@@ -154,10 +154,11 @@ export type AuditSource = 'anaesthetist' | 'office' | 'integration' | 'system' |
  * BillingLine funder overrides (5th review #4) and Invoices; worked out by
  * `billablePartyForProcedure` (`domain/billing/whoIsBilled.ts`) alone.
  *
- * - `patient`: the patient is the payer on the Booking (`id` the patient).
- * - `payer`: another payer named on the Booking (`id` its `BP####`; catch-up
- *   Phase 21, AR-44 `#payer`), resolved from that Booking or the invoice's
- *   `billedTo` snapshot, never from a master.
+ * - `patient`: the patient is the Procedure's payer (`id` the patient).
+ * - `payer`: another payer named on a Procedure (`id` its `BP####`; catch-up
+ *   Phase 21, on each Procedure since 22a; AR-44 `#payer`), resolved from the
+ *   Procedures holding it or the invoice's `billedTo` snapshot, never from a
+ *   master.
  * - `hospital`, `insurer`, `surgeon`, `organisation`, `billableParty`: a holder
  *   Party's billing identity, the one each Party already carried
  *   (`Party.billingIdentity`), so no seeded counterparty or Xero contact
@@ -234,9 +235,10 @@ export interface PostalAddress {
 }
 
 /**
- * The payer named on a Booking (catch-up Phase 21; US-11.2.2, DM-11, RV-30;
- * AR-44 `#payer`, `#patient`): who is invoiced whenever a Procedure's Contract
- * does not bill its holder (`billablePartyForProcedure`).
+ * The payer on a Procedure (catch-up Phase 21, moved onto each Procedure by
+ * catch-up Phase 22a; US-11.2.2, DM-11, RV-30; AR-44 `#payer`, `#patient`):
+ * who is invoiced whenever the Procedure's Contract does not bill its holder
+ * (`billablePartyForProcedure`).
  *
  * - `patient`: the "different payer" tick is clear (Greg, 28 October). The
  *   name, email and postal address are read from the patient record; the two
@@ -246,17 +248,17 @@ export interface PostalAddress {
  *   benefactor or a family trust. `id` is a `BP####` id, so a guardian
  *   re-expressed from the retired master keeps its Xero contact.
  *
- * Contact is optional in the type so a payer can be saved before it is known;
- * the payer sheet asks and Review flags a billed payer with neither
- * (`payerContactMissing`), never a completion check (our reading).
+ * Identity, never matching: a payer copied to another Procedure keeps its id
+ * and is the same payer; one typed in separately is a new id even with the
+ * same name and email (`payerKey`, `domain/billing/procedurePayer.ts`). One
+ * record per payer id on a Booking: every Procedure holding an id holds the
+ * same details. Written only by `setProcedurePayer` after creation.
  *
- * The catalogue's reading: one payer per Booking, changeable by the office and
- * the anaesthetist until AUTHORISED. Greg's v6 holds the payer per booking
- * procedure, admin only, and wanted one billable-party table; this one type,
- * its one writer (`setBookingPayer`) and its one reader keep that change a
- * contained edit. Replaces the guardian master and `Procedure.billablePartyId`.
+ * Contact is optional in the type so a payer can be saved before it is known;
+ * the Paid by sheet asks and Review flags a billed payer with neither
+ * (`payerContactMissing`), never a completion check (our reading).
  */
-export type BookingPayer =
+export type ProcedurePayer =
   | { kind: 'patient'; email?: string; postalAddress?: PostalAddress }
   | {
       kind: 'other'
@@ -808,8 +810,6 @@ export interface Booking {
    * trail stays the record of where each change came from.
    */
   source?: BookingSource
-  /** The payer on the Booking (catch-up Phase 21, US-11.2.2): set on every creation path, written only by `setBookingPayer`. */
-  payer: BookingPayer
   /**
    * The Booking's insurer or funder (catch-up Phase 21; US-11.4.3, DM-12): a
    * Party of kind `insurer` (NIB, Southern Cross Health Society) or `funder`
@@ -932,6 +932,13 @@ export interface InvoiceDescription {
 export interface Procedure {
   id: ProcedureId
   bookingId: BookingId
+  /**
+   * Who pays for this Procedure when its Contract bills the payer (catch-up
+   * Phase 22a; US-11.2.2, DM-11; provisional on OQ-140): filled in from the
+   * patient on every creation path, a Procedure added later copying a shared
+   * payer (`payerForNewProcedure`), written only by `setProcedurePayer`.
+   */
+  payer: ProcedurePayer
   /**
    * The procedure text, exactly as received (catch-up Phase 20a; US-02.5.7,
    * DM-51). Written only by `createBooking` and `replaceProcedureText`; never

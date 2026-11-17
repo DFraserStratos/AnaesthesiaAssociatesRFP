@@ -19,14 +19,15 @@ import phase19Fixture from './__parity__/phase-19-baseline.json'
 import phase19aFixture from './__parity__/phase-19a-baseline.json'
 import phase19bFixture from './__parity__/phase-19b-baseline.json'
 import { COMPLETION_BOOKING_IDS, REVIEW_FLAG_BOOKING_IDS, MERIVALE_FACE_LIFT_BOOKING_ID, PAYER_REVIEW_BOOKING_IDS, SEED_MARKERS, SOURCE_WORDING_BOOKING_IDS } from '../domain/seed'
-import { freshAppState } from './appStore'
+import { freshAppStateBefore22a } from './__parity__/phase22aAdditions'
 import { billingContextForBooking, bookingsForList, prePaidByProcedure, proceduresForBooking } from './selectors'
 import { procedureFee } from '../shared/capture/feeContext'
 import { buildInvoicesForBooking, type InvoiceBuildContext } from '../domain/billing/invoiceBuild'
 import { listHospitalFor } from '../domain/listPairing'
 import type { AssignedList } from '../domain/types'
 
-const state = freshAppState()
+// Catch-up Phase 22a's seed additions are set aside (`__parity__/phase22aAdditions.ts`).
+const state = freshAppStateBefore22a()
 
 const assignedLists = Object.values(state.schedule.lists)
   .filter((l): l is AssignedList => l.anaesthetistId !== undefined)

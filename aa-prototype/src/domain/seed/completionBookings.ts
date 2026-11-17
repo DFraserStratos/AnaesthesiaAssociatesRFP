@@ -56,7 +56,6 @@ export function seedCompletionBookings(next: { booking: number; procedure: numbe
       patientId: spec.patientId,
       scheduledTime: spec.time,
       completed: false,
-      payer: { kind: 'patient' },
       // The seed's source rule: St George's sends a feed, so its Bookings are hospital downloads.
       source: 'hospitalDownload',
       lastModifiedBy: 'Kirsty W.',
@@ -65,6 +64,7 @@ export function seedCompletionBookings(next: { booking: number; procedure: numbe
     procedures.push({
       id: `P${String(p).padStart(4, '0')}`,
       bookingId,
+      payer: { kind: 'patient' },
       procedureText: seedText(spec.text),
       invoiceDescription: null,
       isAdditional: false,

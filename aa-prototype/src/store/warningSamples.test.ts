@@ -11,7 +11,7 @@ import { DEMO_TRIGGER_ACTOR, OFFICE_ACTOR } from './demoActors'
 import { proceduresForBooking } from './selectors'
 import { editProcedure } from './lifecycle'
 import { setProcedureContract } from './contractSelectionActions'
-import { setBookingPayer } from './payerActions'
+import { setProcedurePayer } from './payerActions'
 import { raisePreProcedureInvoice } from './prepaymentActions'
 import { clearWarning, openWarnings, warningsForBooking } from './warnings'
 import {
@@ -266,31 +266,52 @@ describe('the base-units sample never half-stages or overwrites a real edit (rev
   })
 })
 
-describe('the child payer sample (catch-up Phase 21; US-11.2.4)', () => {
+const gracePayers = (api: BoundAppStore) => proceduresForBooking(api.getState(), GRACE).map((p) => p.payer)
+/** The office changes Grace Park's payer on both Procedures (the offer ticked). */
+function setBookingPayer(api: BoundAppStore, actor: typeof OFFICE_ACTOR, bookingId: string, input: Parameters<typeof setProcedurePayer>[3]) {
+  const [first, ...rest] = proceduresForBooking(api.getState(), bookingId)
+  return setProcedurePayer(api, actor, first!.id, input, rest.map((p) => p.id))
+}
+
+describe('the child payer sample (catch-up Phase 21; per Procedure since 22a; US-11.2.4, US-13.7.1)', () => {
   const childWarnings = (api: BoundAppStore, id: string) => warningsForBooking(api.getState(), id).filter((w) => w.ruleId === 'childPayer')
 
   it('stages on Grace Park\'s Booking from an adult\'s, as the demo actor: Hana Park out, the patient in; Clear restores Hana Park', () => {
     const api = createAppStore()
     expect(childWarnings(api, GRACE)).toEqual([])
     expect(raiseSamplesOn(api, AM_TARGET!).ok).toBe(true)
-    expect(api.getState().schedule.bookings[GRACE]!.payer).toEqual({ kind: 'patient' })
+    expect(gracePayers(api)).toEqual([{ kind: 'patient' }, { kind: 'patient' }])
+    // One warning on each of Grace Park's two Procedures billed to the patient (catch-up Phase 22a).
+    const procs = proceduresForBooking(api.getState(), GRACE)
+    expect(childWarnings(api, GRACE).map((x) => x.key)).toEqual(procs.map((p) => `${GRACE}:childPayer:${p.id}`))
     const [w] = childWarnings(api, GRACE)
-    expect(w).toMatchObject({ kind: 'beforeProcedure', strength: 'mild', key: `${GRACE}:childPayer` })
+    expect(w).toMatchObject({ kind: 'beforeProcedure', strength: 'mild', procedureId: procs[0]!.id })
     expect(w!.text).toBe("Grace Park is under 18 and is the payer. Check the payer's details: a parent's or guardian's email or postal address may be needed.")
-    expect(api.getState().audit.some((a) => a.action === 'booking.payer' && a.who === DEMO_TRIGGER_ACTOR.who && a.entityId === GRACE)).toBe(true)
+    expect(api.getState().audit.filter((a) => a.action === 'procedure.payer' && a.who === DEMO_TRIGGER_ACTOR.who).map((a) => a.entityId)).toEqual(procs.map((p) => p.id))
     // It never lands on multiWarning.
     expect(warningsForBooking(api.getState(), SEED_WARNING_SAMPLE_BOOKINGS.multiWarning).some((x) => x.ruleId === 'childPayer')).toBe(false)
     // A second press stages nothing new.
     expect(sampleRaiseRefusal(api.getState(), AM_TARGET!)).toBe('Samples already raised')
     expect(clearSamplesFor(api, AM_TARGET!).ok).toBe(true)
-    expect(api.getState().schedule.bookings[GRACE]!.payer).toEqual(buildSeed().schedule.bookings[GRACE]!.payer)
+    expect(gracePayers(api)).toEqual(proceduresForBooking(buildSeed(), GRACE).map((p) => p.payer))
+    expect(gracePayers(api).every((p) => p.kind === 'other' && p.id === 'BP0001')).toBe(true)
     expect(childWarnings(api, GRACE)).toEqual([])
+  })
+
+  it('the to-do list holds one row for the Booking, folding both Procedures; clearing it clears both (catch-up Phase 22a, D4)', () => {
+    const api = createAppStore()
+    raiseSamplesOn(api, AM_TARGET!)
+    const rows = openWarnings(api.getState()).filter((r) => r.bookingId === GRACE && r.warning.ruleId === 'childPayer')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.foldedKeys).toHaveLength(1)
+    for (const key of [rows[0]!.warning.key, ...rows[0]!.foldedKeys!]) expect(clearWarning(api, OFFICE_ACTOR, GRACE, key).ok).toBe(true)
+    expect(openWarnings(api.getState()).filter((r) => r.bookingId === GRACE && r.warning.ruleId === 'childPayer')).toEqual([])
   })
 
   it('ticking another payer removes the warning; Clear holds across an unrelated edit', () => {
     const api = createAppStore()
     raiseSamplesOn(api, GRACE)
-    const key = `${GRACE}:childPayer`
+    const key = `${GRACE}:childPayer:${proceduresForBooking(api.getState(), GRACE)[0]!.id}`
     clearWarning(api, OFFICE_ACTOR, GRACE, key)
     expect(childWarnings(api, GRACE)[0]!.clearance).toBeDefined()
     editProcedure(api, OFFICE_ACTOR, proceduresForBooking(api.getState(), GRACE)[0]!.id, { billingReference: 'X' })
@@ -305,7 +326,7 @@ describe('the child payer sample (catch-up Phase 21; US-11.2.4)', () => {
     setListState(api, grace.listId, 'AUTHORISED')
     // Prepayment, base units, approval number and (catch-up Phase 22) split; the child payer sample skips Grace Park.
     expect(raiseSamplesOn(api, AM_TARGET!)).toEqual({ ok: true, value: 4 })
-    expect(api.getState().schedule.bookings[GRACE]!.payer.kind).toBe('other')
+    expect(gracePayers(api).every((p) => p.kind === 'other')).toBe(true)
   })
 })
 
@@ -338,11 +359,11 @@ describe('review fixes (convention 18): samples', () => {
   it('a To-do Clear on a staged child warning does not strand the sample: Clear sample warnings still puts Hana Park back', () => {
     const api = createAppStore()
     raiseSamplesOn(api, AM_TARGET!)
-    const key = `${GRACE}:childPayer`
+    const key = `${GRACE}:childPayer:${proceduresForBooking(api.getState(), GRACE)[0]!.id}`
     expect(clearWarning(api, OFFICE_ACTOR, GRACE, key).ok).toBe(true)
     expect(stagedSampleBookings(api.getState())).toContain(GRACE)
     expect(clearAllSamples(api).ok).toBe(true)
-    expect(api.getState().schedule.bookings[GRACE]!.payer).toMatchObject({ kind: 'other', id: 'BP0001' })
+    for (const p of gracePayers(api)) expect(p).toMatchObject({ kind: 'other', id: 'BP0001' })
     expect(sampleRaiseRefusal(api.getState(), AM_TARGET!)).toBeNull()
   })
 
@@ -352,7 +373,7 @@ describe('review fixes (convention 18): samples', () => {
     setBookingPayer(api, OFFICE_ACTOR, GRACE, { kind: 'other', id: 'BP0001', name: 'Hana Park', relationship: 'Mother', email: 'hana.work@example.net' })
     expect(sampleRaiseRefusal(api.getState(), AM_TARGET!)).toBeNull()
     expect(raiseSamplesOn(api, AM_TARGET!)).toEqual({ ok: true, value: 4 })
-    expect(api.getState().schedule.bookings[GRACE]!.payer.kind).toBe('other')
+    expect(gracePayers(api).every((p) => p.kind === 'other')).toBe(true)
   })
 })
 

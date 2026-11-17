@@ -17,7 +17,7 @@ import { PaidByRow } from '../../../shared/booking/PaidByRow'
 import { OFFICE_ACTOR } from '../../../store'
 
 const OPTIONS: PartyOption[] = [
-  { ref: { kind: 'patient', id: 'PT-EX' }, name: 'Alan Prentice', hint: 'Payer on the Booking', group: 'booking' },
+  { ref: { kind: 'patient', id: 'PT-EX' }, name: 'Alan Prentice', hint: 'Payer', group: 'booking' },
   { ref: { kind: 'insurer', id: 'I-EX' }, name: 'nib', hint: 'Insurer', group: 'parties' },
   { ref: { kind: 'hospital', id: 'H-EX' }, name: "St George's", hint: 'Hospital', group: 'parties' },
   { ref: { kind: 'party', id: 'PY-EX' }, name: 'Unisports Ortho', hint: 'Surgeon group', group: 'parties' },

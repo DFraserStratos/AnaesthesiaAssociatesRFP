@@ -98,8 +98,8 @@ export interface ProcedureStackCtx {
   contracts: Readonly<Record<string, Contract>>
   parties: Readonly<Record<PartyId, Party>>
   rvgGroups: Readonly<Record<RvgGroupId, RvgGroup>>
-  /** The Booking's payer and patient: who a Contract that bills the payer bills (catch-up Phase 21). */
-  booking: Pick<Booking, 'payer' | 'patientId'>
+  /** The Booking's patient: with the Procedure's own payer, who a Contract that bills the payer bills (catch-up Phases 21, 22a). */
+  booking: Pick<Booking, 'patientId'>
   /** The procedure date: the List's. */
   dateISO: string
   surface: StackSurface
@@ -250,15 +250,16 @@ export function newerInvoiceDescription(
 /**
  * Who the Procedure's invoice goes to, by name: the one rule,
  * `billablePartyForProcedure` (catch-up Phase 21; AR-61 `who-is-billed`):
- * the holder's Party when its Contract bills its holder, otherwise the payer
- * on the Booking (the patient, or another payer). Never a second derivation.
+ * the holder's Party when its Contract bills its holder, otherwise the
+ * Procedure's own payer (the patient, or another payer). Never a second
+ * derivation.
  */
 export function whoIsInvoicedFor(
-  procedure: Pick<Procedure, 'governingContractId'>,
+  procedure: Pick<Procedure, 'governingContractId' | 'payer'>,
   ctx: Pick<ProcedureStackCtx, 'contracts' | 'parties' | 'booking' | 'nameOf'>,
 ): InvoicedParty | null {
   const contract = procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
-  const ref = billablePartyForProcedure(contract, ctx.booking, ctx.parties)
+  const ref = billablePartyForProcedure(contract, procedure, ctx.booking.patientId, ctx.parties)
   if (ref === undefined) return null
   const kind: InvoicedParty['kind'] = ref.kind === 'patient' ? 'patient' : ref.kind === 'payer' ? 'payer' : 'holder'
   return { name: ctx.nameOf(ref), kind }

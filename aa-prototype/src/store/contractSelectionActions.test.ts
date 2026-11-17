@@ -184,7 +184,8 @@ describe('creation, added Procedures and completion (US-04.3.4, US-03.2.3)', () 
     expect(none.ok).toBe(true)
     if (!none.ok) return
     expect(proc(api, none.value.procedureId).governingContractId).toBeUndefined()
-    expect(api.getState().schedule.bookings[guardian]?.payer.kind).toBe('other')
+    // A Procedure added later copies the Booking's shared payer (catch-up Phase 22a, US-11.2.2).
+    expect(proc(api, none.value.procedureId).payer).toMatchObject({ kind: 'other', id: 'BP0001' })
     void first
     const picked = addProcedure(api, OFFICE, guardian, { governingContractId: 'CT-NO-CONTRACT' })
     expect(picked.ok && proc(api, picked.value.procedureId).governingContractId).toBe('CT-NO-CONTRACT')

@@ -211,7 +211,7 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string)
       procedureIds: [...draft.procedureIds],
       ...(supplier !== undefined ? { supplier } : {}),
       agent: AA_AGENT,
-      delivery: deliveryStampFor(invoiceDeliveryFor(draft.counterparty, booking, patient, seed.masters.parties), SEED_PREPAYMENT_RAISED_ISO, BILLING_RUN_SENDER_NAME),
+      delivery: deliveryStampFor(invoiceDeliveryFor(draft.counterparty, proceduresOf(seed, booking.id).filter((p) => draft.procedureIds.includes(p.id)), booking.patientId, patient, seed.masters.parties), SEED_PREPAYMENT_RAISED_ISO, BILLING_RUN_SENDER_NAME),
     }
     for (const line of draft.lines) {
       const lineId = next('invoiceLine')

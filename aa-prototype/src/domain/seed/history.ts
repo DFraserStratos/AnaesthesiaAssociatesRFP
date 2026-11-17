@@ -450,8 +450,6 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       patientId: acc.patientId,
       completed: true,
       completedAtISO: acc.raisedISO,
-      // The payer on the Booking (catch-up Phase 21): Hana Park on Grace Park's guardian-funded account, else the patient.
-      payer: acc.counterparty.kind === 'payer' && acc.counterparty.id === BP.guardian ? HANA_PARK_PAYER : { kind: 'patient' },
       ...(acc.scheduledTime !== undefined ? { scheduledTime: acc.scheduledTime } : {}),
       lastModifiedBy: 'Billing run',
       lastModifiedAtISO: acc.raisedISO,
@@ -459,6 +457,8 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
     const procedure: Procedure = {
       id: procId,
       bookingId,
+      // The Procedure's payer (catch-up Phase 21, on the Procedure since 22a): Hana Park on Grace Park's guardian-funded account, else the patient.
+      payer: acc.counterparty.kind === 'payer' && acc.counterparty.id === BP.guardian ? HANA_PARK_PAYER : { kind: 'patient' },
       procedureText: seedText(acc.description),
       invoiceDescription: null,
       // Catch-up Phase 20: the one Contract it was billed under. A patient or
@@ -499,9 +499,8 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       agent: AA_AGENT,
     }
     if (masters.parties !== undefined) {
-      const historyBooking = build.bookings[bookingId]!
       invoice.delivery = deliveryStampFor(
-        invoiceDeliveryFor(acc.counterparty, historyBooking, masters.patients?.[acc.patientId], masters.parties),
+        invoiceDeliveryFor(acc.counterparty, [build.procedures[procId]!], acc.patientId, masters.patients?.[acc.patientId], masters.parties),
         acc.raisedISO,
         'Billing run',
       )

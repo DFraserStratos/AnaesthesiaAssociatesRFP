@@ -41,15 +41,15 @@ export function contractPartyFor(state: AppState, procedureId: string): Counterp
   const booking = procedure !== undefined ? state.schedule.bookings[procedure.bookingId] : undefined
   if (procedure === undefined || booking === undefined) return undefined
   const contract = procedure.governingContractId !== undefined ? state.masters.contracts[procedure.governingContractId] : undefined
-  return billablePartyForProcedure(contract, booking, state.masters.parties)
+  return billablePartyForProcedure(contract, procedure, booking.patientId, state.masters.parties)
 }
 
 /** The party picker's options for a Procedure (the one selector; `PartyPicker` reads it). */
 export function partyOptionsForProcedure(state: AppState, procedureId: string): PartyOption[] {
   const procedure = state.schedule.procedures[procedureId]
   const booking = procedure !== undefined ? state.schedule.bookings[procedure.bookingId] : undefined
-  if (booking === undefined) return []
-  return partyOptionsFor(booking, contractPartyFor(state, procedureId), state.masters.parties, (ref) => counterpartyName(state, ref, booking.id))
+  if (procedure === undefined || booking === undefined) return []
+  return partyOptionsFor(procedure, booking.patientId, contractPartyFor(state, procedureId), state.masters.parties, (ref) => counterpartyName(state, ref, booking.id))
 }
 
 /**
@@ -79,7 +79,7 @@ export function setProcedureSplit(
     if (bookingRequiresPrepayment(state, bookingId)) return refuse('prepaidProcedure', PREPAID_PROCEDURE_MESSAGE)
     const fee = procedureFeeNow(state, procedureId)
     if (fee === undefined || fee.total <= 0) return refuse('noFee', NO_FEE_TO_SPLIT_MESSAGE)
-    if (split.shares.some((share) => !isBillablePartyOn(found.booking, share.party, state.masters.parties))) {
+    if (split.shares.some((share) => !isBillablePartyOn(procedure, found.booking.patientId, share.party, state.masters.parties))) {
       return refuse('partyUnknown', 'Choose each party from the list.')
     }
     const resolved = resolveSplit(fee.total, split.shares)

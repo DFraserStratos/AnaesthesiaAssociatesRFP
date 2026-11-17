@@ -94,7 +94,6 @@ export function seedSourceWordingBookings(
       patientId: spec.patientId,
       scheduledTime: spec.time,
       completed: false,
-      payer: { kind: 'patient' },
       source: spec.bookingSource,
       lastModifiedBy: 'Kirsty W.',
       lastModifiedAtISO: '2026-07-20T16:30:00',
@@ -102,6 +101,7 @@ export function seedSourceWordingBookings(
     const procedure: Procedure = {
       id: procedureId,
       bookingId,
+      payer: { kind: 'patient' },
       procedureText: seedText(
         spec.wording.asReceived,
         spec.wording.source,

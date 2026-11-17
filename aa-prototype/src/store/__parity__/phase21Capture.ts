@@ -10,7 +10,8 @@
  * there, exactly. Imported only by tests.
  */
 
-import { freshAppState, type AppState } from '../appStore'
+import type { AppState } from '../appStore'
+import { freshAppStateBefore22a } from './phase22aAdditions'
 import { billingContextForBooking, bookingsForList, counterpartyName, prePaidByProcedure, proceduresForBooking } from '../selectors'
 import { buildInvoicesForBooking, type InvoiceBuildContext } from '../../domain/billing/invoiceBuild'
 import { payerContactSpec } from '../xeroHandoff'
@@ -99,6 +100,7 @@ export function captureIssued(state: AppState): IssuedInvoiceRow[] {
 }
 
 export function captureBaseline21(): Phase21Baseline {
-  const state = freshAppState()
+  // Catch-up Phase 22a's seed additions are set aside (`phase22aAdditions.ts`).
+  const state = freshAppStateBefore22a()
   return { bookings: captureBookings(state), issued: captureIssued(state) }
 }

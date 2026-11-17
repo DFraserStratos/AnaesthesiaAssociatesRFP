@@ -36,7 +36,7 @@ import { formatPostalAddress } from '../../../domain/billing/payer'
 import { isOpen, type Warning } from '../../../domain/warnings'
 import { stampText } from '../../../domain/dateText'
 import type { Notification } from '../../../domain/types'
-import { procedureStackViewFor } from '../../../store/selectors'
+import { proceduresForBooking, procedureStackViewFor } from '../../../store/selectors'
 import { ProcedureStack } from '../../../shared/booking/ProcedureStack'
 import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
 import { sessionText } from '../../../domain/outOfHours'
@@ -568,14 +568,16 @@ function ProcedureFlags({
 /** The payer and the insurer or funder (21's), compact for the table, with Change opening the Admin Booking's payer sheet. */
 function PayerAndInsurer({ booking, onChange }: { booking: Booking; onChange?: () => void }) {
   const masters = useAppStore((s) => s.masters)
-  const payer = payerDetails(booking, masters.patients[booking.patientId])
+  // INTERIM until catch-up Phase 22a session 2 shows each Procedure's payer in its row: the first Procedure's.
+  const firstPayer = useAppStore((s) => proceduresForBooking(s, booking.id)[0]?.payer) ?? { kind: 'patient' as const }
+  const payer = payerDetails(firstPayer, masters.patients[booking.patientId])
   const funder = booking.funderPartyId !== undefined ? masters.parties[booking.funderPartyId] : undefined
   const missing = approvalNumberMissing(booking, masters.parties)
   const number = booking.insuranceApprovalNumber?.trim()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6, fontSize: 12, color: neutral.slate }}>
       <div data-shot="review-payer" style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
-        <span>{booking.payer.kind === 'patient' ? 'Patient pays' : `Payer: ${payer.name}${payer.relationship !== undefined ? ` (${payer.relationship})` : ''}`}</span>
+        <span>{firstPayer.kind === 'patient' ? 'Patient pays' : `Payer: ${payer.name}${payer.relationship !== undefined ? ` (${payer.relationship})` : ''}`}</span>
         {onChange !== undefined && <TextAction small onClick={onChange} label="Change the payer on the Booking">Change</TextAction>}
       </div>
       {/* How the payer is invoiced (21's delivery rule: email where there is one, else post). */}

@@ -130,9 +130,9 @@ describe('buildPrePaymentInvoiceForBooking', () => {
     expect(invoice.lines[0]!.units).toBe(21)
   })
 
-  it('addresses the pre-invoice to another payer on the Booking (a guardian pays; catch-up Phase 21)', () => {
-    const proc = prepaymentProc({ prepaymentDetail: { type: 'split', depositAmount: 300 } })
-    const booking = mkBooking({ payer: { kind: 'other', id: 'BP0007', name: 'Angela Park', relationship: 'Mother', email: 'angela@example.net' } })
+  it("addresses the pre-invoice to the Procedure's own payer (a guardian pays; catch-up Phases 21, 22a)", () => {
+    const proc = prepaymentProc({ prepaymentDetail: { type: 'split', depositAmount: 300 }, payer: { kind: 'other', id: 'BP0007', name: 'Angela Park', relationship: 'Mother', email: 'angela@example.net' } })
+    const booking = mkBooking()
     const result = buildPrePaymentInvoiceForBooking(booking, [proc], mkCtx())
     if (result.kind !== 'invoices') throw new Error('expected invoices')
     expect(result.invoices[0]!.counterparty).toEqual({ kind: 'payer', id: 'BP0007' })

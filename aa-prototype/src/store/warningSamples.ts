@@ -9,7 +9,7 @@
  * warnings' clearances so raising them again shows them open.
  *
  * The pinned `multiWarning` Booking shows the prepayment and base-units
- * samples. Catch-up Phase 21 adds a child as the payer on the Booking, which
+ * samples. Catch-up Phase 21 adds a child as the payer (per Procedure since 22a), which
  * stages on a minor (`targetFor`: the Booking on screen when its patient is
  * under 18, otherwise Grace Park's), so it never lands on `multiWarning`; each
  * later phase adds its sample here (22 a split that no longer fits the fee,
@@ -31,7 +31,8 @@ import { pickRvgGroup } from './rvgGroupActions'
 import { bookingRequiresPrepayment, prePaymentInvoicesForBooking, proceduresForBooking, railContextForList, railMastersOf } from './selectors'
 import { contractCandidatesFor, openPriceFallbackFor } from '../domain/billing/contractRail'
 import { setProcedureContract } from './contractSelectionActions'
-import { payerAuditText, sameData, setBookingPayer } from './payerActions'
+import { payerAuditText, sameData, setProcedurePayer } from './payerActions'
+import { payerOfferFor } from '../domain/billing/procedurePayer'
 import { setBookingInsurance } from './insuranceActions'
 import { approvalNumberMissing, hasApprovalNumber } from '../domain/billing/insurance'
 
@@ -62,6 +63,8 @@ export interface WarningSample {
   restore(state: SampleState, bookingId: string): Partial<Pick<AppState['schedule'], 'procedures' | 'bookings'>> | undefined
   /** The Booking fields the sample stages, restored and audited on unstage (catch-up Phase 21). */
   bookingFields?: readonly (keyof Booking)[]
+  /** True when the sample stages Procedures' payers, restored and audited (`procedure.payer`) on unstage (catch-up Phase 22a). */
+  stagesPayer?: boolean
   /**
    * Where the sample stages when raised from a Booking (catch-up Phase 21): by
    * default that Booking; the child payer sample redirects to a minor's.
@@ -289,7 +292,7 @@ const baseUnitsSample: WarningSample = {
 }
 
 // ---------------------------------------------------------------------------
-// A child as the payer on the Booking (catch-up Phase 21; US-11.2.4)
+// A child as the payer, per Procedure (catch-up Phase 21; per Procedure since 22a; US-11.2.4, US-13.7.1)
 // ---------------------------------------------------------------------------
 
 /** The Contract fields the child sample may move on the first Procedure (when every Contract bills its holder). */
@@ -306,49 +309,60 @@ function patientIsChild(state: SampleState, bookingId: string): boolean {
   return age !== undefined && age < ADULT_AGE
 }
 
+/** True when any of the Booking's Procedures raises the child payer warning (`childPayerOn`, per Procedure). */
 function childRaisedOn(state: SampleState, bookingId: string): boolean {
   const booking = state.schedule.bookings[bookingId]
   const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
   if (booking === undefined || list === undefined) return false
-  return childPayerOn(booking, state.masters.patients[booking.patientId], proceduresForBooking(state, bookingId), state.masters.contracts, list.dateISO)
+  const patient = state.masters.patients[booking.patientId]
+  return proceduresForBooking(state, bookingId).some((p) =>
+    childPayerOn(p, patient, p.governingContractId !== undefined ? state.masters.contracts[p.governingContractId] : undefined, list.dateISO),
+  )
+}
+
+/** The Booking's Procedures whose payer differs from the seed's (what the child sample stages). */
+function payerMovedProcedures(state: Pick<AppState, 'schedule'>, bookingId: string): Procedure[] {
+  return proceduresForBooking(state, bookingId).filter((p) => {
+    const seed = seedProcedure(p.id)
+    return seed !== undefined && !sameValue(p.payer, seed.payer)
+  })
 }
 
 const childPayerSample: WarningSample = {
   ruleId: 'childPayer',
   fields: CHILD_CONTRACT_FIELDS,
-  bookingFields: ['payer'],
+  stagesPayer: true,
   targetFor(state, bookingId) {
     if (patientIsChild(state, bookingId)) return bookingId
     return SEED_MARKERS.guardianMinorBooking?.entityId
   },
   isStaged(state, bookingId) {
-    const booking = state.schedule.bookings[bookingId]
-    const seed = buildSeed().schedule.bookings[bookingId]
-    if (booking === undefined || seed === undefined || !childRaisedOn(state, bookingId)) return false
+    if (state.schedule.bookings[bookingId] === undefined || !childRaisedOn(state, bookingId)) return false
+    const moved = payerMovedProcedures(state, bookingId)
     const first = firstProcedure(state, bookingId)
     const seedFirst = first !== undefined ? seedProcedure(first.id) : undefined
-    const payerMoved = !sameValue(booking.payer, seed.payer)
     const contractMoved = first !== undefined && seedFirst !== undefined && first.governingContractId !== seedFirst.governingContractId
-    if (!payerMoved && !contractMoved) return false
-    return lastChangedByDemo(state, bookingId) || (first !== undefined && lastChangedByDemo(state, first.id))
+    if (moved.length === 0 && !contractMoved) return false
+    return lastChangedByDemo(state, bookingId) || [...moved, ...(first !== undefined ? [first] : [])].some((p) => lastChangedByDemo(state, p.id))
   },
   seedRaises(bookingId) {
     return childRaisedOn(buildSeed(), bookingId)
   },
   stageRefusal(state, bookingId) {
-    const booking = state.schedule.bookings[bookingId]
-    const seed = buildSeed().schedule.bookings[bookingId]
-    if (booking === undefined || seed === undefined) return null
     // Never stage over someone's real payer change: Clear would undo it.
-    if (!sameValue(booking.payer, seed.payer)) return "This Booking's payer was changed: use Reset"
+    if (payerMovedProcedures(state, bookingId).length > 0) return "A payer on this Booking was changed: use Reset"
     return null
   },
   stage(api, actor, bookingId) {
-    const state = api.getState()
-    const booking = state.schedule.bookings[bookingId]
-    if (booking === undefined) return refuse('notFound', 'Booking not found.')
-    if (booking.payer.kind !== 'patient') {
-      const res = setBookingPayer(api, actor, bookingId, { kind: 'patient' })
+    if (api.getState().schedule.bookings[bookingId] === undefined) return refuse('notFound', 'Booking not found.')
+    // The patient pays on every Procedure: each payer moved once, with the offer to the Procedures sharing it.
+    for (const p of proceduresForBooking(api.getState(), bookingId)) {
+      const now = api.getState()
+      const current = now.schedule.procedures[p.id]
+      const booking = now.schedule.bookings[bookingId]
+      if (current === undefined || booking === undefined || current.payer.kind === 'patient') continue
+      const offer = payerOfferFor(proceduresForBooking(now, bookingId), p.id, now.masters.contracts, booking.patientId).map((o) => o.id)
+      const res = setProcedurePayer(api, actor, p.id, { kind: 'patient' }, offer)
       if (!res.ok) return res
     }
     // A child billed only through holders raises nothing: move the first Procedure onto No contract · RVG.
@@ -362,23 +376,19 @@ const childPayerSample: WarningSample = {
   },
   restore(state, bookingId) {
     if (!this.isStaged(state, bookingId)) return undefined
-    const booking = state.schedule.bookings[bookingId]
-    const seed = buildSeed().schedule.bookings[bookingId]
-    if (booking === undefined || seed === undefined) return undefined
-    const patch: Partial<Pick<AppState['schedule'], 'procedures' | 'bookings'>> = {
-      bookings: { ...state.schedule.bookings, [bookingId]: { ...booking, payer: seed.payer } },
-    }
+    const procedures = { ...state.schedule.procedures }
+    for (const p of payerMovedProcedures(state, bookingId)) procedures[p.id] = { ...p, payer: seedProcedure(p.id)!.payer }
     const first = firstProcedure(state, bookingId)
     const seedFirst = first !== undefined ? seedProcedure(first.id) : undefined
     if (first !== undefined && seedFirst !== undefined && first.governingContractId !== seedFirst.governingContractId) {
-      const restored: Procedure = { ...first }
+      const restored: Procedure = { ...procedures[first.id]! }
       for (const f of CHILD_CONTRACT_FIELDS) {
         if (seedFirst[f] === undefined) delete restored[f]
         else (restored as unknown as Record<string, unknown>)[f] = seedFirst[f]
       }
-      patch.procedures = { ...state.schedule.procedures, [first.id]: restored }
+      procedures[first.id] = restored
     }
-    return patch
+    return { procedures }
   },
   restoredEntityIds(state, bookingId) {
     if (!this.isStaged(state, bookingId)) return []
@@ -761,18 +771,16 @@ export function clearSamplesOn(api: AppStoreApi, bookingId: string, actor: Actor
         after: { ruleId: [...ruleIds].join(', ') },
         stampBookingId: restoreStamp ? null : undefined,
       },
-      // A staged payer goes back to the seed's (catch-up Phase 21).
-      ...(staged.some((s) => s.bookingFields?.includes('payer')) && seedBooking !== undefined && !sameValue(booking.payer, seedBooking.payer)
-        ? [
-            {
-              entityType: 'booking',
-              entityId: bookingId,
-              action: 'booking.payer',
-              before: { payer: payerAuditText(state, booking.payer, booking.patientId) },
-              after: { payer: payerAuditText(state, seedBooking.payer, booking.patientId) },
-              stampBookingId: restoreStamp ? null : undefined,
-            },
-          ]
+      // Each staged payer goes back to the seed's, audited per Procedure (catch-up Phases 21, 22a).
+      ...(staged.some((s) => s.stagesPayer === true)
+        ? payerMovedProcedures(state, bookingId).map((p) => ({
+            entityType: 'procedure',
+            entityId: p.id,
+            action: 'procedure.payer',
+            before: { payer: payerAuditText(state, p.payer, booking.patientId) },
+            after: { payer: payerAuditText(state, seedProcedure(p.id)!.payer, booking.patientId) },
+            stampBookingId: restoreStamp ? null : undefined,
+          }))
         : []),
       // A cleared approval number goes back to the seed's (catch-up Phase 21).
       ...(staged.some((s) => s.bookingFields?.includes('insuranceApprovalNumber')) && seedBooking !== undefined

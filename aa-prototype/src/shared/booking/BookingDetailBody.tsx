@@ -625,13 +625,16 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
         shot="booking-payer-row"
         action={canEdit ? <EditLink label="Change" ariaLabel="Change the payer" onClick={() => setSheet('payer')} /> : undefined}
       >
-        <PayerDetailsView
-          details={payerDetails(booking, patient)}
-          // The office alone is told a holder pays (US-15.0.1: no holder billing setting on anaesthetist screens).
-          holdersOnly={isOffice && onlyHoldersBilled(procedures, masters.contracts)}
-          contactMissing={payerContactMissing(booking, patient, procedures, masters.contracts)}
-          child={childPayerOn(booking, patient, procedures, masters.contracts, list.dateISO)}
-        />
+        {/* INTERIM until catch-up Phase 22a session 2 moves the payer into each Procedure's Paid by: the first Procedure's payer. */}
+        {procedures[0] !== undefined && (
+          <PayerDetailsView
+            details={payerDetails(procedures[0].payer, patient)}
+            // The office alone is told a holder pays (US-15.0.1: no holder billing setting on anaesthetist screens).
+            holdersOnly={isOffice && onlyHoldersBilled(procedures, masters.contracts)}
+            contactMissing={procedures.some((p) => payerContactMissing(p, patient, contractOfProcedure(p, masters.contracts)))}
+            child={procedures.some((p) => childPayerOn(p, patient, contractOfProcedure(p, masters.contracts), list.dateISO))}
+          />
+        )}
       </Section>
       {/* The insurer or funder and the approval number (catch-up Phase 21;
           US-11.4.3): the office and, on the day, the anaesthetist record
@@ -905,4 +908,9 @@ function Stepper({ label, icon, onClick }: { label: string; icon: React.ReactNod
       {icon}
     </button>
   )
+}
+
+/** A Procedure's Contract, if chosen (INTERIM helper for the Booking's Payer section until catch-up Phase 22a session 2). */
+function contractOfProcedure<C>(p: { governingContractId?: string }, contracts: Readonly<Record<string, C>>): C | undefined {
+  return p.governingContractId !== undefined ? contracts[p.governingContractId] : undefined
 }

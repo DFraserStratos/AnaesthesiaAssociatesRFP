@@ -4,7 +4,10 @@
  * `#who-is-billed`, AR-44 `#bill-holder`, `#bill-payer`, `#payer`).
  *
  * Each Procedure's Contract decides: a Contract set to bill its holder bills
- * the holder Party; any other Contract bills the payer named on the Booking.
+ * the holder Party; any other Contract bills the Procedure's own payer
+ * (catch-up Phase 22a: the payer moved from the Booking onto each Procedure,
+ * D85, provisional on OQ-140; its identity, offer and copy rule are in
+ * `procedurePayer.ts`).
  * So No contract · RVG, No contract · Fixed price, a surgeon's fixed price,
  * an anaesthetist's own Contract and every prepaid Contract bill the payer.
  * The Contract's `billsTo` is the only input: this module never reads a
@@ -15,16 +18,16 @@
  *
  * The billing run, 20a's "who is invoiced", Review, the invoice, Xero and the
  * warnings all read `billablePartyForProcedure`; nothing else decides who is
- * billed. If OQ-78 reopens or the payer moves onto each booking procedure
- * (Greg's v6), this file and `setBookingPayer` are the places that change.
+ * billed. If OQ-78 reopens, this file and `setProcedurePayer` are the places
+ * that change.
  *
- * Where this departs from Greg's v6 field names: v6's "alternate payer" flag
- * and payer contact fields on the booking procedure are the Booking's
- * `payer` here (kind `other` is the flag set); v6's contract holder "is
- * billed" setting is each Contract's `billsTo` (Donald, D2).
+ * Where this follows Greg's v6 field names: v6's "alternate payer" flag and
+ * payer contact fields on the booking procedure are the Procedure's `payer`
+ * here (kind `other` is the flag set); v6's contract holder "is billed"
+ * setting is each Contract's `billsTo` (Donald, D2).
  */
 
-import type { Booking, Contract, CounterpartyRef, InvoiceBilledTo, Patient, PostalAddress, Procedure } from '../types'
+import type { Contract, CounterpartyRef, InvoiceBilledTo, Patient, PostalAddress, Procedure, ProcedurePayer } from '../types'
 import type { Party } from './parties'
 import { ageInCompletedYears } from './modifiers'
 import { isEmailShaped, isValidPostalAddress, postalAddressLines } from './payer'
@@ -46,9 +49,9 @@ export function partyForCounterparty(ref: CounterpartyRef, parties: Readonly<Rec
   })
 }
 
-/** The payer on the Booking as a counterparty: the patient, or the other payer by its `BP####` id. */
-export function payerCounterparty(booking: Pick<Booking, 'payer' | 'patientId'>): CounterpartyRef {
-  return booking.payer.kind === 'other' ? { kind: 'payer', id: booking.payer.id } : { kind: 'patient', id: booking.patientId }
+/** The Procedure's payer as a counterparty: the patient, or the other payer by its `BP####` id (identity, never a name). */
+export function payerCounterparty(procedure: Pick<Procedure, 'payer'>, patientId: string): CounterpartyRef {
+  return procedure.payer.kind === 'other' ? { kind: 'payer', id: procedure.payer.id } : { kind: 'patient', id: patientId }
 }
 
 /** The sentence when a Contract that bills its holder names a Party that no longer exists (the validator and the run share it). */
@@ -64,31 +67,32 @@ export function holderBilledFor(
   return holder === undefined ? undefined : holderCounterparty(holder)
 }
 
-/** True when the Contract bills the payer on the Booking (it is set and does not bill its holder). */
+/** True when the Contract bills the Procedure's payer (it is set and does not bill its holder). */
 export function isPayerBilled(contract: Pick<Contract, 'billsTo'> | undefined): boolean {
   return contract !== undefined && contract.billsTo !== 'holder'
 }
 
 /**
  * Who a Procedure bills (the one rule): the Contract's holder Party when the
- * Contract bills its holder; otherwise the payer on the Booking. Undefined
+ * Contract bills its holder; otherwise the Procedure's own payer. Undefined
  * with no Contract ("Needs an invoice destination") or a holder that no longer
- * exists. A fee split on the Booking (catch-up Phase 22) adds parties for that
- * one Procedure on top of this; it never changes who the Contract bills.
+ * exists. A fee split (catch-up Phase 22) adds parties for that one Procedure
+ * on top of this; it never changes who the Contract bills.
  */
 export function billablePartyForProcedure(
   contract: Pick<Contract, 'billsTo' | 'holderId'> | undefined,
-  booking: Pick<Booking, 'payer' | 'patientId'>,
+  procedure: Pick<Procedure, 'payer'>,
+  patientId: string,
   parties: Readonly<Record<string, Party>>,
 ): CounterpartyRef | undefined {
   if (contract === undefined) return undefined
   if (contract.billsTo === 'holder') return holderBilledFor(contract, parties)
-  return payerCounterparty(booking)
+  return payerCounterparty(procedure, patientId)
 }
 
 /**
  * A person rather than an organisation: the patient or another payer named on
- * the Booking (a family trust named as payer counts), never a holder Party.
+ * a Procedure (a family trust named as payer counts), never a holder Party.
  * Phase 27 reads it for prepayment.
  */
 export function isPersonParty(ref: CounterpartyRef | undefined): boolean {
@@ -109,11 +113,10 @@ export interface PayerDetails {
 
 /**
  * The payer's details: for the patient, the patient record's name, email and
- * postal address, each filled from the Booking's typed value where the record
- * has none; for another payer, the details held on the Booking.
+ * postal address, each filled from the value typed on the Procedure where the
+ * record has none; for another payer, the details held on the Procedure.
  */
-export function payerDetails(booking: Pick<Booking, 'payer'>, patient: Pick<Patient, 'name' | 'email' | 'postalAddress' | 'phone'> | undefined): PayerDetails {
-  const payer = booking.payer
+export function payerDetails(payer: ProcedurePayer, patient: Pick<Patient, 'name' | 'email' | 'postalAddress' | 'phone'> | undefined): PayerDetails {
   if (payer.kind === 'other') {
     return {
       isPatient: false,
@@ -139,23 +142,28 @@ export function payerDetails(booking: Pick<Booking, 'payer'>, patient: Pick<Pati
 
 /**
  * The details of the person an invoice is addressed to, by the invoice's own
- * counterparty: a `patient` invoice is the patient (the Booking's typed
- * fill-ins only while the patient is the payer on the Booking); a `payer`
- * invoice is the Booking's other payer only when the ids match. Undefined
- * otherwise (a holder, or a payer no longer on the Booking), so a split line
- * to the patient never carries another payer's contact.
+ * counterparty, read from the payers of the invoice's own Procedures: a
+ * `patient` invoice is the patient (with the fill-ins typed on a Procedure
+ * whose payer is the patient, else the record alone); a `payer` invoice is
+ * the other payer one of those Procedures holds by that id. Undefined
+ * otherwise (a holder, or a payer no longer on those Procedures), so a split
+ * line to the patient never carries another payer's contact. Resolved by id,
+ * never by name or email.
  */
 export function personDetailsFor(
   ref: CounterpartyRef,
-  booking: Pick<Booking, 'payer' | 'patientId'>,
+  procedures: readonly Pick<Procedure, 'payer'>[],
+  patientId: string,
   patient: Pick<Patient, 'name' | 'email' | 'postalAddress' | 'phone'> | undefined,
 ): PayerDetails | undefined {
   if (ref.kind === 'patient') {
-    if (ref.id !== booking.patientId) return undefined
-    return payerDetails(booking.payer.kind === 'patient' ? booking : { payer: { kind: 'patient' } }, patient)
+    if (ref.id !== patientId) return undefined
+    const own = procedures.find((p) => p.payer.kind === 'patient')?.payer
+    return payerDetails(own ?? { kind: 'patient' }, patient)
   }
   if (ref.kind === 'payer') {
-    return booking.payer.kind === 'other' && booking.payer.id === ref.id ? payerDetails(booking, patient) : undefined
+    const held = procedures.find((p) => p.payer.kind === 'other' && p.payer.id === ref.id)?.payer
+    return held !== undefined ? payerDetails(held, patient) : undefined
   }
   return undefined
 }
@@ -166,8 +174,8 @@ export function payerHasContact(details: Pick<PayerDetails, 'email' | 'postalAdd
 }
 
 /**
- * True when every Procedure has a Contract and each bills its holder, so the
- * payer on the Booking is invoiced for nothing (a Booking still waiting on a
+ * True when every Procedure has a Contract and each bills its holder, so no
+ * Procedure's payer is invoiced for anything (a Booking still waiting on a
  * Contract is not this: who is invoiced is not known yet).
  */
 export function onlyHoldersBilled(
@@ -183,7 +191,7 @@ export function onlyHoldersBilled(
   )
 }
 
-/** True when at least one Procedure's Contract bills the payer on the Booking. */
+/** True when at least one Procedure's Contract bills its payer. */
 export function anyPayerBilled(
   procedures: readonly Pick<Procedure, 'governingContractId'>[],
   contracts: Readonly<Record<string, Pick<Contract, 'billsTo'>>>,
@@ -192,20 +200,20 @@ export function anyPayerBilled(
 }
 
 /**
- * US-11.2.3: a Procedure bills the payer on the Booking and the payer has
- * neither an email nor a valid postal address. False when every Procedure's
- * Contract bills its holder (its delivery is on its Party) or none has a
- * Contract yet. Our reading of where it is enforced: the payer sheet asks and
- * Review flags it; never a completion or authorisation check.
+ * US-11.2.3, per Procedure (catch-up Phase 22a): the Procedure's Contract
+ * bills its payer and that payer has neither an email nor a valid postal
+ * address. False for a Procedure whose Contract bills its holder (its
+ * delivery is on its Party) or that has no Contract yet. Our reading of where
+ * it is enforced: the Paid by sheet asks and Review flags it; never a
+ * completion or authorisation check.
  */
 export function payerContactMissing(
-  booking: Pick<Booking, 'payer'>,
+  procedure: Pick<Procedure, 'payer'>,
   patient: Pick<Patient, 'name' | 'email' | 'postalAddress' | 'phone'> | undefined,
-  procedures: readonly Pick<Procedure, 'governingContractId'>[],
-  contracts: Readonly<Record<string, Pick<Contract, 'billsTo'>>>,
+  contract: Pick<Contract, 'billsTo'> | undefined,
 ): boolean {
-  if (!anyPayerBilled(procedures, contracts)) return false
-  return !payerHasContact(payerDetails(booking, patient))
+  if (!isPayerBilled(contract)) return false
+  return !payerHasContact(payerDetails(procedure.payer, patient))
 }
 
 /** The words for a billed payer with no contact (US-11.2.3): the Payer row's chip and Review's flag. */
@@ -221,21 +229,24 @@ export function isMinorOn(dobISO: string, dateISO: string): boolean {
 }
 
 /**
- * US-11.2.4 (D4, OQ-54): the patient is the payer (the tick is clear), is
- * under 18 on the List date (`ageInCompletedYears`, so the 18th birthday
- * itself is adult), and at least one Procedure bills the payer. False when
- * another payer is ticked or every Procedure's Contract bills its holder.
+ * US-11.2.4 and US-13.7.1 per Procedure (D4, OQ-54; catch-up Phase 22a): the
+ * patient, under 18 on the List date (`ageInCompletedYears`, so the 18th
+ * birthday itself is adult), is billed for this Procedure. Unsplit, that is
+ * the Procedure's payer being the patient (the tick clear) with a Contract
+ * that bills the payer; split (US-08.2.3), only a share billed to the patient
+ * counts, so a share to another person never warns. False for a Procedure
+ * billed to its holder or with no Contract yet.
  */
 export function childPayerOn(
-  booking: Pick<Booking, 'payer'>,
+  procedure: Pick<Procedure, 'payer' | 'split'>,
   patient: Pick<Patient, 'dobISO'> | undefined,
-  procedures: readonly Pick<Procedure, 'governingContractId'>[],
-  contracts: Readonly<Record<string, Pick<Contract, 'billsTo'>>>,
+  contract: Pick<Contract, 'billsTo'> | undefined,
   dateISO: string,
 ): boolean {
-  if (booking.payer.kind !== 'patient' || patient === undefined) return false
+  if (patient === undefined || contract === undefined) return false
   if (!isMinorOn(patient.dobISO, dateISO)) return false
-  return anyPayerBilled(procedures, contracts)
+  if (procedure.split !== undefined) return procedure.split.shares.some((s) => s.party.kind === 'patient')
+  return procedure.payer.kind === 'patient' && isPayerBilled(contract)
 }
 
 /** How an invoice to a party is to be delivered (the plan; the run stamps `Invoice.delivery` from it, catch-up Phase 22). */
@@ -248,20 +259,22 @@ export type DeliveryPlan =
  * How an invoice to this party goes out (21a's Review shows it; Phase 22 sends
  * by it, never a second rule):
  * - a holder Party: its own delivery setting (email, or post), from Phase 18;
- * - the payer on the Booking: email where there is one, else post to the
- *   postal address. PROVISIONAL (OQ-122, D70's default): a payer with only a
+ * - a person (the patient or another payer): from the payers of the invoice's
+ *   own Procedures (`personDetailsFor`), email where there is one, else post
+ *   to the postal address. PROVISIONAL (OQ-122, D70's default): a payer with only a
  *   postal address is accepted and posted; if OQ-122 is answered otherwise,
  *   this is the one place that changes;
  * - otherwise none.
  */
 export function invoiceDeliveryFor(
   ref: CounterpartyRef,
-  booking: Pick<Booking, 'payer' | 'patientId'>,
+  procedures: readonly Pick<Procedure, 'payer'>[],
+  patientId: string,
   patient: Pick<Patient, 'name' | 'email' | 'postalAddress' | 'phone'> | undefined,
   parties: Readonly<Record<string, Party>>,
 ): DeliveryPlan {
   if (isPersonParty(ref)) {
-    const details = personDetailsFor(ref, booking, patient)
+    const details = personDetailsFor(ref, procedures, patientId, patient)
     if (details === undefined) return { method: 'none' }
     if (isEmailShaped(details.email)) return { method: 'email', to: (details.email as string).trim() }
     if (isValidPostalAddress(details.postalAddress)) return { method: 'post', lines: postalAddressLines(details.postalAddress) }
@@ -284,11 +297,12 @@ export function invoiceDeliveryFor(
  */
 export function billedToFor(
   ref: CounterpartyRef,
-  booking: Pick<Booking, 'payer' | 'patientId'>,
+  procedures: readonly Pick<Procedure, 'payer'>[],
+  patientId: string,
   patient: Pick<Patient, 'name' | 'email' | 'postalAddress' | 'phone'> | undefined,
 ): InvoiceBilledTo | undefined {
   if (!isPersonParty(ref)) return undefined
-  const details = personDetailsFor(ref, booking, patient)
+  const details = personDetailsFor(ref, procedures, patientId, patient)
   if (details === undefined) return undefined
   return {
     name: details.name,

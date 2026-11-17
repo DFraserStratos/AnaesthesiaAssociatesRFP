@@ -140,26 +140,27 @@ describe('resolveContractForProcedure', () => {
 })
 
 describe('counterpartyForProcedure + invoiceLayoutFor', () => {
-  const booking = mkBooking({ patientId: 'pat-1' })
-  const guardianBooking = mkBooking({ patientId: 'pat-1', payer: { kind: 'other', id: 'BP0007', name: 'Angela Park', relationship: 'Mother' } })
+  // The Procedure's own payer (catch-up Phase 22a): the patient, or a guardian.
+  const booking = mkProcedure()
+  const guardianBooking = mkProcedure({ payer: { kind: 'other', id: 'BP0007', name: 'Angela Park', relationship: 'Mother' } })
 
   it('a Contract that bills its holder bills the HOLDER: hospital, surgeon or organisation', () => {
     const surgeonHeld = mkContract({ id: 'c', holderId: 'party-surgeon' })
     const orgHeld = mkContract({ id: 'c', holderId: 'party-org' })
-    expect(counterpartyForProcedure(HOSPITAL_DEFAULT, booking, PARTIES)).toEqual({ kind: 'hospital', id: 'hosp-1' })
-    expect(counterpartyForProcedure(surgeonHeld, booking, PARTIES)).toEqual({ kind: 'surgeon', id: 'surg-9' })
-    expect(counterpartyForProcedure(orgHeld, booking, PARTIES)).toEqual({ kind: 'organisation', id: 'org-cos' })
+    expect(counterpartyForProcedure(HOSPITAL_DEFAULT, booking, 'pat-1', PARTIES)).toEqual({ kind: 'hospital', id: 'hosp-1' })
+    expect(counterpartyForProcedure(surgeonHeld, booking, 'pat-1', PARTIES)).toEqual({ kind: 'surgeon', id: 'surg-9' })
+    expect(counterpartyForProcedure(orgHeld, booking, 'pat-1', PARTIES)).toEqual({ kind: 'organisation', id: 'org-cos' })
   })
 
-  it('an insurer-held Contract bills the insurer; a Contract billing the payer bills the payer on the Booking (catch-up Phase 21)', () => {
+  it("an insurer-held Contract bills the insurer; a Contract billing the payer bills the Procedure's payer (catch-up Phases 21, 22a)", () => {
     const insurerHeld = mkContract({ id: 'c', holderId: 'party-ins-1' })
-    expect(counterpartyForProcedure(insurerHeld, booking, PARTIES)).toEqual({ kind: 'insurer', id: 'ins-1' })
-    expect(counterpartyForProcedure(NO_CONTRACT, booking, PARTIES)).toEqual({ kind: 'patient', id: 'pat-1' })
-    expect(counterpartyForProcedure(NO_CONTRACT, guardianBooking, PARTIES)).toEqual({ kind: 'payer', id: 'BP0007' })
+    expect(counterpartyForProcedure(insurerHeld, booking, 'pat-1', PARTIES)).toEqual({ kind: 'insurer', id: 'ins-1' })
+    expect(counterpartyForProcedure(NO_CONTRACT, booking, 'pat-1', PARTIES)).toEqual({ kind: 'patient', id: 'pat-1' })
+    expect(counterpartyForProcedure(NO_CONTRACT, guardianBooking, 'pat-1', PARTIES)).toEqual({ kind: 'payer', id: 'BP0007' })
   })
 
-  it('another payer on the Booking never moves a holder-billed Procedure', () => {
-    expect(counterpartyForProcedure(HOSPITAL_DEFAULT, guardianBooking, PARTIES)).toEqual({ kind: 'hospital', id: 'hosp-1' })
+  it('another payer on the Procedure never moves a holder-billed Procedure', () => {
+    expect(counterpartyForProcedure(HOSPITAL_DEFAULT, guardianBooking, 'pat-1', PARTIES)).toEqual({ kind: 'hospital', id: 'hosp-1' })
   })
 
   it("layout from the Contract: the holder's when it bills its holder, the patient's when it bills the payer (catch-up Phase 22)", () => {

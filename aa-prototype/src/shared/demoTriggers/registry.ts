@@ -1194,7 +1194,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'raise-sample-warnings',
     label: 'Raise sample warnings',
     description:
-      "Stages every warning rule's sample, as Demo actions, on Dr Rutherford's Tue 21 Jul Bookings (from the Day view) or on the Booking on screen: an unpaid prepayment, base units outside the range, a child as the payer on the Booking (on the Booking on screen when its patient is under 18, otherwise on Grace Park's), and an insurer named with no approval number (on the Booking on screen when it names an insurer, otherwise on the first seeded NIB Booking). Later rules add theirs: a prepaid procedure with no price, a paying patient with a balance.",
+      "Stages every warning rule's sample, as Demo actions, on Dr Rutherford's Tue 21 Jul Bookings (from the Day view) or on the Booking on screen: an unpaid prepayment, base units outside the range, a child as the payer on each Procedure billed to the patient (on the Booking on screen when its patient is under 18, otherwise on Grace Park's two Procedures, one to-do row), and an insurer named with no approval number (on the Booking on screen when it names an insurer, otherwise on the first seeded NIB Booking). Later rules add theirs: a prepaid procedure with no price, a paying patient with a balance.",
     screen: 'Admin · Day and Booking detail, Mobile · Booking',
     routes: SAMPLE_WARNING_ROUTES,
     surfaces: ['bar', 'pwa'],

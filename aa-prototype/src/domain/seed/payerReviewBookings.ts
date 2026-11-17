@@ -10,7 +10,7 @@
  * - `childPayer`: Ella Moana, 15 on the List's date, the patient pays: the
  *   child payer warning (derived, not seeded).
  * - `payerContactMissing`: Kevin Doherty, no email and no postal address on
- *   file: "Email or postal address needed" on the Payer row and Review.
+ *   file: "Email or postal address needed" on the Procedure's payer and Review.
  * - `familyTrustPayer`: Robert Whitcombe, the Whitcombe Family Trust ticked as
  *   payer with a postal address and no email: no flag (Phase 22 posts it).
  * - `approvalMissing`: Janet Ormsby, funded by NIB on nib's Contract with no
@@ -27,7 +27,7 @@
  * RNG-free, so no existing id or S1 to S5 figure moves.
  */
 
-import type { Booking, BookingPayer, Procedure } from '../types'
+import type { Booking, ProcedurePayer, Procedure } from '../types'
 import { projectedListId } from '../slots'
 import { ANAE } from './cast'
 import { CONTRACT } from './contracts'
@@ -40,7 +40,7 @@ export const PAYER_REVIEW_LIST_ID = projectedListId(ANAE.chen, '2026-07-17', 'AM
 const DAY = '2026-07-17'
 
 /** The Whitcombe Family Trust, paying by post (BP0003, the first payer id after the retired master's two). */
-export const FAMILY_TRUST_PAYER: BookingPayer = {
+export const FAMILY_TRUST_PAYER: ProcedurePayer = {
   kind: 'other',
   id: 'BP0003',
   name: 'Whitcombe Family Trust',
@@ -61,7 +61,7 @@ interface Spec {
   legacyCode?: string
   /** Undefined: no Contract yet ("Needs an invoice destination"). */
   contractId?: string
-  payer?: BookingPayer
+  payer?: ProcedurePayer
   funderPartyId?: string
   insuranceApprovalNumber?: string
   /** Not completed (a forward List). */
@@ -102,7 +102,6 @@ export function seedPayerReviewBookings(next: { booking: number; procedure: numb
       patientId: spec.patientId,
       scheduledTime: spec.time,
       completed: spec.open !== true,
-      payer: spec.payer ?? { kind: 'patient' },
       // The seed's source rule: Christchurch Eye Surgery's rooms send PDFs; Southern Cross sends a feed.
       source: spec.open === true ? 'hospitalDownload' : 'surgeonPdf',
       lastModifiedBy: spec.open === true ? 'Kirsty W.' : 'Dr Alistair Chen',
@@ -115,6 +114,7 @@ export function seedPayerReviewBookings(next: { booking: number; procedure: numb
     const procedure: Procedure = {
       id: `P${String(p).padStart(4, '0')}`,
       bookingId,
+      payer: spec.payer ?? { kind: 'patient' },
       procedureText: seedText(spec.text),
       invoiceDescription: null,
       isAdditional: false,

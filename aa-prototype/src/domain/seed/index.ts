@@ -87,6 +87,7 @@ import { MERIVALE_BOOKING_LIST_ID, seedPricedItemBookings } from './pricedItemBo
 import { finaliseSeedProcedureTexts } from './procedureText'
 import { seedSourceWordingBookings } from './sourceWordingBookings'
 import { PAYER_REVIEW_LIST_ID, seedPayerReviewBookings, type PayerReviewKey } from './payerReviewBookings'
+import { seedProcedurePayerBookings } from './procedurePayerBookings'
 import { seedCompletionBookings, type CompletionBookingKey } from './completionBookings'
 import { REVIEW_FLAGS_LIST_ID, seedReviewFlagBookings, type ReviewFlagBookingKey } from './reviewFlagBookings'
 
@@ -396,6 +397,8 @@ interface SeedBuild {
   completion: Record<CompletionBookingKey, string>
   /** Catch-up Phase 21a session 2's Bookings (the review-flags List and the movable fixed price). */
   reviewFlags: Record<ReviewFlagBookingKey, string>
+  /** Catch-up Phase 22a's additions: Grace Park's second Procedure and the two-payer Booking. */
+  procedurePayer: ReturnType<typeof seedProcedurePayerBookings>['ids']
   /** The recurring bookings the seed's generation could not project (Phase 31 makes them Draft Lists). */
   clashes: RecurringClash[]
 }
@@ -518,6 +521,10 @@ function buildSeedInternal(): SeedBuild {
   const reviewFlagBookings = seedReviewFlagBookings(completionBookings.next)
   for (const b of reviewFlagBookings.bookings) bookingsRec[b.id] = b
   for (const p of reviewFlagBookings.procedures) proceduresRec[p.id] = p
+  // Catch-up Phase 22a: Grace Park's second Procedure (its payer copied) and the two-payer Booking, after every other id.
+  const procedurePayerBookings = seedProcedurePayerBookings(reviewFlagBookings.next, bookingsBuild.scenario.guardianMinor)
+  for (const b of procedurePayerBookings.bookings) bookingsRec[b.id] = b
+  for (const p of procedurePayerBookings.procedures) proceduresRec[p.id] = p
   // Catch-up Phase 21a: every completed Booking's modifiers step is answered (US-03.6.1): a seeded
   // Booking completed before the step existed carries the marker, so it still passes completion.
   for (const p of Object.values(proceduresRec)) {
@@ -626,11 +633,11 @@ function buildSeedInternal(): SeedBuild {
     notifications: {},
     counters: {
       audit: audit.length + 1,
-      booking: reviewFlagBookings.next.booking,
-      procedure: reviewFlagBookings.next.procedure,
+      booking: procedurePayerBookings.next.booking,
+      procedure: procedurePayerBookings.next.procedure,
       billingLine: bookingsBuild.next.billingLine,
       patient: patients.length + 1,
-      // Payer ids (`BP####`): BP0001 is Hana Park as a payer, BP0002 Aria's folded record (catch-up Phase 21).
+      // Payer ids (`BP####`): BP0001 is Hana Park as a payer, BP0002 Aria's folded record (catch-up Phase 21); BP0003 to BP0005 seeded payers.
       billableParty: SEED_PAYER_COUNTER,
       dayNote: DAY_NOTE_NEXT,
       list: 1,
@@ -641,7 +648,7 @@ function buildSeedInternal(): SeedBuild {
     },
   }
 
-  return { state, scenario: bookingsBuild.scenario, payerReview: payerReview.ids, completion: completionBookings.ids, reviewFlags: reviewFlagBookings.ids, clashes }
+  return { state, scenario: bookingsBuild.scenario, payerReview: payerReview.ids, completion: completionBookings.ids, reviewFlags: reviewFlagBookings.ids, procedurePayer: procedurePayerBookings.ids, clashes }
 }
 
 /** Pinned seeded List ids (the projected-id form) the markers and tests reference. */
@@ -823,6 +830,13 @@ export const PAYER_REVIEW_BOOKING_IDS: readonly string[] = Object.values(SEED_BU
 /** Catch-up Phase 21a's two Bookings, appended after 21's: the parity suites name them as additions. */
 export const COMPLETION_BOOKING_IDS: readonly string[] = Object.values(SEED_BUILD.completion).sort()
 
+/** Catch-up Phase 22a's seed additions (Grace Park's second Procedure, the two-payer Booking): the parity suites take them out. */
+export const PROCEDURE_PAYER_ADDITIONS: { readonly procedureIds: string[]; readonly bookingIds: string[]; readonly ids: SeedBuild['procedurePayer'] } = {
+  procedureIds: [SEED_BUILD.procedurePayer.graceParkSecondProcedure],
+  bookingIds: [SEED_BUILD.procedurePayer.twoPayerBooking],
+  ids: SEED_BUILD.procedurePayer,
+}
+
 /** Catch-up Phase 21a session 2's five Bookings, appended after session 1's: the parity suites name them as additions. */
 export const REVIEW_FLAG_BOOKING_IDS: readonly string[] = Object.values(SEED_BUILD.reviewFlags).sort()
 
@@ -832,7 +846,7 @@ export const REVIEW_FLAG_BOOKING_IDS: readonly string[] = Object.values(SEED_BUI
  * Face lift. The parity suites name them as additions.
  */
 export const SOURCE_WORDING_BOOKING_IDS: readonly string[] = Object.keys(SEED_BUILD.state.schedule.bookings)
-  .filter((id) => id.startsWith('BK') && id > MERIVALE_FACE_LIFT_BOOKING_ID && !PAYER_REVIEW_BOOKING_IDS.includes(id) && !COMPLETION_BOOKING_IDS.includes(id) && !REVIEW_FLAG_BOOKING_IDS.includes(id))
+  .filter((id) => id.startsWith('BK') && id > MERIVALE_FACE_LIFT_BOOKING_ID && !PAYER_REVIEW_BOOKING_IDS.includes(id) && !COMPLETION_BOOKING_IDS.includes(id) && !REVIEW_FLAG_BOOKING_IDS.includes(id) && id !== SEED_BUILD.procedurePayer.twoPayerBooking)
   .sort()
 
 /** The Booking whose rooms' "RTK" the hospital's "right total knee" replaced (catch-up Phase 20a). */
@@ -1007,7 +1021,7 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       label: 'A parent pays for a minor',
       entityType: 'booking',
       entityId: scenario.guardianMinor,
-      detail: 'Grace Park (12); her mother, Hana Park, is the payer on the Booking (Different payer ticked): no child warning.',
+      detail: "Grace Park (12); her mother, Hana Park, is the payer on both of the Booking's Procedures (Different payer ticked, BP0001, the second copied): no child warning.",
     },
     prepaymentBooking: {
       label: 'Pre-payment booking (split, unpaid)',
@@ -1154,7 +1168,7 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
     label: 'Payer with no email or postal address',
     entityType: 'booking',
     entityId: SEED_BUILD.payerReview.payerContactMissing,
-    detail: 'Payer review List, 09:15. Kevin Doherty has neither on file: "Email or postal address needed" on the Payer row and the Review row.',
+    detail: 'Payer review List, 09:15. Kevin Doherty has neither on file: "Email or postal address needed" on his Procedure\'s payer and the Review row.',
   },
   familyTrustPayer: {
     label: 'Family trust paying by post',
@@ -1173,6 +1187,13 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
     entityType: 'booking',
     entityId: SEED_BUILD.payerReview.funderNoWarning,
     detail: 'Payer review List, 12:30. Health NZ is a funder, not an insurer: no warning.',
+  },
+  // Catch-up Phase 22a: a payer on each Procedure (provisional on OQ-140).
+  twoPayerBooking: {
+    label: 'Two Procedures, two payers typed separately',
+    entityType: 'booking',
+    entityId: SEED_BUILD.procedurePayer.twoPayerBooking,
+    detail: 'Payer review List, 13:30. Joyce Halvorsen: each Procedure names Erik Halvorsen, typed in separately (BP0004 and BP0005, the same name and email). Authorising the List raises two invoices: payers are never matched on name or email.',
   },
   suggestedTag: {
     label: 'Southern Cross Health Society suggests SXAP',

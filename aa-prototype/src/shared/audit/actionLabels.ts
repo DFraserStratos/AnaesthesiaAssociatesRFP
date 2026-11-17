@@ -27,7 +27,7 @@ export const ACTION_LABELS: Record<string, string> = {
   'booking.cancel': 'Booking cancelled',
   'booking.reassign': 'Booking moved to another list',
   'booking.warningCleared': 'Warning cleared',
-  'booking.payer': 'Payer changed',
+  'procedure.payer': 'Payer changed',
   'booking.insurance': 'Insurer or funder changed',
   'booking.warningSampleUnstaged': 'Sample warning removed',
   'booking.billed': 'Booking billed',

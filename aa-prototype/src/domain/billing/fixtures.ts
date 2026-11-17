@@ -55,6 +55,7 @@ export function mkProcedure(overrides: Partial<Procedure> = {}): Procedure {
   return {
     id: 'proc-1',
     bookingId: 'booking-1',
+    payer: { kind: 'patient' },
     procedureText: null,
     invoiceDescription: null,
     isAdditional: false,
@@ -70,7 +71,6 @@ export function mkBooking(overrides: Partial<Booking> = {}): Booking {
     listId: 'list-1',
     patientId: 'pat-1',
     completed: false,
-    payer: { kind: 'patient' },
     lastModifiedBy: 'Dr Melanie Souter',
     lastModifiedAtISO: '2026-07-21T08:00:00',
     ...overrides,

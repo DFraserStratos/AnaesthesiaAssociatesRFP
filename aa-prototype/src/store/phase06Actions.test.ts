@@ -67,14 +67,15 @@ function feeSplitProcedure(api: BoundAppStore): { listId: string; procedureId: s
   return { listId: booking.listId, procedureId: proc.id, patientId: booking.patientId }
 }
 
-/** nib takes `nib` (an amount or a percent), the payer on the Booking the rest. */
+/** nib takes `nib` (an amount or a percent), the Procedure's payer the rest. */
 function nibAndPayer(bookingId: string, api: BoundAppStore, nib: FeeSplit['shares'][number]['basis']): FeeSplit {
   const booking = api.getState().schedule.bookings[bookingId]
-  if (booking === undefined) throw new Error(`no booking ${bookingId}`)
+  const proc = proceduresForBooking(api.getState(), bookingId)[0]
+  if (booking === undefined || proc === undefined) throw new Error(`no booking ${bookingId}`)
   return {
     shares: [
       { party: { kind: 'insurer', id: INS.nib }, basis: nib },
-      { party: payerCounterparty(booking), basis: { kind: 'rest' } },
+      { party: payerCounterparty(proc, booking.patientId), basis: { kind: 'rest' } },
     ],
   }
 }

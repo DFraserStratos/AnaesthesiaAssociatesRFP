@@ -20,7 +20,8 @@ import {
   type RailContext,
   type RailMasters,
 } from '../domain/billing/contractRail'
-import { billablePartyForProcedure, partyForCounterparty, payerDetails, type PayerDetails } from '../domain/billing/whoIsBilled'
+import { billablePartyForProcedure, partyForCounterparty, payerCounterparty, payerDetails, type PayerDetails } from '../domain/billing/whoIsBilled'
+import { refKey } from '../domain/billing/procedurePayer'
 import type {
   AssignedList,
   DraftList,
@@ -640,6 +641,21 @@ export function bookingRequiresPrepayment(state: Pick<AppState, 'schedule' | 'ma
   )
 }
 
+/**
+ * True when a prepaid Procedure on the Booking names a payer who has no
+ * prepayment invoice of their own yet (catch-up Phase 22a, US-06.3.1 "One per
+ * payer"): the raise would invoice them. Payers by identity, never by name.
+ */
+export function prepaymentPayerAwaiting(state: Pick<AppState, 'schedule' | 'masters' | 'billing'>, bookingId: string): boolean {
+  const booking = state.schedule.bookings[bookingId]
+  if (booking === undefined || booking.cancellation !== undefined) return false
+  const raised = new Set(prePaymentInvoicesForBooking(state, bookingId).map((i) => refKey(i.counterparty)))
+  return proceduresForBooking(state, bookingId).some((p) => {
+    const contract = p.governingContractId !== undefined ? state.masters.contracts[p.governingContractId] : undefined
+    return procedureRequiresPrepayment(contract) && !raised.has(refKey(payerCounterparty(p, booking.patientId)))
+  })
+}
+
 /** The `prePayment`-kind invoices raised for a Booking, in id order. */
 export function prePaymentInvoicesForBooking(state: Pick<AppState, 'billing'>, bookingId: string): Invoice[] {
   return Object.values(state.billing.invoices)
@@ -702,9 +718,10 @@ export function prepaymentStatusFor(state: Pick<AppState, 'schedule' | 'billing'
   // A prepayment already invoiced stays on the record when the Contract moves
   // off prepaid (catch-up Phase 20 review): it is still owed until paid.
   if (!bookingRequiresPrepayment(state, bookingId) && !raised) return 'none'
+  // A payer still without their own prepayment invoice is required first (catch-up Phase 22a: one per payer).
+  if (!raised || prepaymentPayerAwaiting(state, bookingId)) return 'required'
   if (paidPrePaymentCaseForBooking(state, bookingId) !== undefined) return 'paid'
-  if (raised) return 'outstanding'
-  return 'required'
+  return 'outstanding'
 }
 
 // ---------------------------------------------------------------------------
@@ -1165,29 +1182,29 @@ export function paymentHistoryFor(
   )
 }
 
-/** The state `counterpartyName` and `payerRecordFor` read: the masters, and the Bookings and invoices where a payer is named. */
+/** The state `counterpartyName` and `payerRecordFor` read: the masters, and the Procedures and invoices where a payer is named. */
 export type CounterpartyNameState = Pick<AppState, 'masters'> & {
-  schedule?: Pick<AppState['schedule'], 'bookings'>
+  schedule?: Pick<AppState['schedule'], 'procedures'>
   billing?: Pick<AppState['billing'], 'invoices'>
 }
 
 /**
- * The other payer named on a Booking (catch-up Phase 21), by its `BP####`
- * id: the one selector that resolves a `payer` counterparty. It reads the
- * given Booking first, then any Booking naming that payer, then an invoice's
- * `billedTo` snapshot (the payer's details stay with the debt). Never a master.
+ * Another payer (catch-up Phase 21; on each Procedure since 22a), by its
+ * `BP####` id: the one selector that resolves a `payer` counterparty. It reads
+ * the given Booking's Procedures first, then any Procedure holding that id,
+ * then an invoice's `billedTo` snapshot (the payer's details stay with the
+ * debt). Never a master, never a name match.
  */
 export function payerRecordFor(
   state: CounterpartyNameState,
   payerId: string,
   bookingId?: string,
 ): { name: string; email?: string; relationship?: string } | undefined {
-  const bookings = state.schedule?.bookings ?? {}
-  const own = bookingId !== undefined ? bookings[bookingId]?.payer : undefined
-  if (own?.kind === 'other' && own.id === payerId) return own
-  for (const b of Object.values(bookings)) {
-    if (b.payer?.kind === 'other' && b.payer.id === payerId) return b.payer
-  }
+  const procedures = Object.values(state.schedule?.procedures ?? {})
+  const holds = (p: Procedure): boolean => p.payer?.kind === 'other' && p.payer.id === payerId
+  const own = bookingId !== undefined ? procedures.find((p) => p.bookingId === bookingId && holds(p)) : undefined
+  const held = (own ?? procedures.find(holds))?.payer
+  if (held?.kind === 'other') return held
   for (const inv of Object.values(state.billing?.invoices ?? {})) {
     if (inv.counterparty.kind === 'payer' && inv.counterparty.id === payerId && inv.billedTo !== undefined) return inv.billedTo
   }
@@ -1224,11 +1241,29 @@ export function invoiceAddresseeName(state: CounterpartyNameState, invoice: Pick
   return invoice.billedTo?.name ?? counterpartyName(state, invoice.counterparty, invoice.bookingId)
 }
 
-/** The payer's details on a Booking (catch-up Phase 21): the patient's record unless another payer is ticked. */
-export function payerDetailsFor(state: Pick<AppState, 'masters' | 'schedule'>, bookingId: string): PayerDetails | undefined {
-  const booking = state.schedule.bookings[bookingId]
-  if (booking === undefined) return undefined
-  return payerDetails(booking, state.masters.patients[booking.patientId])
+/** A Procedure's payer's details (catch-up Phases 21, 22a): the patient's record unless another payer is ticked. */
+export function payerDetailsForProcedure(state: Pick<AppState, 'masters' | 'schedule'>, procedureId: string): PayerDetails | undefined {
+  const procedure = state.schedule.procedures[procedureId]
+  const booking = procedure !== undefined ? state.schedule.bookings[procedure.bookingId] : undefined
+  if (procedure === undefined || booking === undefined) return undefined
+  return payerDetails(procedure.payer, state.masters.patients[booking.patientId])
+}
+
+/**
+ * True when a Procedure's payer is locked by their own raised prepayment
+ * invoice (US-06.3.1 "Payer locked", catch-up Phase 22a): a prepayment
+ * invoice on its Booking is addressed to the Procedure's payer and covers
+ * the Procedure. Another payer's Procedures on the same Booking stay
+ * changeable. Phase 27 keeps it through the approval lifecycle.
+ */
+export function payerLockedByPrepayment(state: Pick<AppState, 'schedule' | 'billing'>, procedureId: string): boolean {
+  const procedure = state.schedule.procedures[procedureId]
+  const booking = procedure !== undefined ? state.schedule.bookings[procedure.bookingId] : undefined
+  if (procedure === undefined || booking === undefined) return false
+  const key = refKey(payerCounterparty(procedure, booking.patientId))
+  return prePaymentInvoicesForBooking(state, booking.id).some(
+    (inv) => refKey(inv.counterparty) === key && (inv.procedureIds === undefined || inv.procedureIds.includes(procedureId)),
+  )
 }
 
 /** Assemble the validator context for a Booking from store state. */
@@ -2011,7 +2046,7 @@ export function billablePartyForProcedureId(state: Pick<AppState, 'masters' | 's
   const booking = procedure !== undefined ? state.schedule.bookings[procedure.bookingId] : undefined
   if (procedure === undefined || booking === undefined) return undefined
   const contract = procedure.governingContractId !== undefined ? state.masters.contracts[procedure.governingContractId] : undefined
-  return billablePartyForProcedure(contract, booking, state.masters.parties)
+  return billablePartyForProcedure(contract, procedure, booking.patientId, state.masters.parties)
 }
 
 export interface NeedsInvoiceDestinationRow {

@@ -542,16 +542,19 @@ describe('invoice identity and delivery', () => {
     expect(listBilledAudit(api, MORRISON_LIST)?.after).toMatchObject({ sentCount: 0, toPostCount: 0, notSentCount: 6 })
   })
 
-  it("another payer on the Booking is emailed at the payer's address: Grace Park's Booking to Hana Park", () => {
+  it("another payer on the Procedure is emailed at the payer's address: Grace Park's Booking to Hana Park", () => {
     const api = store()
     const bookingId = 'BK0033'
-    const booking = api.getState().schedule.bookings[bookingId]!
-    expect(booking.payer).toMatchObject({ kind: 'other', name: 'Hana Park', email: 'hana.park@example.net' })
     const proc = proceduresForBooking(api.getState(), bookingId)[0]!
+    expect(proc.payer).toMatchObject({ kind: 'other', name: 'Hana Park', email: 'hana.park@example.net' })
     expect(editProcedure(api, OFFICE, proc.id, { anaestheticStartISO: '2026-07-24T08:00:00', handoverISO: '2026-07-24T09:00:00' }).ok).toBe(true)
+    // Her second Procedure (catch-up Phase 22a), the same anaesthetic.
+    const second = proceduresForBooking(api.getState(), bookingId)[1]!
+    expect(editProcedure(api, OFFICE, second.id, { anaestheticStartISO: '2026-07-24T09:00:00', handoverISO: '2026-07-24T09:20:00' }).ok).toBe(true)
     expect(completeAnswered(api, OFFICE, bookingId).ok).toBe(true)
-    stageAndBill(api, booking.listId)
+    stageAndBill(api, api.getState().schedule.bookings[bookingId]!.listId)
     const invoices = invoicesForBooking(api, bookingId)
+    // Both Procedures hold the same payer (BP0001, copied): one invoice (US-08.2.1, catch-up Phase 22a).
     expect(invoices).toHaveLength(1)
     expect(invoices[0]).toMatchObject({ counterparty: { kind: 'payer' }, billedTo: { name: 'Hana Park', email: 'hana.park@example.net' }, layout: 'patient' })
     expect(invoices[0]!.delivery).toMatchObject({ method: 'email', status: 'sent', sends: [{ to: 'hana.park@example.net', by: 'Billing run' }] })

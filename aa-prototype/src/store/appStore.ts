@@ -110,7 +110,11 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v44: catch-up Phase 22, invoice presentation, delivery and the split (US-08.2.3, US-08.4.2, US-08.4.5,
+/** v45: catch-up Phase 22a session 1, a payer on each Procedure (US-11.2.2, US-08.2.1; D85, provisional on
+ *  OQ-140): `Procedure.payer` (Booking.payer gone; every Procedure takes its Booking's payer, BP ids kept),
+ *  Grace Park's second Procedure (Hana Park copied, BP0001) and the two-payer Booking on the payer review
+ *  List (BP0004, BP0005; the payer counter at 6). Reseeds on load.
+ *  v44: catch-up Phase 22, invoice presentation, delivery and the split (US-08.2.3, US-08.4.2, US-08.4.5,
  *  US-09.1.4): `Procedure.split` (Prentice's fee split on the Booking, the two funder lines gone),
  *  `Anaesthetist.gstNumber`, invoices' supplier, agent, delivery and Procedure links, the ACCPAY's
  *  `taxInvoice`, holder reference codes on St George's and nib's RVG Contracts. Reseeds on load.
@@ -263,7 +267,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 44
+export const PERSIST_VERSION = 45
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }

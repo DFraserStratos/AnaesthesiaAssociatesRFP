@@ -74,7 +74,7 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   const anaesthetist = list?.anaesthetistId !== undefined ? masters.anaesthetists[list.anaesthetistId] : undefined
   const patient = booking !== undefined ? masters.patients[booking.patientId] : undefined
   // The name as at the run for a payer (catch-up Phase 21: `billedTo`), else the counterparty's.
-  const addressee = invoiceAddresseeName({ masters, schedule: { bookings: bookingsRecord } }, invoice)
+  const addressee = invoiceAddresseeName({ masters, schedule: { procedures: proceduresRecord } }, invoice)
 
   const isPatientLayout = invoice.layout === 'patient'
   // The supplier as at the run (catch-up Phase 22); an invoice from before it falls back to the List's anaesthetist.
@@ -83,7 +83,7 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   const siblings = (invoice.lineage ?? [])
     .map((l) => billing.invoices[l.invoiceId])
     .filter((i): i is Invoice => i !== undefined)
-    .map((i) => ({ invoice: i, name: invoiceAddresseeName({ masters, schedule: { bookings: bookingsRecord } }, i) }))
+    .map((i) => ({ invoice: i, name: invoiceAddresseeName({ masters, schedule: { procedures: proceduresRecord } }, i) }))
   const procedureDateISO = invoice.crossMatch?.procedureDateISO ?? list?.dateISO
   // The Procedure on a prepaid Contract, if any (INTERIM until Phase 27): the
   // patient note's prepayment wording follows it (catch-up Phase 20).

@@ -499,15 +499,15 @@ describe('the payer on the Booking (catch-up Phase 21)', () => {
     const fresh = freshAppState()
     const bookings = Object.fromEntries(
       Object.entries(fresh.schedule.bookings).map(([id, b]) => {
-        const { payer: _drop, ...rest } = b
-        void _drop
+        const { ...rest } = b as typeof b & { payer?: unknown }
+        delete rest.payer
         return [id, rest]
       }),
     )
     const stale = { ...fresh, schedule: { ...fresh.schedule, bookings }, masters: { ...fresh.masters, billableParties: {} } }
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 39 }))
     const s = createAppStore({ persisted: true }).getState()
-    expect(Object.values(s.schedule.bookings).every((b) => b.payer !== undefined)).toBe(true)
+    expect(Object.values(s.schedule.procedures).every((p) => p.payer !== undefined)).toBe(true)
     expect(s.masters as unknown as Record<string, unknown>).not.toHaveProperty('billableParties')
   })
 })
@@ -584,7 +584,7 @@ describe('invoice presentation and the split (catch-up Phase 22)', () => {
   afterEach(() => localStorage.clear())
 
   it('discards a v43 store whose Prentice Booking carries no split and reseeds it', () => {
-    expect(PERSIST_VERSION).toBe(44)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(44)
     const fresh = freshAppState()
     const procedures = Object.fromEntries(
       Object.entries(fresh.schedule.procedures).map(([id, p]) => {
@@ -596,5 +596,30 @@ describe('invoice presentation and the split (catch-up Phase 22)', () => {
     const s = createAppStore({ persisted: true }).getState()
     expect(Object.values(s.schedule.procedures).filter((p) => p.split !== undefined)).toHaveLength(1)
     expect(Object.values(s.masters.anaesthetists).filter((a) => a.gstNumber !== undefined).length).toBeGreaterThan(10)
+  })
+})
+
+describe('a payer on each Procedure (catch-up Phase 22a)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v44 store whose payer sits on the Booking and reseeds a payer on every Procedure', () => {
+    expect(PERSIST_VERSION).toBe(45)
+    const fresh = freshAppState()
+    // The v44 shape: the payer on the Booking, none on the Procedures.
+    const bookings = Object.fromEntries(Object.entries(fresh.schedule.bookings).map(([id, b]) => [id, { ...b, payer: { kind: 'patient' } }]))
+    const procedures = Object.fromEntries(
+      Object.entries(fresh.schedule.procedures).map(([id, p]) => {
+        const { payer: _payer, ...rest } = p
+        return [id, rest]
+      }),
+    )
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule: { ...fresh.schedule, bookings, procedures } }, version: 44 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.values(s.schedule.procedures).every((p) => p.payer !== undefined)).toBe(true)
+    expect(Object.values(s.schedule.bookings).some((b) => 'payer' in b)).toBe(false)
   })
 })

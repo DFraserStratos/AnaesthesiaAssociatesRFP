@@ -39,7 +39,6 @@ export function seedPricedItemBookings(next: { booking: number; procedure: numbe
     patientId: MERIVALE_BOOKING_PATIENT_ID,
     scheduledTime: '13:30',
     completed: false,
-    payer: { kind: 'patient' },
     // The seed's source rule: St George's sends a feed, so its Bookings are hospital downloads.
     source: 'hospitalDownload',
     lastModifiedBy: 'Kirsty W.',
@@ -50,6 +49,7 @@ export function seedPricedItemBookings(next: { booking: number; procedure: numbe
   const empty: Procedure = {
     id: `P${String(next.procedure).padStart(4, '0')}`,
     bookingId,
+    payer: { kind: 'patient' },
     procedureText: seedText('Face lift'),
     invoiceDescription: null,
     isAdditional: false,

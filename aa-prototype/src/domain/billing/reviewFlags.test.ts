@@ -41,7 +41,7 @@ const ZERO_BTM: BtmBreakdown = {
 }
 const fee = (btm: BtmBreakdown = ZERO_BTM): FeeResult => ({ btm, billableUnits: btm.totalUnits, chargeBasis: 'rvg', unitRate: 30, lines: [], subtotal: 0, override: null, total: 0, needsPrice: false })
 const proc = (over: Partial<Procedure> = {}): Procedure => mkProcedure({ id: 'P1', bookingId: 'BK1', governingContractId: RVG.id, ...over })
-const booking = (over: Partial<Booking> = {}): Booking => ({ id: 'BK1', completed: true, payer: { kind: 'patient' }, ...over }) as unknown as Booking
+const booking = (over: Partial<Booking> = {}): Booking => ({ id: 'BK1', completed: true, ...over }) as unknown as Booking
 
 function input(procedures: ReviewProcedureInput[], over: Partial<ReviewBookingInput> = {}): ReviewBookingInput {
   return {
@@ -117,9 +117,10 @@ describe('the review-flag list (catch-up Phase 21a)', () => {
     expect(reviewFlagsForBooking(input([{ procedure: proc(), fee: fee(b) }])).map((f) => f.text)).toEqual(['B set manually'])
   })
 
-  it("kept from 21: a billed payer with no contact, under the recipes' hook", () => {
-    const onPayer = input([{ procedure: proc({ governingContractId: NO_CONTRACT_RVG.id }), fee: fee() }], { patient: { name: 'No Contact' } })
-    expect(reviewFlagsForBooking(onPayer)).toContainEqual({ tone: 'neutral', text: 'Email or postal address needed', bookingId: 'BK1', rule: 'payerContactMissing', shot: 'review-payer-contact' })
+  it("kept from 21: a billed payer with no contact, under the recipes' hook, on each Procedure billed to its payer (catch-up Phase 22a)", () => {
+    const procedure = proc({ governingContractId: NO_CONTRACT_RVG.id })
+    const onPayer = input([{ procedure, fee: fee() }], { patient: { name: 'No Contact' } })
+    expect(reviewFlagsForBooking(onPayer)).toContainEqual({ tone: 'neutral', text: 'Email or postal address needed', bookingId: 'BK1', procedureId: procedure.id, rule: 'payerContactMissing', shot: 'review-payer-contact' })
   })
 
   it('gone: "No billing reference" (D82), and no route, ACC or prepayment flag', () => {

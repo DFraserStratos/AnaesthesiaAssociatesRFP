@@ -29,6 +29,7 @@ import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal, getBooking } from './lifecycle'
 import { payerFromInput, payerInputRefusal, type PayerInput } from './payerActions'
 import { isBlankText, procedureTextOf, refreshedInvoiceDescriptionFor } from '../domain/billing/procedureStack'
+import { payerForNewProcedure } from '../domain/billing/procedurePayer'
 import { upsertPatient, type PatientIntakeDetails } from './intake'
 import { listInSlot, proceduresForBooking, slotFor } from './selectors'
 import { isOpenSlot } from '../domain/slotStatus'
@@ -68,9 +69,9 @@ export interface CreateBookingInput {
   /** The step rail's answers so far, when no Contract was picked. */
   railAnswers?: RailAnswers
   /**
-   * The payer on the Booking (catch-up Phase 21, US-11.2.2): the patient
-   * unless a form ticks "Different payer". Every creation path without one
-   * names the patient.
+   * The payer of the new Booking's Procedure (catch-up Phase 21; on each
+   * Procedure since 22a, US-11.2.2): the patient unless a form ticks
+   * "Different payer". Every creation path without one names the patient.
    */
   payer?: PayerInput
   billingReference?: string
@@ -159,7 +160,6 @@ export function createBooking(
       listId,
       patientId,
       completed: false,
-      payer: payerAlloc.payer,
       lastModifiedBy: actor.who,
       lastModifiedAtISO: atISO,
     }
@@ -168,9 +168,11 @@ export function createBooking(
     if (input.correlationRef !== undefined) booking.correlationRef = input.correlationRef
     if (input.source !== undefined) booking.source = input.source
 
+    // The form's payer (the patient unless another is ticked) on the Booking's Procedure (catch-up Phase 22a).
     const procedure: Procedure = {
       id: procedureId,
       bookingId,
+      payer: payerAlloc.payer,
       procedureText:
         input.sourceText !== undefined && hasText
           ? procedureTextOf(input.sourceText.text, input.sourceText.source, atISO, input.sourceText.from)
@@ -313,17 +315,17 @@ export function addPostOpAddendum(
       completed: false,
       bookingType: 'postOpAddendum',
       addendumOfBookingId: originalBookingId,
-      // The same episode's payer (catch-up Phase 21).
-      payer: original.payer,
       // Interim until Phase 39 replaces the addendum: the source follows the actor.
       source: actor.role === 'office' ? 'admin' : 'anaesthetistAdHoc',
       lastModifiedBy: actor.who,
       lastModifiedAtISO: atISO,
     }
 
+    // The same episode's payer, by the one copy rule over the source Booking's Procedures (catch-up Phase 22a; until 38b makes the addendum an event).
     const procedure: Procedure = {
       id: procedureId,
       bookingId,
+      payer: payerForNewProcedure(proceduresForBooking(s, originalBookingId), s.masters.contracts, original.patientId),
       procedureText: null,
       invoiceDescription: null,
       isAdditional: false,
@@ -331,7 +333,7 @@ export function addPostOpAddendum(
       removedModifierIds: [],
     }
     // The same episode's Contract (INTERIM until Phase 38b's additional
-    // invoice): an RVG-kind Contract is copied (the payer is the Booking's); a
+    // invoice): an RVG-kind Contract is copied (the payer by the copy rule); a
     // fixed, open or prepaid one is not (it is the whole price of the item it
     // was chosen for, and a post-op event is never prepaid), so the addendum
     // then needs an invoice destination. The post-op event bills its own
@@ -404,7 +406,7 @@ function inheritContract(procedure: Procedure, contractId: string, masters: AppS
  * procedure"). Additional from the first (RFP split-billing rule): it bills
  * time units only; base and modifier units stay on the first procedure. The
  * skeleton is an empty additional Procedure: no procedure text,
- * `isAdditional: true` (the payer is the Booking's, catch-up Phase 21). It picks its own Contract (US-03.2.3, catch-up
+ * `isAdditional: true`, its payer by the copy rule (`payerForNewProcedure`, catch-up Phase 22a). It picks its own Contract (US-03.2.3, catch-up
  * Phase 20): the one given, checked as on the step rail, else none ("Needs an
  * invoice destination"); never one stored silently. Audited `procedure.create`.
  */
@@ -441,16 +443,18 @@ export function addProcedure(
     const procAlloc = allocateId(s.counters, 'procedure')
     procedureId = procAlloc.id
 
+    // A Procedure added later takes the Booking's shared payer, else the patient (US-11.2.2, the one copy rule).
     const procedure: Procedure = {
       id: procedureId,
       bookingId,
+      payer: payerForNewProcedure(proceduresForBooking(s, bookingId), s.masters.contracts, booking.patientId),
       procedureText: null,
       invoiceDescription: null,
       isAdditional: true,
       modifierClaims: [],
       removedModifierIds: [],
     }
-    // Never the base, modifier or time specifics (the payer is the Booking's).
+    // Never the base, modifier or time specifics.
     if (pick.governingContractId !== undefined) {
       procedure.governingContractId = pick.governingContractId
       if (pick.enteredPrice !== undefined) procedure.enteredPrice = pick.enteredPrice

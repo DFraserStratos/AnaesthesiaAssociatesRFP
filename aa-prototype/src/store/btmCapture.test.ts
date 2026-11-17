@@ -136,6 +136,7 @@ describe("per-anaesthetist rates (RVG at the anaesthetist's rate)", () => {
     const procedure: Procedure = {
       id: 'P-TEST',
       bookingId: 'C-TEST',
+      payer: { kind: 'patient' },
       procedureText: null,
       invoiceDescription: null,
       isAdditional: false,

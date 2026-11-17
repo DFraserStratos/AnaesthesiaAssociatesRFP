@@ -108,7 +108,6 @@ export function seedReviewFlagBookings(next: { booking: number; procedure: numbe
       patientId: spec.patientId,
       scheduledTime: spec.time,
       completed: spec.completed,
-      payer: { kind: 'patient' },
       // The seed's source rule: Christchurch Eye Surgery's rooms send PDFs; St George's sends a feed.
       source: onReview ? 'surgeonPdf' : 'hospitalDownload',
       lastModifiedBy: spec.completed ? CHEN : 'Kirsty W.',
@@ -119,6 +118,7 @@ export function seedReviewFlagBookings(next: { booking: number; procedure: numbe
     const procedure: Procedure = {
       id: procedureId,
       bookingId,
+      payer: { kind: 'patient' },
       procedureText: seedText(spec.text),
       invoiceDescription: null,
       isAdditional: false,

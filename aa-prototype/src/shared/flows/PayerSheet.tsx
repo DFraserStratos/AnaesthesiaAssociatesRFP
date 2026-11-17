@@ -14,7 +14,8 @@ import { neutral, radius, semantic } from '../../theme/tokens'
 import type { PostalAddress } from '../../domain/types'
 import { anyPayerBilled, cleanPostalAddress, isMinorOn, onlyHoldersBilled, payerHasContact } from '../../domain/billing'
 import { formatPostalAddress } from '../../domain/billing/payer'
-import { setBookingPayer, useAppStore, type Actor, type PayerInput } from '../../store'
+import { setProcedurePayer, useAppStore, type Actor, type PayerInput } from '../../store'
+import { payerOfferFor } from '../../domain/billing/procedurePayer'
 import { Button, FormError, Notice, TextField } from '../ui'
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
@@ -39,7 +40,9 @@ export function PayerSheet({ open, bookingId, actor, onClose }: PayerSheetProps)
   const listDate = useAppStore((s) => (booking !== undefined ? s.schedule.lists[booking.listId]?.dateISO : undefined))
   const contracts = useAppStore((s) => s.masters.contracts)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
-  const procedures = useMemo(() => Object.values(proceduresRecord).filter((p) => p.bookingId === bookingId), [proceduresRecord, bookingId])
+  const procedures = useMemo(() => Object.values(proceduresRecord).filter((p) => p.bookingId === bookingId).sort((a, b) => a.id.localeCompare(b.id)), [proceduresRecord, bookingId])
+  // INTERIM until catch-up Phase 22a session 2's Paid by sheet: the first Procedure's payer, saved with every offered Procedure ticked.
+  const first = procedures[0]
 
   const [different, setDifferent] = useState(false)
   const [other, setOther] = useState<OtherPayerDraft>(EMPTY_OTHER_PAYER)
@@ -49,8 +52,8 @@ export function PayerSheet({ open, bookingId, actor, onClose }: PayerSheetProps)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!open || booking === undefined) return
-    const payer = booking.payer
+    if (!open || first === undefined) return
+    const payer = first.payer
     setError(null)
     if (payer.kind === 'other') {
       setDifferent(true)
@@ -85,11 +88,12 @@ export function PayerSheet({ open, bookingId, actor, onClose }: PayerSheetProps)
     : { email: recordEmail ?? email, postalAddress: recordAddress ?? cleanPostalAddress(address) }
   const needsContact = billed && !payerHasContact(contactAfter)
 
-  if (booking === undefined) return null
+  if (booking === undefined || first === undefined) return null
 
   function save() {
+    if (booking === undefined || first === undefined) return
     setError(null)
-    const current = booking?.payer
+    const current = first.payer
     const input: PayerInput = different
       ? otherPayerInput(other, current?.kind === 'other' ? current.id : undefined)
       : {
@@ -97,7 +101,8 @@ export function PayerSheet({ open, bookingId, actor, onClose }: PayerSheetProps)
           ...(recordEmail === undefined ? { email } : {}),
           ...(recordAddress === undefined ? { postalAddress: address } : {}),
         }
-    const outcome = setBookingPayer(useAppStore, actor, bookingId, input)
+    const offer = payerOfferFor(procedures, first.id, contracts, booking.patientId).map((p) => p.id)
+    const outcome = setProcedurePayer(useAppStore, actor, first.id, input, offer)
     if (!outcome.ok) {
       setError(outcome.message)
       return

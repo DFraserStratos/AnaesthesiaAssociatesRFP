@@ -70,10 +70,10 @@ describe('no NHI in the Xero slice (convention 8 / Appendix 2)', () => {
 
 /** Every personal value a patient or billable party holds (never in Xero). */
 function personalValues(state: AppState): string[] {
-  // Patients and the other payers named on Bookings (catch-up Phase 21: no payer master).
+  // Patients and the other payers named on Procedures (catch-up Phases 21, 22a: no payer master).
   const people = [
     ...Object.values(state.masters.patients).map((p) => [p.name, p.phone, p.email, p.postalAddress?.line1]),
-    ...Object.values(state.schedule.bookings).flatMap((b) => (b.payer.kind === 'other' ? [[b.payer.name, b.payer.phone, b.payer.email, b.payer.postalAddress?.line1]] : [])),
+    ...Object.values(state.schedule.procedures).flatMap((p) => (p.payer.kind === 'other' ? [[p.payer.name, p.payer.phone, p.payer.email, p.payer.postalAddress?.line1]] : [])),
   ]
   const values = people.flat()
   return values.filter((v): v is string => v !== undefined && v.trim() !== '')

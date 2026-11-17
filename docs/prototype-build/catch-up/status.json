@@ -1,25 +1,27 @@
 {
-  "in_progress": [],
+  "in_progress": [
+    "22a"
+  ],
   "next": {
     "phases": [
       "22a"
     ],
-    "note": "Re-planned 2026-11-17: the payer moves from the Booking to each Procedure (Donald's decision; OQ-140 for AA). Run 22a next (two sessions), then U4, U5 and 23; U6 after 25; U7 before 44."
+    "note": "22a session 1 built (17 November): the payer on each Procedure, one writer with the offer, the copy rule, invoices and prepayment invoices per payer, the child warning per Procedure, the seed additions; S3 and parity unchanged. Run 22a session 2 next (the Paid by line and sheet in all three apps, Another person, Review, the Booking Payer card removed, then review, capture and the demo guide), then U4, U5 and 23; U6 after 25; U7 before 44."
   },
   "guidance": {
     "as_of": "2026-11-17",
-    "headline": "Start 22a now: a payer on each Procedure (re-planned 17 November), then U4, U5 and 23.",
-    "headline_sub": "The 17 November requirements change moves the payer from the Booking to each Procedure (OQ-140 asks AA to confirm; built as decided). 22a reworks 21's Booking payer and 22's Paid by into one Paid by line and sheet per Procedure; U4 and 23 now wait for it.",
-    "parallel": "None now: 22a runs alone, then U4 (a U phase never runs beside a catch-up phase).",
+    "headline": "Start 22a session 2 now. Session 1 moved the payer onto each Procedure (one writer with the offer, one invoice and one prepayment invoice per payer).",
+    "headline_sub": "22a session 1 built the model, the one writer setProcedurePayer with its offer, the copy rule, per-payer invoices, prepayment and lock, and the child warning per Procedure, green and not yet committed; session 2 builds the Paid by line and sheet in all three apps and closes the phase, then U4, U5 and 23.",
+    "parallel": "None now: 22a session 2 runs alone, then U4 (a U phase never runs beside a catch-up phase).",
     "safe": {
-      "22a": "Every dependency is done and committed (21a and 22) and it is next in run order; U4 and 23 now wait for it."
+      "22a": "Session 2 of 22a: session 1 is built and green (commit it first); its dependencies 21a and 22 are done and it is next in run order."
     },
     "wait": {
-      "U4": "Now depends on 22a (22a turns 21's PayerSheet into the one Paid by sheet that U4 migrates); runs straight after it.",
+      "U4": "Needs 22a done (session 2 turns the payer and split sheets into the one Paid by sheet that U4 migrates); runs straight after it.",
       "26": "Its catch-up dependency (17) is done, but it runs after the Contracts track (18 to 25) and U6 (DefRow, Card).",
       "17a": "Its dependencies (17 and 18a) are done, but the run order puts it after 26, so after U6.",
       "U5": "Needs U4 (its only dependency) and runs straight after it.",
-      "23": "Needs 22a and U5 (and 22, now done); runs after 22a, U4 and U5."
+      "23": "Needs 22a (session 2 still to run) and U5; runs after 22a, U4 and U5."
     }
   }
 }

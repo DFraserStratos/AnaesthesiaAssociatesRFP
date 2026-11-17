@@ -16,7 +16,6 @@ const BOOKING: Booking = {
   listId: 'L-1',
   patientId: 'PT1',
   completed: false,
-  payer: { kind: 'patient' },
   lastModifiedBy: 'seed',
   lastModifiedAtISO: '2026-07-21T08:00:00',
 }

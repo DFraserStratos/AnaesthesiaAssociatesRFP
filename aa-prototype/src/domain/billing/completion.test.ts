@@ -126,8 +126,8 @@ describe('completion is exactly three conditions (catch-up Phase 21a; US-03.6.1,
     expect(codes([outside])).toEqual([])
     const noNumber = mkBooking({ funderPartyId: 'party-ins' })
     expect(completionFailuresFor(noNumber, [rvgDone()], ctx())).toEqual([])
-    const noContact = mkBooking({ payer: { kind: 'other', id: 'BP0009', name: 'No Contact' } })
-    expect(completionFailuresFor(noContact, [rvgDone()], ctx())).toEqual([])
+    const noContact = mkBooking()
+    expect(completionFailuresFor(noContact, [{ ...rvgDone(), payer: { kind: 'other', id: 'BP0009', name: 'No Contact' } }], ctx())).toEqual([])
   })
 
   it('a cancelled Booking has no failures; failures are in Procedure order', () => {

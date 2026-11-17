@@ -150,11 +150,10 @@ const typedPrice: Rule = perProcedure('typedPrice', ({ procedure, computedPrice 
 const notCompleted: Rule = ({ booking }) =>
   booking.completed ? [] : [{ tone: 'neutral', text: 'Not marked completed', bookingId: booking.id, rule: 'notCompleted', shot: 'review-flag' }]
 
-/** A billed payer with neither an email nor a postal address (US-11.2.3, catch-up Phase 21). */
-const payerContact: Rule = ({ booking, patient, procedures, rail }) =>
-  payerContactMissing(booking, patient, procedures.map((p) => p.procedure), rail.masters.contracts)
-    ? [{ tone: 'neutral', text: PAYER_CONTACT_NEEDED, bookingId: booking.id, rule: 'payerContactMissing', shot: 'review-payer-contact' }]
-    : []
+/** A billed payer with neither an email nor a postal address, on each Procedure billed to its payer (US-11.2.3; catch-up Phases 21, 22a). */
+const payerContact: Rule = perProcedure('payerContactMissing', ({ procedure }, input) =>
+  payerContactMissing(procedure, input.patient, contractOf(procedure, input)) ? { tone: 'neutral', text: PAYER_CONTACT_NEEDED, shot: 'review-payer-contact' } : null,
+)
 
 /** The natural (non-overridden) B/T/M, to diff a manual override against. */
 function naturalBtm(procedure: Procedure, rvgGroup: RvgGroup | undefined, timeRule: RvgTimeRule, modifierInputs: ModifierInputs): BtmBreakdown {

@@ -153,10 +153,10 @@ describe('delivery (US-08.4.2; D55, D70)', () => {
     'PY-UNI': { id: 'PY-UNI', kind: 'surgeonGroup', name: 'Unisports', codePrefix: 'UNI', postalAddress: 'PO Box 1, Christchurch 8140', deliveryMethod: 'post' },
     'PY-BARE': { id: 'PY-BARE', kind: 'surgeonGroup', name: 'Bare', codePrefix: 'BARE', deliveryMethod: 'email' },
   }
-  const booking = { patientId: 'PT0001', payer: { kind: 'patient' as const } }
+  const procs = [{ payer: { kind: 'patient' as const } }]
   const at = '2026-07-21T10:00:00'
-  const stamp = (ref: { kind: 'insurer' | 'party' | 'patient'; id: string }, patient: Parameters<typeof invoiceDeliveryFor>[2]) =>
-    deliveryStampFor(invoiceDeliveryFor(ref, booking, patient, parties), at, 'Billing run')
+  const stamp = (ref: { kind: 'insurer' | 'party' | 'patient'; id: string }, patient: Parameters<typeof invoiceDeliveryFor>[3]) =>
+    deliveryStampFor(invoiceDeliveryFor(ref, procs, 'PT0001', patient, parties), at, 'Billing run')
 
   it('a holder Party on email is sent; on post is marked to post', () => {
     expect(stamp({ kind: 'insurer', id: 'I-NIB' }, undefined)).toEqual({ method: 'email', status: 'sent', sends: [{ atISO: at, to: 'claims@nib.example', by: 'Billing run' }] })

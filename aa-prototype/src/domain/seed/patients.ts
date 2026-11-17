@@ -14,7 +14,7 @@
  * id with no RNG draw, except the ones left blank on purpose.
  */
 
-import type { BookingPayer, Patient, PostalAddress } from '../types'
+import type { Patient, PostalAddress, ProcedurePayer } from '../types'
 import { generateNhi } from '../nhi'
 import { ETHNICITY_DEMO_SUBSET } from '../nzhis'
 import { slotRng } from './slotHash'
@@ -30,14 +30,18 @@ export const BP = {
   ariaClinic: 'BP0002',
 } as const
 
-/** The next payer id the seed leaves for runtime allocation (BP0001, Aria's BP0002 and the seeded family trust's BP0003 are taken). */
-export const SEED_PAYER_COUNTER = 4
+/**
+ * The next payer id the seed leaves for runtime allocation: BP0001, Aria's
+ * BP0002, the seeded family trust's BP0003 and the two-payer Booking's BP0004
+ * and BP0005 (catch-up Phase 22a) are taken.
+ */
+export const SEED_PAYER_COUNTER = 6
 
 /** Hana Park's postal address (re-expressed from the retired master's free text). */
 const HANA_PARK_ADDRESS: PostalAddress = { line1: '18 Clifford Avenue', suburb: 'Fendalton', city: 'Christchurch', postcode: '8052' }
 
 /** Hana Park, Grace Park's mother, as the payer on her Booking (the retired guardian row, BP0001). */
-export const HANA_PARK_PAYER: BookingPayer = {
+export const HANA_PARK_PAYER: ProcedurePayer = {
   kind: 'other',
   id: BP.guardian,
   name: 'Hana Park',
@@ -158,7 +162,7 @@ export function buildPatients(seed: number): Patient[] {
     patients.push(patient)
   }
 
-  patients.push(...PAYER_REVIEW_PATIENTS, ...COMPLETION_PATIENTS, ...REVIEW_FLAG_PATIENTS)
+  patients.push(...PAYER_REVIEW_PATIENTS, ...COMPLETION_PATIENTS, ...REVIEW_FLAG_PATIENTS, ...PROCEDURE_PAYER_PATIENTS)
   return patients.map(withSeedContact)
 }
 
@@ -191,6 +195,16 @@ export const PAT_21A_REVIEW = {
   otherSurgeon: `PT${String(19 + 132 + 12).padStart(4, '0')}`,
   movableFixed: `PT${String(19 + 132 + 13).padStart(4, '0')}`,
 } as const
+
+/** Catch-up Phase 22a's dedicated patient (`seed/procedurePayerBookings.ts`), after 21a's. */
+export const PAT_22A = {
+  twoPayers: `PT${String(19 + 132 + 14).padStart(4, '0')}`,
+} as const
+
+/** The two-payer Booking's patient: an adult whose two Procedures name two payers typed in separately. */
+const PROCEDURE_PAYER_PATIENTS: readonly Patient[] = [
+  { hiddenInternalId: PAT_22A.twoPayers, nhi: 'ZBC1000', name: 'Joyce Halvorsen', dobISO: '1944-07-30', phone: '03 555 6434', ethnicityCode: '11111' },
+]
 
 const REVIEW_FLAG_PATIENTS: readonly Patient[] = [
   { hiddenInternalId: PAT_21A_REVIEW.contractChange, nhi: 'ZAX1009', name: 'Diane Fairweather', dobISO: '1953-02-11', phone: '021 555 5989', ethnicityCode: '11111' },

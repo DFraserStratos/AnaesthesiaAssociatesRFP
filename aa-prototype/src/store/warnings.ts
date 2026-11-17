@@ -21,6 +21,7 @@ import {
   type Warning,
   type WarningFacts,
   type WarningRule,
+  type WarningRuleId,
   type WarningStrength,
 } from '../domain/warnings'
 import type { Booking, Procedure, Session } from '../domain/types'
@@ -71,7 +72,7 @@ function splitFeesFor(state: WarningState, booking: Booking, procedures: readonl
   if (ctx === undefined) return {}
   const splits: Record<string, { feeExGst: number | null; partiesOn: boolean }> = {}
   for (const procedure of split) {
-    const partiesOn = splitPartiesOn(booking, procedure.split?.shares ?? [], state.masters.parties)
+    const partiesOn = splitPartiesOn(procedure, booking.patientId, procedure.split?.shares ?? [], state.masters.parties)
     if (procedure.governingContractId === undefined) {
       splits[procedure.id] = { feeExGst: null, partiesOn }
       continue
@@ -130,12 +131,23 @@ export interface OpenWarningRow {
   /** Absent for a Booking on a Draft List (shown as "Unassigned"). */
   anaesthetistId?: string
   scheduledTime?: string
+  /**
+   * The keys of the same rule's other open warnings on this Booking, folded
+   * into this one row (catch-up Phase 22a: the child payer warning is raised
+   * per Procedure and listed once per Booking). Clear clears them all.
+   */
+  foldedKeys?: string[]
 }
+
+/** Rules raised per Procedure that the to-do list shows once per Booking (catch-up Phase 22a; US-13.7.1, D4). */
+const FOLDED_PER_BOOKING: ReadonlySet<WarningRuleId> = new Set<WarningRuleId>(['childPayer'])
 
 /**
  * Every OPEN warning on every non-cancelled Booking (the dashboard to-do list,
  * US-13.7.2), sorted by the List's date, then strong before mild, then the
- * Booking's time.
+ * Booking's time. A rule raised per Procedure that the list shows once per
+ * Booking (the child payer warning) is folded into its first row
+ * (`foldedKeys`).
  */
 export function openWarnings(state: WarningState, rules: readonly WarningRule[] = WARNING_RULES): OpenWarningRow[] {
   const byBooking = proceduresByBooking(state)
@@ -144,9 +156,15 @@ export function openWarnings(state: WarningState, rules: readonly WarningRule[] 
     if (booking.cancellation !== undefined) continue
     const facts = factsFor(state, booking, byBooking.get(booking.id) ?? [])
     if (facts === undefined) continue
+    const foldedInto = new Map<WarningRuleId, OpenWarningRow>()
     for (const warning of evaluate(state, facts, rules)) {
       if (warning.clearance !== undefined) continue
-      rows.push({
+      const into = FOLDED_PER_BOOKING.has(warning.ruleId) ? foldedInto.get(warning.ruleId) : undefined
+      if (into !== undefined) {
+        into.foldedKeys = [...(into.foldedKeys ?? []), warning.key]
+        continue
+      }
+      const row: OpenWarningRow = {
         warning,
         bookingId: booking.id,
         listId: facts.list.id,
@@ -155,7 +173,9 @@ export function openWarnings(state: WarningState, rules: readonly WarningRule[] 
         patientId: booking.patientId,
         ...(facts.list.anaesthetistId !== undefined ? { anaesthetistId: facts.list.anaesthetistId } : {}),
         scheduledTime: booking.scheduledTime,
-      })
+      }
+      if (FOLDED_PER_BOOKING.has(warning.ruleId)) foldedInto.set(warning.ruleId, row)
+      rows.push(row)
     }
   }
   return rows.sort(

@@ -32,7 +32,7 @@ function list(id: string, anaesthetistId: string, extra: Partial<AssignedList> =
 }
 
 function booking(id: string, listId: string, extra: Partial<Booking> = {}): Booking {
-  return { id, listId, patientId: 'PT1', completed: false, payer: { kind: 'patient' }, lastModifiedBy: 'seed', lastModifiedAtISO: '2026-07-20T08:00:00', ...extra }
+  return { id, listId, patientId: 'PT1', completed: false, lastModifiedBy: 'seed', lastModifiedAtISO: '2026-07-20T08:00:00', ...extra }
 }
 
 /**

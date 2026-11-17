@@ -110,7 +110,6 @@ export function seedDraftListBookings(next: { booking: number; procedure: number
       patientId: spec.patientId,
       scheduledTime: spec.time,
       completed: false,
-      payer: { kind: 'patient' },
       source: 'admin',
       notes: spec.note,
       lastModifiedBy: OFFICE,
@@ -119,6 +118,7 @@ export function seedDraftListBookings(next: { booking: number; procedure: number
     procedures.push({
       id: `P${String(p).padStart(4, '0')}`,
       bookingId,
+      payer: { kind: 'patient' },
       // The secretary's email wording, as received (catch-up Phase 20a; Phase 31's note stood in for it).
       procedureText: seedText(spec.description, 'email'),
       invoiceDescription: null,

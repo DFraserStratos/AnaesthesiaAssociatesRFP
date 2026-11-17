@@ -32,7 +32,7 @@ export const NO_FEE_TO_SPLIT_MESSAGE = 'This procedure has no fee to split yet. 
 /** A share row with no party chosen. */
 export const PARTY_MISSING_REASON = 'Choose a party for each share.'
 
-/** A share whose party is no longer the payer on the Booking or a Party that can be billed. */
+/** A share whose party is no longer the Procedure's payer or a Party that can be billed. */
 export const PARTY_GONE_REASON = 'A party in the split is no longer on this Booking or in the Parties list.'
 
 /** The parser's refusal. */

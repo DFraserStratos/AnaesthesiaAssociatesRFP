@@ -15,7 +15,7 @@ import type {
   BillingLine,
   Booking,
   BookingCancellation,
-  BookingPayer,
+  ProcedurePayer,
   BookingSource,
   IntegrationCorrelationRef,
   AssignedList,
@@ -198,9 +198,16 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     auditComplete?: boolean
     /** Integration provenance (Phase 11) — modify messages locate the Booking by it. */
     correlationRef?: IntegrationCorrelationRef
-    /** The payer on the Booking (catch-up Phase 21): the patient unless given. */
-    payer?: BookingPayer
+    /**
+     * The payer each of the Booking's Procedures takes (catch-up Phase 21; on
+     * each Procedure since 22a): the patient unless given; `addProcedure`'s
+     * own `payer` overrides it for one Procedure.
+     */
+    payer?: ProcedurePayer
   }
+
+  /** The payer each Booking's Procedures default to (`BookingSpec.payer`), by Booking id. */
+  const defaultPayerOf = new Map<string, ProcedurePayer>()
 
   function anaesthetistNameFor(listId: string): string {
     const list = listById.get(listId)
@@ -217,7 +224,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       listId: spec.listId,
       patientId: spec.patientId,
       completed: spec.completedAtISO !== undefined,
-      payer: spec.payer ?? { kind: 'patient' },
       lastModifiedBy: spec.completedAtISO !== undefined ? who : 'Kirsty W.',
       // Completed bookings carry their completion time; not-yet-completed bookings
       // are stamped at the seed clock (Tue 21 Jul 08:00), never their list's
@@ -234,6 +240,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       booking.lastModifiedAtISO = spec.cancellation.atISO
     }
     bookings.push(booking)
+    if (spec.payer !== undefined) defaultPayerOf.set(booking.id, spec.payer)
 
     if (spec.auditComplete === true && spec.completedAtISO !== undefined) {
       auditN += 1
@@ -296,6 +303,8 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     timeUnitsOverride?: number
     /** The fee split typed on the Booking (catch-up Phase 22; US-08.2.3). */
     split?: FeeSplit
+    /** This Procedure's payer (catch-up Phase 22a): the Booking's default (`BookingSpec.payer`) unless given; Phase 23's seed uses it. */
+    payer?: ProcedurePayer
   }
 
   function addProcedure(booking: Booking, spec: ProcedureSpec): Procedure {
@@ -303,6 +312,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     const procedure: Procedure = {
       id: `P${String(procN).padStart(4, '0')}`,
       bookingId: booking.id,
+      payer: spec.payer ?? defaultPayerOf.get(booking.id) ?? { kind: 'patient' },
       procedureText: seedText(spec.procedureText, spec.textSource, spec.textReceivedAtISO),
       invoiceDescription: null,
       isAdditional: spec.isAdditional ?? false,

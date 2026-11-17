@@ -105,8 +105,13 @@ export function WarningsToDo({
                       warning={r.warning}
                       label={`${r.warning.strength === 'mild' ? 'Clear (optional)' : 'Clear'} warning for ${patient}`}
                       onClear={() => {
-                        const res = clearWarning(useAppStore, actor, r.bookingId, r.warning.key)
-                        setError(res.ok ? null : res.message)
+                        // A folded row (the child warning on each Procedure, catch-up Phase 22a) clears every Procedure's.
+                        let message: string | null = null
+                        for (const key of [r.warning.key, ...(r.foldedKeys ?? [])]) {
+                          const res = clearWarning(useAppStore, actor, r.bookingId, key)
+                          if (!res.ok) message = res.message
+                        }
+                        setError(message)
                       }}
                     />
                   </span>

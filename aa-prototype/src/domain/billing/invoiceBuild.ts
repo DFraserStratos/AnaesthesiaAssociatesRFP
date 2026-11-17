@@ -11,11 +11,13 @@
  *    an open price with no amount typed) is a billing exception the office
  *    resolves in the billing monitor. Nothing is resolved from the List;
  *  - who each Procedure bills to: the Contract says
- *    (`billablePartyForProcedure`, catch-up Phase 21: its holder, or the payer
- *    on the Booking), unless the Procedure's fee is split on the Booking
+ *    (`billablePartyForProcedure`, catch-up Phase 21: its holder, or the
+ *    Procedure's own payer since 22a), unless the Procedure's fee is split
  *    (catch-up Phase 22, `splitShare.ts`), when each share bills its party;
  *  - how lines group into invoices: one invoice per Booking per distinct
- *    party (FT-08.2). What each invoice prints is `invoicePresentation.ts`'s.
+ *    party by `kind:id` (FT-08.2, US-08.2.1), so Procedures sharing a payer
+ *    share one invoice and a payer typed in separately (another BP id, even
+ *    with the same name and email) gets their own; never matched on name. What each invoice prints is `invoicePresentation.ts`'s.
  */
 
 import type {
@@ -100,14 +102,15 @@ export function resolveContractForProcedure(procedure: Procedure, ctx: InvoiceBu
 /**
  * Who the Procedure bills to, through the one rule (`billablePartyForProcedure`,
  * catch-up Phase 21): the holder Party when the resolved Contract bills its
- * holder, otherwise the payer on the Booking.
+ * holder, otherwise the Procedure's own payer (catch-up Phase 22a).
  */
 export function counterpartyForProcedure(
   resolvedContract: Contract | undefined,
-  booking: Pick<Booking, 'payer' | 'patientId'>,
+  procedure: Pick<Procedure, 'payer'>,
+  patientId: string,
   parties: Readonly<Record<string, Party>>,
 ): CounterpartyRef | undefined {
-  return billablePartyForProcedure(resolvedContract, booking, parties)
+  return billablePartyForProcedure(resolvedContract, procedure, patientId, parties)
 }
 
 
@@ -179,7 +182,7 @@ export function buildInvoicesForBooking(
       return { kind: 'exception', procedureId: procedure.id, code: resolution.code, message: resolution.message }
     }
     const contract = resolution.contract
-    const procedureCounterparty = counterpartyForProcedure(contract, booking, ctx.parties)
+    const procedureCounterparty = counterpartyForProcedure(contract, procedure, booking.patientId, ctx.parties)
     if (procedureCounterparty === undefined) {
       return { kind: 'exception', procedureId: procedure.id, code: 'noCounterparty', message: HOLDER_MISSING_MESSAGE }
     }
@@ -221,7 +224,7 @@ export function buildInvoicesForBooking(
       // the split's parties. A split that no longer fits fails review; it
       // never bills a guess.
       // A share whose party has left the Booking (a renamed or replaced payer) never bills that party.
-      if (!splitPartiesOn(booking, procedure.split.shares, ctx.parties)) {
+      if (!splitPartiesOn(procedure, booking.patientId, procedure.split.shares, ctx.parties)) {
         return { kind: 'exception', procedureId: procedure.id, code: 'splitDoesNotFit', message: splitDoesNotFitMessage(fee.total, PARTY_GONE_REASON) }
       }
       const resolved = resolveSplit(fee.total, procedure.split.shares)
@@ -313,7 +316,8 @@ export function buildInvoicesForBooking(
     const gst = gstOn(subtotal)
     const layout = invoiceLayoutFor(contract, counterparty, isContractParty)
     const lines = layout === 'contractHolder' ? group.lines : group.lines.map(withoutBtm)
-    const billedTo = billedToFor(counterparty, booking, ctx.patient)
+    // Read from the payers of this invoice's own Procedures (catch-up Phase 22a).
+    const billedTo = billedToFor(counterparty, procedures.filter((p) => group.procedureIds.includes(p.id)), booking.patientId, ctx.patient)
     // The party's own Contract, where one of its lines bills under it, names the holder reference and the Contract.
     const ownContract = group.own?.contract ?? contract
     const holderReference = layout === 'contractHolder' ? ownContract?.holderReference : undefined
@@ -390,8 +394,9 @@ export function procedureRequiresPrepayment(contract: Pick<Contract, 'prepaid' |
  * Deposit lines are EX-GST subtotals (an $800 deposit invoices as
  * 800 / GST 120 / total 920); the later balance run subtracts the same ex-GST
  * figure from the ex-GST fee subtotal, so deposit + balance reconciles to the
- * full fee. Grouped by who is billed (the payer on the Booking, the patient
- * unless another payer is ticked); always the patient layout.
+ * full fee. Grouped by who is billed (each prepaid Procedure's own payer, the
+ * patient unless another payer is ticked): one prepayment invoice per payer
+ * (US-06.3.1 "One per payer", catch-up Phase 22a); always the patient layout.
  */
 export function buildPrePaymentInvoiceForBooking(
   booking: Booking,
@@ -408,7 +413,7 @@ export function buildPrePaymentInvoiceForBooking(
     if (procedure.split !== undefined) {
       return { kind: 'exception', procedureId: procedure.id, code: 'prepaidSplit', message: PREPAID_SPLIT_MESSAGE }
     }
-    const counterparty = counterpartyForProcedure(contract, booking, ctx.parties)
+    const counterparty = counterpartyForProcedure(contract, procedure, booking.patientId, ctx.parties)
     if (counterparty === undefined) continue
     const detail = procedure.prepaymentDetail
     if (detail?.type === 'split') {
@@ -453,8 +458,8 @@ export function buildPrePaymentInvoiceForBooking(
   for (const { counterparty, contractId, lines } of groups.values()) {
     const subtotal = roundToCents(lines.reduce((sum, l) => sum + l.amount, 0))
     const gst = gstOn(subtotal)
-    const billedTo = billedToFor(counterparty, booking, ctx.patient)
     const procedureIds = [...new Set(lines.flatMap((l) => (l.procedureId !== undefined ? [l.procedureId] : [])))]
+    const billedTo = billedToFor(counterparty, procedures.filter((p) => procedureIds.includes(p.id)), booking.patientId, ctx.patient)
     invoices.push({
       counterparty,
       ...(billedTo !== undefined ? { billedTo } : {}),

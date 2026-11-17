@@ -55,6 +55,10 @@
  * List's four Bookings (BK0178 to BK0181) on Dr Chen's Tue 14 Jul AM, now
  * SUBMITTED (`SEED_LIST_IDS.reviewFlags`), and the movable Merivale Booking
  * (BK0182) on Dr Souter's Mon 10 Aug PM (`seed/reviewFlagBookings.ts`).
+ *
+ * Catch-up Phase 22a added one row to `bookings` by hand, nothing else: the
+ * two-payer Booking (BK0183) on the payer review List, Dr Chen's Fri 17 Jul AM
+ * (`seed/procedurePayerBookings.ts`), appended after BK0182.
  */
 
 import { describe, expect, it } from 'vitest'

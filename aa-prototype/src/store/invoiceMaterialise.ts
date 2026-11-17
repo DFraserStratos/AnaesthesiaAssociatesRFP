@@ -119,7 +119,7 @@ export function materialiseInvoices(
       ...(lineage.length > 0 ? { lineage } : {}),
     }
     if (args.send && booking !== undefined) {
-      invoice.delivery = deliveryStampFor(invoiceDeliveryFor(draft.counterparty, booking, patient, s.masters.parties), args.atISO, BILLING_RUN_SENDER)
+      invoice.delivery = deliveryStampFor(invoiceDeliveryFor(draft.counterparty, draft.procedureIds.flatMap((id) => (s.schedule.procedures[id] !== undefined ? [s.schedule.procedures[id]] : [])), booking.patientId, patient, s.masters.parties), args.atISO, BILLING_RUN_SENDER)
     }
     invoices[invoiceId] = invoice
 

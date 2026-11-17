@@ -43,10 +43,17 @@ import {
 } from './selectors'
 import { getBooking } from './lifecycle'
 import { handoffCasesForBooking } from './xeroHandoff'
+import { refKey } from '../domain/billing/procedurePayer'
+
+/** The refusal when every payer of the Booking's prepaid Procedures already has their prepayment invoice. */
+export const ALREADY_RAISED_MESSAGE = 'A pre-payment invoice has already been raised to every payer on this Booking.'
 
 /**
- * Raise the pre-procedure invoice for a Booking's patient-funded portion.
- * Office-only; refused on an AUTHORISED/billed List and idempotent.
+ * Raise the pre-procedure invoices for a Booking's prepaid Procedures: one per
+ * payer (catch-up Phase 22a; each prepaid Procedure's own payer, D23), raising
+ * only the payers who have none yet. Office-only; refused on an
+ * AUTHORISED/billed List and idempotent per payer. Phase 27 rebuilds the
+ * lifecycle (approval, the amount, the AA Holding account) per payer on this.
  */
 export function raisePreProcedureInvoice(
   api: AppStoreApi,
@@ -75,9 +82,6 @@ export function raisePreProcedureInvoice(
   if (!bookingRequiresPrepayment(state, bookingId)) {
     return refuse('notPrepayment', 'This booking has no procedure on a prepaid Contract.')
   }
-  if (prePaymentInvoicesForBooking(state, bookingId).length > 0) {
-    return refuse('alreadyRaised', 'A pre-payment invoice has already been raised for this Booking.')
-  }
 
   const bookingCtx = billingContextForBooking(state, booking)
   if (bookingCtx === undefined) {
@@ -96,6 +100,13 @@ export function raisePreProcedureInvoice(
   if (built.invoices.length === 0) {
     return refuse('notPrepayment', 'This booking has no procedure on a prepaid Contract.')
   }
+  // One prepayment invoice per payer (US-06.3.1 "One per payer", catch-up Phase 22a): a payer
+  // whose own is already raised is never invoiced again; only payers without one are raised.
+  const raisedTo = new Set(prePaymentInvoicesForBooking(state, bookingId).map((i) => refKey(i.counterparty)))
+  const toRaise = built.invoices.filter((draft) => !raisedTo.has(refKey(draft.counterparty)))
+  if (toRaise.length === 0) {
+    return refuse('alreadyRaised', ALREADY_RAISED_MESSAGE)
+  }
 
   let invoiceIds: string[] = []
   const metas: MutationMeta[] = []
@@ -103,7 +114,7 @@ export function raisePreProcedureInvoice(
     // Today the office raises the prepayment invoice itself, so it is sent as
     // it is raised; Phase 27 raises it unsent and sends it on admin approval
     // (D6) through the same materialiser's separate send step.
-    const made = materialiseInvoices(s, s.counters, built.invoices, {
+    const made = materialiseInvoices(s, s.counters, toRaise, {
       bookingId,
       atISO: clockISO(s.clock),
       kind: 'prePayment',

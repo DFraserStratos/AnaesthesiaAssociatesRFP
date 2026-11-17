@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { handoffListCases, runBillingForList, type BillingRunResult } from './billingRun'
 import { authoriseList, editProcedure, submitList } from './lifecycle'
-import { setBookingPayer } from './payerActions'
+import { setProcedurePayer } from './payerActions'
 import { contractPartyFor, setProcedureSplit } from './splitActions'
 import { raisePreProcedureInvoice } from './prepaymentActions'
 import { authoriseAsSimulatedOffice } from './officeStandIn'
@@ -83,8 +83,8 @@ function linesOf(api: BoundAppStore, invoiceId: string): InvoiceLine[] {
 }
 
 function payerRef(api: BoundAppStore, bookingId: string): CounterpartyRef {
-  const payer = api.getState().schedule.bookings[bookingId]?.payer
-  if (payer === undefined || payer.kind !== 'other') throw new Error('expected another payer on the Booking')
+  const payer = proceduresForBooking(api.getState(), bookingId)[0]?.payer
+  if (payer === undefined || payer.kind !== 'other') throw new Error("expected another payer on the Procedure")
   return { kind: 'payer', id: payer.id }
 }
 
@@ -98,13 +98,13 @@ function nibHalfAnd(party: CounterpartyRef): FeeSplit {
 describe('a split whose party has left the Booking (review fix)', () => {
   /** Another payer on BK0025, split 50% nib and the rest to them, then the payer renamed (a new BP id). */
   function renamedPayer(api: BoundAppStore): { oldRef: CounterpartyRef; newRef: CounterpartyRef; procedureId: string } {
-    expect(setBookingPayer(api, OFFICE, FEE_SPLIT_BOOKING, { kind: 'other', name: 'Jo Prentice', relationship: 'Guardian', email: 'jo.prentice@example.net' }).ok).toBe(true)
+    expect(setProcedurePayer(api, OFFICE, procOf(api, FEE_SPLIT_BOOKING), { kind: 'other', name: 'Jo Prentice', relationship: 'Guardian', email: 'jo.prentice@example.net' }).ok).toBe(true)
     const oldRef = payerRef(api, FEE_SPLIT_BOOKING)
     const procedureId = procOf(api, FEE_SPLIT_BOOKING)
     expect(setProcedureSplit(api, OFFICE, FEE_SPLIT_BOOKING, procedureId, nibHalfAnd(oldRef)).ok).toBe(true)
-    const payer = api.getState().schedule.bookings[FEE_SPLIT_BOOKING]!.payer
+    const payer = proceduresForBooking(api.getState(), FEE_SPLIT_BOOKING)[0]!.payer
     expect(payer.kind).toBe('other')
-    expect(setBookingPayer(api, OFFICE, FEE_SPLIT_BOOKING, { kind: 'other', id: oldRef.id, name: 'Sam Carter', relationship: 'Guardian', email: 'sam.carter@example.net' }).ok).toBe(true)
+    expect(setProcedurePayer(api, OFFICE, procOf(api, FEE_SPLIT_BOOKING), { kind: 'other', id: oldRef.id, name: 'Sam Carter', relationship: 'Guardian', email: 'sam.carter@example.net' }).ok).toBe(true)
     const newRef = payerRef(api, FEE_SPLIT_BOOKING)
     expect(newRef.id).not.toBe(oldRef.id)
     return { oldRef, newRef, procedureId }
@@ -215,7 +215,7 @@ describe('a split on an office price-overridden fee', () => {
 describe('a guardian as a split party', () => {
   it("bills the guardian's share to the guardian's name and email; nib's share keeps nib's delivery", () => {
     const api = store()
-    expect(setBookingPayer(api, OFFICE, FEE_SPLIT_BOOKING, { kind: 'other', name: 'Jo Prentice', relationship: 'Guardian', email: 'jo.prentice@example.net' }).ok).toBe(true)
+    expect(setProcedurePayer(api, OFFICE, procOf(api, FEE_SPLIT_BOOKING), { kind: 'other', name: 'Jo Prentice', relationship: 'Guardian', email: 'jo.prentice@example.net' }).ok).toBe(true)
     const guardian = payerRef(api, FEE_SPLIT_BOOKING)
     expect(setProcedureSplit(api, OFFICE, FEE_SPLIT_BOOKING, procOf(api, FEE_SPLIT_BOOKING), nibHalfAnd(guardian)).ok).toBe(true)
     stageAndBill(api, PRENTICE_PM)

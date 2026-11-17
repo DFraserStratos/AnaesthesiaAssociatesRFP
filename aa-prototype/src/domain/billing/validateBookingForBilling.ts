@@ -207,7 +207,7 @@ export function validateBookingForBilling(
     if (procedure.split !== undefined) {
       const fee = feeFor(procedure, feeContextFor(procedure, ctx))
       const resolved = resolveSplit(fee.total, procedure.split.shares)
-      if (!splitPartiesOn(booking, procedure.split.shares, ctx.parties)) fail(id, 'split', splitDoesNotFitMessage(fee.total, PARTY_GONE_REASON))
+      if (!splitPartiesOn(procedure, booking.patientId, procedure.split.shares, ctx.parties)) fail(id, 'split', splitDoesNotFitMessage(fee.total, PARTY_GONE_REASON))
       else if (!resolved.ok) fail(id, 'split', splitDoesNotFitMessage(fee.total, resolved.reason))
     }
   })

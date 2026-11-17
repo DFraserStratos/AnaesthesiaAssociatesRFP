@@ -1,0 +1,4910 @@
+{
+ "bookings": [
+  {
+   "bookingId": "BK0001",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 344.5,
+      "total": 396.18,
+      "procedures": [
+       "P0001"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0002",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 344.5,
+      "total": 396.18,
+      "procedures": [
+       "P0002"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0003",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 318,
+      "total": 365.7,
+      "procedures": [
+       "P0003"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0004",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 265,
+      "total": 304.75,
+      "procedures": [
+       "P0004"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0005",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 185.5,
+      "total": 213.33,
+      "procedures": [
+       "P0005"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0006",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 318,
+      "total": 365.7,
+      "procedures": [
+       "P0006"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0007",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "insurer:I-NIB",
+      "name": "nib",
+      "contactNumber": "I-NIB",
+      "contactName": "nib",
+      "subtotal": 185.5,
+      "total": 213.33,
+      "procedures": [
+       "P0007"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0008",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0003",
+      "name": "David Chen",
+      "contactNumber": "PT0003",
+      "contactName": "Patient PT0003",
+      "subtotal": 238.5,
+      "total": 274.28,
+      "procedures": [
+       "P0008"
+      ],
+      "billedTo": {
+       "name": "David Chen",
+       "email": "david.chen3@example.net",
+       "postalAddress": {
+        "line1": "41 Strickland Street",
+        "suburb": "Sydenham",
+        "city": "Christchurch",
+        "postcode": "8023"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0009",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 212,
+      "total": 243.8,
+      "procedures": [
+       "P0009"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0010",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 455,
+      "total": 523.25,
+      "procedures": [
+       "P0010"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0011",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 280,
+      "total": 322,
+      "procedures": [
+       "P0011"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0012",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 200,
+      "total": 230,
+      "procedures": [
+       "P0012"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0013",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 315,
+      "total": 362.25,
+      "procedures": [
+       "P0013"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0014",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 175,
+      "total": 201.25,
+      "procedures": [
+       "P0014"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0015",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 245,
+      "total": 281.75,
+      "procedures": [
+       "P0015"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0016",
+   "result": {
+    "kind": "invoices",
+    "invoices": []
+   }
+  },
+  {
+   "bookingId": "BK0017",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 230,
+      "total": 264.5,
+      "procedures": [
+       "P0017"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0018",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 253,
+      "total": 290.95,
+      "procedures": [
+       "P0018"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0019",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 184,
+      "total": 211.6,
+      "procedures": [
+       "P0019"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0020",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 184,
+      "total": 211.6,
+      "procedures": [
+       "P0020"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0021",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 322,
+      "total": 370.3,
+      "procedures": [
+       "P0021"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0022",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-FORTE",
+      "name": "Forte Health",
+      "contactNumber": "H-FORTE",
+      "contactName": "Forte Health",
+      "subtotal": 318,
+      "total": 365.7,
+      "procedures": [
+       "P0022",
+       "P0023"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0023",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-FORTE",
+      "name": "Forte Health",
+      "contactNumber": "H-FORTE",
+      "contactName": "Forte Health",
+      "subtotal": 344.5,
+      "total": 396.18,
+      "procedures": [
+       "P0024"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0024",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-FORTE",
+      "name": "Forte Health",
+      "contactNumber": "H-FORTE",
+      "contactName": "Forte Health",
+      "subtotal": 238.5,
+      "total": 274.28,
+      "procedures": [
+       "P0025"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0025",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "insurer:I-NIB",
+      "name": "nib",
+      "contactNumber": "I-NIB",
+      "contactName": "nib",
+      "subtotal": 132.5,
+      "total": 152.38,
+      "procedures": [
+       "P0026"
+      ]
+     },
+     {
+      "ref": "patient:PT0011",
+      "name": "Alan Prentice",
+      "contactNumber": "PT0011",
+      "contactName": "Patient PT0011",
+      "subtotal": 79.5,
+      "total": 91.43,
+      "procedures": [
+       "P0026"
+      ],
+      "billedTo": {
+       "name": "Alan Prentice",
+       "email": "alan.prentice11@example.net",
+       "postalAddress": {
+        "line1": "145 Harewood Road",
+        "suburb": "Linwood",
+        "city": "Christchurch",
+        "postcode": "8062"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0026",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 318,
+      "total": 365.7,
+      "procedures": [
+       "P0027"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0027",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 265,
+      "total": 304.75,
+      "procedures": [
+       "P0028"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0028",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0015",
+      "name": "Gareth Mills",
+      "contactNumber": "PT0015",
+      "contactName": "Patient PT0015",
+      "subtotal": 2861,
+      "total": 3290.15,
+      "procedures": [
+       "P0029",
+       "P0030"
+      ],
+      "billedTo": {
+       "name": "Gareth Mills",
+       "email": "gareth.mills15@example.net",
+       "postalAddress": {
+        "line1": "197 Barrington Street",
+        "suburb": "Sydenham",
+        "city": "Christchurch",
+        "postcode": "8023"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0029",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "billableParty:BP0002",
+      "name": "Aria Skin and Laser Clinic",
+      "contactNumber": "BP0002",
+      "contactName": "Billable party BP0002",
+      "subtotal": 1440,
+      "total": 1656,
+      "procedures": [
+       "P0031"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0030",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0014",
+      "name": "Marcus Webb",
+      "contactNumber": "PT0014",
+      "contactName": "Patient PT0014",
+      "subtotal": 320,
+      "total": 368,
+      "procedures": [
+       "P0032"
+      ],
+      "billedTo": {
+       "name": "Marcus Webb",
+       "email": "marcus.webb14@example.net",
+       "postalAddress": {
+        "line1": "184 Halswell Road",
+        "suburb": "Riccarton",
+        "city": "Christchurch",
+        "postcode": "8041"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0031",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "organisation:O-COS",
+      "name": "Canterbury Orthopaedic Surgeons",
+      "contactNumber": "O-COS",
+      "contactName": "Canterbury Orthopaedic Surgeons",
+      "subtotal": 264,
+      "total": 303.6,
+      "procedures": [
+       "P0033"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0032",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 207,
+      "total": 238.05,
+      "procedures": [
+       "P0034"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0033",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "payer:BP0001",
+      "name": "Hana Park",
+      "contactNumber": "BP0001",
+      "contactName": "Billable party BP0001",
+      "subtotal": 118,
+      "total": 135.7,
+      "procedures": [
+       "P0035"
+      ],
+      "billedTo": {
+       "name": "Hana Park",
+       "email": "hana.park@example.net",
+       "postalAddress": {
+        "line1": "18 Clifford Avenue",
+        "suburb": "Fendalton",
+        "city": "Christchurch",
+        "postcode": "8052"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0034",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0017",
+      "name": "Annette Riley",
+      "contactNumber": "PT0017",
+      "contactName": "Patient PT0017",
+      "subtotal": 1200,
+      "total": 1380,
+      "procedures": [
+       "P0036"
+      ],
+      "billedTo": {
+       "name": "Annette Riley",
+       "email": "annette.riley17@example.net",
+       "postalAddress": {
+        "line1": "223 Linwood Avenue",
+        "suburb": "Papanui",
+        "city": "Christchurch",
+        "postcode": "8053"
+       }
+      }
+     }
+    ]
+   },
+   "prepayment": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0017",
+      "name": "Annette Riley",
+      "contactNumber": "PT0017",
+      "contactName": "Patient PT0017",
+      "subtotal": 800,
+      "total": 920,
+      "procedures": [
+       "P0036"
+      ],
+      "billedTo": {
+       "name": "Annette Riley",
+       "email": "annette.riley17@example.net",
+       "postalAddress": {
+        "line1": "223 Linwood Avenue",
+        "suburb": "Papanui",
+        "city": "Christchurch",
+        "postcode": "8053"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0035",
+   "result": {
+    "kind": "exception",
+    "code": "noContract"
+   }
+  },
+  {
+   "bookingId": "BK0036",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-FORTE",
+      "name": "Forte Health",
+      "contactNumber": "H-FORTE",
+      "contactName": "Forte Health",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "P0038"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0037",
+   "result": {
+    "kind": "invoices",
+    "invoices": []
+   }
+  },
+  {
+   "bookingId": "BK0038",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-FORTE",
+      "name": "Forte Health",
+      "contactNumber": "H-FORTE",
+      "contactName": "Forte Health",
+      "subtotal": 212,
+      "total": 243.8,
+      "procedures": [
+       "P0040"
+      ]
+     }
+    ]
+   },
+   "prepayment": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0008",
+      "name": "Priya Nair",
+      "contactNumber": "PT0008",
+      "contactName": "Patient PT0008",
+      "subtotal": 238.5,
+      "total": 274.28,
+      "procedures": [
+       "P0041"
+      ],
+      "billedTo": {
+       "name": "Priya Nair",
+       "email": "priya.nair8@example.net",
+       "postalAddress": {
+        "line1": "106 Papanui Road",
+        "suburb": "Halswell",
+        "city": "Christchurch",
+        "postcode": "8025"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0039",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "organisation:O-COS",
+      "name": "Canterbury Orthopaedic Surgeons",
+      "contactNumber": "O-COS",
+      "contactName": "Canterbury Orthopaedic Surgeons",
+      "subtotal": 264,
+      "total": 303.6,
+      "procedures": [
+       "P0042"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0040",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 192.5,
+      "total": 221.38,
+      "procedures": [
+       "P0043"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0041",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 106,
+      "total": 121.9,
+      "procedures": [
+       "P0044"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0042",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 106,
+      "total": 121.9,
+      "procedures": [
+       "P0045"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0043",
+   "result": {
+    "kind": "invoices",
+    "invoices": []
+   }
+  },
+  {
+   "bookingId": "BK0044",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 79.5,
+      "total": 91.43,
+      "procedures": [
+       "P0047"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0045",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 297,
+      "total": 341.55,
+      "procedures": [
+       "P0048"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0046",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 79.5,
+      "total": 91.43,
+      "procedures": [
+       "P0049"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0047",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 79.5,
+      "total": 91.43,
+      "procedures": [
+       "P0050"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0048",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 106,
+      "total": 121.9,
+      "procedures": [
+       "P0051"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0049",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 106,
+      "total": 121.9,
+      "procedures": [
+       "P0052"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0050",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 79.5,
+      "total": 91.43,
+      "procedures": [
+       "P0053"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0051",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "P0054"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0052",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 115,
+      "total": 132.25,
+      "procedures": [
+       "P0055"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0053",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 115,
+      "total": 132.25,
+      "procedures": [
+       "P0056"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0054",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 138,
+      "total": 158.7,
+      "procedures": [
+       "P0057"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0055",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 92,
+      "total": 105.8,
+      "procedures": [
+       "P0058"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0056",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 161,
+      "total": 185.15,
+      "procedures": [
+       "P0059"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0057",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 115,
+      "total": 132.25,
+      "procedures": [
+       "P0060"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0058",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 69,
+      "total": 79.35,
+      "procedures": [
+       "P0061"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0059",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 115,
+      "total": 132.25,
+      "procedures": [
+       "P0062"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0060",
+   "result": {
+    "kind": "exception",
+    "code": "noContract"
+   }
+  },
+  {
+   "bookingId": "BK0061",
+   "result": {
+    "kind": "exception",
+    "code": "noContract"
+   }
+  },
+  {
+   "bookingId": "BK0062",
+   "result": {
+    "kind": "exception",
+    "code": "noContract"
+   }
+  },
+  {
+   "bookingId": "BK0063",
+   "result": {
+    "kind": "exception",
+    "code": "noContract"
+   }
+  },
+  {
+   "bookingId": "BK0064",
+   "result": {
+    "kind": "exception",
+    "code": "noContract"
+   }
+  },
+  {
+   "bookingId": "BK0065",
+   "result": {
+    "kind": "exception",
+    "code": "noContract"
+   }
+  },
+  {
+   "bookingId": "BK0066",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 106,
+      "total": 121.9,
+      "procedures": [
+       "P0069"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0067",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 132.5,
+      "total": 152.38,
+      "procedures": [
+       "P0070"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0068",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 106,
+      "total": 121.9,
+      "procedures": [
+       "P0071"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0069",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 253,
+      "total": 290.95,
+      "procedures": [
+       "P0072"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0070",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0062",
+      "name": "Owen Faʻaoso",
+      "contactNumber": "PT0062",
+      "contactName": "Patient PT0062",
+      "subtotal": 286,
+      "total": 328.9,
+      "procedures": [
+       "P0073"
+      ],
+      "billedTo": {
+       "name": "Owen Faʻaoso",
+       "email": "owen.faaoso62@example.net",
+       "postalAddress": {
+        "line1": "88 Papanui Road",
+        "suburb": "Riccarton",
+        "city": "Christchurch",
+        "postcode": "8041"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0071",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 230,
+      "total": 264.5,
+      "procedures": [
+       "P0074"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0072",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 161,
+      "total": 185.15,
+      "procedures": [
+       "P0075"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0073",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 336,
+      "total": 386.4,
+      "procedures": [
+       "P0076"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0074",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "insurer:I-NIB",
+      "name": "nib",
+      "contactNumber": "I-NIB",
+      "contactName": "nib",
+      "subtotal": 224,
+      "total": 257.6,
+      "procedures": [
+       "P0077"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0075",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 308,
+      "total": 354.2,
+      "procedures": [
+       "P0078"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0076",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0068",
+      "name": "Ruth Carter",
+      "contactNumber": "PT0068",
+      "contactName": "Patient PT0068",
+      "subtotal": 280,
+      "total": 322,
+      "procedures": [
+       "P0079"
+      ],
+      "billedTo": {
+       "name": "Ruth Carter",
+       "email": "ruth.carter68@example.net",
+       "postalAddress": {
+        "line1": "166 Halswell Road",
+        "suburb": "Halswell",
+        "city": "Christchurch",
+        "postcode": "8025"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0077",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "insurer:I-NIB",
+      "name": "nib",
+      "contactNumber": "I-NIB",
+      "contactName": "nib",
+      "subtotal": 264,
+      "total": 303.6,
+      "procedures": [
+       "P0080"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0078",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 161,
+      "total": 185.15,
+      "procedures": [
+       "P0081"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0079",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 207,
+      "total": 238.05,
+      "procedures": [
+       "P0082"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0080",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 230,
+      "total": 264.5,
+      "procedures": [
+       "P0083"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0081",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0073",
+      "name": "Jordan Kaur",
+      "contactNumber": "PT0073",
+      "contactName": "Patient PT0073",
+      "subtotal": 234,
+      "total": 269.1,
+      "procedures": [
+       "P0084"
+      ],
+      "billedTo": {
+       "name": "Jordan Kaur",
+       "email": "jordan.kaur73@example.net",
+       "postalAddress": {
+        "line1": "231 Nayland Street",
+        "suburb": "Merivale",
+        "city": "Christchurch",
+        "postcode": "8014"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0082",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 260,
+      "total": 299,
+      "procedures": [
+       "P0085"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0083",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 244,
+      "total": 280.6,
+      "procedures": [
+       "P0086"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0084",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 274.5,
+      "total": 315.68,
+      "procedures": [
+       "P0087"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0085",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 244,
+      "total": 280.6,
+      "procedures": [
+       "P0088"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0086",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 213.5,
+      "total": 245.53,
+      "procedures": [
+       "P0089"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0087",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 385,
+      "total": 442.75,
+      "procedures": [
+       "P0090"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0088",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 315,
+      "total": 362.25,
+      "procedures": [
+       "P0091"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0089",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 315,
+      "total": 362.25,
+      "procedures": [
+       "P0092"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0090",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 350,
+      "total": 402.5,
+      "procedures": [
+       "P0093"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0091",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 336,
+      "total": 386.4,
+      "procedures": [
+       "P0094"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0092",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 294,
+      "total": 338.1,
+      "procedures": [
+       "P0095"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0093",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 294,
+      "total": 338.1,
+      "procedures": [
+       "P0096"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0094",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 236,
+      "total": 271.4,
+      "procedures": [
+       "P0097"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0095",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 236,
+      "total": 271.4,
+      "procedures": [
+       "P0098"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0096",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 206.5,
+      "total": 237.48,
+      "procedures": [
+       "P0099"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0097",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0089",
+      "name": "Eru Mahmood",
+      "contactNumber": "PT0089",
+      "contactName": "Patient PT0089",
+      "subtotal": 390,
+      "total": 448.5,
+      "procedures": [
+       "P0100"
+      ],
+      "billedTo": {
+       "name": "Eru Mahmood",
+       "email": "eru.mahmood89@example.net",
+       "postalAddress": {
+        "line1": "199 Linwood Avenue",
+        "suburb": "Papanui",
+        "city": "Christchurch",
+        "postcode": "8053"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0098",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0090",
+      "name": "Lachlan Baker",
+      "contactNumber": "PT0090",
+      "contactName": "Patient PT0090",
+      "subtotal": 330,
+      "total": 379.5,
+      "procedures": [
+       "P0101"
+      ],
+      "billedTo": {
+       "name": "Lachlan Baker",
+       "email": "lachlan.baker90@example.net",
+       "postalAddress": {
+        "line1": "212 Clyde Road",
+        "suburb": "Cashmere",
+        "city": "Christchurch",
+        "postcode": "8022"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0099",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 207,
+      "total": 238.05,
+      "procedures": [
+       "P0102"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0100",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 322,
+      "total": 370.3,
+      "procedures": [
+       "P0103"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0101",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 138,
+      "total": 158.7,
+      "procedures": [
+       "P0104"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0102",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "insurer:I-NIB",
+      "name": "nib",
+      "contactNumber": "I-NIB",
+      "contactName": "nib",
+      "subtotal": 399,
+      "total": 458.85,
+      "procedures": [
+       "P0105"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0103",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 288,
+      "total": 331.2,
+      "procedures": [
+       "P0106"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0104",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 256,
+      "total": 294.4,
+      "procedures": [
+       "P0107"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0105",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "insurer:I-NIB",
+      "name": "nib",
+      "contactNumber": "I-NIB",
+      "contactName": "nib",
+      "subtotal": 384,
+      "total": 441.6,
+      "procedures": [
+       "P0108"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0106",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "insurer:I-NIB",
+      "name": "nib",
+      "contactNumber": "I-NIB",
+      "contactName": "nib",
+      "subtotal": 352,
+      "total": 404.8,
+      "procedures": [
+       "P0109"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0107",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 378,
+      "total": 434.7,
+      "procedures": [
+       "P0110"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0108",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 378,
+      "total": 434.7,
+      "procedures": [
+       "P0111"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0109",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "insurer:I-NIB",
+      "name": "nib",
+      "contactNumber": "I-NIB",
+      "contactName": "nib",
+      "subtotal": 462,
+      "total": 531.3,
+      "procedures": [
+       "P0112"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0110",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 212,
+      "total": 243.8,
+      "procedures": [
+       "P0113"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0111",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0103",
+      "name": "Mila McKenzie",
+      "contactNumber": "PT0103",
+      "contactName": "Patient PT0103",
+      "subtotal": 504,
+      "total": 579.6,
+      "procedures": [
+       "P0114"
+      ],
+      "billedTo": {
+       "name": "Mila McKenzie",
+       "email": "mila.mckenzie103@example.net",
+       "postalAddress": {
+        "line1": "141 Ilam Road",
+        "suburb": "Sumner",
+        "city": "Christchurch",
+        "postcode": "8081"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0112",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0104",
+      "name": "Sam McKenzie",
+      "contactNumber": "PT0104",
+      "contactName": "Patient PT0104",
+      "subtotal": 324.5,
+      "total": 373.18,
+      "procedures": [
+       "P0115"
+      ],
+      "billedTo": {
+       "name": "Sam McKenzie",
+       "email": "sam.mckenzie104@example.net",
+       "postalAddress": {
+        "line1": "154 Halswell Road",
+        "suburb": "Halswell",
+        "city": "Christchurch",
+        "postcode": "8025"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0113",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 230,
+      "total": 264.5,
+      "procedures": [
+       "P0116"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0114",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 184,
+      "total": 211.6,
+      "procedures": [
+       "P0117"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0115",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 184,
+      "total": 211.6,
+      "procedures": [
+       "P0118"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0116",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 265,
+      "total": 304.75,
+      "procedures": [
+       "P0119"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0117",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 212,
+      "total": 243.8,
+      "procedures": [
+       "P0120"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0118",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 265,
+      "total": 304.75,
+      "procedures": [
+       "P0121"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0119",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-FORTE",
+      "name": "Forte Health",
+      "contactNumber": "H-FORTE",
+      "contactName": "Forte Health",
+      "subtotal": 192,
+      "total": 220.8,
+      "procedures": [
+       "P0122"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0120",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-FORTE",
+      "name": "Forte Health",
+      "contactNumber": "H-FORTE",
+      "contactName": "Forte Health",
+      "subtotal": 128,
+      "total": 147.2,
+      "procedures": [
+       "P0123"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0121",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-FORTE",
+      "name": "Forte Health",
+      "contactNumber": "H-FORTE",
+      "contactName": "Forte Health",
+      "subtotal": 128,
+      "total": 147.2,
+      "procedures": [
+       "P0124"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0122",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-FORTE",
+      "name": "Forte Health",
+      "contactNumber": "H-FORTE",
+      "contactName": "Forte Health",
+      "subtotal": 160,
+      "total": 184,
+      "procedures": [
+       "P0125"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0123",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "insurer:I-NIB",
+      "name": "nib",
+      "contactNumber": "I-NIB",
+      "contactName": "nib",
+      "subtotal": 192,
+      "total": 220.8,
+      "procedures": [
+       "P0126"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0124",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 207,
+      "total": 238.05,
+      "procedures": [
+       "P0127"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0125",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 92,
+      "total": 105.8,
+      "procedures": [
+       "P0128"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0126",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "insurer:I-NIB",
+      "name": "nib",
+      "contactNumber": "I-NIB",
+      "contactName": "nib",
+      "subtotal": 110,
+      "total": 126.5,
+      "procedures": [
+       "P0129"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0127",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 115,
+      "total": 132.25,
+      "procedures": [
+       "P0130"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0128",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 69,
+      "total": 79.35,
+      "procedures": [
+       "P0131"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0129",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 138,
+      "total": 158.7,
+      "procedures": [
+       "P0132"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0130",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0122",
+      "name": "Jordan Mete",
+      "contactNumber": "PT0122",
+      "contactName": "Patient PT0122",
+      "subtotal": 270,
+      "total": 310.5,
+      "procedures": [
+       "P0133"
+      ],
+      "billedTo": {
+       "name": "Jordan Mete",
+       "email": "jordan.mete122@example.net",
+       "postalAddress": {
+        "line1": "148 Halswell Road",
+        "suburb": "Riccarton",
+        "city": "Christchurch",
+        "postcode": "8041"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0131",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 184,
+      "total": 211.6,
+      "procedures": [
+       "P0134"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0132",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0124",
+      "name": "Michael Ryan",
+      "contactNumber": "PT0124",
+      "contactName": "Patient PT0124",
+      "subtotal": 152.5,
+      "total": 175.38,
+      "procedures": [
+       "P0135"
+      ],
+      "billedTo": {
+       "name": "Michael Ryan",
+       "email": "michael.ryan124@example.net",
+       "postalAddress": {
+        "line1": "174 Bealey Avenue",
+        "suburb": "St Albans",
+        "city": "Christchurch",
+        "postcode": "8014"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0133",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "insurer:I-NIB",
+      "name": "nib",
+      "contactNumber": "I-NIB",
+      "contactName": "nib",
+      "subtotal": 152.5,
+      "total": 175.38,
+      "procedures": [
+       "P0136"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0134",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "insurer:I-NIB",
+      "name": "nib",
+      "contactNumber": "I-NIB",
+      "contactName": "nib",
+      "subtotal": 147.5,
+      "total": 169.63,
+      "procedures": [
+       "P0137"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0135",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 147.5,
+      "total": 169.63,
+      "procedures": [
+       "P0138"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0136",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 118,
+      "total": 135.7,
+      "procedures": [
+       "P0139"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0137",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 132.5,
+      "total": 152.38,
+      "procedures": [
+       "P0140"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0138",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "P0141"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0139",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0131",
+      "name": "Sione Collins",
+      "contactNumber": "PT0131",
+      "contactName": "Patient PT0131",
+      "subtotal": 180,
+      "total": 207,
+      "procedures": [
+       "P0142"
+      ],
+      "billedTo": {
+       "name": "Sione Collins",
+       "email": "sione.collins131@example.net",
+       "postalAddress": {
+        "line1": "25 Hills Road",
+        "suburb": "Linwood",
+        "city": "Christchurch",
+        "postcode": "8062"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0140",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 182,
+      "total": 209.3,
+      "procedures": [
+       "P0143"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0141",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "insurer:I-NIB",
+      "name": "nib",
+      "contactNumber": "I-NIB",
+      "contactName": "nib",
+      "subtotal": 175,
+      "total": 201.25,
+      "procedures": [
+       "P0144"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0142",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 175,
+      "total": 201.25,
+      "procedures": [
+       "P0145"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0143",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-FORTE",
+      "name": "Forte Health",
+      "contactNumber": "H-FORTE",
+      "contactName": "Forte Health",
+      "subtotal": 210,
+      "total": 241.5,
+      "procedures": [
+       "P0146"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0144",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 138,
+      "total": 158.7,
+      "procedures": [
+       "P0147"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0145",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0137",
+      "name": "Rangi Brown",
+      "contactNumber": "PT0137",
+      "contactName": "Patient PT0137",
+      "subtotal": 120,
+      "total": 138,
+      "procedures": [
+       "P0148"
+      ],
+      "billedTo": {
+       "name": "Rangi Brown",
+       "email": "rangi.brown137@example.net",
+       "postalAddress": {
+        "line1": "103 Harewood Road",
+        "suburb": "Papanui",
+        "city": "Christchurch",
+        "postcode": "8053"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0146",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-FORTE",
+      "name": "Forte Health",
+      "contactNumber": "H-FORTE",
+      "contactName": "Forte Health",
+      "subtotal": 150,
+      "total": 172.5,
+      "procedures": [
+       "P0149"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0147",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 118,
+      "total": 135.7,
+      "procedures": [
+       "P0150"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0148",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 147.5,
+      "total": 169.63,
+      "procedures": [
+       "P0151"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0149",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0141",
+      "name": "Chris Adams",
+      "contactNumber": "PT0141",
+      "contactName": "Patient PT0141",
+      "subtotal": 168,
+      "total": 193.2,
+      "procedures": [
+       "P0152"
+      ],
+      "billedTo": {
+       "name": "Chris Adams",
+       "email": "chris.adams141@example.net",
+       "postalAddress": {
+        "line1": "155 Barrington Street",
+        "suburb": "Burnside",
+        "city": "Christchurch",
+        "postcode": "8053"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0150",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 132,
+      "total": 151.8,
+      "procedures": [
+       "P0153"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0151",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 297,
+      "total": 341.55,
+      "procedures": [
+       "P0154"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0152",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 171,
+      "total": 196.65,
+      "procedures": [
+       "P0155"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0153",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 114,
+      "total": 131.1,
+      "procedures": [
+       "P0156"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0154",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-FORTE",
+      "name": "Forte Health",
+      "contactNumber": "H-FORTE",
+      "contactName": "Forte Health",
+      "subtotal": 168,
+      "total": 193.2,
+      "procedures": [
+       "P0157"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0155",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "insurer:I-NIB",
+      "name": "nib",
+      "contactNumber": "I-NIB",
+      "contactName": "nib",
+      "subtotal": 160,
+      "total": 184,
+      "procedures": [
+       "P0158"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0156",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 217,
+      "total": 249.55,
+      "procedures": [
+       "P0159"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0157",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 248,
+      "total": 285.2,
+      "procedures": [
+       "P0160"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0158",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "insurer:I-NIB",
+      "name": "nib",
+      "contactNumber": "I-NIB",
+      "contactName": "nib",
+      "subtotal": 265,
+      "total": 304.75,
+      "procedures": [
+       "P0161"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0159",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 118,
+      "total": 135.7,
+      "procedures": [
+       "P0162"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0162",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 93,
+      "total": 106.95,
+      "procedures": [
+       "P0165"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0163",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0129",
+      "name": "Sophie Matthews",
+      "contactNumber": "PT0129",
+      "contactName": "Patient PT0129",
+      "subtotal": 3100,
+      "total": 3565,
+      "procedures": [
+       "P0166"
+      ],
+      "billedTo": {
+       "name": "Sophie Matthews",
+       "email": "sophie.matthews129@example.net",
+       "postalAddress": {
+        "line1": "239 Strickland Street",
+        "suburb": "Burnside",
+        "city": "Christchurch",
+        "postcode": "8053"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0164",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 212,
+      "total": 243.8,
+      "procedures": [
+       "P0167"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0165",
+   "result": {
+    "kind": "invoices",
+    "invoices": []
+   }
+  },
+  {
+   "bookingId": "BK0166",
+   "result": {
+    "kind": "invoices",
+    "invoices": []
+   }
+  },
+  {
+   "bookingId": "BK0167",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0025",
+      "name": "Harriet Bishop",
+      "contactNumber": "PT0025",
+      "contactName": "Patient PT0025",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "P0170"
+      ],
+      "billedTo": {
+       "name": "Harriet Bishop",
+       "email": "harriet.bishop25@example.net",
+       "postalAddress": {
+        "line1": "87 Innes Road",
+        "suburb": "Merivale",
+        "city": "Christchurch",
+        "postcode": "8014"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0168",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0026",
+      "name": "Gavin Brown",
+      "contactNumber": "PT0026",
+      "contactName": "Patient PT0026",
+      "subtotal": 318,
+      "total": 365.7,
+      "procedures": [
+       "P0171"
+      ],
+      "billedTo": {
+       "name": "Gavin Brown",
+       "email": "gavin.brown26@example.net",
+       "postalAddress": {
+        "line1": "100 Papanui Road",
+        "suburb": "Riccarton",
+        "city": "Christchurch",
+        "postcode": "8041"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0169",
+   "result": {
+    "kind": "invoices",
+    "invoices": []
+   }
+  },
+  {
+   "bookingId": "BK0170",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0152",
+      "name": "Ella Moana",
+      "contactNumber": "PT0152",
+      "contactName": "Patient PT0152",
+      "subtotal": 236,
+      "total": 271.4,
+      "procedures": [
+       "P0173"
+      ],
+      "billedTo": {
+       "name": "Ella Moana",
+       "email": "ella.moana152@example.net",
+       "postalAddress": {
+        "line1": "58 Papanui Road",
+        "suburb": "Halswell",
+        "city": "Christchurch",
+        "postcode": "8025"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0171",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0153",
+      "name": "Kevin Doherty",
+      "contactNumber": "PT0153",
+      "contactName": "Patient PT0153",
+      "subtotal": 177,
+      "total": 203.55,
+      "procedures": [
+       "P0174"
+      ],
+      "billedTo": {
+       "name": "Kevin Doherty"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0172",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "payer:BP0003",
+      "name": "Whitcombe Family Trust",
+      "contactNumber": "BP0003",
+      "contactName": "Billable party BP0003",
+      "subtotal": 206.5,
+      "total": 237.48,
+      "procedures": [
+       "P0175"
+      ],
+      "billedTo": {
+       "name": "Whitcombe Family Trust",
+       "postalAddress": {
+        "line1": "PO Box 13245",
+        "city": "Christchurch",
+        "postcode": "8141"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0173",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "insurer:I-NIB",
+      "name": "nib",
+      "contactNumber": "I-NIB",
+      "contactName": "nib",
+      "subtotal": 236,
+      "total": 271.4,
+      "procedures": [
+       "P0176"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0174",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0156",
+      "name": "Peter Tawhiri",
+      "contactNumber": "PT0156",
+      "contactName": "Patient PT0156",
+      "subtotal": 177,
+      "total": 203.55,
+      "procedures": [
+       "P0177"
+      ],
+      "billedTo": {
+       "name": "Peter Tawhiri",
+       "email": "peter.tawhiri156@example.net",
+       "postalAddress": {
+        "line1": "110 Rossall Street",
+        "suburb": "Fendalton",
+        "city": "Christchurch",
+        "postcode": "8052"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0175",
+   "result": {
+    "kind": "exception",
+    "code": "noContract"
+   }
+  },
+  {
+   "bookingId": "BK0176",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0158",
+      "name": "Miriam Holloway",
+      "contactNumber": "PT0158",
+      "contactName": "Patient PT0158",
+      "subtotal": 3400,
+      "total": 3910,
+      "procedures": [
+       "P0179"
+      ],
+      "billedTo": {
+       "name": "Miriam Holloway",
+       "email": "miriam.holloway158@example.net",
+       "postalAddress": {
+        "line1": "136 Halswell Road",
+        "suburb": "Riccarton",
+        "city": "Christchurch",
+        "postcode": "8041"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0177",
+   "result": {
+    "kind": "exception",
+    "code": "contractIneffective"
+   }
+  },
+  {
+   "bookingId": "BK0178",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CES",
+      "name": "Christchurch Eye Surgery",
+      "contactNumber": "H-CES",
+      "contactName": "Christchurch Eye Surgery",
+      "subtotal": 206.5,
+      "total": 237.48,
+      "procedures": [
+       "P0181"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0179",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0161",
+      "name": "Owen Prendergast",
+      "contactNumber": "PT0161",
+      "contactName": "Patient PT0161",
+      "subtotal": 1200,
+      "total": 1380,
+      "procedures": [
+       "P0182"
+      ],
+      "billedTo": {
+       "name": "Owen Prendergast",
+       "email": "owen.prendergast161@example.net",
+       "postalAddress": {
+        "line1": "175 Linwood Avenue",
+        "suburb": "Papanui",
+        "city": "Christchurch",
+        "postcode": "8053"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0180",
+   "result": {
+    "kind": "exception",
+    "code": "contractIneffective"
+   }
+  },
+  {
+   "bookingId": "BK0181",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0163",
+      "name": "Rosalind Kerr",
+      "contactNumber": "PT0163",
+      "contactName": "Patient PT0163",
+      "subtotal": 3400,
+      "total": 3910,
+      "procedures": [
+       "P0184"
+      ],
+      "billedTo": {
+       "name": "Rosalind Kerr",
+       "email": "rosalind.kerr163@example.net",
+       "postalAddress": {
+        "line1": "201 Nayland Street",
+        "suburb": "Sumner",
+        "city": "Christchurch",
+        "postcode": "8081"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "BK0182",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "patient:PT0164",
+      "name": "Fiona Lattimer",
+      "contactNumber": "PT0164",
+      "contactName": "Patient PT0164",
+      "subtotal": 3100,
+      "total": 3565,
+      "procedures": [
+       "P0185"
+      ],
+      "billedTo": {
+       "name": "Fiona Lattimer",
+       "email": "fiona.lattimer164@example.net",
+       "postalAddress": {
+        "line1": "214 Colombo Street",
+        "suburb": "Halswell",
+        "city": "Christchurch",
+        "postcode": "8025"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK01",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 106,
+      "total": 121.9,
+      "procedures": [
+       "HP01"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK02",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "HP02"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK03",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "HP03"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK04",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 106,
+      "total": 121.9,
+      "procedures": [
+       "HP04"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK05",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "HP05"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK06",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 185.5,
+      "total": 213.33,
+      "procedures": [
+       "HP06"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK07",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 132.5,
+      "total": 152.38,
+      "procedures": [
+       "HP07"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK08",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 106,
+      "total": 121.9,
+      "procedures": [
+       "HP08"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK09",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 185.5,
+      "total": 213.33,
+      "procedures": [
+       "HP09"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK10",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "HP10"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK11",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "HP11"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK12",
+   "result": {
+    "kind": "invoices",
+    "invoices": []
+   }
+  },
+  {
+   "bookingId": "HBK13",
+   "result": {
+    "kind": "invoices",
+    "invoices": []
+   }
+  },
+  {
+   "bookingId": "HBK14",
+   "result": {
+    "kind": "invoices",
+    "invoices": []
+   }
+  },
+  {
+   "bookingId": "HBK15",
+   "result": {
+    "kind": "invoices",
+    "invoices": []
+   }
+  },
+  {
+   "bookingId": "HBK16",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 106,
+      "total": 121.9,
+      "procedures": [
+       "HP16"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK17",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 185.5,
+      "total": 213.33,
+      "procedures": [
+       "HP17"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK18",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "HP18"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK19",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "HP19"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK20",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "HP20"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK21",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "HP21"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK22",
+   "result": {
+    "kind": "invoices",
+    "invoices": []
+   }
+  },
+  {
+   "bookingId": "HBK23",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 106,
+      "total": 121.9,
+      "procedures": [
+       "HP23"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK24",
+   "result": {
+    "kind": "invoices",
+    "invoices": []
+   }
+  },
+  {
+   "bookingId": "HBK25",
+   "result": {
+    "kind": "invoices",
+    "invoices": []
+   }
+  },
+  {
+   "bookingId": "HBK26",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "HP26"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK27",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 185.5,
+      "total": 213.33,
+      "procedures": [
+       "HP27"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK28",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 106,
+      "total": 121.9,
+      "procedures": [
+       "HP28"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK29",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 132.5,
+      "total": 152.38,
+      "procedures": [
+       "HP29"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK30",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-CPH",
+      "name": "Christchurch Public",
+      "contactNumber": "H-CPH",
+      "contactName": "Christchurch Public",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "HP30"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK31",
+   "result": {
+    "kind": "invoices",
+    "invoices": []
+   }
+  },
+  {
+   "bookingId": "HBK32",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "HP32"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK33",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 106,
+      "total": 121.9,
+      "procedures": [
+       "HP33"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK34",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "HP34"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK35",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 106,
+      "total": 121.9,
+      "procedures": [
+       "HP35"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK36",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "HP36"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK37",
+   "result": {
+    "kind": "invoices",
+    "invoices": []
+   }
+  },
+  {
+   "bookingId": "HBK38",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "HP38"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK39",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 159,
+      "total": 182.85,
+      "procedures": [
+       "HP39"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK40",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-SX",
+      "name": "Southern Cross",
+      "contactNumber": "H-SX",
+      "contactName": "Southern Cross",
+      "subtotal": 106,
+      "total": 121.9,
+      "procedures": [
+       "HP40"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "bookingId": "HBK41",
+   "result": {
+    "kind": "invoices",
+    "invoices": []
+   }
+  },
+  {
+   "bookingId": "HBK42",
+   "result": {
+    "kind": "invoices",
+    "invoices": [
+     {
+      "ref": "hospital:H-STG",
+      "name": "St George's",
+      "contactNumber": "H-STG",
+      "contactName": "St George's",
+      "subtotal": 132.5,
+      "total": 152.38,
+      "procedures": [
+       "HP42"
+      ]
+     }
+    ]
+   }
+  }
+ ],
+ "issued": [
+  {
+   "invoiceId": "HINV01",
+   "bookingId": "HBK01",
+   "kind": "standard",
+   "total": 845,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP01"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV02",
+   "bookingId": "HBK02",
+   "kind": "standard",
+   "total": 1240,
+   "ref": "hospital:H-SX",
+   "name": "Southern Cross",
+   "contactNumber": "H-SX",
+   "contactName": "Southern Cross",
+   "addressee": "Southern Cross",
+   "procedureIds": [
+    "HP02"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV03",
+   "bookingId": "HBK03",
+   "kind": "standard",
+   "total": 520.5,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP03"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV04",
+   "bookingId": "HBK04",
+   "kind": "standard",
+   "total": 980,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP04"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV05",
+   "bookingId": "HBK05",
+   "kind": "standard",
+   "total": 1410,
+   "ref": "hospital:H-CPH",
+   "name": "Christchurch Public",
+   "contactNumber": "H-CPH",
+   "contactName": "Christchurch Public",
+   "addressee": "Christchurch Public",
+   "procedureIds": [
+    "HP05"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV06",
+   "bookingId": "HBK06",
+   "kind": "standard",
+   "total": 1930,
+   "ref": "organisation:O-COS",
+   "name": "Canterbury Orthopaedic Surgeons",
+   "contactNumber": "O-COS",
+   "contactName": "Canterbury Orthopaedic Surgeons",
+   "addressee": "Canterbury Orthopaedic Surgeons",
+   "procedureIds": [
+    "HP06"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV07",
+   "bookingId": "HBK07",
+   "kind": "standard",
+   "total": 610,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP07"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV08",
+   "bookingId": "HBK08",
+   "kind": "standard",
+   "total": 250,
+   "ref": "hospital:H-SX",
+   "name": "Southern Cross",
+   "contactNumber": "H-SX",
+   "contactName": "Southern Cross",
+   "addressee": "Southern Cross",
+   "procedureIds": [
+    "HP08"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV09",
+   "bookingId": "HBK09",
+   "kind": "standard",
+   "total": 690,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP09"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV10",
+   "bookingId": "HBK10",
+   "kind": "standard",
+   "total": 1150,
+   "ref": "hospital:H-SX",
+   "name": "Southern Cross",
+   "contactNumber": "H-SX",
+   "contactName": "Southern Cross",
+   "addressee": "Southern Cross",
+   "procedureIds": [
+    "HP10"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV11",
+   "bookingId": "HBK11",
+   "kind": "standard",
+   "total": 480,
+   "ref": "hospital:H-CPH",
+   "name": "Christchurch Public",
+   "contactNumber": "H-CPH",
+   "contactName": "Christchurch Public",
+   "addressee": "Christchurch Public",
+   "procedureIds": [
+    "HP11"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV12",
+   "bookingId": "HBK12",
+   "kind": "standard",
+   "total": 900,
+   "ref": "patient:PT0017",
+   "name": "Annette Riley",
+   "contactNumber": "PT0017",
+   "contactName": "Patient PT0017",
+   "addressee": "Annette Riley",
+   "procedureIds": [
+    "HP12"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV13",
+   "bookingId": "HBK13",
+   "kind": "standard",
+   "total": 540,
+   "ref": "payer:BP0001",
+   "name": "Hana Park",
+   "contactNumber": "BP0001",
+   "contactName": "Billable party BP0001",
+   "addressee": "Hana Park",
+   "billedTo": {
+    "name": "Hana Park",
+    "email": "hana.park@example.net"
+   },
+   "procedureIds": [
+    "HP13"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV14",
+   "bookingId": "HBK14",
+   "kind": "standard",
+   "total": 720,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP14"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV15",
+   "bookingId": "HBK15",
+   "kind": "standard",
+   "total": 455,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP15"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV16",
+   "bookingId": "HBK16",
+   "kind": "standard",
+   "total": 845,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP16"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV17",
+   "bookingId": "HBK17",
+   "kind": "standard",
+   "total": 690,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP17"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV18",
+   "bookingId": "HBK18",
+   "kind": "standard",
+   "total": 1180,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP18"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV19",
+   "bookingId": "HBK19",
+   "kind": "standard",
+   "total": 1150,
+   "ref": "hospital:H-CPH",
+   "name": "Christchurch Public",
+   "contactNumber": "H-CPH",
+   "contactName": "Christchurch Public",
+   "addressee": "Christchurch Public",
+   "procedureIds": [
+    "HP19"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV20",
+   "bookingId": "HBK20",
+   "kind": "standard",
+   "total": 610,
+   "ref": "hospital:H-CPH",
+   "name": "Christchurch Public",
+   "contactNumber": "H-CPH",
+   "contactName": "Christchurch Public",
+   "addressee": "Christchurch Public",
+   "procedureIds": [
+    "HP20"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV21",
+   "bookingId": "HBK21",
+   "kind": "standard",
+   "total": 1240,
+   "ref": "hospital:H-SX",
+   "name": "Southern Cross",
+   "contactNumber": "H-SX",
+   "contactName": "Southern Cross",
+   "addressee": "Southern Cross",
+   "procedureIds": [
+    "HP21"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV22",
+   "bookingId": "HBK22",
+   "kind": "standard",
+   "total": 680,
+   "ref": "hospital:H-SX",
+   "name": "Southern Cross",
+   "contactNumber": "H-SX",
+   "contactName": "Southern Cross",
+   "addressee": "Southern Cross",
+   "procedureIds": [
+    "HP22"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV23",
+   "bookingId": "HBK23",
+   "kind": "standard",
+   "total": 520,
+   "ref": "hospital:H-SX",
+   "name": "Southern Cross",
+   "contactNumber": "H-SX",
+   "contactName": "Southern Cross",
+   "addressee": "Southern Cross",
+   "procedureIds": [
+    "HP23"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV24",
+   "bookingId": "HBK24",
+   "kind": "standard",
+   "total": 1420,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP24"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV25",
+   "bookingId": "HBK25",
+   "kind": "standard",
+   "total": 480,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP25"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV26",
+   "bookingId": "HBK26",
+   "kind": "standard",
+   "total": 980,
+   "ref": "organisation:O-COS",
+   "name": "Canterbury Orthopaedic Surgeons",
+   "contactNumber": "O-COS",
+   "contactName": "Canterbury Orthopaedic Surgeons",
+   "addressee": "Canterbury Orthopaedic Surgeons",
+   "procedureIds": [
+    "HP26"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV27",
+   "bookingId": "HBK27",
+   "kind": "standard",
+   "total": 690,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP27"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV28",
+   "bookingId": "HBK28",
+   "kind": "standard",
+   "total": 845,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP28"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV29",
+   "bookingId": "HBK29",
+   "kind": "standard",
+   "total": 610,
+   "ref": "hospital:H-CPH",
+   "name": "Christchurch Public",
+   "contactNumber": "H-CPH",
+   "contactName": "Christchurch Public",
+   "addressee": "Christchurch Public",
+   "procedureIds": [
+    "HP29"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV30",
+   "bookingId": "HBK30",
+   "kind": "standard",
+   "total": 480,
+   "ref": "hospital:H-CPH",
+   "name": "Christchurch Public",
+   "contactNumber": "H-CPH",
+   "contactName": "Christchurch Public",
+   "addressee": "Christchurch Public",
+   "procedureIds": [
+    "HP30"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV31",
+   "bookingId": "HBK31",
+   "kind": "standard",
+   "total": 680,
+   "ref": "hospital:H-SX",
+   "name": "Southern Cross",
+   "contactNumber": "H-SX",
+   "contactName": "Southern Cross",
+   "addressee": "Southern Cross",
+   "procedureIds": [
+    "HP31"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV32",
+   "bookingId": "HBK32",
+   "kind": "standard",
+   "total": 1150,
+   "ref": "hospital:H-SX",
+   "name": "Southern Cross",
+   "contactNumber": "H-SX",
+   "contactName": "Southern Cross",
+   "addressee": "Southern Cross",
+   "procedureIds": [
+    "HP32"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV33",
+   "bookingId": "HBK33",
+   "kind": "standard",
+   "total": 520,
+   "ref": "hospital:H-SX",
+   "name": "Southern Cross",
+   "contactNumber": "H-SX",
+   "contactName": "Southern Cross",
+   "addressee": "Southern Cross",
+   "procedureIds": [
+    "HP33"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV34",
+   "bookingId": "HBK34",
+   "kind": "standard",
+   "total": 1180,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP34"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV35",
+   "bookingId": "HBK35",
+   "kind": "standard",
+   "total": 845,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP35"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV36",
+   "bookingId": "HBK36",
+   "kind": "standard",
+   "total": 1240,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP36"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV37",
+   "bookingId": "HBK37",
+   "kind": "standard",
+   "total": 680,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP37"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV38",
+   "bookingId": "HBK38",
+   "kind": "standard",
+   "total": 610,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP38"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV39",
+   "bookingId": "HBK39",
+   "kind": "standard",
+   "total": 1150,
+   "ref": "hospital:H-SX",
+   "name": "Southern Cross",
+   "contactNumber": "H-SX",
+   "contactName": "Southern Cross",
+   "addressee": "Southern Cross",
+   "procedureIds": [
+    "HP39"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV40",
+   "bookingId": "HBK40",
+   "kind": "standard",
+   "total": 520,
+   "ref": "hospital:H-SX",
+   "name": "Southern Cross",
+   "contactNumber": "H-SX",
+   "contactName": "Southern Cross",
+   "addressee": "Southern Cross",
+   "procedureIds": [
+    "HP40"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV41",
+   "bookingId": "HBK41",
+   "kind": "standard",
+   "total": 680,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP41"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "HINV42",
+   "bookingId": "HBK42",
+   "kind": "standard",
+   "total": 610,
+   "ref": "hospital:H-STG",
+   "name": "St George's",
+   "contactNumber": "H-STG",
+   "contactName": "St George's",
+   "addressee": "St George's",
+   "procedureIds": [
+    "HP42"
+   ],
+   "delivery": "email"
+  },
+  {
+   "invoiceId": "INV0001",
+   "bookingId": "BK0038",
+   "kind": "prePayment",
+   "total": 274.28,
+   "ref": "patient:PT0008",
+   "name": "Priya Nair",
+   "contactNumber": "PT0008",
+   "contactName": "Patient PT0008",
+   "addressee": "The patient",
+   "billedTo": {
+    "name": "The patient"
+   },
+   "procedureIds": [
+    "P0041"
+   ],
+   "delivery": "email"
+  }
+ ]
+}

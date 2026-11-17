@@ -10,7 +10,8 @@
  * Imported only by tests.
  */
 
-import { createAppStore, freshAppState } from '../appStore'
+import { createAppStore } from '../appStore'
+import { freshAppStateBefore22a } from './phase22aAdditions'
 import { billingContextForBooking } from '../selectors'
 import { counterpartyForProcedure, resolveContractForProcedure } from '../../domain/billing/invoiceBuild'
 import { raisePreProcedureInvoice } from '../prepaymentActions'
@@ -66,7 +67,7 @@ export function captureProcedures(state: AppState): ProcedureParityRow[] {
         contract = `exception:${resolved.code}`
       } else {
         contract = resolved.contract?.id ?? '(none)'
-        const cp = counterpartyForProcedure(resolved.contract, booking, state.masters.parties)
+        const cp = counterpartyForProcedure(resolved.contract, procedure, booking.patientId, state.masters.parties)
         billedTo = cp === undefined ? 'undefined' : `${cp.kind}:${cp.id}`
       }
     }
@@ -125,7 +126,8 @@ export function capturePrepayments(): PrepaymentParityRow[] {
 }
 
 export function captureBaseline(): Phase20Baseline {
-  return { procedures: captureProcedures(freshAppState()), prepayments: capturePrepayments() }
+  // Catch-up Phase 22a's seed additions are set aside (`phase22aAdditions.ts`).
+  return { procedures: captureProcedures(freshAppStateBefore22a()), prepayments: capturePrepayments() }
 }
 
 

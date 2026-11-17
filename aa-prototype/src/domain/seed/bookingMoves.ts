@@ -33,7 +33,6 @@ export function seedBookingMoveBookings(next: { booking: number; procedure: numb
     patientId: ACCEPTANCE_BEAT_PATIENT_ID,
     scheduledTime: '08:30',
     completed: false,
-    payer: { kind: 'patient' },
     // Christchurch Eye Surgery Lists arrive as the surgeon's PDF (the seed's source rule).
     source: 'surgeonPdf',
     lastModifiedBy: 'Kirsty W.',
@@ -42,6 +41,7 @@ export function seedBookingMoveBookings(next: { booking: number; procedure: numb
   const procedure: Procedure = {
     id: `P${String(next.procedure).padStart(4, '0')}`,
     bookingId,
+    payer: { kind: 'patient' },
     procedureText: seedText('Cataract extraction with IOL'),
     invoiceDescription: null,
     rvgGroupId: rvgGroupIdForLegacyCode('42702'),
