@@ -632,7 +632,8 @@ describe('the primary Procedure (catch-up Phase 23)', () => {
   afterEach(() => localStorage.clear())
 
   it('discards a v45 store whose Procedures carry isAdditional and reseeds exactly one primary per Booking', () => {
-    expect(PERSIST_VERSION).toBe(46)
+    // 47 since the join with 17a (one past both branches' 46).
+    expect(PERSIST_VERSION).toBe(47)
     const fresh = freshAppState()
     // The v45 shape: isAdditional on every Procedure, no isPrimary.
     const procedures = Object.fromEntries(
@@ -645,5 +646,34 @@ describe('the primary Procedure (catch-up Phase 23)', () => {
     const s = createAppStore({ persisted: true }).getState()
     expect(Object.values(s.schedule.procedures).every((p) => typeof p.isPrimary === 'boolean')).toBe(true)
     expect(Object.values(s.schedule.procedures).some((p) => 'isAdditional' in p)).toBe(false)
+  })
+})
+
+describe("surgeons at more than one room and optional room emails (catch-up Phase 17a)", () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v45 store whose surgeons hold one roomId and reseeds roomIds and the rooms without an email', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(46)
+    const fresh = freshAppState()
+    // The v45 shape: one roomId per surgeon, every room with an email and a phone string.
+    const surgeons = Object.fromEntries(
+      Object.entries(fresh.masters.surgeons).map(([id, s]) => {
+        const { roomIds, ...rest } = s
+        return [id, { ...rest, roomId: roomIds[0] }]
+      }),
+    )
+    const surgeonRooms = Object.fromEntries(
+      Object.entries(fresh.masters.surgeonRooms).map(([id, r]) => [id, { id, name: r.name, contactEmail: r.contactEmail ?? 'reception@placeholder.example', phone: r.phone ?? '' }]),
+    )
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters: { ...fresh.masters, surgeons, surgeonRooms } }, version: 45 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.values(s.masters.surgeons).every((x) => Array.isArray(x.roomIds) && x.roomIds.length > 0)).toBe(true)
+    expect(Object.values(s.masters.surgeons).some((x) => 'roomId' in x)).toBe(false)
+    expect(s.masters.surgeonRooms['RM-GENERALSUR']?.contactEmail).toBeUndefined()
+    expect(s.masters.surgeons['S-WINSLOW']?.roomIds).toEqual(['RM-RICHMONDFE', 'RM-LINWOODWOM'])
   })
 })

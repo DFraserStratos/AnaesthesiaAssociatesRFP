@@ -138,7 +138,7 @@ export const SEED = 20260721
 export interface SeedMasters {
   anaesthetists: Record<string, Anaesthetist>
   surgeons: Record<string, Surgeon>
-  /** Surgeons' rooms (catch-up Phase 17, US-13.6.1); members derived from `Surgeon.roomId`. */
+  /** Surgeons' rooms (catch-up Phase 17, US-13.6.1); members derived from `Surgeon.roomIds`. */
   surgeonRooms: Record<string, SurgeonRoom>
   /** Surgeon groups (catch-up Phase 17, US-13.4.1), beside `organisations`. */
   surgeonGroups: Record<string, SurgeonGroup>

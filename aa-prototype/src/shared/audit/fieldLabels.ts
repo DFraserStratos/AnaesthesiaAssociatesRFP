@@ -195,6 +195,11 @@ export const FIELD_LABELS: Record<string, string> = {
   fundingTag: 'Funding tag',
   funder: 'Funder',
   roomId: "Surgeons' room",
+  // Catch-up Phase 17a: a surgeon's rooms by name, in order (the main room first), and a room's contacts.
+  rooms: 'Rooms',
+  contact: 'Contact',
+  for: 'For',
+  role: 'Role',
   medicalRegistrationNumber: 'NZ medical registration number',
   memberSurgeonIds: 'Members',
 

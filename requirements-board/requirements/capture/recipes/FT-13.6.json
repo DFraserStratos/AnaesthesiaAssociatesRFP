@@ -1,0 +1,30 @@
+{
+  "id": "FT-13.6",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "surgeon-profile",
+      "app": "admin",
+      "caption": "Each surgeon belongs to one or more rooms, holds one or more specialties and has a profile page",
+      "start": "/admin/masters/surgeons/S-WAINWRIGHT",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=surgeon-room-card][data-room=RM-HILLSBOROU]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=surgeon-specialties]",
+            "[data-shot=surgeon-room-card][data-room=RM-UPPERGIPAR]",
+            "[data-shot=surgeon-room-card][data-room=RM-HILLSBOROU]"
+          ]
+        }
+      ]
+    }
+  ]
+}

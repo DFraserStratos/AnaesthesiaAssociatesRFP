@@ -89,6 +89,8 @@ view respectively.
 | Recurring bookings | `/admin/masters?view=recurringBookings` |
 | Hospitals & holidays | `/admin/masters?view=hospitals` (List or Calendar) |
 | Surgeon profile | `/admin/masters/surgeons/<surgeonId>` (Ms A. Reid: `S-REID`) |
+| Surgeons' rooms | `/admin/masters?view=surgeonRooms` |
+| Surgeon with a PA | `/admin/masters/surgeons/S-DALGETY` (Dr H. Dalgety, Avonhead ENT: Bev, PA) |
 | Anaesthetist record | `/admin/masters/anaesthetists/<anaesthetistId>` (Dr Priya Sharma: `41267`) |
 | Audit | `/admin/audit` |
 

@@ -352,8 +352,14 @@ export interface Surgeon {
    * none). Shown everywhere through `surgeonSpecialtyLabel`.
    */
   specialtyIds: SpecialtyId[]
-  /** The surgeon's room (US-13.6.1: one room per surgeon). The room's surgeons are derived from this field, never stored on the room. */
-  roomId: SurgeonRoomId
+  /**
+   * The surgeon's rooms (US-13.6.1, US-13.6.2; OQ-128 answered, D75; catch-up
+   * Phase 17a): one or more, no duplicates, in order, **the first the main
+   * room**. A room's surgeons are derived from this field, never stored on the
+   * room. Read only through `roomsForSurgeon`, `mainRoomOf` and
+   * `surgeonsInRoom` (`domain/surgeons.ts`).
+   */
+  roomIds: SurgeonRoomId[]
   /**
    * The HPI CPN: the Health Provider Index Common Person Number, the
    * surgeon's unique index (OQ-52), unique across every practitioner
@@ -369,8 +375,34 @@ export interface Surgeon {
 export interface SurgeonRoom {
   id: SurgeonRoomId
   name: string
-  contactEmail: string
-  phone: string
+  /**
+   * The room's shared inbox (catch-up Phase 17a, DM-60): optional, absent when
+   * the practice gives none (never `''`). Resolved for the office's emails only
+   * through `domain/roomContacts.ts`.
+   */
+  contactEmail?: string
+  /** Optional, absent when the practice gives none (never `''`). */
+  phone?: string
+  /** Practice manager and PA contacts (US-13.6.5; OQ-127 default, D74, provisional). Absent or empty when none. */
+  contacts?: RoomContact[]
+}
+
+/** A room contact's role (US-13.6.5). Labels in `ROOM_CONTACT_ROLE_LABELS`. */
+export type RoomContactRole = 'PRACTICE_MANAGER' | 'PA'
+
+/**
+ * A practice manager or PA (US-13.6.5; catch-up Phase 17a). Held on the room
+ * (OQ-127 part 1's default, D74, provisional); `forSurgeonId`, when set, names
+ * one surgeon whose `roomIds` include this room, and is the only owner field,
+ * so moving contacts to the surgeon later is a small change. Never the To of
+ * an office email. No phone.
+ */
+export interface RoomContact {
+  id: string
+  name: string
+  email: string
+  role: RoomContactRole
+  forSurgeonId?: SurgeonId
 }
 
 /** A named group of surgeons (US-13.4.1), beside `organisations`; Phase 18's holders may link to it. */

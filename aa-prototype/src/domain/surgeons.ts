@@ -10,7 +10,7 @@
  * Phase 40a's.
  */
 
-import type { Anaesthetist, Surgeon, SurgeonGroup, SurgeonId, SurgeonRoomId } from './types'
+import type { Anaesthetist, Surgeon, SurgeonGroup, SurgeonId, SurgeonRoom, SurgeonRoomId } from './types'
 
 /** Surname order for people named with a title and initials ("Ms A. Reid" sorts as "reid"). */
 export function compareBySurname(a: { name: string }, b: { name: string }): number {
@@ -21,11 +21,38 @@ export function compareBySurname(a: { name: string }, b: { name: string }): numb
   return key(a.name).localeCompare(key(b.name)) || a.name.localeCompare(b.name)
 }
 
-/** The surgeons of a room, derived from `Surgeon.roomId` (the link's one source of truth), by surname. */
+/**
+ * The surgeons of a room, derived from `Surgeon.roomIds` (the link's one source
+ * of truth), by surname. A surgeon at two rooms appears under both.
+ */
 export function surgeonsInRoom(surgeons: Readonly<Record<string, Surgeon>>, roomId: SurgeonRoomId): Surgeon[] {
   return Object.values(surgeons)
-    .filter((s) => s.roomId === roomId)
+    .filter((s) => s.roomIds.includes(roomId))
     .sort(compareBySurname)
+}
+
+/**
+ * A surgeon's rooms in `roomIds` order, the main room first (catch-up Phase
+ * 17a; OQ-128, D75). An unknown surgeon gives `[]`; an unknown room id is
+ * skipped. With `mainRoomOf` and `surgeonsInRoom`, the one way screens and
+ * helpers read `Surgeon.roomIds` (the surgeon actions and the edit sheet's form
+ * state write it; `roomContactsGuard.test.ts` keeps it so).
+ */
+export function roomsForSurgeon(
+  masters: { surgeons: Readonly<Record<string, Surgeon>>; surgeonRooms: Readonly<Record<string, SurgeonRoom>> },
+  surgeonId: SurgeonId,
+): SurgeonRoom[] {
+  const surgeon = masters.surgeons[surgeonId]
+  if (surgeon === undefined) return []
+  return surgeon.roomIds.map((id) => masters.surgeonRooms[id]).filter((r): r is SurgeonRoom => r !== undefined)
+}
+
+/** A surgeon's main room: the first of their rooms that exists, or `undefined`. */
+export function mainRoomOf(
+  masters: { surgeons: Readonly<Record<string, Surgeon>>; surgeonRooms: Readonly<Record<string, SurgeonRoom>> },
+  surgeonId: SurgeonId,
+): SurgeonRoom | undefined {
+  return roomsForSurgeon(masters, surgeonId)[0]
 }
 
 /** The groups a surgeon belongs to, by name. */

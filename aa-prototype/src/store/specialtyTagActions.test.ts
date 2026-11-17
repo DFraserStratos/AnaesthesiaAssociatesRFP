@@ -66,7 +66,7 @@ describe('specialties (US-13.4.4)', () => {
 })
 
 describe("a surgeon's specialties (US-13.6.6)", () => {
-  const KERR = { name: 'Ms R. Kerr', specialtyIds: [SPC.orthopaedics], roomId: ROOM.riccarton, hpiId: '50KERR' }
+  const KERR = { name: 'Ms R. Kerr', specialtyIds: [SPC.orthopaedics], roomIds: [ROOM.riccarton], hpiId: '50KERR' }
 
   it('refuses a save with none or an unknown one, in the store', () => {
     const api = createAppStore()

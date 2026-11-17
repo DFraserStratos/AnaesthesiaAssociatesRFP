@@ -319,7 +319,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/billing/aa-fees/settings` | AA fee settings: fixed items, the charge per BCTI and the worked example (`aa-fee-example`). |
 | `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. |
 | `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons`, `surgeonRooms`, `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifiers` (catch-up Phase 19b, "Modifiers"; the old `modifierCodes` value opens it), `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). |
-| `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip, Identifiers, Surgeons' room and Groups cards, Pairing preferences. "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. |
+| `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip, Identifiers, Surgeons' room and Groups cards, Pairing preferences. "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. Catch-up Phase 17a: Specialties, Identifiers and Groups in the first row, then one row per room (main room first), its Surgeons' room card beside a "Practice manager and PAs" card, then Pairing preferences. |
 | `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Details, Pairing preferences. Office only. |
 | `/admin/audit` | Audit viewer. |
 
@@ -430,6 +430,26 @@ badge carries `data-shot=nav-badge-<section>`.
   one `<PREFIX>-FIX` per Special holder (`STG-FIX`, `SX-FIX`, `FORTE-FIX`, `CES-FIX`, `CPH-FIX`,
   `NIB-FIX`, `COS-FIX`, `ARIA-FIX`, `UNI-FIX`). Search "Fixed price" lists them. Tagging `CES-001`
   SXAP and saving makes `CES-SXAP-FIX` at once.
+
+**Surgeons' rooms, surgeons at two rooms, practice manager and PA contacts** (catch-up Phase 17a; Admin, Master data)
+
+- Rooms with no email (the row's email cell and the profile's room card read "No email held"; shoot
+  `[data-shot=masters-surgeon-rooms] tr[data-room=RM-GENERALSUR]`): `RM-GENERALSUR` General Surgery
+  Partners (Mr B. Yeoman `S-YEOMAN`), `RM-BURNSIDEEN` Burnside ENT Surgeons, `RM-EYEPARTNER` Eye
+  Partners, `RM-BRYNDWRNEU` Bryndwr Neurosurgery Specialists, `RM-RICHMONDFE`, `RM-IMOGENVAUG` and
+  12 more. `RM-ELODIEBRAM` and `RM-WIGRAMORTH` hold no phone either. The five cast rooms keep their emails.
+- Two-room surgeons (main room first): `S-WAINWRIGHT` Mr N. Wainwright and `S-MORLAND` Mr K. Morland
+  (`RM-UPPERGIPAR` Upper GI Partners, then `RM-HILLSBOROU` Hillsborough Colorectal Specialists),
+  `S-WINSLOW` Dr J. Winslow (`RM-RICHMONDFE`, then `RM-LINWOODWOM`), `S-VAUGHAN` Dr I. Vaughan
+  (`RM-IMOGENVAUG`, then `RM-EDGEWAREOR`). Use `S-WAINWRIGHT` for a two-rooms shot.
+- Contacts (rows `li[data-contact=RC-nnn]`; runtime ids `RCN001`): Avonhead ENT `RM-AVONHEADEN` Bev,
+  PA for Dr H. Dalgety (`/admin/masters/surgeons/S-DALGETY`); Burnside ENT `RM-BURNSIDEEN` Maree (for
+  Mr I. Forsythe `S-FORSYTHE`), Dianne (for `S-MALLORY`), Nicola Holloway (whole room), Leanne (two
+  rows, for `S-CALDER` and `S-WOODVILLE`), so Forsythe's profile shows Maree and Nicola Holloway;
+  Redwood Eye Group `RM-REDWOODEYE` Jodie Yamada (for `S-VASQUEZ`); Bryndwr Neurosurgery
+  `RM-BRYNDWRNEU` Wendy (for `S-MATHIESON`); General Surgery Partners `RM-GENERALSUR` Rosalind
+  Pemberton, Practice manager, whole room (invented). The rooms view's Contacts column reads "5
+  contacts" on Burnside ENT.
 
 
 **Sessions and Lists** (catch-up Phase 28)
@@ -783,6 +803,23 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   `[data-shot=surgeon-edit-sheet]` with `[data-shot=surgeon-specialties-field]` (chips named
   "Remove <specialty>", and a select labelled "Specialties", value an id such as `SPC-PLASTIC`).
   Removing every chip and saving shows "Choose at least one specialty." as the sheet's `role=alert`.
+- **Surgeon sheet, rooms** (catch-up Phase 17a): the same sheet holds `[data-shot=surgeon-rooms-field]`
+  ("Surgeons' rooms", below the specialties): a chip per room in order, the first with a "Main room" pill
+  (`[data-main-chip]`), each other with a "Make main" action named "Make main: <room name>", chips named
+  "Remove <room name>", and a select ("Add another room"). Open it on `S-WAINWRIGHT` for two chips.
+- **Room sheet** (catch-up Phase 17a): "Edit <room name>" on the rooms view opens
+  `[data-shot=surgeon-room-sheet]` with "Contact email (optional)" (hint "Leave blank where the practice
+  gives no shared inbox") and "Phone (optional)"; reach a field as
+  `[data-shot=surgeon-room-sheet] label:has(input[type=email])` (or `type=tel`). Editing an existing room
+  adds `[data-shot=room-sheet-contacts]` ("Practice manager and PAs", its rows and Add contact; the
+  contact form swaps in place inside the sheet, no second dialog).
+- **Contacts on a surgeon profile** (catch-up Phase 17a): each `[data-shot=surgeon-contacts]` card's
+  "Add contact" (`[data-shot=room-contact-add]`, named "Add contact to <room name>") opens
+  `[data-shot=room-contact-sheet]` in a `[role=dialog]`: Name, Email, Role (segmented Practice manager,
+  PA), For (the whole room or one of the room's surgeons, defaulting to the profile's surgeon), then
+  "Add contact". A row's Edit (named "Edit <contact name>") opens the same sheet as "Edit contact";
+  its Remove (named "Remove <contact name>") shows the in-card confirm `[data-shot=room-contact-remove]`
+  ("Remove contact", "Keep it"). On a two-room surgeon, scope by `[data-room=<roomId>]`.
 
 - **Change status** (Admin Day, catch-up Phase 32b): open a session, `[data-shot="drawer-change-status"]`,
   pick `[data-shot="office-status-choices"] [data-status-choice="unavailable"]`; on a session holding a
@@ -1310,6 +1347,15 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 - Pages: `surgeon-profile`, `surgeon-hpi-chip`, `surgeon-identifiers`, `surgeon-room-card`,
   `surgeon-groups`; `anaesthetist-record`, `anaesthetist-hpi-chip`, `anaesthetist-details`,
   `tier-card`.
+- Rooms and contacts (catch-up Phase 17a): `surgeon-room-card` is now one per room, each with
+  `data-room=<roomId>`, the main room first (with a neutral "Main room" pill when there are several), so
+  pick one as `[data-shot=surgeon-room-card][data-room=RM-HILLSBOROU]`; beside each,
+  `surgeon-contacts` ("Practice manager and PAs", also with `data-room`; the first carries the one
+  provisional mist line), rows `li[data-contact=<id>]`; `room-contact-add`, `room-contact-sheet`,
+  `room-contact-remove` (the in-card confirm); on the surgeon sheet `surgeon-rooms-field`; on the room
+  sheet `room-sheet-contacts`. Surgeons table: the Rooms cell is `td[data-rooms=<surgeonId>]` (a room
+  per line, main first). Rooms table: the email cell `td[data-room-email]`, the Contacts cell
+  `td[data-room-contacts-count=<n>]`.
 - Pairing section: `pairing-section`, groups `[data-pairing-group=NOT_PREFERRED|PREFERRED]`, rows
   `[data-pairing=<entryId>]`, `pairing-ended` (a `<details>`: click `[data-shot=pairing-ended] >
   summary` to open), `pairing-add-sheet`, `pairing-counterpart` (the select; a taken counterpart's

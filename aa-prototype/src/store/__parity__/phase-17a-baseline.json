@@ -1,0 +1,662 @@
+{
+ "roomCount": 45,
+ "surgeonCount": 141,
+ "mainRoom": {
+  "S-HALE": "RM-RICC",
+  "S-PATEL": "RM-AVON",
+  "S-WHITFORD": "RM-MERI",
+  "S-OKAFOR": "RM-AVON",
+  "S-LIM": "RM-FEND",
+  "S-DOYLE": "RM-AVON",
+  "S-TAN": "RM-PAPA",
+  "S-REID": "RM-MERI",
+  "S-NAND": "RM-FEND",
+  "S-CAMERON": "RM-PAPA",
+  "S-DALGETY": "RM-AVONHEADEN",
+  "S-GARSIDE": "RM-AVONHEADEN",
+  "S-HARGREAVE": "RM-AVONHEADEN",
+  "S-WHAANGA": "RM-AVONHEADEN",
+  "S-JARDINE": "RM-AVONHEADEN",
+  "S-FORSYTHE": "RM-BURNSIDEEN",
+  "S-CALDER": "RM-BURNSIDEEN",
+  "S-ACHTERBERG": "RM-BURNSIDEEN",
+  "S-MALLORY": "RM-BURNSIDEEN",
+  "S-PAEWAI": "RM-BURNSIDEEN",
+  "S-WOODVILLE": "RM-BURNSIDEEN",
+  "S-ELLERY": "RM-BURNSIDEEN",
+  "S-TRELAWNEY": "RM-BURNSIDEEN",
+  "S-IYER": "RM-BURNSIDEEN",
+  "S-PENROSE": "RM-LINWOODWOM",
+  "S-WINSLOW": "RM-RICHMONDFE",
+  "S-KEREAMA": "RM-LINWOODWOM",
+  "S-OSEI": "RM-LINWOODWOM",
+  "S-PEMBERTON": "RM-LINWOODWOM",
+  "S-TREMAINE": "RM-LINWOODWOM",
+  "S-QUIGLEY": "RM-GYNAECOLOG",
+  "S-CHEUNG": "RM-GYNAECOLOG",
+  "S-KEATING": "RM-GYNAECOLOG",
+  "S-LOWRY": "RM-GYNAECOLOG",
+  "S-EMBLING": "RM-GYNAECOLOG",
+  "S-BEAUMONT": "RM-GYNAECOLOG",
+  "S-COLVILLE": "RM-GYNAECOLOG",
+  "S-ORMSBY": "RM-GYNAECOLOG",
+  "S-LACHLAN": "RM-GYNAECOLOG",
+  "S-WARBURTON": "RM-GYNAECOLOG",
+  "S-LINDQVIST": "RM-GYNAECOLOG",
+  "S-CARMODY": "RM-RICHMONDFE",
+  "S-JESSOP": "RM-RICHMONDFE",
+  "S-HUXLEY": "RM-RICHMONDFE",
+  "S-BANCROFT": "RM-RICHMONDFE",
+  "S-BRAMLEY": "RM-ELODIEBRAM",
+  "S-YEOMAN": "RM-GENERALSUR",
+  "S-CHATTERJEE": "RM-GENERALSUR",
+  "S-STANHOPE": "RM-GENERALSUR",
+  "S-SETON": "RM-HILLSBOROU",
+  "S-DENHOLM": "RM-HILLSBOROU",
+  "S-NAKAMURA": "RM-HILLSBOROU",
+  "S-XU": "RM-HILLSBOROU",
+  "S-FITZGERALD": "RM-HILLSBOROU",
+  "S-WAINWRIGHT": "RM-UPPERGIPAR",
+  "S-MORLAND": "RM-UPPERGIPAR",
+  "S-RAHMAN": "RM-HILLSBOROU",
+  "S-HAWTHORNE": "RM-HILLSBOROU",
+  "S-DRAYCOTT": "RM-HILLSBOROU",
+  "S-GRIEVE": "RM-HILLSBOROU",
+  "S-RUTHERFORD": "RM-HILLSBOROU",
+  "S-WHITCOMBE": "RM-HILLSBOROU",
+  "S-UPTON": "RM-MAIREHAUCO",
+  "S-LOCKHART": "RM-MAIREHAUCO",
+  "S-AINSWORTH": "RM-MAIREHAUCO",
+  "S-DASGUPTA": "RM-GENERALSURX",
+  "S-JUAREZ": "RM-GENERALSURX",
+  "S-MACALISTER": "RM-GENERALSURX",
+  "S-DACRE": "RM-GENERALSURX",
+  "S-RIDLEY": "RM-GENERALSURX",
+  "S-THACKERAY": "RM-GENERALSURX",
+  "S-CLEMENT": "RM-REDWOODEYE",
+  "S-MAITLAND": "RM-REDWOODEYE",
+  "S-TALBOT": "RM-REDWOODEYE",
+  "S-RATHBONE": "RM-REDWOODEYE",
+  "S-KAVANAGH": "RM-REDWOODEYE",
+  "S-SALTMARSH": "RM-REDWOODEYE",
+  "S-RAJAN": "RM-REDWOODEYE",
+  "S-MARWICK": "RM-REDWOODEYE",
+  "S-RENWICK": "RM-REDWOODEYE",
+  "S-NORTHCOTE": "RM-REDWOODEYE",
+  "S-HENDRY": "RM-REDWOODEYE",
+  "S-SHACKLETON": "RM-REDWOODEYE",
+  "S-VASQUEZ": "RM-REDWOODEYE",
+  "S-HARTIGAN": "RM-BECKENHAME",
+  "S-WYNDHAM": "RM-BECKENHAME",
+  "S-ERIKSEN": "RM-EYEPARTNER",
+  "S-DUNMORE": "RM-MATTHIASDU",
+  "S-PICKERING": "RM-OTTOPICKER",
+  "S-OGILVIE": "RM-ALISTAIROG",
+  "S-KINLOCH": "RM-RAFAELKINL",
+  "S-BARCLAY": "RM-ISLABARCLA",
+  "S-FONOTI": "RM-FREYAFONOT",
+  "S-FENWICK": "RM-OTTILIEFEN",
+  "S-EASTWOOD": "RM-ADDINGTONO",
+  "S-VAUGHAN": "RM-IMOGENVAUG",
+  "S-LARKIN": "RM-WIGRAMORTH",
+  "S-SELWYN": "RM-WIGRAMORTH",
+  "S-TAVENER": "RM-HOONHAYORT",
+  "S-KINGSLEY": "RM-SOMERFIELD",
+  "S-FARQUHAR": "RM-SOMERFIELD",
+  "S-SINCLAIR": "RM-SOMERFIELD",
+  "S-BELLAMY": "RM-SOMERFIELD",
+  "S-MARCHETTI": "RM-EDGEWAREOR",
+  "S-SUTHERLAND": "RM-EDGEWAREOR",
+  "S-MERRIMAN": "RM-EDGEWAREOR",
+  "S-SOTO": "RM-SASKIASOTO",
+  "S-UNDERHILL": "RM-HAREWOODOR",
+  "S-MULGREW": "RM-HAREWOODOR",
+  "S-WOLFENDEN": "RM-MIHAKAWOLF",
+  "S-IREDALE": "RM-TOBIASIRED",
+  "S-WILBERFORCE": "RM-PLASTICSUR",
+  "S-LECKIE": "RM-ORSONLECKI",
+  "S-GILLESPIE": "RM-HEATHCOTEP",
+  "S-CORRIGAN": "RM-CORMACCORR",
+  "S-NAKASHIMA": "RM-PLASTICSUR",
+  "S-ROCHFORD": "RM-PLASTICSUR",
+  "S-ALDERTON": "RM-PLASTICSUR",
+  "S-CROWTHER": "RM-PLASTICSUR",
+  "S-DARNELL": "RM-UROLOGYASS",
+  "S-LATTIMORE": "RM-UROLOGYASS",
+  "S-VENNING": "RM-UROLOGYASS",
+  "S-TIERNEY": "RM-UROLOGYASS",
+  "S-MAHUIKA": "RM-UROLOGYASS",
+  "S-GORMAN": "RM-UROLOGYASS",
+  "S-GALLOWAY": "RM-UROLOGYASS",
+  "S-SANDFORD": "RM-UROLOGYASS",
+  "S-NESBITT": "RM-UROLOGYASS",
+  "S-LANGFORD": "RM-YALDHURSTV",
+  "S-ROSCOE": "RM-YALDHURSTV",
+  "S-THORNBURY": "RM-YALDHURSTV",
+  "S-TUILAGI": "RM-SUMNERNEUR",
+  "S-MATHIESON": "RM-BRYNDWRNEU",
+  "S-ABERNETHY": "RM-BRYNDWRNEU",
+  "S-BHATNAGAR": "RM-ORTHOPAEDI",
+  "S-GOODWIN": "RM-ORTHOPAEDI",
+  "S-DELACROIX": "RM-ORTHOPAEDI",
+  "S-BRENNAN": "RM-ORTHOPAEDI",
+  "S-PRENDERGAST": "RM-ORTHOPAEDI",
+  "S-MOFFAT": "RM-ORTHOPAEDI",
+  "S-ZELINSKI": "RM-ORTHOPAEDI"
+ },
+ "specialties": {
+  "S-HALE": [
+   "SPC-ORTHO"
+  ],
+  "S-PATEL": [
+   "SPC-GENSURG"
+  ],
+  "S-WHITFORD": [
+   "SPC-OPHTH"
+  ],
+  "S-OKAFOR": [
+   "SPC-GENSURG"
+  ],
+  "S-LIM": [
+   "SPC-PLASTIC"
+  ],
+  "S-DOYLE": [
+   "SPC-GENSURG"
+  ],
+  "S-TAN": [
+   "SPC-UROLOGY"
+  ],
+  "S-REID": [
+   "SPC-OPHTH"
+  ],
+  "S-NAND": [
+   "SPC-ENT"
+  ],
+  "S-CAMERON": [
+   "SPC-GYNAE"
+  ],
+  "S-DALGETY": [
+   "SPC-ENT"
+  ],
+  "S-GARSIDE": [
+   "SPC-ENT"
+  ],
+  "S-HARGREAVE": [
+   "SPC-ENT"
+  ],
+  "S-WHAANGA": [
+   "SPC-ENT"
+  ],
+  "S-JARDINE": [
+   "SPC-ENT"
+  ],
+  "S-FORSYTHE": [
+   "SPC-ENT"
+  ],
+  "S-CALDER": [
+   "SPC-ENT"
+  ],
+  "S-ACHTERBERG": [
+   "SPC-ENT"
+  ],
+  "S-MALLORY": [
+   "SPC-ENT"
+  ],
+  "S-PAEWAI": [
+   "SPC-ENT"
+  ],
+  "S-WOODVILLE": [
+   "SPC-ENT"
+  ],
+  "S-ELLERY": [
+   "SPC-ENT"
+  ],
+  "S-TRELAWNEY": [
+   "SPC-ENT"
+  ],
+  "S-IYER": [
+   "SPC-ENT"
+  ],
+  "S-PENROSE": [
+   "SPC-GYNAE"
+  ],
+  "S-WINSLOW": [
+   "SPC-GYNAE"
+  ],
+  "S-KEREAMA": [
+   "SPC-GYNAE"
+  ],
+  "S-OSEI": [
+   "SPC-GYNAE"
+  ],
+  "S-PEMBERTON": [
+   "SPC-GYNAE"
+  ],
+  "S-TREMAINE": [
+   "SPC-GYNAE"
+  ],
+  "S-QUIGLEY": [
+   "SPC-GYNAE"
+  ],
+  "S-CHEUNG": [
+   "SPC-GYNAE"
+  ],
+  "S-KEATING": [
+   "SPC-GYNAE"
+  ],
+  "S-LOWRY": [
+   "SPC-GYNAE"
+  ],
+  "S-EMBLING": [
+   "SPC-GYNAE"
+  ],
+  "S-BEAUMONT": [
+   "SPC-GYNAE"
+  ],
+  "S-COLVILLE": [
+   "SPC-GYNAE"
+  ],
+  "S-ORMSBY": [
+   "SPC-GYNAE"
+  ],
+  "S-LACHLAN": [
+   "SPC-GYNAE"
+  ],
+  "S-WARBURTON": [
+   "SPC-GYNAE"
+  ],
+  "S-LINDQVIST": [
+   "SPC-GENSURG"
+  ],
+  "S-CARMODY": [
+   "SPC-GYNAE"
+  ],
+  "S-JESSOP": [
+   "SPC-GYNAE"
+  ],
+  "S-HUXLEY": [
+   "SPC-GYNAE"
+  ],
+  "S-BANCROFT": [
+   "SPC-GYNAE"
+  ],
+  "S-BRAMLEY": [
+   "SPC-GYNAE"
+  ],
+  "S-YEOMAN": [
+   "SPC-GENSURG"
+  ],
+  "S-CHATTERJEE": [
+   "SPC-GENSURG"
+  ],
+  "S-STANHOPE": [
+   "SPC-GENSURG"
+  ],
+  "S-SETON": [
+   "SPC-GENSURG"
+  ],
+  "S-DENHOLM": [
+   "SPC-GENSURG"
+  ],
+  "S-NAKAMURA": [
+   "SPC-GENSURG"
+  ],
+  "S-XU": [
+   "SPC-GENSURG"
+  ],
+  "S-FITZGERALD": [
+   "SPC-GENSURG"
+  ],
+  "S-WAINWRIGHT": [
+   "SPC-GENSURG"
+  ],
+  "S-MORLAND": [
+   "SPC-GENSURG"
+  ],
+  "S-RAHMAN": [
+   "SPC-GENSURG"
+  ],
+  "S-HAWTHORNE": [
+   "SPC-GENSURG"
+  ],
+  "S-DRAYCOTT": [
+   "SPC-GENSURG"
+  ],
+  "S-GRIEVE": [
+   "SPC-GENSURG"
+  ],
+  "S-RUTHERFORD": [
+   "SPC-GENSURG"
+  ],
+  "S-WHITCOMBE": [
+   "SPC-GENSURG"
+  ],
+  "S-UPTON": [
+   "SPC-GENSURG"
+  ],
+  "S-LOCKHART": [
+   "SPC-GENSURG"
+  ],
+  "S-AINSWORTH": [
+   "SPC-GENSURG"
+  ],
+  "S-DASGUPTA": [
+   "SPC-GENSURG"
+  ],
+  "S-JUAREZ": [
+   "SPC-GENSURG"
+  ],
+  "S-MACALISTER": [
+   "SPC-GENSURG"
+  ],
+  "S-DACRE": [
+   "SPC-GENSURG"
+  ],
+  "S-RIDLEY": [
+   "SPC-GENSURG"
+  ],
+  "S-THACKERAY": [
+   "SPC-GENSURG"
+  ],
+  "S-CLEMENT": [
+   "SPC-OPHTH"
+  ],
+  "S-MAITLAND": [
+   "SPC-OPHTH"
+  ],
+  "S-TALBOT": [
+   "SPC-OPHTH"
+  ],
+  "S-RATHBONE": [
+   "SPC-OPHTH"
+  ],
+  "S-KAVANAGH": [
+   "SPC-OPHTH"
+  ],
+  "S-SALTMARSH": [
+   "SPC-OPHTH"
+  ],
+  "S-RAJAN": [
+   "SPC-OPHTH"
+  ],
+  "S-MARWICK": [
+   "SPC-OPHTH"
+  ],
+  "S-RENWICK": [
+   "SPC-OPHTH"
+  ],
+  "S-NORTHCOTE": [
+   "SPC-OPHTH"
+  ],
+  "S-HENDRY": [
+   "SPC-OPHTH"
+  ],
+  "S-SHACKLETON": [
+   "SPC-OPHTH"
+  ],
+  "S-VASQUEZ": [
+   "SPC-OPHTH"
+  ],
+  "S-HARTIGAN": [
+   "SPC-OPHTH"
+  ],
+  "S-WYNDHAM": [
+   "SPC-OPHTH"
+  ],
+  "S-ERIKSEN": [
+   "SPC-OPHTH"
+  ],
+  "S-DUNMORE": [
+   "SPC-OPHTH"
+  ],
+  "S-PICKERING": [
+   "SPC-OPHTH"
+  ],
+  "S-OGILVIE": [
+   "SPC-OMFS"
+  ],
+  "S-KINLOCH": [
+   "SPC-OMFS"
+  ],
+  "S-BARCLAY": [
+   "SPC-OMFS"
+  ],
+  "S-FONOTI": [
+   "SPC-OMFS"
+  ],
+  "S-FENWICK": [
+   "SPC-OMFS"
+  ],
+  "S-EASTWOOD": [
+   "SPC-ORTHO"
+  ],
+  "S-VAUGHAN": [
+   "SPC-ORTHO"
+  ],
+  "S-LARKIN": [
+   "SPC-ORTHO"
+  ],
+  "S-SELWYN": [
+   "SPC-ORTHO"
+  ],
+  "S-TAVENER": [
+   "SPC-ORTHO"
+  ],
+  "S-KINGSLEY": [
+   "SPC-ORTHO"
+  ],
+  "S-FARQUHAR": [
+   "SPC-ORTHO"
+  ],
+  "S-SINCLAIR": [
+   "SPC-ORTHO"
+  ],
+  "S-BELLAMY": [
+   "SPC-ORTHO"
+  ],
+  "S-MARCHETTI": [
+   "SPC-ORTHO"
+  ],
+  "S-SUTHERLAND": [
+   "SPC-ORTHO"
+  ],
+  "S-MERRIMAN": [
+   "SPC-ORTHO"
+  ],
+  "S-SOTO": [
+   "SPC-ORTHO"
+  ],
+  "S-UNDERHILL": [
+   "SPC-ORTHO"
+  ],
+  "S-MULGREW": [
+   "SPC-ORTHO"
+  ],
+  "S-WOLFENDEN": [
+   "SPC-PLASTIC"
+  ],
+  "S-IREDALE": [
+   "SPC-PLASTIC"
+  ],
+  "S-WILBERFORCE": [
+   "SPC-PLASTIC"
+  ],
+  "S-LECKIE": [
+   "SPC-PLASTIC"
+  ],
+  "S-GILLESPIE": [
+   "SPC-PLASTIC"
+  ],
+  "S-CORRIGAN": [
+   "SPC-PLASTIC"
+  ],
+  "S-NAKASHIMA": [
+   "SPC-PLASTIC"
+  ],
+  "S-ROCHFORD": [
+   "SPC-PLASTIC"
+  ],
+  "S-ALDERTON": [
+   "SPC-PLASTIC"
+  ],
+  "S-CROWTHER": [
+   "SPC-PLASTIC"
+  ],
+  "S-DARNELL": [
+   "SPC-UROLOGY"
+  ],
+  "S-LATTIMORE": [
+   "SPC-UROLOGY"
+  ],
+  "S-VENNING": [
+   "SPC-UROLOGY"
+  ],
+  "S-TIERNEY": [
+   "SPC-UROLOGY"
+  ],
+  "S-MAHUIKA": [
+   "SPC-UROLOGY"
+  ],
+  "S-GORMAN": [
+   "SPC-UROLOGY"
+  ],
+  "S-GALLOWAY": [
+   "SPC-UROLOGY"
+  ],
+  "S-SANDFORD": [
+   "SPC-UROLOGY"
+  ],
+  "S-NESBITT": [
+   "SPC-UROLOGY"
+  ],
+  "S-LANGFORD": [
+   "SPC-VASCULAR"
+  ],
+  "S-ROSCOE": [
+   "SPC-VASCULAR"
+  ],
+  "S-THORNBURY": [
+   "SPC-VASCULAR"
+  ],
+  "S-TUILAGI": [
+   "SPC-NEURO"
+  ],
+  "S-MATHIESON": [
+   "SPC-NEURO"
+  ],
+  "S-ABERNETHY": [
+   "SPC-NEURO"
+  ],
+  "S-BHATNAGAR": [
+   "SPC-ORTHO"
+  ],
+  "S-GOODWIN": [
+   "SPC-ORTHO"
+  ],
+  "S-DELACROIX": [
+   "SPC-ORTHO"
+  ],
+  "S-BRENNAN": [
+   "SPC-ORTHO"
+  ],
+  "S-PRENDERGAST": [
+   "SPC-ORTHO"
+  ],
+  "S-MOFFAT": [
+   "SPC-ORTHO"
+  ],
+  "S-ZELINSKI": [
+   "SPC-ORTHO"
+  ]
+ },
+ "directoryRoomsKept": {
+  "RM-AVONHEADEN": {
+   "contactEmail": "info@avonheadent.example",
+   "phone": "03 555 1000"
+  },
+  "RM-LINWOODWOM": {
+   "contactEmail": "admin@linwoodwomens.example",
+   "phone": "03 555 1185"
+  },
+  "RM-GYNAECOLOG": {
+   "contactEmail": "info@gynaecology.example",
+   "phone": "03 555 1222"
+  },
+  "RM-HILLSBOROU": {
+   "contactEmail": "info@hillsboroughcolorectal.example",
+   "phone": "03 555 1333"
+  },
+  "RM-MAIREHAUCO": {
+   "contactEmail": "info@mairehaucolorectal.example",
+   "phone": "03 555 1370"
+  },
+  "RM-UPPERGIPAR": {
+   "contactEmail": "info@uppergi.example",
+   "phone": "03 555 1333"
+  },
+  "RM-GENERALSURX": {
+   "contactEmail": "enquiries@generalsurgery.example",
+   "phone": "03 555 1407"
+  },
+  "RM-REDWOODEYE": {
+   "contactEmail": "info@redwoodeye.example",
+   "phone": "03 555 1444"
+  },
+  "RM-BECKENHAME": {
+   "contactEmail": "info@beckenhameye.example",
+   "phone": "03 555 1481"
+  },
+  "RM-OTTOPICKER": {
+   "contactEmail": "office@ottopickering.example",
+   "phone": "03 555 1592"
+  },
+  "RM-ALISTAIROG": {
+   "contactEmail": "reception@alistairogilvie.example",
+   "phone": "03 555 1629"
+  },
+  "RM-ADDINGTONO": {
+   "contactEmail": "admin@addingtonorthopaedic.example",
+   "phone": "03 555 1814"
+  },
+  "RM-HOONHAYORT": {
+   "contactEmail": "admin@hoonhay.example",
+   "phone": "03 555 1888"
+  },
+  "RM-SOMERFIELD": {
+   "contactEmail": "admin@kingsleyorthopaedic.example",
+   "phone": "03 555 1925"
+  },
+  "RM-EDGEWAREOR": {
+   "contactEmail": "info@vaughanorthopaedic.example",
+   "phone": "03 555 2073"
+  },
+  "RM-SASKIASOTO": {
+   "contactEmail": "office@saskiasoto.example",
+   "phone": "03 555 2184"
+  },
+  "RM-HAREWOODOR": {
+   "contactEmail": "info@harewoodorthopaedic.example",
+   "phone": "03 555 2221"
+  },
+  "RM-MIHAKAWOLF": {
+   "contactEmail": "info@mihakawolfenden.example",
+   "phone": "03 555 2258"
+  },
+  "RM-TOBIASIRED": {
+   "contactEmail": "info@tobiasiredale.example",
+   "phone": "03 555 2295"
+  },
+  "RM-ORSONLECKI": {
+   "contactEmail": "info@orsonleckie.example",
+   "phone": "03 555 2369"
+  },
+  "RM-HEATHCOTEP": {
+   "contactEmail": "secretary@heathcoteplastic.example",
+   "phone": "03 555 2406"
+  },
+  "RM-YALDHURSTV": {
+   "contactEmail": "office@yaldhurstvascular.example",
+   "phone": "03 555 2591"
+  }
+ }
+}

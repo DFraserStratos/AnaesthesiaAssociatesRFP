@@ -20,4 +20,34 @@ describe('ChipMultiSelect', () => {
     expect(screen.queryByRole('list', { name: 'Linked surgeons chosen' })).toBeNull()
     expect(screen.getByRole('combobox', { name: 'Linked surgeons' })).toHaveFocus()
   })
+
+  it('ordered (catch-up Phase 17a): the first chip is the main one, Make main moves another to the front and returns focus', () => {
+    function Ordered() {
+      const [ids, setIds] = useState<string[]>(['a', 'b'])
+      return (
+        <ChipMultiSelect
+          label="Surgeons' rooms"
+          addLabel="Add another room"
+          options={[{ id: 'a', name: 'Avonhead ENT' }, { id: 'b', name: 'Burnside ENT' }, { id: 'c', name: 'Redwood Eye' }]}
+          value={ids}
+          onChange={setIds}
+          ordered={{ firstLabel: 'Main room', promoteLabel: 'Make main' }}
+        />
+      )
+    }
+    render(<Ordered />)
+    const chips = () => Array.from(document.querySelectorAll('[data-chip]')).map((c) => c.getAttribute('data-chip'))
+    expect(chips()).toEqual(['a', 'b'])
+    expect(within(document.querySelector('[data-chip="a"]') as HTMLElement).getByText('Main room')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Make main: Avonhead ENT' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Make main: Burnside ENT' }))
+    expect(chips()).toEqual(['b', 'a'])
+    expect(screen.getByRole('combobox', { name: "Surgeons' rooms" })).toHaveFocus()
+  })
+
+  it('without ordered, no chip carries a main pill or a Make main action', () => {
+    render(<ChipMultiSelect label="Specialties" addLabel="Add" options={[{ id: 'a', name: 'ENT' }, { id: 'b', name: 'Urology' }]} value={['a', 'b']} onChange={() => undefined} />)
+    expect(screen.queryByText('Main room')).toBeNull()
+    expect(screen.queryByRole('button', { name: /Make main/ })).toBeNull()
+  })
 })

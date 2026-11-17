@@ -18,9 +18,12 @@ const entries = Object.values(pairingPreferences)
 
 describe('surgeon masters', () => {
   it('every surgeon has a room and every room has a surgeon', () => {
-    for (const s of Object.values(surgeons)) expect(surgeonRooms[s.roomId], s.id).toBeDefined()
+    for (const s of Object.values(surgeons)) {
+      expect(s.roomIds.length, s.id).toBeGreaterThan(0)
+      for (const id of s.roomIds) expect(surgeonRooms[id], `${s.id} ${id}`).toBeDefined()
+    }
     for (const r of Object.values(surgeonRooms)) {
-      expect(Object.values(surgeons).some((s) => s.roomId === r.id), r.id).toBe(true)
+      expect(Object.values(surgeons).some((s) => s.roomIds.includes(r.id)), r.id).toBe(true)
     }
   })
 
@@ -39,9 +42,13 @@ describe('surgeon masters', () => {
     expect(seed.masters.organisations['O-COS']).toBeDefined()
   })
 
-  it('every hospital and room email is plausible', () => {
+  it('every hospital email and every room email that is held is plausible (a room may hold none, catch-up Phase 17a)', () => {
     for (const h of Object.values(hospitals)) expect(isPlausibleEmail(h.contactEmail ?? ''), h.id).toBe(true)
-    for (const r of Object.values(surgeonRooms)) expect(isPlausibleEmail(r.contactEmail), r.id).toBe(true)
+    for (const r of Object.values(surgeonRooms)) {
+      if (r.contactEmail !== undefined) expect(isPlausibleEmail(r.contactEmail), r.id).toBe(true)
+      expect(r.contactEmail, r.id).not.toBe('')
+      expect(r.phone, r.id).not.toBe('')
+    }
   })
 })
 

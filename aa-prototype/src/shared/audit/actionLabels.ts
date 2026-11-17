@@ -128,6 +128,10 @@ export const ACTION_LABELS: Record<string, string> = {
   'surgeon.update': 'Surgeon updated',
   'surgeonRoom.create': "Surgeons' room added",
   'surgeonRoom.update': "Surgeons' room updated",
+  // Catch-up Phase 17a (US-13.6.5): practice manager and PA contacts on a room.
+  'roomContact.add': 'Room contact added',
+  'roomContact.update': 'Room contact updated',
+  'roomContact.remove': 'Room contact removed',
   'surgeonGroup.create': 'Surgeon group added',
   'surgeonGroup.update': 'Surgeon group updated',
   // Office-private (catch-up Phase 17): only Admin histories read these.

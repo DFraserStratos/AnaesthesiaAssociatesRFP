@@ -741,6 +741,11 @@
     specialties), surgeons' rooms, surgeon groups, hospital contact emails, AA's list of specialties, its
     funding tags (SXAP, HNZ, ACC, in the order they are offered), and its private pairing preferences and
     anaesthetist priority tiers.
+    A surgeons' room's email and phone are optional (a room may hold none); a surgeon belongs to one or more
+    rooms, the first the main room; and each room holds its practice manager and PA contacts (name, email,
+    role), for the whole room or named for one surgeon (provisional, OQ-127).
+    The surgeon update email (Phase 35) will go to the main room's email when one is held, otherwise to
+    nothing (the office types one), with the surgeon's other rooms offered; never to a contact.
     Anaesthetists never see preferences or tiers, and an anaesthetist handing on their own List gets no
     warning.</p>
   </div></details>
@@ -939,6 +944,8 @@
       <tr><td>Recurring bookings</td><td><code>/admin/masters?view=recurringBookings</code></td></tr>
       <tr><td>Hospitals &amp; holidays</td><td><code>/admin/masters?view=hospitals</code> (List or Calendar)</td></tr>
       <tr><td>Surgeon profile</td><td><code>/admin/masters/surgeons/&lt;surgeonId&gt;</code> (Ms A. Reid: <code>S-REID</code>)</td></tr>
+      <tr><td>Surgeons' rooms</td><td><code>/admin/masters?view=surgeonRooms</code></td></tr>
+      <tr><td>Surgeon with a PA</td><td><code>/admin/masters/surgeons/S-DALGETY</code> (Dr H. Dalgety, Avonhead ENT: Bev, PA)</td></tr>
       <tr><td>Anaesthetist record</td><td><code>/admin/masters/anaesthetists/&lt;anaesthetistId&gt;</code> (Dr Priya Sharma: <code>41267</code>)</td></tr>
       <tr><td>Audit</td><td><code>/admin/audit</code></td></tr>
     </table></div>
@@ -1343,7 +1350,7 @@
   <h2>Surgeons, pairings and tiers</h2>
   <ul>
     <li>Surgeon profiles: the HPI CPN is each surgeon's unique index (not the patient's NHI), each surgeon
-      holds one or more specialties from AA's list (required), sits in one surgeons' room with its contact email and phone, and surgeons can belong to groups.</li>
+      holds one or more specialties from AA's list (required), belongs to one or more surgeons' rooms (the first the main room, a room card each; Mr N. Wainwright is at two), and surgeons can belong to groups; a room's email and phone are optional and a room may hold none ("No email held", Mr B. Yeoman's room); practice manager and PA contacts show on the profile beside each room card, the office adds, edits and removes them, and a contact is never the To of an office email (Dr H. Dalgety's PA Bev: <code>/admin/masters/surgeons/S-DALGETY</code>).</li>
     <li>Pairing preferences and priority tiers: kept on both the surgeon profile and the anaesthetist
       record, admin only; a not-preferred pairing warns and never blocks; cover suggestions run in tier
       order, shuffled within a tier; seeded: Ms A. Reid prefers not to work with Dr Sharma, and Mr J.
@@ -1476,6 +1483,11 @@
       under Gynaecology) until AA's spreadsheet replaces the list. A surgeon may hold more than one
       specialty (Ben said it is "not a thing"; for AA to confirm), and a Contract is offered when it shares
       any one. Each funding tag may name its funder. A specialty or tag in use cannot be removed.</p></div>
+    <div class="card"><h3>15 · Surgeons' rooms and practice contacts</h3><p style="font-size:14px">Open
+      (OQ-127): whether practice manager and PA contacts belong to the room or to the surgeon, and which
+      room's apply to a surgeon at several rooms. Built provisionally: held on the room, optionally named for
+      one surgeon, every room's contacts shown on the profile, the main room's email the To; the profile says
+      this is to be confirmed with AA. Answered (OQ-128): a surgeon can belong to more than one room.</p></div>
   </div>
 
   <h2>Likely evaluator questions</h2>

@@ -100,6 +100,11 @@ In Admin, the office also maintains surgeons (each keyed on their HPI CPN and ho
 specialties), surgeons' rooms, surgeon groups, hospital contact emails, AA's list of specialties, its
 funding tags (SXAP, HNZ, ACC, in the order they are offered), and its private pairing preferences and
 anaesthetist priority tiers.
+A surgeons' room's email and phone are optional (a room may hold none); a surgeon belongs to one or more
+rooms, the first the main room; and each room holds its practice manager and PA contacts (name, email,
+role), for the whole room or named for one surgeon (provisional, OQ-127).
+The surgeon update email (Phase 35) will go to the main room's email when one is held, otherwise to
+nothing (the office types one), with the surgeon's other rooms offered; never to a contact.
 Anaesthetists never see preferences or tiers, and an anaesthetist handing on their own List gets no
 warning.
 

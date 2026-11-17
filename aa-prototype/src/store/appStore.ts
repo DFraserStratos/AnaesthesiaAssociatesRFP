@@ -110,10 +110,14 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v46: catch-up Phase 23, the primary Procedure and the multi-procedure rule (US-03.2.2, US-05.3.1, DM-15):
- *  `Procedure.isPrimary` replaces `isAdditional` (exactly one per Booking; Nair's prepaid second Procedure
- *  additional), modifier claims on an additional Procedure moved to its primary, and the three-procedure
- *  Booking on Souter Mon 13 Jul AM (SUBMITTED) with its fixed patient. Reseeds on load.
+/** v47: catch-up Phases 23 and 17a joined (one past both branches' 46). Phase 23, the primary Procedure and the
+ *  multi-procedure rule (US-03.2.2, US-05.3.1, DM-15): `Procedure.isPrimary` replaces `isAdditional` (exactly one
+ *  per Booking; Nair's prepaid second Procedure additional), modifier claims on an additional Procedure moved to its
+ *  primary, and the three-procedure Booking on Souter Mon 13 Jul AM (SUBMITTED) with its fixed patient. Reseeds on load.
+ *  v46: catch-up Phase 17a, surgeons' rooms (DM-60, US-13.6.5; D75): `Surgeon.roomId` becomes the ordered
+ *  `roomIds` (the four two-practice directory surgeons at both rooms), a room's `contactEmail` and `phone`
+ *  optional (the directory's invented reception@ addresses gone), and `SurgeonRoom.contacts` (seeded practice
+ *  manager and PA contacts). Reseeds on load.
  *  v45: catch-up Phase 22a session 1, a payer on each Procedure (US-11.2.2, US-08.2.1; D85, provisional on
  *  OQ-140): `Procedure.payer` (Booking.payer gone; every Procedure takes its Booking's payer, BP ids kept),
  *  Grace Park's second Procedure (Hana Park copied, BP0001) and the two-payer Booking on the payer review
@@ -271,7 +275,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 46
+export const PERSIST_VERSION = 47
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }

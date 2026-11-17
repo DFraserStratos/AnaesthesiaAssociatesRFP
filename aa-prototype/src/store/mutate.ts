@@ -91,6 +91,8 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   surgeonRoom: { prefix: 'RMN', pad: 3 },
   surgeonGroup: { prefix: 'SGN', pad: 3 },
   pairingPreference: { prefix: 'PPN', pad: 3 },
+  // Catch-up Phase 17a: room contacts (seeded ones are RC-###; distinct from RCB and RCT).
+  roomContact: { prefix: 'RCN', pad: 3 },
   // Catch-up Phase 30 (DM-53): seeded rows are RCB###; RB is Phase 16's BCTI-history namespace.
   recurringBooking: { prefix: 'RCBN', pad: 3 },
   holiday: { prefix: 'HHN', pad: 3 },
