@@ -6,19 +6,19 @@ Scope: every story plus every feature with no stories (300 items, 300 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 176 | 162 |
+| Captured | 179 | 164 |
 | Partial | 46 | 46 |
-| Absent from the app | 67 | 66 |
+| Absent from the app | 66 | 65 |
 | Failed recipe | 0 | 0 |
-| No recipe | 26 | 26 |
+| No recipe | 25 | 25 |
 
-693 screenshots. Items per app: admin 153, web 78, mobile 74, simulator 35.
+714 screenshots. Items per app: admin 157, web 79, mobile 75, simulator 35.
 
 ## Failed recipes (0)
 
 None.
 
-## Absent from the app (67)
+## Absent from the app (66)
 
 - **FT-11.4** Insurers · Retired: removed in Phase 18
 - **US-02.1.3** Show differences on match · No field-level difference view. When a surgeon PDF row or HL7 message matches an existing Booking, the prototype only notes "Already booked on this List · will update, not duplicate" and applies the update; time, patient and procedure differences are never shown side by side before applying. Searched the Integrations screen (Surgeon PDFs, Messages), ingestPdfRow and the integration apply path for a diff or compare view.
@@ -31,7 +31,6 @@ None.
 - **US-02.5.6** Concurrent edits · No concurrency handling is shown. The prototype is a single in-browser store where writes apply in order (last write wins, each audited); there is no conflict detection, locking or merge UI. Searched store/ and apps/ for concurrency, stale or version-conflict handling.
 - **US-03.1.3** Attachments · Retired: removed in Phase 20a
 - **US-03.1.5** Anaesthetist sees the patient's NHI · Not built yet: catch-up Phase 40 builds this.
-- **US-03.2.2** Anyone with edit rights can set the primary · The first procedure on a booking is its fixed anchor (it cannot be removed and there is no control to make another procedure primary). Searched BookingDetailBody, BtmCaptureBlock, EditProcedureSheet, AdminBookingDetail and the store for a primary switch.
 - **US-03.3.2** Override a ranged base code · Retired: merged into US-03.3.1
 - **US-03.3.5** Itemise modifiers · Retired: merged into US-03.3.4; itemised modifiers are shot there (Phase 19b)
 - **US-03.7.1** Add a pre-op or post-op event to a Procedure · Not built yet: catch-up Phase 39b builds this.
@@ -52,7 +51,7 @@ None.
 - **US-05.1.2** Add AA codes · Retired: merged into US-05.1.1
 - **US-05.1.6** Procedure master mapped to RVG codes · Not built yet: catch-up Phase 19 builds this.
 - **US-05.2.3** Conditional positioning modifier · Retired: a modifier the base units include is now shown selected at 0 and removable (US-05.1.4, Phase 19b)
-- **US-05.3.3** Modifier split above four units · The prototype keeps all modifier units on the first procedure and charges additional procedures for time only; there is no four unit threshold or equal split of modifiers across procedures. Searched domain/billing (fee.ts, modifierUnits.ts) and the capture UnitsCard.
+- **US-05.3.3** Modifier split above four units · Retired: merged into US-05.3.1 (the split is built in Phase 23)
 - **US-05.3.4** Contract-specific second-procedure rules · Retired: removed in Phase 19a
 - **US-06.1.1** Tick procedures or groups · No prepaid settings exist on the anaesthetist profile. Searched the mobile More screen, the web app and admin Master data for prepaid or pre-payment settings: the prototype triggers pre-payment from a per-procedure payment category instead of anaesthetist-chosen RVG codes or groups.
 - **US-06.1.2** Admin can maintain on behalf · No prepaid settings exist to maintain. Admin Master data holds each anaesthetist's unit value, contact, GST period and active flag, but no prepaid RVG codes or groups; pre-payment is set per procedure in the booking's office billing setup instead.
@@ -137,7 +136,7 @@ None.
 - **US-14.4.1** NHI lookup via Digital Services Hub · The NHI lookup is simulated against a small set of demo records, not the NHI FHIR API, and anaesthetists carry an HPI only as an optional field; nothing is validated against HPI.
 - **US-15.0.1** Ease of use · Ease of use is a quality that screenshots can only suggest: the shots show the calm, large-target capture screen and the operational day view. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had.
 
-## No recipe (26)
+## No recipe (25)
 
 - **US-01.1.5** Split a session between two surgeons
 - **US-02.2.3** Detect Bookings removed from a re-sent List
@@ -162,11 +161,10 @@ None.
 - **US-08.6.6** Start a rebill from a copy of the original lines
 - **US-13.2.4** Reconciliation status at a glance
 - **US-13.5.3** Sign in to the anaesthetist app
-- **US-13.6.5** Practice manager and PA contacts
 - **US-15.0.7** Changes show without signing out
 - **US-15.0.8** Help desk by phone and email
 
-## Captured (176)
+## Captured (179)
 
 - **FT-01.6** Draft Lists · admin
 - **FT-02.2** Surgeon PDF list ingest · admin
@@ -182,6 +180,7 @@ None.
 - **FT-13.1** Schedule dashboard · admin
 - **FT-13.3** Billing flow monitoring · admin
 - **FT-13.4** Master data management · admin
+- **FT-13.6** Surgeons and surgeons' rooms · admin
 - **US-01.1.1** Two Slots per anaesthetist per day · admin, web, mobile
 - **US-01.1.2** Horizon rolls forward daily · admin
 - **US-01.1.3** New anaesthetist gets a populated canvas · admin
@@ -224,6 +223,7 @@ None.
 - **US-03.1.6** Find past work and old invoices · mobile, web
 - **US-03.1.7** Search Bookings by NHI or patient name · mobile, web
 - **US-03.2.1** One primary Procedure · web, mobile
+- **US-03.2.2** Anyone with edit rights can set the primary · web, mobile, admin
 - **US-03.2.3** Add additional Procedures · web, mobile
 - **US-03.3.1** Choose the RVG code, with starting units · web, mobile
 - **US-03.3.3** Record anaesthetic start and finish times · web, mobile
@@ -259,7 +259,7 @@ None.
 - **US-05.2.4** Contract rate or discount · admin
 - **US-05.2.6** RVG at the Contract's rate · web, mobile
 - **US-05.2.7** GST · admin
-- **US-05.3.1** Multi-procedure BTM rule · web, mobile
+- **US-05.3.1** Multi-procedure BTM rule · web, mobile, admin
 - **US-05.3.2** Time units on every Procedure · web, mobile
 - **US-05.3.5** Ledger tracks each Procedure's share · admin
 - **US-05.4.2** Office can change any price · admin
@@ -331,6 +331,7 @@ None.
 - **US-13.6.2** Surgeon profile · admin
 - **US-13.6.3** Not-preferred pairings of surgeons and anaesthetists · admin
 - **US-13.6.4** Preferred pairings · admin
+- **US-13.6.5** Practice manager and PA contacts · admin
 - **US-13.6.6** Surgeon specialties · admin
 - **US-13.7.2** Warnings on the dashboard to-do list · admin
 - **US-13.7.3** Warning flag on a Booking · mobile, web, admin

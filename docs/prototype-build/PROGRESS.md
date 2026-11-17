@@ -576,6 +576,12 @@ and the demo guide are the open questions to take to AA.
 - **27:** leaves prepaid Procedures off the final invoice after this ranking (D57; the not-prepaid additional keeps its reduction, tested at the engine); a prepaid Procedure on the anaesthetist's own fixed-price Contract is fixed-price, so it keeps the prepaid amount and takes no share.
 - **33, 34:** imports create through `createBooking`, so the first row's procedure is the primary; the feed demo trigger applies `setPrimaryProcedure` directly until the matching screen exists ("no automated decisions", FT-02.1); add it to 33's matching rows and 44's trigger audit.
 
+**Catch-up Phase 17a handoffs (2026-11-17)** (copied here at the join from 17a's entry):
+- **18 and any room reader:** `roomsForSurgeon`, `mainRoomOf`, `surgeonsInRoom`; never `roomIds[0]` (the guard test fails on a new reader).
+- **35 and 40:** call `roomEmailForSurgeon(masters, surgeonId, roomId?)`; `''` is a valid, shown To; offer `otherRoomsForSurgeon`; never read `contactEmail` directly (`roomContactsGuard.test.ts` lists the allowed files) and never put a contact in To; show contacts with `contactsForSurgeon`.
+- **42:** load rooms with optional email and phone, each surgeon's `roomIds` (the first main), contacts in the `RoomContact` shape.
+- **43:** generate through the same optional fields and `roomIds`.
+
 **Resolved / informational (kept for the record):**
 - Phase 05: the design dashboard's "Who's free Wed 22 PM" names Dr Ngatai though she is seeded on
   leave until Wed 29 (the mockups are internally inconsistent) — resolved: the panel reads LIVE
@@ -3612,3 +3618,13 @@ Run in the worktree `AnaesthesiaAssociatesRFP-17a` on `cu/17a-rooms` beside 23 (
 - Burnside ENT and Bryndwr Neurosurgery hold no room email (only PA inboxes on the list); Rosalind Pemberton is invented; Leanne seeded twice; Remove asks in-card.
 - No address book, no street address, no surgeon email (OQ-126, OQ-127 part 4).
 - Screens: Admin Surgeons' rooms (`/admin/masters?view=surgeonRooms`), and the profiles of Mr N. Wainwright, Dr H. Dalgety, Mr I. Forsythe and Mr B. Yeoman.
+
+### 23 and 17a merged (2026-11-17)
+
+Joined on branch `cu/23-17a` by the 23 session (17a finished first). 17a's branch was merged into `cu/23-primary` at 23's checkpoint (80d12cec); the final merge of `cu/17a-rooms` was then already up to date. Conflicts, all resolved by keeping both sides: `appStore.ts` (`PERSIST_VERSION` 47, one past both branches' 46, with both comment lines), `persistMigrate.test.ts` (both phases' cases; 23's pins 47, 17a's at least 46), PROGRESS (both status rows, both entries, 23 first); 17a's handoffs copied into the handoff list beside 23's. Everything else auto-merged.
+
+Checked on the joined code: typecheck, both builds, Vitest 2,600 (240 files) and verify-board green; Playwright 194 green (on this session's servers at 5273 and 5274: the owner's main-checkout servers held the shared ports); both phases' seed pins and the canvas golden hold (17a moved neither golden nor fingerprint); no single-room reader (`roomId`/`roomIds[0]` only in 17a's own files, comments and fixtures); no hook lost (each removed `data-*` line re-added). Where the two meet, in the running app and the store: Mr Wainwright (two rooms) put on an empty past Souter List, a two-procedure Booking captured, Make primary used, the List authorised and billed: one invoice, the new primary first ($212.00, B 5 + T 3) and the old one on its time ($79.50); Review still names the List's surgeon after Make primary on Holt; his profile shows both rooms and their contacts sections. One Opus reviewer on the merge: clean; its one finding (17a's handoffs only in its entry) fixed.
+
+Capture: 23's recipes and 17a's re-run, then one full capture: 291 of 291 recipes OK, 714 shots, 0 failed; REPORT before → after: captured 176 → 179, partial 46 → 46, absent 67 → 66, failed 0 → 0, no recipe 26 → 25. Images, REPORT and ATLAS committed with this note. Both demo-guide sections re-read against the joined app.
+
+For the owner: take `cu/23-17a` into `master`; both worktrees and the three branches are left in place for you to remove.

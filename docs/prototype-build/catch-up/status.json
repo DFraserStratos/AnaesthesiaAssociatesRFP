@@ -2,22 +2,22 @@
   "in_progress": [],
   "next": {
     "phases": [
-      "23",
-      "17a"
+      "24"
     ],
-    "note": "U5 done (17 November), not yet committed: one Button (outline, danger, desktop and compact sizes, a printed disabled reason), TextAction, BackLink, IconButton and CloseButton, LineTabs with LineTabLink and LineTab, FilterPills, ProgressBar, the small segmented control and one teal focus ring on every control; Review and Invoices keep only their breadcrumb; the page switches are underline tab links. Commit U5, then run 23 and 17a side by side in two git worktrees cut from that commit (each doc's \"Running beside\" section); then 24 and 25; U6 after 25; U7 before 44."
+    "note": "23 and 17a done (17 November), joined on branch cu/23-17a, not yet in master. 23: one primary Procedure per Booking, listed first, Make primary on every surface and the feed; the RVG default multi-procedure rule (base on the primary, time on each, modifiers split 3 · 2 · 2 above four across RVG-priced Procedures, OQ-132's default provisional) in one pure module under bookingFeeFor for every fee caller; two demo triggers; the three-procedure Booking seeded. 17a: rooms without an email, surgeons at more than one room, practice manager and PA contacts. Take cu/23-17a into master, then run 24 (the pricing function, around feeFor's one rate and discount read, after the allocation); then 25; U6 after 25; U7 before 44."
   },
   "guidance": {
     "as_of": "2026-11-17",
-    "headline": "Start 23 and 17a now, side by side. U5 is done: every command, link and switch on one shared component each, with one teal focus ring.",
-    "headline_sub": "U5 built Button (sizes, outline, danger, disabled reason), TextAction, BackLink, IconButton and CloseButton, LineTabs, FilterPills and ProgressBar, moved about ninety copies onto them and deleted seventeen private ones; reviewed, captured and green, not yet committed. Next in run order: 23 and 17a side by side in two worktrees, then 24 and 25.",
-    "parallel": "23 and 17a side by side, each in its own git worktree (AnaesthesiaAssociatesRFP-23 on cu/23-primary, AnaesthesiaAssociatesRFP-17a on cu/17a-rooms), cut from the master commit that holds U5, taking turns on ports 5173, 5174 and 5180 through one lock; the second to finish merges them on cu/23-17a for the owner to take into master. Their docs' \"Running beside\" sections hold the rules.",
+    "headline": "Start 24 once cu/23-17a is in master. 23 and 17a are done and joined: the primary Procedure with the one multi-procedure rule, and surgeons at more than one room with their practice contacts.",
+    "headline_sub": "23 built isPrimary with Make primary everywhere and the RVG default multi-procedure rule under one engine (no money figure moved); 17a built optional room emails, surgeons at more than one room and room contacts. Both are reviewed, captured and green on branch cu/23-17a, not yet in master. Next in run order: 24, then 25, then U6.",
+    "parallel": "None now: 24 and 25 run in order on the Contracts track, then U6.",
     "safe": {
-      "23": "Its dependencies (19b, 22, 22a, U5) are done; it is next in run order beside 17a. Commit U5 first: 23 builds on U4's StepRail, RailOptionGroup and NoContractGroup and U5's Button, TextAction and IconButton for the capture cards it rebuilds.",
-      "17a": "Its dependencies (17, 18a, U5) are done; it runs beside 23 in its own worktree. Commit U5 first: the worktree is cut from the master commit that holds it."
+      "24": "Its dependencies (21a, 23) are done; it is next in run order. Take branch cu/23-17a into master first: 24 builds the price precedence around 23's allocation in feeFor."
     },
     "wait": {
-      "26": "Its catch-up dependency (17) is done, but it runs after the Contracts track (18 to 25) and U6 (DefRow, Card)."
+      "26": "Its catch-up dependency (17) is done, but it runs after the Contracts track (18 to 25) and U6 (DefRow, Card).",
+      "25": "Its dependencies are done but 24 (it locks 24's price source in the snapshot); runs after 24.",
+      "U6": "Runs after 25 (DefRow, Card), before 26."
     }
   }
 }

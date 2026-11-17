@@ -42,7 +42,7 @@ test('mobile: add a procedure, Make primary moves it to the top with the pill, B
   await expect(page.getByText(/\$\d/)).toHaveCount(0) // units only on the phone
 
   // Before: Ellison's hip is first, with its own base; the added Procedure second.
-  const blocks = page.locator('[data-procedure-id]')
+  const blocks = page.locator('[data-shot="procedure-block"]')
   const firstBefore = await blocks.first().getAttribute('data-procedure-id')
   const secondBefore = await blocks.nth(1).getAttribute('data-procedure-id')
   await expect(blocks.first().locator('[data-shot="units-row-b"]')).not.toContainText('Base units are on the primary procedure')

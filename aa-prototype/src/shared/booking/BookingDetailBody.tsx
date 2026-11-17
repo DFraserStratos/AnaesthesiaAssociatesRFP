@@ -717,6 +717,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
               if (el === null) blockRefs.current.delete(procedure.id)
               else blockRefs.current.set(procedure.id, el)
             }}
+            data-shot="procedure-block"
             data-procedure-id={procedure.id}
             style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
           >
