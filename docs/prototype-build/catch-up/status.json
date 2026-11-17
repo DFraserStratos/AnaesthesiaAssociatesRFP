@@ -4,15 +4,15 @@
     "phases": [
       "U5"
     ],
-    "note": "U4 done (17 November), not yet committed: one field chrome, the fill rule and the teal focus ring; SelectField, Checkbox, Switch, FieldHint, the extended TextField and TextArea, NameSearchBox on both Lists pages; the date, time, stepper, radio and calendar parts; the Contract chooser parts under the Billing card and the creation forms' rail. Commit U4, then run U5 (buttons, tabs and toggles: it also takes the Session Segmented's Out-of-hours wrap and the buttons' focus ring U4 hands on), then 23 and 17a side by side in two git worktrees (each doc's \"Running beside\" section); then 24 and 25; U6 after 25; U7 before 44."
+    "note": "U4 done and committed (17 November): one field chrome, the fill rule and the teal focus ring; SelectField, Checkbox, Switch, FieldHint, the extended TextField and TextArea, NameSearchBox on both Lists pages; the date, time, stepper, radio and calendar parts; the Contract chooser parts under the Billing card and the creation forms' rail. Run U5 (buttons, tabs and toggles: it also takes the Session Segmented's Out-of-hours wrap and the buttons' focus ring U4 hands on), then 23 and 17a side by side in two git worktrees (each doc's \"Running beside\" section); then 24 and 25; U6 after 25; U7 before 44."
   },
   "guidance": {
     "as_of": "2026-11-17",
     "headline": "Start U5 now. U4 is done: one field chrome, one fill rule and one teal focus ring, with the Contract chooser parts built once.",
-    "headline_sub": "U4 built the shared fields (SelectField, Checkbox, Switch, FieldHint, TextField and TextArea extended), both Lists searches on NameSearchBox, the date, time, stepper, radio and calendar parts, and the Contract chooser parts used by the Billing card and the creation forms' rail; reviewed, captured and green, not yet committed. Next in run order: U5, then 23 and 17a side by side in two worktrees.",
+    "headline_sub": "U4 built the shared fields (SelectField, Checkbox, Switch, FieldHint, TextField and TextArea extended), both Lists searches on NameSearchBox, the date, time, stepper, radio and calendar parts, and the Contract chooser parts used by the Billing card and the creation forms' rail; reviewed, captured, green and committed. Next in run order: U5, then 23 and 17a side by side in two worktrees.",
     "parallel": "None now: U5 runs alone (a U phase never runs beside a catch-up phase). After U5: 23 and 17a side by side, each in its own git worktree (AnaesthesiaAssociatesRFP-23 on cu/23-primary, AnaesthesiaAssociatesRFP-17a on cu/17a-rooms), taking turns on ports 5173, 5174 and 5180 through one lock; the second to finish merges them on cu/23-17a for the owner to take into master. Their docs' \"Running beside\" sections hold the rules.",
     "safe": {
-      "U5": "Its only dependency, U4, is done (commit U4 first: U5 builds on its shared fields and hands-off list), and it is next in run order."
+      "U5": "Its only dependency, U4, is done and committed (U5 builds on its shared fields and hand-off list), and it is next in run order."
     },
     "wait": {
       "23": "Needs U5; then runs beside 17a, both in git worktrees, from the master commit that holds U5 (it builds on U4's StepRail, RailOptionGroup and NoContractGroup; its seed uses 22a's addProcedure(booking, { payer })).",
