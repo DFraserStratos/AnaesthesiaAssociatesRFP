@@ -7,6 +7,7 @@ import { contactsForRoom, NO_ROOM_EMAIL, roomContactEmail } from '../../../../do
 import type { Surgeon, SurgeonGroup, SurgeonRoom } from '../../../../domain/types'
 import { useAppStore, type Actor } from '../../../../store'
 import { surgeonSpecialtyLabel } from '../../../../domain/specialties'
+import { plural } from '../../../../shared/format'
 import { Button } from '../../../../shared'
 import { SurgeonEditSheet } from '../../flows/SurgeonEditSheet'
 import { SurgeonRoomSheet } from '../../flows/SurgeonRoomSheet'
@@ -46,7 +47,7 @@ export function SurgeonsView({ actor }: { actor: Actor }) {
     <>
       <Header
         title="Surgeons"
-        sub="One record per surgeon, keyed on the HPI CPN. Open a surgeon for their room, groups and pairing preferences."
+        sub="One record per surgeon, keyed on the HPI CPN. Open a surgeon for their rooms, contacts, groups and pairing preferences."
         action={<Button variant="secondary" onClick={() => setSheet({})}>Add surgeon</Button>}
       />
       <Table heads={['Name', 'Specialties', 'Rooms', 'HPI CPN', 'Pairings', '']} rightAlign={[5]} shot="masters-surgeons">
@@ -105,7 +106,7 @@ export function SurgeonRoomsView({ actor }: { actor: Actor }) {
           return (
             <tr key={r.id} data-room={r.id}>
               <td style={{ ...rowCellStyle, fontWeight: 600 }}>{r.name}</td>
-              <td style={rowCellStyle} data-room-email>{email !== '' ? email : <span style={mist}>{NO_ROOM_EMAIL}</span>}</td>
+              <td style={rowCellStyle} data-room-email>{email !== '' ? <span className="mono">{email}</span> : <span style={mist}>{NO_ROOM_EMAIL}</span>}</td>
               <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>{r.phone ?? <span style={mist}>·</span>}</td>
               <td style={rowCellStyle}>
                 {members.length === 0 ? (
@@ -117,7 +118,7 @@ export function SurgeonRoomsView({ actor }: { actor: Actor }) {
                 )}
               </td>
               <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }} data-room-contacts-count={contactCount}>
-                {contactCount === 0 ? <span style={mist}>·</span> : contactCount === 1 ? '1 contact' : `${contactCount} contacts`}
+                {contactCount === 0 ? <span style={mist}>·</span> : plural(contactCount, 'contact')}
               </td>
               <EditCell onClick={() => setSheet({ room: r })} label={`Edit ${r.name}`} style={rowCellStyle} />
             </tr>

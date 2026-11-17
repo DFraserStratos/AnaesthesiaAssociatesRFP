@@ -50,6 +50,7 @@ import {
   AnaesthetistCandidatesExample,
   ChipMultiSelectExample,
   RoomContactsListExample,
+  OrderedChipMultiSelectExample,
   ClearConflictExample,
   CodePickerExample,
   ConflictCalloutExample,
@@ -215,6 +216,7 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="ChipMultiSelect" source="apps/admin/components/ChipMultiSelect.tsx" usedIn={A} what="A native 'Add a...' select plus removable chips: a Contract's specialties and, since UI unification U4, its linked surgeons (the editor's private SurgeonPicker is gone). The select draws the one field chrome and its hint is the shared FieldHint. Catch-up Phase 17a's `ordered` variant gives a surgeon's rooms: the first chip carries a Main room pill, the others a Make main action." replaceWith="Base UI Combobox (multiple, chips)" note="Searchable, with Backspace to remove.">
           <ChipMultiSelectExample />
+          <OrderedChipMultiSelectExample />
         </CatalogueRow>
         <CatalogueRow name="RoomContactsList" source="apps/admin/components/RoomContactsList.tsx" usedIn={A} what="A surgeons' room's practice manager and PA contacts (catch-up Phase 17a): name, neutral role pill, mono email, who it is for in mist; Edit, Remove with the shared InlineConfirm, and Add contact opening RoomContactSheet (or the form in place inside the room sheet). One list for the surgeon profile's contacts cards and SurgeonRoomSheet." replaceWith="shadcn Table or list + Sheet" note="Writes to the demo store.">
           <RoomContactsListExample />
@@ -243,7 +245,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="Switch" source="shared/ui/Switch.tsx" usedIn={AWM} what="The one on/off switch (UI unification U4): a button with role=switch and aria-checked, so click and Space toggle it; sm is the 36 by 20 track, lg the 52 by 32 touch track, with a label and an optional description." replaceWith="shadcn Switch" note="No product screen uses it yet: Phase 27 builds its approval-step toggle on it. The PWA panel's ToggleRow stays its own (a demo surface).">
           <SwitchExample />
         </CatalogueRow>
-        <CatalogueRow name="ProfileChrome" source="apps/admin/components/ProfileChrome.tsx" usedIn={A} what="The surgeon and anaesthetist record pages' header, id chip, cards, fact rows and History and Edit actions." replaceWith="shadcn Card (+ Breadcrumb for BackLink)" note="Its back link is the shared BackLink since UI unification U5 (teal, a real link), left out here because it would leave this page.">
+        <CatalogueRow name="ProfileChrome" source="apps/admin/components/ProfileChrome.tsx" usedIn={A} what="The surgeon and anaesthetist record pages' header, id chip, cards, fact rows and History and Edit actions. ProfileCard passes data-* attributes through (catch-up Phase 17a: data-room on the room and contacts cards)." replaceWith="shadcn Card (+ Breadcrumb for BackLink)" note="Its back link is the shared BackLink since UI unification U5 (teal, a real link), left out here because it would leave this page.">
           <ProfileChromeExample />
         </CatalogueRow>
         <CatalogueRow name="drawerParts (Section, Row, DrawerLink)" source="apps/admin/components/drawerParts.tsx" usedIn={A} what="The drawers' section headings, label and value rows and inline links, shared by SlotDrawer and DraftListDrawer (one copy since U2); their action buttons are the shared Button at the compact size, a disabled one printing its reason (U5)." replaceWith="shadcn Button + DropdownMenu" note="ActionBtn folded into Button in UI unification U5.">

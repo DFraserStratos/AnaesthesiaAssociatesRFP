@@ -306,17 +306,27 @@ export function RoomContactsListExample() {
   const room = useAppStore((s) => s.masters.surgeonRooms['RM-AVONHEADEN'])
   if (room === undefined) return <Missing what="the Avonhead ENT room" />
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 420 }}>
+    <div style={{ maxWidth: 420 }}>
       <RoomContactsList room={room} surgeonId="S-DALGETY" actor={OFFICE_ACTOR} />
-      <ChipMultiSelect
-        label="Surgeons' rooms"
-        options={[{ id: 'a', name: 'Avonhead ENT' }, { id: 'b', name: 'Burnside ENT Surgeons' }]}
-        value={['a', 'b']}
-        onChange={() => undefined}
-        addLabel="Add another room"
-        ordered={{ firstLabel: 'Main room', promoteLabel: 'Make main' }}
-      />
     </div>
+  )
+}
+
+/** The `ordered` variant (catch-up Phase 17a): a surgeon's rooms, the first the main room. */
+export function OrderedChipMultiSelectExample() {
+  const [value, setValue] = useState<string[]>(['RM-AVONHEADEN', 'RM-BURNSIDEEN'])
+  const rooms = useAppStore((s) => s.masters.surgeonRooms)
+  const options = useMemo(() => Object.values(rooms).sort((a, b) => a.name.localeCompare(b.name)), [rooms])
+  return (
+    <ChipMultiSelect
+      label="Surgeons' rooms"
+      options={options}
+      value={value}
+      onChange={setValue}
+      addLabel="Add another room"
+      hint="Local state only. The first is the main room."
+      ordered={{ firstLabel: 'Main room', promoteLabel: 'Make main' }}
+    />
   )
 }
 

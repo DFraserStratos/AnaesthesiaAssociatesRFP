@@ -7,7 +7,7 @@
  */
 
 import { assigned } from '../../../../test/lists'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ANAE, HOSP, SURG } from '../../../../domain/seed'
@@ -316,13 +316,13 @@ describe("catch-up Phase 17a: rooms without an email, a surgeon at two rooms, pr
     expect(within(garside).getByText('No practice manager or PA recorded.')).toBeInTheDocument()
   })
 
-  it('adds a contact from the profile for this surgeon, then removes it with the confirm', () => {
+  it('adds a contact from the profile for this surgeon, then removes it with the confirm', async () => {
     renderAdmin('/admin/masters/surgeons/S-YEOMAN')
     fireEvent.click(screen.getByRole('button', { name: /Add contact/ }))
     const sheet = () => document.querySelector('[data-shot="room-contact-sheet"]') as HTMLElement
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Add contact' }))
     expect(within(sheet()).getByRole('alert')).toHaveTextContent('A contact name is required.')
-    fireEvent.change(within(sheet()).getByLabelText('Name'), { target: { value: 'Fran' } })
+    fireEvent.change(within(sheet()).getByLabelText('Contact name'), { target: { value: 'Fran' } })
     fireEvent.change(within(sheet()).getByLabelText('Email'), { target: { value: 'fran@gsp.example' } })
     expect((within(sheet()).getByLabelText('For') as HTMLSelectElement).value).toBe('S-YEOMAN')
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Add contact' }))
@@ -330,7 +330,10 @@ describe("catch-up Phase 17a: rooms without an email, a surgeon at two rooms, pr
     const contacts = cards('surgeon-contacts')[0]!
     expect(within(contacts).getByText('Fran')).toBeInTheDocument()
     expect(useAppStore.getState().audit.at(-1)).toMatchObject({ action: 'roomContact.add', entityId: 'RM-GENERALSUR' })
-    fireEvent.click(within(contacts).getByRole('button', { name: 'Remove Fran' }))
+    fireEvent.click(within(contacts).getByRole('button', { name: 'Remove Fran, For this surgeon' }))
+    fireEvent.click(within(contacts).getByRole('button', { name: 'Keep it' }))
+    await waitFor(() => expect(within(contacts).getByRole('button', { name: 'Remove Fran, For this surgeon' })).toHaveFocus())
+    fireEvent.click(within(contacts).getByRole('button', { name: 'Remove Fran, For this surgeon' }))
     fireEvent.click(within(contacts).getByRole('button', { name: 'Remove contact' }))
     expect(within(contacts).queryByText('Fran')).toBeNull()
     expect(useAppStore.getState().audit.at(-1)).toMatchObject({ action: 'roomContact.remove' })
@@ -364,5 +367,16 @@ describe("catch-up Phase 17a: rooms without an email, a surgeon at two rooms, pr
     fireEvent.click(within(field()).getByRole('button', { name: 'Remove Imogen Vaughan · Orthopaedic Surgeon' }))
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
     expect(screen.getByRole('alert')).toHaveTextContent("Choose at least one surgeons' room.")
+  })
+
+  it("the room sheet's contact form holds back the room's Save while it is open", () => {
+    renderAdmin('/admin/masters?view=surgeonRooms')
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Burnside ENT Surgeons' }))
+    const sheet = () => document.querySelector('[data-shot="surgeon-room-sheet"]') as HTMLElement
+    expect(within(sheet()).getAllByRole('button', { name: /^Edit Leanne/ }).map((b) => b.getAttribute('aria-label'))).toEqual(['Edit Leanne, For Dr T. Calder', 'Edit Leanne, For Mr U. Woodville'])
+    fireEvent.click(within(sheet()).getByRole('button', { name: /Add contact/ }))
+    expect(within(sheet()).queryByRole('button', { name: 'Save changes' })).toBeNull()
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Cancel' }))
+    expect(within(sheet()).getByRole('button', { name: 'Save changes' })).toBeInTheDocument()
   })
 })

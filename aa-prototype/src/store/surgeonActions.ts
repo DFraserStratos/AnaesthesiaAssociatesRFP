@@ -132,11 +132,23 @@ export function editSurgeon(api: AppStoreApi, actor: Actor, surgeonId: string, f
     const room = state.masters.surgeonRooms[roomId]
     const stale = (room?.contacts ?? []).filter((c) => c.forSurgeonId === surgeonId)
     if (room === undefined || stale.length === 0) continue
-    roomPatches[roomId] = {
-      ...room,
-      contacts: (room.contacts ?? []).map((c) => (c.forSurgeonId === surgeonId ? withoutSurgeon(c) : c)),
-    }
-    for (const c of stale) {
+    // A named contact whose whole-room twin (same email and role) is already on
+    // the room is merged into it (removed), so the room never holds a duplicate.
+    const wholeRoom = (room.contacts ?? []).filter((c) => c.forSurgeonId === undefined)
+    const twin = (c: RoomContact) => wholeRoom.some((w) => w.email.toLowerCase() === c.email.toLowerCase() && w.role === c.role)
+    const contacts: RoomContact[] = []
+    for (const c of room.contacts ?? []) {
+      if (c.forSurgeonId !== surgeonId) {
+        contacts.push(c)
+        continue
+      }
+      if (twin(c)) {
+        metas.push({ entityType: 'surgeonRoom', entityId: roomId, action: 'roomContact.remove', before: { contact: c.name, for: existing.name }, stampBookingId: null })
+        continue
+      }
+      const cleared = withoutSurgeon(c)
+      contacts.push(cleared)
+      wholeRoom.push(cleared)
       metas.push({
         entityType: 'surgeonRoom',
         entityId: roomId,
@@ -146,6 +158,7 @@ export function editSurgeon(api: AppStoreApi, actor: Actor, surgeonId: string, f
         stampBookingId: null,
       })
     }
+    roomPatches[roomId] = { ...room, contacts }
   }
   mutate(api, actor, metas, (s) => ({
     masters: {

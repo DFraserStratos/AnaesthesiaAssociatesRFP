@@ -17,7 +17,7 @@
  * emails go to the PA" or another room, only `roomEmailForSurgeon` changes.
  */
 
-import { roomsForSurgeon } from './surgeons'
+import { mainRoomOf, roomsForSurgeon } from './surgeons'
 import type { RoomContact, RoomContactRole, Surgeon, SurgeonId, SurgeonRoom, SurgeonRoomId } from './types'
 
 type RoomMasters = {
@@ -58,8 +58,7 @@ export function roomContactEmail(room: SurgeonRoom | undefined): string {
  * Never throws; a contact is never returned.
  */
 export function roomEmailForSurgeon(masters: RoomMasters, surgeonId: SurgeonId, roomId?: SurgeonRoomId): string {
-  const rooms = roomsForSurgeon(masters, surgeonId)
-  const room = roomId === undefined ? rooms[0] : rooms.find((r) => r.id === roomId)
+  const room = roomId === undefined ? mainRoomOf(masters, surgeonId) : roomsForSurgeon(masters, surgeonId).find((r) => r.id === roomId)
   return roomContactEmail(room)
 }
 

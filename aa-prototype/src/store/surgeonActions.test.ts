@@ -3,6 +3,7 @@ import { createAppStore } from './appStore'
 import type { Actor } from './mutate'
 import { createSurgeon, createSurgeonGroup, createSurgeonRoom, editSurgeon, editSurgeonGroup, editSurgeonRoom } from './surgeonActions'
 import { addAnaesthetist, createHospital, editAnaesthetist, editHospital } from './mastersActions'
+import { editRoomContact } from './roomContactActions'
 import { ANAE, HOSP, ROOM, SPC, SURG } from '../domain/seed'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -227,5 +228,18 @@ describe('catch-up Phase 17a: rooms without an email, surgeons at more than one 
     const added = api.getState().audit.slice(before)
     expect(added.map((e) => e.action)).toEqual(['surgeon.update', ...named.map(() => 'roomContact.update')])
     expect(added[1]).toMatchObject({ entityId: 'RM-AVONHEADEN', before: { for: 'Dr H. Dalgety' }, after: { for: 'Whole room' } })
+  })
+
+  it('merges a named contact into its whole-room twin when the room is taken off, so the room never holds a duplicate', () => {
+    const api = createAppStore()
+    const forRoom = (id: string) => ({ ...api.getState().masters.surgeons[id]!, roomIds: [ROOM.riccarton] })
+    // Leanne is named for Calder (RC-005) and for Woodville (RC-006) at Burnside.
+    expect(editSurgeon(api, OFFICE, 'S-CALDER', forRoom('S-CALDER')).ok).toBe(true)
+    expect(editSurgeon(api, OFFICE, 'S-WOODVILLE', forRoom('S-WOODVILLE')).ok).toBe(true)
+    const leanne = api.getState().masters.surgeonRooms['RM-BURNSIDEEN']!.contacts!.filter((c) => c.name === 'Leanne')
+    expect(leanne).toEqual([{ id: 'RC-005', name: 'Leanne', email: 'leanne@burnsideent.example', role: 'PA' }])
+    expect(api.getState().audit.at(-1)).toMatchObject({ action: 'roomContact.remove', entityId: 'RM-BURNSIDEEN', before: { contact: 'Leanne', for: 'Mr U. Woodville' } })
+    // The merged contact can still be edited (no duplicate left to clash with).
+    expect(editRoomContact(api, OFFICE, 'RM-BURNSIDEEN', 'RC-005', { name: 'Leanne Ward', email: 'leanne@burnsideent.example', role: 'PA' }).ok).toBe(true)
   })
 })

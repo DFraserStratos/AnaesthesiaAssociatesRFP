@@ -324,8 +324,12 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Review and authorise
 - Master data and audit
 - Surgeon profiles: the HPI CPN is each surgeon's unique index (not the patient's NHI), each surgeon
-  holds one or more specialties from AA's list (required; a save with none is refused), sits in one
-  surgeons' room with its contact email and phone, and surgeons can belong to groups
+  holds one or more specialties from AA's list (required; a save with none is refused), belongs to one
+  or more surgeons' rooms (the first the main room, a room card each; Mr N. Wainwright is at two), and
+  surgeons can belong to groups; a room's email and phone are optional and a room may hold none ("No
+  email held", Mr B. Yeoman's room); practice manager and PA contacts show on the profile beside each
+  room card, the office adds, edits and removes them, and a contact is never the To of an office email
+  (Dr H. Dalgety's PA Bev: `/admin/masters/surgeons/S-DALGETY`)
 - Pairing preferences and priority tiers: kept on both the surgeon profile and the anaesthetist
   record, admin only; a not-preferred pairing warns and never blocks; cover suggestions run in tier
   order, shuffled within a tier; seeded: Ms A. Reid prefers not to work with Dr Sharma, and Mr J.
@@ -587,6 +591,14 @@ Say:
 - Ben and Vanessa agreed the hospital's text replaces the rooms' (5 November). The Contract's own
   invoice description taking precedence over both on the invoice (D37, extended 5 November) has not
   been put to Ben and Vanessa yet; present it as a discovery point.
+
+### 15. Surgeons' rooms and practice contacts
+
+- Open (OQ-127): whether practice manager and PA contacts belong to the room or to the surgeon, and
+  which room's apply to a surgeon at several rooms. Built provisionally: held on the room, optionally
+  named for one surgeon, every room's contacts shown on the profile, the main room's email the To; the
+  profile says this is to be confirmed with AA.
+- Answered (OQ-128): a surgeon can belong to more than one room.
 
 ## Likely evaluator questions
 

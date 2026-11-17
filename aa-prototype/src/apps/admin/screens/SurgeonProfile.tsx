@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { neutral } from '../../../theme/tokens'
-import { groupsForSurgeon, roomsForSurgeon, surgeonsInRoom } from '../../../domain/surgeons'
+import { groupsForSurgeon, mainRoomOf, roomsForSurgeon, surgeonsInRoom } from '../../../domain/surgeons'
 import { NO_ROOM_EMAIL, ROOM_CONTACTS_PROVISIONAL_NOTE, roomContactEmail } from '../../../domain/roomContacts'
 import { RoomContactsList } from '../components/RoomContactsList'
 import type { Surgeon, SurgeonRoom } from '../../../domain/types'
@@ -44,7 +44,7 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
       <ProfileHeader
         name={surgeon.name}
         chip={<IdChip label="HPI CPN" value={surgeon.hpiId} shot="surgeon-hpi-chip" />}
-        sub={[surgeonSpecialtyLabel({ specialties }, surgeon), surgeonRooms[0]?.name].filter((v) => v !== undefined && v !== '').join(' · ')}
+        sub={[surgeonSpecialtyLabel({ specialties }, surgeon), mainRoomOf({ surgeons, surgeonRooms: rooms }, surgeon.id)?.name].filter((v) => v !== undefined && v !== '').join(' · ')}
         action={<HeaderActions onHistory={() => setHistory(true)} onEdit={() => setEditing(true)} />}
       />
 
@@ -89,7 +89,7 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
         </ProfileCard>
       ) : (
         surgeonRooms.map((room, index) => (
-          <div key={room.id} data-room-row={room.id} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, alignItems: 'start' }}>
+          <div key={room.id} data-room-row={room.id} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, alignItems: 'stretch' }}>
             <RoomCard room={room} main={index === 0} several={surgeonRooms.length > 1} surgeon={surgeon} surgeons={surgeons} />
             <ProfileCard title="Practice manager and PAs" shot="surgeon-contacts" data-room={room.id}>
               {index === 0 && <div style={{ fontSize: 12, color: neutral.mist }}>{ROOM_CONTACTS_PROVISIONAL_NOTE}</div>}
@@ -112,27 +112,27 @@ function RoomCard({ room, main, several, surgeon, surgeons }: { room: SurgeonRoo
   const email = roomContactEmail(room)
   const colleagues = surgeonsInRoom(surgeons, room.id).filter((s) => s.id !== surgeon.id)
   return (
-      <ProfileCard
-        title="Surgeons' room"
-        shot="surgeon-room-card"
-        data-room={room.id}
-        action={several && main ? <Pill size="sm">Main room</Pill> : undefined}
-      >
-        <div style={{ fontSize: 14, fontWeight: 600 }}>{room.name}</div>
-        <Fact label="Contact email" value={email !== '' ? email : <span style={{ color: neutral.mist }}>{NO_ROOM_EMAIL}</span>} mono={email !== ''} />
-        <Fact label="Phone" value={room.phone ?? <span style={{ color: neutral.mist }}>Not recorded</span>} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: neutral.mist }}>Also in this room</div>
-          {colleagues.length === 0 ? (
-            <EmptyState>No other surgeons.</EmptyState>
-          ) : (
-            colleagues.map((c) => (
-              <Link key={c.id} to={surgeonProfilePath(c.id)} className="aa-table-entity-link" style={{ fontSize: 14 }}>
-                <span className="aa-table-entity-link-title" style={{ fontWeight: 500 }}>{c.name}</span>
-              </Link>
-            ))
-          )}
-        </div>
-      </ProfileCard>
+    <ProfileCard
+      title="Surgeons' room"
+      shot="surgeon-room-card"
+      data-room={room.id}
+      action={several && main ? <Pill size="sm">Main room</Pill> : undefined}
+    >
+      <div style={{ fontSize: 14, fontWeight: 600 }}>{room.name}</div>
+      <Fact label="Contact email" value={email !== '' ? email : <span style={{ color: neutral.mist }}>{NO_ROOM_EMAIL}</span>} mono={email !== ''} />
+      <Fact label="Phone" value={room.phone ?? <span style={{ color: neutral.mist }}>Not recorded</span>} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: neutral.mist }}>Also in this room</div>
+        {colleagues.length === 0 ? (
+          <EmptyState>No other surgeons.</EmptyState>
+        ) : (
+          colleagues.map((c) => (
+            <Link key={c.id} to={surgeonProfilePath(c.id)} className="aa-table-entity-link" style={{ fontSize: 14 }}>
+              <span className="aa-table-entity-link-title" style={{ fontWeight: 500 }}>{c.name}</span>
+            </Link>
+          ))
+        )}
+      </div>
+    </ProfileCard>
   )
 }

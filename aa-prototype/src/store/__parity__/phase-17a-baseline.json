@@ -568,5 +568,95 @@
   "S-ZELINSKI": [
    "SPC-ORTHO"
   ]
+ },
+ "directoryRoomsKept": {
+  "RM-AVONHEADEN": {
+   "contactEmail": "info@avonheadent.example",
+   "phone": "03 555 1000"
+  },
+  "RM-LINWOODWOM": {
+   "contactEmail": "admin@linwoodwomens.example",
+   "phone": "03 555 1185"
+  },
+  "RM-GYNAECOLOG": {
+   "contactEmail": "info@gynaecology.example",
+   "phone": "03 555 1222"
+  },
+  "RM-HILLSBOROU": {
+   "contactEmail": "info@hillsboroughcolorectal.example",
+   "phone": "03 555 1333"
+  },
+  "RM-MAIREHAUCO": {
+   "contactEmail": "info@mairehaucolorectal.example",
+   "phone": "03 555 1370"
+  },
+  "RM-UPPERGIPAR": {
+   "contactEmail": "info@uppergi.example",
+   "phone": "03 555 1333"
+  },
+  "RM-GENERALSURX": {
+   "contactEmail": "enquiries@generalsurgery.example",
+   "phone": "03 555 1407"
+  },
+  "RM-REDWOODEYE": {
+   "contactEmail": "info@redwoodeye.example",
+   "phone": "03 555 1444"
+  },
+  "RM-BECKENHAME": {
+   "contactEmail": "info@beckenhameye.example",
+   "phone": "03 555 1481"
+  },
+  "RM-OTTOPICKER": {
+   "contactEmail": "office@ottopickering.example",
+   "phone": "03 555 1592"
+  },
+  "RM-ALISTAIROG": {
+   "contactEmail": "reception@alistairogilvie.example",
+   "phone": "03 555 1629"
+  },
+  "RM-ADDINGTONO": {
+   "contactEmail": "admin@addingtonorthopaedic.example",
+   "phone": "03 555 1814"
+  },
+  "RM-HOONHAYORT": {
+   "contactEmail": "admin@hoonhay.example",
+   "phone": "03 555 1888"
+  },
+  "RM-SOMERFIELD": {
+   "contactEmail": "admin@kingsleyorthopaedic.example",
+   "phone": "03 555 1925"
+  },
+  "RM-EDGEWAREOR": {
+   "contactEmail": "info@vaughanorthopaedic.example",
+   "phone": "03 555 2073"
+  },
+  "RM-SASKIASOTO": {
+   "contactEmail": "office@saskiasoto.example",
+   "phone": "03 555 2184"
+  },
+  "RM-HAREWOODOR": {
+   "contactEmail": "info@harewoodorthopaedic.example",
+   "phone": "03 555 2221"
+  },
+  "RM-MIHAKAWOLF": {
+   "contactEmail": "info@mihakawolfenden.example",
+   "phone": "03 555 2258"
+  },
+  "RM-TOBIASIRED": {
+   "contactEmail": "info@tobiasiredale.example",
+   "phone": "03 555 2295"
+  },
+  "RM-ORSONLECKI": {
+   "contactEmail": "info@orsonleckie.example",
+   "phone": "03 555 2369"
+  },
+  "RM-HEATHCOTEP": {
+   "contactEmail": "secretary@heathcoteplastic.example",
+   "phone": "03 555 2406"
+  },
+  "RM-YALDHURSTV": {
+   "contactEmail": "office@yaldhurstvascular.example",
+   "phone": "03 555 2591"
+  }
  }
 }

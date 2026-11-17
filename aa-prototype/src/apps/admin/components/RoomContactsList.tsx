@@ -7,7 +7,7 @@
  * `domain/roomContacts.ts`; writes only through the contact actions.
  */
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { neutral } from '../../../theme/tokens'
 import type { RoomContact, SurgeonRoom } from '../../../domain/types'
 import { contactsForRoom, contactsForSurgeon, FOR_THIS_SURGEON_LABEL, ROOM_CONTACT_ROLE_LABELS, WHOLE_ROOM_LABEL } from '../../../domain/roomContacts'
@@ -22,6 +22,7 @@ export function RoomContactsList({
   surgeonId,
   actor,
   formIn = 'sheet',
+  onEditingChange,
 }: {
   room: SurgeonRoom
   /** On a surgeon's profile: the room's whole-room contacts and those named for this surgeon. Absent: every contact. */
@@ -29,11 +30,16 @@ export function RoomContactsList({
   actor: Actor
   /** `sheet` opens the form in the app's overlay; `inline` swaps it in place (inside the room sheet). */
   formIn?: 'sheet' | 'inline'
+  /** Told when the inline form opens and closes, so the room sheet can hold back its own Save. */
+  onEditingChange?: (editing: boolean) => void
 }) {
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const [form, setForm] = useState<Form>(null)
   const [confirming, setConfirming] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const removeRefs = useRef(new Map<string, HTMLButtonElement | null>())
+  const editing = formIn === 'inline' && form !== null
+  useEffect(() => onEditingChange?.(editing), [editing, onEditingChange])
 
   const rows =
     surgeonId !== undefined
@@ -76,19 +82,28 @@ export function RoomContactsList({
                 </div>
                 {confirming !== contact.id && (
                   <div style={{ display: 'flex', gap: 12, flex: 'none' }}>
-                    <TextAction size="sm" flush label={`Edit ${contact.name}`} onClick={() => setForm({ contact })}>Edit</TextAction>
-                    <TextAction size="sm" flush label={`Remove ${contact.name}`} onClick={() => setConfirming(contact.id)}>Remove</TextAction>
+                    <TextAction size="sm" flush label={`Edit ${contact.name}, ${forLine}`} onClick={() => setForm({ contact })}>Edit</TextAction>
+                    <TextAction
+                      size="sm"
+                      flush
+                      label={`Remove ${contact.name}, ${forLine}`}
+                      buttonRef={(el) => { removeRefs.current.set(contact.id, el) }}
+                      onClick={() => setConfirming(contact.id)}
+                    >
+                      Remove
+                    </TextAction>
                   </div>
                 )}
               </div>
               {confirming === contact.id && (
                 <InlineConfirm
-                  label={`Remove ${contact.name}`}
-                  message={`Remove ${contact.name} from ${room.name}? This is recorded in the room's history.`}
+                  label={`Remove ${contact.name}, ${forLine}`}
+                  message={`Remove ${contact.name} (${forLine.toLowerCase()}) from ${room.name}? This is recorded in the room's history.`}
                   confirmLabel="Remove contact"
                   onConfirm={() => remove(contact.id)}
                   cancelLabel="Keep it"
                   onCancel={() => setConfirming(null)}
+                  returnFocus={() => removeRefs.current.get(contact.id)}
                   shot="room-contact-remove"
                 />
               )}

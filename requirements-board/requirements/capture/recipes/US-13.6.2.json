@@ -6,7 +6,7 @@
     {
       "name": "surgeons-table",
       "app": "admin",
-      "caption": "Surgeons with their room, specialties, HPI CPN and pairing counts",
+      "caption": "The room or rooms and the specialties each surgeon holds, with the HPI CPN and pairing counts; Mr N. Wainwright is at two rooms",
       "start": "/admin/masters?view=surgeons",
       "states": [
         {
@@ -16,7 +16,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=masters-surgeons]"
+            "[data-shot=masters-surgeons] tr[data-surgeon=S-WAINWRIGHT]"
           ]
         }
       ]
@@ -44,17 +44,24 @@
         },
         {
           "state": "edit",
-          "caption": "Editing the surgeon: one or more specialties and the HPI CPN are required, the registration number is for information",
+          "caption": "A surgeon belongs to one or more rooms, the first the main room; specialties are required too",
           "steps": [
+            {
+              "goto": "/admin/masters/surgeons/S-WAINWRIGHT"
+            },
             {
               "click": "role=button[name=\"Edit details\"]"
             },
             {
-              "wait": 500
+              "wait": "[data-shot=surgeon-rooms-field]"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[data-shot=surgeon-specialties-field]",
+            "[data-shot=surgeon-rooms-field]"
           ]
         }
       ]

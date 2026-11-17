@@ -70,6 +70,13 @@ describe('room contacts (US-13.6.5)', () => {
     expect(editRoomContact(api, SOUTER, 'RM-AVONHEADEN', contact.id, { name: 'B', email: 'b@b.example', role: 'PA' }).ok).toBe(false)
   })
 
+  it('moving a contact to another surgeon of the room is a change, compared by id', () => {
+    const api = createAppStore()
+    expect(editRoomContact(api, OFFICE, 'RM-BURNSIDEEN', 'RC-002', { name: 'Maree', email: 'maree@burnsideent.example', role: 'PA', forSurgeonId: 'S-CALDER' }).ok).toBe(true)
+    expect(api.getState().masters.surgeonRooms['RM-BURNSIDEEN']!.contacts!.find((c) => c.id === 'RC-002')?.forSurgeonId).toBe('S-CALDER')
+    expect(api.getState().audit.at(-1)).toMatchObject({ action: 'roomContact.update', before: { contact: 'Maree', for: 'Mr I. Forsythe' }, after: { contact: 'Maree', for: 'Dr T. Calder' } })
+  })
+
   it('refuses an edit that would duplicate another contact of the room', () => {
     const api = createAppStore()
     const r = editRoomContact(api, OFFICE, 'RM-BURNSIDEEN', 'RC-006', { name: 'Leanne', email: 'leanne@burnsideent.example', role: 'PA', forSurgeonId: 'S-CALDER' })

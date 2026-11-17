@@ -75,6 +75,13 @@ describe('catch-up Phase 17a seed', () => {
     expect(surgeonRooms['RM-WIGRAMORTH']?.phone).toBeUndefined()
   })
 
+  it('keeps the email and phone of every directory room that holds one, as before the phase', () => {
+    for (const [id, kept] of Object.entries(baseline.directoryRoomsKept)) {
+      expect({ contactEmail: surgeonRooms[id]?.contactEmail, phone: surgeonRooms[id]?.phone }, id).toEqual(kept)
+    }
+    expect(Object.keys(baseline.directoryRoomsKept).length + NO_EMAIL.length).toBe(40)
+  })
+
   it("keeps the five cast rooms' emails and phones", () => {
     expect(SURGEON_ROOMS.map((r) => [r.id, r.contactEmail, r.phone])).toEqual([
       ['RM-RICC', 'reception@riccartonortho.example', '03 555 0141'],

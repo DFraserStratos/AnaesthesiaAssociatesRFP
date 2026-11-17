@@ -34,8 +34,9 @@ export function surgeonsInRoom(surgeons: Readonly<Record<string, Surgeon>>, room
 /**
  * A surgeon's rooms in `roomIds` order, the main room first (catch-up Phase
  * 17a; OQ-128, D75). An unknown surgeon gives `[]`; an unknown room id is
- * skipped. With `roomsForSurgeon` and `mainRoomOf`, the only readers of
- * `Surgeon.roomIds`.
+ * skipped. With `mainRoomOf` and `surgeonsInRoom`, the one way screens and
+ * helpers read `Surgeon.roomIds` (the surgeon actions and the edit sheet's form
+ * state write it; `roomContactsGuard.test.ts` keeps it so).
  */
 export function roomsForSurgeon(
   masters: { surgeons: Readonly<Record<string, Surgeon>>; surgeonRooms: Readonly<Record<string, SurgeonRoom>> },

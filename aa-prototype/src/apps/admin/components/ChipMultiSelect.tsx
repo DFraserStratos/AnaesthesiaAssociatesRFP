@@ -73,7 +73,11 @@ export function ChipMultiSelect({
                 size="sm"
                 flush
                 label={`${ordered.promoteLabel}: ${byId.get(id) ?? id}`}
-                onClick={() => onChange([id, ...value.filter((v) => v !== id)])}
+                onClick={() => {
+                  onChange([id, ...value.filter((v) => v !== id)])
+                  // The action leaves with the chip's move to the front; focus returns to the field.
+                  selectRef.current?.focus()
+                }}
                 style={{ marginLeft: 6 }}
               >
                 {ordered.promoteLabel}

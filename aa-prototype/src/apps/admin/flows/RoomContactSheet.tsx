@@ -43,11 +43,11 @@ export function RoomContactForm({ room, contact, defaultSurgeonId, actor, onClos
   return (
     <div data-shot="room-contact-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {inline ? (
-        <div style={{ fontSize: 15, fontWeight: 600 }}>{contact === undefined ? 'Add a contact' : 'Edit contact'}</div>
+        <h3 style={{ margin: 0, fontSize: 15, lineHeight: '22px', fontWeight: 600 }}>{contact === undefined ? 'Add a contact' : 'Edit contact'}</h3>
       ) : (
         <OverlayHeader title={contact === undefined ? 'Add a contact' : 'Edit contact'} description={room.name} />
       )}
-      <TextField label="Name" value={name} onChange={(v) => { setName(v); setError(null) }} placeholder="e.g. Bev" />
+      <TextField label="Contact name" value={name} onChange={(v) => { setName(v); setError(null) }} placeholder="e.g. Bev" />
       <TextField label="Email" value={email} onChange={(v) => { setEmail(v); setError(null) }} type="email" mono placeholder="name@rooms.example" />
       <Segmented
         label="Role"
@@ -62,7 +62,7 @@ export function RoomContactForm({ room, contact, defaultSurgeonId, actor, onClos
       <FormError message={error} />
       {inline ? (
         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-          <Button variant="primary" onClick={save}>{label}</Button>
+          <Button variant="primary" size="compact" onClick={save}>{label}</Button>
           <TextAction onClick={onClose}>Cancel</TextAction>
         </div>
       ) : (

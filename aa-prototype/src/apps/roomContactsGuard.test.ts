@@ -15,8 +15,13 @@ const PWA = import.meta.glob('../../pwa/**/*.{ts,tsx}', { query: '?raw', import:
 /** `../domain/x.ts` → `domain/x.ts`; `./admin/x.tsx` (this folder) → `apps/admin/x.tsx`. */
 const rel = (path: string) => path.replace(/^\.\.\//, '').replace(/^\.\//, 'apps/')
 const isTest = (path: string) => /\.test\.tsx?$|\/__parity__\//.test(path)
-/** Code without comments, so a doc comment naming a field never counts as a read. */
-const code = (text: string) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/.*$/gm, '$1')
+/**
+ * Code without comments, so a doc comment naming a field never counts as a read. A comment
+ * opens only at a line start or after whitespace or punctuation, so a route string such as
+ * `'/admin/day/*'` or a URL's `//` never swallows the code after it.
+ */
+const code = (text: string) =>
+  text.replace(/(^|[\s;{}(),])\/\*[\s\S]*?\*\//g, '$1').replace(/(^|\s)\/\/.*$/gm, '$1')
 
 const sources = Object.entries(SRC)
   .map(([path, text]) => [rel(path), code(text)] as const)
@@ -63,11 +68,22 @@ describe("one helper for a surgeons' room's email (catch-up Phase 17a)", () => {
   it("no file reads Surgeon.roomIds except the room lookups, the surgeon actions, the edit sheet's form state and the seed", () => {
     const allowed = new Set(['domain/surgeons.ts', 'domain/types.ts', 'store/surgeonActions.ts', 'store/roomContactActions.ts', 'apps/admin/flows/SurgeonEditSheet.tsx'])
     const readers = sources
-      .filter(([path, text]) => /\.roomIds\b|roomIds\s*\[/.test(text) && !allowed.has(path) && !path.startsWith('domain/seed/'))
+      .filter(([path, text]) => /\broomIds\b/.test(text) && !allowed.has(path) && !path.startsWith('domain/seed/'))
       .map(([path]) => path)
     expect(readers).toEqual([])
     // No single-room reader survives anywhere.
     expect(sources.filter(([, text]) => /\.roomId\b/.test(text)).map(([path]) => path)).toEqual([])
+  })
+
+  it('the comment stripper keeps code after a route string', () => {
+    expect(code("const r = '/admin/day/*'\nroom.contactEmail")).toContain('room.contactEmail')
+    expect(code("const u = 'http://x.example'\nroom.contactEmail")).toContain('room.contactEmail')
+    expect(code('/* room.contactEmail */\n// room.contactEmail\nok')).not.toContain('contactEmail')
+  })
+
+  it('no shared module (it ships to the anaesthetist apps and the PWA) reads the room contacts', () => {
+    const words = /\broomContacts\b|\bRoomContact\b|\bcontactsForSurgeon\b|\bcontactsForRoom\b|\broomEmailForSurgeon\b|\botherRoomsForSurgeon\b|\bNO_ROOM_EMAIL\b/
+    expect(sources.filter(([path, text]) => path.startsWith('shared/') && words.test(text)).map(([path]) => path)).toEqual([])
   })
 
   it('no anaesthetist app or the PWA names a room email or its contacts', () => {

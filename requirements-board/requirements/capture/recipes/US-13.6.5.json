@@ -1,0 +1,63 @@
+{
+  "id": "US-13.6.5",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "surgeon-contacts",
+      "app": "admin",
+      "caption": "Practice manager and PA contacts shown on the surgeon's profile, provisional until AA confirms where contacts belong",
+      "start": "/admin/masters/surgeons/S-DALGETY",
+      "states": [
+        {
+          "state": "profile",
+          "caption": "Practice manager and PA contacts shown on the surgeon's profile: Bev, PA for Dr H. Dalgety, with a name and email. Provisional until AA confirms where contacts belong",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=surgeon-contacts]"
+          ]
+        },
+        {
+          "state": "add",
+          "caption": "The office adds a contact with a name, email and role, for the whole room or one surgeon (provisional)",
+          "steps": [
+            {
+              "click": "[data-shot=room-contact-add]"
+            },
+            {
+              "wait": "[data-shot=room-contact-sheet]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "whole-room",
+      "app": "admin",
+      "caption": "A PA for this surgeon and a PA for the whole room, on Mr I. Forsythe's profile (provisional)",
+      "start": "/admin/masters/surgeons/S-FORSYTHE",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=surgeon-contacts]"
+          ]
+        }
+      ]
+    }
+  ]
+}

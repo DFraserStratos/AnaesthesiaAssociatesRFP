@@ -80,7 +80,10 @@ export function editRoomContact(api: AppStoreApi, actor: Actor, roomId: string, 
   const next: RoomContact = { id: contactId, ...cleaned.value }
   const before = auditContact(state, existing)
   const after = auditContact(state, next)
-  const changed = (Object.keys(after) as (keyof typeof after)[]).filter((k) => k !== 'contact' && before[k] !== after[k])
+  // Changed fields compared on the record (ids, not the names the audit prints).
+  const changed = (['email', 'role', 'for'] as const).filter((k) =>
+    k === 'for' ? (existing.forSurgeonId ?? '') !== (next.forSurgeonId ?? '') : existing[k] !== next[k],
+  )
   if (existing.name === next.name && changed.length === 0) return ok(undefined)
   // The contact's name always shows, so History says whose details changed.
   const pick = (v: Record<string, string>) => ({ contact: v.contact!, ...Object.fromEntries(changed.map((k) => [k, v[k]!])) })
