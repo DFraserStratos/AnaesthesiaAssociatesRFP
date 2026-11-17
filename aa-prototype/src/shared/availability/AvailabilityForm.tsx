@@ -5,7 +5,7 @@ import type { SlotStatusKey, Weekday } from '../../domain/types'
 import { anaesthetistChoices, activeStatuses, statusFor, type SessionChoice } from '../../domain/slotStatus'
 import { seriesLine, weekdayOf, WEEKDAY_NAMES, WEEKDAYS } from '../../domain/availabilitySeries'
 import { createAvailabilitySeries, setAvailabilityRange, useAppStore, type Actor } from '../../store'
-import { Button, FieldLabel, FormError, Segmented, SlidingSegmentedControl, TextField } from '../ui'
+import { Button, FieldLabel, FormError, Segmented, TextField } from '../ui'
 import { StatusChip } from '../StatusChip'
 import { describeAvailabilityOutcome } from './describeAvailabilityOutcome'
 import { useAvailabilityBounds } from './useAvailability'
@@ -217,18 +217,17 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
 
       {allowRepeat && !singleSession && sessions !== 'OOH' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <FieldLabel>Repeat</FieldLabel>
-          <SlidingSegmentedControl
+          <Segmented
+            label="Repeat"
             value={repeat}
             layout="two-column"
-            ariaLabel="Repeat"
             options={[
               { value: 'none', label: 'Does not repeat' },
               { value: '1', label: 'Every week' },
               { value: '2', label: 'Every 2 weeks' },
               { value: 'more', label: 'More' },
             ]}
-            onSelect={(v) => { touched(); setRepeat(v) }}
+            onChange={(v) => { touched(); setRepeat(v) }}
           />
           {repeat === 'more' && (
             <div style={{ display: 'flex', gap: 8 }}>

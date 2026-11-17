@@ -1,11 +1,12 @@
 import { useMemo } from 'react'
-import { accent, neutral, radius } from '../../../theme/tokens'
+import { neutral, radius } from '../../../theme/tokens'
 import { billedLists, changedSinceSubmitted, invoiceCountsByList, useAppStore } from '../../../store'
 import { ChangedSinceSubmittedPill } from '../components/ChangedSinceSubmitted'
 import { dayMicroCap, hhmm } from '../../../shared/format'
 import type { AssignedList } from '../../../domain/types'
 import { cellStyle as adminCell, headCellStyle as adminHead, isInteractiveRowTarget } from '../tableChrome'
 import { listShortLabel, listSourceLabels } from '../util'
+import { TextAction } from '../../../shared/ui'
 
 interface ReviewQueueProps {
   onOpen: (listId: string) => void
@@ -132,13 +133,9 @@ export function ReviewQueue({ onOpen, onViewInvoices }: ReviewQueueProps) {
                       </div>
                     </td>
                     <td style={{ ...cellStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <button
-                        type="button"
-                        onClick={() => onOpen(list.id)}
-                        style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-                      >
+                      <TextAction size="sm" flush onClick={() => onOpen(list.id)}>
                         Review →
-                      </button>
+                      </TextAction>
                     </td>
                   </tr>
                 )
@@ -152,9 +149,9 @@ export function ReviewQueue({ onOpen, onViewInvoices }: ReviewQueueProps) {
       <div data-testid="review-queue-recently-billed" style={{ background: neutral.sunken, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <span style={{ fontSize: 14, fontWeight: 700 }}>Recently billed</span>
-          <button onClick={onViewInvoices} style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          <TextAction size="sm" flush onClick={onViewInvoices}>
             View invoices →
-          </button>
+          </TextAction>
         </div>
         <div style={{ fontSize: 12.5, color: neutral.slate }}>
           Authorising a list hands it to the Billing Engine as a unit; its invoices are raised in the same moment.

@@ -37,7 +37,7 @@ import {
   StatusChipExample,
   StatusLegendExample,
   SuccessOverlayExample,
-  TabLinkExample,
+  LineTabsExample,
   TextAreaExample,
   TextFieldExample,
   TickBadgeExample,
@@ -107,7 +107,7 @@ export function AdminCatalogue() {
     >
       {/* ------------------------------------------------------------------ */}
       <LibraryGroup id="shadcn">
-        <CatalogueRow name="Button" source="shared/ui/Button.tsx" usedIn={AWM} what="The one button: teal primary, outlined secondary and the compact tinted pill, with a disabled state. About 102 uses in Admin." replaceWith="shadcn Button (cva variants)" note="Adds focus-visible, hover and loading states.">
+        <CatalogueRow name="Button" source="shared/ui/Button.tsx" usedIn={AWM} what="The one button (UI unification U5): primary, secondary, the teal outline the mockups draw, the tinted pill and the one red danger outline (Cancel booking only, question 8); the touch size (54, 48, 44: sheet footers keep the 54px primary, question 7), desktop (44, radius 12) and compact (36); one disabled treatment and a printed disabled reason; the teal focus ring and a desktop hover." replaceWith="shadcn Button (cva variants)" note="Replaced ActionBtn, PanelAction and the hand-rolled teal outlines. Press feedback stays in global.css.">
           <ButtonExample />
         </CatalogueRow>
         <CatalogueRow name="TickButton" source="shared/ui/TickButton.tsx" usedIn={AW} what="The office's 'dealt with' control: a teal outline button with a check, used by To-do Clear and notice Resolve." replaceWith="shadcn Button (outline variant + icon)">
@@ -116,7 +116,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="Segmented" source="shared/ui/Field.tsx" usedIn={AWM} what="A row of mutually exclusive options (status filters, List or Calendar, Yes or No). 22 uses in Admin." replaceWith="shadcn ToggleGroup (single)" note="Gives radio semantics and arrow keys.">
           <SegmentedExample />
         </CatalogueRow>
-        <CatalogueRow name="SlidingSegmentedControl" source="shared/ui/SlidingSegmentedControl.tsx" usedIn={AWM} what="A segmented control whose selected pill slides between options, in teal, surface and ink variants." replaceWith="shadcn ToggleGroup (single) or Tabs" note="Keep the sliding indicator with a Motion layoutId.">
+        <CatalogueRow name="SlidingSegmentedControl" source="shared/ui/SlidingSegmentedControl.tsx" usedIn={AWM} what="A segmented control whose selected pill slides between options, in teal and surface variants, md and sm (the 36px row order on Admin Day) sizes. The ink variant went with question 17 (UI unification U5)." replaceWith="shadcn ToggleGroup (single) or Tabs" note="Keep the sliding indicator with a Motion layoutId. Segments stay buttons with aria-pressed (question 3).">
           <SlidingSegmentedExample />
         </CatalogueRow>
         <CatalogueRow name="StatusLegend (chips)" source="shared/StatusLegend.tsx" usedIn={AWM} what="The List kinds and availability statuses from the status master. With a toggle handler each chip hides or shows that status on the grid." replaceWith="shadcn ToggleGroup (multiple)">
@@ -150,7 +150,7 @@ export function AdminCatalogue() {
           <SlotDrawerExample />
           <StageHint>Opens over the page from the right.</StageHint>
         </CatalogueRow>
-        <CatalogueRow name="DraftListDrawer" source="apps/admin/components/DraftListDrawer.tsx" usedIn={A} what={`The same drawer on SidePanel for a ${DRAFT_LIST} (no session yet): its details, bookings and Assign, Redate, Edit and Remove.`} replaceWith="shadcn Sheet (side)" note="Disabled reasons live only in title tooltips. Its actions write to the demo store.">
+        <CatalogueRow name="DraftListDrawer" source="apps/admin/components/DraftListDrawer.tsx" usedIn={A} what={`The same drawer on SidePanel for a ${DRAFT_LIST} (no session yet): its details, bookings and Assign, Redate, Edit and Remove.`} replaceWith="shadcn Sheet (side)" note="Its actions are the shared Button (compact); a disabled one prints its reason (UI unification U5). Its actions write to the demo store.">
           <DraftListDrawerExample />
         </CatalogueRow>
         <CatalogueRow name="ClearConflictSheet" source="apps/admin/components/conflicts/ClearConflictSheet.tsx" usedIn={A} what="Confirms clearing a hospital-closure conflict on a List, with an optional note. A ConfirmSheet: focus opens on the safe button and a double click clears once." replaceWith="shadcn AlertDialog" note="Confirming clears the conflict in the demo store.">
@@ -159,7 +159,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="HistorySheet" source="shared/booking/HistorySheet.tsx" usedIn={AWM} what="The audit history of a record in an Overlay, titled by an OverlayHeader, with expandable steps (HistoryTimeline)." replaceWith="shadcn Dialog + Accordion">
           <HistorySheetExample />
         </CatalogueRow>
-        <CatalogueRow name="SideNav (with RolesInfo)" source="apps/admin/components/SideNav.tsx" usedIn={A} what="The dark Admin side nav: sections with crimson and amber count badges (the mockup badge, kept local), the wordmark, the Roles in this prototype dialog and the persona through the shared PersonaChip." replaceWith="shadcn Sidebar" note="Gives real links, aria-current and a nav label; crimson only on --sidebar-primary." height={600}>
+        <CatalogueRow name="SideNav (with RolesInfo)" source="apps/admin/components/SideNav.tsx" usedIn={A} what="The dark Admin side nav: sections with crimson and amber count badges (the mockup badge, kept local), the wordmark, the Roles in this prototype dialog and the persona through the shared PersonaChip." replaceWith="shadcn Sidebar" note="A labelled navigation whose active item carries aria-current since UI unification U5; the items stay buttons (question 3). Crimson only on --sidebar-primary." height={600}>
           <SideNavExample />
         </CatalogueRow>
         <CatalogueRow name="Master data sub-nav" source="apps/admin/screens/masters/MasterData.tsx" usedIn={A} what="The vertical list of the 15 master views, with aria-current on the open one." replaceWith="shadcn Sidebar group / NavigationMenu" note="Rebuilt from MasterData's markup and the real MASTERS_NAV: the real nav writes ?view= and renders every master view." height={420}>
@@ -170,10 +170,10 @@ export function AdminCatalogue() {
             <IntegrationMonitorScreen actor={OFFICE_ACTOR} />
           </Wide>
         </CatalogueRow>
-        <CatalogueRow name="TabLink (AA fees)" source="apps/admin/screens/AaFeesScreen.tsx" usedIn={A} what="Route tabs for the AA fee invoices and fee settings pages." replaceWith="shadcn Tabs (as links)" note="Rebuilt on buttons with the same styles: the real one is a router Link that would leave this page.">
-          <TabLinkExample />
+        <CatalogueRow name="LineTabs" source="shared/ui/LineTabs.tsx" usedIn={AWM} what={`The underline tab strip (UI unification U5): LineTabLink for sibling routes (AA fees, ${DRAFT_LISTS}, the web Availability page switch), a labelled navigation with aria-current; LineTab for local panels (Phase 25's Contract History tab), buttons with aria-pressed; a badge after the label for a count.`} replaceWith="shadcn Tabs (as links)" note="Was AA fees' TabLink. Shown with LineTab so nothing leaves this page.">
+          <LineTabsExample />
         </CatalogueRow>
-        <CatalogueRow name="DayNav (with SortToggle)" source="apps/admin/components/DayNav.tsx" usedIn={A} what="The Day view toolbar: week and day steppers, Today, the shared DateJumpInput (36px, named Go to date, bounded by the horizon; UI unification U4), the Roster or A to Z SortToggle and Find available." replaceWith="shadcn Button Group + ToggleGroup + Date Picker" note="Labels the glyph buttons and gives SortToggle pressed semantics. The date input takes only a full day inside the bounds; buttons get the shared focus ring in U5.">
+        <CatalogueRow name="DayNav (with SortToggle)" source="apps/admin/components/DayNav.tsx" usedIn={A} what="The Day view toolbar: week and day steppers, Today, the shared DateJumpInput (36px, named Go to date, bounded by the horizon; UI unification U4), the Roster order or A to Z choice and Find available. Since UI unification U5 the step buttons are IconButtons named Previous day and Next day, the week steps and Today are the compact Button, and SortToggle is the small SlidingSegmentedControl (Row order)." replaceWith="shadcn Button Group + ToggleGroup + Date Picker" note="The date input takes only a full day inside the bounds. Every button takes the teal focus ring.">
           <DayNavExample />
         </CatalogueRow>
         <CatalogueRow name="StatusChip" source="shared/StatusChip.tsx" usedIn={AWM} what="A small tinted chip for a List kind or availability status, coloured from the status master." replaceWith="shadcn Badge (6 status variants)">
@@ -239,10 +239,10 @@ export function AdminCatalogue() {
         <CatalogueRow name="Switch" source="shared/ui/Switch.tsx" usedIn={AWM} what="The one on/off switch (UI unification U4): a button with role=switch and aria-checked, so click and Space toggle it; sm is the 36 by 20 track, lg the 52 by 32 touch track, with a label and an optional description." replaceWith="shadcn Switch" note="No product screen uses it yet: Phase 27 builds its approval-step toggle on it. The PWA panel's ToggleRow stays its own (a demo surface).">
           <SwitchExample />
         </CatalogueRow>
-        <CatalogueRow name="ProfileChrome" source="apps/admin/components/ProfileChrome.tsx" usedIn={A} what="The surgeon and anaesthetist record pages' header, id chip, cards, fact rows and History and Edit actions." replaceWith="shadcn Card (+ Breadcrumb for BackLink)" note="BackLink is left out: it is a router Link.">
+        <CatalogueRow name="ProfileChrome" source="apps/admin/components/ProfileChrome.tsx" usedIn={A} what="The surgeon and anaesthetist record pages' header, id chip, cards, fact rows and History and Edit actions." replaceWith="shadcn Card (+ Breadcrumb for BackLink)" note="Its back link is the shared BackLink since UI unification U5 (teal, a real link), left out here because it would leave this page.">
           <ProfileChromeExample />
         </CatalogueRow>
-        <CatalogueRow name="drawerParts (Section, Row, DrawerLink, ActionBtn)" source="apps/admin/components/drawerParts.tsx" usedIn={A} what="The drawers' section headings, label and value rows, inline links and action buttons, shared by SlotDrawer and DraftListDrawer (one copy since U2)." replaceWith="shadcn Button + DropdownMenu" note="U5 folds ActionBtn into Button.">
+        <CatalogueRow name="drawerParts (Section, Row, DrawerLink)" source="apps/admin/components/drawerParts.tsx" usedIn={A} what="The drawers' section headings, label and value rows and inline links, shared by SlotDrawer and DraftListDrawer (one copy since U2); their action buttons are the shared Button at the compact size, a disabled one printing its reason (U5)." replaceWith="shadcn Button + DropdownMenu" note="ActionBtn folded into Button in UI unification U5.">
           <DrawerPartsExample />
         </CatalogueRow>
       </LibraryGroup>
@@ -299,7 +299,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="BackstopAmountField" source="shared/contracts/railParts.tsx" usedIn={AWM} what="The typed amount on No contract · Fixed price (UI unification U4): TextField's chrome at the rail's 44px, mono, a decimal keypad, aria-invalid with the hint saying why, saved on blur or Enter, with an optional inline action beside it." replaceWith="Base UI NumberField + shadcn Field" note="Local state here; in the Billing card and the step rail sheet it writes the price.">
           <BackstopAmountFieldExample />
         </CatalogueRow>
-        <CatalogueRow name="ContractPanel (ContractEditSheet)" source="apps/admin/flows/ContractEditSheet.tsx" usedIn={A} what="The Contract editor in a MasterPanel: two-column fields, SelectFields (holder, linked anaesthetist, funding tag, pricing kind), segmented choices, ChipMultiSelect for specialties and linked surgeons, FieldHint lines, the RVG code picker and price ranges. All shared field parts since UI unification U4." replaceWith="shadcn Sheet + Field + React Hook Form + Zod" note="Save writes the Contract to the demo store.">
+        <CatalogueRow name="ContractPanel (ContractEditSheet)" source="apps/admin/flows/ContractEditSheet.tsx" usedIn={A} what="The Contract editor in a MasterPanel: two-column fields, SelectFields (holder, linked anaesthetist, funding tag, pricing kind), segmented choices, Disable as a neutral secondary Button (question 8), ChipMultiSelect for specialties and linked surgeons, FieldHint lines, the RVG code picker and price ranges. All shared field parts since UI unification U4." replaceWith="shadcn Sheet + Field + React Hook Form + Zod" note="Save writes the Contract to the demo store.">
           <ContractPanelExample />
         </CatalogueRow>
         <CatalogueRow name="SlotStatusSheet" source="apps/admin/flows/SlotStatusSheet.tsx" usedIn={A} what="Adds or edits an availability status in an Overlay: an OverlayHeader title, name, colour swatches, flags (the shared Checkbox with a hint, UI unification U4) and a live preview validated as you type, and a SheetActions footer." replaceWith="shadcn Dialog + Field + ToggleGroup (swatches) + RHF/Zod" note="Save adds the status to the demo store.">

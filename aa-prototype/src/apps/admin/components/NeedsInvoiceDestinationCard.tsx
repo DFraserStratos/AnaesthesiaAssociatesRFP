@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { needsInvoiceDestinationBookings, useAppStore } from '../../../store'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { CountBadge } from '../../../shared/ui/CountBadge'
+import { TextAction } from '../../../shared/ui'
 import { shortDay } from '../../../shared/format'
 import { sessionText } from '../../../domain/outOfHours'
 import { EmptyState } from '../../../shared/ui/EmptyState'
@@ -57,13 +58,9 @@ export function NeedsInvoiceDestinationCard({ onOpenBooking }: { onOpenBooking: 
         </div>
       )}
       {rows.length > VISIBLE_ROWS && (
-        <button
-          type="button"
-          onClick={() => setExpanded(!expanded)}
-          style={{ alignSelf: 'flex-start', border: 'none', background: 'none', padding: 0, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, color: accent.base, cursor: 'pointer' }}
-        >
+        <TextAction size="sm" flush onClick={() => setExpanded(!expanded)} style={{ alignSelf: 'flex-start' }}>
           {expanded ? 'Fewer' : `All ${rows.length}`}
-        </button>
+        </TextAction>
       )}
     </section>
   )

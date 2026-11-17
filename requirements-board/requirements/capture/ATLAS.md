@@ -197,6 +197,13 @@ Hooks already added:
   - `role=button[name="Foo"]`.
   - A `data-shot` hook.
 - Tabs and segmented controls are usually plain `<button>`s, not `role=tab`.
+- **Page switches are links (UI unification U5).** The web "Availability page" switch (Find cover, My availability),
+  the Admin Draft Lists tabs (Unassigned, History) and the AA fees tabs are links in a named navigation:
+  `role=navigation[name="Availability page"] >> role=link[name="My availability"]`, `[data-draft-tab=history]`,
+  `role=navigation[name="AA fees"] >> role=link[...]`. The current one carries `aria-current=page`, not `aria-selected`. Segmented controls (Admin Day's "Row order", the web "Anaesthetists
+  shown" pills, the phone's "Show Lists" and "Balance section") stay `role=group` holding buttons with `aria-pressed`.
+- **Navs (U5):** the Admin side nav is `nav[aria-label="Admin"]`, the web nav `nav[aria-label="Main"]`, the phone tab bar
+  `nav[aria-label="Main"][data-testid=mobile-tab-bar]`; their items are still buttons, the active one with `aria-current=page`.
 - Many labels repeat, such as "Reset demo data" (harness and inspector), "Lists" (tab and back
   button) and "Replay". Scope them, for example `[data-testid=integration-inspector] >> text="Reset demo data"`,
   or use `>> nth=0`.
@@ -289,7 +296,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/web/lists` | The web main view (catch-up Phase 38a): "Earlier, not yet authorised" first (`web-main-view-earlier`, Mon 20 Jul AM and PM), then "From today"; a Progress column (`[data-progress=submitted]` etc.); no From input, only To. Title row: the search pill (`[data-testid=web-lists-search]` on the `<input>`, `role=searchbox[name="Search your Bookings"]`; its X is "Clear the search field") and "Go to date" (`[data-testid=web-lists-go-to-date]` on the date input, inside a `<label>` "Go to date"). `?q=` shows the results table (`web-lookback-search`, rows `tr[data-booking-id]`, "Clear search"); `?day=YYYY-MM-DD` the day table (`web-lookback-day`, rows `tr[data-list-id]`). Back from List and Booking detail returns to the same `?q=` or `?day=` (location state). |
 | `/web/lists/:listId` | List detail: header, bookings table, "Add a booking", submit action. A SUBMITTED List stays editable (catch-up Phase 38a). An AUTHORISED List shows "Invoiced · read only" (`list-authorised-status`), an Invoiced column in place of Units and Fee, and the Invoices panel (`list-invoices`). |
 | `/web/lists/:listId/bookings/:bookingId` | Booking detail with capture: RVG code, times, units and the itemised modifiers, booking total, "Mark complete". On her own ACTIVE List dated today or later, "Move to a colleague" (`move-booking-action`) sits above Cancel booking and opens the single-Booking move as a dialog (catch-up Phase 32a). A Booking a colleague handed her shows "Moved to you by" (`booking-moved-to-you`). |
-| `/web/availability` | Find cover: the practice availability grid. `?date=YYYY-MM-DD` opens a day (catch-up Phase 32). Free cells read "Free · Open for booking". Dr Souter's own movable List cells show "Move" (`availability-move-mine-am`/`-pm`), and a colleague's free cell in a session where she has a movable List shows "Move here" (`availability-move-to-<registration>-am`/`-pm`); every other cell is inert. A "Moved to you" panel (`moved-to-you`) shows above the filters when a colleague moved a List to her this week. The "Find cover · My availability" switch is `role=group[name="Availability page"]`; the "(you)" row's "Change" link opens My availability on that date. |
+| `/web/availability` | Find cover: the practice availability grid. `?date=YYYY-MM-DD` opens a day (catch-up Phase 32). Free cells read "Free · Open for booking". Dr Souter's own movable List cells show "Move" (`availability-move-mine-am`/`-pm`), and a colleague's free cell in a session where she has a movable List shows "Move here" (`availability-move-to-<registration>-am`/`-pm`); every other cell is inert. A "Moved to you" panel (`moved-to-you`) shows above the filters when a colleague moved a List to her this week. The "Find cover · My availability" switch (UI unification U5) is a navigation of links, `role=navigation[name="Availability page"]` holding `role=link[name="Find cover"]` and `role=link[name="My availability"]` (the current one has `aria-current=page`), on both pages; it is no longer a group of buttons. The day steps stay `role=button[name="Previous day"]`/`"Next day"`; the filter pills are `role=group[name="Anaesthetists shown"]` with buttons "All anaesthetists" and "Free only · N" (match "Free only" by `button:has-text("Free only")`). The "(you)" row's "Change" link opens My availability on that date. |
 | `/web/availability/mine` | My availability (catch-up Phase 29): Dr Souter's month (AM and PM per day), click a day and shift-click to a range; the right rail holds the session panel and the form, then "Your series" and the legend. `?date=YYYY-MM-DD` opens a day in the rail (the capture runner has no shift-click: open `?date=`, click "Change both sessions" and fill the To date for a range). |
 | `/web/accounts/overdue`, `/web/accounts/payments`, `/web/accounts/gst`, `/web/accounts/fees` | Accounts tabs. Add `?invoice=AA-2026-0005` to focus a payment, which exists only after S3 billing. AA fees (catch-up Phase 16) lists Dr Souter's AA fee invoices; `?invoice=AA-FEE-2026-H02` focuses one. |
 
@@ -298,10 +305,10 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | Route | Shows |
 |---|---|
 | `/admin` | Redirects to `/admin/day/2026-07-21`. |
-| `/admin/day/:date` | Day grid of anaesthetists by time. The right rail has the mini calendar, "Internal notes" and "Awaiting review". Add `?sort=az` for A to Z order. The header's date input is named "Go to date" (`[aria-label="Go to date"]`). |
+| `/admin/day/:date` | Day grid of anaesthetists by time. The right rail has the mini calendar, "Internal notes" and "Awaiting review". Add `?sort=az` for A to Z order. The toolbar is `[data-testid=admin-day-nav]` (see "Date navigation" under "Overlays that need clicks"); its row order is a segmented control, `role=group[name="Row order"]` with buttons "Roster order" and "A to Z" (`aria-pressed`). The header's date input is named "Go to date" (`[aria-label="Go to date"]`). |
 | `/admin/day/:date/bookings/:bookingId` | Admin booking detail with "Office billing setup". |
 | `/admin/notifications` | The shared notification pool (catch-up Phase 32; US-13.8.1): newest first, six a page, `?page=N`; the table `admin-notifications-table`, rows `[data-notification-row=NT0001]` with "Open List", "Open Draft List" or "Open Booking", the pager `admin-notifications-pager` (Newer / Older). Catch-up Phase 32b: notices are active or resolved; the page shows active ones by default, the count `admin-notifications-page-count`, each active row's tick `notification-tick` ("Resolve"), and the "Show resolved" checkbox `admin-notifications-show-resolved` (`?resolved=1`, kept with `?page=`); resolved rows carry `data-notification-resolved=true` and the line `notification-resolved-line` ("Resolved by Kirsty W., Tue 21 Jul 08:00"). An alert's note is `notification-alert-note`. The provisional caption is gone. Seeds empty: stage it with the `colleague-moves-list-to-office` trigger, or send an alert from a web Booking (same origin) and `goto` here. |
-| `/admin/draft-lists` | Draft Lists (catch-up Phase 31): Unassigned tab (default) and History (`?tab=history`). `?open=<listId>` opens the Draft List drawer (`admin-draft-list-drawer`); `?assigned=<listId>` shows the assigned confirmation with "Open List". The drawer's "Available that session" Assign opens step 2; the row's Assign opens step 1 (Everyone / Free only, tier filter, groups). "New Draft List" opens `admin-new-draft-list`. |
+| `/admin/draft-lists` | Draft Lists (catch-up Phase 31): Unassigned tab (default) and History (`?tab=history`). Since UI unification U5 the two tabs are links inside `role=navigation[name="Draft Lists"]`, not `role=tab`: `a[data-draft-tab=unassigned]` and `a[data-draft-tab=history]`, each with its count inside the link text (so match by the hook, not the name); the current one has `aria-current=page`. `?open=<listId>` opens the Draft List drawer (`admin-draft-list-drawer`); `?assigned=<listId>` shows the assigned confirmation with "Open List". The drawer's "Available that session" Assign opens step 2; the row's Assign opens step 1 (Everyone / Free only, tier filter, groups). "New Draft List" opens `admin-new-draft-list`. |
 | `/admin/conflicts` | Conflicts (catch-up Phase 30): every live conflict, grouped by date (`section[data-conflict-date=<date>]`), one table each (`[data-shot=conflicts-table]` wraps them). Rows are `tr[data-conflict-row=<listId>]` (cleared ones add `data-conflict-cleared=true`). Row actions have accessible names with context (`Reassign, Dr Rutherford Wed 22 Jul AM`, `Clear conflict, ...`, `Open the List, ...`, `Open the day, ...`): match them by regex (`role=button[name=/^Clear conflict/]`). Hospital closures only since catch-up Phase 32b (no reason filter, no Availability column). Filters in the URL: `?when=twoWeeks|canvas|past`, `?hospital=<id>`, `?anaesthetist=<reg>`, `?cleared=1`. After a reassign or clear, `[data-shot=conflicts-confirmation]`. |
 | `/admin/review` | Review queue, plus "Recently billed". |
 | `/admin/review/:listId` | Sanity check: total units, B · T · M, "Log phone note", "Authorise for billing". |
@@ -991,7 +998,10 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   - `>> nth=-1` confirms. The banner then reads "List authorised · locked for billing".
 - **Day notes:** "+ Add note", placeholder "Add an internal note for this day", then "Save note".
 - **Date navigation:**
-  - Buttons ‹, ›, Today, -4w, -1w, +1w, +4w.
+  - Admin Day's toolbar is `[data-testid=admin-day-nav]`. Its buttons are "Previous day", "Next day", Today, -4w, -1w,
+    +1w, +4w (since UI unification U5 the day steps are named; they were the glyphs ‹ and ›). Scope them by the toolbar,
+    `[data-testid=admin-day-nav] >> role=button[name="Next day"]`, because the harness clock menu and `/demo/control`
+    also have a "Next day" (the clock one rolls the demo date). "Find available" is `[data-shot=admin-availability-finder-open]`.
   - `input[type=date]` accepts a fill; since UI unification U4 it is named "Go to date"
     (`[aria-label="Go to date"]`), and only a full date moves the day.
   - Mini calendar days are named like "Wednesday 22 July 2026".
@@ -1040,6 +1050,11 @@ the exception: use the `trigger` step)
 
 ## Existing hooks
 
+- UI unification Phase U5 (every earlier hook kept): `admin-day-nav` (test id, Admin Day's toolbar of day and week steps,
+  Today, the date input, Find available and the Row order group); `data-draft-tab=unassigned|history` (attribute on the
+  Draft Lists tab links). GONE: Review's "Back to queue" link and the invoice detail's "All invoices" link. The breadcrumb
+  is the only way back: `role=button[name="Review queue"]` on `/admin/review/:listId`, and
+  `[data-testid=invoice-detail-screen] >> role=button[name="Invoices"]` on `/admin/invoices/:invoiceId`.
 - Catch-up Phase 22a: `paid-by-sheet` (the one Paid by sheet), `paid-by-save`, `paid-by-change` (Change beside the payer), `paid-by-payer` (the payer's name on a
   Paid by line, `data-procedure-id`), `payer-not-billed`, `payer-offer`, `payer-offer-row`, `payer-offer-provisional`,
   `split-start`, `split-another-person`, `split-person`; Review: `review-payer` (per Procedure under its stack, `data-procedure-id`),

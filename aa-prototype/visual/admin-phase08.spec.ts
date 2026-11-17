@@ -407,7 +407,7 @@ test('exemplar staging via the guard console: patient layout and the fee split',
   await page.screenshot({ path: 'visual/shots/a8-07-patient-doc.png', fullPage: true })
 
   // nib's share: holder layout, emailed to nib, the split note linking Alan's share.
-  await page.getByRole('button', { name: 'All invoices' }).click()
+  await page.getByTestId('invoice-detail-screen').getByRole('button', { name: 'Invoices', exact: true }).click()
   const nibRow = page
     .getByTestId('invoice-list-table-shell')
     .locator('tbody tr')

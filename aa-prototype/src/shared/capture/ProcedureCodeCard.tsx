@@ -165,6 +165,7 @@ export function RvgCodeField({
             {canCapture && coded && (
               <button
                 type="button"
+                className="aa-ctl"
                 aria-label="Clear the RVG code"
                 title="Clear"
                 data-shot="rvg-code-clear"

@@ -13,13 +13,13 @@ import { defaultVacated, pushTargets, type PushTarget } from '../../domain/listM
 import type { AssignedList, SlotStatusKey } from '../../domain/types'
 import { drSurname, locationName, matchesNameQuery, plural, shortDay } from '../format'
 import { resolveDisplayStatus, useSlotStatusRecords } from '../status/useSlotStatuses'
-import { Button, NameSearchBox, TextArea, FormError } from '../ui'
+import { BackLink, Button, NameSearchBox, TextArea, FormError } from '../ui'
 import { DoneStep } from '../ui/DoneStep'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { SheetActions } from '../surface/SheetActions'
 import { useSurface } from '../surface'
 import { useMoveInput } from './useListMoves'
-import { BackLink, ChoiceRow } from './moveSheetParts'
+import { ChoiceRow } from './moveSheetParts'
 import { Avatar } from '../Avatar'
 import { VacatedSessionChoice } from './VacatedSessionChoice'
 import { sessionText } from '../../domain/outOfHours'
@@ -188,7 +188,7 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
 
         {step === 'colleague' && (
           <>
-            <BackLink onClick={() => setStep('where')}>Where it goes</BackLink>
+            <BackLink size="step" onClick={() => setStep('where')}>Where it goes</BackLink>
             {header}
             <NameSearchBox value={query} onChange={setQuery} label="Find a colleague" placeholder="Type a name" shot="move-search" fill="well" />
             <div style={{ fontSize: 13, color: neutral.slate }}>Free on {dayLine}</div>
@@ -221,7 +221,7 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
 
         {step === 'confirm' && (
           <div data-shot="move-confirm" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {toSlotId === undefined && <BackLink onClick={() => setStep(route === 'colleague' ? 'colleague' : 'where')}>{route === 'colleague' ? 'Who is free' : 'Where it goes'}</BackLink>}
+            {toSlotId === undefined && <BackLink size="step" onClick={() => setStep(route === 'colleague' ? 'colleague' : 'where')}>{route === 'colleague' ? 'Who is free' : 'Where it goes'}</BackLink>}
             {route === 'colleague' && colleague !== undefined ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <Avatar name={colleague.name} size={44} variant="neutral" />

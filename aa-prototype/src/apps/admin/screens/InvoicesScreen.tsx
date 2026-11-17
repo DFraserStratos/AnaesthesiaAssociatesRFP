@@ -1,10 +1,10 @@
 import { useMemo } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { accent, neutral, radius, semantic } from '../../../theme/tokens'
+import { neutral, radius, semantic } from '../../../theme/tokens'
 import type { Invoice } from '../../../domain/types'
 import { invoiceDeliveryLabel, layoutShortLabel } from '../../../domain/billing'
-import { Pill } from '../../../shared/ui'
+import { Pill, TextAction } from '../../../shared/ui'
 import type { Actor } from '../../../store'
 import { billedLists, invoiceAddresseeName, invoiceCountsByList, isBackdropInvoice, useAppStore } from '../../../store'
 import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm, plural } from '../../../shared/format'
@@ -73,9 +73,6 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
             <span style={{ color: neutral.lineStrong }}> / </span>
             <span className="mono">{invoice.invoiceNumber}</span>
           </div>
-          <button onClick={() => onSelect(null)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start', border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-            <ChevronLeft size={16} strokeWidth={2.4} aria-hidden /> All invoices
-          </button>
         </div>
         <InvoiceDocument key={selectedInvoiceId} invoiceId={selectedInvoiceId} actor={actor} />
       </div>
@@ -222,9 +219,9 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                     <DeliveryPill invoice={invoice} />
                   </td>
                   <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
-                    <button onClick={() => onSelect(invoice.id)} style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                    <TextAction size="sm" flush onClick={() => onSelect(invoice.id)}>
                       View →
-                    </button>
+                    </TextAction>
                   </td>
                   </tr>
                 )

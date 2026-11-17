@@ -193,7 +193,7 @@ export function ModifierPickerSheet({ open, procedure, items, removed, actor, ed
                       {state.kind === 'removed' && (
                         <div style={{ padding: '0 10px 10px 80px', fontSize: 12.5, color: neutral.mist }}>
                           Removed from this procedure.{' '}
-                          <TextAction small label={`Put back ${m.code}`} onClick={() => putBack(m)}>
+                          <TextAction size="sm" label={`Put back ${m.code}`} onClick={() => putBack(m)}>
                             Put back
                           </TextAction>
                         </div>

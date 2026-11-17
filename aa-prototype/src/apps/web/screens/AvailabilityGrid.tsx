@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { accent, neutral, radius } from '../../../theme/tokens'
+import { neutral, radius } from '../../../theme/tokens'
 import type { Session } from '../../../domain/types'
 import { isOpenSlotView, rosterForDate, slotViewsForDate, useAppStore, type SlotView } from '../../../store'
 import { Avatar, resolveDisplayStatus, StatusLegend, useDisplayStatus } from '../../../shared'
 import { initialsOf, locationName, matchesNameQuery, longDayNoYear } from '../../../shared/format'
-import { NameSearchBox } from '../../../shared/ui'
+import { Button, FilterPills, IconButton, NameSearchBox, TextAction } from '../../../shared/ui'
 import { AvailabilityPageSwitch, Panel } from '../components'
 import { useNavigate } from 'react-router-dom'
 import { MovedToYouPanel, useMovableSessions, useMoveListPrompt } from '../../../shared/flows'
@@ -126,16 +125,12 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
           <AvailabilityPageSwitch current="find" />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <IconBtn label="Previous day" onClick={() => shiftDay(-1)}><ChevronLeft size={16} aria-hidden /></IconBtn>
+          <IconButton size={38} label="Previous day" onClick={() => shiftDay(-1)}>‹</IconButton>
           <div style={{ height: 38, padding: '0 18px', borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, display: 'flex', alignItems: 'center', fontSize: 14, fontWeight: 600 }}>{selLong}</div>
-          <IconBtn label="Next day" onClick={() => shiftDay(1)}><ChevronRight size={16} aria-hidden /></IconBtn>
-          <button
-            type="button"
-            onClick={() => setSelectedDate(todayISO)}
-            style={{ height: 38, padding: '0 14px', borderRadius: radius.ctl, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-          >
+          <IconButton size={38} label="Next day" onClick={() => shiftDay(1)}>›</IconButton>
+          <Button variant="outline" size="compact" onClick={() => setSelectedDate(todayISO)} style={{ minHeight: 38 }}>
             Today
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -148,8 +143,16 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
       {/* Filters + search + legend */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>All anaesthetists</FilterChip>
-          <FilterChip active={filter === 'free'} onClick={() => setFilter('free')}>Free only · {freeCount}</FilterChip>
+          <FilterPills
+            size="md"
+            ariaLabel="Anaesthetists shown"
+            value={filter}
+            onSelect={setFilter}
+            options={[
+              { value: 'all', label: 'All anaesthetists' },
+              { value: 'free', label: `Free only · ${freeCount}` },
+            ]}
+          />
           <NameSearchBox value={query} onChange={setQuery} label="Search name" size="pill" shot="availability-search" />
         </div>
         <StatusChipsLegend />
@@ -176,14 +179,15 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
                     {row.anaesthetistId === anaesthetistId && <span style={{ marginLeft: 6, fontSize: 11, color: neutral.mist }}>(you)</span>}
                   </span>
                   {row.anaesthetistId === anaesthetistId && (
-                    <button
-                      type="button"
-                      data-shot="availability-change-mine"
+                    <TextAction
+                      size="sm"
+                      flush
+                      shot="availability-change-mine"
                       onClick={() => navigate(`/web/availability/mine?date=${selectedDate}`)}
-                      style={{ flex: 'none', border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                      style={{ flex: 'none', fontSize: 12 }}
                     >
                       Change
-                    </button>
+                    </TextAction>
                   )}
                 </span>
                 {sessionsShown.map((session) => {
@@ -266,37 +270,6 @@ function Cell({ view, labels, onClick, action, shot, title, quietEmpty = false }
 
 function HeaderCell({ children }: { children: React.ReactNode }) {
   return <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>{children}</span>
-}
-
-function IconBtn({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" aria-label={label} onClick={onClick} style={{ width: 38, height: 38, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      {children}
-    </button>
-  )
-}
-
-function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        height: 36,
-        padding: '0 16px',
-        borderRadius: radius.pill,
-        border: `1px solid ${active ? accent.base : neutral.line}`,
-        background: active ? accent.base : neutral.surface,
-        color: active ? neutral.surface : neutral.slate,
-        fontFamily: 'inherit',
-        fontSize: 13,
-        fontWeight: 600,
-        cursor: 'pointer',
-      }}
-    >
-      {children}
-    </button>
-  )
 }
 
 function StatusChipsLegend() {

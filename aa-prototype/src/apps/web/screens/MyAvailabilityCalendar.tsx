@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import { ChevronLeft, ChevronRight, Repeat } from 'lucide-react'
+import { Repeat } from 'lucide-react'
 import { AttentionDot } from '../../../shared/warnings/AttentionDot'
 import { accent, brand, neutral, radius } from '../../../theme/tokens'
 import { useAppStore, type Actor, type CalendarSession } from '../../../store'
@@ -17,6 +17,7 @@ import {
   useAvailabilityMonth,
 } from '../../../shared/availability'
 import { MonthHeaderRow } from '../../../shared/calendar'
+import { Button, IconButton } from '../../../shared/ui'
 import { AvailabilityPageSwitch, Panel } from '../components'
 import { sessionText } from '../../../domain/outOfHours'
 
@@ -82,9 +83,9 @@ export function MyAvailabilityCalendar({ actor, anaesthetistId, initialDateISO }
           title={format(parseISO(`${month}-01`), 'MMMM yyyy')}
           action={
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <NavButton label="Previous month" disabled={month <= firstMonth} onClick={() => setMonthISO(shiftMonth(month, -1))}><ChevronLeft size={16} aria-hidden /></NavButton>
-              <NavButton label="Next month" disabled={month >= lastMonth} onClick={() => setMonthISO(shiftMonth(month, 1))}><ChevronRight size={16} aria-hidden /></NavButton>
-              <button type="button" onClick={() => setMonthISO(firstMonth)} style={{ height: 34, padding: '0 12px', borderRadius: radius.ctl, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>This month</button>
+              <IconButton size={38} label="Previous month" disabled={month <= firstMonth} onClick={() => setMonthISO(shiftMonth(month, -1))}>‹</IconButton>
+              <IconButton size={38} label="Next month" disabled={month >= lastMonth} onClick={() => setMonthISO(shiftMonth(month, 1))}>›</IconButton>
+              <Button variant="outline" size="compact" onClick={() => setMonthISO(firstMonth)} style={{ minHeight: 38 }}>This month</Button>
             </div>
           }
         >
@@ -190,14 +191,6 @@ function DayCell({ session }: { session: CalendarSession | undefined }) {
         <AttentionDot title="This List has a conflict for the office to resolve" style={{ position: 'absolute', top: -4.5, right: -4.5 }} />
       )}
     </span>
-  )
-}
-
-function NavButton({ label, disabled, onClick, children }: { label: string; disabled: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" aria-label={label} disabled={disabled} onClick={onClick} style={{ width: 34, height: 34, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, color: disabled ? neutral.lineStrong : neutral.slate, cursor: disabled ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      {children}
-    </button>
   )
 }
 

@@ -8,7 +8,8 @@ import { HistorySheet } from '../../../shared/booking'
 import { formatCurrency } from '../../../shared/format'
 import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
 import { PairingSection, useProfileHistory } from '../components/pairing'
-import { BackLink, Fact, HeaderActions, IdChip, ProfileCard, ProfileHeader, ProfilePage } from '../components/ProfileChrome'
+import { Fact, HeaderActions, IdChip, ProfileCard, ProfileHeader, ProfilePage } from '../components/ProfileChrome'
+import { BackLink } from '../../../shared/ui'
 import { EditAnaesthetistSheet } from '../flows/EditAnaesthetistSheet'
 import { GST_OPTIONS } from '../flows/fieldChrome'
 import { mastersViewPath } from '../mastersPaths'
@@ -42,7 +43,7 @@ export function AnaesthetistRecord({ anaesthetistId, actor }: { anaesthetistId: 
 
   return (
     <ProfilePage shot="anaesthetist-record">
-      <BackLink to={mastersViewPath('anaesthetists')}>Anaesthetists</BackLink>
+      <BackLink to={mastersViewPath('anaesthetists')} size="desktop">Anaesthetists</BackLink>
       <ProfileHeader
         name={anaesthetist.name}
         chip={anaesthetist.hpiId !== '' ? <IdChip label="HPI CPN" value={anaesthetist.hpiId} shot="anaesthetist-hpi-chip" /> : <span style={{ fontSize: 12.5, color: neutral.mist }}>HPI CPN not set</span>}

@@ -127,7 +127,8 @@ export function DraftListSheet({
           <div style={{ flex: 1 }}>
             <TextField label="Day" type="date" value={draft.dateISO} min={today} max={horizonEnd} onChange={(dateISO) => update({ dateISO })} shot="draft-list-date" />
           </div>
-          <Segmented label="Session" value={draft.session} options={SESSION_OPTIONS} onChange={(session) => update({ session })} />
+          {/* `wrap` sizes each segment to its word, so "Out-of-hours" keeps one line and the row its 48px (U5). */}
+          <Segmented label="Session" layout="wrap" value={draft.session} options={SESSION_OPTIONS} onChange={(session) => update({ session })} />
         </div>
 
         <Segmented label="Kind of List" value={draft.kind} options={KIND_OPTIONS} onChange={(kind) => setDraft((d) => withKind(d, kind, aaRoomsId))} />

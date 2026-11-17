@@ -3,6 +3,7 @@ import type { AuditEntry } from '../../domain/types'
 import { accent, neutral, radius } from '../../theme/tokens'
 import { easing, motion } from '../../theme/motion'
 import { Pill } from '../ui/Pill'
+import { TextAction } from '../ui/TextAction'
 import { useAppStore, useToday } from '../../store'
 import { dayHeading, hhmm } from '../format'
 import { actionLabel, auditFieldChanges, auditNamesFor, coalesceAudit, type AuditFieldChange, type AuditGroup, type AuditNames } from '../audit'
@@ -192,23 +193,9 @@ function GroupRow({
         {changes.length > 0 && <Ledger changes={changes} stacked={stacked} />}
         {coalesced && (
           <>
-            <button
-              onClick={() => setExpanded((v) => !v)}
-              style={{
-                alignSelf: 'flex-start',
-                border: 'none',
-                background: 'none',
-                padding: 0,
-                marginTop: 2,
-                color: accent.base,
-                fontFamily: 'inherit',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
+            <TextAction size="sm" flush onClick={() => setExpanded((v) => !v)} style={{ alignSelf: 'flex-start', marginTop: 2, fontSize: 12 }}>
               {expanded ? `Hide the ${steps.length} steps` : `Show the ${steps.length} steps`}
-            </button>
+            </TextAction>
             <Steps steps={steps} expanded={expanded} stacked={stacked} />
           </>
         )}

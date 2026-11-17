@@ -85,6 +85,7 @@ export function RailOptionGroup({
             key={o.value}
             {...radio.itemProps(i)}
             type="button"
+            className="aa-ctl"
             data-rail-option={o.value}
             disabled={!o.selectable}
             onClick={() => onPick(o.value)}
@@ -313,6 +314,7 @@ export function StepMarker({ step, orientation, last }: { step: RailStep; orient
     return (
       <button
         type="button"
+        className="aa-ctl"
         data-shot={`contract-rail-step-${n}`}
         disabled={onJump === undefined}
         onClick={onJump}
@@ -329,6 +331,7 @@ export function StepMarker({ step, orientation, last }: { step: RailStep; orient
   return (
     <button
       type="button"
+      className="aa-ctl"
       data-shot={`contract-rail-step-${n}`}
       disabled={onJump === undefined}
       onClick={onJump}

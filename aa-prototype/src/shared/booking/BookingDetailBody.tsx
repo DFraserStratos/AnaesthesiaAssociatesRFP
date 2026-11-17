@@ -739,12 +739,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       )}
       {canEdit && (
         <div style={{ display: 'flex', flexDirection: 'column', marginTop: 4 }}>
-          <button
-            onClick={() => setSheet('cancel')}
-            style={{ minHeight: 48, borderRadius: radius.ctl, border: `1px solid ${semantic.error.solid}55`, background: neutral.surface, color: semantic.error.onTint, fontFamily: 'inherit', fontSize: 15, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-          >
+          <Button variant="danger" block onClick={() => setSheet('cancel')}>
             <XCircle size={16} aria-hidden /> Cancel booking
-          </button>
+          </Button>
         </div>
       )}
 

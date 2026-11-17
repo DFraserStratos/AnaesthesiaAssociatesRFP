@@ -14,7 +14,7 @@ import { drSurname, LIST_STATE_LABELS, locationName, pairingLine, slotTimeRange,
 import { surnameFirst } from '../util'
 import { ConflictPanel } from './conflicts/ConflictPanel'
 import { SidePanel } from './SidePanel'
-import { ActionBtn, DrawerLink, Row, Section } from './drawerParts'
+import { DRAWER_ACTION, DRAWER_ACTION_PRIMARY, DrawerLink, Row, Section } from './drawerParts'
 import { EditListSheet } from '../flows/EditListSheet'
 import { ReassignListFlow } from '../flows/ReassignListFlow'
 import { PhoneAdviceBooking } from '../flows/PhoneAdviceBooking'
@@ -27,7 +27,7 @@ import type { EffectiveSlotTimes } from '../../../domain/slots'
 import { surgeonProfilePath } from '../mastersPaths'
 import { isOutOfHours, sessionText } from '../../../domain/outOfHours'
 import { CLOSE_OUT_OF_HOURS } from '../../../shared/outOfHoursTerms'
-import { FormError } from '../../../shared/ui'
+import { Button, FormError, TextAction } from '../../../shared/ui'
 import { Notice } from '../../../shared/ui/Notice'
 import { EmptyState } from '../../../shared/ui/EmptyState'
 
@@ -152,10 +152,10 @@ function ListBody({
         footerLayout="wrap"
         footer={
           <>
-            <ActionBtn onClick={() => setSheet('edit')}>Edit list</ActionBtn>
-            {list.state !== 'AUTHORISED' && <ActionBtn onClick={() => setSheet('reassign')}>Reassign list</ActionBtn>}
-            {list.state !== 'AUTHORISED' && <ActionBtn shot="drawer-change-status" onClick={() => setSheet({ status: slot.id })}>Change status</ActionBtn>}
-            <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
+            <Button variant="secondary" size="compact" style={DRAWER_ACTION} onClick={() => setSheet('edit')}>Edit list</Button>
+            {list.state !== 'AUTHORISED' && <Button variant="secondary" size="compact" style={DRAWER_ACTION} onClick={() => setSheet('reassign')}>Reassign list</Button>}
+            {list.state !== 'AUTHORISED' && <Button variant="secondary" size="compact" style={DRAWER_ACTION} shot="drawer-change-status" onClick={() => setSheet({ status: slot.id })}>Change status</Button>}
+            <Button variant="secondary" size="compact" style={DRAWER_ACTION} onClick={() => setSheet('history')}>History</Button>
           </>
         }
       >
@@ -322,24 +322,23 @@ function EmptySessionDrawer({
           {open ? (
             <>
               <div style={{ display: 'flex' }}>
-                <ActionBtn primary onClick={() => setSheet('assign')}>Assign List</ActionBtn>
+                <Button variant="primary" size="compact" style={DRAWER_ACTION_PRIMARY} onClick={() => setSheet('assign')}>Assign List</Button>
               </div>
               <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
-                <ActionBtn onClick={() => setSheet('phone')}>Book (phone advice)</ActionBtn>
-                <ActionBtn onClick={() => setSheet('times')}>Edit times</ActionBtn>
-                <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
+                <Button variant="secondary" size="compact" style={DRAWER_ACTION} onClick={() => setSheet('phone')}>Book (phone advice)</Button>
+                <Button variant="secondary" size="compact" style={DRAWER_ACTION} onClick={() => setSheet('times')}>Edit times</Button>
+                <Button variant="secondary" size="compact" style={DRAWER_ACTION} onClick={() => setSheet('history')}>History</Button>
               </div>
             </>
           ) : (
             <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
-              <ActionBtn onClick={() => setSheet('times')}>Edit times</ActionBtn>
-              <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
+              <Button variant="secondary" size="compact" style={DRAWER_ACTION} onClick={() => setSheet('times')}>Edit times</Button>
+              <Button variant="secondary" size="compact" style={DRAWER_ACTION} onClick={() => setSheet('history')}>History</Button>
             </div>
           )}
           {evening && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <ActionBtn shot="drawer-close-out-of-hours" disabled={closeBlocked !== null} onClick={closeSession}>{CLOSE_OUT_OF_HOURS}</ActionBtn>
-              {closeBlocked !== null && <span style={{ fontSize: 12, color: neutral.mist }}>{closeBlocked}</span>}
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+              <Button variant="secondary" size="compact" style={DRAWER_ACTION} shot="drawer-close-out-of-hours" disabled={closeBlocked !== null} disabledReason={closeBlocked ?? undefined} onClick={closeSession}>{CLOSE_OUT_OF_HOURS}</Button>
             </div>
           )}
           </>
@@ -349,9 +348,9 @@ function EmptySessionDrawer({
             <Row label="Status">
               {displayStatusLabel(slot.status, statuses, true)}
               {/* The office sets the anaesthetist's status here, a sickness phoned in included (catch-up Phase 32b). */}
-              <button type="button" data-shot="drawer-change-status" onClick={() => setSheet({ status: slot.id })} style={{ marginLeft: 10, border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              <TextAction size="sm" flush shot="drawer-change-status" onClick={() => setSheet({ status: slot.id })} style={{ marginLeft: 10 }}>
                 Change status
-              </button>
+              </TextAction>
             </Row>
             <Row label="Times">
               {slotTimeRange(times)}

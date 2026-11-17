@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { accent, neutral, radius, elevation } from '../../theme/tokens'
+import { neutral, radius, elevation } from '../../theme/tokens'
+import { TextAction } from '../../shared/ui'
 import { RequireEntity } from '../../shell/RequireEntity'
 import { isISODate } from '../../shell/routeParams'
 import { listInSlot, useAppStore, useToday, type NotificationTarget } from '../../store'
@@ -361,13 +362,9 @@ function BeyondHorizon({ endISO, onGoToEnd }: { endISO: string; onGoToEnd: () =>
       <div style={{ fontSize: 13, color: neutral.slate, maxWidth: 560, lineHeight: '19px' }}>
         Sessions are created up to the horizon and roll forward each day. The horizon length is set in Master data, Schedule settings.
       </div>
-      <button
-        type="button"
-        onClick={onGoToEnd}
-        style={{ marginTop: 6, border: 0, padding: 0, background: 'transparent', color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-      >
+      <TextAction size="sm" flush onClick={onGoToEnd} style={{ marginTop: 6 }}>
         Go to the last day
-      </button>
+      </TextAction>
     </div>
   )
 }

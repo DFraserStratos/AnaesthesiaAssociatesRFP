@@ -432,6 +432,7 @@ function StartAgain({ onClick, hidden }: { onClick: () => void; hidden: boolean 
   return (
     <button
       type="button"
+      className="aa-ctl"
       data-shot="contract-rail-start-again"
       onClick={onClick}
       tabIndex={hidden ? -1 : 0}
@@ -489,6 +490,7 @@ function ContractCombo({
       <button
         key={contract.id}
         type="button"
+        className="aa-ctl"
         role="option"
         aria-selected={selected}
         data-contract-id={contract.id}
@@ -516,6 +518,7 @@ function ContractCombo({
       <button
         {...triggerProps}
         type="button"
+        className="aa-ctl"
         data-shot="contract-combo"
         aria-haspopup="listbox"
         onClick={() => {
@@ -688,7 +691,7 @@ function PriceBlock({
           field('reference')
         ) : canCapture ? (
           <span style={{ alignSelf: 'flex-start' }}>
-            <TextAction small shot="rvg-code-add-reference" onClick={() => setReferenceOpen(true)}>
+            <TextAction size="sm" shot="rvg-code-add-reference" onClick={() => setReferenceOpen(true)}>
               Add an RVG code for reference
             </TextAction>
           </span>
@@ -700,7 +703,7 @@ function PriceBlock({
           field('reference')
         ) : canCapture ? (
           <span style={{ alignSelf: 'flex-start' }}>
-            <TextAction small shot="rvg-code-add-reference" onClick={() => setReferenceOpen(true)}>
+            <TextAction size="sm" shot="rvg-code-add-reference" onClick={() => setReferenceOpen(true)}>
               Add an RVG code for reference
             </TextAction>
           </span>
@@ -840,6 +843,7 @@ function MobileBillingCard(props: BillingCardProps) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16 }}>
       <button
         type="button"
+        className="aa-ctl"
         data-shot="capture-billing"
         aria-label={`${label}. ${editable ? 'Edit' : 'Read only'}`}
         disabled={!editable}

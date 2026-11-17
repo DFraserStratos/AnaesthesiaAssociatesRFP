@@ -12,9 +12,8 @@ import { restoreListConflict, useAppStore, useConflictLookups, type Actor } from
 import { hhmm } from '../../../../shared/format'
 import { neutral, radius, semantic } from '../../../../theme/tokens'
 import { ClearConflictSheet } from './ClearConflictSheet'
-import { textActionStyle } from '../../tableChrome'
+import { TextAction } from '../../../../shared/ui'
 
-const linkStyle = textActionStyle
 
 export function ConflictPanel({ list, actor }: { list: List; actor: Actor }) {
   const lookups = useConflictLookups()
@@ -37,9 +36,9 @@ export function ConflictPanel({ list, actor }: { list: List; actor: Actor }) {
                   <span>{d.detail}</span>
                   {office && (
                     <span>
-                      <button type="button" style={linkStyle} onClick={() => setClearing(c)}>
+                      <TextAction size="sm" flush onClick={() => setClearing(c)}>
                         Clear conflict
-                      </button>
+                      </TextAction>
                     </span>
                   )}
                 </div>
@@ -58,9 +57,9 @@ export function ConflictPanel({ list, actor }: { list: List; actor: Actor }) {
                 {clear.note !== undefined ? `: ${clear.note}` : ''}
               </span>
               {office && (
-                <button type="button" style={{ ...linkStyle, flex: 'none' }} onClick={() => restoreListConflict(useAppStore, actor, list.id, clear.cause)}>
+                <TextAction size="sm" flush style={{ flex: 'none' }} onClick={() => restoreListConflict(useAppStore, actor, list.id, clear.cause)}>
                   Flag again
-                </button>
+                </TextAction>
               )}
             </div>
           )

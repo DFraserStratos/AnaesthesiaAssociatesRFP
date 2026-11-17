@@ -74,7 +74,8 @@ export function AvailabilityFinderSheet({ open, dateISO, initialSession, onClose
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
           <div style={{ width: 260, flex: 'none' }}>
-            <Segmented label="Session" value={session} options={[{ value: 'AM', label: 'AM' }, { value: 'PM', label: 'PM' }, { value: 'OOH', label: 'Out-of-hours' }]} onChange={setSession} />
+            {/* `wrap` sizes each segment to its word, so "Out-of-hours" keeps one line and the row its 48px (U5). */}
+            <Segmented label="Session" layout="wrap" value={session} options={[{ value: 'AM', label: 'AM' }, { value: 'PM', label: 'PM' }, { value: 'OOH', label: 'Out-of-hours' }]} onChange={setSession} />
           </div>
           <div style={{ flex: 1 }}>
             <SelectField label="Surgeon for the List (optional)" value={surgeonId} onChange={setSurgeonId} shot="finder-surgeon">

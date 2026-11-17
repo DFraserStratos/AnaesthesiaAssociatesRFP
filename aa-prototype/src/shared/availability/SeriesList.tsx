@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react'
 import { Repeat } from 'lucide-react'
-import { accent, neutral, radius } from '../../theme/tokens'
+import { neutral, radius } from '../../theme/tokens'
 import { defaultSlotStatus } from '../../domain/slotStatus'
 import { deleteAvailabilitySeries, useAppStore, type Actor } from '../../store'
 import { FormError } from '../ui'
 import { InlineConfirm } from '../ui/InlineConfirm'
+import { TextAction } from '../ui/TextAction'
 import { describeAvailabilityOutcome } from './describeAvailabilityOutcome'
 import { useActiveSeries } from './useAvailability'
 import { ResultLine } from '../ui/ResultLine'
@@ -21,7 +22,8 @@ export function SeriesList({ actor, anaesthetistId, shot, emptyText }: { actor: 
   const [confirmId, setConfirmId] = useState<string | null>(null)
   const [line, setLine] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const deleteLinks = useRef<Record<string, HTMLButtonElement | null>>({})
+  // Each series' row, to find its Delete again when "Keep it" returns focus.
+  const deleteRows = useRef<Record<string, HTMLDivElement | null>>({})
 
   function remove(id: string) {
     const out = deleteAvailabilitySeries(useAppStore, actor, id)
@@ -39,11 +41,11 @@ export function SeriesList({ actor, anaesthetistId, shot, emptyText }: { actor: 
       {series.length === 0 && <EmptyState>{emptyText}</EmptyState>}
       {series.map((s) => (
         <div key={s.id} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div ref={(el) => { deleteRows.current[s.id] = el }} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Repeat size={14} color={neutral.slate} aria-hidden />
             <span style={{ flex: 1, fontSize: 13, color: neutral.ink }}>{s.line}</span>
             {confirmId !== s.id && (
-              <button ref={(el) => { deleteLinks.current[s.id] = el }} type="button" onClick={() => setConfirmId(s.id)} aria-label={`Delete ${s.line}`} style={linkStyle}>Delete</button>
+              <TextAction onClick={() => setConfirmId(s.id)} label={`Delete ${s.line}`} style={{ fontSize: 13, padding: '6px 4px' }}>Delete</TextAction>
             )}
           </div>
           {confirmId === s.id && (
@@ -54,7 +56,7 @@ export function SeriesList({ actor, anaesthetistId, shot, emptyText }: { actor: 
               onConfirm={() => remove(s.id)}
               cancelLabel="Keep it"
               onCancel={() => setConfirmId(null)}
-              returnFocus={() => deleteLinks.current[s.id]}
+              returnFocus={() => deleteRows.current[s.id]?.querySelector<HTMLButtonElement>('button')}
             />
           )}
         </div>
@@ -64,5 +66,3 @@ export function SeriesList({ actor, anaesthetistId, shot, emptyText }: { actor: 
     </div>
   )
 }
-
-const linkStyle: React.CSSProperties = { border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '6px 4px' }

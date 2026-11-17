@@ -67,7 +67,7 @@ export function MobileCatalogue() {
           <Ex.AvailabilityEditorExample />
         </CatalogueRow>
         <CatalogueRow name="Button (MobileButton)" source="shared/ui/Button.tsx" usedIn={SW} stage="mobile" height={320}
-          what="The shared button set: primary (54px teal), secondary (outlined) and pill (tinted, compact). Mobile imports it as MobileButton."
+          what="The shared button set: primary (54px teal), secondary (outlined) and pill (tinted, compact), the phone's touch size. Mobile imports it as MobileButton. Since UI unification U5 the same Button has outline, danger, the desktop and compact sizes and a printed disabled reason (see the Admin catalogue's Button row)."
           replaceWith="shadcn Button (cva variants)"
           note="Adds focus-visible, hover, loading and aria-disabled states.">
           <Ex.ButtonExample />
@@ -79,7 +79,7 @@ export function MobileCatalogue() {
           <Ex.PressFeedbackExample />
         </CatalogueRow>
         <CatalogueRow name="SlidingSegmentedControl" source="shared/ui/SlidingSegmentedControl.tsx" usedIn={SW} stage="mobile" height={260}
-          what="A segmented control whose highlight slides to the chosen cell, measured in layout pixels so it survives the phone frame's scale. Teal, surface and ink variants."
+          what="A segmented control whose highlight slides to the chosen cell, measured in layout pixels so it survives the phone frame's scale. Teal and surface variants, md and sm sizes; Balances took the standard teal control and the ink variant went (UI unification U5, question 17)."
           replaceWith="shadcn ToggleGroup (single) or Tabs"
           note="Gives radio semantics and arrow keys (today role=group with aria-pressed). Keep the slide with Motion layoutId.">
           <Ex.SlidingSegmentedExample />
@@ -90,14 +90,14 @@ export function MobileCatalogue() {
           note="The label is a div today, so it is not tied to the control.">
           <Ex.SegmentedExample />
         </CatalogueRow>
-        <CatalogueRow name="Filter chips (Week / Month / To-Do / Done)" source="apps/mobile/screens/ForwardListsScreen.tsx" usedIn={M} stage="mobile" height={200}
-          what="The pill toggles above the Lists home that bound the forward window or filter to work to do or done."
+        <CatalogueRow name="Filter chips (Week / Month / To-Do / Done)" source="shared/ui/FilterPills.tsx" usedIn={M} stage="mobile" height={200}
+          what="The pill toggles above the Lists home that bound the forward window or filter to work to do or done: the shared FilterPills at 38px (UI unification U5), a labelled group with aria-pressed."
           replaceWith="shadcn ToggleGroup (single)"
-          note="Recreated: local to ForwardListsScreen.tsx. Already has aria-pressed; the web FilterChip copy does not.">
+          note="One component with Find cover's 36px pills since U5.">
           <Ex.FilterChipsExample />
         </CatalogueRow>
         <CatalogueRow name="StepperButton" source="shared/capture/ui.tsx" usedIn={SW} stage="mobile" height={200}
-          what="The mockup's 44px round-square minus and plus button. Since UI unification U4 it is the button part of NumberStepper, which names and bounds it; on its own it still takes a glyph, a label and disabled."
+          what="The mockup's 44px round-square minus and plus button, on the shared IconButton since UI unification U5 (44px square, radius 12). Since U4 it is the button part of NumberStepper, which names and bounds it; on its own it still takes a glyph, a label and disabled."
           replaceWith="shadcn Button (icon) + Button Group"
           note="Takes a label (catch-up Phase 21a); NumberStepper names the pair Fewer and More. UnitsCard's rows move onto NumberStepper in Phase 23.">
           <Ex.StepperButtonExample />
@@ -169,10 +169,10 @@ export function MobileCatalogue() {
           note="Recreated: local to ListDetailScreen.tsx. Tap a card to cycle Capture, done, cancelled (local only). Its accessible name is all the text run together today.">
           <Ex.BookingCardExample picks={picks} />
         </CatalogueRow>
-        <CatalogueRow name="Progress bar" source="apps/mobile/screens/ListDetailScreen.tsx" usedIn={WM} stage="mobile" height={180}
-          what="The List's n of m complete line with a green bar that eases to the new width."
+        <CatalogueRow name="Progress bar" source="shared/ui/ProgressBar.tsx" usedIn={WM} stage="mobile" height={180}
+          what="The List's n of m complete line with a green bar that eases to the new width: the shared ProgressBar filling its row (UI unification U5), a progressbar with its values."
           replaceWith="shadcn Progress"
-          note="Recreated: local to ListDetailScreen.tsx. Gains role=progressbar and aria-valuenow.">
+          note="One component with the web List header's 200px bar since U5.">
           <Ex.ProgressBarExample />
         </CatalogueRow>
         <CatalogueRow name="LookbackSearchRow" source="apps/mobile/screens/ListsLookback.tsx" usedIn={M} stage="mobile" height={200}
@@ -249,7 +249,7 @@ export function MobileCatalogue() {
           <Ex.MonthGridExample />
         </CatalogueRow>
         <CatalogueRow name="My calendar month grid" source="apps/mobile/screens/MyAvailabilityCalendarScreen.tsx" usedIn={M} stage="mobile" height={520}
-          what="Her own month: each day is an AM over PM pair of half-blocks in the session's status, with previous and next month buttons. Since UI unification U4 the month buttons are the shared MonthStepButton and the weekday row the shared MonthHeaderRow."
+          what="Her own month: each day is an AM over PM pair of half-blocks in the session's status, with previous and next month buttons. Since UI unification U4 the month buttons are the shared MonthStepButton (on IconButton since U5) and the weekday row the shared MonthHeaderRow."
           replaceWith="shadcn Calendar with a custom day renderer"
           note="Recreated: local to MyAvailabilityCalendarScreen.tsx (reads her real sessions), on the same shared parts. The library gives the grid and keyboard; the half-blocks stay ours.">
           <Ex.MyCalendarGridExample />
@@ -334,7 +334,7 @@ export function MobileCatalogue() {
         <CatalogueRow name="BottomTabBar" source="apps/mobile/MobileApp.tsx" usedIn={M} stage="mobile" height={220}
           what="The four-tab bar at the foot of the phone: Lists, Availability, Balances, More, frosted, hidden once you drill in."
           replaceWith="Custom nav of links with aria-current"
-          note="Recreated: local to MobileApp.tsx. Today plain buttons, active by colour only, not a nav.">
+          note="Recreated: local to MobileApp.tsx. Since UI unification U5 a labelled navigation whose active tab carries aria-current; the tabs stay buttons (question 3).">
           <Ex.BottomTabBarExample />
         </CatalogueRow>
         <CatalogueRow name="MobileHeader" source="apps/mobile/components/MobileHeader.tsx" usedIn={M} stage="mobile" height={140}

@@ -15,6 +15,7 @@ import { useDashboardFigures } from '../useDashboardFigures'
 import { SESSIONS_IN_ORDER, sessionText } from '../../../domain/outOfHours'
 import { OverlayHeader } from '../../../shared/surface/OverlayHeader'
 import { EmptyState } from '../../../shared/ui/EmptyState'
+import { Button, TextAction } from '../../../shared/ui'
 
 interface DashboardScreenProps {
   anaesthetistId: string
@@ -135,27 +136,16 @@ export function DashboardScreen({
           </h1>
           <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>{summaryLine}</div>
         </div>
-        <button
-          type="button"
-          data-shot="dashboard-move-list"
+        <Button
+          variant="primary"
+          size="desktop"
+          shot="dashboard-move-list"
           onClick={() => setPicking(true)}
           disabled={!canMove}
-          title={movableLists.length === 0 ? 'No upcoming Lists to move' : undefined}
-          style={{
-            height: 42,
-            padding: '0 20px',
-            borderRadius: radius.md,
-            border: 'none',
-            background: canMove ? accent.base : neutral.line,
-            color: canMove ? neutral.surface : neutral.mist,
-            fontFamily: 'inherit',
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: canMove ? 'pointer' : 'default',
-          }}
+          {...(movableLists.length === 0 ? { title: 'No upcoming Lists to move' } : {})}
         >
           Move a List
-        </button>
+        </Button>
       </div>
 
       <Overlay open={picking} onClose={() => setPicking(false)}>
@@ -226,7 +216,7 @@ export function DashboardScreen({
               </div>
               <div style={{ fontSize: 13, color: neutral.slate, borderTop: `1px solid ${neutral.sunken}`, paddingTop: 12 }}>
                 {plural(receivables.accountsOver60, 'account')} over 60 days ·{' '}
-                <LinkButton onClick={onViewOverdue}>view overdue accounts</LinkButton>
+                <TextAction size="sm" flush onClick={onViewOverdue} style={{ fontSize: 13 }}>view overdue accounts</TextAction>
               </div>
             </>
           )}
@@ -294,7 +284,7 @@ export function DashboardScreen({
         {/* Who's free (live) */}
         <Panel
           title="Who's free · next 5 days"
-          action={<LinkButton onClick={onOpenAvailability}>Full availability grid →</LinkButton>}
+          action={<TextAction size="sm" flush onClick={onOpenAvailability} style={{ fontSize: 13 }}>Full availability grid →</TextAction>}
           style={{ gridColumn: 'span 7' }}
         >
           <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -364,18 +354,6 @@ function StatTile({ label, value, pill }: { label: string; value: string; pill?:
         )}
       </div>
     </div>
-  )
-}
-
-function LinkButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{ border: 'none', background: 'none', padding: 0, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: accent.base, cursor: 'pointer' }}
-    >
-      {children}
-    </button>
   )
 }
 

@@ -44,7 +44,7 @@ test('admin phase 09: prepayment warning on a booking (never a block)', async ({
 
   // Navigate the day view forward to Friday 24 July (Tue 21 -> Fri 24).
   for (let i = 0; i < 3; i++) {
-    await page.getByRole('button', { name: '›', exact: true }).first().click()
+    await page.getByTestId('admin-day-nav').getByRole('button', { name: 'Next day', exact: true }).click()
     await page.waitForTimeout(200)
   }
   await expect(page.getByRole('heading', { name: /Friday 24 July 2026/ })).toBeVisible()

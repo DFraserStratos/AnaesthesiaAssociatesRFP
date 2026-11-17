@@ -156,7 +156,6 @@ export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOp
           onSelect={setMode}
           variant="surface"
           ariaLabel="Availability view"
-          buttonStyle={{ height: 40 }}
         />
       </div>
 

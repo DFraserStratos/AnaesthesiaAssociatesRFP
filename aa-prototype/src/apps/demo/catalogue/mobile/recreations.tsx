@@ -54,7 +54,8 @@ const TABS: readonly { key: Tab; label: string; icon: LucideIcon }[] = [
 
 export function BottomTabBarCopy({ active, onSelect }: { active: Tab; onSelect: (tab: Tab) => void }) {
   return (
-    <div
+    <nav
+      aria-label="Main"
       style={{
         position: 'absolute',
         left: 0,
@@ -78,6 +79,8 @@ export function BottomTabBarCopy({ active, onSelect }: { active: Tab; onSelect: 
         return (
           <button
             key={tab.key}
+            type="button"
+            aria-current={on ? 'page' : undefined}
             onClick={() => onSelect(tab.key)}
             style={{
               display: 'flex',
@@ -97,7 +100,7 @@ export function BottomTabBarCopy({ active, onSelect }: { active: Tab; onSelect: 
           </button>
         )
       })}
-    </div>
+    </nav>
   )
 }
 
@@ -106,44 +109,12 @@ export function BottomTabBarCopy({ active, onSelect }: { active: Tab; onSelect: 
 // ---------------------------------------------------------------------------
 
 export type Filter = 'week' | 'month' | 'todo' | 'done'
-const FILTERS: { key: Filter; label: string }[] = [
+export const FILTERS: { key: Filter; label: string }[] = [
   { key: 'week', label: 'Week' },
   { key: 'month', label: 'Month' },
   { key: 'todo', label: 'To-Do' },
   { key: 'done', label: 'Done' },
 ]
-
-export function FilterChipsCopy({ filter, onChange }: { filter: Filter; onChange: (f: Filter) => void }) {
-  return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center', minHeight: 38 }}>
-      {FILTERS.map((f) => {
-        const active = f.key === filter
-        return (
-          <button
-            key={f.key}
-            type="button"
-            aria-pressed={active}
-            onClick={() => onChange(f.key)}
-            style={{
-              height: 38,
-              padding: '0 16px',
-              borderRadius: 999,
-              border: active ? 'none' : `1px solid ${neutral.line}`,
-              background: active ? accent.base : neutral.surface,
-              color: active ? neutral.surface : neutral.slate,
-              fontFamily: 'inherit',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            {f.label}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
 
 // ---------------------------------------------------------------------------
 // ListDetailScreen.tsx: the Booking card, the progress bar, the submit dock
@@ -202,20 +173,6 @@ export function BookingCardCopy({ row, state, animateTick, onClick }: { row: Boo
         <span style={{ padding: '9px 16px', borderRadius: 999, background: accent.tint, fontSize: 13, fontWeight: 600, color: accent.pressed, flex: 'none' }}>Capture</span>
       )}
     </button>
-  )
-}
-
-export function ProgressBarCopy({ done, total }: { done: number; total: number }) {
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0 4px' }}>
-      <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>
-        {done} of {total} complete
-      </span>
-      <span style={{ flex: 1, height: 6, borderRadius: 99, background: neutral.line, overflow: 'hidden', display: 'block' }}>
-        <span style={{ display: 'block', height: '100%', borderRadius: 99, background: semantic.success.solid, transition: 'width 300ms cubic-bezier(0.2,0.8,0.2,1)', width: `${pct}%` }} />
-      </span>
-    </div>
   )
 }
 

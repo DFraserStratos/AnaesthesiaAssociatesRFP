@@ -149,7 +149,7 @@ export function ModifiersSection({ procedure, items, actor, editable, required =
         <div key={r.modifierId} data-shot="capture-modifier-removed" style={{ fontSize: 12.5, color: neutral.mist, lineHeight: '18px' }}>
           Removed: <span className="mono">{r.code}</span>.{' '}
           {editable && (
-            <TextAction small label={`Put back ${r.code}`} onClick={() => run(restoreModifier(useAppStore, actor, procedure.id, r.modifierId))}>
+            <TextAction size="sm" label={`Put back ${r.code}`} onClick={() => run(restoreModifier(useAppStore, actor, procedure.id, r.modifierId))}>
               Put back
             </TextAction>
           )}
@@ -164,7 +164,7 @@ export function ModifiersSection({ procedure, items, actor, editable, required =
             <>
               {' · '}
               {/* The same `modifier-add` hook as "Add a modifier" (they never show together), so recipes open the picker either way. */}
-              <TextAction small label="Change: add a modifier" shot="modifier-add" onClick={() => setPicker({})}>
+              <TextAction size="sm" label="Change: add a modifier" shot="modifier-add" onClick={() => setPicker({})}>
                 Change
               </TextAction>
             </>
@@ -298,7 +298,7 @@ function LedgerRow({
           {actions.length > 0 && (
             <span style={{ display: 'inline-flex', gap: 14, marginLeft: 'auto' }}>
               {actions.map((a) => (
-                <TextAction key={a.label} small onClick={a.onClick} {...(a.ariaLabel !== undefined ? { label: a.ariaLabel } : {})}>
+                <TextAction key={a.label} size="sm" onClick={a.onClick} {...(a.ariaLabel !== undefined ? { label: a.ariaLabel } : {})}>
                   {a.label}
                 </TextAction>
               ))}

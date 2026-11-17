@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { runDeliverySummary } from '../../../domain/billing/invoicePresentation'
 import { useMemo, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { ArrowLeft, ArrowRight, ChevronLeft, Check, Lock, Receipt } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Lock, Receipt } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import type { AssignedList, Booking, Procedure } from '../../../domain/types'
 import {
@@ -232,10 +232,6 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
         <span>{anaesthetist !== undefined ? anaesthetist.name : list.anaesthetistId} · {hospitalName} {sessionText(list.session)}</span>
       </div>
 
-      <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start', border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-        <ChevronLeft size={16} strokeWidth={2.4} aria-hidden /> Back to queue
-      </button>
-
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div>
@@ -284,7 +280,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
       {authorised && (
         <div data-shot="review-authorised-banner" style={{ display: 'flex', alignItems: 'center', gap: 16, background: semantic.success.tint, border: `1px solid ${semantic.success.solid}44`, borderRadius: radius.card, padding: 16, animation: 'aa-fade-in 260ms ease' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span aria-hidden style={{ width: 30, height: 30, borderRadius: 999, background: semantic.success.solid, color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', animation: 'aa-circle-pop 320ms ease' }}>
+            <span aria-hidden style={{ width: 30, height: 30, borderRadius: 999, background: semantic.success.solid, color: neutral.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', animation: 'aa-circle-pop 320ms ease' }}>
               <Check size={18} strokeWidth={3} aria-hidden />
             </span>
             <div>
@@ -401,9 +397,9 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
                         <FlagPill key={i} flag={f} />
                       ))}
                       {authorised && <Lock size={13} aria-hidden style={{ color: neutral.mist }} />}
-                      <button onClick={() => setHistory({ ids: entityIds, ...(entityLabels !== undefined ? { labels: entityLabels } : {}) })} style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>History</button>
+                      <TextAction size="sm" flush onClick={() => setHistory({ ids: entityIds, ...(entityLabels !== undefined ? { labels: entityLabels } : {}) })}>History</TextAction>
                       {/* The Admin Booking, where the office edits the invoice description (catch-up Phase 20a). */}
-                      {onOpenBooking !== undefined && <button data-shot="review-open-booking" onClick={() => onOpenBooking(list.dateISO, booking.id)} style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Open</button>}
+                      {onOpenBooking !== undefined && <TextAction size="sm" flush shot="review-open-booking" onClick={() => onOpenBooking(list.dateISO, booking.id)}>Open</TextAction>}
                     </div>
                   </td>
                 </tr>
@@ -557,8 +553,8 @@ function ProcedureFlags({
           <FlagPill flag={f} />
           {f.rule === 'contractChanged' && !locked && (
             <>
-              <TextAction small shot="review-contract-approve" onClick={onApprove} label={`Approve the Contract change for ${patientName}`}>Approve</TextAction>
-              {onCorrect !== undefined && <TextAction small shot="review-contract-correct" onClick={onCorrect} label={`Correct the Contract for ${patientName}`}>Correct</TextAction>}
+              <TextAction size="sm" shot="review-contract-approve" onClick={onApprove} label={`Approve the Contract change for ${patientName}`}>Approve</TextAction>
+              {onCorrect !== undefined && <TextAction size="sm" shot="review-contract-correct" onClick={onCorrect} label={`Correct the Contract for ${patientName}`}>Correct</TextAction>}
             </>
           )}
         </span>
@@ -613,7 +609,7 @@ function ReviewPaidBy({ procedure, patientId, invoicedName, child, onChange }: {
           </Pill>
         )}
         {onChange !== undefined && (
-          <TextAction small onClick={onChange} label="Change this procedure's payer">
+          <TextAction size="sm" onClick={onChange} label="Change this procedure's payer">
             Change
           </TextAction>
         )}

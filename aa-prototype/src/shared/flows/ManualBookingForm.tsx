@@ -12,7 +12,7 @@ import { DemoBadge } from '../DemoBadge'
 import { CodePickerSheet } from '../capture/CodePickerSheet'
 import { baseUnitsShort } from '../../domain/billing/rvgGroups'
 import { formatPostalAddress } from '../../domain/billing/payer'
-import { Button, TextField, FieldLabel, Segmented, FormError } from '../ui'
+import { Button, TextAction, TextField, FieldLabel, Segmented, FormError } from '../ui'
 import { formatCurrency } from '../format'
 
 /** Fields a photo extraction may pre-fill. */
@@ -160,7 +160,7 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
           <div style={{ flex: 1 }}>
             <TextField label="NHI" value={nhi} onChange={(v) => { setNhi(v); setLookup({ kind: 'idle' }) }} placeholder="ABC1234" mono />
           </div>
-          <Button variant="secondary" onClick={runLookup} disabled={nhi.trim() === '' && emptyLookupPrefill === undefined} style={{ minHeight: 48 }}>
+          <Button variant="secondary" onClick={runLookup} disabled={nhi.trim() === '' && emptyLookupPrefill === undefined}>
             <Search size={16} strokeWidth={2.2} aria-hidden /> Look up
           </Button>
         </div>
@@ -226,13 +226,9 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
             </span>
           </button>
           {rvgGroupId !== '' && (
-            <button
-              type="button"
-              onClick={() => pickCode(null)}
-              style={{ border: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 14, fontWeight: 600, color: accent.base, cursor: 'pointer', padding: '8px 4px' }}
-            >
+            <TextAction onClick={() => pickCode(null)} style={{ padding: '8px 4px' }}>
               Clear
-            </button>
+            </TextAction>
           )}
         </div>
       </div>
@@ -288,14 +284,9 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
             )}
           </span>
         )}
-        <button
-          type="button"
-          onClick={() => setRailOpen(true)}
-          disabled={railContext === undefined}
-          style={{ border: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 14, fontWeight: 600, color: accent.base, cursor: 'pointer', padding: '8px 4px', flex: 'none' }}
-        >
+        <TextAction onClick={() => setRailOpen(true)} disabled={railContext === undefined} style={{ padding: '8px 4px', flex: 'none' }}>
           {pick !== undefined ? 'Change' : 'Choose'}
-        </button>
+        </TextAction>
       </div>
       {pick === undefined && <div style={{ fontSize: 12.5, color: neutral.slate, marginTop: -8 }}>{SAVED_WITHOUT_CONTRACT}</div>}
       {railContext !== undefined && (

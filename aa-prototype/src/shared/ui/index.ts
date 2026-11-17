@@ -1,5 +1,11 @@
 /** Shared UI primitives (moved from mobile in Phase 05; identical on both apps). */
-export { Button } from './Button'
+export { Button, type ButtonVariant, type ButtonSize } from './Button'
+export { TextAction, type TextActionSize } from './TextAction'
+export { BackLink, type BackLinkSize } from './BackLink'
+export { IconButton, CloseButton, type IconButtonSize, type IconButtonShape, type IconButtonTone } from './IconButton'
+export { LineTabs, LineTabLink, LineTab } from './LineTabs'
+export { FilterPills, type FilterPillsSize } from './FilterPills'
+export { ProgressBar } from './ProgressBar'
 export { FieldLabel, FieldHint, FormError, TextField, TextArea, SelectField, Segmented, type DataAttributes } from './Field'
 export { FIELD_HEIGHT, FIELD_FILL, FIELD_CLASS, fieldControlStyle, controlStyle, selectControlStyle, type FieldSize, type FieldFill } from './fieldChrome'
 export { Checkbox, type CheckboxProps } from './Checkbox'
@@ -9,6 +15,7 @@ export {
   type SlidingSegmentLayout,
   type SlidingSegmentOption,
   type SlidingSegmentVariant,
+  type SlidingSegmentSize,
 } from './SlidingSegmentedControl'
 export { TickBadge } from './TickBadge'
 export { TickButton } from './TickButton'

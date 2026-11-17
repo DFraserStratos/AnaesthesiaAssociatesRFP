@@ -18,7 +18,9 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { ChevronUp } from 'lucide-react'
-import { accent, neutral, radius } from '../../../theme/tokens'
+import { neutral } from '../../../theme/tokens'
+import { FilterPills } from '../../../shared/ui/FilterPills'
+import { TextAction } from '../../../shared/ui/TextAction'
 import { useBookingsMovedToMe, useMovedToMe } from '../../../shared/flows'
 import type { AssignedList, Booking, DisplayKey, Session } from '../../../domain/types'
 import { sessionRank } from '../../../domain/outOfHours'
@@ -36,11 +38,11 @@ import { EmptyState } from '../../../shared/ui/EmptyState'
 
 type Filter = 'week' | 'month' | 'todo' | 'done'
 
-const FILTERS: { key: Filter; label: string }[] = [
-  { key: 'week', label: 'Week' },
-  { key: 'month', label: 'Month' },
-  { key: 'todo', label: 'To-Do' },
-  { key: 'done', label: 'Done' },
+const FILTERS: { value: Filter; label: string }[] = [
+  { value: 'week', label: 'Week' },
+  { value: 'month', label: 'Month' },
+  { value: 'todo', label: 'To-Do' },
+  { value: 'done', label: 'Done' },
 ]
 
 const EMPTY_FORWARD: Record<Filter, string> = {
@@ -301,31 +303,7 @@ export function ForwardListsScreen({
           </div>
         )}
         {mode === 'day' && dayISO !== null && <DayChip dateISO={dayISO} onClose={() => onDayChange(null)} />}
-        {mode === 'main' && FILTERS.map((f) => {
-          const active = f.key === filter
-          return (
-            <button
-              key={f.key}
-              type="button"
-              aria-pressed={active}
-              onClick={() => setFilter(f.key)}
-              style={{
-                height: 38,
-                padding: '0 16px',
-                borderRadius: radius.pill,
-                border: active ? 'none' : `1px solid ${neutral.line}`,
-                background: active ? accent.base : neutral.surface,
-                color: active ? neutral.surface : neutral.slate,
-                fontFamily: 'inherit',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              {f.label}
-            </button>
-          )
-        })}
+        {mode === 'main' && <FilterPills value={filter} options={FILTERS} onSelect={setFilter} ariaLabel="Show Lists" size="lg" />}
       </div>
 
       {/* Scroll clearance for the tab bar, which itself tracks the inset 1:1,
@@ -365,30 +343,15 @@ export function ForwardListsScreen({
             <DayHeading>{dayHeading(todayISO, todayISO)}</DayHeading>
           </div>
           {earlierCount > 0 && (
-            <button
-              type="button"
-              data-shot="mobile-main-view-earlier"
+            <TextAction
+              size="lg"
+              shot="mobile-main-view-earlier"
               onClick={showEarlier}
-              style={{
-                alignSelf: 'flex-start',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                minHeight: 44,
-                margin: '-10px 0 0',
-                padding: 0,
-                border: 'none',
-                background: 'none',
-                color: accent.base,
-                fontFamily: 'inherit',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
+              style={{ alignSelf: 'flex-start', gap: 4, margin: '-10px 0 0', fontSize: 13 }}
             >
               <ChevronUp size={16} strokeWidth={2.4} aria-hidden />
               {earlierCount} earlier {earlierCount === 1 ? 'List' : 'Lists'} not yet authorised
-            </button>
+            </TextAction>
           )}
           {todaySection !== undefined && renderRows(todaySection.rows)}
           {/* To-Do and Done count earlier Lists too: empty only when both parts are. */}

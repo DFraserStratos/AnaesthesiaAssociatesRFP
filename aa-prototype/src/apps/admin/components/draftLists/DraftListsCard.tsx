@@ -13,8 +13,9 @@ import { bookingCountsByList, useAppStore, waitingDraftLists } from '../../../..
 import { format, parseISO } from 'date-fns'
 import { pairingLine } from '../../../../shared/format'
 import { DRAFT_LISTS } from '../../../../shared/scheduleTerms'
-import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
+import { neutral, radius, semantic } from '../../../../theme/tokens'
 import { CountBadge } from '../../../../shared/ui/CountBadge'
+import { TextAction } from '../../../../shared/ui'
 import { BookingCount, UnassignedPill, WaitingTime } from './DraftListParts'
 import { sessionText } from '../../../../domain/outOfHours'
 import { EmptyState } from '../../../../shared/ui/EmptyState'
@@ -65,9 +66,9 @@ export function DraftListsCard({ onOpenDraftList, onSeeAll }: { onOpenDraftList:
         </ul>
       )}
       {waiting.length > 0 && (
-        <button type="button" data-shot="admin-draft-lists-see-all" onClick={onSeeAll} style={{ alignSelf: 'flex-start', border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
+        <TextAction size="sm" flush shot="admin-draft-lists-see-all" onClick={onSeeAll} style={{ alignSelf: 'flex-start' }}>
           See all {waiting.length}
-        </button>
+        </TextAction>
       )}
     </section>
   )

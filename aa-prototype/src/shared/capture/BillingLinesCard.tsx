@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-import { accent, neutral, semantic } from '../../theme/tokens'
+import { neutral, semantic } from '../../theme/tokens'
 import type { BillingLine, Contract, Procedure } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
 import { removeBillingLine, useAppStore, type Actor } from '../../store'
 import { AddBillingLineSheet } from './AddBillingLineSheet'
 import { CaptureSection, Caption, FailureNotes } from './ui'
+import { Button } from '../ui/Button'
+import { TextAction } from '../ui/TextAction'
 
 interface BillingLinesCardProps {
   procedure: Procedure
@@ -47,29 +49,15 @@ export function BillingLinesCard({
     canCapture || failures.length > 0 ? (
       <>
         {canCapture && (
-          <button
-            type="button"
+          <Button
+            variant="pill"
             data-validation-procedure-id={procedure.id}
             data-validation-fields="billingLines"
             onClick={() => setSheetOpen(true)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              minHeight: 44,
-              borderRadius: 999,
-              border: 'none',
-              background: accent.tint,
-              color: accent.pressed,
-              fontFamily: 'inherit',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
+            style={{ gap: 6 }}
           >
             <Plus size={16} strokeWidth={2.4} aria-hidden /> Add billing line
-          </button>
+          </Button>
         )}
         <FailureNotes failures={failures} />
       </>
@@ -99,23 +87,9 @@ export function BillingLinesCard({
               ${line.amount.toFixed(2)}
             </span>
             {canCapture && (
-              <button
-                type="button"
-                onClick={() => remove(line.id)}
-                style={{
-                  border: 'none',
-                  background: 'none',
-                  padding: 0,
-                  fontFamily: 'inherit',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: semantic.error.onTint,
-                  cursor: 'pointer',
-                  flex: 'none',
-                }}
-              >
+              <TextAction flush onClick={() => remove(line.id)} style={{ fontSize: 13, flex: 'none' }}>
                 Remove
-              </button>
+              </TextAction>
             )}
           </div>
         )

@@ -9,7 +9,8 @@ import { closedEmptyColleagueSlots, listInSlot, markUnavailableAndMoveList, open
 import { Button, FormError, TextArea } from '../../../shared/ui'
 import { DoneStep } from '../../../shared/ui/DoneStep'
 import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
-import { BackLink, ChoiceRow } from '../../../shared/flows/moveSheetParts'
+import { ChoiceRow } from '../../../shared/flows/moveSheetParts'
+import { BackLink } from '../../../shared/ui'
 import { StatusRadioGroup, VacatedSessionChoice } from '../../../shared/flows/VacatedSessionChoice'
 import { useDemoTriggerContextWhile } from '../../../shared/demoTriggers'
 import { bookingCountLabel, DRAFT_LISTS } from '../../../shared/scheduleTerms'
@@ -214,7 +215,7 @@ export function SessionStatusSheet({ open, slotId, actor, onClose }: { open: boo
 
         {step === 'where' && (
           <>
-            <BackLink onClick={() => setStep('status')}>Status</BackLink>
+            <BackLink size="step" onClick={() => setStep('status')}>Status</BackLink>
             {header}
             <div style={{ fontSize: 13, lineHeight: '19px', color: neutral.slate }}>
               {who} will be {statusLabel} for this session, so the List cannot stay with them.
@@ -249,7 +250,7 @@ export function SessionStatusSheet({ open, slotId, actor, onClose }: { open: boo
 
         {step === 'colleague' && (
           <>
-            <BackLink onClick={() => setStep('where')}>Where it goes</BackLink>
+            <BackLink size="step" onClick={() => setStep('where')}>Where it goes</BackLink>
             {header}
             <AnaesthetistCandidates
               candidates={candidateIds}
@@ -270,7 +271,7 @@ export function SessionStatusSheet({ open, slotId, actor, onClose }: { open: boo
 
         {step === 'confirm' && (
           <div data-shot="office-status-confirm" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <BackLink onClick={() => setStep(route === 'colleague' ? 'colleague' : 'where')}>{route === 'colleague' ? 'Who is free' : 'Where it goes'}</BackLink>
+            <BackLink size="step" onClick={() => setStep(route === 'colleague' ? 'colleague' : 'where')}>{route === 'colleague' ? 'Who is free' : 'Where it goes'}</BackLink>
             {header}
             <Notice tone="neutral">
               {route === 'colleague'

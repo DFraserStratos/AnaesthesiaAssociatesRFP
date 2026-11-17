@@ -6,7 +6,6 @@
 
 import { useMemo, useState, type ReactNode } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { neutral, semantic } from '../../../../theme/tokens'
 import type { DisplayKey, Procedure, RvgGroupId } from '../../../../domain/types'
 import type { ListProgress } from '../../../../domain/listProgress'
@@ -25,7 +24,7 @@ import {
   useSurface,
   WarningTriangle,
 } from '../../../../shared'
-import { NameSearchBox, SlidingSegmentedControl, type SlidingSegmentVariant } from '../../../../shared/ui'
+import { BackLink, Button, FilterPills, IconButton, NameSearchBox, ProgressBar, SlidingSegmentedControl, TextAction, type SlidingSegmentSize, type SlidingSegmentVariant } from '../../../../shared/ui'
 import { drSurname, formatCurrency, locationName, mondayOf, shiftWeeks } from '../../../../shared/format'
 import { ListInvoices, useBookingSearch, useListInvoices } from '../../../../shared/schedule'
 import { AddBookingFlow, AlertOfficeEntry, MovedToYouPanel, SubmitListSheet, useMovableLists } from '../../../../shared/flows'
@@ -53,18 +52,10 @@ import {
   AddBookingButton,
   AgingBars,
   AvailabilityCell,
-  BackLink,
   DayPill,
-  FilterChip,
-  IconBtn,
-  LinkButton,
-  NavButton,
-  ProgressBar,
   StatTile,
   SubmitAction,
   SubTabButton,
-  TodayButton,
-  WeekNavButton,
   WhosFreeChip,
 } from './recreations'
 import { OverlayHeader } from '../../../../shared/surface/OverlayHeader'
@@ -134,7 +125,11 @@ export function BackLinkDemo() {
   const [said, setSaid] = useState<string | null>(null)
   return (
     <>
-      <BackLink label="Lists" onClick={() => setSaid('Would go back to the Lists page (or the search it came from).')} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <BackLink onClick={() => setSaid('Would go back to the Lists page (or the search it came from).')}>Lists</BackLink>
+        <BackLink to="/demo/catalogue/web" size="desktop">A real link (a route)</BackLink>
+        <BackLink size="step" onClick={() => setSaid('A move sheet\'s step back.')}>Choose another List</BackLink>
+      </div>
       <Said text={said} />
     </>
   )
@@ -176,14 +171,17 @@ export function StatTileDemo({ f }: F) {
 
 export function SlidingSegmentedDemo() {
   const [variant, setVariant] = useState<SlidingSegmentVariant>('surface')
+  const [size, setSize] = useState<SlidingSegmentSize>('md')
   const [value, setValue] = useState<'everyone' | 'free' | 'mine'>('everyone')
   return (
     <>
-      <Knobs label="Variant" value={variant} options={[{ value: 'surface', label: 'surface' }, { value: 'teal', label: 'teal' }, { value: 'ink', label: 'ink' }]} onChange={setVariant} />
+      <Knobs label="Variant" value={variant} options={[{ value: 'surface', label: 'surface' }, { value: 'teal', label: 'teal' }]} onChange={setVariant} />
+      <Knobs label="Size" value={size} options={[{ value: 'md', label: 'md' }, { value: 'sm', label: 'sm' }]} onChange={setSize} />
       <div style={{ width: 360 }}>
         <SlidingSegmentedControl
           value={value}
           variant={variant}
+          size={size}
           ariaLabel="Who to show"
           options={[
             { value: 'everyone', label: 'Everyone' },
@@ -227,10 +225,12 @@ export function FilterChipDemo({ f }: F) {
     [schedule, appSettings, slotStatuses, f.todayISO],
   )
   return (
-    <div style={{ display: 'flex', gap: 8 }}>
-      <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>All anaesthetists</FilterChip>
-      <FilterChip active={filter === 'free'} onClick={() => setFilter('free')}>Free only · {freeCount}</FilterChip>
-    </div>
+    <FilterPills
+      value={filter}
+      ariaLabel="Anaesthetists shown"
+      options={[{ value: 'all', label: 'All anaesthetists' }, { value: 'free', label: `Free only · ${freeCount}` }]}
+      onSelect={setFilter}
+    />
   )
 }
 
@@ -360,20 +360,20 @@ export function IconButtonsDemo() {
     <>
       <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
         <span style={{ display: 'flex', gap: 6 }}>
-          <IconBtn label="Previous day" onClick={() => setSaid('IconBtn: Previous day')}><ChevronLeft size={16} aria-hidden /></IconBtn>
-          <IconBtn label="Next day" onClick={() => setSaid('IconBtn: Next day')}><ChevronRight size={16} aria-hidden /></IconBtn>
+          <IconButton size={38} label="Previous day" onClick={() => setSaid('Previous day (Find cover, 38px)')}>‹</IconButton>
+          <IconButton size={38} label="Next day" onClick={() => setSaid('Next day (Find cover, 38px)')}>›</IconButton>
         </span>
         <span style={{ display: 'flex', gap: 6 }}>
-          <NavButton label="Previous month" disabled={!atEnd} onClick={() => setAtEnd(false)}><ChevronLeft size={16} aria-hidden /></NavButton>
-          <NavButton label="Next month" disabled={atEnd} onClick={() => setAtEnd(true)}><ChevronRight size={16} aria-hidden /></NavButton>
+          <IconButton size={38} label="Previous month" disabled={!atEnd} onClick={() => setAtEnd(false)}>‹</IconButton>
+          <IconButton size={38} label="Next month" disabled={atEnd} onClick={() => setAtEnd(true)}>›</IconButton>
         </span>
         <span style={{ display: 'flex', gap: 6 }}>
-          <WeekNavButton label="Previous week" onClick={() => setSaid('WeekNavButton: Previous week')}><ChevronLeft size={16} aria-hidden /></WeekNavButton>
-          <WeekNavButton label="Next week" onClick={() => setSaid('WeekNavButton: Next week')}><ChevronRight size={16} aria-hidden /></WeekNavButton>
+          <IconButton size={32} label="Previous week" onClick={() => setSaid('Previous week (the week strip, 32px)')}>‹</IconButton>
+          <IconButton size={32} label="Next week" onClick={() => setSaid('Next week (the week strip, 32px)')}>›</IconButton>
         </span>
       </div>
       <Said text={said} />
-      <StageHint>Left to right: IconBtn (38px), NavButton (34px, disables at the horizon), WeekNavButton (32px).</StageHint>
+      <StageHint>Left to right: Find cover's day step (38px), My availability's month step (38px, disables at the horizon), the dashboard week strip (32px).</StageHint>
     </>
   )
 }
@@ -383,10 +383,10 @@ export function DayStepperDemo({ f }: F) {
   const shift = (d: number) => setDateISO(format(addDays(parseISO(dateISO), d), 'yyyy-MM-dd'))
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <IconBtn label="Previous day" onClick={() => shift(-1)}><ChevronLeft size={16} aria-hidden /></IconBtn>
+      <IconButton size={38} label="Previous day" onClick={() => shift(-1)}>‹</IconButton>
       <DayPill>{format(parseISO(dateISO), 'EEEE d MMMM')}</DayPill>
-      <IconBtn label="Next day" onClick={() => shift(1)}><ChevronRight size={16} aria-hidden /></IconBtn>
-      <TodayButton onClick={() => setDateISO(f.todayISO)} />
+      <IconButton size={38} label="Next day" onClick={() => shift(1)}>›</IconButton>
+      <Button variant="outline" size="compact" style={{ minHeight: 38 }} onClick={() => setDateISO(f.todayISO)}>Today</Button>
     </div>
   )
 }
@@ -396,7 +396,14 @@ export function LinkButtonDemo() {
   return (
     <>
       <div style={{ fontSize: 13, color: neutral.slate }}>
-        3 accounts over 60 days · <LinkButton onClick={() => setSaid('Would open Accounts, Overdue.')}>view overdue accounts</LinkButton>
+        3 accounts over 60 days · <TextAction size="sm" flush onClick={() => setSaid('Would open Accounts, Overdue.')}>view overdue accounts</TextAction>
+      </div>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginTop: 10 }}>
+        <TextAction size="sm" onClick={() => setSaid('sm: 12.5 in a table')}>Open</TextAction>
+        <TextAction onClick={() => setSaid('md: 14 in a card')}>Edit</TextAction>
+        <TextAction size="lg" onClick={() => setSaid('lg: 15 with a 44px target on the phone')}>Show all</TextAction>
+        <span style={{ fontSize: 13, color: neutral.slate }}>Edited. <TextAction inline onClick={() => setSaid('inline: underlined inside a sentence')}>Amend</TextAction></span>
+        <TextAction disabled disabledReason="Submitted Lists are locked" onClick={() => undefined}>Remove</TextAction>
       </div>
       <Said text={said} />
     </>
@@ -455,7 +462,10 @@ export function ProgressBarDemo() {
   const total = 5
   return (
     <>
-      <ProgressBar done={done} total={total} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>{done} of {total} complete</span>
+        <ProgressBar done={done} total={total} width={200} />
+      </div>
       <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
         <KnobButton onClick={() => setDone((d) => Math.max(0, d - 1))}>One fewer</KnobButton>
         <KnobButton onClick={() => setDone((d) => Math.min(total, d + 1))}>One more</KnobButton>

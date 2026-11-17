@@ -1,11 +1,11 @@
 import { useSearchParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { neutral, radius } from '../../../theme/tokens'
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, type CSSProperties } from 'react'
 import { activeNotificationCount, notificationPool, type Actor, type NotificationTarget } from '../../../store'
-import { cellStyle as cellFactory, headCellStyle as headFactory, textActionStyle } from '../tableChrome'
+import { cellStyle as cellFactory, headCellStyle as headFactory } from '../tableChrome'
 import { ActiveCount, NotificationText, usePoolState, useResolveWithTick } from '../components/NotificationsCard'
-import { Checkbox, FormError, TickBadge, TickButton } from '../../../shared/ui'
+import { Button, Checkbox, FormError, TextAction, TickBadge, TickButton } from '../../../shared/ui'
 import { DRAFT_LIST } from '../../../shared/scheduleTerms'
 
 const cellStyle = cellFactory()
@@ -104,9 +104,9 @@ export function NotificationsScreen({ actor, onOpen }: { actor: Actor; onOpen: (
                 </td>
                 <td style={{ ...cellStyle, textAlign: 'right' }}>
                   {r.target.kind !== 'gone' && (
-                    <button type="button" onClick={() => onOpen(r.target)} style={textActionStyle}>
+                    <TextAction size="sm" flush onClick={() => onOpen(r.target)}>
                       {r.target.kind === 'draftList' ? `Open ${DRAFT_LIST}` : r.target.kind === 'booking' ? 'Open Booking' : 'Open List'}
-                    </button>
+                    </TextAction>
                   )}
                 </td>
               </tr>
@@ -117,26 +117,21 @@ export function NotificationsScreen({ actor, onOpen }: { actor: Actor; onOpen: (
 
       {pool.total > 0 && (
         <div data-shot="admin-notifications-pager" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <PagerButton disabled={pool.page <= 1} onClick={() => go(pool.page - 1)}>Newer</PagerButton>
+          <Button variant="secondary" size="compact" disabled={pool.page <= 1} style={pagerStyle(pool.page <= 1)} onClick={() => go(pool.page - 1)}>Newer</Button>
           <span className="mono" style={{ fontSize: 12.5, color: neutral.slate }}>
             Page {pool.page} of {pool.pageCount}
           </span>
-          <PagerButton disabled={pool.page >= pool.pageCount} onClick={() => go(pool.page + 1)}>Older</PagerButton>
+          <Button variant="secondary" size="compact" disabled={pool.page >= pool.pageCount} style={pagerStyle(pool.page >= pool.pageCount)} onClick={() => go(pool.page + 1)}>Older</Button>
         </div>
       )}
     </div>
   )
 }
 
-function PagerButton({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      style={{ minHeight: 36, padding: '0 14px', borderRadius: radius.pill, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: disabled ? neutral.mist : neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: disabled ? 'default' : 'pointer' }}
-    >
-      {children}
-    </button>
-  )
+/**
+ * The pager keeps its pill shape, ink label and stronger border on the compact secondary
+ * `Button` (U5); disabled takes the shared disabled treatment.
+ */
+function pagerStyle(disabled: boolean): CSSProperties {
+  return disabled ? { borderRadius: radius.pill } : { borderRadius: radius.pill, border: `1px solid ${neutral.lineStrong}`, color: neutral.ink }
 }

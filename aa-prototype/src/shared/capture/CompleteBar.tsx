@@ -1,4 +1,5 @@
 import { accent, elevation, neutral, radius, semantic } from '../../theme/tokens'
+import { TextAction } from '../ui/TextAction'
 
 interface CompleteBarProps {
   completed: boolean
@@ -45,24 +46,9 @@ export function CompleteBar({ completed, canAmend, onComplete, onAmend }: Comple
       </svg>
       Booking complete
       {canAmend && (
-        <button
-          type="button"
-          onClick={onAmend}
-          style={{
-            border: 'none',
-            background: 'none',
-            padding: '4px 0',
-            marginLeft: 6,
-            fontFamily: 'inherit',
-            fontSize: 14,
-            fontWeight: 600,
-            color: accent.base,
-            cursor: 'pointer',
-            textDecoration: 'underline',
-          }}
-        >
+        <TextAction inline onClick={onAmend} style={{ marginLeft: 6, fontSize: 14, padding: '4px 0' }}>
           Amend
-        </button>
+        </TextAction>
       )}
     </div>
   ) : (

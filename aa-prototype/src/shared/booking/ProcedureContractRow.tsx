@@ -76,7 +76,7 @@ export function ProcedureContractRow({ procedure, actor, canEdit, caption, shot 
           <span data-shot="contract-set-by-office" style={{ fontSize: 12.5, color: neutral.slate, whiteSpace: 'nowrap' }}>{SET_BY_THE_OFFICE}</span>
         ) : (
           mayOpen && (
-            <TextAction small shot="procedure-contract-change" onClick={() => setOpen(true)}>
+            <TextAction size="sm" shot="procedure-contract-change" onClick={() => setOpen(true)}>
               {contract !== undefined ? 'Change' : 'Choose'}
             </TextAction>
           )

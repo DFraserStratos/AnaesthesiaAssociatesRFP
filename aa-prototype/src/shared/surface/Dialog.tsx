@@ -3,7 +3,7 @@ import { elevation, neutral, radius, scrim, zIndex } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 import { useModalLayer } from './useModalLayer'
 import { OverlayTitleContext } from './overlayTitle'
-import { CornerClose } from './CornerClose'
+import { CloseButton } from '../ui/IconButton'
 
 interface DialogProps {
   open: boolean
@@ -72,8 +72,8 @@ export function Dialog({ open, onClose, children, size = 'default', initialFocus
       >
         <OverlayTitleContext.Provider value={seam}>{children}</OverlayTitleContext.Provider>
         {titleId !== null && (
-          // The drawer's corner X, through the layer's one onClose (question 11; U5's CloseButton takes it over).
-          <CornerClose onClose={onClose} style={{ position: 'absolute', top: 20, right: 20, display: 'flex' }} />
+          // The drawer's corner X, through the layer's one onClose (question 11; the shared CloseButton since U5).
+          <CloseButton onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, display: 'flex' }} />
         )}
       </div>
     </div>

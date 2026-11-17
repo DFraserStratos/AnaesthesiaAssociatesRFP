@@ -7,10 +7,9 @@
  * shared `TimeRangeFields` since UI unification U4 (48px, the one focus ring).
  */
 
-import { accent } from '../../../theme/tokens'
 import type { Session } from '../../../domain/types'
 import { isWallTime } from '../../../domain/slots'
-import { TimeRangeFields } from '../../../shared/ui'
+import { TextAction, TimeRangeFields } from '../../../shared/ui'
 import { sessionText } from '../../../domain/outOfHours'
 
 export interface TimesDraft {
@@ -56,13 +55,9 @@ export function SessionTimesFields({
         ) : (
           <>
             <span>Own times. The {sessionText(session)} default is {defaults.startTime} to {defaults.endTime}.</span>
-            <button
-              type="button"
-              onClick={() => onChange({ ...defaults })}
-              style={{ border: 0, padding: 0, background: 'transparent', color: accent.base, fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-            >
+            <TextAction size="sm" flush onClick={() => onChange({ ...defaults })}>
               Use default
-            </button>
+            </TextAction>
           </>
         )
       }

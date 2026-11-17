@@ -10,7 +10,9 @@ import { accent, neutral, radius, elevation, zIndex } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 
 export type SlidingSegmentLayout = 'row' | 'two-column' | 'wrap'
-export type SlidingSegmentVariant = 'teal' | 'surface' | 'ink'
+export type SlidingSegmentVariant = 'teal' | 'surface'
+/** `md` today's control (40px items, default); `sm` the 36px toolbar fit (30px items, 12px type; Admin Day's row order, U5). */
+export type SlidingSegmentSize = 'sm' | 'md'
 
 export interface SlidingSegmentOption<T extends string> {
   value: T
@@ -25,6 +27,7 @@ interface SlidingSegmentedControlProps<T extends string> {
   onSelect: (value: T) => void
   layout?: SlidingSegmentLayout
   variant?: SlidingSegmentVariant
+  size?: SlidingSegmentSize
   disabled?: boolean
   ariaLabel?: string
   trackStyle?: CSSProperties
@@ -68,12 +71,12 @@ const VARIANT_STYLE: Record<
     inactive: neutral.slate,
     shadow: '0 1px 3px rgba(23,35,32,0.15)',
   },
-  ink: {
-    background: neutral.ink,
-    active: neutral.surface,
-    inactive: neutral.slate,
-    shadow: '0 1px 3px rgba(23,35,32,0.18)',
-  },
+}
+
+/** Track and item metrics per size. `md` is today's control; `sm` is SortToggle's (U5). */
+const SIZE_STYLE: Record<SlidingSegmentSize, { trackPad: number; trackGap: number; trackRadius: number; itemHeight: number; itemPad: string; itemRadius: number; fontSize: number }> = {
+  md: { trackPad: 4, trackGap: 4, trackRadius: radius.md, itemHeight: 40, itemPad: '0 12px', itemRadius: 9, fontSize: 14 },
+  sm: { trackPad: 3, trackGap: 2, trackRadius: radius.ctl, itemHeight: 30, itemPad: '0 10px', itemRadius: radius.sm, fontSize: 12 },
 }
 
 /**
@@ -88,6 +91,7 @@ export function SlidingSegmentedControl<T extends string>({
   onSelect,
   layout = 'row',
   variant = 'teal',
+  size = 'md',
   disabled = false,
   ariaLabel,
   trackStyle,
@@ -99,6 +103,7 @@ export function SlidingSegmentedControl<T extends string>({
   const hasCompletedInitialLayout = useRef(false)
   const [indicator, setIndicator] = useState<IndicatorState>(EMPTY_INDICATOR)
   const colours = VARIANT_STYLE[variant]
+  const metrics = SIZE_STYLE[size]
 
   const measure = useCallback(() => {
     if (value === undefined) {
@@ -179,9 +184,9 @@ export function SlidingSegmentedControl<T extends string>({
       style={{
         position: 'relative',
         background: neutral.sunken,
-        borderRadius: radius.md,
-        padding: 4,
-        gap: 4,
+        borderRadius: metrics.trackRadius,
+        padding: metrics.trackPad,
+        gap: metrics.trackGap,
         opacity: disabled ? 0.55 : 1,
         ...trackLayout,
         ...trackStyle,
@@ -198,7 +203,7 @@ export function SlidingSegmentedControl<T extends string>({
           top: 0,
           width: indicator.width,
           height: indicator.height,
-          borderRadius: 9,
+          borderRadius: metrics.itemRadius,
           background: colours.background,
           boxShadow: colours.shadow,
           opacity: indicator.visible ? 1 : 0,
@@ -222,6 +227,7 @@ export function SlidingSegmentedControl<T extends string>({
               else buttonRefs.current.set(option.value, node)
             }}
             type="button"
+            className="aa-ctl"
             disabled={inert}
             aria-pressed={selected}
             title={option.title}
@@ -231,14 +237,14 @@ export function SlidingSegmentedControl<T extends string>({
               zIndex: zIndex.raised,
               flex: layout === 'row' ? 1 : layout === 'wrap' ? '0 0 auto' : undefined,
               minWidth: 0,
-              minHeight: 40,
-              padding: '0 12px',
-              borderRadius: 9,
+              minHeight: metrics.itemHeight,
+              padding: metrics.itemPad,
+              borderRadius: metrics.itemRadius,
               border: 'none',
               background: 'transparent',
               color: inert ? neutral.lineStrong : selected ? colours.active : colours.inactive,
               fontFamily: 'inherit',
-              fontSize: 14,
+              fontSize: metrics.fontSize,
               fontWeight: 600,
               cursor: inert ? 'default' : 'pointer',
               transition: `color ${motion.uiFade.duration}ms ${motion.uiFade.easing}`,

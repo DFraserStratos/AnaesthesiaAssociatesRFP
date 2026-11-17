@@ -30,9 +30,9 @@ import type { PriorityTier } from '../../../../domain/types'
 import { matchesNameQuery, pairingLine, slotTimeRange, titledSurname } from '../../../../shared/format'
 import { effectiveSlotTimes } from '../../../../domain/slots'
 import { StatusChip } from '../../../../shared'
-import { NameSearchBox, Segmented } from '../../../../shared/ui'
+import { NameSearchBox, Segmented, TextAction } from '../../../../shared/ui'
 import { draftListAvailabilityFor, useAppStore } from '../../../../store'
-import { accent, neutral, radius } from '../../../../theme/tokens'
+import { neutral, radius } from '../../../../theme/tokens'
 import { surnameFirst } from '../../util'
 import { CandidateRow, ClosedColleagueRow, FILTER_OPTIONS, Group, type TierFilter } from './AnaesthetistCandidates'
 import { TierPill } from './Pills'
@@ -212,13 +212,9 @@ export function DraftListCandidates({
                     <span style={{ fontSize: 12, color: neutral.slate }}>Holds {what}. Resolve it in the Day view first.</span>
                   </span>
                   <TierPill tier={tierFor(tiers, r.anaesthetistId)} />
-                  <button
-                    type="button"
-                    onClick={() => onOpenOccupied(r.listId)}
-                    style={{ border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', padding: 0 }}
-                  >
+                  <TextAction size="sm" flush onClick={() => onOpenOccupied(r.listId)}>
                     Open List
-                  </button>
+                  </TextAction>
                 </div>
               )
             })}

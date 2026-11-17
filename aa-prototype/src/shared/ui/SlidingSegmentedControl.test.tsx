@@ -73,4 +73,26 @@ describe('SlidingSegmentedControl', () => {
       expect(button).toBeDisabled()
     }
   })
+
+  it('draws the sm size for a 36px toolbar (UI unification U5: Admin Day row order)', () => {
+    render(
+      <SlidingSegmentedControl
+        value="az"
+        options={[{ value: 'roster', label: 'Roster order' }, { value: 'az', label: 'A to Z' }]}
+        onSelect={() => {}}
+        ariaLabel="Row order"
+        size="sm"
+      />,
+    )
+    expect(screen.getByRole('group', { name: 'Row order' })).toHaveStyle({ padding: '3px', gap: '2px' })
+    const az = screen.getByRole('button', { name: 'A to Z' })
+    expect(az).toHaveAttribute('aria-pressed', 'true')
+    expect(az).toHaveStyle({ minHeight: '30px', fontSize: '12px' })
+    expect(az).toHaveClass('aa-ctl')
+  })
+
+  it('keeps today\'s md size by default', () => {
+    render(<SlidingSegmentedControl value="one" options={OPTIONS} onSelect={() => {}} ariaLabel="Default" />)
+    expect(screen.getByRole('button', { name: 'One' })).toHaveStyle({ minHeight: '40px', fontSize: '14px' })
+  })
 })

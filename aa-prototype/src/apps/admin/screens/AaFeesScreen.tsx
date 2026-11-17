@@ -1,7 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { addMonths, format, parseISO } from 'date-fns'
-import { ChevronDown, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
+import { ChevronDown, ChevronRight, Plus, X } from 'lucide-react'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import type { AaFeeFixedItem, AaFeeSettings } from '../../../domain/types'
 import { aaFeeFixedTotal, aaFeeFor, aaFeeMonthLabel, validateAaFeeSettings } from '../../../domain/billing/aaFee'
@@ -20,7 +19,7 @@ import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { drSurname, formatCurrency, parseAmountOrNaN, plainDate, plural } from '../../../shared/format'
 import { cellStyle as cellFactory, headCellStyle as headFactory } from '../tableChrome'
 import { Pill } from '../../../shared/ui/Pill'
-import { FormError, TextField } from '../../../shared/ui'
+import { Button, FormError, IconButton, LineTabLink, LineTabs, TextField } from '../../../shared/ui'
 import { ResultLine } from '../../../shared/ui/ResultLine'
 
 export type AaFeesTab = 'invoices' | 'settings'
@@ -57,32 +56,13 @@ export function AaFeesScreen({ actor, tab }: { actor: Actor; tab: AaFeesTab }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${neutral.line}` }}>
-        <TabLink active={tab === 'invoices'} to="/admin/billing/aa-fees">Fee invoices</TabLink>
-        <TabLink active={tab === 'settings'} to="/admin/billing/aa-fees/settings">Fee settings</TabLink>
-      </div>
+      <LineTabs label="AA fees">
+        <LineTabLink active={tab === 'invoices'} to="/admin/billing/aa-fees">Fee invoices</LineTabLink>
+        <LineTabLink active={tab === 'settings'} to="/admin/billing/aa-fees/settings">Fee settings</LineTabLink>
+      </LineTabs>
 
       {tab === 'invoices' ? <FeeInvoicesTab actor={actor} /> : <FeeSettingsTab actor={actor} />}
     </div>
-  )
-}
-
-function TabLink({ active, to, children }: { active: boolean; to: string; children: React.ReactNode }) {
-  return (
-    <Link
-      to={to}
-      aria-current={active ? 'page' : undefined}
-      style={{
-        padding: '10px 14px',
-        fontSize: 14,
-        fontWeight: active ? 600 : 500,
-        color: active ? neutral.ink : neutral.slate,
-        boxShadow: active ? `inset 0 -2px 0 ${neutral.ink}` : 'none',
-        textDecoration: 'none',
-      }}
-    >
-      {children}
-    </Link>
   )
 }
 
@@ -139,40 +119,23 @@ function FeeInvoicesTab({ actor }: { actor: Actor }) {
       <section style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden' }}>
         <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', borderBottom: `1px solid ${neutral.line}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <StepButton label="Previous month" onClick={() => step(-1)} disabled={month <= FIRST_MONTH}>
-              <ChevronLeft size={18} strokeWidth={2.2} aria-hidden />
-            </StepButton>
+            <IconButton size={36} label="Previous month" onClick={() => step(-1)} disabled={month <= FIRST_MONTH}>
+              ‹
+            </IconButton>
             <div data-testid="aa-fee-month" style={{ minWidth: 128, textAlign: 'center', fontSize: 16, fontWeight: 700 }}>
               {aaFeeMonthLabel(month)}
             </div>
-            <StepButton label="Next month" onClick={() => step(1)} disabled={month >= currentMonth}>
-              <ChevronRight size={18} strokeWidth={2.2} aria-hidden />
-            </StepButton>
+            <IconButton size={36} label="Next month" onClick={() => step(1)} disabled={month >= currentMonth}>
+              ›
+            </IconButton>
           </div>
           <div style={{ flex: 1, minWidth: 240, fontSize: 12.5, color: neutral.slate }}>
             The real run is made at month end; in the demo, running the current month invoices it to date.
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-            <button
-              type="button"
-              onClick={run}
-              disabled={disabledReason !== null}
-              style={{
-                minHeight: 38,
-                padding: '0 16px',
-                borderRadius: radius.ctl,
-                border: 'none',
-                background: disabledReason !== null ? neutral.line : accent.base,
-                color: disabledReason !== null ? neutral.mist : neutral.surface,
-                fontFamily: 'inherit',
-                fontSize: 13.5,
-                fontWeight: 600,
-                cursor: disabledReason !== null ? 'default' : 'pointer',
-              }}
-            >
+            <Button variant="primary" size="compact" onClick={run} disabled={disabledReason !== null} disabledReason={disabledReason ?? undefined}>
               Run monthly fee invoices
-            </button>
-            {disabledReason !== null && <div style={{ fontSize: 12, color: neutral.mist }}>{disabledReason}</div>}
+            </Button>
           </div>
         </div>
         <ResultLine shot="aa-fee-run-result" line={result?.ok === true ? result.text : null} style={{ margin: '0 16px 12px' }} />
@@ -226,31 +189,6 @@ function FeeInvoicesTab({ actor }: { actor: Actor }) {
 
       <FeeInvoiceList invoices={invoices} />
     </div>
-  )
-}
-
-function StepButton({ label, onClick, disabled = false, children }: { label: string; onClick: () => void; disabled?: boolean; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        width: 34,
-        height: 34,
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: radius.ctl,
-        border: `1px solid ${neutral.line}`,
-        background: neutral.surface,
-        color: disabled ? neutral.lineStrong : neutral.ink,
-        cursor: disabled ? 'default' : 'pointer',
-      }}
-    >
-      {children}
-    </button>
   )
 }
 
@@ -483,17 +421,16 @@ function FeeSettingsTab({ actor }: { actor: Actor }) {
               <div key={item.id} data-testid={`aa-fee-item-${index}`} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 36px', gap: 8, alignItems: 'center' }}>
                 <TextField label={`Fixed item ${index + 1} description`} hideLabel size="compact" value={item.description} onChange={(v) => update(item.id, { description: v })} />
                 <TextField label={`Fixed item ${index + 1} amount`} hideLabel size="compact" mono inputMode="decimal" align="right" value={item.amount} onChange={(v) => update(item.id, { amount: v })} />
-                <button
-                  type="button"
-                  aria-label={`Remove ${item.description.trim() === '' ? `fixed item ${index + 1}` : item.description}`}
+                <IconButton
+                  size={36}
+                  label={`Remove ${item.description.trim() === '' ? `fixed item ${index + 1}` : item.description}`}
                   onClick={() => {
                     setItems((prev) => prev.filter((x) => x.id !== item.id))
                     setMessage(null)
                   }}
-                  style={{ width: 36, height: 36, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, cursor: 'pointer' }}
                 >
                   <X size={16} aria-hidden />
-                </button>
+                </IconButton>
               </div>
             ))}
           </div>
@@ -535,14 +472,9 @@ function FeeSettingsTab({ actor }: { actor: Actor }) {
         <FormError message={message?.ok === false ? message.text : null} />
 
         <div>
-          <button
-            type="button"
-            onClick={save}
-            disabled={invalid !== null}
-            style={{ minHeight: 40, padding: '0 18px', borderRadius: radius.ctl, border: 'none', background: invalid !== null ? neutral.line : accent.base, color: invalid !== null ? neutral.mist : neutral.surface, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, cursor: invalid !== null ? 'default' : 'pointer' }}
-          >
+          <Button variant="primary" size="compact" onClick={save} disabled={invalid !== null}>
             Save settings
-          </button>
+          </Button>
         </div>
       </section>
     </div>

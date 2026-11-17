@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Check, ChevronLeft, Lock, Plus } from 'lucide-react'
+import { Check, Lock, Plus } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { STATUS_PALETTE } from '../../../theme/statusColours'
 import type { Booking, Procedure } from '../../../domain/types'
@@ -15,7 +15,7 @@ import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { NEEDS_PRICE_LABEL } from '../../../domain/billing/priceRanges'
-import { easing } from '../../../theme/motion'
+import { BackLink, Button, ProgressBar } from '../../../shared/ui'
 
 interface ListDetailViewProps {
   listId: string
@@ -142,16 +142,10 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
   // ACTIVE or SUBMITTED, own List: editable until the office authorises it (catch-up Phase 38a).
   const canEdit = editRefusal(actor, list) === null
   const incomplete = model.activeCount - model.done
-  const pct = model.activeCount > 0 ? Math.round((model.done / model.activeCount) * 100) : 0
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <button
-        onClick={onBack}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start', border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-      >
-        <ChevronLeft size={16} strokeWidth={2.4} aria-hidden /> Lists
-      </button>
+      <BackLink onClick={onBack}>Lists</BackLink>
 
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div>
@@ -174,14 +168,9 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {movable && movePrompt !== null && (
-            <button
-              type="button"
-              data-shot="list-move"
-              onClick={() => movePrompt.openMove(listId)}
-              style={{ height: 42, padding: '0 18px', borderRadius: radius.md, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-            >
+            <Button variant="outline" size="desktop" shot="list-move" onClick={() => movePrompt.openMove(listId)}>
               Move this List
-            </button>
+            </Button>
           )}
           <SubmitAction
             state={list.state}
@@ -201,9 +190,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
             <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>
               {model.done} of {model.activeCount} complete
             </span>
-            <span style={{ width: 200, height: 6, borderRadius: radius.pill, background: neutral.line, overflow: 'hidden', display: 'block' }}>
-              <span style={{ display: 'block', height: '100%', borderRadius: radius.pill, background: semantic.success.solid, transition: `width 300ms ${easing.card}`, width: `${pct}%` }} />
-            </span>
+            <ProgressBar done={model.done} total={model.activeCount} width={200} />
           </span>
         }
       >
@@ -323,6 +310,8 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
         {canEdit && (
           <div style={{ padding: '0 20px 20px' }}>
             <button
+              type="button"
+              className="aa-ctl"
               onClick={() => setAddOpen(true)}
               style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 16px', background: neutral.surface, border: `1.5px dashed ${neutral.lineStrong}`, borderRadius: radius.ctl, fontFamily: 'inherit', color: accent.base, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
             >
@@ -398,6 +387,7 @@ function SubmitAction({
     return (
       <button
         type="button"
+        className="aa-ctl"
         onClick={onBlockers}
         title="See what is left to finish"
         style={{ ...shared, background: neutral.surface, color: neutral.slate, border: `1px solid ${neutral.lineStrong}`, cursor: 'pointer' }}
@@ -407,7 +397,7 @@ function SubmitAction({
     )
   }
   return (
-    <button type="button" onClick={onConfirm} style={{ ...shared, background: accent.base, color: neutral.surface, cursor: 'pointer' }}>
+    <button type="button" className="aa-ctl" onClick={onConfirm} style={{ ...shared, background: accent.base, color: neutral.surface, cursor: 'pointer' }}>
       Mark list completed
     </button>
   )

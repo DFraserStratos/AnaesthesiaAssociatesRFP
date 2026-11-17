@@ -1,5 +1,6 @@
 /** Shared primitives for the BTM capture cards (mockup screen 3 anatomy). */
 import { Pill } from '../ui/Pill'
+import { IconButton } from '../ui/IconButton'
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
@@ -83,7 +84,7 @@ export function CaptureSection({
   )
 }
 
-/** The mockup's 44px round-square − / + stepper button. */
+/** The mockup's 44px round-square − / + stepper button; the shared `IconButton` (square, 44) since U5. */
 export function StepperButton({
   glyph,
   onClick,
@@ -96,29 +97,10 @@ export function StepperButton({
   /** The accessible name ("Fewer units"); the glyph alone names nothing. */
   label?: string
 }) {
-  const isDisabled = disabled === true
   return (
-    <button
-      type="button"
-      aria-label={label}
-      disabled={isDisabled}
-      onClick={isDisabled ? undefined : onClick}
-      style={{
-        width: 44,
-        height: 44,
-        borderRadius: radius.md,
-        border: `1px solid ${neutral.line}`,
-        background: neutral.surface,
-        fontSize: 20,
-        fontWeight: 600,
-        fontFamily: 'inherit',
-        color: isDisabled ? neutral.lineStrong : neutral.slate,
-        cursor: isDisabled ? 'default' : 'pointer',
-        flex: 'none',
-      }}
-    >
+    <IconButton label={label ?? glyph} onClick={onClick} disabled={disabled === true} size={44}>
       {glyph}
-    </button>
+    </IconButton>
   )
 }
 

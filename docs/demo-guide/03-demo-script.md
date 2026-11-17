@@ -624,7 +624,7 @@ until you authorise the Lists live; the run then sends them.
     Melanie Souter as supplier with "GST number 104-348-211", the agent block ("Issued by Anaesthesia
     Associates Limited as agent for Dr Melanie Souter. AA GST number 102-345-678.") with its
     **Provisional (OQ-29)** pill, and GST (15%) at the foot.
-  - Select **All invoices**, locate the fixed comparison rows and pause:
+  - Select the **Invoices** breadcrumb at the top, locate the fixed comparison rows and pause:
     - **AA-2026-0002 · Brian Holt · Forte Health · $365.70** is the one-invoice split-billing
       Booking. (It read $396.18 before catch-up Phase 19b: his ASA II no longer seeds a modifier
       unit, because the RVG table prices ASA I or II at 0.)
@@ -636,7 +636,7 @@ until you authorise the Lists live; the run then sends them.
     AA-2026-0006. It carries no **Your reference**: Alan's Procedure is on No contract · RVG and split,
     so nib's share has no holder reference code. The PM List's St George's invoices (its other two
     Bookings, on St George's RVG) print **Your reference SGANAES01**.
-  - Back to **All invoices**, open **AA-2026-0006** ("Emailed to alan.prentice11@example.net"): the
+  - Back through the **Invoices** breadcrumb, open **AA-2026-0006** ("Emailed to alan.prentice11@example.net"): the
     patient's layout, the same lines without the BTM breakdown or the strip.
 - **Say:** "The Billing Engine, not Xero, produces and sends every invoice as part of the run, in Dr
   Souter's name with her GST number and AA as agent. Each Procedure's Contract decides who is billed:

@@ -18,7 +18,8 @@
 
 import { useId, useRef, type CSSProperties, type ReactNode } from 'react'
 import { elevation, neutral, scrim, type as typeScale, zIndex } from '../../../theme/tokens'
-import { CornerClose, useModalLayer } from '../../../shared/surface'
+import { useModalLayer } from '../../../shared/surface'
+import { CloseButton } from '../../../shared/ui'
 import { ADMIN_LIST_DRAWER_WIDTH } from '../layout'
 
 export const SIDE_PANEL_WIDTH = { list: ADMIN_LIST_DRAWER_WIDTH, record: 600 } as const
@@ -88,7 +89,7 @@ export function SidePanel({ open, onClose, title, meta, above, width, footer, fo
             {meta !== undefined &&
               (record ? <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', fontSize: 13, color: neutral.slate }}>{meta}</div> : meta)}
           </div>
-          <CornerClose onClose={onClose} />
+          <CloseButton onClick={onClose} />
         </header>
         <div style={{ flex: 1, overflowY: 'auto', padding: record ? '20px 24px' : 24, display: 'flex', flexDirection: 'column', gap: bodyGap ?? (record ? 20 : 16) }}>{children}</div>
         {footer !== undefined && (

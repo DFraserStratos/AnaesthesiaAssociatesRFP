@@ -25,7 +25,8 @@ const TABS: readonly TabDef[] = [
 
 function BottomTabBar({ active, onSelect }: { active: MobileTab; onSelect: (tab: MobileTab) => void }) {
   return (
-    <div
+    <nav
+      aria-label="Main"
       data-testid="mobile-tab-bar"
       style={{
         position: 'absolute',
@@ -55,6 +56,9 @@ function BottomTabBar({ active, onSelect }: { active: MobileTab; onSelect: (tab:
         return (
           <button
             key={tab.key}
+            type="button"
+            className="aa-ctl"
+            aria-current={on ? 'page' : undefined}
             onClick={() => onSelect(tab.key)}
             style={{
               display: 'flex',
@@ -74,7 +78,7 @@ function BottomTabBar({ active, onSelect }: { active: MobileTab; onSelect: (tab:
           </button>
         )
       })}
-    </div>
+    </nav>
   )
 }
 

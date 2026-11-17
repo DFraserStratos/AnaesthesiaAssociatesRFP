@@ -30,13 +30,15 @@ export function WebNav({ tab, onTab, personaName, initials }: WebNavProps) {
       <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 32px', height: 64, display: 'flex', alignItems: 'center', gap: 32 }}>
         <Logo height={24} />
 
-        <nav style={{ display: 'flex', gap: 4, height: '100%', alignItems: 'stretch', flex: 1 }}>
+        <nav aria-label="Main" style={{ display: 'flex', gap: 4, height: '100%', alignItems: 'stretch', flex: 1 }}>
           {TABS.map((t) => {
             const active = t.key === tab
             return (
               <button
                 key={t.key}
                 type="button"
+                className="aa-ctl"
+                aria-current={active ? 'page' : undefined}
                 onClick={() => onTab(t.key)}
                 style={{
                   display: 'flex',

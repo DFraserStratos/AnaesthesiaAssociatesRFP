@@ -284,7 +284,7 @@ export function ContractRail({ open, actor, context, start, currentContractId, c
             shot="contract-rail-outcome"
             action={
               actor === 'office' && finalContract !== undefined && isRvgKind(finalContract.pricing.kind) && !usingOther ? (
-                <TextAction small shot="contract-rail-enter-rvg" onClick={() => setCodeOpen(true)}>
+                <TextAction size="sm" shot="contract-rail-enter-rvg" onClick={() => setCodeOpen(true)}>
                   {rvgNow !== undefined ? 'Change code' : 'Enter it now'}
                 </TextAction>
               ) : undefined
@@ -403,6 +403,7 @@ function ContractRow({
     <button
       {...itemProps}
       type="button"
+      className="aa-ctl"
       data-contract-id={contract.id}
       onClick={onPick}
       style={{

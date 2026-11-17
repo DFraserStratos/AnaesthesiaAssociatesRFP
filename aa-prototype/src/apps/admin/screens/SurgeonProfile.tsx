@@ -7,7 +7,8 @@ import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { Pill } from '../components/MasterPills'
 import { HistorySheet } from '../../../shared/booking'
 import { PairingSection, useProfileHistory } from '../components/pairing'
-import { BackLink, Fact, HeaderActions, IdChip, ProfileCard, ProfileHeader, ProfilePage } from '../components/ProfileChrome'
+import { Fact, HeaderActions, IdChip, ProfileCard, ProfileHeader, ProfilePage } from '../components/ProfileChrome'
+import { BackLink } from '../../../shared/ui'
 import { SurgeonEditSheet } from '../flows/SurgeonEditSheet'
 import { mastersViewPath, surgeonProfilePath } from '../mastersPaths'
 import { EmptyState } from '../../../shared/ui/EmptyState'
@@ -35,7 +36,7 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
 
   return (
     <ProfilePage shot="surgeon-profile">
-      <BackLink to={mastersViewPath('surgeons')}>Surgeons</BackLink>
+      <BackLink to={mastersViewPath('surgeons')} size="desktop">Surgeons</BackLink>
       <ProfileHeader
         name={surgeon.name}
         chip={<IdChip label="HPI CPN" value={surgeon.hpiId} shot="surgeon-hpi-chip" />}

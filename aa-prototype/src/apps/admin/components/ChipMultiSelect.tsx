@@ -8,9 +8,8 @@
  */
 
 import { useId, useRef } from 'react'
-import { X } from 'lucide-react'
 import { neutral, radius } from '../../../theme/tokens'
-import { FIELD_CLASS, FieldHint, FieldLabel, fieldControlStyle } from '../../../shared/ui'
+import { CloseButton, FIELD_CLASS, FieldHint, FieldLabel, fieldControlStyle } from '../../../shared/ui'
 
 export interface ChipOption {
   id: string
@@ -59,18 +58,14 @@ export function ChipMultiSelect({
             style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 4px 2px 10px', borderRadius: radius.pill, background: neutral.sunken, color: neutral.ink, fontSize: 12.5, fontWeight: 500 }}
           >
             {byId.get(id) ?? id}
-            <button
-              type="button"
-              aria-label={`Remove ${byId.get(id) ?? id}`}
-              onClick={() => {
-                onChange(value.filter((v) => v !== id))
-                // The button leaves the page; keep focus on the field.
-                selectRef.current?.focus()
-              }}
-              style={{ border: 'none', background: 'none', color: neutral.slate, cursor: 'pointer', padding: 2, display: 'inline-flex' }}
-            >
-              <X size={14} aria-hidden />
-            </button>
+            {/* The button leaves the page; focus returns to the field. */}
+            <CloseButton
+              label={`Remove ${byId.get(id) ?? id}`}
+              iconSize={14}
+              returnFocusTo={selectRef}
+              onClick={() => onChange(value.filter((v) => v !== id))}
+              style={{ padding: 2, display: 'inline-flex' }}
+            />
           </span>
         ))}
       </div>

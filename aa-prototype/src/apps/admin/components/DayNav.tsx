@@ -1,9 +1,17 @@
 import { addDays, format, parseISO } from 'date-fns'
-import { accent, neutral, radius } from '../../../theme/tokens'
+import { neutral } from '../../../theme/tokens'
 import { shiftWeeks, longDay } from '../../../shared/format'
-import { DateJumpInput } from '../../../shared/ui'
+import { Button, DateJumpInput, IconButton, SlidingSegmentedControl, type SlidingSegmentOption } from '../../../shared/ui'
 
 export type SortMode = 'roster' | 'az'
+
+const SORT_OPTIONS: readonly SlidingSegmentOption<SortMode>[] = [
+  { value: 'roster', label: 'Roster order' },
+  { value: 'az', label: 'A to Z' },
+]
+
+/** The week steps keep their narrower 10px side padding (U5). */
+const WEEK_STEP = { padding: '0 10px' } as const
 
 interface DayNavProps {
   selectedDateISO: string
@@ -30,70 +38,24 @@ export function DayNav({ selectedDateISO, summary, sortMode, onSort, onNavigateD
         <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{summary}</div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      <div data-testid="admin-day-nav" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         {onFindAvailable !== undefined && (
-          <button
-            type="button"
-            data-shot="admin-availability-finder-open"
-            onClick={onFindAvailable}
-            style={{ height: 36, padding: '0 14px', borderRadius: radius.ctl, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-          >
+          <Button variant="outline" size="compact" shot="admin-availability-finder-open" onClick={onFindAvailable}>
             Find available
-          </button>
+          </Button>
         )}
-        <SortToggle sortMode={sortMode} onSort={onSort} />
-        <TextBtn onClick={() => week(-4)}>-4w</TextBtn>
-        <TextBtn onClick={() => week(-1)}>-1w</TextBtn>
-        <SquareBtn onClick={() => step(-1)}>‹</SquareBtn>
-        <button
-          type="button"
-          onClick={() => onNavigateDate(todayISO)}
-          style={{ height: 36, padding: '0 14px', borderRadius: radius.ctl, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-        >
+        <SlidingSegmentedControl size="sm" layout="wrap" variant="teal" ariaLabel="Row order" value={sortMode} options={SORT_OPTIONS} onSelect={onSort} />
+        <Button variant="secondary" size="compact" style={WEEK_STEP} onClick={() => week(-4)}>-4w</Button>
+        <Button variant="secondary" size="compact" style={WEEK_STEP} onClick={() => week(-1)}>-1w</Button>
+        <IconButton size={36} label="Previous day" onClick={() => step(-1)}>‹</IconButton>
+        <Button variant="outline" size="compact" onClick={() => onNavigateDate(todayISO)}>
           Today
-        </button>
-        <SquareBtn onClick={() => step(1)}>›</SquareBtn>
-        <TextBtn onClick={() => week(1)}>+1w</TextBtn>
-        <TextBtn onClick={() => week(4)}>+4w</TextBtn>
+        </Button>
+        <IconButton size={36} label="Next day" onClick={() => step(1)}>›</IconButton>
+        <Button variant="secondary" size="compact" style={WEEK_STEP} onClick={() => week(1)}>+1w</Button>
+        <Button variant="secondary" size="compact" style={WEEK_STEP} onClick={() => week(4)}>+4w</Button>
         <DateJumpInput beyondMax label="Go to date" height={36} width={139} value={selectedDateISO} max={maxDateISO} onPick={(d) => d !== null && onNavigateDate(d)} />
       </div>
     </div>
-  )
-}
-
-function SortToggle({ sortMode, onSort }: { sortMode: SortMode; onSort: (m: SortMode) => void }) {
-  const opt = (mode: SortMode, label: string) => {
-    const active = mode === sortMode
-    return (
-      <button
-        type="button"
-        onClick={() => onSort(mode)}
-        style={{ height: 30, padding: '0 10px', borderRadius: radius.sm, border: 'none', background: active ? accent.base : 'transparent', color: active ? neutral.surface : neutral.slate, fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-      >
-        {label}
-      </button>
-    )
-  }
-  return (
-    <div title="Row order" style={{ display: 'flex', background: neutral.sunken, borderRadius: radius.ctl, padding: 3, gap: 2 }}>
-      {opt('roster', 'Roster order')}
-      {opt('az', 'A to Z')}
-    </div>
-  )
-}
-
-function SquareBtn({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" onClick={onClick} style={{ width: 36, height: 36, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, cursor: 'pointer', fontSize: 15, fontFamily: 'inherit' }}>
-      {children}
-    </button>
-  )
-}
-
-function TextBtn({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" onClick={onClick} style={{ height: 36, padding: '0 10px', borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, cursor: 'pointer', fontSize: 12.5, fontWeight: 600, fontFamily: 'inherit' }}>
-      {children}
-    </button>
   )
 }

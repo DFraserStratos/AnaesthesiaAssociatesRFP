@@ -11,17 +11,17 @@
  */
 
 import { useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { Plus, TriangleAlert } from 'lucide-react'
-import { accent, neutral, radius, semantic } from '../../../theme/tokens'
+import { accent, fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
 import { removeBlockedReason } from '../../../domain/draftLists'
 import { bookingCountsByList, finishedDraftLists, useAppStore, waitingDraftLists, type Actor } from '../../../store'
-import { Button } from '../../../shared/ui'
+import { Button, LineTabLink, LineTabs, TextAction } from '../../../shared/ui'
 import { drSurname, hhmm, initialsOf, locationName, shortDay } from '../../../shared/format'
 import { DRAFT_LIST, DRAFT_LISTS, ORIGIN_SHORT_LABELS, SOURCE_LABELS, UNASSIGNED, draftListCount, unavailableDetail } from '../../../shared/scheduleTerms'
 import type { List } from '../../../domain/types'
-import { cellStyle as adminCell, headCellStyle as adminHead, isInteractiveRowTarget, textActionStyle } from '../tableChrome'
+import { cellStyle as adminCell, headCellStyle as adminHead, isInteractiveRowTarget } from '../tableChrome'
 import { surnameFirst } from '../util'
 import { BookingCount, UnassignedPill, WaitingTime } from '../components/draftLists/DraftListParts'
 import { AssignDraftListSheet } from '../flows/AssignDraftListSheet'
@@ -50,6 +50,7 @@ export function DraftListsScreen({
   onOpenList: (listId: string) => void
 }) {
   const [params, setParams] = useSearchParams()
+  const { pathname } = useLocation()
   const tab = params.get('tab') === 'history' ? 'history' : 'unassigned'
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const bookings = useAppStore((s) => s.schedule.bookings)
@@ -75,12 +76,14 @@ export function DraftListsScreen({
     setParams(p, { replace: true })
   }
 
-  function setTab(next: 'unassigned' | 'history') {
+  // A tab's link: this page with `tab=history` set (or dropped for Unassigned), `open` dropped, the rest kept.
+  function tabHref(next: 'unassigned' | 'history'): string {
     const p = new URLSearchParams(params)
     if (next === 'history') p.set('tab', 'history')
     else p.delete('tab')
     p.delete('open')
-    setParams(p, { replace: true })
+    const search = p.toString()
+    return search === '' ? pathname : `${pathname}?${search}`
   }
 
   const surgeon = (l: List) => masters.surgeons[l.surgeonId]?.name ?? l.surgeonId
@@ -120,7 +123,7 @@ export function DraftListsScreen({
         </Button>
       </div>
 
-      <div role="tablist" aria-label={DRAFT_LISTS} style={{ display: 'inline-flex', gap: 6 }}>
+      <LineTabs label={DRAFT_LISTS}>
         {(
           [
             ['unassigned', `${UNASSIGNED}`, waiting.length],
@@ -129,20 +132,19 @@ export function DraftListsScreen({
         ).map(([value, label, n]) => {
           const active = tab === value
           return (
-            <button
+            <LineTabLink
               key={value}
-              type="button"
-              role="tab"
-              aria-selected={active}
+              to={tabHref(value)}
+              replace
+              active={active}
               data-draft-tab={value}
-              onClick={() => setTab(value)}
-              style={{ padding: '6px 12px', borderRadius: radius.pill, border: `1px solid ${active ? accent.base : neutral.line}`, background: active ? accent.tint : neutral.surface, color: active ? accent.pressed : neutral.slate, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
+              badge={<span style={{ fontFamily: fontFamily.mono, fontSize: 12, fontWeight: 500, fontVariantNumeric: 'tabular-nums', color: active ? accent.base : neutral.slate }}>{n}</span>}
             >
-              {label} <span className="mono" style={{ fontVariantNumeric: 'tabular-nums', marginLeft: 2 }}>{n}</span>
-            </button>
+              {label}
+            </LineTabLink>
           )
         })}
-      </div>
+      </LineTabs>
 
       <ResultLine
         shot="draft-lists-assigned"
@@ -150,8 +152,8 @@ export function DraftListsScreen({
         actions={
           assignedNote !== null ? (
             <span style={{ display: 'inline-flex', gap: 14 }}>
-              <button type="button" style={textActionStyle} onClick={() => onOpenList(assignedNote.listId)}>Open List</button>
-              <button type="button" style={textActionStyle} onClick={() => setAssigned(null)}>Dismiss</button>
+              <TextAction size="sm" flush onClick={() => onOpenList(assignedNote.listId)}>Open List</TextAction>
+              <TextAction size="sm" flush onClick={() => setAssigned(null)}>Dismiss</TextAction>
             </span>
           ) : undefined
         }
@@ -214,26 +216,26 @@ export function DraftListsScreen({
                         <td className="mono" title={since(l)} style={{ ...cellStyle, fontSize: 12, color: neutral.slate, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{since(l)}</td>
                         <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
                           <span style={{ display: 'inline-flex', gap: 12 }}>
-                            <button
-                              type="button"
-                              aria-label={`Assign ${DRAFT_LIST}, ${shortDay(l.dateISO)} ${sessionText(l.session)}`}
+                            <TextAction
+                              size="sm"
+                              flush
+                              label={`Assign ${DRAFT_LIST}, ${shortDay(l.dateISO)} ${sessionText(l.session)}`}
                               disabled={passed}
-                              title={passed ? 'This day has passed. Change its date or remove it.' : undefined}
-                              style={passed ? { ...textActionStyle, color: neutral.mist, cursor: 'default' } : textActionStyle}
+                              {...(passed ? { title: 'This day has passed. Change its date or remove it.' } : {})}
                               onClick={() => setSheet({ kind: 'assign', listId: l.id })}
                             >
                               Assign
-                            </button>
-                            <button type="button" style={textActionStyle} onClick={() => setSheet({ kind: 'redate', listId: l.id })}>Change date</button>
-                            <button
-                              type="button"
+                            </TextAction>
+                            <TextAction size="sm" flush onClick={() => setSheet({ kind: 'redate', listId: l.id })}>Change date</TextAction>
+                            <TextAction
+                              size="sm"
+                              flush
                               disabled={(counts.get(l.id) ?? 0) > 0}
-                              title={(counts.get(l.id) ?? 0) > 0 ? removeBlockedReason(counts.get(l.id) ?? 0) : undefined}
-                              style={(counts.get(l.id) ?? 0) > 0 ? { ...textActionStyle, color: neutral.mist, cursor: 'default' } : textActionStyle}
+                              {...((counts.get(l.id) ?? 0) > 0 ? { title: removeBlockedReason(counts.get(l.id) ?? 0) } : {})}
                               onClick={() => setSheet({ kind: 'remove', listId: l.id })}
                             >
                               Remove
-                            </button>
+                            </TextAction>
                           </span>
                         </td>
                       </tr>
@@ -279,7 +281,7 @@ export function DraftListsScreen({
                       {at !== undefined ? `${format(parseISO(at), 'd MMM')} ${hhmm(at)}` : ''} · {by ?? ''}
                     </td>
                     <td style={cellStyle}>
-                      {assigned && <button type="button" style={textActionStyle} onClick={() => onOpenList(l.id)}>Open List</button>}
+                      {assigned && <TextAction size="sm" flush onClick={() => onOpenList(l.id)}>Open List</TextAction>}
                     </td>
                   </tr>
                 )

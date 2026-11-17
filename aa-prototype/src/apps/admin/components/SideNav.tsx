@@ -57,13 +57,14 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, integrationBadg
         <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.14em', color: brand.onDarkMuted, paddingLeft: 2 }}>ADMIN</span>
       </div>
 
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <nav aria-label="Admin" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {items.map((item) => {
           const activeItem = item.section === active
           return (
             <button
               key={item.section}
               type="button"
+              aria-current={activeItem ? 'page' : undefined}
               onClick={() => onNavigate(item.section)}
               style={{
                 display: 'flex',

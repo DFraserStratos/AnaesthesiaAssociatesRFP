@@ -1,7 +1,7 @@
 import { useId, type CSSProperties, type HTMLAttributes, type KeyboardEvent, type ReactNode } from 'react'
 import { neutral, radius, semantic } from '../../theme/tokens'
 import { controlStyle, FIELD_CLASS, FIELD_FILL, fieldControlStyle, type FieldFill, type FieldSize } from './fieldChrome'
-import { SlidingSegmentedControl } from './SlidingSegmentedControl'
+import { SlidingSegmentedControl, type SlidingSegmentLayout, type SlidingSegmentSize } from './SlidingSegmentedControl'
 
 export function FieldLabel({ children }: { children: ReactNode }) {
   return (
@@ -307,10 +307,13 @@ interface SegmentedProps<T extends string> {
   onChange: (value: T) => void
   /** Read-only rendering: selection stays visible, taps do nothing. */
   disabled?: boolean
+  /** The control's layout and size (U5): `row` and `md` by default. */
+  layout?: SlidingSegmentLayout
+  size?: SlidingSegmentSize
 }
 
 /** A segmented control (convention 16: prefer over a dropdown). Teal selection. */
-export function Segmented<T extends string>({ label, value, options, onChange, disabled }: SegmentedProps<T>) {
+export function Segmented<T extends string>({ label, value, options, onChange, disabled, layout, size }: SegmentedProps<T>) {
   const isDisabled = disabled === true
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -321,6 +324,8 @@ export function Segmented<T extends string>({ label, value, options, onChange, d
         onSelect={onChange}
         disabled={isDisabled}
         ariaLabel={label}
+        {...(layout !== undefined ? { layout } : {})}
+        {...(size !== undefined ? { size } : {})}
       />
     </div>
   )

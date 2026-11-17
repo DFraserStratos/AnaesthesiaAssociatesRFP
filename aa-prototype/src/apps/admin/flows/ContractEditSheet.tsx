@@ -52,7 +52,7 @@ import {
   STATUS_LABEL,
 } from '../../../shared/contracts'
 import { compareBySurname } from '../../../domain/surgeons'
-import { neutral, radius, semantic } from '../../../theme/tokens'
+import { neutral, radius } from '../../../theme/tokens'
 import { MasterPanel, PanelGrid, PanelSection } from '../components/MasterPanel'
 import { TextAction } from '../screens/masters/chrome'
 import { Pill } from '../components/MasterPills'
@@ -221,14 +221,9 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
           {editing && !system && (
             <div style={{ marginRight: 'auto' }}>
               {contract.status === 'active' ? (
-                <button
-                  type="button"
-                  data-shot="contract-disable"
-                  onClick={toggleStatus}
-                  style={{ minHeight: 48, padding: '0 18px', borderRadius: radius.ctl, border: `1px solid ${semantic.error.solid}55`, background: neutral.surface, color: semantic.error.onTint, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-                >
+                <Button variant="secondary" shot="contract-disable" onClick={toggleStatus}>
                   Disable
-                </button>
+                </Button>
               ) : (
                 <Button variant="secondary" onClick={toggleStatus}>Make active</Button>
               )}

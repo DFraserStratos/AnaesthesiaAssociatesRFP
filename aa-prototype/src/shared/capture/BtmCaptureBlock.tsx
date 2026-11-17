@@ -15,6 +15,7 @@ import { BILLING_FAILURE_FIELDS, BillingCard } from '../booking/BillingCard'
 import { ProcedureStack } from '../booking/ProcedureStack'
 import { ContractApprovalLine } from '../booking/ContractApprovalLine'
 import { Notice } from '../ui/Notice'
+import { TextAction } from '../ui/TextAction'
 import { rvgDetailFor } from '../../domain/billing/rvgDetail'
 import { priceStatusFor } from '../../domain/billing/priceStatus'
 import { needsPriceMessage } from '../../domain/billing/priceRanges'
@@ -142,22 +143,9 @@ export function BtmCaptureBlock({
                 `removeProcedure` refuses it, so never show an action that
                 cannot work. */}
             {editable && onRemove !== undefined && canCapture && ordinal > 1 && (
-              <button
-                type="button"
-                onClick={onRemove}
-                style={{
-                  border: 'none',
-                  background: 'none',
-                  padding: 0,
-                  fontFamily: 'inherit',
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: semantic.error.onTint,
-                  cursor: 'pointer',
-                }}
-              >
+              <TextAction flush onClick={onRemove}>
                 Remove
-              </button>
+              </TextAction>
             )}
                 </>
               ),

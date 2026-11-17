@@ -6,7 +6,7 @@
  */
 
 import type { ReactNode } from 'react'
-import { Check, ChevronLeft, Lock, Plus } from 'lucide-react'
+import { Check, Lock, Plus } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
 import { STATUS_PALETTE } from '../../../../theme/statusColours'
 import { useDisplayStatus } from '../../../../shared'
@@ -26,43 +26,6 @@ export function StatTile({ label, value, pill }: { label: string; value: string;
         )}
       </div>
     </div>
-  )
-}
-
-/** Recreated: local `LinkButton` in apps/web/screens/DashboardScreen.tsx. */
-export function LinkButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{ border: 'none', background: 'none', padding: 0, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: accent.base, cursor: 'pointer' }}
-    >
-      {children}
-    </button>
-  )
-}
-
-/** Recreated: local `FilterChip` in apps/web/screens/AvailabilityGrid.tsx. */
-export function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        height: 36,
-        padding: '0 16px',
-        borderRadius: 999,
-        border: `1px solid ${active ? accent.base : neutral.line}`,
-        background: active ? accent.base : neutral.surface,
-        color: active ? neutral.surface : neutral.slate,
-        fontFamily: 'inherit',
-        fontSize: 13,
-        fontWeight: 600,
-        cursor: 'pointer',
-      }}
-    >
-      {children}
-    </button>
   )
 }
 
@@ -89,68 +52,12 @@ export function SubTabButton({ active, onClick, children }: { active: boolean; o
   )
 }
 
-/** Recreated: local `IconBtn` in apps/web/screens/AvailabilityGrid.tsx (38px). */
-export function IconBtn({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
-  return (
-    <button type="button" aria-label={label} onClick={onClick} style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      {children}
-    </button>
-  )
-}
-
-/** Recreated: local `NavButton` in apps/web/screens/MyAvailabilityCalendar.tsx (34px, can disable). */
-export function NavButton({ label, disabled, onClick, children }: { label: string; disabled: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button type="button" aria-label={label} disabled={disabled} onClick={onClick} style={{ width: 34, height: 34, borderRadius: 10, border: `1px solid ${neutral.line}`, background: neutral.surface, color: disabled ? neutral.lineStrong : neutral.slate, cursor: disabled ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      {children}
-    </button>
-  )
-}
-
-/** Recreated: local `WeekNavButton` in apps/web/components/WeekStrip.tsx (32px). */
-export function WeekNavButton({ onClick, label, children }: { onClick: () => void; label: string; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onClick}
-      style={{ width: 32, height: 32, borderRadius: 9, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-    >
-      {children}
-    </button>
-  )
-}
-
 /** Recreated: the day stepper's date pill and Today button in apps/web/screens/AvailabilityGrid.tsx. */
 export function DayPill({ children }: { children: ReactNode }) {
   return (
     <div style={{ height: 38, padding: '0 18px', borderRadius: 10, border: `1px solid ${neutral.line}`, background: neutral.surface, display: 'flex', alignItems: 'center', fontSize: 14, fontWeight: 600 }}>{children}</div>
   )
 }
-export function TodayButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{ height: 38, padding: '0 14px', borderRadius: 10, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-    >
-      Today
-    </button>
-  )
-}
-
-/** Recreated: the back link at the top of apps/web/screens/ListDetailView.tsx and BookingDetailView.tsx. */
-export function BackLink({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start', border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-    >
-      <ChevronLeft size={16} strokeWidth={2.4} aria-hidden /> {label}
-    </button>
-  )
-}
-
 /** Recreated: local `SubmitAction` in apps/web/screens/ListDetailView.tsx. */
 export function SubmitAction({
   state,
@@ -221,21 +128,6 @@ export function AddBookingButton({ onClick }: { onClick: () => void }) {
     >
       <Plus size={17} strokeWidth={2.4} aria-hidden /> Add a booking
     </button>
-  )
-}
-
-/** Recreated: the Bookings panel's progress bar in apps/web/screens/ListDetailView.tsx. */
-export function ProgressBar({ done, total }: { done: number; total: number }) {
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0
-  return (
-    <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-      <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>
-        {done} of {total} complete
-      </span>
-      <span style={{ width: 200, height: 6, borderRadius: 99, background: neutral.line, overflow: 'hidden', display: 'block' }}>
-        <span style={{ display: 'block', height: '100%', borderRadius: 99, background: semantic.success.solid, transition: 'width 300ms cubic-bezier(0.2,0.8,0.2,1)', width: `${pct}%` }} />
-      </span>
-    </span>
   )
 }
 

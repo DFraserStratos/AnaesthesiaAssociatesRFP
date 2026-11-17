@@ -20,14 +20,14 @@ import { UNASSIGNED } from '../../../shared/scheduleTerms'
 import { isAssignedList } from '../../../domain/draftLists'
 import { AttentionDot } from '../../../shared/warnings/AttentionDot'
 import { neutral, radius, semantic } from '../../../theme/tokens'
-import { cellStyle as adminCell, headCellStyle as adminHead, textActionStyle } from '../tableChrome'
+import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
 import { ReassignListFlow } from '../flows/ReassignListFlow'
 import { UnassignedPill } from '../components/draftLists/DraftListParts'
 import { ClearConflictSheet } from '../components/conflicts/ClearConflictSheet'
 import { sessionText } from '../../../domain/outOfHours'
 import { ResultLine } from '../../../shared/ui/ResultLine'
 import { EmptyState } from '../../../shared/ui/EmptyState'
-import { Checkbox, SelectField } from '../../../shared/ui'
+import { Checkbox, SelectField, TextAction } from '../../../shared/ui'
 
 const cellStyle = { ...adminCell(), verticalAlign: 'top' as const }
 const headCellStyle = adminHead()
@@ -168,9 +168,9 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
         shot="conflicts-confirmation"
         line={confirmation}
         actions={
-          <button type="button" style={textActionStyle} onClick={() => setConfirmation(null)}>
+          <TextAction size="sm" flush onClick={() => setConfirmation(null)}>
             Dismiss
-          </button>
+          </TextAction>
         }
       />
 
@@ -231,38 +231,38 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
                             <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
                               <span style={{ display: 'inline-flex', gap: 14 }}>
                                 {cleared ? (
-                                  <button type="button" aria-label={`Flag again, ${rowName}`} style={textActionStyle} onClick={() => restoreListConflict(useAppStore, actor, r.listId, r.cause)}>
+                                  <TextAction size="sm" flush label={`Flag again, ${rowName}`} onClick={() => restoreListConflict(useAppStore, actor, r.listId, r.cause)}>
                                     Flag again
-                                  </button>
+                                  </TextAction>
                                 ) : (
                                   <>
                                     {r.listState !== 'DRAFT' && (
-                                    <button
-                                      type="button"
-                                      aria-label={r.listState === 'AUTHORISED' ? `Reassign, ${rowName}: an authorised List is locked` : `Reassign, ${rowName}`}
-                                      title={r.listState === 'AUTHORISED' ? 'An authorised List is locked' : undefined}
+                                    <TextAction
+                                      size="sm"
+                                      flush
+                                      label={r.listState === 'AUTHORISED' ? `Reassign, ${rowName}: an authorised List is locked` : `Reassign, ${rowName}`}
+                                      {...(r.listState === 'AUTHORISED' ? { title: 'An authorised List is locked' } : {})}
                                       disabled={r.listState === 'AUTHORISED'}
-                                      style={r.listState === 'AUTHORISED' ? { ...textActionStyle, color: neutral.mist, cursor: 'default' } : textActionStyle}
                                       onClick={() => setReassigning(r.listId)}
                                     >
                                       Reassign
-                                    </button>
+                                    </TextAction>
                                     )}
-                                    <button
-                                      type="button"
-                                      aria-label={`Clear conflict, ${rowName}`}
-                                      style={textActionStyle}
+                                    <TextAction
+                                      size="sm"
+                                      flush
+                                      label={`Clear conflict, ${rowName}`}
                                       onClick={() => {
                                         const c = conflictFromCause(r.cause)
                                         if (c !== null) setClearing({ listId: r.listId, conflict: c })
                                       }}
                                     >
                                       Clear
-                                    </button>
+                                    </TextAction>
                                   </>
                                 )}
-                                <button type="button" aria-label={`Open the List, ${rowName}`} style={textActionStyle} onClick={() => (r.slotId !== undefined ? onOpenSession(r.slotId) : onOpenDraftList !== undefined ? onOpenDraftList(r.listId) : navigate(`/admin/day/${r.dateISO}`))}>Open</button>
-                                <button type="button" aria-label={`Open the day, ${shortDay(r.dateISO)}`} style={textActionStyle} onClick={() => navigate(`/admin/day/${r.dateISO}`)}>Day</button>
+                                <TextAction size="sm" flush label={`Open the List, ${rowName}`} onClick={() => (r.slotId !== undefined ? onOpenSession(r.slotId) : onOpenDraftList !== undefined ? onOpenDraftList(r.listId) : navigate(`/admin/day/${r.dateISO}`))}>Open</TextAction>
+                                <TextAction size="sm" flush label={`Open the day, ${shortDay(r.dateISO)}`} onClick={() => navigate(`/admin/day/${r.dateISO}`)}>Day</TextAction>
                               </span>
                             </td>
                           </tr>

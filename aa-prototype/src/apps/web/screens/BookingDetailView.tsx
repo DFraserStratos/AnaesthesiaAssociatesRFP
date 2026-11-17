@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
-import { ChevronLeft } from 'lucide-react'
-import { accent, neutral } from '../../../theme/tokens'
+import { neutral } from '../../../theme/tokens'
 import type { Procedure } from '../../../domain/types'
 import { useAppStore, type Actor } from '../../../store'
 import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
 import { BookingDetailBody } from '../../../shared/booking'
 import { ageYears, formatDob, nhiBadge, locationName } from '../../../shared/format'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
+import { BackLink } from '../../../shared/ui'
 
 interface BookingDetailViewProps {
   bookingId: string
@@ -87,12 +87,7 @@ export function BookingDetailView({ bookingId, actor, todayISO, onBack }: Bookin
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <button
-        onClick={onBack}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start', border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-      >
-        <ChevronLeft size={16} strokeWidth={2.4} aria-hidden /> List
-      </button>
+      <BackLink onClick={onBack}>List</BackLink>
 
       <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} header={header} />
     </div>

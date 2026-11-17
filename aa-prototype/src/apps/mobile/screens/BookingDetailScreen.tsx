@@ -1,7 +1,7 @@
 import { useMemo, type ReactNode } from 'react'
 import { locationName } from '../../../shared/format'
-import { ChevronLeft } from 'lucide-react'
-import { accent, neutral } from '../../../theme/tokens'
+import { neutral } from '../../../theme/tokens'
+import { BackLink } from '../../../shared/ui/BackLink'
 import { motion } from '../../../theme/motion'
 import type { Procedure } from '../../../domain/types'
 import { isAssignedList } from '../../../domain/draftLists'
@@ -74,13 +74,9 @@ export function BookingDetailScreen({ bookingId, actor, onBack }: BookingDetailS
       style={{ flex: 'none', padding: 'calc(var(--aa-inset-top, 54px) + 6px) 20px 14px', borderBottom: `1px solid ${neutral.line}`, background: neutral.surface }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 44 }}>
-        <button
-          onClick={onBack}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flex: 'none', minHeight: 44, border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}
-        >
-          <ChevronLeft size={18} strokeWidth={2.4} aria-hidden />
+        <BackLink size="touch" onClick={onBack}>
           List
-        </button>
+        </BackLink>
         {/* The folded title. Kept mounted so the reveal can animate, and hidden
             from assistive tech while closed so the name is never read twice. */}
         <span

@@ -215,7 +215,7 @@ export function ContractPriceRanges({ contract, actor, onError }: { contract: Co
                 </div>
               </td>
               <td colSpan={2} style={{ ...cellStyle, verticalAlign: 'middle', textAlign: 'right', borderBottom: 'none' }}>
-                <Button variant="primary" onClick={add} style={{ minHeight: 36, padding: '0 14px', fontSize: 13, borderRadius: radius.ctl }}>
+                <Button variant="primary" size="compact" onClick={add}>
                   Add price range
                 </Button>
               </td>

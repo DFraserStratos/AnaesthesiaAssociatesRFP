@@ -16,7 +16,8 @@ import {
   useSurface,
   WarningTriangle,
 } from '../../../../shared'
-import { NameSearchBox, Pill, PopoverPanel, SelectField, SlidingSegmentedControl, TickButton, usePopover } from '../../../../shared/ui'
+import { DRAFT_LISTS, UNASSIGNED } from '../../../../shared/scheduleTerms'
+import { LineTab, LineTabs, NameSearchBox, Pill, PopoverPanel, SelectField, SlidingSegmentedControl, TickButton, usePopover } from '../../../../shared/ui'
 import { VacatedSessionChoice } from '../../../../shared/flows'
 import { matchesNameQuery } from '../../../../domain/names'
 import { openWarnings, useAppStore, useToday } from '../../../../store'
@@ -28,7 +29,7 @@ import { Pill as MasterPill } from '../../../admin/components/MasterPills'
 import { AttentionDot } from '../../../../shared/warnings/AttentionDot'
 import { ChangedSinceSubmittedPill } from '../../../admin/components/ChangedSinceSubmitted'
 import { NotPreferredPill, PreferredPill, TierPill } from '../../../admin/components/pairing'
-import { ActionBtn, DrawerLink, Row as DrawerRow, Section as DrawerSection } from '../../../admin/components/drawerParts'
+import { DrawerLink, Row as DrawerRow, Section as DrawerSection } from '../../../admin/components/drawerParts'
 import { Fact, HeaderActions, IdChip, ProfileCard, ProfileHeader } from '../../../admin/components/ProfileChrome'
 import { MasterPanel, PanelGrid, PanelSection } from '../../../admin/components/MasterPanel'
 import { SidePanel } from '../../../admin/components/SidePanel'
@@ -66,11 +67,24 @@ export function ButtonExample() {
   const [last, setLast] = useState('Nothing clicked yet.')
   return (
     <div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-        <Button onClick={() => setLast('Primary clicked.')}>Primary</Button>
-        <Button variant="secondary" onClick={() => setLast('Secondary clicked.')}>Secondary</Button>
-        <Button variant="pill" onClick={() => setLast('Pill clicked.')}>Pill</Button>
-        <Button variant="secondary" disabled>Disabled</Button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+          <Button onClick={() => setLast('Primary, touch (54).')}>Primary</Button>
+          <Button variant="secondary" onClick={() => setLast('Secondary, touch (48).')}>Secondary</Button>
+          <Button variant="outline" onClick={() => setLast('Outline, touch (48).')}>Outline</Button>
+          <Button variant="pill" onClick={() => setLast('Pill (44).')}>Pill</Button>
+          <Button variant="danger" onClick={() => setLast('Danger: kept for Cancel booking only.')}>Cancel booking</Button>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+          <Button size="desktop" onClick={() => setLast('Primary, desktop (44, radius 12).')}>Authorise</Button>
+          <Button size="desktop" variant="outline" onClick={() => setLast('Outline, desktop (44).')}>Log phone note</Button>
+          <Button size="compact" variant="outline" onClick={() => setLast('Outline, compact (36).')}>Today</Button>
+          <Button size="compact" variant="secondary" onClick={() => setLast('Secondary, compact (36).')}>+1w</Button>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-start' }}>
+          <Button variant="secondary" disabled>Disabled</Button>
+          <Button size="compact" disabled disabledReason="It holds a List: move the List first.">Close out-of-hours session</Button>
+        </div>
       </div>
       <Echo>{last}</Echo>
     </div>
@@ -111,7 +125,8 @@ export function SegmentedExample() {
 
 export function SlidingSegmentedExample() {
   const [session, setSession] = useState<'AM' | 'PM' | 'OOH'>('AM')
-  const [variant, setVariant] = useState<'teal' | 'surface' | 'ink'>('teal')
+  const [variant, setVariant] = useState<'teal' | 'surface'>('teal')
+  const [order, setOrder] = useState<'roster' | 'az'>('roster')
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 360 }}>
       <SlidingSegmentedControl
@@ -132,10 +147,22 @@ export function SlidingSegmentedExample() {
         options={[
           { value: 'teal', label: 'teal' },
           { value: 'surface', label: 'surface' },
-          { value: 'ink', label: 'ink' },
         ]}
         onSelect={setVariant}
       />
+      <div style={{ alignSelf: 'flex-start' }}>
+        <SlidingSegmentedControl
+          ariaLabel="Row order"
+          size="sm"
+          layout="wrap"
+          value={order}
+          options={[
+            { value: 'roster', label: 'Roster order' },
+            { value: 'az', label: 'A to Z' },
+          ]}
+          onSelect={setOrder}
+        />
+      </div>
     </div>
   )
 }
@@ -326,29 +353,22 @@ export function MastersSubNavExample() {
   )
 }
 
-/** AaFeesScreen's TabLink, rebuilt on buttons: the real one is a router Link that would leave this page. */
-export function TabLinkExample() {
-  const [tab, setTab] = useState<'invoices' | 'settings'>('invoices')
-  const link = (id: 'invoices' | 'settings', label: string) => {
-    const active = tab === id
-    return (
-      <button
-        type="button"
-        aria-current={active ? 'page' : undefined}
-        onClick={() => setTab(id)}
-        style={{ border: 'none', background: 'none', fontFamily: 'inherit', cursor: 'pointer', padding: '10px 14px', fontSize: 14, fontWeight: active ? 600 : 500, color: active ? neutral.ink : neutral.slate, boxShadow: active ? `inset 0 -2px 0 ${neutral.ink}` : 'none' }}
-      >
-        {label}
-      </button>
-    )
-  }
+/** LineTabs with LineTab examples (U5); the route strips (LineTabLink) would leave this page. */
+export function LineTabsExample() {
+  const [tab, setTab] = useState<'details' | 'history'>('details')
+  const [page, setPage] = useState<'unassigned' | 'history'>('unassigned')
+  const count = (n: number, on: boolean) => <span className="mono" style={{ fontSize: 12, fontWeight: 600, color: on ? neutral.ink : neutral.mist }}>{n}</span>
   return (
-    <div>
-      <div style={{ display: 'flex', borderBottom: `1px solid ${neutral.line}` }}>
-        {link('invoices', 'Fee invoices')}
-        {link('settings', 'Fee settings')}
-      </div>
-      <Echo>Route: /admin/billing/aa-fees{tab === 'settings' ? '/settings' : ''}</Echo>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <LineTabs label={`${DRAFT_LISTS} (example)`} kind="group">
+        <LineTab active={page === 'unassigned'} onClick={() => setPage('unassigned')} badge={count(16, page === 'unassigned')}>{UNASSIGNED}</LineTab>
+        <LineTab active={page === 'history'} onClick={() => setPage('history')} badge={count(4, page === 'history')}>History</LineTab>
+      </LineTabs>
+      <LineTabs label="Contract panel (example)" kind="group">
+        <LineTab active={tab === 'details'} onClick={() => setTab('details')}>Details</LineTab>
+        <LineTab active={tab === 'history'} onClick={() => setTab('history')}>History</LineTab>
+      </LineTabs>
+      <Echo>Route strips (AA fees, {DRAFT_LISTS}, the Availability page switch) use LineTabLink: the same look as links with aria-current. Shown here as LineTab so nothing leaves the page.</Echo>
     </div>
   )
 }
@@ -601,9 +621,9 @@ export function DrawerPartsExample() {
         </DrawerRow>
       </DrawerSection>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        <ActionBtn primary onClick={() => setLast('Primary action.')}>Assign List</ActionBtn>
-        <ActionBtn onClick={() => setLast('Secondary action.')}>Edit times</ActionBtn>
-        <ActionBtn disabled title="Disabled reason, shown only as a title tooltip" onClick={() => setLast('Never fires.')}>Remove</ActionBtn>
+        <Button size="compact" style={{ flex: '1 1 auto' }} onClick={() => setLast('Primary action.')}>Assign List</Button>
+        <Button size="compact" variant="secondary" onClick={() => setLast('Secondary action.')}>Edit times</Button>
+        <Button size="compact" variant="secondary" disabled disabledReason="Move its List first." onClick={() => setLast('Never fires.')}>Close session</Button>
       </div>
       <Echo>{last}</Echo>
     </div>
@@ -778,8 +798,8 @@ export function SidePanelExample() {
         meta={<div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>Tue 21 Jul · PM</div>}
         footer={
           <>
-            <ActionBtn primary onClick={() => setOpen(false)}>Done</ActionBtn>
-            <ActionBtn onClick={() => setOpen(false)}>Close</ActionBtn>
+            <Button size="compact" style={{ flex: '1 1 auto' }} onClick={() => setOpen(false)}>Done</Button>
+            <Button size="compact" variant="secondary" onClick={() => setOpen(false)}>Close</Button>
           </>
         }
       >

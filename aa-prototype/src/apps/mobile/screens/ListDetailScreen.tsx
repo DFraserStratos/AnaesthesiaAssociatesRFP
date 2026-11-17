@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeftRight, BellRing, ChevronLeft, Lock, MoreHorizontal, Plus } from 'lucide-react'
+import { ArrowLeftRight, BellRing, Lock, MoreHorizontal, Plus } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic, surface } from '../../../theme/tokens'
-import { motion, easing } from '../../../theme/motion'
+import { motion } from '../../../theme/motion'
+import { BackLink } from '../../../shared/ui/BackLink'
+import { ProgressBar } from '../../../shared/ui/ProgressBar'
 import type { Booking, Procedure } from '../../../domain/types'
 import { isAssignedList } from '../../../domain/draftLists'
 import { bookingContractCue, editRefusal, officeAlertRefusal, useAppStore, useToday, type Actor, useListTimes } from '../../../store'
@@ -158,7 +160,6 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
   // ACTIVE or SUBMITTED, own List: editable until the office authorises it (catch-up Phase 38a).
   const canEdit = editRefusal(actor, list) === null
   const incomplete = model.activeCount - model.done
-  const pct = model.activeCount > 0 ? Math.round((model.done / model.activeCount) * 100) : 0
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
@@ -166,26 +167,9 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           it needs less air than a tab screen's large title. */}
       <div data-testid="mobile-list-header" style={{ padding: 'calc(var(--aa-inset-top, 54px) + 6px) 20px 14px', flex: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <button
-          onClick={onBack}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 4,
-            minHeight: 44,
-            border: 'none',
-            background: 'none',
-            padding: 0,
-            color: accent.base,
-            fontFamily: 'inherit',
-            fontSize: 15,
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
-          <ChevronLeft size={18} strokeWidth={2.4} aria-hidden />
+        <BackLink size="touch" onClick={onBack}>
           Lists
-        </button>
+        </BackLink>
         {listOptions.length > 0 && (
           <button
             type="button"
@@ -233,18 +217,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>
             {model.done} of {model.activeCount} complete
           </span>
-          <span style={{ flex: 1, height: 6, borderRadius: radius.pill, background: neutral.line, overflow: 'hidden', display: 'block' }}>
-            <span
-              style={{
-                display: 'block',
-                height: '100%',
-                borderRadius: radius.pill,
-                background: semantic.success.solid,
-                transition: `width 300ms ${easing.card}`,
-                width: `${pct}%`,
-              }}
-            />
-          </span>
+          <ProgressBar done={model.done} total={model.activeCount} width="fill" />
         </div>
       </div>
 

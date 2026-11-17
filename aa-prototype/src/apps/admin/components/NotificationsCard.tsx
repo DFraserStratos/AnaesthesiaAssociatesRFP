@@ -12,10 +12,10 @@
 import { format, parseISO } from 'date-fns'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { activeNotificationCount, latestNotifications, resolveNotification, useAppStore, type Actor, type NotificationRow, type NotificationTarget, type PoolState } from '../../../store'
-import { accent, neutral, radius } from '../../../theme/tokens'
+import { neutral, radius } from '../../../theme/tokens'
 import { CountBadge } from '../../../shared/ui/CountBadge'
 import { motion } from '../../../theme/motion'
-import { FormError, TickBadge, TickButton } from '../../../shared/ui'
+import { FormError, TextAction, TickBadge, TickButton } from '../../../shared/ui'
 import { stampText } from '../../../shared/format'
 import { EmptyState } from '../../../shared/ui/EmptyState'
 
@@ -179,23 +179,13 @@ export function NotificationsCard({
       )}
       <FormError message={error} />
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-        <button
-          type="button"
-          data-shot="admin-notifications-see-all"
-          onClick={onSeeAll}
-          style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
-        >
+        <TextAction size="sm" flush shot="admin-notifications-see-all" onClick={onSeeAll}>
           See all notifications
-        </button>
+        </TextAction>
         {onShowResolved !== undefined && (
-          <button
-            type="button"
-            data-shot="admin-notifications-rail-show-resolved"
-            onClick={onShowResolved}
-            style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
-          >
+          <TextAction size="sm" flush shot="admin-notifications-rail-show-resolved" onClick={onShowResolved}>
             Show resolved
-          </button>
+          </TextAction>
         )}
       </div>
     </section>

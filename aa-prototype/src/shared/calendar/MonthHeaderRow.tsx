@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { accent, neutral, radius } from '../../theme/tokens'
+import { neutral } from '../../theme/tokens'
+import { IconButton } from '../ui/IconButton'
 import { WEEKDAY_INITIALS, WEEKDAY_SHORT_NAMES } from '../availability/monthCells'
 
 /**
@@ -26,17 +27,11 @@ export function MonthHeaderRow({ variant = 'initial', style = PHONE_ROW, cellSty
   )
 }
 
-/** The 44px round month step button (MonthGrid's, Phase 38a), shared by the phone's calendars. */
+/** The 44px round month step button (MonthGrid's, Phase 38a), shared by the phone's calendars; the shared `IconButton` since U5. */
 export function MonthStepButton({ label, disabled, onClick, children }: { label: string; disabled: boolean; onClick: () => void; children: ReactNode }) {
   return (
-    <button
-      type="button"
-      aria-label={label}
-      disabled={disabled}
-      onClick={onClick}
-      style={{ width: 44, height: 44, flex: 'none', borderRadius: radius.pill, border: `1px solid ${neutral.line}`, background: neutral.surface, color: disabled ? neutral.lineStrong : accent.pressed, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: disabled ? 'default' : 'pointer' }}
-    >
+    <IconButton label={label} disabled={disabled} onClick={onClick} size={44} shape="round" tone="action">
       {children}
-    </button>
+    </IconButton>
   )
 }

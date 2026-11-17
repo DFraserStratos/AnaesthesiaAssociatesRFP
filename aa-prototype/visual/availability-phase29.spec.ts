@@ -82,7 +82,7 @@ test('mobile: My calendar, Add days off for a week, a fortnightly Friday PM seri
 
 test('web: My availability, click then shift-click a range, the rail form', async ({ page }) => {
   await fresh(page, '/web/availability')
-  await page.getByRole('group', { name: 'Availability page' }).getByRole('button', { name: 'My availability' }).click()
+  await page.getByRole('navigation', { name: 'Availability page' }).getByRole('link', { name: 'My availability' }).click()
   await expect(page).toHaveURL(/\/web\/availability\/mine$/)
   await page.getByRole('button', { name: 'Next month' }).click()
   await page.locator('button[data-date="2026-08-17"]').click()

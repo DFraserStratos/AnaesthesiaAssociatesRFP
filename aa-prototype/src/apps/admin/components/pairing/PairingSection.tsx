@@ -16,7 +16,7 @@ import { neutral, radius } from '../../../../theme/tokens'
 import { useAppStore, type Actor } from '../../../../store'
 import { Button } from '../../../../shared'
 import { anaesthetistRecordPath, surgeonProfilePath } from '../../mastersPaths'
-import { textActionStyle } from '../../tableChrome'
+import { TextAction } from '../../../../shared/ui'
 import { pairingSubject, type PairingPerspective } from './perspective'
 import { NotPreferredPill, PreferredPill } from './Pills'
 import { PairingAddSheet } from './PairingAddSheet'
@@ -144,14 +144,9 @@ function ActiveRow({ entry, counterpart, sentence, onEnd }: { entry: PairingPref
         </div>
         <div style={{ fontSize: 12, color: neutral.mist }}>{addedLine(entry.addedBy, entry.addedAtISO)}</div>
       </div>
-      <button
-        type="button"
-        onClick={onEnd}
-        aria-label={`${PAIRING_LABELS.end} ${sentence}`}
-        style={{ ...textActionStyle, flex: 'none', padding: '2px 0' }}
-      >
+      <TextAction size="sm" onClick={onEnd} label={`${PAIRING_LABELS.end} ${sentence}`} style={{ flex: 'none', padding: '2px 0' }}>
         {PAIRING_LABELS.end}
-      </button>
+      </TextAction>
     </div>
   )
 }

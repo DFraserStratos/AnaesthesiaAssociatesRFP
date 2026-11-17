@@ -28,7 +28,7 @@ import {
   WarningTriangle,
   type ListRowRight,
 } from '../../../../shared'
-import { Button, FormError, Segmented, SlidingSegmentedControl, TextArea, TextField } from '../../../../shared/ui'
+import { Button, FilterPills, FormError, ProgressBar, Segmented, SlidingSegmentedControl, TextArea, TextField } from '../../../../shared/ui'
 import { OutOfHoursMoon, useBookingSearch } from '../../../../shared/schedule'
 import { AlertOfficeSheet, MovedToYouPanel, SubmitListSheet, useBookingsMovedToMe, useMovedToMe } from '../../../../shared/flows'
 import { AvailabilityEditor, SeriesList, useAvailabilityMonth } from '../../../../shared/availability'
@@ -48,17 +48,16 @@ import {
   BottomTabBarCopy,
   ColleagueCellsCopy,
   DateStripCopy,
-  FilterChipsCopy,
   HalfBlockCopy,
   HeroFigureCardCopy,
   InstallCoachCopy,
   MyCalendarGridCopy,
-  ProgressBarCopy,
   SubmitDockCopy,
   ToggleRowCopy,
   UpdatePromptCopy,
   type BookingCardState,
   type DockState,
+  FILTERS,
   type Filter,
 } from './recreations'
 import { useMobilePersona, type SeedPicks } from './persona'
@@ -335,11 +334,8 @@ export function SlidingSegmentedExample() {
         value={section}
         options={[{ value: 'outstanding', label: 'Outstanding' }, { value: 'gst', label: 'GST this month' }]}
         onSelect={setSection}
-        variant="ink"
+        variant="teal"
         ariaLabel="Balance section"
-        trackStyle={{ borderRadius: 999 }}
-        indicatorStyle={{ borderRadius: 999 }}
-        buttonStyle={{ minHeight: 36, borderRadius: 999, padding: '0 10px', fontSize: 13 }}
       />
       <SlidingSegmentedControl value={asa} options={['1', '2', '3', '4', '5'].map((v) => ({ value: v, label: v }))} onSelect={setAsa} variant="teal" ariaLabel="ASA" />
     </div>
@@ -361,7 +357,7 @@ export function FilterChipsExample() {
   const [filter, setFilter] = useState<Filter>('week')
   return (
     <div style={col}>
-      <FilterChipsCopy filter={filter} onChange={setFilter} />
+      <FilterPills size="lg" ariaLabel="Show Lists" value={filter} options={FILTERS.map((f) => ({ value: f.key, label: f.label }))} onSelect={setFilter} />
       <span style={{ fontSize: 12.5, color: neutral.mist }}>Filter: {filter}</span>
     </div>
   )
@@ -606,7 +602,10 @@ export function ProgressBarExample() {
   const total = 5
   return (
     <div style={col}>
-      <ProgressBarCopy done={done} total={total} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0 4px' }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>{done} of {total} complete</span>
+        <ProgressBar done={done} total={total} width="fill" />
+      </div>
       <div style={row}>
         <Button variant="pill" onClick={() => setDone((d) => Math.max(0, d - 1))}>One fewer</Button>
         <Button variant="pill" onClick={() => setDone((d) => Math.min(total, d + 1))}>One more</Button>

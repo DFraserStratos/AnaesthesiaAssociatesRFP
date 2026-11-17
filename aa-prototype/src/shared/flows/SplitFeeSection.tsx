@@ -10,8 +10,7 @@
  * hands the sheet its shares. The sheet's one Save writes it. PWA-safe.
  */
 
-import { useEffect, useMemo, useState } from 'react'
-import { X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { accent, neutral, radius } from '../../theme/tokens'
 import type { CounterpartyRef, SplitShare } from '../../domain/types'
 import { formatMoney } from '../../domain/billing/money'
@@ -29,7 +28,7 @@ import {
   type SplitPersonInput,
   type SplitShareInput,
 } from '../../store'
-import { FormError, Notice, TextField } from '../ui'
+import { CloseButton, FormError, Notice, TextField } from '../ui'
 import { TextAction } from '../ui/TextAction'
 import { PartyPicker } from '../booking/PartyPicker'
 import { addressDraftOf } from './PostalAddressFields'
@@ -216,6 +215,8 @@ export interface SplitFeeSectionProps {
 
 export function SplitFeeSection({ draft, heading = true }: SplitFeeSectionProps) {
   const { feeTotal, rows, active } = draft
+  // A removed party's X leaves with its row: focus goes to Add a party (bug 9, U5).
+  const addPartyRef = useRef<HTMLButtonElement>(null)
   const parsed = sharesOf(rows)
   const resolution = feeTotal !== undefined && parsed.ok ? resolveSplit(feeTotal, previewShares(parsed.shares)) : undefined
   const amounts = resolution?.ok === true ? resolution.amounts : undefined
@@ -282,7 +283,7 @@ export function SplitFeeSection({ draft, heading = true }: SplitFeeSectionProps)
                         <div data-shot="split-person" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
                             <span style={{ fontSize: 13, fontWeight: 600, color: neutral.ink }}>Party {index + 1}: another person</span>
-                            <TextAction small onClick={() => draft.update(row.key, { person: null })} label={`Choose a party for share ${index + 1} instead`}>
+                            <TextAction size="sm" onClick={() => draft.update(row.key, { person: null })} label={`Choose a party for share ${index + 1} instead`}>
                               Choose a party
                             </TextAction>
                           </div>
@@ -296,14 +297,13 @@ export function SplitFeeSection({ draft, heading = true }: SplitFeeSectionProps)
                       )}
                     </div>
                     {rows.length > 2 && (
-                      <button
-                        type="button"
-                        aria-label={`Remove party ${index + 1}`}
+                      <CloseButton
+                        label={`Remove party ${index + 1}`}
+                        iconSize={18}
+                        returnFocusTo={addPartyRef}
                         onClick={() => draft.removeRow(row.key)}
-                        style={{ flex: 'none', width: 44, height: 44, border: 'none', background: 'transparent', color: neutral.slate, cursor: 'pointer', borderRadius: radius.ctl }}
-                      >
-                        <X size={18} aria-hidden />
-                      </button>
+                        style={{ flex: 'none', width: 44, height: 44, padding: 0, borderRadius: radius.ctl, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                      />
                     )}
                   </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
@@ -348,7 +348,7 @@ export function SplitFeeSection({ draft, heading = true }: SplitFeeSectionProps)
           </ol>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <TextAction shot="split-add-party" onClick={draft.addRow}>
+            <TextAction shot="split-add-party" buttonRef={addPartyRef} onClick={draft.addRow}>
               Add a party
             </TextAction>
             {feeTotal !== undefined && (

@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { ChevronLeft, ChevronRight, Plus, Repeat } from 'lucide-react'
 import { AttentionDot } from '../../../shared/warnings/AttentionDot'
-import { accent, brand, neutral, radius, surface } from '../../../theme/tokens'
+import { brand, neutral, radius, surface } from '../../../theme/tokens'
+import { BackLink } from '../../../shared/ui/BackLink'
+import { Button } from '../../../shared/ui/Button'
 import type { Actor, CalendarSession } from '../../../store'
 import { blockFill, DockSpacer, resolveDisplayStatus, StatusChip, useAnaesthetistStatusChoices, useDisplayStatus, useSlotStatusRecords } from '../../../shared'
 import {
@@ -52,14 +54,9 @@ export function MyAvailabilityCalendarScreen({ actor, anaesthetistId, onBack, on
   return (
     <div data-shot="mobile-availability-calendar" style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       <div style={{ padding: 'calc(var(--aa-inset-top, 54px) + 6px) 20px 6px', flex: 'none' }}>
-        <button
-          type="button"
-          onClick={onBack}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, minHeight: 44, border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}
-        >
-          <ChevronLeft size={18} strokeWidth={2.4} aria-hidden />
+        <BackLink size="touch" onClick={onBack}>
           Availability
-        </button>
+        </BackLink>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <div style={{ fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>{format(parseISO(`${month}-01`), 'MMMM yyyy')}</div>
@@ -148,15 +145,10 @@ export function MyAvailabilityCalendarScreen({ actor, anaesthetistId, onBack, on
           borderTop: `1px solid ${neutral.line}`,
         }}
       >
-        <button
-          type="button"
-          data-shot="mobile-add-days-off"
-          onClick={() => onAddDaysOff(addFrom)}
-          style={{ width: '100%', height: 54, borderRadius: radius.card, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 17, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer' }}
-        >
+        <Button variant="primary" block shot="mobile-add-days-off" onClick={() => onAddDaysOff(addFrom)}>
           <Plus size={18} strokeWidth={2.4} aria-hidden />
           Add days off
-        </button>
+        </Button>
       </div>
     </div>
   )

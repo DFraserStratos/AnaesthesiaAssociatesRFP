@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { accent, neutral, radius } from '../../theme/tokens'
+import { Button } from './Button'
 
 export interface InlineConfirmProps {
   /** The group's accessible name ("Delete the series"). */
@@ -41,36 +42,25 @@ export function InlineConfirm({ label, message, confirmLabel, onConfirm, cancelL
     <div data-shot={shot} role="group" aria-label={label} style={{ background: neutral.bg, borderRadius: radius.ctl, padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ fontSize: 13, lineHeight: '19px', color: neutral.ink }}>{message}</div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <button
-          ref={keepRef}
-          type="button"
+        <Button
+          buttonRef={keepRef}
+          variant="secondary"
+          size="compact"
           onClick={() => {
             cancelled.current = true
             onCancel()
           }}
-          style={pillStyle(false)}
+          style={{ ...PILL, border: `1px solid ${neutral.lineStrong}`, color: accent.pressed }}
         >
           {cancelLabel}
-        </button>
-        <button type="button" onClick={onConfirm} style={pillStyle(true)}>
+        </Button>
+        <Button variant="primary" size="compact" onClick={onConfirm} style={PILL}>
           {confirmLabel}
-        </button>
+        </Button>
       </div>
     </div>
   )
 }
 
-function pillStyle(primary: boolean): CSSProperties {
-  return {
-    minHeight: 38,
-    padding: '0 14px',
-    borderRadius: radius.pill,
-    border: `1px solid ${primary ? accent.base : neutral.lineStrong}`,
-    background: primary ? accent.base : neutral.surface,
-    color: primary ? neutral.surface : accent.pressed,
-    fontFamily: 'inherit',
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: 'pointer',
-  }
-}
+/** The compact Button at today's 38px pill (the AvailabilitySlotPanel block's actions). */
+const PILL: CSSProperties = { minHeight: 38, borderRadius: radius.pill }

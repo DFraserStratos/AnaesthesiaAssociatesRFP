@@ -30,16 +30,16 @@ export function WebCatalogue() {
       <SurfaceProvider variant="web">
       <MoveListPromptProvider actor={f.actor}>
         <LibraryGroup id="shadcn">
-          <CatalogueRow name="WebNav" source="apps/web/components/WebNav.tsx" usedIn={W} what="The white top bar: AA logo, the four section tabs with a crimson underline on the active one, and the persona's name and avatar." replaceWith="shadcn NavigationMenu (links) + Avatar" note="Plain buttons today: no aria-current, no nav label. The avatar is the shared Avatar (tint, 36).">
+          <CatalogueRow name="WebNav" source="apps/web/components/WebNav.tsx" usedIn={W} what="The white top bar: AA logo, the four section tabs with a crimson underline on the active one, and the persona's name and avatar." replaceWith="shadcn NavigationMenu (links) + Avatar" note="A labelled navigation (Main) whose active tab carries aria-current since UI unification U5; the tabs stay buttons (question 3). The avatar is the shared Avatar (tint, 36).">
             <D.WebNavDemo f={f} />
           </CatalogueRow>
-          <CatalogueRow name="AvailabilityPageSwitch" source="apps/web/components/AvailabilityPageSwitch.tsx" usedIn={W} what="Switches between the two Availability pages, Find cover and My availability. A sliding segmented control used as route navigation." replaceWith="shadcn Tabs (as links)" note="A segmented control doing a tab bar's job; tabs-as-links give the route and aria-current.">
+          <CatalogueRow name="AvailabilityPageSwitch" source="apps/web/components/AvailabilityPageSwitch.tsx" usedIn={W} what="Switches between the two Availability pages, Find cover and My availability. Since UI unification U5 (question 18) an underline tab strip of links on the shared LineTabs: a labelled navigation, the current page marked aria-current." replaceWith="shadcn Tabs (as links)" note="Was a sliding segmented control doing a tab bar's job; now real links, so the route and the browser's back work as links do.">
             <D.PageSwitchDemo />
           </CatalogueRow>
           <CatalogueRow name="SubTabButton" source="apps/web/screens/AccountsScreen.tsx" usedIn={W} what="The Accounts underline sub-tabs: Overdue, Payments, GST activity and AA fees." replaceWith="shadcn Tabs" note="Recreated: local to AccountsScreen.tsx. No tab roles, aria-selected or arrow keys today.">
             <D.SubTabsDemo />
           </CatalogueRow>
-          <CatalogueRow name="Back link" source="apps/web/screens/ListDetailView.tsx" usedIn={W} what="The teal chevron link above List and Booking detail that returns to where you came from." replaceWith="shadcn Breadcrumb" note="Recreated: inline in ListDetailView.tsx and BookingDetailView.tsx. A breadcrumb also says where you are.">
+          <CatalogueRow name="Back link" source="shared/ui/BackLink.tsx" usedIn={ALL} what="The teal chevron that returns to the parent screen (UI unification U5): a real link where a route exists, else a button; desktop 14px, the phone's 15px with a 44px target, a sheet's 13px step back. Review and Invoices keep only their breadcrumb (question 9)." replaceWith="shadcn Breadcrumb" note="One component for the five desktop copies, the phone's header backs, the move sheets' step back and ProfileChrome's link.">
             <D.BackLinkDemo />
           </CatalogueRow>
           <CatalogueRow name="Panel" source="apps/web/components/Panel.tsx" usedIn={W} what="The white card every web screen is built from: optional title row with a right-aligned action, padded or flush for a full-bleed table." replaceWith="shadcn Card" note="The title is a div, not a heading, so screen-reader users cannot jump between panels.">
@@ -48,13 +48,13 @@ export function WebCatalogue() {
           <CatalogueRow name="StatTile" source="apps/web/screens/DashboardScreen.tsx" usedIn={W} what="A dashboard figure: small caps label, a large mono value and an optional green change pill. Seeded productivity figures." replaceWith="shadcn Card + Badge" note="Recreated: local to DashboardScreen.tsx. Static figures; no animation to add.">
             <D.StatTileDemo f={f} />
           </CatalogueRow>
-          <CatalogueRow name="SlidingSegmentedControl" source="shared/ui/SlidingSegmentedControl.tsx" usedIn={ALL} what="A single-choice segmented control whose highlight slides between options. Three colour variants." replaceWith="shadcn ToggleGroup (single)" note="aria-pressed buttons rather than radios, no roving focus. Keep the slide with Motion layoutId.">
+          <CatalogueRow name="SlidingSegmentedControl" source="shared/ui/SlidingSegmentedControl.tsx" usedIn={ALL} what="A single-choice segmented control whose highlight slides between options. Two colour variants (teal, surface) and two sizes: md, and sm for a 36px toolbar (Admin Day's row order, UI unification U5). The ink variant went with question 17." replaceWith="shadcn ToggleGroup (single)" note="aria-pressed buttons rather than radios, no roving focus (question 3 keeps them buttons). Keep the slide with Motion layoutId.">
             <D.SlidingSegmentedDemo />
           </CatalogueRow>
           <CatalogueRow name="Segmented" source="shared/ui/Field.tsx" usedIn={ALL} what="The simpler segmented control (no slide). On web it picks the GST period on Accounts." replaceWith="shadcn ToggleGroup (single)" note="A second segmented control doing the same job; merge into one.">
             <D.SegmentedDemo />
           </CatalogueRow>
-          <CatalogueRow name="FilterChip" source="apps/web/screens/AvailabilityGrid.tsx" usedIn={W} what="The All anaesthetists / Free only pills on Find cover, with today's free-session count." replaceWith="shadcn ToggleGroup (single)" note="Recreated: local to AvailabilityGrid.tsx. No aria-pressed (the mobile filter chips have it).">
+          <CatalogueRow name="FilterPills" source="shared/ui/FilterPills.tsx" usedIn={WM} what="Choose one list filter from a row of solid pills (UI unification U5): the All anaesthetists / Free only pills on Find cover with today's free-session count (36px), and the phone's Week, Month, To-Do and Done (38px). A labelled group with aria-pressed." replaceWith="shadcn ToggleGroup (single)" note="Was the web FilterChip and the mobile Lists pills, one job built twice.">
             <D.FilterChipDemo f={f} />
           </CatalogueRow>
           <CatalogueRow name="StatusLegend (toggle mode)" source="shared/StatusLegend.tsx" usedIn={ALL} what="The status legend as compact chips. Given activeStatuses and onToggleStatus it becomes a status filter; click the chips." replaceWith="shadcn ToggleGroup (multiple)" note="A group of toggles without a toggle group's keyboard model.">
@@ -75,13 +75,13 @@ export function WebCatalogue() {
           <CatalogueRow name="Who's free chip" source="apps/web/screens/DashboardScreen.tsx" usedIn={W} what="A colleague's name on the dashboard's Who's free panel. A button when her List can move into their free session, a plain chip otherwise." replaceWith="shadcn Tooltip" note="Recreated: inline in DashboardScreen.tsx. Why it is or is not clickable is only in title=.">
             <D.WhosFreeChipDemo f={f} />
           </CatalogueRow>
-          <CatalogueRow name="IconBtn · NavButton · WeekNavButton" source="apps/web/screens/AvailabilityGrid.tsx" usedIn={W} what="Three near-identical square chevron buttons (day, month and week stepping), each labelled, at three sizes." replaceWith="shadcn Button (size icon)" note="Recreated: local to AvailabilityGrid.tsx, MyAvailabilityCalendar.tsx and WeekStrip.tsx. Three copies of one button.">
+          <CatalogueRow name="IconButton" source="shared/ui/IconButton.tsx" usedIn={ALL} what="A button holding only a glyph or icon (UI unification U5): the desktop step buttons at each mockup's size (32 the week strip, 36 Admin Day, 38 Find cover and My availability) with ‹ ›, the phone's 44px round month and square stepper buttons. Its label is required; CloseButton is the borderless X." replaceWith="shadcn Button (size icon)" note="Was IconBtn, NavButton and WeekNavButton here, and SquareBtn, StepButton and the steppers elsewhere.">
             <D.IconButtonsDemo />
           </CatalogueRow>
-          <CatalogueRow name="Day stepper" source="apps/web/screens/AvailabilityGrid.tsx" usedIn={W} what="Previous day, the day's name, next day and Today, for Find cover." replaceWith="shadcn Button Group" note="Recreated: inline in AvailabilityGrid.tsx. No arrow-key or T-for-today shortcuts.">
+          <CatalogueRow name="Day stepper" source="apps/web/screens/AvailabilityGrid.tsx" usedIn={W} what="Previous day, the day's name, next day and Today, for Find cover." replaceWith="shadcn Button Group" note="Recreated: inline in AvailabilityGrid.tsx, on the shared IconButton and Button (outline). No arrow-key or T-for-today shortcuts.">
             <D.DayStepperDemo f={f} />
           </CatalogueRow>
-          <CatalogueRow name="LinkButton" source="apps/web/screens/DashboardScreen.tsx" usedIn={W} what="A teal text button inside a sentence, such as view overdue accounts." replaceWith="shadcn Button (variant link)" note="Recreated: local to DashboardScreen.tsx.">
+          <CatalogueRow name="TextAction" source="shared/ui/TextAction.tsx" usedIn={ALL} what="A borderless teal word that does one thing (UI unification U5): sm 12.5 in tables, md 14 in cards, lg 15 with a 44px target on the phone, flush, inline inside a sentence, and a printed reason when disabled. The dashboard's view overdue accounts is one." replaceWith="shadcn Button (variant link)" note="Was the dashboard's LinkButton, SeriesList's linkStyle and about forty inline teal copies.">
             <D.LinkButtonDemo />
           </CatalogueRow>
           <CatalogueRow name="SubmitAction" source="apps/web/screens/ListDetailView.tsx" usedIn={W} what="List detail's primary action in four states: blocked (count left, opens the real blockers sheet), ready, submitted and authorised." replaceWith="shadcn Button variants + Badge" note="Recreated: local to ListDetailView.tsx. Submitting just swaps the button for a green pill, with no live region or toast.">
@@ -90,7 +90,7 @@ export function WebCatalogue() {
           <CatalogueRow name="Add a booking (dashed)" source="apps/web/screens/ListDetailView.tsx" usedIn={W} what="The full-width dashed button under the Bookings table. Opens the real Add a booking dialog." replaceWith="shadcn Button (outline, dashed variant)" note="Recreated: inline in ListDetailView.tsx. Saving in the dialog adds a Booking to the demo data.">
             <D.AddBookingButtonDemo f={f} />
           </CatalogueRow>
-          <CatalogueRow name="Progress bar" source="apps/web/screens/ListDetailView.tsx" usedIn={WM} what="How many Bookings on the List are complete, as a count and a green bar that eases to its new width." replaceWith="shadcn Progress" note="Recreated: inline in ListDetailView.tsx. No progressbar role or value today.">
+          <CatalogueRow name="Progress bar" source="shared/ui/ProgressBar.tsx" usedIn={WM} what="How many Bookings on the List are complete, as a count and a green bar that eases to its new width: the shared ProgressBar (UI unification U5), 200px in the web header and the rest of the row on the phone, a progressbar with its values." replaceWith="shadcn Progress" note="Was built twice, without a role.">
             <D.ProgressBarDemo />
           </CatalogueRow>
           <CatalogueRow name="Dialog (web Overlay)" source="shared/surface/Dialog.tsx" usedIn={WA} what="The web surface's modal: a centred card over a scrim, closed by Escape, the corner X or a scrim click. On the one modal stack (useModalLayer): focus goes in, stays in and comes back, and the OverlayHeader title names the dialog. Shown with the dashboard's Which List? picker." replaceWith="shadcn Dialog" note="The Overlay is real; the picker content is recreated from DashboardScreen.tsx. The library would add scroll lock.">

@@ -43,14 +43,22 @@ against what is behind it. Fields are **48px** (`size="field"`, the default) in 
 and in-table inputs use the one **compact 36px** size (the web Lists row keeps its 38px pair). Every
 field control carries `aa-field`, and the one rule in `theme/global.css` gives it the teal border and the
 Design Language focus ring on keyboard focus, never the browser blue. The admin calendar's crimson ring
-stays its own; buttons get theirs in U5.
+stays its own. Controls (buttons, text actions, back links, icon buttons, segments, tabs and filter pills) carry
+`aa-ctl` since U5, whose one rule draws the same ring as a 3px outline (`--focus-ring-color`), on keyboard focus only.
+Press feedback stays in the mobile rules of `global.css`, never in a component.
 
 ## The shared components today
 
 | Component | File | Job | Extended by |
 |---|---|---|---|
-| `Button` | `ui/Button.tsx` | Primary, secondary and danger commands | U5 (sizes, `outline`, `disabledReason`) |
-| `TextAction` | `ui/TextAction.tsx` | A teal text command inside a row or card | U5 |
+| `Button` | `ui/Button.tsx` | A labelled command (U5): `variant` primary, secondary, outline (the mockups' teal outline), pill, danger (the one red outline, "Cancel booking" only); `size` touch (default: 54, 48, 44; sheet footers), desktop (44, radius 12, 14/600) or compact (36, radius 10, 13/600) for desktop buttons; one disabled treatment; `disabledReason` printed and tied by `aria-describedby`; `title`, `ariaLabel`, `ariaPressed`, `shot`, `data-*`; desktop hover in `global.css` | Phase 27 (`disabledReason`, `desktop`) |
+| `IconButton` | `ui/IconButton.tsx` | A glyph or icon only (U5): `label` required (its name), `size` 32, 36, 38 or 44 (each mockup's step size), `shape` square or round, `tone` neutral or action, `bordered`; desktop step buttons show ‹ › | Phases 23, 24 |
+| `CloseButton` | `ui/IconButton.tsx` | The borderless slate X (U5): every drawer, panel and dialog corner close ("Close"), and with a `label` and `returnFocusTo` a clear or remove button that hands focus back | None planned |
+| `BackLink` | `ui/BackLink.tsx` | Return to the parent screen (U5): `to` a real link, else `onClick` a button; `size` desktop (14), touch (15, 44px target) or step (13, a sheet's step back) | Phase 34 (Integrations' back) |
+| `TextAction` | `ui/TextAction.tsx` | A borderless teal word that does one thing (U5): `size` sm (12.5, tables), md (14, cards; default), lg (15, a 44px target on the phone); `flush`, `inline` (underlined in a sentence), `disabledReason`, `label`, `shot`, `data-*` | Phases 35, 42 (the masters' own copy) |
+| `LineTabs` | `ui/LineTabs.tsx` | The underline tab strip (U5): `LineTabs` a labelled `<nav>` of `LineTabLink`s (routes, `aria-current="page"`) or, with `kind="group"`, a labelled group of `LineTab`s (local panels, buttons with `aria-pressed`); `badge` for a count | Phases 25 (`LineTab`), 34, 38, 38b (`LineTabLink`, `badge`) |
+| `FilterPills` | `ui/FilterPills.tsx` | Choose one list filter from solid pills (U5): `size` md (36, web) or lg (38, the phone), a labelled group with `aria-pressed` | Phases 36, 37 |
+| `ProgressBar` | `ui/ProgressBar.tsx` | "n of N complete" as a bar (U5): `role="progressbar"` with its values, `width` a number or `fill` | None planned |
 | `Pill` | `ui/Pill.tsx` | A tone label: status, kind, attention flag. `tone` neutral, success, warning, error; `size` sm, md (inline, default), lg (table, `4px 10px` 11/600); `variant` tint or outline; `leading`, `mono`, `title`, `shot`, `data-*` | U3 (done) |
 | `NameSearchBox` | `ui/NameSearchBox.tsx` | The one search box in all three apps: `size` field (48) or pill (36, or `height` 38 on the web Lists row); `fill` well or surface (default); `testId`, `clearLabel`, `touch` (the 44px clear on the phone), `shot`; Escape clears | U4 (done: `fill`, `testId`, `clearLabel`, `touch`, `height`; replaced `WebSearchField` and the mobile Lists input) |
 | `FieldLabel` | `ui/Field.tsx` | The 11/600 uppercase label above a field; every labelled field part draws it | U4 (done) |
@@ -66,8 +74,8 @@ stays its own; buttons get theirs in U5.
 | `FilterDateInput` | `ui/DateFields.tsx` | The filter-bar date (U4): compact and white on the page, label `above` or `inline`, `height` 36 or 38 | Phases 36, 37 |
 | `TimeRangeFields` | `ui/DateFields.tsx` | A start and an end time side by side (U4, from `SessionTimesFields`): labels, `optional`, one `hint` read with both, `size`, `fill`, `shot` | Phase 39b |
 | `useRovingRadio` | `ui/useRovingRadio.ts` | The one radio-group keyboard model (U4): one Tab stop, arrows, Home and End, disabled skipped; `selectOnMove: false` where a pick saves (the Contract rail) | None planned |
-| `Segmented` | `ui/Field.tsx` | A labelled choice between a few options | U5 |
-| `SlidingSegmentedControl` | `ui/SlidingSegmentedControl.tsx` | The segmented control with the sliding highlight | U5 (one variant per question 17) |
+| `Segmented` | `ui/Field.tsx` | A labelled choice between a few options; passes `layout` and `size` to the sliding control (U5) | Phases 33, 36, 39b |
+| `SlidingSegmentedControl` | `ui/SlidingSegmentedControl.tsx` | The segmented control with the sliding highlight: `variant` teal or surface (`ink` went with question 17), `size` md or sm (the 36px toolbar fit, U5), `layout` row, two-column or wrap; segments stay buttons with `aria-pressed`. The README target's `shape` was not built: its only pill user, Balances, took the standard control (question 17) | None planned |
 | `TickBadge` | `ui/TickBadge.tsx` | The completed tick disc | None planned |
 | `TickButton` | `ui/TickButton.tsx` | A tick-to-confirm control | None planned |
 | `SuccessOverlay` | `ui/SuccessOverlay.tsx` | The full-surface "it worked" moment | U2 (`DoneStep`) |
@@ -86,8 +94,8 @@ stays its own; buttons get theirs in U5.
 | `MonthGrid` | `calendar/MonthGrid.tsx` | The mobile "Go to a date" month calendar, built on `useCalendarKeys` (bounded), `MonthHeaderRow` and `MonthStepButton` | U4 (done) |
 | `useCalendarKeys` | `calendar/useCalendarKeys.ts` | The one month-calendar keyboard model (U4): a roving tab stop in the visible month, arrows by day and week, Home and End, Page Up and Down by month (Shift by year); with `bounds` a key stops at a bound, without (the admin calendar) it runs on | None planned |
 | `MonthHeaderRow` | `calendar/MonthHeaderRow.tsx` | The Monday-first weekday row, `initial` or `short`, `aria-hidden`; each calendar passes its own `style` and `cellStyle` (U4) | Phase 42 (hospital calendar) |
-| `MonthStepButton` | `calendar/MonthHeaderRow.tsx` | The phone calendars' 44px round previous and next month button (U4) | None planned |
-| `NumberStepper` | `capture/ui.tsx` | The one whole-number stepper (U4): `StepperButton` minus and plus named "Fewer" and "More {label}", `min`, `max`, the value announced; `typeable` types a value in place (Enter saves, Escape cancels) | Phases 23 (`UnitsCard`), 39b |
+| `MonthStepButton` | `calendar/MonthHeaderRow.tsx` | The phone calendars' 44px round previous and next month button (U4), on `IconButton` since U5 | None planned |
+| `NumberStepper` | `capture/ui.tsx` | The one whole-number stepper (U4): `StepperButton` (on `IconButton` since U5) minus and plus named "Fewer" and "More {label}", `min`, `max`, the value announced; `typeable` types a value in place (Enter saves, Escape cancels) | Phases 23 (`UnitsCard`), 39b |
 | Rail parts | `contracts/railParts.tsx` (words in `railText.ts`) | The Contract chooser's parts (U4), one set for the Billing card and the step rail sheet: `RailOptionGroup` (`list` or `tiles`, on `useRovingRadio` with `selectOnMove: false`), `StepRail` and `StepMarker` (`vertical` or `compact`, `aria-current="step"`), `NoContractGroup` and `ContractGroupHeading`, `BackstopAmountField` (the typed amount at 44px) | Phase 23 (Make primary) |
 | `useModalLayer` | `surface/useModalLayer.ts` | The one modal stack (U2): one Escape closes only the top layer, focus in, trapped and back, the background inert within the closest `[data-aa-modal-scope]`, every close through the layer's one `onClose`. Dialog, BottomSheet and SidePanel use it; popovers join as `kind: 'popover'` | Phase 35 (close guard on the one `onClose`) |
 | `usePopover` | `ui/usePopover.ts` | The one popover behaviour (U2): open state, outside `pointerdown`, Escape back to the trigger, `aria-expanded` and `aria-controls` | Phase 43a (`InfoTip`) |

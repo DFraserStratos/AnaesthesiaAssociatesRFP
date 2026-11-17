@@ -18,12 +18,11 @@ import {
   type RecurringBookingApplyResult,
 } from '../../../store'
 import { Button, FormError, Segmented, TextField, useSurface } from '../../../shared'
-import { SelectField, TimeRangeFields } from '../../../shared/ui'
+import { SelectField, TextAction, TimeRangeFields } from '../../../shared/ui'
 import { OverlayHeader, SheetActions } from '../../../shared/surface'
 import { shortDay } from '../../../shared/format'
 import { NotPreferredWarning, SurgeonPicker, useNotPreferredWarning } from '../components/pairing'
 import { keptDetail, previewLine, resultLine, retirePreviewLine, retireResultLine, SKIPPED_DETAIL, SKIPPED_HEADING } from '../recurringBookingCopy'
-import { textActionStyle } from '../tableChrome'
 import { Notice } from '../../../shared/ui/Notice'
 import { ResultLine } from '../../../shared/ui/ResultLine'
 
@@ -308,9 +307,9 @@ function AppliedView({ applied, onShow, onOpenDraftLists, onDone }: { applied: A
     <div data-shot="recurring-booking-result" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <ResultLine line={applied.line} />
       {result.firstAffectedDateISO !== undefined && (
-        <button type="button" style={{ ...textActionStyle, alignSelf: 'flex-start', fontSize: 13 }} onClick={() => onShow(result.firstAffectedDateISO!)}>
+        <TextAction flush style={{ alignSelf: 'flex-start', fontSize: 13 }} onClick={() => onShow(result.firstAffectedDateISO!)}>
           Show on day grid ({shortDay(result.firstAffectedDateISO)})
-        </button>
+        </TextAction>
       )}
       <DetailList title={`Kept (${result.kept.length})`} rows={result.kept} line={(k: PlanKept) => `${shortDay(k.dateISO)}: ${keptDetail(k)}`} />
       <DetailList
@@ -323,9 +322,9 @@ function AppliedView({ applied, onShow, onOpenDraftLists, onDone }: { applied: A
         }}
       />
       {result.skipped.length > 0 && (
-        <button type="button" data-shot="recurring-booking-draft-lists" style={{ ...textActionStyle, alignSelf: 'flex-start', fontSize: 13 }} onClick={() => onOpenDraftLists()}>
+        <TextAction flush shot="recurring-booking-draft-lists" style={{ alignSelf: 'flex-start', fontSize: 13 }} onClick={() => onOpenDraftLists()}>
           See them on {SKIPPED_HEADING}
-        </button>
+        </TextAction>
       )}
       <SheetActions primary={<Button variant="primary" block onClick={onDone}>Done</Button>} />
     </div>
@@ -341,9 +340,9 @@ function DetailList<T extends { dateISO: string; slotId?: string; listId?: strin
         {rows.map((r) => (
           <li key={`${r.listId ?? r.slotId ?? ''}-${r.dateISO}`}>
             {onOpen !== undefined ? (
-              <button type="button" style={{ ...textActionStyle, fontSize: 13, fontWeight: 500, textAlign: 'left' }} onClick={() => onOpen(r)}>
+              <TextAction flush style={{ fontSize: 13, fontWeight: 500, textAlign: 'left', whiteSpace: 'normal' }} onClick={() => onOpen(r)}>
                 {line(r)}
-              </button>
+              </TextAction>
             ) : (
               line(r)
             )}

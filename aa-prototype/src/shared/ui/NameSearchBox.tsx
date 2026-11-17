@@ -1,7 +1,8 @@
 import { useRef } from 'react'
-import { Search, X } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { neutral, radius } from '../../theme/tokens'
 import { FIELD_CLASS, FIELD_FILL, type FieldFill } from './fieldChrome'
+import { CloseButton } from './IconButton'
 
 /**
  * The one type-ahead name search box (catch-up Phase 32a; US-01.4.7 "the names
@@ -113,32 +114,26 @@ export function NameSearchBox({
         }}
       />
       {value !== '' && (
-        <button
-          type="button"
-          aria-label={clearLabel}
-          onClick={() => {
-            onChange('')
-            // The button leaves with the text: keep focus in the box (and inside a sheet).
-            inputRef.current?.focus()
-          }}
+        // The button leaves with the text: focus returns to the box (and stays inside a sheet).
+        <CloseButton
+          label={clearLabel}
+          returnFocusTo={inputRef}
+          onClick={() => onChange('')}
+          iconSize={touch ? 18 : pill ? 12 : 14}
+          strokeWidth={touch ? 2 : 2.4}
           style={{
             position: 'absolute',
             right: touch ? 2 : pill ? 6 : 8,
             width: clearSize,
             height: clearSize,
             borderRadius: radius.pill,
-            border: 'none',
             background: touch ? 'transparent' : neutral.sunken,
-            color: neutral.slate,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            cursor: 'pointer',
             padding: 0,
           }}
-        >
-          <X size={touch ? 18 : pill ? 12 : 14} strokeWidth={touch ? 2 : 2.4} aria-hidden />
-        </button>
+        />
       )}
     </div>
   )

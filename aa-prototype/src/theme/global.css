@@ -156,6 +156,9 @@
      Tailwind emits a theme variable only once a rule reads it, so it reaches the page then.
      The admin calendar's crimson ring above stays beside it (README section 5). */
   --focus-ring: 0 0 0 3px rgba(13, 110, 99, 0.3);
+  /* The same ring as an outline colour, for controls (U5): an outline never fights a control's own
+     inline box-shadow (the segmented thumb, a card's elevation) and follows its radius. */
+  --focus-ring-color: rgba(13, 110, 99, 0.3);
 
   /* ── Type scale (size / line-height / weight / tracking) ─ */
   --text-display: 32px;
@@ -408,9 +411,35 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
   appearance: none;
 }
 
-.aa-filter-toggle:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 2px;
+/* UI unification U5 (question 6): the one focus ring on every control. Button, TextAction,
+   BackLink, IconButton, the segmented buttons, LineTab and LineTabLink and FilterPills carry
+   `aa-ctl`; the Admin Day filter toggles, the table entity links and the Contract rail's own
+   buttons do the same job and share the rule. The Design Language ring (3px teal at 0.3, as
+   `.aa-field` draws it) as an outline, on keyboard focus only, never the browser blue. The admin
+   calendar's crimson ring stays its own (README section 5). Press feedback stays in the mobile
+   rules below; nothing here touches `:active`. */
+.aa-ctl:focus-visible,
+.aa-filter-toggle:focus-visible,
+.aa-table-entity-link:focus-visible {
+  outline: 3px solid var(--focus-ring-color);
+  outline-offset: 0;
+}
+.aa-ctl:focus:not(:focus-visible) {
+  outline: none;
+}
+/* The shared Button's hover (U5), as the desktop mockups draw it (`style-hover`): a pointer that
+   hovers, outside the phone, enabled buttons only. `!important` beats the button's inline fill. */
+@media (hover: hover) {
+  .aa-btn-primary:not(:disabled):not([data-aa-mobile-product] *):hover {
+    background-color: var(--color-accent-hover) !important;
+  }
+  .aa-btn-outline:not(:disabled):not([data-aa-mobile-product] *):hover {
+    background-color: var(--color-accent-tint) !important;
+  }
+  .aa-btn-secondary:not(:disabled):not([data-aa-mobile-product] *):hover,
+  .aa-icon-btn:not(:disabled):not([data-aa-mobile-product] *):hover {
+    background-color: var(--color-sunken) !important;
+  }
 }
 
 [data-validation-fields]:focus-visible {
@@ -468,10 +497,6 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
   font-weight: 600;
 }
 
-.aa-table-entity-link:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 3px;
-}
 
 @media (hover: hover) {
   .aa-table-entity-link:hover .aa-table-entity-link-title {
@@ -712,6 +737,13 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
     scroll-behavior: auto !important;
   }
 
+  /* The press rule's own transition longhands are `!important` and outrank the sweep
+     above, so a phone button kept its 150ms fades under reduced motion (U4 checklist 14h):
+     clamp them here, same selector, later in the file (U5). */
+  [data-aa-mobile-product] button:not(:disabled) {
+    transition-duration: 80ms !important;
+  }
+
   /* Both press variants, because the device-scoped one outranks the plain
      selector and would otherwise survive the reduced-motion sweep. */
   [data-aa-mobile-product] button:not(:disabled):active,
@@ -831,13 +863,3 @@ details[open] > .aa-disclosure .aa-disclosure-chevron {
   }
 }
 
-/* Catch-up Phase 20: the step rail's and the Billing card's buttons take the
-   app's teal focus outline, never the browser's blue. Their inputs carry
-   `aa-field` since U4; buttons move onto the shared ring in U5. */
-.aa-rail-scope button:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
-.aa-rail-scope button:focus:not(:focus-visible) {
-  outline: none;
-}

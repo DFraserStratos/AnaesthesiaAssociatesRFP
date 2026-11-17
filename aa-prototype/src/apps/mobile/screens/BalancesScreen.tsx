@@ -78,11 +78,8 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
           { value: 'gst', label: 'GST this month' },
         ]}
         onSelect={setSection}
-        variant="ink"
         ariaLabel="Balance section"
-        trackStyle={{ marginTop: 16, borderRadius: radius.pill }}
-        indicatorStyle={{ borderRadius: radius.pill }}
-        buttonStyle={{ minHeight: 36, borderRadius: radius.pill, padding: '0 10px', fontSize: 13 }}
+        trackStyle={{ marginTop: 16 }}
       />
 
       {section === 'outstanding' ? (

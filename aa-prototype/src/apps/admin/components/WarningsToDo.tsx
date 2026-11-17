@@ -3,6 +3,7 @@ import { clearWarning, openConflictCount, useAppStore, type Actor, type OpenWarn
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { CountBadge } from '../../../shared/ui/CountBadge'
 import { FormError } from '../../../shared/ui/Field'
+import { TextAction } from '../../../shared/ui'
 import { drSurname, shortDay, plural } from '../../../shared/format'
 import { UNASSIGNED } from '../../../shared/scheduleTerms'
 import { AttentionDot } from '../../../shared/warnings/AttentionDot'
@@ -92,14 +93,9 @@ export function WarningsToDo({
                     {patient} · {anae !== undefined ? drSurname(anae.name) : (r.anaesthetistId ?? UNASSIGNED)} · {shortDay(r.dateISO)} {sessionText(r.session)}
                   </span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
-                    <button
-                      type="button"
-                      aria-label={`Open ${patient}'s Booking`}
-                      onClick={() => onOpenBooking(r.dateISO, r.bookingId)}
-                      style={{ border: 'none', background: 'none', padding: 0, minHeight: 30, color: accent.base, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
-                    >
+                    <TextAction size="sm" flush label={`Open ${patient}'s Booking`} onClick={() => onOpenBooking(r.dateISO, r.bookingId)} style={{ minHeight: 30 }}>
                       Open
-                    </button>
+                    </TextAction>
                     <ClearWarningButton
                       compact
                       warning={r.warning}
@@ -122,14 +118,9 @@ export function WarningsToDo({
         </ul>
       )}
       {rows.length > TODO_VISIBLE_ROWS && (
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          aria-expanded={expanded}
-          style={{ alignSelf: 'flex-start', border: 'none', background: 'none', padding: 0, minHeight: 28, color: accent.base, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
-        >
+        <TextAction size="sm" flush ariaExpanded={expanded} onClick={() => setExpanded((v) => !v)} style={{ alignSelf: 'flex-start', minHeight: 28 }}>
           {expanded ? 'Show fewer' : `Show all (${rows.length})`}
-        </button>
+        </TextAction>
       )}
       <FormError message={error} variant="inline" />
     </section>

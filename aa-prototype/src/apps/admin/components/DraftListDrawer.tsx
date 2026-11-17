@@ -12,7 +12,7 @@
 
 import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import { accent, neutral } from '../../../theme/tokens'
+import { neutral } from '../../../theme/tokens'
 import { useAppStore, type Actor } from '../../../store'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { HistorySheet } from '../../../shared/booking'
@@ -32,7 +32,8 @@ import { RemoveDraftListSheet } from '../flows/RemoveDraftListSheet'
 import { TierPill, PreferredPill, useSuggestionKey } from './pairing'
 import { useDraftListCandidates } from './pairing/DraftListCandidates'
 import { BookingCount, DraftStateChip, UnassignedPill, WaitingTime } from './draftLists/DraftListParts'
-import { ActionBtn, DrawerLink, Row, Section } from './drawerParts'
+import { DRAWER_ACTION, DRAWER_ACTION_PRIMARY, DrawerLink, Row, Section } from './drawerParts'
+import { Button, TextAction } from '../../../shared/ui'
 import { SidePanel } from './SidePanel'
 import { sessionText } from '../../../domain/outOfHours'
 import { Notice } from '../../../shared/ui/Notice'
@@ -124,14 +125,15 @@ function DraftBody({
             </div>
         }
         footerTestId="admin-list-actions"
-        footerLayout="row"
+        footerLayout="wrap"
         footer={
           <>
-          <ActionBtn primary disabled={passed} title={passed ? 'This day has passed. Change its date or remove it.' : undefined} onClick={() => setSheet('assign')}>Assign</ActionBtn>
-          <ActionBtn onClick={() => setSheet('edit')}>Edit</ActionBtn>
-          <ActionBtn onClick={() => setSheet('redate')}>Change date</ActionBtn>
-          <ActionBtn disabled={active.length > 0} title={active.length > 0 ? removeBlockedReason(active.length) : undefined} onClick={() => setSheet('remove')}>Remove</ActionBtn>
-          <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
+          {/* Assign's reason is printed by the body's Notice, so it keeps only the title here. */}
+          <Button variant="primary" size="compact" style={DRAWER_ACTION_PRIMARY} disabled={passed} {...(passed ? { title: 'This day has passed. Change its date or remove it.' } : {})} onClick={() => setSheet('assign')}>Assign</Button>
+          <Button variant="secondary" size="compact" style={DRAWER_ACTION} onClick={() => setSheet('edit')}>Edit</Button>
+          <Button variant="secondary" size="compact" style={DRAWER_ACTION} onClick={() => setSheet('redate')}>Change date</Button>
+          <Button variant="secondary" size="compact" style={DRAWER_ACTION} disabled={active.length > 0} {...(active.length > 0 ? { title: removeBlockedReason(active.length), disabledReason: removeBlockedReason(active.length) } : {})} onClick={() => setSheet('remove')}>Remove</Button>
+          <Button variant="secondary" size="compact" style={DRAWER_ACTION} onClick={() => setSheet('history')}>History</Button>
           </>
         }
       >
@@ -187,9 +189,9 @@ function DraftBody({
                     <DrawerLink onClick={() => setSheet({ assignTo: c.anaesthetistId })}>Assign</DrawerLink>
                   </div>
                 ))}
-                <button type="button" onClick={() => setSheet('assign')} style={{ alignSelf: 'flex-start', border: 'none', background: 'none', padding: '4px 0', color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                <TextAction size="sm" onClick={() => setSheet('assign')} style={{ alignSelf: 'flex-start' }}>
                   See everyone ({everyone})
-                </button>
+                </TextAction>
               </div>
             </Section>
           )}
@@ -212,9 +214,9 @@ function DraftBody({
                 </div>
               )
             })}
-            <button type="button" data-shot="draft-list-add-booking" onClick={() => setSheet('addBooking')} style={{ alignSelf: 'flex-start', border: 'none', background: 'none', padding: '4px 0', color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <TextAction size="sm" shot="draft-list-add-booking" onClick={() => setSheet('addBooking')} style={{ alignSelf: 'flex-start' }}>
               Add Booking
-            </button>
+            </TextAction>
           </Section>
       </SidePanel>
 

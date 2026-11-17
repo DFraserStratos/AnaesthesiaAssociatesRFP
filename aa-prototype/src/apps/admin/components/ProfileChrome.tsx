@@ -1,27 +1,17 @@
 /**
  * The chrome of the Admin profile pages (catch-up Phase 17): the surgeon
- * profile and the Admin anaesthetist record. A back link to the Master data
- * view, a header with the name, its identifier chip and the page's action,
- * and plain white cards. Phase 26 extends the anaesthetist record on it.
+ * profile and the Admin anaesthetist record. A header with the name, its
+ * identifier chip and the page's action, and plain white cards (the back link
+ * to the Master data view is the shared `BackLink` since UI unification U5).
+ * Phase 26 extends the anaesthetist record on it.
  */
 
 import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
-import { ChevronLeft } from 'lucide-react'
 import { neutral, radius } from '../../../theme/tokens'
 import { Button } from '../../../shared'
 
 export function ProfilePage({ shot, children }: { shot: string; children: ReactNode }) {
   return <div data-shot={shot} style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>{children}</div>
-}
-
-export function BackLink({ to, children }: { to: string; children: ReactNode }) {
-  return (
-    <Link to={to} className="aa-table-entity-link" style={{ alignSelf: 'flex-start', fontSize: 13, fontWeight: 600, color: neutral.slate, gap: 2 }}>
-      <ChevronLeft size={16} aria-hidden />
-      <span className="aa-table-entity-link-title">{children}</span>
-    </Link>
-  )
 }
 
 export function ProfileHeader({ name, chip, sub, action }: { name: string; chip?: ReactNode; sub?: ReactNode; action?: ReactNode }) {

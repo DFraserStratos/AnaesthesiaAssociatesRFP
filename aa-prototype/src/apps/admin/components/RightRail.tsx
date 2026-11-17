@@ -13,7 +13,7 @@ import { hhmm, longDay } from '../../../shared/format'
 import { useCalendarKeys } from '../../../shared/calendar'
 import { monthCells, WEEKDAY_INITIALS } from '../../../shared/availability/monthCells'
 import { EmptyState } from '../../../shared/ui/EmptyState'
-import { Checkbox, TextArea } from '../../../shared/ui'
+import { Button, Checkbox, TextArea } from '../../../shared/ui'
 
 interface ReviewRow {
   listId: string
@@ -201,12 +201,12 @@ function InternalNotes({ notes, onAddNote }: { notes: DayNote[]; onAddNote: (tex
           <TextArea size="compact" ariaLabel="Internal note for this day" value={text} onChange={setText} placeholder="Add an internal note for this day" autoFocus />
           <Checkbox checked={flagged} onChange={setFlagged} style={{ gap: 6, fontSize: 12, color: neutral.slate }}>Flag (amber)</Checkbox>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" onClick={save} disabled={text.trim() === ''} style={{ flex: 1, height: 34, borderRadius: radius.ctl, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: text.trim() === '' ? 'default' : 'pointer', opacity: text.trim() === '' ? 0.5 : 1 }}>Save note</button>
-            <button type="button" onClick={() => { setAdding(false); setText('') }} style={{ flex: 'none', height: 34, padding: '0 12px', borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+            <Button variant="primary" size="compact" onClick={save} disabled={text.trim() === ''} style={{ flex: 1 }}>Save note</Button>
+            <Button variant="secondary" size="compact" onClick={() => { setAdding(false); setText('') }} style={{ flex: 'none' }}>Cancel</Button>
           </div>
         </div>
       ) : (
-        <button type="button" onClick={() => setAdding(true)} style={{ height: 36, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>+ Add note</button>
+        <Button variant="secondary" size="compact" onClick={() => setAdding(true)}>+ Add note</Button>
       )}
     </Card>
   )

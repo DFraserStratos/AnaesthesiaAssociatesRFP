@@ -12,7 +12,7 @@
         {
           "steps": [
             {
-              "click": "role=button[name=\"›\"] >> nth=0"
+              "click": "[data-testid=admin-day-nav] >> role=button[name=\"Next day\"]"
             },
             {
               "wait": 600

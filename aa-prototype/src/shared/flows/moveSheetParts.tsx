@@ -1,21 +1,12 @@
 import type { ReactNode } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { accent, neutral, radius } from '../../theme/tokens'
+import { ChevronRight } from 'lucide-react'
+import { neutral, radius } from '../../theme/tokens'
 
 /**
  * Parts the move sheets share (Phase 32's `MoveListSheet`, Phase 32a's
  * `MoveBookingToColleagueSheet`, Phase 32b's office status sheet), so their
  * anatomy cannot drift.
  */
-
-/** A teal text link back one step. */
-export function BackLink({ children, onClick }: { children: ReactNode; onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 2, border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-      <ChevronLeft size={15} strokeWidth={2.4} aria-hidden /> {children}
-    </button>
-  )
-}
 
 /** One "where does it go" choice: a neutral icon disc, a title and a line, a chevron. */
 export function ChoiceRow({ icon, title, line, onClick, disabled = false, shot }: { icon: ReactNode; title: string; line: string; onClick: () => void; disabled?: boolean; shot: string }) {

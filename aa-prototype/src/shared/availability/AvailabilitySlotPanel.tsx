@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode, type Ref } from 'react'
+import { useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { Repeat } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { SlotStatusKey } from '../../domain/types'
@@ -7,6 +7,7 @@ import { clearAvailability, deleteAvailabilitySeries, useAppStore, type Actor, t
 import { StatusChip } from '../StatusChip'
 import { FormError } from '../ui'
 import { InlineConfirm } from '../ui/InlineConfirm'
+import { Button } from '../ui/Button'
 import { describeAvailabilityOutcome } from './describeAvailabilityOutcome'
 import { useMoveListPrompt } from '../flows/MoveListPrompt'
 import { SESSIONS_IN_ORDER, sessionText } from '../../domain/outOfHours'
@@ -124,7 +125,7 @@ export function AvailabilitySlotPanel({ actor, day, todayISO, onChange, onResult
             {!past && s.list !== undefined && s.list.state === 'ACTIVE' && actor.role === 'anaesthetist' && movePrompt !== null && (
               <Actions>
                 <span data-shot="availability-panel-move" style={{ display: 'contents' }}>
-                  <PanelAction primary onClick={() => movePrompt.openMove(s.list!.id)}>Move this List</PanelAction>
+                  <Button variant="primary" size="compact" style={PANEL_PILL} onClick={() => movePrompt.openMove(s.list!.id)}>Move this List</Button>
                 </span>
               </Actions>
             )}
@@ -134,14 +135,14 @@ export function AvailabilitySlotPanel({ actor, day, todayISO, onChange, onResult
               <div style={{ fontSize: 12, color: neutral.mist }}>Set by the office. Ask the office to change it.</div>
             ) : s.series !== undefined ? (
               <Actions>
-                <PanelAction onClick={() => onChange({ sessions: s.session, statusKey: s.statusKey, ...(s.note !== undefined ? { note: s.note } : {}), instance: true })}>Change this one</PanelAction>
-                <PanelAction onClick={() => remove(s)}>Delete this one</PanelAction>
-                <PanelAction buttonRef={(el) => { seriesDeleteLinks.current[s.slotId] = el }} onClick={() => setConfirmSeries(s)}>Delete the series</PanelAction>
+                <Button variant="secondary" size="compact" style={PANEL_SECONDARY} onClick={() => onChange({ sessions: s.session, statusKey: s.statusKey, ...(s.note !== undefined ? { note: s.note } : {}), instance: true })}>Change this one</Button>
+                <Button variant="secondary" size="compact" style={PANEL_SECONDARY} onClick={() => remove(s)}>Delete this one</Button>
+                <Button variant="secondary" size="compact" style={PANEL_SECONDARY} buttonRef={(el) => { seriesDeleteLinks.current[s.slotId] = el }} onClick={() => setConfirmSeries(s)}>Delete the series</Button>
               </Actions>
             ) : (
               <Actions>
-                <PanelAction onClick={() => onChange({ sessions: s.session, statusKey: s.statusKey, ...(s.note !== undefined ? { note: s.note } : {}) })}>Change</PanelAction>
-                {oneOff && <PanelAction onClick={() => remove(s)}>Remove</PanelAction>}
+                <Button variant="secondary" size="compact" style={PANEL_SECONDARY} onClick={() => onChange({ sessions: s.session, statusKey: s.statusKey, ...(s.note !== undefined ? { note: s.note } : {}) })}>Change</Button>
+                {oneOff && <Button variant="secondary" size="compact" style={PANEL_SECONDARY} onClick={() => remove(s)}>Remove</Button>}
               </Actions>
             )}
             {confirmSeries?.slotId === s.slotId && s.series !== undefined && (
@@ -160,7 +161,7 @@ export function AvailabilitySlotPanel({ actor, day, todayISO, onChange, onResult
         )
       })}
       {!past && day.AM !== undefined && day.PM !== undefined && (
-        <PanelAction onClick={() => onChange({ sessions: 'both' })}>Change both sessions</PanelAction>
+        <Button variant="secondary" size="compact" style={PANEL_SECONDARY} onClick={() => onChange({ sessions: 'both' })}>Change both sessions</Button>
       )}
       <FormError message={error} />
     </div>
@@ -171,26 +172,6 @@ function Actions({ children }: { children: ReactNode }) {
   return <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{children}</div>
 }
 
-function PanelAction({ onClick, children, primary, buttonRef }: { onClick: () => void; children: ReactNode; primary?: boolean; buttonRef?: Ref<HTMLButtonElement> }) {
-  return (
-    <button
-      ref={buttonRef}
-      type="button"
-      onClick={onClick}
-      style={{
-        minHeight: 38,
-        padding: '0 14px',
-        borderRadius: radius.pill,
-        border: `1px solid ${primary === true ? accent.base : neutral.lineStrong}`,
-        background: primary === true ? accent.base : neutral.surface,
-        color: primary === true ? neutral.surface : accent.pressed,
-        fontFamily: 'inherit',
-        fontSize: 13,
-        fontWeight: 600,
-        cursor: 'pointer',
-      }}
-    >
-      {children}
-    </button>
-  )
-}
+/** The panel's actions: the compact Button at today's 38px pill; the secondary keeps its lineStrong border and pressed-teal text. */
+const PANEL_PILL: CSSProperties = { minHeight: 38, borderRadius: radius.pill }
+const PANEL_SECONDARY: CSSProperties = { ...PANEL_PILL, border: `1px solid ${neutral.lineStrong}`, color: accent.pressed }

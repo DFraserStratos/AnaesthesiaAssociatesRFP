@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { format, parseISO } from 'date-fns'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { brand, neutral, radius } from '../../../theme/tokens'
 import { resolveDisplayStatus, useDisplayStatus } from '../../../shared'
 import type { Session } from '../../../domain/types'
@@ -8,6 +7,7 @@ import { slotViewsForAnaesthetist, useAppStore, type SlotView } from '../../../s
 import { hasLeftMainView, LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
 import { slotTimeRange, weekDays, locationName } from '../../../shared/format'
 import { Panel } from './Panel'
+import { IconButton } from '../../../shared/ui'
 import { sessionText } from '../../../domain/outOfHours'
 
 interface WeekStripProps {
@@ -87,8 +87,8 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
       title="This week"
       action={
         <div style={{ display: 'flex', gap: 6 }}>
-          <WeekNavButton onClick={onPrevWeek} label="Previous week"><ChevronLeft size={16} aria-hidden /></WeekNavButton>
-          <WeekNavButton onClick={onNextWeek} label="Next week"><ChevronRight size={16} aria-hidden /></WeekNavButton>
+          <IconButton size={32} onClick={onPrevWeek} label="Previous week">‹</IconButton>
+          <IconButton size={32} onClick={onNextWeek} label="Next week">›</IconButton>
         </div>
       }
     >
@@ -147,30 +147,6 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
         })}
       </div>
     </Panel>
-  )
-}
-
-function WeekNavButton({ onClick, label, children }: { onClick: () => void; label: string; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onClick}
-      style={{
-        width: 32,
-        height: 32,
-        borderRadius: 9,
-        border: `1px solid ${neutral.line}`,
-        background: neutral.surface,
-        color: neutral.slate,
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      {children}
-    </button>
   )
 }
 

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { locationName, shortDay } from '../../../shared/format'
 import { addDays, format, parseISO } from 'date-fns'
-import { accent, neutral, radius } from '../../../theme/tokens'
+import { neutral, radius } from '../../../theme/tokens'
 import type { AssignedList, Booking, DisplayKey } from '../../../domain/types'
 import type { EffectiveSlotTimes } from '../../../domain/slots'
 import { hasLeftMainView, listProgress, type ListProgress } from '../../../domain/listProgress'
@@ -10,6 +10,7 @@ import { emptySessionLine, ProgressPill, resolveDisplayStatus, StatusChip, Statu
 import { Panel } from '../components'
 import { searchCountLine, useBookingSearch, useFieldText } from '../../../shared/schedule'
 import { NameSearchBox } from '../../../shared/ui/NameSearchBox'
+import { TextAction } from '../../../shared/ui'
 import { FilterDateInput } from '../../../shared/ui/DateFields'
 import { WebDayChip, WebDayTable, WebGoToDate, WebResultsTable } from './ListsLookback'
 import { sessionText } from '../../../domain/outOfHours'
@@ -222,13 +223,9 @@ export function ListsScreen({
                 {searchCountLine(results.total, shown, query)}
               </span>
             )}
-            <button
-              type="button"
-              onClick={() => onQueryChange('')}
-              style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-            >
+            <TextAction size="sm" flush onClick={() => onQueryChange('')} style={{ fontSize: 13 }}>
               Clear search
-            </button>
+            </TextAction>
           </>
         )}
       </div>

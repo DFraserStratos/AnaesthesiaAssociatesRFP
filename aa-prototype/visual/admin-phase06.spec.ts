@@ -57,7 +57,7 @@ test('admin phase 06 walkthrough', async ({ page }) => {
   // Back to the day, navigate to Wed 22 for its conflicts (catch-up Phase 30: real facts).
   await page.getByRole('button', { name: 'Day view', exact: true }).first().click()
   await page.waitForTimeout(200)
-  await page.getByRole('button', { name: '›', exact: true }).first().click()
+  await page.getByTestId('admin-day-nav').getByRole('button', { name: 'Next day', exact: true }).click()
   await page.waitForTimeout(300)
   await page.screenshot({ path: 'visual/shots/a-06-wed.png', fullPage: true })
 })
