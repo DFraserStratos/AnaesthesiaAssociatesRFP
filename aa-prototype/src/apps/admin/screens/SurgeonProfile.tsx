@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { neutral } from '../../../theme/tokens'
-import { groupsForSurgeon, surgeonsInRoom } from '../../../domain/surgeons'
+import { groupsForSurgeon, roomsForSurgeon, surgeonsInRoom } from '../../../domain/surgeons'
+import { NO_ROOM_EMAIL, ROOM_CONTACTS_PROVISIONAL_NOTE, roomContactEmail } from '../../../domain/roomContacts'
+import { RoomContactsList } from '../components/RoomContactsList'
+import type { Surgeon, SurgeonRoom } from '../../../domain/types'
 import { useAppStore, type Actor } from '../../../store'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { Pill } from '../components/MasterPills'
@@ -17,6 +20,8 @@ import { EmptyState } from '../../../shared/ui/EmptyState'
  * The surgeon profile (catch-up Phase 17; US-13.6.2, US-13.6.1, US-13.6.3,
  * US-13.6.4): one identified record keyed on the HPI CPN, the surgeon's room
  * and its contacts, the groups, and the office's private pairing preferences.
+ * Catch-up Phase 17a (US-13.6.5; D75, D74): a room card per room, the main
+ * room first, each beside its practice manager and PA contacts card.
  * `/admin/masters/surgeons/:surgeonId`.
  */
 export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor: Actor }) {
@@ -30,8 +35,7 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
   const profileHistory = useProfileHistory('surgeon', surgeonId)
   if (surgeon === undefined) return null
 
-  const room = rooms[surgeon.roomId]
-  const colleagues = room !== undefined ? surgeonsInRoom(surgeons, room.id).filter((s) => s.id !== surgeon.id) : []
+  const surgeonRooms = roomsForSurgeon({ surgeons, surgeonRooms: rooms }, surgeon.id)
   const memberOf = groupsForSurgeon(groups, surgeon.id)
 
   return (
@@ -40,7 +44,7 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
       <ProfileHeader
         name={surgeon.name}
         chip={<IdChip label="HPI CPN" value={surgeon.hpiId} shot="surgeon-hpi-chip" />}
-        sub={[surgeonSpecialtyLabel({ specialties }, surgeon), room?.name].filter((v) => v !== undefined && v !== '').join(' · ')}
+        sub={[surgeonSpecialtyLabel({ specialties }, surgeon), surgeonRooms[0]?.name].filter((v) => v !== undefined && v !== '').join(' · ')}
         action={<HeaderActions onHistory={() => setHistory(true)} onEdit={() => setEditing(true)} />}
       />
 
@@ -64,30 +68,6 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
           />
         </ProfileCard>
 
-        <ProfileCard title="Surgeons' room" shot="surgeon-room-card">
-          {room === undefined ? (
-            <div style={{ fontSize: 13, color: neutral.mist }}>No room recorded.</div>
-          ) : (
-            <>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>{room.name}</div>
-              <Fact label="Contact email" value={room.contactEmail} />
-              <Fact label="Phone" value={room.phone !== '' ? room.phone : <span style={{ color: neutral.mist }}>Not recorded</span>} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: neutral.mist }}>Also in this room</div>
-                {colleagues.length === 0 ? (
-                  <EmptyState>No other surgeons.</EmptyState>
-                ) : (
-                  colleagues.map((c) => (
-                    <Link key={c.id} to={surgeonProfilePath(c.id)} className="aa-table-entity-link" style={{ fontSize: 14 }}>
-                      <span className="aa-table-entity-link-title" style={{ fontWeight: 500 }}>{c.name}</span>
-                    </Link>
-                  ))
-                )}
-              </div>
-            </>
-          )}
-        </ProfileCard>
-
         <ProfileCard title="Groups" shot="surgeon-groups">
           {memberOf.length === 0 ? (
             <div style={{ fontSize: 13, color: neutral.mist }}>Not in a surgeon group.</div>
@@ -103,10 +83,56 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
         </ProfileCard>
       </div>
 
+      {surgeonRooms.length === 0 ? (
+        <ProfileCard title="Surgeons' room" shot="surgeon-room-card">
+          <div style={{ fontSize: 13, color: neutral.mist }}>No room recorded.</div>
+        </ProfileCard>
+      ) : (
+        surgeonRooms.map((room, index) => (
+          <div key={room.id} data-room-row={room.id} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, alignItems: 'start' }}>
+            <RoomCard room={room} main={index === 0} several={surgeonRooms.length > 1} surgeon={surgeon} surgeons={surgeons} />
+            <ProfileCard title="Practice manager and PAs" shot="surgeon-contacts" data-room={room.id}>
+              {index === 0 && <div style={{ fontSize: 12, color: neutral.mist }}>{ROOM_CONTACTS_PROVISIONAL_NOTE}</div>}
+              <RoomContactsList room={room} surgeonId={surgeon.id} actor={actor} />
+            </ProfileCard>
+          </div>
+        ))
+      )}
+
       <PairingSection perspective="surgeon" subjectId={surgeon.id} actor={actor} />
 
       <HistorySheet open={history} entityIds={profileHistory.ids} entityLabels={profileHistory.labels} title="Surgeon history" onClose={() => setHistory(false)} />
       {editing && <SurgeonEditSheet surgeon={surgeon} actor={actor} onClose={() => setEditing(false)} />}
     </ProfilePage>
+  )
+}
+
+/** One of the surgeon's rooms: its email (or that none is held), phone and the room's other surgeons. */
+function RoomCard({ room, main, several, surgeon, surgeons }: { room: SurgeonRoom; main: boolean; several: boolean; surgeon: Surgeon; surgeons: Readonly<Record<string, Surgeon>> }) {
+  const email = roomContactEmail(room)
+  const colleagues = surgeonsInRoom(surgeons, room.id).filter((s) => s.id !== surgeon.id)
+  return (
+      <ProfileCard
+        title="Surgeons' room"
+        shot="surgeon-room-card"
+        data-room={room.id}
+        action={several && main ? <Pill size="sm">Main room</Pill> : undefined}
+      >
+        <div style={{ fontSize: 14, fontWeight: 600 }}>{room.name}</div>
+        <Fact label="Contact email" value={email !== '' ? email : <span style={{ color: neutral.mist }}>{NO_ROOM_EMAIL}</span>} mono={email !== ''} />
+        <Fact label="Phone" value={room.phone ?? <span style={{ color: neutral.mist }}>Not recorded</span>} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: neutral.mist }}>Also in this room</div>
+          {colleagues.length === 0 ? (
+            <EmptyState>No other surgeons.</EmptyState>
+          ) : (
+            colleagues.map((c) => (
+              <Link key={c.id} to={surgeonProfilePath(c.id)} className="aa-table-entity-link" style={{ fontSize: 14 }}>
+                <span className="aa-table-entity-link-title" style={{ fontWeight: 500 }}>{c.name}</span>
+              </Link>
+            ))
+          )}
+        </div>
+      </ProfileCard>
   )
 }

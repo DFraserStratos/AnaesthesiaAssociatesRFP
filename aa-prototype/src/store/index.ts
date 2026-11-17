@@ -245,6 +245,8 @@ export {
   type SurgeonRoomFields,
   type SurgeonGroupFields,
 } from './surgeonActions'
+// Catch-up Phase 17a: practice manager and PA contacts on a surgeons' room (US-13.6.5).
+export { addRoomContact, editRoomContact, removeRoomContact, type RoomContactFields } from './roomContactActions'
 export { createParty, editParty, partyContractFacts, type PartyFields } from './partyActions'
 // Catch-up Phase 18a: AA's specialties and funding tags (Admin Master data).
 export { createSpecialty, renameSpecialty, removeSpecialty } from './specialtyActions'

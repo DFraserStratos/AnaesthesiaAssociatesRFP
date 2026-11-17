@@ -6,14 +6,21 @@
  *
  * The surgeon's HPI CPN (OQ-52) is required, stored trimmed and upper-cased,
  * shape-checked, and unique across every practitioner, surgeons and
- * anaesthetists alike. A room's surgeons are derived from `Surgeon.roomId`.
+ * anaesthetists alike. A room's surgeons are derived from `Surgeon.roomIds`.
+ *
+ * Catch-up Phase 17a (DM-60; OQ-128 answered, D75): a surgeon belongs to one
+ * or more rooms, in order, the first the main room (none, or an unknown one,
+ * is refused; duplicates are dropped); a room's email and phone are optional,
+ * absent when blank, and audit as '' when cleared. Taking a room off a surgeon
+ * turns that room's contacts named for them into whole-room contacts.
  *
  * Catch-up Phase 18a (US-13.6.6): a surgeon holds one or more specialties from
  * AA's list, required here (not only in the form): a save with none, or with
  * an unknown one, is refused. The audit prints them by name.
  */
 
-import type { Surgeon, SurgeonGroup, SurgeonRoom } from '../domain/types'
+import type { RoomContact, Surgeon, SurgeonGroup, SurgeonRoom } from '../domain/types'
+import { WHOLE_ROOM_LABEL } from '../domain/roomContacts'
 import { hpiCpnHolder, isPlausibleEmail, isPlausibleHpiCpn, normaliseHpiCpn } from '../domain/surgeons'
 import { cleanSpecialtyIds, specialtyNames } from '../domain/specialties'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
@@ -27,7 +34,8 @@ export interface SurgeonFields {
   name: string
   /** One or more, from AA's list; the first is shown first. */
   specialtyIds: string[]
-  roomId: string
+  /** One or more (catch-up Phase 17a, D75), in order, the first the main room; duplicates are dropped. */
+  roomIds: readonly string[]
   hpiId: string
   medicalRegistrationNumber?: string
 }
@@ -41,8 +49,10 @@ function cleanSurgeonFields(
   if (name === '') return refuse('nameRequired', 'A surgeon name is required.')
   const specialties = cleanSpecialtyIds(fields.specialtyIds, state.masters.specialties)
   if (!specialties.ok) return refuse(specialties.code, specialties.message)
-  if (state.masters.surgeonRooms[fields.roomId] === undefined) {
-    return refuse('roomRequired', "Choose the surgeon's room.")
+  const roomIds = [...new Set(fields.roomIds)]
+  if (roomIds.length === 0) return refuse('roomRequired', "Choose at least one surgeons' room.")
+  if (roomIds.some((id) => state.masters.surgeonRooms[id] === undefined)) {
+    return refuse('notFound', "One of the chosen surgeons' rooms was not found.")
   }
   const hpiId = normaliseHpiCpn(fields.hpiId)
   if (hpiId === '') return refuse('hpiCpnRequired', 'An HPI CPN is required. It is the surgeon\'s unique number on the Health Provider Index.')
@@ -55,16 +65,24 @@ function cleanSurgeonFields(
   return ok({
     name,
     specialtyIds: specialties.ids,
-    roomId: fields.roomId,
+    roomIds,
     hpiId,
     ...(registration !== '' ? { medicalRegistrationNumber: registration } : {}),
   })
 }
 
-/** A surgeon's audit values with the specialties as names (`specialties: ['ENT']`), never ids. */
+/**
+ * A surgeon's audit values with the specialties (`specialties: ['ENT']`) and
+ * the rooms (`rooms: ['Avonhead ENT']`, in order, the main room first) as
+ * names, never ids.
+ */
 function auditValues(values: Partial<Omit<Surgeon, 'id'>>, state: Pick<AppState, 'masters'>): Record<string, unknown> {
-  const { specialtyIds, ...rest } = values
-  return specialtyIds !== undefined ? { ...rest, specialties: specialtyNames(state.masters, specialtyIds) } : rest
+  const { specialtyIds, roomIds, ...rest } = values
+  return {
+    ...rest,
+    ...(specialtyIds !== undefined ? { specialties: specialtyNames(state.masters, specialtyIds) } : {}),
+    ...(roomIds !== undefined ? { rooms: roomIds.map((id) => state.masters.surgeonRooms[id]?.name ?? id) } : {}),
+  }
 }
 
 /** Add a surgeon. Audited `surgeon.create`. */
@@ -93,12 +111,14 @@ export function editSurgeon(api: AppStoreApi, actor: Actor, surgeonId: string, f
   const cleaned = cleanSurgeonFields(state, fields, surgeonId)
   if (!cleaned.ok) return cleaned
   const next: Surgeon = { id: surgeonId, ...cleaned.value }
-  const keys = ['name', 'specialtyIds', 'roomId', 'hpiId', 'medicalRegistrationNumber'] as const
+  const keys = ['name', 'specialtyIds', 'roomIds', 'hpiId', 'medicalRegistrationNumber'] as const
   const changed = keys.filter((k) => JSON.stringify(existing[k] ?? '') !== JSON.stringify(next[k] ?? ''))
   if (changed.length === 0) return ok(undefined)
-  mutate(
-    api,
-    actor,
+  // A room taken off the surgeon: its contacts named for them become whole-room
+  // contacts in the same commit, so no contact names a surgeon outside its room.
+  const leftRooms = existing.roomIds.filter((id) => !next.roomIds.includes(id))
+  const roomPatches: Record<string, SurgeonRoom> = {}
+  const metas: MutationMeta[] = [
     {
       entityType: 'surgeon',
       entityId: surgeonId,
@@ -107,9 +127,39 @@ export function editSurgeon(api: AppStoreApi, actor: Actor, surgeonId: string, f
       after: auditValues(Object.fromEntries(changed.map((k) => [k, next[k] ?? ''])), state),
       stampBookingId: null,
     },
-    (s) => ({ masters: { ...s.masters, surgeons: { ...s.masters.surgeons, [surgeonId]: next } } }),
-  )
+  ]
+  for (const roomId of leftRooms) {
+    const room = state.masters.surgeonRooms[roomId]
+    const stale = (room?.contacts ?? []).filter((c) => c.forSurgeonId === surgeonId)
+    if (room === undefined || stale.length === 0) continue
+    roomPatches[roomId] = {
+      ...room,
+      contacts: (room.contacts ?? []).map((c) => (c.forSurgeonId === surgeonId ? withoutSurgeon(c) : c)),
+    }
+    for (const c of stale) {
+      metas.push({
+        entityType: 'surgeonRoom',
+        entityId: roomId,
+        action: 'roomContact.update',
+        before: { contact: c.name, for: existing.name },
+        after: { contact: c.name, for: WHOLE_ROOM_LABEL },
+        stampBookingId: null,
+      })
+    }
+  }
+  mutate(api, actor, metas, (s) => ({
+    masters: {
+      ...s.masters,
+      surgeons: { ...s.masters.surgeons, [surgeonId]: next },
+      surgeonRooms: { ...s.masters.surgeonRooms, ...roomPatches },
+    },
+  }))
   return ok(undefined)
+}
+
+function withoutSurgeon(contact: RoomContact): RoomContact {
+  const { forSurgeonId: _dropped, ...rest } = contact
+  return rest
 }
 
 // ---------------------------------------------------------------------------
@@ -118,18 +168,24 @@ export function editSurgeon(api: AppStoreApi, actor: Actor, surgeonId: string, f
 
 export interface SurgeonRoomFields {
   name: string
-  contactEmail: string
-  phone: string
+  /** Optional (catch-up Phase 17a, DM-60): blank holds no email. */
+  contactEmail?: string
+  /** Optional: blank holds no phone. */
+  phone?: string
 }
 
-function cleanRoomFields(fields: SurgeonRoomFields): Outcome<Omit<SurgeonRoom, 'id'>> {
+/** The room's own fields; its contacts are kept by the contact actions, never here. */
+type RoomOwnFields = Pick<SurgeonRoom, 'name' | 'contactEmail' | 'phone'>
+
+function cleanRoomFields(fields: SurgeonRoomFields): Outcome<RoomOwnFields> {
   const name = fields.name.trim()
   if (name === '') return refuse('nameRequired', 'A room name is required.')
-  const contactEmail = fields.contactEmail.trim()
-  if (!isPlausibleEmail(contactEmail)) {
+  const contactEmail = fields.contactEmail?.trim() ?? ''
+  if (contactEmail !== '' && !isPlausibleEmail(contactEmail)) {
     return refuse('invalidEmail', 'That contact email does not look right. Use the form name@example.co.nz.')
   }
-  return ok({ name, contactEmail, phone: fields.phone.trim() })
+  const phone = fields.phone?.trim() ?? ''
+  return ok({ name, ...(contactEmail !== '' ? { contactEmail } : {}), ...(phone !== '' ? { phone } : {}) })
 }
 
 /** Add a surgeons' room. Audited `surgeonRoom.create`. */
@@ -158,9 +214,14 @@ export function editSurgeonRoom(api: AppStoreApi, actor: Actor, roomId: string, 
   if (existing === undefined) return refuse('notFound', 'Room not found.')
   const cleaned = cleanRoomFields(fields)
   if (!cleaned.ok) return cleaned
-  const next: SurgeonRoom = { id: roomId, ...cleaned.value }
+  const next: SurgeonRoom = {
+    id: roomId,
+    ...cleaned.value,
+    ...(existing.contacts !== undefined ? { contacts: existing.contacts } : {}),
+  }
   const keys = ['name', 'contactEmail', 'phone'] as const
-  const changed = keys.filter((k) => existing[k] !== next[k])
+  // An absent email or phone audits as '' (never `undefined`).
+  const changed = keys.filter((k) => (existing[k] ?? '') !== (next[k] ?? ''))
   if (changed.length === 0) return ok(undefined)
   mutate(
     api,
@@ -169,8 +230,8 @@ export function editSurgeonRoom(api: AppStoreApi, actor: Actor, roomId: string, 
       entityType: 'surgeonRoom',
       entityId: roomId,
       action: 'surgeonRoom.update',
-      before: Object.fromEntries(changed.map((k) => [k, existing[k]])),
-      after: Object.fromEntries(changed.map((k) => [k, next[k]])),
+      before: Object.fromEntries(changed.map((k) => [k, existing[k] ?? ''])),
+      after: Object.fromEntries(changed.map((k) => [k, next[k] ?? ''])),
       stampBookingId: null,
     },
     (s) => ({ masters: { ...s.masters, surgeonRooms: { ...s.masters.surgeonRooms, [roomId]: next } } }),

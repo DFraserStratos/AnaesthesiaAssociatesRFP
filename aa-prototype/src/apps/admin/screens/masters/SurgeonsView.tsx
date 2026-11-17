@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { neutral } from '../../../../theme/tokens'
 import { pairingCounts } from '../../../../domain/pairingPreferences'
-import { compareBySurname, surgeonsInRoom } from '../../../../domain/surgeons'
+import { compareBySurname, roomsForSurgeon, surgeonsInRoom } from '../../../../domain/surgeons'
+import { contactsForRoom, NO_ROOM_EMAIL, roomContactEmail } from '../../../../domain/roomContacts'
 import type { Surgeon, SurgeonGroup, SurgeonRoom } from '../../../../domain/types'
 import { useAppStore, type Actor } from '../../../../store'
 import { surgeonSpecialtyLabel } from '../../../../domain/specialties'
@@ -48,7 +49,7 @@ export function SurgeonsView({ actor }: { actor: Actor }) {
         sub="One record per surgeon, keyed on the HPI CPN. Open a surgeon for their room, groups and pairing preferences."
         action={<Button variant="secondary" onClick={() => setSheet({})}>Add surgeon</Button>}
       />
-      <Table heads={['Name', 'Specialties', 'Room', 'HPI CPN', 'Pairings', '']} rightAlign={[5]} shot="masters-surgeons">
+      <Table heads={['Name', 'Specialties', 'Rooms', 'HPI CPN', 'Pairings', '']} rightAlign={[5]} shot="masters-surgeons">
         {rows.map((s) => {
           const counts = pairingCounts(entries, { surgeonId: s.id })
           return (
@@ -62,7 +63,9 @@ export function SurgeonsView({ actor }: { actor: Actor }) {
             >
               <td style={rowCellStyle}><SurgeonLink id={s.id} name={s.name} /></td>
               <td style={rowCellStyle}>{surgeonSpecialtyLabel({ specialties }, s)}</td>
-              <td style={rowCellStyle}>{rooms[s.roomId]?.name ?? s.roomId}</td>
+              <td style={rowCellStyle} data-rooms={s.id}>
+                {roomsForSurgeon({ surgeons, surgeonRooms: rooms }, s.id).map((room) => <div key={room.id}>{room.name}</div>)}
+              </td>
               <td className="mono" style={rowCellStyle}>{s.hpiId}</td>
               <td style={rowCellStyle}>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -91,17 +94,19 @@ export function SurgeonRoomsView({ actor }: { actor: Actor }) {
     <>
       <Header
         title="Surgeons' rooms"
-        sub="Each room holds its contact email, phone and surgeons. A surgeon joins a room from their own record."
+        sub="Each room holds its contact email and phone where the practice gives them, and its surgeons. A surgeon joins one or more rooms from their own record."
         action={<Button variant="secondary" onClick={() => setSheet({})}>Add room</Button>}
       />
-      <Table heads={['Name', 'Contact email', 'Phone', 'Surgeons', '']} rightAlign={[4]} shot="masters-surgeon-rooms">
+      <Table heads={['Name', 'Contact email', 'Phone', 'Surgeons', 'Contacts', '']} rightAlign={[5]} shot="masters-surgeon-rooms">
         {rows.map((r) => {
           const members = surgeonsInRoom(surgeons, r.id)
+          const email = roomContactEmail(r)
+          const contactCount = contactsForRoom(r, surgeons).length
           return (
             <tr key={r.id} data-room={r.id}>
               <td style={{ ...rowCellStyle, fontWeight: 600 }}>{r.name}</td>
-              <td style={rowCellStyle}>{r.contactEmail}</td>
-              <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>{r.phone !== '' ? r.phone : <span style={mist}>·</span>}</td>
+              <td style={rowCellStyle} data-room-email>{email !== '' ? email : <span style={mist}>{NO_ROOM_EMAIL}</span>}</td>
+              <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>{r.phone ?? <span style={mist}>·</span>}</td>
               <td style={rowCellStyle}>
                 {members.length === 0 ? (
                   <span style={mist}>No surgeons yet</span>
@@ -110,6 +115,9 @@ export function SurgeonRoomsView({ actor }: { actor: Actor }) {
                     {members.map((m) => <SurgeonLink key={m.id} id={m.id} name={m.name} />)}
                   </div>
                 )}
+              </td>
+              <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }} data-room-contacts-count={contactCount}>
+                {contactCount === 0 ? <span style={mist}>·</span> : contactCount === 1 ? '1 contact' : `${contactCount} contacts`}
               </td>
               <EditCell onClick={() => setSheet({ room: r })} label={`Edit ${r.name}`} style={rowCellStyle} />
             </tr>

@@ -39,9 +39,12 @@ export function IdChip({ label, value, shot }: { label: string; value: string; s
   )
 }
 
-export function ProfileCard({ title, shot, action, children }: { title: string; shot?: string; action?: ReactNode; children: ReactNode }) {
+type DataAttributes = { [key: `data-${string}`]: string | undefined }
+
+/** A white card with a title; `data-*` attributes pass through (catch-up Phase 17a: `data-room`). */
+export function ProfileCard({ title, shot, action, children, ...data }: { title: string; shot?: string; action?: ReactNode; children: ReactNode } & DataAttributes) {
   return (
-    <section data-shot={shot} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>
+    <section {...data} data-shot={shot} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
         <h2 style={{ margin: 0, fontSize: 15, lineHeight: '22px', fontWeight: 600 }}>{title}</h2>
         {action}

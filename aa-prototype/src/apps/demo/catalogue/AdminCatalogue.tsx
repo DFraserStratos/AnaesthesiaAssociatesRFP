@@ -49,6 +49,7 @@ import {
 import {
   AnaesthetistCandidatesExample,
   ChipMultiSelectExample,
+  RoomContactsListExample,
   ClearConflictExample,
   CodePickerExample,
   ConflictCalloutExample,
@@ -212,8 +213,11 @@ export function AdminCatalogue() {
         <CatalogueRow name="NotPreferredWarning" source="apps/admin/components/pairing/NotPreferredWarning.tsx" usedIn={A} what="An amber callout when the chosen surgeon is not preferred with the anaesthetist, on the shared Notice; it warns, never blocks." replaceWith="shadcn Alert" note="Fed by the real useNotPreferredWarning hook for a seeded not-preferred pairing.">
           <NotPreferredWarningExample />
         </CatalogueRow>
-        <CatalogueRow name="ChipMultiSelect" source="apps/admin/components/ChipMultiSelect.tsx" usedIn={A} what="A native 'Add a...' select plus removable chips: a Contract's specialties and, since UI unification U4, its linked surgeons (the editor's private SurgeonPicker is gone). The select draws the one field chrome and its hint is the shared FieldHint." replaceWith="Base UI Combobox (multiple, chips)" note="Searchable, with Backspace to remove.">
+        <CatalogueRow name="ChipMultiSelect" source="apps/admin/components/ChipMultiSelect.tsx" usedIn={A} what="A native 'Add a...' select plus removable chips: a Contract's specialties and, since UI unification U4, its linked surgeons (the editor's private SurgeonPicker is gone). The select draws the one field chrome and its hint is the shared FieldHint. Catch-up Phase 17a's `ordered` variant gives a surgeon's rooms: the first chip carries a Main room pill, the others a Make main action." replaceWith="Base UI Combobox (multiple, chips)" note="Searchable, with Backspace to remove.">
           <ChipMultiSelectExample />
+        </CatalogueRow>
+        <CatalogueRow name="RoomContactsList" source="apps/admin/components/RoomContactsList.tsx" usedIn={A} what="A surgeons' room's practice manager and PA contacts (catch-up Phase 17a): name, neutral role pill, mono email, who it is for in mist; Edit, Remove with the shared InlineConfirm, and Add contact opening RoomContactSheet (or the form in place inside the room sheet). One list for the surgeon profile's contacts cards and SurgeonRoomSheet." replaceWith="shadcn Table or list + Sheet" note="Writes to the demo store.">
+          <RoomContactsListExample />
         </CatalogueRow>
         <CatalogueRow name="CodePickerSheet" source="shared/capture/CodePickerSheet.tsx" usedIn={AWM} what="The RVG code type-ahead in an Overlay titled by an OverlayHeader: search by code or description, every match rendered. Its search is the shared NameSearchBox in the well fill (UI unification U4)." replaceWith="Base UI Combobox + TanStack Virtual" note="The library would add combobox and listbox roles and arrow and Enter selection.">
           <CodePickerExample />

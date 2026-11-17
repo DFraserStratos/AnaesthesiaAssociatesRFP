@@ -5,11 +5,15 @@
  * specialties (none means every specialty), and the Contract editor's linked
  * surgeons (UI unification U4). Neutral chips only, never the teal action
  * tint. The select draws the one field chrome (`aa-field`), its hint tied.
+ *
+ * `ordered` (catch-up Phase 17a, a surgeon's rooms): the first chip carries a
+ * neutral pill ("Main room") and every other chip a "Make main" action that
+ * moves it to the front. Absent, the chips look as they always have.
  */
 
 import { useId, useRef } from 'react'
 import { neutral, radius } from '../../../theme/tokens'
-import { CloseButton, FIELD_CLASS, FieldHint, FieldLabel, fieldControlStyle } from '../../../shared/ui'
+import { CloseButton, FIELD_CLASS, FieldHint, FieldLabel, Pill, TextAction, fieldControlStyle } from '../../../shared/ui'
 
 export interface ChipOption {
   id: string
@@ -25,6 +29,7 @@ export function ChipMultiSelect({
   hint,
   empty,
   shot,
+  ordered,
 }: {
   label: string
   options: readonly ChipOption[]
@@ -36,6 +41,8 @@ export function ChipMultiSelect({
   /** What an empty choice means, shown in place of the chips. */
   empty?: string
   shot?: string
+  /** The first choice is the main one: its pill label, and the action that promotes another. */
+  ordered?: { firstLabel: string; promoteLabel: string }
 }) {
   const selectId = useId()
   const hintId = useId()
@@ -50,7 +57,7 @@ export function ChipMultiSelect({
       {value.length === 0 && empty !== undefined && <div style={{ fontSize: 13, color: neutral.mist, minHeight: 26, display: 'flex', alignItems: 'center' }}>{empty}</div>}
       {value.length > 0 && (
       <div role="list" aria-label={`${label} chosen`} style={{ display: 'flex', flexWrap: 'wrap', gap: 6, minHeight: 26, alignItems: 'center' }}>
-        {value.map((id) => (
+        {value.map((id, index) => (
           <span
             key={id}
             role="listitem"
@@ -58,6 +65,20 @@ export function ChipMultiSelect({
             style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 4px 2px 10px', borderRadius: radius.pill, background: neutral.sunken, color: neutral.ink, fontSize: 12.5, fontWeight: 500 }}
           >
             {byId.get(id) ?? id}
+            {ordered !== undefined && index === 0 && (
+              <Pill size="sm" variant="outline" data-main-chip style={{ marginLeft: 4 }}>{ordered.firstLabel}</Pill>
+            )}
+            {ordered !== undefined && index > 0 && (
+              <TextAction
+                size="sm"
+                flush
+                label={`${ordered.promoteLabel}: ${byId.get(id) ?? id}`}
+                onClick={() => onChange([id, ...value.filter((v) => v !== id)])}
+                style={{ marginLeft: 6 }}
+              >
+                {ordered.promoteLabel}
+              </TextAction>
+            )}
             {/* The button leaves the page; focus returns to the field. */}
             <CloseButton
               label={`Remove ${byId.get(id) ?? id}`}

@@ -18,6 +18,7 @@ import { RightRail } from '../../../admin/components/RightRail'
 import { WarningsToDo } from '../../../admin/components/WarningsToDo'
 import { NotificationsCard } from '../../../admin/components/NotificationsCard'
 import { ChipMultiSelect } from '../../../admin/components/ChipMultiSelect'
+import { RoomContactsList } from '../../../admin/components/RoomContactsList'
 import { ClearConflictSheet } from '../../../admin/components/conflicts/ClearConflictSheet'
 import { ConflictCallout, useConflictPreview } from '../../../admin/components/conflicts/ConflictCallout'
 import { BookingCount, DraftStateChip, UnassignedPill, WaitingTime } from '../../../admin/components/draftLists/DraftListParts'
@@ -299,6 +300,24 @@ export function ChipMultiSelectExample() {
   const options = useMemo(() => Object.values(specialties).sort((a, b) => a.name.localeCompare(b.name)), [specialties])
   const [value, setValue] = useState<string[]>([])
   return <ChipMultiSelect label="Specialties" options={options} value={value} onChange={setValue} addLabel="Add a specialty" empty="Any specialty" hint="Local state only." />
+}
+
+export function RoomContactsListExample() {
+  const room = useAppStore((s) => s.masters.surgeonRooms['RM-AVONHEADEN'])
+  if (room === undefined) return <Missing what="the Avonhead ENT room" />
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 420 }}>
+      <RoomContactsList room={room} surgeonId="S-DALGETY" actor={OFFICE_ACTOR} />
+      <ChipMultiSelect
+        label="Surgeons' rooms"
+        options={[{ id: 'a', name: 'Avonhead ENT' }, { id: 'b', name: 'Burnside ENT Surgeons' }]}
+        value={['a', 'b']}
+        onChange={() => undefined}
+        addLabel="Add another room"
+        ordered={{ firstLabel: 'Main room', promoteLabel: 'Make main' }}
+      />
+    </div>
+  )
 }
 
 export function CodePickerExample() {

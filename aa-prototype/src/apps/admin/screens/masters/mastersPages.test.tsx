@@ -111,7 +111,7 @@ describe('Master data views', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add surgeon' }))
     const sheet = () => document.querySelector('[data-shot="surgeon-edit-sheet"]') as HTMLElement
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ms R. Tester' } })
-    fireEvent.change(within(sheet()).getByLabelText("Surgeons' room"), { target: { value: 'RM-MERI' } })
+    fireEvent.change(within(sheet()).getByLabelText("Surgeons' rooms"), { target: { value: 'RM-MERI' } })
     fireEvent.change(screen.getByLabelText('HPI CPN (required)'), { target: { value: '12shap' } })
     // Catch-up Phase 18a: a surgeon needs at least one specialty (US-13.6.6).
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Add surgeon' }))
@@ -122,7 +122,7 @@ describe('Master data views', () => {
     fireEvent.change(screen.getByLabelText('HPI CPN (required)'), { target: { value: ' 50test ' } })
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Add surgeon' }))
     const added = Object.values(useAppStore.getState().masters.surgeons).find((s) => s.name === 'Ms R. Tester')
-    expect(added).toMatchObject({ hpiId: '50TEST', roomId: 'RM-MERI', specialtyIds: ['SPC-OPHTH'] })
+    expect(added).toMatchObject({ hpiId: '50TEST', roomIds: ['RM-MERI'], specialtyIds: ['SPC-OPHTH'] })
   })
 
   it('edits a hospital contact email, and shows "No contact email" when there is none', () => {
@@ -267,5 +267,102 @@ describe('cross-links', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Ms A. Reid' }))
     expect(onClose).toHaveBeenCalled()
     expect(location()).toBe(`/admin/masters/surgeons/${SURG.reid}`)
+  })
+})
+
+describe("catch-up Phase 17a: rooms without an email, a surgeon at two rooms, practice manager and PA contacts", () => {
+  beforeEach(() => {
+    useAppStore.setState(freshAppState())
+  })
+
+  const cards = (shot: string) => Array.from(document.querySelectorAll(`[data-shot="${shot}"]`)) as HTMLElement[]
+
+  it("a two-room surgeon's profile shows a room card and a contacts card per room, the main room first and labelled", () => {
+    renderAdmin('/admin/masters/surgeons/S-WAINWRIGHT')
+    const rooms = cards('surgeon-room-card')
+    expect(rooms.map((c) => c.getAttribute('data-room'))).toEqual(['RM-UPPERGIPAR', 'RM-HILLSBOROU'])
+    expect(within(rooms[0]!).getByText('Main room')).toBeInTheDocument()
+    expect(within(rooms[1]!).queryByText('Main room')).toBeNull()
+    expect(cards('surgeon-contacts').map((c) => c.getAttribute('data-room'))).toEqual(['RM-UPPERGIPAR', 'RM-HILLSBOROU'])
+    // The provisional line, once.
+    expect(screen.getAllByText("Where contacts belong, and which room's apply, is to be confirmed with AA")).toHaveLength(1)
+    // 18a's specialties stay on the profile.
+    expect(document.querySelector('[data-shot="surgeon-specialties"]')).toHaveTextContent('General surgery')
+  })
+
+  it('a room with no email says so; its whole-room practice manager is listed', () => {
+    renderAdmin('/admin/masters/surgeons/S-YEOMAN')
+    const room = cards('surgeon-room-card')[0]!
+    expect(within(room).getByText('No email held')).toBeInTheDocument()
+    expect(room.textContent).not.toContain('reception@')
+    const contacts = cards('surgeon-contacts')[0]!
+    expect(within(contacts).getByText('Rosalind Pemberton')).toBeInTheDocument()
+    expect(within(contacts).getByText('Practice manager')).toBeInTheDocument()
+    expect(within(contacts).getByText('Whole room')).toBeInTheDocument()
+  })
+
+  it("shows a contact named for this surgeon, never one named for a colleague; no contact reads as empty", () => {
+    renderAdmin('/admin/masters/surgeons/S-DALGETY')
+    const dalgety = cards('surgeon-contacts')[0]!
+    expect(within(dalgety).getByText('Bev')).toBeInTheDocument()
+    expect(within(dalgety).getByText('bev@avonheadent.example')).toBeInTheDocument()
+    expect(within(dalgety).getByText('For this surgeon')).toBeInTheDocument()
+  })
+
+  it("a colleague of the same room sees none of another surgeon's PA", () => {
+    renderAdmin('/admin/masters/surgeons/S-GARSIDE')
+    const garside = cards('surgeon-contacts')[0]!
+    expect(within(garside).queryByText('Bev')).toBeNull()
+    expect(within(garside).getByText('No practice manager or PA recorded.')).toBeInTheDocument()
+  })
+
+  it('adds a contact from the profile for this surgeon, then removes it with the confirm', () => {
+    renderAdmin('/admin/masters/surgeons/S-YEOMAN')
+    fireEvent.click(screen.getByRole('button', { name: /Add contact/ }))
+    const sheet = () => document.querySelector('[data-shot="room-contact-sheet"]') as HTMLElement
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Add contact' }))
+    expect(within(sheet()).getByRole('alert')).toHaveTextContent('A contact name is required.')
+    fireEvent.change(within(sheet()).getByLabelText('Name'), { target: { value: 'Fran' } })
+    fireEvent.change(within(sheet()).getByLabelText('Email'), { target: { value: 'fran@gsp.example' } })
+    expect((within(sheet()).getByLabelText('For') as HTMLSelectElement).value).toBe('S-YEOMAN')
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Add contact' }))
+    expect(document.querySelector('[data-shot="room-contact-sheet"]')).toBeNull()
+    const contacts = cards('surgeon-contacts')[0]!
+    expect(within(contacts).getByText('Fran')).toBeInTheDocument()
+    expect(useAppStore.getState().audit.at(-1)).toMatchObject({ action: 'roomContact.add', entityId: 'RM-GENERALSUR' })
+    fireEvent.click(within(contacts).getByRole('button', { name: 'Remove Fran' }))
+    fireEvent.click(within(contacts).getByRole('button', { name: 'Remove contact' }))
+    expect(within(contacts).queryByText('Fran')).toBeNull()
+    expect(useAppStore.getState().audit.at(-1)).toMatchObject({ action: 'roomContact.remove' })
+  })
+
+  it("the rooms view lists a two-room surgeon under both rooms, says when a room holds no email and counts contacts", () => {
+    renderAdmin('/admin/masters?view=surgeonRooms')
+    const row = (id: string) => document.querySelector(`tr[data-room="${id}"]`) as HTMLElement
+    expect(within(row('RM-UPPERGIPAR')).getByText('Mr N. Wainwright')).toBeInTheDocument()
+    expect(within(row('RM-HILLSBOROU')).getByText('Mr N. Wainwright')).toBeInTheDocument()
+    expect(within(row('RM-GENERALSUR')).getByText('No email held')).toBeInTheDocument()
+    expect(within(row('RM-BURNSIDEEN')).getByText('5 contacts')).toBeInTheDocument()
+    expect(within(row('RM-AVONHEADEN')).getByText('info@avonheadent.example')).toBeInTheDocument()
+    expect(document.querySelector('[data-shot="masters-surgeon-rooms"]')?.textContent).not.toContain('reception@generalsurgery')
+  })
+
+  it("the Surgeons table shows both of a two-room surgeon's rooms, main first", () => {
+    renderAdmin('/admin/masters?view=surgeons')
+    expect(document.querySelector('td[data-rooms="S-VAUGHAN"]')?.textContent).toBe('Imogen Vaughan · Orthopaedic SurgeonEdgeware Orthopaedic Specialists')
+  })
+
+  it("the edit sheet's Rooms multi-select makes another room the main one and refuses none", () => {
+    renderAdmin('/admin/masters/surgeons/S-VAUGHAN')
+    fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
+    const field = () => document.querySelector('[data-shot="surgeon-rooms-field"]') as HTMLElement
+    fireEvent.click(within(field()).getByRole('button', { name: 'Make main: Edgeware Orthopaedic Specialists' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    expect(useAppStore.getState().masters.surgeons['S-VAUGHAN']?.roomIds).toEqual(['RM-EDGEWAREOR', 'RM-IMOGENVAUG'])
+    fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
+    fireEvent.click(within(field()).getByRole('button', { name: 'Remove Edgeware Orthopaedic Specialists' }))
+    fireEvent.click(within(field()).getByRole('button', { name: 'Remove Imogen Vaughan · Orthopaedic Surgeon' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    expect(screen.getByRole('alert')).toHaveTextContent("Choose at least one surgeons' room.")
   })
 })

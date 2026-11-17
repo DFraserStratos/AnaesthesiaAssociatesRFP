@@ -110,7 +110,11 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v45: catch-up Phase 22a session 1, a payer on each Procedure (US-11.2.2, US-08.2.1; D85, provisional on
+/** v46: catch-up Phase 17a, surgeons' rooms (DM-60, US-13.6.5; D75): `Surgeon.roomId` becomes the ordered
+ *  `roomIds` (the four two-practice directory surgeons at both rooms), a room's `contactEmail` and `phone`
+ *  optional (the directory's invented reception@ addresses gone), and `SurgeonRoom.contacts` (seeded practice
+ *  manager and PA contacts). Reseeds on load.
+ *  v45: catch-up Phase 22a session 1, a payer on each Procedure (US-11.2.2, US-08.2.1; D85, provisional on
  *  OQ-140): `Procedure.payer` (Booking.payer gone; every Procedure takes its Booking's payer, BP ids kept),
  *  Grace Park's second Procedure (Hana Park copied, BP0001) and the two-payer Booking on the payer review
  *  List (BP0004, BP0005; the payer counter at 6). Reseeds on load.
@@ -267,7 +271,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 45
+export const PERSIST_VERSION = 46
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }

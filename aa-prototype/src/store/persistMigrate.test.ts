@@ -607,7 +607,7 @@ describe('a payer on each Procedure (catch-up Phase 22a)', () => {
   afterEach(() => localStorage.clear())
 
   it('discards a v44 store whose payer sits on the Booking and reseeds a payer on every Procedure', () => {
-    expect(PERSIST_VERSION).toBe(45)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(45)
     const fresh = freshAppState()
     // The v44 shape: the payer on the Booking, none on the Procedures.
     const bookings = Object.fromEntries(Object.entries(fresh.schedule.bookings).map(([id, b]) => [id, { ...b, payer: { kind: 'patient' } }]))
@@ -621,5 +621,34 @@ describe('a payer on each Procedure (catch-up Phase 22a)', () => {
     const s = createAppStore({ persisted: true }).getState()
     expect(Object.values(s.schedule.procedures).every((p) => p.payer !== undefined)).toBe(true)
     expect(Object.values(s.schedule.bookings).some((b) => 'payer' in b)).toBe(false)
+  })
+})
+
+describe("surgeons at more than one room and optional room emails (catch-up Phase 17a)", () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v45 store whose surgeons hold one roomId and reseeds roomIds and the rooms without an email', () => {
+    expect(PERSIST_VERSION).toBe(46)
+    const fresh = freshAppState()
+    // The v45 shape: one roomId per surgeon, every room with an email and a phone string.
+    const surgeons = Object.fromEntries(
+      Object.entries(fresh.masters.surgeons).map(([id, s]) => {
+        const { roomIds, ...rest } = s
+        return [id, { ...rest, roomId: roomIds[0] }]
+      }),
+    )
+    const surgeonRooms = Object.fromEntries(
+      Object.entries(fresh.masters.surgeonRooms).map(([id, r]) => [id, { id, name: r.name, contactEmail: r.contactEmail ?? 'reception@placeholder.example', phone: r.phone ?? '' }]),
+    )
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters: { ...fresh.masters, surgeons, surgeonRooms } }, version: 45 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.values(s.masters.surgeons).every((x) => Array.isArray(x.roomIds) && x.roomIds.length > 0)).toBe(true)
+    expect(Object.values(s.masters.surgeons).some((x) => 'roomId' in x)).toBe(false)
+    expect(s.masters.surgeonRooms['RM-GENERALSUR']?.contactEmail).toBeUndefined()
+    expect(s.masters.surgeons['S-WINSLOW']?.roomIds).toEqual(['RM-RICHMONDFE', 'RM-LINWOODWOM'])
   })
 })
