@@ -156,6 +156,8 @@ describe('bookingFeeFor · the mixed Booking (a fixed-price primary; OQ-132 defa
     expect([r.allocations['P-B']!.modifierShare, r.allocations['P-C']!.modifierShare]).toEqual([4, 3])
     expect([r.fees['P-A']!.total, r.fees['P-B']!.total, r.fees['P-C']!.total]).toEqual([2800, 180, 150])
     expect(r.total).toBe(3130)
+    // Units: the fixed primary records B 10 + T 6 for reference and no share; B 6 and C 5: 27, the 7 counted once.
+    expect(r.units).toBe(16 + 6 + 5)
   })
 
   it('4 or fewer: they sit on the fixed-price primary and are billed nowhere; B and C bill T 2 alone, $60 each; total $2,920', () => {

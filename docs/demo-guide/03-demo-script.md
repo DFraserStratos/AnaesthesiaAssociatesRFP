@@ -13,9 +13,10 @@ Where a scenario needs a worked example, use one recognisable business object:
 
 > Dr Melanie Souter's operating Lists, at Southern Cross, St George's and Forte Health.
 
-The seed keeps her design-day tableau (Tue 21 Jul), the split-billing and fee-split Lists (Mon 20
-Jul), a submitted review-queue List, forward Lists for the integration bookings (Tue 28 Jul), and the
-unfinished Margaret Ellison Booking designed for live capture.
+The seed keeps her design-day tableau (Tue 21 Jul), the multi-procedure and fee-split Lists (Mon 20
+Jul), a submitted review-queue List (Mon 13 Jul AM, the three-procedure Booking), forward Lists for
+the integration bookings (Tue 28 Jul), and the unfinished Margaret Ellison Booking designed for live
+capture.
 
 ## Pre-demo setup
 
@@ -605,21 +606,23 @@ List (our reading; no after-hours pricing).
 
 ## S3 · Money end-to-end
 
-**Serves:** the Billing Engine at the centre, split billing, the Xero pair, the two separate money
-states, and AA's own monthly fee. **Time:** 8 to 10 minutes. This is the money story's payoff, so authorise live.
+**Serves:** the Billing Engine at the centre, the multi-procedure rule, the Xero pair, the two
+separate money states, and AA's own monthly fee. **Time:** 8 to 10 minutes. This is the money story's payoff, so authorise live.
 
 **Stage it:** use **Reset → Confirm reset**, then go directly to Admin. Both of Dr Souter's Mon 20 Jul
-Lists are already in the Review queue: AM (Forte Health, the split-billing Booking) and PM
-(St George's, the fee-split Booking: nib $132.50, Alan Prentice the rest). Their invoices do not exist
-until you authorise the Lists live; the run then sends them.
+Lists are already in the Review queue: AM (Forte Health, the multi-procedure Booking) and PM
+(St George's, the fee-split Booking: nib $132.50, Alan Prentice the rest). Her Mon 13 Jul AM List
+(also Forte Health, the three-procedure Booking) waits there too; leave it for the optional point after
+Beat 1. The Mon 20 Jul invoices do not exist until you authorise the Lists live; the run then sends
+them.
 
 ### Beat 1: authorise and generate invoices
 
 - **Click:**
   - Go to **Admin → Review queue**.
-  - Process the two Melanie Lists: authorise Forte AM (the banner reads "3 invoices raised. 3 emailed,
-    0 to post."), then use **Next in queue** to authorise St George's PM ("4 invoices raised. 4
-    emailed, 0 to post.").
+  - Process the two Mon 20 Jul Melanie Lists: authorise Mon 20 Forte AM (the banner reads "3 invoices
+    raised. 3 emailed, 0 to post."), then use **Next in queue** to authorise St George's PM ("4
+    invoices raised. 4 emailed, 0 to post.").
   - Select **View invoices → AA-2026-0002 · Brian Holt → View**.
   - Pause on the **Delivery** card on the invoice rail: the run already emailed it ("Emailed to ... at
     08:00", a **Simulated send** badge, **Resend** and **Print**). Then pause on the invoice's head: Dr
@@ -627,8 +630,10 @@ until you authorise the Lists live; the run then sends them.
     Associates Limited as agent for Dr Melanie Souter. AA GST number 102-345-678.") with its
     **Provisional (OQ-29)** pill, and GST (15%) at the foot.
   - Select the **Invoices** breadcrumb at the top, locate the fixed comparison rows and pause:
-    - **AA-2026-0002 · Brian Holt · Forte Health · $365.70** is the one-invoice split-billing
-      Booking. (It read $396.18 before catch-up Phase 19b: his ASA II no longer seeds a modifier
+    - **AA-2026-0002 · Brian Holt · Forte Health · $365.70** is the one-invoice multi-procedure
+      Booking (additional procedure on its own time units; modifiers stay on the primary at 4 or
+      fewer): its additional line's BTM breakdown reads "Additional procedure: Time 2 units at
+      $26.50". (It read $396.18 before catch-up Phase 19b: his ASA II no longer seeds a modifier
       unit, because the RVG table prices ASA I or II at 0.)
     - **AA-2026-0005 · Alan Prentice · nib · $152.38** and **AA-2026-0006 · Alan Prentice · $91.43**
       (billed to Alan himself) are the two invoices from the same fee-split Booking at 14:00.
@@ -646,12 +651,13 @@ until you authorise the Lists live; the run then sends them.
   share a payer share one invoice. The layout
   follows the Contract (the holder's when it bills its holder) and GST is always added at the foot;
   the Party decides whether its invoice goes by email or post, and a payer with only a postal address
-  gets 'To post'. Alan's knee arthroscopy was split on the Booking: nib pays $132.50 and Alan the rest,
+  gets 'To post'. Brian Holt had two procedures in one episode: base units and modifiers sit on the
+  primary, the additional procedure bills its own time, and with one payer it is one invoice. Alan's knee arthroscopy was split on the Booking: nib pays $132.50 and Alan the rest,
   so nib is invoiced its share and Alan the gap, each on its own invoice. Xero follows as the
   receivables and banking service." Name the agent wording as provisional: it waits on AA's
   accountant (OQ-29).
 - **Expected:** invoice rows appear for both Lists, derived from the same captured data, with the
-  figures unchanged ($365.70; $152.38 and $91.43); one invoice for the split-billing Booking, two for
+  figures unchanged ($365.70; $152.38 and $91.43); one invoice for the multi-procedure Booking, two for
   the fee-split Booking, and AA-2026-0006 goes to Alan Prentice (the gap), not St George's. Each
   invoice shows its delivery stamp. Dr Souter's Mon 20 Jul Lists leave her main view (phone and web) as
   soon as the office authorises them, and their invoices show in her Balances at once, with no Next
@@ -669,6 +675,25 @@ until you authorise the Lists live; the run then sends them.
   Anaesthetists**, the GST number column; Dr Oliver Strand reads "Not held"), not on the anaesthetist's
   own profile; blank prints "GST number not held". **Master data → Contracts** shows the read-only
   Layout and Delivery columns. The agency wording waits on AA's accountant (OQ-29).
+
+**Worth pointing at (optional, the multi-procedure rule):** open Dr Souter's Mon 13 Jul AM List in the
+Review queue (`/admin/review/L-34821-2026-07-13-AM`, Forte Health, Mr Okafor): Graeme Tullett's row
+reads "M 7 · split 3 · 2 · 2". Open his Admin Booking (`/admin/day/2026-07-13/bookings/BK0184`): a
+laparoscopic cholecystectomy as the primary (listed first, with the **Primary** pill), then umbilical
+and inguinal hernia repairs. AS3, OB3 and emergency are claimed with their explanations and A1 is
+pre-applied from his age (74): 7 modifier units, recorded once on the primary and split 3 · 2 · 2, the
+remainder to the primary. The Booking total is **$636.00** (15, 4 and 5 units at $26.50). Select **Make
+primary** on the umbilical hernia and confirm ("Make this the primary procedure?"): it moves to the
+top, takes base 4 from its own RVG group and the 3 modifier units, and the total reads **$583.00**.
+Make the cholecystectomy primary again and **$636.00** returns. Authorising the List gives one invoice,
+to the patient. For the mixed Booking, open Mr Doyle's bariatric Booking
+(`/admin/day/2026-07-14/bookings/BK0028`): a **$2,800** fixed-price primary ("Primary · fixed
+price"), its hernia repair billed on its own time units ($61), and the note "No base units billed
+(provisional, OQ-132)". Two demo actions (harness bar, and the PWA Demo sheet) go further: **Load
+3-procedure Booking (7 modifier units)** adds the same Booking, not complete, to Dr Souter's next open
+List (Wed 22 Jul AM; then disabled, "Already loaded on ..."), and **Hospital feed changes the primary**,
+on any Booking with two or more Procedures, makes the next one primary, audited as the feed (refused on
+a submitted List: "A hospital feed cannot change a submitted List").
 
 ### Beat 2: the Xero collection and payable pair
 
@@ -926,7 +951,9 @@ published range, shown to the anaesthetist, and starts at its lower figure (OQ-1
 table as printed (values that are not plain numbers are entered at capture); only the age and included
 modifiers are pre-applied and nothing else is pre-filled (settled, Ben, 27 October); the age bands are
 still to confirm (OQ-95); modifiers stack with no limit; AA's own modifiers (Vanessa's list) are not yet
-loaded; and the concurrency model (single-user by design, audited
+loaded; which Procedure is primary (Vanessa: the most expensive; Greg: the first in the list; the
+build keeps the first until someone changes it); base units when the primary is on a fixed price (OQ-132:
+the build bills none); and the concurrency model (single-user by design, audited
 last-write-wins, with the multi-source reality shown via the audit trail and live integration updates).
 
 ---

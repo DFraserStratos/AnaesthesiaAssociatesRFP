@@ -64,7 +64,7 @@ export function useWebFixtures(): WebFixtures {
     let capture: WebFixtures['capture']
     if (withOpenWork !== undefined) {
       const booking = (activeOn.get(withOpenWork.id) ?? []).filter((b) => !b.completed).sort((a, b) => a.id.localeCompare(b.id))[0]
-      const proc = booking !== undefined ? Object.values(procedures).filter((p) => p.bookingId === booking.id).sort((a, b) => a.id.localeCompare(b.id))[0] : undefined
+      const proc = booking !== undefined ? Object.values(procedures).find((p) => p.bookingId === booking.id && p.isPrimary) : undefined
       if (booking !== undefined && proc !== undefined) capture = { listId: withOpenWork.id, bookingId: booking.id, procedureId: proc.id }
     }
 

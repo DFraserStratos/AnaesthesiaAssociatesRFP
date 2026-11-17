@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { inDisplayOrder } from '../../../domain/billing/multiProcedure'
 import { Link } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { accent, neutral, radius } from '../../../theme/tokens'
@@ -226,10 +227,11 @@ function ListBody({
                     {/* Each Procedure's stack, compact (catch-up Phase 20a; US-03.1.9). */}
                     {!cancelled && (
                       <div data-shot="drawer-procedure-stack" style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6 }}>
-                        {Object.values(schedule.procedures)
-                          .filter((p) => p.bookingId === booking.id)
-                          .sort((a, b) => a.id.localeCompare(b.id))
-                          .map((p, i, all) => {
+                        {inDisplayOrder(
+                          Object.values(schedule.procedures)
+                            .filter((p) => p.bookingId === booking.id)
+                            .sort((a, b) => a.id.localeCompare(b.id)),
+                        ).map((p, i, all) => {
                             const view = procedureStackViewFor({ masters, schedule }, p.id, 'office')
                             return view === undefined ? null : (
                               <ProcedureStack key={p.id} view={view} density="compact" surface="office" heading={all.length > 1 ? `Procedure ${i + 1}` : 'Procedure'} />

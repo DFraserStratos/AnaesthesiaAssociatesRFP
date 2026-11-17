@@ -49,7 +49,7 @@ export function MakePrimarySheet({ open, procedureId, actor, onClose, onDone }: 
     return {
       name: nameOf(procedure.id),
       oldName: old !== undefined ? nameOf(old.id) : '',
-      baseCleared: old !== undefined && (old.baseUnitsSelected !== undefined || old.baseUnitsCaptured?.source === 'overridden'),
+      baseCleared: old !== undefined && (old.baseUnitsSelected !== undefined || old.baseUnitsCaptured !== undefined),
       droppedCodes: dropped.map((c) => state.masters.modifiers[c.modifierId]?.code ?? c.modifierId),
     }
   }, [schedule, masters, procedure])

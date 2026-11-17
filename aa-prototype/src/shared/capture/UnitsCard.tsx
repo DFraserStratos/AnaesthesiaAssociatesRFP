@@ -149,8 +149,10 @@ function primaryModifierCaption(items: string, allocation: ProcedureAllocation):
 /** An additional Procedure's M caption: its share, none at 4 or fewer, or not shared on a fixed price (catch-up Phase 23). */
 function additionalModifierCaption(allocation: ProcedureAllocation): string {
   if (!allocation.rvgPriced) return "Not shared · priced by its Contract's fixed price"
-  if (allocation.splitAcross <= 1) return `None · the Booking's ${allocation.bookingModifierUnits} modifier units stay on the primary`
-  return `Share of the Booking's ${allocation.bookingModifierUnits} modifier units`
+  // A share whenever it holds one: also the whole total, when it is the only RVG-priced Procedure beside a fixed-price primary.
+  if (allocation.modifierShare > 0) return `Share of the Booking's ${allocation.bookingModifierUnits} modifier units`
+  if (allocation.bookingModifierUnits === 0) return 'None'
+  return `None · the Booking's ${allocation.bookingModifierUnits} modifier units stay on the primary`
 }
 
 /**

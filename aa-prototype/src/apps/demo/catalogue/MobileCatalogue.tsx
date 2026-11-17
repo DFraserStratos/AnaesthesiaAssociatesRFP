@@ -310,7 +310,7 @@ export function MobileCatalogue() {
       </LibraryGroup>
 
       <LibraryGroup id="custom">
-        <CatalogueRow name="ProcedureStack" source="shared/booking/ProcedureStack.tsx" usedIn={SW} stage="mobile" height={520} what="One Procedure's procedure text, invoice description, Contract and RVG code on every Booking screen, Admin Review and the List drawer, in full or compact density; still-to-choose parts are neutral and dashed." replaceWith="Custom (a description list on library primitives)" note="Fixed example views; nothing writes to the demo data.">
+        <CatalogueRow name="ProcedureStack" source="shared/booking/ProcedureStack.tsx" usedIn={SW} stage="mobile" height={520} what="One Procedure's procedure text, invoice description, Contract and RVG code on every Booking screen, Admin Review and the List drawer, in full or compact density; still-to-choose parts are neutral and dashed. On a multi-procedure Booking its heading takes a badge, the neutral Primary pill (catch-up Phase 23)." replaceWith="Custom (a description list on library primitives)" note="Fixed example views; nothing writes to the demo data.">
           <ProcedureStackExample layout="stacked" />
         </CatalogueRow>
         <CatalogueRow name="ContractApprovalLine" source="shared/booking/ContractApprovalLine.tsx" usedIn="Web · Mobile" stage="mobile" height={120} what="Under the anaesthetist's Billing card (catch-up Phase 21a): after they change a Procedure's Contract, Awaiting office approval, then Approved by the office with the time once the office approves it on Review or authorises the List." replaceWith="Custom (a text line)" note="Reads the seeded Contract change on Dr Chen's review-flags List; writes nothing.">

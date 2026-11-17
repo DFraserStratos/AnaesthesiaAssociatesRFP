@@ -262,7 +262,8 @@ Hooks already added:
 | Souter Tue 21 PM | `L-34821-2026-07-21-PM` | Southern Cross, Ms K. Patel. 4 bookings, Ellison pending, ACTIVE. |
 | Morrison Mon 20 | `L-25490-2026-07-20-AM` | SUBMITTED. 6 complete and 1 cancelled. |
 | Whitaker Fri 17 | `L-36208-2026-07-17-AM` | SUBMITTED. |
-| Souter Mon 20 AM | `L-34821-2026-07-20-AM` | SUBMITTED. Forte Health, Brian Holt's two Procedures on one invoice. Authorised first, it raises AA-2026-0002 to 0004. |
+| Souter Mon 13 AM | `L-34821-2026-07-13-AM` | SUBMITTED (catch-up Phase 23). Forte Health, Mr C. Okafor. One Booking: the three-procedure `BK0184` (Graeme Tullett), in the Review queue. |
+| Souter Mon 20 AM | `L-34821-2026-07-20-AM` | SUBMITTED. Forte Health, Brian Holt's two Procedures on one invoice (`BK0022`: the inguinal hernia repair the primary, the umbilical hernia repair additional). Authorised first, it raises AA-2026-0002 to 0004. |
 | Souter Mon 20 PM | `L-34821-2026-07-20-PM` | SUBMITTED. The fee-split Booking: Alan Prentice (`BK0025`), one Procedure's fee split between nib ($132.50) and Alan Prentice (the rest); see [Invoice presentation, delivery and the split](#invoice-presentation-delivery-and-the-split-catch-up-phase-22). Dr Souter can still change it (catch-up Phase 38a): "Amend" on a Booking makes Review show "Changed since submitted" and disables Authorise until it is completed again. |
 | Souter Fri 24 AM | `L-34821-2026-07-24-AM` | Pre-payment **unpaid** (Annette Riley). |
 | Souter Fri 24 PM | `L-34821-2026-07-24-PM` | Pre-payment **paid** (Priya Nair, `INV0001`). |
@@ -279,7 +280,9 @@ Hooks already added:
 `fixedPriceNoTimes` BK0176, `needsPriceBooking` BK0177, `contractChangeBooking` BK0178, `typedPriceBooking`
 BK0179, `reviewNeedsPrice` BK0180, `otherSurgeonContract` BK0181, `movableFixedBooking` BK0182. The List is
 `SEED_LIST_IDS.reviewFlags` (`L-45178-2026-07-14-AM`). Catch-up Phase 22: `feeSplitBooking` BK0025 ("One
-procedure's fee split between nib and the patient"; it replaces `twoFunderBooking`).
+procedure's fee split between nib and the patient"; it replaces `twoFunderBooking`). Catch-up Phase 23:
+`multiProcedureBooking` BK0184 ("Three procedures, 7 modifier units, split 3 · 2 · 2"; see
+[The primary Procedure and the multi-procedure rule](#the-primary-procedure-and-the-multi-procedure-rule-catch-up-phase-23)).
 
 ## Routes
 
@@ -293,7 +296,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | Route | Shows |
 |---|---|
 | `/web` | Dashboard: "Kia ora, Dr Souter", week strip, receivables aging, productivity, leave, "Offer cover". Add `?week=YYYY-MM-DD` (a Monday) to show another week. |
-| `/web/lists` | The web main view (catch-up Phase 38a): "Earlier, not yet authorised" first (`web-main-view-earlier`, Mon 20 Jul AM and PM), then "From today"; a Progress column (`[data-progress=submitted]` etc.); no From input, only To. Title row: the search pill (`[data-testid=web-lists-search]` on the `<input>`, `role=searchbox[name="Search your Bookings"]`; its X is "Clear the search field") and "Go to date" (`[data-testid=web-lists-go-to-date]` on the date input, inside a `<label>` "Go to date"). `?q=` shows the results table (`web-lookback-search`, rows `tr[data-booking-id]`, "Clear search"); `?day=YYYY-MM-DD` the day table (`web-lookback-day`, rows `tr[data-list-id]`). Back from List and Booking detail returns to the same `?q=` or `?day=` (location state). |
+| `/web/lists` | The web main view (catch-up Phase 38a): "Earlier, not yet authorised" first (`web-main-view-earlier`, Mon 13 Jul AM, then Mon 20 Jul AM and PM; catch-up Phase 23 added Mon 13, so pick a row by `tr[data-list-id=...]`, never `>> nth=0`), then "From today"; a Progress column (`[data-progress=submitted]` etc.); no From input, only To. Title row: the search pill (`[data-testid=web-lists-search]` on the `<input>`, `role=searchbox[name="Search your Bookings"]`; its X is "Clear the search field") and "Go to date" (`[data-testid=web-lists-go-to-date]` on the date input, inside a `<label>` "Go to date"). `?q=` shows the results table (`web-lookback-search`, rows `tr[data-booking-id]`, "Clear search"); `?day=YYYY-MM-DD` the day table (`web-lookback-day`, rows `tr[data-list-id]`). Back from List and Booking detail returns to the same `?q=` or `?day=` (location state). |
 | `/web/lists/:listId` | List detail: header, bookings table, "Add a booking", submit action. A SUBMITTED List stays editable (catch-up Phase 38a). An AUTHORISED List shows "Invoiced · read only" (`list-authorised-status`), an Invoiced column in place of Units and Fee, and the Invoices panel (`list-invoices`). |
 | `/web/lists/:listId/bookings/:bookingId` | Booking detail with capture: RVG code, times, units and the itemised modifiers, booking total, "Mark complete". On her own ACTIVE List dated today or later, "Move to a colleague" (`move-booking-action`) sits above Cancel booking and opens the single-Booking move as a dialog (catch-up Phase 32a). A Booking a colleague handed her shows "Moved to you by" (`booking-moved-to-you`). |
 | `/web/availability` | Find cover: the practice availability grid. `?date=YYYY-MM-DD` opens a day (catch-up Phase 32). Free cells read "Free · Open for booking". Dr Souter's own movable List cells show "Move" (`availability-move-mine-am`/`-pm`), and a colleague's free cell in a session where she has a movable List shows "Move here" (`availability-move-to-<registration>-am`/`-pm`); every other cell is inert. A "Moved to you" panel (`moved-to-you`) shows above the filters when a colleague moved a List to her this week. The "Find cover · My availability" switch (UI unification U5) is a navigation of links, `role=navigation[name="Availability page"]` holding `role=link[name="Find cover"]` and `role=link[name="My availability"]` (the current one has `aria-current=page`), on both pages; it is no longer a group of buttons. The day steps stay `role=button[name="Previous day"]`/`"Next day"`; the filter pills are `role=group[name="Anaesthetists shown"]` with buttons "All anaesthetists" and "Free only · N" (match "Free only" by `button:has-text("Free only")`). The "(you)" row's "Change" link opens My availability on that date. |
@@ -331,7 +334,7 @@ badge carries `data-shot=nav-badge-<section>`.
 
 | Route | Shows |
 |---|---|
-| `/mobile/lists` | The main view (catch-up Phase 38a): it opens scrolled so the Today heading (`mobile-lists-today`) sits at the top of `mobile-lists-scroll`; above it, "Earlier, not yet authorised" (`mobile-main-view-earlier-group`, Mon 20 Jul AM and PM, rows `[data-quiet=true]`, "Done · unbilled"), reached by scrolling up or the teal hint under Today (`mobile-main-view-earlier`, "2 earlier Lists not yet authorised"). Chips Week, Month, To-Do, Done (Done = submitted only; an authorised List is under no chip). In the fixed header: the search field (`[data-testid=mobile-lists-search]` on the `<input>`, `role=searchbox[name="Search your Bookings"]`, placeholder "Search patient name or NHI") and the calendar button (`[aria-label="Go to a date"]`) that opens the date sheet (`mobile-lookback-calendar`, days `[data-date=YYYY-MM-DD]`, labelled "Friday 13 March 2026, 1 List"; the title button opens month chips, e.g. `role=button[name="March 2026"]`). `?day=YYYY-MM-DD` shows that date's Lists (`mobile-lookback-day`) under a teal day chip (`mobile-lists-day-chip`); `?q=` shows results (`mobile-lookback-search`, rows `button[data-booking-id]`, Upcoming then Past) with the count line (`mobile-lists-search-count`). Free rows read "Open for bookings". |
+| `/mobile/lists` | The main view (catch-up Phase 38a): it opens scrolled so the Today heading (`mobile-lists-today`) sits at the top of `mobile-lists-scroll`; above it, "Earlier, not yet authorised" (`mobile-main-view-earlier-group`, Mon 13 Jul AM, Mon 20 Jul AM and PM, rows `[data-quiet=true]`, "Done · unbilled"), reached by scrolling up or the teal hint under Today (`mobile-main-view-earlier`, "3 earlier Lists not yet authorised" since catch-up Phase 23). Pick a row by `[data-testid=slide-home] [data-list-id="L-..."]`: a `button:has-text(...) >> nth=0` can land on an earlier List. Chips Week, Month, To-Do, Done (Done = submitted only; an authorised List is under no chip). In the fixed header: the search field (`[data-testid=mobile-lists-search]` on the `<input>`, `role=searchbox[name="Search your Bookings"]`, placeholder "Search patient name or NHI") and the calendar button (`[aria-label="Go to a date"]`) that opens the date sheet (`mobile-lookback-calendar`, days `[data-date=YYYY-MM-DD]`, labelled "Friday 13 March 2026, 1 List"; the title button opens month chips, e.g. `role=button[name="March 2026"]`). `?day=YYYY-MM-DD` shows that date's Lists (`mobile-lookback-day`) under a teal day chip (`mobile-lists-day-chip`); `?q=` shows results (`mobile-lookback-search`, rows `button[data-booking-id]`, Upcoming then Past) with the count line (`mobile-lists-search-count`). Free rows read "Open for bookings". |
 | `/mobile/lists?day=2026-03-13` | The pinned history day (`SEED_LOOKBACK`): one invoiced List, `L-HIST-2026-03-13-AM`. Back from its List returns here. |
 | `/mobile/lists/:listId` | List detail, with an "Add a booking" and "Mark list completed" footer. The tab bar is hidden. |
 | `/mobile/lists/:listId/bookings/:bookingId` | Booking detail. The tab bar is hidden. "Move to a colleague" (`move-booking-action`, scroll to it, above Cancel booking) opens the single-Booking move as a bottom sheet (catch-up Phase 32a). |
@@ -388,7 +391,8 @@ badge carries `data-shot=nav-badge-<section>`.
 - The one Booking on a priced item: BK0163, Sophie Matthews, Face lift on Dr Souter's Mon 10 Aug PM
   List (St George's, Ms Lim), `/admin/day/2026-08-10/bookings/BK0163`, unedited at $3,100; a range
   added from a date before 10 Aug re-prices it. The bariatric hernia (P0030 on BK0028) is on No
-  contract · RVG at $61, billed to the patient.
+  contract · RVG at $61, billed to the patient: the additional procedure beside the fixed-price gastric bypass
+  primary (the mixed Booking, catch-up Phase 23).
 - The row's Edit button's accessible name is "Edit <name>": click `button:text-is("Edit")` inside the
   row, not `role=button[name="Edit"]`. The search input is `[data-shot=contract-search] input`.
 
@@ -581,7 +585,9 @@ outline (`[data-shot=drawer-booking-warning]`), and the To-do card under the cal
 (`[data-shot=admin-warnings-todo]`) lists the warning with Open and Clear. PM is paid (Priya Nair:
 the success note keeps `booking-prepayment`).
 
-**Review queue (pristine):** Morrison, Whitaker, Souter Mon 20 AM and PM, Ropata, Delaney.
+**Review queue (pristine):** Morrison, Whitaker, Souter Mon 20 AM and PM, Ropata, Delaney, and since catch-up
+Phase 23 Souter Mon 13 AM (the three-procedure Booking; a second "Souter · Forte Health" row, so open a List by its
+route, never by row text).
 Authorising Morrison raises 6 invoices.
 
 **Web accounts (backdrop history)**
@@ -777,6 +783,46 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   Paediatric strabismus, May 2026) is billed to Hana Park and reads "Emailed to hana.park@example.net".
 - **History invoices** carry the supplier, agent and delivery stamped at raising; every seeded ACCPAY carries the
   buyer-created tax invoice (`xero-accpay-buyer-created` on `/demo/xero/invoices/XRH01`).
+
+### The primary Procedure and the multi-procedure rule (catch-up Phase 23)
+
+- **Every Booking has one primary Procedure, listed first** everywhere (capture, the procedure stack, the Booking
+  total, Review, invoice lines). With one Procedure nothing changes on screen. With two or more, the primary's heading
+  row (`[data-testid=procedure-header] >> nth=0`) carries the neutral pill `procedure-primary-pill` ("Primary"), and
+  each additional Procedure's heading row has the teal text action `make-primary` ("Make primary", beside Remove).
+  It opens `make-primary-sheet` ("Make this the primary procedure?", confirm `make-primary-confirm` "Make primary",
+  cancel "Keep <old>"); after confirming, the new primary moves to the top with the pill. Anyone with edit rights:
+  the office on ACTIVE and SUBMITTED Lists, the anaesthetist on her own ACTIVE List (a completed Booking needs Amend
+  first).
+- **An additional Procedure** shows the note `procedure-additional-note` ("Additional procedure. Base units are
+  charged on the primary procedure only. It earns its own time units, and an equal share of the Booking's modifiers
+  once they total more than 4."), its Units card's B row `units-row-b` reads 0 with "Base units are on the primary
+  procedure", and the caption row `modifiers-on-primary` ("Modifiers are recorded once for the Booking, on the
+  primary procedure.") replaces the Modifiers section. A ranged RVG group shows `rvg-range-additional` ("Base not
+  charged on an additional procedure"). Reach the additional's rows as `[data-shot=capture-units] >> nth=1 >>
+  [data-shot=units-row-b]`.
+- **Ellison** (`BK0009`, Souter Tue 21 PM): one Procedure until "Add another procedure"
+  (`role=button[name="Add another procedure"]`) is clicked; then two, the added one additional, starting on the primary's
+  Contract. The anaesthetist demo of Make primary: `/web/lists/L-34821-2026-07-21-PM/bookings/BK0009`,
+  `/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009`.
+- **The three-procedure Booking** (`SEED_MARKERS.multiProcedureBooking`): `BK0184`, Graeme Tullett (`PT0166`, 74, so
+  A1 pre-applied), on Dr Souter's Mon 13 Jul AM List `L-34821-2026-07-13-AM` (Forte Health, Mr C. Okafor),
+  SUBMITTED, completed. Procedures `P0189` laparoscopic cholecystectomy (primary; AS3, OB3 and ASE claimed), `P0190`
+  umbilical hernia repair and `P0191` inguinal hernia repair, all on No contract · RVG. Admin
+  `/admin/day/2026-07-13/bookings/BK0184`: the Booking total `[data-testid=booking-calculation]` holds
+  `booking-total-split` with rows noted "Primary · B + T + M 3 of 7", "Additional · T + M 2 of 7" (twice) and the
+  caption "Modifiers 7, split 3 · 2 · 2"; total $636.00. Make primary on the umbilical repair gives $583.00. Review
+  `/admin/review/L-34821-2026-07-13-AM`: `review-modifier-split` ("M 7 · split 3 · 2 · 2") and
+  `review-procedure-share` per Procedure ("Primary · B + T + M 3 of 7" first).
+- **Holt** (`BK0022`, Souter Mon 20 AM, `/admin/day/2026-07-20/bookings/BK0022`): `booking-total-split` rows
+  "Primary · B + T" and "Additional · T" (modifiers of 4 or fewer stay on the primary).
+- **The mixed Booking** (`BK0028`, Doyle bariatric, Fitzgerald Tue 14 Jul AM, `/admin/day/2026-07-14/bookings/BK0028`):
+  `booking-total-split` rows "Primary · fixed price" and "Additional · T", caption "No base units billed
+  (provisional, OQ-132)". A fixed or open price keeps its price and takes no modifier share.
+- **Office billing setup** headings read "Office billing setup · primary procedure" or "· additional procedure";
+  `office-billing-setup-<n>` is numbered in display order, so `-1` is always the primary.
+- Two-procedure Bookings also in the seed (primary first): `BK0033` Grace Park, `BK0038` Priya Nair, `BK0183` Joyce
+  Halvorsen.
 
 ## Overlays that need clicks
 
@@ -1087,6 +1133,14 @@ the exception: use the `trigger` step)
 
 ## Existing hooks
 
+- Catch-up Phase 23 (`data-shot`): `procedure-primary-pill` (the "Primary" pill in the primary's
+  `procedure-header`, only with two or more Procedures), `make-primary` (the teal text action on an additional
+  Procedure's heading row), `make-primary-sheet` and `make-primary-confirm`, `procedure-additional-note` (new wording),
+  `modifiers-on-primary` (the caption row on an additional Procedure's Units card, in place of `capture-modifiers`),
+  `rvg-range-additional`, `units-row-b` / `units-row-t` / `units-row-m` (the Units card's stepper rows),
+  `booking-total-split` (inside `booking-calculation` on a Booking with two or more Procedures: the per-Procedure rows
+  "Primary · ..." and "Additional · ..." and the split caption), Review `review-modifier-split` and
+  `review-procedure-share`. `office-billing-setup-<n>` is numbered in display order (the primary is 1).
 - UI unification Phase U5 (every earlier hook kept): `admin-day-nav` (test id, Admin Day's toolbar of day and week steps,
   Today, the date input, Find available and the Row order group); `data-draft-tab=unassigned|history` (attribute on the
   Draft Lists tab links). GONE: Review's "Back to queue" link and the invoice detail's "All invoices" link. The breadcrumb
@@ -1272,7 +1326,9 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   `procedure-contract` (Contract and pricing basis) and `procedure-rvg-code`. `procedure-description` (the
   manual form); the anaesthetist's billing reference field is gone (catch-up Phase 21: the approval number on `booking-funder-row` takes its place); `invoice-billed-to` (the payer's email or postal address under "Invoice to"); the invoice description prints on
   each line of `invoice-lines` (catch-up Phase 22; `invoice-procedure-heading` is gone);
-  `review-open-booking`. `data-testid=procedure-header` is the card's heading row, with Remove on an added procedure only.
+  `review-open-booking`. `data-testid=procedure-header` is the card's heading row: on a Booking with two or more Procedures the
+  primary's (always `>> nth=0`) carries `procedure-primary-pill`, and each additional one has Make primary
+  (`make-primary`) and Remove (catch-up Phase 23).
   The attachment hooks are gone. `booking-source` (the source line)
 
 **Web**
@@ -1433,6 +1489,8 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/mobile/lists` (PWA Demo sheet) | `office-adds-out-of-hours-list` | Catch-up Phase 32c, badged Office stand-in, PWA only. Opens Dr Souter's out-of-hours session for tonight (18:00 to 21:00) and assigns a List at the hospital and with the surgeon of her latest List; disabled while one is open tonight. In the framed build use Open out-of-hours session on Admin Day instead. |
 | `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `office-approves-contract-change` | Catch-up Phase 21a, badged Office stand-in, PWA only ("Office approves this Contract change"). Approves the Contract the anaesthetist changed on the Booking, as Approve on Review would, so `contract-approval-status` turns from "Awaiting office approval" to "Approved by the office <time>". Disabled when the Booking has no pending change (true of every Souter Booking at reset: change a Contract on the Billing sheet first). In the framed build use Approve on Admin Review. |
 | `/mobile/lists/<listId>`, `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `office-resolves-alert` | Catch-up Phase 32b, badged Office stand-in, PWA only. Ticks the viewed List's or Booking's open alert resolved as the simulated office, so the handset shows "The office has dealt with this". Disabled with no open alert. |
+| `/web/lists/<listId>`, `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/mobile/lists/<listId>[/bookings/<id>]` (bar and PWA) | `load-multi-procedure-booking` | Catch-up Phase 23, "Load 3-procedure Booking (7 modifier units)". Adds the three-procedure worked example (the same spec as the seeded BK0184) to Dr Souter's next open List, Wed 22 Jul AM (`L-34821-2026-07-22-AM`) on a fresh seed, as `BK0185`, not marked complete; result "Loaded on Dr Souter's ... List: 3 procedures, 7 modifier units, split 3 · 2 · 2." Disabled "Already loaded" on a second run. Open it at `/web/lists/L-34821-2026-07-22-AM/bookings/BK0185` or `/admin/day/2026-07-22/bookings/BK0185` |
+| `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/mobile/lists/<listId>/bookings/<id>` (bar and PWA) | `feed-changes-primary` | Catch-up Phase 23, "Hospital feed changes the primary". Shown only on a Booking with two or more Procedures: the List's hospital feed makes the next Procedure the primary, audited as an integration; it moves to the top with the Primary pill and base units come from it ("... made ... the primary. Base units now come from it."). Disabled on a SUBMITTED List ("A hospital feed cannot change a submitted List"), so not on BK0184 or Holt: run it on Ellison after "Add another procedure", or on BK0185 after `load-multi-procedure-booking` |
 | `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`: the prepayment and base-units samples); on a Booking, on that Booking (seeded Bookings only). Four rules since catch-up Phase 21: the child payer sample stages on the Booking on screen when its patient is under 18, otherwise on Grace Park's (BK0033: Hana Park out, the patient in); the approval number sample on the Booking on screen when it names an insurer, otherwise BK0074 (its number cleared). Catch-up Phase 22 adds a fifth, `splitDoesNotFit`: on the Booking on screen when its seed carries a split, otherwise the fee-split Booking BK0025, nib's share raised to $250.00 so the rest has nothing left. A Booking whose fee is split cannot take the prepayment sample. Clear restores them. Also in the PWA Demo sheet on a mobile Booking |
 
 The PWA-only entries (`office-authorises-list` on a mobile List, `office-clears-warning` on a

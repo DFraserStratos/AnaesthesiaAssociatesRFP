@@ -55,9 +55,8 @@ export function BookingDetailScreen({ bookingId, actor, onBack }: BookingDetailS
   const list = booking !== undefined ? listsRecord[booking.listId] : undefined
   const primary: Procedure | undefined = useMemo(() => {
     if (booking === undefined) return undefined
-    return Object.values(proceduresRecord)
-      .filter((p) => p.bookingId === bookingId)
-      .sort((a, b) => a.id.localeCompare(b.id))[0]
+    // The Booking's primary Procedure (catch-up Phase 23), not the first by id.
+    return Object.values(proceduresRecord).find((p) => p.bookingId === bookingId && p.isPrimary)
   }, [booking, bookingId, proceduresRecord])
 
   const warnings = useBookingWarnings(bookingId)

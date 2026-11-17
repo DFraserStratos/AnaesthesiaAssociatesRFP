@@ -6,11 +6,18 @@
     {
       "name": "additional-base",
       "app": "web",
-      "caption": "Additional procedure: base units not charged and not editable",
+      "caption": "Additional procedure: base units are charged on the primary procedure only",
       "start": "/web/lists/L-34821-2026-07-20-AM/bookings/BK0022",
       "states": [
         {
-          "steps": [],
+          "steps": [
+            {
+              "scroll": "[data-shot=capture-units] >> nth=1"
+            },
+            {
+              "wait": 300
+            }
+          ],
           "highlight": [
             "[data-shot=capture-units] >> nth=1 >> [data-shot=units-row-b]"
           ]
@@ -20,13 +27,64 @@
     {
       "name": "additional-base",
       "app": "mobile",
-      "caption": "Additional procedure: base units not charged and not editable",
+      "caption": "Additional procedure: base units are charged on the primary procedure only",
       "start": "/mobile/lists/L-34821-2026-07-20-AM/bookings/BK0022",
       "states": [
         {
-          "steps": [],
+          "steps": [
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=capture-units] >> nth=1"
+            },
+            {
+              "wait": 300
+            }
+          ],
           "highlight": [
             "[data-testid=slide-booking] [data-shot=capture-units] >> nth=1 >> [data-shot=units-row-b]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "modifier-split",
+      "app": "admin",
+      "caption": "Modifier units above 4 split equally across RVG-priced Procedures, the remainder to the primary",
+      "start": "/admin/day/2026-07-13/bookings/BK0184",
+      "states": [
+        {
+          "caption": "Seven modifier units over three RVG-priced Procedures: 3 on the primary, 2 on each additional",
+          "steps": [
+            {
+              "scroll": "[data-testid=booking-calculation]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-testid=booking-calculation] [data-shot=booking-total-split]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mixed-booking",
+      "app": "admin",
+      "caption": "A fixed-price primary keeps its price and takes no modifier share; the additional procedure bills its time units",
+      "start": "/admin/day/2026-07-14/bookings/BK0028",
+      "states": [
+        {
+          "caption": "Fixed-price primary, additional on time units, and no base units billed (provisional, OQ-132)",
+          "steps": [
+            {
+              "scroll": "[data-testid=booking-calculation]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-testid=booking-calculation] [data-shot=booking-total-split]"
           ]
         }
       ]

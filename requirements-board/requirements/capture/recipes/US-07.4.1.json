@@ -95,7 +95,7 @@
           "state": "submitted",
           "steps": [],
           "highlight": [
-            "[data-shot=web-main-view-earlier] tr[data-list-id]"
+            "[data-shot=web-main-view-earlier] tr[data-list-id^=\"L-34821-2026-07-20\"]"
           ]
         }
       ]

@@ -369,7 +369,7 @@ describe('removeProcedure', () => {
     expect(auditForEntity(api.getState(), line.value.billingLineId).at(-1)?.action).toBe('billingLine.remove')
   })
 
-  it('refuses the Booking\'s first procedure, whether or not it is the only one', () => {
+  it('refuses the Booking\'s primary procedure, whether or not it is the only one', () => {
     const api = store()
     const primary = firstProcedureId(api, ELLISON_BOOKING)
 

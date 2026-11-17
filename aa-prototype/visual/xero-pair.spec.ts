@@ -18,7 +18,8 @@ test('S3: the nib invoice opens its routed ACCREC and ACCPAY pair', async ({ pag
 
   // Authorise the Forte AM List and the St George's PM List.
   await page.getByRole('button', { name: /Review queue/ }).first().click()
-  const forteRow = page.getByRole('row').filter({ hasText: /Dr Melanie Souter/ }).filter({ hasText: /Forte Health/ })
+  // Mon 20 Jul: catch-up Phase 23 seeds a second Souter Forte List (Mon 13 Jul AM) in the queue.
+  const forteRow = page.getByRole('row').filter({ hasText: /Dr Melanie Souter/ }).filter({ hasText: /Forte Health/ }).filter({ hasText: /20 Jul/i })
   await forteRow.getByRole('button', { name: 'Review →' }).click()
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()
   await page.getByRole('button', { name: 'Authorise for billing' }).last().click()

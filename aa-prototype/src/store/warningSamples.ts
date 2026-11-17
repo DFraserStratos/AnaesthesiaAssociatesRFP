@@ -101,8 +101,7 @@ function lastChangedByDemo(state: SampleState, entityId: string): boolean {
 
 /**
  * The prepayment sample (catch-up Phase 20 re-points 15a's): the office moves
- * the Booking's first Procedure (in `proceduresForBooking` order; no primary
- * flag until Phase 23) onto a prepaid Contract through the step rail's own
+ * the Booking's primary Procedure (catch-up Phase 23) onto a prepaid Contract through the step rail's own
  * action: the List's first prepaid candidate (its anaesthetist's own price
  * list), else Patient › Prepaid's open-price fallback with the sample amount
  * typed. A prepaid Contract is what requires the prepayment (INTERIM until
@@ -205,13 +204,13 @@ const prepaymentSample: WarningSample = {
 const BASE_UNITS_FIELDS = ['rvgGroupId', 'baseUnitsSelected', 'baseUnitsCaptured'] as const satisfies readonly (keyof Procedure)[]
 
 /**
- * The Procedure the base-units sample stages on: the Booking's first Procedure
- * (in `proceduresForBooking` order) that carries an RVG code in the pristine
- * seed, else its first Procedure. A stable rule on the seed, never a hard-coded id.
+ * The Procedure the base-units sample stages on: the Booking's primary in the
+ * pristine seed, the only Procedure that records base units (catch-up Phase
+ * 23). A stable rule on the seed, never a hard-coded id.
  */
 function baseUnitsTarget(bookingId: string): Procedure | undefined {
   const seedProcs = proceduresForBooking(buildSeed(), bookingId)
-  return seedProcs.find((p) => p.rvgGroupId !== undefined) ?? seedProcs[0]
+  return seedProcs.find((p) => p.isPrimary) ?? seedProcs[0]
 }
 
 /**
@@ -246,6 +245,8 @@ const baseUnitsSample: WarningSample = {
     const target = baseUnitsTarget(bookingId)
     const p = target !== undefined ? state.schedule.procedures[target.id] : undefined
     if (p === undefined || target === undefined) return null
+    // After Make primary the seed's primary is additional, which refuses a base value (catch-up Phase 23).
+    if (!p.isPrimary) return 'Base units are recorded on the primary procedure: use Reset'
     // Never stage over someone's real edit to these fields: Clear would wipe it.
     if (BASE_UNITS_FIELDS.some((f) => !sameValue(p[f], target[f]))) return "This Booking's base units were changed: use Reset"
     const values = baseUnitsSampleValues(target)

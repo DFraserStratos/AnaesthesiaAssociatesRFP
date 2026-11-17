@@ -172,7 +172,7 @@ price list) and claims back themselves; nib is billed only through nib's own Con
 - No move ever resets a Procedure's Contract or typed price; a Contract that does not fit the new List
   is flagged at review.
 - Seeded: Dr Chen's Tue 14 Jul AM at Christchurch Eye Surgery (`/admin/review/L-45178-2026-07-14-AM`)
-  shows each flag; the Review queue holds 8 seeded submitted Lists.
+  shows each flag; the Review queue holds 9 seeded submitted Lists.
 
 ### Procedure text and the invoice description
 
@@ -186,11 +186,37 @@ price list) and claims back themselves; nib is billed only through nib's own Con
   invoice description on top; never the RVG code. The office's own wording always wins.
 - No attachments on Bookings or Lists. The demo's procedure wording is illustrative (AI-made), not AA's.
 
-### Split billing
+### Multi-procedure rule
 
-- A second/additional Procedure in the same episode (**Add another procedure**) is time-only; Brian Holt
-  on Dr Souter's Mon 20 AM List (the S3 split Booking) shows it.
-- Base and Modifiers cannot be charged again.
+- **One primary per Booking**, always listed first, with a neutral **Primary** pill when there are two
+  or more. Anyone with edit rights can make another Procedure primary (**Make primary**, teal; a bottom
+  sheet on the phone, a dialog on desktop: "Make this the primary procedure?"): the anaesthetist on her
+  own List until it is authorised (she amends a completed Booking first), the office on `ACTIVE` and
+  `SUBMITTED` Lists, a hospital feed on `ACTIVE` Lists only. Removing the primary is refused; nothing is
+  promoted silently.
+- **Base** on the primary only, from its RVG group or the value recorded; none when the primary is on a
+  fixed or open price (OQ-132).
+- **Time** on every Procedure, from its own times.
+- **Modifiers** recorded once for the Booking, on the primary: all on the primary at 4 units or fewer;
+  above 4, split equally across the RVG-priced Procedures with the remainder to the primary (7 over 3 =
+  3 / 2 / 2, agreed with AA on 7 October), whichever Contracts the Procedures are on.
+- The rule adjusts RVG-priced Procedures only: a fixed or open price keeps its price and takes no share,
+  and on a mixed Booking whose primary is a fixed price no base units are billed (provisional, OQ-132).
+- AA confirmed the rule on 19 October (OQ-90): one rule system-wide, no switch. Which Procedure is
+  primary is not settled (Vanessa: the most expensive; Greg: the first in the list), so the first
+  stays primary until someone changes it.
+- Seeded: Brian Holt (Dr Souter's Mon 20 AM, Forte, the S3 multi-procedure Booking): additional line
+  "Additional procedure: Time 2 units at $26.50", total rows "Primary · B + T" and "Additional · T",
+  one invoice. Mr Doyle's bariatric Booking (Tue 14 Jul, `BK0028`) is the mixed Booking: $2,800 fixed
+  primary ("Primary · fixed price"), its hernia repair on its own time units ($61), "No base units
+  billed (provisional, OQ-132)". Graeme Tullett (Dr Souter's Mon 13 Jul AM, Forte Health, in the
+  Review queue, `/admin/day/2026-07-13/bookings/BK0184`): three Procedures, 7 modifier units split
+  3 · 2 · 2, $636.00; Make primary on the umbilical hernia gives $583.00.
+- Demo actions: **Load 3-procedure Booking (7 modifier units)** (the same Booking, not complete, on
+  Dr Souter's next open List) and **Hospital feed changes the primary** (refused on a submitted List).
+
+### Splitting a Procedure's fee
+
 - **Split** is pressed in the Billing card's Paid by line, on its right (it opens the Paid by sheet with the split alone; **Change**, beside the payer's name, opens it with who pays) on each Procedure of a Booking, for the office or the
   anaesthetist (on her own Booking, phone and web, until the List is authorised). Each party's share is
   typed in $ or %, one party can take the rest, a share can go to **Another person** (name and an
@@ -240,8 +266,8 @@ price list) and claims back themselves; nib is billed only through nib's own Con
   plus 1 add on is its own Contract; fee extras (a GA add-on fee, per 15 minutes over 120, per area)
   are events, not Contracts. An anaesthetist's price list is one prepaid Contract per item, kept by
   the office, every price above zero (Dr Souter's). Prices are ex GST, GST at the invoice foot.
-- No Contract prices a second procedure: Doyle's bariatric hernia now bills at RVG under No contract ·
-  RVG, time units only.
+- No Contract prices an additional procedure by its own rule: Doyle's bariatric hernia bills at RVG
+  under No contract · RVG on its own time units, under the multi-procedure rule.
 - **No contract · RVG**, held by AA, is always there.
 - Every Contract has AA's own code (for example `COS-001`).
 - A Contract carries none or more **specialties** from AA's list (none means every specialty) and at
@@ -524,11 +550,13 @@ Say:
   and anyone who marks a booked session unavailable is asked first whether the List returns to the
   office or goes to a colleague (US-01.5.5).
 
-### 7. Split-billing invoice count
+### 7. Multi-procedure invoice count
 
 - RFP grouping text says same-counterparty Procedures share an invoice.
-- Split-billing text says two invoices in both split cases.
-- The prototype makes one invoice per billable party per Booking; a Split on the Booking (Paid by in a Procedure's Billing card, each party's share in $ or %, one party taking the rest) gives one
+- The RFP's "Split Billing" section says two invoices, both for multiple procedures in one episode and
+  for a partly covered procedure.
+- Invoices group by billable party: one invoice per billable party per Booking, so a multi-procedure
+  Booking with one payer is one invoice and one BCTI. A Split on the Booking (Paid by in a Procedure's Billing card, each party's share in $ or %, one party taking the rest) gives one
   invoice per share. No split setting on the Contract.
 
 ### 8. Pre-payment

@@ -40,8 +40,8 @@
         {
           "steps": [],
           "highlight": [
-            "[data-testid=slide-home] button:has-text(\"St George\") >> nth=0",
-            "[data-testid=slide-home] button:has-text(\"Southern Cross\") >> nth=0"
+            "[data-testid=slide-home] [data-list-id=\"L-34821-2026-07-21-AM\"]",
+            "[data-testid=slide-home] [data-list-id=\"L-34821-2026-07-21-PM\"]"
           ]
         }
       ]

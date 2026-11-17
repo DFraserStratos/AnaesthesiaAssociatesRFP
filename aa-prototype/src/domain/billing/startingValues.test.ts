@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { fillFromContract } from './startingValues'
 import { BASE_SINGLE_10, mkAnaesthetist, mkContract, mkProcedure } from './fixtures'
-import { soleProcedureFee as feeFor } from './bookingFee'
+import { soleProcedureFee as feeFor } from './fixtures'
 import { DEFAULT_RVG_TIME_RULE } from './timeUnits'
 import type { RvgGroup } from '../types'
 

@@ -186,7 +186,7 @@ export function WebCatalogue() {
         </LibraryGroup>
 
         <LibraryGroup id="numberflow">
-          <CatalogueRow name="BookingTotalPanel · useTickingValue" source="shared/capture/BookingTotalPanel.tsx" usedIn={WA} what="The ink Booking total: breakdown lines, units and fee, rate and override note. Units and fee tick to new values with a green flash." replaceWith="NumberFlow (optional swap for useTickingValue)" note="Fed local figures here. Keep the flash and the reduced-motion jump; animate nothing that is static today.">
+          <CatalogueRow name="BookingTotalPanel · useTickingValue" source="shared/capture/BookingTotalPanel.tsx" usedIn={WA} what="The ink Booking total: breakdown lines, units and fee, rate and override note. Units and fee tick to new values with a green flash. On a multi-procedure Booking its rows say each Procedure's place in the rule (Primary · B + T + M 3 of 7) and plain captions follow (Modifiers 7, split 3 · 2 · 2), all under booking-total-split (catch-up Phase 23)." replaceWith="NumberFlow (optional swap for useTickingValue)" note="Fed local figures here. Keep the flash and the reduced-motion jump; animate nothing that is static today.">
             <D.BookingTotalDemo f={f} />
           </CatalogueRow>
         </LibraryGroup>
@@ -201,7 +201,7 @@ export function WebCatalogue() {
         </LibraryGroup>
 
         <LibraryGroup id="custom">
-          <CatalogueRow name="ProcedureStack" source="shared/booking/ProcedureStack.tsx" usedIn={ALL} what="One Procedure's procedure text, invoice description, Contract and RVG code on every Booking screen, Admin Review and the List drawer, in full or compact density; still-to-choose parts are neutral and dashed." replaceWith="Custom (a description list on library primitives)" note="Fixed example views; nothing writes to the demo data.">
+          <CatalogueRow name="ProcedureStack" source="shared/booking/ProcedureStack.tsx" usedIn={ALL} what="One Procedure's procedure text, invoice description, Contract and RVG code on every Booking screen, Admin Review and the List drawer, in full or compact density; still-to-choose parts are neutral and dashed. On a multi-procedure Booking its heading takes a badge, the neutral Primary pill (catch-up Phase 23)." replaceWith="Custom (a description list on library primitives)" note="Fixed example views; nothing writes to the demo data.">
             <ProcedureStackExample />
           </CatalogueRow>
             <CatalogueRow name="PayerFields (DifferentPayerTick, OtherPayerFields, PostalAddressFields)" source="shared/flows/PayerFields.tsx, PostalAddressFields.tsx" usedIn={ALL} what="The payer form's parts, in PaidBySheet's Who pays and the add forms (U4 migrates them): the Different payer tick, then the other payer's name, relationship chips, email, NZ Post postal address and phone." replaceWith="shadcn Checkbox card, ToggleGroup and Input" note="Local state only; nothing writes to the demo data.">

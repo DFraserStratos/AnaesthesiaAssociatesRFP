@@ -225,12 +225,14 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   // After Make primary the new primary's block slides into the top place (the theme's
   // selection-slide, never blocking; reduced motion is the 80 ms fade).
   const blockRefs = useRef(new Map<string, HTMLDivElement>())
+  // Keyed by Booking, so opening another Booking never plays it.
   const lastPrimary = useRef<string | undefined>(undefined)
   useEffect(() => {
     const id = bookingTotals.primaryId
+    const key = id === undefined ? undefined : `${bookingId}:${id}`
     const previous = lastPrimary.current
-    lastPrimary.current = id
-    if (previous === undefined || id === undefined || previous === id) return
+    lastPrimary.current = key
+    if (previous === undefined || id === undefined || key === undefined || previous === key || !previous.startsWith(`${bookingId}:`)) return
     const el = blockRefs.current.get(id)
     if (el === undefined || typeof el.animate !== 'function') return
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
@@ -238,7 +240,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       reduced ? [{ opacity: 0.6 }, { opacity: 1 }] : [{ transform: 'translateY(24px)', opacity: 0.6 }, { transform: 'none', opacity: 1 }],
       { duration: reduced ? motion.reducedMotionFade : motion.selectionSlide.duration, easing: reduced ? 'linear' : motion.selectionSlide.easing },
     )
-  }, [bookingTotals.primaryId])
+  }, [bookingTotals.primaryId, bookingId])
 
   /**
    * The breakdown behind the pinned Booking total. Rows are per PROCEDURE on a

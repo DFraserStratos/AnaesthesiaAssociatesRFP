@@ -14,10 +14,12 @@
  * Seeded after every other Booking and Procedure (the next free ids), RNG-free,
  * with its own fixed patient, on Dr Souter's Mon 13 Jul AM List (Forte,
  * Mr Okafor; empty and unscripted before this phase), left SUBMITTED with the
- * Booking completed, so it waits in the Review queue.
+ * Booking completed, so it waits in the Review queue. (A Southern Cross List
+ * was tried and dropped: today's PM List is Southern Cross, and the phone's
+ * earlier group would have shown a second one above it.)
  */
 
-import type { AuditEntry, Booking, ModifierClaim, Procedure } from '../types'
+import type { AuditEntry, Booking, ModifierClaim, Procedure, Session } from '../types'
 import { applyClaim } from '../billing/modifiers'
 import { CONTRACT } from './contracts'
 import { PAT_23 } from './patients'
@@ -36,8 +38,6 @@ export interface MultiProcedureDemoProcedure {
 /** The shared spec: the seed and the demo trigger build the same Booking from it. */
 export const MULTI_PROCEDURE_DEMO = {
   patientId: PAT_23.multiProcedure,
-  /** 08:30 on the List's date. */
-  startHHMM: '08:30',
   procedures: [
     { legacyCode: '20941', text: 'Laparoscopic cholecystectomy', fromMinute: 0, toMinute: 90 },
     { legacyCode: '49120', text: 'Umbilical hernia repair, same anaesthetic', fromMinute: 90, toMinute: 120 },
@@ -53,6 +53,12 @@ export const MULTI_PROCEDURE_DEMO = {
 
 /** The List the seeded copy sits on: Dr Souter, Mon 13 Jul AM (Forte, Mr Okafor). */
 export const MULTI_PROCEDURE_LIST_DATE = '2026-07-13'
+export const MULTI_PROCEDURE_LIST_SESSION = 'AM' as const
+
+/** When the anaesthetic starts: 08:30 on a morning List, 13:30 otherwise. */
+export function multiProcedureStart(session: Session): string {
+  return session === 'AM' ? '08:30' : '13:30'
+}
 
 /** `HH:MM` plus minutes, on a date: a local ISO stamp like every seeded time. */
 export function multiProcedureStamp(dateISO: string, startHHMM: string, minutes: number): string {
@@ -79,7 +85,8 @@ export function seedMultiProcedureBooking(
   const day = MULTI_PROCEDURE_LIST_DATE
   const bookingId = `BK${String(next.booking).padStart(4, '0')}`
   let p = next.procedure
-  const at = (minutes: number) => multiProcedureStamp(day, MULTI_PROCEDURE_DEMO.startHHMM, minutes)
+  const start = multiProcedureStart(MULTI_PROCEDURE_LIST_SESSION)
+  const at = (minutes: number) => multiProcedureStamp(day, start, minutes)
   const last = MULTI_PROCEDURE_DEMO.procedures[MULTI_PROCEDURE_DEMO.procedures.length - 1]!
   const completedAtISO = at(last.toMinute + 15)
 
@@ -104,7 +111,7 @@ export function seedMultiProcedureBooking(
     id: bookingId,
     listId,
     patientId: MULTI_PROCEDURE_DEMO.patientId,
-    scheduledTime: MULTI_PROCEDURE_DEMO.startHHMM,
+    scheduledTime: start,
     completed: true,
     completedAtISO,
     // The seed's source rule: Forte's rooms send PDFs.

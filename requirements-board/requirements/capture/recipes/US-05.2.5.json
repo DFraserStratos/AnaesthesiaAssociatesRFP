@@ -6,7 +6,7 @@
     {
       "name": "fixed-price",
       "app": "admin",
-      "caption": "Gastric bypass priced at its fixed price, units still recorded",
+      "caption": "Gastric bypass at its fixed price as the primary procedure; the additional hernia repair bills its time units",
       "start": "/admin/day/2026-07-14/bookings/BK0028",
       "states": [
         {

@@ -13,7 +13,10 @@
 import { describe, expect, it } from 'vitest'
 import baselineJson from './__parity__/phase-23-baseline.json'
 import { capturePhase23, type FeeRow23, type Phase23Baseline } from './__parity__/phase23Capture'
-import { freshAppState } from './appStore'
+import { createAppStore, freshAppState } from './appStore'
+import { authoriseList } from './lifecycle'
+import { handoffListCases, runBillingForList } from './billingRun'
+import { bctiRecords } from './selectors'
 import { MULTI_PROCEDURE_IDS, SEED_MARKERS } from '../domain/seed'
 
 const baseline = baselineJson as unknown as Phase23Baseline
@@ -112,5 +115,16 @@ describe('Phase 23 census of multi-procedure Bookings (FT-03.2 and US-05.3.5 car
       [MULTI_PROCEDURE_IDS.procedures[2], 5, 132.5], // T 3 + M 2
     ])
     expect(invoice!.subtotal).toBe(636)
+  })
+  it('authorising its List raises one receivable and one BCTI for it (grouping by payer unchanged)', () => {
+    const api = createAppStore()
+    const booking = api.getState().schedule.bookings[MULTI_PROCEDURE_IDS.booking]!
+    const before = bctiRecords(api.getState()).length
+    expect(authoriseList(api, { who: 'Kirsty W.', role: 'office', source: 'office' }, booking.listId).ok).toBe(true)
+    expect(runBillingForList(api, booking.listId).ok).toBe(true)
+    handoffListCases(api, booking.listId)
+    const invoices = Object.values(api.getState().billing.invoices).filter((i) => i.bookingId === booking.id && i.kind === 'standard')
+    expect(invoices).toHaveLength(1)
+    expect(bctiRecords(api.getState()).length - before).toBe(1)
   })
 })

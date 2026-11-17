@@ -7,7 +7,7 @@ import { baseUnitsFor, baseUnitsShort, baseUnitsText, isRecordableBaseUnits } fr
 import { editProcedure, pickRvgGroup, useAppStore, type Actor } from '../../store'
 import { CodePickerSheet } from './CodePickerSheet'
 import { RvgCodeList, rvgSections } from './RvgCodeList'
-import { FailureNotes, NumberStepper } from './ui'
+import { Caption, FailureNotes, NumberStepper } from './ui'
 
 interface RvgCodeBaseProps {
   procedure: Procedure
@@ -219,9 +219,9 @@ export function RvgCodeField({
         <RangeUnitsRow procedure={procedure} rvgGroup={{ ...rvgGroup, baseUnitsRange: rvgGroup.baseUnitsRange }} canCapture={canCapture} onSelect={selectRangeUnits} />
       )}
       {rvgGroup?.baseUnitsRange !== undefined && !procedure.isPrimary && (
-        <span data-shot="rvg-range-additional" style={{ fontSize: 12.5, color: neutral.slate }}>
-          Base not charged on an additional procedure
-        </span>
+        <div data-shot="rvg-range-additional">
+          <Caption>Base not charged on an additional procedure</Caption>
+        </div>
       )}
 
       {look === 'row' && (

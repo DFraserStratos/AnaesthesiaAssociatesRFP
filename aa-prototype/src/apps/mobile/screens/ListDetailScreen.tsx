@@ -81,11 +81,10 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
   const cueState = useAppStore((s) => s)
   const model = useMemo(() => {
     if (list === undefined) return undefined
-    // Primary op per booking = the lowest-id (first-created) procedure's label (catch-up Phase 20a).
+    // The row's operation is the Booking's primary Procedure (catch-up Phase 23).
     const firstProcByBooking = new Map<string, Procedure>()
     for (const p of Object.values(proceduresRecord)) {
-      const current = firstProcByBooking.get(p.bookingId)
-      if (current === undefined || p.id < current.id) firstProcByBooking.set(p.bookingId, p)
+      if (p.isPrimary) firstProcByBooking.set(p.bookingId, p)
     }
     const rows: BookingRow[] = Object.values(bookingsRecord)
       .filter((c) => c.listId === listId)

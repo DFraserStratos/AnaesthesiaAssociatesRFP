@@ -1,6 +1,244 @@
 {
   "id": "US-03.2.2",
-  "status": "absent",
-  "absentReason": "The first procedure on a booking is its fixed anchor (it cannot be removed and there is no control to make another procedure primary). Searched BookingDetailBody, BtmCaptureBlock, EditProcedureSheet, AdminBookingDetail and the store for a primary switch.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "make-primary",
+      "app": "web",
+      "caption": "Anyone with edit rights can set the primary Procedure, and it is shown first",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "states": [
+        {
+          "state": "before",
+          "caption": "An added Procedure offers Make primary beside Remove",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add another procedure\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "[data-shot=make-primary]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-testid=procedure-header] >> nth=1"
+          ]
+        },
+        {
+          "state": "sheet",
+          "caption": "Make primary asks first: base units and the modifiers move to the new primary",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add another procedure\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=make-primary]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=make-primary-sheet]"
+          ]
+        },
+        {
+          "state": "moved",
+          "caption": "The new primary moves to the top with the Primary pill",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add another procedure\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=make-primary]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=make-primary-confirm]"
+            },
+            {
+              "wait": 700
+            }
+          ],
+          "highlight": [
+            "[data-testid=procedure-header] >> nth=0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "make-primary",
+      "app": "mobile",
+      "caption": "Anyone with edit rights can set the primary Procedure, and it is shown first",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "states": [
+        {
+          "state": "before",
+          "caption": "An added Procedure offers Make primary beside Remove",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add another procedure\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=make-primary]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-testid=procedure-header] >> nth=1"
+          ]
+        },
+        {
+          "state": "sheet",
+          "caption": "Make primary asks first: base units and the modifiers move to the new primary",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add another procedure\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-testid=slide-booking] [data-shot=make-primary]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [data-shot=make-primary-sheet]"
+          ]
+        },
+        {
+          "state": "moved",
+          "caption": "The new primary moves to the top with the Primary pill",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add another procedure\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-testid=slide-booking] [data-shot=make-primary]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=make-primary-confirm]"
+            },
+            {
+              "wait": 700
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-testid=procedure-header] >> nth=0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "make-primary",
+      "app": "admin",
+      "caption": "Anyone with edit rights can set the primary Procedure, and it is shown first",
+      "start": "/admin/day/2026-07-13/bookings/BK0184",
+      "states": [
+        {
+          "state": "before",
+          "caption": "The office can make an additional Procedure the primary on a submitted List",
+          "steps": [
+            {
+              "scroll": "[data-shot=make-primary] >> nth=0"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-testid=procedure-header] >> nth=1"
+          ]
+        },
+        {
+          "state": "sheet",
+          "caption": "Make primary asks first: base units and the modifiers move to the new primary",
+          "steps": [
+            {
+              "click": "[data-shot=make-primary] >> nth=0"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=make-primary-sheet]"
+          ]
+        },
+        {
+          "state": "moved",
+          "caption": "The umbilical hernia repair is now the primary, shown first, and the Booking total follows",
+          "steps": [
+            {
+              "click": "[data-shot=make-primary] >> nth=0"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=make-primary-confirm]"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "scroll": "[data-testid=procedure-header] >> nth=0"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-testid=procedure-header] >> nth=0"
+          ]
+        }
+      ]
+    }
+  ]
 }

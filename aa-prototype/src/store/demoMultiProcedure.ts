@@ -18,7 +18,7 @@
 
 import { format, parseISO } from 'date-fns'
 import type { AssignedList, Procedure } from '../domain/types'
-import { MULTI_PROCEDURE_DEMO, multiProcedureStamp } from '../domain/seed/multiProcedureDemo'
+import { MULTI_PROCEDURE_DEMO, multiProcedureStamp, multiProcedureStart } from '../domain/seed/multiProcedureDemo'
 import { rvgGroupIdForLegacyCode } from '../domain/seed/rvgGroups'
 import { seedModifierId } from '../domain/seed/modifiers'
 import { CONTRACT } from '../domain/seed/contracts'
@@ -27,7 +27,8 @@ import { procedureLabel } from '../domain/billing/procedureStack'
 import type { AppState, AppStoreApi } from './appStore'
 import { addProcedure, createBooking, setPrimaryProcedure } from './bookingActions'
 import { setProcedureContract } from './contractSelectionActions'
-import { editProcedure } from './lifecycle'
+import { cancelBooking, editProcedure } from './lifecycle'
+import { pickRvgGroup } from './rvgGroupActions'
 import { claimModifier } from './modifierActions'
 import { DEMO_OFFICE_ACTOR } from './demoActors'
 import { integrationActorForHospital } from './integrationActions'
@@ -73,8 +74,9 @@ export function stageMultiProcedureBooking(api: AppStoreApi): Outcome<{ bookingI
   if (patient === undefined) return refuse('notFound', 'The demo patient is missing.')
   const actor = DEMO_OFFICE_ACTOR
   const [first, ...rest] = MULTI_PROCEDURE_DEMO.procedures
+  let bookingId: string | undefined
   try {
-    const { bookingId } = must(
+    ;({ bookingId } = must(
       createBooking(api, actor, list.id, {
         patient: { name: patient.name, dobISO: patient.dobISO, ...(patient.nhi !== undefined ? { nhi: patient.nhi } : {}) },
         sourceText: { text: first!.text, source: 'email' },
@@ -82,10 +84,11 @@ export function stageMultiProcedureBooking(api: AppStoreApi): Outcome<{ bookingI
         governingContractId: CONTRACT.noContractRvg,
         scheduledTime: '16:30',
       }),
-    )
+    ))
     for (const spec of rest) {
       const { procedureId } = must(addProcedure(api, actor, bookingId, { governingContractId: CONTRACT.noContractRvg }))
-      must(editProcedure(api, actor, procedureId, { rvgGroupId: rvgGroupIdForLegacyCode(spec.legacyCode) }))
+      // 19's RVG code pick, as the office would make it.
+      must(pickRvgGroup(api, actor, procedureId, rvgGroupIdForLegacyCode(spec.legacyCode)))
     }
     const procedures = proceduresForBooking(api.getState(), bookingId)
     MULTI_PROCEDURE_DEMO.procedures.forEach((spec, i) => {
@@ -93,8 +96,8 @@ export function stageMultiProcedureBooking(api: AppStoreApi): Outcome<{ bookingI
       if (p.governingContractId === undefined) must(setProcedureContract(api, actor, p.id, CONTRACT.noContractRvg))
       must(
         editProcedure(api, actor, p.id, {
-          anaestheticStartISO: multiProcedureStamp(list.dateISO, MULTI_PROCEDURE_DEMO.startHHMM, spec.fromMinute),
-          handoverISO: multiProcedureStamp(list.dateISO, MULTI_PROCEDURE_DEMO.startHHMM, spec.toMinute),
+          anaestheticStartISO: multiProcedureStamp(list.dateISO, multiProcedureStart(list.session), spec.fromMinute),
+          handoverISO: multiProcedureStamp(list.dateISO, multiProcedureStart(list.session), spec.toMinute),
         }),
       )
     })
@@ -104,6 +107,8 @@ export function stageMultiProcedureBooking(api: AppStoreApi): Outcome<{ bookingI
     }
     return { ok: true, value: { bookingId, message: `Loaded on Dr Souter's ${listName(list)} List: 3 procedures, 7 modifier units, split 3 · 2 · 2.` } }
   } catch (error) {
+    // Never leave a part-loaded Booking: it would read as "Already loaded" with no way to retry.
+    if (bookingId !== undefined) cancelBooking(api, actor, bookingId, 'Demo load did not complete')
     return refuse('stageFailed', (error as Error).message)
   }
 }

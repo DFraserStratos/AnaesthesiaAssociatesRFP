@@ -228,6 +228,25 @@ export function BtmCaptureBlock({
         </div>
       )}
 
+      {/* A fixed or open price primary of a multi-procedure Booking still records the Booking's
+          modifiers, which the RVG-priced Procedures share above 4 (catch-up Phase 23): its units
+          card shows B 0 (OQ-132, provisional) and the Modifiers section; no times are asked. */}
+      {detail.times === 'hidden' && several && procedure.isPrimary && !allocation.rvgPriced && (
+        <div data-shot="capture-booking-modifiers">
+          <UnitsCard
+            procedure={procedure}
+            btm={fee.btm}
+            rvgGroup={rvgGroup}
+            actor={actor}
+            canCapture={canCapture}
+            allocation={allocation}
+            showValidation={showValidation}
+            modifierFailures={forFields(['modifierClaims'])}
+            onError={onError}
+          />
+        </div>
+      )}
+
       <Pair>
         <OverrideCard
           procedure={procedure}

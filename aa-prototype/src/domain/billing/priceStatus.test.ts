@@ -4,7 +4,7 @@ import { BASE_SINGLE_10, HANDOVER_1030, RVG_MODIFIER_MASTER, START_0800, mkAnaes
 import { computedPriceFor, priceStatusFor } from './priceStatus'
 import { type FeeContext } from './fee'
 import { soleAllocation } from './multiProcedure'
-import { soleProcedureFee as feeFor } from './bookingFee'
+import { soleProcedureFee as feeFor } from './fixtures'
 
 const FIXED = mkContract({ id: 'fx', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-01-01', price: 400 }, { startISO: '2026-09-01', price: 450 }] } })
 const LATER = mkContract({ id: 'later', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-09-01', price: 3100 }] } })

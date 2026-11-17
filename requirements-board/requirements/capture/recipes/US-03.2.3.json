@@ -6,48 +6,8 @@
     {
       "name": "add-procedure",
       "app": "web",
-      "caption": "Add another procedure to a booking",
+      "caption": "Add another procedure to a Booking",
       "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
-      "states": [
-        {
-          "state": "before",
-          "steps": [
-            {
-              "scroll": "role=button[name=\"Add another procedure\"]"
-            }
-          ],
-          "highlight": [
-            "role=button[name=\"Add another procedure\"]"
-          ],
-          "caption": "Add another procedure to the booking"
-        },
-        {
-          "state": "added",
-          "steps": [
-            {
-              "click": "role=button[name=\"Add another procedure\"]"
-            },
-            {
-              "wait": 600
-            },
-            {
-              "wait": 600
-            }
-          ],
-          "highlight": [
-            "[data-testid=procedure-header] >> nth=1",
-            "[data-shot=capture-billing] >> nth=1",
-            "[data-shot=procedure-additional-note]"
-          ],
-          "caption": "Procedure 2 added, with its own Billing card to pick its Contract"
-        }
-      ]
-    },
-    {
-      "name": "add-procedure",
-      "app": "mobile",
-      "caption": "Add another procedure to a booking",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "before",
@@ -79,7 +39,95 @@
             "[data-shot=capture-billing] >> nth=1",
             "[data-shot=procedure-additional-note]"
           ],
-          "caption": "Procedure 2 added, with its own Billing card to pick its Contract"
+          "caption": "Added below the primary as an additional Procedure, starting on the primary's Contract, with its own Billing card to change it"
+        },
+        {
+          "state": "modifiers",
+          "caption": "Modifiers stay recorded once, on the primary: the added Procedure shows a caption instead",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add another procedure\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "[data-shot=modifiers-on-primary]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=modifiers-on-primary]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "add-procedure",
+      "app": "mobile",
+      "caption": "Add another procedure to a Booking",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "states": [
+        {
+          "state": "before",
+          "steps": [
+            {
+              "scroll": "role=button[name=\"Add another procedure\"]"
+            }
+          ],
+          "highlight": [
+            "role=button[name=\"Add another procedure\"]"
+          ],
+          "caption": "Add another procedure to the Booking"
+        },
+        {
+          "state": "added",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add another procedure\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-testid=procedure-header] >> nth=1",
+            "[data-testid=slide-booking] [data-shot=capture-billing] >> nth=1",
+            "[data-testid=slide-booking] [data-shot=procedure-additional-note]"
+          ],
+          "caption": "Added below the primary as an additional Procedure, starting on the primary's Contract, with its own Billing card to change it"
+        },
+        {
+          "state": "modifiers",
+          "caption": "Modifiers stay recorded once, on the primary: the added Procedure shows a caption instead",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add another procedure\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=modifiers-on-primary]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=modifiers-on-primary]"
+          ]
         }
       ]
     }

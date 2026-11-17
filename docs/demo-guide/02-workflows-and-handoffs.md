@@ -339,10 +339,27 @@ The procedure has occurred and the anaesthetist needs to record the clinical bil
 
 ### Multiple Procedures
 
-- One Booking can have several Procedures.
-- An additional Procedure in the same episode (added with **Add another procedure**) is time-only under the
-  hard split-billing rule. Brian Holt's Booking on Dr Souter's Mon 20 AM List is the seeded example.
-- Base and Modifier units must not be charged a second time.
+- One Booking can have several Procedures, and exactly one of them is the primary: listed first
+  everywhere, with a neutral **Primary** pill when there are two or more. The first Procedure entered is
+  the primary until someone changes it.
+- **Make primary** on any additional Procedure (a bottom sheet on the phone, a dialog on desktop: "Make
+  this the primary procedure?") moves the primary. Anyone with edit rights can use it: the anaesthetist
+  on her own List until it is authorised (she amends a completed Booking first), the office on `ACTIVE`
+  and `SUBMITTED` Lists, a hospital feed on `ACTIVE` Lists only. Removing the primary is refused, and
+  nothing is ever promoted silently.
+- The multi-procedure rule, one rule system-wide: base units on the primary only (from its RVG group or
+  the value recorded); time units on every Procedure from its own times; modifiers recorded once for the
+  Booking, on the primary. At 4 modifier units or fewer they all stay on the primary; above 4 they split
+  equally across the RVG-priced Procedures, the remainder to the primary (7 over 3 = 3 / 2 / 2), whichever
+  Contracts they are on.
+- A fixed or open price keeps its price and takes no share. On a mixed Booking whose primary is a fixed
+  price, no base units are billed (provisional, OQ-132).
+- AA confirmed the rule on 19 October (OQ-90; the 3 / 2 / 2 split was agreed on 7 October). Which
+  Procedure should be primary is not settled (Vanessa: the most expensive; Greg: the first in the list),
+  so the first stays primary until someone changes it.
+- Brian Holt's Booking on Dr Souter's Mon 20 AM List is the seeded two-procedure example; Graeme
+  Tullett's on her Mon 13 Jul AM List (Forte Health, in the Review queue) is the three-procedure
+  one, split 3 / 2 / 2.
 
 ### Handoff
 
@@ -450,7 +467,7 @@ The List reaches `AUTHORISED`.
    A surgeon's fixed price, No contract · RVG, No contract · Fixed price, an anaesthetist's own price
    list and every prepaid Contract bill the payer. The Booking's insurer or funder never decides it.
 4. It calculates the fee from the captured snapshot.
-5. It enforces time-only additional Procedures. A Procedure's fee split on the Booking (the **Split**
+5. It applies the multi-procedure rule to RVG-priced Procedures. A Procedure's fee split on the Booking (the **Split**
    button in its Billing card's Paid by, typed by the office or the anaesthetist before authorise: each party's
    share in $ or %, one party taking the rest) bills each party its share.
 6. It makes one invoice per billable party per Booking, and one per share where a fee is split.
@@ -474,9 +491,12 @@ supplier and AA as agent (provisional wording, OQ-29).
 
 ### RFP ambiguity
 
-The RFP contains tension between same-counterparty grouping and a statement that split billing creates
-two invoices. The prototype makes one invoice per billable party per Booking: two invoices arise where
-a Procedure's fee is split on the Booking.
+Multi-procedure invoice count: the RFP contains tension between same-counterparty grouping and its
+`Split Billing` section's statement that multiple procedures in one episode (and a partly covered
+procedure) need two separate invoices. The prototype
+groups invoices by billable party, one invoice per billable party per Booking, so a multi-procedure
+Booking with one payer is one invoice and one BCTI. Two invoices arise only where a Procedure's fee is
+split on the Booking.
 
 ### Source
 

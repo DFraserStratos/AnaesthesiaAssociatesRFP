@@ -63,8 +63,11 @@ Bookings and capture the data AA needs for billing.
    herself (she rings the office).
 9. Create a missing Booking manually, with its procedure description as told or written (kept exactly
    as typed).
-10. Record an additional procedure inside a Booking with **Add another procedure**, which charges time
-    units only.
+10. Record an additional procedure inside a Booking with **Add another procedure**. The first
+    Procedure is the primary, listed first with a **Primary** pill; **Make primary** on another one
+    (a bottom sheet on the phone, a dialog on web) changes it on her own List until it is authorised
+    (on a completed Booking she amends it first). Base units and the modifiers sit on the primary;
+    every Procedure bills its own time.
 11. Name another payer on a Procedure (**Paid by → Change**, a bottom sheet: a parent, a guardian, a
     benefactor or a family trust; offered to the Booking's other Procedures with the same payer), and enter the insurer's approval number on the day when she learns
     it (**Insurer or funder**); she sees the number the Booking holds.
@@ -192,6 +195,8 @@ short-notice cover.
 15. Open an **out-of-hours session** for an emergency or late case (Open out-of-hours session on an
     anaesthetist's Day row, any day from today, one a day, 18:00 to 21:00 by default) and put a List in
     it, a new one or a Draft List for that evening; close an empty one from its drawer.
+16. Set the primary Procedure from the rooms' sheet (**Make primary** on the Admin Booking), and
+    correct it at review; the office can do this on `ACTIVE` and `SUBMITTED` Lists.
 
 ### Permissions
 

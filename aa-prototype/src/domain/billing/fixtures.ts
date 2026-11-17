@@ -15,6 +15,8 @@ import type {
 } from '../types'
 import { modifierFromRvgRow, type Modifier, type ModifierClaim } from './modifiers'
 import { RVG_MODIFIER_ROWS } from '../seed/rvgModifiers.generated'
+import { bookingFeeFor, type ProcedureFeeContext } from './bookingFee'
+import type { FeeResult } from './fee'
 
 /** The RVG modifier master as the seed builds it (generated from the catalogue), keyed by id. */
 export const RVG_MODIFIER_MASTER: Readonly<Record<string, Modifier>> = Object.fromEntries(
@@ -161,3 +163,14 @@ export const BASE_RANGE_5_9: RvgGroup = {
 /** 2h30m on the demo day: 08:00 start, 10:30 handover (T = 11 units). */
 export const START_0800 = '2026-07-21T08:00:00'
 export const HANDOVER_1030 = '2026-07-21T10:30:00'
+
+/**
+ * Test support (catch-up Phase 23): the fee of a Booking's only Procedure,
+ * through the one engine (`bookingFeeFor`), the Procedure priced as the
+ * Booking's primary. The app never prices a Procedure alone.
+ */
+export function soleProcedureFee(procedure: Procedure, ctx: ProcedureFeeContext): FeeResult {
+  const result = bookingFeeFor([{ ...procedure, isPrimary: true }], () => ctx)
+  if (result.kind !== 'ok') throw new Error('structural')
+  return result.fees[procedure.id] as FeeResult
+}

@@ -22,7 +22,7 @@
         },
         {
           "state": "scrolled-back",
-          "caption": "Scrolled back: Monday's submitted Lists, quieter and still editable",
+          "caption": "Scrolled back: the submitted Lists not yet authorised, quieter and still editable",
           "steps": [
             {
               "click": "[data-shot=mobile-main-view-earlier]"

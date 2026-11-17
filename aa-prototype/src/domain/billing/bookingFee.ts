@@ -96,13 +96,3 @@ export function bookingFeeFor(procedures: readonly Procedure[], ctxFor: (procedu
 export function feeIn(result: BookingFeeResult, procedureId: ProcedureId): FeeResult | undefined {
   return result.kind === 'ok' ? result.fees[procedureId] : undefined
 }
-
-/**
- * The fee of a Booking's only Procedure, through the same engine (tests and
- * single-Procedure callers): the Procedure is priced as the Booking's primary.
- */
-export function soleProcedureFee(procedure: Procedure, ctx: ProcedureFeeContext): FeeResult {
-  const sole = { ...procedure, isPrimary: true }
-  const result = bookingFeeFor([sole], () => ctx)
-  return (result as Extract<BookingFeeResult, { kind: 'ok' }>).fees[procedure.id] as FeeResult
-}

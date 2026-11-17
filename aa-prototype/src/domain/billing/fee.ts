@@ -84,7 +84,7 @@ export interface ModifierInputs {
 }
 
 /** A Procedure's place in the multi-procedure rule, as `resolveBtm` reads it (none: priced as the primary). */
-export type BtmRole = Pick<ProcedureAllocation, 'role' | 'modifierShare'>
+export type BtmRole = Pick<ProcedureAllocation, 'role' | 'modifierShare'> & Partial<Pick<ProcedureAllocation, 'baseCharged'>>
 
 /**
  * Resolve B/T/M from the procedure's CAPTURED inputs (RFP principle 10 — the
@@ -100,7 +100,8 @@ export type BtmRole = Pick<ProcedureAllocation, 'role' | 'modifierShare'>
  * and finish stamps only.
  *
  * `role` (catch-up Phase 23): on an additional Procedure base is 0 with source
- * `'additional'`, whatever its group, range choice or stored capture, and M is
+ * `'additional'` (unless `baseOn` placed the base there, `baseCharged`),
+ * whatever its group, range choice or stored capture, and M is
  * its share of the Booking's modifiers (its own claims and starting figure
  * ignored, so nothing counts twice and the age modifier counts once for the
  * Booking). With no role (or the primary) B and M are the Procedure's own.
@@ -113,9 +114,10 @@ export function resolveBtm(
   role?: BtmRole,
 ): BtmBreakdown {
   const additional = role?.role === 'additional'
-  // Base
+  // Base: where `baseOn` puts it (the allocation's `baseCharged`), else 0 on an additional Procedure.
+  const noBase = additional && role?.baseCharged !== true
   const resolvedBase = baseUnitsFor({ procedure, ...(group !== undefined ? { group } : {}) })
-  const base: ResolvedUnits = additional
+  const base: ResolvedUnits = noBase
     ? { units: 0, source: 'seeded' }
     : { units: resolvedBase.units, source: resolvedBase.source === 'overridden' ? 'overridden' : 'seeded' }
 
@@ -147,9 +149,9 @@ export function resolveBtm(
 
   return {
     base,
-    baseSource: additional ? 'additional' : resolvedBase.source,
+    baseSource: noBase ? 'additional' : resolvedBase.source,
     ...(resolvedBase.guide !== undefined ? { baseGuide: resolvedBase.guide } : {}),
-    baseOutsideGuide: !additional && resolvedBase.outsideGuide,
+    baseOutsideGuide: !noBase && resolvedBase.outsideGuide,
     time,
     modifiers,
     modifierItems: additional ? computed.items.filter((i) => i.origin === 'included') : computed.items,
@@ -165,7 +167,8 @@ export function resolveBtm(
  * for reference and the price stands.
  */
 export function unitsUnderRule(btm: BtmBreakdown, allocation: ProcedureAllocation): number {
-  const base = allocation.role === 'primary' ? btm.base.units : 0
+  // Base where `baseOn` puts it (`baseCharged`); a fixed or open price primary records its own for reference.
+  const base = allocation.baseCharged || allocation.role === 'primary' ? btm.base.units : 0
   return base + btm.time.units + allocation.modifierShare
 }
 
@@ -282,9 +285,10 @@ export function modifierInputsOf(ctx: Pick<FeeContext, 'patientDobISO' | 'dateIS
 export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
   const { allocation } = ctx
   // The rule adjusts RVG-priced Procedures only (US-05.3.1, A19): a fixed or open price keeps its
-  // own units, unadjusted, for reference; its price stands.
+  // own units, unadjusted, for reference, and its price stands. A fixed or open price primary
+  // counts the Booking's modifiers under the rule (its share), so a split is never counted twice.
   const btm = resolveBtm(procedure, ctx.rvgGroup, ctx.timeRule, modifierInputsOf(ctx), allocation.rvgPriced ? allocation : undefined)
-  const billableUnits = allocation.rvgPriced ? unitsUnderRule(btm, allocation) : btm.totalUnits
+  const billableUnits = allocation.rvgPriced || allocation.role === 'primary' ? unitsUnderRule(btm, allocation) : btm.totalUnits
   const several = (ctx.bookingProcedureCount ?? 1) > 1
   const lines: FeeLine[] = []
 

@@ -101,6 +101,8 @@ export function confirmNoModifiers(api: AppStoreApi, actor: Actor, procedureId: 
   const loaded = load(api, actor, procedureId)
   if (!('state' in loaded)) return loaded
   const { procedure } = loaded
+  // The modifiers step is the Booking's, answered on the primary (catch-up Phase 23).
+  if (!procedure.isPrimary) return refuse('modifiersOnPrimary', MODIFIERS_ON_PRIMARY_MESSAGE)
   if (procedure.modifiersConfirmed === true) return ok(undefined)
   mutate(
     api,
@@ -177,6 +179,8 @@ export function removeModifier(
   const loaded = load(api, actor, procedureId)
   if (!('state' in loaded)) return loaded
   const { state, procedure } = loaded
+  // Removing a claim is allowed anywhere (a clear); removing a pre-applied modifier is the Booking's, on the primary.
+  if (from === 'preApplied' && !procedure.isPrimary) return refuse('modifiersOnPrimary', MODIFIERS_ON_PRIMARY_MESSAGE)
   const modifiers = state.masters.modifiers
   const claim = procedure.modifierClaims.find((c) => c.modifierId === modifierId)
   if (claim !== undefined && from === 'claim') {
@@ -224,6 +228,7 @@ export function restoreModifier(api: AppStoreApi, actor: Actor, procedureId: str
   const loaded = load(api, actor, procedureId)
   if (!('state' in loaded)) return loaded
   const { state, procedure } = loaded
+  if (!procedure.isPrimary) return refuse('modifiersOnPrimary', MODIFIERS_ON_PRIMARY_MESSAGE)
   if (!procedure.removedModifierIds.includes(modifierId)) {
     return refuse('notRemoved', 'That modifier was not removed from this Procedure.')
   }

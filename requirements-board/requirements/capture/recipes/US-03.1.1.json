@@ -13,7 +13,7 @@
           "state": "schedule",
           "steps": [],
           "highlight": [
-            "tr:has-text(\"Southern Cross · Ms K. Patel\") >> nth=0"
+            "tr[data-list-id=\"L-34821-2026-07-21-PM\"]"
           ],
           "caption": "My Lists, one row per session"
         },
@@ -21,7 +21,7 @@
           "state": "list",
           "steps": [
             {
-              "click": "tr:has-text(\"Southern Cross · Ms K. Patel\") >> nth=0"
+              "click": "tr[data-list-id=\"L-34821-2026-07-21-PM\"]"
             },
             {
               "wait": "text=\"Margaret Ellison\""
@@ -36,7 +36,7 @@
           "state": "booking",
           "steps": [
             {
-              "click": "tr:has-text(\"Southern Cross · Ms K. Patel\") >> nth=0"
+              "click": "tr[data-list-id=\"L-34821-2026-07-21-PM\"]"
             },
             {
               "click": "tr:has-text(\"Margaret Ellison\")"
@@ -60,7 +60,7 @@
           "state": "schedule",
           "steps": [],
           "highlight": [
-            "[data-testid=slide-home] button:has-text(\"Southern Cross\") >> nth=0"
+            "[data-testid=slide-home] [data-list-id=\"L-34821-2026-07-21-PM\"]"
           ],
           "caption": "My Lists, one row per session"
         },
@@ -68,7 +68,7 @@
           "state": "list",
           "steps": [
             {
-              "click": "[data-testid=slide-home] button:has-text(\"Southern Cross\") >> nth=0"
+              "click": "[data-testid=slide-home] [data-list-id=\"L-34821-2026-07-21-PM\"]"
             },
             {
               "wait": "[data-testid=slide-list] >> text=\"Margaret Ellison\""
@@ -83,7 +83,7 @@
           "state": "booking",
           "steps": [
             {
-              "click": "[data-testid=slide-home] button:has-text(\"Southern Cross\") >> nth=0"
+              "click": "[data-testid=slide-home] [data-list-id=\"L-34821-2026-07-21-PM\"]"
             },
             {
               "click": "[data-testid=slide-list] button:has-text(\"Margaret Ellison\")"

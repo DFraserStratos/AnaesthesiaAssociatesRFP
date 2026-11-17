@@ -6,10 +6,12 @@
     {
       "name": "primary-and-additional",
       "app": "web",
-      "caption": "First procedure anchors base and modifier units",
+      "caption": "One Procedure is the primary, shown first",
       "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
+          "state": "primary",
+          "caption": "One Procedure is the primary, shown first with the Primary pill",
           "steps": [
             {
               "click": "role=button[name=\"Add another procedure\"]"
@@ -19,22 +21,53 @@
             },
             {
               "wait": 600
+            },
+            {
+              "scroll": "[data-shot=procedure-primary-pill]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-primary-pill]"
+          ]
+        },
+        {
+          "state": "additional",
+          "caption": "The other is additional: base units are charged on the primary only",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add another procedure\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "[data-shot=procedure-additional-note]"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [
             "[data-shot=procedure-additional-note]"
-          ],
-          "caption": "Procedure 2 is additional: it bills time units only, base and modifiers stay on the first"
+          ]
         }
       ]
     },
     {
       "name": "primary-and-additional",
       "app": "mobile",
-      "caption": "First procedure anchors base and modifier units",
+      "caption": "One Procedure is the primary, shown first",
       "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
+          "state": "primary",
+          "caption": "One Procedure is the primary, shown first with the Primary pill",
           "steps": [
             {
               "click": "role=button[name=\"Add another procedure\"]"
@@ -44,12 +77,41 @@
             },
             {
               "wait": 600
+            },
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=procedure-primary-pill]"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=procedure-additional-note]"
+            "[data-testid=slide-booking] [data-shot=procedure-primary-pill]"
+          ]
+        },
+        {
+          "state": "additional",
+          "caption": "The other is additional: base units are charged on the primary only",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add another procedure\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "[data-testid=slide-booking] [data-shot=procedure-additional-note]"
+            },
+            {
+              "wait": 300
+            }
           ],
-          "caption": "Procedure 2 is additional: it bills time units only, base and modifiers stay on the first"
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=procedure-additional-note]"
+          ]
         }
       ]
     }

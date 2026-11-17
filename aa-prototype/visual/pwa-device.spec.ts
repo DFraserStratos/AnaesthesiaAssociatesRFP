@@ -412,3 +412,32 @@ test('a colleague moves a Booking to me; the acceptance beat; then I move one of
   // Her List held six Bookings; it now holds five, and still exists.
   await expect(page.getByText('0 of 5 complete')).toBeVisible()
 })
+
+test('the 3-procedure Booking loads from the Demo sheet, and the hospital feed changes its primary there (catch-up Phase 23)', async ({ page }) => {
+  await page.goto('/mobile/lists')
+  await page.evaluate(() => window.localStorage.clear())
+  // Dr Souter's next open List after Tue 21 Jul: Wed 22 Jul AM (Christchurch Eye Surgery).
+  await page.goto('/mobile/lists/L-34821-2026-07-22-AM')
+  await page.waitForLoadState('networkidle')
+  await settleSlide(page)
+  await page.locator('[data-shot="pwa-demo-actions"]').click()
+  const load = page.locator('[data-shot="pwa-demo-action-load-multi-procedure-booking"]')
+  await expect(load).toBeVisible()
+  await load.getByRole('button', { name: 'Run' }).click()
+  await expect(load.getByRole('status')).toContainText('3 procedures, 7 modifier units, split 3 · 2 · 2')
+  await page.keyboard.press('Escape')
+
+  // The staged Booking takes the next Booking id after the seed's last (BK0184).
+  await page.goto('/mobile/lists/L-34821-2026-07-22-AM/bookings/BK0185')
+  await page.waitForLoadState('networkidle')
+  await settleSlide(page)
+  await expect(page.locator('[data-testid="procedure-header"]').first().locator('[data-shot="procedure-primary-pill"]')).toHaveText('Primary')
+  await page.locator('[data-shot="pwa-demo-actions"]').click()
+  const feed = page.locator('[data-shot="pwa-demo-action-feed-changes-primary"]')
+  await expect(feed).toBeVisible()
+  await feed.getByRole('button', { name: 'Run' }).click()
+  await expect(feed.getByRole('status')).toContainText('the primary. Base units now come from it.')
+  await page.keyboard.press('Escape')
+  await expectNoDocumentScroll(page, 'multi-procedure Booking')
+  await page.screenshot({ path: 'visual/shots/pwa-23-feed-changes-primary.png' })
+})

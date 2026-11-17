@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { resolveBtm } from './fee'
 // A single-Procedure Booking's fee, through the one engine (catch-up Phase 23).
-import { bookingFeeFor, soleProcedureFee as feeFor } from './bookingFee'
+import { bookingFeeFor } from './bookingFee'
+import { soleProcedureFee as feeFor } from './fixtures'
 import {
   BASE_RANGE_5_9,
   BASE_SINGLE_10,
@@ -123,6 +124,11 @@ describe('resolveBtm on an additional Procedure (catch-up Phase 23)', () => {
     expect(btm.modifiers.units).toBe(0)
     expect(btm.modifierItems).toEqual([])
     expect(resolveBtm(p, BASE_SINGLE_10, R, MI, { role: 'additional', modifierShare: 2 }).modifiers.units).toBe(2)
+  })
+
+  it("keeps base on an additional Procedure only when baseOn placed it there (baseCharged): OQ-132's answer changes baseOn alone", () => {
+    const p = mkProcedure({ ...spotCheckProcedure, isPrimary: false })
+    expect(resolveBtm(p, BASE_SINGLE_10, R, MI, { role: 'additional', modifierShare: 0, baseCharged: true }).base.units).toBe(10)
   })
 })
 

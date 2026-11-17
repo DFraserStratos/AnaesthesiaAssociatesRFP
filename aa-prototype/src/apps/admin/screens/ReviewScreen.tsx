@@ -374,7 +374,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
                             <ProcedureStack view={view} density="compact" surface="office" heading={stackViews.length > 1 ? `Procedure ${i + 1}` : 'Procedure'} />
                             {/* Each Procedure's share under the multi-procedure rule, primary first (catch-up Phase 23). */}
                             {stackViews.length > 1 && totals.views[procedureId] !== undefined && (
-                              <span className="mono" data-shot="review-procedure-share" style={{ fontSize: 11.5, color: neutral.slate, fontVariantNumeric: 'tabular-nums' }}>
+                              <span data-shot="review-procedure-share" style={{ fontSize: 11.5, color: neutral.slate, fontVariantNumeric: 'tabular-nums' }}>
                                 {allocationNote(totals.views[procedureId]!.allocation)}
                               </span>
                             )}

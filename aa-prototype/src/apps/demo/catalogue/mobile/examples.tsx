@@ -579,7 +579,7 @@ export function BookingCardExample({ picks }: { picks: SeedPicks }) {
       .sort((a, b) => (a.scheduledTime ?? '99:99').localeCompare(b.scheduledTime ?? '99:99') || a.id.localeCompare(b.id))
       .slice(0, 3)
       .map((b) => {
-        const proc = Object.values(procedures).filter((p) => p.bookingId === b.id).sort((x, y) => x.id.localeCompare(y.id))[0]
+        const proc = Object.values(procedures).find((p) => p.bookingId === b.id && p.isPrimary)
         const patient = patients[b.patientId]
         return { id: b.id, time: b.scheduledTime ?? '·', patientName: patient?.name ?? 'Unknown patient', nhi: patient?.nhi, operation: proc !== undefined ? procedureLabel(proc, rvgGroupsForLabels, 1) : 'Procedure to capture' }
       })

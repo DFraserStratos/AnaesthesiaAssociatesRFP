@@ -296,6 +296,25 @@ describe('buildInvoicesForBooking', () => {
     expect(insurer!.subtotal + patient!.subtotal).toBe(630)
   })
 
+  it('a split on an additional Procedure divides its own allocated fee, keyed by Procedure, and Make primary does not move the share (catch-up Phase 23)', () => {
+    const split: FeeSplit = {
+      shares: [
+        { party: { kind: 'insurer', id: 'ins-1' }, basis: { kind: 'amount', amountExGst: 100 } },
+        { party: { kind: 'patient', id: 'pat-1' }, basis: { kind: 'rest' } },
+      ],
+    }
+    // The additional's fee: T 11 x $30 = $330 (no base, no modifier share).
+    const before = buildInvoicesForBooking(mkBooking(), [primary, { ...additional, split }], mkCtx())
+    if (before.kind !== 'invoices') throw new Error('expected invoices')
+    const shareLines = (r: typeof before) => r.invoices.flatMap((i) => i.lines).filter((l) => l.procedureId === 'proc-2')
+    expect(shareLines(before).map((l) => l.amount)).toEqual([100, 230])
+    // Make the split Procedure primary: its fee becomes B 10 + T 11 = $630, the split stays on it.
+    const after = buildInvoicesForBooking(mkBooking(), [{ ...primary, isPrimary: false }, { ...additional, isPrimary: true, split }], mkCtx())
+    if (after.kind !== 'invoices') throw new Error('expected invoices')
+    expect(shareLines(after).map((l) => l.amount)).toEqual([100, 530])
+    expect(after.invoices.flatMap((i) => i.lines).filter((l) => l.procedureId === 'proc-1').map((l) => l.amount)).toEqual([330])
+  })
+
   it("a split party who is also another Procedure's party gets one invoice holding both", () => {
     const split: FeeSplit = {
       shares: [
