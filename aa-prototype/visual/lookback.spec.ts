@@ -12,7 +12,8 @@ test('mobile: the main view opens at Today with the earlier hint; submitted rows
   await page.goto('/mobile/lists')
   await page.waitForLoadState('networkidle')
   const hint = page.locator('[data-shot="mobile-main-view-earlier"]')
-  await expect(hint).toHaveText(/2 earlier Lists not yet authorised/)
+  // Mon 13 Jul AM (catch-up Phase 23's three-procedure Booking) and Mon 20 Jul AM and PM.
+  await expect(hint).toHaveText(/3 earlier Lists not yet authorised/)
   // Today sits at the top of the scroller: the earlier rows are scrolled out of view.
   const scroller = page.getByTestId('mobile-lists-scroll')
   expect(await scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0)
@@ -53,7 +54,7 @@ test('web: Lists opens with the earlier group; search and the day view', async (
   await page.goto('/web/lists')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot="web-main-view-earlier"]')).toContainText('Earlier, not yet authorised')
-  await expect(page.locator('[data-shot="web-main-view-earlier"] tr[data-list-id]')).toHaveCount(2)
+  await expect(page.locator('[data-shot="web-main-view-earlier"] tr[data-list-id]')).toHaveCount(3)
   await page.screenshot({ path: `${SHOTS}/web-main-view.png` })
 
   await page.goto('/web/lists?day=2026-03-13')
