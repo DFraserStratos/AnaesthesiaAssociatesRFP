@@ -19,6 +19,7 @@ import { buildSeed, buildSeedBillingSlice, SEED_AUTHORISED_INVOICED_BOOKING_IDS,
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
 import { seededIntegrationsSlice, type AppState, type AppStoreApi } from './appStore'
 import { reconcileConflictsInPatch, type MutationResult } from './conflictReconcile'
+import { seedLocks } from './locks'
 
 export type { MutationResult } from './conflictReconcile'
 
@@ -289,6 +290,7 @@ export function resetDomainState(api: AppStoreApi): void {
       receipts: seedBilling.receipts,
       contactIdCache: seedBilling.contactIdCache,
       aaFeeInvoices: seedBilling.aaFeeInvoices,
+      locks: {},
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
@@ -297,4 +299,7 @@ export function resetDomainState(api: AppStoreApi): void {
     // within-tier orders.
     shell: { ...api.getState().shell, suggestionSeq: 0 },
   })
+  // Every seeded AUTHORISED List locked, as `freshAppState` does (catch-up Phase 25).
+  const locked = seedLocks(api.getState())
+  api.setState({ billing: { ...api.getState().billing, locks: locked.locks, cases: locked.cases } })
 }

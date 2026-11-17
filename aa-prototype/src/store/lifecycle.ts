@@ -33,7 +33,11 @@ import {
   type Outcome,
 } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
-import { bookingsForList, completionContextFor, proceduresForBooking } from './selectors'
+import { bookingsForList, completionContextFor, heldPricesForBooking, proceduresForBooking } from './selectors'
+import { takeLockFor } from './locks'
+import type { BookingLock } from '../domain/billing/lock'
+import { priceStatusFor } from '../domain/billing/priceStatus'
+import { needsPriceMessage } from '../domain/billing/priceRanges'
 import { emitAppEvent } from './events'
 import { BASE_UNITS_WHOLE_MESSAGE, isRecordableBaseUnits, rvgGroupPickRefusal } from '../domain/billing/rvgGroups'
 import { claimsAuditView } from '../domain/billing/modifiers'
@@ -288,12 +292,14 @@ export function submitList(api: AppStoreApi, actor: Actor, listId: string): Outc
 
 /**
  * SUBMITTED → AUTHORISED (strictly ordered — an ACTIVE List can never jump).
- * Office only. Completion-gated like `submitList` (catch-up Phase 38a): the
- * anaesthetist can re-open or add a Booking on a SUBMITTED List, so authorise is
- * refused while any non-cancelled Booking is incomplete, naming them. The List
- * stays SUBMITTED (no return state): the office completes the Booking itself or
- * rings the anaesthetist. Locks the List's Bookings immutable and emits
- * `listAuthorised` for Phase 08's billing run.
+ * Office only. Refused while a Procedure needs a price (`authoriseBlockersFor`,
+ * catch-up Phase 25) and, like `submitList`, while any non-cancelled Booking is
+ * incomplete (catch-up Phase 38a), naming them. The List stays SUBMITTED (no
+ * return state). In the same commit it writes the pricing snapshot for every
+ * non-cancelled Booking (`billing.locks`, catch-up Phase 25; US-04.3.5,
+ * US-07.3.1): the Contract's settings, the range in force, the price, who is
+ * billed and who is paid. Then it emits `listAuthorised` for the billing run,
+ * which reads only those locks.
  */
 export function authoriseList(api: AppStoreApi, actor: Actor, listId: string): Outcome {
   const state = api.getState()
@@ -306,6 +312,15 @@ export function authoriseList(api: AppStoreApi, actor: Actor, listId: string): O
   if (actor.role !== 'office') {
     return refuse('officeOnly', 'Only the office can authorise a List for billing.')
   }
+
+  // "Needs a price" first: a snapshot cannot be written without a price (US-04.3.5).
+  const blockers = authoriseBlockersFor(state, listId)
+  if (blockers.length > 0) {
+    const first = blockers[0]!
+    const more = blockers.length > 1 ? ` (${blockers.length} Procedures need a price)` : ''
+    return refuse(first.code, `${AUTHORISE_NEEDS_PRICE} ${first.message}${more}`, blockers.map((b) => b.bookingId ?? ''))
+  }
+
   const incomplete = incompleteBookingsOn(state, listId)
   if (incomplete.length > 0) {
     return refuse(
@@ -315,12 +330,17 @@ export function authoriseList(api: AppStoreApi, actor: Actor, listId: string): O
     )
   }
 
-  const blockers = authoriseBlockersFor(state, listId)
-  if (blockers.length > 0) return refuse(blockers[0]!.code, blockers[0]!.message)
-
   // Every anaesthetist's Contract change still unapproved is approved at
   // authorise, in the same commit (catch-up Phase 21a, US-07.2.2): never a gate.
   const approvals = approvalsAtAuthorise(state, actor, listId)
+  // The pricing snapshot, resolved once from live data (catch-up Phase 25).
+  const takenAtISO = clockISO(state.clock)
+  const locks: Record<string, BookingLock> = {}
+  for (const booking of bookingsForList(state, listId)) {
+    if (booking.cancellation !== undefined) continue
+    const lock = takeLockFor(state, booking, actor.who, takenAtISO)
+    if (lock !== undefined) locks[booking.id] = lock
+  }
   mutate(
     api,
     actor,
@@ -333,6 +353,13 @@ export function authoriseList(api: AppStoreApi, actor: Actor, listId: string): O
         after: { state: 'AUTHORISED' },
       },
       ...approvals.metas,
+      ...Object.values(locks).map((lock) => ({
+        entityType: 'booking' as const,
+        entityId: lock.bookingId,
+        action: 'booking.lock',
+        after: lockAuditSummary(lock),
+        stampBookingId: null,
+      })),
     ],
     (s) => ({
       schedule: {
@@ -340,10 +367,26 @@ export function authoriseList(api: AppStoreApi, actor: Actor, listId: string): O
         lists: { ...s.schedule.lists, [listId]: { ...list, state: 'AUTHORISED' } },
         procedures: { ...s.schedule.procedures, ...approvals.procedures },
       },
+      billing: { ...s.billing, locks: { ...s.billing.locks, ...locks } },
     }),
   )
   emitAppEvent({ type: 'listAuthorised', listId })
   return ok(undefined)
+}
+
+/** The refusal's lead sentence when a Procedure needs a price. */
+export const AUTHORISE_NEEDS_PRICE = 'A Procedure needs a price before this List can be authorised.'
+
+/** The audit entry's `after` for one Booking's lock: the Contracts and their settings, the payee, the pricing date, the total. */
+function lockAuditSummary(lock: BookingLock): Record<string, unknown> {
+  return {
+    state: lock.state,
+    contracts: lock.procedures.map((p) => (p.contract !== undefined ? `${p.contract.aaCode} ${p.contract.name} (${p.contract.pricing.kind}, bills ${p.contract.billsTo})` : p.procedureId)).join('; '),
+    payee: lock.payee.name,
+    pricingDateISO: lock.pricingDateISO,
+    expectedTotal: lock.expected.total,
+    ...(lock.state === 'rejected' && lock.rejections[0] !== undefined ? { rejection: lock.rejections[0].message } : {}),
+  }
 }
 
 /** A reason a SUBMITTED List may not be authorised yet (catch-up Phase 21a's seam). */
@@ -351,17 +394,33 @@ export interface AuthoriseBlocker {
   code: string
   message: string
   bookingId?: string
+  procedureId?: string
 }
 
 /**
  * The one place authorise blockers live (catch-up Phase 21a), shared by
- * `authoriseList`, Review's action bar and the PWA's office stand-ins. It
- * returns **none in this phase**: review flags never block (Phase 07's ruling,
- * AR-58 A49). Phase 25 adds its "Needs a price" kind and Phase 40 the missing
- * NHI. Incomplete Bookings stay `authoriseList`'s own completion gate (38a).
+ * `authoriseList`, Review's action bar and the PWA's office stand-ins. Its one
+ * kind since catch-up Phase 25: a Procedure whose price status is "Needs a
+ * price" (24's `priceStatusFor` with the held amounts, no second rule; our
+ * reading of US-04.3.5, A48). Review flags and 15a's warnings never block
+ * (Phase 07's ruling, AR-58 A49); Phase 40 adds the missing NHI. Incomplete
+ * Bookings stay `authoriseList`'s own completion gate (38a).
  */
-export function authoriseBlockersFor(_state: Pick<AppState, 'schedule'>, _listId: string): AuthoriseBlocker[] {
-  return []
+export function authoriseBlockersFor(state: AppState, listId: string): AuthoriseBlocker[] {
+  const list = state.schedule.lists[listId]
+  if (list === undefined) return []
+  const out: AuthoriseBlocker[] = []
+  for (const booking of bookingsForList(state, listId)) {
+    if (booking.cancellation !== undefined) continue
+    const held = heldPricesForBooking(state, booking.id)
+    for (const procedure of proceduresForBooking(state, booking.id)) {
+      const contract = procedure.governingContractId !== undefined ? state.masters.contracts[procedure.governingContractId] : undefined
+      if (contract === undefined) continue
+      if (priceStatusFor(procedure, contract, list.dateISO, held[procedure.id])?.status !== 'needsPrice') continue
+      out.push({ code: 'needsPrice', message: needsPriceMessage(contract, list.dateISO, { named: true }), bookingId: booking.id, procedureId: procedure.id })
+    }
+  }
+  return out
 }
 
 // ---------------------------------------------------------------------------

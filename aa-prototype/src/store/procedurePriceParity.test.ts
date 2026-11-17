@@ -5,8 +5,8 @@
  * it before Phase 24 replaced the price with one function. The fixture never
  * changes and this suite is never run with `-u`. The declared differences:
  *   - the seeded history Procedures on AUTHORISED Lists price at the amount
- *     their invoices carry (the ladder's first rung, `authorisedPriceFor`,
- *     INTERIM until 25), where the old engine recomputed them from their
+ *     their invoices carry (the ladder's first rung: the interim invoiced
+ *     amount in 24, the pricing snapshot since 25), where the old engine recomputed them from their
  *     recorded units; their seeded invoices were written by hand and never
  *     matched the engine. Their rebuilt invoices print that amount as one line;
  *   - BK0179's typed $1,200 (the office's fixed fee with a reason, now the one
@@ -19,6 +19,7 @@
  * Nothing else moves: every other price, total, line, unit and BCTI count.
  */
 
+import { withPhase25Codes } from './__parity__/phase25Declared'
 import { describe, expect, it } from 'vitest'
 import baselineJson from './__parity__/phase-24-baseline.json'
 import { capturePhase24, type Phase24Baseline } from './__parity__/phase24Capture'
@@ -71,7 +72,7 @@ describe('Phase 24 price parity', () => {
 
   it('every other invoice and prepayment build is as before: grouping, totals, line amounts, units and wording', () => {
     const skip = (id: string) => declared(id) || id === typedBooking
-    expect(now.bookings.filter((r) => !skip(r.bookingId))).toEqual(baseline.bookings.filter((r) => !skip(r.bookingId)))
+    expect(now.bookings.filter((r) => !skip(r.bookingId))).toEqual(withPhase25Codes(baseline.bookings.filter((r) => !skip(r.bookingId))))
   })
 
   it("BK0179's typed $1,200 prints as one fee line at the price, its invoice total unchanged", () => {

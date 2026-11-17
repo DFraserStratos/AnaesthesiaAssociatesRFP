@@ -97,7 +97,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
       .map((booking) => {
         // The primary first (catch-up Phase 23): the row's operation text is the primary's.
         const procs = inDisplayOrder(procsByBooking.get(booking.id) ?? [])
-        const totals = booking.cancellation === undefined ? bookingFee({ procedures: procs, list, masters, billingLines: billingLinesRecord, patientId: booking.patientId, held: heldPricesForBooking(cueState, booking.id) }) : { units: 0, total: 0, needsPrice: false }
+        const totals = booking.cancellation === undefined ? bookingFee({ procedures: procs, list, masters, billingLines: billingLinesRecord, patientId: booking.patientId, held: heldPricesForBooking(cueState, booking.id), ...(cueState.billing.locks[booking.id] !== undefined ? { lock: cueState.billing.locks[booking.id]! } : {}) }) : { units: 0, total: 0, needsPrice: false }
         // What it was invoiced at: the same invoices the Invoices panel lists.
         const invoiced = invoicedByBooking.get(booking.id) ?? 0
         return {

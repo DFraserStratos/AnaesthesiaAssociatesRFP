@@ -137,3 +137,31 @@ describe('assignDraftListAsSimulatedOffice (catch-up Phase 31; the PWA stand-in 
     expect(STAND_IN_SOURCE).not.toMatch(/officePrivate|pairingPreferences|priorityTiers|notPreferredEntryIds|notPreferredWarning|tierFor|TIER_LABELS|PAIRING_LABELS/)
   })
 })
+
+describe('the office stand-in writes the lock (catch-up Phase 25)', () => {
+  it("authorises through authoriseList: every Booking locked with the handset's anaesthetist as payee", () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    try {
+      const listId = SEED_LIST_IDS.souterMon20Am
+      expect(authoriseAsSimulatedOffice(api, listId).ok).toBe(true)
+      const bookings = Object.values(api.getState().schedule.bookings).filter((b) => b.listId === listId && b.cancellation === undefined)
+      for (const b of bookings) expect(api.getState().billing.locks[b.id]?.payee.anaesthetistId).toBe(ANAE.souter)
+    } finally {
+      unwire()
+    }
+  })
+
+  it('a Procedure that needs a price surfaces as the refusal message, and nothing is locked', () => {
+    const api = createAppStore()
+    const listId = SEED_LIST_IDS.souterMon20Am
+    const booking = Object.values(api.getState().schedule.bookings).find((b) => b.listId === listId)!
+    const p = Object.values(api.getState().schedule.procedures).find((x) => x.bookingId === booking.id)!
+    const open = Object.values(api.getState().masters.contracts).find((c) => c.systemRole === 'openPriceFallback' && c.billsTo === 'payer')!
+    api.setState({ schedule: { ...api.getState().schedule, procedures: { ...api.getState().schedule.procedures, [p.id]: { ...p, governingContractId: open.id } } } })
+    const outcome = authoriseAsSimulatedOffice(api, listId)
+    expect(outcome.ok).toBe(false)
+    if (!outcome.ok) expect(outcome.message).toMatch(/^Needs a price/)
+    expect(api.getState().billing.locks[booking.id]).toBeUndefined()
+  })
+})

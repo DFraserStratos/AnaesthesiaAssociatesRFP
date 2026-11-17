@@ -6,7 +6,7 @@
     {
       "name": "authorise-list",
       "app": "admin",
-      "caption": "Authorising a submitted list hands it to the billing run",
+      "caption": "Authorising a submitted List locks each Procedure and hands the List to the billing run",
       "start": "/admin/review/L-34821-2026-07-20-AM",
       "setup": [
         {
@@ -16,7 +16,7 @@
       "states": [
         {
           "state": "confirm",
-          "caption": "Authorise confirm: the list locks and goes to billing as one unit",
+          "caption": "Authorise confirm: each Procedure's Contract, settings and price are locked, and the List goes to billing as one unit",
           "steps": [
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -31,10 +31,13 @@
         },
         {
           "state": "authorised",
-          "caption": "List authorised: the billing run raises its invoices and sends each by its party's delivery",
+          "caption": "List authorised and locked: the billing run raises its invoices from each Procedure's locked record and sends each by its party's delivery",
           "steps": [
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "wait": 400
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
@@ -52,7 +55,7 @@
     {
       "name": "billing-run",
       "app": "admin",
-      "caption": "Billing run for the authorised list, Booking by Booking",
+      "caption": "The billing run raises its invoices from each Procedure's locked record, one invoice per payer, and sends each by its party's delivery; the Procedures on a Booking billing the same payer share an invoice",
       "start": "/admin/billing",
       "setup": [
         {

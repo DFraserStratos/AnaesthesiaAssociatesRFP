@@ -19,6 +19,7 @@ import { advanceClockToDate } from './clockActions'
 import { receivePayment } from './paymentActions'
 import { payablesDue, runPayables } from './payablesActions'
 import { auditForEntity, bookingsForList, openAccRecs, proceduresForBooking } from './selectors'
+import { regenerateInvoiceFromLock } from './locks'
 import type { Actor } from './mutate'
 import { ANAE, HOSP, INS, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
 import { SURGEON_PDFS } from '../domain/integrations'
@@ -208,5 +209,25 @@ describe('PDF arrival · Surgeon PDF ingest', () => {
 
     const second = ingestPdfRow(api, OFFICE, listId, row)
     expect(second.ok && second.value.outcome === 'updated').toBe(true)
+  })
+})
+
+describe('every scenario jump leaves its AUTHORISED Lists locked and its invoices reproducible (catch-up Phase 25)', () => {
+  it('after S3 and S5 authorise, every AUTHORISED List is locked per Booking and every raised invoice regenerates identically', () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    try {
+      for (const listId of [SEED_LIST_IDS.souterMon20Am, SEED_LIST_IDS.souterMon20Pm, SEED_LIST_IDS.whitakerFri17]) expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
+      const s = api.getState()
+      for (const list of Object.values(s.schedule.lists).filter((l) => l.state === 'AUTHORISED')) {
+        for (const b of bookingsForList(s, list.id).filter((x) => x.cancellation === undefined)) expect(s.billing.locks[b.id]?.state, b.id).toBe('locked')
+      }
+      for (const invoice of Object.values(s.billing.invoices).filter((i) => i.kind === 'standard')) {
+        const result = regenerateInvoiceFromLock(s, invoice.id)
+        expect(result.ok && result.comparison.identical, invoice.invoiceNumber).toBe(true)
+      }
+    } finally {
+      unwire()
+    }
   })
 })

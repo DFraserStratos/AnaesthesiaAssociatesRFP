@@ -6,8 +6,8 @@ import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
 import {
   billingMonitor,
-  chooseContractForFailedBooking,
   handoffCase,
+  handoffCasesForBooking,
   allAaFeeInvoices,
   payablesDue,
   retryBillingCase,
@@ -19,12 +19,8 @@ import {
 } from '../../../store'
 import { dayMicroCap, formatCurrency, hhmm, plural } from '../../../shared/format'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
+import { FormError } from '../../../shared'
 import { sessionText } from '../../../domain/outOfHours'
-import { Button, FormError, useSurface } from '../../../shared'
-import { ContractSelect } from '../../../shared/contracts'
-import { contractAllowedOn } from '../../../domain/billing/contractRail'
-import { railContextForList, railMastersOf } from '../../../store'
-import { selectControlStyle } from '../flows/fieldChrome'
 
 interface BillingMonitorScreenProps {
   actor: Actor
@@ -32,17 +28,18 @@ interface BillingMonitorScreenProps {
 
 const cellStyle = adminCell()
 
-/** The billing failures the office resolves by choosing the Booking's Contract. */
-const CONTRACT_FAILURES = new Set(['contractIneffective', 'contractMissing', 'noContract', 'noCounterparty'])
+/** Under a failure the run raised (not a hand-off fault): what the Retry does (catch-up Phase 25). */
+export const RETRY_FROM_LOCK_NOTE = 'Retry rebuilds from the locked record. A wrong price after invoicing is corrected by a credit note and rebill.'
 const headCellStyle = adminHead()
 
 /**
  * The billing-flow monitor (Phase 09; A5). One pipeline per authorised List:
  * List authorised -> Billing run -> Invoices generated -> Emailed -> Xero
- * (Phase 10 stub), with a per-Booking row underneath. Failed rows carry the case's
- * readable failure and a Resolve & retry action: for a Contract failure it asks
- * the office to choose the Booking's Contract (catch-up Phase 18; no Contract is
- * ever edited from here), then re-bills only that Booking.
+ * (Phase 10 stub), with a per-Booking row underneath. Each Booking prices from
+ * its locked record (catch-up Phase 25). A hand-off fault keeps "Resolve &
+ * retry" (the hand-off again); any other failure shows its reason and a
+ * "Retry" that rebuilds from the lock. Nothing here edits a Contract or a
+ * Procedure.
  *
  * Two RFP-open readings are stated in the copy here: this surface lives in the
  * Admin Web App (vs a separate Billing Engine screen), and a failed Booking blocks
@@ -57,7 +54,6 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
   const xero = useAppStore((s) => s.xero)
   const [error, setError] = useState<string | null>(null)
   const [payRunMsg, setPayRunMsg] = useState<string | null>(null)
-  const [choosing, setChoosing] = useState<{ row: MonitorBookingRow; procedureId: string } | null>(null)
 
   const rows = useMemo(() => billingMonitor({ schedule, billing, masters }), [schedule, billing, masters])
   const failedTotal = rows.reduce((n, r) => n + r.failedCount + r.handoffFailedCount, 0)
@@ -87,15 +83,6 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
       setError(outcome.ok ? null : outcome.message)
       return
     }
-    // A Contract failure (no price in force, a Contract that cannot be found,
-    // no Contract to bill under, or a holder with no billing record): the
-    // office chooses the Booking's Contract first (keeping it is allowed, say
-    // after adding its price), then retries.
-    const failure = row.failure
-    if (failure?.procedureId !== undefined && failure.procedureId !== '' && CONTRACT_FAILURES.has(failure.code)) {
-      setChoosing({ row, procedureId: failure.procedureId })
-      return
-    }
     retry(row)
   }
 
@@ -107,35 +94,21 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
       return
     }
     setError(null)
-    // A billing-failure retry rebuilds the invoice; hand it off to Xero so the
-    // resolved case gets its ACCREC/ACCPAY pair (else it would never be payable).
-    handoffCase(useAppStore, row.caseId)
+    // A billing-failure retry rebuilds the Booking's invoices (a split raises two); hand each off to Xero
+    // so every resolved case gets its ACCREC/ACCPAY pair (else it would never be payable).
+    handoffCasesForBooking(useAppStore, row.bookingId)
   }
 
   return (
     <>
-    {choosing !== null && (
-      <ChooseContractSheet
-        actor={actor}
-        caseId={choosing.row.caseId ?? ''}
-        procedureId={choosing.procedureId}
-        patientName={choosing.row.patientName}
-        reason={choosing.row.failure?.message ?? ''}
-        onDone={() => {
-          const row = choosing.row
-          setChoosing(null)
-          retry(row)
-        }}
-        onClose={() => setChoosing(null)}
-      />
-    )}
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>
       <div>
         <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>Billing monitor</h1>
         <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4, maxWidth: 780 }}>
           The billing engine's office view: every authorised list, its pipeline from authorisation
-          to Xero handoff, and any booking that needs attention. A failed booking blocks only its own
-          invoice, never the rest of the list. Where the RFP leaves open whether this surface sits in
+          to Xero handoff, and any booking that needs attention. Each booking prices from its locked
+          record, taken when the list was authorised. A failed booking is held back on its own while
+          the rest of the list bills. Where the RFP leaves open whether this surface sits in
           the Admin app or a separate Billing Engine screen, the prototype puts it here. The "Prior
           balance" flag reads any open (unpaid) prior episode; whether to separately distinguish open
           from genuinely overdue is held as a discovery question, since invoices carry a raised date
@@ -187,71 +160,6 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
       )}
     </div>
     </>
-  )
-}
-
-/**
- * "Choose a Contract" for a Booking whose billing failed on its Contract
- * (catch-up Phase 18; RV-32): the office picks the right Contract, then the
- * Booking re-bills. Only the Procedure's Contract changes; no Contract is edited.
- */
-function ChooseContractSheet({
-  actor,
-  caseId,
-  procedureId,
-  patientName,
-  reason,
-  onDone,
-  onClose,
-}: {
-  actor: Actor
-  caseId: string
-  procedureId: string
-  patientName: string
-  reason: string
-  onDone: () => void
-  onClose: () => void
-}) {
-  const { Overlay } = useSurface()
-  const current = useAppStore((s) => s.schedule.procedures[procedureId]?.governingContractId ?? '')
-  const masters = useAppStore((s) => s.masters)
-  const schedule = useAppStore((s) => s.schedule)
-  // Only the Contracts the step rail allows on this Booking's List (catch-up Phase 20).
-  const allowed = useMemo(() => {
-    const booking = schedule.procedures[procedureId] !== undefined ? schedule.bookings[schedule.procedures[procedureId]!.bookingId] : undefined
-    const list = booking !== undefined ? schedule.lists[booking.listId] : undefined
-    if (list === undefined) return () => false
-    const ctx = railContextForList({ masters }, list)
-    const rail = railMastersOf({ masters })
-    return (id: string) => contractAllowedOn(rail, ctx, id)
-  }, [masters, schedule, procedureId])
-  const [contractId, setContractId] = useState(current)
-  const [error, setError] = useState<string | null>(null)
-
-  function choose() {
-    const outcome = chooseContractForFailedBooking(useAppStore, actor, caseId, procedureId, contractId)
-    if (!outcome.ok) {
-      setError(outcome.message)
-      return
-    }
-    onDone()
-  }
-
-  return (
-    <Overlay open onClose={onClose}>
-      <div data-shot="choose-contract-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Choose a Contract</div>
-        <div style={{ fontSize: 13.5, color: neutral.slate }}>
-          {patientName}'s Booking could not be billed. {reason} Choose the Contract it should bill under, or keep it once its price is added, then it is billed again.
-        </div>
-        <ContractSelect value={contractId} onChange={setContractId} selectStyle={selectControlStyle} label="Contract" allowed={allowed} />
-        <FormError message={error} />
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={choose} disabled={contractId === ''}>Choose and retry</Button>
-        </div>
-      </div>
-    </Overlay>
   )
 }
 
@@ -316,7 +224,10 @@ function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveR
                 <td style={cellStyle}><BookingStatusPill row={bookingRow} /></td>
                 <td style={cellStyle}>
                   {bookingRow.status === 'failed' ? (
-                    <span style={{ color: semantic.error.onTint }}>{bookingRow.failure?.message ?? 'Needs manual review.'}</span>
+                    <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <span style={{ color: semantic.error.onTint }}>{bookingRow.failure?.message ?? 'Needs manual review.'}</span>
+                      <span data-shot="monitor-retry-note" style={{ fontSize: 12, color: neutral.slate }}>{RETRY_FROM_LOCK_NOTE}</span>
+                    </span>
                   ) : bookingRow.handoffFailure !== undefined ? (
                     <span style={{ color: semantic.warning.onTint }}>{bookingRow.handoffFailure.message}</span>
                   ) : bookingRow.status === 'cancelled' ? (
@@ -333,7 +244,7 @@ function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveR
                       onClick={() => onResolveRetry(bookingRow)}
                       style={{ minHeight: 34, padding: '0 12px', borderRadius: radius.ctl, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                     >
-                      Resolve &amp; retry
+                      {bookingRow.status === 'failed' ? 'Retry' : 'Resolve & retry'}
                     </button>
                   )}
                 </td>

@@ -1464,6 +1464,14 @@ export interface BillingCase {
    */
   archivedAccRelated?: true
   invoiceId?: InvoiceId
+  /**
+   * Who is paid (catch-up Phase 25, DM-42): the List's anaesthetist at
+   * authorise, stamped by the run from the Booking's lock (`lock.payee`). The
+   * Xero hand-off, receipts and BCTIs read it, never a Booking-to-List join.
+   * Absent on a pre-payment case (raised at setup, before any lock: the live
+   * join until Phases 27 and 41).
+   */
+  payeeAnaesthetistId?: AnaesthetistId
   accRecId?: string
   accPayId?: string
   status: BillingPipelineStatus
@@ -1779,6 +1787,12 @@ export interface DemoSettings {
    * demo-only trigger.
    */
   failNextHandoff?: boolean
+  /**
+   * The Booking the armed hand-off fault waits for (catch-up Phase 25's staged
+   * billing failure, a built default): absent, the next hand-off faults.
+   * Cleared with the flag when it fires.
+   */
+  failHandoffBookingId?: string
   /** Seeded aggregate contact-volume counters for the Xero-sim callout. */
   volumeStory: XeroVolumeStory
 }

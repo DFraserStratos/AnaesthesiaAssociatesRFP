@@ -1,6 +1,7 @@
 /**
  * Pure invoice-building tests (Phase 08; flat Contracts since catch-up Phase
- * 18): the Contract-resolution truth table (the stored Contract governs,
+ * 18): the Contract-resolution truth table (since catch-up Phase 25, the lock
+ * builder's: a Procedure it cannot price or bill rejects the lock) (the stored Contract governs,
  * Disabled included; "Needs a price"; none is "Needs an invoice
  * destination", never resolved from the List, catch-up Phase 20), who is
  * billed from the Contract (`billablePartyForProcedure`),
@@ -12,12 +13,9 @@
 
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_RVG_TIME_RULE } from './timeUnits'
-import {
-  buildInvoicesForBooking,
-  counterpartyForProcedure,
-  resolveContractForProcedure,
-  type InvoiceBuildContext,
-} from './invoiceBuild'
+import { buildInvoicesForBooking, type InvoiceBuildContext } from './invoiceBuild'
+import { buildBookingLock } from './lock'
+import { billablePartyForProcedure as counterpartyForProcedure } from './whoIsBilled'
 import { GST_RATE, invoiceLayoutFor } from './invoicePresentation'
 import { splitDoesNotFitMessage } from './splitShare'
 import {
@@ -31,7 +29,7 @@ import {
   mkProcedure,
   RVG_MODIFIER_MASTER,
 } from './fixtures'
-import type { BillingLine, Contract, FeeSplit, Party } from '../types'
+import type { BillingLine, Contract, FeeSplit, Party, Procedure } from '../types'
 
 /** The holder Parties these tests use (catch-up Phase 18): each bills today's counterparty. */
 const PARTIES: Record<string, Party> = Object.fromEntries(
@@ -76,7 +74,17 @@ function withContracts(...contracts: Contract[]): InvoiceBuildContext {
   return mkCtx({ contracts: record })
 }
 
-describe('resolveContractForProcedure', () => {
+/** The lock builder's resolution for one Procedure (catch-up Phase 25): its Contract as locked, or the rejection. */
+function resolveContractForProcedure(procedure: Procedure, ctx: InvoiceBuildContext): { kind: 'resolved'; contract?: Contract } | { kind: 'exception'; code: string; message: string } {
+  const lock = buildBookingLock({ booking: mkBooking(), procedures: [procedure], ctx, takenAtISO: '', takenBy: '', partyName: (r) => r.id })
+  if (lock.state === 'rejected') {
+    const r = lock.rejections[0]!
+    return { kind: 'exception', code: r.code, message: r.message }
+  }
+  return { kind: 'resolved', contract: lock.procedures[0]?.contract }
+}
+
+describe('the lock builder resolves each Procedure\'s Contract', () => {
   const rateContract = mkContract({
     id: 'con-t2',
     aaCode: 'TST-002',
@@ -108,7 +116,7 @@ describe('resolveContractForProcedure', () => {
     const primary = mkProcedure({ rvgGroupId: 'RG-T-GA10', governingContractId: 'con-fix' })
     const needs = {
       kind: 'exception',
-      code: 'contractIneffective',
+      code: 'needsPrice',
       message: 'Needs a price: no price range in force on 21 Jul 2026 under COS ACC fixed fees.',
     }
     expect(resolveContractForProcedure(primary, ctx)).toEqual(needs)

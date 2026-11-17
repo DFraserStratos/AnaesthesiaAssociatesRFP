@@ -38,8 +38,10 @@ export function setArchiveWindowDays(api: AppStoreApi, actor: Actor, days: numbe
 /**
  * Arm the NEXT Xero handoff to fault (badged demo-only trigger; D-handoff). The
  * handoff records a `handoffFailure`, clears this flag and creates no pair.
+ * With `bookingId` the fault waits for that Booking's hand-off (catch-up Phase
+ * 25's staged billing failure), so the List's other Bookings hand off.
  */
-export function armHandoffFault(api: AppStoreApi, actor: Actor): Outcome {
+export function armHandoffFault(api: AppStoreApi, actor: Actor, opts: { bookingId?: string } = {}): Outcome {
   mutate(
     api,
     actor,
@@ -47,9 +49,12 @@ export function armHandoffFault(api: AppStoreApi, actor: Actor): Outcome {
       entityType: 'settings',
       entityId: 'demo',
       action: 'settings.armHandoffFault',
-      after: { failNextHandoff: true, atISO: clockISO(api.getState().clock) },
+      after: { failNextHandoff: true, ...(opts.bookingId !== undefined ? { bookingId: opts.bookingId } : {}), atISO: clockISO(api.getState().clock) },
     },
-    (s) => ({ settings: { ...s.settings, failNextHandoff: true } }),
+    (s) => {
+      const { failHandoffBookingId: _previous, ...rest } = s.settings
+      return { settings: { ...rest, failNextHandoff: true, ...(opts.bookingId !== undefined ? { failHandoffBookingId: opts.bookingId } : {}) } }
+    },
   )
   return ok(undefined)
 }

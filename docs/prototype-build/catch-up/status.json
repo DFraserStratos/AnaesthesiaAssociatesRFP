@@ -2,21 +2,20 @@
   "in_progress": [],
   "next": {
     "phases": [
-      "25"
+      "U6"
     ],
-    "note": "24 done (17 November), not yet committed: one price function (priceFor in domain/billing/procedurePrice.ts) over the five pricing kinds and the ladder (AUTHORISED, prepaid raised, typed, computed, \"Needs a price\"), one typed price (enteredPrice) behind setProcedurePrice and its gates; the anaesthetist's price line (PriceCard) and the phone's dock strip restored from d1562b4c; the office's Change price and Review Fee cell; the discount as its own line and the $0 no-charge invoice; the rate x time line and Method 3 gate gone, Aria at $26.50 (Fitzgerald's Booking $583.00); the backdated range trigger. PERSIST_VERSION 49. Reviewed, captured and green. Run 25 next (it replaces 24's interim authorisedPriceFor with the snapshot); U6 after 25; U7 before 44."
+    "note": "25 done (17 November), not yet committed: a pricing snapshot per Booking at authorise (domain/billing/lock.ts: BookingLock, buildBookingLock, invoiceDraftsFromLock, priceBookingFromLock, compareInvoice, lockViewFor), written in authoriseList's one commit; \"Needs a price\" the one authorise blocker; the billing run, retry and Regenerate read only the lock; the payee fixed on each case (payeeAnaesthetistId); every seeded AUTHORISED List locked (history migrated); the locked badge, Review's locked rate, the invoice's Locked record and Regenerate from locked data; each Contract's History tab; the billing-failure demo re-based on a Xero hand-off fault. PERSIST_VERSION 50. Reviewed, captured and green. Run U6 next (DefRow, Card, the table kit; it migrates 25's label and value rows), then 26."
   },
   "guidance": {
     "as_of": "2026-11-17",
-    "headline": "Start 25 now. 24 built one price function over the five pricing kinds, who may change the price, and the anaesthetist's view of it.",
-    "headline_sub": "24 built priceFor and the price ladder, enteredPrice behind setProcedurePrice, the anaesthetist's price line and dock strip, the office's Change price, the no-charge invoice and the discount line, and removed the rate x time line; it is reviewed, captured and green, not yet committed. Next in run order: 25, then U6.",
-    "parallel": "None now: 25 runs alone on the Contracts track, then U6.",
+    "headline": "Start U6 now. 25 locked each Procedure's Contract and price at authorise, billed only from that record, and showed each Contract's history.",
+    "headline_sub": "25 built the pricing snapshot at AUTHORISED (\"Needs a price\" blocks it), the lock-only billing run and Regenerate from locked data, the payee fixed at authorise and each Contract's History tab; it is done and not yet committed. Next in run order: U6, then 26, 27 and 27a.",
+    "parallel": "None now: U6 runs alone (a U phase never runs beside a catch-up phase), then 26.",
     "safe": {
-      "25": "Its dependencies (19a, 22, 22a, 23, 24) are done and it is next in run order. Commit 24 first: 25 snapshots 24's price source (priceFor) and replaces its interim authorisedPriceFor."
+      "U6": "Its dependencies (U5, 25) are done and it is next in run order. Commit 25 first: U6 migrates 25's rows (LockedBillingSetup, the Locked record card) onto DefRow."
     },
     "wait": {
-      "26": "Its catch-up dependency (17) is done, but it runs after the Contracts track (18 to 25) and U6 (DefRow, Card).",
-      "U6": "Runs after 25 (DefRow, Card), before 26."
+      "26": "Its catch-up dependency (17) is done, but it runs after U6 (DefRow, Card)."
     }
   }
 }

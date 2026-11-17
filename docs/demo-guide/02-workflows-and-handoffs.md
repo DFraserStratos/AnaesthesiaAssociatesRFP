@@ -415,8 +415,11 @@ Every active Booking in the List has been marked complete.
    - the **Changed** marker for edits since submit;
    - flags, which never block authorise: **Changed by Dr X: was** the old Contract, **Price typed: $X
      (computed $Y)**, **Contract not offered on this List** (for example after a move to another
-     surgeon's List), **Needs a price**, **Needs an invoice destination**, **Not marked completed**,
-     **Email or postal address needed** and manual B/T/M notes. A Disabled Contract raises no flag.
+     surgeon's List), **Needs an invoice destination**, **Not marked completed**, **Email or postal
+     address needed** and manual B/T/M notes. A Disabled Contract raises no flag.
+   - the one blocker: a Procedure that still **Needs a price**. **Authorise for billing** stays
+     disabled, naming the Procedure with an **Open** link, until a price is typed (Dr Chen's Tue 14 Jul
+     AM review List shows it on Hemi Walker's No contract · Fixed price Booking).
 9. She approves (**Approve**) or corrects (**Correct**, which opens the Booking's rail) each Contract
    change the anaesthetist made, or uses **Approve all N Contract changes**; she checks any typed price
    against the computed one. If something is wrong, Kirsty phones for clarification and corrects it in
@@ -424,12 +427,17 @@ Every active Booking in the List has been marked complete.
 10. She may log a phone note.
 11. She selects **Authorise for billing**. Authorising approves any Contract change still waiting; the
     confirm says how many. The anaesthetist sees **Awaiting office approval** under the Billing card
-    until then, and **Approved by the office** with the time after.
-12. The List becomes `AUTHORISED`; every Booking is immutable.
+    until then, and **Approved by the office** with the time after. Authorise is refused while any
+    Procedure needs a price.
+12. The List becomes `AUTHORISED`; every Booking is immutable. In the same step each Booking's lock is
+    written: each Procedure's Contract and its settings, the price range in force, the units, rate and
+    discount, the price, who is billed (with the patient and payer details as they stood), the split,
+    and who is paid, fixed as the List's anaesthetist at that moment. The Booking shows **Contract
+    locked at authorise**.
 
 ### Handoff
 
-One List-authorised event hands the whole List to the Billing Engine.
+One List-authorised event hands the whole List, with each Booking's lock, to the Billing Engine.
 
 ### Key rule
 
@@ -463,22 +471,27 @@ The List reaches `AUTHORISED`.
 
 ### Steps
 
-1. The Billing Engine iterates each active Booking and its Procedures.
-2. It reads each Procedure's one Contract; a Procedure with none fails as "Needs an invoice
-   destination".
-3. Each Procedure's Contract says who is billed: its holder Party when the Contract bills its holder
+1. The Billing Engine iterates each active Booking and reads only its lock, written at authorise. It
+   never looks up a Contract, a payer, a unit value or an RVG group afresh, and never swaps in a default
+   or another Contract; a Booking with no lock fails on its own.
+2. Each Procedure's locked Contract is the one it was authorised with; a Contract edit, Disable or new
+   price range after authorise changes nothing here.
+3. Each Procedure's Contract (as locked) says who is billed: its holder Party when the Contract bills its holder
    (a hospital, an insurer, a surgeon group), otherwise the Procedure's payer: the patient,
    or whoever the Paid by sheet names (a parent, a guardian, a benefactor, a family trust). Procedures
    sharing a payer share one invoice; payers are never matched on name or email.
    A surgeon's fixed price, No contract · RVG, No contract · Fixed price, an anaesthetist's own price
    list and every prepaid Contract bill the payer. The Booking's insurer or funder never decides it.
-4. It calculates the fee from the captured snapshot.
+4. It takes each Procedure's price from the lock (units, rate and discount, or the range in force on
+   the procedure date, as locked).
 5. It applies the multi-procedure rule to RVG-priced Procedures. A Procedure's fee split on the Booking (the **Split**
    button in its Billing card's Paid by, typed by the office or the anaesthetist before authorise: each party's
    share in $ or %, one party taking the rest) bills each party its share.
 6. It makes one invoice per billable party per Booking, and one per share where a fee is split.
-7. It creates one or more invoice documents, each in the anaesthetist's name as supplier with their GST
-   number, and AA as agent (the agent wording is provisional, OQ-29).
+7. It creates one or more invoice documents, each in the name of the payee locked at authorise as
+   supplier with their GST number, and AA as agent (the agent wording is provisional, OQ-29). The
+   invoice document prints from the lock (its **Locked record** card on the invoice rail), so it can be
+   regenerated exactly (**Regenerate from locked data**: identical), whatever has changed since.
 8. The layout comes from the Contract: the holder's when it bills its holder (invoice descriptions, the
    BTM breakdown, a cross-match strip and the Contract's holder reference code as "Your reference"),
    otherwise the patient's. Prices are held GST exclusive, with GST at the foot.
@@ -647,9 +660,13 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 
 #### Billing failure
 
-- A Booking may fail rating after the List is authorised.
-- The prototype isolates that Booking, lets the others invoice, then corrects the cause and retries.
-- Booking-level isolation is an explicit prototype choice; the RFP leaves it open.
+- The run prices only from the lock, so a Contract edit cannot fail it; what can still fail is outside
+  the lock, such as the Xero hand-off.
+- Failure is per Booking and a List never fails as a whole (OQ-05, answered): the failed Booking is held
+  back (a split Booking's invoices with it) while the rest of the List bills.
+- The office retries once from the Billing monitor: **Resolve & retry** re-sends a hand-off, **Retry**
+  rebuilds from the lock. The fix never edits a Contract or any other master; a wrong price after
+  invoicing is corrected by a credit note and rebill (a later build).
 
 #### Integration failure
 
@@ -676,6 +693,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Office review and authorisation | Yes | Phase 07 |
 | Invoice calculation and documents | Yes | Phase 08 |
 | Pre-payment, addendum, billing monitor/retry | Yes | Phase 09 |
+| Contract locked at authorise, invoices from the lock, Contract history | Yes | Catch-up Phase 25 |
 | Xero pairs, payment, balances and disbursement | Yes | Phase 10 |
 | AA's monthly fee invoices (settings, run, AA fees tab) | Yes | Catch-up Phase 16 |
 | HL7/FHIR/PDF ingestion and monitoring | Yes | Phase 11 |

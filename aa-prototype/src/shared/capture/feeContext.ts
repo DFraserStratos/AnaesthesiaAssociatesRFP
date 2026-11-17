@@ -21,6 +21,7 @@ import type { HeldPrices } from '../../domain/billing/procedurePrice'
 import { bookingFeeFor, type ProcedureFeeContext } from '../../domain/billing/bookingFee'
 import type { ProcedureAllocation } from '../../domain/billing/multiProcedure'
 import { groupOf } from '../../domain/billing/rvgGroups'
+import { priceBookingFromLock, type BookingLock } from '../../domain/billing/lock'
 import type { AppState } from '../../store'
 
 export interface BookingFeeArgs {
@@ -38,6 +39,13 @@ export interface BookingFeeArgs {
    * for the run. Absent: nothing holds a price.
    */
   held?: Readonly<Record<ProcedureId, HeldPrices>>
+  /**
+   * The Booking's pricing snapshot, once its List is AUTHORISED (catch-up
+   * Phase 25): every fee, unit, rate and the Contract then come from the lock,
+   * never from masters, so an edit after authorise moves no locked figure
+   * (US-15.0.3's one exception). Absent: the live price.
+   */
+  lock?: BookingLock
 }
 
 export interface ProcedureFeeView {
@@ -71,7 +79,9 @@ export interface BookingFeeTotals {
  * Booking total, Review and the list rows read its views; none prices a
  * Procedure alone.
  */
-export function bookingFee({ procedures, list, masters, billingLines, patientId, held }: BookingFeeArgs): BookingFeeTotals {
+export function bookingFee({ procedures, list, masters, billingLines, patientId, held, lock }: BookingFeeArgs): BookingFeeTotals {
+  const locked = lock !== undefined ? lockedFeeTotals(lock, billingLines) : undefined
+  if (locked !== undefined) return locked
   const anaesthetist = masters.anaesthetists[list.anaesthetistId]
   if (anaesthetist === undefined) {
     throw new Error(`list ${list.id} has no anaesthetist ${list.anaesthetistId}`)
@@ -106,4 +116,29 @@ export function bookingFee({ procedures, list, masters, billingLines, patientId,
     views[id] = { fee, allocation: fee.allocation, ...extras.get(id)! }
   }
   return { units: result.units, total: result.total, needsPrice: result.needsPrice, order: result.order, primaryId: result.primaryId, views }
+}
+
+/**
+ * A locked Booking's figures from its snapshot alone (catch-up Phase 25): the
+ * fee, allocation, Contract and RVG group as locked. Undefined when the lock
+ * holds no fee for some Procedure (a migrated history Booking that could not
+ * be priced at seed time): the caller then prices live with the held amounts.
+ */
+function lockedFeeTotals(lock: BookingLock, billingLines: Record<string, BillingLine>): BookingFeeTotals | undefined {
+  if (lock.state !== 'locked' || lock.procedures.length === 0 || lock.procedures.some((s) => s.fee === undefined)) return undefined
+  const views: Record<ProcedureId, ProcedureFeeView> = {}
+  for (const s of lock.procedures) {
+    // The extra billing lines are part of the locked fee's lines; the stored rows are listed beside them (frozen after AUTHORISED).
+    const nonRvgLines = Object.values(billingLines).filter((l) => l.procedureId === s.procedureId && l.chargeBasis !== 'rvg')
+    views[s.procedureId] = { fee: s.fee!, allocation: s.fee!.allocation, ...(s.rvgGroup !== undefined ? { rvgGroup: s.rvgGroup } : {}), ...(s.contract !== undefined ? { contract: s.contract } : {}), nonRvgLines }
+  }
+  const price = priceBookingFromLock(lock)
+  return {
+    units: price.units,
+    total: price.total,
+    needsPrice: false,
+    order: lock.procedures.map((s) => s.procedureId),
+    primaryId: lock.procedures.find((s) => s.procedure.isPrimary)?.procedureId ?? lock.procedures[0]?.procedureId,
+    views,
+  }
 }

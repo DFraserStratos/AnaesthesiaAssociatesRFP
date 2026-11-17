@@ -6,12 +6,12 @@
     {
       "name": "authorise",
       "app": "admin",
-      "caption": "Authorise the List for billing",
+      "caption": "Authorise the List for billing, locking each Procedure's Contract and price",
       "start": "/admin/review/L-25490-2026-07-20-AM",
       "states": [
         {
           "state": "confirm",
-          "caption": "Confirm authorising the whole List",
+          "caption": "Confirm authorising the whole List: each Procedure's Contract, settings and price are locked for billing",
           "steps": [
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -26,7 +26,7 @@
         },
         {
           "state": "authorised",
-          "caption": "List authorised and locked, invoices raised by the billing run",
+          "caption": "List authorised and locked: the lock shows against each Procedure's Contract, and the billing run raises the invoices",
           "steps": [
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -42,7 +42,8 @@
             }
           ],
           "highlight": [
-            "[data-shot=review-authorised-banner]"
+            "[data-shot=review-authorised-banner]",
+            "[data-shot=procedure-contract-locked] >> nth=0"
           ]
         }
       ]

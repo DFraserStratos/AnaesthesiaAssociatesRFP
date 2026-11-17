@@ -35,6 +35,7 @@ import { Notice } from '../ui/Notice'
 import { BackstopAmountField, ContractGroupHeading, NoContractGroup, RailOptionGroup, StepRail, type RailStep } from '../contracts/railParts'
 import { backstopPriceText, contractPriceText, railBackstops, railContractLabel } from '../contracts/railText'
 import { FormError } from '../ui'
+import { LockBadge } from './LockBadge'
 import { PaidByRow, type PaidByRowProps } from './PaidByRow'
 
 /**
@@ -128,6 +129,8 @@ function InlineBillingCard(props: BillingCardProps) {
     >
       <BillingSteps {...props} layout="side" />
       {paidBy !== null && <PaidByRow {...paidBy} variant="line" />}
+      {/* Once the List is AUTHORISED: the Contract and price are locked (catch-up Phase 25). */}
+      <LockBadge bookingId={props.procedure.bookingId} detail />
     </CaptureSection>
   )
 }
@@ -146,10 +149,11 @@ function usePaidBy({ procedure, actor, canEdit }: BillingCardProps): Omit<PaidBy
   const billingLines = useAppStore((s) => s.schedule.billingLines)
   const invoices = useAppStore((s) => s.billing.invoices)
   const invoiceLines = useAppStore((s) => s.billing.invoiceLines)
+  const locks = useAppStore((s) => s.billing.locks)
   const surface = actor.role === 'office' ? 'office' : 'anaesthetist'
   const view = useMemo(
-    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines }, billing: { invoices, invoiceLines } }, procedure.id, surface),
-    [masters, procedures, bookings, lists, billingLines, invoices, invoiceLines, procedure.id, surface],
+    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines }, billing: { invoices, invoiceLines, locks } }, procedure.id, surface),
+    [masters, procedures, bookings, lists, billingLines, invoices, invoiceLines, locks, procedure.id, surface],
   )
   if (view === undefined) return null
   const booking = bookings[procedure.bookingId]
@@ -865,6 +869,7 @@ function MobileBillingCard(props: BillingCardProps) {
         )}
       </button>
       {paidBy !== null && <PaidByRow {...paidBy} variant="summary" />}
+      <LockBadge bookingId={procedure.bookingId} style={{ marginTop: 10, alignSelf: 'flex-start' }} />
       <Overlay open={open} onClose={() => setOpen(false)}>
         <div data-shot="billing-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <OverlayHeader title={label} />

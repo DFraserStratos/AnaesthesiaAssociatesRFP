@@ -87,6 +87,8 @@ export interface ProcedureStackView {
      * Alan Prentice $79.50 (the rest)", or the reason it no longer fits.
      */
     split?: { text: string; fits: boolean; parties: number }
+    /** Locked at AUTHORISED (catch-up Phase 25): everything above is the snapshot's, shown with the lock glyph. */
+    locked?: true
   } | null
   /**
    * The RVG code wherever one is held; `toChoose` (the anaesthetist's

@@ -245,7 +245,8 @@ allowing billing to proceed.
   Contract), and confirm the Contract and who is billed make sense at review.
 - Approve or correct each Contract the anaesthetist changed, and check any typed price against the
   computed one.
-- Spot manually adjusted BTM values and other advisory flags, none of which blocks authorise.
+- Spot manually adjusted BTM values and other advisory flags, none of which blocks authorise; only a
+  Procedure that still needs a price does, until she types one.
 - Correct office-owned data without returning the List to the anaesthetist.
 - Authorise a clean List and know that it is now immutable.
 - Monitor later billing, integration and Xero exceptions.
@@ -266,8 +267,10 @@ allowing billing to proceed.
    waiting.
 5. Log a phone note if clarification was needed.
 6. Authorise the List. A $0.00 Booking raises a $0.00 "No charge" invoice: no payable, no BCTI.
-7. Confirm that the Bookings lock and the List hands to billing.
-8. Later, monitor invoice and integration failures and retry after correction.
+7. Confirm that the Bookings lock, each Procedure's Contract and price locked onto it ("Contract locked
+   at authorise"), and the List hands to billing.
+8. Later, monitor invoice and integration failures: a failed Booking is held back while the rest of
+   the List bills, and she retries it from the Billing monitor without editing any Contract.
 9. Split a Procedure's fee on a Booking when more than one party pays (**Split** in its Billing card's Paid by), before authorising.
    Change a Procedure's payer there too (a dialog on web) until the List is authorised; each payer gets one invoice.
 10. After the run: the Billing Engine emails each invoice or marks it **To post**; the office does not

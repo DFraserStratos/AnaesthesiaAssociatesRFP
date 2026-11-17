@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { RegenerateResult } from '../../store/locks'
 
 /**
  * Per-trigger memory that "Replay" needs (catch-up Phase 14). Shared across
@@ -21,6 +22,12 @@ export interface DemoTriggerMemory {
   photoCaptureRequest: { listId: string; n: number } | null
   /** Photo request counter, the `n` above; it outlives a clear, so a repeat still differs. */
   photoCaptureCounter: number
+  /**
+   * The last "Regenerate from locked data" result per invoice (catch-up Phase
+   * 25): the invoice rail's result line reads it. Read-only, no domain write.
+   */
+  regenerated: Record<string, RegenerateResult>
+  rememberRegenerate: (invoiceId: string, result: RegenerateResult) => void
   rememberMessage: (id: string) => void
   rememberWebhook: (webhook: { accRecId: string; key: string; amount: number }, n: number) => void
   requestPhotoCapture: (listId: string) => void
@@ -34,6 +41,8 @@ export const useDemoTriggerMemory = create<DemoTriggerMemory>((set) => ({
   webhookCounter: 0,
   photoCaptureRequest: null,
   photoCaptureCounter: 0,
+  regenerated: {},
+  rememberRegenerate: (invoiceId, result) => set((m) => ({ regenerated: { ...m.regenerated, [invoiceId]: result } })),
   rememberMessage: (id) => set({ lastMessageId: id }),
   rememberWebhook: (webhook, n) => set({ lastWebhook: webhook, webhookCounter: n }),
   requestPhotoCapture: (listId) =>

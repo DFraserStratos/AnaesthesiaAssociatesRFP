@@ -19,6 +19,8 @@ import { accent, fontFamily, neutral, radius, type as typeScale } from '../../th
 import type { ProcedureStackView, StackSurface } from '../../domain/billing/procedureStack'
 import { PROCEDURE_TEXT_SOURCE_LABELS, receivedDay } from '../format'
 import { formatPricingBasis } from '../contracts/labels'
+import { Lock } from 'lucide-react'
+import { LOCK_BADGE_TEXT } from '../../domain/billing/lock'
 
 export interface ProcedureStackProps {
   view: ProcedureStackView
@@ -171,9 +173,11 @@ function CompactStack({ view, surface, heading }: ProcedureStackProps) {
       {line(
         'procedure-contract',
         'Contract',
-        contract !== null ? `${contract.name}, held by ${contract.holderName}, invoiced ${contract.invoiced?.name ?? 'not yet known'}, ${basis}` : 'Needs an invoice destination',
+        contract !== null ? `${contract.name}, held by ${contract.holderName}, invoiced ${contract.invoiced?.name ?? 'not yet known'}, ${basis}${contract.locked === true ? `, ${LOCK_BADGE_TEXT.toLowerCase()}` : ''}` : 'Needs an invoice destination',
         contract !== null ? (
           <>
+            {/* Locked at authorise (catch-up Phase 25): the small mist lock glyph of Admin Review's locked rows. */}
+            {contract.locked === true && <Lock data-shot="procedure-contract-locked" size={11} strokeWidth={2.25} color={neutral.mist} aria-label={LOCK_BADGE_TEXT} style={{ display: 'inline-block', marginRight: 4, verticalAlign: '-1px' }} />}
             <span style={{ color: neutral.ink, fontWeight: 600 }}>{contract.name}</span> · {basis}
           </>
         ) : (

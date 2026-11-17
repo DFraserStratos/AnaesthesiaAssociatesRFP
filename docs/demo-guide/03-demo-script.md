@@ -541,8 +541,10 @@ already seeded.
   the office checks: every Procedure's text, Contract with who is invoiced, and RVG code, the payer, the
   insurer or funder with its approval number, any alert from the anaesthetist and any edit since
   submit. Flags point at what needs a look, a Contract she changed, a typed price beside the computed
-  one, a Contract that no longer fits the List, anything still needing a price, but no flag ever blocks.
-  The office approves or corrects each Contract change, and authorising approves the rest."
+  one, a Contract that no longer fits the List, but no flag blocks. The one thing that stops
+  authorise is a Procedure that still needs a price, because authorising locks each Procedure's
+  Contract and price onto it. The office approves or corrects each Contract change, and authorising
+  approves the rest."
 - **Expected:** Dr Morrison's Mon 20 Jul AM (`/admin/review/L-25490-2026-07-20-AM`) raises no flags.
   Each row shows its Procedure stack (procedure text, Contract with who is invoiced, RVG code) and the
   payer and insurer or funder, with a teal **Change** that opens the Admin Booking. The authorisation
@@ -556,7 +558,9 @@ already seeded.
   Surgery RVG: select **Approve** (it reads **Approved** with the time) or **Correct**, which opens the
   Booking's rail. Owen Prendergast (09:00, No contract · RVG) reads **Price typed: $1,200.00 (computed
   $265.50)**. Hemi Walker (10:15, No contract · Fixed price, no amount) reads **Needs a price** and **Not
-  marked completed**: the office types a price and completes it before authorising. Rosalind Kerr (11:00)
+  marked completed**, and **Authorise for billing** stays disabled, naming her ("Hemi Walker: Needs a
+  price: No contract · Fixed price has no price of its own.", with an **Open** link): the office types
+  a price and completes her Booking before authorising. Rosalind Kerr (11:00)
   carries a Merivale fixed price linked to Ms Lim, so it reads **Contract not offered on this List**.
   While any change waits, the action bar offers **Approve all N Contract changes**; authorising
   approves any still waiting, and the confirm says how many. A Disabled Contract raises no flag. On the
@@ -633,12 +637,21 @@ them.
 
 - **Click:**
   - Go to **Admin → Review queue**.
-  - Process the two Mon 20 Jul Melanie Lists: authorise Mon 20 Forte AM (the banner reads "3 invoices
-    raised. 3 emailed, 0 to post."), then use **Next in queue** to authorise St George's PM ("4
-    invoices raised. 4 emailed, 0 to post.").
+  - Process the two Mon 20 Jul Melanie Lists: authorise Mon 20 Forte AM (the confirm says authorising
+    locks each Procedure's Contract onto it; the banner reads "3 invoices raised. 3 emailed, 0 to
+    post."), then use **Next in queue** to authorise St George's PM ("4 invoices raised. 4 emailed, 0
+    to post.").
+  - On the authorised List, pause on the lock glyph beside each Contract in the Contract column, the
+    rate in the totals row, **@ $26.50/unit (locked)**, and **Paid to Dr Melanie Souter** on each row.
+  - Optional: open Ruth Kim's Booking (`/admin/day/2026-07-20/bookings/BK0023`): the Billing card
+    carries **Contract locked at authorise**, and the Office billing setup is read only, from the
+    locked record: Contract Forte Health RVG · FORTE-001, Billed to Forte Health, Price $344.50 (13
+    units @ $26.50/unit (locked)), Paid to Dr Melanie Souter, "Locked Tue 21 Jul, 08:00 by Kirsty W."
   - Select **View invoices → AA-2026-0002 · Brian Holt → View**.
   - Pause on the **Delivery** card on the invoice rail: the run already emailed it ("Emailed to ... at
-    08:00", a **Simulated send** badge, **Resend** and **Print**). Then pause on the invoice's head: Dr
+    08:00", a **Simulated send** badge, **Resend** and **Print**), and the **Locked record** card the
+    invoice was raised from (the Contract and its settings, who is billed, the price, the split, who is
+    paid). Then pause on the invoice's head: Dr
     Melanie Souter as supplier with "GST number 104-348-211", the agent block ("Issued by Anaesthesia
     Associates Limited as agent for Dr Melanie Souter. AA GST number 102-345-678.") with its
     **Provisional (OQ-29)** pill, and GST (15%) at the foot.
@@ -659,7 +672,10 @@ them.
   - Back through the **Invoices** breadcrumb, open **AA-2026-0006** ("Emailed to alan.prentice11@example.net"): the
     patient's layout, the same lines without the BTM breakdown or the strip.
 - **Say:** "The Billing Engine, not Xero, produces and sends every invoice as part of the run, in Dr
-  Souter's name with her GST number and AA as agent. Each Procedure's Contract decides who is billed:
+  Souter's name with her GST number and AA as agent. Authorising locked each Procedure's Contract onto
+  it: the Contract's settings, the range in force, the rate and discount, the price, who is billed and
+  who is paid. The run prices from that record alone, so a Contract edit after authorise changes
+  nothing here. Each Procedure's Contract decides who is billed:
   its holder when the Contract bills its holder, otherwise the Procedure's payer, and Procedures that
   share a payer share one invoice. The layout
   follows the Contract (the holder's when it bills its holder) and GST is always added at the foot;
@@ -669,10 +685,14 @@ them.
   so nib is invoiced its share and Alan the gap, each on its own invoice. Xero follows as the
   receivables and banking service." Name the agent wording as provisional: it waits on AA's
   accountant (OQ-29).
-- **Expected:** invoice rows appear for both Lists, derived from the same captured data, with the
-  figures unchanged ($365.70; $152.38 and $91.43); one invoice for the multi-procedure Booking, two for
-  the fee-split Booking, and AA-2026-0006 goes to Alan Prentice (the gap), not St George's. Each
-  invoice shows its delivery stamp. Dr Souter's Mon 20 Jul Lists leave her main view (phone and web) as
+- **Expected:** each authorised Booking carries **Contract locked at authorise**, and the run prices
+  from that record: the Contract's settings, the range in force, the rate and discount, the price, who
+  is billed and who is paid (Dr Souter), and the Prentice split. Invoice rows appear for both Lists
+  with the figures unchanged: Forte AM, Brian Holt $365.70, Ruth Kim $396.18 and Esther Patel $274.28;
+  St George's PM, nib $152.38 and Alan Prentice $91.43 (the split), then $365.70 and $304.75. One
+  invoice for the multi-procedure Booking, two for the fee-split Booking, and AA-2026-0006 goes to
+  Alan Prentice (the gap), not St George's. Review shows the lock glyph in the Contract column and
+  "@ $26.50/unit (locked)". Each invoice shows its delivery stamp. Dr Souter's Mon 20 Jul Lists leave her main view (phone and web) as
   soon as the office authorises them, and their invoices show in her Balances at once, with no Next
   morning needed.
 - **Optional aside (before authorising the PM List):** open Alan's Booking (**Admin → Day → Mon 20
@@ -721,7 +741,9 @@ a submitted List: "A hospital feed cannot change a submitted List").
 - **Expected:** a matched ACCREC plus draft ACCPAY pair per invoice, each showing its InvoiceNumber
   and Reference (the ACCPAY's number ends `-P`). The patient, Alan Prentice, is named only in the
   "Linked Billing Engine case" panel, which reads the billing system; read his name from there. On
-  this pair, nib owes $152.38 and the payable to Dr Souter is $152.38. Each ACCPAY carries a
+  this pair, nib owes $152.38 and the payable to Dr Souter is $152.38: the payee is read from the
+  Booking's locked record (who is paid was fixed at authorise), as is nib's share of the split. Each
+  ACCPAY carries a
   **Buyer-created tax invoice** block, with provisional wording (**Provisional (OQ-29)**) naming Dr
   Souter as supplier (GST 104-348-211) and AA as agent (GST 102-345-678): one per invoice and the same
   value, so Alan's split gives two.
@@ -839,15 +861,22 @@ actions** on the screen named in its beat.
 ### Beat 3: billing failure and retry
 
 - **Click:**
-  - Go to **Admin billing monitor → Demo actions → Trigger billing failure → Run**.
-  - On the same screen, **Losa Tuilagi → Resolve & retry**, choose **COS-001 · ACC orthopaedic
-    services, Canterbury Orthopaedic Surgeons**, then **Choose and retry**.
-- **Say:** "A Booking can fail after the List is authorised, here because the Booking was pointed at a
-  fixed-price COS Contract whose price only starts on 1 August, after this List. The prototype isolates that Booking, still
-  invoices its clean sibling, then lets the office choose the right Contract and retry. No Contract is
-  edited."
-- **Expected:** the failed Booking shows "Needs a price: no price range in force on 16 Jul 2026 under
-  COS ACC fixed fees" while its sibling is billed; choosing the Contract and retrying bills COS.
+  - Go to **Admin Billing monitor → Demo actions → Trigger billing failure → Run**. It authorises Dr
+    Ropata's Thu 16 Jul List with the Xero hand-off set to fail for one Booking.
+  - Pause on the monitor's intro ("Each booking prices from its locked record, taken when the list was
+    authorised. A failed booking is held back on its own while the rest of the list bills.") and on
+    Dr Hannah Ropata's St George's AM List.
+  - On the same screen, **Losa Tuilagi → Resolve & retry**.
+- **Say:** "The engine prices only from what was locked at authorise, so a Contract edit can no longer
+  break a run, and nothing is ever swapped for a default. What can still fail is outside the lock,
+  here the hand-off to Xero. A List never fails as a whole: the failed Booking is held back and the
+  rest of the List bills. The office retries once, without touching the Contract."
+- **Expected:** Losa Tuilagi's Booking reads **Handoff failed** with its reason on the row ("Xero
+  handoff failed (simulated fault). No ACCREC/ACCPAY pair was created; the invoice stands. Resolve and
+  retry from the billing monitor."); Hemi Walker's Booking reads **Handed off**, and the List is not
+  failed. **Resolve & retry** hands hers off once: her row reads **Handed off** and her Xero pair
+  appears, with no duplicate invoice. Her invoice (AA-2026-0002, Canterbury Orthopaedic Surgeons,
+  $303.60) and Hemi Walker's (AA-2026-0003, St George's, $221.38) are unchanged. No Contract changes.
 
 ### Beat 4: integration dead-letter and manual fix
 
@@ -875,21 +904,24 @@ actions** on the screen named in its beat.
 - **Expected:** the payable authorises exactly the amount received; each run pays exactly what arrived,
   and the total paid out equals the invoice total, never more.
 
-**Discovery points:** billing-failure isolation (a prototype choice; the RFP leaves it open); which
-conditions warn, and how strongly; where the to-do list sits on the dashboard; and how inbound messages targeting a submitted or authorised List
+**Discovery points:** settled: billing failure is per Booking, and a List never fails as a whole
+(OQ-05); still to confirm with AA: exactly which fields are frozen at authorise (US-15.0.3: AR-58 2.8
+names them, Donald's proposal); which conditions warn, and how strongly; where the to-do list sits on the dashboard; and how inbound messages targeting a submitted or authorised List
 are parked for manual intervention.
 
 ---
 
 ## S5 · Compliance tour
 
-**Serves:** audit, identity, data minimisation and audited Contract edits, the governance the
-evaluators will probe. **Time:** 5 to 6 minutes.
+**Serves:** audit, identity, data minimisation, Contract history and the invoice recipe, the
+governance the evaluators will probe. **Time:** 5 to 6 minutes.
 
 **Stage it:** control panel, Scenario jumps, **S5 · Compliance tour → Jump → Confirm jump**. This
 resets to rich booking-to-clinical histories on every Booking, adds three live edits to David Chen's
-trail, and authorises Dr Whitaker's Fri 17 Jul List to raise its Health NZ agreed rate
-invoices. Use **Go to Admin app** and **Go to Xero sim**.
+trail, and authorises Dr Whitaker's Fri 17 Jul List, which locks the Health NZ agreed rate and the
+price in force on 17 Jul onto each Procedure and raises its five invoices from that record
+(AA-2026-0002 to AA-2026-0006, Hemi Walker's first at $264.50). Use **Go to Admin app** and **Go to
+Xero sim**.
 
 ### Beat 1: the audit trail of a much-edited Booking
 
@@ -932,24 +964,53 @@ invoices. Use **Go to Admin app** and **Go to Xero sim**.
   or guardian name shows on any Xero contact or record; hospitals, insurers and the anaesthetist
   payees keep their names.
 
-### Beat 4: Contract edits are audited
+### Beat 4: Contract history and the invoice recipe
 
 - **Click:**
-  - Go to **Admin → Master data → Contracts**, type **Unisports** in the search, and open
-    **UNI-001 · Unisports Ortho**.
-  - Change its rate from **$93.47** to **$95.00**, then **Save contract**.
-  - Open **Admin → Audit**, set **Entity type** to **contract**, and pause on the entry.
-  - Back in **Contracts**, search **Face lift** and open **MER-001 · Face lift** (Merivale Plastic
-    Surgery, $3,100.00 from 1 Jun 2026, **In force today**). Under **Price ranges**, enter a start of
-    **1 Jul 2026** (already past) and **3200**, then **Add price range**. Open the seeded Booking it prices (**Admin
-    Day view → Mon 10 Aug → Dr Souter's PM List → Sophie Matthews**).
-- **Say:** "A Contract is edited in place, and every change is recorded with before and after. A fixed
-  price changes from a date by adding a price range, and the start can be in the past: the Booking
-  re-prices, while invoices already raised stay as they are. Any other change that must start on a
-  date is a new Contract, and the old one is disabled, never deleted."
-- **Expected:** the audit entry shows the pricing before and after; no invoice changes. The Face lift's
-  first range now reads **1 Jun 2026 to 30 Jun 2026**, the new one **From 1 Jul 2026** (In force today), and Sophie
-  Matthews' Booking total reads **$3,200.00**; the audit shows **Price range added**.
+  - Go to **Admin → Master data → Contracts** and open **CPH-002 · Health NZ agreed rate**
+    (Christchurch Public, RVG at the Contract's own rate, $23.00 a unit). Optionally open its
+    **History** tab first: "No changes yet", with Dr Whitaker's Procedures already listed under
+    **Procedures locked against this Contract**.
+  - On **Details**, change **Rate ($ per unit)** from 23 to 24, then **Save contract**.
+  - Open the Contract again and select its **History** tab. Pause on the new row, then on **Procedures
+    locked against this Contract**.
+  - Follow Hemi Walker's invoice link (**AA-2026-0002**), or go to **Admin → Invoices** and open it.
+    Pause on the **Locked record** card, then **Demo actions → Regenerate from locked data → Run**.
+- **Say:** "Every change to a Contract is audited with its values before and after, who made it and
+  when, and nothing is deleted: a Contract is edited in place or disabled, never versioned or staged.
+  A Booking's price follows its Contract until the List is authorised. From then on the invoice keeps
+  the recipe it was raised from: the Contract's settings, the range in force, the price, who was
+  billed, the patient details and who is paid. So it can be produced again exactly, whatever has
+  changed since. It is not a replay of the data as at a date."
+- **Expected:** the History row reads **Contract updated · Kirsty W. · office**, with today's date and
+  time and **Pricing: RVG at $23.00 per unit → RVG at $24.00 per unit**. Under it, Dr Whitaker's five
+  Fri 17 Jul Procedures (Hemi Walker, Chris Liu, Laura Collins, Olive Patel, Gemma Kaur), each "Locked
+  Tue 21 Jul, 08:00" and linked to its invoice (AA-2026-0002 to AA-2026-0006). His invoices are
+  unchanged: Hemi Walker's still reads $264.50, and its Locked record card still reads 10 units @
+  $23.00/unit (Contract rate, locked), paid to Dr Ben Whitaker, priced on Fri 17 Jul 2026. Regenerate
+  reads **Regenerated from locked data: identical (1 line, total $264.50)**.
+- **Worth pointing at (optional, a backdated price range):** a price range belongs only to a
+  fixed-price Contract, so Health NZ agreed rate, an RVG rate, has none. On the Contracts view,
+  **Demo actions → Demo: add a backdated price range → Run** adds a range from 1 Jul 2026 at
+  $3,300.00 to Merivale's Face lift (MER-001). An ACTIVE Booking follows the change: Sophie Matthews'
+  Face lift (`/admin/day/2026-08-10/bookings/BK0163`) now reads $3,300.00. A Booking with a typed
+  price, and the authorised, invoiced one, stay as they were: a locked Booking never follows a change.
+
+### Optional beat: unit value after authorise
+
+- **Click:**
+  - In the Review queue, authorise Dr Souter's Mon 20 Jul AM List (`/admin/review/L-34821-2026-07-20-AM`)
+    if it is still waiting: the rate reads **@ $26.50/unit (locked)**, total $901.00.
+  - Go to **Admin → Master data → Anaesthetists → Dr Melanie Souter → Edit**, change **Unit value ($)**
+    from 26.50 to 28.00, then **Save changes**.
+  - Back on the authorised List in Review; then Brian Holt's invoice (**AA-2026-0007** after the S5
+    jump) → **Demo actions → Regenerate from locked data → Run**; then an ACTIVE Booking of hers,
+    Hemi Walker on her Tue 21 Jul AM List (`/admin/day/2026-07-21/bookings/BK0001`).
+- **Say:** "The unit value is read when the List is authorised and kept in the lock. Changing it later
+  re-prices only work not yet authorised."
+- **Expected:** Review still reads **@ $26.50/unit (locked)** and $901.00; Regenerate reads
+  **identical (2 lines, total $365.70)**; Hemi Walker's ACTIVE Booking reads **13 units x $28.00 =
+  $364.00** (it was $344.50). **Reset → Confirm reset** afterwards (or jump S5 again).
 
 **Worth pointing at (optional):** **Admin → Master data → Contracts**: Merivale's three combination
 Contracts (search **H3**: Face lift, Facelift plus 1 add on, Facelift plus 2 add ons, each its own

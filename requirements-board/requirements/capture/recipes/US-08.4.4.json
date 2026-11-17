@@ -1,12 +1,12 @@
 {
   "id": "US-08.4.4",
-  "status": "partial",
-  "absentReason": "Invoices are stored as snapshots (lines, supplier, agent and delivery) that later Contract edits do not change, but there is no action yet to regenerate a past invoice from the locked data and the price range in force: catch-up Phase 25 builds it.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "snapshot-invoice",
       "app": "admin",
-      "caption": "An invoice kept exactly as raised: its lines, supplier, agent and delivery stored on it, unchanged by later Contract edits",
+      "caption": "An invoice kept exactly as raised from its locked record: its lines, supplier and delivery stored on it, unchanged by later edits",
       "start": "/admin/invoices",
       "setup": [
         {
@@ -25,6 +25,111 @@
           ],
           "highlight": [
             "[data-shot=invoice-lines]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "locked-record",
+      "app": "admin",
+      "caption": "The invoice's locked record: the Contract and its settings, who is billed, the price with its units and locked rate, the split and the payee",
+      "start": "/admin/invoices",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/masters"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "[data-shot=masters-anaesthetists] tr:has-text(\"Souter\") >> text=\"Edit\""
+        },
+        {
+          "wait": 500
+        },
+        {
+          "fill": "[role=dialog] >> role=textbox[name=\"Unit value ($)\"]",
+          "value": "28.00"
+        },
+        {
+          "click": "[role=dialog] >> role=button[name=\"Save changes\"]"
+        },
+        {
+          "wait": 500
+        }
+      ],
+      "states": [
+        {
+          "state": "record",
+          "caption": "Raised from the record locked at authorise; Dr Souter's unit value has since changed and the record has not",
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0002\") >> role=button[name=\"View →\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "[data-shot=invoice-locked-record]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-locked-record]"
+          ]
+        },
+        {
+          "state": "regenerated",
+          "caption": "Regenerated from locked data after the unit value change: identical to the invoice as raised",
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0002\") >> role=button[name=\"View →\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "trigger": "regenerate-invoice"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-shot=invoice-regenerated]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-locked-record]",
+            "[data-shot=invoice-regenerated][data-identical=true]"
           ]
         }
       ]

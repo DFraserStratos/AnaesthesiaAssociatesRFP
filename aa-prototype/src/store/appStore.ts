@@ -37,6 +37,8 @@ import type {
   XeroContact,
 } from '../domain/types'
 import type { AppId } from '../shell/appConfig'
+import type { BookingLock } from '../domain/billing/lock'
+import { seedLocks } from './locks'
 
 // ---------------------------------------------------------------------------
 // Slice shapes (typed now, filled in Phases 08 to 11)
@@ -60,6 +62,12 @@ export interface BillingSlice {
    * own case, deliberately outside `cases` (see `AaFeeInvoice`).
    */
   aaFeeInvoices: Record<string, AaFeeInvoice>
+  /**
+   * The pricing snapshot per Booking, written at AUTHORISED (catch-up Phase 25;
+   * US-04.3.5, DM-08): the billing run, its retry and Regenerate read only
+   * this. Keyed by Booking id; `domain/billing/lock.ts` holds the shape.
+   */
+  locks: Record<string, BookingLock>
 }
 
 export interface XeroSlice {
@@ -282,11 +290,14 @@ export const PERSIST_KEY = 'aa-demo'
  *  seeded Tue-21 notes) + two advisory ListConflicts seeded onto Wed 22 booked
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
- *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 49
+ *  (live Finish-now demo) + the Souter rate x time capture booking + patient.
+ *  v50: catch-up Phase 25, the pricing snapshot (`billing.locks`, every seeded
+ *  AUTHORISED List locked, the history backdrop migrated from its invoices)
+ *  and `BillingCase.payeeAnaesthetistId`. */
+export const PERSIST_VERSION = 50
 
 export function emptyBillingSlice(): BillingSlice {
-  return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }
+  return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {} }
 }
 export function emptyXeroSlice(): XeroSlice {
   return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {} }
@@ -309,7 +320,7 @@ export function freshAppState(): AppState {
   // counters bumped past the ids it consumed so the first runtime billing run
   // continues the sequence cleanly.
   const seedBilling = buildSeedBillingSlice(seed, SEED_PREPAID_BOOKING_ID, SEED_AUTHORISED_INVOICED_BOOKING_IDS)
-  return {
+  const state: AppState = {
     ...seed,
     counters: seedBilling.counters,
     clock: INITIAL_CLOCK,
@@ -320,11 +331,15 @@ export function freshAppState(): AppState {
       receipts: seedBilling.receipts,
       contactIdCache: seedBilling.contactIdCache,
       aaFeeInvoices: seedBilling.aaFeeInvoices,
+      locks: {},
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
     shell: { currentApp: 'mobile', suggestionSeq: 0 },
   }
+  // Every seeded AUTHORISED List is locked (catch-up Phase 25), its cases stamped with the payee.
+  const locked = seedLocks(state)
+  return { ...state, billing: { ...state.billing, locks: locked.locks, cases: locked.cases } }
 }
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {

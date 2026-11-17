@@ -282,7 +282,6 @@ export {
 export {
   runBillingForList,
   retryBillingCase,
-  chooseContractForFailedBooking,
   resendInvoice,
   wireBillingRun,
   handoffListCases,
@@ -419,3 +418,5 @@ export {
   completionContextFor,
   type NeedsInvoiceDestinationRow,
 } from './selectors'
+export * from './locks'
+export { stageBillingFailure, BILLING_FAILURE_ALREADY } from './demoStaging'

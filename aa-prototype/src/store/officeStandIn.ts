@@ -12,7 +12,7 @@
 import type { AppState, AppStoreApi } from './appStore'
 import { handoffListCases, runBillingForList } from './billingRun'
 import { OFFICE_SIMULATION_ACTOR } from './demoActors'
-import { authoriseList, incompleteBookingsOn } from './lifecycle'
+import { authoriseBlockersFor, authoriseList, incompleteBookingsOn } from './lifecycle'
 import { ok, refuse, type Outcome } from './mutate'
 import { isListBilled, isOpenSlotView, scheduleHorizon, slotViewsForAnaesthetist, waitingDraftLists } from './selectors'
 import { assignDraftList, createDraftList, draftListFitsAnaesthetist, surgeonFitsAnaesthetist } from './draftListActions'
@@ -32,11 +32,14 @@ import { closeOutOfHoursSession, openOutOfHoursSession } from './outOfHoursActio
 export const STAND_IN_INCOMPLETE = 'A Booking on this List is not complete'
 
 /** Why the stand-in cannot act on `listId` now, or null: the demo trigger's disabled reason and this guard's refusal. */
-export function officeStandInRefusal(state: Pick<AppState, 'schedule'>, listId: string): string | null {
+export function officeStandInRefusal(state: AppState, listId: string): string | null {
   const list = state.schedule.lists[listId]
   if (list === undefined) return 'This List is not in the current demo data'
   if (list.state === 'ACTIVE') return 'Submit the List first'
   if (list.state !== 'SUBMITTED') return 'Already authorised'
+  // A Procedure that needs a price blocks the lock (catch-up Phase 25), named as the office's Review names it.
+  const blocker = authoriseBlockersFor(state, listId)[0]
+  if (blocker !== undefined) return blocker.message
   if (incompleteBookingsOn(state, listId).length > 0) return STAND_IN_INCOMPLETE
   return null
 }

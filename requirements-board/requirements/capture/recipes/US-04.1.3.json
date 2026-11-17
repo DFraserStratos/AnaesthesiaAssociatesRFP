@@ -1,6 +1,164 @@
 {
   "id": "US-04.1.3",
-  "status": "absent",
-  "absentReason": "Contracts are edited in place; no version history is kept. Contract edits are audited, and an invoice already raised is a snapshot that later contract edits do not change, but there is nothing to show or restore an earlier version. Searched domain/types.ts (Contract), store/contractActions.ts and apps/admin/flows/ContractEditSheet.tsx.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "history",
+      "app": "admin",
+      "caption": "Every change to a Contract is kept with its values before and after; nothing is deleted",
+      "start": "/admin/masters?view=contracts",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/masters?view=contracts"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-FORTE-D1\"] >> td >> nth=0"
+        },
+        {
+          "wait": 500
+        },
+        {
+          "fill": "[data-shot=contract-detail] >> role=textbox[name=\"Invoice description\"]",
+          "value": "Anaesthesia services at Forte Health"
+        },
+        {
+          "click": "[data-shot=contract-detail] >> role=button[name=\"Save contract\"]"
+        },
+        {
+          "wait": 500
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-FORTE-D1\"] >> td >> nth=0"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=contract-tab-history]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "caption": "Forte Health RVG's History: the office's edit to its invoice description, with who, when and the value before and after",
+          "highlight": [
+            "[data-shot=contract-history] > div:first-child"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "locked-against",
+      "app": "admin",
+      "caption": "The Procedures locked against the Contract, with their invoices, which a later change to it leaves as raised",
+      "start": "/admin/masters?view=contracts",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/masters?view=contracts"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-FORTE-D1\"] >> td >> nth=0"
+        },
+        {
+          "wait": 500
+        },
+        {
+          "fill": "[data-shot=contract-detail] >> role=textbox[name=\"Invoice description\"]",
+          "value": "Anaesthesia services at Forte Health"
+        },
+        {
+          "click": "[data-shot=contract-detail] >> role=button[name=\"Save contract\"]"
+        },
+        {
+          "wait": 500
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-FORTE-D1\"] >> td >> nth=0"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=contract-tab-history]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-shot=contract-locked-against]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-locked-against]"
+          ]
+        }
+      ]
+    }
+  ]
 }

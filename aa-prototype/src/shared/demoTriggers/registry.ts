@@ -102,7 +102,7 @@ import {
 import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
 import { contractCandidatesFor, destinationOf } from '../../domain/billing/contractRail'
 import { noContractRvg } from '../../domain/billing/contracts'
-import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, CONTRACT, SEED_LIST_IDS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
+import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, SEED_LIST_IDS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
 import { MULTI_PROCEDURE_DEMO } from '../../domain/seed/multiProcedureDemo'
 import { DRAFT_LIST, DRAFT_LISTS, SOURCE_LABELS } from '../scheduleTerms'
 import { projectedListId } from '../../domain/slots'
@@ -113,6 +113,8 @@ import { drSurname, formatCurrency, plural, shortDay } from '../format'
 import { isAssignedList } from '../../domain/draftLists'
 import { useDemoTriggerMemory } from './memory'
 import { simulateSickness, sicknessCandidates, sicknessColleagueSlot, sicknessRefusal, type SicknessRoute } from '../../store/demoSimulations'
+import { BILLING_FAILURE_ALREADY, stageBillingFailure } from '../../store/demoStaging'
+import { regenerateInvoiceFromLock, regenerateRefusal, regenerateSummary } from '../../store/locks'
 import type { DemoTrigger, DemoTriggerCtx, DemoTriggerResult } from './types'
 import { sessionText } from '../../domain/outOfHours'
 import { newerInvoiceDescription } from '../../domain/billing/procedureStack'
@@ -441,40 +443,26 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'billing-failure',
     label: 'Trigger billing failure',
     description:
-      "Points Losa Tuilagi's Procedure at the COS ACC fixed fees Contract, whose price starts on 1 Aug 2026, and authorises Dr Ropata's Thu 16 Jul List. Her Booking fails with Needs a price; its clean sibling still invoices.",
+      "Arms the Xero hand-off to fault for Losa Tuilagi's Booking alone and authorises Dr Ropata's Thu 16 Jul List. Each Booking bills from its locked record: hers is held back at the hand-off, Hemi Walker's bills, and the List is not failed. Resolve & retry hands hers off once. No Contract changes.",
     screen: BILLING_MONITOR_SCREEN,
     routes: BILLING_MONITOR,
     surfaces: ['bar'],
     when: (state) => state.schedule.lists[SEED_LIST_IDS.billingFailure] !== undefined,
-    disabledReason: (state) =>
-      state.schedule.lists[SEED_LIST_IDS.billingFailure]?.billedAtISO !== undefined ? 'Already triggered' : null,
-    // Re-based in catch-up Phase 18 (RV-32: no dates, and no Contract is
-    // edited): point Losa Tuilagi's Procedure at COS ACC fixed fees (no price
-    // range in force on her List's date, so never a step-rail candidate:
-    // catch-up Phase 20 stages it through the rail's audited demo path), then
-    // authorise as the office; the run fails her Booking and bills its sibling.
+    disabledReason: (state) => {
+      const list = state.schedule.lists[SEED_LIST_IDS.billingFailure]
+      return list?.billedAtISO !== undefined || list?.state === 'AUTHORISED' ? BILLING_FAILURE_ALREADY : null
+    },
+    // Re-based in catch-up Phase 25 (`stageBillingFailure`): the engine prices
+    // only from the lock, so the cause is outside it (the hand-off).
     run: (api) => {
-      const listId = SEED_LIST_IDS.billingFailure
-      const list = api.getState().schedule.lists[listId]
-      if (list === undefined) return { ok: false, message: 'The billing-failure list is not present in this seed.' }
-      if (list.billedAtISO !== undefined) {
-        return { ok: false, message: 'Already triggered. Use Resolve & retry on the failed booking in the billing monitor.' }
-      }
-      if (list.state === 'ACTIVE') submitList(api, OFFICE_ACTOR, listId)
-      const { procedures, bookings } = api.getState().schedule
-      const losa = Object.values(procedures).find(
-        (p) => p.governingContractId === CONTRACT.cosAcc && bookings[p.bookingId]?.listId === listId,
-      )
-      if (losa !== undefined) {
-        const pointed = setProcedureContract(api, DEMO_TRIGGER_ACTOR, losa.id, CONTRACT.cosFixed, { demoStage: true })
-        if (!pointed.ok) return { ok: false, message: `Refused: ${pointed.message}` }
-      }
-      const outcome = authoriseList(api, OFFICE_ACTOR, listId)
+      const staged = stageBillingFailure(api)
       return {
-        ok: outcome.ok,
-        message: outcome.ok
-          ? 'Done. In the billing monitor Losa Tuilagi shows Needs a price while her clean sibling billed. Use Resolve & retry to choose her Contract.'
-          : `Refused: ${outcome.message}`,
+        ok: staged.ok,
+        message: staged.ok
+          ? "Done. In the billing monitor Losa Tuilagi's Booking is held back at the Xero hand-off while Hemi Walker's billed. Use Resolve & retry on her row."
+          : staged.message === BILLING_FAILURE_ALREADY
+            ? 'Already triggered.'
+            : `Refused: ${staged.message}`,
       }
     },
     indexPath: () => '/admin/billing',
@@ -621,7 +609,11 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       if (list === undefined) return { ok: false, message: 'The post-op original list is not present in this seed.' }
       if (list.state === 'ACTIVE') submitList(api, OFFICE_ACTOR, listId)
       const submitted = api.getState().schedule.lists[listId]
-      if (submitted?.state === 'SUBMITTED') authoriseList(api, OFFICE_ACTOR, listId)
+      // A refused authorise ("Needs a price", or an incomplete Booking) is the message (catch-up Phase 25).
+      if (submitted?.state === 'SUBMITTED') {
+        const authorised = authoriseList(api, OFFICE_ACTOR, listId)
+        if (!authorised.ok) return { ok: false, message: `Refused: ${authorised.message}` }
+      }
       return {
         ok: true,
         message:
@@ -665,6 +657,28 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
   },
 
   // ── Admin · Invoice (and the Xero sim pair) ───────────────────────────
+  {
+    id: 'regenerate-invoice',
+    label: 'Regenerate from locked data',
+    description:
+      "Rebuilds the invoice on screen from its Booking's locked record (the pricing snapshot taken at authorise) and compares it with the invoice as stored: identical, with its line count and total, or the differences. Read-only. Try it after a Contract edit, a Disable, a backdated price range, an RVG group edit, a unit-value edit, or a patient address or payer email change.",
+    screen: 'Admin · Invoice',
+    routes: ['/admin/invoices/:invoiceId'],
+    surfaces: ['bar'],
+    disabledReason: (state, ctx) => {
+      const invoiceId = ctx.params['invoiceId']
+      return invoiceId === undefined ? 'Open an invoice first' : regenerateRefusal(state, invoiceId)
+    },
+    run: (api, ctx) => {
+      const invoiceId = ctx.params['invoiceId']
+      if (invoiceId === undefined) return { ok: false, message: 'Open an invoice first' }
+      const result = regenerateInvoiceFromLock(api.getState(), invoiceId)
+      useDemoTriggerMemory.getState().rememberRegenerate(invoiceId, result)
+      return { ok: result.ok && result.comparison.identical, message: regenerateSummary(result) }
+    },
+    indexPath: firstOpenInvoicePath,
+    indexEmptyReason: 'No invoice yet: authorise a List first',
+  },
   {
     id: 'payment-full',
     label: 'Payment received · full',

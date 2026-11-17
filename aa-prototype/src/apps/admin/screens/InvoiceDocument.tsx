@@ -25,6 +25,11 @@ import { Button, DemoBadge, Logo } from '../../../shared'
 import { dateTimeMicroCap, formatCurrency } from '../../../shared/format'
 import { dayWithYear } from '../../../domain/dateText'
 import { FormError, Notice, Pill, TextField } from '../../../shared/ui'
+import { Row } from '../components/drawerParts'
+import { lockStampText, lockViewFor, MIGRATED_LOCK_TEXT, partyKeyOf } from '../../../domain/billing/lock'
+import { BILLS_LABEL, pricingLabel } from '../../../shared/contracts'
+import { regenerateSummary, type RegenerateResult } from '../../../store/locks'
+import { useDemoTriggerMemory } from '../../../shared/demoTriggers/memory'
 
 interface InvoiceDocumentProps {
   invoiceId: string
@@ -56,6 +61,10 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   const [error, setError] = useState<string | null>(null)
 
   const invoice = billing.invoices[invoiceId]
+  // A locked invoice prints from its recipe (catch-up Phase 25; US-08.4.4): addressee, patient and supplier from the lock.
+  // Pre-payment invoices (27's) and AA fee invoices (16's) have no lock and keep today's reads.
+  const lockRecord = invoice !== undefined && invoice.kind === 'standard' ? billing.locks[invoice.bookingId] : undefined
+  const lock = lockRecord !== undefined && lockRecord.state === 'locked' ? lockViewFor(lockRecord) : undefined
 
   const lines = useMemo(() => invoiceLinesFor({ billing }, invoiceId), [billing, invoiceId])
   const theCase = useMemo(
@@ -74,22 +83,24 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   const anaesthetist = list?.anaesthetistId !== undefined ? masters.anaesthetists[list.anaesthetistId] : undefined
   const patient = booking !== undefined ? masters.patients[booking.patientId] : undefined
   // The name as at the run for a payer (catch-up Phase 21: `billedTo`), else the counterparty's.
-  const addressee = invoiceAddresseeName({ masters, schedule: { procedures: proceduresRecord } }, invoice)
+  const addressee = lock?.addressees[partyKeyOf(invoice.counterparty)] ?? invoiceAddresseeName({ masters, schedule: { procedures: proceduresRecord } }, invoice)
 
   const isPatientLayout = invoice.layout === 'patient'
   // The supplier as at the run (catch-up Phase 22); an invoice from before it falls back to the List's anaesthetist.
-  const supplier = invoice.supplier ?? (anaesthetist !== undefined ? { anaesthetistId: anaesthetist.registrationNumber, name: anaesthetist.name } : undefined)
+  const supplier = invoice.supplier ?? lock?.supplier ?? (anaesthetist !== undefined ? { anaesthetistId: anaesthetist.registrationNumber, name: anaesthetist.name } : undefined)
+  const careOf = lock !== undefined ? lock.patientName : patient?.name
   // The split's other shares, by number and addressee (US-08.2.3).
   const siblings = (invoice.lineage ?? [])
     .map((l) => billing.invoices[l.invoiceId])
     .filter((i): i is Invoice => i !== undefined)
-    .map((i) => ({ invoice: i, name: invoiceAddresseeName({ masters, schedule: { procedures: proceduresRecord } }, i) }))
+    .map((i) => ({ invoice: i, name: lock?.addressees[partyKeyOf(i.counterparty)] ?? invoiceAddresseeName({ masters, schedule: { procedures: proceduresRecord } }, i) }))
   const procedureDateISO = invoice.crossMatch?.procedureDateISO ?? list?.dateISO
   // The Procedure on a prepaid Contract, if any (INTERIM until Phase 27): the
   // patient note's prepayment wording follows it (catch-up Phase 20).
-  const prepaymentProc = procedures.find((p) =>
-    procedureRequiresPrepayment(p.governingContractId !== undefined ? masters.contracts[p.governingContractId] : undefined),
-  )
+  const prepaymentProc = procedures.find((p) => {
+    const locked = lock?.procedures.find((v) => v.procedureId === p.id)
+    return locked !== undefined ? locked.prepaid && locked.billsTo === 'payer' : procedureRequiresPrepayment(p.governingContractId !== undefined ? masters.contracts[p.governingContractId] : undefined)
+  })
   const gstLabel = `GST (${GST_RATE * 100}%)`
 
   function doSend(to?: string): boolean {
@@ -180,8 +191,8 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
                 postalAddressLines(invoice.billedTo.postalAddress).map((line) => <span key={line}>{line}</span>)}
             </div>
           )}
-          {isPatientLayout && invoice.counterparty.kind === 'payer' && patient !== undefined && (
-            <div style={{ fontSize: 12.5, color: neutral.slate }}>For the care of {patient.name}</div>
+          {isPatientLayout && invoice.counterparty.kind === 'payer' && careOf !== undefined && (
+            <div data-shot="invoice-care-of" style={{ fontSize: 12.5, color: neutral.slate }}>For the care of {careOf}</div>
           )}
         </div>
 
@@ -336,6 +347,8 @@ function InvoiceInfoRail({
         <FormError message={error} />
       </RailCard>
 
+      <LockedRecordCard invoice={invoice} />
+
       {siblings.length > 0 && (
         <RailCard title="Related invoices">
           <div data-shot="invoice-related" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -489,6 +502,77 @@ function CrossMatchItem({ label, value, plain = false }: { label: string; value:
     <span>
       {label} <span className={plain ? undefined : 'mono'} style={{ color: neutral.ink, fontWeight: 600 }}>{value}</span>
     </span>
+  )
+}
+
+/**
+ * "Locked record" (catch-up Phase 25; US-04.3.5, US-08.4.4): the recipe this
+ * invoice was raised from, read through `lockViewFor`: the Contract as locked
+ * with its settings and the range in force, who is billed, the price and its
+ * basis per Procedure, the split as typed, the payee, who locked it and when.
+ * Under it, the last Regenerate result ("identical", or the differences).
+ */
+function LockedRecordCard({ invoice }: { invoice: Invoice }) {
+  const lock = useAppStore((s) => (invoice.kind === 'standard' ? s.billing.locks[invoice.bookingId] : undefined))
+  const regenerated = useDemoTriggerMemory((m) => m.regenerated[invoice.id])
+  if (lock === undefined || lock.state !== 'locked') return null
+  const view = lockViewFor(lock)
+  const mine = view.procedures.filter((p) => invoice.procedureIds === undefined || invoice.procedureIds.includes(p.procedureId))
+  return (
+    <RailCard title="Locked record">
+      <div data-shot="invoice-locked-record" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {view.origin === 'migrated' && <span style={{ fontSize: 12.5, color: neutral.slate }}>{MIGRATED_LOCK_TEXT}</span>}
+        {mine.map((p) => (
+          <div key={p.procedureId} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {mine.length > 1 && p.label !== undefined && <span style={{ fontSize: 12.5, fontWeight: 600, color: neutral.ink }}>{p.label}</span>}
+            {p.contractName !== undefined && (
+              <Row label="Contract">
+                <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <span style={{ fontWeight: 600 }}>{p.contractName}</span>
+                  <span style={{ fontSize: 12, color: neutral.slate }}>
+                    <span className="mono">{p.contractAaCode}</span>
+                    {p.pricing !== undefined ? ` · ${pricingLabel(p.pricing)}` : ''}
+                    {p.billsTo !== undefined ? ` · bills ${BILLS_LABEL[p.billsTo].toLowerCase()}` : ''}
+                  </span>
+                </span>
+              </Row>
+            )}
+            {p.billedName !== undefined && <Row label="Billed to">{p.billedName}</Row>}
+            <Row label="Price">
+              <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <span className="mono">{formatMoney(p.price)}{p.typed ? ' · typed' : ''}</span>
+                {p.basisText !== undefined && <span style={{ fontSize: 12, color: neutral.slate }}>{p.basisText}</span>}
+                {p.outOfGuideRange && <span><Pill tone="warning" size="sm" shot="invoice-locked-outside-range">Outside the range</Pill></span>}
+              </span>
+            </Row>
+            <Row label="Split">{p.splitText}</Row>
+          </div>
+        ))}
+        <Row label="Paid to">{view.payeeName}</Row>
+        <Row label="Priced on">{dayWithYear(view.pricingDateISO)}</Row>
+        <span style={{ fontSize: 12, color: neutral.slate }}>{lockStampText(view)}</span>
+        {regenerated !== undefined && <RegenerateNotice result={regenerated} />}
+      </div>
+    </RailCard>
+  )
+}
+
+/** The Regenerate result under the Locked record card: identical, or the differences (US-08.4.4). */
+function RegenerateNotice({ result }: { result: RegenerateResult }) {
+  if (!result.ok) return <Notice tone="warning" shot="invoice-regenerated">{result.reason}</Notice>
+  if (result.comparison.identical) {
+    return (
+      <Notice tone="success" shot="invoice-regenerated" data-identical="true">
+        {regenerateSummary(result)}
+      </Notice>
+    )
+  }
+  return (
+    <Notice tone="warning" shot="invoice-regenerated" data-identical="false" title="Regenerated from locked data: differs">
+      {result.comparison.differences.map((d) => (
+        <span key={d.field} style={{ display: 'block' }}>{d.field}: stored {d.stored}, regenerated {d.regenerated}</span>
+      ))}
+    </Notice>
   )
 }
 

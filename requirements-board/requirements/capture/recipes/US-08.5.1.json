@@ -55,7 +55,7 @@
     {
       "name": "failure-reason",
       "app": "admin",
-      "caption": "A Booking that failed to process, with the reason why",
+      "caption": "A Booking held back at the Xero hand-off, with the reason why, while the rest of the List bills",
       "start": "/admin/billing",
       "setup": [
         {

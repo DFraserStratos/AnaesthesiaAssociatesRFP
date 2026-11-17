@@ -10,6 +10,7 @@
  * Money, charged units, invoice lines and BCTI counts do not move.
  */
 
+import { withPhase25Codes } from './__parity__/phase25Declared'
 import { describe, expect, it } from 'vitest'
 import { PHASE_24_ARIA_BOOKINGS, PHASE_24_ARIA_PROCEDURES } from './__parity__/phase24Declared'
 import baselineJson from './__parity__/phase-23-baseline.json'
@@ -58,7 +59,7 @@ describe('Phase 23 multi-procedure parity', () => {
 
   it('every seeded invoice and prepayment build is as before: grouping, totals, line amounts, units and wording', () => {
     const keptBooking = (id: string) => id !== TYPED_24_BOOKING && !PHASE_24_ARIA_BOOKINGS.has(id)
-    expect(now.bookings.filter((r) => !added.has(r.bookingId) && keptBooking(r.bookingId))).toEqual(baseline.bookings.filter((r) => keptBooking(r.bookingId)))
+    expect(now.bookings.filter((r) => !added.has(r.bookingId) && keptBooking(r.bookingId))).toEqual(withPhase25Codes(baseline.bookings.filter((r) => keptBooking(r.bookingId))))
   })
 
   it("the BCTI count per anaesthetist and month (16's bctisFor) is unchanged", () => {

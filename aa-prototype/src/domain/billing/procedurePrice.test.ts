@@ -7,7 +7,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   anaesthetistMayTypePrice,
-  authorisedPriceFor,
   officeMayChangePrice,
   prepaidHeldPriceFor,
   priceFor,
@@ -144,12 +143,6 @@ describe('W12 under the multi-procedure rule a discount changes only its own Pro
 
 describe('the interim held amounts', () => {
   const line = (procedureId: string, amount: number, description = 'Anaesthesia') => ({ procedureId, amount, description })
-  it("authorisedPriceFor: the List's invoiced amount once AUTHORISED (a split's shares summed, a prepayment deduction left out)", () => {
-    const lines = [line('P1', 300), line('P1', 200), line('P1', -100, 'Less pre-payment deposit already invoiced'), line('P2', 50)]
-    expect(authorisedPriceFor('P1', 'AUTHORISED', lines)).toBe(500)
-    expect(authorisedPriceFor('P1', 'SUBMITTED', lines)).toBeUndefined()
-    expect(authorisedPriceFor('P3', 'AUTHORISED', lines)).toBeUndefined()
-  })
   it("prepaidHeldPriceFor: a raised full prepayment holds; a split's deposit is part of the price, not the price", () => {
     expect(prepaidHeldPriceFor('P1', [line('P1', 500, 'Pre-payment, estimated full fee')])).toBe(500)
     expect(prepaidHeldPriceFor('P1', [line('P1', 800, 'Pre-payment deposit')])).toBeUndefined()

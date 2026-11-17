@@ -17,6 +17,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { PHASE_24_ARIA_BOOKINGS } from './__parity__/phase24Declared'
+import { PHASE_25_ADDRESSEE_BOOKINGS, withPhase25Codes } from './__parity__/phase25Declared'
 import baseline from './__parity__/phase-22a-baseline.json'
 import { captureBaseline22a, type Phase22aBaseline } from './__parity__/phase22aCapture'
 import { payerContactSpec } from './xeroHandoff'
@@ -33,12 +34,19 @@ describe('Phase 22a payer-per-Procedure parity (no declared difference)', () => 
   it('holds every seeded Booking: grouping, totals, printed name, billedTo, Xero contact and prepayment build', () => {
     // Catch-up Phase 24's declared Aria move set aside (`__parity__/phase24Declared.ts`).
     const kept = (r: { bookingId: string }) => !PHASE_24_ARIA_BOOKINGS.has(r.bookingId)
-    expect(now.bookings.filter(kept)).toEqual(before.bookings.filter(kept))
+    expect(now.bookings.filter(kept)).toEqual(withPhase25Codes(before.bookings.filter(kept)))
   })
 
   it('holds every issued invoice: addressee, billedTo, Procedures, delivery and Xero contact', () => {
     // Catch-up Phase 24's seeded invoice for its AUTHORISED Face lift is an addition.
-    expect(now.issued.filter((i) => !PHASE_24_ARIA_BOOKINGS.has(i.bookingId))).toEqual(before.issued)
+    // Catch-up Phase 25's declared seed fix (addressed by name, `__parity__/phase25Declared.ts`): only the addressee moves.
+    const kept = (i: { bookingId: string }) => !PHASE_24_ARIA_BOOKINGS.has(i.bookingId)
+    const asBefore = now.issued.filter(kept).map((i) => {
+      if (!PHASE_25_ADDRESSEE_BOOKINGS.has(i.bookingId)) return i
+      const was = before.issued.find((b) => b.bookingId === i.bookingId && b.ref === i.ref)
+      return was !== undefined ? { ...i, addressee: was.addressee, billedTo: was.billedTo } : i
+    })
+    expect(asBefore).toEqual(before.issued)
   })
 
   it("keeps Hana Park as BP0001 on Xero's billableParty:BP0001 contact", () => {

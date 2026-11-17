@@ -267,7 +267,7 @@ Hooks already added:
 | Souter Mon 20 PM | `L-34821-2026-07-20-PM` | SUBMITTED. The fee-split Booking: Alan Prentice (`BK0025`), one Procedure's fee split between nib ($132.50) and Alan Prentice (the rest); see [Invoice presentation, delivery and the split](#invoice-presentation-delivery-and-the-split-catch-up-phase-22). Dr Souter can still change it (catch-up Phase 38a): "Amend" on a Booking makes Review show "Changed since submitted" and disables Authorise until it is completed again. |
 | Souter Fri 24 AM | `L-34821-2026-07-24-AM` | Pre-payment **unpaid** (Annette Riley). |
 | Souter Fri 24 PM | `L-34821-2026-07-24-PM` | Pre-payment **paid** (Priya Nair, `INV0001`). |
-| Ropata Thu 16 | `L-39560-2026-07-16-AM` | SUBMITTED. The billing-failure target. |
+| Ropata Thu 16 | `L-39560-2026-07-16-AM` | SUBMITTED. The billing-failure target (Losa Tuilagi BK0039 held at the Xero hand-off, Hemi Walker BK0040 bills). |
 | Delaney Fri 17 | `L-27731-2026-07-17-AM` | SUBMITTED. Integration-locked target. |
 | Souter Tue 28 AM | `L-34821-2026-07-28-AM` | The S1 destination: MSG-STG-1001 adds Sarah Mitchell. Its 07:45 and 11:15 cases read as the rooms sent them (AR-35 rows 6 and 8); Sarah Mitchell arrives with "lap appy ?conv to open" (Hospital feed). |
 | Souter Tue 4 Aug AM | `L-34821-2026-08-04-AM` | Targets for S13, S14 and S15. |
@@ -320,14 +320,14 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/draft-lists` | Draft Lists (catch-up Phase 31): Unassigned tab (default) and History (`?tab=history`). Since UI unification U5 the two tabs are links inside `role=navigation[name="Draft Lists"]`, not `role=tab`: `a[data-draft-tab=unassigned]` and `a[data-draft-tab=history]`, each with its count inside the link text (so match by the hook, not the name); the current one has `aria-current=page`. `?open=<listId>` opens the Draft List drawer (`admin-draft-list-drawer`); `?assigned=<listId>` shows the assigned confirmation with "Open List". The drawer's "Available that session" Assign opens step 2; the row's Assign opens step 1 (Everyone / Free only, tier filter, groups). "New Draft List" opens `admin-new-draft-list`. |
 | `/admin/conflicts` | Conflicts (catch-up Phase 30): every live conflict, grouped by date (`section[data-conflict-date=<date>]`), one table each (`[data-shot=conflicts-table]` wraps them). Rows are `tr[data-conflict-row=<listId>]` (cleared ones add `data-conflict-cleared=true`). Row actions have accessible names with context (`Reassign, Dr Rutherford Wed 22 Jul AM`, `Clear conflict, ...`, `Open the List, ...`, `Open the day, ...`): match them by regex (`role=button[name=/^Clear conflict/]`). Hospital closures only since catch-up Phase 32b (no reason filter, no Availability column). Filters in the URL: `?when=twoWeeks|canvas|past`, `?hospital=<id>`, `?anaesthetist=<reg>`, `?cleared=1`. After a reassign or clear, `[data-shot=conflicts-confirmation]`. |
 | `/admin/review` | Review queue, plus "Recently billed". |
-| `/admin/review/:listId` | Sanity check: total units, B · T · M, "Log phone note", "Authorise for billing". |
+| `/admin/review/:listId` | Sanity check: total units, B · T · M, "Log phone note", "Authorise for billing". A Procedure that needs a price blocks it (`review-needs-price-blocker`, catch-up Phase 25); once authorised, the lock glyph in each Procedure stack, "(locked)" rate and "Paid to" line. |
 | `/admin/invoices` | Invoice list (office pipeline only; the seeded history invoices are left out), newest id first. Columns: Number, Patient / booking (a link to the Booking), Anaesthetist, List (a link to the day), List date, Raised, Counterparty (a split share adds the "Split" chip `invoice-list-split`), Layout (Patient or Holder), Total, Delivery (`invoice-list-delivery`, `data-delivery` sent, toPost, noAddress), and "View →". Open an invoice with `[data-testid=invoice-list-table-shell] tr:has-text("AA-2026-0005") >> role=button[name="View →"]`: a bare row click can land on a row link. |
-| `/admin/invoices/:invoiceId` | Tax invoice document (`.aa-invoice-doc`) with an info rail (catch-up Phase 22): Delivery (`invoice-delivery`), Related invoices on a split share (`invoice-related`), Xero handoff. Any invoice id opens, the history ones too (`HINV13`). |
+| `/admin/invoices/:invoiceId` | Tax invoice document (`.aa-invoice-doc`) with an info rail (catch-up Phase 22): Delivery (`invoice-delivery`), Related invoices on a split share (`invoice-related`), Xero handoff, and the Locked record (`invoice-locked-record`, catch-up Phase 25; migrated words on a history invoice) with the `regenerate-invoice` demo action. Any invoice id opens, the history ones too (`HINV13`). |
 | `/admin/billing` | Billing monitor. Its AA fee invoices panel is `[data-shot=billing-aa-fee-invoices]`. The pipeline stage after Invoices generated reads "Sent or to post" (catch-up Phase 22); a List with an invoice that has no invoice address shows `monitor-no-address` ("1 invoice needs an invoice address." with the link "Add an address and send"). |
 | `/admin/billing/aa-fees` | AA fee invoices: month picker, the run preview (`aa-fee-preview-<anaesthetistId>` rows), the teal "Run monthly fee invoices" button and every fee invoice (`aa-fee-row-<number>`, expand for `aa-fee-detail-<number>`). |
 | `/admin/billing/aa-fees/settings` | AA fee settings: fixed items, the charge per BCTI and the worked example (`aa-fee-example`). |
 | `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. |
-| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons`, `surgeonRooms`, `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifiers` (catch-up Phase 19b, "Modifiers"; the old `modifierCodes` value opens it), `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). |
+| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons`, `surgeonRooms`, `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifiers` (catch-up Phase 19b, "Modifiers"; the old `modifierCodes` value opens it), `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). A Contract's panel has Details and History tabs (catch-up Phase 25). |
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip, Identifiers, Surgeons' room and Groups cards, Pairing preferences. "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. Catch-up Phase 17a: Specialties, Identifiers and Groups in the first row, then one row per room (main room first), its Surgeons' room card beside a "Practice manager and PAs" card, then Pairing preferences. |
 | `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Details, Pairing preferences. Office only. |
 | `/admin/audit` | Audit viewer. |
@@ -381,7 +381,7 @@ badge carries `data-shot=nav-badge-<section>`.
   `CES-001`; `CPH-001`, `CPH-002` Health NZ agreed rate ($23); `NIB-001`; `DOYLE-001` Gastric bypass
   (`CT-DOYLE-BAR`, fixed: $2,800 from 1 Jan 2025, $2,950 from 28 Jul 2026, bills the payer);
   `COS-001` ACC orthopaedic services ($24), `COS-002` COS ACC fixed fees (fixed, one range from
-  1 Aug 2026, so S4's failure still "Needs a price"); `ARIA-001` Aria Skin and Laser Clinic (`CT-ARIA-HOURLY`, RVG at the Contract's rate, $26.50, price fixed for the
+  1 Aug 2026; the billing-failure demo no longer uses it since catch-up Phase 25); `ARIA-001` Aria Skin and Laser Clinic (`CT-ARIA-HOURLY`, RVG at the Contract's rate, $26.50, price fixed for the
   anaesthetist; catch-up Phase 24, was rate and time); `UNI-001` Unisports
   Ortho ($93.47); and, seeded last, Forte Health RVG less 10% (`CT-FORTE-DISC`, catch-up Phase 24). All Active.
 - Priced items (catch-up Phase 19a, `seed/pricedItems.ts`; every fixed price a Contract with price
@@ -897,6 +897,53 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 - **GONE:** the anaesthetist's "Adjustment and charge" card (`capture-adjustment-and-charge`, its "Adjustment $" /
   "Charge $" control, reason field and "Save override").
 
+### The lock at authorise and Contract history (catch-up Phase 25)
+
+- **Authorise writes a lock per Booking.** "Authorise for billing" on Review (click `>> nth=0`, then the confirm's
+  `>> nth=-1`) copies each Procedure's Contract settings, the range in force, units, rate, price, who is billed, the split
+  and the payee onto the Booking, in the same step as the List flip. The confirm's text names the lock ("... locks each
+  Procedure's Contract onto it: its settings, the price range in force, the rate, the price, who is billed and who is
+  paid ..."). After it, Review shows the lock glyph `procedure-contract-locked` in each Procedure's compact stack, the
+  totals row's `review-list-rate` reads "@ $26.50/unit (locked)", each patient cell `review-locked-payee` ("Paid to Dr
+  Melanie Souter"), and the banner "List authorised · locked for billing".
+- **Seeded AUTHORISED Lists carry locks** (written at seed time, e.g. BK0188 on `L-34821-2026-07-16-PM`), so their
+  Bookings show the badge at reset. The seeded history backdrop (the `HINV<nn>` invoices) carries **migrated** locks:
+  their stamp, the invoice's Locked record and the Contract History's locked rows read "Migrated history" ("Migrated
+  history: locked from the invoice as loaded") instead of "Locked <when> by <who>".
+- **The Booking after authorise** (S3 AM, `/admin/day/2026-07-20/bookings/BK0023`, Ruth Kim; Holt is BK0022):
+  `office-billing-setup-1` carries `data-locked="true"` and is read-only (Contract with its settings, Billed to, Price
+  with "N units @ $26.50/unit (locked)", Split when not Full, Paid to, `office-billing-locked-stamp`), with
+  `booking-lock-badge` ("Contract locked at authorise") in its heading. The Billing card shows the badge too, with
+  `booking-lock-stamp` ("Locked Tue 21 Jul, 08:00 by Kirsty W."), and the price line's `price-card` has
+  `data-state=locked`. Before authorise: no badge, the editable setup. Scope the badge as
+  `[data-shot=office-billing-setup-1] [data-shot=booking-lock-badge]` (it also shows on the Billing card).
+- **"Needs a price" blocks authorise** (the only blocker): Dr Chen's SUBMITTED Tue 14 Jul AM List
+  `/admin/review/L-45178-2026-07-14-AM` shows `review-needs-price-blocker` ("<patient>: Needs a price: No contract ·
+  Fixed price has no price of its own." with an Open link) and "Authorise for billing" disabled. No seeded scripted List
+  is blocked.
+- **A unit-value edit re-prices unlocked Bookings only.** Edit Dr Souter on `/admin/masters` (`[data-shot=masters-anaesthetists]
+  tr:has-text("Souter") >> text="Edit"`, fill `[role=dialog] >> role=textbox[name="Unit value"]`, "Save changes"): after
+  the S3 AM authorise, BK0023 keeps "@ $26.50/unit (locked)" while her ACTIVE BK0186 (Mon 27 Jul AM, No contract · RVG)
+  reads "4 units x $28.00 = $112.00". Forte Health RVG (`CT-FORTE-D1`) is RVG at the anaesthetist's rate; Health NZ
+  (`CT-HNZ`) is RVG at its own $23 rate and has no price ranges (only fixed-price Contracts have ranges).
+- **Invoice Locked record**: `/admin/invoices/<id>` (after the S3 AM authorise, open AA-2026-0002 from `/admin/invoices`)
+  shows the rail card `invoice-locked-record`: Contract with its AA code and settings, Billed to, Price with units and the
+  "(locked)" rate, Split, Paid to, Priced on, and the stamp. The demo action `regenerate-invoice` writes
+  `invoice-regenerated` under it: `data-identical="true"` and "Regenerated from locked data: identical (n lines, total
+  $x)", or `data-identical="false"` with the differences. No card on prepayment or AA fee invoices.
+- **Contract History** (`/admin/masters?view=contracts`, open a Contract by clicking its row's first cell,
+  `tr[data-contract="CT-FORTE-D1"] >> td >> nth=0`): tabs `contract-tab-details` and `contract-tab-history`. History
+  holds `contract-history` (the shared History timeline, newest first, who, when, before and after; empty:
+  `contract-history-empty`, "No changes yet") and `contract-locked-against` ("Procedures locked against this Contract",
+  rows `contract-locked-row` with the patient, Booking id, "Locked <when>" or "Migrated history", and invoice links).
+  **Seeded Contracts have no create audit**, so stage an edit first (Details tab, change a field such as "Invoice
+  description", "Save contract", which closes the panel; reopen and click History). The History tab's footer is a single
+  Close.
+- **Parties** (`/admin/masters?view=parties`): every row has a "History" action (`role=button[name="History of <party>"]`)
+  opening the shared History sheet ("History · <party>"); empty until the Party is edited.
+- **Billing failure, re-based**: see `billing-failure` under Demo actions. No Contract is changed and
+  `choose-contract-sheet` is gone.
+
 ## Overlays that need clicks
 
 - **Drawers and dialogs after Phase U2.** The three Admin drawers (List, empty-session, Draft List) are `SidePanel`:
@@ -1213,6 +1260,21 @@ the exception: use the `trigger` step)
 
 ## Existing hooks
 
+- Catch-up Phase 25 (`data-shot`): `booking-lock-badge` (the neutral "Contract locked at authorise" pill, in the
+  heading of a locked `office-billing-setup-<n>` and on the Billing card in all three apps; nothing before authorise),
+  `booking-lock-stamp` (its detail line on the web and Admin Billing card, "Locked Tue 21 Jul, 08:00 by Kirsty W." or the
+  migrated words), `office-billing-setup-<n>` now carries `data-locked="true"` when read-only from the lock, with
+  `office-billing-locked-stamp` inside; `procedure-contract-locked` (the lock glyph in a compact Procedure stack, Review's
+  Procedures column); Review `review-list-rate` (the totals row's rate, "@ $26.50/unit (locked)" once authorised, else
+  "(list rate)"), `review-locked-payee` ("Paid to ..." under the patient once authorised), `review-needs-price-blocker`
+  (also test id `review-authorise-blocker`: one per Procedure that needs a price, with an Open link; Authorise disabled);
+  Invoice `invoice-locked-record` (the "Locked record" rail card), `invoice-locked-outside-range` (its "Outside the
+  range" pill), `invoice-regenerated` (the Regenerate result, `data-identical` true or false); Contract panel
+  `contract-tabs`, `contract-tab-details`, `contract-tab-history`, `contract-history`, `contract-history-empty`,
+  `contract-locked-against`, `contract-locked-row`; Billing monitor `monitor-retry-note` (under a run failure's reason,
+  beside its "Retry" button: "Retry rebuilds from the locked record. ..."). A hand-off fault row keeps "Resolve & retry",
+  its "Handoff failed" pill and the fault message, and retries in place (no sheet). GONE: `choose-contract-sheet`. See
+  [The lock at authorise and Contract history](#the-lock-at-authorise-and-contract-history-catch-up-phase-25).
 - Catch-up Phase 24 (`data-shot`): `change-price` (the office's "Change price" button in `office-billing-setup-<n>`,
   was "Price override"), `pricing-sheet` (the Change price dialog), `pricing-sheet-computed` ("Computed from the
   Contract" and the figure), `pricing-sheet-price` (the "Price $" input itself), `pricing-sheet-save` ("Save price"),
@@ -1465,8 +1527,7 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   with `data-range-start` and `data-in-force="today"`, the add row `price-range-add` with inputs
   labelled "New range start" and "New range price (ex GST)" and the "Add price range" button; refusals
   in `[data-shot=contract-detail] [role=alert]`; the only range's Delete is disabled, named "Delete (a
-  Contract keeps at least one price range)"), `choose-contract-sheet` (Billing monitor, Resolve & retry on a Contract
-  failure). The office billing setup's Contract select lists `<AA code> · <name>`, No contract · RVG first,
+  Contract keeps at least one price range)"); `choose-contract-sheet` is gone (catch-up Phase 25). The office billing setup's Contract select lists `<AA code> · <name>`, No contract · RVG first,
   and never a Fixed price fallback.
 - Modifiers (catch-up Phase 19b): `capture-modifiers` (the ledger inside the Units card; also the
   completion anchor for `modifierClaims`), `capture-modifier-applied` (a pre-applied row, with
@@ -1564,7 +1625,8 @@ and in the installed PWA's "Demo" sheet. The registry is
 
 | Screen (`goto`) | ids | Notes |
 |---|---|---|
-| `/admin/billing` | `billing-failure`, `arm-handoff-fault`, `run-reconciliation-poll`, `run-archive-job` | Billing failure points Losa Tuilagi's Procedure (BK0039) at COS ACC fixed fees (`CT-COS-FIXED`, no price for it) and authorises Ropata Thu 16: she fails with "No price in force for this procedure under COS ACC fixed fees.", Hemi Walker's sibling bills. Resolve & retry opens `[data-shot=choose-contract-sheet]` (a `select` of Contracts; pick `CT-COS-ACC`, then "Choose and retry"); no Contract is edited. "Run payables" is the screen's own product button, `[data-shot=billing-payables-run]`, not a demo action |
+| `/admin/billing` | `billing-failure`, `arm-handoff-fault`, `run-reconciliation-poll`, `run-archive-job` | "Trigger billing failure" (re-based in catch-up Phase 25) arms a Xero hand-off fault for Losa Tuilagi's Booking (BK0039) alone and authorises Dr Ropata's Thu 16 Jul AM List (`L-39560-2026-07-16-AM`). Each Booking bills from its locked record: her row (`[data-shot=billing-pipeline-L-39560-2026-07-16-AM] tr:has-text("Losa Tuilagi")`) shows the "Handoff failed" pill, "Xero handoff failed (simulated fault). No ACCREC/ACCPAY pair was created; the invoice stands. ..." and the button "Resolve & retry", which hands her off once, in place (no sheet); Hemi Walker's (BK0040) bills; the List is not failed. No Contract changes; `choose-contract-sheet` is gone. Disabled "Already triggered" once the List is AUTHORISED. A run failure (none staged by this trigger) shows "Retry" and `monitor-retry-note`. "Run payables" is the screen's own product button, `[data-shot=billing-payables-run]`, not a demo action |
+| `/admin/invoices/<invoiceId>` | `regenerate-invoice` | Catch-up Phase 25, "Regenerate from locked data". Rebuilds the invoice on screen from its Booking's lock and compares it with the invoice as stored, read-only: the result shows under the Locked record card as `[data-shot=invoice-regenerated]`, `data-identical="true"` with "Regenerated from locked data: identical (n lines, total $x)", or the differences. Disabled on prepayment and AA fee invoices and on an invoice with no lock. Stage an edit first (a Contract edit, a backdated range, a unit-value edit) to show it holds; US-08.4.4 shows the pattern (S3 AM authorise, a unit-value edit, open AA-2026-0002, trigger) |
 | `/demo/xero`, `/demo/xero/invoices[/<accRecId>]` | `run-reconciliation-poll`, `run-archive-job` | |
 | `/demo/xero/invoices/<accRecId>` of an AA fee pair | `record-fee-payment` | Only on a fee pair; the payment triggers below are hidden there |
 | `/admin/billing/aa-fees` | `run-scheduled-fee-run`, `seed-month-of-bctis` | The scheduled run raises the month in the picker as the system actor; "Run monthly fee invoices" is the screen's own product button |

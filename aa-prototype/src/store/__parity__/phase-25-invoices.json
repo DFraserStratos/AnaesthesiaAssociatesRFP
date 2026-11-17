@@ -1,0 +1,815 @@
+{
+  "lists": [
+    {
+      "listId": "L-34821-2026-07-20-AM",
+      "ok": true,
+      "message": null,
+      "bookings": [
+        "BK0022",
+        "BK0023",
+        "BK0024"
+      ]
+    },
+    {
+      "listId": "L-34821-2026-07-20-PM",
+      "ok": true,
+      "message": null,
+      "bookings": [
+        "BK0025",
+        "BK0026",
+        "BK0027"
+      ]
+    },
+    {
+      "listId": "L-36208-2026-07-17-AM",
+      "ok": true,
+      "message": null,
+      "bookings": [
+        "BK0017",
+        "BK0018",
+        "BK0019",
+        "BK0020",
+        "BK0021"
+      ]
+    },
+    {
+      "listId": "L-39560-2026-07-16-AM",
+      "ok": true,
+      "message": null,
+      "bookings": [
+        "BK0039",
+        "BK0040"
+      ]
+    }
+  ],
+  "invoices": [
+    {
+      "invoiceNumber": "AA-2026-0002",
+      "bookingId": "BK0022",
+      "counterparty": "hospital:H-FORTE",
+      "billedTo": null,
+      "supplier": {
+        "anaesthetistId": "34821",
+        "name": "Dr Melanie Souter",
+        "gstNumber": "104348211"
+      },
+      "layout": "contractHolder",
+      "delivery": {
+        "status": "sent",
+        "method": "email",
+        "to": "accounts@fortehealth.example"
+      },
+      "holderReference": null,
+      "crossMatch": {
+        "procedureDateISO": "2026-07-20",
+        "surgeon": "Mr C. Okafor",
+        "hospitalRef": "FH-2026-2101"
+      },
+      "split": null,
+      "noCharge": false,
+      "procedureIds": [
+        "P0022",
+        "P0023"
+      ],
+      "lines": [
+        {
+          "procedureId": "P0022",
+          "kind": "fee",
+          "description": "Inguinal hernia repair",
+          "units": 10,
+          "amount": 265,
+          "btm": {
+            "base": 5,
+            "time": 5,
+            "modifiers": 0,
+            "units": 10,
+            "unitValue": 26.5
+          }
+        },
+        {
+          "procedureId": "P0023",
+          "kind": "fee",
+          "description": "Umbilical hernia repair, same anaesthetic",
+          "units": 2,
+          "amount": 53,
+          "btm": {
+            "base": 0,
+            "time": 2,
+            "modifiers": 0,
+            "units": 2,
+            "unitValue": 26.5,
+            "role": "additional"
+          }
+        }
+      ],
+      "subtotal": 318,
+      "gst": 47.7,
+      "total": 365.7
+    },
+    {
+      "invoiceNumber": "AA-2026-0003",
+      "bookingId": "BK0023",
+      "counterparty": "hospital:H-FORTE",
+      "billedTo": null,
+      "supplier": {
+        "anaesthetistId": "34821",
+        "name": "Dr Melanie Souter",
+        "gstNumber": "104348211"
+      },
+      "layout": "contractHolder",
+      "delivery": {
+        "status": "sent",
+        "method": "email",
+        "to": "accounts@fortehealth.example"
+      },
+      "holderReference": null,
+      "crossMatch": {
+        "procedureDateISO": "2026-07-20",
+        "surgeon": "Mr C. Okafor"
+      },
+      "split": null,
+      "noCharge": false,
+      "procedureIds": [
+        "P0024"
+      ],
+      "lines": [
+        {
+          "procedureId": "P0024",
+          "kind": "fee",
+          "description": "Laparoscopic cholecystectomy",
+          "units": 13,
+          "amount": 344.5,
+          "btm": {
+            "base": 6,
+            "time": 5,
+            "modifiers": 2,
+            "units": 13,
+            "unitValue": 26.5
+          }
+        }
+      ],
+      "subtotal": 344.5,
+      "gst": 51.68,
+      "total": 396.18
+    },
+    {
+      "invoiceNumber": "AA-2026-0004",
+      "bookingId": "BK0024",
+      "counterparty": "hospital:H-FORTE",
+      "billedTo": null,
+      "supplier": {
+        "anaesthetistId": "34821",
+        "name": "Dr Melanie Souter",
+        "gstNumber": "104348211"
+      },
+      "layout": "contractHolder",
+      "delivery": {
+        "status": "sent",
+        "method": "email",
+        "to": "accounts@fortehealth.example"
+      },
+      "holderReference": null,
+      "crossMatch": {
+        "procedureDateISO": "2026-07-20",
+        "surgeon": "Mr C. Okafor",
+        "hospitalRef": "FH-2026-2103"
+      },
+      "split": null,
+      "noCharge": false,
+      "procedureIds": [
+        "P0025"
+      ],
+      "lines": [
+        {
+          "procedureId": "P0025",
+          "kind": "fee",
+          "description": "Appendicectomy, laparoscopic",
+          "units": 9,
+          "amount": 238.5,
+          "btm": {
+            "base": 5,
+            "time": 4,
+            "modifiers": 0,
+            "units": 9,
+            "unitValue": 26.5
+          }
+        }
+      ],
+      "subtotal": 238.5,
+      "gst": 35.78,
+      "total": 274.28
+    },
+    {
+      "invoiceNumber": "AA-2026-0005",
+      "bookingId": "BK0025",
+      "counterparty": "insurer:I-NIB",
+      "billedTo": null,
+      "supplier": {
+        "anaesthetistId": "34821",
+        "name": "Dr Melanie Souter",
+        "gstNumber": "104348211"
+      },
+      "layout": "contractHolder",
+      "delivery": {
+        "status": "sent",
+        "method": "email",
+        "to": "claims@nib.example"
+      },
+      "holderReference": null,
+      "crossMatch": {
+        "procedureDateISO": "2026-07-20",
+        "surgeon": "Ms G. Lim",
+        "hospitalRef": "SG-2026-0791"
+      },
+      "split": {
+        "procedureId": "P0026",
+        "feeExGst": 212,
+        "shareLabel": "$132.50",
+        "isRest": false
+      },
+      "noCharge": false,
+      "procedureIds": [
+        "P0026"
+      ],
+      "lines": [
+        {
+          "procedureId": "P0026",
+          "kind": "fee",
+          "description": "Knee arthroscopy: share of the fee of $212.00 ($132.50)",
+          "units": null,
+          "amount": 132.5,
+          "btm": {
+            "base": 4,
+            "time": 4,
+            "modifiers": 0,
+            "units": 8,
+            "unitValue": 26.5
+          }
+        }
+      ],
+      "subtotal": 132.5,
+      "gst": 19.88,
+      "total": 152.38
+    },
+    {
+      "invoiceNumber": "AA-2026-0006",
+      "bookingId": "BK0025",
+      "counterparty": "patient:PT0011",
+      "billedTo": {
+        "name": "Alan Prentice",
+        "email": "alan.prentice11@example.net",
+        "postalAddress": {
+          "line1": "145 Harewood Road",
+          "suburb": "Linwood",
+          "city": "Christchurch",
+          "postcode": "8062"
+        }
+      },
+      "supplier": {
+        "anaesthetistId": "34821",
+        "name": "Dr Melanie Souter",
+        "gstNumber": "104348211"
+      },
+      "layout": "patient",
+      "delivery": {
+        "status": "sent",
+        "method": "email",
+        "to": "alan.prentice11@example.net"
+      },
+      "holderReference": null,
+      "crossMatch": null,
+      "split": {
+        "procedureId": "P0026",
+        "feeExGst": 212,
+        "shareLabel": "the rest",
+        "isRest": true
+      },
+      "noCharge": false,
+      "procedureIds": [
+        "P0026"
+      ],
+      "lines": [
+        {
+          "procedureId": "P0026",
+          "kind": "fee",
+          "description": "Knee arthroscopy: share of the fee of $212.00 (the rest)",
+          "units": null,
+          "amount": 79.5,
+          "btm": null
+        }
+      ],
+      "subtotal": 79.5,
+      "gst": 11.93,
+      "total": 91.43
+    },
+    {
+      "invoiceNumber": "AA-2026-0007",
+      "bookingId": "BK0026",
+      "counterparty": "hospital:H-STG",
+      "billedTo": null,
+      "supplier": {
+        "anaesthetistId": "34821",
+        "name": "Dr Melanie Souter",
+        "gstNumber": "104348211"
+      },
+      "layout": "contractHolder",
+      "delivery": {
+        "status": "sent",
+        "method": "email",
+        "to": "accounts@stgeorges.example"
+      },
+      "holderReference": "SGANAES01",
+      "crossMatch": {
+        "procedureDateISO": "2026-07-20",
+        "surgeon": "Ms G. Lim",
+        "hospitalRef": "SG-2026-0792"
+      },
+      "split": null,
+      "noCharge": false,
+      "procedureIds": [
+        "P0027"
+      ],
+      "lines": [
+        {
+          "procedureId": "P0027",
+          "kind": "fee",
+          "description": "Complex skin flap repair",
+          "units": 12,
+          "amount": 318,
+          "btm": {
+            "base": 5,
+            "time": 5,
+            "modifiers": 2,
+            "units": 12,
+            "unitValue": 26.5
+          }
+        }
+      ],
+      "subtotal": 318,
+      "gst": 47.7,
+      "total": 365.7
+    },
+    {
+      "invoiceNumber": "AA-2026-0008",
+      "bookingId": "BK0027",
+      "counterparty": "hospital:H-STG",
+      "billedTo": null,
+      "supplier": {
+        "anaesthetistId": "34821",
+        "name": "Dr Melanie Souter",
+        "gstNumber": "104348211"
+      },
+      "layout": "contractHolder",
+      "delivery": {
+        "status": "sent",
+        "method": "email",
+        "to": "accounts@stgeorges.example"
+      },
+      "holderReference": "SGANAES01",
+      "crossMatch": {
+        "procedureDateISO": "2026-07-20",
+        "surgeon": "Ms G. Lim",
+        "hospitalRef": "SG-2026-0793"
+      },
+      "split": null,
+      "noCharge": false,
+      "procedureIds": [
+        "P0028"
+      ],
+      "lines": [
+        {
+          "procedureId": "P0028",
+          "kind": "fee",
+          "description": "Breast reduction",
+          "units": 10,
+          "amount": 265,
+          "btm": {
+            "base": 6,
+            "time": 4,
+            "modifiers": 0,
+            "units": 10,
+            "unitValue": 26.5
+          }
+        }
+      ],
+      "subtotal": 265,
+      "gst": 39.75,
+      "total": 304.75
+    },
+    {
+      "invoiceNumber": "AA-2026-0009",
+      "bookingId": "BK0017",
+      "counterparty": "hospital:H-CPH",
+      "billedTo": null,
+      "supplier": {
+        "anaesthetistId": "36208",
+        "name": "Dr Ben Whitaker",
+        "gstNumber": "104362081"
+      },
+      "layout": "contractHolder",
+      "delivery": {
+        "status": "sent",
+        "method": "email",
+        "to": "accounts.payable@chchpublic.example"
+      },
+      "holderReference": null,
+      "crossMatch": {
+        "procedureDateISO": "2026-07-17",
+        "surgeon": "Mr C. Okafor",
+        "hospitalRef": "HNZ-2026-3311"
+      },
+      "split": null,
+      "noCharge": false,
+      "procedureIds": [
+        "P0017"
+      ],
+      "lines": [
+        {
+          "procedureId": "P0017",
+          "kind": "fee",
+          "description": "Appendicectomy, laparoscopic",
+          "units": 10,
+          "amount": 230,
+          "btm": {
+            "base": 5,
+            "time": 5,
+            "modifiers": 0,
+            "units": 10,
+            "unitValue": 23
+          }
+        }
+      ],
+      "subtotal": 230,
+      "gst": 34.5,
+      "total": 264.5
+    },
+    {
+      "invoiceNumber": "AA-2026-0010",
+      "bookingId": "BK0018",
+      "counterparty": "hospital:H-CPH",
+      "billedTo": null,
+      "supplier": {
+        "anaesthetistId": "36208",
+        "name": "Dr Ben Whitaker",
+        "gstNumber": "104362081"
+      },
+      "layout": "contractHolder",
+      "delivery": {
+        "status": "sent",
+        "method": "email",
+        "to": "accounts.payable@chchpublic.example"
+      },
+      "holderReference": null,
+      "crossMatch": {
+        "procedureDateISO": "2026-07-17",
+        "surgeon": "Mr C. Okafor",
+        "hospitalRef": "HNZ-2026-3312"
+      },
+      "split": null,
+      "noCharge": false,
+      "procedureIds": [
+        "P0018"
+      ],
+      "lines": [
+        {
+          "procedureId": "P0018",
+          "kind": "fee",
+          "description": "Laparoscopic cholecystectomy",
+          "units": 11,
+          "amount": 253,
+          "btm": {
+            "base": 6,
+            "time": 5,
+            "modifiers": 0,
+            "units": 11,
+            "unitValue": 23
+          }
+        }
+      ],
+      "subtotal": 253,
+      "gst": 37.95,
+      "total": 290.95
+    },
+    {
+      "invoiceNumber": "AA-2026-0011",
+      "bookingId": "BK0019",
+      "counterparty": "hospital:H-CPH",
+      "billedTo": null,
+      "supplier": {
+        "anaesthetistId": "36208",
+        "name": "Dr Ben Whitaker",
+        "gstNumber": "104362081"
+      },
+      "layout": "contractHolder",
+      "delivery": {
+        "status": "sent",
+        "method": "email",
+        "to": "accounts.payable@chchpublic.example"
+      },
+      "holderReference": null,
+      "crossMatch": {
+        "procedureDateISO": "2026-07-17",
+        "surgeon": "Mr C. Okafor",
+        "hospitalRef": "HNZ-2026-3313"
+      },
+      "split": null,
+      "noCharge": false,
+      "procedureIds": [
+        "P0019"
+      ],
+      "lines": [
+        {
+          "procedureId": "P0019",
+          "kind": "fee",
+          "description": "Wrist ORIF, distal radius",
+          "units": 8,
+          "amount": 184,
+          "btm": {
+            "base": 4,
+            "time": 4,
+            "modifiers": 0,
+            "units": 8,
+            "unitValue": 23
+          }
+        }
+      ],
+      "subtotal": 184,
+      "gst": 27.6,
+      "total": 211.6
+    },
+    {
+      "invoiceNumber": "AA-2026-0012",
+      "bookingId": "BK0020",
+      "counterparty": "hospital:H-CPH",
+      "billedTo": null,
+      "supplier": {
+        "anaesthetistId": "36208",
+        "name": "Dr Ben Whitaker",
+        "gstNumber": "104362081"
+      },
+      "layout": "contractHolder",
+      "delivery": {
+        "status": "sent",
+        "method": "email",
+        "to": "accounts.payable@chchpublic.example"
+      },
+      "holderReference": null,
+      "crossMatch": {
+        "procedureDateISO": "2026-07-17",
+        "surgeon": "Mr C. Okafor",
+        "hospitalRef": "HNZ-2026-3314"
+      },
+      "split": null,
+      "noCharge": false,
+      "procedureIds": [
+        "P0020"
+      ],
+      "lines": [
+        {
+          "procedureId": "P0020",
+          "kind": "fee",
+          "description": "Inguinal hernia repair",
+          "units": 8,
+          "amount": 184,
+          "btm": {
+            "base": 5,
+            "time": 3,
+            "modifiers": 0,
+            "units": 8,
+            "unitValue": 23
+          }
+        }
+      ],
+      "subtotal": 184,
+      "gst": 27.6,
+      "total": 211.6
+    },
+    {
+      "invoiceNumber": "AA-2026-0013",
+      "bookingId": "BK0021",
+      "counterparty": "hospital:H-CPH",
+      "billedTo": null,
+      "supplier": {
+        "anaesthetistId": "36208",
+        "name": "Dr Ben Whitaker",
+        "gstNumber": "104362081"
+      },
+      "layout": "contractHolder",
+      "delivery": {
+        "status": "sent",
+        "method": "email",
+        "to": "accounts.payable@chchpublic.example"
+      },
+      "holderReference": null,
+      "crossMatch": {
+        "procedureDateISO": "2026-07-17",
+        "surgeon": "Mr C. Okafor",
+        "hospitalRef": "HNZ-2026-3315"
+      },
+      "split": null,
+      "noCharge": false,
+      "procedureIds": [
+        "P0021"
+      ],
+      "lines": [
+        {
+          "procedureId": "P0021",
+          "kind": "fee",
+          "description": "Laparotomy, exploratory",
+          "units": 14,
+          "amount": 322,
+          "btm": {
+            "base": 7,
+            "time": 5,
+            "modifiers": 2,
+            "units": 14,
+            "unitValue": 23
+          }
+        }
+      ],
+      "subtotal": 322,
+      "gst": 48.3,
+      "total": 370.3
+    },
+    {
+      "invoiceNumber": "AA-2026-0014",
+      "bookingId": "BK0039",
+      "counterparty": "organisation:O-COS",
+      "billedTo": null,
+      "supplier": {
+        "anaesthetistId": "39560",
+        "name": "Dr Hannah Ropata",
+        "gstNumber": "104395601"
+      },
+      "layout": "contractHolder",
+      "delivery": {
+        "status": "sent",
+        "method": "email",
+        "to": "accounts@canterburyortho.example"
+      },
+      "holderReference": null,
+      "crossMatch": {
+        "procedureDateISO": "2026-07-16",
+        "surgeon": "Mr T. Hale",
+        "hospitalRef": "ACC45-118844"
+      },
+      "split": null,
+      "noCharge": false,
+      "procedureIds": [
+        "P0042"
+      ],
+      "lines": [
+        {
+          "procedureId": "P0042",
+          "kind": "fee",
+          "description": "ACL reconstruction, ACC via Canterbury Orthopaedic Surgeons",
+          "units": 11,
+          "amount": 264,
+          "btm": {
+            "base": 5,
+            "time": 6,
+            "modifiers": 0,
+            "units": 11,
+            "unitValue": 24
+          }
+        }
+      ],
+      "subtotal": 264,
+      "gst": 39.6,
+      "total": 303.6
+    },
+    {
+      "invoiceNumber": "AA-2026-0015",
+      "bookingId": "BK0040",
+      "counterparty": "hospital:H-STG",
+      "billedTo": null,
+      "supplier": {
+        "anaesthetistId": "39560",
+        "name": "Dr Hannah Ropata",
+        "gstNumber": "104395601"
+      },
+      "layout": "contractHolder",
+      "delivery": {
+        "status": "sent",
+        "method": "email",
+        "to": "accounts@stgeorges.example"
+      },
+      "holderReference": "SGANAES01",
+      "crossMatch": {
+        "procedureDateISO": "2026-07-16",
+        "surgeon": "Mr T. Hale",
+        "hospitalRef": "SG-2026-0810"
+      },
+      "split": null,
+      "noCharge": false,
+      "procedureIds": [
+        "P0043"
+      ],
+      "lines": [
+        {
+          "procedureId": "P0043",
+          "kind": "fee",
+          "description": "Knee arthroscopy",
+          "units": 7,
+          "amount": 192.5,
+          "btm": {
+            "base": 4,
+            "time": 3,
+            "modifiers": 0,
+            "units": 7,
+            "unitValue": 27.5
+          }
+        }
+      ],
+      "subtotal": 192.5,
+      "gst": 28.88,
+      "total": 221.38
+    }
+  ],
+  "cases": [
+    {
+      "bookingId": "BK0017",
+      "status": "invoiced",
+      "invoiceNumber": "AA-2026-0009",
+      "failure": null
+    },
+    {
+      "bookingId": "BK0018",
+      "status": "invoiced",
+      "invoiceNumber": "AA-2026-0010",
+      "failure": null
+    },
+    {
+      "bookingId": "BK0019",
+      "status": "invoiced",
+      "invoiceNumber": "AA-2026-0011",
+      "failure": null
+    },
+    {
+      "bookingId": "BK0020",
+      "status": "invoiced",
+      "invoiceNumber": "AA-2026-0012",
+      "failure": null
+    },
+    {
+      "bookingId": "BK0021",
+      "status": "invoiced",
+      "invoiceNumber": "AA-2026-0013",
+      "failure": null
+    },
+    {
+      "bookingId": "BK0022",
+      "status": "invoiced",
+      "invoiceNumber": "AA-2026-0002",
+      "failure": null
+    },
+    {
+      "bookingId": "BK0023",
+      "status": "invoiced",
+      "invoiceNumber": "AA-2026-0003",
+      "failure": null
+    },
+    {
+      "bookingId": "BK0024",
+      "status": "invoiced",
+      "invoiceNumber": "AA-2026-0004",
+      "failure": null
+    },
+    {
+      "bookingId": "BK0025",
+      "status": "invoiced",
+      "invoiceNumber": "AA-2026-0005",
+      "failure": null
+    },
+    {
+      "bookingId": "BK0025",
+      "status": "invoiced",
+      "invoiceNumber": "AA-2026-0006",
+      "failure": null
+    },
+    {
+      "bookingId": "BK0026",
+      "status": "invoiced",
+      "invoiceNumber": "AA-2026-0007",
+      "failure": null
+    },
+    {
+      "bookingId": "BK0027",
+      "status": "invoiced",
+      "invoiceNumber": "AA-2026-0008",
+      "failure": null
+    },
+    {
+      "bookingId": "BK0039",
+      "status": "invoiced",
+      "invoiceNumber": "AA-2026-0014",
+      "failure": null
+    },
+    {
+      "bookingId": "BK0040",
+      "status": "invoiced",
+      "invoiceNumber": "AA-2026-0015",
+      "failure": null
+    }
+  ]
+}

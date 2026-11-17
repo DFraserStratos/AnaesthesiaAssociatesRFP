@@ -25,6 +25,7 @@ import { proceduresForBooking } from './selectors'
 import { OFFICE_ACTOR, SOUTER_ACTOR, anaesthetistActor } from './demoActors'
 import type { Actor } from './mutate'
 import { ANAE, BOOKING_MOVE_DEMO, LIST_MOVE_DEMO, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
+import { REVIEW_FLAGS_LIST_ID } from '../domain/seed/reviewFlagBookings'
 import { SEED_DRAFT_LIST_IDS } from '../domain/seed/draftLists'
 import { CONTRACT_CHANGED_FROM } from '../domain/seed/reviewFlagBookings'
 import { slotIdFor } from '../domain/slots'
@@ -62,12 +63,17 @@ describe('the review flags on the pristine seed (catch-up Phase 21a)', () => {
     expect(flags.some((f) => f.rule === 'btmOverride' && /^T (adjusted|set)/.test(f.text))).toBe(true)
   })
 
-  it("S2 Beat 4's List raises none, and every seeded SUBMITTED List's blockers are empty", () => {
+  it("S2 Beat 4's List raises none; the only seeded SUBMITTED List blocked is Dr Chen's review List, by its \"Needs a price\" Booking (catch-up Phase 25)", () => {
     const api = createAppStore()
     expect(reviewFlagsOnList(api.getState(), SEED_LIST_IDS.morrisonMon20)).toEqual([])
     const submitted = Object.values(api.getState().schedule.lists).filter((l) => l.state === 'SUBMITTED')
     expect(submitted.length).toBeGreaterThan(5)
-    for (const l of submitted) expect(authoriseBlockersFor(api.getState(), l.id), l.id).toEqual([])
+    const needsPrice = SEED_MARKERS['reviewNeedsPrice']?.entityId
+    for (const l of submitted) {
+      const blockers = authoriseBlockersFor(api.getState(), l.id)
+      if (l.id === REVIEW_FLAGS_LIST_ID) expect(blockers.map((b) => [b.code, b.bookingId])).toEqual([['needsPrice', needsPrice]])
+      else expect(blockers, l.id).toEqual([])
+    }
   })
 })
 

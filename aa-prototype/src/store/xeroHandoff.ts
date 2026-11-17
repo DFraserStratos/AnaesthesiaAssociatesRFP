@@ -34,7 +34,8 @@
  */
 
 import { buyerCreatedTaxInvoiceFor, supplierFor } from '../domain/billing/invoicePresentation'
-import type { Anaesthetist, Booking, CounterpartyRef, XeroContact } from '../domain/types'
+import type { Anaesthetist, BillingCase, Booking, CounterpartyRef, XeroContact } from '../domain/types'
+import type { LockedPayee } from '../domain/billing/lock'
 import { xeroIndividualContactName } from '../domain/xeroContact'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
@@ -200,15 +201,16 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
   }
   const invoice = state.billing.invoices[theCase.invoiceId]
   if (invoice === undefined) return refuse('noInvoice', 'The case invoice was not found.')
-  const booking = state.schedule.bookings[theCase.bookingId]
-  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
-  const anaesthetist = list?.anaesthetistId !== undefined ? state.masters.anaesthetists[list.anaesthetistId] : undefined
-  if (anaesthetist === undefined) {
+  // The payee locked at authorise (catch-up Phase 25): its contact and supplier block, never a Booking-to-List join.
+  const payeeRecord = payeeForCase(state, theCase)
+  if (payeeRecord === undefined) {
     return refuse('noAnaesthetist', 'Could not resolve the anaesthetist payee for this case.')
   }
 
-  // Fault path: record the fault, clear the flag, create no pair (all one mutate).
-  if (state.settings.failNextHandoff === true) {
+  // Fault path: record the fault, clear the flag, create no pair (all one mutate). A fault
+  // scoped to one Booking (`failHandoffBookingId`, catch-up Phase 25's staged failure) waits for it.
+  const scoped = state.settings.failHandoffBookingId
+  if (state.settings.failNextHandoff === true && (scoped === undefined || scoped === theCase.bookingId)) {
     mutate(
       api,
       HANDOFF_ACTOR,
@@ -221,7 +223,10 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
             ...s.billing,
             cases: { ...s.billing.cases, [caseId]: { ...existing, handoffFailure: { ...HANDOFF_FAULT } } },
           },
-          settings: { ...s.settings, failNextHandoff: false },
+          settings: (() => {
+            const { failHandoffBookingId: _scoped, ...rest } = s.settings
+            return { ...rest, failNextHandoff: false }
+          })(),
         }
       },
     )
@@ -229,7 +234,7 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
   }
 
   const payerSpec = payerContactSpec(invoice.counterparty, state.masters)
-  const payeeSpec = anaesthetistContactSpec(anaesthetist)
+  const payeeSpec = anaesthetistContactSpec({ registrationNumber: payeeRecord.anaesthetistId, name: payeeRecord.name })
 
   const metas: MutationMeta[] = []
   let out: HandoffResult = {}
@@ -313,13 +318,13 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
       invoiceNumber: `${invoice.invoiceNumber}-P`,
       reference: invoice.caseReference,
       issuedAtISO,
-      anaesthetistId: anaesthetist.registrationNumber,
+      anaesthetistId: payeeRecord.anaesthetistId,
       amountPayable: invoice.total,
       amountAuthorised: 0,
       amountDisbursed: 0,
       status: 'draft',
       // The ACCPAY stands as the buyer-created tax invoice (US-09.1.4; provisional, OQ-29): one per receivable, the same value.
-      taxInvoice: buyerCreatedTaxInvoiceFor(invoice, supplierFor(anaesthetist)),
+      taxInvoice: buyerCreatedTaxInvoiceFor(invoice, payeeRecord.supplier),
     }
     // Clear any prior handoff fault on success (a resolved-and-retried case).
     const updated = { ...existing, accRecId: xr.id, accPayId: xp.id, status: 'handedOff' as const }
@@ -365,4 +370,18 @@ export function handoffCasesForBooking(api: AppStoreApi, bookingId: string): voi
       handoffCase(api, c.id)
     }
   }
+}
+
+/**
+ * Who a case pays, with the details its ACCPAY and BCTI print (catch-up Phase
+ * 25, DM-42): the payee locked at authorise. A pre-payment case, raised at
+ * setup before any lock, still reads the List's anaesthetist (until 27 and 41).
+ */
+function payeeForCase(state: Pick<AppState, 'schedule' | 'masters' | 'billing'>, theCase: BillingCase): LockedPayee | undefined {
+  const locked = theCase.payeeAnaesthetistId !== undefined ? state.billing.locks[theCase.bookingId]?.payee : undefined
+  if (locked !== undefined && locked.anaesthetistId === theCase.payeeAnaesthetistId) return locked
+  const booking = state.schedule.bookings[theCase.bookingId]
+  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
+  const anaesthetist = list?.anaesthetistId !== undefined ? state.masters.anaesthetists[list.anaesthetistId] : undefined
+  return anaesthetist !== undefined ? { anaesthetistId: anaesthetist.registrationNumber, name: anaesthetist.name, supplier: supplierFor(anaesthetist) } : undefined
 }

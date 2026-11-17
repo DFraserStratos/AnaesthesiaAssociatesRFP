@@ -6,11 +6,15 @@
     {
       "name": "contract-before",
       "app": "admin",
-      "caption": "Billing setup still editable while the list awaits review",
-      "start": "/admin/day/2026-07-20/bookings/BK0012",
+      "caption": "Before authorise, the price follows its Contract",
+      "start": "/admin/day/2026-07-20/bookings/BK0023",
       "states": [
         {
-          "steps": [],
+          "steps": [
+            {
+              "wait": "[data-shot=office-billing-setup-1]"
+            }
+          ],
           "highlight": [
             "[data-shot=office-billing-setup-1]"
           ]
@@ -20,11 +24,17 @@
     {
       "name": "locked-contract",
       "app": "admin",
-      "caption": "Billing setup locked once the list is authorised",
-      "start": "/admin/day/2026-07-20/bookings/BK0012",
+      "caption": "Authorised: the Contract's settings, the range in force and the price are locked onto each Procedure",
+      "start": "/admin/day/2026-07-20/bookings/BK0023",
       "setup": [
         {
-          "goto": "/admin/review/L-25490-2026-07-20-AM"
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -41,9 +51,35 @@
       ],
       "states": [
         {
-          "steps": [],
+          "steps": [
+            {
+              "wait": "[data-shot=office-billing-setup-1] [data-shot=booking-lock-badge]"
+            }
+          ],
           "highlight": [
-            "[data-shot=office-billing-setup-1]"
+            "[data-shot=office-billing-setup-1][data-locked=true]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "needs-price",
+      "app": "admin",
+      "caption": "A Procedure that still needs a price blocks authorise: Review names it and Authorise for billing stays off",
+      "start": "/admin/review/L-45178-2026-07-14-AM",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-shot=review-needs-price-blocker]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=review-needs-price-blocker]",
+            "role=button[name=\"Authorise for billing\"]"
           ]
         }
       ]

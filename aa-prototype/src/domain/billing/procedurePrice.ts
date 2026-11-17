@@ -6,7 +6,7 @@
  * the review flags, the invoice build and every screen read it.
  *
  * The price at any moment is the first that applies:
- *   1. the AUTHORISED price (INTERIM: the amount invoiced; Phase 25's snapshot);
+ *   1. the AUTHORISED price: the pricing snapshot's (catch-up Phase 25, `lock.ts`);
  *   2. the prepaid amount once its prepayment invoice is raised (INTERIM: the
  *      amount on that invoice; Phase 27's `prepaidAmountFor`);
  *   3. a typed price (`Procedure.enteredPrice`, 0 allowed);
@@ -21,7 +21,7 @@
  */
 
 import { isRvgKind, type Contract, type PricingKind } from './contracts'
-import type { ListState, Procedure } from '../types'
+import type { Procedure } from '../types'
 import { roundToCents } from './money'
 import { rangeInForce } from './priceRanges'
 
@@ -70,7 +70,7 @@ export type PriceResult =
     }
   | { status: 'needsPrice'; reason: NeedsPriceReason }
 
-/** The two held amounts the ladder reads ahead of a typed price (each INTERIM: see below). */
+/** The two held amounts the ladder reads ahead of a typed price (the snapshot's; the prepaid one INTERIM until 27). */
 export interface HeldPrices {
   authorised?: number
   prepaid?: number
@@ -177,25 +177,6 @@ export const PREPAYMENT_DEPOSIT_DESCRIPTION = 'Pre-payment deposit'
 /** Whether a prepayment invoice line holds the Procedure's price: the full prepayment does, a deposit does not. */
 export function holdsPrepaidPrice(line: Pick<HeldInvoiceLine, 'description'>): boolean {
   return line.description !== PREPAYMENT_DEPOSIT_DESCRIPTION
-}
-
-/**
- * INTERIM until Phase 25 (its snapshot replaces it): the AUTHORISED rung reads
- * the amount the run invoiced for the Procedure, its fee, discount and price
- * lines on the List's standard invoices (a split's shares summed), less
- * nothing for a prepayment deduction. Undefined until the List is AUTHORISED
- * and an invoice line names the Procedure. A reading, logged.
- */
-export function authorisedPriceFor(procedureId: string, listState: ListState, standardInvoiceLines: readonly HeldInvoiceLine[]): number | undefined {
-  if (listState !== 'AUTHORISED') return undefined
-  let found = false
-  let sum = 0
-  for (const line of standardInvoiceLines) {
-    if (line.procedureId !== procedureId || line.description === PREPAYMENT_DEDUCTION_DESCRIPTION) continue
-    found = true
-    sum += line.amount
-  }
-  return found ? roundToCents(sum) : undefined
 }
 
 /**

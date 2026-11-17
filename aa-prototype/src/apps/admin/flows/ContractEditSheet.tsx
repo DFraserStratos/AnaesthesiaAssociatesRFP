@@ -44,7 +44,8 @@ import {
   type Actor,
 } from '../../../store'
 import { Button, FieldLabel, FormError, Segmented, TextField } from '../../../shared'
-import { FieldHint, SelectField } from '../../../shared/ui'
+import { FieldHint, LineTab, LineTabs, SelectField } from '../../../shared/ui'
+import { ContractHistory } from './ContractHistory'
 import {
   BILLS_LABEL,
   PARTY_KIND_LABEL,
@@ -102,6 +103,8 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
   const [firstStart, setFirstStart] = useState('')
   const [firstPrice, setFirstPrice] = useState('')
   const [error, setError] = useState<string | null>(null)
+  // The panel's two tabs (catch-up Phase 25): the Contract's details, and its History.
+  const [tab, setTab] = useState<'details' | 'history'>('details')
   // The live Contract, so the ranges table shows each range change at once.
   const live = useAppStore((s) => (contract !== undefined ? s.masters.contracts[contract.id] : undefined)) ?? contract
   const defaultGroup = defaultRvgGroupId !== null ? masters.rvgGroups[defaultRvgGroupId] : undefined
@@ -220,6 +223,9 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
       meta={meta}
       shot="contract-detail"
       footer={
+        tab === 'history' ? (
+          <Button variant="secondary" onClick={onClose}>Close</Button>
+        ) : (
         <>
           {editing && !system && (
             <div style={{ marginRight: 'auto' }}>
@@ -235,8 +241,19 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button variant="primary" onClick={save}>{editing ? 'Save contract' : 'Create contract'}</Button>
         </>
+        )
       }
     >
+      {editing && (
+        <LineTabs label="Contract" kind="group" shot="contract-tabs">
+          <LineTab active={tab === 'details'} onClick={() => setTab('details')} shot="contract-tab-details">Details</LineTab>
+          <LineTab active={tab === 'history'} onClick={() => setTab('history')} shot="contract-tab-history">History</LineTab>
+        </LineTabs>
+      )}
+      {editing && tab === 'history' ? (
+        <ContractHistory contractId={contract.id} />
+      ) : (
+      <>
       {system && (
         <div data-shot="contract-system-notice" style={{ background: neutral.sunken, color: neutral.slate, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
           {isOpenPriceFallback(contract)
@@ -417,6 +434,8 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
       </PanelSection>
 
       <FormError message={error} />
+      </>
+      )}
       <CodePickerSheet
         open={pickerOpen}
         {...(defaultRvgGroupId !== null ? { currentId: defaultRvgGroupId } : {})}

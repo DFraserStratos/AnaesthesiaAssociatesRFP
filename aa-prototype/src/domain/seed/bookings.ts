@@ -936,11 +936,10 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
 
   // Billing FAILURE exemplar (Phase 09; A5) — a dedicated SUBMITTED, complete,
   // MULTI-booking list (Ropata, Thu 16 Jul, St George's / Mr Hale). The failing
-  // booking is on the COS ACC rate Contract; the billing-failure demo trigger
-  // points it at COS ACC fixed fees (no price for its procedure, catch-up Phase
-  // 18) then authorises this list, so the booking is a genuine rating failure
-  // (contractIneffective). The clean hospital-route sibling still invoices,
-  // demonstrating per-booking failure isolation.
+  // booking is on the COS ACC rate Contract; since catch-up Phase 25 the
+  // billing-failure demo trigger arms a Xero hand-off fault for it alone and
+  // authorises this list, so it is held back at the hand-off while the clean
+  // hospital-route sibling invoices, demonstrating per-booking isolation.
   const ropataThu16 = projectedListId(ANAE.ropata, THU16, 'AM')
   const failureBooking = addBooking({
     listId: ropataThu16,

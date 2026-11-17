@@ -6,8 +6,31 @@
     {
       "name": "review-contracts",
       "app": "admin",
-      "caption": "Each procedure already carries its locked contract before billing",
+      "caption": "Each Procedure carries its locked Contract into billing: the lock shows against it once the List is authorised",
       "start": "/admin/review/L-34821-2026-07-20-PM",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-PM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        }
+      ],
       "states": [
         {
           "steps": [],

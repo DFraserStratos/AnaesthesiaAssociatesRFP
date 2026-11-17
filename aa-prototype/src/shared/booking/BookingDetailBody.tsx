@@ -150,6 +150,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   // The price ladder's held amounts (catch-up Phase 24) read the invoices.
   const invoices = useAppStore((s) => s.billing.invoices)
   const invoiceLines = useAppStore((s) => s.billing.invoiceLines)
+  const locks = useAppStore((s) => s.billing.locks)
   const masters = useAppStore((s) => s.masters)
   const prepaymentStatus = useAppStore((s) => prepaymentStatusFor(s, bookingId))
   const warnings = useBookingWarnings(bookingId)
@@ -219,9 +220,10 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
     if (list === undefined || list.state === 'DRAFT' || procedures.length === 0) {
       return { units: 0, total: 0, needsPrice: false, order: inDisplayOrder(procedures).map((p) => p.id), primaryId: undefined, views: {} }
     }
-    const held = booking !== undefined ? heldPricesForBooking({ billing: { invoices, invoiceLines }, schedule: { lists: listsRecord, bookings: { [booking.id]: booking }, procedures: proceduresRecord } }, booking.id) : {}
-    return bookingFee({ procedures, list, masters, billingLines: billingLinesRecord, patientId: booking?.patientId, held })
-  }, [list, procedures, masters, billingLinesRecord, booking, invoices, invoiceLines, listsRecord, proceduresRecord])
+    const held = booking !== undefined ? heldPricesForBooking({ billing: { invoices, invoiceLines, locks }, schedule: { lists: listsRecord, bookings: { [booking.id]: booking }, procedures: proceduresRecord } }, booking.id) : {}
+    const lock = booking !== undefined ? locks[booking.id] : undefined
+    return bookingFee({ procedures, list, masters, billingLines: billingLinesRecord, patientId: booking?.patientId, held, ...(lock !== undefined ? { lock } : {}) })
+  }, [list, procedures, masters, billingLinesRecord, booking, invoices, invoiceLines, locks, listsRecord, proceduresRecord])
   // The primary first, then the rest in Booking order (US-03.2.2): every list on this screen.
   const ordered: Procedure[] = useMemo(() => inDisplayOrder(procedures), [procedures])
 

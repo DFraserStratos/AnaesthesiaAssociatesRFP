@@ -28,7 +28,8 @@ import { roundToCents, toCents } from '../domain/billing/money'
 import { payableReleasedFor } from '../domain/billing/payableRelease'
 import { GST_RATE } from '../domain/billing/invoicePresentation'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
-import type { AppState, AppStoreApi } from './appStore'
+import type { AppStoreApi } from './appStore'
+import { payeeIdForCase } from './selectors'
 
 /** GST component of a GST-inclusive amount received (3/23 of the gross). */
 export function gstComponentOf(gross: number): number {
@@ -55,11 +56,6 @@ export interface ReceivePaymentInput {
   atISO?: string
 }
 
-function anaesthetistIdForCase(state: Pick<AppState, 'schedule'>, theCase: BillingCase): string | undefined {
-  const booking = state.schedule.bookings[theCase.bookingId]
-  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
-  return list?.anaesthetistId
-}
 
 /**
  * Detect a payment on an ACCREC. Idempotent by `idempotencyKey` (the receipts
@@ -84,7 +80,7 @@ export function receivePayment(api: AppStoreApi, input: ReceivePaymentInput): Ou
   }
   const theCase = Object.values(state.billing.cases).find((c) => c.accRecId === input.accRecId)
   if (theCase === undefined) return refuse('noCase', 'No billing case links this ACCREC.')
-  const anaesthetistId = anaesthetistIdForCase(state, theCase)
+  const anaesthetistId = payeeIdForCase(state, theCase)
   if (anaesthetistId === undefined) return refuse('noAnaesthetist', 'Could not resolve the anaesthetist for this ACCREC.')
 
   // Clamp the applied amount to the outstanding balance (a normal ACCREC cannot

@@ -91,6 +91,10 @@ import { BackstopAmountFieldExample, NoContractGroupExample, RailOptionGroupExam
 import { ProcedureStackExample } from './procedureStackExample'
 import { FunderDetailsExample, PayerFieldsExample } from './payerExamples'
 import { PaidByRowExample, PaidBySheetExample, PartyPickerExample } from './splitExamples'
+import { LockBadge } from '../../../shared/booking/LockBadge'
+import { SEED_MARKERS } from '../../../domain/seed'
+import { ContractHistory } from '../../admin/flows/ContractHistory'
+import { useAppStore } from '../../../store'
 
 const A = 'Admin'
 const AW = 'Admin · Web'
@@ -383,6 +387,12 @@ export function AdminCatalogue() {
         <CatalogueRow name="PaidByRow" source="shared/booking/PaidByRow.tsx" usedIn={AWM} what="Paid by in the Billing card (catch-up Phases 22 and 22a; US-08.2.3, US-11.2.2): the Procedure's payer with Patient or the relationship and the warning-tint Email or postal address needed and Under 18 pills where its Contract bills the payer; the holder where the Contract bills its holder; a split's parties, in the warning tint when it no longer fits; Payer: not billed yet with no Contract. On web and Admin a line at the card's foot, on the phone the Billing summary's last row: Change beside the payer's name opens PaidBySheet with who pays and the offer; Split on the right opens it with the split alone." replaceWith="Custom (text rows and the shared Pill)" note="Read-only examples over fixed views; the sheet opens on a real Booking.">
           <PaidByRowExample variant="line" />
         </CatalogueRow>
+        <CatalogueRow name="LockBadge" source="shared/booking/LockBadge.tsx" usedIn={AWM} what="Contract locked at authorise (catch-up Phase 25; US-04.3.5): the shared neutral Pill with the lock glyph on a Booking whose List is AUTHORISED, in the Billing card on all three apps and the office's billing setup; who locked it and when on hover, or as a detail line on web and Admin. Never a seventh status colour." replaceWith="shadcn Badge (the shared Pill)" note="Shown on the seeded AUTHORISED Face lift, locked at seed time.">
+          <LockBadge bookingId={SEED_MARKERS['rangeAuthorisedBooking']?.entityId ?? ''} detail />
+        </CatalogueRow>
+        <CatalogueRow name="ContractHistory" source="apps/admin/flows/ContractHistory.tsx" usedIn={A} what="A Contract's History tab (catch-up Phase 25; US-04.1.3): its audited changes newest first through the shared HistoryTimeline (who, when, the values before and after), then the Procedures locked against it with links to their Bookings and invoices; EmptyState before any change." replaceWith="Custom (the shared HistoryTimeline and EmptyState)" note="Shown on the fixed-price Contract of the seeded AUTHORISED Face lift.">
+          <ContractHistoryExample />
+        </CatalogueRow>
         <CatalogueRow name="PaidBySheet (with SplitFeeSection)" source="shared/flows/PaidBySheet.tsx, shared/flows/SplitFeeSection.tsx" usedIn={AWM} what="The one Paid by sheet (catch-up Phase 22a; US-11.2.2, US-08.2.3): a bottom sheet on the phone, a dialog on web and Admin. Opened by Change, it holds who pays (the Different payer tick, the patient's details or the other payer's fields, the Under 18 hint and the contact ask) and, when the payer changes, the offer (the Booking's other Procedures with the same payer, each ticked, and the one neutral Provisional, OQ-140 pill). Opened by Split, it holds the split alone (a party or Another person, a $ or % share and Takes the rest per row, each amount live). Save writes it or refuses it whole." replaceWith="Custom (shadcn Sheet, Checkbox and Input inside)" note="Opens on Grace Park's first seeded Procedure; Save writes to the demo store.">
           <PaidBySheetExample />
         </CatalogueRow>
@@ -413,4 +423,13 @@ export function AdminCatalogue() {
       </LibraryGroup>
     </CataloguePage>
   )
+}
+
+/** The History tab on the Contract the seeded AUTHORISED Face lift is locked against (catch-up Phase 25). */
+function ContractHistoryExample() {
+  const contractId = useAppStore((s) => {
+    const bookingId = SEED_MARKERS['rangeAuthorisedBooking']?.entityId ?? ''
+    return s.billing.locks[bookingId]?.procedures[0]?.contract?.id ?? ''
+  })
+  return contractId === '' ? null : <ContractHistory contractId={contractId} />
 }

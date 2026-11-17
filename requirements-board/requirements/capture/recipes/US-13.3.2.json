@@ -6,7 +6,7 @@
     {
       "name": "resolve-retry",
       "app": "admin",
-      "caption": "Resolve and retry a failed billing item",
+      "caption": "Resolve and retry a Booking whose billing failed",
       "start": "/admin/billing",
       "setup": [
         {
@@ -22,43 +22,18 @@
       "states": [
         {
           "state": "failed",
-          "caption": "A Booking that failed to rate, with the reason and Resolve & retry",
+          "caption": "A Booking held back at the Xero hand-off, with the reason and Resolve & retry",
           "steps": [],
           "highlight": [
-            "tr:has(button:has-text(\"Resolve & retry\"))"
-          ]
-        },
-        {
-          "state": "choose",
-          "caption": "Resolve & retry asks the office to choose the Booking's Contract",
-          "steps": [
-            {
-              "click": "role=button[name=\"Resolve & retry\"]"
-            },
-            {
-              "wait": 700
-            }
-          ],
-          "highlight": [
-            "[data-shot=choose-contract-sheet]"
+            "[data-shot=billing-pipeline-L-39560-2026-07-16-AM] tr:has-text(\"Losa Tuilagi\")"
           ]
         },
         {
           "state": "retried",
-          "caption": "After Resolve & retry the Booking invoices and hands off",
+          "caption": "After one Resolve & retry the Booking hands off to Xero; the rest of the List had already billed",
           "steps": [
             {
-              "click": "role=button[name=\"Resolve & retry\"]"
-            },
-            {
-              "wait": 600
-            },
-            {
-              "select": "[data-shot=choose-contract-sheet] select",
-              "value": "CT-COS-ACC"
-            },
-            {
-              "click": "role=button[name=\"Choose and retry\"]"
+              "click": "[data-shot=billing-pipeline-L-39560-2026-07-16-AM] tr:has-text(\"Losa Tuilagi\") >> role=button[name=\"Resolve & retry\"]"
             },
             {
               "wait": 1200

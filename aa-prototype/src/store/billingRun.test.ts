@@ -411,25 +411,21 @@ describe('contract lifecycle at billing time', () => {
     }
   })
 
-  it('a fixed-price Contract with no range in force on the List\'s date is a per-booking exception; the list still completes its run', () => {
+  it("a fixed-price Contract with no range in force on the List's date blocks authorise and writes nothing (catch-up Phase 25)", () => {
     const api = store()
     const bookingId = marker('cosAccContractBooking')
     const proc = proceduresForBooking(api.getState(), bookingId)[0]!
     // No range in force, so never a rail candidate: staged as the demo actions do (catch-up Phase 20).
     expect(setProcedureContract(api, DEMO_TRIGGER_ACTOR, proc.id, CONTRACT.cosFixed, { demoStage: true }).ok).toBe(true)
-    const result = stageAndBill(api, listOf(api, bookingId))
-    expect(result.exceptions).toHaveLength(1)
-    expect(result.exceptions[0]).toMatchObject({ bookingId, code: 'contractIneffective', message: needsPriceMessage(api.getState().masters.contracts[CONTRACT.cosFixed]!, api.getState().schedule.lists[listOf(api, bookingId)]!.dateISO, { named: true }) })
-    expect(invoicesForBooking(api, bookingId)).toHaveLength(0)
-    const state = api.getState()
-    const failed = Object.values(state.billing.cases).filter((c) => c.status === 'failed')
-    expect(failed).toHaveLength(1)
-    expect(failed[0]!.bookingId).toBe(bookingId)
-    const exceptionAudit = state.audit.filter((a) => a.action === 'booking.billingException')
-    expect(exceptionAudit).toHaveLength(1)
-    expect(exceptionAudit[0]!.source).toBe('system')
-    // A per-booking failure does NOT hold the list on screen (the settled billedAt reading).
-    expect(isListBilled(state.schedule.lists[listOf(api, bookingId)]!)).toBe(true)
+    const listId = listOf(api, bookingId)
+    if (api.getState().schedule.lists[listId]!.state === 'ACTIVE') expect(submitList(api, OFFICE, listId).ok).toBe(true)
+    const audit = api.getState().audit.length
+    const refused = authoriseList(api, OFFICE, listId)
+    expect(refused).toMatchObject({ ok: false, code: 'needsPrice' })
+    if (!refused.ok) expect(refused.message).toContain(needsPriceMessage(api.getState().masters.contracts[CONTRACT.cosFixed]!, api.getState().schedule.lists[listId]!.dateISO, { named: true }))
+    expect(api.getState().schedule.lists[listId]!.state).toBe('SUBMITTED')
+    expect(api.getState().billing.locks[bookingId]).toBeUndefined()
+    expect(api.getState().audit).toHaveLength(audit)
   })
 
   it('a typed price is snapshotted onto the invoice as its fee line, with no reason and no adjustment line (catch-up Phase 24)', () => {
@@ -652,7 +648,7 @@ describe('review-pass hardening (8th review)', () => {
     }
   })
 
-  it('a split that no longer fits the fee fails the booking for review instead of billing a guess; the retry stamps delivery', () => {
+  it('a split that no longer fits the fee is a rejected lock: the Booking is held back whole, neither share raised, and a retry changes nothing', () => {
     const api = store()
     const bookingId = marker('feeSplitBooking')
     // nib's typed $132.50 fitted 8 units at $26.50 ($212); at $15 the fee is $120, leaving nothing for the rest.
@@ -663,12 +659,27 @@ describe('review-pass hardening (8th review)', () => {
     expect(invoicesForBooking(api, bookingId)).toHaveLength(0)
     const failed = Object.values(api.getState().billing.cases).find((c) => c.bookingId === bookingId)
     expect(failed?.failure?.message).toContain('$120.00')
-
-    // The rate is put back; the office retries and both shares are raised and sent at the clock time.
+    // No relock: putting the rate back changes nothing the retry reads (a credit note and rebill is Phase 39's).
     expect(editAnaesthetist(api, OFFICE, ANAE.souter, { unitValue: 26.5 }).ok).toBe(true)
+    expect(retryBillingCase(api, OFFICE, failed!.id)).toMatchObject({ ok: false, code: 'splitDoesNotFit' })
+    expect(api.getState().billing.cases[failed!.id]!.status).toBe('failed')
+    expect(invoicesForBooking(api, bookingId)).toHaveLength(0)
+  })
+
+  it('the retry stamps delivery at the clock time and links the split shares (catch-up Phase 22, from the lock)', () => {
+    const api = store()
+    const bookingId = marker('feeSplitBooking')
+    const listId = listOf(api, bookingId)
+    if (api.getState().schedule.lists[listId]!.state === 'ACTIVE') expect(submitList(api, OFFICE, listId).ok).toBe(true)
+    expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
+    const lock = api.getState().billing.locks[bookingId]!
+    const { [bookingId]: _dropped, ...rest } = api.getState().billing.locks
+    api.setState({ billing: { ...api.getState().billing, locks: rest } })
+    runBillingForList(api, listId)
+    const failed = Object.values(api.getState().billing.cases).find((c) => c.bookingId === bookingId && c.status === 'failed')!
+    api.setState({ billing: { ...api.getState().billing, locks: { ...api.getState().billing.locks, [bookingId]: lock } } })
     advanceClockMinutes(api, 15)
-    const retried = retryBillingCase(api, OFFICE, failed!.id)
-    expect(retried.ok).toBe(true)
+    expect(retryBillingCase(api, OFFICE, failed.id).ok).toBe(true)
     const atISO = clockISO(api.getState().clock)
     const invoices = invoicesForBooking(api, bookingId)
     expect(invoices.map((i) => [i.counterparty.kind, i.total])).toEqual([

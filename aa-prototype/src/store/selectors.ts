@@ -55,7 +55,8 @@ import type {
 } from '../domain/types'
 import { bookingFeesFor, type BookingBillingContext } from '../domain/billing/validateBookingForBilling'
 import { feeIn } from '../domain/billing/bookingFee'
-import { authorisedPriceFor, holdsPrepaidPrice, prepaidHeldPriceFor, type HeldPrices } from '../domain/billing/procedurePrice'
+import { holdsPrepaidPrice, prepaidHeldPriceFor, type HeldPrices } from '../domain/billing/procedurePrice'
+import { authorisedPricesFromLock, lockViewFor } from '../domain/billing/lock'
 import { deliveryCountsText } from '../domain/billing/invoicePresentation'
 import { listHospitalFor } from '../domain/listPairing'
 import { ANAESTHETISTS, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
@@ -658,36 +659,25 @@ export function prepaymentPayerAwaiting(state: Pick<AppState, 'schedule' | 'mast
 }
 
 /**
- * The price ladder's held amounts for each Procedure of a Booking (catch-up
- * Phase 24, `procedurePrice.ts`): the AUTHORISED rung from the List's
- * standard invoices once it is AUTHORISED, the prepaid rung from a raised
- * prepayment invoice. Both INTERIM reads (25's snapshot and 27's
- * `prepaidAmountFor` replace them). Procedures with neither are absent.
+ * The price ladder's held amounts per Procedure (catch-up Phase 24): the
+ * AUTHORISED rung reads the Booking's pricing snapshot (catch-up Phase 25,
+ * `billing.locks`), the prepaid rung the raised prepayment invoice (INTERIM
+ * until 27). A caller without `locks` sees no AUTHORISED rung.
  */
 export function heldPricesForBooking(
-  state: { billing: Pick<AppState['billing'], 'invoices' | 'invoiceLines'>; schedule: Pick<AppState['schedule'], 'lists' | 'bookings' | 'procedures'> },
+  state: { billing: Pick<AppState['billing'], 'invoices' | 'invoiceLines'> & Partial<Pick<AppState['billing'], 'locks'>>; schedule: Pick<AppState['schedule'], 'lists' | 'bookings' | 'procedures'> },
   bookingId: string,
 ): Record<ProcedureId, HeldPrices> {
   const booking = state.schedule.bookings[bookingId]
   if (booking === undefined) return {}
-  const invoices = Object.values(state.billing.invoices).filter((i) => i.bookingId === bookingId)
-  if (invoices.length === 0) return {}
-  const kindOf = new Map(invoices.map((i) => [i.id, i.kind]))
-  const standard: InvoiceLine[] = []
-  const prepayment: InvoiceLine[] = []
-  for (const line of Object.values(state.billing.invoiceLines)) {
-    const kind = kindOf.get(line.invoiceId)
-    if (kind === 'standard') standard.push(line)
-    else if (kind === 'prePayment') prepayment.push(line)
-  }
-  const listState = state.schedule.lists[booking.listId]?.state
-  const out: Record<ProcedureId, HeldPrices> = {}
+  const out: Record<ProcedureId, HeldPrices> = { ...authorisedPricesFromLock(state.billing.locks?.[bookingId]) }
+  const prepaymentIds = new Set(Object.values(state.billing.invoices).filter((i) => i.bookingId === bookingId && i.kind === 'prePayment').map((i) => i.id))
+  if (prepaymentIds.size === 0) return out
+  const prepayment = Object.values(state.billing.invoiceLines).filter((l) => prepaymentIds.has(l.invoiceId))
   for (const p of Object.values(state.schedule.procedures)) {
     if (p.bookingId !== bookingId) continue
-    const authorised = listState === undefined || listState === 'DRAFT' ? undefined : authorisedPriceFor(p.id, listState, standard)
     const prepaid = prepaidHeldPriceFor(p.id, prepayment)
-    if (authorised === undefined && prepaid === undefined) continue
-    out[p.id] = { ...(authorised !== undefined ? { authorised } : {}), ...(prepaid !== undefined ? { prepaid } : {}) }
+    if (prepaid !== undefined) out[p.id] = { ...(out[p.id] ?? {}), prepaid }
   }
   return out
 }
@@ -1020,8 +1010,14 @@ export interface AccpayInvoiceRow {
   bucket: AgingBucketKey
 }
 
-function anaesthetistIdForCase(state: Pick<AppState, 'schedule'>, c: BillingCase): string | undefined {
-  const booking = state.schedule.bookings[c.bookingId]
+/**
+ * Who a case pays (catch-up Phase 25, DM-42): the payee stamped from the
+ * Booking's lock at the run. A pre-payment case, raised at setup before any
+ * lock, has none and keeps the Booking-to-List join until Phases 27 and 41.
+ */
+export function payeeIdForCase(state: Pick<AppState, 'schedule'>, theCase: BillingCase): string | undefined {
+  if (theCase.payeeAnaesthetistId !== undefined) return theCase.payeeAnaesthetistId
+  const booking = state.schedule.bookings[theCase.bookingId]
   const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
   return list?.anaesthetistId
 }
@@ -1062,7 +1058,7 @@ function accpayRowForCase(state: MirrorState, c: BillingCase, todayISO: string):
 export function accpayInvoicesFor(state: MirrorState, anaesthetistId: string, todayISO: string): AccpayInvoiceRow[] {
   const rows: AccpayInvoiceRow[] = []
   for (const c of Object.values(state.billing.cases)) {
-    if (anaesthetistIdForCase(state, c) !== anaesthetistId) continue
+    if (payeeIdForCase(state, c) !== anaesthetistId) continue
     const row = accpayRowForCase(state, c, todayISO)
     if (row === undefined) continue
     rows.push(row)
@@ -1184,7 +1180,7 @@ export function paymentHistoryFor(
 
   const rows: PaymentHistoryRow[] = []
   for (const c of Object.values(state.billing.cases)) {
-    if (anaesthetistIdForCase(state, c) !== anaesthetistId) continue
+    if (payeeIdForCase(state, c) !== anaesthetistId) continue
     if (toCents(c.receivedAmount) <= 0 || c.invoiceId === undefined) continue
     const invoice = state.billing.invoices[c.invoiceId]
     const booking = state.schedule.bookings[c.bookingId]
@@ -2170,7 +2166,7 @@ export function bookingContractCue(state: Pick<AppState, 'masters' | 'schedule'>
 export function procedureStackViewFor(
   state: Pick<AppState, 'masters'> & {
     schedule: Pick<AppState['schedule'], 'procedures' | 'bookings' | 'lists'> & Partial<Pick<AppState['schedule'], 'billingLines'>>
-    billing?: Pick<AppState['billing'], 'invoices' | 'invoiceLines'>
+    billing?: Pick<AppState['billing'], 'invoices' | 'invoiceLines'> & Partial<Pick<AppState['billing'], 'locks'>>
   },
   procedureId: string,
   surface: StackSurface,
@@ -2180,6 +2176,32 @@ export function procedureStackViewFor(
   const booking = state.schedule.bookings[procedure.bookingId]
   if (booking === undefined) return undefined
   const list = state.schedule.lists[booking.listId]
+  // A locked Booking's Contract part reads its snapshot (catch-up Phase 25, `lockViewFor`): never the masters.
+  const lock = state.billing?.locks?.[booking.id]
+  const snapshot = lock?.state === 'locked' ? lock.procedures.find((p) => p.procedureId === procedureId) : undefined
+  if (lock !== undefined && snapshot?.contract !== undefined) {
+    const locked = lockViewFor(lock, procedureId).procedure!
+    const view = procedureStackView(procedure, {
+      ...(procedure.split !== undefined ? { splitFeeExGst: snapshot.price } : {}),
+      contracts: { ...state.masters.contracts, [snapshot.contract.id]: snapshot.contract },
+      parties: state.masters.parties,
+      rvgGroups: snapshot.rvgGroup !== undefined ? { ...state.masters.rvgGroups, [snapshot.rvgGroup.id]: snapshot.rvgGroup } : state.masters.rvgGroups,
+      booking,
+      dateISO: lock.pricingDateISO,
+      surface,
+      nameOf: (ref) => lock.parties.find((p) => p.ref.kind === ref.kind && p.ref.id === ref.id)?.name ?? counterpartyName(state, ref, booking.id),
+    })
+    if (view?.contract == null) return view
+    return {
+      ...view,
+      contract: {
+        ...view.contract,
+        holderName: locked.holderName ?? view.contract.holderName,
+        ...(view.contract.invoiced !== null && locked.billedName !== undefined ? { invoiced: { ...view.contract.invoiced, name: locked.billedName } } : {}),
+        locked: true,
+      },
+    }
+  }
   // A split's summary needs the fee as the run computes it (catch-up Phase 22).
   let splitFeeExGst: number | null | undefined
   if (procedure.split !== undefined) {

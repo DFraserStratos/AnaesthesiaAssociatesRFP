@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { runDeliverySummary } from '../../../domain/billing/invoicePresentation'
 import { useMemo, useState } from 'react'
-import { useShallow } from 'zustand/react/shallow'
 import { ArrowLeft, ArrowRight, Check, Lock, Receipt } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import type { AssignedList, Booking, Procedure } from '../../../domain/types'
@@ -10,6 +9,7 @@ import {
   approveContractChangesOnList,
   approveContractSelection,
   authoriseBlockersFor,
+  type AuthoriseBlocker,
   authoriseList,
   clearWarning,
   contractChangeFor,
@@ -32,6 +32,7 @@ import { HistorySheet } from '../../../shared/booking'
 import { ConfirmSheet, OverlayHeader, SheetActions } from '../../../shared/surface'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
 import { NEEDS_PRICE_LABEL } from '../../../domain/billing/priceRanges'
+import { lockViewFor } from '../../../domain/billing/lock'
 import { reviewFlagsForBooking, type ContractChangeRecord, type ReviewFlag } from '../../../domain/billing/reviewFlags'
 import { approvalNumberMissing } from '../../../domain/billing/insurance'
 import { PAYER_NOT_BILLED_YET, isPayerBilled, payerDetails } from '../../../domain/billing/whoIsBilled'
@@ -86,11 +87,14 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
   const invoicesRecord = useAppStore((s) => s.billing.invoices)
+  const locksRecord = useAppStore((s) => s.billing.locks)
   const masters = useAppStore((s) => s.masters)
   const audit = useAppStore((s) => s.audit)
   const notifications = useAppStore((s) => s.notifications)
   const pendingCount = useAppStore((s) => pendingContractChangesOnList(s, listId).length)
-  const authoriseBlockers = useAppStore(useShallow((s) => authoriseBlockersFor(s, listId)))
+  // A stable key (the blockers are fresh objects each read): "Needs a price" names its Procedures (catch-up Phase 25).
+  const blockersKey = useAppStore((s) => JSON.stringify(authoriseBlockersFor(s, listId)))
+  const authoriseBlockers = useMemo(() => JSON.parse(blockersKey) as AuthoriseBlocker[], [blockersKey])
 
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [noteOpen, setNoteOpen] = useState(false)
@@ -116,7 +120,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
       )
       // The flags come from the one pure list (`domain/billing/reviewFlags.ts`) over the store's one input selector (catch-up Phase 21a).
       const state = useAppStore.getState()
-      const totals = bookingFee({ procedures: procs, list, masters, billingLines: billingLinesRecord, patientId: booking.patientId, held: heldPricesForBooking(state, booking.id) })
+      const totals = bookingFee({ procedures: procs, list, masters, billingLines: billingLinesRecord, patientId: booking.patientId, held: heldPricesForBooking(state, booking.id), ...(state.billing.locks[booking.id] !== undefined ? { lock: state.billing.locks[booking.id]! } : {}) })
       const input = reviewInputFor(state, booking)
       const flags = input !== undefined ? reviewFlagsForBooking(input) : []
       const changes: (ContractChangeRecord | undefined)[] = procs.map((p) => contractChangeFor(state, p.id))
@@ -154,10 +158,13 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
         entityLabels = labels
       }
       const alert: Notification | undefined = activeAlertFor(state, { listId, bookingId: booking.id })
-      return { booking, primary, primaryView, primaryAllocation, totals, flags, changes, procs, procIds: procs.map((p) => p.id), billedText, procCount: procs.length, entityIds, entityLabels, stackViews, alert }
+      // After authorise, the Booking's locked record (catch-up Phase 25): who is paid, and any split as typed.
+      const lock = locksRecord[booking.id]
+      const lockView = lock !== undefined ? lockViewFor(lock) : undefined
+      return { booking, primary, primaryView, primaryAllocation, totals, flags, changes, procs, procIds: procs.map((p) => p.id), billedText, procCount: procs.length, entityIds, entityLabels, stackViews, alert, lockView }
     })
     // The audit feeds the change records; the notifications feed the alerts.
-  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, audit, notifications, invoicesRecord])
+  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, audit, notifications, invoicesRecord, locksRecord])
   const warningsByBooking = useListWarnings(listId)
   // The anaesthetist's changes since submit (catch-up Phase 38a): null once authorised.
   const changed = useChangedSinceSubmitted(listId)
@@ -184,9 +191,13 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
   const allFlags: ReviewFlag[] = rows.flatMap((r) => r.flags)
   // Contract changes still waiting: approved together here, or at authorise (catch-up Phase 21a). Never a gate.
   const pendingChanges = authorised ? 0 : pendingCount
-  // The one blockers seam (empty in this phase: flags never block; 25 and 40 add their kinds).
+  // The one blockers seam: "Needs a price" since catch-up Phase 25 (flags never block; 40 adds the NHI).
   const blockers = authorised ? [] : authoriseBlockers
   const unitRate = anaesthetist?.unitValue ?? 0
+  // After authorise the rate is the locked one (catch-up Phase 25): "(locked)", or "(Contract rate, locked)".
+  const lockedRates = [...new Set(rows.flatMap((r) => r.lockView?.procedures.flatMap((p) => (p.rateText !== undefined ? [p.rateText] : [])) ?? []))]
+  // Several locked rates (or none, all fixed prices): the List's rate is not one figure, and never the live one after authorise.
+  const rateText = !authorised ? `@ ${formatCurrency(unitRate)}/unit (list rate)` : lockedRates.length === 1 ? lockedRates[0]! : 'Rates locked per Booking'
 
   const submitAt = audit.filter((a) => a.entityId === listId && a.action === 'list.submit').at(-1)?.atISO
   const authAt = audit.filter((a) => a.entityId === listId && a.action === 'list.authorise').at(-1)?.atISO
@@ -330,7 +341,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ booking, primary, primaryView, primaryAllocation, totals, flags, changes, procs, procIds, billedText, entityIds, entityLabels, stackViews, alert }) => {
+            {rows.map(({ booking, primary, primaryView, primaryAllocation, totals, flags, changes, procs, procIds, billedText, entityIds, entityLabels, stackViews, alert, lockView }) => {
               const patient = masters.patients[booking.patientId]
               const btm = primaryView?.fee.btm
               return (
@@ -365,6 +376,14 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
                   <td style={{ ...cellStyle, maxWidth: 150 }}>
                     <div style={{ fontWeight: 600, fontSize: 13 }}>{billedText}</div>
                     <InsurerLine booking={booking} />
+                    {lockView !== undefined && lockView.state === 'locked' && (
+                      <div data-shot="review-locked-payee" style={{ fontSize: 11.5, color: neutral.slate, marginTop: 2 }}>
+                        Paid to {lockView.payeeName}
+                        {lockView.procedures.filter((p) => p.splitText !== 'Full').map((p) => (
+                          <div key={p.procedureId}>{p.splitText}</div>
+                        ))}
+                      </div>
+                    )}
                   </td>
                   {/* Every Procedure's stack, compact (catch-up Phase 20a; US-07.2.2, US-03.1.9). */}
                   <td data-shot="review-procedures" style={{ ...cellStyle, minWidth: 240, maxWidth: 300 }}>
@@ -435,7 +454,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
               <td style={cellStyle} />
               <td className="mono" style={{ ...numCell, fontWeight: 700 }}>{listTotals.units}</td>
               <td className="mono" style={{ ...numCell, fontWeight: 700 }}>{listFeeText}</td>
-              <td style={{ ...cellStyle, color: neutral.mist, fontSize: 12 }}>@ {formatCurrency(unitRate)}/unit (list rate)</td>
+              <td data-shot="review-list-rate" style={{ ...cellStyle, color: neutral.mist, fontSize: 12 }}>{rateText}</td>
             </tr>
           </tbody>
         </table>
@@ -464,9 +483,18 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
           {!authorised && allFlags.length > 0 && (
             <div style={{ fontSize: 12.5, color: semantic.warning.onTint }}>{allFlags.length} flag{allFlags.length === 1 ? '' : 's'} open. Check or note them before authorising.</div>
           )}
-          {blockers.map((b) => (
-            <div key={b.code} data-testid="review-authorise-blocker" style={{ fontSize: 12.5, color: semantic.warning.onTint }}>{b.message}</div>
-          ))}
+          {/* "Needs a price" blocks the lock (catch-up Phase 25): each Procedure named, with an Open link. */}
+          {blockers.map((b) => {
+            const who = b.bookingId !== undefined ? masters.patients[bookingsRecord[b.bookingId]?.patientId ?? '']?.name : undefined
+            return (
+              <div key={`${b.code}-${b.procedureId ?? b.bookingId ?? ''}`} data-testid="review-authorise-blocker" data-shot="review-needs-price-blocker" style={{ display: 'flex', alignItems: 'baseline', gap: 8, fontSize: 12.5, color: semantic.warning.onTint }}>
+                <span>{who !== undefined ? `${who}: ` : ''}{b.message}</span>
+                {onOpenBooking !== undefined && b.bookingId !== undefined && (
+                  <TextAction size="sm" flush onClick={() => onOpenBooking(list.dateISO, b.bookingId!)}>Open</TextAction>
+                )}
+              </div>
+            )
+          })}
           <div style={{ fontSize: 11.5, color: neutral.mist }}>Authorisation is an OfficeAdmin action · acting as {actor.who} (Office)</div>
         </div>
         {authorised ? (
@@ -496,7 +524,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
         cancelLabel="Cancel"
       >
         <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
-          Authorising locks every Booking on this List immutable (no further edits by anyone) and hands the List to the Billing Engine as a single unit. Invoices are raised and sent immediately, one for each billable party. There is no return to the anaesthetist from here.
+          Authorising locks every Booking on this List (no further edits by anyone) and locks each Procedure's Contract onto it: its settings, the price range in force, the rate, the price, who is billed and who is paid. The Billing Engine raises the invoices from that locked record and sends them now, one for each billable party; a later Contract edit never changes them. There is no return to the anaesthetist from here.
         </div>
         {pendingChanges > 0 && (
           <div data-testid="review-authorise-approves" style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px', marginTop: 8 }}>

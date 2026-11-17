@@ -13,7 +13,10 @@
 import { createAppStore } from '../appStore'
 import { freshAppStateBefore22a } from './phase22aAdditions'
 import { billingContextForBooking } from '../selectors'
-import { counterpartyForProcedure, resolveContractForProcedure } from '../../domain/billing/invoiceBuild'
+import { procedureNeedsPrice } from '../../domain/billing/procedurePrice'
+import { billablePartyForProcedure } from '../../domain/billing/whoIsBilled'
+import type { BookingBillingContext } from '../../domain/billing/validateBookingForBilling'
+import type { Contract, Procedure } from '../../domain/types'
 import { raisePreProcedureInvoice } from '../prepaymentActions'
 import { handoffCasesForBooking } from '../xeroHandoff'
 import { SEED_MARKERS } from '../../domain/seed'
@@ -62,13 +65,13 @@ export function captureProcedures(state: AppState): ProcedureParityRow[] {
     let billedTo = 'none'
     let contract = 'none'
     if (ctx !== undefined) {
-      const resolved = resolveContractForProcedure(procedure, { ...ctx, patientId: booking.patientId })
+      const resolved = resolveContractForParity(procedure, ctx)
       if (resolved.kind === 'exception') {
         billedTo = `exception:${resolved.code}`
         contract = `exception:${resolved.code}`
       } else {
         contract = resolved.contract?.id ?? '(none)'
-        const cp = counterpartyForProcedure(resolved.contract, procedure, booking.patientId, state.masters.parties)
+        const cp = billablePartyForProcedure(resolved.contract, procedure, booking.patientId, state.masters.parties)
         billedTo = cp === undefined ? 'undefined' : `${cp.kind}:${cp.id}`
       }
     }
@@ -133,3 +136,16 @@ export function captureBaseline(): Phase20Baseline {
 }
 
 
+
+/**
+ * The resolution the billing run made before catch-up Phase 25 (its codes as
+ * the fixture recorded them). Test-only: the lock builder (`lock.ts`) is the
+ * one resolver now.
+ */
+function resolveContractForParity(procedure: Procedure, ctx: BookingBillingContext): { kind: 'resolved'; contract: Contract } | { kind: 'exception'; code: string } {
+  if (procedure.governingContractId === undefined) return { kind: 'exception', code: 'noContract' }
+  const stored = ctx.contracts[procedure.governingContractId]
+  if (stored === undefined) return { kind: 'exception', code: 'contractMissing' }
+  if (procedureNeedsPrice(stored, ctx.listDateISO, procedure, ctx.held?.[procedure.id])) return { kind: 'exception', code: 'contractIneffective' }
+  return { kind: 'resolved', contract: stored }
+}

@@ -6,6 +6,9 @@ import { useAppStore, type Actor } from '../../store'
 import { Button } from '../ui'
 import { formatCurrency } from '../format'
 import { EditBillingSetupSheet, PricingSheet } from '../flows'
+import { lockStampText, lockViewFor, type BookingLock } from '../../domain/billing/lock'
+import { LockBadge } from './LockBadge'
+import { BILLS_LABEL, pricingLabel } from '../contracts'
 
 interface OfficeBillingSetupProps {
   procedure: Procedure
@@ -30,7 +33,10 @@ type Sheet = 'none' | 'setup' | 'price'
  */
 export function OfficeBillingSetup({ procedure, displayNumber, actor, canEdit }: OfficeBillingSetupProps) {
   const masters = useAppStore((s) => s.masters)
+  const lock = useAppStore((s) => s.billing.locks[procedure.bookingId])
   const [sheet, setSheet] = useState<Sheet>('none')
+  // Once authorised, the office reads what was locked (catch-up Phase 25): no picker, no share editor.
+  if (lock !== undefined && lock.state === 'locked') return <LockedBillingSetup lock={lock} procedure={procedure} displayNumber={displayNumber} />
 
   const contract = procedure.governingContractId !== undefined ? masters.contracts[procedure.governingContractId] : undefined
   const refMissing = billingReferenceMissing(procedure, masters.contracts, masters.parties)
@@ -65,6 +71,43 @@ export function OfficeBillingSetup({ procedure, displayNumber, actor, canEdit }:
 
       <EditBillingSetupSheet open={sheet === 'setup'} procedure={procedure} actor={actor} onClose={() => setSheet('none')} />
       <PricingSheet open={sheet === 'price'} procedureId={procedure.id} actor={actor} onClose={() => setSheet('none')} />
+    </div>
+  )
+}
+
+/**
+ * The office billing setup on a locked Booking (catch-up Phase 25; US-04.3.5):
+ * read-only from the lock (`lockViewFor`), never the masters: the Contract as
+ * locked with its settings, who is billed, the pricing basis with its figure,
+ * the split as typed and the payee.
+ */
+function LockedBillingSetup({ lock, procedure, displayNumber }: { lock: BookingLock; procedure: Procedure; displayNumber: number }) {
+  const view = lockViewFor(lock, procedure.id)
+  const p = view.procedure
+  return (
+    <div data-shot={`office-billing-setup-${displayNumber}`} data-locked="true" style={{ background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.slate, textTransform: 'uppercase' }}>
+          Office billing setup · {procedure.isPrimary ? 'primary procedure' : 'additional procedure'}
+        </div>
+        <LockBadge bookingId={procedure.bookingId} />
+      </div>
+      {p !== undefined && (
+        <>
+          <Row label="Contract">
+            <span>{p.contractName ?? 'Migrated history'}{p.contractAaCode !== undefined && <span className="mono" style={{ fontSize: 12, color: neutral.slate }}> · {p.contractAaCode}</span>}</span>
+            {p.pricing !== undefined && <span style={{ fontSize: 12.5, color: neutral.slate }}>{pricingLabel(p.pricing)}{p.billsTo !== undefined ? ` · bills ${BILLS_LABEL[p.billsTo].toLowerCase()}` : ''}</span>}
+          </Row>
+          <Row label="Billed to">{p.billedName ?? 'As invoiced'}</Row>
+          <Row label="Price">
+            <span data-shot="office-billing-price" className="mono">{formatCurrency(p.price)}{p.typed ? ' · typed' : ''}</span>
+            {p.basisText !== undefined && <span style={{ fontSize: 12.5, color: neutral.slate }}>{p.basisText}</span>}
+          </Row>
+          {p.splitText !== 'Full' && <Row label="Split">{p.splitText}</Row>}
+        </>
+      )}
+      <Row label="Paid to">{view.payeeName}</Row>
+      <span data-shot="office-billing-locked-stamp" style={{ fontSize: 12, color: neutral.slate }}>{lockStampText(view)}</span>
     </div>
   )
 }

@@ -1,34 +1,33 @@
 /**
- * Billing failure isolation + resolve-and-retry tests (Phase 09; A5).
+ * Billing failure isolation and retry under the lock (Phase 09; catch-up
+ * Phase 25, OQ-05, US-08.5.1, US-08.5.2, US-13.3.2).
  *
- * The seeded multi-booking failure list bills its clean hospital-route booking while
- * Losa Tuilagi's Booking fails: it was pointed at COS ACC fixed fees, which has no
- * price range in force on her List's date ("Needs a price"; catch-up Phases 18 and 19a, RV-32, no
- * dates and no Contract edited). The office chooses her Contract
- * (`chooseContractForFailedBooking`, the one edit allowed on an authorised List)
- * and `retryBillingCase` recovers the booking without duplicating the list's
- * other invoices, idempotently, refused on a non-failed case and to non-office actors.
+ * The run prices only from each Booking's lock, so a Contract edit can no
+ * longer break it. A Booking with no lock (or a rejected one) fails whole and
+ * is held back while its siblings bill; the List never fails. `retryBillingCase`
+ * rebuilds from the lock only: it never edits a master or a Procedure, refuses a
+ * case that is not failed, leaves a still-failing case untouched and never
+ * duplicates an invoice. The S4 beat's cause is outside the lock: the Xero
+ * hand-off of Losa Tuilagi's Booking (`stageBillingFailure`).
  */
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
-import { authoriseList, submitList } from './lifecycle'
-import { chooseContractForFailedBooking, runBillingForList, retryBillingCase } from './billingRun'
-import { setProcedureContract } from './contractSelectionActions'
-import { DEMO_TRIGGER_ACTOR } from './demoActors'
+import { authoriseList } from './lifecycle'
+import { handoffListCases, runBillingForList, retryBillingCase } from './billingRun'
 import { handoffCase } from './xeroHandoff'
-import { addPriceRange, disableContract } from './contractActions'
+import { addPriceRange, disableContract, editContract } from './contractActions'
+import { editAnaesthetist } from './mastersActions'
+import { stageBillingFailure } from './demoStaging'
 import { failedCases, invoicesForList, proceduresForBooking } from './selectors'
 import type { Actor } from './mutate'
 import type { Invoice } from '../domain/types'
 import { CONTRACT, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
+import { LOCK_MISSING_MESSAGE } from '../domain/billing/lock'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: '34821' }
 
-function store(): BoundAppStore {
-  return createAppStore()
-}
 function marker(key: string): string {
   const m = SEED_MARKERS[key]
   if (m === undefined) throw new Error(`missing marker ${key}`)
@@ -38,171 +37,139 @@ function invoicesForBooking(api: BoundAppStore, bookingId: string): Invoice[] {
   return Object.values(api.getState().billing.invoices).filter((i) => i.bookingId === bookingId)
 }
 
-function losaProcedureId(api: BoundAppStore): string {
-  return proceduresForBooking(api.getState(), marker('billingFailureBooking'))[0]!.id
+const LIST = SEED_LIST_IDS.billingFailure
+const LOSA = () => marker('billingFailureBooking')
+
+/** Authorise the S4 List, then drop Losa's lock before the run (a Booking with no locked record). */
+function failForMissingLock(api: BoundAppStore): void {
+  expect(authoriseList(api, OFFICE, LIST).ok).toBe(true)
+  const { [LOSA()]: _dropped, ...rest } = api.getState().billing.locks
+  api.setState({ billing: { ...api.getState().billing, locks: rest } })
+  expect(runBillingForList(api, LIST).ok).toBe(true)
 }
 
-/** The demo trigger's path: point Losa Tuilagi's Procedure at COS ACC fixed fees, then authorise and run. */
-function triggerFailure(api: BoundAppStore): void {
-  const listId = SEED_LIST_IDS.billingFailure
-  const list = api.getState().schedule.lists[listId]!
-  if (list.state === 'ACTIVE') expect(submitList(api, OFFICE, listId).ok).toBe(true)
-  // Catch-up Phase 20: COS ACC fixed fees has no range in force, so it is never a step-rail candidate; the trigger stages it as the demo actions.
-  expect(setProcedureContract(api, DEMO_TRIGGER_ACTOR, losaProcedureId(api), CONTRACT.cosFixed, { demoStage: true }).ok).toBe(true)
-  expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
-  const run = runBillingForList(api, listId)
-  expect(run.ok).toBe(true)
-}
-
-describe('failure isolation', () => {
-  it('the COS booking fails while the clean sibling still invoices', () => {
-    const api = store()
-    triggerFailure(api)
-    const listId = SEED_LIST_IDS.billingFailure
-    const failureBooking = marker('billingFailureBooking')
-
-    // Only the sibling billed; the COS booking produced no invoice.
-    expect(invoicesForList(api.getState(), listId)).toHaveLength(1)
-    expect(invoicesForBooking(api, failureBooking)).toHaveLength(0)
-
+describe('failure isolation under the lock (OQ-05)', () => {
+  it('a Booking with no lock fails whole while its sibling bills; the List completes its run', () => {
+    const api = createAppStore()
+    failForMissingLock(api)
+    expect(invoicesForBooking(api, LOSA())).toHaveLength(0)
+    expect(invoicesForList(api.getState(), LIST)).toHaveLength(1)
     const failed = failedCases(api.getState())
     expect(failed).toHaveLength(1)
-    expect(failed[0]!.bookingId).toBe(failureBooking)
-    expect(failed[0]!.failure).toMatchObject({ code: 'contractIneffective', message: 'Needs a price: no price range in force on 16 Jul 2026 under COS ACC fixed fees.' })
-    // The list still completed its run (the settled billedAt reading).
-    expect(api.getState().schedule.lists[listId]!.billedAtISO).toBeDefined()
+    expect(failed[0]!.failure).toMatchObject({ code: 'lockMissing', message: LOCK_MISSING_MESSAGE })
+    expect(api.getState().schedule.lists[LIST]!.billedAtISO).toBeDefined()
+  })
+
+  it('a rejected lock fails with its reason and bills its sibling', () => {
+    const api = createAppStore()
+    expect(authoriseList(api, OFFICE, LIST).ok).toBe(true)
+    const lock = api.getState().billing.locks[LOSA()]!
+    api.setState({ billing: { ...api.getState().billing, locks: { ...api.getState().billing.locks, [LOSA()]: { ...lock, state: 'rejected', rejections: [{ code: 'needsPrice', message: 'Needs a price: forced.' }], procedures: [], parties: [] } } } })
+    expect(runBillingForList(api, LIST).ok).toBe(true)
+    expect(failedCases(api.getState())[0]!.failure).toMatchObject({ code: 'needsPrice', message: 'Needs a price: forced.' })
+    expect(invoicesForList(api.getState(), LIST)).toHaveLength(1)
   })
 })
 
-describe('retryBillingCase', () => {
-  it('recovers the fixed booking without duplicating the list other invoices; idempotent; guarded', () => {
-    const api = store()
-    triggerFailure(api)
-    const listId = SEED_LIST_IDS.billingFailure
-    const failureBooking = marker('billingFailureBooking')
+describe('retryBillingCase rebuilds from the lock only', () => {
+  it('a still-failing retry leaves the case untouched; once the lock is there it bills once, never duplicating; guarded', () => {
+    const api = createAppStore()
+    expect(authoriseList(api, OFFICE, LIST).ok).toBe(true)
+    const lock = api.getState().billing.locks[LOSA()]!
+    const { [LOSA()]: _dropped, ...rest } = api.getState().billing.locks
+    api.setState({ billing: { ...api.getState().billing, locks: rest } })
+    expect(runBillingForList(api, LIST).ok).toBe(true)
     const failedCaseId = failedCases(api.getState())[0]!.id
 
-    // Office-only.
     expect(retryBillingCase(api, SOUTER, failedCaseId)).toMatchObject({ ok: false, code: 'officeOnly' })
-
-    // Retrying before the data is fixed still fails (case stays failed).
-    expect(retryBillingCase(api, OFFICE, failedCaseId)).toMatchObject({ ok: false, code: 'contractIneffective' })
+    expect(retryBillingCase(api, OFFICE, failedCaseId)).toMatchObject({ ok: false, code: 'lockMissing' })
     expect(api.getState().billing.cases[failedCaseId]!.status).toBe('failed')
 
-    // The office chooses the right Contract (no Contract is edited), then retries.
-    expect(chooseContractForFailedBooking(api, OFFICE, failedCaseId, losaProcedureId(api), CONTRACT.cosAcc).ok).toBe(true)
-    expect(api.getState().masters.contracts[CONTRACT.cosFixed]?.status).toBe('active')
-    const retried = retryBillingCase(api, OFFICE, failedCaseId)
-    expect(retried.ok).toBe(true)
-
-    expect(invoicesForBooking(api, failureBooking)).toHaveLength(1)
-    // Billed to COS as the same organisation counterparty as before, at the $24 rate.
-    expect(invoicesForBooking(api, failureBooking)[0]!.counterparty).toEqual({ kind: 'organisation', id: 'O-COS' })
-    // The reused case is now invoiced with the new invoice.
-    const reused = api.getState().billing.cases[failedCaseId]!
-    expect(reused.status).toBe('invoiced')
-    expect(reused.invoiceId).toBeDefined()
-    expect(reused.failure).toBeUndefined()
-    // The sibling's invoice was NOT duplicated: 1 sibling + 1 recovered = 2.
-    expect(invoicesForList(api.getState(), listId)).toHaveLength(2)
-    expect(failedCases(api.getState())).toHaveLength(0)
-
-    // A second retry is a no-op (the case is no longer failed).
-    expect(retryBillingCase(api, OFFICE, failedCaseId)).toMatchObject({ ok: false, code: 'caseNotFailed' })
-    expect(invoicesForList(api.getState(), listId)).toHaveLength(2)
-  })
-
-  it('a recovered case is then handed off to Xero (the monitor resolve-and-retry flow)', () => {
-    const api = store()
-    triggerFailure(api)
-    const failedCaseId = failedCases(api.getState())[0]!.id
-    expect(chooseContractForFailedBooking(api, OFFICE, failedCaseId, losaProcedureId(api), CONTRACT.cosAcc).ok).toBe(true)
+    // The record returns (test-only): the retry bills exactly it, after a Contract edit and Disable.
+    api.setState({ billing: { ...api.getState().billing, locks: { ...api.getState().billing.locks, [LOSA()]: lock } } })
+    expect(editContract(api, OFFICE, CONTRACT.cosAcc, { name: 'COS ACC (renamed)' }).ok).toBe(true)
+    expect(disableContract(api, OFFICE, CONTRACT.cosAcc).ok).toBe(true)
     expect(retryBillingCase(api, OFFICE, failedCaseId).ok).toBe(true)
+    const [invoice] = invoicesForBooking(api, LOSA())
+    expect(invoice!.counterparty).toEqual({ kind: 'organisation', id: 'O-COS' })
+    expect(invoice!.total).toBe(lock.expected.total)
+    const reused = api.getState().billing.cases[failedCaseId]!
+    expect(reused).toMatchObject({ status: 'invoiced', payeeAnaesthetistId: lock.payee.anaesthetistId })
+    expect(reused.failure).toBeUndefined()
+    expect(invoicesForList(api.getState(), LIST)).toHaveLength(2)
 
-    // The monitor hands the rebuilt invoice off so it becomes payable.
-    expect(api.getState().billing.cases[failedCaseId]!.accRecId).toBeUndefined()
-    expect(handoffCase(api, failedCaseId).ok).toBe(true)
-    const c = api.getState().billing.cases[failedCaseId]!
-    expect(c.status).toBe('handedOff')
-    expect(c.accRecId).toBeDefined()
-    expect(c.accPayId).toBeDefined()
-  })
-
-  it('refuses a retry on a case that never failed', () => {
-    const api = store()
-    triggerFailure(api)
-    const listId = SEED_LIST_IDS.billingFailure
-    // The clean sibling's case is 'invoiced' — retrying it is refused.
-    const siblingInvoice = invoicesForList(api.getState(), listId)[0]!
-    const invoicedCase = Object.values(api.getState().billing.cases).find((c) => c.invoiceId === siblingInvoice.id)!
-    expect(retryBillingCase(api, OFFICE, invoicedCase.id)).toMatchObject({ ok: false, code: 'caseNotFailed' })
-    // And a genuinely unknown case id.
+    // A second retry is refused; the invoice count does not change.
+    expect(retryBillingCase(api, OFFICE, failedCaseId)).toMatchObject({ ok: false, code: 'caseNotFailed' })
+    expect(invoicesForList(api.getState(), LIST)).toHaveLength(2)
     expect(retryBillingCase(api, OFFICE, 'BC-nope')).toMatchObject({ ok: false, code: 'notFound' })
   })
-})
 
-describe('chooseContractForFailedBooking (the one edit on an authorised List)', () => {
-  it('is office only, on a failed Booking with no invoice, for an Active Contract, and audited', () => {
-    const api = store()
-    triggerFailure(api)
-    const failedCaseId = failedCases(api.getState())[0]!.id
-    const procId = losaProcedureId(api)
-    expect(chooseContractForFailedBooking(api, SOUTER, failedCaseId, procId, CONTRACT.cosAcc)).toMatchObject({ ok: false, code: 'officeOnly' })
-    // The step rail stays locked on the authorised List.
-    expect(setProcedureContract(api, OFFICE, procId, CONTRACT.cosAcc)).toMatchObject({ ok: false, code: 'listAuthorised' })
-    expect(disableContract(api, OFFICE, CONTRACT.stgAcc).ok).toBe(true)
-    expect(chooseContractForFailedBooking(api, OFFICE, failedCaseId, procId, CONTRACT.stgAcc)).toMatchObject({ ok: false, code: 'contractDisabled' })
-    expect(chooseContractForFailedBooking(api, OFFICE, failedCaseId, procId, CONTRACT.cosAcc).ok).toBe(true)
-    expect(api.getState().audit.at(-1)).toMatchObject({
-      action: 'procedure.contract',
-      entityId: procId,
-      before: { governingContractId: CONTRACT.cosFixed },
-      after: { governingContractId: CONTRACT.cosAcc },
-    })
-  })
-
-  it("refuses a Booking that billed, and a procedure from another Booking", () => {
-    const api = store()
-    triggerFailure(api)
-    const listId = SEED_LIST_IDS.billingFailure
-    const siblingInvoice = invoicesForList(api.getState(), listId)[0]!
-    const invoicedCase = Object.values(api.getState().billing.cases).find((c) => c.invoiceId === siblingInvoice.id)!
-    const siblingProc = proceduresForBooking(api.getState(), siblingInvoice.bookingId)[0]!.id
-    expect(chooseContractForFailedBooking(api, OFFICE, invoicedCase.id, siblingProc, CONTRACT.cosAcc)).toMatchObject({ ok: false, code: 'caseNotFailed' })
-    const failedCaseId = failedCases(api.getState())[0]!.id
-    expect(chooseContractForFailedBooking(api, OFFICE, failedCaseId, siblingProc, CONTRACT.cosAcc)).toMatchObject({ ok: false, code: 'notFound' })
+  it('no master is edited by a run or a retry', () => {
+    const api = createAppStore()
+    const masters = api.getState().masters
+    failForMissingLock(api)
+    retryBillingCase(api, OFFICE, failedCases(api.getState())[0]!.id)
+    expect(api.getState().masters).toBe(masters)
   })
 })
 
-describe('Resolve & retry after the review pass', () => {
-  it('keeps the current Contract once a backdated price range covers the List, then retries (catch-up Phase 19a)', () => {
-    const api = store()
-    triggerFailure(api)
-    const failedCaseId = failedCases(api.getState())[0]!.id
-    const proc = api.getState().schedule.procedures[losaProcedureId(api)]!
-    // COS ACC fixed fees starts 1 Aug 2026; a range from 1 Jul covers Losa's Thu 16 Jul List.
+describe('the S4 billing failure, re-based on the Xero hand-off (stageBillingFailure)', () => {
+  function staged(): BoundAppStore {
+    const api = createAppStore()
+    expect(stageBillingFailure(api).ok).toBe(true)
+    expect(runBillingForList(api, LIST).ok).toBe(true)
+    handoffListCases(api, LIST)
+    return api
+  }
+
+  it("Losa Tuilagi's Booking is held back at the hand-off, Hemi Walker's bills and hands off, and the List is not failed", () => {
+    const api = staged()
+    const cases = Object.values(api.getState().billing.cases).filter((c) => proceduresForBooking(api.getState(), c.bookingId).length > 0 && api.getState().schedule.bookings[c.bookingId]?.listId === LIST)
+    const losa = cases.find((c) => c.bookingId === LOSA())!
+    const sibling = cases.find((c) => c.bookingId !== LOSA())!
+    expect(losa.handoffFailure).toBeDefined()
+    expect(losa.accRecId).toBeUndefined()
+    expect(sibling.accRecId).toBeDefined()
+    expect(sibling.handoffFailure).toBeUndefined()
+    expect(failedCases(api.getState())).toHaveLength(0)
+    expect(api.getState().settings.failNextHandoff).toBe(false)
+    expect(api.getState().settings.failHandoffBookingId).toBeUndefined()
+  })
+
+  it('Resolve & retry hands hers off once; a second press creates nothing more; no Contract changed', () => {
+    const api = staged()
+    const contracts = api.getState().masters.contracts
+    const losa = Object.values(api.getState().billing.cases).find((c) => c.bookingId === LOSA())!
+    expect(handoffCase(api, losa.id).ok).toBe(true)
+    const after = api.getState().billing.cases[losa.id]!
+    expect(after.accRecId).toBeDefined()
+    expect(after.handoffFailure).toBeUndefined()
+    const accRecs = Object.keys(api.getState().xero.accRecs).length
+    expect(handoffCase(api, losa.id).ok).toBe(true)
+    expect(Object.keys(api.getState().xero.accRecs)).toHaveLength(accRecs)
+    expect(api.getState().masters.contracts).toBe(contracts)
+  })
+
+  it('a second press says Already triggered', () => {
+    const api = staged()
+    expect(stageBillingFailure(api)).toMatchObject({ ok: false, code: 'alreadyTriggered', message: 'Already triggered' })
+  })
+})
+
+describe('the run reads the lock, not the masters (US-08.1.1)', () => {
+  it('a backdated range, a Contract edit and a unit-value change after authorise move nothing the run raises', () => {
+    const plain = createAppStore()
+    expect(authoriseList(plain, OFFICE, LIST).ok).toBe(true)
+    expect(runBillingForList(plain, LIST).ok).toBe(true)
+    const before = invoicesForList(plain.getState(), LIST).map((i) => ({ counterparty: i.counterparty, total: i.total }))
+
+    const api = createAppStore()
+    expect(authoriseList(api, OFFICE, LIST).ok).toBe(true)
     expect(addPriceRange(api, OFFICE, CONTRACT.cosFixed, { startISO: '2026-07-01', price: 1100 }).ok).toBe(true)
-    expect(chooseContractForFailedBooking(api, OFFICE, failedCaseId, proc.id, CONTRACT.cosFixed).ok).toBe(true)
-    expect(retryBillingCase(api, OFFICE, failedCaseId).ok).toBe(true)
-    expect(invoicesForBooking(api, marker('billingFailureBooking'))[0]!.total).toBe(1265)
-  })
-
-  it('No contract · RVG bills the patient: the retry then invoices her (catch-up Phase 20, pre-approval falls through)', () => {
-    const api = store()
-    triggerFailure(api)
-    const failedCaseId = failedCases(api.getState())[0]!.id
-    expect(chooseContractForFailedBooking(api, OFFICE, failedCaseId, losaProcedureId(api), CONTRACT.noContractRvg).ok).toBe(true)
-    expect(retryBillingCase(api, OFFICE, failedCaseId).ok).toBe(true)
-    const booking = api.getState().schedule.bookings[marker('billingFailureBooking')]!
-    expect(invoicesForBooking(api, booking.id)[0]!.counterparty).toEqual({ kind: 'patient', id: booking.patientId })
-  })
-})
-
-describe('the monitor Contract change follows the step rail (catch-up Phase 20 review)', () => {
-  it('refuses a Contract that does not fit the List', () => {
-    const api = store()
-    triggerFailure(api)
-    const failed = Object.values(api.getState().billing.cases).find((c) => c.bookingId === marker('billingFailureBooking') && c.status === 'failed')!
-    expect(chooseContractForFailedBooking(api, OFFICE, failed.id, losaProcedureId(api), 'CT-SXAP')).toMatchObject({ ok: false, code: 'notACandidate' })
+    expect(editContract(api, OFFICE, CONTRACT.stgAcc, { name: 'St George ACC renamed' }).ok).toBe(true)
+    const ropata = api.getState().schedule.lists[LIST]!.anaesthetistId!
+    expect(editAnaesthetist(api, OFFICE, ropata, { unitValue: 99 }).ok).toBe(true)
+    expect(runBillingForList(api, LIST).ok).toBe(true)
+    expect(invoicesForList(api.getState(), LIST).map((i) => ({ counterparty: i.counterparty, total: i.total }))).toEqual(before)
   })
 })

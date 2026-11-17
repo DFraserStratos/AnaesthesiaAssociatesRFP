@@ -13,7 +13,7 @@ import { clearWarning, warningsForBooking } from '../../store/warnings'
 import { OFFICE_ACTOR, SOUTER_ACTOR } from '../../store/demoActors'
 import { setAvailabilityRange } from '../../store/availabilityActions'
 import { alertOffice } from '../../store/officeAlertActions'
-import { CONTRACT, SEED_LIST_IDS, SEED_MARKERS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
+import { SEED_LIST_IDS, SEED_MARKERS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
 import { SURGEON_PDFS } from '../../domain/integrations'
 import { DEMO_TRIGGERS, POST_OP_ORIGINAL_LIST_ID } from './registry'
 import { demoTriggersFor, initialChoice } from './match'
@@ -237,7 +237,7 @@ describe('route scoping', () => {
 })
 
 describe('re-homed bodies match the Control Panel', () => {
-  it('billing failure points Losa Tuilagi at COS ACC fixed fees, fails her Booking with Needs a price, bills its sibling, edits no Contract, then reads Already triggered', () => {
+  it("billing failure (re-based, catch-up Phase 25) holds Losa Tuilagi back at the Xero hand-off, bills Hemi Walker, fails no List, edits no Contract, then reads Already triggered", () => {
     const api = createAppStore()
     wireBillingRun(api)
     const t = byId('billing-failure')
@@ -245,16 +245,17 @@ describe('re-homed bodies match the Control Panel', () => {
     expect(t.disabledReason(api.getState(), ctx)).toBeNull()
     expect(t.run(api, ctx).ok).toBe(true)
     const state = api.getState()
-    // No Contract is edited: the masters are as seeded.
     expect(state.masters.contracts).toEqual(createAppStore().getState().masters.contracts)
     expect(state.audit.some((a) => a.action.startsWith('contract.'))).toBe(false)
-    const failed = Object.values(state.billing.cases).find((c) => c.status === 'failed')
-    expect(failed?.failure?.message).toBe('Needs a price: no price range in force on 16 Jul 2026 under COS ACC fixed fees.')
-    expect(state.schedule.procedures[failed!.failure!.procedureId!]?.governingContractId).toBe(CONTRACT.cosFixed)
     const cases = Object.values(state.billing.cases).filter((c) => bookingsForList(state, SEED_LIST_IDS.billingFailure).some((booking) => booking.id === c.bookingId))
-    expect(cases.some((c) => c.status === 'failed')).toBe(true)
-    expect(cases.some((c) => c.status !== 'failed' && c.invoiceId !== undefined)).toBe(true)
+    const losa = cases.find((c) => c.bookingId === SEED_MARKERS['billingFailureBooking']!.entityId)!
+    expect(losa.handoffFailure).toBeDefined()
+    expect(losa.accRecId).toBeUndefined()
+    expect(cases.filter((c) => c.bookingId !== losa.bookingId).every((c) => c.accRecId !== undefined)).toBe(true)
+    expect(cases.some((c) => c.status === 'failed')).toBe(false)
+    expect(state.schedule.lists[SEED_LIST_IDS.billingFailure]!.billedAtISO).toBeDefined()
     expect(t.disabledReason(api.getState(), ctx)).toBe('Already triggered')
+    expect(t.run(api, ctx).message).toBe('Already triggered.')
   })
 
   it('arm handoff fault arms once and reads Armed', () => {
@@ -756,5 +757,28 @@ describe('AA fee entries (catch-up Phase 16)', () => {
     const run = byId('run-scheduled-fee-run')
     expect(run.disabledReason(api.getState(), ctxFor(FEE, {}, { 'aaFees.month': '2026-08' }))).toBe('August 2026 has not started yet.')
     expect(run.run(api, ctxFor(FEE, {}, { 'aaFees.month': '2026-06' })).message).toMatch(/for June 2026/)
+  })
+})
+
+describe('Regenerate from locked data (catch-up Phase 25)', () => {
+  it('shows only on an Admin invoice; disabled with its reason on pre-payment and AA fee invoices; identical on S3 invoices', () => {
+    const api = createAppStore()
+    wireBillingRun(api)
+    expect(authoriseList(api, { who: 'Kirsty W.', role: 'office', source: 'office' }, SEED_LIST_IDS.souterMon20Am).ok).toBe(true)
+    const t = byId('regenerate-invoice')
+    const s3 = Object.values(api.getState().billing.invoices).find((i) => i.kind === 'standard' && api.getState().schedule.bookings[i.bookingId]?.listId === SEED_LIST_IDS.souterMon20Am)!
+    expect(ids(api, `/admin/invoices/${s3.id}`)).toContain('regenerate-invoice')
+    expect(ids(api, '/admin/billing')).not.toContain('regenerate-invoice')
+    expect(ids(api, '/admin/invoices')).not.toContain('regenerate-invoice')
+    const ctx = ctxFor(`/admin/invoices/${s3.id}`, { invoiceId: s3.id })
+    expect(t.disabledReason(api.getState(), ctx)).toBeNull()
+    const res = t.run(api, ctx)
+    expect(res.ok).toBe(true)
+    expect(res.message).toMatch(/^Regenerated from locked data: identical/)
+    expect(useDemoTriggerMemory.getState().regenerated[s3.id]?.ok).toBe(true)
+    const prepayment = Object.values(api.getState().billing.invoices).find((i) => i.kind === 'prePayment')!
+    expect(t.disabledReason(api.getState(), ctxFor(`/admin/invoices/${prepayment.id}`, { invoiceId: prepayment.id }))).toBe('Raised at setup, before the lock')
+    const fee = Object.keys(api.getState().billing.aaFeeInvoices)[0]!
+    expect(t.disabledReason(api.getState(), ctxFor(`/admin/invoices/${fee}`, { invoiceId: fee }))).toBe('Not priced from a Procedure')
   })
 })

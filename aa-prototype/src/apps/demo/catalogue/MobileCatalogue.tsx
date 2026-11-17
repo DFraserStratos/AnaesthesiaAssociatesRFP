@@ -4,6 +4,8 @@ import * as Ex from './mobile/examples'
 import { ProcedureStackExample } from './procedureStackExample'
 import { FunderDetailsExample, PayerFieldsExample } from './payerExamples'
 import { PaidByRowExample, PaidBySheetExample, PartyPickerExample } from './splitExamples'
+import { LockBadge } from '../../../shared/booking/LockBadge'
+import { SEED_MARKERS } from '../../../domain/seed'
 import { ContractApprovalExample } from './contractApprovalExample'
 
 const M = 'Mobile'
@@ -324,6 +326,9 @@ export function MobileCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="PartyPicker" source="shared/booking/PartyPicker.tsx" usedIn={SW} stage="mobile" height={520} what="Choose who an invoice goes to (catch-up Phases 22 and 22a): the Procedure's payer and the Contract's party first, then every Party, searchable by name, and with onAnotherPerson a last row, Another person, for someone who is no Party. The split's party field in PaidBySheet; Phases 38b, 39 and 39b reuse it." replaceWith="shadcn Combobox (Popover and Command)" note="Fixed options on local state; nothing writes to the demo data.">
           <PartyPickerExample />
+        </CatalogueRow>
+        <CatalogueRow name="LockBadge" source="shared/booking/LockBadge.tsx" usedIn={SW} stage="mobile" what="Contract locked at authorise (catch-up Phase 25; US-04.3.5): the shared neutral Pill with the lock glyph under the phone's Billing summary once the List is AUTHORISED; who locked it and when on its title." replaceWith="shadcn Badge (the shared Pill)" note="Shown on the seeded AUTHORISED Face lift.">
+          <LockBadge bookingId={SEED_MARKERS['rangeAuthorisedBooking']?.entityId ?? ''} />
         </CatalogueRow>
         <CatalogueRow name="PaidByRow" source="shared/booking/PaidByRow.tsx" usedIn={SW} stage="mobile" height={520} what="Paid by in the Billing card (catch-up Phases 22 and 22a; US-08.2.3, US-11.2.2): the Procedure's payer with Patient or the relationship and the warning-tint Email or postal address needed and Under 18 pills where its Contract bills the payer; the holder where the Contract bills its holder; a split's parties, in the warning tint when it no longer fits; Payer: not billed yet with no Contract. On web and Admin a line at the card's foot, on the phone the Billing summary's last row: Change beside the payer's name opens PaidBySheet with who pays and the offer; Split on the right opens it with the split alone." replaceWith="Custom (text rows and the shared Pill)" note="Read-only examples over fixed views; the sheet opens on a real Booking.">
           <PaidByRowExample variant="summary" />

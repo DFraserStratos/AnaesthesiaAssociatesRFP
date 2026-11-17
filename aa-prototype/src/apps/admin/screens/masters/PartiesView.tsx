@@ -16,7 +16,8 @@ import { neutral } from '../../../../theme/tokens'
 import { PartyPanel } from '../../flows/PartyPanel'
 import { Pill } from '../../components/MasterPills'
 import { isInteractiveRowTarget } from '../../tableChrome'
-import { EditCell, Header, Table, TextAction } from './chrome'
+import { Header, Table, TextAction } from './chrome'
+import { HistorySheet } from '../../../../shared/booking'
 import { rowCellStyle } from './tableStyles'
 
 const KIND_ORDER: readonly PartyKind[] = ['aa', 'hospital', 'insurer', 'funder', 'surgeonGroup', 'surgeon', 'anaesthetist']
@@ -27,6 +28,7 @@ export function PartiesView({ actor }: { actor: Actor }) {
   const contracts = useAppStore((s) => s.masters.contracts)
   const [, setParams] = useSearchParams()
   const [panel, setPanel] = useState<{ party?: Party } | null>(null)
+  const [history, setHistory] = useState<Party | null>(null)
 
   const rows = useMemo(
     () =>
@@ -89,11 +91,18 @@ export function PartiesView({ actor }: { actor: Actor }) {
                   </TextAction>
                 )}
               </td>
-              <EditCell onClick={() => setPanel({ party: p })} label={p.kind === 'aa' ? `View ${p.name}` : `Edit ${p.name}`} style={rowCellStyle} />
+              {/* A Party's audited edits with before and after (catch-up Phase 25, US-04.1.3): the shared History sheet, as RVG groups have. */}
+              <td style={{ ...rowCellStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                <span style={{ display: 'inline-flex', gap: 12 }}>
+                  <TextAction onClick={() => setHistory(p)} label={`History of ${p.name}`}>History</TextAction>
+                  <TextAction onClick={() => setPanel({ party: p })} label={p.kind === 'aa' ? `View ${p.name}` : `Edit ${p.name}`}>Edit</TextAction>
+                </span>
+              </td>
             </tr>
           )
         })}
       </Table>
+      <HistorySheet open={history !== null} entityIds={history !== null ? [history.id] : []} title={history !== null ? `History · ${history.name}` : 'Party history'} onClose={() => setHistory(null)} />
       {panel !== null && <PartyPanel key={panel.party?.id ?? 'new'} open actor={actor} party={panel.party !== undefined ? parties[panel.party.id] : undefined} onClose={() => setPanel(null)} />}
     </>
   )

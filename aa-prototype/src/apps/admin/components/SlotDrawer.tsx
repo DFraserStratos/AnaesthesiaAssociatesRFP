@@ -122,6 +122,7 @@ function ListBody({
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const masters = useAppStore((s) => s.masters)
   const schedule = useAppStore((s) => s.schedule)
+  const billing = useAppStore((s) => s.billing)
   const warningsByBooking = useListWarnings(listId)
 
   const bookings = Object.values(bookingsRecord)
@@ -232,7 +233,7 @@ function ListBody({
                             .filter((p) => p.bookingId === booking.id)
                             .sort((a, b) => a.id.localeCompare(b.id)),
                         ).map((p, i, all) => {
-                            const view = procedureStackViewFor({ masters, schedule }, p.id, 'office')
+                            const view = procedureStackViewFor({ masters, schedule, billing }, p.id, 'office')
                             return view === undefined ? null : (
                               <ProcedureStack key={p.id} view={view} density="compact" surface="office" heading={all.length > 1 ? `Procedure ${i + 1}` : 'Procedure'} />
                             )

@@ -10,7 +10,6 @@ import { authoriseList, completeBooking, completionBlockersFor } from './lifecyc
 import { claimModifier, confirmNoModifiers, removeModifier } from './modifierActions'
 import { setProcedureContract } from './contractSelectionActions'
 import { setProcedurePrice } from './pricingActions'
-import { runBillingForList } from './billingRun'
 import { proceduresForBooking } from './selectors'
 import type { Actor } from './mutate'
 import { ANAE, CONTRACT, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
@@ -114,18 +113,16 @@ describe('a Contract change that newly asks for RVG detail re-opens a completed 
 })
 
 describe('the billing run keeps its pre-flight (catch-up Phase 21a)', () => {
-  it('a Booking that needs a price, which slipped past completion, goes to the monitor in the same words (catch-up Phase 24)', () => {
+  it('a Booking that needs a price, which slipped past completion, blocks authorise in the same words (catch-up Phase 25)', () => {
     const api = createAppStore()
     const listId = SEED_LIST_IDS.morrisonMon20
     const s = api.getState()
     const booking = Object.values(s.schedule.bookings).find((b) => b.listId === listId && b.completed && b.cancellation === undefined)!
     const p = proceduresForBooking(s, booking.id)[0]!
     api.setState({ schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [p.id]: { ...p, governingContractId: seedFallbackId('patient-standard') } } } })
-    expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
-    const run = runBillingForList(api, listId)
-    expect(run.ok).toBe(true)
-    if (!run.ok) return
-    const exception = run.value.exceptions.find((e) => e.bookingId === booking.id)
-    expect(exception?.message).toContain('Needs a price')
+    const refused = authoriseList(api, OFFICE, listId)
+    expect(refused).toMatchObject({ ok: false, code: 'needsPrice' })
+    if (!refused.ok) expect(refused.message).toContain('Needs a price')
+    expect(api.getState().billing.locks[booking.id]).toBeUndefined()
   })
 })

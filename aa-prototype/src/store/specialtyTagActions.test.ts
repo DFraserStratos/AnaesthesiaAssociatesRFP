@@ -6,7 +6,6 @@ import { createFundingTag, editFundingTag, moveFundingTagInList, removeFundingTa
 import { createContract, disableContract, editContract, enableContract, type ContractInput } from './contractActions'
 import { createSurgeon, editSurgeon } from './surgeonActions'
 import { editProcedure } from './lifecycle'
-import { chooseContractForFailedBooking } from './billingRun'
 import { editParty } from './partyActions'
 import { fundingTagsInOrder } from '../domain/billing/fundingTags'
 import { destinationKey, destinationOf, impliedDestinations, isOpenPriceFallback, isRvgFallback } from '../domain/billing/fallbacks'
@@ -264,14 +263,12 @@ describe('Contracts with specialties, a tag and the fallbacks (US-04.2.16, US-04
     expect(refused).toEqual(['systemFixed', 'systemFixed', 'systemFixed', 'systemNeverDisabled', 'systemNeverDisabled'])
   })
 
-  it('a Procedure reaches an open-price Contract only through the step rail, never a plain edit or the retry (catch-up Phase 20)', () => {
+  it('a Procedure reaches an open-price Contract only through the step rail, never a plain edit (catch-up Phase 20; no retry edits a Procedure since 25)', () => {
     const api = createAppStore()
     const p = Object.values(api.getState().schedule.procedures).find((x) => x.governingContractId === CONTRACT.stgAcc)!
     const outcome = editProcedure(api, OFFICE, p.id, { governingContractId: 'CT-FIX-HOSPITAL-PY-STG-TAG-ACC' } as never)
     expect(outcome.ok ? '' : outcome.code).toBe('contractThroughRail')
     expect(api.getState().schedule.procedures[p.id]?.governingContractId).toBe(CONTRACT.stgAcc)
-    const retry = chooseContractForFailedBooking(api, OFFICE, 'nope', p.id, 'CT-FIX-PATIENT-STANDARD')
-    expect(retry.ok).toBe(false)
   })
 })
 

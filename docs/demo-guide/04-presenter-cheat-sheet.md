@@ -48,8 +48,9 @@ ACTIVE -> SUBMITTED -> AUTHORISED -> Billing run completed
 - `SUBMITTED`: the office reviews and corrects; the anaesthetist sees it less prominent ("Done ·
   unbilled") and can still change it until it is authorised. The last change stands, and Review
   shows "Changed since submitted".
-- `AUTHORISED`: Bookings are locked; the whole List hands to billing. The List leaves the
-  anaesthetist's main view at once, its invoices show in their balances at once, and search finds it.
+- `AUTHORISED`: Bookings are locked, and each Procedure's Contract and price are locked onto it ("Contract
+  locked at authorise"); the whole List hands to billing. The List leaves the anaesthetist's main view
+  at once, its invoices show in their balances at once, and search finds it.
 - Billing-run completion: the prototype stamps `billedAt` for the office's billing monitor; it no
   longer decides what the anaesthetist sees.
 - There is no `RETURNED` state.
@@ -172,7 +173,7 @@ price list) and claims back themselves; nib is billed only through nib's own Con
 - Seeded on Dr Souter's Mon 10 Aug PM: Miriam Holloway (Merivale fixed price) completes with no times;
   Graham Pulley (No contract · Fixed price) shows **Needs a price** until an amount is typed.
 
-### Review flags (never block)
+### Review flags (never block) and the one blocker
 
 - Review shows, per row, each Procedure's stack (procedure text, Contract with who is invoiced, RVG code)
   with its flags under it; each Procedure's payer ("Patient pays", "Paid by nib") and the insurer or funder with approval number (**Change** opens the
@@ -182,6 +183,9 @@ price list) and claims back themselves; nib is billed only through nib's own Con
   the time); **Price typed: $X (computed $Y)**; **Contract not offered on this List**; **Needs a price**;
   **Needs an invoice destination**; **Not marked completed**; **Email or postal address needed**;
   manual B/T/M notes. A Disabled Contract raises no flag.
+- One thing blocks authorise: a Procedure that still **Needs a price**. **Authorise for billing** stays
+  disabled and names it, with an **Open** link, until a price is typed (Dr Chen's Tue 14 Jul AM List:
+  Hemi Walker, No contract · Fixed price). Every other flag and warning never blocks.
 - **Approve all N Contract changes** in the action bar; authorising approves any still waiting (the
   confirm says how many). The anaesthetist sees **Awaiting office approval**, then **Approved by the
   office** with the time.
@@ -278,7 +282,7 @@ price list) and claims back themselves; nib is billed only through nib's own Con
 - Each priced item is a Contract of its own, with a holder reference code, an invoice description and
   a default RVG code. A fixed price has price ranges: the range in force on the procedure date gives
   the price, and a new range, even backdated, re-prices everything not yet authorised, prepaid or
-  priced by hand; invoices already raised never change. A combination such as Merivale's Facelift
+  priced by hand; an authorised Booking and its invoices never change (they keep their lock). A combination such as Merivale's Facelift
   plus 1 add on is its own Contract; fee extras (a GA add-on fee, per 15 minutes over 120, per area)
   are events, not Contracts. An anaesthetist's price list is one prepaid Contract per item, kept by
   the office, every price above zero (Dr Souter's). Prices are ex GST, GST at the invoice foot.
@@ -300,6 +304,33 @@ price list) and claims back themselves; nib is billed only through nib's own Con
 - Tip: find a Contract by typing its name, AA code, holder reference code, a word of its invoice
   description or its default RVG code ("CAT" finds the cataract items, "H3" Merivale's
   combinations); filter by holder or funding tag.
+
+### Lock at authorise
+
+- Authorising a List locks each Procedure's Contract onto it: the Contract's settings, the price range
+  in force, the units, the rate and discount, the price, who is billed (with the patient and payer
+  details as they stood), the split and who is paid. The Booking shows **Contract locked at authorise**
+  ("Locked Tue 21 Jul, 08:00 by Kirsty W."); Review shows the lock glyph in the Contract column and
+  "@ $26.50/unit (locked)"; the Admin Booking's Office billing setup turns read only.
+- A Procedure that still **Needs a price** blocks authorise (our reading of US-04.3.5).
+- The billing run prices from the lock alone. There is no fallback: nothing is swapped for a default
+  or another Contract, and a later Contract edit, Disable, backdated range, unit-value or RVG group
+  change never reaches an authorised Booking. An ACTIVE Booking still follows its Contract.
+- The invoice keeps its recipe: the invoice document prints from the lock (the invoice rail's
+  **Locked record** card), and **Demo actions → Regenerate from locked data** rebuilds it from the lock
+  and says "identical". It is the recipe, not a replay of the data as at a date.
+- Which fields are frozen is Donald's proposal (AR-58 2.8), still to confirm with AA (US-15.0.3).
+- An invoiced Booking's price, split or payee changes only by a credit note and rebill (later build).
+
+### Contract history
+
+- A Contract is edited in place, every change audited with its values before and after, who and when;
+  nothing is deleted (a Contract is Disabled, never removed). There are no versions, no staged or
+  submitted price review and no upload.
+- The Contract panel's **History** tab lists each change (for example "Contract updated · Kirsty W. ·
+  office · Pricing: RVG at $23.00 per unit → RVG at $24.00 per unit"), then **Procedures locked
+  against this Contract**, each linked to its Booking and invoice. A seeded Contract reads "No changes
+  yet" until it is edited. Parties and RVG groups have their own History too.
 
 ## The money model
 
@@ -432,6 +463,8 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 - The anaesthetist's edit window to `AUTHORISED`, the main view from today, and search by patient
   name, NHI or date over months of history (catch-up Phase 38a)
 - Pre-payment, post-op addendum and billing monitor with per-booking isolation and retry (Phase 09)
+- Contract locked at authorise, the run and the invoice document reading only the lock, Regenerate
+  from locked data, and each Contract's History tab (catch-up Phase 25)
 - Xero collection/payable pairs, payments, reconciliation poll, payables, live balances and GST (Phase 10)
 - HL7/FHIR/PDF ingestion, integration monitor, mapping fix and dedupe (Phase 11)
 - The demo control panel with S1 to S5 scenario jumps (Phase 12), now the index of the per-screen
@@ -511,10 +544,15 @@ Say:
 - Its invoices show in their balances at once (Xero returns the ID straight away).
 - Older work is found by search on patient name, NHI or date; there is no calendar archive.
 
-### 3. Billing failure isolation
+### 3. Billing failure isolation (answered)
 
-- The RFP asks whether one failed Booking blocks the whole List.
-- The prototype isolates the failed Booking and bills the others, then supports resolve-and-retry.
+- The RFP asked whether one failed Booking blocks the whole List. Answered (OQ-05): failure is per
+  Booking, and a List never fails as a whole. A failed Booking is held back (both invoices of a split
+  Booking with it) while the rest of the List bills.
+- The run prices only from the lock, so a Contract edit cannot fail it; what can still fail is outside
+  the lock, such as the Xero hand-off (S4 Beat 3). The office retries once from the Billing monitor
+  (**Resolve & retry** for a hand-off; **Retry** rebuilds from the locked record), and the fix never
+  edits a Contract or any other master.
 
 ### 4. Monitoring location
 

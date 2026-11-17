@@ -104,6 +104,9 @@ function contextFor(seed: SeedState, bookingId: string): InvoiceBuildContext | u
     modifiers: seed.masters.modifiers,
     patientId: booking.patientId,
   }
+  // The payer's details as printed (catch-up Phase 25: the run always had them; the seed now does too).
+  const patient = seed.masters.patients[booking.patientId]
+  if (patient !== undefined) ctx.patient = patient
   // AA rooms is a location, never a Contract holder (catch-up Phase 31).
   const listHospitalId = billingHospitalId(list.hospitalId, seed.masters.hospitals)
   if (listHospitalId !== undefined) ctx.listHospitalId = listHospitalId

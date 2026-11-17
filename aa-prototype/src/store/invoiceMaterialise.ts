@@ -3,7 +3,9 @@
  * FT-08.4, US-08.4.2, US-08.4.5): the billing run, the monitor's retry and the
  * office's prepayment raise all call `materialiseInvoices` inside their own
  * `mutate()`, so the three paths cannot drift. It allocates the ids and
- * numbers, snapshots the supplier (the List's anaesthetist) and AA as agent,
+ * numbers, prints the supplier from the locked payee (catch-up Phase 25; a
+ * pre-payment, raised before any lock, still reads the List's anaesthetist
+ * until Phases 27 and 41) and AA as agent,
  * links a split's shares to each other, and, when `send` is true, stamps each
  * invoice's delivery at the run's clock time from 21's one delivery rule
  * (`invoiceDeliveryFor`): emailed, marked to post, or raised with no address
@@ -14,7 +16,7 @@
  */
 
 import type { BillingCase, Invoice, InvoiceId, InvoiceLine, InvoiceLineage } from '../domain/types'
-import type { DraftInvoice } from '../domain/billing/invoiceBuild'
+import type { DraftInvoice, LockedPayee } from '../domain/billing/lock'
 import { AA_AGENT, deliveryStampFor, supplierFor } from '../domain/billing/invoicePresentation'
 import { invoiceDeliveryFor } from '../domain/billing/whoIsBilled'
 import { allocateId, type MutationMeta } from './mutate'
@@ -33,6 +35,8 @@ export interface MaterialiseArgs {
   createAction: 'invoice.create' | 'invoice.raisePrePayment'
   /** The retry reuses the failed case's id for its first invoice. */
   reuseCaseId?: string
+  /** The locked payee (catch-up Phase 25): the supplier block and each case's payee. Absent on a pre-payment (the live join, until 27). */
+  payee?: LockedPayee
 }
 
 export interface MaterialiseResult {
@@ -65,9 +69,10 @@ export function materialiseInvoices(
   const { invoices, invoiceLines, cases } = maps
   const booking = s.schedule.bookings[args.bookingId]
   const list = booking !== undefined ? s.schedule.lists[booking.listId] : undefined
-  const anaesthetist = list?.anaesthetistId !== undefined ? s.masters.anaesthetists[list.anaesthetistId] : undefined
   const patient = booking !== undefined ? s.masters.patients[booking.patientId] : undefined
-  const supplier = anaesthetist !== undefined ? supplierFor(anaesthetist) : undefined
+  // A pre-payment case is raised at setup, before any lock: its payee is still the List's anaesthetist (D38; until 27 and 41).
+  const anaesthetist = args.payee === undefined && list?.anaesthetistId !== undefined ? s.masters.anaesthetists[list.anaesthetistId] : undefined
+  const supplier = args.payee?.supplier ?? (anaesthetist !== undefined ? supplierFor(anaesthetist) : undefined)
 
   const invoiceIds: InvoiceId[] = []
   const metas: MutationMeta[] = []
@@ -119,7 +124,9 @@ export function materialiseInvoices(
       ...(lineage.length > 0 ? { lineage } : {}),
       ...(draft.noCharge === true ? { noCharge: true as const } : {}),
     }
-    if (args.send && booking !== undefined) {
+    if (args.send && draft.delivery !== undefined) {
+      invoice.delivery = deliveryStampFor(draft.delivery, args.atISO, BILLING_RUN_SENDER)
+    } else if (args.send && booking !== undefined) {
       invoice.delivery = deliveryStampFor(invoiceDeliveryFor(draft.counterparty, draft.procedureIds.flatMap((id) => (s.schedule.procedures[id] !== undefined ? [s.schedule.procedures[id]] : [])), booking.patientId, patient, s.masters.parties), args.atISO, BILLING_RUN_SENDER)
     }
     invoices[invoiceId] = invoice
@@ -133,7 +140,7 @@ export function materialiseInvoices(
       if (line.btm !== undefined) stored.btm = line.btm
       invoiceLines[il.id] = stored
     }
-    cases[caseId] = { id: caseId, bookingId: args.bookingId, invoiceId, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 } satisfies BillingCase
+    cases[caseId] = { id: caseId, bookingId: args.bookingId, ...(args.payee !== undefined ? { payeeAnaesthetistId: args.payee.anaesthetistId } : {}), invoiceId, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 } satisfies BillingCase
     invoiceIds.push(invoiceId)
 
     metas.push({

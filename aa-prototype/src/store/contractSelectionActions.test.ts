@@ -218,7 +218,7 @@ describe('review-pass fixes (catch-up Phase 20)', () => {
     const api = store()
     const p = firstProcOf(api, pickUp())
     expect(setProcedureContract(api, OFFICE, p.id, 'CT-FIX-PATIENT-PREPAID')).toMatchObject({ ok: true })
-    expect(raisePreProcedureInvoice(api, OFFICE, pickUp())).toMatchObject({ ok: false, code: 'contractIneffective' })
+    expect(raisePreProcedureInvoice(api, OFFICE, pickUp())).toMatchObject({ ok: false, code: 'needsPrice' })
   })
 
   it('refuses Prepaid answers for the anaesthetist at creation too', () => {

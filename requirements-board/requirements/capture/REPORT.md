@@ -6,19 +6,19 @@ Scope: every story plus every feature with no stories (300 items, 300 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 186 | 168 |
-| Partial | 44 | 44 |
-| Absent from the app | 67 | 66 |
+| Captured | 188 | 170 |
+| Partial | 43 | 43 |
+| Absent from the app | 66 | 65 |
 | Failed recipe | 0 | 0 |
 | No recipe | 22 | 22 |
 
-741 screenshots. Items per app: admin 164, web 82, mobile 78, simulator 35.
+747 screenshots. Items per app: admin 165, web 82, mobile 78, simulator 35.
 
 ## Failed recipes (0)
 
 None.
 
-## Absent from the app (67)
+## Absent from the app (66)
 
 - **FT-11.4** Insurers · Retired: removed in Phase 18
 - **US-02.1.3** Show differences on match · No field-level difference view. When a surgeon PDF row or HL7 message matches an existing Booking, the prototype only notes "Already booked on this List · will update, not duplicate" and applies the update; time, patient and procedure differences are never shown side by side before applying. Searched the Integrations screen (Surgeon PDFs, Messages), ingestPdfRow and the integration apply path for a diff or compare view.
@@ -36,7 +36,6 @@ None.
 - **US-03.3.7** Rate x time capture · Retired. The rate x time line was removed in Phase 24.
 - **US-03.7.1** Add a pre-op or post-op event to a Procedure · Not built yet: catch-up Phase 39b builds this.
 - **US-03.7.2** Bill an event · Not built yet: catch-up Phase 39b builds this.
-- **US-04.1.3** Contract audit · Contracts are edited in place; no version history is kept. Contract edits are audited, and an invoice already raised is a snapshot that later contract edits do not change, but there is nothing to show or restore an earlier version. Searched domain/types.ts (Contract), store/contractActions.ts and apps/admin/flows/ContractEditSheet.tsx.
 - **US-04.1.6** Stage Contract changes for review, then submit · Retired: the flat Contract model has no lines, versions or defaults
 - **US-04.2.3** Base unit override · A contract cannot override base units for an RVG code or group. Base units always come from the RVG code master; a fixed-price Contract prices a code with a fixed price instead. Searched domain/types.ts (Contract, ContractPrice), domain/billing/fee.ts and ContractEditSheet.tsx.
 - **US-04.2.4** Contract lines · Retired: removed in Phase 19a
@@ -88,7 +87,7 @@ None.
 - **US-15.0.4** Volumes · Not demonstrated. The prototype runs on a small seeded in-browser data set (14 anaesthetists, a few weeks of lists); scale is only narrated in copy on the admin day grid and the Xero simulation, never simulated or load tested.
 - **US-15.0.5** Testable billing rules · No screen shows this. It is met in the prototype's code rather than its UI: fee, unit, Contract and split logic is pure and deterministic in aa-prototype/src/domain/billing with Vitest suites of worked examples.
 
-## Partial (44)
+## Partial (43)
 
 - **US-01.4.1** Reassign a List with its bookings · Reassignment moves the List (same id, Bookings and history) into a colleague's free session, and the vacated session returns to Free unless marked otherwise; the update email to the hospital is Phase 35's on-demand button.
 - **US-02.1.1** Import hospital bookings · No hospital booking file import. The nearest analogue is surgeon-emailed PDF operating lists, whose extracted rows are reviewed beside the document and ingested.
@@ -118,7 +117,6 @@ None.
 - **US-08.3.3** Patient-linked history survives Xero archiving · Archiving is simulated for Xero contacts only; purging a contact is not shown.
 - **US-08.3.4** Money in and money out · Receipts and disbursements are tracked per invoice and shown per booking, but there is no equilibrium view for AA overall, per anaesthetist or per patient.
 - **US-08.3.5** Per-anaesthetist ledger position · Each anaesthetist sees their own position in the web and mobile apps, but there is no office view of a chosen anaesthetist's ledger position, and the mobile app shows only what is outstanding, not collected or paid out.
-- **US-08.4.4** Invoice reproducibility · Invoices are stored as snapshots (lines, supplier, agent and delivery) that later Contract edits do not change, but there is no action yet to regenerate a past invoice from the locked data and the price range in force: catch-up Phase 25 builds it.
 - **US-08.4.6** Invoice description on each Procedure · The invoice description shows on the invoice only; the office's edit of it has no screen yet (it left the Booking at the owner's review, 12 November).
 - **US-08.6.1** Additional invoice for late charges · The post-op charge becomes a new linked addendum booking on the anaesthetist's free session today and bills when that list is authorised, rather than raising a supplementary invoice directly against the invoiced booking. It needs a free session that day.
 - **US-09.4.1** Dedicated Xero organisation · The simulator models a single Xero organisation used only for receivables, payables and payments, but no organisation setup or separation from general accounting is shown.
@@ -160,7 +158,7 @@ None.
 - **US-15.0.7** Changes show without signing out
 - **US-15.0.8** Help desk by phone and email
 
-## Captured (186)
+## Captured (188)
 
 - **FT-01.6** Draft Lists · admin
 - **FT-02.2** Surgeon PDF list ingest · admin
@@ -237,6 +235,7 @@ None.
 - **US-03.6.1** Mark a Booking complete · web, mobile
 - **US-03.6.2** Incomplete Bookings listed · web, mobile
 - **US-03.6.3** Ask the office to check a Booking or List · web, mobile, admin
+- **US-04.1.3** Contract audit · admin
 - **US-04.1.5** Parties · admin
 - **US-04.2.2** Pricing kinds · admin
 - **US-04.2.8** Invoice presentation and delivery · admin
@@ -289,6 +288,7 @@ None.
 - **US-08.4.1** Generate invoice documents · admin
 - **US-08.4.2** Send to the invoice email · admin
 - **US-08.4.3** Unique invoice numbers · simulator
+- **US-08.4.4** Invoice reproducibility · admin
 - **US-08.4.5** Anaesthetist as supplier, AA as agent · admin
 - **US-08.5.1** Report processing status · admin
 - **US-08.5.2** Booking-level vs List-level failure · admin

@@ -131,10 +131,11 @@ export function BtmCaptureBlock({
   // The invoices too: a held price is what a split divides (catch-up Phase 24).
   const invoices = useAppStore((s) => s.billing.invoices)
   const invoiceLines = useAppStore((s) => s.billing.invoiceLines)
+  const locks = useAppStore((s) => s.billing.locks)
   const stackSurface = actor.role === 'office' ? 'office' : 'anaesthetist'
   const stackView = useMemo(
-    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines }, billing: { invoices, invoiceLines } }, procedure.id, stackSurface),
-    [masters, procedures, bookings, lists, billingLines, invoices, invoiceLines, procedure.id, stackSurface],
+    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines }, billing: { invoices, invoiceLines, locks } }, procedure.id, stackSurface),
+    [masters, procedures, bookings, lists, billingLines, invoices, invoiceLines, locks, procedure.id, stackSurface],
   )
 
   return (

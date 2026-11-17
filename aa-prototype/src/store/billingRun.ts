@@ -2,9 +2,13 @@
  * The billing run (Phase 08) — the RFP's Billing Engine Integration Point.
  *
  * It acts on a single event, a List reaching AUTHORISED, and consumes the
- * whole List as a unit: iterate Bookings and Procedures, resolve the counterparty
- * per Procedure, rate via the Phase 01 calculator, group by counterparty per
- * Booking into Invoices (+ a BillingCase each), and stamp `List.billedAtISO`.
+ * whole List as a unit. Since catch-up Phase 25 it prices ONLY from each
+ * Booking's pricing snapshot written at authorise (`billing.locks`,
+ * `invoiceDraftsFromLock`; US-08.1.1, RV-11): no Contract, range, route or
+ * payer is resolved here and nothing reads `state.masters`. A Booking with no
+ * lock, or a rejected one, fails as a whole and is held back while the rest of
+ * the List bills (OQ-05); the List never fails. Each case is stamped with the
+ * locked payee. Then `List.billedAtISO` is stamped.
  *
  * `billedAtISO` = COMPLETION OF THE LIST'S BILLING RUN (§11 labelled reading;
  * 3rd review #12): it is what removes the List from the anaesthetist's views.
@@ -23,21 +27,10 @@
  * directly or wire explicitly and unsubscribe.
  */
 
-import { refreshedInvoiceDescriptionFor } from '../domain/billing/procedureStack'
-import { contractChoosableForProcedure, OPEN_PRICE_NOT_CHOSEN_MESSAGE } from '../domain/billing/fallbacks'
-import { HOLDER_MISSING_MESSAGE, holderBilledFor } from '../domain/billing/whoIsBilled'
-import { NOT_A_CANDIDATE_MESSAGE, applyContractChange, contractAllowedOn } from '../domain/billing/contractRail'
-import { withRvgRowChange } from './lifecycle'
-import { railContextForList, railMastersOf } from './selectors'
-import { listHospitalFor } from '../domain/listPairing'
-import type { BillingCase, BookingId, InvoiceDelivery, InvoiceId, Procedure } from '../domain/types'
+import type { BillingCase, BookingId, InvoiceDelivery, InvoiceId } from '../domain/types'
 import { emailProblem } from '../domain/billing/payer'
 import { materialiseInvoices } from './invoiceMaterialise'
-import {
-  buildInvoicesForBooking,
-  type BookingBuildResult,
-  type InvoiceBuildContext,
-} from '../domain/billing/invoiceBuild'
+import { invoiceDraftsFromLock, LOCK_MISSING_MESSAGE, type BookingBuildResult } from '../domain/billing/lock'
 import {
   allocateId,
   clockISO,
@@ -49,9 +42,7 @@ import {
   type Outcome,
 } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
-import { billingContextForBooking, bookingsForList, casesForList, prePaidByProcedure, proceduresForBooking } from './selectors'
-import { getBooking } from './lifecycle'
-import { validateBookingForBilling } from '../domain/billing/validateBookingForBilling'
+import { bookingsForList, casesForList } from './selectors'
 import { onAppEvent } from './events'
 import { handoffCase } from './xeroHandoff'
 
@@ -89,62 +80,11 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
   // Decide everything first (pure), then commit once. Cancelled Bookings are
   // retained but excluded from billing entirely.
   const bookings = bookingsForList(state, listId).filter((c) => c.cancellation === undefined)
-  const built: { bookingId: BookingId; result: BookingBuildResult }[] = bookings.map((booking) => {
-    const bookingCtx = billingContextForBooking(state, booking)
-    if (bookingCtx === undefined) {
-      return {
-        bookingId: booking.id,
-        result: {
-          kind: 'exception',
-          procedureId: '',
-          code: 'noContext',
-          message: 'Billing context could not be assembled for this Booking.',
-        },
-      }
-    }
-    // Net off any pre-payment already invoiced for this booking (Phase 09): the
-    // run bills only the remaining balance (a full pre-payment nets to $0 and
-    // raises no balance invoice).
-    const prePaid = prePaidByProcedure(state, booking.id)
-    const buildCtx: InvoiceBuildContext = {
-      ...bookingCtx,
-      listDateISO: list.dateISO,
-      patientId: booking.patientId,
-      ...surgeonNameFor(state, list.surgeonId),
-      ...listHospitalFor(list, state.masters.hospitals),
-      ...(Object.keys(prePaid).length > 0 ? { prePaidByProcedure: prePaid } : {}),
-    }
-    // Per-booking isolation is absolute: a build error becomes a failed
-    // BillingCase, never a throw — the run executes inside authoriseList's
-    // event emit, and a throw there would strand the List AUTHORISED-unbilled
-    // with the authorise already committed (8th review).
-    try {
-      const procedures = proceduresForBooking(state, booking.id)
-      const result = buildInvoicesForBooking(booking, procedures, buildCtx)
-      if (result.kind === 'exception') return { bookingId: booking.id, result }
-      // The run's pre-flight (catch-up Phase 21a): the checks completion no longer
-      // makes ("Needs a price", a split that no longer fits) send
-      // the Booking to the monitor instead of building invoices from it.
-      const preflight = validateBookingForBilling(booking, procedures, bookingCtx)[0]
-      if (preflight !== undefined) {
-        return {
-          bookingId: booking.id,
-          result: { kind: 'exception', procedureId: preflight.procedureId ?? '', code: 'preflight', message: preflight.message },
-        }
-      }
-      return { bookingId: booking.id, result }
-    } catch (error) {
-      return {
-        bookingId: booking.id,
-        result: {
-          kind: 'exception',
-          procedureId: '',
-          code: 'runError',
-          message: error instanceof Error ? error.message : 'The billing run failed on this Booking.',
-        },
-      }
-    }
-  })
+  // From the lock alone: the engine never reads a master (US-08.1.1).
+  const built: { bookingId: BookingId; result: BookingBuildResult }[] = bookings.map((booking) => ({
+    bookingId: booking.id,
+    result: buildFromLock(state, booking.id),
+  }))
 
   const invoiceIds: InvoiceId[] = []
   const exceptions: BillingRunException[] = []
@@ -167,9 +107,11 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
         const procedureId = result.procedureId !== '' ? result.procedureId : undefined
         // The failure lives ON the case — the system of record Phase 09's
         // monitor retries against; the audit entry is the history.
+        const payee = s.billing.locks[bookingId]?.payee.anaesthetistId
         cases[bc.id] = {
           id: bc.id,
           bookingId,
+          ...(payee !== undefined ? { payeeAnaesthetistId: payee } : {}),
           status: 'failed',
           receivedAmount: 0,
           authorisedAmount: 0,
@@ -201,7 +143,7 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
         continue
       }
 
-      const made = materialiseInvoices(s, counters, result.invoices, { bookingId, atISO, kind: 'standard', send: true, createAction: 'invoice.create' }, { invoices, invoiceLines, cases })
+      const made = materialiseInvoices(s, counters, result.invoices, { bookingId, atISO, kind: 'standard', send: true, createAction: 'invoice.create', payee: s.billing.locks[bookingId]!.payee }, { invoices, invoiceLines, cases })
       counters = made.counters
       const bookingInvoiceIds = made.invoiceIds
       metas.push(...made.metas)
@@ -246,87 +188,14 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
 const BILLING_RETRY_ACTOR: Actor = { who: 'Billing run (retry)', role: 'system', source: 'system' }
 
 /**
- * The billing monitor's "Choose a Contract" (catch-up Phase 18; RV-32): the
- * one office edit allowed on an AUTHORISED List, and only on a Booking whose
- * billing case FAILED and that has no invoice. It sets the Procedure's
- * Contract (one the step rail allows on its List, or the one it already has)
- * with the rail's change (`applyContractChange`: a typed price cleared, the
- * RVG code filled only when empty), audited as `procedure.contract` (catch-up
- * Phase 20); `retryBillingCase` then rebuilds it. No Contract is edited.
- */
-export function chooseContractForFailedBooking(
-  api: AppStoreApi,
-  actor: Actor,
-  caseId: string,
-  procedureId: string,
-  contractId: string,
-): Outcome {
-  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can choose a Contract for a failed Booking.')
-  const state = api.getState()
-  const failed = state.billing.cases[caseId]
-  if (failed === undefined) return refuse('notFound', 'Billing case not found.')
-  if (failed.status !== 'failed' || failed.invoiceId !== undefined) {
-    return refuse('caseNotFailed', 'Only a failed Booking with no invoice can have its Contract changed here.')
-  }
-  const procedure = state.schedule.procedures[procedureId]
-  if (procedure === undefined || procedure.bookingId !== failed.bookingId) {
-    return refuse('notFound', 'That procedure is not on the failed Booking.')
-  }
-  const contract = state.masters.contracts[contractId]
-  if (contract === undefined) return refuse('notFound', 'Contract not found.')
-  if (contract.status !== 'active' && procedure.governingContractId !== contractId) {
-    return refuse('contractDisabled', 'Choose an Active Contract.')
-  }
-  // An open price needs its amount typed on the step rail, which the
-  // billing monitor does not ask for (catch-up Phase 20).
-  if (!contractChoosableForProcedure(contract)) return refuse('openPriceNotChosen', OPEN_PRICE_NOT_CHOSEN_MESSAGE)
-  // A Contract that bills its holder needs that Party, or the retry would fail again.
-  if (contract.billsTo === 'holder' && holderBilledFor(contract, state.masters.parties) === undefined) {
-    return refuse('holderMissing', HOLDER_MISSING_MESSAGE)
-  }
-  if (procedure.governingContractId === contractId) return ok(undefined)
-  // The step rail's candidate rule (US-04.3.2): no "show all" here either.
-  const booking = state.schedule.bookings[procedure.bookingId]
-  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
-  if (list === undefined || !contractAllowedOn(railMastersOf(state), railContextForList(state, list), contractId)) {
-    return refuse('notACandidate', NOT_A_CANDIDATE_MESSAGE)
-  }
-  const row = withRvgRowChange(state, procedure, applyContractChange(state.masters, procedure, contractId))
-  if (!row.ok) return row
-  const next: Procedure = { ...procedure, ...row.value.patch, ...(row.value.reconciled ?? {}) }
-  for (const key of Object.keys(row.value.patch) as (keyof Procedure)[]) {
-    if (row.value.patch[key] === undefined) delete next[key]
-  }
-  // The invoice description follows the Contract (US-08.4.6, D37) unless the office edited it (D73).
-  next.invoiceDescription = refreshedInvoiceDescriptionFor(next, state.masters.contracts)
-  mutate(
-    api,
-    actor,
-    {
-      entityType: 'procedure',
-      entityId: procedureId,
-      action: 'procedure.contract',
-      before: { governingContractId: procedure.governingContractId, enteredPrice: procedure.enteredPrice, rvgGroupId: procedure.rvgGroupId, invoiceDescription: procedure.invoiceDescription?.text ?? null },
-      after: { governingContractId: next.governingContractId, enteredPrice: next.enteredPrice, rvgGroupId: next.rvgGroupId, invoiceDescription: next.invoiceDescription?.text ?? null },
-    },
-    (s) => ({
-      schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: next } },
-    }),
-  )
-  return ok(undefined)
-}
-
-/**
- * Resolve-and-retry a single failed BillingCase (Phase 09 monitor). Rebuilds
- * ONLY that Booking against current data (after the office fixed it, e.g. restored
- * a contract) and, on success, flips the failed case to `invoiced` reusing its
- * id. Idempotent: a case that is not `failed` is refused (a second retry after
- * success is a no-op), and a rebuild that still fails leaves the case untouched.
- * The rebill is a billing-engine action, so it audits source=system regardless
- * of who pressed the button; office-gated (the monitor button is office).
- *
- * Failure isolation (the recorded reading): retrying one Booking never touches the
- * List's other invoices — no duplication.
+ * Retry a single failed BillingCase (Phase 09 monitor). Rebuilds ONLY that
+ * Booking, from its lock alone (catch-up Phase 25): nothing re-edits a master
+ * and nothing re-prices, so a retry bills exactly what was locked (a wrong
+ * price after invoicing is a credit note and rebill, Phase 39). On success it
+ * flips the failed case to `invoiced`, reusing its id. Idempotent: a case that
+ * is not `failed` is refused (a second retry after success), and a rebuild
+ * that still fails leaves the case untouched. Audited source=system; office
+ * only. Retrying one Booking never touches the List's other invoices.
  */
 export function retryBillingCase(api: AppStoreApi, actor: Actor, caseId: string): Outcome<BillingRunResult> {
   const state = api.getState()
@@ -338,35 +207,13 @@ export function retryBillingCase(api: AppStoreApi, actor: Actor, caseId: string)
   if (failed.status !== 'failed') {
     return refuse('caseNotFailed', 'This billing case is not in a failed state; nothing to retry.')
   }
-  const found = getBooking(state, failed.bookingId)
-  if (found === undefined) return refuse('notFound', 'The failed case has no Booking.')
-  const { booking, list } = found
+  const bookingId = failed.bookingId
+  if (state.schedule.bookings[bookingId] === undefined) return refuse('notFound', 'The failed case has no Booking.')
 
-  const bookingCtx = billingContextForBooking(state, booking)
-  if (bookingCtx === undefined) return refuse('noContext', 'Billing context could not be assembled for this Booking.')
-  const prePaid = prePaidByProcedure(state, booking.id)
-  const buildCtx: InvoiceBuildContext = {
-    ...bookingCtx,
-    listDateISO: list.dateISO,
-    patientId: booking.patientId,
-    ...surgeonNameFor(state, list.surgeonId),
-    ...listHospitalFor(list, state.masters.hospitals),
-    ...(Object.keys(prePaid).length > 0 ? { prePaidByProcedure: prePaid } : {}),
-  }
-
-  let result: BookingBuildResult
-  try {
-    result = buildInvoicesForBooking(booking, proceduresForBooking(state, booking.id), buildCtx)
-  } catch (error) {
-    return refuse('runError', error instanceof Error ? error.message : 'The billing run failed on this Booking.')
-  }
-  if (result.kind === 'exception') {
-    // Still failing — the data is not fixed. Leave the case failed unchanged.
-    return refuse(result.code, result.message)
-  }
-  // The same pre-flight as the run (catch-up Phase 21a).
-  const preflight = validateBookingForBilling(booking, proceduresForBooking(state, booking.id), bookingCtx)[0]
-  if (preflight !== undefined) return refuse('preflight', preflight.message)
+  const result = buildFromLock(state, bookingId)
+  // Still failing: leave the case failed, unchanged.
+  if (result.kind === 'exception') return refuse(result.code, result.message)
+  const payee = state.billing.locks[bookingId]!.payee
 
   let invoiceIds: InvoiceId[] = []
   const metas: MutationMeta[] = []
@@ -375,18 +222,19 @@ export function retryBillingCase(api: AppStoreApi, actor: Actor, caseId: string)
     // The first invoice reuses the failed case's id (flip failed -> invoiced,
     // dropping its `failure`); any extra invoices allocate fresh cases.
     const made = materialiseInvoices(s, s.counters, result.invoices, {
-      bookingId: booking.id,
+      bookingId,
       atISO,
       kind: 'standard',
       send: true,
       createAction: 'invoice.create',
       reuseCaseId: failed.id,
+      payee,
     })
     invoiceIds = made.invoiceIds
     metas.push(...made.metas)
     metas.push({
       entityType: 'booking',
-      entityId: booking.id,
+      entityId: bookingId,
       action: 'booking.billed',
       after: { invoiceIds, retriedCaseId: failed.id },
       stampBookingId: null,
@@ -395,6 +243,18 @@ export function retryBillingCase(api: AppStoreApi, actor: Actor, caseId: string)
   })
 
   return ok({ invoiceIds, exceptions: [] })
+}
+
+/** One Booking's invoices from its lock: none is `lockMissing`, a rejected one fails with its reason (US-08.5.1). */
+function buildFromLock(state: Pick<AppState, 'billing'>, bookingId: BookingId): BookingBuildResult {
+  const lock = state.billing.locks[bookingId]
+  if (lock === undefined) return { kind: 'exception', procedureId: '', code: 'lockMissing', message: LOCK_MISSING_MESSAGE }
+  // Per-booking isolation is absolute: a build error becomes a failed case, never a throw (8th review).
+  try {
+    return invoiceDraftsFromLock(lock)
+  } catch (error) {
+    return { kind: 'exception', procedureId: '', code: 'runError', message: error instanceof Error ? error.message : 'The billing run failed on this Booking.' }
+  }
 }
 
 /**
@@ -434,12 +294,6 @@ export function resendInvoice(api: AppStoreApi, actor: Actor, invoiceId: string,
     (s) => ({ billing: { ...s.billing, invoices: { ...s.billing.invoices, [invoiceId]: { ...invoice, delivery } } } }),
   )
   return ok(undefined)
-}
-
-/** The List's surgeon by name, for the holder layout's cross-match (catch-up Phase 22). */
-export function surgeonNameFor(state: Pick<AppState, 'masters'>, surgeonId: string | undefined): { surgeonName?: string } {
-  const name = surgeonId !== undefined ? state.masters.surgeons[surgeonId]?.name : undefined
-  return name !== undefined ? { surgeonName: name } : {}
 }
 
 /**
