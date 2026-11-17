@@ -6,6 +6,7 @@ Bump `version` in `package.json` and add an entry here before each kit export.
 
 - `run-build-phase`: a two-session phase runs in one session by default. The doc's session boundary is now a checkpoint, not a stop. There the session runs the full gate, writes the `IN PROGRESS` status row and a short `**Session 1**` paragraph (so a session that ends unexpectedly can be resumed), then carries on with the rest. It stops at the checkpoint only when the prompt says so (a session-1-only run), when its context has already been compacted, or when the context or a usage limit warns it is near its end. A stop updates the plan page so the same prompt resumes the phase. A phase finished in one session gets one full entry in place of the `**Session 1**` paragraph. The running log gains a `Checkpoint:` line after each work item, and a resumed session starts from the last one.
 - `phase-context.mjs`: an `IN PROGRESS` pack points to the log's last `Checkpoint:` line as well as the progress entry.
+- `build-index.mjs`: the plan page counts phases, not sessions. Under the progress bar it reads "<n> phases to go", and Every phase reads "<done> done, <left> to go". Phases are the unit the plan runs in; a session estimate is only a size.
 
 ## 1.9.0 · 2026-11-16
 

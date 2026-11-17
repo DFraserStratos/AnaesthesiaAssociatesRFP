@@ -73,7 +73,6 @@ const inlineMd = (s) =>
     .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, t, u) => `<a href="${u}">${t}</a>`);
 
 const oqHref = (id) => `${CATALOGUE_REL}/questions/${encodeURIComponent(id)}.md`;
-const sessionsOf = (s) => Number(String(s ?? '').match(/\d+/)?.[0] ?? 0);
 const firstSentence = (text) => {
   const t = String(text ?? '').trim();
   // The first ". " or "; " after 40 characters, outside brackets.
@@ -177,8 +176,6 @@ const safeLater = phases.filter((p) => stateOf(p) === 'safe-later');
 const readyUnflagged = phases.filter((p) => stateOf(p) === 'ready');
 const waitNow = phases.filter((p) => stateOf(p) === 'wait' && waveOf(p.num) === 1);
 const replanLater = phases.filter((p) => !isDone(p.num) && waveOf(p.num) > 1 && !G.safe?.[p.num] && (replanOqs(p).length || G.wait?.[p.num]));
-const totalSessions = phases.reduce((n, p) => n + sessionsOf(p.est_sessions), 0);
-const doneSessions = done.reduce((n, p) => n + sessionsOf(p.est_sessions), 0);
 const shortCommit = String(plan.commit ?? '').slice(0, 7);
 
 // ---------- pieces ----------
@@ -352,7 +349,7 @@ const fold = (id, title, body) => `
 
 const foldsSection = `
 <section class="folds" aria-label="Reference">
-  ${fold('all', `Every phase <span class="cnt">${esc(phases.length)}</span>`, `<p class="fine">${esc(done.length)} done, ${esc(phases.length - done.length)} to go: ${esc(doneSessions)} of about ${esc(totalSessions)} sessions. Status comes from ${progressName ? `the status table in <code>${esc(progressName)}</code>` : '<code>status.json</code>'}.</p>${phases.map(phaseEntry).join('')}`)}
+  ${fold('all', `Every phase <span class="cnt">${esc(phases.length)}</span>`, `<p class="fine">${esc(done.length)} done, ${esc(phases.length - done.length)} to go. Status comes from ${progressName ? `the status table in <code>${esc(progressName)}</code>` : '<code>status.json</code>'}.</p>${phases.map(phaseEntry).join('')}`)}
   ${fold('rules', 'Sequencing rules', ruleParas || '<p>None recorded.</p>')}
   ${fold('how', 'How a phase runs', `<ol class="how">${howTo.map((li) => `<li>${fill(li, vars)}</li>`).join('')}</ol>${callouts.map((c) => `<p class="note">${fill(c.html, vars)}</p>`).join('')}`)}
   ${(plan.milestones ?? []).length ? fold('milestones', 'What each milestone can show', `<ul class="plain">${plan.milestones.map((m) => `<li><b><a href="#p-${esc(m.after)}">After ${esc(m.after)}</a></b> ${esc(m.can_show)}</li>`).join('')}</ul>`) : ''}
@@ -527,7 +524,7 @@ ${CSS}
   <h1>${esc(headline)}</h1>
   ${G.headline_sub ? `<p class="sub-h">${inlineMd(G.headline_sub)}</p>` : ''}
   <div class="progress" aria-hidden="true"><span style="width:${phases.length ? ((done.length / phases.length) * 100).toFixed(1) : 0}%"></span></div>
-  <p class="fine">${esc(doneSessions)} of about ${esc(totalSessions)} sessions done.</p>
+  <p class="fine">${esc(phases.length - done.length)} ${phases.length - done.length === 1 ? 'phase' : 'phases'} to go.</p>
   <h2 class="sr">The phases by track</h2>
   <div style="margin-top:28px">${map}</div>
 ${nowSection}
