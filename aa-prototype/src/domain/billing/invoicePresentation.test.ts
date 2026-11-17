@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { soleAllocation } from './multiProcedure'
 import type { FeeResult } from './fee'
 import type { Party } from './parties'
 import {
@@ -31,6 +32,7 @@ import { invoiceDeliveryFor } from './whoIsBilled'
 
 function fee(overrides: Partial<FeeResult> = {}): FeeResult {
   return {
+    allocation: soleAllocation(true, 0),
     btm: {
       base: { units: 4, source: 'seeded' },
       baseSource: 'group',
@@ -183,8 +185,13 @@ describe('the BTM breakdown line (US-08.4.1)', () => {
     expect(btmBreakdownText({ base: 4, time: 4, modifiers: 0, units: 8, unitValue: 26.5 })).toBe('Base 4 + Time 4 + Modifiers 0 = 8 units at $26.50')
     expect(btmBreakdownText({ base: 6, time: 3, modifiers: 2, units: 11, unitValue: 30 })).toBe('Base 6 + Time 3 + Modifiers 2 = 11 units at $30.00')
   })
-  it('prints time units only on an additional procedure (the stored btm is the full B/T/M)', () => {
+  it('reads a line issued before catch-up Phase 23 (full B/T/M stored, no role) as it did', () => {
     expect(btmBreakdownText({ base: 4, time: 2, modifiers: 0, units: 2, unitValue: 26.5 })).toBe('Additional procedure: Time 2 units at $26.50')
+  })
+  it('prints the multi-procedure split: the primary\'s share of the Booking\'s modifiers, and an additional procedure\'s time and share (catch-up Phase 23)', () => {
+    expect(btmBreakdownText({ base: 6, time: 6, modifiers: 3, modifiersOf: 7, units: 15, unitValue: 26.5 })).toBe('Base 6 + Time 6 + Modifiers 3 of 7 = 15 units at $26.50')
+    expect(btmBreakdownText({ base: 0, time: 2, modifiers: 2, modifiersOf: 7, units: 4, unitValue: 26.5, role: 'additional' })).toBe('Additional procedure: Time 2 + Modifiers 2 of 7 = 4 units at $26.50')
+    expect(btmBreakdownText({ base: 0, time: 2, modifiers: 0, units: 2, unitValue: 26.5, role: 'additional' })).toBe('Additional procedure: Time 2 units at $26.50')
   })
 })
 

@@ -239,7 +239,7 @@ describe('"Needs a price" on a fixed price with no range in force (catch-up Phas
   })
 
   it('an additional Procedure needs a price too, and an office fixed fee is a typed price', () => {
-    const add = validProcedure({ governingContractId: 'con-fx', isAdditional: true })
+    const add = validProcedure({ governingContractId: 'con-fx', isPrimary: false })
     expect(fieldsOf(validateBookingForBilling(booking, [add], ctxOn('2026-07-21')))).toContain('governingContractId')
     const typed = validProcedure({ governingContractId: 'con-fx', priceOverride: { kind: 'fixedFee', amount: 3000, reason: 'Office price' } })
     expect(fieldsOf(validateBookingForBilling(booking, [typed], ctxOn('2026-07-21')))).not.toContain('governingContractId')

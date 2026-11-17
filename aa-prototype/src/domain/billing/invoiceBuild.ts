@@ -31,7 +31,8 @@ import type {
   Procedure,
   ProcedureId,
 } from '../types'
-import { feeFor } from './fee'
+import { NO_PRIMARY_MESSAGE } from './bookingFee'
+import { inDisplayOrder } from './multiProcedure'
 import { formatMoney, roundToCents, toCents } from './money'
 import { btmOf, crossMatchFor, gstOn, invoiceLayoutFor, invoiceLineViews, type InvoiceLayout, type InvoiceLineView } from './invoicePresentation'
 import { PARTY_GONE_REASON, resolveSplit, shareLabel, splitDoesNotFitMessage, splitLineText } from './splitShare'
@@ -40,7 +41,7 @@ import { procedureNeedsPrice } from './contracts'
 import { needsPriceMessage } from './priceRanges'
 import type { Party } from './parties'
 import { billablePartyForProcedure, billedToFor, HOLDER_MISSING_MESSAGE } from './whoIsBilled'
-import { feeContextFor, type BookingBillingContext } from './validateBookingForBilling'
+import { bookingFeesFor, type BookingBillingContext } from './validateBookingForBilling'
 
 export interface InvoiceBuildContext extends BookingBillingContext {
   /** The Booking's patient id (the payer when the "different payer" tick is clear). */
@@ -125,9 +126,9 @@ export interface DraftInvoice {
   subtotal: number
   gst: number
   total: number
-  /** The first Procedure's Contract, in Booking order. */
+  /** The first Procedure's Contract, in display order (the primary first). */
   contractId?: ContractId
-  /** The Procedures this invoice bills, in Booking order. */
+  /** The Procedures this invoice bills, in display order (the primary first, `inDisplayOrder`). */
   procedureIds: ProcedureId[]
   /** Set when the invoice holds a split share (its first split line's). */
   split?: InvoiceSplitInfo
@@ -162,9 +163,12 @@ interface TaggedLine {
  * A split party who is also another Procedure's billable party on the same
  * Booking gets one invoice holding both (its `split` then describes the split
  * line); an invoice spanning Procedures takes the first Procedure's layout
- * (both logged readings). `procedures` must be in Booking order. A
- * resolution exception on any Procedure fails the whole Booking (per-booking
- * isolation; the List still completes its run).
+ * (both logged readings). `procedures` must be in Booking order; the Booking
+ * is priced once under the multi-procedure rule (`bookingFeesFor`, catch-up
+ * Phase 23) with each Procedure's resolved Contract, and lines follow
+ * `inDisplayOrder` (the primary first). A resolution exception on any
+ * Procedure fails the whole Booking (per-booking isolation; the List still
+ * completes its run), as does a Booking without exactly one primary.
  */
 export function buildInvoicesForBooking(
   booking: Booking,
@@ -176,22 +180,29 @@ export function buildInvoicesForBooking(
 
   const tagged: TaggedLine[] = []
 
+  // Every Procedure's Contract first, then the Booking priced once with them.
+  const resolved = new Map<ProcedureId, Contract | undefined>()
   for (const procedure of procedures) {
     const resolution = resolveContractForProcedure(procedure, ctx)
     if (resolution.kind === 'exception') {
       return { kind: 'exception', procedureId: procedure.id, code: resolution.code, message: resolution.message }
     }
-    const contract = resolution.contract
+    resolved.set(procedure.id, resolution.contract)
+  }
+  const priced = bookingFeesFor(procedures, ctx, (procedure) => resolved.get(procedure.id))
+  if (priced.kind === 'structural') {
+    return { kind: 'exception', procedureId: procedures[0]?.id ?? '', code: 'noPrimaryProcedure', message: `${NO_PRIMARY_MESSAGE}.` }
+  }
+
+  for (const procedure of inDisplayOrder(procedures)) {
+    const contract = resolved.get(procedure.id)
     const procedureCounterparty = counterpartyForProcedure(contract, procedure, booking.patientId, ctx.parties)
     if (procedureCounterparty === undefined) {
       return { kind: 'exception', procedureId: procedure.id, code: 'noCounterparty', message: HOLDER_MISSING_MESSAGE }
     }
 
-    // Price with the resolved Contract (the stored one).
-    const feeCtx = feeContextFor(procedure, ctx)
-    if (contract !== undefined) feeCtx.contract = contract
-    else delete feeCtx.contract
-    const fee = feeFor(procedure, feeCtx)
+    // Priced with the resolved Contract (the stored one), under the rule.
+    const fee = priced.fees[procedure.id]!
 
     // A procedure that was pre-invoiced nets its deposit off the balance below.
     const prePaid = ctx.prePaidByProcedure?.[procedure.id]
@@ -386,9 +397,9 @@ export function procedureRequiresPrepayment(contract: Pick<Contract, 'prepaid' |
  * authorisation). Two shapes, from `prepaymentDetail` (INTERIM until 27):
  *
  *   - `split`: a flat AGREED deposit line (the `depositAmount` figure, never
- *     via `feeFor` — the deposit is a negotiated number, not a fraction of the
+ *     via the fee engine: the deposit is a negotiated number, not a fraction of the
  *     estimated fee);
- *   - `full`:  the full fee via `feeFor` on the prepaid Contract (the same
+ *   - `full`:  the full fee on the prepaid Contract through `bookingFeesFor` (the same
  *     calculator the balance run uses, so the balance nets to exactly $0).
  *
  * Deposit lines are EX-GST subtotals (an $800 deposit invoices as
@@ -405,8 +416,10 @@ export function buildPrePaymentInvoiceForBooking(
 ): BookingBuildResult {
   if (booking.cancellation !== undefined) return { kind: 'invoices', invoices: [] }
 
+  // Every Procedure is ranked, prepaid or not (D57): the Booking is priced once under the rule.
+  const priced = bookingFeesFor(procedures, ctx)
   const tagged: { counterparty: CounterpartyRef; contractId: ContractId; line: DraftInvoiceLine }[] = []
-  for (const procedure of procedures) {
+  for (const procedure of inDisplayOrder(procedures)) {
     const contract = procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
     if (contract === undefined || !procedureRequiresPrepayment(contract)) continue
     // A split fee is never prepaid by one party (catch-up Phase 22): the office removes the split first.
@@ -427,8 +440,11 @@ export function buildPrePaymentInvoiceForBooking(
       })
     } else {
       // Full prepayment: the full fee on the prepaid Contract, via the same
-      // calculator the balance run uses.
-      const fee = feeFor(procedure, feeContextFor(procedure, ctx))
+      // engine the balance run uses.
+      if (priced.kind === 'structural') {
+        return { kind: 'exception', procedureId: procedure.id, code: 'noPrimaryProcedure', message: `${NO_PRIMARY_MESSAGE}.` }
+      }
+      const fee = priced.fees[procedure.id]!
       // No price yet (an open price with no amount typed): nothing to prepay.
       if (fee.needsPrice) {
         return { kind: 'exception', procedureId: procedure.id, code: 'contractIneffective', message: needsPriceMessage(contract, ctx.listDateISO, { named: true }) }

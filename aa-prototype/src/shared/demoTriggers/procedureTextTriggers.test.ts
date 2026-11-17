@@ -12,7 +12,7 @@ import { RTK_BOOKING_ID, SEED_MARKERS } from '../../domain/seed'
 import { DEMO_TRIGGERS } from './registry'
 import { demoTriggersFor, initialChoice } from './match'
 import { useDemoTriggerMemory } from './memory'
-import { cannedMessageForBooking, firstProcedureOf } from './procedureTextTriggers'
+import { cannedMessageForBooking, primaryProcedureOf } from './procedureTextTriggers'
 import type { DemoTrigger, DemoTriggerCtx } from './types'
 
 const byId = (id: string): DemoTrigger => DEMO_TRIGGERS.find((t) => t.id === id)!
@@ -51,9 +51,9 @@ describe('Fire hospital message on a Booking', () => {
     const api = createAppStore()
     const first = byId('fire-hospital-message').run(api, adminCtx(api, FOSTER), 'MSG-STG-1012')
     expect(first.message).toContain("the hospital's description replaced the rooms' text")
-    const text = firstProcedureOf(api.getState(), FOSTER)!.procedureText
+    const text = primaryProcedureOf(api.getState(), FOSTER)!.procedureText
     byId('fire-hospital-message').run(api, adminCtx(api, FOSTER), 'MSG-STG-1012')
-    expect(firstProcedureOf(api.getState(), FOSTER)!.procedureText).toEqual(text)
+    expect(primaryProcedureOf(api.getState(), FOSTER)!.procedureText).toEqual(text)
   })
 })
 
@@ -78,7 +78,7 @@ describe('Hospital description arrives', () => {
     const out = trigger().run(api, adminCtx(api, TANE), 'ar35-row-12')
     expect(out.ok).toBe(true)
     expect(out.message).toContain('The invoice description follows it')
-    expect(firstProcedureOf(api.getState(), TANE)!.invoiceDescription).toEqual({ text: 'lap chole', origin: 'hospital' })
+    expect(primaryProcedureOf(api.getState(), TANE)!.invoiceDescription).toEqual({ text: 'lap chole', origin: 'hospital' })
     expect(trigger().disabledReason(api.getState(), adminCtx(api, TANE), 'ar35-row-12')).toBe('This Booking already holds that hospital description')
   })
 
@@ -86,15 +86,15 @@ describe('Hospital description arrives', () => {
     const api = createAppStore()
     const out = trigger().run(api, adminCtx(api, DOYLE), 'ar35-row-20')
     expect(out.message).toContain("stays the Contract's")
-    expect(firstProcedureOf(api.getState(), DOYLE)!.invoiceDescription?.origin).toBe('contract')
+    expect(primaryProcedureOf(api.getState(), DOYLE)!.invoiceDescription?.origin).toBe('contract')
   })
 
   it("keeps an office edit and reports the newer description cue", () => {
     const api = createAppStore()
-    const p = firstProcedureOf(api.getState(), TANE)!
+    const p = primaryProcedureOf(api.getState(), TANE)!
     setInvoiceDescription(api, OFFICE_ACTOR, p.id, 'Laparoscopic cholecystectomy')
     const out = trigger().run(api, adminCtx(api, TANE), 'ar35-row-12')
     expect(out.message).toContain("The office's edit stays on the invoice, with a newer description cue")
-    expect(firstProcedureOf(api.getState(), TANE)!.invoiceDescription?.text).toBe('Laparoscopic cholecystectomy')
+    expect(primaryProcedureOf(api.getState(), TANE)!.invoiceDescription?.text).toBe('Laparoscopic cholecystectomy')
   })
 })

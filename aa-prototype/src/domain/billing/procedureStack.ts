@@ -366,7 +366,8 @@ const LABEL_MAX = 40
 export function procedureLabel(
   procedure: Pick<Procedure, 'procedureText' | 'rvgGroupId'>,
   rvgGroups: Readonly<Record<RvgGroupId, Pick<RvgGroup, 'code' | 'description'>>>,
-  ordinal: number,
+  /** Its number in display order (the primary is 1), for the fallback label. */
+  displayNumber: number,
 ): string {
   const text = procedure.procedureText?.text
   if (text !== undefined && !isBlankText(text)) {
@@ -376,7 +377,7 @@ export function procedureLabel(
   }
   const group = procedure.rvgGroupId !== undefined ? rvgGroups[procedure.rvgGroupId] : undefined
   if (group !== undefined) return `${group.code} · ${group.description}`
-  return `Procedure ${ordinal}`
+  return `Procedure ${displayNumber}`
 }
 
 /** Stamp an incoming text (the store's constructor; the seed's is `seedText`). */

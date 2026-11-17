@@ -9,8 +9,8 @@ import { EditBillingSetupSheet, PriceOverrideSheet } from '../flows'
 
 interface OfficeBillingSetupProps {
   procedure: Procedure
-  /** 1-based position on the Booking. */
-  ordinal: number
+  /** Its number in display order (the primary is 1): numbers the `office-billing-setup-n` hook recipes land on. */
+  displayNumber: number
   actor: Actor
   /** Office may edit (ACTIVE or SUBMITTED, not AUTHORISED, not cancelled). */
   canEdit: boolean
@@ -28,7 +28,7 @@ type Sheet = 'none' | 'setup' | 'override'
  * label or status tint). "Edit billing setup" opens
  * "Contract and reference" (the reference; the payer is on the Booking since catch-up Phase 21).
  */
-export function OfficeBillingSetup({ procedure, ordinal, actor, canEdit }: OfficeBillingSetupProps) {
+export function OfficeBillingSetup({ procedure, displayNumber, actor, canEdit }: OfficeBillingSetupProps) {
   const masters = useAppStore((s) => s.masters)
   const [sheet, setSheet] = useState<Sheet>('none')
 
@@ -50,10 +50,10 @@ export function OfficeBillingSetup({ procedure, ordinal, actor, canEdit }: Offic
   })()
 
   return (
-    <div data-shot={`office-billing-setup-${ordinal}`} style={{ background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div data-shot={`office-billing-setup-${displayNumber}`} style={{ background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.slate, textTransform: 'uppercase' }}>
-          Office billing setup · procedure {ordinal}
+          Office billing setup · {procedure.isPrimary ? 'primary procedure' : 'additional procedure'}
         </div>
       </div>
 

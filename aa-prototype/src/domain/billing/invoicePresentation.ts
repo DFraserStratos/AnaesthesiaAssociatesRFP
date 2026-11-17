@@ -208,17 +208,40 @@ export interface LineViewOptions {
   discount?: { percent: number; unitValue: number }
 }
 
-/** The holder layout's BTM breakdown for a fee result at a unit value. */
-export function btmOf(fee: Pick<FeeResult, 'btm' | 'billableUnits'>, unitValue: number): InvoiceLineBtm {
-  return { base: fee.btm.base.units, time: fee.btm.time.units, modifiers: fee.btm.modifiers.units, units: fee.billableUnits, unitValue }
+/**
+ * The holder layout's BTM breakdown for a fee result at a unit value: the units
+ * charged under the multi-procedure rule (catch-up Phase 23), so base on the
+ * primary only and the Procedure's own share of the Booking's modifiers.
+ */
+export function btmOf(fee: Pick<FeeResult, 'btm' | 'billableUnits' | 'allocation'>, unitValue: number): InvoiceLineBtm {
+  const { allocation } = fee
+  return {
+    base: fee.btm.base.units,
+    time: fee.btm.time.units,
+    modifiers: allocation.modifierShare,
+    units: fee.billableUnits,
+    unitValue,
+    // Only an additional line names its role (absent reads as primary), so a single-Procedure line is as before.
+    ...(allocation.role === 'additional' ? { role: 'additional' as const } : {}),
+    ...(allocation.splitAcross > 1 ? { modifiersOf: allocation.bookingModifierUnits } : {}),
+  }
 }
 
-/** The holder layout's breakdown line: "Base 4 + Time 4 + Modifiers 0 = 8 units at $26.50", or time units only on an additional procedure. */
+/**
+ * The holder layout's breakdown line: "Base 4 + Time 4 + Modifiers 0 = 8 units
+ * at $26.50", "Modifiers 3 of 7" when the Booking's modifiers split, and on an
+ * additional procedure "Additional procedure: Time 2 + Modifiers 2 of 7 = 4
+ * units at $26.50", or "Additional procedure: Time 2 units at $26.50" with no
+ * share. A line issued before catch-up Phase 23 (no `role`) reads as it did.
+ */
 export function btmBreakdownText(btm: InvoiceLineBtm): string {
+  const at = formatMoney(btm.unitValue)
+  const m = `Modifiers ${btm.modifiers}${btm.modifiersOf !== undefined ? ` of ${btm.modifiersOf}` : ''}`
+  if (btm.role === 'additional') {
+    return btm.modifiers > 0 ? `Additional procedure: Time ${btm.time} + ${m} = ${btm.units} units at ${at}` : `Additional procedure: Time ${btm.units} units at ${at}`
+  }
   const sum = btm.base + btm.time + btm.modifiers
-  return btm.units === sum
-    ? `Base ${btm.base} + Time ${btm.time} + Modifiers ${btm.modifiers} = ${sum} units at ${formatMoney(btm.unitValue)}`
-    : `Additional procedure: Time ${btm.units} units at ${formatMoney(btm.unitValue)}`
+  return btm.units === sum ? `Base ${btm.base} + Time ${btm.time} + ${m} = ${sum} units at ${at}` : `Additional procedure: Time ${btm.units} units at ${at}`
 }
 
 /**

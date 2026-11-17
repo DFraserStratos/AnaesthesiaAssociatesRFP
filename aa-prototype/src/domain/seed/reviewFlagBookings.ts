@@ -121,7 +121,7 @@ export function seedReviewFlagBookings(next: { booking: number; procedure: numbe
       payer: { kind: 'patient' },
       procedureText: seedText(spec.text),
       invoiceDescription: null,
-      isAdditional: false,
+      isPrimary: true,
       modifierClaims: [],
       removedModifierIds: [],
       governingContractId: spec.contractId,

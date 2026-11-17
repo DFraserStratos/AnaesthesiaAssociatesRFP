@@ -37,6 +37,7 @@ import { SheetActions } from '../surface/SheetActions'
 import { PostalAddressFields, addressDraftOf, type PostalAddressDraft } from './PostalAddressFields'
 import { DifferentPayerTick, EMPTY_OTHER_PAYER, OtherPayerFields, otherPayerInput, type OtherPayerDraft } from './PayerFields'
 import { SECTION_HEADING, SplitFeeSection, useSplitDraft } from './SplitFeeSection'
+import { inDisplayOrder } from '../../domain/billing/multiProcedure'
 
 export const PAYER_CONTACT_ASK = 'Add an email or a postal address. A payer needs one to receive the invoice.'
 export const CHILD_PAYER_HINT = 'Under 18. Check whether a parent or guardian should be the payer.'
@@ -107,8 +108,10 @@ export function PaidBySheet({ open, procedureId, actor, onClose, focus = 'payer'
   // Change opens who pays (and the offer); Split opens the split alone (owner, 2026-11-17).
   const showWhoPays = focus === 'payer' && billsPayer
   const showSplit = focus === 'split'
-  const ordinal = procedures.findIndex((p) => p.id === procedureId) + 1
-  const labelOf = (p: Procedure) => procedureLabel(p, rvgGroups, procedures.findIndex((q) => q.id === p.id) + 1)
+  // Numbered in display order, the primary first (catch-up Phase 23).
+  const ordered = inDisplayOrder(procedures)
+  const displayNumber = ordered.findIndex((p) => p.id === procedureId) + 1
+  const labelOf = (p: Procedure) => procedureLabel(p, rvgGroups, ordered.findIndex((q) => q.id === p.id) + 1)
 
   const current = procedure.payer
   // A change of payer (not the same person's contact): the offer applies only then.
@@ -151,7 +154,7 @@ export function PaidBySheet({ open, procedureId, actor, onClose, focus = 'payer'
   return (
     <Overlay open={open} onClose={onClose}>
       <div data-shot="paid-by-sheet" data-procedure-id={procedureId} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <OverlayHeader title={showSplit ? 'Split the fee' : 'Who pays'} description={procedures.length > 1 ? `Procedure ${ordinal} · ${labelOf(procedure)}` : labelOf(procedure)} />
+        <OverlayHeader title={showSplit ? 'Split the fee' : 'Who pays'} description={procedures.length > 1 ? `Procedure ${displayNumber} · ${labelOf(procedure)}` : labelOf(procedure)} />
 
         {showWhoPays && (
           <section aria-label="Who pays" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

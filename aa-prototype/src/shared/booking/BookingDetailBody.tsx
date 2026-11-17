@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { History, Minus, Plus, Receipt, ShieldCheck, Stethoscope, Users, XCircle } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
+import { motion } from '../../theme/motion'
 import type { Procedure } from '../../domain/types'
 import { bookingMoveRefusal } from '../../domain/bookingMoves'
 import { approvalNumberMissing } from '../../domain/billing'
@@ -28,9 +29,12 @@ import { Button } from '../ui'
 import { Notice } from '../ui/Notice'
 import { ResultLine } from '../ui/ResultLine'
 import { useSurface, type BookingTotalLine } from '../surface'
-import { BtmCaptureBlock, CompleteBar, CompletionOverlay, bookingFee, procedureFee } from '../capture'
+import { BtmCaptureBlock, CompleteBar, CompletionOverlay, bookingFee, type BookingFeeTotals } from '../capture'
 import { ageYears, BOOKING_SOURCE_LABELS, formatCurrency, formatDob, hhmm, nhiBadge } from '../format'
 import { procedureLabel } from '../../domain/billing/procedureStack'
+import { allocationNote, inDisplayOrder } from '../../domain/billing/multiProcedure'
+import { NO_PRIMARY_MESSAGE } from '../../domain/billing/bookingFee'
+import { MakePrimarySheet } from '../flows/MakePrimarySheet'
 import {
   CancelBookingSheet,
   EditPatientSheet,
@@ -45,7 +49,7 @@ import {
 import { useBookingWarnings, WarningsPanel } from '../warnings'
 import { OfficeBillingSetup } from './OfficeBillingSetup'
 import { FunderDetailsView } from './FunderDetailsView'
-import { contractAllowedOn, contractChangeRefusal, railAnswersFor } from '../../domain/billing/contractRail'
+import { startForAddedProcedure } from '../../domain/billing/contractRail'
 import { HistorySheet } from './HistorySheet'
 
 interface BookingDetailBodyProps {
@@ -68,7 +72,8 @@ type SheetState =
   | 'cancel'
   | 'patient'
   | 'funder'
-  | { kind: 'removeProcedure'; procedureId: string; ordinal: number }
+  | { kind: 'removeProcedure'; procedureId: string; displayNumber: number }
+  | { kind: 'makePrimary'; procedureId: string }
 
 function shiftTime(time: string, deltaMin: number): string {
   const base = time === '' ? 8 * 60 : Number(time.slice(0, 2)) * 60 + Number(time.slice(3))
@@ -122,8 +127,8 @@ const officeActionStyle: React.CSSProperties = {
 /**
  * The booking-detail body (Phase 05 extraction). Everything from the old mobile
  * `BookingDetailScreen` below the header: the patient / scheduled-time /
- * notes sections, the per-procedure BTM capture blocks (ordinal
- * ordered), the live completion rule (`completionFailuresFor`) + the showValidation latch, the
+ * notes sections, the per-procedure BTM capture blocks (the primary first,
+ * `inDisplayOrder`), the live completion rule (`completionFailuresFor`) + the showValidation latch, the
  * cancel / add-procedure / complete / amend handlers, the edit sheets,
  * the completion overlay, and the complete/amend bar. Both mobile's
  * `BookingDetailScreen` and web's `BookingDetailView` are thin chrome wrappers around
@@ -206,10 +211,34 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
     return ctx === undefined ? [] : completionFailuresFor(booking, procedures, ctx)
   }, [booking, cancelled, masters, listsRecord, billingLinesRecord, procedures])
 
-  const bookingTotals = useMemo(() => {
-    if (list === undefined || list.state === 'DRAFT' || procedures.length === 0) return { units: 0, total: 0, needsPrice: false }
-    return bookingFee(procedures, list, masters, billingLinesRecord, booking?.patientId)
+  // The whole Booking priced once, under the multi-procedure rule (catch-up Phase 23): the
+  // total, the breakdown and every capture block read this one result.
+  const bookingTotals: BookingFeeTotals = useMemo(() => {
+    if (list === undefined || list.state === 'DRAFT' || procedures.length === 0) {
+      return { units: 0, total: 0, needsPrice: false, order: inDisplayOrder(procedures).map((p) => p.id), primaryId: undefined, views: {} }
+    }
+    return bookingFee({ procedures, list, masters, billingLines: billingLinesRecord, patientId: booking?.patientId })
   }, [list, procedures, masters, billingLinesRecord, booking?.patientId])
+  // The primary first, then the rest in Booking order (US-03.2.2): every list on this screen.
+  const ordered: Procedure[] = useMemo(() => inDisplayOrder(procedures), [procedures])
+
+  // After Make primary the new primary's block slides into the top place (the theme's
+  // selection-slide, never blocking; reduced motion is the 80 ms fade).
+  const blockRefs = useRef(new Map<string, HTMLDivElement>())
+  const lastPrimary = useRef<string | undefined>(undefined)
+  useEffect(() => {
+    const id = bookingTotals.primaryId
+    const previous = lastPrimary.current
+    lastPrimary.current = id
+    if (previous === undefined || id === undefined || previous === id) return
+    const el = blockRefs.current.get(id)
+    if (el === undefined || typeof el.animate !== 'function') return
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+    el.animate(
+      reduced ? [{ opacity: 0.6 }, { opacity: 1 }] : [{ transform: 'translateY(24px)', opacity: 0.6 }, { transform: 'none', opacity: 1 }],
+      { duration: reduced ? motion.reducedMotionFade : motion.selectionSlide.duration, easing: reduced ? 'linear' : motion.selectionSlide.easing },
+    )
+  }, [bookingTotals.primaryId])
 
   /**
    * The breakdown behind the pinned Booking total. Rows are per PROCEDURE on a
@@ -225,13 +254,12 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       lines: [] as BookingTotalLine[],
       rateLabel: null as string | null,
       overrideNote: null as string | null,
+      notes: [] as string[],
     }
     // A Booking on a Draft List has no anaesthetist to price it yet (catch-up Phase 31).
-    if (list === undefined || list.state === 'DRAFT' || procedures.length === 0) return empty
+    if (list === undefined || list.state === 'DRAFT' || procedures.length === 0 || bookingTotals.structural !== undefined) return empty
 
-    const views = procedures.map((procedure) =>
-      procedureFee({ procedure, list, masters, billingLines: billingLinesRecord, patientId: booking?.patientId }),
-    )
+    const views = ordered.map((procedure) => bookingTotals.views[procedure.id]!)
 
     const rateLabels = views.map(({ fee }) =>
       fee.unitRate === null ? 'FIXED CONTRACT PRICE' : `FEE @ ${formatCurrency(fee.unitRate)}/UNIT`,
@@ -239,17 +267,22 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
     const rateLabel = rateLabels.every((l) => l === rateLabels[0]) ? (rateLabels[0] ?? null) : null
 
     let lines: BookingTotalLine[]
+    const notes: string[] = []
     if (procedures.length > 1) {
-      lines = procedures.map((procedure, index) => {
+      lines = ordered.map((procedure, index) => {
         const line: BookingTotalLine = {
           label: procedureLabel(procedure, masters.rvgGroups, index + 1),
           amount: views[index]!.fee.total,
+          // Each row's place in the multi-procedure rule (catch-up Phase 23).
+          note: allocationNote(views[index]!.allocation),
         }
-        // A fixed price is the whole price on any Procedure (catch-up Phase 19a).
-        if (procedure.isAdditional && views[index]!.fee.unitRate !== null) line.note = 'Time units only'
         if (views[index]!.fee.needsPrice) line.needsPrice = true
         return line
       })
+      const first = views[0]!.allocation
+      // OQ-132's default, provisional: a fixed or open price primary bills no base units.
+      if (!first.rvgPriced) notes.push('No base units billed (provisional, OQ-132)')
+      if (first.splitAcross > 1) notes.push(`Modifiers ${first.bookingModifierUnits}, split ${first.splitShares.join(' · ')}`)
     } else {
       const only = views[0]!.fee
       lines = only.lines.length > 1 ? only.lines.map((l) => ({ label: l.description, amount: l.amount })) : []
@@ -265,8 +298,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
           ? `Override applied · was ${formatCurrency(overridden[0]!.fee.override!.before)}`
           : `Override applied on ${overridden.length} of ${procedures.length} procedures`
 
-    return { lines, rateLabel, overrideNote }
-  }, [list, procedures, masters, billingLinesRecord])
+    return { lines, rateLabel, overrideNote, notes }
+  }, [list, procedures, ordered, bookingTotals, masters.rvgGroups])
 
   // The booking's full history: its own id plus its procedures' and billing lines'
   // ids, so BTM overrides / billing-setup edits (audited on those entities) show.
@@ -312,32 +345,23 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   const historyEntityLabels = useMemo(() => {
     if (procedures.length < 2) return undefined
     const labels: Record<string, string> = {}
-    procedures.forEach((procedure, index) => {
-      const scope = `Procedure ${index + 1}`
+    ordered.forEach((procedure, index) => {
+      const scope = procedure.isPrimary ? 'Primary' : 'Additional'
       const label = procedureLabel(procedure, masters.rvgGroups, index + 1)
-      labels[procedure.id] = label === scope ? scope : `${scope} · ${label}`
+      labels[procedure.id] = `${scope} · ${label}`
       for (const line of Object.values(billingLinesRecord)) {
         if (line.procedureId === procedure.id) labels[line.id] = `${scope} · fee line`
       }
     })
     return labels
-  }, [procedures, billingLinesRecord, masters.rvgGroups])
+  }, [ordered, procedures.length, billingLinesRecord, masters.rvgGroups])
 
   // "Add another procedure" (US-03.2.3, catch-up Phase 20): the new Procedure
-  // picks its own Contract on the step rail, opened on the first Procedure's
-  // answers with its Contract ticked when it is still on offer (one tap to
-  // confirm, never stored silently). Closing the rail adds nothing.
-  const firstProcedure = procedures[0]
+  // picks its own Contract on the step rail, opened on the primary's answers
+  // (catch-up Phase 23) with its Contract ticked when it is still on offer (one
+  // tap to confirm, never stored silently). Closing the rail adds nothing.
   const addRailContext = useMemo(() => (list !== undefined ? railContextForList({ masters }, list, booking) : undefined), [masters, list, booking])
-  const addRailTick =
-    firstProcedure?.governingContractId !== undefined &&
-    addRailContext !== undefined &&
-    contractAllowedOn(railMastersOf({ masters }), addRailContext, firstProcedure.governingContractId) &&
-    contractChangeRefusal(railActorOf(actor), masters, undefined, firstProcedure.governingContractId) === null
-      ? firstProcedure.governingContractId
-      : undefined
-  const addRailStart =
-    addRailTick !== undefined ? railAnswersFor(masters, addRailTick) : firstProcedure?.governingContractId === undefined ? firstProcedure?.railAnswers : undefined
+  const { start: addRailStart } = startForAddedProcedure(railMastersOf({ masters }), addRailContext, railActorOf(actor), procedures)
 
   if (booking === undefined || list === undefined) return null
   const patient = masters.patients[booking.patientId]
@@ -377,7 +401,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   }
 
   // "Add another procedure" (US-03.2.3): the new Procedure picks its own
-  // Contract on its own Billing card; it starts on the first Procedure's
+  // Contract on its own Billing card; it starts on the primary's
   // answers when that Contract still fits (answers only, never a Contract
   // stored silently), else at the first step.
   function doAddProcedure() {
@@ -661,13 +685,13 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
 
   const capture = (
     <>
-      {/* Outcome / BTM capture — one block per procedure, in Booking order
-          (the number only labels it; no Contract prices a second procedure, catch-up Phase 19a). */}
+      {/* Outcome / BTM capture: one block per procedure, the primary first (`inDisplayOrder`,
+          catch-up Phase 23); the number only labels it. */}
       {/* A Booking on a Draft List has no anaesthetist yet, so no fee or capture: its
           procedures are listed and priced once the office assigns the List (catch-up Phase 31). */}
       {!cancelled && list.state === 'DRAFT' && procedures.length > 0 && (
         <Section label={`Procedures (${procedures.length})`}>
-          {procedures.map((procedure, index) => (
+          {ordered.map((procedure, index) => (
             <div key={procedure.id} style={{ fontSize: 14, color: neutral.ink }}>
               {procedureLabel(procedure, masters.rvgGroups, index + 1)}
               {procedure.rvgGroupId !== undefined && masters.rvgGroups[procedure.rvgGroupId] !== undefined && (
@@ -678,26 +702,40 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
           <div style={{ fontSize: 12.5, color: neutral.mist }}>The fee shows once an anaesthetist is assigned.</div>
         </Section>
       )}
+      {!cancelled && list.state !== 'DRAFT' && bookingTotals.structural !== undefined && (
+        <Notice tone="error" shot="booking-structural">{NO_PRIMARY_MESSAGE}.</Notice>
+      )}
       {!cancelled &&
         list.state !== 'DRAFT' &&
-        procedures.map((procedure, index) => (
-          <div key={procedure.id} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        bookingTotals.structural === undefined &&
+        ordered.map((procedure, index) => (
+          <div
+            key={procedure.id}
+            ref={(el) => {
+              if (el === null) blockRefs.current.delete(procedure.id)
+              else blockRefs.current.set(procedure.id, el)
+            }}
+            data-procedure-id={procedure.id}
+            style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+          >
             <BtmCaptureBlock
               procedure={procedure}
               list={list}
               actor={actor}
-              ordinal={index + 1}
+              view={bookingTotals.views[procedure.id]!}
+              displayNumber={index + 1}
               procedureCount={procedures.length}
               canCapture={canCapture}
               failures={failures.filter((f) => f.procedureId === procedure.id)}
               showValidation={showValidation}
-              onRemove={() => setSheet({ kind: 'removeProcedure', procedureId: procedure.id, ordinal: index + 1 })}
+              onRemove={() => setSheet({ kind: 'removeProcedure', procedureId: procedure.id, displayNumber: index + 1 })}
+              onMakePrimary={() => setSheet({ kind: 'makePrimary', procedureId: procedure.id })}
               onError={setError}
             />
             {actor.role === 'office' && (
               <OfficeBillingSetup
                 procedure={procedure}
-                ordinal={index + 1}
+                displayNumber={index + 1}
                 actor={actor}
                 canEdit={canEdit}
               />
@@ -786,6 +824,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
                   lines={bookingBreakdown.lines}
                   rateLabel={bookingBreakdown.rateLabel}
                   overrideNote={bookingBreakdown.overrideNote}
+                  notes={bookingBreakdown.notes}
+                  multiProcedure={procedures.length > 1}
                   action={action}
                 />
               )
@@ -839,11 +879,14 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
         <RemoveProcedureSheet
           open
           procedureId={sheet.procedureId}
-          ordinal={sheet.ordinal}
+          displayNumber={sheet.displayNumber}
           actor={actor}
           onClose={() => setSheet('none')}
           onRemoved={() => setError(null)}
         />
+      )}
+      {typeof sheet === 'object' && sheet.kind === 'makePrimary' && proceduresRecord[sheet.procedureId] !== undefined && (
+        <MakePrimarySheet open procedureId={sheet.procedureId} actor={actor} onClose={() => setSheet('none')} onDone={() => setError(null)} />
       )}
       <HistorySheet
         open={historyOpen}

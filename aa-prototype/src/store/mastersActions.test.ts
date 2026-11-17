@@ -19,7 +19,7 @@ import {
   editRecurringBooking,
 } from './mastersActions'
 import type { Actor } from './mutate'
-import { procedureFee } from '../shared/capture/feeContext'
+import { procedureFeeAlone as procedureFee } from './testFees'
 import { enumerateDatesISO, horizonFor } from '../domain/clock'
 import { ANAE, HOSP, SEED_LEAVE, SEED_MARKERS, SURG, generateCanvasForDates } from '../domain/seed'
 import { slotIdFor } from '../domain/slots'

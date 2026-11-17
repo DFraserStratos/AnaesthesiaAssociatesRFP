@@ -537,3 +537,25 @@ export function contractAllowedOn(masters: RailMasters, ctx: RailContext, contra
   }
   return isContractCandidate(masters, ctx, contract, opts)
 }
+
+/**
+ * Where "Add another procedure" opens the step rail (catch-up Phase 23;
+ * US-03.2.3): on the primary's answers, with the primary's Contract ticked
+ * when it still fits the rail's rules for the new Procedure (holder fit and the
+ * procedure date, no line test) and the actor may pick it; otherwise on the
+ * primary's answers so far when it has no Contract, as 20 built it. Never
+ * stored silently: the rail confirms it.
+ */
+export function startForAddedProcedure(
+  masters: RailMasters,
+  ctx: RailContext | undefined,
+  actor: RailActor,
+  procedures: readonly Pick<Procedure, 'isPrimary' | 'governingContractId' | 'railAnswers'>[],
+): { tick: ContractId | undefined; start: RailAnswers | undefined } {
+  const primary = procedures.find((p) => p.isPrimary)
+  const id = primary?.governingContractId
+  const tick =
+    id !== undefined && ctx !== undefined && contractAllowedOn(masters, ctx, id) && contractChangeRefusal(actor, masters, undefined, id) === null ? id : undefined
+  const start = tick !== undefined ? railAnswersFor(masters, tick) : id === undefined ? primary?.railAnswers : undefined
+  return { tick, start }
+}

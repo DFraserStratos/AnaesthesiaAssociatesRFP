@@ -35,7 +35,9 @@ export function priceStatusFor(
  * The price the Contract works out with nothing typed, for the review flag's
  * "beside the computed price" (Admin only): the range price on a fixed price,
  * the fee engine's figure on an RVG kind, none on an open price or with no
- * price in force. No new money maths: the fee engine's own figure.
+ * price in force. No new money maths: the fee engine's own figure, at the
+ * Procedure's allocation in its Booking (`ctx.allocation`, catch-up Phase 23;
+ * a typed price never changes who took part in the split).
  */
 export function computedPriceFor(procedure: Procedure, contract: Contract | undefined, ctx: FeeContext): number | undefined {
   if (contract === undefined || contract.pricing.kind === 'open') return undefined

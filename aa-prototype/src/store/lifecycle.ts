@@ -516,10 +516,21 @@ const CONTRACT_FIELDS = ['governingContractId', 'railAnswers', 'enteredPrice'] a
  */
 const TEXT_FIELDS = ['procedureText', 'invoiceDescription'] as const
 
-/** What `editProcedure` may change: never the Contract or what rides with it (the step rail's, catch-up Phase 20), nor the two texts (20a). */
+/**
+ * What `editProcedure` may change: never the Contract or what rides with it
+ * (the step rail's, catch-up Phase 20), nor the two texts (20a), nor which
+ * Procedure is primary (`setPrimaryProcedure`, catch-up Phase 23).
+ */
 export type ProcedurePatch = Partial<
-  Omit<Procedure, 'id' | 'bookingId' | (typeof CONTRACT_FIELDS)[number] | (typeof TEXT_FIELDS)[number]>
+  Omit<Procedure, 'id' | 'bookingId' | 'isPrimary' | (typeof CONTRACT_FIELDS)[number] | (typeof TEXT_FIELDS)[number]>
 >
+
+/** The primary changes only through Make primary (catch-up Phase 23). */
+export const USE_PRIMARY_ACTION_MESSAGE = 'Use Make primary to change the primary procedure.'
+/** Base units are recorded on the primary only (US-05.3.1, enforced, not a hint). */
+export const ADDITIONAL_PROCEDURE_BASE_MESSAGE = 'Base units are charged on the primary procedure only.'
+/** The Booking's modifiers are recorded once, on the primary (catch-up Phase 23). */
+export const MODIFIERS_ON_PRIMARY_MESSAGE = 'Modifiers are recorded once for the Booking, on the primary procedure.'
 
 export const PROCEDURE_TEXT_NOT_EDITABLE_MESSAGE =
   'The procedure text is kept as received, and the invoice description is changed by the office on its own.'
@@ -578,6 +589,16 @@ export function editProcedure(
   // (catch-up Phase 19b), so no claim is ever saved without its explanation.
   if ('modifierClaims' in patch || 'removedModifierIds' in patch) {
     return refuse('modifiersThroughActions', MODIFIERS_THROUGH_ACTIONS_MESSAGE)
+  }
+  // Which Procedure is primary changes only through Make primary (a defensive guard for untyped callers).
+  if ('isPrimary' in (patch as Partial<Procedure>)) return refuse('usePrimaryAction', USE_PRIMARY_ACTION_MESSAGE)
+  // Structural, not cosmetic (US-05.3.1, catch-up Phase 23): an additional Procedure takes no base
+  // value and no manual M. Only a value is refused; clearing a key is allowed.
+  if (!procedure.isPrimary) {
+    if (patch.baseUnitsSelected !== undefined || patch.baseUnitsCaptured !== undefined) {
+      return refuse('additionalProcedureBase', ADDITIONAL_PROCEDURE_BASE_MESSAGE)
+    }
+    if (patch.modifierUnitsCaptured !== undefined) return refuse('modifiersOnPrimary', MODIFIERS_ON_PRIMARY_MESSAGE)
   }
   // Any whole base-unit value of 0 or more is accepted (D3, catch-up Phase 19):
   // no range check here; an out-of-range value only warns the office.

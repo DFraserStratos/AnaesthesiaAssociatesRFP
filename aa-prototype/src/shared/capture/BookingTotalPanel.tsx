@@ -20,9 +20,9 @@ import { formatCurrency } from '../format'
  *
  * Values tick with a green flash, so one modifier tap reads as one movement.
  * Figures come from the Phase 01 calculator via
- * `bookingFee` / `procedureFee` — this only formats.
+ * `bookingFee` (the Booking priced once, under the multi-procedure rule) — this only formats.
  */
-export function BookingTotalPanel({ units, fee, needsPrice = false, lines, rateLabel, overrideNote, action }: BookingTotalProps) {
+export function BookingTotalPanel({ units, fee, needsPrice = false, lines, rateLabel, overrideNote, notes = [], multiProcedure = false, action }: BookingTotalProps) {
   const u = useTickingValue(units)
   const f = useTickingValue(fee)
 
@@ -39,7 +39,7 @@ export function BookingTotalPanel({ units, fee, needsPrice = false, lines, rateL
       }}
     >
       {lines.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div data-shot={multiProcedure ? 'booking-total-split' : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {lines.map((line, i) => (
             <div
               key={i}
@@ -65,6 +65,11 @@ export function BookingTotalPanel({ units, fee, needsPrice = false, lines, rateL
               ) : (
                 <span className="mono" style={{ flex: 'none' }}>{formatCurrency(line.amount)}</span>
               )}
+            </div>
+          ))}
+          {notes.map((note) => (
+            <div key={note} style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.55)' }}>
+              {note}
             </div>
           ))}
         </div>

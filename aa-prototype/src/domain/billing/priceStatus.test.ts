@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_RVG_TIME_RULE } from './timeUnits'
 import { BASE_SINGLE_10, HANDOVER_1030, RVG_MODIFIER_MASTER, START_0800, mkAnaesthetist, mkContract, mkProcedure } from './fixtures'
 import { computedPriceFor, priceStatusFor } from './priceStatus'
-import { feeFor, type FeeContext } from './fee'
+import { type FeeContext } from './fee'
+import { soleAllocation } from './multiProcedure'
+import { soleProcedureFee as feeFor } from './bookingFee'
 
 const FIXED = mkContract({ id: 'fx', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-01-01', price: 400 }, { startISO: '2026-09-01', price: 450 }] } })
 const LATER = mkContract({ id: 'later', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-09-01', price: 3100 }] } })
@@ -17,6 +19,7 @@ const feeCtx: FeeContext = {
   modifiers: RVG_MODIFIER_MASTER,
   nonRvgLines: [],
   rvgGroup: BASE_SINGLE_10,
+  allocation: soleAllocation(true, 0),
 }
 
 describe('the price status, one selector (catch-up Phase 21a; US-05.2.8, AR-58 5.7, A48)', () => {

@@ -79,6 +79,9 @@ describe('addPostOpAddendum', () => {
     expect(created.surgeonId).toBe(originalList.surgeonId)
     const actions = api.getState().audit.slice(-3).map((a) => a.action)
     expect(actions).toEqual(['list.create', 'booking.create', 'procedure.create'])
+    // Its one Procedure is its own Booking's primary (catch-up Phase 23).
+    const addendumProcs = Object.values(api.getState().schedule.procedures).filter((p) => p.bookingId === bookingId)
+    expect(addendumProcs.map((p) => p.isPrimary)).toEqual([true])
 
     // The original Booking is byte-for-byte unchanged (immutability answer).
     expect(api.getState().schedule.bookings[original]).toEqual(before)

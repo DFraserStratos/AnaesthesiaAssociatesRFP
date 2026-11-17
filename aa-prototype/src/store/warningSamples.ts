@@ -140,8 +140,9 @@ function sameValue(a: unknown, b: unknown): boolean {
   return sameData(a, b)
 }
 
+/** The Booking's primary: base units and modifiers are recorded there only (catch-up Phase 23). */
 function firstProcedure(state: Pick<AppState, 'schedule'>, bookingId: string): Procedure | undefined {
-  return proceduresForBooking(state, bookingId)[0]
+  return proceduresForBooking(state, bookingId).find((p) => p.isPrimary)
 }
 
 function seedProcedure(procedureId: string): Procedure | undefined {

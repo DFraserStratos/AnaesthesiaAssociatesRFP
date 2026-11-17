@@ -195,7 +195,7 @@ function activeBookingsOn(state: Pick<AppState, 'schedule'>, listId: string): Bo
 /** A Booking's Procedure names, the primary first (an added Procedure after). */
 function procedureNames(procedures: readonly Procedure[]): string[] {
   return [...procedures]
-    .sort((a, b) => Number(a.isAdditional) - Number(b.isAdditional) || a.id.localeCompare(b.id))
+    .sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary) || a.id.localeCompare(b.id))
     .map((p) => p.procedureText?.text ?? '')
     .filter((d) => d.trim() !== '')
 }

@@ -39,6 +39,12 @@ export const OFFICE_SIMULATION_ACTOR: Actor = { who: 'AA office (simulated)', ro
 export const DEMO_TRIGGER_ACTOR: Actor = { who: 'Demo actions', role: 'system', source: 'demo' }
 
 /**
+ * The office as a demo trigger acts it (catch-up Phase 23): office rights,
+ * audited with source `demo`, so a staged Booking reads as staged.
+ */
+export const DEMO_OFFICE_ACTOR: Actor = { who: 'Demo actions', role: 'office', source: 'demo' }
+
+/**
  * Kirsty W.'s account id for the simulated sign-in audit rows. She has no
  * seeded master record (office staff are not modelled), so the rows need a
  * fixed id of their own.

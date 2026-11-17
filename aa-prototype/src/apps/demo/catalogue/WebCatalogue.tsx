@@ -123,7 +123,7 @@ export function WebCatalogue() {
           <CatalogueRow name="TimesCard" source="shared/capture/TimesCard.tsx" usedIn={ALL} what="Start and Finish capture: Start now and Finish now stamp the demo clock, then minus and plus 5 minute nudges." replaceWith="shadcn Card + Button Group" note="Live on a seeded Booking; stamping and nudging write to the demo data.">
             <D.TimesCardDemo f={f} />
           </CatalogueRow>
-          <CatalogueRow name="UnitsCard" source="shared/capture/UnitsCard.tsx" usedIn={ALL} what="The base, time and modifier unit rows with steppers, each showing where its value came from." replaceWith="shadcn Card + Button Group (labelled steppers)" note="Each stepper is labelled with its row and direction (catch-up Phase 21a). The modifier and ASA controls were being reworked (ModifiersSection) when this page was built, so they are not shown as separate rows.">
+          <CatalogueRow name="UnitsCard" source="shared/capture/UnitsCard.tsx" usedIn={ALL} what="The base, time and modifier unit rows with steppers (NumberStepper since catch-up Phase 23), each showing where its value came from. On an additional procedure B and M show their figure and caption with no stepper, and one caption row stands in for the Modifiers section (the multi-procedure rule)." replaceWith="shadcn Card + Button Group (labelled steppers)" note="Each stepper is labelled with its row and direction (catch-up Phase 21a); it takes the procedure's allocation in its Booking (catch-up Phase 23). The modifier and ASA controls were being reworked (ModifiersSection) when this page was built, so they are not shown as separate rows.">
             <D.UnitsCardDemo f={f} />
           </CatalogueRow>
         </LibraryGroup>

@@ -12,7 +12,7 @@ import { addAaModifier, claimModifier, editModifierExplanation, removeModifier, 
 import { pickRvgGroup } from './rvgGroupActions'
 import { proceduresForBooking } from './selectors'
 import type { Actor } from './mutate'
-import { procedureFee } from '../shared/capture/feeContext'
+import { procedureFeeAlone as procedureFee } from './testFees'
 import { ANAE, RVG_GROUP, SEED_MARKERS } from '../domain/seed'
 import { seedModifierId as mod } from '../domain/seed/modifiers'
 import { assigned } from '../test/lists'

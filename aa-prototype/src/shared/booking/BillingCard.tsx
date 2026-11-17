@@ -86,7 +86,7 @@ interface BillingCardProps {
   codeFailures: BillingValidationFailure[]
   onError: (message: string) => void
   /** "Procedure n" when the Booking has more than one. */
-  ordinal?: number
+  displayNumber?: number
   procedureCount?: number
 }
 
@@ -110,8 +110,8 @@ function useBilling(procedure: Procedure) {
 }
 
 /** The card's title. */
-function cardLabel(ordinal?: number, count?: number): string {
-  return count !== undefined && count > 1 && ordinal !== undefined ? `Billing · procedure ${ordinal}` : 'Billing'
+function cardLabel(displayNumber?: number, count?: number): string {
+  return count !== undefined && count > 1 && displayNumber !== undefined ? `Billing · procedure ${displayNumber}` : 'Billing'
 }
 
 // ---------------------------------------------------------------------------
@@ -122,7 +122,7 @@ function InlineBillingCard(props: BillingCardProps) {
   const paidBy = usePaidBy(props)
   return (
     <CaptureSection
-      label={cardLabel(props.ordinal, props.procedureCount)}
+      label={cardLabel(props.displayNumber, props.procedureCount)}
       shot="billing"
       validationTarget={{ procedureId: props.procedure.id, fields: BILLING_FAILURE_FIELDS }}
     >
@@ -809,7 +809,7 @@ function ReadOnlySummary({ contract, answersText, officeOnly }: { contract?: Con
  * same flow as the web and Admin card.
  */
 function MobileBillingCard(props: BillingCardProps) {
-  const { procedure, actor, canEdit, canCapture, rvgGroup, codeFailures, ordinal, procedureCount } = props
+  const { procedure, actor, canEdit, canCapture, rvgGroup, codeFailures, displayNumber, procedureCount } = props
   const { masters, context, contract, start } = useBilling(procedure)
   const paidBy = usePaidBy(props)
   const { Overlay } = useSurface()
@@ -821,7 +821,7 @@ function MobileBillingCard(props: BillingCardProps) {
   const answers = contract !== undefined ? railAnswersText(masters, context, start) : procedure.railAnswers !== undefined ? railAnswersText(masters, context, procedure.railAnswers) : undefined
   const priceLine = contract !== undefined ? priceSummary(contract, procedure, rvgGroup, context.listDateISO, railActor) : rvgGroup !== undefined ? `RVG ${rvgGroup.code}` : undefined
   const rvgTodo = contract !== undefined && isRvgKind(contract.pricing.kind) && procedure.rvgGroupId === undefined && canCapture
-  const label = cardLabel(ordinal, procedureCount)
+  const label = cardLabel(displayNumber, procedureCount)
 
   const rows = (
     <>

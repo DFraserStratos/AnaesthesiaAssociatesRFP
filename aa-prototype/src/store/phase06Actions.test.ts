@@ -312,8 +312,9 @@ describe('submitted-list selectors', () => {
     const api = store()
     // Morrison + Whitaker (Phase 02) + the Phase-09 billing-failure exemplar +
     // the Phase-11 locked-target list (Delaney Fri 17) + S3's two Souter Lists
-    // + catch-up Phase 21's payer review List (Chen Fri 17) + catch-up Phase 21a's review-flags List (Chen Tue 14).
-    expect(submittedListCount(api.getState())).toBe(8)
+    // + catch-up Phase 21's payer review List (Chen Fri 17) + catch-up Phase 21a's review-flags List (Chen Tue 14)
+    // + catch-up Phase 23's three-procedure Booking's List (Souter Mon 13 Jul AM).
+    expect(submittedListCount(api.getState())).toBe(9)
     expect(submittedLists(api.getState()).every((l) => l.state === 'SUBMITTED')).toBe(true)
   })
 })

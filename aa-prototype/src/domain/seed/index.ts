@@ -88,6 +88,7 @@ import { finaliseSeedProcedureTexts } from './procedureText'
 import { seedSourceWordingBookings } from './sourceWordingBookings'
 import { PAYER_REVIEW_LIST_ID, seedPayerReviewBookings, type PayerReviewKey } from './payerReviewBookings'
 import { seedProcedurePayerBookings } from './procedurePayerBookings'
+import { MULTI_PROCEDURE_LIST_DATE, seedMultiProcedureBooking } from './multiProcedureDemo'
 import { seedCompletionBookings, type CompletionBookingKey } from './completionBookings'
 import { REVIEW_FLAGS_LIST_ID, seedReviewFlagBookings, type ReviewFlagBookingKey } from './reviewFlagBookings'
 
@@ -399,6 +400,8 @@ interface SeedBuild {
   reviewFlags: Record<ReviewFlagBookingKey, string>
   /** Catch-up Phase 22a's additions: Grace Park's second Procedure and the two-payer Booking. */
   procedurePayer: ReturnType<typeof seedProcedurePayerBookings>['ids']
+  /** Catch-up Phase 23's three-procedure Booking and its Procedures (primary first). */
+  multiProcedure: ReturnType<typeof seedMultiProcedureBooking>['ids']
   /** The recurring bookings the seed's generation could not project (Phase 31 makes them Draft Lists). */
   clashes: RecurringClash[]
 }
@@ -453,6 +456,8 @@ function buildSeedInternal(): SeedBuild {
     SEED_LIST_IDS.payerReview,
     // Catch-up Phase 21a: the review-flags List (Chen Tue 14 Jul AM), waiting in the Review queue.
     SEED_LIST_IDS.reviewFlags,
+    // Catch-up Phase 23: the three-procedure Booking's List (Souter Mon 13 Jul AM), waiting in the Review queue.
+    SEED_LIST_IDS.multiProcedure,
   ]) {
     const list = lists[id]
     if (list !== undefined && list.state !== 'DRAFT') lists[id] = { ...list, state: 'SUBMITTED' }
@@ -525,6 +530,10 @@ function buildSeedInternal(): SeedBuild {
   const procedurePayerBookings = seedProcedurePayerBookings(reviewFlagBookings.next, bookingsBuild.scenario.guardianMinor)
   for (const b of procedurePayerBookings.bookings) bookingsRec[b.id] = b
   for (const p of procedurePayerBookings.procedures) proceduresRec[p.id] = p
+  // Catch-up Phase 23: the three-procedure Booking (7 modifier units, split 3 · 2 · 2), after every other id.
+  const multiProcedureBooking = seedMultiProcedureBooking(procedurePayerBookings.next, SEED_LIST_IDS.multiProcedure)
+  for (const b of multiProcedureBooking.bookings) bookingsRec[b.id] = b
+  for (const p of multiProcedureBooking.procedures) proceduresRec[p.id] = p
   // Catch-up Phase 21a: every completed Booking's modifiers step is answered (US-03.6.1): a seeded
   // Booking completed before the step existed carries the marker, so it still passes completion.
   for (const p of Object.values(proceduresRec)) {
@@ -555,6 +564,8 @@ function buildSeedInternal(): SeedBuild {
       { ...wordingBookings.replaceAudit, id: 'seed-rtk-replace' },
       // Catch-up Phase 21a: Dr Chen's Contract change on the review-flags List, never approved.
       ...reviewFlagBookings.audit,
+      // Catch-up Phase 23: Dr Souter submitted the three-procedure Booking's List.
+      ...multiProcedureBooking.audit,
       ...seedDraftListAudit(seededDraftLists),
       {
         id: 'seed-sickness-return',
@@ -633,8 +644,8 @@ function buildSeedInternal(): SeedBuild {
     notifications: {},
     counters: {
       audit: audit.length + 1,
-      booking: procedurePayerBookings.next.booking,
-      procedure: procedurePayerBookings.next.procedure,
+      booking: multiProcedureBooking.next.booking,
+      procedure: multiProcedureBooking.next.procedure,
       billingLine: bookingsBuild.next.billingLine,
       patient: patients.length + 1,
       // Payer ids (`BP####`): BP0001 is Hana Park as a payer, BP0002 Aria's folded record (catch-up Phase 21); BP0003 to BP0005 seeded payers.
@@ -648,7 +659,7 @@ function buildSeedInternal(): SeedBuild {
     },
   }
 
-  return { state, scenario: bookingsBuild.scenario, payerReview: payerReview.ids, completion: completionBookings.ids, reviewFlags: reviewFlagBookings.ids, procedurePayer: procedurePayerBookings.ids, clashes }
+  return { state, scenario: bookingsBuild.scenario, payerReview: payerReview.ids, completion: completionBookings.ids, reviewFlags: reviewFlagBookings.ids, procedurePayer: procedurePayerBookings.ids, multiProcedure: multiProcedureBooking.ids, clashes }
 }
 
 /** Pinned seeded List ids (the projected-id form) the markers and tests reference. */
@@ -679,6 +690,8 @@ export const SEED_LIST_IDS = {
   payerReview: PAYER_REVIEW_LIST_ID,
   // Catch-up Phase 21a: the review-flags List (Dr Chen, Tue 14 Jul AM, Christchurch Eye Surgery), SUBMITTED.
   reviewFlags: REVIEW_FLAGS_LIST_ID,
+  // Catch-up Phase 23: the three-procedure Booking's List (Dr Souter, Mon 13 Jul AM, Forte / Mr Okafor), SUBMITTED.
+  multiProcedure: projectedListId(ANAE.souter, MULTI_PROCEDURE_LIST_DATE, 'AM'),
 } as const
 
 /**
@@ -831,6 +844,9 @@ export const PAYER_REVIEW_BOOKING_IDS: readonly string[] = Object.values(SEED_BU
 export const COMPLETION_BOOKING_IDS: readonly string[] = Object.values(SEED_BUILD.completion).sort()
 
 /** Catch-up Phase 22a's seed additions (Grace Park's second Procedure, the two-payer Booking): the parity suites take them out. */
+/** Catch-up Phase 23's three-procedure Booking (`seed/multiProcedureDemo.ts`) and its Procedures, primary first. */
+export const MULTI_PROCEDURE_IDS: SeedBuild['multiProcedure'] = SEED_BUILD.multiProcedure
+
 export const PROCEDURE_PAYER_ADDITIONS: { readonly procedureIds: string[]; readonly bookingIds: string[]; readonly ids: SeedBuild['procedurePayer'] } = {
   procedureIds: [SEED_BUILD.procedurePayer.graceParkSecondProcedure],
   bookingIds: [SEED_BUILD.procedurePayer.twoPayerBooking],
@@ -846,7 +862,7 @@ export const REVIEW_FLAG_BOOKING_IDS: readonly string[] = Object.values(SEED_BUI
  * Face lift. The parity suites name them as additions.
  */
 export const SOURCE_WORDING_BOOKING_IDS: readonly string[] = Object.keys(SEED_BUILD.state.schedule.bookings)
-  .filter((id) => id.startsWith('BK') && id > MERIVALE_FACE_LIFT_BOOKING_ID && !PAYER_REVIEW_BOOKING_IDS.includes(id) && !COMPLETION_BOOKING_IDS.includes(id) && !REVIEW_FLAG_BOOKING_IDS.includes(id) && id !== SEED_BUILD.procedurePayer.twoPayerBooking)
+  .filter((id) => id.startsWith('BK') && id > MERIVALE_FACE_LIFT_BOOKING_ID && !PAYER_REVIEW_BOOKING_IDS.includes(id) && !COMPLETION_BOOKING_IDS.includes(id) && !REVIEW_FLAG_BOOKING_IDS.includes(id) && id !== SEED_BUILD.procedurePayer.twoPayerBooking && id !== SEED_BUILD.multiProcedure.booking)
   .sort()
 
 /** The Booking whose rooms' "RTK" the hospital's "right total knee" replaced (catch-up Phase 20a). */
@@ -976,10 +992,10 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       detail: 'On the SUBMITTED Morrison list; visible, excluded from validation and billing.',
     },
     splitBillingBooking: {
-      label: 'Split billing multi procedure booking',
+      label: 'Multi-procedure booking (Holt, S3)',
       entityType: 'booking',
       entityId: scenario.splitBilling,
-      detail: 'Second procedure isAdditional: time units only on the BTM path.',
+      detail: 'Additional procedure: its own time units, base on the primary only, modifiers on the primary (4 or fewer).',
     },
     feeSplitBooking: {
       label: "One procedure's fee split between nib and the patient",
@@ -1003,7 +1019,7 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       label: 'Fixed price booking (bariatric)',
       entityType: 'booking',
       entityId: scenario.bariatric,
-      detail: "Mr Doyle's Gastric bypass at its range in force; the concurrent hernia on No contract · RVG, time units only.",
+      detail: 'Fixed-price primary, RVG-priced additional procedure: no base units billed (provisional, OQ-132).',
     },
     cosAccContractBooking: {
       label: 'Externally held ACC contract booking (COS)',
@@ -1156,6 +1172,13 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
     entityType: 'booking',
     entityId: RTK_BOOKING_ID,
     detail: "Souter Tue 4 Aug AM (St George's), 09:30; the rooms' RTK is in its History.",
+  },
+  // Catch-up Phase 23: the domain model's worked example, waiting in the Review queue.
+  multiProcedureBooking: {
+    label: 'Three procedures, 7 modifier units, split 3 · 2 · 2',
+    entityType: 'booking',
+    entityId: SEED_BUILD.multiProcedure.booking,
+    detail: 'Souter Mon 13 Jul AM (Forte, Mr Okafor), SUBMITTED: a laparoscopic cholecystectomy primary and two hernia repairs; AS3, OB3, ASE and the pre-applied A1.',
   },
   // Catch-up Phase 21: the payer review List (Dr Chen, Fri 17 Jul AM, Christchurch Eye Surgery, SUBMITTED).
   childPayer: {

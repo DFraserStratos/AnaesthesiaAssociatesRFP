@@ -6,7 +6,7 @@
  * billed from the Contract (`billablePartyForProcedure`),
  * the layout from the Contract (`invoiceLayoutFor`, catch-up Phase 22), line
  * building (the invoice description, override adjustment, a discount as its
- * own line, time-only additional procedures), the fee split on the Booking
+ * own line, additional procedures under the multi-procedure rule), the fee split on the Booking
  * (US-08.2.3), same-party grouping and the GST demo assumption's maths.
  */
 
@@ -113,7 +113,7 @@ describe('resolveContractForProcedure', () => {
     }
     expect(resolveContractForProcedure(primary, ctx)).toEqual(needs)
     // An additional Procedure is no exception: a fixed price is the whole price on any Procedure.
-    expect(resolveContractForProcedure({ ...primary, isAdditional: true }, ctx)).toEqual(needs)
+    expect(resolveContractForProcedure({ ...primary, isPrimary: false }, ctx)).toEqual(needs)
     // On or after the first start it resolves; an office fixed fee is a typed price.
     expect(resolveContractForProcedure(primary, { ...ctx, listDateISO: '2026-08-01' }).kind).toBe('resolved')
     const typed = { ...primary, priceOverride: { kind: 'fixedFee' as const, amount: 900, reason: 'Office price' } }
@@ -193,17 +193,17 @@ describe('buildInvoicesForBooking', () => {
     handoverISO: HANDOVER_1030,
     governingContractId: 'con-def',
   })
-  /** isAdditional: time only — T11 at $30 = $330. */
+  /** Additional (catch-up Phase 23): no base, T 11 and no modifier share, at $30 = $330. */
   const additional = mkProcedure({
     id: 'proc-2',
     rvgGroupId: BASE_SINGLE_10.id,
     anaestheticStartISO: START_0800,
     handoverISO: HANDOVER_1030,
     governingContractId: 'con-def',
-    isAdditional: true,
+    isPrimary: false,
   })
 
-  it('same-counterparty procedures share ONE invoice; the additional line is time-only', () => {
+  it('same-counterparty procedures share ONE invoice; the additional line bills its own time units', () => {
     const result = buildInvoicesForBooking(mkBooking(), [primary, additional], mkCtx())
     expect(result.kind).toBe('invoices')
     if (result.kind !== 'invoices') return
@@ -214,11 +214,11 @@ describe('buildInvoicesForBooking', () => {
     expect(invoice.lines).toHaveLength(2)
     expect(invoice.lines[0]!.amount).toBe(630)
     // The fee's own text with no invoice description; the units stay in `units`, and the holder's layout carries the BTM.
-    expect(invoice.lines[0]!).toMatchObject({ kind: 'fee', description: 'Anaesthesia (B + T + M units)', units: 21, btm: { base: 10, time: 11, modifiers: 0, unitValue: 30 } })
+    expect(invoice.lines[0]!).toMatchObject({ kind: 'fee', description: 'Anaesthesia, primary procedure (B 10 + T 11 + M 0 units)', units: 21, btm: { base: 10, time: 11, modifiers: 0, unitValue: 30 } })
     expect(invoice.lines[0]!.description).not.toContain('per unit')
     expect(invoice.lines[1]!.amount).toBe(330)
     expect(invoice.lines[1]!.units).toBe(11)
-    expect(invoice.lines[1]!.description).toContain('time units only')
+    expect(invoice.lines[1]!.description).toBe('Anaesthesia, additional procedure (T 11 units)')
     expect(invoice.procedureIds).toEqual(['proc-1', 'proc-2'])
     expect(invoice.contractId).toBe('con-def')
     expect(invoice.subtotal).toBe(960)
@@ -237,7 +237,7 @@ describe('buildInvoicesForBooking', () => {
     expect(patient!.counterparty).toEqual({ kind: 'patient', id: 'pat-1' })
     expect(patient!.layout).toBe('patient')
     expect(patient!.lines).toHaveLength(1)
-    expect(patient!.lines[0]!.description).toContain('time units only')
+    expect(patient!.lines[0]!.description).toBe('Anaesthesia, additional procedure (T 11 units)')
     // The patient's layout carries no BTM breakdown and no cross-match.
     expect(patient!.lines[0]!.btm).toBeUndefined()
     expect(patient!.crossMatch).toBeUndefined()

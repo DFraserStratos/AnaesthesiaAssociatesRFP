@@ -41,11 +41,11 @@ function view(api: BoundAppStore, anaesthetistId: string = ANAE.souter) {
 }
 
 describe('mainViewFor (US-07.4.2)', () => {
-  it('at the demo today, earlier is exactly Mon 20 Jul AM and PM (not the empty 7 to 16 July Lists), oldest first', () => {
+  it('at the demo today, earlier is exactly Mon 13 Jul AM (catch-up Phase 23\'s three-procedure Booking) and Mon 20 Jul AM and PM (not the empty 7 to 16 July Lists), oldest first', () => {
     const api = store()
     expect(api.getState().clock.todayISO).toBe(TODAY)
     const v = view(api)
-    expect(v.earlier.map((l) => l.id)).toEqual([SEED_LIST_IDS.souterMon20Am, SEED_LIST_IDS.souterMon20Pm])
+    expect(v.earlier.map((l) => l.id)).toEqual([SEED_LIST_IDS.multiProcedure, SEED_LIST_IDS.souterMon20Am, SEED_LIST_IDS.souterMon20Pm])
     for (const l of v.earlier) expect(l.state).toBe('SUBMITTED')
   })
 
@@ -61,7 +61,7 @@ describe('mainViewFor (US-07.4.2)', () => {
   it('authorising a List removes it from earlier at once', () => {
     const api = store()
     expect(authoriseList(api, OFFICE, SEED_LIST_IDS.souterMon20Pm).ok).toBe(true)
-    expect(view(api).earlier.map((l) => l.id)).toEqual([SEED_LIST_IDS.souterMon20Am])
+    expect(view(api).earlier.map((l) => l.id)).toEqual([SEED_LIST_IDS.multiProcedure, SEED_LIST_IDS.souterMon20Am])
   })
 
   it('an authorised List today leaves the upcoming rows too', () => {
@@ -95,7 +95,8 @@ describe('mainViewFor (US-07.4.2)', () => {
     expect(row).toBeDefined()
     const bookings = Object.values(api.getState().schedule.bookings).filter((b) => b.listId === past!.id)
     expect(listProgress(row!, bookings, TODAY)).toBe('readyToSubmit')
-    expect(earlier[0]?.id).toBe(past!.id)
+    // Oldest first: after Mon 13 Jul's submitted List (catch-up Phase 23), before Mon 20 Jul's.
+    expect(earlier.map((l) => l.id).slice(0, 2)).toEqual([SEED_LIST_IDS.multiProcedure, past!.id])
   })
 
   it('a List moved to a colleague and every Draft List are absent', () => {
@@ -105,7 +106,7 @@ describe('mainViewFor (US-07.4.2)', () => {
       schedule: { ...s.schedule, lists: { ...s.schedule.lists, [moved]: { ...assigned(s.schedule.lists[moved]), anaesthetistId: ANAE.morrison } } },
     }))
     const v = view(api)
-    expect(v.earlier.map((l) => l.id)).toEqual([SEED_LIST_IDS.souterMon20Am])
+    expect(v.earlier.map((l) => l.id)).toEqual([SEED_LIST_IDS.multiProcedure, SEED_LIST_IDS.souterMon20Am])
     expect(view(api, ANAE.morrison).earlier.some((l) => l.id === moved)).toBe(true)
     const shown = new Set([...v.earlier.map((l) => l.id), ...v.upcoming.flatMap((u) => (u.list !== undefined ? [u.list.id] : []))])
     const drafts = Object.values(api.getState().schedule.lists).filter((l) => l.state === 'DRAFT')

@@ -39,7 +39,7 @@ import { OverrideCard } from '../../../../shared/capture/OverrideCard'
 import { RvgCodeField } from '../../../../shared/capture/ProcedureCodeCard'
 import { CodePickerSheet } from '../../../../shared/capture/CodePickerSheet'
 import { UnitsCard } from '../../../../shared/capture/UnitsCard'
-import { procedureFee } from '../../../../shared/capture/feeContext'
+import { bookingFee } from '../../../../shared/capture/feeContext'
 import { sessionText } from '../../../../domain/outOfHours'
 import { AvailabilityPageSwitch, Panel, WebNav, WeekStrip, type WebTab } from '../../../web/components'
 import { AccountsScreen, AvailabilityGrid, ListDetailView, ListsScreen, MyAvailabilityCalendar, type AccountsSubTab } from '../../../web/screens'
@@ -907,7 +907,7 @@ export function BookingTotalDemo({ f }: F) {
         needsPrice={needsPrice === 'yes'}
         lines={[
           { label: 'Procedure 1', amount: base * rate },
-          { label: 'Procedure 2', amount: (units - base) * rate, note: 'time units only' },
+          { label: 'Procedure 2', amount: (units - base) * rate, note: 'Additional · T' },
         ]}
         rateLabel={`FEE @ ${formatCurrency(rate)}/UNIT`}
         overrideNote={null}
@@ -1015,9 +1015,12 @@ function UnitsCardBody({ f, procedure, canCapture, onError }: F & { procedure: P
   const masters = useAppStore((s) => s.masters)
   const billingLines = useAppStore((s) => s.schedule.billingLines)
   const patientId = useAppStore((s) => s.schedule.bookings[procedure.bookingId]?.patientId)
+  const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   if (list === undefined || !isAssignedList(list)) return null
-  const { fee, rvgGroup } = procedureFee({ procedure, list, masters, billingLines, patientId })
-  return <UnitsCard procedure={procedure} btm={fee.btm} rvgGroup={rvgGroup} actor={f.actor} canCapture={canCapture} isAdditional={procedure.isAdditional} onError={onError} />
+  const procedures = Object.values(proceduresRecord).filter((p) => p.bookingId === procedure.bookingId).sort((a, b) => a.id.localeCompare(b.id))
+  const view = bookingFee({ procedures, list, masters, billingLines, patientId }).views[procedure.id]
+  if (view === undefined) return null
+  return <UnitsCard procedure={procedure} btm={view.fee.btm} rvgGroup={view.rvgGroup} actor={f.actor} canCapture={canCapture} allocation={view.allocation} onError={onError} />
 }
 
 export function UnitsCardDemo({ f }: F) {

@@ -981,11 +981,21 @@ export interface Procedure {
   /** The hospital's contract/approval reference (6th review #6; A4's completeness check). */
   billingReference?: string
   /**
-   * Set on a Procedure added with "Add another procedure" (`addProcedure`):
-   * additional procedures yield TIME UNITS ONLY (RFP split-billing rule). A
-   * Booking's first Procedure is never additional.
+   * The Booking's primary Procedure (catch-up Phase 23; US-03.2.1, US-03.2.2,
+   * DM-15): exactly one per Booking that has Procedures, guaranteed by the
+   * store, and listed first everywhere (`inDisplayOrder`). It drives the
+   * multi-procedure rule (`domain/billing/multiProcedure.ts`): base units and
+   * the Booking's modifiers are recorded on the primary, time units on every
+   * Procedure, and modifiers above 4 split across the RVG-priced Procedures.
+   * The primary is a choice, not the first done: the first Procedure entered
+   * starts as the primary, and anyone with edit rights changes it with Make
+   * primary (`setPrimaryProcedure`). An ACC pre-op assessment is a pre-op
+   * event (39b), never a Procedure, so never primary. The flag is the
+   * catalogue's addition beside the flat ERD's booking procedure fields
+   * (AR-61#booking-procedure; the domain model's "`isPrimary` flag drives the
+   * multi-procedure rule").
    */
-  isAdditional: boolean
+  isPrimary: boolean
 
   // --- captured BTM inputs (data, not derivation) ---
   /**
@@ -1377,12 +1387,18 @@ export interface Invoice {
 
 /** The B/T/M breakdown printed on a holder-layout fee line (US-08.4.1). */
 export interface InvoiceLineBtm {
+  /** Base units charged: 0 on an additional procedure (catch-up Phase 23). */
   base: number
   time: number
+  /** The modifier units charged here: the Procedure's share under the multi-procedure rule. */
   modifiers: number
-  /** The units charged (time only on an additional procedure). */
+  /** The units charged: base + time + modifiers. */
   units: number
   unitValue: number
+  /** Set on an additional procedure's line (catch-up Phase 23); absent reads as primary (and on a line issued before it). */
+  role?: 'additional'
+  /** The Booking's modifier units when they were split ("Modifiers 3 of 7"); absent when not split. */
+  modifiersOf?: number
 }
 
 export interface InvoiceLine {

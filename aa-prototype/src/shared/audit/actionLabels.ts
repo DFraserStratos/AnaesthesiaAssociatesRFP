@@ -41,6 +41,8 @@ export const ACTION_LABELS: Record<string, string> = {
   'procedure.railAnswers': 'Invoice destination so far',
   'procedure.enteredPrice': 'Typed price changed',
   'procedure.remove': 'Procedure removed',
+  // Catch-up Phase 23 (US-03.2.2).
+  'procedure.setPrimary': 'Primary procedure changed',
   // Catch-up Phase 20a (US-02.5.7, US-08.4.6).
   'procedure.procedureText.replace': 'Procedure text replaced',
   'procedure.invoiceDescription.set': 'Invoice description changed',

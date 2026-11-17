@@ -22,7 +22,7 @@ import {
   withoutClaim,
 } from '../domain/billing/modifiers'
 import type { AppState, AppStoreApi } from './appStore'
-import { editRefusal, getBooking } from './lifecycle'
+import { editRefusal, getBooking, MODIFIERS_ON_PRIMARY_MESSAGE } from './lifecycle'
 import { modifierFactsFor } from './modifierFacts'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 
@@ -65,6 +65,8 @@ export function claimModifier(api: AppStoreApi, actor: Actor, procedureId: strin
   const loaded = load(api, actor, procedureId)
   if (!('state' in loaded)) return loaded
   const { state, procedure } = loaded
+  // The Booking's modifiers are recorded once, on the primary (catch-up Phase 23).
+  if (!procedure.isPrimary) return refuse('modifiersOnPrimary', MODIFIERS_ON_PRIMARY_MESSAGE)
   const facts = modifierFactsFor(state, procedure)
   const preApplied = preAppliedModifiersFor({ ...facts, removedModifierIds: procedure.removedModifierIds })
   const claim = claimOf(input)
@@ -127,6 +129,7 @@ export function editModifierExplanation(
   const loaded = load(api, actor, procedureId)
   if (!('state' in loaded)) return loaded
   const { state, procedure } = loaded
+  if (!procedure.isPrimary) return refuse('modifiersOnPrimary', MODIFIERS_ON_PRIMARY_MESSAGE)
   const current = procedure.modifierClaims.find((c) => c.modifierId === modifierId)
   if (current === undefined) return refuse('notClaimed', 'That modifier is not claimed on this Procedure.')
   if (explanation.trim() === '') return refuse('modifierClaimRefused', 'Add a short explanation, or remove the modifier.')

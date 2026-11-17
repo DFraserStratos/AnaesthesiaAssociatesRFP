@@ -12,6 +12,7 @@ import { AddBookingFlow, AlertOfficeEntry, SubmitListSheet, movedToYouByLine, us
 import { formatCurrency, slotTimeRange, locationName, dayWithYear } from '../../../shared/format'
 import { Panel } from '../components'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
+import { inDisplayOrder } from '../../../domain/billing/multiProcedure'
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { NEEDS_PRICE_LABEL } from '../../../domain/billing/priceRanges'
@@ -94,8 +95,9 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
       .filter((c) => c.listId === listId)
       .sort((a, b) => (a.scheduledTime ?? '99:99').localeCompare(b.scheduledTime ?? '99:99') || a.id.localeCompare(b.id))
       .map((booking) => {
-        const procs = procsByBooking.get(booking.id) ?? []
-        const totals = booking.cancellation === undefined ? bookingFee(procs, list, masters, billingLinesRecord, booking.patientId) : { units: 0, total: 0, needsPrice: false }
+        // The primary first (catch-up Phase 23): the row's operation text is the primary's.
+        const procs = inDisplayOrder(procsByBooking.get(booking.id) ?? [])
+        const totals = booking.cancellation === undefined ? bookingFee({ procedures: procs, list, masters, billingLines: billingLinesRecord, patientId: booking.patientId }) : { units: 0, total: 0, needsPrice: false }
         // What it was invoiced at: the same invoices the Invoices panel lists.
         const invoiced = invoicedByBooking.get(booking.id) ?? 0
         return {

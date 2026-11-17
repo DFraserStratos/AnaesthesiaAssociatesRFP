@@ -8,7 +8,7 @@ const H1: RvgGroup = { id: 'g-h1', code: 'H1', description: 'Minor procedures', 
 const GROUPS = { [H4.id]: H4, [H1.id]: H1 }
 
 const proc = (id: string, patch: Partial<Procedure>): Procedure =>
-  ({ id, bookingId: 'BK1', description: 'x', isAdditional: false, modifierClaims: [], removedModifierIds: [], ...patch }) as Procedure
+  ({ id, bookingId: 'BK1', description: 'x', isPrimary: true, modifierClaims: [], removedModifierIds: [], ...patch }) as Procedure
 
 function facts(procedures: Procedure[], rvgGroups: WarningFacts['rvgGroups'] | 'none' = GROUPS): WarningFacts {
   return {
@@ -58,6 +58,6 @@ describe('baseUnitsOutsideGuide rule (D3, RV-10; catch-up Phase 19)', () => {
 
 describe('baseUnitsOutsideGuide on an additional procedure', () => {
   it('finds nothing: an additional procedure charges time only', () => {
-    expect(baseUnitsOutsideGuideRule.evaluate(facts([proc('P1', { rvgGroupId: H4.id, baseUnitsSelected: 40, isAdditional: true })]), {})).toEqual([])
+    expect(baseUnitsOutsideGuideRule.evaluate(facts([proc('P1', { rvgGroupId: H4.id, baseUnitsSelected: 40, isPrimary: false })]), {})).toEqual([])
   })
 })

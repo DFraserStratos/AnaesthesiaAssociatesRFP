@@ -90,11 +90,17 @@ import {
   approveContractRefusal,
   makeAvailableRefusal,
   makeSessionAvailableAsColleague,
+  stageMultiProcedureBooking,
+  multiProcedureLoadRefusal,
+  nextOpenSouterList,
+  feedChangesPrimary,
+  feedChangesPrimaryRefusal,
 } from '../../store'
 import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
 import { contractCandidatesFor, destinationOf } from '../../domain/billing/contractRail'
 import { noContractRvg } from '../../domain/billing/contracts'
 import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, CONTRACT, SEED_LIST_IDS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
+import { MULTI_PROCEDURE_DEMO } from '../../domain/seed/multiProcedureDemo'
 import { DRAFT_LIST, DRAFT_LISTS, SOURCE_LABELS } from '../scheduleTerms'
 import { projectedListId } from '../../domain/slots'
 import { SEED_STATUS, statusFor } from '../../domain/slotStatus'
@@ -110,7 +116,7 @@ import { newerInvoiceDescription } from '../../domain/billing/procedureStack'
 import {
   cannedMessageForBooking,
   defaultHospitalDescription,
-  firstProcedureOf,
+  primaryProcedureOf,
   hospitalDescriptionChoices,
   hospitalDescriptionOutcome,
   hospitalDescriptionRefusal,
@@ -561,14 +567,14 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     routes: [ADMIN_BOOKING],
     surfaces: ['bar'],
     choices: () => hospitalDescriptionChoices().map(({ id, label }) => ({ id, label })),
-    defaultChoice: (state, ctx) => defaultHospitalDescription(firstProcedureOf(state, ctx.params['bookingId'])),
+    defaultChoice: (state, ctx) => defaultHospitalDescription(primaryProcedureOf(state, ctx.params['bookingId'])),
     disabledReason: (state, ctx, choiceId) =>
       hospitalDescriptionRefusal(
-        firstProcedureOf(state, ctx.params['bookingId']),
-        hospitalDescriptionText(choiceId ?? defaultHospitalDescription(firstProcedureOf(state, ctx.params['bookingId']))),
+        primaryProcedureOf(state, ctx.params['bookingId']),
+        hospitalDescriptionText(choiceId ?? defaultHospitalDescription(primaryProcedureOf(state, ctx.params['bookingId']))),
       ),
     run: (api, ctx, choiceId) => {
-      const procedure = firstProcedureOf(api.getState(), ctx.params['bookingId'])
+      const procedure = primaryProcedureOf(api.getState(), ctx.params['bookingId'])
       const text = hospitalDescriptionText(choiceId ?? defaultHospitalDescription(procedure))
       const refused = hospitalDescriptionRefusal(procedure, text)
       if (refused !== null || procedure === undefined || text === undefined) return { ok: false, message: refused ?? 'Nothing to replace.' }
@@ -1391,5 +1397,58 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     disabledReason: (state, _ctx, choiceId) => souterPaymentDisabled(state, choiceId),
     run: (api, _ctx, choiceId) => sendPaymentWebhook(api, choiceId, 'partial'),
     indexPath: () => null,
+  },
+  // ── List and Booking detail, all three apps: the multi-procedure rule (catch-up Phase 23) ──
+  {
+    id: 'load-multi-procedure-booking',
+    label: 'Load 3-procedure Booking (7 modifier units)',
+    description:
+      "Adds the domain model's worked example to Dr Souter's next open List: a laparoscopic cholecystectomy as the primary and two hernia repairs, each on No contract · RVG with its own times, AS3, OB3 and emergency claimed with their explanations and A1 pre-applied from the patient's age: 7 modifier units, split 3 · 2 · 2. Not marked complete.",
+    screen: 'List and Booking detail',
+    routes: [...MOBILE_LISTS.slice(1), '/web/lists/:listId', WEB_BOOKING, ADMIN_BOOKING],
+    surfaces: ['bar', 'pwa'],
+    disabledReason: (state) => multiProcedureLoadRefusal(state),
+    run: (api) => {
+      const res = stageMultiProcedureBooking(api)
+      return res.ok ? { ok: true, message: res.value.message } : { ok: false, message: res.message }
+    },
+    indexPath: (state) => {
+      const list = nextOpenSouterList(state)
+      if (list === undefined) return null
+      // The staged Booking once loaded; before that, a Booking already on that List (the entry shows on Booking detail).
+      const onList = Object.values(state.schedule.bookings).filter((b) => b.listId === list.id).sort((a, b) => a.id.localeCompare(b.id))
+      const target = onList.find((b) => b.patientId === MULTI_PROCEDURE_DEMO.patientId) ?? onList[0]
+      return target !== undefined ? `/admin/day/${list.dateISO}/bookings/${target.id}` : null
+    },
+    indexEmptyReason: 'Dr Souter has no open List ahead.',
+  },
+  {
+    id: 'feed-changes-primary',
+    label: 'Hospital feed changes the primary',
+    description:
+      "Plays the List's hospital feed making the next procedure on this Booking the primary, audited as an integration: base units then come from it and it moves to the top. Applied directly until the matching screen exists (Phase 33).",
+    screen: 'Booking detail',
+    routes: [MOBILE_BOOKING, WEB_BOOKING, ADMIN_BOOKING],
+    surfaces: ['bar', 'pwa'],
+    when: (state, ctx) => {
+      const bookingId = ctx.params['bookingId']
+      return bookingId !== undefined && Object.values(state.schedule.procedures).filter((p) => p.bookingId === bookingId).length >= 2
+    },
+    disabledReason: (state, ctx) => {
+      const bookingId = ctx.params['bookingId']
+      return bookingId === undefined ? 'Open a Booking' : feedChangesPrimaryRefusal(state, bookingId)
+    },
+    run: (api, ctx) => {
+      const bookingId = ctx.params['bookingId']
+      if (bookingId === undefined) return { ok: false, message: 'Open a Booking' }
+      const res = feedChangesPrimary(api, bookingId)
+      return res.ok ? { ok: true, message: res.value.message } : { ok: false, message: res.message }
+    },
+    indexPath: (state) => {
+      const list = nextOpenSouterList(state)
+      const staged = list !== undefined ? Object.values(state.schedule.bookings).find((b) => b.listId === list.id && b.patientId === MULTI_PROCEDURE_DEMO.patientId) : undefined
+      return list !== undefined && staged !== undefined ? `/admin/day/${list.dateISO}/bookings/${staged.id}` : null
+    },
+    indexEmptyReason: 'Load the 3-procedure Booking first, or open any ACTIVE Booking with two procedures.',
   },
 ]

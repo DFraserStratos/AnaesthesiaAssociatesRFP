@@ -607,7 +607,7 @@ describe('a payer on each Procedure (catch-up Phase 22a)', () => {
   afterEach(() => localStorage.clear())
 
   it('discards a v44 store whose payer sits on the Booking and reseeds a payer on every Procedure', () => {
-    expect(PERSIST_VERSION).toBe(45)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(45)
     const fresh = freshAppState()
     // The v44 shape: the payer on the Booking, none on the Procedures.
     const bookings = Object.fromEntries(Object.entries(fresh.schedule.bookings).map(([id, b]) => [id, { ...b, payer: { kind: 'patient' } }]))
@@ -621,5 +621,29 @@ describe('a payer on each Procedure (catch-up Phase 22a)', () => {
     const s = createAppStore({ persisted: true }).getState()
     expect(Object.values(s.schedule.procedures).every((p) => p.payer !== undefined)).toBe(true)
     expect(Object.values(s.schedule.bookings).some((b) => 'payer' in b)).toBe(false)
+  })
+})
+
+describe('the primary Procedure (catch-up Phase 23)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v45 store whose Procedures carry isAdditional and reseeds exactly one primary per Booking', () => {
+    expect(PERSIST_VERSION).toBe(46)
+    const fresh = freshAppState()
+    // The v45 shape: isAdditional on every Procedure, no isPrimary.
+    const procedures = Object.fromEntries(
+      Object.entries(fresh.schedule.procedures).map(([id, p]) => {
+        const { isPrimary, ...rest } = p
+        return [id, { ...rest, isAdditional: !isPrimary }]
+      }),
+    )
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule: { ...fresh.schedule, procedures } }, version: 45 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.values(s.schedule.procedures).every((p) => typeof p.isPrimary === 'boolean')).toBe(true)
+    expect(Object.values(s.schedule.procedures).some((p) => 'isAdditional' in p)).toBe(false)
   })
 })

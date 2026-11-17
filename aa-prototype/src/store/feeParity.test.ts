@@ -21,7 +21,7 @@ import phase19bFixture from './__parity__/phase-19b-baseline.json'
 import { COMPLETION_BOOKING_IDS, REVIEW_FLAG_BOOKING_IDS, MERIVALE_FACE_LIFT_BOOKING_ID, PAYER_REVIEW_BOOKING_IDS, SEED_MARKERS, SOURCE_WORDING_BOOKING_IDS } from '../domain/seed'
 import { freshAppStateBefore22a } from './__parity__/phase22aAdditions'
 import { billingContextForBooking, bookingsForList, prePaidByProcedure, proceduresForBooking } from './selectors'
-import { procedureFee } from '../shared/capture/feeContext'
+import { procedureFeeAlone as procedureFee } from './testFees'
 import { buildInvoicesForBooking, type InvoiceBuildContext } from '../domain/billing/invoiceBuild'
 import { listHospitalFor } from '../domain/listPairing'
 import type { AssignedList } from '../domain/types'
@@ -64,6 +64,7 @@ for (const list of assignedLists) {
     procedures.forEach((procedure) => {
       const { fee } = procedureFee({
         procedure,
+        siblings: procedures,
         list,
         masters: state.masters,
         billingLines: state.schedule.billingLines,
@@ -110,6 +111,30 @@ for (const list of assignedLists) {
 fees.sort((a, b) => a.procedureId.localeCompare(b.procedureId))
 unitRows.sort((a, b) => a.procedureId.localeCompare(b.procedureId))
 invoices.sort((a, b) => a.bookingId.localeCompare(b.bookingId))
+
+// ---------------------------------------------------------------------------
+// Catch-up Phase 23 (FT-05.3, US-05.3.1, DM-15): the multi-procedure rule.
+// No money figure, invoice or charged unit moves (`multiProcedureParity.test.ts`
+// pins all of them against its own fixture). Its only on-purpose difference
+// here, exact: an RVG-priced additional Procedure records base 0 (base units
+// are on the primary only) and M as its share of the Booking's modifiers (0:
+// each Booking's total is 4 or fewer), where it used to record its own group's
+// base and its own modifiers, uncharged. Mapped back to the fixtures' form only
+// when the row equals its declared value (asserted in "Phase 23" below).
+// ---------------------------------------------------------------------------
+
+const PHASE_23_ADDITIONAL: Record<string, { before: { b: number; m: number } }> = {
+  P0023: { before: { b: 4, m: 0 } }, // Holt's umbilical hernia (S3)
+  P0030: { before: { b: 4, m: 2 } }, // the bariatric hernia: its AS3 claim duplicated the primary's
+}
+const phase23Raw = unitRows.map((r) => structuredClone(r))
+for (const row of unitRows) {
+  const declared = PHASE_23_ADDITIONAL[row.procedureId]
+  if (declared !== undefined && row.b === 0 && row.m === 0) {
+    row.b = declared.before.b
+    row.m = declared.before.m
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Catch-up Phase 20 (DM-10, US-04.3.1): one Contract per Procedure, the route
@@ -477,7 +502,7 @@ describe('Phase 19a price range parity', () => {
     // ...and a primary on a plain RVG Contract (the same pricing kind) is held as written.
     const plain = Object.values(state.schedule.procedures).find(
       (p) =>
-        !p.isAdditional &&
+        p.isPrimary &&
         !MOVED_19B.has(p.id) &&
         p.governingContractId !== undefined &&
         state.masters.contracts[p.governingContractId]?.pricing.kind === 'rvgAnaesthetistRate' &&
@@ -656,5 +681,15 @@ describe('Phase 22 fee split (catch-up Phase 22, US-08.2.3)', () => {
     expect(Object.values(state.schedule.billingLines).filter((l) => l.procedureId === proc!.id)).toEqual([])
     expect(feeOf(proc!.id)).toMatchObject({ total: 212, billableUnits: 8 })
     expect(feeOf(proc!.id)).toEqual((phase18Fixture as { fees: FeeRow[] }).fees.find((f) => f.procedureId === proc!.id))
+  })
+})
+
+describe('Phase 23 multi-procedure rule (catch-up Phase 23, US-05.3.1)', () => {
+  it('declares its difference exactly: each RVG-priced additional Procedure records base 0 and M 0 (its share), its charged units and fee unmoved', () => {
+    for (const id of Object.keys(PHASE_23_ADDITIONAL)) {
+      const raw = phase23Raw.find((r) => r.procedureId === id)
+      expect(raw, id).toMatchObject({ b: 0, m: 0 })
+      expect(state.schedule.procedures[id]?.isPrimary, id).toBe(false)
+    }
   })
 })

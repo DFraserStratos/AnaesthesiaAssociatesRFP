@@ -7,14 +7,14 @@
 
 import { assigned, assignedLists } from '../../test/lists'
 import { describe, expect, it } from 'vitest'
-import { buildSeed, ANAE, HOSP, INS, SURG, SEED_LIST_IDS, SEED_MARKERS, SEED_LEAVE, SEED_SICKNESS, RECORDED_WINDOW, seedRecurringClashes } from './index'
+import { buildSeed, MULTI_PROCEDURE_IDS, ANAE, HOSP, INS, SURG, SEED_LIST_IDS, SEED_MARKERS, SEED_LEAVE, SEED_SICKNESS, RECORDED_WINDOW, seedRecurringClashes } from './index'
 import { conflictFactsFor, expectedConflicts, holidayIndex } from '../conflicts'
 import { ANAESTHETISTS } from './cast'
 import { RECURRING_BOOKINGS } from './recurringBookings'
 import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
 import { validateNhi } from '../nhi'
 import { lookupNhi } from '../nzhis'
-import { feeFor } from '../billing/fee'
+import { bookingFeeFor, type ProcedureFeeContext } from '../billing/bookingFee'
 import { contractRefusal, noContractRvg } from '../billing/contracts'
 import { isValidGstNumber, normaliseGstNumber } from '../billing/invoicePresentation'
 import { resolveSplit } from '../billing/splitShare'
@@ -394,7 +394,7 @@ describe('patients & NHIs', () => {
 
   it('seeds ~150 patients, all ethnicity-coded from the demo subset', () => {
     expect(patients.length).toBeGreaterThanOrEqual(145)
-    expect(patients.length).toBeLessThanOrEqual(165)
+    expect(patients.length).toBeLessThanOrEqual(166)
     for (const p of patients) {
       expect(p.ethnicityCode, `${p.hiddenInternalId} has ethnicity`).toBeDefined()
     }
@@ -445,7 +445,8 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
     const procedures = proceduresForBooking(seed, bookingId)
     const totals: number[] = []
     const unitSums: number[] = []
-    procedures.forEach((procedure) => {
+    // The Booking priced once, under the multi-procedure rule (catch-up Phase 23).
+    const result = bookingFeeFor(procedures, (procedure) => {
       const contract =
         procedure.governingContractId !== undefined
           ? seed.masters.contracts[procedure.governingContractId]
@@ -455,7 +456,7 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
       const nonRvgLines = Object.values(seed.schedule.billingLines).filter(
         (l) => l.procedureId === procedure.id && l.chargeBasis !== 'rvg',
       )
-      const ctx: Parameters<typeof feeFor>[1] = {
+      const ctx: ProcedureFeeContext = {
         anaesthetist,
         dateISO: list.dateISO,
         timeRule: seed.masters.rvgTimeRule,
@@ -465,7 +466,11 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
       }
       if (contract !== undefined) ctx.contract = contract
       if (rvgGroup !== undefined) ctx.rvgGroup = rvgGroup
-      const fee = feeFor(procedure, ctx)
+      return ctx
+    })
+    if (result.kind !== 'ok') throw new Error('structural')
+    procedures.forEach((procedure) => {
+      const fee = result.fees[procedure.id]!
       totals.push(fee.total)
       unitSums.push(fee.billableUnits)
     })
@@ -494,7 +499,7 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
     expect(all.reduce((s, f) => s + (f.totals[0] ?? 0), 0)).toBeCloseTo(954, 2)
   })
 
-  it("bariatric fixed price: $2,800 from Gastric bypass's range in force; the hernia at RVG, time units only (catch-up Phase 19a, RV-07)", () => {
+  it("bariatric fixed price: $2,800 from Gastric bypass's range in force; the hernia at RVG on its own time units, the mixed Booking (catch-up Phases 19a and 23, RV-07)", () => {
     const marker = SEED_MARKERS['bariatricType3Booking']
     expect(marker).toBeDefined()
     if (marker === undefined) return
@@ -645,6 +650,8 @@ describe('scenario states', () => {
         SEED_LIST_IDS.souterMon20Am,
         SEED_LIST_IDS.souterMon20Pm,
         SEED_LIST_IDS.billingFailure,
+        // Catch-up Phase 23: the three-procedure Booking's List.
+        SEED_LIST_IDS.multiProcedure,
       ].sort(),
     )
   })
@@ -1044,7 +1051,9 @@ describe('modifiers (catch-up Phase 19b)', () => {
   })
 
   it('claims only AS3 and AS4 from the old ASA grades; Ellison claims nothing and has A1 pre-applied', () => {
-    const codes = new Set(procedures.flatMap((p) => p.modifierClaims.map((c) => seed.masters.modifiers[c.modifierId]!.code)))
+    // Catch-up Phase 23's three-procedure Booking claims AS3, OB3 and ASE on purpose (its own test below).
+    const phase23 = new Set(MULTI_PROCEDURE_IDS.procedures)
+    const codes = new Set(procedures.filter((p) => !phase23.has(p.id)).flatMap((p) => p.modifierClaims.map((c) => seed.masters.modifiers[c.modifierId]!.code)))
     expect([...codes].sort()).toEqual(['AS3'])
     const ellison = seed.schedule.procedures.P0009!
     expect(ellison.modifierClaims).toEqual([])
@@ -1075,5 +1084,62 @@ describe('modifiers (catch-up Phase 19b)', () => {
     // Generated DOBs run 1938 to 2007, so nobody is under 2.
     expect(counts.A1! + counts.A2!).toBeGreaterThan(20)
     console.info(`Phase 19b age bands over ${procedures.length} seeded Procedures: A1 ${counts.A1}, A2 ${counts.A2}, none ${counts.none}`)
+  })
+})
+
+describe('the primary Procedure and the multi-procedure rule (catch-up Phase 23)', () => {
+  const all = Object.values(seed.schedule.procedures)
+
+  it('every Booking with Procedures has exactly one primary (FT-03.2 carried across)', () => {
+    const byBooking = new Map<string, Procedure[]>()
+    for (const p of all) byBooking.set(p.bookingId, [...(byBooking.get(p.bookingId) ?? []), p])
+    for (const [bookingId, procs] of byBooking) expect(procs.filter((p) => p.isPrimary), bookingId).toHaveLength(1)
+  })
+
+  it('no additional Procedure carries base inputs, modifier claims, removals or a manual M', () => {
+    for (const p of all.filter((x) => !x.isPrimary)) {
+      expect(p.baseUnitsSelected, p.id).toBeUndefined()
+      expect(p.baseUnitsCaptured, p.id).toBeUndefined()
+      expect(p.modifierClaims, p.id).toEqual([])
+      expect(p.removedModifierIds, p.id).toEqual([])
+      expect(p.modifierUnitsCaptured, p.id).toBeUndefined()
+    }
+  })
+
+  it('seeds the three-procedure Booking after every other: a SUBMITTED Souter List, completed, AS3, OB3 and ASE claimed on the primary, a 74 year old patient', () => {
+    const booking = seed.schedule.bookings[MULTI_PROCEDURE_IDS.booking]!
+    expect(MULTI_PROCEDURE_IDS.booking).toBe('BK0184')
+    expect(MULTI_PROCEDURE_IDS.procedures).toEqual(['P0189', 'P0190', 'P0191'])
+    expect(booking.completed).toBe(true)
+    const list = seed.schedule.lists[booking.listId]!
+    expect(list.id).toBe(SEED_LIST_IDS.multiProcedure)
+    expect(list.state).toBe('SUBMITTED')
+    expect(Object.values(seed.schedule.bookings).filter((b) => b.listId === list.id)).toHaveLength(1)
+    const patient = seed.masters.patients[booking.patientId]!
+    expect(ageModifierCodeFor(ageInCompletedYears(patient.dobISO, list.dateISO)!)).toBe('A1')
+    const [primary, ...rest] = MULTI_PROCEDURE_IDS.procedures.map((id) => seed.schedule.procedures[id]!)
+    expect(primary!.isPrimary).toBe(true)
+    expect(primary!.modifierClaims.map((c) => seed.masters.modifiers[c.modifierId]!.code)).toEqual(['AS3', 'OB3', 'ASE'])
+    for (const p of [primary!, ...rest]) expect(p.payer).toEqual({ kind: 'patient' })
+    expect(SEED_MARKERS['multiProcedureBooking']?.entityId).toBe(booking.id)
+  })
+
+  it('allocates the three-procedure Booking 3 / 2 / 2 from 7 modifier units', () => {
+    const booking = seed.schedule.bookings[MULTI_PROCEDURE_IDS.booking]!
+    const list = assigned(seed.schedule.lists[booking.listId])
+    const procs = MULTI_PROCEDURE_IDS.procedures.map((id) => seed.schedule.procedures[id]!)
+    const result = bookingFeeFor(procs, (p): ProcedureFeeContext => ({
+      anaesthetist: seed.masters.anaesthetists[list.anaesthetistId]!,
+      dateISO: list.dateISO,
+      timeRule: seed.masters.rvgTimeRule,
+      patientDobISO: seed.masters.patients[booking.patientId]?.dobISO,
+      modifiers: seed.masters.modifiers,
+      nonRvgLines: [],
+      contract: seed.masters.contracts[p.governingContractId!]!,
+      rvgGroup: seed.masters.rvgGroups[p.rvgGroupId!]!,
+    }))
+    if (result.kind !== 'ok') throw new Error('structural')
+    expect(procs.map((p) => result.allocations[p.id]!.modifierShare)).toEqual([3, 2, 2])
+    expect(result.allocations[procs[0]!.id]!.bookingModifierUnits).toBe(7)
   })
 })

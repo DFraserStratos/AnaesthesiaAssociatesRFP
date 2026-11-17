@@ -214,8 +214,14 @@ export function RvgCodeField({
         </span>
       )}
 
-      {rvgGroup?.baseUnitsRange !== undefined && !procedure.isAdditional && (
+      {/* Base units are charged on the primary only (catch-up Phase 23): no range chooser on an additional Procedure. */}
+      {rvgGroup?.baseUnitsRange !== undefined && procedure.isPrimary && (
         <RangeUnitsRow procedure={procedure} rvgGroup={{ ...rvgGroup, baseUnitsRange: rvgGroup.baseUnitsRange }} canCapture={canCapture} onSelect={selectRangeUnits} />
+      )}
+      {rvgGroup?.baseUnitsRange !== undefined && !procedure.isPrimary && (
+        <span data-shot="rvg-range-additional" style={{ fontSize: 12.5, color: neutral.slate }}>
+          Base not charged on an additional procedure
+        </span>
       )}
 
       {look === 'row' && (

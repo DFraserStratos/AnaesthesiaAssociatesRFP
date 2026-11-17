@@ -30,12 +30,10 @@ export function cannedMessageForBooking(state: Pick<AppState, 'schedule'>, booki
   return modify.sort((a, b) => order.indexOf(a.eventType) - order.indexOf(b.eventType))[0]?.id
 }
 
-/** The Booking's first Procedure (the intake target until Phase 23's primary). */
-export function firstProcedureOf(state: Pick<AppState, 'schedule'>, bookingId: string | undefined): Procedure | undefined {
+/** The Booking's primary Procedure (the intake target, catch-up Phase 23). */
+export function primaryProcedureOf(state: Pick<AppState, 'schedule'>, bookingId: string | undefined): Procedure | undefined {
   if (bookingId === undefined) return undefined
-  return Object.values(state.schedule.procedures)
-    .filter((p) => p.bookingId === bookingId)
-    .sort((a, b) => a.id.localeCompare(b.id))[0]
+  return Object.values(state.schedule.procedures).find((p) => p.bookingId === bookingId && p.isPrimary)
 }
 
 export const HOSPITAL_DESCRIPTION_CHOICE_ID = (row: number) => `ar35-row-${row}`

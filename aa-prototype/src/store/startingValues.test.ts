@@ -13,7 +13,8 @@ import { editProcedure } from './lifecycle'
 import { setProcedureContract } from './contractSelectionActions'
 import { addProcedure } from './bookingActions'
 import { proceduresForBooking } from './selectors'
-import { bookingFee, procedureFee } from '../shared/capture/feeContext'
+import { bookingFee } from '../shared/capture/feeContext'
+import { procedureFeeAlone as procedureFee } from './testFees'
 import { editContract } from './contractActions'
 import { PRICED_ITEM } from '../domain/seed/pricedItems'
 import { CONTRACT, MERIVALE_FACE_LIFT_BOOKING_ID, RVG_GROUP, SEED_MARKERS } from '../domain/seed'
@@ -93,7 +94,7 @@ describe('starting values from the Contract', () => {
     expect(p.rvgGroupId).toBeUndefined()
     const s = api.getState()
     const list = s.schedule.lists[s.schedule.bookings[MERIVALE_FACE_LIFT_BOOKING_ID]!.listId] as AssignedList
-    expect(bookingFee(proceduresForBooking(s, MERIVALE_FACE_LIFT_BOOKING_ID), list, s.masters, s.schedule.billingLines, s.schedule.bookings[MERIVALE_FACE_LIFT_BOOKING_ID]!.patientId).total).toBe(3100)
+    expect(bookingFee({ procedures: proceduresForBooking(s, MERIVALE_FACE_LIFT_BOOKING_ID), list, masters: s.masters, billingLines: s.schedule.billingLines, patientId: s.schedule.bookings[MERIVALE_FACE_LIFT_BOOKING_ID]!.patientId }).total).toBe(3100)
   })
 
   it('a typed base value from before the fill is cleared, so B comes from the RVG group alone', () => {

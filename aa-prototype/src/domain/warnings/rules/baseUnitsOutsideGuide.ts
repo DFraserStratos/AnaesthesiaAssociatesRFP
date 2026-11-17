@@ -25,7 +25,8 @@ export const baseUnitsOutsideGuideRule: WarningRule = {
     const out: WarningFinding[] = []
     for (const procedure of facts.procedures) {
       const group = procedure.rvgGroupId !== undefined ? groups[procedure.rvgGroupId] : undefined
-      if (group === undefined || procedure.isAdditional) continue
+      // Base units are recorded on the primary only (catch-up Phase 23): the rule re-reads it after Make primary.
+      if (group === undefined || !procedure.isPrimary) continue
       const base = baseUnitsFor({ procedure, group })
       if (!base.outsideGuide || base.guide === undefined) continue
       out.push({

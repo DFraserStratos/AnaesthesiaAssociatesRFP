@@ -8,8 +8,9 @@
  */
 
 import type { CounterpartyRef, FeeSplit, OtherPayer, SplitShare, SplitShareBasis } from '../domain/types'
-import { feeContextFor } from '../domain/billing/validateBookingForBilling'
-import { feeFor, type FeeResult } from '../domain/billing/fee'
+import { bookingFeesFor } from '../domain/billing/validateBookingForBilling'
+import type { FeeResult } from '../domain/billing/fee'
+import { feeIn } from '../domain/billing/bookingFee'
 import { NO_FEE_TO_SPLIT_MESSAGE, resolveSplit } from '../domain/billing/splitShare'
 import { billablePartyForProcedure } from '../domain/billing/whoIsBilled'
 import { isShareBillableOn, partyOptionsFor, type PartyOption } from '../domain/billing/partyOptions'
@@ -17,7 +18,7 @@ import { mutate, ok, refuse, type Actor, type Outcome } from './mutate'
 import { payerFromInput, payerInputRefusal, sameData, sameName, type PayerInput } from './payerActions'
 import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal, getBooking } from './lifecycle'
-import { billingContextForBooking, bookingRequiresPrepayment, counterpartyName } from './selectors'
+import { billingContextForBooking, bookingRequiresPrepayment, counterpartyName, proceduresForBooking } from './selectors'
 
 /** The refusal on a Procedure whose Booking carries the interim prepayment flag (INTERIM until Phase 27). */
 export const PREPAID_PROCEDURE_MESSAGE = 'A prepaid procedure is billed by its prepayment.'
@@ -32,8 +33,9 @@ export function procedureFeeNow(state: AppState, procedureId: string): FeeResult
   if (booking === undefined) return undefined
   const ctx = billingContextForBooking(state, booking)
   if (ctx === undefined) return undefined
-  const fee = feeFor(procedure, feeContextFor(procedure, ctx))
-  return fee.needsPrice ? undefined : fee
+  // Priced in its Booking, under the multi-procedure rule (catch-up Phase 23).
+  const fee = feeIn(bookingFeesFor(proceduresForBooking(state, booking.id), ctx), procedure.id)
+  return fee === undefined || fee.needsPrice ? undefined : fee
 }
 
 /** The party the Procedure's Contract bills (who is invoiced with no split). */

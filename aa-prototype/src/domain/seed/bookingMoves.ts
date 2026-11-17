@@ -45,7 +45,7 @@ export function seedBookingMoveBookings(next: { booking: number; procedure: numb
     procedureText: seedText('Cataract extraction with IOL'),
     invoiceDescription: null,
     rvgGroupId: rvgGroupIdForLegacyCode('42702'),
-    isAdditional: false,
+    isPrimary: true,
     modifierClaims: [],
     removedModifierIds: [],
     governingContractId: CONTRACT.cesRvg,

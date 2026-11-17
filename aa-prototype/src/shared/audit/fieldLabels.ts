@@ -54,7 +54,7 @@ export const FIELD_LABELS: Record<string, string> = {
   insuranceApprovalNumber: 'Approval number',
   prepaymentDetail: 'Prepayment',
   billingReference: 'Billing reference',
-  isAdditional: 'Additional procedure',
+  isPrimary: 'Primary procedure',
   // Catch-up Phase 19b: a Procedure's modifiers, by code, never by hidden id.
   modifierClaims: 'Modifiers claimed',
   removedModifierIds: 'Pre-applied modifiers removed',

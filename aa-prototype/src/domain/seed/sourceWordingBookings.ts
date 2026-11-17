@@ -109,7 +109,7 @@ export function seedSourceWordingBookings(
         spec.wording.row === 2 ? RTK_FROM : undefined,
       ),
       invoiceDescription: null,
-      isAdditional: false,
+      isPrimary: true,
       modifierClaims: [],
       removedModifierIds: [],
       governingContractId: spec.wording.row === 2 ? CONTRACT.stgRvg : CONTRACT.noContractRvg,

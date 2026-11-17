@@ -1,9 +1,9 @@
 import { accent, neutral, semantic } from '../../theme/tokens'
 import type { CapturedUnits, Procedure, RvgGroup } from '../../domain/types'
-import { describeTimeRule, resolveStartingUnits, type BillingValidationFailure, type BtmBreakdown, type ProcedureModifier } from '../../domain/billing'
+import { describeTimeRule, resolveStartingUnits, type BillingValidationFailure, type BtmBreakdown, type ProcedureAllocation, type ProcedureModifier } from '../../domain/billing'
 import { editProcedure, useAppStore, type Actor, type ProcedurePatch } from '../../store'
 import { ModifiersSection } from './ModifiersSection'
-import { CaptureSection, StepperButton } from './ui'
+import { Caption, CaptureSection, NumberStepper } from './ui'
 
 type UnitsField = 'baseUnitsCaptured' | 'timeUnitsCaptured' | 'modifierUnitsCaptured'
 
@@ -13,7 +13,12 @@ interface UnitsCardProps {
   rvgGroup?: RvgGroup | undefined
   actor: Actor
   canCapture: boolean
-  isAdditional: boolean
+  /**
+   * Its place in the Booking under the multi-procedure rule (catch-up Phase 23):
+   * base and modifiers are recorded on the primary only; an additional
+   * Procedure's B and M rows read their figure with no stepper.
+   */
+  allocation: ProcedureAllocation
   /** On an RVG kind the modifiers step is required (catch-up Phase 21a): "None apply" and the "Required" caption. */
   modifiersRequired?: boolean
   /** Mark complete's validation latch. */
@@ -31,9 +36,15 @@ interface UnitsCardProps {
  * captured fact: there is NO auto-clear on numeric equality (Phase 07's
  * "adjusted manually" flags key off it); the explicit "Use seeded value"
  * link is the only way back. On an additional procedure B and M render
- * value + caption with no buttons (the split-billing rule is structural).
+ * value + caption with no stepper, and its Modifiers section is one caption
+ * row: the store refuses a base value or a modifier there (the
+ * multi-procedure rule is structural, catch-up Phase 23). Units only, never a
+ * fee.
  */
-export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, isAdditional, modifiersRequired = false, showValidation = false, modifierFailures = [], onError }: UnitsCardProps) {
+export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, allocation, modifiersRequired = false, showValidation = false, modifierFailures = [], onError }: UnitsCardProps) {
+  const additional = allocation.role === 'additional'
+  // OQ-132's default, provisional: a primary on a fixed or open price bills no base units.
+  const unbilledBase = !additional && !allocation.rvgPriced
   // The RVG time tiers held as data (catch-up Phase 19a; US-05.2.2): the T caption's title words the rule.
   const timeRule = useAppStore((s) => s.masters.rvgTimeRule)
   function write(patch: ProcedurePatch) {
@@ -57,17 +68,19 @@ export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, isAddit
     <CaptureSection label="Units" gap={14}>
       <StepperRow
         title="B · Base"
-        value={btm.base.units}
-        overridden={btm.base.source === 'overridden'}
+        unit="base units"
+        value={unbilledBase ? 0 : btm.base.units}
+        overridden={!unbilledBase && btm.base.source === 'overridden'}
         overriddenLabel={`Set manually${btm.baseOutsideGuide ? ', outside the guide range' : ''}`}
-        captionTone={btm.baseOutsideGuide && !isAdditional ? 'warn' : 'quiet'}
-        seededCaption={isAdditional ? 'Not charged on an additional procedure' : baseCaption(btm)}
-        steppable={canCapture && !isAdditional}
+        captionTone={btm.baseOutsideGuide && !additional ? 'warn' : 'quiet'}
+        seededCaption={additional ? 'Base units are on the primary procedure' : unbilledBase ? 'No base units billed on a fixed price (provisional, OQ-132)' : baseCaption(btm)}
+        steppable={canCapture && !additional && !unbilledBase}
         onStep={(delta) => step('baseUnitsCaptured', btm.base.units, delta)}
-        onReset={canCapture && !isAdditional ? () => reset('baseUnitsCaptured') : undefined}
+        onReset={canCapture && !additional ? () => reset('baseUnitsCaptured') : undefined}
       />
       <StepperRow
         title="T · Time"
+        unit="time units"
         value={btm.time.units}
         overridden={btm.time.source === 'overridden'}
         seededCaption="From start and finish stamps · RVG time tiers"
@@ -78,23 +91,34 @@ export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, isAddit
       />
       <StepperRow
         title="M · Modifiers"
+        unit="modifier units"
         value={btm.modifiers.units}
-        overridden={btm.modifiers.source === 'overridden'}
-        seededCaption={isAdditional ? 'Not charged on an additional procedure' : mBreakdown}
-        steppable={canCapture && !isAdditional}
+        overridden={!additional && btm.modifiers.source === 'overridden'}
+        seededCaption={additional ? additionalModifierCaption(allocation) : primaryModifierCaption(mBreakdown, allocation)}
+        steppable={canCapture && !additional}
         onStep={(delta) => step('modifierUnitsCaptured', btm.modifiers.units, delta)}
-        onReset={canCapture && !isAdditional ? () => reset('modifierUnitsCaptured') : undefined}
+        onReset={canCapture && !additional ? () => reset('modifierUnitsCaptured') : undefined}
       />
-      <ModifiersSection
-        procedure={procedure}
-        items={btm.modifierItems}
-        actor={actor}
-        editable={canCapture && !isAdditional}
-        required={modifiersRequired && !isAdditional}
-        latched={showValidation}
-        failures={modifierFailures}
-        onError={onError}
-      />
+      {additional ? (
+        <>
+          {/* US-05.1.4 holds per Procedure: its own included P1 shows at 0 units; the engine never counts it. */}
+          {btm.modifierItems.length > 0 && <Caption>{btm.modifierItems.map((i) => `${i.code} included 0`).join(' · ')}</Caption>}
+          <div data-shot="modifiers-on-primary">
+            <Caption>Modifiers are recorded once for the Booking, on the primary procedure.</Caption>
+          </div>
+        </>
+      ) : (
+        <ModifiersSection
+          procedure={procedure}
+          items={btm.modifierItems}
+          actor={actor}
+          editable={canCapture}
+          required={modifiersRequired}
+          latched={showValidation}
+          failures={modifierFailures}
+          onError={onError}
+        />
+      )}
     </CaptureSection>
   )
 }
@@ -116,6 +140,19 @@ function modifierBreakdown(items: readonly ProcedureModifier[], start: number): 
   return parts.length > 0 ? parts.join(' · ') : 'None applied'
 }
 
+/** The primary's M caption: its items, and the split when the Booking's modifiers are shared (catch-up Phase 23). */
+function primaryModifierCaption(items: string, allocation: ProcedureAllocation): string {
+  if (allocation.splitAcross <= 1) return items
+  return `${items}. Booking total ${allocation.bookingModifierUnits}, split ${allocation.splitShares.join(' · ')}. This procedure carries ${allocation.modifierShare}.`
+}
+
+/** An additional Procedure's M caption: its share, none at 4 or fewer, or not shared on a fixed price (catch-up Phase 23). */
+function additionalModifierCaption(allocation: ProcedureAllocation): string {
+  if (!allocation.rvgPriced) return "Not shared · priced by its Contract's fixed price"
+  if (allocation.splitAcross <= 1) return `None · the Booking's ${allocation.bookingModifierUnits} modifier units stay on the primary`
+  return `Share of the Booking's ${allocation.bookingModifierUnits} modifier units`
+}
+
 /**
  * The B row's caption from where its units came from (catch-up Phase 19;
  * `BtmBreakdown.baseSource`): the RVG group, a chosen value on a ranged group,
@@ -132,11 +169,14 @@ function baseCaption(btm: BtmBreakdown): string {
       return `Set manually${outside}`
     case 'none':
       return 'No RVG code'
+    case 'additional':
+      return 'Base units are on the primary procedure'
   }
 }
 
 function StepperRow({
   title,
+  unit,
   value,
   overridden,
   overriddenLabel = 'Adjusted manually',
@@ -148,6 +188,8 @@ function StepperRow({
   onReset,
 }: {
   title: string
+  /** The plural noun the stepper's buttons name ("base units"). */
+  unit: string
   value: number
   overridden: boolean
   overriddenLabel?: string
@@ -193,11 +235,13 @@ function StepperRow({
           <span title={captionTitle} style={{ fontSize: 12, color: captionTone === 'warn' ? semantic.warning.onTint : neutral.mist }}>{seededCaption}</span>
         )}
       </span>
-      {steppable && <StepperButton glyph="−" label={`${title}: one fewer unit`} onClick={() => onStep(-1)} disabled={value <= 0} />}
-      <span className="mono" style={{ width: 36, textAlign: 'center', fontSize: 20, fontWeight: 700 }}>
-        {value}
-      </span>
-      {steppable && <StepperButton glyph="+" label={`${title}: one more unit`} onClick={() => onStep(1)} />}
+      {steppable ? (
+        <NumberStepper value={value} label={unit} onChange={(next) => onStep(next - value)} />
+      ) : (
+        <span className="mono" style={{ width: 32, textAlign: 'center', fontSize: 18, fontWeight: 700 }}>
+          {value}
+        </span>
+      )}
     </div>
   )
 }

@@ -59,6 +59,11 @@
  * Catch-up Phase 22a added one row to `bookings` by hand, nothing else: the
  * two-payer Booking (BK0183) on the payer review List, Dr Chen's Fri 17 Jul AM
  * (`seed/procedurePayerBookings.ts`), appended after BK0182.
+ *
+ * Catch-up Phase 23 added one row to `bookings`, one window row's state and one
+ * `seedListIds` entry by hand, nothing else: the three-procedure Booking
+ * (BK0184) on Dr Souter's Mon 13 Jul AM, now SUBMITTED
+ * (`SEED_LIST_IDS.multiProcedure`, `seed/multiProcedureDemo.ts`), appended after BK0183.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -108,6 +113,8 @@ const DELIBERATE: Record<string, Partial<GoldenRow>> = {
   '45178|2026-07-17|AM': { state: 'SUBMITTED' },
   // Catch-up Phase 21a: Dr Chen's Tue 14 Jul AM List holds the review-flags Bookings and waits in the Review queue.
   '45178|2026-07-14|AM': { state: 'SUBMITTED' },
+  // Catch-up Phase 23: Dr Souter's Mon 13 Jul AM List holds the three-procedure Booking and waits in the Review queue.
+  '34821|2026-07-13|AM': { state: 'SUBMITTED' },
 }
 
 const seed = buildSeed()

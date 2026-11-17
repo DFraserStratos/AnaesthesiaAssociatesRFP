@@ -168,6 +168,9 @@ export {
   addProcedure,
   removeProcedure,
   addPostOpAddendum,
+  setPrimaryProcedure,
+  PRIMARY_NOT_REMOVABLE_MESSAGE,
+  PRIMARY_COMPLETED_MESSAGE,
   type CreateBookingInput,
 } from './bookingActions'
 export { raisePreProcedureInvoice } from './prepaymentActions'
@@ -286,7 +289,7 @@ export {
 } from './billingRun'
 export { handoffCase, handoffCasesForBooking, type HandoffResult } from './xeroHandoff'
 export { setArchiveWindowDays, armHandoffFault } from './demoSettingsActions'
-export { anaesthetistActor, OFFICE_ACTOR, SOUTER_ACTOR, OFFICE_SIMULATION_ACTOR, DEMO_TRIGGER_ACTOR, OFFICE_ACCOUNT_ID } from './demoActors'
+export { anaesthetistActor, OFFICE_ACTOR, SOUTER_ACTOR, OFFICE_SIMULATION_ACTOR, DEMO_TRIGGER_ACTOR, DEMO_OFFICE_ACTOR, OFFICE_ACCOUNT_ID } from './demoActors'
 export {
   WARNING_SAMPLES,
   WARNING_RULE_COUNT,
@@ -384,6 +387,14 @@ export {
   contractChangeFor,
   pendingContractChangesOnList,
 } from './contractApprovalActions'
+export {
+  stageMultiProcedureBooking,
+  multiProcedureLoadRefusal,
+  nextOpenSouterList,
+  feedChangesPrimary,
+  feedChangesPrimaryRefusal,
+  nextPrimaryFor,
+} from './demoMultiProcedure'
 export { reviewFlagsFor, reviewFlagsOnList, reviewInputFor } from './reviewSelectors'
 export * from './lookback'
 

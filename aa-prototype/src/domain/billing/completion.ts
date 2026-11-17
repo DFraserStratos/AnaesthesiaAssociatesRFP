@@ -111,8 +111,8 @@ export function completionFailuresFor(
       else if (start !== undefined && Date.parse(finish) <= Date.parse(start)) {
         fail('finishTime', 'handoverISO', FINISH_ORDER_MESSAGE, 'anaesthetist')
       }
-      // The modifiers step belongs to the first Procedure: an additional one carries no modifiers (its form has no step).
-      if (!procedure.isAdditional) {
+      // The modifiers step belongs to the primary: the Booking's modifiers are recorded there once (catch-up Phase 23).
+      if (procedure.isPrimary) {
         if (!modifiersStepAnswered(procedure)) {
           fail('modifiersStep', 'modifierClaims', MODIFIERS_STEP_MESSAGE, 'anaesthetist')
         }

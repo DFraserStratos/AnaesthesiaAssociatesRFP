@@ -96,7 +96,7 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
         list,
         patientName: s.masters.patients[booking.patientId]?.name ?? 'Patient',
         procedure: (() => {
-          const first = procedures.find((p) => !p.isAdditional) ?? procedures[0]
+          const first = procedures.find((p) => p.isPrimary) ?? procedures[0]
           return first !== undefined ? procedureLabel(first, s.masters.rvgGroups, 1) : undefined
         })(),
         bookingsOnList: Object.values(s.schedule.bookings).filter((b) => b.listId === list.id && b.cancellation === undefined).length,

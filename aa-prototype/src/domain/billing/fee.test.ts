@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { feeFor, resolveBtm, splitBillingUnits } from './fee'
+import { resolveBtm } from './fee'
+// A single-Procedure Booking's fee, through the one engine (catch-up Phase 23).
+import { bookingFeeFor, soleProcedureFee as feeFor } from './bookingFee'
 import {
   BASE_RANGE_5_9,
   BASE_SINGLE_10,
@@ -111,12 +113,16 @@ describe('resolveBtm', () => {
   })
 })
 
-describe('splitBillingUnits', () => {
-  it('an additional procedure yields time units only', () => {
-    const p = mkProcedure({ ...spotCheckProcedure, isAdditional: true })
-    const btm = resolveBtm(p, BASE_SINGLE_10, R, MI)
-    expect(splitBillingUnits(p, btm)).toBe(11)
-    expect(splitBillingUnits(spotCheckProcedure, resolveBtm(spotCheckProcedure, BASE_SINGLE_10, R, MI))).toBe(23)
+describe('resolveBtm on an additional Procedure (catch-up Phase 23)', () => {
+  it('base is 0 from the source "additional", whatever its group or stored capture; M is its share, its own claims ignored', () => {
+    const p = mkProcedure({ ...spotCheckProcedure, isPrimary: false, baseUnitsCaptured: { units: 12, source: 'overridden' } })
+    const btm = resolveBtm(p, BASE_SINGLE_10, R, MI, { role: 'additional', modifierShare: 0 })
+    expect(btm.base).toEqual({ units: 0, source: 'seeded' })
+    expect(btm.baseSource).toBe('additional')
+    expect(btm.time.units).toBe(11)
+    expect(btm.modifiers.units).toBe(0)
+    expect(btm.modifierItems).toEqual([])
+    expect(resolveBtm(p, BASE_SINGLE_10, R, MI, { role: 'additional', modifierShare: 2 }).modifiers.units).toBe(2)
   })
 })
 
@@ -172,10 +178,12 @@ describe('feeFor · a fixed price from its range in force (catch-up Phase 19a)',
   })
 
   it('a fixed price is the whole price on an additional Procedure too (no second-procedure rule, RV-07)', () => {
-    const p = mkProcedure({ ...spotCheckProcedure, isAdditional: true })
-    const fee = feeFor(p, { ...ON, anaesthetist, contract: fixedPrice, rvgGroup: BASE_SINGLE_10 })
-    expect(fee.total).toBe(700)
-    expect(fee.lines.map((l) => l.chargeBasis)).toEqual(['fixed'])
+    const primary = mkProcedure({ ...spotCheckProcedure, id: 'P-A' })
+    const p = mkProcedure({ ...spotCheckProcedure, id: 'P-B', isPrimary: false })
+    const result = bookingFeeFor([primary, p], (x) => ({ ...ON, anaesthetist, ...(x.id === 'P-B' ? { contract: fixedPrice } : {}), rvgGroup: BASE_SINGLE_10 }))
+    const fee = result.kind === 'ok' ? result.fees['P-B']! : undefined
+    expect(fee?.total).toBe(700)
+    expect(fee?.lines).toEqual([{ chargeBasis: 'fixed', description: 'Contract price, additional procedure', amount: 700 }])
   })
 
   it('needs a price before the first range: no line, no amount, never a fall back to RVG', () => {

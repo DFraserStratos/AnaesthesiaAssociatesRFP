@@ -53,8 +53,8 @@ import type {
   DisplayKey,
   SlotStatusKey,
 } from '../domain/types'
-import { feeContextFor, type BookingBillingContext } from '../domain/billing/validateBookingForBilling'
-import { feeFor } from '../domain/billing/fee'
+import { bookingFeesFor, type BookingBillingContext } from '../domain/billing/validateBookingForBilling'
+import { feeIn } from '../domain/billing/bookingFee'
 import { deliveryCountsText } from '../domain/billing/invoicePresentation'
 import { listHospitalFor } from '../domain/listPairing'
 import { ANAESTHETISTS, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
@@ -396,8 +396,8 @@ export function bookingsForList(state: Pick<AppState, 'schedule'>, listId: strin
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
-/** Procedures in Booking order (creation order; the first is the primary). */
-export function proceduresForBooking(state: Pick<AppState, 'schedule'>, bookingId: string): Procedure[] {
+/** Procedures in Booking order (creation order). The primary is the `isPrimary` one; lists show `inDisplayOrder` (catch-up Phase 23). */
+export function proceduresForBooking(state: { schedule: Pick<AppState['schedule'], 'procedures'> }, bookingId: string): Procedure[] {
   return Object.values(state.schedule.procedures)
     .filter((p) => p.bookingId === bookingId)
     .sort((a, b) => a.id.localeCompare(b.id))
@@ -2129,7 +2129,7 @@ export function procedureStackViewFor(
   let splitFeeExGst: number | null | undefined
   if (procedure.split !== undefined) {
     const ctx = billingContextForBooking({ masters: state.masters, schedule: { lists: state.schedule.lists, billingLines: state.schedule.billingLines ?? {} } }, booking)
-    const fee = ctx !== undefined && procedure.governingContractId !== undefined ? feeFor(procedure, feeContextFor(procedure, ctx)) : undefined
+    const fee = ctx !== undefined && procedure.governingContractId !== undefined ? feeIn(bookingFeesFor(proceduresForBooking(state, booking.id), ctx), procedure.id) : undefined
     splitFeeExGst = fee === undefined || fee.needsPrice ? null : fee.total
   }
   return procedureStackView(procedure, {

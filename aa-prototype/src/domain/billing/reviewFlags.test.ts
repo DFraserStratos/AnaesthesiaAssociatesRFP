@@ -6,6 +6,7 @@
  * are ported from the old `apps/admin/reviewFlags.test.ts`.
  */
 import { describe, expect, it } from 'vitest'
+import { soleAllocation } from './multiProcedure'
 import type { Booking, Procedure } from '../types'
 import { DEFAULT_RVG_TIME_RULE } from './timeUnits'
 import type { BtmBreakdown, FeeResult } from './fee'
@@ -39,7 +40,7 @@ const ZERO_BTM: BtmBreakdown = {
   modifierItems: [],
   totalUnits: 0,
 }
-const fee = (btm: BtmBreakdown = ZERO_BTM): FeeResult => ({ btm, billableUnits: btm.totalUnits, chargeBasis: 'rvg', unitRate: 30, lines: [], subtotal: 0, override: null, total: 0, needsPrice: false })
+const fee = (btm: BtmBreakdown = ZERO_BTM): FeeResult => ({ btm, billableUnits: btm.totalUnits, allocation: soleAllocation(true, btm.modifiers.units), chargeBasis: 'rvg', unitRate: 30, lines: [], subtotal: 0, override: null, total: 0, needsPrice: false })
 const proc = (over: Partial<Procedure> = {}): Procedure => mkProcedure({ id: 'P1', bookingId: 'BK1', governingContractId: RVG.id, ...over })
 const booking = (over: Partial<Booking> = {}): Booking => ({ id: 'BK1', completed: true, ...over }) as unknown as Booking
 

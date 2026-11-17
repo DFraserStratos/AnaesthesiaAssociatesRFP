@@ -29,6 +29,7 @@ import {
   extractFromFhir,
   extractViaMapping,
   FEED_META,
+  INTEGRATION_FEEDS,
   type CannedMessage,
   type ParsedMessage,
   type SurgeonPdf,
@@ -47,6 +48,16 @@ type PdfRow = SurgeonPdf['rows'][number]
 
 function integrationActor(feedId: string): Actor {
   return { who: FEED_META[feedId]?.actorLabel ?? 'Integration feed', role: 'system', source: 'integration' }
+}
+
+/**
+ * The inbound source for a hospital (catch-up Phase 23): its feed's actor
+ * where one is configured, else a plain "Hospital feed", both audited as
+ * `integration`.
+ */
+export function integrationActorForHospital(hospitalId: string | undefined): Actor {
+  const feed = INTEGRATION_FEEDS.find((f) => f.hospitalId === hospitalId)
+  return feed !== undefined ? integrationActor(feed.id) : { who: 'Hospital feed', role: 'system', source: 'integration' }
 }
 
 function timeToSession(time: string | undefined): 'AM' | 'PM' {
@@ -162,7 +173,8 @@ function hospitalNameOf(api: AppStoreApi, hospitalId: string | undefined): strin
 function replaceFromFeed(api: AppStoreApi, actor: Actor, bookingId: string, parsed: ParsedMessage): Outcome<{ replaced: boolean }> {
   if (parsed.operation === undefined || parsed.operation.trim() === '') return ok({ replaced: false })
   const state = api.getState()
-  const first = proceduresForBooking(state, bookingId)[0]
+  // The primary Procedure is the intake target (catch-up Phase 23).
+  const first = proceduresForBooking(state, bookingId).find((p) => p.isPrimary)
   if (first === undefined) return ok({ replaced: false })
   const list = state.schedule.lists[state.schedule.bookings[bookingId]?.listId ?? '']
   const from = hospitalNameOf(api, list?.hospitalId)
@@ -522,7 +534,7 @@ export function ingestPdfRow(
     }
     // The rooms' text through the one write path (US-02.5.7): it replaces a
     // different rooms' text, never a hospital's; an identical row changes nothing.
-    const first = proceduresForBooking(state, existing.id)[0]
+    const first = proceduresForBooking(state, existing.id).find((p) => p.isPrimary)
     if (first !== undefined && row.operation.trim() !== '') {
       const text = replaceProcedureText(api, actor, first.id, { text: row.operation, source: 'surgeonPdf' })
       if (!text.ok) return text

@@ -14,7 +14,9 @@ import { advanceClockMinutes } from './clockActions'
 import { editProcedure, submitList } from './lifecycle'
 import { auditForEntity, isListBilled, proceduresForBooking } from './selectors'
 import { clockISO, mutate, type Actor } from './mutate'
-import { feeFor, resolveBtm } from '../domain/billing/fee'
+import { resolveBtm } from '../domain/billing/fee'
+import { soleProcedureFee as feeFor } from '../domain/billing/bookingFee'
+import { bookingFee } from '../shared/capture/feeContext'
 import { ANAE, RVG_GROUP, SEED_MARKERS, SEED_LIST_IDS } from '../domain/seed'
 import type { Procedure } from '../domain/types'
 
@@ -45,34 +47,16 @@ function feeForBooking(api: BoundAppStore, bookingId: string): { totals: number[
   const booking = state.schedule.bookings[bookingId]
   if (booking === undefined) throw new Error(`missing booking ${bookingId}`)
   const list = assigned(state.schedule.lists[booking.listId])
-  const anaesthetist = state.masters.anaesthetists[list.anaesthetistId]
-  if (anaesthetist === undefined) throw new Error('missing context')
   const totals: number[] = []
   const units: number[] = []
-  proceduresForBooking(state, bookingId).forEach((procedure) => {
-    const contract =
-      procedure.governingContractId !== undefined
-        ? state.masters.contracts[procedure.governingContractId]
-        : undefined
-    const rvgGroup =
-      procedure.rvgGroupId !== undefined ? state.masters.rvgGroups[procedure.rvgGroupId] : undefined
-    const nonRvgLines = Object.values(state.schedule.billingLines).filter(
-      (l) => l.procedureId === procedure.id && l.chargeBasis !== 'rvg',
-    )
-    const ctx: Parameters<typeof feeFor>[1] = {
-      anaesthetist,
-      dateISO: list.dateISO,
-      timeRule: state.masters.rvgTimeRule,
-      patientDobISO: state.masters.patients[booking.patientId]?.dobISO,
-      modifiers: state.masters.modifiers,
-      nonRvgLines,
-    }
-    if (contract !== undefined) ctx.contract = contract
-    if (rvgGroup !== undefined) ctx.rvgGroup = rvgGroup
-    const fee = feeFor(procedure, ctx)
+  // The Booking priced once, through the one UI assembler (catch-up Phase 23).
+  const procedures = proceduresForBooking(state, bookingId)
+  const { views } = bookingFee({ procedures, list, masters: state.masters, billingLines: state.schedule.billingLines, patientId: booking.patientId })
+  for (const procedure of procedures) {
+    const fee = views[procedure.id]!.fee
     totals.push(fee.total)
     units.push(fee.billableUnits)
-  })
+  }
   return { totals, units }
 }
 
@@ -139,7 +123,7 @@ describe("per-anaesthetist rates (RVG at the anaesthetist's rate)", () => {
       payer: { kind: 'patient' },
       procedureText: null,
       invoiceDescription: null,
-      isAdditional: false,
+      isPrimary: true,
       modifierClaims: [],
       removedModifierIds: [],
       rvgGroupId: RVG_GROUP.a3!,

@@ -81,7 +81,8 @@ describe('the mobile main view (US-07.4.2)', () => {
     const scroller = screen.getByTestId('mobile-lists-scroll')
     // Scrolled down to the Today anchor (the exact position is Playwright's to check).
     expect(scroller.scrollTop).toBeGreaterThan(0)
-    const hint = screen.getByRole('button', { name: /2 earlier Lists not yet authorised/ })
+    // Mon 13 Jul AM (catch-up Phase 23) and Mon 20 Jul AM and PM.
+    const hint = screen.getByRole('button', { name: /3 earlier Lists not yet authorised/ })
     fireEvent.click(hint)
     expect(scroller.scrollTop).toBe(0)
   })

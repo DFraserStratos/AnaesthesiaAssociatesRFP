@@ -299,7 +299,8 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     railAnswers?: RailAnswers
     prepaymentDetail?: { type: 'full' | 'split'; depositAmount?: number }
     billingReference?: string
-    isAdditional?: boolean
+    /** False on an additional Procedure (catch-up Phase 23); a Booking's first Procedure is its primary. */
+    isPrimary?: boolean
     timeUnitsOverride?: number
     /** The fee split typed on the Booking (catch-up Phase 22; US-08.2.3). */
     split?: FeeSplit
@@ -315,8 +316,11 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       payer: spec.payer ?? defaultPayerOf.get(booking.id) ?? { kind: 'patient' },
       procedureText: seedText(spec.procedureText, spec.textSource, spec.textReceivedAtISO),
       invoiceDescription: null,
-      isAdditional: spec.isAdditional ?? false,
-      modifierClaims: claimsForSeedAsa(spec.asaClass),
+      isPrimary: spec.isPrimary ?? true,
+      // Modifiers are recorded once for the Booking, on the primary (catch-up
+      // Phase 23): an additional Procedure's seeded ASA claim was a duplicate
+      // of its primary's (the bariatric AS3) or worth nothing (Holt's AS2).
+      modifierClaims: spec.isPrimary === false ? [] : claimsForSeedAsa(spec.asaClass),
       removedModifierIds: [],
     }
     if (spec.legacyCode !== undefined) procedure.rvgGroupId = rvgGroupIdForLegacyCode(spec.legacyCode)
@@ -570,7 +574,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   addListAudit(whitakerFri17, 'list.submit', 'Dr Ben Whitaker', iso(FRI17, '16:38'))
 
   // -------------------------------------------------------------------------
-  // Souter Mon 20 AM Forte / Mr Okafor — split billing + missing ref #2
+  // Souter Mon 20 AM Forte / Mr Okafor — the multi-procedure Booking (Holt) + missing ref #2
   // -------------------------------------------------------------------------
 
   const souterMon20Am = projectedListId(ANAE.souter, MON20, 'AM')
@@ -599,7 +603,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     asaClass: 'AS2',
     governingContractId: CONTRACT.forteRvg,
     billingReference: 'FH-2026-2101',
-    isAdditional: true,
+    isPrimary: false,
   })
 
   const missingRefBooking = addBooking({
@@ -714,8 +718,9 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   // the gastric bypass on Doyle's "Gastric bypass" Contract at its range in
   // force ($2,800). Catch-up Phase 19a (RV-07, OQ-90): no Contract prices a
   // second procedure, so the old ordinal row went and the concurrent hernia
-  // repair is on No contract · RVG, priced at RVG under today's
-  // additional-procedure rule (time units only) until Phase 23. No contract ·
+  // repair is on No contract · RVG. Under the multi-procedure rule (catch-up
+  // Phase 23) it is the RVG-priced additional procedure of a mixed Booking:
+  // its own time units, no base billed (OQ-132, provisional). No contract ·
   // RVG is AA's and bills the Procedure's payer (AA, its holder, is never
   // billed); since catch-up Phase 21 the bypass bills the payer too.
   const fitzTue14 = projectedListId(ANAE.fitzgerald, TUE14, 'AM')
@@ -745,7 +750,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     handoverISO: iso(TUE14, '10:45'),
     asaClass: 'AS3',
     governingContractId: CONTRACT.noContractRvg,
-    isAdditional: true,
+    isPrimary: false,
   })
 
   // Rate x time under the billable-party-held individual-arrangement contract
@@ -935,6 +940,8 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     // Catch-up Phase 20: Dr Souter's prepaid price list, at the $238.50 she prepaid.
     governingContractId: PRICED_ITEM.souterRhinoCosmetic,
     prepaymentDetail: { type: 'full' },
+    // Additional (catch-up Phase 23): exactly one primary per Booking. A fixed price, so nothing moves.
+    isPrimary: false,
   })
 
   // Billing FAILURE exemplar (Phase 09; A5) — a dedicated SUBMITTED, complete,

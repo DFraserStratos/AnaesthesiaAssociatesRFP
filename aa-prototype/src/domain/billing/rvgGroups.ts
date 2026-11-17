@@ -220,7 +220,11 @@ export function resolveStartingUnits({ group }: { group: RvgGroup }): StartingUn
 }
 
 /** Where a Procedure's base units came from. */
-export type BaseUnitsSource = 'overridden' | 'chosen' | 'rvgGroup' | 'none'
+/**
+ * Where a Procedure's base units come from; `'additional'` (catch-up Phase 23)
+ * is an additional Procedure's 0: base units are charged on the primary only.
+ */
+export type BaseUnitsSource = 'overridden' | 'chosen' | 'rvgGroup' | 'none' | 'additional'
 
 export interface ResolvedBaseUnits {
   units: number

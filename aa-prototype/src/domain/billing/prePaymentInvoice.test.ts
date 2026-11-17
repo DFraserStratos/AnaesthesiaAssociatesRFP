@@ -98,7 +98,8 @@ describe('buildPrePaymentInvoiceForBooking', () => {
       handoverISO: HANDOVER_1030,
       governingContractId: 'con-def',
     })
-    const result = buildPrePaymentInvoiceForBooking(mkBooking(), [hospitalProc, prepaymentProc()], mkCtx())
+    // One primary per Booking (catch-up Phase 23): the prepaid Procedure is the additional one here.
+    const result = buildPrePaymentInvoiceForBooking(mkBooking(), [hospitalProc, prepaymentProc({ isPrimary: false })], mkCtx())
     if (result.kind !== 'invoices') throw new Error('expected invoices')
     expect(result.invoices).toHaveLength(1)
     const invoice = result.invoices[0]!
@@ -180,9 +181,11 @@ describe('deposit + balance reconciliation', () => {
       handoverISO: HANDOVER_1030,
       governingContractId: 'con-def',
     })
+    // The prepaid Procedure is additional (catch-up Phase 23) on a fixed price: it keeps its $630
+    // and takes no share, prepaid in full, so its balance nets to $0 (D57: ranked like any other).
     const balance = buildInvoicesForBooking(
       mkBooking(),
-      [hospitalProc, prepaymentProc()],
+      [hospitalProc, prepaymentProc({ isPrimary: false })],
       mkCtx({ prePaidByProcedure: pp(FULL_FEE) }),
     )
     if (balance.kind !== 'invoices') throw new Error('expected invoices')

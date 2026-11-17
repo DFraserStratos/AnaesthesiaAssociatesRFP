@@ -91,7 +91,7 @@ describe('completion is exactly three conditions (catch-up Phase 21a; US-03.6.1,
   })
 
   it('an additional Procedure carries no modifiers step (its form has none)', () => {
-    expect(codes([rvgDone({ isAdditional: true, modifiersConfirmed: undefined })])).toEqual([])
+    expect(codes([rvgDone({ isPrimary: false, modifiersConfirmed: undefined })])).toEqual([])
   })
 
   it('a Procedure priced by its own rate x time line asks for no RVG detail (Method 3)', () => {

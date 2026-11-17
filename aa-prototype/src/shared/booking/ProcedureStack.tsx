@@ -29,8 +29,10 @@ export interface ProcedureStackProps {
   layout?: 'stacked' | 'columns'
   /** "Procedure" or "Procedure 2": with `actions`, the heading row (`procedure-header`). */
   heading?: string
-  /** The caller's actions on the heading row (Edit, Remove). */
+  /** The caller's actions on the heading row (Make primary, Remove). */
   actions?: ReactNode
+  /** Beside the heading: the neutral "Primary" pill on a multi-procedure Booking (catch-up Phase 23). None by default. */
+  badge?: ReactNode
 }
 
 const MICRO = { fontSize: typeScale.micro.size, lineHeight: `${typeScale.micro.line}px`, fontWeight: typeScale.micro.weight, letterSpacing: typeScale.micro.tracking, textTransform: 'uppercase' as const, color: neutral.mist }
@@ -46,7 +48,7 @@ export function ProcedureStack(props: ProcedureStackProps) {
 // Full density
 // ---------------------------------------------------------------------------
 
-function FullStack({ view, heading, actions }: ProcedureStackProps) {
+function FullStack({ view, heading, actions, badge }: ProcedureStackProps) {
   const text = view.procedureText
   const [expanded, setExpanded] = useState(false)
   const [clipped, setClipped] = useState(false)
@@ -70,7 +72,14 @@ function FullStack({ view, heading, actions }: ProcedureStackProps) {
       style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '12px 16px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}
     >
       <div data-testid="procedure-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 24 }}>
-        <h3 style={{ ...MICRO, margin: 0 }}>{heading ?? 'Procedure'}</h3>
+        {badge === undefined ? (
+          <h3 style={{ ...MICRO, margin: 0 }}>{heading ?? 'Procedure'}</h3>
+        ) : (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            <h3 style={{ ...MICRO, margin: 0 }}>{heading ?? 'Procedure'}</h3>
+            {badge}
+          </span>
+        )}
         {actions !== undefined && <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 14, flex: 'none' }}>{actions}</div>}
       </div>
       <div data-shot="procedure-text" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

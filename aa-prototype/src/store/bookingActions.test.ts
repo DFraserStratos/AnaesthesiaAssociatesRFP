@@ -64,7 +64,7 @@ describe('createBooking', () => {
     expect(booking?.completed).toBe(false)
     const procs = proceduresForBooking(state, outcome.value.bookingId)
     expect(procs).toHaveLength(1)
-    expect(procs[0]?.isAdditional).toBe(false)
+    expect(procs[0]?.isPrimary).toBe(true)
     // Created with no Contract: it needs an invoice destination (catch-up Phase 20, US-04.3.4).
     expect(procs[0]?.governingContractId).toBeUndefined()
 

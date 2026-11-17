@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { ANAE, SEED_MARKERS } from '../../domain/seed'
 import { resolveBtm } from '../../domain/billing/fee'
 import { describeTimeRule } from '../../domain/billing/timeUnits'
+import { soleAllocation } from '../../domain/billing/multiProcedure'
 import { proceduresForBooking, resetDemo, useAppStore, type Actor } from '../../store'
 import { SurfaceProvider } from '../surface/SurfaceProvider'
 import { UnitsCard } from './UnitsCard'
@@ -24,7 +25,7 @@ function Harness() {
   const btm = resolveBtm(procedure, group, state.masters.rvgTimeRule, { modifiers: state.masters.modifiers })
   return (
     <SurfaceProvider variant="mobile">
-      <UnitsCard procedure={procedure} btm={btm} rvgGroup={group} actor={SOUTER} canCapture isAdditional={false} onError={() => undefined} />
+      <UnitsCard procedure={procedure} btm={btm} rvgGroup={group} actor={SOUTER} canCapture allocation={soleAllocation(true, btm.modifiers.units)} onError={() => undefined} />
     </SurfaceProvider>
   )
 }

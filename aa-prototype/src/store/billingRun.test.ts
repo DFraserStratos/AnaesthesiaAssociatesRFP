@@ -300,8 +300,8 @@ describe('charge bases and holders', () => {
   })
 })
 
-describe('split billing', () => {
-  it('same funder: the split pair shares ONE invoice and the additional procedure is time-only', () => {
+describe('the multi-procedure Booking (Holt)', () => {
+  it('same funder: the pair shares ONE invoice and the additional procedure bills its own time units', () => {
     const api = store()
     const bookingId = marker('splitBillingBooking')
     stageAndBill(api, listOf(api, bookingId))

@@ -52,7 +52,7 @@ export function seedPricedItemBookings(next: { booking: number; procedure: numbe
     payer: { kind: 'patient' },
     procedureText: seedText('Face lift'),
     invoiceDescription: null,
-    isAdditional: false,
+    isPrimary: true,
     modifierClaims: [],
     removedModifierIds: [],
     governingContractId: PRICED_ITEM.merFaceLift,

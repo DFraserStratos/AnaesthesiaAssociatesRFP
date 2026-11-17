@@ -6,8 +6,7 @@
 
 import type { AppState } from './appStore'
 import type { Booking } from '../domain/types'
-import { feeContextFor } from '../domain/billing/validateBookingForBilling'
-import { feeFor } from '../domain/billing/fee'
+import { bookingFeesFor, feeContextFor } from '../domain/billing/validateBookingForBilling'
 import { groupOf } from '../domain/billing/rvgGroups'
 import { computedPriceFor } from '../domain/billing/priceStatus'
 import { reviewFlagsForBooking, type ReviewBookingInput, type ReviewFlag } from '../domain/billing/reviewFlags'
@@ -19,12 +18,16 @@ export function reviewInputFor(state: AppState, booking: Booking): ReviewBooking
   const list = state.schedule.lists[booking.listId]
   const ctx = billingContextForBooking(state, booking)
   if (list === undefined || ctx === undefined) return undefined
-  const procedures = proceduresForBooking(state, booking.id).map((procedure) => {
+  const bookingProcedures = proceduresForBooking(state, booking.id)
+  // The Booking is priced once, under the multi-procedure rule (catch-up Phase 23).
+  const priced = bookingFeesFor(bookingProcedures, ctx)
+  if (priced.kind === 'structural') return undefined
+  const procedures = bookingProcedures.map((procedure) => {
     const feeCtx = feeContextFor(procedure, ctx)
-    const fee = feeFor(procedure, feeCtx)
+    const fee = priced.fees[procedure.id]!
     const rvgGroup = groupOf(state.masters.rvgGroups, procedure.rvgGroupId)
     const contract = feeCtx.contract
-    const computedPrice = contract !== undefined ? computedPriceFor(procedure, contract, feeCtx) : undefined
+    const computedPrice = contract !== undefined ? computedPriceFor(procedure, contract, { ...feeCtx, allocation: fee.allocation, bookingProcedureCount: bookingProcedures.length }) : undefined
     const contractChange = contractChangeFor(state, procedure.id)
     return {
       procedure,

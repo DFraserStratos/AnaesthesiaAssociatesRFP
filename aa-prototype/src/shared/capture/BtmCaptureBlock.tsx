@@ -4,7 +4,7 @@ import type { AssignedList, Procedure } from '../../domain/types'
 import type { CompletionFailure } from '../../domain/billing/completion'
 import { editRefusal, procedureStackViewFor, useAppStore, type Actor } from '../../store'
 import { useSurface } from '../surface'
-import { procedureFee } from './feeContext'
+import type { ProcedureFeeView } from './feeContext'
 import { TimesCard } from './TimesCard'
 import { UnitsCard } from './UnitsCard'
 import { OverrideCard } from './OverrideCard'
@@ -16,6 +16,7 @@ import { ProcedureStack } from '../booking/ProcedureStack'
 import { ContractApprovalLine } from '../booking/ContractApprovalLine'
 import { Notice } from '../ui/Notice'
 import { TextAction } from '../ui/TextAction'
+import { Pill } from '../ui/Pill'
 import { rvgDetailFor } from '../../domain/billing/rvgDetail'
 import { priceStatusFor } from '../../domain/billing/priceStatus'
 import { needsPriceMessage } from '../../domain/billing/priceRanges'
@@ -28,8 +29,10 @@ interface BtmCaptureBlockProps {
   procedure: Procedure
   list: AssignedList
   actor: Actor
-  /** 1-based position on the Booking: labels it "PROCEDURE n" (no Contract prices by position, catch-up Phase 19a). */
-  ordinal: number
+  /** Its fee and place in the Booking, from the one assembler (`bookingFee`, catch-up Phase 23): no pricing of its own. */
+  view: ProcedureFeeView
+  /** Its number in display order, the primary first: labels it "PROCEDURE n" (no pricing reads it). */
+  displayNumber: number
   /** True count of procedures (header shows PROCEDURE n only when > 1). */
   procedureCount: number
   canCapture: boolean
@@ -37,8 +40,10 @@ interface BtmCaptureBlockProps {
   failures: CompletionFailure[]
   showValidation: boolean
   /** Open the RemoveProcedureSheet for THIS procedure. Never offered on the
-   *  Booking's first procedure, which `removeProcedure` refuses to delete. */
+   *  primary, which `removeProcedure` refuses to delete. */
   onRemove?: (() => void) | undefined
+  /** Open the MakePrimarySheet for THIS procedure (additional procedures only, catch-up Phase 23). */
+  onMakePrimary?: (() => void) | undefined
   onError: (message: string) => void
 }
 
@@ -71,23 +76,22 @@ export function BtmCaptureBlock({
   procedure,
   list,
   actor,
-  ordinal,
+  view,
+  displayNumber,
   procedureCount,
   canCapture,
   failures,
   showValidation,
   onRemove,
+  onMakePrimary,
   onError,
 }: BtmCaptureBlockProps) {
   const { Pair } = useSurface()
   const masters = useAppStore((s) => s.masters)
   const billingLines = useAppStore((s) => s.schedule.billingLines)
-  const patientId = useAppStore((s) => s.schedule.bookings[procedure.bookingId]?.patientId)
+  const completed = useAppStore((s) => s.schedule.bookings[procedure.bookingId]?.completed === true)
 
-  const { fee, rvgGroup, contract, nonRvgLines } = useMemo(
-    () => procedureFee({ procedure, list, masters, billingLines, patientId }),
-    [procedure, list, masters, billingLines, patientId],
-  )
+  const { fee, allocation, rvgGroup, contract, nonRvgLines } = view
 
   // What this Procedure asks for follows its Contract's pricing kind (catch-up Phase 21a, US-03.3.9):
   // the one predicate (`rvgDetail.ts`). On a fixed or open price the times, units and modifiers are
@@ -113,6 +117,11 @@ export function BtmCaptureBlock({
 
   // The store's edit gate (ACTIVE or SUBMITTED, own List for the anaesthetist; catch-up Phase 38a).
   const editable = procedure !== undefined && editRefusal(actor, list) === null
+  const several = procedureCount > 1
+  // Make primary (US-03.2.2): anyone with edit rights while the Booking is editable; the anaesthetist
+  // amends a completed Booking first, the office corrects it at review (`setPrimaryProcedure`).
+  const canMakePrimary = several && !procedure.isPrimary && editable && onMakePrimary !== undefined && (actor.role !== 'anaesthetist' || !completed)
+  const canRemove = several && !procedure.isPrimary && editable && onRemove !== undefined && canCapture
 
   // The procedure stack's view (catch-up Phase 20a): the one pure module, through the store's selector.
   // Only the three records the view reads, so a write elsewhere does not rebuild it.
@@ -134,19 +143,24 @@ export function BtmCaptureBlock({
         view={stackView!}
         density="full"
         surface={stackSurface}
-        heading={procedureCount > 1 ? `Procedure ${ordinal}` : 'Procedure'}
-        {...(editable && onRemove !== undefined && canCapture && ordinal > 1
+        heading={several ? `Procedure ${displayNumber}` : 'Procedure'}
+        {...(several && procedure.isPrimary ? { badge: <Pill size="sm" shot="procedure-primary-pill">Primary</Pill> } : {})}
+        {...(canMakePrimary || canRemove
           ? {
               actions: (
                 <>
-            {/* Additional procedures only: the Booking's first is its anchor and
-                `removeProcedure` refuses it, so never show an action that
-                cannot work. */}
-            {editable && onRemove !== undefined && canCapture && ordinal > 1 && (
-              <TextAction flush onClick={onRemove}>
-                Remove
-              </TextAction>
-            )}
+                  {/* Additional procedures only: the primary is not removable (`removeProcedure`
+                      refuses it), so never show an action that cannot work. */}
+                  {canMakePrimary && (
+                    <TextAction flush shot="make-primary" onClick={onMakePrimary}>
+                      Make primary
+                    </TextAction>
+                  )}
+                  {canRemove && (
+                    <TextAction flush onClick={onRemove}>
+                      Remove
+                    </TextAction>
+                  )}
                 </>
               ),
             }
@@ -164,17 +178,18 @@ export function BtmCaptureBlock({
         rvgGroup={rvgGroup}
         codeFailures={forFields(['rvgGroupId', 'baseUnitsSelected'])}
         onError={onError}
-        ordinal={ordinal}
+        displayNumber={displayNumber}
         procedureCount={procedureCount}
       />
       {/* The anaesthetist's own Contract change and the office's approval (catch-up Phase 21a). */}
       {stackSurface === 'anaesthetist' && <ContractApprovalLine procedureId={procedure.id} />}
       <FailureNotes failures={contextFailures} />
 
-      {procedure.isAdditional && (
+      {allocation.role === 'additional' && (
         <Notice tone="neutral" shot="procedure-additional-note">
-          Additional procedure. It bills for time units only; base and modifier units stay on the
-          first procedure.
+          {allocation.rvgPriced
+            ? "Additional procedure. Base units are charged on the primary procedure only. It earns its own time units, and an equal share of the Booking's modifiers once they total more than 4."
+            : "Additional procedure on a fixed price. Its Contract's price is the whole price; its units are recorded for reference."}
         </Notice>
       )}
 
@@ -204,7 +219,7 @@ export function BtmCaptureBlock({
             rvgGroup={rvgGroup}
             actor={actor}
             canCapture={canCapture}
-            isAdditional={procedure.isAdditional}
+            allocation={allocation}
             modifiersRequired={detail.modifiers === 'required'}
             showValidation={showValidation}
             modifierFailures={forFields(['modifierClaims'])}

@@ -28,9 +28,9 @@ import type { Booking, Procedure, Session } from '../domain/types'
 import type { AppState, AppStoreApi } from './appStore'
 import { clockISO, mutate, ok, refuse, type Actor, type Outcome } from './mutate'
 import { billingContextForBooking, prepaymentStatusFor } from './selectors'
-import { feeFor } from '../domain/billing/fee'
+import { feeIn } from '../domain/billing/bookingFee'
 import { splitPartiesOn } from '../domain/billing/partyOptions'
-import { feeContextFor } from '../domain/billing/validateBookingForBilling'
+import { bookingFeesFor } from '../domain/billing/validateBookingForBilling'
 import { compareSessions } from '../domain/outOfHours'
 
 /** The state slices the warning selectors read. */
@@ -70,6 +70,8 @@ function splitFeesFor(state: WarningState, booking: Booking, procedures: readonl
   if (split.length === 0) return {}
   const ctx = billingContextForBooking(state, booking)
   if (ctx === undefined) return {}
+  // The Booking is priced once, under the multi-procedure rule (catch-up Phase 23).
+  const priced = bookingFeesFor(procedures, ctx)
   const splits: Record<string, { feeExGst: number | null; partiesOn: boolean }> = {}
   for (const procedure of split) {
     const partiesOn = splitPartiesOn(procedure, booking.patientId, procedure.split?.shares ?? [], state.masters.parties)
@@ -77,8 +79,8 @@ function splitFeesFor(state: WarningState, booking: Booking, procedures: readonl
       splits[procedure.id] = { feeExGst: null, partiesOn }
       continue
     }
-    const fee = feeFor(procedure, feeContextFor(procedure, ctx))
-    splits[procedure.id] = { feeExGst: fee.needsPrice ? null : fee.total, partiesOn }
+    const fee = feeIn(priced, procedure.id)
+    splits[procedure.id] = { feeExGst: fee === undefined || fee.needsPrice ? null : fee.total, partiesOn }
   }
   return { splits }
 }

@@ -99,7 +99,7 @@ export function MobileCatalogue() {
         <CatalogueRow name="StepperButton" source="shared/capture/ui.tsx" usedIn={SW} stage="mobile" height={200}
           what="The mockup's 44px round-square minus and plus button, on the shared IconButton since UI unification U5 (44px square, radius 12). Since U4 it is the button part of NumberStepper, which names and bounds it; on its own it still takes a glyph, a label and disabled."
           replaceWith="shadcn Button (icon) + Button Group"
-          note="Takes a label (catch-up Phase 21a); NumberStepper names the pair Fewer and More. UnitsCard's rows move onto NumberStepper in Phase 23.">
+          note="Takes a label (catch-up Phase 21a); NumberStepper names the pair Fewer and More. UnitsCard's steppers moved onto NumberStepper in catch-up Phase 23.">
           <Ex.StepperButtonExample />
         </CatalogueRow>
         <CatalogueRow name="NumberStepper" source="shared/capture/ui.tsx" usedIn={SW} stage="mobile" height={260}

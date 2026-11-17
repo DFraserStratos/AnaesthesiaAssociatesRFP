@@ -16,7 +16,7 @@ import { editContract } from './contractActions'
 import { CONTRACT } from '../domain/seed'
 import { proceduresForBooking } from './selectors'
 import { openWarnings, warningsForBooking } from './warnings'
-import { procedureFee } from '../shared/capture/feeContext'
+import { procedureFeeAlone as procedureFee } from './testFees'
 import { searchRvgGroups } from '../domain/billing/rvgGroups'
 import { ANAE, RVG_GROUP, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
 
@@ -230,7 +230,7 @@ describe('review fixes (convention 18, catch-up Phase 19)', () => {
     const p = ellison(api)
     pickRvgGroup(api, SOUTER, p.id, RVG_GROUP.h4!)
     const s = api.getState()
-    api.setState({ schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [p.id]: { ...s.schedule.procedures[p.id]!, isAdditional: true, baseUnitsSelected: 40 } } } })
+    api.setState({ schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [p.id]: { ...s.schedule.procedures[p.id]!, isPrimary: false, baseUnitsSelected: 40 } } } })
     expect(warningsForBooking(api.getState(), ELLISON).some((w) => w.ruleId === 'baseUnitsOutsideGuide')).toBe(false)
   })
 

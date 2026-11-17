@@ -34,6 +34,8 @@ import { upsertPatient, type PatientIntakeDetails } from './intake'
 import { listInSlot, proceduresForBooking, slotFor } from './selectors'
 import { isOpenSlot } from '../domain/slotStatus'
 import { rvgGroupPickRefusal } from '../domain/billing/rvgGroups'
+import { claimsAuditView, reconcileClaims } from '../domain/billing/modifiers'
+import { modifierFactsFor } from './modifierFacts'
 import { placeListOnSlot } from './slotActions'
 import { fillFromContract } from '../domain/billing/startingValues'
 import { isRvgKind } from '../domain/billing/contracts'
@@ -97,7 +99,8 @@ export const PROCEDURE_OR_CODE_REQUIRED_MESSAGE = 'Type the procedure as told, o
  * Create an ad-hoc Booking (the manual and photo paths share this — the photo path
  * simply pre-fills `input`). Runs the shared
  * `upsertPatient` first (NHI dedupe: reuse or create), then creates the Booking
- * and its first Procedure (`isAdditional:false`), audited `booking.create` +
+ * and its first Procedure, the Booking's primary (`isPrimary: true`; catch-up
+ * Phase 23: the first entered is the primary by default), audited `booking.create` +
  * `procedure.create`. The patient audit comes from `upsertPatient`.
  */
 export function createBooking(
@@ -180,7 +183,7 @@ export function createBooking(
           ? procedureTextOf(input.sourceText.text, input.sourceText.source, atISO, input.sourceText.from)
           : null,
       invoiceDescription: null,
-      isAdditional: false,
+      isPrimary: true,
       modifierClaims: [],
       removedModifierIds: [],
     }
@@ -253,7 +256,7 @@ export function createBooking(
  * addendum Booking with an additional invoice. Refused `noOpenSession` when
  * neither of today's sessions is open.
  * The patient is reused; the billing setup is inherited from the original's
- * first procedure. Audited `booking.create` + `procedure.create`; original untouched.
+ * primary procedure, and the addendum's Procedure is its own Booking's primary. Audited `booking.create` + `procedure.create`; original untouched.
  */
 export function addPostOpAddendum(
   api: AppStoreApi,
@@ -287,7 +290,8 @@ export function addPostOpAddendum(
   const rights = editRefusal(actor, { ...originalList, state: 'ACTIVE' })
   if (rights !== null) return rights
 
-  const first = proceduresForBooking(state, originalBookingId)[0]
+  const originals = proceduresForBooking(state, originalBookingId)
+  const first = originals.find((p) => p.isPrimary) ?? originals[0]
 
   let bookingId = ''
   let listId = ''
@@ -330,7 +334,7 @@ export function addPostOpAddendum(
       payer: payerForNewProcedure(proceduresForBooking(s, originalBookingId), s.masters.contracts, original.patientId),
       procedureText: null,
       invoiceDescription: null,
-      isAdditional: false,
+      isPrimary: true,
       modifierClaims: [],
       removedModifierIds: [],
     }
@@ -339,7 +343,7 @@ export function addPostOpAddendum(
     // fixed, open or prepaid one is not (it is the whole price of the item it
     // was chosen for, and a post-op event is never prepaid), so the addendum
     // then needs an invoice destination. The post-op event bills its own
-    // B/T/M (not time-only: it is a distinct billable item).
+    // B/T/M: it is its own Booking, so its one Procedure is that Booking's primary.
     // Only a Contract the step rail allows on the addendum's List (US-04.3.2).
     if (first?.governingContractId !== undefined && contractAllowedOn(railMastersOf(s), railContextForList(s, placed.list), first.governingContractId)) {
       inheritContract(procedure, first.governingContractId, s.masters)
@@ -405,10 +409,11 @@ function inheritContract(procedure: Procedure, contractId: string, masters: AppS
 
 /**
  * Add an additional Procedure to an existing Booking (Phase 04's "Add another
- * procedure"). Additional from the first (RFP split-billing rule): it bills
- * time units only; base and modifier units stay on the first procedure. The
+ * procedure"). It is additional (`isPrimary: false`): under the multi-procedure
+ * rule (catch-up Phase 23) it earns its own time units, its share of the
+ * Booking's modifiers above 4, and no base units. The
  * skeleton is an empty additional Procedure: no procedure text,
- * `isAdditional: true`, its payer by the copy rule (`payerForNewProcedure`, catch-up Phase 22a). It picks its own Contract (US-03.2.3, catch-up
+ * `isPrimary: false`, its payer by the copy rule (`payerForNewProcedure`, catch-up Phase 22a). It picks its own Contract (US-03.2.3, catch-up
  * Phase 20): the one given, checked as on the step rail, else none ("Needs an
  * invoice destination"); never one stored silently. Audited `procedure.create`.
  */
@@ -452,7 +457,7 @@ export function addProcedure(
       payer: payerForNewProcedure(proceduresForBooking(s, bookingId), s.masters.contracts, booking.patientId),
       procedureText: null,
       invoiceDescription: null,
-      isAdditional: true,
+      isPrimary: false,
       modifierClaims: [],
       removedModifierIds: [],
     }
@@ -472,7 +477,7 @@ export function addProcedure(
       action: 'procedure.create',
       after: {
         bookingId,
-        isAdditional: true,
+        isPrimary: false,
         ...(procedure.governingContractId !== undefined ? { governingContractId: procedure.governingContractId } : {}),
         ...(procedure.enteredPrice !== undefined ? { enteredPrice: procedure.enteredPrice } : {}),
         ...(procedure.rvgGroupId !== undefined ? { rvgGroupId: procedure.rvgGroupId } : {}),
@@ -500,12 +505,12 @@ export function addProcedure(
  * its soft-cancel; that is the audited "this happened and then did not" case.
  *
  * Two things make it safe:
- *  - **The Booking's first procedure is not removable** (user ruling, 2026-07-27).
- *    It is the anchor: it carries the base and modifier units the additional
- *    ones deliberately do not. Deleting it would leave a Booking billing time units only, and
- *    silently promoting the next one would rewrite the billing basis of a
- *    procedure nobody touched. A Booking booked wholly in error is a booking
- *    CANCELLATION, which is the refusal's pointer.
+ *  - **The primary procedure is not removable** (user ruling, 2026-07-27,
+ *    re-based on the flag in catch-up Phase 23). It carries the base units and
+ *    the Booking's modifiers. Removal never promotes another: silently
+ *    promoting one would rewrite the billing basis of a procedure nobody
+ *    touched. Make primary is the explicit route, and a Booking booked wholly
+ *    in error is a booking CANCELLATION; the refusal names both.
  *  - **Its billing lines go with it**, each separately audited in the same
  *    commit, so no line is orphaned onto a procedure that no longer exists
  *    (an orphan would break the invoice build).
@@ -527,16 +532,8 @@ export function removeProcedure(api: AppStoreApi, actor: Actor, procedureId: str
   const rights = editRefusal(actor, list)
   if (rights !== null) return rights
 
-  // Position, not the stored `isAdditional` flag: what may not be removed is
-  // whatever the Booking currently anchors on, which is what the UI numbers
-  // PROCEDURE 1.
-  const siblings = proceduresForBooking(state, booking.id)
-  if (siblings[0]?.id === procedureId) {
-    return refuse(
-      'primaryProcedure',
-      "A Booking's first procedure cannot be removed. Remove the additional procedures, or cancel the Booking if the whole booking is wrong.",
-    )
-  }
+  // The flag, not the position (catch-up Phase 23): the primary is refused, and nothing is promoted.
+  if (procedure.isPrimary) return refuse('primaryProcedure', PRIMARY_NOT_REMOVABLE_MESSAGE)
 
   const lines = Object.values(state.schedule.billingLines).filter((l) => l.procedureId === procedureId)
 
@@ -568,4 +565,114 @@ export function removeProcedure(api: AppStoreApi, actor: Actor, procedureId: str
   })
 
   return ok(undefined)
+}
+
+// ---------------------------------------------------------------------------
+// setPrimaryProcedure (catch-up Phase 23; US-03.2.2, US-03.2.1)
+// ---------------------------------------------------------------------------
+
+/** `removeProcedure`'s refusal on the primary: removal never promotes (2026-07-27, re-based on the flag). */
+export const PRIMARY_NOT_REMOVABLE_MESSAGE =
+  'The primary procedure cannot be removed. Make another procedure primary first, or cancel the Booking if the whole booking is wrong.'
+
+/** The anaesthetist's refusal on a completed Booking; the office corrects it at review. */
+export const PRIMARY_COMPLETED_MESSAGE = 'This Booking is marked complete. Amend it before changing the primary procedure.'
+
+/**
+ * Make another Procedure the Booking's primary ("Make primary"): anyone with
+ * edit rights (the anaesthetist on her own ACTIVE List, the office on ACTIVE
+ * and SUBMITTED, an inbound feed on ACTIVE), while the Booking is editable.
+ * One audited commit, two `procedure.setPrimary` entries (old and new, each
+ * with before and after), stamping the Booking. The effect:
+ *  - the old primary's flag clears and the new one's sets;
+ *  - the Booking's modifier records move to the new primary: the claims (each
+ *    with its explanation), the removed pre-applied modifiers, the manual M
+ *    adjustment and the modifiers step's answer. The pre-applied age and
+ *    included modifiers are derived, so they re-derive for the new primary,
+ *    and a claim its RVG group includes is dropped (`reconcileClaims`; kept in
+ *    the old entry's `before`). Picked reading, logged;
+ *  - the old primary's base inputs (a recorded value, a chosen value on a
+ *    ranged group) are cleared, kept in its `before`, so no additional
+ *    Procedure carries base inputs; the new primary's base starts from 19's
+ *    resolver for its own RVG group.
+ */
+export function setPrimaryProcedure(api: AppStoreApi, actor: Actor, procedureId: string): Outcome<{ previousPrimaryId: string | undefined }> {
+  const state = api.getState()
+  const target = state.schedule.procedures[procedureId]
+  if (target === undefined) return refuse('notFound', 'Procedure not found.')
+  const found = getBooking(state, target.bookingId)
+  if (found === undefined) return refuse('notFound', 'The procedure has no Booking.')
+  const { booking, list } = found
+  if (booking.cancellation !== undefined) {
+    return refuse('bookingCancelled', 'This Booking is cancelled. Its procedures cannot be changed.')
+  }
+  const rights = editRefusal(actor, list)
+  if (rights !== null) return rights
+  if (booking.completed && actor.role === 'anaesthetist') return refuse('bookingCompleted', PRIMARY_COMPLETED_MESSAGE)
+  if (target.isPrimary) return refuse('alreadyPrimary', 'This is already the primary procedure.')
+
+  const old = proceduresForBooking(state, booking.id).find((p) => p.isPrimary)
+  const carried: Pick<Procedure, 'modifierClaims' | 'removedModifierIds'> & Partial<Pick<Procedure, 'modifierUnitsCaptured' | 'modifiersConfirmed'>> = {
+    modifierClaims: old?.modifierClaims ?? [],
+    removedModifierIds: old?.removedModifierIds ?? [],
+    ...(old?.modifierUnitsCaptured !== undefined ? { modifierUnitsCaptured: old.modifierUnitsCaptured } : {}),
+    ...(old?.modifiersConfirmed !== undefined ? { modifiersConfirmed: old.modifiersConfirmed } : {}),
+  }
+  // The pre-applied modifiers re-derive for the new primary; a claim its group includes is dropped.
+  const reconciled = reconcileClaims(carried.modifierClaims, carried.removedModifierIds, modifierFactsFor(state, target))
+  const next: Procedure = {
+    ...withoutBookingModifiers(target),
+    isPrimary: true,
+    modifierClaims: reconciled.modifierClaims,
+    removedModifierIds: reconciled.removedModifierIds,
+    ...(carried.modifierUnitsCaptured !== undefined ? { modifierUnitsCaptured: carried.modifierUnitsCaptured } : {}),
+    ...(carried.modifiersConfirmed !== undefined ? { modifiersConfirmed: carried.modifiersConfirmed } : {}),
+  }
+  const modifiers = state.masters.modifiers
+  const metas: MutationMeta[] = []
+  const updates: Record<string, Procedure> = { [target.id]: next }
+  if (old !== undefined) {
+    const demoted: Procedure = { ...withoutBookingModifiers(old), isPrimary: false, modifierClaims: [], removedModifierIds: [] }
+    delete demoted.baseUnitsSelected
+    delete demoted.baseUnitsCaptured
+    updates[old.id] = demoted
+    metas.push({
+      entityType: 'procedure',
+      entityId: old.id,
+      action: 'procedure.setPrimary',
+      before: {
+        isPrimary: true,
+        ...claimsAuditView(old, modifiers),
+        ...(old.modifierUnitsCaptured !== undefined ? { modifierUnitsCaptured: old.modifierUnitsCaptured } : {}),
+        ...(old.baseUnitsSelected !== undefined ? { baseUnitsSelected: old.baseUnitsSelected } : {}),
+        ...(old.baseUnitsCaptured !== undefined ? { baseUnitsCaptured: old.baseUnitsCaptured } : {}),
+      },
+      after: { isPrimary: false, ...claimsAuditView(demoted, modifiers) },
+      stampBookingId: booking.id,
+    })
+  }
+  metas.push({
+    entityType: 'procedure',
+    entityId: target.id,
+    action: 'procedure.setPrimary',
+    before: { isPrimary: false, ...claimsAuditView(target, modifiers) },
+    after: {
+      isPrimary: true,
+      ...claimsAuditView(next, modifiers),
+      ...(next.modifierUnitsCaptured !== undefined ? { modifierUnitsCaptured: next.modifierUnitsCaptured } : {}),
+    },
+    stampBookingId: booking.id,
+  })
+  mutate(api, actor, metas, (s) => ({
+    schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, ...updates } },
+  }))
+  return ok({ previousPrimaryId: old?.id })
+}
+
+/** A Procedure without the Booking-level modifier records (they live on the primary alone). */
+function withoutBookingModifiers(procedure: Procedure): Procedure {
+  const copy: Procedure = { ...procedure }
+  delete copy.modifierUnitsCaptured
+  delete copy.modifiersConfirmed
+  return copy
 }

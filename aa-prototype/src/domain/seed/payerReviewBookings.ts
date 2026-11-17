@@ -117,7 +117,7 @@ export function seedPayerReviewBookings(next: { booking: number; procedure: numb
       payer: spec.payer ?? { kind: 'patient' },
       procedureText: seedText(spec.text),
       invoiceDescription: null,
-      isAdditional: false,
+      isPrimary: true,
       modifierClaims: [],
       removedModifierIds: [],
     }

@@ -42,6 +42,7 @@ import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../componen
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
+import { allocationNote, inDisplayOrder } from '../../../domain/billing/multiProcedure'
 import { FormError, Notice, Pill, ResultLine, TickButton } from '../../../shared/ui'
 import { TextAction } from '../../../shared/ui/TextAction'
 import { ClearWarningButton } from '../../../shared/warnings'
@@ -69,8 +70,8 @@ const REVIEW_NOWRAP_HEADINGS = new Set(['Time', 'Times', 'B · T · M', 'Units',
  * (convention 17, visual only): breadcrumb, header (title · context · status
  * pill · submitted pill), a 4-tile summary strip, the review table and totals
  * row, and the authorise action bar + choreography. Every figure comes from the
- * REAL Phase 01 calculator (procedureFee / bookingFee looped over the non-cancelled
- * bookings) — NOT the mockup's simplified numbers (Decisions log). The Billed to
+ * REAL Phase 01 calculator (`bookingFee`, each Booking priced once under the
+ * multi-procedure rule, over the non-cancelled bookings) — NOT the mockup's simplified numbers (Decisions log). The Billed to
  * column shows who each Booking bills (catch-up Phase 20). FLAGS come from
  * the one review-flag list, `domain/billing/reviewFlags.ts` (catch-up Phase 21a: never a block;
  * no invented duration-outlier flag).
@@ -104,17 +105,21 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
       .filter((c) => c.listId === listId && c.cancellation === undefined)
       .sort((a, b) => (a.scheduledTime ?? '').localeCompare(b.scheduledTime ?? '') || a.id.localeCompare(b.id))
     return bookings.map((booking: Booking) => {
-      const procs = Object.values(proceduresRecord)
-        .filter((p) => p.bookingId === booking.id)
-        .sort((a, b) => a.id.localeCompare(b.id))
-      const totals = bookingFee(procs, list, masters, billingLinesRecord, booking.patientId)
+      // The primary first, then the rest in Booking order (US-03.2.2; catch-up Phase 23).
+      const procs = inDisplayOrder(
+        Object.values(proceduresRecord)
+          .filter((p) => p.bookingId === booking.id)
+          .sort((a, b) => a.id.localeCompare(b.id)),
+      )
+      const totals = bookingFee({ procedures: procs, list, masters, billingLines: billingLinesRecord, patientId: booking.patientId })
       // The flags come from the one pure list (`domain/billing/reviewFlags.ts`) over the store's one input selector (catch-up Phase 21a).
       const state = useAppStore.getState()
       const input = reviewInputFor(state, booking)
       const flags = input !== undefined ? reviewFlagsForBooking(input) : []
       const changes: (ContractChangeRecord | undefined)[] = procs.map((p) => contractChangeFor(state, p.id))
-      const primary: Procedure | undefined = procs[0]
-      const primaryView = input?.procedures[0]
+      const primary: Procedure | undefined = procs.find((p) => p.isPrimary)
+      const primaryView = input?.procedures.find((v) => v.procedure.isPrimary)
+      const primaryAllocation = primary !== undefined ? totals.views[primary.id]?.allocation : undefined
       // Every Procedure's stack view (catch-up Phase 20a): the one pure module, read for the
       // Procedures column and for who is billed ("Mixed" when Procedures differ; `billablePartyForProcedure`, catch-up Phase 21).
       const stackViews = procs.map((p) => procedureStackViewFor({ masters, schedule: { procedures: proceduresRecord, bookings: bookingsRecord, lists: listsRecord, billingLines: billingLinesRecord } }, p.id, 'office')!)
@@ -136,9 +141,9 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
       if (procs.length > 1) {
         const labels: Record<string, string> = {}
         procs.forEach((procedure, index) => {
-          const scope = `Procedure ${index + 1}`
+          const scope = procedure.isPrimary ? 'Primary' : 'Additional'
           const label = procedureLabel(procedure, masters.rvgGroups, index + 1)
-          labels[procedure.id] = label === scope ? scope : `${scope} · ${label}`
+          labels[procedure.id] = `${scope} · ${label}`
           for (const line of Object.values(billingLinesRecord)) {
             if (line.procedureId === procedure.id) labels[line.id] = `${scope} · fee line`
           }
@@ -146,7 +151,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
         entityLabels = labels
       }
       const alert: Notification | undefined = activeAlertFor(state, { listId, bookingId: booking.id })
-      return { booking, primary, primaryView, totals, flags, changes, procs, procIds: procs.map((p) => p.id), billedText, procCount: procs.length, entityIds, entityLabels, stackViews, alert }
+      return { booking, primary, primaryView, primaryAllocation, totals, flags, changes, procs, procIds: procs.map((p) => p.id), billedText, procCount: procs.length, entityIds, entityLabels, stackViews, alert }
     })
     // The audit feeds the change records; the notifications feed the alerts.
   }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, audit, notifications])
@@ -322,7 +327,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ booking, primary, primaryView, totals, flags, changes, procs, procIds, billedText, entityIds, entityLabels, stackViews, alert }) => {
+            {rows.map(({ booking, primary, primaryView, primaryAllocation, totals, flags, changes, procs, procIds, billedText, entityIds, entityLabels, stackViews, alert }) => {
               const patient = masters.patients[booking.patientId]
               const btm = primaryView?.fee.btm
               return (
@@ -367,6 +372,12 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
                         return (
                           <div key={i} data-shot="review-procedure-stack" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                             <ProcedureStack view={view} density="compact" surface="office" heading={stackViews.length > 1 ? `Procedure ${i + 1}` : 'Procedure'} />
+                            {/* Each Procedure's share under the multi-procedure rule, primary first (catch-up Phase 23). */}
+                            {stackViews.length > 1 && totals.views[procedureId] !== undefined && (
+                              <span className="mono" data-shot="review-procedure-share" style={{ fontSize: 11.5, color: neutral.slate, fontVariantNumeric: 'tabular-nums' }}>
+                                {allocationNote(totals.views[procedureId]!.allocation)}
+                              </span>
+                            )}
                             <ReviewPaidBy
                               procedure={procs[i]!}
                               child={(warningsByBooking.get(booking.id) ?? []).some((w) => w.ruleId === 'childPayer' && w.procedureId === procedureId && isOpen(w))}
@@ -388,7 +399,13 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
                     </div>
                   </td>
                   <td className="mono" style={nowrapCell}>{primary?.anaestheticStartISO !== undefined ? `${hhmm(primary.anaestheticStartISO)} to ${hhmm(primary.handoverISO)}` : '·'}</td>
-                  <td className="mono" data-testid="review-btm-value" style={{ ...nowrapCell, color: neutral.slate }}>{btm !== undefined ? `${btm.base.units} · ${btm.time.units} · ${btm.modifiers.units}` : '·'}</td>
+                  <td className="mono" data-testid="review-btm-value" style={{ ...nowrapCell, color: neutral.slate }}>{btm !== undefined ? `${btm.base.units} · ${btm.time.units} · ${btm.modifiers.units}` : '·'}
+                    {primaryAllocation !== undefined && primaryAllocation.splitAcross > 1 && (
+                      <div data-shot="review-modifier-split" style={{ fontSize: 11.5 }}>
+                        M {primaryAllocation.bookingModifierUnits} · split {primaryAllocation.splitShares.join(' · ')}
+                      </div>
+                    )}
+                  </td>
                   <td className="mono" style={{ ...numCell, fontWeight: 700 }}>{totals.units}</td>
                   <td className={totals.needsPrice ? undefined : 'mono'} style={{ ...numCell, fontWeight: 600 }}>{totals.needsPrice ? NEEDS_PRICE_LABEL : formatCurrency(totals.total)}</td>
                   <td style={{ ...cellStyle, minWidth: 150 }}>

@@ -467,7 +467,7 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       governingContractId: isPatientRoute(acc.counterparty)
         ? CONTRACT.noContractRvg
         : (PLAIN_RVG_CONTRACT_BY_HOSPITAL[listHospitalId] ?? CONTRACT.stgRvg),
-      isAdditional: false,
+      isPrimary: true,
       modifierClaims: [],
       removedModifierIds: [],
     }

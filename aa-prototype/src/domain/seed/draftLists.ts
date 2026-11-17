@@ -123,7 +123,7 @@ export function seedDraftListBookings(next: { booking: number; procedure: number
       procedureText: seedText(spec.description, 'email'),
       invoiceDescription: null,
       rvgGroupId: rvgGroupIdForLegacyCode(spec.code),
-      isAdditional: false,
+      isPrimary: true,
       modifierClaims: [],
       removedModifierIds: [],
       governingContractId: CONTRACT.noContractRvg,

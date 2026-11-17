@@ -162,7 +162,7 @@ export function buildPatients(seed: number): Patient[] {
     patients.push(patient)
   }
 
-  patients.push(...PAYER_REVIEW_PATIENTS, ...COMPLETION_PATIENTS, ...REVIEW_FLAG_PATIENTS, ...PROCEDURE_PAYER_PATIENTS)
+  patients.push(...PAYER_REVIEW_PATIENTS, ...COMPLETION_PATIENTS, ...REVIEW_FLAG_PATIENTS, ...PROCEDURE_PAYER_PATIENTS, ...MULTI_PROCEDURE_PATIENTS)
   return patients.map(withSeedContact)
 }
 
@@ -200,6 +200,15 @@ export const PAT_21A_REVIEW = {
 export const PAT_22A = {
   twoPayers: `PT${String(19 + 132 + 14).padStart(4, '0')}`,
 } as const
+
+/** Catch-up Phase 23's dedicated patient (`seed/multiProcedureDemo.ts`), after 22a's: 74 in July 2026, so A1 is pre-applied. */
+export const PAT_23 = {
+  multiProcedure: `PT${String(19 + 132 + 15).padStart(4, '0')}`,
+} as const
+
+const MULTI_PROCEDURE_PATIENTS: readonly Patient[] = [
+  { hiddenInternalId: PAT_23.multiProcedure, nhi: 'ZBD1005', name: 'Graeme Tullett', dobISO: '1951-09-02', phone: '03 555 6545', ethnicityCode: '11111' },
+]
 
 /** The two-payer Booking's patient: an adult whose two Procedures name two payers typed in separately. */
 const PROCEDURE_PAYER_PATIENTS: readonly Patient[] = [

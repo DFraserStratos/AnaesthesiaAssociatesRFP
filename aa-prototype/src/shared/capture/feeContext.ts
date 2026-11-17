@@ -15,13 +15,16 @@
  *     included modifiers (catch-up Phase 19b), as in every other assembler.
  */
 
-import type { AssignedList, BillingLine, Contract, Procedure, RvgGroup } from '../../domain/types'
-import { feeFor, type FeeContext, type FeeResult } from '../../domain/billing/fee'
+import type { AssignedList, BillingLine, Contract, Procedure, ProcedureId, RvgGroup } from '../../domain/types'
+import type { FeeResult } from '../../domain/billing/fee'
+import { bookingFeeFor, type ProcedureFeeContext } from '../../domain/billing/bookingFee'
+import type { ProcedureAllocation } from '../../domain/billing/multiProcedure'
 import { groupOf } from '../../domain/billing/rvgGroups'
 import type { AppState } from '../../store'
 
-export interface ProcedureFeeArgs {
-  procedure: Procedure
+export interface BookingFeeArgs {
+  /** The Booking's Procedures, in Booking order. */
+  procedures: readonly Procedure[]
   /** The List's anaesthetist prices the fee, so only an assigned List (a Draft List has none yet). */
   list: AssignedList
   masters: AppState['masters']
@@ -32,67 +35,66 @@ export interface ProcedureFeeArgs {
 
 export interface ProcedureFeeView {
   fee: FeeResult
+  /** Its place in the Booking under the multi-procedure rule (catch-up Phase 23). */
+  allocation: ProcedureAllocation
   /** The Procedure's RVG group row (catch-up Phase 19), for display. */
   rvgGroup?: RvgGroup
   contract?: Contract
   nonRvgLines: BillingLine[]
 }
 
-export function procedureFee({ procedure, list, masters, billingLines, patientId }: ProcedureFeeArgs): ProcedureFeeView {
-  const anaesthetist = masters.anaesthetists[list.anaesthetistId]
-  if (anaesthetist === undefined) {
-    throw new Error(`list ${list.id} has no anaesthetist ${list.anaesthetistId}`)
-  }
-  const contract =
-    procedure.governingContractId !== undefined
-      ? masters.contracts[procedure.governingContractId]
-      : undefined
-  const rvgGroup = groupOf(masters.rvgGroups, procedure.rvgGroupId)
-  const nonRvgLines = Object.values(billingLines).filter(
-    (l) => l.procedureId === procedure.id && l.chargeBasis !== 'rvg',
-  )
-
-  const ctx: FeeContext = {
-    anaesthetist,
-    dateISO: list.dateISO,
-    timeRule: masters.rvgTimeRule,
-    patientDobISO: patientId !== undefined ? masters.patients[patientId]?.dobISO : undefined,
-    modifiers: masters.modifiers,
-    nonRvgLines,
-  }
-  if (contract !== undefined) ctx.contract = contract
-  if (rvgGroup !== undefined) ctx.rvgGroup = rvgGroup
-
-  const view: ProcedureFeeView = { fee: feeFor(procedure, ctx), nonRvgLines }
-  if (rvgGroup !== undefined) view.rvgGroup = rvgGroup
-  if (contract !== undefined) view.contract = contract
-  return view
-}
-
 export interface BookingFeeTotals {
+  /** The units under the multi-procedure rule, summed. */
   units: number
   total: number
   /** Some Procedure has no price on the List's date ("Needs a price", catch-up Phase 19a). */
   needsPrice: boolean
+  /** The Procedure ids, the primary first (`inDisplayOrder`). */
+  order: ProcedureId[]
+  primaryId: ProcedureId | undefined
+  views: Record<ProcedureId, ProcedureFeeView>
+  /** Set when the Booking has no primary or several (the store never leaves one so): no fee is shown. */
+  structural?: 'noPrimary' | 'severalPrimaries'
 }
 
-/** Booking-level totals (the CompleteBar / completion overlay figures): summed
- *  billable units and fee across the Booking's procedures in Booking order. */
-export function bookingFee(
-  procedures: readonly Procedure[],
-  list: AssignedList,
-  masters: AppState['masters'],
-  billingLines: Record<string, BillingLine>,
-  patientId: string | undefined,
-): BookingFeeTotals {
-  let units = 0
-  let total = 0
-  let needsPrice = false
-  procedures.forEach((procedure) => {
-    const { fee } = procedureFee({ procedure, list, masters, billingLines, patientId })
-    units += fee.billableUnits
-    total += fee.total
-    needsPrice ||= fee.needsPrice
+/**
+ * The one UI assembler (catch-up Phase 23): the whole Booking priced through
+ * `bookingFeeFor`, with each Procedure's context gathered as `feeContextFor`
+ * gathers it for the run (kept in step with it). The capture blocks, the
+ * Booking total, Review and the list rows read its views; none prices a
+ * Procedure alone.
+ */
+export function bookingFee({ procedures, list, masters, billingLines, patientId }: BookingFeeArgs): BookingFeeTotals {
+  const anaesthetist = masters.anaesthetists[list.anaesthetistId]
+  if (anaesthetist === undefined) {
+    throw new Error(`list ${list.id} has no anaesthetist ${list.anaesthetistId}`)
+  }
+  const patientDobISO = patientId !== undefined ? masters.patients[patientId]?.dobISO : undefined
+  const extras = new Map<ProcedureId, { rvgGroup?: RvgGroup; contract?: Contract; nonRvgLines: BillingLine[] }>()
+  const result = bookingFeeFor(procedures, (procedure) => {
+    const contract = procedure.governingContractId !== undefined ? masters.contracts[procedure.governingContractId] : undefined
+    const rvgGroup = groupOf(masters.rvgGroups, procedure.rvgGroupId)
+    const nonRvgLines = Object.values(billingLines).filter((l) => l.procedureId === procedure.id && l.chargeBasis !== 'rvg')
+    extras.set(procedure.id, { ...(rvgGroup !== undefined ? { rvgGroup } : {}), ...(contract !== undefined ? { contract } : {}), nonRvgLines })
+    const ctx: ProcedureFeeContext = {
+      anaesthetist,
+      dateISO: list.dateISO,
+      timeRule: masters.rvgTimeRule,
+      patientDobISO,
+      modifiers: masters.modifiers,
+      nonRvgLines,
+    }
+    if (contract !== undefined) ctx.contract = contract
+    if (rvgGroup !== undefined) ctx.rvgGroup = rvgGroup
+    return ctx
   })
-  return { units, total: Math.round(total * 100) / 100, needsPrice }
+  if (result.kind === 'structural') {
+    return { units: 0, total: 0, needsPrice: false, order: procedures.map((p) => p.id), primaryId: undefined, views: {}, structural: result.reason }
+  }
+  const views: Record<ProcedureId, ProcedureFeeView> = {}
+  for (const id of result.order) {
+    const fee = result.fees[id]!
+    views[id] = { fee, allocation: fee.allocation, ...extras.get(id)! }
+  }
+  return { units: result.units, total: result.total, needsPrice: result.needsPrice, order: result.order, primaryId: result.primaryId, views }
 }

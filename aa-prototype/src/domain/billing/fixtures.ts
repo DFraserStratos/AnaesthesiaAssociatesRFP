@@ -58,7 +58,7 @@ export function mkProcedure(overrides: Partial<Procedure> = {}): Procedure {
     payer: { kind: 'patient' },
     procedureText: null,
     invoiceDescription: null,
-    isAdditional: false,
+    isPrimary: true,
     modifierClaims: [],
     removedModifierIds: [],
     ...overrides,

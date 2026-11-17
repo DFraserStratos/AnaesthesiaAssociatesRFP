@@ -8,8 +8,8 @@ import { procedureLabel } from '../../domain/billing/procedureStack'
 interface RemoveProcedureSheetProps {
   open: boolean
   procedureId: string
-  /** 1-based position on the Booking, for the heading. */
-  ordinal: number
+  /** 1-based number in display order (the primary is 1), for the heading. */
+  displayNumber: number
   actor: Actor
   onClose: () => void
   onRemoved: () => void
@@ -26,7 +26,7 @@ interface RemoveProcedureSheetProps {
  * What it does owe the user is the consequences, since capture is destroyed:
  * the sheet names the procedure and counts the billing lines going with it.
  */
-export function RemoveProcedureSheet({ open, procedureId, ordinal, actor, onClose, onRemoved }: RemoveProcedureSheetProps) {
+export function RemoveProcedureSheet({ open, procedureId, displayNumber, actor, onClose, onRemoved }: RemoveProcedureSheetProps) {
   const procedure = useAppStore((s) => s.schedule.procedures[procedureId])
   const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
   const lineCount = useAppStore(
@@ -39,7 +39,7 @@ export function RemoveProcedureSheet({ open, procedureId, ordinal, actor, onClos
   }, [open])
 
   if (procedure === undefined) return null
-  const name = procedureLabel(procedure, rvgGroups, ordinal)
+  const name = procedureLabel(procedure, rvgGroups, displayNumber)
 
   function submit() {
     setError(null)
@@ -56,7 +56,7 @@ export function RemoveProcedureSheet({ open, procedureId, ordinal, actor, onClos
     <ConfirmSheet
       open={open}
       onClose={onClose}
-      title={`Remove procedure ${ordinal}?`}
+      title={`Remove procedure ${displayNumber}?`}
       description={
         <>
           <strong style={{ color: neutral.ink }}>{name}</strong> and everything captured on it (times, units,

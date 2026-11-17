@@ -1,7 +1,12 @@
 /**
- * The fee calculator — the BTM path, contract pricing (by pricing kind), non-RVG
+ * The fee calculator: the BTM path, contract pricing (by pricing kind), non-RVG
  * billing lines (fixed + rate x time) and typed price overrides, composed into
  * a structured `FeeResult` the UI only formats (PROGRESS convention 9).
+ *
+ * Since catch-up Phase 23 every Procedure is priced from its place in its
+ * Booking (`FeeContext.allocation`, from `multiProcedure.ts`): `bookingFeeFor`
+ * (`bookingFee.ts`) is the one entry point that allocates a Booking and calls
+ * `feeFor` for each of its Procedures.
  */
 
 import type {
@@ -18,6 +23,7 @@ import { rangeInForce } from './priceRanges'
 import { procedureModifiers, type Modifier, type ModifierId, type ProcedureModifier } from './modifiers'
 import { baseUnitsFor, resolveStartingUnits, type BaseUnitsSource, type GuideValue, type RvgGroup } from './rvgGroups'
 import { timeUnitsFromMinutes, type RvgTimeRule } from './timeUnits'
+import type { ProcedureAllocation } from './multiProcedure'
 
 // ---------------------------------------------------------------------------
 // B/T/M resolution
@@ -29,23 +35,31 @@ export interface ResolvedUnits {
 }
 
 export interface BtmBreakdown {
+  /** Base units: 0 on an additional Procedure (source `'additional'`), whatever its RVG group (catch-up Phase 23). */
   base: ResolvedUnits
-  /** Where the base units came from (catch-up Phase 19; `baseUnitsFor`). */
+  /** Where the base units came from (catch-up Phase 19; `baseUnitsFor`), or `'additional'`. */
   baseSource: BaseUnitsSource
   /** The RVG group's guide value (absent with no RVG code). */
   baseGuide?: GuideValue
   /** A recorded base value that differs from the starting value and lies outside the guide (D3: never blocks). */
   baseOutsideGuide: boolean
   time: ResolvedUnits
+  /**
+   * The modifier units: on the primary, the Booking's total (recorded there
+   * once, catch-up Phase 23); on an additional Procedure, its share of that
+   * total under the multi-procedure rule.
+   */
   modifiers: ResolvedUnits
   /**
    * The itemised modifiers (catch-up Phase 19b): the pre-applied age and
    * included rows, then the claims, each with its origin and units; a refused
    * duplicate is listed with its reason and adds nothing. The UI, the units
-   * caption, Phase 23's split and Phase 25's snapshot read this one answer.
+   * caption, the multi-procedure split and Phase 25's snapshot read this one
+   * answer. On an additional Procedure only its own included rows (0 units,
+   * US-05.1.4 per Procedure): the Booking's modifiers are the primary's.
    */
   modifierItems: ProcedureModifier[]
-  /** base + time + modifiers (before the isAdditional split rule). */
+  /** base + time + modifiers, as recorded on this Procedure. */
   totalUnits: number
 }
 
@@ -69,6 +83,9 @@ export interface ModifierInputs {
   modifiers: Readonly<Record<ModifierId, Modifier>>
 }
 
+/** A Procedure's place in the multi-procedure rule, as `resolveBtm` reads it (none: priced as the primary). */
+export type BtmRole = Pick<ProcedureAllocation, 'role' | 'modifierShare'>
+
 /**
  * Resolve B/T/M from the procedure's CAPTURED inputs (RFP principle 10 — the
  * inputs are data): seeded values are recomputed from the inputs; a captured
@@ -81,19 +98,26 @@ export interface ModifierInputs {
  * pre-applied age and included rows and the claims. Time units follow the RVG time rule
  * held as data (`masters.rvgTimeRule`, catch-up Phase 19a), from the start
  * and finish stamps only.
+ *
+ * `role` (catch-up Phase 23): on an additional Procedure base is 0 with source
+ * `'additional'`, whatever its group, range choice or stored capture, and M is
+ * its share of the Booking's modifiers (its own claims and starting figure
+ * ignored, so nothing counts twice and the age modifier counts once for the
+ * Booking). With no role (or the primary) B and M are the Procedure's own.
  */
 export function resolveBtm(
   procedure: Procedure,
   group: RvgGroup | undefined,
   timeRule: RvgTimeRule,
   modifierInputs: ModifierInputs,
+  role?: BtmRole,
 ): BtmBreakdown {
+  const additional = role?.role === 'additional'
   // Base
   const resolvedBase = baseUnitsFor({ procedure, ...(group !== undefined ? { group } : {}) })
-  const base: ResolvedUnits = {
-    units: resolvedBase.units,
-    source: resolvedBase.source === 'overridden' ? 'overridden' : 'seeded',
-  }
+  const base: ResolvedUnits = additional
+    ? { units: 0, source: 'seeded' }
+    : { units: resolvedBase.units, source: resolvedBase.source === 'overridden' ? 'overridden' : 'seeded' }
 
   // Time
   let time: ResolvedUnits
@@ -113,7 +137,9 @@ export function resolveBtm(
     start: group !== undefined ? resolveStartingUnits({ group }).modifier.units : 0,
   })
   let modifiers: ResolvedUnits
-  if (procedure.modifierUnitsCaptured?.source === 'overridden') {
+  if (additional) {
+    modifiers = { units: role?.modifierShare ?? 0, source: 'seeded' }
+  } else if (procedure.modifierUnitsCaptured?.source === 'overridden') {
     modifiers = { units: procedure.modifierUnitsCaptured.units, source: 'overridden' }
   } else {
     modifiers = { units: computed.units, source: 'seeded' }
@@ -121,23 +147,26 @@ export function resolveBtm(
 
   return {
     base,
-    baseSource: resolvedBase.source,
+    baseSource: additional ? 'additional' : resolvedBase.source,
     ...(resolvedBase.guide !== undefined ? { baseGuide: resolvedBase.guide } : {}),
-    baseOutsideGuide: resolvedBase.outsideGuide,
+    baseOutsideGuide: !additional && resolvedBase.outsideGuide,
     time,
     modifiers,
-    modifierItems: computed.items,
+    modifierItems: additional ? computed.items.filter((i) => i.origin === 'included') : computed.items,
     totalUnits: base.units + time.units + modifiers.units,
   }
 }
 
 /**
- * The RFP's split-billing rule: an additional procedure (added with Add
- * another procedure) yields TIME UNITS ONLY; base and modifiers charge on the first
- * procedure alone.
+ * The units a Procedure earns under the multi-procedure rule (catch-up Phase
+ * 23): base on the primary (`baseOn`'s Procedure), time on every Procedure,
+ * and its share of the Booking's modifiers. On an RVG-priced Procedure these
+ * are the units charged at a rate; on a fixed or open price they are recorded
+ * for reference and the price stands.
  */
-export function splitBillingUnits(procedure: Procedure, btm: BtmBreakdown): number {
-  return procedure.isAdditional ? btm.time.units : btm.totalUnits
+export function unitsUnderRule(btm: BtmBreakdown, allocation: ProcedureAllocation): number {
+  const base = allocation.role === 'primary' ? btm.base.units : 0
+  return base + btm.time.units + allocation.modifierShare
 }
 
 // ---------------------------------------------------------------------------
@@ -164,6 +193,14 @@ export interface FeeContext {
   patientDobISO: string | undefined
   /** The modifier master (`masters.modifiers`, catch-up Phase 19b). */
   modifiers: Readonly<Record<ModifierId, Modifier>>
+  /**
+   * This Procedure's place in its Booking under the multi-procedure rule
+   * (catch-up Phase 23): from `bookingFeeFor`, the one entry point, or
+   * `soleAllocation` for the Booking's only Procedure.
+   */
+  allocation: ProcedureAllocation
+  /** How many Procedures the Booking has: the line descriptions name the role only with two or more. */
+  bookingProcedureCount?: number
   /**
    * The procedure's captured NON-RVG billing lines (fixed / rate x time).
    * RVG-basis lines are never inputs — the calculator produces the RVG amount
@@ -192,8 +229,14 @@ export interface AppliedOverride {
 
 export interface FeeResult {
   btm: BtmBreakdown
-  /** Units actually charged (after the isAdditional time-only rule). */
+  /**
+   * The units under the multi-procedure rule (`unitsUnderRule`), charged at a
+   * rate, on an RVG-priced Procedure; on a fixed or open price, its own units
+   * (B + T + M, unadjusted by the rule), for reference.
+   */
   billableUnits: number
+  /** The allocation this fee was priced from (catch-up Phase 23), echoed. */
+  allocation: ProcedureAllocation
   /** Basis of the primary component; 'mixed' when lines span bases. */
   chargeBasis: ChargeBasis | 'mixed'
   /** $ per unit applied on the RVG path (null when a fixed price applied). */
@@ -237,8 +280,12 @@ export function modifierInputsOf(ctx: Pick<FeeContext, 'patientDobISO' | 'dateIS
  * (its RVG figure is working only). The resolver and validator own the refusal.
  */
 export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
-  const btm = resolveBtm(procedure, ctx.rvgGroup, ctx.timeRule, modifierInputsOf(ctx))
-  const billableUnits = splitBillingUnits(procedure, btm)
+  const { allocation } = ctx
+  // The rule adjusts RVG-priced Procedures only (US-05.3.1, A19): a fixed or open price keeps its
+  // own units, unadjusted, for reference; its price stands.
+  const btm = resolveBtm(procedure, ctx.rvgGroup, ctx.timeRule, modifierInputsOf(ctx), allocation.rvgPriced ? allocation : undefined)
+  const billableUnits = allocation.rvgPriced ? unitsUnderRule(btm, allocation) : btm.totalUnits
+  const several = (ctx.bookingProcedureCount ?? 1) > 1
   const lines: FeeLine[] = []
 
   // --- the RVG / fixed-price component ---
@@ -271,16 +318,14 @@ export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
     if (range !== null) {
       lines.push({
         chargeBasis: 'fixed',
-        description: 'Contract price',
+        description: several ? `Contract price, ${allocation.role} procedure` : 'Contract price',
         amount: roundToCents(range.price),
       })
     }
   } else if (procedure.rvgGroupId !== undefined) {
     lines.push({
       chargeBasis: 'rvg',
-      description: procedure.isAdditional
-        ? 'Anaesthesia, additional procedure (time units only)'
-        : 'Anaesthesia (B + T + M units)',
+      description: several ? rvgLineDescription(btm, allocation) : 'Anaesthesia (B + T + M units)',
       amount: roundToCents(billableUnits * (unitRate ?? 0)),
       units: billableUnits,
       rate: unitRate ?? undefined,
@@ -325,5 +370,23 @@ export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
   const chargeBasis: ChargeBasis | 'mixed' =
     bases.size > 1 ? 'mixed' : (lines[0]?.chargeBasis ?? (isFixed || typedOpenPrice !== undefined ? 'fixed' : 'rvg'))
 
-  return { btm, billableUnits, chargeBasis, unitRate, lines, subtotal, override: applied, total, needsPrice }
+  return { btm, billableUnits, allocation, chargeBasis, unitRate, lines, subtotal, override: applied, total, needsPrice }
+}
+
+/**
+ * The RVG line on a Booking with two or more Procedures (catch-up Phase 23):
+ * "Anaesthesia, primary procedure (B 6 + T 6 + M 3 of 7 units)" or
+ * "Anaesthesia, additional procedure (T 2 + M 2 of 7 units)", "of n" only
+ * when the modifiers split, and an additional Procedure with no share reads
+ * its time units alone. No dashes (app copy).
+ */
+export function rvgLineDescription(btm: BtmBreakdown, allocation: ProcedureAllocation): string {
+  const share = allocation.modifierShare
+  const m = allocation.splitAcross > 1 ? `M ${share} of ${allocation.bookingModifierUnits}` : `M ${share}`
+  if (allocation.role === 'primary') {
+    const parts = [...(allocation.baseCharged ? [`B ${btm.base.units}`] : []), `T ${btm.time.units}`, m]
+    return `Anaesthesia, primary procedure (${parts.join(' + ')} units)`
+  }
+  const parts = [`T ${btm.time.units}`, ...(share > 0 ? [m] : [])]
+  return `Anaesthesia, additional procedure (${parts.join(' + ')} units)`
 }

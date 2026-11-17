@@ -33,7 +33,7 @@ export interface FooterProps {
 export interface BookingTotalLine {
   label: string
   amount: number
-  /** A short qualifier, e.g. "time units only". */
+  /** A short qualifier: the row's place in the multi-procedure rule, e.g. "Additional · T + M 2 of 7" (catch-up Phase 23). */
   note?: string
   /** No price on the List's date: shown as "Needs a price", never as an amount (catch-up Phase 19a). */
   needsPrice?: boolean
@@ -48,7 +48,7 @@ export interface BookingTotalLine {
  * the control as a separate, matching-width sibling below the total.
  */
 export interface BookingTotalProps {
-  /** Summed billable units across the Booking's procedures (`bookingFee`). */
+  /** The units under the multi-procedure rule across the Booking's procedures (`bookingFee`). */
   units: number
   /** Summed fee across the Booking's procedures (`bookingFee`). */
   fee: number
@@ -60,6 +60,13 @@ export interface BookingTotalProps {
   rateLabel: string | null
   /** Price-override note, or null. */
   overrideNote: string | null
+  /**
+   * Plain neutral captions under the rows of a multi-procedure Booking (catch-up
+   * Phase 23): "Modifiers 7, split 3 · 2 · 2", and OQ-132's provisional note.
+   */
+  notes?: readonly string[]
+  /** Two or more Procedures: the rows and their captions carry `booking-total-split`. */
+  multiProcedure?: boolean
   /** The complete / amend bar. Omitted on a locked Booking. */
   action?: ReactNode
 }

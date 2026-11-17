@@ -283,7 +283,7 @@ describe('removeBillingLine', () => {
 })
 
 describe('addProcedure', () => {
-  it('adds an isAdditional skeleton inheriting the funding context from the first procedure', () => {
+  it('adds an additional (not primary) skeleton inheriting the funding context from the first procedure', () => {
     const api = store()
     const first = proceduresForBooking(api.getState(), ELLISON_BOOKING)[0]
     const outcome = addProcedure(api, SOUTER, ELLISON_BOOKING)
@@ -291,7 +291,7 @@ describe('addProcedure', () => {
     if (!outcome.ok) return
 
     const procedure = api.getState().schedule.procedures[outcome.value.procedureId]
-    expect(procedure?.isAdditional).toBe(true)
+    expect(procedure?.isPrimary).toBe(false)
     expect(procedure?.procedureText).toBeNull()
     expect(procedure?.rvgGroupId).toBeUndefined()
     // It picks its own Contract on the step rail (catch-up Phase 20, US-03.2.3):

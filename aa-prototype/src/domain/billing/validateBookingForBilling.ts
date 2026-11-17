@@ -27,7 +27,7 @@ import type {
   RvgGroup,
   RvgGroupId,
 } from '../types'
-import { feeFor } from './fee'
+import { bookingFeeFor, NO_PRIMARY_MESSAGE, type BookingFeeResult, type ProcedureFeeContext } from './bookingFee'
 import { groupOf } from './rvgGroups'
 import { formatMoney } from './money'
 import { PARTY_GONE_REASON, resolveSplit, splitDoesNotFitMessage } from './splitShare'
@@ -117,20 +117,21 @@ export interface BookingBillingContext {
 }
 
 /**
- * Assemble the `feeFor` context for one procedure from a booking billing
- * context. Single-sourced so the run, the pre-flight, the split's checks and
- * the warnings compute the procedure fee identically.
+ * Assemble one procedure's fee context (before the multi-procedure rule places
+ * it) from a booking billing context. Single-sourced so the run, the
+ * pre-flight, the split's checks and the warnings compute the procedure fee
+ * identically, always through `bookingFeesFor`.
  */
 export function feeContextFor(
   procedure: Procedure,
   ctx: BookingBillingContext,
-): Parameters<typeof feeFor>[1] {
+): ProcedureFeeContext {
   const storedLines = ctx.billingLines.filter((l) => l.procedureId === procedure.id)
   const nonRvgLines = storedLines.filter((l) => l.chargeBasis !== 'rvg')
   const rvgGroup = groupOf(ctx.rvgGroups, procedure.rvgGroupId)
   const contract =
     procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
-  const feeCtx: Parameters<typeof feeFor>[1] = {
+  const feeCtx: ProcedureFeeContext = {
     anaesthetist: ctx.anaesthetist,
     dateISO: ctx.listDateISO,
     timeRule: ctx.timeRule,
@@ -144,9 +145,30 @@ export function feeContextFor(
 }
 
 /**
- * Validate a Booking's procedures for billing. `procedures` must be in Booking
- * order — a procedure's ordinal (2nd-procedure contract pricing) is its
- * 1-based position in this array.
+ * Price a whole Booking from a booking billing context (catch-up Phase 23):
+ * `bookingFeeFor` over `feeContextFor`, the one way the run, the pre-flight,
+ * Review, the warnings and the split's checks price a Procedure.
+ * `contractFor` lets the run inject each Procedure's resolved Contract.
+ */
+export function bookingFeesFor(
+  procedures: readonly Procedure[],
+  ctx: BookingBillingContext,
+  contractFor?: (procedure: Procedure) => Contract | undefined,
+): BookingFeeResult {
+  return bookingFeeFor(procedures, (procedure) => {
+    const feeCtx = feeContextFor(procedure, ctx)
+    if (contractFor === undefined) return feeCtx
+    const contract = contractFor(procedure)
+    if (contract !== undefined) feeCtx.contract = contract
+    else delete feeCtx.contract
+    return feeCtx
+  })
+}
+
+/**
+ * Validate a Booking's procedures for billing. `procedures` is the Booking's
+ * Procedures in Booking order; they are priced together under the
+ * multi-procedure rule, so a Booking without exactly one primary fails.
  */
 export function validateBookingForBilling(
   booking: Booking,
@@ -160,6 +182,11 @@ export function validateBookingForBilling(
   const fail = (procedureId: string, field: string, message: string) => {
     failures.push({ procedureId, field, message })
   }
+
+  // The Booking is priced once, under the multi-procedure rule (catch-up Phase 23).
+  const priced = bookingFeesFor(procedures, ctx)
+  if (priced.kind === 'structural') failures.push({ field: 'isPrimary', message: NO_PRIMARY_MESSAGE })
+  const feeOf = (procedure: Procedure) => (priced.kind === 'ok' ? priced.fees[procedure.id] : undefined)
 
   procedures.forEach((procedure) => {
     const id = procedure.id
@@ -195,8 +222,8 @@ export function validateBookingForBilling(
       if (procedure.priceOverride.reason.trim() === '') {
         fail(id, 'priceOverride', 'Give a reason for the price override.')
       }
-      const fee = feeFor(procedure, feeContextFor(procedure, ctx))
-      if (fee.total < 0) {
+      const fee = feeOf(procedure)
+      if (fee !== undefined && fee.total < 0) {
         fail(id, 'priceOverride', `The price override makes the fee negative (${formatMoney(fee.total)}). Adjust the override.`)
       }
     }
@@ -204,8 +231,9 @@ export function validateBookingForBilling(
     // A split that no longer fits the fee (catch-up Phase 22; US-08.2.3):
     // the fee changed under a typed $ share, so the run fails the Booking for
     // review rather than billing a guess.
-    if (procedure.split !== undefined) {
-      const fee = feeFor(procedure, feeContextFor(procedure, ctx))
+    const splitFee = feeOf(procedure)
+    if (procedure.split !== undefined && splitFee !== undefined) {
+      const fee = splitFee
       const resolved = resolveSplit(fee.total, procedure.split.shares)
       if (!splitPartiesOn(procedure, booking.patientId, procedure.split.shares, ctx.parties)) fail(id, 'split', splitDoesNotFitMessage(fee.total, PARTY_GONE_REASON))
       else if (!resolved.ok) fail(id, 'split', splitDoesNotFitMessage(fee.total, resolved.reason))
