@@ -10,7 +10,7 @@ import { TEXT_FIELDS, lineCounts, lineDiff, setDiff, type DiffLine, type FieldCh
 import { firstLaneName, parseArtifactRef, type ImageRef, type Item } from '../../shared/types.ts'
 import { api, historyBlobUrl } from '../api.ts'
 import { dayLabel, timeLabel } from '../dates.ts'
-import { useCatalogue, useConfig, type Index } from '../store.ts'
+import { useCatalogue, type Index } from '../store.ts'
 import { typeClass } from '../vocab.ts'
 import { ArtifactRefName, ItemName, RecordName, StatusLabel } from './bits.tsx'
 
@@ -85,20 +85,19 @@ export type ChangeEntry = Extract<TimelineEntry, { type: 'change' }>
  * ruled across, the uncommitted run in amber. `children` draws an entry's changes.
  */
 export function HistoryTimeline({ entries, children }: { entries: TimelineEntry[]; children: (e: ChangeEntry) => ReactNode }) {
-  const { locale } = useConfig().project
   const firstUncommitted = entries.findIndex((e) => e.type === 'change' && e.uncommitted)
   let day = ''
   return (
     <ol className="hist-list">
       {entries.map((e, i) => {
-        const d = dayLabel(e.at, locale)
+        const d = dayLabel(e.at)
         const head = d !== day ? <li className="hist-day" key={`d${i}`}>{(day = d)}</li> : null
         if (e.type === 'commit') {
           return (
             <Fragment key={i}>
               {head}
               <li className="hist-commit" title={`${e.commit.sha.slice(0, 7)} by ${e.commit.author}`}>
-                <time className="hist-time">{timeLabel(e.at, locale)}</time>
+                <time className="hist-time">{timeLabel(e.at)}</time>
                 <span className="hist-commit-label">
                   Committed <q>{e.commit.subject}</q>
                 </span>
@@ -111,8 +110,8 @@ export function HistoryTimeline({ entries, children }: { entries: TimelineEntry[
             {head}
             {i === firstUncommitted && <li className="hist-pending-label">Not committed yet</li>}
             <li className={`hist-entry src-${e.source}${e.uncommitted ? ' uncommitted' : ''}`}>
-              <time className="hist-time" dateTime={e.at} title={new Date(e.at).toLocaleString(locale)}>
-                {timeLabel(e.at, locale)}
+              <time className="hist-time" dateTime={e.at} title={new Date(e.at).toLocaleString('en-NZ')}>
+                {timeLabel(e.at)}
               </time>
               <span className="hist-mark" aria-hidden />
               <div className="hist-body">

@@ -20,14 +20,13 @@ export function AboutView() {
   useEffect(() => {
     if (section) document.getElementById(`about-${section}`)?.scrollIntoView({ block: 'start' })
   }, [section])
-  const board = useConfig().board.name
 
   return (
     <div className="page">
       <div className="page-inner about">
         <div className="page-head">
           <div>
-            <h1>How to use {board === 'Requirements board' ? 'this board' : board}</h1>
+            <h1>How to use this board</h1>
             <p>
               A requirements catalogue you keep in git, a board to read and arrange it, and Claude Code skills that keep it up to date from what your client tells you.{' '}
               <span className="mono about-version">v{__BOARD_VERSION__}</span>
@@ -90,7 +89,7 @@ function WhatItIs() {
         </div>
       </div>
       <p className="about-note">
-        Both routes edit the same files, and <code>npm run check</code> keeps them valid: the board shows the result as <em>Checks pass</em> in the masthead.
+        Both routes edit the same files, and <code>npm run check</code> keeps them valid: when a file is wrong, a red pill appears in the masthead.
       </p>
     </section>
   )
@@ -404,7 +403,7 @@ function Anatomy() {
         <div className="about-tile">
           <h3>Outline and checks</h3>
           <p>
-            <Link to="/outline">Outline</Link> lists everything as a document, ready to read top to bottom. <em>Checks pass</em> in the masthead turns red when a file is wrong; click it to see why. It also warns when a description carries history that belongs in Notes, by the patterns listed under <code>voice</code> in <code>board.config.json</code>.
+            <Link to="/outline">Outline</Link> lists everything as a document, ready to read top to bottom. The masthead stays clear while all is well. A pill appears only when something needs attention: amber <em>Offline</em> when the board has lost its server and nothing is being saved, red when a file is wrong or a card move didn’t save. Click it to see why. The checks also note when a description carries history that belongs in Notes, by the patterns listed under <code>voice</code> in <code>board.config.json</code>; notes never raise the pill, and Settings lists them under Checks.
           </p>
         </div>
       </div>
@@ -419,7 +418,7 @@ const FOLDERS: [string, string][] = [
   ['changes/', 'A change log per update: what changed and why'],
   ['artifacts/', 'A sidecar per artifact (AR-01), its file in artifacts/files/'],
   ['VOICE.md', 'How requirements are written; the skills follow it (edit it in Settings), and the check warns on the voice patterns in board.config.json'],
-  ['board.config.json', 'Board and project name, components and statuses (Settings edits it); voice patterns for the check (by hand)'],
+  ['board.config.json', 'Project name and accent colour, components and statuses (Settings edits it); voice patterns for the check (by hand)'],
   ['board-layout.json', 'Swimlanes and any cards you placed by hand'],
   ['SCHEMA.md', 'The file format: read it before editing files by hand'],
   ['domain-model.md', 'The narrative model of the system, once there is one'],

@@ -1,7 +1,7 @@
-import { AlertTriangle, CheckCircle2, Info, Settings } from 'lucide-react'
-import { Suspense, lazy, useEffect, useRef, useState, type RefObject } from 'react'
+import { Info, Settings } from 'lucide-react'
+import { Suspense, lazy, useEffect, useState, type CSSProperties } from 'react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
-import { STARTER_PROJECT_NAME } from '../shared/config.ts'
+import { BOARD_NAME, STARTER_PROJECT_NAME } from '../shared/config.ts'
 import { isOpenQuestion } from '../shared/statuses.ts'
 import { isPastArtifact, type CatalogueEvent } from '../shared/types.ts'
 import { ItemModal } from './components/ItemModal.tsx'
@@ -10,8 +10,9 @@ import { QuestionModal } from './components/QuestionModal.tsx'
 import { hasUnsavedDrafts } from './components/useEditableRecord.ts'
 import { useOpen } from './nav.ts'
 import { useCatalogue, useConfig, useIndex, useShownIndex } from './store.ts'
-import { useDismiss } from './useDismiss.ts'
 import { useArtifactIndex } from './artifactIndex.ts'
+import { BrandMark } from './components/BrandMark.tsx'
+import { ProblemPill } from './components/ProblemPill.tsx'
 import { AboutView } from './views/AboutView.tsx'
 import { ArtifactPage } from './views/ArtifactPage.tsx'
 import { ArtifactsView } from './views/ArtifactsView.tsx'
@@ -116,27 +117,21 @@ function Masthead({ connected }: { connected: boolean }) {
   const shown = useShownIndex()
   const artifacts = useArtifactIndex()
   const liveArtifacts = artifacts.list.filter((r) => !isPastArtifact(r.data.status)).length
-  const issues = useCatalogue((s) => s.issues)
-  const layoutError = useCatalogue((s) => s.layoutError)
-  const moveError = useCatalogue((s) => s.moveError)
-  const clearMoveError = useCatalogue((s) => s.clearMoveError)
   const config = useConfig()
   const project = config.project.name
-  const board = config.board.name
-  const [showIssues, setShowIssues] = useState(false)
-  const checksRef = useRef<HTMLButtonElement>(null)
+  const accent = config.project.accent
+  const board = BOARD_NAME
   useEffect(() => {
     document.title = project ? `${project} · ${board}` : board
   }, [project, board])
+  useEffect(() => setFavicon(accent), [accent])
   const openCount = index.questions.filter((q) => isOpenQuestion(index.config, q)).length
-  const errors = issues.filter((i) => i.severity === 'error').length
   const uncommitted = useUncommittedCount()
-  const warnings = issues.length - errors
 
   return (
-    <header className="masthead">
+    <header className={accent ? 'masthead accented' : 'masthead'} style={accent ? ({ '--accent': accent } as CSSProperties) : undefined}>
       <div className="brand">
-        <BrandMark />
+        <BrandMark accent={accent} />
         <span className="brand-name">{board}</span>
         {project && (
           <span className="brand-project" title={project}>
@@ -162,26 +157,8 @@ function Masthead({ connected }: { connected: boolean }) {
         </NavLink>
       </nav>
       <div className="masthead-right">
-        {layoutError && (
-          <span className="checks bad" role="alert" title={layoutError}>
-            <AlertTriangle size={14} /> Card moves not saved
-          </span>
-        )}
-        {/* A refused Mapped move is already rolled back; this says why, until dismissed or the next move saves. */}
-        {moveError && (
-          <button className="checks bad" role="alert" title={`${moveError}\nClick to dismiss`} onClick={clearMoveError}>
-            <AlertTriangle size={14} /> {moveError.split(':')[0]}
-          </button>
-        )}
-        <span className="live" title={connected ? 'Watching the requirements folder for changes' : 'Dev server not reachable'}>
-          <span className={`live-dot${connected ? '' : ' off'}`} />
-          {connected ? 'Live' : 'Offline'}
-        </span>
-        <button ref={checksRef} className={`checks${errors ? ' bad' : ''}`} onClick={() => setShowIssues((v) => !v)} aria-expanded={showIssues}>
-          {errors ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />}
-          {errors ? `${errors} error${errors > 1 ? 's' : ''}` : 'Checks pass'}
-          {warnings > 0 && <span className="mono">· {warnings} note{warnings > 1 ? 's' : ''}</span>}
-        </button>
+        {/* Nothing shows while all is well: the pill appears only when something needs attention. */}
+        <ProblemPill connected={connected} />
         {/* Until the project is named, a new team is pointed at the guide. */}
         {(!project || project === STARTER_PROJECT_NAME) && (
           <NavLink className="btn ghost sm start-here" to="/about">
@@ -195,39 +172,20 @@ function Masthead({ connected }: { connected: boolean }) {
           <Settings size={16} />
         </NavLink>
       </div>
-      {showIssues && <ChecksPanel anchor={checksRef} onClose={() => setShowIssues(false)} />}
     </header>
   )
 }
 
-function ChecksPanel({ anchor, onClose }: { anchor: RefObject<HTMLButtonElement | null>; onClose: () => void }) {
-  const issues = useCatalogue((s) => s.issues)
-  const ref = useDismiss<HTMLDivElement>(onClose, anchor)
-  return (
-    <div ref={ref} className="checks-panel" role="dialog" aria-label="Catalogue checks">
-      {issues.length === 0 ? (
-        <p className="empty">Every ID, parent, link and value checks out.</p>
-      ) : (
-        <ul>
-          {issues.map((i, n) => (
-            <li key={n}>
-              <span className={`mono sev-${i.severity}`}>{i.id}</span>
-              <span className={`sev-${i.severity}`}>{i.message}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  )
+/**
+ * The tab icon: the board's card on a grid, its card drawn in the project's accent when one is set,
+ * so tabs for different projects tell apart. Without one it is the teal mark from `index.html`. Its
+ * grid lines are darker and heavier than the masthead mark's, or they vanish at tab-icon size.
+ */
+function setFavicon(accent: string | undefined) {
+  const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+  if (!link) return
+  const stroke = accent ?? '#0d6e63'
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='#edf2f0'/><path d='M0 8h32M0 16h32M0 24h32M8 0v32M16 0v32M24 0v32' stroke='#b3c2bd' stroke-width='1.3'/><rect x='6' y='9' width='20' height='14' rx='2' fill='${accent ? stroke : '#fff'}' stroke='${stroke}' stroke-width='2'/></svg>`
+  link.href = `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
-/** The board's own mark, the same card-on-a-grid drawing as the favicon. */
-function BrandMark() {
-  return (
-    <svg className="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden>
-      <rect width="32" height="32" rx="6" fill="var(--paper)" />
-      <path d="M0 8h32M0 16h32M0 24h32M8 0v32M16 0v32M24 0v32" stroke="var(--rule-strong)" strokeWidth="1" />
-      <rect x="6" y="9" width="20" height="14" rx="2" fill="var(--card)" stroke="var(--teal)" strokeWidth="2.4" />
-    </svg>
-  )
-}

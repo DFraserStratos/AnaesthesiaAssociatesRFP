@@ -552,7 +552,7 @@ function Board({ mode }: { mode: BoardMode }) {
           <span className="toolbar-spacer" />
           <div className="toolbar-group" style={{ position: 'relative' }}>
             <div className="mode-switch" role="radiogroup" aria-label="Board mode">
-              {(['freeform', 'mapped'] as const).map((m) => (
+              {(['mapped', 'freeform'] as const).map((m) => (
                 <button
                   key={m}
                   role="radio"

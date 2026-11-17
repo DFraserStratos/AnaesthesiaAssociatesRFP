@@ -2,6 +2,20 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.12.0 · 2026-11-18
+
+- The masthead shows status only when something is wrong. "Live" and "Checks pass" are gone; one **problem pill** appears while there is a problem: amber "Offline" when the board has lost its dev server (nothing is being saved), red for catalogue errors, card moves not saved or a refused move. One problem names itself, more say "2 problems"; it opens one list grouped as Connection, Card moves and Checks, offline first, with the command to restart the server. When the last problem clears, a green "All clear" shows for about three seconds and fades. The "Card moves not saved" and refused-move pills are folded into it.
+- Check notes no longer show in the masthead. Settings has a new **Checks** section listing every error and note; the pill's list shows notes under the errors.
+
+## 1.11.0 · 2026-11-18
+
+- Settings: the Board section is now **Project**, with the project's name and a new **accent colour** (`project.accent` in `board.config.json`, `#rrggbb`): nine presets, None, or any other colour. With one set, the board's mark in the masthead and the browser tab icon are filled with it, the underline under the open view takes it in place of teal, and the project's name turns bold, so boards for different projects open side by side tell apart at a glance.
+- The board's name is fixed as "Requirements board" (`board.name` is no longer read, and saving Settings drops it from the file), and dates and times are always New Zealand English (`project.locale` is no longer read). `capture.locale` for screenshots is unchanged.
+
+## 1.10.1 · 2026-11-18
+
+- The board opens in Mapped mode by default, and Mapped is now the left-hand option of the mode switch. A browser that has already saved a mode keeps it.
+
 ## 1.10.0 · 2026-11-17
 
 - `run-build-phase`: a two-session phase runs in one session by default. The doc's session boundary is now a checkpoint, not a stop. There the session runs the full gate, writes the `IN PROGRESS` status row and a short `**Session 1**` paragraph (so a session that ends unexpectedly can be resumed), then carries on with the rest. It stops at the checkpoint only when the prompt says so (a session-1-only run), when its context has already been compacted, or when the context or a usage limit warns it is near its end. A stop updates the plan page so the same prompt resumes the phase. A phase finished in one session gets one full entry in place of the `**Session 1**` paragraph. The running log gains a `Checkpoint:` line after each work item, and a resumed session starts from the last one.

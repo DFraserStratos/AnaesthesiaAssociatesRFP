@@ -4,12 +4,11 @@
  * every change shown, to jump to one. Under it, the two column heads, level with the cards' columns.
  */
 import { ArrowLeftRight, Check, ChevronDown, Search } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
 import { EMPTY_TREE, WORKTREE, type CatalogueCommit } from '../../shared/diff.ts'
 import { GROUPS, type Change, type Counts, type Entry, type Filters, type Group } from '../../shared/diffModel.ts'
 import { RecordMark } from '../components/bits.tsx'
 import { dateTimeLabel } from '../dates.ts'
-import { useConfig } from '../store.ts'
 import { useDismiss } from '../useDismiss.ts'
 import { markOf } from './DiffFields.tsx'
 
@@ -87,12 +86,6 @@ export function StickyBar({
   )
 }
 
-/** A commit's date and time, in the project's locale. */
-function useDateLabel() {
-  const { locale } = useConfig().project
-  return useCallback((iso: string) => dateTimeLabel(iso, locale), [locale])
-}
-
 /** What a ref is called: the commit's message, or what on disk / before any commit means. */
 function refName(ref: string, commits: CatalogueCommit[]): { name: string; at: string | null; short: string | null } {
   if (ref === WORKTREE) return { name: 'Uncommitted', at: null, short: null }
@@ -149,7 +142,7 @@ function CommitPicker({
   const [query, setQuery] = useState('')
   const anchor = useRef<HTMLButtonElement>(null)
   const ref = useDismiss<HTMLDivElement>(() => setOpen(false), anchor, open)
-  const dateLabel = useDateLabel()
+  const dateLabel = dateTimeLabel
   const current = refName(value, commits)
   const q = query.trim().toLowerCase()
   const shown = commits.filter((c) => !q || c.subject.toLowerCase().includes(q) || c.sha.startsWith(q))
@@ -327,7 +320,7 @@ export function DiffBar({
   density: Density
   setDensity: (d: Density) => void
 }) {
-  const dateLabel = useDateLabel()
+  const dateLabel = dateTimeLabel
   const index = useMemo(() => new Map(commits.map((c, i) => [c.sha, i])), [commits])
   // Newest first: a lower index is newer. On disk is newer than any commit, before the first older than all.
   const age = (ref: string) => (ref === WORKTREE ? -1 : ref === EMPTY_TREE ? commits.length : (index.get(ref) ?? commits.length))

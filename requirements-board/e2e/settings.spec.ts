@@ -6,10 +6,10 @@
 import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
-import { configPath } from '../server/catalogueFs.ts'
+import { configPath, writeItem } from '../server/catalogueFs.ts'
 import { DEFAULT_ITEM_STATUSES } from '../shared/statuses.ts'
 import type { CatalogueSnapshot } from '../shared/types.ts'
-import { FIXTURE_DIR, writeFixture } from './fixtureCatalogue.ts'
+import { FIXTURE_DIR, fixtureItems, writeFixture } from './fixtureCatalogue.ts'
 
 test.describe.configure({ mode: 'serial' })
 
@@ -66,17 +66,29 @@ test('a status in use, or holding a required role, cannot be removed; the rules 
   await expect(items(page).locator('.settings-problems')).toHaveCount(0)
 })
 
-test('naming the board and the project changes the masthead and the tab title, and nothing else', async ({ page }) => {
-  const board = page.locator('section[aria-label="Board"]')
-  await board.getByLabel('Board name').fill('Delivery board')
-  await board.getByLabel('Project').fill('Orders')
-  await board.getByRole('button', { name: 'Save' }).click()
-  await expect(page.locator('.brand-name')).toHaveText('Delivery board')
-  await expect(page.locator('.brand-project')).toHaveText('Orders')
-  await expect(page).toHaveTitle('Orders · Delivery board')
-  const saved = config() as unknown as { board: unknown; project: unknown; statuses?: unknown }
-  expect(saved.board).toEqual({ name: 'Delivery board' })
-  expect(saved.project).toEqual({ name: 'Orders' })
+test('naming the project and picking its accent changes the masthead and the tab, and nothing else', async ({ page }) => {
+  const project = page.locator('section[aria-label="Project"]')
+  await project.getByLabel('Project name').fill('Orders')
+  await project.getByRole('radio', { name: 'Indigo' }).click()
+  await project.getByRole('button', { name: 'Save' }).click()
+  await expect(page.locator('.masthead .brand-name')).toHaveText('Requirements board')
+  await expect(page.locator('.masthead .brand-project')).toHaveText('Orders')
+  await expect(page.locator('.masthead')).toHaveClass(/accented/)
+  await expect(page.locator('.masthead .brand-mark rect').last()).toHaveAttribute('fill', '#5a4fcf')
+  await page.locator('.masthead .tab').first().click()
+  await expect(page.locator('.masthead .tab[aria-current="page"]')).toHaveCSS('border-bottom-color', 'rgb(90, 79, 207)')
+  await page.goto('/#/settings')
+  await expect(page).toHaveTitle('Orders · Requirements board')
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /5a4fcf/)
+  const saved = config() as unknown as { board?: unknown; project: unknown }
+  expect(saved.board).toBeUndefined()
+  expect(saved.project).toEqual({ name: 'Orders', accent: '#5a4fcf' })
+
+  // None takes the accent away again.
+  await project.getByRole('radio', { name: 'None' }).click()
+  await project.getByRole('button', { name: 'Save' }).click()
+  await expect(page.locator('.masthead')).not.toHaveClass(/accented/)
+  await expect.poll(() => (config() as unknown as { project: unknown }).project).toEqual({ name: 'Orders' })
 })
 
 test('a component in use cannot be removed or renamed; a new one is saved', async ({ page }) => {
@@ -86,6 +98,23 @@ test('a component in use cannot be removed or renamed; a new one is saved', asyn
   await comps.getByRole('textbox', { name: 'Name of new component' }).fill('Reporting')
   await comps.getByRole('button', { name: 'Save' }).click()
   await expect.poll(() => (config() as unknown as { components: { name: string }[] }).components.map((c) => c.name)).toContain('Reporting')
+})
+
+test('the masthead shows a problem pill only while a check fails, and Settings lists the checks', async ({ page }) => {
+  const pill = page.locator('.masthead .problem-pill')
+  await expect(page.locator('section[aria-label="Checks"]')).toContainText('Every ID, parent, link and value checks out.')
+  await expect(pill).toHaveCount(0)
+  // A story whose feature does not exist: an error, written on disk as an agent would.
+  const orphan = { ...fixtureItems().find((i) => i.id === 'US-01.1.1')!, id: 'US-01.1.9', parent: 'FT-09.9', title: 'Orphan story' }
+  writeItem(orphan, FIXTURE_DIR)
+  await expect(pill).toHaveClass(/bad/)
+  await expect(pill).toHaveText(/\d+ errors?/)
+  await pill.click()
+  await expect(page.locator('.problem-panel')).toContainText('US-01.1.9')
+  await expect(page.locator('section[aria-label="Checks"] .issue-list')).toContainText('US-01.1.9')
+  rmSync(join(FIXTURE_DIR, 'stories', 'US-01.1.9.md'))
+  await expect(pill).toHaveText('All clear')
+  await expect(pill).toHaveCount(0, { timeout: 6000 })
 })
 
 test('the About page explains the loop and lists the live statuses', async ({ page }) => {

@@ -1,5 +1,5 @@
 {
-  "project": { "name": "AA", "locale": "en-NZ" },
+  "project": { "name": "AA", "accent": "#c0392b" },
   "components": [
     { "name": "Scheduling Engine", "code": "SCH" },
     { "name": "Billing/Invoice Engine", "code": "BIL" },
@@ -50,10 +50,12 @@
       { "pattern": "\\bour reading\\b", "message": "an \"our reading\" marker" },
       { "pattern": "\\bAR-\\d+[ #]?A\\d+\\b", "message": "an assumption reference" },
       { "pattern": "\\b(decision|Donald's) D\\d+\\b", "message": "a decision number" },
-      { "pattern": "\\b(Ben|Vanessa|Greg|Donald|Michael|Shane),? \\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December)\\b", "message": "a dated remark by a person" },
+      {
+        "pattern": "\\b(Ben|Vanessa|Greg|Donald|Michael|Shane),? \\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December)\\b",
+        "message": "a dated remark by a person"
+      },
       { "pattern": "\\bNotes \\d{4}-\\d{2}-\\d{2}\\b", "message": "a note citation" },
       { "pattern": "^Update \\d{4}-\\d{2}-\\d{2}", "flags": "im", "message": "an update paragraph" }
     ]
-  },
-  "board": { "name": "Requirements board" }
+  }
 }

@@ -3,7 +3,13 @@
 Read this before changing anything visual in the board. These are settled decisions from working
 with the product owner; extend them, don't relitigate them. The board carries no project's
 branding: a project's own design rules govern its own app, not this tool, and its name appears
-only as quiet text beside the board's name (`project.name` in `board.config.json`).
+only beside the board's fixed name, "Requirements board" (`project.name` in `board.config.json`).
+That name is quiet grey text unless the project has an **accent** (`project.accent`, picked in
+Settings). Then three marks take it, and nothing else: the masthead mark's card and the tab icon's
+card are filled with it, and the underline under the open view is drawn in it, at teal's 2px, in place of
+teal. The name itself turns bold, in ink, never in the accent. The accent is a way to tell apart
+boards for different projects open side by side, not branding, and it is never a pill or chip.
+Its presets stay clear of the action teal.
 
 ## Philosophy
 
@@ -50,8 +56,16 @@ Where an item came from is its sources, never its status. Scope is a swim lane, 
 ruling kept low enough in contrast that cards read cleanly over it (Mapped uses the same paper without the ruling: see Board modes); type is
 Hanken Grotesk for everything, JetBrains Mono only for genuine codes; sentence case; teal
 `#0D6E63` is the only action colour; the masthead mark is the board's own card-on-a-grid drawing,
-never a project's logo or colour; no en or em dashes in any
+never a project's logo (its card and the tab icon's take the project's accent, if one is set); no en or em dashes in any
 UI copy (use a middot, a comma or "to").
+
+**The masthead shows status only when something is wrong.** No "Live", no "Checks pass": one
+problem pill appears at the right while there is a problem, naming it ("Offline", "3 errors", "Card
+moves not saved") or, with more than one, counting them ("2 problems"). Amber while offline, since
+nothing is being saved, and offline leads its list; red otherwise. It opens one list grouped as
+Connection, Card moves and Checks. When the last problem clears, a green "All clear" shows for about
+three seconds and fades. Check notes are not problems: they never raise the pill and are read under
+Checks on Settings (and under the errors in the pill's list).
 
 ## Cards
 
@@ -413,6 +427,11 @@ the catalogue. Laptop first: the width goes to the two columns, the controls to 
 - Outside git, the tab says there is nothing to compare and how to start.
 
 ## Settings
+
+The page opens on **Project**: the project's name and its accent colour, as a row of round swatches
+(None first, a ring with a slash; then the presets; then a rainbow swatch for any other colour),
+the chosen one ringed, and a live preview beside them: the mark, the name and a Board tab's underline, as the masthead will show them. The board's own name
+and the date locale are fixed (New Zealand English), so neither is a setting.
 
 The gear at the right of the masthead opens `/settings`: each status list (items, then questions) is a
 table, so the column heads say once what every field is: No., Shows as, Name, Group heading

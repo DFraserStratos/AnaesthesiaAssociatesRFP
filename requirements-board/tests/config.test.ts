@@ -6,7 +6,7 @@ describe('board.config.json', () => {
   it('reads a full config', () => {
     const { config, problems } = parseConfig(
       JSON.stringify({
-        project: { name: 'Acme', locale: 'en-GB' },
+        project: { name: 'Acme', accent: '#2B6CB0' },
         components: [{ name: 'Core', code: 'COR' }, 'Reports'],
         screenshotApps: [{ key: 'web', label: 'Web', viewport: 'desktop' }, { key: 'phone', viewport: 'mobile' }],
         statuses: [
@@ -19,7 +19,7 @@ describe('board.config.json', () => {
       }),
     )
     expect(problems).toEqual([])
-    expect(config.project).toEqual({ name: 'Acme', locale: 'en-GB' })
+    expect(config.project).toEqual({ name: 'Acme', accent: '#2b6cb0' })
     expect(config.components).toEqual([{ name: 'Core', code: 'COR' }, { name: 'Reports' }])
     expect(config.screenshotApps).toEqual([
       { key: 'web', label: 'Web', viewport: 'desktop' },

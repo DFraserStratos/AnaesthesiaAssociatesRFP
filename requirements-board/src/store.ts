@@ -641,7 +641,7 @@ const DEFAULT_PREFS: ViewPrefs = {
   types: [],
   onlyWithQuestions: false,
   showRetired: false,
-  boardMode: 'freeform',
+  boardMode: 'mapped',
   collapsedLanes: [],
 }
 

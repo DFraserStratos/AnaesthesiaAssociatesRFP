@@ -96,7 +96,7 @@ src/
   nav.ts         URL-driven sheets (?item, ?question, one-shot ?edit=<id>), the docked panel's leave guard
   useDismiss.ts  Esc / outside-press close for popovers
   useCatalogueRefresh.ts  re-run on record changes on disk or window focus; usePersistentState.ts a per-browser pick
-  dates.ts       dates and times in the project's locale
+  dates.ts       dates and times, in New Zealand English
   diff/          the Diff review, loaded with its route: DiffView (the page), useDiffData (loading), viewedStore,
                  useProgressiveDraw, useDiffKeys + scroll, DiffBar, DiffCard (typed field definitions),
                  DiffFields, DiffProse, DiffFile, diffMarks (remark plugin), diff.css, useUncommittedCount
@@ -244,9 +244,9 @@ gallery has one tab per app present, in that order; untagged images fall back to
 
 `requirements/board.config.json` holds what differs between projects. Every field is optional:
 
-- `board`: `name`, the board's own name in the masthead and the tab title (default "Requirements board");
-- `project`: `name` (beside the board's name and in the tab title) and `locale` (dates and times;
-  unset uses the browser's);
+- `project`: `name` (beside the board's name, "Requirements board", and in the tab title) and
+  `accent` (optional `#rrggbb`: fills the board's mark and the tab icon and underlines the open
+  view, so boards for different projects tell apart; set on the Settings page). Dates and times are always New Zealand English;
 - `components`: `[{ "name", "code" }]`, the areas items belong to, in order; `code` is the card
   glyph (unset: the name's first three letters). Listed, the check holds items to them; empty, any
   name goes and the filters offer the ones in use;

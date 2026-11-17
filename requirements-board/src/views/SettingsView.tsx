@@ -1,9 +1,11 @@
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import Markdown from 'react-markdown'
 import { Link } from 'react-router-dom'
 import { ApiError, api, type Voice } from '../api.ts'
+import { BrandMark } from '../components/BrandMark.tsx'
 import { MarkdownTextarea } from '../components/MarkdownTextarea.tsx'
+import { IssueList } from '../components/ProblemPill.tsx'
 import { componentCodeIn, type ComponentDef, type ConfigPatch } from '../../shared/config.ts'
 import {
   ITEM_ROLES,
@@ -21,8 +23,8 @@ import {
 import { useCatalogue, useConfig, useIndex } from '../store.ts'
 
 /**
- * The project's settings that live in `board.config.json` and are safe to edit here: the board's
- * and project's names, the components, and the item and question statuses. Files store a status's
+ * The project's settings that live in `board.config.json` and are safe to edit here: the project's
+ * name and accent colour, the components, and the item and question statuses. Files store a status's
  * code, so renaming, rewording, recolouring or reordering a status touches no file; only the
  * config is rewritten.
  */
@@ -33,19 +35,42 @@ export function SettingsView() {
         <div className="page-head">
           <div>
             <h1>Settings</h1>
-            <p>What this board is called, the areas of the system, and what each status is called, means and looks like. Cards store only a status's number, so renaming a status here changes no card.</p>
+            <p>The project this board is for, how requirements are written, the areas of the system, and what each status is called, means and looks like. Cards store only a status's number, so renaming a status here changes no card.</p>
           </div>
         </div>
-        <BoardSection />
+        <ProjectSection />
         <VoiceSection />
         <ComponentSection />
         <StatusSection kind="item" title="Item statuses" />
         <StatusSection kind="question" title="Question statuses" />
+        <ChecksSection />
         <p className="settings-version">
           Requirements board <span className="mono">v{__BOARD_VERSION__}</span> · <Link to="/about">How to use this board</Link>
         </p>
       </div>
     </div>
+  )
+}
+
+/**
+ * What the catalogue checks found. Errors also raise the masthead's problem pill; notes never do,
+ * so this is where they are read in full.
+ */
+function ChecksSection() {
+  const issues = useCatalogue((s) => s.issues)
+  const errors = issues.filter((i) => i.severity === 'error').length
+  const notes = issues.length - errors
+  return (
+    <section className="settings-section" aria-label="Checks">
+      <h2 className="group-head">Checks</h2>
+      <p className="settings-intro">
+        {issues.length === 0
+          ? 'Every ID, parent, link and value checks out.'
+          : `${errors ? `${errors} error${errors > 1 ? 's' : ''}` : 'No errors'}${notes ? `, ${notes} note${notes > 1 ? 's' : ''}` : ''}. Errors also show in the masthead; notes, such as a file not named after its ID, show only here.`}{' '}
+        The same checks run in <code>npm run check</code>.
+      </p>
+      {issues.length > 0 && <IssueList issues={issues} />}
+    </section>
   )
 }
 
@@ -85,44 +110,65 @@ function SaveBar({ dirty, blocked, busy, onDiscard, onSave, children }: { dirty:
   )
 }
 
-/** The board's own name (masthead and browser tab) and the project it is for. */
-function BoardSection() {
+/** Accent presets: clear of one another, and of the action teal, so a glance at a tab tells the projects apart. */
+const ACCENTS: [name: string, hex: string][] = [
+  ['Red', '#c0392b'],
+  ['Orange', '#d35400'],
+  ['Gold', '#b7791f'],
+  ['Green', '#2f855a'],
+  ['Blue', '#2b6cb0'],
+  ['Indigo', '#5a4fcf'],
+  ['Purple', '#8e44ad'],
+  ['Pink', '#c2417a'],
+  ['Slate', '#4a5568'],
+]
+
+/** The project the board is for: its name beside the board's, and an accent colour for the mark, the open view's underline and the tab icon. */
+function ProjectSection() {
   const config = useConfig()
-  const saved = { board: config.board.name, project: config.project.name, locale: config.project.locale ?? '' }
+  const saved = { project: config.project.name, accent: config.project.accent ?? '' }
   const [form, setForm] = useState(saved)
   const { busy, error, setError, save } = useSave()
   const dirty = JSON.stringify(form) !== JSON.stringify(saved)
   useEffect(() => {
     if (!dirty) setForm(saved)
-  }, [config.board, config.project])
+  }, [config.project])
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }))
+  const custom = !!form.accent && !ACCENTS.some(([, hex]) => hex === form.accent)
   return (
-    <section className="settings-section" aria-label="Board">
-      <h2 className="group-head">Board</h2>
+    <section className="settings-section" aria-label="Project">
+      <h2 className="group-head">Project</h2>
       <div className="settings-fields">
         <label>
-          <span>Board name</span>
-          <input className="input status-name" value={form.board} placeholder="Requirements board" onChange={(e) => set({ board: e.target.value })} />
-          <small>In the masthead and the browser tab.</small>
-        </label>
-        <label>
-          <span>Project</span>
+          <span>Project name</span>
           <input className="input status-name" value={form.project} placeholder="Project name" onChange={(e) => set({ project: e.target.value })} />
-          <small>Shown beside the board's name.</small>
+          <small>Shown beside the board's name and in the browser tab.</small>
         </label>
-        <label>
-          <span>Locale</span>
-          <input className="input status-help" value={form.locale} placeholder="Browser's own" onChange={(e) => set({ locale: e.target.value })} />
-          <small>For dates, e.g. en-GB or en-US.</small>
-        </label>
+        <div className="accent-field">
+          <span id="accent-label">Accent colour</span>
+          <div className="accent-swatches" role="radiogroup" aria-labelledby="accent-label">
+            <button type="button" role="radio" aria-checked={!form.accent} className="accent-swatch none" title="None" aria-label="None" onClick={() => set({ accent: '' })} />
+            {ACCENTS.map(([name, hex]) => (
+              <button key={hex} type="button" role="radio" aria-checked={form.accent === hex} className="accent-swatch" style={{ '--accent': hex } as CSSProperties} title={name} aria-label={name} onClick={() => set({ accent: hex })} />
+            ))}
+            <label className={custom ? 'accent-swatch custom' : 'accent-swatch custom unset'} style={custom ? ({ '--accent': form.accent } as CSSProperties) : undefined} title="Another colour">
+              <input type="color" aria-label="Another colour" value={form.accent || '#2b6cb0'} onChange={(e) => set({ accent: e.target.value.toLowerCase() })} />
+            </label>
+            <span className={form.accent ? 'accent-preview accented' : 'accent-preview'} style={form.accent ? ({ '--accent': form.accent } as CSSProperties) : undefined} aria-hidden>
+              <BrandMark accent={form.accent || undefined} />
+              <span className="accent-preview-name">{form.project.trim() || 'Project name'}</span>
+              <span className="accent-preview-tab">Board</span>
+            </span>
+          </div>
+          <small>Colours the board's mark, the underline under the open view and the tab icon, so boards for different projects open side by side tell apart at a glance.</small>
+        </div>
       </div>
       {error && <div className="banner error">{error}</div>}
       <SaveBar
         dirty={dirty}
-        blocked={!form.board.trim()}
         busy={busy}
         onDiscard={() => (setForm(saved), setError(null))}
-        onSave={() => void save({ board: { name: form.board.trim() }, project: { name: form.project.trim(), ...(form.locale.trim() ? { locale: form.locale.trim() } : {}) } })}
+        onSave={() => void save({ project: { name: form.project.trim(), ...(form.accent ? { accent: form.accent } : {}) } })}
       />
     </section>
   )

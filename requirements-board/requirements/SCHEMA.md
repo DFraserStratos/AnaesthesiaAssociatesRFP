@@ -378,8 +378,7 @@ Every field is optional; with no file the board runs on neutral defaults.
 
 ```json
 {
-  "board": { "name": "Requirements board" },
-  "project": { "name": "Acme ordering", "locale": "en-GB" },
+  "project": { "name": "Acme ordering", "accent": "#2b6cb0" },
   "components": [{ "name": "Order engine", "code": "ORD" }, { "name": "Customer app" }],
   "screenshotApps": [{ "key": "web", "label": "Web", "viewport": "desktop" }, { "key": "phone", "label": "Phone", "viewport": "mobile" }],
   "statuses": [
@@ -398,8 +397,9 @@ Every field is optional; with no file the board runs on neutral defaults.
 }
 ```
 
-`board.name` is the board's own name, in the masthead and the browser tab (default "Requirements
-board"); `project.name` shows beside it. `components` and `screenshotApps` are the lists the check
+`project.name` shows beside the board's name (always "Requirements board") in the masthead and the
+browser tab; `project.accent` (optional, `#rrggbb`) fills the board's mark and the tab icon and
+underlines the open view, so boards for different projects tell apart. Dates and times are always New Zealand English. `components` and `screenshotApps` are the lists the check
 holds items to (empty: anything goes).
 `statuses` (items) and `questionStatuses` (questions) are ordered lists; each entry is
 `{ code, label, help, tone, role?, settle?, heading? }`. `code` is a whole number from 1, unique within its list. A file stores the `code`; the label, help,

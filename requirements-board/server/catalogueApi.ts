@@ -23,7 +23,7 @@
  *                                there what the last catalogue commit changed (`jumped: true`)
  *   PUT  /api/artifacts/:id      { record, baseRev }  its details only (title, kind, status, date, author,
  *                                area, sources, description); its file, regions and source stay as on disk
- *   PUT  /api/config             { statuses?, questionStatuses? }  replaces those lists in board.config.json (the
+ *   PUT  /api/config             { project?, components?, statuses?, questionStatuses? }  replaces those lists in board.config.json (the
  *                                rest of the file is kept); 422 if a list breaks the rules or drops a status in use
  *   PUT  /api/layout             { positions?: { id: {x,y} | null }, lanes?: string[], firstLane?: string | null }
  *                                positions are a patch (null restores the story-map place); lanes replace the
@@ -41,7 +41,7 @@ import { compareSiblings, nextItemId, nextQuestionId } from '../shared/ids.ts'
 import { buildArtifactTimeline, buildTimeline, diffItems } from '../shared/history.ts'
 import { defaultStatus, normaliseStatus, readStatusList, statusLabel, type StatusDef, type StatusKind } from '../shared/statuses.ts'
 import { parseArtifact, revOf } from '../shared/files.ts'
-import { parseConfig } from '../shared/config.ts'
+import { ACCENT_PATTERN, parseConfig } from '../shared/config.ts'
 import { laneListProblem } from '../shared/move.ts'
 import { planDelete } from '../shared/remove.ts'
 import { ITEM_TYPES, UNASSIGNED_LANE, firstLaneName, type Artifact, type ArtifactRec, type Layout, type CatalogueEvent, type Item, type ItemType, type Question, type Rev } from '../shared/types.ts'
@@ -530,15 +530,17 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
         }
         next[field] = list.map(clean)
       }
-      for (const field of ['board', 'project'] as const) {
-        if (body[field] === undefined) continue
-        const v = body[field] as Record<string, unknown> | null
+      if (body.project !== undefined) {
+        const v = body.project as Record<string, unknown> | null
         const name = typeof v?.name === 'string' ? v.name.trim() : ''
-        if (field === 'board' && !name) problems.push('board: the board needs a name')
-        const locale = typeof v?.locale === 'string' ? v.locale.trim() : ''
-        const was = (raw[field] ?? {}) as Record<string, unknown>
-        next[field] = field === 'project' ? { ...was, name, ...(locale ? { locale } : {}) } : { ...was, name }
-        if (field === 'project' && !locale) delete (next.project as Record<string, unknown>).locale
+        const accent = typeof v?.accent === 'string' ? v.accent.trim().toLowerCase() : ''
+        if (accent && !ACCENT_PATTERN.test(accent)) problems.push(`project: the accent must be a colour like #2f5dbe, not ${accent}`)
+        // The board's name and the locale are fixed now; a file that still names them is tidied on save.
+        const was: Record<string, unknown> = { ...((raw.project ?? {}) as Record<string, unknown>) }
+        delete was.locale
+        delete was.accent
+        next.project = { ...was, name, ...(accent ? { accent } : {}) }
+        delete next.board
       }
       if (body.components !== undefined) {
         const { config: parsed, problems: bad } = parseConfig(JSON.stringify({ components: body.components }))
