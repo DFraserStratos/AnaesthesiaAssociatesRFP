@@ -32,7 +32,7 @@
               "scroll": "[data-shot=procedure-split-row] >> nth=0"
             },
             {
-              "click": "[data-shot=procedure-split-button] >> nth=0"
+              "click": "[data-shot=paid-by-change] >> nth=0"
             },
             {
               "wait": 400
@@ -68,7 +68,7 @@
           "caption": "The Paid by sheet asks for one, and saves without it",
           "steps": [
             {
-              "click": "[data-shot=procedure-split-button] >> nth=0"
+              "click": "[data-shot=paid-by-change] >> nth=0"
             },
             {
               "wait": 500
@@ -109,10 +109,10 @@
           "caption": "Another payer named with no email or postal address: \"Email or postal address needed\"",
           "steps": [
             {
-              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
+              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-row]"
             },
             {
-              "click": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
+              "click": "[data-testid=slide-booking] [data-shot=paid-by-change]"
             },
             {
               "wait": 400
@@ -131,11 +131,11 @@
               "wait": 400
             },
             {
-              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
+              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-row]"
             }
           ],
           "highlight": [
-            "[data-testid=slide-booking] [data-shot=procedure-split-button]"
+            "[data-testid=slide-booking] [data-shot=procedure-split-row]"
           ]
         },
         {
@@ -143,10 +143,10 @@
           "caption": "A postal address alone is enough: the request is gone",
           "steps": [
             {
-              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
+              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-row]"
             },
             {
-              "click": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
+              "click": "[data-testid=slide-booking] [data-shot=paid-by-change]"
             },
             {
               "wait": 400
@@ -177,11 +177,11 @@
               "wait": 400
             },
             {
-              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
+              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-row]"
             }
           ],
           "highlight": [
-            "[data-testid=slide-booking] [data-shot=procedure-split-button]"
+            "[data-testid=slide-booking] [data-shot=procedure-split-row]"
           ]
         }
       ]

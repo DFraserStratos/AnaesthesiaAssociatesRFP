@@ -32,7 +32,7 @@
               "scroll": "[data-shot=procedure-split-row] >> nth=0"
             },
             {
-              "click": "[data-shot=procedure-split-button] >> nth=0"
+              "click": "[data-shot=paid-by-change] >> nth=0"
             },
             {
               "wait": 500
@@ -50,7 +50,7 @@
               "scroll": "[data-shot=procedure-split-row] >> nth=0"
             },
             {
-              "click": "[data-shot=procedure-split-button] >> nth=0"
+              "click": "[data-shot=paid-by-change] >> nth=0"
             },
             {
               "wait": 500
@@ -102,7 +102,7 @@
               "scroll": "[data-shot=procedure-split-row] >> nth=0"
             },
             {
-              "click": "[data-shot=procedure-split-button] >> nth=0"
+              "click": "[data-shot=paid-by-change] >> nth=0"
             },
             {
               "wait": 400
@@ -129,10 +129,10 @@
         {
           "steps": [
             {
-              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
+              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-row]"
             },
             {
-              "click": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
+              "click": "[data-testid=slide-booking] [data-shot=paid-by-change]"
             },
             {
               "wait": 500

@@ -661,9 +661,11 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 ### A payer on each Procedure (catch-up Phase 22a)
 
 - **No Booking-level Payer card** in any app: the payer is on each Procedure, in its Billing card's Paid by line
-  (`procedure-split-row`, the payer's name `paid-by-payer` with `data-procedure-id`). Contract bills its holder: the
-  button reads "Split"; the Contract bills the payer, or the fee is split: "Change"; no Contract: no button and
-  `payer-not-billed` ("Payer: not billed yet"). Both open the one Paid by sheet.
+  (`procedure-split-row`, the payer's name `paid-by-payer` with `data-procedure-id`), the same on the phone. Two actions:
+  `paid-by-change` ("Change", beside the payer's name, only where the Contract bills the payer) opens the one Paid by
+  sheet with who pays and the offer only; `procedure-split-button` ("Split", on the right, whenever the Booking is
+  editable and has a Contract) opens it with the split alone (title "Split the fee"). No Contract: no actions and `payer-not-billed` ("Payer:
+  not billed yet").
 - **Grace Park (BK0033, `/admin/day/2026-07-24/bookings/BK0033`)** now has two Procedures, P0035 and P0186, both paid by
   Hana Park (Mother, `BP0001`). "Raise sample warnings" puts "Under 18" on both Paid by lines (`payer-under-18`, one per
   Procedure) with one to-do row (`todo-child-warning`) on the Admin dashboard.
@@ -922,9 +924,11 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 - **The Paid by sheet and the insurer or funder (catch-up Phase 22a, every app):** the Booking-level Payer card,
   `booking-payer-row`, `payer-sheet` and the "Change the payer" button are GONE. Each Procedure's Paid by line
   (`procedure-split-row` on web and Admin; the phone's `[data-testid=slide-booking] [data-shot=procedure-split-button]`)
-  has `procedure-split-button` ("Change" or "Split"; none with no Contract) opening the one `paid-by-sheet` (a Dialog on
-  web and Admin, a bottom sheet on the phone), whose single Save is `paid-by-save` ("Save"; "Save payer" and "Save split"
-  are gone). Its "Who pays" section keeps the payer hooks: `payer-different-tick` (its `input` checkbox), `payer-patient-details`,
+  has `paid-by-change` ("Change", beside the payer's name, where the Contract bills the payer) and
+  `procedure-split-button` ("Split", on the right; none with no Contract), each opening the one `paid-by-sheet` (a Dialog
+  on web and Admin, a bottom sheet on the phone): Change with who pays and the offer only (title "Who pays"), Split with
+  the split alone (title "Split the fee"). Its Save is `paid-by-save` ("Save"; "Save payer" and "Save split" are gone).
+  Its who pays part keeps the payer hooks: `payer-different-tick` (its `input` checkbox), `payer-patient-details`,
   `payer-child-hint`, `payer-other-fields` (Name, relationship chips, "Other relationship", Email,
   `payer-postal-address` with Address, "Unit, building or RD (optional)", "Suburb (optional)", "Town or
   city", Postcode, "Phone (optional)"), `payer-contact-ask`. When the payer changes to another person (fill "Name" with a different name) the offer
@@ -981,11 +985,11 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   showing; the party picker's open list ends with `split-another-person` ("Another person"), which turns that row into
   `split-person` fields; the former `split-save` is gone): on a
   Booking, scroll to `[data-shot=procedure-split-row]` (the Paid by line at the foot of the Billing card on web and Admin)
-  and click `[data-shot=procedure-split-button]` ("Split", or "Change" once split). On mobile Paid by is the Billing
-  summary's fourth row, itself `[data-testid=slide-booking] [data-shot=procedure-split-button]` (its own tap target; the
-  rest of the summary is `capture-billing`).
-  Paid by reads the party the Contract bills (both surfaces) or the split's parties and amounts; on the phone with "Tap
-  to split the fee" or "Split 2 ways" under it. Inside `[data-shot=split-sheet]`: the fee `split-fee`, one `[data-shot=split-row][data-row=<n>]` per party
+  and click `[data-shot=procedure-split-button]` ("Split"; the sheet then holds the split alone). On mobile Paid by is the Billing
+  summary's last row, `[data-testid=slide-booking] [data-shot=procedure-split-row]`, with the same Change and Split
+  actions (no longer one tap target; the rest of the summary is `capture-billing`).
+  Paid by reads the payer or the party the Contract bills (both surfaces) or the split's parties and amounts; on the
+  phone with the relationship or "Split 2 ways" under it. Inside `[data-shot=split-sheet]`: the fee `split-fee`, one `[data-shot=split-row][data-row=<n>]` per party
   (party picker `[data-testid=party-picker-toggle]`, options `[data-shot=party-option]`, search `party-picker-search`),
   `[data-shot=split-share-input] >> input` ($ or %, a TextField; for example `>> nth=0 >> input` filled "62.5%"), the switch
   `[data-shot=split-rest-toggle]` ("Takes the rest"), the amount `split-amount`, "Add a party" (`split-add-party`), the
@@ -1014,10 +1018,11 @@ the exception: use the `trigger` step)
 
 ## Existing hooks
 
-- Catch-up Phase 22a: `paid-by-sheet` (the one Paid by sheet), `paid-by-save`, `paid-by-payer` (the payer's name on a
+- Catch-up Phase 22a: `paid-by-sheet` (the one Paid by sheet), `paid-by-save`, `paid-by-change` (Change beside the payer), `paid-by-payer` (the payer's name on a
   Paid by line, `data-procedure-id`), `payer-not-billed`, `payer-offer`, `payer-offer-row`, `payer-offer-provisional`,
   `split-start`, `split-another-person`, `split-person`; Review: `review-payer` (per Procedure under its stack, `data-procedure-id`),
-  `review-payer-contact` per Procedure, `review-insurance` (Billed to column). `payer-contact-missing` and `payer-under-18`
+  `review-payer-contact` per Procedure, `review-payer-under-18`, `review-insurance` (Billed to column). The phone's Paid by row is
+  no longer one tap target: `procedure-split-button` is its Split action. `payer-contact-missing` and `payer-under-18`
   now sit on each Paid by line. GONE: `booking-payer-row`, `payer-sheet`, the "Change the payer" button, `split-save`,
   "Save payer", "Save split".
 - Catch-up Phase 22 (`data-shot` unless marked): the invoice document's `invoice-supplier` (the anaesthetist's name and

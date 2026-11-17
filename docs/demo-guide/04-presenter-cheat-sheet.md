@@ -191,7 +191,7 @@ price list) and claims back themselves; nib is billed only through nib's own Con
 - A second/additional Procedure in the same episode (**Add another procedure**) is time-only; Brian Holt
   on Dr Souter's Mon 20 AM List (the S3 split Booking) shows it.
 - Base and Modifiers cannot be charged again.
-- **Split** is pressed in the Billing card's Paid by line (**Change** opens the one Paid by sheet: who pays, then the split) on each Procedure of a Booking, for the office or the
+- **Split** is pressed in the Billing card's Paid by line, on its right (it opens the Paid by sheet with the split alone; **Change**, beside the payer's name, opens it with who pays) on each Procedure of a Booking, for the office or the
   anaesthetist (on her own Booking, phone and web, until the List is authorised). Each party's share is
   typed in $ or %, one party can take the rest, a share can go to **Another person** (name and an
   email or postal address), and each party gets its own invoice. No split setting

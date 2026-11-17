@@ -18,7 +18,7 @@ test('the office splits a fee on the Admin Booking detail', async ({ page }) => 
   await page.waitForTimeout(400)
 
   const summary = page.locator('[data-shot="procedure-split-summary"]')
-  await expect(summary).toHaveText('nib $132.50, Alan Prentice $79.50 (the rest)')
+  await expect(summary).toContainText('nib $132.50, Alan Prentice $79.50 (the rest)')
   await expect(page.getByText(/^Funder alloc/)).toHaveCount(0)
   await expect(page.getByText(/^Funders$/)).toHaveCount(0)
 
@@ -54,7 +54,10 @@ test('the office splits a fee on the Admin Booking detail', async ({ page }) => 
   await expect(sheet.locator('[data-shot="split-amount"]')).toHaveText(['$127.20', '$84.80'])
   await paidBy.locator('[data-shot="paid-by-save"]').click()
   await expect(paidBy).toHaveCount(0)
-  await expect(summary).toHaveText('nib $127.20, Alan Prentice $84.80 (the rest)')
+  await expect(summary).toContainText('nib $127.20, Alan Prentice $84.80 (the rest)')
+
+  // Change (who pays) sits beside the payer, apart from Split on the right (catch-up Phase 22a owner review).
+  await expect(page.locator('[data-shot="paid-by-change"]')).toHaveCount(1)
 
   // Remove split, then Save: invoiced in full to the Procedure's payer.
   await page.locator('[data-shot="procedure-split-button"]').click()
@@ -86,10 +89,11 @@ test('the anaesthetist splits a fee on the phone, before the List is authorised'
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(800)
 
-  // Paid by is the Billing summary's last row on the phone (owner review, idea 6).
+  // Paid by is the Billing summary's last row on the phone (owner review, idea 6); Split sits on its right.
   const summary = page.locator('[data-shot="procedure-split-summary"]').first()
   await expect(summary).toContainText("St George's")
-  await expect(summary).toContainText('Tap to split the fee')
+  // A holder-billed Procedure: Split on the right, no Change (no payer is invoiced).
+  await expect(page.locator('[data-shot="paid-by-change"]')).toHaveCount(0)
   await page.locator('[data-shot="procedure-split-button"]').first().click()
   const paidBy = page.locator('[data-shot="paid-by-sheet"]')
   const sheet = paidBy.locator('[data-shot="split-sheet"]')

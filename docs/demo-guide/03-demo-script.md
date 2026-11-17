@@ -655,8 +655,8 @@ until you authorise the Lists live; the run then sends them.
   soon as the office authorises them, and their invoices show in her Balances at once, with no Next
   morning needed.
 - **Optional aside (before authorising the PM List):** open Alan's Booking (**Admin → Day → Mon 20
-  Jul → Alan Prentice**). The Billing card's Paid by line reads "nib $132.50, Alan Prentice $79.50 (the rest)"; press **Change** (on the phone, tap the Paid by row): the one Paid by sheet asks who pays, then the
-  split. The split section shows the fee, $212.00, and each party
+  Jul → Alan Prentice**). The Billing card's Paid by line reads "nib $132.50, Alan Prentice $79.50 (the rest)"; press **Split** on its right (the phone has the same Split): the Paid by sheet opens with the split alone
+  (**Change**, beside the payer's name, opens it with who pays). The split section shows the fee, $212.00, and each party
   with a $ or % share or **Takes the rest**, every amount live, and "$212.00 of $212.00". Type nib's
   share as **62.5%** instead of $132.50: the same split. Any user can split, including the anaesthetist
   on her own Booking (phone and web) until the List is authorised, and there is no split setting on

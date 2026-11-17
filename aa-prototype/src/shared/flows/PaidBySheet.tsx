@@ -3,9 +3,11 @@
  * US-08.2.3; D85, provisional on OQ-140): the one place to see and change who
  * pays for one Procedure. A bottom sheet on the phone, a dialog on web and
  * Admin, through `useSurface().Overlay`; opened by the Paid by line of the
- * Procedure's Billing card.
+ * Procedure's Billing card: its Change opens who pays (with the offer), its
+ * Split opens the split alone (owner, 2026-11-17), titled for what it holds.
  *
- * - **Who pays** (only where the Procedure's Contract bills its payer):
+ * - **Who pays** (where the Procedure's Contract bills its payer, or a split
+ *   share does):
  *   Greg's "different payer" tick. Clear, the patient pays, from the patient
  *   record (an email or address the record lacks can be added here); ticked,
  *   any party who pays. A payer with neither an email nor a postal address is
@@ -13,9 +15,10 @@
  * - **The offer**: when the payer changes, the Booking's other Procedures
  *   holding the same payer (`payerOfferFor`), each ticked, never forced. The
  *   one provisional label of the phase sits here (OQ-140).
- * - **The split**: 22's split, as a section (`SplitFeeSection`).
+ * - **The split**: 22's split (`SplitFeeSection`), opened by Split.
  *
- * One Save writes both through `savePaidBy` (both refused or both written).
+ * Save writes what the sheet shows through `savePaidBy` (refused as a whole,
+ * nothing written); a split's share billed to the old payer follows a new one.
  * No money outside the split.
  */
 
@@ -43,13 +46,13 @@ interface PaidBySheetProps {
   procedureId: string
   actor: Actor
   onClose: () => void
-  /** Open with the split started (the line's Split action on a Procedure with no split). */
-  startSplit?: boolean
+  /** Which part the line's action opened: who pays (Change) or the split (Split: started and scrolled to). */
+  focus?: 'payer' | 'split'
 }
 
 const sectionStyle = { display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 16, borderTop: `1px solid ${neutral.line}` } as const
 
-export function PaidBySheet({ open, procedureId, actor, onClose, startSplit = false }: PaidBySheetProps) {
+export function PaidBySheet({ open, procedureId, actor, onClose, focus = 'payer' }: PaidBySheetProps) {
   const { Overlay } = useSurface()
   const procedure = useAppStore((s) => s.schedule.procedures[procedureId])
   const booking = useAppStore((s) => (procedure !== undefined ? s.schedule.bookings[procedure.bookingId] : undefined))
@@ -73,7 +76,7 @@ export function PaidBySheet({ open, procedureId, actor, onClose, startSplit = fa
   const [address, setAddress] = useState<PostalAddressDraft>(addressDraftOf(undefined))
   const [unticked, setUnticked] = useState<ReadonlySet<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
-  const split = useSplitDraft(procedureId, open, startSplit, () => setError(null))
+  const split = useSplitDraft(procedureId, open, focus === 'split', () => setError(null))
 
   useEffect(() => {
     if (!open || procedure === undefined) return
@@ -101,13 +104,16 @@ export function PaidBySheet({ open, procedureId, actor, onClose, startSplit = fa
   // Who pays shows where the Contract bills the payer, or where a split share bills them (its contact is then asked here too).
   const payerRef = payerCounterparty(procedure, booking.patientId)
   const billsPayer = isPayerBilled(contract) || (procedure.split?.shares.some((s) => s.person === undefined && s.party.kind === payerRef.kind && s.party.id === payerRef.id) ?? false)
+  // Change opens who pays (and the offer); Split opens the split alone (owner, 2026-11-17).
+  const showWhoPays = focus === 'payer' && billsPayer
+  const showSplit = focus === 'split'
   const ordinal = procedures.findIndex((p) => p.id === procedureId) + 1
   const labelOf = (p: Procedure) => procedureLabel(p, rvgGroups, procedures.findIndex((q) => q.id === p.id) + 1)
 
   const current = procedure.payer
   // A change of payer (not the same person's contact): the offer applies only then.
   const changesPayer = current.kind === 'other' ? !different || !sameName(current.name, other.name) : different
-  const offer = billsPayer && changesPayer ? payerOfferFor(procedures, procedureId, contracts, booking.patientId) : []
+  const offer = showWhoPays && changesPayer ? payerOfferFor(procedures, procedureId, contracts, booking.patientId) : []
   // An offered Procedure covered by its payer's raised prepayment keeps its payer (US-06.3.1 "Payer locked"): shown, never ticked.
   const lockedInOffer = new Set(offer.filter((p) => payerLockedByPrepayment(useAppStore.getState(), p.id)).map((p) => p.id))
 
@@ -118,20 +124,19 @@ export function PaidBySheet({ open, procedureId, actor, onClose, startSplit = fa
     ? { email: other.email, postalAddress: cleanPostalAddress(other.address) }
     : { email: recordEmail ?? email, postalAddress: recordAddress ?? cleanPostalAddress(address) }
   const needsContact = !payerHasContact(contactAfter)
-  const payerName = different ? (other.name.trim() !== '' ? other.name.trim() : 'Payer') : (patient?.name ?? 'The patient')
 
   function save() {
     if (procedure === undefined) return
     setError(null)
     const change: PaidByChange = {}
-    if (billsPayer) {
+    if (showWhoPays) {
       const input: PayerInput = different
         ? otherPayerInput(other, current.kind === 'other' ? current.id : undefined)
         : { kind: 'patient', ...(recordEmail === undefined ? { email } : {}), ...(recordAddress === undefined ? { postalAddress: address } : {}) }
       change.payer = { input, alsoApplyTo: offer.map((p) => p.id).filter((id) => !unticked.has(id) && !lockedInOffer.has(id)) }
     }
-    if (split.change !== undefined) change.split = split.change
-    else if (split.blocked) {
+    if (showSplit && split.change !== undefined) change.split = split.change
+    else if (showSplit && split.blocked) {
       setError(split.problem)
       return
     }
@@ -146,11 +151,10 @@ export function PaidBySheet({ open, procedureId, actor, onClose, startSplit = fa
   return (
     <Overlay open={open} onClose={onClose}>
       <div data-shot="paid-by-sheet" data-procedure-id={procedureId} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <OverlayHeader title="Paid by" description={procedures.length > 1 ? `Procedure ${ordinal} · ${labelOf(procedure)}` : labelOf(procedure)} />
+        <OverlayHeader title={showSplit ? 'Split the fee' : 'Who pays'} description={procedures.length > 1 ? `Procedure ${ordinal} · ${labelOf(procedure)}` : labelOf(procedure)} />
 
-        {billsPayer && (
+        {showWhoPays && (
           <section aria-label="Who pays" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <h3 style={SECTION_HEADING}>Who pays</h3>
             {locked && (
               <Notice tone="neutral" shot="payer-locked">
                 {PAYER_LOCKED_BY_PREPAYMENT}
@@ -231,15 +235,13 @@ export function PaidBySheet({ open, procedureId, actor, onClose, startSplit = fa
           </section>
         )}
 
-        <div style={billsPayer ? sectionStyle : { display: 'flex', flexDirection: 'column' }}>
-          <SplitFeeSection draft={split} payerName={billsPayer ? payerName : undefined} />
-        </div>
+        {showSplit && <SplitFeeSection draft={split} heading={false} />}
 
         {/* The split's own problem shows once, in its section; any other refusal here. */}
-        <FormError message={error !== null && !(split.showsProblem && error === split.problem) ? error : null} />
+        <FormError message={error !== null && !(showSplit && split.showsProblem && error === split.problem) ? error : null} />
         <SheetActions
           primary={
-            <Button variant="primary" block onClick={save} disabled={billsPayer && different && other.name.trim() === ''} shot="paid-by-save">
+            <Button variant="primary" block onClick={save} disabled={showWhoPays && different && other.name.trim() === ''} shot="paid-by-save">
               Save
             </Button>
           }

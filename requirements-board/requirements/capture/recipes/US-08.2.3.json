@@ -281,11 +281,11 @@
           "caption": "Not split yet, with the Split button",
           "steps": [
             {
-              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
+              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-row]"
             }
           ],
           "highlight": [
-            "[data-testid=slide-booking] [data-shot=procedure-split-button]"
+            "[data-testid=slide-booking] [data-shot=procedure-split-row]"
           ]
         },
         {
@@ -293,7 +293,7 @@
           "caption": "The Paid by sheet's split section: each party's share typed in $ or %, one taking the rest",
           "steps": [
             {
-              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-button]"
+              "scroll": "[data-testid=slide-booking] [data-shot=procedure-split-row]"
             },
             {
               "click": "[data-testid=slide-booking] [data-shot=procedure-split-button]"

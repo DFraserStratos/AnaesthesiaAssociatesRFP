@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Check, ChevronDown, RotateCcw, Search } from 'lucide-react'
 import { accent, neutral, radius, semantic, zIndex } from '../../theme/tokens'
 import type { Contract, ContractId, Procedure, RailAnswers, RvgGroup } from '../../domain/types'
-import { childPayerOn, payerContactMissing, payerDetails, type BillingValidationFailure } from '../../domain/billing'
+import { childPayerOn, payerContactMissing, payerCounterparty, payerDetails, type BillingValidationFailure } from '../../domain/billing'
 import { NEEDS_PRICE_LABEL, rangeInForce } from '../../domain/billing/priceRanges'
 import { RvgCodeField } from '../capture/ProcedureCodeCard'
 import { TextAction } from '../ui/TextAction'
@@ -157,7 +157,10 @@ function usePaidBy({ procedure, actor, canEdit }: BillingCardProps): Omit<PaidBy
   const contract = procedure.governingContractId !== undefined ? masters.contracts[procedure.governingContractId] : undefined
   const cancelled = booking?.cancellation !== undefined
   const invoicedKind = view.contract?.invoiced?.kind
-  const details = invoicedKind === 'patient' || invoicedKind === 'payer' ? payerDetails(procedure.payer, patient) : undefined
+  // The payer where the Contract bills them, or where a split share does (Change then reaches their contact).
+  const payerRef = booking !== undefined ? payerCounterparty(procedure, booking.patientId) : undefined
+  const splitBillsPayer = payerRef !== undefined && (procedure.split?.shares.some((s) => s.person === undefined && s.party.kind === payerRef.kind && s.party.id === payerRef.id) ?? false)
+  const details = invoicedKind === 'patient' || invoicedKind === 'payer' || splitBillsPayer ? payerDetails(procedure.payer, patient) : undefined
   return {
     contract: view.contract,
     procedureId: procedure.id,

@@ -154,7 +154,8 @@ export function useSplitDraft(procedureId: string, open: boolean, startActive: b
   const problem = !active ? null : feeTotal === undefined ? NO_FEE_TO_SPLIT_MESSAGE : !parsed.ok ? parsed.reason : resolution?.ok === false ? resolution.reason : null
   const filled = rows.every((r) => (r.party !== null || (r.person !== null && r.person.name.trim() !== '')) && (r.rest || r.text.trim() !== ''))
   const showsProblem = problem !== null && (filled || feeTotal === undefined)
-  const pending = touched || hadSplit !== active
+  // Opened by Split but untouched leaves the Procedure as it is (no split written, nothing refused).
+  const pending = touched || (hadSplit && !active)
   const blocked = pending && active && !parsed.ok
   const change: SplitDraft['change'] = !pending ? undefined : active ? (parsed.ok ? { shares: parsed.shares } : undefined) : hadSplit ? null : undefined
   const edited = () => {
@@ -209,28 +210,30 @@ export function useSplitDraft(procedureId: string, open: boolean, startActive: b
 
 export interface SplitFeeSectionProps {
   draft: SplitDraft
-  /** The name the "Payer" option shows: the payer as typed above it in the sheet. */
-  payerName?: string
+  /** The section's own "Split the fee" heading; off when the sheet's title already says it. */
+  heading?: boolean
 }
 
-export function SplitFeeSection({ draft, payerName }: SplitFeeSectionProps) {
+export function SplitFeeSection({ draft, heading = true }: SplitFeeSectionProps) {
   const { feeTotal, rows, active } = draft
   const parsed = sharesOf(rows)
   const resolution = feeTotal !== undefined && parsed.ok ? resolveSplit(feeTotal, previewShares(parsed.shares)) : undefined
   const amounts = resolution?.ok === true ? resolution.amounts : undefined
   const total = amounts?.reduce((s, a) => s + a.amountExGst, 0)
-  const options = payerName !== undefined ? draft.options.map((o) => (o.hint === 'Payer' ? { ...o, name: payerName } : o)) : draft.options
+  const options = draft.options
 
   return (
     <section data-shot="split-sheet" aria-label="Split the fee" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-        <h3 style={SECTION_HEADING}>Split the fee</h3>
+      {(heading || (active && draft.hadSplit)) && (
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: heading ? 'space-between' : 'flex-end', gap: 12 }}>
+        {heading && <h3 style={SECTION_HEADING}>Split the fee</h3>}
         {active && draft.hadSplit && (
           <TextAction shot="split-remove" onClick={draft.remove} label="Remove the split">
             Remove split
           </TextAction>
         )}
       </div>
+      )}
 
       {!active ? (
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
