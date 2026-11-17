@@ -540,7 +540,7 @@ async function main() {
     const self = statusOf(id)
     const s = [`## 1. The phase (plan.json)`, '', src(`${CU}/plan.json`, `phases[num=${id}]`), '']
     s.push(`**Phase ${id} · ${phase.title}** (track: ${phase.track || 'none'}; ${phase.est_sessions || '? sessions'}).`, '')
-    if (self === 'IN PROGRESS') s.push(`**Status: IN PROGRESS.** Session 1 is built and frozen: build only what remains (its progress entry, below, says what). Its doc keeps its own drift-check baseline.`, '')
+    if (self === 'IN PROGRESS') s.push(`**Status: IN PROGRESS.** Session 1 is built and frozen: build only what remains (its progress entry, below, says what; the log's last \`Checkpoint:\` line may show more built since). Its doc keeps its own drift-check baseline.`, '')
     else if (self.startsWith('DONE') || self.startsWith('built')) s.push(`**Status: ${self}.** This phase is already built; it is frozen. Follow-up work belongs in a later phase.`, '')
     else s.push(`**Status:** not built.`, '')
     s.push(`- **Goal:** ${phase.goal}`, `- **Delivers:** ${phase.delivers}`)

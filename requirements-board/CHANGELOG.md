@@ -2,6 +2,11 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.10.0 · 2026-11-17
+
+- `run-build-phase`: a two-session phase runs in one session by default. The doc's session boundary is now a checkpoint, not a stop. There the session runs the full gate, writes the `IN PROGRESS` status row and a short `**Session 1**` paragraph (so a session that ends unexpectedly can be resumed), then carries on with the rest. It stops at the checkpoint only when the prompt says so (a session-1-only run), when its context has already been compacted, or when the context or a usage limit warns it is near its end. A stop updates the plan page so the same prompt resumes the phase. A phase finished in one session gets one full entry in place of the `**Session 1**` paragraph. The running log gains a `Checkpoint:` line after each work item, and a resumed session starts from the last one.
+- `phase-context.mjs`: an `IN PROGRESS` pack points to the log's last `Checkpoint:` line as well as the progress entry.
+
 ## 1.9.0 · 2026-11-16
 
 - `run-build-phase`, a new skill: builds one phase of a plan made by `update-build-plan`, start to finish, in a fresh session. It orients from a context pack and the phase doc, runs the drift check, writes a step plan and builds straight on (in plan mode, one approval at the plan), gates on the plan's checks, compares each changed screen with its design file, runs the manual checklist, then the review, the catalogue screenshots and the demo guide side by side, writes a short progress entry and updates the plan page so it names the next phase. A kick-off prompt says "Load the run-build-phase skill and follow it for Phase <id>" and adds only what the phase doc does not say. Its "This repo" block holds the project's rules, app, design references, progress file and tracks; the starter has one.

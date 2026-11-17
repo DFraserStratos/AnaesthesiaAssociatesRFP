@@ -147,8 +147,9 @@ vitest, verify-board and shots: together they are the project's green commands.
 1. The phase id is in the prompt's first line. Note its track ("This repo" names them) and any
    override block.
 2. `date +%F` is today for the progress file (the app's demo clock is something else).
-3. The pack (Stage 1) says whether the phase is not built, IN PROGRESS (session 1 built: this is
-   session 2) or DONE (stop and say so).
+3. The pack (Stage 1) says whether the phase is not built, IN PROGRESS (an earlier session stopped
+   at or past the checkpoint: resume) or DONE (stop and say so). Two-session phases normally run
+   in one session (see "Two-session phases").
 
 ## Stage 1: orient (about 5 minutes)
 
@@ -157,8 +158,9 @@ vitest, verify-board and shots: together they are the project's green commands.
 3. Read the prompt's "Also read" items, by section.
 4. Nothing else whole. For anything more, follow the pack's pointers to a line range, grep, or ask
    an Explore subagent.
-5. Session 2: read your own progress entry (in the pack) and `<logDir>/<id>-log.md` and
-   `<id>-plan.md` if they survive; resume at the checkpoint the entry names. Do not redo session 1.
+5. Resuming (IN PROGRESS): read your own progress entry (in the pack) and `<logDir>/<id>-log.md` and
+   `<id>-plan.md` if they survive; resume where the log's last checkpoint line says, which may be
+   past the checkpoint the entry names. Do not redo built work.
 
 ## Stage 2: drift check
 
@@ -185,13 +187,14 @@ The pack has already run the catalogue diff since the doc's baseline. Its baseli
 
 1. Write `<logDir>/<id>-plan.md`: any prompt override first; the drift result in five lines; then
    the work items as ordered, work-sized steps (domain and store first, UI after), each naming its
-   files and tests; the session boundary if the phase has two; the screens that change and the
+   files and tests; the checkpoint (the doc's session boundary) if the phase has two; the screens that change and the
    design reference for each (for Stage 4). In normal mode, do not wait for anyone: start step 1. In
    plan mode, this plan is what ExitPlanMode presents (Ground rules); write the file once approved.
 2. Keep `<logDir>/<id>-log.md` as you go, one line per entry: each default or reading built, each
    deviation from the doc with why, each name you ship that a later phase will use, tests added,
    `PERSIST_VERSION` moves, anything for `/update-requirements`. It is the brief for the progress
-   entry and what session 2 resumes from.
+   entry and what a resumed session starts from: after each work item, a line
+   `Checkpoint: items 1 to n built, <inner loop result>`.
 3. Build. Follow the house rules ("This repo") and the doc's work items. Before building or
    reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states)
    load the `frontend-design` skill and apply it inside the design system: the design files and
@@ -200,8 +203,9 @@ The pack has already run the catalogue diff since the doc's baseline. Its baseli
 4. **Inner loop:** `node T/phase-check.mjs --changed` (partial: typecheck, Vitest related to your
    changes, the catalogue check), or one Vitest file (`npx vitest run <file>` in the app). Never the
    full suite or a build after each edit.
-5. **Full gate** (`node T/phase-check.mjs`, in the background) only at: the end of each session's
-   build, after the review fixes, and the final close. On failure fix and run `--failed`.
+5. **Full gate** (`node T/phase-check.mjs`, in the background) only at: a two-session phase's
+   checkpoint, the end of the build, after the review fixes, and the final close. On failure fix and
+   run `--failed`.
 
 ## Stage 4: prove it (UI phases: all three; others: 1 and 3)
 
@@ -269,8 +273,8 @@ Short: aim for 40 lines or fewer. A subagent may draft it from `<id>-log.md`, th
 gate, review and capture results; you check every name and number in it.
 
 1. **Status row** in the status table, in run order after the last row: `DONE` and today, or
-   `IN PROGRESS` after session 1; the summary one sentence of what was built.
-2. **The entry**, after the last phase entry, headed exactly as "This repo" gives it (a second session adds its date to the range). Bold-label paragraphs, so the tools can
+   `IN PROGRESS` at a checkpoint; the summary one sentence of what was built.
+2. **The entry**, after the last phase entry, headed exactly as "This repo" gives it (a session that resumes on a later day adds its date to the range). Bold-label paragraphs, so the tools can
    find them:
    - `**Drift check against <baseline>.**` what changed, what was dropped, built as answered or default.
    - `**Built.**` three to eight bullets: model, the one place each rule lives, writers, UI, triggers,
@@ -296,7 +300,7 @@ gate, review and capture results; you check every name and number in it.
 The owner refreshes the plan page and runs what it says, so it must name the next phase.
 
 1. In `PLAN/status.json` (keep the existing entries' style and length):
-   - `in_progress`: this id after session 1; remove it when DONE.
+   - `in_progress`: this id when stopping at a checkpoint; remove it when DONE.
    - `next`: `phases` (what to run next) and a one-paragraph `note`.
    - `guidance.as_of`: today. `headline`: "Start <next> now. <what this phase built, in a clause>."
      `headline_sub`: what this phase built in one sentence, that it is done and not yet committed,
@@ -304,7 +308,7 @@ The owner refreshes the plan page and runs what it says, so it must name the nex
    - `safe`: the owner has delegated this call to you. Mark a phase safe only if every phase in its
      plan entry's `depends_on` is DONE (counting this one), it is next in ROADMAP's run order, and no
      sequencing rule bars it; each reason says why and that this phase must be committed first.
-     After session 1 the only safe phase is this one's session 2.
+     After stopping at a checkpoint the only safe phase is this one, to resume.
    - `wait`: drop entries for phases now DONE or now safe; update reasons that named this phase.
    - `parallel`: which safe phases may run side by side (only where the sequencing rules allow).
 2. Run `node P/build-index.mjs`: it must print no index warnings.
@@ -315,16 +319,30 @@ The owner refreshes the plan page and runs what it says, so it must name the nex
 
 ## Two-session phases
 
-- The doc (or prompt) names the boundary. Session 1 builds up to it, then runs Stage 4's full gate
-  and the checklist items its work covers, and stops green and demoable. It writes the status row
-  `IN PROGRESS`, the entry with a `**Session 1 (<date>).**` paragraph saying exactly what is built
-  and what session 2 starts with, and its handoffs so far; it updates the plan page (this phase's
-  session 2 next). Review, capture and the demo guide wait for session 2 unless the prompt says
-  "When done at the end of each session".
-- Session 2 resumes from the pack and its own entry, builds the rest, then runs Stages 4 to 7 for the
-  whole phase and completes the entry (one entry, not two).
-- If a session runs long, stop at the doc's fallback point, never mid-step: green, entry updated,
-  plan page updated.
+A doc's "2 sessions" is a size, not a stop. The boundary it names (or the prompt names) is a
+**checkpoint**: a green, demoable point to fall back to. One session normally builds the whole phase,
+straight through the checkpoint.
+
+- **At the checkpoint:** run the full gate (Stage 3 step 5) and fix it green. Write the status row
+  `IN PROGRESS` and the entry with a short `**Session 1 (<date>).**` paragraph: what is built, what
+  the rest starts with, and the handoffs so far. If the session ends unexpectedly after this point,
+  the next one can resume. Log `Checkpoint: session 1's items built, gate green`. Then **carry
+  on** with the remaining items in the same session. No plan page update and no checklist run yet:
+  Stage 4 covers the whole phase at the end.
+- **Stop at the checkpoint instead** only when one of these is true:
+  - the prompt says so (a session-1-only run);
+  - this session's context has already been compacted;
+  - the context or a usage limit is warning that it is near its end.
+
+  To stop, update the plan page as Stage 7 says (this phase, to resume, is the only safe one) and
+  give the final notes: what is built, that the gate is green, and that the same prompt resumes it.
+  Review, capture and the demo guide wait for the resumed session unless the prompt says "When done
+  at the end of each session".
+- **Finishing:** whichever session builds the last item runs Stages 4 to 7 for the whole phase and
+  completes the entry: one entry, not two. If the whole phase was built in one session, the full
+  entry replaces the `**Session 1**` paragraph.
+- If the rest runs long after the checkpoint, stop at the doc's fallback point, never mid-step, as
+  if stopping at the checkpoint: green, entry updated, plan page updated.
 
 ## Phases in a worktree
 
