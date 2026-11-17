@@ -156,8 +156,8 @@ deliverable**, like the originals, and has a plan in `phases/phase-NN-<slug>.md`
 the app green, demoable and fully migrated, because the prototype is shown in live workshops between
 phases. **Built:** 14 to 17; 28 to 32 with 32a, 32b and 32c, and 38a (the Schedule track ran ahead of
 the Contracts track while the pricing requirements settled); 18 to 22 with 18a, 19a, 19b, 20a and 21a;
-and U1 to U3. **Next:** 22a, then U4 and U5, then 23, 24 and 25, then U6, then 26, 17a, 27 and 27a,
-Intake and Money. The 2026-11-17 update re-opens items on built phases, which stay on their covers:
+U1 to U3, and 22a. **Next:** U4 and U5, then 23 and 17a side by side (two worktrees), then 24 and 25,
+then U6, then 26, 27 and 27a, Intake and Money. The 2026-11-17 update re-opens items on built phases, which stay on their covers:
 built 21's FT-11.2, US-11.2.1 to US-11.2.4 and DM-11 (the payer held on the Booking), built 22's
 US-08.2.3, US-08.4.2 and DM-28 (a split share to another person; one invoice per payer), built 15a's
 US-13.7.1 and DM-31 (the child warning per Procedure), built 21a's US-07.2.2 and built 20's
@@ -395,14 +395,15 @@ UI unif.      U1 tokens, money & date text ─▶ U2 overlays │ U3 pills, badg
               owner-added, outside the gap analysis: docs/ui-unification/
 ```
 
-Run order from here: 22a, then U4 and U5, then 23, 24 and 25, then U6, then 26, 17a, 27, 27a, then
+Run order from here: U4 and U5, then 23 and 17a side by side (two worktrees), then 24 and 25, then U6,
+then 26, 27, 27a, then
 Intake (33, 33a, 34, 35) and Money (36 on), with the remaining phases as their dependencies allow,
 then U7, then 44. Parked: the A and B split of a session (US-01.1.5, DM-65), the pre-op consult in
 AA's room (US-03.7.4) and the Procedure's hospital reference (DM-68, on OQ-136); see Parked.
 
 The UI unification phases (U1 to U7, owner-added on 12 November 2026) run between the catch-up phases,
-never beside one: 21, then U1, then U2 and U3 (side by side, in two worktrees), then 21a, 22 and 22a, then U4 and U5, then 23, 24 and 25, then U6,
-then 26, 17a, 27, 27a, Intake, Money and 40 to 43a, then U7, then 44. See "The UI unification track"
+never beside one: 21, then U1, then U2 and U3 (side by side, in two worktrees), then 21a, 22 and 22a, then U4 and U5, then 23 and 17a (side by side, in two worktrees), then 24 and 25, then U6,
+then 26, 27, 27a, Intake, Money and 40 to 43a, then U7, then 44. See "The UI unification track"
 under Sequencing rules.
 
 ## Phases
@@ -415,7 +416,7 @@ under Sequencing rules.
 | 15b | [Copy and photo capture out, and DRAFT becomes ACTIVE](phases/phase-15b-copy-and-photo-removal.md) | **Built.** Copy a Booking removed from all three apps, the store, the seed and the guide. Photo capture out of the Add a booking chooser, kept only as a badged Future-scope demo action. The List state the prototype called DRAFT renamed ACTIVE. (Its RV ids were renumbered away: see Sequencing rules) | 15a | 0 / 0 / 0 |
 | 16 | [AA fee as its own monthly invoice](phases/phase-16-aa-fee-invoice.md) | **Built.** The payable equals the receivable, and a part payment releases exactly what was received. AA fee settings and a monthly run raising one AA-FEE invoice per anaesthetist (fixed items plus a per-BCTI charge, D1, counted by one pure function), shown in Admin and web Accounts. Xero pairs carry the invoice number and reference, and Xero holds no patient names. US-09.1.1's prepayment payee (the holding account) closes with 27 and 27a | 15a, 15b | 8 / 1 / 0 |
 | 17 | [Surgeons, rooms, pairing preferences and priority tiers](phases/phase-17-surgeons-rooms-blacklist.md) | **Built.** Surgeon profile with one HPI CPN field, surgeons' rooms with contacts, surgeon groups and a hospital contact email. Private two-way pairing preferences, admin only (D44), and an admin-only priority tier per anaesthetist (D36), on one shared helper every office pairing path uses. Follow-ups: bank details (DM-32) in 26, preferred pairing in the office's order (US-13.6.4) in 32b, a room with no email (US-13.6.1) in 17a | 14, 15 | 7 / 2 / 0 |
-| 17a | [Rooms without an email, surgeons at more than one room, and practice manager and PA contacts](phases/phase-17a-rooms-and-practice-contacts.md) | A surgeons' room held with no email or phone (built 17's US-13.6.1 follow-up), shown as such, and the specialist directory seed without its placeholder emails. A surgeon at one or more rooms, the first their main room (D75 answered; built 17's FT-13.6, US-13.6.1 and US-13.6.2 follow-up), the four two-practice surgeons at both. Practice manager and PA contacts (name, email, role) on the room, each optionally named for one surgeon (D74, provisional), kept by the office and shown on the surgeon's profile. One helper for the address the office's emails use (the main room's, the others offered; OQ-127 part 5, provisional) that 35 and 40 read. 18a's required specialties kept on the same surgeon form, profile and seed | 17, 18a | 1 / 1 / 0 |
+| 17a | [Rooms without an email, surgeons at more than one room, and practice manager and PA contacts](phases/phase-17a-rooms-and-practice-contacts.md) | A surgeons' room held with no email or phone (built 17's US-13.6.1 follow-up), shown as such, and the specialist directory seed without its placeholder emails. A surgeon at one or more rooms, the first their main room (D75 answered; built 17's FT-13.6, US-13.6.1 and US-13.6.2 follow-up), the four two-practice surgeons at both. Practice manager and PA contacts (name, email, role) on the room, each optionally named for one surgeon (D74, provisional), kept by the office and shown on the surgeon's profile. One helper for the address the office's emails use (the main room's, the others offered; OQ-127 part 5, provisional) that 35 and 40 read. 18a's required specialties kept on the same surgeon form, profile and seed | 17, 18a, U5 | 1 / 1 / 0 |
 | 18 | [Parties and flat Contracts](phases/phase-18-contract-model.md) | **Built.** A Party master (hospital, insurer, funder, surgeon or surgeon group, anaesthetist, AA; billing details once a Contract bills it; delivery by email or post, D55) replacing contract holders and the Insurer master with its direct-claims flag (RV-39). Contracts as one flat priced item each (D77 answered): a unique AA code and a holder reference code, a holder Party, bills its holder or the payer (a prepaid Contract always the payer, D23 at Confirm), linked surgeons and at most one anaesthetist, prepaid fixed for life, one of five pricing kinds (rate and discount undated settings), the override setting on RVG kinds only, Active or Disabled (a Procedure already on a Disabled one bills as normal, D81), edited in place with audit and never deleted (RV-32), with save guards. No contract · RVG held by AA replacing the default Type 1s (RV-06); the ACC review flag gone; every fee unchanged | 17 | 5 / 2 / 4 |
 | 18a | [Specialties, funding tags and the open-price fallbacks](phases/phase-18a-specialties-funding-tags-and-fallbacks.md) | **Built.** AA's specialties list and its funding tags (SXAP, HNZ, ACC, each optionally naming its funder) in Admin Master data, audited. Every surgeon holding one or more specialties, required (built 17's FT-13.6 and US-13.6.2 follow-up; D3's list at Verify). Each Contract carrying none or more specialties and at most one funding tag; ACC a tag, not a kind of Contract. One system-made open-price fallback per invoice destination (No contract · Fixed price, Prepaid · Fixed price, one per hospital and tag, one per Special holder), kept in step automatically, never disabled or deleted | 18 | 7 / 3 / 0 |
 | 19 | [RVG groups and the RVG code type-ahead](phases/phase-19-rvg-and-procedure-masters.md) | **Built.** RVG groups as the one master list, reseeded from the NZSA RVG 2021 in place of the invented demo codes (RV-41) (a hidden key never shown, the same code on several rows, anatomy heading, base and modifier units, starting figure and published range, shown to the anaesthetist) plus AA's own, office-maintained and audited, with no procedure list. An optional RVG code picked by type-ahead (code, description, base units) on mobile, web and Admin. Any base-unit value accepted, with an after-procedure office warning when out of range | 15a, 18 | 3 / 1 / 2 |
@@ -482,8 +483,9 @@ under Sequencing rules.
   the UI unification track" as an owner directive on each run; a phase with no covers is otherwise a
   candidate for removal). A built U phase is frozen like any other once its PROGRESS row says DONE.
   - **Run order.** 21, then U1, then U2 and U3 side by side, then 21a, 22 and 22a, then U4 and U5,
-    then 23, 24 and 25, then U6, then 26, 17a, 27, 27a, Intake, Money and 40 to 43a, then U7, then 44. A U
-    phase runs between catch-up phases, never beside one, because both edit the same shared files.
+    then 23 and 17a side by side, then 24 and 25, then U6, then 26, 27, 27a, Intake, Money and 40 to 43a,
+    then U7, then 44. A U phase runs between catch-up phases, never beside one, because both edit the
+    same shared files.
   - **U2 and U3 are built at the same time** (Donald, 16 November 2026), the one such pair. Each
     runs in its own git worktree and branch (`ui/u2-overlays`, `ui/u3-pills`), cut from the commit on
     `master` that holds 21 and U1. For these two phases only, the agents commit: on their own branch,
@@ -516,7 +518,7 @@ under Sequencing rules.
   - **U7** (close out) runs after the parallel tracks and before 44, which regenerates every
     screenshot and audits labels against the demo guide.
   - **In `plan.json`** each catch-up phase that must follow a U phase names the latest one it needs
-    in `depends_on` (21a and 22: U2 and U3; 23: U5; 26, 27, 33, 36, 42 and 43a: U6; 44: U7), so the plan
+    in `depends_on` (21a and 22: U2 and U3; 23 and 17a: U5; 26, 27, 33, 36, 42 and 43a: U6; 44: U7), so the plan
     page's waves show the order; U4 names 22a, the catch-up phase it must follow.
   - **Fold-ins.** A U phase never migrates a screen a catch-up phase is about to rebuild. Those
     copies move inside that phase: 21a, 22, 22a, 23, 24, 25, 26, 27, 27a, 33, 33a, 34, 35, 36, 37, 38, 38b,
@@ -732,7 +734,7 @@ under Sequencing rules.
 - **26 needs only U6 (and 17, built).** It keeps its place after 25 and U6, and can run as soon as
   U6 is done if AA wants bank details sooner; it removes the GST period (RV-02), so it runs before 38, whose monthly GST report it
   leaves in calendar months.
-- **17a needs 18a** (and built 17). It runs after 26 in run order, and before 35, 40
+- **17a needs 18a** (and built 17) and U5. Since 17 November it runs beside 23, after U5, and before 35, 40
   and 42: 35's update email and 40's NHI request read a room's email through its one helper (empty
   when the room holds none; the main room's for a surgeon at more than one room, the others offered,
   D74 with OQ-127 part 5), and 42's rooms sheet loads a room with no email and a surgeon at each room
@@ -740,13 +742,29 @@ under Sequencing rules.
   now that a surgeon's room becomes a list (about 10 non-test files read `roomId`). Its grep and
   migration include any room reader 18 to 25 add before it runs (18's Party migration may read the
   room-to-surgeons lookup, which 17a re-points; 20's surgeon filter is by practitioner ID and adds
-  none), so it keeps its place in the run order. Neither ever reads the real
+  none). It needs U4's `ChipMultiSelect` for the Rooms multi-select and U4's `SelectField` and
+  `TextField` for the contact form, and both it and U4 rewrite `SurgeonEditSheet`, so it runs after U5,
+  never beside a U phase. 23 adds no room reader, and 24 and 25 start from the merged code, so their
+  readers (if any) build on `roomIds`. See "23 and 17a side by side". Neither ever reads the real
   `Christchurch_Specialists.xlsx` beside the fictional copy: the seed is fictional only. Since
   2026-11-10 18a has already given each surgeon one or more specialties, required, on the same
   surgeon form (`SurgeonEditSheet`), profile and specialist directory seed (its header included) by
   the time 17a runs, and re-shot US-13.6.2's profile with them: 17a keeps them when `roomId` becomes
   `roomIds`, its rooms list sits beside them, its US-13.6.2 and FT-13.6 shots start from 18a's and
   keep them in their captions, and 42 loads both. 18a is therefore one of 17a's dependencies.
+- **23 and 17a side by side** (Donald, 17 November 2026), the first catch-up pair run in parallel.
+  After U5 is committed on `master`, each runs in its own git worktree and branch
+  (`AnaesthesiaAssociatesRFP-23` on `cu/23-primary`, `AnaesthesiaAssociatesRFP-17a` on
+  `cu/17a-rooms`), cut from that commit. They barely meet: 23 rebuilds Procedures, units and the fee
+  engine; 17a only surgeons' rooms and their contacts (every reader of a surgeon's room is a surgeon
+  or room file). Their shared files take additions only (`types.ts`, the audit label files, the seed
+  index, `mutate.ts`'s id formats, the store barrel, the catalogue, PROGRESS.md, ATLAS.md, the demo
+  guide), and `PERSIST_VERSION` is bumped once by each and once more by the merge. For these two phases
+  the agents commit on their own branch and on the merge branch `cu/23-17a`, never on `master`. They
+  take turns on ports 5173, 5174 and 5180 through one lock, never commit capture images on their own
+  branch, sync at their checkpoint, and the session that finishes second merges the two, re-runs every
+  check and capture on the joined code and updates the plan page. The owner takes `cu/23-17a` into
+  `master`; 24 starts only after that. Each phase doc's "Running beside" section has the rules.
 - **27 then 27a, after 25, back to back.** 27 needs 18's prepaid setting, 19a's price lists, 20's
   "Payment type: Prepaid" and the Prepaid list's "No contract · Fixed price" backstop (Prepaid · Fixed
   price; the "Other price" toggle went in 20's owner review of 16 November), 22a's payer on each

@@ -83,7 +83,9 @@ root (`git rev-parse --show-toplevel`; folder names contain spaces, so quote eve
   status, `rg` copy counts and the baseline shots in `docs/ui-unification/shots/`
   (`shoot.mjs`), and their rules are `docs/ui-unification/README.md` sections 5, 6 and 8 (no
   redesign: a visible change cites the README question that approved it; never re-open the 27
-  answers). U2 and U3 run side by side in worktrees; their prompts carry the branch and merge rules.
+  answers). U2 and U3 ran side by side in worktrees, and 23 and 17a do (after U5); their prompts and
+  docs ("Running beside") carry the branch, port-lock (`phase-ports.lock` in the git common dir) and
+  merge rules.
 
 ## Ground rules
 

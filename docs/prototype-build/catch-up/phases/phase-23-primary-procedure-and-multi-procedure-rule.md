@@ -55,7 +55,7 @@ actions, seed, tests), ending green. Session 2: work items 9 to 13 (capture with
 the Booking total, Review and invoices, the two triggers, copy sweep, Playwright, demo guide) and the
 review pass. Session 1 is the heavy one: it changes the fee engine's shape under every caller. If it
 overruns, finish items 1 to 6 and 8 green and carry item 7's store guards into session 2 with item 9,
-rather than splitting the engine rewire.
+rather than splitting the engine rewire. The session boundary is the checkpoint where this phase commits and syncs with 17a: it runs **beside Phase 17a, in its own git worktree** ("Running beside 17a", below).
 
 **Updated 2026-11-10 (catalogue `efe123c`).** Donald's 5 November flat contract model (D1 to D11) is built as decided:
 no Contract lines, versions or staged changes, and AR-28, AR-29 and AR-30 are Retired (cite AR-58 and AR-61).
@@ -137,6 +137,79 @@ The anaesthetist's capture shows units and shares only. The 2026-09-28 ruling (n
 the anaesthetist's Booking) stands wherever the catalogue gives no price: this phase adds no Booking
 total, dollar share or calculated fee to an anaesthetist surface. Invoices still group by
 payer identity (21, 22a), so the BCTI count (16's `bctisFor`) does not move.
+
+## Running beside 17a: the worktree, the ports and the merge
+
+23 and 17a are built **at the same time, by two sessions, in two git worktrees** (the owner's decision of 17 November 2026; ROADMAP.md, Sequencing rules, "23 and 17a side by side"). This phase is 23. Read this section before the drift check: it changes where you work, how you share the ports, and how the phase ends. Everything else in this doc stands. It follows the pattern U2 and U3 used on 16 November.
+
+**Where you work.**
+
+- Branch `cu/23-primary`, in the worktree `/Users/d.fraser/Development/Stratos Dev/AnaesthesiaAssociatesRFP-23` (a sibling of the main checkout). 17a is on branch `cu/17a-rooms` in `/Users/d.fraser/Development/Stratos Dev/AnaesthesiaAssociatesRFP-17a`. Both branch from `master` at the commit that holds U5 (and 22a, U4 and this section).
+- If your session is not already in that worktree, create it from the main checkout: `git worktree add -b cu/23-primary "/Users/d.fraser/Development/Stratos Dev/AnaesthesiaAssociatesRFP-23" master`, then `npm run setup` in it (each worktree needs its own `node_modules`). If the branch already exists, this is a resumed session: `git worktree add "/Users/d.fraser/Development/Stratos Dev/AnaesthesiaAssociatesRFP-23" cu/23-primary` (or just work in it if it is already there).
+- A worktree holds only committed files. If U5 is not DONE and committed on `master` (no DONE row for U5 in `master`'s PROGRESS.md, or U5's changes still uncommitted in the main checkout), stop and tell the owner.
+- Every path in this doc is from **your worktree's root**, the tools too (`node T/...`, `node P/...`). Never edit, build or run anything in the main checkout or in 17a's worktree.
+
+**Commits: an exception to the "never commit" default, for 23 and 17a only.** Parallel worktrees cannot be joined without commits, so the owner allows this much and no more:
+
+- Commit on `cu/23-primary`, and on the merge branch `cu/23-17a` if you are the one who merges (below). Commit at your checkpoint (the doc's session boundary, green), at the end, and whenever a merge needs a clean tree. Stage by path (`git add <paths>`), never `git add -A` or `git add .`.
+- Never commit on `master`, never merge into `master`, never push, never rebase, amend or reset a commit 17a made, never delete a branch or a worktree. The owner takes the result into `master`.
+- When this phase is finished and green in your worktree, make a final commit whose subject starts exactly `23 complete:`. 17a looks for that subject to know you are done.
+
+**What 17a is doing meanwhile** (its doc is `phase-17a-rooms-and-practice-contacts.md` in this folder: read its Goal and its Work items' titles once, so you know its shape). 17a lets a surgeons' room hold no email or phone, turns `Surgeon.roomId` into an ordered `roomIds` list (the first the main room) through every reader, adds practice manager and PA contacts on the room (`RoomContact`, three store actions) and one pure helper `src/domain/roomContacts.ts`, on the admin Master data screens only (the surgeon form, profile, rooms view and room sheet), with the specialist directory seed edited in place and one `PERSIST_VERSION` bump. Session 1 is the model, seed and the many-rooms screens; session 2 the contacts and helper.
+
+**The boundary.** The two phases barely meet, and keeping it that way is what makes the merge automatic.
+
+| | Owns |
+|---|---|
+| 23 | Procedures, units and fees: the Procedure and Booking types' fields, `src/domain/billing/` (`multiProcedure.ts`, `bookingFeeFor` and the fee callers), the Booking and Procedure store actions, the capture screens (`UnitsCard`, `ProcedureStack`, `MakePrimarySheet`), Review and the invoices, its triggers, its seeded Booking |
+| 17a | Surgeons and their rooms: the `Surgeon`, `SurgeonRoom` and `RoomContact` types, `src/domain/surgeons.ts`, `src/domain/roomContacts.ts`, `store/surgeonActions.ts` (and any `roomContactActions.ts`), `seed/specialistDirectory.ts`, the surgeon and room records in `seed/cast.ts`, `SurgeonEditSheet`, `SurgeonRoomSheet`, `SurgeonProfile`, `screens/masters/SurgeonsView.tsx`, `mastersPaths.ts` and their tests |
+
+- Never open a surgeon or room file, and never read a surgeon's room (`roomId`, which 17a renames `roomIds`): nothing in 23 needs one. If your work seems to, do not build it: note it in your PROGRESS entry under "For the merge".
+- Files both phases add to: `src/domain/types.ts` (each its own types and fields), `src/shared/audit/actionLabels.ts` and `fieldLabels.ts`, `src/domain/seed/index.ts`, `store/mutate.ts`'s `ID_FORMATS`, the store barrel, `src/store/appStore.ts` (`PERSIST_VERSION` and its migrate test), the catalogue files and their tests (`src/apps/demo/catalogue/`), the seed pin tests (`canvasFingerprint.test.ts`, the golden tests), `pwaPurity.test.ts`, `docs/prototype-build/PROGRESS.md`, `requirements-board/requirements/capture/ATLAS.md` and the demo guide. Add your lines, rows, exports and entries; never rewrite, sort or re-wrap what is already there, and keep each edit to the lines your work item needs.
+- **`PERSIST_VERSION`:** bump it once on your branch as this doc says. Both branches start from the same number, so both will say the same next number; the merge sets it one past that and keeps both phases' comment lines and migrate test cases.
+
+**The ports are shared: take turns through one lock.** The dev servers, Playwright (`npm run shots`), the catalogue shots (`shoot.mjs`) and capture all use the fixed ports 5173, 5174 and 5180, and Playwright reuses whatever server is already listening. If 17a's server holds a port, your run would test 17a's code and pass or fail for the wrong reason. The two sessions work together through one lock folder in the shared git directory; neither ever holds it while writing code.
+
+- **Needs the lock:** a full `node T/phase-check.mjs` (it ends with the screenshot suite), `phase-check --capture`, `npm run shots`, `shoot.mjs`, `node scripts/capture.ts` or `npm run capture`, any dev server (`runner.devCommand`, `npm run dev`, the `run` skill), and Stage 4's design pairs and manual checklist in the running app. **Needs no lock:** `phase-check --changed`, `phase-check --only typecheck,build,build-pwa,vitest,verify-board`, `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run verify:board`. Order your work so the port steps come together (for example, the design pairs and the checklist in one hold).
+- **Take it:** `mkdir "$(git rev-parse --git-common-dir)/phase-ports.lock"` (it fails if the lock is held), then `echo "23 $(date '+%F %T')" > "$(git rev-parse --git-common-dir)/phase-ports.lock/owner"`. Then check nothing is listening: `lsof -ti :5173 -i :5174 -i :5180`. If something is and you did not start it, do not kill it: release the lock and treat it as held.
+- **Release it** as soon as the step ends: stop every server you started (`node T/phase-check.mjs --stop-servers`, and any you started by hand), check the three ports are free, then `rm -rf "$(git rev-parse --git-common-dir)/phase-ports.lock"`. Release it too before you stop for any reason, a checkpoint stop included.
+- **If it is held:** carry on with work that needs no port, and try again when you next reach a port step. If nothing is left that needs no port, wait with one background command that returns when the lock is gone (`until [ ! -d "$(git rev-parse --git-common-dir)/phase-ports.lock" ]; do sleep 20; done`, with `run_in_background`) and act on its notification; no foreground sleeps or loops. A lock whose `owner` line is more than 60 minutes old with nothing listening on the three ports is stale: take it over and say so in your notes.
+- `phase-check`'s own lock (in `.build-phase/`) is per worktree: it stops two gates in one worktree, not the two worktrees sharing ports. Only the port lock does that.
+
+**Capture images are not committed on your branch.** Run `phase-check --capture <IDs>` for the recipes this doc lists (with the port lock) and look at the shots, but then restore the generated files (`git checkout -- requirements-board/requirements/assets requirements-board/requirements/capture/REPORT.md`): two branches rewriting the same PNGs cannot be merged. Skip Stage 5's final `--capture all` on your branch: the merge runs it once on the joined code and commits the images. Commit recipe and ATLAS edits (text) as usual.
+
+**The sync at the checkpoint.** When you reach this doc's session boundary (the run-build-phase skill's checkpoint) and have committed it green, look for 17a's work: `git log master..cu/17a-rooms --oneline`. If it has commits, merge it into your branch (`git merge cu/17a-rooms`), resolve by the rules below, and get `npm run build`, `npm run build:pwa` and `npx vitest run` green before your next work item. If 17a has committed nothing yet, carry on without it. If your session stops at the checkpoint, the resumed session does the sync first.
+
+**Finishing: who merges.** When your checklist, green run, screenshot comparison and review pass are done in your worktree, and PROGRESS.md has your row and entry:
+
+1. Commit with the subject `23 complete: ...`.
+2. Look for 17a's: `git log cu/17a-rooms --grep='^17a complete:' --oneline`.
+3. **Nothing found: you finished first.** Stop here, with the port lock released. Do not update the plan page (`status.json`, `index.html`): the merging session does it for both phases. Your notes say "23 is complete on `cu/23-primary`; 17a is still running and will do the merge". Do not wait or poll.
+4. **Found: you finished second, so you merge.** Claim it with `git branch cu/23-17a cu/23-primary`. If that fails because the branch exists, 17a got there first and is merging: stop as in step 3. Otherwise `git switch cu/23-17a` in your worktree and `git merge cu/17a-rooms`.
+
+**Resolving conflicts** (the sync and the final merge):
+
+- **A file only one phase owns** (the table above) should not conflict. If it does, keep the owner's version and re-apply the other side's lines by hand, then check them against that phase's work items.
+- **Imports, index exports, the store barrel, `ID_FORMATS`, the audit label files:** the union, with no duplicate.
+- **`types.ts`, the seed index:** both phases' additions. If both touched one type, keep both sets of fields.
+- **`PERSIST_VERSION`:** one past the number both branches reached, with both comment lines; the migrate test keeps both phases' cases.
+- **Catalogue files and tests, ATLAS.md, the demo guide:** the union: every row, entry and beat from both; 23's before 17a's where order is free. A minimum row count in a catalogue test takes the larger number. Seed pin and fingerprint tests are re-measured on the joined seed, never added up.
+- **PROGRESS.md:** both status rows (23 above 17a) and both entries (23's first), both sets of Decisions-log lines, both handoff lists. Test counts are re-measured after the merge.
+- **A hook** (`shot`, `data-shot`, `data-testid`, `data-validation-*`, a row `data-*`): if either side kept it, it stays, on the element recipes and specs target.
+- **Never** resolve by taking one side's whole file, and never drop one phase's work to make a conflict go away. If a conflict cannot be resolved without changing what the other phase built, resolve it the smallest way that keeps both behaviours, and log it under "For the owner's review".
+
+**After the final merge, on `cu/23-17a`** (the merging session does all of this; take the port lock where a step needs it):
+
+- `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` from `aa-prototype/`, and `npm run verify:board` from the worktree root, all green (or one full `node T/phase-check.mjs`).
+- The seed holds both phases' pins on the joined code: S3's Holt invoice, the bariatric primary at $2,800 and 22's split pair (23); the directory's 40 rooms and 131 surgeons, every surgeon's main room, the five cast rooms' emails and every surgeon's specialties (17a); the S1 to S5 golden tests; the canvas fingerprint as 23's doc expects it (17a must not move it).
+- No single-room reader crept in from 23: `grep -rnE "\.roomId\b|roomIds\[0\]" aa-prototype/src` finds nothing outside 17a's lookups.
+- No hook lost across the join: `git diff master...cu/23-17a -- aa-prototype | grep '^-.*data-'` and account for every line.
+- Where the two phases meet, checked in the running app: a Booking whose surgeon is one of the four two-room surgeons is captured with two Procedures, Make primary is used, and Review and the invoice still show the surgeon as before; that surgeon's profile shows both rooms and their contacts.
+- Capture: `phase-check --capture` for every recipe either phase lists under "Catalogue screenshots" and "Recipes this phase breaks", look at the shots, then one `node T/phase-check.mjs --capture all`; commit the images, `REPORT.md` and ATLAS this time.
+- One adversarial reviewer on the merge alone (PROGRESS convention 18), steered at: work one phase lost in a conflict, a part built twice, a hook dropped, a `PERSIST_VERSION` or seed pin wrong on the joined seed.
+- Add a short "23 and 17a merged" note to PROGRESS.md under the two entries (date, conflicts and how each was resolved, the re-measured Vitest, Playwright and capture counts, anything for the owner), and re-read both "Demo guide updates" sections against the joined app.
+- Update the plan page for both phases (run-build-phase Stage 7, on this branch): 23 and 17a DONE, next 24, which is safe once the owner has taken `cu/23-17a` into `master`; then `node P/build-index.mjs` with no warnings.
+- Commit with the subject `23 and 17a merged: ...`. Tell the owner the result is branch `cu/23-17a`, ready to take into `master`, and that both worktrees and the three branches are left in place for the owner to remove.
 
 ## Before you start: drift check
 
