@@ -52,7 +52,7 @@ function Card({ title, children }: { title: string; children: ReactNode }) {
         marginTop: 16,
         background: neutral.surface,
         border: `1px solid ${neutral.line}`,
-        borderRadius: 16,
+        borderRadius: radius.card,
         padding: 16,
         display: 'flex',
         flexDirection: 'column',

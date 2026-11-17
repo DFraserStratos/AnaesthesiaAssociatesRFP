@@ -24,7 +24,7 @@ import {
   useSurface,
   WarningTriangle,
 } from '../../../../shared'
-import { BackLink, Button, FilterPills, IconButton, NameSearchBox, ProgressBar, SlidingSegmentedControl, TextAction, type SlidingSegmentSize, type SlidingSegmentVariant } from '../../../../shared/ui'
+import { AddRowButton, BackLink, Button, Card, DayChip, FilterPills, StatTile, IconButton, NameSearchBox, ProgressBar, SlidingSegmentedControl, TextAction, type SlidingSegmentSize, type SlidingSegmentVariant } from '../../../../shared/ui'
 import { drSurname, formatCurrency, locationName, mondayOf, shiftWeeks } from '../../../../shared/format'
 import { ListInvoices, useBookingSearch, useListInvoices } from '../../../../shared/schedule'
 import { AddBookingFlow, AlertOfficeEntry, MovedToYouPanel, SubmitListSheet, useMovableLists } from '../../../../shared/flows'
@@ -42,19 +42,17 @@ import { CodePickerSheet } from '../../../../shared/capture/CodePickerSheet'
 import { UnitsCard } from '../../../../shared/capture/UnitsCard'
 import { bookingFee } from '../../../../shared/capture/feeContext'
 import { sessionText } from '../../../../domain/outOfHours'
-import { AvailabilityPageSwitch, Panel, WebNav, WeekStrip, type WebTab } from '../../../web/components'
+import { AvailabilityPageSwitch, WebNav, WeekStrip, type WebTab } from '../../../web/components'
 import { AccountsScreen, AvailabilityGrid, ListDetailView, ListsScreen, MyAvailabilityCalendar, type AccountsSubTab } from '../../../web/screens'
-import { WebDayChip, WebDayTable, WebGoToDate, WebResultsTable } from '../../../web/screens/ListsLookback'
+import { WebDayTable, WebGoToDate, WebResultsTable } from '../../../web/screens/ListsLookback'
 import { useDashboardFigures } from '../../../web/useDashboardFigures'
 import { StageHint } from '../CatalogueKit'
 import type { WebFixtures } from './fixtures'
 import { KnobButton, Knobs, NavSandbox, RowBoundary, Sandboxed, Wide } from './sandbox'
 import {
-  AddBookingButton,
   AgingBars,
   AvailabilityCell,
   DayPill,
-  StatTile,
   SubmitAction,
   SubTabButton,
   WhosFreeChip,
@@ -145,9 +143,9 @@ export function PanelDemo() {
   return (
     <>
       <Knobs label="Padding" value={flush} options={[{ value: 'padded', label: 'Padded' }, { value: 'flush', label: 'Flush' }]} onChange={setFlush} />
-      <Panel title="Leave" action={<span className="mono" style={{ fontSize: 14, fontWeight: 600 }}>2 booked</span>} flush={flush === 'flush'}>
+      <Card padding="panel" title="Leave" action={<span className="mono" style={{ fontSize: 14, fontWeight: 600 }}>2 booked</span>} flush={flush === 'flush'}>
         <div style={{ fontSize: 13, color: neutral.slate }}>Any content: a list, a table or a chart.</div>
-      </Panel>
+      </Card>
     </>
   )
 }
@@ -158,10 +156,10 @@ export function StatTileDemo({ f }: F) {
   const p = figures.productivity
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-      <StatTile label="UNITS" value={String(p.units)} pill={`+${p.unitsChangePct}%`} />
-      <StatTile label="LISTS" value={String(p.lists)} />
-      <StatTile label="AVG UNITS / LIST" value={p.avgUnitsPerList.toFixed(1)} />
-      <StatTile label="FEES INVOICED" value={formatCurrency(p.feesInvoiced)} />
+      <StatTile variant="quiet" label="UNITS" value={String(p.units)} pill={`+${p.unitsChangePct}%`} />
+      <StatTile variant="quiet" label="LISTS" value={String(p.lists)} />
+      <StatTile variant="quiet" label="AVG UNITS / LIST" value={p.avgUnitsPerList.toFixed(1)} />
+      <StatTile variant="quiet" label="FEES INVOICED" value={formatCurrency(p.feesInvoiced)} />
     </div>
   )
 }
@@ -285,7 +283,7 @@ export function ProgressPillDemo() {
 export function DayChipDemo({ f }: F) {
   const [shown, setShown] = useState(true)
   return shown ? (
-    <WebDayChip dateISO={f.pastDayISO ?? f.todayISO} onClose={() => setShown(false)} />
+    <DayChip dateISO={f.pastDayISO ?? f.todayISO} onClose={() => setShown(false)} />
   ) : (
     <KnobButton onClick={() => setShown(true)}>Show the chip again</KnobButton>
   )
@@ -451,7 +449,7 @@ export function AddBookingButtonDemo({ f }: F) {
   if (f.detailListId === undefined) return <Missing what="active List" />
   return (
     <>
-      <AddBookingButton onClick={() => setOpen(true)} />
+      <AddRowButton onClick={() => setOpen(true)}>Add a booking</AddRowButton>
       <AddBookingFlow open={open} listId={f.detailListId} actor={f.actor} onClose={() => setOpen(false)} onCreated={() => undefined} />
       <StageHint>Opens the real Add a booking dialog for her next List.</StageHint>
     </>
@@ -667,9 +665,7 @@ export function ResultsTableDemo({ f }: F) {
             <ListsSearchBox query={query} onQueryChange={setQuery} />
           </div>
           <Wide width={1000}>
-            <Panel flush>
-              <WebResultsTable upcoming={results.upcoming} past={results.past} onOpenBooking={(_l, b) => go(`Would open Booking ${b}`)} />
-            </Panel>
+            <WebResultsTable upcoming={results.upcoming} past={results.past} onOpenBooking={(_l, b) => go(`Would open Booking ${b}`)} />
           </Wide>
         </>
       )}
@@ -691,9 +687,7 @@ export function DayTableDemo({ f }: F) {
             style={{ height: 32, marginBottom: 10, fontFamily: 'inherit' }}
           />
           <Wide width={900}>
-            <Panel flush>
-              <WebDayTable anaesthetistId={f.anaesthetistId} dateISO={dateISO} todayISO={f.todayISO} onOpenList={(id) => go(`Would open List ${id}`)} />
-            </Panel>
+            <WebDayTable anaesthetistId={f.anaesthetistId} dateISO={dateISO} todayISO={f.todayISO} onOpenList={(id) => go(`Would open List ${id}`)} />
           </Wide>
         </>
       )}

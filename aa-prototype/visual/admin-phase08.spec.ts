@@ -136,7 +136,7 @@ test('authorise raises and sends invoices; contract-holder document, Resend and 
   await expect(page).toHaveURL(/\/admin\/invoices$/)
 
   // Open a document: contract-holder layout.
-  await page.getByRole('button', { name: 'View →' }).first().click()
+  await page.getByRole('button', { name: /^View invoice / }).first().click()
   await page.waitForTimeout(300)
   await expect(page.getByText('TAX INVOICE')).toBeVisible()
   await expect(page.getByText('Attn: Accounts')).toBeVisible()
@@ -399,7 +399,7 @@ test('exemplar staging via the guard console: patient layout and the fee split',
   // to the patient, so the note is payment on receipt (catch-up Phase 20; the
   // insured-reimbursement wording went with the payment category).
   const patientRow = page.locator('tr', { hasText: 'Patient' }).filter({ hasText: 'AA-2026' }).first()
-  await patientRow.getByRole('button', { name: 'View →' }).click()
+  await patientRow.getByRole('button', { name: /^View invoice / }).click()
   await page.waitForTimeout(300)
   await expect(page.getByText('TAX INVOICE')).toBeVisible()
   await expect(page.getByText('Payment is due on receipt of this invoice.')).toBeVisible()
@@ -414,7 +414,7 @@ test('exemplar staging via the guard console: patient layout and the fee split',
     .filter({ hasText: 'Alan Prentice' })
     .filter({ hasText: 'nib' })
     .first()
-  await nibRow.getByRole('button', { name: 'View →' }).click()
+  await nibRow.getByRole('button', { name: /^View invoice / }).click()
   const insurerRail = page.getByTestId('invoice-info-rail')
   await expect(insurerRail.locator('[data-shot="invoice-delivery"]')).toContainText('Emailed to claims@nib.example')
   await expect(insurerRail.getByText('Present via nib upload portal')).toHaveCount(0)

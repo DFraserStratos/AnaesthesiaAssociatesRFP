@@ -224,6 +224,17 @@ Hooks already added:
   Ticks are the shared Checkbox (a real `input type=checkbox` inside its own `<label>`); hooks such as
   `admin-notifications-show-resolved`, `move-booking-tell-office`, `payer-different-tick` and
   `payer-offer-row` sit on a wrapper `div` around it, so `[data-shot=X] input` still finds the box.
+- **UI unification Phase U6 (tables, cards, label rows):** table shells are `shared/table/TableShell` and cards
+  `shared/ui/Card`. A shell's hook is on the scroller `div`, so `[data-testid=X] thead th:nth-child(N)` and
+  `[data-testid=X] tbody tr` still reach in; a hook passed as `tableData` is on the `<table>` itself
+  (`[data-shot=web-lookback-day] tr[data-list-id]`). Column headers are `th[scope=col]`; a group row is
+  `tr:has(th[scope=colgroup])`, so `tbody tr:has(td:nth-child(N))` skips it. A card is a `section` named by its title,
+  so `section:has(h2:text-is("Title"))` finds one (the web panel titles were `div`s before U6). A label and value row
+  is `dl > div > dt + dd`: highlight a row by its label as `div:has(> dt:text-is("Label"))`, never
+  `div:has(> span:text-is(...))` or `span + span` (the invoice totals, `div:has(> span:text-is("Subtotal"))`, are not
+  `DefRow` and keep their spans). A clickable row's keyboard handle is one named button inside it, such as Draft
+  Lists' "Open Draft List ..."; a bare `role=button[name="Open"]` is a substring match and can now hit it, so scope
+  it or use `name=/^Open$/`.
 
 ## Personas and IDs
 
@@ -321,7 +332,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/conflicts` | Conflicts (catch-up Phase 30): every live conflict, grouped by date (`section[data-conflict-date=<date>]`), one table each (`[data-shot=conflicts-table]` wraps them). Rows are `tr[data-conflict-row=<listId>]` (cleared ones add `data-conflict-cleared=true`). Row actions have accessible names with context (`Reassign, Dr Rutherford Wed 22 Jul AM`, `Clear conflict, ...`, `Open the List, ...`, `Open the day, ...`): match them by regex (`role=button[name=/^Clear conflict/]`). Hospital closures only since catch-up Phase 32b (no reason filter, no Availability column). Filters in the URL: `?when=twoWeeks|canvas|past`, `?hospital=<id>`, `?anaesthetist=<reg>`, `?cleared=1`. After a reassign or clear, `[data-shot=conflicts-confirmation]`. |
 | `/admin/review` | Review queue, plus "Recently billed". |
 | `/admin/review/:listId` | Sanity check: total units, B · T · M, "Log phone note", "Authorise for billing". A Procedure that needs a price blocks it (`review-needs-price-blocker`, catch-up Phase 25); once authorised, the lock glyph in each Procedure stack, "(locked)" rate and "Paid to" line. |
-| `/admin/invoices` | Invoice list (office pipeline only; the seeded history invoices are left out), newest id first. Columns: Number, Patient / booking (a link to the Booking), Anaesthetist, List (a link to the day), List date, Raised, Counterparty (a split share adds the "Split" chip `invoice-list-split`), Layout (Patient or Holder), Total, Delivery (`invoice-list-delivery`, `data-delivery` sent, toPost, noAddress), and "View →". Open an invoice with `[data-testid=invoice-list-table-shell] tr:has-text("AA-2026-0005") >> role=button[name="View →"]`: a bare row click can land on a row link. |
+| `/admin/invoices` | Invoice list (office pipeline only; the seeded history invoices are left out), newest id first. Columns: Number, Patient / booking (a link to the Booking), Anaesthetist, List (a link to the day), List date, Raised, Counterparty (a split share adds the "Split" chip `invoice-list-split`), Layout (Patient or Holder), Total, Delivery (`invoice-list-delivery`, `data-delivery` sent, toPost, noAddress), and "View →" (named "View invoice AA-2026-0005" since UI unification U6). Open an invoice with `[data-testid=invoice-list-table-shell] tr:has-text("AA-2026-0005") >> role=button[name=/^View invoice /]`: a bare row click can land on a row link. |
 | `/admin/invoices/:invoiceId` | Tax invoice document (`.aa-invoice-doc`) with an info rail (catch-up Phase 22): Delivery (`invoice-delivery`), Related invoices on a split share (`invoice-related`), Xero handoff, and the Locked record (`invoice-locked-record`, catch-up Phase 25; migrated words on a history invoice) with the `regenerate-invoice` demo action. Any invoice id opens, the history ones too (`HINV13`). |
 | `/admin/billing` | Billing monitor. Its AA fee invoices panel is `[data-shot=billing-aa-fee-invoices]`. The pipeline stage after Invoices generated reads "Sent or to post" (catch-up Phase 22); a List with an invoice that has no invoice address shows `monitor-no-address` ("1 invoice needs an invoice address." with the link "Add an address and send"). |
 | `/admin/billing/aa-fees` | AA fee invoices: month picker, the run preview (`aa-fee-preview-<anaesthetistId>` rows), the teal "Run monthly fee invoices" button and every fee invoice (`aa-fee-row-<number>`, expand for `aa-fee-detail-<number>`). |
@@ -1260,6 +1271,28 @@ the exception: use the `trigger` step)
 
 ## Existing hooks
 
+- UI unification Phase U6 (every earlier hook kept, none moved off its element): table shells are the shared
+  `shared/table/TableShell`. Its `shot`, `testId` and `data-*` sit on the scroller `div` (as before:
+  `invoice-list-table-shell`, `review-queue-table-shell`, `review-detail-table-shell`, `draft-lists-table`,
+  `draft-lists-history`, `admin-notifications-table`, the masters tables' `masters-*` and `recurring-bookings-table`);
+  its `tableData` sits on the `<table>` itself (`web-lookback-search`, `web-lookback-day` as `data-shot`;
+  `aa-fee-preview`, `aa-fee-invoices` as `data-testid`). Headers are `thead th[scope=col]`; group rows are
+  `tr > th[scope=colgroup]` (web Lists "Earlier, not yet authorised", the lookback search's "Upcoming" and "Past"). Clickable rows are the shared
+  `ClickableRow`, a `tr` with the same row attributes (`data-draft-list-row`, `data-list-id`, `data-slot-id`,
+  `data-quiet`, `out-of-hours-row`); the row never takes focus, and its keyboard handle is one button inside it. On
+  Draft Lists that is the Session cell's button, named "Open Draft List Tue 21 Jul AM, Mercy Hospital"
+  (`[data-draft-list-row=<id>] >> role=button[name=/^Open Draft List/]`); its Assign, Change date and Remove keep their
+  names. Cards are the shared `shared/ui/Card`: a `section` named by its `h2` title (`h3` where a page sets it), with
+  `data-shot` and `data-*` on the `section`: the Day rail's `admin-notifications-rail`, `admin-warnings-todo`,
+  `admin-draft-lists-rail`, `admin-needs-invoice-destination` (heading ids kept), the profile cards `tier-card`,
+  `anaesthetist-details`, `surgeon-specialties`, `surgeon-identifiers`, `surgeon-groups`, `surgeon-room-card` and
+  `surgeon-contacts` (`data-room` kept). The web panels are the same `Card`, so their titles ("Bookings", "Invoices",
+  "Leave", "Receivables aging") are `h2`, no longer a `div`. The invoice rail's own `section` and `h2` cards
+  (`invoice-info-rail`) are unchanged. Label and value rows are the shared `shared/ui/DefRow` in a `dl`: each row is
+  `div > dt + dd` (was `div > span + span`) in the Admin drawers, the Booking detail (Paid by, funder details), Office billing
+  setup, the Assign Draft List sheet, the invoice's Locked record and the profile facts. Page titles are the shared `PageHeader` (the `h1` text unchanged);
+  eyebrows are the shared `Eyebrow` (CSS caps, so `text=` still matches the DOM's mixed case). The phone's day chip
+  is the shared `DayChip`, test id `mobile-lists-day-chip` kept.
 - Catch-up Phase 25 (`data-shot`): `booking-lock-badge` (the neutral "Contract locked at authorise" pill, in the
   heading of a locked `office-billing-setup-<n>` and on the Billing card in all three apps; nothing before authorise),
   `booking-lock-stamp` (its detail line on the web and Admin Billing card, "Locked Tue 21 Jul, 08:00 by Kirsty W." or the

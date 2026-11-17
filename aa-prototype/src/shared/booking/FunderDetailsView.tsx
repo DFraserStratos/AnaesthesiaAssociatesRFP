@@ -9,7 +9,7 @@
 
 import { neutral } from '../../theme/tokens'
 import type { Party } from '../../domain/types'
-import { Pill } from '../ui'
+import { DefList, DefRow, Pill } from '../ui'
 
 export function FunderDetailsView({
   funder,
@@ -31,20 +31,22 @@ export function FunderDetailsView({
         <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>{funder.name}</span>
         <span style={{ fontSize: 13, color: neutral.slate }}>{funder.kind === 'insurer' ? 'Insurer' : 'Funder'}</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-        <span style={{ width: 96, flex: 'none', fontSize: 12, color: neutral.mist }}>Approval number</span>
-        {number !== undefined ? (
-          <span data-aa-selectable data-shot="funder-approval-number" className="mono" style={{ fontSize: 14, color: neutral.ink }}>
-            {number}
-          </span>
-        ) : approvalMissing ? (
-          <Pill tone="warning" shot="funder-approval-missing">
-            No approval number
-          </Pill>
-        ) : (
-          <span style={{ fontSize: 14, color: neutral.mist }}>None recorded</span>
-        )}
-      </div>
+      {/* The shared label and value row (UI unification U6); its label keeps 96px, as "Approval number" wraps at 80. */}
+      <DefList>
+        <DefRow label="Approval number" labelWidth={96}>
+          {number !== undefined ? (
+            <span data-aa-selectable data-shot="funder-approval-number" className="mono" style={{ fontSize: 14, color: neutral.ink }}>
+              {number}
+            </span>
+          ) : approvalMissing ? (
+            <Pill tone="warning" shot="funder-approval-missing">
+              No approval number
+            </Pill>
+          ) : (
+            <span style={{ fontSize: 14, color: neutral.mist }}>None recorded</span>
+          )}
+        </DefRow>
+      </DefList>
     </div>
   )
 }

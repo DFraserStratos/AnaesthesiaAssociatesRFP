@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Check, Lock, Plus } from 'lucide-react'
+import { Check, Lock } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { STATUS_PALETTE } from '../../../theme/statusColours'
 import type { Booking, Procedure } from '../../../domain/types'
@@ -10,13 +10,17 @@ import { LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
 import { bookingFee } from '../../../shared/capture'
 import { AddBookingFlow, AlertOfficeEntry, SubmitListSheet, movedToYouByLine, useIsMovable, useMovedToMeNotice, useMoveListPrompt } from '../../../shared/flows'
 import { formatCurrency, slotTimeRange, locationName, dayWithYear } from '../../../shared/format'
-import { Panel } from '../components'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { inDisplayOrder } from '../../../domain/billing/multiProcedure'
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { NEEDS_PRICE_LABEL } from '../../../domain/billing/priceRanges'
-import { BackLink, Button, ProgressBar } from '../../../shared/ui'
+import { AddRowButton } from '../../../shared/ui/AddRowButton'
+import { BackLink, Button, Card, PageHeader, ProgressBar } from '../../../shared/ui'
+import { ClickableRow, RowOpenButton, TableShell, Td, Th } from '../../../shared/table'
+
+/** The totals row keeps no divider under it (the table's last line), as before the kit. */
+const TOTALS_CELL = { borderBottom: 'none' } as const
 
 interface ListDetailViewProps {
   listId: string
@@ -149,42 +153,46 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <BackLink onClick={onBack}>Lists</BackLink>
 
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>
-              {title} {sessionText(list.session)}
-            </h1>
-            <StatusChip status={list.kind} />
-          </div>
-          <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>{subline}</div>
-          {moved !== undefined && (
-            <div data-shot="list-moved-to-you" style={{ fontSize: 13, color: neutral.slate, marginTop: 6 }}>
-              {movedToYouByLine(moved.atISO, moved.fromName)}
+      <PageHeader
+        size="web"
+        wrap
+        title={`${title} ${sessionText(list.session)}`}
+        aside={<StatusChip status={list.kind} />}
+        subStyle={{ fontSize: 'inherit', color: 'inherit' }}
+        sub={
+          <>
+            <div style={{ fontSize: 14, color: neutral.slate }}>{subline}</div>
+            {moved !== undefined && (
+              <div data-shot="list-moved-to-you" style={{ fontSize: 13, color: neutral.slate, marginTop: 6 }}>
+                {movedToYouByLine(moved.atISO, moved.fromName)}
+              </div>
+            )}
+            {/* Alert the office (catch-up Phase 32b, US-03.6.3): her own List only. */}
+            <div style={{ marginTop: 10, maxWidth: 520 }}>
+              <AlertOfficeEntry actor={actor} target={{ listId }} compact />
             </div>
-          )}
-          {/* Alert the office (catch-up Phase 32b, US-03.6.3): her own List only. */}
-          <div style={{ marginTop: 10, maxWidth: 520 }}>
-            <AlertOfficeEntry actor={actor} target={{ listId }} compact />
+          </>
+        }
+        actions={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {movable && movePrompt !== null && (
+              <Button variant="outline" size="desktop" shot="list-move" onClick={() => movePrompt.openMove(listId)}>
+                Move this List
+              </Button>
+            )}
+            <SubmitAction
+              state={list.state}
+              authorisedLabel={progressLabel}
+              incomplete={incomplete}
+              onBlockers={() => setSubmitSheet('blockers')}
+              onConfirm={() => setSubmitSheet('confirm')}
+            />
           </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {movable && movePrompt !== null && (
-            <Button variant="outline" size="desktop" shot="list-move" onClick={() => movePrompt.openMove(listId)}>
-              Move this List
-            </Button>
-          )}
-          <SubmitAction
-            state={list.state}
-            authorisedLabel={progressLabel}
-            incomplete={incomplete}
-            onBlockers={() => setSubmitSheet('blockers')}
-            onConfirm={() => setSubmitSheet('confirm')}
-          />
-        </div>
-      </div>
+        }
+      />
 
-      <Panel
+      <Card
+        padding="panel"
         flush
         title="Bookings"
         action={
@@ -196,10 +204,10 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
           </span>
         }
       >
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+        {/* The table kit inside the titled card: the card is the shell, so the scroller drops its own chrome. */}
+        <TableShell label="Bookings" bare>
             <thead>
-              <tr style={{ borderBottom: `1px solid ${neutral.line}` }}>
+              <tr>
                 <Th>Time</Th>
                 <Th>Patient</Th>
                 <Th>Procedure</Th>
@@ -225,10 +233,10 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
               {model.rows.map((r) => {
                 const cancelled = r.booking.cancellation !== undefined
                 return (
-                  <tr
+                  <ClickableRow
                     key={r.booking.id}
-                    onClick={() => onOpenBooking(r.booking.id)}
-                    style={{ borderBottom: `1px solid ${neutral.sunken}`, cursor: 'pointer', opacity: cancelled ? 0.6 : 1 }}
+                    onOpen={() => onOpenBooking(r.booking.id)}
+                    style={{ opacity: cancelled ? 0.6 : 1 }}
                   >
                     <Td mono>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
@@ -239,17 +247,9 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
                     <Td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {/* The row's keyboard handle (UI unification U1, U09): a plain button on the patient's name, as the web Lists table's; the row click stays for the mouse. */}
-                        <button
-                          type="button"
-                          aria-label={`Open Booking for ${r.patientName} at ${r.time}`}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onOpenBooking(r.booking.id)
-                          }}
-                          style={{ border: 'none', background: 'none', padding: 0, font: 'inherit', color: 'inherit', textAlign: 'inherit', cursor: 'pointer' }}
-                        >
+                        <RowOpenButton label={`Open Booking for ${r.patientName} at ${r.time}`} onOpen={() => onOpenBooking(r.booking.id)}>
                           <span style={{ fontWeight: 600, textDecoration: cancelled ? 'line-through' : 'none' }}>{r.patientName}</span>
-                        </button>
+                        </RowOpenButton>
                         <WarningTriangle warnings={warningsByBooking.get(r.booking.id) ?? []} size="sm" />
                       </div>
                       <div className="mono" style={{ fontSize: 11.5, color: neutral.mist, marginTop: 2 }}>{r.nhi}</div>
@@ -284,49 +284,41 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
                         </span>
                       )}
                     </Td>
-                  </tr>
+                  </ClickableRow>
                 )
               })}
               {model.activeCount > 0 && (
                 <tr style={{ background: neutral.bg }}>
-                  <Td />
-                  <Td>
+                  <Td style={TOTALS_CELL} />
+                  <Td style={TOTALS_CELL}>
                     <span style={{ fontWeight: 700 }}>Totals</span>
                   </Td>
-                  <Td />
+                  <Td style={TOTALS_CELL} />
                   {authorised ? (
-                    <Td mono align="right"><strong>{formatCurrency(model.invoiced)}</strong></Td>
+                    <Td mono align="right" style={TOTALS_CELL}><strong>{formatCurrency(model.invoiced)}</strong></Td>
                   ) : (
                     <>
-                      <Td mono align="right"><strong>{model.units}</strong></Td>
-                      <Td mono align="right"><strong>{model.needsPrice ? NEEDS_PRICE_LABEL : formatCurrency(model.fee)}</strong></Td>
+                      <Td mono align="right" style={TOTALS_CELL}><strong>{model.units}</strong></Td>
+                      <Td mono align="right" style={TOTALS_CELL}><strong>{model.needsPrice ? NEEDS_PRICE_LABEL : formatCurrency(model.fee)}</strong></Td>
                     </>
                   )}
-                  <Td />
+                  <Td style={TOTALS_CELL} />
                 </tr>
               )}
             </tbody>
-          </table>
-        </div>
+        </TableShell>
 
         {canEdit && (
           <div style={{ padding: '0 20px 20px' }}>
-            <button
-              type="button"
-              className="aa-ctl"
-              onClick={() => setAddOpen(true)}
-              style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 16px', background: neutral.surface, border: `1.5px dashed ${neutral.lineStrong}`, borderRadius: radius.ctl, fontFamily: 'inherit', color: accent.base, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-            >
-              <Plus size={17} strokeWidth={2.4} aria-hidden /> Add a booking
-            </button>
+            <AddRowButton onClick={() => setAddOpen(true)}>Add a booking</AddRowButton>
           </div>
         )}
-      </Panel>
+      </Card>
 
       {authorised && (
-        <Panel title="Invoices">
+        <Card padding="panel" title="Invoices">
           <ListInvoices rows={invoices} />
-        </Panel>
+        </Card>
       )}
 
       <AddBookingFlow open={addOpen} listId={listId} actor={actor} onClose={() => setAddOpen(false)} onCreated={() => undefined} />
@@ -405,21 +397,3 @@ function SubmitAction({
   )
 }
 
-function Th({ children, align }: { children?: React.ReactNode; align?: 'right' }) {
-  return (
-    <th style={{ textAlign: align ?? 'left', padding: '12px 20px', fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-      {children}
-    </th>
-  )
-}
-
-function Td({ children, mono, align }: { children?: React.ReactNode; mono?: boolean; align?: 'right' }) {
-  return (
-    <td
-      className={mono === true ? 'mono' : undefined}
-      style={{ padding: '12px 20px', color: neutral.ink, verticalAlign: 'middle', textAlign: align ?? 'left', whiteSpace: 'nowrap' }}
-    >
-      {children}
-    </td>
-  )
-}

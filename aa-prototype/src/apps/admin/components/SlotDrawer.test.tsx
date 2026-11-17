@@ -47,6 +47,17 @@ describe('SlotDrawer', () => {
     expect(drawer.textContent).not.toMatch(/ACTIVE|DRAFT|SUBMITTED/)
   })
 
+  it('reads its session facts as terms and values (the shared DefRow in a dl, UI unification U6)', () => {
+    renderDrawer(STRAND_PM)
+    const drawer = screen.getByTestId('admin-list-drawer')
+    const terms = within(drawer).getAllByRole('term').map((t) => t.textContent)
+    expect(terms).toEqual(expect.arrayContaining(['Status', 'Times']))
+    const times = within(drawer).getAllByRole('term').find((t) => t.textContent === 'Times')!
+    expect(times).toHaveStyle({ width: '80px' })
+    expect(times.closest('dl')).not.toBeNull()
+    expect(within(drawer).getAllByRole('definition').some((d) => d.textContent?.includes('13:00 to 17:30'))).toBe(true)
+  })
+
   it('after Assign List from the drawer, a Reassign follows the moved List to its success overlay and closes', () => {
     vi.useFakeTimers()
     const onClose = renderDrawer(STRAND_PM)

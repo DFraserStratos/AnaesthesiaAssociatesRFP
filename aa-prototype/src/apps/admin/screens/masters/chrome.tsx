@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { neutral, radius } from '../../../../theme/tokens'
-import { cellStyle, headCellStyle, textActionStyle } from './tableStyles'
+import { neutral } from '../../../../theme/tokens'
+import { TableShell, Th } from '../../../../shared/table'
+import { cellStyle, textActionStyle } from './tableStyles'
 
 /** A view's title row: heading, one mist line, and its action on the right. */
 export function Header({ title, sub, action }: { title: string; sub?: string; action?: ReactNode }) {
@@ -15,20 +16,23 @@ export function Header({ title, sub, action }: { title: string; sub?: string; ac
   )
 }
 
-export function Table({ heads, children, rightAlign, shot }: { heads: string[]; children: ReactNode; rightAlign?: number[]; shot?: string }) {
+/**
+ * A master view's table: the shared `TableShell` (dense, e1) and `Th` since UI unification U6, with
+ * this signature kept until Phase 42 renames `heads` to columns. `label` names the scroller when it
+ * overflows ("Master data" until 42 passes each view's title).
+ */
+export function Table({ heads, children, rightAlign, shot, label = 'Master data' }: { heads: string[]; children: ReactNode; rightAlign?: number[]; shot?: string; label?: string }) {
   return (
-    <div data-shot={shot} style={{ overflowX: 'auto', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}>
-      <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-        <thead>
-          <tr>
-            {heads.map((h, i) => (
-              <th key={`${h}-${i}`} style={{ ...headCellStyle, textAlign: rightAlign?.includes(i) ? 'right' : 'left' }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>{children}</tbody>
-      </table>
-    </div>
+    <TableShell density="dense" shot={shot} label={label}>
+      <thead>
+        <tr>
+          {heads.map((h, i) => (
+            <Th key={`${h}-${i}`} align={rightAlign?.includes(i) ? 'right' : 'left'}>{h}</Th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>{children}</tbody>
+    </TableShell>
   )
 }
 

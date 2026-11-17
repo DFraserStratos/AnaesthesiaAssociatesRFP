@@ -10,7 +10,7 @@ is `docs/ui-unification/PLAN.md`. Each later U phase adds its rows to the table 
 |---|---|
 | `src/shared/ui/` | Controls and feedback: buttons, text actions, pills, fields, search, segmented controls, ticks, the success overlay. |
 | `src/shared/surface/` | Sheets, dialogs and modal behaviour: `useSurface().Overlay` picks a bottom sheet on the phone and a dialog on web and Admin. |
-| `src/shared/table/` | Tables: cells, shell, clickable rows (arrives in U6). |
+| `src/shared/table/` | Tables (U6): `Th`, `Td`, `GroupRow`, `TableShell`, the density, `ClickableRow`, `RowOpenButton`, `isInteractiveRowTarget`. |
 | `src/shared/calendar/` | Month calendars and their keyboard model. |
 | `src/theme/tokens.ts`, `motion.ts`, `statusColours.ts` | Every colour, size, radius, shadow, z-layer and duration, transcribed from `docs/design/Design Language.dc.html` and the sample pages (each added token names its source). |
 | `src/shared/format.ts` | Display text. Money through `formatMoney` (also exported as `formatCurrency`): "$3,100.00". Dates, timestamps, times and counts through the helpers in `src/domain/dateText.ts` (`shortDay`, `dateRange`, `stampText`, `hhmm`, `plural` ...), re-exported here. Typed money through `parseAmount`. Person names through `drSurname` and friends. |
@@ -34,6 +34,24 @@ element capture recipes and Playwright specs target, and passes `data-*` attribu
 components (`Button`, `Dialog`, `BottomSheet`, `MonthGrid`) do not take `shot` yet; the U phase that
 extends each one adds it (the field parts took it in U4). Replacing a private copy with a shared component never
 drops a hook: check `git diff` for removed `data-` lines.
+
+## Tables
+
+Settled in U6 (question 19). One kit in `src/shared/table/`: `TableShell` renders the white, `line`, radius 14,
+e1 scroller and the `<table>` (`nested` is Phase 37's flat `radius.ctl` table); `Th` (`scope="col"`, `align`,
+`width`, `nowrap`), `Td` (`align`, `mono`, `bold`, `clip`, `nowrap`), `GroupRow` (always `th scope="colgroup"`).
+The header is the Admin Review mockup's on every table: 11/600/0.06em mist caps on the `neutral.bg` band over a
+`line` rule; body rows are divided by `sunken`. The `density` is the shell's: `comfortable` (12px 20px, web),
+`compact` (10px 10px at 13, admin) or `dense` (8px 10px at 12.5, the audit and master tables), so admin rows keep
+their height. When the table is wider than its scroller, the scroller becomes a focusable region named by
+`label` (pass the screen's heading or the table's section title); a table that fits gets no tab stop.
+`shot`, `testId` and `data-*` land on the scroller; `tableData` on the `<table>`.
+
+A row that opens a record is a `ClickableRow` (`.aa-clickable-table-row`, the sunken hover; clicks on an inner
+link, button or field do only their own action) with one `RowOpenButton` (or link) as its keyboard handle,
+carrying the full name ("Open List Tue 21 Jul AM, ..."). Rows never take focus. `today` tints the cells `bg`,
+`quiet` sets the text slate. `apps/admin/tableChrome.ts` stays a thin re-export of the cell styles for the
+screens later phases rebuild and for Phase 43's `Pager`.
 
 ## The fill rule and field heights
 
@@ -61,7 +79,12 @@ Press feedback stays in the mobile rules of `global.css`, never in a component.
 | `ProgressBar` | `ui/ProgressBar.tsx` | "n of N complete" as a bar (U5): `role="progressbar"` with its values, `width` a number or `fill` | None planned |
 | `Pill` | `ui/Pill.tsx` | A tone label: status, kind, attention flag. `tone` neutral, success, warning, error; `size` sm, md (inline, default), lg (table, `4px 10px` 11/600); `variant` tint or outline; `leading`, `mono`, `title`, `shot`, `data-*` | U3 (done) |
 | `NameSearchBox` | `ui/NameSearchBox.tsx` | The one search box in all three apps: `size` field (48) or pill (36, or `height` 38 on the web Lists row); `fill` well or surface (default); `testId`, `clearLabel`, `touch` (the 44px clear on the phone), `shot`; Escape clears | U4 (done: `fill`, `testId`, `clearLabel`, `touch`, `height`; replaced `WebSearchField` and the mobile Lists input) |
-| `FieldLabel` | `ui/Field.tsx` | The 11/600 uppercase label above a field; every labelled field part draws it | U4 (done) |
+| `FieldLabel` | `ui/Field.tsx` | The 11/600 uppercase label above a field; every labelled field part draws it. Since U6 it is `Eyebrow` itself | U4 (done) |
+| `Eyebrow` | `ui/Eyebrow.tsx` | The 11px caps tracked label above a value, a section or a field (U6, question 23): `type.micro`, 11/600/0.06em, one size everywhere; `as` (`div` default, `span`, `h2`/`h3` where it titles a section, `dt`), `tone` mist, slate, warning, brand (the crimson eyebrow), `id`, `shot` | Phase 43a (`InfoTip` beside it) |
+| `Card` | `ui/Card.tsx` | A white bordered card with an optional heading and action (U6, question 20): `padding` panel (20, gap 14, e1, 17/600: a page's main surface, the web panels) or card (16, gap 10, flat, 14/600: rails, profiles, the phone); radius 14 everywhere; the title is an `h2` (`titleLevel` 3) naming the `section`; `headingId`, `headingRef` (focus return, `tabIndex=-1`), `action`, `elevation`, `flush`, `tone="warning"`, `shot`, `data-*` | Phases 26 (the More card), 27 (`PrepaymentPanel`), 37, 38 (Balances) |
+| `PageHeader` | `ui/PageHeader.tsx` | A page's title row (U6): `size` web (28/34), admin (24/30) or section (18/700, Phase 42's `MasterHeader`); an `h1` (`level` 2 for a section), `sub`, right-aligned `actions` (`wrap` on web), `count` beside the title, `headingRef` for focus return (beyond the audit's API: the Notifications page returns focus to its `h1`), `subStyle` | Phase 42 (`MasterHeader`) |
+| `StatTile` | `ui/StatTile.tsx` | A summary figure tile (U6), two looks kept apart on purpose: `quiet` (Web Dashboard: `bg`, radius 10, mono 24) and `outlined` (Admin Review: white, `line`, radius 12, `14px 16px`, mono 22); the label an `Eyebrow`; `sub`, `pill`, `tone="warning"` | Phases 40, 42 (four-tile rows, outlined) |
+| `DefList`, `DefRow` | `ui/DefRow.tsx` | Label and value pairs as a `dl` (U6): `layout` inline (a 12px label in an 80px column beside a 14px value; `labelWidth`), stacked (the profile fact) or settings (slate label left, mono value right, `trailing`); `mono`, `note`, `tone="warning"`, `labelTone`, `valueStyle`, `data-*`; `DefList` `gap` matches the screen's rhythm | Phase 26 (`ProfileRow` on `layout="settings"`) |
 | `FieldHint` | `ui/Field.tsx` | The one quiet line under a field: 12px mist or `tone="error"`, tied by `id` and `aria-describedby`; the `hint` prop of every field part (U4) | None planned |
 | `FormError` | `ui/Field.tsx` | Every refusal: the `box` under a form, or the `inline` line beside a compact row control; always `role="alert"`; `shot` (U3) | None planned |
 | `TextField` | `ui/Field.tsx` | A labelled single-line input: `type` text, date, time, number, email, tel; `mono`, `hint`, `invalid` (`aria-invalid` and the error border), `inputMode`, `align`, `min`, `max`, `step`, `list`, `size`, `fill`, `hideLabel`, `width`, `shot`, `data-*`; defaults keep the 48px grey well | U4 (done); Phase 24 (`PriceCard` amount) |

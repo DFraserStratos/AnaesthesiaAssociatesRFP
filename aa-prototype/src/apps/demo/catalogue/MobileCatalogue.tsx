@@ -138,10 +138,10 @@ export function MobileCatalogue() {
           note="Recreated: local to BalancesScreen.tsx.">
           <Ex.AgeChipExample />
         </CatalogueRow>
-        <CatalogueRow name="DayChip" source="apps/mobile/screens/ListsLookback.tsx" usedIn={M} stage="mobile" height={160}
+        <CatalogueRow name="DayChip" source="shared/ui/DayChip.tsx" usedIn={M} stage="mobile" height={160}
           what="The teal chip naming the picked day; tapping it closes the day view and goes back to the Lists."
           replaceWith="shadcn Badge (as a button, with dismiss icon)"
-          note="Teal reads as an action here, which is right: it is one.">
+          note="The shared DayChip at the touch size (UI unification U6, U35); the web day chip is the same component at the desktop size. Keeps mobile-lists-day-chip.">
           <Ex.DayChipExample />
         </CatalogueRow>
         <CatalogueRow name="Avatar" source="shared/Avatar.tsx" usedIn={SW} stage="mobile" height={160}
@@ -152,7 +152,7 @@ export function MobileCatalogue() {
         <CatalogueRow name="Hero figure card" source="apps/mobile/screens/BalancesScreen.tsx" usedIn={M} stage="mobile" height={200}
           what="The Balances headline: outstanding to you, in large mono figures, with the unpaid invoice count. Static, not animated."
           replaceWith="shadcn Card"
-          note="Recreated: local to BalancesScreen.tsx. Reads the persona's real receivables.">
+          note="The Balances cards are at radius 14 since UI unification U6 (question 20); Phases 36 and 38 move Balances onto the shared Card.">
           <Ex.HeroFigureCardExample />
         </CatalogueRow>
         <CatalogueRow name="EmptyState" source="shared/ui/EmptyState.tsx" usedIn={SW} stage="mobile" height={260}
@@ -203,7 +203,7 @@ export function MobileCatalogue() {
         <CatalogueRow name="InstallCoach" source="pwa/InstallCoach.tsx" usedIn="Mobile (installed PWA)" stage="mobile" height={340}
           what="The dismissible Add to your home screen tip, with iPhone steps or an Android Install button."
           replaceWith="shadcn Alert"
-          note="Recreated: src/pwa is PWA-only (its installPrompt module attaches a window listener at import and must not load in the prototype).">
+          note="Radius 14 since UI unification U6 (question 20); otherwise presenter chrome, left off the shared parts (question 2).">
           <Ex.InstallCoachExample />
         </CatalogueRow>
       </LibraryGroup>
@@ -221,7 +221,7 @@ export function MobileCatalogue() {
         <CatalogueRow name="BookingDetailBody" source="shared/booking/BookingDetailBody.tsx" usedIn={SW} stage="mobile" height={640}
           what="The whole Booking capture: patient, ASA, RVG code, times, units, override, billing lines, notes and Mark complete, laid out by the mobile surface."
           replaceWith="React Hook Form + Zod over shadcn Card fields"
-          note={`On a failed complete it focuses the first invalid field by hand; RHF's shouldFocusError does that. The ASA, units and modifier cards (being reworked in catch-up Phase 19b) are live in here. ${STORE_NOTE}`}>
+          note={`On a failed complete it focuses the first invalid field by hand; RHF's shouldFocusError does that. The ASA, units and modifier cards (being reworked in catch-up Phase 19b) are live in here. Its label and value rows are the shared DefRow (a dl, labels at 80; UI unification U6); its sections move in Phase 35. ${STORE_NOTE}`}>
           <Ex.BookingDetailBodyExample picks={picks} />
         </CatalogueRow>
         <CatalogueRow name="TextField" source="shared/ui/Field.tsx" usedIn={SW} stage="mobile" height={200}
@@ -321,7 +321,7 @@ export function MobileCatalogue() {
         <CatalogueRow name="PayerFields (DifferentPayerTick, OtherPayerFields, PostalAddressFields)" source="shared/flows/PayerFields.tsx, PostalAddressFields.tsx" usedIn={SW} stage="mobile" height={640} what="The payer form's parts, in PaidBySheet's Who pays and the add forms (U4 migrates them): the Different payer tick, then the other payer's name, relationship chips, email, NZ Post postal address and phone." replaceWith="shadcn Checkbox card, ToggleGroup and Input" note="Local state only; nothing writes to the demo data.">
           <PayerFieldsExample />
         </CatalogueRow>
-        <CatalogueRow name="FunderDetailsView" source="shared/booking/FunderDetailsView.tsx" usedIn={SW} stage="mobile" height={520} what="The Booking's insurer or funder and its approval number (catch-up Phase 21): None; an insurer with its number; an insurer with no number (the warning-tint chip); a funder with none. FunderSheet edits it with radio chips." replaceWith="Custom (text rows and the shared Pill)" note="Fixed example details; nothing writes to the demo data.">
+        <CatalogueRow name="FunderDetailsView" source="shared/booking/FunderDetailsView.tsx" usedIn={SW} stage="mobile" height={520} what="The Booking's insurer or funder and its approval number (catch-up Phase 21): None; an insurer with its number; an insurer with no number (the warning-tint chip); a funder with none. FunderSheet edits it with radio chips." replaceWith="Custom (text rows and the shared Pill)" note="Fixed example details; nothing writes to the demo data. The approval number row is a shared DefRow (UI unification U6), its label kept at 96 because it wraps at 80.">
           <FunderDetailsExample />
         </CatalogueRow>
         <CatalogueRow name="PartyPicker" source="shared/booking/PartyPicker.tsx" usedIn={SW} stage="mobile" height={520} what="Choose who an invoice goes to (catch-up Phases 22 and 22a): the Procedure's payer and the Contract's party first, then every Party, searchable by name, and with onAnotherPerson a last row, Another person, for someone who is no Party. The split's party field in PaidBySheet; Phases 38b, 39 and 39b reuse it." replaceWith="shadcn Combobox (Popover and Command)" note="Fixed options on local state; nothing writes to the demo data.">
@@ -330,7 +330,7 @@ export function MobileCatalogue() {
         <CatalogueRow name="LockBadge" source="shared/booking/LockBadge.tsx" usedIn={SW} stage="mobile" what="Contract locked at authorise (catch-up Phase 25; US-04.3.5): the shared neutral Pill with the lock glyph under the phone's Billing summary once the List is AUTHORISED; who locked it and when on its title." replaceWith="shadcn Badge (the shared Pill)" note="Shown on the seeded AUTHORISED Face lift.">
           <LockBadge bookingId={SEED_MARKERS['rangeAuthorisedBooking']?.entityId ?? ''} />
         </CatalogueRow>
-        <CatalogueRow name="PaidByRow" source="shared/booking/PaidByRow.tsx" usedIn={SW} stage="mobile" height={520} what="Paid by in the Billing card (catch-up Phases 22 and 22a; US-08.2.3, US-11.2.2): the Procedure's payer with Patient or the relationship and the warning-tint Email or postal address needed and Under 18 pills where its Contract bills the payer; the holder where the Contract bills its holder; a split's parties, in the warning tint when it no longer fits; Payer: not billed yet with no Contract. On web and Admin a line at the card's foot, on the phone the Billing summary's last row: Change beside the payer's name opens PaidBySheet with who pays and the offer; Split on the right opens it with the split alone." replaceWith="Custom (text rows and the shared Pill)" note="Read-only examples over fixed views; the sheet opens on a real Booking.">
+        <CatalogueRow name="PaidByRow" source="shared/booking/PaidByRow.tsx" usedIn={SW} stage="mobile" height={520} what="Paid by in the Billing card (catch-up Phases 22 and 22a; US-08.2.3, US-11.2.2): the Procedure's payer with Patient or the relationship and the warning-tint Email or postal address needed and Under 18 pills where its Contract bills the payer; the holder where the Contract bills its holder; a split's parties, in the warning tint when it no longer fits; Payer: not billed yet with no Contract. On web and Admin a line at the card's foot, on the phone the Billing summary's last row: Change beside the payer's name opens PaidBySheet with who pays and the offer; Split on the right opens it with the split alone." replaceWith="Custom (text rows and the shared Pill)" note="Read-only examples over fixed views; the sheet opens on a real Booking. The Paid by line is a shared DefRow since UI unification U6 (its Change and Split inside the value).">
           <PaidByRowExample variant="summary" />
         </CatalogueRow>
         <CatalogueRow name="PaidBySheet (with SplitFeeSection)" source="shared/flows/PaidBySheet.tsx, shared/flows/SplitFeeSection.tsx" usedIn={SW} stage="mobile" height={720} what="The one Paid by sheet (catch-up Phase 22a; US-11.2.2, US-08.2.3): a bottom sheet on the phone, a dialog on web and Admin. Opened by Change, it holds who pays (the Different payer tick, the patient's details or the other payer's fields, the Under 18 hint and the contact ask) and, when the payer changes, the offer (the Booking's other Procedures with the same payer, each ticked, and the one neutral Provisional, OQ-140 pill). Opened by Split, it holds the split alone (a party or Another person, a $ or % share and Takes the rest per row, each amount live). Save writes it or refuses it whole." replaceWith="Custom (shadcn Sheet, Checkbox and Input inside)" note="Opens on Grace Park's first seeded Procedure; Save writes to the demo store.">
@@ -345,7 +345,7 @@ export function MobileCatalogue() {
         <CatalogueRow name="MobileHeader" source="apps/mobile/components/MobileHeader.tsx" usedIn={M} stage="mobile" height={140}
           what="The tab-screen header: micro-caps eyebrow, large title and the persona avatar."
           replaceWith="Custom (keep), title as a real h1"
-          note="The large title is a div, so the screen has no heading.">
+          note="Its eyebrow is the shared Eyebrow (11/600, UI unification U6).">
           <Ex.MobileHeaderExample />
         </CatalogueRow>
         <CatalogueRow name="ListRow" source="shared/schedule/ListRow.tsx" usedIn={SW} stage="mobile" height={460}

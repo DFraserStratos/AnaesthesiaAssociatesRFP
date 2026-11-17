@@ -17,8 +17,8 @@ import {
   useAvailabilityMonth,
 } from '../../../shared/availability'
 import { MonthHeaderRow } from '../../../shared/calendar'
-import { Button, IconButton } from '../../../shared/ui'
-import { AvailabilityPageSwitch, Panel } from '../components'
+import { Button, Card, IconButton, PageHeader } from '../../../shared/ui'
+import { AvailabilityPageSwitch } from '../components'
 import { sessionText } from '../../../domain/outOfHours'
 
 interface MyAvailabilityCalendarProps {
@@ -69,17 +69,17 @@ export function MyAvailabilityCalendar({ actor, anaesthetistId, initialDateISO }
   return (
     <div data-shot="web-availability-mine" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>Availability</h1>
-          <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>
-            Mark days off weeks ahead, set repeating days off, and change or delete one occurrence. Every session is {defaultLabel} until you change it.
-          </div>
-        </div>
+        <PageHeader
+          size="web"
+          title="Availability"
+          sub={<>Mark days off weeks ahead, set repeating days off, and change or delete one occurrence. Every session is {defaultLabel} until you change it.</>}
+        />
         <AvailabilityPageSwitch current="mine" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: 20, alignItems: 'start' }}>
-        <Panel
+        <Card
+          padding="panel"
           title={format(parseISO(`${month}-01`), 'MMMM yyyy')}
           action={
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -133,10 +133,10 @@ export function MyAvailabilityCalendar({ actor, anaesthetistId, initialDateISO }
               )
             })}
           </div>
-        </Panel>
+        </Card>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Panel>
+          <Card padding="panel">
             {selection === null ? (
               <div data-shot="web-availability-rail-empty" style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
                 Select a day to see its AM and PM sessions, or shift-click to select a range of days off.
@@ -151,18 +151,18 @@ export function MyAvailabilityCalendar({ actor, anaesthetistId, initialDateISO }
                 shot="web-availability-rail"
               />
             )}
-          </Panel>
+          </Card>
 
-          <Panel title="Your series">
+          <Card padding="panel" title="Your series">
             <SeriesList actor={actor} anaesthetistId={anaesthetistId} shot="web-availability-series" emptyText="No repeating days off. Choose Repeat in the form to set one." />
-          </Panel>
+          </Card>
 
-          <Panel title="Legend">
+          <Card padding="panel" title="Legend">
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {choices.map((s) => <StatusChip key={s.key} status={s.key} label={s.longLabel} />)}
             </div>
             <div style={{ fontSize: 12.5, color: neutral.mist }}>A session holding a List shows the List in place of its status.</div>
-          </Panel>
+          </Card>
         </div>
       </div>
     </div>

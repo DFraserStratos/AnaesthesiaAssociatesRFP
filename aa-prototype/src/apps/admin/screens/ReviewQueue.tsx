@@ -1,20 +1,17 @@
 import { useMemo } from 'react'
-import { neutral, radius } from '../../../theme/tokens'
+import { neutral } from '../../../theme/tokens'
 import { billedLists, changedSinceSubmitted, invoiceCountsByList, useAppStore } from '../../../store'
 import { ChangedSinceSubmittedPill } from '../components/ChangedSinceSubmitted'
-import { dayMicroCap, hhmm } from '../../../shared/format'
+import { dayMicroCap, hhmm, shortDay } from '../../../shared/format'
 import type { AssignedList } from '../../../domain/types'
-import { cellStyle as adminCell, headCellStyle as adminHead, isInteractiveRowTarget } from '../tableChrome'
 import { listShortLabel, listSourceLabels } from '../util'
-import { TextAction } from '../../../shared/ui'
+import { Card, PageHeader, TextAction } from '../../../shared/ui'
+import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 
 interface ReviewQueueProps {
   onOpen: (listId: string) => void
   onViewInvoices: () => void
 }
-
-const cellStyle = { ...adminCell(), verticalAlign: 'middle' as const }
-const headCellStyle = adminHead()
 
 /**
  * The authorisation review queue (Phase 07): every SUBMITTED list awaiting
@@ -70,89 +67,74 @@ export function ReviewQueue({ onOpen, onViewInvoices }: ReviewQueueProps) {
 
   return (
     <div data-testid="review-queue-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
-      <div>
-        <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>Review queue</h1>
-        <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4 }}>
-          Submitted lists awaiting a sanity check and authorisation for billing. {submitted.length} in the queue.
-        </div>
-      </div>
+      <PageHeader size="admin" title="Review queue" sub={<>Submitted lists awaiting a sanity check and authorisation for billing. {submitted.length} in the queue.</>} />
 
       {submitted.length === 0 ? (
         <div style={{ fontSize: 13, color: neutral.mist }}>Nothing awaiting review.</div>
       ) : (
-        <div
-          data-testid="review-queue-table-shell"
-          style={{ overflowX: 'auto', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}
-        >
-          <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 980 }}>
-            <thead>
-              <tr>
-                {['Anaesthetist', 'List', 'List date', 'Bookings', 'Submitted', ''].map((heading, index) => (
-                  <th
-                    key={heading === '' ? 'review' : heading}
-                    style={{
-                      ...headCellStyle,
-                      textAlign: index === 3 ? 'right' : 'left',
-                      whiteSpace: index >= 2 ? 'nowrap' : undefined,
-                    }}
-                  >
-                    {heading}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {submitted.map((list) => {
-                const anaesthetist = masters.anaesthetists[list.anaesthetistId]
-                const source = listSourceLabels(list, masters)
-                return (
-                  <tr
-                    key={list.id}
-                    className="aa-clickable-table-row"
-                    onClick={(event) => {
-                      if (!isInteractiveRowTarget(event.target)) onOpen(list.id)
-                    }}
-                  >
-                    <td style={{ ...cellStyle, fontWeight: 600 }}>
-                      {anaesthetist?.name ?? 'Anaesthetist unavailable'}
-                    </td>
-                    <td style={cellStyle}>
-                      <div style={{ fontWeight: 600 }}>{source.primary}</div>
-                      {source.secondary !== undefined && (
-                        <div style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist }}>{source.secondary}</div>
-                      )}
-                    </td>
-                    <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{dayMicroCap(list.dateISO)}</td>
-                    <td className="mono" style={{ ...cellStyle, textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      {bookingCount[list.id] ?? 0}
-                    </td>
-                    <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span className="mono">{submitTimes[list.id] !== undefined ? hhmm(submitTimes[list.id]) : 'Submitted'}</span>
-                        {changedByList.has(list.id) && <ChangedSinceSubmittedPill cue={changedByList.get(list.id)!} />}
-                      </div>
-                    </td>
-                    <td style={{ ...cellStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <TextAction size="sm" flush onClick={() => onOpen(list.id)}>
-                        Review →
-                      </TextAction>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+        <TableShell testId="review-queue-table-shell" label="Review queue" density="compact" minWidth={980}>
+          <thead>
+            <tr>
+              <Th>Anaesthetist</Th>
+              <Th>List</Th>
+              <Th nowrap>List date</Th>
+              <Th align="right" nowrap>Bookings</Th>
+              <Th nowrap>Submitted</Th>
+              <Th nowrap />
+            </tr>
+          </thead>
+          <tbody>
+            {submitted.map((list) => {
+              const anaesthetist = masters.anaesthetists[list.anaesthetistId]
+              const source = listSourceLabels(list, masters)
+              return (
+                <ClickableRow key={list.id} onOpen={() => onOpen(list.id)}>
+                  <Td bold>{anaesthetist?.name ?? 'Anaesthetist unavailable'}</Td>
+                  <Td>
+                    <div style={{ fontWeight: 600 }}>{source.primary}</div>
+                    {source.secondary !== undefined && (
+                      <div style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist }}>{source.secondary}</div>
+                    )}
+                  </Td>
+                  <Td mono nowrap>{dayMicroCap(list.dateISO)}</Td>
+                  <Td mono bold align="right" nowrap>
+                    {bookingCount[list.id] ?? 0}
+                  </Td>
+                  <Td nowrap>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className="mono">{submitTimes[list.id] !== undefined ? hhmm(submitTimes[list.id]) : 'Submitted'}</span>
+                      {changedByList.has(list.id) && <ChangedSinceSubmittedPill cue={changedByList.get(list.id)!} />}
+                    </div>
+                  </Td>
+                  <Td align="right" nowrap>
+                    {/* The row's keyboard handle, named in full (U6, U09); the row click stays for the mouse. */}
+                    <TextAction
+                      size="sm"
+                      flush
+                      label={`Review ${anaesthetist?.name ?? 'the'} List, ${source.primary}, ${shortDay(list.dateISO)}`}
+                      onClick={() => onOpen(list.id)}
+                    >
+                      Review →
+                    </TextAction>
+                  </Td>
+                </ClickableRow>
+              )
+            })}
+          </tbody>
+        </TableShell>
       )}
 
       {/* Where authorised lists went — the billing run raises invoices immediately. */}
-      <div data-testid="review-queue-recently-billed" style={{ background: neutral.sunken, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <span style={{ fontSize: 14, fontWeight: 700 }}>Recently billed</span>
+      <Card
+        data-testid="review-queue-recently-billed"
+        title="Recently billed"
+        action={
           <TextAction size="sm" flush onClick={onViewInvoices}>
             View invoices →
           </TextAction>
-        </div>
+        }
+        style={{ background: neutral.sunken, gap: 8 }}
+      >
         <div style={{ fontSize: 12.5, color: neutral.slate }}>
           Authorising a list hands it to the Billing Engine as a unit; its invoices are raised in the same moment.
         </div>
@@ -170,7 +152,7 @@ export function ReviewQueue({ onOpen, onViewInvoices }: ReviewQueueProps) {
             ))}
           </div>
         )}
-      </div>
+      </Card>
     </div>
   )
 }

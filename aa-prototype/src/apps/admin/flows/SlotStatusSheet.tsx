@@ -4,7 +4,7 @@ import { STATUS_COLOUR_TOKENS, type SlotStatus, type StatusColourToken, type Sta
 import { validateSlotStatusDraft, type SlotStatusDraft } from '../../../domain/slotStatus'
 import { addSlotStatus, editSlotStatus, useAppStore, type Actor } from '../../../store'
 import { resolveStatusVisual, STATUS_PALETTE } from '../../../theme/statusColours'
-import { blockFill, Button, FieldLabel, FormError, Segmented, StatusChipView, TextArea, TextField, useSurface } from '../../../shared'
+import { Button, FieldLabel, StatusBlock, FormError, Segmented, StatusChipView, TextArea, TextField, useSurface } from '../../../shared'
 import { OverlayHeader, SheetActions } from '../../../shared/surface'
 import { Checkbox } from '../../../shared/ui'
 
@@ -128,10 +128,7 @@ export function SlotStatusSheet({ status, actor, onClose }: { status?: SlotStatu
           <FieldLabel>Preview</FieldLabel>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: radius.ctl, background: neutral.bg }}>
             <StatusChipView visual={visual} label={previewLabel} style={{ flex: 'none' }} />
-            <span style={{ flex: 1, minWidth: 0, display: 'block', borderRadius: radius.xs, padding: '6px 9px', ...blockFill(visual) }}>
-              <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: visual.onTint }}>{previewLong}</span>
-              <span style={{ display: 'block', fontSize: 10, color: visual.onTint, opacity: 0.75 }}>AM · a session with no List</span>
-            </span>
+            <StatusBlock visual={visual} title={previewLong} detail="AM · a session with no List" style={{ flex: 1, minWidth: 0 }} />
           </div>
         </div>
 

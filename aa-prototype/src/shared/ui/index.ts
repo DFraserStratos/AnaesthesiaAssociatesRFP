@@ -36,3 +36,11 @@ export { EmptyState, type EmptyStateVariant } from './EmptyState'
 // UI unification U4: date and time parts.
 export { DateJumpInput, FilterDateInput, TimeRangeFields, acceptedJumpDate, type DateJumpInputProps, type FilterDateInputProps, type TimeRange, type TimeRangeFieldsProps, type ToolbarHeight } from './DateFields'
 export { useRovingRadio } from './useRovingRadio'
+// UI unification U6: page chrome.
+export { Eyebrow, type EyebrowTone } from './Eyebrow'
+export { Card, type CardPadding, type CardElevation } from './Card'
+export { PageHeader, type PageHeaderSize } from './PageHeader'
+export { StatTile, type StatTileVariant } from './StatTile'
+export { DefList, DefRow, type DefRowLayout } from './DefRow'
+export { DayChip } from './DayChip'
+export { AddRowButton } from './AddRowButton'

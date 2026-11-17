@@ -96,7 +96,7 @@
         {
           "steps": [
             {
-              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0005\") >> role=button[name=\"View →\"]"
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0005\") >> role=button[name=/^View invoice /]"
             },
             {
               "wait": 500
@@ -153,7 +153,7 @@
         {
           "steps": [
             {
-              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0006\") >> role=button[name=\"View →\"]"
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0006\") >> role=button[name=/^View invoice /]"
             },
             {
               "wait": 500

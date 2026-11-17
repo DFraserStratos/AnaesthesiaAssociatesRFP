@@ -1,13 +1,12 @@
 import { useMemo } from 'react'
 import { format, parseISO } from 'date-fns'
 import { brand, neutral, radius } from '../../../theme/tokens'
-import { resolveDisplayStatus, useDisplayStatus } from '../../../shared'
+import { blockFill, resolveDisplayStatus, useDisplayStatus } from '../../../shared'
 import type { Session } from '../../../domain/types'
 import { slotViewsForAnaesthetist, useAppStore, type SlotView } from '../../../store'
 import { hasLeftMainView, LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
 import { slotTimeRange, weekDays, locationName } from '../../../shared/format'
-import { Panel } from './Panel'
-import { IconButton } from '../../../shared/ui'
+import { Card, Eyebrow, IconButton } from '../../../shared/ui'
 import { sessionText } from '../../../domain/outOfHours'
 
 interface WeekStripProps {
@@ -83,7 +82,8 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
   }
 
   return (
-    <Panel
+    <Card
+      padding="panel"
       title="This week"
       action={
         <div style={{ display: 'flex', gap: 6 }}>
@@ -110,17 +110,9 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
                 gap: 6,
               }}
             >
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: isToday ? 700 : 600,
-                  letterSpacing: '0.06em',
-                  color: isToday ? brand.base : neutral.mist,
-                  textAlign: 'center',
-                }}
-              >
+              <Eyebrow tone={isToday ? 'brand' : 'mist'} style={{ textAlign: 'center' }}>
                 {format(parseISO(dateISO), 'EEE d').toUpperCase()}
-              </div>
+              </Eyebrow>
               <div
                 style={{
                   display: 'flex',
@@ -146,7 +138,7 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
           )
         })}
       </div>
-    </Panel>
+    </Card>
   )
 }
 
@@ -172,7 +164,9 @@ function Block({
   const list = view.list
   const c = resolved.visual
   const isFree = c.treatment === 'dashed'
-  const bg = c.tint
+  // The fill through the one rule (UI unification U6, bug 7): the hatch for a hatched status, the
+  // dashed outline for Free; the strip keeps its own bar, radius and size.
+  const fill = blockFill(c)
   const timeRange = list === undefined && !view.open ? undefined : slotTimeRange(view.times)
   // Only a List opens; an empty session has nothing to open.
   const Tag = list !== undefined ? 'button' : 'div'
@@ -185,9 +179,9 @@ function Block({
         height,
         opacity: submitted ? 0.72 : 1,
         borderRadius: radius.sm,
-        background: bg,
-        border: isFree ? c.border : 'none',
-        borderLeft: isFree ? c.border : `3px solid ${c.solid}`,
+        background: fill.background,
+        border: isFree ? fill.border : 'none',
+        borderLeft: isFree ? fill.border : `3px solid ${c.solid}`,
         padding: isFree ? '6px 8px' : '7px 9px',
         boxSizing: 'border-box',
         textAlign: 'left',

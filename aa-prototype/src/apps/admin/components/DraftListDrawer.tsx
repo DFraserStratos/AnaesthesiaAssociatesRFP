@@ -32,8 +32,8 @@ import { RemoveDraftListSheet } from '../flows/RemoveDraftListSheet'
 import { TierPill, PreferredPill, useSuggestionKey } from './pairing'
 import { useDraftListCandidates } from './pairing/DraftListCandidates'
 import { BookingCount, DraftStateChip, UnassignedPill, WaitingTime } from './draftLists/DraftListParts'
-import { DRAWER_ACTION, DRAWER_ACTION_PRIMARY, DrawerLink, Row, Section } from './drawerParts'
-import { Button, TextAction } from '../../../shared/ui'
+import { DRAWER_ACTION, DRAWER_ACTION_PRIMARY, DrawerLink, Section } from './drawerParts'
+import { Button, DefList, DefRow, TextAction } from '../../../shared/ui'
 import { SidePanel } from './SidePanel'
 import { sessionText } from '../../../domain/outOfHours'
 import { Notice } from '../../../shared/ui/Notice'
@@ -145,34 +145,36 @@ function DraftBody({
           )}
 
           <Section label="Request">
-            <Row label="Hospital">{locationName(list.hospitalId, masters.hospitals)}</Row>
-            <Row label="Surgeon">{masters.surgeons[list.surgeonId]?.name ?? list.surgeonId}</Row>
-            <Row label="Kind">{LIST_KIND_LABELS[list.kind].label}</Row>
-            {list.notes !== undefined && list.notes.trim() !== '' && <Row label="Note">{list.notes}</Row>}
-            {trail !== undefined && (
-              <Row label="Came from">
-                {trail.origin === 'request' && trail.source !== undefined ? `${ORIGIN_LABELS.request} · ${SOURCE_LABELS[trail.source]}` : ORIGIN_LABELS[trail.origin]}
-                {trail.origin === 'recurringClash' && (
-                  <div style={{ fontSize: 12.5, color: neutral.slate, marginTop: 2 }}>
-                    {recurring !== undefined
-                      ? `${format(parseISO(trail.projectedFor?.dateISO ?? list.dateISO), 'EEE')} ${sessionText(recurring.session)} · ${pairingLine(recurring, masters)}`
-                      : ORIGIN_SHORT_LABELS.recurringClash}
-                    {from !== undefined ? ` · ${unavailableDetail(drSurname(from.name))}` : ''}
-                  </div>
-                )}
-                {/* Catch-up Phase 32: the anaesthetist's own return (US-13.8.2). */}
-                {(trail.origin === 'movedToOffice' || trail.origin === 'unavailableReturn') && from !== undefined && (
-                  <div data-shot="draft-list-returned-by" style={{ fontSize: 12.5, color: neutral.slate, marginTop: 2 }}>
-                    Returned to the office by {drSurname(from.name)}
-                  </div>
-                )}
-              </Row>
-            )}
-            {trail !== undefined && (
-              <Row label="Since">
-                <span className="mono" style={{ fontSize: 13 }}>{format(parseISO(trail.sinceISO), 'd MMM HH:mm')}</span> · {trail.by}
-              </Row>
-            )}
+            <DefList>
+              <DefRow label="Hospital">{locationName(list.hospitalId, masters.hospitals)}</DefRow>
+              <DefRow label="Surgeon">{masters.surgeons[list.surgeonId]?.name ?? list.surgeonId}</DefRow>
+              <DefRow label="Kind">{LIST_KIND_LABELS[list.kind].label}</DefRow>
+              {list.notes !== undefined && list.notes.trim() !== '' && <DefRow label="Note">{list.notes}</DefRow>}
+              {trail !== undefined && (
+                <DefRow label="Came from">
+                  {trail.origin === 'request' && trail.source !== undefined ? `${ORIGIN_LABELS.request} · ${SOURCE_LABELS[trail.source]}` : ORIGIN_LABELS[trail.origin]}
+                  {trail.origin === 'recurringClash' && (
+                    <div style={{ fontSize: 12.5, color: neutral.slate, marginTop: 2 }}>
+                      {recurring !== undefined
+                        ? `${format(parseISO(trail.projectedFor?.dateISO ?? list.dateISO), 'EEE')} ${sessionText(recurring.session)} · ${pairingLine(recurring, masters)}`
+                        : ORIGIN_SHORT_LABELS.recurringClash}
+                      {from !== undefined ? ` · ${unavailableDetail(drSurname(from.name))}` : ''}
+                    </div>
+                  )}
+                  {/* Catch-up Phase 32: the anaesthetist's own return (US-13.8.2). */}
+                  {(trail.origin === 'movedToOffice' || trail.origin === 'unavailableReturn') && from !== undefined && (
+                    <div data-shot="draft-list-returned-by" style={{ fontSize: 12.5, color: neutral.slate, marginTop: 2 }}>
+                      Returned to the office by {drSurname(from.name)}
+                    </div>
+                  )}
+                </DefRow>
+              )}
+              {trail !== undefined && (
+                <DefRow label="Since">
+                  <span className="mono" style={{ fontSize: 13 }}>{format(parseISO(trail.sinceISO), 'd MMM HH:mm')}</span> · {trail.by}
+                </DefRow>
+              )}
+            </DefList>
           </Section>
 
           <div style={{ fontSize: 13, color: neutral.slate }}>No anaesthetist yet. Nobody's schedule changes until it is assigned.</div>

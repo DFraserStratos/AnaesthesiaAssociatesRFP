@@ -3,7 +3,7 @@ import { clearWarning, openConflictCount, useAppStore, type Actor, type OpenWarn
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { CountBadge } from '../../../shared/ui/CountBadge'
 import { FormError } from '../../../shared/ui/Field'
-import { TextAction } from '../../../shared/ui'
+import { Card, TextAction } from '../../../shared/ui'
 import { drSurname, shortDay, plural } from '../../../shared/format'
 import { UNASSIGNED } from '../../../shared/scheduleTerms'
 import { AttentionDot } from '../../../shared/warnings/AttentionDot'
@@ -49,15 +49,16 @@ export function WarningsToDo({
   const shown = expanded ? rows : rows.slice(0, TODO_VISIBLE_ROWS)
 
   return (
-    <section
-      data-shot="admin-warnings-todo"
-      aria-labelledby="admin-todo-heading"
-      style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}
+    <Card
+      shot="admin-warnings-todo"
+      headingId="admin-todo-heading"
+      title={
+        <>
+          To-do
+          <CountBadge count={rows.length} srNoun="to do" />
+        </>
+      }
     >
-      <h2 id="admin-todo-heading" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600 }}>
-        To-do
-        <CountBadge count={rows.length} srNoun="to do" />
-      </h2>
       {conflicts > 0 && (
         <button
           type="button"
@@ -123,6 +124,6 @@ export function WarningsToDo({
         </TextAction>
       )}
       <FormError message={error} variant="inline" />
-    </section>
+    </Card>
   )
 }

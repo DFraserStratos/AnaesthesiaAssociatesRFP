@@ -3,13 +3,11 @@ import { format, parseISO } from 'date-fns'
 import { neutral, radius } from '../../../theme/tokens'
 import { useMemo, useRef, type CSSProperties } from 'react'
 import { activeNotificationCount, notificationPool, type Actor, type NotificationTarget } from '../../../store'
-import { cellStyle as cellFactory, headCellStyle as headFactory } from '../tableChrome'
+import { TableShell, Td, Th } from '../../../shared/table'
 import { ActiveCount, NotificationText, usePoolState, useResolveWithTick } from '../components/NotificationsCard'
-import { Button, Checkbox, FormError, TextAction, TickBadge, TickButton } from '../../../shared/ui'
+import { Button, Checkbox, FormError, PageHeader, TextAction, TickBadge, TickButton } from '../../../shared/ui'
 import { DRAFT_LIST } from '../../../shared/scheduleTerms'
 
-const cellStyle = cellFactory()
-const headCellStyle = headFactory()
 
 /**
  * The shared notification pool, in full (catch-up Phase 32; FT-13.8,
@@ -45,15 +43,14 @@ export function NotificationsScreen({ actor, onOpen }: { actor: Actor; onOpen: (
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>
-      <div>
-        <h1 ref={heading} tabIndex={-1} style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em', display: 'flex', alignItems: 'center', gap: 10, outline: 'none' }}>
-          Notifications
-          <ActiveCount count={count} shot="admin-notifications-page-count" />
-        </h1>
-        <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4, maxWidth: 760, lineHeight: '19px' }}>
-          Lists anaesthetists have moved themselves, and their alerts to the office, newest first. A notice stays until someone resolves it; resolving it hides it for everyone in the office.
-        </div>
-      </div>
+      <PageHeader
+        size="admin"
+        title="Notifications"
+        count={<ActiveCount count={count} shot="admin-notifications-page-count" />}
+        headingRef={heading}
+        subStyle={{ maxWidth: 760, lineHeight: '19px' }}
+        sub="Lists anaesthetists have moved themselves, and their alerts to the office, newest first. A notice stays until someone resolves it; resolving it hides it for everyone in the office."
+      />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <Checkbox labelShot="admin-notifications-show-resolved" checked={showResolved} onChange={(c) => setQuery({ page: 1, resolved: c })} style={{ display: 'inline-flex', gap: 6, fontSize: 13, color: neutral.slate }}>
@@ -62,8 +59,7 @@ export function NotificationsScreen({ actor, onOpen }: { actor: Actor; onOpen: (
         <FormError message={error} />
       </div>
 
-      <div data-shot="admin-notifications-table" style={{ overflowX: 'auto', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}>
-        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 760 }}>
+      <TableShell shot="admin-notifications-table" label="Notifications" density="compact" minWidth={760}>
           <colgroup>
             <col style={{ width: 150 }} />
             <col />
@@ -74,26 +70,26 @@ export function NotificationsScreen({ actor, onOpen }: { actor: Actor; onOpen: (
           <thead>
             <tr>
               {['When', 'What happened', 'By', '', ''].map((h, i) => (
-                <th key={i} style={headCellStyle}>{h}</th>
+                <Th key={i}>{h}</Th>
               ))}
             </tr>
           </thead>
           <tbody>
             {pool.rows.length === 0 && (
               <tr>
-                <td style={{ ...cellStyle, color: neutral.slate }} colSpan={5}>
+                <Td colSpan={5} style={{ color: neutral.slate }}>
                   {showResolved ? 'No notifications yet.' : 'Nothing waiting. When an anaesthetist moves a List or alerts the office, it shows here until someone resolves it.'}
-                </td>
+                </Td>
               </tr>
             )}
             {pool.rows.map((r) => (
               <tr key={r.notification.id} data-notification-row={r.notification.id} data-notification-resolved={r.resolved ? 'true' : undefined} style={{ background: r.resolved ? neutral.bg : undefined, opacity: resolving.has(r.notification.id) ? 0.55 : 1, transition: 'opacity 200ms' }}>
-                <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap', color: r.resolved ? neutral.mist : neutral.slate }}>{format(parseISO(r.atISO), 'EEE d MMM HH:mm')}</td>
-                <td style={cellStyle}>
+                <Td mono nowrap style={{ color: r.resolved ? neutral.mist : neutral.slate }}>{format(parseISO(r.atISO), 'EEE d MMM HH:mm')}</Td>
+                <Td>
                   <NotificationText row={r} />
-                </td>
-                <td style={{ ...cellStyle, color: r.resolved ? neutral.slate : undefined }}>{r.by}</td>
-                <td style={{ ...cellStyle, textAlign: 'right' }}>
+                </Td>
+                <Td style={r.resolved ? { color: neutral.slate } : undefined}>{r.by}</Td>
+                <Td align="right">
                   {office && !r.resolved && (resolving.has(r.notification.id) ? (
                     <span style={{ display: 'inline-flex' }}><TickBadge size={30} animate /></span>
                   ) : (
@@ -101,19 +97,18 @@ export function NotificationsScreen({ actor, onOpen }: { actor: Actor; onOpen: (
                       Resolve
                     </TickButton>
                   ))}
-                </td>
-                <td style={{ ...cellStyle, textAlign: 'right' }}>
+                </Td>
+                <Td align="right">
                   {r.target.kind !== 'gone' && (
                     <TextAction size="sm" flush onClick={() => onOpen(r.target)}>
                       {r.target.kind === 'draftList' ? `Open ${DRAFT_LIST}` : r.target.kind === 'booking' ? 'Open Booking' : 'Open List'}
                     </TextAction>
                   )}
-                </td>
+                </Td>
               </tr>
             ))}
           </tbody>
-        </table>
-      </div>
+      </TableShell>
 
       {pool.total > 0 && (
         <div data-shot="admin-notifications-pager" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

@@ -24,8 +24,7 @@ import {
 import { Button, DemoBadge, Logo } from '../../../shared'
 import { dateTimeMicroCap, formatCurrency } from '../../../shared/format'
 import { dayWithYear } from '../../../domain/dateText'
-import { FormError, Notice, Pill, TextField } from '../../../shared/ui'
-import { Row } from '../components/drawerParts'
+import { DefList, DefRow, FormError, Notice, Pill, TextField } from '../../../shared/ui'
 import { lockStampText, lockViewFor, MIGRATED_LOCK_TEXT, partyKeyOf } from '../../../domain/billing/lock'
 import { BILLS_LABEL, pricingLabel } from '../../../shared/contracts'
 import { regenerateSummary, type RegenerateResult } from '../../../store/locks'
@@ -525,31 +524,35 @@ function LockedRecordCard({ invoice }: { invoice: Invoice }) {
         {mine.map((p) => (
           <div key={p.procedureId} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {mine.length > 1 && p.label !== undefined && <span style={{ fontSize: 12.5, fontWeight: 600, color: neutral.ink }}>{p.label}</span>}
-            {p.contractName !== undefined && (
-              <Row label="Contract">
-                <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <span style={{ fontWeight: 600 }}>{p.contractName}</span>
-                  <span style={{ fontSize: 12, color: neutral.slate }}>
-                    <span className="mono">{p.contractAaCode}</span>
-                    {p.pricing !== undefined ? ` · ${pricingLabel(p.pricing)}` : ''}
-                    {p.billsTo !== undefined ? ` · bills ${BILLS_LABEL[p.billsTo].toLowerCase()}` : ''}
+            <DefList gap={4}>
+              {p.contractName !== undefined && (
+                <DefRow label="Contract">
+                  <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <span style={{ fontWeight: 600 }}>{p.contractName}</span>
+                    <span style={{ fontSize: 12, color: neutral.slate }}>
+                      <span className="mono">{p.contractAaCode}</span>
+                      {p.pricing !== undefined ? ` · ${pricingLabel(p.pricing)}` : ''}
+                      {p.billsTo !== undefined ? ` · bills ${BILLS_LABEL[p.billsTo].toLowerCase()}` : ''}
+                    </span>
                   </span>
+                </DefRow>
+              )}
+              {p.billedName !== undefined && <DefRow label="Billed to">{p.billedName}</DefRow>}
+              <DefRow label="Price">
+                <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <span className="mono">{formatMoney(p.price)}{p.typed ? ' · typed' : ''}</span>
+                  {p.basisText !== undefined && <span style={{ fontSize: 12, color: neutral.slate }}>{p.basisText}</span>}
+                  {p.outOfGuideRange && <span><Pill tone="warning" size="sm" shot="invoice-locked-outside-range">Outside the range</Pill></span>}
                 </span>
-              </Row>
-            )}
-            {p.billedName !== undefined && <Row label="Billed to">{p.billedName}</Row>}
-            <Row label="Price">
-              <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <span className="mono">{formatMoney(p.price)}{p.typed ? ' · typed' : ''}</span>
-                {p.basisText !== undefined && <span style={{ fontSize: 12, color: neutral.slate }}>{p.basisText}</span>}
-                {p.outOfGuideRange && <span><Pill tone="warning" size="sm" shot="invoice-locked-outside-range">Outside the range</Pill></span>}
-              </span>
-            </Row>
-            <Row label="Split">{p.splitText}</Row>
+              </DefRow>
+              <DefRow label="Split">{p.splitText}</DefRow>
+            </DefList>
           </div>
         ))}
-        <Row label="Paid to">{view.payeeName}</Row>
-        <Row label="Priced on">{dayWithYear(view.pricingDateISO)}</Row>
+        <DefList gap={10}>
+          <DefRow label="Paid to">{view.payeeName}</DefRow>
+          <DefRow label="Priced on">{dayWithYear(view.pricingDateISO)}</DefRow>
+        </DefList>
         <span style={{ fontSize: 12, color: neutral.slate }}>{lockStampText(view)}</span>
         {regenerated !== undefined && <RegenerateNotice result={regenerated} />}
       </div>

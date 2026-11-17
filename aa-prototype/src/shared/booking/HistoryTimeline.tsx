@@ -3,6 +3,7 @@ import type { AuditEntry } from '../../domain/types'
 import { accent, neutral, radius } from '../../theme/tokens'
 import { easing, motion } from '../../theme/motion'
 import { Pill } from '../ui/Pill'
+import { Eyebrow } from '../ui/Eyebrow'
 import { TextAction } from '../ui/TextAction'
 import { useAppStore, useToday } from '../../store'
 import { dayHeading, hhmm } from '../format'
@@ -123,18 +124,9 @@ export function HistoryTimeline({
 
 function DayHeading({ label, first }: { label: string; first: boolean }) {
   return (
-    <div
-      style={{
-        fontSize: 10.5,
-        fontWeight: 700,
-        letterSpacing: '0.06em',
-        textTransform: 'uppercase',
-        color: neutral.mist,
-        padding: first ? '2px 0 8px' : '18px 0 8px',
-      }}
-    >
+    <Eyebrow style={{ padding: first ? '2px 0 8px' : '18px 0 8px' }}>
       {label}
-    </div>
+    </Eyebrow>
   )
 }
 
@@ -232,19 +224,9 @@ function Ledger({ changes, stacked }: { changes: readonly AuditFieldChange[]; st
             gap: stacked ? 1 : 10,
           }}
         >
-          <span
-            style={{
-              flex: 'none',
-              width: stacked ? undefined : LABEL_WIDTH,
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              color: neutral.mist,
-            }}
-          >
+          <Eyebrow as="span" style={{ flex: 'none', width: stacked ? undefined : LABEL_WIDTH }}>
             {change.label}
-          </span>
+          </Eyebrow>
           <span style={{ minWidth: 0, fontSize: 12.5, lineHeight: '18px' }}>
             {change.before !== undefined && change.after !== undefined ? (
               <>

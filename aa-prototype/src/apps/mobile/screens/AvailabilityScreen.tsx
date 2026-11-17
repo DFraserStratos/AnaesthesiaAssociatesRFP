@@ -6,7 +6,7 @@ import type { SlotStatusRecords } from '../../../domain/slotStatus'
 import { isOpenSlotView, rosterForDate, slotViewsForDate, useAppStore, useToday, type SlotView } from '../../../store'
 import { ChevronRight } from 'lucide-react'
 import { MobileHeader } from '../components'
-import { Avatar, DockSpacer, resolveDisplayStatus, StatusChip, useDefaultStatus } from '../../../shared'
+import { Avatar, blockFill, DockSpacer, resolveDisplayStatus, StatusChip, useDefaultStatus } from '../../../shared'
 import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
 import { locationName, shortDay } from '../../../shared/format'
 import { MovedToYouPanel, useMovableSessions, useMoveListPrompt } from '../../../shared/flows'
@@ -28,9 +28,12 @@ interface AvailabilityScreenProps {
 /** Cell visual per status, from the status master (colleague cells show status only, never patient detail, A8). */
 function cellStyle(key: DisplayKey, statuses: SlotStatusRecords): { bg: string; border: string; color: string } {
   const c = resolveDisplayStatus(key, statuses).visual
-  if (c.border !== undefined) return { bg: c.blockBackground, border: c.border, color: c.onTint }
-  if (c.treatment === 'hatched') return { bg: c.blockBackground, border: `1px solid ${neutral.line}`, color: c.onTint }
-  return { bg: c.tint, border: '1px solid transparent', color: c.onTint }
+  // The fill through the one rule (UI unification U6, U23); the cell keeps its own 1px outline.
+  const fill = blockFill(c)
+  const bg = typeof fill.background === 'string' ? fill.background : c.blockBackground
+  if (typeof fill.border === 'string') return { bg, border: fill.border, color: c.onTint }
+  if (c.treatment === 'hatched') return { bg, border: `1px solid ${neutral.line}`, color: c.onTint }
+  return { bg, border: '1px solid transparent', color: c.onTint }
 }
 
 export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOpenCalendar }: AvailabilityScreenProps) {

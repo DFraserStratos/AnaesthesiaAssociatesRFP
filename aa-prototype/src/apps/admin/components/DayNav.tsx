@@ -1,7 +1,6 @@
 import { addDays, format, parseISO } from 'date-fns'
-import { neutral } from '../../../theme/tokens'
 import { shiftWeeks, longDay } from '../../../shared/format'
-import { Button, DateJumpInput, IconButton, SlidingSegmentedControl, type SlidingSegmentOption } from '../../../shared/ui'
+import { Button, DateJumpInput, IconButton, PageHeader, SlidingSegmentedControl, type SlidingSegmentOption } from '../../../shared/ui'
 
 export type SortMode = 'roster' | 'az'
 
@@ -32,12 +31,14 @@ export function DayNav({ selectedDateISO, summary, sortMode, onSort, onNavigateD
   const week = (weeks: number) => onNavigateDate(shiftWeeks(selectedDateISO, weeks))
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-      <div>
-        <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>{title}</h1>
-        <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{summary}</div>
-      </div>
-
+    <PageHeader
+      size="admin"
+      wrap
+      style={{ alignItems: 'center' }}
+      title={title}
+      sub={summary}
+      subStyle={{ marginTop: 2 }}
+      actions={
       <div data-testid="admin-day-nav" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         {onFindAvailable !== undefined && (
           <Button variant="outline" size="compact" shot="admin-availability-finder-open" onClick={onFindAvailable}>
@@ -56,6 +57,7 @@ export function DayNav({ selectedDateISO, summary, sortMode, onSort, onNavigateD
         <Button variant="secondary" size="compact" style={WEEK_STEP} onClick={() => week(4)}>+4w</Button>
         <DateJumpInput beyondMax label="Go to date" height={36} width={139} value={selectedDateISO} max={maxDateISO} onPick={(d) => d !== null && onNavigateDate(d)} />
       </div>
-    </div>
+      }
+    />
   )
 }

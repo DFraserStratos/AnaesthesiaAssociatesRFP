@@ -10,12 +10,12 @@ import { drSurname, formatCurrency, plural, shortDay, longDayNoYear } from '../.
 import { useDefaultStatus, useSurface } from '../../../shared'
 import { sessionKey, useMovableLists, useMoveListPrompt, useMoveTargets } from '../../../shared/flows'
 import { locationName } from '../../../shared/format'
-import { Panel, WeekStrip } from '../components'
+import { WeekStrip } from '../components'
 import { useDashboardFigures } from '../useDashboardFigures'
 import { SESSIONS_IN_ORDER, sessionText } from '../../../domain/outOfHours'
 import { OverlayHeader } from '../../../shared/surface/OverlayHeader'
 import { EmptyState } from '../../../shared/ui/EmptyState'
-import { Button, TextAction } from '../../../shared/ui'
+import { Button, Card, PageHeader, StatTile, TextAction } from '../../../shared/ui'
 
 interface DashboardScreenProps {
   anaesthetistId: string
@@ -129,24 +129,24 @@ export function DashboardScreen({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>
-            Kia ora, {greetingName}
-          </h1>
-          <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>{summaryLine}</div>
-        </div>
-        <Button
-          variant="primary"
-          size="desktop"
-          shot="dashboard-move-list"
-          onClick={() => setPicking(true)}
-          disabled={!canMove}
-          {...(movableLists.length === 0 ? { title: 'No upcoming Lists to move' } : {})}
-        >
-          Move a List
-        </Button>
-      </div>
+      <PageHeader
+        size="web"
+        wrap
+        title={`Kia ora, ${greetingName}`}
+        sub={summaryLine}
+        actions={
+          <Button
+            variant="primary"
+            size="desktop"
+            shot="dashboard-move-list"
+            onClick={() => setPicking(true)}
+            disabled={!canMove}
+            {...(movableLists.length === 0 ? { title: 'No upcoming Lists to move' } : {})}
+          >
+            Move a List
+          </Button>
+        }
+      />
 
       <Overlay open={picking} onClose={() => setPicking(false)}>
         <div data-shot="dashboard-move-picker" style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 460, maxWidth: '100%' }}>
@@ -186,7 +186,8 @@ export function DashboardScreen({
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 16 }}>
         {/* Receivables */}
-        <Panel
+        <Card
+          padding="panel"
           title="Receivables aging"
           action={
             <span className="mono" style={{ fontSize: 14, fontWeight: 600 }}>
@@ -220,10 +221,11 @@ export function DashboardScreen({
               </div>
             </>
           )}
-        </Panel>
+        </Card>
 
         {/* Productivity */}
-        <Panel
+        <Card
+          padding="panel"
           title="Productivity"
           action={<span style={{ fontSize: 12, color: neutral.mist }}>{figures?.productivity.periodLabel}</span>}
           style={{ gridColumn: 'span 5' }}
@@ -233,10 +235,10 @@ export function DashboardScreen({
           ) : (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <StatTile label="UNITS" value={String(figures.productivity.units)} pill={`+${figures.productivity.unitsChangePct}%`} />
-                <StatTile label="LISTS" value={String(figures.productivity.lists)} />
-                <StatTile label="AVG UNITS / LIST" value={figures.productivity.avgUnitsPerList.toFixed(1)} />
-                <StatTile label="FEES INVOICED" value={formatCurrency(figures.productivity.feesInvoiced)} />
+                <StatTile variant="quiet" label="UNITS" value={String(figures.productivity.units)} pill={`+${figures.productivity.unitsChangePct}%`} />
+                <StatTile variant="quiet" label="LISTS" value={String(figures.productivity.lists)} />
+                <StatTile variant="quiet" label="AVG UNITS / LIST" value={figures.productivity.avgUnitsPerList.toFixed(1)} />
+                <StatTile variant="quiet" label="FEES INVOICED" value={formatCurrency(figures.productivity.feesInvoiced)} />
               </div>
               <div style={{ fontSize: 12, color: neutral.slate, borderTop: `1px solid ${neutral.sunken}`, paddingTop: 10 }}>
                 6 months: <strong className="mono">{figures.productivity.sixMonthUnits.toLocaleString('en-NZ')}</strong> units ·{' '}
@@ -255,10 +257,10 @@ export function DashboardScreen({
               </div>
             </>
           )}
-        </Panel>
+        </Card>
 
         {/* Leave */}
-        <Panel title="Leave" style={{ gridColumn: 'span 5' }}>
+        <Card padding="panel" title="Leave" style={{ gridColumn: 'span 5' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {figures !== undefined && figures.leave.length > 0 ? (
               figures.leave.map((l, i) => (
@@ -279,10 +281,11 @@ export function DashboardScreen({
               <EmptyState style={{ padding: '4px 0' }}>No leave booked.</EmptyState>
             )}
           </div>
-        </Panel>
+        </Card>
 
         {/* Who's free (live) */}
-        <Panel
+        <Card
+          padding="panel"
           title="Who's free · next 5 days"
           action={<TextAction size="sm" flush onClick={onOpenAvailability} style={{ fontSize: 13 }}>Full availability grid →</TextAction>}
           style={{ gridColumn: 'span 7' }}
@@ -337,21 +340,7 @@ export function DashboardScreen({
               </div>
             ))}
           </div>
-        </Panel>
-      </div>
-    </div>
-  )
-}
-
-function StatTile({ label, value, pill }: { label: string; value: string; pill?: string }) {
-  return (
-    <div style={{ background: neutral.bg, borderRadius: radius.ctl, padding: '12px 14px' }}>
-      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist }}>{label}</div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
-        <span className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{value}</span>
-        {pill !== undefined && (
-          <span style={{ fontSize: 11, fontWeight: 600, color: semantic.success.onTint, background: semantic.success.tint, borderRadius: radius.pill, padding: '2px 7px' }}>{pill}</span>
-        )}
+        </Card>
       </div>
     </div>
   )

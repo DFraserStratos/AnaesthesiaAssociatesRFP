@@ -234,6 +234,15 @@ describe('DayGrid conflicts (catch-up Phase 30: the List changes colour)', () =>
     expect(container.textContent).not.toContain('Surgeon TBC')
   })
 
+  it('keeps the conflict outline while the fill comes from blockFill (UI unification U6, U23)', () => {
+    const { container } = renderConflictGrid()
+    const conflicted = container.querySelector('[data-list-id="conflicted"]') as HTMLElement
+    const surgeonOnly = container.querySelector('[data-list-id="surgeon-only"]') as HTMLElement
+    expect(conflicted.style.border).toMatch(/^1\.5px solid/)
+    expect(conflicted.style.border).not.toContain('rgba(0, 0, 0, 0)')
+    expect(surgeonOnly.style.border).toContain('rgba(0, 0, 0, 0)')
+  })
+
   it('the Conflict chip shows only conflicted blocks', () => {
     const { container } = renderConflictGrid()
     fireEvent.click(screen.getByRole('button', { name: 'Conflict' }))

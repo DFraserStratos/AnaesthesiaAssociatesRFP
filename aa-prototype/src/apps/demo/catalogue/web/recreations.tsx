@@ -6,28 +6,13 @@
  */
 
 import type { ReactNode } from 'react'
-import { Check, Lock, Plus } from 'lucide-react'
-import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
+import { Check, Lock } from 'lucide-react'
+import { accent, neutral, semantic } from '../../../../theme/tokens'
 import { STATUS_PALETTE } from '../../../../theme/statusColours'
 import { useDisplayStatus } from '../../../../shared'
 import { isOpenSlotView, type SlotView } from '../../../../store'
 import type { AgingBucketKey } from '../../../../domain/seed'
 import { formatCurrency } from '../../../../shared/format'
-
-/** Recreated: local `StatTile` in apps/web/screens/DashboardScreen.tsx. */
-export function StatTile({ label, value, pill }: { label: string; value: string; pill?: string }) {
-  return (
-    <div style={{ background: neutral.bg, borderRadius: 10, padding: '12px 14px' }}>
-      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist }}>{label}</div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
-        <span className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{value}</span>
-        {pill !== undefined && (
-          <span style={{ fontSize: 11, fontWeight: 600, color: semantic.success.onTint, background: semantic.success.tint, borderRadius: 999, padding: '2px 7px' }}>{pill}</span>
-        )}
-      </div>
-    </div>
-  )
-}
 
 /** Recreated: local `SubTabButton` in apps/web/screens/AccountsScreen.tsx. */
 export function SubTabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
@@ -115,18 +100,6 @@ export function SubmitAction({
   return (
     <button type="button" onClick={onConfirm} style={{ ...shared, background: accent.base, color: neutral.surface, cursor: 'pointer' }}>
       Mark list completed
-    </button>
-  )
-}
-
-/** Recreated: the dashed "Add a booking" button in apps/web/screens/ListDetailView.tsx. */
-export function AddBookingButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 16px', background: neutral.surface, border: `1.5px dashed ${neutral.lineStrong}`, borderRadius: radius.ctl, fontFamily: 'inherit', color: accent.base, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-    >
-      <Plus size={17} strokeWidth={2.4} aria-hidden /> Add a booking
     </button>
   )
 }

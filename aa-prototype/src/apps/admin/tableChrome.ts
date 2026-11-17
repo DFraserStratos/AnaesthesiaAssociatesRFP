@@ -1,39 +1,23 @@
 import type { CSSProperties } from 'react'
-import { accent, neutral } from '../../theme/tokens'
+import { accent } from '../../theme/tokens'
+import { densityCellStyle, densityHeadCellStyle } from '../../shared/table'
 
 /**
- * Shared table cell styles for the admin data screens (review, master data,
- * audit) — one definition instead of three near-identical copies. `compact` is
- * the tighter 8px/12.5 variant used by the dense audit + master tables; the
- * default is the roomier 10px/13 review table.
+ * The admin cell styles, now a thin re-export of the shared table kit (`src/shared/table/`, UI
+ * unification U6) for the screens that still type their own cells (Billing monitor, Integrations,
+ * the pairing and edit sheets) and Phase 43's `Pager`. `compact` is the kit's `dense` density (8px
+ * 10px at 12.5, the audit and master tables); the default is its `compact` density (10px 10px at 13).
+ * The header is the Admin Review mockup's (question 19).
  */
 export function cellStyle(compact = false): CSSProperties {
-  return {
-    padding: compact ? '8px 10px' : '10px 10px',
-    fontSize: compact ? 12.5 : 13,
-    borderBottom: `1px solid ${neutral.line}`,
-    textAlign: 'left',
-    verticalAlign: 'top',
-  }
+  return densityCellStyle(compact ? 'dense' : 'compact')
 }
 
 export function headCellStyle(compact = false): CSSProperties {
-  return {
-    ...cellStyle(compact),
-    fontSize: 10,
-    fontWeight: 700,
-    letterSpacing: '0.06em',
-    textTransform: 'uppercase',
-    color: neutral.mist,
-    borderBottom: `1px solid ${neutral.lineStrong}`,
-    background: neutral.bg,
-  }
+  return densityHeadCellStyle(compact ? 'dense' : 'compact')
 }
 
-/** Keep links and buttons inside a clickable table row in charge of their own action. */
-export function isInteractiveRowTarget(target: EventTarget | null): boolean {
-  return target instanceof Element && target.closest('a, button, input, select, textarea') !== null
-}
+export { isInteractiveRowTarget } from '../../shared/table'
 
 /** A teal text action inside a table, card or sheet ("Edit", "End", "Open record"). */
 export const textActionStyle: CSSProperties = {

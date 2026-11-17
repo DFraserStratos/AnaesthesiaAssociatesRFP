@@ -28,7 +28,7 @@ describe('the Web component catalogue', () => {
   it('renders its rows under the replacement-library groups', () => {
     renderPage()
     expect(screen.getByRole('heading', { level: 1, name: 'Anaesthetist Web App · UI components' })).toBeInTheDocument()
-    for (const name of ['WebNav', 'Panel', 'SlidingSegmentedControl', 'StatusLegend (toggle mode)', 'Dialog (web Overlay)', 'Lists table (Th · Td · GroupRow)', 'WeekStrip', 'BookingTotalPanel · useTickingValue', 'TickBadge', 'HistoryTimeline']) {
+    for (const name of ['WebNav', 'Card (panel)', 'SlidingSegmentedControl', 'StatusLegend (toggle mode)', 'Dialog (web Overlay)', 'Lists table (Th · Td · GroupRow)', 'WeekStrip', 'BookingTotalPanel · useTickingValue', 'TickBadge', 'HistoryTimeline']) {
       expect(row(name), name).not.toBeNull()
     }
     expect(within(document.getElementById('lib-tanstack') as HTMLElement).getByText('Accounts tables (tfoot totals)')).toBeInTheDocument()

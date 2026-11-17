@@ -7,12 +7,13 @@ import type { EffectiveSlotTimes } from '../../../domain/slots'
 import { hasLeftMainView, listProgress, type ListProgress } from '../../../domain/listProgress'
 import { mainViewFor, timesForList, useAppStore, type SlotView } from '../../../store'
 import { emptySessionLine, ProgressPill, resolveDisplayStatus, StatusChip, StatusLegend } from '../../../shared'
-import { Panel } from '../components'
 import { searchCountLine, useBookingSearch, useFieldText } from '../../../shared/schedule'
 import { NameSearchBox } from '../../../shared/ui/NameSearchBox'
-import { TextAction } from '../../../shared/ui'
+import { PageHeader, TextAction } from '../../../shared/ui'
+import { ClickableRow, GroupRow, RowOpenButton, TableShell, Td, Th } from '../../../shared/table'
 import { FilterDateInput } from '../../../shared/ui/DateFields'
-import { WebDayChip, WebDayTable, WebGoToDate, WebResultsTable } from './ListsLookback'
+import { WebDayTable, WebGoToDate, WebResultsTable } from './ListsLookback'
+import { DayChip } from '../../../shared/ui'
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 
@@ -138,37 +139,26 @@ export function ListsScreen({
     const quiet = r.progress === 'submitted'
     const dateText = shortDay(r.dateISO)
     const list = r.list
+    const open = list !== undefined ? () => onOpenList(list.id) : undefined
     return (
-      <tr
+      <ClickableRow
         key={r.key}
         data-slot-id={r.slotId}
         data-list-id={list?.id}
         data-shot={r.session === 'OOH' ? 'out-of-hours-row' : undefined}
         data-quiet={quiet ? 'true' : undefined}
-        onClick={list !== undefined ? () => onOpenList(list.id) : undefined}
-        style={{
-          borderBottom: `1px solid ${neutral.sunken}`,
-          cursor: list !== undefined ? 'pointer' : 'default',
-          background: r.dateISO === todayISO ? neutral.bg : neutral.surface,
-          color: quiet ? neutral.slate : neutral.ink,
-        }}
+        {...(open !== undefined ? { onOpen: open } : {})}
+        today={r.dateISO === todayISO}
+        quiet={quiet}
       >
         <Td>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             <span aria-hidden style={{ width: 3, height: 20, borderRadius: radius.pill, background: c.solid, flex: 'none', opacity: quiet ? 0.45 : 1 }} />
-            {list !== undefined ? (
+            {open !== undefined ? (
               // The row's keyboard handle: a plain button on the date (the row click stays for the mouse).
-              <button
-                type="button"
-                aria-label={`Open List ${dateText} ${sessionText(r.session)}, ${r.description}`}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onOpenList(list.id)
-                }}
-                style={{ border: 'none', background: 'none', padding: 0, font: 'inherit', color: 'inherit', cursor: 'pointer' }}
-              >
+              <RowOpenButton label={`Open List ${dateText} ${sessionText(r.session)}, ${r.description}`} onOpen={open}>
                 {dateText}
-              </button>
+              </RowOpenButton>
             ) : (
               dateText
             )}
@@ -181,41 +171,43 @@ export function ListsScreen({
         <Td>{r.description}</Td>
         <Td><StatusChip status={r.displayKey} /></Td>
         <Td>{r.progress !== undefined ? <ProgressPill progress={r.progress} /> : null}</Td>
-      </tr>
+      </ClickableRow>
     )
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>Lists</h1>
-          <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>Your Lists from today, with any earlier ones not yet authorised. From/To are the actual session times.</div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          {/* The shared search box on the page (UI unification U4): the 38px pill beside Go to date. */}
-          <NameSearchBox
-            value={searchText}
-            onChange={setSearchText}
-            label="Search your Bookings"
-            placeholder="Search patient name or NHI"
-            size="pill"
-            height={38}
-            width={280}
-            fill="surface"
-            testId="web-lists-search"
-            clearLabel="Clear the search field"
-          />
-          <WebGoToDate anaesthetistId={anaesthetistId} dayISO={dayISO} onDayChange={onDayChange} />
-          {mode === 'main' && (
-            <FilterDateInput label="To" labelPlacement="inline" height={38} value={toISO} min={todayISO} onChange={setToISO} />
-          )}
-        </div>
-      </div>
+      <PageHeader
+        size="web"
+        wrap
+        title="Lists"
+        sub="Your Lists from today, with any earlier ones not yet authorised. From/To are the actual session times."
+        actions={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            {/* The shared search box on the page (UI unification U4): the 38px pill beside Go to date. */}
+            <NameSearchBox
+              value={searchText}
+              onChange={setSearchText}
+              label="Search your Bookings"
+              placeholder="Search patient name or NHI"
+              size="pill"
+              height={38}
+              width={280}
+              fill="surface"
+              testId="web-lists-search"
+              clearLabel="Clear the search field"
+            />
+            <WebGoToDate anaesthetistId={anaesthetistId} dayISO={dayISO} onDayChange={onDayChange} />
+            {mode === 'main' && (
+              <FilterDateInput label="To" labelPlacement="inline" height={38} value={toISO} min={todayISO} onChange={setToISO} />
+            )}
+          </div>
+        }
+      />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', minHeight: 32 }}>
         {mode === 'main' && <StatusLegend variant="chips" />}
-        {mode === 'day' && dayISO !== null && <WebDayChip dateISO={dayISO} onClose={() => onDayChange(null)} />}
+        {mode === 'day' && dayISO !== null && <DayChip dateISO={dayISO} onClose={() => onDayChange(null)} />}
         {mode === 'search' && (
           <>
             {shown > 0 && (
@@ -230,82 +222,40 @@ export function ListsScreen({
         )}
       </div>
 
-      {mode === 'search' && (
-        <Panel flush>
-          <div style={{ overflowX: 'auto' }}>
-            <WebResultsTable upcoming={results.upcoming} past={results.past} onOpenBooking={onOpenBooking} />
-          </div>
-        </Panel>
-      )}
-      {mode === 'day' && dayISO !== null && (
-        <Panel flush>
-          <div style={{ overflowX: 'auto' }}>
-            <WebDayTable anaesthetistId={anaesthetistId} dateISO={dayISO} todayISO={todayISO} onOpenList={onOpenList} />
-          </div>
-        </Panel>
-      )}
+      {mode === 'search' && <WebResultsTable upcoming={results.upcoming} past={results.past} onOpenBooking={onOpenBooking} />}
+      {mode === 'day' && dayISO !== null && <WebDayTable anaesthetistId={anaesthetistId} dateISO={dayISO} todayISO={todayISO} onOpenList={onOpenList} />}
       {mode === 'main' && (
-      <Panel flush>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${neutral.line}` }}>
-                <Th>Date</Th>
-                <Th>Session</Th>
-                <Th>From</Th>
-                <Th>To</Th>
-                <Th>Description</Th>
-                <Th>Status</Th>
-                <Th>Progress</Th>
-              </tr>
-            </thead>
-            {earlier.length > 0 && (
-              <tbody data-shot="web-main-view-earlier">
-                <GroupRow>Earlier, not yet authorised</GroupRow>
-                {earlier.map(renderRow)}
-              </tbody>
-            )}
-            <tbody>
-              {earlier.length > 0 && <GroupRow>From today</GroupRow>}
-              {upcoming.length === 0 && (
-                <tr>
-                  <td colSpan={COLUMNS} style={{ padding: '24px 20px', textAlign: 'center', color: neutral.mist }}>
-                    No Lists from today in this date range.
-                  </td>
-                </tr>
-              )}
-              {upcoming.map(renderRow)}
+        <TableShell label="Lists">
+          <thead>
+            <tr>
+              <Th>Date</Th>
+              <Th>Session</Th>
+              <Th>From</Th>
+              <Th>To</Th>
+              <Th>Description</Th>
+              <Th>Status</Th>
+              <Th>Progress</Th>
+            </tr>
+          </thead>
+          {earlier.length > 0 && (
+            <tbody data-shot="web-main-view-earlier">
+              <GroupRow span={COLUMNS}>Earlier, not yet authorised</GroupRow>
+              {earlier.map(renderRow)}
             </tbody>
-          </table>
-        </div>
-      </Panel>
+          )}
+          <tbody>
+            {earlier.length > 0 && <GroupRow span={COLUMNS}>From today</GroupRow>}
+            {upcoming.length === 0 && (
+              <tr>
+                <td colSpan={COLUMNS} style={{ padding: '24px 20px', textAlign: 'center', color: neutral.mist }}>
+                  No Lists from today in this date range.
+                </td>
+              </tr>
+            )}
+            {upcoming.map(renderRow)}
+          </tbody>
+        </TableShell>
       )}
     </div>
-  )
-}
-
-function GroupRow({ children }: { children: React.ReactNode }) {
-  return (
-    <tr style={{ borderBottom: `1px solid ${neutral.line}`, background: neutral.bg }}>
-      <th colSpan={COLUMNS} scope="colgroup" style={{ textAlign: 'left', padding: '10px 20px', fontSize: 13, fontWeight: 600, color: neutral.slate }}>
-        {children}
-      </th>
-    </tr>
-  )
-}
-
-function Th({ children }: { children: React.ReactNode }) {
-  return (
-    <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-      {children}
-    </th>
-  )
-}
-
-function Td({ children, mono }: { children: React.ReactNode; mono?: boolean }) {
-  return (
-    <td className={mono === true ? 'mono' : undefined} style={{ padding: '12px 20px', color: 'inherit', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-      {children}
-    </td>
   )
 }

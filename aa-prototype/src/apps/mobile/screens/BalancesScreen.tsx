@@ -88,7 +88,7 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
             <EmptyState variant="card">No outstanding invoices. A List's invoices show here once the office authorises it.</EmptyState>
           ) : (
             outstanding.map((r) => (
-              <div key={r.caseId} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 16, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div key={r.caseId} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }}>
                   <span style={{ fontSize: 15, fontWeight: 600 }}>{r.patientName}</span>
                   <span className="mono" style={{ fontSize: 15, fontWeight: 700 }}>{formatCurrency(r.outstanding)}</span>
@@ -114,7 +114,7 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
           ) : (
             <>
               {gst.rows.map((r) => (
-                <div key={r.receiptId} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 16, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }}>
+                <div key={r.receiptId} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }}>
                   <span style={{ display: 'flex', flexDirection: 'column' }}>
                     <span className="mono" style={{ fontSize: 13.5, fontWeight: 600 }}>{formatCurrency(r.grossAmount)}</span>
                     <span style={{ fontSize: 12, color: neutral.slate }}>{format(parseISO(r.atISO.slice(0, 10)), 'd MMM')} · {r.payerLabel}</span>

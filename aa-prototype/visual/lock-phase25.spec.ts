@@ -45,7 +45,7 @@ test('the invoice prints from its recipe: the Locked record card, and Regenerate
   await authoriseS3Am(page)
   await page.goto('/admin/invoices')
   await page.waitForLoadState('networkidle')
-  await page.getByRole('button', { name: 'View →' }).first().click()
+  await page.getByRole('button', { name: /^View invoice / }).first().click()
   await page.waitForTimeout(300)
   const card = page.locator('[data-shot="invoice-locked-record"]')
   await expect(card).toBeVisible()

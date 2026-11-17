@@ -8,8 +8,8 @@ import { HistorySheet } from '../../../shared/booking'
 import { formatCurrency } from '../../../shared/format'
 import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
 import { PairingSection, useProfileHistory } from '../components/pairing'
-import { Fact, HeaderActions, IdChip, ProfileCard, ProfileHeader, ProfilePage } from '../components/ProfileChrome'
-import { BackLink } from '../../../shared/ui'
+import { HeaderActions, IdChip, PROFILE_CARD, ProfileHeader, ProfilePage } from '../components/ProfileChrome'
+import { BackLink, Card, DefList, DefRow } from '../../../shared/ui'
 import { EditAnaesthetistSheet } from '../flows/EditAnaesthetistSheet'
 import { GST_OPTIONS } from '../flows/fieldChrome'
 import { mastersViewPath } from '../mastersPaths'
@@ -52,23 +52,23 @@ export function AnaesthetistRecord({ anaesthetistId, actor }: { anaesthetistId: 
       />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, alignItems: 'start' }}>
-        <ProfileCard title="Priority tier" shot="tier-card">
+        <Card style={PROFILE_CARD} title="Priority tier" shot="tier-card">
           <SlidingSegmentedControl ariaLabel="Priority tier" value={String(tier)} options={TIER_OPTIONS} onSelect={changeTier} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <div style={{ fontSize: 12.5, color: neutral.mist }}>Only the office sees this. It orders the suggestions when you assign or move a List.</div>
             {TIER_NAMES_PROVISIONAL && <div style={{ fontSize: 12.5, color: neutral.mist }}>Tier names are provisional.</div>}
           </div>
           <FormError message={tierError} />
-        </ProfileCard>
+        </Card>
 
-        <ProfileCard title="Details" shot="anaesthetist-details">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Fact label="Unit value" value={formatCurrency(anaesthetist.unitValue)} mono />
-            <Fact label="Phone" value={anaesthetist.phone} />
-            <Fact label="Email" value={anaesthetist.email} />
-            <Fact label="GST period" value={gstLabel} />
-          </div>
-        </ProfileCard>
+        <Card style={PROFILE_CARD} title="Details" shot="anaesthetist-details">
+          <DefList gap={12} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+            <DefRow layout="stacked" label="Unit value" mono>{formatCurrency(anaesthetist.unitValue)}</DefRow>
+            <DefRow layout="stacked" label="Phone">{anaesthetist.phone}</DefRow>
+            <DefRow layout="stacked" label="Email">{anaesthetist.email}</DefRow>
+            <DefRow layout="stacked" label="GST period">{gstLabel}</DefRow>
+          </DefList>
+        </Card>
       </div>
 
       <PairingSection perspective="anaesthetist" subjectId={anaesthetist.registrationNumber} actor={actor} />

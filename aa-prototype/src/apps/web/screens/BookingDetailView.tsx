@@ -6,7 +6,7 @@ import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared
 import { BookingDetailBody } from '../../../shared/booking'
 import { ageYears, formatDob, nhiBadge, locationName } from '../../../shared/format'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
-import { BackLink } from '../../../shared/ui'
+import { BackLink, PageHeader } from '../../../shared/ui'
 
 interface BookingDetailViewProps {
   bookingId: string
@@ -50,38 +50,32 @@ export function BookingDetailView({ bookingId, actor, todayISO, onBack }: Bookin
   const hospitalName = locationName(list.hospitalId, masters.hospitals)
 
   const header = (_collapsed: boolean, history: React.ReactNode) => (
-    <div
+    <PageHeader
       data-testid="web-booking-header"
-      style={{
-        display: 'flex',
-        alignItems: 'flex-end',
-        justifyContent: 'space-between',
-        gap: 20,
-        flexWrap: 'wrap',
-        marginBottom: 16,
-      }}
-    >
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>
-            {patient?.name ?? 'Unknown patient'}
-          </h1>
-          <WarningTriangle warnings={warnings} />
+      size="web"
+      wrap
+      style={{ gap: 20, marginBottom: 16 }}
+      title={patient?.name ?? 'Unknown patient'}
+      aside={<WarningTriangle warnings={warnings} />}
+      subStyle={{ fontSize: 'inherit', color: 'inherit', marginTop: 0 }}
+      sub={
+        <>
+          <div className="mono" style={{ fontSize: 12.5, color: neutral.mist, marginTop: 6 }}>
+            {badge.text}
+            {patient !== undefined && ` · DOB ${formatDob(patient.dobISO)} (${ageYears(patient.dobISO, todayISO)}y)`}
+          </div>
+          <div style={{ fontSize: 14, color: neutral.slate, marginTop: 2 }}>
+            {primary !== undefined ? procedureLabel(primary, masters.rvgGroups, 1) : 'Procedure to capture'} · {hospitalName}
+          </div>
+        </>
+      }
+      actions={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: 2 }}>
+          <StatusChip status={list.kind} />
+          {history}
         </div>
-        <div className="mono" style={{ fontSize: 12.5, color: neutral.mist, marginTop: 6 }}>
-          {badge.text}
-          {patient !== undefined && ` · DOB ${formatDob(patient.dobISO)} (${ageYears(patient.dobISO, todayISO)}y)`}
-        </div>
-        <div style={{ fontSize: 14, color: neutral.slate, marginTop: 2 }}>
-          {primary !== undefined ? procedureLabel(primary, masters.rvgGroups, 1) : 'Procedure to capture'} · {hospitalName}
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: 2 }}>
-        <StatusChip status={list.kind} />
-        {history}
-      </div>
-    </div>
+      }
+    />
   )
 
   return (

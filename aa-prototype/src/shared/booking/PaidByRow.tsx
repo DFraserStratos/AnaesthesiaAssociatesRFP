@@ -23,7 +23,7 @@ import { neutral, semantic } from '../../theme/tokens'
 import { PAYER_CONTACT_NEEDED, PAYER_NOT_BILLED_YET } from '../../domain/billing/whoIsBilled'
 import type { ProcedureStackView } from '../../domain/billing/procedureStack'
 import type { Actor } from '../../store'
-import { Pill } from '../ui'
+import { DefList, DefRow, Pill } from '../ui'
 import { TextAction } from '../ui/TextAction'
 import { PaidBySheet } from '../flows/PaidBySheet'
 
@@ -49,26 +49,24 @@ function splitParties(text: string): string {
   return text.replace(/^Split: /, '')
 }
 
-const GRID = { display: 'grid', gridTemplateColumns: '84px minmax(0, 1fr) auto', columnGap: 12, alignItems: 'baseline' } as const
+/** The row on the shared `DefRow` (UI unification U6): the 80px label column, 12px apart, under a rule. */
+const ROW = { gap: 12, paddingTop: 12, borderTop: `1px solid ${neutral.line}` } as const
 
 export function PaidByRow({ contract, procedureId, actor, canEdit, variant, payer, contactMissing = false, child = false }: PaidByRowProps) {
   // Which part of the Paid by sheet opened it: who pays (Change) or the split (Split); null while closed.
   const [open, setOpen] = useState<'payer' | 'split' | null>(null)
-  const label = <span style={{ fontSize: 13, fontWeight: 600, color: neutral.slate }}>Paid by</span>
+  const label = <span style={{ fontSize: 13, fontWeight: 600 }}>Paid by</span>
 
   // No Contract yet: who is invoiced is not known, so there is nothing to change (US-11.2.2 "Not billed yet").
   if (contract === null) {
     return (
-      <div
-        data-shot="procedure-split-row"
-        data-split="none"
-        style={{ ...GRID, paddingTop: 12, borderTop: `1px solid ${neutral.line}` }}
-      >
-        {label}
-        <span data-shot="payer-not-billed" data-procedure-id={procedureId} style={{ fontSize: variant === 'summary' ? 15 : 14, lineHeight: '20px', color: neutral.mist }}>
-          {PAYER_NOT_BILLED_YET}
-        </span>
-      </div>
+      <DefList>
+        <DefRow label={label} labelTone="slate" shot="procedure-split-row" data-split="none" style={ROW}>
+          <span data-shot="payer-not-billed" data-procedure-id={procedureId} style={{ fontSize: variant === 'summary' ? 15 : 14, lineHeight: '20px', color: neutral.mist }}>
+            {PAYER_NOT_BILLED_YET}
+          </span>
+        </DefRow>
+      </DefList>
     )
   }
 
@@ -127,19 +125,26 @@ export function PaidByRow({ contract, procedureId, actor, canEdit, variant, paye
   const splitState = split !== undefined ? (split.fits ? 'fits' : 'doesNotFit') : 'none'
 
   return (
-    <div
-      data-shot="procedure-split-row"
-      data-split={splitState}
-      style={{ ...GRID, paddingTop: 12, borderTop: `1px solid ${neutral.line}` }}
-    >
-      {label}
-      {valueBlock}
-      {canEdit && (
-        <TextAction shot="procedure-split-button" onClick={() => setOpen('split')} label={split === undefined ? 'Split the fee' : 'Change the split'}>
-          Split
-        </TextAction>
-      )}
-      {sheet}
-    </div>
+    <DefList>
+      <DefRow
+        label={label}
+        labelTone="slate"
+        shot="procedure-split-row"
+        data-split={splitState}
+        style={ROW}
+        trailing={
+          <>
+            {canEdit && (
+              <TextAction shot="procedure-split-button" onClick={() => setOpen('split')} label={split === undefined ? 'Split the fee' : 'Change the split'}>
+                Split
+              </TextAction>
+            )}
+            {sheet}
+          </>
+        }
+      >
+        {valueBlock}
+      </DefRow>
+    </DefList>
   )
 }

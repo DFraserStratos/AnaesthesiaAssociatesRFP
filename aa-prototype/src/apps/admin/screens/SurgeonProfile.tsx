@@ -10,8 +10,8 @@ import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { Pill } from '../components/MasterPills'
 import { HistorySheet } from '../../../shared/booking'
 import { PairingSection, useProfileHistory } from '../components/pairing'
-import { Fact, HeaderActions, IdChip, ProfileCard, ProfileHeader, ProfilePage } from '../components/ProfileChrome'
-import { BackLink } from '../../../shared/ui'
+import { HeaderActions, IdChip, PROFILE_CARD, ProfileHeader, ProfilePage } from '../components/ProfileChrome'
+import { BackLink, Card, DefList, DefRow } from '../../../shared/ui'
 import { SurgeonEditSheet } from '../flows/SurgeonEditSheet'
 import { mastersViewPath, surgeonProfilePath } from '../mastersPaths'
 import { EmptyState } from '../../../shared/ui/EmptyState'
@@ -49,26 +49,25 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
       />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, alignItems: 'start' }}>
-        <ProfileCard title="Specialties" shot="surgeon-specialties">
+        <Card style={PROFILE_CARD} title="Specialties" shot="surgeon-specialties">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {surgeon.specialtyIds.filter((id) => specialties[id] !== undefined).map((id) => (
               <Pill key={id}>{specialties[id]!.name}</Pill>
             ))}
           </div>
           <div style={{ fontSize: 12, color: neutral.mist }}>From AA&apos;s specialties list. One or more, usually one.</div>
-        </ProfileCard>
+        </Card>
 
-        <ProfileCard title="Identifiers" shot="surgeon-identifiers">
-          <Fact label="HPI CPN" value={surgeon.hpiId} mono note="Unique index on the Health Provider Index. Not the patient's NHI." />
-          <Fact
-            label="NZ medical registration number"
-            value={surgeon.medicalRegistrationNumber ?? <span style={{ color: neutral.mist }}>Not recorded</span>}
-            mono={surgeon.medicalRegistrationNumber !== undefined}
-            note="For information"
-          />
-        </ProfileCard>
+        <Card style={PROFILE_CARD} title="Identifiers" shot="surgeon-identifiers">
+          <DefList gap={10}>
+            <DefRow layout="stacked" label="HPI CPN" mono note="Unique index on the Health Provider Index. Not the patient's NHI.">{surgeon.hpiId}</DefRow>
+            <DefRow layout="stacked" label="NZ medical registration number" mono={surgeon.medicalRegistrationNumber !== undefined} note="For information">
+              {surgeon.medicalRegistrationNumber ?? <span style={{ color: neutral.mist }}>Not recorded</span>}
+            </DefRow>
+          </DefList>
+        </Card>
 
-        <ProfileCard title="Groups" shot="surgeon-groups">
+        <Card style={PROFILE_CARD} title="Groups" shot="surgeon-groups">
           {memberOf.length === 0 ? (
             <div style={{ fontSize: 13, color: neutral.mist }}>Not in a surgeon group.</div>
           ) : (
@@ -80,21 +79,21 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
               ))}
             </div>
           )}
-        </ProfileCard>
+        </Card>
       </div>
 
       {surgeonRooms.length === 0 ? (
-        <ProfileCard title="Surgeons' room" shot="surgeon-room-card">
+        <Card style={PROFILE_CARD} title="Surgeons' room" shot="surgeon-room-card">
           <div style={{ fontSize: 13, color: neutral.mist }}>No room recorded.</div>
-        </ProfileCard>
+        </Card>
       ) : (
         surgeonRooms.map((room, index) => (
           <div key={room.id} data-room-row={room.id} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, alignItems: 'stretch' }}>
             <RoomCard room={room} main={index === 0} several={surgeonRooms.length > 1} surgeon={surgeon} surgeons={surgeons} />
-            <ProfileCard title="Practice manager and PAs" shot="surgeon-contacts" data-room={room.id}>
+            <Card style={PROFILE_CARD} title="Practice manager and PAs" shot="surgeon-contacts" data-room={room.id}>
               {index === 0 && <div style={{ fontSize: 12, color: neutral.mist }}>{ROOM_CONTACTS_PROVISIONAL_NOTE}</div>}
               <RoomContactsList room={room} surgeonId={surgeon.id} actor={actor} />
-            </ProfileCard>
+            </Card>
           </div>
         ))
       )}
@@ -112,15 +111,18 @@ function RoomCard({ room, main, several, surgeon, surgeons }: { room: SurgeonRoo
   const email = roomContactEmail(room)
   const colleagues = surgeonsInRoom(surgeons, room.id).filter((s) => s.id !== surgeon.id)
   return (
-    <ProfileCard
+    <Card
+      style={PROFILE_CARD}
       title="Surgeons' room"
       shot="surgeon-room-card"
       data-room={room.id}
       action={several && main ? <Pill size="sm">Main room</Pill> : undefined}
     >
       <div style={{ fontSize: 14, fontWeight: 600 }}>{room.name}</div>
-      <Fact label="Contact email" value={email !== '' ? email : <span style={{ color: neutral.mist }}>{NO_ROOM_EMAIL}</span>} mono={email !== ''} />
-      <Fact label="Phone" value={room.phone ?? <span style={{ color: neutral.mist }}>Not recorded</span>} />
+      <DefList gap={10}>
+        <DefRow layout="stacked" label="Contact email" mono={email !== ''}>{email !== '' ? email : <span style={{ color: neutral.mist }}>{NO_ROOM_EMAIL}</span>}</DefRow>
+        <DefRow layout="stacked" label="Phone">{room.phone ?? <span style={{ color: neutral.mist }}>Not recorded</span>}</DefRow>
+      </DefList>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: neutral.mist }}>Also in this room</div>
         {colleagues.length === 0 ? (
@@ -133,6 +135,6 @@ function RoomCard({ room, main, several, surgeon, surgeons }: { room: SurgeonRoo
           ))
         )}
       </div>
-    </ProfileCard>
+    </Card>
   )
 }

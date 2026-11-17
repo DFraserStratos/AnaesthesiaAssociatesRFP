@@ -13,7 +13,7 @@ import { hhmm, longDay } from '../../../shared/format'
 import { useCalendarKeys } from '../../../shared/calendar'
 import { monthCells, WEEKDAY_INITIALS } from '../../../shared/availability/monthCells'
 import { EmptyState } from '../../../shared/ui/EmptyState'
-import { Button, Checkbox, TextArea } from '../../../shared/ui'
+import { Button, Card, Checkbox, TextArea } from '../../../shared/ui'
 
 interface ReviewRow {
   listId: string
@@ -64,14 +64,6 @@ export function RightRail(props: RightRailProps) {
       )}
       <InternalNotes notes={props.notes} onAddNote={props.onAddNote} />
       <AwaitingReview rows={props.reviewRows} onReviewList={props.onReviewList} />
-    </div>
-  )
-}
-
-function Card({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {children}
     </div>
   )
 }
@@ -184,8 +176,7 @@ function InternalNotes({ notes, onAddNote }: { notes: DayNote[]; onAddNote: (tex
   }
 
   return (
-    <Card>
-      <div style={{ fontSize: 14, fontWeight: 600 }}>Internal notes</div>
+    <Card title="Internal notes">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {notes.length === 0 && <EmptyState>No notes for this day.</EmptyState>}
         {notes.map((n) => (
@@ -218,8 +209,7 @@ function InternalNotes({ notes, onAddNote }: { notes: DayNote[]; onAddNote: (tex
 
 function AwaitingReview({ rows, onReviewList }: { rows: ReviewRow[]; onReviewList: (listId: string) => void }) {
   return (
-    <Card>
-      <div style={{ fontSize: 14, fontWeight: 600 }}>Awaiting review</div>
+    <Card title="Awaiting review">
       {rows.length === 0 && <EmptyState>Nothing awaiting review.</EmptyState>}
       {rows.map((r) => (
         <button

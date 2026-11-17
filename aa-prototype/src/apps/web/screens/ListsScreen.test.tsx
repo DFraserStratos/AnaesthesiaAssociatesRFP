@@ -62,6 +62,17 @@ describe('the web Lists main view (US-07.4.2, US-03.1.4)', () => {
     }
   })
 
+  it('a row opens its List from its one keyboard handle, found by role and full name (UI unification U6)', () => {
+    renderAt('/web/lists')
+    const row = document.querySelector(`tr[data-list-id="${SEED_LIST_IDS.souterMon20Am}"]`) as HTMLElement
+    expect(row).toHaveClass('aa-clickable-table-row')
+    expect(row).not.toHaveAttribute('tabindex')
+    const handles = within(row).getAllByRole('button', { name: /^Open List / })
+    expect(handles).toHaveLength(1)
+    fireEvent.click(handles[0]!)
+    expect(where()).toBe(`/web/lists/${SEED_LIST_IDS.souterMon20Am}`)
+  })
+
   it('a search for CQY9304 lists the same three Bookings; Clear search restores the view', () => {
     renderAt('/web/lists?q=CQY9304')
     const table = document.querySelector('[data-shot="web-lookback-search"]') as HTMLElement
@@ -125,5 +136,17 @@ describe('the week strip marks submitted blocks (US-07.2.1)', () => {
     useAppStore.setState({ schedule: { ...s.schedule, lists: { ...s.schedule.lists, [pm.id]: { ...pm, state: 'AUTHORISED' } as typeof pm } } })
     rerender(<WeekStrip anaesthetistId={ANAE.souter} weekAnchorISO="2026-07-20" todayISO="2026-07-21" onPrevWeek={vi.fn()} onNextWeek={vi.fn()} onOpenList={vi.fn()} />)
     expect(document.querySelector(`[data-slot-id="${pm.slotId}"]`)).toBeNull()
+  })
+  it('draws a hatched (Unavailable) session hatched, through blockFill (UI unification U6, bug 7)', () => {
+    const s = useAppStore.getState()
+    const hatched = Object.values(s.masters.slotStatuses).find((st) => st.treatment === 'hatched')!
+    const listSlots = new Set(Object.values(s.schedule.lists).map((l) => l.slotId))
+    const slot = Object.values(s.schedule.slots).find(
+      (sl) => sl.anaesthetistId === ANAE.souter && sl.dateISO >= '2026-07-20' && sl.dateISO <= '2026-07-26' && sl.session !== 'OOH' && !listSlots.has(sl.id),
+    )!
+    useAppStore.setState({ schedule: { ...s.schedule, slots: { ...s.schedule.slots, [slot.id]: { ...slot, status: hatched.key } } } })
+    render(<WeekStrip anaesthetistId={ANAE.souter} weekAnchorISO="2026-07-20" todayISO="2026-07-21" onPrevWeek={vi.fn()} onNextWeek={vi.fn()} onOpenList={vi.fn()} />)
+    const block = document.querySelector(`[data-slot-id="${slot.id}"]`) as HTMLElement
+    expect(block.style.background).toContain('repeating-linear-gradient')
   })
 })

@@ -15,7 +15,7 @@ import { drSurname, LIST_STATE_LABELS, locationName, pairingLine, slotTimeRange,
 import { surnameFirst } from '../util'
 import { ConflictPanel } from './conflicts/ConflictPanel'
 import { SidePanel } from './SidePanel'
-import { DRAWER_ACTION, DRAWER_ACTION_PRIMARY, DrawerLink, Row, Section } from './drawerParts'
+import { DRAWER_ACTION, DRAWER_ACTION_PRIMARY, DrawerLink, Section } from './drawerParts'
 import { EditListSheet } from '../flows/EditListSheet'
 import { ReassignListFlow } from '../flows/ReassignListFlow'
 import { PhoneAdviceBooking } from '../flows/PhoneAdviceBooking'
@@ -28,7 +28,7 @@ import type { EffectiveSlotTimes } from '../../../domain/slots'
 import { surgeonProfilePath } from '../mastersPaths'
 import { isOutOfHours, sessionText } from '../../../domain/outOfHours'
 import { CLOSE_OUT_OF_HOURS } from '../../../shared/outOfHoursTerms'
-import { Button, FormError, TextAction } from '../../../shared/ui'
+import { Button, DefList, DefRow, FormError, TextAction } from '../../../shared/ui'
 import { Notice } from '../../../shared/ui/Notice'
 import { EmptyState } from '../../../shared/ui/EmptyState'
 
@@ -168,28 +168,30 @@ function ListBody({
           <BookingMovedHereLine listId={list.id} />
 
           <Section label="Session">
-            <Row label="Times">
-              {slotTimeRange(times)}
-              <span style={{ marginLeft: 8, fontSize: 12, color: neutral.mist }}>{times.overridden ? 'Own times' : 'Default'}</span>
-            </Row>
-            <Row label="Hospital">{hospital}</Row>
-            <Row label="Surgeon">
-              {masters.surgeons[list.surgeonId] !== undefined ? (
-                <Link
-                  to={surgeonProfilePath(list.surgeonId)}
-                  onClick={onClose}
-                  data-shot="drawer-surgeon-link"
-                  className="aa-table-entity-link"
-                  style={{ color: accent.base }}
-                >
-                  <span className="aa-table-entity-link-title">{surgeon}</span>
-                </Link>
-              ) : (
-                surgeon
-              )}
-            </Row>
-            {list.notes !== undefined && list.notes.trim() !== '' && <Row label="Note">{list.notes}</Row>}
-            {list.recurringBookingId !== undefined && <Row label="Source">From a recurring booking</Row>}
+            <DefList>
+              <DefRow label="Times">
+                {slotTimeRange(times)}
+                <span style={{ marginLeft: 8, fontSize: 12, color: neutral.mist }}>{times.overridden ? 'Own times' : 'Default'}</span>
+              </DefRow>
+              <DefRow label="Hospital">{hospital}</DefRow>
+              <DefRow label="Surgeon">
+                {masters.surgeons[list.surgeonId] !== undefined ? (
+                  <Link
+                    to={surgeonProfilePath(list.surgeonId)}
+                    onClick={onClose}
+                    data-shot="drawer-surgeon-link"
+                    className="aa-table-entity-link"
+                    style={{ color: accent.base }}
+                  >
+                    <span className="aa-table-entity-link-title">{surgeon}</span>
+                  </Link>
+                ) : (
+                  surgeon
+                )}
+              </DefRow>
+              {list.notes !== undefined && list.notes.trim() !== '' && <DefRow label="Note">{list.notes}</DefRow>}
+              {list.recurringBookingId !== undefined && <DefRow label="Source">From a recurring booking</DefRow>}
+            </DefList>
           </Section>
 
           <Section label={`Bookings (${activeBookings.length})`}>
@@ -348,18 +350,20 @@ function EmptySessionDrawer({
         }
       >
           <Section label="Session">
-            <Row label="Status">
-              {displayStatusLabel(slot.status, statuses, true)}
-              {/* The office sets the anaesthetist's status here, a sickness phoned in included (catch-up Phase 32b). */}
-              <TextAction size="sm" flush shot="drawer-change-status" onClick={() => setSheet({ status: slot.id })} style={{ marginLeft: 10 }}>
-                Change status
-              </TextAction>
-            </Row>
-            <Row label="Times">
-              {slotTimeRange(times)}
-              <span style={{ marginLeft: 8, fontSize: 12, color: neutral.mist }}>{times.overridden ? 'Own times' : 'Default'}</span>
-            </Row>
-            {slot.note !== undefined && slot.note.trim() !== '' && <Row label="Note">{slot.note}</Row>}
+            <DefList>
+              <DefRow label="Status">
+                {displayStatusLabel(slot.status, statuses, true)}
+                {/* The office sets the anaesthetist's status here, a sickness phoned in included (catch-up Phase 32b). */}
+                <TextAction size="sm" flush shot="drawer-change-status" onClick={() => setSheet({ status: slot.id })} style={{ marginLeft: 10 }}>
+                  Change status
+                </TextAction>
+              </DefRow>
+              <DefRow label="Times">
+                {slotTimeRange(times)}
+                <span style={{ marginLeft: 8, fontSize: 12, color: neutral.mist }}>{times.overridden ? 'Own times' : 'Default'}</span>
+              </DefRow>
+              {slot.note !== undefined && slot.note.trim() !== '' && <DefRow label="Note">{slot.note}</DefRow>}
+            </DefList>
           </Section>
           {open ? (
             <div style={{ fontSize: 13, color: neutral.slate, lineHeight: '19px' }}>

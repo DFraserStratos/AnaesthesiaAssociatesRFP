@@ -3,13 +3,10 @@ import { neutral, radius, semantic } from '../../theme/tokens'
 import { controlStyle, FIELD_CLASS, FIELD_FILL, fieldControlStyle, type FieldFill, type FieldSize } from './fieldChrome'
 import { SlidingSegmentedControl, type SlidingSegmentLayout, type SlidingSegmentSize } from './SlidingSegmentedControl'
 
-export function FieldLabel({ children }: { children: ReactNode }) {
-  return (
-    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>
-      {children}
-    </div>
-  )
-}
+import { Eyebrow } from './Eyebrow'
+
+/** The 11/600 caps label above a field: the shared `Eyebrow` (UI unification U6), mist, as a `div`. */
+export const FieldLabel = Eyebrow
 
 /** `data-*` attributes a field passes through to its control (UI unification U1 "hooks travel"). */
 export type DataAttributes = { [key: `data-${string}`]: string | number | boolean | undefined }

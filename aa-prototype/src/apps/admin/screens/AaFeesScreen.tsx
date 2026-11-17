@@ -17,17 +17,12 @@ import {
 } from '../../../store'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { drSurname, formatCurrency, parseAmountOrNaN, plainDate, plural } from '../../../shared/format'
-import { cellStyle as cellFactory, headCellStyle as headFactory } from '../tableChrome'
+import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 import { Pill } from '../../../shared/ui/Pill'
-import { Button, FormError, IconButton, LineTabLink, LineTabs, TextField } from '../../../shared/ui'
+import { Button, Card, Eyebrow, FormError, IconButton, LineTabLink, LineTabs, PageHeader, TextField, visuallyHidden } from '../../../shared/ui'
 import { ResultLine } from '../../../shared/ui/ResultLine'
 
 export type AaFeesTab = 'invoices' | 'settings'
-
-const cellStyle = cellFactory()
-const headCellStyle = headFactory()
-const numCell = { ...cellStyle, textAlign: 'right' as const }
-const numHead = { ...headCellStyle, textAlign: 'right' as const }
 
 /** The worked example's BCTI count (US-10.3.1's acceptance example). */
 const EXAMPLE_BCTIS = 40
@@ -47,14 +42,18 @@ function dateLabel(iso: string | undefined): string {
 export function AaFeesScreen({ actor, tab }: { actor: Actor; tab: AaFeesTab }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>
-      <div>
-        <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>AA fee invoices</h1>
-        <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4, maxWidth: 780 }}>
-          AA invoices each anaesthetist its own fee once a month: fixed charges plus a charge for each
-          buyer-created tax invoice (BCTI) paid that month. It is a separate invoice, never taken out of a
-          payment to the anaesthetist.
-        </div>
-      </div>
+      <PageHeader
+        size="admin"
+        title="AA fee invoices"
+        subStyle={{ maxWidth: 780 }}
+        sub={
+          <>
+            AA invoices each anaesthetist its own fee once a month: fixed charges plus a charge for each
+            buyer-created tax invoice (BCTI) paid that month. It is a separate invoice, never taken out of a
+            payment to the anaesthetist.
+          </>
+        }
+      />
 
       <LineTabs label="AA fees">
         <LineTabLink active={tab === 'invoices'} to="/admin/billing/aa-fees">Fee invoices</LineTabLink>
@@ -116,7 +115,7 @@ function FeeInvoicesTab({ actor }: { actor: Actor }) {
 
   return (
     <div data-shot="admin-aa-fee-invoices" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <section style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden' }}>
+      <Card flush elevation="e1" style={{ overflow: 'hidden', gap: 0, display: 'block' }}>
         <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', borderBottom: `1px solid ${neutral.line}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <IconButton size={36} label="Previous month" onClick={() => step(-1)} disabled={month <= FIRST_MONTH}>
@@ -140,44 +139,42 @@ function FeeInvoicesTab({ actor }: { actor: Actor }) {
         </div>
         <ResultLine shot="aa-fee-run-result" line={result?.ok === true ? result.text : null} style={{ margin: '0 16px 12px' }} />
         <FormError message={result?.ok === false ? result.text : null} style={{ margin: '0 16px 12px' }} />
-        <div style={{ overflowX: 'auto' }}>
-          <table data-testid="aa-fee-preview" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
+        <TableShell label={`AA fee run, ${aaFeeMonthLabel(month)}`} density="compact" minWidth={720} bare tableData={{ 'data-testid': 'aa-fee-preview' }}>
             <thead>
               <tr>
-                <th style={headCellStyle}>Anaesthetist</th>
-                <th style={numHead}>BCTIs paid</th>
-                <th style={numHead}>Fixed</th>
-                <th style={numHead}>Per-BCTI</th>
-                <th style={numHead}>Fee (ex GST)</th>
-                <th style={headCellStyle}>Invoiced</th>
+                <Th>Anaesthetist</Th>
+                <Th align="right">BCTIs paid</Th>
+                <Th align="right">Fixed</Th>
+                <Th align="right">Per-BCTI</Th>
+                <Th align="right">Fee (ex GST)</Th>
+                <Th>Invoiced</Th>
               </tr>
             </thead>
             <tbody>
               {preview.map((row) => (
                 <tr key={row.anaesthetistId} data-testid={`aa-fee-preview-${row.anaesthetistId}`}>
-                  <td style={cellStyle}>{drSurname(row.anaesthetistName)}</td>
-                  <td style={numCell} className="mono">{row.bctiCount}</td>
-                  <td style={numCell} className="mono">{formatCurrency(row.fixedTotal)}</td>
-                  <td style={numCell} className="mono">{formatCurrency(row.perBctiTotal)}</td>
-                  <td style={{ ...numCell, fontWeight: 600 }} className="mono">{formatCurrency(row.subtotal)}</td>
-                  <td style={cellStyle} className={row.invoice !== undefined ? 'mono' : undefined}>
+                  <Td>{drSurname(row.anaesthetistName)}</Td>
+                  <Td align="right" mono>{row.bctiCount}</Td>
+                  <Td align="right" mono>{formatCurrency(row.fixedTotal)}</Td>
+                  <Td align="right" mono>{formatCurrency(row.perBctiTotal)}</Td>
+                  <Td align="right" mono bold>{formatCurrency(row.subtotal)}</Td>
+                  <Td mono={row.invoice !== undefined}>
                     {row.invoice !== undefined ? row.invoice.invoiceNumber : <span style={{ color: neutral.mist }}>Not yet</span>}
-                  </td>
+                  </Td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr>
-                <td style={{ ...cellStyle, borderBottom: 'none', color: neutral.slate }} colSpan={4}>
+                <Td colSpan={4} style={{ borderBottom: 'none', color: neutral.slate }}>
                   Still to invoice for {aaFeeMonthLabel(month)} (ex GST)
-                </td>
-                <td style={{ ...numCell, borderBottom: 'none', fontWeight: 700 }} className="mono">{formatCurrency(pendingTotal)}</td>
-                <td style={{ ...cellStyle, borderBottom: 'none' }} />
+                </Td>
+                <Td align="right" mono style={{ borderBottom: 'none', fontWeight: 700 }}>{formatCurrency(pendingTotal)}</Td>
+                <Td style={{ borderBottom: 'none' }} />
               </tr>
             </tfoot>
-          </table>
-        </div>
-      </section>
+        </TableShell>
+      </Card>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12.5, lineHeight: 1.5, color: neutral.slate, maxWidth: 780 }}>
         <span data-testid="aa-fee-count-rule">
@@ -196,25 +193,23 @@ function FeeInvoiceList({ invoices }: { invoices: AaFeeInvoiceRow[] }) {
   const masters = useAppStore((s) => s.masters)
   const [open, setOpen] = useState<string | null>(null)
   return (
-    <section style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden' }}>
-      <div style={{ padding: '14px 16px 10px', fontSize: 14, fontWeight: 700 }}>Every fee invoice</div>
+    <Card flush elevation="e1" title="Every fee invoice" style={{ overflow: 'hidden' }}>
       {invoices.length === 0 ? (
         <div style={{ padding: '0 16px 16px', fontSize: 13, color: neutral.mist }}>No fee invoices yet. Run a month above.</div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table data-testid="aa-fee-invoices" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 860 }}>
+        <TableShell label="Every fee invoice" density="compact" minWidth={860} bare tableData={{ 'data-testid': 'aa-fee-invoices' }}>
             <thead>
               <tr>
-                <th style={{ ...headCellStyle, width: 28 }} aria-label="Expand" />
-                <th style={headCellStyle}>Number</th>
-                <th style={headCellStyle}>Anaesthetist</th>
-                <th style={headCellStyle}>Month</th>
-                <th style={numHead}>BCTIs</th>
-                <th style={numHead}>Fee (ex GST)</th>
-                <th style={numHead}>GST</th>
-                <th style={numHead}>Total</th>
-                <th style={headCellStyle}>Raised</th>
-                <th style={headCellStyle}>Status</th>
+                <Th width={28}><span style={visuallyHidden}>Expand</span></Th>
+                <Th>Number</Th>
+                <Th>Anaesthetist</Th>
+                <Th>Month</Th>
+                <Th align="right">BCTIs</Th>
+                <Th align="right">Fee (ex GST)</Th>
+                <Th align="right">GST</Th>
+                <Th align="right">Total</Th>
+                <Th>Raised</Th>
+                <Th>Status</Th>
               </tr>
             </thead>
             <tbody>
@@ -223,52 +218,48 @@ function FeeInvoiceList({ invoices }: { invoices: AaFeeInvoiceRow[] }) {
                 const name = masters.anaesthetists[f.anaesthetistId]?.name ?? f.anaesthetistId
                 return (
                   <Fragment key={f.id}>
-                    <tr
+                    <ClickableRow
+                      align="top"
                       data-testid={`aa-fee-row-${f.invoiceNumber}`}
-                      className="aa-clickable-table-row"
-                      onClick={() => setOpen(expanded ? null : f.id)}
-                      style={{ background: expanded ? neutral.bg : undefined }}
+                      onOpen={() => setOpen(expanded ? null : f.id)}
+                      {...(expanded ? { style: { background: neutral.bg } } : {})}
                     >
-                      <td style={cellStyle}>
+                      <Td>
                         <button
                           type="button"
                           aria-expanded={expanded}
                           aria-label={`${expanded ? 'Hide' : 'Show'} ${f.invoiceNumber} details`}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setOpen(expanded ? null : f.id)
-                          }}
+                          onClick={() => setOpen(expanded ? null : f.id)}
                           style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', color: neutral.slate, display: 'inline-flex' }}
                         >
                           {expanded ? <ChevronDown size={16} aria-hidden /> : <ChevronRight size={16} aria-hidden />}
                         </button>
-                      </td>
-                      <td style={{ ...cellStyle, fontWeight: 600 }} className="mono">{f.invoiceNumber}</td>
-                      <td style={cellStyle}>{drSurname(name)}</td>
-                      <td style={cellStyle}>{aaFeeMonthLabel(f.monthISO)}</td>
-                      <td style={numCell} className="mono">{f.bctiCount}</td>
-                      <td style={numCell} className="mono">{formatCurrency(f.subtotal)}</td>
-                      <td style={numCell} className="mono">{formatCurrency(f.gst)}</td>
-                      <td style={{ ...numCell, fontWeight: 600 }} className="mono">{formatCurrency(f.total)}</td>
-                      <td style={cellStyle} className="mono">{dateLabel(f.raisedAtISO)}</td>
-                      <td style={cellStyle}><FeeStatusPill row={f} /></td>
-                    </tr>
+                      </Td>
+                      <Td mono bold>{f.invoiceNumber}</Td>
+                      <Td>{drSurname(name)}</Td>
+                      <Td>{aaFeeMonthLabel(f.monthISO)}</Td>
+                      <Td align="right" mono>{f.bctiCount}</Td>
+                      <Td align="right" mono>{formatCurrency(f.subtotal)}</Td>
+                      <Td align="right" mono>{formatCurrency(f.gst)}</Td>
+                      <Td align="right" mono bold>{formatCurrency(f.total)}</Td>
+                      <Td mono>{dateLabel(f.raisedAtISO)}</Td>
+                      <Td><FeeStatusPill row={f} /></Td>
+                    </ClickableRow>
                     {expanded && (
                       <tr data-testid={`aa-fee-detail-${f.invoiceNumber}`}>
-                        <td style={{ ...cellStyle, background: neutral.bg }} />
-                        <td colSpan={9} style={{ ...cellStyle, background: neutral.bg }}>
+                        <Td style={{ background: neutral.bg }} />
+                        <Td colSpan={9} style={{ background: neutral.bg }}>
                           <FeeInvoiceDetail row={f} />
-                        </td>
+                        </Td>
                       </tr>
                     )}
                   </Fragment>
                 )
               })}
             </tbody>
-          </table>
-        </div>
+        </TableShell>
       )}
-    </section>
+    </Card>
   )
 }
 
@@ -285,7 +276,7 @@ function FeeInvoiceDetail({ row }: { row: AaFeeInvoiceRow }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 1fr) minmax(320px, 1.4fr)', gap: 24, padding: '4px 0' }}>
       <div>
-        <DetailLabel>Lines (ex GST)</DetailLabel>
+        <Eyebrow>Lines (ex GST)</Eyebrow>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
           {row.lines.map((line, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12.5 }}>
@@ -304,7 +295,7 @@ function FeeInvoiceDetail({ row }: { row: AaFeeInvoiceRow }) {
         </div>
       </div>
       <div>
-        <DetailLabel>Counted BCTIs ({row.bctiCount})</DetailLabel>
+        <Eyebrow>Counted BCTIs ({row.bctiCount})</Eyebrow>
         {row.bctis.length === 0 ? (
           <div style={{ marginTop: 6, fontSize: 12.5, color: neutral.mist }}>No BCTIs paid in {aaFeeMonthLabel(row.monthISO)}: fixed charges only.</div>
         ) : (
@@ -312,19 +303,19 @@ function FeeInvoiceDetail({ row }: { row: AaFeeInvoiceRow }) {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th style={{ ...headCellStyle, background: 'transparent' }}>BCTI (ACCPAY)</th>
-                  <th style={{ ...headCellStyle, background: 'transparent' }}>Procedure invoice</th>
-                  <th style={{ ...headCellStyle, background: 'transparent' }}>Issued</th>
-                  <th style={{ ...headCellStyle, background: 'transparent' }}>Paid</th>
+                  <Th style={{ background: 'transparent' }}>BCTI (ACCPAY)</Th>
+                  <Th style={{ background: 'transparent' }}>Procedure invoice</Th>
+                  <Th style={{ background: 'transparent' }}>Issued</Th>
+                  <Th style={{ background: 'transparent' }}>Paid</Th>
                 </tr>
               </thead>
               <tbody>
                 {row.bctis.map((b) => (
                   <tr key={b.accPayId}>
-                    <td style={{ ...cellStyle, padding: '5px 10px' }} className="mono">{b.billNumber}</td>
-                    <td style={{ ...cellStyle, padding: '5px 10px' }} className="mono">{b.receivableInvoiceNumber}</td>
-                    <td style={{ ...cellStyle, padding: '5px 10px' }} className="mono">{dateLabel(b.issuedAtISO)}</td>
-                    <td style={{ ...cellStyle, padding: '5px 10px' }} className="mono">{dateLabel(b.receivablePaidAtISO)}</td>
+                    <Td mono style={{ padding: '5px 10px' }}>{b.billNumber}</Td>
+                    <Td mono style={{ padding: '5px 10px' }}>{b.receivableInvoiceNumber}</Td>
+                    <Td mono style={{ padding: '5px 10px' }}>{dateLabel(b.issuedAtISO)}</Td>
+                    <Td mono style={{ padding: '5px 10px' }}>{dateLabel(b.receivablePaidAtISO)}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -334,10 +325,6 @@ function FeeInvoiceDetail({ row }: { row: AaFeeInvoiceRow }) {
       </div>
     </div>
   )
-}
-
-function DetailLabel({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist }}>{children}</div>
 }
 
 // ---------------------------------------------------------------------------
@@ -399,11 +386,11 @@ function FeeSettingsTab({ actor }: { actor: Actor }) {
 
   return (
     <div data-shot="admin-aa-fee-settings" style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 680 }}>
-      <section style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-          <div style={{ fontSize: 14, fontWeight: 700 }}>Monthly fee schedule</div>
-          <Pill data-testid="aa-fee-sample">Sample schedule</Pill>
-        </div>
+      <Card
+        title="Monthly fee schedule"
+        aside={<Pill data-testid="aa-fee-sample">Sample schedule</Pill>}
+        style={{ gap: 14 }}
+      >
         <div style={{ fontSize: 12.5, lineHeight: 1.5, color: neutral.slate }}>
           A sample until AA's accountant supplies the real fixed charges. Amounts exclude GST; GST is added at
           the foot of each fee invoice. Changes apply from the next monthly run. Raised fee invoices keep the
@@ -411,9 +398,9 @@ function FeeSettingsTab({ actor }: { actor: Actor }) {
         </div>
 
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 36px', gap: 8, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist, marginBottom: 6 }}>
-            <span>Fixed item</span>
-            <span style={{ textAlign: 'right' }}>Amount (ex GST)</span>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 36px', gap: 8, marginBottom: 6 }}>
+            <Eyebrow as="span">Fixed item</Eyebrow>
+            <Eyebrow as="span" style={{ textAlign: 'right' }}>Amount (ex GST)</Eyebrow>
             <span />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -476,7 +463,7 @@ function FeeSettingsTab({ actor }: { actor: Actor }) {
             Save settings
           </Button>
         </div>
-      </section>
+      </Card>
     </div>
   )
 }

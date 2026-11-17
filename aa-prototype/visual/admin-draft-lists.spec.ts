@@ -113,3 +113,21 @@ test('A recurring booking for Dr Beaumont on Thursday AM, while she is away, mak
   await sheet.locator('[data-shot="recurring-booking-draft-lists"]').click()
   await expect(page.locator('tr[data-draft-list-row]', { hasText: 'Thu 23 Jul' })).toContainText('Recurring booking · Dr Beaumont unavailable')
 })
+
+test('Draft Lists by keyboard (UI unification U6, bug 3): Tab to a row handle past the rail\'s first five, Enter opens its drawer', async ({ page }) => {
+  await fresh(page, '/admin/draft-lists')
+  const sixth = page.locator('tr[data-draft-list-row]').nth(5)
+  const listId = await sixth.getAttribute('data-draft-list-row')
+  const handle = sixth.getByRole('button', { name: /^Open Draft List / })
+  await expect(handle).toHaveCount(1)
+  // Rows never take focus; the handle does.
+  await expect(sixth).not.toHaveAttribute('tabindex', /.*/)
+  // Tab in from the row above: its last control, then Tab lands on this row's handle.
+  await page.locator('tr[data-draft-list-row]').nth(4).getByRole('button').last().focus()
+  await page.keyboard.press('Tab')
+  await expect(handle).toBeFocused()
+  await page.keyboard.press('Enter')
+  const drawer = page.locator('[data-shot="admin-draft-list-drawer"]')
+  await expect(drawer).toBeVisible()
+  await expect(page.locator(`[data-testid="admin-list-drawer"][data-list-id="${listId}"]`)).toHaveCount(1)
+})

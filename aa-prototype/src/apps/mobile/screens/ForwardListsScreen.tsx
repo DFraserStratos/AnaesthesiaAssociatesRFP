@@ -32,9 +32,11 @@ import { listRowModel } from './listRowModel'
 import { dayHeading, drSurname } from '../../../shared/format'
 import { DockSpacer } from '../../../shared/ui/DockSpacer'
 import { resolveDisplayStatus } from '../../../shared'
-import { DayChip, LookbackDayView, LookbackResults, LookbackSearchRow } from './ListsLookback'
+import { LookbackDayView, LookbackResults, LookbackSearchRow } from './ListsLookback'
+import { DayChip } from '../../../shared/ui/DayChip'
 import { searchCountLine, useBookingSearch } from '../../../shared/schedule'
 import { EmptyState } from '../../../shared/ui/EmptyState'
+import { Eyebrow } from '../../../shared/ui/Eyebrow'
 
 type Filter = 'week' | 'month' | 'todo' | 'done'
 
@@ -302,7 +304,7 @@ export function ForwardListsScreen({
             {searchCountLine(results.total, shown, query)}
           </div>
         )}
-        {mode === 'day' && dayISO !== null && <DayChip dateISO={dayISO} onClose={() => onDayChange(null)} />}
+        {mode === 'day' && dayISO !== null && <DayChip dateISO={dayISO} onClose={() => onDayChange(null)} size="touch" testId="mobile-lists-day-chip" />}
         {mode === 'main' && <FilterPills value={filter} options={FILTERS} onSelect={setFilter} ariaLabel="Show Lists" size="lg" />}
       </div>
 
@@ -373,11 +375,9 @@ export function ForwardListsScreen({
   )
 }
 
-/** The design's day heading: 11px micro-caps in mist. */
+/** The design's day heading: the shared micro-caps `Eyebrow` in mist. */
 function DayHeading({ children }: { children: string }) {
   return (
-    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, margin: '18px 0 8px' }}>
-      {children}
-    </div>
+    <Eyebrow style={{ margin: '18px 0 8px' }}>{children}</Eyebrow>
   )
 }

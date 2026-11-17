@@ -325,11 +325,14 @@ export function DateStripCopy({ selected, onSelect }: { selected: string; onSele
   )
 }
 
+/** As `AvailabilityScreen`'s `cellStyle`: the fill through `blockFill` (UI unification U6, U23). */
 function cellStyle(key: DisplayKey, statuses: SlotStatusRecords): { bg: string; border: string; color: string } {
   const c = resolveDisplayStatus(key, statuses).visual
-  if (c.border !== undefined) return { bg: c.blockBackground, border: c.border, color: c.onTint }
-  if (c.treatment === 'hatched') return { bg: c.blockBackground, border: `1px solid ${neutral.line}`, color: c.onTint }
-  return { bg: c.tint, border: '1px solid transparent', color: c.onTint }
+  const fill = blockFill(c)
+  const bg = typeof fill.background === 'string' ? fill.background : c.blockBackground
+  if (typeof fill.border === 'string') return { bg, border: fill.border, color: c.onTint }
+  if (c.treatment === 'hatched') return { bg, border: `1px solid ${neutral.line}`, color: c.onTint }
+  return { bg, border: '1px solid transparent', color: c.onTint }
 }
 
 /** Colleague cards with AM / PM cells for one day. `moveTargets` turns open cells into the "Tap to move your List here" buttons. */
@@ -572,7 +575,7 @@ export function UpdatePromptCopy({ needRefresh, onReload, bottom }: { needRefres
 export function InstallCoachCopy({ ios, canInstall, onDismiss, onInstall }: { ios: boolean; canInstall: boolean; onDismiss: () => void; onInstall: () => void }) {
   const dismissBtn: CSSProperties = { flex: 'none', width: 44, height: 44, margin: -12, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'none', color: neutral.mist, cursor: 'pointer' }
   return (
-    <div style={{ marginTop: 16, background: neutral.surface, border: `1px solid ${accent.base}`, borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div style={{ marginTop: 16, background: neutral.surface, border: `1px solid ${accent.base}`, borderRadius: 14, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
         <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>Add to your home screen</span>
         <button type="button" aria-label="Dismiss the install tip" onClick={onDismiss} style={dismissBtn}>

@@ -8,7 +8,7 @@
  */
 
 import { useMemo, useState } from 'react'
-import { CalendarDays, ChevronRight, X } from 'lucide-react'
+import { CalendarDays, ChevronRight } from 'lucide-react'
 import { accent, elevation, neutral, radius } from '../../../theme/tokens'
 import { LIST_PROGRESS_LABEL } from '../../../domain/listProgress'
 import { listDaysFor, listsOnDayFor, useAppStore, type BookingSearchRow, type LookbackList } from '../../../store'
@@ -18,7 +18,7 @@ import { ProgressPill, useBookingWarnings, useSurface, WarningTriangle } from '.
 import { ListRow } from '../components'
 import { listRowModel } from './listRowModel'
 import { DAY_EMPTY, SEARCH_EMPTY, useFieldText, useLookbackBounds } from '../../../shared/schedule'
-import { dayWithYear, longDay, nhiBadge, shortDay, plural } from '../../../shared/format'
+import { longDay, nhiBadge, shortDay, plural } from '../../../shared/format'
 import { sessionText } from '../../../domain/outOfHours'
 import { OverlayHeader } from '../../../shared/surface/OverlayHeader'
 import { NameSearchBox } from '../../../shared/ui/NameSearchBox'
@@ -141,22 +141,6 @@ function DateSheetBody({ anaesthetistId, todayISO, selectedISO, onPick }: { anae
 // The day chip, the day view and the results
 // ---------------------------------------------------------------------------
 
-/** "Fri 13 Mar 2026" with a close glyph: one teal chip that ends the day view. */
-export function DayChip({ dateISO, onClose }: { dateISO: string; onClose: () => void }) {
-  const label = dayWithYear(dateISO)
-  return (
-    <button
-      type="button"
-      data-testid="mobile-lists-day-chip"
-      aria-label={`${longDay(dateISO)}. Close the day and go back to your Lists`}
-      onClick={onClose}
-      style={{ height: 44, minWidth: 44, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '0 10px 0 16px', borderRadius: radius.pill, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-    >
-      <span className="mono">{label}</span>
-      <X size={16} strokeWidth={2.4} aria-hidden />
-    </button>
-  )
-}
 
 export function LookbackDayView({ anaesthetistId, dateISO, todayISO, onOpenList }: { anaesthetistId: string; dateISO: string; todayISO: string; onOpenList: (listId: string) => void }) {
   const schedule = useAppStore((s) => s.schedule)

@@ -15,11 +15,11 @@ import type { Contract, PriceRange } from '../../../domain/types'
 import { formatRangeDate, formatRangePrice, parsePriceText, rangeInForce, rangeSpanText, rangesOf } from '../../../domain/billing/priceRanges'
 import { addPriceRange, deletePriceRange, editPriceRange, useAppStore, useToday, type Actor } from '../../../store'
 import { Button, FieldLabel } from '../../../shared'
-import { TextField } from '../../../shared/ui'
+import { TextField, visuallyHidden } from '../../../shared/ui'
+import { TableShell, Td, Th } from '../../../shared/table'
 import { Pill } from '../components/MasterPills'
-import { cellStyle, headCellStyle } from '../screens/masters/tableStyles'
 import { TextAction } from '../screens/masters/chrome'
-import { neutral, radius } from '../../../theme/tokens'
+import { neutral } from '../../../theme/tokens'
 
 /** The native date control is kept narrow so the table fits the 600px panel. */
 const DATE_WIDTH = 132
@@ -96,29 +96,28 @@ export function ContractPriceRanges({ contract, actor, onError }: { contract: Co
   const last = ranges.length <= 1
 
   return (
-    <div data-shot="contract-price-ranges" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div ref={tableRef} data-shot="contract-price-ranges" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
         <FieldLabel>Price ranges</FieldLabel>
         <span style={{ fontSize: 12, color: neutral.mist }}>The range in force on the procedure date gives the price.</span>
       </div>
-      <div ref={tableRef} style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflowX: 'auto', background: neutral.surface }}>
-        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+      <TableShell label="Price ranges" density="dense">
           <thead>
             <tr>
-              <th style={headCellStyle}>Start</th>
-              <th style={{ ...headCellStyle, textAlign: 'right' }}>Price (ex GST)</th>
-              <th style={headCellStyle}>In force</th>
-              <th style={{ ...headCellStyle, textAlign: 'right' }} aria-label="Actions" />
+              <Th>Start</Th>
+              <Th align="right">Price (ex GST)</Th>
+              <Th>In force</Th>
+              <Th align="right"><span style={visuallyHidden}>Actions</span></Th>
             </tr>
           </thead>
           <tbody>
             {ranges.map((r, i) => {
               const current = inForce?.startISO === r.startISO
-              const rowStyle = { ...cellStyle, verticalAlign: 'middle' as const, background: current ? neutral.sunken : undefined }
+              const rowStyle = { verticalAlign: 'middle' as const, ...(current ? { background: neutral.sunken } : {}) }
               if (editing === r.startISO) {
                 return (
                   <tr key={r.startISO} data-shot="price-range-row" data-range-start={r.startISO} onKeyDown={(e) => editKeys(e, r.startISO)}>
-                    <td style={rowStyle}>
+                    <Td style={rowStyle}>
                       <TextField
                         type="date"
                         label={`Start of the range from ${formatRangeDate(r.startISO)}`}
@@ -130,8 +129,8 @@ export function ContractPriceRanges({ contract, actor, onError }: { contract: Co
                         onChange={setDraftStart}
                         autoFocus
                       />
-                    </td>
-                    <td style={{ ...rowStyle, textAlign: 'right' }}>
+                    </Td>
+                    <Td align="right" style={rowStyle}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                         <TextField
                           label={`Price (ex GST) of the range from ${formatRangeDate(r.startISO)}`}
@@ -145,30 +144,30 @@ export function ContractPriceRanges({ contract, actor, onError }: { contract: Co
                           onChange={setDraftPrice}
                         />
                       </div>
-                    </td>
-                    <td style={rowStyle} />
-                    <td style={{ ...rowStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    </Td>
+                    <Td style={rowStyle} />
+                    <Td align="right" nowrap style={rowStyle}>
                       <span style={{ display: 'inline-flex', gap: 10 }}>
                         <TextAction onClick={() => saveEdit(r.startISO)}>Save</TextAction>
                         <TextAction onClick={() => cancelEdit(r.startISO)}>Cancel</TextAction>
                       </span>
-                    </td>
+                    </Td>
                   </tr>
                 )
               }
               return (
                 <tr key={r.startISO} data-shot="price-range-row" data-range-start={r.startISO} data-in-force={current ? 'today' : undefined}>
-                  <td style={rowStyle} className="mono">{formatRangeDate(r.startISO)}</td>
-                  <td style={{ ...rowStyle, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }} className="mono">
+                  <Td mono style={rowStyle}>{formatRangeDate(r.startISO)}</Td>
+                  <Td mono bold align="right" style={{ ...rowStyle, fontVariantNumeric: 'tabular-nums' }}>
                     {formatRangePrice(r.price)}
-                  </td>
-                  <td style={rowStyle}>
+                  </Td>
+                  <Td style={rowStyle}>
                     <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
                       <span style={{ color: neutral.slate, whiteSpace: 'nowrap' }}>{rangeSpanText(ranges, i)}</span>
                       {current && <Pill size="sm">In force today</Pill>}
                     </span>
-                  </td>
-                  <td style={{ ...rowStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  </Td>
+                  <Td align="right" nowrap style={rowStyle}>
                     <span style={{ display: 'inline-flex', gap: 10 }}>
                       <span data-action="edit" style={{ display: 'contents' }}>
                         <TextAction onClick={() => startEdit(r)} label={`Edit the range from ${formatRangeDate(r.startISO)}`}>Edit</TextAction>
@@ -183,22 +182,22 @@ export function ContractPriceRanges({ contract, actor, onError }: { contract: Co
                         </TextAction>
                       </span>
                     </span>
-                  </td>
+                  </Td>
                 </tr>
               )
             })}
             {inForce === null && ranges[0] !== undefined && (
               <tr>
-                <td colSpan={4} style={{ ...cellStyle, color: neutral.slate }}>
+                <Td colSpan={4} style={{ color: neutral.slate }}>
                   Not in force today: the first range starts {formatRangeDate(ranges[0].startISO)}.
-                </td>
+                </Td>
               </tr>
             )}
             <tr data-shot="price-range-add">
-              <td style={{ ...cellStyle, verticalAlign: 'middle', borderBottom: 'none' }}>
+              <Td style={{ verticalAlign: 'middle', borderBottom: 'none' }}>
                 <TextField type="date" label="New range start" hideLabel size="compact" mono width={DATE_WIDTH} value={newStart} onChange={setNewStart} />
-              </td>
-              <td style={{ ...cellStyle, verticalAlign: 'middle', textAlign: 'right', borderBottom: 'none' }}>
+              </Td>
+              <Td align="right" style={{ verticalAlign: 'middle', borderBottom: 'none' }}>
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <TextField
                     label="New range price (ex GST)"
@@ -213,16 +212,15 @@ export function ContractPriceRanges({ contract, actor, onError }: { contract: Co
                     onChange={setNewPrice}
                   />
                 </div>
-              </td>
-              <td colSpan={2} style={{ ...cellStyle, verticalAlign: 'middle', textAlign: 'right', borderBottom: 'none' }}>
+              </Td>
+              <Td colSpan={2} align="right" style={{ verticalAlign: 'middle', borderBottom: 'none' }}>
                 <Button variant="primary" size="compact" onClick={add}>
                   Add price range
                 </Button>
-              </td>
+              </Td>
             </tr>
           </tbody>
-        </table>
-      </div>
+      </TableShell>
       <span style={{ fontSize: 12, color: neutral.mist }}>
         A start may be in the past: every Procedure on this Contract that nothing holds re-prices at once. Invoices already raised stay as they are.
       </span>

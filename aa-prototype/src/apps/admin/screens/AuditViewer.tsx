@@ -1,6 +1,6 @@
 import { contractLabel } from '../../../shared/contracts'
 import { useMemo, useState } from 'react'
-import { accent, neutral, radius } from '../../../theme/tokens'
+import { accent, neutral } from '../../../theme/tokens'
 import { useAppStore } from '../../../store'
 import {
   actionLabel,
@@ -10,11 +10,9 @@ import {
   sortAuditNewestFirst,
   summariseAuditChanges,
 } from '../../../shared/audit'
-import { cellStyle as cellFactory, headCellStyle as headFactory } from '../tableChrome'
-import { FilterDateInput, SelectField } from '../../../shared/ui'
+import { FilterDateInput, PageHeader, SelectField } from '../../../shared/ui'
+import { TableShell, Td, Th } from '../../../shared/table'
 
-const cellStyle = cellFactory(true)
-const headCellStyle = headFactory(true)
 
 const SOURCES = ['all', 'anaesthetist', 'office', 'integration', 'system', 'demo'] as const
 
@@ -87,12 +85,7 @@ export function AuditViewer() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>
-      <div>
-        <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>Audit</h1>
-        <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4 }}>
-          Every recorded action, with the acting role and source. Nothing here is ever edited or deleted.
-        </div>
-      </div>
+      <PageHeader size="admin" title="Audit" sub="Every recorded action, with the acting role and source. Nothing here is ever edited or deleted." />
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <SelectField label="Entity type" size="compact" fill="surface" value={entityType} onChange={setEntityType}>
@@ -110,43 +103,41 @@ export function AuditViewer() {
         <span style={{ fontSize: 12.5, color: neutral.mist, paddingBottom: 9 }}>{filtered.length} entries</span>
       </div>
 
-      <div style={{ overflowX: 'auto', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}>
-        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 900 }}>
+      <TableShell label="Audit" density="dense" minWidth={900}>
           <thead>
             <tr>
               {['At', 'Action', 'Who', 'Role · source', 'Entity', 'Change'].map((h) => (
-                <th key={h} style={headCellStyle}>{h}</th>
+                <Th key={h}>{h}</Th>
               ))}
             </tr>
           </thead>
           <tbody>
             {shown.length === 0 && (
               <tr>
-                <td style={cellStyle} colSpan={6}>No matching audit entries.</td>
+                <Td colSpan={6}>No matching audit entries.</Td>
               </tr>
             )}
             {shown.map((entry) => {
               const change = summariseAuditChanges(auditFieldChanges(entry, names))
               return (
                 <tr key={entry.id}>
-                  <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{formatAuditStamp(entry.atISO)}</td>
-                  <td style={cellStyle}>
+                  <Td mono nowrap>{formatAuditStamp(entry.atISO)}</Td>
+                  <Td>
                     <div style={{ fontWeight: 600, color: accent.pressed }}>{actionLabel(entry.action)}</div>
                     <div className="mono" style={{ fontSize: 11, color: neutral.mist }}>{entry.action}</div>
-                  </td>
-                  <td style={cellStyle}>{entry.who}</td>
-                  <td style={cellStyle}>{entry.role} · {entry.source}</td>
-                  <td style={cellStyle}>
+                  </Td>
+                  <Td>{entry.who}</Td>
+                  <Td>{entry.role} · {entry.source}</Td>
+                  <Td>
                     <div style={{ fontSize: 12 }}>{entry.entityType}</div>
                     <div className="mono" style={{ fontSize: 11, color: neutral.mist }}>{entityName(entry.entityType, entry.entityId)}</div>
-                  </td>
-                  <td className="mono" style={{ ...cellStyle, fontSize: 11.5, maxWidth: 300, color: neutral.slate }}>{change}</td>
+                  </Td>
+                  <Td mono style={{ fontSize: 11.5, maxWidth: 300, color: neutral.slate }}>{change}</Td>
                 </tr>
               )
             })}
           </tbody>
-        </table>
-      </div>
+      </TableShell>
       {filtered.length > CAP && (
         <div style={{ fontSize: 12, color: neutral.mist }}>Showing the {CAP} most recent of {filtered.length} matching entries. Narrow the filters to see older ones.</div>
       )}

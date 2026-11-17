@@ -15,7 +15,7 @@ import { pairingLine } from '../../../../shared/format'
 import { DRAFT_LISTS } from '../../../../shared/scheduleTerms'
 import { neutral, radius, semantic } from '../../../../theme/tokens'
 import { CountBadge } from '../../../../shared/ui/CountBadge'
-import { TextAction } from '../../../../shared/ui'
+import { Card, TextAction } from '../../../../shared/ui'
 import { BookingCount, UnassignedPill, WaitingTime } from './DraftListParts'
 import { sessionText } from '../../../../domain/outOfHours'
 import { EmptyState } from '../../../../shared/ui/EmptyState'
@@ -31,15 +31,16 @@ export function DraftListsCard({ onOpenDraftList, onSeeAll }: { onOpenDraftList:
   const shown = waiting.slice(0, RAIL_ROWS)
 
   return (
-    <section
-      data-shot="admin-draft-lists-rail"
-      aria-labelledby="admin-draft-lists-heading"
-      style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}
+    <Card
+      shot="admin-draft-lists-rail"
+      headingId="admin-draft-lists-heading"
+      title={
+        <>
+          {DRAFT_LISTS}
+          <CountBadge count={waiting.length} tone="warning" mono srNoun="waiting" />
+        </>
+      }
     >
-      <h2 id="admin-draft-lists-heading" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600 }}>
-        {DRAFT_LISTS}
-        <CountBadge count={waiting.length} tone="warning" mono srNoun="waiting" />
-      </h2>
       {waiting.length === 0 && <EmptyState>No {DRAFT_LISTS} waiting.</EmptyState>}
       {shown.length > 0 && (
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -70,6 +71,6 @@ export function DraftListsCard({ onOpenDraftList, onSeeAll }: { onOpenDraftList:
           See all {waiting.length}
         </TextAction>
       )}
-    </section>
+    </Card>
   )
 }

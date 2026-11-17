@@ -1,0 +1,154 @@
+/**
+ * The one table kit (UI unification U6, README group U10): header cell, body cell, group row and the
+ * density that sizes them. The header is the Admin Review mockup's (`Admin Review.dc.html` 77 to 87):
+ * 11/600/0.06em mist caps on the `neutral.bg` band over a `line` rule; body rows are divided by
+ * `sunken` (question 19). Web tables are `comfortable` (12px 20px, today's look); admin tables keep
+ * their tighter padding and size as `compact` (10px 10px at 13) and `dense` (8px 10px at 12.5, the
+ * audit and master tables), so no row changes height. Lives in `src/shared` so web and mobile can
+ * import it and `pwaPurity.test.ts` holds.
+ */
+
+import { createContext, useContext, type CSSProperties, type ReactNode } from 'react'
+import { neutral, type as typeScale } from '../../theme/tokens'
+import type { DataAttributes } from '../ui/Field'
+
+export type TableDensity = 'comfortable' | 'compact' | 'dense'
+export type CellAlign = 'left' | 'right' | 'center'
+
+export const TableDensityContext = createContext<TableDensity>('comfortable')
+
+/** Clickable rows set this to `middle`, so their cells centre beside the row's handle. */
+export const RowAlignContext = createContext<'top' | 'middle' | undefined>(undefined)
+
+const PADDING: Record<TableDensity, string> = { comfortable: '12px 20px', compact: '10px 10px', dense: '8px 10px' }
+const BODY_SIZE: Record<TableDensity, number | undefined> = { comfortable: undefined, compact: 13, dense: 12.5 }
+
+/** A body cell's style at a density: the padding, the `sunken` divider, left and top (middle on web). */
+export function densityCellStyle(density: TableDensity): CSSProperties {
+  const comfortable = density === 'comfortable'
+  return {
+    padding: PADDING[density],
+    ...(BODY_SIZE[density] !== undefined ? { fontSize: BODY_SIZE[density] } : {}),
+    borderBottom: `1px solid ${neutral.sunken}`,
+    textAlign: 'left',
+    verticalAlign: comfortable ? 'middle' : 'top',
+    ...(comfortable ? { whiteSpace: 'nowrap' } : {}),
+  }
+}
+
+/** A header cell's style at a density: the mockup's micro caps on the `bg` band over a `line` rule. */
+export function densityHeadCellStyle(density: TableDensity): CSSProperties {
+  return {
+    padding: PADDING[density],
+    fontSize: typeScale.micro.size,
+    fontWeight: typeScale.micro.weight,
+    letterSpacing: typeScale.micro.tracking,
+    textTransform: 'uppercase',
+    color: neutral.mist,
+    background: neutral.bg,
+    borderBottom: `1px solid ${neutral.line}`,
+    textAlign: 'left',
+    verticalAlign: density === 'comfortable' ? 'middle' : 'top',
+    ...(density === 'comfortable' ? { whiteSpace: 'nowrap' } : {}),
+  }
+}
+
+/** A column header (`scope="col"`). `nowrap` keeps a short head like "B · T · M" on one line. */
+export function Th({
+  children,
+  align,
+  width,
+  nowrap,
+  style,
+  ...data
+}: {
+  children?: ReactNode
+  align?: CellAlign
+  width?: number | string
+  nowrap?: boolean
+  style?: CSSProperties
+} & DataAttributes) {
+  const density = useContext(TableDensityContext)
+  return (
+    <th
+      scope="col"
+      {...data}
+      style={{
+        ...densityHeadCellStyle(density),
+        ...(align !== undefined ? { textAlign: align } : {}),
+        ...(width !== undefined ? { width } : {}),
+        ...(nowrap === true ? { whiteSpace: 'nowrap' } : nowrap === false ? { whiteSpace: 'normal' } : {}),
+        ...style,
+      }}
+    >
+      {children}
+    </th>
+  )
+}
+
+/** A body cell: `mono` for figures and codes, `bold` 600, `clip` an ellipsis, `nowrap` on one line. */
+export function Td({
+  children,
+  align,
+  mono,
+  bold,
+  clip,
+  nowrap,
+  colSpan,
+  style,
+  ...data
+}: {
+  children?: ReactNode
+  align?: CellAlign
+  mono?: boolean
+  bold?: boolean
+  clip?: boolean
+  nowrap?: boolean
+  colSpan?: number
+  style?: CSSProperties
+} & DataAttributes) {
+  const density = useContext(TableDensityContext)
+  const rowAlign = useContext(RowAlignContext)
+  return (
+    <td
+      {...data}
+      colSpan={colSpan}
+      className={mono === true ? 'mono' : undefined}
+      style={{
+        ...densityCellStyle(density),
+        ...(rowAlign !== undefined ? { verticalAlign: rowAlign } : {}),
+        ...(align !== undefined ? { textAlign: align } : {}),
+        ...(bold === true ? { fontWeight: 600 } : {}),
+        ...(nowrap === true ? { whiteSpace: 'nowrap' } : nowrap === false ? { whiteSpace: 'normal' } : {}),
+        ...(clip === true ? { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } : {}),
+        ...style,
+      }}
+    >
+      {children}
+    </td>
+  )
+}
+
+/** A heading row across the table ("Earlier, not yet authorised"), always `th scope="colgroup"`. */
+export function GroupRow({ span, children, style, ...data }: { span: number; children: ReactNode; style?: CSSProperties } & DataAttributes) {
+  const density = useContext(TableDensityContext)
+  return (
+    <tr {...data} style={{ background: neutral.bg }}>
+      <th
+        colSpan={span}
+        scope="colgroup"
+        style={{
+          textAlign: 'left',
+          padding: density === 'comfortable' ? '10px 20px' : PADDING[density],
+          fontSize: 13,
+          fontWeight: 600,
+          color: neutral.slate,
+          borderBottom: `1px solid ${neutral.line}`,
+          ...style,
+        }}
+      >
+        {children}
+      </th>
+    </tr>
+  )
+}

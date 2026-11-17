@@ -1,6 +1,7 @@
 /**
  * The parts the Admin List drawers share (catch-up Phase 32c): a labelled
- * section, a label and value row, the small teal-text link button and the
+ * section (its label the shared `Eyebrow`; its label and value rows the shared
+ * `DefRow` in a `DefList` since UI unification U6), the small teal-text link button and the
  * footer actions' layout styles (the actions themselves are compact `Button`s
  * since UI unification U5 folded `ActionBtn` into it). Used inside `SidePanel`
  * by the Draft List drawer and by SlotDrawer's List and empty-session drawers
@@ -9,21 +10,14 @@
 
 import type { CSSProperties } from 'react'
 import { accent, neutral, radius } from '../../../theme/tokens'
+import { Eyebrow } from '../../../shared/ui'
 
+/** A drawer section: its label is an `h3` Eyebrow under the drawer's `h2`, reachable by heading (U6). */
 export function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>{label}</div>
+      <Eyebrow as="h3">{label}</Eyebrow>
       {children}
-    </div>
-  )
-}
-
-export function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-      <span style={{ width: 80, flex: 'none', fontSize: 12, color: neutral.mist }}>{label}</span>
-      <span style={{ flex: 1, fontSize: 14, color: neutral.ink }}>{children}</span>
     </div>
   )
 }

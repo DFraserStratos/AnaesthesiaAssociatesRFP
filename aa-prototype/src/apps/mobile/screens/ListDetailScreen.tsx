@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeftRight, BellRing, Lock, MoreHorizontal, Plus } from 'lucide-react'
+import { ArrowLeftRight, BellRing, Lock, MoreHorizontal } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic, surface } from '../../../theme/tokens'
 import { motion } from '../../../theme/motion'
 import { BackLink } from '../../../shared/ui/BackLink'
@@ -9,6 +9,7 @@ import { isAssignedList } from '../../../domain/draftLists'
 import { bookingContractCue, editRefusal, officeAlertRefusal, useAppStore, useToday, type Actor, useListTimes } from '../../../store'
 import { DockSpacer, StatusChip, useListWarnings, WarningTriangle } from '../../../shared'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
+import { AddRowButton } from '../../../shared/ui/AddRowButton'
 import { ListOptionsSheet, TickBadge, type ListOption } from '../components'
 import { ListInvoices, useListInvoices } from '../../../shared/schedule'
 import { LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
@@ -306,29 +307,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           </section>
         )}
 
-        {canEdit && (
-          <button
-            onClick={onAddBooking}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              padding: '14px 16px',
-              background: neutral.surface,
-              border: `1.5px dashed ${neutral.lineStrong}`,
-              borderRadius: radius.card,
-              fontFamily: 'inherit',
-              color: accent.base,
-              fontSize: 15,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            <Plus size={18} strokeWidth={2.4} aria-hidden />
-            Add a booking
-          </button>
-        )}
+        {canEdit && <AddRowButton size="touch" onClick={onAddBooking}>Add a booking</AddRowButton>}
         {/* 96 - 10 for the column gap, so the reserved space is unchanged. */}
         <DockSpacer height="calc(var(--aa-inset-bottom, 34px) + 86px)" />
       </div>

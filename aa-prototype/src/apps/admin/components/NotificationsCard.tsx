@@ -15,7 +15,7 @@ import { activeNotificationCount, latestNotifications, resolveNotification, useA
 import { neutral, radius } from '../../../theme/tokens'
 import { CountBadge } from '../../../shared/ui/CountBadge'
 import { motion } from '../../../theme/motion'
-import { FormError, TextAction, TickBadge, TickButton } from '../../../shared/ui'
+import { Card, FormError, TextAction, TickBadge, TickButton } from '../../../shared/ui'
 import { stampText } from '../../../shared/format'
 import { EmptyState } from '../../../shared/ui/EmptyState'
 
@@ -129,15 +129,17 @@ export function NotificationsCard({
   const { resolving, resolve, error } = useResolveWithTick(actor, () => heading.current?.focus())
   const office = actor.role === 'office'
   return (
-    <section
-      data-shot="admin-notifications-rail"
-      aria-labelledby="admin-notifications-heading"
-      style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}
+    <Card
+      shot="admin-notifications-rail"
+      headingId="admin-notifications-heading"
+      headingRef={heading}
+      title={
+        <>
+          Notifications
+          <ActiveCount count={count} shot="admin-notifications-count" />
+        </>
+      }
     >
-      <h2 id="admin-notifications-heading" ref={heading} tabIndex={-1} style={{ margin: 0, fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, outline: 'none' }}>
-        Notifications
-        <ActiveCount count={count} shot="admin-notifications-count" />
-      </h2>
       {rows.length === 0 && (
         <EmptyState>Nothing waiting. When an anaesthetist moves a List or alerts the office, it shows here until someone ticks it.</EmptyState>
       )}
@@ -188,6 +190,6 @@ export function NotificationsCard({
           </TextAction>
         )}
       </div>
-    </section>
+    </Card>
   )
 }

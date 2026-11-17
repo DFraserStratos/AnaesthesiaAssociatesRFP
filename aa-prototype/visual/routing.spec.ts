@@ -153,7 +153,7 @@ test('admin: an invoice document is a URL that survives a refresh', async ({ pag
   await page.goto('/admin/invoices')
   await page.waitForLoadState('networkidle')
 
-  await page.getByRole('button', { name: 'View →' }).first().click()
+  await page.getByRole('button', { name: /^View invoice / }).first().click()
   await expect(page).toHaveURL(/\/admin\/invoices\/[^/]+$/)
   const invoiceURL = page.url()
 

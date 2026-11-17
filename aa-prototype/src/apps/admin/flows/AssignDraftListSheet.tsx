@@ -17,7 +17,7 @@ import { neutral, radius } from '../../../theme/tokens'
 import { assignDraftList, bookingCountsByList, useAppStore, type Actor } from '../../../store'
 import { useDemoTriggerContextWhile } from '../../../shared/demoTriggers'
 import { DRAFT_ASSIGN_WARNINGS, isDraftList } from '../../../domain/draftLists'
-import { Button, FormError, SuccessOverlay } from '../../../shared/ui'
+import { Button, DefList, DefRow, FormError, SuccessOverlay } from '../../../shared/ui'
 import { Notice } from '../../../shared/ui/Notice'
 import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { locationName, pairingLine } from '../../../shared/format'
@@ -125,12 +125,14 @@ export function AssignDraftListSheet({ open, listId, actor, initialAnaesthetistI
         ) : (
           <>
             <div data-shot="assign-draft-list-confirm" style={{ display: 'flex', flexDirection: 'column', gap: 8, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 14 }}>
-              <ConfirmRow label="Anaesthetist">{surnameFirst(target?.name ?? targetId)}</ConfirmRow>
-              <ConfirmRow label="Session">{format(parseISO(list.dateISO), 'EEE d MMM')} · {sessionText(list.session)}</ConfirmRow>
-              <ConfirmRow label="Hospital">{hospitalName}</ConfirmRow>
-              <ConfirmRow label="Surgeon">{masters.surgeons[list.surgeonId]?.name ?? list.surgeonId}</ConfirmRow>
-              <ConfirmRow label="Kind">{LIST_KIND_LABELS[list.kind].label}</ConfirmRow>
-              {list.notes !== undefined && list.notes.trim() !== '' && <ConfirmRow label="Note">{list.notes}</ConfirmRow>}
+              <DefList>
+                <DefRow label="Anaesthetist">{surnameFirst(target?.name ?? targetId)}</DefRow>
+                <DefRow label="Session">{format(parseISO(list.dateISO), 'EEE d MMM')} · {sessionText(list.session)}</DefRow>
+                <DefRow label="Hospital">{hospitalName}</DefRow>
+                <DefRow label="Surgeon">{masters.surgeons[list.surgeonId]?.name ?? list.surgeonId}</DefRow>
+                <DefRow label="Kind">{LIST_KIND_LABELS[list.kind].label}</DefRow>
+                {list.notes !== undefined && list.notes.trim() !== '' && <DefRow label="Note">{list.notes}</DefRow>}
+              </DefList>
               {onEdit !== undefined && (
                 <button type="button" onClick={onEdit} style={{ alignSelf: 'flex-start', border: 'none', background: 'none', padding: 0, color: neutral.slate, textDecoration: 'underline', fontFamily: 'inherit', fontSize: 12.5, cursor: 'pointer' }}>
                   Edit hospital, surgeon or note
@@ -155,14 +157,5 @@ export function AssignDraftListSheet({ open, listId, actor, initialAnaesthetistI
         </SuccessOverlay>
       ) : null}
     </Overlay>
-  )
-}
-
-function ConfirmRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', gap: 10, fontSize: 14 }}>
-      <span style={{ width: 96, flex: 'none', fontSize: 12, color: neutral.mist, paddingTop: 2 }}>{label}</span>
-      <span style={{ color: neutral.ink }}>{children}</span>
-    </div>
   )
 }

@@ -30,7 +30,7 @@ import { roundToCents } from '../../../domain/billing/money'
 import { dayMicroCap, formatCurrency, hhmm, locationName, slotTimeRange } from '../../../shared/format'
 import { HistorySheet } from '../../../shared/booking'
 import { ConfirmSheet, OverlayHeader, SheetActions } from '../../../shared/surface'
-import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
+import { TableShell, Td, Th } from '../../../shared/table'
 import { NEEDS_PRICE_LABEL } from '../../../domain/billing/priceRanges'
 import { lockViewFor } from '../../../domain/billing/lock'
 import { reviewFlagsForBooking, type ContractChangeRecord, type ReviewFlag } from '../../../domain/billing/reviewFlags'
@@ -47,7 +47,7 @@ import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { allocationNote, inDisplayOrder } from '../../../domain/billing/multiProcedure'
-import { FormError, Notice, Pill, ResultLine, TickButton } from '../../../shared/ui'
+import { FormError, Notice, PageHeader, Pill, ResultLine, StatTile, TickButton } from '../../../shared/ui'
 import { TextAction } from '../../../shared/ui/TextAction'
 import { ClearWarningButton } from '../../../shared/warnings'
 
@@ -63,10 +63,6 @@ interface ReviewScreenProps {
   onOpenBooking?: (dateISO: string, bookingId: string) => void
 }
 
-const cellStyle = adminCell()
-const headCellStyle = adminHead()
-const nowrapCell = { ...cellStyle, whiteSpace: 'nowrap' as const }
-const numCell = { ...nowrapCell, textAlign: 'right' as const }
 const REVIEW_NOWRAP_HEADINGS = new Set(['Time', 'Times', 'B · T · M', 'Units', 'Fee'])
 
 /**
@@ -252,16 +248,21 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
       </div>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>{hospitalName} · {sessionText(list.session)} list</h1>
-          <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4 }}>
+      <PageHeader
+        size="admin"
+        wrap
+        style={{ alignItems: 'flex-start' }}
+        actionsStyle={{ marginLeft: 'auto', maxWidth: '100%' }}
+        title={<>{hospitalName} · {sessionText(list.session)} list</>}
+        sub={
+          <>
             {anaesthetist !== undefined ? anaesthetist.name : list.anaesthetistId}
             {surgeon !== undefined ? ` · ${surgeon.name}` : ''}
             {surgeonSpecialtyLabel(masters, surgeon) !== '' ? ` · ${surgeonSpecialtyLabel(masters, surgeon)}` : ''}
             {` · ${dayLabel}${times !== undefined ? ` · ${slotTimeRange(times)}` : ''}`}
-          </div>
-        </div>
+          </>
+        }
+        actions={
         <div style={{ display: 'flex', flex: '0 0 auto', flexDirection: 'column', alignItems: 'flex-end', gap: 10, marginLeft: 'auto', maxWidth: '100%' }}>
           <div data-testid="review-queue-navigation" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
             <Button
@@ -293,7 +294,8 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
             {changed !== null && <ChangedSinceSubmittedPill cue={changed} />}
           </div>
         </div>
-      </div>
+        }
+      />
 
       {/* Authorised banner (choreography) */}
       {authorised && (
@@ -322,21 +324,26 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
 
       {/* Summary strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-        <Tile label="Bookings" value={String(rows.length)} />
-        <Tile label="Total units" value={String(listTotals.units)} />
-        <Tile label="Total fee" value={listFeeText} />
-        <Tile label="Flags" value={String(allFlags.length)} tone={allFlags.length > 0 ? 'warn' : undefined} sub="to check before authorising" />
+        <StatTile variant="outlined" label="Bookings" value={String(rows.length)} />
+        <StatTile variant="outlined" label="Total units" value={String(listTotals.units)} />
+        <StatTile variant="outlined" label="Total fee" value={listFeeText} />
+        <StatTile variant="outlined" label="Flags" value={String(allFlags.length)} {...(allFlags.length > 0 ? { tone: 'warning' as const } : {})} sub="to check before authorising" />
       </div>
 
       <FormError message={error} />
 
       {/* Review table */}
-      <div data-testid="review-detail-table-shell" style={{ overflowX: 'auto', opacity: authorised ? 0.72 : 1, transition: 'opacity 300ms', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}>
-        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 1120 }}>
+      <TableShell
+        testId="review-detail-table-shell"
+        label={`${hospitalName} · ${sessionText(list.session)} list`}
+        density="compact"
+        minWidth={1120}
+        style={{ opacity: authorised ? 0.72 : 1, transition: 'opacity 300ms' }}
+      >
           <thead>
             <tr>
               {['Time', 'Patient', 'Billed to', 'Procedures', 'Times', 'B · T · M', 'Units', 'Fee', 'Flags'].map((h, i) => (
-                <th key={h} style={{ ...headCellStyle, textAlign: i === 6 || i === 7 ? 'right' : 'left', whiteSpace: REVIEW_NOWRAP_HEADINGS.has(h) ? 'nowrap' : undefined }}>{h}</th>
+                <Th key={h} align={i === 6 || i === 7 ? 'right' : 'left'} {...(REVIEW_NOWRAP_HEADINGS.has(h) ? { nowrap: true } : {})}>{h}</Th>
               ))}
             </tr>
           </thead>
@@ -346,8 +353,8 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
               const btm = primaryView?.fee.btm
               return (
                 <tr key={booking.id}>
-                  <td className="mono" style={nowrapCell}>{booking.scheduledTime ?? '·'}</td>
-                  <td style={cellStyle}>
+                  <Td mono nowrap>{booking.scheduledTime ?? '·'}</Td>
+                  <Td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontWeight: 600, fontSize: 13.5 }}>{patient?.name ?? 'Unknown'}</span>
                       <WarningTriangle warnings={warningsByBooking.get(booking.id) ?? []} size="sm" />
@@ -372,8 +379,8 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
                     <div className="mono" style={{ fontSize: 11.5, color: neutral.mist }}>{patient?.nhi ?? 'NHI pending'}</div>
                     {alert !== undefined && <AlertLine alert={alert} onResolve={() => run(resolveNotification(useAppStore, actor, alert.id))} disabled={authorised} />}
                     <OpenWarnings warnings={warningsByBooking.get(booking.id) ?? []} patientName={patient?.name ?? 'this Booking'} disabled={authorised} onClear={(w) => run(clearWarning(useAppStore, actor, w.bookingId, w.key))} />
-                  </td>
-                  <td style={{ ...cellStyle, maxWidth: 150 }}>
+                  </Td>
+                  <Td style={{ maxWidth: 150 }}>
                     <div style={{ fontWeight: 600, fontSize: 13 }}>{billedText}</div>
                     <InsurerLine booking={booking} />
                     {lockView !== undefined && lockView.state === 'locked' && (
@@ -384,9 +391,9 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
                         ))}
                       </div>
                     )}
-                  </td>
+                  </Td>
                   {/* Every Procedure's stack, compact (catch-up Phase 20a; US-07.2.2, US-03.1.9). */}
-                  <td data-shot="review-procedures" style={{ ...cellStyle, minWidth: 240, maxWidth: 300 }}>
+                  <Td data-shot="review-procedures" style={{ minWidth: 240, maxWidth: 300 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {stackViews.map((view, i) => {
                         const procedureId = procIds[i]!
@@ -419,20 +426,20 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
                         )
                       })}
                     </div>
-                  </td>
-                  <td className="mono" style={nowrapCell}>{primary?.anaestheticStartISO !== undefined ? `${hhmm(primary.anaestheticStartISO)} to ${hhmm(primary.handoverISO)}` : '·'}</td>
-                  <td className="mono" data-testid="review-btm-value" style={{ ...nowrapCell, color: neutral.slate }}>{btm !== undefined ? `${btm.base.units} · ${btm.time.units} · ${btm.modifiers.units}` : '·'}
+                  </Td>
+                  <Td mono nowrap>{primary?.anaestheticStartISO !== undefined ? `${hhmm(primary.anaestheticStartISO)} to ${hhmm(primary.handoverISO)}` : '·'}</Td>
+                  <Td mono nowrap data-testid="review-btm-value" style={{ color: neutral.slate }}>{btm !== undefined ? `${btm.base.units} · ${btm.time.units} · ${btm.modifiers.units}` : '·'}
                     {primaryAllocation !== undefined && primaryAllocation.splitAcross > 1 && (
                       <div data-shot="review-modifier-split" style={{ fontSize: 11.5 }}>
                         M {primaryAllocation.bookingModifierUnits} · split {primaryAllocation.splitShares.join(' · ')}
                       </div>
                     )}
-                  </td>
-                  <td className="mono" style={{ ...numCell, fontWeight: 700 }}>{totals.units}</td>
-                  <td data-shot="review-fee" style={{ ...numCell, fontWeight: 600 }}>
+                  </Td>
+                  <Td mono nowrap align="right" style={{ fontWeight: 700 }}>{totals.units}</Td>
+                  <Td data-shot="review-fee" nowrap align="right" bold>
                     <ReviewFeeCell totals={totals} />
-                  </td>
-                  <td style={{ ...cellStyle, minWidth: 150 }}>
+                  </Td>
+                  <Td style={{ minWidth: 150 }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
                       {flags.filter((f) => f.procedureId === undefined).map((f, i) => (
                         <FlagPill key={i} flag={f} />
@@ -442,23 +449,22 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
                       {/* The Admin Booking, where the office edits the invoice description (catch-up Phase 20a). */}
                       {onOpenBooking !== undefined && <TextAction size="sm" flush shot="review-open-booking" onClick={() => onOpenBooking(list.dateISO, booking.id)}>Open</TextAction>}
                     </div>
-                  </td>
+                  </Td>
                 </tr>
               )
             })}
             {/* Totals */}
             <tr style={{ background: neutral.bg }}>
-              <td style={cellStyle} />
-              <td style={{ ...cellStyle, fontWeight: 700 }}>Totals</td>
-              <td style={cellStyle} colSpan={4} />
-              <td style={cellStyle} />
-              <td className="mono" style={{ ...numCell, fontWeight: 700 }}>{listTotals.units}</td>
-              <td className="mono" style={{ ...numCell, fontWeight: 700 }}>{listFeeText}</td>
-              <td data-shot="review-list-rate" style={{ ...cellStyle, color: neutral.mist, fontSize: 12 }}>{rateText}</td>
+              <Td />
+              <Td style={{ fontWeight: 700 }}>Totals</Td>
+              <Td colSpan={4} />
+              <Td />
+              <Td mono nowrap align="right" style={{ fontWeight: 700 }}>{listTotals.units}</Td>
+              <Td mono nowrap align="right" style={{ fontWeight: 700 }}>{listFeeText}</Td>
+              <Td data-shot="review-list-rate" style={{ color: neutral.mist, fontSize: 12 }}>{rateText}</Td>
             </tr>
           </tbody>
-        </table>
-      </div>
+      </TableShell>
 
       {/* Phone notes */}
       {list.phoneNotes !== undefined && list.phoneNotes.length > 0 && (
@@ -551,16 +557,6 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
           onClose={() => setHistory(null)}
         />
       )}
-    </div>
-  )
-}
-
-function Tile({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: 'warn' }) {
-  return (
-    <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 12, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist }}>{label}</span>
-      <span className="mono" style={{ fontSize: 22, fontWeight: 700, color: tone === 'warn' ? semantic.warning.onTint : neutral.ink }}>{value}</span>
-      {sub !== undefined && <span style={{ fontSize: 11, color: neutral.mist }}>{sub}</span>}
     </div>
   )
 }

@@ -1,32 +1,35 @@
 /**
  * The chrome of the Admin profile pages (catch-up Phase 17): the surgeon
  * profile and the Admin anaesthetist record. A header with the name, its
- * identifier chip and the page's action, and plain white cards (the back link
- * to the Master data view is the shared `BackLink` since UI unification U5).
+ * identifier chip and the page's action; its cards are the shared `Card` and
+ * its facts `DefRow layout="stacked"` since UI unification U6 (the back link
+ * to the Master data view is the shared `BackLink` since U5).
  * Phase 26 extends the anaesthetist record on it.
  */
 
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { neutral, radius } from '../../../theme/tokens'
-import { Button } from '../../../shared'
-import type { DataAttributes } from '../../../shared/ui'
+import { Button, PageHeader } from '../../../shared/ui'
 
 export function ProfilePage({ shot, children }: { shot: string; children: ReactNode }) {
   return <div data-shot={shot} style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>{children}</div>
 }
 
+/**
+ * The page's title row: the shared `PageHeader` (admin, 24/30; UI unification U6) with the identifier
+ * chip beside the name (outside the heading, 12px from it, as before), the sub-line and the
+ * page's action.
+ */
 export function ProfileHeader({ name, chip, sub, action }: { name: string; chip?: ReactNode; sub?: ReactNode; action?: ReactNode }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, paddingBottom: 4 }}>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>{name}</h1>
-          {chip}
-        </div>
-        {sub !== undefined && <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4 }}>{sub}</div>}
-      </div>
-      {action}
-    </div>
+    <PageHeader
+      size="admin"
+      title={name}
+      {...(chip !== undefined ? { aside: chip, asideGap: 12 } : {})}
+      {...(sub !== undefined ? { sub } : {})}
+      {...(action !== undefined ? { actions: action } : {})}
+      style={{ paddingBottom: 4 }}
+    />
   )
 }
 
@@ -40,29 +43,8 @@ export function IdChip({ label, value, shot }: { label: string; value: string; s
   )
 }
 
-/** A white card with a title; `data-*` attributes pass through (catch-up Phase 17a: `data-room`). */
-export function ProfileCard({ title, shot, action, children, ...data }: { title: string; shot?: string; action?: ReactNode; children: ReactNode } & DataAttributes) {
-  return (
-    <section {...data} data-shot={shot} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-        <h2 style={{ margin: 0, fontSize: 15, lineHeight: '22px', fontWeight: 600 }}>{title}</h2>
-        {action}
-      </div>
-      {children}
-    </section>
-  )
-}
-
-/** One labelled value in a card; `mono` for identifiers, `note` a mist line under it. */
-export function Fact({ label, value, mono, note }: { label: string; value: ReactNode; mono?: boolean; note?: string }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <div style={{ fontSize: 12, fontWeight: 600, color: neutral.mist }}>{label}</div>
-      <div className={mono === true ? 'mono' : undefined} style={{ fontSize: 14, color: neutral.ink, overflowWrap: 'anywhere' }}>{value}</div>
-      {note !== undefined && <div style={{ fontSize: 12, color: neutral.mist }}>{note}</div>}
-    </div>
-  )
-}
+/** A profile card's style on the shared `Card`: it may shrink inside the page's card grid. */
+export const PROFILE_CARD: CSSProperties = { minWidth: 0 }
 
 /** The page's actions: the record's History, then Edit details. */
 export function HeaderActions({ onHistory, onEdit }: { onHistory: () => void; onEdit: () => void }) {

@@ -296,7 +296,7 @@ already seeded.
   types, then the availability statuses from master data (the same six labels as before). A Draft Lists
   card in the right rail and a Draft Lists band above the grid hold Dr Ngata's acute AM (he is
   unavailable) and St George's PM, Mr S. Tan, waiting 16 h; every List block shows its booking count;
-  the nav shows Draft Lists 15.
+  the nav shows Draft Lists 16.
 
 ### Beat 1b: a List with no anaesthetist yet
 
@@ -534,7 +534,8 @@ already seeded.
 
 - **Click:**
   - Go to **Review queue → Dr Kate Morrison, Mon 20 Jul → Review**.
-  - Pause on the submitted List, then select **Authorise for billing → Confirm**.
+  - Pause on the submitted List, then select **Authorise for billing**, then **Authorise for billing**
+    again in the confirm.
 - **Say:** "The office reviews the Bookings as a set, a human sanity check, not an automatic gate. If
   something needs clarification the office phones and corrects it here. The List is never returned.
   Authorisation locks every Booking and hands the whole List to the Billing Engine. Each row shows what
@@ -546,8 +547,9 @@ already seeded.
   Contract and price onto it. The office approves or corrects each Contract change, and authorising
   approves the rest."
 - **Expected:** Dr Morrison's Mon 20 Jul AM (`/admin/review/L-25490-2026-07-20-AM`) raises no flags.
-  Each row shows its Procedure stack (procedure text, Contract with who is invoiced, RVG code) and the
-  payer and insurer or funder, with a teal **Change** that opens the Admin Booking. The authorisation
+  Each row shows its Procedure stack (procedure text, Contract with who is invoiced, RVG code) and who
+  pays: here **Paid by St George's** on every row; where a patient or insurer pays, a teal **Change**
+  beside the payer opens the Admin Booking. The authorisation
   banner appears, rows lock, and the Review queue count falls. Until
   this moment the List stayed on Dr Morrison's main view, less prominent, and she could still change
   it; if she had, Review would show **Changed since submitted** with the count. Now it leaves her main

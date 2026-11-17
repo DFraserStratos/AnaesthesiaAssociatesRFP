@@ -20,17 +20,14 @@ import { UNASSIGNED } from '../../../shared/scheduleTerms'
 import { isAssignedList } from '../../../domain/draftLists'
 import { AttentionDot } from '../../../shared/warnings/AttentionDot'
 import { neutral, radius, semantic } from '../../../theme/tokens'
-import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
+import { TableShell, Td, Th } from '../../../shared/table'
 import { ReassignListFlow } from '../flows/ReassignListFlow'
 import { UnassignedPill } from '../components/draftLists/DraftListParts'
 import { ClearConflictSheet } from '../components/conflicts/ClearConflictSheet'
 import { sessionText } from '../../../domain/outOfHours'
 import { ResultLine } from '../../../shared/ui/ResultLine'
 import { EmptyState } from '../../../shared/ui/EmptyState'
-import { Checkbox, SelectField, TextAction } from '../../../shared/ui'
-
-const cellStyle = { ...adminCell(), verticalAlign: 'top' as const }
-const headCellStyle = adminHead()
+import { Checkbox, PageHeader, SelectField, TextAction } from '../../../shared/ui'
 
 type WhenFilter = 'today' | 'twoWeeks' | 'canvas' | 'past'
 
@@ -127,16 +124,20 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
 
   return (
     <div data-testid="conflicts-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
-      <div>
-        <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>Conflicts</h1>
-        <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4, maxWidth: 760, lineHeight: '19px' }}>
-          Lists at a hospital that is closed that day. Bookings stay in place; reassign to cover, or clear.{' '}
-          <span data-shot="conflicts-count" style={{ color: neutral.ink, fontWeight: 600 }}>
-            {liveCount} open
-          </span>
-          {' '}in this range.
-        </div>
-      </div>
+      <PageHeader
+        size="admin"
+        title="Conflicts"
+        subStyle={{ maxWidth: 760, lineHeight: '19px' }}
+        sub={
+          <>
+            Lists at a hospital that is closed that day. Bookings stay in place; reassign to cover, or clear.{' '}
+            <span data-shot="conflicts-count" style={{ color: neutral.ink, fontWeight: 600 }}>
+              {liveCount} open
+            </span>
+            {' '}in this range.
+          </>
+        }
+      />
 
       {/* Filters: Admin Review's chips and selects, state in the URL. */}
       <div data-shot="conflicts-filters" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
@@ -188,8 +189,7 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
                   {shortDay(dateISO)}
                   <span style={{ color: neutral.mist, fontWeight: 500 }}> · {open} conflict{open === 1 ? '' : 's'}{dayRows.length > open ? `, ${dayRows.length - open} cleared` : ''}</span>
                 </h2>
-                <div style={{ overflowX: 'auto', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}>
-                  <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 1040, tableLayout: 'fixed' }}>
+                <TableShell label={`Conflicts, ${shortDay(dateISO)}`} density="compact" minWidth={1040} tableStyle={{ tableLayout: 'fixed' }}>
                     {/* One set of widths, so the day groups line up. */}
                     <colgroup>
                       {[64, 170, 160, 130, undefined, 84, 236].map((w, i) => (
@@ -199,7 +199,7 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
                     <thead>
                       <tr>
                         {['Session', 'Anaesthetist', 'Hospital', 'Surgeon', 'Reason', 'Bookings', ''].map((h, i) => (
-                          <th key={h === '' ? 'actions' : h} style={{ ...headCellStyle, textAlign: i === 5 ? 'right' : 'left' }}>{h}</th>
+                          <Th key={h === '' ? 'actions' : h} align={i === 5 ? 'right' : 'left'}>{h}</Th>
                         ))}
                       </tr>
                     </thead>
@@ -210,11 +210,11 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
                         const rowName = `${r.anaesthetistId !== undefined ? drSurname(nameOf(r.anaesthetistId)) : UNASSIGNED} ${shortDay(r.dateISO)} ${sessionText(r.session)}`
                         return (
                           <tr key={r.key} data-conflict-row={r.listId} data-conflict-cleared={cleared ? 'true' : undefined}>
-                            <td className="mono" style={{ ...cellStyle, ...muted, boxShadow: `inset 3px 0 0 ${cleared ? neutral.line : semantic.warning.solid}`, fontWeight: 600, whiteSpace: 'nowrap' }}>{sessionText(r.session)}</td>
-                            <td style={{ ...cellStyle, ...muted, fontWeight: 600 }}>{r.anaesthetistId === undefined ? <UnassignedPill /> : nameOf(r.anaesthetistId)}</td>
-                            <td style={{ ...cellStyle, ...muted }}>{locationName(r.hospitalId, masters.hospitals)}</td>
-                            <td style={{ ...cellStyle, ...muted }}>{masters.surgeons[r.surgeonId]?.name ?? r.surgeonId}</td>
-                            <td style={{ ...cellStyle, maxWidth: 340 }}>
+                            <Td mono bold nowrap style={{ ...muted, boxShadow: `inset 3px 0 0 ${cleared ? neutral.line : semantic.warning.solid}` }}>{sessionText(r.session)}</Td>
+                            <Td bold style={muted}>{r.anaesthetistId === undefined ? <UnassignedPill /> : nameOf(r.anaesthetistId)}</Td>
+                            <Td style={muted}>{locationName(r.hospitalId, masters.hospitals)}</Td>
+                            <Td style={muted}>{masters.surgeons[r.surgeonId]?.name ?? r.surgeonId}</Td>
+                            <Td style={{ maxWidth: 340 }}>
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 8px 2px 3px', borderRadius: radius.pill, background: cleared ? neutral.sunken : semantic.warning.tint, color: cleared ? neutral.slate : semantic.warning.onTint, fontSize: 12, fontWeight: 600 }}>
                                 <AttentionDot size={14} tone={cleared ? 'muted' : 'warning'} />
                                 {r.reason}
@@ -226,9 +226,9 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
                                   {r.clear.note !== undefined ? `: ${r.clear.note}` : ''}
                                 </div>
                               )}
-                            </td>
-                            <td className="mono" style={{ ...cellStyle, ...muted, textAlign: 'right', fontWeight: 600 }}>{r.bookingCount}</td>
-                            <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
+                            </Td>
+                            <Td mono bold align="right" style={muted}>{r.bookingCount}</Td>
+                            <Td nowrap>
                               <span style={{ display: 'inline-flex', gap: 14 }}>
                                 {cleared ? (
                                   <TextAction size="sm" flush label={`Flag again, ${rowName}`} onClick={() => restoreListConflict(useAppStore, actor, r.listId, r.cause)}>
@@ -264,13 +264,12 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
                                 <TextAction size="sm" flush label={`Open the List, ${rowName}`} onClick={() => (r.slotId !== undefined ? onOpenSession(r.slotId) : onOpenDraftList !== undefined ? onOpenDraftList(r.listId) : navigate(`/admin/day/${r.dateISO}`))}>Open</TextAction>
                                 <TextAction size="sm" flush label={`Open the day, ${shortDay(r.dateISO)}`} onClick={() => navigate(`/admin/day/${r.dateISO}`)}>Day</TextAction>
                               </span>
-                            </td>
+                            </Td>
                           </tr>
                         )
                       })}
                     </tbody>
-                  </table>
-                </div>
+                </TableShell>
               </section>
             )
           })}

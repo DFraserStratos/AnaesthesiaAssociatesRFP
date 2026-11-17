@@ -39,7 +39,8 @@ import { useTickingValue } from '../../../../shared/capture/useTickingValue'
 import { BookingDetailBody } from '../../../../shared/booking'
 import { monthOf } from '../../../../shared/availability'
 import { ListOptionsSheet, MobileHeader, SlideStack, type ListOption, type SlideLayer } from '../../../mobile/components'
-import { DayChip, LookbackDateSheet, LookbackResults, LookbackSearchRow } from '../../../mobile/screens/ListsLookback'
+import { LookbackDateSheet, LookbackResults, LookbackSearchRow } from '../../../mobile/screens/ListsLookback'
+import { DayChip } from '../../../../shared/ui/DayChip'
 import { listRowModel } from '../../../mobile/screens/listRowModel'
 import { dayWithYear, formatCurrency } from '../../../../shared/format'
 import {
@@ -408,7 +409,7 @@ export function NudgeButtonExample() {
 export function ToggleRowExample() {
   const [on, setOn] = useState(false)
   return (
-    <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 16, padding: '6px 16px' }}>
+    <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 14, padding: '6px 16px' }}>
       <ToggleRowCopy on={on} onChange={setOn} label="Play the office" />
     </div>
   )
@@ -460,7 +461,7 @@ export function LookbackSearchRowExample() {
 export function DayChipExample() {
   const todayISO = useToday()
   const [open, setOpen] = useState(true)
-  return open ? <DayChip dateISO={todayISO} onClose={() => setOpen(false)} /> : <Button variant="pill" onClick={() => setOpen(true)}>Bring the chip back</Button>
+  return open ? <DayChip dateISO={todayISO} onClose={() => setOpen(false)} size="touch" testId="mobile-lists-day-chip" /> : <Button variant="pill" onClick={() => setOpen(true)}>Bring the chip back</Button>
 }
 
 export function MonthGridExample() {
@@ -797,7 +798,7 @@ export function AgeChipExample() {
   const [acc, setAcc] = useState(true)
   return (
     <div style={col}>
-      <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 16, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 14, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: 12.5, color: neutral.slate }}><span className="mono">INV-0001</span> · Southern Cross</span>
         <AgeChipCopy days={days} accFunded={acc} />
       </div>

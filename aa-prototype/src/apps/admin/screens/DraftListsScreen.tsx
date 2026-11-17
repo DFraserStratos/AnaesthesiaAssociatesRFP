@@ -5,9 +5,10 @@
  * "sorted by how close they are to the procedure date"), through the one
  * comparator. The waiting times read the demo clock, so they move with it.
  * Assign (teal), Change date and Remove act on a row; a row click opens the
- * drawer. History lists the ones assigned or removed. The Review table's
- * rhythm (`tableChrome.ts`); the flag is the warning tint, never a status
- * colour.
+ * drawer, and so does the row's one keyboard handle, its session (UI
+ * unification U6). History lists the ones assigned or removed. The shared
+ * table kit at the admin `compact` density; the flag is the warning tint,
+ * never a status colour.
  */
 
 import { useMemo, useState } from 'react'
@@ -17,11 +18,11 @@ import { Plus, TriangleAlert } from 'lucide-react'
 import { accent, fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
 import { removeBlockedReason } from '../../../domain/draftLists'
 import { bookingCountsByList, finishedDraftLists, useAppStore, waitingDraftLists, type Actor } from '../../../store'
-import { Button, LineTabLink, LineTabs, TextAction } from '../../../shared/ui'
+import { Button, LineTabLink, LineTabs, PageHeader, TextAction } from '../../../shared/ui'
+import { ClickableRow, RowOpenButton, TableShell, Td, Th } from '../../../shared/table'
 import { drSurname, hhmm, initialsOf, locationName, shortDay } from '../../../shared/format'
 import { DRAFT_LIST, DRAFT_LISTS, ORIGIN_SHORT_LABELS, SOURCE_LABELS, UNASSIGNED, draftListCount, unavailableDetail } from '../../../shared/scheduleTerms'
 import type { List } from '../../../domain/types'
-import { cellStyle as adminCell, headCellStyle as adminHead, isInteractiveRowTarget } from '../tableChrome'
 import { surnameFirst } from '../util'
 import { BookingCount, UnassignedPill, WaitingTime } from '../components/draftLists/DraftListParts'
 import { AssignDraftListSheet } from '../flows/AssignDraftListSheet'
@@ -33,8 +34,7 @@ import { ResultLine } from '../../../shared/ui/ResultLine'
 import { Pill } from '../../../shared/ui/Pill'
 import { EmptyState } from '../../../shared/ui/EmptyState'
 
-const cellStyle = adminCell()
-const headCellStyle = adminHead()
+/** Draft List rows keep the plain admin table's top alignment beside their stacked Origin cell. */
 
 type Sheet = { kind: 'assign' | 'redate' | 'remove'; listId: string } | { kind: 'new' } | null
 
@@ -111,17 +111,17 @@ export function DraftListsScreen({
 
   return (
     <div data-shot="admin-draft-lists" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>{DRAFT_LISTS}</h1>
-          <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4, maxWidth: 720, lineHeight: '19px' }}>
-            Lists with no anaesthetist yet, soonest first. Assign each one to an anaesthetist for its session.
-          </div>
-        </div>
-        <Button variant="primary" onClick={() => setSheet({ kind: 'new' })}>
-          <Plus size={16} aria-hidden /> New {DRAFT_LIST}
-        </Button>
-      </div>
+      <PageHeader
+        size="admin"
+        title={DRAFT_LISTS}
+        sub="Lists with no anaesthetist yet, soonest first. Assign each one to an anaesthetist for its session."
+        subStyle={{ maxWidth: 720, lineHeight: '19px' }}
+        actions={
+          <Button variant="primary" onClick={() => setSheet({ kind: 'new' })}>
+            <Plus size={16} aria-hidden /> New {DRAFT_LIST}
+          </Button>
+        }
+      />
 
       <LineTabs label={DRAFT_LISTS}>
         {(
@@ -165,8 +165,7 @@ export function DraftListsScreen({
             No {DRAFT_LISTS} are waiting. New requests appear here until they are assigned.
           </EmptyState>
         ) : (
-          <div data-shot="draft-lists-table" style={{ overflowX: 'auto', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}>
-            <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 1140, tableLayout: 'fixed' }}>
+          <TableShell shot="draft-lists-table" label={DRAFT_LISTS} density="compact" minWidth={1140} tableStyle={{ tableLayout: 'fixed' }}>
               <colgroup>
                 {[84, 56, 136, 112, 84, 78, 168, undefined, 172, 214].map((w, i) => (
                   <col key={i} style={w !== undefined ? { width: w } : undefined} />
@@ -175,7 +174,7 @@ export function DraftListsScreen({
               <thead>
                 <tr>
                   {['Day', 'Session', 'Hospital', 'Surgeon', 'Bookings', 'Waiting', 'Origin', 'Note', 'Since', ''].map((h, i) => (
-                    <th key={h === '' ? 'actions' : h} style={{ ...headCellStyle, textAlign: i === 4 || i === 5 ? 'right' : 'left' }}>{h}</th>
+                    <Th key={h === '' ? 'actions' : h} align={i === 4 || i === 5 ? 'right' : 'left'}>{h}</Th>
                   ))}
                 </tr>
               </thead>
@@ -185,21 +184,28 @@ export function DraftListsScreen({
                     const passed = l.dateISO < today
                     const holiday = l.conflicts.some((c) => c.kind === 'holiday')
                     return (
-                      <tr
+                      <ClickableRow
                         key={l.id}
+                        align="top"
                         data-draft-list-row={l.id}
-                        onClick={(e) => {
-                          if (!isInteractiveRowTarget(e.target)) onOpenDraftList(l.id)
-                        }}
-                        style={{ cursor: 'pointer', ...(i === 0 && g > 0 ? { borderTop: `2px solid ${neutral.lineStrong}` } : {}) }}
+                        onOpen={() => onOpenDraftList(l.id)}
+                        {...(i === 0 && g > 0 ? { style: { borderTop: `2px solid ${neutral.lineStrong}` } } : {})}
                       >
-                        <td style={{ ...cellStyle, fontWeight: i === 0 ? 600 : 400, color: i === 0 ? neutral.ink : neutral.mist, whiteSpace: 'nowrap' }}>{i === 0 ? shortDay(dateISO) : ''}</td>
-                        <td className="mono" style={{ ...cellStyle, fontWeight: 600 }}>{sessionText(l.session)}</td>
-                        <td style={{ ...cellStyle, fontWeight: 600 }}>{locationName(l.hospitalId, masters.hospitals)}</td>
-                        <td style={cellStyle}>{surgeon(l)}</td>
-                        <td style={{ ...cellStyle, textAlign: 'right' }}><BookingCount count={counts.get(l.id) ?? 0} style={{ fontSize: 13 }} /></td>
-                        <td style={{ ...cellStyle, textAlign: 'right', whiteSpace: 'nowrap' }}><WaitingTime list={l} style={{ fontSize: 13 }} /></td>
-                        <td style={cellStyle}>
+                        <Td nowrap style={{ fontWeight: i === 0 ? 600 : 400, color: i === 0 ? neutral.ink : neutral.mist }}>{i === 0 ? shortDay(dateISO) : ''}</Td>
+                        <Td mono bold>
+                          {/* The row's keyboard handle (bug 3): the session opens the Draft List's drawer, as the row click does. */}
+                          <RowOpenButton
+                            label={`Open ${DRAFT_LIST} ${shortDay(l.dateISO)} ${sessionText(l.session)}, ${locationName(l.hospitalId, masters.hospitals)}, ${surgeon(l)}`}
+                            onOpen={() => onOpenDraftList(l.id)}
+                          >
+                            {sessionText(l.session)}
+                          </RowOpenButton>
+                        </Td>
+                        <Td bold>{locationName(l.hospitalId, masters.hospitals)}</Td>
+                        <Td>{surgeon(l)}</Td>
+                        <Td align="right"><BookingCount count={counts.get(l.id) ?? 0} style={{ fontSize: 13 }} /></Td>
+                        <Td align="right" nowrap><WaitingTime list={l} style={{ fontSize: 13 }} /></Td>
+                        <Td>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
                             <UnassignedPill />
                             <span style={{ fontSize: 12.5, color: neutral.slate }}>{origin(l)}</span>
@@ -211,10 +217,10 @@ export function DraftListsScreen({
                               </span>
                             )}
                           </div>
-                        </td>
-                        <td style={{ ...cellStyle, color: neutral.slate, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={l.notes}>{l.notes ?? ''}</td>
-                        <td className="mono" title={since(l)} style={{ ...cellStyle, fontSize: 12, color: neutral.slate, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{since(l)}</td>
-                        <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
+                        </Td>
+                        <Td clip style={{ color: neutral.slate }}><span title={l.notes}>{l.notes ?? ''}</span></Td>
+                        <Td clip mono style={{ fontSize: 12, color: neutral.slate }}><span title={since(l)}>{since(l)}</span></Td>
+                        <Td nowrap>
                           <span style={{ display: 'inline-flex', gap: 12 }}>
                             <TextAction
                               size="sm"
@@ -237,26 +243,24 @@ export function DraftListsScreen({
                               Remove
                             </TextAction>
                           </span>
-                        </td>
-                      </tr>
+                        </Td>
+                      </ClickableRow>
                     )
                   }),
                 )}
               </tbody>
-            </table>
-          </div>
+          </TableShell>
         )
       ) : finished.length === 0 ? (
         <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 24, fontSize: 13, color: neutral.slate }}>
           Nothing yet. {DRAFT_LISTS} appear here once they are assigned or removed.
         </div>
       ) : (
-        <div data-shot="draft-lists-history" style={{ overflowX: 'auto', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}>
-          <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 960 }}>
+        <TableShell shot="draft-lists-history" label={`${DRAFT_LISTS} history`} density="compact" minWidth={960}>
             <thead>
               <tr>
                 {['Day', 'Hospital', 'Surgeon', 'Outcome', 'Waited', 'By', ''].map((h) => (
-                  <th key={h === '' ? 'actions' : h} style={headCellStyle}>{h}</th>
+                  <Th key={h === '' ? 'actions' : h}>{h}</Th>
                 ))}
               </tr>
             </thead>
@@ -268,27 +272,26 @@ export function DraftListsScreen({
                 const at = assigned ? l.draft?.assignedAtISO : l.removedAtISO
                 return (
                   <tr key={l.id} data-draft-history-row={l.id}>
-                    <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{shortDay(l.dateISO)} {sessionText(l.session)}</td>
-                    <td style={cellStyle}>{locationName(l.hospitalId, masters.hospitals)}</td>
-                    <td style={cellStyle}>{surgeon(l)}</td>
-                    <td style={cellStyle}>
+                    <Td nowrap>{shortDay(l.dateISO)} {sessionText(l.session)}</Td>
+                    <Td>{locationName(l.hospitalId, masters.hospitals)}</Td>
+                    <Td>{surgeon(l)}</Td>
+                    <Td>
                       {assigned
                         ? `Assigned to ${drSurname(who?.name ?? l.anaesthetistId ?? '')}, ${shortDay(l.dateISO)} ${sessionText(l.session)}`
                         : `Removed${l.removeReason !== undefined ? `: ${l.removeReason}` : ''}`}
-                    </td>
-                    <td style={cellStyle}><WaitingTime list={l} style={{ fontSize: 13 }} /></td>
-                    <td className="mono" style={{ ...cellStyle, fontSize: 12, color: neutral.slate, whiteSpace: 'nowrap' }}>
+                    </Td>
+                    <Td><WaitingTime list={l} style={{ fontSize: 13 }} /></Td>
+                    <Td mono nowrap style={{ fontSize: 12, color: neutral.slate }}>
                       {at !== undefined ? `${format(parseISO(at), 'd MMM')} ${hhmm(at)}` : ''} · {by ?? ''}
-                    </td>
-                    <td style={cellStyle}>
+                    </Td>
+                    <Td>
                       {assigned && <TextAction size="sm" flush onClick={() => onOpenList(l.id)}>Open List</TextAction>}
-                    </td>
+                    </Td>
                   </tr>
                 )
               })}
             </tbody>
-          </table>
-        </div>
+        </TableShell>
       )}
 
       {sheet !== null && sheet.kind === 'assign' && (

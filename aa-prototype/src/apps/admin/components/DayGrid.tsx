@@ -8,7 +8,8 @@ import type { Anaesthetist } from '../../../domain/types'
 import type { AppState, ListWarningSummary, SlotView } from '../../../store'
 import { useAppStore, useConflictLookups } from '../../../store'
 import { CONFLICT_REASONS } from '../../../domain/conflicts'
-import { resolveDisplayStatus, StatusLegend, useLegendKeys, useSlotStatusRecords } from '../../../shared'
+import { blockFill, resolveDisplayStatus, StatusLegend, useLegendKeys, useSlotStatusRecords } from '../../../shared'
+import { Eyebrow } from '../../../shared/ui/Eyebrow'
 import { attentionReasons, blockGeometry, DAY_RULER, GRID_GUTTER, hoursOf, rulerEndLabel, rulerFor, rulerLabels, slotSpan, surnameFirst, type Ruler } from '../util'
 import { compareSessions, isOutOfHours } from '../../../domain/outOfHours'
 import { OPEN_OUT_OF_HOURS, OUT_OF_HOURS } from '../../../shared/outOfHoursTerms'
@@ -208,7 +209,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
     <div style={{ flex: 1, minWidth: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden', boxShadow: elevation.e1 }}>
       {/* Ruler header */}
       <div style={{ display: 'flex', padding: '8px 0', borderBottom: `1px solid ${neutral.line}`, background: neutral.bg }}>
-        <span style={{ width: 148, flex: 'none', paddingLeft: 16, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, boxSizing: 'border-box' }}>ANAESTHETIST</span>
+        <Eyebrow as="span" style={{ width: 148, flex: 'none', paddingLeft: 16, boxSizing: 'border-box' }}>ANAESTHETIST</Eyebrow>
         <span style={{ flex: 1, display: 'flex' }}>
           {rulerLabels(ruler).map((t) => (
             <span key={t} className="mono" style={{ flex: 1, fontSize: 10, color: neutral.mist }}>{t}</span>
@@ -382,13 +383,15 @@ function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: Displa
   // The out-of-hours session (catch-up Phase 32c): a moon before its first line, and "Out-of-hours" on an empty one.
   const evening = isOutOfHours(slot)
 
-  // A conflicted List takes the warning tint (the design's amber attention
-  // treatment, no new hex); its kind's left bar and label stay.
-  const bg = conflict ? semantic.warning.tint : colour.blockBackground
+  // The status fill from the one rule (`blockFill`, UI unification U6): the tint, the hatch or the
+  // dashed outline. A conflicted List takes the warning tint (the design's amber attention
+  // treatment, no new hex); its kind's left bar (drawn inset here) and label stay.
+  const fill = blockFill(colour)
+  const bg = conflict ? semantic.warning.tint : fill.background
   // A strong open warning outlines the block in the error red; otherwise any
   // attention (List-level, or a mild warning) is the amber outline (US-13.7.3).
   const outline = warnings?.strongest === 'strong' ? semantic.error.solid : ATTENTION
-  const border = conflict ? `1.5px solid ${outline}` : colour.border !== undefined ? colour.border : needsAttention ? `1.5px solid ${outline}` : '1px solid rgba(0,0,0,0)'
+  const border = conflict ? `1.5px solid ${outline}` : fill.border !== undefined ? fill.border : needsAttention ? `1.5px solid ${outline}` : '1px solid rgba(0,0,0,0)'
   const conflictReason = list !== undefined && list.conflicts[0] !== undefined ? CONFLICT_REASONS[list.conflicts[0].kind] : undefined
 
   // AA rooms keeps the design's first line, the kind's long label ("Pre-op Assessment"); its name is in the subtitle.

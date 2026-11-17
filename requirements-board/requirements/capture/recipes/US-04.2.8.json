@@ -71,7 +71,7 @@
         {
           "steps": [
             {
-              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0007\") >> role=button[name=\"View →\"]"
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0007\") >> role=button[name=/^View invoice /]"
             },
             {
               "wait": 500

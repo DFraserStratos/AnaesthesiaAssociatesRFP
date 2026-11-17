@@ -3,10 +3,10 @@ import { addDays, format, parseISO } from 'date-fns'
 import { neutral, radius } from '../../../theme/tokens'
 import type { Session } from '../../../domain/types'
 import { isOpenSlotView, rosterForDate, slotViewsForDate, useAppStore, type SlotView } from '../../../store'
-import { Avatar, resolveDisplayStatus, StatusLegend, useDisplayStatus } from '../../../shared'
+import { Avatar, blockFill, resolveDisplayStatus, StatusLegend, useDisplayStatus } from '../../../shared'
 import { initialsOf, locationName, matchesNameQuery, longDayNoYear } from '../../../shared/format'
-import { Button, FilterPills, IconButton, NameSearchBox, TextAction } from '../../../shared/ui'
-import { AvailabilityPageSwitch, Panel } from '../components'
+import { Button, Card, Eyebrow, FilterPills, IconButton, NameSearchBox, PageHeader, TextAction } from '../../../shared/ui'
+import { AvailabilityPageSwitch } from '../components'
 import { useNavigate } from 'react-router-dom'
 import { MovedToYouPanel, useMovableSessions, useMoveListPrompt } from '../../../shared/flows'
 import { sessionText } from '../../../domain/outOfHours'
@@ -118,10 +118,7 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>Availability</h1>
-            <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>Find cover fast. Move one of your Lists into a colleague's free session.</div>
-          </div>
+          <PageHeader size="web" title="Availability" sub="Find cover fast. Move one of your Lists into a colleague's free session." />
           <AvailabilityPageSwitch current="find" />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -158,7 +155,7 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
         <StatusChipsLegend />
       </div>
 
-      <Panel flush>
+      <Card padding="panel" flush>
         <div style={{ overflowX: 'auto' }}>
           <div style={{ minWidth: 720 }}>
             <div style={{ display: 'grid', gridTemplateColumns: columns, gap: '0 12px', padding: '10px 20px', borderBottom: `1px solid ${neutral.line}`, background: neutral.bg }}>
@@ -218,7 +215,7 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
             ))}
           </div>
         </div>
-      </Panel>
+      </Card>
     </div>
   )
 }
@@ -232,9 +229,11 @@ function Cell({ view, labels, onClick, action, shot, title, quietEmpty = false }
   }
   const c = resolved.visual
   const isFree = isOpenSlotView(view)
-  const bg = c.blockBackground
+  // The fill through the one rule (UI unification U6, U23): the hatch or tint, and Free's dashed
+  // outline; the cell keeps its own bar, radius and size.
+  const fill = blockFill(c)
   const tc = c.onTint
-  const border = isFree ? (c.border ?? '1.5px solid transparent') : '1.5px solid transparent'
+  const border = isFree ? (fill.border ?? '1.5px solid transparent') : '1.5px solid transparent'
   return (
     <button
       type="button"
@@ -253,7 +252,7 @@ function Cell({ view, labels, onClick, action, shot, title, quietEmpty = false }
         textAlign: 'left',
         fontFamily: 'inherit',
         cursor: onClick !== undefined ? 'pointer' : 'default',
-        background: bg,
+        background: fill.background,
         border,
         width: '100%',
       }}
@@ -269,7 +268,7 @@ function Cell({ view, labels, onClick, action, shot, title, quietEmpty = false }
 }
 
 function HeaderCell({ children }: { children: React.ReactNode }) {
-  return <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>{children}</span>
+  return <Eyebrow as="span">{children}</Eyebrow>
 }
 
 function StatusChipsLegend() {

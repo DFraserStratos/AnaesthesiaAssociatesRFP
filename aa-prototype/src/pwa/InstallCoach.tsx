@@ -83,7 +83,7 @@ export function InstallCoach() {
         marginTop: 16,
         background: neutral.surface,
         border: `1px solid ${accent.base}`,
-        borderRadius: 16,
+        borderRadius: radius.card,
         padding: 16,
         display: 'flex',
         flexDirection: 'column',

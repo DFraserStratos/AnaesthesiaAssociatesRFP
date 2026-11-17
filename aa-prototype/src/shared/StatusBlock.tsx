@@ -6,7 +6,11 @@ import { radius } from '../theme/tokens'
 
 interface StatusBlockProps {
   /** A List kind or an availability status ID. */
-  status: DisplayKey
+  status?: DisplayKey
+  /** A visual not yet saved (the status sheet's preview of a draft status); wins over `status`. */
+  visual?: StatusVisual
+  /** The element: `span` (default, inline in a legend) or `div`. */
+  as?: 'span' | 'div'
   /** Primary line (e.g. hospital / session name). */
   title: string
   /** Secondary line (e.g. surgeon · specialty). */
@@ -27,12 +31,15 @@ export function blockFill(visual: StatusVisual): CSSProperties {
 
 /**
  * A small session block honouring each status's fill treatment. The
- * demonstration counterpart to {@link StatusChip}.
+ * demonstration counterpart to {@link StatusChip} (the legend, the status
+ * sheet's preview). The grids draw their own sized blocks, each taking its
+ * fill from {@link blockFill} (UI unification U6, group U23).
  */
-export function StatusBlock({ status, title, detail, style }: StatusBlockProps) {
-  const c = useDisplayStatus(status).visual
+export function StatusBlock({ status, visual, as: Tag = 'span', title, detail, style }: StatusBlockProps) {
+  const resolved = useDisplayStatus(status ?? '').visual
+  const c = visual ?? resolved
   return (
-    <span style={{ display: 'block', borderRadius: radius.xs, padding: '6px 9px', minWidth: 110, ...blockFill(c), ...style }}>
+    <Tag style={{ display: 'block', borderRadius: radius.xs, padding: '6px 9px', minWidth: 110, ...blockFill(c), ...style }}>
       <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: c.onTint }}>
         {title}
       </span>
@@ -41,6 +48,6 @@ export function StatusBlock({ status, title, detail, style }: StatusBlockProps) 
           {detail}
         </span>
       )}
-    </span>
+    </Tag>
   )
 }

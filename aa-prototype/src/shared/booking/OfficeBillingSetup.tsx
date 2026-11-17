@@ -3,7 +3,7 @@ import { neutral, radius, semantic } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
 import { billingReferenceMissing, procedureRequiresPrepayment } from '../../domain/billing'
 import { useAppStore, type Actor } from '../../store'
-import { Button } from '../ui'
+import { Button, DefList, DefRow, Eyebrow } from '../ui'
 import { formatCurrency } from '../format'
 import { EditBillingSetupSheet, PricingSheet } from '../flows'
 import { lockStampText, lockViewFor, type BookingLock } from '../../domain/billing/lock'
@@ -52,15 +52,17 @@ export function OfficeBillingSetup({ procedure, displayNumber, actor, canEdit }:
   return (
     <div data-shot={`office-billing-setup-${displayNumber}`} style={{ background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.slate, textTransform: 'uppercase' }}>
+        <Eyebrow tone="slate">
           Office billing setup · {procedure.isPrimary ? 'primary procedure' : 'additional procedure'}
-        </div>
+        </Eyebrow>
       </div>
 
       {/* The Contract, its holder and who is invoiced show in the procedure stack above (catch-up Phase 20a). */}
-      <Row label="Reference">{refMissing ? <Missing>Missing</Missing> : (procedure.billingReference ?? 'None')}</Row>
-      <Row label="Price"><span data-shot="office-billing-price">{typedLabel}</span></Row>
-      <Row label="Prepayment">{prepaymentText}</Row>
+      <DefList gap={10}>
+        <DefRow labelTone="slate" valueStyle={STACK} label="Reference">{refMissing ? <Missing>Missing</Missing> : (procedure.billingReference ?? 'None')}</DefRow>
+        <DefRow labelTone="slate" valueStyle={STACK} label="Price"><span data-shot="office-billing-price">{typedLabel}</span></DefRow>
+        <DefRow labelTone="slate" valueStyle={STACK} label="Prepayment">{prepaymentText}</DefRow>
+      </DefList>
 
       {canEdit && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
@@ -87,39 +89,35 @@ function LockedBillingSetup({ lock, procedure, displayNumber }: { lock: BookingL
   return (
     <div data-shot={`office-billing-setup-${displayNumber}`} data-locked="true" style={{ background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.slate, textTransform: 'uppercase' }}>
+        <Eyebrow tone="slate">
           Office billing setup · {procedure.isPrimary ? 'primary procedure' : 'additional procedure'}
-        </div>
+        </Eyebrow>
         <LockBadge bookingId={procedure.bookingId} />
       </div>
-      {p !== undefined && (
-        <>
-          <Row label="Contract">
-            <span>{p.contractName ?? 'Migrated history'}{p.contractAaCode !== undefined && <span className="mono" style={{ fontSize: 12, color: neutral.slate }}> · {p.contractAaCode}</span>}</span>
-            {p.pricing !== undefined && <span style={{ fontSize: 12.5, color: neutral.slate }}>{pricingLabel(p.pricing)}{p.billsTo !== undefined ? ` · bills ${BILLS_LABEL[p.billsTo].toLowerCase()}` : ''}</span>}
-          </Row>
-          <Row label="Billed to">{p.billedName ?? 'As invoiced'}</Row>
-          <Row label="Price">
-            <span data-shot="office-billing-price" className="mono">{formatCurrency(p.price)}{p.typed ? ' · typed' : ''}</span>
-            {p.basisText !== undefined && <span style={{ fontSize: 12.5, color: neutral.slate }}>{p.basisText}</span>}
-          </Row>
-          {p.splitText !== 'Full' && <Row label="Split">{p.splitText}</Row>}
-        </>
-      )}
-      <Row label="Paid to">{view.payeeName}</Row>
+      <DefList gap={10}>
+        {p !== undefined && (
+          <>
+            <DefRow labelTone="slate" valueStyle={STACK} label="Contract">
+              <span>{p.contractName ?? 'Migrated history'}{p.contractAaCode !== undefined && <span className="mono" style={{ fontSize: 12, color: neutral.slate }}> · {p.contractAaCode}</span>}</span>
+              {p.pricing !== undefined && <span style={{ fontSize: 12.5, color: neutral.slate }}>{pricingLabel(p.pricing)}{p.billsTo !== undefined ? ` · bills ${BILLS_LABEL[p.billsTo].toLowerCase()}` : ''}</span>}
+            </DefRow>
+            <DefRow labelTone="slate" valueStyle={STACK} label="Billed to">{p.billedName ?? 'As invoiced'}</DefRow>
+            <DefRow labelTone="slate" valueStyle={STACK} label="Price">
+              <span data-shot="office-billing-price" className="mono">{formatCurrency(p.price)}{p.typed ? ' · typed' : ''}</span>
+              {p.basisText !== undefined && <span style={{ fontSize: 12.5, color: neutral.slate }}>{p.basisText}</span>}
+            </DefRow>
+            {p.splitText !== 'Full' && <DefRow labelTone="slate" valueStyle={STACK} label="Split">{p.splitText}</DefRow>}
+          </>
+        )}
+        <DefRow labelTone="slate" valueStyle={STACK} label="Paid to">{view.payeeName}</DefRow>
+      </DefList>
       <span data-shot="office-billing-locked-stamp" style={{ fontSize: 12, color: neutral.slate }}>{lockStampText(view)}</span>
     </div>
   )
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-      <span style={{ width: 84, flex: 'none', fontSize: 12, color: neutral.slate }}>{label}</span>
-      <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: neutral.ink, display: 'flex', flexDirection: 'column', gap: 2 }}>{children}</span>
-    </div>
-  )
-}
+/** The value column stacks a figure over its quiet line, as the card's rows always did. */
+const STACK = { display: 'flex', flexDirection: 'column', gap: 2 } as const
 
 function Missing({ children }: { children: React.ReactNode }) {
   return (

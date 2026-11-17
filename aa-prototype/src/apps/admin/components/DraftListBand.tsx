@@ -17,6 +17,7 @@ import { DRAFT_LISTS, UNASSIGNED, bookingCountLabel, unavailableDetail } from '.
 import { neutral, semantic, radius } from '../../../theme/tokens'
 import { blockGeometry, DAY_RULER, GRID_GUTTER, hoursOf, type Ruler } from '../util'
 import { BookingCount, WaitingTime } from './draftLists/DraftListParts'
+import { Eyebrow } from '../../../shared/ui/Eyebrow'
 
 const LANE = 52
 
@@ -52,7 +53,7 @@ export function DraftListBand({
         <span style={{ fontSize: 12.5, fontWeight: 600, color: neutral.ink }}>
           {DRAFT_LISTS} <span className="mono" style={{ fontVariantNumeric: 'tabular-nums', color: semantic.warning.onTint }}>{draftLists.length}</span>
         </span>
-        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', color: semantic.warning.onTint }}>{UNASSIGNED.toUpperCase()}</span>
+        <Eyebrow as="span" tone="warning">{UNASSIGNED.toUpperCase()}</Eyebrow>
       </span>
       <span style={{ flex: 1, position: 'relative', height: lanes * LANE, display: 'block' }}>
         {draftLists.map((l) => {

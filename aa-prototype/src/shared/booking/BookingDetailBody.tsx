@@ -26,7 +26,7 @@ import {
   useToday,
   type Actor,
 } from '../../store'
-import { Button } from '../ui'
+import { Button, DefList, DefRow } from '../ui'
 import { Notice } from '../ui/Notice'
 import { ResultLine } from '../ui/ResultLine'
 import { useSurface, type BookingTotalLine } from '../surface'
@@ -614,39 +614,46 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
     <>
       {/* Patient */}
       <Section label="Patient" action={canEdit ? <EditLink onClick={() => setSheet('patient')} /> : undefined}>
-        <Row label="NHI">
-          <span className="mono" style={{ fontSize: 14 }}>{badge.text}</span>
-        </Row>
-        {/* `data-aa-selectable` re-enables text selection and the iOS
-            magnifier on clinical reference data. The mobile hosts switch
-            selection off across the whole subtree so a resting thumb does not
-            summon the magnifier on chrome; these are the values someone
-            genuinely needs to copy at the bedside. NHI, times and money are
-            already covered by `.mono`. */}
-        {patient !== undefined && (
-          <Row label="Date of birth">
-            <span data-aa-selectable>{formatDob(patient.dobISO)} · {ageYears(patient.dobISO, todayISO)} years</span>
-          </Row>
-        )}
-        <Row label="Contact">
-          <span data-aa-selectable>{patient?.phone ?? 'Not recorded'}</span>
-        </Row>
-        {/* The slot the patient was booked into: reference data, so it sits
-            with the patient rows at their weight. Given a card of its own it
-            read as a second timer beside the Times card, which is the one that
-            records what happened and drives the fee. The ±5 stays here rather
-            than behind an Edit sheet because a slipping list is nudged in
-            passing, and it keeps its 44px target for the phone. */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: canEdit ? 44 : undefined }}>
-          <span style={{ width: 96, flex: 'none', fontSize: 12, color: neutral.mist }}>Scheduled</span>
-          <span className="mono" style={{ flex: 1, fontSize: 14, color: neutral.ink }}>{booking.scheduledTime ?? 'Not set'}</span>
-          {canEdit && (
-            <>
-              <Stepper label="5 minutes earlier" icon={<Minus size={16} aria-hidden />} onClick={() => stepTime(-5)} />
-              <Stepper label="5 minutes later" icon={<Plus size={16} aria-hidden />} onClick={() => stepTime(5)} />
-            </>
+        <DefList gap={10}>
+          <DefRow label="NHI">
+            <span className="mono" style={{ fontSize: 14 }}>{badge.text}</span>
+          </DefRow>
+          {/* `data-aa-selectable` re-enables text selection and the iOS
+              magnifier on clinical reference data. The mobile hosts switch
+              selection off across the whole subtree so a resting thumb does not
+              summon the magnifier on chrome; these are the values someone
+              genuinely needs to copy at the bedside. NHI, times and money are
+              already covered by `.mono`. */}
+          {patient !== undefined && (
+            <DefRow label="Date of birth">
+              <span data-aa-selectable>{formatDob(patient.dobISO)} · {ageYears(patient.dobISO, todayISO)} years</span>
+            </DefRow>
           )}
-        </div>
+          <DefRow label="Contact">
+            <span data-aa-selectable>{patient?.phone ?? 'Not recorded'}</span>
+          </DefRow>
+          {/* The slot the patient was booked into: reference data, so it sits
+              with the patient rows at their weight. Given a card of its own it
+              read as a second timer beside the Times card, which is the one that
+              records what happened and drives the fee. The ±5 stays here rather
+              than behind an Edit sheet because a slipping list is nudged in
+              passing, and it keeps its 44px target for the phone. */}
+          <DefRow
+            label="Scheduled"
+            mono
+            style={{ alignItems: 'center', ...(canEdit ? { minHeight: 44 } : {}) }}
+            trailing={
+              canEdit && (
+                <>
+                  <Stepper label="5 minutes earlier" icon={<Minus size={16} aria-hidden />} onClick={() => stepTime(-5)} />
+                  <Stepper label="5 minutes later" icon={<Plus size={16} aria-hidden />} onClick={() => stepTime(5)} />
+                </>
+              )
+            }
+          >
+            {booking.scheduledTime ?? 'Not set'}
+          </DefRow>
+        </DefList>
       </Section>
       {/* The payer is on each Procedure, in its Billing card's Paid by line (catch-up Phase 22a; US-11.2.2):
           the Booking holds only the insurer or funder and its approval number (US-11.4.3, D28). */}
@@ -914,15 +921,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
         onClose={() => setHistoryOpen(false)}
       />
     </>
-  )
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-      <span style={{ width: 96, flex: 'none', fontSize: 12, color: neutral.mist }}>{label}</span>
-      <span style={{ flex: 1, fontSize: 14, color: neutral.ink }}>{children}</span>
-    </div>
   )
 }
 

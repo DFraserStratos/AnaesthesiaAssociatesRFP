@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { UnassignedPill } from '../components/draftLists/DraftListParts'
 import { neutral } from '../../../theme/tokens'
-import { BackLink } from '../../../shared/ui'
+import { BackLink, PageHeader } from '../../../shared/ui'
 import type { Procedure } from '../../../domain/types'
 import { useAppStore, type Actor } from '../../../store'
 import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
@@ -52,27 +52,33 @@ export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLab
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <BackLink onClick={onBack} size="desktop">{backLabel}</BackLink>
 
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 style={{ margin: 0, fontSize: 26, lineHeight: '32px', fontWeight: 700, letterSpacing: '-0.01em' }}>{patient?.name ?? 'Unknown patient'}</h1>
-            <WarningTriangle warnings={warnings} />
+      {/* The admin page title, 24/30 since UI unification U6 (was 26/32). */}
+      <PageHeader
+        size="admin"
+        wrap
+        title={patient?.name ?? 'Unknown patient'}
+        aside={<WarningTriangle warnings={warnings} />}
+        subStyle={{ marginTop: 0 }}
+        sub={
+          <>
+            <div className="mono" style={{ fontSize: 12, color: neutral.mist, marginTop: 6 }}>
+              {badge.text}
+              {patient !== undefined && ` · DOB ${formatDob(patient.dobISO)} (${ageYears(patient.dobISO, todayISO)}y)`}
+            </div>
+            <div style={{ fontSize: 14, color: neutral.slate, marginTop: 2 }}>
+              {primary !== undefined ? procedureLabel(primary, masters.rvgGroups, 1) : 'Procedure to capture'} · {hospitalName}
+            </div>
+          </>
+        }
+        actions={
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            {/* A Booking on a Draft List has no anaesthetist yet (catch-up Phase 31). */}
+            {list.state === 'DRAFT' && <UnassignedPill />}
+            {changed !== null && changed.bookingIds.includes(bookingId) && <ChangedSinceSubmittedPill cue={changed} />}
+            <StatusChip status={list.kind} />
           </div>
-          <div className="mono" style={{ fontSize: 12, color: neutral.mist, marginTop: 6 }}>
-            {badge.text}
-            {patient !== undefined && ` · DOB ${formatDob(patient.dobISO)} (${ageYears(patient.dobISO, todayISO)}y)`}
-          </div>
-          <div style={{ fontSize: 14, color: neutral.slate, marginTop: 2 }}>
-            {primary !== undefined ? procedureLabel(primary, masters.rvgGroups, 1) : 'Procedure to capture'} · {hospitalName}
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          {/* A Booking on a Draft List has no anaesthetist yet (catch-up Phase 31). */}
-          {list.state === 'DRAFT' && <UnassignedPill />}
-          {changed !== null && changed.bookingIds.includes(bookingId) && <ChangedSinceSubmittedPill cue={changed} />}
-          <StatusChip status={list.kind} />
-        </div>
-      </div>
+        }
+      />
 
       <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} />
     </div>

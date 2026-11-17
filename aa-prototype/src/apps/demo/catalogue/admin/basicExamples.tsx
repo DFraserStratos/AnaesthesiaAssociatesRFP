@@ -29,8 +29,8 @@ import { Pill as MasterPill } from '../../../admin/components/MasterPills'
 import { AttentionDot } from '../../../../shared/warnings/AttentionDot'
 import { ChangedSinceSubmittedPill } from '../../../admin/components/ChangedSinceSubmitted'
 import { NotPreferredPill, PreferredPill, TierPill } from '../../../admin/components/pairing'
-import { DrawerLink, Row as DrawerRow, Section as DrawerSection } from '../../../admin/components/drawerParts'
-import { Fact, HeaderActions, IdChip, ProfileCard, ProfileHeader } from '../../../admin/components/ProfileChrome'
+import { DrawerLink, Section as DrawerSection } from '../../../admin/components/drawerParts'
+import { HeaderActions, IdChip, ProfileHeader } from '../../../admin/components/ProfileChrome'
 import { MasterPanel, PanelGrid, PanelSection } from '../../../admin/components/MasterPanel'
 import { SidePanel } from '../../../admin/components/SidePanel'
 import { Header, Table, TextAction, EditCell } from '../../../admin/screens/masters/chrome'
@@ -39,7 +39,7 @@ import { SessionTimesFields, timesDraftError, type TimesDraft } from '../../../a
 import { OverlayHeader } from '../../../../shared/surface/OverlayHeader'
 import { SheetActions } from '../../../../shared/surface/SheetActions'
 import { ConfirmSheet } from '../../../../shared/surface/ConfirmSheet'
-import { EmptyState, Notice, ResultLine } from '../../../../shared/ui'
+import { Card, DefList, DefRow, EmptyState, Notice, ResultLine } from '../../../../shared/ui'
 
 /** A quiet line under an example that reports what the last click did. */
 export function Echo({ children }: { children: ReactNode }) {
@@ -614,11 +614,13 @@ export function DrawerPartsExample() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <DrawerSection label="Session">
-        <DrawerRow label="Times">08:00 to 12:30</DrawerRow>
-        <DrawerRow label="Hospital">St George's</DrawerRow>
-        <DrawerRow label="Surgeon">
-          <DrawerLink onClick={() => setLast('Opened the surgeon (stubbed).')}>Mr Hale</DrawerLink>
-        </DrawerRow>
+        <DefList>
+          <DefRow label="Times">08:00 to 12:30</DefRow>
+          <DefRow label="Hospital">St George's</DefRow>
+          <DefRow label="Surgeon">
+            <DrawerLink onClick={() => setLast('Opened the surgeon (stubbed).')}>Mr Hale</DrawerLink>
+          </DefRow>
+        </DefList>
       </DrawerSection>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         <Button size="compact" style={{ flex: '1 1 auto' }} onClick={() => setLast('Primary action.')}>Assign List</Button>
@@ -640,10 +642,12 @@ export function ProfileChromeExample() {
         sub="Anaesthetist · since Jan 2020"
         action={<HeaderActions onHistory={() => setLast('History (stubbed).')} onEdit={() => setLast('Edit details (stubbed).')} />}
       />
-      <ProfileCard title="Contact">
-        <Fact label="Email" value="example@aa.co.nz" />
-        <Fact label="Mobile" value="021 000 0000" mono note="Shown to the office only." />
-      </ProfileCard>
+      <Card title="Contact">
+        <DefList gap={12}>
+          <DefRow layout="stacked" label="Email">example@aa.co.nz</DefRow>
+          <DefRow layout="stacked" label="Mobile" mono note="Shown to the office only.">021 000 0000</DefRow>
+        </DefList>
+      </Card>
       <Echo>{last}</Echo>
     </div>
   )
@@ -804,7 +808,9 @@ export function SidePanelExample() {
         }
       >
         <DrawerSection label="Session">
-          <DrawerRow label="Times">13:00 to 17:30</DrawerRow>
+          <DefList>
+            <DefRow label="Times">13:00 to 17:30</DefRow>
+          </DefList>
         </DrawerSection>
         <div style={{ fontSize: 13, color: neutral.slate }}>Escape closes it and focus returns to the button. The record width (600px) is MasterPanel.</div>
       </SidePanel>

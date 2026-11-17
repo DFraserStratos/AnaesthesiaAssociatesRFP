@@ -18,7 +18,7 @@ import { Segmented } from '../../../shared'
 import { formatCurrency } from '../../../shared/format'
 import { aaFeeFixedTotal, aaFeeMonthLabel } from '../../../domain/billing/aaFee'
 import { roundToCents } from '../../../domain/billing/money'
-import { Panel } from '../components'
+import { Card } from '../../../shared/ui'
 
 export type AccountsSubTab = 'overdue' | 'payments' | 'gst' | 'fees'
 
@@ -98,16 +98,16 @@ function OverdueTable({ anaesthetistId }: { anaesthetistId: string }) {
 
   if (rows.length === 0) {
     return (
-      <Panel>
+      <Card padding="panel">
         <div style={{ fontSize: 14, color: neutral.mist, padding: '8px 0' }}>
           No outstanding accounts. A List's invoices show here once the office authorises it.
         </div>
-      </Panel>
+      </Card>
     )
   }
 
   return (
-    <Panel flush>
+    <Card padding="panel" flush>
       <div style={{ padding: '16px 20px 0', fontSize: 12, color: neutral.mist }}>
         One row per outstanding ACCPAY invoice, ordered by date raised. No rollup (per the RFP).
       </div>
@@ -168,7 +168,7 @@ function OverdueTable({ anaesthetistId }: { anaesthetistId: string }) {
           </tfoot>
         </table>
       </div>
-    </Panel>
+    </Card>
   )
 }
 
@@ -197,7 +197,7 @@ function PaymentsTable({
   )
 
   return (
-    <Panel flush>
+    <Card padding="panel" flush>
       <div style={{ padding: '16px 20px 0', fontSize: 12, lineHeight: 1.5, color: neutral.mist }}>
         Received invoices remain here after they leave Overdue. Everything AA receives for an
         invoice is released to you in full. AA's own fee is{' '}
@@ -267,7 +267,7 @@ function PaymentsTable({
           </tbody>
         </table>
       </div>
-    </Panel>
+    </Card>
   )
 }
 
@@ -293,7 +293,7 @@ function AaFeesTable({ anaesthetistId, focusInvoiceNumber }: { anaesthetistId: s
   const unpaidTotal = rows.filter((r) => r.status === 'unpaid').reduce((sum, r) => sum + r.total, 0)
 
   return (
-    <Panel flush>
+    <Card padding="panel" flush>
       <div data-shot="web-accounts-aa-fees">
         <div style={{ padding: '16px 20px 0', fontSize: 12, lineHeight: 1.5, color: neutral.mist, maxWidth: 860 }}>
           AA invoices its fee monthly: fixed charges plus a charge for each buyer-created tax invoice (BCTI) AA
@@ -377,7 +377,7 @@ function AaFeesTable({ anaesthetistId, focusInvoiceNumber }: { anaesthetistId: s
           </table>
         </div>
       </div>
-    </Panel>
+    </Card>
   )
 }
 
@@ -404,7 +404,8 @@ function GstReport({ anaesthetistId }: { anaesthetistId: string }) {
   const periodLabel: Record<GstPeriod, string> = { monthly: 'Monthly', biMonthly: 'Bi-monthly', sixMonthly: 'Six-monthly' }
 
   return (
-    <Panel
+    <Card
+      padding="panel"
       title="GST activity"
       action={
         <div style={{ width: 320 }}>
@@ -465,7 +466,7 @@ function GstReport({ anaesthetistId }: { anaesthetistId: string }) {
           </tfoot>
         </table>
       </div>
-    </Panel>
+    </Card>
   )
 }
 

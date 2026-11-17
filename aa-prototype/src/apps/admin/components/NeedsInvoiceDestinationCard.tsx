@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { needsInvoiceDestinationBookings, useAppStore } from '../../../store'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { CountBadge } from '../../../shared/ui/CountBadge'
-import { TextAction } from '../../../shared/ui'
+import { Card, TextAction } from '../../../shared/ui'
 import { shortDay } from '../../../shared/format'
 import { sessionText } from '../../../domain/outOfHours'
 import { EmptyState } from '../../../shared/ui/EmptyState'
@@ -25,15 +25,16 @@ export function NeedsInvoiceDestinationCard({ onOpenBooking }: { onOpenBooking: 
   const shown = expanded ? rows : rows.slice(0, VISIBLE_ROWS)
 
   return (
-    <section
-      data-shot="admin-needs-invoice-destination"
-      aria-labelledby="admin-needs-destination-heading"
-      style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}
+    <Card
+      shot="admin-needs-invoice-destination"
+      headingId="admin-needs-destination-heading"
+      title={
+        <>
+          Needs an invoice destination
+          <CountBadge count={rows.length} srNoun={rows.length === 1 ? 'procedure' : 'procedures'} />
+        </>
+      }
     >
-      <h2 id="admin-needs-destination-heading" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600 }}>
-        Needs an invoice destination
-        <CountBadge count={rows.length} srNoun={rows.length === 1 ? 'procedure' : 'procedures'} />
-      </h2>
       {rows.length === 0 ? (
         <EmptyState>Every Booking has an invoice destination.</EmptyState>
       ) : (
@@ -62,6 +63,6 @@ export function NeedsInvoiceDestinationCard({ onOpenBooking }: { onOpenBooking: 
           {expanded ? 'Fewer' : `All ${rows.length}`}
         </TextAction>
       )}
-    </section>
+    </Card>
   )
 }

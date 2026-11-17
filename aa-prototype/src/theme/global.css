@@ -477,6 +477,12 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
   transition: background-color 120ms ease-out;
 }
 
+/* Today's row in a web table (shared `ClickableRow today`, U6): the `bg` tint on its cells, which
+   the hover below paints over. */
+.aa-table-row-today > td {
+  background: var(--color-bg);
+}
+
 @media (hover: hover) {
   .aa-clickable-table-row:hover > td {
     background: var(--color-sunken);
