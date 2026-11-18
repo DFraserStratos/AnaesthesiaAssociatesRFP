@@ -47,7 +47,7 @@ lane branch holds a commit whose subject starts `<id> complete:`.
 ### Current wave: Wave 3
 
 Wave 1 (Lane A 26, 27, 27a; Lane B 32d, 33) was joined on 18 November 2026, and Wave 2 (Lane A 25a,
-36; Lane B 33a, 17b) on 19 November 2026; `master` holds both once the Wave 2 fast-forward is done.
+36; Lane B 33a, 17b) on 19 November 2026; `master` holds both.
 
 | Lane | Queue | Sessions |
 |---|---|---|

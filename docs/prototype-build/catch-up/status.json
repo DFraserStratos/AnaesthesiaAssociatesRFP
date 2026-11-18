@@ -13,7 +13,7 @@
     "headline_sub": "Wave 2 is joined: Contract change warnings and the Disabled Contract flag (25a), the internal ledger with the Admin Ledger screen (36), stubs on a List (33a) and surgeon contacts on the surgeon (17b). Wave 3: Lane A 37, then 38; Lane B 34, then 35. Nothing is pushed.",
     "parallel": "Wave 3 runs in two lanes, each in its own git worktree with its own ports. Copy each lane's prompt below into its own Claude session (claude for Lane A, claude2 for Lane B); a session started in the main folder moves itself into its worktree. The same prompt starts, resumes and joins.",
     "safe": {
-      "37": "Lane A's first phase in Wave 3. Its one dependency, 36, is done and joined in Wave 2 (master once the Wave 2 fast-forward is done).",
+      "37": "Lane A's first phase in Wave 3. Its one dependency, 36, is done and joined in Wave 2.",
       "34": "Lane B's first phase in Wave 3. Its dependencies (17b, 33, 33a) are done and joined in Wave 2."
     },
     "wait": {
