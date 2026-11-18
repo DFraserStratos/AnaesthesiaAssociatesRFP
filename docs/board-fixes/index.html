@@ -458,7 +458,7 @@ function select(id, scroll){
       el('span',{class:'b b-teal',text:p.order?`Serial step ${p.order} of 13`:'Parallel worktree'}),
       el('span',{class:'b',text:STATUS[id]}),
       el('span',{class:'b b-ok',text:'Ready to plan'}),
-      el('span',{class:'b b-warn',text:p.decisions.length?`Build gate: ${p.decisions.join(', ')}`:'Build gate: prerequisites'}),
+      (p.id==='B01'?el('span',{class:'b b-ok',text:'D-01 accepted'}):el('span',{class:'b b-warn',text:p.decisions.length?`Build gate: ${p.decisions.join(', ')}`:'Build gate: prerequisites'})),
       ids.length?el('span',{class:'b',text:`${ids.length} findings`}):null,
       medCount(p)?el('span',{class:'b b-err',text:`${medCount(p)} medium`}):null
     ])])]);
@@ -507,7 +507,7 @@ mx.append(tb);
 // Decisions
 const dt = document.getElementById('dtable');
 dt.append(el('thead',{},el('tr',{},['ID','Question','Owner','Waits on it','Resolve before','Status'].map(h=>el('th',{text:h})))));
-const dtb = el('tbody'); DECISIONS.forEach(r=>dtb.append(el('tr',{},[el('td',{class:'mono',text:r[0]}),el('td',{text:r[1]}),el('td',{class:'mono',text:r[2]}),el('td',{text:r[3]}),el('td',{text:r[4]}),el('td',{},el('span',{class:'b b-warn',text:'Open'}))]))); dt.append(dtb);
+const dtb = el('tbody'); DECISIONS.forEach(r=>dtb.append(el('tr',{},[el('td',{class:'mono',text:r[0]}),el('td',{text:r[1]}),el('td',{class:'mono',text:r[2]}),el('td',{text:r[3]}),el('td',{text:r[4]}),el('td',{},r[0]==='D-01'?el('span',{class:'b b-ok',text:'Accepted'}):el('span',{class:'b b-warn',text:'Open'}))]))); dt.append(dtb);
 
 // Status
 const st = document.getElementById('stable');
@@ -516,7 +516,7 @@ const stb = el('tbody');
 SERIAL.concat(['B12','B13']).forEach(id=>{ const p=byId[id]; stb.append(el('tr',{},[el('td',{class:'mono',text:id}),el('td',{text:p.title}),el('td',{},el('span',{class:'b',text:STATUS[id]})),el('td',{},el('span',{class:'b b-ok',text:'Yes'})),el('td',{text:[p.deps.length?'after '+(p.depNote||p.deps.join(', ')):'', p.decisions.length?p.decisions.join(', ')+' recorded':'', p.gateExtra||''].filter(Boolean).join('; ')||'now'})])); });
 st.append(stb);
 
-document.getElementById('reviewnote').textContent = "Both planning reviews ran on all 15 specifications. Integration: 32 of 32 findings resolved. Fidelity: 19 of 19 resolved, coverage 164 of 164. Next action: start B01.";
+document.getElementById('reviewnote').textContent = "Both planning reviews ran on all 15 specifications. Integration: 32 of 32 findings resolved. Fidelity: 19 of 19 resolved, coverage 164 of 164. D-01 accepted 2026-11-19. Next action: start B01.";
 const start = (location.hash||'').slice(1); select(byId[start]?start:'B01', false);
 </script>
 </body>

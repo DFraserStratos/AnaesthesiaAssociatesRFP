@@ -250,6 +250,10 @@ spelling (E3) and the in-tree folder under a fixture (E5) are **extensions** in 
 
 ### B01-REQ-07 · No file route or reader follows a link out of its base (R-35, R-47 REPO_ROOT "also", E7, E7a)
 
+> **Changed by accepted decision 13 (B01-Q1, 2026-11-19, user):** an escaping symlink is warned
+> about, not refused. Build the warning, not the refusal; R-35 closes as Won't fix (warned instead).
+> The R-47 REPO_ROOT resolution below is unchanged. PROGRESS.md has the full answer.
+
 - A path is inside its base only if its real location (all symbolic links resolved) is inside the
   base's real location. Bases: the requirements folder's `assets/` for screenshots and asset
   history blobs; the requirements folder for a plain artifact path; the repository root for an
