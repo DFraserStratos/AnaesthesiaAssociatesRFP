@@ -34,6 +34,8 @@ import type {
   ImportRowId,
   Stub,
   StubId,
+  PdfListId,
+  SurgeonPdfList,
   Invoice,
   InvoiceLine,
   LedgerDisbursement,
@@ -123,6 +125,8 @@ export interface IntakeSlice {
   rows: Record<ImportRowId, ImportRow>
   /** Stubs on Lists for rows waiting at intake (catch-up Phase 33a; DM-58): never Bookings. */
   stubs: Record<StubId, Stub>
+  /** The rooms' PDF lists as received (catch-up Phase 34; DM-61). */
+  pdfLists: Record<PdfListId, SurgeonPdfList>
 }
 
 export interface ShellSlice {
@@ -367,8 +371,11 @@ export const PERSIST_KEY = 'aa-demo'
  *  v59: catch-up Phase 17b, no surgeons' rooms (`masters.surgeonRooms`, `Surgeon.roomIds` and room contacts gone);
  *  each surgeon holds `practiceName`, `personalContact` and `officeContacts`, and three directory surgeons no HPI CPN
  *  yet (D74, D76). Reseeds on load.
- *  v60: Wave 2 join, Lane A's 36 (v59) joined with Lane B's 17b (v59): one past the higher. */
-export const PERSIST_VERSION = 60
+ *  v60: Wave 2 join, Lane A's 36 (v59) joined with Lane B's 17b (v59): one past the higher.
+ *  v61: catch-up Phase 34, the rooms' PDF lists and where a List came from: `intake.pdfLists` (seeded PDL0001, Mr
+ *  Okafor's list as received; counter `pdfList`), every List's `origin` (two pinned: a rooms' PDF with its sender, the
+ *  hospital's list). Reseeds on load. */
+export const PERSIST_VERSION = 61
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {} }
@@ -382,7 +389,7 @@ export function emptyIntegrationsSlice(): IntegrationsSlice {
 
 /** The intake slice: seeded empty, the presenter imports or a trigger delivers (catch-up Phase 33). */
 export function emptyIntakeSlice(): IntakeSlice {
-  return { batches: {}, rows: {}, stubs: {} }
+  return { batches: {}, rows: {}, stubs: {}, pdfLists: {} }
 }
 
 /** The seeded intake slice: one waiting no-NHI row and its stub on a List (catch-up Phase 33a). */

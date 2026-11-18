@@ -27,7 +27,7 @@ import { MatchingTable } from '../matching/MatchingTable'
 import { RowPanel } from '../matching/RowPanel'
 
 const EMPTY: Record<MatchingFilter, string> = {
-  open: 'No rows waiting. Import a hospital file to start.',
+  open: "No rows waiting. Imported St George's and Southern Cross files, the rooms' PDF lists and received sheets land here.",
   unmatched: 'No unmatched rows. Rows with no match, or waiting for an NHI, show here.',
   decided: 'Nothing decided yet. Applied and rejected rows show here, newest first.',
 }

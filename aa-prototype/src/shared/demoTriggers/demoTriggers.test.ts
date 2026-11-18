@@ -11,10 +11,10 @@ import { resetDemo } from '../../store/clockActions'
 import { bookingsForList, openAccRecs, proceduresForBooking } from '../../store/selectors'
 import { clearWarning, warningsForBooking } from '../../store/warnings'
 import { OFFICE_ACTOR, SOUTER_ACTOR } from '../../store/demoActors'
+import { correctPdfListRow, sendPdfListToMatching } from '../../store/pdfListActions'
 import { setAvailabilityRange } from '../../store/availabilityActions'
 import { alertOffice } from '../../store/officeAlertActions'
 import { SEED_LIST_IDS, SEED_MARKERS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
-import { SURGEON_PDFS } from '../../domain/integrations'
 import { DEMO_TRIGGERS, POST_OP_ORIGINAL_LIST_ID } from './registry'
 import { projectedListId } from '../../domain/slots'
 import { demoTriggersFor, initialChoice } from './match'
@@ -71,7 +71,7 @@ describe('registry shape', () => {
       if (!t.surfaces.includes('bar')) continue
       const path = t.indexPath(state)
       if (path === null) continue
-      const published: Partial<DemoContextValues> = t.indexHint?.includes('Surgeon PDFs') === true ? { 'integrations.tab': 'pdfs' } : {}
+      const published: Partial<DemoContextValues> = t.indexHint?.includes('PDF lists') === true ? { 'integrations.tab': 'pdfs' } : {}
       // A Master data view rides in `?view=`, which the screen publishes (catch-up Phase 31).
       const view = new URLSearchParams(path.split('?')[1] ?? '').get('view')
       if (view !== null) published['adminMasters.view'] = view
@@ -218,11 +218,11 @@ describe('route scoping', () => {
     expect(ids(api, `/admin/review/${SEED_LIST_IDS.souterMon20Am}`)).not.toContain('stage-post-op')
   })
 
-  it('Ingest PDF row shows only on the Surgeon PDFs tab', () => {
+  it('Receive updated PDF from rooms shows only on the PDF lists tab (catch-up Phase 34)', () => {
     const api = createAppStore()
-    expect(ids(api, '/admin/integrations')).not.toContain('ingest-pdf-row')
-    expect(ids(api, '/admin/integrations', 'bar', { 'integrations.tab': 'messages' })).not.toContain('ingest-pdf-row')
-    expect(ids(api, '/admin/integrations', 'bar', { 'integrations.tab': 'pdfs' })).toContain('ingest-pdf-row')
+    expect(ids(api, '/admin/integrations')).not.toContain('pdf-list-resend')
+    expect(ids(api, '/admin/integrations', 'bar', { 'integrations.tab': 'messages' })).not.toContain('pdf-list-resend')
+    expect(ids(api, '/admin/integrations', 'bar', { 'integrations.tab': 'pdfs' })).toContain('pdf-list-resend')
   })
 
   it('hospital messages show on the three mobile Lists layers, in the bar only (catch-up Phase 33)', () => {
@@ -287,15 +287,17 @@ describe('re-homed bodies match the Control Panel', () => {
     expect(t.disabledReason(api.getState(), ctx)).toMatch(/^Already staged/)
   })
 
-  it('PDF ingest creates, then updates the same Booking', () => {
+  it('Receive updated PDF from rooms waits for a sent list, then lands the re-sent one once (catch-up Phase 34)', () => {
     const api = createAppStore()
-    const t = byId('ingest-pdf-row')
+    const t = byId('pdf-list-resend')
     const ctx = ctxFor('/admin/integrations', {}, { 'integrations.tab': 'pdfs' })
-    const first = t.run(api, ctx)
-    expect(first.message).toMatch(/^Created/)
-    const second = t.run(api, ctx)
-    expect(second.message).toMatch(/^Updated/)
-    expect(SURGEON_PDFS[0]).toBeDefined()
+    expect(t.disabledReason(api.getState(), ctx, 'PDF-OKAFOR-0805')).toBe('Send the first version to matching first.')
+    expect(correctPdfListRow(api, OFFICE_ACTOR, 'PDL0001', 'R2', { nhi: 'ZAA0067' }).ok).toBe(true)
+    expect(sendPdfListToMatching(api, OFFICE_ACTOR, 'PDL0001').ok).toBe(true)
+    expect(t.disabledReason(api.getState(), ctx, 'PDF-OKAFOR-0805')).toBeNull()
+    expect(t.run(api, ctx, 'PDF-OKAFOR-0805').ok).toBe(true)
+    expect(Object.values(api.getState().intake.pdfLists).filter((l) => l.replacesId === 'PDL0001')).toHaveLength(1)
+    expect(t.disabledReason(api.getState(), ctx, 'PDF-OKAFOR-0805')).toBe('The updated list has already arrived.')
   })
 
   it('half then replay applies once, keyed WEBHOOK-<accRecId>-<n>', () => {

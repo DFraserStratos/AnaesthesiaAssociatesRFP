@@ -32,19 +32,13 @@ import {
   INTEGRATION_FEEDS,
   type CannedMessage,
   type ParsedMessage,
-  type SurgeonPdf,
 } from '../domain/integrations'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppStoreApi, BoundAppStore } from './appStore'
-import { createBooking } from './bookingActions'
-import { editBooking } from './lifecycle'
-import { replaceProcedureText } from './procedureTextActions'
 import { stageImportRows } from './matchingActions'
-import { bookingsOnListByNhi, listInSlot, proceduresForBooking, slotFor } from './selectors'
+import { listInSlot, slotFor } from './selectors'
 
 export const MAX_ATTEMPTS = 3
-
-type PdfRow = SurgeonPdf['rows'][number]
 
 function integrationActor(feedId: string): Actor {
   return { who: FEED_META[feedId]?.actorLabel ?? 'Integration feed', role: 'system', source: 'integration' }
@@ -378,67 +372,6 @@ export function correctEthnicityCode(api: AppStoreApi, actor: Actor, patientId: 
     },
   )
   return ok(undefined)
-}
-
-// ---------------------------------------------------------------------------
-// PDF ingestion
-// ---------------------------------------------------------------------------
-
-/**
- * Ingest one reviewed PDF row onto a List. A row whose NHI matches a Booking
- * already on that List UPDATES it (scheduled time; the text through
- * `replaceProcedureText`, catch-up Phase 20a) rather than duplicating; otherwise a new Booking is created (patient via the shared
- * `upsertPatient`). Office-actor; a bad NHI refuses so the office must fix it in
- * review first.
- */
-export function ingestPdfRow(
-  api: AppStoreApi,
-  actor: Actor,
-  targetListId: string,
-  row: PdfRow,
-): Outcome<{ bookingId: string; outcome: 'created' | 'updated' }> {
-  const state = api.getState()
-  const list = state.schedule.lists[targetListId]
-  if (list === undefined) return refuse('notFound', 'Target List not found.')
-
-  let normalisedNhi: string | undefined
-  if (row.nhi.trim() !== '') {
-    const verdict = validateNhi(row.nhi)
-    if (!verdict.valid) {
-      return refuse('invalidNhi', verdict.reason ?? 'The NHI on this row is not valid. Correct it before ingesting.')
-    }
-    normalisedNhi = verdict.normalised
-  }
-
-  const existing = normalisedNhi !== undefined ? bookingsOnListByNhi(state, targetListId, normalisedNhi)[0] : undefined
-  if (existing !== undefined) {
-    if (row.scheduledTime !== '') {
-      const timed = editBooking(api, actor, existing.id, { scheduledTime: row.scheduledTime })
-      if (!timed.ok) return timed
-    }
-    // The rooms' text through the one write path (US-02.5.7): it replaces a
-    // different rooms' text, never a hospital's; an identical row changes nothing.
-    const first = proceduresForBooking(state, existing.id).find((p) => p.isPrimary)
-    if (first !== undefined && row.operation.trim() !== '') {
-      const text = replaceProcedureText(api, actor, first.id, { text: row.operation, source: 'surgeonPdf' })
-      if (!text.ok) return text
-    }
-    return ok({ bookingId: existing.id, outcome: 'updated' })
-  }
-
-  const created = createBooking(api, actor, targetListId, {
-    patient: {
-      ...(row.nhi.trim() !== '' ? { nhi: row.nhi.trim() } : {}),
-      name: row.name,
-      dobISO: row.dobISO,
-      ...(row.ethnicityCode !== undefined ? { ethnicityCode: row.ethnicityCode } : {}),
-    },
-    sourceText: { text: row.operation, source: 'surgeonPdf' },
-    ...(row.scheduledTime !== '' ? { scheduledTime: row.scheduledTime } : {}),
-    source: 'surgeonPdf',
-  })
-  if (!created.ok) return created
-  return ok({ bookingId: created.value.bookingId, outcome: 'created' })
 }
 
 // ---------------------------------------------------------------------------

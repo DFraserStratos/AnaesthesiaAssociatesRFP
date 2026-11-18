@@ -118,6 +118,7 @@ export const IMPORT_CHANNEL_LABELS: Record<ImportChannel, string> = {
   download: 'Hospital import',
   manualSheet: 'Keyed sheet',
   feedMessage: 'Feed message',
+  pdfList: 'Rooms PDF',
 }
 
 /** The office's decisions, in words. */
@@ -143,6 +144,8 @@ export function sourceTextChannelFor(channel: ImportChannel): ProcedureTextSourc
       return 'hospitalFeed'
     case 'manualSheet':
       return 'hospitalSheet'
+    case 'pdfList':
+      return 'surgeonPdf'
   }
 }
 

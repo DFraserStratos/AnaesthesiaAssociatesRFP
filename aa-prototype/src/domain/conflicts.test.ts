@@ -33,7 +33,7 @@ const list = (over: Partial<AssignedList> = {}): AssignedList => ({
   kind: 'private',
   hospitalId: 'H-SX',
   surgeonId: 'S-PATEL',
-  conflicts: [],
+  conflicts: [], origin: { kind: 'manual' as const },
   ...over,
 })
 
@@ -109,7 +109,7 @@ describe('reconcileListConflicts', () => {
 
   it('a live clear holds the conflict back, survives an unrelated change and is dropped when its cause goes', () => {
     const e = expectedFor(list(), [hol('HH1')])
-    const cleared = list({ conflicts: [], conflictClears: [{ cause: e[0]!.cause, by: 'Kirsty W.', role: 'office', atISO: AT }] })
+    const cleared = list({ conflicts: [], origin: { kind: 'manual' as const }, conflictClears: [{ cause: e[0]!.cause, by: 'Kirsty W.', role: 'office', atISO: AT }] })
     const held = reconcileListConflicts(cleared, e, AT)
     expect(held.next.conflicts).toEqual([])
     expect(held.next).toBe(cleared)

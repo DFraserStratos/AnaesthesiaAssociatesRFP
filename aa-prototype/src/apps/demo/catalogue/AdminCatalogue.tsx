@@ -7,11 +7,14 @@ import { ReviewQueue } from '../../admin/screens/ReviewQueue'
 import { AuditViewer } from '../../admin/screens/AuditViewer'
 import { IntegrationMonitorScreen } from '../../admin/screens/IntegrationMonitorScreen'
 import { RowField } from '../../admin/components/RowField'
+import { PdfListsTab } from '../../admin/intake/PdfListsTab'
+import { ListOriginRow } from '../../admin/components/ListOriginRow'
+import { SEED_ORIGIN_LISTS } from '../../../domain/seed/listOrigins'
 import { DiffTable } from '../../admin/matching/DiffTable'
 import { DecisionCards, type DecisionKind } from '../../admin/matching/DecisionCards'
 import type { IncomingFieldKey } from '../../../domain/types'
 import type { FieldDiff } from '../../../domain/intake'
-import { OptionRow, Pill, RadioCard, useRovingRadio } from '../../../shared/ui'
+import { DefList, OptionRow, Pill, RadioCard, useRovingRadio } from '../../../shared/ui'
 import { useMemo, useState } from 'react'
 import { HospitalsView } from '../../admin/screens/masters/HospitalsView'
 import { RvgGroupsView } from '../../admin/screens/masters/RvgGroupsView'
@@ -195,6 +198,14 @@ export function AdminCatalogue() {
             <IntegrationMonitorScreen actor={OFFICE_ACTOR} />
           </Wide>
         </CatalogueRow>
+        <CatalogueRow name="PdfListsTab and PdfListReview (PDF lists)" source="apps/admin/intake/PdfListsTab.tsx" usedIn={A} what="The rooms' PDF lists (catch-up Phase 34): an inbox on the shared table kit (sender, surgeon, hospital, received, suggested List, a Re-sent Pill and a status Pill), Upload PDF list (PdfUploadDialog: the surface's Overlay with OverlayHeader, RadioCards badged Sample files, a Sent from TextField and SheetActions), and the review beside the facsimile: compact TextFields per row, each correction listed under its row, Send to matching (Button) and a ResultLine." replaceWith="TanStack Table + shadcn Dialog + Field" note="Uploading, correcting and sending write to the demo store." height={460}>
+          <Wide minWidth={1000}>
+            <PdfListsTab actor={OFFICE_ACTOR} />
+          </Wide>
+        </CatalogueRow>
+        <CatalogueRow name="ListOriginRow" source="apps/admin/components/ListOriginRow.tsx" usedIn={A} what={`Where a List came from (catch-up Phase 34; US-02.2.4): one DefRow on the session and ${DRAFT_LIST} drawers, the origin in words and, as its note, who the office's replies go to through the one email helper (the List's sender first).`} replaceWith="shadcn (DefRow's replacement)">
+          <ListOriginExample />
+        </CatalogueRow>
         <CatalogueRow name="LineTabs" source="shared/ui/LineTabs.tsx" usedIn={AWM} what={`The underline tab strip (UI unification U5): LineTabLink for sibling routes (AA fees, ${DRAFT_LISTS}, the web Availability page switch), a labelled navigation with aria-current; LineTab for local panels (Phase 25's Contract History tab), buttons with aria-pressed; a badge after the label for a count.`} replaceWith="shadcn Tabs (as links)" note="Was AA fees' TabLink. Shown with LineTab so nothing leaves this page.">
           <LineTabsExample />
         </CatalogueRow>
@@ -345,7 +356,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="TextField" source="shared/ui/Field.tsx" usedIn={AWM} what="The one labelled single-line input, about 77 uses in Admin: text, date, time, number, email or phone; mono; a FieldHint tied by aria-describedby; and since UI unification U4 invalid (aria-invalid and the error border), inputMode and align for amounts, min, max, step, list, size (48px field or 36px compact), fill (well or surface) and hideLabel. Catch-up Phase 17b adds accessibleName, a fuller name where the visible label repeats on the page (Office contact 2 email)." replaceWith="shadcn Field + Input (React Hook Form)" note="Every default keeps the old look (48px, grey well). The library would bind errors to the field.">
           <TextFieldExample />
         </CatalogueRow>
-        <CatalogueRow name="RowField" source="apps/admin/components/RowField.tsx" usedIn={A} what="The small labelled in-row input for correcting one field of an incoming row: the Integrations PDF review's extracted rows and the Matching panel's name, date of birth and time (catch-up Phase 33 moved it out of PdfReview so both use it). Mono, an invalid border, and a read-only look for wording kept as received." replaceWith="shadcn Field + Input" note="A near twin of TextField's compact size; fold it into TextField in the migration.">
+        <CatalogueRow name="RowField" source="apps/admin/components/RowField.tsx" usedIn={A} what="The small labelled in-row input for correcting one field of an incoming row: the Matching panel's name, date of birth and time (catch-up Phase 33 moved it out of PdfReview; Phase 34's PDF list review uses the shared TextField, compact, instead). Mono, an invalid border, and a read-only look for wording kept as received." replaceWith="shadcn Field + Input" note="A near twin of TextField's compact size; fold it into TextField in the migration.">
           <RowFieldExample />
         </CatalogueRow>
         <CatalogueRow name="DiffTable (Matching)" source="apps/admin/matching/DiffTable.tsx" usedIn={A} what="Matching's differences between a Booking and the hospital's row: Field, On the Booking now, From the hospital, on the shared table kit (nested, dense). Every row is a changed field in the warning tone (ClickableRow tone=warning); a field the office may apply carries its tick, named by the field; an NHI is shown but never applied." replaceWith="TanStack Table + shadcn Table + Checkbox">
@@ -610,3 +621,14 @@ function DiffTableExample() {
     </div>
   )
 }
+
+/** The seeded rooms' PDF List and the hospital's List, as the drawer shows them (catch-up Phase 34). */
+function ListOriginExample() {
+  const lists = useAppStore((s) => s.schedule.lists)
+  return (
+    <DefList>
+      {[SEED_ORIGIN_LISTS.pdf, SEED_ORIGIN_LISTS.hospital].map((id) => (lists[id] !== undefined ? <ListOriginRow key={id} list={lists[id]!} /> : null))}
+    </DefList>
+  )
+}
+

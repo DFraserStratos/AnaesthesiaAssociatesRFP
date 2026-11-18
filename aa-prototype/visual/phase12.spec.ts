@@ -37,12 +37,16 @@ test('control panel: scenario jump, procedure-day jump, PDF ingest and jobs run 
   await page.getByRole('button', { name: 'Go to Mobile app' }).click()
   await expect(page).toHaveURL(/\/mobile/)
 
-  // PDF arrival: from Admin Integrations, Surgeon PDFs tab, ingest a row.
+  // PDF arrival (catch-up Phase 34): Admin Integrations, PDF lists tab, correct the flagged NHI and send to matching.
   await page.goto('/admin/integrations')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot="demo-actions"]')).toHaveCount(1)
-  await page.getByRole('button', { name: 'Surgeon PDFs' }).click()
-  expect(await runDemoAction(page, 'ingest-pdf-row', { close: true })).toMatch(/Brian Holt/)
+  await page.getByRole('button', { name: 'PDF lists' }).click()
+  await page.locator('[data-shot="pdf-inbox"] tbody tr').first().click()
+  await page.locator('[data-shot="pdf-row-2"]').getByLabel('NHI').fill('ZAA0067')
+  await page.locator('[data-shot="pdf-row-2-apply"]').click()
+  await page.locator('[data-shot="pdf-send"]').click()
+  await expect(page.getByText(/Sent to Matching: 3 rows/)).toBeVisible()
 
   // Automated jobs: run the reconciliation poll from the Billing monitor.
   await page.goto('/admin/billing')

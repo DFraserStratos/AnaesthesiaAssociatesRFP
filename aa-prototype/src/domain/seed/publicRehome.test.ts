@@ -52,9 +52,19 @@ const ADDED_25A_ENTITIES = new Set([
   ...Object.values(seed.schedule.procedures).filter((p) => ADDED_25A_BOOKINGS.has(p.bookingId)).map((p) => p.id),
   'CT-CES-2025',
 ])
+/**
+ * Catch-up Phase 34 gave every List its origin (US-02.2.4) after this fixture
+ * was written: set aside on the seed's side, so every other field compares.
+ */
+function withoutOrigin<T>(list: T): T {
+  if (list === undefined || list === null) return list
+  const { origin: _o, ...rest } = list as T & { origin?: unknown }
+  return rest as T
+}
 const captured = capturePhase32d(seed)
 const now = {
   ...captured,
+  listsWithBookings: Object.fromEntries(Object.entries(captured.listsWithBookings).map(([id, l]) => [id, withoutOrigin(l)])) as typeof captured.listsWithBookings,
   bookings: Object.fromEntries(Object.entries(captured.bookings).filter(([id]) => !ADDED_25A_BOOKINGS.has(id))),
   procedures: Object.fromEntries(Object.entries(captured.procedures).filter(([, p]) => !ADDED_25A_BOOKINGS.has(p.bookingId))),
 }
@@ -134,7 +144,7 @@ describe('Phase 32d parity: what must not move', () => {
   it('every other List is unchanged, apart from the bookless public Lists and the public rows\' clash Draft Lists', () => {
     for (const [id, list] of Object.entries(before.otherLists)) {
       if (removedListIds.has(id) || removedDraftIds.has(id)) continue
-      expect(seed.schedule.lists[id], id).toEqual(list)
+      expect(withoutOrigin(seed.schedule.lists[id]), id).toEqual(list)
     }
     const known = new Set([...Object.keys(before.otherLists), ...Object.keys(before.listsWithBookings)])
     expect(Object.keys(seed.schedule.lists).filter((id) => !known.has(id))).toEqual([])

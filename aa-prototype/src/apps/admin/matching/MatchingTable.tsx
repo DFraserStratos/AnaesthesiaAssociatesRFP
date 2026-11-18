@@ -13,7 +13,9 @@ import type { ImportRowView } from '../../../store'
 import { ClickableRow, RowOpenButton, TableShell, Td, Th } from '../../../shared/table'
 import { Eyebrow, Pill } from '../../../shared/ui'
 import { locationName, stampText } from '../../../shared/format'
-import { CHANNEL_CAPS, byWhen, changeTypePill, decisionText, insurerText, whenText } from './matchingText'
+import { CHANNEL_CAPS, byWhen, changeTypePill, decisionText, insurerText, roomsCap, whenText } from './matchingText'
+import { useAppStore } from '../../../store'
+import { clockISO } from '../../../store/mutate'
 
 export function MatchingTable({
   rows,
@@ -34,6 +36,8 @@ export function MatchingTable({
   todayISO: string
   onOpen: (rowId: string) => void
 }) {
+  const nowISO = useAppStore((s) => clockISO(s.clock))
+  let newSeen = false
   return (
     <TableShell shot="matching-table" testId="matching-table-shell" label="Matching" density="compact" minWidth={1180} tableStyle={{ tableLayout: 'fixed' }}>
       <colgroup>
@@ -62,6 +66,10 @@ export function MatchingTable({
                 ? { label: 'Rejected', tone: 'neutral' as const }
                 : changeTypePill(row.decision?.kind === 'match' ? row.decision.changeType : 'new')
           const unmatched = assessment?.queue === 'unmatched'
+          // Staged at the demo clock's present (an import, a PDF list sent, a message fired): enters with bannerIn and a New chip.
+          const isNew = row.status === 'open' && row.receivedAtISO === nowISO
+          const firstNew = isNew && !newSeen
+          if (isNew) newSeen = true
           return (
             <ClickableRow
               key={row.id}
@@ -71,6 +79,7 @@ export function MatchingTable({
               data-import-row-id={row.id}
               data-selected={row.id === selectedId ? 'true' : undefined}
               style={{
+                ...(isNew ? { animation: 'aa-banner-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1)' } : {}),
                 ...(row.id === selectedId ? { boxShadow: `inset 3px 0 0 ${neutral.ink}` } : {}),
                 ...(dim ? { opacity: 0.55, transition: 'opacity 260ms ease' } : {}),
               }}
@@ -84,8 +93,11 @@ export function MatchingTable({
               <Td>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
                   <span style={{ fontWeight: 600 }}>{locationName(fields.hospitalId, view.hospitals)}</span>
-                  <Eyebrow as="span">{CHANNEL_CAPS[row.channel]}</Eyebrow>
-                  <Pill size="sm">{row.source === 'rooms' ? 'Rooms' : 'Hospital'}</Pill>
+                  <Eyebrow as="span">{row.source === 'rooms' ? roomsCap(fields) : CHANNEL_CAPS[row.channel]}</Eyebrow>
+                  <span style={{ display: 'inline-flex', gap: 4 }}>
+                    <Pill size="sm">{row.source === 'rooms' ? 'Rooms' : 'Hospital'}</Pill>
+                    {isNew && <Pill size="sm" tone="success" shot={firstNew ? 'row-new' : undefined} data-new>New</Pill>}
+                  </span>
                 </div>
               </Td>
               <Td>

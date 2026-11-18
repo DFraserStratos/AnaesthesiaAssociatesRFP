@@ -92,6 +92,7 @@ import { seedCompletionBookings, type CompletionBookingKey } from './completionB
 import { REVIEW_FLAGS_LIST_ID, seedReviewFlagBookings, type ReviewFlagBookingKey } from './reviewFlagBookings'
 import { seedDisabledContractBooking } from './disabledContractBooking'
 import { RANGE_AUTHORISED_BILLED_ISO, RANGE_AUTHORISED_LIST_ID, seedPricingBookings, type PricingBookingKey } from './pricingBookings'
+import { applySeedListOrigins } from './listOrigins'
 
 export {
   canvasAnaesthetists,
@@ -476,6 +477,8 @@ function buildSeedInternal(): SeedBuild {
 
   // Catch-up Phase 32b: the sickness the office recorded returned Rutherford's List (D59).
   applySicknessReturn(canvas)
+  // Catch-up Phase 34: the two pinned List origins (a rooms' PDF with its sender, the hospital's list).
+  applySeedListOrigins(lists)
 
   const patients = buildPatients(SEED)
 
@@ -694,6 +697,8 @@ function buildSeedInternal(): SeedBuild {
       availabilitySeries: rehomed.series.length + 1,
       // Catch-up Phase 33a: the seeded stub is STB0001 (`intakeSeed.ts`).
       stub: 2,
+      // Catch-up Phase 34: the seeded PDF list is PDL0001 (`intakeSeed.ts`).
+      pdfList: 2,
     },
   }
 

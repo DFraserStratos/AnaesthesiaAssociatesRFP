@@ -531,6 +531,18 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
   }
 }
 
+/* Admin Review's bannerIn (catch-up Phase 34): a newly staged Matching row settles in. Reduced motion: 80ms (below). */
+@keyframes aa-banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes aa-card-in {
   from {
     transform: translateX(103%);

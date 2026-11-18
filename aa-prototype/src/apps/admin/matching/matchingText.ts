@@ -15,6 +15,12 @@ export const CHANNEL_CAPS: Record<ImportChannel, string> = {
   download: 'Sample file',
   manualSheet: 'Keyed sheet',
   feedMessage: 'Feed message',
+  pdfList: 'Rooms PDF',
+}
+
+/** A rooms row's micro-cap (catch-up Phase 34): "Rooms PDF · Mr C. Okafor". */
+export function roomsCap(fields: IncomingBookingFields): string {
+  return `Rooms PDF · ${fields.surgeon?.name ?? 'the surgeon'}`
 }
 
 /** Change-type pills: neutral sunken for New, Modification and No change; the error tint only for a Cancellation. */

@@ -15,7 +15,6 @@ import {
   reprocessMessage,
   setFeedMapping,
   correctEthnicityCode,
-  ingestPdfRow,
 } from './integrationActions'
 import { decideImportRow } from './matchingActions'
 import { assessImportRow } from './matchingSelectors'
@@ -30,8 +29,7 @@ import {
 } from './selectors'
 import type { Actor } from './mutate'
 import { ANAE, HOSP, SEED_LIST_IDS } from '../domain/seed'
-import { APPT, FEED, CPH_NHI_FIX, SURGEON_PDFS } from '../domain/integrations'
-import { projectedListId } from '../domain/slots'
+import { APPT, FEED, CPH_NHI_FIX } from '../domain/integrations'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
@@ -199,34 +197,6 @@ describe('dedupe', () => {
   })
 })
 
-describe('PDF ingestion', () => {
-  it('updates an already-booked row (matched by NHI on the target List) instead of duplicating, and creates the new rows', () => {
-    const api = store()
-    const pdf = SURGEON_PDFS.find((p) => p.id === 'PDF-OKAFOR-0729')!
-    const listId = projectedListId(pdf.targetList.anaesthetistId, pdf.targetList.dateISO, pdf.targetList.session)
-    const before = bookingsForList(api.getState(), listId).length
-
-    const [r1, r2, r3] = pdf.rows
-
-    // R1 (Sarah Mitchell) is already booked on this List → update, not duplicate.
-    const u = ingestPdfRow(api, OFFICE, listId, r1!)
-    expect(u.ok && u.value.outcome).toBe('updated')
-    expect(bookingsForList(api.getState(), listId).length).toBe(before)
-
-    // R2 is a clean new patient → create.
-    const c = ingestPdfRow(api, OFFICE, listId, r2!)
-    expect(c.ok && c.value.outcome).toBe('created')
-    expect(bookingsForList(api.getState(), listId).length).toBe(before + 1)
-
-    // R3's printed NHI is invalid → refused until corrected.
-    const bad = ingestPdfRow(api, OFFICE, listId, r3!)
-    expect(bad.ok).toBe(false)
-    const good = ingestPdfRow(api, OFFICE, listId, { ...r3!, nhi: r3!.correctedNhi! })
-    expect(good.ok && good.value.outcome).toBe('created')
-    expect(bookingsForList(api.getState(), listId).length).toBe(before + 2)
-  })
-})
-
 describe('feed mapping edit is audited and office-only', () => {
   it('refuses a non-office actor and audits an office edit', () => {
     const api = store()
@@ -245,26 +215,3 @@ describe('feed mapping edit is audited and office-only', () => {
   })
 })
 
-describe('the procedure text from every intake path (catch-up Phase 20a; US-02.5.7)', () => {
-  const firstProc = (api: BoundAppStore, bookingId: string) =>
-    Object.values(api.getState().schedule.procedures).filter((p) => p.bookingId === bookingId).sort((a, b) => a.id.localeCompare(b.id))[0]!
-
-
-  it('a PDF row creates with the rooms\' text; a later different row replaces a rooms\' text but never a hospital\'s; an identical row changes nothing', () => {
-    const api = store()
-    const pdf = SURGEON_PDFS.find((p) => p.id === 'PDF-OKAFOR-0729')!
-    const listId = projectedListId(pdf.targetList.anaesthetistId, pdf.targetList.dateISO, pdf.targetList.session)
-    const [, r2] = pdf.rows
-    const created = ingestPdfRow(api, OFFICE, listId, r2!)
-    expect(created.ok).toBe(true)
-    if (!created.ok) return
-    const id = created.value.bookingId
-    expect(firstProc(api, id).procedureText).toMatchObject({ text: r2!.operation, source: 'surgeonPdf' })
-    const reworded = { ...r2!, operation: `${r2!.operation}, mesh` }
-    expect(ingestPdfRow(api, OFFICE, listId, reworded).ok).toBe(true)
-    expect(firstProc(api, id).procedureText?.text).toBe(reworded.operation)
-    const audits = api.getState().audit.filter((a) => a.action === 'procedure.procedureText.replace').length
-    expect(ingestPdfRow(api, OFFICE, listId, reworded).ok).toBe(true)
-    expect(api.getState().audit.filter((a) => a.action === 'procedure.procedureText.replace').length).toBe(audits)
-  })
-})

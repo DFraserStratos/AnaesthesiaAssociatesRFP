@@ -46,7 +46,7 @@ function view(anaesthetistId: string, contents: { kind: ListKind; id: string; pa
           kind: contents.kind,
           hospitalId: Object.keys(masters.hospitals)[0]!,
           surgeonId: Object.keys(masters.surgeons)[0]!,
-          conflicts: [],
+          conflicts: [], origin: { kind: 'manual' as const },
           ...contents.patch,
         }
       : undefined

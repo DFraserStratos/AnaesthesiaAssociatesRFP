@@ -948,3 +948,25 @@ describe('the Wave 2 join (v60: Lane A 25a, 36 and Lane B 33a, 17b)', () => {
     expect('surgeonRooms' in s.masters).toBe(false)
   })
 })
+
+describe('catch-up Phase 34 (v61: the rooms\' PDF lists and where a List came from)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v60 store with no PDF lists and no List origins, and reseeds both', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(61)
+    const fresh = freshAppState()
+    const { pdfLists: _p, ...intake } = fresh.intake
+    const lists = Object.fromEntries(Object.entries(fresh.schedule.lists).map(([id, l]) => {
+      const { origin: _o, ...rest } = l
+      return [id, rest]
+    }))
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, intake, schedule: { ...fresh.schedule, lists } }, version: 60 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.intake.pdfLists).toEqual(freshAppState().intake.pdfLists)
+    expect(Object.values(s.schedule.lists).every((l) => l.origin !== undefined)).toBe(true)
+  })
+})

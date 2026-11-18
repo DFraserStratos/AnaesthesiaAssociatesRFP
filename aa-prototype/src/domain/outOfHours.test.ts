@@ -9,7 +9,7 @@ import { OUT_OF_HOURS, OUT_OF_HOURS_DESIGN, compareSessions, isOutOfHours, lists
 import { defaultScheduleSettings } from './slots'
 import type { AssignedList, DraftList, List } from './types'
 
-const base = { kind: 'private' as const, hospitalId: 'H1', surgeonId: 'S1', conflicts: [], state: 'ACTIVE' as const, anaesthetistId: 'A', dateISO: '2026-07-21' }
+const base = { kind: 'private' as const, hospitalId: 'H1', surgeonId: 'S1', conflicts: [], origin: { kind: 'manual' as const }, state: 'ACTIVE' as const, anaesthetistId: 'A', dateISO: '2026-07-21' }
 const am: AssignedList = { ...base, id: 'L-AM', session: 'AM', slotId: 'S-A-2026-07-21-AM' }
 const pm: AssignedList = { ...base, id: 'L-PM', session: 'PM', slotId: 'S-A-2026-07-21-PM' }
 const ooh: AssignedList = { ...base, id: 'L-OOH', session: 'OOH', slotId: 'S-A-2026-07-21-OOH' }

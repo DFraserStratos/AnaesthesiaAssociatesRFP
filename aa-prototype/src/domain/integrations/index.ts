@@ -40,9 +40,3 @@ export {
   cannedMessage,
   type CannedMessage,
 } from './messages'
-export {
-  SURGEON_PDFS,
-  PDF_BY_ID,
-  type SurgeonPdf,
-  type PdfRow,
-} from './pdfSamples'

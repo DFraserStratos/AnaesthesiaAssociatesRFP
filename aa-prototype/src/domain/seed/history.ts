@@ -57,6 +57,7 @@ import { rvgGroupIdForLegacyCode } from './rvgGroups'
 import { CONTRACT, PLAIN_RVG_CONTRACT_BY_HOSPITAL } from './contracts'
 import { BP, genericPatientIds, HANA_PARK_PAYER, PAT } from './patients'
 import { seedText } from './procedureText'
+import { originForNewList } from '../lists/listOrigin'
 
 /** The masters buildHistory needs (structural — avoids a circular import of SeedMasters). */
 export interface HistoryMasters {
@@ -445,6 +446,7 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       hospitalId: listHospitalId,
       surgeonId: acc.surgeonId,
       conflicts: [],
+      origin: originForNewList({ kind: 'office' }),
       billedAtISO: acc.raisedISO,
       notes: 'Historical billed list.',
     }

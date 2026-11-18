@@ -37,4 +37,26 @@ describe('officeAddressFor: the one email helper (catch-up Phase 17b; D74)', () 
     expect(officeAddressFor(masters([{ name: 'No email' }]), 'S-T')).toEqual({ to: null, others: [] })
     expect(officeAddressFor(masters([]), 'S-NOPE')).toEqual({ to: null, others: [] })
   })
+
+  it('puts the sender of a List from a rooms PDF first and offers every office contact (catch-up Phase 34; US-02.2.4)', () => {
+    const contacts = [{ name: 'Bev', email: 'bev@a.example' }, { name: 'Rooms', email: 'info@a.example' }]
+    const pdfList = { origin: { kind: 'pdf' as const, senderEmail: 'pa@a.example' } }
+    expect(officeAddressFor(masters(contacts), 'S-T', pdfList)).toEqual({
+      to: { email: 'pa@a.example', source: 'listSender' },
+      others: [
+        { email: 'bev@a.example', name: 'Bev', source: 'officeContact' },
+        { email: 'info@a.example', name: 'Rooms', source: 'officeContact' },
+      ],
+    })
+    // The sender already an office contact: offered once, as the To.
+    const same = officeAddressFor(masters(contacts), 'S-T', { origin: { kind: 'pdf', senderEmail: 'BEV@a.example' } })
+    expect(same.to).toEqual({ email: 'BEV@a.example', source: 'listSender' })
+    expect(same.others).toEqual([{ email: 'info@a.example', name: 'Rooms', source: 'officeContact' }])
+    // A hospital, by-hand or recurring List holds no sender: 17b's rule unchanged.
+    for (const origin of [{ kind: 'hospital' as const, hospitalId: 'H-SX' }, { kind: 'manual' as const }, { kind: 'recurring' as const }]) {
+      expect(officeAddressFor(masters(contacts), 'S-T', { origin })).toEqual(officeAddressFor(masters(contacts), 'S-T'))
+    }
+    // A sender, even with no office contact held.
+    expect(officeAddressFor(masters([]), 'S-T', pdfList)).toEqual({ to: { email: 'pa@a.example', source: 'listSender' }, others: [] })
+  })
 })

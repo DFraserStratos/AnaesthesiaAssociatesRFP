@@ -25,7 +25,9 @@ import { notPreferredEntryIds, notPreferredWarning, pairingAcknowledgement } fro
 import { DRAFT_ASSIGN_WARNINGS, isDraftList, isRemoved, removeBlockedReason } from '../domain/draftLists'
 import { isOpenSlot } from '../domain/slotStatus'
 import { sessionNotOpenRefusal } from '../domain/listMoves'
-import { LIST_KINDS, type DraftList, type ListKind, type RequestSource, type Session } from '../domain/types'
+import { LIST_KINDS, type DraftList, type ListKind, type ListOrigin, type RequestSource, type Session } from '../domain/types'
+import { originForNewList } from '../domain/lists/listOrigin'
+import { isEmailShaped } from '../domain/billing/payer'
 import { drName } from './conflictReconcile'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
@@ -76,6 +78,10 @@ export interface NewDraftListInput {
   note?: string
   /** How the request came in: required for origin `request` only (Phase 33's `hospitalRow` passes none). */
   source?: RequestSource
+  /** Source `pdf` only (catch-up Phase 34, US-02.2.4): the address the PDF arrived from, recorded as the List's sender. */
+  senderEmail?: string
+  /** Phase 33's row path only: the origin its row gives (`originForNewList`'s `importRow` cause). */
+  listOrigin?: ListOrigin
 }
 
 /**
@@ -104,6 +110,9 @@ export function createDraftList(
   if (origin === 'request' && (input.source === undefined || !REQUEST_SOURCES.includes(input.source))) {
     return refuse('sourceRequired', 'Choose how the request came in.')
   }
+  const sender = input.senderEmail?.trim() ?? ''
+  if (sender !== '' && !isEmailShaped(sender)) return refuse('invalidEmail', 'Enter the address the PDF was sent from as an email address.')
+  const listOrigin = input.listOrigin ?? originForNewList({ kind: 'request', ...(input.source !== undefined ? { source: input.source } : {}), senderEmail: sender })
 
   const metas: MutationMeta[] = []
   let listId = ''
@@ -120,6 +129,7 @@ export function createDraftList(
       hospitalId: input.hospitalId,
       surgeonId: input.surgeonId,
       conflicts: [],
+      origin: listOrigin,
       ...(note !== '' ? { notes: note } : {}),
       draft: {
         origin,

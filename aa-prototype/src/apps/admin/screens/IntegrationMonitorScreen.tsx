@@ -1,26 +1,23 @@
 import { useMemo, useState } from 'react'
 import { neutral, accent, radius, semantic, fontFamily } from '../../../theme/tokens'
 import {
-  bookingsOnListByNhi,
   correctEthnicityCode,
   dataQualityItems,
   integrationMonitor,
-  ingestPdfRow,
   reprocessMessage,
   setFeedMapping,
   useAppStore,
   type Actor,
   type IntegrationMonitorRow,
 } from '../../../store'
-import { SURGEON_PDFS, FEED_META, type PdfRow, type SurgeonPdf } from '../../../domain/integrations'
+import { FEED_META } from '../../../domain/integrations'
+import { PdfListsTab } from '../intake/PdfListsTab'
 import { validateNhi } from '../../../domain/nhi'
 import { validateEthnicityCode, ETHNICITY_DEMO_SUBSET } from '../../../domain/nzhis'
-import { dayMicroCap, locationName, hhmm, plural } from '../../../shared/format'
+import { hhmm, plural } from '../../../shared/format'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { DemoBadge } from '../../../shared/DemoBadge'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
-import { compareSessions, sessionText } from '../../../domain/outOfHours'
-import { RowField } from '../components/RowField'
 
 interface Props {
   actor: Actor
@@ -46,7 +43,7 @@ const head = adminHead()
 export function IntegrationMonitorScreen({ actor }: Props) {
   const [tab, setTab] = useState<Tab>('messages')
   // The tab is local state the URL cannot carry; publish it so the Demo
-  // actions menu can show "Ingest PDF row" on the Surgeon PDFs tab only.
+  // actions menu can show "Receive updated PDF from rooms" on the PDF lists tab only.
   useDemoTriggerContext('integrations.tab', tab)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>
@@ -54,7 +51,7 @@ export function IntegrationMonitorScreen({ actor }: Props) {
         <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>Integrations</h1>
         <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4, maxWidth: 820 }}>
           Hospital HL7 v2 messages are translated to FHIR R4 and applied to the schedule; a FHIR-native
-          feed shows the target state; surgeon PDFs are read and ingested. Each message is stored on
+          feed shows the target state; the rooms' PDF lists are read, corrected and sent to Matching. Each message is stored on
           receipt, then processed, and retried with a dead-letter queue, so nothing is lost when a
           message cannot be applied.
         </div>
@@ -63,7 +60,7 @@ export function IntegrationMonitorScreen({ actor }: Props) {
       <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${neutral.line}`, flexWrap: 'wrap' }}>
         <TabButton active={tab === 'messages'} onClick={() => setTab('messages')} future>Messages</TabButton>
         <TabButton active={tab === 'feeds'} onClick={() => setTab('feeds')} future>Feed config</TabButton>
-        <TabButton active={tab === 'pdfs'} onClick={() => setTab('pdfs')}>Surgeon PDFs</TabButton>
+        <TabButton active={tab === 'pdfs'} onClick={() => setTab('pdfs')}>PDF lists</TabButton>
         <TabButton active={tab === 'quality'} onClick={() => setTab('quality')}>Data quality</TabButton>
         <TabButton active={tab === 'validators'} onClick={() => setTab('validators')}>Validators</TabButton>
       </div>
@@ -71,7 +68,7 @@ export function IntegrationMonitorScreen({ actor }: Props) {
       {(tab === 'messages' || tab === 'feeds') && <FutureScopeNote />}
       {tab === 'messages' && <MessagesTab />}
       {tab === 'feeds' && <FeedConfigTab actor={actor} />}
-      {tab === 'pdfs' && <SurgeonPdfsTab actor={actor} />}
+      {tab === 'pdfs' && <PdfListsTab actor={actor} />}
       {tab === 'quality' && <DataQualityTab actor={actor} />}
       {tab === 'validators' && <ValidatorsTab />}
     </div>
@@ -213,138 +210,6 @@ function MappingRow({ feedId, field, value, actor }: { feedId: string; field: st
 // ---------------------------------------------------------------------------
 // Surgeon PDFs tab
 // ---------------------------------------------------------------------------
-
-function SurgeonPdfsTab({ actor }: Props) {
-  const [openId, setOpenId] = useState<string | null>(null)
-  const pdf = openId !== null ? SURGEON_PDFS.find((p) => p.id === openId) : undefined
-  if (pdf !== undefined) return <PdfReview pdf={pdf} actor={actor} onBack={() => setOpenId(null)} />
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div style={{ fontSize: 12.5, color: neutral.slate, maxWidth: 820 }}>
-        Surgeons email their operating lists as PDFs. Open one to review the extracted rows beside the
-        document, correct anything the parse got wrong, then ingest. A row already booked on the target
-        List updates rather than duplicating. Parsing is simulated for the demo.
-      </div>
-      {SURGEON_PDFS.map((p) => (
-        <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '14px 16px' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 700 }}>{p.subject}</div>
-            <div style={{ fontSize: 12.5, color: neutral.slate }}>{p.fromSurgeon} · {p.hospitalName} · {p.receivedLabel} · {p.rows.length} rows</div>
-          </div>
-          <button type="button" onClick={() => setOpenId(p.id)} style={{ font: 'inherit', fontSize: 13, fontWeight: 600, padding: '7px 14px', borderRadius: radius.ctl, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: neutral.ink, cursor: 'pointer' }}>
-            Open
-          </button>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function PdfReview({ pdf, actor, onBack }: { pdf: SurgeonPdf; actor: Actor; onBack: () => void }) {
-  const schedule = useAppStore((s) => s.schedule)
-  const masters = useAppStore((s) => s.masters)
-  const lists = schedule.lists
-  const hospitals = masters.hospitals
-
-  const suggestedListId = useMemo(() => {
-    const l = Object.values(lists).find(
-      (x) => x.anaesthetistId === pdf.targetList.anaesthetistId && x.dateISO === pdf.targetList.dateISO && x.session === pdf.targetList.session,
-    )
-    return l?.id
-  }, [lists, pdf.targetList])
-
-  const listOptions = useMemo(() => {
-    return Object.values(lists)
-      .filter((l) => l.anaesthetistId === pdf.targetList.anaesthetistId && l.state === 'ACTIVE' && l.dateISO >= pdf.targetList.dateISO)
-      .sort((a, b) => (a.dateISO === b.dateISO ? compareSessions(a, b) : a.dateISO.localeCompare(b.dateISO)))
-      .slice(0, 12)
-  }, [lists, pdf.targetList])
-
-  const [targetListId, setTargetListId] = useState(suggestedListId ?? listOptions[0]?.id ?? '')
-  const [rows, setRows] = useState<PdfRow[]>(pdf.rows.map((r) => ({ ...r })))
-  const [results, setResults] = useState<Record<string, { outcome: 'created' | 'updated' | 'error'; message: string }>>({})
-
-  function updateRow(id: string, patch: Partial<PdfRow>) {
-    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)))
-    setResults((res) => {
-      const { [id]: _removed, ...rest } = res
-      return rest
-    })
-  }
-
-  function ingest(row: PdfRow) {
-    const outcome = ingestPdfRow(useAppStore, actor, targetListId, row)
-    setResults((res) => ({
-      ...res,
-      [row.id]: outcome.ok ? { outcome: outcome.value.outcome, message: outcome.value.outcome === 'updated' ? 'Updated existing Booking (not duplicated).' : 'New Booking created.' } : { outcome: 'error', message: outcome.message },
-    }))
-  }
-
-  function ingestAll() {
-    for (const row of rows) ingest(row)
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <button type="button" onClick={onBack} style={{ alignSelf: 'flex-start', font: 'inherit', fontSize: 13, color: accent.base, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>‹ Back to inbox</button>
-      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-        <div style={{ flex: '0 0 auto' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist, marginBottom: 6 }}>The emailed PDF</div>
-          <img src={pdf.facsimile} alt={`${pdf.subject} facsimile`} style={{ width: 380, maxWidth: '100%', border: `1px solid ${neutral.line}`, borderRadius: radius.card, boxShadow: '0 1px 2px rgba(23,35,32,0.06)' }} />
-        </div>
-        <div style={{ flex: 1, minWidth: 320, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist }}>Extracted rows · review and correct</div>
-
-          <label data-shot="pdf-target-list" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: neutral.slate }}>
-            Ingest onto
-            <select value={targetListId} onChange={(e) => setTargetListId(e.target.value)} style={{ font: 'inherit', fontSize: 12.5, padding: '5px 8px', borderRadius: radius.ctl, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: neutral.ink }}>
-              {listOptions.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {dayMicroCap(l.dateISO)} {sessionText(l.session)} · {locationName(l.hospitalId, hospitals)}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          {rows.map((row, rowIndex) => {
-            const nhiVerdict = row.nhi.trim() !== '' ? validateNhi(row.nhi) : undefined
-            const normalised = nhiVerdict?.valid === true ? nhiVerdict.normalised : undefined
-            const match = normalised !== undefined ? bookingsOnListByNhi({ schedule, masters }, targetListId, normalised)[0] : undefined
-            const result = results[row.id]
-            return (
-              <div key={row.id} data-shot={`pdf-row-${rowIndex + 1}`} style={{ background: neutral.surface, border: `1px solid ${result?.outcome === 'error' ? semantic.error.solid : neutral.line}`, borderRadius: radius.card, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <RowField label="NHI" value={row.nhi} mono onChange={(v) => updateRow(row.id, { nhi: v })} width={110} invalid={nhiVerdict?.valid === false} />
-                  <RowField label="Name" value={row.name} onChange={(v) => updateRow(row.id, { name: v })} width={150} />
-                  <RowField label="Time" value={row.scheduledTime} mono onChange={(v) => updateRow(row.id, { scheduledTime: v })} width={70} />
-                  {/* The rooms' wording is ingested exactly as printed (catch-up Phase 20a, US-02.5.7): read-only here. */}
-                  <RowField label="Procedure text" value={row.operation} mono readOnly width={210} />
-                </div>
-                {row.deliberateError !== undefined && result === undefined && nhiVerdict?.valid === false && (
-                  <div style={{ fontSize: 12, color: semantic.warning.onTint }}>{row.deliberateError}</div>
-                )}
-                {nhiVerdict?.valid === false && (
-                  <div style={{ fontSize: 12, color: semantic.error.onTint }}>NHI invalid: {nhiVerdict.reason}. Correct it before ingesting.</div>
-                )}
-                {match !== undefined && result === undefined && (
-                  <div style={{ fontSize: 12, color: semantic.warning.onTint }}>Already booked on this List · will update, not duplicate.</div>
-                )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <button type="button" onClick={() => ingest(row)} style={{ font: 'inherit', fontSize: 12.5, fontWeight: 600, padding: '5px 12px', borderRadius: radius.ctl, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: neutral.ink, cursor: 'pointer' }}>Ingest row</button>
-                  {result !== undefined && (
-                    <span style={{ fontSize: 12, color: result.outcome === 'error' ? semantic.error.onTint : semantic.success.onTint }}>{result.message}</span>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-
-          <button type="button" onClick={ingestAll} style={{ alignSelf: 'flex-start', font: 'inherit', fontSize: 13, fontWeight: 600, padding: '8px 16px', borderRadius: radius.ctl, border: 'none', background: accent.base, color: neutral.surface, cursor: 'pointer' }}>Ingest all rows</button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 // ---------------------------------------------------------------------------
 // Data quality tab

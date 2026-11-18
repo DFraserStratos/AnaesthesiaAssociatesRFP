@@ -55,7 +55,8 @@ import {
   setProcedureContract,
   railContextForList,
   railMastersOf,
-  ingestPdfRow,
+  receiveResentPdfList,
+  resendRefusal,
   openAccRecs,
   processMessage,
   receivePayment,
@@ -63,7 +64,6 @@ import {
   runReconciliationPoll,
   simulateSignInAttempts,
   submitList,
-  slotFor,
   listInSlot,
   addDraftListForDay,
   assignDraftListAsSimulatedOffice,
@@ -123,7 +123,8 @@ import {
   updateTarget,
   type StandInChoice,
 } from '../../store'
-import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
+import { CANNED_MESSAGES } from '../../domain/integrations'
+import { PDF_LIST_SAMPLES, resendSampleFor } from '../../domain/intake'
 import { contractCandidatesFor, destinationOf } from '../../domain/billing/contractRail'
 import { noContractRvg } from '../../domain/billing/contracts'
 import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, SEED_LIST_IDS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
@@ -204,22 +205,6 @@ const SAMPLE_WARNING_ROUTES = [ADMIN_DAY, ADMIN_BOOKING, MOBILE_BOOKING] as cons
 
 /** Stage post-op: Dr Sharma's Tue 14 Jul AM List (Sarah Mitchell's first episode). */
 export const POST_OP_ORIGINAL_LIST_ID = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
-
-/** The List in a surgeon PDF's target session (catch-up Phase 28: a session may hold none). */
-function pdfTargetListId(
-  state: AppState,
-  pdf: { targetList: { anaesthetistId: string; dateISO: string; session: 'AM' | 'PM' } },
-): string | undefined {
-  const slot = slotFor(state, pdf.targetList.anaesthetistId, pdf.targetList.dateISO, pdf.targetList.session)
-  return slot === undefined ? undefined : listInSlot(state, slot.id)?.id
-}
-
-/** The ingest-PDF sample: the first surgeon PDF's reviewed row R2. */
-function samplePdfRow() {
-  const pdf = SURGEON_PDFS[0]
-  const row = pdf?.rows.find((r) => r.id === 'R2')
-  return pdf === undefined || row === undefined ? undefined : { pdf, row }
-}
 
 const DEFAULT_MESSAGE_ID = CANNED_MESSAGES[0]?.id ?? 'MSG-STG-1001'
 
@@ -732,37 +717,38 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     indexPath: () => `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`,
   },
 
-  // ── Admin · Integrations, Surgeon PDFs tab ────────────────────────────
+  // ── Admin · Integrations, PDF lists tab (catch-up Phase 34) ──────────
   {
-    id: 'ingest-pdf-row',
-    label: 'Ingest PDF row',
+    id: 'pdf-list-resend',
+    label: 'Receive updated PDF from rooms',
     description:
-      'A surgeon\'s emailed PDF arrives: ingests its reviewed row R2 onto Dr Souter\'s Mon 27 Jul AM List, deduped by NHI. Re-firing updates the same Booking.',
+      "The rooms re-send a PDF list already sent to matching, with one changed time and one new patient. It lands in the inbox as received, marked Re-sent, with the address it came from. Once sent, the matching screen shows the change as a difference for approval and the new patient as a new row.",
     screen: 'Admin · Integrations',
     routes: [ADMIN_INTEGRATIONS],
     surfaces: ['bar'],
     when: (_state, ctx) => ctx.published['integrations.tab'] === 'pdfs',
-    disabledReason: (state) => {
-      const sample = samplePdfRow()
-      if (sample === undefined) return 'The sample PDF row is not present in this build.'
-      return pdfTargetListId(state, sample.pdf) === undefined ? "The PDF's target session has no List" : null
+    choices: (state) =>
+      PDF_LIST_SAMPLES.filter((s) => Object.values(state.intake.pdfLists).some((l) => l.sampleId === s.id)).map((s) => ({
+        id: s.id,
+        label: `${s.surgeonName}, ${s.subject.split(' · ')[1] ?? s.subject}`,
+      })),
+    disabledReason: (state, _ctx, choiceId) => {
+      const sampleId = choiceId ?? PDF_LIST_SAMPLES.find((s) => Object.values(state.intake.pdfLists).some((l) => l.sampleId === s.id))?.id
+      return sampleId === undefined ? 'No PDF list has been sent to matching yet.' : resendRefusal(state, sampleId)
     },
-    run: (api) => {
-      const sample = samplePdfRow()
-      if (sample === undefined) return { ok: false, message: 'The sample PDF row is not present in this build.' }
-      const { pdf, row } = sample
-      const listId = pdfTargetListId(api.getState(), pdf)
-      if (listId === undefined) return { ok: false, message: "The PDF's target session has no List." }
-      const res = ingestPdfRow(api, OFFICE_ACTOR, listId, row)
+    run: (api, _ctx, choiceId) => {
+      const sampleId = choiceId ?? PDF_LIST_SAMPLES[0]!.id
+      const res = receiveResentPdfList(api, OFFICE_ACTOR, sampleId)
+      const resend = resendSampleFor(sampleId)
       return {
         ok: res.ok,
         message: res.ok
-          ? `${res.value.outcome === 'created' ? 'Created' : 'Updated'} a Booking for ${row.name} on Dr Souter's Mon 27 Jul AM List from ${pdf.fromSurgeon}'s emailed list. Re-firing updates the same Booking (deduped by NHI), never a duplicate. The full review-and-edit-before-ingest flow, including the deliberately mistyped NHI row, opens from the PDF in this tab.`
+          ? `The updated list arrived from ${resend?.defaultSender ?? 'the rooms'}, marked Re-sent. Open it and Send to matching: unchanged rows are skipped, the changed time waits as a difference for approval and the new patient arrives as a new row.`
           : `Refused: ${res.message}`,
       }
     },
     indexPath: () => ADMIN_INTEGRATIONS,
-    indexHint: 'Then open the Surgeon PDFs tab',
+    indexHint: 'Then open the PDF lists tab',
   },
 
   // ── Admin · Invoice (and the Xero sim pair) ───────────────────────────

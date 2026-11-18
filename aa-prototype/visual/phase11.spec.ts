@@ -54,11 +54,11 @@ test('admin Integrations monitor renders its tabs and the validators respond', a
   await page.getByRole('button', { name: 'Feed config' }).click()
   await expect(page.getByText('Christchurch Public').first()).toBeVisible()
 
-  // Surgeon PDFs tab opens a facsimile + rows.
-  await page.getByRole('button', { name: 'Surgeon PDFs' }).click()
-  await page.getByRole('button', { name: 'Open' }).first().click()
-  await expect(page.getByText('Ingest all rows')).toBeVisible()
-  await page.getByRole('button', { name: '‹ Back to inbox' }).click()
+  // PDF lists tab (catch-up Phase 34) opens a facsimile + rows as read.
+  await page.getByRole('button', { name: 'PDF lists' }).click()
+  await page.locator('[data-shot="pdf-inbox"] tbody tr').first().click()
+  await expect(page.locator('[data-shot="pdf-send"]')).toBeVisible()
+  await page.getByRole('button', { name: 'Back to PDF lists' }).click()
 
   // Validators tab gives a verdict.
   await page.getByRole('button', { name: 'Validators' }).click()

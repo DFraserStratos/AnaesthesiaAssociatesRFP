@@ -35,6 +35,7 @@ import { CLOSE_OUT_OF_HOURS } from '../../../shared/outOfHoursTerms'
 import { Button, DefList, DefRow, FormError, TextAction } from '../../../shared/ui'
 import { Notice } from '../../../shared/ui/Notice'
 import { EmptyState } from '../../../shared/ui/EmptyState'
+import { ListOriginRow } from './ListOriginRow'
 
 interface SlotDrawerProps {
   /** The session open in the drawer (a Slot id). */
@@ -196,7 +197,7 @@ function ListBody({
                 )}
               </DefRow>
               {list.notes !== undefined && list.notes.trim() !== '' && <DefRow label="Note">{list.notes}</DefRow>}
-              {list.recurringBookingId !== undefined && <DefRow label="Source">From a recurring booking</DefRow>}
+              <ListOriginRow list={list} />
             </DefList>
           </Section>
 

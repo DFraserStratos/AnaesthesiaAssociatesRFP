@@ -14,7 +14,6 @@ import { wireBillingRun } from './billingRun'
 import { authoriseList, editBooking } from './lifecycle'
 import { claimModifier, removeModifier } from './modifierActions'
 import { seedModifierId } from '../domain/seed/modifiers'
-import { ingestPdfRow } from './integrationActions'
 import { advanceClockToDate } from './clockActions'
 import { receivePayment } from './paymentActions'
 import { payablesDue, runPayables } from './payablesActions'
@@ -22,7 +21,6 @@ import { auditForEntity, bookingsForList, openAccRecs, proceduresForBooking } fr
 import { regenerateInvoiceFromLock } from './locks'
 import type { Actor } from './mutate'
 import { ANAE, HOSP, INS, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
-import { SURGEON_PDFS } from '../domain/integrations'
 import { decideImportRow, importHospitalDownload } from './matchingActions'
 import { assessImportRow } from './matchingSelectors'
 import type { Invoice } from '../domain/types'
@@ -208,23 +206,6 @@ describe('S5 · compliance tour', () => {
     } finally {
       unwire()
     }
-  })
-})
-
-describe('PDF arrival · Surgeon PDF ingest', () => {
-  it('ingesting the clean row creates a Booking, then a re-ingest updates it (deduped by NHI)', () => {
-    const api = createAppStore()
-    const pdf = SURGEON_PDFS[0]
-    if (pdf === undefined) throw new Error('expected a seeded surgeon PDF')
-    const row = pdf.rows.find((r) => r.id === 'R2')
-    if (row === undefined) throw new Error('expected the clean R2 row')
-    const listId = projectedListId(pdf.targetList.anaesthetistId, pdf.targetList.dateISO, pdf.targetList.session)
-
-    const first = ingestPdfRow(api, OFFICE, listId, row)
-    expect(first.ok && first.value.outcome === 'created').toBe(true)
-
-    const second = ingestPdfRow(api, OFFICE, listId, row)
-    expect(second.ok && second.value.outcome === 'updated').toBe(true)
   })
 })
 

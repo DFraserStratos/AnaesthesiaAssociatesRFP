@@ -36,7 +36,7 @@ function list(id: string, anaesthetistId: string, extra: Partial<AssignedList> =
     kind: 'private',
     hospitalId: 'H-STG',
     surgeonId: 'S-REID',
-    conflicts: [],
+    conflicts: [], origin: { kind: 'manual' as const },
     ...extra,
   }
 }
@@ -120,7 +120,7 @@ describe('ownMoveRefusal', () => {
       kind: 'private',
       hospitalId: 'H-STG',
       surgeonId: 'S-REID',
-      conflicts: [],
+      conflicts: [], origin: { kind: 'manual' as const },
       draft: { origin: 'request', sinceISO: `${TODAY}T08:00:00`, by: 'Kirsty W.' },
     }
     const input = {

@@ -10,7 +10,6 @@ import { extractViaMapping } from './hl7'
 import { toFhirBundle, extractFromFhir, practitionerHpiOf, NHI_SYSTEM } from './fhir'
 import { INTEGRATION_FEEDS, FEED, CPH_NHI_FIX } from './feeds'
 import { CANNED_MESSAGES, cannedMessage, APPT } from './messages'
-import { SURGEON_PDFS } from './pdfSamples'
 import { validateNhi } from '../nhi'
 
 const feed = (id: string) => {
@@ -137,24 +136,5 @@ describe('canned library integrity', () => {
       if (msg.eventType === 'S12') expect(msg.routing, `${msg.id} routing`).toBeDefined()
       else expect(msg.correlationAppointmentId, `${msg.id} correlation`).toBeTruthy()
     }
-  })
-})
-
-describe('surgeon PDFs', () => {
-  it('each PDF carries a facsimile data URL, a target list, and rows', () => {
-    for (const pdf of SURGEON_PDFS) {
-      expect(pdf.facsimile.startsWith('data:image/svg+xml,')).toBe(true)
-      expect(pdf.rows.length).toBeGreaterThan(0)
-      expect(pdf.targetList.anaesthetistId).toBeTruthy()
-    }
-  })
-
-  it('has exactly one deliberately-wrong row whose printed NHI fails validation and whose correction validates', () => {
-    const wrong = SURGEON_PDFS.flatMap((p) => p.rows).filter((r) => r.deliberateError !== undefined)
-    expect(wrong.length).toBe(1)
-    const row = wrong[0]!
-    expect(validateNhi(row.nhi).valid).toBe(false)
-    expect(row.correctedNhi).toBeDefined()
-    expect(validateNhi(row.correctedNhi!).valid).toBe(true)
   })
 })
