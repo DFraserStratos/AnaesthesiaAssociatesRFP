@@ -232,7 +232,7 @@ read the same after the change, and a parity test proves it.
 ## Before you start: drift check
 
 1. Run the catalogue diff for this phase's items and the items it leans on against the plan's
-   baseline, catalogue commit `c9b65ad` (rename-aware; never a plain `git diff` of the catalogue
+   baseline, catalogue commit `63a4490` (rename-aware; never a plain `git diff` of the catalogue
    folder):
 
    ```
@@ -251,7 +251,7 @@ read the same after the change, and a parity test proves it.
    it and adjust the work items. If one is now Retired or Future, drop it from this phase and record
    that in the PROGRESS entry.
 
-   Already folded into this plan (the `3d3a18c` to `c9b65ad` changes, so not drift):
+   Already folded into this plan (the `3d3a18c` to `63a4490` changes, so not drift):
    - the six covered items changed only in artifact links (AR-19, AR-25) and link markup, as did
      US-08.3.1, US-09.1.1, US-09.1.4, US-09.2.1, US-10.1.2, FT-06.3 and FT-10.2;
    - the prepayment rewrite: US-06.2.3 (an estimate) and US-06.4.2 (no automatic credit) Retired;
@@ -272,7 +272,7 @@ read the same after the change, and a parity test proves it.
      prototype), US-13.2.2's patient-centric balance, DM-23's two ledger scopes, US-10.2.5 with OQ-71
      (outside the system), Greg's view on OQ-60 (16 built it) and US-13.5.2's audit scope (DM-45,
      Phase 39).
-   Folded in at `c9b65ad` (so not drift): EP-08, FT-08.3 and US-08.3.1 (prepaid Procedures left off the
+   Folded in at `63a4490` (so not drift): EP-08, FT-08.3 and US-08.3.1 (prepaid Procedures left off the
    final invoice with nothing deducted, D57; a prepayment's payable is to the AA Holding account, a creditor
    in the payables sub-ledger, and its release at authorisation is a transfer, never a receivable);
    FT-06.5, US-06.5.1 and US-06.4.1 (the account, the transfer, system-only payouts); US-06.3.1 (the approval
@@ -280,11 +280,11 @@ read the same after the change, and a parity test proves it.
    extended 2026-10-28 (D38: the pair is created at generation, a move changes nothing, no payee repoint),
    OQ-116 (D57), OQ-125 (D72, the transfer's trigger, open) and OQ-115 (a cancellation refund is paid from
    the system, Phase 41's).
-   Folded in at `c9b65ad` (so not drift): none of the covered items changed; the 5 November contract
+   Folded in at `63a4490` (so not drift): none of the covered items changed; the 5 November contract
    model decisions (D1 to D11, the flat model) reach this phase only through who is billed (the holder
    Party or the payer) and the snapshot (AR-58 2.8; AR-28, AR-29 and AR-30 are Retired, the flat ERD is AR-61).
-   Folded in at `c9b65ad` (so not drift): none of the covered items changed; D85 (17 November) moved the payer from the Booking to each Procedure (22a), so earlier "payer on the Booking" readings are the invoice's payer, and each prepayment invoice and its pair is per payer (27); no ledger rule changes.
-   Folded in at `c9b65ad` (so not drift): OQ-111 answered 4 November (D53; DM-22's note): payments to
+   Folded in at `63a4490` (so not drift): none of the covered items changed; D85 (17 November) moved the payer from the Booking to each Procedure (22a), so earlier "payer on the Booking" readings are the invoice's payer, and each prepayment invoice and its pair is per payer (27); no ledger rule changes.
+   Folded in at `63a4490` (so not drift): OQ-111 answered 4 November (D53; DM-22's note): payments to
    anaesthetists are made in Xero's payables run and recorded here when detected (Phase 37 builds the
    detection); the ledger side of a disbursement is unchanged. The refund on a cancelled prepayment is
    raised by the system (Phase 41) and paid in Xero.
@@ -1298,8 +1298,8 @@ PWA entry is needed. The office-only allocation and refund are product actions i
   `patientLedgerPosition` only.
 - The AA Holding account itself and the transfer's rules (27a builds them; this phase promotes
   their legs into the ledger), refunds on cancellation from the account, and settlement by hand on a
-  prepaid Procedure (additional invoices and credit notes, including a part credit of a prepayment, OQ-97's
-  default): Phase 41. No payee is repointed on a move (D38): there is nothing to build.
+  prepaid Procedure (additional invoices and credit notes, a credit always for the whole prepayment invoice, OQ-97
+  answered, D31): Phase 41. No payee is repointed on a move (D38): there is nothing to build.
 - Anything calculated after a prepaid procedure: nothing is, either way (US-06.4.1, OQ-61, OQ-76
   answered). There is no excess, balance invoice or automatic credit to build anywhere.
 - Splitting a payable per Procedure ("one BCTI per procedure", OQ-29): not built; raise it with AA's
@@ -1592,7 +1592,7 @@ explicitly supersedes.
   - the screens: `/admin/ledger` and `/admin/ledger/anaesthetists/:anaesthetistId` (office), web
     Accounts and mobile Balances (Dr Souter).
 - Status row for catch-up Phase 36, and a phase entry covering:
-  - the drift-check result against `c9b65ad`; the answers built (OQ-02, OQ-05, OQ-30, OQ-40, OQ-42,
+  - the drift-check result against `63a4490`; the answers built (OQ-02, OQ-05, OQ-30, OQ-40, OQ-42,
     OQ-61, OQ-70, OQ-71, OQ-73, OQ-76, OQ-80) and how the open questions were handled (OQ-29, OQ-47
     Proposed, OQ-60);
   - what 16 to 27 were found to provide, and the renames made (the selector and store names in item
@@ -1688,7 +1688,7 @@ explicitly supersedes.
     on each row, carry the invoice (raised) date that D24's threshold counts from, and the oldest
     unpaid raised date.
   - 41 builds letters, the by-hand settlement on a prepaid Procedure (additional invoices and credit notes
-    through this constructor, a part credit of a prepayment as OQ-97's default) and the full refund on
+    through this constructor; a credit is always for the whole invoice, D31) and the full refund on
     cancellation from the AA Holding account (a credit entry on the `prePayment` pair's legs through 39's path,
     so the holding balance falls). It repoints no payee: a moved prepaid Booking changes nothing (D38).
   - 43 loads full-scale pairs through the same constructors.

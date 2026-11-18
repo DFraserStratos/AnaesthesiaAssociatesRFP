@@ -149,7 +149,7 @@ record.
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-09,FT-10.2,FT-09.2,US-09.2.1,US-09.2.2,US-09.2.3,US-09.2.4,US-10.1.2,US-10.2.1,US-10.2.3,US-10.2.4,US-08.3.2,FT-13.3,US-13.3.1,US-13.3.2,US-13.5.2,US-13.2.4,OQ-47,OQ-111,US-09.1.1,US-09.3.1
    ```
 
-   (It diffs the plan baseline, catalogue commit `c9b65ad`, to the working tree.)
+   (It diffs the plan baseline, catalogue commit `63a4490`, to the working tree.)
    Read the DM-67, DM-22 and DM-23 sections of `analysis/domain-model-delta.md` too (the reconciliation
    status needs DM-22's ledger and DM-23's derived positions, which Phase 36 builds).
    Read the hunks for EP-09, FT-10.2, FT-09.2, US-09.2.1, US-09.2.2, US-09.2.3, US-09.2.4, US-10.1.2,

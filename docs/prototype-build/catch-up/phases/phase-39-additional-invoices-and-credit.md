@@ -4,7 +4,7 @@
 [FT-08.6](../../../../requirements-board/requirements/stories/FT-08.6.md) Billing after AUTHORISED (status 3; this phase closes it: the credit half, after 38b built the events, the additional invoice and the rule that every event marked for invoicing is billed in the next run, bundled where it can be and never held, OQ-121, D69; the anaesthetist's post-op event route is FT-03.7, Phase 39b) ·
 [US-08.6.2](../../../../requirements-board/requirements/stories/US-08.6.2.md) Credit note and re-issue (status 3; credited "in full and then rebilled", no longer "an admin credits") ·
 [US-08.6.4](../../../../requirements-board/requirements/stories/US-08.6.4.md) Split a combined Procedure into additional invoices (status 4; a split after invoicing is a credit, then one additional invoice per component; the components **must add up to the credited amount**, entered freely, and the credit reverses the linked payable, OQ-77 parts 1 and 2; a split asked for **before** sending is a normal admin edit, OQ-77 part 3 answered 2026-10-19, D41) ·
-[US-08.6.5](../../../../requirements-board/requirements/stories/US-08.6.5.md) Credit note option on additional invoices (changed 2026-10-07: the **anaesthetist on their own Procedure** can use it too, from the Anaesthetist App; the credit **reverses the linked payable**; after a fixed price no credit exists until someone raises one by hand; a credit for part of an invoice is OQ-97, Phase 41; a credit is not a refund, except that the system itself raises the refund of a cancelled prepayment, automatically on cancel and paid in Xero like every payment, OQ-115 and OQ-111, Phase 41) ·
+[US-08.6.5](../../../../requirements-board/requirements/stories/US-08.6.5.md) Credit note option on additional invoices (changed 2026-10-07: the **anaesthetist on their own Procedure** can use it too, from the Anaesthetist App; the credit **reverses the linked payable**; after a fixed price no credit exists until someone raises one by hand; a credit is always for the whole invoice, never a part, OQ-97 answered, D31; a credit is not a refund, except that the system itself raises the refund of a cancelled prepayment, automatically on cancel and paid in Xero like every payment, OQ-115 and OQ-111, Phase 41) ·
 [US-08.6.6](../../../../requirements-board/requirements/stories/US-08.6.6.md) Start a rebill from a copy of the original lines (Proposed; new 2026-10-02) ·
 [US-13.5.2](../../../../requirements-board/requirements/stories/US-13.5.2.md) Audit trail of changes (status 4, retitled; credit notes, master data, Contract and time-entry changes are audited, and **payments, receipts and disbursements are not**: they are recorded in Xero) ·
 [DM-24](../analysis/domain-model-delta.md#dm-24) A wrong invoice is credited in full, then rebilled (credit note to any party, payable reversal, new invoice), recorded as events ·
@@ -28,7 +28,7 @@ Read alongside (not closed here):
 [DM-25](../analysis/domain-model-delta.md#dm-25) (negative invoice and remittance: 39a),
 [FT-13.5](../../../../requirements-board/requirements/stories/FT-13.5.md) (roles and audit; Matches, kept on built Phase 14),
 [US-06.4.1](../../../../requirements-board/requirements/stories/US-06.4.1.md) (rewritten 2026-10-07 as "No automatic invoice or credit after a prepaid procedure", Confirmed: there is no balance invoice; where the work differed, someone raises an additional invoice or a credit note by hand; the system never credits by itself. The prepaid side of that, a credit on a prepayment invoice, is Phase 41's),
-[OQ-97](../../../../requirements-board/requirements/questions/OQ-97.md) (Open, D31: a credit note for a stated part of a prepayment invoice; Phase 41 builds it on this phase's machinery; here every credit is in full),
+[OQ-97](../../../../requirements-board/requirements/questions/OQ-97.md) (Answered 18 November, D31: a credit note is always for the whole invoice, a prepayment invoice included, never a stated part; anything still owed is raised afresh as an additional invoice; Phase 41 credits a prepayment invoice in full on this phase's machinery),
 [OQ-61](../../../../requirements-board/requirements/questions/OQ-61.md) and
 [OQ-76](../../../../requirements-board/requirements/questions/OQ-76.md) (Answered 2026-10-06: nothing is invoiced or credited automatically; anaesthetists "can / must create any ad-hoc invoices or credit notes as needed"),
 [OQ-19](../../../../requirements-board/requirements/questions/OQ-19.md) (Answered: an AA-side error is credited and reissued),
@@ -43,7 +43,7 @@ Read alongside (not closed here):
 [OQ-60](../../../../requirements-board/requirements/questions/OQ-60.md) (Open: what the AA fee's per-BCTI charge counts), and the
 "What changed since the RFP" rows, the Booking section and the "Internal ledger" section of
 [domain-model.md](../../../../requirements-board/requirements/domain-model.md).
-**Depends on:** 22a and 38b (the event element on a Procedure, its one standard review step and next-run
+**Depends on:** 22a, 25a and 38b (the event element on a Procedure, its one standard review step and next-run
 invoicing, the Procedure's events list in all three apps, and the free-form additional invoice with
 its lines editor, party field and sheet, raised by the office and by the anaesthetist on their own
 Procedure; a credit is a new event kind on that element, and every rebill or split component is a 38b
@@ -54,14 +54,14 @@ the roadmap order 14 (the demo-trigger registry, the payment entries, the shared
 (Booking vocabulary and routes), 16 (`invoiceNumber` and `reference` on both Xero records, the `-P`
 rule, the BCTI count: `bctiRecords` and `bctisFor`), 19a (the flat Contract model, and Merivale's seeded
 combination Contracts: a combination is a fixed-price Contract of its own, with no parent procedures and no combination
-marker), 21 (who is billed, `whoIsBilled.ts`, `invoiceEmailFor`, and the holder references with `referenceValuesFor`), 22a (the payer is each Procedure's, D85: `Procedure.payer`, `setProcedurePayer`, the party picker that can name another person, the Procedure's "Paid by", invoices grouped by payer identity), 22 (`procedureIds`,
+marker), 21 (who is billed, `whoIsBilled.ts`, `invoiceEmailFor`; no holder references were built, D82), 25a (removes the Procedure's `billingReference` and the cross-match `hospitalRef`, so there is no hospital or claim reference left to copy), 22a (the payer is each Procedure's, D85, with no provisional label: `Procedure.payer`, `setProcedurePayer`, the party picker that can name another person, the Procedure's "Paid by", invoices grouped by payer identity), 22 (`procedureIds`,
 `lineage`, `delivery`, `materialiseInvoices`, the Split button's typed shares), 25 (the `BookingLock`
 with its per-Procedure pricing snapshot, the payee, "Regenerate from locked data") and 27 (the
 prepayment invoice generated at setup with its pair; prepaid Procedures are left off the final invoice,
 D57, so there is no deduction line and no balance invoice)
 have also run. This phase does not need Phase 23 (the multi-procedure rule). 37 and 38 may run before
 or after this phase. 39a (netting, in the weekly payment run) runs after it; 40 (a patient credit
-balance) and 41 (credits on a prepaid Procedure, the part credit of OQ-97, and refunds) reuse its
+balance) and 41 (credits on a prepaid Procedure, in full then a fresh additional invoice, OQ-97, and refunds) reuse its
 credit notes.
 **Estimated:** 2 sessions. Session 1 is the office's credit note option and credit in full and
 rebill, with the ledger and Xero reversal and the negative invoice, ending at a green stop point
@@ -91,8 +91,9 @@ unlocking the Booking (FT-08.6, US-07.3.2). OQ-72 is answered (D22), OQ-63 makes
   starts from a person pressing the option.
 - **Credit in full and rebill** (US-08.6.2, DM-24, OQ-19: an AA-side error is credited and reissued).
   The same flow with one replacement prefilled. In session 2 that replacement is a **draft additional
-  invoice holding a copy of the original's lines** and its holder references, such as the purchase
-  order (US-08.6.6), so the admin corrects what was wrong instead of retyping it. The rebill gets a
+  invoice holding a copy of the original's lines** (US-08.6.6; the lines only: no holder references
+  exist, D82, and 25a removes the Procedure's hospital reference), so the admin corrects a line, the
+  invoice description or the Booking's approval number instead of retyping it. The rebill gets a
   new number, linked to the original. Its total is whatever the correction needs (a wrong amount is
   a reason to rebill).
 - **Recorded as events, through the one review step.** The credit and its replacements are events on
@@ -130,8 +131,8 @@ answered 2026-10-19, D41): while the List is not yet authorised and handed to th
 edits the Booking's Procedures, Contracts and prices as today, and no credit or rebill is raised. So
 there is no before-sending path in this phase, no constant and no chip: **Split into additional
 invoices** is offered only once the invoice exists, and before that it is disabled with a sentence
-pointing at the edit. A credit for part of an invoice (OQ-97, D31) is Phase 41's, on a prepayment invoice; here
-every credit is in full, and a prepayment invoice is not credited yet.
+pointing at the edit. A credit for part of an invoice is refused for good (OQ-97 answered, D31): a credit note is always for the whole invoice, anything owed is a fresh additional invoice. Here
+every credit is in full; a prepayment invoice is not credited yet (Phase 41 credits it in full).
 
 The original invoice is never written: "Credited" and every link are derived. The state gains credit
 notes, negative invoices, Xero credit notes and a credit event kind, so `PERSIST_VERSION` is bumped.
@@ -139,7 +140,7 @@ No seeded figure moves. FT-08.6 closes here: its every-event-in-the-next-run rul
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's baseline, catalogue commit `c9b65ad` (plan.json
+1. Run the drift check against the plan's baseline, catalogue commit `63a4490` (plan.json
    `commit`; with no `--to` the tool diffs that baseline against the working tree, so it shows only
    what changed after it):
 
@@ -153,7 +154,7 @@ No seeded figure moves. FT-08.6 closes here: its every-event-in-the-next-run rul
    it and adjust the work items. If an item is now Retired or Future, drop its work items and record
    that in the PROGRESS entry. At plan time (`7cd7802`) FT-08.6 and US-08.6.2 were at status 3,
    US-08.6.4 and US-13.5.2 at status 4, US-08.6.5 and US-08.6.6 unchanged since the earlier plan;
-   OQ-77 and OQ-53 answered, OQ-97 and OQ-60 Open.
+   OQ-77, OQ-53 and OQ-97 answered, OQ-60 Open.
 2. **Answered, build the answer, no provisional label.**
    - **OQ-72 (D22):** "Desc" is description; an additional invoice can go to any billable party (38b
      built both); the credit note option credits the original to any party, the original billable
@@ -191,7 +192,7 @@ No seeded figure moves. FT-08.6 closes here: its every-event-in-the-next-run rul
      invoice as "to net".
    - **OQ-45 (D10):** every replacement is a free-form additional invoice (38b's pricing), with no
      Contract pricing, unit rules or anaesthetist adjustment.
-3. **Open questions, built as their default and labelled provisional in one place** (only OQ-60 and OQ-97 remain).
+3. **Open question, built as its default and labelled provisional in one place** (only OQ-60 remains).
    - **OQ-60** (what the per-BCTI charge counts). 16's rule stands (each BCTI once against the
      anaesthetist who did it, and the paid-only switch Greg favoured on 2026-10-02). This phase decides
      only what its new records are, inside 16's `bctiRecords`: each replacement's ACCPAY is a BCTI
@@ -199,9 +200,10 @@ No seeded figure moves. FT-08.6 closes here: its every-event-in-the-next-run rul
      negative invoice are not (the catalogue: "not called a BCTI credit"); a credited original keeps
      its record, because it was issued. Comment it "OQ-60, provisional" beside `bctiRecords`; no UI
      chip.
-   - **OQ-97 (D31)** is not built here: Phase 41 adds a credit for a stated part of a prepayment
-     invoice on this phase's records. Keep `creditInFull` and the reversal plan shaped so a later
-     partial amount is an added input, not a rewrite (handoff note).
+   - **OQ-97 (D31, answered 18 November, Donald for the build, not yet confirmed by AA):** a credit
+     note is always for the whole invoice, a prepayment invoice included; a part credit is refused
+     (there is no amount input, no stated part), and anything still owed is a fresh additional
+     invoice. A prepayment invoice is credited in full by Phase 41, on this phase's records.
    - **Labelled readings, not OQs** (in the code comment and the PROGRESS entry, no chip):
      - *The equal total is the split's rule.* OQ-77 part 1 and the domain model ("When a combined
        invoice is split ... the rebilled invoices must equal the credited one") apply it to the split
@@ -234,7 +236,7 @@ No seeded figure moves. FT-08.6 closes here: its every-event-in-the-next-run rul
        see in pieces; a split is always a credit and new invoices that add up). Logged for the owner.
      - *The rebill's basis* (the question Phase 25's handoff left: "needs a new lock, decide there"):
        a rebill is a 38b additional invoice with its own stored basis (the copied or typed lines, the
-       party, the holder references). The Booking's lock and its pricing snapshots are never
+       party). The Booking's lock and its pricing snapshots are never
        rewritten and no new lock is made; the rebill's payable goes to the Procedure's locked payee.
        Re-pricing a rebill from a corrected Contract is not built: the admin edits the copied lines
        (US-08.6.6).
@@ -295,10 +297,10 @@ No seeded figure moves. FT-08.6 closes here: its every-event-in-the-next-run rul
      payer identity (a copied payer is the same payer; never matched on name or email);
    - from **21**: who is billed (`whoIsBilled.ts`: the Contract's holder's billable party when the
      holder is billed, otherwise the Procedure's payer as 22a moved it), `invoiceEmailFor`,
-     the snapshot `Invoice.invoiceEmail` and `Invoice.billedTo`, and the holder references
-     (`Contract.holderReferences`, `referenceValuesFor`, and where each value lives: the Booking's
-     `insurerMemberNumber` and `purchaseOrder`, the Procedure's `billingReference` relabelled "Claim or
-     hospital reference");
+     the snapshot `Invoice.invoiceEmail` and `Invoice.billedTo`. No holder references exist
+     (`Contract.holderReferences`, `referenceValuesFor`, `insurerMemberNumber`, `purchaseOrder` are
+     not in the code, D82); confirm 25a removed `Procedure.billingReference` and the cross-match
+     `hospitalRef`, and that the Booking's approval number is the one number it carries;
    - from **27**: the prepayment invoice's kind and pair. Prepaid Procedures are left off the final
      invoice (D57), so no deduction line exists to credit or rebill; there is no balance invoice;
    - from **16**: the `-P` rule, the `invoiceNumber` / `reference` fields on the Xero records,
@@ -396,7 +398,7 @@ deleted or renamed `BillingCase`, `BillingReceipt`, `retryBillingCase`, `handoff
   `payment-full` 376, `payment-half` 389, `pwa-payment-full` 503, `pwa-payment-half` 515, and 38b's
   PWA "Office reviews this additional invoice").
 - Seed: `src/domain/seed/bookings.ts` (Sarah Mitchell's first episode on Dr Sharma's Tue 14 Jul AM List,
-  Christchurch Public, Health NZ, `HNZ-2026-3102`), `src/domain/seed/cast.ts`, 19a's Merivale Contract
+  Christchurch Public, Health NZ; `HNZ-2026-3102` goes with 25a), `src/domain/seed/cast.ts`, 19a's Merivale Contract
   in `src/domain/seed/contracts.ts` (no change expected).
 - Tests to extend: `store/billingRun.test.ts`, `store/xeroHandoff.test.ts`, `store/xeroNhi.test.ts`,
   `store/paymentActions.test.ts`, `store/payablesActions.test.ts`, `store/persistMigrate.test.ts`,
@@ -470,8 +472,7 @@ deleted or renamed `BillingCase`, `BillingReceipt`, `retryBillingCase`, `handoff
      payable is the gross amount, Phase 16), `offsetAgainstPayable = total - disbursed`,
      `releaseCancelled = released - disbursed`, `recoveryDue = disbursed`. The payable is always
      reversed (US-08.6.4 and US-08.6.5 "Payable reversed", OQ-77 part 2); there is no branch that
-     leaves it. Keep the amount credited an explicit input defaulting to the invoice total, so Phase
-     41's part credit of a prepayment (OQ-97, D31) adds a stated amount without reshaping the plan.
+     leaves it. The amount credited is always the invoice total: no amount input, a part credit is refused (OQ-97, D31).
      The cases, test-pinned:
 
      | Original's money | Receivable leg | Payable leg and negative invoice | Left over |
@@ -526,7 +527,7 @@ deleted or renamed `BillingCase`, `BillingReceipt`, `retryBillingCase`, `handoff
    US-08.6.5, US-08.6.2, OQ-19, OQ-42, OQ-63.
    - `submitCredit(api, actor, { invoiceId, party?, invoiceEmail?, reason, cause, replacements })`,
      each replacement 38b's additional-invoice input (`FreeFormLine[]`, its `EventParty` and invoice
-     email, the date of the charge) plus, for a rebill, the holder references. **Who may call it**
+     email, the date of the charge); a rebill adds nothing else (no holder references). **Who may call it**
      (US-08.6.5, answered): the office on any Procedure, or the anaesthetist on their own Procedure
      (38b's own-Procedure rule, the same check its anaesthetist additional invoice uses); the actor's
      role and source are recorded on every entry. One `mutate()` that writes the credit event and one
@@ -537,7 +538,7 @@ deleted or renamed `BillingCase`, `BillingReceipt`, `retryBillingCase`, `handoff
      colleague's Procedure ("You can only credit invoices for your own procedures."); `splitOfficeOnly`
      for an anaesthetist with `cause: 'split'`; `alreadyCredited`; `correctionPending` ("A credit for
      this invoice is waiting for review."); `kindNotCreditable` for a prepayment invoice ("Crediting a
-     prepayment invoice is not in this prototype yet.", Phase 41 with OQ-97) and an AA-FEE invoice ("AA
+     prepayment invoice is not in this prototype yet.", Phase 41 credits it in full) and an AA-FEE invoice ("AA
      fee invoices are not credited here."); a party with email delivery and no invoice email ("Add an
      invoice email for this billable party."); every 38b pricing refusal per replacement; and, for
      `cause: 'split'` only, `splitTotalCheck`. A standard invoice is creditable for what it billed
@@ -639,8 +640,7 @@ deleted or renamed `BillingCase`, `BillingReceipt`, `retryBillingCase`, `handoff
      it, as 38b built `AdditionalInvoiceForm`), opened by **Credit note** and by **Credit in full and
      rebill**. Step 1 **Credit**: the original's number, party and total; the
      party the credit goes to (22a's party picker, which can name another person, default the original's, with the invoice email from
-     `invoiceEmailFor`); the reason (required; quick chips "Wrong reference or purchase order", "Wrong
-     billable party", "Wrong amount", "Less work than expected", "Split requested", "Paid twice", plus
+     `invoiceEmailFor`); the reason (required; quick chips "Wrong billable party", "Wrong amount", "Less work than expected", "Split requested", "Paid twice", plus
      free text); the money state from `reversalPlan` on the current legs in plain words ("Unpaid:
      nothing held", "Paid $x: $x will be held for {payer}", "Dr X's payment is reversed: a negative
      invoice for $x, offset against the unpaid payable", or "Dr X was paid $x: a negative invoice for
@@ -708,11 +708,10 @@ deleted or renamed `BillingCase`, `BillingReceipt`, `retryBillingCase`, `handoff
 ### Session 2: the rebill from a copy, the combined split, the anaesthetist's credit, views, triggers and docs
 
 9. **Rebill from a copy of the original's lines** (US-08.6.6, the office's).
-   - Pure `rebillDraftFrom(invoice, lines, holderReferences)` in `creditNote.ts` (or 38b's
+   - Pure `rebillDraftFrom(invoice, lines)` in `creditNote.ts` (or 38b's
      additional-invoice module if it reads better): a 38b additional-invoice draft holding the
-     original's lines as `FreeFormLine`s, the original's party and invoice email, and the original's
-     holder references (21's `referenceValuesFor`: the insurer member number, the claim or hospital
-     reference, the purchase order, whichever the Contract's holder needs). Each positive line copies
+     original's lines as `FreeFormLine`s, and the original's party and invoice email, and nothing else
+     (no holder references exist, D82; the rebill copies only the original's lines). Each positive line copies
      as quantity 1 at `unitAmount` = the line's stored (ex GST) amount, its description unchanged (any
      units stay in the description), so no per-unit division can lose a cent. 38b's
      `priceFreeFormInvoice` refuses a zero or negative unit amount, but an original can carry negative
@@ -727,13 +726,12 @@ deleted or renamed `BillingCase`, `BillingReceipt`, `retryBillingCase`, `handoff
      as its own line; determinism.
    - **Credit in full and rebill** now opens step 2 with that draft as its one card, editable;
      **Credit note** in Admin offers "Start from a copy of the original's lines" on any card it adds.
-     The holder references are editable on the card (so a wrong purchase order is corrected there)
-     and stored on the replacement event (a `referenceValues?` field on 38b's additional-invoice
-     detail, copied to the issued invoice by the run), so 25's Regenerate (as 38b extended it)
+     What is corrected on the card is a line, the invoice description or, on the Booking, the approval
+     number (never a hospital or claim reference or a purchase order, which do not exist); the
+     replacement's stored basis is its lines and party, so 25's Regenerate (as 38b extended it)
      reproduces the replacement exactly. The copy is the office's only (US-08.6.6 names the admin);
      the anaesthetist's sheet (item 11) types its new invoices.
-   - Tests: an unedited copy rebills to the same total; a corrected purchase order changes only the
-     reference; a party change re-addresses the rebill; Regenerate reports "identical" on the rebill.
+   - Tests: an unedited copy rebills to the same total; a corrected line changes only that line; a party change re-addresses the rebill; Regenerate reports "identical" on the rebill.
 10. **Split a combined Procedure** (US-08.6.4, OQ-53, OQ-77), the office's.
     - `splitCombinedProcedure` is `submitCredit` with `cause: 'split'`, reached through a guard
       `canSplitCombined(state, procedureId, actor)`: refusals `splitOfficeOnly` for an anaesthetist;
@@ -945,7 +943,7 @@ the new entries under their screens automatically.
   Contract changed after sending (D67), and raises the refund of a paid one itself, automatically on
   cancel, paid in Xero like every payment (OQ-115, OQ-111).
 - **Credits on a prepaid Procedure's prepayment invoice**, including the anaesthetist's "only half the
-  prepaid work was done" case and a credit for **part** of a prepayment (OQ-97, D31): Phase 41, on this
+  prepaid work was done" case (credited in full, then a fresh additional invoice; a part credit is never built, OQ-97, D31): Phase 41, on this
   phase's records. Splitting a **prepaid** combination (US-08.6.4's usual case: it needs 41's credit of
   a prepayment invoice, so it is handed to 41 and recorded as a known gap; the post-paid combination
   is built here). Crediting an **AA-FEE** invoice (no catalogue item asks for it).
@@ -1006,9 +1004,8 @@ Jul AM List, and one 38b additional invoice on Sarah Mitchell's Procedure, revie
 Session 2 (after **Reset** and the same staging):
 
 - [ ] **Credit in full and rebill** on Sarah Mitchell's original: the card holds a copy of the
-      original's lines and its holder references (the claim or hospital reference `HNZ-2026-3102`, and
-      a purchase order if 21 made the holder need one). Correct one reference, submit, approve, run:
-      the rebill totals the original exactly and carries the corrected reference; **Regenerate from
+      original's lines only. Correct one line (or the invoice description), submit, approve, run:
+      the rebill totals the original plus the correction and carries the corrected line; **Regenerate from
       locked data** on it says "identical". The Admin **Credit note** sheet offers "Start from a copy
       of the original's lines"; the anaesthetist's sheet does not.
 - [ ] Paid-out case: on the rebill, Billing monitor **Demo actions → Stage refund after payout**, then
@@ -1084,10 +1081,9 @@ patch the sections below and spot-check that the master guide's S4 matches the r
 - **`03-demo-script.md`:**
   - **S4 Beat 2b** (new, after 38b's Beat 2) "Credit in full and rebill":
     - Click: on Sarah Mitchell's original invoice, **Credit in full and rebill**, reason **Wrong
-      reference or purchase order**; the draft already holds the original's lines and holder
-      references; correct the reference the holder needs (Health NZ's claim or hospital reference
-      `HNZ-2026-3102`, or the purchase order only if 21 made that holder need one; script whichever
-      the built card shows); **Submit for review**; approve it in the review queue
+      amount**; the draft already holds the original's lines; correct one line, the invoice
+      description or the approval number on the Booking (never HNZ-2026-3102 or a purchase order,
+      which do not exist); **Submit for review**; approve it in the review queue
       and run the next run; show the credit note with its negative invoice, the credited original,
       the rebill and the Procedure's events list, then the Xero sim pair.
     - Say: "We never edit an issued invoice. We credit it in full, to whichever party needs it, and
@@ -1111,8 +1107,7 @@ patch the sections below and spot-check that the master guide's S4 matches the r
       the office's review like everything else." On the handset, **Office reviews this credit**.
     - Fill in the actual invoice and credit note numbers from a reset run.
   - The **Direct URLs** table gains "One credit note · `/admin/credit-notes/<creditNoteId>`".
-  - The S4 discovery points gain OQ-97 (can a credit be for part of a prepayment) if Phase 41 has not
-    added it, one line; drop any OQ-42, OQ-61, OQ-71, OQ-72, OQ-76 or OQ-77 line (all answered).
+  - The S4 discovery points drop any OQ-42, OQ-61, OQ-71, OQ-72, OQ-76, OQ-77 or OQ-97 line (all answered).
 - **`02-workflows-and-handoffs.md`:** a new "Correction after invoicing" case (an AA-side error, or
   less work than a fixed price assumed, is credited in full to any party by the office or by the
   anaesthetist on their own Procedure, then rebilled; the office's rebill can start from a copy; the
@@ -1150,10 +1145,10 @@ matches what was built:
 | Item | Recipe now | When this phase is done |
 |---|---|---|
 | [US-08.6.1](../../../../requirements-board/requirements/stories/US-08.6.1.md) Additional invoice for late charges | partial · web-post-op-event, mobile-post-op-event, admin-post-op-addendum[locked,added] | No change here (Phase 38b owns it). Check only that it still passes with the Credit note option beside Create additional invoice; fix by text, not position |
-| [US-08.6.2](../../../../requirements-board/requirements/stories/US-08.6.2.md) Credit note and re-issue | absent | captured. Admin `/admin/invoices/<id>`, shot `credit-rebill`: `rail` state highlights `[data-shot=credit-rebill-button]`; `sheet` state fills `[data-shot=credit-sheet]` (reason chip, copied lines and holder references, payable-reversal line, trail preview); `credit-note` state (after Approve for billing and `run-next-billing-run`) opens the credit note highlighting `[data-shot=negative-invoice-card]`; `credited` state highlights `[data-shot=invoice-credited-banner]`. Paid-out variant via `stage-refund-after-payout`. Simulator `/demo/xero/invoices/<accRecId>` shot `xero-credit-note`. Captions: "Credit in full, then rebill", "The payable is reversed by a negative invoice to the anaesthetist". Nothing may suggest an automatic credit |
+| [US-08.6.2](../../../../requirements-board/requirements/stories/US-08.6.2.md) Credit note and re-issue | absent | captured. Admin `/admin/invoices/<id>`, shot `credit-rebill`: `rail` state highlights `[data-shot=credit-rebill-button]`; `sheet` state fills `[data-shot=credit-sheet]` (reason chip, copied lines, payable-reversal line, trail preview); `credit-note` state (after Approve for billing and `run-next-billing-run`) opens the credit note highlighting `[data-shot=negative-invoice-card]`; `credited` state highlights `[data-shot=invoice-credited-banner]`. Paid-out variant via `stage-refund-after-payout`. Simulator `/demo/xero/invoices/<accRecId>` shot `xero-credit-note`. Captions: "Credit in full, then rebill", "The payable is reversed by a negative invoice to the anaesthetist". Nothing may suggest an automatic credit |
 | [US-08.6.3](../../../../requirements-board/requirements/stories/US-08.6.3.md) Create an additional invoice on a Procedure | absent · stub (38b captures it) | No change here (Phase 38b owns it). Check only that its shots pass with the Credit note option added, in Admin and the anaesthetist apps |
 | [US-08.6.4](../../../../requirements-board/requirements/stories/US-08.6.4.md) Split a combined Procedure into additional invoices | absent · stub, no shots | captured. Run `stage-combined-procedure` (Merivale's combination Contract) on Admin · Invoices, open its invoice, shot `split-combined`: `sheet` state highlights `[data-shot=split-combined-sheet]` with three component cards adding up to the credited invoice and `[data-shot=split-left-to-allocate]` at $0.00; `result` state (after review and the run) shows a component invoice linking to the original and the Procedure. Captions in the catalogue's words: "A split after invoicing credits the original, then raises one additional invoice per component", "The components must add up to the credited amount; each amount is entered freely", "The credit reverses the linked payable". Before sending the split is a normal admin edit: no shot or caption for it. The prepaid-combination split is a PROGRESS note handed to 41 |
-| [US-08.6.5](../../../../requirements-board/requirements/stories/US-08.6.5.md) Credit note option on additional invoices | none (create it) | captured. New recipe, office and anaesthetist. Admin Booking detail for Sarah Mitchell (after `stage-post-op`): shot `credit-note-option`, `option` state highlights `[data-shot=credit-note-button]` beside Create additional invoice; `party` state fills `[data-shot=credit-sheet]` with another person chosen through 22a's party picker and the payable-reversal line; `event` state highlights `[data-shot=procedure-credit-event]`. Shot `anaesthetist-credit-note` on web (Dr Souter, David Chen's Mon 22 Jun Booking, reached by 38a's search "Chen"; ids from ATLAS.md): `option` highlights `[data-shot=anaesthetist-credit-note-button]`, `sheet` fills `[data-shot=credit-form]` with "Less work than expected"; the same on mobile in the bottom sheet. Captions in the catalogue's words (credit to the party picked; includes the payable reversal; recorded as an event; none exists until someone creates one by hand). The prepaid half of "After a fixed price" is Phase 41's |
+| [US-08.6.5](../../../../requirements-board/requirements/stories/US-08.6.5.md) Credit note option on additional invoices | none (create it) | captured. New recipe, office and anaesthetist. Admin Booking detail for Sarah Mitchell (after `stage-post-op`): shot `credit-note-option`, `option` state highlights `[data-shot=credit-note-button]` beside Create additional invoice; `party` state fills `[data-shot=credit-sheet]` with another person chosen through 22a's party picker and the payable-reversal line; `event` state highlights `[data-shot=procedure-credit-event]`. Shot `anaesthetist-credit-note` on web (Dr Souter, David Chen's Mon 22 Jun Booking, reached by 38a's search "Chen"; ids from ATLAS.md): `option` highlights `[data-shot=anaesthetist-credit-note-button]`, `sheet` fills `[data-shot=credit-form]` with "Less work than expected"; the same on mobile in the bottom sheet. Captions in the catalogue's words (credit to the party picked; includes the payable reversal; always the whole invoice, never a part; recorded as an event; none exists until someone creates one by hand). The sheet shows no amount field for the credit. The prepaid half of "After a fixed price" is Phase 41's |
 | [US-08.6.6](../../../../requirements-board/requirements/stories/US-08.6.6.md) Start a rebill from a copy of the original lines | none (create it) | captured. New recipe. Admin `/admin/invoices/<id>` for Sarah Mitchell's original: shot `rebill-from-copy` presses `[data-shot=credit-rebill-button]` and highlights the prefilled card in `[data-shot=credit-sheet]` holding the original's lines. Caption "After a credit note, the rebill starts from a copy of the original's lines" |
 | [US-13.5.2](../../../../requirements-board/requirements/stories/US-13.5.2.md) Audit trail of changes (retitled) | captured · admin-audit-viewer, admin-sign-in-attempts | captured. Keep both shots passing, and re-check `admin-audit-viewer` shows no payment, receipt or disbursement row (the carve-out). Add shot `credit-note-audit`: the steps make one credit first (`stage-post-op`, Credit in full and rebill, Approve for billing, `run-next-billing-run`), then `/admin/audit` with entity filter `creditNote`, credit note rows highlighted. Caption "Credit notes are audited, every step with who, role, source and what changed"; add "Payments, receipts and disbursements are not audited here: they are recorded in Xero" |
 
@@ -1219,7 +1214,7 @@ review-and-fix pass (PROGRESS convention 18)**:
 - **Both sides together.** The Xero reversal and every new pair land in one commit or none does; 38b's
   own additional-invoice handoff never runs a second time for a replacement; the fault path leaves a
   retryable, visible state; the retry is idempotent; no NHI reaches a credit note.
-- **Nothing provisional.** OQ-77 (all parts), OQ-72, OQ-71, OQ-63, OQ-61 and OQ-76 are answered: no
+- **Nothing provisional.** OQ-77 (all parts), OQ-97, OQ-72, OQ-71, OQ-63, OQ-61 and OQ-76 are answered: no
   provisional label, toggle, constant or chip, and no before-sending path (a split before sending is a
   normal admin edit; the split is refused with the edit sentence until the invoice exists).
 - **Split rules.** Office only; only once the invoice exists (no combination marker, no parent
@@ -1235,7 +1230,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   anaesthetist apps show no ledger figures; the PWA stand-in is PWA only with its body in
   `src/store`.
 - **Rebill from a copy.** The copy reproduces the original's total exactly, folding any negative line
-  (27 writes no prepayment deduction); holder references carry over and are editable; Regenerate
+  (27 writes no prepayment deduction); only the original's lines are copied (no holder reference, hospital reference or purchase order anywhere); a credit for part of an invoice is refused; Regenerate
   reproduces the replacement; the Booking lock and its pricing snapshots are untouched.
 - **Audit.** Every step of a correction is its own entry with a label (no raw keys in the viewer);
   credit-note entries carry `entityType: 'creditNote'`; payments, receipts and disbursements are hidden
@@ -1267,13 +1262,13 @@ review-and-fix pass (PROGRESS convention 18)**:
   original; the engine sends the credit note; a rebill is a free-form copy with no re-pricing, no new
   lock and no payee correction); the anaesthetist's credit going to the office's review, and the PWA
   stand-in; the US-13.5.2 carve-out as built (payments, receipts and disbursements hidden from the audit viewer only); the prepaid-combination split and
-  every credit on a prepayment invoice left refused for 41 (with OQ-97's part credit); the OQ-60
+  every credit on a prepayment invoice left refused for 41 (OQ-97 answered: in full only); the OQ-60
   reading; and the screens worth a look, each with its route and persona (the credit sheet, a credit
   note, a credited original, the split sheet with Left to allocate, the review row, the
   anaesthetist's credit sheet on web and mobile, the Audit viewer filtered to credit notes).
 - **Status row** for catch-up Phase 39, and a phase entry with:
-  - the drift-check result (items changed or not since `c9b65ad`; FT-08.6, US-08.6.2, US-08.6.4,
-    US-13.5.2 and the other covered items; OQ-60 and OQ-97 status; the
+  - the drift-check result (items changed or not since `63a4490`; FT-08.6, US-08.6.2, US-08.6.4,
+    US-13.5.2 and the other covered items; OQ-60 status; the
     List the combined-procedure trigger uses; the prepaid-combination split left refused, as a known
     gap against US-08.6.4 handed to 41; the prepaid half of US-08.6.5's "After a fixed price" handed
     to 41);
@@ -1307,8 +1302,7 @@ review-and-fix pass (PROGRESS convention 18)**:
      or by the anaesthetist on their own; the ledger credits the original receivable whoever the
      party is; zero or more replacements follow; a credit note is not a refund; nothing is ever
      credited automatically (US-06.4.1).
-  5. **New:** a rebill is a 38b additional invoice, started from a copy of the original's lines and
-     holder references (US-08.6.6, the office's) and edited; the Booking's lock and pricing snapshots
+  5. **New:** a rebill is a 38b additional invoice, started from a copy of the original's lines (US-08.6.6, the office's) and edited; the Booking's lock and pricing snapshots
      are never rewritten and no new lock is made (the question Phase 25 left); its payable goes to
      the locked payee.
   6. **New:** the payable is reversed by a negative invoice to the anaesthetist on every credit
@@ -1341,10 +1335,9 @@ review-and-fix pass (PROGRESS convention 18)**:
     invoice is not unpaid for the balance warning; a patient's `heldForPayer` credits are the credit
     balance D24's mild warning reads.
   - For **41**: the credit note also settles a prepaid Contract changed after sending (D67), and the refund it raises is the system's, automatic on cancel, paid in Xero (OQ-115, OQ-111). Reuse `CreditNote` (`cause` widens to the cancellation refund), `creditInFull`,
-    `reversalPlan` (its amount-credited input is where OQ-97's part credit of a prepayment, D31, plugs
-    in) and `NegativeInvoice`; prepayment invoices and prepaid combinations are still refused by
+    `reversalPlan` (whole invoice only, D31) and `NegativeInvoice`; prepayment invoices and prepaid combinations are still refused by
     `submitCredit` and `canSplitCombined`, so the anaesthetist's "only half the prepaid work was done"
-    credit (US-08.6.5 "After a fixed price", prepaid half) is 41's to open, on the same
+    credit (US-08.6.5 "After a fixed price", prepaid half) is 41's to open (credit in full, then a fresh additional invoice, D31), on the same
     `CreditForm`. US-08.6.4 says combinations are usually prepaid, so once 41's credit
     path takes a prepayment invoice, lift the prepaid refusal. If 41 does not pick it up, 44 records it
     as an open gap against US-08.6.4.

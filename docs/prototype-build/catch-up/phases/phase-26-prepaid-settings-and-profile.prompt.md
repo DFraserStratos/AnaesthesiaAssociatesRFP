@@ -1,6 +1,6 @@
-Please run catch-up Phase 26 (Anaesthetist profile and bank details) of the Anaesthesia Associates prototype.
+Please run requirements catch-up Phase 26 (Anaesthetist profile and bank details) of the Anaesthesia Associates (AA) prototype.
 
-Load the run-build-phase skill and follow it for this phase. The phase doc (it keeps its historical file name, phase-26-prepaid-settings-and-profile.md) holds the reads, drift-check stops, work items, checklist, screenshots, demo guide and progress updates; below is only what the doc does not already say.
+Load the run-build-phase skill and follow it for this phase (1 session). The phase doc (it keeps its historical file name, phase-26-prepaid-settings-and-profile.md) holds the reads, drift-check stops, work items, checklist, screenshots, demo guide and progress updates; below is only what the doc does not already say.
 
 Also read:
 - ROADMAP.md: D64 (prepaid is a Contract setting, nothing about prepayment on the profile, the GST period goes too), the Profile track and the sequencing note "26 needs only U6" (before 38 and 40a).

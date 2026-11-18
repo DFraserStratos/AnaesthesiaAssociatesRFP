@@ -99,11 +99,11 @@ the parity fixture), 18a (funding tags: ACC is a tag on a holder's Contract, not
 starting values, `timeUnitsFromMinutes(minutes, rule)` and `masters.rvgTimeRule`), 19b (modifiers as
 itemised records: none on an event), 20 (one Contract per Procedure, the holder-fit rule and the picker's
 candidate list), 20a (the three-part stack: an event is not in it), 21 (`billablePartyForProcedure` in
-`whoIsBilled.ts`, holder references (`claimReference` on St George's ACC) and
-completion (the payer is on the Procedure since 22a, not the Booking), 22 (`materialiseInvoices`, `deliveryPlanFor`, `lineage`, `procedureIds`, Contract-driven layout
-and GST, the Split button), 23 (exactly one primary Procedure, `isPrimary`), 25 (the `BookingLock` pricing
+`whoIsBilled.ts` and
+completion; the payer is on the Procedure since 22a, not the Booking; no holder references exist, D82), 22 (`materialiseInvoices`, `deliveryPlanFor`, `lineage`, `procedureIds`, Contract-driven layout
+and GST, the Split button), 23 (exactly one primary Procedure, `isPrimary`), 25 and 25a (the `BookingLock` pricing
 snapshot, whose `billingLines` copy goes with the entity, the locked billable party and payee,
-`regenerateInvoiceFromLock`), 26 (the anaesthetist's unit value in the profile), 28 (Slots and Lists), 32 and 32a (a moved Booking sits on the doer's
+`regenerateInvoiceFromLock`; 25a removes `Procedure.billingReference`, so no Procedure carries a hospital or claim reference, D82), 26 (the anaesthetist's unit value in the profile), 28 (Slots and Lists), 32 and 32a (a moved Booking sits on the doer's
 List), 35 (explicit save: its drafted-action table and `BookingSnapshot.billingLines` name the lines
 removed here) and 36 (`newBookingPair`, `handoffPair`, the ledger, one payable leg per receivable,
 `bctiRecordsOf`) have also run.
@@ -175,7 +175,7 @@ seeded billing events, and loses `billingLines`, so `PERSIST_VERSION` is bumped.
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's catalogue snapshot (catalogue commit c9b65ad):
+1. Run the drift check against the plan's catalogue snapshot (catalogue commit 63a4490):
 
    ```
    node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-03.7,US-03.7.1,US-03.7.2,US-05.5.2,US-03.3.6,US-03.7.3,US-08.6.1,US-08.6.3,US-08.6.5,US-05.2.6,US-05.2.5,US-04.2.4,US-05.2.1,FT-11.2,US-07.3.2,US-09.1.4,US-10.3.1,OQ-63,OQ-12,OQ-121,OQ-48,OQ-50,OQ-75,OQ-29,OQ-60,US-03.7.4,OQ-138
@@ -254,7 +254,7 @@ seeded billing events, and loses `billingLines`, so `PERSIST_VERSION` is bumped.
      the parity fixture `store/__parity__/phase-18-baseline.json`;
    - from **19**: `ProcedureType` and the ACL reconstruction procedure's id; from **20**: the holder-fit
      rule and the picker's candidate list (event fees never change it);
-     from **21** and **22a**: `billablePartyForProcedure` (now the Procedure's own payer where its Contract bills the payer), `Procedure.payer` and the copy rule, holder references and the
+     from **21** and **22a**: `billablePartyForProcedure` (now the Procedure's own payer where its Contract bills the payer), `Procedure.payer` and the copy rule and the
      party picker (with its "another person" option); from **22**: `materialiseInvoices`, `deliveryPlanFor`, the `lineage` roles,
      `procedureIds`, `gstTreatment`, the Split button's records and how a split Procedure's invoices
      are told apart; from **25**: `BookingLock` (and its `billingLines` member), the locked billable party and payee,
@@ -661,8 +661,7 @@ names from the drift check):
       with Mr Hale, one Booking for Coral Bennett (each Procedure's payer prefilled from the patient,
       22a), one primary Procedure on the ACL reconstruction procedure (19's list) under St George's ACC
       (`CT-STG-ACC`), times 08:05 to 09:40, no optional modifier claimed (so none needs an explanation;
-      any locked age modifier 19b applies stays), St George's ACC's holder reference filled (21 made it
-      need `claimReference`; use a demo claim number such as "ACC-DEMO-0716", or completion refuses),
+      any locked age modifier 19b applies stays), no claim reference or other holder reference (D82: none exists),
       completed and submitted as Dr Souter (15a: no confirm step), and left SUBMITTED, so the presenter shows events reviewed and billed with the Procedure's invoice when the List is authorised and the run is made, and an event added after that invoiced on its own in the next run, on the same Booking. If an action refuses a past date, use the
       office path (28's assignment as the office actor) and record it. **38b's step stays**: the body
       still does what 38b left it doing for Dr Sharma's Tue 14 Jul AM List, because the

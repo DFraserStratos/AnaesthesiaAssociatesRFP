@@ -8,19 +8,17 @@ standalone documentation stays short; from the 2026-10-01 Notes, "anaesthetists 
 Contract complexity, which the office handles, and the new system should not add it"; and, new from
 Greg on 16 October, model the anaesthetist app very closely on the current mobile app) ·
 [US-13.5.3](../../../../requirements-board/requirements/stories/US-13.5.3.md)
-Sign in to the anaesthetist app (Verify, unchanged, one acceptance criterion: "Given an
+Sign in to the anaesthetist app (Verify, one acceptance criterion: "Given an
 anaesthetist with an account, when they open the PWA, then they sign in with their account login";
 graded **Missing**: the PWA and mobile app open straight into the persona's data, and the only
-sign-in anywhere is Phase 14's "Simulate sign-in attempts", which writes audit rows) ·
-[US-15.0.8](../../../../requirements-board/requirements/stories/US-15.0.8.md)
-Help desk by phone and email (Open, status 2, new 5 November: office staff reach the Stratos help desk
-by phone or email and each request is logged as a ticket and tracked; a request for something the
-system does not yet do goes to the product owner to plan; graded **Missing**; the hours wait on
-[OQ-137](../../../../requirements-board/requirements/questions/OQ-137.md), D83's default built).
+sign-in anywhere is Phase 14's "Simulate sign-in attempts", which writes audit rows).
+[US-15.0.8](../../../../requirements-board/requirements/stories/US-15.0.8.md) (the help line) **left
+this phase on 18 November** and is Phase 43b's with the Help entry in all three apps, the hours and
+the tickets (D83): no help line panel, trigger or `helpTickets` slice is built here.
 US-15.0.1's two catalogue images are the layout targets for the help:
 [mobile Booking capture](../../../../requirements-board/requirements/assets/US-15.0.1/mobile-card-capture.png)
 and [the Admin Day view](../../../../requirements-board/requirements/assets/US-15.0.1/admin-day-view.png).
-US-13.5.3 and US-15.0.8 have no image.
+US-13.5.3 has no image.
 
 **What changed for this phase since the plan was written.** US-15.0.1 (Greg, 16 October: model the
 anaesthetist app very closely on the current mobile app; status 1) and OQ-83 (Open, **deferred to the end
@@ -43,9 +41,10 @@ of discovery**) are as before. The catalogue around them moved, which rewrites t
   discount and a prepaid price are never editable (D30). No first-party or third-party rule, no
   "adjustable" label, no reason, no price precedence.
 - Age modifiers and P1 are pre-applied and removable, never locked (19b).
-- **A payer on each Procedure** (Phase 22a, D85, provisional on OQ-140 only in 22a's offer to the other Procedures): the anaesthetist sees and changes the payer in each Procedure's "Paid by" line with one Paid by sheet; 21's Booking-level Payer row, `PayerSheet` and `setBookingPayer` are gone. The keep-list, the help copy and the checklist read the Procedure's payer.
-- **US-15.0.8 joins** (help desk, OQ-137, D83's default): a Help entry in Admin, a Support panel and
-  mock tickets. Admin only; the phase is now 2 sessions.
+- **A payer on each Procedure** (Phase 22a, D85, answered 18 November: a payer on each Procedure, a change offered to the others billing the same payer; 25a removes the one provisional label): the anaesthetist sees and changes the payer in each Procedure's "Paid by" line with one Paid by sheet; 21's Booking-level Payer row, `PayerSheet` and `setBookingPayer` are gone. The keep-list, the help copy and the checklist read the Procedure's payer.
+- **No holder references** (D82, OQ-136 answered): none were ever built, and 25a removes the Procedure's hospital reference (DM-68), so the add-Booking form, `EditProcedureSheet` and capture ask for none; the keep-list no longer has them.
+- **Answered 18 November** (built as answered): D29 (the age modifier's rule, OQ-95) and D36 (Not preferred, Preferred, Tier 1 to Tier 4, OQ-102) are settled, so the help copy states them (work item 11); 25a clears their on-screen caveats.
+- **US-15.0.8 left** (D83): the help line is 43b's.
 
 US-15.0.1 (status 1) **yields** to the Confirmed US-03.1.2, US-03.1.9, FT-03.5 and
 [US-03.1.8](../../../../requirements-board/requirements/stories/US-03.1.8.md): the descriptions,
@@ -100,19 +99,19 @@ change flagged for office review; DM-37 merged into it) and
 (the anaesthetist's sign-in experience: platforms, biometrics, MFA, single sign-on, identity
 provider; Open and **deferred to the end of discovery**): the phase builds the one thing assumed, an
 account login on the PWA, as a simulated screen, and labels it provisional in one place (log it on the
-"For the owner's review" list). [OQ-137](../../../../requirements-board/requirements/questions/OQ-137.md)
-(the support hours, an 8:00am or 8:30am start; Open): D83's default is built, the hours as one
-configurable string, Monday to Friday 8:30am to 5:30pm NZT as the RFP response offers, with a small
-Provisional pill, so an 8:00am start is a one-line change; outage handling is narrated. The help copy
+"For the owner's review" list). The support hours (OQ-137, answered) are 43b's. The help copy
 states as settled only answered decisions: D3, D12, D14, D15, D16 and D17 (as superseded), D25, D28
 (OQ-93: insurance never narrows the Contract list; the missing approval number is the only insurance
-warning; the anaesthetist sees the approval number where the Booking holds one), D37 (OQ-103: the invoice
-description's order of defaults, which the office can always edit), D42, D43, D44, D46, OQ-78's answer
-(work item 11) and Donald's 5 November contract model decisions (D1 to D11, made for the build: the decided
-step rail, the anaesthetist seeing the price); none gates the phase.
+warning; the anaesthetist sees the approval number where the Booking holds one), D29 (OQ-95: the age
+modifier from the patient's age on the procedure date), D36 (OQ-102: Not preferred, Preferred, Tier 1 to
+Tier 4), D37 (OQ-103: the invoice description's order of defaults, which the office can always edit),
+D42, D43, D44, D46, D85 (OQ-140: a payer on each Procedure, a change offered to the others), OQ-78's
+answer (work item 11) and Donald's 5 November contract model decisions (D1 to D11, made for the build:
+the decided step rail, the anaesthetist seeing the price). All answers are Donald's for the build, not
+yet confirmed by AA, and are built as answered, with no provisional label; none gates the phase.
 **Depends on:** 20a (the `ProcedureStack` on every Booking screen, `procedureStackView`,
-`whoIsInvoicedFor`, `pricingBasisFor` and `formatPricingBasis`), 21a (the capture form following the pricing kind, completion and Review's flags), 21 (the read-only Insurance row, holder references, completion, and Review's
-stack and warnings), 22a (the payer on each Procedure: the "Paid by" line, the one Paid by sheet and `setProcedurePayer`; D85), 24 (prices on the Procedure, the Contract's editable flag, `PriceCard` and its
+`whoIsInvoicedFor`, `pricingBasisFor` and `formatPricingBasis`), 21a (the capture form following the pricing kind, completion and Review's flags), 21 (the read-only Insurance row, completion, and Review's
+stack and warnings), 22a (the payer on each Procedure: the "Paid by" line, the one Paid by sheet and `setProcedurePayer`; D85), 25a (the hospital reference gone from the forms this phase sweeps, DM-68; the age-band and tier caveats and 22a's "provisional (OQ-140)" label cleared), 24 (prices on the Procedure, the Contract's editable flag, `PriceCard` and its
 states, and the price, its calculation and the total shown to the anaesthetist), 31 (the
 DRAFT state, the Draft Lists band on the Day grid and the Draft Lists rail card) and 39b (pre-op and
 post-op events and the billing-line sheet on the capture screen).
@@ -131,13 +130,13 @@ are settled by now, which is why this phase sits late. Also UI unification Phase
 U5), DONE first: U2's `PopoverPanel` and `SidePanel` and U6's `Eyebrow` and `Card`, which this phase
 builds on.
 **Estimated:** 2 sessions. Session 1: the sign-in (items 1 to 4) and the sweep with its guard test
-(items 5 to 9); stop green after item 9. Session 2: the help (items 10 to 15), the help desk (items 16
-to 18) and the triggers (item 19).
+(items 5 to 9); stop green after item 9. Session 2: the help (items 10 to 15) and the triggers (items
+16 and 17).
 
 ## Goal
 
-US-13.5.3 and US-15.0.8 are graded **Missing** and US-15.0.1 **Contradicts** in the gap analysis. This
-phase closes all three (US-15.0.1's has two halves: office-only detail left on anaesthetist screens, and the missing help).
+US-13.5.3 is graded **Missing** and US-15.0.1 **Contradicts** in the gap analysis. This phase closes both
+(US-15.0.1's has two halves: office-only detail left on anaesthetist screens, and the missing help).
 
 - **The anaesthetist signs in to the PWA** (US-13.5.3, PWA first). On launch the installed PWA shows a
   **simulated sign-in screen**: the AA logo, an email and a password field with Dr Souter's demo
@@ -178,29 +177,21 @@ phase closes all three (US-15.0.1's has two halves: office-only detail left on a
   anchored popover on desktop. All copy lives in **one topic file**, written to the answered decisions
   and the contract model proposal (AR-58): how to read the stack, the RVG code type-ahead and base units
   from the Contract's default RVG code or the RVG group, the Contract pick (the decided step rail) and the payer shown in each Procedure's "Paid by" line (changed in the one Paid by sheet),
-  what the anaesthetist can change on the price, the pre-applied age and P1 modifiers and the
+  what the anaesthetist can change on the price, the pre-applied age and P1 modifiers (the age from the patient's age on the procedure date, D29) and the
   explanation asked for any other, Draft Lists assigned only by the office, warnings that never block
   or ask for confirmation, notices kept apart from the to-do list, and how the price is set. Tips sit on the
   three operational screens US-15.0.1 names through its images and its "used every day" sentence:
-  **mobile Booking capture** (the stack, the RVG code, the Contract, the modifiers and the Price
+  **mobile Booking capture** (the stack, the RVG code, the Contract, the modifiers, the payer and the Price
   section; the anaesthetist web app's shared capture gets them too), **the Admin Day view** and
   **Admin Review**. Each app also gets **one first-run hint**: a calm inline card, not a modal, that
   says where to start and that the info glyph explains a heading. A dismissal is kept per browser, like
   the PWA's install coaching, and Reset or the "Show first-run hints again" demo action brings the
   hints back.
-- **The help desk** (US-15.0.8). A **Help** entry in the Admin nav footer opens a Support panel: the
-  Stratos help desk's phone number and email, the support hours as one configurable string (D83's
-  default: Monday to Friday 8:30am to 5:30pm NZT, the RFP response's offer, with a small Provisional
-  pill naming OQ-137, so an 8:00am start is a one-line change) and **Raise a request**. A request is
-  logged as a mock ticket and listed in the panel with its status (Open, In progress, Resolved); a tick
-  "This is something the system does not do yet" marks it a feature request for the product owner. The
-  panel is badged as simulated; there is no ticketing integration or SLA engine, and outage handling is
-  narrated. A badged demo trigger plays the help desk resolving a request.
+The help line and product support (US-15.0.8, hours, tickets) are 43b's (D83); this phase builds no
+help line.
 
 The sign-in session and the dismissed hints are per-viewer browser state, the sweep is presentation and
-the help is copy and UI, so none of them touches the store. The one store change is the help desk's
-ticket list: a small `helpTickets` slice, seeded with two examples (one In progress, one Resolved) and
-changed only through audited `mutate()` actions, so **`PERSIST_VERSION` moves by one** (26 at efe123c).
+the help is copy and UI, so none of them touches the store and **`PERSIST_VERSION` does not move**.
 The pricing model stays in `aa-prototype/src/domain/billing`; this phase only reads its view types and
 never adds a second derivation of who is invoiced, the pricing basis or the price. The sign-in rows are
 audit-only (`mutate()` with an empty patch on the existing `account` entity type, as Phase 14 does).
@@ -212,10 +203,10 @@ presenter-narrated.
 1. Run the catalogue diff since the plan's baseline:
 
    ```
-   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-15.0.1,US-13.5.3,US-15.0.8,FT-13.5,OQ-83,OQ-137,OQ-117,US-15.0.2,US-03.1.2,US-03.1.9,US-03.1.8,FT-03.5,US-03.5.1,FT-03.4,US-03.4.1,FT-04.3,US-04.3.2,FT-03.3,US-03.3.4,US-03.3.8,US-11.2.2,US-04.2.2,US-08.2.3,US-13.6.3,US-01.3.6,FT-13.7,US-13.7.1,US-13.7.2,US-13.7.3,FT-13.8,US-13.8.1,US-13.1.1,FT-01.6,US-07.2.2,EP-13,EP-15,OQ-49,OQ-60,OQ-78,OQ-79,OQ-86,OQ-89,OQ-90,OQ-93,OQ-95,OQ-96,OQ-102,OQ-103
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-15.0.1,US-13.5.3,FT-13.5,OQ-83,OQ-117,OQ-140,US-15.0.2,US-03.1.2,US-03.1.9,US-03.1.8,FT-03.5,US-03.5.1,FT-03.4,US-03.4.1,FT-04.3,US-04.3.2,FT-03.3,US-03.3.4,US-03.3.8,US-11.2.2,US-04.2.2,US-08.2.3,US-13.6.3,US-01.3.6,FT-13.7,US-13.7.1,US-13.7.2,US-13.7.3,FT-13.8,US-13.8.1,US-13.1.1,FT-01.6,US-07.2.2,EP-13,EP-15,OQ-49,OQ-60,OQ-78,OQ-79,OQ-86,OQ-89,OQ-90,OQ-93,OQ-95,OQ-96,OQ-102,OQ-103
    ```
 
-   (it diffs from the baseline, `c9b65ad`, to the working tree; add `--to <ref>` to stop at a commit;
+   (it diffs from the baseline, `63a4490`, to the working tree; add `--to <ref>` to stop at a commit;
    the tool is rename-aware, so never use a plain git diff of the catalogue folder.) Read the hunks for every item listed, any new note that cites
    US-15.0.1, US-13.5.3, US-03.1.2 or US-03.1.9, and the domain-model lines on what the anaesthetist
    sees of a Contract and its price. At efe123c US-15.0.1 is status 1 with Greg's 16 October note, no
@@ -228,8 +219,6 @@ presenter-narrated.
      account), drop the provisional caption and record it. If the answer needs a real identity
      provider, a native app or real biometrics, keep the simulated screen, narrate the rest and tell
      the owner in the PROGRESS entry rather than growing the phase.
-   - **OQ-137 answered** (the support hours): set the one hours string and drop the Provisional pill; if
-     the answer adds channels or a portal, narrate them rather than growing the phase.
    - **US-13.5.3 adds the web app** (or the admin app) as a sign-in surface: the session module (work
      item 1) is app-agnostic, so add the same screen to that app only if it fits; otherwise log it.
    - **US-15.0.1 gains acceptance criteria** (a named screen list, a help centre, a searchable manual,
@@ -252,9 +241,9 @@ presenter-narrated.
    explains it.
 4. **Open questions.** OQ-83 is the only one this phase builds against: the sign-in is simulated and
    carries the provisional caption (work item 3). The help copy is the other risk: a tip never states
-   as settled anything still open. At efe123c the copy in work item 11 is written to the answers (D3,
-   D12, D16 and D17 as superseded, D14, D15, D25, D28, D30, D37, D42, D43, D44, D46, D65, OQ-78's answer,
-   US-13.7.3) and to AR-58, and avoids what is still open:
+   as settled anything still open. The copy in work item 11 is written to the answers (D3, D12, D16 and
+   D17 as superseded, D14, D15, D25, D28, D29, D30, D36, D37, D42, D43, D44, D46, D65, D85, OQ-78's
+   answer, US-13.7.3) and to AR-58, and avoids what is still open:
    - a Booking without an NHI (D11, OQ-49, still Open though Vanessa leans to a mandatory NHI; no tip
      mentions it);
    - the BCTI count (OQ-60 and the ROADMAP's BCTI granularity);
@@ -266,20 +255,18 @@ presenter-narrated.
    - OQ-93 is fully answered (D28): insurance never narrows the Contract list, the missing approval
      number is the only insurance warning, and the anaesthetist sees the number where the Booking holds
      one. The review tip carries no insurer-pays-without-an-insurer-Contract sentence (dropped 23 October);
-   - the age bands and stacking (OQ-95, D29; the modifiers tip says only that age modifiers are added
-     for you and can be removed);
-   - the names of the preference lists and tiers (OQ-102, D36; no tip names a tier);
+   - age stacking limits (a policy matter, D29) and whether ASE stacks with an ASA code (not covered by
+     any question; the modifiers tip says only that age modifiers are added for you and can be removed);
    - where the system code sits (D39; the RVG code tip says "a code or a few words"). The invoice
      description is answered (OQ-103, D37) and the stack tip states its order of defaults;
-   - the support hours (OQ-137; the Help panel states D83's default with a Provisional pill and no tip
-     mentions them);
    - the sign-in experience (OQ-83; no tip mentions sign-in).
 
    Re-read each of these in the diff. If one is answered, the copy may say more; if a topic must touch
    an open point, it carries `provisional` (work item 10) and shows the small neutral "Provisional"
-   pill with the OQ in its tooltip, as earlier phases do. At efe123c no tip topic carries the label (the
-   step rail is decided; only the Help panel's hours do, OQ-137). If a tip's rule changes, change its entry.
-5. **Prerequisite names.** Confirm 20a, 21, 21a, 24, 31 and 39b are DONE in PROGRESS.md and read their
+   pill with the OQ in its tooltip, as earlier phases do. No tip topic carries the label (the step rail,
+   the age modifier D29, the labels D36 and the payer D85 are answered). If a tip's rule changes, change
+   its entry.
+5. **Prerequisite names.** Confirm 20a, 21, 21a, 22a, 24, 25a, 31 and 39b are DONE in PROGRESS.md and read their
    entries, name maps and handoff notes, and the entries for 14, 15, 15a, 15b, 17, 19, 19a, 19b, 20,
    22, 23, 26, 27, 29, 32, 32a, 38a, 38b, 39 and 43. Note in particular:
    - **14:** the registry entry shape (`DemoTrigger` in `src/shared/demoTriggers/types.ts`), route
@@ -307,8 +294,10 @@ presenter-narrated.
      and its received, RVG code and Contract hooks as 20a named them),
      `procedureStackView`, `whoIsInvoicedFor`, `pricingBasisFor` and `formatPricingBasis`, and
      `AddWordingSheet`;
-   - **21:** the read-only Insurance row, holder references asked in plain words, completion, and
-     Review's stack and warnings;
+   - **21 and 25a:** the read-only Insurance row, completion, and Review's stack and warnings; no
+     holder references were ever built (D82), and 25a removed the Procedure's hospital reference
+     (`billingReference`, DM-68, its prompt and the cross-match `hospitalRef`) and the age-band and tier
+     caveats on screen, so confirm the add-Booking form, `EditProcedureSheet` and capture ask for none;
    - **22a:** the "Paid by" line in each Procedure (shown only where its Contract bills the payer,
      "Payer: not billed yet" before one), the one Paid by sheet on phone, web and Admin, and
      `setProcedurePayer`; no Booking-level Payer row or `PayerSheet` remains;
@@ -334,8 +323,8 @@ presenter-narrated.
    - **39b:** the event sheet and the billing-line sheet (fixed amount only after 24);
    - **43:** `SyntheticDataBadge` (`src/shared/SyntheticDataBadge.tsx`) and its tone on the PWA's More
      card, and the handoff asking for it on the sign-in screen.
-6. Note the current `PERSIST_VERSION` (26 at efe123c). Only the help desk's ticket seed (work item 16)
-   bumps it.
+6. Note the current `PERSIST_VERSION`. This phase does not bump it (the help line's ticket seed is
+   43b's).
 
 ## Reference
 
@@ -357,17 +346,16 @@ presenter-narrated.
   rail cards. The Admin first-run card sits between the day header and the grid.
 - `docs/design/Admin Review.dc.html`: the summary tiles, the table header row and the action bar.
 - `docs/design/Web Dashboard.dc.html`: the greeting block, where the web first-run card sits.
-- No mockup draws the Help panel: build it from the Admin Day rail card and the List drawer's panel chrome.
 - No mockup draws a tip, popover or onboarding card. Extend the section-label row, the rail card and
   the bottom sheet; do not invent new chrome (no coach marks, no spotlight scrim, no tour).
 
-**Catalogue items:** the covered and context files above, OQ-83, OQ-137, US-15.0.1's two images, and AR-58 (the contract model proposal) and AR-61 (the flat ERD),
+**Catalogue items:** the covered and context files above, OQ-83, US-15.0.1's two images, and AR-58 (the contract model proposal) and AR-61 (the flat ERD),
 the help copy's wording.
 
 **Analysis files:**
 
 - `docs/prototype-build/catch-up/GAP-ANALYSIS.md`: the EP-13 section's US-13.5.3 row (Missing) and
-  FT-13.5 row (Matches), the EP-15 section's US-15.0.8 row (Missing) and US-15.0.1 row (Contradicts, graded at 3d3a18c and not
+  FT-13.5 row (Matches), the EP-15 section's US-15.0.1 row (Contradicts, graded at 3d3a18c and not
   re-graded) and the EP-03 rows for US-03.1.2, US-03.1.9, US-03.1.8 and FT-03.5 (re-graded at
   60e2d1e: what the anaesthetist must see).
 - `docs/prototype-build/catch-up/epics/EP-13.md` (the US-13.5.3 entry: no sign-in or sign-out, the
@@ -445,10 +433,7 @@ from 60e2d1e; phases 15a to 43 will have moved them):
   - First-run hint seats: 38a's mobile main view (today `apps/mobile/screens/ForwardListsScreen.tsx`,
     `MobileHeader`), `apps/web/screens/DashboardScreen.tsx` (the greeting `h1`), `AdminDayRoute`
     (between `DayNav` and the grid).
-- Help desk: `apps/admin/components/SideNav.tsx` (the nav footer, where Help goes),
-  `apps/admin/AdminApp.tsx` (where a panel mounts), `DraftListDrawer.tsx` (the side-panel pattern to copy),
-  `store/authDemoActions.ts` (the audited-action shape to copy), `store/appStore.ts` and `domain/seed/`
-  (the slice and `PERSIST_VERSION`).
+- `apps/admin/components/SideNav.tsx` (the persona literals work item 17 moves onto `PersonaChip`).
 - Per-viewer storage, the pattern to copy: `pwa/installPrompt.ts` (`COACH_DISMISS_KEY`,
   `wasCoachDismissed`, `rememberCoachDismissed`, `clearInstallCoachDismissal`, all wrapped in
   try/catch), `pwa/InstallCoach.tsx`, and the two Reset paths: `pwa/PwaDemoPanel.tsx` (`ResetCard`;
@@ -466,14 +451,14 @@ from 60e2d1e; phases 15a to 43 will have moved them):
 
 ## Work items
 
-Sign-in first, then the sweep guarded by its test, then the help, then the help desk. Keep `npm run build`,
+Sign-in first, then the sweep guarded by its test, then the help. Keep `npm run build`,
 `npm run build:pwa` and `npx vitest run` green after each group.
 
 New files (none exists at 60e2d1e): `src/shared/session/anaesthetistSession.ts` and its test,
 `src/apps/mobile/screens/SignInScreen.tsx`, `src/shell/framedReset.ts`, `src/shared/viewer.ts` (unless
 20a, 21 or 24 built the helper it extends), `src/apps/anaesthetistSimplicity.test.tsx`,
 `src/shared/help/` (`helpTopics.ts`, `InfoTip.tsx`, `firstRunHints.ts`, `FirstRunHint.tsx` and their
-tests), `src/domain/support.ts`, `src/store/helpDeskActions.ts`, `src/apps/admin/components/HelpPanel.tsx` (each with its test), `visual/ease-of-use.spec.ts` and `visual/storage/demo-ready.json`. Everything else named
+tests), `visual/ease-of-use.spec.ts` and `visual/storage/demo-ready.json`. Everything else named
 below exists today or is built by the phase that names it.
 
 ### Sign-in (US-13.5.3)
@@ -592,8 +577,7 @@ below exists today or is built by the phase that names it.
    - 27's prepaid amount and whether it is paid (US-03.1.8); 26's own unit value and prepaid prices.
    - 22a's "Paid by" line in each Procedure (name, relationship, email, editable through the one Paid by sheet; "Payer: not billed yet" before a Contract), the Insurance row as 21 built it with
      the approval number where the Booking holds one (D28; edit rights as 21 built them),
-     holder references asked in plain words ("{Contract} needs a member number."), and the mild
-     under-18 note.
+     and the mild under-18 note.
    - 19b's modifiers: age and P1 pre-applied with the small "Applied" tag and Remove (nothing locked),
      the optional modifiers with their units and the explanation field.
    - 22's Split button and the "Split: ..." reading; 38b's and 39's own additional invoice and credit
@@ -648,7 +632,8 @@ below exists today or is built by the phase that names it.
    - 24's `PriceCard`: keep every state as built; a refusal message that names an internal rule
      ("editable flag", "first-party") cannot occur from the UI; leave the store messages as they are.
    - `EditProcedureSheet`, the add-Booking form, `ListDetailScreen`, `ListDetailView`, the List row
-     caption, 38a's rows, Dashboard, Lists, Accounts and Balances: fix any item the inventory found.
+     caption, 38a's rows, Dashboard, Lists, Accounts and Balances: fix any item the inventory found, and
+     confirm none asks for or shows a hospital or claim reference (25a removed it; D82).
    - `EditBillingSetupSheet`, `OfficeBillingSetup`, `PricingSheet` and the Contract catalogue:
      confirm each is mounted only for an office actor.
 8. **No copy with a dash** in anything touched; keep "·", commas or "to".
@@ -700,7 +685,7 @@ below exists today or is built by the phase that names it.
     - Vitest (`helpTopics.test.ts`): no en or em dash in any title or body; every body at most 60 words;
       no body contains "slot" (OQ-64: the word never reaches app copy), "event" (38b keeps that label
       in one place), "estimate" or "deposit" (the prepaid amount is never called either), "blacklist"
-      or "DRAFT"; every `provisional.oq`, when present, matches `OQ-\d+`; every id used by a component exists (a typed
+      or "DRAFT"; no "Tier" or "Preferred" in any topic but `day.draftLists` (D36; Admin only); every `provisional.oq`, when present, matches `OQ-\d+`; every id used by a component exists (a typed
       union makes this a compile error; the test checks the reverse, that no topic is unused).
 11. **The topics** (copy verbatim unless the drift check changed a rule; each must match what phases 15a
     to 39b actually built, so re-read the screen before keeping a sentence):
@@ -711,11 +696,12 @@ below exists today or is built by the phase that names it.
     | `capture.rvg` | 19's RVG code type-ahead sheet, beside its search | Choosing an RVG code | "Type a code or a few words. The starting base units come from the Contract line, or from the RVG group when the Contract has none. You can change them: any value is accepted, and an unusual one gives the office a note to check." (D3, D12, AR-58) |
     | `capture.contract` | 20's Contract picker header, and beside the stack's Contract action | Contract | "A procedure needs a Contract. The office sets where the invoice goes and the Contract; where it prices on the RVG, you add the RVG code. Insurance never narrows the choices. You can change the Contract until the List is authorised; the office sees every change." (D16, D17 as superseded, OQ-78 answered, OQ-93 answered (D28), US-03.4.1, AR-58) |
     | `capture.price` | 24's Price section | Price | "The price follows its Contract, and how it is worked out shows here. Where an RVG Contract allows it you can type a different amount; on No contract · Fixed price you type the amount. A prepaid price is never editable, nor a Contract's own discount. The office sees every change." (FT-03.5, US-03.5.1, US-03.3.10, D30, AR-58) |
-    | `capture.modifiers` | 19b's modifiers section | Modifiers | "Age modifiers, and P1 on neurosurgery and spine codes, are added for you; remove one if it does not apply. Every other modifier, ASA included, is optional: tick it and add a short explanation of why it applies." (US-03.3.8, US-05.1.4 and D43, US-03.3.4, AR-58) |
+    | `capture.modifiers` | 19b's modifiers section | Modifiers | "Age modifiers, from the patient's age on the procedure date, and P1 on neurosurgery and spine codes, are added for you; remove one if it does not apply. Every other modifier, ASA included, is optional: tick it and add a short explanation of why it applies." (US-03.3.8, US-05.1.4, D29 and D43, US-03.3.4, AR-58) |
+| `capture.payer` | Booking capture, 22a's "Paid by" line (full density only) | Who pays | "Each procedure has its own payer, shown once its Contract bills the payer; until then it reads Payer: not billed yet. Changing one offers the same change to the other procedures billing that payer, each ticked and yours to untick." (US-11.2.2, D85) |
     | `capture.times` | `TimesCard` | Times | "Tap Start now when the anaesthetic starts and Finish now at handover. You can adjust either time afterwards. Time units come from these two times, and a part interval always counts as a whole one." (D25) |
     | `capture.warnings` | Booking capture, 15a's warnings section | Warnings | "A warning is a reminder, never a block, such as an insurer with no approval number. It shows when you open the Booking, and the approval number shows with the insurer where there is one. You can still complete and submit as usual. The office sees the same warning." (US-13.7.3: no confirm step; OQ-93 answered, D28) |
     | `day.statuses` | Admin Day, beside the status legend | Reading the day | "Each row is one anaesthetist's day: a morning and an afternoon session. A session shows its List, or its availability when it has none. The legend names each kind of List, then each availability status from the office's own list. Select one in the legend to hide or show it." (D14; names no colour, because 29 makes the availability statuses editable) |
-    | `day.draftLists` | Admin Day, 31's band and the Draft Lists rail card | Draft Lists | "A Draft List has a hospital, surgeon, day and session, but no anaesthetist yet. Only the office assigns one; anaesthetists never see them. A List lands here when, for example, its anaesthetist returns it or a surgeon's regular booking falls on a session marked unavailable. Suggestions come in priority order, with any not-preferred pairing shown apart." (FT-01.6, D14, D44, D46; names no tier) |
+    | `day.draftLists` | Admin Day, 31's band and the Draft Lists rail card | Draft Lists | "A Draft List has a hospital, surgeon, day and session, but no anaesthetist yet. Only the office assigns one; anaesthetists never see them. A List lands here when, for example, its anaesthetist returns it or a surgeon's regular booking falls on a session marked unavailable. Suggestions come in tier order, Tier 1 first, with any Not preferred pairing shown apart." (FT-01.6, D14, D36, D44, D46; Admin only, so it may name the settled labels; no anaesthetist screen does) |
     | `day.needsDestination` | Admin Day, 20's "Needs an invoice destination" card | Needs an invoice destination | "Every procedure needs a Contract before it can be completed. These Bookings arrived without a place for the invoice to go. Open one and work down the steps: where the invoice goes, the payment type, then the Contract. An RVG-priced Contract goes to the anaesthetist for the RVG code. Nothing is chosen for you from the hospital." (US-04.3.4, US-04.3.3, OQ-78 answered) |
     | `day.todo` | Admin Day, 15a's To-do rail card | To-do | "Warnings that need action land here. None of them blocks anything. Open one to see the Booking, and Clear it once it is dealt with. Notices that need no action, such as a List an anaesthetist moved, go to Notifications instead." (FT-13.7 note, D15) |
     | `review.flags` | Admin Review, the Flags tile | Flags | "Flags are things to check before you authorise. Fix them here, or phone the anaesthetist. A List is never sent back to the anaesthetist for changes." (US-07.2.3, US-07.2.2: no warning blocks authorise) |
@@ -723,7 +709,7 @@ below exists today or is built by the phase that names it.
     | `review.price` | Admin Review, 24's Fee heading | How the price is set | "The price is held on each procedure. It follows its Contract, units times the rate less any discount, until a typed price or an invoice holds it. You can change any price until the List is authorised. An anaesthetist can change theirs only where an RVG Contract allows it, or the amount on No contract · Fixed price. Every change is flagged here." (FT-05.2, DM-50, Phase 24, D30) |
     | `review.authorise` | Admin Review, the action bar beside "Authorise for billing" | Authorising | "Authorising locks the List, its Bookings and the prices they use, and passes it to billing for its invoices. Anything added afterwards is invoiced in the next run. A correction is made by hand, with an additional invoice or a credit note." (US-07.3.1, 25, 38b, 39; nothing is raised automatically; avoids the word "event", whose label 38b keeps in one place) |
 
-    Keep the list at about fifteen. Do not add tips to other screens in this phase. If a sentence
+    Keep the list at about sixteen. Do not add tips to other screens in this phase. If a sentence
     depends on an open point after the drift check, give the topic `provisional` and show the pill.
     `capture.units` (planned at 3d3a18c) is dropped: the stack, the RVG code, the modifiers and the
     Price section now explain the units and the price.
@@ -757,8 +743,8 @@ below exists today or is built by the phase that names it.
 13. **Place the tips** (work item 11's table):
     - `CaptureSection` gains an optional `help?: HelpTopicId`, drawn at the right end of its micro-caps
       label row. Times, the modifiers section and the Price section pass theirs where they are
-      `CaptureSection`s; 20a's `ProcedureStack` (beside its first label, full density only), the
-      pickers' headers, 15a's warnings section and any other element that is not a `CaptureSection`
+      `CaptureSection`s; 20a's `ProcedureStack` (beside its first label, full density only), 22a's
+      "Paid by" line (full density only), the pickers' headers, 15a's warnings section and any other element that is not a `CaptureSection`
       places `InfoTip` beside its own label. Because the capture block and the stack are shared, the
       anaesthetist web app gets the same tips; the office's view of the same Booking gets them too,
       which is fine (the copy reads for both).
@@ -836,43 +822,10 @@ below exists today or is built by the phase that names it.
     - `pwaPurity.test.ts` holds (`src/shared/help/`, `src/shared/session/` and `src/shared/viewer.ts`
       sit in the PWA closure and import nothing from apps or shell).
 
-### Help desk (US-15.0.8)
-
-16. **Ticket model and actions.**
-    - `src/domain/support.ts` (pure): `SUPPORT_CONTACT` (a fictional phone number and email, for example
-      `0800 555 0142` and `support@stratos-help.example`), `SUPPORT_HOURS` (one string, "Monday to Friday,
-      8:30am to 5:30pm NZT": the only place the hours appear, so an 8:00am start is a one-line change) with
-      `SUPPORT_HOURS_PROVISIONAL = { oq: 'OQ-137', note }`, `HelpTicket = { id ('HD-0001' style), subject,
-      details, kind: 'problem' | 'feature-request', status: 'open' | 'in-progress' | 'resolved', raisedBy,
-      raisedAt, resolvedAt? }` and a status label helper.
-    - A `helpTickets` slice in `AppState`, seeded with two examples (one In progress, one Resolved);
-      bump `PERSIST_VERSION` (`store/appStore.ts`).
-    - `src/store/helpDeskActions.ts`: `raiseHelpRequest(api, { subject, details, featureRequest })` (office
-      actor only; an empty subject is refused) and `resolveHelpRequest(api)` (the simulated help desk moves
-      the oldest unresolved ticket to Resolved), each through `mutate()` with a `helpTicket` entity type,
-      sequential ids, demo-clock time. Vitest: ids and time are deterministic, a feature request is marked,
-      an anaesthetist actor is refused, resolving with none open is a no-op the trigger reports.
-17. **`HelpPanel` and the Help entry** (invoke the frontend-design skill first). A "Help" item in the Admin
-    nav footer (`SideNav.tsx`, `data-shot="nav-help"`) opens `HelpPanel` as a right-side panel in the List
-    drawer's pattern (`data-shot="help-panel"`): the title "Support" with a "Simulated" badge; a contact
-    card with the phone (a `tel:` link) and email (a `mailto:` link); the hours line (`data-shot="help-hours"`)
-    with the Provisional pill; "Raise a request" (Subject, "What is happening", a tick "This is something
-    the system does not do yet", a teal "Send request"); and "Your requests"
-    (`data-shot="help-ticket-list"`), each ticket with its id, subject, status pill and, for a feature
-    request, a "Feature request" tag and the line "Passed to the product owner to plan". Esc and the close
-    button close it and focus returns. Office only: nothing under `src/apps/mobile` or `src/apps/web` imports
-    it (add to the simplicity source scan). Teal for action, no crimson, no dashes, no SLA or outage
-    claim.
-18. **Help desk tests.** Component test (raise adds an Open ticket and clears the form; the tick marks a
-    feature request; the hours string shows with its pill). In `visual/ease-of-use.spec.ts`: Help opens
-    the panel, a request is raised and listed, the demo action resolves it, a reload keeps the list and
-    Reset restores the seed. A test that `8:30am` appears only in `support.ts` among `src` files.
-
-
 ### Demo triggers
 
-19. Register all three in `src/shared/demoTriggers/registry.ts`; their bodies live in `src/shared/session`,
-    `src/shared/help` and `src/store`, PWA-safe (the first two):
+16. Register both in `src/shared/demoTriggers/registry.ts`; their bodies live in `src/shared/session`,
+    `src/shared/help`, PWA-safe:
     - **"Sign out"** (`id: 'pwa-sign-out'`; the PWA stand-in ROADMAP.md's PWA parity list names for
       43a): description "Signs Dr Souter out, as at the end of a shift. The sign-in screen shows with
       the account filled in.", screen "Mobile · any screen", routes `/mobile/*`, surfaces `['pwa']`.
@@ -886,12 +839,6 @@ below exists today or is built by the phase that names it.
       `clearFirstRunHintDismissals()` and returns `{ ok: true, message: 'The welcome cards will show
       again.' }`; it touches no domain state. `disabledReason` is "No welcome card has been dismissed"
       while `anyHintDismissed()` is false. `indexPath: () => '/admin'`.
-    - **"Help desk resolves this request"** (`id: 'help-desk-resolves'`): description "Plays the Stratos
-      help desk closing the oldest open request, as it would after a call or email. Simulated.", screen
-      "Admin · any screen", routes `/admin/*`, surfaces `['bar']`. `run` calls `resolveHelpRequest` and
-      returns `{ ok: true, message: 'HD-0003 marked Resolved by the help desk (simulated).' }` (the real
-      id). `disabledReason` is "No open request" when every ticket is Resolved. `indexPath: () => '/admin'`.
-      "Raise a request" itself is product UI, not a trigger.
     - The session and hint stores are not `AppState`, so the harness bar's Demo actions menu and
       `PwaDemoActions` must re-evaluate `disabledReason` when either changes (subscribe to both, or
       compute on open); otherwise "Got it" or Sign in leaves an entry in the wrong state until the next
@@ -899,18 +846,15 @@ below exists today or is built by the phase that names it.
     - Vitest in the registry's tests: "Sign out" visible only on the PWA surface on a mobile route,
       disabled while signed out, and running it signs out and writes one audit row; "Show first-run
       hints again" visible on a mobile, web and admin route and on the PWA surface, disabled until a
-      hint is dismissed, and running it clears all three; "Help desk resolves this request" visible on an
-      admin route only, disabled with none open, and running it resolves the oldest open ticket and writes
-      one audit row.
-20. **Build on the shared components; migrate these copies (UI unification).**
+      hint is dismissed, and running it clears all three.
+
+17. **Build on the shared components; migrate these copies (UI unification).**
     - UI in this phase is built from the shared components: `usePopover` and `PopoverPanel` (U2) for
-      `InfoTip`; `SidePanel` (U2) for `HelpPanel`; `Eyebrow` and `Card` (U6) for the section labels the
-      tips sit beside, `FirstRunHint` and the help contact card; `Pill` (U3) for ticket status, "Feature
-      request" and Provisional; `PersonaChip` and `Avatar` (U3) for the SideNav persona; `Checkbox`,
-      `TextField` and `TextArea` (U4) for the request form.
+      `InfoTip`; `Eyebrow` and `Card` (U6) for the section labels the tips sit beside and
+      `FirstRunHint`; `Pill` (U3) for Provisional; `PersonaChip` and `Avatar` (U3) for the SideNav
+      persona; the shared `TextField` and button for the sign-in screen.
     - This phase also migrates these existing copies on the screens it rebuilds: `InfoTip` is built on
-      `PopoverPanel` and `HelpPanel` on `SidePanel`, neither with its own outside-click, Escape or focus
-      code; the section labels it places tips beside move onto `Eyebrow`; the SideNav persona (the "KW /
+      `PopoverPanel`, with no outside-click, Escape or focus code of its own; the section labels it places tips beside move onto `Eyebrow`; the SideNav persona (the "KW /
       Kirsty W. / Office" literals in `apps/admin/components/SideNav.tsx`) is read through
       `shared/viewer.ts` and shown with `PersonaChip`.
     - Default props keep today's look; keep every `shot`, `data-shot`, `data-testid`, `data-validation-*`
@@ -927,13 +871,11 @@ below exists today or is built by the phase that names it.
 |---|---|---|---|
 | Sign out | Every Mobile route | PWA demo sheet only | Signs Dr Souter out (one audited row) so the PWA shows the sign-in screen with the account pre-filled. Disabled with "Already signed out". The framed phone uses the product's own Sign out on More. |
 | Show first-run hints again | Every Mobile, Web and Admin route | Harness bar and PWA demo sheet | Clears the three per-browser dismissals so each app's welcome card shows again. Disabled with "No welcome card has been dismissed". |
-| Help desk resolves this request | Every Admin route | Harness bar | Plays the Stratos help desk moving the oldest open mock ticket to Resolved (one audited row, badged simulated). Disabled with "No open request". |
 
 Everything else is demoable through normal use: the sign-in screen shows on any fresh handset and
 after Sign out on More, the tips are product UI on the screens they explain, the hints show on any fresh
-browser and after Reset, and "Raise a request" in the Help panel is product UI. Only what waits on
-someone else gets a trigger: the PWA's "Sign out" stand-in, and the help desk's reply, which would
-otherwise need Stratos staff. The Control Panel page gains nothing; Phase 14's index lists all three
+browser and after Reset. The one trigger that stands in for product UI is the PWA's "Sign out" (the
+framed phone has Sign out on More). The Control Panel page gains nothing; Phase 14's index lists both
 triggers under their screens.
 
 ## Out of scope
@@ -946,11 +888,9 @@ triggers under their screens.
   any persona switch on the sign-in screen (one demo account).
 - Training per user group and short standalone documentation (presenter-narrated, as US-15.0.1's
   technical discussion describes them).
-- A help centre, a searchable manual, a Help page in the anaesthetist apps (the Help panel is Admin
-  only), guided tours, coach marks or a spotlight overlay, and any AI assistant.
-- A ticketing integration, a support portal, an SLA engine or response timers, outage handling,
-  anaesthetists raising tickets themselves (the RFP response's option) and a Stratos-side queue: all
-  narrated.
+- A help centre, a searchable manual, guided tours, coach marks or a spotlight overlay, and any AI
+  assistant.
+- The help line, support hours and tickets (US-15.0.8, D83) and product support (US-15.0.9): 43b.
 - Tips on any screen other than Booking capture (with its pickers), Admin Day and Admin Review
   (Lists, Availability, Accounts, Invoices, Billing monitor, Masters, Intake, Notifications, the
   archive). A later phase adds a topic and a `help` prop if AA asks.
@@ -1017,16 +957,18 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] Add a billing line and a post-op event on mobile: line types by plain name, amounts typed, no
       "Method", rate or computed amount.
 - [ ] On capture, tap the info sign on the stack, the RVG code, the Contract, the modifiers, the
-      Price section, Times and Warnings: each opens a bottom sheet with its copy and "Got it"; none is a
+      "Paid by" line, the Price section, Times and Warnings: each opens a bottom sheet with its copy and "Got it"; none is a
       centred modal and none traps the picker sheet; each tip is easy to hit without touching a
       stepper, chip, Change, Split or "Add wording as given". The Price tip says a fixed or prepaid
-      price is never editable. The Warnings copy mentions no confirm
+      price is never editable; the modifiers tip says age modifiers come from the patient's age on the
+      procedure date; the payer tip matches the Paid by line's states ("Payer: not billed yet" before a
+      Contract; the change offered to the other procedures). The Warnings copy mentions no confirm
       step, and submitting a Booking with a warning goes straight through.
 - [ ] Web → the same Booking: the same tips open as popovers; Esc closes and returns focus.
 - [ ] Admin Day Tue 21 Jul: the tips beside the legend, on the Draft Lists band and rail card, on the
       Needs an invoice destination card and on the To-do card open popovers that stay on screen at 1280px and
-      1440px. No tip carries a provisional pill; no tip text says "slot", "event", "estimate" or a tier
-      name; the To-do tip points to Notifications.
+      1440px. No tip carries a provisional pill; no tip text says "slot", "event" or "estimate"; only the Draft
+      Lists tip names a tier (Tier 1, D36) and Not preferred; the To-do tip points to Notifications.
 - [ ] Admin Review (Dr Morrison, Mon 20 Jul, or the submitted List 21's recipes use): the Flags, stack
       column, Fee and Authorise tips open, and the stack column popover is not clipped by the table.
       Each tip's copy matches what the screen does (the price order, the missing-approval-number warning as the only insurance warning, the approval number visible to the anaesthetist, the invoice wording the office can edit, nothing
@@ -1034,24 +976,18 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] Mobile, a fixed or open price Booking: the capture form collapses to an optional RVG code (no
       times or modifiers asked); on an RVG kind they show. Still kept either way: the stack, the price
       and the approval number where held.
-- [ ] Admin: the nav footer's Help opens the Support panel with the phone, email, the hours string with
-      its Provisional pill (OQ-137) and the Simulated badge. Raise a request adds an Open ticket at
-      demo-clock time beside the two seeded ones; the "does not do yet" tick marks it a feature request
-      for the product owner. Demo actions → "Help desk resolves this request" moves it to Resolved, and is
-      disabled with "No open request" when none is. The list survives a reload; Reset restores the seed;
-      no dash in any copy; the panel is not reachable from Mobile or Web.
 - [ ] PWA (fresh storage, after sign-in): the mobile card clears the insets, the tips open as sheets,
       and the Demo chip offers "Show first-run hints again" and "Sign out".
 - [ ] Keyboard: every tip is reachable by Tab and opens on Enter or Space; screen-reader names read
       "About {title}"; the sign-in fields are labelled and Enter submits.
 - [ ] No en or em dashes in any new string; teal the only action colour; crimson only in the logo and
-      avatar; the Provisional marks (OQ-83 on the sign-in screen, OQ-137 on the Help hours) show only there.
+      avatar; the Provisional mark (OQ-83 on the sign-in screen) shows only there; no other screen carries a provisional label.
 - [ ] Catalogue screenshots: the recipes for US-15.0.1 are updated and the one for US-13.5.3 created,
       any recipe this phase broke is re-pointed, the capture runner presets the three first-run
       dismissals and the PWA session, a full `npm run capture` ends with no failed recipe and no story
       without a recipe, the covered items' new shots are checked by eye (the stack and Price section
       visible in the capture shot), and `npm run verify:board` is green.
-- [ ] `PERSIST_VERSION` moved by one (the help desk seed) and the persisted state reloads cleanly; `npm run build`, `npm run build:pwa`, `npx vitest run`,
+- [ ] `PERSIST_VERSION` unchanged; `npm run build`, `npm run build:pwa`, `npx vitest run`,
       `npm run shots` and `npm run verify:board` are all green.
 
 ## Demo guide updates
@@ -1079,17 +1015,11 @@ phases have rewritten these beats, so locate each passage by text):
     closed with Esc.
   - **S2 Beat 4:** optionally open the stack column or price tip before authorising. Add a discovery
     point: "which screens AA wants help on next, and whether training per user group is enough".
-  - **Any Admin beat (optional Help moment):** open Help in the nav footer: the help desk's phone, email
-    and hours; raise a request, optionally as a feature request; Demo actions → "Help desk resolves this
-    request". Say: "If something stops working, the office rings or emails the help desk, and every
-    request is tracked." Discovery point: the support hours (an 8:00am or 8:30am start, OQ-137).
   - **S5 Beat 1 (optional aside):** with entity type account, the sign-in and sign-out rows from the
     handset sit beside Phase 14's simulated rows.
   - **What to narrate rather than click:** add training per user group before go-live, the short
     standalone guides, and the identity service (Auth0 proposed, MFA, single sign-on, Face ID on a
-    native app, self-service password reset; OQ-83).
-    Also add outage handling through Stratos' incident response process, response targets and
-    anaesthetists raising tickets themselves (US-15.0.8).
+    native app, self-service password reset; OQ-83). The help line and support hours are 43b's beat.
 - `04-presenter-cheat-sheet.md`: under "Likely evaluator questions" add "How will people who are not
   comfortable with new systems cope?" (answer: large controls and one clear action, each procedure
   shown the same way in every app (descriptions as received, then its Contract and RVG code), only what the anaesthetist
@@ -1101,14 +1031,9 @@ phases have rewritten these beats, so locate each passage by text):
   "What each app is for" (Anaesthetist Mobile and Web) gains "sees each procedure's Contract, who is
   invoiced and the price they may change; never Contract set-up, tiers or preferences". Remove any
   cheat-sheet line that says the anaesthetist sees the Contract "by name only".
-  Also add the evaluator question "Who do we call when something is not working?" (answer: Help in Admin
-  shows the Stratos help desk's phone, email and hours; requests are logged as tickets and tracked, and
-  a request for something new goes to the product owner; Monday to Friday 8:30am to 5:30pm NZT, with an
-  8:00am start still to be confirmed).
 - `02-workflows-and-handoffs.md`: one line in the capture workflow that the anaesthetist sees the
   Contract summary and their price options while the office keeps Contract
   set-up, and one that the anaesthetist signs in to the PWA once.
-  Also one line that the office reaches the help desk from Help in Admin.
 - `01-personas-and-responsibilities.md`: Dr Souter's entry gains her demo sign-in account.
 - `master-demo-guide.html`: the same passages.
 - Control Panel scenario text: no change.
@@ -1127,7 +1052,6 @@ matches what was built:
 |---|---|---|
 | [US-15.0.1](../../../../requirements-board/requirements/stories/US-15.0.1.md) Ease of use | partial · mobile-card-capture and admin-day-view | stays partial, reason rewritten (calm capture screen with the stack and Price section kept, point-of-need help, welcome cards; intuitiveness for people not comfortable with modern systems needs usability testing). Shots `card-capture` (mobile :5174, signed in by the runner's preset, BK0009) with states `stack-kept` (highlight `[data-shot=procedure-stack]` and `[data-shot=price-card]`, no office-only pill; the Insurance row with the approval number too if the shot's Booking holds one, else say so in the REPORT) and `tip-open` (`info-tip-capture-stack` sheet); `day-view` (admin `/admin/day/2026-07-21`) with `day` and `tip-open` (`info-tip-day-statuses`); plus `first-run-hint-mobile`, `-web`, `-admin`, `review-tip` and a web `info-tip-capture-price` shot. Check the two old single images leave the frontmatter. Captions: `card-capture` "Booking capture: the descriptions, the Contract, the price and its calculation, nothing the office handles"; tips "Help at the point of need"; hints "Welcome card shown on first visit" |
 | [US-13.5.3](../../../../requirements-board/requirements/stories/US-13.5.3.md) Sign in to the anaesthetist app | none (create it) | create, status captured. Mobile on :5174. Shot `pwa-sign-in`: open `/mobile/more`, tap `[data-shot=more-sign-out]` (the runner's preset starts signed in), state `sign-in` highlighting `[data-shot=sign-in-screen]`'s card (the pre-filled account, Sign in and the Provisional caption); then tap `[data-shot=sign-in-submit]`, state `signed-in` on `/mobile/lists`. Shot `more-account`: `/mobile/more`, highlight the "Signed in as" row and Sign out only (crop above the PWA build panel, below 26's profile card). Caption: "The anaesthetist signs in to the PWA with their account (simulated sign-in; the identity service is deferred to the end of discovery)" |
-| [US-15.0.8](../../../../requirements-board/requirements/stories/US-15.0.8.md) Help desk by phone and email | none (create it) | create, status captured. Admin on :5173 at `/admin/day/2026-07-21`. Shot `help-panel`: tap `[data-shot=nav-help]`, state `support` highlighting `[data-shot=help-panel]`'s contact card and `[data-shot=help-hours]` (phone, email, the hours and their Provisional pill); state `request-raised`: fill the form with the feature-request tick, send, highlight `[data-shot=help-ticket-list]` (the new Open ticket tagged as a feature request beside the seeded ones). Caption: "The Help panel: the help desk's phone, email and hours, and requests logged as tickets with their status (simulated)" |
 
 **Recipes this phase must not break.** The stack and Price section recipes other phases own
 (US-03.1.2 and US-03.1.9 at `[data-shot=procedure-contract]` and `procedure-stack`, 20a; US-03.5.1,
@@ -1155,13 +1079,12 @@ and check their images by eye; a change there means the sweep stripped something
 - `CaptureSection`, the stack, the pickers and the Price section gain an info tip in their label rows,
   so recipes selecting by a section label's exact text (for example `text="Times"` or
   `text="Price"`) may now match the tip's accessible name too; re-run with `--dry`.
-- **The Admin nav gains Help.** Any recipe that highlights or crops the side nav is re-checked with `--dry`.
 - Work item 15 keeps the existing Playwright specs green with a storage preset; the capture runner
   needs the same, which is the one non-doc change this step makes outside `aa-prototype/`.
 
 **ATLAS.md.** Update "Gotchas" (the PWA sign-in screen and the session preset, the first-run welcome
 card and the dismissal preset the runner now applies), "Existing hooks" (`sign-in-screen`,
-`sign-in-submit`, `more-sign-out`, `pwa-demo-action-pwa-sign-out`, `info-tip-*`, `first-run-hint-*`, `nav-help`, `help-panel`, `help-hours`, `help-ticket-list`),
+`sign-in-submit`, `more-sign-out`, `pwa-demo-action-pwa-sign-out`, `info-tip-*`, `first-run-hint-*`),
 the `/mobile/more` route note (the account row) and "Overlays that need clicks" (the info tip as a
 bottom sheet on mobile and an anchored popover on web and admin).
 
@@ -1206,21 +1129,16 @@ Do not re-raise anything settled in the Decisions log.
   20a's and 24's selectors, never re-derived; nothing of the pricing model moves out of
   `domain/billing`.
 - **Help copy is true.** Each topic matches what the screen actually does after 15a to 39b and states
-  only answered rules (D3, D12, D14 to D17, D25, D28, D30, D37, D42 to D44, D46, D65, OQ-78, US-13.7.3) and AR-58's
+  only answered rules (D3, D12, D14 to D17, D25, D28, D29, D30, D36, D37, D42 to D44, D46, D65, D85, OQ-78, US-13.7.3) and AR-58's
   plain words; none states as settled a point still open (OQ-49, OQ-60, OQ-79, OQ-83, OQ-88, OQ-89,
-  OQ-90, OQ-95, OQ-102, BCTI granularity); the price tips say only an RVG Contract that allows it, or the amount on No contract · Fixed price, is editable and a prepaid price never is (D30); no topic says "slot",
-  "event", "estimate", "deposit" or a tier name; every string is dash-free and within 60 words.
+  OQ-90, BCTI granularity); the price tips say only an RVG Contract that allows it, or the amount on No contract · Fixed price, is editable and a prepaid price never is (D30); no topic says "slot",
+  "event", "estimate" or "deposit", and only the Admin Day Draft Lists tip names a tier (D36); every string is dash-free and within 60 words.
 - **Touch and focus.** Mobile tip hit areas are 44px and overlap nothing; a tip inside a picker sheet
   does not trap it; the desktop popover is not clipped, flips at the edges, closes on Esc and outside
   click, returns focus, and only one is open; the sheet is a bottom sheet; no nested interactive
   elements (a tip inside a clickable row or `th` button).
-- **Hints and session are per-viewer, not domain.** Nothing of theirs in `AppState` or the persisted payload (only the help desk's tickets are);
+- **Hints and session are per-viewer, not domain.** Nothing of theirs in `AppState` or the persisted payload (`PERSIST_VERSION` does not move);
   storage failures are swallowed; Reset and the triggers do what the doc says; the PWA closure is clean.
-- **The help desk is honest and office only.** Phone, email and hours come from one constant; the hours
-  carry the Provisional pill (OQ-137) and nothing is stated as settled; tickets are audited,
-  deterministic (demo clock, sequential ids), persisted and restored by Reset; a feature request is
-  marked for the product owner; nothing claims a ticketing system, an SLA or outage handling; the panel
-  is badged simulated, unreachable from the mobile and web apps, and dash-free.
 - **Design.** Teal only for action, crimson only in the logo and avatar, the design's label row, rail
   card, field and sheet anatomy, no new chrome, reduced motion respected.
 - **Private copies.** A new private copy of a shared component (`docs/ui-unification/README.md` section 8),
@@ -1230,7 +1148,7 @@ Do not re-raise anything settled in the Decisions log.
 
 - **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
   themselves"): the simulated sign-in built for OQ-83 (account login on the PWA only, pre-filled,
-  framed build signed in, PWA Reset keeps the session) with its provisional caption (OQ-83 is deferred to the end of discovery); the support hours built as D83's default (OQ-137), the two seeded example tickets, the resolve trigger moving the oldest open ticket to Resolved and the Help panel being office only; scenario jumps
+  framed build signed in, PWA Reset keeps the session) with its provisional caption (OQ-83 is deferred to the end of discovery); scenario jumps
   landing signed in but keeping the welcome-card dismissals (only the Reset buttons bring them back);
   the reading that
   US-15.0.1's note yields to the Confirmed US-03.1.2, US-03.1.9, FT-03.5 and US-03.1.8 (the
@@ -1240,7 +1158,7 @@ Do not re-raise anything settled in the Decisions log.
   a fresh handset, More, mobile capture with the stack and a tip open, Admin Day and Review with a
   popover).
 - **Status row** for catch-up Phase 43a, and a phase entry with:
-  - the drift-check result against c9b65ad (US-15.0.1, US-13.5.3 and US-15.0.8 changed or not; OQ-83 and OQ-137 still open
+  - the drift-check result against 63a4490 (US-15.0.1 and US-13.5.3 changed or not; OQ-83 still open
     or answered; any OQ answered that changed a tip; any change to what the anaesthetist sees);
   - the work item 5 inventory, what was fixed in each place and what was confirmed kept;
   - the name map: `anaesthetistSession.ts` (`useAnaesthetistSession`, `signInSession`,
@@ -1251,9 +1169,9 @@ Do not re-raise anything settled in the Decisions log.
     `src/shared/viewer.ts` (or the earlier helper it extends); `HELP_TOPICS` and `HelpTopicId` in
     `src/shared/help/helpTopics.ts`; `InfoTip`; `CaptureSection`'s `help` prop; `firstRunHints.ts`
     (`dismissHint`, `clearFirstRunHintDismissals`, `anyHintDismissed`, the three storage keys);
-    `FirstRunHint`; `SUPPORT_HOURS`, `HelpTicket`, the `helpTickets` slice, `raiseHelpRequest`, `resolveHelpRequest`, `HelpPanel`; the `pwa-sign-out`, `show-first-run-hints` and `help-desk-resolves` triggers;
+    `FirstRunHint`; the `pwa-sign-out` and `show-first-run-hints` triggers;
     `anaesthetistSimplicity.test.tsx`;
-  - `PERSIST_VERSION` bumped once for the help desk seed (state the new value);
+  - `PERSIST_VERSION` unchanged (state its value);
   - tests added and the before and after Vitest and Playwright counts, and the `demo-ready.json`
     storage preset;
   - the review pass.
@@ -1286,10 +1204,6 @@ Do not re-raise anything settled in the Decisions log.
   5. **Closed:** the Phase 06 reading that "route-setting is office knowledge" with the route chip still
      drawn on the anaesthetist's capture line (superseded by Phase 20's route removal); the Contract on
      the anaesthetist's capture is now 20a's stack.
-  6. **New:** US-15.0.8's help desk is an Admin Help panel with the help desk's phone and email, the
-     support hours as one configurable string (D83's default, provisional on OQ-137) and requests logged
-     as audited mock tickets in a seeded `helpTickets` slice (a feature request marked for the product
-     owner); simulated, office only, no ticketing integration, SLA engine or outage handling.
 - **Handoff notes:**
   - For **44**: S1 Beat 3 and S2 Beats 1 and 4 now carry optional tip moments, the pre-demo note covers
     the welcome cards and the handset sign-in, and S5 Beat 1 has an optional account aside; keep them
@@ -1298,10 +1212,10 @@ Do not re-raise anything settled in the Decisions log.
     test helper its PWA parity spec can reuse instead of signing in through the screen.
   - For any later phase that adds an operational screen section: give it a topic and pass `help`, and
     add any new anaesthetist-reachable sheet to the simplicity scan, in both its directions.
-  - When OQ-137 is answered, change `SUPPORT_HOURS` and drop its Provisional pill; a later ticketing
-    integration replaces `helpDeskActions.ts` only.
+  - For **43b**: the help line and support hours are its own; this phase leaves the Admin nav footer
+    free for its Help entry and builds no ticket code.
   - When OQ-83 is answered, change `SIGN_IN_RULE` and the sign-in screen, and drop
-    `SIGN_IN_PROVISIONAL`. When an OQ that a tip steers around is answered (OQ-89, OQ-90, OQ-95, OQ-102) or Greg reopens OQ-78, update its `HELP_TOPICS` entry. When the
+    `SIGN_IN_PROVISIONAL`. When an OQ that a tip steers around is answered (OQ-89, OQ-90) or Greg reopens OQ-78, update its `HELP_TOPICS` entry. When the
     contract model (AR-58, AR-61) moves on, the stack and the price stay in 20a's and 24's
     modules; this phase's help copy names no field of the design and needs no change unless a rule
     changes.

@@ -4,15 +4,15 @@
     "phases": [
       "26"
     ],
-    "note": "U6 done (18 November), not yet committed: the table kit in src/shared/table (Th, Td, GroupRow, TableShell with comfortable, compact and dense densities, ClickableRow, RowOpenButton) with every admin table on the Admin Review header and an e1 shell; a keyboard handle on 8 clickable tables (Draft Lists opens its drawer by keyboard); Card, Eyebrow (11/600), PageHeader, StatTile and DefList/DefRow in src/shared/ui (25's lock rows and 22a's Paid by line on DefRow); mobile cards at radius 14; every session block through blockFill (the week strip hatch, bug 7); DayChip and AddRowButton. No seed change (PERSIST_VERSION 50). Reviewed, captured and green. Run 26 next: ProfileRow on DefRow layout=\"settings\", the More card on Card at radius 14."
+    "note": "U6 done (18 November), committed (4933a70f): the table kit in src/shared/table (Th, Td, GroupRow, TableShell with comfortable, compact and dense densities, ClickableRow, RowOpenButton) with every admin table on the Admin Review header and an e1 shell; a keyboard handle on 8 clickable tables (Draft Lists opens its drawer by keyboard); Card, Eyebrow (11/600), PageHeader, StatTile and DefList/DefRow in src/shared/ui (25's lock rows and 22a's Paid by line on DefRow); mobile cards at radius 14; every session block through blockFill (the week strip hatch, bug 7); DayChip and AddRowButton. No seed change (PERSIST_VERSION 50). Reviewed, captured and green. Run 26 next: ProfileRow on DefRow layout=\"settings\", the More card on Card at radius 14."
   },
   "guidance": {
     "as_of": "2026-11-18",
     "headline": "Start 26 now. U6 put every table, card, page title, eyebrow, tile and label and value row on one shared part each.",
-    "headline_sub": "U6 built the table kit (every admin table on the Admin Review header, a keyboard handle per clickable row), Card, Eyebrow, PageHeader, StatTile and DefRow, and fixed the week strip hatch; it is done and not yet committed. Next in run order: 26, then 27 and 27a.",
+    "headline_sub": "U6 built the table kit (every admin table on the Admin Review header, a keyboard handle per clickable row), Card, Eyebrow, PageHeader, StatTile and DefRow, and fixed the week strip hatch. Next in run order: 26, then 27 and 27a, then the 18 November follow-ups 25a, 17b and 32d.",
     "parallel": "None now: 26 runs alone, then 27 and 27a.",
     "safe": {
-      "26": "Its dependencies (17, U6) are done and it is next in run order. Commit U6 first: 26 builds ProfileRow on DefRow layout=\"settings\" and its More card on Card."
+      "26": "Its dependencies (17, U6) are done and it is next in run order. It builds ProfileRow on DefRow layout=\"settings\" and its More card on Card."
     },
     "wait": {
       "27": "Its dependencies (15a, 21, 22a, 25, U6) are done, but it runs after 26 in run order."

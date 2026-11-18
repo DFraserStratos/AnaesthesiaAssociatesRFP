@@ -1,9 +1,8 @@
-Please run Phase U7 (UI unification: Close out) of the Anaesthesia Associates prototype.
+Please run requirements catch-up Phase U7 (UI unification: close out) of the Anaesthesia Associates (AA) prototype.
 
-Load the run-build-phase skill and follow it for this phase (track: UI unification, one session), with the overrides below. The phase doc holds the reads, drift-check stops, work items, checklist, screenshots, demo guide and progress updates; below is only what the doc does not already say.
+Load the run-build-phase skill and follow it for this phase (one session, track: UI unification). The phase doc's Before you start, Reference, Work items, Demo triggers, Manual test checklist, Demo guide updates, Catalogue screenshots, Adversarial review (after build) and PROGRESS.md updates sections hold the phase's reads, drift-check stops, rules and finish items; below is only what the doc does not already say.
 
-Overrides:
-- One session. It runs after U6 and every catch-up phase but 44, and must land before Phase 44.
+Override:
 - This phase edits CLAUDE.md, the binding instructions file: the "One component per job" section is README section 8's approved text, word for word, placed after the design section; diff it against the README. Change nothing else in CLAUDE.md beyond the one-line catalogue and research fixes the doc names.
 
 Also read: docs/ui-unification/README.md sections 1 and 4; docs/ui-unification/PLAN.md in full, section 5 (the plan.config.json rule) included; the PROGRESS.md entries of the catch-up phases PLAN.md section 3 names (what each migrated).

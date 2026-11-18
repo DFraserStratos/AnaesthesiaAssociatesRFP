@@ -1,0 +1,12 @@
+Please run requirements catch-up Phase 25a (Contract change warnings, the Disabled Contract flag and the hospital reference removed) of the Anaesthesia Associates (AA) prototype.
+
+Load the run-build-phase skill and follow it for this phase (2 sessions, Contracts track: session 1 the two selectors, the three warnings and the Disabled Contract flag with its seeded case, green; session 2 the hospital reference removed, the payer label and hint, the tier and age-band caveats, recaptures and the demo guide). The phase doc's Before you start, Reference, Work items, Demo triggers, Manual test checklist, Demo guide updates, Catalogue screenshots, Adversarial review (after build) and PROGRESS.md updates sections hold the phase's reads, drift-check stops, rules and finish items; below is only what the doc does not already say.
+
+Hold to these above all:
+- Nothing moves by itself and nothing blocks: the warnings only list, and the Disabled flag is one more rule in `REVIEW_FLAG_RULES`, never in `authoriseBlockersFor`; `contractNoLongerFits` keeps `anyStatus`.
+- The disable day comes only from the `contract.disable` audit entry; no date field on a Contract, and "Replaces" stays warning-only unless the drift check says otherwise.
+- `phase-25-invoices.json` is never run with `-u`: delete only its `hospitalRef` lines by hand. No S1 to S5 figure, invoice total or BCTI count moves.
+- The hospital reference goes everywhere (field, three forms, prompt, snapshot, cross-match, seed, audit label) with nothing printed in its place (OQ-142 open); `Contract.holderReference` stays.
+- Only the answered caveats go (OQ-140, OQ-95, OQ-102); every other provisional label stays.
+
+Phase goal: build Donald's 18 November answers on the built Contracts track. Creating a Contract that replaces another from a date, or disabling one, warns and lists the not-yet-authorised Procedures dated from then still on it, and nothing moves; a price range over authorised Procedures counts and lists those that kept their locked price, never the re-priced ones; a not-yet-authorised Procedure dated on or after its Contract's disable day, read from the audit, is flagged at review and never blocked, with a seeded case on a SUBMITTED List. Then remove the Procedure's hospital reference, its prompt and the cross-match reference, and take the answered caveats off the screen: 22a's "Provisional, OQ-140" pill and the add form's stale Payer row hint, 17's "Tier names are provisional." and 19b's OQ-95 note on the Modifiers master.

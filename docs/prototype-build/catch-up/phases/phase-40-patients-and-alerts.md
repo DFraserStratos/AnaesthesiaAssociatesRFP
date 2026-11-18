@@ -4,7 +4,7 @@
 [FT-11.3](../../../../requirements-board/requirements/stories/FT-11.3.md) Patient outstanding balances and alerts (a mild alert under the threshold, a strong one over it, a mild one for a credit balance; **anaesthetists also see the alert, on the Booking in their List**) ·
 [US-11.1.1](../../../../requirements-board/requirements/stories/US-11.1.1.md) Patient record keyed on NHI (reworked 2026-10-16 and 19: **the NHI is the patient identifier throughout, with no blank**; one record per NHI; any internal id is only an implementation detail; the NHI never reaches Xero; **demographics and ethnicity are held and shown only where supplied, never required**) ·
 [US-11.1.4](../../../../requirements-board/requirements/stories/US-11.1.4.md) Patient without NHI (reworked: **the NHI is mandatory, a Booking cannot be saved without one, an incoming booking without one waits at intake and creates no Booking and no patient**; **while it waits, 33a's stub stands in its place on its List**: OQ-118 answered 4 November, D66) ·
-[US-11.1.5](../../../../requirements-board/requirements/stories/US-11.1.5.md) Intake rows waiting for an NHI (retitled from "Missing NHI problem list": the office's view over Phase 33's unmatched queue; each row shows its 33a stub on its List; the request's To follows OQ-127 part 5) ·
+[US-11.1.5](../../../../requirements-board/requirements/stories/US-11.1.5.md) Intake rows waiting for an NHI (retitled from "Missing NHI problem list": the office's view over Phase 33's unmatched queue; each row shows its 33a stub on its List and the one address to chase: the List's sender, else the surgeon's first office contact, never every contact; rewritten 18 November, D74) ·
 [US-11.3.1](../../../../requirements-board/requirements/stories/US-11.3.1.md) Patient outstanding bills view ·
 [US-11.3.2](../../../../requirements-board/requirements/stories/US-11.3.2.md) Alert on booking a patient with unpaid bills (the rules were restated to Ben and Vanessa on 5 November and neither changed; OQ-74's answer: days from the invoice date, a credit balance is mild, yellow versus red; **the anaesthetist sees the alert on the Booking in their List, the mild one as a colour code**; it says the threshold is fixed until AA asks for a settings page) ·
 [US-11.3.3](../../../../requirements-board/requirements/stories/US-11.3.3.md) Follow-up tools (and **a free-text note on a List or Booking that anyone, office or anaesthetist, can write and everyone who opens it sees**) ·
@@ -27,8 +27,9 @@ Read alongside (not closed here):
 [US-15.0.6](../../../../requirements-board/requirements/stories/US-15.0.6.md) (data minimisation: why the anaesthetist's alert carries no amounts),
 [OQ-49](../../../../requirements-board/requirements/questions/OQ-49.md) (**Answered** 2026-10-16 and 19, owner decision **D11**: NHI mandatory, no blank),
 [OQ-118](../../../../requirements-board/requirements/questions/OQ-118.md) (**answered** 4 November, owner decision **D66**: the row waits at intake and a stub, not a Booking, stands in its place on its List; built by 33a),
-[OQ-127](../../../../requirements-board/requirements/questions/OQ-127.md) (**open**, owner decision **D74**: contacts by room or by surgeon; built default, the room's contact email, read through 17a's helper),
-[OQ-134](../../../../requirements-board/requirements/questions/OQ-134.md) (**open**, new 5 November, owner decision **D80**: do overdue alerts include the outstanding prepayment alert; built default, two rules shown together: this phase's balance alert beside 27's prepayment warning, each in one place),
+[OQ-127](../../../../requirements-board/requirements/questions/OQ-127.md) (**answered** 18 November, owner decision **D74**, Donald for the build, not yet seen by AA: no surgeons' rooms, contacts on the surgeon; the NHI request goes to the List's sender, else the surgeon's first office contact, never every contact; 17b's helper as 34 extends it),
+[US-02.2.4](../../../../requirements-board/requirements/stories/US-02.2.4.md) (a List keeps where it came from: 34) and [US-13.6.5](../../../../requirements-board/requirements/stories/US-13.6.5.md) (the surgeon's office contacts: 17b),
+[OQ-134](../../../../requirements-board/requirements/questions/OQ-134.md) (**answered** 18 November, owner decision **D80**, Donald for the build: two rules shown together, this phase's balance alert beside 27's prepayment warning, each in one place; the "overdue alerts" of D10 are this alert only),
 [OQ-67](../../../../requirements-board/requirements/questions/OQ-67.md) (the Contract bills its holder when the holder pays AA, otherwise the Procedure's payer),
 [OQ-41](../../../../requirements-board/requirements/questions/OQ-41.md) and [OQ-74](../../../../requirements-board/requirements/questions/OQ-74.md) (answered; **D24**),
 [OQ-30](../../../../requirements-board/requirements/questions/OQ-30.md) (answered: no NHI or PII in Xero, only a unique id),
@@ -37,7 +38,7 @@ Read alongside (not closed here):
 **Depends on:** 22a (the payer on each Procedure, D85: `Procedure.payer`, `setProcedurePayer`, its copy rule; no `Booking.payer` remains), 15a (`WarningRule`, `WarningFacts`, `WARNING_RULES`, `evaluateWarnings`,
 `appSettings.warningRules` and its backfill, `warningFactsFor`, `warningsForBooking`, `openWarnings`,
 `clearWarning`, the to-do list, `WarningTriangle`, `WarningsPanel`, `WARNING_SAMPLES`,
-`SEED_WARNING_SAMPLE_BOOKINGS`), 17a (a room may hold no email; its one helper returns a room's contact email, empty when none is held; D74), 33a (stubs on a List and their resolve path; through it 33) and 34 (the rows: `ImportRow` with `corrections`,
+`SEED_WARNING_SAMPLE_BOOKINGS`), 17b (no surgeons' rooms; the contacts on the surgeon and the one email helper, first office contact with the others offered; D74), 33a (stubs on a List and their resolve path; through it 33) and 34 (the List's origin and sender, placed in front of 17b's helper, and the rows: `ImportRow` with `corrections`,
 `correctImportRow`, `suggestDecision`'s derived `waitingForNhi`, `matchingQueue`, `decideImportRow`,
 `stageImportRows`, `importHospitalDownload`, `HOSPITAL_DOWNLOAD_SAMPLES`; 34's rebuilt S1 where Sarah
 Mitchell's St George's row is matched and created), 36 (`patientPosition` and `patientLedgerPosition`:
@@ -45,8 +46,8 @@ rows carry the billable party and a signed outstanding) and 39 (a credited pair 
 `credit.heldForPayer`, which is where a patient's **credit balance** comes from; this includes the
 anaesthetist's own credit note, US-08.6.5). By the roadmap order 14 (the trigger registry,
 `OFFICE_ACTOR`, `OFFICE_SIMULATION_ACTOR`, `store/officeStandIn.ts`), 15 (`createBooking`,
-`ManualBookingForm`, `AddBookingFlow`), 15b (an assigned List is ACTIVE, never "DRAFT"), 17 (surgeons'
-rooms with a contact email and phone, the hospital contact email), 20a (`Procedure.sourceTexts`, the
+`ManualBookingForm`, `AddBookingFlow`), 15b (an assigned List is ACTIVE, never "DRAFT"), 17 (the surgeon
+directory; 17b then unwinds its rooms), 20a (`Procedure.sourceTexts`, the
 three-part stack), 21 (`CounterpartyKind`
 `'payer'`, `billablePartyForProcedure`, `isPayerBilled`, the child-payer rule), 22 (`resendInvoice` and
 its send history), 27 (the prepayment pair created at generation, and its `prepaymentUnpaid` warning rule, US-06.3.2), 31, 35 (`mailto` builder in
@@ -76,7 +77,7 @@ This phase:
   patient, while **33a's stub** stands in its place on its List. The internal patient id stays the store key and Xero's only patient reference (OQ-30) but is
   never shown: the UI and the patient route use the NHI;
 - builds the office's view of **intake rows waiting for an NHI** (US-11.1.5): each row shows the
-  patient as received, the List or date, and the surgeon's rooms to chase, marks the ones whose date is
+  patient as received, the List or date, and the one address to chase (the List's sender, else the surgeon's first office contact), marks the ones whose date is
   close as urgent, and shows each row's stub on its List, and **Add NHI** (typed, validated, with a preview of the existing record it matches)
   resolves the row through 33a's one resolve path: the Booking takes the stub's place, matched to the single record or with the one new record. Nothing is
   applied without the office's decision. There is no authorise guard;
@@ -110,14 +111,14 @@ who was billed.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff against the plan's baseline, catalogue commit `c9b65ad` (rename-aware;
+1. Run the catalogue diff against the plan's baseline, catalogue commit `63a4490` (rename-aware;
    never a plain `git diff` of the catalogue folder):
 
    ```
-   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-11,FT-11.1,FT-11.3,US-11.1.1,US-11.1.4,US-11.1.5,US-11.3.1,US-11.3.2,US-11.3.3,US-13.2.2,US-03.1.5,US-02.1.2,US-02.1.4,US-11.2.2,US-11.1.2,FT-13.7,US-13.7.1,US-13.7.2,US-13.7.3,US-13.7.4,US-15.0.6,OQ-49,OQ-41,OQ-74,OQ-30,OQ-33,OQ-67,OQ-118,OQ-127,OQ-134,FT-02.6,US-06.3.2
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-11,FT-11.1,FT-11.3,US-11.1.1,US-11.1.4,US-11.1.5,US-11.3.1,US-11.3.2,US-11.3.3,US-13.2.2,US-03.1.5,US-02.1.2,US-02.1.4,US-11.2.2,US-11.1.2,FT-13.7,US-13.7.1,US-13.7.2,US-13.7.3,US-13.7.4,US-15.0.6,OQ-49,OQ-41,OQ-74,OQ-30,OQ-33,OQ-67,OQ-118,OQ-127,OQ-134,FT-02.6,US-06.3.2,US-02.2.4,US-13.6.5
    ```
 
-   Already folded into this plan (changes up to `c9b65ad`, so not drift):
+   Already folded into this plan (changes up to `63a4490`, so not drift):
    - **D11 / OQ-49 answered (16 and 19 October):** the NHI is mandatory with no blank and no pending
      state; an incoming row without one waits on 33's queue; the earlier problem list of Bookings,
      the provisional patient and the authorise block are dropped. US-11.1.1 now makes the NHI the
@@ -130,14 +131,17 @@ who was billed.
      US-11.3.3 gains the shared free-text note on a List or Booking; US-11.1.1 holds demographics and
      ethnicity only where supplied; **4 November (a68f09b):** OQ-118 answered (D66, Donald for the build, not yet seen
      by AA): US-11.1.1, US-11.1.4 and US-11.1.5 gain the stub criterion and DM-30 the stub; built as
-     answered, 33a's stub beside each waiting row. OQ-127 (D74) is open: the request's
-     To is the room's contact email through 17a's helper, the main room's for a surgeon at more than one
-     room with the others offered (part 5; item 6). **5 November (efe123c):** EP-11 says insurers and
+     answered, 33a's stub beside each waiting row. **5 November (efe123c):** EP-11 says insurers and
      funders are Parties and the Booking names its insurer or funder (21's; no change here); US-11.3.2's
      rules were restated by Ben and Vanessa and left unchanged, so "still to check with Ben" is gone;
-     OQ-134 (D80, open) is new: the balance alert and 27's prepayment warning are two rules shown
+     OQ-134 (D80) is new: the balance alert and 27's prepayment warning are two rules shown
      together (item 3, item 13).
-   - **17 November (c9b65ad, D85, OQ-140 open, Donald's decision for the build):** the payer is held on each
+   - **18 November (63a4490, Donald's answers for the build, not yet confirmed by AA):** **D74/OQ-127:**
+     no surgeons' rooms; US-11.1.5 is rewritten: the missing-NHI request goes to one address, the List's
+     sender (34), else the surgeon's first office contact (17b), the others offered, never every contact
+     (item 6, item 12). **D80/OQ-134:** two rules, shown together, as planned (item 3). US-11.3.2 gains the
+     note on that. **D85/OQ-140** answered: the payer on each Procedure stands, no provisional label.
+   - **17 November (c9b65ad, D85, Donald's decision for the build):** the payer is held on each
      Procedure (22a); EP-11 is a grouping and leaves the covers. The gate reads each Procedure's payer and
      `setProcedurePayer` adds or removes the warning; no `Booking.payer` exists to read.
    - Earlier and still in force: OQ-67 (the Contract bills its holder when the holder pays AA, otherwise
@@ -146,15 +150,15 @@ who was billed.
      credits (including the anaesthetist's own credit note), OQ-74 answered (no "provisional (OQ-74)"
      caption anywhere).
 
-   If an item changed after `c9b65ad`, re-read it and adjust the work items; re-run the gap analysis for
+   If an item changed after `63a4490`, re-read it and adjust the work items; re-run the gap analysis for
    that item only, per `../README.md`. If an item is now Retired or Future, drop the work items that
    serve only it and note it in PROGRESS.md. Record the result in the phase entry.
 2. **D11 is answered: build it, no default and no caption.** Check OQ-49 still reads mandatory. No
    "provisional" label anywhere for it. **OQ-118 (D66) is answered:** build it, no provisional label: a no-NHI row waits on 33's queue and 33a's
    stub stands in its place on its List; show it beside each waiting row and resolve Add NHI through 33a's
    path (it is Donald's answer for the build; log that AA has not seen it). **OQ-127 (D74) is
-   open:** build the default (the request reads 17a's helper) and log it on the owner's list; if AA
-   answered for contacts on the surgeon, only the helper's owner field moves.
+   answered:** build it (the request reads 17b's helper as 34 extends it: the List's sender, else the
+   surgeon's first office contact, never every contact); log that AA has not seen it.
 3. **US-11.3.2 (Agreed, rules restated 5 November, unchanged), OQ-41 and OQ-74.** Build both answers: the age counts from the **invoice date**
    (`invoiceAgeDays`, the only place the basis lives) and a **credit balance is a mild warning**. If AA
    sets a different starting threshold, change only the rule's `defaultParams`. Record in the Decisions
@@ -173,13 +177,12 @@ who was billed.
      amounts** (US-15.0.6), read-only, following the live strength; the office's Clear on the to-do list
      does not hide it ("the alert stays until the balance is paid", Donald), and whether an anaesthetist
      can clear or annotate it is parked by the catalogue.
-   - **Beside the prepayment warning (OQ-134, D80, open; build its default, no provisional caption):** two
+   - **Beside the prepayment warning (OQ-134, D80, answered; no provisional caption):** two
      rules, shown together, each in one place: this rule says only what the patient's past invoices say,
      27's `prepaymentUnpaid` only what this Booking's own prepayment says, and neither reads the other.
      A Booking that carries both lists both in 15a's `WarningsPanel`, Admin Booking detail and Day to-do
      list; the anaesthetist's chip shows the strongest balance alert beside 27's own prepayment strip.
-     One combined set of overdue alerts would be a small change in the shared panel. Log it on the owner's
-     list.
+     One combined set of overdue alerts would be a small change in the shared panel.
    - **The warning kind** (US-13.7.1 leaves it unset): `beforeProcedure`, in the one rule file.
    - **The threshold field against US-11.3.2 (fixed until a settings page) and US-13.7.4 (Future):** build
      the one Master data field and nothing else of the settings page; log the tension. If the owner
@@ -198,7 +201,7 @@ who was billed.
    adding a second record); 36's `patientLedgerPosition` row fields (extend the selector if a field is
    missing, never join through `state.xero`); 39's `credit.heldForPayer`; 38a's `patientMatches` and NHI
    normalisation; 35's `mailto` builder and `MAILTO_MAX_LENGTH`; 14's actors; the current
-   `PERSIST_VERSION` (16 after 15a; later phases bump it).
+   `PERSIST_VERSION` (16 after 15a; later phases bump it); 17b's contact helper and 34's List sender in front of it.
 
 ## Reference
 
@@ -405,7 +408,7 @@ and 85. The catalogue images for US-11.1.1, US-11.1.4, US-11.3.2 and US-11.3.3 a
      and one by the office on his List both show to the other side with author and time; a blank note and
      an anaesthetist writing on another's List are refused; two notes keep their order.
 
-6. **Waiting rows: add the NHI, ask the rooms** (`store/patientActions.ts`, exported from the store
+6. **Waiting rows: add the NHI, ask the one address** (`store/patientActions.ts`, exported from the store
    index; US-11.1.5). The rows, `waitingForNhi` and `correctImportRow` are 33's, the stub and its one
    resolve path 33a's (read their real names in 33a's PROGRESS entry); this item is the office's entry
    points.
@@ -420,20 +423,16 @@ and 85. The catalogue images for US-11.1.1, US-11.1.4, US-11.3.2 and US-11.3.3 a
    - `nhiRowPreview(state, rowId, typedNhi)`: for the Add NHI sheet: the existing record the NHI
      matches (name, DOB, earlier Bookings) or "no record", and the `detailDifferences` between the row's
      details and that record, so the office sees them before resolving.
-   - `requestNhiFromRooms(api, actor, rowId)`: office only. Builds the email with a new
+   - `requestNhiFromOffice(api, actor, rowId)`: office only. Builds the email with a new
      `buildNhiRequestEmail` in `src/domain/updateEmail.ts`, reusing 35's `mailto` builder and
      `MAILTO_MAX_LENGTH`. Allowlist: patient name as received, the date, session, hospital, surgeon,
      time and the procedure wording as received; **never** a DOB, an NHI, notes, money, Contract or
-     payer. Subject "NHI needed: {patient}, {date}". To: the room's contact email read through 17a's one helper
-     (`roomEmailForSurgeon`: the main room's for a surgeon at more than one room, the others offered from
-     `otherRoomsForSurgeon` for the office to switch to, OQ-127 part 5; no second lookup here), else the
-     hospital's contact email, else empty. Returns the `href` and audits `importRow.nhiRequested`, so
+     payer. Subject "NHI needed: {patient}, {date}". To: **one address only**, because the email carries the patient's details (US-11.1.5, D74): read through 17b's one email helper as 34 extends it, the List's sender address, else the surgeon's first office contact, the other office contacts offered for the office to switch to (never every contact; no second lookup here), else empty. Returns the `href` and audits `importRow.nhiRequested`, so
      the view can show "Requested 21 Jul 09:40".
    - Tests (`patientActions.test.ts`): adding a valid NHI resolves the row through 33a's path (the Booking
      replaces the stub on its List, `waitingForNhi` false); for an NHI that exists leaves exactly
      one patient with it; for a new NHI makes exactly one; the row and its stub make no patient while waiting; an invalid NHI, a second add and an
-     anaesthetist are refused; the email body passes the allowlist (no DOB, no NHI pattern) falls
-     back to the hospital email when the room holds none, and is empty (no error) when neither does; a two-room surgeon's To is the main room's with the other offered.
+     anaesthetist are refused; the email body passes the allowlist (no DOB, no NHI pattern); the To is the List's sender when the List holds one, else the surgeon's first office contact with the others offered, and always one address (never every contact); it is empty (no error) when neither exists.
 
 7. **The balance check at booking time** (US-11.3.2, RV-36).
    - `stampBalanceCheck(draft, bookingId, trigger, atISO)` in `store/patientActions.ts`: sets
@@ -477,8 +476,8 @@ and 85. The catalogue images for US-11.1.1, US-11.1.4, US-11.3.2 and US-11.3.3 a
    - `waitingNhiRows(state)`: one row per open `ImportRow` that 33 derives as `waitingForNhi`: the
      patient as received (name, DOB if sent), the **List** found by 33's date, surgeon, hospital and
      session step (else the row's date and hospital), the Booking time and the wording as received, the
-     surgeon (resolved by HPI CPN, then name) and the **rooms contact** (room name, email, phone, the email read through 17a's helper; a room may hold none; else
-     "Hospital: {email}"), days to go, `waitingNhiUrgency`, and the last `importRow.nhiRequested` time.
+     surgeon (resolved by HPI CPN, then name) and the **address to chase** (the List's sender, else the surgeon's first office contact: name, email, phone, through the one helper, with the other office contacts offered; the
+     others offered), days to go, `waitingNhiUrgency`, and the last `importRow.nhiRequested` time.
      Sorted by date then time. Derived, never stored, so a row leaves the moment its NHI is added and
      stays until then.
    - `openBalanceWarnings(state)` (15a's `openWarnings` for `patientBalance`), `followUpsDue(state)`,
@@ -488,8 +487,7 @@ and 85. The catalogue images for US-11.1.1, US-11.1.4, US-11.3.2 and US-11.3.3 a
      billed to the patient $610.00 strong, and her patient-centric balance also counts a hospital-billed
      episode; Heather Sinclair reads "in credit by $260.00" mild; a named-payer pair (22a's Hana Park,
      BP0001, or a fixture) counts to Grace Park's balance and not to billed-to-patient; the balance
-     equals the sum of row outstanding less credits to the cent; a waiting row carries Mr Okafor's rooms
-     email; the badge count adds up.
+     equals the sum of row outstanding less credits to the cent; a waiting row carries the List's sender, else Mr Okafor's first office contact; the badge count adds up.
 
 9. **Seed** (bump `PERSIST_VERSION` by one; extend `persistMigrate.test.ts`: an older version reseeds,
    and the `patientCare` slice and the `patientBalance` rule entry are backfilled).
@@ -573,10 +571,10 @@ and 85. The catalogue images for US-11.1.1, US-11.1.4, US-11.3.2 and US-11.3.3 a
     - **Search:** one field ("Name, NHI or date of birth"); table: Name, NHI (mono), DOB and age, Next
       Booking, Balance (patient-centric, mono; "In credit" when negative) and the warning strength pill.
     - **Waiting for NHI:** columns Patient as received (name, DOB), List (date, session, hospital,
-      surgeon, time, or the date and hospital when no List exists), Stub (33a's, a small marked chip: "Stub on {surgeon}'s List", linking to that List; none when no List exists), Surgeon's rooms (name, email, phone;
-      or "Hospital: {email}"; a surgeon at more than one room shows the main room first, the others offered), Days to go with an **Urgent** pill (the error tint) on close rows,
-      Requested ("Not yet" or the time). Actions: **Email rooms** (a real `<a href>` from
-      `requestNhiFromRooms`, audited on click) and **Add NHI** (the sheet); **Open on matching** stays for the row's other decisions (reject removes the stub, 33a). Empty
+      surgeon, time, or the date and hospital when no List exists), Stub (33a's, a small marked chip: "Stub on {surgeon}'s List", linking to that List; none when no List exists), Address to chase (the List's sender, else the surgeon's first office
+      contact: name, email, phone; the other office contacts offered to switch to), Days to go with an **Urgent** pill (the error tint) on close rows,
+      Requested ("Not yet" or the time). Actions: **Email for the NHI** (a real `<a href>` from
+      `requestNhiFromOffice`, audited on click) and **Add NHI** (the sheet); **Open on matching** stays for the row's other decisions (reject removes the stub, 33a). Empty
       state "No intake rows are waiting for an NHI." A caption: "These rows are not Bookings yet; each stands as a stub on its List. No Booking or patient is
       created until the office adds the NHI."
     - **Add NHI sheet** (a desktop dialog, convention 16): an NHI field with live `validateNhi`; the
@@ -627,7 +625,7 @@ and 85. The catalogue images for US-11.1.1, US-11.1.4, US-11.3.2 and US-11.3.3 a
       warning is mild; over it, strong. A patient in credit gets a mild warning. A change applies at the
       next Booking check.", and a History link. Nothing else of US-13.7.4's page.
     - Add every new audit code to `ACTION_LABELS`: "Patient details differ", "Patient details reviewed",
-      "NHI requested from rooms", "Follow-up logged", "Follow-up done", "Patient balance threshold
+      "NHI requested", "Follow-up logged", "Follow-up done", "Patient balance threshold
       changed". Entity labels: patient, settings.
 
 13. **Where the warning and the waiting rows surface outside Patients.**
@@ -666,7 +664,7 @@ and 85. The catalogue images for US-11.1.1, US-11.1.4, US-11.3.2 and US-11.3.3 a
     dashes in any string added or changed.
 
 16. **Tests and shots.**
-    - Component tests: the waiting row renders the rooms email, the Urgent pill and Add NHI; the Add NHI
+    - Component tests: the waiting row renders the address to chase, the Urgent pill and Add NHI; the Add NHI
       sheet shows the existing-record preview and calls `addNhiToWaitingRow`; the record's invoice table
       shows Paid (Sharma) and Unpaid (Souter) for Sarah Mitchell with billed to the patient $610.00 and
       the strong pill, and the Balance tile counts every payer; Heather Sinclair shows "In credit
@@ -717,7 +715,7 @@ and 85. The catalogue images for US-11.1.1, US-11.1.4, US-11.3.2 and US-11.3.3 a
 |---|---|---|---|
 | Receive list with a missing NHI | Admin · Patients · Waiting for NHI (`/admin/patients/waiting`) | bar | Imports `NO_NHI_LIST` with 33's `importHospitalDownload(api, OFFICE_ACTOR, sampleId)` (Forte Health, channel `manualSheet`; not `deliverDailySheet`): two rows with no NHI, one urgent, land on 33's matching screen and show in this view. The message names the two NHIs the presenter types (the existing patient's and the new patient's). Nothing is applied. Disabled with "Already received" once that sample's batch exists |
 | (no new trigger) Add NHI | Admin · Patients · Waiting for NHI | none | Product UI: type the NHI in the Add NHI sheet; 33a's resolve makes the Booking in the stub's place on its List, matched to the single record, and the row leaves the view. The existing-patient row (Losa Tuilagi, JKL1188) then carries the mild balance warning |
-| (no new trigger) Strong balance warning on the S1 match | Admin · Intake matching screen | none | Existing S1 flow: 34's on-open sync stages Sarah Mitchell's St George's row, the row previews the warning, Create Booking raises the **strong** warning on the to-do list. Mild: add a Booking for Losa Tuilagi (JKL1188). Credit: add one for Heather Sinclair (ZAN2219). A guardian as payer removes the warning (product). The demo clock's menu ages invoices from their invoice date (`+61 days` turns Tuilagi's mild warning strong) |
+| (no new trigger) Strong balance warning on the S1 match | Admin · Intake matching screen | none | Existing S1 flow: 34's import stages Sarah Mitchell's St George's row, the row previews the warning, Create Booking raises the **strong** warning on the to-do list. Mild: add a Booking for Losa Tuilagi (JKL1188). Credit: add one for Heather Sinclair (ZAN2219). A guardian as payer removes the warning (product). The demo clock's menu ages invoices from their invoice date (`+61 days` turns Tuilagi's mild warning strong) |
 | (no new trigger) Anaesthetist's balance alert | Mobile and web · List and Booking | none | Existing data: as Dr Souter, Sarah Mitchell's new Booking (after S1's Create Booking) shows the strong red alert, a Losa Tuilagi Booking the mild yellow colour code, a Heather Sinclair Booking the mild credit one; no amount shown, no Clear |
 | (no new trigger, product) Add note | Mobile, web and Admin · List and Booking | none | Type a note: the other side sees it on opening the same List or Booking, with author and time |
 | (no new trigger, product) Change the threshold | Admin · Master data · Patient balance warning | none | The one field: set 20 and Tuilagi's 30-day warning reads strong at the next check; set 90 and it reads mild again |
@@ -767,12 +765,12 @@ owner (ROADMAP.md "Owner review: agents test themselves").
       (34) waits on 33's queue with its stub; no Booking is made until its NHI is added.
 - [ ] Waiting for NHI, Demo actions, "Receive list with a missing NHI": two rows appear, one **Urgent**,
       each with the patient as received, the List or date, its stub (also drawn on the List in Admin, web
-      and mobile, never counted as a Booking), and the rooms email and phone (or the hospital's). The
+      and mobile, never counted as a Booking), and the address to chase (the List's sender, else the surgeon's first office contact). The
       matching screen shows the same rows as waiting, creating nothing; no Booking and no patient exist
       for them.
-- [ ] Email rooms opens a mail draft addressed to the room's contact email (17a's helper; the hospital's when the room holds none, empty when neither does), subject "NHI needed: {patient}, {date}", with
+- [ ] Email for the NHI opens a mail draft to one address only: the List's sender, else the surgeon's first office contact (17b's helper as 34 extends it; the others offered, never every contact; empty when neither exists), subject "NHI needed: {patient}, {date}", with
       no DOB and no NHI in the body. The row reads "Requested" with the time; the Audit viewer shows "NHI
-      requested from rooms".
+      requested".
 - [ ] Add NHI on the existing-patient row, typing JKL1188: the sheet says it matches Losa Tuilagi and
       that no second record is made; the row and its stub leave the view and the Booking is on the List in the stub's place. One Losa
       Tuilagi exists and the Booking carries a mild balance warning. An invalid
@@ -836,7 +834,7 @@ owner (ROADMAP.md "Owner review: agents test themselves").
 ## Demo guide updates
 
 Patch these in the same session, and the same sections of `master-demo-guide.html`. The beats are as the
-earlier phases left them (34's S1 sync and match, 20a's three-part stack, 21's payer, 15b's ACTIVE Lists);
+earlier phases left them (34's S1 import and match, 20a's procedure stack, 22a's payer on each Procedure, 15b's ACTIVE Lists);
 this phase adds lines, it does not re-script them, and Phase 44 rewrites S1 to S5 afterwards.
 
 - `03-demo-script.md`:
@@ -856,11 +854,9 @@ this phase adds lines, it does not re-script them, and Phase 44 rewrites S1 to S
     colour code and money-free line is enough, whether staff can clear or annotate it (parked), the starting threshold (Ben and Vanessa left the rules as they were on 5 November), whether the balance and prepayment alerts should be one combined set (OQ-134: built as two rules shown together), and whether the
     threshold should be editable at all (US-11.3.2 says fixed until a settings page).
   - **S5, a new optional beat, "no NHI, no Booking":** the add-booking form refuses a blank NHI; Patients,
-    Waiting for NHI after the trigger (the patient as received, the rooms contact, Urgent, Email rooms);
+    Waiting for NHI after the trigger (the patient as received, the address to chase, Urgent, Email for the NHI);
     the stub on the List; Add NHI resolves it, the Booking takes the stub's place, matched to Losa Tuilagi's single record. Discovery point:
-    D11 and D66 are built (the NHI is mandatory and the identifier; a stub stands in for a waiting row, Donald's answer, not yet seen by AA); D74's discovery point: which contact the
-    NHI request should go to (the room's contact email, as built, or a PA named for the surgeon), and
-    whether the rooms should be contacted from here or by the office's own email.
+    D11 and D66 are built (the NHI is mandatory and the identifier; a stub stands in for a waiting row, Donald's answer, not yet seen by AA); D74 as built (Donald's answer, not yet seen by AA): the request goes to one address, the List's sender, else the surgeon's first office contact, never every contact, and whether it should be sent from here or by the office's own email.
   - "Direct URLs": `/admin/patients`, `/admin/patients/waiting`, `/admin/patients/follow-up`,
     `/admin/patients/CQY9304` (Sarah Mitchell). "Recovery": a decided row cannot be undone except by
     Reset; a cleared balance warning re-opens only if it turns strong.
@@ -873,7 +869,7 @@ this phase adds lines, it does not re-script them, and Phase 44 rewrites S1 to S
   amounts). Add the shared note (anyone writes, everyone sees). Add
   a "The NHI is mandatory" item (no Booking without one; rows wait; the office adds it). Replace any
   "NHI pending" wording. Update "What each app is for" (Admin gains Patients).
-- `02-workflows-and-handoffs.md`: in intake, a row without an NHI waits, the office emails the rooms and
+- `02-workflows-and-handoffs.md`: in intake, a row without an NHI waits, the office emails the List's sender (else the surgeon's first office contact) and
   adds the NHI, then decides the row; a returning patient who owes money raises the balance warning. In
   billing follow-up: the patient record, the follow-up log, Resend and Clear.
 - `01-personas-and-responsibilities.md`: the office persona chases waiting rows and follows up patients
@@ -898,7 +894,7 @@ with `recipe-status.mjs`. Rows for US-11.4.1 and US-11.4.2 are gone from this ph
 | [US-11.1.1](../../../../requirements-board/requirements/stories/US-11.1.1.md) Patient record keyed on NHI | partial · admin-patient-record, admin-edit-patient (on a Booking's patient block; reason "no standalone patient record screen") | captured. Re-point `patient-record` to `/admin/patients/CQY9304` (header with the NHI as identifier, details and ethnicity; highlight the Details card; no internal id) and `edit-patient` to the record's Edit sheet with the ethnicity field; add a `details-differ` state (the Details differ card after Sarah Mitchell returns with a new address) and a `not-supplied` state (a record with no ethnicity or phone, nothing marked required; US-11.1.1's new line). Keep the catalogue's image names; drop the partial reason |
 | [US-11.1.2](../../../../requirements-board/requirements/stories/US-11.1.2.md) | captured · admin-nhi-validator | no change here (34 owns it); re-run `--dry` |
 | [US-11.1.4](../../../../requirements-board/requirements/stories/US-11.1.4.md) Patient without NHI | partial · nhi-pending (BK0035, `[data-shot=booking-patient]`) | captured. Replace `nhi-pending` with `nhi-required`: state `form` (Admin phone advice with the NHI blank, Save disabled with the inline reason) and `waiting` (the matching screen after the trigger: the no-NHI row waiting, nothing created, and the stub on its List; highlight the stub). Caption "A Booking cannot be saved without an NHI; an incoming row without one waits at intake". Drop the partial reason |
-| [US-11.1.5](../../../../requirements-board/requirements/stories/US-11.1.5.md) Intake rows waiting for an NHI | absent (no shots) | captured. Admin shot `waiting-for-nhi` at `/admin/patients/waiting`: states `list` (after "Receive list with a missing NHI": two rows, one Urgent, the room's contact email and phone; highlight the urgent row), `add-nhi` (the sheet typing JKL1188: "Matches Losa Tuilagi ... no second one is made") and `ready` (the Booking on Dr Souter's List in the stub's place, matched to her single record). Add `stub` states (mobile and web List: the stub beside the waiting row's List; no amount). Caption "Intake rows waiting for an NHI, each a stub on its List, with the surgeon's rooms" |
+| [US-11.1.5](../../../../requirements-board/requirements/stories/US-11.1.5.md) Intake rows waiting for an NHI | absent (no shots) | captured. Admin shot `waiting-for-nhi` at `/admin/patients/waiting`: states `list` (after "Receive list with a missing NHI": two rows, one Urgent, each with its address to chase (the List's sender, else the first office contact); highlight the urgent row and the address), `add-nhi` (the sheet typing JKL1188: "Matches Losa Tuilagi ... no second one is made") and `ready` (the Booking on Dr Souter's List in the stub's place, matched to her single record). Add `stub` states (mobile and web List: the stub beside the waiting row's List; no amount). Caption "Intake rows waiting for an NHI, each a stub on its List, with the address to chase" |
 | US-11.2.1, US-11.2.2, US-11.2.3, US-11.2.4, US-11.4.3 | admin-default-payer, admin-guardian-payer, none and absent rows | no change here (Phase 22a owns them, re-pointing their `booking-payer-row` recipes); re-run `--dry` |
 | [US-11.3.1](../../../../requirements-board/requirements/stories/US-11.3.1.md) Patient outstanding bills view | absent | captured. Admin shot `patient-invoices` on `/admin/patients/CQY9304`, highlighting the invoice table: every invoice across anaesthetists (paid under Dr Sharma, unpaid under Dr Souter) with Paid, Part paid, Unpaid pills and the balance |
 | [US-11.3.2](../../../../requirements-board/requirements/stories/US-11.3.2.md) Alert on booking a patient with unpaid bills | partial · prior-balance (billing monitor, `[data-shot=billing-prior-balance]`) | captured. Replace with `balance-warning`, setup `{ "scenario": "S1" }`: states `preview` (the matching row's preview before Create Booking), `to-do` (after Create Booking, the strong red warning on 15a's to-do list: $610.00, 98 days), `credit` (Admin phone advice for Heather Sinclair: the mild yellow credit preview) and `threshold` (Master data, the one field at 90). Admin only. Add `anaesthetist` states on mobile and web (Dr Souter's List after Create Booking: the strong red alert on Sarah Mitchell's Booking, a mild yellow colour code on Tuilagi's; highlight the chip; no amount, no Clear). Add a `beside-prepayment` state (a Booking carrying 27's prepayment warning and this one, two rows). Caption "Balance warning when booking a patient who owes AA, strong over the threshold, also shown on the anaesthetist's List". Drop the partial reason and the `billing-prior-balance` hook |
@@ -945,10 +941,10 @@ anything settled in the Decisions log (as amended by this phase).
   not a Booking and never a patient; Add NHI corrects the row through 33's `correctImportRow` (the
   original is kept) and resolves through 33a's one path, with no second resolve code, the Booking taking
   the stub's place with no second patient record. The view is
-  derived from 33's `waitingForNhi`, never stored, so a row leaves on add and stays until then. The rooms
-  contact resolves surgeon by HPI CPN then name, then the room's email through 17a's helper (the main
-  room's for a surgeon at more than one room, the others offered; no second lookup), else the
-  hospital's, else empty. The NHI request email passes the
+  derived from 33's `waitingForNhi`, never stored, so a row leaves on add and stays until then. The address
+  to chase resolves surgeon by HPI CPN then name, then the List's sender, else the surgeon's first
+  office contact through 17b's helper as 34 extends it (the others offered, never every contact; no
+  second lookup), else empty. The NHI request email passes the
   allowlist (no DOB, NHI, money or notes).
 - **The internal id.** `hiddenInternalId` is the store key and Xero's ContactNumber only; it appears in no
   Admin screen, route, search result or copy. The NHI never enters Xero (`xeroNhi.test.ts` passes).
@@ -997,14 +993,14 @@ anything settled in the Decisions log (as amended by this phase).
   billed-to-the-patient count against the patient-centric balance (insurer included per Greg); the
   anaesthetist's alert as a colour and a money-free line, read-only, following the live strength rather than
   the office's clearance; the shared note log beside the old single note field; OQ-118 built as answered (D66, Donald's answer, not yet seen by AA: 33a's stub beside each waiting
-  row, Add NHI through 33a's path); OQ-127's default (the NHI request to the room's contact email via
-  17a's helper, the main room's for a surgeon at more than one, else the hospital's, else empty; D74); `beforeProcedure` although US-13.7.1 leaves it
-  unset; the one threshold field although US-11.3.2 now says fixed and US-13.7.4 is Future; OQ-134's default (the balance alert and 27's prepayment warning as two rules shown together, one place each; D80); the urgent
+  row, Add NHI through 33a's path); OQ-127 built as answered (D74, Donald's answer, not yet seen by AA: the NHI request to one address, the List's
+  sender, else the surgeon's first office contact through 17b's helper, never every contact); `beforeProcedure` although US-13.7.1 leaves it
+  unset; the one threshold field although US-11.3.2 now says fixed and US-13.7.4 is Future; OQ-134 built as answered (D80, Donald's answer: the balance alert and 27's prepayment warning as two rules shown together, one place each); the urgent
   constant (3 days); the NHI as route key with the internal id hidden; the "Office adds the NHI" PWA entry on the
   List rather than the Booking; no standalone "New patient" form; the waiting view as a filtered office
   view over 33's queue (US-11.1.5 says it could be folded into the queue if it adds nothing); who is the
   credit patient in the seed.
-- **Status row** for catch-up Phase 40 and a phase entry with: the drift-check result against `c9b65ad`
+- **Status row** for catch-up Phase 40 and a phase entry with: the drift-check result against `63a4490`
   (items changed or not; D11 answered and built; OQ-74 built as answered, D24); what was built with a name
   map for later phases:
   - the `patientBalance` rule, its `thresholdDays` param and `setPatientBalanceThreshold`;
@@ -1014,7 +1010,7 @@ anything settled in the Decisions log (as amended by this phase).
   - `src/domain/patients/` (`invoiceAgeDays`, `checksPatientBalance`, `countsTowardPatientBalance`,
     `patientBalanceSummary`, `patientBalanceStrength`, `patientCentricBalance`, `waitingNhiUrgency`,
     `detailDifferences`, `buildNhiIndex`);
-  - `patientActions.ts` (`addNhiToWaitingRow` over 33a's resolve, `nhiRowPreview`, `requestNhiFromRooms`,
+  - `patientActions.ts` (`addNhiToWaitingRow` over 33a's resolve, `nhiRowPreview`, `requestNhiFromOffice`,
     `resolvePatientDetails`, `logPatientFollowUp`, `completeFollowUp`) and `addNhiAsSimulatedOffice`;
   - `patientSelectors.ts` (`waitingNhiRows` among them); `createBooking`'s `nhiRequired` guard;
   - the Admin Patients routes (keyed by NHI); `NO_NHI_LIST` and the Lists it uses; the `oa07` payer
@@ -1041,8 +1037,9 @@ anything settled in the Decisions log (as amended by this phase).
   4. **New:** the anaesthetist sees the balance alert on the Booking in their List (mild a colour code),
      read-only and without amounts, from `balanceAlertForBooking`; the office's Clear does not hide it.
   4a. **New:** a shared append-only note log on a List and a Booking, writable by either side.
-  4a2. **New:** OQ-134 (D80, open): the balance alert and 27's prepayment warning are two rules shown together.
+  4a2. **New:** OQ-134 (D80, answered): the balance alert and 27's prepayment warning are two rules shown together.
   4b. **New:** OQ-118 answered (D66): a no-NHI booking waits at intake with 33a's stub on its List; Add NHI resolves through 33a's path.
+  4c. **New:** the missing-NHI request goes to one address, the List's sender, else the surgeon's first office contact, never every contact (D74, OQ-127 answered; Donald's answer, not yet seen by AA).
   5. **New:** only Bookings stamped at create or match carry the balance warning; strength is derived live.
   6. **New:** the threshold is the one warning parameter with a UI, one Master data field; the settings page
      stays Future (US-13.7.4).
@@ -1066,5 +1063,5 @@ anything settled in the Decisions log (as amended by this phase).
     follow-up log; `patientSearch` must stay fast at full scale.
   - For **44**: S1 Beat 1's warning line, Beat 1d and the S5 beat were added here; re-read them in the
     rewrite and walk "Office adds the NHI" in the PWA-parity audit. If Ben changes the balance rule
-    (restated 5 November, unchanged; OQ-134 open, D80), the switch points are the rule's `defaultParams`,
+    (restated 5 November, unchanged; OQ-134 answered, D80), the switch points are the rule's `defaultParams`,
     `patientBalanceStrength`, `checksPatientBalance` and `countsTowardPatientBalance`.

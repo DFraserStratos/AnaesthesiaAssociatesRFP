@@ -15,7 +15,7 @@ Read alongside (not closed here):
 [US-11.1.1](../../../../requirements-board/requirements/stories/US-11.1.1.md) (ethnicity coded to NZHIS Level 4: Phase 40's; its NHI-mandatory note is settled by OQ-49),
 [US-11.1.5](../../../../requirements-board/requirements/stories/US-11.1.5.md) (intake rows waiting for an NHI: Phase 40's view; a typed or looked-up NHI is how a row gets one),
 [US-12.1.4](../../../../requirements-board/requirements/stories/US-12.1.4.md) (the anaesthetist's HPI CPN, Phase 26),
-[US-13.6.2](../../../../requirements-board/requirements/stories/US-13.6.2.md) (the surgeon's HPI CPN, Phase 17; its pairing-preferences change is 17's and does not touch the HPI CPN),
+[US-13.6.2](../../../../requirements-board/requirements/stories/US-13.6.2.md) (the surgeon's HPI CPN, Phase 17; since 18 November admin staff fill it in and a surgeon may hold none, unique when held, which 17b builds (D76): the display formatter's blank case covers it),
 [US-11.2.2](../../../../requirements-board/requirements/stories/US-11.2.2.md) (the payer on each Procedure, prefilled from the patient and editable to a parent or guardian: Phase 22a's; the lookup fills the patient the payer is prefilled from),
 [US-02.4.1](../../../../requirements-board/requirements/stories/US-02.4.1.md) (Add a Booking manually, with hand-entered procedure text kept as source text: 20a's form, which this phase extends),
 [FT-07.1](../../../../requirements-board/requirements/stories/FT-07.1.md) (the List states DRAFT, ACTIVE, SUBMITTED, AUTHORISED: an assigned List is ACTIVE, 15b; a Draft List has no anaesthetist, 31),
@@ -104,7 +104,7 @@ external system, so it is built from the seed by a pure function and never persi
 
 ## Before you start: drift check
 
-1. Diff the covered and read-alongside items against the plan's snapshot (catalogue commit `c9b65ad`;
+1. Diff the covered and read-alongside items against the plan's snapshot (catalogue commit `63a4490`;
    the tool is rename-aware, so never a plain git diff of the catalogue folder):
 
    ```
@@ -112,11 +112,11 @@ external system, so it is built from the seed by a pure function and never persi
    ```
 
    Read the hunks, and the domain-model lines on the NHI, the register refresh, the payer on each
-   Procedure (DM-11) and the HPI CPN glossary row. (This doc is current at `c9b65ad`: neither covered item
-   changed and both are still **Proposed** with no OQ linked; the 28 October changes to the read-alongside
+   Procedure (DM-11) and the HPI CPN glossary row. (This doc is current at `63a4490`: neither covered item
+   changed in substance (US-14.4.1 gained only a related link) and both are still **Proposed** with no OQ linked; US-13.6.2's 18 November change (a blank surgeon HPI CPN) is 17b's; the 28 October changes to the read-alongside
    items (US-11.1.1, US-11.1.5, US-11.2.2, US-12.1.4, OQ-49) are 40's, 21's and 26's; OQ-49 is answered, so D11 is built, not
    a default; the add-booking form is as the Goal describes.)
-2. If an item changed after `c9b65ad`, re-read it in full and adjust the work items. Specifically:
+2. If an item changed after `63a4490`, re-read it in full and adjust the work items. Specifically:
    - **NHI rule.** If the NHI stops being mandatory, or a blank or pending NHI becomes allowed again,
      stop and tell the owner: the form's validation and Save gate follow 40's required NHI.
    - **Refresh cadence.** If US-14.4.1 now asks for an automatic refresh on a schedule (the
@@ -176,7 +176,7 @@ external system, so it is built from the seed by a pure function and never persi
      field on 33's matching screen (item 9);
    - **38a:** the search field components on mobile and web and `parseBookingQuery`;
    - the current `PERSIST_VERSION`.
-6. Record the result (changed items against `c9b65ad`, the provisional reading, the real names) in
+6. Record the result (changed items against `63a4490`, the provisional reading, the real names) in
    the PROGRESS entry.
 
 ## Reference
@@ -550,9 +550,24 @@ them, so use the real ones from their PROGRESS entries):
       lookup with the purpose note. The PWA device spec runs the Hub entry from the sheet. Wait on
       `data-shot` selectors, never on fixed sleeps.
 
-15. **Demo guide** (see "Demo guide updates"), in the same session.
+15. **Build on the shared components; migrate these copies (UI unification).**
+   - The lookup's status line, Retry and Stop waiting, the purpose note, the refresh differences
+     table and the Hub entry are built from the shared components (U1 to U6): `TextField` and
+     `FieldHint` (U4) for the NHI field and its caption-slot status; `Notice` and `Pill` (U3) in place
+     of a new callout or chip; `Button` and `TextAction` (U5); `OverlayHeader` and `SheetActions` (U2)
+     for the refresh sheet; the table kit and `DefRow` (U6) for the differences table; `dateText`
+     (U1) for the refresh stamp. Where this doc says `Callout`, use U3's `Notice`.
+   - Migrate any private copy of those components in the files this phase opens
+     (`ManualBookingForm`, the phone-advice and review forms, 40's Details differ table) onto the
+     shared one and delete the copy.
+   - Design page per screen changed: the mobile Add booking sheet to `Mobile App.dc.html`; the web
+     Add a booking form to `Web Dashboard.dc.html`; the Admin phone-advice booking and List drawer to
+     `Admin Day.dc.html`; the refresh differences table to `Admin Review.dc.html`; states and type to
+     `Design Language.dc.html`.
 
-16. **Finish green:** `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots`.
+16. **Demo guide** (see "Demo guide updates"), in the same session.
+
+17. **Finish green:** `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots`.
 
 ## Demo triggers
 
@@ -757,6 +772,7 @@ re-raise anything settled in the Decisions log.
   both surfaces, disabled for the current mode. Its body lives in `src/store`, and the hub module in
   `src/shared/nhiHub` (`pwaPurity` holds). Nothing is added to the Control Panel page. The form's
   badge shows a non-Available mode.
+- **One component per job** (work item 15): a new private copy of a shared component is a finding; each replaced copy is deleted.
 - **Design and copy.** Caption-slot status lines, never modals on mobile. Error, warning and success
   tints only, never a status hue. Teal-only actions, no crimson, mono NHI and HPI CPN, the Provisional
   pill once, no en or em dashes.
@@ -767,7 +783,7 @@ re-raise anything settled in the Decisions log.
   themselves"): the defaults built for open questions, provisional readings, anything logged
   rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 40a, and a phase entry with:
-  - the drift-check result against `c9b65ad` (items changed or not; the refresh cadence, HPI CPN and
+  - the drift-check result against `63a4490` (items changed or not; the refresh cadence, HPI CPN and
     NHI-rule checks; the provisional reading built; the real form names from 15b, 19, 20a, 22a and 40);
   - what was built, with the name map for later phases: `nhiEntryFeedback`; `src/domain/nhiRegister/`
     (`NhiRegisterPerson`, `buildNhiRegister`, `lookupOnRegister`, `registerDifferences`);

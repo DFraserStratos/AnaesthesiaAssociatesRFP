@@ -4,7 +4,7 @@
 [FT-02.3](../../../../requirements-board/requirements/stories/FT-02.3.md) Manual booking entry by admin (Agreed; graded Partial: no Add Booking on a List that already has Bookings, and some fields not editable) ·
 [US-02.3.1](../../../../requirements-board/requirements/stories/US-02.3.1.md) Create or amend a Booking (Agreed; **changed at `d4db277`**: every field is editable until the **List is authorised** ([US-07.3.2](../../../../requirements-board/requirements/stories/US-07.3.2.md)), where it said "until AA says otherwise"; its images now say "free session" and that phone advice "assigns the List"; its optional "as given" text for a phone or email Booking is Phase 20a's hand-entered **Procedure description**, kept as [source text](../../../../requirements-board/requirements/stories/US-02.5.7.md); graded Partial: no add on a booked List, and the NHI and the invoice description not editable by the office) ·
 [US-02.3.2](../../../../requirements-board/requirements/stories/US-02.3.2.md) Save Booking changes explicitly (Agreed; graded Contradicts: every edit writes through at once) ·
-[US-02.3.3](../../../../requirements-board/requirements/stories/US-02.3.3.md) Draft a booking update email (Verify; **changed at `60e2d1e`**: its OQ-82 note becomes the answer, the email stays a manual action in the first release, read as covering anaesthetist changes too, and automatic sending is the new Future story US-02.3.5; **changed at `a68f09b`**: a surgeon can belong to more than one room (OQ-128, answered 4 November), and which room's email a change uses is [OQ-127](../../../../requirements-board/requirements/questions/OQ-127.md) part 5; graded Missing) ·
+[US-02.3.3](../../../../requirements-board/requirements/stories/US-02.3.3.md) Draft a booking update email (Verify; **changed at `60e2d1e`**: its OQ-82 note becomes the answer, the email stays a manual action in the first release, read as covering anaesthetist changes too, and automatic sending is the new Future story US-02.3.5; **rewritten 18 November** (D74; D75 superseded; Donald for the build, not yet seen by AA): the To for a change to a Booking is the address the Booking's List [came from](../../../../requirements-board/requirements/stories/US-02.2.4.md) (34), otherwise the surgeon's first [office contact](../../../../requirements-board/requirements/stories/US-13.6.5.md) with the others offered, never every contact at once; the surgeons' room email, room contacts and the several-rooms question are gone, as the system keeps no room record; graded Missing) ·
 [US-02.3.4](../../../../requirements-board/requirements/stories/US-02.3.4.md) Update email templates per kind of change (Agreed; graded Missing) ·
 [US-02.5.8](../../../../requirements-board/requirements/stories/US-02.5.8.md) See a Booking's change history (**new 5 November**, status 3; the history button on the Booking, every change with when, who and what; who is a named office user, or the hospital's list or integration, and the procedure text a hospital list replaced is shown; graded Partial: the History sheet exists in all three apps, but the office is one hard-coded actor and no entry names the hospital's list or shows a replaced text) ·
 [DM-35](../analysis/domain-model-delta.md#dm-35) Explicit-save change sets, an on-demand Booking update email picked from the change history, email templates per kind of change, and the Booking's change history screen ·
@@ -17,20 +17,19 @@ Also touches, without closing:
 [US-01.4.3](../../../../requirements-board/requirements/stories/US-01.4.3.md) (Confirmed; an anaesthetist's own move posts to the shared notification pool, built by Phase 32, and the office sends the cover-change email from the on-demand button),
 [US-13.8.1](../../../../requirements-board/requirements/stories/US-13.8.1.md) and [US-13.8.2](../../../../requirements-board/requirements/stories/US-13.8.2.md) (Phase 32's shared pool, which Vanessa agreed on 2026-10-07, and its List-move notification; this phase adds "Draft cover-change email" to it),
 [US-13.5.2](../../../../requirements-board/requirements/stories/US-13.5.2.md) (Confirmed; the Audit viewer gains a change-set column).
-**Open questions:** all answered, built as answered with no provisional label (OQ-130 joined them on 5 November):
+**Open questions:** all answered but OQ-124, built as answered with no provisional label (all answers are Donald's for the build, not yet confirmed by AA; OQ-130 joined them on 5 November, OQ-127 on 18 November):
 [OQ-69](../../../../requirements-board/requirements/questions/OQ-69.md) (owner decision D19: an on-demand button on the admin screen for any Booking, used ad hoc; the admin picks one or more changes from the history; "not since last email"; no prompt after saving or after a cover change),
 [OQ-82](../../../../requirements-board/requirements/questions/OQ-82.md) (**answered 2026-10-07**, recorded in D19's row: the change emails stay manual in the first release, the office drafting and sending each one; asked about the office's own changes and read as covering an anaesthetist's changes too; automatic sending is Future, US-02.3.5),
 [OQ-65](../../../../requirements-board/requirements/questions/OQ-65.md) (D15: the office is told through the shared notification pool and sends the cover-change email from it; the colleague sees the List with a notice, Phase 32),
-[OQ-46](../../../../requirements-board/requirements/questions/OQ-46.md) (the surgeon's room for a change to a Booking, the hospital contact for a cover change; the admin can edit the To),
-[OQ-128](../../../../requirements-board/requirements/questions/OQ-128.md) (D75, answered 4 November: a surgeon belongs to one or more rooms, the first their main room, so the update email's To never reads a single `Surgeon.roomId`; 17a's helper does the lookup),
+[OQ-46](../../../../requirements-board/requirements/questions/OQ-46.md) (the hospital contact for a cover change; for a change to a Booking, the List's sender else the surgeon's first office contact, as OQ-127 now settles; the admin can edit the To),
+[OQ-127](../../../../requirements-board/requirements/questions/OQ-127.md) (**answered 18 November, D74**, Donald for the build, not yet confirmed by AA: no surgeons' room record; contacts live on the surgeon; the update email's To for a Booking change is the List's sender address (34, US-02.2.4), else the surgeon's first office contact with the other office contacts offered to switch to, and never every contact at once; the one helper is 17b's, as 34 extends it, and this phase builds on it with no lookup of its own; OQ-128 and D75 are superseded with the rooms),
 [OQ-43](../../../../requirements-board/requirements/questions/OQ-43.md) (D44: pairing preferences and priority tiers are private to the office, so they never appear in an email, the as-at view or anything an anaesthetist sees, and an anaesthetist's own move carries no preference check) and
 [OQ-130](../../../../requirements-board/requirements/questions/OQ-130.md) (**answered 5 November, D73**: an admin's edit to the invoice description always wins, neither a late hospital description nor a Contract chosen or changed replaces it; the office's edit goes through 20a's one helper, `setInvoiceDescription`, and this phase adds no layer or rule of its own; the cue that a newer received text has arrived is 20a's and 33's, never replacing the edit),
 [OQ-07](../../../../requirements-board/requirements/questions/OQ-07.md) (optimistic concurrency, now Future Work with US-02.5.6: not built). Also answered, and read here: [OQ-49](../../../../requirements-board/requirements/questions/OQ-49.md) (D11: the NHI is mandatory, with no blank and no pending state, so the office's NHI field never accepts an empty value), [OQ-85](../../../../requirements-board/requirements/questions/OQ-85.md) (D61: a single-Booking move lets the mover optionally notify the office or raise the update email, built by 32a), [OQ-79](../../../../requirements-board/requirements/questions/OQ-79.md) (D58: how notices end, 32b) and [OQ-99](../../../../requirements-board/requirements/questions/OQ-99.md) (D33: completion needs a Contract, not a procedure or an RVG code).
-**Open, built to their defaults** (log each on the "For the owner's review" list, with no caption or screen presenting it as settled):
-[OQ-127](../../../../requirements-board/requirements/questions/OQ-127.md) (D74, new 2026-11-04: practice manager and PA contacts by room or by surgeon, US-13.6.5 Open; its part 5, a surgeon at more than one room, is new with OQ-128). Default, read only through 17a's one helper: a room's contact email is optional, so the update email's To for a Booking change is the **main room's** contact email and **may be empty** (the composer says so and the link opens with an empty To). For a surgeon at more than one room the helper also returns the other rooms, which the composer **offers** for the office to switch to; the room's practice manager and PA contacts are shown as context and **never used as the To**; no surgeon email field. One-line label "working default, not agreed with AA" in the composer's To note and on the owner's review list.
+**Open, built to its default** (log it on the "For the owner's review" list, with no caption or screen presenting it as settled):
 [OQ-124](../../../../requirements-board/requirements/questions/OQ-124.md) (D71, new 2026-10-28: Ben would stop emailing Lists and make the app the anaesthetist's source of truth; Vanessa did not respond). Default: build as written. Emailed Lists and the on-demand update email stay (US-02.3.3, manual), the change history is as above, and nothing is removed or replaced until AA answers. Log it on the "For the owner's review" list. No caption or screen says the app replaces emailed Lists.
 US-02.3.3 stays **Verify** (ROADMAP.md "Confirm before building": Ben to confirm the office's cover-change email from a List move); build it as written.
-**Depends on:** Phase 17a (the one helper that resolves a surgeon's room email: the main room's, optional, with the surgeon's other rooms offered and the rooms' practice manager and PA contacts, D74 and D75; the update email's To reads it and may get nothing back), Phase 22a (a payer on each Procedure: `Procedure.payer`, `setProcedurePayer` with its offer to the Booking's other Procedures, the copy rule and creation path that give an added Procedure its payer, D85; the as-at view and the draft read and write the payer per Procedure), Phase 17 (hospital and surgeons' room contact emails, a surgeon's rooms (a list since 17a, never read directly here), and the office-private pairing preferences and tiers that must never reach an email), Phase 25 (the per-Procedure pricing snapshot written at authorise, which makes AUTHORISED Bookings read-only and which the as-at view reads; 18's Contract audit gives a Contract's settings before then), Phase 32 (the anaesthetist's own List moves and the shared notification pool, FT-13.8 and DM-41, whose List-move notifications carry the cover-change email; no prepayment re-check on a move, D20), Phase 33 (hospital rows land on the matching screen for an office decision, no automated decisions, each row's wording kept as received, so every inbound write goes through the guarded paths). Through them: 14 (trigger registry, context hook, shared actors), 15 (Booking vocabulary, `BookingDetailBody`, Booking source), 15a (the warning routine; warnings are derived, and clearing one is a command), 15b (Copy a Booking is gone, so it is not in the write inventory, and an assigned List is ACTIVE), 18 (the flat Contract model: contract holders, one Contract per set of settings, each change audited, no versions or lines, one stored No contract (RVG); D1 to D11, AR-58 and AR-61), 19 (RVG groups as the one master list and the optional RVG code type-ahead, `pickRvgGroup`; no procedure list), 19a (the Contract's own invoice description as the top default; no lines), 19b (itemised modifiers, each with an explanation; age and the included P1 pre-applied and removable, never locked), 20 (one Contract per Procedure, `contractCandidatesFor`, the Contract step rail, the Contract step rail the office's add uses, the "Needs a Contract" list, completion needing a Contract and not a procedure, D33; the anaesthetist's Contract change until AUTHORISED, D63), 20a (`Procedure.sourceTexts`, append-only, `addSourceText`, the shared form's **Procedure description** field with its Told by choice, the "Add a description" sheet, the invoice description with `setInvoiceDescription` (office only, until AUTHORISED, D63; an admin's edit always wins, D73) and `ProcedureStack`), 21 (the insurance indication, and the payer before 22a moved it off the Booking), 22 (the Split on a Procedure's Contract, `setProcedureSplit`), 22a (the payer on each Procedure, replacing 21's `Booking.payer` and `setBookingPayer`), 23 (the primary Procedure), 24 (the one price precedence, the anaesthetist's typed price and discount, the office override, and the engine's rejections), 27 (prepayment derived from the prepaid set, the invoice generated at setup with its ledger pair and draft Xero pair, approve and send, and the re-check on a change of Procedures, Contract or payer, never on a move), 28 (`reassignList` over `moveListToSlot`, with 17's not-preferred warning and tier ordering), 29 and 30, and 31 (Draft Lists in state DRAFT, which hold Bookings, and the office's Draft List assignment), 32b (notices that resolve, D58) and 38a (the anaesthetist's edits until AUTHORISED, D63, which land in the same history). **Not guaranteed before 35** (not in its dependency chain): 32a (the single-Booking move; normally done first by Schedule track order), 34 (the S1 rebuild; normally done first by Intake track order), 36 and later, and 38b and 39. Every work item that mentions them applies only if that phase is DONE; the drift check records which.
+**Depends on:** Phase 17b (surgeon contacts on the surgeon, with no surgeons' room record: one personal and one or more office contacts, the practice name, and the one email helper that returns the surgeon's first office contact with the others offered; it never throws on a surgeon with no contact), Phase 34 (extends that helper with the List's sender address in front, and gives every List its origin: US-02.2.4; the update email's To reads the one helper and may get nothing back), Phase 22a (a payer on each Procedure: `Procedure.payer`, `setProcedurePayer` with its offer to the Booking's other Procedures, the copy rule and creation path that give an added Procedure its payer, D85; the as-at view and the draft read and write the payer per Procedure), Phase 17 (hospital contact emails, and the office-private pairing preferences and tiers that must never reach an email), Phase 25 (the per-Procedure pricing snapshot written at authorise, which makes AUTHORISED Bookings read-only and which the as-at view reads; 18's Contract audit gives a Contract's settings before then), Phase 32 (the anaesthetist's own List moves and the shared notification pool, FT-13.8 and DM-41, whose List-move notifications carry the cover-change email; no prepayment re-check on a move, D20), Phase 33 (hospital rows land on the matching screen for an office decision, no automated decisions, each row's wording kept as received, so every inbound write goes through the guarded paths). Through them: 14 (trigger registry, context hook, shared actors), 15 (Booking vocabulary, `BookingDetailBody`, Booking source), 15a (the warning routine; warnings are derived, and clearing one is a command), 15b (Copy a Booking is gone, so it is not in the write inventory, and an assigned List is ACTIVE), 18 (the flat Contract model: contract holders, one Contract per set of settings, each change audited, no versions or lines, one stored No contract (RVG); D1 to D11, AR-58 and AR-61), 19 (RVG groups as the one master list and the optional RVG code type-ahead, `pickRvgGroup`; no procedure list), 19a (the Contract's own invoice description as the top default; no lines), 19b (itemised modifiers, each with an explanation; age and the included P1 pre-applied and removable, never locked), 20 (one Contract per Procedure, `contractCandidatesFor`, the Contract step rail, the Contract step rail the office's add uses, the "Needs a Contract" list, completion needing a Contract and not a procedure, D33; the anaesthetist's Contract change until AUTHORISED, D63), 20a (`Procedure.sourceTexts`, append-only, `addSourceText`, the shared form's **Procedure description** field with its Told by choice, the "Add a description" sheet, the invoice description with `setInvoiceDescription` (office only, until AUTHORISED, D63; an admin's edit always wins, D73) and `ProcedureStack`), 21 (the insurance indication, and the payer before 22a moved it off the Booking), 22 (the Split on a Procedure's Contract, `setProcedureSplit`), 22a (the payer on each Procedure, replacing 21's `Booking.payer` and `setBookingPayer`), 23 (the primary Procedure), 24 (the one price precedence, the anaesthetist's typed price and discount, the office override, and the engine's rejections), 27 (prepayment derived from the prepaid set, the invoice generated at setup with its ledger pair and draft Xero pair, approve and send, and the re-check on a change of Procedures, Contract or payer, never on a move), 28 (`reassignList` over `moveListToSlot`, with 17's not-preferred warning and tier ordering), 29 and 30, and 31 (Draft Lists in state DRAFT, which hold Bookings, and the office's Draft List assignment), 32b (notices that resolve, D58) and 38a (the anaesthetist's edits until AUTHORISED, D63, which land in the same history). **Not guaranteed before 35** (not in its dependency chain): 32a (the single-Booking move; normally done first by Schedule track order), 36 and later, and 38b and 39. Every work item that mentions them applies only if that phase is DONE; the drift check records which.
 **Estimated:** 2 sessions. Session 1 is the save boundary (work items 1 to 10: model, pure change-set maths, the as-at reconstruction, the save action, the draft store and its refactor, the Admin save bar with fuller editing, the unsaved-changes guard, grouped history with the as-at view, the change history screen with named office users). Stop green there. Session 2 is the update email (templates, the pure builder, the change picker and compose panel, the notification pool and List drawer entry points) and adding a Booking to a booked List (items 11 to 19). **Spill point:** if session 1 runs long, the as-at view (work item 4 and the "View as at" part of item 10) moves to the start of session 2; nothing else depends on it. If session 2 then runs long, ship the template list edit-only (the four seeded templates, no Add or Retire) and drop the picker's "In an earlier draft" chip, and log both in the handoff for 44, rather than squeezing the demo-guide patch or the adversarial pass, which both stay in session 2.
 
 ## Goal
@@ -58,12 +57,12 @@ mutations with no save boundary (RV-28). This phase makes Admin Booking editing 
   is part of the save.
 
 **Draft update email** (OQ-69 answered) is an on-demand button on every Booking in the Admin App,
-used ad hoc when a change has left the rooms or the hospital out of sync. It is never a prompt after
+used ad hoc when a change has left the surgeon's office or the hospital out of sync. It is never a prompt after
 a save or after a cover change. Pressed, it opens a compose panel: the admin **picks one or more
 changes from the Booking's change history**, the system starts from the **admin-maintained template
 for that kind of change** (US-02.3.4: a change of anaesthetist, a cancellation, an error, a general
 change), and a real `mailto:` link opens the admin's mail client with the subject, boilerplate, the
-picked changes and the To address (OQ-46: the surgeon's main room for a Booking change, through 17a's helper, empty where the room holds no email and with the surgeon's other rooms offered, D74 and D75; the hospital
+picked changes and the To address (OQ-46, OQ-127, D74: for a Booking change the address its List came from, else the surgeon's first office contact with the other office contacts offered, through the one helper 17b builds and 34 extends, and empty where none is held; never every contact at once; the hospital
 contact for a cover change). The admin edits everything, To included, and sends it themselves. Past
 about 2,000 characters the body is shortened and says so. A badged preview panel shows the same email
 for presenters without a mail client. The system sends nothing and never records an email as sent.
@@ -71,7 +70,7 @@ for presenters without a mail client. The system sends nothing and never records
 not after an office save, a reassignment or a Draft List assignment, and not after an anaesthetist's
 own move. Sending automatically is Future (US-02.3.5) and nothing here builds toward it beyond
 keeping the email builder in one pure module. An anaesthetist's single-Booking move (32a, D61) offers
-the same optional, manual email, for the rooms.
+the same optional, manual email, to the surgeon's office.
 
 The **cover-change email** for an anaesthetist's own move (OQ-65 answered) is reached from the move's
 notification in Phase 32's shared notification pool, with the move already picked; for the office's
@@ -87,15 +86,15 @@ admin's own changes onto the real Booking as it is at Save time.
 
 ## Before you start: drift check
 
-1. Diff the catalogue for this phase's items against the plan's snapshot (`c9b65ad`). The tool is rename-aware (the catalogue moved to
+1. Diff the catalogue for this phase's items against the plan's snapshot (`63a4490`). The tool is rename-aware (the catalogue moved to
    `requirements-board/requirements/` after earlier baselines), so never use a plain git diff of the
    folder:
 
    ```
-   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-02.3,US-02.3.1,US-02.3.2,US-02.3.3,US-02.3.4,US-02.3.5,US-02.5.5,US-02.5.6,US-02.5.7,US-02.5.8,US-01.4.1,US-01.4.3,US-13.8.1,US-13.8.2,US-13.5.2,US-01.4.7,US-07.3.2,OQ-43,OQ-46,OQ-49,OQ-65,OQ-69,OQ-79,OQ-82,OQ-85,OQ-99,OQ-124,OQ-127,OQ-128,OQ-130,OQ-07
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-02.3,US-02.3.1,US-02.3.2,US-02.2.4,US-13.6.5,US-02.3.3,US-02.3.4,US-02.3.5,US-02.5.5,US-02.5.6,US-02.5.7,US-02.5.8,US-01.4.1,US-01.4.3,US-13.8.1,US-13.8.2,US-13.5.2,US-01.4.7,US-07.3.2,OQ-43,OQ-46,OQ-49,OQ-65,OQ-69,OQ-79,OQ-82,OQ-85,OQ-99,OQ-124,OQ-127,OQ-130,OQ-07
    ```
 
-   What the move to `c9b65ad` changed: none of this phase's items changed in substance; D85 (OQ-140, 17 November) puts the payer on each Procedure (22a), so the drafted payer write is `setProcedurePayer` with its offer to the Booking's other Procedures, the as-at view shows each Procedure's payer, and an added Booking's Procedures take their payer from 22a's creation path. What the earlier move to `efe123c` changed: US-02.5.8 is new (the history screen, named office users, the replaced procedure text); OQ-130 is answered (D73: an admin's edit always wins); the Contract model is flat (D1 to D11: no versions, lines or staged changes, AR-58 and AR-61). What the move to `a68f09b` changed: US-02.3.3's note records that a surgeon can belong to more than one room (OQ-128 answered) and that the room whose email applies is OQ-127 part 5; D75 is answered, so the To goes through 17a's helper and no code reads a single `Surgeon.roomId`. What the move to `d4db277` changed, and this plan already reflects: US-02.3.1 now says every field
+   What the move to `63a4490` changed: US-02.3.3 was rewritten (D74, OQ-127 answered 18 November, Donald for the build, not yet seen by AA; D75 and OQ-128 superseded): the To for a Booking change is the List's sender address (34, US-02.2.4), else the surgeon's first office contact (US-13.6.5) with the others offered, never all of them; the room email, room contacts and `roomIds` readings are gone, so this phase depends on 17b's helper as 34 extends it and OQ-127 is no longer open. FT-02.3, US-02.3.1, US-02.3.2, US-02.3.4 and US-02.5.8 did not change in substance. What the move to `c9b65ad` changed: none of this phase's items changed in substance; D85 (OQ-140, 17 November) puts the payer on each Procedure (22a), so the drafted payer write is `setProcedurePayer` with its offer to the Booking's other Procedures, the as-at view shows each Procedure's payer, and an added Booking's Procedures take their payer from 22a's creation path. What the earlier move to `efe123c` changed: US-02.5.8 is new (the history screen, named office users, the replaced procedure text); OQ-130 is answered (D73: an admin's edit always wins); the Contract model is flat (D1 to D11: no versions, lines or staged changes, AR-58 and AR-61). What the move to `d4db277` changed, and this plan already reflects: US-02.3.1 now says every field
    is editable until the List is authorised (US-07.3.2); its "as given" text is 20a's hand-entered
    Procedure description, kept as source text (US-02.5.7); the NHI is mandatory with no blank and no
    pending state (OQ-49, D11); OQ-85, OQ-79 and OQ-99 are answered (D61, D58, D33); the procedure
@@ -114,9 +113,9 @@ admin's own changes onto the real Booking as it is at Save time.
    reassignment goes through the explicit save (this plan treats it as its own event, work item 5),
    or OQ-79 answered (it changes the pool, not the email).
 2. **The update email's answers.** OQ-69, OQ-82, OQ-65 and OQ-46 are answered: build them with no
-   provisional label anywhere (no caption on the button, the panel or the pool row). OQ-128 (D75) is answered: build it, no label. OQ-130 (D73) is answered too: an admin's invoice description edit always wins, through 20a's helper, with no provisional label. **OQ-124 (D71) and OQ-127 (D74) are
+   provisional label anywhere (no caption on the button, the panel or the pool row). OQ-130 (D73) is answered too: an admin's invoice description edit always wins, through 20a's helper, with no provisional label. OQ-127 (D74, 18 November) is answered too, so build it with no provisional label: the To for a Booking change is the List's sender, else the surgeon's first office contact with the others offered, never every contact, through 17b's one helper as 34 extends it. **OQ-124 (D71) is
    open:** build its default (emailed Lists and the update email stay as written, nothing removed) and
-   run the drift check on OQ-124 and OQ-127 too (OQ-127 with its part 5: the To is the main room's optional contact email through 17a's helper, empty when none, the surgeon's other rooms offered, the practice manager and PA contacts shown and never the To; if AA has answered either, build the answer and drop its provisional label); if AA has answered that the app replaces emailed Lists, stop and report. Per OQ-82 the
+   run the drift check on it too; if AA has answered that the app replaces emailed Lists, stop and report. If 34 is not DONE or its extended helper is missing, stop and report. Per OQ-82 the
    email is manual for every kind of change, the office's and the anaesthetist's alike: add no
    automatic send, no outbox, no "send automatically" switch and no scheduled job. US-02.3.5 is
    Future; if it has become Confirmed or Proposed by the time you start, stop and report rather than
@@ -131,9 +130,8 @@ admin's own changes onto the real Booking as it is at Save time.
    - **15a:** warnings are derived by the pure routine (not stored on the Booking), so the draft shows
      the warnings its own edits would raise; clearing one (`clearWarning`, writing
      `schedule.warningClearances`) is a command that touches no Booking field.
-   - **17a:** the one helper that returns a surgeon's room's contact email (optional, so possibly nothing), and the room's practice manager and PA contacts (D74); confirm its name, that it returns the main room's email, the surgeon's other rooms and the contacts, and that it never throws on a room with no email or a surgeon with no room. The recipient helper (work item 12) calls it and adds no lookup of its own.
-   - **17:** `Hospital.contactEmail`, `SurgeonRoom { contactEmail, phone }`, `surgeonsInRoom`
-     (a surgeon's rooms are a list since 17a; nothing here reads a single `Surgeon.roomId`); and the privacy boundary (the office-only `officePrivate` slice for pairing
+   - **17b and 34:** the one email helper (17b: a surgeon's first office contact, optional, with the other office contacts offered; 34 extends it so the List's sender address, where the List holds one, comes first). Confirm its name, the List's origin and sender field (US-02.2.4), and that it never throws on a surgeon with no contact or a List with no sender. The recipient helper (work item 12) calls it and adds no lookup of its own; no room, room contact or `roomIds` exists to read (D74).
+   - **17:** `Hospital.contactEmail` and the privacy boundary (the office-only `officePrivate` slice for pairing
      preferences and priority tiers, `apps/officePrivacy.test.ts`). Nothing this phase writes into a
      snapshot, an as-at panel or an email may read that slice.
    - **18 to 24:** every Booking and Procedure field the Admin detail now edits and the store action
@@ -190,7 +188,7 @@ admin's own changes onto the real Booking as it is at Save time.
      audit code `booking.movedToAnaesthetist`) (the receiver gets a new List in that session, never a place in an existing one, D61) and its
      optional office notice (the mover may notify the admin team and may raise the update email;
      neither is required, US-01.4.7, D58). A single-Booking move changes no existing List's
-     anaesthetist, so this phase treats it as a Booking `move` for the rooms, not a cover change
+     anaesthetist, so this phase treats it as a Booking `move` for the surgeon's office, not a cover change
      (OQ-46 defines a cover change as "a new anaesthetist on a List"). 32a's handoff calls it a cover
      change for the hospital contact: this phase keeps the catalogue's definition, puts the new
      anaesthetist on the move's email line so the admin can switch to the Change of anaesthetist
@@ -203,7 +201,7 @@ admin's own changes onto the real Booking as it is at Save time.
      `addSourceText` and leaving a created Booking's Contract for the office). It must write through
      `editBooking` / `editProcedure` / `addSourceText` (or an equally guarded path through `mutate()`);
      it gains `changeSet: 'match'` in work item 5 so an applied row is one pickable history row.
-   - **34 (if DONE):** the rebuilt S1, for the milestone consistency read.
+   - **34:** the rebuilt S1, for the milestone consistency read, and the List's origin and sender that the update email's To reads.
    - **14:** the registry file, `DemoContextValues`, the shared actor constants module and the PWA
      sheet's `office-stand-in` badge.
    - The current `PERSIST_VERSION` (16 at `60e2d1e`, after 15a session 1; 15b to 34 will have bumped
@@ -276,7 +274,7 @@ admin's own changes onto the real Booking as it is at Save time.
 **Catalogue:** the covered files above; US-02.3.5 (Future: what is not built); US-02.5.7 (the
 source text the Procedure description writes); US-01.4.1, US-01.4.3, US-13.8.1 and US-13.8.2 (the
 reassignment, the anaesthetist's own move and the pool the cover-change email is reached from);
-OQ-69, OQ-82, OQ-65, OQ-46, OQ-43, OQ-49, OQ-85, OQ-79, OQ-99 and OQ-07 (answered); the evidence notes
+OQ-69, OQ-82, OQ-65, OQ-46, OQ-127, OQ-43, OQ-49, OQ-85, OQ-79, OQ-99 and OQ-07 (answered); the note `2026-11-18` "Donald surgeon contacts no rooms" #10 and #11 (the To address); the evidence notes
 `requirements-board/requirements/notes/2026-10-07-aa-client-meeting.md` #10, #11, #13, #25 and #39
 (the shared pool agreed; OQ-82 answered, manual first, automation as a future story),
 `requirements-board/requirements/notes/2026-10-08-procedure-picker-and-source-text.md` #8 (the
@@ -287,9 +285,10 @@ wording kept as received, hand-entered text kept as source text), and
 (OQ-82 raised, manual entry confirmed, every field editable, the automated-email question), and
 `requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md` #22 and #60; `domain-model.md` §1 row "No path
 for telling hospitals about Booking changes" (manual in the MVP) and §2 "Booking", "Procedure" (the
-source wording) and "Surgeon, surgeons' room, preferences and priority tiers"; [US-13.4.1](../../../../requirements-board/requirements/stories/US-13.4.1.md)
-and [US-13.6.1](../../../../requirements-board/requirements/stories/US-13.6.1.md)
-(where the contact emails come from);
+source wording) and "Surgeon, contacts, preferences and priority tiers"; [US-13.4.1](../../../../requirements-board/requirements/stories/US-13.4.1.md),
+[US-13.6.5](../../../../requirements-board/requirements/stories/US-13.6.5.md) and
+[US-02.2.4](../../../../requirements-board/requirements/stories/US-02.2.4.md)
+(where the contact emails and the List's sender come from);
 [US-08.4.4](../../../../requirements-board/requirements/stories/US-08.4.4.md)
 (invoice reproducibility, which 25 closed and the as-at view illustrates). The change logs
 `requirements-board/requirements/changes/2026-10-07-requirements-update.md` (the OQ-82 and US-02.3.5
@@ -304,7 +303,7 @@ rows), `2026-10-07-list-lifecycle-states.md` and `2026-10-08-procedure-picker-an
 - [epics/EP-02.md](../epics/EP-02.md): FT-02.3, US-02.3.1, US-02.3.2, US-02.3.3, US-02.3.4;
   [epics/EP-01.md](../epics/EP-01.md): US-01.4.1, US-01.4.3; [epics/EP-13.md](../epics/EP-13.md):
   US-13.8.2.
-- `gaps.json` (current at `c9b65ad`): the entries for FT-02.3, US-02.3.1 to US-02.3.4 and the
+- `gaps.json` (current at `63a4490`): the entries for FT-02.3, US-02.3.1 to US-02.3.4 and the
   `DM-35` delta (US-02.3.5 sits in `excluded` as Future).
 - [analysis/domain-model-delta.md](../analysis/domain-model-delta.md) DM-35 (and DM-32 for the
   contact emails, DM-05 for the anaesthetist's own move, DM-41 for the pool, DM-31 for derived
@@ -653,15 +652,15 @@ have moved them):
     - Model: `UpdateEmailKind = 'anaesthetistChange' | 'cancellation' | 'correction' | 'bookingChange'`
       (fixed ids, the catalogue's three examples plus a general change; labels "Change of
       anaesthetist", "Cancellation", "Correction of an error", "Booking change"). `EmailTemplate { id;
-      name; kind: UpdateEmailKind; recipient: 'rooms' | 'hospital' | 'both'; subject; body; active }`
+      name; kind: UpdateEmailKind; recipient: 'office' | 'hospital' | 'both'; subject; body; active }`
       in `masters.emailTemplates`, id format `ET###`. Placeholders: `{patient}`, `{date}`,
       `{session}`, `{hospital}`, `{surgeon}`, `{anaesthetist}`, `{previousAnaesthetist}`,
       `{bookingCount}`, `{changes}` and `{signature}`.
     - Seed four, one per kind, in plain NZ English with no dashes: "Change of anaesthetist" (to the
       hospital; "Kia ora, {previousAnaesthetist} is no longer the anaesthetist for the {date}
       {session} List at {hospital}. {anaesthetist} will be the anaesthetist. ... Ngā mihi,
-      {signature}"), "Cancellation" (to the rooms), "Correction of an error" (to the rooms) and
-      "Booking change" (to the rooms). Thread `emailTemplates` through `freshAppState`,
+      {signature}"), "Cancellation" (to the surgeon's office), "Correction of an error" (to the surgeon's office) and
+      "Booking change" (to the surgeon's office). Thread `emailTemplates` through `freshAppState`,
       `backfillMerge`, `DomainPatch` and `resetDomainState`; the canvas generator and every RNG input
       are untouched (the seed-determinism test proves it). Bump `PERSIST_VERSION` by one and extend
       `persistMigrate.test.ts` so a stale store is discarded.
@@ -687,11 +686,11 @@ have moved them):
       `{ kind: 'booking'; bookingId }` or `{ kind: 'list'; listId }`. For a Booking it returns the
       rows of its History, newest first: each change set (a save, a creation, a cancellation, a move,
       an applied hospital row), each coalesced group of ungrouped edits (an anaesthetist's change on
-      mobile can leave the rooms out of sync too), and each owner change of its List while the
+      mobile can leave the surgeon's office out of sync too), and each owner change of its List while the
       Booking was on it. For a List it returns the List's owner changes. Each row is
       `PickableChange { key; atISO; who; role; kind: 'save' | 'create' | 'cancel' | 'move' | 'match' |
       'cover' | 'edit'; lines: EmailLine[]; emailable: boolean }`. A row whose changes are all outside
-      the allowlist is `emailable: false` ("Nothing here for the rooms or the hospital"). A List
+      the allowlist is `emailable: false` ("Nothing here for the surgeon's office or the hospital"). A List
       returned to the office (32's `moveListToOffice`, or a hand-back after marking a session
       unavailable) puts no new anaesthetist on the List, so it is not a cover change on its own
       (OQ-46): its row is shown but `emailable: false` ("No new anaesthetist yet. Assign the Draft
@@ -722,15 +721,16 @@ have moved them):
       lines are dropped from the end and a line is added: "This list was shortened to fit an email
       link. 3 more changes are in the booking record." The template's greeting, context and sign-off
       are always kept. `to` empty gives `mailto:?subject=...`.
-    - Recipient helper `updateEmailRecipients(state, subject, choice)` in `store/selectors.ts`: the
-      surgeon's rooms address is 17a's helper for the List's surgeon (optional: nothing back means To
-      empty, D74). For a surgeon at more than one room (OQ-128, D75) it returns the **main room's**
-      email, plus the surgeon's other rooms as `alternatives`, which the composer offers to switch to
-      (OQ-127 part 5); this phase never reads `Surgeon.roomId` or a room's `contactEmail` itself. The
-      hospital is `List.hospitalId` to `Hospital.contactEmail`; `both` joins the two known addresses.
-      A Draft List has a surgeon and a hospital (31), so it resolves the same way; a List with no
-      surgeon has no rooms address (To empty, with the reason "No surgeon on this List"), never a
-      thrown lookup. The room's practice manager and PA contacts come back from the same helper for the composer to show as context; they never enter `to`.
+    - Recipient helper `updateEmailRecipients(state, subject, choice)` in `store/selectors.ts`, built on
+      the one helper 17b made and 34 extended, with no lookup of its own. For a Booking change the To is
+      the address the Booking's List came from (its sender, US-02.2.4), else the surgeon's **first office
+      contact**'s email, with the surgeon's other office contacts returned as `alternatives`, which the
+      composer offers to switch to; it never fills in more than one, and never every contact at once
+      (D74). Nothing back means To empty. No code here reads a room, a room contact or `roomIds` (none
+      exist). The hospital is `List.hospitalId` to `Hospital.contactEmail`; `both` joins the one
+      surgeon-side address and the hospital's. A Draft List has a surgeon, a hospital and an origin
+      (31, 34), so it resolves the same way; a List with no surgeon and no sender has no surgeon-side
+      address (To empty, with the reason "No surgeon on this List"), never a thrown lookup.
     - Vitest: only the picked rows appear; fields outside the allowlist never appear (a picked save
       that changed the Contract, the payer, a typed price, an added description and a changed invoice description yields no line for
       any of them); netting over two
@@ -741,8 +741,9 @@ have moved them):
       change; an over-long pick gives `href.length <= 2000`, `shortened` and the note (singular and
       plural); a short one is not shortened; encoding of `&`, `?`, `#`, `+`, apostrophes, line breaks
       and macrons (Māori names) round-trips through `decodeURIComponent`; no `–` or `—` anywhere in
-      subject or body; an empty `to` is valid; a surgeon at two rooms gets the main room's address with the other offered, and
-      choosing it changes only `to`.
+      subject or body; an empty `to` is valid; a List with a sender gets that address; a List without one gets the surgeon's first office
+      contact with the second offered, never both filled in, and choosing the second changes only `to`;
+      a surgeon with no contact gives an empty `to`.
 13. **The compose panel and the on-demand button** (US-02.3.3; OQ-69 answered):
     - `apps/admin/flows/UpdateEmailComposer.tsx` through `useSurface().Overlay`, a wide dialog
       (`data-shot="update-email-composer"`). Left, **Pick changes**: the `pickableChanges` rows as a
@@ -752,8 +753,8 @@ have moved them):
       the List drawer; the admin ticks or unticks any. A quiet chip "In an earlier draft at 09:14"
       marks rows already picked in a draft (a hint read from `updateEmail.drafted` entries; it changes
       nothing). Right: **Template** (default from `defaultKindFor`, any active template selectable),
-      **Send to** "Surgeon's rooms · Hospital · Both" (default from the template) with the resolved
-      address (for a surgeon at more than one room, the main room's, with the other rooms listed to switch to), or "No contact email held for Riverside Orthopaedic Rooms. To will be left empty." (with the room's practice manager and PA contacts listed beneath as context, never in To),
+      **Send to** "Surgeon's office · Hospital · Both" (default from the template) with the resolved
+      address (the List's sender, else the surgeon's first office contact, with the other office contacts listed to switch to), or "No contact email held for Dr Bennett's office. To will be left empty." (never more than one contact in To),
       then the **preview** `UpdateEmailPreview` (`data-shot="update-email-preview"`, `DemoBadge
       label="Demo preview"`): To, Subject, and Body in mono with pre-wrap, "1,184 of 2,000
       characters", a "Shortened to fit" pill when `shortened`, and one line: "Opens in your mail
@@ -766,7 +767,7 @@ have moved them):
       `stampBookingId: null`. Nothing else: no "sent" flag, no outbox, no copy of the body or address
       (AC "Nothing sent"). Previewing, ticking and switching templates write nothing.
     - **The on-demand button.** The Admin Booking detail's action row always shows **Draft update
-      email** (teal secondary, `Mail` icon) on every Booking, including cancelled ones (the rooms may
+      email** (teal secondary, `Mail` icon) on every Booking, including cancelled ones (the surgeon's office may
       need telling). While the draft is dirty it is disabled with "Save your changes first. The email
       uses saved changes." (it reads saved history only, and a dirty page's `beforeunload` guard must
       never fire on a `mailto:` click). With no emailable row in the history it is disabled with "No
@@ -801,7 +802,7 @@ have moved them):
       link to the Draft List; it is not a cover change until the office assigns it.
     - A single-Booking move notification (32a, if built; the notice is optional, D61 and D58)
       offers
-      **Draft update email** for that Booking (a `move` row, the rooms, with the new anaesthetist on
+      **Draft update email** for that Booking (a `move` row, to the surgeon's office, with the new anaesthetist on
       its line), not a hospital email by default; the admin can switch the template or Send to. 32a's
       handoff reads this move as a cover change for the hospital: the catalogue's definition wins
       here (OQ-46: a cover change is a new anaesthetist on a List), logged for the owner.
@@ -835,7 +836,7 @@ have moved them):
       nothing added here); the office may leave the Contract unset, and the Booking then waits on 20's
       "Needs a Contract" list. There is no hospital default and no "No contract (RVG) first" list. Booking source `admin`
       (15); each added Procedure takes its payer from 22a's creation path, filled from the patient for a new Booking (not a 'payer on the Booking' field: there is none); `createBooking` carries
-      `changeSet: 'create'` from both drawers, so the creation is a pickable row for the rooms email;
+      `changeSet: 'create'` from both drawers, so the creation is a pickable row for the update email;
       27's prepayment derivation runs as it does for any created Booking.
     - **Book (phone advice)** stays for a free session without a List, and the `isScriptedS2Booking`
       prefill still works (S2 Beat 2).
@@ -993,7 +994,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] Apply a hospital list update that replaces a Procedure's procedure text (33): the Booking's History names the hospital's list and shows the text it replaced. The anaesthetist's own History sheet is unchanged.
 - [ ] Admin Audit viewer shows the Change set column; clicking the id filters to that save.
 - [ ] Draft update email on that Booking: the composer lists its history newest first with the latest
-      save ticked; To is the surgeon's main room's contact email; the preview lists only the allowed
+      save ticked; To is the List's sender (a Booking from a rooms' PDF) or else the surgeon's first office contact; the preview lists only the allowed
       changes (no Contract change, no payer, no received or invoice text, no NHI, no notes) and the
       character count. Tick an older save that
       changed the time too: the time shows once, first value to last. Untick everything: Open in mail
@@ -1014,12 +1015,12 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       or plural as fits), the first change line is still there, and the link is at most 2,000
       characters. (The procedure's name is short now that 20a removed the free-text description, so
       length comes from the template and the number of lines.)
-- [ ] A Booking whose surgeon's room has no contact email: the composer says To will be left empty,
-      and the link opens with an empty To. If that room holds a practice manager or PA contact, the
-      composer lists it as context and it is not in To (OQ-127, D74).
-- [ ] A surgeon at more than one room (one of 17a's four two-practice surgeons): the To is the main
-      room's email and the composer lists the other room; switching to it changes only the To (OQ-128,
-      OQ-127 part 5). A surgeon with no room email at the main room gets an empty To, not the other's.
+- [ ] A Booking on a List that came from a surgeon's rooms' PDF (34): the To is the address the PDF
+      arrived from. A Booking on a List with no sender, for a surgeon with two office contacts (17b's
+      form): the To is the first office contact only and the composer offers the second to switch to;
+      switching changes only the To, and the two are never both filled in (OQ-127, D74).
+- [ ] A Booking whose List has no sender and whose surgeon holds no office contact: the composer says
+      To will be left empty, and the link opens with an empty To. A personal contact is never put in To.
 - [ ] Edit a Procedure's invoice description as the office and Save; apply a later default (a hospital
       description or a changed Contract): the office's edit is still the value (OQ-130 answered, D73).
 - [ ] Open the List drawer on an ACTIVE List that already has Bookings. Add Booking opens the add
@@ -1046,7 +1047,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       the Draft List; assign it to Dr Sharma, and the List drawer's Draft update email names the
       original anaesthetist and Dr Sharma.
 - [ ] If 32a is DONE: move a single Booking to a colleague and raise the optional update email. It is
-      a move row in that Booking's history, for the rooms; no hospital email is offered for it, and
+      a move row in that Booking's history, to the surgeon's office; no hospital email is offered for it, and
       skipping the email loses nothing.
 - [ ] A save that adds a Procedure on the anaesthetist's prepaid list creates one prepayment invoice, to whoever the Contract bills, at the anaesthetist's own fixed price, with its ledger
       pair and draft Xero pair, waiting for approve and send: not two and not none (27's re-check
@@ -1084,7 +1085,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
     the shared pool and sends the hospital the cover email from there." If asked why it is not sent
     automatically: AA chose manual for the first release so the office keeps a check while trust
     builds, with automatic sending a later phase (OQ-82, US-02.3.5).
-  - **The rooms email:** in S2 after Beat 2 or in S5, save two changes on one Booking, then **Draft
+  - **The update email to the surgeon's office:** in S2 after Beat 2 or in S5, save two changes on one Booking, then **Draft
     update email**, pick both, show the netted body and the template. Say: "AA asked for a button they
     use when it matters, picking the changes to report, starting from their own templates."
   - **S2 Beat 2 and the office's add** (phone advice as 20 and 20a left it, with the Contract step rail
@@ -1096,7 +1097,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
     "then **Save changes**". There is no estimate edit to script any more (27).
   - Direct URLs: the Email templates view in Master data, if it has its own route.
 - `docs/demo-guide/04-presenter-cheat-sheet.md`: the save bar and its warning, the on-demand email
-  button and its composer (pick changes, templates, the main room for a Booking with the surgeon's other rooms offered, hospital for a cover change,
+  button and its composer (pick changes, templates, the List's sender, else the surgeon's first office contact with the others offered, for a Booking, hospital for a cover change,
   the pool notification after an anaesthetist's move), Master data · Email templates, the PWA
   trigger, Switch office user (two named users in one History) and the recovery ("if a draft gets stuck, Discard"; "the email is always on the Booking and
   the List drawer, nothing is lost by skipping it"; "nothing is sent automatically: AA chose manual
@@ -1137,7 +1138,7 @@ Shell).
 |---|---|---|
 | [US-02.3.1](../../../../requirements-board/requirements/stories/US-02.3.1.md) | partial · admin-phone-advice-booking[free-list,form], admin-amend-booking | captured (admin), partial reason dropped. Keep `phone-advice-booking` (its `form` state shows the Procedure description; keep the catalogue's "free session" and "assigns the List" wording). Re-shoot `amend-booking` as the draft: Edit patient with its NHI field on **Apply**, and `booking-save-bar` ("3 unsaved changes"). Add `add-booking-booked-list`: `drawer` (an ACTIVE List with Bookings, `list-add-booking` highlighted) and `as-given` (the add form with the Procedure description filled with an AR-35 wording, Told by Email, `procedure-description` highlighted). Caption: "The office creates a Booking on any List, with the procedure as it was told, or amends any field until the List is authorised, and each change is recorded against them" |
 | [US-02.3.2](../../../../requirements-board/requirements/stories/US-02.3.2.md) | absent (placeholder) | captured (admin). `save-bar` (`booking-save-bar` listing the changed fields), `leave-guard` (the leave-without-saving dialog), `saved-history` (one grouped save in History, `booking-as-at` open). Replace the placeholder |
-| [US-02.3.3](../../../../requirements-board/requirements/stories/US-02.3.3.md) | absent (placeholder) | captured (admin). `pick-changes` (composer, two history rows ticked, `update-email-composer`), `email-preview` (`update-email-preview`: To the surgeon's main room, with the other room offered for a surgeon at two (OQ-128), or empty with the "To will be left empty" line for a room with no email (D74), subject, boilerplate, picked changes, "The system does not send it" visible), `cover-change-email` (pool notice with `pool-cover-email`, then the composer with the move ticked and To the hospital contact). Captions say the office drafts and sends by hand; none says sent, or offered automatically (OQ-82) |
+| [US-02.3.3](../../../../requirements-board/requirements/stories/US-02.3.3.md) | absent (placeholder) | captured (admin). `pick-changes` (composer, two history rows ticked, `update-email-composer`), `email-preview` (`update-email-preview`: To the List's sender for a Booking from a rooms' PDF, or the surgeon's first office contact with the second offered for a List with no sender (D74), or empty with the "To will be left empty" line where none is held, subject, boilerplate, picked changes, "The system does not send it" visible), `cover-change-email` (pool notice with `pool-cover-email`, then the composer with the move ticked and To the hospital contact). Captions say the office drafts and sends by hand; none says sent, or offered automatically (OQ-82) |
 | [US-02.5.8](../../../../requirements-board/requirements/stories/US-02.5.8.md) | none (create it) | captured (admin). `history` (a Booking edited by two office users, the History button highlighted by `booking-history-button`, the history open with each change's when, who and what; `booking-history` highlighted) and `from-hospital` (a hospital-list entry naming the list with the replaced procedure text visible). Staged by switching office user in `setup` or a first browser step (the harness bar is hidden in shots). Caption: "Every change to a Booking shows when, who made it and what changed, including the text a hospital list replaced"; says nothing about whether the anaesthetist sees it |
 | [US-02.3.4](../../../../requirements-board/requirements/stories/US-02.3.4.md) | none (create it) | captured (admin). `template-list` (Master data · Email templates, the four kinds) and `template-edit` (editor with placeholder list and sample preview). Caption: "Admins keep a template per kind of change; the update email starts from it" |
 
@@ -1194,7 +1195,7 @@ phase entry. Do not re-raise anything settled in the Decisions log.
   description added in a draft is applied as an append through 20a's rules; a draft that changed an
   existing text refuses; `editProcedure` is never handed `sourceTexts` or `invoiceDescription`. The
   office's booked-List add writes its Procedure description verbatim with the right channel.
-- **Recipients and contacts (OQ-127, D74).** The To comes only from 17a's helper (the main room's contact email, else empty, the surgeon's other rooms offered and never the To by default; the hospital's for a cover change); no code here reads `Surgeon.roomId`; a practice manager or PA contact is never put in To; an empty To is valid and shown; no surgeon email field is added.
+- **Recipients and contacts (OQ-127, D74).** The To comes only from 17b's one helper as 34 extends it (the List's sender, else the surgeon's first office contact with the others offered, never all at once; the hospital's for a cover change); no code reads a room, a room contact or `roomIds`; a personal contact is never put in To; an empty To is valid and shown; no surgeon email field is added.
 - **Fields and the NHI.** The office can edit every field until AUTHORISED, the invoice description
   included (through 20a's `setInvoiceDescription`, a blank refused; an admin's edit always wins over a later default, OQ-130 answered, D73, with no rule of this phase's own). The NHI is mandatory: an empty value is
   refused with no blank or pending state (D11), in the sheet and at Save.
@@ -1210,14 +1211,14 @@ phase entry. Do not re-raise anything settled in the Decisions log.
   as received, the invoice description, money, Contract, holder, payer, insurance indication, modifiers, or pairing
   preferences and tiers); a List email names no patient. The
   encoded link is at most 2,000 characters, with the shortened note when lines were dropped.
-  Recipients follow the template and OQ-46 (rooms for a Booking change, the hospital for a cover
+  Recipients follow the template and OQ-46 and OQ-127 (the List's sender or the surgeon's first office contact for a Booking change, the hospital for a cover
   change). Opening a draft writes exactly one `updateEmail.drafted` entry: nothing is labelled or
   stored as sent, no body or address is kept, and no Booking field or `lastModifiedBy` changes.
 - **Templates.** Every kind keeps one active template; rendering never leaves braces; an edited
   template is used by the next draft; the seeded text has no dashes; edits are audited.
 - **Cover changes are reachable everywhere a List changes hands** (the Booking's history, the List
   drawer and the pool notification), picked, never prompted; a return to the office offers nothing
-  until assignment; a single-Booking move is a rooms change, not a cover change; drafting does not
+  until assignment; a single-Booking move is a change to the surgeon's office, not a cover change; drafting does not
   alter the pool.
 - **Derived follow-ons.** A save that changed the Procedures, a Contract or the payer runs 27's
   re-check once on the real store (one prepayment invoice with its ledger pair and draft Xero pair,
@@ -1245,20 +1246,20 @@ phase entry. Do not re-raise anything settled in the Decisions log.
   for every kind of change, nothing automatic; the builder kept in one pure module should AA later
   want US-02.3.5); US-02.3.3 still Verify (Ben to confirm the office's cover-change email from a List
   move); OQ-124 (D71) open, built to its default: emailed Lists and the on-demand update email stay,
-  nothing removed until AA answers; OQ-127 (D74, with part 5) open: the To is the main room's optional contact email through 17a's helper, empty when none, the surgeon's other rooms offered, practice manager and PA contacts shown and never the To (OQ-128, D75, built as answered); OQ-130 answered (D73, built: an admin's invoice description edit always wins, through 20a's helper); US-02.5.8: named office users are a harness switch (our reading: they sign in as themselves, US-13.5.1 not built) and whether the anaesthetist sees the history is not settled (the existing sheet stays in all three apps); the Procedure description on the office's booked-List add (channel Phone or Email) and as a drafted
+  nothing removed until AA answers; OQ-127 (D74) built as answered (Donald's for the build, not yet confirmed by AA): the To is the List's sender, else the surgeon's first office contact with the others offered, never every contact, through 17b's helper as 34 extends it; OQ-130 answered (D73, built: an admin's invoice description edit always wins, through 20a's helper); US-02.5.8: named office users are a harness switch (our reading: they sign in as themselves, US-13.5.1 not built) and whether the anaesthetist sees the history is not settled (the existing sheet stays in all three apps); the Procedure description on the office's booked-List add (channel Phone or Email) and as a drafted
   append on an amend; the invoice description and RVG code edited by the office until AUTHORISED; the
   NHI never cleared (D11); the RVG group's description naming a Procedure in an email line; the four
   seeded template kinds and their wording (Correction of an error and Booking change are our split of
   Greg's examples); the newest change ticked by default in the picker; anaesthetist edits and applied
   hospital rows being pickable; the List-level email naming no patients; a List reassignment as its
-  own event, not a save; a single-Booking move (32a) as a rooms change, not a cover change, against
+  own event, not a save; a single-Booking move (32a) as a change to the surgeon's office, not a cover change, against
   32a's handoff (OQ-46's "a new anaesthetist on a List"); a return to the office as a non-emailable
   row until the Draft List is assigned; the anaesthetist's typed move message shown to the admin as
   context, not put in the email body; every field the office can now edit (and any
   left read-only, with why).
 - Status table: Phase 35 row DONE with the date.
 - Phase entry "Phase 35 · Explicit save and the update email (date)":
-  - the drift-check result against `c9b65ad`; OQ-69, OQ-82, OQ-65 and OQ-46 built as answered;
+  - the drift-check result against `63a4490`; OQ-69, OQ-82, OQ-65 and OQ-46 built as answered;
     US-02.3.5 left as Future;
   - what 31, 32 (and 32a if DONE) delivered that this phase hooks into (the owner-change action codes,
     the Draft List assignment, the pool's notification record and row);
@@ -1287,12 +1288,12 @@ phase entry. Do not re-raise anything settled in the Decisions log.
     coalescing; the Booking's History shows its List's cover changes; the as-at view is Admin-only and
     money-free.
   - New: drafted edits versus commands (and why commands are disabled while unsaved, and why 27's
-    re-check runs at save); the email field allowlist; the OQ-46 recipients; the on-demand button
+    re-check runs at save); the email field allowlist; the OQ-46 and OQ-127 recipients; the on-demand button
     with changes picked from the history and no prompt anywhere (OQ-69, D19); templates per kind of
     change with four seeded kinds (US-02.3.4); the cover email reached from the pool notification
     (OQ-65, D15) and from the List drawer, never from the reassign flow (US-01.4.1); the "drafted, not
     sent" audit entry as a picker hint only; a List reassignment as its own event, not a save; a
-    single-Booking move as a Booking change for the rooms, not a cover change (OQ-46's "a new
+    single-Booking move as a Booking change for the surgeon's office, not a cover change (OQ-46's "a new
     anaesthetist on a List"); `MAILTO_MAX_LENGTH` as one labelled constant; manual only per OQ-82
     (answered 2026-10-07), with automatic sending Future (US-02.3.5); the office's amend adds a description
     as a drafted append and never edits the text as received (US-02.3.1, US-02.5.7); the NHI is
@@ -1307,5 +1308,5 @@ phase entry. Do not re-raise anything settled in the Decisions log.
   - **44:** the S5 rewrite keeps the grouped save and the as-at click; S2 keeps the cover-change email
     from the drawer and the pool, and the office's Add Booking with the Procedure description; the PWA-parity audit
     includes `office-edits-booking`; the cheat sheet's concurrency topic says Future Work and the
-    email topic says manual by AA's choice (OQ-82); the drift check re-reads US-02.3.3 (Verify), OQ-124 (D71), OQ-127 (D74) and
+    email topic says manual by AA's choice (OQ-82); the drift check re-reads US-02.3.3 (Verify), OQ-124 (D71) and
     US-02.3.5 (Future).

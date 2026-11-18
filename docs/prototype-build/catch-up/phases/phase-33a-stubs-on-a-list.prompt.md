@@ -1,8 +1,8 @@
-Please run catch-up Phase 33a (Stubs on a List) of the Anaesthesia Associates prototype.
+Please run requirements catch-up Phase 33a (Stubs on a List) of the Anaesthesia Associates (AA) prototype.
 
-Load the run-build-phase skill and follow it for this phase. The phase doc holds the reads, drift-check stops, work items, checklist, screenshots, demo guide and progress updates; below is only what the doc does not already say.
+Load the run-build-phase skill and follow it for this phase (1 session). The phase doc's Before you start, Reference, Work items, Demo triggers, Manual test checklist, Demo guide updates, Catalogue screenshots, Adversarial review (after build) and PROGRESS.md updates sections hold the phase's reads, drift-check stops, rules and finish items; below is only what the doc does not already say.
 
-Overrides:
+Override:
 - Run it straight after Phase 33, in the same working tree.
 
 Also read:
@@ -13,6 +13,7 @@ Hold to these above all:
 - One path: only settleStubForRow changes a stub's status, inside decideImportRow's commit; resolveStub composes 33's correctImportRow and decideImportRow and is what 34 and 40 reuse.
 - A List holding a stub never reads all-complete, through the stub's own marking only: no Warning record, no to-do entry, no prompt or block at submit or authorise.
 - The stub readings are labelled once: in code (STUB_READINGS), once in the app and on the owner's list.
+- Stubs come from any imported row with no NHI (a hospital file's row, from 34 a rooms' PDF row; no sync, D52).
 - Say "a stub", never "stub Booking"; no "slot" in app copy.
 
 Phase goal: an incoming booking with no NHI still waits in the unmatched queue and creates no Booking, and a stub, a record of its own outside the Bookings table and never keyed on the NHI, stands in its place on its List, clearly marked in the mobile, web and Admin List views and never counted as a Booking; a List holding one never reads all-complete, with no warning, to-do entry, prompt or block; the office resolves it on Matching through one audited path, Add NHI creating the Booking that takes the stub's place or Reject removing it, which 34 and 40 reuse.
