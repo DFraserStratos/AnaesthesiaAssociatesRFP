@@ -317,6 +317,7 @@ const PHASES = [
 ];
 // R-07: B02 delivers the board half, B12 the plan-tool half and closes it. Both list it.
 const STATUS = Object.fromEntries(PHASES.map(p=>[p.id,'PLANNED']));
+STATUS.B01 = 'COMPLETE';
 // Which mode to open each phase's session in. Plan mode for any phase with an open programme decision.
 const MODE = {
   B01:['auto','Its decisions are already recorded (accepted decision 13), so it can plan and build straight through.'],
