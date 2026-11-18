@@ -476,7 +476,7 @@ The List reaches `AUTHORISED`.
 ### Steps
 
 1. The Billing Engine iterates each active Booking and reads only its lock, written at authorise. It
-   never looks up a Contract, a payer, a unit value or an RVG group afresh, and never swaps in a default
+   never looks up a Contract, a payer, a rate per unit or an RVG group afresh, and never swaps in a default
    or another Contract; a Booking with no lock fails on its own.
 2. Each Procedure's locked Contract is the one it was authorised with; a Contract edit, Disable or new
    price range after authorise changes nothing here.
@@ -656,6 +656,23 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
   recorded by the office; the anaesthetist sees the number and can enter it on the day. The funder
   marks one path **Suggested** on the step rail and never narrows it.
 
+#### Profile and bank details (catch-up Phase 26)
+
+- Each anaesthetist's profile holds their rate per unit (the dollar value of one RVG unit), phone,
+  email, registration number, HPI CPN and bank account.
+- The anaesthetist sees it on the mobile More tab (the Profile card) and on the web Profile page,
+  opened from their name and avatar in the top nav. They edit only their own rate per unit
+  (**Change**, a bottom sheet on the phone): the new rate applies to Bookings on Lists not yet
+  authorised, and authorised Lists keep their locked rate.
+- Contact details, the HPI CPN and the bank details are held by the office and show read-only with a
+  lock; the bank number is always masked (Dr Souter's 99-0101-•••••21-00).
+- The office keeps every profile on the Admin anaesthetist record (Master data, Anaesthetists, open a
+  row: **Edit details**) and in the Anaesthetists table, the GST number with it. The HPI CPN and bank
+  details are mandatory: an add or edit without either is refused. Every change is audited, the bank
+  number masked in the audit too.
+- Bank details are display-only master data. The payment to the anaesthetist is made in Xero; the app
+  never pays from them.
+
 #### Post-operative addition
 
 - A later pain consult or ward review can create another charge.
@@ -699,6 +716,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Pre-payment, addendum, billing monitor/retry | Yes | Phase 09 |
 | Contract locked at authorise, invoices from the lock, Contract history | Yes | Catch-up Phase 25 |
 | Xero pairs, payment, balances and disbursement | Yes | Phase 10 |
+| Anaesthetist profile, rate per unit and bank details | Yes | Catch-up Phase 26 |
 | AA's monthly fee invoices (settings, run, AA fees tab) | Yes | Catch-up Phase 16 |
 | HL7/FHIR/PDF ingestion and monitoring | Yes | Phase 11 |
 | Scenario jump controls and guided script | Yes | Phase 12 |

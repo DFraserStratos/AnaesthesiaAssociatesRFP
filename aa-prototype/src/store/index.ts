@@ -223,6 +223,8 @@ export {
   editRecurringBooking,
   retireRecurringBooking,
   applyRecurringBookingsToCanvas,
+  BANK_ACCOUNT_INVALID,
+  UNIT_VALUE_INVALID,
   type AnaesthetistPatch,
   type HospitalPatch,
   type NewAnaesthetistFields,

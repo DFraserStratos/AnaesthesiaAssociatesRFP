@@ -75,6 +75,14 @@ describe('Accounts payment history', () => {
     expect(screen.getByText(/never deducted from your payments/)).toBeInTheDocument()
   })
 
+  it('shows the GST activity for the calendar month of the demo date, with no period switch (Phase 26)', () => {
+    render(<AccountsScreen anaesthetistId={ANAE.souter} subTab="gst" onSubTab={() => undefined} />)
+    expect(screen.getByText(/^Month \(1 Jul to 21 Jul 2026\)/)).toBeInTheDocument()
+    expect(screen.queryByText(/Six-monthly|Bi-monthly|GST period/)).toBeNull()
+    expect(screen.queryByRole('radiogroup')).toBeNull()
+    expect(screen.getByText('Month total')).toBeInTheDocument()
+  })
+
   it('links the Payments caption to the AA fees tab', () => {
     const tabs: string[] = []
     render(<AccountsScreen anaesthetistId={ANAE.souter} subTab="payments" onSubTab={(t) => tabs.push(t)} />)

@@ -14,7 +14,8 @@ import type { Warning } from '../../../../domain/warnings/types'
 import type { ListProgress } from '../../../../domain/listProgress'
 import { listProgress } from '../../../../domain/listProgress'
 import { isAssignedList } from '../../../../domain/draftLists'
-import { editRefusal, useAppStore, useToday, type CalendarSession } from '../../../../store'
+import { editRefusal, profileFor, useAppStore, useToday, type Actor, type CalendarSession } from '../../../../store'
+import { ProfileRow } from '../../../../shared/profile'
 import {
   Avatar,
   DockSpacer,
@@ -28,7 +29,7 @@ import {
   WarningTriangle,
   type ListRowRight,
 } from '../../../../shared'
-import { Button, FilterPills, FormError, ProgressBar, Segmented, SlidingSegmentedControl, TextArea, TextField } from '../../../../shared/ui'
+import { Button, DefList, FilterPills, FormError, ProgressBar, Segmented, SlidingSegmentedControl, TextAction, TextArea, TextField } from '../../../../shared/ui'
 import { OutOfHoursMoon, useBookingSearch } from '../../../../shared/schedule'
 import { AlertOfficeSheet, MovedToYouPanel, SubmitListSheet, useBookingsMovedToMe, useMovedToMe } from '../../../../shared/flows'
 import { AvailabilityEditor, SeriesList, useAvailabilityMonth } from '../../../../shared/availability'
@@ -38,7 +39,7 @@ import { CompleteBar } from '../../../../shared/capture/CompleteBar'
 import { useTickingValue } from '../../../../shared/capture/useTickingValue'
 import { BookingDetailBody } from '../../../../shared/booking'
 import { monthOf } from '../../../../shared/availability'
-import { ListOptionsSheet, MobileHeader, SlideStack, type ListOption, type SlideLayer } from '../../../mobile/components'
+import { EditRateSheet, ListOptionsSheet, MobileHeader, SlideStack, type ListOption, type SlideLayer } from '../../../mobile/components'
 import { LookbackDateSheet, LookbackResults, LookbackSearchRow } from '../../../mobile/screens/ListsLookback'
 import { DayChip } from '../../../../shared/ui/DayChip'
 import { listRowModel } from '../../../mobile/screens/listRowModel'
@@ -1035,3 +1036,31 @@ export function InstallCoachExample() {
   )
 }
 
+
+/** Phase 26: the profile rows, live from the persona's own record (the rate, a locked contact and the masked bank number). */
+export function ProfileRowExample({ anaesthetistId }: { anaesthetistId: string }) {
+  const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
+  const profile = useMemo(() => profileFor({ masters: { anaesthetists } }, anaesthetistId), [anaesthetists, anaesthetistId])
+  if (profile === null) return null
+  return (
+    <DefList gap={4} style={{ width: 340 }}>
+      <ProfileRow label="Rate per unit" trailing={<TextAction onClick={() => undefined}>Change</TextAction>}>{formatCurrency(profile.unitValue)}</ProfileRow>
+      <ProfileRow label="Email" locked>{profile.email}</ProfileRow>
+      <ProfileRow label="HPI CPN" locked>{profile.hpiId}</ProfileRow>
+      <ProfileRow label="Bank account" locked>{profile.bankAccountMasked}</ProfileRow>
+    </DefList>
+  )
+}
+
+/** Phase 26: the rate sheet on the persona's own record. Save writes to the demo store. */
+export function EditRateSheetExample({ actor, anaesthetistId }: { actor: Actor; anaesthetistId: string }) {
+  const unitValue = useAppStore((s) => s.masters.anaesthetists[anaesthetistId]?.unitValue ?? 0)
+  const [open, setOpen] = useState(false)
+  const [key, setKey] = useState(0)
+  return (
+    <>
+      <Button variant="secondary" onClick={() => { setKey((k) => k + 1); setOpen(true) }}>Change rate per unit</Button>
+      <EditRateSheet key={key} open={open} actor={actor} anaesthetistId={anaesthetistId} current={unitValue} onClose={() => setOpen(false)} />
+    </>
+  )
+}

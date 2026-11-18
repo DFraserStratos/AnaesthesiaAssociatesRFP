@@ -30,7 +30,7 @@ export function WebCatalogue() {
       <SurfaceProvider variant="web">
       <MoveListPromptProvider actor={f.actor}>
         <LibraryGroup id="shadcn">
-          <CatalogueRow name="WebNav" source="apps/web/components/WebNav.tsx" usedIn={W} what="The white top bar: AA logo, the four section tabs with a crimson underline on the active one, and the persona's name and avatar." replaceWith="shadcn NavigationMenu (links) + Avatar" note="A labelled navigation (Main) whose active tab carries aria-current since UI unification U5; the tabs stay buttons (question 3). The avatar is the shared Avatar (tint, 36).">
+          <CatalogueRow name="WebNav" source="apps/web/components/WebNav.tsx" usedIn={W} what="The white top bar: AA logo, the four section tabs with a crimson underline on the active one, and the persona's name and avatar, the button to their own profile (catch-up Phase 26), underlined while it shows." replaceWith="shadcn NavigationMenu (links) + Avatar" note="A labelled navigation (Main) whose active tab carries aria-current since UI unification U5; the tabs stay buttons (question 3). The avatar is the shared Avatar (tint, 36).">
             <D.WebNavDemo f={f} />
           </CatalogueRow>
           <CatalogueRow name="AvailabilityPageSwitch" source="apps/web/components/AvailabilityPageSwitch.tsx" usedIn={W} what="Switches between the two Availability pages, Find cover and My availability. Since UI unification U5 (question 18) an underline tab strip of links on the shared LineTabs: a labelled navigation, the current page marked aria-current." replaceWith="shadcn Tabs (as links)" note="Was a sliding segmented control doing a tab bar's job; now real links, so the route and the browser's back work as links do.">
@@ -51,7 +51,7 @@ export function WebCatalogue() {
           <CatalogueRow name="SlidingSegmentedControl" source="shared/ui/SlidingSegmentedControl.tsx" usedIn={ALL} what="A single-choice segmented control whose highlight slides between options. Two colour variants (teal, surface) and two sizes: md, and sm for a 36px toolbar (Admin Day's row order, UI unification U5). The ink variant went with question 17." replaceWith="shadcn ToggleGroup (single)" note="aria-pressed buttons rather than radios, no roving focus (question 3 keeps them buttons). Keep the slide with Motion layoutId.">
             <D.SlidingSegmentedDemo />
           </CatalogueRow>
-          <CatalogueRow name="Segmented" source="shared/ui/Field.tsx" usedIn={ALL} what="The simpler segmented control (no slide). On web it picks the GST period on Accounts." replaceWith="shadcn ToggleGroup (single)" note="A second segmented control doing the same job; merge into one.">
+          <CatalogueRow name="Segmented" source="shared/ui/Field.tsx" usedIn={ALL} what="The simpler segmented control (no slide). The office uses it for an anaesthetist's status." replaceWith="shadcn ToggleGroup (single)" note="A second segmented control doing the same job; merge into one.">
             <D.SegmentedDemo />
           </CatalogueRow>
           <CatalogueRow name="FilterPills" source="shared/ui/FilterPills.tsx" usedIn={WM} what="Choose one list filter from a row of solid pills (UI unification U5): the All anaesthetists / Free only pills on Find cover with today's free-session count (36px), and the phone's Week, Month, To-Do and Done (38px). A labelled group with aria-pressed." replaceWith="shadcn ToggleGroup (single)" note="Was the web FilterChip and the mobile Lists pills, one job built twice.">

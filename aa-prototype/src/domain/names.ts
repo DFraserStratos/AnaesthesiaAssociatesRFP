@@ -17,6 +17,11 @@
  */
 export const TITLE_PREFIX = /^(Dr|Mr|Ms|Mrs|Miss|Prof)\.?\s+/i
 
+/** Drop a leading title (Dr, Mr, Ms, Mrs, Miss, Prof: `TITLE_PREFIX`): "Dr Melanie Souter" -> "Melanie Souter". Re-exported by `shared/format.ts`. */
+export function nameWithoutTitle(name: string): string {
+  return name.trim().replace(TITLE_PREFIX, '').trim()
+}
+
 export function titledSurname(name: string): string {
   const match = TITLE_PREFIX.exec(name.trim())
   if (match === null) return name.trim()

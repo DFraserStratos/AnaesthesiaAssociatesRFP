@@ -27,6 +27,18 @@
               "value": "Dr Nadia Kerr"
             },
             {
+              "fill": "[data-shot=add-anaesthetist-sheet] input[data-validation-field=hpiId]",
+              "value": "30KERN"
+            },
+            {
+              "fill": "[data-shot=add-anaesthetist-sheet] input[data-validation-field=accountName]",
+              "value": "Nadia Kerr"
+            },
+            {
+              "fill": "[data-shot=add-anaesthetist-sheet] input[data-validation-field=accountNumber]",
+              "value": "99-0101-0041552-00"
+            },
+            {
               "fill": "[data-shot=admin-add-anaesthetist-start] input",
               "value": "2026-08-03"
             }
@@ -52,6 +64,18 @@
             {
               "fill": "input[placeholder=\"e.g. Dr Nadia Kerr\"]",
               "value": "Dr Nadia Kerr"
+            },
+            {
+              "fill": "[data-shot=add-anaesthetist-sheet] input[data-validation-field=hpiId]",
+              "value": "30KERN"
+            },
+            {
+              "fill": "[data-shot=add-anaesthetist-sheet] input[data-validation-field=accountName]",
+              "value": "Nadia Kerr"
+            },
+            {
+              "fill": "[data-shot=add-anaesthetist-sheet] input[data-validation-field=accountNumber]",
+              "value": "99-0101-0041552-00"
             },
             {
               "fill": "[data-shot=admin-add-anaesthetist-start] input",
@@ -85,6 +109,18 @@
             {
               "fill": "input[placeholder=\"e.g. Dr Nadia Kerr\"]",
               "value": "Dr Nadia Kerr"
+            },
+            {
+              "fill": "[data-shot=add-anaesthetist-sheet] input[data-validation-field=hpiId]",
+              "value": "30KERN"
+            },
+            {
+              "fill": "[data-shot=add-anaesthetist-sheet] input[data-validation-field=accountName]",
+              "value": "Nadia Kerr"
+            },
+            {
+              "fill": "[data-shot=add-anaesthetist-sheet] input[data-validation-field=accountNumber]",
+              "value": "99-0101-0041552-00"
             },
             {
               "fill": "[data-shot=admin-add-anaesthetist-start] input",
@@ -135,6 +171,18 @@
         {
           "fill": "input[placeholder=\"e.g. Dr Nadia Kerr\"]",
           "value": "Dr Nadia Kerr"
+        },
+        {
+          "fill": "[data-shot=add-anaesthetist-sheet] input[data-validation-field=hpiId]",
+          "value": "30KERN"
+        },
+        {
+          "fill": "[data-shot=add-anaesthetist-sheet] input[data-validation-field=accountName]",
+          "value": "Nadia Kerr"
+        },
+        {
+          "fill": "[data-shot=add-anaesthetist-sheet] input[data-validation-field=accountNumber]",
+          "value": "99-0101-0041552-00"
         },
         {
           "fill": "[data-shot=admin-add-anaesthetist-start] input",

@@ -1,7 +1,7 @@
 {
   "id": "US-12.1.1",
-  "status": "partial",
-  "absentReason": "Each anaesthetist's dollar value per unit is held and editable, but only by the office in admin Master data. The anaesthetist cannot set it in the mobile or web app.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "unit-value",
@@ -31,6 +31,54 @@
           ],
           "highlight": [
             "[role=dialog] label:has-text(\"Unit value\")"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mobile-profile",
+      "app": "mobile",
+      "caption": "Anaesthetist sets their own dollar value per unit",
+      "start": "/mobile/more",
+      "states": [
+        {
+          "state": "profile",
+          "caption": "Anaesthetist sets their own dollar value per unit: the rate per unit on their Profile",
+          "steps": [],
+          "highlight": [
+            "[data-shot=mobile-profile-rate]"
+          ]
+        },
+        {
+          "state": "rate-sheet",
+          "caption": "Changing the rate per unit",
+          "steps": [
+            {
+              "click": "[data-shot=mobile-profile-rate-change]"
+            },
+            {
+              "wait": "[data-shot=mobile-rate-sheet]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "web-profile",
+      "app": "web",
+      "caption": "Anaesthetist sets their own dollar value per unit",
+      "start": "/web/profile",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=web-billing-panel]"
           ]
         }
       ]

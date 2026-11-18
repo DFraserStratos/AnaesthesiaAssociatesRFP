@@ -319,6 +319,8 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/web/availability` | Find cover: the practice availability grid. `?date=YYYY-MM-DD` opens a day (catch-up Phase 32). Free cells read "Free · Open for booking". Dr Souter's own movable List cells show "Move" (`availability-move-mine-am`/`-pm`), and a colleague's free cell in a session where she has a movable List shows "Move here" (`availability-move-to-<registration>-am`/`-pm`); every other cell is inert. A "Moved to you" panel (`moved-to-you`) shows above the filters when a colleague moved a List to her this week. The "Find cover · My availability" switch (UI unification U5) is a navigation of links, `role=navigation[name="Availability page"]` holding `role=link[name="Find cover"]` and `role=link[name="My availability"]` (the current one has `aria-current=page`), on both pages; it is no longer a group of buttons. The day steps stay `role=button[name="Previous day"]`/`"Next day"`; the filter pills are `role=group[name="Anaesthetists shown"]` with buttons "All anaesthetists" and "Free only · N" (match "Free only" by `button:has-text("Free only")`). The "(you)" row's "Change" link opens My availability on that date. |
 | `/web/availability/mine` | My availability (catch-up Phase 29): Dr Souter's month (AM and PM per day), click a day and shift-click to a range; the right rail holds the session panel and the form, then "Your series" and the legend. `?date=YYYY-MM-DD` opens a day in the rail (the capture runner has no shift-click: open `?date=`, click "Change both sessions" and fill the To date for a range). |
 | `/web/accounts/overdue`, `/web/accounts/payments`, `/web/accounts/gst`, `/web/accounts/fees` | Accounts tabs. Add `?invoice=AA-2026-0005` to focus a payment, which exists only after S3 billing. AA fees (catch-up Phase 16) lists Dr Souter's AA fee invoices; `?invoice=AA-FEE-2026-H02` focuses one. |
+| `/web/accounts/gst` (catch-up Phase 26) | The GST tab has no period switch (the GST period is retired): a calendar month, caption `gst-month` "Month (1 Jul to 21 Jul 2026) ...", footer "Month total". Never click a Segmented here. |
+| `/web/profile` | Your profile (catch-up Phase 26; `web-profile`), reached from the nav persona button `[data-shot=web-profile-link]` (aria-label "Your profile, Dr Melanie Souter"); the four nav tabs are unchanged. Panels: Billing `web-billing-panel` (field "Rate per unit ($)", "Save changes" `web-rate-save`, enabled only once the rate differs), Contact `web-contact-panel`, Identity `web-identity-panel` (Registration, HPI CPN), Bank account `web-bank-panel` (name, number masked `99-0101-•••••21-00`). Only the rate is editable; the rest carries lock glyphs. |
 
 **Admin app** (`src/apps/admin/`)
 
@@ -340,7 +342,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. |
 | `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons`, `surgeonRooms`, `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifiers` (catch-up Phase 19b, "Modifiers"; the old `modifierCodes` value opens it), `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). A Contract's panel has Details and History tabs (catch-up Phase 25). |
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip, Identifiers, Surgeons' room and Groups cards, Pairing preferences. "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. Catch-up Phase 17a: Specialties, Identifiers and Groups in the first row, then one row per room (main room first), its Surgeons' room card beside a "Practice manager and PAs" card, then Pairing preferences. |
-| `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Details, Pairing preferences. Office only. |
+| `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Profile, Pairing preferences. Office only. The Profile card (catch-up Phase 26; was "Details", hook `anaesthetist-details` kept) shows Unit value, Status, Phone, Email, HPI CPN and Bank account (masked, row `anaesthetist-bank-account`); it has no action of its own. The page header's secondary button "Edit details" (beside "History") opens the Edit sheet: click `button:text-is("Edit details")` at page level, not inside `anaesthetist-details`. |
 | `/admin/audit` | Audit viewer. |
 
 The side nav has: Day view, Conflicts (amber badge `[data-shot=nav-badge-conflicts]`, catch-up
@@ -359,6 +361,7 @@ badge carries `data-shot=nav-badge-<section>`.
 | `/mobile/availability/calendar` | My calendar (catch-up Phase 29): a month of Dr Souter's sessions, AM over PM, July to the horizon month; the tab bar is hidden; the sticky teal "Add days off" opens the sheet on the form. |
 | `/mobile/balances` | "Your account": Outstanding and GST this month. |
 | `/mobile/more` | Settings. The PWA adds a demo panel with a non-deterministic build ID. Avoid shooting that panel. |
+| `/mobile/more` (catch-up Phase 26) | The "Profile" card `mobile-profile` sits between the persona card and the Demo card: rows `mobile-profile-rate` (Rate per unit $26.50, with the "Change" text action `mobile-profile-rate-change`), Phone, Email, Registration, HPI CPN (`mobile-profile-hpi`) and Bank account (`mobile-profile-bank`, masked), the office-held rows with lock glyphs and captions. Its lower rows sit near the fold: `scroll` to `mobile-profile-bank` first. "Change" opens the bottom sheet `mobile-rate-sheet` (field "Rate per unit ($)", "Save rate" `mobile-rate-save`). |
 
 - The tab bar is `[data-testid=mobile-tab-bar]`, with buttons Lists, Availability, Balances and
   More.
@@ -958,6 +961,23 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 - **Billing failure, re-based**: see `billing-failure` under Demo actions. No Contract is changed and
   `choose-contract-sheet` is gone.
 
+### Anaesthetist profile, HPI CPN and bank account (catch-up Phase 26)
+
+- Every seeded anaesthetist has a mandatory `hpiId` (Souter `10SOUM`, Rutherford `11RUTJ`, Sharma `12SHAP`; prefixes 10
+  to 23 are anaesthetists, 40 to 99 surgeons, so a new one in a recipe can take `30KERN`) and a mandatory bank account on
+  bank 99, `99-0101-<registration, 7 digits>-00`: Dr Souter's is `99-0101-0034821-00`, shown masked
+  `99-0101-•••••21-00` everywhere but the office's Edit field. There is no GST period anywhere (retired; the web GST tab
+  is a calendar month); the GST number (Phase 22) stays office-held and off the anaesthetist's profile.
+- Master data, Anaesthetists (`/admin/masters?view=anaesthetists`, `masters-anaesthetists`): columns Name, Reg, Unit $
+  (the third column, so `table th:nth-child(3)` is the unit value), Tier, HPI CPN, Bank account (masked, cell
+  `anaesthetist-bank`), GST number, Phone, Email, Start date, Active, Edit.
+- The Edit sheet (`edit-anaesthetist-sheet`) and the Add sheet (`add-anaesthetist-sheet`) both hold "HPI CPN (required)"
+  and the bank block `anaesthetist-bank-fields` ("Bank account name (required)", "Bank account number (required)");
+  "Save changes" and "Add anaesthetist" stay disabled, with a printed reason, until all three are filled. Fill them by
+  `input[data-validation-field=hpiId|accountName|accountNumber]` scoped to the sheet's hook.
+- Dr Souter's rate per unit is $26.50 on `/mobile/more` (Profile card) and `/web/profile` (Billing panel); the
+  anaesthetist changes only that, and the change re-prices her unlocked Bookings as the office's edit does.
+
 ## Overlays that need clicks
 
 - **Drawers and dialogs after Phase U2.** The three Admin drawers (List, empty-session, Draft List) are `SidePanel`:
@@ -1297,6 +1317,14 @@ the exception: use the `trigger` step)
   setup, the Assign Draft List sheet, the invoice's Locked record and the profile facts. Page titles are the shared `PageHeader` (the `h1` text unchanged);
   eyebrows are the shared `Eyebrow` (CSS caps, so `text=` still matches the DOM's mixed case). The phone's day chip
   is the shared `DayChip`, test id `mobile-lists-day-chip` kept.
+- Catch-up Phase 26 (`data-shot`): mobile `/mobile/more` `mobile-profile` (the Profile card), `mobile-profile-rate`,
+  `mobile-profile-rate-change` (its "Change"), `mobile-profile-hpi`, `mobile-profile-bank` (masked), the bottom sheet
+  `mobile-rate-sheet` with `mobile-rate-save` ("Save rate"); web `web-profile` (`/web/profile`), `web-profile-link` (the
+  nav persona button), `web-billing-panel`, `web-contact-panel`, `web-identity-panel`, `web-bank-panel`, `web-rate-save`;
+  web GST tab `gst-month` (the month caption, no period switch); Admin `anaesthetist-bank` (Anaesthetists table cell,
+  masked), `anaesthetist-bank-account` (the bank row of the record's Profile card), `anaesthetist-bank-fields` (the bank
+  block in both sheets), `edit-anaesthetist-sheet`, `add-anaesthetist-sheet`. `anaesthetist-details` is now the record's
+  Profile card (was "Details"). See [Anaesthetist profile, HPI CPN and bank account](#anaesthetist-profile-hpi-cpn-and-bank-account-catch-up-phase-26).
 - Catch-up Phase 25 (`data-shot`): `booking-lock-badge` (the neutral "Contract locked at authorise" pill, in the
   heading of a locked `office-billing-setup-<n>` and on the Billing card in all three apps; nothing before authorise),
   `booking-lock-stamp` (its detail line on the web and Admin Billing card, "Locked Tue 21 Jul, 08:00 by Kirsty W." or the
@@ -1596,6 +1624,7 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 - Pages: `surgeon-profile`, `surgeon-hpi-chip`, `surgeon-identifiers`, `surgeon-room-card`,
   `surgeon-groups`; `anaesthetist-record`, `anaesthetist-hpi-chip`, `anaesthetist-details`,
   `tier-card`.
+  (`anaesthetist-details` is the Profile card since catch-up Phase 26.)
 - Rooms and contacts (catch-up Phase 17a): `surgeon-room-card` is now one per room, each with
   `data-room=<roomId>`, the main room first (with a neutral "Main room" pill when there are several), so
   pick one as `[data-shot=surgeon-room-card][data-room=RM-HILLSBOROU]`; beside each,

@@ -294,10 +294,12 @@ export const PERSIST_KEY = 'aa-demo'
  *  v50: catch-up Phase 25, the pricing snapshot (`billing.locks`, every seeded
  *  AUTHORISED List locked, the history backdrop migrated from its invoices)
  *  and `BillingCase.payeeAnaesthetistId`.
- *  v51: catch-up Phase 32d, Public as a Slot status (`publicHospital`, D86): the `public` List kind retired; the
+ *  v51: catch-up Phase 26, the anaesthetist profile (`Anaesthetist.bankAccount`
+ *  seeded for all 14 on bank 99; `gstPeriod` removed).
+ *  v52: catch-up Phase 32d, Public as a Slot status (`publicHospital`, D86): the `public` List kind retired; the
  *  public Lists holding Bookings are private Lists (same ids), the bookless ones Public sessions ("CPH"), seven
  *  weekly Public series (AS0001 to AS0007), six recurring-clash Draft Lists gone. Reseeds on load. */
-export const PERSIST_VERSION = 51
+export const PERSIST_VERSION = 52
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {} }

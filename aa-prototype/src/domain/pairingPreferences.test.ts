@@ -29,7 +29,7 @@ const ANAE: Record<string, Anaesthetist> = Object.fromEntries(
     ['A6', 'Dr Hannah Ropata'],
   ].map(([id, name]) => [
     id,
-    { registrationNumber: id as string, name: name as string, phone: '', email: '', unitValue: 30, gstPeriod: 'monthly', hpiId: '', active: true },
+    { registrationNumber: id as string, name: name as string, phone: '', email: '', unitValue: 30, hpiId: '', bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, active: true },
   ]),
 )
 const SURG: Record<string, Surgeon> = {

@@ -73,6 +73,7 @@ import { isSeriesActive, seriesLine as describeSeriesLine } from '../domain/avai
 import { horizonFor, type Horizon } from '../domain/clock'
 import { FEED_META } from '../domain/integrations'
 import { roundToCents, toCents } from '../domain/billing/money'
+import { maskBankAccount } from '../domain/bankAccount'
 import { procedureAccFunded } from '../domain/billing/fundingTags'
 import { BCTI_COUNT_RULE, bctiFeeHistory, bctiRecordsFrom, bctisFor, type BctiFeeHistory, type BctiRecord } from '../domain/billing/bcti'
 import { aaFeeFixedTotal, aaFeeFor } from '../domain/billing/aaFee'
@@ -1110,8 +1111,8 @@ export interface GstActivity {
 /**
  * The GST activity report (M11 / W's periodic summary): a date-ranged list of
  * amounts RECEIVED, each with its GST component, for one anaesthetist. Reads the
- * receipts ledger; the window (`fromISO`..`toISO`, inclusive date bounds) comes
- * from the anaesthetist's chosen GST period.
+ * receipts ledger; the window (`fromISO`..`toISO`, inclusive date bounds) is the
+ * calendar month to date (catch-up Phase 26: no GST period; Phase 38 rebuilds it).
  */
 export function gstActivityFor(
   state: Pick<AppState, 'billing' | 'masters'>,
@@ -2221,4 +2222,39 @@ export function procedureStackViewFor(
     surface,
     nameOf: (ref) => counterpartyName(state, ref, booking.id),
   })
+}
+
+/**
+ * The anaesthetist's own profile (catch-up Phase 26; US-12.1.4, US-12.1.1):
+ * what the mobile More tab and the web Profile page show. The rate per unit
+ * (the one field the anaesthetist edits), contact, registration, the HPI CPN
+ * as stored and the bank account masked. Reads `masters` only, never the
+ * office-only slice (no tier, no pairing preference). It builds a new object:
+ * screens select the raw record and derive this with `useMemo`.
+ */
+export interface AnaesthetistProfile {
+  registrationNumber: string
+  name: string
+  unitValue: number
+  phone: string
+  email: string
+  hpiId: string
+  bankAccountName: string
+  /** Masked, e.g. `99-0101-•••••21-00`; the full number is the office's alone. */
+  bankAccountMasked: string
+}
+
+export function profileFor(state: { masters: Pick<AppState['masters'], 'anaesthetists'> }, registrationNumber: string): AnaesthetistProfile | null {
+  const a = state.masters.anaesthetists[registrationNumber]
+  if (a === undefined) return null
+  return {
+    registrationNumber: a.registrationNumber,
+    name: a.name,
+    unitValue: a.unitValue,
+    phone: a.phone,
+    email: a.email,
+    hpiId: a.hpiId,
+    bankAccountName: a.bankAccount.accountName,
+    bankAccountMasked: maskBankAccount(a.bankAccount.accountNumber),
+  }
 }

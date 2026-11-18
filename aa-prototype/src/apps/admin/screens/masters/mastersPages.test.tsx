@@ -239,10 +239,10 @@ describe('the surgeon profile and the anaesthetist record', () => {
     expect(useAppStore.getState().audit.at(-1)?.after).not.toHaveProperty('hpiId')
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
-    fireEvent.change(screen.getByLabelText('HPI CPN (optional)'), { target: { value: '47reia' } })
+    fireEvent.change(screen.getByLabelText('HPI CPN (required)'), { target: { value: '47reia' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
     expect(screen.getByRole('alert')).toHaveTextContent('Ms A. Reid')
-    fireEvent.change(screen.getByLabelText('HPI CPN (optional)'), { target: { value: '60ropx' } })
+    fireEvent.change(screen.getByLabelText('HPI CPN (required)'), { target: { value: '60ropx' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
     expect(useAppStore.getState().masters.anaesthetists[ANAE.ropata]?.hpiId).toBe('60ROPX')
   })

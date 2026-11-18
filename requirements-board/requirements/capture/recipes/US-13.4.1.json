@@ -11,7 +11,7 @@
       "states": [
         {
           "state": "anaesthetists",
-          "caption": "Master data, anaesthetists with their priority tier, editable unit value, GST period and active flag",
+          "caption": "Master data, anaesthetists with their unit value, priority tier, HPI CPN, masked bank account and active flag, editable",
           "steps": [],
           "highlight": []
         },

@@ -181,7 +181,8 @@ export const FIELD_LABELS: Record<string, string> = {
   // --- Anaesthetist --------------------------------------------------------
   registrationNumber: 'Registration number',
   unitValue: 'Unit value',
-  gstPeriod: 'GST period',
+  // Catch-up Phase 26: the anaesthetist's bank details (US-12.1.4), the number always masked.
+  bankAccount: 'Bank account',
   // OQ-52: one identifier for surgeons and anaesthetists alike (catch-up Phase 17).
   hpiId: 'HPI CPN',
   active: 'Active',

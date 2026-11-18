@@ -16,7 +16,7 @@ const DAY = '2026-07-23'
 const TODAY = '2026-07-21'
 
 function anaesthetist(id: string, name: string, active = true): Anaesthetist {
-  return { registrationNumber: id, name, phone: `021 ${id}`, email: `${id}@x.example`, unitValue: 25, gstPeriod: 'monthly', hpiId: id, startDateISO: '2010-01-01', active }
+  return { registrationNumber: id, name, phone: `021 ${id}`, email: `${id}@x.example`, unitValue: 25, hpiId: id, bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, startDateISO: '2010-01-01', active }
 }
 
 function slot(anaesthetistId: string, status: string = SEED_STATUS.free, session: Session = 'AM'): Slot {

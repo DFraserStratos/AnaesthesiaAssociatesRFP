@@ -14,7 +14,7 @@
 
 import { ageInCompletedYears } from '../domain/billing/modifiers'
 import { validateNhi } from '../domain/nhi'
-import { TITLE_PREFIX } from '../domain/names'
+import { nameWithoutTitle } from '../domain/names'
 import type { BookingSource, Hospital, InvoiceDescriptionOrigin, List, ProcedureTextSource, Surgeon } from '../domain/types'
 
 export {
@@ -83,10 +83,8 @@ export function nhiBadge(nhi: string | undefined): NhiBadge {
 // cover sheet's mockup reached for a first name instead ("Ask Dr Melanie…");
 // that is the one place the design contradicted itself, and the surname wins.
 
-/** Drop a leading title (Dr, Mr, Ms, Mrs, Miss, Prof: `TITLE_PREFIX`): "Dr Melanie Souter" -> "Melanie Souter". */
-export function nameWithoutTitle(name: string): string {
-  return name.trim().replace(TITLE_PREFIX, '').trim()
-}
+// `nameWithoutTitle` lives in `domain/names.ts` (the seed's bank account names use it too, Phase 26).
+export { nameWithoutTitle }
 
 /** "Dr Melanie Souter" -> "Souter" (A-Z sort key, admin row labels). */
 export function surnameOf(name: string): string {

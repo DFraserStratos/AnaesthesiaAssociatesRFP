@@ -28,5 +28,8 @@ export { Button, TickBadge, SuccessOverlay, FieldLabel, FormError, TextField, Te
 export { Th, Td, GroupRow, TableShell, ClickableRow, RowOpenButton, isInteractiveRowTarget, type TableDensity } from './table'
 export { ListRow, ProgressPill, type ListRowRight } from './schedule'
 
+// Catch-up Phase 26: the anaesthetist's own profile (row, rate editor, copy).
+export { ProfileRow, useRateEditor, BANK_CAPTION, HPI_CPN_CAPTION, OFFICE_HELD_CAPTION, RATE_EXPLAINER, RATE_LABEL, RATE_NOTE } from './profile'
+
 // Catch-up Phase 15a: warnings (triangle, panel, hooks).
 export { useBookingWarnings, useListWarnings, WarningTriangle, WarningsPanel, ClearWarningButton } from './warnings'

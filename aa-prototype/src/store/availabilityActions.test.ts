@@ -101,7 +101,7 @@ describe('setAvailabilityRange (days off ahead)', () => {
     // The office may use an office-only status for anyone (her weekend holds no List).
     expect(setAvailabilityRange(api, OFFICE, { ...range, fromISO: '2026-08-15', toISO: '2026-08-16', statusKey: 'ST0001' }).ok).toBe(true)
     // No session before a start date.
-    const added = addAnaesthetist(api, OFFICE, { registrationNumber: '99001', name: 'Dr Nadia Kerr', phone: '021 000 0000', email: 'n@example.test', unitValue: 25, gstPeriod: 'monthly', hpiId: '99KERN', startDateISO: '2026-08-12' } as never)
+    const added = addAnaesthetist(api, OFFICE, { registrationNumber: '99001', name: 'Dr Nadia Kerr', phone: '021 000 0000', email: 'n@example.test', unitValue: 25, bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, hpiId: '99KERN', startDateISO: '2026-08-12' } as never)
     expect(added.ok).toBe(true)
     const kerr: Actor = { who: 'Dr Nadia Kerr', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: '99001' }
     const noSlot = setAvailabilityRange(api, kerr, { ...range, anaesthetistId: '99001' })

@@ -538,6 +538,7 @@
     <tr><td>Contract locked at authorise, invoices printed and regenerated from the lock, each Contract's History tab</td><td><span class="chip ready">Ready</span></td><td>Catch-up Phase 25</td></tr>
     <tr><td>Warnings: To-do card, triangle on Bookings, warning on opening, Day view outline</td><td><span class="chip ready">Ready</span></td><td>Catch-up 15a</td></tr>
     <tr><td>Xero pairs, payments, payables, live balances, GST</td><td><span class="chip ready">Ready</span></td><td>Phase 10</td></tr>
+    <tr><td>Anaesthetist profile and bank details: own rate per unit on mobile and web; office-held contact, HPI CPN and masked bank details, payments made in Xero</td><td><span class="chip ready">Ready</span></td><td>Catch-up 26</td></tr>
     <tr><td>HL7/FHIR/PDF ingestion and integration monitoring</td><td><span class="chip ready">Ready</span></td><td>Phase 11</td></tr>
     <tr><td>Demo control panel (the index) with S1 to S5 scenario jumps; demo actions on each screen under Demo actions in the top bar, and a Demo sheet on a handset</td><td><span class="chip ready">Ready</span></td><td>Phase 12; per-screen actions from catch-up Phase 14</td></tr>
     <tr><td>HL7/FHIR integration simulator and monitor tabs</td><td><span class="chip ready">Ready</span> <span class="chip">Future scope</span></td><td>Phase 11; in-scope hospital download arrives in catch-up Phase 34</td></tr>
@@ -621,8 +622,10 @@
       theirs), alert the office about a Booking or List with a note, split a Procedure's fee on her own Booking (Split in its Billing card's Paid by), and make another Procedure the primary (Make primary; she amends a completed Booking first), until the List is authorised. An out-of-hours List shows on her
       day after PM, in an evening session the office opened; she marks that session available or not, but does
       not open one herself. Her main view starts at today, with earlier Lists not yet authorised a scroll back; past
-      work is found by patient name, NHI or date. <strong>May not:</strong>
-      edit an authorised List, authorise, or touch master data.</p>
+      work is found by patient name, NHI or date. She sees her own profile (the Profile card on the More tab) and
+      sets her rate per unit with Change; a new rate applies to Bookings on Lists not yet authorised. <strong>May not:</strong>
+      edit an authorised List, authorise, or edit her contact details, HPI CPN, bank details or other master data
+      (they show read-only with a lock, the bank number masked).</p>
     </div>
     <div class="card">
       <span class="eyebrow">Primary persona 2</span>
@@ -630,8 +633,10 @@
       <p style="font-size:14px;color:var(--slate)">A usage context, not a separate role. Wider view of
       upcoming work, availability and finances, with the same List, Booking and BTM actions. The Lists
       table opens with earlier Lists not yet authorised, and searches past work by name, NHI or date.</p>
-      <p style="font-size:13px">Balances and GST activity are now live over the Billing Engine's mirror. Use
-      web for overview and planning; use mobile for the procedure-day action.</p>
+      <p style="font-size:13px">Balances and GST activity (the calendar month to date) are now live over the
+      Billing Engine's mirror. Her Profile opens from her name and avatar in the top nav: rate per unit
+      editable, the rest read-only, as on the phone. Use web for overview and planning; use mobile for the
+      procedure-day action.</p>
     </div>
     <div class="card">
       <span class="eyebrow">Primary persona 3</span>
@@ -643,7 +648,9 @@
       Sees the team's notifications of Lists anaesthetists have moved and their alerts to the office, ticks each one resolved once dealt with (it leaves for the whole office; Show resolved brings it back), and assigns the Draft Lists they return. Records a sickness phoned in with Change status on the Day view: the List goes back to the office or on to a colleague there and then. Opens an out-of-hours session for an emergency or late case (Open out-of-hours session on an anaesthetist's Day row, any day from today, one a day, 18:00 to 21:00 by default) and puts a List in it, a new one or a Draft List for that evening; closes an empty one from its drawer. Sets the primary Procedure from the rooms' sheet (Make primary on the Admin Booking), and corrects it at review.
       Maintains schedule-related master data such as anaesthetists, recurring bookings and hospital holidays (adding, editing and deleting closures),
       and surgeons, their rooms and groups, the office's private pairing preferences and the anaesthetists'
-      priority tiers.</p>
+      priority tiers. Holds each anaesthetist's profile on their record (the Profile card's Edit details): rate
+      per unit, phone, email, registration number, HPI CPN, bank account and GST number. The HPI CPN and bank
+      details are mandatory on every anaesthetist record; every change is audited, the bank number masked.</p>
     </div>
     <div class="card">
       <span class="eyebrow">Primary persona 4</span>
@@ -670,6 +677,7 @@
     <tr><td>Submit a List</td><td class="yes">Yes, own</td><td class="no">Receives after submission</td><td class="no">No</td></tr>
     <tr><td>Authorise a List</td><td class="no">No</td><td class="yes">Yes</td><td class="no">No</td></tr>
     <tr><td>Reassign a whole List</td><td class="no">No</td><td class="yes">Yes</td><td class="no">No</td></tr>
+    <tr><td>Edit own rate per unit</td><td class="yes">Yes, own</td><td class="yes">Yes</td><td class="no">No</td></tr>
     <tr><td>Edit master data</td><td class="no">No</td><td class="yes">Yes</td><td class="no">No</td></tr>
     <tr><td>Monitor billing/integrations</td><td class="no">No</td><td class="yes">Yes</td><td>Automated events write status</td></tr>
   </table></div>
@@ -834,7 +842,7 @@
 
   <details><summary>6 · Calculate and issue invoices</summary><div class="details-body">
     <p>The Billing Engine reads only each Booking's lock, written at authorise: it never looks up a
-    Contract, payer, unit value or RVG group afresh and never swaps in a default, so a Contract edit after
+    Contract, payer, rate per unit or RVG group afresh and never swaps in a default, so a Contract edit after
     authorise changes nothing. Each Procedure's locked Contract decides who is billed: its holder
     Party when it bills its holder, otherwise the Procedure's payer (the patient, or whoever Paid by
     names; Procedures sharing a payer share one invoice); the Booking's insurer or funder never decides it. It takes
@@ -877,7 +885,14 @@
     (AA's decision, OQ-57). <strong>Warnings:</strong> one routine; a small triangle on the Booking, the
     warning at the top of the Booking on opening, the Day view outline, and the office's To-do card with
     Clear; no confirm step at submit. Catch-up Phase 21 adds two mild rules: a child as the payer, and an
-    insurer named with no approval number (never ACC or Health NZ). <strong>Post-op:</strong> a linked addendum Booking with its own cycle; the original stays
+    insurer named with no approval number (never ACC or Health NZ). <strong>Profile and bank details</strong>
+    (catch-up Phase 26): each anaesthetist's profile holds their rate per unit, phone, email, registration
+    number, HPI CPN and bank account. The anaesthetist sees it on the More tab and the web Profile page and
+    edits only their own rate per unit; contact details, HPI CPN and bank details are held by the office,
+    read-only with a lock, the bank number masked (Dr Souter's 99-0101-&#8226;&#8226;&#8226;&#8226;&#8226;21-00). The office keeps
+    every profile on the Admin anaesthetist record and in Master data, Anaesthetists; the HPI CPN and bank
+    details are mandatory. Bank details are display-only master data: the payment is made in Xero.
+    <strong>Post-op:</strong> a linked addendum Booking with its own cycle; the original stays
     immutable. <strong>Billing failure:</strong> per Booking, and a List never fails as a whole (OQ-05):
     the run prices only from the lock, so what can still fail is outside it (here the Xero hand-off); the
     failed Booking is held back while the rest of the List bills, and the office retries it once from the
@@ -1229,9 +1244,9 @@
       <div class="row"><span class="k">Expect</span><span>The History row reads <strong>Contract updated · Kirsty W. · office</strong>, with today's date and time and Pricing: RVG at $23.00 per unit &#8594; RVG at $24.00 per unit. Under it, Dr Whitaker's five Fri 17 Jul Procedures (Hemi Walker, Chris Liu, Laura Collins, Olive Patel, Gemma Kaur), each "Locked Tue 21 Jul, 08:00" and linked to its invoice (AA-2026-0002 to AA-2026-0006). His invoices are unchanged: Hemi Walker's still reads $264.50, its Locked record card still 10 units @ $23.00/unit (Contract rate, locked), paid to Dr Ben Whitaker, priced on Fri 17 Jul 2026. Regenerate reads <strong>Regenerated from locked data: identical (1 line, total $264.50)</strong>.</span></div>
       <div class="row"><span class="k">Worth pointing at</span><span>Optional, a backdated price range: a price range belongs only to a fixed-price Contract, so Health NZ agreed rate, an RVG rate, has none. On the Contracts view, Demo actions &#8594; <strong>Demo: add a backdated price range</strong> &#8594; Run adds a range from 1 Jul 2026 at $3,300.00 to Merivale's Face lift (MER-001). An ACTIVE Booking follows the change: Sophie Matthews' Face lift (<code>/admin/day/2026-08-10/bookings/BK0163</code>) now reads $3,300.00. A Booking with a typed price, and the authorised, invoiced one, stay as they were: a locked Booking never follows a change.</span></div>
     </div>
-    <div class="beat"><h4>Optional beat · unit value after authorise</h4>
+    <div class="beat"><h4>Optional beat · rate per unit after authorise</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Review queue &#8594; authorise Dr Souter's Mon 20 Jul AM List (<code>/admin/review/L-34821-2026-07-20-AM</code>) if it is still waiting: the rate reads @ $26.50/unit (locked), total $901.00.</li><li>Admin Master data &#8594; Anaesthetists &#8594; Dr Melanie Souter &#8594; Edit &#8594; Unit value ($) from 26.50 to 28.00 &#8594; Save changes.</li><li>Back on the authorised List in Review; then Brian Holt's invoice (AA-2026-0007 after the S5 jump) &#8594; Demo actions &#8594; Regenerate from locked data &#8594; Run; then an ACTIVE Booking of hers, Hemi Walker on her Tue 21 Jul AM List (<code>/admin/day/2026-07-21/bookings/BK0001</code>).</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"The unit value is read when the List is authorised and kept in the lock. Changing it later re-prices only work not yet authorised."</span></div>
+      <div class="row"><span class="k">Say</span><span class="say">"The rate per unit is read when the List is authorised and kept in the lock. Changing it later re-prices only work not yet authorised."</span></div>
       <div class="row"><span class="k">Expect</span><span>Review still reads @ $26.50/unit (locked) and $901.00; Regenerate reads identical (2 lines, total $365.70); Hemi Walker's ACTIVE Booking reads 13 units x $28.00 = $364.00 (it was $344.50). Reset &#8594; Confirm reset afterwards (or jump S5 again).</span></div>
     </div>
     <div class="callout">Worth pointing at (optional): Admin &#8594; Master data &#8594; Contracts. Merivale's three combination Contracts (search H3: Face lift, Facelift plus 1 add on, Facelift plus 2 add ons, each its own Contract; fee extras are events, not Contracts) and Dr Souter's own prepaid price list (holder Dr Melanie Souter: one Contract per item, every price above zero; a zero price is refused). Search CAT to find the cataract items by name and the holder's code HNZCATall. Admin &#8594; Master data &#8594; RVG groups. The NZSA RVG 2021 groups as published under their anatomy headings, AA's own beside them and unmarked; both T2s and both P6s are separate rows; H4 reads 10 · range 10 to 12. Add, edit, retire and restore a group: each change is in Admin &#8594; Audit (entity type rvgGroup).</div>
@@ -1356,7 +1371,8 @@
       <h3>Invoices</h3>
       <p style="font-size:13px">Issued in the anaesthetist's name as supplier with their GST number (blank
       prints "GST number not held"; the number is on the Admin anaesthetist record), with AA as agent (AA
-      GST number 102-345-678; the wording is Provisional (OQ-29)). Layout follows the Contract: the
+      GST number 102-345-678; the wording is Provisional (OQ-29)). The anaesthetist's GST activity is
+      monthly: the calendar month to date ("Month (1 Jul to 21 Jul 2026)"), with no period switch. Layout follows the Contract: the
       holder's when it bills its holder (invoice descriptions, the BTM breakdown, a cross-match strip,
       the holder reference code as Your reference), otherwise the patient's; Master data, Contracts shows
       Layout and Delivery read-only. Prices are GST exclusive; GST at the foot. Delivery is the Party's
@@ -1425,6 +1441,7 @@
     <li><strong>AA's monthly fee:</strong> Month end: fee settings + BCTIs paid that month &#8594; AA-FEE invoice (ACCREC) &#8594; Anaesthetist pays AA's own account; never netted. Sample: $350.00 + $150.00 fixed, $5.00 per BCTI; "Seed a month of BCTIs" then the run gives Dr Rutherford $700.00 before GST ($805.00 with GST).</li>
     <li>Caveat: the fixed schedule, the paid-only count and BCTI granularity are with AA's accountant; amounts are held ex GST, with GST at the foot of the fee invoice.</li>
     <li>The apps read the Billing Engine's mirror, never Xero directly.</li>
+    <li>Bank details are master data: the office holds them on each anaesthetist's record (mandatory, with the HPI CPN), the anaesthetist sees them masked and read-only, and the payment itself is made in Xero. The app never pays from them.</li>
     <li>Outstanding balances are flat individual payable rows, not a Booking-level rollup and not amounts the
       anaesthetist personally owes.</li>
   </ul>

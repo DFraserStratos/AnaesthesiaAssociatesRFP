@@ -313,12 +313,12 @@ describe('the GST number on the anaesthetist (DM-62)', () => {
 
   it('addAnaesthetist refuses "12" and stores a spaced number as digits; none when left out', () => {
     const api = store()
-    const base = { name: 'Dr New Person', phone: '021 555 9001', email: 'n.person@aa-associates.example', unitValue: 30, gstPeriod: 'monthly' as const, startDateISO: api.getState().clock.todayISO }
-    expect(addAnaesthetist(api, OFFICE, { ...base, registrationNumber: '99001', gstNumber: '12' })).toMatchObject({ ok: false, code: 'invalidGstNumber', message: GST_NUMBER_INVALID })
+    const base = { name: 'Dr New Person', phone: '021 555 9001', email: 'n.person@aa-associates.example', unitValue: 30, bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, startDateISO: api.getState().clock.todayISO }
+    expect(addAnaesthetist(api, OFFICE, { ...base, registrationNumber: '99001', hpiId: '99GSTA', gstNumber: '12' })).toMatchObject({ ok: false, code: 'invalidGstNumber', message: GST_NUMBER_INVALID })
     expect(api.getState().masters.anaesthetists['99001']).toBeUndefined()
-    expect(addAnaesthetist(api, OFFICE, { ...base, registrationNumber: '99001', gstNumber: '104 348 299' }).ok).toBe(true)
+    expect(addAnaesthetist(api, OFFICE, { ...base, registrationNumber: '99001', hpiId: '99GSTA', gstNumber: '104 348 299' }).ok).toBe(true)
     expect(api.getState().masters.anaesthetists['99001']?.gstNumber).toBe('104348299')
-    expect(addAnaesthetist(api, OFFICE, { ...base, registrationNumber: '99002', name: 'Dr Other Person' }).ok).toBe(true)
+    expect(addAnaesthetist(api, OFFICE, { ...base, registrationNumber: '99002', hpiId: '99GSTB', name: 'Dr Other Person' }).ok).toBe(true)
     expect(api.getState().masters.anaesthetists['99002']).not.toHaveProperty('gstNumber')
   })
 

@@ -15,7 +15,7 @@ function anaesthetist(id: string, name: string): Anaesthetist {
     phone: '021 555 0100',
     email: `${id}@example.test`,
     unitValue: 100,
-    gstPeriod: 'biMonthly',
+    bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' },
     hpiId: `HPI-${id}`,
     startDateISO: '2020-01-06',
     active: true,

@@ -16,7 +16,7 @@ const STORE_NOTE = `Each tap ${WRITES}`
 
 /** /demo/catalogue/mobile: every hand-built component in the Anaesthetist Mobile App, live, one per row. */
 export function MobileCatalogue() {
-  const { anaesthetistId } = useMobilePersona()
+  const { actor, anaesthetistId } = useMobilePersona()
   const picks = useSeedPicks(anaesthetistId)
 
   return (
@@ -49,6 +49,12 @@ export function MobileCatalogue() {
           replaceWith="shadcn Drawer + plain button list"
           note="Declares role=menu with no arrow keys. Either drop the menu roles or use a real Menu.">
           <Ex.ListOptionsSheetExample />
+        </CatalogueRow>
+        <CatalogueRow name="EditRateSheet" source="apps/mobile/components/EditRateSheet.tsx" usedIn={M} stage="mobile" height={460}
+          what="The anaesthetist sets their own rate per unit from the More tab's Profile card (catch-up Phase 26): an OverlayHeader, a mono dollar field on the decimal keypad, the rate note and Save rate in SheetActions; a refusal shows in FormError."
+          replaceWith="shadcn Drawer + Field (React Hook Form + Zod)"
+          note={`Save ${WRITES}`}>
+          <Ex.EditRateSheetExample actor={actor} anaesthetistId={anaesthetistId} />
         </CatalogueRow>
         <CatalogueRow name="AlertOfficeSheet" source="shared/flows/AlertOfficeSheet.tsx" usedIn={WM} stage="mobile" height={560}
           what="Asks the office to check one of her Lists or Bookings, with a note (OverlayHeader and SheetActions). A DoneStep shows the sent state afterwards."
@@ -312,6 +318,9 @@ export function MobileCatalogue() {
       </LibraryGroup>
 
       <LibraryGroup id="custom">
+        <CatalogueRow name="ProfileRow" source="shared/profile/ProfileRow.tsx" usedIn={WM} stage="mobile" height={220} what="One row of the anaesthetist's own profile on the More tab and the web Profile page (catch-up Phase 26): the shared DefRow in its settings layout, the label left, the mono value right, and either an action (the rate's Change) or the lock glyph for a fact the office holds. The bank number is always masked." replaceWith="Custom (a description list on library primitives)" note="Reads the persona's own record; writes nothing.">
+          <Ex.ProfileRowExample anaesthetistId={anaesthetistId} />
+        </CatalogueRow>
         <CatalogueRow name="ProcedureStack" source="shared/booking/ProcedureStack.tsx" usedIn={SW} stage="mobile" height={520} what="One Procedure's procedure text, invoice description, Contract and RVG code on every Booking screen, Admin Review and the List drawer, in full or compact density; still-to-choose parts are neutral and dashed. On a multi-procedure Booking its heading takes a badge, the neutral Primary pill (catch-up Phase 23)." replaceWith="Custom (a description list on library primitives)" note="Fixed example views; nothing writes to the demo data.">
           <ProcedureStackExample layout="stacked" />
         </CatalogueRow>

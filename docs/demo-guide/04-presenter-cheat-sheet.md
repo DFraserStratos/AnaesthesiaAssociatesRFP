@@ -68,6 +68,7 @@ ACTIVE -> SUBMITTED -> AUTHORISED -> Billing run completed
 | Submit a List | Yes, own | No; office receives it after submission | No |
 | Authorise a List | No | Yes | No |
 | Reassign a whole List | No | Yes | No |
+| Edit own rate per unit | Yes, own | Yes | No |
 | Edit master data | No | Yes | No |
 | Monitor billing/integrations | No | Yes | Automated events write status |
 
@@ -253,6 +254,8 @@ price list) and claims back themselves; nib is billed only through nib's own Con
   **Provisional (OQ-29)**.
 - The GST number is a field on the Admin anaesthetist record (Master data, Anaesthetists), not on the
   anaesthetist's own profile.
+- The anaesthetist's GST activity (web Accounts, GST activity) is monthly: the calendar month to date
+  ("Month (1 Jul to 21 Jul 2026)"), with no period switch. There is no GST period anywhere.
 - Layout follows the Contract: the holder's layout when it bills its holder (each line's invoice
   description, the BTM breakdown, a cross-match strip of procedure date, surgeon and hospital reference,
   and the Contract's holder reference code as **Your reference**, for example SGANAES01 or NIBAN2026),
@@ -347,6 +350,9 @@ Payer -> ACCREC -> AA account -> ACCPAY (full amount) -> Anaesthetist
 - The mobile/web app reads the Billing Engine's mirror, never Xero directly.
 - Outstanding balances are flat individual payable rows, not a Booking-level rollup and not amounts the
   anaesthetist personally owes.
+- Bank details are master data: the office holds them on each anaesthetist's record (mandatory, with the
+  HPI CPN), the anaesthetist sees them masked and read-only, and the payment itself is made in Xero. The
+  app never pays from them.
 
 ### AA's monthly fee
 
@@ -374,6 +380,8 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Availability and cover: mark Free, On holiday, Unavailable or Public (with an optional note) ahead,
   repeating days off, change or delete one occurrence (My calendar, a bottom sheet)
 - Move a List to a colleague or the office; hand one Booking to a free colleague (Move to a colleague)
+- Profile (More tab): her rate per unit, which she changes with **Change**; contact details, HPI CPN and
+  bank account (masked) read-only with a lock
 - Later: balances
 
 ### Anaesthetist Web
@@ -384,7 +392,8 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Availability and cover: mark Free, On holiday, Unavailable or Public (with an optional note) ahead,
   repeating days off, change or delete one occurrence (My availability, the same form as the phone)
 - Move a List to a colleague or the office; hand one Booking to a free colleague (Move to a colleague)
-- Accounts and GST activity
+- Accounts and GST activity (the calendar month to date)
+- Profile (her name and avatar in the top nav): rate per unit editable, the rest read-only
 
 ### Admin Web
 
@@ -396,6 +405,9 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Correct billing setup
 - Review and authorise
 - Master data and audit
+- Anaesthetist profiles: rate per unit, contact details, registration number, HPI CPN, bank account
+  (masked) and GST number on each record (**Edit details** on the Profile card) and in the
+  Anaesthetists table; the HPI CPN and bank details are mandatory, every change audited
 - Surgeon profiles: the HPI CPN is each surgeon's unique index (not the patient's NHI), each surgeon
   holds one or more specialties from AA's list (required; a save with none is refused), belongs to one
   or more surgeons' rooms (the first the main room, a room card each; Mr N. Wainwright is at two), and
@@ -466,6 +478,8 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 - Contract locked at authorise, the run and the invoice document reading only the lock, Regenerate
   from locked data, and each Contract's History tab (catch-up Phase 25)
 - Xero collection/payable pairs, payments, reconciliation poll, payables, live balances and GST (Phase 10)
+- The anaesthetist's profile: own rate per unit editable on mobile and web, the office's Profile card and
+  Anaesthetists columns, HPI CPN and bank details mandatory, the bank number masked (catch-up Phase 26)
 - HL7/FHIR/PDF ingestion, integration monitor, mapping fix and dedupe (Phase 11)
 - The demo control panel with S1 to S5 scenario jumps (Phase 12), now the index of the per-screen
   Demo actions (catch-up Phase 14)

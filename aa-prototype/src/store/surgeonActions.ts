@@ -21,7 +21,7 @@
 
 import type { RoomContact, Surgeon, SurgeonGroup, SurgeonRoom } from '../domain/types'
 import { WHOLE_ROOM_LABEL } from '../domain/roomContacts'
-import { hpiCpnHolder, isPlausibleEmail, isPlausibleHpiCpn, normaliseHpiCpn } from '../domain/surgeons'
+import { HPI_CPN_INVALID, hpiCpnHolder, isPlausibleEmail, isPlausibleHpiCpn, normaliseHpiCpn } from '../domain/surgeons'
 import { cleanSpecialtyIds, specialtyNames } from '../domain/specialties'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
@@ -57,7 +57,7 @@ function cleanSurgeonFields(
   const hpiId = normaliseHpiCpn(fields.hpiId)
   if (hpiId === '') return refuse('hpiCpnRequired', 'An HPI CPN is required. It is the surgeon\'s unique number on the Health Provider Index.')
   if (!isPlausibleHpiCpn(hpiId)) {
-    return refuse('invalidHpiCpn', 'That HPI CPN does not look right. It is two digits then four letters, for example 12ABCD.')
+    return refuse('invalidHpiCpn', HPI_CPN_INVALID)
   }
   const holder = hpiCpnHolder(state.masters, hpiId, excludeSurgeonId !== undefined ? { surgeonId: excludeSurgeonId } : undefined)
   if (holder !== null) return refuse('duplicateHpiCpn', `That HPI CPN already belongs to ${holder.name}.`)
