@@ -30,7 +30,8 @@ test('phase 25a a new Contract replacing the Face lift from a date lists the Pro
   await page.getByRole('button', { name: 'New contract' }).click()
   const panel = page.locator('[data-shot=contract-detail]')
   await expect(panel).toBeVisible()
-  await panel.locator('[data-shot=contract-links] select').first().selectOption({ label: 'Merivale Plastic Surgery' })
+  // A hospital holder (no linked surgeon needed) that takes over the Face lift from 1 Aug.
+  await panel.locator('[data-shot=contract-links] select').first().selectOption({ label: "St George's" })
   await panel.getByLabel('Name').fill('Face lift 2026')
   const replaces = panel.locator('[data-shot=contract-replaces]')
   await replaces.getByLabel('Replaces').selectOption(FACE_LIFT)
@@ -44,9 +45,15 @@ test('phase 25a a new Contract replacing the Face lift from a date lists the Pro
   await expect(warning).not.toContainText('Judith Calloway')
   await warning.scrollIntoViewIfNeeded()
   await page.screenshot({ path: 'visual/shots/p25a-01-dated-change.png', fullPage: true })
+
+  // After Create the panel stays on the warning (before and after save); nothing moved.
+  await panel.getByRole('button', { name: 'Create contract' }).click()
+  await expect(panel.locator('[data-shot=contract-created]')).toContainText('Created Face lift 2026.')
+  await expect(warning).toContainText('Sophie Matthews')
+  await page.screenshot({ path: 'visual/shots/p25a-01b-dated-change-created.png', fullPage: true })
 })
 
-test('phase 25a Disable lists the Procedures still on the Face lift; Review flags them and Authorise is not blocked; Make active clears them', async ({ page }) => {
+test('phase 25a Disable lists the Procedures still on the Face lift; Review flags them, never as a blocker; Make active clears them', async ({ page }) => {
   await openContract(page, 'Face lift', FACE_LIFT)
   const panel = page.locator('[data-shot=contract-detail]')
   await panel.locator('[data-shot=contract-disable]').click()
@@ -64,6 +71,8 @@ test('phase 25a Disable lists the Procedures still on the Face lift; Review flag
   await page.goto(`/admin/review/${MON_10_AUG}`)
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot=review-flag]', { hasText: 'Contract disabled on Tue 21 Jul' }).first()).toBeVisible()
+  // A flag, never a block: no authorise blocker names it (contractChangeSelectors.test.ts pins the blockers unchanged).
+  await expect(page.getByText(/Contract disabled on Tue 21 Jul:/)).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p25a-03-review-flag-disabled.png', fullPage: true })
 
   await openContract(page, 'Face lift', FACE_LIFT, { all: true })

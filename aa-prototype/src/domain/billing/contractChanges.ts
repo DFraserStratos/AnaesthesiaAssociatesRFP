@@ -70,7 +70,7 @@ export interface KeptPriceRow {
   listId: string
   dateISO: string
   patientName: string
-  /** The price it was authorised at, ex GST. */
+  /** The range price it was authorised at (its locked range), ex GST. */
   lockedPrice: number
   /** The range's price, ex GST. */
   rangePrice: number
@@ -89,21 +89,27 @@ export function authorisedKeptPrice(
 ): KeptPriceRow[] {
   const sorted = sortRanges(ranges)
   const index = sorted.findIndex((r) => r.startISO === range.startISO)
-  const end = index === -1 ? null : rangeEnd(sorted, index)
+  // A range that is not the Contract's (stale or deleted) has no span: nothing to list.
+  if (index === -1) return []
+  const end = rangeEnd(sorted, index)
   const rows: KeptPriceRow[] = []
   for (const lock of Object.values(locks)) {
     if (lock.state !== 'locked') continue
     const dateISO = lock.pricingDateISO
     if (dateISO < range.startISO || (end !== null && dateISO > end)) continue
     for (const s of lock.procedures) {
-      if (s.contract?.id !== contractId || s.typed || s.price === range.price) continue
+      if (s.contract?.id !== contractId || s.typed) continue
+      // The range price the lock was cut to (`contractAsLocked`), never the whole locked fee: a fixed
+      // billing line or a held amount is part of the Procedure's price, not of the range it kept.
+      const lockedRange = s.contract.pricing.kind === 'fixed' ? s.contract.pricing.ranges[0]?.price : undefined
+      if (lockedRange === undefined || lockedRange === range.price) continue
       rows.push({
         procedureId: s.procedureId,
         bookingId: lock.bookingId,
         listId: lock.listId,
         dateISO,
         patientName: lock.patient.name,
-        lockedPrice: s.price,
+        lockedPrice: lockedRange,
         rangePrice: range.price,
       })
     }

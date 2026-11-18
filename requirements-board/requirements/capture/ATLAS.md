@@ -636,7 +636,7 @@ Authorising Morrison raises 6 invoices.
   invoiced to the patient, AIA Health named as insurer with number `AIA-2026-30418`, no warning.
 - A provisional patient with no NHI.
 - Repeat patients: Mitchell and Walker.
-- Procedures missing a billing reference.
+- Two hospital-billed Procedures on Mon 20 Jul, markers `mon20HolderBilled1` and `mon20HolderBilled2` (once the missing billing references; the reference is gone since catch-up Phase 25a).
 
 **AA fee (catch-up Phase 16):** Dr Souter's AA-FEE-2026-H01 (May, paid) and H02 (June, unpaid), ACCRECs
 `XRFH01` / `XRFH02`. Sample settings: $350.00 + $150.00 fixed, $5.00 per BCTI, ex GST. "Seed a month of BCTIs"
@@ -770,6 +770,12 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   (`typedPriceBooking`: "Price typed: $1,200.00 (computed ...)"); BK0180 Hemi Walker (`reviewNeedsPrice`:
   "Needs a price" and "Not marked completed"); BK0181 Rosalind Kerr (`otherSurgeonContract`: "Contract not
   offered on this List"). S2's Morrison Mon 20 List raises no flag.
+  Since catch-up Phase 25a the List has a fifth Booking, BK0190 Margaret Ellery (P0197, `disabledContractBooking`), on the seeded Disabled Contract
+  "Christchurch Eye Surgery 2025 rate" (`CT-CES-2025`, disabled Fri 10 Jul by Kirsty W.): its flag is `review-flag` with `data-rule=contractDisabled`,
+  "Contract disabled on Fri 10 Jul". The List now shows 5 Bookings. The disabled Contract shows in the Contracts master only under Disabled or All.
+  Disable Merivale's Face lift (`CT-MER-FACELIFT`, Contracts master, `contract-disable`) and `/admin/review/L-34821-2026-08-10-PM` flags each Face lift
+  "Contract disabled on Tue 21 Jul"; the panel's warning lists Sophie Matthews, Paula Westerman, Fiona Lattimer and others. The seed marker formerly
+  `missingBillingRef1/2` is now `mon20HolderBilled1/2`.
 - **The movable Booking** (`SEED_MARKERS.movableFixedBooking`): BK0182 Fiona Lattimer, Face lift (Merivale,
   linked to Ms Lim), Souter Mon 10 Aug PM 17:00, ACTIVE. On `/admin/day/2026-08-10` open her PM List
   (`button[data-list-id="L-34821-2026-08-10-PM"]`), click the row's Move, and pick her AM List with Mr Okafor
@@ -1282,8 +1288,8 @@ were already imported. Nothing new.").
 - **Reassign:** "Reassign list", pick a target like "Sharma, Priya · Free AM", then (the vacated
   session `select[data-shot=reassign-vacated]` defaults to Free and lists the availability statuses in use) "Confirm reassignment".
   `[data-testid=list-reassignment-overlay]` appears.
-- **Admin booking:** "Edit billing setup" (opens "Contract and reference": the Contract row and the
-  Billing reference, "Save reference"; the payer moved to the Booking's Payer row in catch-up Phase 21),
+- **Admin booking:** The Office billing setup card has only Price and Prepayment rows (catch-up Phase 25a removed "Edit billing setup", its
+  "Contract and reference" sheet and the Procedure's billing reference; the Contract is chosen on the Billing card's step rail, the payer on the Paid by line),
   and "Change price" (`[data-shot=office-billing-setup-<n>] >> role=button[name="Change price"]`, hook `change-price`;
   catch-up Phase 24, was "Price override"). It opens `[data-shot=pricing-sheet]` ("Change price"): the row
   `pricing-sheet-computed` ("Computed from the Contract" and the figure), one input `pricing-sheet-price` (label "Price $",
@@ -1320,8 +1326,8 @@ were already imported. Nothing new.").
   `payer-child-hint`, `payer-other-fields` (Name, relationship chips, "Other relationship", Email,
   `payer-postal-address` with Address, "Unit, building or RD (optional)", "Suburb (optional)", "Town or
   city", Postcode, "Phone (optional)"), `payer-contact-ask`. When the payer changes to another person (fill "Name" with a different name) the offer
-  `payer-offer` appears with rows `payer-offer-row` (`data-procedure-id`) and the neutral pill `payer-offer-provisional`
-  ("Provisional, OQ-140"), then the split section `split-sheet` (see Split below). The Insurer or funder section
+  `payer-offer` appears with rows `payer-offer-row` (`data-procedure-id`) (no pill since catch-up Phase 25a)
+  then the split section `split-sheet` (see Split below). The Insurer or funder section
   `booking-funder-row` with "Add" (aria "Add insurer or funder") or "Change" (aria "Change the insurer or
   funder") opening `funder-sheet`: chips `funder-none` ("None"), one per insurer and
   funder by name (for example "nib"), "Approval number", "Save". Row hooks `funder-approval-number`,
@@ -1504,6 +1510,14 @@ the exception: use the `trigger` step)
   one fee line). Review: `review-fee` (the Fee cell), `review-fee-computed` ("Computed $265.50" under a typed price),
   `review-no-charge` (a $0.00 Booking's "No charge" pill). Invoice: `invoice-no-charge` (the "No charge" pill under the
   number). Contracts list: `contract-override-pill` (RVG kinds only). Demo action `demo-action-demo-backdated-range`.
+- Catch-up Phase 25a (`data-shot`): Contracts master create panel `contract-replaces` (the "Replaces" select, option values are Contract ids, and the "From" date input);
+  `contract-still-on-warning` ("N Procedures dated on or after ... are still on ...", with rows `contract-still-on-row`, each with an Open link) and
+  `contract-still-on-none` (the neutral note when nothing is on it), shown in the create panel with Replaces and From set and in a Contract's panel after Disable;
+  `contract-created` (the ResultLine after "Create contract", the panel staying open when rows are listed); `contract-disabled-note` ("Disabled on ...: hidden from the
+  Contract list unless asked for ...", in the Disabled Contract's panel). Under `contract-price-ranges`: `price-range-kept` ("1 authorised Procedure kept its old
+  price") with rows `price-range-kept-row`. Admin Review: `review-flag` with `data-rule=contractDisabled` ("Contract disabled on Fri 10 Jul").
+  GONE in 25a: `payer-offer-provisional`, `masters-modifiers-provisional`, `contract-and-reference` (the sheet) and its "Edit billing setup" button,
+  the Billing reference field on Add Booking and phone advice, and the "Hospital reference" cross-match field (`invoice-cross-match` is Procedure date and Surgeon).
   See [Change price and the price line](#change-price-and-the-price-line-catch-up-phase-24). GONE:
   `capture-adjustment-and-charge` (the anaesthetist's "Adjustment and charge" card).
 - Catch-up Phase 23 (`data-shot`): `procedure-primary-pill` (the "Primary" pill in the primary's
@@ -1520,7 +1534,7 @@ the exception: use the `trigger` step)
   is the only way back: `role=button[name="Review queue"]` on `/admin/review/:listId`, and
   `[data-testid=invoice-detail-screen] >> role=button[name="Invoices"]` on `/admin/invoices/:invoiceId`.
 - Catch-up Phase 22a: `paid-by-sheet` (the one Paid by sheet), `paid-by-save`, `paid-by-change` (Change beside the payer), `paid-by-payer` (the payer's name on a
-  Paid by line, `data-procedure-id`), `payer-not-billed`, `payer-offer`, `payer-offer-row`, `payer-offer-provisional`,
+  Paid by line, `data-procedure-id`), `payer-not-billed`, `payer-offer`, `payer-offer-row`,
   `split-start`, `split-another-person`, `split-person`; Review: `review-payer` (per Procedure under its stack, `data-procedure-id`),
   `review-payer-contact` per Procedure, `review-payer-under-18`, `review-insurance` (Billed to column). The phone's Paid by row is
   no longer one tap target: `procedure-split-button` is its Split action. `payer-contact-missing` and `payer-under-18`
@@ -1550,12 +1564,12 @@ the exception: use the `trigger` step)
   `contract-rail-other-price` (the Billing card's "Price by" wrapper), `contract-rail-amount` (the
   input), `contract-rail-outcome`, `contract-rail-enter-rvg`, `contract-rail-only-option`,
   `no-contract-group` (the "No contract" heading and its two backstops, in the Billing card's combo and
-  the creation-form sheet; `contract-rail-pinned` is retired, UI unification U4); the Contract row `procedure-contract-row` in the
-  sheets (`edit-procedure-contract`, `contract-and-reference-contract`); the mobile Billing rows
+  the creation-form sheet; `contract-rail-pinned` is retired, UI unification U4; the sheets' Contract row `procedure-contract-row` went with the "Contract and reference"
+  sheet in catch-up Phase 25a); the mobile Billing rows
   `billing-contract-rows`,
   `needs-invoice-destination`, `contract-set-by-office`, `contract-price-cleared`; the RVG cues
   `rvg-code-optional`, `list-row-contract-cue`; the Admin Day card
-  `admin-needs-invoice-destination` and its rows `needs-destination-row`; `contract-and-reference`,
+  `admin-needs-invoice-destination` and its rows `needs-destination-row`;
   `manual-contract`; the Suggested pill `rail-suggested` on the step tile the Booking's funder suggests
   (catch-up Phase 21; tiles carry `data-rail-option="<value>"`); the add form's payer block
   `add-booking-payer`.
@@ -1749,8 +1763,8 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   `data-modifier-code`), `capture-modifier-claim` (a claimed row), `capture-modifier-removed` (the
   "Removed: A1. Put back" line), `modifier-add`, `modifier-picker`, `modifier-explanation`,
   `modifier-units`; Admin `masters-modifiers`, `masters-modifiers-rvg` (the 30-row table, rows
-  `tr[data-modifier-code=…]`), `masters-modifiers-aa`, `masters-modifiers-provisional` (the one OQ-95
-  note), `add-aa-modifier`, and on the RVG groups table `masters-rvg-included` (the "P1 · 0" cell on
+  `tr[data-modifier-code=…]`), `masters-modifiers-aa`,
+  `add-aa-modifier`, and on the RVG groups table `masters-rvg-included` (the "P1 · 0" cell on
   the 20 Neurosurgery and Spine rows). `capture-asa-status` is gone (no ASA card), as are the
   segmented modifier bands and "Also applies" chips.
 - RVG groups (catch-up Phase 19): `masters-rvg-groups`, `rvg-group-sheet`, `rvg-group-retire`,
@@ -1871,8 +1885,8 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/mobile/lists` (PWA Demo sheet) | `office-adds-out-of-hours-list` | Catch-up Phase 32c, badged Office stand-in, PWA only. Opens Dr Souter's out-of-hours session for tonight (18:00 to 21:00) and assigns a List at the hospital and with the surgeon of her latest List; disabled while one is open tonight. In the framed build use Open out-of-hours session on Admin Day instead. |
 | `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `office-approves-contract-change` | Catch-up Phase 21a, badged Office stand-in, PWA only ("Office approves this Contract change"). Approves the Contract the anaesthetist changed on the Booking, as Approve on Review would, so `contract-approval-status` turns from "Awaiting office approval" to "Approved by the office <time>". Disabled when the Booking has no pending change (true of every Souter Booking at reset: change a Contract on the Billing sheet first). In the framed build use Approve on Admin Review. |
 | `/mobile/lists/<listId>`, `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `office-resolves-alert` | Catch-up Phase 32b, badged Office stand-in, PWA only. Ticks the viewed List's or Booking's open alert resolved as the simulated office, so the handset shows "The office has dealt with this". Disabled with no open alert. |
-| `/web/lists/<listId>`, `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/mobile/lists/<listId>[/bookings/<id>]` (bar and PWA) | `load-multi-procedure-booking` | Catch-up Phase 23, "Load 3-procedure Booking (7 modifier units)". Adds the three-procedure worked example (the same spec as the seeded BK0184) to Dr Souter's next open List, Wed 22 Jul AM (`L-34821-2026-07-22-AM`) on a fresh seed, as `BK0190` (catch-up Phase 24's five seeded Bookings took BK0185 to BK0189; BK0185 is now the seeded `discountBooking`), not marked complete; result "Loaded on Dr Souter's ... List: 3 procedures, 7 modifier units, split 3 · 2 · 2." Disabled "Already loaded" on a second run. Open it at `/web/lists/L-34821-2026-07-22-AM/bookings/BK0190` or `/admin/day/2026-07-22/bookings/BK0190` |
-| `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/mobile/lists/<listId>/bookings/<id>` (bar and PWA) | `feed-changes-primary` | Catch-up Phase 23, "Hospital feed changes the primary". Shown only on a Booking with two or more Procedures: the List's hospital feed makes the next Procedure the primary, audited as an integration; it moves to the top with the Primary pill and base units come from it ("... made ... the primary. Base units now come from it."). Disabled on a SUBMITTED List ("A hospital feed cannot change a submitted List"), so not on BK0184 or Holt: run it on Ellison after "Add another procedure", or on BK0190 after `load-multi-procedure-booking` |
+| `/web/lists/<listId>`, `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/mobile/lists/<listId>[/bookings/<id>]` (bar and PWA) | `load-multi-procedure-booking` | Catch-up Phase 23, "Load 3-procedure Booking (7 modifier units)". Adds the three-procedure worked example (the same spec as the seeded BK0184) to Dr Souter's next open List, Wed 22 Jul AM (`L-34821-2026-07-22-AM`) on a fresh seed, as `BK0191` (BK0190 is the Phase 25a seeded `disabledContractBooking`; catch-up Phase 24's five seeded Bookings took BK0185 to BK0189; BK0185 is now the seeded `discountBooking`), not marked complete; result "Loaded on Dr Souter's ... List: 3 procedures, 7 modifier units, split 3 · 2 · 2." Disabled "Already loaded" on a second run. Open it at `/web/lists/L-34821-2026-07-22-AM/bookings/BK0191` or `/admin/day/2026-07-22/bookings/BK0191` |
+| `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/mobile/lists/<listId>/bookings/<id>` (bar and PWA) | `feed-changes-primary` | Catch-up Phase 23, "Hospital feed changes the primary". Shown only on a Booking with two or more Procedures: the List's hospital feed makes the next Procedure the primary, audited as an integration; it moves to the top with the Primary pill and base units come from it ("... made ... the primary. Base units now come from it."). Disabled on a SUBMITTED List ("A hospital feed cannot change a submitted List"), so not on BK0184 or Holt: run it on Ellison after "Add another procedure", or on BK0191 after `load-multi-procedure-booking` |
 | `/admin/masters?view=contracts` (or with Merivale's Face lift open in its detail) | `demo-backdated-range` | Catch-up Phase 24, "Demo: add a backdated price range" (`[data-shot=demo-action-demo-backdated-range]`). Shown on the Contracts view, disabled "Already added" once run; run it from the list (the Contract detail panel is modal, so the bar cannot be clicked while it is open). Adds a range from 1 Jul 2026 at $3,300.00 as the office: the unedited Face lift BK0163 then prices at $3,300.00; BK0187 (typed $2,950.00), BK0188 (AUTHORISED, $3,100.00) stays; the prepaid BK0038 is on another Contract and so never moves. Disabled "Already added" on a second run. Stage it with the `trigger` step, then `goto` the Booking (US-05.2.8 shows the pattern) |
 | `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`: the prepayment and base-units samples); on a Booking, on that Booking (seeded Bookings only). Four rules since catch-up Phase 21: the child payer sample stages on the Booking on screen when its patient is under 18, otherwise on Grace Park's (BK0033: Hana Park out, the patient in); the approval number sample on the Booking on screen when it names an insurer, otherwise BK0074 (its number cleared). Catch-up Phase 22 adds a fifth, `splitDoesNotFit`: on the Booking on screen when its seed carries a split, otherwise the fee-split Booking BK0025, nib's share raised to $250.00 so the rest has nothing left. A Booking whose fee is split cannot take the prepayment sample. Clear restores them. Also in the PWA Demo sheet on a mobile Booking |
 

@@ -61,8 +61,6 @@ export function seedDisabledContractBooking(next: { booking: number; procedure: 
     rvgGroupId: rvgGroupIdForLegacyCode('42702'),
     anaestheticStartISO: `${DAY}T11:50:00`,
     handoverISO: `${DAY}T12:35:00`,
-    // As every seeded hospital-billed Procedure carries (until session 2 removes the reference, DM-68).
-    billingReference: 'CES-2026-0714-02',
   }
   const audit: AuditEntry[] = [
     {

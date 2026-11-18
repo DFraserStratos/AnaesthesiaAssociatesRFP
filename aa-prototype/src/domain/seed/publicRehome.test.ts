@@ -25,7 +25,21 @@ import { buildSeed, DISABLED_CONTRACT_BOOKING_IDS, SEED_LIST_IDS } from './index
 import { projectedListId } from '../slots'
 import { ANAE } from './cast'
 
-const before = baselineJson as unknown as Phase32dSeedBaseline
+const raw = baselineJson as unknown as Phase32dSeedBaseline
+/**
+ * Catch-up Phase 25a removed the Procedure's hospital reference (DM-68, D82)
+ * after this fixture was written: its `billingReference` is set aside on the
+ * fixture's side (the file is never rewritten), so every other field compares.
+ */
+const before: Phase32dSeedBaseline = {
+  ...raw,
+  procedures: Object.fromEntries(
+    Object.entries(raw.procedures).map(([id, p]) => {
+      const { billingReference: _ref, ...rest } = p as typeof p & { billingReference?: string }
+      return [id, rest as typeof p]
+    }),
+  ),
+}
 const seed = buildSeed()
 /**
  * Catch-up Phase 25a appended one Booking (and its Procedure) on a new Disabled
@@ -61,11 +75,13 @@ function bookingOfEntity(type: string, id: string): string | undefined {
   }
   return undefined
 }
-const timeShifted25a = (line: string): string => {
+const isShifted25a = (line: string): boolean => {
   const [, type = '', id = ''] = line.split('|')
   const booking = bookingOfEntity(type, id)
-  return booking !== undefined && booking > FIRST_25A ? line.split('|').slice(0, 4).join('|') : line
+  return booking !== undefined && booking > FIRST_25A
 }
+/** A shifted entry without its time (`id|type|entity|action`). */
+const withoutTime = (line: string): string => line.split('|').slice(0, 4).join('|')
 
 /** Dr Sharma's Tue 14 Jul AM List: 14's "Stage post-op scenario" anchor (POST_OP_ORIGINAL_LIST_ID). */
 const POST_OP_ANCHOR = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
@@ -140,9 +156,15 @@ describe('Phase 32d parity: what must not move', () => {
   it('the seeded audit is unchanged, apart from entries about removed Lists (sequence numbers close up after them)', () => {
     const gone = (line: string) => [...removedListIds, ...removedDraftIds].some((id) => line.split('|')[2] === id)
     const body = (line: string) => line.split('|').slice(1).join('|')
-    // Sorted: a moved time also moves an entry's place in the (time-ordered) audit.
-    const comparable = (lines: string[]) => lines.filter((l) => !gone(l)).map(timeShifted25a).map(body).sort()
-    expect(comparable(seedAuditBefore25a.map(auditLine))).toEqual(comparable(before.audit))
+    const kept = (lines: string[]) => lines.filter((l) => !gone(l))
+    const nowLines = kept(seedAuditBefore25a.map(auditLine))
+    const wasLines = kept(before.audit)
+    // Every entry 25a's Booking does not shift: unchanged, in order.
+    expect(nowLines.filter((l) => !isShifted25a(l)).map(body)).toEqual(wasLines.filter((l) => !isShifted25a(l)).map(body))
+    // The shifted history entries: the same entries, without their time (a moved time also moves an entry's place).
+    const shifted = (lines: string[]) => lines.filter(isShifted25a).map(withoutTime).map(body).sort()
+    expect(shifted(nowLines)).toEqual(shifted(wasLines))
+    expect(shifted(nowLines).length).toBeGreaterThan(0)
   })
 
   it('the post-op anchor holds Sarah Mitchell\'s Health NZ Booking', () => {
@@ -151,7 +173,10 @@ describe('Phase 32d parity: what must not move', () => {
     const bookings = Object.values(seed.schedule.bookings).filter((b) => b.listId === POST_OP_ANCHOR)
     expect(bookings.length).toBeGreaterThan(0)
     const procs = Object.values(seed.schedule.procedures).filter((p) => bookings.some((b) => b.id === p.bookingId))
-    expect(procs.some((p) => p.billingReference === 'HNZ-2026-3102')).toBe(true)
+    // Her Procedure is the one the fixture knew by its old hospital reference (gone in catch-up Phase 25a).
+    const hers = Object.values(raw.procedures).find((p) => (p as { billingReference?: string }).billingReference === 'HNZ-2026-3102')
+    expect(hers).toBeDefined()
+    expect(procs.some((p) => p.id === hers!.id)).toBe(true)
   })
 
   it('Souter\'s Thu 23 Jul AM keeps its eight Bookings, and the billing-failure List its own', () => {

@@ -21,7 +21,7 @@ import { normaliseNzBankAccount } from '../bankAccount'
 import { isPlausibleHpiCpn } from '../surgeons'
 import { nameWithoutTitle } from '../names'
 import { resolveSplit } from '../billing/splitShare'
-import { billingReferenceMissing, validateBookingForBilling, type BookingBillingContext } from '../billing/validateBookingForBilling'
+import { validateBookingForBilling, type BookingBillingContext } from '../billing/validateBookingForBilling'
 import type { Booking, List, Procedure } from '../types'
 import type { SeedState } from './index'
 import { parseISO } from 'date-fns'
@@ -651,16 +651,9 @@ describe('scenario states', () => {
     expect(seed.audit.some((a) => a.entityId === marker.entityId && a.action === 'booking.cancel')).toBe(true)
   })
 
-  it('exactly the two marked holder-billed procedures are missing billing references', () => {
-    // Catch-up Phase 20: a reference is expected where the Contract bills a hospital or surgeon holder.
-    const missing = Object.values(seed.schedule.procedures).filter((p) =>
-      billingReferenceMissing(p, seed.masters.contracts, seed.masters.parties),
-    )
-    const expected = [
-      SEED_MARKERS['missingBillingRef1']?.entityId,
-      SEED_MARKERS['missingBillingRef2']?.entityId,
-    ]
-    expect(missing.map((p) => p.id).sort()).toEqual([...expected].sort())
+  it('no Procedure or audit entry carries a hospital reference (catch-up Phase 25a, DM-68, D82)', () => {
+    for (const p of Object.values(seed.schedule.procedures)) expect('billingReference' in p, p.id).toBe(false)
+    expect(JSON.stringify(seed.audit)).not.toMatch(/billingReference|hospitalRef/)
   })
 
   it('seeds the staged submit audit entries', () => {

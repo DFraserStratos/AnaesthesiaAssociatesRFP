@@ -77,8 +77,16 @@ describe('proceduresStillOnContract (US-04.1.2, D79)', () => {
 })
 
 describe('authorisedKeptPrice (US-04.2.15, D79)', () => {
-  const snap = (procedureId: string, price: number, typed = false, contractId = ON): ProcedureSnapshot =>
-    ({ procedureId, procedure: { text: null, invoiceDescription: null, rvgCode: null, isPrimary: true }, contract: { id: contractId }, price, typed, charges: [] }) as unknown as ProcedureSnapshot
+  // The lock's Contract is cut to the range in force on the date (`contractAsLocked`); `price` is the whole fee.
+  const snap = (procedureId: string, rangePrice: number, typed = false, contractId = ON, wholePrice = rangePrice): ProcedureSnapshot =>
+    ({
+      procedureId,
+      procedure: { text: null, invoiceDescription: null, rvgCode: null, isPrimary: true },
+      contract: { id: contractId, pricing: { kind: 'fixed', ranges: [{ startISO: '2026-06-01', price: rangePrice }] } },
+      price: wholePrice,
+      typed,
+      charges: [],
+    }) as unknown as ProcedureSnapshot
   const lock = (bookingId: string, dateISO: string, procedures: ProcedureSnapshot[], state: BookingLock['state'] = 'locked'): BookingLock =>
     ({ bookingId, listId: `L-${bookingId}`, pricingDateISO: dateISO, state, patient: { name: `Patient ${bookingId}` }, procedures }) as unknown as BookingLock
   const locks = {
@@ -109,6 +117,19 @@ describe('authorisedKeptPrice (US-04.2.15, D79)', () => {
   it('"No list of re-priced": one already at the range price is not listed; nor a typed price, another Contract, a rejected lock, or a date outside the span', () => {
     const ids = authorisedKeptPrice(locks, ON, ranges, added).map((r) => r.procedureId)
     for (const id of ['P3', 'P4', 'P5', 'P6', 'P7', 'P8']) expect(ids).not.toContain(id)
+  })
+
+  it('compares the locked range price, never the whole fee: a fixed billing line on top raises no row', () => {
+    const withLine = { B9: lock('B9', '2026-06-20', [snap('P9', 3100, false, ON, 3250)]) }
+    // Under the 1 Jun range ($3,100) it kept nothing, whatever its $150 line added.
+    expect(authorisedKeptPrice(withLine, ON, ranges, ranges[0]!)).toEqual([])
+    // Under a range that changed its price, the row shows the range price it kept, not the whole fee.
+    const moved = [{ startISO: '2026-06-01', price: 3200 }]
+    expect(authorisedKeptPrice(withLine, ON, moved, moved[0]!).map((r) => [r.lockedPrice, r.rangePrice])).toEqual([[3100, 3200]])
+  })
+
+  it('a range that is not among the ranges lists nothing', () => {
+    expect(authorisedKeptPrice(locks, ON, ranges, { startISO: '2026-07-15', price: 9999 })).toEqual([])
   })
 
   it('the last range runs on with no end', () => {

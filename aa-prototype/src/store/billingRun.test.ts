@@ -157,8 +157,8 @@ describe('the Morrison run (same-counterparty grouping, audit, view effects)', (
     expect(accLine.btm?.unitValue).toBe(25)
     expect(accLine.amount).toBe(roundToCents(accLine.units! * 25))
     expect(accLine.description).toBe(wordingOf(api, accLine.procedureId))
-    const missingRefBookingId = api.getState().schedule.procedures[marker('missingBillingRef1')]!.bookingId
-    const standardInvoice = invoicesForBooking(api, missingRefBookingId)[0]
+    const standardBookingId = api.getState().schedule.procedures[marker('mon20HolderBilled1')]!.bookingId
+    const standardInvoice = invoicesForBooking(api, standardBookingId)[0]
     expect(standardInvoice).toBeDefined()
     const standardLine = linesOf(api, standardInvoice!.id)[0]!
     expect(standardLine.btm?.unitValue).toBe(35)
@@ -174,13 +174,6 @@ describe('the Morrison run (same-counterparty grouping, audit, view effects)', (
     expect(morrison).toHaveLength(6)
     const acc = morrison.filter((r) => r.accFunded)
     expect(acc.map((r) => api.getState().billing.cases[r.caseId]?.bookingId)).toEqual([marker('accRelatedBooking')])
-  })
-
-  it('the missing-billing-reference booking bills anyway (an advisory, never a billing blocker)', () => {
-    const api = store()
-    billMorrison(api)
-    const bookingId = api.getState().schedule.procedures[marker('missingBillingRef1')]!.bookingId
-    expect(invoicesForBooking(api, bookingId)).toHaveLength(1)
   })
 
   it('audits the whole run source=system and never stamps a locked booking', () => {

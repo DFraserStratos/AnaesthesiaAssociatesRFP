@@ -1134,17 +1134,17 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       entityId: PAT.walker,
       detail: `Two episodes: bookings ${scenario.repeatWalker[0]} and ${scenario.repeatWalker[1]}.`,
     },
-    missingBillingRef1: {
-      label: 'Missing billing reference 1 of 2',
+    mon20HolderBilled1: {
+      label: 'Hospital-billed Procedure, Mon 20 Jul (1 of 2)',
       entityType: 'procedure',
-      entityId: scenario.missingRefProcedures[0],
-      detail: 'Procedure billed to the hospital, flagged for a missing billing reference.',
+      entityId: scenario.mon20HolderBilledProcedures[0],
+      detail: "On Dr Morrison's Mon 20 Jul List, billed to St George's.",
     },
-    missingBillingRef2: {
-      label: 'Missing billing reference 2 of 2',
+    mon20HolderBilled2: {
+      label: 'Hospital-billed Procedure, Mon 20 Jul (2 of 2)',
       entityType: 'procedure',
-      entityId: scenario.missingRefProcedures[1],
-      detail: 'Procedure billed to the hospital, flagged for a missing billing reference.',
+      entityId: scenario.mon20HolderBilledProcedures[1],
+      detail: "On Dr Souter's Mon 20 Jul AM List, billed to Forte Health.",
     },
     allDayBooking: {
       label: 'All day booking (Rutherford)',
@@ -1252,7 +1252,7 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
     entityId: SEED_BUILD.payerReview.funderNoWarning,
     detail: 'Payer review List, 12:30. Health NZ is a funder, not an insurer: no warning.',
   },
-  // Catch-up Phase 22a: a payer on each Procedure (provisional on OQ-140).
+  // Catch-up Phase 22a: a payer on each Procedure (D85, OQ-140 answered).
   twoPayerBooking: {
     label: 'Two Procedures, two payers typed separately',
     entityType: 'booking',

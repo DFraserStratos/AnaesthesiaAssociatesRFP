@@ -585,7 +585,7 @@ already seeded.
   it; if she had, Review would show **Changed since submitted** with the count. Now it leaves her main
   view and her search finds it.
 - **Optional aside (the review-flags List):** open **Review queue → Dr Alistair Chen, Tue 14 Jul AM
-  (Christchurch Eye Surgery, Dr Whitford)** (`/admin/review/L-45178-2026-07-14-AM`). Diane Fairweather
+  (Christchurch Eye Surgery, Dr Whitford)** (`/admin/review/L-45178-2026-07-14-AM`, five Bookings). Diane Fairweather
   (08:00) reads **Changed by Dr Chen: was Cataract IOL (LA by Anaesthetist)**, now Christchurch Eye
   Surgery RVG: select **Approve** (it reads **Approved** with the time) or **Correct**, which opens the
   Booking's rail. Owen Prendergast (09:00, No contract · RVG) reads **Price typed: $1,200.00 (computed
@@ -595,7 +595,7 @@ already seeded.
   a price and completes her Booking before authorising. Rosalind Kerr (11:00)
   carries a Merivale fixed price linked to Ms Lim, so it reads **Contract not offered on this List**.
   While any change waits, the action bar offers **Approve all N Contract changes**; authorising
-  approves any still waiting, and the confirm says how many. A Disabled Contract raises no flag. On the
+  approves any still waiting, and the confirm says how many. A Disabled Contract raises a flag, never a block: a Procedure not yet authorised and dated on or after the day its Contract was disabled reads **Contract disabled on <day>**; earlier-dated ones are not flagged, and **Make active** clears it. In this List Margaret Ellery's cataract, on Christchurch Eye Surgery 2025 rate (disabled Fri 10 Jul by Kirsty W.), reads **Contract disabled on Fri 10 Jul**. On the
   phone the anaesthetist sees **Awaiting office approval** under the Billing card, then **Approved by the
   office** with the time.
 - **Optional aside (a moved Booking keeps its Contract):** on **Admin Day → Mon 10 Aug**
@@ -643,9 +643,7 @@ a List is asked what the vacated session becomes, Free or Unavailable (OQ-84); s
 active until an admin ticks them resolved, nothing expires, and alerts to the office join List moves in
 the pool (OQ-79); open: the panel's place and layout are our design for AA to check (US-13.8.1), and
 whether an alerted Booking may still be submitted (the prototype allows it); whether monitoring belongs
-in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing
-preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to
-Tier 4 as placeholders; still open); and the pre-op and acute pairing reading (AA rooms as a location; a named surgeon on pre-op and acute Lists).
+in Admin Web or a separate surface (the prototype places it in Admin Web); and the pre-op and acute pairing reading (AA rooms as a location; a named surgeon on pre-op and acute Lists).
 Settled (US-01.1.6, D84): an out-of-hours session after PM is a third kind of session the office opens for an
 anaesthetist on a day, one a day; any List goes in it, new or a Draft List for the evening; it is a full
 session for availability. Open: who opens one when the office is closed. Its Bookings are billed as on any
@@ -697,7 +695,7 @@ them.
       (billed to Alan himself) are the two invoices from the same fee-split Booking at 14:00.
   - Open **AA-2026-0005** ("Emailed to claims@nib.example"): the holder's layout. Point at the line's
     invoice description, the BTM breakdown ("Base 4 + Time 4 + Modifiers 0 = 8 units at $26.50"), the
-    cross-match strip (procedure date, surgeon, hospital reference) and the split note naming
+    cross-match strip (procedure date and surgeon; no hospital reference) and the split note naming
     AA-2026-0006. It carries no **Your reference**: Alan's Procedure is on No contract · RVG and split,
     so nib's share has no holder reference code. The PM List's St George's invoices (its other two
     Bookings, on St George's RVG) print **Your reference SGANAES01**.
@@ -1132,7 +1130,8 @@ Xero sim**.
   **Demo actions → Demo: add a backdated price range → Run** adds a range from 1 Jul 2026 at
   $3,300.00 to Merivale's Face lift (MER-001). An ACTIVE Booking follows the change: Sophie Matthews'
   Face lift (`/admin/day/2026-08-10/bookings/BK0163`) now reads $3,300.00. A Booking with a typed
-  price, and the authorised, invoiced one, stay as they were: a locked Booking never follows a change.
+  price, and the authorised, invoiced one, stay as they were: a locked Booking never follows a change. The Run reports **1 authorised Procedure kept its old price: Judith Calloway, $3,100.00.**, and the Contract's price ranges show the same warning with her row; re-priced Procedures (Sophie Matthews at $3,300.00) are never listed.
+- **Worth pointing at (optional, Disable a Contract):** on the Face lift (MER-001), select **Disable**. The panel reads "Disabled on Tue 21 Jul: hidden from the Contract list unless asked for. Procedures already on it keep it; one not yet authorised and dated on or after Tue 21 Jul is flagged at review." A warning lists the not-yet-authorised Face lifts still on it (Sophie Matthews, Paula Westerman and Fiona Lattimer, Dr Souter's Mon 10 Aug PM List), each with **Open**. Nothing moves; Review of that List then flags each, and **Make active** undoes it. A new Contract with **Replaces** and **From** warns the same way ("N Procedures dated on or after Sat 1 Aug are still on Face lift. Nothing moves by itself: open each to move it."), and stores nothing.
 
 ### Optional beat: rate per unit after authorise
 
@@ -1166,7 +1165,7 @@ base units; the RVG code on a Procedure is optional, picked by type-ahead; a ran
 published range, shown to the anaesthetist, and starts at its lower figure (OQ-101); the RVG modifier
 table as printed (values that are not plain numbers are entered at capture); only the age and included
 modifiers are pre-applied and nothing else is pre-filled (settled, Ben, 27 October); the age bands are
-still to confirm (OQ-95); modifiers stack with no limit; AA's own modifiers (Vanessa's list) are not yet
+settled (OQ-95 answered, D29); modifiers stack with no limit; AA's own modifiers (Vanessa's list) are not yet
 loaded; which Procedure is primary (Vanessa: the most expensive; Greg: the first in the list; the
 build keeps the first until someone changes it); base units when the primary is on a fixed price (OQ-132:
 the build bills none); and the concurrency model (single-user by design, audited

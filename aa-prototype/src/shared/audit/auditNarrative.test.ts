@@ -72,17 +72,17 @@ describe('auditFieldChanges', () => {
 
   it('clears a non-capture field to "not set" (only B/T/M reverts to a seeded value)', () => {
     const changes = auditFieldChanges(
-      entry({ id: 'A0103', before: { billingReference: 'REF-88' }, after: { billingReference: undefined } }),
+      entry({ id: 'A0103', before: { opNotes: 'Seen in recovery' }, after: { opNotes: undefined } }),
     )
     expect(changes[0]?.after).toBe(NOT_SET)
   })
 
   it('diffs over the union of both sides, so an after-only key is not lost', () => {
     const changes = auditFieldChanges(
-      entry({ id: 'A0104', before: { intNotes: 'Grade 2 view' }, after: { intNotes: 'Grade 3 view', billingReference: 'REF-9' } }),
+      entry({ id: 'A0104', before: { intNotes: 'Grade 2 view' }, after: { intNotes: 'Grade 3 view', insuranceApprovalNumber: 'NIB-AP-9' } }),
     )
-    expect(changes.map((c) => c.key)).toEqual(['intNotes', 'billingReference'])
-    expect(changes[1]).toEqual({ key: 'billingReference', label: 'Billing reference', before: NOT_SET, after: 'REF-9' })
+    expect(changes.map((c) => c.key)).toEqual(['intNotes', 'insuranceApprovalNumber'])
+    expect(changes[1]).toEqual({ key: 'insuranceApprovalNumber', label: 'Approval number', before: NOT_SET, after: 'NIB-AP-9' })
   })
 
   it('drops fields that were re-saved without moving', () => {
@@ -213,8 +213,8 @@ describe('coalesceAudit', () => {
   it('leaves multi-field patches alone (no single value to state a net for)', () => {
     const multi = entry({
       id: 'A0071',
-      before: { intNotes: 'Grade 2 view', billingReference: undefined },
-      after: { intNotes: 'Grade 3 view', billingReference: 'REF-9' },
+      before: { intNotes: 'Grade 2 view', opNotes: undefined },
+      after: { intNotes: 'Grade 3 view', opNotes: 'Seen in recovery' },
     })
     const groups = coalesceAudit([multi, { ...multi, id: 'A0072' }])
     expect(groups).toHaveLength(2)

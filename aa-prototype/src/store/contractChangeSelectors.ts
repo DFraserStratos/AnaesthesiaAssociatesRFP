@@ -7,7 +7,7 @@
 
 import type { AppState } from './appStore'
 import type { ContractId, PriceRange } from '../domain/types'
-import { authorisedKeptPrice, keptPriceOnContract, proceduresStillOnContract, type KeptPriceRow, type StillOnRow } from '../domain/billing/contractChanges'
+import { authorisedKeptPrice, proceduresStillOnContract, type KeptPriceRow, type StillOnRow } from '../domain/billing/contractChanges'
 import { rangesOf } from '../domain/billing/priceRanges'
 
 /** The Procedures dated on or after `fromISO` still on the Contract, that can still move. */
@@ -17,13 +17,6 @@ export function stillOnContract(state: Pick<AppState, 'schedule' | 'masters'>, c
     contractId,
     fromISO,
   )
-}
-
-/** Every authorised Procedure on the Contract left at a locked price its ranges no longer give. */
-export function keptPriceOnContractNow(state: Pick<AppState, 'billing' | 'masters'>, contractId: ContractId): KeptPriceRow[] {
-  const contract = state.masters.contracts[contractId]
-  if (contract === undefined || contract.pricing.kind !== 'fixed') return []
-  return keptPriceOnContract(state.billing.locks, contractId, rangesOf(contract))
 }
 
 /** The authorised Procedures a range on the Contract (as it now stands) left at their locked price. */

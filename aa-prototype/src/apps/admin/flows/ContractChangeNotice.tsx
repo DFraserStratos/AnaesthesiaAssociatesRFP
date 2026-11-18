@@ -37,6 +37,7 @@ export function ContractChangeNotice({
   rows,
   shot,
   rowShot,
+  live = false,
 }: {
   title: ReactNode
   children?: ReactNode
@@ -44,9 +45,11 @@ export function ContractChangeNotice({
   rows: readonly ChangeNoticeRow[]
   shot: string
   rowShot: string
+  /** Announce it (`role="status"`): only where it answers a choice just made (Replaces set, Disable clicked). */
+  live?: boolean
 }) {
   return (
-    <Notice tone="warning" live="status" title={title} shot={shot}>
+    <Notice tone="warning" {...(live ? { live: 'status' as const } : {})} title={title} shot={shot}>
       {children}
       <TableShell label="Procedures" density="dense" style={{ marginTop: 6 }}>
         <thead>
@@ -63,12 +66,12 @@ export function ContractChangeNotice({
             <tr key={r.key} data-shot={rowShot} data-booking-id={r.bookingId}>
               <Td bold>{r.patientName}</Td>
               {r.cells.map((cell, i) => (
-                <Td key={columns[i]?.label ?? i} align={columns[i]?.align ?? 'left'} mono={columns[i]?.mono === true}>
+                <Td key={columns[i]?.label ?? i} align={columns[i]?.align ?? 'left'} mono={columns[i]?.mono === true} nowrap={columns[i]?.mono === true}>
                   {cell}
                 </Td>
               ))}
               <Td align="right" nowrap>
-                <Link to={`/admin/day/${r.dateISO}/bookings/${r.bookingId}`} style={{ color: accent.base, fontWeight: 600 }} aria-label={`Open ${r.patientName}'s Booking`}>
+                <Link to={`/admin/day/${r.dateISO}/bookings/${r.bookingId}`} className="aa-ctl" style={{ color: accent.base, fontWeight: 600 }} aria-label={`Open ${r.patientName}'s Booking`}>
                   Open
                 </Link>
               </Td>

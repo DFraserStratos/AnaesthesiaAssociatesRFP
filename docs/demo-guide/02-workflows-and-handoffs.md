@@ -426,7 +426,7 @@ Every active Booking in the List has been marked complete.
    - flags, which never block authorise: **Changed by Dr X: was** the old Contract, **Price typed: $X
      (computed $Y)**, **Contract not offered on this List** (for example after a move to another
      surgeon's List), **Needs an invoice destination**, **Not marked completed**, **Email or postal
-     address needed** and manual B/T/M notes. A Disabled Contract raises no flag.
+     address needed** and manual B/T/M notes. A Procedure not yet authorised and dated on or after the day its Contract was disabled reads **Contract disabled on <day>** (a flag, never a block; Make active clears it).
    - the one blocker: a Procedure that still **Needs a price**. **Authorise for billing** stays
      disabled, naming the Procedure with an **Open** link, until a price is typed (Dr Chen's Tue 14 Jul
      AM review List shows it on Hemi Walker's No contract · Fixed price Booking).
@@ -503,7 +503,8 @@ The List reaches `AUTHORISED`.
    invoice document prints from the lock (its **Locked record** card on the invoice rail), so it can be
    regenerated exactly (**Regenerate from locked data**: identical), whatever has changed since.
 8. The layout comes from the Contract: the holder's when it bills its holder (invoice descriptions, the
-   BTM breakdown, a cross-match strip and the Contract's holder reference code as "Your reference"),
+   BTM breakdown, a cross-match strip of the procedure date and surgeon (no hospital reference) and the
+   Contract's holder reference code as "Your reference"),
    otherwise the patient's. Prices are held GST exclusive, with GST at the foot.
 9. The run sends or queues each invoice by the Party's delivery: emailed, or **To post** for a payer
    with only a postal address (provisional, OQ-122); a payer with neither raises **No invoice

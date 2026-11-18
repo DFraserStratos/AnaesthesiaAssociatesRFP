@@ -188,7 +188,7 @@ describe('review fixes (convention 18)', () => {
   })
 })
 
-describe('a payer on each Procedure (catch-up Phase 22a; US-11.2.2, US-08.2.1; provisional on OQ-140)', () => {
+describe('a payer on each Procedure (catch-up Phase 22a; US-11.2.2, US-08.2.1; D85, OQ-140 answered)', () => {
   const graceProcs = (api: Api) => proceduresForBooking(api.getState(), GRACE)
   const guardian: PayerInput = { kind: 'other', name: 'Ana Park', relationship: 'Aunt', email: 'ana.park@example.net' }
 

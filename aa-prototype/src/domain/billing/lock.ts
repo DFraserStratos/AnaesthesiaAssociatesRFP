@@ -9,8 +9,8 @@
  * points at no version:
  *  - per Procedure: the Contract's settings as they then stood with only the
  *    price range in force on the procedure date, its RVG group as used, the
- *    Procedure's values (procedure text, invoice description, RVG code,
- *    billing reference), the fee as recorded and priced (B, T and M with 19b's
+ *    Procedure's values (procedure text, invoice description, RVG code),
+ *    the fee as recorded and priced (B, T and M with 19b's
  *    items and the guide check, the units after 23's rule, the unit rate, the
  *    discount line and 24's price), who it bills (the holder Party, or the
  *    Procedure's own payer with its BP id, 22a) and its split shares (22),
@@ -101,7 +101,6 @@ export interface ProcedureSnapshot {
     text: string | null
     invoiceDescription: string | null
     rvgCode: string | null
-    billingReference?: string
     isPrimary: boolean
   }
   /** The Contract's settings as they stood, `pricing` cut to the range in force on the procedure date. Absent only on a migrated lock. */
@@ -384,7 +383,6 @@ export function buildBookingLock(input: LockInput): BookingLock {
         text: procedure.procedureText?.text ?? null,
         invoiceDescription: wording,
         rvgCode: group?.code ?? null,
-        ...(procedure.billingReference !== undefined ? { billingReference: procedure.billingReference } : {}),
         isPrimary: procedure.isPrimary,
       },
       contract: contractAsLocked(contract, ctx.listDateISO),
@@ -428,7 +426,6 @@ export function buildBookingLock(input: LockInput): BookingLock {
     const own = ownCharge.get(key) ?? snapshot
     const ownContract = contracts.get(own.procedureId)
     const holderReference = layout === 'contractHolder' ? ownContract?.holderReference : undefined
-    const firstProcedure = procedures.find((p) => p.id === procedureIdsOf.get(key)?.[0])
     parties.push({
       key,
       ref,
@@ -438,7 +435,7 @@ export function buildBookingLock(input: LockInput): BookingLock {
       layout,
       ...(ownContract !== undefined ? { contractId: ownContract.id } : {}),
       ...(holderReference !== undefined && holderReference.trim() !== '' ? { holderReference } : {}),
-      ...(layout === 'contractHolder' ? { crossMatch: crossMatchFor(ctx.listDateISO, ctx.surgeonName, firstProcedure?.billingReference) } : {}),
+      ...(layout === 'contractHolder' ? { crossMatch: crossMatchFor(ctx.listDateISO, ctx.surgeonName) } : {}),
     })
   }
 

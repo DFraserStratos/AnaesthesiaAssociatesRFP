@@ -50,12 +50,11 @@ interface Spec {
   wording: SourceWordingRow
   bookingSource: BookingSource
   rvgGroupId?: string
-  billingReference?: string
 }
 
 const SPECS: readonly Spec[] = [
   // Rows 1 and 2: the Booking whose rooms' text the hospital's replaced.
-  { listId: RTK_BOOKING_LIST_ID, patientId: 'PT0022', time: '09:30', wording: SOURCE_WORDING[2], bookingSource: 'hospitalDownload', rvgGroupId: RVG_GROUP.ll4!, billingReference: 'SG-2026-0921' },
+  { listId: RTK_BOOKING_LIST_ID, patientId: 'PT0022', time: '09:30', wording: SOURCE_WORDING[2], bookingSource: 'hospitalDownload', rvgGroupId: RVG_GROUP.ll4! },
   // The expert rows.
   { listId: SX_TUE28_PM, patientId: 'PT0023', time: '13:00', wording: SOURCE_WORDING[15], bookingSource: 'hospitalDownload' },
   { listId: SX_TUE28_PM, patientId: 'PT0024', time: '14:00', wording: SOURCE_WORDING[17], bookingSource: 'hospitalDownload' },
@@ -115,7 +114,6 @@ export function seedSourceWordingBookings(
       governingContractId: spec.wording.row === 2 ? CONTRACT.stgRvg : CONTRACT.noContractRvg,
     }
     if (spec.rvgGroupId !== undefined) procedure.rvgGroupId = spec.rvgGroupId
-    if (spec.billingReference !== undefined) procedure.billingReference = spec.billingReference
     procedures.push(procedure)
     b += 1
     p += 1

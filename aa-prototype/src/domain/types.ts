@@ -436,7 +436,7 @@ export interface SurgeonGroup {
 // Office-private: pairing preferences and priority tiers (catch-up Phase 17)
 // ---------------------------------------------------------------------------
 
-/** Not preferred (formerly the blacklist) or preferred (US-13.6.3, US-13.6.4). Names are OQ-102's, in one label set. */
+/** Not preferred (formerly the blacklist) or preferred (US-13.6.3, US-13.6.4). Names are OQ-102's answer (D36), in one label set. */
 export type PairingKind = 'NOT_PREFERRED' | 'PREFERRED'
 /** Which side asked for the entry (US-13.6.3 "says which side asked"). */
 export type PairingSide = 'SURGEON' | 'ANAESTHETIST'
@@ -875,8 +875,9 @@ export interface Booking {
    *
    * OQ-93 answered: fields on the Booking; no narrowing; the approval number
    * is the one acceptance reference; the only insurance warning is a missing
-   * number on an insurer. D82 (OQ-136 open, default): no other holder
-   * reference is kept on the Booking.
+   * number on an insurer. D82 (OQ-136 answered): a Contract asks the Booking
+   * for no other reference; the hospital's own reference is gone (catch-up
+   * Phase 25a, DM-68).
    */
   funderPartyId?: string
   /** The insurer's approval number for the claim (US-11.4.3): the office and, on the day, the anaesthetist record it; the anaesthetist sees it. */
@@ -973,7 +974,7 @@ export interface Procedure {
   bookingId: BookingId
   /**
    * Who pays for this Procedure when its Contract bills the payer (catch-up
-   * Phase 22a; US-11.2.2, DM-11; provisional on OQ-140): filled in from the
+   * Phase 22a; US-11.2.2, DM-11; D85, OQ-140 answered): filled in from the
    * patient on every creation path, a Procedure added later copying a shared
    * payer (`payerForNewProcedure`), written only by `setProcedurePayer`.
    */
@@ -1014,8 +1015,6 @@ export interface Procedure {
    */
   enteredPrice?: number
 
-  /** The hospital's contract/approval reference (6th review #6; A4's completeness check). */
-  billingReference?: string
   /**
    * The Booking's primary Procedure (catch-up Phase 23; US-03.2.1, US-03.2.2,
    * DM-15): exactly one per Booking that has Procedures, guaranteed by the
@@ -1377,11 +1376,10 @@ export interface InvoiceLineage {
   invoiceId: InvoiceId
 }
 
-/** The holder layout's cross-match fields (US-08.4.1), as at the run. */
+/** The holder layout's cross-match fields (US-08.4.1), as at the run: the procedure date and the surgeon (no Booking reference, D82; the approval number on it is OQ-142, open). */
 export interface InvoiceCrossMatch {
   procedureDateISO: IsoDate
   surgeon?: string
-  hospitalRef?: string
 }
 
 export interface Invoice {

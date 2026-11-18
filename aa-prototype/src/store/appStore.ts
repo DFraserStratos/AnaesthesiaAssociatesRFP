@@ -336,8 +336,10 @@ export const PERSIST_KEY = 'aa-demo'
  *  v55: catch-up Phase 27a, the AA Holding account's transfer (`billing.transfers`, `xero.journals`,
  *  `BillingCase.prepayLeg` on BC0001, `Disbursement.transferId`). Reseeds on load.
  *  v56: catch-up Phase 25a, the seeded Disabled Contract (Christchurch Eye Surgery 2025 rate, `CT-CES-2025`, its
- *  `contract.disable` audit entry on Fri 10 Jul) and Margaret Ellery's Booking on it on 21a's review-flags List. Reseeds on load. */
-export const PERSIST_VERSION = 56
+ *  `contract.disable` audit entry on Fri 10 Jul) and Margaret Ellery's Booking on it on 21a's review-flags List. Reseeds on load.
+ *  v57: catch-up Phase 25a session 2, the Procedure's hospital reference removed (`Procedure.billingReference`, the
+ *  lock's copy, `InvoiceCrossMatch.hospitalRef`, the seeded values and audit fields; DM-68, D82). Reseeds on load. */
+export const PERSIST_VERSION = 57
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {} }

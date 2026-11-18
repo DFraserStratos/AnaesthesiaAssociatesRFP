@@ -8,7 +8,10 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import { addBackdatedRangeDemo, BACKDATED_RANGE, BACKDATED_RANGE_CONTRACT_ID } from './demoBackdatedRange'
 import { disableContract, enableContract } from './contractActions'
-import { keptPriceForRange, keptPriceOnContractNow, stillOnContract } from './contractChangeSelectors'
+import { keptPriceForRange, stillOnContract } from './contractChangeSelectors'
+import { keptPriceOnContract } from '../domain/billing/contractChanges'
+import { rangesOf } from '../domain/billing/priceRanges'
+import type { AppState } from './appStore'
 import { reviewFlagsFor, reviewFlagsOnList } from './reviewSelectors'
 import { contractDisabledOn, contractHistoryFor } from '../domain/billing/contractHistory'
 import { SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
@@ -17,6 +20,11 @@ import { OFFICE_ACTOR } from './demoActors'
 import { MERIVALE_BOOKING_LIST_ID } from '../domain/seed/pricedItemBookings'
 
 const FACE_LIFT = BACKDATED_RANGE_CONTRACT_ID
+/** What the ranges section lists for a Contract: the domain list over every range (ContractPriceRanges). */
+const keptOn = (s: AppState, id: string) => {
+  const c = s.masters.contracts[id]
+  return c === undefined || c.pricing.kind !== 'fixed' ? [] : keptPriceOnContract(s.billing.locks, id, rangesOf(c))
+}
 
 describe('the dated-change and disable list (US-04.1.2, D79)', () => {
   it("lists the un-authorised Face lifts from the day; Judith Calloway's AUTHORISED one is never listed", () => {
@@ -75,10 +83,24 @@ describe('the seeded Disabled Contract case (work item 7)', () => {
 describe('the kept-price warning (US-04.2.15, D79)', () => {
   it("the backdated range keeps Judith Calloway's locked $3,100.00 and lists only her; the re-priced Face lifts are never listed", () => {
     const api = createAppStore()
-    expect(keptPriceOnContractNow(api.getState(), FACE_LIFT)).toEqual([])
+    expect(keptOn(api.getState(), FACE_LIFT)).toEqual([])
     expect(addBackdatedRangeDemo(api).ok).toBe(true)
     const rows = keptPriceForRange(api.getState(), FACE_LIFT, BACKDATED_RANGE)
     expect(rows.map((r) => [r.patientName, r.lockedPrice, r.rangePrice])).toEqual([['Judith Calloway', 3100, 3300]])
-    expect(keptPriceOnContractNow(api.getState(), FACE_LIFT)).toEqual(rows)
+    expect(keptOn(api.getState(), FACE_LIFT)).toEqual(rows)
+  })
+
+  it('at reset no Contract shows a kept-price list (no false row from a fixed line or a held amount)', () => {
+    const s = createAppStore().getState()
+    for (const c of Object.values(s.masters.contracts)) expect(keptOn(s, c.id), c.id).toEqual([])
+  })
+})
+
+describe('the hospital reference is gone everywhere (work item 9; DM-68, D82)', () => {
+  it('no Procedure, lock, invoice or audit entry in the seeded store carries it; the holder reference code stays', () => {
+    const s = createAppStore().getState()
+    const text = JSON.stringify({ procedures: s.schedule.procedures, locks: s.billing.locks, invoices: s.billing.invoices, audit: s.audit })
+    expect(text).not.toMatch(/billingReference|hospitalRef/)
+    expect(Object.values(s.masters.contracts).some((c) => c.holderReference !== undefined)).toBe(true)
   })
 })

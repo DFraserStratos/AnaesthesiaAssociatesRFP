@@ -1,7 +1,7 @@
 {
   "id": "US-04.2.15",
-  "status": "partial",
-  "absentReason": "Not offering a Contract with no range in force is Phase 20's; 'Needs a price' is Phase 24's.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "price-ranges",
@@ -111,6 +111,43 @@
           "highlight": [
             "[data-shot=contract-price-ranges]",
             "[data-shot=contract-detail] [role=alert]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "kept-price",
+      "app": "admin",
+      "caption": "Authorised Procedures that kept their old price, counted and listed",
+      "start": "/admin/masters?view=contracts",
+      "states": [
+        {
+          "steps": [
+            {
+              "trigger": "demo-backdated-range"
+            },
+            {
+              "fill": "[data-shot=contract-search] input",
+              "value": "Face lift"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-MER-FACELIFT\"] >> button:text-is(\"Edit\")"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=price-range-kept]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=price-range-kept]"
           ]
         }
       ]

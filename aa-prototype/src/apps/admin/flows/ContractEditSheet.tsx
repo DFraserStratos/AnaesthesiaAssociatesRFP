@@ -59,6 +59,7 @@ import { ContractChangeNotice, type ChangeNoticeRow } from './ContractChangeNoti
 import { contractDisabledOn } from '../../../domain/billing/contractHistory'
 import { NOTHING_MOVES, stillOnTitle, type StillOnRow } from '../../../domain/billing/contractChanges'
 import { shortDay } from '../../../domain/dateText'
+import { listShortLabel } from '../util'
 import {
   BILLS_LABEL,
   PARTY_KIND_LABEL,
@@ -300,7 +301,7 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
       ) : created !== null && replaced !== undefined ? (
         <>
           <ResultLine line={`Created ${created}.`} shot="contract-created" />
-          <StillOnNotice rows={stillOnReplaced} fromISO={replacesFrom} contractName={replaced.name} />
+          <StillOnNotice rows={stillOnReplaced} fromISO={replacesFrom} contractName={replaced.name} live />
         </>
       ) : (
       <>
@@ -510,7 +511,7 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
           </PanelGrid>
           {replaced !== undefined && replacesFrom !== '' && (
             stillOnReplaced.length > 0 ? (
-              <StillOnNotice rows={stillOnReplaced} fromISO={replacesFrom} contractName={replaced.name} />
+              <StillOnNotice rows={stillOnReplaced} fromISO={replacesFrom} contractName={replaced.name} live />
             ) : (
               <Notice tone="neutral" shot="contract-still-on-none">
                 {`No Procedure dated on or after ${shortDay(replacesFrom)} is still on ${replaced.name}.`}
@@ -539,21 +540,27 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
 }
 
 /** "2 Procedures dated on or after Sat 1 Aug are still on Face lift. Nothing moves by itself: open each to move it." (D79) */
-function StillOnNotice({ rows, fromISO, contractName }: { rows: readonly StillOnRow[]; fromISO: string; contractName: string }) {
-  const noticeRows: ChangeNoticeRow[] = rows.map((r) => ({
-    key: r.procedureId,
-    bookingId: r.bookingId,
-    dateISO: r.dateISO,
-    patientName: r.patientName,
-    cells: [shortDay(r.dateISO), r.procedureText ?? ''],
-  }))
+function StillOnNotice({ rows, fromISO, contractName, live = false }: { rows: readonly StillOnRow[]; fromISO: string; contractName: string; live?: boolean }) {
+  const lists = useAppStore((s) => s.schedule.lists)
+  const masters = useAppStore((s) => s.masters)
+  const noticeRows: ChangeNoticeRow[] = rows.map((r) => {
+    const list = lists[r.listId]
+    return {
+      key: r.procedureId,
+      bookingId: r.bookingId,
+      dateISO: r.dateISO,
+      patientName: r.patientName,
+      cells: [shortDay(r.dateISO), list !== undefined ? listShortLabel(list, masters) : r.listId, r.procedureText ?? ''],
+    }
+  })
   return (
     <ContractChangeNotice
       title={stillOnTitle(rows.length, shortDay(fromISO), contractName)}
-      columns={[{ label: 'Date', mono: true }, { label: 'Procedure' }]}
+      columns={[{ label: 'Date', mono: true }, { label: 'List' }, { label: 'Procedure' }]}
       rows={noticeRows}
       shot="contract-still-on-warning"
       rowShot="contract-still-on-row"
+      live={live}
     >
       {NOTHING_MOVES}
     </ContractChangeNotice>
