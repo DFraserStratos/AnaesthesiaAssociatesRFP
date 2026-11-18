@@ -67,7 +67,8 @@ Read in full before execution; update the verified result last. One writer at a 
       `board-fixes`' version.
     - **Into master:** `board-fixes` merges into master once, after B15 closes, or earlier only when
       the owner asks (for example to give the live lanes B12's fixes). The board version is settled
-      at that merge as in convention 14. Until then the live catch-up plan keeps using master's board
+      at that merge as in convention 14. Master's `docs/board-fixes/index.html` is a pointer page to
+      this worktree; at that merge, take this branch's version of it. Until then the live catch-up plan keeps using master's board
       and tools, which also keeps convention 8 safe.
     - Never push.
 
@@ -191,6 +192,10 @@ decisions" section and resolved in that phase's planning.
   15. **Programme branch.** The user asked for all board-fixes work on its own branch. Convention 16:
       branch `board-fixes` from master at the commit recording this decision, worked in its own
       worktree, merged into master after B15 or on request.
+      **B01 moved onto the branch** (2026-11-19, at the user's request): B01 (`d1e033a6`, board
+      1.13.0) had been committed to master just before the branch existed. It was never pushed and no
+      other branch held it, so master was moved back to `e3e7bf54` and B01 now lives only on
+      `board-fixes`. Master then got one commit, the pointer page above.
 
 ## Planning handoff
 
