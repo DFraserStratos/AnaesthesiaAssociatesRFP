@@ -223,6 +223,12 @@ When your last phase in the wave is complete:
      --only typecheck,build,build-pwa,vitest,verify-board`, commit, and try again.
    - If it refuses because of the owner's uncommitted changes, stop. Tell the owner the exact
      command to run once they have committed.
+   - If the session isn't allowed to write to the main checkout (a session that entered its worktree
+     with `EnterWorktree` usually isn't: that is what stalled Wave 1's join), don't keep trying. Write
+     `joined, master fast-forward pending the owner` in both status files and stop. Tell the owner to
+     paste this into a Claude session in the main folder: "Finish the Wave <n> join: fast-forward
+     master to wave/<n> as LANES.md's join step 7 says (merging master into wave/<n> first if it
+     moved), then fast-forward both lane branches." That session does it.
    - Then move your own lane branch on: `git switch lane/<x> && git merge --ff-only master`. The other
      lane picks it up at its next start (step 2).
 8. Write `joined` in both status files (`<n> joined, next <its first phase>`) and append a `notes.md`
