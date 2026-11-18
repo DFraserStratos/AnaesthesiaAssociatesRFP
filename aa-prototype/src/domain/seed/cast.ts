@@ -255,4 +255,18 @@ export const SEED_SLOT_STATUSES: readonly SlotStatus[] = [
     anaesthetistCanSet: true,
     order: 3,
   },
+  // Catch-up Phase 32d (D86, OQ-139 answered): Public works like Unavailable, a
+  // status with an optional note ("CPH"), never a kind of List. Its key is not
+  // `public`, so no status key can equal a List kind.
+  {
+    key: 'publicHospital',
+    label: 'Public',
+    longLabel: 'Public hospital',
+    description: 'Working at a public hospital. Not open for bookings or cover.',
+    colour: 'public',
+    treatment: 'solid',
+    bookable: false,
+    anaesthetistCanSet: true,
+    order: 4,
+  },
 ]

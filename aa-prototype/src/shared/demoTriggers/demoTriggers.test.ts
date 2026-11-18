@@ -782,3 +782,31 @@ describe('Regenerate from locked data (catch-up Phase 25)', () => {
     expect(t.disabledReason(api.getState(), ctxFor(`/admin/invoices/${fee}`, { invoiceId: fee }))).toBe('Not priced from a Procedure')
   })
 })
+
+describe('Office sets this session to Public (catch-up Phase 32d; PWA parity)', () => {
+  const SOUTER = '34821'
+  const path = '/mobile/availability/calendar'
+  const day = (dateISO: string): Partial<DemoContextValues> => ({ 'mobileCalendar.day': `${SOUTER}|${dateISO}` })
+
+  it('shows on the PWA only, with a day open in My calendar', () => {
+    const api = createAppStore()
+    expect(ids(api, path, 'pwa')).not.toContain('availability-office-sets-public')
+    expect(ids(api, path, 'pwa', day('2026-08-21'))).toContain('availability-office-sets-public')
+    expect(ids(api, path, 'bar', day('2026-08-21'))).not.toContain('availability-office-sets-public')
+  })
+
+  it('sets the session Public with the note "CPH" as the simulated office, then is disabled; a List or a past day disables it', () => {
+    const api = createAppStore()
+    const t = byId('availability-office-sets-public')
+    const ctx = ctxFor(path, {}, day('2026-08-21'))
+    const am = `S-${SOUTER}-2026-08-21-AM`
+    expect(t.disabledReason(api.getState(), ctx, am)).toBeNull()
+    const out = t.run(api, ctx, am)
+    expect(out).toEqual({ ok: true, message: 'The office set this session to Public · CPH.' })
+    expect(api.getState().schedule.slots[am]).toMatchObject({ status: 'publicHospital', note: 'CPH' })
+    expect(api.getState().audit.at(-1)).toMatchObject({ role: 'office', who: 'AA office (simulated)' })
+    expect(t.disabledReason(api.getState(), ctx, am)).toBe('Already Public')
+    expect(t.disabledReason(api.getState(), ctxFor(path, {}, day('2026-08-17')), `S-${SOUTER}-2026-08-17-AM`)).toBe('This session holds a List')
+    expect(t.disabledReason(api.getState(), ctxFor(path, {}, day('2026-07-20')), `S-${SOUTER}-2026-07-20-AM`)).toBe('This session is past')
+  })
+})

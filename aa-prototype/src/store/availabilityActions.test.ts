@@ -130,13 +130,13 @@ describe('series (US-01.5.3)', () => {
     const out = createAvailabilitySeries(api, SOUTER, fridayPm())
     expect(out.ok).toBe(true)
     if (!out.ok) return
-    expect(out.value.seriesId).toBe('AS0001')
+    expect(out.value.seriesId).toBe('AS0008')
     expect(out.value.leftAsIs).toBe(1)
     expect(souterSlot(api, '2026-08-14', 'PM')).toMatchObject({ status: 'holiday' })
     expect(souterSlot(api, '2026-08-14', 'PM').seriesId).toBeUndefined()
-    expect(souterSlot(api, '2026-07-31', 'PM')).toMatchObject({ status: 'unavailable', seriesId: 'AS0001' })
+    expect(souterSlot(api, '2026-07-31', 'PM')).toMatchObject({ status: 'unavailable', seriesId: 'AS0008' })
     expect(souterSlot(api, '2026-08-07', 'PM').seriesId).toBeUndefined()
-    expect(souterSlot(api, '2026-08-28', 'PM')).toMatchObject({ status: 'unavailable', seriesId: 'AS0001' })
+    expect(souterSlot(api, '2026-08-28', 'PM')).toMatchObject({ status: 'unavailable', seriesId: 'AS0008' })
     const end = scheduleHorizon(api.getState()).endISO
     const fridays = enumerateDatesISO('2026-07-31', end).filter((d) => getISODay(parseISO(d)) === 5)
     const painted = fridays.filter((_, i) => i % 2 === 0)
@@ -164,7 +164,8 @@ describe('series (US-01.5.3)', () => {
       expect(refused.ok ? '' : refused.code).toBe('holdsList')
       expect(refused.ok ? [] : (refused.details as { listIds: string[] }).listIds).toHaveLength(3)
     }
-    expect(Object.keys(api.getState().schedule.availabilitySeries)).toHaveLength(0)
+    // Only the seven seeded Public series (catch-up Phase 32d): the refused one was never added.
+    expect(Object.keys(api.getState().schedule.availabilitySeries)).toHaveLength(7)
   })
 
   it('a range over a series instance edits that instance; clearing another deletes it; both survive a roll forward', () => {
@@ -174,12 +175,12 @@ describe('series (US-01.5.3)', () => {
     expect(edited.ok && edited.value.seriesEdited).toBe(1)
     const cleared = clearAvailability(api, SOUTER, slotIdFor(ANAE.souter, '2026-08-28', 'PM'))
     expect(cleared.ok && cleared.value.seriesEdited).toBe(1)
-    const series = api.getState().schedule.availabilitySeries['AS0001']!
+    const series = api.getState().schedule.availabilitySeries['AS0008']!
     expect(series.exceptions[instanceKey('2026-08-14', 'PM')]).toEqual({ kind: 'edited', statusKey: 'holiday' })
     expect(series.exceptions[instanceKey('2026-08-28', 'PM')]).toEqual({ kind: 'deleted' })
     expect(souterSlot(api, '2026-08-28', 'PM')).toMatchObject({ status: 'free' })
     expect(souterSlot(api, '2026-08-28', 'PM').seriesId).toBeUndefined()
-    expect(souterSlot(api, '2026-08-14', 'PM')).toMatchObject({ status: 'holiday', seriesId: 'AS0001' })
+    expect(souterSlot(api, '2026-08-14', 'PM')).toMatchObject({ status: 'holiday', seriesId: 'AS0008' })
 
     const oldEnd = scheduleHorizon(api.getState()).endISO
     advanceClockDays(api, 14) // a fortnight: the far edge gains one series Friday
@@ -187,9 +188,9 @@ describe('series (US-01.5.3)', () => {
     expect(souterSlot(api, '2026-08-14', 'PM').status).toBe('holiday')
     expect(souterSlot(api, '2026-08-28', 'PM').status).toBe('free')
     const added = horizonDatesBetween(oldEnd, newEnd)
-    const expected = seriesCalendarFor({ schedule: { availabilitySeries: { AS0001: series } } }, added)
+    const expected = seriesCalendarFor({ schedule: { availabilitySeries: { AS0008: series } } }, added)
     expect(expected.length).toBeGreaterThan(0)
-    for (const e of expected) expect(api.getState().schedule.slots[slotIdFor(ANAE.souter, e.dateISO, e.session)]).toMatchObject({ status: 'unavailable', seriesId: 'AS0001' })
+    for (const e of expected) expect(api.getState().schedule.slots[slotIdFor(ANAE.souter, e.dateISO, e.session)]).toMatchObject({ status: 'unavailable', seriesId: 'AS0008' })
   })
 
   it('extending the horizon paints the series onto the added months', () => {
@@ -199,7 +200,7 @@ describe('series (US-01.5.3)', () => {
     expect(setHorizonMonths(api, OFFICE, 5).ok).toBe(true)
     const fridays = horizonDatesBetween(oldEnd, scheduleHorizon(api.getState()).endISO).filter((d) => getISODay(parseISO(d)) === 5)
     expect(fridays.length).toBeGreaterThan(3)
-    for (const d of fridays) expect(souterSlot(api, d, 'PM')).toMatchObject({ status: 'unavailable', seriesId: 'AS0001' })
+    for (const d of fridays) expect(souterSlot(api, d, 'PM')).toMatchObject({ status: 'unavailable', seriesId: 'AS0008' })
   })
 
   it('a recurring booking on a far-edge session a series closes is never placed: one RecurringClash, no List, no flag', () => {
@@ -223,7 +224,7 @@ describe('series (US-01.5.3)', () => {
 
       advanceClockDays(api, 7)
       const after = api.getState()
-      expect(after.schedule.slots[slotId]).toMatchObject({ status: statusKey, seriesId: 'AS0001' })
+      expect(after.schedule.slots[slotId]).toMatchObject({ status: statusKey, seriesId: 'AS0008' })
       expect(listInSlot(after, slotId)).toBeUndefined()
       expect(after.audit.some((a) => a.action === 'list.conflict')).toBe(false)
     }
@@ -234,17 +235,17 @@ describe('series (US-01.5.3)', () => {
     createAvailabilitySeries(api, SOUTER, fridayPm({ startISO: '2026-07-31', everyWeeks: 1 }))
     setAvailabilityRange(api, SOUTER, { anaesthetistId: ANAE.souter, fromISO: '2026-08-14', toISO: '2026-08-14', sessions: 'PM', statusKey: 'holiday' })
     advanceClockDays(api, 11) // today Sat 1 Aug: Fri 31 Jul is past
-    const out = deleteAvailabilitySeries(api, SOUTER, 'AS0001')
+    const out = deleteAvailabilitySeries(api, SOUTER, 'AS0008')
     expect(out.ok).toBe(true)
-    expect(souterSlot(api, '2026-07-31', 'PM')).toMatchObject({ status: 'unavailable', seriesId: 'AS0001' })
+    expect(souterSlot(api, '2026-07-31', 'PM')).toMatchObject({ status: 'unavailable', seriesId: 'AS0008' })
     expect(souterSlot(api, '2026-08-07', 'PM')).toMatchObject({ status: 'free' })
     expect(souterSlot(api, '2026-08-07', 'PM').seriesId).toBeUndefined()
     expect(souterSlot(api, '2026-08-14', 'PM')).toMatchObject({ status: 'holiday' })
     expect(souterSlot(api, '2026-08-14', 'PM').seriesId).toBeUndefined()
-    expect(api.getState().schedule.availabilitySeries['AS0001']!.endedAtISO).toBeDefined()
+    expect(api.getState().schedule.availabilitySeries['AS0008']!.endedAtISO).toBeDefined()
     expect(audit(api, 'availability.seriesDeleted')).toHaveLength(1)
     // An ended series paints nothing more.
-    expect(seriesCalendarFor(api.getState(), ['2026-12-04'])).toEqual([])
+    expect(seriesCalendarFor(api.getState(), ['2026-12-04']).filter((e) => e.seriesId === 'AS0008')).toEqual([])
   })
 
   it('an anaesthetist cannot create or delete a colleague\'s series; a draft with no weekday is refused', () => {
@@ -254,7 +255,7 @@ describe('series (US-01.5.3)', () => {
     const empty = createAvailabilitySeries(api, SOUTER, fridayPm({ weekdays: [] }))
     expect(empty.ok ? '' : empty.message).toMatch(/at least one day/)
     createAvailabilitySeries(api, SOUTER, fridayPm())
-    const del = deleteAvailabilitySeries(api, SHARMA, 'AS0001')
+    const del = deleteAvailabilitySeries(api, SHARMA, 'AS0008')
     expect(del.ok ? 'ok' : del.code).toBe('notOwnAvailability')
   })
 })
@@ -291,14 +292,14 @@ describe('review fixes (catch-up Phase 29 review pass)', () => {
     createAvailabilitySeries(api, OFFICE, fridayPm({ untilISO: '2026-07-31' }))
     const slotId = slotIdFor(ANAE.souter, '2026-07-31', 'PM')
     expect(setAvailabilityRange(api, OFFICE, { anaesthetistId: ANAE.souter, fromISO: '2026-07-31', toISO: '2026-07-31', sessions: 'PM', statusKey: 'free' }).ok).toBe(true)
-    expect(api.getState().schedule.slots[slotId]!.seriesId).toBe('AS0001')
+    expect(api.getState().schedule.slots[slotId]!.seriesId).toBe('AS0008')
     const placed = assignListToSlot(api, OFFICE, slotId, { hospitalId: 'H-STG', surgeonId: 'S-HALE', kind: 'private' })
     expect(placed.ok).toBe(true)
     const moved = markUnavailableAndMoveList(api, OFFICE, slotId, 'unavailable', { route: 'office' })
     expect(moved.ok).toBe(true)
     expect(api.getState().schedule.slots[slotId]).toMatchObject({ status: 'unavailable' })
     expect(api.getState().schedule.slots[slotId]!.seriesId).toBeUndefined()
-    expect(api.getState().schedule.availabilitySeries['AS0001']!.exceptions[instanceKey('2026-07-31', 'PM')]).toEqual({ kind: 'edited', statusKey: 'unavailable' })
+    expect(api.getState().schedule.availabilitySeries['AS0008']!.exceptions[instanceKey('2026-07-31', 'PM')]).toEqual({ kind: 'edited', statusKey: 'unavailable' })
   })
 
   it('the audit names statuses by their label at the time', () => {
@@ -312,7 +313,7 @@ describe('review fixes (catch-up Phase 29 review pass)', () => {
     const api = store()
     createAvailabilitySeries(api, SOUTER, fridayPm({ everyWeeks: 1, startISO: '2026-08-07', untilISO: '2026-08-28' }))
     setAvailabilityRange(api, SOUTER, { anaesthetistId: ANAE.souter, fromISO: '2026-08-21', toISO: '2026-08-21', sessions: 'PM', statusKey: 'holiday' })
-    const out = deleteAvailabilitySeries(api, SOUTER, 'AS0001')
+    const out = deleteAvailabilitySeries(api, SOUTER, 'AS0008')
     expect(out.ok && [out.value.set, out.value.unchanged]).toEqual([3, 1])
   })
 })

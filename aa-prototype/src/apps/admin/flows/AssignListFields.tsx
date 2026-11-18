@@ -39,7 +39,6 @@ export function assignDraftError(draft: AssignDraft): string | null {
  */
 const KIND_OPTIONS: { value: ListKind; label: string }[] = [
   { value: 'private', label: 'Private' },
-  { value: 'public', label: 'Public' },
   { value: 'preop', label: 'Pre-op' },
 ]
 

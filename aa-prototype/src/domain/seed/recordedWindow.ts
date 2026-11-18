@@ -183,14 +183,18 @@ export interface RecordedWindowInput {
  * generated Slots, with the same per-slot draws (and thresholds) the old
  * generator used, on exactly the sessions its RNG branch reached: not under
  * leave, and with no recurring booking or on a weekend. Weekday: under 0.11 a
- * private List at an ad hoc hospital and surgeon, under 0.17 a public acute
- * List, under 0.22 unavailable. Weekend: under 0.08 unavailable.
+ * private List at an ad hoc hospital and surgeon, under 0.17 an acute theatre
+ * List at Christchurch Public, under 0.22 unavailable. Weekend: under 0.08
+ * unavailable. Returns the acute Lists' ids: since catch-up Phase 32d they are
+ * projected as private Lists and re-homed after the last Booking is placed
+ * (`seed/publicSessions.ts`; a bookless one becomes a Public session).
  */
 export function seedRecordedWindow(
   lists: Record<string, List>,
   slots: Record<string, Slot>,
   input: RecordedWindowInput,
-): void {
+): Set<string> {
+  const acuteListIds = new Set<string>()
   const recurringKeys = new Set(input.recurringBookings.map((t) => `${t.anaesthetistId}|${t.dayOfWeek}|${t.session}`))
   const leave = new Set(input.leave.map((w) => `${w.anaesthetistId}|${w.dateISO}|${w.session}`))
   for (const dateISO of enumerateDatesISO(RECORDED_WINDOW.fromISO, RECORDED_WINDOW.toISO)) {
@@ -213,15 +217,17 @@ export function seedRecordedWindow(
           // The on-call surgeon comes from its own stream (catch-up Phase 31), so
           // the 'fill' draws, and every other placement and Booking, are unchanged.
           placeList(lists, slots, anaesthetistId, dateISO, session, {
-            kind: 'public',
+            kind: 'private',
             hospitalId: HOSP.cph,
             surgeonId: pick(slotRng(input.seed, 'acute', anaesthetistId, dateISO, session), ACUTE_SURGEONS),
             notes: 'Acute theatre',
           })
+          acuteListIds.add(projectedListId(anaesthetistId, dateISO, session))
         } else if (draw < 0.22) {
           setSlot(slots, anaesthetistId, dateISO, session, { status: 'unavailable', note: 'Not available' })
         }
       }
     }
   }
+  return acuteListIds
 }

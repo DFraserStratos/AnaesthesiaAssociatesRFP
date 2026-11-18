@@ -9,6 +9,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type AppState } from './appStore'
+import { seriesCalendarFor } from './availabilityActions'
 import {
   advanceClockDays,
   advanceClockMinutes,
@@ -79,16 +80,20 @@ describe('clock roll-forward', () => {
       anaesthetists: canvasAnaesthetists(state.masters.anaesthetists),
       recurringBookings: Object.values(state.masters.recurringBookings),
       leave: SEED_LEAVE,
-      series: [],
+      // The seeded weekly Public series (catch-up Phase 32d) paint the rolled days.
+      series: seriesCalendarFor(state, newDates),
       statuses: state.masters.slotStatuses,
     }
     const fresh = generateCanvasForDates(masters, newDates)
     const byId = <T extends { id: string }>(xs: T[]) => [...xs].sort((a, b) => a.id.localeCompare(b.id))
     expect(byId(slots.filter((s) => newDates.includes(s.dateISO)))).toEqual(byId(fresh.slots))
     expect(byId(Object.values(state.schedule.lists).filter((l) => newDates.includes(l.dateISO)))).toEqual(byId(fresh.lists))
-    // Nothing invented: every rolled session is free unless a recurring booking projected a List.
+    // Nothing invented: every rolled session is free unless a recurring booking projected a List or a
+    // series painted it; a rolled public session is Public, never a List (catch-up Phase 32d).
     const listSlots = new Set(fresh.lists.map((l) => l.slotId))
-    for (const slot of fresh.slots) if (!listSlots.has(slot.id)) expect(slot.status, slot.id).toBe('free')
+    for (const slot of fresh.slots) if (!listSlots.has(slot.id)) expect(slot.status, slot.id).toBe(slot.seriesId !== undefined ? 'publicHospital' : 'free')
+    expect(fresh.slots.some((s) => s.status === 'publicHospital' && s.note === 'CPH')).toBe(true)
+    expect(fresh.lists.some((l) => l.hospitalId === HOSP.cph)).toBe(false)
 
     // One summary audit entry per rolled day, source demo.
     const rollEntries = state.audit.filter((a) => a.action === 'canvas.rollForward')
@@ -202,7 +207,7 @@ describe('canvas generator scale (the RFP production scale)', () => {
       surgeonId: string
     }> = [
       { dayOfWeek: 1, session: 'AM', kind: 'private', hospitalId: HOSP.stg, surgeonId: SURG.hale },
-      { dayOfWeek: 2, session: 'AM', kind: 'public', hospitalId: HOSP.cph, surgeonId: SURG.okafor },
+      { dayOfWeek: 2, session: 'AM', kind: 'private', hospitalId: HOSP.cph, surgeonId: SURG.okafor },
       { dayOfWeek: 3, session: 'PM', kind: 'private', hospitalId: HOSP.sx, surgeonId: SURG.patel },
       { dayOfWeek: 4, session: 'AM', kind: 'private', hospitalId: HOSP.forte, surgeonId: SURG.lim },
       { dayOfWeek: 5, session: 'PM', kind: 'preop', hospitalId: HOSP.aaRooms, surgeonId: SURG.patel },

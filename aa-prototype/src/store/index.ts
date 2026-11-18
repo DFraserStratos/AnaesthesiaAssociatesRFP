@@ -321,6 +321,9 @@ export {
   officeStandInRefusal,
   STAND_IN_INCOMPLETE,
   STAND_IN_ASSIGN_CHOICES,
+  OFFICE_PUBLIC_NOTE,
+  officeSetsPublicRefusal,
+  setSessionPublicAsSimulatedOffice,
 } from './officeStandIn'
 export {
   simulateIncomingDraftListRequest,

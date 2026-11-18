@@ -31,9 +31,9 @@ const holiday = seeded[SEED_STATUS.holiday]!
 const unavailable = seeded[SEED_STATUS.unavailable]!
 
 const draft = (over: Partial<SlotStatusDraft> = {}): SlotStatusDraft => ({
-  label: 'Public hospital',
-  longLabel: 'At the public hospital',
-  description: 'Working at the public hospital. Same effect as Unavailable.',
+  label: 'Teaching',
+  longLabel: 'Teaching session',
+  description: 'Teaching. Same effect as Unavailable.',
   colour: 'unavailable',
   treatment: 'hatched',
   bookable: false,
@@ -43,11 +43,12 @@ const draft = (over: Partial<SlotStatusDraft> = {}): SlotStatusDraft => ({
 })
 
 describe('the seeded starting set (OQ-64, US-01.2.1)', () => {
-  it('is Free (default), On holiday and Unavailable, with today\'s colours and treatments', () => {
+  it('is Free (default), On holiday, Unavailable and Public (catch-up Phase 32d), with today\'s colours and treatments', () => {
     expect(SEED_SLOT_STATUSES.map((s) => [s.key, s.label, s.longLabel, s.colour, s.treatment, s.bookable])).toEqual([
       ['free', 'Free', 'Free', 'free', 'dashed', true],
       ['holiday', 'Holiday', 'On holiday', 'holiday', 'solid', false],
       ['unavailable', 'Unavailable', 'Unavailable', 'unavailable', 'hatched', false],
+      ['publicHospital', 'Public', 'Public hospital', 'public', 'solid', false],
     ])
   })
 
@@ -63,7 +64,7 @@ describe('the seeded starting set (OQ-64, US-01.2.1)', () => {
 
   it('no status key equals a List kind, and none seeds an emergency or extra kind of unavailable', () => {
     for (const s of SEED_SLOT_STATUSES) expect(LIST_KINDS as readonly string[]).not.toContain(s.key)
-    expect(SEED_SLOT_STATUSES).toHaveLength(3)
+    expect(SEED_SLOT_STATUSES).toHaveLength(4)
   })
 
   it('no seeded key or label is a List state or its label (US-01.2.2)', () => {
@@ -73,8 +74,8 @@ describe('the seeded starting set (OQ-64, US-01.2.1)', () => {
     }
   })
 
-  it('offers anaesthetists exactly Free, On holiday, Unavailable, in that order', () => {
-    expect(anaesthetistChoices(seeded).map((s) => s.longLabel)).toEqual(['Free', 'On holiday', 'Unavailable'])
+  it('offers anaesthetists exactly Free, On holiday, Unavailable, Public hospital, in that order', () => {
+    expect(anaesthetistChoices(seeded).map((s) => s.longLabel)).toEqual(['Free', 'On holiday', 'Unavailable', 'Public hospital'])
   })
 })
 
@@ -83,7 +84,7 @@ describe('lookups and behaviour by ID', () => {
     expect(statusFor(seeded, 'nope')).toBeUndefined()
     expect(statusFor(seeded, undefined)).toBeUndefined()
     const retired = { ...seeded, unavailable: { ...unavailable, retiredAtISO: '2026-07-21T09:00:00' } }
-    expect(activeStatuses(retired).map((s) => s.key)).toEqual(['free', 'holiday'])
+    expect(activeStatuses(retired).map((s) => s.key)).toEqual(['free', 'holiday', 'publicHospital'])
   })
 
   it('open and closed come from the bookable flag; an unknown status is closed', () => {
@@ -135,7 +136,9 @@ describe('validateSlotStatusDraft', () => {
 
   it('refuses a duplicate label among statuses in use (case-insensitive) and a List type name', () => {
     expect(validateSlotStatusDraft(draft({ label: 'holiday' }), seeded)).toContain('Another status is already called Holiday.')
-    expect(validateSlotStatusDraft(draft({ label: 'Public' }), seeded).join(' ')).toMatch(/List type/)
+    // Public is a status since catch-up Phase 32d: refused as a duplicate; Private is still a List type.
+    expect(validateSlotStatusDraft(draft({ label: 'Public' }), seeded)).toContain('Another status is already called Public.')
+    expect(validateSlotStatusDraft(draft({ label: 'Private' }), seeded).join(' ')).toMatch(/List type/)
     // Editing a status may keep its own label.
     expect(validateSlotStatusDraft({ ...draft(), label: 'Holiday', longLabel: 'On holiday' }, seeded, { key: 'holiday' })).toEqual([])
   })

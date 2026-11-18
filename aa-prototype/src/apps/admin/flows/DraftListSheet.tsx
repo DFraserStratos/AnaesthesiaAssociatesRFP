@@ -19,7 +19,6 @@ import { surgeonSpecialtyLabel, withSpecialties } from '../../../domain/specialt
 
 const KIND_OPTIONS: { value: ListKind; label: string }[] = [
   { value: 'private', label: 'Private' },
-  { value: 'public', label: 'Public' },
   { value: 'preop', label: 'Pre-op' },
 ]
 const SESSION_OPTIONS: { value: Session; label: string }[] = [

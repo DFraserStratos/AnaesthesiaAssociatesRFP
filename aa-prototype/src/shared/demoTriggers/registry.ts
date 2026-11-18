@@ -44,6 +44,8 @@ import {
   armHandoffFault,
   assignNextFreeSlotAsSimulatedOffice,
   addOutOfHoursListAsSimulatedOffice,
+  officeSetsPublicRefusal,
+  setSessionPublicAsSimulatedOffice,
   outOfHoursStandInRefusal,
   authoriseAsSimulatedOffice,
   nextOpenSlotFor,
@@ -105,8 +107,8 @@ import { noContractRvg } from '../../domain/billing/contracts'
 import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, SEED_LIST_IDS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
 import { MULTI_PROCEDURE_DEMO } from '../../domain/seed/multiProcedureDemo'
 import { DRAFT_LIST, DRAFT_LISTS, SOURCE_LABELS } from '../scheduleTerms'
-import { projectedListId } from '../../domain/slots'
-import { SEED_STATUS, statusFor } from '../../domain/slotStatus'
+import { projectedListId, slotIdFor } from '../../domain/slots'
+import { SEED_STATUS, statusFor, statusLine } from '../../domain/slotStatus'
 import { roundToCents } from '../../domain/billing/money'
 import { aaFeeFor, aaFeeMonthLabel } from '../../domain/billing/aaFee'
 import { drSurname, formatCurrency, plural, shortDay } from '../format'
@@ -408,6 +410,22 @@ function sicknessChoiceParts(choiceId: string): { listId: string; route: Sicknes
 }
 
 /** Closed, empty colleague sessions for the List an open picker is assigning or moving (the stand-in's choices). */
+/**
+ * The AM and PM sessions of the day open in My calendar (catch-up Phase 32d's
+ * office stand-in), each named with its status line; a session that cannot take
+ * Public stays listed and its disabled reason says why.
+ */
+function officePublicChoices(state: AppState, ctx: DemoTriggerCtx): { id: string; label: string }[] {
+  const day = ctx.published['mobileCalendar.day']
+  if (day === undefined) return []
+  const [anaesthetistId, dateISO] = day.split('|') as [string, string]
+  return (['AM', 'PM'] as const).flatMap((session) => {
+    const slot = state.schedule.slots[slotIdFor(anaesthetistId, dateISO, session)]
+    if (slot === undefined) return []
+    return [{ id: slot.id, label: `${shortDay(dateISO)} ${sessionText(session)}, now ${statusLine(slot, state.masters.slotStatuses)}` }]
+  })
+}
+
 function makeAvailableChoices(state: AppState, ctx: DemoTriggerCtx): { id: string; label: string }[] {
   const listId = ctx.published['adminPicker.listId']
   if (listId === undefined) return []
@@ -870,6 +888,34 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => null,
     indexEmptyReason: 'PWA only: the framed build plays the office in Admin (Open out-of-hours session on Admin Day).',
+  },
+  // ── Mobile · My calendar: the office sets a session to Public (catch-up Phase 32d; PWA parity) ──
+  {
+    id: 'availability-office-sets-public',
+    label: 'Office sets this session to Public',
+    description:
+      'Stands in for the office on the phone: sets the AM or PM session of the day open in My calendar to Public with the note "CPH", as Kirsty would with Change status in the Admin Day drawer. Not on a session that holds a List, is already Public or is past.',
+    screen: 'Mobile · My calendar, the session panel',
+    routes: [`${MOBILE_AVAILABILITY}/calendar`],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    when: (_state, ctx) => ctx.published['mobileCalendar.day'] !== undefined,
+    choices: (state, ctx) => officePublicChoices(state, ctx),
+    disabledReason: (state, ctx, choiceId) => {
+      const slotId = choiceId ?? officePublicChoices(state, ctx)[0]?.id
+      if (slotId === undefined) return 'Open a day in My calendar'
+      return officeSetsPublicRefusal(state, slotId)
+    },
+    run: (api, ctx, choiceId) => {
+      const slotId = choiceId ?? officePublicChoices(api.getState(), ctx)[0]?.id
+      if (slotId === undefined) return { ok: false, message: 'Open a day in My calendar' }
+      const res = setSessionPublicAsSimulatedOffice(api, slotId)
+      if (!res.ok) return { ok: false, message: res.message }
+      const status = api.getState().schedule.slots[slotId]
+      return { ok: true, message: `The office set this session to ${status !== undefined ? statusLine(status, api.getState().masters.slotStatuses) : 'Public'}.` }
+    },
+    indexPath: () => null,
+    indexEmptyReason: 'PWA only: the framed build plays the office in Admin (Change status in the Day drawer).',
   },
   // ── Mobile · Lists: the office assigns a waiting request (catch-up Phase 31) ──
   {

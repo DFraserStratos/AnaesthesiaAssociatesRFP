@@ -297,7 +297,7 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
         </div>
       )}
 
-      <TextField label="Note (optional)" value={note} onChange={(v) => { touched(); setNote(v) }} placeholder="For example, conference" />
+      <TextField label="Note (optional)" value={note} onChange={(v) => { touched(); setNote(v) }} placeholder="For example, CPH" />
 
       <FormError message={error} />
       <ResultLine line={result} shot="availability-result" />

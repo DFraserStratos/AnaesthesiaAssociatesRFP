@@ -121,25 +121,27 @@ export type SlotStatusKey = string
 
 /**
  * A List's kind (catch-up Phase 28). The catalogue models no List kind
- * (DM-04: private, public and pre-op appear only as RFP candidate statuses);
- * it is kept as a List attribute so the six-colour design language and the
- * seed's acute and pre-op Lists still read. Logged for the owner.
+ * (DM-04: private and pre-op appear only as RFP candidate statuses); it is
+ * kept as a List attribute so the six-colour design language and the seed's
+ * pre-op Lists still read. Logged for the owner. Public is not a kind of List:
+ * since catch-up Phase 32d (D86, RV-43) it is a Slot status (`publicHospital`)
+ * with an optional note and no List detail.
  */
-export const LIST_KINDS = ['private', 'public', 'preop'] as const
+export const LIST_KINDS = ['private', 'preop'] as const
 export type ListKind = (typeof LIST_KINDS)[number]
 
 /** The List kinds' fixed labels (chip, then long label); not master data (catch-up Phase 29). */
 export const LIST_KIND_LABELS: Record<ListKind, { label: string; longLabel: string }> = {
   private: { label: 'Private', longLabel: 'Private' },
-  public: { label: 'Public', longLabel: 'Public' },
   preop: { label: 'Pre-op', longLabel: 'Pre-op Assessment' },
 }
 
 /**
  * What a session shows (catch-up Phase 29: one display key space): the List's
  * kind when a List is in the Slot, otherwise the Slot's status ID unchanged.
- * No status ID can equal a List kind (seeded IDs are availability words,
- * generated ones `ST####`), so the space cannot collide. Never a List state.
+ * No status ID can equal a List kind (seeded IDs are availability words, Public
+ * is `publicHospital` since Phase 32d, generated ones `ST####`), so the space
+ * cannot collide. Never a List state.
  */
 export type DisplayKey = ListKind | SlotStatusKey
 

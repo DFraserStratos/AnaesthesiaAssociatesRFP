@@ -137,17 +137,18 @@ describe('the availability status master and series (catch-up Phase 29)', () => 
   it('discards a v21 store (the six-key List statuses) and reseeds the status master', () => {
     expect(PERSIST_VERSION).toBeGreaterThanOrEqual(22)
     const fresh = freshAppState()
-    expect(Object.keys(fresh.masters.slotStatuses).sort()).toEqual(['free', 'holiday', 'unavailable'])
+    // Catch-up Phase 32d added Public (`publicHospital`) and its seven seeded weekly series.
+    expect(Object.keys(fresh.masters.slotStatuses).sort()).toEqual(['free', 'holiday', 'publicHospital', 'unavailable'])
     expect('listStatuses' in fresh.masters).toBe(false)
-    expect(fresh.schedule.availabilitySeries).toEqual({})
+    expect(Object.keys(fresh.schedule.availabilitySeries)).toHaveLength(7)
   })
 
-  it('backfills an empty series record into a current-version store saved without it', () => {
+  it('backfills the seeded series record into a current-version store saved without it', () => {
     const fresh = freshAppState()
     const { availabilitySeries: _omit, ...withoutSeries } = fresh.schedule
     void _omit
     const old = { ...fresh, schedule: withoutSeries }
-    expect(backfillMerge(fresh as never, old).schedule.availabilitySeries).toEqual({})
+    expect(backfillMerge(fresh as never, old).schedule.availabilitySeries).toEqual(fresh.schedule.availabilitySeries)
   })
 })
 
@@ -173,7 +174,8 @@ describe('Draft Lists and the pairing rule (catch-up Phase 31)', () => {
       expect(l.hospitalId, l.id).toBeTruthy()
       expect(l.surgeonId, l.id).toBeTruthy()
     }
-    expect(Object.values(fresh.schedule.lists).filter((l) => l.state === 'DRAFT')).toHaveLength(16)
+    // 16 until catch-up Phase 32d removed the six recurring clashes the public rows raised.
+    expect(Object.values(fresh.schedule.lists).filter((l) => l.state === 'DRAFT')).toHaveLength(10)
     expect(fresh.masters.hospitals['H-AAROOMS']).toMatchObject({ locationType: 'aaRooms' })
   })
 })
@@ -699,5 +701,27 @@ describe('one typed price (catch-up Phase 24 session 1)', () => {
     const s = createAppStore({ persisted: true }).getState()
     expect(Object.values(s.schedule.procedures).some((p) => 'priceOverride' in p)).toBe(false)
     expect(Object.values(s.schedule.procedures).filter((p) => p.enteredPrice === 1200)).toHaveLength(1)
+  })
+
+  it('discards a v50 store holding public-kind Lists and no Public status, and reseeds Public as a status with its series', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(51)
+    const fresh = freshAppState()
+    const { publicHospital: _p, ...oldStatuses } = fresh.masters.slotStatuses
+    const sharmaTue14 = 'L-41267-2026-07-14-AM'
+    const old = {
+      ...fresh,
+      masters: { ...fresh.masters, slotStatuses: oldStatuses },
+      schedule: {
+        ...fresh.schedule,
+        availabilitySeries: {},
+        lists: { ...fresh.schedule.lists, [sharmaTue14]: { ...fresh.schedule.lists[sharmaTue14]!, kind: 'public' } },
+      },
+    }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: old, version: 50 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.masters.slotStatuses['publicHospital']?.label).toBe('Public')
+    expect(s.schedule.lists[sharmaTue14]?.kind).toBe('private')
+    expect(Object.values(s.schedule.lists).some((l) => (l.kind as string) === 'public')).toBe(false)
+    expect(Object.keys(s.schedule.availabilitySeries)).toHaveLength(7)
   })
 })

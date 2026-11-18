@@ -60,6 +60,9 @@ describe('canvas fingerprint (Phase 17, re-pinned in Phase 28)', () => {
     // (January to March 2026) were appended; the slots and every other List are unchanged.
     // Re-pinned in catch-up Phase 32b: Dr Rutherford's Wed 22 Jul AM List is a returned
     // Draft List (D59), so it leaves his session; same counts, nothing else moved.
-    expect(canvasFingerprint(buildSeed())).toEqual({ slots: 3864, lists: 1129, hash: 2458698000 })
+    // Re-pinned in catch-up Phase 32d: the public List kind retired (D86). 234 bookless public Lists
+    // are Public sessions ("CPH") and the six recurring-clash Draft Lists the public rows raised are gone
+    // (1129 - 240 = 889); the 12 that hold Bookings are private. Slots unchanged in number.
+    expect(canvasFingerprint(buildSeed())).toEqual({ slots: 3864, lists: 889, hash: 1796667773 })
   })
 })

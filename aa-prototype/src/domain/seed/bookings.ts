@@ -1209,7 +1209,8 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   }
 
   const bookable = (list: AssignedList): boolean =>
-    (list.kind === 'private' || list.kind === 'public') && !pinnedListIds.has(list.id)
+    // Catch-up Phase 32d: the public sessions' Lists are projected as private in the first pass, so this selects exactly what it did.
+    list.kind === 'private' && !pinnedListIds.has(list.id)
 
   let pastBudget = 50
   let todayBudget = 20

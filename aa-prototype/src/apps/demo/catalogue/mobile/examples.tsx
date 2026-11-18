@@ -9,7 +9,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNod
 import { ArrowLeftRight, BellRing, ChevronLeft } from 'lucide-react'
 import { accent, neutral, radius } from '../../../../theme/tokens'
 import { motion } from '../../../../theme/motion'
-import type { AssignedList } from '../../../../domain/types'
+import { LIST_KINDS, type AssignedList } from '../../../../domain/types'
 import type { Warning } from '../../../../domain/warnings/types'
 import type { ListProgress } from '../../../../domain/listProgress'
 import { listProgress } from '../../../../domain/listProgress'
@@ -659,7 +659,7 @@ export function StatusChipExample() {
   const choices = useAnaesthetistStatusChoices()
   return (
     <div style={row}>
-      {(['private', 'public', 'preop'] as const).map((k) => <StatusChip key={k} status={k} />)}
+      {LIST_KINDS.map((k) => <StatusChip key={k} status={k} />)}
       {choices.map((s) => <StatusChip key={s.key} status={s.key} label={s.longLabel} />)}
     </div>
   )

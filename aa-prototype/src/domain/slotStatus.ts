@@ -38,6 +38,8 @@ export const SEED_STATUS = {
   free: 'free',
   holiday: 'holiday',
   unavailable: 'unavailable',
+  /** Public (catch-up Phase 32d, D86): a closed status like Unavailable; never `public`, which was a List kind. */
+  publicHospital: 'publicHospital',
 } as const satisfies Record<string, SlotStatusKey>
 
 export type SlotStatusRecords = Readonly<Record<SlotStatusKey, SlotStatus>>
@@ -154,6 +156,19 @@ export function displayStatusLabel(key: DisplayKey, statuses: SlotStatusRecords,
   return long ? status.longLabel : status.label
 }
 
+/**
+ * A session's status line (catch-up Phase 32d; US-13.1.1): its label and, when
+ * it has one, its note after a middot, for example "Public · CPH". The one
+ * place this wording is built: a Public session shows this and no List detail
+ * (no hospital, surgeon, theatre, kind or count) on every view. An unknown
+ * status reads "Unknown status".
+ */
+export function statusLine(slot: Pick<Slot, 'status' | 'note'>, statuses: SlotStatusRecords, long = false): string {
+  const label = displayStatusLabel(slot.status, statuses, long)
+  const note = slot.note?.trim() ?? ''
+  return note === '' ? label : `${label} · ${note}`
+}
+
 // ---------------------------------------------------------------------------
 // The status master's validator
 // ---------------------------------------------------------------------------
@@ -216,6 +231,7 @@ export function validateSlotStatusDraft(
   const label = draft.label.trim().toLowerCase()
   const clash = activeStatuses(statuses).find((s) => s.key !== ctx.key && s.label.trim().toLowerCase() === label)
   if (label.length > 0 && clash !== undefined) issues.push(`Another status is already called ${clash.label}.`)
+  // Only the kinds that remain (Private, Pre-op): since catch-up Phase 32d Public is a status, refused only as a duplicate label.
   const kindClash = LIST_KINDS.find((k) => LIST_KIND_LABELS[k].label.toLowerCase() === label)
   if (kindClash !== undefined) issues.push(`${LIST_KIND_LABELS[kindClash].label} is a List type, not availability.`)
 

@@ -1,0 +1,153 @@
+/**
+ * Catch-up Phase 32d parity (work item 1; DM-71, RV-43, OQ-139 answered): the
+ * public List kind is retired and the seed re-homed, and nothing billed moves.
+ *
+ * The fixture (`__fixtures__/phase-32d-seed-baseline.json`) was written once by
+ * `__fixtures__/phase32dCapture.ts` from the seed as it stood BEFORE the
+ * re-home (public Lists in place). This suite was green against that seed
+ * before anything changed, and is never run with `-u`.
+ *
+ * Must not move: every Booking, Procedure and billing line; every List holding
+ * a Booking (id, Slot, state, hospital, surgeon, notes; not its kind or its
+ * recurring link); every other Slot and List; the free sessions per day, Tue 21
+ * to Fri 24 Jul; the post-op anchor; the billing-failure List and Souter's
+ * Thu 23 Jul Christchurch Public List.
+ *
+ * May move, each pinned below: the bookless public Lists (gone, their sessions
+ * Public with the note "CPH"), the recurring-clash Draft Lists the public rows
+ * raised (gone), the Draft Lists count, a re-homed List's kind (private).
+ */
+
+import { describe, expect, it } from 'vitest'
+import baselineJson from './__fixtures__/phase-32d-seed-baseline.json'
+import { auditLine, capturePhase32d, freeSessionsOn, PARITY_DAYS, type Phase32dSeedBaseline } from './__fixtures__/phase32dCapture'
+import { buildSeed, SEED_LIST_IDS } from './index'
+import { projectedListId } from '../slots'
+import { ANAE } from './cast'
+
+const before = baselineJson as unknown as Phase32dSeedBaseline
+const seed = buildSeed()
+const now = capturePhase32d(seed)
+
+/** Dr Sharma's Tue 14 Jul AM List: 14's "Stage post-op scenario" anchor (POST_OP_ORIGINAL_LIST_ID). */
+const POST_OP_ANCHOR = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
+/** Dr Souter's Thu 23 Jul AM List at Christchurch Public, eight Health NZ Bookings. */
+const SOUTER_THU23 = projectedListId(ANAE.souter, '2026-07-23', 'AM')
+
+const removedListIds = new Set(before.publicBookless)
+const removedSlotIds = new Set(before.publicBookless.map((id) => before.otherLists[id]!.slotId!))
+const removedDraftIds = new Set(before.draftListIds.filter((id) => !now.draftListIds.includes(id)))
+
+describe('Phase 32d parity: what must not move', () => {
+  it('the baseline is the pre-re-home seed: 12 public Lists hold Bookings, 240 are bookless', () => {
+    expect(before.publicWithBookings).toHaveLength(12)
+    expect(before.publicBookless).toHaveLength(240)
+    expect(before.publicWithBookings).toContain(POST_OP_ANCHOR)
+    expect(before.publicWithBookings).toContain(SOUTER_THU23)
+    // Ropata's Thu 16 Jul AM (the billing-failure List) was re-pointed to St George's by the Phase 09 fixup: not public.
+    expect(before.listsWithBookings[SEED_LIST_IDS.billingFailure]).toBeDefined()
+  })
+
+  it('every Booking, Procedure and billing line is identical', () => {
+    expect(now.bookings).toEqual(before.bookings)
+    expect(now.procedures).toEqual(before.procedures)
+    expect(now.billingLines).toEqual(before.billingLines)
+  })
+
+  it('every List holding a Booking keeps its id, Slot, state, hospital, surgeon and notes', () => {
+    expect(now.listsWithBookings).toEqual(before.listsWithBookings)
+  })
+
+  it('every other List is unchanged, apart from the bookless public Lists and the public rows\' clash Draft Lists', () => {
+    for (const [id, list] of Object.entries(before.otherLists)) {
+      if (removedListIds.has(id) || removedDraftIds.has(id)) continue
+      expect(seed.schedule.lists[id], id).toEqual(list)
+    }
+    const known = new Set([...Object.keys(before.otherLists), ...Object.keys(before.listsWithBookings)])
+    expect(Object.keys(seed.schedule.lists).filter((id) => !known.has(id))).toEqual([])
+  })
+
+  it('every Slot is unchanged, apart from the sessions the bookless public Lists sat in', () => {
+    for (const [id, line] of Object.entries(before.slots)) {
+      if (removedSlotIds.has(id)) continue
+      expect(now.slots[id], id).toBe(line)
+    }
+    expect(Object.keys(now.slots).sort()).toEqual(Object.keys(before.slots).sort())
+  })
+
+  it('free sessions per day, Tue 21 to Fri 24 Jul, are unchanged (a public List and a Public session are both not free)', () => {
+    for (const d of PARITY_DAYS) expect(freeSessionsOn(seed, d), d).toBe(before.freeByDay[d])
+    expect(before.freeByDay).toEqual({ '2026-07-21': 6, '2026-07-22': 13, '2026-07-23': 7, '2026-07-24': 16 })
+  })
+
+  it('the seeded audit is unchanged, apart from entries about removed Lists (sequence numbers close up after them)', () => {
+    const gone = (line: string) => [...removedListIds, ...removedDraftIds].some((id) => line.split('|')[2] === id)
+    const body = (line: string) => line.split('|').slice(1).join('|')
+    expect(seed.audit.map(auditLine).filter((l) => !gone(l)).map(body)).toEqual(before.audit.filter((l) => !gone(l)).map(body))
+  })
+
+  it('the post-op anchor holds Sarah Mitchell\'s Health NZ Booking', () => {
+    const list = seed.schedule.lists[POST_OP_ANCHOR]
+    expect(list?.state).toBe(before.listsWithBookings[POST_OP_ANCHOR]!.state)
+    const bookings = Object.values(seed.schedule.bookings).filter((b) => b.listId === POST_OP_ANCHOR)
+    expect(bookings.length).toBeGreaterThan(0)
+    const procs = Object.values(seed.schedule.procedures).filter((p) => bookings.some((b) => b.id === p.bookingId))
+    expect(procs.some((p) => p.billingReference === 'HNZ-2026-3102')).toBe(true)
+  })
+
+  it('Souter\'s Thu 23 Jul AM keeps its eight Bookings, and the billing-failure List its own', () => {
+    expect(Object.values(seed.schedule.bookings).filter((b) => b.listId === SOUTER_THU23)).toHaveLength(8)
+    expect(seed.schedule.lists[SEED_LIST_IDS.billingFailure]).toBeDefined()
+    expect(Object.values(seed.schedule.bookings).some((b) => b.listId === SEED_LIST_IDS.billingFailure)).toBe(true)
+  })
+})
+
+describe('Phase 32d parity: what may move, each pinned', () => {
+  const lists = seed.schedule.lists
+  const bookless = before.publicBookless.filter((id) => before.otherLists[id]!.state !== 'DRAFT')
+  const clashDrafts = before.publicBookless.filter((id) => before.otherLists[id]!.state === 'DRAFT')
+
+  it('234 bookless public Lists are gone; each session is Public with the note "CPH", never under a List', () => {
+    expect(bookless).toHaveLength(234)
+    for (const id of bookless) {
+      expect(lists[id], id).toBeUndefined()
+      const slot = seed.schedule.slots[before.otherLists[id]!.slotId!]!
+      expect(slot.status).toBe('publicHospital')
+      expect(slot.note).toBe('CPH')
+    }
+    const held = new Set(Object.values(lists).flatMap((l) => (l.slotId !== undefined ? [l.slotId] : [])))
+    const publicSlots = Object.values(seed.schedule.slots).filter((s) => s.status === 'publicHospital')
+    expect(publicSlots).toHaveLength(234)
+    expect(publicSlots.filter((s) => held.has(s.id))).toEqual([])
+  })
+
+  it('the 12 public Lists holding Bookings are private Lists with no recurring link, same id', () => {
+    for (const id of before.publicWithBookings) {
+      expect(lists[id]?.kind, id).toBe('private')
+      expect(lists[id]?.recurringBookingId, id).toBeUndefined()
+    }
+    expect(Object.values(lists).some((l) => (l.kind as string) === 'public')).toBe(false)
+  })
+
+  it('the six recurring-clash Draft Lists the public rows raised are gone; the Draft Lists count is 10', () => {
+    expect([...clashDrafts].sort()).toEqual([...removedDraftIds].sort())
+    expect(clashDrafts).toHaveLength(6)
+    expect(before.draftListIds).toHaveLength(16)
+    expect(now.draftListIds).toHaveLength(10)
+  })
+
+  it('seven weekly Public series, note "CPH", no end date; the surviving Lists\' sessions are deleted instances', () => {
+    const series = Object.values(seed.schedule.availabilitySeries)
+    expect(series.map((s) => s.id)).toEqual(['AS0001', 'AS0002', 'AS0003', 'AS0004', 'AS0005', 'AS0006', 'AS0007'])
+    for (const s of series) {
+      expect(s.statusKey).toBe('publicHospital')
+      expect(s.note).toBe('CPH')
+      expect(s.untilISO).toBeUndefined()
+      expect(s.everyWeeks).toBe(1)
+    }
+    expect(series.find((s) => s.anaesthetistId === ANAE.whitaker)).toMatchObject({ weekdays: [2, 4, 5], sessions: 'AM' })
+    expect(series.find((s) => s.anaesthetistId === ANAE.ropata)).toMatchObject({ weekdays: [2, 4], sessions: 'both' })
+    expect(Object.keys(series.find((s) => s.anaesthetistId === ANAE.sharma)!.exceptions)).toContain('2026-07-14-AM')
+    expect(seed.counters.availabilitySeries).toBe(8)
+  })
+})

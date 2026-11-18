@@ -3,7 +3,7 @@ import { Moon, Plus, TriangleAlert } from 'lucide-react'
 import { accent, neutral, semantic, radius, elevation } from '../../../theme/tokens'
 import { AttentionDot } from '../../../shared/warnings/AttentionDot'
 import type { DisplayKey, DraftList } from '../../../domain/types'
-import { isClosedKey } from '../../../domain/slotStatus'
+import { isClosedKey, statusLine } from '../../../domain/slotStatus'
 import type { Anaesthetist } from '../../../domain/types'
 import type { AppState, ListWarningSummary, SlotView } from '../../../store'
 import { useAppStore, useConflictLookups } from '../../../store'
@@ -92,9 +92,8 @@ function segmentsFor(views: SlotView[], statuses: AppState['masters']['slotStatu
 
 /**
  * A note signal is an annotation beyond the subtitle already visible in a
- * block. A public or pre-op List's note is its template label ("Acute theatre",
- * "Pre-op clinic / AA rooms"), shown as the subtitle, so only a private List's
- * note signals.
+ * block. A pre-op List's note is its template label ("Pre-op clinic / AA
+ * rooms"), shown as the subtitle, so only a private List's note signals.
  */
 function hasNoteSignal(view: SlotView): boolean {
   const list = view.list
@@ -397,8 +396,8 @@ function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: Displa
   // AA rooms keeps the design's first line, the kind's long label ("Pre-op Assessment"); its name is in the subtitle.
   const hospitalName = list !== undefined && masters.hospitals[list.hospitalId]?.locationType !== 'aaRooms' ? masters.hospitals[list.hospitalId]?.name : undefined
   const surgeon = list !== undefined ? masters.surgeons[list.surgeonId] : undefined
-  // Every List names its surgeon (US-01.3.1). A public or pre-op block keeps its template label as the subtitle
-  // ("Acute theatre", "Pre-op clinic / AA rooms") and carries the surgeon in its tooltip, as the design shows.
+  // Every List names its surgeon (US-01.3.1). A pre-op block keeps its template label as the subtitle
+  // ("Pre-op clinic / AA rooms") and carries the surgeon in its tooltip, as the design shows.
   const templateLabel = list !== undefined && list.kind !== 'private' && note !== undefined && note.trim() !== '' ? note : undefined
 
   let l1: string
@@ -416,8 +415,10 @@ function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: Displa
     l1 = resolved.label
     l2 = evening ? (note ?? OUT_OF_HOURS) : (note ?? '').replace(/^Free\s*\/\s*/i, '') || 'open for cover'
   } else {
-    l1 = resolved.label
-    l2 = note ?? (evening ? OUT_OF_HOURS : '')
+    // A closed session (Public among them, catch-up Phase 32d) reads its status line, "Public · CPH",
+    // with no hospital, surgeon, theatre, kind or count.
+    l1 = statusLine(slot, masters.slotStatuses)
+    l2 = evening ? OUT_OF_HOURS : ''
   }
 
   // The has-note dot marks a genuine office annotation, not a note already shown

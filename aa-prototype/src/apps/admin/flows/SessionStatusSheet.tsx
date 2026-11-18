@@ -188,7 +188,7 @@ export function SessionStatusSheet({ open, slotId, actor, onClose }: { open: boo
               shot="office-status-choices"
               labelOf="longLabel"
             />
-            <TextArea label="Note" value={note} onChange={setNote} placeholder="Optional, for example: Unwell, short notice" />
+            <TextArea label="Note" value={note} onChange={setNote} placeholder="Optional, for example: CPH, or Unwell" />
             {needsWhere && !locked && (
               <Notice tone="neutral" shot="office-status-holds-list">
                 <span>This session has a List ({listLine}). {submitted ? 'It has been submitted, so it can only be handed on to a colleague.' : 'Next, choose whether it goes back to the office or to a colleague.'}</span>
