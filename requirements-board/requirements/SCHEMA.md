@@ -398,8 +398,7 @@ Every field is optional; with no file the board runs on neutral defaults.
 ```
 
 `project.name` shows beside the board's name (always "Requirements board") in the masthead and the
-browser tab; `project.accent` (optional, `#rrggbb`) fills the board's mark and the tab icon and
-underlines the open view, so boards for different projects tell apart. Dates and times are always New Zealand English. `components` and `screenshotApps` are the lists the check
+browser tab; `project.accent` (optional, `#rrggbb`) fills the board's mark and the tab icon, so boards for different projects tell apart. Dates and times are always New Zealand English. `components` and `screenshotApps` are the lists the check
 holds items to (empty: anything goes).
 `statuses` (items) and `questionStatuses` (questions) are ordered lists; each entry is
 `{ code, label, help, tone, role?, settle?, heading? }`. `code` is a whole number from 1, unique within its list. A file stores the `code`; the label, help,

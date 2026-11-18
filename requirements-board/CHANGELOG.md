@@ -2,6 +2,13 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.12.1 · 2026-11-18
+
+- The project accent fills only the board's mark and the tab icon. The underline under the open view no longer takes it.
+- The underline under the open view is ink, not teal: showing the open view is not an action, and a coloured underline clashed with the docked sheet's top rule right under it.
+- An item's sheet is ruled in its type's colour (orange epic, purple feature, blue story), as its card is, in place of its status colour. Only the rule changes: artifact marks inside the sheet keep their own colour. A question's sheet keeps its status colour.
+- The tab icon's grid lines are a little darker and heavier, so they still show at tab-icon size. The masthead mark is unchanged.
+
 ## 1.12.0 · 2026-11-18
 
 - The masthead shows status only when something is wrong. "Live" and "Checks pass" are gone; one **problem pill** appears while there is a problem: amber "Offline" when the board has lost its dev server (nothing is being saved), red for catalogue errors, card moves not saved or a refused move. One problem names itself, more say "2 problems"; it opens one list grouped as Connection, Card moves and Checks, offline first, with the command to restart the server. When the last problem clears, a green "All clear" shows for about three seconds and fades. The "Card moves not saved" and refused-move pills are folded into it.
@@ -9,7 +16,7 @@ Bump `version` in `package.json` and add an entry here before each kit export.
 
 ## 1.11.0 · 2026-11-18
 
-- Settings: the Board section is now **Project**, with the project's name and a new **accent colour** (`project.accent` in `board.config.json`, `#rrggbb`): nine presets, None, or any other colour. With one set, the board's mark in the masthead and the browser tab icon are filled with it, the underline under the open view takes it in place of teal, and the project's name turns bold, so boards for different projects open side by side tell apart at a glance.
+- Settings: the Board section is now **Project**, with the project's name and a new **accent colour** (`project.accent` in `board.config.json`, `#rrggbb`): nine presets, None, or any other colour. With one set, the board's mark in the masthead and the browser tab icon are filled with it and the project's name turns bold, so boards for different projects open side by side tell apart at a glance.
 - The board's name is fixed as "Requirements board" (`board.name` is no longer read, and saving Settings drops it from the file), and dates and times are always New Zealand English (`project.locale` is no longer read). `capture.locale` for screenshots is unchanged.
 
 ## 1.10.1 · 2026-11-18

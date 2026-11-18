@@ -42,7 +42,7 @@ is a model to describe.
 The project's vocabulary. The format is in `SCHEMA.md` ("Board config file") and the board's
 README ("Project config"). Ask the user for anything you can't infer:
 
-- `project.name`: beside "Requirements board" in the masthead and the browser tab. `project.accent` (optional, `#rrggbb`, or pick one on the Settings page) fills the board's mark and the tab icon and underlines the open view.
+- `project.name`: beside "Requirements board" in the masthead and the browser tab. `project.accent` (optional, `#rrggbb`, or pick one on the Settings page) fills the board's mark and the tab icon.
   The Settings page edits these, `components` and the status lists.
 - `components`: the system's areas, each with a three-letter `code`. Leave the list empty to accept
   any component until the areas are settled.

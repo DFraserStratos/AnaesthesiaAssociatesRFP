@@ -75,9 +75,6 @@ test('naming the project and picking its accent changes the masthead and the tab
   await expect(page.locator('.masthead .brand-project')).toHaveText('Orders')
   await expect(page.locator('.masthead')).toHaveClass(/accented/)
   await expect(page.locator('.masthead .brand-mark rect').last()).toHaveAttribute('fill', '#5a4fcf')
-  await page.locator('.masthead .tab').first().click()
-  await expect(page.locator('.masthead .tab[aria-current="page"]')).toHaveCSS('border-bottom-color', 'rgb(90, 79, 207)')
-  await page.goto('/#/settings')
   await expect(page).toHaveTitle('Orders · Requirements board')
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /5a4fcf/)
   const saved = config() as unknown as { board?: unknown; project: unknown }

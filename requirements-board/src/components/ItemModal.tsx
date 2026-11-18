@@ -166,7 +166,7 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
         : null)
 
   return (
-    <Sheet onClose={() => ed.leave(open.close)} onKey={ed.onKey} label={`${item.id} ${item.title}`} statusClass={statusClasses(config, 'item', item.status)} confirm={confirm} docked={docked}>
+    <Sheet onClose={() => ed.leave(open.close)} onKey={ed.onKey} label={`${item.id} ${item.title}`} statusClass={`${statusClasses(config, 'item', item.status)} sheet-${item.type}`} confirm={confirm} docked={docked}>
       <SheetHead item={rec.data} index={shown} leave={ed.leave} />
       <EditBanners ed={ed} noun="item" />
       {/* Ctrl F finds in the card while it is open; editing leaves it to the browser, which reads the fields. */}

@@ -123,7 +123,7 @@ const ACCENTS: [name: string, hex: string][] = [
   ['Slate', '#4a5568'],
 ]
 
-/** The project the board is for: its name beside the board's, and an accent colour for the mark, the open view's underline and the tab icon. */
+/** The project the board is for: its name beside the board's, and an accent colour for the mark and the tab icon. */
 function ProjectSection() {
   const config = useConfig()
   const saved = { project: config.project.name, accent: config.project.accent ?? '' }
@@ -157,10 +157,9 @@ function ProjectSection() {
             <span className={form.accent ? 'accent-preview accented' : 'accent-preview'} style={form.accent ? ({ '--accent': form.accent } as CSSProperties) : undefined} aria-hidden>
               <BrandMark accent={form.accent || undefined} />
               <span className="accent-preview-name">{form.project.trim() || 'Project name'}</span>
-              <span className="accent-preview-tab">Board</span>
             </span>
           </div>
-          <small>Colours the board's mark, the underline under the open view and the tab icon, so boards for different projects open side by side tell apart at a glance.</small>
+          <small>Fills the board's mark and the tab icon, so boards for different projects open side by side tell apart at a glance.</small>
         </div>
       </div>
       {error && <div className="banner error">{error}</div>}

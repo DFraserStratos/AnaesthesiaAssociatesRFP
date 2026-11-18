@@ -162,15 +162,12 @@ button {
   padding-left: 10px;
   border-left: 1px solid var(--rule);
 }
-/* A project accent (Settings): the mark is filled with it (BrandMark), the open view's underline
-   takes it in place of teal, and the name turns bold ink. Boards for different projects tell apart. */
+/* A project accent (Settings): the mark is filled with it (BrandMark), matching the tab icon, and the
+   name turns bold ink. Boards for different projects tell apart. */
 .masthead.accented .brand-project {
   font-weight: 700;
   font-size: 14px;
   color: var(--ink);
-}
-.masthead.accented .tab[aria-current='page'] {
-  border-bottom-color: var(--accent);
 }
 .tabs {
   display: flex;
@@ -195,7 +192,8 @@ button {
 }
 .tab[aria-current='page'] {
   color: var(--ink);
-  border-bottom-color: var(--teal);
+  /* Ink, not teal: the open view is not an action, and the docked sheet's coloured top rule sits right under it. */
+  border-bottom-color: var(--ink);
 }
 .tab .count {
   font: 500 11px/1 var(--mono);
@@ -1504,6 +1502,17 @@ mark {
   display: block;
   height: 4px;
   background: var(--ty, var(--sc, var(--ink)));
+}
+/* An item's sheet is ruled in its type's colour, as its card is: the type owns an item's colour,
+   status is the pill. Only the rule: a ty-* class on the sheet would recolour every mark inside it. */
+.sheet.sheet-epic::before {
+  background: var(--ty-epic);
+}
+.sheet.sheet-feature::before {
+  background: var(--ty-feature);
+}
+.sheet.sheet-story::before {
+  background: var(--ty-story);
 }
 /* Docked beside the board: full height, no float; the head and foot stay put while only the body scrolls,
    so the scrollbar sits inside the content area and the head and foot run edge to edge. */
@@ -4589,17 +4598,6 @@ mark {
 .accent-preview.accented .accent-preview-name {
   font-weight: 700;
   color: var(--ink);
-}
-.accent-preview-tab {
-  margin-left: 6px;
-  padding: 2px 2px 3px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ink);
-  border-bottom: 2px solid var(--teal);
-}
-.accent-preview.accented .accent-preview-tab {
-  border-bottom-color: var(--accent);
 }
 .status-table.component-table .status-tr {
   grid-template-columns: 72px minmax(200px, 1fr) 120px 40px;

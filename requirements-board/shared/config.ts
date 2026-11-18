@@ -76,7 +76,7 @@ export interface BoardConfig {
   project: {
     /** Shown beside the board's name and in the browser tab. */
     name: string
-    /** A `#rrggbb` colour for the board's mark, the tab icon and the open view's underline, so boards for different projects tell apart at a glance. */
+    /** A `#rrggbb` colour for the board's mark and the tab icon, so boards for different projects tell apart at a glance. */
     accent?: string
   }
   /** Empty: any component is accepted. */

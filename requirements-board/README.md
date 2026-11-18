@@ -245,8 +245,7 @@ gallery has one tab per app present, in that order; untagged images fall back to
 `requirements/board.config.json` holds what differs between projects. Every field is optional:
 
 - `project`: `name` (beside the board's name, "Requirements board", and in the tab title) and
-  `accent` (optional `#rrggbb`: fills the board's mark and the tab icon and underlines the open
-  view, so boards for different projects tell apart; set on the Settings page). Dates and times are always New Zealand English;
+  `accent` (optional `#rrggbb`: fills the board's mark and the tab icon, so boards for different projects tell apart; set on the Settings page). Dates and times are always New Zealand English;
 - `components`: `[{ "name", "code" }]`, the areas items belong to, in order; `code` is the card
   glyph (unset: the name's first three letters). Listed, the check holds items to them; empty, any
   name goes and the filters offer the ones in use;

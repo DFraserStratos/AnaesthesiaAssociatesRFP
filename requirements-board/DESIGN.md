@@ -5,9 +5,10 @@ with the product owner; extend them, don't relitigate them. The board carries no
 branding: a project's own design rules govern its own app, not this tool, and its name appears
 only beside the board's fixed name, "Requirements board" (`project.name` in `board.config.json`).
 That name is quiet grey text unless the project has an **accent** (`project.accent`, picked in
-Settings). Then three marks take it, and nothing else: the masthead mark's card and the tab icon's
-card are filled with it, and the underline under the open view is drawn in it, at teal's 2px, in place of
-teal. The name itself turns bold, in ink, never in the accent. The accent is a way to tell apart
+Settings). Then two marks take it, and nothing else: the masthead mark's card and the tab icon's
+card are filled with it. The name itself turns bold, in ink, never in the accent. The open view's
+underline is ink, neither teal nor the accent: it sits right on the docked sheet's coloured top
+rule, and a second colour there clashes with it. The accent is a way to tell apart
 boards for different projects open side by side, not branding, and it is never a pill or chip.
 Its presets stay clear of the action teal.
 
@@ -31,9 +32,9 @@ Its presets stay clear of the action teal.
 
 | Type | Accent | Where it shows |
 | --- | --- | --- |
-| Epic | orange `#E06C00` | card top rule (thickest), type icon, lineage pill, minimap |
-| Feature | purple `#773B93` | card top rule, type icon, lineage pill, minimap |
-| Story | blue `#009CCC` | card top rule (thinnest), type icon, lineage pill, minimap |
+| Epic | orange `#E06C00` | card top rule (thickest), item sheet top rule, type icon, lineage pill, minimap |
+| Feature | purple `#773B93` | card top rule, item sheet top rule, type icon, lineage pill, minimap |
+| Story | blue `#009CCC` | card top rule (thinnest), item sheet top rule, type icon, lineage pill, minimap |
 | Artifact | indigo `#4B56B0` | kind icon (plates, list rows, the artifact page, item sheets, links) |
 | Outstanding item | Open's amber `#C0851B` | question mark (`q-mark`), a Diff review card's top rule |
 
@@ -79,7 +80,9 @@ Checks on Settings (and under the errors in the pill's list).
 ## Item sheet
 
 The same sheet serves as the board's docked panel (its head and foot stay put while the body
-scrolls) and as the modal elsewhere.
+scrolls) and as the modal elsewhere. Its 4px top rule is the item's type colour, as on its card; a
+question's sheet, which has no type, takes its status colour. Only the rule takes the type: the sheet
+carries no `ty-*` class, which would recolour the artifact marks inside it.
 
 - Top: the lineage as arrow pills that slot into each other (epic, then feature), in type colours,
   titles only, clickable. The current item is not in the chain; its title is the heading.
@@ -430,7 +433,7 @@ the catalogue. Laptop first: the width goes to the two columns, the controls to 
 
 The page opens on **Project**: the project's name and its accent colour, as a row of round swatches
 (None first, a ring with a slash; then the presets; then a rainbow swatch for any other colour),
-the chosen one ringed, and a live preview beside them: the mark, the name and a Board tab's underline, as the masthead will show them. The board's own name
+the chosen one ringed, and a live preview beside them: the mark and the name, as the masthead will show them. The board's own name
 and the date locale are fixed (New Zealand English), so neither is a setting.
 
 The gear at the right of the masthead opens `/settings`: each status list (items, then questions) is a
