@@ -1,9 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { UnassignedPill } from '../components/draftLists/DraftListParts'
 import { neutral } from '../../../theme/tokens'
-import { BackLink, PageHeader } from '../../../shared/ui'
+import { BackLink, FormError, PageHeader, TextAction } from '../../../shared/ui'
 import type { Procedure } from '../../../domain/types'
-import { useAppStore, type Actor } from '../../../store'
+import { applyDefaultInvoiceDescription, useAppStore, type Actor } from '../../../store'
+import { newerInvoiceDescription } from '../../../domain/billing/procedureStack'
 import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
 import { BookingDetailBody } from '../../../shared/booking'
 import { ageYears, formatDob, nhiBadge, locationName } from '../../../shared/format'
@@ -39,6 +41,29 @@ export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLab
     return Object.values(proceduresRecord).find((p) => p.bookingId === bookingId && p.isPrimary)
   }, [booking, bookingId, proceduresRecord])
 
+  // The hospital row this Booking came from or was last updated by (catch-up Phase 33): the newest applied one.
+  const intakeRows = useAppStore((s) => s.intake.rows)
+  const fromRowId = useMemo(
+    () =>
+      Object.values(intakeRows)
+        .filter((r) => r.status === 'applied' && r.decision !== undefined && 'bookingId' in r.decision && r.decision.bookingId === bookingId)
+        .sort((a, b) => (b.decidedAtISO ?? '').localeCompare(a.decidedAtISO ?? '') || b.id.localeCompare(a.id))[0]?.id,
+    [intakeRows, bookingId],
+  )
+  // Under the invoice description: an office edit kept against newer hospital text (D73, OQ-130).
+  const newerHospital = useMemo(
+    () =>
+      Object.values(proceduresRecord)
+        .filter((p) => p.bookingId === bookingId)
+        .flatMap((p) => {
+          const newer = newerInvoiceDescription(p, masters.contracts)
+          return newer !== undefined && newer.origin === 'hospital' ? [{ procedureId: p.id, text: newer.text }] : []
+        }),
+    [proceduresRecord, bookingId, masters.contracts],
+  )
+  const navigate = useNavigate()
+  const [useError, setUseError] = useState<string | null>(null)
+
   const warnings = useBookingWarnings(bookingId)
   // The anaesthetist changed this Booking after submitting (catch-up Phase 38a).
   const changed = useChangedSinceSubmitted(booking?.listId)
@@ -68,6 +93,13 @@ export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLab
             <div style={{ fontSize: 14, color: neutral.slate, marginTop: 2 }}>
               {primary !== undefined ? procedureLabel(primary, masters.rvgGroups, 1) : 'Procedure to capture'} · {hospitalName}
             </div>
+            {fromRowId !== undefined && (
+              <div style={{ marginTop: 4 }}>
+                <TextAction size="sm" flush shot="booking-from-hospital-row" onClick={() => navigate('/admin/matching', { state: { selectRowId: fromRowId } })} style={{ color: neutral.slate }}>
+                  From hospital row {fromRowId}
+                </TextAction>
+              </div>
+            )}
           </>
         }
         actions={
@@ -79,6 +111,25 @@ export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLab
           </div>
         }
       />
+
+      {newerHospital.map((n) => (
+        <div key={n.procedureId} data-shot="booking-newer-hospital-text" style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', fontSize: 12.5, color: neutral.slate }}>
+          <span>
+            Newer hospital text has arrived: <span className="mono">“{n.text}”</span>
+          </span>
+          <TextAction
+            size="sm"
+            flush
+            onClick={() => {
+              const out = applyDefaultInvoiceDescription(useAppStore, actor, n.procedureId)
+              setUseError(out.ok ? null : out.message)
+            }}
+          >
+            Use it
+          </TextAction>
+        </div>
+      ))}
+      <FormError message={useError} />
 
       <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} />
     </div>

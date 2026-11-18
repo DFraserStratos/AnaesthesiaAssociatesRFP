@@ -1,34 +1,143 @@
 {
   "id": "US-02.5.4",
   "status": "partial",
-  "absentReason": "Inbound changes are applied to any ACTIVE List, including today's, so late bookings are supported. The cut-off is List submission rather than session start: a change addressing a submitted List is not applied and parks for manual intervention, as shown.",
+  "absentReason": "Automated changes are Future Work. In the first release every hospital change waits for the office, who may apply it until the List is authorised.",
   "shots": [
     {
       "name": "change-cutoff",
-      "app": "simulator",
-      "caption": "A change to a submitted List is held for manual intervention",
-      "start": "/demo/integrations",
+      "app": "admin",
+      "caption": "A hospital change can be applied until its List is authorised",
+      "start": "/admin/matching",
+      "setup": [
+        {
+          "goto": "/admin/integrations"
+        },
+        {
+          "trigger": "fire-hospital-message",
+          "choice": "MSG-STG-1014"
+        },
+        {
+          "wait": 800
+        }
+      ],
       "states": [
         {
+          "state": "rows",
+          "caption": "A change to a submitted List beside a change for an authorised List, both waiting for the office",
           "steps": [
             {
-              "click": "[data-testid=integration-library] >> text=\"S14 · Locked target (manual intervention)\""
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_SX]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
             },
             {
               "wait": 400
             },
             {
-              "click": "[data-shot=integrations-replay]"
+              "press": "Escape"
             },
             {
-              "wait": 1500
-            },
-            {
-              "scroll": "[data-shot=integrations-schedule-change]"
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=integrations-schedule-change]"
+            "[data-shot^='matching-row-']:has-text('Alan Prentice')",
+            "[data-shot^='matching-row-']:has-text('Hemi Walker')"
+          ]
+        },
+        {
+          "state": "submitted",
+          "caption": "A change to a submitted List: the office can still apply it",
+          "steps": [
+            {
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_SX]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot^='matching-row-']:has-text('Alan Prentice')"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=matching-diff]",
+            "[data-shot=matching-apply]"
+          ]
+        },
+        {
+          "state": "authorised",
+          "caption": "A change for an authorised List: flagged List authorised, and apply is disabled because the List is locked",
+          "steps": [
+            {
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_SX]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot^='matching-row-']:has-text('Hemi Walker')"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=matching-panel]"
           ]
         }
       ]

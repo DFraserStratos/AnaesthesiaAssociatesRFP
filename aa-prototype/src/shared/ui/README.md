@@ -50,7 +50,7 @@ their height. When the table is wider than its scroller, the scroller becomes a 
 A row that opens a record is a `ClickableRow` (`.aa-clickable-table-row`, the sunken hover; clicks on an inner
 link, button or field do only their own action) with one `RowOpenButton` (or link) as its keyboard handle,
 carrying the full name ("Open List Tue 21 Jul AM, ..."). Rows never take focus. `today` tints the cells `bg`,
-`quiet` sets the text slate. `apps/admin/tableChrome.ts` stays a thin re-export of the cell styles for the
+`quiet` sets the text slate, `tone="warning"` draws the warning tint and on-tint text (Matching's differences, a plain row without `onOpen`). `apps/admin/tableChrome.ts` stays a thin re-export of the cell styles for the
 screens later phases rebuild and for Phase 43's `Pager`.
 
 ## The fill rule and field heights
@@ -108,7 +108,9 @@ Press feedback stays in the mobile rules of `global.css`, never in a component.
 | `AttentionDot` | `warnings/AttentionDot.tsx` | The solid "!" or triangle marker, 13px by default; `aria-hidden` unless labelled; `WarningTriangle` composes it (U3) | None planned |
 | `Avatar` | `Avatar.tsx` | Initials in a disc beside a printed name: `elevated` (mobile), `tint` (web and Admin), `neutral` (move sheets, `muted`); mockup font steps (U3) | None planned |
 | `PersonaChip` | `PersonaChip.tsx` | The signed-in persona on an ink bar: avatar, name, role (U3) | None planned |
-| `Notice` | `ui/Notice.tsx` | A non-blocking note: warning, error (booking-level only), success, neutral; `live` only where it announces; `action` slot (U3) | None planned |
+| `Notice` | `ui/Notice.tsx` | A non-blocking note: warning, error (booking-level only), success, neutral; `live` only where it announces; `action` slot (U3); `enter` fades it in (Matching's decided banner, with `TickBadge animate` as its icon) | Phase 33 (`enter`) |
+| `RadioCard` | `ui/RadioCard.tsx` | One option of a radio group as a card (Phase 33 review): radio dot, title, `titleExtra`, `description`, `disabledReason`, the checked card's own controls as children; checked is the teal accent edge and inset ring on white; `radio` takes `useRovingRadio().itemProps(i)`; `shot`, `data-*` on the radio | None planned |
+| `OptionRow` | `ui/OptionRow.tsx` | One result in a short pick list under a search box (Phase 33 review): a full-width bordered button, words left, mono `trailing` right; `selected` the teal accent edge and tint with `aria-pressed`; `shot`, `data-*` | None planned |
 | `ResultLine` | `ui/ResultLine.tsx` | "It worked" in success green; `role="status"` always mounted (scope `[role=status]` by `data-shot`); `actions`, `onDismiss`, `plain` (U3) | None planned |
 | `EmptyState` | `ui/EmptyState.tsx` | "Nothing here": `inline`, `card`, `centred`; `title`, `action` (U3) | None planned |
 | `Dialog` | `surface/Dialog.tsx` | The centred web and Admin overlay | U2 (`useModalLayer`, `OverlayHeader`, corner X) |

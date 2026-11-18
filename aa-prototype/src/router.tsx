@@ -31,6 +31,7 @@ import {
   AdminIntegrationsRoute,
   AdminInvoicesRoute,
   AdminMastersRoute,
+  AdminMatchingRoute,
   AdminSurgeonProfileRoute,
   AdminAnaesthetistRecordRoute,
   AdminReviewQueueRoute,
@@ -108,6 +109,7 @@ export function AppRouter() {
               <Route path="bookings/:bookingId" element={<AdminBookingDetailRoute />} />
               <Route path="cards/:cardId" element={<LegacyBookingRedirect />} />
             </Route>
+            <Route path="matching" element={<AdminMatchingRoute />} />
             <Route path="conflicts" element={<AdminConflictsRoute />} />
             <Route path="draft-lists" element={<AdminDraftListsRoute />} />
             <Route path="notifications" element={<AdminNotificationsRoute />} />

@@ -36,9 +36,11 @@ import {
   classifyChange,
   diffFields,
   effectiveIncoming,
+  findMatch,
   hospitalNoteLine,
   listsForRow,
   openSlotsForRow,
+  rowPatientKey,
   searchBookingsForRow,
   sourceTextChannelFor,
   targetProcedure,
@@ -51,7 +53,7 @@ import type { AppState, AppStoreApi } from './appStore'
 import { createBooking } from './bookingActions'
 import { cancelBooking, editBooking, editRefusal } from './lifecycle'
 import { editPatient } from './intake'
-import { replaceProcedureText } from './procedureTextActions'
+import { applyDefaultInvoiceDescription, replaceProcedureText } from './procedureTextActions'
 import { setBookingInsurance } from './insuranceActions'
 import { setProcedureContract } from './contractSelectionActions'
 import { pickRvgGroup } from './rvgGroupActions'
@@ -64,7 +66,7 @@ function officeOnly(actor: Actor): Outcome<never> | null {
 }
 
 /** A stable key for "the hospital sent exactly this" (the wording character for character; never the office's corrections). */
-function incomingKey(fields: IncomingBookingFields): string {
+export function incomingKey(fields: IncomingBookingFields): string {
   const sort = (v: unknown): unknown =>
     Array.isArray(v)
       ? v.map(sort)
@@ -104,16 +106,25 @@ export function stageImportRows(
 ): Outcome<{ batchId?: string; rowIds: string[]; skipped: number }> {
   const state = api.getState()
   if (state.masters.hospitals[hospitalId] === undefined) return refuse('notFound', 'Hospital not found.')
-  const seen = new Set(Object.values(state.intake.rows).map((r) => incomingKey(r.incoming)))
+  // A row is skipped when the hospital sent exactly this before and nothing has
+  // arrived for that patient since: identical to an open row, or to the latest
+  // row received for the same patient, session and hospital (any status, so a
+  // decided or rejected row is not restaged on every import). A later revert to
+  // an earlier value is a new row (review fix).
+  const existing = Object.values(state.intake.rows).sort((a, b) => a.receivedAtISO.localeCompare(b.receivedAtISO) || a.id.localeCompare(b.id))
+  const openKeys = new Set(existing.filter((r) => r.status === 'open').map((r) => incomingKey(r.incoming)))
+  const latest = new Map<string, string>()
+  for (const r of existing) latest.set(rowPatientKey(r.incoming), incomingKey(r.incoming))
   const fresh: IncomingBookingFields[] = []
   let skipped = 0
   for (const row of rows) {
     const key = incomingKey(row)
-    if (seen.has(key)) {
+    if (openKeys.has(key) || latest.get(rowPatientKey(row)) === key) {
       skipped += 1
       continue
     }
-    seen.add(key)
+    openKeys.add(key)
+    latest.set(rowPatientKey(row), key)
     fresh.push(row)
   }
   if (fresh.length === 0) return ok({ rowIds: [], skipped })
@@ -230,8 +241,14 @@ export function correctImportRow(api: AppStoreApi, actor: Actor, rowId: string, 
     if (patch.patientName.trim() === '') return refuse('nameRequired', 'The patient needs a name.')
     next.patientName = patch.patientName.trim()
   }
-  if (patch.dobISO !== undefined) next.dobISO = patch.dobISO
-  if (patch.scheduledTime !== undefined) next.scheduledTime = patch.scheduledTime
+  if (patch.dobISO !== undefined) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(patch.dobISO)) return refuse('invalidDob', 'Enter the date of birth as a date.')
+    next.dobISO = patch.dobISO
+  }
+  if (patch.scheduledTime !== undefined) {
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(patch.scheduledTime)) return refuse('invalidTime', 'Enter the time as HH:MM.')
+    next.scheduledTime = patch.scheduledTime
+  }
   if (patch.surgeonId !== undefined) {
     if (state.masters.surgeons[patch.surgeonId] === undefined) return refuse('notFound', 'That surgeon is not in the master data.')
     next.surgeonId = patch.surgeonId
@@ -255,7 +272,14 @@ export function correctImportRow(api: AppStoreApi, actor: Actor, rowId: string, 
 
 /** What the office chose in the panel. The ids the decision creates are filled in when it applies. */
 export type DecisionInput =
-  | { kind: 'match'; bookingId: string; fieldsApplied: readonly IncomingFieldKey[]; picks?: OfficePicks }
+  | {
+      kind: 'match'
+      bookingId: string
+      fieldsApplied: readonly IncomingFieldKey[]
+      picks?: OfficePicks
+      /** "Use it" (D73): the hospital's newer text replaces the admin's edited invoice description too. */
+      useNewerText?: boolean
+    }
   | { kind: 'createBooking'; listId: string; picks?: OfficePicks }
   | { kind: 'createList'; slotId: string; surgeonId?: string; picks?: OfficePicks }
   | { kind: 'createDraft'; surgeonId?: string; picks?: OfficePicks }
@@ -291,6 +315,7 @@ function createInput(state: AppState, row: ImportRow, fields: IncomingBookingFie
     ...(text !== undefined && !isBlankText(text) ? { sourceText: { text, source: sourceTextChannelFor(row.channel), from: hospitalFrom(state, row) } } : {}),
     ...(picks?.rvgGroupId !== undefined ? { rvgGroupId: picks.rvgGroupId } : {}),
     ...(picks?.contract !== undefined ? { governingContractId: picks.contract.contractId } : {}),
+    ...(picks?.contract?.enteredPrice !== undefined ? { enteredPrice: picks.contract.enteredPrice } : {}),
     ...(fields.scheduledTime !== undefined ? { scheduledTime: fields.scheduledTime } : {}),
     ...(note !== undefined ? { notes: note } : {}),
     ...(fields.externalRef !== undefined ? { correlationRef: { sourceFeedId: hospitalSourceKey(fields.hospitalId), externalAppointmentId: fields.externalRef } } : {}),
@@ -302,9 +327,11 @@ function createInput(state: AppState, row: ImportRow, fields: IncomingBookingFie
 function recordInsurer(api: AppStoreApi, actor: Actor, bookingId: string, fields: IncomingBookingFields): Outcome {
   const insurer = fields.insurer
   if (insurer?.insurerPartyId === undefined) return ok(undefined)
+  // A number the hospital did not send is never a change: the Booking's own stays (review fix).
+  const number = insurer.approvalNumber ?? api.getState().schedule.bookings[bookingId]?.insuranceApprovalNumber
   return setBookingInsurance(api, actor, bookingId, {
     funderPartyId: insurer.insurerPartyId,
-    ...(insurer.approvalNumber !== undefined ? { insuranceApprovalNumber: insurer.approvalNumber } : {}),
+    ...(number !== undefined ? { insuranceApprovalNumber: number } : {}),
   })
 }
 
@@ -371,20 +398,32 @@ export function decideImportRow(
     const { diffs } = diffFields(view, booking, row)
     const changeType = classifyChange({ cancelled: booking.cancelled }, fields, diffs)
     if (booking.cancelled && changeType !== 'noChange') return refuse('bookingCancelled', 'This Booking is cancelled. Reject the row, or create a new Booking.')
-    const applied = applicableFields(diffs, input.fieldsApplied, changeType)
+    // With an NHI that differs (a Booking chosen by hand), the patient's name and date of birth
+    // are never written: that would rename another patient's record (review fix).
+    const nhiDiffers = diffs.some((d) => d.key === 'nhi')
+    const applied = applicableFields(diffs, input.fieldsApplied, changeType).filter((k) => !nhiDiffers || (k !== 'patientName' && k !== 'dob'))
     if (applied.includes('insurer') && fields.insurer?.insurerPartyId !== undefined && !isInsurerOrFunder(state.masters.parties[fields.insurer.insurerPartyId])) {
       return refuse('notInsurerOrFunder', 'The insurer the hospital sent is not an insurer or funder.')
     }
     return transaction(api, () => {
       const done = applyMatch(api, actor, row, fields, booking.id, changeType, applied, picks)
       if (!done.ok) return done
-      const decision: ImportDecision = { kind: 'match', bookingId: booking.id, changeType, fieldsApplied: applied, ...(picks !== undefined ? { picks } : {}) }
+      const target = targetProcedure(matchingView(api.getState()).bookings[booking.id]!)
+      if (input.useNewerText === true && applied.includes('procedureText') && target !== undefined) {
+        const used = applyDefaultInvoiceDescription(api, actor, target.id)
+        if (!used.ok) return used
+      }
+      const recorded = changeType === 'cancellation' ? undefined : picks
+      const decision: ImportDecision = { kind: 'match', bookingId: booking.id, changeType, fieldsApplied: applied, ...(recorded !== undefined ? { picks: recorded } : {}) }
       record(api, actor, row, decision, { bookingId: booking.id, changeType, fields: applied })
       return ok({ decision, bookingId: booking.id })
     })
   }
 
   if (fields.hospitalStatus === 'cancelled') return refuse('notANewBooking', 'A cancelled row cannot create a Booking.')
+  // The patient may have been booked since the panel opened (another row applied): never a second Booking (review fix).
+  const live = findMatch(view, fields, assessment.surgeonId)
+  if (live !== undefined && !live.cancelled) return refuse('alreadyBooked', 'This patient is already booked in this session. Match the row to that Booking instead.')
   const createGuard = createRefusal(state, fields, picks)
   if (createGuard !== null) return createGuard
 
@@ -500,7 +539,7 @@ function applyMatch(
 
   // The office's picks first (the refusable steps), then the ticked differences.
   if (picks?.contract !== undefined && procedure !== undefined) {
-    const set = setProcedureContract(api, actor, procedure.id, picks.contract.contractId)
+    const set = setProcedureContract(api, actor, procedure.id, picks.contract.contractId, picks.contract.enteredPrice !== undefined ? { enteredPrice: picks.contract.enteredPrice } : {})
     if (!set.ok) return set
   }
   if (picks?.rvgGroupId !== undefined && procedure !== undefined) {

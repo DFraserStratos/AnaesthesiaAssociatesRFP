@@ -1,80 +1,223 @@
 {
   "id": "US-02.5.2",
-  "status": "captured",
-  "absentReason": "",
+  "status": "partial",
+  "absentReason": "Detecting the move or the missing Booking from a re-sent List, and automated handling, are Future Work (US-02.2.3). In the first release the office decides each row.",
   "shots": [
     {
-      "name": "inbound-message",
-      "app": "simulator",
-      "caption": "Inbound reschedule moves a Booking to another day",
-      "start": "/demo/integrations",
+      "name": "cancel-and-new",
+      "app": "admin",
+      "caption": "A Booking that moves day arrives as a cancellation plus a new Booking, decided by the office",
+      "start": "/admin/matching",
       "states": [
         {
-          "state": "received",
-          "caption": "Hospital reschedule message received",
           "steps": [
             {
-              "click": "[data-testid=integration-library] >> text=\"S13 · Reschedule (moves to another day)\""
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_STG]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "press": "Escape"
             },
             {
               "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=integrations-raw-hl7]"
-          ]
-        },
-        {
-          "state": "applied",
-          "caption": "Reschedule applied, the Booking moves to the new List",
-          "steps": [
-            {
-              "click": "[data-testid=integration-library] >> text=\"S13 · Reschedule (moves to another day)\""
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-shot=integrations-replay]"
-            },
-            {
-              "wait": 1500
-            },
-            {
-              "scroll": "[data-shot=integrations-schedule-change]"
-            }
-          ],
-          "highlight": [
-            "[data-shot=integrations-schedule-change]"
+            "[data-shot^='matching-row-']:has-text('Marcus Webb')"
           ]
         }
       ]
     },
     {
-      "name": "rescheduled-card",
+      "name": "cancel-and-new",
       "app": "web",
-      "caption": "Rescheduled Booking on its new List",
-      "start": "/web/lists/L-34821-2026-08-04-AM",
+      "caption": "A Booking that moves day arrives as a cancellation plus a new Booking, decided by the office",
+      "start": "/web/lists/L-34821-2026-08-03-PM",
       "setup": [
         {
-          "goto": "/demo/integrations"
+          "goto": "/admin/matching"
         },
         {
-          "click": "[data-testid=integration-library] >> text=\"S13 · Reschedule (moves to another day)\""
+          "click": "[data-shot=matching-import-open]"
+        },
+        {
+          "wait": "[data-shot=matching-import]"
+        },
+        {
+          "click": "[data-sample-id=SAMPLE_STG]"
+        },
+        {
+          "click": "[data-shot=matching-import-confirm]"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
         },
         {
           "wait": 400
         },
         {
-          "click": "[data-shot=integrations-replay]"
+          "press": "Escape"
         },
         {
-          "wait": 1500
+          "wait": 400
+        },
+        {
+          "click": "[data-shot^='matching-row-']:has-text('Marcus Webb') >> nth=0"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=matching-apply]"
+        },
+        {
+          "wait": "[data-shot=matching-banner]"
+        },
+        {
+          "wait": 300
+        },
+        {
+          "press": "Escape"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot^='matching-row-']:has-text('Marcus Webb') >> nth=0"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=matching-apply]"
+        },
+        {
+          "wait": "[data-shot=matching-banner]"
+        },
+        {
+          "wait": 300
         }
       ],
       "states": [
         {
-          "steps": [],
+          "state": "old-day",
+          "caption": "The office cancelled the old day's Booking: it stays on Mon 3 Aug PM, marked cancelled",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "tr:has-text(\"Marcus Webb\")"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cancel-and-new",
+      "app": "web",
+      "caption": "A Booking that moves day arrives as a cancellation plus a new Booking, decided by the office",
+      "start": "/web/lists/L-34821-2026-08-04-AM",
+      "setup": [
+        {
+          "goto": "/admin/matching"
+        },
+        {
+          "click": "[data-shot=matching-import-open]"
+        },
+        {
+          "wait": "[data-shot=matching-import]"
+        },
+        {
+          "click": "[data-sample-id=SAMPLE_STG]"
+        },
+        {
+          "click": "[data-shot=matching-import-confirm]"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "press": "Escape"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot^='matching-row-']:has-text('Marcus Webb') >> nth=0"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=matching-apply]"
+        },
+        {
+          "wait": "[data-shot=matching-banner]"
+        },
+        {
+          "wait": 300
+        },
+        {
+          "press": "Escape"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot^='matching-row-']:has-text('Marcus Webb') >> nth=0"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=matching-apply]"
+        },
+        {
+          "wait": "[data-shot=matching-banner]"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "states": [
+        {
+          "state": "new-day",
+          "caption": "The office created the new day's Booking on Tue 4 Aug AM",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
           "highlight": [
             "tr:has-text(\"Marcus Webb\")"
           ]

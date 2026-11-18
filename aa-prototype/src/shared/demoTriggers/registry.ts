@@ -100,6 +100,14 @@ import {
   BACKDATED_RANGE_CONTRACT_ID,
   addBackdatedRangeDemo,
   backdatedRangeAdded,
+  officeMatchesHospitalRow,
+  receiveTheatreList,
+  sendUpdateRefusal,
+  stageUpdateForBooking,
+  standInRefusal,
+  theatreListRefusal,
+  updateTarget,
+  type StandInChoice,
 } from '../../store'
 import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
 import { contractCandidatesFor, destinationOf } from '../../domain/billing/contractRail'
@@ -140,6 +148,7 @@ export const BILLING_MONITOR_SCREEN = 'Admin · Billing monitor'
 const XERO_SIM = ['/demo/xero', '/demo/xero/invoices', '/demo/xero/invoices/:accRecId'] as const
 const INVOICE_PAGES = ['/admin/invoices/:invoiceId', '/demo/xero/invoices/:accRecId'] as const
 const ADMIN_INTEGRATIONS = '/admin/integrations'
+const ADMIN_MATCHING = '/admin/matching'
 const AA_FEE_INVOICES = '/admin/billing/aa-fees'
 const XERO_PAIR = '/demo/xero/invoices/:accRecId'
 const INTEGRATIONS_SIM = '/demo/integrations'
@@ -407,6 +416,13 @@ function sicknessChoices(state: AppState, ctx: DemoTriggerCtx): { id: string; la
 function sicknessChoiceParts(choiceId: string): { listId: string; route: SicknessRoute } {
   const [listId = '', route] = choiceId.split('|')
   return { listId, route: route === 'colleague' ? 'colleague' : 'office' }
+}
+
+/** The PWA office stand-in's choice from the route (catch-up Phase 33): S1, this List, or this Booking. */
+function standInChoice(ctx: DemoTriggerCtx, choiceId: string | undefined): StandInChoice {
+  if (choiceId === 'booking' && ctx.params['bookingId'] !== undefined) return { kind: 'booking', bookingId: ctx.params['bookingId'] }
+  if (choiceId === 'list' && ctx.params['listId'] !== undefined) return { kind: 'list', listId: ctx.params['listId'] }
+  return { kind: 's1' }
 }
 
 /**
@@ -1397,6 +1413,76 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return { ok: true, message: 'Photo capture opened on this List (Future scope).' }
     },
     indexPath: () => `/mobile/lists/${PHOTO_CAPTURE_INDEX_LIST_ID}`,
+  },
+  // ── Admin · Matching (catch-up Phase 33) ──────────────────────────────
+  {
+    id: 'matching-receive-theatre-list',
+    label: 'Import hospital file',
+    description:
+      "Stands in for the hospital's file arriving: stages the sample theatre list's rows on Matching (St George's: a new Booking, a No change, a modification, and a day move as a cancellation plus a new Booking; Southern Cross: a new Booking, a modification with an insurer and approval number, a change for an authorised List, a row with no NHI and a row for a session with no List). Nothing changes the schedule until the office decides.",
+    screen: 'Admin · Matching',
+    routes: [ADMIN_MATCHING],
+    surfaces: ['bar'],
+    choices: () => [
+      { id: 'stg', label: "St George's" },
+      { id: 'sx', label: 'Southern Cross' },
+    ],
+    disabledReason: (state, _ctx, choiceId) => theatreListRefusal(state, choiceId === 'sx' ? 'sx' : 'stg'),
+    run: (api, _ctx, choiceId) => {
+      const hospital = choiceId === 'sx' ? 'sx' : 'stg'
+      const res = receiveTheatreList(api, OFFICE_ACTOR, hospital)
+      if (!res.ok) return { ok: false, message: res.message }
+      const name = hospital === 'sx' ? 'Southern Cross' : "St George's"
+      const n = res.value.rowIds.length
+      return { ok: true, message: `${name} sent its theatre list: ${n} ${n === 1 ? 'row is' : 'rows are'} waiting on Matching. Nothing changes the schedule until the office decides.` }
+    },
+    indexPath: () => ADMIN_MATCHING,
+  },
+  {
+    id: 'matching-send-update',
+    label: 'Send update for a matched Booking',
+    description:
+      "Stands in for the hospital sending a later update: for the Booking matched by the row selected on Matching (if open and not authorised), else Diane Foster's (Tue 4 Aug AM), a row for the same List and patient with a later time and the hospital's fuller wording. It waits for the office to check the differences and approve it.",
+    screen: 'Admin · Matching',
+    routes: [ADMIN_MATCHING],
+    surfaces: ['bar'],
+    disabledReason: (state, ctx) => sendUpdateRefusal(state, ctx.published['matching.selectedRowId']),
+    run: (api, ctx) => {
+      const state = api.getState()
+      const reason = sendUpdateRefusal(state, ctx.published['matching.selectedRowId'])
+      const target = updateTarget(state, ctx.published['matching.selectedRowId'])
+      if (reason !== null || target === undefined) return { ok: false, message: reason ?? 'Select a row matched to an open Booking' }
+      const res = stageUpdateForBooking(api, OFFICE_ACTOR, target)
+      if (!res.ok) return { ok: false, message: res.message }
+      return { ok: true, message: `${res.value.hospital} sent an update for ${res.value.patient}: a new time and fuller wording. Check the differences and approve it.` }
+    },
+    indexPath: () => ADMIN_MATCHING,
+  },
+  {
+    id: 'matching-office-matches-row',
+    label: 'Hospital row arrives and the office matches it',
+    description:
+      "Stands in for the office on the phone: the hospital's row arrives and the office matches it with the suggested decision, every difference ticked and no Contract picked (the office sets the Contract later). Sarah Mitchell's S1 booking; on a St George's or Southern Cross List, a new hospital booking; on a Booking, a hospital update approved by the office (on Diane Foster's, the hospital's fuller wording replaces WLE MM).",
+    screen: 'Mobile · Lists and the Booking screen',
+    routes: [...MOBILE_LISTS],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    choices: (_state, ctx) => {
+      const out = [{ id: 's1', label: 'Sarah Mitchell, Tue 28 Jul AM (S1)' }]
+      if (ctx.params['bookingId'] !== undefined) out.push({ id: 'booking', label: 'A hospital update for this Booking, approved by the office' })
+      else if (ctx.params['listId'] !== undefined) out.push({ id: 'list', label: 'A new hospital booking on this List' })
+      return out
+    },
+    disabledReason: (state, ctx, choiceId) => standInRefusal(state, standInChoice(ctx, choiceId)),
+    run: (api, ctx, choiceId) => {
+      const res = officeMatchesHospitalRow(api, standInChoice(ctx, choiceId))
+      if (!res.ok) return { ok: false, message: res.message }
+      return choiceId === 'booking'
+        ? { ok: true, message: `The hospital sent an update for ${res.value.patient} and the office approved it.` }
+        : { ok: true, message: `${res.value.hospital} sent ${res.value.patient}'s booking and the office matched it. ${res.value.patient} is now on your ${res.value.where} List; the office will set the Contract.` }
+    },
+    indexPath: () => null,
+    indexEmptyReason: 'PWA only: the framed build plays the office in Admin, Matching.',
   },
   // ── Hospital messages (Future scope) ──────────────────────────────────
   {

@@ -44,3 +44,6 @@ export { StatTile, type StatTileVariant } from './StatTile'
 export { DefList, DefRow, type DefRowLayout } from './DefRow'
 export { DayChip } from './DayChip'
 export { AddRowButton } from './AddRowButton'
+// Catch-up Phase 33's review: option cards and pick-list rows.
+export { RadioCard, type RadioCardProps, type RadioItemProps } from './RadioCard'
+export { OptionRow, type OptionRowProps } from './OptionRow'

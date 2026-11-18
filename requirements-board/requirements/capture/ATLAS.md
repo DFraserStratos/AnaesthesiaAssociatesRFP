@@ -280,7 +280,7 @@ Hooks already added:
 | Souter Fri 24 PM | `L-34821-2026-07-24-PM` | Pre-payment **paid** (Priya Nair, `INV0001`). |
 | Ropata Thu 16 | `L-39560-2026-07-16-AM` | SUBMITTED. The billing-failure target (Losa Tuilagi BK0039 held at the Xero hand-off, Hemi Walker BK0040 bills). |
 | Delaney Fri 17 | `L-27731-2026-07-17-AM` | SUBMITTED. Integration-locked target. |
-| Souter Tue 28 AM | `L-34821-2026-07-28-AM` | The S1 destination: MSG-STG-1001 adds Sarah Mitchell. Its 07:45 and 11:15 cases read as the rooms sent them (AR-35 rows 6 and 8); Sarah Mitchell arrives with "lap appy ?conv to open" (Hospital feed). |
+| Souter Tue 28 AM | `L-34821-2026-07-28-AM` | The S1 destination: creating `SAMPLE_STG` R1 on Matching (or applying MSG-STG-1001's row) adds Sarah Mitchell. Its 07:45 and 11:15 cases read as the rooms sent them (AR-35 rows 6 and 8); Sarah Mitchell arrives with "lap appy ?conv to open" (Hospital feed). |
 | Souter Tue 4 Aug AM | `L-34821-2026-08-04-AM` | Targets for S13, S14 and S15. |
 | Souter Mon 3 Aug PM | `L-34821-2026-08-03-PM` | Source list for the S13 move. |
 | Souter Mon 10 Aug PM | `L-34821-2026-08-10-PM` | St George's, Ms G. Lim, ACTIVE. Merivale's Face lift BK0163, and catch-up Phase 21a's BK0176 (fixed price, no times), BK0177 (Needs a price) and BK0182 (the movable Booking). |
@@ -328,7 +328,8 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 |---|---|
 | `/admin` | Redirects to `/admin/day/2026-07-21`. |
 | `/admin/day/:date` | Day grid of anaesthetists by time. The right rail has the mini calendar, "Internal notes" and "Awaiting review". Add `?sort=az` for A to Z order. The toolbar is `[data-testid=admin-day-nav]` (see "Date navigation" under "Overlays that need clicks"); its row order is a segmented control, `role=group[name="Row order"]` with buttons "Roster order" and "A to Z" (`aria-pressed`). The header's date input is named "Go to date" (`[aria-label="Go to date"]`). |
-| `/admin/day/:date/bookings/:bookingId` | Admin booking detail with "Office billing setup". |
+| `/admin/day/:date/bookings/:bookingId` | Admin booking detail with "Office billing setup". A Booking created or changed from a hospital row links back to it (`booking-from-hospital-row`, opens Matching on that row); a newer hospital text waiting on Matching shows the cue `booking-newer-hospital-text` (catch-up Phase 33). |
+| `/admin/matching` | Matching (catch-up Phase 33; Kirsty W.): hospital rows waiting for the office. Empty at reset (`matching-empty`); stage rows with "Import hospital file" (`matching-import-open`, see Overlays) or the Demo actions below. Stat tiles `matching-stats` (`[data-stat=open|new|modification|cancellation|unmatched]`), the filter `[aria-label="Show rows"]` (options whose text starts "Open", "Unmatched", "Decided"), the table `matching-table` with rows `matching-row-<n>` (1-based, ready rows first, then import order). A row click opens its panel `matching-panel` (a right-docked SidePanel with a scrim: press Escape before clicking a row or the header). After an import the batch's first row's panel opens by itself. A row decided stays in place, dimmed, until the panel closes. |
 | `/admin/notifications` | The shared notification pool (catch-up Phase 32; US-13.8.1): newest first, six a page, `?page=N`; the table `admin-notifications-table`, rows `[data-notification-row=NT0001]` with "Open List", "Open Draft List" or "Open Booking", the pager `admin-notifications-pager` (Newer / Older). Catch-up Phase 32b: notices are active or resolved; the page shows active ones by default, the count `admin-notifications-page-count`, each active row's tick `notification-tick` ("Resolve"), and the "Show resolved" checkbox `admin-notifications-show-resolved` (`?resolved=1`, kept with `?page=`); resolved rows carry `data-notification-resolved=true` and the line `notification-resolved-line` ("Resolved by Kirsty W., Tue 21 Jul 08:00"). An alert's note is `notification-alert-note`. The provisional caption is gone. Seeds empty: stage it with the `colleague-moves-list-to-office` trigger, or send an alert from a web Booking (same origin) and `goto` here. |
 | `/admin/draft-lists` | Draft Lists (catch-up Phase 31): Unassigned tab (default) and History (`?tab=history`). Since UI unification U5 the two tabs are links inside `role=navigation[name="Draft Lists"]`, not `role=tab`: `a[data-draft-tab=unassigned]` and `a[data-draft-tab=history]`, each with its count inside the link text (so match by the hook, not the name); the current one has `aria-current=page`. `?open=<listId>` opens the Draft List drawer (`admin-draft-list-drawer`); `?assigned=<listId>` shows the assigned confirmation with "Open List". The drawer's "Available that session" Assign opens step 2; the row's Assign opens step 1 (Everyone / Free only, tier filter, groups). "New Draft List" opens `admin-new-draft-list`. |
 | `/admin/conflicts` | Conflicts (catch-up Phase 30): every live conflict, grouped by date (`section[data-conflict-date=<date>]`), one table each (`[data-shot=conflicts-table]` wraps them). Rows are `tr[data-conflict-row=<listId>]` (cleared ones add `data-conflict-cleared=true`). Row actions have accessible names with context (`Reassign, Dr Rutherford Wed 22 Jul AM`, `Clear conflict, ...`, `Open the List, ...`, `Open the day, ...`): match them by regex (`role=button[name=/^Clear conflict/]`). Hospital closures only since catch-up Phase 32b (no reason filter, no Availability column). Filters in the URL: `?when=twoWeeks|canvas|past`, `?hospital=<id>`, `?anaesthetist=<reg>`, `?cleared=1`. After a reassign or clear, `[data-shot=conflicts-confirmation]`. |
@@ -339,13 +340,14 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/billing` | Billing monitor. Its AA fee invoices panel is `[data-shot=billing-aa-fee-invoices]`. The pipeline stage after Invoices generated reads "Sent or to post" (catch-up Phase 22); a List with an invoice that has no invoice address shows `monitor-no-address` ("1 invoice needs an invoice address." with the link "Add an address and send"). |
 | `/admin/billing/aa-fees` | AA fee invoices: month picker, the run preview (`aa-fee-preview-<anaesthetistId>` rows), the teal "Run monthly fee invoices" button and every fee invoice (`aa-fee-row-<number>`, expand for `aa-fee-detail-<number>`). |
 | `/admin/billing/aa-fees/settings` | AA fee settings: fixed items, the charge per BCTI and the worked example (`aa-fee-example`). |
-| `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. |
+| `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. A message stages a row on `/admin/matching` and applies nothing (catch-up Phase 33); the attention callout `integrations-attention` shows dead-letter only. |
 | `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons`, `surgeonRooms`, `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifiers` (catch-up Phase 19b, "Modifiers"; the old `modifierCodes` value opens it), `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). A Contract's panel has Details and History tabs (catch-up Phase 25). |
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip, Identifiers, Surgeons' room and Groups cards, Pairing preferences. "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. Catch-up Phase 17a: Specialties, Identifiers and Groups in the first row, then one row per room (main room first), its Surgeons' room card beside a "Practice manager and PAs" card, then Pairing preferences. |
 | `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Profile, Pairing preferences. Office only. The Profile card (catch-up Phase 26; was "Details", hook `anaesthetist-details` kept) shows Unit value, Status, Phone, Email, HPI CPN and Bank account (masked, row `anaesthetist-bank-account`); it has no action of its own. The page header's secondary button "Edit details" (beside "History") opens the Edit sheet: click `button:text-is("Edit details")` at page level, not inside `anaesthetist-details`. |
 | `/admin/audit` | Audit viewer. |
 
-The side nav has: Day view, Conflicts (amber badge `[data-shot=nav-badge-conflicts]`, catch-up
+The side nav has: Day view, Matching (amber badge `[data-shot=nav-badge-matching]`, the open rows,
+catch-up Phase 33), Conflicts (amber badge `[data-shot=nav-badge-conflicts]`, catch-up
 Phase 30), Review queue, Invoices, Billing monitor, Integrations, Master data, Audit. Every side-nav
 badge carries `data-shot=nav-badge-<section>`.
 
@@ -376,7 +378,7 @@ badge carries `data-shot=nav-badge-<section>`.
 | `/demo/xero` | Xero simulation, Contacts tab. |
 | `/demo/xero/invoices` | Invoices tab. |
 | `/demo/xero/invoices/:accRecId` | Pair detail: ACCREC and ACCPAY, money flow, both records' InvoiceNumber and Reference (`xero-invoice-identifiers`); the payable equals the receivable. `XRB0` exists in the seed. An AA fee pair (`XRFH01`, `XRFH02`) shows the fee ACCREC and a "No payable" note (`xero-aa-fee-pair`). |
-| `/demo/integrations` | Integration simulator: feeds, message library, raw HL7 to FHIR to schedule change. |
+| `/demo/integrations` | Integration simulator: feeds, message library, raw HL7 to FHIR, then pane 3 "Sent to matching" (a message stages a row on `/admin/matching`, never applies). |
 | `/demo/data` | Data inspector: today's lists, seeded scenario finder, audit trail, lifecycle states, guard console. |
 
 ## Seed data worth shooting
@@ -557,8 +559,9 @@ invoice only); the Booking's Procedure card shows the text. The wording below is
   (Hospital download, from St George's); its History holds "Procedure text replaced" naming "RTK"
   (Surgeon's rooms PDF). Seed marker `procedureTextReplaced`.
 - `BK0043` (Diane Foster, Souter Tue 4 Aug AM, 11:00, No contract · RVG, no RVG code): "WLE MM"
-  (rooms) until MSG-STG-1012 replaces it with "WLE MM, left shoulder + flap repair + SNB + excision SCC
-  and flap, left sternum + BCC" (Hospital feed); her time moves to 12:15.
+  (rooms) until the office applies her hospital row on Matching (`SAMPLE_STG` R3, MSG-STG-1012's row, or
+  `matching-send-update`), which replaces it with "WLE MM, left shoulder + flap repair + SNB + excision SCC
+  and flap, left sternum + BCC"; her time moves. A message alone never changes it (catch-up Phase 33).
 - The expert rows: Souter Tue 28 Jul PM (`L-34821-2026-07-28-PM`) `BK0165` "gastro/colon" and `BK0166`
   "blephs"; Thu 30 Jul AM (`L-34821-2026-07-30-AM`) `BK0167` "hystero D&C" (P1), `BK0168` "L3-5
   decomp + fusion" (S9b, email) and `BK0169` "EUA +/- cysto +/- biopsy". All on No contract · RVG.
@@ -717,8 +720,8 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   and Nair's cosmetic component (BK0038, P0041) on `CT-SOUTER-RHINO-COS`.
 - "Needs an invoice destination" at reset (no Contract): BK0035 (Souter Mon 27 AM, the NHI-pending PDF
   Booking) and the six pre-ops BK0060 to BK0065 (Souter Thu 23 PM, AA rooms). BK0060 carries the
-  answers so far Patient › Standard, for the anaesthetist's pick-up. S12 (MSG-STG-1001) adds Sarah
-  Mitchell with none.
+  answers so far Patient › Standard, for the anaesthetist's pick-up. Sarah Mitchell's Booking created on Matching (S1) arrives
+  with none, unless the office chose one.
 - Good rail Bookings: BK0046 (Souter Wed 22 AM, Christchurch Eye Surgery, Mr Whitford: Patient, the
   hospital under SXAP, HNZ and ACC, Special); BK0009 (Southern Cross, one tag, SXAP fills itself in;
   Other price is Southern Cross · SXAP · Fixed price); BK0034 (Ms Lim: Merivale's items under
@@ -978,6 +981,38 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 - Dr Souter's rate per unit is $26.50 on `/mobile/more` (Profile card) and `/web/profile` (Billing panel); the
   anaesthetist changes only that, and the change re-prices her unlocked Bookings as the office's edit does.
 
+### Hospital sample files and their rows (catch-up Phase 33)
+
+The intake slice is empty at reset; Matching's Import hospital file dialog offers four sample files
+(`domain/intake/hospitalDownloads.ts`, every patient synthetic, the wording from AR-35). Each import
+lands its rows in file order (R1 first); a second import of the same file adds nothing ("All 5 rows
+were already imported. Nothing new.").
+
+- `SAMPLE_STG` (St George's theatre list, Tue 28 Jul to Tue 4 Aug): R1 Sarah Mitchell, New, suggested
+  "Create Booking on Dr Souter, Tue 28 Jul AM", text `lap appy ?conv to open` (AR-35 row 14); R2 Dylan
+  Kereama, No change; R3 Diane Foster (`BK0043`, Tue 4 Aug AM), Modification: a new time, the hospital's
+  fuller wording replacing `WLE MM` (AR-35 row 27) and the note "Bumped 15 min at surgeon request"
+  (three ticks, "Apply 3 changes"); R4 Marcus Webb (`BK0042`, Souter Mon 3 Aug PM), Cancellation
+  ("Cancel Booking"); R5 Marcus Webb Tue 4 Aug AM, New. R4 and R5 together are the day move (no
+  "Reschedule" anywhere).
+- `SAMPLE_STG_UPDATE` (a day later): Sarah Mitchell's update (09:00, a note, "Laparoscopic
+  appendicectomy, may convert to open"). Once R1's Booking exists it is a Modification of it, "Matched by
+  date, surgeon, hospital and session, then NHI", "Apply 3 changes"; before that it is a New row.
+- `SAMPLE_SX` (Southern Cross, Tue 28 Jul to Thu 6 Aug; surgeon Ms K. Patel): R1 Priya Nair, New; R2
+  "Olivia Ratima" (`BK0166`: the corrected name and date of birth, the insurer "nib · Approval 4471203",
+  a note); R3 Hemi Walker on the AUTHORISED Wed 18 Mar List (`HBK08`): the "List authorised" flag and the
+  footer disabled with "This List is authorised and locked"; R4 Tama Henare with no NHI (Unmatched,
+  "Waiting for an NHI"; typing `ZQA1008` in `matching-nhi` releases it as a New row on Dr Souter's Tue
+  28 Jul PM); R5 Grace Whitu Thu 6 Aug PM (Unmatched, "No List at Southern Cross for Ms Patel on Thu 6 Aug
+  PM"). Two Unmatched rows after import.
+- `SAMPLE_FORTE_SHEET` (Forte Health daily sheet keyed by the office): R1 Peter Langley New onto Mr
+  Okafor's Tue 28 Jul AM; R2 Rosa Mendes with a mistyped NHI check digit (flagged, corrected inline);
+  R3 Hugh Barnett Fri 31 Jul PM, no Forte List (create a Draft List).
+- A Booking created from a row has no Contract unless the office chose one, so it lands on Admin Day's
+  Needs an invoice destination card (the banner's "Needs an invoice destination" pill).
+- MSG-STG-1014 (fired from `/admin/integrations` or `/demo/integrations`) stages "Alan Prentice", a change
+  to a SUBMITTED List, still appliable.
+
 ## Overlays that need clicks
 
 - **Drawers and dialogs after Phase U2.** The three Admin drawers (List, empty-session, Draft List) are `SidePanel`:
@@ -1127,6 +1162,20 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 
 **Admin**
 
+- **Import hospital file** (Matching, catch-up Phase 33): `[data-shot=matching-import-open]` opens the dialog
+  `[data-shot=matching-import]` (titled "Import hospital file", badged "Sample file", one radio card per sample); click `[data-sample-id=SAMPLE_STG]` (or
+  another sample), then `[data-shot=matching-import-confirm]`. The dialog closes, `matching-import-result` reads
+  "5 rows imported from St George's", and the batch's first row's panel opens by itself: wait for
+  `[data-shot=matching-panel]`, then `{ "press": "Escape" }` before clicking a row, the filter or the header
+  (the panel's scrim covers them). Decide a row with `[data-decision=<kind>]` then `[data-shot=matching-apply]`;
+  wait for `[data-shot=matching-banner]`. Escape after a decision drops the dimmed row from Open. This is the
+  product's own control, so recipes stage rows with it rather than the bar's `matching-receive-theatre-list`.
+- **Contract and RVG code pickers from a row** (Matching): in the panel's `matching-stack`,
+  `[data-shot=matching-choose-contract]` opens the shared step rail (`[data-shot=contract-picker]`, "Choose the
+  Contract": answer `[data-rail-option=...]` tiles, pick a `[data-contract-id]` row, then
+  `role=button[name="Use this Contract"]`); `[data-shot=matching-choose-rvg]` opens the RVG code sheet. Both
+  are optional; the pick shows in the stack ("Contract to set: ..." on a matched row) and is applied with
+  the decision.
 - **Session drawer:** click a block on the day grid, for example `text="St George's" >> nth=0` or
   `button[data-slot-id="S-41267-2026-07-21-PM"]`. The drawer is `[data-testid=admin-list-drawer]`
   (with `data-slot-id`, and `data-list-id` when a List is in it). A List: "Edit list", "Reassign
@@ -1294,6 +1343,22 @@ the exception: use the `trigger` step)
 
 ## Existing hooks
 
+- Matching (catch-up Phase 33, `/admin/matching`): `admin-matching` (the screen), `matching-empty`,
+  `matching-import-open` (header button), `matching-import` (the dialog body; sample cards
+  `[data-sample-id=SAMPLE_STG|SAMPLE_STG_UPDATE|SAMPLE_SX|SAMPLE_FORTE_SHEET]`), `matching-import-confirm`,
+  `matching-import-result` (its ResultLine), `matching-interim` (the sample-file note), `matching-stats`
+  (tiles `[data-stat=open|new|modification|cancellation|unmatched]`), `matching-table` (the shell's scroller),
+  rows `matching-row-<n>` (1-based; pick one by name: `[data-shot^='matching-row-']:has-text('Diane Foster')`),
+  `matching-received` (the first row's procedure cell; every procedure cell carries `data-received`),
+  `matching-unmatched` (wraps the table while Unmatched is on). The row panel `matching-panel` (`data-import-row-id`)
+  holds `matching-nhi` (the NHI field on a no-NHI or invalid-NHI row), `matching-diff` (the match line and the
+  differences table, a checkbox per change named by its field, e.g. `role=checkbox[name=/Note/]`), `matching-stack`
+  (each Procedure's stack, then `matching-choose-contract` and `matching-choose-rvg`, and the insurer line),
+  `matching-decision` (radio cards, each `[data-decision=match|createBooking|createList|createDraft|reject]`),
+  `matching-pairing-warning`, the footer primary `matching-apply` ("Create Booking", "Apply 3 changes", "Cancel
+  Booking", "Mark as matched", "Create List and Booking", "Create Draft List and Booking", "Reject row"; disabled
+  with its reason) and, after a decision, `matching-banner` (`role=status`). On the Admin Booking detail:
+  `booking-from-hospital-row` and `booking-newer-hospital-text`. Side nav `nav-badge-matching`.
 - Public status (catch-up Phase 32d, no new hook names): `[data-status-choice=publicHospital]` in the mobile and web availability forms and the Day drawer's Change status sheet; `tr[data-status-row=publicHospital]` in Availability statuses; `[data-shot=drawer-change-status]` opens the sheet; the Day block for a Public session is `button[data-slot-id=<id>]` showing "Public" and its note; the legend and the "Status filters" group gain a "Public status" chip (a Slot status, no longer a List kind).
 - UI unification Phase U6 (every earlier hook kept, none moved off its element): table shells are the shared
   `shared/table/TableShell`. Its `shot`, `testId` and `data-*` sit on the scroller `div` (as before:
@@ -1681,7 +1746,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 
 | Scenario | What the jump does | Story |
 |---|---|---|
-| S1 · Booking to theatre | Reset only. | On Mobile Lists, run `fire-hospital-message` (MSG-STG-1001), then Sarah Mitchell appears on Souter Tue 28 Jul AM. |
+| S1 · Booking to theatre | Reset only. | On Admin, Matching, import `SAMPLE_STG` and create Sarah Mitchell's Booking (R1, "Create Booking"); she then appears on Souter Tue 28 Jul AM. On the PWA, `matching-office-matches-row` (S1 choice) plays it. |
 | S2 · Office day | Reset only. | Admin work. |
 | S3 · Money end to end | Reset, then checks both Souter Mon 20 lists are SUBMITTED. | Authorise them in `/admin/review/...`. Billing then gives AA-2026-0005 in Xero (nib, $152.38, its share of the fee-split Booking) and emails every invoice. |
 | S4 · Exceptions | Reset only. | Mobile, then the Admin screens below. |
@@ -1699,7 +1764,9 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/admin/review/L-41267-2026-07-14-AM` or that List's Booking detail | `stage-post-op` | Shown only for Dr Sharma's Tue 14 AM List |
 | `/admin/integrations`, Surgeon PDFs tab | `ingest-pdf-row` | Click the "Surgeon PDFs" tab first; the entry shows only there |
 | `/admin/invoices/<invoiceId>`, `/demo/xero/invoices/<accRecId>` | `payment-full`, `payment-half`, `payment-replay` | Acts on the invoice in the URL; the payable authorises for exactly the amount received. After the S3 AM authorise, AA-2026-0002 is the first open invoice; a raised pre-procedure invoice is `XR0001` |
-| `/mobile/lists[...]`, `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/admin/integrations`, `/demo/integrations` | `fire-hospital-message` (choice: a message id), `replay-hospital-message` | Badged Future scope. On a Booking it defaults to the message addressed to it (MSG-STG-1012 on Foster's `BK0043`), whose text replaces the rooms' (catch-up Phase 20a) |
+| `/mobile/lists[...]`, `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/admin/integrations`, `/demo/integrations` | `fire-hospital-message` (choice: a message id), `replay-hospital-message` | Badged Future scope, **bar only** since catch-up Phase 33 (not in the PWA Demo sheet). It never applies anything: a message stages a row on `/admin/matching` ("Sent ... to matching"), and the Booking changes only once the office decides the row there. On a Booking it defaults to the message addressed to it (MSG-STG-1012 on Foster's `BK0043`). Replay dedupes: no second row |
+| `/admin/matching` | `matching-receive-theatre-list` (choice `stg` or `sx`), `matching-send-update` | Catch-up Phase 33, bar only. "Import hospital file" stages `SAMPLE_STG` or `SAMPLE_SX`'s rows as the hospital sending its theatre list (refused once staged). "Send update for a matched Booking" stages a later row for the Booking matched by the selected row, else Diane Foster's `BK0043` (a later time and the hospital's fuller wording), waiting for approval. Recipes usually stage rows through the product's own Import hospital file dialog instead (see Overlays) |
+| `/mobile/lists[...]` (PWA Demo sheet) | `matching-office-matches-row` (choice by label: "Sarah Mitchell, Tue 28 Jul AM (S1)", "A new hospital booking on this List", "A hospital update for this Booking, approved by the office") | Catch-up Phase 33, badged Office stand-in, PWA only. The hospital's row arrives and the office decides it with the suggestion, every difference ticked, no Contract picked. On Foster's `BK0043` the hospital's fuller wording replaces WLE MM (US-02.5.7's mobile shot). In the framed build use Admin, Matching |
 | `/admin/day/<date>/bookings/<id>` | `hospital-description-arrives` (choice `ar35-row-2`, `-12`, `-20`, `-25`) | Catch-up Phase 20a, bar only, no badge. AR-35's illustrative hospital wording replaces the procedure text through `replaceProcedureText`; defaults to the row paired with the rooms' text (row 12 on Tane's `BK0006`). Disabled when the Booking already holds that text |
 | `/mobile/lists/<listId>` | `photo-capture-future` | Badged Future scope. Opens the Add a booking sheet on the simulated photo of a paper card (sample cards) for the List in the URL; disabled unless the List is ACTIVE. Also in the PWA Demo sheet. A saved Booking reads "Added by anaesthetist" |
 | `/admin/audit` | `simulate-sign-in` | Five simulated sign-in audit rows |
@@ -1730,23 +1797,29 @@ until `{ "trigger": "office-authorises-list" }` runs (US-07.4.1 and US-08.6.1 sh
 **Integration simulator** (`/demo/integrations`)
 
 - **Feeds:** St George's (HL7 v2), Christchurch Public (HL7 v2) and Southern Cross (FHIR-native).
+- **Messages never apply anything (catch-up Phase 33).** A message that parses stages a row on
+  `/admin/matching`, and the Booking changes only when the office decides that row. Pane 3
+  (`[data-shot=integrations-schedule-change]`) reads "Sent to matching". There is no manual-intervention
+  status or park code anywhere; the Integrations monitor's attention callout (`integrations-attention`)
+  shows dead-letter only.
 - **Messages:**
-  - MSG-STG-1001: S12 new booking. Selected by default.
+  - MSG-STG-1001: "S12 · New booking" (Sarah Mitchell). Selected by default.
   - MSG-STG-1002: new-format NHI.
   - MSG-STG-1003: out-of-range ethnicity. It raises a data-quality item.
   - MSG-STG-1004: transient failure, then auto-retry.
-  - MSG-CPH-2001: dead letter.
+  - MSG-CPH-2001: dead letter (still dead-letters; no row).
   - FHIR-SX-2001: FHIR-native booking.
-  - MSG-STG-1010 and 1011: S13 reschedules.
-  - MSG-STG-1012: S14 modification.
-  - MSG-STG-1013: S15 cancellation.
-  - MSG-STG-1014: locked target.
+  - MSG-STG-1010: "S13 · New time, same List"; MSG-STG-1011: "S13 · Booking on another day (arrives as a new row)".
+  - MSG-STG-1012: "S14 · Modification" (Diane Foster). Its hospital wording reaches `BK0043` only through its row, once the office applies it.
+  - MSG-STG-1013: "S15 · Cancellation".
+  - MSG-STG-1014: "S14 · Change to a submitted List" (Alan Prentice, Mr P. Doyle's AM List): its row stays appliable on Matching until the List is authorised.
 - **Selecting a message:** click its title in `[data-testid=integration-library]`, for example
   `[data-testid=integration-library] >> text="S15 · Cancellation"`.
 - **Replaying:** `[data-shot=integrations-replay]` replays the selected message. Each library row
   also has its own Replay button.
 - **After a replay,** `/admin/integrations` shows the message log. Use a `setup` that replays,
-  then set `start` to `/admin/integrations`.
+  then set `start` to `/admin/integrations`. To show a message's row, set `start` to `/admin/matching`
+  instead (US-02.5.4 fires MSG-STG-1014 from `/admin/integrations` in `setup`, then opens Matching).
 
 **Data inspector** (`/demo/data`)
 

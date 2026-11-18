@@ -1,6 +1,166 @@
 {
   "id": "US-02.1.3",
-  "status": "absent",
-  "absentReason": "No field-level difference view. When a surgeon PDF row or HL7 message matches an existing Booking, the prototype only notes \"Already booked on this List · will update, not duplicate\" and applies the update; time, patient and procedure differences are never shown side by side before applying. Searched the Integrations screen (Surgeon PDFs, Messages), ingestPdfRow and the integration apply path for a diff or compare view.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "differences",
+      "app": "admin",
+      "caption": "The differences between a row and its matched Booking, each ticked to apply",
+      "start": "/admin/matching",
+      "states": [
+        {
+          "state": "diff",
+          "caption": "Diane Foster's modification: a new time, the hospital's text replacing the current text, and a note",
+          "steps": [
+            {
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_STG]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot^='matching-row-']:has-text('Diane Foster')"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=matching-diff]"
+          ]
+        },
+        {
+          "state": "diff-unticked",
+          "caption": "The note unticked: the footer applies 2 changes",
+          "steps": [
+            {
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_STG]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot^='matching-row-']:has-text('Diane Foster')"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=matching-diff] >> role=checkbox[name=/Note/]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=matching-diff]",
+            "[data-shot=matching-apply]"
+          ]
+        },
+        {
+          "state": "matched-update",
+          "caption": "A later update for the Booking a row created, matched by date, surgeon, hospital and session, then NHI, waits for approval",
+          "steps": [
+            {
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_STG]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=matching-apply]"
+            },
+            {
+              "wait": "[data-shot=matching-banner]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_STG_UPDATE]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=matching-diff]"
+          ]
+        }
+      ]
+    }
+  ]
 }

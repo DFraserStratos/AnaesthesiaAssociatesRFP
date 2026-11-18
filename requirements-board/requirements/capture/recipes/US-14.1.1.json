@@ -6,14 +6,34 @@
     {
       "name": "hl7-siu-message",
       "app": "simulator",
-      "caption": "Inbound HL7 SIU message, translated to FHIR and applied to the schedule",
+      "caption": "Inbound HL7 SIU message, translated to FHIR · staged on the matching screen, nothing applied",
       "start": "/demo/integrations",
       "states": [
-        { "state": "received", "steps": [], "highlight": ["[data-shot=integrations-raw-hl7]"] },
         {
-          "state": "applied",
-          "steps": [{ "click": "[data-shot=integrations-replay]" }, { "wait": 1500 }, { "scroll": "[data-shot=integrations-schedule-change]" }],
-          "highlight": ["[data-shot=integrations-schedule-change]"]
+          "state": "received",
+          "steps": [],
+          "highlight": [
+            "[data-shot=integrations-raw-hl7]"
+          ],
+          "caption": "Inbound HL7 SIU message as received"
+        },
+        {
+          "state": "staged",
+          "steps": [
+            {
+              "click": "[data-shot=integrations-replay]"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "scroll": "[data-shot=integrations-schedule-change]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=integrations-schedule-change]"
+          ],
+          "caption": "Inbound HL7 SIU message, translated to FHIR · staged on the matching screen, nothing applied"
         }
       ]
     },
@@ -22,8 +42,25 @@
       "app": "admin",
       "caption": "Message log after an SIU S12 is received",
       "start": "/admin/integrations",
-      "setup": [{ "goto": "/demo/integrations" }, { "click": "[data-shot=integrations-replay]" }, { "wait": 1500 }],
-      "states": [{ "steps": [], "highlight": ["table"] }]
+      "setup": [
+        {
+          "goto": "/demo/integrations"
+        },
+        {
+          "click": "[data-shot=integrations-replay]"
+        },
+        {
+          "wait": 1500
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "table"
+          ]
+        }
+      ]
     }
   ]
 }

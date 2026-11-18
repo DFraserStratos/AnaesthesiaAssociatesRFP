@@ -11,6 +11,7 @@ import { assessImportRow, matchingAttentionCount } from './matchingSelectors'
 import { needsInvoiceDestinationBookings, proceduresForBooking } from './selectors'
 import { SX_NO_NHI_TYPED, FORTE_CORRECTED_NHI, SARAH_UPDATE_WORDING, FOSTER_HOSPITAL_WORDING } from '../domain/intake'
 import type { Actor } from './mutate'
+import { setInvoiceDescription } from './procedureTextActions'
 
 const ANAESTHETIST: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: '34821' }
 
@@ -249,5 +250,80 @@ describe('decisions (US-02.1.2, US-02.1.3, FT-02.5)', () => {
     const r1 = imported(api, 'SAMPLE_STG')[0]!
     expect(decideImportRow(api, OFFICE_ACTOR, r1, { kind: 'createBooking', listId: 'L-43015-2026-07-28-AM' })).toMatchObject({ ok: false, code: 'hospitalMismatch' })
     expect(decideImportRow(api, OFFICE_ACTOR, r1, { kind: 'match', bookingId: 'BK0043', fieldsApplied: [] })).toMatchObject({ ok: false, code: 'staleSuggestion' })
+  })
+})
+
+describe('review fixes (catch-up Phase 33)', () => {
+  const stg = (over: Record<string, unknown> = {}) => ({
+    hospitalId: 'H-STG',
+    dateISO: '2026-07-28',
+    session: 'AM' as const,
+    surgeon: { name: 'Mr T. Hale', hpiId: '40HALT' },
+    scheduledTime: '07:45',
+    patient: { name: 'Dylan Kereama', nhi: 'GBB9305', dobISO: '1992-04-16' },
+    hospitalStatus: 'booked' as const,
+    ...over,
+  })
+  const stage = (api: AppStoreApi, row: ReturnType<typeof stg>) => {
+    const res = stageImportRows(api, OFFICE_ACTOR, 'download', 'H-STG', 'test', [row])
+    return res.ok ? res.value.rowIds[0] : undefined
+  }
+
+  it("a Booking chosen by hand with another NHI never renames that patient's record", () => {
+    const api = fresh()
+    const rowId = stage(api, stg({ patient: { name: 'Jane Doe', nhi: 'ZQA1008', dobISO: '1970-01-01' }, procedure: { text: 'x' } }))!
+    const before = api.getState().masters.patients[api.getState().schedule.bookings['BK0066']!.patientId]
+    expect(decideImportRow(api, OFFICE_ACTOR, rowId, { kind: 'match', bookingId: 'BK0066', fieldsApplied: ['patientName', 'dob', 'procedureText'] }).ok).toBe(true)
+    expect(api.getState().masters.patients[api.getState().schedule.bookings['BK0066']!.patientId]).toEqual(before)
+  })
+
+  it("an insurer row with no approval number keeps the Booking's own", () => {
+    const api = fresh()
+    const rowId = stage(api, stg({ patient: { name: 'Leon Pereira', nhi: 'LMF9498' } }))
+    expect(rowId).toBeDefined()
+    // BK0133 holds nib; give it a number, then a row naming Southern Cross Health Society with none.
+    const sx = stageImportRows(api, OFFICE_ACTOR, 'download', 'H-SX', 'test', [
+      { hospitalId: 'H-SX', dateISO: '2026-07-21', session: 'AM', surgeon: { name: 'Mr P. Doyle', hpiId: '45DOYP' }, patient: { name: 'Leon Pereira', nhi: 'LMF9498' }, insurer: { text: 'nib', insurerPartyId: 'PY-NIB', approvalNumber: '111' }, hospitalStatus: 'booked' },
+      { hospitalId: 'H-SX', dateISO: '2026-07-21', session: 'AM', surgeon: { name: 'Mr P. Doyle', hpiId: '45DOYP' }, patient: { name: 'Leon Pereira', nhi: 'LMF9498' }, insurer: { text: 'Southern Cross', insurerPartyId: 'PY-SCHS' }, hospitalStatus: 'booked' },
+    ])
+    const [a, b] = sx.ok ? sx.value.rowIds : []
+    expect(decideImportRow(api, OFFICE_ACTOR, a!, { kind: 'match', bookingId: 'BK0133', fieldsApplied: ['insurer'] }).ok).toBe(true)
+    expect(decideImportRow(api, OFFICE_ACTOR, b!, { kind: 'match', bookingId: 'BK0133', fieldsApplied: ['insurer'] }).ok).toBe(true)
+    expect(api.getState().schedule.bookings['BK0133']).toMatchObject({ funderPartyId: 'PY-SCHS', insuranceApprovalNumber: '111' })
+  })
+
+  it('a revert to an earlier value is a new row; an identical repeat of the latest is skipped', () => {
+    const api = fresh()
+    const first = stage(api, stg({ scheduledTime: '08:00' }))!
+    expect(decideImportRow(api, OFFICE_ACTOR, first, { kind: 'match', bookingId: 'BK0066', fieldsApplied: ['time'] }).ok).toBe(true)
+    const second = stage(api, stg({ scheduledTime: '08:30' }))!
+    expect(decideImportRow(api, OFFICE_ACTOR, second, { kind: 'match', bookingId: 'BK0066', fieldsApplied: ['time'] }).ok).toBe(true)
+    expect(stage(api, stg({ scheduledTime: '08:30' }))).toBeUndefined()
+    expect(stage(api, stg({ scheduledTime: '08:00' }))).toBeDefined()
+  })
+
+  it('a create never double-books a patient already booked in that session', () => {
+    const api = fresh()
+    const rows = imported(api, 'SAMPLE_STG')
+    const dupe = stage(api, stg({ scheduledTime: '08:30', patient: { name: 'Sarah Mitchell', nhi: 'CQY9304', dobISO: '1988-04-12' }, procedure: { text: 'appendicectomy' } }))!
+    expect(decideImportRow(api, OFFICE_ACTOR, rows[0]!, { kind: 'createBooking', listId: 'L-34821-2026-07-28-AM' }).ok).toBe(true)
+    const before = scheduleOf(api)
+    expect(decideImportRow(api, OFFICE_ACTOR, dupe, { kind: 'createDraft' })).toMatchObject({ ok: false, code: 'alreadyBooked' })
+    expect(scheduleOf(api)).toBe(before)
+  })
+
+  it('corrections validate the date of birth and the time', () => {
+    const api = fresh()
+    const rowId = imported(api, 'SAMPLE_STG')[0]!
+    expect(correctImportRow(api, OFFICE_ACTOR, rowId, { dobISO: '12/03/66' })).toMatchObject({ ok: false, code: 'invalidDob' })
+    expect(correctImportRow(api, OFFICE_ACTOR, rowId, { scheduledTime: '9am' })).toMatchObject({ ok: false, code: 'invalidTime' })
+  })
+
+  it('"Use it" applies inside the decision: an edited invoice description takes the hospital text', () => {
+    const api = fresh()
+    expect(setInvoiceDescription(api, OFFICE_ACTOR, 'P0046', 'Excision, melanoma').ok).toBe(true)
+    const r3 = imported(api, 'SAMPLE_STG')[2]!
+    expect(decideImportRow(api, OFFICE_ACTOR, r3, { kind: 'match', bookingId: 'BK0043', fieldsApplied: ['procedureText'], useNewerText: true }).ok).toBe(true)
+    expect(api.getState().schedule.procedures['P0046']!.invoiceDescription?.text).toBe(FOSTER_HOSPITAL_WORDING)
   })
 })

@@ -13,12 +13,14 @@
  * `live` gives the note the role it announces with ("status" for a note that
  * appears after a choice, such as the conflict and pairing warnings); a note
  * with no `live` has no role, so a note keeps exactly the role it had. The
- * icon is always `aria-hidden`. `shot` and `data-*` land on the box.
+ * icon is always `aria-hidden`. `shot` and `data-*` land on the box. `enter`
+ * fades the note in as it appears (Matching's decided banner, catch-up Phase 33).
  */
 
 import type { CSSProperties, ReactNode } from 'react'
 import { TriangleAlert } from 'lucide-react'
 import { neutral, radius, semantic } from '../../theme/tokens'
+import { easing, motion } from '../../theme/motion'
 
 export type NoticeTone = 'warning' | 'error' | 'success' | 'neutral'
 
@@ -33,6 +35,8 @@ export type NoticeProps = {
   live?: 'status' | 'alert'
   /** A control at the right end (a tick, a text action): a real button, after the words. */
   action?: ReactNode
+  /** Fades in on mount (the card-advance timing): a banner that answers a decision just made. */
+  enter?: boolean
   shot?: string
   /** Placement only (margins, alignment). */
   style?: CSSProperties
@@ -41,7 +45,7 @@ export type NoticeProps = {
 
 const TONED: Record<Exclude<NoticeTone, 'neutral'>, { tint: string; onTint: string; solid: string }> = semantic
 
-export function Notice({ tone, title, icon, live, action, shot, style, children, ...data }: NoticeProps) {
+export function Notice({ tone, title, icon, live, action, enter = false, shot, style, children, ...data }: NoticeProps) {
   const shell: CSSProperties =
     tone === 'neutral'
       ? { background: neutral.bg, border: `1px solid ${neutral.line}`, color: neutral.ink, padding: '10px 12px', lineHeight: '19px' }
@@ -53,7 +57,7 @@ export function Notice({ tone, title, icon, live, action, shot, style, children,
       {...data}
       role={live}
       data-shot={shot}
-      style={{ display: 'flex', gap: 10, alignItems: 'flex-start', borderRadius: radius.card, fontSize: 13, ...shell, ...style }}
+      style={{ display: 'flex', gap: 10, alignItems: 'flex-start', borderRadius: radius.card, fontSize: 13, ...shell, ...(enter ? { animation: `aa-fade-in ${motion.cardAdvance.in}ms ${easing.card}` } : {}), ...style }}
     >
       {glyph !== null && (
         <span aria-hidden style={{ display: 'inline-flex', flexShrink: 0, marginTop: 1, color: iconColor }}>

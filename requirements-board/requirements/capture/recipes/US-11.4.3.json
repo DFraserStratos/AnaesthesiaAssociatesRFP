@@ -132,6 +132,54 @@
           ]
         }
       ]
+    },
+    {
+      "name": "matching-insurer",
+      "app": "admin",
+      "caption": "A hospital row's insurer and approval number show on the row and are recorded by the office's decision",
+      "start": "/admin/matching",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_SX]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot^='matching-row-']:has-text('Ratima')"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=matching-diff]"
+          ]
+        }
+      ]
     }
   ]
 }

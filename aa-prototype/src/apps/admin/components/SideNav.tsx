@@ -4,7 +4,7 @@ import { RolesInfo } from '../RolesInfo'
 import { PERSONAS } from '../../../shell/appConfig'
 import { DRAFT_LISTS } from '../../../shared/scheduleTerms'
 
-export type NavSection = 'day' | 'draftLists' | 'conflicts' | 'notifications' | 'review' | 'invoices' | 'billing' | 'integrations' | 'masters' | 'audit'
+export type NavSection = 'day' | 'matching' | 'draftLists' | 'conflicts' | 'notifications' | 'review' | 'invoices' | 'billing' | 'integrations' | 'masters' | 'audit'
 
 interface NavItem {
   section: NavSection
@@ -27,6 +27,8 @@ interface SideNavProps {
   draftListBadge?: number
   /** Active notices in the shared pool (catch-up Phase 32b; US-13.8.1) — amber, an attention count. */
   notificationBadge?: number
+  /** Open rows on the matching screen (catch-up Phase 33; US-02.1.4) — amber, an attention count. */
+  matchingBadge?: number
   onNavigate: (section: NavSection) => void
 }
 
@@ -35,9 +37,11 @@ interface SideNavProps {
  * (Decisions log 2026-07-21). The Review-queue badge derives from the SUBMITTED
  * list count (2026-07-23 decision) rather than a hardcoded figure.
  */
-export function SideNav({ active, reviewBadge, billingBadge = 0, integrationBadge = 0, conflictBadge = 0, draftListBadge = 0, notificationBadge = 0, onNavigate }: SideNavProps) {
+export function SideNav({ active, reviewBadge, billingBadge = 0, integrationBadge = 0, conflictBadge = 0, draftListBadge = 0, notificationBadge = 0, matchingBadge = 0, onNavigate }: SideNavProps) {
   const items: NavItem[] = [
     { section: 'day', label: 'Day view' },
+    // Hospital rows waiting for the office's decision (catch-up Phase 33): amber, never crimson.
+    { section: 'matching', label: 'Matching', badge: matchingBadge, badgeTone: 'warn' },
     { section: 'draftLists', label: DRAFT_LISTS, badge: draftListBadge, badgeTone: 'warn' },
     { section: 'conflicts', label: 'Conflicts', badge: conflictBadge, badgeTone: 'warn' },
     // The shared notification pool: its active notices (catch-up Phase 32b, D58; a resolved notice leaves the count).

@@ -1841,7 +1841,8 @@ export type IncomingFieldKey = 'time' | 'patientName' | 'dob' | 'nhi' | 'procedu
 /** Only what the office chose in the panel; never derived from the row (FT-02.1, OQ-78). */
 export interface OfficePicks {
   rvgGroupId?: string
-  contract?: { contractId: ContractId }
+  /** The Contract the office picked on the step rail, with the price typed on an open-price Contract. */
+  contract?: { contractId: ContractId; enteredPrice?: number }
   /** Record the row's insurer or funder on the Booking (default on, the office may untick). */
   recordInsurer?: boolean
 }

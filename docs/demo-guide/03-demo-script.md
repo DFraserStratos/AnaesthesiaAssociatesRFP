@@ -32,7 +32,7 @@ preparation needed, and prints where to go next with one-click navigation. S1 to
 from the ordinary Reset control. Use the live clock immediately to the right of the app switcher to
 advance time without leaving the screen you are presenting.
 
-**Demo actions live on their screen.** A simulated event (a hospital message, a payment webhook, a
+**Demo actions live on their screen.** A simulated event (a hospital file import, a payment webhook, a
 billing failure, a job run) is fired from the screen it belongs to: open **Demo actions** in the top
 bar, beside the app switcher, and select **Run** on the entry. The pill only appears on screens that
 have demo actions, and the menu stays open after a run so you can read the result. On a handset (the
@@ -74,6 +74,7 @@ view respectively.
 | Admin Web App | URL |
 |---|---|
 | Day view | `/admin/day/2026-07-21` (A to Z order: add `?sort=az`) |
+| Matching | `/admin/matching` |
 | Booking detail | `/admin/day/2026-07-21/bookings/<bookingId>` |
 | Conflicts | `/admin/conflicts` (hospital closures only; filters in the URL, e.g. `?hospital=`, `?cleared=1`) |
 | Review queue | `/admin/review` |
@@ -118,12 +119,12 @@ mobile background and changes nothing here.
 
 ## S1 · Booking to theatre
 
-**Serves:** the RFP's near-real-time hospital integration, the Booking as the billing anchor, and BTM
-capture. **Time:** 5 to 6 minutes.
+**Serves:** importing hospital bookings and the matching screen, the Booking as the billing anchor,
+and BTM capture. **Time:** 5 to 6 minutes.
 
-> **Caveat: HL7 v2 and FHIR are Future scope; present Beat 1 as an illustration of intake.** The
-> in-scope path, a hospital download matched by the office, arrives in a later build. The Integrations
-> simulator and the Admin Integrations Messages and Feed config tabs are badged **Future scope**.
+> **Caveat: the HL7/FHIR simulator is not how S1 is shown.** HL7 v2 and FHIR messaging is Future
+> scope; the Integrations simulator and the Admin Integrations Messages and Feed config tabs are badged
+> **Future scope**, and a message fired there is only sent to matching.
 
 **Stage it:** use **Reset → Confirm reset**, then open the Anaesthetist Mobile App. The Tue 28 Jul
 St George's AM List holds three booked, not-yet-captured cases, so the hospital booking arrives into a
@@ -136,25 +137,42 @@ working List rather than an empty one.
     (07:45 knee arthroscopy, 09:45 shoulder arthroscopy, 11:15 wrist ORIF). Two of them read as the
     surgeon's rooms sent them: "L knee scope + partial menisectomy" and "ORIF # R dist radius"
     (illustrative demo wording, AI-made, not AA's).
-  - Back on Mobile Lists, open **Demo actions** in the top bar → **Fire hospital message** → choose
-    **S12 · New booking · MSG-STG-1001** → **Run**. (Alternative: **Demo: Integrations → S12 · New
-    booking → Replay**, which shows the raw HL7 and FHIR panes.)
-  - Pause on the result line.
-  - Reopen the Tue 28 Jul AM List.
-- **Say:** "Existing hospitals may still send HL7 v2, but the target is FHIR-native. Messages are
-  mapped per hospital, processed near real time, and audited. This booking created a patient Booking
-  without anyone re-keying it."
-- **Expected:** the message shows as processed; the List now carries a fourth Booking for Sarah Mitchell,
-  slotted into her 08:30 place between the first two cases. Her NHI matched an existing record, so
-  intake reused it, no duplicate. Her Booking shows the hospital's text as received, "lap appy ?conv to
-  open" (Hospital feed), with its Contract and RVG code still to choose. She arrives with no Contract, so in Admin she shows on Day's
-  **Needs an invoice destination** card, and her List row reads "Needs an invoice destination".
-- **Click (the office sets it):** in **Admin Day view → Tue 28 Jul**, open her row on the **Needs an
-  invoice destination** card. On her Booking, the **Billing** card shows the steps inline: **Patient**
-  → **Standard** (the payment type is always asked) → **Choose the Contract** → **No contract · RVG**. She leaves the card. (On the PWA,
-  **Demo → Office sets this Booking's Contract** stands in for the office.)
-- **Say:** "The office answers what it knows first: where the invoice goes, then the Contract. Where
-  the Contract prices from the RVG, the code is the anaesthetist's."
+  - Go to **Admin → Matching** (under Day view; the amber badge counts open rows) → **Import hospital
+    file** → **St George's theatre list, Tue 28 Jul to Tue 4 Aug**. The stats strip fills: OPEN, NEW,
+    MODIFICATIONS, CANCELLATIONS, UNMATCHED.
+  - Open **Sarah Mitchell**'s row (R1, New). Read the wording as the hospital sent it,
+    "lap appy ?conv to open", and the suggestion, **Create Booking on Dr Souter, Tue 28 Jul AM**.
+  - In the Procedure stack, **Choose Contract** and set **Patient** → **Standard** (the payment type
+    is always asked) → **No contract · RVG** through its step rail; leave **Choose RVG code** to the
+    anaesthetist.
+  - Select **Create Booking** in the footer.
+  - Back in Mobile, reopen the Tue 28 Jul AM List.
+  - Handset variant (PWA): Mobile Lists → **Demo** → **Hospital row arrives and the office matches
+    it** → **Sarah Mitchell, Tue 28 Jul AM (S1)**. The office then sets her Contract from Admin Day's
+    **Needs an invoice destination** card (on the PWA, **Demo → Office sets this Booking's Contract**),
+    or narrate it.
+- **Say:** "Hospital bookings are how most bookings reach AA today. They land on the matching screen
+  with the hospital's wording exactly as sent, the office sees what each row would change, and nothing
+  reaches the schedule until someone decides, even an update to a Booking already matched. This one is
+  new, so it becomes a Booking on Dr Souter's List. The hospital does not choose the Contract; the
+  office does, here or from its Needs an invoice destination list."
+- **Expected:** the row moves under **Decided**; the List now carries a fourth Booking for Sarah
+  Mitchell at 08:30, between the first two cases, source **Hospital download**. Her NHI matched an
+  existing record, so her patient record is reused, no duplicate. Her stack shows the wording as
+  received, "lap appy ?conv to open", on the Contract the office picked, with the RVG code still to
+  choose; her invoice description starts as the hospital's text (the Contract's invoice description
+  replaces it where filled in). Had the office left the Contract unset, she would wait on Admin Day's
+  **Needs an invoice destination** card.
+- **Optional beat 1b:** on Matching open **R3 (Diane Foster)**, a Modification: the field differences
+  with their tick boxes (time 11:00 to 12:15, the note "Bumped 15 min at surgeon request"), and the
+  hospital's long text replacing "WLE MM" (the old text kept in the history, with a line saying it also
+  becomes the invoice description). Untick a field and the footer count drops. Or import **St George's
+  theatre list, a day later** to show Sarah Mitchell's update (09:00, a note, "Laparoscopic
+  appendicectomy, may convert to open") waiting for approval, matched by date, surgeon, hospital and
+  session.
+- **Do not** fire the S13 to S15 hospital messages in any beat: applying hospital changes automatically
+  is Future Work. If asked, say "Applying hospital changes automatically comes after the first release;
+  until then every change waits for the office here."
 
 ### Beat 2: the Booking fills over the days before theatre
 
@@ -169,11 +187,13 @@ working List rather than an empty one.
   'right total knee', and the original is in the Booking's history. The Booking shows only the latest
   text; the Contract and its RVG code sit together in the Billing card below it." Open **History** to show "Procedure text replaced" naming 'RTK' (Surgeon's rooms PDF). The
   wording is illustrative demo data, not AA's.
-- **Optional, live:** on the same List open **Diane Foster** (11:00, "WLE MM", RVG code to choose) →
-  **Demo actions → Fire hospital message** (it defaults to **MSG-STG-1012**; Future-scope badge: HL7 is
-  illustrative) → **Run**. The hospital's fuller wording replaces "WLE MM", the original goes to the
-  History; her time moves to 12:15 with the note. Firing it again
-  changes nothing.
+- **Optional, live:** on the same List open **Diane Foster** (11:00, "WLE MM", RVG code to choose).
+  Then on **Admin → Matching**, **Demo actions → Send update for a matched Booking** (it defaults to
+  Diane Foster; or use R3 of the St George's import) → open the row → **Apply 3 changes**. The
+  hospital's fuller text replaces "WLE MM", which stays in the Booking's change history, and it also
+  becomes her invoice description unless the Contract's invoice description is filled in or an admin
+  edited it; her time moves to 12:15 with the note. Handset: the stand-in's **A hospital update for
+  this Booking, approved by the office**.
 
 ### Beat 3: capture BTM on mobile
 
@@ -241,6 +261,13 @@ working List rather than an empty one.
 **Discovery point:** settled: a part time interval always rounds up under the RVG tiers (confirmed with
 AA, OQ-75); the tiers are held as data, shown read only under **Admin → Master data → RVG groups**, and
 the T row reads **From start and finish stamps · RVG time tiers**.
+
+**Discovery points (hospital bookings):** OQ-13, how each hospital provides its bookings, the fields
+and cadence, and whether they carry the insurer, the procedure wording and an appointment id; OQ-108
+answered: both sources are built, and the rooms' PDF lists arrive as rows on this same screen in Phase
+34; removals from a re-sent list (US-02.2.3, Future); bulk apply; and AI-assisted matching later. If
+Greg's "why is this a manual task" comes up: the first release keeps the import gate with no automated
+decisions, and automatic matching and updates are Future Work (US-14.6.2).
 
 ---
 
@@ -883,18 +910,21 @@ actions** on the screen named in its beat.
   appears, with no duplicate invoice. Her invoice (AA-2026-0002, Canterbury Orthopaedic Surgeons,
   $303.60) and Hemi Walker's (AA-2026-0003, St George's, $221.38) are unchanged. No Contract changes.
 
-### Beat 4: integration dead-letter and manual fix
+### Beat 4: the unmatched queue
 
 - **Click:**
-  - Go to **Admin Integrations → Demo actions → Fire hospital message → MSG-CPH-2001 → Run**.
-  - Go to **Feed config → Christchurch Public**. Say that the tab is badged **Future scope**: HL7
-    feeds and their mappings are not in today's scope.
-  - Change **patientNhi** from **PID-2** to **PID-3**, then select **Save**.
-  - Go to **Message log → MSG-CPH-2001 → Reprocess**.
-- **Say:** "Christchurch Public sends the NHI in PID-3, but the feed was onboarded reading PID-2. The
-  bad NHI fails validation and the message dead-letters after its retries. Fixing the mapping and
-  reprocessing recovers it, without creating a duplicate."
-- **Expected:** the message dead-letters, then reprocesses cleanly after the mapping fix.
+  - Go to **Admin → Matching → Demo actions → Import hospital file** → choose **Southern Cross** →
+    **Run**.
+  - Filter **Unmatched**. Open **Tama Henare** (R4, no NHI) and type the NHI **ZQA1008**.
+  - Open **Grace Whitu** (R5, Thu 6 Aug PM, no List) → **Create a List in a session** → confirm.
+- **Say:** "Nothing from a hospital is ever dropped. A row with no NHI waits here until the office adds
+  it, and no patient or Booking is made. A row that matches nothing waits until someone decides: create
+  the List, put the Booking on a Draft List for the office to fill, or reject it with a reason."
+- **Expected:** both rows sit under Unmatched; the NHI releases Tama Henare's into a ready row; then
+  the new List and Grace Whitu's Booking show on the Day view for Thu 6 Aug and the row moves under
+  **Decided**.
+- **Optional:** R3 (Hemi Walker, on the authorised Wed 18 Mar List) reads **List authorised** with
+  Apply disabled.
 
 ### Beat 5: partial payment
 
@@ -911,8 +941,10 @@ actions** on the screen named in its beat.
 
 **Discovery points:** settled: billing failure is per Booking, and a List never fails as a whole
 (OQ-05); still to confirm with AA: exactly which fields are frozen at authorise (US-15.0.3: AR-58 2.8
-names them, Donald's proposal); which conditions warn, and how strongly; where the to-do list sits on the dashboard; and how inbound messages targeting a submitted or authorised List
-are parked for manual intervention.
+names them, Donald's proposal); which conditions warn, and how strongly; where the to-do list sits on the dashboard; a hospital row for a submitted List can still be applied by
+the office until the List is authorised (US-02.5.4), and one for an authorised List cannot (what happens
+then is not yet decided); a Booking moved to another day arrives as a cancellation plus a new Booking;
+applying hospital changes automatically is Future Work.
 
 ---
 
@@ -951,11 +983,13 @@ Xero sim**.
 
 - **Click:**
   - Go to **Admin Integrations → Demo actions → Fire hospital message → MSG-STG-1002 (new-format
-    NHI) → Run**.
+    NHI) → Run** (Future scope: it applies nothing, it stages a row).
+  - Go to **Admin → Matching** and open the new row.
   - Optional: add a Booking manually and try both NHI formats.
 - **Say:** "The prototype validates both NHI formats using the official check-digit algorithms. A
-  new-format NHI with a mod-23 check letter validates and processes end to end."
-- **Expected:** the new-format NHI validates; an invalid one is rejected with a reason.
+  new-format NHI with a mod-23 check letter validates; the row still waits for the office to decide."
+- **Expected:** the message is sent to matching; the row on Admin, Matching shows the validated
+  new-format NHI. An invalid NHI is rejected with a reason.
 
 ### Beat 3: no personal information in Xero
 
@@ -1047,7 +1081,7 @@ last-write-wins, with the multi-source reality shown via the audit trail and liv
 |---|---|---:|
 | General evaluation | S1, S2, S3 | 15 to 18 min |
 | Finance-led | S3, S4 (money beats), S5 | 15 min |
-| Integration-led | S1, S4 (integration beat), S2 | 15 min |
+| Integration-led | S1, S4 (unmatched queue beat), S2 | 15 min |
 | Full deep-dive | S1 through S5 | 30 to 35 min |
 
 ## What to narrate rather than click
@@ -1057,8 +1091,11 @@ last-write-wins, with the multi-source reality shown via the audit trail and liv
   aggregate counter to make the point).
 - Health NZ's FHIR-first policy and real OAuth/Keycloak setup.
 - Real email, OCR, Xero and hospital integrations: the prototype simulates them in-browser.
+- Future scope (HL7 v2): a feed-mapping dead-letter. Christchurch Public sends the NHI in PID-3 but the
+  feed was onboarded reading PID-2, so the message dead-letters until the mapping is fixed and it is
+  reprocessed (Admin Integrations, MSG-CPH-2001, Feed config; all badged **Future scope**).
 
-The most persuasive clicks are the state changes: a message or manual booking creates a Booking; Finish
+The most persuasive clicks are the state changes: a matched hospital row or a manual booking creates a Booking; Finish
 now changes Time units and fee; Booking completion enables submission; submission changes who may edit;
 authorisation locks the List; the billing run generates invoices; the invoice-detail shortcut records
 payment and payout; the Web Payments history keeps the settled invoice visible.
@@ -1074,6 +1111,8 @@ payment and payout; the Web Payments history keeps the settled invoice visible.
   performs the same whole-demo reset without making you return to the control panel.
 - Lost the screen a demo action lives on? The control panel's **Demo actions by screen** has an
   **Open screen** link for every entry (with a hint where a tab is needed, such as Surgeon PDFs).
+- Imported the same sample twice: nothing new is added. Applied the wrong row: fix the Booking by
+  hand; the row's decision and any wording it added stay in the history.
 - If **Finish now** was stamped too early, reset and advance the clock before reopening the Booking.
 - A stray refresh is no longer a problem: it returns you to the same screen. If you have clicked
   somewhere unexpected, the browser back button retraces your steps, or paste the beat's address from

@@ -12,6 +12,8 @@ export interface DemoContextValues {
   'integrations.tab': 'messages' | 'feeds' | 'pdfs' | 'quality' | 'validators'
   /** Integrations simulator: the message selected in the library. */
   'integrationsSim.selectedMessageId': string
+  /** Admin · Matching: the row open in the detail panel (an import row id; catch-up Phase 33's "Send update for a matched Booking"). */
+  'matching.selectedRowId': string
   /** Admin · AA fee invoices: the month in the picker (`YYYY-MM`; catch-up Phase 16). */
   'aaFees.month': string
   /**

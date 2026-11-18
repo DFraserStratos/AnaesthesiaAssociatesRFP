@@ -20,6 +20,7 @@ import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { DemoBadge } from '../../../shared/DemoBadge'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
 import { compareSessions, sessionText } from '../../../domain/outOfHours'
+import { RowField } from '../components/RowField'
 
 interface Props {
   actor: Actor
@@ -342,21 +343,6 @@ function PdfReview({ pdf, actor, onBack }: { pdf: SurgeonPdf; actor: Actor; onBa
         </div>
       </div>
     </div>
-  )
-}
-
-function RowField({ label, value, onChange, width, mono, invalid, readOnly }: { label: string; value: string; onChange?: (v: string) => void; width: number; mono?: boolean; invalid?: boolean; readOnly?: boolean }) {
-  return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist }}>{label}</span>
-      <input
-        value={value}
-        readOnly={readOnly === true}
-        onChange={(e) => onChange?.(e.target.value)}
-        className={mono === true ? 'mono' : undefined}
-        style={{ font: 'inherit', ...(mono === true ? { fontFamily: fontFamily.mono } : {}), fontSize: 12.5, padding: '5px 8px', borderRadius: radius.ctl, border: `1px solid ${invalid === true ? semantic.error.solid : readOnly === true ? neutral.line : neutral.lineStrong}`, background: readOnly === true ? neutral.bg : neutral.surface, color: neutral.ink, width }}
-      />
-    </label>
   )
 }
 

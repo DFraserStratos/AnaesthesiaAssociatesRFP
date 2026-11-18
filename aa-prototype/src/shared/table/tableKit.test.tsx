@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { elevation, neutral, radius } from '../../theme/tokens'
+import { elevation, neutral, radius, semantic } from '../../theme/tokens'
 import { ClickableRow, GroupRow, RowOpenButton, TableShell, Td, Th } from '.'
 
 /** UI unification U6 (U10, U09): the one table kit. */
@@ -131,5 +131,19 @@ describe('table kit', () => {
     expect(handle).toHaveAttribute('type', 'button')
     fireEvent.click(handle)
     expect(onOpen).toHaveBeenCalledOnce()
+  })
+
+  it('tone warning tints a row and its text; no tone leaves it plain', () => {
+    render(
+      <TableShell label="Differences" nested density="dense">
+        <tbody>
+          <ClickableRow tone="warning" align="top" data-diff="time"><Td>Time</Td></ClickableRow>
+          <ClickableRow data-diff="plain"><Td>Plain</Td></ClickableRow>
+        </tbody>
+      </TableShell>,
+    )
+    expect(document.querySelector('tr[data-diff="time"]')).toHaveStyle({ background: semantic.warning.tint, color: semantic.warning.onTint })
+    expect(screen.getByText('Time')).toHaveStyle({ verticalAlign: 'top' })
+    expect((document.querySelector('tr[data-diff="plain"]') as HTMLElement).style.background).toBe('')
   })
 })
