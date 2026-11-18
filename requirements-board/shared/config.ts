@@ -37,7 +37,8 @@ export interface CaptureApp {
   /** Where a shot with setup steps loads first, before its `start` route. */
   setupRoute: string
   /** CSS that hides demo-only chrome from every shot. A plugin step can lift it for a moment. */
-  hideCss: string
+  hideCss: string  /** An environment variable that, when set, replaces the url's port (a second worktree on its own ports). */
+  portEnv?: string
 }
 
 export interface CaptureConfig {
@@ -275,7 +276,10 @@ function capture(raw: unknown, apps: ScreenshotApp[], problems: string[]): Captu
     for (const [key, v] of Object.entries(raw.apps)) {
       if (!known.has(key)) problems.push(`capture.apps: "${key}" is not one of the screenshotApps`)
       else if (!isObj(v) || !str(v.url)) problems.push(`capture.apps.${key} needs a url`)
-      else out.apps[key] = { url: str(v.url)!.replace(/\/$/, ''), setupRoute: str(v.setupRoute) ?? '/', hideCss: typeof v.hideCss === 'string' ? v.hideCss : '' }
+      else {
+        out.apps[key] = { url: str(v.url)!.replace(/\/$/, ''), setupRoute: str(v.setupRoute) ?? '/', hideCss: typeof v.hideCss === 'string' ? v.hideCss : '' }
+        if (str(v.portEnv)) out.apps[key].portEnv = str(v.portEnv)
+      }
     }
   }
   return out

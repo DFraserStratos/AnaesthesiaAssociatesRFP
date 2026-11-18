@@ -43,7 +43,15 @@ const CAPTURE: CaptureConfig = config.capture
 const RECIPES_DIR = resolve(REQUIREMENTS_DIR, CAPTURE.recipes)
 const REPORT_PATH = resolve(REQUIREMENTS_DIR, CAPTURE.report)
 /** The apps the runner can open: a screenshot app with a URL in `capture.apps`. */
-const APPS = new Map<string, ScreenshotApp & CaptureApp>(config.screenshotApps.filter((a) => CAPTURE.apps[a.key]).map((a) => [a.key, { ...a, ...CAPTURE.apps[a.key]! }]))
+/** An app's url with its `portEnv` variable, when set, in place of the port. */
+const withPortEnv = (app: CaptureApp): CaptureApp => {
+  const port = app.portEnv && process.env[app.portEnv]
+  if (!port) return app
+  const u = new URL(app.url)
+  u.port = port
+  return { ...app, url: u.href.replace(/\/$/, '') }
+}
+const APPS = new Map<string, ScreenshotApp & CaptureApp>(config.screenshotApps.filter((a) => CAPTURE.apps[a.key]).map((a) => [a.key, { ...a, ...withPortEnv(CAPTURE.apps[a.key]!) }]))
 const APP_KEYS = config.screenshotApps.map((a) => a.key)
 /** A path as the user would type it: relative when it is under the working folder, else absolute. */
 const shown = (abs: string) => {

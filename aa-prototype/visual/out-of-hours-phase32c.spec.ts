@@ -13,7 +13,7 @@ const CHEN = '45178'
 const SOUTER_PM = 'L-34821-2026-07-21-PM'
 const SOUTER_OOH = 'S-34821-2026-07-21-OOH'
 const DAY = '/admin/day/2026-07-21'
-const PWA = 'http://localhost:5174'
+const PWA = process.env['PWA_URL'] ?? `http://localhost:${process.env['AA_PWA_PORT'] ?? 5174}`
 
 async function fresh(page: Page, path: string): Promise<void> {
   await page.goto(path)

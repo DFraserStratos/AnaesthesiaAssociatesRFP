@@ -38,10 +38,10 @@
     "locale": "en-NZ",
     "timezone": "Pacific/Auckland",
     "apps": {
-      "admin": { "url": "http://localhost:5173", "setupRoute": "/", "hideCss": "#root > div > header:first-child { display: none !important; }" },
-      "web": { "url": "http://localhost:5173", "setupRoute": "/", "hideCss": "#root > div > header:first-child { display: none !important; }" },
-      "simulator": { "url": "http://localhost:5173", "setupRoute": "/", "hideCss": "#root > div > header:first-child { display: none !important; }" },
-      "mobile": { "url": "http://localhost:5174", "setupRoute": "/mobile/lists", "hideCss": "[data-shot=\"pwa-demo-actions\"] { display: none !important; }" }
+      "admin": { "url": "http://localhost:5173", "portEnv": "AA_PROTO_PORT", "setupRoute": "/", "hideCss": "#root > div > header:first-child { display: none !important; }" },
+      "web": { "url": "http://localhost:5173", "portEnv": "AA_PROTO_PORT", "setupRoute": "/", "hideCss": "#root > div > header:first-child { display: none !important; }" },
+      "simulator": { "url": "http://localhost:5173", "portEnv": "AA_PROTO_PORT", "setupRoute": "/", "hideCss": "#root > div > header:first-child { display: none !important; }" },
+      "mobile": { "url": "http://localhost:5174", "portEnv": "AA_PWA_PORT", "setupRoute": "/mobile/lists", "hideCss": "[data-shot=\"pwa-demo-actions\"] { display: none !important; }" }
     },
     "startHint": "Start both with `npm run dev` at the repo root (prototype on 5173, PWA on 5174)."
   },

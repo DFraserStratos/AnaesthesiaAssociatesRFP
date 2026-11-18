@@ -17,7 +17,13 @@ import { defineConfig, devices } from '@playwright/test'
  *
  * Both dev servers start together (`webServer` takes an array). `dev:pwa` uses
  * `vite.pwa.config.ts`, which pins port 5174 with `strictPort`.
+ *
+ * AA_PROTO_PORT and AA_PWA_PORT move both servers (and every URL here) for a
+ * parallel build lane in its own worktree (docs/prototype-build/catch-up/LANES.md);
+ * the dev servers it starts inherit them. Unset, the ports are 5173 and 5174.
  */
+const PROTO_URL = `http://localhost:${process.env['AA_PROTO_PORT'] ?? 5173}`
+const PWA_URL = `http://localhost:${process.env['AA_PWA_PORT'] ?? 5174}`
 export default defineConfig({
   testDir: './visual',
   outputDir: './visual/.output',
@@ -38,14 +44,14 @@ export default defineConfig({
         // difference costs us only `env(safe-area-inset-*)`, which no headless
         // browser reports anyway (see the spec's floor assertions).
         browserName: 'chromium',
-        baseURL: 'http://localhost:5174',
+        baseURL: PWA_URL,
       },
     },
     {
       name: 'prototype',
       testIgnore: /pwa-device\.spec\.ts$/,
       use: {
-        baseURL: 'http://localhost:5173',
+        baseURL: PROTO_URL,
         viewport: { width: 1440, height: 900 },
       },
     },
@@ -53,13 +59,13 @@ export default defineConfig({
   webServer: [
     {
       command: 'npm run dev',
-      url: 'http://localhost:5173',
+      url: PROTO_URL,
       reuseExistingServer: true,
       timeout: 60_000,
     },
     {
       command: 'npm run dev:pwa',
-      url: 'http://localhost:5174',
+      url: PWA_URL,
       reuseExistingServer: true,
       timeout: 60_000,
     },

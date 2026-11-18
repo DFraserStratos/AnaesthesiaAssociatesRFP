@@ -450,7 +450,9 @@ UI unif.      U1 tokens, money & date text ─▶ U2 overlays │ U3 pills, badg
               owner-added, outside the gap analysis: docs/ui-unification/
 ```
 
-Run order from here: 26, then 27 and 27a, then the 18 November follow-ups 25a, 17b and 32d (one at a
+**Built in two lanes, in waves, from 26 on** (the owner, 18 November 2026; [LANES.md](LANES.md) and the
+sequencing rule "Two build lanes in waves"): Wave 1 is Lane A 26, 27, 27a beside Lane B 32d, 33; the
+wave queues there replace the order below where they differ. Run order from here: 26, then 27 and 27a, then the 18 November follow-ups 25a, 17b and 32d (one at a
 time, or 17b beside 32d in two worktrees), then Intake (33, 33a, 34, 35) and Money (36 on), with the
 remaining phases (40 to 43b) as their dependencies allow, then U7, then 44. Parked: the A and B split
 of a session (US-01.1.5, DM-65) and the pre-op consult in AA's room (US-03.7.4); see Parked.
@@ -850,6 +852,20 @@ under Sequencing rules.
   the anaesthetist who did the List again. There is no estimate and no excess path: a prepaid
   Procedure is priced at the prepaid amount and left off the final invoice with nothing deducted
   (D57); the `negativeTotal` guard stays for every other negative.
+- **Two build lanes in waves** (the owner, 18 November 2026). From 26 on, the catch-up is built by two
+  sessions at once, each in its own git worktree and branch (Lane A `lane/a` in
+  `AnaesthesiaAssociatesRFP-laneA` on ports 5273, 5274 and 5280; Lane B `lane/b` in
+  `AnaesthesiaAssociatesRFP-laneB` on 5373, 5374 and 5380), run from the owner's two Claude accounts.
+  Each lane works through a short queue (a wave). The session that finishes second joins both on
+  `wave/<n>`, re-runs every check and the full capture, updates the plan page, chooses the next wave
+  and fast-forwards `master`. Lane sessions commit on their lane branch and never push. [LANES.md](LANES.md)
+  holds the current wave, the rules for choosing one (dependencies built or in an earlier wave; 25a
+  in Lane A with no billing phase beside it; U7 and 44 each alone), what each lane owns, the merge
+  rules and the lane prompts; it overrides any phase doc's own "beside" or port-lock notes. Wave 1:
+  Lane A 26, 27, 27a; Lane B 32d, 33 (32d and 33 run ahead of 25a and 17b, which the rule below
+  orders by preference, not dependency). Keep this rule, LANES.md and its lane structure in every
+  re-plan (an owner directive): check the current and next waves against the new dependencies and
+  record any change in LANES.md's wave tables.
 - **25a, 17b and 32d run after 27a and before Intake** (new 2026-11-18). Each follows up built phases
   for one group of the 18 November answers, so each runs before the phases that read what it changes:
   17b (no surgeons' rooms; the surgeon's contacts and the one email helper) before 34, 35, 40 and 42,

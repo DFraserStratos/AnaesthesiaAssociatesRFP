@@ -33,6 +33,8 @@
 //                   "equivalent": "..." }  free text, shown by --list: which project command this stands for
 //     ],
 //     "devServers": [ { "name": "app", "port": 5173, "url": "http://localhost:5173", "cwd": ".", "cmd": "npm run dev:app" } ],
+//                                          a server may add "portEnv": "APP_PORT": when that variable is set, it
+//                                          replaces the port (and the url's port), e.g. for a second worktree on its own ports
 //     "devCommand": { "cwd": ".", "cmd": "npm run dev" },   starts every dev server at once (when all are down)
 //     "startTimeout": 120,                 seconds to wait for the dev servers to answer
 //     "node": { "min": "22.18", "paths": ["/opt/homebrew/opt/node@24/bin", "$HOME/.nvm/versions/node/v24.20.0/bin"] },
@@ -410,6 +412,15 @@ function probe(url, ms = 1500) {
 
 const urlOf = s => s.url ?? `http://localhost:${s.port}`
 
+/** A dev server with its "portEnv" variable (when set) in place of its port and its url's port. */
+function withPortEnv(s) {
+  const v = s.portEnv && process.env[s.portEnv]
+  if (!v) return s
+  const u = new URL(urlOf(s))
+  u.port = v
+  return { ...s, port: Number(v), url: u.href.replace(/\/$/, '') }
+}
+
 async function ensureServers(servers, timeoutS) {
   const up = await Promise.all(servers.map(s => probe(urlOf(s))))
   const down = servers.filter((_, i) => !up[i])
@@ -470,7 +481,7 @@ async function runCapture(ids) {
   takeLock()
   const cap = runner.capture
   if (!cap?.cmd) usage(`no "runner.capture" in ${config.configFile}`)
-  const servers = runner.devServers ?? []
+  const servers = (runner.devServers ?? []).map(withPortEnv)
   const reportFile = path.resolve(ROOT, cap.report ?? config.captureReport ?? '')
   const all = ids === 'all'
   const t0 = performance.now()
@@ -558,7 +569,7 @@ if (has('--capture')) {
   if (has('--list') || has('--dry')) {
     const cap = runner.capture ?? {}
     const ids = valueOf('--capture')
-    console.log(`phase-check --capture plan: probe ${(runner.devServers ?? []).map(s => `${s.name} ${urlOf(s)}`).join(', ')}; start "${runner.devCommand?.cmd ?? 'each server\'s cmd'}" if down`)
+    console.log(`phase-check --capture plan: probe ${((runner.devServers ?? []).map(withPortEnv)).map(s => `${s.name} ${urlOf(s)}`).join(', ')}; start "${runner.devCommand?.cmd ?? 'each server\'s cmd'}" if down`)
     if (ids !== 'all') console.log(`  then (cd ${cap.cwd} && ${cap.cmd} ${cap.onlyFlag ?? '--only'} ${ids} ${cap.dryFlag ?? '--dry'})`)
     console.log(`  then (cd ${cap.cwd} && ${cap.cmd}${ids === 'all' ? '' : ` ${cap.onlyFlag ?? '--only'} ${ids}`})`)
     process.exit(0)

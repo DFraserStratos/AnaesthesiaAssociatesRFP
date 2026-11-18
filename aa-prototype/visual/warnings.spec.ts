@@ -11,7 +11,7 @@ import { runDemoAction } from './demoActions'
 
 const RILEY_LIST = 'L-34821-2026-07-24-AM'
 // The PWA dev server (5174; another port when a worktree runs its own, via PWA_URL).
-const PWA = process.env['PWA_URL'] ?? 'http://localhost:5174'
+const PWA = process.env['PWA_URL'] ?? `http://localhost:${process.env['AA_PWA_PORT'] ?? 5174}`
 
 async function inViewport(page: Page, selector: string): Promise<boolean> {
   return page.evaluate((sel) => {

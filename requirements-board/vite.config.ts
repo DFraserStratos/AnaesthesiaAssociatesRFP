@@ -8,7 +8,8 @@ const { version } = JSON.parse(readFileSync(new URL('./package.json', import.met
 // A local dev tool: the dev server is the app's file API, so there is no production build to host.
 export default defineConfig({
   plugins: [react(), cataloguePlugin()],
-  server: { port: 5180, strictPort: true },
+  // BOARD_PORT moves it (a second checkout or worktree running its own board).
+  server: { port: Number(process.env.BOARD_PORT ?? 5180), strictPort: true },
   // The kit's version, shown on the About and Settings pages.
   define: { __BOARD_VERSION__: JSON.stringify(version) },
   // Loaded only when an artifact needs them; pre-bundled up front, so the first one shown never reloads the page.

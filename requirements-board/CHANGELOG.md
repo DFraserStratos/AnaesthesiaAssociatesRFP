@@ -2,6 +2,11 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.12.2 · 2026-11-18
+
+- Ports for a second worktree. A capture app in `board.config.json` may name `"portEnv"`: when that environment variable is set, it replaces the port in the app's `url`. The run-build-phase `phase-check.mjs` reads the same key on each `runner.devServers` entry (the probe, the start and the capture all use it). Set nothing and every URL is as written. This lets two build sessions in two git worktrees run their own dev servers, Playwright and capture side by side.
+- The board's own dev server takes its port from `BOARD_PORT` when set (default 5180, still strict).
+
 ## 1.12.1 · 2026-11-18
 
 - The project accent fills only the board's mark and the tab icon. The underline under the open view no longer takes it.

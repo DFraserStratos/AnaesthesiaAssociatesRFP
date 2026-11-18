@@ -265,7 +265,7 @@ test('7 · Alert the office on a Booking and a List (web and mobile): active in 
 })
 
 test('8 · PWA: Office resolves this alert shows the resolved line', async ({ page }) => {
-  const PWA = 'http://localhost:5174'
+  const PWA = process.env['PWA_URL'] ?? `http://localhost:${process.env['AA_PWA_PORT'] ?? 5174}`
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto(`${PWA}/mobile/lists/${SOUTER_WED22_AM}`)
   await page.evaluate(() => window.localStorage.clear())

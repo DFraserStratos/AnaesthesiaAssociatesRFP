@@ -22,7 +22,9 @@ the Vitest + Playwright suites are green.
 
 **The requirements catch-up is next.** `docs/prototype-build/catch-up/` holds a verified gap analysis
 between the prototype and the catalogue (at commit `63a4490`) and a build plan of phases 14 to 44 (55 phases, some lettered such as 15a, plus the UI unification track U1 to U7) to
-close it: start at its `README.md`, `ROADMAP.md` or `index.html` (kick-off prompts). A catch-up phase
+close it: start at its `README.md`, `ROADMAP.md` or `index.html` (kick-off prompts). From Phase 26 on it
+is built in two lanes (two git worktrees, two sessions) in waves: `catch-up/LANES.md` holds the current
+wave, the lane rules and the lane prompts, and overrides this file for a lane session. A catch-up phase
 session follows its kick-off prompt, which loads the `run-build-phase` skill (the lifecycle every
 phase shares: context pack, drift check, build, checks, review, screenshots, PROGRESS entry, and
 updating the plan page to name the next phase) and its phase doc; other work is still fixes, polish
@@ -201,11 +203,15 @@ doesn't already cover.
 - Person names have one home: `src/shared/format.ts` (`drSurname`, `surnameOf`, `initialsOf`,
   `nameWithoutTitle`), so the three apps can't drift on the same person.
 
-## Git — do not commit or push
+## Git — commit and merge, never push
 
-**The user handles all commits and pushes themselves.** Coding agents must **not** run
-`git commit`, `git push`, or any command that creates commits or writes to a remote (including
-`git commit --amend`, `git rebase`, `git merge`, tag pushes, or PR creation).
+**Agents may commit and merge; only the user pushes.** Coding agents may run `git commit` and
+`git merge` (and create or switch local branches) when the work is ready, but must **never** run
+`git push` or any command that writes to a remote (including tag pushes, `git push --force`, or PR
+creation).
 
-Make and stage file changes as needed, but stop there. When work is ready, tell the user what
-changed — do not commit it yourself.
+- Commit only your own changes: stage files by path, and leave out anything another session or the
+  user has changed but not committed.
+- Never rewrite history that is already on the remote (no `git rebase`, `git commit --amend` or
+  `git reset` of pushed commits).
+- When work is committed, tell the user what was committed and on which branch; they push.

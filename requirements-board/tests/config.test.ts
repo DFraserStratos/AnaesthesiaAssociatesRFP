@@ -15,7 +15,7 @@ describe('board.config.json', () => {
           { code: 9, label: 'Gone', tone: 'hatched', role: 'retired' },
         ],
         questionKinds: { question: { help: 'Ask Acme' } },
-        capture: { apps: { web: { url: 'http://localhost:3000/' } }, timezone: 'Europe/London' },
+        capture: { apps: { web: { url: 'http://localhost:3000/' }, phone: { url: 'http://localhost:3001', portEnv: 'PHONE_PORT' } }, timezone: 'Europe/London' },
       }),
     )
     expect(problems).toEqual([])
@@ -37,7 +37,10 @@ describe('board.config.json', () => {
       recipes: 'capture/recipes',
       report: 'capture/REPORT.md',
       timezone: 'Europe/London',
-      apps: { web: { url: 'http://localhost:3000', setupRoute: '/', hideCss: '' } },
+      apps: {
+        web: { url: 'http://localhost:3000', setupRoute: '/', hideCss: '' },
+        phone: { url: 'http://localhost:3001', setupRoute: '/', hideCss: '', portEnv: 'PHONE_PORT' },
+      },
     })
   })
 

@@ -87,6 +87,9 @@ function localStamp(): string {
 
 const buildId = readBuildId()
 
+/** 5174 unless a parallel build lane sets AA_PWA_PORT (always strict). */
+const pwaPort = Number(process.env['AA_PWA_PORT'] ?? 5174)
+
 export default defineConfig({
   root: 'pwa',
   // Vite would otherwise resolve `pwa/public`, which does not exist. Pointing
@@ -183,8 +186,9 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    // Playwright's existing `webServer` owns 5173.
-    port: 5174,
+    // Playwright's existing `webServer` owns 5173. AA_PWA_PORT moves it for a
+    // parallel build lane (docs/prototype-build/catch-up/LANES.md).
+    port: pwaPort,
     strictPort: true,
     // Bind every interface rather than localhost alone. Half of what this
     // target adds (safe areas, standalone chrome, the gestures, the icon) can
@@ -194,7 +198,7 @@ export default defineConfig({
     host: true,
   },
   preview: {
-    port: 5174,
+    port: pwaPort,
     strictPort: true,
   },
 })

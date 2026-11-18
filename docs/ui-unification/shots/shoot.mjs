@@ -10,7 +10,7 @@ const index = {}
 for (const app of ['admin', 'web', 'mobile']) {
   const ctx = await browser.newContext({ viewport: { width: 1800, height: 1200 }, deviceScaleFactor: 2 })
   const page = await ctx.newPage()
-  await page.goto(`http://localhost:5173/demo/catalogue/${app}`, { waitUntil: 'networkidle' })
+  await page.goto(`http://localhost:${process.env.AA_PROTO_PORT ?? 5173}/demo/catalogue/${app}`, { waitUntil: 'networkidle' })
   await page.waitForSelector('[data-catalogue-row]')
   await page.waitForTimeout(800)
   const rows = await page.$$('[data-catalogue-row]')

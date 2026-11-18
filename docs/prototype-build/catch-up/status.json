@@ -2,20 +2,24 @@
   "in_progress": [],
   "next": {
     "phases": [
-      "26"
+      "26",
+      "32d"
     ],
-    "note": "U6 done (18 November), committed (4933a70f): the table kit in src/shared/table (Th, Td, GroupRow, TableShell with comfortable, compact and dense densities, ClickableRow, RowOpenButton) with every admin table on the Admin Review header and an e1 shell; a keyboard handle on 8 clickable tables (Draft Lists opens its drawer by keyboard); Card, Eyebrow (11/600), PageHeader, StatTile and DefList/DefRow in src/shared/ui (25's lock rows and 22a's Paid by line on DefRow); mobile cards at radius 14; every session block through blockFill (the week strip hatch, bug 7); DayChip and AddRowButton. No seed change (PERSIST_VERSION 50). Reviewed, captured and green. Run 26 next: ProfileRow on DefRow layout=\"settings\", the More card on Card at radius 14."
+    "note": "Wave 1 of the two build lanes (LANES.md; the owner, 18 November 2026). Lane A (worktree AnaesthesiaAssociatesRFP-laneA, branch lane/a, ports 5273, 5274, 5280) runs 26, then 27, then 27a. Lane B (AnaesthesiaAssociatesRFP-laneB, lane/b, 5373, 5374, 5380) runs 32d, then 33. Paste each lane's prompt from LANES.md in a session started in that worktree; the same prompt starts, resumes and joins. The lane that finishes second joins both on wave/1, re-runs every check and the full capture, updates this page with Wave 2 and fast-forwards master. U6 is committed (4933a70f); no seed change since (PERSIST_VERSION 50)."
   },
   "guidance": {
     "as_of": "2026-11-18",
-    "headline": "Start 26 now. U6 put every table, card, page title, eyebrow, tile and label and value row on one shared part each.",
-    "headline_sub": "U6 built the table kit (every admin table on the Admin Review header, a keyboard handle per clickable row), Card, Eyebrow, PageHeader, StatTile and DefRow, and fixed the week strip hatch. Next in run order: 26, then 27 and 27a, then the 18 November follow-ups 25a, 17b and 32d.",
-    "parallel": "None now: 26 runs alone, then 27 and 27a.",
+    "headline": "Wave 1 in two lanes: start Lane A (26) and Lane B (32d) now.",
+    "headline_sub": "The catch-up now builds in two git worktrees side by side, in waves (LANES.md). Lane A: 26, then 27 and 27a. Lane B: 32d, then 33. Each lane commits on its own branch; the second to finish joins them and fast-forwards master. Wave 2 (provisional): Lane A 25a and 36, Lane B 33a and 17b.",
+    "parallel": "Wave 1: Lane A runs 26, 27, 27a while Lane B runs 32d, 33, each in its own worktree with its own ports. Paste the lane prompts from LANES.md.",
     "safe": {
-      "26": "Its dependencies (17, U6) are done and it is next in run order. It builds ProfileRow on DefRow layout=\"settings\" and its More card on Card."
+      "26": "Lane A's first phase. Its dependencies (17, U6) are done and it is first in run order. Run it from Lane A's prompt in AnaesthesiaAssociatesRFP-laneA. Paste Lane A's prompt (LANES.md), not this card's kick-off prompt: the lane prompt wraps it.",
+      "32d": "Lane B's first phase. Its dependencies (29, 31, 32b, U6) are done; the plan orders it after 25a and 17b by preference only. Run it from Lane B's prompt in AnaesthesiaAssociatesRFP-laneB. Paste Lane B's prompt (LANES.md), not this card's kick-off prompt: the lane prompt wraps it."
     },
     "wait": {
-      "27": "Its dependencies (15a, 21, 22a, 25, U6) are done, but it runs after 26 in run order."
+      "27": "Lane A, after 26. Its dependencies (15a, 21, 22a, 25, U6) are done.",
+      "27a": "Lane A, after 27.",
+      "33": "Lane B, after 32d. Its dependencies (20a, 22a, 31, U6) are done; it builds on its defaults for OQ-13."
     }
   }
 }
