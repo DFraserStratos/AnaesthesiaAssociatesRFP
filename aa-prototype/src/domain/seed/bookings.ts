@@ -298,7 +298,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     governingContractId?: string
     /** The step rail's answers so far on a Procedure with no Contract (catch-up Phase 20). */
     railAnswers?: RailAnswers
-    prepaymentDetail?: { type: 'full' | 'split'; depositAmount?: number }
     billingReference?: string
     /** False on an additional Procedure (catch-up Phase 23); a Booking's first Procedure is its primary. */
     isPrimary?: boolean
@@ -330,7 +329,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     if (spec.handoverISO !== undefined) procedure.handoverISO = spec.handoverISO
     if (spec.governingContractId !== undefined) procedure.governingContractId = spec.governingContractId
     if (spec.railAnswers !== undefined) procedure.railAnswers = spec.railAnswers
-    if (spec.prepaymentDetail !== undefined) procedure.prepaymentDetail = spec.prepaymentDetail
     if (spec.billingReference !== undefined) procedure.billingReference = spec.billingReference
     if (spec.timeUnitsOverride !== undefined) {
       procedure.timeUnitsCaptured = { units: spec.timeUnitsOverride, source: 'overridden' }
@@ -842,24 +840,23 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     governingContractId: CONTRACT.noContractRvg,
   })
 
-  // Pre-payment (split deposit) — the UNPAID exemplar, on Souter's own Fri 24
-  // AM list so the unpaid-prepayment warning is reachable in the mobile app
-  // (Phase 09; B7; a warning, never a block, since catch-up Phase 15a / D5). A self funded cosmetic case billed as a flat
-  // agreed professional fee ($1,200), so an $800 deposit leaves a coherent
-  // $400 balance (deposit + balance = the full fee).
+  // Pre-payment awaiting approval (catch-up Phase 27): on Souter's own Fri 24
+  // AM List so the prepayment warning is reachable in the mobile app (a
+  // warning, never a block; D5). Mild on Tue 21 Jul (3 days out), strong from
+  // Wed 22. No invoice: S4 Beat 1 approves and sends it, after which she is
+  // the all-prepaid case.
   const souterFri24Am = projectedListId(ANAE.souter, FRI24, 'AM')
   const prepaymentBooking = addBooking({
     listId: souterFri24Am,
     patientId: PAT.riley,
     scheduledTime: '09:00',
   })
-  // Catch-up Phase 20: on Dr Souter's own prepaid price list (Rhinoplasty,
-  // $1,200 in force on 24 Jul), which is what requires the prepayment; the
-  // $1,200 is the Contract's price, no longer a typed billing line.
+  // On Dr Souter's own prepaid price list (Rhinoplasty, $1,200 in force on
+  // 24 Jul), which is what makes it prepaid; the patient is the payer, so she
+  // is invoiced the $1,200 in full when the office approves it.
   addProcedure(prepaymentBooking, {
     procedureText: 'Rhinoplasty, self funded, pre-payment required',
     governingContractId: PRICED_ITEM.souterRhinoplasty,
-    prepaymentDetail: { type: 'split', depositAmount: 800 },
   })
 
   // Provisional no-NHI patient (PDF pathway) + Sarah Mitchell's repeat episode
@@ -899,13 +896,14 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     governingContractId: CONTRACT.ariaContractRate,
   })
 
-  // MIXED + FULL pre-payment booking, designated for the seeded PAID pre-invoice
-  // (Phase 09; B7) — Souter Fri 24 PM. One hospital-funded procedure that bills
-  // normally, plus one BillableParty selfFundedPrepayment{full} procedure whose
-  // full fee is pre-invoiced and seeded paid (see domain/seed/billing.ts): it
-  // demos the mixed case (hospital portion untouched), the full case (no balance
-  // invoice) and the paid state (no prepayment warning). Left NOT completed so
-  // the presenter can complete it live; both procedures carry full capture.
+  // The MIXED prepaid Booking with the seeded PAID prepayment (catch-up Phase
+  // 27) — Souter Fri 24 PM. One hospital-funded procedure that bills normally,
+  // plus a rhinoplasty on Dr Souter's prepaid Rhinoplasty Contract, its $1,200
+  // prepayment approved, sent and paid (INV0001, see domain/seed/billing.ts;
+  // its payable credits the AA Holding account). Authorising the List bills
+  // Forte's septoplasty unchanged and leaves the rhinoplasty off, nothing
+  // deducted. Left NOT completed so the presenter can complete it live; both
+  // procedures carry full capture.
   const souterFri24Pm = projectedListId(ANAE.souter, FRI24, 'PM')
   const prepaidBooking = addBooking({
     listId: souterFri24Pm,
@@ -927,9 +925,8 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     startISO: iso(FRI24, '14:00'),
     handoverISO: iso(FRI24, '15:00'),
     asaClass: 'AS1',
-    // Catch-up Phase 20: Dr Souter's prepaid price list, at the $238.50 she prepaid.
-    governingContractId: PRICED_ITEM.souterRhinoCosmetic,
-    prepaymentDetail: { type: 'full' },
+    // Dr Souter's prepaid Rhinoplasty Contract at $1,200 (catch-up Phase 27; replaced 20's $238.50 demo Contract).
+    governingContractId: PRICED_ITEM.souterRhinoplasty,
     // Additional (catch-up Phase 23): exactly one primary per Booking. A fixed price, so nothing moves.
     isPrimary: false,
   })

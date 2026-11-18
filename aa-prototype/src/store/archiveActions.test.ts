@@ -10,7 +10,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
-import { raisePreProcedureInvoice } from './prepaymentActions'
+import { approveAllPrepayments } from '../test/approvePrepayments'
 import { runArchiveJob, eligibleArchiveContactIds } from './archiveActions'
 import { setArchiveWindowDays } from './demoSettingsActions'
 import { advanceClockDays } from './clockActions'
@@ -73,13 +73,13 @@ describe('contact archive job', () => {
   it('does not archive a not-fully-paid individual contact (and unarchives a returning one)', () => {
     const api = store()
     // Riley's patient contact ships ARCHIVED (a past paid self-funded episode).
-    // Raising her live pre-payment pre-invoice unarchives it (returning contact)
-    // but leaves it unpaid, so it never archives while a balance is outstanding.
+    // Approving and sending her live prepayment invoice unarchives it (returning
+    // contact) but leaves it unpaid, so it never archives while a balance is outstanding.
     const rileyContactBefore = contactIdByNumber(api, PAT.riley)
     expect(rileyContactBefore).toBeDefined()
     expect(api.getState().xero.contacts[rileyContactBefore!]!.archived).toBe(true)
 
-    expect(raisePreProcedureInvoice(api, OFFICE, marker('prepaymentBooking')).ok).toBe(true)
+    expect(approveAllPrepayments(api, marker('prepaymentBooking'))).toHaveLength(1)
     expect(api.getState().xero.contacts[rileyContactBefore!]!.archived).toBe(false)
 
     advanceClockDays(api, 400)

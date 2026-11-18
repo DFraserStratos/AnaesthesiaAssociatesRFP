@@ -28,7 +28,8 @@ import { DEMO_TRIGGER_ACTOR } from './demoActors'
 import { editProcedure, editRefusal } from './lifecycle'
 import { mutate, ok, refuse, type Actor, type Outcome } from './mutate'
 import { pickRvgGroup } from './rvgGroupActions'
-import { bookingRequiresPrepayment, prePaymentInvoicesForBooking, proceduresForBooking, railContextForList, railMastersOf } from './selectors'
+import { prePaymentInvoicesForBooking, proceduresForBooking, railContextForList, railMastersOf } from './selectors'
+import { isPrepaidContract } from '../domain/billing/prepayment'
 import { contractCandidatesFor, openPriceFallbackFor } from '../domain/billing/contractRail'
 import { setProcedureContract } from './contractSelectionActions'
 import { payerAuditText, sameData, setProcedurePayer } from './payerActions'
@@ -104,8 +105,9 @@ function lastChangedByDemo(state: SampleState, entityId: string): boolean {
  * the Booking's primary Procedure (catch-up Phase 23) onto a prepaid Contract through the step rail's own
  * action: the List's first prepaid candidate (its anaesthetist's own price
  * list), else Patient › Prepaid's open-price fallback with the sample amount
- * typed. A prepaid Contract is what requires the prepayment (INTERIM until
- * Phase 27). Clear restores every field the Contract change can touch.
+ * typed. A prepaid Contract is what requires the prepayment (catch-up Phase
+ * 27): the patient pays, awaiting approval. Clear restores every field the
+ * Contract change can touch.
  */
 const PREPAYMENT_FIELDS = [
   'governingContractId',
@@ -158,7 +160,8 @@ const prepaymentSample: WarningSample = {
     return contract?.prepaid === true && lastChangedByDemo(state, p.id)
   },
   seedRaises(bookingId) {
-    return bookingRequiresPrepayment(buildSeed(), bookingId)
+    const seed = buildSeed()
+    return proceduresForBooking(seed, bookingId).some((p) => p.governingContractId !== undefined && isPrepaidContract(seed.masters.contracts[p.governingContractId]))
   },
   stageRefusal(state, bookingId) {
     const p = firstProcedure(state, bookingId)
@@ -678,7 +681,7 @@ export function sampleClearRefusal(state: SampleState & Pick<AppState, 'billing'
   // A real invoice raised on the staged prepayment cannot be quietly undone:
   // restoring the seed would leave it orphaned. Reset clears it.
   if (prePaymentInvoicesForBooking(state, bookingId).length > 0) {
-    return 'A pre-procedure invoice was raised on this sample: use Reset'
+    return 'A pre-payment invoice was sent on this sample: use Reset'
   }
   return null
 }

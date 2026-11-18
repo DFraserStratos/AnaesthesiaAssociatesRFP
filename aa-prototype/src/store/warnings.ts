@@ -27,7 +27,8 @@ import {
 import type { Booking, Procedure, Session } from '../domain/types'
 import type { AppState, AppStoreApi } from './appStore'
 import { clockISO, mutate, ok, refuse, type Actor, type Outcome } from './mutate'
-import { billingContextForBooking, prepaymentStatusFor } from './selectors'
+import { billingContextForBooking } from './selectors'
+import { prepaymentStatusFor } from './prepaymentSelectors'
 import { feeIn } from '../domain/billing/bookingFee'
 import { splitPartiesOn } from '../domain/billing/partyOptions'
 import { bookingFeesFor } from '../domain/billing/validateBookingForBilling'
@@ -50,11 +51,25 @@ function proceduresByBooking(state: Pick<AppState, 'schedule'>): Map<string, Pro
 function factsFor(state: WarningState, booking: Booking, procedures: readonly Procedure[]): WarningFacts | undefined {
   const list = state.schedule.lists[booking.listId]
   if (list === undefined) return undefined
+  const prepayment = prepaymentStatusFor(state, booking.id)
   return {
     booking,
     list,
     procedures,
-    prepaymentStatus: prepaymentStatusFor(state, booking.id),
+    prepaymentStatus: prepayment.status,
+    ...(prepayment.groups.length > 0
+      ? {
+          prepaymentGroups: prepayment.groups.map((g) => ({
+            payerKey: g.payerKey,
+            payerName: g.payerName,
+            status: g.status,
+            amount: g.amount,
+            ...(g.invoiceNumber !== undefined ? { invoiceNumber: g.invoiceNumber } : {}),
+            invoicedTotal: g.invoicedTotal,
+            receivedTotal: g.receivedTotal,
+          })),
+        }
+      : {}),
     todayISO: state.clock.todayISO,
     rvgGroups: state.masters.rvgGroups,
     contracts: state.masters.contracts,

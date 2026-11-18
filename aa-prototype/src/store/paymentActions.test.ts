@@ -12,11 +12,12 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList, completeBooking, submitList } from './lifecycle'
 import { runBillingForList, handoffListCases } from './billingRun'
-import { raisePreProcedureInvoice } from './prepaymentActions'
+import { approveAllPrepayments } from '../test/approvePrepayments'
 import { receivePayment, gstComponentOf } from './paymentActions'
 import { runReconciliationPoll } from './reconciliationPoll'
 import { advanceClockDays } from './clockActions'
-import { casesForList, casesForBooking, prepaymentStatusFor } from './selectors'
+import { casesForList, casesForBooking } from './selectors'
+import { prepaymentStatusFor } from './prepaymentSelectors'
 import { warningsForBooking } from './warnings'
 import { roundToCents, toCents } from '../domain/billing/money'
 import { clockISO, type Actor } from './mutate'
@@ -187,14 +188,14 @@ describe('reconciliation poll (safety net)', () => {
 })
 
 describe('pre-payment webhook clears the prepayment warning (Phase 09; catch-up Phase 15a)', () => {
-  it('paying the split pre-payment pre-invoice removes the warning', () => {
+  it('paying the prepayment invoice removes the warning', () => {
     const api = store()
     const riley = marker('prepaymentBooking')
-    expect(prepaymentStatusFor(api.getState(), riley)).toBe('required')
+    expect(prepaymentStatusFor(api.getState(), riley).status).toBe('awaitingApproval')
 
-    // Office raises the pre-invoice → handoff → ACCREC to the patient.
-    expect(raisePreProcedureInvoice(api, OFFICE, riley).ok).toBe(true)
-    expect(prepaymentStatusFor(api.getState(), riley)).toBe('outstanding')
+    // Office approves and sends it (catch-up Phase 27) → handoff → ACCREC to the patient.
+    expect(approveAllPrepayments(api, riley, OFFICE)).toHaveLength(1)
+    expect(prepaymentStatusFor(api.getState(), riley).status).toBe('unpaid')
     const preCase = casesForBooking(api.getState(), riley)[0]!
     const accRec = api.getState().xero.accRecs[preCase.accRecId!]!
 
@@ -202,7 +203,7 @@ describe('pre-payment webhook clears the prepayment warning (Phase 09; catch-up 
 
     // Webhook pays it in full → case 'paid' → the warning goes.
     expect(receivePayment(api, { accRecId: accRec.id, amount: accRec.amountDue, idempotencyKey: 'PRE', source: 'webhook' }).ok).toBe(true)
-    expect(prepaymentStatusFor(api.getState(), riley)).toBe('paid')
+    expect(prepaymentStatusFor(api.getState(), riley).status).toBe('paid')
 
     expect(warningsForBooking(api.getState(), riley).some((w) => w.ruleId === 'prepaymentUnpaid')).toBe(false)
     const done = completeBooking(api, SOUTER, riley)

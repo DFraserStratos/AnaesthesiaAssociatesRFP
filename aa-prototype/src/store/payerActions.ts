@@ -23,6 +23,7 @@ import { payerLockedByPrepayment, proceduresForBooking } from './selectors'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal, getBooking } from './lifecycle'
+import { autoSendPrepayments } from './prepaymentActions'
 
 /** What a form hands in: the stored shape, with an address as typed and no id for a new other payer. */
 export type PayerInput =
@@ -215,5 +216,7 @@ export function setProcedurePayer(
     for (const p of written) updated[p.id] = { ...p, payer: next }
     return { counters: resolved.counters, schedule: { ...s.schedule, procedures: updated } }
   })
+  // With approval off, a group this made ready (a payer's contact added, say) is sent now (catch-up Phase 27).
+  autoSendPrepayments(api, booking.id)
   return ok(undefined)
 }

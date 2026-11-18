@@ -15,7 +15,7 @@ import { authoriseList, cancelBooking, reassignBooking, submitList } from './lif
 import { addPairingPreference } from './officePrivate'
 import { setAvailabilityRange } from './availabilityActions'
 import { runBillingForList, handoffListCases } from './billingRun'
-import { raisePreProcedureInvoice } from './prepaymentActions'
+import { approveAllPrepayments } from '../test/approvePrepayments'
 import { openWarnings } from './warnings'
 import { bookingMoveFor, bookingMovesOntoList, bookingsMovedToMe, movedToMe, notificationPool } from './notifications'
 import { bookingsForList, bookingMoveInputOf, casesForList, proceduresForBooking } from './selectors'
@@ -254,8 +254,7 @@ describe('US-01.4.6: the payable follows, nothing recalculated (US-06.3.5 AC2, U
     ['Mrs Riley, prepayment invoice raised', D.notPreferredBookingId],
   ])('prepaid (%s): no invoice raised, no prepayment, invoice, ledger or Xero change, no money audit', (_label, bookingId) => {
     const api = store()
-    const riley = raisePreProcedureInvoice(api, OFFICE, D.notPreferredBookingId)
-    expect(riley.ok).toBe(true)
+    expect(approveAllPrepayments(api, D.notPreferredBookingId)).toHaveLength(1)
     const before = money(api, [D.prepaidBookingId, D.notPreferredBookingId])
     const invoicesBefore = Object.keys(api.getState().billing.invoices).length
     const from = api.getState().audit.length
@@ -268,7 +267,7 @@ describe('US-01.4.6: the payable follows, nothing recalculated (US-06.3.5 AC2, U
   })
 
   it('prepaid, billed through: the receiver completes, submits and is authorised; no new prepayment invoice, and the payable names the receiver', () => {
-    // The AA Holding account and 27a's transfer are later phases; this is the Phase 09/10 model's version.
+    // The seeded prepayment's payable credits the AA Holding account (catch-up Phase 27); 27a's transfer to the receiver is later.
     const api = store()
     const receiver = freeColleagues(bookingMoveInputOf(api.getState()), D.prepaidBookingId, ANAE.souter)[0]!.anaesthetistId
     const prePaymentsBefore = Object.values(api.getState().billing.invoices).filter((i) => i.kind === 'prePayment').map((i) => i.id)

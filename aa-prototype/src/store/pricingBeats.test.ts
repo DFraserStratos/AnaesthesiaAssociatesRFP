@@ -12,7 +12,7 @@ import { handoffListCases, runBillingForList } from './billingRun'
 import { addBackdatedRangeDemo, backdatedRangeAdded } from './demoBackdatedRange'
 import { addPriceRange } from './contractActions'
 import { confirmNoModifiers } from './modifierActions'
-import { bctiRecords, billingContextForBooking, bookingsForList, proceduresForBooking } from './selectors'
+import { bctiRecords, billingContextForBooking, bookingsForList, prepaidHeldFor, proceduresForBooking } from './selectors'
 import { OFFICE_ACTOR } from './demoActors'
 import { bookingFeeView } from './__parity__/phase24Fees'
 import { buildInvoicesForBooking } from '../domain/billing/invoiceBuild'
@@ -92,22 +92,23 @@ describe('a $0 price raises a no-charge invoice (item 9; US-03.5.1)', () => {
     expect(bctiRecords(s).length).toBe(bctisBefore + other.length)
   })
 
-  it('a group of only prepaid Procedures netted to $0 still raises none (left off the final invoice, D57)', () => {
+  it('a group of only prepaid Procedures raises none: left off the final invoice, nothing deducted (D57)', () => {
     const api = createAppStore()
     const bookingId = marker('rangePrepaidBooking')
     const s = api.getState()
     const booking = s.schedule.bookings[bookingId]!
     const list = s.schedule.lists[booking.listId]!
     const ctx = billingContextForBooking(s, booking)!
-    const prePaid = Object.fromEntries(
-      Object.values(s.billing.invoiceLines)
-        .filter((l) => s.billing.invoices[l.invoiceId]?.kind === 'prePayment' && l.procedureId !== undefined)
-        .map((l) => [l.procedureId!, { amount: l.amount, counterparty: s.billing.invoices[l.invoiceId]!.counterparty }]),
-    )
-    const built = buildInvoicesForBooking(booking, proceduresForBooking(s, bookingId), { ...ctx, listDateISO: list.dateISO, patientId: booking.patientId, ...listHospitalFor(list, s.masters.hospitals), prePaidByProcedure: prePaid })
+    // Catch-up Phase 27: the raised prepayment's Procedures are left off, never netted.
+    const leftOff = prepaidHeldFor(s, bookingId)
+    expect(Object.keys(leftOff)).toHaveLength(1)
+    const built = buildInvoicesForBooking(booking, proceduresForBooking(s, bookingId), { ...ctx, listDateISO: list.dateISO, patientId: booking.patientId, ...listHospitalFor(list, s.masters.hospitals), prepaidLeftOff: leftOff })
     expect(built.kind).toBe('invoices')
     if (built.kind !== 'invoices') return
     expect(built.invoices.some((i) => i.noCharge === true)).toBe(false)
+    const lines = built.invoices.flatMap((i) => i.lines)
+    expect(lines.some((l) => l.procedureId !== undefined && leftOff[l.procedureId] !== undefined)).toBe(false)
+    expect(lines.every((l) => l.amount >= 0)).toBe(true)
   })
 })
 
@@ -115,9 +116,10 @@ describe('no difference invoice ever (US-05.2.8)', () => {
   it('a prepaid Procedure whose prepayment is raised keeps its price when a range arrives; its final run bills no balance or credit for it', () => {
     const api = createAppStore()
     const bookingId = marker('rangePrepaidBooking')
-    const prepaid = proceduresForBooking(api.getState(), bookingId).find((p) => p.governingContractId === 'CT-SOUTER-RHINO-COS')!
+    // Catch-up Phase 27: Nair's rhinoplasty is on Dr Souter's prepaid Rhinoplasty Contract at $1,200.
+    const prepaid = proceduresForBooking(api.getState(), bookingId).find((p) => p.governingContractId === 'CT-SOUTER-RHINO')!
     const before = totalOf(api, bookingId)
-    expect(addPriceRange(api, OFFICE_ACTOR, 'CT-SOUTER-RHINO-COS', { startISO: '2026-07-01', price: 5000 }).ok).toBe(true)
+    expect(addPriceRange(api, OFFICE_ACTOR, 'CT-SOUTER-RHINO', { startISO: '2026-07-01', price: 5000 }).ok).toBe(true)
     expect(totalOf(api, bookingId)).toBe(before)
     const listId = api.getState().schedule.bookings[bookingId]!.listId
     for (const b of bookingsForList(api.getState(), listId)) {
@@ -131,8 +133,9 @@ describe('no difference invoice ever (US-05.2.8)', () => {
     expect(runBillingForList(api, listId).ok).toBe(true)
     const s = api.getState()
     const lines = Object.values(s.billing.invoiceLines).filter((l) => l.procedureId === prepaid.id && s.billing.invoices[l.invoiceId]?.kind === 'standard')
-    // Its fee and the prepayment deduction net to $0: nothing more is billed, nothing credited.
-    expect(lines.reduce((sum, l) => sum + l.amount, 0)).toBeCloseTo(0, 2)
+    // Left off the final invoice (catch-up Phase 27, D57): no line for it, so nothing more is billed and nothing credited.
+    expect(lines).toEqual([])
+    expect(api.getState().billing.locks[bookingId]?.settledByPrepayment[prepaid.id]).toMatchObject({ amount: 1200 })
   })
 })
 

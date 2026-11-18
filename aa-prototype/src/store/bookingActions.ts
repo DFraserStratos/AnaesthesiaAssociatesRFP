@@ -42,6 +42,7 @@ import { isRvgKind } from '../domain/billing/contracts'
 import { contractPickRefusal } from './contractSelectionActions'
 import { PREPAID_OFFICE_ONLY_MESSAGE, contractAllowedOn } from '../domain/billing/contractRail'
 import { railContextForList, railMastersOf } from './selectors'
+import { autoSendPrepayments } from './prepaymentActions'
 
 // ---------------------------------------------------------------------------
 // createBooking
@@ -233,6 +234,8 @@ export function createBooking(
     }
   })
 
+  // With approval off, a prepaid Booking created ready is sent at once (catch-up Phase 27).
+  autoSendPrepayments(api, bookingId)
   return ok({ bookingId, patientId })
 }
 
@@ -489,6 +492,8 @@ export function addProcedure(
     }
   })
 
+  // With approval off, a prepaid Procedure added ready is sent at once (catch-up Phase 27).
+  autoSendPrepayments(api, bookingId)
   return ok({ procedureId })
 }
 
@@ -564,6 +569,8 @@ export function removeProcedure(api: AppStoreApi, actor: Actor, procedureId: str
     return { schedule: { ...s.schedule, procedures, billingLines } }
   })
 
+  // With approval off, a group this left ready is sent now (catch-up Phase 27).
+  autoSendPrepayments(api, procedure.bookingId)
   return ok(undefined)
 }
 

@@ -52,7 +52,8 @@ export const FIELD_LABELS: Record<string, string> = {
   insurerOrFunder: 'Insurer or funder',
   funderPartyId: 'Insurer or funder',
   insuranceApprovalNumber: 'Approval number',
-  prepaymentDetail: 'Prepayment',
+  approval: 'Approval',
+  approvalRequired: 'Pre-payment approval',
   billingReference: 'Billing reference',
   isPrimary: 'Primary procedure',
   // Catch-up Phase 19b: a Procedure's modifiers, by code, never by hidden id.

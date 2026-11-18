@@ -36,6 +36,7 @@
 import { buyerCreatedTaxInvoiceFor, supplierFor } from '../domain/billing/invoicePresentation'
 import type { Anaesthetist, BillingCase, Booking, CounterpartyRef, XeroContact } from '../domain/types'
 import type { LockedPayee } from '../domain/billing/lock'
+import { AA_HOLDING_ACCOUNT } from '../domain/billing/prepayment'
 import { xeroIndividualContactName } from '../domain/xeroContact'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
@@ -68,6 +69,11 @@ export interface ContactSpec {
  * every caller reuses the one contact via the cache rather than minting a
  * duplicate.
  */
+/** The AA Holding account's Xero contact (catch-up Phase 27; FT-06.3): one persistent organisation contact. */
+export function holdingAccountContactSpec(): ContactSpec {
+  return { key: AA_HOLDING_ACCOUNT.contactKey, contactNumber: AA_HOLDING_ACCOUNT.contactNumber, name: AA_HOLDING_ACCOUNT.name, type: 'organisation' }
+}
+
 export function anaesthetistContactSpec(anaesthetist: Pick<Anaesthetist, 'registrationNumber' | 'name'>): ContactSpec {
   return {
     key: `anaesthetist:${anaesthetist.registrationNumber}`,
@@ -234,7 +240,9 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
   }
 
   const payerSpec = payerContactSpec(invoice.counterparty, state.masters)
-  const payeeSpec = anaesthetistContactSpec({ registrationNumber: payeeRecord.anaesthetistId, name: payeeRecord.name })
+  // A prepayment's payable credits the AA Holding account, not the anaesthetist (FT-06.3, D38; catch-up Phase 27).
+  const toHolding = invoice.kind === 'prePayment'
+  const payeeSpec = toHolding ? holdingAccountContactSpec() : anaesthetistContactSpec({ registrationNumber: payeeRecord.anaesthetistId, name: payeeRecord.name })
 
   const metas: MutationMeta[] = []
   let out: HandoffResult = {}
@@ -323,6 +331,7 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
       amountAuthorised: 0,
       amountDisbursed: 0,
       status: 'draft',
+      ...(toHolding ? { payeeAccount: AA_HOLDING_ACCOUNT.payeeAccount } : {}),
       // The ACCPAY stands as the buyer-created tax invoice (US-09.1.4; provisional, OQ-29): one per receivable, the same value.
       taxInvoice: buyerCreatedTaxInvoiceFor(invoice, payeeRecord.supplier),
     }

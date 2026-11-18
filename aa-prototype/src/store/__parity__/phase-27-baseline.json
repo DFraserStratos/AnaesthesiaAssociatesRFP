@@ -1,0 +1,114 @@
+{
+  "statuses": [
+    {
+      "bookingId": "BK0034",
+      "status": "none",
+      "warnings": [
+        "BK0034:prepaymentUnpaid strong: Prepayment required. No prepayment invoice has been raised yet."
+      ]
+    },
+    {
+      "bookingId": "BK0038",
+      "status": "invoiced",
+      "warnings": []
+    }
+  ],
+  "nairRun": {
+    "ok": true,
+    "invoices": [
+      {
+        "invoiceNumber": "AA-2026-0002",
+        "counterparty": "hospital:H-FORTE",
+        "lines": [
+          {
+            "procedureId": "P0040",
+            "description": "Septoplasty, hospital funded",
+            "amount": 212
+          }
+        ],
+        "subtotal": 212,
+        "gst": 31.8,
+        "total": 243.8
+      }
+    ]
+  },
+  "payablesDue": [],
+  "seededPair": [
+    {
+      "invoiceNumber": "AA-2026-0001",
+      "counterparty": "patient:PT0008",
+      "subtotal": 238.5,
+      "gst": 35.78,
+      "total": 274.28,
+      "lines": [
+        {
+          "procedureId": "P0041",
+          "description": "Pre-payment, estimated full fee",
+          "amount": 238.5
+        }
+      ],
+      "accRec": {
+        "contact": "Patient PT0008",
+        "contactType": "patient",
+        "invoiceNumber": "AA-2026-0001",
+        "reference": "BC0001",
+        "amountDue": 274.28,
+        "amountReceived": 274.28,
+        "status": "paid"
+      },
+      "accPay": {
+        "contact": "Dr Melanie Souter",
+        "contactType": "organisation",
+        "invoiceNumber": "AA-2026-0001-P",
+        "reference": "BC0001",
+        "linked": true,
+        "anaesthetistId": "34821",
+        "amountPayable": 274.28,
+        "amountAuthorised": 274.28,
+        "amountDisbursed": 274.28,
+        "status": "paid",
+        "taxInvoice": true
+      },
+      "caseStatus": "disbursed"
+    }
+  ],
+  "livePair": [
+    {
+      "invoiceNumber": "AA-2026-0002",
+      "counterparty": "patient:PT0017",
+      "subtotal": 800,
+      "gst": 120,
+      "total": 920,
+      "lines": [
+        {
+          "procedureId": "P0036",
+          "description": "Pre-payment deposit",
+          "amount": 800
+        }
+      ],
+      "accRec": {
+        "contact": "Patient PT0017",
+        "contactType": "patient",
+        "invoiceNumber": "AA-2026-0002",
+        "reference": "BC0002",
+        "amountDue": 920,
+        "amountReceived": 0,
+        "status": "awaitingPayment"
+      },
+      "accPay": {
+        "contact": "Dr Melanie Souter",
+        "contactType": "organisation",
+        "invoiceNumber": "AA-2026-0002-P",
+        "reference": "BC0002",
+        "linked": true,
+        "anaesthetistId": "34821",
+        "amountPayable": 920,
+        "amountAuthorised": 0,
+        "amountDisbursed": 0,
+        "status": "draft",
+        "taxInvoice": true
+      },
+      "caseStatus": "handedOff"
+    }
+  ]
+}

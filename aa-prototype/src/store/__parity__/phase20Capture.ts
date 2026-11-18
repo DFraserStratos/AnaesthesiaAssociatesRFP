@@ -17,7 +17,7 @@ import { procedureNeedsPrice } from '../../domain/billing/procedurePrice'
 import { billablePartyForProcedure } from '../../domain/billing/whoIsBilled'
 import type { BookingBillingContext } from '../../domain/billing/validateBookingForBilling'
 import type { Contract, Procedure } from '../../domain/types'
-import { raisePreProcedureInvoice } from '../prepaymentActions'
+import { approveAllPrepayments } from '../../test/approvePrepayments'
 import { handoffCasesForBooking } from '../xeroHandoff'
 import { SEED_MARKERS } from '../../domain/seed'
 import type { AppState } from '../appStore'
@@ -119,12 +119,16 @@ function prepaymentRow(state: AppState, bookingId: string): PrepaymentParityRow 
   }
 }
 
-/** Riley: the office raises her split pre-invoice and hands it to Xero. Nair: the seeded, paid full prepayment. */
+/**
+ * Riley: the office approves and sends her prepayment (catch-up Phase 27; it
+ * was her split pre-invoice) and hands it to Xero. Nair: the seeded, paid
+ * prepayment.
+ */
 export function capturePrepayments(): PrepaymentParityRow[] {
   const api = createAppStore()
   const riley = marker('prepaymentBooking')
-  const raised = raisePreProcedureInvoice(api, OFFICE, riley)
-  if (!raised.ok) throw new Error(`Riley's pre-invoice was refused: ${raised.message}`)
+  const raised = approveAllPrepayments(api, riley, OFFICE)
+  if (raised.length === 0) throw new Error("Riley's prepayment was refused")
   handoffCasesForBooking(api, riley)
   const nair = marker('prepaymentPaidBooking')
   return [prepaymentRow(api.getState(), riley), prepaymentRow(api.getState(), nair)]

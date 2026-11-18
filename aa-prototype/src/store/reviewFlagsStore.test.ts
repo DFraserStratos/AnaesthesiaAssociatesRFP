@@ -171,7 +171,6 @@ function contractFields(api: BoundAppStore): Record<string, unknown> {
   const pick = (p: Procedure) => ({
     governingContractId: p.governingContractId,
     enteredPrice: p.enteredPrice,
-    prepaymentDetail: p.prepaymentDetail,
     railAnswers: p.railAnswers,
     rvgGroupId: p.rvgGroupId,
     baseUnitsSelected: p.baseUnitsSelected,

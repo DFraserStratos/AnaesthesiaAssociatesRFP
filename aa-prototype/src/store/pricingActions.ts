@@ -28,6 +28,7 @@ import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal } from './lifecycle'
 import { procedureOn } from './contractSelectionActions'
 import { prepaymentRaisedFor } from './selectors'
+import { autoSendPrepayments } from './prepaymentActions'
 
 
 /** The anaesthetist's gate for this Procedure's Contract (`null`: no Contract yet). */
@@ -86,5 +87,7 @@ export function setProcedurePrice(api: AppStoreApi, actor: Actor, procedureId: s
     },
     (s) => ({ schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: next } } }),
   )
+  // With approval off, an amount typed above zero sends the group now (catch-up Phase 27).
+  autoSendPrepayments(api, procedure.bookingId)
   return ok(undefined)
 }

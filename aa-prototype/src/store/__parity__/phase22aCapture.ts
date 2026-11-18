@@ -14,10 +14,13 @@
  */
 
 import { freshAppState, type AppState } from '../appStore'
-import { billingContextForBooking, bookingsForList, invoiceAddresseeName, prePaidByProcedure, proceduresForBooking } from '../selectors'
-import { buildInvoicesForBooking, buildPrePaymentInvoiceForBooking, type InvoiceBuildContext } from '../../domain/billing/invoiceBuild'
+import { billingContextForBooking, bookingsForList, invoiceAddresseeName, prepaidHeldFor, proceduresForBooking } from '../selectors'
+import { buildInvoicesForBooking, type InvoiceBuildContext } from '../../domain/billing/invoiceBuild'
+import type { DraftInvoice } from '../../domain/billing/lock'
+import { prepaymentGroupsFor, prepaymentInvoiceDraftFor } from '../../domain/billing/prepayment'
+import { bookingFeesFor, type BookingBillingContext } from '../../domain/billing/validateBookingForBilling'
 import { listHospitalFor } from '../../domain/listPairing'
-import type { AssignedList, InvoiceBilledTo } from '../../domain/types'
+import type { AssignedList, Booking, InvoiceBilledTo, Procedure } from '../../domain/types'
 import { faceOf, type PartyFace } from './phase21Capture'
 import { withoutPhase22aAdditions, type Phase22aAdditions } from './phase22aAdditions'
 import { withoutPhase23Additions } from './phase23Additions'
@@ -62,6 +65,37 @@ function face(state: AppState, inv: { counterparty: Parameters<typeof faceOf>[1]
   }
 }
 
+/**
+ * The prepayment invoices a raise would build now (catch-up Phase 27 replaced
+ * `buildPrePaymentInvoiceForBooking`): one draft per payer group of the
+ * Booking's prepaid Procedures, at each one's price in full, whatever is
+ * already issued (as the old build read it); a group with a Procedure with
+ * no price is the `needsPrice` exception.
+ */
+export function prepaymentDraftsAsRaised(
+  state: AppState,
+  booking: Booking,
+  procedures: readonly Procedure[],
+  ctx: BookingBillingContext,
+): { kind: 'invoices'; invoices: DraftInvoice[] } | { kind: 'exception'; code: string } {
+  const priced = bookingFeesFor(procedures, ctx)
+  const priceOf = (p: Procedure): number | null => {
+    if (priced.kind === 'structural') return p.enteredPrice ?? null
+    const fee = priced.fees[p.id]
+    return fee === undefined || fee.needsPrice ? null : fee.total
+  }
+  const patient = state.masters.patients[booking.patientId]
+  const groups = prepaymentGroupsFor({ booking, procedures, contracts: state.masters.contracts, issued: [], priceOf, ...(patient !== undefined ? { patient } : {}) })
+  const invoices: DraftInvoice[] = []
+  for (const group of groups) {
+    if (group.lines.some((l) => l.amount.kind === 'noPrice')) return { kind: 'exception', code: 'needsPrice' }
+    // The old build never read the payer's contact details: a group is built whether or not it is ready to send.
+    const draft = prepaymentInvoiceDraftFor({ ...group, ready: true }, procedures, { contracts: state.masters.contracts, patientId: booking.patientId, ...(patient !== undefined ? { patient } : {}) })
+    if (draft !== null) invoices.push(draft)
+  }
+  return { kind: 'invoices', invoices }
+}
+
 export function captureBookings22a(state: AppState): BookingRow22a[] {
   const rows: BookingRow22a[] = []
   const lists = Object.values(state.schedule.lists).filter((l): l is AssignedList => l.anaesthetistId !== undefined)
@@ -71,16 +105,17 @@ export function captureBookings22a(state: AppState): BookingRow22a[] {
       const ctx = billingContextForBooking({ masters: state.masters, schedule: state.schedule }, booking)
       if (ctx === undefined) continue
       const procedures = proceduresForBooking(state, booking.id)
-      const prePaid = prePaidByProcedure(state, booking.id)
+      // Catch-up Phase 27: a raised prepayment's Procedures are left off (was: netted by a deduction line).
+      const leftOff = prepaidHeldFor(state, booking.id)
       const buildCtx: InvoiceBuildContext = {
         ...ctx,
         listDateISO: list.dateISO,
         patientId: booking.patientId,
         ...listHospitalFor(list, state.masters.hospitals),
-        ...(Object.keys(prePaid).length > 0 ? { prePaidByProcedure: prePaid } : {}),
+        ...(Object.keys(leftOff).length > 0 ? { prepaidLeftOff: leftOff } : {}),
       }
       const result = buildInvoicesForBooking(booking, procedures, buildCtx)
-      const pre = buildPrePaymentInvoiceForBooking(booking, procedures, { ...buildCtx, prePaidByProcedure: undefined })
+      const pre = prepaymentDraftsAsRaised(state, booking, procedures, buildCtx)
       const prepayment =
         pre.kind === 'exception'
           ? { kind: 'exception' as const, code: pre.code }

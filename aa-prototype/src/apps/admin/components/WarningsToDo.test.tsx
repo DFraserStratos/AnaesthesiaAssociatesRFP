@@ -30,7 +30,8 @@ describe('WarningsToDo', () => {
     const card = screen.getByRole('region', { name: /To-do/ })
     const rows = within(card).getAllByRole('listitem')
     expect(rows).toHaveLength(1)
-    expect(rows[0]).toHaveTextContent('Prepayment required')
+    // Catch-up Phase 27: awaiting approval, three days out, so mild.
+    expect(rows[0]).toHaveTextContent('Prepayment of $1,200.00 from Annette Riley is awaiting approval on Invoices')
     expect(rows[0]).toHaveTextContent('Annette Riley')
     expect(rows[0]).toHaveTextContent('Dr Souter')
     expect(rows[0]).toHaveTextContent('Fri 24 Jul AM')
@@ -50,7 +51,7 @@ describe('WarningsToDo', () => {
 
   it('Clear removes the row at once and writes the audit row (Cleared)', () => {
     render(<Harness />)
-    fireEvent.click(screen.getByRole('button', { name: 'Clear warning for Annette Riley' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Clear (optional) warning for Annette Riley' }))
     expect(screen.queryAllByRole('listitem')).toHaveLength(0)
     expect(screen.getByText('Nothing needs attention.')).toBeInTheDocument()
     expect(useAppStore.getState().audit.at(-1)).toMatchObject({ action: 'booking.warningCleared', entityId: RILEY, who: 'Kirsty W.' })

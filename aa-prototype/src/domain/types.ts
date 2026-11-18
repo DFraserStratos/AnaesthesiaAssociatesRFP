@@ -887,17 +887,6 @@ export interface Booking {
 // ---------------------------------------------------------------------------
 
 /**
- * INTERIM (Phase 20): the split or full prepayment a Procedure on a prepaid
- * Contract carries (7th review B6's typing). Read only when the Procedure's
- * Contract is prepaid; the Booking-level "prepayment required" is derived
- * from the Contract, never stored. Phase 27 removes it.
- */
-export interface PrepaymentDetail {
-  type: 'full' | 'split'
-  depositAmount?: number
-}
-
-/**
  * The step rail's answers so far (US-04.3.8), held on a Procedure only while
  * it has no Contract, so whoever opens it next (the office or the
  * anaesthetist) carries on from there. Cleared when a Contract is set. Never a
@@ -1017,8 +1006,6 @@ export interface Procedure {
    */
   enteredPrice?: number
 
-  /** INTERIM (Phase 20): read only on a prepaid Contract; Phase 27 removes it. */
-  prepaymentDetail?: PrepaymentDetail
   /** The hospital's contract/approval reference (6th review #6; A4's completeness check). */
   billingReference?: string
   /**
@@ -1426,6 +1413,19 @@ export interface Invoice {
   noCharge?: true
   /** How it was sent (US-08.4.2); stamped by the run. */
   delivery?: InvoiceDelivery
+  /**
+   * A prepayment invoice's approval (catch-up Phase 27; US-06.3.1, D6): an
+   * admin approved it, or approval was switched off and the system sent it.
+   */
+  approval?: InvoiceApproval
+}
+
+/** Who let a prepayment invoice go out, and how (catch-up Phase 27). */
+export interface InvoiceApproval {
+  mode: 'approved' | 'automatic'
+  by: string
+  role: ActorRole
+  atISO: IsoDateTime
 }
 
 /** The B/T/M breakdown printed on a holder-layout fee line (US-08.4.1). */
@@ -1455,6 +1455,11 @@ export interface InvoiceLine {
   amount: number
   /** Holder layout fee lines only. */
   btm?: InvoiceLineBtm
+  /**
+   * A prepayment line's Contract when it was raised (catch-up Phase 27): the
+   * re-check reads it to tell a Procedure that changed Contract after sending.
+   */
+  contractId?: ContractId
 }
 
 export type BillingPipelineStatus =
@@ -1603,6 +1608,14 @@ export interface XeroAccPay {
   amountAuthorised: number
   amountDisbursed: number
   status: 'draft' | 'authorised' | 'paid'
+  /**
+   * Who the payable credits when it is not the anaesthetist (catch-up Phase
+   * 27; FT-06.3): a prepayment's payable credits the AA Holding account
+   * (`AA_HOLDING_ACCOUNT`), which the payables run never pays; 27a's transfer
+   * pays the anaesthetist who did the List. `anaesthetistId` still names the
+   * List's anaesthetist at the time. Absent: the anaesthetist.
+   */
+  payeeAccount?: 'aaHoldingAccount'
   /**
    * The ACCPAY held as a buyer-created tax invoice (catch-up Phase 22;
    * US-09.1.4): one per receivable invoice, the same value. Wording and the

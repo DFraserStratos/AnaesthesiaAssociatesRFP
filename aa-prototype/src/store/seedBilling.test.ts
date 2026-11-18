@@ -12,7 +12,7 @@ import { buildSeed, buildSeedBillingSlice, SEED_MARKERS, SEED_PREPAID_BOOKING_ID
 import { authoriseList, submitList } from './lifecycle'
 import { runBillingForList } from './billingRun'
 import { resetDomainState } from './mutate'
-import { prepaymentStatusFor } from './selectors'
+import { prepaymentStatusFor } from './prepaymentSelectors'
 import type { Actor } from './mutate'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -32,16 +32,22 @@ describe('the seeded paid pre-payment slice', () => {
     const invoice = prePayInvoices[0]!
     expect(invoice.bookingId).toBe(SEED_PREPAID_BOOKING_ID)
     expect(invoice.layout).toBe('patient')
-    // Booking B's full pre-payment procedure: base 5 + T4 + M0 = 9 units at $26.50.
-    expect(invoice.subtotal).toBe(238.5)
+    // Catch-up Phase 27: Nair's rhinoplasty at Dr Souter's prepaid Rhinoplasty price, in full: $1,200 ex GST, $1,380 with GST.
+    expect(invoice.subtotal).toBe(1200)
+    expect(invoice.total).toBe(1380)
+    expect(invoice.approval).toMatchObject({ mode: 'approved', by: 'Kirsty W.', role: 'office' })
 
-    // The pre-payment case is fully paid in (and, in the seed, disbursed).
+    // The pre-payment case is fully paid in; its payable credits the AA Holding account, authorised and not disbursed.
     const preCase = Object.values(billing.cases).find((c) => c.invoiceId === invoice.id)!
     expect(preCase.bookingId).toBe(SEED_PREPAID_BOOKING_ID)
     expect(preCase.receivedAmount).toBe(invoice.total)
+    expect(preCase.disbursedAmount).toBe(0)
+    const accPay = api.getState().xero.accPays[preCase.accPayId!]!
+    expect(accPay).toMatchObject({ payeeAccount: 'aaHoldingAccount', status: 'authorised', amountDisbursed: 0 })
+    expect(api.getState().xero.contacts[accPay.contactId]?.name).toBe('AA Holding account')
 
-    // The gate reads paid via the case->invoice join (money-based).
-    expect(prepaymentStatusFor(api.getState(), SEED_PREPAID_BOOKING_ID)).toBe('paid')
+    // The status reads paid via the case->invoice join (money-based).
+    expect(prepaymentStatusFor(api.getState(), SEED_PREPAID_BOOKING_ID).status).toBe('paid')
   })
 
   it('numbers the seeded pre-payment INV/BC/IL/number 0001 and the runtime run starts at 0002', () => {

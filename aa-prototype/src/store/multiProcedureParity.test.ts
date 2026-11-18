@@ -7,12 +7,23 @@
  *   - each RVG-priced additional Procedure records base 0 and M as its share
  *     (0: every existing Booking's modifiers total 4 or fewer), where it used to
  *     record its own group's base and its own modifiers, uncharged.
- * Money, charged units, invoice lines and BCTI counts do not move.
+ *   - catch-up Phase 27 (`__parity__/phase27Declared.ts`): Nair's rhinoplasty
+ *     at $1,200, and Riley's and Nair's prepayment builds at that $1,200 in full.
+ * Money, charged units, invoice lines and BCTI counts do not move otherwise.
  */
 
 import { withPhase25Codes } from './__parity__/phase25Declared'
 import { describe, expect, it } from 'vitest'
 import { PHASE_24_ARIA_BOOKINGS, PHASE_24_ARIA_PROCEDURES } from './__parity__/phase24Declared'
+import {
+  mapNairFeeBefore27,
+  PHASE_27_BOOKINGS,
+  PHASE_27_NAIR_FEE,
+  PHASE_27_NAIR_PREPAID_PROCEDURE,
+  PHASE_27_PREPAYMENT_BUILD,
+  PHASE_27_REASON,
+  prepaymentBuildBefore27,
+} from './__parity__/phase27Declared'
 import baselineJson from './__parity__/phase-23-baseline.json'
 import { capturePhase23, type FeeRow23, type Phase23Baseline } from './__parity__/phase23Capture'
 import { createAppStore, freshAppState } from './appStore'
@@ -43,10 +54,27 @@ function asBefore(row: FeeRow23): FeeRow23 {
   return before !== undefined && row.b === 0 && row.m === 0 ? { ...row, ...before } : row
 }
 
+/** Catch-up Phase 27's declared fee (Nair's rhinoplasty at $1,200, `__parity__/phase27Declared.ts`), mapped back. */
+function feeBefore27(row: FeeRow23): FeeRow23 {
+  const copy = structuredClone(row)
+  mapNairFeeBefore27(copy)
+  return copy
+}
+
 describe('Phase 23 multi-procedure parity', () => {
   it('every seeded fee is as before, bar the declared recorded B and M on additional Procedures', () => {
     const kept = (id: string) => !typed24Procedures.has(id) && !PHASE_24_ARIA_PROCEDURES.has(id)
-    expect(now.fees.filter((r) => !addedProcedures.has(r.procedureId) && kept(r.procedureId)).map(asBefore)).toEqual(baseline.fees.filter((r) => kept(r.procedureId)))
+    expect(now.fees.filter((r) => !addedProcedures.has(r.procedureId) && kept(r.procedureId)).map(asBefore).map(feeBefore27)).toEqual(baseline.fees.filter((r) => kept(r.procedureId)))
+  })
+
+  it(`declares Phase 27's differences exactly (${PHASE_27_REASON})`, () => {
+    expect(now.fees.find((r) => r.procedureId === PHASE_27_NAIR_PREPAID_PROCEDURE)).toMatchObject(PHASE_27_NAIR_FEE)
+    for (const id of PHASE_27_BOOKINGS) {
+      const row = now.bookings.find((r) => r.bookingId === id)
+      expect(row?.prepayment, id).toMatchObject({ kind: 'invoices', invoices: [{ subtotal: PHASE_27_PREPAYMENT_BUILD.subtotal, total: PHASE_27_PREPAYMENT_BUILD.total, lines: [PHASE_27_PREPAYMENT_BUILD.line] }] })
+      // The final build holds: Nair's rhinoplasty is left off where it used to net to $0.
+      expect(row?.result, id).toEqual(baseline.bookings.find((r) => r.bookingId === id)?.result)
+    }
   })
 
   it('declares its difference exactly: the four additional Procedures record base 0 and M 0, their charged units and money unmoved', () => {
@@ -59,7 +87,8 @@ describe('Phase 23 multi-procedure parity', () => {
 
   it('every seeded invoice and prepayment build is as before: grouping, totals, line amounts, units and wording', () => {
     const keptBooking = (id: string) => id !== TYPED_24_BOOKING && !PHASE_24_ARIA_BOOKINGS.has(id)
-    expect(now.bookings.filter((r) => !added.has(r.bookingId) && keptBooking(r.bookingId))).toEqual(withPhase25Codes(baseline.bookings.filter((r) => keptBooking(r.bookingId))))
+    // Catch-up Phase 27's declared prepayment builds (Riley and Nair), mapped back.
+    expect(now.bookings.filter((r) => !added.has(r.bookingId) && keptBooking(r.bookingId)).map(prepaymentBuildBefore27)).toEqual(withPhase25Codes(baseline.bookings.filter((r) => keptBooking(r.bookingId))))
   })
 
   it("the BCTI count per anaesthetist and month (16's bctisFor) is unchanged", () => {

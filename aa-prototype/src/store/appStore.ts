@@ -295,8 +295,13 @@ export const PERSIST_KEY = 'aa-demo'
  *  AUTHORISED List locked, the history backdrop migrated from its invoices)
  *  and `BillingCase.payeeAnaesthetistId`.
  *  v51: catch-up Phase 26, the anaesthetist profile (`Anaesthetist.bankAccount`
- *  seeded for all 14 on bank 99; `gstPeriod` removed). */
-export const PERSIST_VERSION = 51
+ *  seeded for all 14 on bank 99; `gstPeriod` removed).
+ *  v52: catch-up Phase 27, the prepayment lifecycle (`prepaymentDetail` gone;
+ *  `Invoice.approval`, `InvoiceLine.contractId`, `XeroAccPay.payeeAccount`,
+ *  `appSettings.prepayment`, the lock's `settledByPrepayment`; Nair on Dr
+ *  Souter's prepaid Rhinoplasty at $1,200, INV0001's payable to the AA Holding
+ *  account; Riley awaiting approval). */
+export const PERSIST_VERSION = 52
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {} }

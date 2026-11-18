@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { History, Minus, Plus, Receipt, ShieldCheck, Stethoscope, Users, XCircle } from 'lucide-react'
+import { History, Minus, Plus, ShieldCheck, Stethoscope, Users, XCircle } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 import type { Procedure } from '../../domain/types'
@@ -20,7 +20,6 @@ import {
   railContextForList,
   railMastersOf,
   setRailAnswers,
-  raisePreProcedureInvoice,
   uncompleteBooking,
   useAppStore,
   useToday,
@@ -108,23 +107,6 @@ function EditLink({ onClick, label = 'Edit', ariaLabel }: { onClick: () => void;
   )
 }
 
-/** A teal-only office action button used on the prepayment warning's row (convention 17). */
-const officeActionStyle: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 6,
-  minHeight: 36,
-  padding: '0 12px',
-  borderRadius: radius.ctl,
-  border: `1px solid ${accent.base}`,
-  background: neutral.surface,
-  color: accent.base,
-  fontFamily: 'inherit',
-  fontSize: 13,
-  fontWeight: 600,
-  cursor: 'pointer',
-}
-
 /**
  * The booking-detail body (Phase 05 extraction). Everything from the old mobile
  * `BookingDetailScreen` below the header: the patient / scheduled-time /
@@ -152,7 +134,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   const invoiceLines = useAppStore((s) => s.billing.invoiceLines)
   const locks = useAppStore((s) => s.billing.locks)
   const masters = useAppStore((s) => s.masters)
-  const prepaymentStatus = useAppStore((s) => prepaymentStatusFor(s, bookingId))
+  const prepaymentStatus = useAppStore((s) => prepaymentStatusFor(s, bookingId).status)
   const warnings = useBookingWarnings(bookingId)
   const audit = useAppStore((s) => s.audit)
   const todayISO = useToday()
@@ -509,10 +491,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
     }
   }
 
-  function doRaisePrepayment() {
-    run(raisePreProcedureInvoice(useAppStore, actor, bookingId))
-  }
-
   function doAddPostOp() {
     const outcome = addPostOpAddendum(useAppStore, actor, bookingId)
     if (!outcome.ok) {
@@ -555,13 +533,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
         actor={actor}
         canClear={isOffice}
         rowShot={(w) => BOOKING_WARNING_SHOTS[w.ruleId]}
-        extra={(w) =>
-          w.ruleId === 'prepaymentUnpaid' && isOffice && prepaymentStatus === 'required' && canEdit ? (
-            <button onClick={doRaisePrepayment} style={officeActionStyle}>
-              <Receipt size={14} aria-hidden /> Raise pre-procedure invoice
-            </button>
-          ) : null
-        }
       />
       {movedToMe !== undefined && (
         <Notice tone="neutral" shot="booking-moved-to-you">

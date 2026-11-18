@@ -12,7 +12,7 @@ import { proceduresForBooking } from './selectors'
 import { editProcedure } from './lifecycle'
 import { setProcedureContract } from './contractSelectionActions'
 import { setProcedurePayer } from './payerActions'
-import { raisePreProcedureInvoice } from './prepaymentActions'
+import { approveAllPrepayments } from '../test/approvePrepayments'
 import { clearWarning, openWarnings, warningsForBooking } from './warnings'
 import {
   allSampleClearRefusal,
@@ -45,7 +45,7 @@ function setListState(api: BoundAppStore, listId: string, state: 'SUBMITTED' | '
   api.setState({ schedule: { ...s.schedule, lists: { ...s.schedule.lists, [listId]: { ...assigned(s.schedule.lists[listId]), state } } } })
 }
 
-const STAGED_FIELDS = ['governingContractId', 'enteredPrice', 'prepaymentDetail', 'rvgGroupId', 'baseUnitsSelected', 'baseUnitsCaptured'] as const
+const STAGED_FIELDS = ['governingContractId', 'enteredPrice', 'rvgGroupId', 'baseUnitsSelected', 'baseUnitsCaptured'] as const
 
 function seedFieldsOf(bookingId: string) {
   const seed = buildSeed()
@@ -230,11 +230,11 @@ describe('review fixes (convention 18)', () => {
     expect(stagedSampleBookings(api.getState())).not.toContain(AM_TARGET)
   })
 
-  it('refuses to unstage once a real pre-procedure invoice was raised on the sample', () => {
+  it('refuses to unstage once a real prepayment invoice was sent on the sample', () => {
     const api = createAppStore()
     raiseSamplesOn(api, AM_TARGET!)
-    expect(raisePreProcedureInvoice(api, OFFICE_ACTOR, AM_TARGET!).ok).toBe(true)
-    expect(sampleClearRefusal(api.getState(), AM_TARGET!)).toBe('A pre-procedure invoice was raised on this sample: use Reset')
+    expect(approveAllPrepayments(api, AM_TARGET!, OFFICE_ACTOR)).toHaveLength(1)
+    expect(sampleClearRefusal(api.getState(), AM_TARGET!)).toBe('A pre-payment invoice was sent on this sample: use Reset')
     expect(clearSamplesOn(api, AM_TARGET!).ok).toBe(false)
     // Grace Park's child payer sample (catch-up Phase 21) can still be cleared everywhere.
     expect(allSampleClearRefusal(api.getState())).toBeNull()

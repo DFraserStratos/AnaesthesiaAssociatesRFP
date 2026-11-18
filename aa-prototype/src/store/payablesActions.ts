@@ -32,11 +32,21 @@ export interface PayablesDue {
   total: number
 }
 
+/**
+ * Whether the payables run pays this ACCPAY: never one crediting the AA
+ * Holding account (catch-up Phase 27; FT-06.3, D38). 27a's transfer pays the
+ * anaesthetist who did the List from the holding account.
+ */
+export function paidByPayablesRun(p: Pick<XeroAccPay, 'payeeAccount'>): boolean {
+  return p.payeeAccount === undefined
+}
+
 /** The payables due right now: count of ACCPAYs and the total increment to disburse. */
 export function payablesDue(state: Pick<AppState, 'xero'>): PayablesDue {
   let count = 0
   let total = 0
   for (const p of Object.values(state.xero.accPays)) {
+    if (!paidByPayablesRun(p)) continue
     const increment = roundToCents(p.amountAuthorised - p.amountDisbursed)
     if (toCents(increment) > 0) {
       count += 1
@@ -59,7 +69,7 @@ function disbursePayables(
 ): Outcome<PayablesRunResult> {
   const state = api.getState()
   const eligible = Object.values(state.xero.accPays).filter(
-    (p) => eligibleIds.has(p.id) && toCents(p.amountAuthorised - p.amountDisbursed) > 0,
+    (p) => eligibleIds.has(p.id) && paidByPayablesRun(p) && toCents(p.amountAuthorised - p.amountDisbursed) > 0,
   )
   if (eligible.length === 0) {
     return ok({ disbursedCount: 0, totalDisbursed: 0, accPayIds: [] })

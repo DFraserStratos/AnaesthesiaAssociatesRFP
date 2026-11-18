@@ -107,7 +107,8 @@ describe('evaluateWarnings', () => {
 
   it('a throwaway rule plugs in with no change elsewhere', () => {
     const throwaway = rule('throwaway', 'mild', 'Throwaway.')
-    const out = evaluateWarnings(facts({ prepaymentStatus: 'required' }), [...WARNING_RULES, throwaway], {}, {})
+    const awaiting = { payerKey: 'patient:PT1', payerName: 'The patient', status: 'awaitingApproval' as const, amount: 1200, invoicedTotal: 0, receivedTotal: 0 }
+    const out = evaluateWarnings(facts({ prepaymentStatus: 'awaitingApproval', prepaymentGroups: [awaiting] }), [...WARNING_RULES, throwaway], {}, {})
     expect(out.map((w) => w.ruleId)).toEqual(['prepaymentUnpaid', 'throwaway'])
   })
 })

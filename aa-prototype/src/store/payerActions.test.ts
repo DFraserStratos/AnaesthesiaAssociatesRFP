@@ -19,7 +19,8 @@ import { setProcedureContract } from './contractSelectionActions'
 import { buildSeed, PAT_REVIEW, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
 import type { Actor } from './mutate'
 import { payerOfferFor } from '../domain/billing/procedurePayer'
-import { raisePreProcedureInvoice } from './prepaymentActions'
+import { approvePrepayment } from './prepaymentActions'
+import { approveAllPrepayments } from '../test/approvePrepayments'
 
 const marker = (key: string) => SEED_MARKERS[key]!.entityId
 const invoicesForBooking = (s: AppState, bookingId: string) =>
@@ -285,8 +286,8 @@ describe('prepayment per payer (catch-up Phase 22a; US-06.3.1 "One per payer", "
     expect(added.ok).toBe(true)
     if (!added.ok) return
     expect(setProcedurePayer(api, OFFICE_ACTOR, added.value.procedureId, { kind: 'other', name: 'Ruth Riley', relationship: 'Mother', email: 'ruth@example.net' }, []).ok).toBe(true)
-    const raised = raisePreProcedureInvoice(api, OFFICE_ACTOR, RILEY)
-    expect(raised.ok && raised.value.invoiceIds).toHaveLength(2)
+    // Catch-up Phase 27: each payer group is approved and sent on its own.
+    expect(approveAllPrepayments(api, RILEY, OFFICE_ACTOR)).toHaveLength(2)
     const pre = Object.values(api.getState().billing.invoices).filter((i) => i.bookingId === RILEY && i.kind === 'prePayment')
     expect(pre.map((i) => `${i.counterparty.kind}:${i.counterparty.id}`).sort()).toEqual(['patient:' + api.getState().schedule.bookings[RILEY]!.patientId, 'payer:BP0006'].sort())
     // Each payer locked on the Procedures their own invoice covers.
@@ -295,8 +296,8 @@ describe('prepayment per payer (catch-up Phase 22a; US-06.3.1 "One per payer", "
     const third = addProcedure(api, OFFICE_ACTOR, RILEY, { governingContractId: p1!.governingContractId! })
     if (!third.ok) throw new Error(third.message)
     expect(setProcedurePayer(api, OFFICE_ACTOR, third.value.procedureId, { kind: 'other', name: 'Tom Riley', relationship: 'Father', email: 'tom@example.net' }, []).ok).toBe(true)
-    const again = raisePreProcedureInvoice(api, OFFICE_ACTOR, RILEY)
-    expect(again.ok && again.value.invoiceIds).toHaveLength(1)
-    expect(raisePreProcedureInvoice(api, OFFICE_ACTOR, RILEY)).toMatchObject({ ok: false, code: 'alreadyRaised' })
+    expect(approveAllPrepayments(api, RILEY, OFFICE_ACTOR)).toHaveLength(1)
+    expect(approveAllPrepayments(api, RILEY, OFFICE_ACTOR)).toHaveLength(0)
+    expect(approvePrepayment(api, OFFICE_ACTOR, RILEY, 'payer:BP0006')).toMatchObject({ ok: false, code: 'alreadySent' })
   })
 })

@@ -26,6 +26,7 @@ import type {
   Anaesthetist,
   BuyerCreatedTaxInvoice,
   Contract,
+  ContractId,
   CounterpartyRef,
   Invoice,
   InvoiceAgent,
@@ -194,6 +195,8 @@ export interface InvoiceLineView {
   units?: number
   amount: number
   btm?: InvoiceLineBtm
+  /** A prepayment line's Contract when raised (catch-up Phase 27). */
+  contractId?: ContractId
 }
 
 export interface LineViewOptions {

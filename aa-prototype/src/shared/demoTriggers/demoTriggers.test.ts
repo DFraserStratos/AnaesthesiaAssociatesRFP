@@ -623,7 +623,8 @@ describe('sample warnings (catch-up Phase 15a)', () => {
     const t = byId('office-clears-warning')
     const ctx = ctxFor(rileyPath, { listId: SEED_LIST_IDS.prepaymentUnpaidList, bookingId: RILEY })
     const choice = initialChoice(t, api.getState(), ctx)
-    expect(choice).toBe(`${RILEY}:prepaymentUnpaid`)
+    // Catch-up Phase 27: one warning per payer group, keyed by the payer's identity.
+    expect(choice).toBe(`${RILEY}:prepaymentUnpaid:patient:PT0017`)
     expect(t.disabledReason(api.getState(), ctx, choice)).toBeNull()
     expect(t.run(api, ctx, choice).ok).toBe(true)
     expect(api.getState().audit.at(-1)).toMatchObject({ action: 'booking.warningCleared', who: 'AA office (simulated)' })

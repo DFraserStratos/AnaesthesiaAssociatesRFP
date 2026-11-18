@@ -17,7 +17,6 @@ import {
   formatMoney,
   invoiceDeliveryLabel,
   postalAddressLines,
-  procedureRequiresPrepayment,
   splitNoteText,
   supplierGstText,
 } from '../../../domain/billing'
@@ -71,10 +70,6 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
     [billing.cases, invoiceId],
   )
 
-  const procedures = useMemo(() => {
-    const ids = new Set(lines.map((l) => l.procedureId).filter((id): id is string => id !== undefined))
-    return [...ids].map((id) => proceduresRecord[id]).filter((p): p is NonNullable<typeof p> => p !== undefined)
-  }, [lines, proceduresRecord])
 
   if (invoice === undefined) return null
   const booking = bookingsRecord[invoice.bookingId]
@@ -94,12 +89,6 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
     .filter((i): i is Invoice => i !== undefined)
     .map((i) => ({ invoice: i, name: lock?.addressees[partyKeyOf(i.counterparty)] ?? invoiceAddresseeName({ masters, schedule: { procedures: proceduresRecord } }, i) }))
   const procedureDateISO = invoice.crossMatch?.procedureDateISO ?? list?.dateISO
-  // The Procedure on a prepaid Contract, if any (INTERIM until Phase 27): the
-  // patient note's prepayment wording follows it (catch-up Phase 20).
-  const prepaymentProc = procedures.find((p) => {
-    const locked = lock?.procedures.find((v) => v.procedureId === p.id)
-    return locked !== undefined ? locked.prepaid && locked.billsTo === 'payer' : procedureRequiresPrepayment(p.governingContractId !== undefined ? masters.contracts[p.governingContractId] : undefined)
-  })
   const gstLabel = `GST (${GST_RATE * 100}%)`
 
   function doSend(to?: string): boolean {
@@ -223,7 +212,7 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
             Procedure is on a prepaid Contract, else payment on receipt. */}
         {isPatientLayout && invoice.noCharge !== true && (
           <PatientInvoiceNote
-            {...patientInvoiceNote(prepaymentProc !== undefined, invoice.kind, prepaymentProc?.prepaymentDetail?.type, prepaymentProc?.prepaymentDetail?.depositAmount)}
+            {...patientInvoiceNote(invoice.kind)}
           />
         )}
 
@@ -698,35 +687,16 @@ function TotalRow({ label, value }: { label: string; value: string }) {
 }
 
 /**
- * The patient note on a patient-layout invoice (catch-up Phase 20): a Booking
- * with a Procedure on a prepaid Contract gives the prepayment wording (the
- * pre-procedure invoice, or the balance after it); otherwise payment is due on
- * receipt. The insured-reimbursement wording went with the payment category
- * (US-11.4.2 Retired).
+ * The patient note on a patient-layout invoice (catch-up Phase 27): a
+ * prepayment invoice is the prepaid amount, the price for the anaesthetic in
+ * full; every other invoice is due on receipt (a prepaid Procedure is left off
+ * it, so there is no balance to explain). The letters are Phase 41's.
  */
-export function patientInvoiceNote(
-  requiresPrepayment: boolean,
-  invoiceKind: 'standard' | 'prePayment',
-  prepaymentType?: 'full' | 'split',
-  depositAmount?: number,
-): { badge: string; text: string } {
-  if (!requiresPrepayment) return { badge: 'Payment', text: 'Payment is due on receipt of this invoice.' }
+export function patientInvoiceNote(invoiceKind: 'standard' | 'prePayment'): { badge: string; text: string } {
   if (invoiceKind === 'prePayment') {
-    return {
-      badge: 'Prepayment (before the procedure)',
-      text:
-        prepaymentType === 'split'
-          ? `This pre-procedure invoice is the agreed first payment${depositAmount !== undefined ? ` of ${formatCurrency(depositAmount)}` : ''}. Payment is required before the procedure proceeds; the balance is invoiced after the procedure.`
-          : 'This pre-procedure invoice is the full fee, payable before the procedure proceeds.',
-    }
+    return { badge: 'Prepayment (before the procedure)', text: 'This invoice is the prepaid amount for the procedure. It is the price for the anaesthetic.' }
   }
-  return {
-    badge: 'Prepayment balance',
-    text:
-      prepaymentType === 'split'
-        ? 'A first payment has already been invoiced for this procedure. This invoice covers the balance.'
-        : 'This procedure was prepaid; this invoice covers any remaining balance.',
-  }
+  return { badge: 'Payment', text: 'Payment is due on receipt of this invoice.' }
 }
 
 function PatientInvoiceNote({ badge, text }: { badge: string; text: string }) {

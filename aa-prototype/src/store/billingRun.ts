@@ -159,6 +159,19 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
         after: { invoiceIds: bookingInvoiceIds },
         stampBookingId: null,
       })
+      // Prepaid Procedures left off the final invoice, nothing deducted (catch-up Phase 27; US-08.2.2, D57).
+      // An all-prepaid Booking raises no invoice and reads billed; 27a's transfer reads the lock's record.
+      const settled = s.billing.locks[bookingId]?.settledByPrepayment ?? {}
+      const settledIds = Object.keys(settled)
+      if (settledIds.length > 0) {
+        metas.push({
+          entityType: 'booking',
+          entityId: bookingId,
+          action: 'booking.prepaidSettled',
+          after: { procedureIds: settledIds, prepaymentInvoiceIds: [...new Set(settledIds.map((id) => settled[id]!.prepaymentInvoiceId))] },
+          stampBookingId: null,
+        })
+      }
     }
 
     metas.push({

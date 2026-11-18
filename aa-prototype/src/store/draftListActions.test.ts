@@ -46,7 +46,6 @@ import {
   finishedDraftLists,
   listInSlot,
   listsForDate,
-  prepaymentStatusFor,
   scheduleHorizon,
   slotViewsForAnaesthetist,
   slotViewsForDate,
@@ -60,6 +59,7 @@ import { ANAE, HOSP, SEED_DRAFT_LIST_IDS, SEED_LIST_IDS, SURG } from '../domain/
 import { slotIdFor } from '../domain/slots'
 import { isActivePairing } from '../domain/listPairing'
 import { assigned, draft } from '../test/lists'
+import { prepaymentStatusFor } from './prepaymentSelectors'
 import { addDays, format, parseISO } from 'date-fns'
 
 const OFFICE = OFFICE_ACTOR
@@ -151,7 +151,7 @@ describe('Bookings on a Draft List (US-01.6.1 "Bookings allowed")', () => {
     const auth = authoriseList(api, OFFICE, id)
     expect(auth.ok ? '' : auth.message).toBe('Assign an anaesthetist first.')
     // The prepayment routine sees no anaesthetist: nothing required, nothing generated.
-    expect(prepaymentStatusFor(api.getState(), bookingId)).toBe('none')
+    expect(prepaymentStatusFor(api.getState(), bookingId).status).toBe('none')
     expect(openWarnings(api.getState()).filter((w) => w.listId === id)).toEqual([])
     // Off it, onto an ACTIVE List, and back.
     const target = slotViewsForDate(api.getState(), THU23).find((v) => v.list !== undefined && v.list.state === 'ACTIVE')!.list!

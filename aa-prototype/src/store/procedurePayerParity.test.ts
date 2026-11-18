@@ -13,11 +13,23 @@
  * the two-payer Booking) are taken out before the capture, and pinned
  * separately below. Hana Park stays BP0001 with Xero's `billableParty:BP0001`
  * contact; S3 stays $365.70 (Holt), $152.38 to nib and $91.43 to Alan Prentice.
+ * Later phases' declared differences are mapped back: catch-up Phase 27's
+ * prepayment builds for Riley and Nair and INV0001's total
+ * (`__parity__/phase27Declared.ts`).
  */
 
 import { describe, expect, it } from 'vitest'
 import { PHASE_24_ARIA_BOOKINGS } from './__parity__/phase24Declared'
 import { PHASE_25_ADDRESSEE_BOOKINGS, withPhase25Codes } from './__parity__/phase25Declared'
+import {
+  issuedBefore27,
+  PHASE_27_BOOKINGS,
+  PHASE_27_NAIR_INVOICE,
+  PHASE_27_NAIR_INVOICE_TOTAL,
+  PHASE_27_PREPAYMENT_BUILD,
+  PHASE_27_REASON,
+  prepaymentBuildBefore27,
+} from './__parity__/phase27Declared'
 import baseline from './__parity__/phase-22a-baseline.json'
 import { captureBaseline22a, type Phase22aBaseline } from './__parity__/phase22aCapture'
 import { payerContactSpec } from './xeroHandoff'
@@ -34,14 +46,25 @@ describe('Phase 22a payer-per-Procedure parity (no declared difference)', () => 
   it('holds every seeded Booking: grouping, totals, printed name, billedTo, Xero contact and prepayment build', () => {
     // Catch-up Phase 24's declared Aria move set aside (`__parity__/phase24Declared.ts`).
     const kept = (r: { bookingId: string }) => !PHASE_24_ARIA_BOOKINGS.has(r.bookingId)
-    expect(now.bookings.filter(kept)).toEqual(withPhase25Codes(before.bookings.filter(kept)))
+    // Catch-up Phase 27's declared prepayment builds (Riley and Nair, `__parity__/phase27Declared.ts`), mapped back.
+    expect(now.bookings.filter(kept).map(prepaymentBuildBefore27)).toEqual(withPhase25Codes(before.bookings.filter(kept)))
+  })
+
+  it(`declares Phase 27's differences exactly (${PHASE_27_REASON})`, () => {
+    for (const id of PHASE_27_BOOKINGS) {
+      const row = now.bookings.find((r) => r.bookingId === id)
+      expect(row?.prepayment, id).toMatchObject({ kind: 'invoices', invoices: [{ subtotal: PHASE_27_PREPAYMENT_BUILD.subtotal, total: PHASE_27_PREPAYMENT_BUILD.total }] })
+      expect(row?.result, id).toEqual(before.bookings.find((r) => r.bookingId === id)?.result)
+    }
+    expect(now.issued.find((i) => i.invoiceId === PHASE_27_NAIR_INVOICE)?.total).toBe(PHASE_27_NAIR_INVOICE_TOTAL)
   })
 
   it('holds every issued invoice: addressee, billedTo, Procedures, delivery and Xero contact', () => {
     // Catch-up Phase 24's seeded invoice for its AUTHORISED Face lift is an addition.
     // Catch-up Phase 25's declared seed fix (addressed by name, `__parity__/phase25Declared.ts`): only the addressee moves.
     const kept = (i: { bookingId: string }) => !PHASE_24_ARIA_BOOKINGS.has(i.bookingId)
-    const asBefore = now.issued.filter(kept).map((i) => {
+    // Catch-up Phase 27's declared INV0001 total (`__parity__/phase27Declared.ts`), mapped back.
+    const asBefore = now.issued.filter(kept).map(issuedBefore27).map((i) => {
       if (!PHASE_25_ADDRESSEE_BOOKINGS.has(i.bookingId)) return i
       const was = before.issued.find((b) => b.bookingId === i.bookingId && b.ref === i.ref)
       return was !== undefined ? { ...i, addressee: was.addressee, billedTo: was.billedTo } : i

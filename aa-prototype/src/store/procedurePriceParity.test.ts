@@ -16,6 +16,10 @@
  *     and Aria is RVG at its own rate, so Fitzgerald's Wed 15 Jul Aria Booking
  *     moves from 3.0 hours at $480 ($1,440) to 22 units at $26.50 ($583.00), and
  *     both Aria Bookings' text drops "individually arranged hourly rate".
+ *   - catch-up Phase 27 (`__parity__/phase27Declared.ts`): Nair's rhinoplasty
+ *     prices at $1,200 on Dr Souter's Rhinoplasty Contract (her Booking total
+ *     $1,412.00), and Riley's and Nair's prepayment builds are each that $1,200
+ *     in full, one line with the Procedure's invoice description.
  * Nothing else moves: every other price, total, line, unit and BCTI count.
  */
 
@@ -26,6 +30,17 @@ import { capturePhase24, type Phase24Baseline } from './__parity__/phase24Captur
 import { freshAppState } from './appStore'
 import { PRICING_BOOKING_IDS, SEED_MARKERS } from '../domain/seed'
 import { PHASE_24_ARIA_BOOKINGS } from './__parity__/phase24Declared'
+import {
+  nairBookingTotalBefore27,
+  nairPriceBefore27,
+  PHASE_27_BOOKINGS,
+  PHASE_27_NAIR_BOOKING,
+  PHASE_27_NAIR_BOOKING_TOTAL,
+  PHASE_27_NAIR_PREPAID_PROCEDURE,
+  PHASE_27_PREPAYMENT_BUILD,
+  PHASE_27_REASON,
+  prepaymentBuildBefore27,
+} from './__parity__/phase27Declared'
 
 const baseline = baselineJson as unknown as Phase24Baseline
 const state = freshAppState()
@@ -56,7 +71,18 @@ describe('Phase 24 price parity', () => {
   })
 
   it('every other seeded price is as before: total, charged units, B, T and M, the price status and the computed price', () => {
-    expect(now.fees.filter((r) => !declared(r.bookingId))).toEqual(baseline.fees.filter((r) => !declared(r.bookingId)))
+    // Catch-up Phase 27's declared price (Nair's rhinoplasty at $1,200, `__parity__/phase27Declared.ts`), mapped back.
+    expect(now.fees.filter((r) => !declared(r.bookingId)).map(nairPriceBefore27)).toEqual(baseline.fees.filter((r) => !declared(r.bookingId)))
+  })
+
+  it(`declares Phase 27's differences exactly (${PHASE_27_REASON})`, () => {
+    expect(now.fees.find((r) => r.procedureId === PHASE_27_NAIR_PREPAID_PROCEDURE)).toMatchObject({ total: 1200, computed: 1200, priceStatus: 'priced' })
+    expect(now.bookingTotals.find((r) => r.bookingId === PHASE_27_NAIR_BOOKING)?.total).toBe(PHASE_27_NAIR_BOOKING_TOTAL)
+    for (const id of PHASE_27_BOOKINGS) {
+      const row = now.bookings.find((r) => r.bookingId === id)
+      expect(row?.prepayment, id).toMatchObject({ kind: 'invoices', invoices: [{ subtotal: PHASE_27_PREPAYMENT_BUILD.subtotal, total: PHASE_27_PREPAYMENT_BUILD.total, lines: [PHASE_27_PREPAYMENT_BUILD.line] }] })
+      expect(row?.result, id).toEqual(withPhase25Codes(baseline.bookings.find((r) => r.bookingId === id)?.result))
+    }
   })
 
   it('a history Procedure on an AUTHORISED List prices at its invoiced amount, its units and computed price unchanged', () => {
@@ -67,12 +93,12 @@ describe('Phase 24 price parity', () => {
   })
 
   it('every other Booking total is as before', () => {
-    expect(now.bookingTotals.filter((r) => !declared(r.bookingId))).toEqual(baseline.bookingTotals.filter((r) => !declared(r.bookingId)))
+    expect(now.bookingTotals.filter((r) => !declared(r.bookingId)).map(nairBookingTotalBefore27)).toEqual(baseline.bookingTotals.filter((r) => !declared(r.bookingId)))
   })
 
   it('every other invoice and prepayment build is as before: grouping, totals, line amounts, units and wording', () => {
     const skip = (id: string) => declared(id) || id === typedBooking
-    expect(now.bookings.filter((r) => !skip(r.bookingId))).toEqual(withPhase25Codes(baseline.bookings.filter((r) => !skip(r.bookingId))))
+    expect(now.bookings.filter((r) => !skip(r.bookingId)).map(prepaymentBuildBefore27)).toEqual(withPhase25Codes(baseline.bookings.filter((r) => !skip(r.bookingId))))
   })
 
   it("BK0179's typed $1,200 prints as one fee line at the price, its invoice total unchanged", () => {

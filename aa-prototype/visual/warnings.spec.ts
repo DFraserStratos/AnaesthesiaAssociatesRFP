@@ -28,7 +28,7 @@ test('admin: To-do card, outline down to the Booking, Clear, sample triggers', a
 
   const todo = page.locator('[data-shot="admin-warnings-todo"]')
   await expect(todo).toBeVisible()
-  await expect(todo).toContainText('Prepayment required')
+  await expect(todo).toContainText('awaiting approval on Invoices')
   await expect(todo).toContainText('Annette Riley')
   await expect(todo).not.toContainText('Provisional')
   // The To-do card sits directly under the mini calendar in the rail.
@@ -54,7 +54,7 @@ test('admin: To-do card, outline down to the Booking, Clear, sample triggers', a
 
   // Clear empties Riley's row; the outline drops with it. (The payer review List's
   // child payer, catch-up Phase 21, stays on the list: it is on Fri 17.)
-  await todo.getByRole('button', { name: 'Clear warning for Annette Riley' }).click()
+  await todo.getByRole('button', { name: /^Clear (\(optional\) )?warning for Annette Riley$/ }).click()
   await expect(todo).not.toContainText('Annette Riley')
   await expect(todo.locator('[data-shot="todo-child-warning"]')).toHaveCount(1)
   await expect(todo.locator('[data-shot="todo-approval-warning"]')).toHaveCount(1)
@@ -76,14 +76,14 @@ test('admin: To-do card, outline down to the Booking, Clear, sample triggers', a
   await expect(todo.locator('li')).toHaveCount(2)
 })
 
-test('admin: the Booking detail shows the warning first, with Raise pre-procedure invoice on its row', async ({ page }) => {
+test('admin: the Booking detail shows the warning first, awaiting approval, with no raise button (catch-up Phase 27)', async ({ page }) => {
   await page.goto('/admin/day/2026-07-24')
   await page.waitForLoadState('networkidle')
   await page.locator('[data-shot="admin-warnings-todo"]').getByRole('button', { name: "Open Annette Riley's Booking" }).click()
   const panel = page.locator('[data-shot="booking-warnings"]')
   await expect(panel).toBeVisible()
-  await expect(panel.locator('[data-shot="booking-prepayment"]')).toContainText('Prepayment required')
-  await expect(panel.getByRole('button', { name: /Raise pre-procedure invoice/ })).toBeVisible()
+  await expect(panel.locator('[data-shot="booking-prepayment"]')).toContainText('awaiting approval')
+  await expect(panel.getByRole('button', { name: /Raise pre-procedure invoice/ })).toHaveCount(0)
   await expect(panel.getByRole('button', { name: 'Clear' })).toBeVisible()
   await expect(page.getByText(/Override\s+gate/i)).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/w15a-04-admin-booking.png', fullPage: true })
@@ -104,7 +104,7 @@ test.describe('phone (PWA, 375 x 812)', () => {
     const panel = page.locator('[data-testid="slide-booking"] [data-shot="booking-warnings"]')
     await expect(panel).toBeVisible()
     await expect(panel).toContainText('Before procedure')
-    await expect(panel).toContainText('Strong')
+    await expect(panel).toContainText('Mild')
     await page.waitForTimeout(500)
     expect(await inViewport(page, '[data-testid="slide-booking"] [data-shot="booking-warnings"]')).toBe(true)
     await expect(panel.getByRole('button', { name: /Clear/ })).toHaveCount(0)

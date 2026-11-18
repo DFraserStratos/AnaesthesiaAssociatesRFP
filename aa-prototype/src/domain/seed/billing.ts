@@ -30,7 +30,9 @@ import type {
   XeroAccRec,
   XeroContact,
 } from '../types'
-import { buildInvoicesForBooking, buildPrePaymentInvoiceForBooking, type InvoiceBuildContext } from '../billing/invoiceBuild'
+import { buildInvoicesForBooking, type InvoiceBuildContext } from '../billing/invoiceBuild'
+import { AA_HOLDING_ACCOUNT, prepaymentGroupsFor, prepaymentInvoiceDraftFor } from '../billing/prepayment'
+import { bookingFeesFor } from '../billing/validateBookingForBilling'
 import { xeroIndividualContactName } from '../xeroContact'
 import { billingHospitalId } from '../listPairing'
 import { buildHistory } from './history'
@@ -66,10 +68,12 @@ export interface SeedBillingSlice {
   counters: Record<string, number>
 }
 
-/** Fixed pre-day instant the seeded pre-invoice was "raised" (never the clock). */
+/** Fixed pre-day instant the seeded prepayment invoice was approved, sent and paid (never the clock). */
 const SEED_PREPAYMENT_RAISED_ISO = '2026-07-14T09:00:00'
-/** When the seeded pre-payment was disbursed (a payables run a couple of days later). */
-const SEED_PREPAYMENT_DISBURSED_ISO = '2026-07-16T09:00:00'
+/** Who approved the seeded prepayment invoice (catch-up Phase 27). */
+const SEED_PREPAYMENT_APPROVER = 'Kirsty W.'
+/** The AA Holding account's seeded Xero contact (catch-up Phase 27). */
+const HOLDING_CONTACT_ID = 'XCHOLD'
 
 /** Mirrors store/mutate.ts ID_FORMATS for the billing kinds (kept in step). */
 const FORMATS: Record<string, { prefix: string; pad: number }> = {
@@ -241,11 +245,25 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
   const booking = seed.schedule.bookings[prepaidBookingId]
   const ctx = contextFor(seed, prepaidBookingId)
   if (booking === undefined || ctx === undefined) return finishAndReturn()
-  const built = buildPrePaymentInvoiceForBooking(booking, proceduresOf(seed, prepaidBookingId), ctx)
-  if (built.kind !== 'invoices' || built.invoices.length === 0) return finishAndReturn()
+  // Nair's rhinoplasty: one payer group, approved by the office a week out (catch-up Phase 27).
+  const nairProcedures = proceduresOf(seed, prepaidBookingId)
+  const nairPriced = bookingFeesFor(nairProcedures, ctx)
+  const nairPatient = seed.masters.patients[booking.patientId]
+  const groups = prepaymentGroupsFor({
+    booking,
+    procedures: nairProcedures,
+    contracts: seed.masters.contracts,
+    issued: [],
+    priceOf: (p) => (nairPriced.kind === 'structural' ? null : (nairPriced.fees[p.id]?.needsPrice ?? true) ? null : nairPriced.fees[p.id]!.total),
+    ...(nairPatient !== undefined ? { patient: nairPatient } : {}),
+  })
+  const drafts = groups.flatMap((g) => {
+    const d = prepaymentInvoiceDraftFor(g, nairProcedures, { contracts: seed.masters.contracts, patientId: booking.patientId, ...(nairPatient !== undefined ? { patient: nairPatient } : {}) })
+    return d !== null ? [d] : []
+  })
+  if (drafts.length === 0) return finishAndReturn()
 
   const anaesthetistId = seed.schedule.lists[booking.listId]?.anaesthetistId
-  const payeeContactId = anaesthetistId !== undefined ? contactIdCache[`anaesthetist:${anaesthetistId}`] : undefined
   // No personal information in Xero (US-09.3.1): the neutral label built from the hidden id.
   // Another payer on a Booking keeps the `billableParty` contact namespace its BP id always had (catch-up Phase 21).
   const individual = (kind: string): 'billableParty' | 'patient' => (kind === 'billableParty' || kind === 'payer' ? 'billableParty' : 'patient')
@@ -256,7 +274,7 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
   const supplier = anaesthetist !== undefined ? supplierFor(anaesthetist) : undefined
   const patient = seed.masters.patients[booking.patientId]
 
-  built.invoices.forEach((draft, index) => {
+  drafts.forEach((draft, index) => {
     const caseId = next('billingCase')
     const invoiceId = next('invoice')
     const invoiceNumber = next('invoiceNumber')
@@ -278,12 +296,14 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
       ...(supplier !== undefined ? { supplier } : {}),
       agent: AA_AGENT,
       delivery: deliveryStampFor(invoiceDeliveryFor(draft.counterparty, proceduresOf(seed, booking.id).filter((p) => draft.procedureIds.includes(p.id)), booking.patientId, patient, seed.masters.parties), SEED_PREPAYMENT_RAISED_ISO, BILLING_RUN_SENDER_NAME),
+      approval: { mode: 'approved', by: SEED_PREPAYMENT_APPROVER, role: 'office', atISO: SEED_PREPAYMENT_RAISED_ISO },
     }
     for (const line of draft.lines) {
       const lineId = next('invoiceLine')
       const stored: InvoiceLine = { id: lineId, invoiceId, kind: line.kind, description: line.description, amount: line.amount }
       if (line.procedureId !== undefined) stored.procedureId = line.procedureId
       if (line.units !== undefined) stored.units = line.units
+      if (line.contractId !== undefined) stored.contractId = line.contractId
       invoiceLines[lineId] = stored
     }
 
@@ -314,24 +334,29 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
       paidAtISO: SEED_PREPAYMENT_RAISED_ISO,
       status: 'paid',
     }
-    if (payeeContactId !== undefined && anaesthetistId !== undefined) {
-      // Received Jul 14, disbursed Jul 16 (both before today) so a fresh store
-      // starts with nothing pending — the demo creates the first payable live.
+    if (anaesthetistId !== undefined) {
+      // Received Jul 14: the payable credits the AA Holding account (catch-up
+      // Phase 27; FT-06.3, D38), authorised by the receipt and held there, never
+      // paid by the payables run (27a's transfer pays whoever does the List).
+      if (contacts[HOLDING_CONTACT_ID] === undefined) {
+        contacts[HOLDING_CONTACT_ID] = { contactId: HOLDING_CONTACT_ID, contactNumber: AA_HOLDING_ACCOUNT.contactNumber, name: AA_HOLDING_ACCOUNT.name, type: 'organisation', archived: false }
+        contactIdCache[AA_HOLDING_ACCOUNT.contactKey] = HOLDING_CONTACT_ID
+      }
       accPays[accPayId] = {
         id: accPayId,
         accRecId,
-        contactId: payeeContactId,
+        contactId: HOLDING_CONTACT_ID,
         invoiceNumber: `${invoiceNumber}-P`,
         reference: caseId,
         issuedAtISO: SEED_PREPAYMENT_RAISED_ISO,
         anaesthetistId,
         amountPayable,
         amountAuthorised: amountPayable,
-        amountDisbursed: amountPayable,
-        status: 'paid',
+        amountDisbursed: 0,
+        status: 'authorised',
+        payeeAccount: AA_HOLDING_ACCOUNT.payeeAccount,
         ...(supplier !== undefined ? { taxInvoice: buyerCreatedTaxInvoiceFor({ invoiceNumber, supplier, agent: AA_AGENT }, supplier) } : {}),
       }
-      disbursements[`DSBB${index}`] = { id: `DSBB${index}`, accPayId, amount: amountPayable, atISO: SEED_PREPAYMENT_DISBURSED_ISO, payablesRunId: 'PR-SEED-01' }
     }
     payments[`PMTB${index}`] = { id: `PMTB${index}`, accRecId, amount: draft.total, atISO: SEED_PREPAYMENT_RAISED_ISO, idempotencyKey: `${SEED_PREPAYMENT_KEY}-${index}`, source: 'webhook' }
     if (anaesthetistId !== undefined) {
@@ -352,13 +377,12 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
       bookingId: prepaidBookingId,
       invoiceId,
       accRecId,
-      ...(payeeContactId !== undefined ? { accPayId } : {}),
-      status: payeeContactId !== undefined ? 'disbursed' : 'paid',
+      ...(anaesthetistId !== undefined ? { accPayId } : {}),
+      status: 'paid',
       receivedAmount: draft.total,
-      authorisedAmount: payeeContactId !== undefined ? amountPayable : 0,
-      disbursedAmount: payeeContactId !== undefined ? amountPayable : 0,
+      authorisedAmount: anaesthetistId !== undefined ? amountPayable : 0,
+      disbursedAmount: 0,
       paidInAtISO: SEED_PREPAYMENT_RAISED_ISO,
-      ...(payeeContactId !== undefined ? { disbursedAtISO: SEED_PREPAYMENT_DISBURSED_ISO } : {}),
     }
   })
 

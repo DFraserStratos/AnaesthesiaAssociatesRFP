@@ -726,3 +726,35 @@ describe('anaesthetist profile (catch-up Phase 26)', () => {
     expect(s.masters.anaesthetists[ANAE.souter]?.bankAccount).toEqual({ accountName: 'Melanie Souter', accountNumber: '99-0101-0034821-00' })
   })
 })
+
+describe('the prepayment lifecycle (catch-up Phase 27)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it("discards a v51 store with deposit prepayments and no approval switch, and reseeds Nair's $1,200 prepayment to the AA Holding account", () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(52)
+    const fresh = freshAppState()
+    const procedures = Object.fromEntries(
+      Object.entries(fresh.schedule.procedures).map(([id, p]) => [id, id === 'P0036' ? { ...p, prepaymentDetail: { type: 'split', depositAmount: 800 } } : p]),
+    )
+    const { prepayment: _p, ...oldSettings } = fresh.appSettings
+    const accPays = Object.fromEntries(
+      Object.entries(fresh.xero.accPays).map(([id, a]) => {
+        const { payeeAccount: _a, ...old } = a
+        return [id, old]
+      }),
+    )
+    localStorage.setItem(
+      PERSIST_KEY,
+      JSON.stringify({ state: { ...fresh, appSettings: oldSettings, schedule: { ...fresh.schedule, procedures }, xero: { ...fresh.xero, accPays } }, version: 51 }),
+    )
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.values(s.schedule.procedures).some((p) => 'prepaymentDetail' in p)).toBe(false)
+    expect(s.appSettings.prepayment.approvalRequired).toBe(true)
+    expect(s.billing.invoices.INV0001).toMatchObject({ kind: 'prePayment', subtotal: 1200, total: 1380 })
+    expect(Object.values(s.xero.accPays).filter((a) => a.payeeAccount === 'aaHoldingAccount')).toHaveLength(1)
+  })
+})

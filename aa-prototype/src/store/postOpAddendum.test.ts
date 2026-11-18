@@ -16,7 +16,8 @@ import { authoriseList, editProcedure, submitList } from './lifecycle'
 import { setProcedureContract } from './contractSelectionActions'
 import { addPostOpAddendum } from './bookingActions'
 import { runBillingForList } from './billingRun'
-import { prepaymentStatusFor, proceduresForBooking } from './selectors'
+import { proceduresForBooking } from './selectors'
+import { prepaymentStatusFor } from './prepaymentSelectors'
 import type { Actor } from './mutate'
 import type { Invoice } from '../domain/types'
 import { ANAE, RVG_GROUP } from '../domain/seed'
@@ -128,9 +129,9 @@ describe('addPostOpAddendum', () => {
     // Put the original episode on a prepaid Contract (Patient › Prepaid, Other price), then lock it.
     const original = originalOn(api, SHARMA_TUE14)
     const proc = proceduresForBooking(api.getState(), original)[0]!
+    // Catch-up Phase 27: the prepaid Contract alone makes it prepaid; there is no prepayment detail to set.
     expect(setProcedureContract(api, OFFICE, proc.id, 'CT-FIX-PATIENT-PREPAID', { enteredPrice: 500 }).ok).toBe(true)
-    expect(editProcedure(api, OFFICE, proc.id, { prepaymentDetail: { type: 'full' } }).ok).toBe(true)
-    expect(prepaymentStatusFor(api.getState(), original)).not.toBe('none')
+    expect(prepaymentStatusFor(api.getState(), original).status).not.toBe('none')
     expect(submitList(api, OFFICE, SHARMA_TUE14).ok).toBe(true)
     expect(authoriseList(api, OFFICE, SHARMA_TUE14).ok).toBe(true)
 
@@ -139,10 +140,9 @@ describe('addPostOpAddendum', () => {
     if (!added.ok) return
     const addendumProc = proceduresForBooking(api.getState(), added.value.bookingId)[0]!
     // A post-op event is never itself prepaid: the prepaid Contract is not
-    // copied (it needs an invoice destination) and no prepaymentDetail carries over.
+    // copied (it needs an invoice destination), so no prepayment follows it.
     expect(addendumProc.governingContractId).toBeUndefined()
-    expect(addendumProc.prepaymentDetail).toBeUndefined()
-    expect(prepaymentStatusFor(api.getState(), added.value.bookingId)).toBe('none')
+    expect(prepaymentStatusFor(api.getState(), added.value.bookingId).status).toBe('none')
   })
 
   it('refuses noOpenSession when no free, empty session is available today', () => {

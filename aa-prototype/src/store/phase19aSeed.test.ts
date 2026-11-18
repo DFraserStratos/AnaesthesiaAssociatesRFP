@@ -55,7 +55,9 @@ describe('every fixed price is a Contract with valid ranges', () => {
       PRICED_ITEM.souterBleph,
       PRICED_ITEM.souterBreastAug,
     ])
-    expect(Object.values(state.schedule.procedures).filter((p) => ids.has(p.governingContractId ?? '')).map((p) => p.id)).toEqual(['P0036'])
+    // Catch-up Phase 27: Nair's rhinoplasty (P0041) joins Riley on Dr Souter's prepaid Rhinoplasty Contract at $1,200.
+    expect(Object.values(state.schedule.procedures).filter((p) => ids.has(p.governingContractId ?? '')).map((p) => p.id)).toEqual(['P0036', 'P0041'])
+    expect(state.schedule.procedures.P0041?.governingContractId).toBe(PRICED_ITEM.souterRhinoplasty)
     expect(state.schedule.procedures.P0036?.governingContractId).toBe(PRICED_ITEM.souterRhinoplasty)
   })
 })

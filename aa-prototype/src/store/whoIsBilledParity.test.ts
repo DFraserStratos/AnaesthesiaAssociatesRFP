@@ -25,6 +25,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { PHASE_24_ARIA_BOOKINGS } from './__parity__/phase24Declared'
+import { issuedBefore27, PHASE_27_NAIR_INVOICE, PHASE_27_NAIR_INVOICE_TOTAL, PHASE_27_REASON } from './__parity__/phase27Declared'
 import baseline from './__parity__/phase-21-baseline.json'
 import { captureBaseline21, type BookingInvoicesRow, type Phase21Baseline } from './__parity__/phase21Capture'
 
@@ -94,7 +95,9 @@ describe('Phase 21 who-is-billed parity', () => {
 
   it('keeps every issued invoice on its counterparty and Xero contact (Hana Park and the Aria clinic included)', () => {
     // Catch-up Phase 24's seeded invoice for its AUTHORISED Face lift is an addition.
-    expect(now.issued.filter((i) => !PHASE_24_ARIA_BOOKINGS.has(i.bookingId)).map(asBefore)).toEqual(before.issued)
+    // Catch-up Phase 27's declared INV0001 total (`__parity__/phase27Declared.ts`): Nair's prepayment is the rhinoplasty's $1,200 in full.
+    expect(now.issued.filter((i) => !PHASE_24_ARIA_BOOKINGS.has(i.bookingId)).map(asBefore).map(issuedBefore27)).toEqual(before.issued)
+    expect(now.issued.find((i) => i.invoiceId === PHASE_27_NAIR_INVOICE), PHASE_27_REASON).toMatchObject({ ref: 'patient:PT0008', total: PHASE_27_NAIR_INVOICE_TOTAL })
     const hana = now.issued.find((i) => i.ref === 'payer:BP0001')
     expect(hana).toMatchObject({ name: 'Hana Park', contactNumber: 'BP0001', contactName: 'Billable party BP0001' })
   })

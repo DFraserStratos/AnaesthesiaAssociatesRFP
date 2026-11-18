@@ -15,13 +15,22 @@
 
 import { describe, expect, it } from 'vitest'
 import { PHASE_24_ARIA_BOOKINGS, PHASE_24_ARIA_PROCEDURES } from './__parity__/phase24Declared'
+import {
+  mapNairFeeBefore27,
+  PHASE_27_NAIR_BOOKING,
+  PHASE_27_NAIR_CONTRACT,
+  PHASE_27_NAIR_CONTRACT_BEFORE,
+  PHASE_27_NAIR_FEE,
+  PHASE_27_NAIR_PREPAID_PROCEDURE,
+  PHASE_27_REASON,
+} from './__parity__/phase27Declared'
 import phase18Fixture from './__parity__/phase-18-baseline.json'
 import phase19Fixture from './__parity__/phase-19-baseline.json'
 import phase19aFixture from './__parity__/phase-19a-baseline.json'
 import phase19bFixture from './__parity__/phase-19b-baseline.json'
 import { COMPLETION_BOOKING_IDS, REVIEW_FLAG_BOOKING_IDS, MERIVALE_FACE_LIFT_BOOKING_ID, PAYER_REVIEW_BOOKING_IDS, SEED_MARKERS, SOURCE_WORDING_BOOKING_IDS } from '../domain/seed'
 import { freshAppStateBefore22a } from './__parity__/phase22aAdditions'
-import { billingContextForBooking, bookingsForList, prePaidByProcedure, proceduresForBooking } from './selectors'
+import { billingContextForBooking, bookingsForList, prepaidHeldFor, proceduresForBooking } from './selectors'
 import { procedureFeeAlone as procedureFee } from './testFees'
 import { buildInvoicesForBooking, type InvoiceBuildContext } from '../domain/billing/invoiceBuild'
 import { listHospitalFor } from '../domain/listPairing'
@@ -87,13 +96,14 @@ for (const list of assignedLists) {
 
     const bookingCtx = billingContextForBooking({ masters: state.masters, schedule: state.schedule }, booking)
     if (bookingCtx === undefined) continue
-    const prePaid = prePaidByProcedure(state, booking.id)
+    // Catch-up Phase 27: a raised prepayment's Procedures are left off (was: netted by a deduction line).
+    const leftOff = prepaidHeldFor(state, booking.id)
     const buildCtx: InvoiceBuildContext = {
       ...bookingCtx,
       listDateISO: list.dateISO,
       patientId: booking.patientId,
       ...listHospitalFor(list, state.masters.hospitals),
-      ...(Object.keys(prePaid).length > 0 ? { prePaidByProcedure: prePaid } : {}),
+      ...(Object.keys(leftOff).length > 0 ? { prepaidLeftOff: leftOff } : {}),
     }
     const result = buildInvoicesForBooking(booking, procedures, buildCtx)
     invoices.push({
@@ -154,6 +164,13 @@ for (const row of unitRows) {
 //     a fixed price where it was RVG.
 // Every other row, every counterparty and every total holds as written.
 // ---------------------------------------------------------------------------
+
+// Catch-up Phase 27 (`__parity__/phase27Declared.ts`): Nair's rhinoplasty moved to Dr Souter's
+// $1,200 prepaid Rhinoplasty Contract. Mapped back to Phase 20's form first (only when the row
+// equals its declared value), and asserted in "Phase 27 prepayment" below. Her invoices hold: the
+// prepaid Procedure is left off where it used to net to $0.
+const phase27Raw = fees.map((r) => structuredClone(r))
+for (const rows of [fees, unitRows]) for (const row of rows) mapNairFeeBefore27(row)
 
 const PHASE_20_NO_CONTRACT_BOOKINGS = new Set(['BK0035', 'BK0060', 'BK0061', 'BK0062', 'BK0063', 'BK0064', 'BK0065'])
 const NAIR_PREPAID_PROCEDURE = 'P0041'
@@ -644,7 +661,8 @@ describe('Phase 20 one Contract per Procedure parity', () => {
       expect(phase20Raw.invoices.find((i) => i.bookingId === id)?.result, id).toEqual({ kind: 'exception', code: 'noContract' })
     }
     expect(phase20Raw.fees.find((f) => f.procedureId === NAIR_PREPAID_PROCEDURE)).toEqual(NAIR_FEE_20)
-    expect(state.schedule.procedures[NAIR_PREPAID_PROCEDURE]?.governingContractId).toBe('CT-SOUTER-RHINO-COS')
+    // Catch-up Phase 27 moved it on again, declared below.
+    expect(PHASE_27_NAIR_CONTRACT_BEFORE).toBe('CT-SOUTER-RHINO-COS')
   })
 
   it('every Procedure carries a Contract but the seven route-less Bookings (and Phase 21\'s Suggested Booking, waiting on the office)', () => {
@@ -696,6 +714,17 @@ describe('Phase 23 multi-procedure rule (catch-up Phase 23, US-05.3.1)', () => {
       const raw = phase23Raw.find((r) => r.procedureId === id)
       expect(raw, id).toMatchObject({ b: 0, m: 0 })
       expect(state.schedule.procedures[id]?.isPrimary, id).toBe(false)
+    }
+  })
+})
+
+describe('Phase 27 prepayment (catch-up Phase 27, US-06.2.2, US-08.2.2)', () => {
+  it(`declares its difference exactly (${PHASE_27_REASON}): Nair's rhinoplasty at $1,200 on Dr Souter's Rhinoplasty Contract, her invoices unmoved`, () => {
+    expect(phase27Raw.find((f) => f.procedureId === PHASE_27_NAIR_PREPAID_PROCEDURE)).toEqual(PHASE_27_NAIR_FEE)
+    expect(state.schedule.procedures[PHASE_27_NAIR_PREPAID_PROCEDURE]?.governingContractId).toBe(PHASE_27_NAIR_CONTRACT)
+    // Left off where it used to net to $0: Forte's septoplasty is still the Booking's one invoice.
+    for (const fixture of [phase18Fixture, phase19Fixture, phase19aFixture, phase19bFixture] as { invoices: InvoiceRow[] }[]) {
+      expect(invoicesOf(PHASE_27_NAIR_BOOKING), PHASE_27_NAIR_BOOKING).toEqual(fixture.invoices.find((i) => i.bookingId === PHASE_27_NAIR_BOOKING)?.result)
     }
   })
 })

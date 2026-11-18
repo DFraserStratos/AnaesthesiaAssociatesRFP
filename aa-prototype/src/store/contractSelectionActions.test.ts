@@ -10,8 +10,10 @@ import { setProcedureContract, setRailAnswers } from './contractSelectionActions
 import { setProcedurePrice } from './pricingActions'
 import { authoriseList, completeBooking, editList, editProcedure, submitList } from './lifecycle'
 import { addProcedure, createBooking } from './bookingActions'
-import { bookingsForList, needsInvoiceDestinationBookings, prepaymentStatusFor, proceduresForBooking, rvgCodeToFillFor } from './selectors'
-import { raisePreProcedureInvoice } from './prepaymentActions'
+import { bookingsForList, needsInvoiceDestinationBookings, proceduresForBooking, rvgCodeToFillFor } from './selectors'
+import { approvePrepayment } from './prepaymentActions'
+import { prepaymentStatusFor } from './prepaymentSelectors'
+import { approveAllPrepayments } from '../test/approvePrepayments'
 import type { Actor } from './mutate'
 import { SEED_MARKERS } from '../domain/seed'
 import { NO_CONTRACT_MESSAGE as NEEDS_DESTINATION_FAILURE } from '../domain/billing/completion'
@@ -218,7 +220,12 @@ describe('review-pass fixes (catch-up Phase 20)', () => {
     const api = store()
     const p = firstProcOf(api, pickUp())
     expect(setProcedureContract(api, OFFICE, p.id, 'CT-FIX-PATIENT-PREPAID')).toMatchObject({ ok: true })
-    expect(raisePreProcedureInvoice(api, OFFICE, pickUp())).toMatchObject({ ok: false, code: 'needsPrice' })
+    // Catch-up Phase 27: the payer group waits with no price; Approve and send is refused until an amount is typed.
+    const [group] = prepaymentStatusFor(api.getState(), pickUp()).groups
+    expect(group).toMatchObject({ status: 'awaitingApproval', amount: null, ready: false })
+    const invoicesBefore = Object.keys(api.getState().billing.invoices).length
+    expect(approvePrepayment(api, OFFICE, pickUp(), group!.payerKey)).toMatchObject({ ok: false, code: 'noPrice' })
+    expect(Object.keys(api.getState().billing.invoices)).toHaveLength(invoicesBefore)
   })
 
   it('refuses Prepaid answers for the anaesthetist at creation too', () => {
@@ -238,11 +245,17 @@ describe('review-pass fixes (catch-up Phase 20)', () => {
     expect(needsInvoiceDestinationBookings(api.getState()).filter((r) => r.bookingId === booking)).toHaveLength(1)
   })
 
-  it('keeps a raised prepayment outstanding when the office moves the Procedure off prepaid', () => {
+  it('keeps a sent prepayment invoice, never rewritten, when the office moves the Procedure off prepaid', () => {
     const api = store()
     const riley = marker('prepaymentBooking')
-    expect(raisePreProcedureInvoice(api, OFFICE, riley).ok).toBe(true)
+    const [invoiceId] = approveAllPrepayments(api, riley)
+    expect(invoiceId).toBeDefined()
+    const invoiceBefore = api.getState().billing.invoices[invoiceId!]
     expect(setProcedureContract(api, OFFICE, RILEY_PROC, 'CT-NO-CONTRACT')).toMatchObject({ ok: true })
-    expect(prepaymentStatusFor(api.getState(), riley)).toBe('outstanding')
+    // Catch-up Phase 27 (D67): the sent invoice stays as it was and its group reads not needed until 41's handling.
+    expect(api.getState().billing.invoices[invoiceId!]).toEqual(invoiceBefore)
+    const status = prepaymentStatusFor(api.getState(), riley)
+    expect(status.status).toBe('notNeeded')
+    expect(status.groups.map((g) => g.invoiceId)).toEqual([invoiceId])
   })
 })

@@ -14,7 +14,7 @@ import { authoriseList, submitList } from './lifecycle'
 import { setProcedurePrice } from './pricingActions'
 import { setProcedurePayer } from './payerActions'
 import { contractPartyFor, setProcedureSplit } from './splitActions'
-import { raisePreProcedureInvoice } from './prepaymentActions'
+import { approveAllPrepayments } from '../test/approvePrepayments'
 import { authoriseAsSimulatedOffice } from './officeStandIn'
 import { addAnaesthetist, editAnaesthetist } from './mastersActions'
 import { warningsForBooking } from './warnings'
@@ -22,7 +22,7 @@ import { billingContextForBooking, prePaymentInvoicesForBooking, proceduresForBo
 import { clockISO, type Actor } from './mutate'
 import { validateBookingForBilling } from '../domain/billing/validateBookingForBilling'
 import { btmBreakdownText, GST_NUMBER_INVALID } from '../domain/billing/invoicePresentation'
-import { PREPAID_SPLIT_MESSAGE } from '../domain/billing/invoiceBuild'
+import { buildInvoicesForBooking, PREPAID_SPLIT_MESSAGE } from '../domain/billing/invoiceBuild'
 import { ANAE, INS, PAT, SEED_MARKERS } from '../domain/seed'
 import type { CounterpartyRef, FeeSplit, Invoice, InvoiceLine } from '../domain/types'
 
@@ -159,7 +159,9 @@ describe('a split whose party has left the Booking (review fix)', () => {
 })
 
 describe('a prepaid Procedure with a split (review fix)', () => {
-  it('raisePreProcedureInvoice refuses prepaidSplit and raises nothing', () => {
+  it('the final build refuses prepaidSplit for a prepaid Procedure left off with a split, and bills nothing (catch-up Phase 27)', () => {
+    // Catch-up Phase 27: approval no longer builds through the final invoice's guards, so the
+    // prepaidSplit refusal is read where it now lives: the final build of a left-off Procedure.
     const api = store()
     const procedureId = procOf(api, FEE_SPLIT_BOOKING)
     const prepaidContract = api.getState().schedule.procedures[procOf(api, PREPAYMENT_BOOKING)]!.governingContractId
@@ -169,11 +171,16 @@ describe('a prepaid Procedure with a split (review fix)', () => {
       schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: { ...s.schedule.procedures[procedureId]!, governingContractId: prepaidContract } } },
     }))
     expect(api.getState().schedule.procedures[procedureId]?.split).toBeDefined()
-    const invoicesBefore = Object.keys(api.getState().billing.invoices).length
-    const r = raisePreProcedureInvoice(api, OFFICE, FEE_SPLIT_BOOKING)
-    expect(r).toMatchObject({ ok: false, code: 'prepaidSplit', message: PREPAID_SPLIT_MESSAGE })
-    expect(prePaymentInvoicesForBooking(api.getState(), FEE_SPLIT_BOOKING)).toHaveLength(0)
-    expect(Object.keys(api.getState().billing.invoices)).toHaveLength(invoicesBefore)
+    const s = api.getState()
+    const booking = s.schedule.bookings[FEE_SPLIT_BOOKING]!
+    const ctx = billingContextForBooking(s, booking)!
+    const built = buildInvoicesForBooking(booking, proceduresForBooking(s, FEE_SPLIT_BOOKING), {
+      ...ctx,
+      patientId: booking.patientId,
+      prepaidLeftOff: { [procedureId]: { amount: 1200, prepaymentInvoiceId: 'INV-PRE' } },
+    })
+    expect(built).toMatchObject({ kind: 'exception', code: 'prepaidSplit', message: PREPAID_SPLIT_MESSAGE })
+    expect(prePaymentInvoicesForBooking(s, FEE_SPLIT_BOOKING)).toHaveLength(0)
   })
 })
 
@@ -256,10 +263,9 @@ describe('the PWA stand-in runs the same send as the billing run', () => {
 })
 
 describe('the prepayment invoice is sent as it is raised', () => {
-  it('raisePreProcedureInvoice stamps delivery on the prepayment invoice', () => {
+  it('approving the prepayment (catch-up Phase 27) stamps delivery on the prepayment invoice', () => {
     const api = store()
-    const r = raisePreProcedureInvoice(api, OFFICE, PREPAYMENT_BOOKING)
-    expect(r.ok).toBe(true)
+    expect(approveAllPrepayments(api, PREPAYMENT_BOOKING, OFFICE)).toHaveLength(1)
     const atISO = clockISO(api.getState().clock)
     const [invoice] = prePaymentInvoicesForBooking(api.getState(), PREPAYMENT_BOOKING)
     expect(invoice).toBeDefined()

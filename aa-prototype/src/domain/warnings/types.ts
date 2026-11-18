@@ -19,8 +19,21 @@ export type WarningStrength = 'mild' | 'strong'
 /** Every registered rule. Phases 19, 21, 27 and 40 widen the union. */
 export type WarningRuleId = 'prepaymentUnpaid' | 'baseUnitsOutsideGuide' | 'childPayer' | 'approvalNumberMissing' | 'splitDoesNotFit'
 
-/** The derived prepayment state a rule may read (the store's `prepaymentStatusFor`). */
-export type WarningPrepaymentStatus = 'none' | 'required' | 'outstanding' | 'paid'
+/** The derived prepayment status a rule may read (the store's `prepaymentStatusFor`, catch-up Phase 27). */
+export type WarningPrepaymentStatus = 'none' | 'awaitingApproval' | 'unpaid' | 'partPaid' | 'paid' | 'notNeeded' | 'changedAfterSending'
+
+/** One payer group's prepayment, as the rule reads it (catch-up Phase 27). */
+export interface WarningPrepaymentGroup {
+  /** 22a's payer identity: the warning's key carries it, so clearing one payer's never hides another's. */
+  payerKey: string
+  payerName: string
+  status: Exclude<WarningPrepaymentStatus, 'none'>
+  /** Ex GST; null while a Procedure has no price. */
+  amount: number | null
+  invoiceNumber?: string
+  invoicedTotal: number
+  receivedTotal: number
+}
 
 /**
  * Everything a rule may read, built by the store (`warningFactsFor`). Later
@@ -31,7 +44,10 @@ export interface WarningFacts {
   booking: Booking
   list: List
   procedures: readonly Procedure[]
+  /** The Booking's status: `none`, or its least settled payer group's. */
   prepaymentStatus: WarningPrepaymentStatus
+  /** Each payer group (catch-up Phase 27). Absent: `prepaymentUnpaid` finds nothing. */
+  prepaymentGroups?: readonly WarningPrepaymentGroup[]
   /** From the demo clock, never `Date.now()`. */
   todayISO: IsoDate
   /** The RVG groups (catch-up Phase 19), for `baseUnitsOutsideGuide`. Absent: that rule finds nothing. */
@@ -59,6 +75,8 @@ export interface WarningFinding {
   text: string
   /** Set for a per-Procedure finding; becomes part of the warning key. */
   procedureId?: ProcedureId
+  /** Set for a per-payer finding (catch-up Phase 27: the payer's identity); becomes part of the warning key. */
+  scope?: string
 }
 
 export interface WarningRule {
@@ -105,8 +123,19 @@ export interface AppSettings {
   aaFee: AaFeeSettings
   /** The schedule settings: horizon months and default session times (catch-up Phase 28; FT-01.1, US-01.1.4). */
   schedule: ScheduleSettings
+  /**
+   * Prepayment (catch-up Phase 27; US-06.3.1, D6 extended): whether each
+   * prepayment invoice waits for an admin to approve it (on by default) or is
+   * generated and sent as soon as its payer group is ready.
+   */
+  prepayment: PrepaymentSettings
 }
 
-export function warningKey(bookingId: BookingId, ruleId: WarningRuleId, procedureId?: ProcedureId): string {
-  return procedureId === undefined ? `${bookingId}:${ruleId}` : `${bookingId}:${ruleId}:${procedureId}`
+export interface PrepaymentSettings {
+  approvalRequired: boolean
+}
+
+export function warningKey(bookingId: BookingId, ruleId: WarningRuleId, procedureId?: ProcedureId, scope?: string): string {
+  const sub = procedureId ?? scope
+  return sub === undefined ? `${bookingId}:${ruleId}` : `${bookingId}:${ruleId}:${sub}`
 }

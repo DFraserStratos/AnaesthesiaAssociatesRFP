@@ -42,6 +42,7 @@ import type {
   Invoice,
   InvoiceBilledTo,
   InvoiceCrossMatch,
+  InvoiceId,
   InvoiceLine,
   InvoiceSplitInfo,
   InvoiceSupplier,
@@ -56,7 +57,7 @@ import { formatMoney, roundToCents, toCents } from './money'
 import { crossMatchFor, GST_RATE, invoiceLayoutFor, invoiceLineViews, supplierFor, btmOf, type InvoiceLayout, type InvoiceLineView } from './invoicePresentation'
 import { PARTY_GONE_REASON, resolveSplit, shareLabel, splitDoesNotFitMessage, splitLineText } from './splitShare'
 import { splitPartiesOn } from './partyOptions'
-import { PREPAYMENT_DEDUCTION_DESCRIPTION, procedureNeedsPrice } from './procedurePrice'
+import { procedureNeedsPrice } from './procedurePrice'
 import { needsPriceMessage, rangeInForce } from './priceRanges'
 import { groupOf } from './rvgGroups'
 import { dayWithYear, stampText } from '../dateText'
@@ -173,8 +174,13 @@ export interface BookingLock {
   /** The List's surgeon, for the holder layout's cross-match. */
   surgeonName?: string
   gstRate: number
-  /** INTERIM until Phase 27: the pre-payment already invoiced per Procedure (ex GST), as at authorise. */
-  prePaid: Record<ProcedureId, number>
+  /**
+   * The Procedures left off the final invoice because their prepayment is
+   * raised (catch-up Phase 27; US-08.2.2, D57): each priced at its prepaid
+   * amount (ex GST) with the prepayment invoice that holds it. Nothing is
+   * deducted anywhere. 27a's transfer reads it.
+   */
+  settledByPrepayment: Record<ProcedureId, { amount: number; prepaymentInvoiceId: InvoiceId }>
   /** Checksum: the drafts' sum. */
   expected: { subtotal: number; gst: number; total: number }
   /** The Booking's units under the multi-procedure rule and its price, ex GST. */
@@ -223,8 +229,11 @@ export type BookingBuildResult =
 export interface InvoiceBuildContext extends BookingBillingContext {
   patientId: string
   surgeonName?: string
-  /** INTERIM until Phase 27: the pre-payment already invoiced per Procedure, with the party it was raised against. */
-  prePaidByProcedure?: Record<ProcedureId, { amount: number; counterparty: CounterpartyRef }>
+  /**
+   * The Procedures whose prepayment invoice is raised (catch-up Phase 27):
+   * left off the final invoice, priced at the amount (held in `held.prepaid`).
+   */
+  prepaidLeftOff?: Record<ProcedureId, { amount: number; prepaymentInvoiceId: InvoiceId }>
 }
 
 export interface LockInput {
@@ -296,7 +305,11 @@ export function buildBookingLock(input: LockInput): BookingLock {
     patient: { name: ctx.patient?.name ?? '' },
     ...(ctx.surgeonName !== undefined ? { surgeonName: ctx.surgeonName } : {}),
     gstRate: GST_RATE,
-    prePaid: Object.fromEntries(Object.entries(ctx.prePaidByProcedure ?? {}).map(([id, p]) => [id, roundToCents(p.amount)])),
+    settledByPrepayment: Object.fromEntries(
+      Object.entries(ctx.prepaidLeftOff ?? {})
+        .filter(([id]) => procedures.some((p) => p.id === id))
+        .map(([id, p]) => [id, { amount: roundToCents(p.amount), prepaymentInvoiceId: p.prepaymentInvoiceId }]),
+    ),
   }
 
   // Every Procedure's Contract first, then the Booking priced once with them.
@@ -327,17 +340,9 @@ export function buildBookingLock(input: LockInput): BookingLock {
     const billed = billablePartyForProcedure(contract, procedure, booking.patientId, ctx.parties)
     if (billed === undefined) return rejected(base, { procedureId: procedure.id, code: 'noCounterparty', message: HOLDER_MISSING_MESSAGE })
     const fee = priced.fees[procedure.id]!
-    const prePaid = ctx.prePaidByProcedure?.[procedure.id]
-    if (prePaid !== undefined) {
-      if (procedure.split !== undefined) return rejected(base, { procedureId: procedure.id, code: 'prepaidSplit', message: PREPAID_SPLIT_MESSAGE })
-      if (prePaid.counterparty.kind !== billed.kind || prePaid.counterparty.id !== billed.id) {
-        return rejected(base, {
-          procedureId: procedure.id,
-          code: 'prepaidCounterpartyChanged',
-          message: 'This procedure was pre-invoiced to a different payer than it now bills to. Reallocate the pre-payment before rebilling the balance.',
-        })
-      }
-    }
+    // Left off the final invoice (D57): its prepayment invoice holds the price; nothing is deducted.
+    const leftOff = ctx.prepaidLeftOff?.[procedure.id] !== undefined
+    if (leftOff && procedure.split !== undefined) return rejected(base, { procedureId: procedure.id, code: 'prepaidSplit', message: PREPAID_SPLIT_MESSAGE })
 
     const wording = procedure.invoiceDescription?.text ?? null
     const charges: LockedCharge[] = []
@@ -363,17 +368,9 @@ export function buildBookingLock(input: LockInput): BookingLock {
           split: { procedureId: procedure.id, feeExGst: fee.total, shareLabel: shareLabel(share.basis), isRest: share.isRest },
         })
       }
-    } else {
+    } else if (!leftOff) {
       for (const view of invoiceLineViews('contractHolder', fee, { procedureId: procedure.id, wording })) {
         charges.push({ partyKey: partyKeyOf(billed), isContractParty: true, line: view })
-      }
-      // INTERIM until Phase 27 (D57 removes it): net any pre-payment already invoiced as a visible deduction line.
-      if (prePaid !== undefined && prePaid.amount > 0) {
-        charges.push({
-          partyKey: partyKeyOf(billed),
-          isContractParty: true,
-          line: { procedureId: procedure.id, kind: 'adjustment', description: PREPAYMENT_DEDUCTION_DESCRIPTION, amount: -roundToCents(prePaid.amount) },
-        })
       }
     }
 
@@ -520,11 +517,9 @@ export function invoiceDraftsFromLock(lock: BookingLock): BookingBuildResult {
         kind: 'exception',
         procedureId: group.lines[0]?.procedureId ?? '',
         code: 'negativeTotal',
-        message: `The lines billed to one counterparty add up to a negative amount (${formatMoney(subtotal)}). Review the pre-payment or the price before rebilling; an overpaid pre-payment needs a manual credit.`,
+        message: `The lines billed to one counterparty add up to a negative amount (${formatMoney(subtotal)}). Review the price before rebilling.`,
       }
     }
-    const netted = group.lines.some((l) => l.kind === 'adjustment' && l.description === PREPAYMENT_DEDUCTION_DESCRIPTION)
-    if (toCents(subtotal) === 0 && netted) continue
     const noCharge = toCents(subtotal) === 0
     const gst = party.printed?.gst ?? roundToCents(subtotal * lock.gstRate)
     const lines = party.layout === 'contractHolder' ? group.lines.map((l) => ({ ...l })) : group.lines.map(withoutBtm)
@@ -729,7 +724,7 @@ export function migratedLockFromInvoices(args: {
   const procedures: ProcedureSnapshot[] = order.map((pid) => {
     const shown = display?.procedures.find((s) => s.procedureId === pid)
     const own = charges.get(pid) ?? []
-    const price = roundToCents(own.filter((c) => c.line.description !== PREPAYMENT_DEDUCTION_DESCRIPTION).reduce((s, c) => s + c.line.amount, 0))
+    const price = roundToCents(own.reduce((s, c) => s + c.line.amount, 0))
     return {
       procedureId: pid,
       procedure: shown?.procedure ?? { text: null, invoiceDescription: null, rvgCode: null, isPrimary: order[0] === pid },
@@ -756,7 +751,7 @@ export function migratedLockFromInvoices(args: {
     payee: args.payee,
     patient: args.patient,
     gstRate: GST_RATE,
-    prePaid: {},
+    settledByPrepayment: {},
     expected: { subtotal: 0, gst: 0, total: 0 },
     bookingUnits: display?.bookingUnits ?? 0,
     bookingPrice: roundToCents(procedures.reduce((s, p) => s + p.price, 0)),

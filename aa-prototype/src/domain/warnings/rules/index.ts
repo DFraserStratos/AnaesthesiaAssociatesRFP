@@ -15,7 +15,14 @@ import { approvalNumberMissingRule } from './approvalNumberMissing'
 
 export const WARNING_RULES: readonly WarningRule[] = [prepaymentUnpaidRule, baseUnitsOutsideGuideRule, childPayerRule, approvalNumberMissingRule, splitDoesNotFitRule]
 
-export { prepaymentUnpaidRule, PREPAYMENT_REQUIRED_TEXT, PREPAYMENT_UNPAID_TEXT } from './prepaymentUnpaid'
+export {
+  prepaymentUnpaidRule,
+  prepaymentAwaitingText,
+  prepaymentUnpaidText,
+  prepaymentPartPaidText,
+  prepaymentNotNeededText,
+  prepaymentChangedText,
+} from './prepaymentUnpaid'
 export { baseUnitsOutsideGuideRule } from './baseUnitsOutsideGuide'
 export { childPayerRule, childPayerText } from './childPayer'
 export { splitDoesNotFitRule } from './splitDoesNotFit'

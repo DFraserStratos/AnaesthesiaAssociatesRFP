@@ -408,13 +408,20 @@ describe('buildInvoicesForBooking', () => {
   })
 
   it('a negative counterparty total is an exception, never a negative invoice (8th review)', () => {
-    // A price is never below $0 (catch-up Phase 24), so only an over-deducted prepayment can drive a total negative.
-    const first = buildInvoicesForBooking(mkBooking(), [primary], mkCtx())
-    if (first.kind !== 'invoices') throw new Error('expected invoices')
-    const counterparty = first.invoices[0]!.counterparty
-    const result = buildInvoicesForBooking(mkBooking(), [primary], mkCtx({ prePaidByProcedure: { [primary.id]: { amount: 5000, counterparty } } }))
+    // Catch-up Phase 27: no prepayment is deducted any more, so a negative billing line is what drives a total negative.
+    const lines: BillingLine[] = [{ id: 'bl-neg', procedureId: primary.id, chargeBasis: 'fixed', amount: -5000, description: 'Adjustment' }]
+    const result = buildInvoicesForBooking(mkBooking(), [primary], mkCtx({ billingLines: lines }))
     expect(result.kind).toBe('exception')
     if (result.kind === 'exception') expect(result.code).toBe('negativeTotal')
+  })
+
+  it('a Procedure whose prepayment is raised is left off the final invoice: no line, nothing deducted (catch-up Phase 27, D57)', () => {
+    const result = buildInvoicesForBooking(mkBooking(), [primary, additional], mkCtx({ prepaidLeftOff: { [primary.id]: { amount: 5000, prepaymentInvoiceId: 'INV-PRE' } } }))
+    if (result.kind !== 'invoices') throw new Error('expected invoices')
+    const lines = result.invoices.flatMap((i) => i.lines)
+    expect(lines.some((l) => l.procedureId === primary.id)).toBe(false)
+    expect(lines.every((l) => l.amount >= 0)).toBe(true)
+    expect(lines.some((l) => l.procedureId === additional.id)).toBe(true)
   })
 
   it('GST maths: 15% on the GST-exclusive subtotal, rounded to cents', () => {

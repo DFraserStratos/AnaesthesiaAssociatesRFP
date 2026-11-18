@@ -11,7 +11,7 @@ import { reassignList, setAvailability } from './slotActions'
 import { createAvailabilitySeries, setAvailabilityRange } from './availabilityActions'
 import { assignDraftList } from './draftListActions'
 import { addPairingPreference, setPriorityTier } from './officePrivate'
-import { raisePreProcedureInvoice } from './prepaymentActions'
+import { approveAllPrepayments } from '../test/approvePrepayments'
 import { openWarnings } from './warnings'
 import { bookingsForList, listInSlot, moveInputOf } from './selectors'
 import { OFFICE_ACTOR, SOUTER_ACTOR } from './demoActors'
@@ -332,8 +332,7 @@ describe('nothing recalculated on a move (US-06.3.5 AC2, US-06.5.4, D20)', () =>
     const api = store()
     // A sent-and-paid prepayment (Fri 24 PM, seeded) and a generated one awaiting payment (Fri 24 AM).
     const unpaid = bookingsForList(api.getState(), SEED_LIST_IDS.prepaymentUnpaidList)[0]!
-    const raised = raisePreProcedureInvoice(api, OFFICE, unpaid.id)
-    expect(raised.ok).toBe(true)
+    expect(approveAllPrepayments(api, unpaid.id, OFFICE)).toHaveLength(1)
     expect(Object.values(api.getState().billing.invoices).filter((i) => i.kind === 'prePayment').length).toBeGreaterThanOrEqual(2)
     return api
   }

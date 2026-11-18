@@ -20,6 +20,8 @@ beforeEach(() => {
 
 describe('SubmitListSheet with a warning on the List', () => {
   it('shows the usual confirm sheet with no warning text and submits straight through', () => {
+    // Catch-up Phase 27: Riley's prepayment warning is strong from two days out, so the demo clock goes to Thu 23 Jul.
+    useAppStore.setState({ clock: { ...useAppStore.getState().clock, todayISO: '2026-07-23' } })
     for (const b of bookingsForList(useAppStore.getState(), LIST)) {
       if (b.cancellation === undefined && !b.completed) expect(completeBooking(useAppStore, SOUTER_ACTOR, b.id).ok).toBe(true)
     }

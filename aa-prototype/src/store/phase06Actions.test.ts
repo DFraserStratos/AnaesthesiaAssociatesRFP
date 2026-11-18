@@ -14,7 +14,6 @@ import { setProcedureSplit } from './splitActions'
 import { addDayNote, initialsFor } from './dayNoteActions'
 import {
   auditForEntity,
-  bookingRequiresPrepayment,
   bookingsForList,
   dayNotesFor,
   listsForDate,
@@ -27,6 +26,7 @@ import type { FeeSplit } from '../domain/types'
 import { ANAE, INS, SEED_MARKERS } from '../domain/seed'
 import { payerCounterparty } from '../domain/billing/whoIsBilled'
 import { assigned } from '../test/lists'
+import { bookingRequiresPrepayment } from './prepaymentSelectors'
 import { DEMO_TODAY } from '../domain/clock'
 import { setSlotTimes } from './slotActions'
 

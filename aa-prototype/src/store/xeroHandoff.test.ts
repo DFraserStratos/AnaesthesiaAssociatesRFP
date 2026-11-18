@@ -13,7 +13,7 @@ import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList, submitList } from './lifecycle'
 import { runBillingForList, handoffListCases } from './billingRun'
 import { handoffCase, payerContactSpec } from './xeroHandoff'
-import { raisePreProcedureInvoice } from './prepaymentActions'
+import { approveAllPrepayments } from '../test/approvePrepayments'
 import { armHandoffFault } from './demoSettingsActions'
 import { casesForList, casesForBooking } from './selectors'
 import { clockISO, type Actor } from './mutate'
@@ -119,9 +119,9 @@ describe('Xero handoff — the atomic pair', () => {
 
   it('keys the patient contact on the hidden internal id, never the NHI (convention 8)', () => {
     const api = store()
-    // Raise the self-funded pre-payment pre-invoice (patient payer) → patient contact.
+    // Approve and send the self funded prepayment invoice (patient payer) → patient contact.
     const rileyBooking = marker('prepaymentBooking')
-    expect(raisePreProcedureInvoice(api, OFFICE, rileyBooking).ok).toBe(true)
+    expect(approveAllPrepayments(api, rileyBooking, OFFICE)).toHaveLength(1)
 
     const contacts = Object.values(api.getState().xero.contacts)
     const patientContact = contacts.find((c) => c.type === 'patient')
@@ -138,7 +138,7 @@ describe('Xero handoff — no personal information in Xero (US-09.3.1)', () => {
   it('names a patient payer contact only by the neutral label, reusing the archived contact', () => {
     const api = store()
     const before = Object.keys(api.getState().xero.contacts).length
-    expect(raisePreProcedureInvoice(api, OFFICE, marker('prepaymentBooking')).ok).toBe(true)
+    expect(approveAllPrepayments(api, marker('prepaymentBooking'), OFFICE)).toHaveLength(1)
     const contact = Object.values(api.getState().xero.contacts).find((c) => c.contactNumber === PAT.riley)!
     expect(contact.name).toBe(`Patient ${PAT.riley}`)
     expect(contact.archived).toBe(false)
@@ -235,15 +235,19 @@ describe('Xero handoff — fault, retry, idempotency (D-handoff)', () => {
 })
 
 describe('Xero handoff — pre-payment pre-invoice gets a full pair (D-pre-invoice-pair)', () => {
-  it('raising a pre-invoice hands its case off to a full ACCREC + ACCPAY pair', () => {
+  it('approving a prepayment hands its case off to a full ACCREC + ACCPAY pair, the payable to the AA Holding account', () => {
     const api = store()
     const rileyBooking = marker('prepaymentBooking')
-    expect(raisePreProcedureInvoice(api, OFFICE, rileyBooking).ok).toBe(true)
+    expect(approveAllPrepayments(api, rileyBooking, OFFICE)).toHaveLength(1)
     const cases = casesForBooking(api.getState(), rileyBooking)
     expect(cases.length).toBe(1)
     const c = cases[0]!
     expect(c.accRecId).toBeDefined()
     expect(c.accPayId).toBeDefined()
     expect(c.status).toBe('handedOff')
+    // Catch-up Phase 27 (FT-06.3, D38): a DRAFT payable crediting the AA Holding account, never the anaesthetist.
+    const accPay = api.getState().xero.accPays[c.accPayId!]!
+    expect(accPay).toMatchObject({ payeeAccount: 'aaHoldingAccount', status: 'draft', amountPayable: 1380 })
+    expect(api.getState().xero.contacts[accPay.contactId]).toMatchObject({ name: 'AA Holding account', contactNumber: 'AA-HOLDING' })
   })
 })

@@ -72,7 +72,7 @@ type Step = 1 | 2 | 3
  * Billing card for any of them (the Booking's procedure card has no Edit since
  * catch-up Phase 20a's owner review).
  */
-export const BILLING_FAILURE_FIELDS = ['governingContractId', 'enteredPrice', 'prepaymentDetail'] as const
+export const BILLING_FAILURE_FIELDS = ['governingContractId', 'enteredPrice'] as const
 
 interface BillingCardProps {
   procedure: Procedure

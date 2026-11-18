@@ -7,8 +7,8 @@
  *
  * The price at any moment is the first that applies:
  *   1. the AUTHORISED price: the pricing snapshot's (catch-up Phase 25, `lock.ts`);
- *   2. the prepaid amount once its prepayment invoice is raised (INTERIM: the
- *      amount on that invoice; Phase 27's `prepaidAmountFor`);
+ *   2. the prepaid amount once its prepayment invoice is raised (catch-up
+ *      Phase 27: its line on that invoice, `prepaidAmountFor` in `prepayment.ts`);
  *   3. a typed price (`Procedure.enteredPrice`, 0 allowed);
  *   4. computed from the kind: units x the rate (the Contract's, else the
  *      anaesthetist's unit value), less the Contract's discount as its own
@@ -70,7 +70,7 @@ export type PriceResult =
     }
   | { status: 'needsPrice'; reason: NeedsPriceReason }
 
-/** The two held amounts the ladder reads ahead of a typed price (the snapshot's; the prepaid one INTERIM until 27). */
+/** The two held amounts the ladder reads ahead of a typed price: the snapshot's, and a raised prepayment's line (catch-up Phase 27). */
 export interface HeldPrices {
   authorised?: number
   prepaid?: number
@@ -155,45 +155,6 @@ export function priceFor(input: PriceInput): PriceResult {
  */
 export function procedureNeedsPrice(contract: Contract, dateISO: string, procedure: Pick<Procedure, 'enteredPrice'>, held?: HeldPrices): boolean {
   return priceFor({ contract, dateISO, enteredPrice: procedure.enteredPrice, units: 0, unitValue: 0, ...(held !== undefined ? { held } : {}) }).status === 'needsPrice'
-}
-
-// ---------------------------------------------------------------------------
-// The interim held amounts
-// ---------------------------------------------------------------------------
-
-/** An invoice line as the interim reads see it. */
-export interface HeldInvoiceLine {
-  procedureId?: string
-  kind?: 'fee' | 'discount' | 'adjustment'
-  description: string
-  amount: number
-}
-
-/** The prepayment deduction a final invoice nets off (27 removes the netting); never part of the Procedure's price. */
-export const PREPAYMENT_DEDUCTION_DESCRIPTION = 'Less pre-payment deposit already invoiced'
-/** A split prepayment's deposit line (INTERIM `prepaymentDetail`, 27 removes it): a part of the price, never the price. */
-export const PREPAYMENT_DEPOSIT_DESCRIPTION = 'Pre-payment deposit'
-
-/** Whether a prepayment invoice line holds the Procedure's price: the full prepayment does, a deposit does not. */
-export function holdsPrepaidPrice(line: Pick<HeldInvoiceLine, 'description'>): boolean {
-  return line.description !== PREPAYMENT_DEPOSIT_DESCRIPTION
-}
-
-/**
- * INTERIM until Phase 27 (`prepaidAmountFor` replaces it): the prepaid rung
- * reads the amount on a raised prepayment invoice for the Procedure, its full
- * prepayment (a split's deposit is a part of the price, not the price).
- * Undefined when none is raised. A reading, logged.
- */
-export function prepaidHeldPriceFor(procedureId: string, prepaymentInvoiceLines: readonly HeldInvoiceLine[]): number | undefined {
-  let found = false
-  let sum = 0
-  for (const line of prepaymentInvoiceLines) {
-    if (line.procedureId !== procedureId || !holdsPrepaidPrice(line)) continue
-    found = true
-    sum += line.amount
-  }
-  return found ? roundToCents(sum) : undefined
 }
 
 // ---------------------------------------------------------------------------

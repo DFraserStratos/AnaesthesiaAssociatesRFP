@@ -12,7 +12,7 @@
 
 import type { AppState } from '../appStore'
 import { freshAppStateBefore22a } from './phase22aAdditions'
-import { billingContextForBooking, bookingsForList, counterpartyName, prePaidByProcedure, proceduresForBooking } from '../selectors'
+import { billingContextForBooking, bookingsForList, counterpartyName, prepaidHeldFor, proceduresForBooking } from '../selectors'
 import { buildInvoicesForBooking, type InvoiceBuildContext } from '../../domain/billing/invoiceBuild'
 import { payerContactSpec } from '../xeroHandoff'
 import { listHospitalFor } from '../../domain/listPairing'
@@ -65,13 +65,14 @@ export function captureBookings(state: AppState): BookingInvoicesRow[] {
       const ctx = billingContextForBooking({ masters: state.masters, schedule: state.schedule }, booking)
       if (ctx === undefined) continue
       const procedures = proceduresForBooking(state, booking.id)
-      const prePaid = prePaidByProcedure(state, booking.id)
+      // Catch-up Phase 27: a raised prepayment's Procedures are left off (was: netted by a deduction line).
+      const leftOff = prepaidHeldFor(state, booking.id)
       const buildCtx: InvoiceBuildContext = {
         ...ctx,
         listDateISO: list.dateISO,
         patientId: booking.patientId,
         ...listHospitalFor(list, state.masters.hospitals),
-        ...(Object.keys(prePaid).length > 0 ? { prePaidByProcedure: prePaid } : {}),
+        ...(Object.keys(leftOff).length > 0 ? { prepaidLeftOff: leftOff } : {}),
       }
       const result = buildInvoicesForBooking(booking, procedures, buildCtx)
       rows.push({

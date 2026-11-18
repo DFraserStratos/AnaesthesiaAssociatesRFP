@@ -125,7 +125,8 @@ describe("Contracts' specialties and tags (US-04.2.16, US-04.2.17)", () => {
       'MER-001:SPC-PLASTIC',
       'MER-002:SPC-PLASTIC',
       'MER-003:SPC-PLASTIC',
-      'SOUTER-001:SPC-PLASTIC',
+      // Catch-up Phase 27: Nair's prepaid Rhinoplasty, done with an ENT surgeon too.
+      'SOUTER-001:SPC-PLASTIC+SPC-ENT',
       'SOUTER-002:SPC-PLASTIC',
       'SOUTER-003:SPC-PLASTIC',
       // Catch-up Phase 20: Nair's prepaid item, done with an ENT surgeon too.

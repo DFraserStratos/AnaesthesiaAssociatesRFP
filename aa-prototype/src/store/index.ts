@@ -173,7 +173,16 @@ export {
   PRIMARY_COMPLETED_MESSAGE,
   type CreateBookingInput,
 } from './bookingActions'
-export { raisePreProcedureInvoice } from './prepaymentActions'
+export {
+  approvePrepayment,
+  autoSendPrepayments,
+  readyPendingPrepaymentCount,
+  setPrepaymentApprovalRequired,
+  PREPAYMENT_ALREADY_SENT,
+  PREPAYMENT_NOT_NEEDED,
+  PREPAYMENT_PAYER_CONTACT,
+} from './prepaymentActions'
+export * from './prepaymentSelectors'
 export {
   warningFactsFor,
   warningsForBooking,

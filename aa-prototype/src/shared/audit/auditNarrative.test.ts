@@ -141,7 +141,9 @@ describe('formatAuditValue', () => {
     expect(formatAuditValue('removedModifierIds', [])).toBe('none')
     // The one typed price (catch-up Phase 24): money, no reason.
     expect(formatAuditValue('enteredPrice', 450)).toBe('$450.00')
-    expect(formatAuditValue('prepaymentDetail', { type: 'split', depositAmount: 200 })).toBe('Split · deposit $200.00')
+    // Catch-up Phase 27: a prepayment invoice's approval (the deposit detail is gone).
+    expect(formatAuditValue('approval', { mode: 'approved', by: 'Kirsty W.', role: 'office', atISO: '2026-07-21T09:00:00' })).toBe('Approved by Kirsty W.')
+    expect(formatAuditValue('approval', { mode: 'automatic', by: 'System', role: 'system', atISO: '2026-07-21T09:00:00' })).toBe('Sent with approval off')
     expect(formatAuditValue('counterparty', { kind: 'hospital', id: 'HH001' })).toBe('Hospital HH001')
     expect(formatAuditValue('completed', true)).toBe('yes')
     expect(formatAuditValue('total', 1234.5)).toBe('$1,234.50')
@@ -251,6 +253,11 @@ function emittedActionCodes(): string[] {
     if (file.endsWith('.test.ts')) continue // fixtures may invent codes
     // `createAction:` is the invoice materialiser's argument (catch-up Phase 22), passed through to `action:`.
     for (const match of source.matchAll(/(?:\baction|createAction): '([^']+)'/g)) codes.add(match[1]!)
+    // A materialiser argument picked by a ternary (catch-up Phase 27's prepayment approval): both codes.
+    for (const match of source.matchAll(/createAction: [^,?\n]+\? '([^']+)' : '([^']+)'/g)) {
+      codes.add(match[1]!)
+      codes.add(match[2]!)
+    }
   }
   return [...codes].sort()
 }
@@ -266,8 +273,10 @@ describe('action labels', () => {
   })
 
   it('labels no code that nothing emits (the map stays honest)', () => {
+    // Catch-up Phase 27 retired the office's raise (approve and send replaced it); its label still reads audit rows written before.
+    const legacy = new Set(['invoice.raisePrePayment'])
     const emitted = new Set(emittedActionCodes())
-    expect(Object.keys(ACTION_LABELS).filter((code) => !emitted.has(code))).toEqual([])
+    expect(Object.keys(ACTION_LABELS).filter((code) => !emitted.has(code) && !legacy.has(code))).toEqual([])
   })
 
   it('degrades an unmapped code to English instead of rendering a machine code', () => {

@@ -15,7 +15,7 @@
  * AA fee invoices (Phase 16) never come through here: they are AA's own.
  */
 
-import type { BillingCase, Invoice, InvoiceId, InvoiceLine, InvoiceLineage } from '../domain/types'
+import type { BillingCase, Invoice, InvoiceApproval, InvoiceId, InvoiceLine, InvoiceLineage } from '../domain/types'
 import type { DraftInvoice, LockedPayee } from '../domain/billing/lock'
 import { AA_AGENT, deliveryStampFor, supplierFor } from '../domain/billing/invoicePresentation'
 import { invoiceDeliveryFor } from '../domain/billing/whoIsBilled'
@@ -31,8 +31,10 @@ export interface MaterialiseArgs {
   kind: Invoice['kind']
   /** Stamp delivery now (the run, the retry, today's prepayment raise). */
   send: boolean
-  /** The audit action each invoice is created under. */
-  createAction: 'invoice.create' | 'invoice.raisePrePayment'
+  /** The audit action each invoice is created under (a prepayment's: approved, or sent with approval off). */
+  createAction: 'invoice.create' | 'invoice.prePaymentApproved' | 'invoice.prePaymentAutoSent'
+  /** A prepayment invoice's approval stamp (catch-up Phase 27). */
+  approval?: InvoiceApproval
   /** The retry reuses the failed case's id for its first invoice. */
   reuseCaseId?: string
   /** The locked payee (catch-up Phase 25): the supplier block and each case's payee. Absent on a pre-payment (the live join, until 27). */
@@ -123,6 +125,7 @@ export function materialiseInvoices(
       ...(draft.crossMatch !== undefined ? { crossMatch: draft.crossMatch } : {}),
       ...(lineage.length > 0 ? { lineage } : {}),
       ...(draft.noCharge === true ? { noCharge: true as const } : {}),
+      ...(args.approval !== undefined ? { approval: { ...args.approval } } : {}),
     }
     if (args.send && draft.delivery !== undefined) {
       invoice.delivery = deliveryStampFor(draft.delivery, args.atISO, BILLING_RUN_SENDER)
@@ -138,6 +141,7 @@ export function materialiseInvoices(
       if (line.procedureId !== undefined) stored.procedureId = line.procedureId
       if (line.units !== undefined) stored.units = line.units
       if (line.btm !== undefined) stored.btm = line.btm
+      if (line.contractId !== undefined) stored.contractId = line.contractId
       invoiceLines[il.id] = stored
     }
     cases[caseId] = { id: caseId, bookingId: args.bookingId, ...(args.payee !== undefined ? { payeeAnaesthetistId: args.payee.anaesthetistId } : {}), invoiceId, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 } satisfies BillingCase

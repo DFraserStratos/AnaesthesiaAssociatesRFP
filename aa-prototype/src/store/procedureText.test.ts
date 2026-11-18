@@ -226,7 +226,12 @@ describe('the invoice prints the invoice description (catch-up Phase 20a; US-08.
         expect(g.heading, invoice.id).toBe(s.schedule.procedures[g.procedureId]?.invoiceDescription?.text)
         if (g.heading !== undefined) {
           headings += 1
-          expect(groupNames.has(g.heading) && s.schedule.procedures[g.procedureId]?.procedureText?.text !== g.heading, g.heading).toBe(false)
+          // Catch-up Phase 27: Nair's rhinoplasty is on Dr Souter's Rhinoplasty Contract, whose own invoice
+          // description ("Rhinoplasty") is also an RVG group's name; a Contract's own text is never the group's.
+          const procedure = s.schedule.procedures[g.procedureId]
+          const contractText = procedure?.invoiceDescription?.origin === 'contract' && procedure.governingContractId !== undefined ? s.masters.contracts[procedure.governingContractId]?.invoiceDescription : undefined
+          if (contractText === g.heading) continue
+          expect(groupNames.has(g.heading) && procedure?.procedureText?.text !== g.heading, g.heading).toBe(false)
         }
       }
     }

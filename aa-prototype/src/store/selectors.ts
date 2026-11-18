@@ -10,7 +10,6 @@ import type { CompletionContext } from '../domain/billing/completion'
 import { rvgCodeToFill } from '../domain/billing/rvgDetail'
 import { procedureStackView, type ProcedureStackView, type StackSurface } from '../domain/billing/procedureStack'
 import { isOpenPriceFallback } from '../domain/billing/fallbacks'
-import { procedureRequiresPrepayment } from '../domain/billing/invoiceBuild'
 import {
   contractRailFor,
   railAnswersFor,
@@ -40,6 +39,7 @@ import type {
   IntegrationMessage,
   IntegrationMessageStatus,
   Invoice,
+  InvoiceId,
   InvoiceLine,
   List,
   Patient,
@@ -55,7 +55,7 @@ import type {
 } from '../domain/types'
 import { bookingFeesFor, type BookingBillingContext } from '../domain/billing/validateBookingForBilling'
 import { feeIn } from '../domain/billing/bookingFee'
-import { holdsPrepaidPrice, prepaidHeldPriceFor, type HeldPrices } from '../domain/billing/procedurePrice'
+import type { HeldPrices } from '../domain/billing/procedurePrice'
 import { authorisedPricesFromLock, lockViewFor } from '../domain/billing/lock'
 import { deliveryCountsText } from '../domain/billing/invoicePresentation'
 import { listHospitalFor } from '../domain/listPairing'
@@ -624,46 +624,48 @@ export function patientHasOutstandingPriorEpisode(
 }
 
 // ---------------------------------------------------------------------------
-// Pre-payment (Phase 09; B7) — apps read the billing MIRROR, never Xero
-// (convention 9). "Paid" is a case->invoice join: a BillingCase whose invoice
-// is a `prePayment` invoice and whose status is 'paid'. Phase 10's webhook
-// flips the case live; Phase 09 seeds a paid case so the cleared path demos now.
+// Pre-payment: the issued invoices (catch-up Phase 27). The payer groups,
+// statuses and lists are in `prepaymentSelectors.ts`; these low-level reads
+// sit here because the price ladder and the billing context read them.
 // ---------------------------------------------------------------------------
 
-/**
- * True when a non-cancelled Booking has a Procedure on a prepaid Contract
- * billed to a person (derived, never stored). INTERIM until Phase 27, which
- * builds the prepayment lifecycle on the prepaid Contract (catch-up Phase 20;
- * D23). No gate (D5).
- */
-export function bookingRequiresPrepayment(state: Pick<AppState, 'schedule' | 'masters'>, bookingId: string): boolean {
-  const booking = state.schedule.bookings[bookingId]
-  if (booking === undefined || booking.cancellation !== undefined) return false
-  return proceduresForBooking(state, bookingId).some((p) =>
-    procedureRequiresPrepayment(p.governingContractId !== undefined ? state.masters.contracts[p.governingContractId] : undefined),
-  )
+/** The `prePayment`-kind invoices raised for a Booking, in id order. */
+export function prePaymentInvoicesForBooking(state: { billing: Pick<AppState['billing'], 'invoices'> }, bookingId: string): Invoice[] {
+  return Object.values(state.billing.invoices)
+    .filter((i) => i.bookingId === bookingId && i.kind === 'prePayment')
+    .sort((a, b) => a.id.localeCompare(b.id))
 }
 
 /**
- * True when a prepaid Procedure on the Booking names a payer who has no
- * prepayment invoice of their own yet (catch-up Phase 22a, US-06.3.1 "One per
- * payer"): the raise would invoice them. Payers by identity, never by name.
+ * The Procedures of a Booking whose prepayment is raised and that still sit
+ * on the Contract it was raised on (catch-up Phase 27): each one's amount ex
+ * GST and the invoice holding it. The price ladder holds them at that amount
+ * (D47, A16), the run leaves them off the final invoice (D57). A Procedure
+ * moved to another Contract after sending is billed as usual and the office
+ * settles the prepayment by hand (US-06.3.7, 41's; D67).
  */
-export function prepaymentPayerAwaiting(state: Pick<AppState, 'schedule' | 'masters' | 'billing'>, bookingId: string): boolean {
-  const booking = state.schedule.bookings[bookingId]
-  if (booking === undefined || booking.cancellation !== undefined) return false
-  const raised = new Set(prePaymentInvoicesForBooking(state, bookingId).map((i) => refKey(i.counterparty)))
-  return proceduresForBooking(state, bookingId).some((p) => {
-    const contract = p.governingContractId !== undefined ? state.masters.contracts[p.governingContractId] : undefined
-    return procedureRequiresPrepayment(contract) && !raised.has(refKey(payerCounterparty(p, booking.patientId)))
-  })
+export function prepaidHeldFor(
+  state: { billing: Pick<AppState['billing'], 'invoices' | 'invoiceLines'>; schedule: Pick<AppState['schedule'], 'procedures'> },
+  bookingId: string,
+): Record<ProcedureId, { amount: number; prepaymentInvoiceId: InvoiceId }> {
+  const out: Record<ProcedureId, { amount: number; prepaymentInvoiceId: InvoiceId }> = {}
+  const ids = new Set(prePaymentInvoicesForBooking(state, bookingId).map((i) => i.id))
+  if (ids.size === 0) return out
+  for (const line of Object.values(state.billing.invoiceLines)) {
+    if (!ids.has(line.invoiceId) || line.procedureId === undefined) continue
+    const procedure = state.schedule.procedures[line.procedureId]
+    if (procedure === undefined || (line.contractId !== undefined && procedure.governingContractId !== line.contractId)) continue
+    const existing = out[line.procedureId]
+    out[line.procedureId] = { amount: roundToCents((existing?.amount ?? 0) + line.amount), prepaymentInvoiceId: existing?.prepaymentInvoiceId ?? line.invoiceId }
+  }
+  return out
 }
 
 /**
  * The price ladder's held amounts per Procedure (catch-up Phase 24): the
  * AUTHORISED rung reads the Booking's pricing snapshot (catch-up Phase 25,
- * `billing.locks`), the prepaid rung the raised prepayment invoice (INTERIM
- * until 27). A caller without `locks` sees no AUTHORISED rung.
+ * `billing.locks`), the prepaid rung a raised prepayment's line (catch-up
+ * Phase 27, `prepaidHeldFor`). A caller without `locks` sees no AUTHORISED rung.
  */
 export function heldPricesForBooking(
   state: { billing: Pick<AppState['billing'], 'invoices' | 'invoiceLines'> & Partial<Pick<AppState['billing'], 'locks'>>; schedule: Pick<AppState['schedule'], 'lists' | 'bookings' | 'procedures'> },
@@ -672,90 +674,19 @@ export function heldPricesForBooking(
   const booking = state.schedule.bookings[bookingId]
   if (booking === undefined) return {}
   const out: Record<ProcedureId, HeldPrices> = { ...authorisedPricesFromLock(state.billing.locks?.[bookingId]) }
-  const prepaymentIds = new Set(Object.values(state.billing.invoices).filter((i) => i.bookingId === bookingId && i.kind === 'prePayment').map((i) => i.id))
-  if (prepaymentIds.size === 0) return out
-  const prepayment = Object.values(state.billing.invoiceLines).filter((l) => prepaymentIds.has(l.invoiceId))
-  for (const p of Object.values(state.schedule.procedures)) {
-    if (p.bookingId !== bookingId) continue
-    const prepaid = prepaidHeldPriceFor(p.id, prepayment)
-    if (prepaid !== undefined) out[p.id] = { ...(out[p.id] ?? {}), prepaid }
+  for (const [procedureId, held] of Object.entries(prepaidHeldFor(state, bookingId))) {
+    out[procedureId] = { ...(out[procedureId] ?? {}), prepaid: held.amount }
   }
   return out
 }
 
-/** Whether a prepayment invoice for this Procedure is raised: the office's price is then read-only (A16). */
-export function prepaymentRaisedFor(state: { billing: Pick<AppState['billing'], 'invoices' | 'invoiceLines'> }, procedureId: string): boolean {
-  const prepaymentIds = new Set(Object.values(state.billing.invoices).filter((i) => i.kind === 'prePayment').map((i) => i.id))
-  if (prepaymentIds.size === 0) return false
-  return Object.values(state.billing.invoiceLines).some((l) => l.procedureId === procedureId && prepaymentIds.has(l.invoiceId) && holdsPrepaidPrice(l))
-}
-
-/** The `prePayment`-kind invoices raised for a Booking, in id order. */
-export function prePaymentInvoicesForBooking(state: Pick<AppState, 'billing'>, bookingId: string): Invoice[] {
-  return Object.values(state.billing.invoices)
-    .filter((i) => i.bookingId === bookingId && i.kind === 'prePayment')
-    .sort((a, b) => a.id.localeCompare(b.id))
-}
-
-/**
- * A paid pre-payment case for a Booking, if any. Keyed on the MIRROR MONEY
- * (received covers the invoice total), not the status label — a fully-paid case
- * may already read `disbursed` (D-money-state: status is a derived label, the
- * amounts are the source of truth). Phase 10's webhook flips the case live; the
- * seed ships one already cleared.
- */
-export function paidPrePaymentCaseForBooking(state: Pick<AppState, 'billing'>, bookingId: string): BillingCase | undefined {
-  const prePaymentInvoiceIds = new Set(prePaymentInvoicesForBooking(state, bookingId).map((i) => i.id))
-  return Object.values(state.billing.cases).find((c) => {
-    if (c.bookingId !== bookingId || c.invoiceId === undefined || !prePaymentInvoiceIds.has(c.invoiceId)) return false
-    const total = state.billing.invoices[c.invoiceId]?.total ?? 0
-    return toCents(c.receivedAmount) >= toCents(total) && toCents(total) > 0
-  })
-}
-
-/**
- * The EX-GST amount already invoiced per procedure via a Booking's pre-payment
- * invoices (deposit for split, full fee for full), WITH the counterparty the
- * pre-invoice was raised against. The balance run threads this into the invoice
- * builder so the post-procedure invoice bills only the remaining balance, and
- * the builder fails the Booking if the payer changed since the deposit was raised.
- */
-export function prePaidByProcedure(
-  state: Pick<AppState, 'billing'>,
-  bookingId: string,
-): Record<ProcedureId, { amount: number; counterparty: CounterpartyRef }> {
-  const out: Record<ProcedureId, { amount: number; counterparty: CounterpartyRef }> = {}
-  for (const invoice of prePaymentInvoicesForBooking(state, bookingId)) {
-    for (const line of Object.values(state.billing.invoiceLines)) {
-      if (line.invoiceId !== invoice.id || line.procedureId === undefined) continue
-      const existing = out[line.procedureId]
-      out[line.procedureId] = {
-        amount: (existing?.amount ?? 0) + line.amount,
-        counterparty: invoice.counterparty,
-      }
-    }
-  }
-  return out
-}
-
-export type PrepaymentStatus = 'none' | 'required' | 'outstanding' | 'paid'
-
-/**
- * The ONE derived pre-payment status for a Booking: the source the
- * `prepaymentUnpaid` warning rule (via `warningFactsFor`), the Booking's
- * prepayment row and the Billing views read. `required` = prepayment needed,
- * no invoice raised yet; `outstanding` = invoice raised, unpaid; `paid` = the
- * pre-invoice cleared. Never a completion gate (catch-up Phase 15a; D5).
- */
-export function prepaymentStatusFor(state: Pick<AppState, 'schedule' | 'billing' | 'masters'>, bookingId: string): PrepaymentStatus {
-  const raised = prePaymentInvoicesForBooking(state, bookingId).length > 0
-  // A prepayment already invoiced stays on the record when the Contract moves
-  // off prepaid (catch-up Phase 20 review): it is still owed until paid.
-  if (!bookingRequiresPrepayment(state, bookingId) && !raised) return 'none'
-  // A payer still without their own prepayment invoice is required first (catch-up Phase 22a: one per payer).
-  if (!raised || prepaymentPayerAwaiting(state, bookingId)) return 'required'
-  if (paidPrePaymentCaseForBooking(state, bookingId) !== undefined) return 'paid'
-  return 'outstanding'
+/** Whether this Procedure's prepaid price is on a raised prepayment invoice: the office's price is then read-only (A16, D30). */
+export function prepaymentRaisedFor(
+  state: { billing: Pick<AppState['billing'], 'invoices' | 'invoiceLines'>; schedule: Pick<AppState['schedule'], 'procedures'> },
+  procedureId: string,
+): boolean {
+  const procedure = state.schedule.procedures[procedureId]
+  return procedure !== undefined && prepaidHeldFor(state, procedure.bookingId)[procedureId] !== undefined
 }
 
 // ---------------------------------------------------------------------------
@@ -966,7 +897,7 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
   })
 }
 
-function patientNameFor(state: Pick<AppState, 'masters'>, patientId: string): string {
+export function patientNameFor(state: Pick<AppState, 'masters'>, patientId: string): string {
   return state.masters.patients[patientId]?.name ?? patientId
 }
 
@@ -1292,19 +1223,20 @@ export function payerDetailsForProcedure(state: Pick<AppState, 'masters' | 'sche
 
 /**
  * True when a Procedure's payer is locked by their own raised prepayment
- * invoice (US-06.3.1 "Payer locked", catch-up Phase 22a): a prepayment
- * invoice on its Booking is addressed to the Procedure's payer and covers
- * the Procedure. Another payer's Procedures on the same Booking stay
- * changeable. Phase 27 keeps it through the approval lifecycle.
+ * invoice (US-06.3.1 "Payer locked"; catch-up Phase 22a, the one lock, read
+ * from the issued invoice's lines since Phase 27): the Procedure is a line on
+ * an issued prepayment invoice addressed to its payer. Another payer's
+ * Procedures stay changeable, and so does a Procedure added later to the same
+ * payer until its own invoice is raised.
  */
 export function payerLockedByPrepayment(state: Pick<AppState, 'schedule' | 'billing'>, procedureId: string): boolean {
   const procedure = state.schedule.procedures[procedureId]
   const booking = procedure !== undefined ? state.schedule.bookings[procedure.bookingId] : undefined
   if (procedure === undefined || booking === undefined) return false
   const key = refKey(payerCounterparty(procedure, booking.patientId))
-  return prePaymentInvoicesForBooking(state, booking.id).some(
-    (inv) => refKey(inv.counterparty) === key && (inv.procedureIds === undefined || inv.procedureIds.includes(procedureId)),
-  )
+  const addressed = new Set(prePaymentInvoicesForBooking(state, booking.id).filter((inv) => refKey(inv.counterparty) === key).map((inv) => inv.id))
+  if (addressed.size === 0) return false
+  return Object.values(state.billing.invoiceLines).some((l) => l.procedureId === procedureId && addressed.has(l.invoiceId))
 }
 
 /** Assemble the validator context for a Booking from store state. */

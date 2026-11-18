@@ -25,12 +25,18 @@
  *    (P0026, the `feeSplitBooking` marker) is on No contract · RVG (was
  *    St George's CT-STG-D1), so its Contract bills the Procedure's payer,
  *    Alan Prentice; nib's share is a split on the Booking, not a billing line.
+ *  - catch-up Phase 27 (`__parity__/phase27Declared.ts`): Nair's rhinoplasty
+ *    (P0041) is on Dr Souter's Rhinoplasty Contract (was CT-SOUTER-RHINO-COS);
+ *    Riley's and Nair's prepayments are each the rhinoplasty's $1,200 in full
+ *    ($1,380 with GST), Nair's payable authorised and held on the AA Holding
+ *    account, not disbursed.
  * Every other billed party, starting value, prepayment build, ledger line and
  * Xero pair holds as written.
  */
 
 import { describe, expect, it } from 'vitest'
 import { PHASE_24_ARIA_PROCEDURES } from './__parity__/phase24Declared'
+import { contractBefore27, PHASE_27_NAIR_CONTRACT, PHASE_27_NAIR_PREPAID_PROCEDURE, PHASE_27_PREPAYMENT_ROWS_20, PHASE_27_REASON } from './__parity__/phase27Declared'
 import baseline from './__parity__/phase-20-baseline.json'
 import { captureBaseline, type Phase20Baseline, type ProcedureParityRow } from './__parity__/phase20Capture'
 import { COMPLETION_BOOKING_IDS, REVIEW_FLAG_BOOKING_IDS, PAYER_REVIEW_BOOKING_IDS, SEED_MARKERS, SOURCE_WORDING_BOOKING_IDS } from '../domain/seed'
@@ -43,7 +49,10 @@ const FOSTER_20A = SEED_MARKERS.integrationS14!.entityId
 const captured = captureBaseline()
 const now = {
   ...captured,
-  procedures: captured.procedures.filter((r) => !ADDED_20A.has(r.bookingId) && r.bookingId !== FOSTER_20A),
+  // Catch-up Phase 27's declared Contract move (Nair's rhinoplasty), mapped back to Phase 20's form (`__parity__/phase27Declared.ts`).
+  procedures: captured.procedures
+    .filter((r) => !ADDED_20A.has(r.bookingId) && r.bookingId !== FOSTER_20A)
+    .map((r) => ({ ...r, contract: contractBefore27(r.procedureId, r.contract) })),
 }
 const beforeRows = before.procedures.filter((r) => r.bookingId !== FOSTER_20A)
 
@@ -106,8 +115,22 @@ describe('Phase 20 contract parity', () => {
     }
   })
 
-  it("keeps Riley's split and Nair's full prepayment: invoices, ledger lines and Xero pairs (S4 Beat 1)", () => {
-    expect(now.prepayments).toEqual(before.prepayments)
+  it("keeps Riley's and Nair's prepayments: invoices, ledger lines and Xero pairs (S4 Beat 1), bar Phase 27's declared figures", () => {
+    // Catch-up Phase 27 (`__parity__/phase27Declared.ts`): each is the rhinoplasty's $1,200 in full, payable to the AA Holding account.
+    expect(now.prepayments).toEqual(PHASE_27_PREPAYMENT_ROWS_20)
+    // Everything else about them holds: the Bookings, the payers, one invoice, receivable and payable each, the receivables' states.
+    const shape = (rows: Phase20Baseline['prepayments']) =>
+      rows.map((r) => ({
+        bookingId: r.bookingId,
+        invoices: r.invoices.map((i) => ({ kind: i.kind, counterparty: i.counterparty, lines: i.lines.length })),
+        accRecs: r.accRecs.map((a) => a.status),
+        accPays: r.accPays.map((p) => p.anaesthetistId),
+      }))
+    expect(shape(now.prepayments)).toEqual(shape(before.prepayments))
+  })
+
+  it(`declares Phase 27's Contract move exactly (${PHASE_27_REASON})`, () => {
+    expect(captured.procedures.find((r) => r.procedureId === PHASE_27_NAIR_PREPAID_PROCEDURE)?.contract).toBe(PHASE_27_NAIR_CONTRACT)
   })
 
   it("bills Doyle's bariatric primary to the Procedure's payer, at his price list (catch-up Phase 21, US-11.2.1)", () => {

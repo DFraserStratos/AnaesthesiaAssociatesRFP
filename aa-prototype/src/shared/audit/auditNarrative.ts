@@ -139,11 +139,9 @@ function formatShape(value: Record<string, unknown>): string | null {
   if (typeof value.units === 'number' && typeof value.source === 'string' && Object.keys(value).length === 2) {
     return String(value.units)
   }
-  // PrepaymentDetail
-  if (value.type === 'full') return 'Full amount up front'
-  if (value.type === 'split') {
-    const deposit = typeof value.depositAmount === 'number' ? ` · deposit ${formatCurrency(value.depositAmount)}` : ''
-    return `Split${deposit}`
+  // InvoiceApproval (catch-up Phase 27)
+  if ((value.mode === 'approved' || value.mode === 'automatic') && typeof value.by === 'string') {
+    return value.mode === 'approved' ? `Approved by ${value.by}` : 'Sent with approval off'
   }
   // CounterpartyRef
   if (typeof value.kind === 'string' && typeof value.id === 'string' && Object.keys(value).length === 2) {

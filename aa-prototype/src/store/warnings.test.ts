@@ -23,7 +23,10 @@ const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: '34821' }
 
 const RILEY = SEED_MARKERS['prepaymentBooking']!.entityId
-const RILEY_KEY = warningKey(RILEY, 'prepaymentUnpaid')
+/** Riley's one payer group (catch-up Phase 27): the warning's key carries the payer's identity. */
+const RILEY_KEY = warningKey(RILEY, 'prepaymentUnpaid', undefined, 'patient:PT0017')
+/** A test rule's finding carries no scope. */
+const TEST_RULE_KEY = warningKey(RILEY, 'prepaymentUnpaid')
 
 function store(): BoundAppStore {
   return createAppStore()
@@ -58,7 +61,8 @@ describe('selectors', () => {
     const state = api.getState()
     const list = state.schedule.lists[state.schedule.bookings[RILEY]!.listId]!
     expect(warningsForList(state, list.id).map((w) => w.key)).toEqual([RILEY_KEY])
-    expect(warningSummaryByList(state, list.dateISO).get(list.id)).toEqual({ open: 1, strongest: 'strong' })
+    // Catch-up Phase 27: three days out on the demo clock, awaiting approval, so mild (strong from two days).
+    expect(warningSummaryByList(state, list.dateISO).get(list.id)).toEqual({ open: 1, strongest: 'mild' })
     expect(warningSummaryByList(state, '2026-07-21').has(list.id)).toBe(false)
   })
 })
@@ -71,7 +75,7 @@ describe('clearWarning', () => {
     const state = api.getState()
     expect(openWarnings(state).some((r) => r.bookingId === RILEY)).toBe(false)
     const [w] = warningsForBooking(state, RILEY)
-    expect(w?.clearance).toMatchObject({ by: 'Kirsty W.', role: 'office', strength: 'strong' })
+    expect(w?.clearance).toMatchObject({ by: 'Kirsty W.', role: 'office', strength: 'mild' })
     expect(state.audit).toHaveLength(auditBefore + 1)
     expect(state.audit.at(-1)).toMatchObject({ action: 'booking.warningCleared', entityType: 'booking', entityId: RILEY })
   })
@@ -94,15 +98,22 @@ describe('clearWarning', () => {
     }
     const rules = [escalating]
     const api = store()
-    expect(clearWarning(api, OFFICE, RILEY, RILEY_KEY, rules).ok).toBe(true)
+    expect(clearWarning(api, OFFICE, RILEY, TEST_RULE_KEY, rules).ok).toBe(true)
     expect(openWarnings(api.getState(), rules)).toEqual([])
     strength = 'strong'
-    expect(openWarnings(api.getState(), rules).map((r) => r.warning.key)).toEqual([RILEY_KEY])
-    expect(clearWarning(api, OFFICE, RILEY, RILEY_KEY, rules).ok).toBe(true)
+    expect(openWarnings(api.getState(), rules).map((r) => r.warning.key)).toEqual([TEST_RULE_KEY])
+    expect(clearWarning(api, OFFICE, RILEY, TEST_RULE_KEY, rules).ok).toBe(true)
     expect(openWarnings(api.getState(), rules)).toEqual([])
   })
 
   it('works on an AUTHORISED List and leaves the Booking record untouched', () => {
+    // Catch-up Phase 27: the prepayment rule says nothing once AUTHORISED, so a test rule that still fires stands in.
+    const standing: WarningRule = {
+      id: 'prepaymentUnpaid',
+      label: 'test',
+      defaultParams: {},
+      evaluate: (f) => (f.booking.id === RILEY ? [{ kind: 'beforeProcedure', strength: 'mild', text: 'Standing.' }] : []),
+    }
     const api = store()
     const listId = api.getState().schedule.bookings[RILEY]!.listId
     for (const b of bookingsForList(api.getState(), listId)) {
@@ -111,7 +122,7 @@ describe('clearWarning', () => {
     expect(submitList(api, SOUTER, listId).ok).toBe(true)
     expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
     const before = api.getState().schedule.bookings[RILEY]
-    expect(clearWarning(api, OFFICE, RILEY, RILEY_KEY).ok).toBe(true)
+    expect(clearWarning(api, OFFICE, RILEY, TEST_RULE_KEY, [standing]).ok).toBe(true)
     const after = api.getState().schedule.bookings[RILEY]
     expect(after).toBe(before)
     expect(after?.lastModifiedBy).toBe(before?.lastModifiedBy)
@@ -130,7 +141,7 @@ describe('persistence', () => {
   it('backfills a rule entry missing from a persisted app-settings record, keeping persisted entries', () => {
     const current = createAppStore().getState()
     const merged = backfillMerge(current, { appSettings: { warningRules: {} } })
-    expect(merged.appSettings.warningRules.prepaymentUnpaid).toEqual({ active: true, params: {} })
+    expect(merged.appSettings.warningRules.prepaymentUnpaid).toEqual({ active: true, params: { mildWithinDays: 7, strongWithinDays: 2 } })
     const kept = backfillMerge(current, { appSettings: { warningRules: { prepaymentUnpaid: { active: false, params: {} } } } })
     expect(kept.appSettings.warningRules.prepaymentUnpaid?.active).toBe(false)
   })

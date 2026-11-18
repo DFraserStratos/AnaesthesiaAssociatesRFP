@@ -156,8 +156,9 @@ export const PRICED_ITEMS: readonly SeedPricedItem[] = [
   merivale(PRICED_ITEM.merFaceLift2, 'Facelift plus 2 add ons (eg bleph & fat grafting)', 3700),
 
   // --- Dr Melanie Souter's own price list (US-04.2.14; D42, D30, D65): demo figures.
-  // Rhinoplasty is the $1,200 Riley's prepayment uses, with a price change from 1 Sep 2026.
-  souter({ id: PRICED_ITEM.souterRhinoplasty, name: 'Rhinoplasty', pricing: fixed(['2026-01-01', 1200], ['2026-09-01', 1300]), defaultRvgGroupId: RVG_GROUP.aaRhinoplasty }),
+  // Rhinoplasty is the $1,200 Riley's and Nair's prepayments use, with a price change from 1 Sep 2026.
+  // Done with a plastic or an ENT surgeon, so it fits Mr Nand's Lists too (Nair, catch-up Phase 27).
+  souter({ id: PRICED_ITEM.souterRhinoplasty, name: 'Rhinoplasty', pricing: fixed(['2026-01-01', 1200], ['2026-09-01', 1300]), defaultRvgGroupId: RVG_GROUP.aaRhinoplasty, specialtyIds: [SPC.plasticSurgery, SPC.ent] }),
   souter({ id: PRICED_ITEM.souterBleph, name: 'Blepharoplasty, upper lids', pricing: fixed(['2026-01-01', 900]) }),
   souter({ id: PRICED_ITEM.souterBreastAug, name: 'Breast augmentation', pricing: fixed(['2026-01-01', 1450]) }),
   // Catch-up Phase 20: the cosmetic component of a septorhinoplasty, done with an

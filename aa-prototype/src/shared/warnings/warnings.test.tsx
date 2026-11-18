@@ -13,15 +13,18 @@ import { WarningTriangle } from './WarningTriangle'
 import { WarningsPanel } from './WarningsPanel'
 
 const RILEY = SEED_MARKERS['prepaymentBooking']!.entityId
+/** Riley's live warning key (catch-up Phase 27): one per payer group, so it carries the payer's identity. */
+const RILEY_KEY = `${RILEY}:prepaymentUnpaid:patient:PT0017`
+const RILEY_TEXT = 'Prepayment of $1,200.00 from Annette Riley is awaiting approval on Invoices and has not been sent.'
 
 function warning(over: Partial<Warning> = {}): Warning {
   return {
-    key: `${RILEY}:prepaymentUnpaid`,
+    key: RILEY_KEY,
     bookingId: RILEY,
     ruleId: 'prepaymentUnpaid',
     kind: 'beforeProcedure',
     strength: 'strong',
-    text: 'Prepayment required. No prepayment invoice has been raised yet.',
+    text: RILEY_TEXT,
     ...over,
   }
 }
@@ -39,7 +42,7 @@ describe('WarningTriangle', () => {
   it('is a labelled image, never a button or a dialog (no tap-to-read)', () => {
     const { container } = render(<WarningTriangle warnings={TWO} />)
     const img = screen.getByRole('img')
-    expect(img).toHaveAccessibleName(/^2 warnings: Prepayment required/)
+    expect(img).toHaveAccessibleName(/^2 warnings: Prepayment of \$1,200\.00/)
     expect(img).toHaveAttribute('data-shot', 'booking-warning')
     expect(img).toHaveAttribute('data-strength', 'strong')
     expect(img).toHaveTextContent('2')
@@ -67,7 +70,7 @@ describe('WarningsPanel', () => {
     const panel = screen.getByRole('region', { name: /Warnings/ })
     const rows = within(panel).getAllByRole('listitem')
     expect(rows).toHaveLength(2)
-    expect(rows[0]).toHaveTextContent('Prepayment required')
+    expect(rows[0]).toHaveTextContent(RILEY_TEXT)
     expect(rows[0]).toHaveTextContent('Before procedure')
     expect(rows[0]).toHaveTextContent('Strong')
     expect(rows[1]).toHaveTextContent('A second, mild warning.')
@@ -78,14 +81,14 @@ describe('WarningsPanel', () => {
 
   it('Clear shows for the office only; a mild one reads optional', () => {
     render(<WarningsPanel warnings={TWO} actor={OFFICE_ACTOR} canClear />)
-    expect(screen.getByRole('button', { name: 'Clear warning: Prepayment required. No prepayment invoice has been raised yet.' })).toHaveTextContent(/^Clear$/)
+    expect(screen.getByRole('button', { name: `Clear warning: ${RILEY_TEXT}` })).toHaveTextContent(/^Clear$/)
     expect(screen.getByRole('button', { name: 'Clear (optional) warning: A second, mild warning.' })).toHaveTextContent('Clear (optional)')
   })
 
   it('Clear records the clearance; the re-rendered row reads who cleared it and when', () => {
     const { rerender } = render(<WarningsPanel warnings={[warning()]} actor={OFFICE_ACTOR} canClear />)
     fireEvent.click(screen.getByRole('button', { name: /^Clear warning:/ }))
-    const clearance = useAppStore.getState().schedule.warningClearances[`${RILEY}:prepaymentUnpaid`]
+    const clearance = useAppStore.getState().schedule.warningClearances[RILEY_KEY]
     expect(clearance).toMatchObject({ by: 'Kirsty W.', role: 'office' })
     rerender(<WarningsPanel warnings={[warning({ clearance })]} actor={OFFICE_ACTOR} canClear />)
     expect(screen.getByText(/^Cleared by Kirsty W\., Tue 21 Jul \d\d:\d\d$/)).toBeInTheDocument()

@@ -18,9 +18,10 @@ import { mutate, ok, refuse, type Actor, type Outcome } from './mutate'
 import { payerFromInput, payerInputRefusal, sameData, sameName, type PayerInput } from './payerActions'
 import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal, getBooking } from './lifecycle'
-import { billingContextForBooking, bookingRequiresPrepayment, counterpartyName, proceduresForBooking } from './selectors'
+import { billingContextForBooking, counterpartyName, proceduresForBooking } from './selectors'
+import { prepaymentForProcedure } from './prepaymentSelectors'
 
-/** The refusal on a Procedure whose Booking carries the interim prepayment flag (INTERIM until Phase 27). */
+/** The refusal on a split of a prepaid Procedure (catch-up Phase 27): its prepayment bills its one payer. */
 export const PREPAID_PROCEDURE_MESSAGE = 'A prepaid procedure is billed by its prepayment.'
 
 export { NO_FEE_TO_SPLIT_MESSAGE }
@@ -133,7 +134,8 @@ export function setProcedureSplit(
   if (input === null) {
     if (procedure.split === undefined) return ok(undefined)
   } else {
-    if (bookingRequiresPrepayment(state, bookingId)) return refuse('prepaidProcedure', PREPAID_PROCEDURE_MESSAGE)
+    const prepayment = prepaymentForProcedure(state, procedureId)
+    if (prepayment !== undefined && prepayment.status !== 'notNeeded') return refuse('prepaidProcedure', PREPAID_PROCEDURE_MESSAGE)
     const fee = procedureFeeNow(state, procedureId)
     if (fee === undefined || fee.total <= 0) return refuse('noFee', NO_FEE_TO_SPLIT_MESSAGE)
     const shares = resolveShares(input, procedure.split?.shares ?? [], state.counters)

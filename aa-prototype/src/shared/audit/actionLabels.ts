@@ -31,6 +31,7 @@ export const ACTION_LABELS: Record<string, string> = {
   'booking.insurance': 'Insurer or funder changed',
   'booking.warningSampleUnstaged': 'Sample warning removed',
   'booking.billed': 'Booking billed',
+  'booking.prepaidSettled': 'Prepaid, left off the final invoice',
   'booking.billingException': 'Billing exception raised',
   'booking.lock': 'Contract locked at authorise',
 
@@ -106,6 +107,7 @@ export const ACTION_LABELS: Record<string, string> = {
   'canvas.trim': 'Sessions removed',
   'settings.scheduleDefaults': 'Default session times changed',
   'settings.horizon': 'Schedule horizon changed',
+  'settings.prepaymentApprovalChanged': 'Pre-payment approval switched',
   'recurringBooking.create': 'Recurring booking added',
   'recurringBooking.update': 'Recurring booking updated',
   'recurringBooking.pairingAcknowledged': `${PAIRING_LABELS.kind.NOT_PREFERRED} pairing assigned (warning acknowledged)`,
@@ -179,6 +181,8 @@ export const ACTION_LABELS: Record<string, string> = {
   // --- Billing run & invoices ---------------------------------------------
   'invoice.create': 'Invoice raised',
   'invoice.raisePrePayment': 'Pre-payment invoice raised',
+  'invoice.prePaymentApproved': 'Pre-payment invoice approved and sent',
+  'invoice.prePaymentAutoSent': 'Pre-payment invoice sent, approval off',
   'invoice.sent': 'Invoice emailed',
   'invoice.toPost': 'Invoice marked to post',
   'invoice.notSent': 'Invoice not sent',

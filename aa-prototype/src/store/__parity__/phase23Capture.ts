@@ -13,8 +13,9 @@
  */
 
 import type { AppState } from '../appStore'
-import { bctiRecords, bctisToChargeFor, billingContextForBooking, bookingsForList, prePaidByProcedure, proceduresForBooking } from '../selectors'
-import { buildInvoicesForBooking, buildPrePaymentInvoiceForBooking, type InvoiceBuildContext } from '../../domain/billing/invoiceBuild'
+import { bctiRecords, bctisToChargeFor, billingContextForBooking, bookingsForList, prepaidHeldFor, proceduresForBooking } from '../selectors'
+import { buildInvoicesForBooking, type InvoiceBuildContext } from '../../domain/billing/invoiceBuild'
+import { prepaymentDraftsAsRaised } from './phase22aCapture'
 import type { FeeResult } from '../../domain/billing/fee'
 import { listHospitalFor } from '../../domain/listPairing'
 import { bookingFee } from '../../shared/capture/feeContext'
@@ -90,7 +91,7 @@ export function feesForBooking(state: AppState, list: AssignedList, booking: Boo
   return out
 }
 
-function buildRow(result: ReturnType<typeof buildInvoicesForBooking>): BuildRow23 {
+function buildRow(result: ReturnType<typeof buildInvoicesForBooking> | ReturnType<typeof prepaymentDraftsAsRaised>): BuildRow23 {
   if (result.kind === 'exception') return { kind: 'exception', code: result.code }
   return {
     kind: 'invoices',
@@ -157,16 +158,17 @@ export function capturePhase23(state: AppState, opts: { held?: boolean } = {}): 
       }
       const ctx = billingContextForBooking(opts.held === true ? state : { masters: state.masters, schedule: state.schedule }, booking)
       if (ctx === undefined) continue
-      const prePaid = prePaidByProcedure(state, booking.id)
+      // Catch-up Phase 27: a raised prepayment's Procedures are left off (was: netted by a deduction line).
+      const leftOff = prepaidHeldFor(state, booking.id)
       const buildCtx: InvoiceBuildContext = {
         ...ctx,
         listDateISO: list.dateISO,
         patientId: booking.patientId,
         ...listHospitalFor(list, state.masters.hospitals),
-        ...(Object.keys(prePaid).length > 0 ? { prePaidByProcedure: prePaid } : {}),
+        ...(Object.keys(leftOff).length > 0 ? { prepaidLeftOff: leftOff } : {}),
       }
       const row: BookingRow23 = { bookingId: booking.id, result: buildRow(buildInvoicesForBooking(booking, procedures, buildCtx)) }
-      const pre = buildPrePaymentInvoiceForBooking(booking, procedures, buildCtx)
+      const pre = prepaymentDraftsAsRaised(state, booking, procedures, buildCtx)
       if (pre.kind === 'exception' || pre.invoices.length > 0) row.prepayment = buildRow(pre)
       bookings.push(row)
     }

@@ -73,13 +73,14 @@ function fieldsOf(failures: { field: string }[]): string[] {
 }
 
 describe('validateBookingForBilling is the run\'s pre-flight only (catch-up Phase 21a)', () => {
-  it('asks nothing completion asks: no Contract, no RVG code, no times, an unexplained claim and a split prepayment with no deposit all pass here', () => {
+  it('asks nothing completion asks: no Contract, no RVG code, no times, an unexplained claim and an unsent prepayment all pass here', () => {
     const bare = mkProcedure({ modifierClaims: [mkClaim('AS3', '  ')] })
     expect(validateBookingForBilling(booking, [bare], mkCtx())).toEqual([])
     const noTimes = validProcedure({ anaestheticStartISO: undefined, handoverISO: undefined, rvgGroupId: undefined })
     expect(validateBookingForBilling(booking, [noTimes], mkCtx())).toEqual([])
-    const split = mkProcedure({ governingContractId: PREPAID.id, prepaymentDetail: { type: 'split' } })
-    expect(validateBookingForBilling(booking, [split], mkCtx())).toEqual([])
+    // Catch-up Phase 27: a prepaid Procedure has no deposit to ask for; its prepayment is never a gate (D5).
+    const prepaid = mkProcedure({ governingContractId: PREPAID.id })
+    expect(validateBookingForBilling(booking, [prepaid], mkCtx())).toEqual([])
   })
 })
 

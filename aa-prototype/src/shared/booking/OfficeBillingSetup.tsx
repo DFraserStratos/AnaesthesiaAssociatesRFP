@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { neutral, radius, semantic } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
-import { billingReferenceMissing, procedureRequiresPrepayment } from '../../domain/billing'
+import { billingReferenceMissing, isPrepaidContract } from '../../domain/billing'
 import { useAppStore, type Actor } from '../../store'
 import { Button, DefList, DefRow, Eyebrow } from '../ui'
 import { formatCurrency } from '../format'
@@ -40,12 +40,8 @@ export function OfficeBillingSetup({ procedure, displayNumber, actor, canEdit }:
 
   const contract = procedure.governingContractId !== undefined ? masters.contracts[procedure.governingContractId] : undefined
   const refMissing = billingReferenceMissing(procedure, masters.contracts, masters.parties)
-  // Prepayment follows a prepaid Contract (INTERIM until Phase 27); read-only here.
-  const prepaymentText = !procedureRequiresPrepayment(contract)
-    ? 'Not required'
-    : procedure.prepaymentDetail?.type === 'split' && procedure.prepaymentDetail.depositAmount !== undefined
-      ? `Required · ${formatCurrency(procedure.prepaymentDetail.depositAmount)} seeded`
-      : 'Required · prepaid Contract'
+  // Prepayment follows a prepaid Contract (catch-up Phase 27); read-only here, the panel above carries its status.
+  const prepaymentText = isPrepaidContract(contract) ? 'Prepaid Contract' : 'Not prepaid'
 
   const typedLabel = procedure.enteredPrice !== undefined ? `Typed ${formatCurrency(procedure.enteredPrice)}` : 'From the Contract'
 

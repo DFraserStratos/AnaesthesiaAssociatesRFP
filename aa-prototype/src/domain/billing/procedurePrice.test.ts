@@ -8,13 +8,13 @@ import { describe, expect, it } from 'vitest'
 import {
   anaesthetistMayTypePrice,
   officeMayChangePrice,
-  prepaidHeldPriceFor,
   priceFor,
   procedureNeedsPrice,
   PREPAID_PRICE_RAISED_MESSAGE,
   type PriceInput,
 } from './procedurePrice'
 import { bookingFeeFor, type ProcedureFeeContext } from './bookingFee'
+import { prepaidAmountFor } from './prepayment'
 import { BASE_SINGLE_10, mkAnaesthetist, mkContract, mkProcedure, RVG_MODIFIER_MASTER } from './fixtures'
 import { DEFAULT_RVG_TIME_RULE } from './timeUnits'
 import type { Contract, ContractPricing, Procedure } from '../types'
@@ -141,12 +141,11 @@ describe('W12 under the multi-procedure rule a discount changes only its own Pro
   })
 })
 
-describe('the interim held amounts', () => {
-  const line = (procedureId: string, amount: number, description = 'Anaesthesia') => ({ procedureId, amount, description })
-  it("prepaidHeldPriceFor: a raised full prepayment holds; a split's deposit is part of the price, not the price", () => {
-    expect(prepaidHeldPriceFor('P1', [line('P1', 500, 'Pre-payment, estimated full fee')])).toBe(500)
-    expect(prepaidHeldPriceFor('P1', [line('P1', 800, 'Pre-payment deposit')])).toBeUndefined()
-    expect(prepaidHeldPriceFor('P1', [])).toBeUndefined()
+describe('the prepaid held amount (catch-up Phase 27)', () => {
+  it('prepaidAmountFor: a raised prepayment line holds the price in full, whatever its text; none raised reads the price now', () => {
+    expect(prepaidAmountFor({ governingContractId: 'CT-1' }, 900, { contractId: 'CT-1', amount: 500 })).toEqual({ kind: 'priced', contractId: 'CT-1', amount: 500, source: 'invoiced' })
+    expect(prepaidAmountFor({ governingContractId: 'CT-1' }, 900)).toEqual({ kind: 'priced', contractId: 'CT-1', amount: 900, source: 'range' })
+    expect(prepaidAmountFor({ governingContractId: 'CT-1' }, null)).toEqual({ kind: 'noPrice' })
   })
 })
 

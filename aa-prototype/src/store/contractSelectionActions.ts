@@ -25,6 +25,7 @@ import { editRefusal, getBooking, withRvgRowChange } from './lifecycle'
 import { prepaymentRaisedFor, railContextForList, railMastersOf } from './selectors'
 import { claimsAuditView } from '../domain/billing/modifiers'
 import { refreshedInvoiceDescriptionFor } from '../domain/billing/procedureStack'
+import { autoSendPrepayments } from './prepaymentActions'
 
 /** The rail's actor for a store actor: the anaesthetist, or the office (system and integration act as the office). */
 export function railActorOf(actor: Actor): RailActor {
@@ -180,6 +181,8 @@ export function setProcedureContract(
     }
     return { schedule: { ...s.schedule, bookings, procedures: { ...s.schedule.procedures, [procedureId]: next } } }
   })
+  // With approval off, a group this made ready is sent now (catch-up Phase 27; D6 extended).
+  autoSendPrepayments(api, booking.id)
   return ok(undefined)
 }
 

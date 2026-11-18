@@ -39,7 +39,7 @@ export function evaluateWarnings(
     if (setting !== undefined && !setting.active) return
     const params = { ...rule.defaultParams, ...(setting?.params ?? {}) }
     for (const finding of rule.evaluate(facts, params)) {
-      const key = warningKey(facts.booking.id, rule.id, finding.procedureId)
+      const key = warningKey(facts.booking.id, rule.id, finding.procedureId, finding.scope)
       const stored = clearances[key]
       const covers = stored !== undefined && STRENGTH_RANK[stored.strength] >= STRENGTH_RANK[finding.strength]
       const warning: Warning = { ...finding, key, bookingId: facts.booking.id, ruleId: rule.id }

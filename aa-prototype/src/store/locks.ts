@@ -23,10 +23,10 @@ import {
 } from '../domain/billing/lock'
 import { supplierFor } from '../domain/billing/invoicePresentation'
 import { formatMoney, roundToCents } from '../domain/billing/money'
-import { PREPAYMENT_DEDUCTION_DESCRIPTION, type HeldPrices } from '../domain/billing/procedurePrice'
+import type { HeldPrices } from '../domain/billing/procedurePrice'
 export { authorisedPricesFromLock } from '../domain/billing/lock'
 import { listHospitalFor } from '../domain/listPairing'
-import { billingContextForBooking, counterpartyName, prePaidByProcedure, proceduresForBooking } from './selectors'
+import { billingContextForBooking, counterpartyName, prepaidHeldFor, proceduresForBooking } from './selectors'
 
 /** Who takes a seeded lock (the office, as the seed's authorise). */
 export const SEED_LOCK_TAKER = 'AA office'
@@ -36,7 +36,8 @@ export function invoiceBuildContextFor(state: AppState, booking: Booking): Invoi
   const list = state.schedule.lists[booking.listId]
   const ctx = billingContextForBooking(state, booking)
   if (list === undefined || ctx === undefined) return undefined
-  const prePaid = prePaidByProcedure(state, booking.id)
+  // A prepaid Procedure whose prepayment is raised is left off the final invoice (catch-up Phase 27; D57).
+  const leftOff = prepaidHeldFor(state, booking.id)
   const surgeonName = list.surgeonId !== undefined ? state.masters.surgeons[list.surgeonId]?.name : undefined
   return {
     ...ctx,
@@ -44,7 +45,7 @@ export function invoiceBuildContextFor(state: AppState, booking: Booking): Invoi
     patientId: booking.patientId,
     ...(surgeonName !== undefined ? { surgeonName } : {}),
     ...listHospitalFor(list, state.masters.hospitals),
-    ...(Object.keys(prePaid).length > 0 ? { prePaidByProcedure: prePaid } : {}),
+    ...(Object.keys(leftOff).length > 0 ? { prepaidLeftOff: leftOff } : {}),
   }
 }
 
@@ -160,12 +161,12 @@ export function regenerateInvoiceFromLock(state: Pick<AppState, 'billing'>, invo
 // The seed's locks
 // ---------------------------------------------------------------------------
 
-/** The amount a Procedure's standard invoices carry, its pre-payment deduction left out (the seed's history price). */
+/** The amount a Procedure's standard invoices carry (the seed's history price). */
 function invoicedAmounts(invoices: readonly Invoice[], state: Pick<AppState, 'billing'>): Record<ProcedureId, number> {
   const ids = new Set(invoices.map((i) => i.id))
   const out: Record<ProcedureId, number> = {}
   for (const line of Object.values(state.billing.invoiceLines)) {
-    if (!ids.has(line.invoiceId) || line.procedureId === undefined || line.description === PREPAYMENT_DEDUCTION_DESCRIPTION) continue
+    if (!ids.has(line.invoiceId) || line.procedureId === undefined) continue
     out[line.procedureId] = roundToCents((out[line.procedureId] ?? 0) + line.amount)
   }
   return out
