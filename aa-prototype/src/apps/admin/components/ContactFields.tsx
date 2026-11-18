@@ -62,9 +62,9 @@ export function ContactFields({
         </div>
       )}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr 1fr', gap: 10 }}>
-        <TextField label="Name" value={value.name} onChange={(name) => onChange({ ...value, name })} data-contact-field="name" />
-        <TextField label="Email" type="email" mono value={value.email} onChange={(email) => onChange({ ...value, email })} invalid={invalidEmail} placeholder="name@example.co.nz" />
-        <TextField label="Phone" type="tel" value={value.phone} onChange={(phone) => onChange({ ...value, phone })} placeholder="03 555 0100" />
+        <TextField label="Name" accessibleName={`${legend} name`} value={value.name} onChange={(name) => onChange({ ...value, name })} data-contact-field="name" />
+        <TextField label="Email" accessibleName={`${legend} email`} type="email" mono value={value.email} onChange={(email) => onChange({ ...value, email })} invalid={invalidEmail} placeholder="name@example.co.nz" />
+        <TextField label="Phone" accessibleName={`${legend} phone`} type="tel" value={value.phone} onChange={(phone) => onChange({ ...value, phone })} placeholder="03 555 0100" />
       </div>
       <FormError message={error} variant="inline" />
     </fieldset>

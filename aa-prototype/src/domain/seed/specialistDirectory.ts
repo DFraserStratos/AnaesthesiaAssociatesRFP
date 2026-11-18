@@ -4,8 +4,11 @@
  * the fictional copy of the list AA sent on 3 November 2026
  * (`docs/discovery-reference/Other docs/Christchurch_Specialists_fictional.xlsx`)
  * and now edited by hand: no generator is in the repo, and any regeneration
- * must read only that fictional file, never the real list beside it. Every
- * name, phone and email is invented, `.example` domains only.
+ * must read only that fictional file, never the real list beside it. (Catch-up
+ * Phase 17b derived the practice names and office contacts once, by a
+ * throwaway script, from its pinned copy of 17a's rooms,
+ * `store/__parity__/phase-17b-baseline.json`.) Every name, phone and email is
+ * invented, `.example` domains only.
  *
  * Each surgeon's specialty is the list's free text mapped onto AA's broad list
  * (`SPECIALTY_FOR_DIRECTORY_TEXT` in `specialties.ts`), subspecialties folded

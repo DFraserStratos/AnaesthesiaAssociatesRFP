@@ -50,7 +50,9 @@ export const NO_HPI_CPN = 'No HPI CPN yet'
  * one place this rule lives. OQ-143 part 1 is open; its default (D89, our
  * reading of OQ-129's answer) is never: admin staff fill the number in later,
  * and a surgeon is saved and booked without one, with no warning. A different
- * answer ("required before the first Booking") changes this predicate only.
+ * answer changes this predicate and the edit sheet's "(optional)" label; one
+ * that depends on the surgeon's Bookings ("required before the first Booking")
+ * also gives it the surgeon and the state to read.
  * The anaesthetist's HPI CPN is separate and stays mandatory (catch-up Phase 26,
  * `checkAnaesthetistHpiCpn` in `store/mastersActions.ts`).
  */

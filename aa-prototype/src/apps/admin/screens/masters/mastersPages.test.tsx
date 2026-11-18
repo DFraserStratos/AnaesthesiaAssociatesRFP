@@ -281,7 +281,7 @@ describe('catch-up Phase 17b: no surgeons\' rooms, contacts on the surgeon, the 
 
   const sheet = () => document.querySelector('[data-shot="surgeon-edit-sheet"]') as HTMLElement
   const sets = () => Array.from(sheet().querySelectorAll('[data-office-contact]')) as HTMLElement[]
-  const nameIn = (set: HTMLElement) => within(set).getByLabelText('Name')
+  const nameIn = (set: HTMLElement) => within(set).getByLabelText(/ name$/)
 
   it('the Surgeons table shows Practice, Office contact and HPI CPN, and "No HPI CPN yet" for a blank one', () => {
     renderAdmin('/admin/masters?view=surgeons')
@@ -321,6 +321,21 @@ describe('catch-up Phase 17b: no surgeons\' rooms, contacts on the surgeon, the 
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Remove office contact 2' }))
     expect(sets()).toHaveLength(1)
     expect(within(sheet()).queryByRole('button', { name: /Remove office contact/ })).toBeNull()
+  })
+
+  it('minus on a middle set removes it whole and moves the set below up with its values; each input has its own name', () => {
+    renderAdmin('/admin/masters/surgeons/S-FORSYTHE')
+    fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
+    expect(sets()).toHaveLength(3)
+    expect(within(sheet()).getByRole('textbox', { name: 'Office contact 3 phone' })).toHaveValue('03 555 1037')
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Remove office contact 2' }))
+    expect(sets()).toHaveLength(2)
+    expect(within(sheet()).getByRole('textbox', { name: 'Office contact 1 name' })).toHaveValue('Maree')
+    expect(within(sheet()).getByRole('textbox', { name: 'Office contact 2 name' })).toHaveValue('Burnside ENT Surgeons')
+    expect(within(sheet()).getByRole('textbox', { name: 'Office contact 2 phone' })).toHaveValue('03 555 1037')
+    expect(nameIn(sets()[0]!)).toHaveFocus()
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save changes' }))
+    expect(useAppStore.getState().masters.surgeons['S-FORSYTHE']!.officeContacts.map((c) => c.name)).toEqual(['Maree', 'Burnside ENT Surgeons'])
   })
 
   it('an empty extra set is dropped on save; a bad email in office contact 2 is refused under it and nothing is saved', () => {

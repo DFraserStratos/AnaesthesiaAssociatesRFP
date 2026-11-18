@@ -112,7 +112,7 @@ type AuditedKey = (typeof AUDITED)[number]
 
 /**
  * One audited field as text the History shows: specialties by name, a contact
- * as "name · email · phone", office contacts one per line, a blank practice
+ * as "name · email · phone", office contacts as a list (History joins them), a blank practice
  * or registration as '' and a blank HPI CPN as "None" (never `undefined`).
  */
 function auditValue(key: AuditedKey, surgeon: Omit<Surgeon, 'id'>, state: Pick<AppState, 'masters'>): unknown {

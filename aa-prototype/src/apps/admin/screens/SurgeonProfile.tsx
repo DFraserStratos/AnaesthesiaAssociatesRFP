@@ -123,15 +123,15 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
   )
 }
 
-/** A contact's name, mono email and phone, "Not recorded" in mist for each blank. */
+/** A contact's name, mono email and phone; a blank one says which ("Email not recorded") in mist. */
 function ContactLines({ contact }: { contact: SurgeonContact }) {
   const c = cleanContact(contact)
-  const missing = <span style={{ color: neutral.mist }}>Not recorded</span>
+  const missing = (what: string) => <span style={{ color: neutral.mist }}>{what} not recorded</span>
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-      <span style={{ fontSize: 14, fontWeight: 600, color: c.name !== undefined ? neutral.ink : neutral.mist }}>{c.name ?? 'No name recorded'}</span>
-      <span className={c.email !== undefined ? 'mono' : undefined} style={{ fontSize: 13, overflowWrap: 'anywhere' }}>{c.email ?? missing}</span>
-      <span style={{ fontSize: 13 }}>{c.phone ?? missing}</span>
+      <span style={{ fontSize: 14, fontWeight: 600, color: c.name !== undefined ? neutral.ink : neutral.mist }}>{c.name ?? 'Name not recorded'}</span>
+      <span className={c.email !== undefined ? 'mono' : undefined} style={{ fontSize: 13, overflowWrap: 'anywhere' }}>{c.email ?? missing('Email')}</span>
+      <span style={{ fontSize: 13 }}>{c.phone ?? missing('Phone')}</span>
     </div>
   )
 }

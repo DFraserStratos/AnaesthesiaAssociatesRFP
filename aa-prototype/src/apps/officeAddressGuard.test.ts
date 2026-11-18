@@ -27,8 +27,9 @@ const sources = Object.entries(SRC)
 
 /**
  * Where `officeContacts` may be read or written: the helper, the type, the
- * surgeon actions, and the three surgeon screens (the edit sheet's form, the
- * profile's card, the table's column through the helper). The seed writes it.
+ * surgeon actions, and the two surgeon screens that edit or list every
+ * contact (the edit sheet's form, the profile's card); the surgeons table reads
+ * the helper. The seed writes it.
  */
 const OFFICE_CONTACT_FILES = new Set([
   'domain/surgeonContacts.ts',
@@ -36,7 +37,6 @@ const OFFICE_CONTACT_FILES = new Set([
   'store/surgeonActions.ts',
   'apps/admin/flows/SurgeonEditSheet.tsx',
   'apps/admin/screens/SurgeonProfile.tsx',
-  'apps/admin/screens/masters/SurgeonsView.tsx',
   'shared/audit/fieldLabels.ts',
 ])
 
@@ -47,6 +47,15 @@ describe('one helper for the office\'s emails to a surgeon (catch-up Phase 17b)'
       .map(([path]) => path)
       .filter((path) => !OFFICE_CONTACT_FILES.has(path))
     // A new reader of a surgeon's address calls officeAddressFor instead.
+    expect(readers).toEqual([])
+  })
+
+  it('no other file reads personalContact: the office never sends to a surgeon\'s own contact', () => {
+    const PERSONAL_CONTACT_FILES = new Set(['domain/types.ts', 'store/surgeonActions.ts', 'apps/admin/flows/SurgeonEditSheet.tsx', 'apps/admin/screens/SurgeonProfile.tsx', 'shared/audit/fieldLabels.ts'])
+    const readers = sources
+      .filter(([path, text]) => /\bpersonalContact\b/.test(text) && !path.startsWith('domain/seed/'))
+      .map(([path]) => path)
+      .filter((path) => !PERSONAL_CONTACT_FILES.has(path))
     expect(readers).toEqual([])
   })
 
