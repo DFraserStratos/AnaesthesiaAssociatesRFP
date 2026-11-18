@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Printer, Mail, Clock, Send } from 'lucide-react'
 import { accent, fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
@@ -23,7 +23,7 @@ import {
 import { Button, DemoBadge, Logo } from '../../../shared'
 import { dateTimeMicroCap, formatCurrency } from '../../../shared/format'
 import { dayWithYear } from '../../../domain/dateText'
-import { DefList, DefRow, FormError, Notice, Pill, TextField } from '../../../shared/ui'
+import { DefList, DefRow, FormError, Notice, Pill, TextAction, TextField } from '../../../shared/ui'
 import { lockStampText, lockViewFor, MIGRATED_LOCK_TEXT, partyKeyOf } from '../../../domain/billing/lock'
 import { BILLS_LABEL, pricingLabel } from '../../../shared/contracts'
 import { regenerateSummary, type RegenerateResult } from '../../../store/locks'
@@ -332,13 +332,11 @@ function InvoiceInfoRail({
   error: string | null
   onSend: (to?: string) => boolean
 }) {
+  const navigate = useNavigate()
   const handoffFailed = billingCase?.handoffFailure !== undefined
   const accRecId = billingCase?.receivable.xeroAccRecId
   const accPayId = billingCase?.payable?.xeroAccPayId
   const handoffComplete = accRecId !== undefined
-  // The InvoiceNumbers stored on the Xero records (US-09.1.1), not derived here.
-  const accRecNumber = useAppStore((s) => (accRecId !== undefined ? s.xero.accRecs[accRecId]?.invoiceNumber : undefined))
-  const accPayNumber = useAppStore((s) => (accPayId !== undefined ? s.xero.accPays[accPayId]?.invoiceNumber : undefined))
   // A prepayment's payable credits the AA Holding account; once transferred, its journal (catch-up Phase 27a).
   const collect = billingCase?.kind === 'prePayment'
   const journalNumber = useAppStore((s) => {
@@ -376,36 +374,45 @@ function InvoiceInfoRail({
         </RailCard>
       )}
 
-      <RailCard title="Xero handoff" warning={handoffFailed}>
-        <div
-          data-testid="xero-handoff-status"
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 8,
-            color: handoffFailed ? semantic.warning.onTint : handoffComplete ? neutral.ink : neutral.slate,
-          }}
-        >
-          <Clock size={15} aria-hidden style={{ marginTop: 1, flex: 'none' }} />
-          <span style={{ fontSize: 12.5, lineHeight: '18px', fontWeight: 600 }}>
-            {handoffFailed ? 'Xero handoff failed' : handoffComplete ? (invoice.noCharge === true ? 'ACCREC created at $0.00, no ACCPAY' : 'ACCREC and ACCPAY created') : 'Xero handoff pending'}
-          </span>
-        </div>
-
-        {handoffFailed ? (
-          <div style={{ fontSize: 12.5, lineHeight: '18px', color: semantic.warning.onTint }}>
-            The invoice remains valid. Resolve and retry in Billing monitor.
+      {/* The invoice's ledger pair (catch-up Phase 36; US-08.3.1): both numbers, each with its Xero id or
+          "Not yet in Xero". The pair stands whether or not Xero has it. */}
+      <RailCard title="Ledger" warning={handoffFailed}>
+        <div data-shot="invoice-ledger-card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div
+            data-testid="xero-handoff-status"
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 8,
+              color: handoffFailed ? semantic.warning.onTint : handoffComplete ? neutral.ink : neutral.slate,
+            }}
+          >
+            <Clock size={15} aria-hidden style={{ marginTop: 1, flex: 'none' }} />
+            <span style={{ fontSize: 12.5, lineHeight: '18px', fontWeight: 600 }}>
+              {handoffFailed ? 'Xero handoff failed' : handoffComplete ? 'Mirrored in Xero' : 'Not yet in Xero'}
+            </span>
           </div>
-        ) : handoffComplete ? (
-          <dl style={{ display: 'flex', flexDirection: 'column', gap: 10, margin: 0 }}>
-            <XeroReference label="ACCREC" value={accRecNumber ?? invoice.invoiceNumber} testId="xero-accrec-reference" />
-            {accPayNumber !== undefined && (
-              <XeroReference label="ACCPAY" value={accPayNumber} testId="xero-accpay-reference" />
-            )}
-            {collect && <XeroReference label="Payee" value={HOLDING_ACCOUNT.name} testId="xero-accpay-payee" />}
-            {journalNumber !== undefined && <XeroReference label="Transfer journal" value={journalNumber} testId="xero-transfer-journal-reference" />}
-          </dl>
-        ) : null}
+          {handoffFailed && (
+            <div style={{ fontSize: 12.5, lineHeight: '18px', color: semantic.warning.onTint }}>
+              The invoice and its ledger pair stand. Resolve and retry in Billing monitor.
+            </div>
+          )}
+          {billingCase !== undefined && (
+            <dl style={{ display: 'flex', flexDirection: 'column', gap: 10, margin: 0 }}>
+              <XeroReference label="Receivable" value={billingCase.receivable.number} testId="ledger-receivable-number" />
+              {accRecId !== undefined ? <XeroReference label="Xero ACCREC" value={accRecId} testId="xero-accrec-reference" /> : null}
+              <XeroReference label="Payable" value={billingCase.payable?.number ?? (invoice.noCharge === true ? 'None (no charge)' : 'None')} testId="ledger-payable-number" />
+              {accPayId !== undefined ? <XeroReference label="Xero ACCPAY" value={accPayId} testId="xero-accpay-reference" /> : null}
+              {collect && <XeroReference label="Payee" value={HOLDING_ACCOUNT.name} testId="xero-accpay-payee" />}
+              {journalNumber !== undefined && <XeroReference label="Transfer journal" value={journalNumber} testId="xero-transfer-journal-reference" />}
+            </dl>
+          )}
+          {billingCase !== undefined && (
+            <TextAction size="sm" flush shot="invoice-open-ledger" onClick={() => navigate(`/admin/ledger?pair=${billingCase.id}`)}>
+              Open in the ledger
+            </TextAction>
+          )}
+        </div>
       </RailCard>
     </aside>
   )

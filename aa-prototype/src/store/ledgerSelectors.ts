@@ -202,6 +202,22 @@ export interface LedgerRow {
   createdAtISO: string
 }
 
+/** The Ledger table's footer: the pairs' totals, exact to the cent; a transfer moves money already on its prepayment pair, so it is left out. */
+export function ledgerRowTotals(rows: readonly LedgerRow[]): { amount: number; received: number; released: number; paidOut: number } {
+  let amount = 0
+  let received = 0
+  let released = 0
+  let paidOut = 0
+  for (const r of rows) {
+    if (r.kind === 'transfer') continue
+    amount += toCents(r.amount)
+    received += toCents(r.received)
+    released += toCents(r.released)
+    paidOut += toCents(r.paidOut)
+  }
+  return { amount: amount / 100, received: received / 100, released: released / 100, paidOut: paidOut / 100 }
+}
+
 /** The Ledger's rows: every pair and transfer, in scope, newest first. Excludes nothing: the seeded history is ledger data. */
 export function ledgerRows(state: Pick<AppState, 'billing' | 'masters' | 'schedule' | 'xero'>, opts: { anaesthetistId?: AnaesthetistId; openOnly: boolean }): LedgerRow[] {
   const rows: LedgerRow[] = []

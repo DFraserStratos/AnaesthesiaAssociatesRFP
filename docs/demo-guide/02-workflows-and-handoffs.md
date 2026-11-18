@@ -570,7 +570,11 @@ An invoice has been generated.
    paid only after the transfer at authorisation (Workflow 8, Pre-payment).
 7. The system tracks **paid into AA** and **disbursed to anaesthetist** separately.
 8. The anaesthetist's flat balance view, persistent payment history and GST activity update from the
-   Billing Engine's mirror, not from direct Xero queries.
+   Billing Engine's own ledger, AA's system of record, not from direct Xero queries. Every invoice is a
+   ledger pair (a receivable from the payer and a payable to the anaesthetist) created with the invoice;
+   payments are recorded in the ledger first, the payables run pays from the payable legs, and Xero
+   mirrors both. The office checks on **Admin → Ledger** that receipts held equal payables due plus the
+   AA Holding account, and follows up any anaesthetist on its out-of-balance list (catch-up Phase 36).
 9. Eligible individual Xero contacts may later be archived to manage active-contact volume. These
    patient and payer contacts carry only the hidden internal ID: no name, NHI or other personal
    information.
@@ -585,6 +589,8 @@ For S3, use the selected invoice's combined **Simulate payment and payout** shor
 direct link to the highlighted Web Payments row. Explain that the shortcut combines the two demo
 events while the underlying receipt and disbursement states remain separate. For a technical
 audience, use a partial payment followed by two payables runs to prove no double payment.
+S3 Beat 5 closes on the Ledger: in balance, then a $120.00 receipt that matches no invoice puts it
+out of balance (and Dr Souter on the out-of-balance list) until the office allocates it.
 
 ### Source
 
@@ -772,6 +778,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Addendum, billing monitor/retry | Yes | Phase 09 |
 | Contract locked at authorise, invoices from the lock, Contract history | Yes | Catch-up Phase 25 |
 | Xero pairs, payment, balances and disbursement | Yes | Phase 10 |
+| Internal ledger with in-balance view (whole ledger, one anaesthetist, the out-of-balance list) | Yes | Catch-up Phase 36 |
 | Anaesthetist profile, rate per unit and bank details | Yes | Catch-up Phase 26 |
 | AA's monthly fee invoices (settings, run, AA fees tab) | Yes | Catch-up Phase 16 |
 | Hospital import and matching screen | Yes | Catch-up Phase 33 |

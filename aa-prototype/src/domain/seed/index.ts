@@ -213,7 +213,7 @@ export interface SeedState {
   /**
    * Seeded anaesthetist-dashboard figures (Phase 05; W1/W4), keyed by
    * registration number. Labelled demo figures; Phase 10 replaces the
-   * receivables/overdue portion with billing-mirror derivation.
+   * receivables/overdue portion with ledger derivation.
    */
   dashboards: Record<string, AnaesthetistDashboardSeed>
   /** Per-day internal office notes (Phase 06), keyed by calendar date. */
@@ -490,7 +490,7 @@ function buildSeedInternal(): SeedBuild {
   const organisationsRec = byId(ORGANISATIONS, (o) => o.id)
   const patientsRec = byId(patients, (p) => p.hiddenInternalId)
 
-  // Seeded historical billing-mirror rows (Phase 10): merge their Lists/Bookings/
+  // Seeded historical ledger rows (Phase 10): merge their Lists/Bookings/
   // Procedures into the schedule. Their billing + Xero side is composed by
   // `buildSeedBillingSlice`, which rebuilds the same deterministic graph.
   const history = buildHistory({

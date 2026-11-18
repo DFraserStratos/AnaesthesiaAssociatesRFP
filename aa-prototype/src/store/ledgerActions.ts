@@ -10,14 +10,13 @@
 import { roundToCents, toCents } from '../domain/billing/money'
 import { isBookingPair } from '../domain/billing/ledger'
 import { clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
-import type { AppStoreApi } from './appStore'
+import type { AppState, AppStoreApi } from './appStore'
 import { applyReceiptInto } from './paymentActions'
 
 export const OVER_ALLOCATION = "This receipt is more than the invoice's balance. Choose another invoice or mark it refunded."
 
 /** The office's choice of invoices for a held receipt: Booking receivables whose balance covers it. */
-export function allocationRefusal(api: Pick<AppStoreApi, 'getState'>, unmatchedId: string, pairId: string): { code: string; message: string } | null {
-  const state = api.getState()
+export function allocationRefusal(state: Pick<AppState, 'billing'>, unmatchedId: string, pairId: string): { code: string; message: string } | null {
   const u = state.billing.unmatchedReceipts[unmatchedId]
   if (u === undefined) return { code: 'notFound', message: 'Unmatched receipt not found.' }
   if (u.status !== 'held') return { code: 'notHeld', message: 'This receipt is already allocated or refunded.' }
@@ -25,6 +24,8 @@ export function allocationRefusal(api: Pick<AppStoreApi, 'getState'>, unmatchedI
   if (pair === undefined) return { code: 'notFound', message: 'Invoice not found in the ledger.' }
   const balance = roundToCents(pair.receivable.amount - pair.receivable.receivedAmount)
   if (!isBookingPair(pair) || toCents(balance) <= 0) return { code: 'notReceivable', message: 'Choose an invoice with a balance still owed.' }
+  // The payment is recorded in Xero too (a PaymentIn on its ACCREC): an invoice not yet there cannot take it.
+  if (pair.receivable.xeroAccRecId === undefined) return { code: 'notInXero', message: 'This invoice is not in Xero yet. Choose another invoice, or resolve its handoff first.' }
   if (toCents(u.amount) > toCents(balance)) return { code: 'overAllocation', message: OVER_ALLOCATION }
   return null
 }
@@ -37,7 +38,7 @@ export function allocationRefusal(api: Pick<AppStoreApi, 'getState'>, unmatchedI
  */
 export function allocateUnmatchedReceipt(api: AppStoreApi, actor: Actor, unmatchedId: string, pairId: string): Outcome {
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can allocate a receipt.')
-  const refusal = allocationRefusal(api, unmatchedId, pairId)
+  const refusal = allocationRefusal(api.getState(), unmatchedId, pairId)
   if (refusal !== null) return refuse(refusal.code, refusal.message)
   const u = api.getState().billing.unmatchedReceipts[unmatchedId]!
   const metas: MutationMeta[] = []

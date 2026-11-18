@@ -49,7 +49,7 @@
       "states": [
         {
           "state": "due",
-          "caption": "Payables run with the transferred prepayment authorised to disburse: 1 payable, $1,380.00",
+          "caption": "Payables run with the transferred prepayment due to pay out: 1 payable, $1,380.00",
           "steps": [
             {
               "goto": "/web/lists/L-34821-2026-07-24-PM"

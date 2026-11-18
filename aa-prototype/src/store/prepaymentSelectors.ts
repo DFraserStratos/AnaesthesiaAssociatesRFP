@@ -1,7 +1,7 @@
 /**
  * Prepayment as the apps read it (catch-up Phase 27; US-06.3.1, US-06.3.2,
  * US-06.3.4, US-06.3.5, US-03.1.8). The rules are `domain/billing/prepayment.ts`;
- * this file feeds them from the store and reads money from the billing MIRROR
+ * this file feeds them from the store and reads money from the ledger
  * (convention 9), never Xero.
  *
  * The re-check is the derivation (US-06.3.5): nothing is stored, so a change
@@ -53,7 +53,7 @@ export interface PrepaymentGroupView {
   invoiceNumber?: string
   /** The issued invoice's total with GST (0 while pending). */
   invoicedTotal: number
-  /** Received on it, from the mirror (0 while pending). */
+  /** Received on it, from the ledger (0 while pending). */
   receivedTotal: number
   /** Where its money is (catch-up Phase 27a): held in the AA Holding account, transferred, or paid out. */
   holding?: PrepaymentHolding
@@ -369,7 +369,7 @@ export interface HoldingAccountView {
 /**
  * The AA Holding account as Admin reads it (catch-up Phase 27a; US-06.5.1):
  * its balance, the Bookings it covers and its entries, all derived from the
- * mirror by `prepayHolding.ts`, never stored.
+ * ledger by `prepayHolding.ts`, never stored.
  */
 export function holdingAccountView(state: Pick<AppState, 'schedule' | 'billing' | 'masters'>): HoldingAccountView {
   const entries = holdingEntries(state.billing)

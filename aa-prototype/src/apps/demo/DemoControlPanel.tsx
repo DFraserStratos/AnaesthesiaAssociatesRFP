@@ -263,7 +263,7 @@ const SCENARIOS: readonly Scenario[] = [
   {
     id: 'S3',
     title: 'S3 · Money end-to-end',
-    blurb: 'Authorise the multi-procedure and split Lists (the run sends every invoice), follow one Xero pair from payment to the anaesthetist account, then raise AA\'s monthly fee invoices.',
+    blurb: 'Authorise the multi-procedure and split Lists (the run sends every invoice), follow one Xero pair from payment to the anaesthetist account, raise AA\'s monthly fee invoices, then show the ledger balancing.',
     run: () => {
       resetDemo(useAppStore)
       const state = useAppStore.getState()
@@ -275,7 +275,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset. Both of Dr Souter\'s Mon 20 Jul Lists are already in the Review queue: AM (Forte Health, the multi-procedure Booking) and PM (St George\'s, the fee-split Booking: nib $132.50, Alan Prentice the rest). In Admin, authorise both: the run raises and emails the invoices and creates the Xero pairs live. Open AA-2026-0005 in the Xero simulation, use its payment and payout button (the full $152.38 is paid to Dr Souter), then follow the direct link to Dr Souter\'s payment history. Beat 4: Admin Billing monitor, Open AA fee invoices, Demo actions, Seed a month of BCTIs, then Run monthly fee invoices (Dr Rutherford $700.00 before GST), and Record fee payment on AA-FEE-2026-H02 in the Xero simulation.',
+          'Reset. Both of Dr Souter\'s Mon 20 Jul Lists are already in the Review queue: AM (Forte Health, the multi-procedure Booking) and PM (St George\'s, the fee-split Booking: nib $132.50, Alan Prentice the rest). In Admin, authorise both: the run raises and emails the invoices, and each invoice\'s pair goes into the ledger, mirrored in Xero. Open AA-2026-0005 in the Xero simulation, use its payment and payout button (the full $152.38 is paid to Dr Souter), then follow the direct link to Dr Souter\'s payment history. Beat 4: Admin Billing monitor, Open AA fee invoices, Demo actions, Seed a month of BCTIs, then Run monthly fee invoices (Dr Rutherford $700.00 before GST), and Record fee payment on AA-FEE-2026-H02 in the Xero simulation. Beat 5: Admin Ledger reads In balance, with no anaesthetist out of balance; switch to Dr Souter to show what AA owes her and what she owes AA. Then Demo actions, Inject unmatched receipt, Names Dr Souter: out of balance by $120.00 and Dr Souter on the list. Allocate to invoice on one of her receivables puts it back in balance.',
         nav: [{ label: 'Go to Admin app', path: APP_CONFIG.admin.path }],
       }
     },

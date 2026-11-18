@@ -180,7 +180,7 @@ export function WebCatalogue() {
         </LibraryGroup>
 
         <LibraryGroup id="recharts">
-          <CatalogueRow name="Receivables aging bars" source="apps/web/screens/DashboardScreen.tsx" usedIn={W} what="Outstanding receivables by age bucket as horizontal bars with amounts, from the billing mirror." replaceWith="Recharts bar chart (shadcn Chart)" note="Recreated: inline in DashboardScreen.tsx. Spans with no chart semantics or table fallback.">
+          <CatalogueRow name="Receivables aging bars" source="apps/web/screens/DashboardScreen.tsx" usedIn={W} what="Outstanding receivables by age bucket as horizontal bars with amounts, from the ledger." replaceWith="Recharts bar chart (shadcn Chart)" note="Recreated: inline in DashboardScreen.tsx. Spans with no chart semantics or table fallback.">
             <D.AgingBarsDemo f={f} />
           </CatalogueRow>
         </LibraryGroup>

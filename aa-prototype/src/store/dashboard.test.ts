@@ -2,7 +2,7 @@
  * Anaesthetist money views (Phase 05 productivity/leave + Phase 10 billing-mirror
  * receivables / GST). Productivity + leave are seeded demo figures; receivables
  * aging, the flat outstanding ACCPAY list and the GST activity report all derive
- * from the seeded historical billing mirror (`seed/history.ts`), read through the
+ * from the seeded historical ledger (`seed/history.ts`), read through the
  * `billing` slice only (convention 9). Uses isolated, non-persisted stores.
  */
 
@@ -57,7 +57,7 @@ describe('dashboardFiguresFor (store selector, view-scoped)', () => {
   })
 })
 
-describe('receivables aging (billing mirror)', () => {
+describe('receivables aging (ledger)', () => {
   it('buckets the seeded outstanding ACCPAY invoices against today', () => {
     const { aging, accountsOver60 } = receivablesAgingFor(mirror(store()), SOUTER, DEMO_TODAY)
     // (catch-up Phase 36: an unmirrored invoice is owed. The seed range beat AA-2026-S2401, never handed off,

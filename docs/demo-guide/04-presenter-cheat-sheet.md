@@ -349,7 +349,8 @@ Payer -> ACCREC -> AA account -> ACCPAY (full amount) -> Anaesthetist
   transferred to the anaesthetist when the List is authorised (section 8 below).
 - A partial payment releases the payable for exactly the amount received; the rest stays outstanding.
 - Both Xero records carry the InvoiceNumber (the ACCPAY's ends `-P`) and the case Reference.
-- The mobile/web app reads the Billing Engine's mirror, never Xero directly.
+- The mobile/web app reads the Billing Engine's own ledger, AA's system of record, never Xero
+  directly. Xero mirrors the ledger for receivables and banking.
 - Outstanding balances are flat individual payable rows, not a Booking-level rollup and not amounts the
   anaesthetist personally owes.
 - Bank details are master data: the office holds them on each anaesthetist's record (mandatory, with the
@@ -368,6 +369,42 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
   Rutherford $500 + $5 x 40 = $700.00 before GST, $805.00 with GST.
 - Caveat: the fixed schedule, the paid-only count and BCTI granularity (per invoice or per procedure) are
   with AA's accountant; amounts are held ex GST, with GST at the foot of the fee invoice.
+
+### Internal ledger (catch-up Phase 36)
+
+```text
+Receipts held = payables due + the AA Holding account  ->  In balance
+```
+
+- **Pairs:** every invoice is a pair in the Billing Engine's own ledger, created with the invoice
+  (before and whatever happens at the Xero handoff): a receivable from whoever pays and a payable to the
+  anaesthetist (the invoice number, and the same number with `-P`). A prepayment's payable is to the AA
+  Holding account; authorising the List adds a transfer row to whoever did it. An AA fee invoice is a
+  pair with no payable, outside the balance. Xero mirrors the pairs; a pair not yet in Xero is counted
+  ("Not yet in Xero").
+- **The equation:** receipts held less payables due and the AA Holding account is $0.00 when in
+  balance. Fresh seed: Receipts held $1,380.00 = Payables due $0.00 + AA Holding account $1,380.00
+  (Priya Nair's prepayment); Receivables outstanding $11,350.50, Disbursed $27,220.00, AA fees
+  outstanding $580.75 (Dr Souter's unpaid June fee invoice), Not yet in Xero 1.
+- **Two scopes:** the whole ledger, and one anaesthetist. Dr Souter on a fresh seed: AA owes Dr Souter
+  $11,350.50 (due now $0.00, awaiting collection $11,350.50), Dr Souter owes AA $580.75, Collected
+  $27,220.00, Paid out $27,220.00.
+- **The out-of-balance list:** "Anaesthetists out of balance", just a list, each with the amount, the
+  reason and Open. Empty: "Every anaesthetist's ledger is in balance."
+- **The trigger:** **Demo actions → Inject unmatched receipt** on the Ledger, a $120.00 bank receipt that
+  matches no invoice. **Names Dr Souter** (the default): out of balance by $120.00 and Dr Souter on the
+  list. **Names no one**: out by $120.00, the list stays empty. The office clears it with **Allocate to
+  invoice** or **Mark refunded**; the trigger is disabled ("Resolve the held receipt first") while one
+  is held.
+- **Where it lives:** **Admin → Ledger** (`/admin/ledger`, an amber badge counting what puts it out of balance; one
+  anaesthetist at `/admin/ledger/anaesthetists/34821`), linked from the Billing monitor (**Open the
+  ledger**) and each invoice's **Ledger** card. The anaesthetist sees her position on web **Accounts**
+  (Your position) and mobile **Balances** ("Collected $X · Paid out $Y"); on a handset the Demo sheet's
+  **Office runs payables** (office stand-in) pays what is due. The Xero sim's pair detail shows
+  **Ledger pair (the system of record)** with **Matches the ledger**.
+- Note: Dr Souter's outstanding total is $11,350.50 on a fresh seed (it was $7,785.50 before Phase 36),
+  because the seeded AA-2026-S2401 ($3,565.00, Thu 16 Jul Face lift) is now counted though it is not
+  yet in Xero.
 
 ## What each app is for
 
@@ -480,6 +517,9 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 - Contract locked at authorise, the run and the invoice document reading only the lock, Regenerate
   from locked data, and each Contract's History tab (catch-up Phase 25)
 - Xero collection/payable pairs, payments, reconciliation poll, payables, live balances and GST (Phase 10)
+- The internal ledger with an in-balance view: Admin Ledger (the whole ledger and one anaesthetist),
+  the out-of-balance list, unmatched receipts allocated or refunded, and the anaesthetist's position on
+  web Accounts and mobile Balances (catch-up Phase 36)
 - The anaesthetist's profile: own rate per unit editable on mobile and web, the office's Profile card and
   Anaesthetists columns, HPI CPN and bank details mandatory, the bank number masked (catch-up Phase 26)
 - Hospital file import and the matching screen (Admin, Matching): wording as received, field

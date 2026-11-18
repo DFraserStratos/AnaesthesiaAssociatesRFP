@@ -5,6 +5,7 @@ import { SurfaceProvider } from '../../shared'
 import {
   addDayNote,
   billingAttentionCount,
+  ledgerAttentionCount,
   integrationAttentionCount,
   isOpenSlotView,
   matchingAttentionCount,
@@ -50,6 +51,7 @@ function sectionForPath(pathname: string): NavSection {
     case 'review':
     case 'invoices':
     case 'billing':
+    case 'ledger':
     case 'integrations':
     case 'masters':
     case 'audit':
@@ -227,6 +229,8 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   // Billing exceptions across the pipeline (the billing-monitor nav badge):
   // billing-run failures + Xero handoff faults (Phase 10).
   const exceptionCount = useMemo(() => billingAttentionCount({ billing }), [billing])
+  // The ledger's checks, a held unmatched receipt among them (catch-up Phase 36): the amber Ledger badge.
+  const ledgerCount = useMemo(() => ledgerAttentionCount({ billing }), [billing])
   const integrationCount = useMemo(() => integrationAttentionCount({ integrations }), [integrations])
   // Live conflicts from today to the horizon (catch-up Phase 30): the amber Conflicts badge.
   const conflictCount = useMemo(() => openConflictCount({ schedule, masters, clock, appSettings }), [schedule, masters, clock, appSettings])
@@ -292,6 +296,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     review: '/admin/review',
     invoices: '/admin/invoices',
     billing: '/admin/billing',
+    ledger: '/admin/ledger',
     integrations: '/admin/integrations',
     masters: '/admin/masters',
     audit: '/admin/audit',
@@ -303,6 +308,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         active={sectionForPath(pathname)}
         reviewBadge={reviewLists.length}
         billingBadge={exceptionCount}
+        ledgerBadge={ledgerCount}
         integrationBadge={integrationCount}
         conflictBadge={conflictCount}
         draftListBadge={draftListBadge}

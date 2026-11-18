@@ -607,7 +607,7 @@ describe('invoice identity and delivery', () => {
 })
 
 describe('review-pass hardening (8th review)', () => {
-  it('a booking with no Contract moved onto a submitted list fails as a BillingCase, never a throw; authorise stays committed', () => {
+  it('a booking with no Contract moved onto a submitted list fails as a BillingException, never a throw; authorise stays committed', () => {
     const api = store()
     const unwire = wireBillingRun(api)
     try {
@@ -622,7 +622,7 @@ describe('review-pass hardening (8th review)', () => {
       expect(gated.ok).toBe(false)
       if (!gated.ok) expect(gated.code).toBe('bookingsNotCompleted')
       // A Booking marked complete with no Contract (the state this hardening covers)
-      // still fails as a BillingCase, never a throw.
+      // still fails as a BillingException, never a throw.
       api.setState((s) => ({
         schedule: { ...s.schedule, bookings: { ...s.schedule.bookings, [provisional!.id]: { ...s.schedule.bookings[provisional!.id]!, completed: true } } },
       }))

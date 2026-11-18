@@ -53,7 +53,7 @@ function pairRows(state: AppState, bookingId: string): PairRow27[] {
     .filter((i) => i.bookingId === bookingId && i.kind === 'prePayment')
     .sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber))
     .map((i) => {
-      // Catch-up Phase 36: the invoice's ledger pair (was its BillingCase); its Xero ids are on the legs.
+      // Catch-up Phase 36: the invoice's ledger pair (was its billing case); its Xero ids are on the legs.
       const c = Object.values(state.billing.ledger).find((x): x is BookingLedgerPair => isBookingPair(x) && x.invoiceId === i.id)
       const rec = c?.receivable.xeroAccRecId !== undefined ? state.xero.accRecs[c.receivable.xeroAccRecId] : undefined
       const pay = c?.payable?.xeroAccPayId !== undefined ? state.xero.accPays[c.payable.xeroAccPayId] : undefined

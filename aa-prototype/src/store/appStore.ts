@@ -324,7 +324,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  v6: Phase 10 — new billing-case money fields (received/authorised/disbursed +
  *  paidIn/disbursed stamps + handoffFailure), the `receipts` ledger on the
  *  billing slice, DemoSettings.volumeStory + failNextHandoff, seeded historical
- *  billing-mirror + Xero rows (Souter receivables/GST) and the seeded
+ *  ledger + Xero rows (Souter receivables/GST) and the seeded
  *  missed-webhook PaymentIn, new counters (XC/XR/XP/PMT/DSB/PR/RCT).
  *  v5: Phase 09 — new seed bookings (relocated unpaid pre-payment booking, the mixed
  *  + full pre-payment booking, the multi-booking billing-failure list), the seeded
@@ -360,7 +360,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Southern Cross row with no NHI (IRS001, Mere Tipene) and its stub STB0001 on Dr Souter's Tue 4 Aug PM List.
  *  Reseeds on load.
  *  v58: Wave 2 sync on lane/a, Lane B's 33a (v56) joined with Lane A's 25a (v56, v57): one past the higher.
- *  v59: catch-up Phase 36, the internal ledger: `billing.cases` becomes `billing.ledger` (pairs with receivable
+ *  v59: catch-up Phase 36, the internal ledger: the billing cases slice becomes `billing.ledger` (pairs with receivable
  *  and payable legs), with `disbursements`, `unmatchedReceipts` and `exceptions`; receipts carry `pairId`;
  *  transfers hold `out`/`in` legs; AA fee invoices point at their `aaFee` pair; counter `ledgerPair`. Reseeds on load. */
 export const PERSIST_VERSION = 59

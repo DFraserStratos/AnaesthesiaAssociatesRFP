@@ -1,7 +1,7 @@
 /**
  * Catch-up Phase 36 parity capture (work item 1): every money figure the
  * internal ledger must not move, written once from the build BEFORE the phase
- * (BillingCase still the record) into `phase-36-baseline.json`, and compared
+ * (the billing case still the record) into `phase-36-baseline.json`, and compared
  * after it by `ledgerParity.test.ts`. Keyed on invoice numbers and Booking
  * ids, never on case ids (failures no longer consume `BC` ids). Never run
  * with `-u`.

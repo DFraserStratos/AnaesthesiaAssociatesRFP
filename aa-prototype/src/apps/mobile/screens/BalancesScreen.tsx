@@ -6,6 +6,7 @@ import { STATUS_PALETTE } from '../../../theme/statusColours'
 import {
   gstActivityFor,
   outstandingPayableRowsFor,
+  anaesthetistLedgerPosition,
   receivablesAgingFor,
   useAppStore,
   useToday,
@@ -22,8 +23,9 @@ type Section = 'outstanding' | 'gst'
 
 /**
  * Balances tab (M11) — the anaesthetist's money, from the ledger (AA's system of record)
- * (never Xero; convention 9). Outstanding is a FLAT list of individual ACCPAY
- * invoices, no rollup (RFP); a fully-mobile card list, not a table. A GST peek
+ * (never Xero; convention 9). Outstanding is a FLAT list of individual
+ * invoices, no rollup (RFP); the header adds what was collected and paid out,
+ * and what you owe AA (catch-up Phase 36); a fully-mobile card list, not a table. A GST peek
  * lists the amounts received this month with their GST component. An invoice
  * shows the moment the office authorises its List (catch-up Phase 38a).
  */
@@ -42,6 +44,8 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
     () => receivablesAgingFor({ billing, schedule, masters }, anaesthetistId, todayISO).aging,
     [billing, schedule, masters, anaesthetistId, todayISO],
   )
+  // Collected, paid out and what you owe AA, from the ledger's one position (catch-up Phase 36; US-08.3.5).
+  const position = useMemo(() => anaesthetistLedgerPosition({ billing }, anaesthetistId), [billing, anaesthetistId])
   // GST this calendar month (the mobile peek; the web Accounts screen has the period selector).
   const monthStart = `${todayISO.slice(0, 7)}-01`
   const gst = useMemo(
@@ -69,6 +73,14 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
           <span style={{ fontSize: 12, color: neutral.slate }}>Outstanding to you</span>
           <span className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{formatCurrency(aging.total)}</span>
           <span style={{ fontSize: 12, color: neutral.mist }}>{plural(outstanding.length, 'unpaid invoice')}</span>
+          {/* Collected and paid out (catch-up Phase 36): one line where it fits, else each on its own, never split inside a figure. */}
+          <span data-shot="balances-collected-paid-out" className="mono" style={{ fontSize: 12, color: neutral.slate, marginTop: 4, display: 'flex', flexDirection: 'column' }}>
+            <span style={{ whiteSpace: 'nowrap' }}>Collected {formatCurrency(position.collected)}</span>
+            <span style={{ whiteSpace: 'nowrap' }}>Paid out {formatCurrency(position.paidOut)}</span>
+          </span>
+          {position.theyOweAa > 0 && (
+            <span data-shot="balances-you-owe-aa" className="mono" style={{ fontSize: 12, color: neutral.slate }}>You owe AA {formatCurrency(position.theyOweAa)}</span>
+          )}
         </div>
       </div>
 

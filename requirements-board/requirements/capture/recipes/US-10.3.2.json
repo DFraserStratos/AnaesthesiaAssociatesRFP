@@ -1,7 +1,7 @@
 {
   "id": "US-10.3.2",
   "status": "partial",
-  "absentReason": "Web shows AA fee invoices and their status; the mobile app does not show them.",
+  "absentReason": "Web shows AA fee invoices and their status; the mobile app shows only the total owed to AA, not the invoices.",
   "shots": [
     {
       "name": "aa-fees",
@@ -13,6 +13,20 @@
           "steps": [],
           "highlight": [
             "[data-shot=web-accounts-aa-fees]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "you-owe-aa",
+      "app": "mobile",
+      "caption": "What you owe AA in unpaid fee invoices, on the phone",
+      "start": "/mobile/balances",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=balances-you-owe-aa]"
           ]
         }
       ]

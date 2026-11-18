@@ -117,10 +117,10 @@ describe("a prepayment's payable and the count (catch-up Phase 27a; OQ-29 provis
 
   it('is off by default: the AA Holding account payable is not a BCTI', () => {
     expect(BCTI_COUNT_RULE.prepaymentPairs).toBe(false)
-    expect(ids(bctiRecordsOf(pairs, { TR1: transfer }))).toEqual(['P-R1'])
+    expect(ids(bctiRecordsOf(pairs, { TR1: transfer }))).toEqual(['BC-R1']) // keyed on the pair id (catch-up Phase 36 review: stable across the hand-off)
   })
 
   it('switched on, it counts again', () => {
-    expect(ids(bctiRecordsOf(pairs, { TR1: transfer }, { ...BCTI_COUNT_RULE, prepaymentPairs: true })).sort()).toEqual(['P-R1', 'P-R2'])
+    expect(ids(bctiRecordsOf(pairs, { TR1: transfer }, { ...BCTI_COUNT_RULE, prepaymentPairs: true })).sort()).toEqual(['BC-R1', 'BC-R2'])
   })
 })

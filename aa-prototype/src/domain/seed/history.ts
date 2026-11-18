@@ -1,8 +1,8 @@
 /**
- * Seeded historical billing-mirror + Xero rows (Phase 10; Decision 1 seed-money).
+ * Seeded historical ledger + Xero rows (Phase 10; Decision 1 seed-money).
  *
  * The anaesthetist money views (outstanding balances, receivables aging, GST
- * activity) go LIVE over the Billing Engine's mirror in Phase 10. To have them
+ * activity) go LIVE over the Billing Engine's ledger in Phase 10. To have them
  * populated on load for Dr Souter, we seed a set of PAST accounts as a full,
  * coherent graph: a billed List + completed Booking + Procedure, an Invoice + line,
  * a ledger pair carrying the money (received / authorised / disbursed + dates),

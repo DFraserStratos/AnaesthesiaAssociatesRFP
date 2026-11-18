@@ -16,7 +16,7 @@
  * `payablesDue` is the ONE source of what is due: Phase 39a's weekly run reads
  * it, with no second copy. The run is an on-demand office action here (OQ-47
  * Proposed). Each disbursement is the ledger's record of a payment made in Xero
- * (OQ-111, D53), written through one function (`disburseLegsInto`) that Phase
+ * (OQ-111, D53), written through one function (`disburseLegs`) that Phase
  * 37's detection will call too, so only the caller changes. Audited
  * `ledger.disbursed` then `xero.disbursed`.
  */
@@ -94,11 +94,12 @@ export function payablesDue(state: Pick<AppState, 'billing'>, filter: PayablesFi
   const by = new Map<string, { count: number; cents: number }>()
   for (const l of legsOf(state, filter)) {
     const due = toCents(dueOn(l.leg))
-    if (due <= 0) continue
-    count += 1
+    if (due === 0) continue
+    // Signed: a negative leg (Phase 39a) nets against the payee's positive ones; only positive legs count as payables to pay.
+    if (due > 0) count += 1
     cents += due
     const row = by.get(l.anaesthetistId) ?? { count: 0, cents: 0 }
-    row.count += 1
+    if (due > 0) row.count += 1
     row.cents += due
     by.set(l.anaesthetistId, row)
   }

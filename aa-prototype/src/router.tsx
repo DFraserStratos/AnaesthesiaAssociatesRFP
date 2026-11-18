@@ -23,6 +23,8 @@ import {
 import {
   AdminAuditRoute,
   AdminBillingPage,
+  AdminLedgerRoute,
+  AdminAnaesthetistLedgerRoute,
   AdminAaFeesRoute,
   AdminAaFeeSettingsRoute,
   AdminBookingDetailRoute,
@@ -125,6 +127,10 @@ export function AppRouter() {
               <Route index element={<AdminBillingPage />} />
               <Route path="aa-fees" element={<AdminAaFeesRoute />} />
               <Route path="aa-fees/settings" element={<AdminAaFeeSettingsRoute />} />
+            </Route>
+            <Route path="ledger">
+              <Route index element={<AdminLedgerRoute />} />
+              <Route path="anaesthetists/:anaesthetistId" element={<AdminAnaesthetistLedgerRoute />} />
             </Route>
             <Route path="integrations" element={<AdminIntegrationsRoute />} />
             <Route path="masters">

@@ -266,10 +266,13 @@ describe('the BCTI records (16 count, read from the payable legs)', () => {
   it('one record per procedure payable leg, none for a fee, a prepayment or a transfer; paid date only once fully received', () => {
     const fee = newAaFeePair({ id: 'F', aaFeeInvoice: { id: 'AF', invoiceNumber: 'AA-FEE-1', anaesthetistId: SOUTER, total: 805 }, atISO: AT })
     const records = bctiRecordsOf([receive(pair('A', 100), 100), receive(pair('B', 100, { mirrored: false }), 50), pair('PP', 1380, { holding: true }), fee])
+    // Keyed on the pair id, never the mirror id, so a record counted before the hand-off is the same one after.
     expect(records.map((r) => [r.accPayId, r.billNumber, r.anaesthetistId, r.receivablePaidAtISO ?? null])).toEqual([
+      ['A', 'AA-A-P', SOUTER, AT],
       ['B', 'AA-B-P', SOUTER, null],
-      ['XP-A', 'AA-A-P', SOUTER, AT],
     ])
+    const mirrored = receive(pair('B', 100), 50)
+    expect(bctiRecordsOf([mirrored])[0]!.accPayId).toBe(bctiRecordsOf([receive(pair('B', 100, { mirrored: false }), 50)])[0]!.accPayId)
   })
 
   it('same input gives deep-equal output', () => {

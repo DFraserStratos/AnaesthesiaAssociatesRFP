@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { TextAction } from '../../../shared/ui'
 import { aaFeeMonthLabel } from '../../../domain/billing/aaFee'
 import { needAddressText } from '../../../domain/billing/invoicePresentation'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
@@ -52,6 +53,7 @@ const headCellStyle = adminHead()
  * harness bar's Demo actions menu on this screen) are badged (convention 13).
  */
 export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
+  const navigate = useNavigate()
   const schedule = useAppStore((s) => s.schedule)
   const billing = useAppStore((s) => s.billing)
   const masters = useAppStore((s) => s.masters)
@@ -121,7 +123,7 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
           balance" flag reads any open (unpaid) prior episode; whether to separately distinguish open
           from genuinely overdue is held as a discovery question, since invoices carry a raised date
           but no due date. AA's own fee is invoiced to each anaesthetist monthly; it is never deducted
-          from a payable.
+          from a payable. Money in and out is recorded in the ledger first; Xero mirrors it.
         </div>
       </div>
 
@@ -132,15 +134,18 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
       )}
 
       {/* Payables run (unbadged office action; the disbursement side of the
-          two-state money model). Pays every authorised ACCPAY the increment
-          since the last run. */}
+          two-state money model). Pays every payable leg in the ledger what it has
+          released since the last run (catch-up Phase 36). */}
       <div data-shot="billing-payables-run" style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 240 }}>
           <div style={{ fontSize: 14, fontWeight: 700 }}>Payables run</div>
           <div style={{ fontSize: 12.5, color: neutral.slate, marginTop: 2 }}>
             {due.count > 0
-              ? `${plural(due.count, 'payable')} authorised · ${formatCurrency(due.total)} to disburse to anaesthetists. A payable authorises for exactly what its ACCREC has received.`
-              : 'No payables are authorised for disbursement. A payable authorises for exactly what its ACCREC has received.'}
+              ? `${plural(due.count, 'payable')} due · ${formatCurrency(due.total)} to pay out to anaesthetists. A payable is released for exactly what its invoice has received.`
+              : 'No payables due. A payable is released for exactly what its invoice has received.'}
+          </div>
+          <div style={{ marginTop: 6 }}>
+            <TextAction size="sm" flush shot="billing-open-ledger" onClick={() => navigate('/admin/ledger')}>Open the ledger</TextAction>
           </div>
           {payRunMsg !== null && (
             <div style={{ fontSize: 12.5, color: semantic.success.onTint, marginTop: 6 }}>{payRunMsg}</div>

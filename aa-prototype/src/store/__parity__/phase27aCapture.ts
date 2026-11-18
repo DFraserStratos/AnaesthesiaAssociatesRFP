@@ -90,7 +90,7 @@ export function payablesDueByAnaesthetist(state: AppState): { anaesthetistId: st
   return [...due.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([anaesthetistId, cents]) => ({ anaesthetistId, total: cents / 100 }))
 }
 
-/** An invoice's ledger pair (catch-up Phase 36; was its BillingCase). */
+/** An invoice's ledger pair (catch-up Phase 36; was its billing case). */
 function pairOfInvoice(state: AppState, invoiceId: string): BookingLedgerPair | undefined {
   return Object.values(state.billing.ledger).find((x): x is BookingLedgerPair => isBookingPair(x) && x.invoiceId === invoiceId)
 }
@@ -104,7 +104,7 @@ function pairShapes(state: AppState, bookingId: string): PairShape27a[] {
     .filter((i) => i.bookingId === bookingId && i.kind === 'prePayment')
     .sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber))
     .map((i) => {
-      // Catch-up Phase 36: the invoice's ledger pair (was its BillingCase); its Xero ids are on the legs.
+      // Catch-up Phase 36: the invoice's ledger pair (was its billing case); its Xero ids are on the legs.
       const c = pairOfInvoice(state, i.id)
       const rec = c?.receivable.xeroAccRecId !== undefined ? state.xero.accRecs[c.receivable.xeroAccRecId] : undefined
       const pay = c?.payable?.xeroAccPayId !== undefined ? state.xero.accPays[c.payable.xeroAccPayId] : undefined

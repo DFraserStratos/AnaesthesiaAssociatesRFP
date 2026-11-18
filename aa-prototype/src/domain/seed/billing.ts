@@ -9,7 +9,7 @@
  * restores it through the same seam.
  *
  * Ids are formatted to MIRROR `store/mutate.ts`'s ID_FORMATS for the four
- * billing counter kinds (invoice / invoiceLine / billingCase / invoiceNumber),
+ * billing counter kinds (invoice / invoiceLine / ledgerPair / invoiceNumber),
  * and the returned counters are bumped past what this slice consumes so the
  * first runtime billing run continues the sequence with no collision. Billing
  * and Xero records deliberately receive no simulated runtime audit entries;
@@ -131,7 +131,7 @@ const BILLING_RUN_SENDER_NAME = 'Billing run'
 const SEED_PREPAYMENT_KEY = 'SEED-PREPAY-BC0001'
 
 /**
- * Build the seeded billing slice: the seeded historical mirror + Xero rows
+ * Build the seeded billing slice: the seeded historical ledger + Xero rows
  * (Phase 10; buildHistory) composed with the ONE PAID pre-payment case (the
  * mixed + full pre-payment exemplar), which gets its own Xero pair + receipt so
  * it reads consistently in the Xero sim and the GST report. Returns just the

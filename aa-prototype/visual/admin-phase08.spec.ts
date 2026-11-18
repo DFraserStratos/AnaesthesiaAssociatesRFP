@@ -194,9 +194,9 @@ test('authorise raises and sends invoices; contract-holder document, Resend and 
 
   // Phase 10: authorising now hands the invoice off to Xero. The rail keeps
   // the two references separately labelled instead of one long footer string.
-  await expect(page.getByTestId('xero-handoff-status')).toHaveText('ACCREC and ACCPAY created')
-  await expect(page.getByTestId('xero-accrec-reference')).toHaveText(/AA-2026-\d{4}/)
-  await expect(page.getByTestId('xero-accpay-reference')).toHaveText(/AA-2026-\d{4}-P/)
+  await expect(page.getByTestId('xero-handoff-status')).toHaveText('Mirrored in Xero')
+  await expect(page.getByTestId('xero-accrec-reference')).toHaveText(/^XR\d{4}$/)
+  await expect(page.getByTestId('xero-accpay-reference')).toHaveText(/^XP\d{4}$/)
   await page.screenshot({ path: 'visual/shots/a8-03-contract-holder-doc.png', fullPage: true })
 
   await page.screenshot({ path: 'visual/shots/a8-04-emailed.png', fullPage: true })
@@ -241,7 +241,7 @@ test('authorise raises and sends invoices; contract-holder document, Resend and 
   })
   await page.reload()
   await page.waitForLoadState('networkidle')
-  await expect(page.getByTestId('xero-handoff-status')).toHaveText('Xero handoff pending')
+  await expect(page.getByTestId('xero-handoff-status')).toHaveText('Not yet in Xero')
   await expect(page.getByTestId('xero-accrec-reference')).toHaveCount(0)
   await expect(page.getByTestId('xero-accpay-reference')).toHaveCount(0)
 
@@ -340,7 +340,7 @@ test('invoice rail keeps a failed Xero handoff visible and actionable', async ({
   await page.waitForLoadState('networkidle')
   const status = page.getByTestId('xero-handoff-status')
   await expect(status).toHaveText('Xero handoff failed')
-  await expect(page.getByText('The invoice remains valid. Resolve and retry in Billing monitor.')).toBeVisible()
+  await expect(page.getByText('The invoice and its ledger pair stand. Resolve and retry in Billing monitor.')).toBeVisible()
   await expect(page.getByTestId('xero-accrec-reference')).toHaveCount(0)
   await expect(page.getByTestId('xero-accpay-reference')).toHaveCount(0)
   await expect(status.locator('xpath=ancestor::section')).toHaveCSS('background-color', 'rgb(249, 240, 220)')

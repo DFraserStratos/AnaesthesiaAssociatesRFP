@@ -84,7 +84,7 @@ export function CardExample() {
       <Card padding="panel" title="Leave" action={<span className="mono" style={{ fontSize: 14, fontWeight: 600 }}>2 booked</span>}>
         <span style={{ fontSize: 13, color: neutral.slate }}>The panel: 20px, e1, a 17/600 h2.</span>
       </Card>
-      <Card title="Xero handoff" tone="warning">
+      <Card title="Ledger" tone="warning">
         <span style={{ fontSize: 13 }}>The warning tone.</span>
       </Card>
     </div>

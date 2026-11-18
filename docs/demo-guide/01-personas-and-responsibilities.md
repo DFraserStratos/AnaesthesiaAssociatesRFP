@@ -153,7 +153,8 @@ functionality.
 ### Current prototype caveats
 
 - Balances, payment history and GST activity are now live: the anaesthetist money views read the
-  Billing Engine's mirror (outstanding payables, received and paid-out invoices, receivables aging,
+  Billing Engine's own ledger, AA's system of record (her position on web Accounts, "Collected ·
+  Paid out" on mobile Balances, outstanding payables, received and paid-out invoices, receivables aging,
   GST transaction list), over seeded historical rows plus anything a demo payment adds. They never
   query Xero directly.
 - Days off are kept in the availability calendar (My calendar on mobile, My availability on the web),
@@ -268,6 +269,8 @@ allowing billing to proceed.
 - Correct office-owned data without returning the List to the anaesthetist.
 - Authorise a clean List and know that it is now immutable.
 - Monitor later billing, integration and Xero exceptions.
+- Check the ledger is in balance on the Ledger screen, and follow up any anaesthetist on its
+  out-of-balance list (allocate or refund a receipt that matches no invoice).
 - Keep invoices moving after the run sends them: resend one, or give a payer with no invoice address
   an email or postal address.
 
@@ -358,6 +361,8 @@ organisational assumption.
 - Manage individual Xero contact archiving at scale.
 - Maintain AA fee settings and run the monthly fee invoices (AA's own fee to each anaesthetist, never
   deducted from a payment to them).
+- Check the ledger is in balance on the Ledger screen (the whole ledger or one anaesthetist), and
+  follow up any anaesthetist on its out-of-balance list.
 
 ### Prototype status
 
@@ -366,7 +371,9 @@ webhook and reconciliation poll, payables run with separate paid-in and disburse
 archiving and live anaesthetist balances (Phase 10) are all clickable. AA's monthly fee settings,
 the monthly fee invoice run and the anaesthetist's AA fees tab followed in catch-up Phase 16. Since
 catch-up Phase 22 the run sends each invoice itself (emailed, or marked To post), in the
-anaesthetist's name with AA as agent, and a fee can be split on the Booking.
+anaesthetist's name with AA as agent, and a fee can be split on the Booking. Since catch-up Phase 36
+the Billing Engine's own ledger is AA's system of record (every invoice a receivable and payable pair,
+Xero mirroring it), with the Admin Ledger screen's in-balance view and out-of-balance list.
 
 ## External actors, not prototype login personas
 

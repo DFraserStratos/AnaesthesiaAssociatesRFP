@@ -1,7 +1,7 @@
 {
   "id": "US-08.3.3",
   "status": "partial",
-  "absentReason": "Archiving is simulated for Xero contacts only; purging a contact is not shown.",
+  "absentReason": "Purging a contact is not shown.",
   "shots": [
     {
       "name": "archived-contacts",
@@ -49,6 +49,38 @@
           "steps": [],
           "highlight": [
             "tr:has-text(\"Annette Riley\")"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ledger-archived-contact",
+      "app": "admin",
+      "caption": "Annette Riley's pairs keep their rows and money in the ledger after her Xero contact is archived",
+      "start": "/admin/ledger",
+      "setup": [
+        {
+          "goto": "/admin/ledger"
+        },
+        {
+          "trigger": "run-archive-job"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=group[name=\"Which pairs\"] >> role=button[name=\"All\"]"
+            },
+            {
+              "wait": "[data-shot=ledger-pairs] tr:has-text(\"Annette Riley\") >> text=\"Contact archived in Xero\" >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[data-shot=ledger-pairs] tr:has-text(\"Annette Riley\")"
           ]
         }
       ]

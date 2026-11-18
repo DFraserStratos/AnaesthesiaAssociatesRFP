@@ -387,3 +387,35 @@ describe('payables are computed from the ledger (work item 7)', () => {
     expect((runPayables(api, OFFICE) as { ok: true; value: { disbursedCount: number } }).value.disbursedCount).toBe(0)
   })
 })
+
+describe('review fixes (catch-up Phase 36)', () => {
+  it('a receipt cannot be allocated to an invoice not yet in Xero (the payment is recorded there too)', () => {
+    const api = createAppStore()
+    const r = recordUnmatchedReceipt(api, { amount: 120, reference: 'Bank deposit · SOUTER JULY', idempotencyKey: 'RF1', source: 'webhook', anaesthetistId: ANAE.souter })
+    const id = r.ok ? r.value.id : ''
+    const unmirrored = Object.values(api.getState().billing.ledger).find((p) => p.receivable.xeroAccRecId === undefined)!
+    expect(allocateUnmatchedReceipt(api, OFFICE, id, unmirrored.id)).toMatchObject({ ok: false, code: 'notInXero' })
+    expect(payablesDue(api.getState()).total).toBe(0)
+  })
+
+  it('a key already applied to an invoice is never held a second time as unmatched', () => {
+    const api = createAppStore()
+    authoriseMon20(api)
+    const p = pairsForList(api.getState(), AM20)[0]!
+    receivePayment(api, { accRecId: p.receivable.xeroAccRecId!, amount: 10, idempotencyKey: 'DUP', source: 'webhook' })
+    expect(recordUnmatchedReceipt(api, { amount: 10, reference: 'x', idempotencyKey: 'DUP', source: 'webhook' })).toMatchObject({ ok: false, code: 'alreadyApplied' })
+    expect(heldUnmatchedReceipts(api.getState())).toEqual([])
+  })
+
+  it('a BCTI counted before its pair reaches Xero is not counted again after (one stable key)', () => {
+    const api = createAppStore()
+    armHandoffFault(api, OFFICE_ACTOR, {})
+    authoriseMon20(api)
+    const faulted = Object.values(api.getState().billing.ledger).find((p) => p.handoffFailure !== undefined)!
+    const before = bctiRecords(api.getState()).find((r) => r.billNumber === (faulted as BookingLedgerPair).payable!.number)!
+    handoffPair(api, faulted.id)
+    const after = bctiRecords(api.getState()).find((r) => r.billNumber === (faulted as BookingLedgerPair).payable!.number)!
+    expect(after.accPayId).toBe(before.accPayId)
+  })
+})
+

@@ -6,7 +6,7 @@
     {
       "name": "receipt-in-ledger",
       "app": "web",
-      "caption": "A receipt recorded in Xero shown against its ledger invoice in the anaesthetist's payments",
+      "caption": "A receipt reconciled back to its invoice in the ledger, shown in the anaesthetist's payments",
       "start": "/web/accounts/payments?invoice=AA-2026-0002",
       "setup": [
         {
@@ -58,7 +58,7 @@
     {
       "name": "engine-link",
       "app": "simulator",
-      "caption": "Xero pair carrying its link back to the billing engine case",
+      "caption": "Xero pair linked back to its ledger pair, the system of record, and matching it after the payment",
       "start": "/demo/xero/invoices",
       "setup": [
         {

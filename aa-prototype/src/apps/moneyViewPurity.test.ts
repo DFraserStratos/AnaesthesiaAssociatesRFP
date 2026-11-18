@@ -23,6 +23,7 @@ const ALLOWED: Record<string, string> = {
   './admin/screens/masters/ReferenceViews.tsx': 'Xero contact archiving (a Xero administration view, not a money view)',
   '../shared/demoTriggers/registry.ts': "the demo triggers pick ACCRECs through openAccRecs (Phase 14's demo-surface exemption)",
   './admin/screens/InvoiceDocument.tsx': "the Ledger card's Xero identifiers beside the ledger's numbers (no money figure)",
+  './admin/screens/LedgerScreen.tsx': "the Xero column's 'Contact archived in Xero' note beside ledger data (no money figure)",
 }
 
 /** Strip block + line comments so a comment mentioning `state.xero` never trips the scan. */

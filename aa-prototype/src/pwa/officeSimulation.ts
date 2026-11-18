@@ -43,8 +43,8 @@
  * SUBMITTED -> AUTHORISED transition, locks the Bookings, and emits
  * `listAuthorised`; `wireBillingRun` (wired by the PWA entry exactly as
  * `main.tsx` wires it) consumes the event, runs the billing run, raises the
- * Invoices and their BillingCases, stamps `billedAtISO`, and hands the cases off
- * to the Xero mirror as ACCREC/ACCPAY pairs. The authorised List leaves the
+ * Invoices with their ledger pairs, stamps `billedAtISO`, and hands the pairs off
+ * to Xero, which mirrors them as ACCREC/ACCPAY records. The authorised List leaves the
  * anaesthetist's Done tab and its money appears in Balances (catch-up Phase 38a:
  * both at once, at AUTHORISED) — which is the
  * whole reason this exists. Should a host ever wire this job WITHOUT the billing

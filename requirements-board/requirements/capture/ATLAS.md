@@ -320,6 +320,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/web/availability/mine` | My availability (catch-up Phase 29): Dr Souter's month (AM and PM per day), click a day and shift-click to a range; the right rail holds the session panel and the form, then "Your series" and the legend. `?date=YYYY-MM-DD` opens a day in the rail (the capture runner has no shift-click: open `?date=`, click "Change both sessions" and fill the To date for a range). |
 | `/web/accounts/overdue`, `/web/accounts/payments`, `/web/accounts/gst`, `/web/accounts/fees` | Accounts tabs. Add `?invoice=AA-2026-0005` to focus a payment, which exists only after S3 billing. AA fees (catch-up Phase 16) lists Dr Souter's AA fee invoices; `?invoice=AA-FEE-2026-H02` focuses one. |
 | `/web/accounts/gst` (catch-up Phase 26) | The GST tab has no period switch (the GST period is retired): a calendar month, caption `gst-month` "Month (1 Jul to 21 Jul 2026) ...", footer "Month total". Never click a Segmented here. |
+| `/web/accounts/*` (catch-up Phase 36) | Every Accounts tab has the "Your position" strip `web-accounts-position` above the sub-tabs: AA owes you (with "Due now ..., which AA holds for you; awaiting collection ..."), Collected for you, Paid out to you, You owe AA (its link "Your AA fee invoices" opens the AA fees tab). The Overdue caption reads "One row per outstanding invoice, ordered by date raised. No rollup (per the RFP)." (no ACCPAY). Overdue also lists the seed's AA-2026-S2401 ($3,565.00, Thu 16 Jul PM) now. |
 | `/web/profile` | Your profile (catch-up Phase 26; `web-profile`), reached from the nav persona button `[data-shot=web-profile-link]` (aria-label "Your profile, Dr Melanie Souter"); the four nav tabs are unchanged. Panels: Billing `web-billing-panel` (field "Rate per unit ($)", "Save changes" `web-rate-save`, enabled only once the rate differs), Contact `web-contact-panel`, Identity `web-identity-panel` (Registration, HPI CPN), Bank account `web-bank-panel` (name, number masked `99-0101-•••••21-00`). Only the rate is editable; the rest carries lock glyphs. |
 
 **Admin app** (`src/apps/admin/`)
@@ -340,6 +341,10 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/billing` | Billing monitor. Its AA fee invoices panel is `[data-shot=billing-aa-fee-invoices]`. The pipeline stage after Invoices generated reads "Sent or to post" (catch-up Phase 22); a List with an invoice that has no invoice address shows `monitor-no-address` ("1 invoice needs an invoice address." with the link "Add an address and send"). |
 | `/admin/billing/aa-fees` | AA fee invoices: month picker, the run preview (`aa-fee-preview-<anaesthetistId>` rows), the teal "Run monthly fee invoices" button and every fee invoice (`aa-fee-row-<number>`, expand for `aa-fee-detail-<number>`). |
 | `/admin/billing/aa-fees/settings` | AA fee settings: fixed items, the charge per BCTI and the worked example (`aa-fee-example`). |
+| `/admin/ledger` | Ledger (catch-up Phase 36; US-13.2.1, US-08.3.4): the Billing Engine's own ledger, AA's system of record. Header `ledger-system-of-record`; the "Scope" segmented control (`role=group[name="Scope"]`, buttons "Whole ledger" and "One anaesthetist"); the balance indicator `ledger-balance` (`data-in-balance=true|false`; "In balance · receipts held equal payables due" or "Out of balance by $120.00", its equation line, and one `li[data-check=<code>]` per failed check); the tiles `ledger-tiles` (Receivables outstanding, Receipts held, Payables due, Disbursed; then Awaiting collection, AA Holding account, AA fees outstanding, Not yet in Xero); "Anaesthetists out of balance" `ledger-anaesthetists-out-of-balance` (empty state "Every anaesthetist's ledger is in balance."; else a table, rows `tr[data-anaesthetist-id=<reg>]` with Open); "Receipts with no matching invoice" `ledger-unmatched` (only once an unmatched receipt exists; rows `tr[data-unmatched-id=UR0001]`, pill Held, "Allocated to ..." or "Refunded", actions `ledger-allocate` and `ledger-refund`); "Pairs" `ledger-pairs` with the filter `role=group[name="Which pairs"]` (buttons "Open", the default, and "All"); rows `tr[data-pair-id=<id>][data-pair-kind=procedure|prePayment|transfer|aaFee]`, columns Receivable, Payable, Kind, Patient, Payer, Payee, Amount, Received, Released, Paid out, Xero ("Mirrored", or the pill "Not yet in Xero", plus "Contact archived in Xero" under an archived payer); a row click opens its invoice (an AA fee row opens `/admin/billing/aa-fees`); `?pair=<id>` tints that row; then `ledger-footnotes`. |
+| `/admin/ledger/anaesthetists/:anaesthetistId` | One anaesthetist's ledger (catch-up Phase 36; US-08.3.5): the same screen scoped, with the select `ledger-anaesthetist-select`; `ledger-balance` reads "Dr Souter's ledger is in balance" (or "... is out of balance by $120.00"); `ledger-tiles` (`data-shot-scope=anaesthetist`) holds `ledger-aa-owes` ("AA owes Dr Souter": Due now, Awaiting collection, Total), `ledger-owes-aa` ("Dr Souter owes AA": Unpaid AA fees) and the Collected for them and Paid out to them tiles; "Dr Souter's pairs" (no Payee column). No out-of-balance list or unmatched card at this scope. Dr Souter is `34821`; an unknown id redirects to `/admin/ledger`. |
+| `/admin/invoices/:invoiceId` (catch-up Phase 36) | The rail's "Xero handoff" card is now the "Ledger" card `invoice-ledger-card` (no `h2` "Xero handoff" any more): `xero-handoff-status` reads "Mirrored in Xero", "Not yet in Xero" or "Xero handoff failed" (then "The invoice and its ledger pair stand. Resolve and retry in Billing monitor."), then `ledger-receivable-number`, `xero-accrec-reference` (now the Xero ID, `XR...`), `ledger-payable-number`, `xero-accpay-reference` (`XP...`), on a prepayment `xero-accpay-payee` and `xero-transfer-journal-reference`, and the link "Open in the ledger" `invoice-open-ledger` (`/admin/ledger?pair=<id>`). The Xero ID rows show only once the pair is in Xero. |
+| `/admin/billing` (catch-up Phase 36) | The intro adds "Money in and out is recorded in the ledger first; Xero mirrors it." The payables panel `billing-payables-run` reads "N payable(s) due · $X to pay out to anaesthetists. A payable is released for exactly what its invoice has received." (or "No payables due. ...") with the link "Open the ledger" `billing-open-ledger`; the "Run payables" button is unchanged. |
 | `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. A message stages a row on `/admin/matching` and applies nothing (catch-up Phase 33); the attention callout `integrations-attention` shows dead-letter only. |
 | `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons`, `surgeonRooms`, `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifiers` (catch-up Phase 19b, "Modifiers"; the old `modifierCodes` value opens it), `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). A Contract's panel has Details and History tabs (catch-up Phase 25). |
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip, Identifiers, Surgeons' room and Groups cards, Pairing preferences. "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. Catch-up Phase 17a: Specialties, Identifiers and Groups in the first row, then one row per room (main room first), its Surgeons' room card beside a "Practice manager and PAs" card, then Pairing preferences. |
@@ -350,6 +355,9 @@ The side nav has: Day view, Matching (amber badge `[data-shot=nav-badge-matching
 catch-up Phase 33), Conflicts (amber badge `[data-shot=nav-badge-conflicts]`, catch-up
 Phase 30), Review queue, Invoices, Billing monitor, Integrations, Master data, Audit. Every side-nav
 badge carries `data-shot=nav-badge-<section>`.
+
+Catch-up Phase 36 adds "Ledger" after Billing monitor, with an amber badge `[data-shot=nav-badge-ledger]` counting
+the ledger's failed checks (none at reset, so no badge; 1 after "Inject unmatched receipt").
 
 **Mobile app** (`src/apps/mobile/`; on :5174 for shots)
 
@@ -362,6 +370,7 @@ badge carries `data-shot=nav-badge-<section>`.
 | `/mobile/availability` | Find cover: "My availability" (the day's AM and PM chips, a "Move" button on a movable List, `availability-move-am`/`-pm`; "Change" opens the day's bottom sheet, "My calendar" slides the calendar in), and the everyone / free-only grid. The six-day strip's days are `button[data-date=YYYY-MM-DD]` (Tue 21 to Sun 26). A colleague's free cell is tappable only where Dr Souter has a movable List that session (`availability-move-to-<registration>-am`/`-pm`, "Tap to move your List here"). "Moved to you" (`moved-to-you`) tops the screen when a colleague moved a List to her (catch-up Phase 32; the cover request and "Tap to ask" are retired). |
 | `/mobile/availability/calendar` | My calendar (catch-up Phase 29): a month of Dr Souter's sessions, AM over PM, July to the horizon month; the tab bar is hidden; the sticky teal "Add days off" opens the sheet on the form. |
 | `/mobile/balances` | "Your account": Outstanding and GST this month. |
+| `/mobile/balances` (catch-up Phase 36) | The header card adds the line `balances-collected-paid-out` "Collected $X · Paid out $Y" under the unpaid count, and `balances-you-owe-aa` "You owe AA $Z" only when Dr Souter has an unpaid AA fee invoice (she does at reset: AA-FEE-2026-H02). The PWA Demo sheet adds `pwa-office-runs-payables` here. |
 | `/mobile/more` | Settings. The PWA adds a demo panel with a non-deterministic build ID. Avoid shooting that panel. |
 | `/mobile/more` (catch-up Phase 26) | The "Profile" card `mobile-profile` sits between the persona card and the Demo card: rows `mobile-profile-rate` (Rate per unit $26.50, with the "Change" text action `mobile-profile-rate-change`), Phone, Email, Registration, HPI CPN (`mobile-profile-hpi`) and Bank account (`mobile-profile-bank`, masked), the office-held rows with lock glyphs and captions. Its lower rows sit near the fold: `scroll` to `mobile-profile-bank` first. "Change" opens the bottom sheet `mobile-rate-sheet` (field "Rate per unit ($)", "Save rate" `mobile-rate-save`). |
 
@@ -378,6 +387,7 @@ badge carries `data-shot=nav-badge-<section>`.
 | `/demo/xero` | Xero simulation, Contacts tab. |
 | `/demo/xero/invoices` | Invoices tab. |
 | `/demo/xero/invoices/:accRecId` | Pair detail: ACCREC and ACCPAY, money flow, both records' InvoiceNumber and Reference (`xero-invoice-identifiers`); the payable equals the receivable. `XRB0` exists in the seed. An AA fee pair (`XRFH01`, `XRFH02`) shows the fee ACCREC and a "No payable" note (`xero-aa-fee-pair`). |
+| `/demo/xero/invoices/:accRecId` (catch-up Phase 36) | The callout `xero-engine-link` is now titled "Ledger pair (the system of record)"; inside it `xero-ledger-pair` (the patient, then Ledger pair, Receivable and Payable numbers and the ledger's received, released and paid out) and the chip `xero-ledger-match` ("Matches the ledger" or "Differs from the ledger"). The page subtitle says Xero mirrors the Billing Engine's ledger. |
 | `/demo/integrations` | Integration simulator: feeds, message library, raw HL7 to FHIR, then pane 3 "Sent to matching" (a message stages a row on `/admin/matching`, never applies). |
 | `/demo/data` | Data inspector: today's lists, seeded scenario finder, audit trail, lifecycle states, guard console. |
 
@@ -1114,6 +1124,38 @@ were already imported. Nothing new.").
 - Admin Day: open the drawer with `button[data-list-id="L-34821-2026-08-04-PM"]` on `/admin/day/2026-08-04`.
   `/admin/review/L-34821-2026-08-04-PM` renders the ACTIVE List with the stub row.
 
+### Internal ledger (catch-up Phase 36)
+
+- **At reset the ledger is in balance and no anaesthetist is out of balance**: `/admin/ledger` shows
+  `[data-shot=ledger-balance][data-in-balance=true]`, the empty out-of-balance list, no unmatched receipts card and
+  no `nav-badge-ledger`. Every invoice is a pair (ids `BC…`; history pairs `HBC…`, AA fee pairs `HBCF01` paid and
+  `HBCF02` unpaid); the old billing cases are gone.
+- **Pairs worth shooting.** Nair's prepayment `BC0001` (AA-2026-0001, $1,380.00) is the one `prePayment` row
+  (`[data-shot=ledger-pairs] tr[data-pair-kind="prePayment"]`), Payee "AA Holding account", held and so on the
+  Open filter. The seed's AA-2026-S2401 (pair `BC-S24-01`, Souter Thu 16 Jul PM, $3,565.00) is the one pair "Not yet
+  in Xero" (the tile reads 1; the Billing monitor's fault badge does not count it), and it now shows in Dr Souter's
+  outstanding rows on web and mobile. After Nair's List (`L-34821-2026-07-24-PM`) is completed, submitted and
+  authorised (the steps under Staging and in US-09.1.3), the transfer row `[data-pair-kind="transfer"]` appears:
+  Receivable "None", Kind "Transfer" with "From AA-2026-0001", Payee Dr Souter; the prepayment row then leaves
+  the Open filter (click "All" to see it). The Billing monitor's payables panel then reads "1 payable due ·
+  $1,380.00 to pay out to anaesthetists." (the 27a section's "authorised" wording is older).
+- **The unmatched receipt** (`inject-unmatched-receipt` on the Ledger): $120.00, id `UR0001`, key
+  `UNMATCHED-DEMO-1`. Choice `souter` ("Names Dr Souter", the default) gives the reference "Bank deposit · SOUTER
+  JULY", attributed to Dr Souter: the indicator reads "Out of balance by $120.00" with one
+  `li[data-check=unmatchedReceiptHeld]`, `nav-badge-ledger` shows 1, Dr Souter is the one row
+  `tr[data-anaesthetist-id="34821"]` of `ledger-anaesthetists-out-of-balance` ("Receipt with no matching invoice,
+  $120.00"), and her scope reads "Dr Souter's ledger is out of balance by $120.00". Choice `none` ("Names no one")
+  gives "Bank deposit · JULY": the whole ledger is out by $120.00 but the list stays empty. Clear it with
+  `[data-shot=ledger-allocate]` ("Allocate to invoice": the dialog `ledger-allocate-dialog` lists invoices whose
+  balance covers it, Dr Souter's first, each `[data-allocate-pair=<id>]`; click `>> nth=0`) or
+  `[data-shot=ledger-refund]` ("Mark refunded": `ledger-refund-dialog`, a Note, `ledger-refund-confirm`). Either
+  puts the ledger back in balance; the row stays with "Allocated to AA-..." or "Refunded".
+- **Archived contacts.** After `run-archive-job` (from the Ledger, the Billing monitor or the Xero sim), an archived
+  payer's pairs keep their rows and money, with "Contact archived in Xero" under the Xero column (Annette Riley's;
+  click "All" first, since a settled pair leaves the Open filter).
+- **Words.** "Ledger", "pair", "receivable", "payable", "released", "paid out"; anaesthetist screens never say ACCREC,
+  ACCPAY or "mirror". Xero mirrors the ledger, never the other way round.
+
 ## Overlays that need clicks
 
 - **Drawers and dialogs after Phase U2.** The three Admin drawers (List, empty-session, Draft List) are `SidePanel`:
@@ -1839,6 +1881,22 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 
 - Draft Lists (catch-up Phase 31): `admin-draft-lists` (page), `admin-draft-list-drawer`, `admin-draft-lists-rail` (Day rail card, with `admin-draft-lists-see-all`), `admin-assign-draft-list` (sheet; becomes `admin-assign-draft-list-not-preferred` when a not-preferred pick is shown; `draft-list-reach`, `draft-list-candidates`, `assign-draft-list-pairing-warning`, `assign-draft-list-closed-warning`, `assign-draft-list-confirm`), `admin-new-draft-list` (`draft-list-hospital`, `draft-list-surgeon`, `draft-list-date`), `admin-redate-draft-list`, `admin-remove-draft-list`, `draft-lists-table`, `draft-lists-history`, `draft-lists-assigned`, `draft-list-available`, `draft-list-add-booking`, `daygrid-draft-band`, `daygrid-block-count`; nav badge `nav-badge-draftLists`. The List drawer's ACTIVE state is plain text in its subtitle, so highlight `[data-testid=admin-list-drawer] > header`.
 
+- Ledger (catch-up Phase 36, `/admin/ledger` and `/admin/ledger/anaesthetists/:anaesthetistId`): `ledger-system-of-record`
+  (the page header), `ledger-anaesthetist-select` (one-anaesthetist scope), `ledger-balance` (the balance indicator,
+  `data-in-balance=true|false`, checks `li[data-check=<code>]`), `ledger-tiles` (whole: the tile rows; one
+  anaesthetist: the grid holding `ledger-aa-owes`, `ledger-owes-aa` and the Collected and Paid out tiles),
+  `ledger-anaesthetists-out-of-balance` (the empty state or the table, rows `tr[data-anaesthetist-id=<reg>]`),
+  `ledger-unmatched` (rows `tr[data-unmatched-id=<id>]`), `ledger-allocate`, `ledger-refund`,
+  `ledger-allocate-dialog` (options `[data-allocate-pair=<pairId>]`), `ledger-refund-dialog`, `ledger-refund-confirm`,
+  `ledger-pairs` (the empty state or the table, rows `tr[data-pair-id=<id>]` with `data-pair-kind=procedure|prePayment|transfer|aaFee`),
+  `ledger-footnotes`; side nav `nav-badge-ledger`.
+- Ledger reads elsewhere (catch-up Phase 36): the invoice rail's `invoice-ledger-card` (replaces the
+  `section:has(h2:text-is("Xero handoff"))` selector; inside it `xero-handoff-status`, `ledger-receivable-number`,
+  `xero-accrec-reference`, `ledger-payable-number`, `xero-accpay-reference`, `xero-accpay-payee`,
+  `xero-transfer-journal-reference`, `invoice-open-ledger`); the Billing monitor's `billing-open-ledger`; web
+  Accounts' `web-accounts-position`; mobile Balances' `balances-collected-paid-out` and `balances-you-owe-aa`; the Xero
+  sim pair's `xero-ledger-pair` and `xero-ledger-match`, inside `xero-engine-link`.
+
 **Other hooks**
 
 - `[data-aa-mobile-product]`
@@ -1847,6 +1905,18 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 - `[data-validation-focus=true]`
 
 ## Demo control panel (`/demo/control`) and Demo actions
+
+- Catch-up Phase 36: "Inject unmatched receipt" (`inject-unmatched-receipt`, bar only) on the Ledger, with
+  choices `souter` ("Names Dr Souter", the default) and `none` ("Names no one"); pass one with the `trigger`
+  step's `"choice"`. Disabled "Resolve the held receipt first" while one is held. `payment-full`,
+  `payment-half`, `payment-replay`, `arm-handoff-fault` and `run-archive-job` are also on the Ledger routes; there
+  the payment entries' choices are the open receivables with a Xero ACCREC ("AA-2026-0002 · payer · $x"),
+  defaulting to the first, and are disabled "No open invoice in Xero" when none is open. `arm-handoff-fault` now
+  means the next authorise still makes every pair, marked "Not yet in Xero"; "Trigger billing failure"
+  (`billing-failure`) shows the same on Losa Tuilagi's invoice deterministically. The PWA-only
+  `pwa-office-runs-payables` ("Office runs payables", office stand-in) on Mobile Balances pays out what is due to
+  Dr Souter (disabled "Nothing due to pay out", as it is at reset). There is still no "Run payables" demo action:
+  it is the Billing monitor's own button.
 
 - Catch-up Phase 27a: no new demo action. The Payables run has nothing due at reset (Nair's seeded prepayment is
   held in the AA Holding account, never in the run); it is due only once her List is authorised and the transfer
@@ -1917,6 +1987,8 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/mobile/lists/<listId>/bookings/<id>` (bar and PWA) | `feed-changes-primary` | Catch-up Phase 23, "Hospital feed changes the primary". Shown only on a Booking with two or more Procedures: the List's hospital feed makes the next Procedure the primary, audited as an integration; it moves to the top with the Primary pill and base units come from it ("... made ... the primary. Base units now come from it."). Disabled on a SUBMITTED List ("A hospital feed cannot change a submitted List"), so not on BK0184 or Holt: run it on Ellison after "Add another procedure", or on BK0191 after `load-multi-procedure-booking` |
 | `/admin/masters?view=contracts` (or with Merivale's Face lift open in its detail) | `demo-backdated-range` | Catch-up Phase 24, "Demo: add a backdated price range" (`[data-shot=demo-action-demo-backdated-range]`). Shown on the Contracts view, disabled "Already added" once run; run it from the list (the Contract detail panel is modal, so the bar cannot be clicked while it is open). Adds a range from 1 Jul 2026 at $3,300.00 as the office: the unedited Face lift BK0163 then prices at $3,300.00; BK0187 (typed $2,950.00), BK0188 (AUTHORISED, $3,100.00) stays; the prepaid BK0038 is on another Contract and so never moves. Disabled "Already added" on a second run. Stage it with the `trigger` step, then `goto` the Booking (US-05.2.8 shows the pattern) |
 | `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`: the prepayment and base-units samples); on a Booking, on that Booking (seeded Bookings only). Four rules since catch-up Phase 21: the child payer sample stages on the Booking on screen when its patient is under 18, otherwise on Grace Park's (BK0033: Hana Park out, the patient in); the approval number sample on the Booking on screen when it names an insurer, otherwise BK0074 (its number cleared). Catch-up Phase 22 adds a fifth, `splitDoesNotFit`: on the Booking on screen when its seed carries a split, otherwise the fee-split Booking BK0025, nib's share raised to $250.00 so the rest has nothing left. A Booking whose fee is split cannot take the prepayment sample. Clear restores them. Also in the PWA Demo sheet on a mobile Booking |
+| `/admin/ledger`, `/admin/ledger/anaesthetists/<id>` | `inject-unmatched-receipt` (choice `souter` or `none`), `payment-full`, `payment-half`, `payment-replay` (choice: an open receivable's ACCREC id), `arm-handoff-fault`, `run-archive-job` | Catch-up Phase 36, bar only. The $120.00 unmatched receipt puts the ledger out of balance (see "Internal ledger" under Seed data); US-13.2.1 and US-08.3.4 show the pattern (`goto` `/admin/ledger`, then the trigger in `setup`). The payment entries land the receipt in the ledger first, then Xero, and the ledger stays in balance |
+| `/mobile/balances` (PWA Demo sheet only) | `pwa-office-runs-payables` | Catch-up Phase 36, badged Office stand-in. Runs the payables for Dr Souter; Balances' "Paid out" rises by what was due. Disabled "Nothing due to pay out" until a payment has been received |
 
 The PWA-only entries (`office-authorises-list` on a mobile List, `office-clears-warning` on a
 mobile Booking with an open warning, `office-assigns-next-free` on the mobile Lists home (catch-up

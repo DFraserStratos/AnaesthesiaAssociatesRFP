@@ -270,7 +270,7 @@ export function retryBillingException(api: AppStoreApi, actor: Actor, exceptionI
 function buildFromLock(state: Pick<AppState, 'billing'>, bookingId: BookingId): BookingBuildResult {
   const lock = state.billing.locks[bookingId]
   if (lock === undefined) return { kind: 'exception', procedureId: '', code: 'lockMissing', message: LOCK_MISSING_MESSAGE }
-  // Per-booking isolation is absolute: a build error becomes a failed case, never a throw (8th review).
+  // Per-booking isolation is absolute: a build error becomes a billing exception, never a throw (8th review).
   try {
     return invoiceDraftsFromLock(lock)
   } catch (error) {

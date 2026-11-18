@@ -5,7 +5,7 @@
  * Nothing is invoiced at setup. Each payer group waits on the admin Invoices
  * screen until an admin approves it; Approve and send generates that payer's
  * invoice through `generatePrepaymentInvoice`, the one place the pair is
- * created (OQ-80, D38): the invoice, its case, then the Xero hand-off makes a
+ * created (OQ-80, D38): the invoice and its ledger pair, then the Xero hand-off makes a
  * receivable from the payer and a DRAFT payable crediting the AA Holding
  * account (`AA_HOLDING_ACCOUNT`), never the anaesthetist; then 22's send step.
  * Approval is a step AA can switch off: off, each ready group is generated

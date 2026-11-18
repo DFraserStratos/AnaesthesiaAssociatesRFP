@@ -6,24 +6,47 @@
     {
       "name": "web-accounts",
       "app": "web",
-      "caption": "Anaesthetist's outstanding accounts, read from the billing engine ledger",
+      "caption": "Balances come from the ledger, not from Xero: the anaesthetist's position on the web",
       "start": "/web/accounts/overdue",
       "states": [
         {
           "steps": [],
-          "highlight": []
+          "highlight": [
+            "[data-shot=web-accounts-position]"
+          ]
         }
       ]
     },
     {
       "name": "mobile-balances",
       "app": "mobile",
-      "caption": "Balances on the phone, read from the billing engine ledger",
+      "caption": "Balances come from the ledger, not from Xero: outstanding, collected and paid out on the phone",
       "start": "/mobile/balances",
       "states": [
         {
           "steps": [],
-          "highlight": []
+          "highlight": [
+            "[data-shot=balances-collected-paid-out]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ledger-system-of-record",
+      "app": "admin",
+      "caption": "Balances come from the ledger, not from Xero: the Ledger, AA's system of record, with Xero as its mirror for receivables and banking",
+      "start": "/admin/ledger",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=ledger-pairs]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=ledger-system-of-record]",
+            "[data-shot=ledger-pairs]"
+          ]
         }
       ]
     }

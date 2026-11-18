@@ -451,7 +451,7 @@ export function isListBilled(list: List): boolean {
  * The seeded dashboard figures for an anaesthetist, aged against the demo
  * clock's today (Phase 05; W1/W4). Returns undefined when no figures are seeded
  * for that anaesthetist (honest-empty). Phase 10 replaces the receivables /
- * overdue portion with billing-mirror derivation.
+ * overdue portion with ledger derivation.
  */
 export function dashboardFiguresFor(state: AppState, anaesthetistId: string): DashboardFigures | undefined {
   const seed = state.dashboards[anaesthetistId]
@@ -530,6 +530,8 @@ export function openAccRecs(state: Pick<AppState, 'xero' | 'billing' | 'masters'
     // Procedure receivables only: an AA fee invoice is paid by "Record fee
     // payment", never a procedure payment webhook (catch-up Phase 16).
     .filter((r) => r.kind === 'procedure')
+    // Only ACCRECs a ledger pair links (catch-up Phase 36): a payment always lands on its pair.
+    .filter((r) => Object.values(state.billing.ledger).some((p) => p.receivable.xeroAccRecId === r.id))
     .filter((r) => toCents(r.amountReceived) < toCents(r.amountDue))
     // Exclude the seeded historical backdrop (its aged receivables are the
     // anaesthetist money-view story; the missed webhook is caught by the poll).

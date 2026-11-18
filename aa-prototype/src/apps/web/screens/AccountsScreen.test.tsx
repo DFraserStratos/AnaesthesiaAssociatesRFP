@@ -43,7 +43,7 @@ describe('Accounts payment history', () => {
       source: 'webhook',
     }).ok).toBe(true)
     // Paid out by its ledger pair (catch-up Phase 36: the payable is the pair's leg).
-    expect(disbursePayable(useAppStore, OFFICE, pair.engine.caseId ?? '').ok).toBe(true)
+    expect(disbursePayable(useAppStore, OFFICE, pair.ledger.pairId ?? '').ok).toBe(true)
 
     render(
       <AccountsScreen

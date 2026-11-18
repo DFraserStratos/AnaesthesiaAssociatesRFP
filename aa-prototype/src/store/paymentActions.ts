@@ -242,6 +242,8 @@ export function recordUnmatchedReceipt(api: AppStoreApi, input: UnmatchedReceipt
   if (!Number.isFinite(input.amount) || toCents(input.amount) <= 0) return refuse('invalidAmount', 'The receipt amount must be positive.')
   const existing = Object.values(state.billing.unmatchedReceipts).find((u) => u.idempotencyKey === input.idempotencyKey)
   if (existing !== undefined) return ok({ id: existing.id, applied: false })
+  // A key a ledger receipt already holds was applied to an invoice: never hold it a second time.
+  if (receiptKeySeen(state, input.idempotencyKey)) return refuse('alreadyApplied', 'This payment is already recorded against an invoice.')
   if (input.anaesthetistId !== undefined) {
     const a = state.masters.anaesthetists[input.anaesthetistId]
     if (a === undefined || a.active === false) return refuse('unknownAnaesthetist', 'The receipt names no active anaesthetist.')

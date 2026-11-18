@@ -12,6 +12,7 @@ import { RightRail } from './components/RightRail'
 import { AdminBookingDetail } from './screens/AdminBookingDetail'
 import { AuditViewer } from './screens/AuditViewer'
 import { BillingMonitorScreen } from './screens/BillingMonitorScreen'
+import { LedgerScreen } from './screens/LedgerScreen'
 import { AaFeesScreen } from './screens/AaFeesScreen'
 import { IntegrationMonitorScreen } from './screens/IntegrationMonitorScreen'
 import { InvoicesScreen } from './screens/InvoicesScreen'
@@ -299,6 +300,21 @@ export function AdminNotificationsRoute() {
 export function AdminBillingPage() {
   const { actor } = useAdminOutlet()
   return <BillingMonitorScreen actor={actor} />
+}
+
+/** The internal ledger, whole (catch-up Phase 36; US-13.2.1). */
+export function AdminLedgerRoute() {
+  const { actor } = useAdminOutlet()
+  return <LedgerScreen actor={actor} />
+}
+
+/** One anaesthetist's ledger; an unknown anaesthetist goes back to the whole ledger. */
+export function AdminAnaesthetistLedgerRoute() {
+  const { actor } = useAdminOutlet()
+  const { anaesthetistId = '' } = useParams()
+  const known = useAppStore((s) => s.masters.anaesthetists[anaesthetistId] !== undefined)
+  if (!known) return <Navigate to="/admin/ledger" replace />
+  return <LedgerScreen actor={actor} anaesthetistId={anaesthetistId} />
 }
 
 /** AA's monthly fee: the fee invoices and the fee settings (catch-up Phase 16). */

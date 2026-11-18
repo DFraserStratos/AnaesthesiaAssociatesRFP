@@ -82,6 +82,8 @@ view respectively.
 | Invoices | `/admin/invoices` |
 | One invoice document | `/admin/invoices/<invoiceId>` |
 | Billing monitor | `/admin/billing` |
+| Ledger (the whole ledger) | `/admin/ledger` |
+| Ledger, one anaesthetist | `/admin/ledger/anaesthetists/<anaesthetistId>` (Dr Souter: `34821`) |
 | Integration monitor | `/admin/integrations` |
 | Master data | `/admin/masters` (one view: `?view=surgeons`, `?view=surgeonRooms`, `?view=anaesthetists`) |
 | Availability statuses | `/admin/masters?view=availability-statuses` |
@@ -654,7 +656,7 @@ List (our reading; no after-hours pricing).
 ## S3 · Money end-to-end
 
 **Serves:** the Billing Engine at the centre, the multi-procedure rule, the Xero pair, the two
-separate money states, and AA's own monthly fee. **Time:** 8 to 10 minutes. This is the money story's payoff, so authorise live.
+separate money states, AA's own monthly fee, and the internal ledger that balances. **Time:** 8 to 10 minutes. This is the money story's payoff, so authorise live.
 
 **Stage it:** use **Reset → Confirm reset**, then go directly to Admin. Both of Dr Souter's Mon 20 Jul
 Lists are already in the Review queue: AM (Forte Health, the multi-procedure Booking) and PM
@@ -770,7 +772,9 @@ a submitted List: "A hospital feed cannot change a submitted List").
   NHI or other personal information ever crosses into Xero."
 - **Expected:** a matched ACCREC plus draft ACCPAY pair per invoice, each showing its InvoiceNumber
   and Reference (the ACCPAY's number ends `-P`). The patient, Alan Prentice, is named only in the
-  "Linked Billing Engine case" panel, which reads the billing system; read his name from there. On
+  **Ledger pair (the system of record)** panel, which reads the Billing Engine's own ledger; read his
+  name from there. The panel shows the pair's receivable and payable numbers (AA-2026-0005 and
+  AA-2026-0005-P) and a **Matches the ledger** chip. On
   this pair, nib owes $152.38 and the payable to Dr Souter is $152.38: the payee is read from the
   Booking's locked record (who is paid was fixed at authorise), as is nib's share of the split. Each
   ACCPAY carries a
@@ -789,10 +793,13 @@ a submitted List: "A hospital feed cannot change a submitted List").
   AA pays the same $152.38 to Dr Souter. In a real operation those outgoing payments are grouped into
   a payables run. We keep the paid-in and
   paid-out states separate underneath, even though this guided path advances both together. The
-  anaesthetist app reads the Billing Engine's mirror; it never queries Xero directly."
+  anaesthetist app reads the Billing Engine's own ledger, AA's system of record. Xero mirrors it for
+  receivables and banking."
 - **Expected:** ACCREC shows paid, ACCPAY shows disbursed, and the Web Payments row remains visible
   with $152.38 received by AA, $152.38 released to you, $152.38 paid to you and **Paid to you**. It does not
-  remain under Overdue because it is no longer outstanding.
+  remain under Overdue because it is no longer outstanding. The Ledger pair panel reads "Ledger:
+  received $152.38 · released $152.38 · paid out $152.38" beside Xero's same three figures, still
+  **Matches the ledger**.
 
 ### Beat 4: AA's monthly fee
 
@@ -821,7 +828,56 @@ a submitted List: "A hospital feed cannot change a submitted List").
 - **Expected:** Web **Accounts → AA fees** highlights **AA-FEE-2026-H02** as Paid, with May Paid and July
   Unpaid. Payables, GST activity and Overdue do not change when a fee invoice is raised or paid. Read
   Dr Souter's July figures from the app if Beat 3 was skipped (then two BCTIs, $510.00 before GST,
-  $586.50 with GST).
+  $586.50 with GST). The fee invoice is an AA fee pair on the Ledger, with no payable ("None"), outside
+  the balance.
+
+### Beat 5: the ledger balances
+
+- **Click:**
+  - Go to **Admin → Ledger** (`/admin/ledger`). Point at **In balance · receipts held equal payables
+    due**, the equation beneath it, the four tiles and the empty **Anaesthetists out of balance** list
+    ("Every anaesthetist's ledger is in balance.").
+  - Switch the scope to **One anaesthetist → Dr Souter** (`/admin/ledger/anaesthetists/34821`): **AA
+    owes Dr Souter** (Due now and Awaiting collection), **Dr Souter owes AA** (her unpaid AA fees),
+    **Collected for them** and **Paid out to them**.
+  - Back on **Whole ledger**, open **Demo actions → Inject unmatched receipt**, keep **Names Dr
+    Souter**, then **Run**: the indicator turns **Out of balance by $120.00**, the nav's Ledger badge
+    reads 1, and Dr Souter is on the out-of-balance list. Its **Open** shows her scope out of balance
+    by the same $120.00.
+  - In **Receipts with no matching invoice**, select **Allocate to invoice** and pick one of Dr
+    Souter's receivables (her invoices are listed first; **AA-2026-0002 · Brian Holt** is at the top):
+    back in balance, and the list is empty again.
+- **Say:** "Every invoice is a pair in AA's own ledger: a receivable from whoever pays and a payable
+  to the anaesthetist, created the moment the invoice is raised. Money in and money out are
+  recorded here first, so the office can see at a glance that every dollar held is owed to
+  someone. A receipt nobody can match shows up as an imbalance, not a mystery in Xero, and any
+  anaesthetist whose ledger is out of balance is simply on a list."
+- **Expected:** after Beats 1 to 4 as scripted, the whole ledger reads "Receipts held $1,380.00 less
+  payables due $0.00 and the AA Holding account $1,380.00 = $0.00" (the $1,380.00 is Priya Nair's
+  prepayment, held until her List is authorised), with Receivables outstanding $13,148.54, Receipts
+  held $1,380.00, Payables due $0.00 and Disbursed $52,655.13 (Beat 4's seeded month of BCTIs
+  included). Dr Souter's scope: AA owes Dr Souter $13,148.54 (Due now $0.00, Awaiting collection
+  $13,148.54), Dr Souter owes AA $592.25 (her July fee invoice from Beat 4), Collected for them and
+  Paid out to them both $27,372.38, and "Dr Souter's ledger is in balance". After the injected
+  receipt: "Out of balance by $120.00" with the check line "Receipt with no matching invoice: Bank
+  deposit · SOUTER JULY, $120.00"; Dr Souter listed at $120.00 ("Receipt with no matching invoice,
+  $120.00"), and her scope reads "Dr Souter's ledger is out of balance by $120.00". After allocation:
+  in balance, the list reads "Every anaesthetist's ledger is in balance.", the receipt's row reads
+  **Allocated to AA-2026-0002**, and Payables due shows $120.00 (now due to Dr Souter, with the link
+  "Run payables in the Billing monitor"). From a fresh reset with no S3 beats run, the tiles read
+  Receivables outstanding $11,350.50, Receipts held $1,380.00, Payables due $0.00 and Disbursed
+  $27,220.00; read the figures from the app if you skipped any beat.
+- **Optional:** run the trigger again with **Names no one**: the whole ledger is out by $120.00 but
+  the out-of-balance list stays empty. **Mark refunded** with a note returns it to balance, and the
+  row reads Refunded with the note. The Billing monitor's payables panel has an **Open the ledger**
+  link, and each invoice's rail has a **Ledger** card (receivable and payable numbers, their Xero ids,
+  **Open in the ledger**).
+- **Optional (the anaesthetist's side):** web **Accounts** opens on a **Your position** strip (AA owes
+  you, with due now and awaiting collection; Collected for you; Paid out to you; You owe AA), and
+  mobile **Balances** adds one line under Outstanding to you, "Collected $27,220.00 · Paid out
+  $27,220.00" and "You owe AA $580.75" on a fresh reset. On a handset (the PWA), **Demo → Payment
+  received · half**, then **Office runs payables** (office stand-in): Collected moves, then Paid out.
+  The stand-in is disabled with "Nothing due to pay out" when nothing is due.
 
 ### Optional closing moment: finding past work
 
@@ -846,6 +902,10 @@ invoice; per procedure, per payment or per run is open, OQ-29), and whether a pr
 counts as a BCTI (the prototype leaves it out, provisional, OQ-29); what other outputs a Party can have,
 nib's portal among them (OQ-114); posting invoices to a payer with no email (OQ-122); and AA's fee
 schedule and the paid-only BCTI count (with AA's accountant).
+For the ledger (Beat 5): how AA wants unmatched receipts handled (allocate, refund, or hold for
+investigation); whether the two scopes and the out-of-balance list are what the office needs
+(US-13.2.1's acceptance criterion is to come from this prototype); and whether a buyer-created tax
+invoice is one per invoice, as built, or one per procedure (OQ-29, with AA's accountant).
 
 ---
 
@@ -911,7 +971,11 @@ actions** on the screen named in its beat.
   nothing deducted. A move to a colleague changes nothing in the books."
 - **Expected:** awaiting approval, then the sent invoice with its pair to the AA Holding account, part
   paid on all three surfaces, the AA Holding account card holding both prepayments with nothing due in
-  the payables run, and a submit that goes through.
+  the payables run, and a submit that goes through. The Ledger (`/admin/ledger`) shows Riley's
+  Pre-payment pair (AA-2026-0002, Payee "AA Holding account") beside Nair's; its AA Holding account
+  tile rises from $1,380.00 to $2,070.00 with her half while Payables due stays $0.00, and the ledger
+  stays in balance. Authorising the List (Beat 7) adds the transfer, two payable legs and no
+  receivable, to whoever did it.
 
 ### Beat 2: post-op addendum
 
@@ -939,8 +1003,10 @@ actions** on the screen named in its beat.
   here the hand-off to Xero. A List never fails as a whole: the failed Booking is held back and the
   rest of the List bills. The office retries once, without touching the Contract."
 - **Expected:** Losa Tuilagi's Booking reads **Handoff failed** with its reason on the row ("Xero
-  handoff failed (simulated fault). No ACCREC/ACCPAY pair was created; the invoice stands. Resolve and
-  retry from the billing monitor."); Hemi Walker's Booking reads **Handed off**, and the List is not
+  handoff failed (simulated fault). The invoice and its ledger pair stand, not yet in Xero. Resolve
+  and retry from the billing monitor."; it read "No ACCREC/ACCPAY pair was created" before catch-up
+  Phase 36, which creates the pair with the invoice); the Ledger's **Not yet in Xero** tile counts her
+  pair until the retry; Hemi Walker's Booking reads **Handed off**, and the List is not
   failed. **Resolve & retry** hands hers off once: her row reads **Handed off** and her Xero pair
   appears, with no duplicate invoice. Her invoice (AA-2026-0003, Canterbury Orthopaedic Surgeons,
   $303.60) and Hemi Walker's (AA-2026-0004, St George's, $221.38) are unchanged. No Contract changes.
@@ -994,7 +1060,9 @@ actions** on the screen named in its beat.
   rest stays outstanding on the invoice. Two payables runs across a part-then-balance payment prove
   there is no double payment."
 - **Expected:** the payable authorises exactly the amount received; each run pays exactly what arrived,
-  and the total paid out equals the invoice total, never more.
+  and the total paid out equals the invoice total, never more. The Ledger's Payables due rises with
+  each part payment and returns to $0.00 after each run: $110.69 after the half (Hemi Walker's
+  AA-2026-0004, $221.38), $0.00 after the first run, $110.69 after the rest, $0.00 after the second.
 
 ### Beat 6: The date approaches
 
@@ -1043,7 +1111,10 @@ $1,380.00 held since Beat 1) to Dr Souter.
   confirm with AA."
 - **Expected:** one Transferred entry naming Dr Souter, the card's balance down by $1,380.00, MJ-0001 on
   XRB0, and a payables run of exactly $1,380.00 to Dr Souter. The transfer itself adds no invoice,
-  ACCREC or payment, and GST does not move (her septoplasty bills on its own invoice as usual).
+  ACCREC or payment, and GST does not move (her septoplasty bills on its own invoice as usual). On the
+  Ledger the transfer is its own row (Kind Transfer, Receivable "None", "From AA-2026-0001", Payee Dr
+  Souter); the AA Holding account tile falls and Payables due rises by the same amount until Run
+  payables, and the ledger stays in balance.
 
 **Discovery points:** settled: billing failure is per Booking, and a List never fails as a whole
 (OQ-05); still to confirm with AA: exactly which fields are frozen at authorise (US-15.0.3: AR-58 2.8

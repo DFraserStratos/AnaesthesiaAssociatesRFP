@@ -140,7 +140,8 @@ import { useDemoTriggerMemory } from './memory'
 import { simulateSickness, sicknessCandidates, sicknessColleagueSlot, sicknessRefusal, type SicknessRoute } from '../../store/demoSimulations'
 import { BILLING_FAILURE_ALREADY, stageBillingFailure } from '../../store/demoStaging'
 import { regenerateInvoiceFromLock, regenerateRefusal, regenerateSummary } from '../../store/locks'
-import type { DemoTrigger, DemoTriggerCtx, DemoTriggerResult } from './types'
+import type { DemoTrigger, DemoTriggerChoice, DemoTriggerCtx, DemoTriggerResult } from './types'
+import { injectUnmatchedReceipt, injectUnmatchedRefusal, officeRunsPayables, officeRunsPayablesRefusal, UNMATCHED_RECEIPT_DEMO } from '../../store/ledgerDemo'
 import { sessionText } from '../../domain/outOfHours'
 import { newerInvoiceDescription } from '../../domain/billing/procedureStack'
 import {
@@ -161,6 +162,12 @@ const BILLING_MONITOR = ['/admin/billing'] as const
 /** The Billing monitor's index heading (the Control Panel adds its Run payables note under it). */
 export const BILLING_MONITOR_SCREEN = 'Admin · Billing monitor'
 const XERO_SIM = ['/demo/xero', '/demo/xero/invoices', '/demo/xero/invoices/:accRecId'] as const
+/** The Admin Ledger, whole and one anaesthetist (catch-up Phase 36). */
+const LEDGER = ['/admin/ledger', '/admin/ledger/anaesthetists/:anaesthetistId'] as const
+
+function onLedger(ctx: DemoTriggerCtx): boolean {
+  return ctx.pathname.startsWith('/admin/ledger')
+}
 const INVOICE_PAGES = ['/admin/invoices/:invoiceId', '/demo/xero/invoices/:accRecId'] as const
 const ADMIN_INTEGRATIONS = '/admin/integrations'
 const ADMIN_MATCHING = '/admin/matching'
@@ -264,11 +271,20 @@ function accRecIdOnScreen(state: AppState, ctx: DemoTriggerCtx): string | undefi
   return Object.values(state.xero.accRecs).find((r) => r.invoiceId === invoiceId)?.id
 }
 
-/** The payment entries' screens: an invoice, the Xero pair, and the Admin Booking detail for its prepayment (catch-up Phase 27). */
-const PAYMENT_PAGES = [...INVOICE_PAGES, '/admin/day/:dateISO/bookings/:bookingId'] as const
+/** The payment entries' screens: an invoice, the Xero pair, the Admin Booking detail for its prepayment (catch-up Phase 27) and the Ledger (catch-up Phase 36). */
+const PAYMENT_PAGES = [...INVOICE_PAGES, '/admin/day/:dateISO/bookings/:bookingId', ...LEDGER] as const
 
-/** The ACCREC a payment entry acts on: the invoice on screen, or the chosen (else first) prepayment ACCREC on a Booking. */
+/** On the Ledger: the open Booking receivables that have a Xero ACCREC (number, payer, balance). */
+function ledgerPaymentChoices(state: AppState): DemoTriggerChoice[] {
+  return openAccRecs(state).map((c) => ({ id: c.accRecId, label: `${c.invoiceNumber} · ${c.counterpartyLabel} · ${formatCurrency(c.remaining)}` }))
+}
+
+/** The ACCREC a payment entry acts on: the invoice on screen, the chosen (else first) prepayment ACCREC on a Booking, or the Ledger's chosen receivable. */
 function paymentTargetOnScreen(state: AppState, ctx: DemoTriggerCtx, choiceId?: string): string | undefined {
+  if (onLedger(ctx)) {
+    const choices = ledgerPaymentChoices(state)
+    return choices.find((c) => c.id === choiceId)?.id ?? choices[0]?.id
+  }
   const bookingId = ctx.params['bookingId']
   if (bookingId === undefined) return accRecIdOnScreen(state, ctx)
   const choices = prepaymentAccRecChoices(state, bookingId)
@@ -541,9 +557,10 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'arm-handoff-fault',
     label: 'Arm handoff failure',
     description:
-      'Arms the next ACCREC/ACCPAY handoff to fault once. Then authorise a List: the monitor shows the fault with a Resolve & retry.',
+      'Arms the next Xero handoff to fault once. Then authorise a List: every invoice still gets its ledger pair, marked Not yet in Xero, and the monitor offers Resolve & retry to mirror it.',
     screen: BILLING_MONITOR_SCREEN,
-    routes: BILLING_MONITOR,
+    // Also on the Ledger (catch-up Phase 36): the next authorise still makes every pair, marked "Not yet in Xero".
+    routes: [...BILLING_MONITOR, ...LEDGER],
     surfaces: ['bar'],
     disabledReason: (state) => (state.settings.failNextHandoff === true ? 'Armed' : null),
     run: (api) => {
@@ -551,6 +568,27 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return { ok: true, message: 'Armed. The next Xero handoff will fault once, then clear.' }
     },
     indexPath: () => '/admin/billing',
+  },
+  // ── Admin · Ledger (catch-up Phase 36; US-13.2.1, US-08.3.4) ────────────
+  {
+    id: 'inject-unmatched-receipt',
+    label: 'Inject unmatched receipt',
+    description:
+      'A bank-feed notification arrives for $120.00 that matches no invoice number. The ledger goes out of balance by $120.00; naming Dr Souter puts her on the out-of-balance list. The office clears it with Allocate to invoice or Mark refunded.',
+    screen: 'Admin · Ledger',
+    routes: LEDGER,
+    surfaces: ['bar'],
+    choices: () => [
+      { id: UNMATCHED_RECEIPT_DEMO.namesSouter.id, label: UNMATCHED_RECEIPT_DEMO.namesSouter.label },
+      { id: UNMATCHED_RECEIPT_DEMO.namesNoOne.id, label: UNMATCHED_RECEIPT_DEMO.namesNoOne.label },
+    ],
+    defaultChoice: () => UNMATCHED_RECEIPT_DEMO.namesSouter.id,
+    disabledReason: (state) => injectUnmatchedRefusal(state),
+    run: (api, _ctx, choiceId) => {
+      const out = injectUnmatchedReceipt(api, choiceId)
+      return out.ok ? { ok: true, message: out.value.message } : { ok: false, message: out.message }
+    },
+    indexPath: () => '/admin/ledger',
   },
   {
     id: 'run-reconciliation-poll',
@@ -568,7 +606,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         message:
           n > 0
             ? `Reconciliation poll applied ${plural(n, 'previously-missed payment')}.`
-            : 'Reconciliation poll ran: no unmirrored payments to catch.',
+            : 'Reconciliation poll ran: no missed payments to catch.',
       }
     },
     indexPath: () => '/admin/billing',
@@ -579,7 +617,8 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     description:
       'Runs the nightly Xero contact-archive job now, without advancing the clock. Also in the Xero simulation.',
     screen: BILLING_MONITOR_SCREEN,
-    routes: [...BILLING_MONITOR, ...XERO_SIM],
+    // Also on the Ledger (catch-up Phase 36): an archived payer's pairs stay listed with their money.
+    routes: [...BILLING_MONITOR, ...XERO_SIM, ...LEDGER],
     surfaces: ['bar'],
     disabledReason: () => null,
     run: (api) => {
@@ -760,8 +799,8 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     // A fee payment is "Record fee payment", never a procedure webhook.
     when: (state, ctx) => !isFeePairOnScreen(state, ctx),
     // On the Admin Booking detail (catch-up Phase 27): that Booking's sent prepayment invoices.
-    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : []),
-    disabledReason: (state, ctx, choiceId) => paymentReasonOnScreen(state, ctx, choiceId),
+    choices: (state, ctx) => (onLedger(ctx) ? ledgerPaymentChoices(state) : ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : []),
+    disabledReason: (state, ctx, choiceId) => (onLedger(ctx) && ledgerPaymentChoices(state).length === 0 ? 'No open invoice in Xero' : paymentReasonOnScreen(state, ctx, choiceId)),
     run: (api, ctx, choiceId) => sendPaymentWebhook(api, paymentTargetOnScreen(api.getState(), ctx, choiceId), 'full'),
     indexPath: firstOpenInvoicePath,
     indexEmptyReason: 'No open invoice yet: authorise a List first',
@@ -777,8 +816,8 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     // A fee payment is "Record fee payment", never a procedure webhook.
     when: (state, ctx) => !isFeePairOnScreen(state, ctx),
     // On the Admin Booking detail (catch-up Phase 27): that Booking's sent prepayment invoices.
-    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : []),
-    disabledReason: (state, ctx, choiceId) => paymentReasonOnScreen(state, ctx, choiceId),
+    choices: (state, ctx) => (onLedger(ctx) ? ledgerPaymentChoices(state) : ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : []),
+    disabledReason: (state, ctx, choiceId) => (onLedger(ctx) && ledgerPaymentChoices(state).length === 0 ? 'No open invoice in Xero' : paymentReasonOnScreen(state, ctx, choiceId)),
     run: (api, ctx, choiceId) => sendPaymentWebhook(api, paymentTargetOnScreen(api.getState(), ctx, choiceId), 'partial'),
     indexPath: firstOpenInvoicePath,
     indexEmptyReason: 'No open invoice yet: authorise a List first',
@@ -1680,6 +1719,22 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
   },
 
   // ── Mobile · Balances, installed PWA only ─────────────────────────────
+  {
+    id: 'pwa-office-runs-payables',
+    label: 'Office runs payables',
+    description:
+      "Stands in for the office, which has no app on the phone: runs the payables for Dr Souter, paying out what is due to her. Balances' Paid out rises by it.",
+    screen: 'Mobile · Balances',
+    routes: ['/mobile/balances'],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    disabledReason: (state) => officeRunsPayablesRefusal(state),
+    run: (api) => {
+      const out = officeRunsPayables(api)
+      return out.ok ? { ok: true, message: out.value.message } : { ok: false, message: out.message }
+    },
+    indexPath: () => null,
+  },
   {
     id: 'pwa-payment-full',
     label: 'Payment received · full',

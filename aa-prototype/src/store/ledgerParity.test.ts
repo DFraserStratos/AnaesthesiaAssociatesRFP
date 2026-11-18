@@ -1,7 +1,7 @@
 /**
  * Catch-up Phase 36 parity (work item 1). `__parity__/phase-36-baseline.json`
  * was written once from the build as it stood BEFORE the internal ledger
- * (BillingCase the record, every money view reading it) and is never
+ * (the billing case the record, every money view reading it) and is never
  * rewritten (never `-u`). Every figure a presenter shows must read the same
  * once the ledger is the system of record: the seed's anaesthetist views,
  * payables due, prepayment statuses, the AA Holding account, the AA fee

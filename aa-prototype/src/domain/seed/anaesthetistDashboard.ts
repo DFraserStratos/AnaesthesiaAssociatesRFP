@@ -4,7 +4,7 @@
  * PRODUCTIVITY and LEAVE stay seeded demo figures: W1 wants "6 months vs prior
  * years", which the 4-month demo canvas cannot produce, and leave has no master.
  *
- * RECEIVABLES / OVERDUE / GST have moved to billing-mirror derivation over the
+ * RECEIVABLES / OVERDUE / GST have moved to ledger derivation over the
  * real invoice, ledger pair and receipt data (Phase 10; see `store/selectors.ts`
  * `outstandingAccpayInvoicesFor` / `receivablesAgingFor` / `gstActivityFor`, fed
  * by the seeded historical rows in `seed/history.ts`). This module no longer
@@ -64,7 +64,7 @@ export const ANAESTHETIST_DASHBOARD: Readonly<Record<string, AnaesthetistDashboa
 
 // ---------------------------------------------------------------------------
 // Derivation (kept for the productivity/leave figures; the receivables aging
-// now lives in the billing-mirror selectors)
+// now lives in the ledger selectors)
 // ---------------------------------------------------------------------------
 
 export interface DashboardFigures {

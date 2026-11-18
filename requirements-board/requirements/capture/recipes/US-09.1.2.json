@@ -6,7 +6,7 @@
     {
       "name": "invoice-number-reference",
       "app": "simulator",
-      "caption": "Engine invoice number as the Xero InvoiceNumber, case reference alongside",
+      "caption": "The ledger's own invoice number as the Xero InvoiceNumber, the internal Reference alongside",
       "start": "/demo/xero/invoices/XRH01",
       "states": [
         {

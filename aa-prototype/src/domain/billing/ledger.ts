@@ -635,7 +635,9 @@ export function bctiRecordsOf(pairs: readonly LedgerPair[], transfers: Readonly<
     const anaesthetistId = payeeAnaesthetistOf(pair.payable) ?? (transfer !== undefined ? payeeAnaesthetistOf(transfer.in) : undefined)
     if (anaesthetistId === undefined) continue
     records.push({
-      accPayId: pair.payable.xeroAccPayId ?? pair.id,
+      // Keyed on the pair id, which never changes: the mirror id appears only at hand-off, so a record
+      // counted before it would count again after (catch-up Phase 36 review). The fee history keys on this.
+      accPayId: pair.id,
       billNumber: pair.payable.number,
       receivableInvoiceNumber: pair.receivable.number,
       anaesthetistId,
