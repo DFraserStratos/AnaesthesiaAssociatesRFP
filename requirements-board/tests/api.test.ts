@@ -505,6 +505,113 @@ describe('the status settings', () => {
   })
 })
 
+describe('status identity on the server (R-01, R-68)', () => {
+  /** This repo's numbering: 4 Agreed, 5 Confirmed, 6 Retired (the defaults have 5 Retired). */
+  const SIX = [
+    { code: 1, label: 'Proposed', help: 'Needs agreement', tone: 'neutral', role: 'default' },
+    { code: 2, label: 'Open', help: 'Waiting', tone: 'amber', role: 'waiting' },
+    { code: 3, label: 'Verify', help: 'Check it', tone: 'olive', settle: true },
+    { code: 4, label: 'Agreed', help: 'Agreed', tone: 'green', settle: true },
+    { code: 5, label: 'Confirmed', help: 'Signed off', tone: 'forest', settle: true },
+    { code: 6, label: 'Retired', help: 'Gone', tone: 'hatched', role: 'retired' },
+  ]
+  const writeConfig = (statuses: unknown, extra: Record<string, unknown> = {}) => writeFileSync(configPath(root), JSON.stringify({ project: { name: 'Acme' }, statuses, ...extra }, null, 2))
+  const put = (a: ReturnType<typeof api>, body: unknown) => call(a, 'PUT', '/api/config', body)
+  const codesOnDisk = () => (JSON.parse(readFileSync(configPath(root), 'utf8')).statuses as { code: number; label: string }[]).map((d) => `${d.code} ${d.label}`)
+  beforeEach(() => {
+    writeItem(item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, status: '5' }), root)
+    writeItem(item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2, status: '6' }), root)
+  })
+
+  it('keeps the project\'s codes when a list with a bad tone is reworded and saved (the FINDINGS scenario)', () => {
+    writeConfig(SIX.map((d) => (d.code === 4 ? { ...d, tone: 'teal' } : d)))
+    const a = api()
+    const shown = a.getState().config.statuses
+    put(a, { statuses: shown.map((d) => (d.code === '1' ? { ...d, help: 'Reworded' } : d)) })
+    expect(codesOnDisk()).toEqual(['1 Proposed', '2 Open', '3 Verify', '4 Agreed', '5 Confirmed', '6 Retired'])
+    expect(a.getState().config.statusState.statuses.state).toBe('healthy')
+  })
+
+  it('refuses a status save while the list on disk is damaged, leaving the file byte for byte', () => {
+    const damaged: Record<string, unknown> = {
+      'a bad code': SIX.map((d) => (d.code === 3 ? { ...d, code: 'x' } : d)),
+      'a duplicated code': [...SIX, { ...SIX[1] }],
+      'two retired roles': SIX.map((d) => (d.code === 5 ? { ...d, role: 'retired' } : d)),
+      'not a list': { Proposed: 1 },
+    }
+    for (const [name, statuses] of Object.entries(damaged)) {
+      writeConfig(statuses)
+      const before = readFileSync(configPath(root), 'utf8')
+      const a = api()
+      expect(a.getState().config.statusState.statuses.state, name).toBe('damaged')
+      expect(status(() => put(a, { statuses: SIX })), name).toBe(422)
+      expect(readFileSync(configPath(root), 'utf8'), name).toBe(before)
+    }
+    for (const text of ['{ "statuses": [ ,', 'null', '[]']) {
+      writeFileSync(configPath(root), text)
+      expect(status(() => put(api(), { statuses: SIX })), text).toBe(422)
+      expect(readFileSync(configPath(root), 'utf8'), text).toBe(text)
+    }
+  })
+
+  it('judges a status in use against the list on disk, not the one in memory', () => {
+    const a = api()
+    // The server read no config (built-in 1 to 5); the file on disk now defines 6, which a card holds.
+    writeConfig(SIX)
+    expect(status(() => put(a, { statuses: SIX.filter((d) => d.code !== 6).map((d) => (d.code === 5 ? { ...d, settle: undefined, role: 'retired' } : d)) }))).toBe(422)
+    expect(codesOnDisk()).toHaveLength(6)
+    // A card holding a code the list never defined does not block an unrelated save.
+    writeItem(item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2, status: '9' }), root)
+    const b = api()
+    expect(status(() => put(b, { statuses: SIX.map((d) => (d.code === 2 ? { ...d, label: 'Waiting' } : d)) }))).toBe(200)
+  })
+
+  it('tells the client how each list read, in the snapshot and the config event', () => {
+    writeConfig(SIX.map((d) => (d.code === 4 ? { ...d, tone: 'teal' } : d)))
+    const a = api()
+    const snap = call(a, 'GET', '/api/catalogue') as { config: { statusState: Record<string, { state: string; problems: string[] }> } }
+    expect(snap.config.statusState.statuses!.state).toBe('degraded')
+    expect(snap.config.statusState.statuses!.problems[0]).toMatch(/"4" tone/)
+    expect(snap.config.statusState.questionStatuses!.state).toBe('healthy')
+    put(a, { statuses: SIX })
+    const ev = events.findLast((e) => e.kind === 'config') as { config: { statusState: Record<string, { state: string }> } }
+    expect(ev.config.statusState.statuses!.state).toBe('healthy')
+    writeConfig({ Proposed: 1 })
+    expect((call(api(), 'GET', '/api/catalogue') as typeof snap).config.statusState.statuses!.state).toBe('damaged')
+  })
+
+  it('records a removed status and never hands its code out again', () => {
+    writeConfig([...SIX, { code: 7, label: 'On hold', help: '', tone: 'sand' }])
+    const a = api()
+    put(a, { statuses: SIX })
+    const file = JSON.parse(readFileSync(configPath(root), 'utf8'))
+    expect(file.removedStatuses).toEqual({ statuses: [{ code: 7, label: 'On hold' }] })
+    expect(file.project).toEqual({ name: 'Acme' })
+    expect(status(() => put(a, { statuses: [...SIX, { code: 7, label: 'Deferred', help: '', tone: 'sand' }] }))).toBe(422)
+    expect(status(() => put(a, { statuses: [...SIX, { code: 8, label: 'Deferred', help: '', tone: 'sand' }] }))).toBe(200)
+    expect(a.getState().config.statusState.statuses.highWater).toBe(8)
+  })
+
+  it('skips codes used only in a recode or only in a record', () => {
+    writeConfig(SIX)
+    writeFileSync(join(root, 'status-recodes.json'), JSON.stringify([{ date: '2026-11-01', items: { Old: '12' }, questions: {} }]))
+    writeItem(item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2, status: '20' }), root)
+    const a = api()
+    expect(status(() => put(a, { statuses: [...SIX, { code: 10, label: 'New', help: '', tone: 'sand' }] }))).toBe(422)
+    expect(status(() => put(a, { statuses: [...SIX, { code: 15, label: 'New', help: '', tone: 'sand' }] }))).toBe(422)
+    expect(status(() => put(a, { statuses: [...SIX, { code: 21, label: 'New', help: '', tone: 'sand' }] }))).toBe(200)
+  })
+
+  it('refuses a new card while the default status is unresolved, and a status the project\'s list lacks', () => {
+    writeConfig(SIX.map((d) => (d.code === 3 ? { ...d, role: 'default' } : d)))
+    const a = api()
+    expect(status(() => call(a, 'POST', '/api/items', { type: 'story', parent: 'FT-01.1', title: 'New' }))).toBe(422)
+    const r = recOf(a, 'US-01.1.1')
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...r.data, status: '9' }, baseRev: r.rev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...r.data, status: '4' }, baseRev: r.rev }))).toBe(200)
+  })
+})
+
 describe('diff review routes', () => {
   it('needs both refs, and reads a folder outside git as nothing to compare', async () => {
     const a = api()

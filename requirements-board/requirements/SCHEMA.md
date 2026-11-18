@@ -412,10 +412,20 @@ roles: `default` and `answered`. There must be exactly one default and one retir
 at least one `settle`; one default and one answered question status. The board's Settings page
 (`/settings`, the gear at the right of the masthead) edits these lists (label, help, heading, tone,
 role, settle, order, add, remove) and writes the file; a status in use or holding a required role
-can't be removed, and a new status takes the next free number, fixed once saved (the number
-shows only in a quiet "No." column). To change a code across the files use
-`npm --prefix requirements-board run statuses:recode -- --items old=new,... --questions old=new,...` (it rewrites only `status:` lines and the board's history journal, and records
-the run in `status-recodes.json` so diffs across it read a pure relabel as no change). `questionKinds`
+can't be removed. A removed status is kept under `removedStatuses` (`{ "statuses": [{ "code": 7,
+"label": "On hold" }], "questionStatuses": [] }`): its code is spent, and an old version storing it
+reads as its last label, marked removed. A code is never handed out twice: a new status takes a
+number past every code the list has ever used (live, removed, in a recode, or on a card), fixed once
+saved (the number shows only in a quiet "No." column). The lists are only ever the project's own,
+never the built-in ones: a bad `tone` falls back for that status alone, while a structural problem
+(a missing or doubled code, a role or settle rule broken, a file that does not parse) is reported,
+the board reads only what it can of the list, and status saves are refused until the file is fixed.
+To change a code across the files use
+`npm --prefix requirements-board run statuses:recode -- --items old=new,... --questions old=new,...` (it rewrites only `status:` lines, the board's history journal and the codes in these lists, and records
+the run in `status-recodes.json` so diffs across it read a pure relabel as no change). A recode
+renumbers to fresh codes: it refuses a target that it or an earlier recode moves away, or that was
+used before, so it can't swap two numbers in place; to merge statuses, name the one kept as well
+(`3=4,4=4`). Stop the board before a recode: it refuses to run beside one. `questionKinds`
 changes only the wording beside a kind (`help`). `capture` is described in the board's README.
 `voice.descriptionWarnings` is the check's backstop for the voice in `VOICE.md`: each entry is
 `{ pattern, flags?, message }`, where `pattern` is a JavaScript regular expression (backslashes

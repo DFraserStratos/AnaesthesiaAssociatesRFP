@@ -39,9 +39,9 @@ import { checkCatalogue, issueKey } from '../shared/check.ts'
 import { artifactRoundTripProblems, itemRoundTripProblems, normaliseItem, normaliseQuestion, parseItem, parseQuestion, questionRoundTripProblems, serialiseItem, serialiseQuestion, withArtifactDetails } from '../shared/files.ts'
 import { compareSiblings, nextItemId, nextQuestionId } from '../shared/ids.ts'
 import { buildArtifactTimeline, buildTimeline, diffItems } from '../shared/history.ts'
-import { defaultStatus, normaliseStatus, readStatusList, statusLabel, type StatusDef, type StatusKind } from '../shared/statuses.ts'
+import { STATUS_FIELDS, defaultStatus, highestCode, nextStatusCode, normaliseStatus, readStatusList, statusCodes, type StatusDef, type StatusField, type StatusKind } from '../shared/statuses.ts'
 import { parseArtifact, revOf } from '../shared/files.ts'
-import { ACCENT_PATTERN, parseConfig } from '../shared/config.ts'
+import { ACCENT_PATTERN, CONFIG_FILE, parseConfig } from '../shared/config.ts'
 import { laneListProblem } from '../shared/move.ts'
 import { planDelete } from '../shared/remove.ts'
 import { ITEM_TYPES, UNASSIGNED_LANE, firstLaneName, type Artifact, type ArtifactRec, type Layout, type CatalogueEvent, type Item, type ItemType, type Question, type Rev } from '../shared/types.ts'
@@ -168,6 +168,18 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
     const after = checkCatalogue({ items, questions, fileExists: fileExistsIn(root), lanes: state.layout.lanes, config: state.config, ...artifactCheck(artifacts, root) })
     const added = after.filter((i) => i.severity === 'error' && !before.has(issueKey(i)))
     if (added.length) throw new HttpError(422, added.map((i) => `${i.id}: ${i.message}`).join('\n'))
+  }
+
+  /**
+   * A status written by the board comes from the project's own list. The check says so for a healthy
+   * list; this also holds while a list is damaged (when the check is quiet about cards). A card keeping
+   * the status it already has is never refused for it.
+   */
+  function guardStatus(kind: StatusKind, id: string, status: string, was?: string) {
+    if (status === was) return
+    const codes = statusCodes(state.config, kind)
+    if (!status) throw new HttpError(422, `${id}: the ${STATUS_FIELDS[kind]} list in ${CONFIG_FILE} has no single default status, so new ${kind === 'item' ? 'cards' : 'questions'} can't start anywhere until it is fixed`)
+    if (!codes.includes(status)) throw new HttpError(422, `${id}: status "${status}" is not one of the project's statuses (${codes.join(', ') || 'none readable'})`)
   }
 
   /** Normalise an untrusted record into exactly what will be written, or refuse it. */
@@ -365,6 +377,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       const current = itemOnDisk(id)
       checkBase(current, id, body.baseRev)
       if (current.data.type !== item.type) throw new HttpError(422, `${id}: the type of an item cannot change`)
+      guardStatus('item', id, item.status, current.data.status)
       guard([...itemList().filter((i) => i.id !== id), item], questionList())
       return commitItem(item, false)
     }
@@ -426,6 +439,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
         const patch = (c.patch ?? {}) as Record<string, unknown>
         const item = prepareItem({ ...current.data, ...patch, id })
         if (item.type !== current.data.type) throw new HttpError(422, `${id}: the type of an item cannot change`)
+        guardStatus('item', id, item.status, current.data.status)
         next.set(id, item)
       }
       if (!next.size) return { records: [] }
@@ -461,6 +475,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
             images: [],
             extra: {},
           })
+          guardStatus('item', id, item.status)
           guard([...itemList(), item], questionList())
           return item
         },
@@ -473,7 +488,9 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       const id = idFromPath(m[1]!)
       const q = prepareQuestion(body.record)
       if (q.id !== id) throw new HttpError(400, 'the record id does not match the URL')
-      checkBase(questionOnDisk(id), id, body.baseRev)
+      const current = questionOnDisk(id)
+      checkBase(current, id, body.baseRev)
+      guardStatus('question', id, q.status, current.data.status)
       guard(itemList(), [...questionList().filter((x) => x.id !== id), q])
       return commitQuestion(q, false)
     }
@@ -500,6 +517,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
             answer: '',
             extra: {},
           })
+          guardStatus('question', q.id, q.status)
           guard(itemList(), [...questionList(), q])
           return q
         },
@@ -527,14 +545,24 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       } catch (e) {
         if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw new HttpError(422, 'board.config.json cannot be read; fix it on disk first')
       }
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new HttpError(422, 'board.config.json must hold an object; fix it on disk first')
       const next = { ...raw }
       const problems: string[] = []
-      const fields: [string, StatusKind, { status: string }[]][] = [
+      const fields: [StatusField, StatusKind, { status: string }[]][] = [
         ['statuses', 'item', itemList()],
         ['questionStatuses', 'question', questionList()],
       ]
       for (const [field, kind, records] of fields) {
         if (body[field] === undefined) continue
+        // Judge against the list as it is on disk now, never the server's copy: a damaged list is
+        // never saved over (its codes would change meaning), and in-use and reuse are disk facts.
+        const onDisk = parseConfig(JSON.stringify({ [field]: raw[field], removedStatuses: raw.removedStatuses }), readRecodes(root))
+        const diskState = onDisk.config.statusState[field]
+        if (diskState.state === 'damaged') {
+          problems.push(`${CONFIG_FILE}: ${field} is damaged, so status saves are refused until it is fixed in the file:\n${diskState.problems.join('\n')}`)
+          continue
+        }
+        const diskList = onDisk.config[field]
         const { list, problems: bad } = readStatusList(body[field], kind, field)
         problems.push(...bad)
         // A status still on a card can't go: its files would name a status the board no longer knows.
@@ -542,8 +570,27 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
         const dropped = new Map<string, number>()
         for (const r of records) if (!kept.has(r.status)) dropped.set(r.status, (dropped.get(r.status) ?? 0) + 1)
         for (const [code, n] of dropped) {
-          const was = (kind === 'item' ? state.config.statuses : state.config.questionStatuses).some((d) => d.code === code)
-          if (was) problems.push(`${field}: ${statusLabel(state.config, kind, code)} is still used by ${n} ${kind === 'item' ? 'item' : 'question'}${n === 1 ? '' : 's'}`)
+          const was = diskList.find((d) => d.code === code)
+          if (was) problems.push(`${field}: ${was.label} is still used by ${n} ${kind === 'item' ? 'item' : 'question'}${n === 1 ? '' : 's'}`)
+        }
+        // A code is never reissued: a new entry takes a code past every code the list has used.
+        const highWater = highestCode([String(diskState.highWater)], records.map((r) => r.status))
+        for (const d of list)
+          if (!diskList.some((x) => x.code === d.code) && Number(d.code) <= highWater)
+            problems.push(`${field}: "${d.label}" can't take code ${d.code}, which was used before (removed, recoded or held by a card): use ${nextStatusCode([String(highWater)], list.map((x) => x.code))}`)
+        // A removed status keeps its code spent and its last label, so old versions storing it never read as another.
+        const removed = diskList.filter((d) => !kept.has(d.code))
+        if (removed.length) {
+          const was = next.removedStatuses
+          if (onDisk.problems.some((p) => p.startsWith('removedStatuses must') || p.startsWith(`removedStatuses.${field}`))) {
+            problems.push(`${CONFIG_FILE}: removedStatuses is not readable; fix it in the file before removing a status`)
+            continue
+          }
+          // Entries already there stay exactly as written; only the newly removed are appended.
+          const wasList = ((was ?? {}) as Record<string, unknown>)[field]
+          const prior = Array.isArray(wasList) ? wasList : []
+          const added = removed.filter((d) => !onDisk.config.removedStatuses[field].some((r) => r.code === d.code)).map((d) => ({ code: Number(d.code), label: d.label }))
+          next.removedStatuses = { ...((was ?? {}) as Record<string, unknown>), [field]: [...prior, ...added] }
         }
         next[field] = list.map(clean)
       }

@@ -90,7 +90,7 @@ Agent tools in parallel: B12 (after B02), B13 (REQ-07b after B04); both before B
 | Phase | Outcome | Status | Planning/build gate | Notes |
 |---|---|---|---|---|
 | B01 | Origin security | COMPLETE | D-01 and B01-Q1 to Q3 recorded (accepted decision 13) | 2026-11-19, board 1.13.0; R-35 Won't fix (warned instead), user's choice |
-| B02 | Status identity | PLANNED | after B01; D-02 before build; migration shown to user | can plan now |
+| B02 | Status identity | COMPLETE | D-02 and B02-Q3 to Q6 recorded (accepted decision 16); no migration needed | 2026-11-19, board 1.14.0; R-01 and R-07 board halves delivered (B06, B12 close); A-2 confirmed and fixed |
 | B03 | Load resilience | PLANNED | after B01; D-06 before build | |
 | B04 | One rule, one helper | PLANNED | after B03; D-03 before build | D-03 also settled before B12 builds if B12 needs it |
 | B08 | Git history reader | PLANNED | after B03; D-07 before build; D-05 with B05-Q2/Q3 recorded (planning-only gate) | |
@@ -116,7 +116,7 @@ decisions" section and resolved in that phase's planning.
 | ID | Question / source gap | Owner phase | Depends on this | Resolve before | Boundary / acceptance impact | Status / answer |
 |---|---|---|---|---|---|---|
 | D-01 | Origin security model (fs.deny vs normalisation, CORS, SVG CSP, write token) | B01 | B10 | B01 build | B10's link handling; whether B01-REQ-10 applies | **Accepted 2026-11-19** (accepted decision 13): deny rule and normalisation; CORS off plus cross-site refusal; no page CSP; no write token |
-| D-02 | Status registry format, recode versioning, migration; plan-tool readability | B02 | B06, B12, B14 | B02 build | Settings UI, plan-tool status rule, SCHEMA and starter docs; whether B02 touches `catalogueDiff.ts` | Open |
+| D-02 | Status registry format, recode versioning, migration; plan-tool readability | B02 | B06, B12, B14 | B02 build | Settings UI, plan-tool status rule, SCHEMA and starter docs; whether B02 touches `catalogueDiff.ts` | **Accepted 2026-11-19** (accepted decision 16): no-overlap recodes; removed statuses under `removedStatuses` in `board.config.json`; no migration; `catalogueDiff.ts` untouched |
 | D-03 | How agent `.mjs` tools share `shared/*.ts` rules, including the note-cite resolution rule | B04 | B12, B13 | B04 build (and before B12 builds if needed) | B13-REQ-07b (R-141) shape; parity tests | Open |
 | D-04 | Write protocol (patch + base rev vs three-way merge; conflict reply; in-place YAML scope; config writes) | B05 | B06, B07 | B05 build | All client save flows; one-line-diff convention if items are edited in place | Open |
 | D-05 | ID reuse rule: SCHEMA "never reused" vs deliberate documented reuse (A-1, R-54); with B05-Q2/Q3 | B05 (user) | B08, B14 | B08 build (planning-only gate in a B05 planning conversation) | SCHEMA text; journal and history handling; possible deleted-ID list (data migration) | Open |
@@ -203,6 +203,53 @@ decisions" section and resolved in that phase's planning.
       other branch held it, so master was moved back to `e3e7bf54` and B01 now lives only on
       `board-fixes`. Master then got one commit, the pointer page above.
 
+- 2026-11-19, user (B02's planning questions, asked in the B02 session):
+  16. **D-02 and B02-Q3 to Q6, A-2's fix:**
+      - **D-02b, recodes never overlap.** `statuses:recode` refuses any target that is a source (other
+        than an identity pair such as `4=4`) in its own map or a source in any earlier recode, and any
+        target that is neither a fresh code past the list's high-water mark nor an explicit merge into
+        a live code (the merge target named as an identity pair). Following every recorded recode in
+        order (`normaliseStatus`, today's chain rule) then reads every version, old or new, correctly;
+        no recode records which versions it applies to, and `catalogueDiff.ts` is not touched. A swap
+        in place (`4=5,5=4`) is impossible; a project renumbers to fresh codes. An overlapping history
+        already on disk (an adopting repo) is reported by the check.
+      - **D-02a, removed statuses are kept.** Removing a status records its code and last label under
+        a new top-level key in `board.config.json`:
+        `"removedStatuses": { "statuses": [{ "code": 7, "label": "On hold" }], "questionStatuses": [] }`.
+        The plan tools read only the `statuses` and `questionStatuses` arrays, so they never see a
+        removed code as live; older boards ignore unknown keys. A stored removed code shows its last
+        label marked removed. A new status takes a code past every code ever used: live, removed,
+        any numeric key or value of a recorded recode, and any code a record holds.
+      - **D-02c, no migration.** This repo has never removed a status and its one recode maps names
+        to codes, so every registry fact derives (items: high-water 6, next 7; questions: 4, next 5).
+        Nothing is written to the real `board.config.json`, `status-recodes.json` or `.history/`; the
+        first removal or recode writes what it needs. The starter kit and older catalogues need no step.
+      - **B02-Q3 and Q4, cosmetic problems repairable, structural ones lock.** A list with only
+        tone, label, help or heading problems is **degraded**: each bad field falls back alone, the
+        problem is reported, and Settings may save (repair) it. A list that is not a list, has an
+        entry without a valid code or a duplicated code, breaks a role rule (missing, duplicated or
+        unknown role) or the settle rules, or a config file that does not parse, is **damaged**: the
+        server refuses status saves for that list (file unchanged). A damaged list reads as the
+        readable part of the project's own list (first entry wins for a duplicated code; a role is
+        kept only when exactly one entry, with an unduplicated code, holds it), never the built-in
+        defaults, which apply only to an absent key or file. While its default role is unresolved
+        new cards (or questions) are refused; a status change is accepted only to a code the readable
+        list defines.
+      - **B02-Q5, a recode updates the config too.** `statuses:recode` moves each config entry to its
+        new code in the same run (an entry merged away is dropped, refused if it holds a role), so
+        files and config never disagree, and a rerun of the same command completes an interrupted
+        run without recording it twice.
+      - **B02-Q6: no code column** in the CSV (the SPEC's default; not asked).
+      - **A-2's fix: refuse while a board runs.** The board keeps a lock file (`board-<pid>.lock`,
+        named by its process ID) in its journal folder while it runs; `statuses:recode` refuses, saying to stop
+        the board first, while that process is alive. A stale lock (dead process) is ignored.
+      - **R-07 rule for B12** (plan-tool half): unchanged. Follow every recorded recode in order from
+        the stored value (`scope.mjs` `normaliseStatus` as it is). It is correct for every version
+        because B02 refuses any overlapping recode upstream. B12's proof: an attempted overlapping
+        recode is refused by `statuses:recode`, and the plan tools read the 2026-10-20 entry as today.
+        D-03 is not needed for this (accepted decision 8). `status-recodes.json` stays an array of
+        `{ date, note?, items, questions }`.
+
 ## Planning handoff
 
 - 2026-11-18: orchestrator created FINDINGS.md (copy of the verified review report), PLAN.md, this
@@ -241,8 +288,118 @@ decisions" section and resolved in that phase's planning.
 | A top-level visit from another site can still open Vite's `/__open-in-editor` (navigations are allowed so links to the board work); Vite still serves the board's own source, `node_modules` and any `.html` outside the catalogue as same-origin pages (SPEC residual) | B01 | B15 | Vite's dev model; consider refusing cross-site navigations to `/__open-in-editor` |
 | A screenshot whose file name holds a backslash cannot be served (`\` is read as `/`, as the file system on Windows would) | B01 correctness review | B14 (docs) | rare; document, or keep `%5C` apart |
 | `verify:board` saw 5 s Vitest timeouts in `gitHistory.test.ts` under full parallel load (once in four runs; passes alone) | B01 | B12 or B14 | the live origin test adds a Vite boot to the load; consider raising git-test timeouts |
+| The 5 s timeouts recurred in B02 across `gitHistory`, `catalogueDiff`, `api` and `catalogue` tests while the machine's load average was 20 to 26 (antivirus scanning); all pass alone, and the suite passed once the load fell | B02 | B12 or B14 | same item as above; B02's script tests that spawn node carry a 60 s timeout |
+| The Settings Add row's use of the high-water mark has no browser test (the helper and the server refusal are unit-tested) | B02 review | B06 | B06 owns the Settings UI and can prove it with the lock-out |
+| A lock left by a crashed board whose process ID is later reused makes `statuses:recode` refuse until the file is deleted (the message names the file) | B02 review | B14 (docs) | rare; a start-time marker would settle it |
+| `statuses:recode` writes `board.config.json` through `formatJson`, so a hand layout it would lay out differently is reflowed (data unchanged; Settings does the same) | B02 review | none | accepted: `formatJson` is the file's house layout |
 
 ## Phase entries
+
+### B02 · Status identity · COMPLETE · 2026-11-19
+
+Board 1.13.0 to **1.14.0**. Plan and evidence: `phases/B02-status-identity/IMPLEMENTATION.md`.
+Decisions: accepted decision 16 (D-02, B02-Q3 to Q6, A-2's fix, the R-07 rule for B12), asked in this
+session. Master merged first (`60bd04c6`, master's pointer-page commit; on `index.html` this branch's
+version kept, convention 16).
+
+**Dispositions**
+
+| Finding | Disposition | Proof (each failed on the pre-B02 code, passes after) |
+|---|---|---|
+| R-01 (board and server half) | **Delivered; B06 closes** (lock-out UI). Lists never swapped for the defaults: degraded (bad tone, non-text field) keeps every code, label and role; damaged reads the readable part; the check reports the list once; the server refuses status saves on a damaged on-disk list (file byte-identical) and judges in-use against the disk; `config.statusState` in snapshot and event | `tests/config.test.ts` "status identity (R-01)"; `tests/api.test.ts` "status identity on the server" (FINDINGS scenario; damaged saves incl. unparseable, `null` and `[]` files; disk in-use guard; state in snapshot and event); `tests/catalogue.test.ts` check once, no flood |
+| R-06 | **Fixed.** An unmapped live code is refused while the map renumbers live codes; explicit merges (`3=4,4=4`) accepted and listed as merges; a status holding a role is never merged away | `tests/recodeStatuses.test.ts` (FINDINGS map refused naming 4 and its file; merge; role merge refused; names-to-codes rerun still succeeds) |
+| R-07 (board half) | **Delivered; B12 closes** (plan tools). No-overlap rule in `recodeProblems`; chain-following unchanged and correct for every version; `catalogueDiff.ts` untouched | script refuses `4=5,5=6` and a target an earlier recode moved away; after `5=7,6=8` every post-recode code reads as stored; `catalogueDiff.test.ts` later real move reported (a guard, passes before too); the 2026-10-20 entry reads as today |
+| R-30 | **Fixed.** Both CSVs show `statusLabel` from the project's list; unknown as stored; columns unchanged; no code column (B02-Q6) | `tests/catalogue.test.ts` "the CSV export (R-30)" |
+| R-44 | **Fixed.** Recode recorded first; files, journal and config written whole (temp then rename); unreadable journal lines kept byte for byte and counted; failures name file and step and exit 1; the same command resumes once; an unreadable `status-recodes.json` refuses the run | script tests: truncated line; read-only folder then rerun (one entry, finished); truncated recodes file refused byte-identical, earlier entries kept as written |
+| R-46 | **Fixed.** Saved filter not pruned or rewritten while either list is damaged or the file is unreadable; pruned on a real removal | `tests/store.test.ts` "the saved status filter (R-46)" |
+| R-68 | **Fixed.** `nextStatusCode(...groups)` past live, removed, recoded and record codes; server refuses reuse; removal recorded in `removedStatuses` with last label; a removed code reads "label (removed)"; the check reports a removed or recoded-away code in use; an old name never maps to a spent code | config registry tests; api "records a removed status", "skips codes used only in a recode or only in a record"; check removed-status test; script "never maps an old name to a spent code" |
+| A-2 | **Confirmed and Fixed.** Reproduced on the pre-B02 code (scratch catalogue, a watching catalogue API with a scratch journal, the old file step then its journal rewrite): map `3=7` left a `status 7 to 7` entry; overlapping `3=4,4=5` left `4 to 5`, a move that never happened. Fix: the board holds `board-<pid>.lock` in its journal folder; the recode refuses beside a live one (a stale one ignored) | script test (refused, nothing written; dry run allowed; stale lock ignored); `tests/originLive.test.ts` (the real Vite board holds the lock in the folder the script checks, and drops it on exit); manual on 5480 |
+
+**Registry format (for B06, B12, B14):** `board.config.json` may hold
+`"removedStatuses": { "statuses": [{ "code": 7, "label": "On hold" }], "questionStatuses": [] }`,
+written by the server when Settings drops a status (entries already there kept as written).
+`status-recodes.json` unchanged: an array of `{ date, note?, items, questions }`. Derived, never
+written: `config.statusState[field] = { state: 'healthy' | 'degraded' | 'damaged', problems, highWater }`.
+
+**Damage-state contract for B06:** render the lock-out from `config.statusState[field]` (its problems
+name the file, field and entry); the server already refuses damaged-list saves (422) and accepts
+degraded ones (the repair). Settings allocation: `nextStatusCode(list codes, [String(highWater)],
+record codes)` (done at `SettingsView.tsx` `add`).
+
+**R-07 rule for B12:** as decision 16: keep `scope.mjs` `normaliseStatus` (follow every recode in
+order); prove an overlapping recode is refused by `statuses:recode` and the 2026-10-20 entry reads as
+today. Checked here: `config.mjs` `statusListsOf` ignores `removedStatuses`; `scope.mjs`
+`loadRecodes` reads the file; the plan tools' `node --test` suites pass (27).
+
+**What shipped:** `shared/statuses.ts` (health classes, `readablePart`, `parseRemoved`,
+`highestCode`, `nextStatusCode(...groups)`, `recodedCodes`, `recodeProblems`,
+`recodeHistoryProblems`, removed labels, safe `defaultStatus`); `shared/config.ts`
+(`removedStatuses`, `statusState`, `parseConfig(text, recodes)`, an unreadable file as damaged lists);
+`shared/check.ts`; `shared/csv.ts`; `server/catalogueApi.ts` (config PUT, `guardStatus` on create,
+PUT and batch, non-object config 422); `server/catalogueFs.ts` (`readConfig` passes the recodes);
+`server/historyDir.ts` (new: `historyDirFor` moved here, `holdBoardLock`, `boardsRunning`);
+`scripts/recode-statuses.ts` (rewritten main: strict recodes read, validation, lock, order, resume,
+journal and config passes); `scripts/export-csv.ts`; `src/store.ts`.
+
+**Touch-rights edits (convention 11):** `shared/check.ts` (status judged against the project's list;
+removed-status message); `src/views/SettingsView.tsx` (`add` only); `server/cataloguePlugin.ts`
+(B07's: `historyDirFor` moved out, lock held and released); `tests/originLive.test.ts` (B01's: lock
+assertions); `docs/board-fixes/index.html` (B02 status).
+
+**Deviations:** (1) The lock is `board-<pid>.lock` (not `board.lock`), so two boards on one journal
+never drop each other's; decision 16's wording corrected. (2) The recode's journal pass now uses the
+board's own journal-folder rule (`historyDirFor`), so it also rewrites a fixture board's temp journal;
+before, it skipped the journal whenever `REQUIREMENTS_DIR` was set. (3) Old names (from before
+statuses were codes) may still merge into one live code (`Proposed=1,Future=1`, as the 2026-10-20
+recode did) but never target a spent code. (4) A reused removed code, or a live code a recode moved
+away, makes the list degraded (reported, Settings can still save), not damaged. (5)
+`requirements/SCHEMA.md` is a catalogue doc; only its statuses paragraph changed, no requirement.
+
+**Verification:** `npm run verify:board` green (652 tests; check OK). Earlier runs under a load average
+of 20 to 26 (antivirus scanning) timed out in unrelated git tests that pass alone (Discovered). Fixture
+e2e on 5182: full suite 100 passed; Settings, status picker and question answer 13 passed after the
+review fixes. Before-proofs: the new tests were run against `git archive 60bd04c6` of the board in the
+scratchpad: 26 of the first set and all 6 review regression tests fail there (the 8 that pass are
+preservation checks); `server/historyDir.ts` was copied in only because a test writes a lock with it.
+Real catalogue: `npm run check` output byte-identical before and after; derived registry healthy,
+high-water items 6 and questions 4, nothing removed; no file under `requirements/` changed but
+SCHEMA.md. **Migration:** none. The derivation report was the dry run; nothing was written to
+`board.config.json`, `status-recodes.json` or `.history/`. Manual on 5480 (a scratch copy of the real
+catalogue): status 4's tone set to `teal` by hand: the board reports the tone problem and keeps 5
+Confirmed and 6 Retired (52 retired cards, no card errors), and a reworded save writes codes 1 to 6
+unchanged (repairing the tone). A doubled code 5: state damaged, save refused 422 naming the cause,
+file unchanged by checksum, retired role still on 6. A recode with that board running: refused,
+nothing written.
+
+**Review outcomes (convention 15):** two Sonnet reviewers (diff about 720 lines outside tests).
+Confirmed and fixed: a recode replaced an unreadable `status-recodes.json`, losing its history
+(reproduced; now refused, entries appended as written); an old name could target a spent code; a
+`null` config gave 500 on save; non-text label, help or heading went unreported; a live code a recode
+moved away went unreported; the plugin's lock wiring was untested; the exit hook piled up across
+restarts; the refusal line misled for non-mapping refusals; the lock message did not name the file;
+hand-written removed entries were rewritten; a recode into a config without a list said nothing.
+Regression tests added for each behaviour change. Not taken: optional chaining on `statusState`
+(kept as a defensive read); `formatJson` reflow (house layout); unreadable `removedStatuses` not
+locking the list (by design: a removal is refused while it is unreadable).
+
+**Doc facts (convention 12):** `requirements-board/README.md` config section (`removedStatuses` line;
+the paragraph after the list: status lists never swapped, degraded and damaged, `statusState`);
+`requirements-board/requirements/SCHEMA.md` statuses paragraph (removed statuses, never reissued,
+damaged lists, recode rules, stop the board); `requirements-board/ADOPTING.md` statuses bullet (recode
+guidance); headers of `shared/statuses.ts`, `shared/config.ts` (`parseConfig`), `shared/csv.ts`,
+`scripts/recode-statuses.ts`, `server/historyDir.ts`; `CHANGELOG.md` 1.14.0. About and SKILL.md lines
+checked: nothing they say changed. The starter config needs no change.
+
+**What later phases need:**
+- **B03:** while a list is damaged, cards can hold codes the readable list lacks; R-121's listing
+  covers them. `defaultStatus` may now return `''`.
+- **B05:** keep in the config write route the damaged-list refusal, the on-disk in-use guard, the
+  reuse refusal, the `removedStatuses` append and the non-object 422, and `guardStatus` on item and
+  question writes; keep `api.test.ts` "status identity on the server" green.
+- **B06:** the contract above; closes R-01 with the lock-out rendering.
+- **B12:** the R-07 rule above; closes R-07. Lane worktrees need no migration.
+- **B14:** registry format and doc facts above; R-149's pins untouched.
+- **B15:** confirm A-2 with `tests/recodeStatuses.test.ts` and `tests/originLive.test.ts`.
 
 ### B01 · Origin security · COMPLETE · 2026-11-19
 

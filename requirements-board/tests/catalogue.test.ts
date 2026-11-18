@@ -144,13 +144,13 @@ describe('catalogue files', () => {
 
   it.skipIf(!hasLive)('exports CSV in the old shape and reads it back', () => {
     const items = Object.values(real.items).map((r) => r.data)
-    const rows = parseCsv(requirementsCsv(items))
+    const rows = parseCsv(requirementsCsv(items, real.config))
     expect(rows).toHaveLength(items.length)
     expect(rows[0]!.ID).toBe(depthFirst(items)[0]!.id)
-    const one = parseCsv(requirementsCsv([item({ acceptance: '- A, "quoted"\n- B', technical: 'See [the rule](US-01.1.2).', related: ['US-01.1.2', 'US-01.1.3'] })]))[0]!
+    const one = parseCsv(requirementsCsv([item({ acceptance: '- A, "quoted"\n- B', technical: 'See [the rule](US-01.1.2).', related: ['US-01.1.2', 'US-01.1.3'] })], real.config))[0]!
     expect(Object.keys(one).slice(-3)).toEqual(['Acceptance criteria', 'Technical discussion', 'Related'])
     expect([one['Acceptance criteria'], one['Technical discussion'], one.Related]).toEqual(['- A, "quoted"\n- B', 'See the rule.', 'US-01.1.2; US-01.1.3'])
-    const qs = parseCsv(questionsCsv(Object.values(real.questions).map((r) => r.data)))
+    const qs = parseCsv(questionsCsv(Object.values(real.questions).map((r) => r.data), real.config))
     expect(qs.map((q) => q.ID ?? '')).toEqual([...qs.map((q) => q.ID ?? '')].sort((a, b) => a.localeCompare(b, 'en', { numeric: true })))
   })
 
@@ -322,5 +322,50 @@ describe('writing', () => {
     const loaded = loadCatalogue(dir)
     expect(loaded.items['US-01.1.1']).toEqual(rec)
     expect(readdirSync(storiesDir(dir))).toEqual(['EP-01.md', 'FT-01.1.md', 'US-01.1.1.md'])
+  })
+})
+
+/** A project numbering unlike the defaults: 5 Confirmed, 6 Retired (the defaults have 5 Retired). */
+const SIX = [
+  { code: 1, label: 'Proposed', tone: 'neutral', role: 'default' },
+  { code: 2, label: 'Open', tone: 'amber', role: 'waiting' },
+  { code: 3, label: 'Verify', tone: 'olive', settle: true },
+  { code: 4, label: 'Agreed', tone: 'green', settle: true },
+  { code: 5, label: 'Confirmed', tone: 'forest', settle: true },
+  { code: 6, label: 'Retired', tone: 'hatched', role: 'retired' },
+]
+const sixConfig = (extra: Record<string, unknown> = {}, statuses: unknown = SIX) => parseConfig(JSON.stringify({ components: [{ name: 'Core' }], statuses, ...extra })).config
+
+describe('the check against the project\'s own statuses (R-01, R-68)', () => {
+  const cards = ['1', '4', '5', '6', '6', '6'].map((status, i) => item({ id: `US-01.1.${i + 1}`, status, order: i + 1 }))
+  const statusErrors = (config = sixConfig()) => checkCatalogue({ items: [epic, feature, ...cards], questions: [], config }).filter((i) => i.severity === 'error' && /status "/.test(i.message))
+
+  it('reports a damaged list once, with no card judged against the defaults', () => {
+    const damaged = sixConfig({}, SIX.map((d) => (d.code === 5 ? { ...d, role: 'retired' } : d)))
+    expect(damaged.statusState.statuses.state).toBe('damaged')
+    expect(statusErrors(damaged)).toEqual([])
+    const unreadable = sixConfig({}, { Proposed: 1 })
+    expect(unreadable.statuses).toEqual([])
+    expect(statusErrors(unreadable)).toEqual([])
+    expect(statusErrors()).toEqual([])
+    expect(statusErrors(sixConfig({}, SIX.filter((d) => d.code !== 4)))).toHaveLength(1)
+  })
+
+  it('says when a card holds a removed status', () => {
+    const config = sixConfig({ removedStatuses: { statuses: [{ code: 7, label: 'On hold' }] } })
+    const msgs = checkCatalogue({ items: [epic, feature, item({ status: '7' })], questions: [], config }).map((i) => i.message)
+    expect(msgs.some((m) => /status "7" is On hold, a removed status/.test(m))).toBe(true)
+  })
+})
+
+describe('the CSV export (R-30)', () => {
+  it('shows each status by the project\'s label, an unknown code as stored, with the columns unchanged', () => {
+    const config = parseConfig(JSON.stringify({ statuses: SIX })).config
+    const rows = parseCsv(requirementsCsv([epic, item({ id: 'FT-01.1', type: 'feature', parent: 'EP-01', status: '5' }), item({ status: '9' })], config))
+    expect(Object.keys(rows[0]!)).toEqual(['ID', 'Type', 'Parent', 'Title', 'Description', 'Notes', 'Component', 'Status', 'Source', 'Acceptance criteria', 'Technical discussion', 'Related'])
+    expect(rows.map((r) => r.Status)).toEqual(['Proposed', 'Confirmed', '9'])
+    const qs = parseCsv(questionsCsv([question({ status: '4' }), question({ id: 'OQ-02', status: '1' })], DEFAULT_CONFIG))
+    expect(Object.keys(qs[0]!)).toEqual(['ID', 'Title', 'Question', 'Affects', 'Owner', 'Status', 'Source'])
+    expect(qs.map((r) => r.Status)).toEqual(['Answered', 'Open'])
   })
 })

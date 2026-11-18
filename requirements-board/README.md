@@ -265,6 +265,9 @@ gallery has one tab per app present, in that order; untagged images fall back to
   file names and item frontmatter, so keep them stable;
 - `statuses` and `questionStatuses`: ordered lists of `{ code, label, help, tone, role?, settle? }`
   (format in `SCHEMA.md`); files store only the number;
+- `removedStatuses`: `{ "statuses": [{ "code", "label" }], "questionStatuses": [...] }`, the
+  statuses taken off each list, written by Settings when one is removed: their codes are never
+  handed out again, and old versions storing one read as its last label, marked removed;
 - `questionKinds`: `{ "<kind>": { "label", "help" } }`, the wording beside each question kind;
 - `capture`: see Capturing screenshots;
 - `voice`: `{ "descriptionWarnings": [{ "pattern", "flags", "message" }] }`, project patterns
@@ -273,8 +276,13 @@ gallery has one tab per app present, in that order; untagged images fall back to
   Edited by hand (format in `SCHEMA.md`).
 
 The server reads it with the catalogue and reloads it live; a malformed entry is reported by the
-check and left at its default. The Settings page edits `board`, `project`, `components` and the two
-status lists, and leaves every other field as written.
+check and left at its default, except in the status lists, which are never swapped for the built-in
+ones: a bad tone falls back for that status alone, and a structural problem (a bad or doubled code,
+a role or settle rule broken, a file that does not parse) marks the list damaged, the board reads
+only its readable part, and status saves are refused until the file is fixed. Each list's state
+(`healthy`, `degraded`, `damaged`) reaches the client in the config as `statusState`. The Settings
+page edits `board`, `project`, `components` and the two status lists, and leaves every other field
+as written.
 
 ### Capturing screenshots
 

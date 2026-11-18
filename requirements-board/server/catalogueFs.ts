@@ -106,15 +106,21 @@ export function readLayout(root = REQUIREMENTS_DIR): { layout: Layout; error?: s
   }
 }
 
-/** The project's vocabulary. No file: the neutral defaults. Problems are reported and their entries left at the default. */
+/**
+ * The project's vocabulary. No file: the neutral defaults. Problems are reported and their entries
+ * left at the default, except the status lists, which are only ever the project's own (see
+ * `shared/statuses.ts`). The recodes feed each status list's high-water mark.
+ */
 export function readConfig(root = REQUIREMENTS_DIR): { config: BoardConfig; problems: string[] } {
   let text: string
+  const recodes = readRecodes(root)
   try {
     text = readFileSync(configPath(root), 'utf8')
   } catch {
-    return { config: DEFAULT_CONFIG, problems: [] }
+    if (!recodes.length) return { config: DEFAULT_CONFIG, problems: [] }
+    return parseConfig('{}', recodes)
   }
-  return parseConfig(text)
+  return parseConfig(text, recodes)
 }
 
 /** The recorded status recodes (`status-recodes.json`); none when the file is absent. */

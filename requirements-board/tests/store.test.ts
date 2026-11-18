@@ -11,7 +11,14 @@ vi.mock('../src/api.ts', () => ({
   ApiError: class extends Error {},
 }))
 
-const { useCatalogue } = await import('../src/store.ts')
+const stored = new Map<string, string>()
+vi.stubGlobal('localStorage', {
+  getItem: (k: string) => stored.get(k) ?? null,
+  setItem: (k: string, v: string) => void stored.set(k, v),
+  removeItem: (k: string) => void stored.delete(k),
+})
+const { useCatalogue, useView } = await import('../src/store.ts')
+const { parseConfig } = await import('../shared/config.ts')
 const s = () => useCatalogue.getState()
 
 beforeEach(async () => {
@@ -216,5 +223,35 @@ describe('undo and redo', () => {
     useCatalogue.setState({ items: { ...recs(), 'US-01.1.1': { data: item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, swimlane: 'MVP' }), rev: 'r1' } }, layout: { positions: {}, lanes: ['MVP'] } })
     expect(await s().renameLane('MVP', 'Later')).toBe(true)
     expect(s().past).toEqual([])
+  })
+})
+
+describe('the saved status filter (R-46)', () => {
+  const SIX = [
+    { code: 1, label: 'Proposed', role: 'default' },
+    { code: 2, label: 'Open', role: 'waiting' },
+    { code: 3, label: 'Verify', settle: true },
+    { code: 4, label: 'Agreed', settle: true },
+    { code: 5, label: 'Confirmed', settle: true },
+    { code: 6, label: 'Retired', role: 'retired' },
+  ]
+  const config = (text: string) => parseConfig(text).config
+  const saved = () => JSON.parse(stored.get('requirements-board:view') ?? '{}').statuses as string[] | undefined
+
+  it('survives a config that is broken for a moment, and goes only when its status is really gone', () => {
+    useView.getState().set({ statuses: ['6'] })
+    const before = saved()
+    expect(before).toEqual(['6'])
+    for (const broken of ['{ "statuses": [ ,', JSON.stringify({ statuses: SIX.map((d) => (d.code === 5 ? { ...d, role: 'retired' } : d)) }), JSON.stringify({ statuses: { Retired: 6 } })]) {
+      s().applyEvent({ kind: 'config', config: config(broken) })
+      expect(useView.getState().statuses, broken).toEqual(['6'])
+      expect(saved(), broken).toEqual(['6'])
+    }
+    s().applyEvent({ kind: 'config', config: config(JSON.stringify({ statuses: SIX })) })
+    expect(useView.getState().statuses).toEqual(['6'])
+    // Removed for real: a filter naming it would hide every card.
+    s().applyEvent({ kind: 'config', config: config(JSON.stringify({ statuses: SIX.filter((d) => d.code !== 6).map((d) => (d.code === 5 ? { ...d, settle: undefined, role: 'retired' } : d)) })) })
+    expect(useView.getState().statuses).toEqual([])
+    expect(saved()).toEqual([])
   })
 })

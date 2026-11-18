@@ -675,8 +675,13 @@ export const useView = create<ViewState>((set, get) => ({
   },
 }))
 
-/** A saved status filter naming a status the config no longer has (renamed or removed) would hide every card: drop it. */
+/**
+ * A saved status filter naming a status the config no longer has (removed) would hide every card:
+ * drop it. Never while a status list is damaged or the file can't be read: that is a moment's
+ * breakage, not a removal, and the filter is kept as saved.
+ */
 function dropUnknownStatuses(config: BoardConfig) {
+  if (config.statusState?.statuses.state === 'damaged' || config.statusState?.questionStatuses.state === 'damaged') return
   const v = useView.getState()
   const known = new Set(statusCodes(config, 'item'))
   if (v.statuses.some((s) => !known.has(s))) v.set({ statuses: v.statuses.filter((s) => known.has(s)) })

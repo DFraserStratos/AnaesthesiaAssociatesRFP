@@ -29,7 +29,7 @@ import {
 import { isArtifactId, isQuestionId, itemTexts, mentions } from './links.ts'
 import { buildSourceIndex, citationProblems, resolveSource, type SpotFacts } from './sources.ts'
 import { appKeys, componentNames, DEFAULT_CONFIG, voiceRegex, type BoardConfig } from './config.ts'
-import { isAnswered, isRetired, statusCodes } from './statuses.ts'
+import { STATUS_FIELDS, isAnswered, isRetired, removedStatus, statusCodes, type StatusKind } from './statuses.ts'
 import { stepOf, stepState } from './steps.ts'
 import { ANCHOR_FORMATS, boxRect, isRegionId, looseText, matchSimpleSelector, normText, parseAnchor, rectWithin, type SvgElement } from './artifacts.ts'
 
@@ -79,8 +79,16 @@ export interface CheckInput {
 export function checkCatalogue({ items, questions, fileExists, linkOut, lanes, artifacts = [], artifactFacts, config = DEFAULT_CONFIG }: CheckInput): Issue[] {
   const issues: Issue[] = []
   const components = componentNames(config)
-  const itemCodes = statusCodes(config, 'item')
-  const questionCodes = statusCodes(config, 'question')
+  // A card's status is judged against the project's own list only. While that list is damaged the
+  // config problem is the one error: judging every card against what is left of it would bury the cause.
+  const statusProblem = (kind: StatusKind, code: string): string | null => {
+    const field = STATUS_FIELDS[kind]
+    const codes = statusCodes(config, kind)
+    if (config.statusState?.[field].state === 'damaged' || codes.includes(code)) return null
+    const gone = removedStatus(config, kind, code)
+    if (gone) return `status "${code}" is ${gone.label}, a removed status: give it one of ${codes.join(', ')} (${field} in board.config.json)`
+    return `status "${code}" is not one of ${codes.join(', ')} (${field} in board.config.json)`
+  }
   const retired = (it: Item) => isRetired(config, it)
   const apps = appKeys(config)
   const unknownComponent = (c: string) => components.length > 0 && !components.includes(c)
@@ -100,7 +108,8 @@ export function checkCatalogue({ items, questions, fileExists, linkOut, lanes, a
     }
     if (!ID_PATTERNS[it.type].test(it.id)) err(it.id, `ID ${it.id} does not match the ${it.type} pattern`)
     if (!it.title.trim()) err(it.id, 'title is empty')
-    if (!itemCodes.includes(it.status)) err(it.id, `status "${it.status}" is not one of ${itemCodes.join(', ')} (statuses in board.config.json)`)
+    const badStatus = statusProblem('item', it.status)
+    if (badStatus) err(it.id, badStatus)
     for (const c of it.components) {
       if (unknownComponent(c)) err(it.id, `component "${c}" is not in the vocabulary (board.config.json)`)
     }
@@ -386,7 +395,8 @@ export function checkCatalogue({ items, questions, fileExists, linkOut, lanes, a
     if (!ID_PATTERNS.question.test(q.id)) err(q.id, `ID ${q.id} does not match OQ-nn`)
     if (!QUESTION_KINDS.includes(q.kind)) err(q.id, `kind "${q.kind}" is not one of ${QUESTION_KINDS.join(', ')}`)
     if (!q.title.trim()) err(q.id, 'title is empty')
-    if (!questionCodes.includes(q.status)) err(q.id, `status "${q.status}" is not one of ${questionCodes.join(', ')} (questionStatuses in board.config.json)`)
+    const badStatus = statusProblem('question', q.status)
+    if (badStatus) err(q.id, badStatus)
     for (const a of q.affects) if (!byId.has(a)) err(q.id, `affects ${a}, which does not exist`)
     if (q.affects.length === 0) warn(q.id, 'affects no items')
     if (isAnswered(config, q) && !q.answer.trim()) warn(q.id, 'answered but the answer is empty')

@@ -12,7 +12,9 @@ import { REQUIREMENTS_DIR, loadCatalogue } from '../server/catalogueFs.ts'
 
 const outFlag = process.argv.indexOf('--out')
 const out = outFlag > 0 ? resolve(process.argv[outFlag + 1]!) : join(REQUIREMENTS_DIR, 'exports')
-const { items, questions, issues } = loadCatalogue()
+// Status labels come from the project's own list only: a damaged list is a check error, and even
+// under --allow-errors a code that list does not define is written as stored, never through the defaults.
+const { items, questions, issues, config } = loadCatalogue()
 const errors = issues.filter((i) => i.severity === 'error')
 if (errors.length && !process.argv.includes('--allow-errors')) {
   for (const e of errors) console.error(`ERROR  ${e.id.padEnd(10)} ${e.message}`)
@@ -20,6 +22,6 @@ if (errors.length && !process.argv.includes('--allow-errors')) {
   process.exit(1)
 }
 mkdirSync(out, { recursive: true })
-writeFileSync(join(out, 'requirements.csv'), requirementsCsv(Object.values(items).map((r) => r.data)))
-writeFileSync(join(out, 'open-questions.csv'), questionsCsv(Object.values(questions).map((r) => r.data)))
+writeFileSync(join(out, 'requirements.csv'), requirementsCsv(Object.values(items).map((r) => r.data), config))
+writeFileSync(join(out, 'open-questions.csv'), questionsCsv(Object.values(questions).map((r) => r.data), config))
 console.log(`Wrote requirements.csv and open-questions.csv to ${out}`)

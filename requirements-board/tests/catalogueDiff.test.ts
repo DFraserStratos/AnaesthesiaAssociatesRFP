@@ -422,6 +422,20 @@ describe.skipIf(!hasGit)('catalogue diff', () => {
     expect(r.kind === 'item' && [r.before?.status, r.after?.status]).toEqual(['7', '2'])
   })
 
+  it('reads a version saved after a recode as stored, and still reports a later real move (R-07)', async () => {
+    seed()
+    write('stories/US-01.1.1.md', serialiseItem(item({ id: 'US-01.1.1', parent: 'FT-01.1', title: 'Send an invoice', description: 'Sends it.', status: '7' })))
+    write('status-recodes.json', JSON.stringify([{ date: '2026-11-01', items: { '1': '7' }, questions: {} }]))
+    commit('Renumber statuses')
+    const after = head()
+    write('stories/US-01.1.1.md', serialiseItem(item({ id: 'US-01.1.1', parent: 'FT-01.1', title: 'Send an invoice', description: 'Sends it.', status: '2' })))
+    commit('A real move')
+    const d = await catalogueDiff(root, after, head())
+    expect(d.records.map((r) => r.id)).toEqual(['US-01.1.1'])
+    const r = d.records[0]!
+    expect(r.kind === 'item' && [r.before?.status, r.after?.status]).toEqual(['7', '2'])
+  })
+
   it("gives each screenshot its blob on both sides when a card's pictures change", async () => {
     seed()
     const shot = (name: string) => ({ src: `assets/US-01.1.1/${name}.png`, viewport: 'desktop' as const })

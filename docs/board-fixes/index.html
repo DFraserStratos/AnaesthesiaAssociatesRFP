@@ -335,6 +335,7 @@ const PHASES = [
 // One entry per started or finished phase: status 'IN PROGRESS' or 'COMPLETE', the date, a one-line note.
 const PHASE_STATE = {
   B01: { status:'COMPLETE', date:'2026-11-19', note:'Board 1.13.0. R-35 won\'t fix (warned instead), your choice.' },
+  B02: { status:'COMPLETE', date:'2026-11-19', note:'Board 1.14.0. D-02 accepted (no-overlap recodes, removedStatuses, no migration); A-2 confirmed and fixed.' },
 };
 // ===== end PHASE STATUS =====
 const STATUS = Object.fromEntries(PHASES.map(p=>[p.id,(PHASE_STATE[p.id]||{}).status||'PLANNED']));

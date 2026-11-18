@@ -6,7 +6,6 @@
  */
 import { createReadStream, readFileSync, statSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { tmpdir } from 'node:os'
 import { dirname, extname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
@@ -16,6 +15,7 @@ import { HttpError, createCatalogueApi, idFromPath } from './catalogueApi.ts'
 import { REQUIREMENTS_DIR } from './catalogueFs.ts'
 import { OBJECT_SHA, blobShaOf, git, gitBlob, repoTop } from './gitHistory.ts'
 import { priorDirs, priorPaths } from './gitRenames.ts'
+import { holdBoardLock, historyDirFor } from './historyDir.ts'
 import { createJournal } from './historyJournal.ts'
 import { inside, linkOut, realPath, under } from './realPaths.ts'
 
@@ -26,15 +26,6 @@ const MIME: Record<string, string> = {
   '.webp': 'image/webp',
   '.gif': 'image/gif',
   '.svg': 'image/svg+xml',
-}
-/**
- * Where the change journal lives: HISTORY_DIR, else `.history/` beside this app for the real
- * requirements folder, else a temp folder per folder (a fixture never mixes into the real one's history).
- */
-function historyDirFor(root: string): string {
-  if (process.env.HISTORY_DIR) return resolve(process.env.HISTORY_DIR)
-  if (resolve(root) === resolve(REQUIREMENTS_DIR) && !process.env.REQUIREMENTS_DIR) return join(dirname(fileURLToPath(import.meta.url)), '..', '.history')
-  return join(tmpdir(), 'requirements-board-history', resolve(root).replace(/[^A-Za-z0-9]+/g, '_').slice(-80))
 }
 
 /** Coalesce bursts of file events, but never hold a sync back longer than this. */
@@ -174,7 +165,17 @@ export function cataloguePlugin(root = REQUIREMENTS_DIR): Plugin {
         warned.add(message)
         dev.config.logger.warn(`[catalogue] ${message}`)
       }
-      const api = createCatalogueApi(root, (e: CatalogueEvent) => dev.ws.send('catalogue:changed', e), { journal: createJournal(historyDirFor(root)), watched: true })
+      const historyDir = historyDirFor(root)
+      const api = createCatalogueApi(root, (e: CatalogueEvent) => dev.ws.send('catalogue:changed', e), { journal: createJournal(historyDir), watched: true })
+      // While the board watches, `statuses:recode` refuses to run beside it (see historyDir.ts).
+      // The lock is named by process: a Vite restart closes the old server (dropping it) before this
+      // one takes it again, and each server removes its own exit hook when it closes.
+      const release = holdBoardLock(historyDir)
+      process.once('exit', release)
+      dev.httpServer?.once('close', () => {
+        process.off('exit', release)
+        release()
+      })
 
       const sync = () => {
         try {

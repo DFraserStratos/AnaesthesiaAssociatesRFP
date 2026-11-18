@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_CONFIG, componentCodeIn, kindHelpIn, parseConfig } from '../shared/config.ts'
-import { DEFAULT_ITEM_STATUSES, DEFAULT_QUESTION_STATUSES, defaultStatus, isAnswered, isRetired, normaliseStatus, roleCode, settleTargets, statusClasses, statusHeading, statusHelp, statusLabel, waitingStatus, type Recode } from '../shared/statuses.ts'
+import { DEFAULT_ITEM_STATUSES, DEFAULT_QUESTION_STATUSES, defaultStatus, isAnswered, isRetired, nextStatusCode, normaliseStatus, roleCode, settleTargets, statusClasses, statusCodes, statusHeading, statusHelp, statusLabel, waitingStatus, type Recode } from '../shared/statuses.ts'
 
 describe('board.config.json', () => {
   it('reads a full config', () => {
@@ -46,7 +46,9 @@ describe('board.config.json', () => {
 
   it('falls back to neutral defaults, field by field, and says what was wrong', () => {
     expect(parseConfig('{').problems[0]).toMatch(/not valid JSON/)
-    expect(parseConfig('{').config).toEqual(DEFAULT_CONFIG)
+    // Every other field at its neutral default; the status lists damaged, never the built-in ones (B02, R-01).
+    expect({ ...parseConfig('{').config, statuses: DEFAULT_CONFIG.statuses, questionStatuses: DEFAULT_CONFIG.questionStatuses, statusState: DEFAULT_CONFIG.statusState }).toEqual(DEFAULT_CONFIG)
+    expect(parseConfig('{').config.statuses).toEqual([])
     const { config, problems } = parseConfig(
       JSON.stringify({
         components: [{ name: 'Core' }, { code: 'X' }, { name: 'Core' }],
@@ -58,19 +60,21 @@ describe('board.config.json', () => {
     )
     expect(config.components).toEqual([{ name: 'Core' }])
     expect(config.screenshotApps).toEqual([{ key: 'web', label: 'web', viewport: 'desktop' }])
-    expect(config.statuses).toEqual(DEFAULT_ITEM_STATUSES)
-    expect(config.questionStatuses).toEqual(DEFAULT_QUESTION_STATUSES)
+    // The project's own lists as far as they read (B02, R-01), never the built-in ones.
+    expect(config.statuses).toEqual([])
+    expect(config.questionStatuses).toEqual([{ code: '1', label: '1', help: '', tone: 'neutral', role: 'default' }])
     expect(config.capture?.apps).toEqual({})
+    const damaged = 'the board reads only the readable part of this list until it is fixed in board.config.json (status saves are refused meanwhile)'
     expect(problems).toEqual([
       'components: {"code":"X"} has no name',
       'components: "Core" is listed twice',
       'screenshotApps: {"key":"Web App"} needs a key in lower-case letters, digits and hyphens',
       'screenshotApps: "web" viewport must be desktop or mobile',
       'statuses must be a list of statuses ({ code, label, help, tone, role })',
-      'statuses: using the defaults until that is fixed',
+      `statuses: ${damaged}`,
       'questionStatuses: {"code":"open"} needs a code: a whole number from 1',
       'questionStatuses: one status needs the answered role',
-      'questionStatuses: using the defaults until that is fixed',
+      `questionStatuses: ${damaged}`,
       'capture.apps: "kiosk" is not one of the screenshotApps',
       'capture.apps.web needs a url',
     ])
@@ -167,14 +171,19 @@ describe('statuses', () => {
       { code: 1, role: 'default' },
       { code: 2, tone: 'purple' },
     ])
-    expect(config.statuses).toEqual(DEFAULT_ITEM_STATUSES)
+    // Damaged: the readable part, with the doubled default role resolved by neither entry (B02, R-01).
+    expect(config.statuses).toEqual([
+      { code: '1', label: '1', help: '', tone: 'neutral' },
+      { code: '2', label: '2', help: '', tone: 'neutral' },
+    ])
+    expect(config.statusState.statuses.state).toBe('damaged')
     expect(problems).toEqual([
       'statuses: "2" tone must be one of neutral, amber, olive, green, forest, sand, hatched',
       'statuses: "1" is listed twice',
       'statuses: only one status may have the default role',
       'statuses: one status needs the retired role',
       'statuses: at least one status needs settle (offered when a question is answered)',
-      'statuses: using the defaults until that is fixed',
+      'statuses: the board reads only the readable part of this list until it is fixed in board.config.json (status saves are refused meanwhile)',
     ])
   })
 
@@ -188,5 +197,117 @@ describe('statuses', () => {
     expect(normaliseStatus(recodes, 'item', '3')).toBe('3')
     expect(normaliseStatus(recodes, 'question', 'Answered')).toBe('4')
     expect(normaliseStatus(recodes, 'question', 'Confirmed')).toBe('Confirmed')
+  })
+})
+
+/** This repo's six-status list: 4 Agreed, 5 Confirmed, 6 Retired (the defaults have 5 Retired). */
+const PROJECT = [
+  { code: 1, label: 'Proposed', help: 'Needs agreement', tone: 'neutral', role: 'default' },
+  { code: 2, label: 'Open', help: 'Waiting on an open question', tone: 'amber', role: 'waiting' },
+  { code: 3, label: 'Verify', help: 'Question answered', tone: 'olive', settle: true },
+  { code: 4, label: 'Agreed', help: 'Agreed, not signed off', tone: 'green', settle: true },
+  { code: 5, label: 'Confirmed', help: 'Signed off', tone: 'forest', settle: true },
+  { code: 6, label: 'Retired', help: 'No longer wanted', tone: 'hatched', role: 'retired' },
+]
+const withEntry = (i: number, patch: Record<string, unknown>) => PROJECT.map((d, j) => (j === i ? { ...d, ...patch } : d))
+
+describe('status identity (R-01)', () => {
+  const read = (statuses: unknown) => parseConfig(JSON.stringify({ statuses }))
+
+  it('keeps every project code, label and role when one field is bad, falling back for that field alone', () => {
+    const { config, problems } = read(withEntry(3, { tone: 'teal' }))
+    expect(config.statuses.map((d) => [d.code, d.label, d.role ?? ''])).toEqual(PROJECT.map((d) => [String(d.code), d.label, d.role ?? '']))
+    expect(config.statuses[3]!.tone).toBe('neutral')
+    expect(config.statusState.statuses.state).toBe('degraded')
+    expect(problems).toContain('statuses: "4" tone must be one of neutral, amber, olive, green, forest, sand, hatched')
+    expect(isRetired(config, { status: '5' })).toBe(false)
+    expect(isRetired(config, { status: '6' })).toBe(true)
+    expect(statusLabel(config, 'item', '6')).toBe('Retired')
+  })
+
+  it('never reads a damaged list through the defaults', () => {
+    const cases: Record<string, unknown> = {
+      'a bad code': withEntry(2, { code: 'x' }),
+      'a duplicated code': [...PROJECT, { ...PROJECT[1], label: 'Open again' }],
+      'not a list': { Proposed: 1 },
+      'two retired roles': withEntry(4, { role: 'retired' }),
+      'no retired role': withEntry(5, { role: undefined }),
+      'an unknown role': withEntry(4, { role: 'archived' }),
+      'no settle': PROJECT.map((d) => ({ ...d, settle: undefined })),
+    }
+    for (const [name, statuses] of Object.entries(cases)) {
+      const { config, problems } = read(statuses)
+      expect(config.statusState.statuses.state, name).toBe('damaged')
+      expect(config.statuses, name).not.toEqual(DEFAULT_ITEM_STATUSES)
+      expect(isRetired(config, { status: '5' }), name).toBe(false)
+      expect(statusLabel(config, 'item', '5'), name).not.toBe('Retired')
+      expect(problems.some((p) => /using the defaults/.test(p)), name).toBe(false)
+      if (name !== 'not a list') expect(statusLabel(config, 'item', '6'), name).toBe('Retired')
+    }
+    // A role two entries claim is resolved by neither; a role one entry holds still stands.
+    expect(isRetired(read(withEntry(4, { role: 'retired' })).config, { status: '6' })).toBe(false)
+    expect(defaultStatus(read(withEntry(4, { role: 'retired' })).config, 'item')).toBe('1')
+    expect(defaultStatus(read({ Proposed: 1 }).config, 'item')).toBe('')
+  })
+
+  it('reads a config file that does not parse as damaged lists, never the defaults', () => {
+    const { config, problems } = parseConfig('{ "statuses": [ ,')
+    expect(problems[0]).toMatch(/not valid JSON/)
+    expect(config.statuses).toEqual([])
+    expect(config.questionStatuses).toEqual([])
+    expect(config.statusState.statuses.state).toBe('damaged')
+    expect(config.statusState.questionStatuses.state).toBe('damaged')
+    expect(isRetired(config, { status: '5' })).toBe(false)
+    expect(statusLabel(config, 'item', '6')).toBe('6')
+  })
+
+  it('uses the built-in lists only when the project defines none', () => {
+    const { config, problems } = parseConfig('{}')
+    expect(problems).toEqual([])
+    expect(config.statuses).toEqual(DEFAULT_ITEM_STATUSES)
+    expect(config.statusState.statuses.state).toBe('healthy')
+  })
+})
+
+describe('status registry (R-68, D-02)', () => {
+  it('derives the high-water marks with no registry fields (this repo: items 6, questions 4)', () => {
+    const recodes: Recode[] = [{ date: '2026-10-20', items: { Proposed: '1', Future: '1', Open: '2', Verify: '3', Confirmed: '4', Retired: '6' }, questions: { Open: '1', Confirm: '2', Proposed: '3', Answered: '4' } }]
+    const { config, problems } = parseConfig(JSON.stringify({ statuses: PROJECT, questionStatuses: DEFAULT_QUESTION_STATUSES.map((d) => ({ ...d, code: Number(d.code) })) }), recodes)
+    expect(problems).toEqual([])
+    expect(config.statusState.statuses).toEqual({ state: 'healthy', problems: [], highWater: 6 })
+    expect(config.statusState.questionStatuses).toEqual({ state: 'healthy', problems: [], highWater: 4 })
+    expect(config.removedStatuses).toEqual({ statuses: [], questionStatuses: [] })
+  })
+
+  it('never hands out a code used before: removed, recoded or held by a record', () => {
+    expect(nextStatusCode(['1', '6'])).toBe('7')
+    const { config } = parseConfig(JSON.stringify({ statuses: PROJECT, removedStatuses: { statuses: [{ code: 7, label: 'On hold' }] } }), [{ date: 'x', items: { '6': '9' }, questions: {} }])
+    expect(config.statusState.statuses.highWater).toBe(9)
+    expect(nextStatusCode(statusCodes(config, 'item'), [String(config.statusState.statuses.highWater)])).toBe('10')
+    expect(nextStatusCode(['1', '2'], ['12'])).toBe('13')
+    expect(statusLabel(config, 'item', '7')).toBe('On hold (removed)')
+  })
+
+  it('reports a removed code used again', () => {
+    const { problems } = parseConfig(JSON.stringify({ statuses: PROJECT, removedStatuses: { statuses: [{ code: 5, label: 'Old five' }] } }))
+    expect(problems.some((p) => /"5" was removed .*cannot be used again/.test(p))).toBe(true)
+  })
+
+  it('reports a live code a recode moved away', () => {
+    const { config, problems } = parseConfig(JSON.stringify({ statuses: PROJECT }), [{ date: '2026-11-01', items: { '5': '9' }, questions: {} }])
+    expect(problems.some((p) => /"5" was recoded away/.test(p))).toBe(true)
+    expect(config.statusState.statuses.state).toBe('degraded')
+  })
+
+  it('reports a label, help or heading that is not text, and keeps the list usable', () => {
+    const { config, problems } = parseConfig(JSON.stringify({ statuses: withEntry(1, { label: 7, help: ['x'] }) }))
+    expect(problems).toEqual(['statuses: "2" label must be text', 'statuses: "2" help must be text'])
+    expect(config.statusState.statuses.state).toBe('degraded')
+    expect(config.statuses[1]).toMatchObject({ code: '2', label: '2', role: 'waiting' })
+  })
+
+  it('reports an overlapping recode history', () => {
+    const { problems } = parseConfig(JSON.stringify({ statuses: PROJECT }), [{ date: '2026-11-01', items: { '4': '5', '5': '6' }, questions: {} }])
+    expect(problems.some((p) => /status-recodes\.json/.test(p) && /"5"/.test(p))).toBe(true)
   })
 })

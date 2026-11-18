@@ -7,7 +7,7 @@
  * cannot read or embed board responses; malformed escapes are client errors; the board still loads.
  */
 import { type ChildProcess, spawn } from 'node:child_process'
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import { request } from 'node:http'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { writeFixture } from '../e2e/fixtureCatalogue.ts'
 import { gitBlobSha } from '../server/historyJournal.ts'
+import { boardsRunning, historyDirFor } from '../server/historyDir.ts'
 
 const BOARD = fileURLToPath(new URL('..', import.meta.url))
 /** Ports a person or another suite may be using: never boot on these. */
@@ -100,6 +101,8 @@ afterAll(async () => {
     const gone = new Promise((r) => server!.once('exit', r))
     server.kill()
     await gone
+    // A board that stops takes its lock away (A-2).
+    expect(readdirSync(history).filter((n) => n.endsWith('.lock'))).toEqual([])
   }
   try {
     chmodSync(join(fixture, 'assets', 'US-01.1.1', 'locked.png'), 0o644)
@@ -115,6 +118,19 @@ const SAME = { 'sec-fetch-site': 'same-origin' }
 vi.setConfig({ testTimeout: 20_000 })
 
 describe('the board on a scratch port', () => {
+  it('holds the lock statuses:recode looks for, in the journal folder it rewrites (A-2)', () => {
+    // The script asks historyDirFor with the same environment the board started with.
+    const was = process.env.HISTORY_DIR
+    process.env.HISTORY_DIR = history
+    try {
+      expect(historyDirFor(fixture)).toBe(history)
+    } finally {
+      if (was === undefined) delete process.env.HISTORY_DIR
+      else process.env.HISTORY_DIR = was
+    }
+    expect(boardsRunning(history)).toEqual([server!.pid])
+  })
+
   it('loads: the page, its client, its source and the catalogue API', async () => {
     expect((await call('/')).body).toContain('<div id="root">')
     expect((await call('/@vite/client')).status).toBe(200)

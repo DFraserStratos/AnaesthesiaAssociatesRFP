@@ -411,8 +411,9 @@ function StatusSection({ kind, title }: { kind: StatusKind; title: string }) {
       next.splice(i + by, 0, r!)
       return next
     })
-  // A removed number is never handed out again while this page is open: past the saved list and every row.
-  const add = () => setRows((rs) => [...rs, { code: nextStatusCode([...saved, ...rs]), label: '', help: '', tone: 'neutral', fresh: true }])
+  // A number is never handed out again: past the saved list, every row, every code the list has ever used (removed or recoded) and every code a card holds.
+  const highWater = String(config.statusState?.[field].highWater ?? 0)
+  const add = () => setRows((rs) => [...rs, { code: nextStatusCode([...saved, ...rs].map((d) => d.code), [highWater], usage.keys()), label: '', help: '', tone: 'neutral', fresh: true }])
 
   const save = async () => {
     setBusy(true)

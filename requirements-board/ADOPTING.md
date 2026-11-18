@@ -53,10 +53,16 @@ README ("Project config"). Ask the user for anything you can't infer:
   Codes are whole numbers from 1, unique per list. A number means only what this config says: files store
   `status: 4`, so agents must look it up here (or on the Settings page) and never infer it. Behaviour
   comes from roles and `settle`, never from a code.
-  The lists can also be edited later on the board's Settings page. To renumber a status in an
-  existing catalogue, run `npm --prefix requirements-board run statuses:recode -- --items old=new,...
-  --questions old=new,...` (add `--dry-run` first): it rewrites only the `status:` lines and the board's
-  history, and records the run in `requirements/status-recodes.json` so diffs read a pure relabel as no change.
+  The lists can also be edited later on the board's Settings page; a removed status is kept under
+  `removedStatuses` so its number is never handed out again. To renumber a status in an
+  existing catalogue, stop the board and run `npm --prefix requirements-board run statuses:recode -- --items old=new,...
+  --questions old=new,...` (add `--dry-run` first): it rewrites only the `status:` lines, the board's
+  history and the codes in `board.config.json`, and records the run in `requirements/status-recodes.json` so diffs read a pure relabel as no change.
+  Renumber to fresh codes (past every code used so far), mapping every status the files hold: a recode
+  refuses to reuse a number, to swap two in place, or to leave a live status out, so no status is merged
+  by accident (to merge on purpose, name the one kept too: `3=4,4=4`). An older catalogue whose
+  `status-recodes.json` already overlaps (a later recode targets a code an earlier one moved away) is
+  reported by the check.
 - `questionKinds["missing-source"].help`: the kinds of source this project cites.
 - `screenshotApps` and `capture`: only if the project has an app to screenshot (step 6).
 - `voice.descriptionWarnings` (optional, edited by hand): patterns the check warns on in a live
