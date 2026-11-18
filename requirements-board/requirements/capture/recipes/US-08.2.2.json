@@ -4,31 +4,50 @@
   "absentReason": "",
   "shots": [
     {
-      "name": "deposit-invoice",
+      "name": "left-off",
       "app": "admin",
-      "caption": "Older screen, a pre-payment deposit invoice raised before the procedure; the prepaid amount is now the anaesthetist's own fixed price",
-      "start": "/admin/invoices",
+      "caption": "Prepaid Procedures are left off the final invoice; nothing is deducted",
+      "start": "/admin/invoices/INV0002",
       "setup": [
         {
-          "goto": "/admin/day/2026-07-24"
+          "goto": "/web/lists/L-34821-2026-07-24-PM"
         },
         {
-          "click": "text=\"Ms G. Lim · Plastic surgery\""
+          "click": "text=\"Priya Nair\" >> nth=0"
         },
         {
-          "wait": 600
+          "wait": 700
         },
         {
-          "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+          "scroll": "[data-shot=capture-modifiers]"
         },
         {
-          "wait": 800
-        },
-        {
-          "click": "role=button[name=\"Raise pre-procedure invoice\"]"
+          "click": "[data-shot=modifier-add]"
         },
         {
           "wait": 500
+        },
+        {
+          "click": "[role=dialog] [data-modifier-code=AS3]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+          "value": "ASA III on review"
+        },
+        {
+          "click": "role=button[name=\"Claim\"]"
+        },
+        {
+          "wait": 700
+        },
+        {
+          "press": "Escape"
+        },
+        {
+          "wait": 400
         },
         {
           "click": "role=button[name=\"Mark complete\"]"
@@ -37,28 +56,19 @@
           "wait": 1500
         },
         {
-          "wait": 400
+          "goto": "/web/lists/L-34821-2026-07-24-PM"
         },
         {
-          "goto": "/web/lists/L-34821-2026-07-24-AM"
+          "click": "text=\"Mark list completed\" >> nth=0"
         },
         {
-          "click": "role=button[name=\"Mark list completed\"]"
-        },
-        {
-          "wait": 600
-        },
-        {
-          "click": "role=button[name=\"Submit to office\"]"
+          "click": "text=\"Submit to office\" >> nth=0"
         },
         {
           "wait": 1500
         },
         {
-          "wait": 400
-        },
-        {
-          "goto": "/admin/review/L-34821-2026-07-24-AM"
+          "goto": "/admin/review/L-34821-2026-07-24-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -67,104 +77,35 @@
           "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
         },
         {
-          "wait": 800
+          "wait": 1500
         }
       ],
       "states": [
         {
+          "state": "invoice",
+          "caption": "Forte's final invoice carries the septoplasty only: no rhinoplasty line and no deduction",
           "steps": [
             {
-              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Annette Riley\") >> nth=1"
-            },
-            {
-              "wait": 500
+              "wait": "[data-shot=invoice-lines]"
             }
           ],
           "highlight": [
             "[data-shot=invoice-lines]"
           ]
-        }
-      ]
-    },
-    {
-      "name": "balance-invoice",
-      "app": "admin",
-      "caption": "Older screen, a balance invoice less the pre-payment already invoiced; nothing is now left to bill afterwards",
-      "start": "/admin/invoices",
-      "setup": [
-        {
-          "goto": "/admin/day/2026-07-24"
         },
         {
-          "click": "text=\"Ms G. Lim · Plastic surgery\""
-        },
-        {
-          "wait": 600
-        },
-        {
-          "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
-        },
-        {
-          "wait": 800
-        },
-        {
-          "click": "role=button[name=\"Raise pre-procedure invoice\"]"
-        },
-        {
-          "wait": 500
-        },
-        {
-          "click": "role=button[name=\"Mark complete\"]"
-        },
-        {
-          "wait": 1500
-        },
-        {
-          "wait": 400
-        },
-        {
-          "goto": "/web/lists/L-34821-2026-07-24-AM"
-        },
-        {
-          "click": "role=button[name=\"Mark list completed\"]"
-        },
-        {
-          "wait": 600
-        },
-        {
-          "click": "role=button[name=\"Submit to office\"]"
-        },
-        {
-          "wait": 1500
-        },
-        {
-          "wait": 400
-        },
-        {
-          "goto": "/admin/review/L-34821-2026-07-24-AM"
-        },
-        {
-          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
-        },
-        {
-          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
-        },
-        {
-          "wait": 800
-        }
-      ],
-      "states": [
-        {
+          "state": "panel",
+          "caption": "Prepaid, left off the final invoice (AA-2026-0001)",
           "steps": [
             {
-              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Annette Riley\") >> nth=0"
+              "goto": "/admin/day/2026-07-24/bookings/BK0038"
             },
             {
-              "wait": 500
+              "wait": "[data-shot=booking-prepaid-left-off]"
             }
           ],
           "highlight": [
-            "[data-shot=invoice-lines]"
+            "[data-shot=booking-prepaid-left-off]"
           ]
         }
       ]

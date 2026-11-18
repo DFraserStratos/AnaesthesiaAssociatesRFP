@@ -10,12 +10,14 @@ import {
   handoffCasesForBooking,
   allAaFeeInvoices,
   payablesDue,
+  prepaidLeftOffText,
   retryBillingCase,
   runPayables,
   useAppStore,
   type MonitorBookingRow,
   type MonitorListRow,
   type MonitorStage,
+  type PrepaidLeftOff,
 } from '../../../store'
 import { dayMicroCap, formatCurrency, hhmm, plural } from '../../../shared/format'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
@@ -233,9 +235,14 @@ function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveR
                   ) : bookingRow.status === 'cancelled' ? (
                     <span style={{ color: neutral.mist }}>Cancelled · excluded from billing.</span>
                   ) : bookingRow.invoiceIds.length > 0 ? (
-                    <MoneyDetail row={bookingRow} />
+                    <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <MoneyDetail row={bookingRow} />
+                      {bookingRow.prepaidLeftOff !== undefined && <PrepaidLeftOffLine leftOff={bookingRow.prepaidLeftOff} />}
+                    </span>
+                  ) : bookingRow.prepaidLeftOff !== undefined ? (
+                    <PrepaidLeftOffLine leftOff={bookingRow.prepaidLeftOff} />
                   ) : (
-                    <span style={{ color: neutral.mist }}>No invoice (fully pre-paid or nothing to bill).</span>
+                    <span style={{ color: neutral.mist }}>No invoice (nothing to bill).</span>
                   )}
                 </td>
                 <td style={cellStyle}>
@@ -269,6 +276,15 @@ function StageChip({ stage }: { stage: MonitorStage }) {
   return (
     <span title={stage.detail} style={{ fontSize: 11.5, fontWeight: 600, borderRadius: radius.pill, padding: '4px 10px', whiteSpace: 'nowrap', ...tone }}>
       {stage.label}
+    </span>
+  )
+}
+
+/** A prepaid Procedure left off the final invoice (catch-up Phase 27; US-08.2.2, D57): a fact, never an exception. */
+function PrepaidLeftOffLine({ leftOff }: { leftOff: PrepaidLeftOff }) {
+  return (
+    <span data-shot="monitor-prepaid-left-off" style={{ fontSize: 12.5, color: neutral.slate }}>
+      {prepaidLeftOffText(leftOff)}
     </span>
   )
 }
@@ -312,7 +328,9 @@ function BookingStatusPill({ row }: { row: MonitorBookingRow }) {
   }
   // A handoff fault keeps the case `invoiced`; surface it as its own pill.
   const it =
-    row.handoffFailure !== undefined && row.status !== 'failed'
+    row.prepaidLeftOff?.all === true && row.invoiceIds.length === 0 && row.status !== 'failed'
+      ? { label: 'Prepaid', background: semantic.success.tint, color: semantic.success.onTint }
+      : row.handoffFailure !== undefined && row.status !== 'failed'
       ? { label: 'Handoff failed', background: semantic.warning.tint, color: semantic.warning.onTint }
       : map[row.status] ?? { label: row.status, background: neutral.sunken, color: neutral.slate }
   return (

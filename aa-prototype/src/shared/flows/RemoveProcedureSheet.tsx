@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { neutral } from '../../theme/tokens'
-import { removeProcedure, useAppStore, type Actor } from '../../store'
+import { prepaymentRecheckLine, prepaymentStatusFor, removeProcedure, useAppStore, type Actor } from '../../store'
 import { FormError } from '../ui'
 import { ConfirmSheet } from '../surface/ConfirmSheet'
 import { procedureLabel } from '../../domain/billing/procedureStack'
@@ -12,7 +12,8 @@ interface RemoveProcedureSheetProps {
   displayNumber: number
   actor: Actor
   onClose: () => void
-  onRemoved: () => void
+  /** After the removal, with the prepayment re-check line or null (catch-up Phase 27, US-06.3.5). */
+  onRemoved: (recheckLine: string | null) => void
 }
 
 /**
@@ -43,12 +44,14 @@ export function RemoveProcedureSheet({ open, procedureId, displayNumber, actor, 
 
   function submit() {
     setError(null)
+    const bookingId = useAppStore.getState().schedule.procedures[procedureId]?.bookingId ?? ''
+    const before = prepaymentStatusFor(useAppStore.getState(), bookingId)
     const outcome = removeProcedure(useAppStore, actor, procedureId)
     if (!outcome.ok) {
       setError(outcome.message)
       return
     }
-    onRemoved()
+    onRemoved(prepaymentRecheckLine(before, prepaymentStatusFor(useAppStore.getState(), bookingId)))
     onClose()
   }
 

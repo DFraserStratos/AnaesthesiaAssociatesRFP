@@ -1,0 +1,48 @@
+{
+  "id": "FT-06.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "prepaid-contract",
+      "app": "admin",
+      "caption": "A prepaid Contract, or an amount typed on No contract · Fixed price, starts prepayment, billed to the Procedure's payer",
+      "start": "/admin/day/2026-07-24/bookings/BK0034",
+      "states": [
+        {
+          "state": "panel",
+          "caption": "On Dr Souter's prepaid Rhinoplasty Contract the prepayment is billed to the Procedure's payer",
+          "steps": [
+            {
+              "wait": "[data-shot=booking-prepayment]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-prepayment]"
+          ]
+        },
+        {
+          "state": "rail",
+          "caption": "Prepaid answer: Dr Souter's prepaid Contracts, and No contract · Fixed price under the No contract heading",
+          "steps": [
+            {
+              "click": "[data-shot=contract-rail-step-2] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=prepaid] >> nth=0"
+            },
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=contract-combo-list]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-combo-list]"
+          ]
+        }
+      ]
+    }
+  ]
+}

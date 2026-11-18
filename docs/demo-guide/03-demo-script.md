@@ -826,27 +826,48 @@ actions** on the screen named in its beat.
 
 **Stage it:** use **Reset → Confirm reset**. Work top to bottom through the beats below.
 
-### Beat 1: prepayment warning
+### Beat 1: Pre-payment from a prepaid Contract
 
 - **Click:**
-  - Go to **Anaesthetist Mobile App → Dr Souter's Fri 24 Jul AM List**. Point at the small warning
-    triangle on **Annette Riley**'s row (it is a marker; tapping it does nothing of its own).
-  - Open her Booking: the warning is at the top, **Prepayment required**, Before procedure, Strong,
-    on screen with no scroll and no tap.
-  - Select **Mark complete**: it completes. Then **Mark list completed → Submit to office**: the
-    usual submit sheet, with no warning step; it goes straight through.
-  - Go to **Admin Day view → Fri 24 Jul**: the Souter AM block has the red outline and the triangle.
-    Open it: Annette Riley's row in the drawer carries the same outline.
-  - In the right rail, the **To-do** card under the calendar lists her warning. Select **Clear**: it
-    leaves the list, the outline drops, and her Booking shows who cleared it and when.
-- **Say:** "Dr Souter's own price list is a prepaid Contract, so this booking needs paying first. A
-  warning, never a block, and no pop-up in the way. The anaesthetist sees it when they
-  open the Booking, the night before, while the surgeon can still be told; the office sees it on its
-  to-do list as a second check. AA decided not to block (OQ-57)."
-- **Expected:** completion and submit go through with no extra step; the warning shows in both apps
-  and leaves the to-do list when cleared. There is no override any more.
-- **Optional:** on **Admin Day view → Tue 21 Jul**, **Demo actions → Raise sample warnings** fills
-  the To-do card with sample warnings on Dr Rutherford's Lists; **Clear sample warnings** removes them.
+  - Go to **Admin Day view → Tue 21 Jul**. In the right rail, the **Pre-payments** card under the
+    **To-do** card lists **Annette Riley** (Awaiting approval, $1,200.00, In 3 days) and **Priya Nair**
+    (Paid). The To-do card carries Riley's warning: "Prepayment of $1,200.00 from Annette Riley is
+    awaiting approval on Invoices and has not been sent." Selecting her row in the card opens Invoices.
+  - Open Riley's Booking (Dr Souter's Fri 24 Jul AM List): Rhinoplasty on Dr Souter's own prepaid
+    Contract, $1,200.00 plus GST ($1,380.00), the patient as the Procedure's payer. The panel reads
+    **Pre-payment awaiting approval**; there is no amount field and no raise button.
+  - Go to **Admin Invoices**: the **Awaiting approval** card above the table, and its **Prepayment
+    approval** switch. Select **Approve and send**. Optionally open the **Xero sim**: the pair is a
+    receivable from the patient and a payable crediting the AA Holding account.
+  - Back on Riley's Booking, **Demo actions → Payment received · half → Run**: it reads "Pre-payment
+    part paid · $690.00 of $1,380.00 received".
+  - Go to **Anaesthetist Mobile App → Dr Souter's Fri 24 Jul AM List → Annette Riley**: the triangle,
+    the warning on opening, the read-only prepayment panel, and "Prepaid $1,200.00 · part paid" in the
+    units block, with the price card reading **Prepaid amount** and no price field. Complete and
+    submit: no confirm step, nothing blocks, no second invoice.
+  - Optional, the mixed case: **Priya Nair** (Souter Fri 24 Jul PM) has her rhinoplasty prepaid
+    (invoice AA-2026-0001, $1,200.00 plus GST, approved by Kirsty W., paid, its payable to the AA
+    Holding account, not disbursed) and her septoplasty on Forte's Contract, billed as usual. On
+    **Authorise** the prepaid Procedure reads "Prepaid, left off the final invoice (AA-2026-0001)",
+    with nothing deducted.
+  - Optional asides: on a Booking with no prepaid Contract, **Patient › Prepaid**, the **No contract**
+    heading at the top of the list, **No contract · Fixed price**, type $2,000 ("just make it two
+    grand"): it awaits approval at $2,000.00 plus GST ($2,300.00). **Demo actions → Add prepaid
+    Booking → Two payers** (Admin Day or Booking detail) adds Fiona Gray with Rhinoplasty $1,200.00 to
+    the patient and Blepharoplasty, upper lids $900.00 to Ian Gray: two rows on the strip, one invoice
+    per payer, and approving one locks only that payer. Switching **Prepayment approval** off asks to
+    confirm, then prepayment invoices are generated and sent at once.
+  - Finally clear Riley's mild warning from the To-do card (it leaves the list, and her Booking shows
+    who cleared it and when); Beat 6 re-opens it.
+- **Say:** "The office picked Dr Souter's own prepaid Contract for this procedure, so it needs
+  prepayment: the price, in full, not an estimate, and fixed once the invoice is raised. Whoever pays
+  for this procedure is invoiced; if two procedures have different payers, each gets their own
+  prepayment invoice. By default we approve it here, and AA can switch that step off. Approving sends
+  it and credits the AA Holding account, not Dr Souter. Nothing blocks: the warning strengthens as the
+  day approaches. After the procedure it is left off the final invoice, nothing deducted, nothing more
+  automatic. A move to a colleague changes nothing in the books."
+- **Expected:** awaiting approval, then the sent invoice with its pair to the AA Holding account, part
+  paid on all three surfaces, and a submit that goes through.
 
 ### Beat 2: post-op addendum
 
@@ -877,8 +898,10 @@ actions** on the screen named in its beat.
   handoff failed (simulated fault). No ACCREC/ACCPAY pair was created; the invoice stands. Resolve and
   retry from the billing monitor."); Hemi Walker's Booking reads **Handed off**, and the List is not
   failed. **Resolve & retry** hands hers off once: her row reads **Handed off** and her Xero pair
-  appears, with no duplicate invoice. Her invoice (AA-2026-0002, Canterbury Orthopaedic Surgeons,
-  $303.60) and Hemi Walker's (AA-2026-0003, St George's, $221.38) are unchanged. No Contract changes.
+  appears, with no duplicate invoice. Her invoice (AA-2026-0003, Canterbury Orthopaedic Surgeons,
+  $303.60) and Hemi Walker's (AA-2026-0004, St George's, $221.38) are unchanged. No Contract changes.
+  (The numbers follow Riley's prepayment invoice, AA-2026-0002, raised in Beat 1; skip that approve and
+  they are AA-2026-0002 and AA-2026-0003.)
 
 ### Beat 4: integration dead-letter and manual fix
 
@@ -906,10 +929,31 @@ actions** on the screen named in its beat.
 - **Expected:** the payable authorises exactly the amount received; each run pays exactly what arrived,
   and the total paid out equals the invoice total, never more.
 
+### Beat 6: The date approaches
+
+Last on purpose, so Beats 2 to 5 run on the seeded date (Tue 21 Jul). If a jump leaves Beat 2 without
+its ACTIVE today List, keep the jump last and say so in Stage it.
+
+- **Click:**
+  - Go to **Admin Day view → Tue 21 Jul** (Riley's mild warning cleared in Beat 1).
+  - Open **Demo actions → Move to 2 days before procedure**, choose Annette Riley's Booking, **Run**.
+  - The clock jumps to Wed 22 Jul. Look at the **To-do** card and the Booking's triangle.
+- **Say:** "Two days out and still not paid in full, so the same warning is now strong. It re-opens even though
+  the office cleared the mild one. Still never a block: the office chases the payment, and the
+  anaesthetist sees it on opening the Booking."
+- **Expected:** the warning turns strong and the cleared mild one re-opens; the jump is forward only and
+  **Reset** restores the seeded date.
+
 **Discovery points:** settled: billing failure is per Booking, and a List never fails as a whole
 (OQ-05); still to confirm with AA: exactly which fields are frozen at authorise (US-15.0.3: AR-58 2.8
 names them, Donald's proposal); which conditions warn, and how strongly; where the to-do list sits on the dashboard; and how inbound messages targeting a submitted or authorised List
-are parked for manual intervention.
+are parked for manual intervention. For the prepayment beats: still to confirm whether the prepayment
+invoice names the anaesthetist (OQ-120). Stated as facts: the prepaid price is never editable by the
+anaesthetist and is kept (OQ-96, OQ-104), the prepaid Procedure is left off the final invoice (OQ-116),
+and a Contract changed after sending is handled as a cancellation, built in Phase 41 (OQ-119). One
+prepayment invoice per payer, each payer locked once theirs is raised, is built from Donald's answer and
+not yet discussed with AA (OQ-140); a prepaid Contract always billing the Procedure's payer is a working
+reading awaiting AA's confirmation (OQ-73).
 
 ---
 

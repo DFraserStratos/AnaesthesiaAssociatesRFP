@@ -56,7 +56,10 @@ test('phase 24 mobile: read-only on Aria, the discount and her own price list; t
   const own = page.locator('[data-shot=price-card]').first()
   await expect(own).toHaveAttribute('data-state', 'read-only')
   await expect(own).toContainText('Fixed price')
-  await expect(own).toContainText('To use a different price, alert the office.')
+  // Riley's Procedure is prepaid since catch-up Phase 27: "Prepaid amount", no field, no caption (D30).
+  await expect(own).toContainText('Prepaid amount')
+  await expect(own).not.toContainText('alert the office')
+  await expect(own.locator('input')).toHaveCount(0)
 
   await open(page, '/mobile/lists/L-34821-2026-08-10-PM/bookings/BK0177')
   const amount = page.locator('[data-shot=price-card]').first()

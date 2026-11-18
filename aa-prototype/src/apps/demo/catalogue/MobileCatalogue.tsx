@@ -224,6 +224,12 @@ export function MobileCatalogue() {
       </LibraryGroup>
 
       <LibraryGroup id="forms">
+        <CatalogueRow name="PrepaymentPanel" source="shared/booking/PrepaymentPanel.tsx" usedIn={SW} stage="mobile" height={420}
+          what="A Booking's prepayment (catch-up Phase 27): a title by status, then one block per payer with its prepaid Procedures (text, Contract, price), the prepaid amount and the invoice. Read-only for the anaesthetist; the office sees Approve on Invoices."
+          replaceWith="shadcn Card + Badge"
+          note={`On the shared Card, Pill and TextAction; amounts in mono. All three apps through BookingDetailBody. ${STORE_NOTE}`}>
+          <Ex.PrepaymentPanelExample />
+        </CatalogueRow>
         <CatalogueRow name="BookingDetailBody" source="shared/booking/BookingDetailBody.tsx" usedIn={SW} stage="mobile" height={640}
           what="The whole Booking capture: patient, ASA, RVG code, times, units, override, billing lines, notes and Mark complete, laid out by the mobile surface."
           replaceWith="React Hook Form + Zod over shadcn Card fields"

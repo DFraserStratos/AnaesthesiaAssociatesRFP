@@ -7,6 +7,7 @@
  * the Contract.
  */
 
+import { autoSendPrepayments } from './prepaymentActions'
 import type { CounterpartyRef, FeeSplit, OtherPayer, SplitShare, SplitShareBasis } from '../domain/types'
 import { bookingFeesFor } from '../domain/billing/validateBookingForBilling'
 import type { FeeResult } from '../domain/billing/fee'
@@ -135,7 +136,8 @@ export function setProcedureSplit(
     if (procedure.split === undefined) return ok(undefined)
   } else {
     const prepayment = prepaymentForProcedure(state, procedureId)
-    if (prepayment !== undefined && prepayment.status !== 'notNeeded') return refuse('prepaidProcedure', PREPAID_PROCEDURE_MESSAGE)
+    // Prepaid, or covered by a sent prepayment it has since left (held and left off until 41 settles it): never split.
+    if (prepayment !== undefined) return refuse('prepaidProcedure', PREPAID_PROCEDURE_MESSAGE)
     const fee = procedureFeeNow(state, procedureId)
     if (fee === undefined || fee.total <= 0) return refuse('noFee', NO_FEE_TO_SPLIT_MESSAGE)
     const shares = resolveShares(input, procedure.split?.shares ?? [], state.counters)
@@ -168,5 +170,7 @@ export function setProcedureSplit(
     },
     (s) => ({ counters, schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: next } } }),
   )
+  // With prepayment approval off, a group this makes ready is sent now (catch-up Phase 27).
+  autoSendPrepayments(api, procedure.bookingId)
   return ok(undefined)
 }

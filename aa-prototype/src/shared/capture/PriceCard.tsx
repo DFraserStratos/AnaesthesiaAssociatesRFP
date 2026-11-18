@@ -6,7 +6,7 @@ import { isRvgKind } from '../../domain/billing/contracts'
 import { parseAmount } from '../../domain/billing/money'
 import { anaesthetistPriceCaption } from '../../domain/billing/procedurePrice'
 import { NEEDS_PRICE_LABEL } from '../../domain/billing/priceRanges'
-import { anaesthetistPriceRightFor, priceChangeRefusal, setProcedurePrice, useAppStore, type Actor } from '../../store'
+import { anaesthetistPriceRightFor, priceChangeRefusal, setProcedurePrice, useAppStore, useProcedurePrepayment, isStillPrepaid, type Actor } from '../../store'
 import { Button, Pill, TextField } from '../ui'
 import { TextAction } from '../ui/TextAction'
 import { formatMoney } from '../format'
@@ -54,7 +54,10 @@ export function PriceCard({ procedure, actor, fee, contract, canCapture, failure
     [actor, canCapture, procedure.id, procedures, bookings, lists, invoiceLines, masters],
   )
   const right = anaesthetistPriceRightFor({ masters }, procedure)
-  const editable = actor.role === 'anaesthetist' && canCapture && refusal === null && right.may
+  // A prepaid Procedure reads "Prepaid amount" and is never the anaesthetist's to change (catch-up Phase 27; D30, US-03.1.8).
+  const prepayment = useProcedurePrepayment(procedure.id)
+  const prepaid = isStillPrepaid(prepayment)
+  const editable = actor.role === 'anaesthetist' && canCapture && refusal === null && right.may && !prepaid
   const mode = right.may ? right.mode : undefined
 
   const typed = procedure.enteredPrice
@@ -90,9 +93,9 @@ export function PriceCard({ procedure, actor, fee, contract, canCapture, failure
   }
 
   const held = price.status === 'priced' ? price.heldBy : null
-  const heldLabel = held === 'typed' ? 'Price typed' : held === 'authorised' ? 'Invoiced' : held === 'prepaid' ? 'Prepaid' : null
+  const heldLabel = prepaid ? null : held === 'typed' ? 'Price typed' : held === 'authorised' ? 'Invoiced' : held === 'prepaid' ? 'Prepaid' : null
   const refusalText = (() => {
-    if (actor.role !== 'anaesthetist' || !canCapture || editable) return null
+    if (actor.role !== 'anaesthetist' || !canCapture || editable || prepaid) return null
     // The edit window, a raised prepayment or another fallback: the store's own sentence.
     if (refusal !== null && !refusal.ok && refusal.code !== 'priceSetByContract' && refusal.code !== 'pricePrepaid') return refusal.message
     if (right.may || right.reason === 'office' || contract === undefined) return refusal !== null && !refusal.ok ? refusal.message : null
@@ -150,7 +153,7 @@ export function PriceCard({ procedure, actor, fee, contract, canCapture, failure
         ) : (
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
             <span style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              <span style={{ fontSize: 13, color: neutral.slate }}>Price</span>
+              <span style={{ fontSize: 13, color: neutral.slate }}>{prepaid ? 'Prepaid amount' : 'Price'}</span>
               {heldLabel !== null && <Pill tone="neutral" size="sm">{heldLabel}</Pill>}
             </span>
             <span className="mono" data-shot="price-card-price" style={{ fontSize: 15, fontWeight: 700, color: neutral.ink }}>

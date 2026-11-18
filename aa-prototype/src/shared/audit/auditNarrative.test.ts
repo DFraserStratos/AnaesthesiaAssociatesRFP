@@ -145,6 +145,8 @@ describe('formatAuditValue', () => {
     expect(formatAuditValue('approval', { mode: 'approved', by: 'Kirsty W.', role: 'office', atISO: '2026-07-21T09:00:00' })).toBe('Approved by Kirsty W.')
     expect(formatAuditValue('approval', { mode: 'automatic', by: 'System', role: 'system', atISO: '2026-07-21T09:00:00' })).toBe('Sent with approval off')
     expect(formatAuditValue('counterparty', { kind: 'hospital', id: 'HH001' })).toBe('Hospital HH001')
+    expect(formatAuditValue('approvalRequired', false)).toBe('off')
+    expect(formatAuditValue('approvalRequired', true)).toBe('on')
     expect(formatAuditValue('completed', true)).toBe('yes')
     expect(formatAuditValue('total', 1234.5)).toBe('$1,234.50')
     expect(formatAuditValue('handoverISO', '2026-07-21T10:15:00')).toBe('21 Jul 10:15')

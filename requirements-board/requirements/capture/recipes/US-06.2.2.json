@@ -1,33 +1,13 @@
 {
   "id": "US-06.2.2",
-  "status": "partial",
-  "absentReason": "Full versus deposit and the deposit amount are stored on the procedure and drive the pre-procedure invoice, but they are seeded only: no screen lets an admin or anaesthetist set or change the prepaid amount.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
-      "name": "deposit-invoice",
+      "name": "full-fee-invoice",
       "app": "admin",
-      "caption": "Older screen, pre-procedure invoice for a partial deposit, which is no longer allowed",
-      "start": "/admin/invoices/INV0002",
-      "setup": [
-        {
-          "goto": "/admin/day/2026-07-24"
-        },
-        {
-          "click": "[data-shot=daygrid-block-warnings] >> nth=0"
-        },
-        {
-          "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
-        },
-        {
-          "wait": "[data-shot=booking-prepayment]"
-        },
-        {
-          "click": "role=button[name=\"Raise pre-procedure invoice\"]"
-        },
-        {
-          "wait": 500
-        }
-      ],
+      "caption": "Prepayment invoice for the Procedure's price when raised, in full",
+      "start": "/admin/invoices/INV0001",
       "states": [
         {
           "steps": [],
@@ -39,16 +19,36 @@
       ]
     },
     {
-      "name": "full-fee-invoice",
+      "name": "prepaid-amount",
       "app": "admin",
-      "caption": "Older screen, pre-procedure invoice for an estimated full fee; the prepaid amount is now the anaesthetist's own fixed price",
-      "start": "/admin/invoices/INV0001",
+      "caption": "The prepaid amount is the Procedure's price on its prepaid Contract, with no amount field to change",
+      "start": "/admin/day/2026-07-24/bookings/BK0034",
+      "setup": [
+        {
+          "goto": "/admin/invoices"
+        },
+        {
+          "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
+        },
+        {
+          "click": "[data-shot=awaiting-approval-row][data-booking-id=BK0034] [data-shot=approve-and-send]"
+        },
+        {
+          "wait": 800
+        }
+      ],
       "states": [
         {
-          "steps": [],
+          "state": "read-only",
+          "caption": "Once the invoice is sent the price is read-only: a change goes through a credit or additional invoice",
+          "steps": [
+            {
+              "wait": "[data-shot=booking-prepayment]"
+            }
+          ],
           "highlight": [
-            ".aa-invoice-doc div:has(> span:text-is(\"Prepayment (before the procedure)\"))",
-            "[data-shot=invoice-lines]"
+            "[data-shot=booking-prepayment]",
+            "[data-shot=capture-billing] >> nth=0"
           ]
         }
       ]

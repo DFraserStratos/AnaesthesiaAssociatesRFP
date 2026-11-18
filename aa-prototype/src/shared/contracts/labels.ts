@@ -4,6 +4,7 @@
  * and the PWA purity test holds.
  */
 
+import { NO_PRICE_YET, prepaymentStatusWords } from '../booking/prepaymentText'
 import type { BillsTo, Contract, ContractPricing, ContractStatus, DeliveryMethod, PartyKind, PricingKind } from '../../domain/types'
 import type { PricingBasis, StackSurface } from '../../domain/billing/procedureStack'
 import { formatMoney } from '../../domain/billing/money'
@@ -70,6 +71,11 @@ export function contractLabel(contract: Pick<Contract, 'aaCode' | 'name' | 'stat
  * The RVG kinds share pricingLabel's words; the basis, never the computed fee.
  */
 export function formatPricingBasis(basis: PricingBasis, surface: StackSurface): string {
+  // A prepaid Procedure reads its prepaid amount and status (catch-up Phase 27, US-03.1.8).
+  if (basis.prepaid !== undefined) {
+    const amount = basis.prepaid.amount !== null ? formatMoney(basis.prepaid.amount) : NO_PRICE_YET.toLowerCase()
+    return `Prepaid amount ${amount} · ${prepaymentStatusWords(basis.prepaid.status)}`
+  }
   const kind = formatKindBasis(basis, surface)
   // A typed price holding the price on a kind that is not open price (catch-up Phase 24).
   return basis.typed !== undefined ? `${kind} · Price typed ${formatMoney(basis.typed)}` : kind
@@ -89,3 +95,4 @@ function formatKindBasis(basis: PricingBasis, surface: StackSurface): string {
       return basis.amount !== null ? 'Other price ' + formatMoney(basis.amount) : 'Other price, amount to enter'
   }
 }
+

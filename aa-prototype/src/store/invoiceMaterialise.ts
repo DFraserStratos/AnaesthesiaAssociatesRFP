@@ -37,8 +37,10 @@ export interface MaterialiseArgs {
   approval?: InvoiceApproval
   /** The retry reuses the failed case's id for its first invoice. */
   reuseCaseId?: string
-  /** The locked payee (catch-up Phase 25): the supplier block and each case's payee. Absent on a pre-payment (the live join, until 27). */
+  /** The locked payee (catch-up Phase 25): the supplier block and each case's payee. Absent on a pre-payment: the List's anaesthetist at approval. */
   payee?: LockedPayee
+  /** False leaves the anaesthetist off the invoice (a pre-payment's `PREPAYMENT_NAMES_ANAESTHETIST`, OQ-120). */
+  namesSupplier?: boolean
 }
 
 export interface MaterialiseResult {
@@ -72,9 +74,9 @@ export function materialiseInvoices(
   const booking = s.schedule.bookings[args.bookingId]
   const list = booking !== undefined ? s.schedule.lists[booking.listId] : undefined
   const patient = booking !== undefined ? s.masters.patients[booking.patientId] : undefined
-  // A pre-payment case is raised at setup, before any lock: its payee is still the List's anaesthetist (D38; until 27 and 41).
+  // A pre-payment is generated on approval, before any lock: it names the List's anaesthetist (catch-up Phase 27; its payable credits the AA Holding account).
   const anaesthetist = args.payee === undefined && list?.anaesthetistId !== undefined ? s.masters.anaesthetists[list.anaesthetistId] : undefined
-  const supplier = args.payee?.supplier ?? (anaesthetist !== undefined ? supplierFor(anaesthetist) : undefined)
+  const supplier = args.namesSupplier === false ? undefined : (args.payee?.supplier ?? (anaesthetist !== undefined ? supplierFor(anaesthetist) : undefined))
 
   const invoiceIds: InvoiceId[] = []
   const metas: MutationMeta[] = []

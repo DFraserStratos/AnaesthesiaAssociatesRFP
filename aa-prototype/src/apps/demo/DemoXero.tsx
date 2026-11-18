@@ -10,6 +10,7 @@ import { APP_CONFIG } from '../../shell/appConfig'
 import { xeroInvoicePairViews, type XeroInvoicePairView } from './xeroPairView'
 import { recordFeePaymentFor } from '../../shared/demoTriggers'
 import { aaFeeMonthLabel } from '../../domain/billing/aaFee'
+import { AA_HOLDING_ACCOUNT } from '../../domain/billing/prepayment'
 import { BCTI_DOCUMENT_NAME, GST_NUMBER_NOT_HELD, OQ29_CAPTION, OQ29_PILL, formatGstNumber } from '../../domain/billing/invoicePresentation'
 import { Pill } from '../../shared/ui'
 
@@ -106,7 +107,7 @@ function ContactsTable({ contacts }: { contacts: XeroContact[] }) {
         used for that transaction.
       </div>
       {contacts.length === 0 ? (
-        <EmptyNote>No Xero contacts yet. Authorise a list (or raise a pre-payment invoice) to hand a pair off.</EmptyNote>
+        <EmptyNote>No Xero contacts yet. Authorise a list (or approve and send a pre-payment invoice) to hand a pair off.</EmptyNote>
       ) : (
         <TableShell minWidth={720}>
           <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 720 }}>
@@ -233,6 +234,7 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
     pair.accRec.amountReceived > 0 &&
     pair.engine.anaesthetistId === APP_CONFIG.web.persona.anaesthetistId
 
+  const heldInHolding = pair.accPay?.contact?.contactNumber === AA_HOLDING_ACCOUNT.contactNumber
   function settleInvoice() {
     if (pair.accPay === undefined) {
       setSettlementMessage('This record has no linked payable to disburse.')
@@ -252,6 +254,11 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
       }
     }
 
+    // A prepayment's payable credits the AA Holding account (catch-up Phase 27): the payment is all there is to simulate.
+    if (heldInHolding) {
+      setSettlementMessage(`Done. The customer payment is recorded; the ${AA_HOLDING_ACCOUNT.name} holds it.`)
+      return
+    }
     const payout = disbursePayable(useAppStore, OFFICE_ACTOR, pair.accPay.id)
     if (!payout.ok) {
       setSettlementMessage(`The anaesthetist payout could not be completed: ${payout.message}`)
@@ -286,7 +293,7 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
             <button
               type="button"
               onClick={settleInvoice}
-              disabled={pair.accPay === undefined || fullySettled}
+              disabled={pair.accPay === undefined || fullySettled || (heldInHolding && pair.accRec.status === 'paid')}
               style={{
                 font: 'inherit',
                 fontSize: 13,
@@ -299,7 +306,11 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
                 cursor: fullySettled ? 'default' : 'pointer',
               }}
             >
-              {fullySettled
+              {heldInHolding
+                ? pair.accRec.status === 'paid'
+                  ? 'Payment recorded'
+                  : 'Simulate payment'
+                : fullySettled
                 ? 'Payment and payout complete'
                 : pair.accRec.status === 'paid'
                   ? `Pay ${pair.accPay?.contact?.name ?? 'anaesthetist'} now`
@@ -391,7 +402,9 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
             from="Anaesthesia Associates"
             to={pair.accPay?.contact?.name ?? 'Anaesthetist'}
           >
-            Simulated payable to the anaesthetist. This record tracks the full amount AA will disburse. {`Held as a ${BCTI_DOCUMENT_NAME.toLowerCase()} from the anaesthetist, one for each invoice and the same value.`}
+            {pair.accPay?.contact?.contactNumber === AA_HOLDING_ACCOUNT.contactNumber
+              ? `Simulated payable crediting the ${AA_HOLDING_ACCOUNT.name}, not the anaesthetist: a prepayment is held there until the List is authorised. The payables run never pays it.`
+              : <>Simulated payable to the anaesthetist. This record tracks the full amount AA will disburse. {`Held as a ${BCTI_DOCUMENT_NAME.toLowerCase()} from the anaesthetist, one for each invoice and the same value.`}</>}
           </MoneyFlowCard>
           <AccPayCard pair={pair} />
         </div>

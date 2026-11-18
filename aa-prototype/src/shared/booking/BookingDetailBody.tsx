@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { History, Minus, Plus, ShieldCheck, Stethoscope, Users, XCircle } from 'lucide-react'
-import { accent, neutral, radius, semantic } from '../../theme/tokens'
+import { History, Minus, Plus, Stethoscope, Users, XCircle } from 'lucide-react'
+import { accent, neutral, radius } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 import type { Procedure } from '../../domain/types'
 import { bookingMoveRefusal } from '../../domain/bookingMoves'
@@ -15,7 +15,7 @@ import {
   editRefusal,
   heldPricesForBooking,
   isBackdropList,
-  prepaymentStatusFor,
+  useBookingPrepayment,
   railActorOf,
   railContextForList,
   railMastersOf,
@@ -48,6 +48,7 @@ import {
 } from '../flows'
 import { useBookingWarnings, WarningsPanel } from '../warnings'
 import { OfficeBillingSetup } from './OfficeBillingSetup'
+import { PrepaymentPanel, type PrepaymentOfficeLinks } from './PrepaymentPanel'
 import { FunderDetailsView } from './FunderDetailsView'
 import { startForAddedProcedure } from '../../domain/billing/contractRail'
 import { HistorySheet } from './HistorySheet'
@@ -65,6 +66,8 @@ interface BookingDetailBodyProps {
    * own page header above the body and passes nothing.
    */
   header?: (collapsed: boolean, history: React.ReactNode) => React.ReactNode
+  /** Admin's links from the prepayment panel to the Invoices screen (catch-up Phase 27). */
+  officeLinks?: PrepaymentOfficeLinks
 }
 
 type SheetState =
@@ -123,7 +126,7 @@ function EditLink({ onClick, label = 'Edit', ariaLabel }: { onClick: () => void;
  * `useSurface().BookingLayout`, which owns the arrangement: one phone column, or
  * the desktop's capture-plus-sticky-rail grid. No `variant` branching here.
  */
-export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingDetailBodyProps) {
+export function BookingDetailBody({ bookingId, actor, onBack, header, officeLinks }: BookingDetailBodyProps) {
   const { BookingLayout, BookingTotal } = useSurface()
   const booking = useAppStore((s) => s.schedule.bookings[bookingId])
   const listsRecord = useAppStore((s) => s.schedule.lists)
@@ -134,7 +137,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   const invoiceLines = useAppStore((s) => s.billing.invoiceLines)
   const locks = useAppStore((s) => s.billing.locks)
   const masters = useAppStore((s) => s.masters)
-  const prepaymentStatus = useAppStore((s) => prepaymentStatusFor(s, bookingId).status)
+  const prepaymentStatus = useBookingPrepayment(bookingId).status
   const warnings = useBookingWarnings(bookingId)
   const audit = useAppStore((s) => s.audit)
   const todayISO = useToday()
@@ -161,6 +164,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   const movedToMe = useBookingMovedToMeNotice(bookingId, actor.role === 'anaesthetist' ? actor.anaesthetistId : undefined)
   const [overlay, setOverlay] = useState(false)
   const [postOpMsg, setPostOpMsg] = useState<string | null>(null)
+  /** The prepayment re-check after removing a Procedure (catch-up Phase 27, US-06.3.5). */
+  const [recheck, setRecheck] = useState<string | null>(null)
   const overlayTimer = useRef<number | null>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
@@ -521,7 +526,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
     movedToMe !== undefined ||
     cancelled ||
     booking.bookingType === 'postOpAddendum' ||
-    prepaymentStatus === 'paid' ||
+    prepaymentStatus !== 'none' ||
+    recheck !== null ||
     error !== null ||
     (completeError !== null && showValidation)
 
@@ -553,11 +559,19 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
           </span>
         </Notice>
       )}
-      {prepaymentStatus === 'paid' && (
-        <div data-shot="booking-prepayment" style={{ background: semantic.success.tint, color: semantic.success.onTint, borderRadius: radius.card, padding: 12, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ShieldCheck size={16} aria-hidden />
-          <span><strong>Prepayment received.</strong> The prepayment invoice has been paid.</span>
-        </div>
+      {/* The prepayment, per payer group (catch-up Phase 27; US-06.3.2, US-03.1.8): on screen the moment the Booking opens. */}
+      {prepaymentStatus !== 'none' && (
+        <PrepaymentPanel
+          bookingId={bookingId}
+          actor={actor}
+          {...(officeLinks !== undefined ? { links: officeLinks } : {})}
+          onShowProcedure={(id) => blockRefs.current.get(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+        />
+      )}
+      {recheck !== null && (
+        <Notice tone="neutral" icon={false} shot="prepayment-recheck">
+          {recheck}
+        </Notice>
       )}
       {error !== null && (
         <Notice tone="error" icon={false}>
@@ -878,7 +892,10 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
           displayNumber={sheet.displayNumber}
           actor={actor}
           onClose={() => setSheet('none')}
-          onRemoved={() => setError(null)}
+          onRemoved={(line) => {
+            setError(null)
+            setRecheck(line)
+          }}
         />
       )}
       {typeof sheet === 'object' && sheet.kind === 'makePrimary' && proceduresRecord[sheet.procedureId] !== undefined && (

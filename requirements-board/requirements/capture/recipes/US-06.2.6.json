@@ -1,0 +1,136 @@
+{
+  "id": "US-06.2.6",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "fixed-price-amount",
+      "app": "admin",
+      "caption": "An amount from outside any price list: No contract · Fixed price, typed above zero, becomes the prepaid amount",
+      "start": "/admin/day/2026-07-24/bookings/BK0034",
+      "states": [
+        {
+          "state": "typed",
+          "caption": "Prepaid · Fixed price picked under the No contract heading and $2,000 typed as the amount",
+          "steps": [
+            {
+              "click": "[data-shot=contract-rail-step-2] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=prepaid] >> nth=0"
+            },
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=contract-combo-list]"
+            },
+            {
+              "click": "[data-contract-id=CT-FIX-PATIENT-PREPAID] >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-shot=contract-rail-amount]",
+              "value": "2000"
+            },
+            {
+              "press": "Tab",
+              "on": "[data-shot=contract-rail-amount]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-billing] >> nth=0"
+          ]
+        },
+        {
+          "state": "zero",
+          "caption": "No amount typed yet: Approve and send is off, with \"Type an amount above zero first\"",
+          "steps": [
+            {
+              "click": "[data-shot=contract-rail-step-2] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=prepaid] >> nth=0"
+            },
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=contract-combo-list]"
+            },
+            {
+              "click": "[data-contract-id=CT-FIX-PATIENT-PREPAID] >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
+          ]
+        },
+        {
+          "state": "invoiced",
+          "caption": "Approved and sent: $2,000.00 plus GST to the payer",
+          "steps": [
+            {
+              "click": "[data-shot=contract-rail-step-2] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=prepaid] >> nth=0"
+            },
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=contract-combo-list]"
+            },
+            {
+              "click": "[data-contract-id=CT-FIX-PATIENT-PREPAID] >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-shot=contract-rail-amount]",
+              "value": "2000"
+            },
+            {
+              "press": "Tab",
+              "on": "[data-shot=contract-rail-amount]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
+            },
+            {
+              "click": "[data-shot=awaiting-approval-row][data-booking-id=BK0034] [data-shot=approve-and-send]"
+            },
+            {
+              "wait": "[data-shot=approve-and-send-result]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=approve-and-send-result]"
+          ]
+        }
+      ]
+    }
+  ]
+}

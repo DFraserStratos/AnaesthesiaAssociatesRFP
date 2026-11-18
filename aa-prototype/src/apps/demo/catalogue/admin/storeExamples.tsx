@@ -18,6 +18,8 @@ import { SlotDrawer } from '../../../admin/components/SlotDrawer'
 import { DraftListDrawer } from '../../../admin/components/DraftListDrawer'
 import { RightRail } from '../../../admin/components/RightRail'
 import { WarningsToDo } from '../../../admin/components/WarningsToDo'
+import { PrepaymentsRailCard } from '../../../admin/components/PrepaymentsRailCard'
+import { PrepaymentApprovalStrip } from '../../../admin/components/PrepaymentApprovalStrip'
 import { NotificationsCard } from '../../../admin/components/NotificationsCard'
 import { ChipMultiSelect } from '../../../admin/components/ChipMultiSelect'
 import { RoomContactsList } from '../../../admin/components/RoomContactsList'
@@ -441,6 +443,22 @@ export function ConflictCalloutExample() {
       {conflicts.length === 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>Open that day: no callout. Pick a closed hospital.</div>}
     </div>
   )
+}
+
+/** The rail's Pre-payments card on the live seed: Riley awaiting approval, Nair paid (catch-up Phase 27). */
+export function PrepaymentsRailCardExample() {
+  const [last, setLast] = useState('')
+  return (
+    <div style={{ maxWidth: 320 }}>
+      <PrepaymentsRailCard onOpenBooking={(d, b) => setLast(`Open booking ${b} on ${d} (stubbed).`)} onOpenInvoices={() => setLast('Open Invoices, Awaiting approval (stubbed).')} />
+      <Echo>{last}</Echo>
+    </div>
+  )
+}
+
+/** The Invoices screen's Awaiting approval strip with its approval switch, on the live seed (catch-up Phase 27). Approve and send writes to the demo store. */
+export function PrepaymentApprovalStripExample() {
+  return <PrepaymentApprovalStrip actor={OFFICE_ACTOR} />
 }
 
 export function WarningsToDoExample() {

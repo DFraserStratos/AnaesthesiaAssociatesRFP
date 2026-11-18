@@ -22,6 +22,7 @@
  * React, no store.
  */
 
+import type { PrepaymentStatus } from './prepayment'
 import type {
   Booking,
   CounterpartyRef,
@@ -64,6 +65,8 @@ export type PricingBasis = (
 ) & {
   /** A typed price holding the price on a kind that is not open price (catch-up Phase 24): "Price typed". */
   typed?: number
+  /** A prepaid Procedure (catch-up Phase 27, US-03.1.8): "Prepaid amount $1,200.00" with its status. */
+  prepaid?: { amount: number | null; status: PrepaymentStatus }
 }
 
 /** The surface a view is drawn for: the office's or the anaesthetist's. */
@@ -113,6 +116,8 @@ export interface ProcedureStackCtx {
   nameOf: (ref: CounterpartyRef) => string
   /** The Procedure's fee ex GST, when it is split (null: no price yet). */
   splitFeeExGst?: number | null
+  /** The Procedure's prepayment, when it has one (catch-up Phase 27): the basis reads the prepaid amount. */
+  prepaid?: { amount: number | null; status: PrepaymentStatus }
 }
 
 // ---------------------------------------------------------------------------
@@ -338,7 +343,7 @@ export function procedureStackView(procedure: Procedure, ctx: ProcedureStackCtx)
             ...(contract.aaCode !== '' ? { aaCode: contract.aaCode } : {}),
             holderName: ctx.parties[contract.holderId]?.name ?? 'Unknown holder',
             invoiced: whoIsInvoicedFor(procedure, ctx),
-            basis: pricingBasisFor(procedure, contract, ctx.dateISO),
+            basis: { ...pricingBasisFor(procedure, contract, ctx.dateISO), ...(ctx.prepaid !== undefined ? { prepaid: ctx.prepaid } : {}) },
             ...splitSummaryFor(procedure, ctx),
           },
     rvg,

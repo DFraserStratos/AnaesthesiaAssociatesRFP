@@ -5,6 +5,7 @@ import type { DayNote } from '../../../domain/types'
 import type { Actor, OpenWarningRow } from '../../../store'
 import { WarningsToDo } from './WarningsToDo'
 import { NeedsInvoiceDestinationCard } from './NeedsInvoiceDestinationCard'
+import { PrepaymentsRailCard } from './PrepaymentsRailCard'
 import { DraftListsCard } from './draftLists/DraftListsCard'
 import { NotificationsCard } from './NotificationsCard'
 import type { NotificationTarget } from '../../../store'
@@ -37,6 +38,8 @@ interface RightRailProps {
   actor: Actor
   onOpenBooking: (dateISO: string, bookingId: string) => void
   onOpenConflicts?: () => void
+  /** The Invoices screen's Awaiting approval strip (catch-up Phase 27). */
+  onOpenInvoices?: () => void
   /** Catch-up Phase 31: open a Draft List's drawer, and the Draft Lists page. */
   onOpenDraftList?: (listId: string) => void
   onSeeAllDraftLists?: () => void
@@ -55,6 +58,8 @@ export function RightRail(props: RightRailProps) {
           Lists (31), the shared notification pool (32), notes, Awaiting review;
           "Needs an invoice destination" (20) under the To-do. */}
       <WarningsToDo rows={props.todoRows} actor={props.actor} onOpenBooking={props.onOpenBooking} {...(props.onOpenConflicts !== undefined ? { onOpenConflicts: props.onOpenConflicts } : {})} />
+      {/* Upcoming pre-payments, under the To-do (catch-up Phase 27, US-06.3.2). */}
+      <PrepaymentsRailCard onOpenBooking={props.onOpenBooking} {...(props.onOpenInvoices !== undefined ? { onOpenInvoices: props.onOpenInvoices } : {})} />
       <NeedsInvoiceDestinationCard onOpenBooking={props.onOpenBooking} />
       {props.onOpenDraftList !== undefined && props.onSeeAllDraftLists !== undefined && (
         <DraftListsCard onOpenDraftList={props.onOpenDraftList} onSeeAll={props.onSeeAllDraftLists} />

@@ -6,7 +6,7 @@
     {
       "name": "prepayment-pair",
       "app": "simulator",
-      "caption": "Pre-payment invoice handed off as the same ACCREC and ACCPAY pair",
+      "caption": "Pre-payment invoice handed off as the same ACCREC and ACCPAY pair, the payable crediting the AA Holding account",
       "start": "/demo/xero/invoices/XRB0",
       "states": [
         {

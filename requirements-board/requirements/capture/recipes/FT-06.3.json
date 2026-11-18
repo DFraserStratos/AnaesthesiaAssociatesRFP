@@ -1,0 +1,21 @@
+{
+  "id": "FT-06.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "holding-account-payable",
+      "app": "simulator",
+      "caption": "A prepayment's payable credits the AA Holding account, not the anaesthetist",
+      "start": "/demo/xero/invoices/XRB0",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=xero-accpay-card]"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -192,6 +192,8 @@ export function formatAuditValue(key: string, value: unknown, names?: AuditNames
   // A List with no anaesthetist is a Draft List: its flag, not "not set" (catch-up Phase 31).
   if ((value === undefined || value === null) && key === 'anaesthetistId') return UNASSIGNED
   if (value === undefined || value === null) return NOT_SET
+  // The Prepayment approval switch reads on or off (catch-up Phase 27).
+  if (typeof value === 'boolean' && key === 'approvalRequired') return value ? 'on' : 'off'
   if (typeof value === 'boolean') return value ? 'yes' : 'no'
   if (typeof value === 'number') {
     if (key === 'tier' && isPriorityTier(value)) return tierLabel(value)

@@ -44,7 +44,8 @@ describe('DemoXero invoice table', () => {
     expect(screen.getByTestId('xero-money-flow-grid')).toHaveTextContent('MONEY OUT OF AA')
     // No fee box: the payable is the gross amount (catch-up Phase 16).
     expect(screen.queryByTestId('aa-service-fee')).toBeNull()
-    expect(screen.getByTestId('xero-money-flow-grid')).toHaveTextContent('full amount AA will disburse')
+    // The first pair is Nair's prepayment (catch-up Phase 27): its payable credits the AA Holding account, never the anaesthetist.
+    expect(screen.getByTestId('xero-money-flow-grid')).toHaveTextContent('Simulated payable crediting the AA Holding account')
     // Both records show their stored InvoiceNumber and Reference (US-09.1.1).
     expect(screen.getAllByText('InvoiceNumber')).toHaveLength(2)
     expect(screen.getAllByText('Reference')).toHaveLength(2)

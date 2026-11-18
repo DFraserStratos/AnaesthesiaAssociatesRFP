@@ -128,6 +128,7 @@ export function AdminDayRoute() {
           actor={ctx.actor}
           onOpenBooking={(d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`)}
           onOpenConflicts={() => navigate('/admin/conflicts')}
+          onOpenInvoices={() => navigate('/admin/invoices')}
           onOpenDraftList={ctx.onOpenDraftList}
           onSeeAllDraftLists={() => navigate('/admin/draft-lists')}
           onOpenNotification={(target) => openNotificationTarget(target, ctx, (d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`))}
@@ -177,6 +178,10 @@ export function AdminBookingDetailRoute() {
             ? 'Day view'
             : `Invoice ${returnInvoice.invoiceNumber}`
         }
+        officeLinks={{
+          onOpenInvoices: () => navigate('/admin/invoices'),
+          onOpenInvoice: (invoiceId) => navigate(`/admin/invoices/${invoiceId}`),
+        }}
       />
     </RequireEntity>
   )

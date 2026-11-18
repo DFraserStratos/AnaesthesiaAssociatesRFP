@@ -14,13 +14,13 @@
  * The letter joins the send in Phase 41.
  */
 
-import { prepaymentInvoiceDraftFor, pendingGroupFor, TYPE_AN_AMOUNT_FIRST, type PrepaymentGroup } from '../domain/billing/prepayment'
+import { PAYER_CONTACT_FIRST, PREPAYMENT_NAMES_ANAESTHETIST, prepaymentInvoiceDraftFor, pendingGroupFor, TYPE_AN_AMOUNT_FIRST, type PrepaymentGroup } from '../domain/billing/prepayment'
 import { PREPAID_SPLIT_MESSAGE } from '../domain/billing/lock'
 import { materialiseInvoices } from './invoiceMaterialise'
 import { clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppStoreApi } from './appStore'
 import { proceduresForBooking } from './selectors'
-import { pendingPrepayments, prepaymentGroupsForBooking } from './prepaymentSelectors'
+import { ASSIGN_THE_LIST_FIRST, pendingPrepayments, prepaymentGroupsForBooking } from './prepaymentSelectors'
 import { getBooking } from './lifecycle'
 import { handoffCasesForBooking } from './xeroHandoff'
 
@@ -29,7 +29,7 @@ export const PREPAYMENT_AUTO_ACTOR: Actor = { who: 'System', role: 'system', sou
 
 export const PREPAYMENT_ALREADY_SENT = 'Already sent'
 export const PREPAYMENT_NOT_NEEDED = 'This booking does not need pre-payment'
-export const PREPAYMENT_PAYER_CONTACT = "Add the payer's email or postal address first"
+export const PREPAYMENT_PAYER_CONTACT = PAYER_CONTACT_FIRST
 
 /**
  * Generate one payer group's prepayment invoice, its pair and its send (the
@@ -59,6 +59,7 @@ function generatePrepaymentInvoice(api: AppStoreApi, actor: Actor, bookingId: st
       send: true,
       createAction: mode === 'approved' ? 'invoice.prePaymentApproved' : 'invoice.prePaymentAutoSent',
       approval: { mode, by: actor.who, role: actor.role, atISO },
+      namesSupplier: PREPAYMENT_NAMES_ANAESTHETIST,
     })
     invoiceId = made.invoiceIds[0] ?? ''
     metas.push(...made.metas)
@@ -82,6 +83,7 @@ export function approvePrepayment(api: AppStoreApi, actor: Actor, bookingId: str
   const { booking, list } = found
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office approves a pre-payment invoice.')
   if (booking.cancellation !== undefined) return refuse('bookingCancelled', 'This Booking is cancelled; no pre-payment invoice is sent.')
+  if (list.anaesthetistId === undefined) return refuse('noAnaesthetist', ASSIGN_THE_LIST_FIRST)
   if (list.state === 'AUTHORISED' || list.billedAtISO !== undefined) {
     return refuse('listBilled', 'This List is already authorised; the Procedure is billed on its final invoice.')
   }

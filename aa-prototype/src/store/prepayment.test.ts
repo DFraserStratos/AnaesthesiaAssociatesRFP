@@ -23,6 +23,7 @@ import { addProcedure } from './bookingActions'
 import { authoriseList, reassignBooking, submitList } from './lifecycle'
 import { runBillingForList } from './billingRun'
 import { setProcedureSplit } from './splitActions'
+import { addBillingLine } from './billingLineActions'
 import { completeAnswered } from '../test/completeAnswered'
 import { CONTRACT, SEED_LIST_IDS, SEED_MARKERS, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
 import { PRICED_ITEM } from '../domain/seed/pricedItems'
@@ -237,10 +238,14 @@ describe('the re-check (US-06.3.5) and a move (US-04.3.11)', () => {
     if (!out.ok) throw new Error(out.message)
     const snap = () => JSON.stringify({ s: prepaymentStatusFor(api.getState(), RILEY), x: api.getState().xero.accPays, i: api.getState().billing.invoices })
     const before = snap()
-    const target = Object.values(api.getState().schedule.lists).find((l) => l.dateISO === '2026-07-24' && l.anaesthetistId !== undefined && l.anaesthetistId !== api.getState().schedule.lists[api.getState().schedule.bookings[RILEY]!.listId]!.anaesthetistId && l.state === 'ACTIVE')
-    if (target === undefined) return
-    const moved = reassignBooking(api, OFFICE, RILEY, target.id)
-    if (!moved.ok) return
+    const souterId = api.getState().schedule.lists[api.getState().schedule.bookings[RILEY]!.listId]!.anaesthetistId
+    // A colleague's ACTIVE List the office can move her to, the procedure day first: the test must really move her.
+    const candidates = Object.values(api.getState().schedule.lists)
+      .filter((l) => l.anaesthetistId !== undefined && l.anaesthetistId !== souterId && l.state === 'ACTIVE')
+      .sort((a, b) => Number(b.dateISO === '2026-07-24') - Number(a.dateISO === '2026-07-24') || a.id.localeCompare(b.id))
+    const moved = candidates.find((l) => reassignBooking(api, OFFICE, RILEY, l.id).ok)
+    expect(moved, 'a colleague List Riley can move to').toBeDefined()
+    expect(api.getState().schedule.bookings[RILEY]!.listId).toBe(moved!.id)
     expect(snap()).toBe(before)
     expect(rileyProc(api).governingContractId).toBe(PRICED_ITEM.souterRhinoplasty)
   })
@@ -292,5 +297,50 @@ describe('the run leaves a raised prepayment off the final invoice (US-08.2.2, D
     const finals = Object.values(unapproved.getState().billing.invoices).filter((i) => i.bookingId === RILEY && i.kind === 'standard')
     expect(finals.map((i) => i.subtotal)).toEqual([1200])
     expect(pendingPrepayments(unapproved.getState())).toEqual([])
+  })
+})
+
+describe('the adversarial review fixes (catch-up Phase 27)', () => {
+  function authoriseAndRun(api: BoundAppStore, listId: string) {
+    for (const b of Object.values(api.getState().schedule.bookings).filter((x) => x.listId === listId && x.cancellation === undefined)) completeAnswered(api, SOUTER, b.id)
+    if (api.getState().schedule.lists[listId]!.state === 'ACTIVE') expect(submitList(api, SOUTER, listId).ok).toBe(true)
+    const authorised = authoriseList(api, OFFICE, listId)
+    if (!authorised.ok) throw new Error(authorised.message)
+    expect(runBillingForList(api, listId).ok).toBe(true)
+  }
+  const nairRhino = (api: BoundAppStore) => proceduresForBooking(api.getState(), NAIR).find((p) => p.governingContractId === PRICED_ITEM.souterRhinoplasty)!
+
+  it('a paid prepayment is never billed twice: moved to another prepaid Contract, it stays held, locked and left off', () => {
+    const api = createAppStore()
+    const p = nairRhino(api)
+    // A new amount is refused once raised (A16); the Contract itself may still change.
+    expect(setProcedureContract(api, OFFICE, p.id, 'CT-FIX-PATIENT-PREPAID', { enteredPrice: 1200 })).toMatchObject({ ok: false, code: 'prepaidPriceRaised' })
+    expect(setProcedureContract(api, OFFICE, p.id, PRICED_ITEM.souterRhinoCosmetic)).toMatchObject({ ok: true })
+    // The office price edit stays refused once raised (A16), whatever the Contract now.
+    expect(setProcedurePrice(api, OFFICE, p.id, 900)).toMatchObject({ ok: false, code: 'prepaidPriceRaised' })
+    authoriseAndRun(api, SEED_LIST_IDS.prepaymentPaidList)
+    const finals = Object.values(api.getState().billing.invoices).filter((i) => i.bookingId === NAIR && i.kind === 'standard')
+    expect(finals.map((i) => i.subtotal)).toEqual([212])
+  })
+
+  it('moved off prepaid after sending: left off the final invoice, the office warning kept after authorise (D67 interim)', () => {
+    const api = createAppStore()
+    const p = nairRhino(api)
+    expect(setProcedureContract(api, OFFICE, p.id, CONTRACT.noContractRvg).ok).toBe(true)
+    expect(prepaymentForProcedure(api.getState(), p.id)?.status).toBe('notNeeded')
+    authoriseAndRun(api, SEED_LIST_IDS.prepaymentPaidList)
+    const finals = Object.values(api.getState().billing.invoices).filter((i) => i.bookingId === NAIR && i.kind === 'standard')
+    expect(finals.map((i) => i.subtotal)).toEqual([212])
+    const w = warningsForBooking(api.getState(), NAIR).filter((x) => x.ruleId === 'prepaymentUnpaid')
+    expect(w.map((x) => x.strength)).toEqual(['mild'])
+    expect(w[0]!.text).toContain('no longer needs prepayment')
+  })
+
+  it('a prepaid Procedure takes no billing lines; its amount stays the range price', () => {
+    const api = createAppStore()
+    const p = rileyProc(api)
+    expect(addBillingLine(api, SOUTER, p.id, { chargeBasis: 'fixed', description: 'Extra', amount: 150 })).toMatchObject({ ok: false, code: 'prepaidProcedure' })
+    expect(addBillingLine(api, OFFICE, p.id, { chargeBasis: 'fixed', description: 'Extra', amount: 150 })).toMatchObject({ ok: false, code: 'prepaidProcedure' })
+    expect(prepaymentStatusFor(api.getState(), RILEY).groups[0]!.amount).toBe(1200)
   })
 })

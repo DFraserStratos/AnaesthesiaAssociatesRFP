@@ -25,6 +25,7 @@ import { priceStatusFor } from './priceStatus'
 import { asksRvgDetail } from './rvgDetail'
 import { NEEDS_PRICE_LABEL } from './priceRanges'
 import { formatMoney } from './money'
+import type { PrepaymentStatus } from './prepayment'
 
 export type FlagTone = 'neutral' | 'warn'
 
@@ -37,6 +38,7 @@ export type ReviewFlagRule =
   | 'notCompleted'
   | 'payerContactMissing'
   | 'btmOverride'
+  | 'prepayment'
 
 export interface ReviewFlag {
   tone: FlagTone
@@ -75,6 +77,8 @@ export interface ReviewProcedureInput {
   contractChange?: ContractChangeRecord
   /** `computedPriceFor`: the price with nothing typed, shown beside a typed one (Admin only). */
   computedPrice?: number
+  /** The Procedure's prepayment status, when it has a raised prepayment invoice (catch-up Phase 27). */
+  prepayment?: { status: PrepaymentStatus; issued: boolean }
 }
 
 export interface ReviewBookingInput {
@@ -183,6 +187,19 @@ const btmOverride: Rule = perProcedure('btmOverride', ({ procedure, fee, rvgGrou
     })
 })
 
+/**
+ * A raised prepayment (catch-up Phase 27; US-08.2.2, US-06.3.7): "Prepaid, left
+ * off" on a Procedure the run leaves off the final invoice (neutral); "Pre-payment
+ * sent, no longer needed" and "Pre-payment sent before a change" (warn) when the
+ * Procedure changed after its invoice was sent, which 41 settles. Never blocks.
+ */
+const prepayment: Rule = perProcedure('prepayment', ({ prepayment: p }) => {
+  if (p === undefined || !p.issued) return null
+  if (p.status === 'notNeeded') return { tone: 'warn', text: 'Pre-payment sent, no longer needed', shot: 'review-flag-prepayment' }
+  if (p.status === 'changedAfterSending') return { tone: 'warn', text: 'Pre-payment sent before a change', shot: 'review-flag-prepayment' }
+  return { tone: 'neutral', text: 'Prepaid, left off', shot: 'review-flag-prepayment' }
+})
+
 /** The rules, in the order Review lists them. */
 export const REVIEW_FLAG_RULES: readonly { rule: ReviewFlagRule; flags: Rule }[] = [
   { rule: 'contractChanged', flags: contractChanged },
@@ -193,6 +210,7 @@ export const REVIEW_FLAG_RULES: readonly { rule: ReviewFlagRule; flags: Rule }[]
   { rule: 'notCompleted', flags: notCompleted },
   { rule: 'payerContactMissing', flags: payerContact },
   { rule: 'btmOverride', flags: btmOverride },
+  { rule: 'prepayment', flags: prepayment },
 ]
 
 /** Flags for one Booking, in rule order. A cancelled Booking yields none (excluded from review). */

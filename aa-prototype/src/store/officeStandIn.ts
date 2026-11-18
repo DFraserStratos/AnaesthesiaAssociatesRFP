@@ -18,6 +18,10 @@ import { isListBilled, isOpenSlotView, scheduleHorizon, slotViewsForAnaesthetist
 import { assignDraftList, createDraftList, draftListFitsAnaesthetist, surgeonFitsAnaesthetist } from './draftListActions'
 import { CANNED_DRAFT_LIST_REQUESTS } from '../domain/seed'
 import { assignListToSlot } from './slotActions'
+import { approvePrepayment, PREPAYMENT_ALREADY_SENT, PREPAYMENT_NOT_NEEDED } from './prepaymentActions'
+import { prepaymentStatusFor } from './prepaymentSelectors'
+import { TYPE_AN_AMOUNT_FIRST } from '../domain/billing/prepayment'
+import { formatMoney } from '../domain/billing/money'
 import type { Slot } from '../domain/types'
 import { OUT_OF_HOURS, compareSessions } from '../domain/outOfHours'
 import { isAssignedList } from '../domain/draftLists'
@@ -64,6 +68,39 @@ export function authoriseAsSimulatedOffice(api: AppStoreApi, listId: string): Ou
   if (!run.ok) return ok({ billed: false })
   handoffListCases(api, listId)
   return ok({ billed: isListBilled(api.getState().schedule.lists[listId] ?? after) })
+}
+
+/**
+ * The office stand-in approves and sends a prepayment invoice (catch-up Phase
+ * 27; US-06.3.1): the installed PWA has no Invoices screen, so this plays
+ * Approve and send on one of this Booking's ready payer groups, as the
+ * simulated office. Choices name each payer where there are two.
+ */
+export function prepaymentApprovalChoices(state: AppState, bookingId: string): { id: string; label: string }[] {
+  return prepaymentStatusFor(state, bookingId)
+    .groups.filter((g) => g.status === 'awaitingApproval')
+    .map((g) => ({ id: g.payerKey, label: `${g.payerName}${g.amount !== null ? ` · ${formatMoney(g.amount)}` : ''}` }))
+}
+
+/** Why the stand-in cannot approve a prepayment on this Booking (or this payer), or null. */
+export function prepaymentStandInRefusal(state: AppState, bookingId: string, payerKey?: string): string | null {
+  const status = prepaymentStatusFor(state, bookingId)
+  if (status.groups.length === 0) return PREPAYMENT_NOT_NEEDED
+  const pending = status.groups.filter((g) => g.status === 'awaitingApproval' && (payerKey === undefined || g.payerKey === payerKey))
+  if (pending.length === 0) return PREPAYMENT_ALREADY_SENT
+  if (!pending.some((g) => g.ready)) return pending[0]!.notReadyReason ?? TYPE_AN_AMOUNT_FIRST
+  return null
+}
+
+export function approvePrepaymentAsSimulatedOffice(api: AppStoreApi, bookingId: string, payerKey?: string): Outcome<{ invoiceNumber: string; amount: number }> {
+  const state = api.getState()
+  const refusal = prepaymentStandInRefusal(state, bookingId, payerKey)
+  if (refusal !== null) return refuse('officeStandIn', refusal)
+  const group = prepaymentStatusFor(state, bookingId).groups.find((g) => g.status === 'awaitingApproval' && g.ready && (payerKey === undefined || g.payerKey === payerKey))!
+  const approved = approvePrepayment(api, OFFICE_SIMULATION_ACTOR, bookingId, group.payerKey)
+  if (!approved.ok) return approved
+  const invoice = api.getState().billing.invoices[approved.value.invoiceId]
+  return ok({ invoiceNumber: invoice?.invoiceNumber ?? '', amount: invoice?.total ?? 0 })
 }
 
 // ---------------------------------------------------------------------------

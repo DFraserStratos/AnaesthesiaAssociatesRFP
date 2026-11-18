@@ -1,12 +1,12 @@
 {
   "id": "US-06.3.2",
-  "status": "partial",
-  "absentReason": "Status is shown per booking as a prepayment warning (required, outstanding, received) and as a warning on the admin day grid. There is no part paid status and no list of all upcoming prepaid bookings.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "day-grid-flag",
       "app": "admin",
-      "caption": "Day grid filtered to Lists with warnings",
+      "caption": "Day grid filtered to Lists with warnings: the prepayment's triangle on Fri 24 Jul",
       "start": "/admin/day/2026-07-24",
       "states": [
         {
@@ -27,27 +27,84 @@
     {
       "name": "card-status",
       "app": "admin",
-      "caption": "Pre-payment status on the booking",
-      "start": "/admin/day/2026-07-24",
+      "caption": "Prepayment status per upcoming Booking, with a warning that strengthens as the date nears",
+      "start": "/admin/day/2026-07-24/bookings/BK0034",
       "states": [
         {
-          "state": "outstanding",
-          "caption": "Pre-payment outstanding, invoice raised but not paid",
+          "state": "awaiting-approval",
+          "caption": "Awaiting approval: no invoice yet",
           "steps": [
             {
-              "click": "[data-shot=daygrid-block-warnings] >> nth=0"
+              "wait": "[data-shot=booking-prepayment]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-prepayment]"
+          ]
+        },
+        {
+          "state": "unpaid",
+          "caption": "Sent and unpaid: the invoice is outstanding",
+          "steps": [
+            {
+              "goto": "/admin/invoices"
             },
             {
-              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+              "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
+            },
+            {
+              "click": "[data-shot=awaiting-approval-row][data-booking-id=BK0034] [data-shot=approve-and-send]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/day/2026-07-24/bookings/BK0034"
             },
             {
               "wait": "[data-shot=booking-prepayment]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-prepayment]"
+          ]
+        },
+        {
+          "state": "part-paid",
+          "caption": "Half received: part paid",
+          "steps": [
+            {
+              "goto": "/admin/invoices"
             },
             {
-              "click": "role=button[name=\"Raise pre-procedure invoice\"]"
+              "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
             },
             {
-              "wait": 500
+              "click": "[data-shot=awaiting-approval-row][data-booking-id=BK0034] [data-shot=approve-and-send]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/demo/xero/invoices/XR0001"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "trigger": "payment-half"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/day/2026-07-24/bookings/BK0034"
+            },
+            {
+              "wait": "[data-shot=booking-prepayment]"
             }
           ],
           "highlight": [
@@ -67,6 +124,67 @@
           ],
           "highlight": [
             "[data-shot=booking-prepayment]"
+          ]
+        },
+        {
+          "state": "strong",
+          "caption": "Two days before the procedure the warning turns strong",
+          "steps": [
+            {
+              "goto": "/admin/day/2026-07-21"
+            },
+            {
+              "trigger": "prepayment-two-days-before",
+              "choice": "BK0034"
+            },
+            {
+              "goto": "/admin/day/2026-07-24/bookings/BK0034"
+            },
+            {
+              "wait": "[data-shot=booking-warnings]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-warnings]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rail-prepayments",
+      "app": "admin",
+      "caption": "The Pre-payments card on the Admin Day rail lists each upcoming prepaid Booking with its status",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=rail-prepayments]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=rail-prepayments]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mobile-riley",
+      "app": "mobile",
+      "caption": "The anaesthetist sees the prepayment's warning at the top of Mrs Riley's Booking",
+      "start": "/mobile/lists/L-34821-2026-07-24-AM",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "text=\"Annette Riley\" >> nth=0"
+            },
+            {
+              "wait": "[data-testid=slide-booking] [data-shot=booking-warnings]"
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=booking-warnings]"
           ]
         }
       ]

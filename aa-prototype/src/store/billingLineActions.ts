@@ -7,6 +7,7 @@
  * Procedure is its Contract, or its split (catch-up Phase 22), never a line.
  */
 
+import { prepaymentForProcedure } from './prepaymentSelectors'
 import type { BillingLine } from '../domain/types'
 import { roundToCents } from '../domain/billing/money'
 import {
@@ -32,6 +33,9 @@ export interface AddBillingLineInput {
  * cents. Audited
  * `billingLine.add`; the parent Booking is stamped by the wrapper.
  */
+/** A billing line on a prepaid Procedure (catch-up Phase 27). */
+export const PREPAID_NO_BILLING_LINES = 'A prepaid procedure is billed by its prepayment, so it takes no billing lines. Ask the office to change the amount before the invoice is raised.'
+
 export function addBillingLine(
   api: AppStoreApi,
   actor: Actor,
@@ -45,6 +49,8 @@ export function addBillingLine(
   if (found === undefined) return refuse('notFound', 'The procedure has no Booking.')
   const rights = editRefusal(actor, found.list)
   if (rights !== null) return rights
+  // A prepaid Procedure's price is its prepaid amount, in full (catch-up Phase 27; US-06.2.2, D30): no add-ons.
+  if (prepaymentForProcedure(state, procedureId) !== undefined) return refuse('prepaidProcedure', PREPAID_NO_BILLING_LINES)
 
   if (input.description.trim() === '') {
     return refuse('descriptionRequired', 'A billing line needs a description.')

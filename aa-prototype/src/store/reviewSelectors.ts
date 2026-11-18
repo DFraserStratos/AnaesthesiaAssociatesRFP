@@ -12,6 +12,7 @@ import { computedPriceFor } from '../domain/billing/priceStatus'
 import { reviewFlagsForBooking, type ReviewBookingInput, type ReviewFlag } from '../domain/billing/reviewFlags'
 import { billingContextForBooking, proceduresForBooking, railContextForList, railMastersOf } from './selectors'
 import { contractChangeFor } from './contractApprovalActions'
+import { prepaymentForProcedure } from './prepaymentSelectors'
 
 /** The flag list's input for one Booking; undefined on a Draft List (no anaesthetist prices it). */
 export function reviewInputFor(state: AppState, booking: Booking): ReviewBookingInput | undefined {
@@ -29,7 +30,10 @@ export function reviewInputFor(state: AppState, booking: Booking): ReviewBooking
     const contract = feeCtx.contract
     const computedPrice = contract !== undefined ? computedPriceFor(procedure, contract, { ...feeCtx, allocation: fee.allocation, bookingProcedureCount: bookingProcedures.length }) : undefined
     const contractChange = contractChangeFor(state, procedure.id)
+    // A raised prepayment's chip (catch-up Phase 27).
+    const prepay = prepaymentForProcedure(state, procedure.id)
     return {
+      ...(prepay !== undefined ? { prepayment: { status: prepay.status, issued: prepay.invoiceId !== undefined } } : {}),
       procedure,
       fee,
       ...(rvgGroup !== undefined ? { rvgGroup } : {}),

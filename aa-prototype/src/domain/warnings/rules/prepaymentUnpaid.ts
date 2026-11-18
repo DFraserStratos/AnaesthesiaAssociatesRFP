@@ -16,13 +16,14 @@
  * alert are two rules shown side by side on the Booking, each in one place.
  */
 
+import { TYPE_AN_AMOUNT_FIRST } from '../../billing/prepayment'
 import { daysBetween } from '../../dateDays'
 import { formatMoney } from '../../billing/money'
 import type { WarningFinding, WarningPrepaymentGroup, WarningRule } from '../types'
 
 export const prepaymentAwaitingText = (amount: number | null, payer: string): string =>
   amount === null
-    ? `Prepayment from ${payer} is awaiting approval on Invoices and has not been sent. Type an amount above zero first.`
+    ? `Prepayment from ${payer} is awaiting approval on Invoices and has not been sent. ${TYPE_AN_AMOUNT_FIRST}.`
     : `Prepayment of ${formatMoney(amount)} from ${payer} is awaiting approval on Invoices and has not been sent.`
 export const prepaymentUnpaidText = (number: string, payer: string): string =>
   `Prepayment invoice ${number} to ${payer} unpaid. Check with the payer before surgery starts.`
@@ -56,7 +57,9 @@ export const prepaymentUnpaidRule: WarningRule = {
   label: 'Prepayment outstanding',
   defaultParams: { mildWithinDays: 7, strongWithinDays: 2 },
   evaluate(facts, params) {
-    if (facts.list.state === 'AUTHORISED') return []
+    // Once AUTHORISED the owed states go quiet; the office finding for a sent invoice that no longer
+    // fits stays until it is settled by hand (D67, the interim until 41), whatever the date.
+    const authorised = facts.list.state === 'AUTHORISED'
     const groups = facts.prepaymentGroups ?? []
     const daysToGo = daysBetween(facts.todayISO, facts.list.dateISO)
     const out: WarningFinding[] = []
@@ -69,6 +72,7 @@ export const prepaymentUnpaidRule: WarningRule = {
         out.push({ kind: 'beforeProcedure', strength: 'mild', text, scope })
         continue
       }
+      if (authorised) continue
       if (daysToGo <= (params['strongWithinDays'] ?? 2)) out.push({ kind: 'beforeProcedure', strength: 'strong', text, scope })
       else if (daysToGo <= (params['mildWithinDays'] ?? 7)) out.push({ kind: 'beforeProcedure', strength: 'mild', text, scope })
     }

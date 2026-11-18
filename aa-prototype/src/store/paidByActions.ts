@@ -13,6 +13,7 @@
  * left the Procedure.
  */
 
+import { autoSendPrepayments } from './prepaymentActions'
 import { createStore } from 'zustand/vanilla'
 import type { CounterpartyRef, FeeSplit } from '../domain/types'
 import { payerCounterparty } from '../domain/billing/whoIsBilled'
@@ -82,5 +83,9 @@ function run(api: AppStoreApi, actor: Actor, procedureId: string, change: PaidBy
 export function savePaidBy(api: AppStoreApi, actor: Actor, procedureId: string, change: PaidByChange): Outcome {
   const dry = run(scratchOf(api), actor, procedureId, change)
   if (!dry.ok) return dry
-  return run(api, actor, procedureId, change)
+  const out = run(api, actor, procedureId, change)
+  // With prepayment approval off, a group this makes ready is sent now (catch-up Phase 27).
+  const bookingId = api.getState().schedule.procedures[procedureId]?.bookingId
+  if (out.ok && bookingId !== undefined) autoSendPrepayments(api, bookingId)
+  return out
 }

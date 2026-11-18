@@ -6,6 +6,7 @@
  * one Patient row, before Xero contact resolution ever matters.
  */
 
+import { autoSendPrepayments } from './prepaymentActions'
 import type { Patient, PostalAddress } from '../domain/types'
 import { emailProblem, formatPostalAddress, postalAddressProblem } from '../domain/billing/payer'
 import { validateNhi } from '../domain/nhi'
@@ -189,5 +190,7 @@ export function editPatient(
       },
     }),
   )
+  // With prepayment approval off, a group this makes ready is sent now (catch-up Phase 27).
+  autoSendPrepayments(api)
   return ok(undefined)
 }

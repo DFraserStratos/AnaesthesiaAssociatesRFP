@@ -1,7 +1,7 @@
 {
   "id": "US-09.2.4",
-  "status": "captured",
-  "absentReason": "",
+  "status": "partial",
+  "absentReason": "The payables run shot is retired: a prepayment's payable credits the AA Holding account and is never disbursed, so there is no prepayment to run it on. Disbursement of an anaesthetist's payable is shown on a billed History pair (accpay-disbursed), and a run over an authorised List's payables is not staged here.",
   "shots": [
     {
       "name": "accpay-disbursed",
@@ -37,63 +37,6 @@
           ],
           "highlight": [
             "[data-shot=xero-accpay-card]"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "payables-run",
-      "app": "admin",
-      "caption": "Payables run in the billing monitor",
-      "start": "/admin/billing",
-      "setup": [
-        {
-          "goto": "/admin/day/2026-07-24/bookings/BK0034"
-        },
-        {
-          "click": "role=button[name=\"Raise pre-procedure invoice\"]"
-        },
-        {
-          "wait": 800
-        },
-        {
-          "wait": 400
-        },
-        {
-          "goto": "/demo/xero/invoices/XR0001"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "trigger": "payment-full"
-        },
-        {
-          "wait": 600
-        }
-      ],
-      "states": [
-        {
-          "state": "due",
-          "caption": "Payables run with an authorised payable ready to disburse",
-          "steps": [],
-          "highlight": [
-            "[data-shot=billing-payables-run]"
-          ]
-        },
-        {
-          "state": "run",
-          "caption": "Payables run disbursed to the anaesthetist",
-          "steps": [
-            {
-              "click": "[data-shot=billing-payables-run] >> role=button[name=\"Run payables\"]"
-            },
-            {
-              "wait": 500
-            }
-          ],
-          "highlight": [
-            "[data-shot=billing-payables-run]"
           ]
         }
       ]

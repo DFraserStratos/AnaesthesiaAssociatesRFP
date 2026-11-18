@@ -293,8 +293,8 @@ function warningsFor(kind: string, todayISO: string): Warning[] {
   const base = { kind: 'afterProcedure' as const, bookingId: 'catalogue', ruleId: 'baseUnitsOutsideGuide' as const }
   const mk = (strength: WarningStrength, text: string, n: number): Warning => ({ ...base, strength, text, key: `catalogue:${n}` })
   if (kind === 'mild') return [mk('mild', 'Base units are outside the guide range for this RVG code.', 1)]
-  if (kind === 'strong') return [mk('strong', 'Prepayment is still unpaid.', 1)]
-  if (kind === 'two') return [mk('strong', 'Prepayment is still unpaid.', 1), mk('mild', 'Base units are outside the guide range for this RVG code.', 2)]
+  if (kind === 'strong') return [mk('strong', 'Prepayment invoice AA-2026-0003 to Annette Riley unpaid. Check with the payer before surgery starts.', 1)]
+  if (kind === 'two') return [mk('strong', 'Prepayment invoice AA-2026-0003 to Annette Riley unpaid. Check with the payer before surgery starts.', 1), mk('mild', 'Base units are outside the guide range for this RVG code.', 2)]
   if (kind === 'cleared') {
     const w = mk('mild', 'Base units are outside the guide range for this RVG code.', 1)
     return [{ ...w, clearance: { key: w.key, bookingId: w.bookingId, ruleId: w.ruleId, strength: 'mild', by: 'Kirsty W.', role: 'office', atISO: `${todayISO}T09:00:00` } }]

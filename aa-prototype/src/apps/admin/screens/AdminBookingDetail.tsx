@@ -5,7 +5,7 @@ import { BackLink, PageHeader } from '../../../shared/ui'
 import type { Procedure } from '../../../domain/types'
 import { useAppStore, type Actor } from '../../../store'
 import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
-import { BookingDetailBody } from '../../../shared/booking'
+import { BookingDetailBody, type PrepaymentOfficeLinks } from '../../../shared/booking'
 import { ageYears, formatDob, nhiBadge, locationName } from '../../../shared/format'
 import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
@@ -16,6 +16,8 @@ interface AdminBookingDetailProps {
   todayISO: string
   onBack: () => void
   backLabel?: string
+  /** The prepayment panel's links to the Invoices screen (catch-up Phase 27). */
+  officeLinks?: PrepaymentOfficeLinks
 }
 
 /**
@@ -26,7 +28,7 @@ interface AdminBookingDetailProps {
  * and the same desktop record layout the anaesthetist web app gets — both run
  * on `variant="web"`, so the capture column and sticky commit rail come free.
  */
-export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLabel = 'Day view' }: AdminBookingDetailProps) {
+export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLabel = 'Day view', officeLinks }: AdminBookingDetailProps) {
   const booking = useAppStore((s) => s.schedule.bookings[bookingId])
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
@@ -80,7 +82,7 @@ export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLab
         }
       />
 
-      <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} />
+      <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} {...(officeLinks !== undefined ? { officeLinks } : {})} />
     </div>
   )
 }

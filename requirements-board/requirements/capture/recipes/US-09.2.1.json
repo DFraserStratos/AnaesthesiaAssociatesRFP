@@ -36,10 +36,13 @@
       ],
       "setup": [
         {
-          "goto": "/admin/day/2026-07-24/bookings/BK0034"
+          "goto": "/admin/invoices"
         },
         {
-          "click": "role=button[name=\"Raise pre-procedure invoice\"]"
+          "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
+        },
+        {
+          "click": "[data-shot=awaiting-approval-row][data-booking-id=BK0034] [data-shot=approve-and-send]"
         },
         {
           "wait": 800

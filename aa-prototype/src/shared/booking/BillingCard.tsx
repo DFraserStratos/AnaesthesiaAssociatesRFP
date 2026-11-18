@@ -19,6 +19,8 @@ import {
   railActorOf,
   railContextForList,
   railMastersOf,
+  prepaymentRecheckLine,
+  prepaymentStatusFor,
   railStartFor,
   setProcedureContract,
   setRailAnswers,
@@ -194,6 +196,17 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
   const [otherOn, setOtherOn] = useState(contract?.pricing.kind === 'open')
   const [error, setError] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
+  // The re-check made visible (catch-up Phase 27, US-06.3.5): one line when the pick changes the prepayment.
+  const [recheck, setRecheck] = useState<string | null>(null)
+  /** Run a change and say what it did to the prepayment. */
+  const withRecheck = <T,>(run: () => T): T => {
+    const before = prepaymentStatusFor(useAppStore.getState(), procedure.bookingId)
+    const out = run()
+    // A pick that changes nothing keeps the line the step before set (a release, then the new Contract).
+    const line = prepaymentRecheckLine(before, prepaymentStatusFor(useAppStore.getState(), procedure.bookingId))
+    setRecheck((prev) => line ?? prev)
+    return out
+  }
 
   // Follow the Procedure when its Contract or answers change elsewhere.
   const startKey = JSON.stringify([procedure.governingContractId, procedure.railAnswers, procedure.enteredPrice])
@@ -226,6 +239,7 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
     setEditing(null)
     setError(null)
     setNote(null)
+    setRecheck(null)
     setOtherOn(false)
     // Every answer is saved as it is given (owner review, 2026-11-16), so the other side sees how far it has got.
     // An answer that still leads to the Contract (the same path, or the start of it) keeps it; one that does not releases it.
@@ -234,7 +248,7 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
       const res = setRailAnswers(useAppStore, actor, procedure.id, next)
       if (!res.ok) setError(res.message)
     } else if (!onPath) {
-      const res = setRailAnswers(useAppStore, actor, procedure.id, next, { releaseContract: true })
+      const res = withRecheck(() => setRailAnswers(useAppStore, actor, procedure.id, next, { releaseContract: true }))
       if (!res.ok) {
         setError(res.message)
         return
@@ -249,7 +263,7 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
 
   const choose = (contractId: ContractId, enteredPrice?: number) => {
     const changing = procedure.governingContractId !== undefined && procedure.governingContractId !== contractId
-    const res = setProcedureContract(useAppStore, actor, procedure.id, contractId, enteredPrice !== undefined ? { enteredPrice } : {})
+    const res = withRecheck(() => setProcedureContract(useAppStore, actor, procedure.id, contractId, enteredPrice !== undefined ? { enteredPrice } : {}))
     if (!res.ok) {
       setError(res.message)
       return
@@ -418,6 +432,7 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
       )}
       <FormError message={error} />
       {note !== null && <span data-shot="contract-price-cleared" style={{ fontSize: 12.5, color: neutral.slate }}>{note}</span>}
+      {recheck !== null && <span data-shot="prepayment-recheck" role="status" style={{ fontSize: 12.5, color: neutral.slate }}>{recheck}</span>}
     </div>
   )
 }

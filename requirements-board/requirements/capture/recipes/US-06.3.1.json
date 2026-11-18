@@ -4,48 +4,101 @@
   "absentReason": "",
   "shots": [
     {
-      "name": "raise-prepayment-invoice",
+      "name": "approve-and-send",
       "app": "admin",
-      "caption": "Office raises the pre-procedure invoice from the booking",
-      "start": "/admin/day/2026-07-24",
+      "caption": "One prepayment invoice per payer, generated when an admin approves it (a step AA can switch off), its payable to the AA Holding account",
+      "start": "/admin/invoices",
       "states": [
         {
-          "state": "required",
-          "caption": "Pre-payment required, with Raise pre-procedure invoice",
+          "state": "awaiting-approval",
+          "caption": "Prepayment approval is on: Riley's $1,200.00 awaits approval on the Invoices strip",
           "steps": [
             {
-              "click": "[data-shot=daygrid-block-warnings] >> nth=0"
-            },
-            {
-              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
-            },
-            {
-              "wait": "[data-shot=booking-prepayment]"
+              "wait": "[data-shot=invoices-awaiting-approval]"
             }
           ],
           "highlight": [
-            "[data-shot=booking-prepayment]"
+            "[data-shot=invoices-awaiting-approval]",
+            "[data-shot=prepayment-approval-switch]"
           ]
         },
         {
-          "state": "raised",
-          "caption": "Pre-procedure invoice raised, pre-payment now outstanding",
+          "state": "sent",
+          "caption": "Approve and send: the invoice goes out at $1,200.00 plus GST",
           "steps": [
             {
-              "click": "[data-shot=daygrid-block-warnings] >> nth=0"
+              "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
             },
             {
-              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+              "click": "[data-shot=awaiting-approval-row][data-booking-id=BK0034] [data-shot=approve-and-send]"
             },
             {
-              "click": "role=button[name=\"Raise pre-procedure invoice\"]"
-            },
-            {
-              "wait": 500
+              "wait": "[data-shot=approve-and-send-result]"
             }
           ],
           "highlight": [
-            "[data-shot=booking-prepayment]"
+            "[data-shot=approve-and-send-result]"
+          ]
+        },
+        {
+          "state": "approval-off",
+          "caption": "Prepayment approval switched off: a Booking added afterwards is invoiced at once, with nothing waiting on the strip",
+          "steps": [
+            {
+              "click": "[data-shot=prepayment-approval-switch]"
+            },
+            {
+              "click": "[data-shot=prepayment-approval-off-confirm]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/day/2026-07-21"
+            },
+            {
+              "trigger": "add-prepaid-booking",
+              "choice": "one-payer"
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": "[data-shot=prepayment-approval-switch]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=prepayment-approval-switch]",
+            "[data-shot=invoices-awaiting-approval]"
+          ]
+        },
+        {
+          "state": "two-payers",
+          "caption": "Two payers on one Booking: one invoice per payer, and the other payer still awaits approval",
+          "steps": [
+            {
+              "goto": "/admin/day/2026-07-21"
+            },
+            {
+              "trigger": "add-prepaid-booking",
+              "choice": "two-payers"
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": "[data-shot=awaiting-approval-row]:has-text(\"Fiona Gray\")"
+            },
+            {
+              "click": "[data-shot=awaiting-approval-row]:has-text(\"Fiona Gray\") [data-shot=approve-and-send] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=approve-and-send-result]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoices-awaiting-approval]",
+            "[data-shot=approve-and-send-result]"
           ]
         }
       ]
@@ -53,7 +106,7 @@
     {
       "name": "prepayment-invoice",
       "app": "admin",
-      "caption": "Older screen, pre-procedure invoice for an estimated full fee; the prepaid amount is now the anaesthetist's own fixed price",
+      "caption": "The prepayment invoice for the Procedure's price, in full, issued before the procedure",
       "start": "/admin/invoices/INV0001",
       "states": [
         {
@@ -69,7 +122,7 @@
     {
       "name": "prepayment-xero-pair",
       "app": "simulator",
-      "caption": "The pre-payment's Xero pair: receivable from the patient and payable to the anaesthetist",
+      "caption": "The prepayment's Xero pair: a receivable from the payer and a payable crediting the AA Holding account, not the anaesthetist",
       "start": "/demo/xero/invoices/XRB0",
       "states": [
         {

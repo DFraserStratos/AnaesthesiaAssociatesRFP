@@ -29,7 +29,7 @@ import { cleanPostalAddress, isMinorOn, isPayerBilled, payerCounterparty, payerD
 import { formatPostalAddress } from '../../domain/billing/payer'
 import { PAYER_OFFER_PROVISIONAL, payerOfferFor } from '../../domain/billing/procedurePayer'
 import { procedureLabel } from '../../domain/billing/procedureStack'
-import { PAYER_LOCKED_BY_PREPAYMENT, payerLockedByPrepayment, sameName, savePaidBy, useAppStore, type Actor, type PaidByChange, type PayerInput } from '../../store'
+import { PAYER_LOCKED_BY_PREPAYMENT, payerLockedByPrepayment, prepaymentRecheckLine, prepaymentStatusFor, sameName, savePaidBy, useAppStore, type Actor, type PaidByChange, type PayerInput } from '../../store'
 import { Button, Checkbox, FormError, Notice, Pill, TextField } from '../ui'
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
@@ -49,11 +49,13 @@ interface PaidBySheetProps {
   onClose: () => void
   /** Which part the line's action opened: who pays (Change) or the split (Split: started and scrolled to). */
   focus?: 'payer' | 'split'
+  /** After a save: the prepayment re-check line, or null (catch-up Phase 27, US-06.3.5). */
+  onSaved?: (recheckLine: string | null) => void
 }
 
 const sectionStyle = { display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 16, borderTop: `1px solid ${neutral.line}` } as const
 
-export function PaidBySheet({ open, procedureId, actor, onClose, focus = 'payer' }: PaidBySheetProps) {
+export function PaidBySheet({ open, procedureId, actor, onClose, focus = 'payer', onSaved }: PaidBySheetProps) {
   const { Overlay } = useSurface()
   const procedure = useAppStore((s) => s.schedule.procedures[procedureId])
   const booking = useAppStore((s) => (procedure !== undefined ? s.schedule.bookings[procedure.bookingId] : undefined))
@@ -143,11 +145,14 @@ export function PaidBySheet({ open, procedureId, actor, onClose, focus = 'payer'
       setError(split.problem)
       return
     }
+    const bookingId = procedure?.bookingId ?? ''
+    const before = prepaymentStatusFor(useAppStore.getState(), bookingId)
     const outcome = savePaidBy(useAppStore, actor, procedureId, change)
     if (!outcome.ok) {
       setError(outcome.message)
       return
     }
+    onSaved?.(prepaymentRecheckLine(before, prepaymentStatusFor(useAppStore.getState(), bookingId)))
     onClose()
   }
 

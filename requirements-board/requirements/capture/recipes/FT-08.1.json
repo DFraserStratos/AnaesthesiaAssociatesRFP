@@ -1,0 +1,25 @@
+{
+  "id": "FT-08.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "awaiting-approval-strip",
+      "app": "admin",
+      "caption": "The one invoice before AUTHORISED: a prepayment, generated on approval",
+      "start": "/admin/invoices",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=invoices-awaiting-approval]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoices-awaiting-approval]"
+          ]
+        }
+      ]
+    }
+  ]
+}

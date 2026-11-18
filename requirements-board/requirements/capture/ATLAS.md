@@ -262,8 +262,8 @@ Hooks already added:
 | Booking | `BK0001`… | Seed order. `BK0001`..`BK0005` are Souter Tue 21 AM (BK0001 Hemi Walker). `BK0006` Wiremu Tane, `BK0007` Susan Marsh, `BK0008` David Chen, `BK0009` **Margaret Ellison** (pending). Verify with one run. |
 | History Booking | `HBK01`… | The billed history backdrop (Lists `L-HIST-NN`, Procedures `HP`, cases `HBC`). Before catch-up Phase 15 these were `HC01`…. Catch-up Phase 38a appended `HBK14` to `HBK42` on twelve Lists keyed by date and session, `L-HIST-2026-01-12-PM` to `L-HIST-2026-03-27-AM`, all paid before April. |
 | Pinned history List | `L-HIST-2026-03-13-AM` | `SEED_LOOKBACK`: Fri 13 Mar 2026 AM, St George's, Mr P. Doyle, three Bookings (Sarah Mitchell `HBK36`), invoices `AA-2026-H36` to `H38`, paid. |
-| Invoice | `INV0001` / `AA-2026-0001` | `INV0001` is the seeded paid pre-payment. Runtime invoices start at `INV0002` once a list is authorised. |
-| Xero pair | `XRB0` | The seeded pre-payment. History pairs are `XRH01`… and runtime pairs `XR0001`…. |
+| Invoice | `INV0001` / `AA-2026-0001` | `INV0001` is Priya Nair's seeded paid pre-payment: $1,200.00 plus GST = $1,380.00, approved by Kirsty W. Riley's, once approved on the Invoices strip, is the next runtime invoice. Runtime invoices otherwise start at `INV0002` once a list is authorised. |
+| Xero pair | `XRB0` | The seeded pre-payment: its ACCPAY credits the "AA Holding account" (contact `XCHOLD`), not the anaesthetist, and is not disbursed. History pairs are `XRH01`… and runtime pairs `XR0001`…. |
 
 **Named lists** (`SEED_LIST_IDS`)
 
@@ -276,8 +276,8 @@ Hooks already added:
 | Souter Mon 13 AM | `L-34821-2026-07-13-AM` | SUBMITTED (catch-up Phase 23). Forte Health, Mr C. Okafor. One Booking: the three-procedure `BK0184` (Graeme Tullett), in the Review queue. |
 | Souter Mon 20 AM | `L-34821-2026-07-20-AM` | SUBMITTED. Forte Health, Brian Holt's two Procedures on one invoice (`BK0022`: the inguinal hernia repair the primary, the umbilical hernia repair additional). Authorised first, it raises AA-2026-0002 to 0004. |
 | Souter Mon 20 PM | `L-34821-2026-07-20-PM` | SUBMITTED. The fee-split Booking: Alan Prentice (`BK0025`), one Procedure's fee split between nib ($132.50) and Alan Prentice (the rest); see [Invoice presentation, delivery and the split](#invoice-presentation-delivery-and-the-split-catch-up-phase-22). Dr Souter can still change it (catch-up Phase 38a): "Amend" on a Booking makes Review show "Changed since submitted" and disables Authorise until it is completed again. |
-| Souter Fri 24 AM | `L-34821-2026-07-24-AM` | Pre-payment **unpaid** (Annette Riley). |
-| Souter Fri 24 PM | `L-34821-2026-07-24-PM` | Pre-payment **paid** (Priya Nair, `INV0001`). |
+| Souter Fri 24 AM | `L-34821-2026-07-24-AM` | Pre-payment **awaiting approval** (Annette Riley, `BK0034`, no invoice yet). |
+| Souter Fri 24 PM | `L-34821-2026-07-24-PM` | Pre-payment **paid** (Priya Nair, `BK0038`, `INV0001`); mixed Booking. |
 | Ropata Thu 16 | `L-39560-2026-07-16-AM` | SUBMITTED. The billing-failure target (Losa Tuilagi BK0039 held at the Xero hand-off, Hemi Walker BK0040 bills). |
 | Delaney Fri 17 | `L-27731-2026-07-17-AM` | SUBMITTED. Integration-locked target. |
 | Souter Tue 28 AM | `L-34821-2026-07-28-AM` | The S1 destination: MSG-STG-1001 adds Sarah Mitchell. Its 07:45 and 11:15 cases read as the rooms sent them (AR-35 rows 6 and 8); Sarah Mitchell arrives with "lap appy ?conv to open" (Hospital feed). |
@@ -596,15 +596,16 @@ invoice only); the Booking's Procedure card shows the text. The wording below is
   (5 Lists), every hospital closed. 17 open List conflicts plus Dr Beaumont's two Draft Lists (the nav badge reads 19); Tue 21 has none.
 
 **Fri 24:** the prepayment warning (a warning, never a block, since catch-up Phase 15a; no gate, no
-override). AM is unpaid: Annette Riley's Booking (`BK0034`) carries a small warning triangle on its
+override). AM awaits approval (catch-up Phase 27, see [Prepayment lifecycle](#prepayment-lifecycle-catch-up-phase-27)): Annette Riley's Booking (`BK0034`) carries a small warning triangle on its
 row in all three apps, and opening it shows the warnings panel at the top (`[data-shot=booking-warnings]`,
-"Prepayment required", Before procedure, Strong; the prepayment row is `[data-shot=booking-prepayment]`
-with the office's "Raise pre-procedure invoice"). It still completes and submits through the usual
-sheet. On Admin Day Fri 24 the Souter AM block has the red outline and a triangle with "1"
+"Prepayment of $1,200.00 from Annette Riley is awaiting approval on Invoices and has not been sent.",
+Before procedure, Mild on Tue 21 Jul, Strong from Wed 22; under it the prepayment panel `[data-shot=booking-prepayment]`
+with the office's "Approve on Invoices" link; there is no "Raise pre-procedure invoice" button since catch-up Phase 27). It still completes and submits through the usual
+sheet. On Admin Day Fri 24 the Souter AM block has the amber outline and a triangle with "1"
 (`[data-shot=daygrid-block-warnings]`, the block button itself), her drawer row carries the same
 outline (`[data-shot=drawer-booking-warning]`), and the To-do card under the calendar
 (`[data-shot=admin-warnings-todo]`) lists the warning with Open and Clear. PM is paid (Priya Nair:
-the success note keeps `booking-prepayment`).
+the panel `booking-prepayment` reads "Pre-payment received").
 
 **Review queue (pristine):** Morrison, Whitaker, Souter Mon 20 AM and PM, Ropata, Delaney, and since catch-up
 Phase 23 Souter Mon 13 AM (the three-procedure Booking; a second "Souter · Forte Health" row, so open a List by its
@@ -710,8 +711,8 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   Southern Cross, Southern Cross Health Society with `SCHS-2026-55120`, no Contract yet, so the Billing
   card opens on step 1 with Southern Cross marked Suggested.
 - Prepaid Contracts: Dr Souter's price list (`CT-SOUTER-RHINO` $1,200, `-BLEPH`, `-BREAST`, and
-  `CT-SOUTER-RHINO-COS` $238.50, plastic surgery and ENT). Riley (BK0034, P0036) is on the Rhinoplasty
-  and Nair's cosmetic component (BK0038, P0041) on `CT-SOUTER-RHINO-COS`.
+  `CT-SOUTER-RHINO-COS` retired in Phase 27, plastic surgery and ENT). Riley (BK0034, P0036) and Nair's cosmetic
+  component (BK0038, P0041) are both on the Rhinoplasty Contract at $1,200.00 ex GST.
 - "Needs an invoice destination" at reset (no Contract): BK0035 (Souter Mon 27 AM, the NHI-pending PDF
   Booking) and the six pre-ops BK0060 to BK0065 (Souter Thu 23 PM, AA rooms). BK0060 carries the
   answers so far Patient › Standard, for the anaesthetist's pick-up. S12 (MSG-STG-1001) adds Sarah
@@ -974,6 +975,45 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   `input[data-validation-field=hpiId|accountName|accountNumber]` scoped to the sheet's hook.
 - Dr Souter's rate per unit is $26.50 on `/mobile/more` (Profile card) and `/web/profile` (Billing panel); the
   anaesthetist changes only that, and the change re-prices her unlocked Bookings as the office's edit does.
+
+### Prepayment lifecycle (catch-up Phase 27)
+
+- **Seed.** Prepayment approval is on. Riley (Annette Riley, `BK0034`, Souter Fri 24 Jul AM
+  `L-34821-2026-07-24-AM`) awaits approval: $1,200.00 ex GST on Dr Souter's prepaid Rhinoplasty Contract, no
+  invoice. Nair (Priya Nair, `BK0038`, Fri 24 Jul PM `L-34821-2026-07-24-PM`) has `INV0001` = `AA-2026-0001`,
+  $1,200.00 plus GST = $1,380.00, approved by Kirsty W., paid; its ACCPAY (`XRB0` pair) credits the "AA Holding
+  account" (contact `XCHOLD`), not disbursed. Her septoplasty stays on Forte's Contract (the final invoice's only
+  line once authorised: `INV0002`). Demo date Tue 21 Jul 2026.
+- **GONE:** the "Raise pre-procedure invoice" button, any deposit or estimated-fee invoice, "Less pre-payment
+  deposit", balance invoices, `CT-SOUTER-RHINO-COS` and the $238.50 and $274.28 amounts.
+- **Admin Booking detail** `/admin/day/:dateISO/bookings/:bookingId`: the panel `[data-shot=booking-prepayment]`
+  ("Pre-payment awaiting approval", "Pre-payment received", "Part paid"), one block per payer
+  `[data-shot=prepayment-group]` (`data-payer-key`), the office link `[data-shot=prepayment-approve-link]`
+  ("Approve on Invoices"), the invoice link `[data-shot=prepayment-invoice-link]`. After the List is authorised,
+  `[data-shot=booking-prepaid-left-off]` reads "Prepaid, left off the final invoice (AA-2026-0001)" or "Prepaid in
+  full, no final invoice (...)". The Contract rail's re-check line is `[data-shot=prepayment-recheck]` ("Pre-payment
+  no longer needed"; the Paid by row shows the same hook after a save).
+- **Units row** `[data-shot=capture-prepaid]`: "Prepaid $1,200.00 · paid", read-only, inside the procedure block on
+  mobile and web. The price card `[data-shot=price-card]` reads "Prepaid amount" for a prepaid Procedure.
+- **Admin Invoices** `/admin/invoices`: the strip `[data-shot=invoices-awaiting-approval]` (card "Awaiting approval",
+  `data-rows` count), rows `[data-shot=awaiting-approval-row]` (`data-booking-id`, `data-payer-key`), the button
+  `[data-shot=approve-and-send]` "Approve and send" (disabled, reason "Type an amount above zero first", when not
+  ready), the switch `[data-shot=prepayment-approval-switch]` (role switch, "Prepayment approval"; switching off
+  opens a confirm whose primary is `[data-shot=prepayment-approval-off-confirm]` "Switch off"), and the result line
+  `[data-shot=approve-and-send-result]`. Approve Riley with
+  `[data-shot=awaiting-approval-row][data-booking-id=BK0034] [data-shot=approve-and-send]`.
+- **Admin Day** `/admin/day/2026-07-21`: the rail card `[data-shot=rail-prepayments]` ("Pre-payments"), rows
+  `[data-shot=rail-prepayment-row]` (`data-booking-id`, `data-status`). 15a's triangle and To-do card are unchanged.
+- **Billing monitor** `/admin/billing`: `[data-shot=monitor-prepaid-left-off]`. **Review:** the chip
+  `[data-shot=review-flag-prepayment]` ("Prepaid, left off", "Pre-payment sent, no longer needed", "Pre-payment sent
+  before a change").
+- **Xero sim** `/demo/xero/invoices/XRB0` (and Riley's pair `XR0001` once sent): the ACCPAY "to" reads "AA Holding
+  account", "Simulated payable crediting the AA Holding account, not the anaesthetist".
+- **Staging.** Approve and send, the switch, the typed amount (rail Patient › Prepaid › `CT-FIX-PATIENT-PREPAID` Prepaid · Fixed
+  price under the "No contract" heading, then `[data-shot=contract-rail-amount]`) and a second payer are product
+  controls (real clicks); never a trigger. A payment, the clock jump and the two-payer Booking use the `trigger` step
+  (see Demo actions). Nair's final invoice needs the PM List completed, submitted and authorised (`/web/lists/...-PM`,
+  "Mark complete", "Mark list completed", "Submit to office", then `/admin/review/L-34821-2026-07-24-PM`).
 
 ## Overlays that need clicks
 
@@ -1526,7 +1566,7 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 
 - `booking-warning` (the small triangle on a Booking row or header; not interactive),
   `booking-warnings` (the warnings panel at the top of the Booking detail), `booking-prepayment`
-  (the prepayment warning's row in that panel, or the paid note), `admin-warnings-todo` (the To-do
+  (the prepayment warning's row in that panel, and the Booking's prepayment panel under it), `admin-warnings-todo` (the To-do
   card in the Admin Day rail), `daygrid-block-warnings` (a day-grid block button whose List has an
   open warning; click it to open the drawer), `drawer-booking-warning` (an outlined Booking row in
   the List drawer). `daygrid-block-prepayment` and the "Pre-payment flagged" filter are gone: the
@@ -1680,7 +1720,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 | S1 · Booking to theatre | Reset only. | On Mobile Lists, run `fire-hospital-message` (MSG-STG-1001), then Sarah Mitchell appears on Souter Tue 28 Jul AM. |
 | S2 · Office day | Reset only. | Admin work. |
 | S3 · Money end to end | Reset, then checks both Souter Mon 20 lists are SUBMITTED. | Authorise them in `/admin/review/...`. Billing then gives AA-2026-0005 in Xero (nib, $152.38, its share of the fee-split Booking) and emails every invoice. |
-| S4 · Exceptions | Reset only. | Mobile, then the Admin screens below. |
+| S4 · Exceptions | Reset only. | Admin Day, then Invoices and Mobile. Beat 1 is the prepayment: Riley's $1,200.00 (Dr Souter's Fri 24 Jul AM, prepaid Rhinoplasty) awaits approval; the office approves and sends it on `/admin/invoices` (Approve and send), the patient pays (`payment-full` / `payment-half`), and Nair is the paid, mixed case whose rhinoplasty is left off the final invoice. |
 | S5 · Compliance tour | Reset, three audited edits on David Chen's booking, then authorises Whitaker Fri 17, which raises invoices. | Admin audit and Xero. |
 
 **Demo actions by screen** (`trigger` ids)
@@ -1694,7 +1734,10 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/admin/billing/aa-fees` | `run-scheduled-fee-run`, `seed-month-of-bctis` | The scheduled run raises the month in the picker as the system actor; "Run monthly fee invoices" is the screen's own product button |
 | `/admin/review/L-41267-2026-07-14-AM` or that List's Booking detail | `stage-post-op` | Shown only for Dr Sharma's Tue 14 AM List |
 | `/admin/integrations`, Surgeon PDFs tab | `ingest-pdf-row` | Click the "Surgeon PDFs" tab first; the entry shows only there |
-| `/admin/invoices/<invoiceId>`, `/demo/xero/invoices/<accRecId>` | `payment-full`, `payment-half`, `payment-replay` | Acts on the invoice in the URL; the payable authorises for exactly the amount received. After the S3 AM authorise, AA-2026-0002 is the first open invoice; a raised pre-procedure invoice is `XR0001` |
+| `/admin/invoices/<invoiceId>`, `/demo/xero/invoices/<accRecId>`, `/admin/day/<date>/bookings/<bookingId>` | `payment-full`, `payment-half`, `payment-replay` | Acts on the invoice in the URL; the payable authorises for exactly the amount received. On a Booking detail the choices are that Booking's sent prepayment ACCRECs, disabled "Not approved yet" before approval. After the S3 AM authorise, AA-2026-0002 is the first open invoice; Riley's prepayment invoice once approved on the strip is `XR0001` |
+| `/admin/day/<date>` (choice = booking id), `/admin/day/<date>/bookings/<bookingId>` (acts on that Booking), `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `prepayment-two-days-before` | Catch-up Phase 27: moves the demo clock to 2 days before the procedure, so the prepayment warning turns strong. On Admin Day use `"choice": "BK0034"`. Forward only; disabled "No outstanding pre-payments" or "Already 2 days or less before" |
+| `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>` | `add-prepaid-booking` (choices `one-payer`, `two-payers`) | Catch-up Phase 27: as the office stand-in, adds Fiona Gray on Dr Souter's next ACTIVE List where her prepaid Contracts are offered. `two-payers`: Rhinoplasty $1,200.00 to the patient and Blepharoplasty, upper lids $900.00 to Ian Gray, so two strip rows. With approval off each is sent at once. Disabled "No ACTIVE List for Dr Souter" or "Already added (Reset to repeat)" |
+| `/mobile/lists/<listId>/bookings/<bookingId>` (PWA Demo sheet only) | `pwa-office-approves-prepayment`, `pwa-payment-full`, `pwa-payment-half` | Catch-up Phase 27: the office approves and sends this Booking's first ready payer group; the patient pays half or all of its sent prepayment. Not in the framed build's bar |
 | `/mobile/lists[...]`, `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/admin/integrations`, `/demo/integrations` | `fire-hospital-message` (choice: a message id), `replay-hospital-message` | Badged Future scope. On a Booking it defaults to the message addressed to it (MSG-STG-1012 on Foster's `BK0043`), whose text replaces the rooms' (catch-up Phase 20a) |
 | `/admin/day/<date>/bookings/<id>` | `hospital-description-arrives` (choice `ar35-row-2`, `-12`, `-20`, `-25`) | Catch-up Phase 20a, bar only, no badge. AR-35's illustrative hospital wording replaces the procedure text through `replaceProcedureText`; defaults to the row paired with the rooms' text (row 12 on Tane's `BK0006`). Disabled when the Booking already holds that text |
 | `/mobile/lists/<listId>` | `photo-capture-future` | Badged Future scope. Opens the Add a booking sheet on the simulated photo of a paper card (sample cards) for the List in the URL; disabled unless the List is ACTIVE. Also in the PWA Demo sheet. A saved Booking reads "Added by anaesthetist" |

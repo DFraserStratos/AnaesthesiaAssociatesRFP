@@ -55,6 +55,8 @@ const ROW = { gap: 12, paddingTop: 12, borderTop: `1px solid ${neutral.line}` } 
 export function PaidByRow({ contract, procedureId, actor, canEdit, variant, payer, contactMissing = false, child = false }: PaidByRowProps) {
   // Which part of the Paid by sheet opened it: who pays (Change) or the split (Split); null while closed.
   const [open, setOpen] = useState<'payer' | 'split' | null>(null)
+  // The prepayment re-check after a save (catch-up Phase 27, US-06.3.5).
+  const [recheck, setRecheck] = useState<string | null>(null)
   const label = <span style={{ fontSize: 13, fontWeight: 600 }}>Paid by</span>
 
   // No Contract yet: who is invoiced is not known, so there is nothing to change (US-11.2.2 "Not billed yet").
@@ -119,9 +121,14 @@ export function PaidByRow({ contract, procedureId, actor, canEdit, variant, paye
       )}
       {variant === 'summary' && sub === undefined && split !== undefined && change}
       {pills}
+      {recheck !== null && (
+        <span data-shot="prepayment-recheck" role="status" style={{ fontSize: 12.5, fontWeight: 400, color: neutral.slate }}>
+          {recheck}
+        </span>
+      )}
     </span>
   )
-  const sheet = <PaidBySheet open={open !== null} procedureId={procedureId} actor={actor} onClose={() => setOpen(null)} focus={open ?? 'payer'} />
+  const sheet = <PaidBySheet open={open !== null} procedureId={procedureId} actor={actor} onClose={() => setOpen(null)} focus={open ?? 'payer'} onSaved={setRecheck} />
   const splitState = split !== undefined ? (split.fits ? 'fits' : 'doesNotFit') : 'none'
 
   return (

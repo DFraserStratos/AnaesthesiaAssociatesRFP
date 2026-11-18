@@ -20,6 +20,7 @@
  * `store/officePrivate.ts`, so the PWA closure check holds.
  */
 
+import { autoSendPrepayments } from './prepaymentActions'
 import { notPreferredEntryIds, notPreferredWarning, pairingAcknowledgement } from '../domain/pairingPreferences'
 import { DRAFT_ASSIGN_WARNINGS, isDraftList, isRemoved, removeBlockedReason } from '../domain/draftLists'
 import { isOpenSlot } from '../domain/slotStatus'
@@ -241,6 +242,8 @@ export function assignDraftList(
       },
     }
   })
+  // With prepayment approval off, a group the assigned List makes ready is sent now (catch-up Phase 27).
+  for (const b of Object.values(api.getState().schedule.bookings)) if (b.listId === listId) autoSendPrepayments(api, b.id)
   return ok({ listId, warnings, firstAssignmentBookingIds })
 }
 

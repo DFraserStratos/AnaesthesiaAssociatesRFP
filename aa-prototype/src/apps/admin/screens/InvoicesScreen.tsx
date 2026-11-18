@@ -11,6 +11,7 @@ import { billedLists, invoiceAddresseeName, invoiceCountsByList, isBackdropInvoi
 import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm, plural } from '../../../shared/format'
 import { listShortLabel, listSourceLabels } from '../util'
 import { InvoiceDocument } from './InvoiceDocument'
+import { PrepaymentApprovalStrip } from '../components/PrepaymentApprovalStrip'
 
 interface InvoicesScreenProps {
   actor: Actor
@@ -91,6 +92,9 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
           </>
         }
       />
+
+      {/* Prepayment invoices waiting on an admin, with the approval switch (catch-up Phase 27, US-06.3.1). */}
+      <PrepaymentApprovalStrip actor={actor} />
 
       {/* Recently billed lists */}
       {billed.length > 0 && (

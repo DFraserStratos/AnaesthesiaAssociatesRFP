@@ -98,6 +98,16 @@ import {
   BACKDATED_RANGE_CONTRACT_ID,
   addBackdatedRangeDemo,
   backdatedRangeAdded,
+  addPrepaidBooking,
+  addPrepaidBookingRefusal,
+  approvePrepaymentAsSimulatedOffice,
+  moveToTwoDaysBefore,
+  outstandingPrepaymentBookings,
+  prepaymentAccRecChoices,
+  prepaymentApprovalChoices,
+  prepaymentPaymentRefusal,
+  prepaymentStandInRefusal,
+  twoDaysBeforeRefusal,
 } from '../../store'
 import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
 import { contractCandidatesFor, destinationOf } from '../../domain/billing/contractRail'
@@ -236,6 +246,27 @@ function accRecIdOnScreen(state: AppState, ctx: DemoTriggerCtx): string | undefi
   const invoiceId = ctx.params['invoiceId']
   if (invoiceId === undefined) return undefined
   return Object.values(state.xero.accRecs).find((r) => r.invoiceId === invoiceId)?.id
+}
+
+/** The payment entries' screens: an invoice, the Xero pair, and the Admin Booking detail for its prepayment (catch-up Phase 27). */
+const PAYMENT_PAGES = [...INVOICE_PAGES, '/admin/day/:dateISO/bookings/:bookingId'] as const
+
+/** The ACCREC a payment entry acts on: the invoice on screen, or the chosen (else first) prepayment ACCREC on a Booking. */
+function paymentTargetOnScreen(state: AppState, ctx: DemoTriggerCtx, choiceId?: string): string | undefined {
+  const bookingId = ctx.params['bookingId']
+  if (bookingId === undefined) return accRecIdOnScreen(state, ctx)
+  const choices = prepaymentAccRecChoices(state, bookingId)
+  return choices.find((c) => c.id === choiceId)?.id ?? choices[0]?.id
+}
+
+/** Why a payment entry is disabled on this screen: on a Booking, "Not approved yet" until its prepayment is sent. */
+function paymentReasonOnScreen(state: AppState, ctx: DemoTriggerCtx, choiceId?: string): string | null {
+  const bookingId = ctx.params['bookingId']
+  if (bookingId !== undefined) {
+    const refused = prepaymentPaymentRefusal(state, bookingId)
+    if (refused !== null) return refused
+  }
+  return paymentDisabledReason(state, paymentTargetOnScreen(state, ctx, choiceId))
 }
 
 /** Why a webhook cannot be sent for `accRecId`, or null. The target must be an `openAccRecs` row, as on the Control Panel. */
@@ -684,13 +715,15 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     label: 'Payment received · full',
     description:
       'Simulates a Xero payment webhook for the remaining balance of the invoice on screen. Its paired ACCPAY is authorised for exactly the amount received. Also on the Xero simulation pair.',
-    screen: 'Admin · Invoice',
-    routes: INVOICE_PAGES,
+    screen: 'Admin · Invoice and Booking detail',
+    routes: PAYMENT_PAGES,
     surfaces: ['bar'],
     // A fee payment is "Record fee payment", never a procedure webhook.
     when: (state, ctx) => !isFeePairOnScreen(state, ctx),
-    disabledReason: (state, ctx) => paymentDisabledReason(state, accRecIdOnScreen(state, ctx)),
-    run: (api, ctx) => sendPaymentWebhook(api, accRecIdOnScreen(api.getState(), ctx), 'full'),
+    // On the Admin Booking detail (catch-up Phase 27): that Booking's sent prepayment invoices.
+    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : []),
+    disabledReason: (state, ctx, choiceId) => paymentReasonOnScreen(state, ctx, choiceId),
+    run: (api, ctx, choiceId) => sendPaymentWebhook(api, paymentTargetOnScreen(api.getState(), ctx, choiceId), 'full'),
     indexPath: firstOpenInvoicePath,
     indexEmptyReason: 'No open invoice yet: authorise a List first',
   },
@@ -699,13 +732,15 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     label: 'Payment received · half',
     description:
       'Simulates a Xero payment webhook for half the remaining balance of the invoice on screen (a part payment). Its paired ACCPAY is authorised for exactly the amount received. Also on the Xero simulation pair.',
-    screen: 'Admin · Invoice',
-    routes: INVOICE_PAGES,
+    screen: 'Admin · Invoice and Booking detail',
+    routes: PAYMENT_PAGES,
     surfaces: ['bar'],
     // A fee payment is "Record fee payment", never a procedure webhook.
     when: (state, ctx) => !isFeePairOnScreen(state, ctx),
-    disabledReason: (state, ctx) => paymentDisabledReason(state, accRecIdOnScreen(state, ctx)),
-    run: (api, ctx) => sendPaymentWebhook(api, accRecIdOnScreen(api.getState(), ctx), 'partial'),
+    // On the Admin Booking detail (catch-up Phase 27): that Booking's sent prepayment invoices.
+    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : []),
+    disabledReason: (state, ctx, choiceId) => paymentReasonOnScreen(state, ctx, choiceId),
+    run: (api, ctx, choiceId) => sendPaymentWebhook(api, paymentTargetOnScreen(api.getState(), ctx, choiceId), 'partial'),
     indexPath: firstOpenInvoicePath,
     indexEmptyReason: 'No open invoice yet: authorise a List first',
   },
@@ -714,8 +749,8 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     label: 'Replay last payment event',
     description:
       'Re-sends the last payment webhook with the same key, to show it is ignored (idempotent by key, no double effect).',
-    screen: 'Admin · Invoice',
-    routes: INVOICE_PAGES,
+    screen: 'Admin · Invoice and Booking detail',
+    routes: PAYMENT_PAGES,
     surfaces: ['bar'],
     // A fee payment is "Record fee payment", never a procedure webhook.
     when: (state, ctx) => !isFeePairOnScreen(state, ctx),
@@ -1233,12 +1268,78 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => '/admin/masters?view=recurringBookings',
   },
+  // ── Admin · Day and Booking detail, Mobile · Booking: prepayment (catch-up Phase 27) ──
+  {
+    id: 'prepayment-two-days-before',
+    label: 'Move to 2 days before procedure',
+    description:
+      "Moves the demo clock forward to 08:00 two days before a prepaid procedure whose prepayment is outstanding (awaiting approval, unpaid or part paid): the prepayment warning turns strong, and a mild one the office cleared re-opens. On a Booking it acts on that Booking; on the Day view choose one. The clock never goes back: Reset restores it.",
+    screen: 'Admin · Day and Booking detail, Mobile · Booking',
+    routes: [ADMIN_DAY, ADMIN_BOOKING, MOBILE_BOOKING],
+    surfaces: ['bar', 'pwa'],
+    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? [] : outstandingPrepaymentBookings(state).map((t) => ({ id: t.bookingId, label: t.label }))),
+    disabledReason: (state, ctx, choiceId) => twoDaysBeforeRefusal(state, ctx.params['bookingId'] ?? choiceId),
+    run: (api, ctx, choiceId) => {
+      const res = moveToTwoDaysBefore(api, ctx.params['bookingId'] ?? choiceId)
+      return res.ok
+        ? { ok: true, message: `The demo clock is now ${shortDay(res.value.dateISO)}, 2 days before ${res.value.patientName}'s procedure. The prepayment warning is strong.` }
+        : { ok: false, message: res.message }
+    },
+    indexPath: () => '/admin/day/2026-07-21',
+  },
+  {
+    id: 'add-prepaid-booking',
+    label: 'Add prepaid Booking',
+    description:
+      "Adds a Booking for Fiona Gray on Dr Souter's next ACTIVE List. One payer: Rhinoplasty on Dr Souter's prepaid Contract, the patient paying ($1,200.00). Two payers: also Blepharoplasty, upper lids on her prepaid Contract ($900.00), paid by a second person, so each payer gets their own prepayment invoice. It waits on the Invoices strip, or is sent at once with approval off.",
+    screen: 'Admin · Day and Booking detail',
+    routes: [ADMIN_DAY, ADMIN_BOOKING],
+    surfaces: ['bar'],
+    choices: () => [
+      { id: 'one-payer', label: 'One payer' },
+      { id: 'two-payers', label: 'Two payers' },
+    ],
+    disabledReason: (state) => addPrepaidBookingRefusal(state),
+    run: (api, _ctx, choiceId) => {
+      const res = addPrepaidBooking(api, choiceId === 'two-payers' ? 'two-payers' : 'one-payer')
+      return res.ok ? { ok: true, message: res.value.message } : { ok: false, message: res.message }
+    },
+    indexPath: () => '/admin/day/2026-07-21',
+  },
+  {
+    id: 'pwa-office-approves-prepayment',
+    label: 'Office approves and sends the prepayment invoice',
+    description:
+      "Stands in for the office, which approves prepayment invoices on Admin Invoices: approves and sends this Booking's prepayment invoice to its payer, with its payable to the AA Holding account. Where two payers each have one, choose which.",
+    screen: 'Mobile · Booking',
+    routes: [MOBILE_BOOKING],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    choices: (state, ctx) => {
+      const options = prepaymentApprovalChoices(state, ctx.params['bookingId'] ?? '')
+      return options.length > 1 ? options : []
+    },
+    disabledReason: (state, ctx, choiceId) => {
+      const bookingId = ctx.params['bookingId']
+      return bookingId === undefined ? 'Open a Booking' : prepaymentStandInRefusal(state, bookingId, choiceId)
+    },
+    run: (api, ctx, choiceId) => {
+      const bookingId = ctx.params['bookingId']
+      if (bookingId === undefined) return { ok: false, message: 'Open a Booking' }
+      const res = approvePrepaymentAsSimulatedOffice(api, bookingId, choiceId)
+      return res.ok
+        ? { ok: true, message: `The office approved and sent prepayment invoice ${res.value.invoiceNumber} for ${formatCurrency(res.value.amount)} including GST.` }
+        : { ok: false, message: res.message }
+    },
+    indexPath: () => null,
+    indexEmptyReason: 'PWA only: the framed build approves on Admin Invoices (Approve and send).',
+  },
   // ── Admin · Day, Booking detail and Mobile · Booking: sample warnings ──
   {
     id: 'raise-sample-warnings',
     label: 'Raise sample warnings',
     description:
-      "Stages every warning rule's sample, as Demo actions, on Dr Rutherford's Tue 21 Jul Bookings (from the Day view) or on the Booking on screen: an unpaid prepayment, base units outside the range, a child as the payer on each Procedure billed to the patient (on the Booking on screen when its patient is under 18, otherwise on Grace Park's two Procedures, one to-do row), and an insurer named with no approval number (on the Booking on screen when it names an insurer, otherwise on the first seeded NIB Booking). Later rules add theirs: a prepaid procedure with no price, a paying patient with a balance.",
+      "Stages every warning rule's sample, as Demo actions, on Dr Rutherford's Tue 21 Jul Bookings (from the Day view) or on the Booking on screen: a prepayment awaiting approval (the List's own prepaid Contract, else Prepaid · Fixed price at $500), base units outside the range, a child as the payer on each Procedure billed to the patient (on the Booking on screen when its patient is under 18, otherwise on Grace Park's two Procedures, one to-do row), and an insurer named with no approval number (on the Booking on screen when it names an insurer, otherwise on the first seeded NIB Booking). Later rules add theirs: a paying patient with a balance.",
     screen: 'Admin · Day and Booking detail, Mobile · Booking',
     routes: SAMPLE_WARNING_ROUTES,
     surfaces: ['bar', 'pwa'],
@@ -1416,24 +1517,36 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'pwa-payment-full',
     label: 'Payment received · full',
     description: 'A Xero payment webhook for the full balance of one of Dr Souter\'s open invoices, chosen below.',
-    screen: 'Mobile · Balances',
-    routes: ['/mobile/balances'],
+    screen: 'Mobile · Balances and Booking',
+    routes: ['/mobile/balances', MOBILE_BOOKING],
     surfaces: ['pwa'],
-    choices: (state) => souterPaymentChoices(state),
-    disabledReason: (state, _ctx, choiceId) => souterPaymentDisabled(state, choiceId),
-    run: (api, _ctx, choiceId) => sendPaymentWebhook(api, choiceId, 'full'),
+    // On a Booking (catch-up Phase 27): its sent prepayment invoices only.
+    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : souterPaymentChoices(state)),
+    disabledReason: (state, ctx, choiceId) =>
+      ctx.params['bookingId'] !== undefined
+        ? prepaymentAccRecChoices(state, ctx.params['bookingId']).length === 0
+          ? 'No sent pre-payment invoice yet'
+          : paymentDisabledReason(state, paymentTargetOnScreen(state, ctx, choiceId))
+        : souterPaymentDisabled(state, choiceId),
+    run: (api, ctx, choiceId) => sendPaymentWebhook(api, ctx.params['bookingId'] !== undefined ? paymentTargetOnScreen(api.getState(), ctx, choiceId) : choiceId, 'full'),
     indexPath: () => null,
   },
   {
     id: 'pwa-payment-half',
     label: 'Payment received · half',
     description: 'A Xero payment webhook for half the balance of one of Dr Souter\'s open invoices, chosen below (a part payment).',
-    screen: 'Mobile · Balances',
-    routes: ['/mobile/balances'],
+    screen: 'Mobile · Balances and Booking',
+    routes: ['/mobile/balances', MOBILE_BOOKING],
     surfaces: ['pwa'],
-    choices: (state) => souterPaymentChoices(state),
-    disabledReason: (state, _ctx, choiceId) => souterPaymentDisabled(state, choiceId),
-    run: (api, _ctx, choiceId) => sendPaymentWebhook(api, choiceId, 'partial'),
+    // On a Booking (catch-up Phase 27): its sent prepayment invoices only.
+    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : souterPaymentChoices(state)),
+    disabledReason: (state, ctx, choiceId) =>
+      ctx.params['bookingId'] !== undefined
+        ? prepaymentAccRecChoices(state, ctx.params['bookingId']).length === 0
+          ? 'No sent pre-payment invoice yet'
+          : paymentDisabledReason(state, paymentTargetOnScreen(state, ctx, choiceId))
+        : souterPaymentDisabled(state, choiceId),
+    run: (api, ctx, choiceId) => sendPaymentWebhook(api, ctx.params['bookingId'] !== undefined ? paymentTargetOnScreen(api.getState(), ctx, choiceId) : choiceId, 'partial'),
     indexPath: () => null,
   },
   // ── List and Booking detail, all three apps: the multi-procedure rule (catch-up Phase 23) ──

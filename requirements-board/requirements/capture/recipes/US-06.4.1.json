@@ -4,82 +4,19 @@
   "absentReason": "",
   "shots": [
     {
-      "name": "balance-invoice",
-      "app": "admin",
-      "caption": "Older screen, balance invoice after the procedure, final fee less the paid prepayment; nothing is now invoiced automatically afterwards",
-      "start": "/admin/invoices/INV0003",
-      "setup": [
-        {
-          "goto": "/admin/day/2026-07-24"
-        },
-        {
-          "click": "[data-shot=daygrid-block-warnings] >> nth=0"
-        },
-        {
-          "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
-        },
-        {
-          "click": "role=button[name=\"Raise pre-procedure invoice\"]"
-        },
-        {
-          "wait": 600
-        },
-        {
-          "goto": "/demo/xero/invoices/XR0001"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "trigger": "payment-full"
-        },
-        {
-          "wait": 600
-        },
-        {
-          "goto": "/web/lists/L-34821-2026-07-24-AM"
-        },
-        {
-          "click": "text=\"Annette Riley\" >> nth=0"
-        },
-        {
-          "click": "role=button[name=\"Mark complete\"]"
-        },
-        {
-          "wait": 1500
-        },
-        {
-          "goto": "/web/lists/L-34821-2026-07-24-AM"
-        },
-        {
-          "click": "text=\"Mark list completed\" >> nth=0"
-        },
-        {
-          "click": "text=\"Submit to office\" >> nth=0"
-        },
-        {
-          "wait": 1500
-        },
-        {
-          "goto": "/admin/review/L-34821-2026-07-24-AM"
-        },
-        {
-          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
-        },
-        {
-          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
-        },
-        {
-          "wait": 1500
-        }
-      ],
+      "name": "prepaid-price",
+      "app": "web",
+      "caption": "A prepaid Procedure is priced at the prepaid amount and left off the final invoice",
+      "start": "/web/lists/L-34821-2026-07-24-PM/bookings/BK0038",
       "states": [
         {
-          "steps": [],
+          "steps": [
+            {
+              "wait": "[data-shot=price-card]"
+            }
+          ],
           "highlight": [
-            ".aa-invoice-doc div:has(> span:text-is(\"Prepayment balance\"))",
-            "[data-shot=invoice-lines]",
-            ".aa-invoice-doc div:has(> span:text-is(\"Total due\"))"
+            "[data-shot=price-card]"
           ]
         }
       ]

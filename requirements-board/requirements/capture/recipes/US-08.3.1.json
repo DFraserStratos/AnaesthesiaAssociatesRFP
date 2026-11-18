@@ -6,7 +6,7 @@
     {
       "name": "xero-pair",
       "app": "simulator",
-      "caption": "Receivable and payable pair, linked to each other and to the case",
+      "caption": "Receivable and payable pair for the prepayment, linked to each other and to the case; the payable credits the AA Holding account",
       "start": "/demo/xero/invoices/XRB0",
       "states": [
         {

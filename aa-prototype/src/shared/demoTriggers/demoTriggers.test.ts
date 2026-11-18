@@ -783,3 +783,49 @@ describe('Regenerate from locked data (catch-up Phase 25)', () => {
     expect(t.disabledReason(api.getState(), ctxFor(`/admin/invoices/${fee}`, { invoiceId: fee }))).toBe('Not priced from a Procedure')
   })
 })
+
+describe('prepayment entries (catch-up Phase 27)', () => {
+  const RILEY = SEED_MARKERS.prepaymentBooking!.entityId
+  const rileyList = (api: BoundAppStore) => api.getState().schedule.bookings[RILEY]!.listId
+  const adminBooking = `/admin/day/2026-07-24/bookings/${RILEY}`
+
+  it('show on their routes only', () => {
+    const api = createAppStore()
+    expect(ids(api, '/admin/day/2026-07-21')).toEqual(expect.arrayContaining(['prepayment-two-days-before', 'add-prepaid-booking']))
+    expect(ids(api, adminBooking)).toEqual(expect.arrayContaining(['prepayment-two-days-before', 'add-prepaid-booking', 'payment-full', 'payment-half']))
+    const mobile = `/mobile/lists/${rileyList(api)}/bookings/${RILEY}`
+    expect(ids(api, mobile, 'pwa')).toEqual(expect.arrayContaining(['prepayment-two-days-before', 'pwa-office-approves-prepayment', 'pwa-payment-full', 'pwa-payment-half']))
+    expect(ids(api, mobile, 'bar')).not.toContain('pwa-office-approves-prepayment')
+    expect(ids(api, '/admin/invoices')).not.toContain('add-prepaid-booking')
+  })
+
+  it('give their disabled reasons', () => {
+    const api = createAppStore()
+    const ctx = ctxFor(adminBooking, { dateISO: '2026-07-24', bookingId: RILEY })
+    // Riley awaits approval: no payment yet.
+    expect(byId('payment-half').disabledReason(api.getState(), ctx)).toBe('Not approved yet')
+    expect(byId('prepayment-two-days-before').disabledReason(api.getState(), ctx)).toBeNull()
+    const mobileCtx = ctxFor(`/mobile/lists/${rileyList(api)}/bookings/${RILEY}`, { listId: rileyList(api), bookingId: RILEY })
+    expect(byId('pwa-payment-half').disabledReason(api.getState(), mobileCtx)).toBe('No sent pre-payment invoice yet')
+    expect(byId('pwa-office-approves-prepayment').disabledReason(api.getState(), mobileCtx)).toBeNull()
+    // The stand-in approves; then it reads "Already sent" and the payment opens.
+    expect(byId('pwa-office-approves-prepayment').run(api, mobileCtx).ok).toBe(true)
+    expect(byId('pwa-office-approves-prepayment').disabledReason(api.getState(), mobileCtx)).toBe('Already sent')
+    expect(byId('pwa-payment-half').disabledReason(api.getState(), mobileCtx)).toBeNull()
+    const paid = byId('pwa-payment-half').run(api, mobileCtx)
+    expect(paid.ok).toBe(true)
+    expect(paid.message).toContain('$690.00')
+  })
+
+  it('the clock jump never rewinds; add-prepaid-booking refuses a second run', () => {
+    const api = createAppStore()
+    const day = ctxFor('/admin/day/2026-07-21', { dateISO: '2026-07-21' })
+    const jump = byId('prepayment-two-days-before')
+    const first = jump.choices!(api.getState(), day)[0]!.id
+    expect(jump.run(api, day, first).ok).toBe(true)
+    expect(jump.disabledReason(api.getState(), day, first)).toBe('Already 2 days or less before')
+    const add = byId('add-prepaid-booking')
+    expect(add.run(api, day, 'two-payers').ok).toBe(true)
+    expect(add.disabledReason(api.getState(), day)).toBe('Already added (Reset to repeat)')
+  })
+})

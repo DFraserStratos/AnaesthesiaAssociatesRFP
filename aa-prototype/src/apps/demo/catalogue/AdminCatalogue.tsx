@@ -79,6 +79,8 @@ import {
   SlotStatusSheetExample,
   SurgeonPickerExample,
   WarningsToDoExample,
+  PrepaymentsRailCardExample,
+  PrepaymentApprovalStripExample,
 } from './admin/storeExamples'
 import {
   CheckboxExample,
@@ -242,6 +244,12 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="WarningsToDo" source="apps/admin/components/WarningsToDo.tsx" usedIn={A} what="The rail's To-do card: every open warning, soonest first, each with Open and Clear, and a show-more toggle. Its count is the shared CountBadge (read as 3 to do)." replaceWith="shadcn Card + Collapsible" note="On the shared Card (padding card, flat; UI unification U6), its h2 naming the section. Clear writes a clearance to the demo store.">
           <WarningsToDoExample />
+        </CatalogueRow>
+        <CatalogueRow name="PrepaymentsRailCard" source="apps/admin/components/PrepaymentsRailCard.tsx" usedIn={A} what="The rail's Pre-payments card (catch-up Phase 27): every upcoming prepaid Booking, one row per payer, with its amount, a status pill and the days to go. An awaiting row opens the Invoices strip; the others open the Booking. Its count is the shared CountBadge; empty, the shared EmptyState." replaceWith="shadcn Card + Badge" note="On the shared Card (padding card, flat), under the To-do card. Reads useUpcomingPrepayments.">
+          <PrepaymentsRailCardExample />
+        </CatalogueRow>
+        <CatalogueRow name="PrepaymentApprovalStrip" source="apps/admin/components/PrepaymentApprovalStrip.tsx" usedIn={A} what="The Invoices screen's Awaiting approval strip (catch-up Phase 27): one row per Booking and payer, Approve and send (disabled with its reason until there is an amount), and the Prepayment approval Switch in its header; switching off confirms in a ConfirmSheet." replaceWith="shadcn Card + Table + Switch" note="On the shared Card, TableShell, Button (disabledReason), Switch and ConfirmSheet. Approve and send writes to the demo store.">
+          <PrepaymentApprovalStripExample />
         </CatalogueRow>
         <CatalogueRow name="NotificationsCard" source="apps/admin/components/NotificationsCard.tsx" usedIn={A} what="The rail's shared notification pool: active notices with Resolve, See all and Show resolved. Its count is the shared CountBadge (read as 2 active), still showing 0." replaceWith="shadcn Card + Button" note="On the shared Card (U6) with headingRef: after a tick focus returns to its heading. Resolve writes to the demo store. The fresh seed has no notices, so it shows the empty state until one is raised.">
           <NotificationsCardExample />

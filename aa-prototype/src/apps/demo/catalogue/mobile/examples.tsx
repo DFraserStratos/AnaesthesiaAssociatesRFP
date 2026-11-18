@@ -37,7 +37,7 @@ import { TimesCard } from '../../../../shared/capture/TimesCard'
 import { CaptureSection, NudgeButton, NumberStepper, StepperButton, Caption } from '../../../../shared/capture/ui'
 import { CompleteBar } from '../../../../shared/capture/CompleteBar'
 import { useTickingValue } from '../../../../shared/capture/useTickingValue'
-import { BookingDetailBody } from '../../../../shared/booking'
+import { BookingDetailBody, PrepaymentPanel } from '../../../../shared/booking'
 import { monthOf } from '../../../../shared/availability'
 import { EditRateSheet, ListOptionsSheet, MobileHeader, SlideStack, type ListOption, type SlideLayer } from '../../../mobile/components'
 import { LookbackDateSheet, LookbackResults, LookbackSearchRow } from '../../../mobile/screens/ListsLookback'
@@ -67,6 +67,7 @@ import { procedureLabel } from '../../../../domain/billing/procedureStack'
 import { OverlayHeader } from '../../../../shared/surface/OverlayHeader'
 import { DoneStep, InlineConfirm } from '../../../../shared/ui'
 import { EmptyState } from '../../../../shared/ui/EmptyState'
+import { SEED_MARKERS, SEED_PREPAID_BOOKING_ID } from '../../../../domain/seed'
 
 // ---------------------------------------------------------------------------
 // Small helpers
@@ -685,8 +686,8 @@ export function WarningTriangleExample({ picks }: { picks: SeedPicks }) {
   const todayISO = useToday()
   const bookingId = picks.bookingId ?? 'example'
   const base = { bookingId, ruleId: 'prepaymentUnpaid' as const, kind: 'beforeProcedure' as const }
-  const mild: Warning = { ...base, key: 'w1', strength: 'mild', text: 'Prepayment not yet received.' }
-  const strong: Warning = { ...base, key: 'w2', strength: 'strong', text: 'Prepayment required before the procedure.' }
+  const mild: Warning = { ...base, key: 'w1', strength: 'mild', text: 'Prepayment of $1,200.00 from Annette Riley is awaiting approval on Invoices and has not been sent.' }
+  const strong: Warning = { ...base, key: 'w2', strength: 'strong', text: 'Prepayment invoice AA-2026-0003 to Annette Riley unpaid. Check with the payer before surgery starts.' }
   const cleared: Warning = { ...mild, key: 'w3', clearance: { key: 'w3', bookingId, ruleId: 'prepaymentUnpaid', strength: 'mild', by: 'Office', role: 'office', atISO: `${todayISO}T09:00:00` } }
   const sets: { label: string; warnings: Warning[] }[] = [
     { label: 'Mild', warnings: [mild] },
@@ -984,6 +985,17 @@ export function TimesCardExample({ picks }: { picks: SeedPicks }) {
       <TimesCard procedure={procedure} actor={actor} canCapture={canCapture} failures={[]} onError={setError} />
       <ErrorLine message={error} />
     </>
+  )
+}
+
+/** The Booking's prepayment panel (catch-up Phase 27): Nair (paid, left off after authorise) and Riley (awaiting approval), read-only as Dr Souter sees them. */
+export function PrepaymentPanelExample() {
+  const { actor } = useMobilePersona()
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <PrepaymentPanel bookingId={SEED_PREPAID_BOOKING_ID} actor={actor} />
+      <PrepaymentPanel bookingId={SEED_MARKERS.prepaymentBooking!.entityId} actor={actor} />
+    </div>
   )
 }
 

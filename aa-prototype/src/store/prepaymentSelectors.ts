@@ -12,7 +12,6 @@
 
 import type { Booking, CounterpartyRef, InvoiceId, Procedure, ProcedureId } from '../domain/types'
 import {
-  isOutstanding,
   isPrepaidContract,
   leastSettled,
   prepaymentGroupsFor,
@@ -27,7 +26,8 @@ import { bookingFeesFor } from '../domain/billing/validateBookingForBilling'
 import { roundToCents } from '../domain/billing/money'
 import { daysBetween } from '../domain/dateDays'
 import { billingContextForBooking, counterpartyName, patientNameFor, prePaymentInvoicesForBooking, proceduresForBooking } from './selectors'
-import type { AppState } from './appStore'
+import { useMemo } from 'react'
+import { useAppStore, type AppState } from './appStore'
 
 export type PrepaymentState = Pick<AppState, 'schedule' | 'billing' | 'masters'>
 
@@ -44,6 +44,8 @@ export interface PrepaymentGroupView {
   /** Ex GST; null while a Procedure has no price. */
   amount: number | null
   ready: boolean
+  /** Why it is not ready (the strip's disabled reason, the panel's way forward). */
+  notReadyReason?: string
   invoiceId?: InvoiceId
   invoiceNumber?: string
   /** The issued invoice's total with GST (0 while pending). */
@@ -90,7 +92,9 @@ export function prepaymentGroupsForBooking(state: PrepaymentState, bookingId: st
   const priceOf = (p: Procedure): number | null => {
     if (priced === undefined || priced.kind === 'structural') return p.enteredPrice ?? null
     const fee = priced.fees[p.id]
-    return fee === undefined || fee.needsPrice ? null : fee.total
+    if (fee === undefined || fee.needsPrice || fee.price.status !== 'priced') return null
+    // The Procedure's own price (the range in force, or the amount typed), never its captured add-on lines (US-06.2.2).
+    return fee.price.heldBy === null && fee.price.computed !== undefined ? fee.price.computed.total : fee.price.price
   }
   const patient = state.masters.patients[booking.patientId]
   return prepaymentGroupsFor({
@@ -126,6 +130,7 @@ export function prepaymentStatusFor(state: PrepaymentState, bookingId: string): 
       status: prepaymentStatusOf(g.state, { total: invoicedTotal, received: receivedTotal }),
       amount: g.amount,
       ready: g.ready,
+      ...(g.notReadyReason !== undefined ? { notReadyReason: g.notReadyReason } : {}),
       ...(invoice !== undefined ? { invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber } : {}),
       invoicedTotal,
       receivedTotal,
@@ -165,12 +170,21 @@ export function prepaymentForProcedure(state: PrepaymentState, procedureId: stri
   const line = holding.lines.find((l) => l.procedureId === procedureId)!
   return {
     groupKey: holding.key,
-    status: holding.status,
+    // A Procedure that has left its sent invoice's prepaid Contract reads "no longer needed" itself.
+    status: line.stillPrepaid ? holding.status : 'notNeeded',
     amount: line.amount,
     payerName: holding.payerName,
     ...(holding.invoiceId !== undefined ? { invoiceId: holding.invoiceId, invoiceNumber: holding.invoiceNumber! } : {}),
   }
 }
+
+/** Whether a Procedure is prepaid now (the units row, the price card, the stack basis, the split refusal): one test. */
+export function isStillPrepaid(prepayment: ProcedurePrepayment | undefined): prepayment is ProcedurePrepayment {
+  return prepayment !== undefined && prepayment.status !== 'notNeeded'
+}
+
+/** A prepayment on a Draft List waits for its anaesthetist (the invoice names them; the pair needs a payee). */
+export const ASSIGN_THE_LIST_FIRST = 'Assign the List to an anaesthetist first'
 
 /** One Booking and payer awaiting approval (the Invoices strip). */
 export interface PendingPrepaymentRow {
@@ -184,6 +198,7 @@ export interface PendingPrepaymentRow {
   amount: number | null
   procedureIds: ProcedureId[]
   ready: boolean
+  notReadyReason?: string
 }
 
 function liveBookings(state: PrepaymentState): { booking: Booking; listId: string; dateISO: string; anaesthetistId?: string }[] {
@@ -213,7 +228,9 @@ export function pendingPrepayments(state: PrepaymentState): PendingPrepaymentRow
         payerName: g.payerName,
         amount: g.amount,
         procedureIds: g.procedureIds,
-        ready: g.ready,
+        // A Draft List has no anaesthetist to name or to pair the payable with: it waits for one.
+        ready: g.ready && anaesthetistId !== undefined,
+        ...(anaesthetistId === undefined ? { notReadyReason: ASSIGN_THE_LIST_FIRST } : g.notReadyReason !== undefined ? { notReadyReason: g.notReadyReason } : {}),
       })
     }
   }
@@ -225,6 +242,9 @@ export interface UpcomingPrepaymentRow extends PendingPrepaymentRow {
   status: PrepaymentStatus
   daysToGo: number
   invoiceId?: InvoiceId
+  /** The issued invoice's total with GST, and what has been received on it (0 while pending). */
+  invoicedTotal: number
+  receivedTotal: number
 }
 
 /** Every prepaid Booking on a List not yet AUTHORISED, one row per payer group, with days to go from the demo clock. */
@@ -245,6 +265,8 @@ export function upcomingPrepayments(state: PrepaymentState & Pick<AppState, 'clo
         ready: g.ready,
         status: g.status,
         daysToGo: daysBetween(state.clock.todayISO, dateISO),
+        invoicedTotal: g.invoicedTotal,
+        receivedTotal: g.receivedTotal,
         ...(g.invoiceId !== undefined ? { invoiceId: g.invoiceId } : {}),
       })
     }
@@ -252,7 +274,73 @@ export function upcomingPrepayments(state: PrepaymentState & Pick<AppState, 'clo
   return rows
 }
 
-/** Whether any group on the Booking is still owed (the warning's states). */
-export function prepaymentOutstanding(state: PrepaymentState, bookingId: string): boolean {
-  return prepaymentStatusFor(state, bookingId).groups.some((g) => isOutstanding(g.status))
+
+// ---------------------------------------------------------------------------
+// Hooks for the screens (session 2): the derived views, memoised on the slices
+// they read, so a screen never re-derives on an unrelated change and never
+// returns a fresh object to the store's equality check.
+// ---------------------------------------------------------------------------
+
+/** One Booking's prepayment, per payer group (the panel, the units row). */
+export function useBookingPrepayment(bookingId: string): BookingPrepayment {
+  const schedule = useAppStore((s) => s.schedule)
+  const billing = useAppStore((s) => s.billing)
+  const masters = useAppStore((s) => s.masters)
+  return useMemo(() => prepaymentStatusFor({ schedule, billing, masters }, bookingId), [schedule, billing, masters, bookingId])
+}
+
+/** One Procedure's prepayment, or undefined (the units row, the price card). */
+export function useProcedurePrepayment(procedureId: string): ProcedurePrepayment | undefined {
+  const schedule = useAppStore((s) => s.schedule)
+  const billing = useAppStore((s) => s.billing)
+  const masters = useAppStore((s) => s.masters)
+  return useMemo(() => prepaymentForProcedure({ schedule, billing, masters }, procedureId), [schedule, billing, masters, procedureId])
+}
+
+/** Every payer group awaiting approval (the Invoices strip). */
+export function usePendingPrepayments(): PendingPrepaymentRow[] {
+  const schedule = useAppStore((s) => s.schedule)
+  const billing = useAppStore((s) => s.billing)
+  const masters = useAppStore((s) => s.masters)
+  return useMemo(() => pendingPrepayments({ schedule, billing, masters }), [schedule, billing, masters])
+}
+
+/** Every upcoming prepaid Booking and payer (the rail card). */
+export function useUpcomingPrepayments(): UpcomingPrepaymentRow[] {
+  const schedule = useAppStore((s) => s.schedule)
+  const billing = useAppStore((s) => s.billing)
+  const masters = useAppStore((s) => s.masters)
+  const clock = useAppStore((s) => s.clock)
+  return useMemo(() => upcomingPrepayments({ schedule, billing, masters, clock }), [schedule, billing, masters, clock])
+}
+
+/**
+ * The re-check made visible (US-06.3.5): one line for a confirmation when a
+ * change of Procedures, a Procedure's Contract or its payer changes the
+ * prepayment, else null. Compares the status before and after the action; a
+ * move changes no Contract, so it never produces one.
+ */
+export function prepaymentRecheckLine(before: BookingPrepayment, after: BookingPrepayment): string | null {
+  const issuedBefore = new Set(before.groups.flatMap((g) => (g.invoiceId !== undefined ? [g.invoiceId] : [])))
+  const statusBefore = new Map(before.groups.map((g) => [g.key, g.status]))
+  // A sent invoice whose Procedures have left it (41 settles it): never rewritten.
+  if (after.groups.some((g) => (g.status === 'notNeeded' || g.status === 'changedAfterSending') && statusBefore.get(g.key) !== g.status)) {
+    return 'Pre-payment invoice sent before this change'
+  }
+  // Generated at once with approval off.
+  if (after.groups.some((g) => g.invoiceId !== undefined && !issuedBefore.has(g.invoiceId))) return 'Pre-payment now needed: sent'
+  const pending = (p: BookingPrepayment) => {
+    const out = new Map<string, PrepaymentGroupView>()
+    for (const g of p.groups) if (g.status === 'awaitingApproval') for (const id of g.procedureIds) out.set(id, g)
+    return out
+  }
+  const was = pending(before)
+  const now = pending(after)
+  for (const [id, g] of now) {
+    const prior = was.get(id)
+    if (prior === undefined) return 'Pre-payment now needed: awaiting approval'
+    if (prior.payerKey !== g.payerKey) return `Pre-payment now goes to ${g.payerName}`
+  }
+  if ([...was.keys()].some((id) => !now.has(id))) return 'Pre-payment no longer needed'
+  return null
 }

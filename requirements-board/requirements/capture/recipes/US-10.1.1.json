@@ -7,7 +7,7 @@
       "name": "money-path",
       "app": "simulator",
       "caption": "One payment path: payer pays AA, AA pays the anaesthetist",
-      "start": "/demo/xero/invoices/XRB0",
+      "start": "/demo/xero/invoices/XRH01",
       "states": [
         {
           "steps": [

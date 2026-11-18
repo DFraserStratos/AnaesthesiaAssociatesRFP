@@ -1,6 +1,6 @@
 {
   "id": "US-06.2.4",
   "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 27 builds this.",
+  "absentReason": "Retired in catch-up Phase 27: there is no prepayment estimate to calculate; the prepaid amount is the Procedure's price on its prepaid Contract.",
   "shots": []
 }

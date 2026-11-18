@@ -31,7 +31,7 @@ import { billedToFor, payerContactMissing, payerCounterparty } from './whoIsBill
 import { refKey } from './procedurePayer'
 import { defaultInvoiceDescriptionFor } from './procedureStack'
 import { inDisplayOrder } from './multiProcedure'
-import type { DraftInvoice, DraftInvoiceLine } from './lock'
+import { PREPAID_SPLIT_MESSAGE, type DraftInvoice, type DraftInvoiceLine } from './lock'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -40,7 +40,7 @@ import type { DraftInvoice, DraftInvoiceLine } from './lock'
 /**
  * Whether the prepayment invoice names the anaesthetist, as other AA invoices
  * do (OQ-120 open, D68's default): one constant, so dropping the name is one
- * line. The invoice and 41's letter read it.
+ * line. Approve and send passes it to the invoice (`namesSupplier`); 41's letter reads it too.
  */
 export const PREPAYMENT_NAMES_ANAESTHETIST = true
 
@@ -56,6 +56,9 @@ export const AA_HOLDING_ACCOUNT = {
   contactNumber: 'AA-HOLDING',
   name: 'AA Holding account',
 } as const
+
+/** Approve and send waits for a way to reach the payer (22's delivery). */
+export const PAYER_CONTACT_FIRST = "Add the payer's email or postal address first"
 
 /** Approve and send refused on a group with a Procedure that has no price yet (US-06.2.6). */
 export const TYPE_AN_AMOUNT_FIRST = 'Type an amount above zero first'
@@ -165,6 +168,8 @@ export interface PrepaymentGroup {
   /** The sum ex GST, or null while a line has no price. */
   amount: number | null
   ready: boolean
+  /** Why a pending group is not ready, in the words every surface shows (no price, no payer contact, a split). */
+  notReadyReason?: string
   invoice?: IssuedPrepayment
 }
 
@@ -243,6 +248,7 @@ export function prepaymentGroupsFor(input: PrepaymentGroupsInput): PrepaymentGro
       lines,
       amount: priced ? roundToCents(lines.reduce((s, l) => s + (l.amount.kind === 'priced' ? l.amount.amount : 0), 0)) : null,
       ready: priced && contactOk && unsplit,
+      ...(!priced ? { notReadyReason: TYPE_AN_AMOUNT_FIRST } : !unsplit ? { notReadyReason: PREPAID_SPLIT_MESSAGE } : !contactOk ? { notReadyReason: PAYER_CONTACT_FIRST } : {}),
     })
   }
   return groups

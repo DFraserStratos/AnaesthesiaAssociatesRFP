@@ -1,0 +1,77 @@
+{
+  "id": "US-03.1.8",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "web-booking",
+      "app": "web",
+      "caption": "The anaesthetist sees the prepaid amount, read-only, on the Booking and when recording units",
+      "start": "/web/lists/L-34821-2026-07-24-PM/bookings/BK0038",
+      "states": [
+        {
+          "state": "booking",
+          "caption": "The prepaid amount on the Booking, read-only",
+          "steps": [
+            {
+              "wait": "[data-shot=booking-prepayment]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-prepayment]"
+          ]
+        },
+        {
+          "state": "units",
+          "caption": "The prepaid amount on the units row, read-only",
+          "steps": [
+            {
+              "scroll": "[data-shot=capture-prepaid]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-prepaid]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mobile-booking",
+      "app": "mobile",
+      "caption": "The anaesthetist sees the prepaid amount, read-only, on the Booking and when recording units",
+      "start": "/mobile/lists/L-34821-2026-07-24-PM",
+      "states": [
+        {
+          "state": "booking",
+          "caption": "The prepaid amount on the Booking, read-only",
+          "steps": [
+            {
+              "click": "text=\"Priya Nair\" >> nth=0"
+            },
+            {
+              "wait": "[data-testid=slide-booking] [data-shot=booking-prepayment]"
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=booking-prepayment]"
+          ]
+        },
+        {
+          "state": "units",
+          "caption": "The prepaid amount on the units row, read-only",
+          "steps": [
+            {
+              "click": "text=\"Priya Nair\" >> nth=0"
+            },
+            {
+              "scroll": "[data-shot=capture-prepaid]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-prepaid]"
+          ]
+        }
+      ]
+    }
+  ]
+}

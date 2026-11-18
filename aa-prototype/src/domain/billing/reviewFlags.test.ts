@@ -121,10 +121,22 @@ describe('the review-flag list (catch-up Phase 21a)', () => {
     expect(reviewFlagsForBooking(onPayer)).toContainEqual({ tone: 'neutral', text: 'Email or postal address needed', bookingId: 'BK1', procedureId: procedure.id, rule: 'payerContactMissing', shot: 'review-payer-contact' })
   })
 
-  it('gone: "No billing reference" (D82), and no route, ACC or prepayment flag', () => {
+  it('gone: "No billing reference" (D82), and no route, ACC or prepayment gate flag', () => {
     const all = reviewFlagsForBooking(input([{ procedure: proc({ procedureText: { text: 'ACL, ACC claim', source: 'surgeonPdf', receivedAtISO: '2026-07-14T09:00:00' } }), fee: fee() }]))
     expect(all).toEqual([])
-    expect(REVIEW_FLAG_RULES.map((r) => r.rule)).toEqual(['contractChanged', 'contractNoLongerFits', 'needsInvoiceDestination', 'needsPrice', 'typedPrice', 'notCompleted', 'payerContactMissing', 'btmOverride'])
+    // Catch-up Phase 27 adds the raised-prepayment chip, last; never a gate.
+    expect(REVIEW_FLAG_RULES.map((r) => r.rule)).toEqual(['contractChanged', 'contractNoLongerFits', 'needsInvoiceDestination', 'needsPrice', 'typedPrice', 'notCompleted', 'payerContactMissing', 'btmOverride', 'prepayment'])
+  })
+
+  it('a raised prepayment: "Prepaid, left off" (neutral); sent then changed reads as a warning (catch-up Phase 27)', () => {
+    const chip = (status: 'unpaid' | 'paid' | 'notNeeded' | 'changedAfterSending', issued = true) =>
+      reviewFlagsForBooking(input([{ procedure: proc(), fee: fee(), prepayment: { status, issued } }])).filter((f) => f.rule === 'prepayment')
+    expect(chip('paid')).toEqual([expect.objectContaining({ tone: 'neutral', text: 'Prepaid, left off', shot: 'review-flag-prepayment' })])
+    expect(chip('unpaid')[0]?.text).toBe('Prepaid, left off')
+    expect(chip('notNeeded')).toEqual([expect.objectContaining({ tone: 'warn', text: 'Pre-payment sent, no longer needed' })])
+    expect(chip('changedAfterSending')).toEqual([expect.objectContaining({ tone: 'warn', text: 'Pre-payment sent before a change' })])
+    // Awaiting approval (not issued): no chip.
+    expect(chip('unpaid', false)).toEqual([])
   })
 
   it('several on one Booking come out in rule order; a cancelled Booking yields none; the List sums them', () => {

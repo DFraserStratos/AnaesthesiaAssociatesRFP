@@ -6,7 +6,7 @@
     {
       "name": "invoice-pairs",
       "app": "simulator",
-      "caption": "Xero invoices, each ACCREC to the payer paired with an ACCPAY to the anaesthetist",
+      "caption": "Xero invoices, each ACCREC to the payer paired with an ACCPAY (to the anaesthetist, or to the AA Holding account for a prepayment)",
       "start": "/demo/xero/invoices",
       "states": [
         {

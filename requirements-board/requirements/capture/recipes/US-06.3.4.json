@@ -11,22 +11,19 @@
       "states": [
         {
           "state": "part-paid",
-          "caption": "Half the pre-payment received, pre-payment still outstanding",
+          "caption": "Half the pre-payment received, still outstanding",
           "steps": [
             {
-              "click": "[data-shot=daygrid-block-warnings] >> nth=0"
+              "goto": "/admin/invoices"
             },
             {
-              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+              "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
             },
             {
-              "wait": "[data-shot=booking-prepayment]"
+              "click": "[data-shot=awaiting-approval-row][data-booking-id=BK0034] [data-shot=approve-and-send]"
             },
             {
-              "click": "role=button[name=\"Raise pre-procedure invoice\"]"
-            },
-            {
-              "wait": 500
+              "wait": 800
             },
             {
               "wait": 400
@@ -44,13 +41,7 @@
               "wait": 400
             },
             {
-              "goto": "/admin/day/2026-07-24"
-            },
-            {
-              "click": "[data-day-grid-row=\"34821\"] button >> nth=0"
-            },
-            {
-              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+              "goto": "/admin/day/2026-07-24/bookings/BK0034"
             },
             {
               "wait": "[data-shot=booking-prepayment]"
@@ -62,22 +53,19 @@
         },
         {
           "state": "paid",
-          "caption": "Pre-payment paid in full, pre-payment received and warning cleared",
+          "caption": "Pre-payment paid in full, received and the warning cleared",
           "steps": [
             {
-              "click": "[data-shot=daygrid-block-warnings] >> nth=0"
+              "goto": "/admin/invoices"
             },
             {
-              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+              "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
             },
             {
-              "wait": "[data-shot=booking-prepayment]"
+              "click": "[data-shot=awaiting-approval-row][data-booking-id=BK0034] [data-shot=approve-and-send]"
             },
             {
-              "click": "role=button[name=\"Raise pre-procedure invoice\"]"
-            },
-            {
-              "wait": 500
+              "wait": 800
             },
             {
               "wait": 400
@@ -95,13 +83,7 @@
               "wait": 400
             },
             {
-              "goto": "/admin/day/2026-07-24"
-            },
-            {
-              "click": "[data-day-grid-row=\"34821\"] button >> nth=0"
-            },
-            {
-              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+              "goto": "/admin/day/2026-07-24/bookings/BK0034"
             },
             {
               "wait": "[data-shot=booking-prepayment]"

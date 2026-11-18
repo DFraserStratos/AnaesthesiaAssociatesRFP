@@ -474,7 +474,7 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   (catch-up Phase 22)
 - The anaesthetist's edit window to `AUTHORISED`, the main view from today, and search by patient
   name, NHI or date over months of history (catch-up Phase 38a)
-- Pre-payment, post-op addendum and billing monitor with per-booking isolation and retry (Phase 09)
+- Pre-payment from a prepaid Contract (catch-up Phase 27), post-op addendum and billing monitor with per-booking isolation and retry (Phase 09)
 - Contract locked at authorise, the run and the invoice document reading only the lock, Regenerate
   from locked data, and each Contract's History tab (catch-up Phase 25)
 - Xero collection/payable pairs, payments, reconciliation poll, payables, live balances and GST (Phase 10)
@@ -629,12 +629,26 @@ Say:
 
 ### 8. Pre-payment
 
-- The RFP requires payment before the procedure.
-- AA decided not to block (OQ-57): an unpaid prepayment is a strong before-procedure warning in both
-  apps, and completing, submitting and authorising all go through. There is no override.
-- The escalation as the date nears and the automatic prepayment invoice come later (catch-up Phase 27).
-- Warnings: one routine; a To-do card in Admin; a small triangle on Bookings in all three apps; the
-  warning at the top of the Booking when it opens. Never a block, and no confirm step at submit.
+- The RFP requires payment before the procedure. The trigger is Patient › Payment type: Prepaid, picked
+  by the office, per Procedure. It is invoiced to the Procedure's payer: one prepayment invoice per
+  payer, and each payer is locked once theirs is raised.
+- The amount is the Procedure's price when the invoice is raised, in full and read-only after; or an
+  amount the office types on No contract · Fixed price, at the top of the Prepaid list (the "just make
+  it two grand" case).
+- Approve and send is a switchable step (Admin Invoices, "Prepayment approval", on by default):
+  approving generates the invoice to the payer, its pair, and sends it. The payable credits the AA
+  Holding account, not the anaesthetist, and nothing is disbursed.
+- AA decided not to block (OQ-57): an unpaid prepayment is a warning in both apps that escalates as the
+  date nears (mild, then strong from two days before; D5), and completing, submitting and authorising
+  all go through. There is no override.
+- After the procedure the prepaid Procedure is left off the final invoice with nothing deducted, and
+  nothing more happens automatically. A move to a colleague changes nothing in the books.
+- Demo seed: Annette Riley (awaiting approval, $1,200.00 plus GST) and Priya Nair (the mixed case, paid,
+  AA-2026-0001). Demo actions: Payment received · half / full, Move to 2 days before procedure, Add
+  prepaid Booking (One payer / Two payers).
+- Warnings: one routine; a To-do card and a Pre-payments card in Admin; a small triangle on Bookings in
+  all three apps; the warning at the top of the Booking when it opens. Never a block, and no confirm
+  step at submit.
 - Catch-up Phase 21 adds two mild before-procedure rules: a **child as the payer** (under 18 on the
   List date, the patient paying for a Procedure billed to the payer; none when another payer is named
   or the Contract bills its holder; it shows on each Procedure, with one to-do row per Booking) and an **insurer with no approval number** (NIB or Southern Cross

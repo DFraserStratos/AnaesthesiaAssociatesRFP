@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
-import { semantic } from '../../theme/tokens'
+import { radius, semantic } from '../../theme/tokens'
 import type { AssignedList, Procedure } from '../../domain/types'
 import type { CompletionFailure } from '../../domain/billing/completion'
-import { editRefusal, procedureStackViewFor, useAppStore, type Actor } from '../../store'
+import { editRefusal, procedureStackViewFor, useAppStore, useProcedurePrepayment, isStillPrepaid, type Actor } from '../../store'
 import { useSurface } from '../surface'
 import type { ProcedureFeeView } from './feeContext'
 import { TimesCard } from './TimesCard'
@@ -20,6 +20,7 @@ import { Pill } from '../ui/Pill'
 import { rvgDetailFor } from '../../domain/billing/rvgDetail'
 import { priceStatusFor } from '../../domain/billing/priceStatus'
 import { needsPriceMessage } from '../../domain/billing/priceRanges'
+import { prepaidAmountText, prepaymentStatusWords, prepaymentTone } from '../booking/prepaymentText'
 
 /** Fields the Contract row anchors (the step rail and "Contract and reference" own them; catch-up Phase 20). */
 // The Contract fields' failures, shown under the Billing card, which Mark complete focuses.
@@ -132,10 +133,12 @@ export function BtmCaptureBlock({
   const invoices = useAppStore((s) => s.billing.invoices)
   const invoiceLines = useAppStore((s) => s.billing.invoiceLines)
   const locks = useAppStore((s) => s.billing.locks)
+  // The cases too: a prepaid Procedure's basis reads its prepayment status (catch-up Phase 27).
+  const cases = useAppStore((s) => s.billing.cases)
   const stackSurface = actor.role === 'office' ? 'office' : 'anaesthetist'
   const stackView = useMemo(
-    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines }, billing: { invoices, invoiceLines, locks } }, procedure.id, stackSurface),
-    [masters, procedures, bookings, lists, billingLines, invoices, invoiceLines, locks, procedure.id, stackSurface],
+    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines }, billing: { invoices, invoiceLines, locks, cases } }, procedure.id, stackSurface),
+    [masters, procedures, bookings, lists, billingLines, invoices, invoiceLines, locks, cases, procedure.id, stackSurface],
   )
 
   return (
@@ -251,6 +254,9 @@ export function BtmCaptureBlock({
         </div>
       )}
 
+      {/* The prepaid amount where units are recorded (catch-up Phase 27, US-03.1.8): read-only, with its status. */}
+      <PrepaidRow procedureId={procedure.id} />
+
       <Pair>
         {/* What the price comes to (catch-up Phase 24, US-03.3.10): the reasoned Adjustment and charge card is gone (RV-04). */}
         <PriceCard
@@ -281,6 +287,28 @@ export function BtmCaptureBlock({
           <FailureNotes failures={unanchored} />
         </>
       )}
+    </div>
+  )
+}
+
+/** "Prepaid $1,200.00 · paid": a prepaid Procedure's amount and status, read-only (catch-up Phase 27; US-03.1.8, D30). */
+function PrepaidRow({ procedureId }: { procedureId: string }) {
+  const prepayment = useProcedurePrepayment(procedureId)
+  if (!isStillPrepaid(prepayment)) return null
+  const tone = prepaymentTone(prepayment.status) === 'success' ? semantic.success : semantic.warning
+  return (
+    <div
+      data-shot="capture-prepaid"
+      data-prepayment-status={prepayment.status}
+      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: radius.ctl, background: tone.tint, color: tone.onTint, fontSize: 13 }}
+    >
+      <span>
+        <span className="mono" style={{ fontWeight: 600 }}>
+          Prepaid {prepaidAmountText(prepayment.amount)}
+        </span>
+        {' · '}
+        {prepaymentStatusWords(prepayment.status)}
+      </span>
     </div>
   )
 }

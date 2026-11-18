@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react'
 import { semantic } from '../../theme/tokens'
 import type { BillingLine, Procedure } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
-import { removeBillingLine, useAppStore, type Actor } from '../../store'
+import { removeBillingLine, useAppStore, type Actor, useProcedurePrepayment } from '../../store'
 import { AddBillingLineSheet } from './AddBillingLineSheet'
 import { CaptureSection, Caption, FailureNotes } from './ui'
 import { formatMoney } from '../format'
@@ -34,6 +34,9 @@ export function BillingLinesCard({
 }: BillingLinesCardProps) {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // A prepaid Procedure is billed by its prepayment, in full: no add-on lines (catch-up Phase 27; the store refuses them too).
+  const prepaid = useProcedurePrepayment(procedure.id) !== undefined
+  const canAdd = canCapture && !prepaid
 
   function remove(lineId: string) {
     setError(null)
@@ -45,9 +48,9 @@ export function BillingLinesCard({
   // height against a tall Adjustment card it would otherwise float in the
   // middle of a mostly empty card.
   const footer =
-    canCapture || failures.length > 0 ? (
+    canAdd || failures.length > 0 ? (
       <>
-        {canCapture && (
+        {canAdd && (
           <Button
             variant="pill"
             data-validation-procedure-id={procedure.id}
@@ -69,7 +72,7 @@ export function BillingLinesCard({
       footer={footer}
       validationTarget={{ procedureId: procedure.id, fields: ['billingLines'] }}
     >
-      {nonRvgLines.length === 0 && <Caption>No extra billing lines. The RVG fee bills on its own.</Caption>}
+      {nonRvgLines.length === 0 && <Caption>{prepaid ? 'A prepaid procedure is billed by its prepayment and takes no billing lines.' : 'No extra billing lines. The RVG fee bills on its own.'}</Caption>}
 
       {nonRvgLines.map((line) => {
         return (

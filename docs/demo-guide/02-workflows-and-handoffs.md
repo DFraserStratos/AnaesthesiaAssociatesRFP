@@ -612,12 +612,17 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 
 #### Pre-payment
 
-- A patient-funded Procedure may require full or split pre-payment.
-- Payment is required before the procedure.
-- An unpaid prepayment never blocks: it is a strong before-procedure warning on the Booking in both
-  apps, so the anaesthetist sees it before surgery starts (AA's decision, OQ-57). There is no override.
-- The office raises the pre-procedure invoice; once it is paid the warning goes.
-- Exact timing relative to the normal `AUTHORISED` billing trigger is a prototype reading.
+- A Procedure on a prepaid Contract (Patient › Payment type: Prepaid, picked by the office) needs the
+  price paid before the procedure, in full. The invoice goes to the Procedure's payer: one prepayment
+  invoice per payer, each payer locked once theirs is raised.
+- The amount is the Procedure's price when the invoice is raised, read-only after; or an amount the
+  office types on No contract · Fixed price.
+- The office approves and sends it from Admin Invoices (a switchable step, on by default). The invoice's
+  pair credits the AA Holding account, not the anaesthetist.
+- An unpaid prepayment never blocks (AA's decision, OQ-57): a warning that turns strong as the date
+  nears, so the anaesthetist sees it before surgery starts. There is no override.
+- After the procedure it is left off the final invoice with nothing deducted; a move to a colleague
+  changes nothing in the books.
 
 #### Warnings and the to-do list
 
@@ -709,7 +714,8 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | BTM capture, completion and submit | Yes | Phase 04 |
 | Office review and authorisation | Yes | Phase 07 |
 | Invoice calculation and documents | Yes | Phase 08 |
-| Pre-payment, addendum, billing monitor/retry | Yes | Phase 09 |
+| Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), AA Holding account, escalating warning, left off the final invoice | Yes | Catch-up Phase 27 |
+| Addendum, billing monitor/retry | Yes | Phase 09 |
 | Contract locked at authorise, invoices from the lock, Contract history | Yes | Catch-up Phase 25 |
 | Xero pairs, payment, balances and disbursement | Yes | Phase 10 |
 | Anaesthetist profile, rate per unit and bank details | Yes | Catch-up Phase 26 |

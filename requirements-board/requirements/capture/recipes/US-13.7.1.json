@@ -1,7 +1,7 @@
 {
   "id": "US-13.7.1",
   "status": "partial",
-  "absentReason": "One routine evaluates every Booking and raises warnings with their text, kind and strength, never a block, but only the unpaid prepayment rule exists so far. Later phases add theirs: base units outside the RVG group's range (19), a child as the payer on the Booking and insurer-will-pay with no insurer Contract (21), a prepaid procedure with no price on the anaesthetist's own Contract (27) and a paying patient with a balance (40).",
+  "absentReason": "One routine evaluates every Booking and raises warnings with their text, kind and strength, never a block, but only the unpaid prepayment rule exists so far. Later phases add theirs: base units outside the RVG group's range (19), a child as the payer on the Booking and insurer-will-pay with no insurer Contract (21).",
   "shots": [
     {
       "name": "warning-text",

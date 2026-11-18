@@ -37,6 +37,8 @@ export interface PayablesDue {
  * Holding account (catch-up Phase 27; FT-06.3, D38). 27a's transfer pays the
  * anaesthetist who did the List from the holding account.
  */
+export const HELD_IN_HOLDING_ACCOUNT = 'This payable credits the AA Holding account. It is not paid out to the anaesthetist from here.'
+
 export function paidByPayablesRun(p: Pick<XeroAccPay, 'payeeAccount'>): boolean {
   return p.payeeAccount === undefined
 }
@@ -175,6 +177,9 @@ export function disbursePayable(
 ): Outcome<PayablesRunResult> {
   const state = api.getState()
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can disburse a payable.')
-  if (state.xero.accPays[accPayId] === undefined) return refuse('notFound', 'ACCPAY not found.')
+  const accPay = state.xero.accPays[accPayId]
+  if (accPay === undefined) return refuse('notFound', 'ACCPAY not found.')
+  // A prepayment's payable credits the AA Holding account: never paid out here (catch-up Phase 27; FT-06.3, D38).
+  if (!paidByPayablesRun(accPay)) return refuse('heldInHoldingAccount', HELD_IN_HOLDING_ACCOUNT)
   return disbursePayables(api, new Set([accPayId]))
 }

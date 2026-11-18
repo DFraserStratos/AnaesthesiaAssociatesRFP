@@ -81,6 +81,7 @@ import { bucketForAgingDays, epochDayOf, type AgingBucketKey } from '../domain/d
 import { useMemo } from 'react'
 import { addDays, format, getDaysInMonth, parseISO } from 'date-fns'
 import { useAppStore, type AppState } from './appStore'
+import { isStillPrepaid, prepaymentForProcedure } from './prepaymentSelectors'
 import { clockISO } from './mutate'
 import { compareSessions } from '../domain/outOfHours'
 import { SESSIONS_IN_ORDER } from '../domain/outOfHours'
@@ -637,12 +638,14 @@ export function prePaymentInvoicesForBooking(state: { billing: Pick<AppState['bi
 }
 
 /**
- * The Procedures of a Booking whose prepayment is raised and that still sit
- * on the Contract it was raised on (catch-up Phase 27): each one's amount ex
- * GST and the invoice holding it. The price ladder holds them at that amount
- * (D47, A16), the run leaves them off the final invoice (D57). A Procedure
- * moved to another Contract after sending is billed as usual and the office
- * settles the prepayment by hand (US-06.3.7, 41's; D67).
+ * The Procedures of a Booking covered by a raised prepayment invoice (catch-up
+ * Phase 27): each one's amount ex GST and the invoice holding it. The price
+ * ladder holds them at that amount (D47, A16) and the run leaves them off the
+ * final invoice (D57), whatever Contract the Procedure is on now: no path
+ * changes a raised prepayment, so a payer is never billed twice for one
+ * Procedure. A Contract changed after sending reads "no longer needed" or
+ * "sent before a change" with an office warning; the office settles it by hand
+ * until Phase 41's cancellation (US-06.3.7, D67).
  */
 export function prepaidHeldFor(
   state: { billing: Pick<AppState['billing'], 'invoices' | 'invoiceLines'>; schedule: Pick<AppState['schedule'], 'procedures'> },
@@ -654,7 +657,7 @@ export function prepaidHeldFor(
   for (const line of Object.values(state.billing.invoiceLines)) {
     if (!ids.has(line.invoiceId) || line.procedureId === undefined) continue
     const procedure = state.schedule.procedures[line.procedureId]
-    if (procedure === undefined || (line.contractId !== undefined && procedure.governingContractId !== line.contractId)) continue
+    if (procedure === undefined) continue
     const existing = out[line.procedureId]
     out[line.procedureId] = { amount: roundToCents((existing?.amount ?? 0) + line.amount), prepaymentInvoiceId: existing?.prepaymentInvoiceId ?? line.invoiceId }
   }
@@ -700,6 +703,35 @@ export interface MonitorStage {
   state: MonitorStageState
   detail: string
 }
+/** What the run left off a Booking's final invoice for its prepayment (catch-up Phase 27; US-08.2.2). */
+export interface PrepaidLeftOff {
+  /** The prepayment invoices that settled the Procedures left off, by number. */
+  invoiceNumbers: string[]
+  /** Every Procedure was left off: no final invoice. */
+  all: boolean
+}
+
+/**
+ * The prepaid Procedures the run left off this Booking's final invoice, from
+ * the lock's `settledByPrepayment` (catch-up Phase 27; D57): nothing
+ * deducted, never an exception. Undefined when none was left off.
+ */
+export function prepaidLeftOffFor(state: Pick<AppState, 'billing' | 'schedule'>, bookingId: string): PrepaidLeftOff | undefined {
+  const lock = state.billing.locks[bookingId]
+  const settled = lock?.settledByPrepayment ?? {}
+  const ids = Object.keys(settled)
+  if (ids.length === 0) return undefined
+  const numbers = [...new Set(ids.map((id) => state.billing.invoices[settled[id]!.prepaymentInvoiceId]?.invoiceNumber ?? settled[id]!.prepaymentInvoiceId))].sort()
+  const live = Object.values(state.schedule.procedures).filter((p) => p.bookingId === bookingId)
+  return { invoiceNumbers: numbers, all: live.length > 0 && live.every((p) => settled[p.id] !== undefined) }
+}
+
+/** "Prepaid, left off the final invoice (AA-2026-0001)" or "Prepaid in full, no final invoice (AA-2026-0001)". */
+export function prepaidLeftOffText(leftOff: PrepaidLeftOff): string {
+  const numbers = leftOff.invoiceNumbers.join(', ')
+  return leftOff.all ? `Prepaid in full, no final invoice (${numbers})` : `Prepaid, left off the final invoice (${numbers})`
+}
+
 export interface MonitorBookingRow {
   bookingId: string
   patientName: string
@@ -717,6 +749,8 @@ export interface MonitorBookingRow {
   disbursedAmount: number
   paidInAtISO?: string
   disbursedAtISO?: string
+  /** Prepaid Procedures left off the final invoice at the run (catch-up Phase 27; US-08.2.2, D57). */
+  prepaidLeftOff?: PrepaidLeftOff
 }
 export interface MonitorListRow {
   listId: string
@@ -807,6 +841,8 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
       const disbursedAtISO = runCases.find((c) => c.disbursedAtISO !== undefined)?.disbursedAtISO
       if (disbursedAtISO !== undefined) row.disbursedAtISO = disbursedAtISO
       if (patientHasOutstandingPriorEpisode(state, booking.patientId, booking.id)) row.outstandingPriorBalance = true
+      const leftOff = prepaidLeftOffFor(state, booking.id)
+      if (leftOff !== undefined) row.prepaidLeftOff = leftOff
       return row
     })
 
@@ -2099,7 +2135,7 @@ export function bookingContractCue(state: Pick<AppState, 'masters' | 'schedule'>
 export function procedureStackViewFor(
   state: Pick<AppState, 'masters'> & {
     schedule: Pick<AppState['schedule'], 'procedures' | 'bookings' | 'lists'> & Partial<Pick<AppState['schedule'], 'billingLines'>>
-    billing?: Pick<AppState['billing'], 'invoices' | 'invoiceLines'> & Partial<Pick<AppState['billing'], 'locks'>>
+    billing?: Pick<AppState['billing'], 'invoices' | 'invoiceLines'> & Partial<Pick<AppState['billing'], 'locks' | 'cases'>>
   },
   procedureId: string,
   surface: StackSurface,
@@ -2144,8 +2180,15 @@ export function procedureStackViewFor(
     const fee = ctx !== undefined && procedure.governingContractId !== undefined ? feeIn(bookingFeesFor(proceduresForBooking(state, booking.id), ctx), procedure.id) : undefined
     splitFeeExGst = fee === undefined || fee.needsPrice ? null : fee.total
   }
+  // A prepaid Procedure's basis reads its prepaid amount (catch-up Phase 27, US-03.1.8): needs the billing slice.
+  const prepay =
+    state.billing?.cases !== undefined && state.schedule.billingLines !== undefined
+      ? prepaymentForProcedure(state as Parameters<typeof prepaymentForProcedure>[0], procedureId)
+      : undefined
+  const prepaid = isStillPrepaid(prepay) ? { amount: prepay.amount.kind === 'priced' ? prepay.amount.amount : null, status: prepay.status } : undefined
   return procedureStackView(procedure, {
     ...(splitFeeExGst !== undefined ? { splitFeeExGst } : {}),
+    ...(prepaid !== undefined ? { prepaid } : {}),
     contracts: state.masters.contracts,
     parties: state.masters.parties,
     rvgGroups: state.masters.rvgGroups,
