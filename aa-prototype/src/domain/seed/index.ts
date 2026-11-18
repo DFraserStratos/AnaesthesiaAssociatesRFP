@@ -688,6 +688,8 @@ function buildSeedInternal(): SeedBuild {
       contract: 1,
       slotStatus: 1,
       availabilitySeries: rehomed.series.length + 1,
+      // Catch-up Phase 33a: the seeded stub is STB0001 (`intakeSeed.ts`).
+      stub: 2,
     },
   }
 

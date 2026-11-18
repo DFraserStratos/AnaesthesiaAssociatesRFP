@@ -790,7 +790,7 @@ describe('the matching screen (catch-up Phase 33)', () => {
   })
   afterEach(() => localStorage.clear())
 
-  it('discards a v52 store with no intake slice and a manual-intervention message, and reseeds an empty intake', () => {
+  it('discards a v52 store with no intake slice and a manual-intervention message, and reseeds the intake', () => {
     expect(PERSIST_VERSION).toBeGreaterThanOrEqual(53)
     const { intake: _i, ...fresh } = freshAppState()
     const messages = {
@@ -798,7 +798,7 @@ describe('the matching screen (catch-up Phase 33)', () => {
     }
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, integrations: { ...fresh.integrations, messages } }, version: 52 }))
     const s = createAppStore({ persisted: true }).getState()
-    expect(s.intake).toEqual({ batches: {}, rows: {} })
+    expect(s.intake).toEqual(freshAppState().intake)
     expect(s.integrations.messages).toEqual({})
   })
 })
@@ -817,7 +817,7 @@ describe('the Wave 1 join (v54: Lane A 27 and Lane B 32d, 33)', () => {
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, appSettings: oldSettings }, version: 53 }))
     const s = createAppStore({ persisted: true }).getState()
     expect(s.appSettings.prepayment.approvalRequired).toBe(true)
-    expect(s.intake).toEqual({ batches: {}, rows: {} })
+    expect(s.intake).toEqual(freshAppState().intake)
   })
 })
 
@@ -839,5 +839,23 @@ describe('the AA Holding account transfer (catch-up Phase 27a)', () => {
     expect(s.billing.transfers).toEqual({})
     expect(s.xero.journals).toEqual({})
     expect(s.billing.cases.BC0001?.prepayLeg).toBe('collect')
+  })
+})
+
+describe('stubs on a List (catch-up Phase 33a)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v55 store whose intake has no stubs, and reseeds the waiting row and its stub', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(56)
+    const fresh = freshAppState()
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, intake: { batches: {}, rows: {} } }, version: 55 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.keys(s.intake.stubs)).toEqual(['STB0001'])
+    expect(s.intake.stubs.STB0001).toMatchObject({ status: 'standing', listId: 'L-34821-2026-08-04-PM', importRowId: 'IRS001' })
+    expect(s.counters.stub).toBe(2)
   })
 })

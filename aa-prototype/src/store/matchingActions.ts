@@ -60,6 +60,7 @@ import { pickRvgGroup } from './rvgGroupActions'
 import { assignListToSlot } from './slotActions'
 import { createDraftList } from './draftListActions'
 import { assessImportRow, matchingView } from './matchingSelectors'
+import { placeStubsForRows, settleStubForRow, stubOutcomeForDecision } from './stubSettle'
 
 function officeOnly(actor: Actor): Outcome<never> | null {
   return actor.role === 'office' ? null : refuse('officeOnly', 'Only the AA office decides rows on the matching screen.')
@@ -184,10 +185,12 @@ export function stageImportRows(
       })
     }
     return {
-      intake: { batches: { ...s.intake.batches, [batchId]: batch }, rows: { ...s.intake.rows, ...newRows } },
+      intake: { ...s.intake, batches: { ...s.intake.batches, [batchId]: batch }, rows: { ...s.intake.rows, ...newRows } },
       counters,
     }
   })
+  // A row with no NHI waits and creates nothing (D11); a stub stands in its place on its List (33a, D66).
+  placeStubsForRows(api, actor, rowIds)
   return ok({ batchId, rowIds, skipped })
 }
 
@@ -620,6 +623,9 @@ function record(
       decidedBy: actor.who,
       decidedAtISO: clockISO(s.clock),
     }
-    return { intake: { ...s.intake, rows: { ...s.intake.rows, [row.id]: next } } }
+    // The row's stub, if one stands, is settled in the same commit (33a: the one place a stub's status changes).
+    const settled = settleStubForRow(s.intake.stubs, row.id, stubOutcomeForDecision(decision), clockISO(s.clock), actor.who)
+    if (settled !== undefined) metas.push(settled.meta)
+    return { intake: { ...s.intake, rows: { ...s.intake.rows, [row.id]: next }, ...(settled !== undefined ? { stubs: settled.stubs } : {}) } }
   })
 }

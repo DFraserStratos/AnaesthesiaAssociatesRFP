@@ -31,6 +31,7 @@ import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta
 import type { AppState, AppStoreApi } from './appStore'
 import { listInSlot, moveInputOf, scheduleHorizon, slotFor } from './selectors'
 import { attachListToSlot, insertDraftList, pairingRefusal } from './slotActions'
+import { stubsOffDraftList } from './stubSettle'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 const REQUEST_SOURCES: readonly RequestSource[] = ['phone', 'email', 'pdf', 'other']
@@ -276,9 +277,7 @@ export function redateDraftList(
   if (day !== null) return day
   if (input.dateISO === list.dateISO && input.session === list.session) return refuse('sameDay', 'That is its day and session already.')
 
-  mutate(
-    api,
-    actor,
+  const redateMetas: MutationMeta[] = [
     {
       entityType: 'list',
       entityId: listId,
@@ -287,9 +286,20 @@ export function redateDraftList(
       after: { dateISO: input.dateISO, session: input.session },
       stampBookingId: null,
     },
-    (s) => ({
-      schedule: { ...s.schedule, lists: { ...s.schedule.lists, [listId]: { ...list, dateISO: input.dateISO, session: input.session } } },
-    }),
+  ]
+  mutate(
+    api,
+    actor,
+    redateMetas,
+    (s) => {
+      // Its stubs come off; their rows keep waiting (catch-up Phase 33a, our reading).
+      const off = stubsOffDraftList(s, listId, 'draftListRedated', clockISO(s.clock), actor.who)
+      if (off !== undefined) redateMetas.push(...off.metas)
+      return {
+        schedule: { ...s.schedule, lists: { ...s.schedule.lists, [listId]: { ...list, dateISO: input.dateISO, session: input.session } } },
+        ...(off !== undefined ? { intake: { ...s.intake, stubs: off.stubs } } : {}),
+      }
+    },
   )
   return ok({ listId })
 }
@@ -312,9 +322,7 @@ export function removeDraftList(api: AppStoreApi, actor: Actor, listId: string, 
   if (active.length > 0) return refuse('hasBookings', removeBlockedReason(active.length))
   const why = reason?.trim() ?? ''
 
-  mutate(
-    api,
-    actor,
+  const removeMetas: MutationMeta[] = [
     {
       entityType: 'list',
       entityId: listId,
@@ -323,7 +331,12 @@ export function removeDraftList(api: AppStoreApi, actor: Actor, listId: string, 
       after: { state: 'DRAFT', removedAtISO: clockISO(state.clock), ...(why !== '' ? { removeReason: why } : {}) },
       stampBookingId: null,
     },
-    (s) => ({
+  ]
+  mutate(api, actor, removeMetas, (s) => {
+    // Its stubs come off; their rows keep waiting (catch-up Phase 33a, our reading).
+    const off = stubsOffDraftList(s, listId, 'draftListRemoved', clockISO(s.clock), actor.who)
+    if (off !== undefined) removeMetas.push(...off.metas)
+    return {
       schedule: {
         ...s.schedule,
         lists: {
@@ -331,8 +344,9 @@ export function removeDraftList(api: AppStoreApi, actor: Actor, listId: string, 
           [listId]: { ...list, removedAtISO: clockISO(s.clock), removedBy: actor.who, removeCause: 'office', ...(why !== '' ? { removeReason: why } : {}) },
         },
       },
-    }),
-  )
+      ...(off !== undefined ? { intake: { ...s.intake, stubs: off.stubs } } : {}),
+    }
+  })
   return ok({ listId })
 }
 

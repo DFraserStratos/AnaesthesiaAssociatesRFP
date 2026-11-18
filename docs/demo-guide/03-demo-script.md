@@ -954,16 +954,36 @@ actions** on the screen named in its beat.
 - **Click:**
   - Go to **Admin → Matching → Demo actions → Import hospital file** → choose **Southern Cross** →
     **Run**.
-  - Filter **Unmatched**. Open **Tama Henare** (R4, no NHI) and type the NHI **ZQA1008**.
+  - Filter **Unmatched**. Open **Tama Henare** (R4, no NHI): the panel says a stub stands on Dr Souter's
+    Tue 28 Jul PM List. Optionally open that List first (Mobile Lists, or Admin Day, Tue 28 Jul) to show
+    the stub: a dashed amber row at 15:30, after the 13:00 and 14:00 Bookings, reading "Waiting at
+    intake: no NHI · The office is resolving this".
+  - Back on Matching, type the NHI **ZQA1008** and press **Add NHI**.
   - Open **Grace Whitu** (R5, Thu 6 Aug PM, no List) → **Create a List in a session** → confirm.
 - **Say:** "Nothing from a hospital is ever dropped. A row with no NHI waits here until the office adds
-  it, and no patient or Booking is made. A row that matches nothing waits until someone decides: create
+  it, and no patient or Booking is made. So the anaesthetist still sees the case coming, a stub stands
+  on the List in its place: the time, name and wording as received, but it is not a Booking, it is never
+  counted and it never blocks submit or authorise. When the office adds the NHI, the Booking takes the
+  stub's place. A row that matches nothing waits until someone decides: create
   the List, put the Booking on a Draft List for the office to fill, or reject it with a reason."
-- **Expected:** both rows sit under Unmatched; the NHI releases Tama Henare's into a ready row; then
+- **Expected:** both rows sit under Unmatched; Tama Henare's stub stands on Dr Souter's Tue 28 Jul PM
+  List (a triangle marker on the Lists row and the Admin Day block; progress reads "... · 1 waiting at
+  intake" and the bar stays amber). Add NHI creates her Booking on that List with no Contract ("Needs an
+  invoice destination") and the banner reads "The Booking takes the stub's place on the List."; the
+  stub is gone and the audit reads **Stub replaced by Booking**. Then
   the new List and Grace Whitu's Booking show on the Day view for Thu 6 Aug and the row moves under
   **Decided**.
 - **Optional:** R3 (Hemi Walker, on the authorised Wed 18 Mar List) reads **List authorised** with
   Apply disabled.
+- **Optional (seeded stub):** without importing, Matching already holds **Mere Tipene** (Southern Cross,
+  "Lap chole", 14:00, no NHI, from "Southern Cross theatre list, Tue 4 Aug"). Her stub stands on Dr
+  Souter's Tue 4 Aug PM List (Ms K. Patel; `/mobile/lists/L-34821-2026-08-04-PM`), which reads "0 of 0
+  complete · 1 waiting at intake". In Admin, the List drawer, Draft List drawer and Review show the stub
+  with a teal **Resolve on Matching** link that opens her row; type **ZQA1024** and **Add NHI**, or
+  **Reject** with a reason (footer), which removes the stub with the row (audited **Stub removed**).
+- **Optional (handset):** on the PWA, open Dr Souter's List holding a stub, tap the stub (a read-only
+  sheet: what was received and its source), then **Demo → Office adds the NHI to this stub** (office
+  stand-in): "The office added the NHI. The Booking now stands in the stub's place."
 
 ### Beat 5: partial payment
 
@@ -1033,6 +1053,9 @@ names them, Donald's proposal); which conditions warn, and how strongly; where t
 the office until the List is authorised (US-02.5.4), and one for an authorised List cannot (what happens
 then is not yet decided); a Booking moved to another day arrives as a cancellation plus a new Booking;
 applying hospital changes automatically is Future Work.
+For the stub on a List (Beat 4), our readings, to confirm with AA: the Booking takes the stub's place
+when the office adds the NHI; what a stub shows (time, name and wording as received, marked waiting at
+intake); and how a List holding one reads (counted apart, no prompt or block on submit or authorise).
 For the prepayment beats: still to confirm whether the prepayment
 invoice names the anaesthetist (OQ-120); still to confirm when the AA Holding account releases the
 money (OQ-125: the prototype transfers it when the office authorises the List; Greg said "confirmed and

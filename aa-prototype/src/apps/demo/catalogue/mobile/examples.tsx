@@ -560,7 +560,7 @@ export function ListRowExample({ picks }: { picks: SeedPicks }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {real.map(({ list, model }, i) => (
-        <ListRow key={list.id} statusKey={list.kind} session={list.session} {...model} listId={list.id} {...(i === 0 ? { badge: 'New' } : {})} onClick={() => setLine(`Would open ${model.title}.`)} />
+        <ListRow key={list.id} statusKey={list.kind} session={list.session} {...model} listId={list.id} {...(i === 0 ? { badge: 'New' } : { stubCount: 1 })} onClick={() => setLine(`Would open ${model.title}.`)} />
       ))}
       <ListRow statusKey="free" variant="open" session="PM" title="Free session" subtitle="Open for bookings" right={{ kind: 'chip', statusKey: 'free', label: 'Free' }} />
       <ListRow statusKey="holiday" variant="closed" title="On holiday" subtitle="On holiday" right={{ kind: 'chip', statusKey: 'holiday', label: 'Holiday' }} />

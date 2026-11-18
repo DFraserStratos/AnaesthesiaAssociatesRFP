@@ -18,6 +18,9 @@ import { slotTimeRange, locationName, dayWithYear } from '../../../shared/format
 import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
+import { withStubsInTimeOrder } from '../../../domain/intake/stubs'
+import { useListStubs } from '../../../store/stubSelectors'
+import { ListStubNote, StubRow, StubSheet } from '../../../shared/stubs'
 
 interface ListDetailScreenProps {
   listId: string
@@ -111,6 +114,10 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
   }, [list, listId, bookingsRecord, proceduresRecord, patients, cueState])
 
   const warningsByBooking = useListWarnings(listId)
+  // Stubs for rows waiting at intake (catch-up Phase 33a): drawn in time order, never counted.
+  const stubs = useListStubs(listId)
+  const [openStubId, setOpenStubId] = useState<string | null>(null)
+  const entries = useMemo(() => withStubsInTimeOrder(model?.rows ?? [], (r) => r.booking.scheduledTime, stubs), [model, stubs])
   // An authorised List is read only and shows its invoices (catch-up Phase 38a).
   const invoices = useListInvoices(listId)
 
@@ -217,7 +224,8 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>
             {model.done} of {model.activeCount} complete
           </span>
-          <ProgressBar done={model.done} total={model.activeCount} width="fill" />
+          <ProgressBar done={model.done} total={model.activeCount} width="fill" tone={stubs.length > 0 ? 'held' : 'done'} />
+          <ListStubNote count={stubs.length} />
         </div>
       </div>
 
@@ -226,7 +234,11 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           screen is where trailing padding was found to create no scroll extent
           on WebKit, stranding "Add a booking" under the dock. */}
       <div data-testid="mobile-list-scroll" style={{ flex: 1, overflow: 'auto', padding: '12px 20px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {model.rows.map((r) => {
+        {entries.map((entry) => {
+          if (entry.kind === 'stub') {
+            return <StubRow key={entry.stub.id} stub={entry.stub} onOpen={() => setOpenStubId(entry.stub.id)} />
+          }
+          const r = entry.booking
           const cancelled = r.booking.cancellation !== undefined
           return (
             <button
@@ -441,6 +453,8 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           }}
         />
       )}
+
+      <StubSheet stub={stubs.find((x) => x.id === openStubId)} onClose={() => setOpenStubId(null)} />
 
       {showSubmitted ? (
         <SuccessOverlay

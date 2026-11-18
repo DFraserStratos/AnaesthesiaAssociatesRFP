@@ -21,4 +21,14 @@ describe('ProgressBar', () => {
     expect(bar.style.flex).toContain('1')
     expect((bar.firstChild as HTMLElement).style.width).toBe('0%')
   })
+
+  it('held (catch-up Phase 33a): a stub stands on the List, so a full bar is amber, never the done green', () => {
+    const { rerender } = render(<ProgressBar done={3} total={3} />)
+    const bar = screen.getByRole('progressbar')
+    expect(bar).toHaveAttribute('data-tone', 'done')
+    expect((bar.firstChild as HTMLElement).style.background).toBe('rgb(30, 142, 90)')
+    rerender(<ProgressBar done={3} total={3} tone="held" />)
+    expect(screen.getByRole('progressbar')).toHaveAttribute('data-tone', 'held')
+    expect((screen.getByRole('progressbar').firstChild as HTMLElement).style.background).toBe('rgb(161, 98, 7)')
+  })
 })

@@ -806,6 +806,16 @@ The RFP is internally inconsistent: one section treats NHI as the unique patient
 says "where available". The prototype uses a hidden internal ID as the invariant and allows a
 provisional NHI-pending patient.
 
+A hospital row with no NHI waits at intake on Admin Matching; no patient or Booking is made. So the
+anaesthetist still sees the case, a stub stands on the List in its place: a dashed amber row, "Waiting
+at intake: no NHI · The office is resolving this", with the time, name and wording as received. A stub
+is never a Booking: it is never counted ("n of n complete · 1 waiting at intake"), and it never blocks
+submit or authorise. When the office adds the NHI on Matching, the Booking takes the stub's place;
+rejecting the row removes the stub. On Reset, Matching already holds Mere Tipene's row (Southern Cross,
+Dr Souter's Tue 4 Aug PM List): type the NHI **ZQA1024** and press **Add NHI**. The Southern Cross
+import's Tama Henare takes **ZQA1008**. How a stub reads, and that the Booking takes its place, are our
+readings, to confirm with AA.
+
 ### "Is the demo using real patient or integration data?"
 
 No. All names and data are fictional. Hospital, PDF/OCR, NHI, email, Xero and payment events are

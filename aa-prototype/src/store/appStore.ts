@@ -33,6 +33,8 @@ import type {
   ImportBatchId,
   ImportRow,
   ImportRowId,
+  Stub,
+  StubId,
   Invoice,
   InvoiceLine,
   PaymentIn,
@@ -45,6 +47,7 @@ import type {
 import type { AppId } from '../shell/appConfig'
 import type { BookingLock } from '../domain/billing/lock'
 import { seedLocks } from './locks'
+import { seededIntake } from '../domain/seed/intakeSeed'
 
 // ---------------------------------------------------------------------------
 // Slice shapes (typed now, filled in Phases 08 to 11)
@@ -106,6 +109,8 @@ export interface IntegrationsSlice {
 export interface IntakeSlice {
   batches: Record<ImportBatchId, ImportBatch>
   rows: Record<ImportRowId, ImportRow>
+  /** Stubs on Lists for rows waiting at intake (catch-up Phase 33a; DM-58): never Bookings. */
+  stubs: Record<StubId, Stub>
 }
 
 export interface ShellSlice {
@@ -334,8 +339,11 @@ export const PERSIST_KEY = 'aa-demo'
  *  instead of applying (`resultImportRowId`); `manualIntervention` and `integrationImmutable` retired. Reseeds on load.
  *  v54: Wave 1 sync on lane/a, Lane B's 32d and 33 (v52, v53) joined with Lane A's 27 (v52): one past the higher.
  *  v55: catch-up Phase 27a, the AA Holding account's transfer (`billing.transfers`, `xero.journals`,
- *  `BillingCase.prepayLeg` on BC0001, `Disbursement.transferId`). Reseeds on load. */
-export const PERSIST_VERSION = 55
+ *  `BillingCase.prepayLeg` on BC0001, `Disbursement.transferId`). Reseeds on load.
+ *  v56: catch-up Phase 33a, stubs on a List (`intake.stubs`, counter `stub`): the seeded intake holds one
+ *  Southern Cross row with no NHI (IRS001, Mere Tipene) and its stub STB0001 on Dr Souter's Tue 4 Aug PM List.
+ *  Reseeds on load. */
+export const PERSIST_VERSION = 56
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {} }
@@ -349,7 +357,12 @@ export function emptyIntegrationsSlice(): IntegrationsSlice {
 
 /** The intake slice: seeded empty, the presenter imports or a trigger delivers (catch-up Phase 33). */
 export function emptyIntakeSlice(): IntakeSlice {
-  return { batches: {}, rows: {} }
+  return { batches: {}, rows: {}, stubs: {} }
+}
+
+/** The seeded intake slice: one waiting no-NHI row and its stub on a List (catch-up Phase 33a). */
+export function seededIntakeSlice(): IntakeSlice {
+  return seededIntake()
 }
 
 /** The seeded integrations slice: the three feed configs, no messages yet (Phase 11). */
@@ -382,7 +395,7 @@ export function freshAppState(): AppState {
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
-    intake: emptyIntakeSlice(),
+    intake: seededIntakeSlice(),
     shell: { currentApp: 'mobile', suggestionSeq: 0 },
   }
   // Every seeded AUTHORISED List is locked (catch-up Phase 25), its cases stamped with the payee.

@@ -1,0 +1,104 @@
+{
+  "id": "US-02.6.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "stub-on-list",
+      "app": "mobile",
+      "caption": "An incoming booking with no NHI waits at intake; a stub, not a Booking, stands in its place on its List",
+      "start": "/mobile/lists/L-34821-2026-08-04-PM",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=list-stub]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=list-stub]",
+            "[data-shot=list-stub-note]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "stub-on-list",
+      "app": "web",
+      "caption": "An incoming booking with no NHI waits at intake; a stub, not a Booking, stands in its place on its List",
+      "start": "/web/lists/L-34821-2026-08-04-PM",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=list-stub-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=list-stub-row]",
+            "[data-shot=list-stub-note]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "stub-placed",
+      "app": "admin",
+      "caption": "Importing the Southern Cross file places a stub for Tama Henare, who has no NHI, on Dr Souter's Tue 28 Jul PM List after its two Bookings",
+      "start": "/admin/day/2026-07-28",
+      "setup": [
+        {
+          "goto": "/admin/matching"
+        },
+        {
+          "click": "[data-shot=matching-import-open]"
+        },
+        {
+          "wait": "[data-shot=matching-import]"
+        },
+        {
+          "click": "[data-sample-id=SAMPLE_SX]"
+        },
+        {
+          "click": "[data-shot=matching-import-confirm]"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "press": "Escape"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "button[data-list-id=\"L-34821-2026-07-28-PM\"]"
+            },
+            {
+              "wait": "[data-testid=admin-list-drawer]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-testid=admin-list-drawer] [data-shot=list-stub]"
+          ]
+        }
+      ]
+    }
+  ]
+}

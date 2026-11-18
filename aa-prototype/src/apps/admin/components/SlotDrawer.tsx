@@ -26,6 +26,10 @@ import { SessionStatusSheet } from '../flows/SessionStatusSheet'
 import type { AssignedList, Slot } from '../../../domain/types'
 import type { EffectiveSlotTimes } from '../../../domain/slots'
 import { surgeonProfilePath } from '../mastersPaths'
+import { withStubsInTimeOrder } from '../../../domain/intake/stubs'
+import { useListStubs } from '../../../store/stubSelectors'
+import { StubRow } from '../../../shared/stubs'
+import { StubResolveLink } from './StubResolveLink'
 import { isOutOfHours, sessionText } from '../../../domain/outOfHours'
 import { CLOSE_OUT_OF_HOURS } from '../../../shared/outOfHoursTerms'
 import { Button, DefList, DefRow, FormError, TextAction } from '../../../shared/ui'
@@ -124,6 +128,8 @@ function ListBody({
   const schedule = useAppStore((s) => s.schedule)
   const billing = useAppStore((s) => s.billing)
   const warningsByBooking = useListWarnings(listId)
+  // Stubs for rows waiting at intake (catch-up Phase 33a): drawn among the Bookings, never counted.
+  const stubs = useListStubs(listId)
 
   const bookings = Object.values(bookingsRecord)
     .filter((c) => c.listId === listId)
@@ -195,8 +201,12 @@ function ListBody({
           </Section>
 
           <Section label={`Bookings (${activeBookings.length})`}>
-            {bookings.length === 0 && <EmptyState>No bookings on this List yet.</EmptyState>}
-            {bookings.map((booking) => {
+            {bookings.length === 0 && stubs.length === 0 && <EmptyState>No bookings on this List yet.</EmptyState>}
+            {withStubsInTimeOrder(bookings, (b) => b.scheduledTime, stubs).map((entry) => {
+              if (entry.kind === 'stub') {
+                return <StubRow key={entry.stub.id} stub={entry.stub} density="table" trailing={<StubResolveLink stub={entry.stub} />} style={{ margin: '6px 0' }} />
+              }
+              const booking = entry.booking
               const patient = masters.patients[booking.patientId]
               const cancelled = booking.cancellation !== undefined
               const warnings = warningsByBooking.get(booking.id) ?? []

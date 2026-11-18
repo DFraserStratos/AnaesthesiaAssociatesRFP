@@ -4,6 +4,7 @@
  * the three outcomes, the disabled reason, absent from the PWA).
  */
 
+import { SEED_STUB } from '../../domain/seed/intakeSeed'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from '../../store/appStore'
 import { setInvoiceDescription } from '../../store/procedureTextActions'
@@ -54,9 +55,9 @@ describe('Fire hospital message on a Booking', () => {
     const first = byId('fire-hospital-message').run(api, adminCtx(api, FOSTER), 'MSG-STG-1012')
     expect(first.message).toBe("Sent MSG-STG-1012 to matching: the hospital's text replaces the rooms' once the office applies the row.")
     expect(primaryProcedureOf(api.getState(), FOSTER)!.procedureText).toEqual(text)
-    expect(Object.values(api.getState().intake.rows)).toHaveLength(1)
+    expect(Object.values(api.getState().intake.rows).filter((r) => r.id !== SEED_STUB.rowId)).toHaveLength(1)
     byId('fire-hospital-message').run(api, adminCtx(api, FOSTER), 'MSG-STG-1012')
-    expect(Object.values(api.getState().intake.rows)).toHaveLength(1)
+    expect(Object.values(api.getState().intake.rows).filter((r) => r.id !== SEED_STUB.rowId)).toHaveLength(1)
   })
 })
 

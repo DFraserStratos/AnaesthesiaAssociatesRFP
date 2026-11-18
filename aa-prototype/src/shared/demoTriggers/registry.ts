@@ -111,6 +111,8 @@ import {
   prepaymentStandInRefusal,
   twoDaysBeforeRefusal,
   officeMatchesHospitalRow,
+  officeAddsNhiRefusal,
+  officeAddsNhiToStub,
   receiveTheatreList,
   sendUpdateRefusal,
   stageUpdateForBooking,
@@ -1584,6 +1586,28 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => null,
     indexEmptyReason: 'PWA only: the framed build plays the office in Admin, Matching.',
+  },
+  {
+    id: 'stub-office-adds-nhi',
+    label: 'Office adds the NHI to this stub',
+    description:
+      "Stands in for the office on the phone (catch-up Phase 33a): on a List holding a stub, the office adds the NHI the sample holds for its waiting row on Matching, through the one resolve path, and the Booking takes the stub's place. On Dr Souter's Tue 4 Aug PM List, Mere Tipene (ZQA1024); after the Southern Cross import, Tama Henare on Tue 28 Jul PM (ZQA1008).",
+    screen: 'Mobile · List detail',
+    routes: ['/mobile/lists/:listId'],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    disabledReason: (state, ctx) => officeAddsNhiRefusal(state, ctx.params['listId']),
+    run: (api, ctx) => {
+      const listId = ctx.params['listId']
+      if (listId === undefined) return { ok: false, message: 'Open a List first' }
+      const res = officeAddsNhiToStub(api, listId)
+      if (!res.ok) return { ok: false, message: res.message }
+      return res.value.kind === 'resolved'
+        ? { ok: true, message: "The office added the NHI. The Booking now stands in the stub's place." }
+        : { ok: true, message: `The office added ${res.value.patient}'s NHI. The row now waits for the office's decision on Matching.` }
+    },
+    indexPath: () => null,
+    indexEmptyReason: 'PWA only: the framed build plays the office in Admin, Matching (Add NHI).',
   },
   // ── Hospital messages (Future scope) ──────────────────────────────────
   {

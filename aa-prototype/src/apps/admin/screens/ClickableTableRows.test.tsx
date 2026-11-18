@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
+import { SEED_STUB } from '../../../domain/seed/intakeSeed'
 import { MemoryRouter, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { assessImportRow, decideImportRow, freshAppState, importHospitalDownload, isBackdropInvoice, useAppStore, type Actor } from '../../../store'
@@ -148,7 +149,7 @@ describe('admin clickable table rows', () => {
 
   it("links a Booking made from a hospital row back to that row on Matching (catch-up Phase 33)", () => {
     importHospitalDownload(useAppStore, OFFICE, 'SAMPLE_STG')
-    const rowId = useAppStore.getState().intake.batches[Object.keys(useAppStore.getState().intake.batches)[0]!]!.rowIds[0]!
+    const rowId = useAppStore.getState().intake.batches[Object.keys(useAppStore.getState().intake.batches).find((id) => id !== SEED_STUB.batchId)!]!.rowIds[0]!
     const suggestion = assessImportRow(useAppStore.getState(), rowId)?.suggestion
     const listId = suggestion?.kind === 'createBooking' ? suggestion.listId : ''
     const out = decideImportRow(useAppStore, OFFICE, rowId, { kind: 'createBooking', listId })

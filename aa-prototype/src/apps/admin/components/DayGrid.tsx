@@ -18,6 +18,9 @@ import { BookingCount } from './draftLists/DraftListParts'
 import { draftListCount } from '../../../shared/scheduleTerms'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { plural } from '../../../shared/format'
+import { StubMarker } from '../../../shared/stubs'
+import { useStubCountsByList } from '../../../store/stubSelectors'
+import { listStubNote } from '../../../domain/intake/stubs'
 
 interface DayGridProps {
   anaesthetists: Anaesthetist[]
@@ -107,6 +110,8 @@ const NO_COUNTS: ReadonlyMap<string, number> = new Map()
 export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFlags, onSelectSlot, draftLists = NO_DRAFTS, bookingCounts = NO_COUNTS, onOpenDraftList, onOpenOutOfHours }: DayGridProps) {
   // The ruler: 07:00 to 18:00, longer only on a day with an out-of-hours session or an evening Draft List.
   const eveningDefaults = useAppStore((s) => s.appSettings.schedule.defaultTimes.OOH)
+  // Stubs standing on each List (catch-up Phase 33a): a marker beside the count, never in it.
+  const stubCounts = useStubCountsByList()
   const ruler = useMemo(() => {
     const ends = Object.values(viewsByAnaesthetist).flatMap((vs) => vs.filter((v) => isOutOfHours(v.slot)).map((v) => slotSpan(v).end))
     const draftEnds = draftLists.some((l) => isOutOfHours(l)) ? [hoursOf(eveningDefaults.endTime)] : []
@@ -248,7 +253,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
               <span aria-hidden data-after-hours style={{ position: 'absolute', top: 0, bottom: 0, left: afterHours.left, width: afterHours.width, background: neutral.bg, borderLeft: `1px dashed ${neutral.lineStrong}` }} />
             )}
             {segments.map((seg) => (
-              <GridBlock key={seg.view.slot.id} seg={seg} masters={masters} ruler={ruler} bookingCount={seg.view.list !== undefined ? (bookingCounts.get(seg.view.list.id) ?? 0) : undefined} onClick={() => onSelectSlot(seg.view.slot.id)} />
+              <GridBlock key={seg.view.slot.id} seg={seg} masters={masters} ruler={ruler} bookingCount={seg.view.list !== undefined ? (bookingCounts.get(seg.view.list.id) ?? 0) : undefined} stubCount={seg.view.list !== undefined ? (stubCounts.get(seg.view.list.id) ?? 0) : 0} onClick={() => onSelectSlot(seg.view.slot.id)} />
             ))}
           </span>
           {/* The row's right gutter (catch-up Phase 32c): "Open out-of-hours session" beside where the evening session
@@ -368,7 +373,7 @@ function SignalFilterButton({ label, active, icon, onClick }: { label: string; a
   )
 }
 
-function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: DisplaySegment; masters: AppState['masters']; ruler: Ruler; bookingCount: number | undefined; onClick: () => void }) {
+function GridBlock({ seg, masters, ruler, bookingCount, stubCount = 0, onClick }: { seg: DisplaySegment; masters: AppState['masters']; ruler: Ruler; bookingCount: number | undefined; stubCount?: number; onClick: () => void }) {
   const { slot, list } = seg.view
   const { displayKey, listAttention, needsAttention, conflict, hasNote: hasNoteSignal, warnings } = seg
   const resolved = resolveDisplayStatus(displayKey, masters.slotStatuses)
@@ -428,7 +433,7 @@ function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: Displa
   const showNoteDot = hasNoteSignal && !listAttention
   const warningTip = warnings !== undefined ? plural(warnings.open, 'open warning') : ''
   const surgeonTip = (conflict || templateLabel !== undefined) && surgeon !== undefined ? surgeon.name : ''
-  const countTip = bookingCount !== undefined ? plural(bookingCount, 'booking') : ''
+  const countTip = bookingCount !== undefined ? [plural(bookingCount, 'booking'), listStubNote(stubCount)].filter(Boolean).join(', ') : ''
   const closedLine = list === undefined && !isOpenEmpty ? statusLine(slot, masters.slotStatuses) : ''
   const tooltip = [closedLine, surgeonTip, ...reasons, warningTip, hasNote && !noteIsSubtitle ? `Note: ${note}` : '', countTip].filter(Boolean).join(' · ')
 
@@ -476,6 +481,7 @@ function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: Displa
               <BookingCount count={bookingCount} style={{ fontSize: 9, lineHeight: '12px', color: bookingCount === 0 ? neutral.mist : colour.onTint }} />
             </span>
           )}
+          <StubMarker count={stubCount} size={11} shot="daygrid-block-stub" />
           {l2 !== '' && (
             <span style={conflict ? { fontSize: 9.5, lineHeight: '12px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: semantic.warning.onTint } : { fontSize: 9.5, lineHeight: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: colour.onTint, opacity: 0.75 }}>{l2}</span>
           )}
