@@ -39,12 +39,13 @@ import { PHASE_24_ARIA_PROCEDURES } from './__parity__/phase24Declared'
 import { contractBefore27, PHASE_27_NAIR_CONTRACT, PHASE_27_NAIR_PREPAID_PROCEDURE, PHASE_27_PREPAYMENT_ROWS_20, PHASE_27_REASON } from './__parity__/phase27Declared'
 import baseline from './__parity__/phase-20-baseline.json'
 import { captureBaseline, type Phase20Baseline, type ProcedureParityRow } from './__parity__/phase20Capture'
-import { COMPLETION_BOOKING_IDS, REVIEW_FLAG_BOOKING_IDS, PAYER_REVIEW_BOOKING_IDS, SEED_MARKERS, SOURCE_WORDING_BOOKING_IDS } from '../domain/seed'
+import { COMPLETION_BOOKING_IDS, DISABLED_CONTRACT_BOOKING_IDS, REVIEW_FLAG_BOOKING_IDS, PAYER_REVIEW_BOOKING_IDS, SEED_MARKERS, SOURCE_WORDING_BOOKING_IDS } from '../domain/seed'
 
 const before = baseline as Phase20Baseline
 /** Catch-up Phase 20a's additions and its one recorded exception (Foster's S14 target), set aside. */
 /** Phase 20a's named additions, and Phase 21's payer review List (set aside the same way). */
-const ADDED_20A = new Set([...SOURCE_WORDING_BOOKING_IDS, ...PAYER_REVIEW_BOOKING_IDS, ...COMPLETION_BOOKING_IDS, ...REVIEW_FLAG_BOOKING_IDS])
+// Catch-up Phase 25a's Booking on the Disabled Contract is set aside the same way.
+const ADDED_20A = new Set([...SOURCE_WORDING_BOOKING_IDS, ...PAYER_REVIEW_BOOKING_IDS, ...COMPLETION_BOOKING_IDS, ...REVIEW_FLAG_BOOKING_IDS, ...DISABLED_CONTRACT_BOOKING_IDS])
 const FOSTER_20A = SEED_MARKERS.integrationS14!.entityId
 const captured = captureBaseline()
 const now = {

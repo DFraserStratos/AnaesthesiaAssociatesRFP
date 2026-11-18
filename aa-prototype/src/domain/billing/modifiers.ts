@@ -83,7 +83,7 @@ export interface ProcedureModifier {
 export const MODIFIER_EXPLANATION_MAX = 200
 
 // ---------------------------------------------------------------------------
-// Age (US-03.3.8; D29's default, OQ-95 part 1 still open)
+// Age (US-03.3.8; D29, OQ-95 part 1 answered)
 // ---------------------------------------------------------------------------
 
 export interface AgeBand {
@@ -95,13 +95,14 @@ export interface AgeBand {
 }
 
 /**
- * The age bands, D29's default reading of the printed rows (RVG p.12):
+ * The age bands, D29's reading of the printed rows (RVG p.12):
  *   A1 "Age >1, and/but <2, 70-80-year-old" (1 unit)
  *   A2 "Age < 1 year old and/but > 80-year-old" (2 units)
  * Age in completed years on the procedure date, lower bounds inclusive as
  * printed: under 1 is A2, 1 is A1, 2 to 69 none, 70 to 79 A1, 80 and over A2.
- * PROVISIONAL until AA confirms the boundaries (OQ-95 part 1): an answer is a
- * change here and to `noAgeModifier` on the RVG groups, and their tests.
+ * OQ-95 part 1 answered as built (D29, 18 November 2026). A change to the
+ * boundaries is a change here and to `noAgeModifier` on the RVG groups, and
+ * their tests.
  */
 export const AGE_BANDS: readonly AgeBand[] = [
   { from: 0, to: 0, code: 'A2' },

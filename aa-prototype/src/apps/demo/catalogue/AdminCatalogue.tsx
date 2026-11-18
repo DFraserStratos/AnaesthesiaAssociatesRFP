@@ -12,7 +12,7 @@ import { DecisionCards, type DecisionKind } from '../../admin/matching/DecisionC
 import type { IncomingFieldKey } from '../../../domain/types'
 import type { FieldDiff } from '../../../domain/intake'
 import { OptionRow, Pill, RadioCard, useRovingRadio } from '../../../shared/ui'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { HospitalsView } from '../../admin/screens/masters/HospitalsView'
 import { RvgGroupsView } from '../../admin/screens/masters/RvgGroupsView'
 import {
@@ -107,7 +107,10 @@ import { PaidByRowExample, PaidBySheetExample, PartyPickerExample } from './spli
 import { LockBadge } from '../../../shared/booking/LockBadge'
 import { SEED_MARKERS } from '../../../domain/seed'
 import { ContractHistory } from '../../admin/flows/ContractHistory'
-import { useAppStore } from '../../../store'
+import { stillOnContract, useAppStore, useToday } from '../../../store'
+import { ContractChangeNotice } from '../../admin/flows/ContractChangeNotice'
+import { NOTHING_MOVES, stillOnTitle } from '../../../domain/billing/contractChanges'
+import { shortDay } from '../../../domain/dateText'
 
 const A = 'Admin'
 const AW = 'Admin · Web'
@@ -368,13 +371,13 @@ export function AdminCatalogue() {
         <CatalogueRow name="BackstopAmountField" source="shared/contracts/railParts.tsx" usedIn={AWM} what="The typed amount on No contract · Fixed price (UI unification U4): TextField's chrome at the rail's 44px, mono, a decimal keypad, aria-invalid with the hint saying why, saved on blur or Enter, with an optional inline action beside it." replaceWith="Base UI NumberField + shadcn Field" note="Local state here; in the Billing card and the step rail sheet it writes the price.">
           <BackstopAmountFieldExample />
         </CatalogueRow>
-        <CatalogueRow name="ContractPanel (ContractEditSheet)" source="apps/admin/flows/ContractEditSheet.tsx" usedIn={A} what="The Contract editor in a MasterPanel: two-column fields, SelectFields (holder, linked anaesthetist, funding tag, pricing kind), segmented choices, Disable as a neutral secondary Button (question 8), ChipMultiSelect for specialties and linked surgeons, FieldHint lines, the RVG code picker and price ranges. All shared field parts since UI unification U4." replaceWith="shadcn Sheet + Field + React Hook Form + Zod" note="Save writes the Contract to the demo store.">
+        <CatalogueRow name="ContractPanel (ContractEditSheet)" source="apps/admin/flows/ContractEditSheet.tsx" usedIn={A} what="The Contract editor in a MasterPanel: two-column fields, SelectFields (holder, linked anaesthetist, funding tag, pricing kind), segmented choices, Disable as a neutral secondary Button (question 8), ChipMultiSelect for specialties and linked surgeons, FieldHint lines, the RVG code picker and price ranges. All shared field parts since UI unification U4. Catch-up Phase 25a: a new Contract's Replaces section (a SelectField and a From date) with the ContractChangeNotice listing the Procedures still on the old one, before and after Create; a Disabled Contract's neutral Notice with its disable day and the same list; the system notice a neutral Notice." replaceWith="shadcn Sheet + Field + React Hook Form + Zod" note="Save writes the Contract to the demo store.">
           <ContractPanelExample />
         </CatalogueRow>
         <CatalogueRow name="SlotStatusSheet" source="apps/admin/flows/SlotStatusSheet.tsx" usedIn={A} what="Adds or edits an availability status in an Overlay: an OverlayHeader title, name, colour swatches, flags (the shared Checkbox with a hint, UI unification U4) and a live preview validated as you type, and a SheetActions footer." replaceWith="shadcn Dialog + Field + ToggleGroup (swatches) + RHF/Zod" note="Save adds the status to the demo store. Its preview block is the shared StatusBlock with the draft visual (UI unification U6).">
           <SlotStatusSheetExample />
         </CatalogueRow>
-        <CatalogueRow name="ContractPriceRanges" source="apps/admin/flows/ContractPriceRanges.tsx" usedIn={A} what="A fixed-price Contract's dated prices as an inline-edit table: Enter saves, Escape cancels, the last row cannot be deleted. Its in-table inputs are the shared TextField at the compact size (UI unification U4): hidden labels, mono, the price right-aligned on a decimal keypad." replaceWith="Base UI NumberField + TanStack Table (cell edit)" note="On the shared TableShell (dense) and Th since UI unification U6.">
+        <CatalogueRow name="ContractPriceRanges" source="apps/admin/flows/ContractPriceRanges.tsx" usedIn={A} what="A fixed-price Contract's dated prices as an inline-edit table: Enter saves, Escape cancels, the last row cannot be deleted. Its in-table inputs are the shared TextField at the compact size (UI unification U4): hidden labels, mono, the price right-aligned on a decimal keypad. Under it (catch-up Phase 25a) the ContractChangeNotice lists each authorised Procedure that kept its old range price." replaceWith="Base UI NumberField + TanStack Table (cell edit)" note="On the shared TableShell (dense) and Th since UI unification U6.">
           <ContractPriceRangesExample />
         </CatalogueRow>
       </LibraryGroup>
@@ -451,7 +454,10 @@ export function AdminCatalogue() {
         <CatalogueRow name="ContractHistory" source="apps/admin/flows/ContractHistory.tsx" usedIn={A} what="A Contract's History tab (catch-up Phase 25; US-04.1.3): its audited changes newest first through the shared HistoryTimeline (who, when, the values before and after), then the Procedures locked against it with links to their Bookings and invoices; EmptyState before any change." replaceWith="Custom (the shared HistoryTimeline and EmptyState)" note="Shown on the fixed-price Contract of the seeded AUTHORISED Face lift.">
           <ContractHistoryExample />
         </CatalogueRow>
-        <CatalogueRow name="PaidBySheet (with SplitFeeSection)" source="shared/flows/PaidBySheet.tsx, shared/flows/SplitFeeSection.tsx" usedIn={AWM} what="The one Paid by sheet (catch-up Phase 22a; US-11.2.2, US-08.2.3): a bottom sheet on the phone, a dialog on web and Admin. Opened by Change, it holds who pays (the Different payer tick, the patient's details or the other payer's fields, the Under 18 hint and the contact ask) and, when the payer changes, the offer (the Booking's other Procedures with the same payer, each ticked, and the one neutral Provisional, OQ-140 pill). Opened by Split, it holds the split alone (a party or Another person, a $ or % share and Takes the rest per row, each amount live). Save writes it or refuses it whole." replaceWith="Custom (shadcn Sheet, Checkbox and Input inside)" note="Opens on Grace Park's first seeded Procedure; Save writes to the demo store.">
+        <CatalogueRow name="ContractChangeNotice" source="apps/admin/flows/ContractChangeNotice.tsx" usedIn={A} what="The Contract panel's change warning (catch-up Phase 25a; US-04.1.2, US-04.2.15): the shared warning Notice with its sentence, then the Procedures it names on the shared TableShell (dense), each with Open to its Booking. One component for the dated change (a new Contract's Replaces and From), a disable, and the authorised Procedures a price range left at their old price. It only lists: nothing moves." replaceWith="Custom (the shared Notice and TableShell)" note="Shown with the Procedures dated on or after today still on Merivale's Face lift, read from the demo store.">
+          <ContractChangeNoticeExample />
+        </CatalogueRow>
+        <CatalogueRow name="PaidBySheet (with SplitFeeSection)" source="shared/flows/PaidBySheet.tsx, shared/flows/SplitFeeSection.tsx" usedIn={AWM} what="The one Paid by sheet (catch-up Phase 22a; US-11.2.2, US-08.2.3): a bottom sheet on the phone, a dialog on web and Admin. Opened by Change, it holds who pays (the Different payer tick, the patient's details or the other payer's fields, the Under 18 hint and the contact ask) and, when the payer changes, the offer (the Booking's other Procedures with the same payer, each ticked, never forced). Opened by Split, it holds the split alone (a party or Another person, a $ or % share and Takes the rest per row, each amount live). Save writes it or refuses it whole." replaceWith="Custom (shadcn Sheet, Checkbox and Input inside)" note="Opens on Grace Park's first seeded Procedure; Save writes to the demo store.">
           <PaidBySheetExample />
         </CatalogueRow>
         <CatalogueRow name="DayGrid" source="apps/admin/components/DayGrid.tsx" usedIn={A} what={`The daily scheduling canvas: one row per anaesthetist, blocks on a 07:00 to 18:00 ruler, conflict and attention overlays, the ${DRAFT_LIST} band and the filter footer. Cut down to 10 rows.`} replaceWith="Custom on primitives (grid roles, Tooltip, TanStack Virtual)" note="Blocks open the real SlotDrawer. Each block takes its fill and dashed outline from blockFill (UI unification U6, U23); the conflict and attention outlines stay its own." height={620}>
@@ -490,6 +496,25 @@ function ContractHistoryExample() {
     return s.billing.locks[bookingId]?.procedures[0]?.contract?.id ?? ''
   })
   return contractId === '' ? null : <ContractHistory contractId={contractId} />
+}
+
+/** The dated-change warning on Merivale's Face lift from today (catch-up Phase 25a). */
+function ContractChangeNoticeExample() {
+  const schedule = useAppStore((s) => s.schedule)
+  const masters = useAppStore((s) => s.masters)
+  const today = useToday()
+  const rows = useMemo(() => stillOnContract({ schedule, masters }, 'CT-MER-FACELIFT', today), [schedule, masters, today])
+  return (
+    <ContractChangeNotice
+      title={stillOnTitle(rows.length, shortDay(today), masters.contracts['CT-MER-FACELIFT']?.name ?? 'Face lift')}
+      columns={[{ label: 'Date', mono: true }, { label: 'Procedure' }]}
+      rows={rows.map((r) => ({ key: r.procedureId, bookingId: r.bookingId, dateISO: r.dateISO, patientName: r.patientName, cells: [shortDay(r.dateISO), r.procedureText ?? ''] }))}
+      shot="catalogue-contract-still-on"
+      rowShot="catalogue-contract-still-on-row"
+    >
+      {NOTHING_MOVES}
+    </ContractChangeNotice>
+  )
 }
 
 /** RowField (catch-up Phase 33's move): an editable NHI flagged invalid, a name, and wording kept as received. */

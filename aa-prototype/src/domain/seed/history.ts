@@ -472,9 +472,6 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       removedModifierIds: [],
     }
     if (acc.legacyCode !== undefined) procedure.rvgGroupId = rvgGroupIdForLegacyCode(acc.legacyCode)
-    // Historical holder-billed procedures carry a billing reference (they are
-    // billed + often paid), so they never read as the seeded "missing ref" gaps.
-    if (!isPatientRoute(acc.counterparty)) procedure.billingReference = `HIST-${acc.key.toUpperCase()}`
     build.procedures[procId] = procedure
 
     // --- billing mirror: Invoice + line + Case ---

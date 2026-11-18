@@ -150,9 +150,9 @@ describe('lines (US-08.4.1)', () => {
     const views = invoiceLineViews('patient', typed, { procedureId: 'P1', wording: 'Knee' })
     expect(views.map((v) => [v.kind, v.description, v.amount])).toEqual([['fee', 'Knee', 200]])
   })
-  it('the cross-match fields', () => {
-    expect(crossMatchFor('2026-07-20', 'Ms Lim', ' SG-2026-0791 ')).toEqual({ procedureDateISO: '2026-07-20', surgeon: 'Ms Lim', hospitalRef: 'SG-2026-0791' })
-    expect(crossMatchFor('2026-07-20', undefined, undefined)).toEqual({ procedureDateISO: '2026-07-20' })
+  it('the cross-match fields: the procedure date and the surgeon, no Booking reference (catch-up Phase 25a, D82; OQ-142 open)', () => {
+    expect(crossMatchFor('2026-07-20', 'Ms Lim')).toEqual({ procedureDateISO: '2026-07-20', surgeon: 'Ms Lim' })
+    expect(crossMatchFor('2026-07-20', undefined)).toEqual({ procedureDateISO: '2026-07-20' })
   })
 })
 

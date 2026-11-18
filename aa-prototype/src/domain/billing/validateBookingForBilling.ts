@@ -47,36 +47,6 @@ export interface BillingValidationFailure {
 }
 
 
-/** Who gives a contract reference when billed: a hospital, a surgeon or a surgeons' organisation (by billing identity). */
-const REFERENCE_COUNTERPARTY_KINDS: ReadonlySet<string> = new Set(['hospital', 'surgeon', 'organisation'])
-/** The same, for a holder Party billed as itself (catch-up Phase 21): a hospital, a surgeon or a surgeon group. */
-const REFERENCE_PARTY_KINDS: ReadonlySet<string> = new Set(['hospital', 'surgeon', 'surgeonGroup'])
-
-/**
- * A4's "reference completeness" check, single-sourced (6th review #6): the
- * holder's contract or approval reference is expected when the Procedure's
- * Contract bills a hospital or a surgeon holder (keyed on who is billed,
- * `holderBilledFor`); an insurer's Contract, a Contract billing the payer, an
- * open-price fallback and No contract · RVG expect none. True when it is
- * expected and absent or blank. The office billing setup and the
- * authorisation-review flags read this one predicate. Catch-up Phase 21 builds
- * no other holder reference (OQ-136, D82); 21a settles this flag with Review.
- */
-export function billingReferenceMissing(
-  procedure: Pick<Procedure, 'billingReference' | 'governingContractId'>,
-  contracts: Readonly<Record<string, Contract>>,
-  parties: Readonly<Record<string, Party>>,
-): boolean {
-  const contract = procedure.governingContractId !== undefined ? contracts[procedure.governingContractId] : undefined
-  if (contract === undefined || contract.systemRole !== undefined) return false
-  const billed = holderBilledFor(contract, parties)
-  if (billed === undefined) return false
-  // A holder Party billed as itself (no older identity, e.g. Unisports) is judged by its Party kind.
-  const expects = billed.kind === 'party' ? REFERENCE_PARTY_KINDS.has(parties[billed.id]?.kind ?? '') : REFERENCE_COUNTERPARTY_KINDS.has(billed.kind)
-  if (!expects) return false
-  return procedure.billingReference === undefined || procedure.billingReference.trim() === ''
-}
-
 export interface BookingBillingContext {
   anaesthetist: Anaesthetist
   /** The RVG groups, keyed by their hidden id (catch-up Phase 19). */

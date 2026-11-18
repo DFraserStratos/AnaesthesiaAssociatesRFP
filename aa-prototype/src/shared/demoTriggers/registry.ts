@@ -97,7 +97,9 @@ import {
   nextOpenSouterList,
   feedChangesPrimary,
   feedChangesPrimaryRefusal,
+  BACKDATED_RANGE,
   BACKDATED_RANGE_CONTRACT_ID,
+  keptPriceForRange,
   addBackdatedRangeDemo,
   backdatedRangeAdded,
   addPrepaidBooking,
@@ -129,7 +131,8 @@ import { MULTI_PROCEDURE_DEMO } from '../../domain/seed/multiProcedureDemo'
 import { DRAFT_LIST, DRAFT_LISTS, SOURCE_LABELS } from '../scheduleTerms'
 import { projectedListId, slotIdFor } from '../../domain/slots'
 import { SEED_STATUS, statusFor, statusLine } from '../../domain/slotStatus'
-import { roundToCents } from '../../domain/billing/money'
+import { formatMoney, roundToCents } from '../../domain/billing/money'
+import { keptPriceTitle } from '../../domain/billing/contractChanges'
 import { aaFeeFor, aaFeeMonthLabel } from '../../domain/billing/aaFee'
 import { drSurname, formatCurrency, plural, shortDay } from '../format'
 import { isAssignedList } from '../../domain/draftLists'
@@ -1291,7 +1294,10 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     run: (api) => {
       const res = addBackdatedRangeDemo(api)
       if (!res.ok) return { ok: false, message: res.message }
-      return { ok: true, message: 'Added a range from 1 Jul 2026 at $3,300.00 to the Face lift. Unedited Face lift Bookings now price at $3,300.00; the typed and the invoiced ones are held.' }
+      // The kept-price count and names come from the same list the ranges section shows (catch-up Phase 25a, D79).
+      const kept = keptPriceForRange(api.getState(), BACKDATED_RANGE_CONTRACT_ID, BACKDATED_RANGE)
+      const keptText = kept.length > 0 ? ` ${keptPriceTitle(kept.length)}: ${kept.map((r) => `${r.patientName}, ${formatMoney(r.lockedPrice)}`).join('; ')}.` : ''
+      return { ok: true, message: `Added a range from 1 Jul 2026 at $3,300.00 to the Face lift. Unedited Face lift Bookings now price at $3,300.00; the typed and the invoiced ones are held.${keptText}` }
     },
     indexPath: () => '/admin/masters?view=contracts',
     indexHint: "Then open Merivale's Face lift (search \"Face lift\", then Edit) to see its ranges.",

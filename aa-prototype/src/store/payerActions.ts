@@ -150,10 +150,10 @@ function sameIdentity(a: ProcedurePayer, b: ProcedurePayer, patientId: string): 
  *   approval lifecycle): a Procedure covered by its payer's raised prepayment
  *   invoice cannot change payer; another payer's Procedures still can.
  *
- * PROVISIONAL (OQ-140, D85): a payer on each Procedure, the change offered to
- * the others, each ticked by default and never forced. Going back to one
- * payer per Booking is `alsoApplyTo` always being every Procedure on the
- * Booking; nothing else changes.
+ * D85 (OQ-140 answered 18 November 2026): a payer on each Procedure, the
+ * change offered to the others, each ticked by default and never forced.
+ * One payer per Booking would be `alsoApplyTo` always being every Procedure
+ * on the Booking; nothing else would change.
  */
 export function setProcedurePayer(
   api: AppStoreApi,

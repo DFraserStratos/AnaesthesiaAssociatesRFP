@@ -19,17 +19,17 @@
         },
         {
           "state": "edit",
-          "caption": "The office sets the Contract at setup: Contract and reference",
+          "caption": "The office sets the Contract at setup: the Contract, chosen on the step rail",
           "steps": [
             {
-              "click": "role=button[name=\"Edit billing setup\"]"
+              "scroll": "[data-shot=capture-billing] >> nth=0"
             },
             {
-              "wait": 500
+              "wait": 400
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[data-shot=capture-billing] >> nth=0"
           ]
         }
       ]

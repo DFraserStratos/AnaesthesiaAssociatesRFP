@@ -264,12 +264,16 @@ export function invoiceLineViews(layout: InvoiceLayout, fee: FeeResult, options:
   return views
 }
 
-/** The holder layout's cross-match fields (US-08.4.1): the procedure date, the surgeon, the hospital's reference. */
-export function crossMatchFor(procedureDateISO: IsoDate, surgeonName: string | undefined, hospitalRef: string | undefined): InvoiceCrossMatch {
+/**
+ * The holder layout's cross-match fields (US-08.4.1): the procedure date and
+ * the surgeon. The hospital's reference is gone (catch-up Phase 25a, DM-68,
+ * D82); whether the Booking's approval number prints here is OQ-142 (open,
+ * D88: as built, nothing), and would be one more field in this one place.
+ */
+export function crossMatchFor(procedureDateISO: IsoDate, surgeonName: string | undefined): InvoiceCrossMatch {
   return {
     procedureDateISO,
     ...(surgeonName !== undefined && surgeonName !== '' ? { surgeon: surgeonName } : {}),
-    ...(hospitalRef !== undefined && hospitalRef.trim() !== '' ? { hospitalRef: hospitalRef.trim() } : {}),
   }
 }
 

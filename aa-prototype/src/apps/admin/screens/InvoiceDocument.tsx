@@ -249,7 +249,6 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
           <div data-shot="invoice-cross-match" style={{ display: 'flex', gap: 24, flexWrap: 'wrap', fontSize: 12, color: neutral.slate, background: neutral.bg, borderRadius: radius.ctl, padding: '8px 12px' }}>
             <CrossMatchItem label="Procedure date" value={dayWithYear(invoice.crossMatch.procedureDateISO)} />
             {invoice.crossMatch.surgeon !== undefined && <CrossMatchItem label="Surgeon" value={invoice.crossMatch.surgeon} plain />}
-            {invoice.crossMatch.hospitalRef !== undefined && <CrossMatchItem label="Hospital reference" value={invoice.crossMatch.hospitalRef} />}
           </div>
         )}
 

@@ -342,8 +342,13 @@ export const PERSIST_KEY = 'aa-demo'
  *  `BillingCase.prepayLeg` on BC0001, `Disbursement.transferId`). Reseeds on load.
  *  v56: catch-up Phase 33a, stubs on a List (`intake.stubs`, counter `stub`): the seeded intake holds one
  *  Southern Cross row with no NHI (IRS001, Mere Tipene) and its stub STB0001 on Dr Souter's Tue 4 Aug PM List.
- *  Reseeds on load. */
-export const PERSIST_VERSION = 56
+ *  Reseeds on load.
+ *  v56: catch-up Phase 25a, the seeded Disabled Contract (Christchurch Eye Surgery 2025 rate, `CT-CES-2025`, its
+ *  `contract.disable` audit entry on Fri 10 Jul) and Margaret Ellery's Booking on it on 21a's review-flags List. Reseeds on load.
+ *  v57: catch-up Phase 25a session 2, the Procedure's hospital reference removed (`Procedure.billingReference`, the
+ *  lock's copy, `InvoiceCrossMatch.hospitalRef`, the seeded values and audit fields; DM-68, D82). Reseeds on load.
+ *  v58: Wave 2 sync on lane/b, Lane A's 25a (v57) joined with Lane B's 33a (v56): one past the higher. */
+export const PERSIST_VERSION = 58
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {} }

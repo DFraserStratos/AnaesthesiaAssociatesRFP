@@ -213,8 +213,8 @@ export const RVG_GROUPS: readonly RvgGroup[] = ALL_ROWS.map((row, i) => ({
   // The modifiers the base units include (catch-up Phase 19b, US-05.1.4, D43):
   // P1 on the 20 published Neurosurgery and Spine rows, from the catalogue's CSV.
   includedModifierIds: i < PUBLISHED.length ? [...(INCLUDED_MODIFIER_IDS_BY_RVG_CODE.get(row.code) ?? [])] : [],
-  // The base codes the guide splits by age take no age modifier (D29's default,
-  // OQ-95 part 1), on every row that carries the code (AA's own P2 row too).
+  // The base codes the guide splits by age take no age modifier (D29,
+  // OQ-95 part 1 answered), on every row that carries the code (AA's own P2 row too).
   ...(AGE_SPLIT_CODES.has(row.code) ? { noAgeModifier: true } : {}),
 }))
 

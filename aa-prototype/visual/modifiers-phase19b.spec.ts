@@ -196,7 +196,8 @@ test('admin: the Modifiers tab lists the 30 RVG rows as printed with the one pro
   await fresh(page, '/admin/masters?view=modifiers')
   const rvg = page.locator('[data-shot="masters-modifiers-rvg"] tbody tr')
   await expect(rvg).toHaveCount(30)
-  await expect(page.locator('[data-shot="masters-modifiers-provisional"]')).toContainText('The age bands are still to confirm with AA (OQ-95).')
+  // OQ-95 answered (D29): no provisional note (catch-up Phase 25a).
+  await expect(page.locator('[data-shot="masters-modifiers-provisional"]')).toHaveCount(0)
   await expect(page.locator('tr[data-modifier-code="PA3"]')).toContainText('2 + Time')
   await expect(page.locator('tr[data-modifier-code="POC2a"]')).toContainText('Entered at capture')
   await expect(page.locator('tr[data-modifier-code="AS3"] td').nth(3)).toHaveText('2')

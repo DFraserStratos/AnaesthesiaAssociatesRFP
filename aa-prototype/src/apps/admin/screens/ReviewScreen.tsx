@@ -27,6 +27,7 @@ import { Button, StatusChip, TextArea, useListWarnings, useSurface, WarningTrian
 import { bookingFee } from '../../../shared/capture'
 import { isNoChargeBooking } from '../../../domain/billing/procedurePrice'
 import { roundToCents } from '../../../domain/billing/money'
+import { disabledDaysByContract } from '../../../domain/billing/contractHistory'
 import { dayMicroCap, formatCurrency, hhmm, locationName, slotTimeRange } from '../../../shared/format'
 import { HistorySheet } from '../../../shared/booking'
 import { ConfirmSheet, OverlayHeader, SheetActions } from '../../../shared/surface'
@@ -108,6 +109,8 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
 
   const rows = useMemo(() => {
     if (list === undefined || list.state === 'DRAFT') return []
+    // The Disabled Contracts' days, read from the audit once per Review (catch-up Phase 25a).
+    const disabledDays = disabledDaysByContract(audit)
     const bookings = Object.values(bookingsRecord)
       .filter((c) => c.listId === listId && c.cancellation === undefined)
       .sort((a, b) => (a.scheduledTime ?? '').localeCompare(b.scheduledTime ?? '') || a.id.localeCompare(b.id))
@@ -121,7 +124,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
       // The flags come from the one pure list (`domain/billing/reviewFlags.ts`) over the store's one input selector (catch-up Phase 21a).
       const state = useAppStore.getState()
       const totals = bookingFee({ procedures: procs, list, masters, billingLines: billingLinesRecord, patientId: booking.patientId, held: heldPricesForBooking(state, booking.id), ...(state.billing.locks[booking.id] !== undefined ? { lock: state.billing.locks[booking.id]! } : {}) })
-      const input = reviewInputFor(state, booking)
+      const input = reviewInputFor(state, booking, disabledDays)
       const flags = input !== undefined ? reviewFlagsForBooking(input) : []
       const changes: (ContractChangeRecord | undefined)[] = procs.map((p) => contractChangeFor(state, p.id))
       const primary: Procedure | undefined = procs.find((p) => p.isPrimary)

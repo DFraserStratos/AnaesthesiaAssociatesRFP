@@ -6,7 +6,7 @@
  * Each Procedure's Contract decides: a Contract set to bill its holder bills
  * the holder Party; any other Contract bills the Procedure's own payer
  * (catch-up Phase 22a: the payer moved from the Booking onto each Procedure,
- * D85, provisional on OQ-140; its identity, offer and copy rule are in
+ * D85, OQ-140 answered; its identity, offer and copy rule are in
  * `procedurePayer.ts`).
  * So No contract · RVG, No contract · Fixed price, a surgeon's fixed price,
  * an anaesthetist's own Contract and every prepaid Contract bill the payer.

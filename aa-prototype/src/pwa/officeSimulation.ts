@@ -18,7 +18,7 @@
  * IT IS A SIMULATION, AND IT IS EXPLICITLY NOT THE RFP FLOW. Nothing in the RFP
  * authorises a List off the back of the anaesthetist's own submit, and this must
  * never be presented as proposed behaviour. A real submission goes to the
- * OFFICE REVIEW QUEUE, where a person checks it (missing billing references,
+ * OFFICE REVIEW QUEUE, where a person checks it (the review flags,
  * prepayment warnings, cancelled bookings, phone notes) and authorises it
  * deliberately — that separation is the whole point of the SUBMITTED state, and
  * the Admin Review screen is where the prototype demonstrates it. What this job

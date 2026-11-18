@@ -74,8 +74,6 @@ interface Spec {
   enteredPrice?: number
   /** Who typed `enteredPrice` (its seeded audit row). */
   typedBy?: 'office' | 'anaesthetist'
-  /** The hospital's reference, on a Contract that bills a hospital holder. */
-  billingReference?: string
   /** The seed's source rule: Forte's rooms send PDFs; St George's a feed; AA's rooms the office. */
   source: Booking['source']
 }
@@ -84,7 +82,7 @@ function specs(noChargeListId: string): readonly Spec[] {
   const MON27 = '2026-07-27'
   const MON10AUG = '2026-08-10'
   return [
-    { key: 'discountBooking', listId: PRICE_LINE_LIST_ID, day: MON27, patientId: PAT_24.discount, time: '11:15', text: 'Breast reduction, bilateral', contractId: CONTRACT.forteDiscount, legacyCode: '45200', completed: false, billingReference: 'FH-2026-0727-04', source: 'surgeonPdf' },
+    { key: 'discountBooking', listId: PRICE_LINE_LIST_ID, day: MON27, patientId: PAT_24.discount, time: '11:15', text: 'Breast reduction, bilateral', contractId: CONTRACT.forteDiscount, legacyCode: '45200', completed: false, source: 'surgeonPdf' },
     { key: 'priceCaptureBooking', listId: PRICE_LINE_LIST_ID, day: MON27, patientId: PAT_24.priceCapture, time: '12:15', text: 'Skin flap repair, cheek', contractId: CONTRACT.noContractRvg, legacyCode: '45030', completed: false, source: 'surgeonPdf' },
     { key: 'rangeTypedBooking', listId: MERIVALE_BOOKING_LIST_ID, day: MON10AUG, patientId: PAT_24.rangeTyped, time: '17:45', text: 'Face lift', contractId: PRICED_ITEM.merFaceLift, completed: false, enteredPrice: RANGE_TYPED_PRICE, typedBy: 'office', source: 'hospitalDownload' },
     { key: 'rangeAuthorisedBooking', listId: RANGE_AUTHORISED_LIST_ID, day: '2026-07-16', patientId: PAT_24.rangeAuthorised, time: '13:30', text: 'Face lift', contractId: PRICED_ITEM.merFaceLift, start: '13:35', finish: '16:05', completed: true, source: 'admin' },
@@ -141,7 +139,6 @@ export function seedPricingBookings(
       procedure.handoverISO = `${spec.day}T${spec.finish}:00`
     }
     if (spec.enteredPrice !== undefined) procedure.enteredPrice = spec.enteredPrice
-    if (spec.billingReference !== undefined) procedure.billingReference = spec.billingReference
     procedures.push(procedure)
     if (spec.enteredPrice !== undefined && spec.typedBy !== undefined) {
       const office = spec.typedBy === 'office'

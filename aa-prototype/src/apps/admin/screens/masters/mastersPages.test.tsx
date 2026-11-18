@@ -225,7 +225,8 @@ describe('the surgeon profile and the anaesthetist record', () => {
     renderAdmin(`/admin/masters/anaesthetists/${ANAE.sharma}`)
     const card = document.querySelector('[data-shot="tier-card"]') as HTMLElement
     expect(within(card).getByText('Only the office sees this. It orders the suggestions when you assign or move a List.')).toBeInTheDocument()
-    expect(within(card).getByText('Tier names are provisional.')).toBeInTheDocument()
+    // OQ-102 answered (D36): no provisional line (catch-up Phase 25a).
+    expect(within(card).queryByText('Tier names are provisional.')).toBeNull()
     fireEvent.click(within(card).getByRole('button', { name: 'Tier 1' }))
     expect(selectPriorityTier(useAppStore.getState(), ANAE.sharma)).toBe(1)
     expect(useAppStore.getState().audit.at(-1)?.action).toBe('anaesthetist.tierSet')

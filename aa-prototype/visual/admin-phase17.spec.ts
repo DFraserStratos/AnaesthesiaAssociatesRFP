@@ -74,7 +74,8 @@ test('phase 17 surgeon profile and add sheet', async ({ page }) => {
 test('phase 17 anaesthetist record', async ({ page }) => {
   await page.goto('/admin/masters/anaesthetists/41267')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="tier-card"]').getByText('Tier names are provisional.')).toBeVisible()
+  // OQ-102 answered (D36): no provisional line (catch-up Phase 25a).
+  await expect(page.locator('[data-shot="tier-card"]').getByText('Tier names are provisional.')).toHaveCount(0)
   await expect(page.locator('[data-pairing-group="NOT_PREFERRED"]').getByRole('link', { name: 'Ms A. Reid' })).toBeVisible()
   await expect(page.locator('[data-pairing-group="PREFERRED"]').getByRole('link', { name: 'Mr J. Whitford' })).toBeVisible()
   await page.waitForTimeout(450)

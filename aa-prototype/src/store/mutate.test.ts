@@ -44,7 +44,7 @@ describe('the wrapper stamps lastModifiedBy/At in lockstep with the audit entry'
     const api = createAppStore()
     const procedure = proceduresForBooking(api.getState(), ELLISON_BOOKING)[0]
     if (procedure === undefined) throw new Error('no procedure')
-    expect(editProcedure(api, OFFICE, procedure.id, { billingReference: 'SX-2026-7000' }).ok).toBe(true)
+    expect(editProcedure(api, OFFICE, procedure.id, { opNotes: 'Seen in recovery' }).ok).toBe(true)
     const state = api.getState()
     const booking = state.schedule.bookings[ELLISON_BOOKING]
     const entry = auditForEntity(state, procedure.id).at(-1)

@@ -429,6 +429,8 @@ export {
   nextPrimaryFor,
 } from './demoMultiProcedure'
 export { reviewFlagsFor, reviewFlagsOnList, reviewInputFor } from './reviewSelectors'
+// The Contract change warnings' lists (catch-up Phase 25a).
+export { keptPriceForRange, stillOnContract } from './contractChangeSelectors'
 export * from './lookback'
 
 // The step rail's writes and reads (catch-up Phase 20).

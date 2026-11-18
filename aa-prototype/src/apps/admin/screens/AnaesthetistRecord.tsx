@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { neutral } from '../../../theme/tokens'
-import { TIER_LABELS, TIER_NAMES_PROVISIONAL, TIER_VALUES, isPriorityTier } from '../../../domain/pairingPreferences'
+import { TIER_LABELS, TIER_VALUES, isPriorityTier } from '../../../domain/pairingPreferences'
 import { useAppStore, type Actor } from '../../../store'
 import { selectPriorityTier, setPriorityTier } from '../../../store/officePrivate'
 import { FormError } from '../../../shared'
@@ -54,10 +54,7 @@ export function AnaesthetistRecord({ anaesthetistId, actor }: { anaesthetistId: 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, alignItems: 'start' }}>
         <Card style={PROFILE_CARD} title="Priority tier" shot="tier-card">
           <SlidingSegmentedControl ariaLabel="Priority tier" value={String(tier)} options={TIER_OPTIONS} onSelect={changeTier} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <div style={{ fontSize: 12.5, color: neutral.mist }}>Only the office sees this. It orders the suggestions when you assign or move a List.</div>
-            {TIER_NAMES_PROVISIONAL && <div style={{ fontSize: 12.5, color: neutral.mist }}>Tier names are provisional.</div>}
-          </div>
+          <div style={{ fontSize: 12.5, color: neutral.mist }}>Only the office sees this. It orders the suggestions when you assign or move a List.</div>
           <FormError message={tierError} />
         </Card>
 

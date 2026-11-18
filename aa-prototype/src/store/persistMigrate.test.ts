@@ -574,7 +574,8 @@ describe('office review flags and the movable Booking (catch-up Phase 21a sessio
     const bookings = Object.fromEntries(Object.entries(fresh.schedule.bookings).filter(([, b]) => b.listId !== SEED_LIST_IDS.reviewFlags))
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule: { ...fresh.schedule, bookings } }, version: 42 }))
     const s = createAppStore({ persisted: true }).getState()
-    expect(Object.values(s.schedule.bookings).filter((b) => b.listId === SEED_LIST_IDS.reviewFlags)).toHaveLength(4)
+    // Four from 21a; catch-up Phase 25a adds the Booking on the Disabled Contract.
+    expect(Object.values(s.schedule.bookings).filter((b) => b.listId === SEED_LIST_IDS.reviewFlags)).toHaveLength(5)
   })
 })
 
@@ -857,5 +858,33 @@ describe('stubs on a List (catch-up Phase 33a)', () => {
     expect(Object.keys(s.intake.stubs)).toEqual(['STB0001'])
     expect(s.intake.stubs.STB0001).toMatchObject({ status: 'standing', listId: 'L-34821-2026-08-04-PM', importRowId: 'IRS001' })
     expect(s.counters.stub).toBe(2)
+  })
+})
+
+describe('the seeded Disabled Contract (catch-up Phase 25a)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v55 store with no Disabled Contract and reseeds it with its disable entry', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(56)
+    const fresh = freshAppState()
+    const { 'CT-CES-2025': _gone, ...contracts } = fresh.masters.contracts
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters: { ...fresh.masters, contracts } }, version: 55 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.masters.contracts['CT-CES-2025']?.status).toBe('disabled')
+    expect(s.audit.some((a) => a.entityId === 'CT-CES-2025' && a.action === 'contract.disable')).toBe(true)
+  })
+
+  it('discards a v56 store whose Procedures still carry a hospital reference, and reseeds without one (session 2, DM-68)', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(57)
+    const fresh = freshAppState()
+    const [firstId, first] = Object.entries(fresh.schedule.procedures)[0]!
+    const procedures = { ...fresh.schedule.procedures, [firstId]: { ...first, billingReference: 'SG-2026-0001' } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule: { ...fresh.schedule, procedures } }, version: 56 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.values(s.schedule.procedures).some((p) => 'billingReference' in p)).toBe(false)
   })
 })

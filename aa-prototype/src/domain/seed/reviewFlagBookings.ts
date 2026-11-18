@@ -133,8 +133,6 @@ export function seedReviewFlagBookings(next: { booking: number; procedure: numbe
       procedure.handoverISO = `${DAY}T${spec.finish}:00`
     }
     if (spec.enteredPrice !== undefined) procedure.enteredPrice = spec.enteredPrice
-    // Christchurch Eye Surgery's own Contract carries its reference, as every other seeded hospital-billed Procedure does.
-    if (spec.contractId === CES_RVG) procedure.billingReference = 'CES-2026-0714-01'
     procedures.push(procedure)
     if (spec.key === 'contractChangeBooking') {
       // Dr Chen's change on his own List (Phase 20's record), before he completed it; never approved.

@@ -28,7 +28,7 @@ import phase18Fixture from './__parity__/phase-18-baseline.json'
 import phase19Fixture from './__parity__/phase-19-baseline.json'
 import phase19aFixture from './__parity__/phase-19a-baseline.json'
 import phase19bFixture from './__parity__/phase-19b-baseline.json'
-import { COMPLETION_BOOKING_IDS, REVIEW_FLAG_BOOKING_IDS, MERIVALE_FACE_LIFT_BOOKING_ID, PAYER_REVIEW_BOOKING_IDS, SEED_MARKERS, SOURCE_WORDING_BOOKING_IDS } from '../domain/seed'
+import { COMPLETION_BOOKING_IDS, DISABLED_CONTRACT_BOOKING_IDS, REVIEW_FLAG_BOOKING_IDS, MERIVALE_FACE_LIFT_BOOKING_ID, PAYER_REVIEW_BOOKING_IDS, SEED_MARKERS, SOURCE_WORDING_BOOKING_IDS } from '../domain/seed'
 import { freshAppStateBefore22a } from './__parity__/phase22aAdditions'
 import { billingContextForBooking, bookingsForList, prepaidHeldFor, proceduresForBooking } from './selectors'
 import { procedureFeeAlone as procedureFee } from './testFees'
@@ -365,6 +365,7 @@ const ADDED_BOOKINGS: Record<string, string> = {
   ...Object.fromEntries(PAYER_REVIEW_BOOKING_IDS.map((id) => [id, 'Phase 21 · the payer review List'])),
   ...Object.fromEntries(COMPLETION_BOOKING_IDS.map((id) => [id, 'Phase 21a · the fixed price with no times and the open price that needs a price'])),
   ...Object.fromEntries(REVIEW_FLAG_BOOKING_IDS.map((id) => [id, 'Phase 21a · the review-flags List and the movable fixed price'])),
+  ...Object.fromEntries(DISABLED_CONTRACT_BOOKING_IDS.map((id) => [id, 'Phase 25a · the Booking on the Disabled Contract'])),
 }
 
 /**
@@ -376,7 +377,7 @@ const FOSTER_BOOKING_20A = SEED_MARKERS.integrationS14!.entityId
 const FOSTER_PROCEDURE_20A = Object.values(state.schedule.procedures).find((p) => p.bookingId === FOSTER_BOOKING_20A)!.id
 /** Phase 20a's appended Bookings and their Procedures (named additions). */
 /** Phase 20a's named additions, and Phase 21's payer review List beside them (set aside the same way). */
-const ADDED_BOOKINGS_20A = new Set([...SOURCE_WORDING_BOOKING_IDS, ...PAYER_REVIEW_BOOKING_IDS, ...COMPLETION_BOOKING_IDS, ...REVIEW_FLAG_BOOKING_IDS])
+const ADDED_BOOKINGS_20A = new Set([...SOURCE_WORDING_BOOKING_IDS, ...PAYER_REVIEW_BOOKING_IDS, ...COMPLETION_BOOKING_IDS, ...REVIEW_FLAG_BOOKING_IDS, ...DISABLED_CONTRACT_BOOKING_IDS])
 const ADDED_PROCEDURES_20A = new Set(Object.values(state.schedule.procedures).filter((p) => ADDED_BOOKINGS_20A.has(p.bookingId)).map((p) => p.id))
 
 function addedProcedureIds(): Set<string> {

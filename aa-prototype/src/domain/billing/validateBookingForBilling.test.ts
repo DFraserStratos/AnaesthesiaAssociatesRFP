@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_RVG_TIME_RULE } from './timeUnits'
 import { RVG_MODIFIER_MASTER, mkClaim } from './fixtures'
 import {
-  billingReferenceMissing,
   validateBookingForBilling,
   type BookingBillingContext,
 } from './validateBookingForBilling'
@@ -205,15 +204,5 @@ describe('"Needs a price" on a fixed price with no range in force (catch-up Phas
       'Needs a price: No contract · Fixed price has no price of its own.',
     )
     expect(validateBookingForBilling(booking, [{ ...p, enteredPrice: 2000 }], mkCtx())).toEqual([])
-  })
-})
-
-describe('billingReferenceMissing for a Party billed as itself (catch-up Phase 21 review)', () => {
-  it('asks a surgeon group billed as itself for its reference, as COS is asked', () => {
-    const group = mkParty({ id: 'party-group', kind: 'surgeonGroup', name: 'Group', codePrefix: 'GRP', hospitalId: undefined })
-    const held = mkContract({ id: 'con-grp', name: 'Group RVG', holderId: 'party-group' })
-    const p = validProcedure({ governingContractId: 'con-grp' })
-    expect(billingReferenceMissing(p, { 'con-grp': held }, { 'party-group': group })).toBe(true)
-    expect(billingReferenceMissing({ ...p, billingReference: 'G-1' }, { 'con-grp': held }, { 'party-group': group })).toBe(false)
   })
 })

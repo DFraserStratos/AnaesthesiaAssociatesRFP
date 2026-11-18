@@ -1,7 +1,7 @@
 {
   "id": "US-04.1.2",
-  "status": "partial",
-  "absentReason": "A fixed price changes by a price range from Phase 19a.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "contracts",
@@ -90,6 +90,84 @@
           "highlight": [
             "[data-shot=contract-disable]",
             "[data-shot=contract-detail] >> role=button[name=\"Save contract\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dated-change",
+      "app": "admin",
+      "caption": "A new Contract for a dated change lists the Procedures still on the old one",
+      "start": "/admin/masters?view=contracts",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"New contract\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "select": "[data-shot=contract-links] select >> nth=0",
+              "value": "Merivale Plastic Surgery"
+            },
+            {
+              "select": "[data-shot=contract-replaces] select",
+              "value": "CT-MER-FACELIFT"
+            },
+            {
+              "fill": "[data-shot=contract-replaces] input[type=date]",
+              "value": "2026-08-01"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-shot=contract-still-on-warning]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-replaces]",
+            "[data-shot=contract-still-on-warning]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "disable-warning",
+      "app": "admin",
+      "caption": "Disabling lists the Procedures still on it; nothing moves",
+      "start": "/admin/masters?view=contracts",
+      "states": [
+        {
+          "steps": [
+            {
+              "fill": "[data-shot=contract-search] input",
+              "value": "Face lift"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-MER-FACELIFT\"] >> button:text-is(\"Edit\")"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=contract-disable]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=contract-still-on-warning]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-disabled-note]",
+            "[data-shot=contract-still-on-warning]"
           ]
         }
       ]

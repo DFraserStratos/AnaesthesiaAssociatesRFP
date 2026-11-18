@@ -1,6 +1,6 @@
 /**
  * The Paid by sheet (catch-up Phase 22a; US-11.2.2, US-11.2.3, US-11.2.4,
- * US-08.2.3; D85, provisional on OQ-140): the one place to see and change who
+ * US-08.2.3; D85, OQ-140 answered): the one place to see and change who
  * pays for one Procedure. A bottom sheet on the phone, a dialog on web and
  * Admin, through `useSurface().Overlay`; opened by the Paid by line of the
  * Procedure's Billing card: its Change opens who pays (with the offer), its
@@ -13,8 +13,8 @@
  *   any party who pays. A payer with neither an email nor a postal address is
  *   asked for one and still saves (Review flags it; never a block).
  * - **The offer**: when the payer changes, the Booking's other Procedures
- *   holding the same payer (`payerOfferFor`), each ticked, never forced. The
- *   one provisional label of the phase sits here (OQ-140).
+ *   holding the same payer (`payerOfferFor`), each ticked, never forced (no
+ *   provisional label since catch-up Phase 25a: OQ-140 is answered).
  * - **The split**: 22's split (`SplitFeeSection`), opened by Split.
  *
  * Save writes what the sheet shows through `savePaidBy` (refused as a whole,
@@ -27,10 +27,10 @@ import { neutral, radius } from '../../theme/tokens'
 import type { PostalAddress, Procedure } from '../../domain/types'
 import { cleanPostalAddress, isMinorOn, isPayerBilled, payerCounterparty, payerDetails, payerHasContact } from '../../domain/billing'
 import { formatPostalAddress } from '../../domain/billing/payer'
-import { PAYER_OFFER_PROVISIONAL, payerOfferFor } from '../../domain/billing/procedurePayer'
+import { payerOfferFor } from '../../domain/billing/procedurePayer'
 import { procedureLabel } from '../../domain/billing/procedureStack'
 import { PAYER_LOCKED_BY_PREPAYMENT, payerLockedByPrepayment, prepaymentRecheckLine, prepaymentStatusFor, sameName, savePaidBy, useAppStore, type Actor, type PaidByChange, type PayerInput } from '../../store'
-import { Button, Checkbox, FormError, Notice, Pill, TextField } from '../ui'
+import { Button, Checkbox, FormError, Notice, TextField } from '../ui'
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { SheetActions } from '../surface/SheetActions'
@@ -199,12 +199,7 @@ export function PaidBySheet({ open, procedureId, actor, onClose, focus = 'payer'
 
         {offer.length > 0 && (
           <section data-shot="payer-offer" aria-label="Change the payer on other procedures too" style={sectionStyle}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-              <h3 style={SECTION_HEADING}>Also change</h3>
-              <Pill tone="neutral" shot="payer-offer-provisional" title="A payer on each procedure, with the change offered to the others, is provisional until AA confirms it (OQ-140).">
-                {PAYER_OFFER_PROVISIONAL}
-              </Pill>
-            </div>
+            <h3 style={SECTION_HEADING}>Also change</h3>
             <span style={{ fontSize: 13, lineHeight: '19px', color: neutral.slate }}>These procedures have the same payer now. Untick any that should keep it.</span>
             <div style={{ display: 'flex', flexDirection: 'column', border: `1px solid ${neutral.line}`, borderRadius: radius.ctl }}>
               {offer.map((p, i) => {

@@ -22,7 +22,7 @@ import { priceStatusFor } from '../../domain/billing/priceStatus'
 import { needsPriceMessage } from '../../domain/billing/priceRanges'
 import { prepaidAmountText, prepaymentHoldingWords, prepaymentStatusWords, prepaymentTone } from '../booking/prepaymentText'
 
-/** Fields the Contract row anchors (the step rail and "Contract and reference" own them; catch-up Phase 20). */
+/** Fields the Contract row anchors (the step rail owns them; catch-up Phase 20). */
 // The Contract fields' failures, shown under the Billing card, which Mark complete focuses.
 const CONTEXT_FIELDS = BILLING_FAILURE_FIELDS
 
