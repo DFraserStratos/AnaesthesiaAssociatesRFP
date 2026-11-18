@@ -7,7 +7,7 @@
 import { GST_NUMBER_INVALID, isValidGstNumber, normaliseGstNumber } from '../domain/billing/invoicePresentation'
 import type {
   Anaesthetist,
-  GstPeriod,
+  BankAccount,
   Party,
   HospitalId,
   Hospital,
@@ -28,7 +28,9 @@ import { previewApplyAllRecurringBookings, previewRecurringBookingChange, previe
 import { holidayCause } from '../domain/conflicts'
 import { normaliseClash } from '../domain/draftLists'
 import { emptyPlan, firstAffectedDate, type PlanKept, type PlanSkipped, type ProjectedFields, type ProjectionPlan } from '../domain/recurringBookingProjection'
-import { hpiCpnHolder, isPlausibleEmail, normaliseHpiCpn } from '../domain/surgeons'
+import { HPI_CPN_INVALID, hpiCpnHolder, isPlausibleEmail, isPlausibleHpiCpn, normaliseHpiCpn } from '../domain/surgeons'
+import { maskBankAccount, normaliseNzBankAccount } from '../domain/bankAccount'
+import { roundToCents } from '../domain/billing/money'
 import { pairingAcknowledgement } from '../domain/pairingPreferences'
 import { partyRefusal, suggestCodePrefix } from '../domain/billing/parties'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
@@ -162,15 +164,20 @@ export function editHospital(api: AppStoreApi, actor: Actor, hospitalId: Hospita
 // Anaesthetist master (edit + add-with-canvas-forward)
 // ---------------------------------------------------------------------------
 
-/** Editable Anaesthetist fields (registration number is the immutable id). */
+/**
+ * Editable Anaesthetist fields (registration number is the immutable id). The
+ * anaesthetist may send only `unitValue`, for their own record; the office
+ * may send any (catch-up Phase 26; US-12.1.1, US-12.1.4).
+ */
 export interface AnaesthetistPatch {
   unitValue?: number
   phone?: string
   email?: string
-  gstPeriod?: GstPeriod
   active?: boolean
-  /** The HPI CPN, optional on an anaesthetist; a typed one is stored normalised and must be unique across practitioners (Phase 17). */
+  /** The HPI CPN (mandatory, Phase 26): stored normalised, two digits then four letters, unique across practitioners (Phase 17). */
   hpiId?: string
+  /** The bank details (mandatory, Phase 26; OQ-14): replaced whole, never cleared. */
+  bankAccount?: BankAccount
   /** The start date (catch-up Phase 28, US-01.1.3): moving it adds or removes Slots from today on. */
   startDateISO?: string
   /** The GST number (catch-up Phase 22, DM-62): optional; blank clears it; a typed one must be 8 or 9 digits. */
@@ -180,19 +187,93 @@ export interface AnaesthetistPatch {
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 /**
- * Refuse an HPI CPN another practitioner already holds (catch-up Phase 17,
- * OQ-52): the identifier is unique across surgeons and anaesthetists
- * whichever record is saved first. Blank never clashes.
+ * The anaesthetist's HPI CPN, mandatory (catch-up Phase 26; US-12.1.4, OQ-52):
+ * required, two digits then four letters, and unique across practitioners
+ * whichever record is saved first (Phase 17). Returns it normalised.
  */
-function hpiCpnClash(state: ReturnType<AppStoreApi['getState']>, hpiId: string, anaesthetistId?: string): Outcome<never> | null {
+function checkAnaesthetistHpiCpn(state: ReturnType<AppStoreApi['getState']>, raw: string, anaesthetistId?: string): Outcome<string> {
+  const hpiId = normaliseHpiCpn(raw)
+  if (hpiId === '') return refuse('hpiCpnRequired', ANAESTHETIST_HPI_CPN_REQUIRED)
+  if (!isPlausibleHpiCpn(hpiId)) return refuse('invalidHpiCpn', HPI_CPN_INVALID)
   const holder = hpiCpnHolder(state.masters, hpiId, anaesthetistId !== undefined ? { anaesthetistId } : undefined)
-  return holder === null ? null : refuse('duplicateHpiCpn', `That HPI CPN already belongs to ${holder.name}.`)
+  if (holder !== null) return refuse('duplicateHpiCpn', `That HPI CPN already belongs to ${holder.name}.`)
+  return ok(hpiId)
 }
 
 /**
- * Edit an anaesthetist's contact / unit value / GST period / active flag /
- * start date. Office-only; audited `anaesthetist.update` (before to after).
- * Changing the unit value re-prices every fee priced at the anaesthetist's rate, or less a discount, that reads it.
+ * The anaesthetist's bank details, mandatory (catch-up Phase 26; US-12.1.4,
+ * OQ-14): an account name and a well-formed NZ account number, stored dashed.
+ */
+function checkBankAccount(input: BankAccount | undefined): Outcome<BankAccount> {
+  const accountName = input?.accountName.trim() ?? ''
+  const rawNumber = input?.accountNumber.trim() ?? ''
+  if (accountName === '' || rawNumber === '') return refuse('bankAccountRequired', BANK_ACCOUNT_REQUIRED)
+  const accountNumber = normaliseNzBankAccount(rawNumber)
+  if (accountNumber === null) return refuse('invalidBankAccount', BANK_ACCOUNT_INVALID)
+  return ok({ accountName, accountNumber })
+}
+
+/** The refusals the profile forms also show inline (one wording, store and form alike). */
+export const ANAESTHETIST_HPI_CPN_REQUIRED = "An HPI CPN is required. It is the anaesthetist's unique number on the Health Provider Index."
+export const BANK_ACCOUNT_REQUIRED = 'Bank details are required: an account name and an account number.'
+export const BANK_ACCOUNT_INVALID = 'That bank account number does not look right. It is bank, branch, account and suffix, for example 12-3456-7654321-00.'
+export const UNIT_VALUE_INVALID = 'The rate per unit must be greater than zero.'
+
+/** Why an anaesthetist may not change a field of their own profile: the office holds it (US-12.1.4 "Admins hold"). */
+const OFFICE_HELD_FIELD: Record<Exclude<keyof AnaesthetistPatch, 'unitValue'>, string> = {
+  phone: 'Contact details are held by the AA office. Ask the office to change them.',
+  email: 'Contact details are held by the AA office. Ask the office to change them.',
+  hpiId: 'The HPI CPN is held by the AA office. Ask the office to change it.',
+  bankAccount: 'Bank details are held by the AA office. Ask the office to change them.',
+  active: 'Only the AA office can make an anaesthetist active or inactive.',
+  startDateISO: 'The start date is held by the AA office.',
+  gstNumber: 'The GST number is held by the AA office.',
+}
+
+/** The fields a patch may carry; anything else is refused, whoever sends it. */
+const PATCH_KEYS: ReadonlySet<string> = new Set(['unitValue', 'phone', 'email', 'active', 'hpiId', 'bankAccount', 'startDateISO', 'gstNumber'])
+
+/** A rate per unit rounded to the cent, or null when it is not a finite amount above zero after rounding. */
+function cleanUnitValue(value: number): number | null {
+  const rounded = roundToCents(value)
+  return Number.isFinite(rounded) && rounded > 0 ? rounded : null
+}
+
+/**
+ * A bank account as the audit records it: the number always masked (Phase
+ * 26). The mask shows only the last two account digits, so a new number that
+ * masks the same as the old one is marked, or the change would read as none.
+ */
+function auditBankAccount(bank: BankAccount, other?: BankAccount): BankAccount {
+  const masked = maskBankAccount(bank.accountNumber)
+  const hiddenChange = other !== undefined && other.accountNumber !== bank.accountNumber && maskBankAccount(other.accountNumber) === masked
+  return { accountName: bank.accountName, accountNumber: hiddenChange ? `${masked} (new number)` : masked }
+}
+
+function sameFieldValue(key: keyof AnaesthetistPatch, existing: Anaesthetist, value: unknown): boolean {
+  if (key === 'bankAccount') {
+    const bank = value as BankAccount
+    return bank.accountName === existing.bankAccount.accountName && bank.accountNumber === existing.bankAccount.accountNumber
+  }
+  if (key === 'gstNumber') return (existing.gstNumber ?? '') === value
+  return existing[key] === value
+}
+
+/**
+ * Edit an anaesthetist's profile: rate per unit, contact, HPI CPN, bank
+ * details, active flag, start date, GST number. Audited
+ * `anaesthetist.update`, before and after of the changed fields only, the
+ * bank number masked in both; a patch that changes nothing is `ok` with no
+ * entry.
+ *
+ * Who edits what (catch-up Phase 26; US-12.1.1, US-12.1.4): the office edits
+ * every field. An anaesthetist edits only their own `unitValue`
+ * (`notOwnProfile` for a colleague's record, `officeOnlyField` naming the
+ * field for anything else). A system actor writes nothing. The HPI CPN and
+ * the bank details are mandatory: never blanked.
+ *
+ * A unit-value change re-prices only Procedures on Lists not yet authorised:
+ * an AUTHORISED List keeps the rate locked in its pricing snapshot (Phase 25).
  *
  * Start date and active (catch-up Phase 28; US-01.1.3 "Once created, the Slots
  * can be edited freely"; FT-01.1 "every active anaesthetist") add or remove
@@ -207,18 +288,36 @@ export function editAnaesthetist(
   registrationNumber: string,
   patch: AnaesthetistPatch,
 ): Outcome {
-  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can edit an anaesthetist.')
+  if (actor.role === 'system') return refuse('systemActor', 'An anaesthetist profile is changed only by the office or the anaesthetist.')
   const state = api.getState()
   const existing = state.masters.anaesthetists[registrationNumber]
   if (existing === undefined) return refuse('notFound', 'Anaesthetist not found.')
-  if (patch.unitValue !== undefined && !(patch.unitValue > 0)) {
-    return refuse('invalidUnitValue', 'The unit value must be greater than zero.')
+  const unknown = Object.keys(patch).find((k) => !PATCH_KEYS.has(k))
+  if (unknown !== undefined) return refuse('unknownField', 'That detail cannot be changed here.')
+  if (actor.role === 'anaesthetist') {
+    if (actor.anaesthetistId !== registrationNumber) return refuse('notOwnProfile', 'You can change only your own profile.')
+    const held = (Object.keys(patch) as (keyof AnaesthetistPatch)[]).find((k) => k !== 'unitValue' && patch[k] !== undefined)
+    if (held !== undefined && held !== 'unitValue') return refuse('officeOnlyField', OFFICE_HELD_FIELD[held])
+  } else if (actor.role !== 'office') {
+    return refuse('officeOnly', 'Only the office can edit an anaesthetist.')
+  }
+  if (patch.unitValue !== undefined) {
+    const unitValue = cleanUnitValue(patch.unitValue)
+    if (unitValue === null) return refuse('invalidUnitValue', UNIT_VALUE_INVALID)
+    patch = { ...patch, unitValue }
   }
   if (patch.hpiId !== undefined) {
-    patch = { ...patch, hpiId: normaliseHpiCpn(patch.hpiId) }
-    const clash = hpiCpnClash(state, patch.hpiId ?? '', registrationNumber)
-    if (clash !== null) return clash
+    const hpi = checkAnaesthetistHpiCpn(state, patch.hpiId, registrationNumber)
+    if (!hpi.ok) return hpi
+    patch = { ...patch, hpiId: hpi.value }
   }
+  if (patch.bankAccount !== undefined) {
+    const bank = checkBankAccount(patch.bankAccount)
+    if (!bank.ok) return bank
+    patch = { ...patch, bankAccount: bank.value }
+  }
+  if (patch.phone !== undefined) patch = { ...patch, phone: patch.phone.trim() }
+  if (patch.email !== undefined) patch = { ...patch, email: patch.email.trim() }
   if (patch.startDateISO !== undefined && !ISO_DATE.test(patch.startDateISO)) {
     return refuse('invalidStartDate', 'Choose a valid start date.')
   }
@@ -228,15 +327,26 @@ export function editAnaesthetist(
     patch = { ...patch, gstNumber: gst }
   }
 
-  const next: Anaesthetist = { ...existing, ...patch }
+  // Only the fields that change are written and audited; nothing changed is a quiet ok.
+  const changed = Object.fromEntries(
+    (Object.keys(patch) as (keyof AnaesthetistPatch)[])
+      .filter((k) => patch[k] !== undefined && !sameFieldValue(k, existing, patch[k]))
+      .map((k) => [k, patch[k]]),
+  ) as AnaesthetistPatch
+  const changedKeys = Object.keys(changed) as (keyof AnaesthetistPatch)[]
+  if (changedKeys.length === 0) return ok(undefined)
+
+  const next: Anaesthetist = { ...existing, ...changed }
   if (next.gstNumber === '') delete next.gstNumber
+  const auditValue = (k: keyof AnaesthetistPatch, value: unknown, other: unknown): unknown =>
+    k === 'bankAccount' ? auditBankAccount(value as BankAccount, other as BankAccount) : (value ?? '')
   const metas: MutationMeta[] = [
     {
       entityType: 'anaesthetist',
       entityId: registrationNumber,
       action: 'anaesthetist.update',
-      before: Object.fromEntries(Object.keys(patch).map((k) => [k, existing[k as keyof Anaesthetist]])),
-      after: patch,
+      before: Object.fromEntries(changedKeys.map((k) => [k, auditValue(k, existing[k], undefined)])),
+      after: Object.fromEntries(changedKeys.map((k) => [k, auditValue(k, changed[k], existing[k])])),
       stampBookingId: null,
     },
   ]
@@ -306,8 +416,10 @@ export interface NewAnaesthetistFields {
   phone: string
   email: string
   unitValue: number
-  gstPeriod: GstPeriod
-  hpiId?: string
+  /** Required (US-12.1.4, Phase 26): two digits then four letters, unique across practitioners. */
+  hpiId: string
+  /** Required (US-12.1.4, Phase 26): an account name and a well-formed NZ account number. */
+  bankAccount: BankAccount
   /** Required (US-01.1.3): the anaesthetist's Slots are created from this date. */
   startDateISO: string
   /** Optional (catch-up Phase 22, DM-62): 8 or 9 digits. */
@@ -336,10 +448,13 @@ export function addAnaesthetist(
   if (state.masters.anaesthetists[reg] !== undefined) {
     return refuse('duplicateRegistration', 'That registration number is already in use.')
   }
-  if (!(fields.unitValue > 0)) return refuse('invalidUnitValue', 'The unit value must be greater than zero.')
-  const hpiId = normaliseHpiCpn(fields.hpiId ?? '')
-  const clash = hpiCpnClash(state, hpiId)
-  if (clash !== null) return clash
+  const unitValue = cleanUnitValue(fields.unitValue)
+  if (unitValue === null) return refuse('invalidUnitValue', UNIT_VALUE_INVALID)
+  const hpi = checkAnaesthetistHpiCpn(state, fields.hpiId)
+  if (!hpi.ok) return hpi
+  const hpiId = hpi.value
+  const bank = checkBankAccount(fields.bankAccount)
+  if (!bank.ok) return bank
   if (!ISO_DATE.test(fields.startDateISO)) return refuse('invalidStartDate', 'Choose a valid start date.')
   const gstNumber = normaliseGstNumber((fields.gstNumber ?? '').trim())
   if (gstNumber !== '' && !isValidGstNumber(gstNumber)) return refuse('invalidGstNumber', GST_NUMBER_INVALID)
@@ -352,9 +467,9 @@ export function addAnaesthetist(
     name: fields.name.trim(),
     phone: fields.phone.trim(),
     email: fields.email.trim(),
-    unitValue: fields.unitValue,
-    gstPeriod: fields.gstPeriod,
+    unitValue,
     hpiId,
+    bankAccount: bank.value,
     startDateISO: fields.startDateISO,
     active: true,
     ...(gstNumber !== '' ? { gstNumber } : {}),

@@ -33,6 +33,7 @@ import {
   ProfileChromeExample,
   SegmentedExample,
   SessionTimesExample,
+  AnaesthetistFieldsExample,
   SlidingSegmentedExample,
   StatusBlockExample,
   StatusChipExample,
@@ -286,7 +287,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="Eyebrow" source="shared/ui/Eyebrow.tsx" usedIn={AWM} what="The 11px caps tracked label (U6, question 23): 11/600/0.06em everywhere, tones mist, slate, warning and brand, a heading where it titles a section. FieldLabel is this component." replaceWith="Custom (type token)">
           <EyebrowExample />
         </CatalogueRow>
-        <CatalogueRow name="DefList / DefRow" source="shared/ui/DefRow.tsx" usedIn={AWM} what="Label and value pairs as a dl (U6): inline (the drawers and Booking detail, labels at 80), stacked (the profile facts) and settings (Phase 26's ProfileRow, with a trailing lock)." replaceWith="Custom (dl)">
+        <CatalogueRow name="DefList / DefRow" source="shared/ui/DefRow.tsx" usedIn={AWM} what="Label and value pairs as a dl (U6): inline (the drawers and Booking detail, labels at 80), stacked (the profile facts) and settings (the base of Phase 26's ProfileRow, with a trailing lock and the bank number masked)." replaceWith="Custom (dl)">
           <DefRowExample />
         </CatalogueRow>
         <CatalogueRow name="ReviewQueue (clickable rows)" source="apps/admin/screens/ReviewQueue.tsx" usedIn={A} what="Submitted Lists to authorise, on the shared table kit (UI unification U6): TableShell (compact), Th, Td and ClickableRow, whose row click opens the List while the Review button stays the keyboard handle." replaceWith="TanStack Table + shadcn Table (row links)" note="Rows never take focus; the Review button is the one handle per row. Open is stubbed." height={380}>
@@ -358,6 +359,9 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="FilterDateInput" source="shared/ui/DateFields.tsx" usedIn={AW} what="The filter-bar date (UI unification U4): compact and white on the page, its label above (the Admin filter bars, as AuditViewer's From and To) or inline (the web Lists row's To, 38px)." replaceWith="shadcn Date Picker (range)" note="Phase 37's From and To build on it.">
           <FilterDateInputExample />
+        </CatalogueRow>
+        <CatalogueRow name="HpiCpnField / BankAccountFields" source="apps/admin/flows/anaesthetistFields.tsx" usedIn={A} what="The anaesthetist's mandatory HPI CPN and bank account name and number (catch-up Phase 26), shared by Add an anaesthetist and the Edit sheet: marked required, checked inline (the error hint in the store's own words, data-validation-invalid on the field), Save disabled with its reason until all three are filled." replaceWith="shadcn Field (React Hook Form + Zod)" note="Local state only; nothing writes to the demo data. The full bank number shows only here, in the office's editor.">
+          <AnaesthetistFieldsExample />
         </CatalogueRow>
         <CatalogueRow name="SessionTimesFields" source="apps/admin/flows/SessionTimesFields.tsx" usedIn={A} what="A session's start and end with a default or own-times hint and Use default. Since UI unification U4 it renders the shared TimeRangeFields (48px, the one focus ring); its controlStyle prop is gone." replaceWith="React Aria TimeField (or keep native)" note="Neither Base UI nor react-day-picker has a time picker.">
           <SessionTimesExample />

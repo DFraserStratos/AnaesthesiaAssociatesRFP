@@ -701,3 +701,28 @@ describe('one typed price (catch-up Phase 24 session 1)', () => {
     expect(Object.values(s.schedule.procedures).filter((p) => p.enteredPrice === 1200)).toHaveLength(1)
   })
 })
+
+describe('anaesthetist profile (catch-up Phase 26)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v50 store with a GST period and no bank details, and reseeds every anaesthetist with bank details', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(51)
+    const fresh = freshAppState()
+    const anaesthetists = Object.fromEntries(
+      Object.entries(fresh.masters.anaesthetists).map(([id, a]) => {
+        const { bankAccount: _b, ...old } = a
+        return [id, { ...old, gstPeriod: 'monthly' }]
+      }),
+    )
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters: { ...fresh.masters, anaesthetists } }, version: 50 }))
+    const s = createAppStore({ persisted: true }).getState()
+    const all = Object.values(s.masters.anaesthetists)
+    expect(all.some((a) => 'gstPeriod' in a)).toBe(false)
+    expect(all.every((a) => a.bankAccount.accountNumber.startsWith('99-'))).toBe(true)
+    expect(s.masters.anaesthetists[ANAE.souter]?.bankAccount).toEqual({ accountName: 'Melanie Souter', accountNumber: '99-0101-0034821-00' })
+  })
+})

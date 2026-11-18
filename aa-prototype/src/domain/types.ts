@@ -281,9 +281,23 @@ export interface InvoiceBilledTo {
 }
 
 /**
- * Anaesthetist master (RFP: "basic contact information plus registration
- * number (ID)"; 2nd review #2, 6th review #5). `unitValue` is the
- * anaesthetist-specific $ per unit RVG at the anaesthetist's rate multiplies by.
+ * An anaesthetist's bank account (catch-up Phase 26; US-12.1.4, OQ-14,
+ * DM-32): master data the office holds. Payments to anaesthetists are made in
+ * Xero (D53), so nothing in the app pays from it. `accountNumber` is stored
+ * dashed, `BB-bbbb-AAAAAAA-SS(S)` (`domain/bankAccount.ts`), and shown masked
+ * everywhere but the office's editor and in every audit entry.
+ */
+export interface BankAccount {
+  accountName: string
+  accountNumber: string
+}
+
+/**
+ * Anaesthetist master, and the anaesthetist's profile (US-12.1.4, catch-up
+ * Phase 26): contact details, registration number, HPI CPN, bank account and
+ * the dollar value per unit. `unitValue` is the anaesthetist-specific $ per
+ * unit RVG at the anaesthetist's rate multiplies by; it is the one field the
+ * anaesthetist edits themselves (US-12.1.1). The office holds the rest.
  */
 export interface Anaesthetist {
   registrationNumber: AnaesthetistId
@@ -291,14 +305,15 @@ export interface Anaesthetist {
   phone: string
   email: string
   unitValue: number
-  gstPeriod: GstPeriod
   /**
    * The HPI CPN (Health Provider Index Common Person Number, e.g. `12ABCD`;
    * OQ-52): one identifier, unique across every practitioner, surgeons
-   * included. Optional on an anaesthetist ("where available", US-12.1.4), so
-   * blank is allowed here; a typed one is stored normalised (Phase 17).
+   * included. Mandatory on an anaesthetist (US-12.1.4, Phase 26), stored
+   * normalised (Phase 17).
    */
   hpiId: string
+  /** Mandatory (US-12.1.4, Phase 26): held by the office, display-only to the anaesthetist. */
+  bankAccount: BankAccount
   /**
    * The date the anaesthetist starts (catch-up Phase 28; US-01.1.3: adding an
    * anaesthetist "creates their Slots from their start date"). No Slot exists
@@ -319,8 +334,6 @@ export interface Anaesthetist {
    */
   gstNumber?: string
 }
-
-export type GstPeriod = 'monthly' | 'biMonthly' | 'sixMonthly'
 
 /**
  * Where a List is held (catch-up Phase 31; US-01.3.1): a hospital, or AA's own

@@ -6,37 +6,99 @@
     {
       "name": "anaesthetist-record",
       "app": "admin",
-      "caption": "Anaesthetist contact details in Master data",
+      "caption": "Anaesthetist identity, contact and bank details; one HPI CPN",
       "start": "/admin/masters",
       "states": [
         {
           "state": "edit",
-          "caption": "Editing an anaesthetist's phone and email",
+          "caption": "Editing an anaesthetist's contact, HPI CPN and bank details (both required)",
           "steps": [
             {
-              "click": "tr:has-text(\"Souter\") >> text=\"Edit\""
+              "click": "[data-shot=masters-anaesthetists] tr[data-anaesthetist=\"34821\"] >> button:text-is(\"Edit\")"
             },
             {
               "wait": 500
+            },
+            {
+              "scroll": "[data-shot=anaesthetist-bank-fields]"
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[data-shot=edit-anaesthetist-sheet] div:has(> label:has-text(\"HPI CPN (required)\"))",
+            "[data-shot=edit-anaesthetist-sheet] [data-shot=anaesthetist-bank-fields]"
           ]
         },
         {
           "state": "add",
-          "caption": "Adding an anaesthetist with registration number, contact, HPI CPN and start date",
+          "caption": "Adding an anaesthetist with registration number, contact, mandatory HPI CPN and bank account",
           "steps": [
             {
               "click": "role=button[name=\"Add anaesthetist\"]"
             },
             {
               "wait": 500
+            },
+            {
+              "scroll": "[data-shot=anaesthetist-bank-fields]"
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[data-shot=add-anaesthetist-sheet] div:has(> label:has-text(\"HPI CPN (required)\"))",
+            "[data-shot=add-anaesthetist-sheet] [data-shot=anaesthetist-bank-fields]"
+          ]
+        },
+        {
+          "state": "record",
+          "caption": "The Profile card on the anaesthetist's record: contact, HPI CPN and the bank account, masked",
+          "steps": [
+            {
+              "goto": "/admin/masters/anaesthetists/34821"
+            },
+            {
+              "wait": "[data-shot=anaesthetist-record]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=anaesthetist-details]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mobile-profile",
+      "app": "mobile",
+      "caption": "Anaesthetist identity, contact and bank details; one HPI CPN",
+      "start": "/mobile/more",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-shot=mobile-profile-bank]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=mobile-profile] div:has(> dt:text-is(\"Registration\"))",
+            "[data-shot=mobile-profile-hpi]",
+            "[data-shot=mobile-profile-bank]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "web-profile",
+      "app": "web",
+      "caption": "Anaesthetist identity, contact and bank details on their profile, held by the office; one HPI CPN",
+      "start": "/web/profile",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=web-contact-panel]",
+            "[data-shot=web-identity-panel]",
+            "[data-shot=web-bank-panel]"
           ]
         }
       ]

@@ -16,7 +16,8 @@ const TAB_PATH: Record<WebTab, string> = {
   accounts: '/web/accounts',
 }
 
-function tabForPath(pathname: string): WebTab {
+function tabForPath(pathname: string): WebTab | null {
+  if (pathname.startsWith('/web/profile')) return null
   if (pathname.startsWith('/web/lists')) return 'lists'
   if (pathname.startsWith('/web/availability')) return 'availability'
   if (pathname.startsWith('/web/accounts')) return 'accounts'
@@ -58,6 +59,8 @@ export function WebApp() {
           onTab={(next) => navigate(TAB_PATH[next])}
           personaName={persona.name}
           initials={persona.initials}
+          profileActive={pathname.startsWith('/web/profile')}
+          onProfile={() => navigate('/web/profile')}
         />
         <div style={{ maxWidth: 1320, margin: '0 auto', padding: '28px 32px 48px' }}>
           <MoveListPromptProvider actor={actor}>

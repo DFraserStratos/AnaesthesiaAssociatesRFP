@@ -302,6 +302,6 @@ export function MobileBalancesRoute() {
 }
 
 export function MobileMoreRoute() {
-  const { personaName, personaRole, initials, moreExtra } = useMobileOutlet()
-  return <MoreScreen personaName={personaName} personaRole={personaRole} initials={initials} extra={moreExtra} />
+  const { actor, anaesthetistId, personaName, personaRole, initials, moreExtra } = useMobileOutlet()
+  return <MoreScreen personaName={personaName} personaRole={personaRole} initials={initials} actor={actor} anaesthetistId={anaesthetistId} extra={moreExtra} />
 }

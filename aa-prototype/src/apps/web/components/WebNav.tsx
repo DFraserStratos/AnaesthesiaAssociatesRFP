@@ -11,10 +11,14 @@ const TABS: { key: WebTab; label: string }[] = [
 ]
 
 interface WebNavProps {
-  tab: WebTab
+  /** The active tab, or null on the profile page (no tab is underlined there). */
+  tab: WebTab | null
   onTab: (tab: WebTab) => void
   personaName: string
   initials: string
+  /** The profile page is showing (catch-up Phase 26): the persona block takes the underline. */
+  profileActive: boolean
+  onProfile: () => void
 }
 
 /**
@@ -22,9 +26,11 @@ interface WebNavProps {
  * AA wordmark (the `Logo` image — identity, per CLAUDE.md's "use the Logo
  * component, not re-typeset text" rule and the 2026-07-22 Decisions entry), the
  * four nav tabs with the crimson active underline (now clickable), and the
- * persona name + crimson-tint MS avatar. Crimson is identity only.
+ * persona name + crimson-tint MS avatar. Crimson is identity only. The persona
+ * block is the button to the anaesthetist's own profile (catch-up Phase 26),
+ * underlined in crimson while it shows, so the four tabs stay as designed.
  */
-export function WebNav({ tab, onTab, personaName, initials }: WebNavProps) {
+export function WebNav({ tab, onTab, personaName, initials, profileActive, onProfile }: WebNavProps) {
   return (
     <div style={{ background: neutral.surface, borderBottom: `1px solid ${neutral.line}` }}>
       <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 32px', height: 64, display: 'flex', alignItems: 'center', gap: 32 }}>
@@ -60,10 +66,29 @@ export function WebNav({ tab, onTab, personaName, initials }: WebNavProps) {
           })}
         </nav>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: neutral.slate }}>{personaName}</span>
+        <button
+          type="button"
+          className="aa-ctl"
+          aria-current={profileActive ? 'page' : undefined}
+          aria-label={`Your profile, ${personaName}`}
+          data-shot="web-profile-link"
+          onClick={onProfile}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            height: '100%',
+            padding: '0 4px',
+            border: 'none',
+            background: 'none',
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            boxShadow: profileActive ? `inset 0 -3px 0 ${brand.base}` : 'none',
+          }}
+        >
+          <span style={{ fontSize: 13, fontWeight: 600, color: profileActive ? neutral.ink : neutral.slate }}>{personaName}</span>
           <Avatar initials={initials} size={36} variant="tint" />
-        </div>
+        </button>
       </div>
     </div>
   )

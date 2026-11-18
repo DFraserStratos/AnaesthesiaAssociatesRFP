@@ -35,6 +35,7 @@ import { ORIGIN_LABELS, SOURCE_LABELS, UNASSIGNED } from '../scheduleTerms'
 import { fieldLabel } from './fieldLabels'
 import { PAIRING_LABELS, isPriorityTier, tierLabel } from '../../domain/pairingPreferences'
 import { sessionText } from '../../domain/outOfHours'
+import { maskBankAccount } from '../../domain/bankAccount'
 
 /** A key present in the patch but holding no value. */
 export const NOT_SET = 'not set'
@@ -267,6 +268,12 @@ export function formatAuditValue(key: string, value: unknown, names?: AuditNames
     }
     // An RVG group's published range (catch-up Phase 19): "10 to 12".
     if (key === 'baseUnitsRange' && typeof value.min === 'number' && typeof value.max === 'number') return `${value.min} to ${value.max}`
+    // An anaesthetist's bank details (catch-up Phase 26): the name and the number, always masked
+    // (the store writes it masked; a full number reaching here is masked again, never shown).
+    if (key === 'bankAccount' && typeof value.accountName === 'string' && typeof value.accountNumber === 'string') {
+      const number = value.accountNumber.includes('•') ? value.accountNumber : maskBankAccount(value.accountNumber)
+      return `${value.accountName} · ${number}`
+    }
     // A Contract's pricing (catch-up Phase 18): "RVG at $95.00 per unit".
     if (key === 'pricing' && typeof value.kind === 'string' && Object.hasOwn(PRICING_KIND_LABEL, value.kind)) {
       return pricingLabel(value as unknown as ContractPricing)

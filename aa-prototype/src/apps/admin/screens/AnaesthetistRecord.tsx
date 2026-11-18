@@ -11,16 +11,18 @@ import { PairingSection, useProfileHistory } from '../components/pairing'
 import { HeaderActions, IdChip, PROFILE_CARD, ProfileHeader, ProfilePage } from '../components/ProfileChrome'
 import { BackLink, Card, DefList, DefRow } from '../../../shared/ui'
 import { EditAnaesthetistSheet } from '../flows/EditAnaesthetistSheet'
-import { GST_OPTIONS } from '../flows/fieldChrome'
+import { maskBankAccount } from '../../../domain/bankAccount'
 import { mastersViewPath } from '../mastersPaths'
 
 const TIER_OPTIONS = TIER_VALUES.map((t) => ({ value: String(t), label: TIER_LABELS[t] }))
 
 /**
  * The Admin anaesthetist record (catch-up Phase 17; US-12.1.4 Admin side,
- * US-01.3.6, US-13.6.3): the details the office keeps, the priority tier and
- * the pairing preferences. Built lean: Phase 26 adds the profile fields (bank
- * details, GST number, prepaid settings) here.
+ * US-01.3.6, US-13.6.3): the priority tier, the anaesthetist's profile and the
+ * pairing preferences. The Profile card (catch-up Phase 26) shows what the
+ * office holds: the rate per unit, contact, HPI CPN, the bank account (masked
+ * here too; the full number only in the editor) and whether they are active.
+ * The header's "Edit details" opens the one editor, `EditAnaesthetistSheet`.
  * `/admin/masters/anaesthetists/:anaesthetistId`.
  */
 export function AnaesthetistRecord({ anaesthetistId, actor }: { anaesthetistId: string; actor: Actor }) {
@@ -39,14 +41,12 @@ export function AnaesthetistRecord({ anaesthetistId, actor }: { anaesthetistId: 
     setTierError(outcome.ok ? null : outcome.message)
   }
 
-  const gstLabel = GST_OPTIONS.find((o) => o.value === anaesthetist.gstPeriod)?.label ?? anaesthetist.gstPeriod
-
   return (
     <ProfilePage shot="anaesthetist-record">
       <BackLink to={mastersViewPath('anaesthetists')} size="desktop">Anaesthetists</BackLink>
       <ProfileHeader
         name={anaesthetist.name}
-        chip={anaesthetist.hpiId !== '' ? <IdChip label="HPI CPN" value={anaesthetist.hpiId} shot="anaesthetist-hpi-chip" /> : <span style={{ fontSize: 12.5, color: neutral.mist }}>HPI CPN not set</span>}
+        chip={<IdChip label="HPI CPN" value={anaesthetist.hpiId} shot="anaesthetist-hpi-chip" />}
         sub={<>Registration <span className="mono">{anaesthetist.registrationNumber}</span> · {anaesthetist.active ? 'Active' : 'Inactive'}</>}
         action={<HeaderActions onHistory={() => setHistory(true)} onEdit={() => setEditing(true)} />}
       />
@@ -61,12 +61,16 @@ export function AnaesthetistRecord({ anaesthetistId, actor }: { anaesthetistId: 
           <FormError message={tierError} />
         </Card>
 
-        <Card style={PROFILE_CARD} title="Details" shot="anaesthetist-details">
+        <Card style={PROFILE_CARD} title="Profile" shot="anaesthetist-details">
           <DefList gap={12} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
             <DefRow layout="stacked" label="Unit value" mono>{formatCurrency(anaesthetist.unitValue)}</DefRow>
+            <DefRow layout="stacked" label="Status">{anaesthetist.active ? 'Active' : 'Inactive'}</DefRow>
             <DefRow layout="stacked" label="Phone">{anaesthetist.phone}</DefRow>
             <DefRow layout="stacked" label="Email">{anaesthetist.email}</DefRow>
-            <DefRow layout="stacked" label="GST period">{gstLabel}</DefRow>
+            <DefRow layout="stacked" label="HPI CPN" mono>{anaesthetist.hpiId}</DefRow>
+            <DefRow layout="stacked" label="Bank account" mono note={anaesthetist.bankAccount.accountName} shot="anaesthetist-bank-account">
+              {maskBankAccount(anaesthetist.bankAccount.accountNumber)}
+            </DefRow>
           </DefList>
         </Card>
       </div>

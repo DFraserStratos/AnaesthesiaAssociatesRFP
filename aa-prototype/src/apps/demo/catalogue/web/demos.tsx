@@ -83,7 +83,7 @@ export function WebNavDemo({ f }: F) {
   const [tab, setTab] = useState<WebTab>('dashboard')
   return (
     <Wide width={1000}>
-      <WebNav tab={tab} onTab={setTab} personaName={f.personaName} initials={f.initials} />
+      <WebNav tab={tab} onTab={setTab} personaName={f.personaName} initials={f.initials} profileActive={false} onProfile={() => undefined} />
     </Wide>
   )
 }
@@ -195,20 +195,20 @@ export function SlidingSegmentedDemo() {
   )
 }
 
-type GstPeriod = 'monthly' | 'biMonthly' | 'sixMonthly'
+type DemoStatus = 'active' | 'inactive'
 
+/** The Segmented control, as the office's anaesthetist editor uses it for the status. */
 export function SegmentedDemo() {
-  const [period, setPeriod] = useState<GstPeriod>('monthly')
+  const [status, setStatus] = useState<DemoStatus>('active')
   return (
     <div style={{ width: 320 }}>
-      <Segmented<GstPeriod>
-        value={period}
+      <Segmented<DemoStatus>
+        value={status}
         options={[
-          { value: 'monthly', label: 'Monthly' },
-          { value: 'biMonthly', label: 'Bi-monthly' },
-          { value: 'sixMonthly', label: 'Six-monthly' },
+          { value: 'active', label: 'Active' },
+          { value: 'inactive', label: 'Inactive' },
         ]}
-        onChange={setPeriod}
+        onChange={setStatus}
       />
     </div>
   )

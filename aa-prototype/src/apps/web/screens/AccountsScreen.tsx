@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { format, parseISO, startOfMonth, subMonths } from 'date-fns'
+import { useMemo } from 'react'
+import { format, parseISO, startOfMonth } from 'date-fns'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { type AgingBucketKey } from '../../../domain/seed'
 import {
@@ -14,7 +14,6 @@ import {
   type PaymentHistoryRow,
   type PaymentHistoryStatus,
 } from '../../../store'
-import { Segmented } from '../../../shared'
 import { formatCurrency } from '../../../shared/format'
 import { aaFeeFixedTotal, aaFeeMonthLabel } from '../../../domain/billing/aaFee'
 import { roundToCents } from '../../../domain/billing/money'
@@ -35,8 +34,6 @@ const AGING_COLS: { key: AgingBucketKey; label: string }[] = [
   { key: 'd61_90', label: '61 to 90' },
   { key: 'd90plus', label: '90 +' },
 ]
-
-type GstPeriod = 'monthly' | 'biMonthly' | 'sixMonthly'
 
 /**
  * The Accounts area (W4 + M11 GST report). Sub-nav: Overdue (a flat
@@ -381,49 +378,32 @@ function AaFeesTable({ anaesthetistId, focusInvoiceNumber }: { anaesthetistId: s
   )
 }
 
-/** The GST period window ending at today (rolling N calendar months). */
-function periodWindow(period: GstPeriod, todayISO: string): { fromISO: string; toISO: string } {
-  const months = period === 'monthly' ? 1 : period === 'biMonthly' ? 2 : 6
+/**
+ * The calendar month of the demo date, to today (catch-up Phase 26: the GST
+ * period is gone, RV-02 and US-12.1.2 Retired). Phase 38 rebuilds the monthly
+ * GST report from here.
+ */
+function monthWindow(todayISO: string): { fromISO: string; toISO: string } {
   const today = parseISO(todayISO)
-  return { fromISO: format(startOfMonth(subMonths(today, months - 1)), 'yyyy-MM-dd'), toISO: format(today, 'yyyy-MM-dd') }
+  return { fromISO: format(startOfMonth(today), 'yyyy-MM-dd'), toISO: format(today, 'yyyy-MM-dd') }
 }
 
 function GstReport({ anaesthetistId }: { anaesthetistId: string }) {
   const billing = useAppStore((s) => s.billing)
   const masters = useAppStore((s) => s.masters)
   const todayISO = useToday()
-  const defaultPeriod = (masters.anaesthetists[anaesthetistId]?.gstPeriod ?? 'monthly') as GstPeriod
-  const [period, setPeriod] = useState<GstPeriod>(defaultPeriod)
 
-  const { fromISO, toISO } = periodWindow(period, todayISO)
+  const { fromISO, toISO } = monthWindow(todayISO)
   const activity = useMemo(
     () => gstActivityFor({ billing, masters }, anaesthetistId, fromISO, toISO),
     [billing, masters, anaesthetistId, fromISO, toISO],
   )
 
-  const periodLabel: Record<GstPeriod, string> = { monthly: 'Monthly', biMonthly: 'Bi-monthly', sixMonthly: 'Six-monthly' }
-
   return (
-    <Card
-      padding="panel"
-      title="GST activity"
-      action={
-        <div style={{ width: 320 }}>
-          <Segmented<GstPeriod>
-            value={period}
-            options={[
-              { value: 'monthly', label: 'Monthly' },
-              { value: 'biMonthly', label: 'Bi-monthly' },
-              { value: 'sixMonthly', label: 'Six-monthly' },
-            ]}
-            onChange={setPeriod}
-          />
-        </div>
-      }
-    >
-      <div style={{ fontSize: 12, color: neutral.mist }}>
-        {periodLabel[period]} period ({format(parseISO(fromISO), 'd MMM')} to {format(parseISO(toISO), 'd MMM yyyy')}) · one row per amount
-        received, each with its GST component; period totals below.
+    <Card padding="panel" title="GST activity">
+      <div data-shot="gst-month" style={{ fontSize: 12, color: neutral.mist }}>
+        Month ({format(parseISO(fromISO), 'd MMM')} to {format(parseISO(toISO), 'd MMM yyyy')}) · one row per amount
+        received, each with its GST component; month totals below.
       </div>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 560 }}>
@@ -440,7 +420,7 @@ function GstReport({ anaesthetistId }: { anaesthetistId: string }) {
             {activity.rows.length === 0 ? (
               <tr>
                 <td colSpan={5} style={{ padding: '28px 20px', textAlign: 'center', color: neutral.mist }}>
-                  No payments received in this period.
+                  No payments received this month.
                 </td>
               </tr>
             ) : (
@@ -457,7 +437,7 @@ function GstReport({ anaesthetistId }: { anaesthetistId: string }) {
           </tbody>
           <tfoot>
             <tr style={{ borderTop: `2px solid ${neutral.line}` }}>
-              <Td bold>Period total</Td>
+              <Td bold>Month total</Td>
               <Td>{''}</Td>
               <Td>{''}</Td>
               <Td mono right bold>{formatCurrency(activity.totalGross)}</Td>

@@ -58,6 +58,7 @@ entry describing what was *actually* built (which may differ from the plan — r
 | 24 | Catch-up · Pricing kinds, the price following its Contract until held, and who may change it | DONE | 2026-11-17 | One price function (`priceFor`) over five pricing kinds and the ladder (AUTHORISED, prepaid raised, typed, computed, "Needs a price"), one typed price (`enteredPrice`) behind `setProcedurePrice` and its gates, the anaesthetist's price line and dock strip, the office's Change price and Review Fee cell, the discount as its own line, the $0 no-charge invoice, and the rate x time line and Method 3 gate gone (Aria at $26.50). |
 | 25 | Catch-up · Contract history and the AUTHORISED lock | DONE | 2026-11-17 | A pricing snapshot per Booking at authorise (`domain/billing/lock.ts`) written in `authoriseList`'s one commit, "Needs a price" the one authorise blocker; the billing run, retry and Regenerate from locked data read only the lock; the payee fixed on each case; every seeded AUTHORISED List locked (history migrated); the locked badge, Review's locked rate, the invoice's Locked record; each Contract's History tab; the billing-failure demo re-based on a Xero hand-off fault; `PERSIST_VERSION` 50 |
 | U6 | Catch-up · UI unification: Tables, cards and page chrome | DONE | 2026-11-18 | One table kit (`src/shared/table/`: `Th`, `Td`, `GroupRow`, `TableShell`, three densities, `ClickableRow`, `RowOpenButton`) with every admin table on the Admin Review header and an e1 shell, a keyboard handle on 8 clickable tables (Draft Lists opens its drawer by keyboard), `Card` (radius 14 on mobile), `Eyebrow` 11/600, `PageHeader`, `StatTile`, `DefRow`, every session block through `blockFill` (the week strip hatch), `DayChip` and `AddRowButton`; 30-odd private copies deleted; no seed change; Vitest 2706, Playwright 205 |
+| 26 | Catch-up · Anaesthetist profile and bank details | DONE | 2026-11-18 | Each anaesthetist's profile (rate per unit, contact, registration, HPI CPN, a masked bank account) on the mobile More tab and at `/web/profile`, the rate theirs to set; bank details and the HPI CPN mandatory office-held master data on the Admin record and Master data; the GST period removed everywhere; `PERSIST_VERSION` 51 |
 
 Statuses: NOT STARTED → IN PROGRESS → DONE (with date). If a phase is partially done at the end
 of a session, leave it IN PROGRESS and state exactly what remains.
@@ -463,6 +464,10 @@ one-line why. Later sessions must not re-litigate entries here.
 - **2026-11-18 · Catch-up Phase U6 (1): admin tables on the Admin Review header (question 19)** (U10). Every admin table takes the mockup header (11/600/0.06em mist caps on `bg`, a `line` rule) over `sunken` dividers in an e1 shell, keeping its tighter padding as the `compact` (10px 10px at 13) or `dense` (8px 10px at 12.5) density, so no body row moves; the masters and the left-alone Billing monitor and Integrations take the header through `tableStyles.ts` and the `tableChrome.ts` re-export. See the U6 entry.
 - **2026-11-18 · Catch-up Phase U6 (2): mobile cards at radius 14 (question 20)** (U14). More, Balances and the PWA panels go from 16 to the mockups' 14 (More on the shared `Card`, the rest by token), before Phase 26 adds a card to More. See the U6 entry.
 - **2026-11-18 · Catch-up Phase U6 (3): one eyebrow, 11/600 (question 23)** (U22). The shared `Eyebrow` (`type.micro`) is the one caps label; the 10, 10.5 and 11/700 copies on the screens U6 opened lighten to 11/600, and `FieldLabel` is the `Eyebrow`; tones (crimson, warning) stay. See the U6 entry.
+- **2026-11-18 · Catch-up Phase 26 (1): the profile holds the rate, contact, identity and bank only** (US-12.1.4, RV-02, D64; supersedes the July GST period reading). The anaesthetist's profile is the rate per unit, phone, email, registration number, HPI CPN and bank account. No GST period anywhere (US-12.1.2 Retired: gone from the type, seed, forms, Master data and audit; the GST tab is the calendar month to date until Phase 38), no GST number on the profile (office-held, Phase 22), no prepaid setting (D64). See the Phase 26 entry.
+- **2026-11-18 · Catch-up Phase 26 (2): the anaesthetist edits only their own rate per unit** (US-12.1.1, US-12.1.4 "Admins hold"; supersedes the July reading that the anaesthetist has no access to master data). `editAnaesthetist` lets an anaesthetist actor change only their own `unitValue` (`notOwnProfile`, `officeOnlyField`); the office edits every field; a system actor writes nothing; contact, HPI CPN and bank details are shown read-only with a lock. See the Phase 26 entry.
+- **2026-11-18 · Catch-up Phase 26 (3): bank details are master data on the Anaesthetist, display-only and mandatory** (OQ-14, D53, DM-32). `Anaesthetist.bankAccount` (name and dashed NZ number) is required with the HPI CPN on every add and edit; the number is masked everywhere but the office's editor and in every audit entry; payments are made in Xero, so nothing in the app pays from or snapshots it. Seeded on the fictional bank 99 from the registration number. See the Phase 26 entry.
+- **2026-11-18 · Catch-up Phase 26 (4): the web profile opens from the persona block** (US-12.1.4; keeps the 2026-07-21 four-tab web navigation). `/web/profile` is reached from the name and avatar in `WebNav`, which takes the crimson underline while it shows; the four tabs are unchanged. See the Phase 26 entry.
 
 ## Discovered for later — handoff list
 
@@ -603,6 +608,13 @@ and the demo guide are the open questions to take to AA.
 - **35 and 40:** call `roomEmailForSurgeon(masters, surgeonId, roomId?)`; `''` is a valid, shown To; offer `otherRoomsForSurgeon`; never read `contactEmail` directly (`roomContactsGuard.test.ts` lists the allowed files) and never put a contact in To; show contacts with `contactsForSurgeon`.
 - **42:** load rooms with optional email and phone, each surgeon's `roomIds` (the first main), contacts in the `RoomContact` shape.
 - **43:** generate through the same optional fields and `roomIds`.
+
+**Catch-up Phase 26 handoffs (2026-11-18):**
+- **37:** moves the payout to Xero and reads no bank field (`Anaesthetist.bankAccount` is master data only).
+- **38:** builds the monthly GST report from the calendar-month GST tab (`monthWindow` in `AccountsScreen.tsx`).
+- **40a:** moves the profile screens' HPI CPN (`ProfileRow`, `HPI_CPN_CAPTION`, the admin `HpiCpnField`) onto its shared label and formatter.
+- **42:** loads bank details through the spreadsheet loader if AA wants it (`normaliseNzBankAccount`).
+- **25:** reads the unit value the profile edits (`Anaesthetist.unitValue`, one copy).
 
 **Resolved / informational (kept for the record):**
 - Phase 05: the design dashboard's "Who's free Wed 22 PM" names Dr Ngatai though she is seeded on
@@ -3807,3 +3819,43 @@ Both sessions built in one, straight through the checkpoint (the kit, masters in
 - Bug 7 seen on screen: Dr Souter's Wed 22 PM set Unavailable shows hatched on the web week strip, Admin Day, web Availability, My availability and the phone.
 - U35 built: `DayChip`, `AddRowButton`; handed to U7: the rest.
 - Screens worth a look: Admin Day with the rail, Review, Invoices, Draft Lists (Tab to a session, Enter), a master view, AA fees, web Lists and Dashboard, mobile More and Balances.
+
+### Catch-up Phase 26 · Anaesthetist profile and bank details (2026-11-18)
+
+Built in Lane A (worktree `AnaesthesiaAssociatesRFP-laneA`, branch `lane/a`, Wave 1; LANES.md overrides: committed on the lane branch, catalogue captures not committed, the plan page left to the join).
+
+**Drift check against `63a4490`.** Nothing changed in substance for the 9 ids; US-12.1.2 (GST period) and FT-06.1 are Retired and stay unbuilt (D64). OQ-14, OQ-52 and OQ-111 (D53) built as answered. 22 (`gstNumber`) and 25 (the lock) had landed: the rate note is the lock version and the lock regression test runs. `PERSIST_VERSION` was 50; 28's start date stays on the record page and add form.
+
+**Built.**
+- Model: `BankAccount { accountName, accountNumber }` and a required `Anaesthetist.bankAccount`; `hpiId` mandatory; `GstPeriod` and `gstPeriod` gone (type, seed, fixtures, forms, Master data column, record page, audit label, GST tab switch, catalogue demo). `domain/bankAccount.ts`: `normaliseNzBankAccount` (dashed `BB-bbbb-AAAAAAA-SS(S)`, no modulus check), `maskBankAccount` (`99-0101-•••••21-00`), `seedBankAccountNumber`.
+- Store (`mastersActions.ts`): `editAnaesthetist` permission matrix (office every field; anaesthetist only their own `unitValue`, `notOwnProfile`, `officeOnlyField` naming the field; system `systemActor`; unknown keys `unknownField`); `hpiCpnRequired`, `invalidHpiCpn` (now also on anaesthetists), `duplicateHpiCpn`, `bankAccountRequired`, `invalidBankAccount` on add and edit; rate rounded to the cent before the check; only changed fields written and audited, a no-op is `ok` with no entry; the bank number masked before and after (a new number masking the same reads "(new number)"). `profileFor(state, reg)` in `selectors.ts` (masters only).
+- Seed: all 14 get bank details on bank 99 from the registration number, the name from `nameWithoutTitle` (now in `domain/names.ts`), no RNG draw; `PERSIST_VERSION` 50 to 51.
+- Mobile: More's Profile card (persona, Profile, demo card, then the PWA panel) with `EditRateSheet` (bottom sheet, decimal keypad, rate note as the hint, teal Save rate). Web: `/web/profile` (`ProfileScreen`: Billing saves the rate; Contact, Identity, Bank account read-only), opened from the `WebNav` persona button. Shared: `src/shared/profile/` (`ProfileRow` on `DefRow` settings with the lock, `useRateEditor`, `profileCopy`).
+- Admin: Master data columns Name, Reg, Unit $ (third again; 17 had put Tier there), Tier, HPI CPN, Bank account (masked), GST number, Phone, Email, Start date, Active; the record page's Details card is the Profile card (unit value, status, contact, HPI CPN, masked bank); Add and Edit share `anaesthetistFields.tsx` (required, inline checks, Save disabled with its reason). Web GST tab: the calendar month to date ("Month (1 Jul to 21 Jul 2026)"). `RolesInfo` copy. No demo trigger.
+
+**Tests.** New: `domain/bankAccount.test.ts`, `apps/mobile/screens/MoreScreen.test.tsx`, `visual/profile-phase26.spec.ts`. Extended: `mastersActions.test.ts` (matrix per field, validation, no-op, masked audit, hidden-digit change, unknown fields, the lock test: her ACTIVE List re-prices, her locks and invoices hold), `seed.test.ts`, `persistMigrate.test.ts`, `auditNarrative.test.ts`, `AccountsScreen.test.tsx`, `navState.test.tsx`, `mastersPages.test.tsx`, `routing.spec.ts`. Vitest 2736, Playwright 209. Gate GREEN 6/6.
+
+**Checked.** Checklist 13 of 13 pass (`.build-phase/26-checklist/`). Design: no mockup draws a profile; More, the rate sheet, `/web/profile`, the record page and Master data compared with Mobile App, Web Dashboard and Admin Review and the record page's own cards (`.build-phase/26-design/`); the duplicate card "Edit details" removed.
+
+**Review.** Quality, bugs and plan-adherence lenses (Opus). Fixed: the duplicated "Edit details"; a bank change hidden by the mask; the web rate field going stale when the rate changed elsewhere; sub-cent and overflowing rates; unknown patch keys; a weak lock test; `ProfileRow` overrides trimmed to `DefRow`; the rate note as the field hint; the bank hint wrongly naming the payables run; one home for the rate label, the required reason, `HPI_CPN_INVALID` (now in `domain/surgeons.ts`, shared with surgeons) and `nameWithoutTitle`; stale comments; catalogue rows. Declined: the admin label stays "Unit value ($)" (recipes and `admin-phase07.spec` fill it); the `WebNav` button style is not extracted (two call sites).
+
+**Catalogue screenshots.** Updated US-12.1.4 (edit, add, new record state, mobile and web profile shots), US-12.1.1 (captured: mobile profile and rate sheet, web profile), US-01.1.3 (fills the mandatory fields), US-13.4.1 (caption); US-06.1.1, US-06.1.2, US-12.1.2, US-12.1.3 and US-12.1.5 absent ("Retired"). 15 recipes dry-run and captured, 0 failed, shots checked by eye; images, REPORT.md and story image links not committed (lane rule): REPORT before Captured 188/170 · Partial 43/43 · Absent 66/65 · Failed 0/0 · No recipe 22/22; the join's full capture sets the after counts. ATLAS: `/web/profile`, the new hooks, the bank seed.
+
+**Demo guide.** Personas (anaesthetist and office), workflows ("Profile and bank details"), cheat sheet (permission row "Edit own rate per unit", monthly GST, bank details in Xero), README feature row, the run sheet's optional rate beat, and `master-demo-guide.html` to match.
+
+**Handoffs.**
+- **17b:** the anaesthetist's HPI CPN stays mandatory (`checkAnaesthetistHpiCpn`, `ANAESTHETIST_HPI_CPN_REQUIRED`); `HPI_CPN_INVALID` lives in `domain/surgeons.ts` for both.
+- **27, 27a:** nothing about prepayment on the profile; `Anaesthetist.bankAccount` is master data only.
+- **37, 39a:** the payout reads no bank field; `maskBankAccount` if a screen ever shows it.
+- **38:** builds the monthly GST report from the GST tab's `monthWindow` (`AccountsScreen.tsx`, hook `gst-month`).
+- **40a:** the profile's HPI CPN rows (`ProfileRow`, `HPI_CPN_CAPTION`) and the admin `HpiCpnField` move onto its shared label and formatter.
+- **42:** bank details through the spreadsheet loader if AA wants it (`normaliseNzBankAccount`); the Master data table keeps Unit $ third.
+- **25:** reads the `unitValue` the profile edits; `profileFor`, `useRateEditor`, `RATE_NOTE`.
+
+**Deviations.** The admin forms keep "Unit value ($)"; the web rate field has no `$` prefix (`TextField` has none; label "Rate per unit ($)"); the HPI field reads "HPI CPN (required)" as on the surgeon form; Phone and Email carry the lock on mobile; the Master data table keeps 17's Tier, 22's GST number and 28's Start date besides the doc's columns.
+
+**For the owner's review.**
+- Readings: the anaesthetist edits only their own rate per unit; contact, HPI CPN and bank details stay office-held; the GST number stays off the profile; the GST tab is the calendar month to date until 38; the bank number is masked on the anaesthetist's screens and in the audit.
+- Screens: mobile More as Dr Souter (`/mobile/more`, Change the rate); `/web/profile` from her name in the nav; Admin `/admin/masters?view=anaesthetists` and `/admin/masters/anaesthetists/34821` (Edit details) as Kirsty W.
+
+**For the merge.** Shared files touched: `types.ts` (`BankAccount`, `Anaesthetist`), `seed/cast.ts`, `fieldLabels.ts`, `auditNarrative.ts`, `store/index.ts`, `selectors.ts`, `appStore.ts` (51), `persistMigrate.test.ts`, `shared/index.ts`, `shared/format.ts`, `domain/names.ts`, `domain/surgeons.ts`, `surgeonActions.ts`, the catalogue, ATLAS and the demo guide.

@@ -17,6 +17,9 @@ import { lookupNhi } from '../nzhis'
 import { bookingFeeFor, type ProcedureFeeContext } from '../billing/bookingFee'
 import { contractRefusal, noContractRvg } from '../billing/contracts'
 import { isValidGstNumber, normaliseGstNumber } from '../billing/invoicePresentation'
+import { normaliseNzBankAccount } from '../bankAccount'
+import { isPlausibleHpiCpn } from '../surgeons'
+import { nameWithoutTitle } from '../names'
 import { resolveSplit } from '../billing/splitShare'
 import { billingReferenceMissing, validateBookingForBilling, type BookingBillingContext } from '../billing/validateBookingForBilling'
 import type { Booking, List, Procedure } from '../types'
@@ -599,6 +602,20 @@ describe('scenario states', () => {
     expect(new Set(held).size).toBe(held.length)
     expect(seed.masters.anaesthetists[ANAE.strand]?.gstNumber).toBeUndefined()
     expect(seed.masters.anaesthetists[ANAE.souter]?.gstNumber).toBe('104348211')
+  })
+
+  it('every anaesthetist has a plausible HPI CPN and bank details on the fictional bank 99, and no GST period (Phase 26)', () => {
+    const anaesthetists = Object.values(seed.masters.anaesthetists)
+    expect(anaesthetists).toHaveLength(14)
+    for (const a of anaesthetists) {
+      expect(isPlausibleHpiCpn(a.hpiId), a.name).toBe(true)
+      expect(a.bankAccount.accountName, a.name).toBe(nameWithoutTitle(a.name))
+      expect(normaliseNzBankAccount(a.bankAccount.accountNumber), a.name).toBe(a.bankAccount.accountNumber)
+      expect(a.bankAccount.accountNumber.startsWith('99-'), a.name).toBe(true)
+      expect('gstPeriod' in a, a.name).toBe(false)
+    }
+    expect(new Set(anaesthetists.map((a) => a.bankAccount.accountNumber)).size).toBe(14)
+    expect(seed.masters.anaesthetists[ANAE.souter]?.bankAccount.accountNumber).toBe('99-0101-0034821-00')
   })
 
   it("the seeded review Lists' non-cancelled bookings are completed and valid", () => {

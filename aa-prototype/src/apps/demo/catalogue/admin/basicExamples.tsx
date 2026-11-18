@@ -36,6 +36,7 @@ import { SidePanel } from '../../../admin/components/SidePanel'
 import { Header, Table, TextAction, EditCell } from '../../../admin/screens/masters/chrome'
 import { rowCellStyle } from '../../../admin/screens/masters/tableStyles'
 import { SessionTimesFields, timesDraftError, type TimesDraft } from '../../../admin/flows/SessionTimesFields'
+import { BankAccountFields, HpiCpnField } from '../../../admin/flows/anaesthetistFields'
 import { OverlayHeader } from '../../../../shared/surface/OverlayHeader'
 import { SheetActions } from '../../../../shared/surface/SheetActions'
 import { ConfirmSheet } from '../../../../shared/surface/ConfirmSheet'
@@ -575,6 +576,19 @@ export function SessionTimesExample() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <SessionTimesFields session="AM" draft={draft} defaults={{ startTime: defaults.startTime, endTime: defaults.endTime }} onChange={setDraft} />
       <FormError message={timesDraftError(draft)} />
+    </div>
+  )
+}
+
+/** Phase 26: the anaesthetist's mandatory HPI CPN and bank fields, with an invalid number to show the inline check. Local state only. */
+export function AnaesthetistFieldsExample() {
+  const [hpiId, setHpiId] = useState('10SOUM')
+  const [accountName, setAccountName] = useState('Melanie Souter')
+  const [accountNumber, setAccountNumber] = useState('99-0101-00348')
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, width: 360 }}>
+      <HpiCpnField value={hpiId} onChange={setHpiId} />
+      <BankAccountFields accountName={accountName} accountNumber={accountNumber} onAccountName={setAccountName} onAccountNumber={setAccountNumber} />
     </div>
   )
 }

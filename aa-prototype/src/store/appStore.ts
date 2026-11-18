@@ -293,8 +293,10 @@ export const PERSIST_KEY = 'aa-demo'
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient.
  *  v50: catch-up Phase 25, the pricing snapshot (`billing.locks`, every seeded
  *  AUTHORISED List locked, the history backdrop migrated from its invoices)
- *  and `BillingCase.payeeAnaesthetistId`. */
-export const PERSIST_VERSION = 50
+ *  and `BillingCase.payeeAnaesthetistId`.
+ *  v51: catch-up Phase 26, the anaesthetist profile (`Anaesthetist.bankAccount`
+ *  seeded for all 14 on bank 99; `gstPeriod` removed). */
+export const PERSIST_VERSION = 51
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {} }

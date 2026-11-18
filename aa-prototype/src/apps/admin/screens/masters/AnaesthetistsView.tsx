@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { neutral } from '../../../../theme/tokens'
 import { formatGstNumber } from '../../../../domain/billing/invoicePresentation'
+import { maskBankAccount } from '../../../../domain/bankAccount'
 import { format, parseISO } from 'date-fns'
 import { Link, useNavigate } from 'react-router-dom'
 import { tierFor } from '../../../../domain/pairingPreferences'
@@ -16,7 +17,8 @@ import { anaesthetistRecordPath } from '../../mastersPaths'
 
 /**
  * Anaesthetists (catch-up Phase 17 adds the Tier column and the row that opens
- * the record). The row's "Edit" link and "Add anaesthetist" keep their names:
+ * the record; Phase 26 the HPI CPN, the masked bank account and the email, and
+ * drops the GST period). Unit $ stays the third column: recipes highlight it. The row's "Edit" link and "Add anaesthetist" keep their names:
  * the catalogue's capture recipes click them.
  */
 export function AnaesthetistsView({ actor }: { actor: Actor }) {
@@ -35,7 +37,7 @@ export function AnaesthetistsView({ actor }: { actor: Actor }) {
         sub="Open an anaesthetist for their record, tier and pairing preferences. Adding one creates their sessions from their start date."
         action={<Button variant="secondary" onClick={() => setAdding(true)}>Add anaesthetist</Button>}
       />
-      <Table heads={['Name', 'Reg', 'Tier', 'Unit $', 'GST', 'GST number', 'Phone', 'Start date', 'Active', '']} rightAlign={[9]} shot="masters-anaesthetists">
+      <Table heads={['Name', 'Reg', 'Unit $', 'Tier', 'HPI CPN', 'Bank account', 'GST number', 'Phone', 'Email', 'Start date', 'Active', '']} rightAlign={[11]} shot="masters-anaesthetists">
         {rows.map((a) => (
           <tr
             key={a.registrationNumber}
@@ -51,13 +53,15 @@ export function AnaesthetistsView({ actor }: { actor: Actor }) {
               </Link>
             </td>
             <td className="mono" style={rowCellStyle}>{a.registrationNumber}</td>
-            <td style={rowCellStyle}><TierPill tier={tierFor(tiers, a.registrationNumber)} /></td>
             <td className="mono" style={rowCellStyle}>{a.unitValue.toFixed(2)}</td>
-            <td style={rowCellStyle}>{a.gstPeriod}</td>
+            <td style={rowCellStyle}><TierPill tier={tierFor(tiers, a.registrationNumber)} /></td>
+            <td className="mono" style={rowCellStyle}>{a.hpiId}</td>
+            <td data-shot="anaesthetist-bank" className="mono" style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>{maskBankAccount(a.bankAccount.accountNumber)}</td>
             <td data-shot="anaesthetist-gst-number" className={a.gstNumber !== undefined ? 'mono' : undefined} style={{ ...rowCellStyle, whiteSpace: 'nowrap', ...(a.gstNumber === undefined ? { color: neutral.mist } : {}) }}>
               {a.gstNumber !== undefined ? formatGstNumber(a.gstNumber) : 'Not held'}
             </td>
-            <td style={rowCellStyle}>{a.phone}</td>
+            <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>{a.phone}</td>
+            <td style={rowCellStyle}>{a.email}</td>
             <td className="mono" style={rowCellStyle}>{format(parseISO(a.startDateISO), 'd MMM yyyy')}</td>
             <td style={rowCellStyle}>{a.active ? 'Yes' : 'No'}</td>
             <EditCell onClick={() => setEditId(a.registrationNumber)} style={rowCellStyle} />

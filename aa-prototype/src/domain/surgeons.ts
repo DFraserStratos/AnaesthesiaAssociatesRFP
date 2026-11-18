@@ -72,6 +72,9 @@ export function normaliseHpiCpn(value: string): string {
   return value.trim().toUpperCase()
 }
 
+/** The refusal for a malformed HPI CPN, surgeon or anaesthetist (one wording, store and form alike). */
+export const HPI_CPN_INVALID = 'That HPI CPN does not look right. It is two digits then four letters, for example 12ABCD.'
+
 /** Two digits then four letters (after normalising), e.g. `12ABCD`. */
 export function isPlausibleHpiCpn(value: string): boolean {
   return /^\d{2}[A-Z]{4}$/.test(normaliseHpiCpn(value))

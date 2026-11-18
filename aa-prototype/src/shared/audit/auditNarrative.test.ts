@@ -124,6 +124,16 @@ describe('a typed price change (catch-up Phase 24)', () => {
   })
 })
 
+describe('the anaesthetist profile (catch-up Phase 26)', () => {
+  it('reads a bank account as its name and the masked number, never the full number', () => {
+    expect(formatAuditValue('bankAccount', { accountName: 'Melanie Souter', accountNumber: '99-0101-•••••21-00' })).toBe('Melanie Souter · 99-0101-•••••21-00')
+    expect(formatAuditValue('bankAccount', { accountName: 'Melanie Souter', accountNumber: '99-0101-0034821-00' })).toBe('Melanie Souter · 99-0101-•••••21-00')
+    expect(fieldLabel('bankAccount')).toBe('Bank account')
+    expect(fieldLabel('hpiId')).toBe('HPI CPN')
+    expect(formatAuditValue('unitValue', 27)).toBe('$27.00')
+  })
+})
+
 describe('formatAuditValue', () => {
   it('never stringifies JSON for the shapes the store stores', () => {
     expect(formatAuditValue('baseUnitsCaptured', { units: 3, source: 'overridden' })).toBe('3')

@@ -276,7 +276,7 @@ describe('history survives the clock and the canvas', () => {
     ).toBe(true)
     expect(addHospitalHoliday(api, OFFICE, HOSP.stg, '2026-08-14', 'Shutdown').ok).toBe(true)
     expect(
-      addAnaesthetist(api, OFFICE, { registrationNumber: '99001', name: 'Dr Nadia Kerr', phone: '021 000 0000', email: 'n@example.test', unitValue: 25, gstPeriod: 'monthly', hpiId: '99KERN', startDateISO: '2026-08-12' } as never).ok,
+      addAnaesthetist(api, OFFICE, { registrationNumber: '99001', name: 'Dr Nadia Kerr', phone: '021 000 0000', email: 'n@example.test', unitValue: 25, bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, hpiId: '99KERN', startDateISO: '2026-08-12' } as never).ok,
     ).toBe(true)
     advanceClockDays(api, 30)
     // The horizon shortened and lengthened again.

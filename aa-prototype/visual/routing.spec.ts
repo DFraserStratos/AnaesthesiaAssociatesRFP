@@ -46,6 +46,18 @@ test('web: drilling writes the URL; refresh holds the booking; Back unwinds the 
   await expect(page.getByRole('heading', { name: 'Lists' })).toBeVisible()
 })
 
+test('web: the persona block opens /web/profile, which survives a refresh (catch-up Phase 26)', async ({ page }) => {
+  await page.goto('/web')
+  await page.waitForLoadState('networkidle')
+  await page.getByRole('button', { name: 'Your profile, Dr Melanie Souter' }).click()
+  await expect(page).toHaveURL(/\/web\/profile$/)
+  await page.reload()
+  await page.waitForLoadState('networkidle')
+  await expect(page).toHaveURL(/\/web\/profile$/)
+  await expect(page.getByRole('heading', { name: 'Your profile' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Your profile, Dr Melanie Souter' })).toHaveAttribute('aria-current', 'page')
+})
+
 test('web: the accounts sub-tab is a URL, and the bare section redirects to Overdue', async ({ page }) => {
   await page.goto('/web/accounts')
   await page.waitForLoadState('networkidle')

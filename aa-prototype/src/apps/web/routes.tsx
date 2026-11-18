@@ -13,6 +13,7 @@ import {
   DashboardScreen,
   ListDetailView,
   ListsScreen,
+  ProfileScreen,
   type AccountsSubTab,
 } from './screens'
 import { useWebOutlet } from './outlet'
@@ -190,6 +191,15 @@ export function WebMyAvailabilityRoute() {
   const [params] = useSearchParams()
   const date = params.get('date') ?? undefined
   return <MyAvailabilityCalendar key={date ?? 'none'} actor={actor} anaesthetistId={anaesthetistId} {...(date !== undefined ? { initialDateISO: date } : {})} />
+}
+
+// ---------------------------------------------------------------------------
+// Profile — `/web/profile` (catch-up Phase 26), from the persona block in the nav
+// ---------------------------------------------------------------------------
+
+export function WebProfileRoute() {
+  const { anaesthetistId, actor } = useWebOutlet()
+  return <ProfileScreen anaesthetistId={anaesthetistId} actor={actor} />
 }
 
 // ---------------------------------------------------------------------------

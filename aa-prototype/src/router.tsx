@@ -12,6 +12,7 @@ import {
   WebDashboardRoute,
   WebListDetailRoute,
   WebListsRoute,
+  WebProfileRoute,
 } from './apps/web/routes'
 import {
   MobileAvailabilityRoute,
@@ -95,6 +96,7 @@ export function AppRouter() {
               <Route index element={<Navigate to="overdue" replace />} />
               <Route path=":subTab" element={<WebAccountsRoute />} />
             </Route>
+            <Route path="profile" element={<WebProfileRoute />} />
             <Route path="*" element={<Navigate to="/web" replace />} />
           </Route>
 

@@ -116,8 +116,8 @@ export function DefRowExample() {
         <DefRow layout="stacked" label="Mobile" note="Shown to the office only.">021 000 0000</DefRow>
       </DefList>
       <DefList gap={0}>
-        <DefRow layout="settings" label="Bank account" trailing={<Lock size={14} aria-hidden color={neutral.mist} />}>12-3456-0789012-00</DefRow>
-        <DefRow layout="settings" label="GST number">104-348-211</DefRow>
+        <DefRow layout="settings" label="Bank account" trailing={<Lock size={14} aria-hidden color={neutral.mist} />}>12-3456-•••••12-00</DefRow>
+        <DefRow layout="settings" label="Rate per unit">$26.50</DefRow>
       </DefList>
     </div>
   )

@@ -998,7 +998,7 @@ Xero sim**.
   Face lift (`/admin/day/2026-08-10/bookings/BK0163`) now reads $3,300.00. A Booking with a typed
   price, and the authorised, invoiced one, stay as they were: a locked Booking never follows a change.
 
-### Optional beat: unit value after authorise
+### Optional beat: rate per unit after authorise
 
 - **Click:**
   - In the Review queue, authorise Dr Souter's Mon 20 Jul AM List (`/admin/review/L-34821-2026-07-20-AM`)
@@ -1008,7 +1008,7 @@ Xero sim**.
   - Back on the authorised List in Review; then Brian Holt's invoice (**AA-2026-0007** after the S5
     jump) → **Demo actions → Regenerate from locked data → Run**; then an ACTIVE Booking of hers,
     Hemi Walker on her Tue 21 Jul AM List (`/admin/day/2026-07-21/bookings/BK0001`).
-- **Say:** "The unit value is read when the List is authorised and kept in the lock. Changing it later
+- **Say:** "The rate per unit is read when the List is authorised and kept in the lock. Changing it later
   re-prices only work not yet authorised."
 - **Expected:** Review still reads **@ $26.50/unit (locked)** and $901.00; Regenerate reads
   **identical (2 lines, total $365.70)**; Hemi Walker's ACTIVE Booking reads **13 units x $28.00 =

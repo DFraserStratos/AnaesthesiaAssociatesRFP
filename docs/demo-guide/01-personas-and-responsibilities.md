@@ -34,7 +34,8 @@ Bookings and capture the data AA needs for billing.
 - Complete work and hand the whole List to the AA office.
 - See availability, and move one of her Lists to a free colleague or back to the office.
 - Hand one Booking to a colleague who is free that session (it becomes a new List of theirs).
-- Later, see outstanding amounts and GST-period activity.
+- Later, see outstanding amounts and her GST activity for the month to date.
+- See her own profile and set her rate per unit (the dollar value of one RVG unit).
 
 ### Core actions
 
@@ -47,7 +48,7 @@ Bookings and capture the data AA needs for billing.
    or **None apply**); on a fixed or open price, no times or modifiers, the RVG code optional "for
    reference", and a typed amount where the price asks for one. Then notes and any allowed additional
    billing line. What only the office can fix goes to the office with **Alert the office**.
-5. Review the calculated units and fee at her personal dollar-per-unit value.
+5. Review the calculated units and fee at her own rate per unit.
 6. Mark each active Booking complete.
 7. Submit the whole List to the office.
 8. Use Availability to mark days off weeks ahead, including repeating days off, and to move one of
@@ -74,6 +75,10 @@ Bookings and capture the data AA needs for billing.
 12. Split a Procedure's fee on her own Booking (**Split** in its Billing card's Paid by: each party's share in
     $ or %, one party taking the rest, each party invoiced separately), before she submits and until
     the office authorises the List.
+13. Open her **Profile** (a Profile card on the More tab): rate per unit, phone, email, registration
+    number, HPI CPN and bank account (masked, such as 99-0101-•••••21-00). **Change** beside Rate per
+    unit opens a bottom sheet; the new rate applies to Bookings on Lists not yet authorised, while
+    authorised Lists keep their locked rate. The other rows show a lock: the office holds them.
 
 ### Permissions
 
@@ -83,7 +88,9 @@ Bookings and capture the data AA needs for billing.
 - `AUTHORISED`: Bookings are locked for everyone.
 - May only see her own Lists and patient Bookings.
 - May see colleagues' session availability, but not their patient details.
-- May not authorise a List, edit master data or use office monitoring.
+- May set her own rate per unit. May not edit her contact details, HPI CPN, bank details or other
+  master data.
+- May not authorise a List or use office monitoring.
 
 `DRAFT` means a Draft List with no anaesthetist yet; the office assigns it.
 
@@ -133,7 +140,9 @@ underlying List, Booking and BTM actions.
   is more convenient.
 - Find Free colleagues and move one of her Lists to a free colleague or back to the office.
 - Hand one Booking to a colleague who is free that session, from the Booking's screen.
-- Review accounts outstanding and GST-period activity.
+- Review accounts outstanding and GST activity for the calendar month to date (Accounts, GST activity).
+- Open her Profile from her name and avatar in the top nav (`/web/profile`) and change her rate per
+  unit; contact details, HPI CPN and bank details are read-only there, as on the phone.
 
 ### Demo distinction
 
@@ -182,6 +191,11 @@ short-notice cover.
 9. Maintain schedule-related master data such as anaesthetists, recurring bookings and hospital
    holidays (adding, editing and deleting closures), and surgeons, their rooms and groups, the office's private pairing preferences and the
    anaesthetists' priority tiers.
+9a. Keep each anaesthetist's profile on their record (Master data, Anaesthetists, open a row: the
+   Profile card's **Edit details**): rate per unit, phone, email, registration number, HPI CPN, bank
+   account and GST number. The HPI CPN and bank details are mandatory on every anaesthetist record: an
+   add or edit without either is refused. Every change is audited, the bank number masked there too.
+   Bank details are master data only; payments to anaesthetists are made in Xero.
 10. Review the audit history when a change needs explanation.
 11. Work the to-do list on the dashboard: open each warning's Booking and clear it once dealt with,
     chasing a missing approval number with the surgeon's rooms and checking a child payer's parent
@@ -205,6 +219,8 @@ short-notice cover.
 - May not edit Bookings after `AUTHORISED`.
 - May perform office-only billing setup corrections.
 - May reassign a List or a Booking.
+- Holds each anaesthetist's profile, bank details and HPI CPN, and may change any anaesthetist's
+  rate per unit.
 
 ### Pain points
 
