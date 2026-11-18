@@ -162,7 +162,7 @@ export function buildPatients(seed: number): Patient[] {
     patients.push(patient)
   }
 
-  patients.push(...PAYER_REVIEW_PATIENTS, ...COMPLETION_PATIENTS, ...REVIEW_FLAG_PATIENTS, ...PROCEDURE_PAYER_PATIENTS, ...MULTI_PROCEDURE_PATIENTS, ...PRICING_PATIENTS)
+  patients.push(...PAYER_REVIEW_PATIENTS, ...COMPLETION_PATIENTS, ...REVIEW_FLAG_PATIENTS, ...PROCEDURE_PAYER_PATIENTS, ...MULTI_PROCEDURE_PATIENTS, ...PRICING_PATIENTS, ...DISABLED_CONTRACT_PATIENTS)
   return patients.map(withSeedContact)
 }
 
@@ -214,6 +214,15 @@ export const PAT_24 = {
   rangeAuthorised: `PT${String(19 + 132 + 19).padStart(4, '0')}`,
   noCharge: `PT${String(19 + 132 + 20).padStart(4, '0')}`,
 } as const
+
+/** Catch-up Phase 25a's dedicated patient (`seed/disabledContractBooking.ts`), after 24's. */
+export const PAT_25A = {
+  disabledContract: `PT${String(19 + 132 + 21).padStart(4, '0')}`,
+} as const
+
+const DISABLED_CONTRACT_PATIENTS: readonly Patient[] = [
+  { hiddenInternalId: PAT_25A.disabledContract, nhi: 'ZBM1009', name: 'Margaret Ellery', dobISO: '1956-03-17', phone: '03 555 7323', ethnicityCode: '11111' },
+]
 
 const PRICING_PATIENTS: readonly Patient[] = [
   { hiddenInternalId: PAT_24.discount, nhi: 'ZBE1019', name: 'Natalie Brennan', dobISO: '1979-05-14', phone: '021 555 6656', ethnicityCode: '11111' },

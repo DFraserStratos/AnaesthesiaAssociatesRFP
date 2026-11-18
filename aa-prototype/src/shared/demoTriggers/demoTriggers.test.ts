@@ -243,10 +243,13 @@ describe('re-homed bodies match the Control Panel', () => {
     const t = byId('billing-failure')
     const ctx = ctxFor('/admin/billing')
     expect(t.disabledReason(api.getState(), ctx)).toBeNull()
+    // The seed's own Contract entries (catch-up Phase 25a's seeded disable) are there before the trigger runs.
+    const contractEntries = (s: ReturnType<typeof api.getState>) => s.audit.filter((a) => a.action.startsWith('contract.')).length
+    const seededContractEntries = contractEntries(api.getState())
     expect(t.run(api, ctx).ok).toBe(true)
     const state = api.getState()
     expect(state.masters.contracts).toEqual(createAppStore().getState().masters.contracts)
-    expect(state.audit.some((a) => a.action.startsWith('contract.'))).toBe(false)
+    expect(contractEntries(state)).toBe(seededContractEntries)
     const cases = Object.values(state.billing.cases).filter((c) => bookingsForList(state, SEED_LIST_IDS.billingFailure).some((booking) => booking.id === c.bookingId))
     const losa = cases.find((c) => c.bookingId === SEED_MARKERS['billingFailureBooking']!.entityId)!
     expect(losa.handoffFailure).toBeDefined()

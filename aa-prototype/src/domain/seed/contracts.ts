@@ -61,6 +61,8 @@ export const CONTRACT = {
   forteDiscount: 'CT-FORTE-DISC',
   unisports: 'CT-UNISPORTS',
   cosFixed: 'CT-COS-FIXED',
+  // Catch-up Phase 25a: Christchurch Eye Surgery's old rate, Disabled on Fri 10 Jul 2026 (the seeded Disabled Contract flag).
+  cesOldRate: 'CT-CES-2025',
 } as const
 
 /**
@@ -96,6 +98,8 @@ interface SeedContract {
   aaCode?: string
   fundingTagId?: string
   specialtyIds?: string[]
+  /** Active unless named (catch-up Phase 25a: the one seeded Disabled Contract, its disable in the seeded audit). */
+  status?: Contract['status']
 }
 
 const RVG: ContractPricing = { kind: 'rvgAnaesthetistRate' }
@@ -133,6 +137,9 @@ const SEED: readonly SeedContract[] = [
   ...PRICED_ITEMS,
   // Catch-up Phase 24 (demo values): Forte Health at standard RVG less 10%, the override off; last, so no AA code moves.
   { id: CONTRACT.forteDiscount, name: 'Forte Health RVG less 10%', holderId: PARTY.forte, billsTo: 'holder', pricing: { kind: 'rvgDiscount', discountPct: 10 } },
+  // Catch-up Phase 25a (demo values): Christchurch Eye Surgery's old rate, Disabled on Fri 10 Jul 2026 by the office
+  // (`seed/disabledContractBooking.ts` writes the audit entry); one later Procedure still on it is flagged at review. Last, so no AA code moves.
+  { id: CONTRACT.cesOldRate, name: 'Christchurch Eye Surgery 2025 rate', holderId: PARTY.ces, billsTo: 'holder', pricing: rate(25), status: 'disabled' },
 ]
 
 function buildContracts(): Contract[] {
@@ -157,7 +164,7 @@ function buildContracts(): Contract[] {
       prepaid: c.prepaid ?? false,
       anaesthetistMayOverridePrice: c.anaesthetistMayOverridePrice ?? false,
       pricing: c.pricing,
-      status: 'active',
+      status: c.status ?? 'active',
       ...(c.systemRole !== undefined ? { systemRole: c.systemRole } : {}),
       specialtyIds: c.specialtyIds ?? [],
       ...(c.fundingTagId !== undefined ? { fundingTagId: c.fundingTagId } : {}),

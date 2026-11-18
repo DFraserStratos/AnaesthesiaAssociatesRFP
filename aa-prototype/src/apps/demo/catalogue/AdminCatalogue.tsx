@@ -11,7 +11,7 @@ import { DecisionCards, type DecisionKind } from '../../admin/matching/DecisionC
 import type { IncomingFieldKey } from '../../../domain/types'
 import type { FieldDiff } from '../../../domain/intake'
 import { OptionRow, Pill, RadioCard, useRovingRadio } from '../../../shared/ui'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { HospitalsView } from '../../admin/screens/masters/HospitalsView'
 import { RvgGroupsView } from '../../admin/screens/masters/RvgGroupsView'
 import {
@@ -106,7 +106,10 @@ import { PaidByRowExample, PaidBySheetExample, PartyPickerExample } from './spli
 import { LockBadge } from '../../../shared/booking/LockBadge'
 import { SEED_MARKERS } from '../../../domain/seed'
 import { ContractHistory } from '../../admin/flows/ContractHistory'
-import { useAppStore } from '../../../store'
+import { stillOnContract, useAppStore, useToday } from '../../../store'
+import { ContractChangeNotice } from '../../admin/flows/ContractChangeNotice'
+import { NOTHING_MOVES, stillOnTitle } from '../../../domain/billing/contractChanges'
+import { shortDay } from '../../../domain/dateText'
 
 const A = 'Admin'
 const AW = 'Admin · Web'
@@ -447,6 +450,9 @@ export function AdminCatalogue() {
         <CatalogueRow name="ContractHistory" source="apps/admin/flows/ContractHistory.tsx" usedIn={A} what="A Contract's History tab (catch-up Phase 25; US-04.1.3): its audited changes newest first through the shared HistoryTimeline (who, when, the values before and after), then the Procedures locked against it with links to their Bookings and invoices; EmptyState before any change." replaceWith="Custom (the shared HistoryTimeline and EmptyState)" note="Shown on the fixed-price Contract of the seeded AUTHORISED Face lift.">
           <ContractHistoryExample />
         </CatalogueRow>
+        <CatalogueRow name="ContractChangeNotice" source="apps/admin/flows/ContractChangeNotice.tsx" usedIn={A} what="The Contract panel's change warning (catch-up Phase 25a; US-04.1.2, US-04.2.15): the shared warning Notice with its sentence, then the Procedures it names on the shared TableShell (dense), each with Open to its Booking. One component for the dated change (a new Contract's Replaces and From), a disable, and the authorised Procedures a price range left at their old price. It only lists: nothing moves." replaceWith="Custom (the shared Notice and TableShell)" note="Shown with the Procedures dated on or after today still on Merivale's Face lift, read from the demo store.">
+          <ContractChangeNoticeExample />
+        </CatalogueRow>
         <CatalogueRow name="PaidBySheet (with SplitFeeSection)" source="shared/flows/PaidBySheet.tsx, shared/flows/SplitFeeSection.tsx" usedIn={AWM} what="The one Paid by sheet (catch-up Phase 22a; US-11.2.2, US-08.2.3): a bottom sheet on the phone, a dialog on web and Admin. Opened by Change, it holds who pays (the Different payer tick, the patient's details or the other payer's fields, the Under 18 hint and the contact ask) and, when the payer changes, the offer (the Booking's other Procedures with the same payer, each ticked, and the one neutral Provisional, OQ-140 pill). Opened by Split, it holds the split alone (a party or Another person, a $ or % share and Takes the rest per row, each amount live). Save writes it or refuses it whole." replaceWith="Custom (shadcn Sheet, Checkbox and Input inside)" note="Opens on Grace Park's first seeded Procedure; Save writes to the demo store.">
           <PaidBySheetExample />
         </CatalogueRow>
@@ -486,6 +492,25 @@ function ContractHistoryExample() {
     return s.billing.locks[bookingId]?.procedures[0]?.contract?.id ?? ''
   })
   return contractId === '' ? null : <ContractHistory contractId={contractId} />
+}
+
+/** The dated-change warning on Merivale's Face lift from today (catch-up Phase 25a). */
+function ContractChangeNoticeExample() {
+  const schedule = useAppStore((s) => s.schedule)
+  const masters = useAppStore((s) => s.masters)
+  const today = useToday()
+  const rows = useMemo(() => stillOnContract({ schedule, masters }, 'CT-MER-FACELIFT', today), [schedule, masters, today])
+  return (
+    <ContractChangeNotice
+      title={stillOnTitle(rows.length, shortDay(today), masters.contracts['CT-MER-FACELIFT']?.name ?? 'Face lift')}
+      columns={[{ label: 'Date', mono: true }, { label: 'Procedure' }]}
+      rows={rows.map((r) => ({ key: r.procedureId, bookingId: r.bookingId, dateISO: r.dateISO, patientName: r.patientName, cells: [shortDay(r.dateISO), r.procedureText ?? ''] }))}
+      shot="catalogue-contract-still-on"
+      rowShot="catalogue-contract-still-on-row"
+    >
+      {NOTHING_MOVES}
+    </ContractChangeNotice>
+  )
 }
 
 /** RowField (catch-up Phase 33's move): an editable NHI flagged invalid, a name, and wording kept as received. */

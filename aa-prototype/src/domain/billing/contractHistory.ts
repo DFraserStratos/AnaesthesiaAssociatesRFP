@@ -56,3 +56,28 @@ export function contractHistoryFor(audit: readonly AuditEntry[], contractId: str
     .filter((a) => a.entityType === 'contract' && a.entityId === contractId && CONTRACT_HISTORY_ACTIONS.has(a.action))
     .sort((a, b) => b.atISO.localeCompare(a.atISO) || sequenceOf(b.id) - sequenceOf(a.id))
 }
+
+/**
+ * The day each Disabled Contract was disabled (catch-up Phase 25a; US-07.2.2,
+ * US-04.1.2, D81): for every Contract whose latest disable or enable entry in
+ * the audit is a `contract.disable`, that entry's day. A Contract re-enabled
+ * since, or never disabled, has none. The day is read only from the audit: a
+ * Contract carries no date field (US-04.1.2 "No dates"). One pass over the
+ * audit, so Review builds it once per screen, not once per Procedure.
+ */
+export function disabledDaysByContract(audit: readonly AuditEntry[]): Record<string, string> {
+  const latest = new Map<string, AuditEntry>()
+  for (const a of audit) {
+    if (a.entityType !== 'contract' || (a.action !== 'contract.disable' && a.action !== 'contract.enable')) continue
+    const seen = latest.get(a.entityId)
+    if (seen === undefined || a.atISO.localeCompare(seen.atISO) > 0 || (a.atISO === seen.atISO && sequenceOf(a.id) > sequenceOf(seen.id))) latest.set(a.entityId, a)
+  }
+  const out: Record<string, string> = {}
+  for (const [id, a] of latest) if (a.action === 'contract.disable') out[id] = a.atISO.slice(0, 10)
+  return out
+}
+
+/** One Contract's disable day (`YYYY-MM-DD`), or null when it is Active or was re-enabled since. */
+export function contractDisabledOn(audit: readonly AuditEntry[], contractId: string): string | null {
+  return disabledDaysByContract(audit.filter((a) => a.entityId === contractId))[contractId] ?? null
+}

@@ -13,6 +13,7 @@
  */
 
 import { withPhase25Codes } from './__parity__/phase25Declared'
+import { PHASE_25A_ADDED_BOOKINGS, PHASE_25A_ADDED_PROCEDURES } from './__parity__/phase25aDeclared'
 import { describe, expect, it } from 'vitest'
 import { PHASE_24_ARIA_BOOKINGS, PHASE_24_ARIA_PROCEDURES } from './__parity__/phase24Declared'
 import {
@@ -35,8 +36,9 @@ import { MULTI_PROCEDURE_IDS, SEED_MARKERS } from '../domain/seed'
 
 const baseline = baselineJson as unknown as Phase23Baseline
 const now = capturePhase23(freshAppState())
-const added = new Set([MULTI_PROCEDURE_IDS.booking])
-const addedProcedures = new Set(MULTI_PROCEDURE_IDS.procedures)
+// Catch-up Phase 25a's appended Booking on the Disabled Contract is an addition too (`__parity__/phase25aDeclared.ts`).
+const added = new Set([MULTI_PROCEDURE_IDS.booking, ...PHASE_25A_ADDED_BOOKINGS])
+const addedProcedures = new Set([...MULTI_PROCEDURE_IDS.procedures, ...PHASE_25A_ADDED_PROCEDURES])
 // Catch-up Phase 24's declared difference (procedurePriceParity.test.ts pins it): the typed $1,200 on
 // BK0179 prints as one fee line at the price, its total unchanged. Set aside here.
 const TYPED_24_BOOKING = SEED_MARKERS['typedPriceBooking']!.entityId

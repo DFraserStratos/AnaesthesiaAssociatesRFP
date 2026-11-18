@@ -81,7 +81,7 @@
 
 import { describe, expect, it } from 'vitest'
 import goldenRaw from './__fixtures__/canvas-golden.json?raw'
-import { buildSeed, SEED_LIST_IDS, SEED_LEAVE } from './index'
+import { buildSeed, DISABLED_CONTRACT_BOOKING_IDS, SEED_LIST_IDS, SEED_LEAVE } from './index'
 import { RECURRING_BOOKINGS } from './recurringBookings'
 import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
 import { displayStatusKey, effectiveSlotTimes, slotIdFor } from '../slots'
@@ -175,7 +175,9 @@ describe('golden canvas (Phase 28: the split keeps the demo window)', () => {
   })
 
   it('reproduces every seeded Booking on the same List and patient', () => {
+    // Catch-up Phase 25a's Booking on the Disabled Contract was appended after the golden was written (never rewritten).
     const bookings = Object.values(seed.schedule.bookings)
+      .filter((b) => !DISABLED_CONTRACT_BOOKING_IDS.includes(b.id))
       .map((b) => ({ id: b.id, listId: b.listId, patientId: b.patientId }))
       .sort((a, b) => a.id.localeCompare(b.id))
     expect(bookings).toEqual(golden.bookings)

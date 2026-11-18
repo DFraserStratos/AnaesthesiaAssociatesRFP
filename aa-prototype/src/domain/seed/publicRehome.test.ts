@@ -21,13 +21,51 @@
 import { describe, expect, it } from 'vitest'
 import baselineJson from './__fixtures__/phase-32d-seed-baseline.json'
 import { auditLine, capturePhase32d, freeSessionsOn, PARITY_DAYS, type Phase32dSeedBaseline } from './__fixtures__/phase32dCapture'
-import { buildSeed, SEED_LIST_IDS } from './index'
+import { buildSeed, DISABLED_CONTRACT_BOOKING_IDS, SEED_LIST_IDS } from './index'
 import { projectedListId } from '../slots'
 import { ANAE } from './cast'
 
 const before = baselineJson as unknown as Phase32dSeedBaseline
 const seed = buildSeed()
-const now = capturePhase32d(seed)
+/**
+ * Catch-up Phase 25a appended one Booking (and its Procedure) on a new Disabled
+ * Contract after this fixture was written: set aside with its audit entries, so
+ * every Booking, Procedure and entry 32d captured still compares as written.
+ */
+const ADDED_25A_BOOKINGS = new Set(DISABLED_CONTRACT_BOOKING_IDS)
+const ADDED_25A_ENTITIES = new Set([
+  ...ADDED_25A_BOOKINGS,
+  ...Object.values(seed.schedule.procedures).filter((p) => ADDED_25A_BOOKINGS.has(p.bookingId)).map((p) => p.id),
+  'CT-CES-2025',
+])
+const captured = capturePhase32d(seed)
+const now = {
+  ...captured,
+  bookings: Object.fromEntries(Object.entries(captured.bookings).filter(([id]) => !ADDED_25A_BOOKINGS.has(id))),
+  procedures: Object.fromEntries(Object.entries(captured.procedures).filter(([, p]) => !ADDED_25A_BOOKINGS.has(p.bookingId))),
+}
+const seedAuditBefore25a = seed.audit.filter((a) => !ADDED_25A_ENTITIES.has(a.entityId))
+/**
+ * The seed audit dates each Booking's synthetic "booked" entries by its place in
+ * id order (`bookingISO`), so 25a's Booking moves every Booking whose id sorts
+ * after it (the history Bookings, `HBK…`) by one slot: those entries, and their
+ * Procedures' and billing lines', are compared without their time.
+ */
+const FIRST_25A = [...ADDED_25A_BOOKINGS].sort()[0]!
+function bookingOfEntity(type: string, id: string): string | undefined {
+  if (type === 'booking') return id
+  if (type === 'procedure') return seed.schedule.procedures[id]?.bookingId
+  if (type === 'billingLine') {
+    const line = seed.schedule.billingLines[id]
+    return line !== undefined ? seed.schedule.procedures[line.procedureId]?.bookingId : undefined
+  }
+  return undefined
+}
+const timeShifted25a = (line: string): string => {
+  const [, type = '', id = ''] = line.split('|')
+  const booking = bookingOfEntity(type, id)
+  return booking !== undefined && booking > FIRST_25A ? line.split('|').slice(0, 4).join('|') : line
+}
 
 /** Dr Sharma's Tue 14 Jul AM List: 14's "Stage post-op scenario" anchor (POST_OP_ORIGINAL_LIST_ID). */
 const POST_OP_ANCHOR = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
@@ -102,7 +140,9 @@ describe('Phase 32d parity: what must not move', () => {
   it('the seeded audit is unchanged, apart from entries about removed Lists (sequence numbers close up after them)', () => {
     const gone = (line: string) => [...removedListIds, ...removedDraftIds].some((id) => line.split('|')[2] === id)
     const body = (line: string) => line.split('|').slice(1).join('|')
-    expect(seed.audit.map(auditLine).filter((l) => !gone(l)).map(body)).toEqual(before.audit.filter((l) => !gone(l)).map(body))
+    // Sorted: a moved time also moves an entry's place in the (time-ordered) audit.
+    const comparable = (lines: string[]) => lines.filter((l) => !gone(l)).map(timeShifted25a).map(body).sort()
+    expect(comparable(seedAuditBefore25a.map(auditLine))).toEqual(comparable(before.audit))
   })
 
   it('the post-op anchor holds Sarah Mitchell\'s Health NZ Booking', () => {

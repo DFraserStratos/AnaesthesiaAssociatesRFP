@@ -1,7 +1,8 @@
 /**
  * The review-flag list (catch-up Phase 21a; US-07.2.2, US-04.3.11, A41, A49):
  * each rule, the order, several on one Booking, none on a cancelled Booking,
- * and D81's default (a Disabled Contract raises none; OQ-135 open). Phase 07's
+ * and D81 as answered (catch-up Phase 25a: a Disabled Contract flags a
+ * Procedure dated on or after its disable day, never blocks). Phase 07's
  * kept flags (not completed, the B/T/M override note) and 21's payer contact
  * are ported from the old `apps/admin/reviewFlags.test.ts`.
  */
@@ -103,8 +104,35 @@ describe('the review-flag list (catch-up Phase 21a)', () => {
     ])
   })
 
-  it('D81 (OQ-135 open): a Procedure on a Disabled Contract bills as normal and raises no flag', () => {
-    expect(reviewFlagsForBooking(input([{ procedure: proc({ governingContractId: DISABLED.id }), fee: fee() }]))).toEqual([])
+  describe('contractDisabled (catch-up Phase 25a; D81, OQ-135 answered)', () => {
+    const onDisabled = (listDateISO: string, over: Partial<ReviewBookingInput> = {}) =>
+      input([{ procedure: proc({ governingContractId: DISABLED.id }), fee: fee() }], {
+        rail: { masters: MASTERS, ctx: { listDateISO, hospitalId: 'hosp-1', surgeonId: 'sur-a' } },
+        disabledOn: { [DISABLED.id]: '2026-12-01' },
+        listState: 'SUBMITTED',
+        ...over,
+      })
+
+    it('US-07.2.2 "Disabled Contract": disabled 1 Dec, a Procedure on 3 Dec is flagged (warn, with the day); one on 28 Nov is not', () => {
+      expect(reviewFlagsForBooking(onDisabled('2026-12-03'))).toEqual([
+        { tone: 'warn', text: 'Contract disabled on Tue 1 Dec', bookingId: 'BK1', procedureId: 'P1', rule: 'contractDisabled', shot: 'review-flag' },
+      ])
+      expect(reviewFlagsForBooking(onDisabled('2026-11-28'))).toEqual([])
+    })
+
+    it('the disable day itself is flagged ("on or after")', () => {
+      expect(rules(onDisabled('2026-12-01'))).toEqual(['contractDisabled'])
+    })
+
+    it('an AUTHORISED List raises none (its Procedures are authorised); no disable day (re-enabled) raises none', () => {
+      expect(rules(onDisabled('2026-12-03', { listState: 'AUTHORISED' }))).toEqual([])
+      expect(rules(onDisabled('2026-12-03', { disabledOn: {} }))).toEqual([])
+    })
+
+    it('an Active Contract with a stale disable day raises none (the status decides first)', () => {
+      const active = input([{ procedure: proc(), fee: fee() }], { disabledOn: { [RVG.id]: '2026-07-01' }, listState: 'SUBMITTED' })
+      expect(rules(active)).toEqual([])
+    })
   })
 
   it('kept from Phase 07: not completed, and the B/T/M override with its signed delta', () => {
@@ -124,8 +152,8 @@ describe('the review-flag list (catch-up Phase 21a)', () => {
   it('gone: "No billing reference" (D82), and no route, ACC or prepayment gate flag', () => {
     const all = reviewFlagsForBooking(input([{ procedure: proc({ procedureText: { text: 'ACL, ACC claim', source: 'surgeonPdf', receivedAtISO: '2026-07-14T09:00:00' } }), fee: fee() }]))
     expect(all).toEqual([])
-    // Catch-up Phase 27 adds the raised-prepayment chip, last; never a gate.
-    expect(REVIEW_FLAG_RULES.map((r) => r.rule)).toEqual(['contractChanged', 'contractNoLongerFits', 'needsInvoiceDestination', 'needsPrice', 'typedPrice', 'notCompleted', 'payerContactMissing', 'btmOverride', 'prepayment'])
+    // Catch-up Phase 27 adds the raised-prepayment chip, last; never a gate. Phase 25a adds the Disabled Contract flag after "not offered".
+    expect(REVIEW_FLAG_RULES.map((r) => r.rule)).toEqual(['contractChanged', 'contractNoLongerFits', 'contractDisabled', 'needsInvoiceDestination', 'needsPrice', 'typedPrice', 'notCompleted', 'payerContactMissing', 'btmOverride', 'prepayment'])
   })
 
   it('a raised prepayment: "Prepaid, left off" (neutral); sent then changed reads as a warning (catch-up Phase 27)', () => {

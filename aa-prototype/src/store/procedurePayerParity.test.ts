@@ -21,6 +21,7 @@
 import { describe, expect, it } from 'vitest'
 import { PHASE_24_ARIA_BOOKINGS } from './__parity__/phase24Declared'
 import { PHASE_25_ADDRESSEE_BOOKINGS, withPhase25Codes } from './__parity__/phase25Declared'
+import { PHASE_25A_ADDED_BOOKINGS } from './__parity__/phase25aDeclared'
 import {
   issuedBefore27,
   PHASE_27_BOOKINGS,
@@ -44,8 +45,8 @@ const now = captureBaseline22a(PROCEDURE_PAYER_ADDITIONS)
 
 describe('Phase 22a payer-per-Procedure parity (no declared difference)', () => {
   it('holds every seeded Booking: grouping, totals, printed name, billedTo, Xero contact and prepayment build', () => {
-    // Catch-up Phase 24's declared Aria move set aside (`__parity__/phase24Declared.ts`).
-    const kept = (r: { bookingId: string }) => !PHASE_24_ARIA_BOOKINGS.has(r.bookingId)
+    // Catch-up Phase 24's declared Aria move set aside (`__parity__/phase24Declared.ts`), and 25a's appended Booking (`phase25aDeclared.ts`).
+    const kept = (r: { bookingId: string }) => !PHASE_24_ARIA_BOOKINGS.has(r.bookingId) && !PHASE_25A_ADDED_BOOKINGS.has(r.bookingId)
     // Catch-up Phase 27's declared prepayment builds (Riley and Nair, `__parity__/phase27Declared.ts`), mapped back.
     expect(now.bookings.filter(kept).map(prepaymentBuildBefore27)).toEqual(withPhase25Codes(before.bookings.filter(kept)))
   })

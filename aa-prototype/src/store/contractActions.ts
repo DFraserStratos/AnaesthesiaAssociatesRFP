@@ -289,7 +289,12 @@ export function editContract(api: AppStoreApi, actor: Actor, contractId: string,
   )
 }
 
-/** Disable a Contract: it leaves the default list; a Procedure already on it keeps it and bills as normal (D81). */
+/**
+ * Disable a Contract: it leaves the default list; a Procedure already on it
+ * keeps it. Its `contract.disable` entry dates the disable: a Procedure not yet
+ * authorised and dated on or after that day is flagged at review, never
+ * blocked (D81, catch-up Phase 25a); the panel lists those still on it.
+ */
 export function disableContract(api: AppStoreApi, actor: Actor, contractId: string): Outcome {
   return save(api, actor, contractId, (prev) => ({ ...prev, status: 'disabled' }), { action: 'contract.disable' })
 }

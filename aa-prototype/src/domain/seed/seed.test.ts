@@ -896,6 +896,8 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
       'CT-SOUTER-RHINO-COS': 'SOUTER-004',
       // Catch-up Phase 24: Forte Health RVG less 10%, the seed's discount Contract, appended last.
       'CT-FORTE-DISC': 'FORTE-002',
+      // Catch-up Phase 25a: Christchurch Eye Surgery's old rate, the seeded Disabled Contract, appended last.
+      'CT-CES-2025': 'CES-010',
     })
     expect(Object.fromEntries(Object.values(contracts).filter((c) => c.systemRole === 'rvgFallback').map((c) => [c.id, c.aaCode]))).toEqual(RVG_BACKSTOPS)
     const codes = Object.values(contracts).map((c) => c.aaCode)
@@ -915,7 +917,8 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
     expect(Object.values(contracts).filter((c) => c.prepaid).map((c) => c.id).sort()).toEqual(
       ['CT-SOUTER-BLEPH', 'CT-SOUTER-BREAST', 'CT-SOUTER-RHINO', 'CT-SOUTER-RHINO-COS', Object.values(contracts).find((c) => c.name === 'Prepaid · Fixed price')!.id].sort(),
     )
-    expect(Object.values(contracts).some((c) => c.status !== 'active')).toBe(false)
+    // Every Contract is Active but one: catch-up Phase 25a's Christchurch Eye Surgery 2025 rate, Disabled on Fri 10 Jul.
+    expect(Object.values(contracts).filter((c) => c.status !== 'active').map((c) => c.id)).toEqual(['CT-CES-2025'])
   })
 
   it('keeps the named rates and fixed prices (SXAP $26.50, Health NZ $23, ACC $25 and $24, Unisports $93.47)', () => {

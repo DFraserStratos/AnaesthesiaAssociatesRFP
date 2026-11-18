@@ -334,8 +334,10 @@ export const PERSIST_KEY = 'aa-demo'
  *  instead of applying (`resultImportRowId`); `manualIntervention` and `integrationImmutable` retired. Reseeds on load.
  *  v54: Wave 1 sync on lane/a, Lane B's 32d and 33 (v52, v53) joined with Lane A's 27 (v52): one past the higher.
  *  v55: catch-up Phase 27a, the AA Holding account's transfer (`billing.transfers`, `xero.journals`,
- *  `BillingCase.prepayLeg` on BC0001, `Disbursement.transferId`). Reseeds on load. */
-export const PERSIST_VERSION = 55
+ *  `BillingCase.prepayLeg` on BC0001, `Disbursement.transferId`). Reseeds on load.
+ *  v56: catch-up Phase 25a, the seeded Disabled Contract (Christchurch Eye Surgery 2025 rate, `CT-CES-2025`, its
+ *  `contract.disable` audit entry on Fri 10 Jul) and Margaret Ellery's Booking on it on 21a's review-flags List. Reseeds on load. */
+export const PERSIST_VERSION = 56
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {} }

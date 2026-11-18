@@ -574,7 +574,8 @@ describe('office review flags and the movable Booking (catch-up Phase 21a sessio
     const bookings = Object.fromEntries(Object.entries(fresh.schedule.bookings).filter(([, b]) => b.listId !== SEED_LIST_IDS.reviewFlags))
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule: { ...fresh.schedule, bookings } }, version: 42 }))
     const s = createAppStore({ persisted: true }).getState()
-    expect(Object.values(s.schedule.bookings).filter((b) => b.listId === SEED_LIST_IDS.reviewFlags)).toHaveLength(4)
+    // Four from 21a; catch-up Phase 25a adds the Booking on the Disabled Contract.
+    expect(Object.values(s.schedule.bookings).filter((b) => b.listId === SEED_LIST_IDS.reviewFlags)).toHaveLength(5)
   })
 })
 
@@ -839,5 +840,23 @@ describe('the AA Holding account transfer (catch-up Phase 27a)', () => {
     expect(s.billing.transfers).toEqual({})
     expect(s.xero.journals).toEqual({})
     expect(s.billing.cases.BC0001?.prepayLeg).toBe('collect')
+  })
+})
+
+describe('the seeded Disabled Contract (catch-up Phase 25a)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v55 store with no Disabled Contract and reseeds it with its disable entry', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(56)
+    const fresh = freshAppState()
+    const { 'CT-CES-2025': _gone, ...contracts } = fresh.masters.contracts
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters: { ...fresh.masters, contracts } }, version: 55 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.masters.contracts['CT-CES-2025']?.status).toBe('disabled')
+    expect(s.audit.some((a) => a.entityId === 'CT-CES-2025' && a.action === 'contract.disable')).toBe(true)
   })
 })
