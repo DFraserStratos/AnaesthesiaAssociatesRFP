@@ -7,3 +7,4 @@ dist
 /.links/
 /requirements/exports/
 __pycache__/
+/.origin-fixture/

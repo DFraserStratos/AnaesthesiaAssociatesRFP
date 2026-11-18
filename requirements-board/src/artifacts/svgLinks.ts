@@ -96,10 +96,27 @@ function linkElement(doc: Document, id: string, link: DiagramLink): Element {
   return a
 }
 
-/** The linked ID an event came from, if any (the drawing sits in a shadow root, so this reads the path). */
-export function linkFromEvent(e: Event): Element | null {
+/**
+ * The link in the drawing an event came from, if any: a linked ID or one the drawing has. The
+ * drawing sits in a shadow root, so this reads the event's path, and stops at that root: a link
+ * on the page around the viewer is not the drawing's.
+ */
+export function anchorFromEvent(e: Event): Element | null {
   for (const t of e.composedPath()) {
-    if (t instanceof Element && t.localName === 'a' && t.classList.contains(RECORD_LINK_CLASS)) return t
+    if (t instanceof ShadowRoot) break
+    if (t instanceof Element && t.localName === 'a') return t
   }
   return null
+}
+
+/** Did the event come through a `<use>` copy? Its copied tree is closed to the page, so a link inside it never shows in the path. */
+export const fromUseCopy = (e: Event) => e.composedPath().some((t) => t instanceof Element && t.localName === 'use')
+
+/** Is this one of the board's own record links? The sanitiser strips `data-record` from drawings, so a drawing cannot forge one. */
+export const isRecordLink = (a: Element | null): a is Element => !!a && a.classList.contains(RECORD_LINK_CLASS) && a.hasAttribute('data-record')
+
+/** The linked ID an event came from, if any. */
+export function linkFromEvent(e: Event): Element | null {
+  const a = anchorFromEvent(e)
+  return isRecordLink(a) ? a : null
 }

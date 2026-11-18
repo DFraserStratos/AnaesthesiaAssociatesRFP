@@ -4,19 +4,20 @@
  * so edits made elsewhere (an agent, a terminal, git) reach the open board as
  * `catalogue:changed` HMR events. No separate server process.
  */
-import { createReadStream, existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
+import { createReadStream, readFileSync, statSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { tmpdir } from 'node:os'
-import { basename, dirname, extname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path'
+import { dirname, extname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
 import type { ArtifactRec, CatalogueEvent } from '../shared/types.ts'
-import { ARTIFACT_MIME, artifactPath } from './artifactFiles.ts'
-import { HttpError, createCatalogueApi } from './catalogueApi.ts'
+import { ARTIFACT_MIME, artifactBase, artifactPath } from './artifactFiles.ts'
+import { HttpError, createCatalogueApi, idFromPath } from './catalogueApi.ts'
 import { REQUIREMENTS_DIR } from './catalogueFs.ts'
 import { OBJECT_SHA, blobShaOf, git, gitBlob, repoTop } from './gitHistory.ts'
 import { priorDirs, priorPaths } from './gitRenames.ts'
 import { createJournal } from './historyJournal.ts'
+import { inside, linkOut, realPath, under } from './realPaths.ts'
 
 const MIME: Record<string, string> = {
   '.png': 'image/png',
@@ -64,10 +65,115 @@ function send(res: ServerResponse, status: number, body: unknown) {
   res.end(JSON.stringify(body))
 }
 
+function end(res: ServerResponse, status: number) {
+  res.statusCode = status
+  res.end()
+}
+
+/** How a file route warns (a file served through a link that leads out of its folder): once per message, in the server log. */
+type Warn = (message: string) => void
+
+const ASSET_PREFIX = '/requirements/'
+/**
+ * The board's file routes. Each answers every request under its prefix, under any spelling: a
+ * file, or a 4xx. Prefixes match without regard to case and are cut off by length (every spelling
+ * of a prefix has its length).
+ */
+const FILE_ROUTES = [ASSET_PREFIX, '/artifact-file/', '/history-blob/']
+
+/** Vite's own `server.fs.deny` defaults, which setting the option replaces: kept, so `.env` files and keys stay refused. */
+export const VITE_DENY = ['.env', '.env.*', '*.{crt,pem,key,p12,pfx,cer,der}', '.npmrc', '.yarnrc.yml', '**/.git/**']
+
+/**
+ * A folder as Vite `server.fs.deny` globs: the folder and everything in it, as written and as its
+ * real path (a temp folder under `/var` is `/private/var`), glob characters escaped. Vite matches
+ * them against absolute paths, ignoring case.
+ */
+export function denyGlobs(dir: string): string[] {
+  const spellings = new Set([resolve(dir), realPath(resolve(dir))])
+  return [...spellings].map((p) => p.split(sep).join('/').replace(/[\\*?[\]{}()!+@|]/g, '\\$&')).flatMap((p) => [p, `${p}/**`])
+}
+
+/**
+ * A request target as the board's routes read it: the path decoded, a backslash read as `/`, and doubled
+ * slashes and dot segments resolved (as Vite and the file system would read it), with the query as
+ * sent. Null when the path has a malformed escape.
+ */
+export function routeTarget(url: string): { path: string; query: string } | null {
+  const q = url.indexOf('?')
+  let raw = q < 0 ? url : url.slice(0, q)
+  try {
+    // A target in absolute form (`http://host/path`): its path.
+    if (!raw.startsWith('/')) raw = new URL(raw, 'http://local').pathname
+    return { path: posix.normalize(`/${decodeURIComponent(raw).replace(/\\/g, '/')}`), query: q < 0 ? '' : url.slice(q) }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * A read that another site's page asked for (fetch metadata): refused, so no other page, on
+ * another port or host, can read or embed what the board serves. A top-level visit (a link opened
+ * from elsewhere, a typed address), the board's own pages and clients that send no metadata (Node,
+ * curl, scripts) are served. Writes are refused by the API's own checks.
+ */
+export function crossSiteRead(method: string, headers: IncomingMessage['headers']): boolean {
+  if (method !== 'GET' && method !== 'HEAD') return false
+  const site = headers['sec-fetch-site']
+  if (site !== 'cross-site' && site !== 'same-site') return false
+  return !(headers['sec-fetch-mode'] === 'navigate' && headers['sec-fetch-dest'] === 'document')
+}
+
+/** The catalogue folder beside the board, still under Vite's root when REQUIREMENTS_DIR points elsewhere. */
+const IN_TREE = join(dirname(fileURLToPath(import.meta.url)), '..', 'requirements')
+
+/** A file's identity (device and inode), or null when there is nothing there. */
+function identity(path: string): string | null {
+  try {
+    const st = statSync(path, { throwIfNoEntry: false })
+    return st ? `${st.dev}:${st.ino}` : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Does a request path name a file in one of `folders` through Vite's own serving: its root, an
+ * absolute `/@fs/` path, or a `/@id/` module ID? Decided by what the file system opens, not by
+ * spelling: each folder above the named file is compared by identity, so letter case, Unicode case
+ * folding (`requirementſ`), normalisation and links all count as the folder they open.
+ */
+export function namesFolder(path: string, viteRoot: string, folders: string[]): boolean {
+  const homes = new Set(folders.map(identity).filter((id): id is string => id !== null))
+  if (!homes.size) return false
+  const abs = path.startsWith('/@fs/') ? path.slice(4).replace(/^\/(?=[A-Za-z]:)/, '') : null
+  const named = abs ? [abs] : path.startsWith('/@id/') ? [path.slice(4), join(viteRoot, path.slice(4))] : [join(viteRoot, path)]
+  return named.some((n) => {
+    for (let p = resolve(n); ; p = dirname(p)) {
+      const id = identity(p)
+      if (id && homes.has(id)) return true
+      if (dirname(p) === p) return false
+    }
+  })
+}
+
 export function cataloguePlugin(root = REQUIREMENTS_DIR): Plugin {
   return {
     name: 'catalogue-api',
+    // Vite's own file serving (its root, `/@fs/`, HTML pages, module transforms) never reads a
+    // catalogue folder, under any spelling: the one being served, and the one beside the board
+    // (still under Vite's root when REQUIREMENTS_DIR points elsewhere). The board's routes below
+    // run first and serve what the board shows.
+    config(user) {
+      return { server: { fs: { deny: [...(user.server?.fs?.deny ? [] : VITE_DENY), ...new Set([...denyGlobs(root), ...denyGlobs(IN_TREE)])] } } }
+    },
     configureServer(dev) {
+      const warned = new Set<string>()
+      const warn: Warn = (message) => {
+        if (warned.has(message)) return
+        warned.add(message)
+        dev.config.logger.warn(`[catalogue] ${message}`)
+      }
       const api = createCatalogueApi(root, (e: CatalogueEvent) => dev.ws.send('catalogue:changed', e), { journal: createJournal(historyDirFor(root)), watched: true })
 
       const sync = () => {
@@ -86,7 +192,7 @@ export function cataloguePlugin(root = REQUIREMENTS_DIR): Plugin {
       const watchArtifactFiles = () => {
         for (const rec of Object.values(api.getState().artifacts)) {
           const abs = rec.data.file ? artifactPath(rec.data.file, root) : null
-          if (abs && !abs.startsWith(rootAbs + sep) && !outside.has(abs)) {
+          if (abs && !inside(abs, rootAbs) && !outside.has(abs)) {
             outside.add(abs)
             dev.watcher.add(abs)
           }
@@ -103,7 +209,7 @@ export function cataloguePlugin(root = REQUIREMENTS_DIR): Plugin {
         }
       }, 0).unref?.()
       dev.watcher.on('all', (_event, file) => {
-        if ((!resolve(file).startsWith(rootAbs + sep) && !outside.has(resolve(file))) || file.endsWith('.tmp')) return
+        if ((!inside(resolve(file), rootAbs) && !outside.has(resolve(file))) || file.endsWith('.tmp')) return
         // At once, not after the debounce: the Diff review never serves a comparison older than the files.
         api.worktreeChanged()
         const now = performance.now()
@@ -118,30 +224,47 @@ export function cataloguePlugin(root = REQUIREMENTS_DIR): Plugin {
       })
 
       dev.middlewares.use((req, res, next) => {
-        const url = new URL(req.url ?? '/', 'http://local')
-        if (url.pathname.startsWith('/requirements/')) {
-          // Only screenshots: the folder sits inside Vite's root, so never fall through to its static files.
-          if (!serveAsset(root, url, res)) {
-            res.statusCode = 404
-            res.end()
-          }
+        const url = req.url ?? '/'
+        const method = req.method ?? 'GET'
+        const target = routeTarget(url)
+        const lower = target?.path.toLowerCase()
+        const isApi = url.startsWith('/api/')
+        // Another site's page reads nothing here, the board's routes or Vite's own (`/__open-in-editor` included).
+        if (crossSiteRead(method, req.headers)) return end(res, 403)
+        // A malformed escape names nothing anywhere: a client error, never Vite's error page.
+        if (!target && !isApi) return end(res, 400)
+        const route = isApi ? '/api/' : FILE_ROUTES.find((r) => lower!.startsWith(r) || lower === r.slice(0, -1))
+        if (!route) {
+          // The deny rule keeps Vite from reading a catalogue file; this makes every such request a
+          // plain 404, not Vite's page fallback or a module error.
+          if (namesFolder(target!.path, dev.config.root, [root, IN_TREE])) return end(res, 404)
+          return next()
+        }
+        res.setHeader('Cross-Origin-Resource-Policy', 'same-origin')
+        // Re-encoded from the resolved path, so every spelling reaches its route the same way.
+        const routed = () => new URL(target!.path.split('/').map(encodeURIComponent).join('/') + target!.query, 'http://local')
+        if (route === ASSET_PREFIX) {
+          // Only screenshots, and never a fall-through to Vite's static files.
+          if (!serveAsset(root, routed(), res, warn)) end(res, 404)
           return
         }
-        if (url.pathname.startsWith('/artifact-file/')) {
-          if (!serveArtifactFile(root, api.getState().artifacts, url, res)) next()
+        if (route === '/artifact-file/') {
+          if (!serveArtifactFile(root, api.getState().artifacts, routed(), res, warn)) end(res, 404)
           return
         }
-        if (url.pathname.startsWith('/history-blob/')) {
-          void serveHistoryBlob(root, url, res, api.getState().artifacts).then((ok) => ok || next())
+        if (route === '/history-blob/') {
+          serveHistoryBlob(root, routed(), res, api.getState().artifacts, warn)
+            .then((ok) => ok || end(res, 404))
+            .catch(() => (res.headersSent ? res.end() : end(res, 404)))
           return
         }
-        if (!url.pathname.startsWith('/api/')) return next()
+        const path = url.slice(0, url.includes('?') ? url.indexOf('?') : undefined)
         readJson(req)
           .then((body) =>
             api.handle({
-              method: req.method ?? 'GET',
-              path: url.pathname,
-              query: Object.fromEntries(url.searchParams),
+              method,
+              path,
+              query: Object.fromEntries(new URLSearchParams(target?.query ?? '')),
               body,
               headers: { 'content-type': req.headers['content-type'], origin: req.headers.origin, host: req.headers.host },
             }),
@@ -162,22 +285,49 @@ export function cataloguePlugin(root = REQUIREMENTS_DIR): Plugin {
  */
 const SVG_CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src data:"
 
-/** The file an artifact shows: `/artifact-file/<ID>`, resolved through its sidecar only, so no other path is ever served. */
-export function serveArtifactFile(root: string, artifacts: Record<string, ArtifactRec>, url: URL, res: ServerResponse): boolean {
-  const id = decodeURIComponent(url.pathname.slice('/artifact-file/'.length))
-  const file = artifacts[id]?.data.file
-  const abs = file ? artifactPath(file, root) : null
-  const type = abs ? ARTIFACT_MIME[extname(abs).toLowerCase()] : undefined
-  if (!abs || !type || !existsSync(abs) || !statSync(abs).isFile()) return false
+/** Is `abs` a file? False for anything missing, unreadable or looping, never a throw. */
+function isFile(abs: string): boolean {
+  try {
+    return !!statSync(abs, { throwIfNoEntry: false })?.isFile()
+  } catch {
+    return false
+  }
+}
+
+/** A file served through a symbolic link that leads out of its folder: still served, and the server log says so. */
+function warnLinkOut(abs: string, base: string, warn?: Warn) {
+  const out = warn && linkOut(abs, base)
+  if (out) warn(`${abs} is a symbolic link to ${out}, outside ${base}; served anyway`)
+}
+
+/** Send a file as its type, never sniffed as another, an SVG with script blocked. */
+function sendFile(res: ServerResponse, abs: string, type: string) {
   res.setHeader('Content-Type', type)
-  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('X-Content-Type-Options', 'nosniff')
   if (type === 'image/svg+xml') res.setHeader('Content-Security-Policy', SVG_CSP)
+  res.setHeader('Cache-Control', 'no-cache')
   createReadStream(abs)
     .on('error', () => {
       if (!res.headersSent) res.statusCode = 404
       res.end()
     })
     .pipe(res)
+}
+
+/** The file an artifact shows: `/artifact-file/<ID>`, resolved through its sidecar only, so no other path is ever served. Returns false when there is none to serve. */
+export function serveArtifactFile(root: string, artifacts: Record<string, ArtifactRec>, url: URL, res: ServerResponse, warn?: Warn): boolean {
+  let id: string
+  try {
+    id = idFromPath(url.pathname.slice('/artifact-file/'.length))
+  } catch {
+    return false
+  }
+  const file = Object.hasOwn(artifacts, id) ? artifacts[id]!.data.file : null
+  const abs = file ? artifactPath(file, root) : null
+  const type = abs ? ARTIFACT_MIME[extname(abs).toLowerCase()] : undefined
+  if (!file || !abs || !type || !isFile(abs)) return false
+  warnLinkOut(abs, artifactBase(file, root), warn)
+  sendFile(res, abs, type)
   return true
 }
 
@@ -187,25 +337,31 @@ export function serveArtifactFile(root: string, artifacts: Record<string, Artifa
  * that artifact's file now), or `?artifact=<ID>&file=<its file at that version>` (served as the type
  * of `file`, for a version whose file had another type, or an artifact since removed; honoured only
  * when the blob is at that path in some commit, or on disk). Read from git, or from the file on
- * disk while it still has that content (a version not yet committed). Returns false to fall through.
+ * disk while it still has that content (a version not yet committed). Returns false when there is
+ * none to serve.
  */
-export async function serveHistoryBlob(root: string, url: URL, res: ServerResponse, artifacts: Record<string, ArtifactRec> = {}): Promise<boolean> {
+export async function serveHistoryBlob(root: string, url: URL, res: ServerResponse, artifacts: Record<string, ArtifactRec> = {}, warn?: Warn): Promise<boolean> {
   const sha = url.pathname.slice('/history-blob/'.length)
   if (!OBJECT_SHA.test(sha)) return false
   const artifactId = url.searchParams.get('artifact')
   const named = url.searchParams.get('file')
   const namedAbs = artifactId && named ? artifactPath(named, root) : null
   const namedOk = !!namedAbs && !!ARTIFACT_MIME[extname(namedAbs).toLowerCase()] && (await blobWasAt(root, sha, namedAbs))
-  const artifactFile = artifactId ? (namedOk ? named : (artifacts[artifactId]?.data.file ?? null)) : null
+  const current = artifactId && Object.hasOwn(artifacts, artifactId) ? (artifacts[artifactId]!.data.file ?? null) : null
+  const artifactFile = artifactId ? (namedOk ? named : current) : null
   const src = url.searchParams.get('src') ?? ''
   const abs = artifactFile ? artifactPath(artifactFile, root) : artifactId ? null : resolve(root, src)
   if (!abs) return false
+  const base = artifactFile ? artifactBase(artifactFile, root) : resolve(root, 'assets')
   const type = artifactFile ? ARTIFACT_MIME[extname(abs).toLowerCase()] : MIME[extname(abs).toLowerCase()]
-  if (!type || (!artifactFile && !abs.startsWith(resolve(root, 'assets') + sep))) return false
+  if (!type || (!artifactFile && !under(abs, base))) return false
   let buf = await gitBlob(root, sha)
-  if (!buf && existsSync(abs) && statSync(abs).isFile()) {
+  if (!buf && isFile(abs)) {
     const onDisk = readFileSync(abs)
-    if (blobShaOf(onDisk, sha.length === 64) === sha) buf = onDisk
+    if (blobShaOf(onDisk, sha.length === 64) === sha) {
+      buf = onDisk
+      warnLinkOut(abs, base, warn)
+    }
   }
   if (!buf) return false
   res.setHeader('Content-Type', type)
@@ -215,24 +371,6 @@ export async function serveHistoryBlob(root: string, url: URL, res: ServerRespon
   res.setHeader('Cache-Control', 'private, max-age=31536000, immutable')
   res.end(buf)
   return true
-}
-
-/**
- * `abs` with its symbolic links resolved, as git names the repository's top (a temporary folder
- * on macOS sits under one). The file itself may be gone: its nearest folder that exists is resolved.
- */
-function realPath(abs: string): string {
-  let dir = abs
-  const rest: string[] = []
-  while (!existsSync(dir) && dirname(dir) !== dir) {
-    rest.unshift(basename(dir))
-    dir = dirname(dir)
-  }
-  try {
-    return join(realpathSync(dir), ...rest)
-  } catch {
-    return abs
-  }
 }
 
 /**
@@ -281,19 +419,22 @@ async function blobWasAt(root: string, sha: string, abs: string): Promise<boolea
   return ok
 }
 
-/** Stream a file from the requirements folder's `assets/`, and nothing outside it. Returns false when it is not one. */
-export function serveAsset(root: string, url: URL, res: ServerResponse): boolean {
-  const rel = decodeURIComponent(url.pathname.slice('/requirements/'.length))
+/**
+ * A screenshot: a file of an image type in the requirements folder's `assets/`, and nothing else.
+ * Returns false when it is not one.
+ */
+export function serveAsset(root: string, url: URL, res: ServerResponse, warn?: Warn): boolean {
+  let rel: string
+  try {
+    rel = decodeURIComponent(url.pathname.slice(ASSET_PREFIX.length))
+  } catch {
+    return false
+  }
+  const base = resolve(root, 'assets')
   const abs = resolve(root, rel)
-  if (!abs.startsWith(resolve(root, 'assets') + sep) || !existsSync(abs) || !statSync(abs).isFile()) return false
-  res.setHeader('Content-Type', MIME[extname(abs).toLowerCase()] ?? 'application/octet-stream')
-  if (extname(abs).toLowerCase() === '.svg') res.setHeader('Content-Security-Policy', SVG_CSP)
-  res.setHeader('Cache-Control', 'no-cache')
-  createReadStream(abs)
-    .on('error', () => {
-      if (!res.headersSent) res.statusCode = 404
-      res.end()
-    })
-    .pipe(res)
+  const type = MIME[extname(abs).toLowerCase()]
+  if (!under(abs, base) || !type || !isFile(abs)) return false
+  warnLinkOut(abs, base, warn)
+  sendFile(res, abs, type)
   return true
 }

@@ -56,6 +56,8 @@ export interface ArtifactFacts {
   nodeIds?: Set<string> | null
   markdown?: { headings: Heading[]; loose: string; lines: number; points?: NotePoint[] }
   pdf?: { pages: { w: number; h: number; loose: string }[] }
+  /** Where the file really is when it is a symbolic link that leads out of its folder (it is still shown). */
+  linkOut?: string
 }
 
 export interface CheckInput {
@@ -63,6 +65,8 @@ export interface CheckInput {
   questions: Question[]
   /** Returns whether a catalogue-relative path exists. Omit to skip image checks (browser). */
   fileExists?: (relPath: string) => boolean
+  /** Where a catalogue-relative path really leads when a symbolic link takes it out of its folder, else null. Omit to skip. */
+  linkOut?: (relPath: string) => string | null
   /** The board's named swim lanes (`board-layout.json`). Omit to skip the lane check. */
   lanes?: string[]
   artifacts?: Artifact[]
@@ -72,7 +76,7 @@ export interface CheckInput {
   config?: BoardConfig
 }
 
-export function checkCatalogue({ items, questions, fileExists, lanes, artifacts = [], artifactFacts, config = DEFAULT_CONFIG }: CheckInput): Issue[] {
+export function checkCatalogue({ items, questions, fileExists, linkOut, lanes, artifacts = [], artifactFacts, config = DEFAULT_CONFIG }: CheckInput): Issue[] {
   const issues: Issue[] = []
   const components = componentNames(config)
   const itemCodes = statusCodes(config, 'item')
@@ -125,6 +129,8 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
       if (!img.src) err(it.id, 'image with no src')
       else if (!img.src.startsWith('assets/')) err(it.id, `image ${img.src} must live under assets/ (the board only serves that folder)`)
       else if (fileExists && !fileExists(img.src)) err(it.id, `image file ${img.src} is missing`)
+      const out = img.src?.startsWith('assets/') ? linkOut?.(img.src) : null
+      if (out) warn(it.id, `image ${img.src} is a symbolic link to ${out}, outside assets/; the board still shows it`)
       if (!VIEWPORTS.includes(img.viewport)) err(it.id, `image viewport "${img.viewport}" is not desktop or mobile`)
       const app = img.app === undefined ? undefined : config.screenshotApps.find((a) => a.key === img.app)
       if (img.app !== undefined && apps.length > 0 && !app) err(it.id, `image app "${img.app}" is not one of ${apps.join(', ')}`)
@@ -246,6 +252,7 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     }
     const f = factsOf.get(a.id)
     if (f && !f.ok) err(a.id, f.error ?? `file ${a.file} cannot be read`)
+    if (f?.linkOut) warn(a.id, `file ${a.file} is a symbolic link to ${f.linkOut}, outside ${a.file?.startsWith('/') ? 'the repository' : 'the requirements folder'}; the board still shows it`)
 
     const seen = new Set<string>()
     for (const r of a.regions) {

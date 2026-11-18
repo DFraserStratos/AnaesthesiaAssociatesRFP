@@ -61,7 +61,7 @@ Agent tools in parallel: B12 (after B02), B13 (REQ-07b after B04); both before B
 
 | Phase | Outcome | Status | Planning/build gate | Notes |
 |---|---|---|---|---|
-| B01 | Origin security | PLANNED | D-01 and B01-Q1 to Q3 recorded (accepted decision 13) | first; ready to plan and build |
+| B01 | Origin security | COMPLETE | D-01 and B01-Q1 to Q3 recorded (accepted decision 13) | 2026-11-19, board 1.13.0; R-35 Won't fix (warned instead), user's choice |
 | B02 | Status identity | PLANNED | after B01; D-02 before build; migration shown to user | can plan now |
 | B03 | Load resilience | PLANNED | after B01; D-06 before build | |
 | B04 | One rule, one helper | PLANNED | after B03; D-03 before build | D-03 also settled before B12 builds if B12 needs it |
@@ -200,7 +200,100 @@ decisions" section and resolved in that phase's planning.
 | Two layout saves that both succeed can land out of order; StrictMode double start-up load | B07 author | B07 | taken into scope |
 | `artifact:new` uses `git mv`, which stages mid-phase | B05 author (B05-Q6) | B05, then B14 | conflicts with convention 9 |
 | Fixture e2e port 5182 is fixed, so two lanes collide | B14 author (B14-Q3) | B14 | |
+| `/history-blob/<sha>?src=assets/x.png` serves any blob in the repository by full sha, typed by `src`'s extension (same-origin only; needs the hash) | B01 security review | B08 | gate the `src` case with `blobWasAt` as the `file` case is |
+| `catalogueDiff.ts:135` compares git's real top with `REPO_ROOT` as given (the E7a mixed-path defect) | B01 completeness review | B09 | use `realPaths.ts` (`realPath` both sides) |
+| A base folder that is itself an escaping link (`assets/` linked out of the requirements folder) is not warned: `linkOut` compares against the base's real path | B01 completeness review | B03 | decide with R-47's isolation; a check warning would suffice |
+| A top-level visit from another site can still open Vite's `/__open-in-editor` (navigations are allowed so links to the board work); Vite still serves the board's own source, `node_modules` and any `.html` outside the catalogue as same-origin pages (SPEC residual) | B01 | B15 | Vite's dev model; consider refusing cross-site navigations to `/__open-in-editor` |
+| A screenshot whose file name holds a backslash cannot be served (`\` is read as `/`, as the file system on Windows would) | B01 correctness review | B14 (docs) | rare; document, or keep `%5C` apart |
+| `verify:board` saw 5 s Vitest timeouts in `gitHistory.test.ts` under full parallel load (once in four runs; passes alone) | B01 | B12 or B14 | the live origin test adds a Vite boot to the load; consider raising git-test timeouts |
 
 ## Phase entries
 
-None yet.
+### B01 · Origin security · COMPLETE · 2026-11-19
+
+Board 1.12.3 to **1.13.0**. Plan and evidence: `phases/B01-origin-security/IMPLEMENTATION.md`.
+Decisions applied as accepted (decision 13); nothing new asked.
+
+**Dispositions**
+
+| Finding | Disposition | Proof (each failed at HEAD, passes after) |
+|---|---|---|
+| R-03 | **Fixed.** Sanitiser judges attributes by local name in any namespace; URL attributes keep only `#id` (not `#/`) or a raster data URL; CSS read as a browser reads it; non-SVG elements dropped. Its "also" (network reach) fixed too | `tests/sanitise.test.ts` (61); `e2e/origin.spec.ts` script link |
+| R-04 | **Fixed.** Plugin adds `server.fs.deny` globs (served folder and in-tree folder, written and real, glob characters escaped, Vite defaults kept) and answers 404 for any path into a catalogue folder by folder identity; its own `/requirements/` route reads every spelling; every SVG carries the CSP and every file `nosniff` | `tests/originLive.test.ts` (live Vite on a free port, 50); deny rule via `resolveConfig` in `tests/originRules.test.ts` |
+| R-22 | **Fixed.** `/artifact-file/` and `/history-blob/` answer 404 (GET and HEAD) on every miss; the history promise has a `.catch`. At HEAD a failing lookup's unhandled rejection **stopped the dev server** (worse than the finding said) | live probe misses; e2e "the file is missing" |
+| R-35 | **Won't fix (warned instead), user's choice** (decision 13, B01-Q1). Escaping links are served; the server log warns once per message and the check warns for an item image and an artifact file | rules tests: served with type and `nosniff`, warning names the target; check warnings; no warning for links inside, plain files, or `assets/../` spellings |
+| R-36 | **Fixed.** `server.cors: false`; fetch-metadata refusal (GET/HEAD, `cross-site` or `same-site`, except a top-level visit) on every route; CORP `same-origin` on board routes; writes keep 415/403 | live probe headers; e2e from the other loopback name: fetch and `<img>` refused |
+| R-63 | **Fixed.** `idFromPath` (`server/catalogueApi.ts`) on all seven ID routes and `/artifact-file/`: bad escape 400 with JSON; `/`, `\`, `.`, `..`, control characters 400 before any read; any other path with a bad escape 400 | rules tests (7 routes, unsafe IDs, every catalogue ID routes); live probe |
+| R-102 | **Fixed.** Every drawing link is prevented unless it is a record link opened with Cmd, Ctrl, Shift or a non-primary button; a `#id` link brings its spot into view (B01-Q2); `auxclick` and clicks through `<use>` copies prevented | `e2e/origin.spec.ts` (plain, modified, Alt, middle, Enter; reveal; record link new tab, Enter, artifact link) |
+| R-47 REPO_ROOT "also" (decision 11) | **Fixed.** `meta.path` from real repository root to the real folder of the file (`repoRelative`); watcher inside/outside by `inside()` | rules tests both ways on `/var` temp folders: resolves, served, right `meta.path`, outside file classified outside |
+
+**What shipped:** `server/realPaths.ts` (new: `realPath`, `realEntry`, `under`, `inside`, `linkOut`);
+`server/cataloguePlugin.ts` (deny hook, `routeTarget`, `crossSiteRead`, `namesFolder`, `denyGlobs`,
+404s, `sendFile`, warnings); `server/artifactFiles.ts` (`artifactBase`, `repoRelative`,
+`facts.linkOut`); `server/catalogueApi.ts` (`idFromPath`, `hasOwn` on history routes);
+`src/artifacts/sanitise.ts` (rewritten rules); `src/artifacts/CanvasViewer.tsx` (click interception,
+`spotOf`); `vite.config.ts` (`cors: false`). Tests: `tests/sanitise.test.ts`,
+`tests/originRules.test.ts`, `tests/originLive.test.ts`, `e2e/origin.spec.ts`.
+
+**Touch-rights edits (convention 11):** `shared/check.ts` (`linkOut` input and two warnings,
+`ArtifactFacts.linkOut`); `server/catalogueFs.ts` (one `linkOut` line in `issuesFor`);
+`src/artifacts/svgLinks.ts` (`anchorFromEvent`, `isRecordLink`, `fromUseCopy`; `linkFromEvent` now
+needs `data-record`); the watcher's two inside/outside comparisons in `cataloguePlugin.ts` (B07's
+territory) now use `inside()`; `playwright.config.ts` (the new spec in the fixture project);
+`.gitignore` (`/.origin-fixture/`); `docs/board-fixes/index.html` (B01 status).
+
+**Deviations:** (1) A second layer beyond the deny rule: the live probe showed the deny rule alone
+leaves Vite's page fallback (200 `index.html`, never the file) for a catalogue inside Vite's root and
+for `/@id/`, and the security review found `requirementſ` passing both string guards; the plugin's
+identity-based 404 closes both. Within D-01a ("both"). (2) The refusal applies to every route, not
+only the board's, to stop another site triggering `/__open-in-editor`. (3) `.` refused as an ID with
+`..` (both dot segments; within B01-Q3's intent). (4) `#/...` hrefs dropped by the sanitiser: they
+are routes, never spots. (5) `serveAsset` serves image types only (an `.html` or `.md` under
+`assets/` is a 404). (6) Review ran four reviewers (the kick-off prompt) before convention 15 was
+recorded. (7) IMPLEMENTATION.md was saved after the first build rather than before; the plan
+followed the accepted decisions directly.
+
+**Verification:** `npm run verify:board` green (617 tests; one earlier run of four hit 5 s timeouts
+in `gitHistory.test.ts` under load, see Discovered). Full fixture e2e on 5182: 100 passed.
+`npm run check`: byte-identical to HEAD (P-08). Real catalogue on scratch port 5393: all 15 SVG
+artifacts and three region or step views rendered, PNGs byte-identical before and after
+(gradients, markers, highlights intact), repeated after the review fixes. Before-runs stashed the
+sources and set `realPaths.ts` aside; `originRules.test.ts` fails on import at HEAD and its
+behaviour was shown failing with a self-contained copy (IMPLEMENTATION.md).
+
+**Review outcomes:** four reviewers (quality, completeness, correctness, security). Confirmed and
+fixed: `ſ` and NFD spellings past both guards; three CSS-reading gaps that let seven payloads fetch
+in Chromium; a quadratic `<style>` cleaner (120 KB font, 19 s) and CSS it corrupted; text attributes
+read as CSS; Alt+click on record links; link walk past the shadow root; `<use>` copies; Vite routes
+open cross-site; `__proto__` 500s; `.` IDs; `assets/../` called a link; XHTML root; Windows `/@fs/`;
+live-test robustness and missing proofs. Not taken (reasons in IMPLEMENTATION.md): `IN_TREE`
+duplication, moving `spotOf`, decoded-path handler signatures. Five items recorded under
+Discovered for later. During review the security reviewer's probe requested
+`/__open-in-editor?file=requirements/README.md` on its scratch server, which may have opened that
+file in the user's editor; nothing was changed.
+
+**Doc facts (convention 12):** `requirements-board/README.md` serving paragraph (about lines 194
+to 207: routes, image-only assets, CSP and `nosniff`, 404s and 400s, deny rule and identity 404,
+CORS off and the cross-site refusal, symbolic-link warnings, sanitiser and link behaviour) and the
+`server/` map (`cataloguePlugin.ts` line, new `realPaths.ts` line); `CHANGELOG.md` 1.13.0. No About,
+SCHEMA, ADOPTING or SKILL.md line describes this behaviour.
+
+**What later phases need:**
+- **B10:** no page CSP (D-01c). A non-record link in a drawing never navigates; a `#id` link calls
+  the viewer's existing reveal (`revealRef`) on its target; a missing target does nothing (B01-Q2).
+  `CanvasViewer.tsx` click handling is in the layout effect (`onClick`, `onAux`, `spotOf`); the
+  sanitiser strips `data-record`, so `isRecordLink` can trust it. Keep `fromUseCopy`.
+- **B02, B05:** every ID taken from a URL goes through `idFromPath` (`server/catalogueApi.ts`); use
+  `Object.hasOwn` on state lookups by ID.
+- **B03:** reuse `server/realPaths.ts` (`under`, `inside`, `linkOut`, `realEntry`) and
+  `artifactBase`/`repoRelative` in `artifactFiles.ts`; `artifactPath` stays lexical (a `..` is
+  refused, a link followed and named in `facts.linkOut`).
+- **B07:** middleware order is: cross-site refusal, malformed-escape 400, route by normalised
+  lower-cased prefix (`/api/` by the raw URL), else the identity 404 then `next()`; every file route
+  ends in a 4xx. The watcher's inside/outside test is `inside()`. Asset URLs keep their query string,
+  so D-10's token passes (`?v=` proved).
+- **B08:** `/history-blob/` ends 404 on every miss and failure; disk reads go through `isFile` and
+  warn on escaping links. See Discovered for the `?src=` blob gate.
+- **B15:** rerun `tests/originLive.test.ts`, `tests/originRules.test.ts`, `tests/sanitise.test.ts`
+  and `e2e/origin.spec.ts`; the live test boots Vite on a free port with a fixture in
+  `requirements-board/.origin-fixture/`.

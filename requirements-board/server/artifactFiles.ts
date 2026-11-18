@@ -11,6 +11,7 @@ import { looseText, markdownFacts, mermaidNodeIds, rasterSize, svgFacts } from '
 import type { ArtifactFacts } from '../shared/check.ts'
 import { artifactFormat, type Artifact, type ArtifactFormat, type ArtifactMeta } from '../shared/types.ts'
 import { gitBlobSha } from './historyJournal.ts'
+import { linkOut, realEntry, realPath, under } from './realPaths.ts'
 
 const here = dirname(fileURLToPath(import.meta.url))
 /**
@@ -54,16 +55,26 @@ export const ARTIFACT_MIME: Record<string, string> = {
   '.pdf': 'application/pdf',
 }
 
+/** The folder an artifact's `file` is read from: the repository for a path starting `/`, else the requirements folder. */
+export const artifactBase = (file: string, root: string) => resolve(file.startsWith('/') ? REPO_ROOT : root)
+
 /**
- * The absolute path of an artifact's `file`, or null when it would step outside its base: the
- * requirements folder for a plain path, the repository for one starting `/`.
+ * The absolute path of an artifact's `file`, or null when it would step outside its base (as
+ * written: a symbolic link that leads out is followed, and named by `linkOut`).
  */
 export function artifactPath(file: string, root: string): string | null {
-  const repo = file.startsWith('/')
-  const base = resolve(repo ? REPO_ROOT : root)
-  const abs = resolve(base, repo ? file.slice(1) : file)
-  return abs.startsWith(base + sep) ? abs : null
+  const base = artifactBase(file, root)
+  const abs = resolve(base, file.startsWith('/') ? file.slice(1) : file)
+  return under(abs, base) ? abs : null
 }
+
+let repoReal: string | undefined
+/**
+ * A file's path from the repository root, as `/`-rooted artifact paths are written. Both sides
+ * are compared as real folders: git names the repository by its real path, while the requirements
+ * folder may be reached through a link (a macOS temp folder under `/var`).
+ */
+export const repoRelative = (abs: string) => relative((repoReal ??= realPath(REPO_ROOT)), realEntry(abs)).split(sep).join('/')
 
 export interface ArtifactInfo {
   facts: ArtifactFacts
@@ -111,7 +122,8 @@ export function artifactInfo(a: Artifact, root: string): ArtifactInfo {
   if (hit?.key === key) return hit.info
 
   const buf = readFileSync(abs)
-  const meta: ArtifactMeta = { ...empty(format), fileRev: gitBlobSha(buf), bytes: stat.size, path: relative(REPO_ROOT, abs).split(sep).join('/') }
+  const meta: ArtifactMeta = { ...empty(format), fileRev: gitBlobSha(buf), bytes: stat.size, path: repoRelative(abs) }
+  const out = linkOut(abs, artifactBase(a.file, root))
   let info: ArtifactInfo
   if (format === 'svg') {
     const f = svgFacts(buf.toString('utf8'))
@@ -135,6 +147,7 @@ export function artifactInfo(a: Artifact, root: string): ArtifactInfo {
       info = { facts: { format, ok: true, bounds: null, pdf: { pages: r.pages.map((p) => ({ w: p.w, h: p.h, loose: looseText(p.text) })) } }, meta }
     }
   } else info = fail(format, `file ${a.file} is not a kind the board shows`, meta)
+  if (out) info.facts.linkOut = out
   cache.set(abs, { key, info })
   return info
 }

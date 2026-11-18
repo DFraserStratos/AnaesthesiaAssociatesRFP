@@ -92,6 +92,23 @@ export class HttpError extends Error {
   }
 }
 
+/**
+ * A record ID taken from a URL path: every route that takes one reads it through this. A malformed
+ * escape is a client error, and so is an ID that could name another file once decoded (a path
+ * separator, `.` or `..`, or a control character), refused before any file is read. No ID pattern is
+ * assumed, so every ID a catalogue can hold still routes.
+ */
+export function idFromPath(segment: string): string {
+  let id: string
+  try {
+    id = decodeURIComponent(segment)
+  } catch {
+    throw new HttpError(400, 'the URL has a malformed % escape')
+  }
+  if (!id || id === '.' || id === '..' || /[\\/\u0000-\u001f\u007f]/.test(id)) throw new HttpError(400, `${JSON.stringify(id)} is not a record ID`)
+  return id
+}
+
 export interface ApiRequest {
   method: string
   path: string
@@ -292,8 +309,8 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
 
     const a = /^\/api\/artifacts\/([^/]+)\/history$/.exec(path)
     if (a && method === 'GET') {
-      const id = decodeURIComponent(a[1]!)
-      const rec = state.artifacts[id]
+      const id = idFromPath(a[1]!)
+      const rec = Object.hasOwn(state.artifacts, id) ? state.artifacts[id] : undefined
       if (!rec) throw new HttpError(404, `${id} does not exist`)
       const file = rec.data.file ? artifactPath(rec.data.file, root) : null
       return Promise.all([
@@ -305,7 +322,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
     const ap = /^\/api\/artifacts\/([^/]+)$/.exec(path)
     if (ap && method === 'PUT') {
       // Only an artifact's details: whatever else the record carries, its file, regions and source stay as on disk.
-      const id = decodeURIComponent(ap[1]!)
+      const id = idFromPath(ap[1]!)
       const current = artifactOnDisk(id)
       checkBase(current, id, body.baseRev)
       const sent = (body.record ?? {}) as Record<string, unknown>
@@ -324,8 +341,8 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
 
     let m = /^\/api\/items\/([^/]+)\/history$/.exec(path)
     if (m && method === 'GET') {
-      const id = decodeURIComponent(m[1]!)
-      if (!state.items[id]) throw new HttpError(404, `${id} does not exist`)
+      const id = idFromPath(m[1]!)
+      if (!Object.hasOwn(state.items, id)) throw new HttpError(404, `${id} does not exist`)
       // The one asynchronous route: git runs in child processes, off the request path of every other call.
       return Promise.all([
         gitHistory(itemPath(id, root)).catch(() => ({ versions: [], dirty: false, working: null })),
@@ -342,7 +359,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
 
     m = /^\/api\/items\/([^/]+)$/.exec(path)
     if (m && method === 'PUT') {
-      const id = decodeURIComponent(m[1]!)
+      const id = idFromPath(m[1]!)
       const item = prepareItem(body.record)
       if (item.id !== id) throw new HttpError(400, 'the record id does not match the URL')
       const current = itemOnDisk(id)
@@ -353,7 +370,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
     }
 
     if (m && method === 'DELETE') {
-      const id = decodeURIComponent(m[1]!)
+      const id = idFromPath(m[1]!)
       // The plan rewrites records across the catalogue, so plan it from the folder as it is right now.
       syncFromDisk()
       checkBase(itemOnDisk(id), id, body.baseRev)
@@ -453,7 +470,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
 
     m = /^\/api\/questions\/([^/]+)$/.exec(path)
     if (m && method === 'PUT') {
-      const id = decodeURIComponent(m[1]!)
+      const id = idFromPath(m[1]!)
       const q = prepareQuestion(body.record)
       if (q.id !== id) throw new HttpError(400, 'the record id does not match the URL')
       checkBase(questionOnDisk(id), id, body.baseRev)
@@ -461,7 +478,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       return commitQuestion(q, false)
     }
     if (m && method === 'DELETE') {
-      const id = decodeURIComponent(m[1]!)
+      const id = idFromPath(m[1]!)
       checkBase(questionOnDisk(id), id, body.baseRev)
       deleteQuestionFile(id, root)
       delete state.questions[id]

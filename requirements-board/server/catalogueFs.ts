@@ -12,6 +12,7 @@ import { CONFIG_FILE, DEFAULT_CONFIG, parseConfig, type BoardConfig } from '../s
 import { RECODES_FILE, parseRecodes, type Recode } from '../shared/statuses.ts'
 import type { Artifact, ArtifactRec, CatalogueSnapshot, Issue, Item, Layout, Question, Rev } from '../shared/types.ts'
 import { artifactInfo } from './artifactFiles.ts'
+import { linkOut as linkOutOf } from './realPaths.ts'
 
 const here = dirname(fileURLToPath(import.meta.url))
 /** The requirements folder: `REQUIREMENTS_DIR` from the environment, else `requirements/` beside the board's code. */
@@ -167,6 +168,7 @@ export function issuesFor(
       items: Object.values(items).map((r) => r.data),
       questions: Object.values(questions).map((r) => r.data),
       fileExists: fileExistsIn(root),
+      linkOut: (rel) => linkOutOf(resolve(root, rel), resolve(root, 'assets')),
       lanes,
       config,
       ...artifactCheck(artifacts, root),

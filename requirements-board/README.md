@@ -85,7 +85,8 @@ server/
   gitHistory.ts      a card file's commits and dirty state, read-only and asynchronous
   gitRenames.ts      a file's earlier paths from git's renames, so history reaches back past folder moves
   catalogueDiff.ts   the Diff review's git reading: commits that changed records, two states compared, cached
-  cataloguePlugin.ts Vite dev-server plugin: wires the API, serves assets and artifact files, folder watcher → HMR events
+  cataloguePlugin.ts Vite dev-server plugin: wires the API, serves assets and artifact files (and guards the origin), folder watcher → HMR events
+  realPaths.ts       real-path rules: containment across linked folders, symbolic links that lead out
   artifactFiles.ts   an artifact's file: where it is, what it holds (cached per version), for the check and the board
   pdfFacts.ts        a PDF's page sizes and text, in a child process (pdf.js is async; the catalogue loads sync)
 scripts/       check, export-csv, capture (+ captureFiles: generated-file naming, testable),
@@ -192,7 +193,18 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   zoom. A plain drag never pans a drawing (it selects text): Space or the middle button drags, a
   trackpad scroll pans, a pinch or the wheel zooms. Documents scroll as pages (Markdown through the
   same renderer as the sheets, PDFs through pdf.js with its text layer). The server serves a file
-  only through its sidecar (`/artifact-file/<ID>`), SVGs with a no-script CSP, and the check reads
+  only through its sidecar (`/artifact-file/<ID>`), and screenshots only from `assets/`
+  (`/requirements/assets/...`, image files only); every SVG it sends carries a no-script CSP and no file is sniffed as
+  another type (`nosniff`). A file it cannot serve is a 404 (never the app's page), and a malformed
+  `%` escape is a 400. Vite's own file serving never reads a catalogue folder under any path
+  spelling (a `server.fs.deny` rule added by the plugin, plus a 404 from the plugin itself for any
+  path the file system opens inside one); CORS is off, and a read another site's page asks for
+  (fetch metadata) is refused on every route, so no other page can read or embed what the board
+  serves. A file reached through a symbolic link that leads out of its
+  folder is still served, with a warning in the server log and in the check. The sanitiser keeps
+  only links and references to the drawing's own elements (`#id`, `url(#id)`) and pictures as data,
+  in any namespace; a link in a drawing never moves the board (one to `#id` brings that spot into
+  view), and only the board's own record links open anything. The check reads
   every file (PDFs in a child process) to hold every region's anchors to account. History comes
   from git: the sidecar's commits as field changes, the file's as before and after (side by side,
   swipe, or a source diff). Every artifact with text has a find box (`src/artifacts/find.ts`):

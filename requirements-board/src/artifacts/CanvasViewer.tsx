@@ -21,7 +21,7 @@ import { findRanges, lineRects } from './find.ts'
 import { anchorsRect, canvasRegionRect } from './regionsDom.ts'
 import { playFlights, type Flight } from './stepMoves.ts'
 import { STEP_CSS, STEP_FADE, applyStepState, insideOff, type StepView } from './stepsDom.ts'
-import { linkFromEvent, linkRecordIds, type ResolveLink } from './svgLinks.ts'
+import { anchorFromEvent, fromUseCopy, isRecordLink, linkFromEvent, linkRecordIds, type ResolveLink } from './svgLinks.ts'
 
 /** What to find in an artifact, which match is the current one, and where to report how many there are. */
 export interface FindProps {
@@ -97,6 +97,19 @@ export interface CanvasViewerProps {
 
 /** A press that moves further than this is a text selection, not a click on a link. */
 const CLICK_SLOP_PX = 4
+
+/** The element a drawing's own link points at (`#id`, as `href` or XLink `href`), or null for any other link or a missing spot. */
+function spotOf(svg: SVGSVGElement, a: Element): Element | null {
+  const href = (a.getAttribute('href') ?? a.getAttributeNS('http://www.w3.org/1999/xlink', 'href') ?? '').trim()
+  if (!href.startsWith('#') || href.length < 2) return null
+  let id = href.slice(1)
+  try {
+    id = decodeURIComponent(id)
+  } catch {
+    // kept as written
+  }
+  return [...svg.querySelectorAll('[id]')].find((el) => el.id === id) ?? null
+}
 
 export function CanvasViewer({ content, region, focusKey, preview = null, dragPans = false, controls = true, viewExtra, label, onRegionFound, find, resolveLink, onLink, stepState = null, flight = null, follow = null }: CanvasViewerProps) {
   const frameRef = useRef<HTMLDivElement>(null)
@@ -183,16 +196,34 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
     const onDown = (e: PointerEvent) => {
       down = { x: e.clientX, y: e.clientY }
     }
+    // A link in a drawing never moves the board or opens anything: only the board's record links
+    // do (a plain click opens the record, a modified one a new tab). A link to one of the drawing's
+    // own spots (`#id`) brings that spot into view; any other does nothing.
     const onClick = (e: MouseEvent) => {
-      const a = linkFromEvent(e)
-      if (!a) return
-      // A modified click opens the link in a new tab, as any link would.
-      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
+      const a = anchorFromEvent(e)
+      if (!a) {
+        if (fromUseCopy(e)) e.preventDefault()
+        return
+      }
+      const record = isRecordLink(a)
+      const modified = e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0
+      // A modified click on a record link opens it in a new tab, as any link would.
+      if (record && modified) return
       e.preventDefault()
-      // A drag that started on the ID selected text: not a click on the link.
+      // A drag that started on the link selected text: not a click on it.
       const moved = down && e.detail > 0 && Math.hypot(e.clientX - down.x, e.clientY - down.y) > CLICK_SLOP_PX
       down = null
-      if (!moved) onLinkRef.current?.(a.getAttribute('data-record')!)
+      if (moved || modified) return
+      if (record) onLinkRef.current?.(a.getAttribute('data-record')!)
+      else {
+        const spot = spotOf(svg, a)
+        if (spot) revealRef.current(spot)
+      }
+    }
+    // A middle click opens a link in a new tab without a click event: only a record link may.
+    const onAux = (e: MouseEvent) => {
+      const a = anchorFromEvent(e)
+      if (a ? !isRecordLink(a) : fromUseCopy(e)) e.preventDefault()
     }
     // The tooltip: SVG shows only a <title> child, which would add to the text, so the host carries it.
     const onOver = (e: PointerEvent) => {
@@ -207,6 +238,7 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
     }
     svg.addEventListener('pointerdown', onDown)
     svg.addEventListener('click', onClick)
+    svg.addEventListener('auxclick', onAux)
     svg.addEventListener('pointerover', onOver)
     svg.addEventListener('pointerleave', onLeave)
     svg.addEventListener('focusin', onFocus)
@@ -218,6 +250,7 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
     return () => {
       svg.removeEventListener('pointerdown', onDown)
       svg.removeEventListener('click', onClick)
+      svg.removeEventListener('auxclick', onAux)
       svg.removeEventListener('pointerover', onOver)
       svg.removeEventListener('pointerleave', onLeave)
       svg.removeEventListener('focusin', onFocus)
