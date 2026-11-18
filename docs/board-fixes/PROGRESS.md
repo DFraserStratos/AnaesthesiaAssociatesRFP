@@ -71,6 +71,12 @@ Read in full before execution; update the verified result last. One writer at a 
       this worktree; at that merge, take this branch's version of it. Until then the live catch-up plan keeps using master's board
       and tools, which also keeps convention 8 safe.
     - Never push.
+17. **The plan page names the next phase.** `index.html` is built once; its only live part is the
+    **PHASE STATUS** block near the top of its script. The session that finishes a phase adds or
+    updates its entry there (`status: 'COMPLETE'`, the date, a one-line note; `'IN PROGRESS'` is
+    allowed while a phase runs) in the same commit as its PROGRESS entry. From that block the page
+    works out the progress tiles, the ticks on the map and order strip, the status table and the
+    "Next up" banner, and opens on the next phase. Edit nothing else in the page by hand.
 
 ## Phase ownership and sequencing gates
 
