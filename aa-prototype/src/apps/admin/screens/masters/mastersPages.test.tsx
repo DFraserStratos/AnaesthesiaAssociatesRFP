@@ -7,7 +7,7 @@
  */
 
 import { assigned } from '../../../../test/lists'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ANAE, HOSP, SURG } from '../../../../domain/seed'
@@ -55,7 +55,8 @@ describe('Master data views', () => {
 
   it('reads the view from ?view=, falling back to Anaesthetists', () => {
     expect(parseMastersView('surgeons')).toBe('surgeons')
-    expect(parseMastersView('surgeonRooms')).toBe('surgeonRooms')
+    // Catch-up Phase 17b: the surgeons' rooms view is gone; its old URL opens Surgeons.
+    expect(parseMastersView('surgeonRooms')).toBe('surgeons')
     expect(parseMastersView('nope')).toBe('anaesthetists')
     expect(parseMastersView(null)).toBe('anaesthetists')
   })
@@ -66,9 +67,9 @@ describe('Master data views', () => {
     const reid = document.querySelector(`tr[data-surgeon="${SURG.reid}"]`) as HTMLElement
     expect(within(reid).getByText('47REIA')).toBeInTheDocument()
     expect(within(reid).getByText('1 Not preferred')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: "Surgeons' rooms" }))
-    expect(location()).toBe('/admin/masters?view=surgeonRooms')
-    expect(screen.getByRole('heading', { name: "Surgeons' rooms" })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Surgeon groups' }))
+    expect(location()).toBe('/admin/masters?view=surgeonGroups')
+    expect(screen.queryByRole('button', { name: "Surgeons' rooms" })).toBeNull()
   })
 
   it('an unknown view shows Anaesthetists with the Tier column; no entry reads Tier 4', () => {
@@ -110,19 +111,20 @@ describe('Master data views', () => {
     renderAdmin('/admin/masters?view=surgeons')
     fireEvent.click(screen.getByRole('button', { name: 'Add surgeon' }))
     const sheet = () => document.querySelector('[data-shot="surgeon-edit-sheet"]') as HTMLElement
-    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ms R. Tester' } })
-    fireEvent.change(within(sheet()).getByLabelText("Surgeons' rooms"), { target: { value: 'RM-MERI' } })
-    fireEvent.change(screen.getByLabelText('HPI CPN (required)'), { target: { value: '12shap' } })
+    fireEvent.change(within(sheet()).getAllByLabelText('Name')[0]!, { target: { value: 'Ms R. Tester' } })
+    fireEvent.change(within(sheet()).getByLabelText('Practice (optional)'), { target: { value: 'Merivale Eye Rooms' } })
+    fireEvent.change(screen.getByLabelText('HPI CPN (optional)'), { target: { value: '12shap' } })
     // Catch-up Phase 18a: a surgeon needs at least one specialty (US-13.6.6).
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Add surgeon' }))
     expect(screen.getByRole('alert')).toHaveTextContent('Choose at least one specialty.')
     fireEvent.change(within(sheet()).getByLabelText('Specialties'), { target: { value: 'SPC-OPHTH' } })
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Add surgeon' }))
     expect(screen.getByRole('alert')).toHaveTextContent('That HPI CPN already belongs to Dr Priya Sharma.')
-    fireEvent.change(screen.getByLabelText('HPI CPN (required)'), { target: { value: ' 50test ' } })
+    fireEvent.change(screen.getByLabelText('HPI CPN (optional)'), { target: { value: ' 50test ' } })
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Add surgeon' }))
     const added = Object.values(useAppStore.getState().masters.surgeons).find((s) => s.name === 'Ms R. Tester')
-    expect(added).toMatchObject({ hpiId: '50TEST', roomIds: ['RM-MERI'], specialtyIds: ['SPC-OPHTH'] })
+    // The personal contact's Name followed the surgeon's Name; the empty office set was dropped.
+    expect(added).toMatchObject({ hpiId: '50TEST', practiceName: 'Merivale Eye Rooms', specialtyIds: ['SPC-OPHTH'], personalContact: { name: 'Ms R. Tester' }, officeContacts: [] })
   })
 
   it('edits a hospital contact email, and shows "No contact email" when there is none', () => {
@@ -145,12 +147,13 @@ describe('the surgeon profile and the anaesthetist record', () => {
     useAppStore.setState(freshAppState())
   })
 
-  it("Ms Reid's profile: HPI CPN, room colleague, group, the not-preferred entry and the ended one", () => {
+  it("Ms Reid's profile: HPI CPN, practice and contacts, group, the not-preferred entry and the ended one", () => {
     renderAdmin(`/admin/masters/surgeons/${SURG.reid}`)
     expect(screen.getByText("Unique index on the Health Provider Index. Not the patient's NHI.")).toBeInTheDocument()
     expect(screen.getByText('For information')).toBeInTheDocument()
-    const room = document.querySelector('[data-shot="surgeon-room-card"]') as HTMLElement
-    expect(within(room).getByText('Mr J. Whitford')).toBeInTheDocument()
+    const contacts = document.querySelector('[data-shot="surgeon-contacts"]') as HTMLElement
+    expect(within(contacts).getByText('bookings@merivaleeye.example')).toBeInTheDocument()
+    expect(within(contacts).getByText('a.reid@surgeons.example')).toBeInTheDocument()
     expect(screen.getByText('Christchurch Eye Surgeons')).toBeInTheDocument()
     const section = document.querySelector('[data-shot="pairing-section"]') as HTMLElement
     expect(within(section).getByText('Private to the office. Anaesthetists never see these.')).toBeInTheDocument()
@@ -225,7 +228,8 @@ describe('the surgeon profile and the anaesthetist record', () => {
     renderAdmin(`/admin/masters/anaesthetists/${ANAE.sharma}`)
     const card = document.querySelector('[data-shot="tier-card"]') as HTMLElement
     expect(within(card).getByText('Only the office sees this. It orders the suggestions when you assign or move a List.')).toBeInTheDocument()
-    expect(within(card).getByText('Tier names are provisional.')).toBeInTheDocument()
+    // OQ-102 answered (D36): no provisional line (catch-up Phase 25a).
+    expect(within(card).queryByText('Tier names are provisional.')).toBeNull()
     fireEvent.click(within(card).getByRole('button', { name: 'Tier 1' }))
     expect(selectPriorityTier(useAppStore.getState(), ANAE.sharma)).toBe(1)
     expect(useAppStore.getState().audit.at(-1)?.action).toBe('anaesthetist.tierSet')
@@ -270,113 +274,112 @@ describe('cross-links', () => {
   })
 })
 
-describe("catch-up Phase 17a: rooms without an email, a surgeon at two rooms, practice manager and PA contacts", () => {
+describe('catch-up Phase 17b: no surgeons\' rooms, contacts on the surgeon, the HPI CPN optional', () => {
   beforeEach(() => {
     useAppStore.setState(freshAppState())
   })
 
-  const cards = (shot: string) => Array.from(document.querySelectorAll(`[data-shot="${shot}"]`)) as HTMLElement[]
+  const sheet = () => document.querySelector('[data-shot="surgeon-edit-sheet"]') as HTMLElement
+  const sets = () => Array.from(sheet().querySelectorAll('[data-office-contact]')) as HTMLElement[]
+  const nameIn = (set: HTMLElement) => within(set).getByLabelText(/ name$/)
 
-  it("a two-room surgeon's profile shows a room card and a contacts card per room, the main room first and labelled", () => {
-    renderAdmin('/admin/masters/surgeons/S-WAINWRIGHT')
-    const rooms = cards('surgeon-room-card')
-    expect(rooms.map((c) => c.getAttribute('data-room'))).toEqual(['RM-UPPERGIPAR', 'RM-HILLSBOROU'])
-    expect(within(rooms[0]!).getByText('Main room')).toBeInTheDocument()
-    expect(within(rooms[1]!).queryByText('Main room')).toBeNull()
-    expect(cards('surgeon-contacts').map((c) => c.getAttribute('data-room'))).toEqual(['RM-UPPERGIPAR', 'RM-HILLSBOROU'])
-    // The provisional line, once.
-    expect(screen.getAllByText("Where contacts belong, and which room's apply, is to be confirmed with AA")).toHaveLength(1)
-    // 18a's specialties stay on the profile.
-    expect(document.querySelector('[data-shot="surgeon-specialties"]')).toHaveTextContent('General surgery')
-  })
-
-  it('a room with no email says so; its whole-room practice manager is listed', () => {
-    renderAdmin('/admin/masters/surgeons/S-YEOMAN')
-    const room = cards('surgeon-room-card')[0]!
-    expect(within(room).getByText('No email held')).toBeInTheDocument()
-    expect(room.textContent).not.toContain('reception@')
-    const contacts = cards('surgeon-contacts')[0]!
-    expect(within(contacts).getByText('Rosalind Pemberton')).toBeInTheDocument()
-    expect(within(contacts).getByText('Practice manager')).toBeInTheDocument()
-    expect(within(contacts).getByText('Whole room')).toBeInTheDocument()
-  })
-
-  it("shows a contact named for this surgeon, never one named for a colleague; no contact reads as empty", () => {
-    renderAdmin('/admin/masters/surgeons/S-DALGETY')
-    const dalgety = cards('surgeon-contacts')[0]!
-    expect(within(dalgety).getByText('Bev')).toBeInTheDocument()
-    expect(within(dalgety).getByText('bev@avonheadent.example')).toBeInTheDocument()
-    expect(within(dalgety).getByText('For this surgeon')).toBeInTheDocument()
-  })
-
-  it("a colleague of the same room sees none of another surgeon's PA", () => {
-    renderAdmin('/admin/masters/surgeons/S-GARSIDE')
-    const garside = cards('surgeon-contacts')[0]!
-    expect(within(garside).queryByText('Bev')).toBeNull()
-    expect(within(garside).getByText('No practice manager or PA recorded.')).toBeInTheDocument()
-  })
-
-  it('adds a contact from the profile for this surgeon, then removes it with the confirm', async () => {
-    renderAdmin('/admin/masters/surgeons/S-YEOMAN')
-    fireEvent.click(screen.getByRole('button', { name: /Add contact/ }))
-    const sheet = () => document.querySelector('[data-shot="room-contact-sheet"]') as HTMLElement
-    fireEvent.click(within(sheet()).getByRole('button', { name: 'Add contact' }))
-    expect(within(sheet()).getByRole('alert')).toHaveTextContent('A contact name is required.')
-    fireEvent.change(within(sheet()).getByLabelText('Contact name'), { target: { value: 'Fran' } })
-    fireEvent.change(within(sheet()).getByLabelText('Email'), { target: { value: 'fran@gsp.example' } })
-    expect((within(sheet()).getByLabelText('For') as HTMLSelectElement).value).toBe('S-YEOMAN')
-    fireEvent.click(within(sheet()).getByRole('button', { name: 'Add contact' }))
-    expect(document.querySelector('[data-shot="room-contact-sheet"]')).toBeNull()
-    const contacts = cards('surgeon-contacts')[0]!
-    expect(within(contacts).getByText('Fran')).toBeInTheDocument()
-    expect(useAppStore.getState().audit.at(-1)).toMatchObject({ action: 'roomContact.add', entityId: 'RM-GENERALSUR' })
-    fireEvent.click(within(contacts).getByRole('button', { name: 'Remove Fran, For this surgeon' }))
-    fireEvent.click(within(contacts).getByRole('button', { name: 'Keep it' }))
-    await waitFor(() => expect(within(contacts).getByRole('button', { name: 'Remove Fran, For this surgeon' })).toHaveFocus())
-    fireEvent.click(within(contacts).getByRole('button', { name: 'Remove Fran, For this surgeon' }))
-    fireEvent.click(within(contacts).getByRole('button', { name: 'Remove contact' }))
-    expect(within(contacts).queryByText('Fran')).toBeNull()
-    expect(useAppStore.getState().audit.at(-1)).toMatchObject({ action: 'roomContact.remove' })
-  })
-
-  it("the rooms view lists a two-room surgeon under both rooms, says when a room holds no email and counts contacts", () => {
-    renderAdmin('/admin/masters?view=surgeonRooms')
-    const row = (id: string) => document.querySelector(`tr[data-room="${id}"]`) as HTMLElement
-    expect(within(row('RM-UPPERGIPAR')).getByText('Mr N. Wainwright')).toBeInTheDocument()
-    expect(within(row('RM-HILLSBOROU')).getByText('Mr N. Wainwright')).toBeInTheDocument()
-    expect(within(row('RM-GENERALSUR')).getByText('No email held')).toBeInTheDocument()
-    expect(within(row('RM-BURNSIDEEN')).getByText('5 contacts')).toBeInTheDocument()
-    expect(within(row('RM-AVONHEADEN')).getByText('info@avonheadent.example')).toBeInTheDocument()
-    expect(document.querySelector('[data-shot="masters-surgeon-rooms"]')?.textContent).not.toContain('reception@generalsurgery')
-  })
-
-  it("the Surgeons table shows both of a two-room surgeon's rooms, main first", () => {
+  it('the Surgeons table shows Practice, Office contact and HPI CPN, and "No HPI CPN yet" for a blank one', () => {
     renderAdmin('/admin/masters?view=surgeons')
-    expect(document.querySelector('td[data-rooms="S-VAUGHAN"]')?.textContent).toBe('Imogen Vaughan · Orthopaedic SurgeonEdgeware Orthopaedic Specialists')
+    const table = document.querySelector('[data-shot="masters-surgeons"]') as HTMLElement
+    for (const head of ['Practice', 'Office contact', 'HPI CPN']) expect(within(table).getByRole('columnheader', { name: head })).toBeInTheDocument()
+    const wainwright = document.querySelector('tr[data-surgeon="S-WAINWRIGHT"]') as HTMLElement
+    expect(wainwright.getAttribute('data-practice')).toBe('Upper GI Partners and Hillsborough Colorectal Specialists')
+    expect(within(wainwright).getByText('info@uppergi.example')).toBeInTheDocument()
+    for (const id of ['S-WHAANGA', 'S-OSEI', 'S-SELWYN']) {
+      const row = document.querySelector(`tr[data-surgeon="${id}"]`) as HTMLElement
+      expect(row.getAttribute('data-hpi'), id).toBe('')
+      expect(within(row).getByText('No HPI CPN yet')).toBeInTheDocument()
+    }
+    expect(screen.getByText("AA's address book of surgeons. Open a surgeon for their contacts, groups and pairing preferences.")).toBeInTheDocument()
   })
 
-  it("the edit sheet's Rooms multi-select makes another room the main one and refuses none", () => {
-    renderAdmin('/admin/masters/surgeons/S-VAUGHAN')
+  it('a surgeon with no office contact gets one empty set with no minus; plus adds sets and focuses each new Name; minus removes a set whole', () => {
+    // Dr Whaanga holds the practice inbox only; Mr Achterberg two. Start from a surgeon with none.
+    const state = useAppStore.getState()
+    const whaanga = state.masters.surgeons['S-WHAANGA']!
+    useAppStore.setState({ masters: { ...state.masters, surgeons: { ...state.masters.surgeons, 'S-WHAANGA': { ...whaanga, officeContacts: [] } } } })
+    renderAdmin('/admin/masters/surgeons/S-WHAANGA')
     fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
-    const field = () => document.querySelector('[data-shot="surgeon-rooms-field"]') as HTMLElement
-    fireEvent.click(within(field()).getByRole('button', { name: 'Make main: Edgeware Orthopaedic Specialists' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
-    expect(useAppStore.getState().masters.surgeons['S-VAUGHAN']?.roomIds).toEqual(['RM-EDGEWAREOR', 'RM-IMOGENVAUG'])
-    fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
-    fireEvent.click(within(field()).getByRole('button', { name: 'Remove Edgeware Orthopaedic Specialists' }))
-    fireEvent.click(within(field()).getByRole('button', { name: 'Remove Imogen Vaughan · Orthopaedic Surgeon' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
-    expect(screen.getByRole('alert')).toHaveTextContent("Choose at least one surgeons' room.")
+    expect(sets()).toHaveLength(1)
+    expect(within(sheet()).queryByRole('button', { name: /Remove office contact/ })).toBeNull()
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Add office contact' }))
+    expect(sets()).toHaveLength(2)
+    expect(nameIn(sets()[1]!)).toHaveFocus()
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Add office contact' }))
+    expect(sets()).toHaveLength(3)
+    expect(nameIn(sets()[2]!)).toHaveFocus()
+    fireEvent.change(nameIn(sets()[2]!), { target: { value: 'Third' } })
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Remove office contact 3' }))
+    expect(sets()).toHaveLength(2)
+    expect(nameIn(sets()[1]!)).toHaveFocus()
+    expect(sheet().textContent).not.toContain('Third')
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Remove office contact 2' }))
+    expect(sets()).toHaveLength(1)
+    expect(within(sheet()).queryByRole('button', { name: /Remove office contact/ })).toBeNull()
   })
 
-  it("the room sheet's contact form holds back the room's Save while it is open", () => {
-    renderAdmin('/admin/masters?view=surgeonRooms')
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Burnside ENT Surgeons' }))
-    const sheet = () => document.querySelector('[data-shot="surgeon-room-sheet"]') as HTMLElement
-    expect(within(sheet()).getAllByRole('button', { name: /^Edit Leanne/ }).map((b) => b.getAttribute('aria-label'))).toEqual(['Edit Leanne, For Dr T. Calder', 'Edit Leanne, For Mr U. Woodville'])
-    fireEvent.click(within(sheet()).getByRole('button', { name: /Add contact/ }))
-    expect(within(sheet()).queryByRole('button', { name: 'Save changes' })).toBeNull()
-    fireEvent.click(within(sheet()).getByRole('button', { name: 'Cancel' }))
-    expect(within(sheet()).getByRole('button', { name: 'Save changes' })).toBeInTheDocument()
+  it('minus on a middle set removes it whole and moves the set below up with its values; each input has its own name', () => {
+    renderAdmin('/admin/masters/surgeons/S-FORSYTHE')
+    fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
+    expect(sets()).toHaveLength(3)
+    expect(within(sheet()).getByRole('textbox', { name: 'Office contact 3 phone' })).toHaveValue('03 555 1037')
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Remove office contact 2' }))
+    expect(sets()).toHaveLength(2)
+    expect(within(sheet()).getByRole('textbox', { name: 'Office contact 1 name' })).toHaveValue('Maree')
+    expect(within(sheet()).getByRole('textbox', { name: 'Office contact 2 name' })).toHaveValue('Burnside ENT Surgeons')
+    expect(within(sheet()).getByRole('textbox', { name: 'Office contact 2 phone' })).toHaveValue('03 555 1037')
+    expect(nameIn(sets()[0]!)).toHaveFocus()
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save changes' }))
+    expect(useAppStore.getState().masters.surgeons['S-FORSYTHE']!.officeContacts.map((c) => c.name)).toEqual(['Maree', 'Burnside ENT Surgeons'])
+  })
+
+  it('an empty extra set is dropped on save; a bad email in office contact 2 is refused under it and nothing is saved', () => {
+    renderAdmin('/admin/masters/surgeons/S-DALGETY')
+    const before = useAppStore.getState().masters.surgeons['S-DALGETY']!.officeContacts
+    fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
+    fireEvent.change(within(sets()[1]!).getByLabelText('Email'), { target: { value: 'not an email' } })
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save changes' }))
+    expect(within(sets()[1]!).getByRole('alert')).toHaveTextContent('Office contact 2: that email does not look right.')
+    expect(useAppStore.getState().masters.surgeons['S-DALGETY']!.officeContacts).toEqual(before)
+    fireEvent.change(within(sets()[1]!).getByLabelText('Email'), { target: { value: 'info@avonheadent.example' } })
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Add office contact' }))
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save changes' }))
+    expect(useAppStore.getState().masters.surgeons['S-DALGETY']!.officeContacts).toEqual(before)
+  })
+
+  it('clearing an HPI CPN saves; the chip, Identifiers and History read it; a held one and an anaesthetist\'s are refused', () => {
+    renderAdmin(`/admin/masters/surgeons/${SURG.reid}`)
+    fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
+    fireEvent.change(within(sheet()).getByLabelText('HPI CPN (optional)'), { target: { value: '42whij' } })
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save changes' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('That HPI CPN already belongs to Mr J. Whitford.')
+    fireEvent.change(within(sheet()).getByLabelText('HPI CPN (optional)'), { target: { value: '12shap' } })
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save changes' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Dr Priya Sharma')
+    fireEvent.change(within(sheet()).getByLabelText('HPI CPN (optional)'), { target: { value: '' } })
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save changes' }))
+    expect(useAppStore.getState().masters.surgeons[SURG.reid]).not.toHaveProperty('hpiId')
+    expect(useAppStore.getState().audit.at(-1)).toMatchObject({ action: 'surgeon.update', before: { hpiId: '47REIA' }, after: { hpiId: 'None' } })
+    expect(within(document.querySelector('[data-shot="surgeon-hpi-chip"]') as HTMLElement).getByText('No HPI CPN yet')).toBeInTheDocument()
+    expect(within(document.querySelector('[data-shot="surgeon-identifiers"]') as HTMLElement).getByText('No HPI CPN yet')).toBeInTheDocument()
+  })
+
+  it("Mr Wainwright's profile: the practice name, the personal contact, an office contact per practice, the first marked; no room card, nothing provisional", () => {
+    renderAdmin('/admin/masters/surgeons/S-WAINWRIGHT')
+    const card = document.querySelector('[data-shot="surgeon-contacts"]') as HTMLElement
+    expect(within(card).getByText('Upper GI Partners and Hillsborough Colorectal Specialists')).toBeInTheDocument()
+    const office = Array.from(card.querySelectorAll('[data-office-contact]')) as HTMLElement[]
+    expect(office.map((o) => o.getAttribute('data-office-contact'))).toEqual(['1', '2'])
+    expect(within(office[0]!).getByText('info@uppergi.example')).toBeInTheDocument()
+    expect(within(office[0]!).getByText('Office emails go here first')).toBeInTheDocument()
+    expect(within(office[1]!).getByText('info@hillsboroughcolorectal.example')).toBeInTheDocument()
+    expect(within(office[1]!).queryByText('Office emails go here first')).toBeNull()
+    expect(document.querySelector('[data-shot="surgeon-room-card"]')).toBeNull()
+    expect(document.body.textContent).not.toMatch(/provisional|to be confirmed/i)
   })
 })

@@ -4,7 +4,7 @@ import { accent, neutral, radius } from '../../../../theme/tokens'
 import type { Actor } from '../../../../store'
 import { AnaesthetistsView } from './AnaesthetistsView'
 import { HospitalsView } from './HospitalsView'
-import { SurgeonGroupsView, SurgeonRoomsView, SurgeonsView } from './SurgeonsView'
+import { SurgeonGroupsView, SurgeonsView } from './SurgeonsView'
 import {
   RecurringBookingsMaster,
   XeroArchivingView,
@@ -71,7 +71,6 @@ export function MasterData({ actor }: MasterDataProps) {
         {view === 'recurringBookings' && <RecurringBookingsMaster actor={actor} />}
         {view === 'hospitals' && <HospitalsView actor={actor} />}
         {view === 'surgeons' && <SurgeonsView actor={actor} />}
-        {view === 'surgeonRooms' && <SurgeonRoomsView actor={actor} />}
         {view === 'surgeonGroups' && <SurgeonGroupsView actor={actor} />}
         {view === 'rvgGroups' && <RvgGroupsView actor={actor} />}
         {view === 'modifiers' && <ModifiersView actor={actor} />}

@@ -39,7 +39,6 @@ import type {
   FundingTag,
   Surgeon,
   SurgeonGroup,
-  SurgeonRoom,
 } from '../types'
 import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
 import { SEED_MODIFIERS } from './modifiers'
@@ -61,9 +60,8 @@ import {
   SURG,
   SURGEONS,
   SURGEON_GROUPS,
-  SURGEON_ROOMS,
 } from './cast'
-import { DIRECTORY_ROOMS, DIRECTORY_SURGEONS } from './specialistDirectory'
+import { DIRECTORY_SURGEONS } from './specialistDirectory'
 import { buildOfficePrivate } from './officePrivate'
 import { CONTRACT, CONTRACTS } from './contracts'
 import { PARTIES, PARTY } from './parties'
@@ -92,6 +90,7 @@ import { seedProcedurePayerBookings } from './procedurePayerBookings'
 import { MULTI_PROCEDURE_LIST_DATE, seedMultiProcedureBooking } from './multiProcedureDemo'
 import { seedCompletionBookings, type CompletionBookingKey } from './completionBookings'
 import { REVIEW_FLAGS_LIST_ID, seedReviewFlagBookings, type ReviewFlagBookingKey } from './reviewFlagBookings'
+import { seedDisabledContractBooking } from './disabledContractBooking'
 import { RANGE_AUTHORISED_BILLED_ISO, RANGE_AUTHORISED_LIST_ID, seedPricingBookings, type PricingBookingKey } from './pricingBookings'
 
 export {
@@ -108,7 +107,7 @@ export { RECORDED_WINDOW } from './recordedWindow'
 export { SEED_DRAFT_LIST_IDS, SEED_DRAFT_LISTS, SEED_CLASH_RUN_ISO, SEED_CLASH_BY, CANNED_DRAFT_LIST_REQUESTS, CANNED_DAY_DRAFT_LISTS } from './draftLists'
 export { SEED_LEAVE } from './availabilityAndHolidays'
 export { slotRng, hashStringToSeed } from './slotHash'
-export { ANAE, HOSP, INS, SURG, ORG, ROOM, ANAESTHETISTS, SEED_SLOT_STATUSES } from './cast'
+export { ANAE, HOSP, INS, SURG, ORG, ANAESTHETISTS, SEED_SLOT_STATUSES } from './cast'
 
 /** The seeded availability statuses keyed by ID (generator input for tests and tools). */
 export function seedSlotStatusRecords(): Record<string, SlotStatus> {
@@ -140,8 +139,6 @@ export const SEED = 20260721
 export interface SeedMasters {
   anaesthetists: Record<string, Anaesthetist>
   surgeons: Record<string, Surgeon>
-  /** Surgeons' rooms (catch-up Phase 17, US-13.6.1); members derived from `Surgeon.roomIds`. */
-  surgeonRooms: Record<string, SurgeonRoom>
   /** Surgeon groups (catch-up Phase 17, US-13.4.1), beside `organisations`. */
   surgeonGroups: Record<string, SurgeonGroup>
   hospitals: Record<string, Hospital>
@@ -212,7 +209,7 @@ export interface SeedState {
   /**
    * Seeded anaesthetist-dashboard figures (Phase 05; W1/W4), keyed by
    * registration number. Labelled demo figures; Phase 10 replaces the
-   * receivables/overdue portion with billing-mirror derivation.
+   * receivables/overdue portion with ledger derivation.
    */
   dashboards: Record<string, AnaesthetistDashboardSeed>
   /** Per-day internal office notes (Phase 06), keyed by calendar date. */
@@ -406,6 +403,8 @@ interface SeedBuild {
   multiProcedure: ReturnType<typeof seedMultiProcedureBooking>['ids']
   /** Catch-up Phase 24's price beats (`seed/pricingBookings.ts`). */
   pricing: Record<PricingBookingKey, string>
+  /** Catch-up Phase 25a's Booking on the Disabled Contract (`seed/disabledContractBooking.ts`). */
+  disabledContract: ReturnType<typeof seedDisabledContractBooking>['ids']
   /** The recurring bookings the seed's generation could not project (Phase 31 makes them Draft Lists). */
   clashes: RecurringClash[]
 }
@@ -487,7 +486,7 @@ function buildSeedInternal(): SeedBuild {
   const organisationsRec = byId(ORGANISATIONS, (o) => o.id)
   const patientsRec = byId(patients, (p) => p.hiddenInternalId)
 
-  // Seeded historical billing-mirror rows (Phase 10): merge their Lists/Bookings/
+  // Seeded historical ledger rows (Phase 10): merge their Lists/Bookings/
   // Procedures into the schedule. Their billing + Xero side is composed by
   // `buildSeedBillingSlice`, which rebuilds the same deterministic graph.
   const history = buildHistory({
@@ -550,6 +549,10 @@ function buildSeedInternal(): SeedBuild {
   const pricingBookings = seedPricingBookings(multiProcedureBooking.next, SEED_LIST_IDS.multiProcedure)
   for (const b of pricingBookings.bookings) bookingsRec[b.id] = b
   for (const p of pricingBookings.procedures) proceduresRec[p.id] = p
+  // Catch-up Phase 25a: the Booking on the Disabled Contract (the review flag's seeded case), after every other id.
+  const disabledContractBooking = seedDisabledContractBooking(pricingBookings.next)
+  for (const b of disabledContractBooking.bookings) bookingsRec[b.id] = b
+  for (const p of disabledContractBooking.procedures) proceduresRec[p.id] = p
   // Its Thu 16 Jul PM List is AUTHORISED and billed (the seed's billing slice raises the Face lift's invoice).
   const rangeList = lists[RANGE_AUTHORISED_LIST_ID]
   if (rangeList !== undefined && rangeList.state !== 'DRAFT') lists[RANGE_AUTHORISED_LIST_ID] = { ...rangeList, state: 'AUTHORISED', billedAtISO: RANGE_AUTHORISED_BILLED_ISO }
@@ -597,6 +600,8 @@ function buildSeedInternal(): SeedBuild {
       ...multiProcedureBooking.audit,
       // Catch-up Phase 24: the typed prices on the range beat's Face lift (the office) and the no-charge Booking (Dr Souter).
       ...pricingBookings.audit,
+      // Catch-up Phase 25a: the office disabled Christchurch Eye Surgery's old rate on Fri 10 Jul.
+      ...disabledContractBooking.audit,
       ...seedDraftListAudit(seededDraftLists),
       {
         id: 'seed-sickness-return',
@@ -635,7 +640,6 @@ function buildSeedInternal(): SeedBuild {
     masters: {
       anaesthetists: anaesthetistsRec,
       surgeons: surgeonsRec,
-      surgeonRooms: byId([...SURGEON_ROOMS, ...DIRECTORY_ROOMS], (r) => r.id),
       surgeonGroups: byId(SURGEON_GROUPS, (g) => g.id),
       hospitals: hospitalsRec,
       parties: byId(PARTIES, (p) => p.id),
@@ -676,8 +680,8 @@ function buildSeedInternal(): SeedBuild {
     notifications: {},
     counters: {
       audit: audit.length + 1,
-      booking: pricingBookings.next.booking,
-      procedure: pricingBookings.next.procedure,
+      booking: disabledContractBooking.next.booking,
+      procedure: disabledContractBooking.next.procedure,
       billingLine: bookingsBuild.next.billingLine,
       patient: patients.length + 1,
       // Payer ids (`BP####`): BP0001 is Hana Park as a payer, BP0002 Aria's folded record (catch-up Phase 21); BP0003 to BP0005 seeded payers.
@@ -688,10 +692,12 @@ function buildSeedInternal(): SeedBuild {
       contract: 1,
       slotStatus: 1,
       availabilitySeries: rehomed.series.length + 1,
+      // Catch-up Phase 33a: the seeded stub is STB0001 (`intakeSeed.ts`).
+      stub: 2,
     },
   }
 
-  return { state, scenario: bookingsBuild.scenario, payerReview: payerReview.ids, completion: completionBookings.ids, reviewFlags: reviewFlagBookings.ids, procedurePayer: procedurePayerBookings.ids, multiProcedure: multiProcedureBooking.ids, pricing: pricingBookings.ids, clashes }
+  return { state, scenario: bookingsBuild.scenario, payerReview: payerReview.ids, completion: completionBookings.ids, reviewFlags: reviewFlagBookings.ids, procedurePayer: procedurePayerBookings.ids, multiProcedure: multiProcedureBooking.ids, pricing: pricingBookings.ids, disabledContract: disabledContractBooking.ids, clashes }
 }
 
 /** Pinned seeded List ids (the projected-id form) the markers and tests reference. */
@@ -894,7 +900,7 @@ export const REVIEW_FLAG_BOOKING_IDS: readonly string[] = Object.values(SEED_BUI
  * Face lift. The parity suites name them as additions.
  */
 export const SOURCE_WORDING_BOOKING_IDS: readonly string[] = Object.keys(SEED_BUILD.state.schedule.bookings)
-  .filter((id) => id.startsWith('BK') && id > MERIVALE_FACE_LIFT_BOOKING_ID && !PAYER_REVIEW_BOOKING_IDS.includes(id) && !COMPLETION_BOOKING_IDS.includes(id) && !REVIEW_FLAG_BOOKING_IDS.includes(id) && id !== SEED_BUILD.procedurePayer.twoPayerBooking && id !== SEED_BUILD.multiProcedure.booking && !Object.values(SEED_BUILD.pricing).includes(id))
+  .filter((id) => id.startsWith('BK') && id > MERIVALE_FACE_LIFT_BOOKING_ID && !PAYER_REVIEW_BOOKING_IDS.includes(id) && !COMPLETION_BOOKING_IDS.includes(id) && !REVIEW_FLAG_BOOKING_IDS.includes(id) && id !== SEED_BUILD.procedurePayer.twoPayerBooking && id !== SEED_BUILD.multiProcedure.booking && !Object.values(SEED_BUILD.pricing).includes(id) && id !== SEED_BUILD.disabledContract.disabledContractBooking)
   .sort()
 
 /** The Booking whose rooms' "RTK" the hospital's "right total knee" replaced (catch-up Phase 20a). */
@@ -1125,17 +1131,17 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       entityId: PAT.walker,
       detail: `Two episodes: bookings ${scenario.repeatWalker[0]} and ${scenario.repeatWalker[1]}.`,
     },
-    missingBillingRef1: {
-      label: 'Missing billing reference 1 of 2',
+    mon20HolderBilled1: {
+      label: 'Hospital-billed Procedure, Mon 20 Jul (1 of 2)',
       entityType: 'procedure',
-      entityId: scenario.missingRefProcedures[0],
-      detail: 'Procedure billed to the hospital, flagged for a missing billing reference.',
+      entityId: scenario.mon20HolderBilledProcedures[0],
+      detail: "On Dr Morrison's Mon 20 Jul List, billed to St George's.",
     },
-    missingBillingRef2: {
-      label: 'Missing billing reference 2 of 2',
+    mon20HolderBilled2: {
+      label: 'Hospital-billed Procedure, Mon 20 Jul (2 of 2)',
       entityType: 'procedure',
-      entityId: scenario.missingRefProcedures[1],
-      detail: 'Procedure billed to the hospital, flagged for a missing billing reference.',
+      entityId: scenario.mon20HolderBilledProcedures[1],
+      detail: "On Dr Souter's Mon 20 Jul AM List, billed to Forte Health.",
     },
     allDayBooking: {
       label: 'All day booking (Rutherford)',
@@ -1243,7 +1249,7 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
     entityId: SEED_BUILD.payerReview.funderNoWarning,
     detail: 'Payer review List, 12:30. Health NZ is a funder, not an insurer: no warning.',
   },
-  // Catch-up Phase 22a: a payer on each Procedure (provisional on OQ-140).
+  // Catch-up Phase 22a: a payer on each Procedure (D85, OQ-140 answered).
   twoPayerBooking: {
     label: 'Two Procedures, two payers typed separately',
     entityType: 'booking',
@@ -1355,9 +1361,18 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
     entityId: SEED_BUILD.pricing.noChargeBooking,
     detail: 'Completed with a typed $0.00 on a SUBMITTED List: authorising it raises a "No charge" invoice, with no payable.',
   },
+  // Catch-up Phase 25a: the Disabled Contract flag's seeded case.
+  disabledContractBooking: {
+    label: 'Booking on a Disabled Contract (review flag)',
+    entityType: 'booking',
+    entityId: SEED_BUILD.disabledContract.disabledContractBooking,
+    detail: "Chen Tue 14 Jul AM, 11:45, on Christchurch Eye Surgery 2025 rate, disabled Fri 10 Jul: Review reads \"Contract disabled on Fri 10 Jul\"; the List still authorises.",
+  },
 }
 
 /** Catch-up Phase 24's price beat Bookings, in id order (seed/pricingBookings.ts). */
 export const PRICING_BOOKING_IDS: readonly string[] = Object.values(SEED_BUILD.pricing).sort()
+/** Catch-up Phase 25a's Booking on the Disabled Contract (seed/disabledContractBooking.ts). */
+export const DISABLED_CONTRACT_BOOKING_IDS: readonly string[] = [SEED_BUILD.disabledContract.disabledContractBooking]
 /** The seeded AUTHORISED Booking the billing slice invoices (catch-up Phase 24's range beat). */
 export const SEED_AUTHORISED_INVOICED_BOOKING_IDS: readonly string[] = [SEED_BUILD.pricing.rangeAuthorisedBooking]

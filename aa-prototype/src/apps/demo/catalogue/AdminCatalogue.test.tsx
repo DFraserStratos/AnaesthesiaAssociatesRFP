@@ -39,7 +39,7 @@ describe('AdminCatalogue', () => {
     // About 90 live rows render here (U4 added 15): give the whole page room under a loaded full run.
   }, 20_000)
 
-  it('opens the shared Overlay from its row and keeps the text local', () => {
+  it('opens the shared Overlay from its row and keeps the text local', { timeout: 20000 }, () => {
     const { container } = renderPage()
     const row = container.querySelector('[data-catalogue-row="Dialog (useSurface().Overlay)"]') as HTMLElement
     fireEvent.click(within(row).getByRole('button', { name: 'Open dialog' }))

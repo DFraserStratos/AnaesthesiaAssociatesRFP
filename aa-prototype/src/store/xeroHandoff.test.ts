@@ -1,21 +1,22 @@
 /**
  * Xero handoff tests (Phase 10; WI2, X2/X3, D-handoff).
  *
- * The atomic ACCREC + DRAFT ACCPAY pair is created from an invoiced case,
- * linked back via the case GUIDs; contacts resolve by ContactNumber (never the
- * NHI) and dedupe across episodes; a handoff FAULT is data (no pair, case stays
- * invoiced, flag cleared) and its retry creates exactly one pair; an already
- * paired case is a no-op.
+ * The atomic ACCREC + DRAFT ACCPAY pair is created from a ledger pair, linked
+ * back via the legs' Xero ids; contacts resolve by ContactNumber (never the
+ * NHI) and dedupe across episodes; a handoff FAULT is data (no Xero pair, the
+ * ledger pair stands "Not yet in Xero", flag cleared) and its retry creates
+ * exactly one Xero pair; an already mirrored pair is a no-op.
  */
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList, submitList } from './lifecycle'
-import { runBillingForList, handoffListCases } from './billingRun'
-import { handoffCase, payerContactSpec } from './xeroHandoff'
+import { runBillingForList } from './billingRun'
+import { handoffListPairs, handoffPair, payerContactSpec } from './xeroHandoff'
 import { approveAllPrepayments } from '../test/approvePrepayments'
 import { armHandoffFault } from './demoSettingsActions'
-import { casesForList, casesForBooking } from './selectors'
+import { pairsForList, pairsForBooking } from './ledgerSelectors'
+import { pairStatusLabel } from '../domain/billing/ledger'
 import { clockISO, type Actor } from './mutate'
 import { SEED_LIST_IDS, SEED_MARKERS, PAT, BP } from '../domain/seed'
 
@@ -40,25 +41,25 @@ function billAndHandoff(api: BoundAppStore, listId: string): void {
   if (list?.state === 'ACTIVE') expect(submitList(api, OFFICE, listId).ok).toBe(true)
   expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
   expect(runBillingForList(api, listId).ok).toBe(true)
-  handoffListCases(api, listId)
+  handoffListPairs(api, listId)
 }
 
 describe('Xero handoff — the atomic pair', () => {
-  it('creates one ACCREC + one DRAFT ACCPAY per invoice, linked via the case', () => {
+  it('creates one ACCREC + one DRAFT ACCPAY per invoice, linked via the ledger pair', () => {
     const api = store()
     const listId = SEED_LIST_IDS.morrisonMon20
     billAndHandoff(api, listId)
 
-    const cases = casesForList(api.getState(), listId).filter((c) => c.status !== 'failed')
+    const cases = pairsForList(api.getState(), listId)
     expect(cases.length).toBeGreaterThan(0)
     const { accRecs, accPays } = api.getState().xero
     for (const c of cases) {
-      expect(c.status).toBe('handedOff')
-      expect(c.accRecId).toBeDefined()
-      expect(c.accPayId).toBeDefined()
-      const accRec = accRecs[c.accRecId!]!
-      const accPay = accPays[c.accPayId!]!
-      const invoice = api.getState().billing.invoices[c.invoiceId!]!
+      expect(pairStatusLabel(c)).toBe('handedOff')
+      expect(c.receivable.xeroAccRecId).toBeDefined()
+      expect(c.payable?.xeroAccPayId).toBeDefined()
+      const accRec = accRecs[c.receivable.xeroAccRecId!]!
+      const accPay = accPays[c.payable!.xeroAccPayId!]!
+      const invoice = api.getState().billing.invoices[c.invoiceId]!
       expect(accRec.invoiceId).toBe(invoice.id)
       expect(accRec.kind).toBe('procedure')
       expect(accRec.amountDue).toBe(invoice.total)
@@ -179,12 +180,12 @@ describe('Xero handoff — no personal information in Xero (US-09.3.1)', () => {
 describe('Xero handoff — fault, retry, idempotency (D-handoff)', () => {
   function cosCaseId(api: BoundAppStore): string {
     const listId = listOf(api, marker('cosAccContractBooking'))
-    const cases = casesForList(api.getState(), listId).filter((c) => c.status !== 'failed')
+    const cases = pairsForList(api.getState(), listId)
     expect(cases.length).toBe(1)
     return cases[0]!.id
   }
 
-  it('a fault records handoffFailure, creates no pair, keeps status invoiced, clears the flag', () => {
+  it('a fault records handoffFailure, creates no Xero pair, keeps the ledger pair "Not yet in Xero", clears the flag', () => {
     const api = store()
     const listId = listOf(api, marker('cosAccContractBooking'))
     expect(submitList(api, OFFICE, listId).ok).toBe(true)
@@ -192,12 +193,13 @@ describe('Xero handoff — fault, retry, idempotency (D-handoff)', () => {
     expect(runBillingForList(api, listId).ok).toBe(true)
     // Arm the fault, then hand off.
     expect(armHandoffFault(api, OFFICE).ok).toBe(true)
-    handoffListCases(api, listId)
+    handoffListPairs(api, listId)
 
-    const c = api.getState().billing.cases[cosCaseId(api)]!
+    const c = api.getState().billing.ledger[cosCaseId(api)]!
     expect(c.handoffFailure).toBeDefined()
-    expect(c.accRecId).toBeUndefined() // no pair created for this case
-    expect(c.status).toBe('invoiced')
+    expect(c.receivable.xeroAccRecId).toBeUndefined() // no Xero pair created for this ledger pair
+    // (catch-up Phase 36: the ledger pair stands, its derived label is 'handoffFailed'; the old case stayed 'invoiced'.)
+    expect(pairStatusLabel(c)).toBe('handoffFailed')
     // Flag cleared so the next handoff succeeds.
     expect(api.getState().settings.failNextHandoff).toBe(false)
   })
@@ -209,15 +211,15 @@ describe('Xero handoff — fault, retry, idempotency (D-handoff)', () => {
     expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
     expect(runBillingForList(api, listId).ok).toBe(true)
     expect(armHandoffFault(api, OFFICE).ok).toBe(true)
-    handoffListCases(api, listId)
+    handoffListPairs(api, listId)
 
     const caseId = cosCaseId(api)
-    expect(handoffCase(api, caseId).ok).toBe(true)
-    const c = api.getState().billing.cases[caseId]!
+    expect(handoffPair(api, caseId).ok).toBe(true)
+    const c = api.getState().billing.ledger[caseId]!
     expect(c.handoffFailure).toBeUndefined()
-    expect(c.accRecId).toBeDefined() // exactly one pair now
-    expect(c.accPayId).toBeDefined()
-    expect(c.status).toBe('handedOff')
+    expect(c.receivable.xeroAccRecId).toBeDefined() // exactly one pair now
+    expect(c.kind !== 'aaFee' ? c.payable?.xeroAccPayId : undefined).toBeDefined()
+    expect(pairStatusLabel(c)).toBe('handedOff')
   })
 
   it('is idempotent — a second handoff of an already-paired case is a no-op', () => {
@@ -225,11 +227,11 @@ describe('Xero handoff — fault, retry, idempotency (D-handoff)', () => {
     const listId = listOf(api, marker('cosAccContractBooking'))
     billAndHandoff(api, listId)
     const caseId = cosCaseId(api)
-    const before = api.getState().billing.cases[caseId]!.accRecId
+    const before = api.getState().billing.ledger[caseId]!.receivable.xeroAccRecId
     const recsBefore = Object.keys(api.getState().xero.accRecs).length
 
-    expect(handoffCase(api, caseId).ok).toBe(true)
-    expect(api.getState().billing.cases[caseId]!.accRecId).toBe(before)
+    expect(handoffPair(api, caseId).ok).toBe(true)
+    expect(api.getState().billing.ledger[caseId]!.receivable.xeroAccRecId).toBe(before)
     expect(Object.keys(api.getState().xero.accRecs).length).toBe(recsBefore)
   })
 })
@@ -239,14 +241,16 @@ describe('Xero handoff — pre-payment pre-invoice gets a full pair (D-pre-invoi
     const api = store()
     const rileyBooking = marker('prepaymentBooking')
     expect(approveAllPrepayments(api, rileyBooking, OFFICE)).toHaveLength(1)
-    const cases = casesForBooking(api.getState(), rileyBooking)
+    const cases = pairsForBooking(api.getState(), rileyBooking)
     expect(cases.length).toBe(1)
     const c = cases[0]!
-    expect(c.accRecId).toBeDefined()
-    expect(c.accPayId).toBeDefined()
-    expect(c.status).toBe('handedOff')
+    expect(c.kind).toBe('prePayment')
+    expect(c.payable?.payee).toEqual({ kind: 'holding' })
+    expect(c.receivable.xeroAccRecId).toBeDefined()
+    expect(c.payable?.xeroAccPayId).toBeDefined()
+    expect(pairStatusLabel(c)).toBe('handedOff')
     // Catch-up Phase 27 (FT-06.3, D38): a DRAFT payable crediting the AA Holding account, never the anaesthetist.
-    const accPay = api.getState().xero.accPays[c.accPayId!]!
+    const accPay = api.getState().xero.accPays[c.payable!.xeroAccPayId!]!
     expect(accPay).toMatchObject({ payeeAccount: 'aaHoldingAccount', status: 'draft', amountPayable: 1380 })
     expect(api.getState().xero.contacts[accPay.contactId]).toMatchObject({ name: 'AA Holding account', contactNumber: 'AA-HOLDING' })
   })

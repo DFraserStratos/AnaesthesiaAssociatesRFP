@@ -1,41 +1,66 @@
 {
   "id": "US-08.3.5",
-  "status": "partial",
-  "absentReason": "Each anaesthetist sees their own position in the web and mobile apps, but there is no office view of a chosen anaesthetist's ledger position, and the mobile app shows only what is outstanding, not collected or paid out.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "web-overdue",
       "app": "web",
-      "caption": "What is still owed to the anaesthetist, aged",
+      "caption": "Your position on the web: what AA owes you, collected for you, paid out to you and what you owe AA, above what is still owed",
       "start": "/web/accounts/overdue",
       "states": [
         {
           "steps": [],
-          "highlight": []
+          "highlight": [
+            "[data-shot=web-accounts-position]"
+          ]
         }
       ]
     },
     {
       "name": "web-payments",
       "app": "web",
-      "caption": "What has been collected and what has been paid out to the anaesthetist",
+      "caption": "Your position beside the payments: what AA owes you, collected for you, paid out to you and what you owe AA",
       "start": "/web/accounts/payments",
       "states": [
         {
           "steps": [],
-          "highlight": []
+          "highlight": [
+            "[data-shot=web-accounts-position]"
+          ]
         }
       ]
     },
     {
       "name": "mobile-balances",
       "app": "mobile",
-      "caption": "Outstanding to you, on the phone",
+      "caption": "Outstanding to you, collected and paid out, on the phone",
       "start": "/mobile/balances",
       "states": [
         {
           "steps": [],
-          "highlight": []
+          "highlight": [
+            "[data-shot=balances-collected-paid-out]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "anaesthetist-ledger",
+      "app": "admin",
+      "caption": "One anaesthetist's ledger position in the office: what AA owes them, what they owe AA, collected and paid out",
+      "start": "/admin/ledger/anaesthetists/34821",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=ledger-aa-owes]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=ledger-balance]",
+            "[data-shot=ledger-tiles]"
+          ]
         }
       ]
     }

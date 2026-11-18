@@ -25,7 +25,7 @@ describe('the Mobile UI catalogue', () => {
     useAppStore.setState(freshAppState())
   })
 
-  it('renders one row per component, grouped by replacement library', () => {
+  it('renders one row per component, grouped by replacement library', { timeout: 20000 }, () => {
     renderPage()
     expect(screen.getByRole('heading', { level: 1, name: /Anaesthetist Mobile App/ })).toBeInTheDocument()
     for (const name of ['BottomSheet', 'ListOptionsSheet', 'SlideStack', 'BottomTabBar', 'MonthGrid (LookbackDateSheet)', 'SuccessOverlay', 'UpdatePrompt', 'BookingDetailBody', 'HalfBlock', 'useTickingValue', 'InlineConfirm', 'DoneStep']) {

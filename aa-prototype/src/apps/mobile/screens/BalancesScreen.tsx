@@ -5,7 +5,8 @@ import { neutral, semantic, radius } from '../../../theme/tokens'
 import { STATUS_PALETTE } from '../../../theme/statusColours'
 import {
   gstActivityFor,
-  outstandingAccpayInvoicesFor,
+  outstandingPayableRowsFor,
+  anaesthetistLedgerPosition,
   receivablesAgingFor,
   useAppStore,
   useToday,
@@ -21,9 +22,10 @@ import { HELD_UNTIL_AUTHORISED } from '../../../domain/billing/prepayHolding'
 type Section = 'outstanding' | 'gst'
 
 /**
- * Balances tab (M11) — the anaesthetist's money, from the Billing Engine MIRROR
- * (never Xero; convention 9). Outstanding is a FLAT list of individual ACCPAY
- * invoices, no rollup (RFP); a fully-mobile card list, not a table. A GST peek
+ * Balances tab (M11) — the anaesthetist's money, from the ledger (AA's system of record)
+ * (never Xero; convention 9). Outstanding is a FLAT list of individual
+ * invoices, no rollup (RFP); the header adds what was collected and paid out,
+ * and what you owe AA (catch-up Phase 36); a fully-mobile card list, not a table. A GST peek
  * lists the amounts received this month with their GST component. An invoice
  * shows the moment the office authorises its List (catch-up Phase 38a).
  */
@@ -35,13 +37,15 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
   const [section, setSection] = useState<Section>('outstanding')
 
   const outstanding = useMemo(
-    () => outstandingAccpayInvoicesFor({ billing, schedule, masters }, anaesthetistId, todayISO),
+    () => outstandingPayableRowsFor({ billing, schedule, masters }, anaesthetistId, todayISO),
     [billing, schedule, masters, anaesthetistId, todayISO],
   )
   const aging = useMemo(
     () => receivablesAgingFor({ billing, schedule, masters }, anaesthetistId, todayISO).aging,
     [billing, schedule, masters, anaesthetistId, todayISO],
   )
+  // Collected, paid out and what you owe AA, from the ledger's one position (catch-up Phase 36; US-08.3.5).
+  const position = useMemo(() => anaesthetistLedgerPosition({ billing }, anaesthetistId), [billing, anaesthetistId])
   // GST this calendar month (the mobile peek; the web Accounts screen has the period selector).
   const monthStart = `${todayISO.slice(0, 7)}-01`
   const gst = useMemo(
@@ -69,6 +73,14 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
           <span style={{ fontSize: 12, color: neutral.slate }}>Outstanding to you</span>
           <span className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{formatCurrency(aging.total)}</span>
           <span style={{ fontSize: 12, color: neutral.mist }}>{plural(outstanding.length, 'unpaid invoice')}</span>
+          {/* Collected and paid out (catch-up Phase 36): one line where it fits, else each on its own, never split inside a figure. */}
+          <span data-shot="balances-collected-paid-out" className="mono" style={{ fontSize: 12, color: neutral.slate, marginTop: 4, display: 'flex', flexDirection: 'column' }}>
+            <span style={{ whiteSpace: 'nowrap' }}>Collected {formatCurrency(position.collected)}</span>
+            <span style={{ whiteSpace: 'nowrap' }}>Paid out {formatCurrency(position.paidOut)}</span>
+          </span>
+          {position.theyOweAa > 0 && (
+            <span data-shot="balances-you-owe-aa" className="mono" style={{ fontSize: 12, color: neutral.slate }}>You owe AA {formatCurrency(position.theyOweAa)}</span>
+          )}
         </div>
       </div>
 
@@ -90,7 +102,7 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
             <EmptyState variant="card">No outstanding invoices. A List's invoices show here once the office authorises it.</EmptyState>
           ) : (
             outstanding.map((r) => (
-              <div key={r.caseId} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div key={r.pairId} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }}>
                   <span style={{ fontSize: 15, fontWeight: 600 }}>{r.patientName}</span>
                   <span className="mono" style={{ fontSize: 15, fontWeight: 700 }}>{formatCurrency(r.outstanding)}</span>

@@ -9,7 +9,8 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore, freshAppState, type BoundAppStore } from './appStore'
 import { authoriseList, submitList } from './lifecycle'
-import { handoffListCases, runBillingForList } from './billingRun'
+import { runBillingForList } from './billingRun'
+import { handoffListPairs as handoffListCases } from './xeroHandoff'
 import { addPriceRange, disableContract, editContract } from './contractActions'
 import { setProcedurePayer } from './payerActions'
 import { setProcedurePrice } from './pricingActions'
@@ -180,12 +181,13 @@ describe('the payee is fixed at authorise (DM-42)', () => {
     handoffListCases(api, S3_AM)
     const s = api.getState()
     const ids = new Set(bookingsForList(s, S3_AM).map((b) => b.id))
-    const cases = Object.values(s.billing.cases).filter((c) => ids.has(c.bookingId))
-    expect(cases.length).toBeGreaterThan(0)
-    for (const c of cases) {
-      expect(c.payeeAnaesthetistId).toBe('34821')
-      expect(s.billing.invoices[c.invoiceId!]!.supplier?.name).toBe('Dr Melanie Souter')
-      const pay = s.xero.accPays[c.accPayId!]!
+    const pairs = Object.values(s.billing.ledger).flatMap((p) => (p.kind !== 'aaFee' && ids.has(p.bookingId) ? [p] : []))
+    expect(pairs.length).toBeGreaterThan(0)
+    for (const c of pairs) {
+      expect(c.anaesthetistId).toBe('34821')
+      expect(c.payable?.payee).toEqual({ kind: 'anaesthetist', anaesthetistId: '34821' })
+      expect(s.billing.invoices[c.invoiceId]!.supplier?.name).toBe('Dr Melanie Souter')
+      const pay = s.xero.accPays[c.payable!.xeroAccPayId!]!
       expect(pay.anaesthetistId).toBe('34821')
       expect(pay.taxInvoice?.supplierName).toBe('Dr Melanie Souter')
     }

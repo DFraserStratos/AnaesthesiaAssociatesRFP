@@ -14,11 +14,13 @@ import * as lifecycle from './lifecycle'
 import { authoriseList, cancelBooking, reassignBooking, submitList } from './lifecycle'
 import { addPairingPreference } from './officePrivate'
 import { setAvailabilityRange } from './availabilityActions'
-import { runBillingForList, handoffListCases } from './billingRun'
+import { runBillingForList } from './billingRun'
+import { handoffListPairs } from './xeroHandoff'
+import { pairsForList } from './ledgerSelectors'
 import { approveAllPrepayments } from '../test/approvePrepayments'
 import { openWarnings } from './warnings'
 import { bookingMoveFor, bookingMovesOntoList, bookingsMovedToMe, movedToMe, notificationPool } from './notifications'
-import { bookingsForList, bookingMoveInputOf, casesForList, proceduresForBooking } from './selectors'
+import { bookingsForList, bookingMoveInputOf, proceduresForBooking } from './selectors'
 import { anaesthetistActor, OFFICE_ACTOR, SOUTER_ACTOR } from './demoActors'
 import type { Actor } from './mutate'
 import { ANAE, BOOKING_MOVE_DEMO, SEED_LIST_IDS, SURG } from '../domain/seed'
@@ -233,10 +235,10 @@ describe('US-01.4.6: the payable follows, nothing recalculated (US-06.3.5 AC2, U
     expect(submitList(api, as(api, ANAE.hughes), listId).ok).toBe(true)
     expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
     expect(runBillingForList(api, listId).ok).toBe(true)
-    handoffListCases(api, listId)
-    const cases = casesForList(api.getState(), listId).filter((c) => c.accPayId !== undefined)
+    handoffListPairs(api, listId)
+    const cases = pairsForList(api.getState(), listId).filter((c) => c.payable?.xeroAccPayId !== undefined)
     expect(cases.length).toBeGreaterThan(0)
-    for (const c of cases) expect(api.getState().xero.accPays[c.accPayId!]?.anaesthetistId).toBe(ANAE.hughes)
+    for (const c of cases) expect(api.getState().xero.accPays[c.payable!.xeroAccPayId!]?.anaesthetistId).toBe(ANAE.hughes)
   })
 
   function money(api: BoundAppStore, bookingIds: readonly string[]) {
@@ -271,8 +273,8 @@ describe('US-01.4.6: the payable follows, nothing recalculated (US-06.3.5 AC2, U
     const api = store()
     const receiver = freeColleagues(bookingMoveInputOf(api.getState()), D.prepaidBookingId, ANAE.souter)[0]!.anaesthetistId
     const prePaymentsBefore = Object.values(api.getState().billing.invoices).filter((i) => i.kind === 'prePayment').map((i) => i.id)
-    // The seeded prepayment's own case was settled before the move (Phase 09/10); only this List's new billing is asked about.
-    const casesBefore = new Set(Object.keys(api.getState().billing.cases))
+    // The seeded prepayment's own pair was settled before the move (Phase 09/10); only this List's new billing is asked about.
+    const casesBefore = new Set(Object.keys(api.getState().billing.ledger))
     const out = moveBookingToAnaesthetist(api, SOUTER, D.prepaidBookingId, receiver)
     expect(out.ok).toBe(true)
     if (!out.ok) return
@@ -281,12 +283,12 @@ describe('US-01.4.6: the payable follows, nothing recalculated (US-06.3.5 AC2, U
     expect(submitList(api, them, out.value.createdListId).ok).toBe(true)
     expect(authoriseList(api, OFFICE, out.value.createdListId).ok).toBe(true)
     expect(runBillingForList(api, out.value.createdListId).ok).toBe(true)
-    handoffListCases(api, out.value.createdListId)
+    handoffListPairs(api, out.value.createdListId)
     const prePaymentsAfter = Object.values(api.getState().billing.invoices).filter((i) => i.kind === 'prePayment').map((i) => i.id)
     expect(prePaymentsAfter).toEqual(prePaymentsBefore)
-    const cases = casesForList(api.getState(), out.value.createdListId).filter((c) => c.accPayId !== undefined && !casesBefore.has(c.id))
+    const cases = pairsForList(api.getState(), out.value.createdListId).filter((c) => c.payable?.xeroAccPayId !== undefined && !casesBefore.has(c.id))
     expect(cases.length).toBeGreaterThan(0)
-    for (const c of cases) expect(api.getState().xero.accPays[c.accPayId!]?.anaesthetistId).toBe(receiver)
+    for (const c of cases) expect(api.getState().xero.accPays[c.payable!.xeroAccPayId!]?.anaesthetistId).toBe(receiver)
   })
 })
 

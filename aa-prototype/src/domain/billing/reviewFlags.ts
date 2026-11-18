@@ -9,15 +9,17 @@
  *
  * Replaces Phase 07's `apps/admin/reviewFlags.ts`. Kept from it: "Not marked
  * completed", 21's payer-contact flag and the manual B/T/M override note.
- * Dropped: "No billing reference" (the holder's references are not built,
- * D82, OQ-136); the route and ACC flags were already gone (18, RV-37).
+ * Dropped: "No billing reference" (a Contract asks the Booking for no
+ * reference, D82, OQ-136); the route and ACC flags were already gone (18, RV-37).
  *
- * D81 (OQ-135, still open, our default): a Procedure already on a Disabled
- * Contract bills as normal and raises no flag. If OQ-135 is answered "flag
- * it", add one rule to `REVIEW_FLAG_RULES`.
+ * D81 (OQ-135, answered 18 November 2026; catch-up Phase 25a): a Procedure not
+ * yet authorised and dated on or after the day its Contract was disabled is
+ * flagged (`contractDisabled`), never blocked; an earlier-dated one bills as
+ * normal with no flag. The day comes only from the Contract's audit
+ * (`disabledDaysByContract`), passed in as `disabledOn`.
  */
 
-import type { Booking, ContractApproval, ContractId, Patient, Procedure, RvgGroup, RvgTimeRule } from '../types'
+import type { Booking, ContractApproval, ContractId, ListState, Patient, Procedure, RvgGroup, RvgTimeRule } from '../types'
 import { resolveBtm, type BtmBreakdown, type FeeResult, type ModifierInputs } from './fee'
 import { PAYER_CONTACT_NEEDED, payerContactMissing } from './whoIsBilled'
 import { contractAllowedOn, type RailContext, type RailMasters } from './contractRail'
@@ -25,6 +27,7 @@ import { priceStatusFor } from './priceStatus'
 import { asksRvgDetail } from './rvgDetail'
 import { NEEDS_PRICE_LABEL } from './priceRanges'
 import { formatMoney } from './money'
+import { shortDay } from '../dateText'
 import type { PrepaymentStatus } from './prepayment'
 
 export type FlagTone = 'neutral' | 'warn'
@@ -32,6 +35,7 @@ export type FlagTone = 'neutral' | 'warn'
 export type ReviewFlagRule =
   | 'contractChanged'
   | 'contractNoLongerFits'
+  | 'contractDisabled'
   | 'needsInvoiceDestination'
   | 'needsPrice'
   | 'typedPrice'
@@ -90,6 +94,10 @@ export interface ReviewBookingInput {
   patient?: Pick<Patient, 'name' | 'email' | 'postalAddress' | 'phone'>
   timeRule: RvgTimeRule
   modifierInputs: ModifierInputs
+  /** The Booking's List state: a Procedure on an AUTHORISED List is authorised (catch-up Phase 25a). */
+  listState?: ListState
+  /** The disable day (`YYYY-MM-DD`) of each of the Booking's Contracts that is Disabled, read from the audit (catch-up Phase 25a, D81). */
+  disabledOn?: Readonly<Record<ContractId, string>>
 }
 
 type Rule = (input: ReviewBookingInput) => ReviewFlag[]
@@ -115,13 +123,28 @@ const contractChanged: Rule = perProcedure('contractChanged', ({ contractChange 
 
 /**
  * The Procedure's Contract is not offered on its Booking's List (our reading,
- * A41): 20's candidates rule with the status test off (D81) and the range test
- * on. Derived, never stored, so it clears when the Booking moves back.
+ * A41): 20's candidates rule with the status test off (a Disabled Contract is
+ * `contractDisabled`'s, from its disable day) and the range test on. Derived, never stored, so it clears when the Booking moves back.
  */
 const contractNoLongerFits: Rule = perProcedure('contractNoLongerFits', ({ procedure }, input) => {
   if (procedure.governingContractId === undefined || contractOf(procedure, input) === undefined) return null
   if (contractAllowedOn(input.rail.masters, input.rail.ctx, procedure.governingContractId, { anyStatus: true })) return null
   return { tone: 'warn', text: 'Contract not offered on this List', shot: 'review-flag' }
+})
+
+/**
+ * The Procedure's Contract is Disabled and was disabled on or before its date,
+ * and the List is not yet authorised (catch-up Phase 25a; US-07.2.2, D81):
+ * "Contract disabled on Fri 10 Jul" (warn). A flag, never a block; an
+ * earlier-dated Procedure raises nothing, and making the Contract active again
+ * clears it.
+ */
+const contractDisabled: Rule = perProcedure('contractDisabled', ({ procedure }, input) => {
+  const contract = contractOf(procedure, input)
+  if (contract === undefined || contract.status !== 'disabled' || input.listState === 'AUTHORISED') return null
+  const day = input.disabledOn?.[contract.id]
+  if (day === undefined || day > input.rail.ctx.listDateISO) return null
+  return { tone: 'warn', text: `Contract disabled on ${shortDay(day)}`, shot: 'review-flag' }
 })
 
 /** No Contract (US-04.3.8). Likely unreachable at review (it blocks completion and submit); kept because US-07.2.2 names it. */
@@ -204,6 +227,7 @@ const prepayment: Rule = perProcedure('prepayment', ({ prepayment: p }) => {
 export const REVIEW_FLAG_RULES: readonly { rule: ReviewFlagRule; flags: Rule }[] = [
   { rule: 'contractChanged', flags: contractChanged },
   { rule: 'contractNoLongerFits', flags: contractNoLongerFits },
+  { rule: 'contractDisabled', flags: contractDisabled },
   { rule: 'needsInvoiceDestination', flags: needsInvoiceDestination },
   { rule: 'needsPrice', flags: needsPrice },
   { rule: 'typedPrice', flags: typedPrice },

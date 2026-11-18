@@ -13,6 +13,7 @@
  */
 
 import { withPhase25Codes } from './__parity__/phase25Declared'
+import { PHASE_25A_ADDED_BOOKINGS, PHASE_25A_ADDED_PROCEDURES } from './__parity__/phase25aDeclared'
 import { describe, expect, it } from 'vitest'
 import { PHASE_24_ARIA_BOOKINGS, PHASE_24_ARIA_PROCEDURES } from './__parity__/phase24Declared'
 import {
@@ -29,14 +30,16 @@ import baselineJson from './__parity__/phase-23-baseline.json'
 import { capturePhase23, type FeeRow23, type Phase23Baseline } from './__parity__/phase23Capture'
 import { createAppStore, freshAppState } from './appStore'
 import { authoriseList } from './lifecycle'
-import { handoffListCases, runBillingForList } from './billingRun'
-import { bctiRecords } from './selectors'
+import { runBillingForList } from './billingRun'
+import { handoffListPairs } from './xeroHandoff'
+import { bctiRecords } from './ledgerSelectors'
 import { MULTI_PROCEDURE_IDS, SEED_MARKERS } from '../domain/seed'
 
 const baseline = baselineJson as unknown as Phase23Baseline
 const now = capturePhase23(freshAppState())
-const added = new Set([MULTI_PROCEDURE_IDS.booking])
-const addedProcedures = new Set(MULTI_PROCEDURE_IDS.procedures)
+// Catch-up Phase 25a's appended Booking on the Disabled Contract is an addition too (`__parity__/phase25aDeclared.ts`).
+const added = new Set([MULTI_PROCEDURE_IDS.booking, ...PHASE_25A_ADDED_BOOKINGS])
+const addedProcedures = new Set([...MULTI_PROCEDURE_IDS.procedures, ...PHASE_25A_ADDED_PROCEDURES])
 // Catch-up Phase 24's declared difference (procedurePriceParity.test.ts pins it): the typed $1,200 on
 // BK0179 prints as one fee line at the price, its total unchanged. Set aside here.
 const TYPED_24_BOOKING = SEED_MARKERS['typedPriceBooking']!.entityId
@@ -160,7 +163,7 @@ describe('Phase 23 census of multi-procedure Bookings (FT-03.2 and US-05.3.5 car
     const before = bctiRecords(api.getState()).length
     expect(authoriseList(api, { who: 'Kirsty W.', role: 'office', source: 'office' }, booking.listId).ok).toBe(true)
     expect(runBillingForList(api, booking.listId).ok).toBe(true)
-    handoffListCases(api, booking.listId)
+    handoffListPairs(api, booking.listId)
     const invoices = Object.values(api.getState().billing.invoices).filter((i) => i.bookingId === booking.id && i.kind === 'standard')
     expect(invoices).toHaveLength(1)
     expect(bctiRecords(api.getState()).length - before).toBe(1)

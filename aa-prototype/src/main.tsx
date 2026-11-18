@@ -5,7 +5,7 @@ import App from './App.tsx'
 import { useAppStore, wireArchiveJob, wireBillingRun, wireIntegrationRetry, wireReconciliationPoll } from './store'
 
 // The billing engine's one integration point (RFP): authorising a List emits
-// `listAuthorised`; the run consumes it (then hands its cases off to Xero).
+// `listAuthorised`; the run consumes it (then hands its ledger pairs off to Xero).
 // Wired once, here, for the singleton store — never in appStore.ts (mutate.ts
 // runtime-imports it) and never per-store (tests drive the actions themselves).
 wireBillingRun(useAppStore)

@@ -6,19 +6,19 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 200 | 179 |
-| Partial | 35 | 35 |
-| Absent from the app | 67 | 66 |
+| Captured | 206 | 185 |
+| Partial | 32 | 32 |
+| Absent from the app | 69 | 68 |
 | Failed recipe | 0 | 0 |
-| No recipe | 22 | 22 |
+| No recipe | 17 | 17 |
 
-789 screenshots. Items per app: admin 169, web 86, mobile 82, simulator 32.
+819 screenshots. Items per app: admin 175, web 88, mobile 86, simulator 32.
 
 ## Failed recipes (0)
 
 None.
 
-## Absent from the app (67)
+## Absent from the app (69)
 
 - **FT-11.4** Insurers · Retired: removed in Phase 18
 - **US-02.1.5** Automatic sync from St George's and Southern Cross · Not built yet: catch-up Phase 34 builds this.
@@ -64,8 +64,10 @@ None.
 - **US-06.5.3** Prepayment for a replacement anaesthetist · Not built yet: catch-up Phase 41 builds this.
 - **US-06.5.4** Prepaid Booking moved to another anaesthetist · Not built yet: catch-up Phase 41 builds this.
 - **US-08.6.2** Credit note and re-issue · No credit note, payable reversal or re-issue flow. Searched the prototype source for credit note, reverse and re-issue; none exist. Invoiced bookings can only take a post-op addendum.
-- **US-08.6.3** Create an additional invoice on a Procedure · Not built yet: catch-up Phase 39 builds this.
+- **US-08.6.3** Create an additional invoice on a Procedure · Not built yet: catch-up Phase 38b builds this (raised by the office, or by the anaesthetist on their own Procedure).
 - **US-08.6.4** Split a combined Procedure into additional invoices · Not built yet: catch-up Phase 39 builds this.
+- **US-08.6.5** Credit note option on additional invoices · Not built yet: catch-up Phase 39 builds this.
+- **US-08.6.6** Start a rebill from a copy of the original lines · Not built yet: catch-up Phase 39 builds this.
 - **US-10.2.4** Bulk remittance stays in Xero · Bulk remittance and bank reconciliation stay in Xero by design, so the prototype has no screen for them. Searched the Xero simulator, admin and control panel for remittance and bank reconciliation; only a note on the Xero simulator mentions remittance matching.
 - **US-10.2.5** Negative invoices netted in the payment run · Not built yet: catch-up Phase 39a builds this.
 - **US-10.2.6** Approve the period's BCTIs for payment · Not built yet: catch-up Phase 39a builds this.
@@ -77,18 +79,18 @@ None.
 - **US-12.1.2** GST period · Retired
 - **US-12.1.3** Prepaid procedures · Retired
 - **US-12.1.5** Bank details for disbursement · Retired: merged into US-12.1.4
-- **US-13.2.1** Ledger balance views · No whole-ledger view. Receivables, receipts held, payables due, disbursed and imbalance are never totalled for the office; the billing monitor shows only the payables due for the next payables run and the AA Holding account's balance, and each invoice shows its own paid and disbursed state. Searched apps/admin and apps/demo for ledger, balance, receivable and disbursed.
 - **US-13.2.2** Per-patient balance · No patient profile or per-patient balance in the Admin app. The only patient balance signal is the "Prior balance" flag on a billing monitor row. Searched apps/admin for patient balance and patient profile screens.
 - **US-13.2.3** Per-anaesthetist balance · No per-anaesthetist ledger view for the office. Each anaesthetist sees their own balances in the Anaesthetist app (web Accounts, mobile Balances), but the Admin app has no equivalent. Searched apps/admin for balance and receivable views.
 - **US-13.4.2** Clean-cut start, not a full migration · Not built yet: catch-up Phase 42 builds this.
 - **US-13.4.3** Reference data loaded at cutover · Not built yet: catch-up Phase 42 builds this.
+- **US-13.6.1** Surgeons' rooms master record · Retired: removed in Phase 17b
 - **US-13.7.4** Warning and check-step settings · Future Work lane: out of the current scope, so not planned in the catch-up.
 - **US-14.6.1** Feeds from the other Christchurch providers · Not planned: Future Work, in no catch-up phase.
 - **US-14.6.2** Automatic matching and updates · Not planned: Future Work, in no catch-up phase.
 - **US-15.0.4** Volumes · Not demonstrated. The prototype runs on a small seeded in-browser data set (14 anaesthetists, a few weeks of lists); scale is only narrated in copy on the admin day grid and the Xero simulation, never simulated or load tested.
 - **US-15.0.5** Testable billing rules · No screen shows this. It is met in the prototype's code rather than its UI: fee, unit, Contract and split logic is pure and deterministic in aa-prototype/src/domain/billing with Vitest suites of worked examples.
 
-## Partial (35)
+## Partial (32)
 
 - **US-01.4.1** Reassign a List with its bookings · Reassignment moves the List (same id, Bookings and history) into a colleague's free session, and the vacated session returns to Free unless marked otherwise; the update email to the hospital is Phase 35's on-demand button.
 - **US-02.3.1** Create or amend a Booking · The office can amend any Booking (patient, procedure, times, billing setup), each change audited against the user. It can create a Booking only on a free session through the phone-advice booking, which assigns the List first; there is no way for the office to add a Booking to a List that already has one.
@@ -98,35 +100,32 @@ None.
 - **US-02.5.4** Inbound changes accepted until the List is authorised · Automated changes are Future Work. In the first release every hospital change waits for the office, who may apply it until the List is authorised.
 - **US-03.3.6** Other billing lines · Non-BTM lines are added as a fixed amount with a description; there is no typed list of line kinds (HDU review, nerve catheter and so on) and no service date on a line. Charges dated after the procedure are handled as a post-op event on a locked booking, not shot here.
 - **US-04.1.1** Typical Contract arrangements · Funding tags arrive in Phase 18a, price ranges in 19a and the invoice destination on the step rail in 20.
-- **US-04.1.2** Create, edit and disable Contracts · A fixed price changes by a price range from Phase 19a.
 - **US-04.1.4** AA identifier for every Contract · Found by typing on the step rail from Phase 20; holder reference codes are seeded in 19a.
 - **US-04.2.1** Holder, who is billed, and where a Contract is offered · Who is billed acts in Phase 21; where a Contract is offered narrows the step rail in Phase 20; specialties arrive in 18a.
 - **US-04.2.11** Combinations as Contracts · Fee extras billed as events or additional invoices are Phases 38b and 39b's.
 - **US-04.2.14** Anaesthetist's own price list Contracts · Offered only on her Lists under Patient › Prepaid in Phase 20; the prepaid amount in 27.
-- **US-04.2.15** Price ranges on a fixed price · Not offering a Contract with no range in force is Phase 20's; 'Needs a price' is Phase 24's.
 - **US-04.2.18** Holder reference code, invoice description and default RVG code · Found by typing on the step rail in Phase 20; the invoice description reaches the invoice in 20a; the holder reference code is printed in 22.
 - **US-04.3.3** No contract · RVG · No contract · RVG is pinned first under Patient › Standard on the step rail and bills the patient, or the payer override on the Procedure; the payer named on the Booking (a parent, an employer) is Phase 21.
 - **US-05.2.5** Fixed fee schedule pricing · An additional invoice or credit note by hand is Phases 38b and 39.
 - **US-05.5.2** ACC pre-op flat fee codes · An ACC pre-operative assessment is added as an ancillary fixed amount line, with the code typed into the description. CS250, CS260 and CS70 are not a code set to pick from, and their rates are not held.
 - **US-06.2.1** Detect prepayment requirement · The prototype flags a booking as needing pre-payment when a procedure's patient payment category is set to self funded pre-payment. There is no per-anaesthetist prepaid set of RVG codes or groups to match against.
-- **US-08.3.3** Patient-linked history survives Xero archiving · Archiving is simulated for Xero contacts only; purging a contact is not shown.
-- **US-08.3.4** Money in and money out · Receipts and disbursements are tracked per invoice and shown per booking, but there is no equilibrium view for AA overall, per anaesthetist or per patient.
-- **US-08.3.5** Per-anaesthetist ledger position · Each anaesthetist sees their own position in the web and mobile apps, but there is no office view of a chosen anaesthetist's ledger position, and the mobile app shows only what is outstanding, not collected or paid out.
+- **US-08.3.3** Patient-linked history survives Xero archiving · Purging a contact is not shown.
+- **US-08.3.4** Money in and money out · Per-patient position arrives with the patient screen (catch-up Phase 40).
 - **US-08.4.6** Invoice description on each Procedure · The invoice description shows on the invoice only; the office's edit of it has no screen yet (it left the Booking at the owner's review, 12 November).
 - **US-08.6.1** Additional invoice for late charges · The post-op charge becomes a new linked addendum booking on the anaesthetist's free session today and bills when that list is authorised, rather than raising a supplementary invoice directly against the invoiced booking. It needs a free session that day.
 - **US-09.4.1** Dedicated Xero organisation · The simulator models a single Xero organisation used only for receivables, payables and payments, but no organisation setup or separation from general accounting is shown.
 - **US-09.4.2** Duplicate invoice number prevention · The Xero setting is only described in a note on the simulator; it is not modelled as a configurable or enforced setting (open question OQ-11).
-- **US-10.3.2** AA fee visible to the anaesthetist · Web shows AA fee invoices and their status; the mobile app does not show them.
+- **US-10.3.2** AA fee visible to the anaesthetist · Web shows AA fee invoices and their status; the mobile app shows only the total owed to AA, not the invoices.
 - **US-11.1.1** Patient record keyed on NHI · Patient details show on each booking; there is no standalone patient record screen, and ethnicity is held but not shown on the patient panel.
 - **US-11.1.4** Patient without NHI · A patient can be created without an NHI (the add booking form leaves it optional) and shows as NHI pending, but there is no way to attach the NHI later: Edit patient details has no NHI field.
 - **US-11.3.2** Alert on booking a patient with unpaid bills · The unpaid prior balance is flagged in the billing monitor once the list is authorised, not as an alert when the booking is created or matched.
 - **US-11.3.3** Follow-up tools · Invoices are re-sent from the invoice's Delivery card, but there is no way to record follow-up actions against a patient's outstanding items.
-- **US-13.4.1** Maintain reference tables · Anaesthetists, Contracts, Parties, recurring bookings, hospitals (with a contact email) and their holiday calendars (closures added, edited and deleted), surgeons, surgeons' rooms and surgeon groups are editable. Availability statuses are editable (added, renamed, recoloured, retired). The RVG modifier rows are as printed (AA's own can be added), and public holidays are held per hospital with no separate master calendar.
+- **US-13.4.1** Maintain reference tables · Anaesthetists, Contracts, Parties, recurring bookings, hospitals (with a contact email) and their holiday calendars (closures added, edited and deleted), surgeons (with their practice and contacts) and surgeon groups are editable. Availability statuses are editable (added, renamed, recoloured, retired). The RVG modifier rows are as printed (AA's own can be added), and public holidays are held per hospital with no separate master calendar.
 - **US-13.7.1** Warning routine · One routine evaluates every Booking and raises warnings with their text, kind and strength, never a block, but only the unpaid prepayment rule exists so far. Later phases add theirs: base units outside the RVG group's range (19), a child as the payer on the Booking and insurer-will-pay with no insurer Contract (21).
 - **US-14.4.1** NHI lookup via Digital Services Hub · The NHI lookup is simulated against a small set of demo records, not the NHI FHIR API, and anaesthetists carry an HPI only as an optional field; nothing is validated against HPI.
 - **US-15.0.1** Ease of use · Ease of use is a quality that screenshots can only suggest: the shots show the calm, large-target capture screen and the operational day view. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had.
 
-## No recipe (22)
+## No recipe (17)
 
 - **US-01.1.5** Split a session between two surgeons
 - **US-02.2.3** Detect Bookings removed from a re-sent List
@@ -134,24 +133,19 @@ None.
 - **US-02.3.4** Update email templates per kind of change
 - **US-02.3.5** Send booking change emails automatically
 - **US-02.5.8** See a Booking's change history
-- **US-02.6.1** Stub in place of a booking that could not be posted
-- **US-02.6.2** Stub clearly marked for anaesthetists and the office
-- **US-02.6.3** Office resolves a stub from intake
 - **US-03.1.10** Booking total on the office's Booking page
 - **US-03.7.3** See a Procedure's events
 - **US-03.7.4** Bill a pre-op consult held in AA's room
 - **US-04.2.13** Export and re-import Contracts
 - **US-04.4.2** Default RVG Contract for every procedure
 - **US-06.3.7** Contract changed after a prepayment is sent or paid
-- **US-08.6.5** Credit note option on additional invoices
-- **US-08.6.6** Start a rebill from a copy of the original lines
 - **US-13.2.4** Reconciliation status at a glance
 - **US-13.5.3** Sign in to the anaesthetist app
 - **US-15.0.7** Changes show without signing out
 - **US-15.0.8** Help line for app users
 - **US-15.0.9** Product support for AA
 
-## Captured (200)
+## Captured (206)
 
 - **FT-01.6** Draft Lists · admin
 - **FT-02.2** Surgeon PDF list ingest · admin
@@ -211,6 +205,9 @@ None.
 - **US-02.4.1** Add a Booking manually · web, mobile
 - **US-02.5.5** Append-only change history · admin
 - **US-02.5.7** The hospital's procedure text replaces the rooms' · web, mobile, admin
+- **US-02.6.1** Stub in place of a booking that could not be posted · mobile, web, admin
+- **US-02.6.2** Stub clearly marked for anaesthetists and the office · mobile, web, admin
+- **US-02.6.3** Office resolves a stub from intake · admin, mobile
 - **US-03.1.1** Schedule to List to Booking drill-down · web, mobile
 - **US-03.1.2** See the Contract on each Procedure · web, mobile
 - **US-03.1.4** Each app used for what it does best · web, mobile
@@ -234,10 +231,12 @@ None.
 - **US-03.6.1** Mark a Booking complete · web, mobile
 - **US-03.6.2** Incomplete Bookings listed · web, mobile
 - **US-03.6.3** Ask the office to check a Booking or List · web, mobile, admin
+- **US-04.1.2** Create, edit and disable Contracts · admin
 - **US-04.1.3** Contract audit · admin
 - **US-04.1.5** Parties · admin
 - **US-04.2.2** Pricing kinds · admin
 - **US-04.2.8** Invoice presentation and delivery · admin
+- **US-04.2.15** Price ranges on a fixed price · admin
 - **US-04.2.16** Specialties on a Contract · admin
 - **US-04.2.17** Funding tag on a Contract · admin
 - **US-04.3.1** Exactly one Contract per Procedure · admin
@@ -288,7 +287,8 @@ None.
 - **US-08.2.2** Prepaid Procedures left off the final invoice · admin
 - **US-08.2.3** Split one Procedure's fee between two payers · admin, web, mobile
 - **US-08.3.1** Linked receivable and payable pair · simulator, admin
-- **US-08.3.2** Ledger is the system of record · web, mobile
+- **US-08.3.2** Ledger is the system of record · web, mobile, admin
+- **US-08.3.5** Per-anaesthetist ledger position · web, mobile, admin
 - **US-08.4.1** Generate invoice documents · admin
 - **US-08.4.2** Send to the invoice email · admin
 - **US-08.4.3** Unique invoice numbers · simulator
@@ -329,13 +329,13 @@ None.
 - **US-12.2.3** Dashboard · web
 - **US-13.1.1** One-day dashboard · admin
 - **US-13.1.2** Review future days in the day view · admin
+- **US-13.2.1** Ledger balance views · admin
 - **US-13.3.1** Processing monitor · admin
 - **US-13.3.2** Manual intervention · admin
 - **US-13.4.4** Specialties · admin
 - **US-13.4.5** Funding tags · admin
 - **US-13.5.1** Role-based access · admin, simulator
 - **US-13.5.2** Audit trail of changes · admin
-- **US-13.6.1** Surgeons' rooms master record · admin
 - **US-13.6.2** Surgeon profile · admin
 - **US-13.6.3** Not-preferred pairings of surgeons and anaesthetists · admin
 - **US-13.6.4** Preferred pairings · admin

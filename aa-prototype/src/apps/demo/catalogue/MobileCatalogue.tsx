@@ -1,4 +1,5 @@
 import { CataloguePage, CatalogueRow, LibraryGroup, StageHint } from './CatalogueKit'
+import { StubSheetExample } from './stubExamples'
 import { useMobilePersona, useSeedPicks } from './mobile/persona'
 import * as Ex from './mobile/examples'
 import { ProcedureStackExample } from './procedureStackExample'
@@ -180,8 +181,14 @@ export function MobileCatalogue() {
         <CatalogueRow name="Progress bar" source="shared/ui/ProgressBar.tsx" usedIn={WM} stage="mobile" height={180}
           what="The List's n of m complete line with a green bar that eases to the new width: the shared ProgressBar filling its row (UI unification U5), a progressbar with its values."
           replaceWith="shadcn Progress"
-          note="One component with the web List header's 200px bar since U5.">
+          note="One component with the web List header's 200px bar since U5. tone held (catch-up Phase 33a): a stub stands on the List, so the fill is amber and never the done green.">
           <Ex.ProgressBarExample />
+        </CatalogueRow>
+        <CatalogueRow name="StubSheet" source="shared/stubs/StubSheet.tsx" usedIn={M} stage="mobile" height={420}
+          what="A stub on the phone's List and its bottom sheet (catch-up Phase 33a): what was received, why it waits at intake, who resolves it and the readings caption. Read only; it never opens a Booking."
+          replaceWith="shadcn Drawer"
+          note="A fixed example stub; nothing writes to the demo data.">
+          <StubSheetExample />
         </CatalogueRow>
         <CatalogueRow name="LookbackSearchRow" source="apps/mobile/screens/ListsLookback.tsx" usedIn={M} stage="mobile" height={200}
           what="The Lists search row: the shared NameSearchBox (patient name or NHI; 48px, white on the phone canvas, the 44px touch clear, the mobile-lists-search test id) and the Go to a date button beside it."
@@ -348,7 +355,7 @@ export function MobileCatalogue() {
         <CatalogueRow name="PaidByRow" source="shared/booking/PaidByRow.tsx" usedIn={SW} stage="mobile" height={520} what="Paid by in the Billing card (catch-up Phases 22 and 22a; US-08.2.3, US-11.2.2): the Procedure's payer with Patient or the relationship and the warning-tint Email or postal address needed and Under 18 pills where its Contract bills the payer; the holder where the Contract bills its holder; a split's parties, in the warning tint when it no longer fits; Payer: not billed yet with no Contract. On web and Admin a line at the card's foot, on the phone the Billing summary's last row: Change beside the payer's name opens PaidBySheet with who pays and the offer; Split on the right opens it with the split alone." replaceWith="Custom (text rows and the shared Pill)" note="Read-only examples over fixed views; the sheet opens on a real Booking. The Paid by line is a shared DefRow since UI unification U6 (its Change and Split inside the value).">
           <PaidByRowExample variant="summary" />
         </CatalogueRow>
-        <CatalogueRow name="PaidBySheet (with SplitFeeSection)" source="shared/flows/PaidBySheet.tsx, shared/flows/SplitFeeSection.tsx" usedIn={SW} stage="mobile" height={720} what="The one Paid by sheet (catch-up Phase 22a; US-11.2.2, US-08.2.3): a bottom sheet on the phone, a dialog on web and Admin. Opened by Change, it holds who pays (the Different payer tick, the patient's details or the other payer's fields, the Under 18 hint and the contact ask) and, when the payer changes, the offer (the Booking's other Procedures with the same payer, each ticked, and the one neutral Provisional, OQ-140 pill). Opened by Split, it holds the split alone (a party or Another person, a $ or % share and Takes the rest per row, each amount live). Save writes it or refuses it whole." replaceWith="Custom (shadcn Sheet, Checkbox and Input inside)" note="Opens on Grace Park's first seeded Procedure; Save writes to the demo store.">
+        <CatalogueRow name="PaidBySheet (with SplitFeeSection)" source="shared/flows/PaidBySheet.tsx, shared/flows/SplitFeeSection.tsx" usedIn={SW} stage="mobile" height={720} what="The one Paid by sheet (catch-up Phase 22a; US-11.2.2, US-08.2.3): a bottom sheet on the phone, a dialog on web and Admin. Opened by Change, it holds who pays (the Different payer tick, the patient's details or the other payer's fields, the Under 18 hint and the contact ask) and, when the payer changes, the offer (the Booking's other Procedures with the same payer, each ticked, never forced). Opened by Split, it holds the split alone (a party or Another person, a $ or % share and Takes the rest per row, each amount live). Save writes it or refuses it whole." replaceWith="Custom (shadcn Sheet, Checkbox and Input inside)" note="Opens on Grace Park's first seeded Procedure; Save writes to the demo store.">
           <PaidBySheetExample />
         </CatalogueRow>
         <CatalogueRow name="BottomTabBar" source="apps/mobile/MobileApp.tsx" usedIn={M} stage="mobile" height={220}
@@ -366,7 +373,7 @@ export function MobileCatalogue() {
         <CatalogueRow name="ListRow" source="shared/schedule/ListRow.tsx" usedIn={SW} stage="mobile" height={460}
           what="A session row on the Lists home: status rail, session and time, title, and a right-hand cluster (progress, count, chip). Open and closed sessions take the status fill."
           replaceWith="Custom on shadcn Item / Card (status rail stays ours)"
-          note="First two rows are her real upcoming Lists.">
+          note="First two rows are her real upcoming Lists. The second real row shows stubCount (catch-up Phase 33a): the triangle marker for a stub on the List, never in its count.">
           <Ex.ListRowExample picks={picks} />
         </CatalogueRow>
         <CatalogueRow name="Sticky submit dock" source="apps/mobile/screens/ListDetailScreen.tsx" usedIn={M} stage="mobile" height={260}

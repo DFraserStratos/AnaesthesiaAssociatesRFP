@@ -265,7 +265,7 @@ export function pendingGroupFor(groups: readonly PrepaymentGroup[], payerKey: st
 
 /**
  * A payer group's status as people read it: pending is `awaitingApproval`;
- * an issued invoice is `unpaid`, `partPaid` or `paid` from mirror money
+ * an issued invoice is `unpaid`, `partPaid` or `paid` from ledger money
  * (received against its total), unless it is `notNeeded` or
  * `changedAfterSending`.
  */

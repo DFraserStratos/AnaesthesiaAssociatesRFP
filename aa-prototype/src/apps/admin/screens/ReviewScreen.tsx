@@ -27,6 +27,7 @@ import { Button, StatusChip, TextArea, useListWarnings, useSurface, WarningTrian
 import { bookingFee } from '../../../shared/capture'
 import { isNoChargeBooking } from '../../../domain/billing/procedurePrice'
 import { roundToCents } from '../../../domain/billing/money'
+import { disabledDaysByContract } from '../../../domain/billing/contractHistory'
 import { dayMicroCap, formatCurrency, hhmm, locationName, slotTimeRange } from '../../../shared/format'
 import { HistorySheet } from '../../../shared/booking'
 import { ConfirmSheet, OverlayHeader, SheetActions } from '../../../shared/surface'
@@ -50,6 +51,10 @@ import { allocationNote, inDisplayOrder } from '../../../domain/billing/multiPro
 import { FormError, Notice, PageHeader, Pill, ResultLine, StatTile, TickButton } from '../../../shared/ui'
 import { TextAction } from '../../../shared/ui/TextAction'
 import { ClearWarningButton } from '../../../shared/warnings'
+import { withStubsInTimeOrder } from '../../../domain/intake/stubs'
+import { useListStubs } from '../../../store/stubSelectors'
+import { StubTableRow } from '../../../shared/stubs'
+import { StubResolveLink } from '../components/StubResolveLink'
 
 interface ReviewScreenProps {
   listId: string
@@ -104,6 +109,8 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
 
   const rows = useMemo(() => {
     if (list === undefined || list.state === 'DRAFT') return []
+    // The Disabled Contracts' days, read from the audit once per Review (catch-up Phase 25a).
+    const disabledDays = disabledDaysByContract(audit)
     const bookings = Object.values(bookingsRecord)
       .filter((c) => c.listId === listId && c.cancellation === undefined)
       .sort((a, b) => (a.scheduledTime ?? '').localeCompare(b.scheduledTime ?? '') || a.id.localeCompare(b.id))
@@ -117,7 +124,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
       // The flags come from the one pure list (`domain/billing/reviewFlags.ts`) over the store's one input selector (catch-up Phase 21a).
       const state = useAppStore.getState()
       const totals = bookingFee({ procedures: procs, list, masters, billingLines: billingLinesRecord, patientId: booking.patientId, held: heldPricesForBooking(state, booking.id), ...(state.billing.locks[booking.id] !== undefined ? { lock: state.billing.locks[booking.id]! } : {}) })
-      const input = reviewInputFor(state, booking)
+      const input = reviewInputFor(state, booking, disabledDays)
       const flags = input !== undefined ? reviewFlagsForBooking(input) : []
       const changes: (ContractChangeRecord | undefined)[] = procs.map((p) => contractChangeFor(state, p.id))
       const primary: Procedure | undefined = procs.find((p) => p.isPrimary)
@@ -162,6 +169,8 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
     // The audit feeds the change records; the notifications feed the alerts.
   }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, audit, notifications, invoicesRecord, locksRecord])
   const warningsByBooking = useListWarnings(listId)
+  // Stubs for rows waiting at intake (catch-up Phase 33a): shown in the table, never in the stats or totals.
+  const stubs = useListStubs(listId)
   // The anaesthetist's changes since submit (catch-up Phase 38a): null once authorised.
   const changed = useChangedSinceSubmitted(listId)
   const changedIds = new Set(changed?.bookingIds ?? [])
@@ -348,7 +357,9 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ booking, primary, primaryView, primaryAllocation, totals, flags, changes, procs, procIds, billedText, entityIds, entityLabels, stackViews, alert, lockView }) => {
+            {withStubsInTimeOrder(rows, (r) => r.booking.scheduledTime, stubs).map((entry) => {
+              if (entry.kind === 'stub') return <StubTableRow key={entry.stub.id} stub={entry.stub} colSpan={9} trailing={<StubResolveLink stub={entry.stub} />} />
+              const { booking, primary, primaryView, primaryAllocation, totals, flags, changes, procs, procIds, billedText, entityIds, entityLabels, stackViews, alert, lockView } = entry.booking
               const patient = masters.patients[booking.patientId]
               const btm = primaryView?.fee.btm
               return (

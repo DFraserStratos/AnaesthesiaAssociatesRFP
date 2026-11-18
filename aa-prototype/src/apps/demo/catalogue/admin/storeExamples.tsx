@@ -23,7 +23,7 @@ import { PrepaymentApprovalStrip } from '../../../admin/components/PrepaymentApp
 import { HoldingAccountPanel } from '../../../admin/components/HoldingAccountPanel'
 import { NotificationsCard } from '../../../admin/components/NotificationsCard'
 import { ChipMultiSelect } from '../../../admin/components/ChipMultiSelect'
-import { RoomContactsList } from '../../../admin/components/RoomContactsList'
+import { ContactFields, EMPTY_CONTACT, type ContactDraft } from '../../../admin/components/ContactFields'
 import { ClearConflictSheet } from '../../../admin/components/conflicts/ClearConflictSheet'
 import { ConflictCallout, useConflictPreview } from '../../../admin/components/conflicts/ConflictCallout'
 import { BookingCount, DraftStateChip, UnassignedPill, WaitingTime } from '../../../admin/components/draftLists/DraftListParts'
@@ -320,31 +320,13 @@ export function ChipMultiSelectExample() {
   return <ChipMultiSelect label="Specialties" options={options} value={value} onChange={setValue} addLabel="Add a specialty" empty="Any specialty" hint="Local state only." />
 }
 
-export function RoomContactsListExample() {
-  const room = useAppStore((s) => s.masters.surgeonRooms['RM-AVONHEADEN'])
-  if (room === undefined) return <Missing what="the Avonhead ENT room" />
+/** Catch-up Phase 17b (US-13.6.5): one office contact set, with the minus an extra set carries. */
+export function ContactFieldsExample() {
+  const [value, setValue] = useState<ContactDraft>({ ...EMPTY_CONTACT, name: 'Bev', email: 'bev@avonheadent.example' })
   return (
-    <div style={{ maxWidth: 420 }}>
-      <RoomContactsList room={room} surgeonId="S-DALGETY" actor={OFFICE_ACTOR} />
+    <div style={{ maxWidth: 640 }}>
+      <ContactFields legend="Office contact 2" index={2} value={value} onChange={setValue} onRemove={() => setValue(EMPTY_CONTACT)} />
     </div>
-  )
-}
-
-/** The `ordered` variant (catch-up Phase 17a): a surgeon's rooms, the first the main room. */
-export function OrderedChipMultiSelectExample() {
-  const [value, setValue] = useState<string[]>(['RM-AVONHEADEN', 'RM-BURNSIDEEN'])
-  const rooms = useAppStore((s) => s.masters.surgeonRooms)
-  const options = useMemo(() => Object.values(rooms).sort((a, b) => a.name.localeCompare(b.name)), [rooms])
-  return (
-    <ChipMultiSelect
-      label="Surgeons' rooms"
-      options={options}
-      value={value}
-      onChange={setValue}
-      addLabel="Add another room"
-      hint="Local state only. The first is the main room."
-      ordered={{ firstLabel: 'Main room', promoteLabel: 'Make main' }}
-    />
   )
 }
 

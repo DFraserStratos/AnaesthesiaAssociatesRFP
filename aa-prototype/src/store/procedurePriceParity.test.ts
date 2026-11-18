@@ -30,6 +30,7 @@ import { capturePhase24, type Phase24Baseline } from './__parity__/phase24Captur
 import { freshAppState } from './appStore'
 import { PRICING_BOOKING_IDS, SEED_MARKERS } from '../domain/seed'
 import { PHASE_24_ARIA_BOOKINGS } from './__parity__/phase24Declared'
+import { PHASE_25A_ADDED_BOOKINGS } from './__parity__/phase25aDeclared'
 import {
   nairBookingTotalBefore27,
   nairPriceBefore27,
@@ -51,7 +52,8 @@ const typedBooking = SEED_MARKERS['typedPriceBooking']!.entityId
 const authorisedListIds = new Set(Object.values(state.schedule.lists).filter((l) => l.state === 'AUTHORISED').map((l) => l.id))
 const heldBookings = new Set(Object.values(state.schedule.bookings).filter((b) => authorisedListIds.has(b.listId) && !PRICING_BOOKING_IDS.includes(b.id)).map((b) => b.id))
 /** Every declared Booking: the AUTHORISED history and the two Aria Bookings. */
-const declared = (bookingId: string) => heldBookings.has(bookingId) || PHASE_24_ARIA_BOOKINGS.has(bookingId)
+// Catch-up Phase 25a's appended Booking on the Disabled Contract is set aside too (`__parity__/phase25aDeclared.ts`).
+const declared = (bookingId: string) => heldBookings.has(bookingId) || PHASE_24_ARIA_BOOKINGS.has(bookingId) || PHASE_25A_ADDED_BOOKINGS.has(bookingId)
 
 /** The amount each Procedure's standard invoices carry (the AUTHORISED rung's interim read). */
 function invoicedAmount(procedureId: string): number {

@@ -45,7 +45,10 @@ import {
   railContextForList,
   railContextForProcedure,
   railStartFor,
+  resolveStub,
+  resolvedStubForRow,
   rowStackViews,
+  stubForRow,
   useAppStore,
   type Actor,
   type DecisionInput,
@@ -93,6 +96,9 @@ export function RowPanel({
   const billing = useAppStore((s) => s.billing)
   const view = useMemo(() => matchingView({ masters, schedule, intake }), [masters, schedule, intake])
   const row = intake.rows[rowId]
+  // The row's standing stub, if any (catch-up Phase 33a): Add NHI and Reject resolve it through `resolveStub`.
+  const stub = useMemo(() => stubForRow({ intake }, rowId), [intake, rowId])
+  const settledStub = useMemo(() => resolvedStubForRow({ intake }, rowId), [intake, rowId])
   const assessment: RowAssessment | undefined = useMemo(() => (row !== undefined && row.status === 'open' ? suggestDecision(view, row) : undefined), [view, row])
 
   // The office's choices on this row (the panel is keyed by row, so they reset per row).
@@ -116,6 +122,8 @@ export function RowPanel({
   const [railOpen, setRailOpen] = useState(false)
   const [codeOpen, setCodeOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /** After Add NHI stops short of a decision (33a): what the office does next. */
+  const [stubNote, setStubNote] = useState<string | null>(null)
 
   const open = row?.status === 'open'
   const fields = assessment?.fields ?? (row !== undefined ? effectiveIncoming(row) : undefined)
@@ -229,6 +237,8 @@ export function RowPanel({
   if (row === undefined || fields === undefined) return null
 
   const hospitalName = locationName(fields.hospitalId, masters.hospitals)
+  const stubList = stub !== undefined ? view.lists[stub.listId] : undefined
+  const stubListText = stubList !== undefined ? `${listOwnerLabel(view, stubList)}'s ${sessionLabel(stubList.dateISO, stubList.session)} List` : 'its List'
   const batch = intake.batches[row.batchId]
   const missing = missingFields(fields)
   const change = assessment !== undefined ? changeTypePill(effective?.changeType ?? assessment.changeType) : null
@@ -266,7 +276,8 @@ export function RowPanel({
       else if (kind === 'createList') input = { kind, slotId: slot!.id, ...(assessment?.surgeonId === undefined && surgeonId !== undefined ? { surgeonId } : {}), ...withPicks }
       else input = { kind, ...(assessment?.surgeonId === undefined && surgeonId !== undefined ? { surgeonId } : {}), ...withPicks }
     }
-    const out = decideImportRow(useAppStore, actor, rowId, input)
+    // A stub stands for this row: the one resolve path removes it with the row (33a).
+    const out = stub !== undefined && input.kind === 'reject' ? resolveStub(useAppStore, actor, stub.id, input) : decideImportRow(useAppStore, actor, rowId, input)
     if (!out.ok) {
       setError(out.message)
       return
@@ -275,8 +286,24 @@ export function RowPanel({
     onDecided(rowId)
   }
 
+  /** Add NHI on a row whose stub stands (US-02.6.3): the Booking takes the stub's place, or the office decides as usual. */
+  function addNhiToStub() {
+    if (stub === undefined) return
+    const out = resolveStub(useAppStore, actor, stub.id, { kind: 'addNhi', nhi: nhiValue })
+    if (!out.ok) {
+      setError(out.message)
+      return
+    }
+    setError(null)
+    setNhiDraft(null)
+    if (out.value.kind === 'resolved') onDecided(rowId)
+    else if (out.value.kind === 'needsDecision') setStubNote(out.value.reason)
+  }
+
   function onNhi(value: string) {
     setNhiDraft(value)
+    // With a stub standing, the NHI waits for Add NHI (one audited path, 33a).
+    if (stub !== undefined && assessment?.waitingForNhi === true) return
     const v = validateNhi(value)
     if (v.valid) {
       const out = correctImportRow(useAppStore, actor, rowId, { nhi: v.normalised })
@@ -379,6 +406,9 @@ export function RowPanel({
     >
       {justDecided && row.decision !== undefined && (
         <Notice tone="success" live="status" shot="matching-banner" enter icon={<TickBadge size={30} animate />} title={`${decisionText(view, row, row.decision)} · ${byWhen(row, todayISO)}`}>
+          {settledStub !== undefined && settledStub.bookingId === decidedBookingId && (
+            <span data-shot="matching-stub-resolved">The Booking takes the stub's place on the List.</span>
+          )}
           {needsDestination && (
             <span>
               <Pill size="sm" tone="warning">Needs an invoice destination</Pill>
@@ -403,6 +433,11 @@ export function RowPanel({
       )}
 
       {/* NHI first (D11): nothing is created until it is added. */}
+      {open && stub !== undefined && (
+        <Notice tone="warning" shot="matching-stub" title={`A stub stands on ${stubListText}`}>
+          <span>{stubNote ?? 'Anaesthetists and the office see it on the List until this row is resolved.'}</span>
+        </Notice>
+      )}
       {open && blockedByNhi && (
         <div data-shot="matching-nhi" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <TextField
@@ -422,6 +457,13 @@ export function RowPanel({
             }
             data-row-nhi
           />
+          {stub !== undefined && assessment?.waitingForNhi === true && (
+            <span style={{ display: 'flex', gap: 8 }}>
+              <Button variant="primary" size="desktop" shot="stub-add-nhi" disabled={!validateNhi(nhiValue).valid} disabledReason="Type a valid NHI first." onClick={addNhiToStub}>
+                Add NHI
+              </Button>
+            </span>
+          )}
         </div>
       )}
 

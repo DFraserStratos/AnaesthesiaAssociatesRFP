@@ -7,7 +7,7 @@ import { invoiceDeliveryLabel, layoutShortLabel } from '../../../domain/billing'
 import { Card, Eyebrow, PageHeader, Pill, TextAction } from '../../../shared/ui'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 import type { Actor } from '../../../store'
-import { billedLists, invoiceAddresseeName, invoiceCountsByList, isBackdropInvoice, useAppStore } from '../../../store'
+import { billedLists, invoiceAddresseeName, invoiceCountsByList, isBackdropInvoice, useAppStore, openBillingExceptions } from '../../../store'
 import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm, plural } from '../../../shared/format'
 import { listShortLabel, listSourceLabels } from '../util'
 import { InvoiceDocument } from './InvoiceDocument'
@@ -56,11 +56,8 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
   const billed = useMemo(() => billedLists({ schedule }), [schedule])
   const invoiceCountByList = useMemo(() => invoiceCountsByList({ schedule, billing }), [schedule, billing])
 
-  // The failure record lives on the case itself (the Phase 09 monitor's seam).
-  const failedCases = useMemo(
-    () => Object.values(billing.cases).filter((c) => c.status === 'failed'),
-    [billing.cases],
-  )
+  // Billing-run exceptions not yet resolved (catch-up Phase 36; the Phase 09 monitor's seam).
+  const failedCases = useMemo(() => openBillingExceptions({ billing }), [billing])
 
   if (selectedInvoiceId !== null && billing.invoices[selectedInvoiceId] !== undefined) {
     const invoice = billing.invoices[selectedInvoiceId]
@@ -119,7 +116,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
           </span>
           {failedCases.map((c) => (
             <div key={c.id} style={{ fontSize: 12.5, color: semantic.warning.onTint }}>
-              <span className="mono">{c.bookingId}</span> · {c.failure?.message ?? 'Needs manual review.'}
+              <span className="mono">{c.bookingId}</span> · {c.message}
             </div>
           ))}
           <span style={{ fontSize: 12, color: semantic.warning.onTint }}>Open Billing monitor to resolve and retry.</span>

@@ -85,7 +85,7 @@ function anaesthetistOf(state: Pick<AppState, 'masters'>, anaesthetistId: string
 }
 
 /** Why the BCTIs cannot be seeded for `anaesthetistId`, or null. */
-export function seedBctisDisabledReason(state: Pick<AppState, 'masters' | 'billing' | 'xero'>, anaesthetistId: string): string | null {
+export function seedBctisDisabledReason(state: Pick<AppState, 'masters' | 'billing'>, anaesthetistId: string): string | null {
   if (anaesthetistOf(state, anaesthetistId) === undefined) return 'The anaesthetist is not in this seed.'
   const month = aaFeeMonthLabel(BCTI_SEED_MONTH)
   if (Object.values(state.billing.aaFeeInvoices).some((f) => f.anaesthetistId === anaesthetistId && f.monthISO === BCTI_SEED_MONTH)) {
@@ -127,7 +127,7 @@ export function seedMonthOfBctis(api: AppStoreApi, actor: Actor, anaesthetistId:
         return r.contactId
       }
       const build: HistoryBuild = {
-        lists: {}, bookings: {}, procedures: {}, invoices: {}, invoiceLines: {}, cases: {},
+        lists: {}, bookings: {}, procedures: {}, invoices: {}, invoiceLines: {}, ledger: {}, ledgerDisbursements: {},
         receipts: {}, contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, contactIdCache: {},
       }
       addHistoryAccounts(build, {
@@ -151,7 +151,8 @@ export function seedMonthOfBctis(api: AppStoreApi, actor: Actor, anaesthetistId:
           ...s.billing,
           invoices: { ...s.billing.invoices, ...build.invoices },
           invoiceLines: { ...s.billing.invoiceLines, ...build.invoiceLines },
-          cases: { ...s.billing.cases, ...build.cases },
+          ledger: { ...s.billing.ledger, ...build.ledger },
+          disbursements: { ...s.billing.disbursements, ...build.ledgerDisbursements },
           receipts: { ...s.billing.receipts, ...build.receipts },
           contactIdCache: cache,
         },

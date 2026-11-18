@@ -11,7 +11,7 @@ import { fundingTagsInOrder } from '../domain/billing/fundingTags'
 import { destinationKey, destinationOf, impliedDestinations, isOpenPriceFallback, isRvgFallback } from '../domain/billing/fallbacks'
 import { surgeonSpecialtyLabel } from '../domain/specialties'
 import type { AuditEntry } from '../domain/types'
-import { CONTRACT, PARTY, ROOM, SPC, SURG, TAG } from '../domain/seed'
+import { CONTRACT, PARTY, SPC, SURG, TAG } from '../domain/seed'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: '34821' }
@@ -65,7 +65,7 @@ describe('specialties (US-13.4.4)', () => {
 })
 
 describe("a surgeon's specialties (US-13.6.6)", () => {
-  const KERR = { name: 'Ms R. Kerr', specialtyIds: [SPC.orthopaedics], roomIds: [ROOM.riccarton], hpiId: '50KERR' }
+  const KERR = { name: 'Ms R. Kerr', specialtyIds: [SPC.orthopaedics], practiceName: 'Riccarton Orthopaedic Rooms', hpiId: '50KERR' }
 
   it('refuses a save with none or an unknown one, in the store', () => {
     const api = createAppStore()

@@ -1,7 +1,7 @@
 /**
  * Shared pure date-in-days helpers (Phase 10) — lifted out of
  * `seed/anaesthetistDashboard.ts` so the receivables aging (Phase 05/10), the
- * mirror money selectors and the contact-archive job all age dates the same
+ * ledger money selectors and the contact-archive job all age dates the same
  * way. Deterministic, UTC-midnight based; no `Date.now()` (domain purity).
  */
 

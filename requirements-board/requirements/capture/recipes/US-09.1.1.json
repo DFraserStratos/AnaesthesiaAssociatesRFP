@@ -39,12 +39,12 @@
     {
       "name": "invoice-xero-ids",
       "app": "admin",
-      "caption": "Both Xero records referenced on the engine's invoice record; a prepayment's payee is the AA Holding account",
+      "caption": "Both Xero records referenced in the invoice's Ledger card; a prepayment's payee is the AA Holding account",
       "start": "/admin/invoices/INV0001",
       "states": [
         {
           "state": "held",
-          "caption": "Prepayment invoice AA-2026-0001: ACCREC, ACCPAY and its payee, the AA Holding account",
+          "caption": "Prepayment invoice AA-2026-0001: its ledger pair with the Xero ACCREC and ACCPAY IDs, and its payee, the AA Holding account",
           "steps": [
             {
               "wait": "[data-testid=xero-accpay-payee]"

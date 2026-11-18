@@ -63,6 +63,27 @@
           ]
         },
         {
+          "state": "disabled-flag",
+          "caption": "A Procedure on a Contract disabled before its date is flagged, never blocked",
+          "steps": [
+            {
+              "goto": "/admin/review/L-45178-2026-07-14-AM"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "[data-shot=review-flag][data-rule=contractDisabled]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=review-flag][data-rule=contractDisabled]"
+          ]
+        },
+        {
           "state": "approved",
           "caption": "Approve accepts the anaesthetist's Contract change and stamps when",
           "steps": [
@@ -99,26 +120,26 @@
           "caption": "Office billing setup on a submitted Booking",
           "steps": [
             {
-              "scroll": "text=/Office billing setup/"
+              "scroll": "[data-shot=office-billing-setup-1]"
             }
           ],
           "highlight": [
-            "text=/Office billing setup/ >> xpath=ancestor::div[.//button[normalize-space()='Edit billing setup']][1]"
+            "[data-shot=office-billing-setup-1]"
           ]
         },
         {
           "state": "edit",
-          "caption": "Contract and reference, the Contract chosen on the step rail",
+          "caption": "The Contract, chosen on the step rail",
           "steps": [
             {
-              "click": "role=button[name=\"Edit billing setup\"]"
+              "scroll": "[data-shot=capture-billing] >> nth=0"
             },
             {
-              "wait": 600
+              "wait": 400
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[data-shot=capture-billing] >> nth=0"
           ]
         }
       ]

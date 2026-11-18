@@ -27,7 +27,6 @@ export interface ExtractionFields {
   /** The optional RVG code: an RVG group row by id (catch-up Phase 19). */
   rvgGroupId?: string
   scheduledTime?: string
-  billingReference?: string
 }
 
 interface ManualBookingFormProps {
@@ -79,7 +78,6 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
     const key = nhi.trim().toUpperCase()
     return key === '' ? undefined : Object.values(masters.patients).find((p) => p.nhi === key)
   }, [nhi, masters.patients])
-  const [billingReference, setBillingReference] = useState(initial?.billingReference ?? '')
 
   const [lookup, setLookup] = useState<LookupState>({ kind: 'idle' })
   const [error, setError] = useState<string | null>(null)
@@ -101,7 +99,6 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
         if (emptyLookupPrefill.description !== undefined) setDescription(emptyLookupPrefill.description)
         if (emptyLookupPrefill.rvgGroupId !== undefined) setRvgGroupId(emptyLookupPrefill.rvgGroupId)
         if (emptyLookupPrefill.scheduledTime !== undefined) setScheduledTime(emptyLookupPrefill.scheduledTime)
-        if (emptyLookupPrefill.billingReference !== undefined) setBillingReference(emptyLookupPrefill.billingReference)
       }
       setLookup({ kind: 'hit', name: result.name, fullBooking: useEmptyPrefill })
     } else {
@@ -135,7 +132,6 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
       ...(pick?.enteredPrice !== undefined ? { enteredPrice: pick.enteredPrice } : {}),
       ...(pick === undefined && answers !== undefined ? { railAnswers: answers } : {}),
       ...(differentPayer ? { payer: otherPayerInput(otherPayer) } : {}),
-      ...(billingReference.trim() !== '' ? { billingReference: billingReference.trim() } : {}),
       ...(source !== undefined ? { source } : {}),
     })
     if (!outcome.ok) {
@@ -320,16 +316,13 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
             {knownPatient?.email !== undefined && <span style={{ fontSize: 13, color: neutral.slate }}>{knownPatient.email}</span>}
             {knownPatient?.postalAddress !== undefined && <span style={{ fontSize: 13, color: neutral.slate }}>{formatPostalAddress(knownPatient.postalAddress)}</span>}
             {knownPatient?.email === undefined && knownPatient?.postalAddress === undefined && (
-              <span style={{ fontSize: 13, color: neutral.slate }}>No email or postal address on file yet: add one on the Booking&apos;s Payer row.</span>
+              <span style={{ fontSize: 13, color: neutral.slate }}>No email or postal address on file yet: add one on the Procedure&apos;s Paid by line.</span>
             )}
           </div>
         )}
         <DifferentPayerTick checked={differentPayer} onChange={setDifferentPayer} />
         {differentPayer && <OtherPayerFields draft={otherPayer} onChange={setOtherPayer} />}
       </div>
-
-      {/* The holder's reference is the office's (the approval number lives on the Booking's Insurer or funder row, catch-up Phase 21). */}
-      {isOffice && <TextField label="Billing reference" value={billingReference} onChange={setBillingReference} placeholder="Hospital contract reference" />}
 
       <FormError message={error} />
 

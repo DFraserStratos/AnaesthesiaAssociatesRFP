@@ -385,8 +385,9 @@ export interface ListInvoiceRow {
  */
 export function invoicesForListView(state: Pick<AppState, 'schedule' | 'billing' | 'masters'>, listId: string): ListInvoiceRow[] {
   const bookingIds = new Set(Object.values(state.schedule.bookings).filter((b) => b.listId === listId).map((b) => b.id))
-  const caseByInvoice = new Map<string, AppState['billing']['cases'][string]>()
-  for (const c of Object.values(state.billing.cases)) if (c.invoiceId !== undefined) caseByInvoice.set(c.invoiceId, c)
+  // The ledger's receivable per invoice (catch-up Phase 36).
+  const caseByInvoice = new Map<string, { receivedAmount: number; paidInAtISO?: string }>()
+  for (const p of Object.values(state.billing.ledger)) if (p.kind !== 'aaFee') caseByInvoice.set(p.invoiceId, p.receivable)
   return Object.values(state.billing.invoices)
     .filter((i) => bookingIds.has(i.bookingId))
     .sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber))

@@ -1,6 +1,6 @@
 /**
  * A payer on each Procedure (catch-up Phase 22a; US-11.2.2, US-08.2.1; D85,
- * provisional on OQ-140): two seed additions, appended after every other
+ * OQ-140 answered): two seed additions, appended after every other
  * seeded Booking and Procedure (the next free ids), RNG-free, so no existing
  * id or S1 to S5 figure moves.
  *

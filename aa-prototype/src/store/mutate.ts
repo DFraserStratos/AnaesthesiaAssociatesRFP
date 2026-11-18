@@ -17,7 +17,7 @@
 import type { ActorRole, AuditEntry, AuditSource, BookingId } from '../domain/types'
 import { buildSeed, buildSeedBillingSlice, SEED_AUTHORISED_INVOICED_BOOKING_IDS, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
-import { emptyIntakeSlice, seededIntegrationsSlice, type AppState, type AppStoreApi } from './appStore'
+import { seededIntakeSlice, seededIntegrationsSlice, type AppState, type AppStoreApi } from './appStore'
 import { reconcileConflictsInPatch, type MutationResult } from './conflictReconcile'
 import { seedLocks } from './locks'
 
@@ -87,13 +87,10 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   fundingTag: { prefix: 'TGN', pad: 3 },
   // Runtime prefixes distinct from the seed's PL###/HH###/CP-… ids so an
   // allocation can never collide with a seeded master row (Phase 07).
-  // Catch-up Phase 17: distinct from the seed's S-, RM-, SG- and PP- ids.
+  // Catch-up Phase 17: distinct from the seed's S-, SG- and PP- ids.
   surgeon: { prefix: 'SN', pad: 3 },
-  surgeonRoom: { prefix: 'RMN', pad: 3 },
   surgeonGroup: { prefix: 'SGN', pad: 3 },
   pairingPreference: { prefix: 'PPN', pad: 3 },
-  // Catch-up Phase 17a: room contacts (seeded ones are RC-###; distinct from RCB and RCT).
-  roomContact: { prefix: 'RCN', pad: 3 },
   // Catch-up Phase 30 (DM-53): seeded rows are RCB###; RB is Phase 16's BCTI-history namespace.
   recurringBooking: { prefix: 'RCBN', pad: 3 },
   holiday: { prefix: 'HHN', pad: 3 },
@@ -106,7 +103,8 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   // deliberately pinned like DEMO_TODAY — the demo lives in July 2026.
   invoice: { prefix: 'INV', pad: 4 },
   invoiceLine: { prefix: 'IL', pad: 4 },
-  billingCase: { prefix: 'BC', pad: 4 },
+  // A ledger pair (catch-up Phase 36; was the billing case): the BC prefix kept, so every case reference stays valid.
+  ledgerPair: { prefix: 'BC', pad: 4 },
   invoiceNumber: { prefix: 'AA-2026-', pad: 4 },
   // Xero simulation + payments (Phase 10). Top-level counters on AppState (not
   // under `billing`), like the billing kinds above.
@@ -126,10 +124,16 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   // The matching screen's import batches and rows (catch-up Phase 33).
   importBatch: { prefix: 'IB', pad: 4 },
   importRow: { prefix: 'IR', pad: 4 },
+  // Stubs on Lists for rows waiting at intake (catch-up Phase 33a; DM-58), never the NHI.
+  stub: { prefix: 'STB', pad: 4 },
   // Prepayment transfers from the AA Holding account and their Xero manual journals (catch-up Phase 27a).
   prepayTransfer: { prefix: 'PXT', pad: 4 },
   xeroJournal: { prefix: 'XJ', pad: 4 },
   xeroJournalNumber: { prefix: 'MJ-', pad: 4 },
+  // The internal ledger (catch-up Phase 36): billing-run exceptions, receipts matching no invoice, and money out.
+  billingException: { prefix: 'BX', pad: 4 },
+  unmatchedReceipt: { prefix: 'UR', pad: 4 },
+  ledgerDisbursement: { prefix: 'LD', pad: 4 },
 }
 
 /** Allocate the next deterministic id of a kind from the counters record. */
@@ -324,8 +328,11 @@ export function resetDomainState(api: AppStoreApi): void {
     billing: {
       invoices: seedBilling.invoices,
       invoiceLines: seedBilling.invoiceLines,
-      cases: seedBilling.cases,
+      ledger: seedBilling.ledger,
       receipts: seedBilling.receipts,
+      disbursements: seedBilling.disbursements,
+      unmatchedReceipts: {},
+      exceptions: {},
       contactIdCache: seedBilling.contactIdCache,
       aaFeeInvoices: seedBilling.aaFeeInvoices,
       locks: {},
@@ -333,7 +340,7 @@ export function resetDomainState(api: AppStoreApi): void {
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
-    intake: emptyIntakeSlice(),
+    intake: seededIntakeSlice(),
     // The shell slice survives a Reset, except the office picker counter
     // (catch-up Phase 17): zeroing it makes a fresh Reset replay the same
     // within-tier orders.
@@ -341,5 +348,5 @@ export function resetDomainState(api: AppStoreApi): void {
   })
   // Every seeded AUTHORISED List locked, as `freshAppState` does (catch-up Phase 25).
   const locked = seedLocks(api.getState())
-  api.setState({ billing: { ...api.getState().billing, locks: locked.locks, cases: locked.cases } })
+  api.setState({ billing: { ...api.getState().billing, locks: locked.locks } })
 }

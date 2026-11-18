@@ -44,16 +44,17 @@ async function closePanel(page: Page): Promise<void> {
 test("St George's import: rows land with their wording as received, nothing applied", async ({ page }) => {
   await fresh(page)
   await expect(page.getByText('Import hospital file').first()).toBeVisible()
-  await expect(page.locator('[data-shot="matching-empty"]')).toBeVisible()
+  // The seeded row waiting for an NHI, with its stub on a List (catch-up Phase 33a), is the only row at reset.
+  await expect(rowLocator(page, 'Mere Tipene')).toBeVisible()
   expect(/download/i.test(await page.locator('[data-shot="admin-matching"]').innerText())).toBe(false)
 
   await importSample(page, 'SAMPLE_STG')
   await expect(page.locator('[data-shot="matching-import-result"]')).toContainText("5 rows imported from St George's")
-  await expect(stat(page, 'open')).toContainText('5')
-  await expect(stat(page, 'new')).toContainText('2')
+  await expect(stat(page, 'open')).toContainText('6')
+  await expect(stat(page, 'new')).toContainText('3') // two from the file plus the seeded waiting row (33a)
   await expect(stat(page, 'modification')).toContainText('1')
   await expect(stat(page, 'cancellation')).toContainText('1')
-  await expect(stat(page, 'unmatched')).toContainText('0')
+  await expect(stat(page, 'unmatched')).toContainText('1')
   await expect(page.locator('[data-received]').filter({ hasText: 'lap appy ?conv to open' })).toHaveCount(1)
   await page.screenshot({ path: 'visual/shots/admin-matching-imported.png', fullPage: true })
 
@@ -70,7 +71,7 @@ test("R1 Create Booking; R3 applies the ticked fields; R4 and R5 a day move; a r
   await expect(page.locator('[data-shot="matching-stack"]')).toBeVisible()
   await page.locator('[data-shot="matching-apply"]').click()
   await expect(page.locator('[data-shot="matching-banner"]')).toContainText('Needs an invoice destination')
-  await expect(stat(page, 'open')).toContainText('4')
+  await expect(stat(page, 'open')).toContainText('5')
 
   await row(page, 'Diane Foster').click()
   const diff = page.locator('[data-shot="matching-diff"]')
@@ -97,7 +98,7 @@ test("R1 Create Booking; R3 applies the ticked fields; R4 and R5 a day move; a r
   await expect(page.locator('[data-shot="matching-apply"]')).toBeDisabled()
   await panel(page).getByRole('button', { name: 'Not an AA booking' }).click()
   await page.locator('[data-shot="matching-apply"]').click()
-  await expect(stat(page, 'open')).toContainText('0')
+  await expect(stat(page, 'open')).toContainText('1')
 })
 
 test('the later update for the Booking R1 created waits for approval', async ({ page }) => {
@@ -113,19 +114,20 @@ test('the later update for the Booking R1 created waits for approval', async ({ 
   await page.screenshot({ path: 'visual/shots/admin-matching-update.png', fullPage: true })
 })
 
-test('Southern Cross: the no-NHI row waits under Unmatched until an NHI is typed', async ({ page }) => {
+test('Southern Cross: the no-NHI row waits under Unmatched, its stub on the List, until the NHI is added', async ({ page }) => {
   await fresh(page)
   await importSample(page, 'SAMPLE_SX')
-  await expect(stat(page, 'unmatched')).toContainText('2')
+  await expect(stat(page, 'unmatched')).toContainText('3')
   await closePanel(page)
   await page.locator('[aria-label="Show rows"]').getByText(/^Unmatched/).click()
   await expect(page.locator('[data-shot="matching-unmatched"]')).toContainText('Waiting for an NHI')
   await row(page, 'Tama Henare').click()
   await expect(page.locator('[data-shot="matching-apply"]')).toBeDisabled()
-  await page.locator('[data-shot="matching-nhi"]').getByRole('textbox').fill('ZQA1008')
-  // Released, it leaves the Unmatched queue and is a ready New row under Open.
-  await closePanel(page)
-  await page.locator('[aria-label="Show rows"]').getByText(/^Open/).click()
-  await expect(rowLocator(page, 'Tama Henare')).toContainText('Create Booking on Dr Souter, Tue 28 Jul PM')
+  await expect(page.locator('[data-shot="matching-stub"]')).toContainText("A stub stands on Dr Souter's Tue 28 Jul PM List")
   await page.screenshot({ path: 'visual/shots/admin-matching-unmatched.png', fullPage: true })
+  await page.locator('[data-shot="matching-nhi"]').getByRole('textbox').fill('ZQA1008')
+  // Add NHI (catch-up Phase 33a): the Booking takes the stub's place on the List.
+  await page.locator('[data-shot="stub-add-nhi"]').click()
+  await expect(page.locator('[data-shot="matching-banner"]')).toContainText("Dr Souter's Tue 28 Jul PM List")
+  await expect(page.locator('[data-shot="matching-stub-resolved"]')).toBeVisible()
 })

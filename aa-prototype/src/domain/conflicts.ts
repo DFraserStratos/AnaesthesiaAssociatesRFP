@@ -33,7 +33,7 @@ import type { ConflictClear, HospitalHoliday, List, ListConflict } from './types
  * L-HIST Lists / HINV invoices exist to populate the ANAESTHETIST money views
  * (receivables aging, GST); they are NOT live office-pipeline items, so the
  * office surfaces (billing monitor, Invoices table, recently-billed, the demo
- * payment picker) exclude them, while the mirror money selectors include them.
+ * payment picker) exclude them, while the ledger money selectors include them.
  * Since catch-up Phase 38a Dr Souter's are also her browsable history (search
  * and the date lookup reach them, January to June 2026); they stay out of the
  * office surfaces and the anaesthetist's main view.

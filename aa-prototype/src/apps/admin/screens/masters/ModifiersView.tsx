@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { neutral, radius } from '../../../../theme/tokens'
 import type { Modifier } from '../../../../domain/types'
 import { addAaModifier, useAppStore, type Actor } from '../../../../store'
-import { Button, DemoBadge, FormError, TextField } from '../../../../shared'
+import { Button, FormError, TextField } from '../../../../shared'
 import { OverlayHeader, SheetActions, useSurface } from '../../../../shared/surface'
 import { Header, Table } from './chrome'
 import { cellStyle } from './tableStyles'
@@ -21,8 +21,8 @@ function appliedText(m: Modifier, includedSomewhere: boolean): string {
  * modifier table as printed (generated from the catalogue, values as printed,
  * a value that is not a plain number entered at capture), then AA's own. The
  * RVG rows are not edited here (Phase 42 loads and edits masters); the office
- * can add one of AA's own. The tab carries this phase's one provisional note:
- * the age bands (OQ-95 part 1).
+ * can add one of AA's own. The age bands are OQ-95's answer (D29, catch-up
+ * Phase 25a took the provisional note off).
  */
 export function ModifiersView({ actor }: { actor: Actor }) {
   const modifiers = useAppStore((s) => s.masters.modifiers)
@@ -46,10 +46,6 @@ export function ModifiersView({ actor }: { actor: Actor }) {
         sub="The NZSA RVG 2021 modifier table, as printed, plus AA's own."
         action={<Button variant="secondary" onClick={() => setAdding(true)}>Add AA modifier</Button>}
       />
-      <div data-shot="masters-modifiers-provisional" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <DemoBadge label="Provisional" />
-        <span style={{ fontSize: 13, color: neutral.slate }}>The age bands are still to confirm with AA (OQ-95).</span>
-      </div>
 
       <Table heads={RVG_HEADS} rightAlign={[3, 6]} shot="masters-modifiers-rvg">
         {rvg.map((m) => (

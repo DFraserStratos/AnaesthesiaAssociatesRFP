@@ -18,8 +18,10 @@ test('review flags: the Contract change, the typed price, the misfit, Approve', 
   await expect(flags.filter({ hasText: /^Price typed: \$1,200\.00 \(computed \$[\d,.]+\)$/ })).toBeVisible()
   await expect(page.locator('[data-shot="review-flag"][data-rule="contractNoLongerFits"]')).toHaveText('Contract not offered on this List')
   await expect(page.locator('[data-shot="review-flag"][data-rule="needsPrice"]')).toHaveText('Needs a price')
-  await expect(page.locator('[data-shot="review-procedure-stack"]')).toHaveCount(4)
-  await expect(page.locator('[data-shot="review-payer"]')).toHaveCount(4)
+  // Catch-up Phase 25a's Booking on the Disabled Contract is the fifth on this List.
+  await expect(page.locator('[data-shot="review-flag"][data-rule="contractDisabled"]')).toHaveText('Contract disabled on Fri 10 Jul')
+  await expect(page.locator('[data-shot="review-procedure-stack"]')).toHaveCount(5)
+  await expect(page.locator('[data-shot="review-payer"]')).toHaveCount(5)
   await expect(page.locator('[data-shot="review-contract-approve-all"]')).toHaveText('Approve the Contract change')
   await page.screenshot({ path: 'visual/shots/r21a-01-review-flags.png', fullPage: true })
 

@@ -77,7 +77,7 @@ export function DashboardScreen({
   const moveTargets = useMoveTargets(anaesthetistId, todayISO, format(addDays(parseISO(todayISO), 4), 'yyyy-MM-dd'))
 
   const figures = useDashboardFigures(anaesthetistId)
-  // Receivables aging now derives from the billing mirror (Phase 10; W1/W4).
+  // Receivables aging derives from the ledger (Phase 10; W1/W4; the ledger since catch-up Phase 36).
   const receivables = useMemo(
     () => receivablesAgingFor({ billing, schedule, masters }, anaesthetistId, todayISO),
     [billing, schedule, masters, anaesthetistId, todayISO],

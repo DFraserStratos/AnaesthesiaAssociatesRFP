@@ -1,12 +1,12 @@
 /**
  * The daily reconciliation poll (Phase 10; WI3, X4) — the RFP's safety net for
  * missed/failed webhook delivery. Subscribes to `dayAdvanced` (the documented
- * hook) and re-detects any Xero payment the Billing Engine has not yet mirrored
+ * hook) and re-detects any Xero payment the ledger has not yet recorded
  * (no receipt carries its idempotency key), applying it through the SAME
  * `receivePayment` handler as the webhook, source `poll`. Idempotent: a payment
- * already mirrored (by webhook or a prior poll) is skipped.
+ * already recorded (by webhook or a prior poll) is skipped.
  *
- * The seeded missed-webhook `PaymentIn` (an unmirrored Xero payment) is what the
+ * The seeded missed-webhook `PaymentIn` (a Xero payment the ledger has not recorded) is what the
  * poll catches on the next day advance, "aligns with the reappears-next-day
  * behaviour" the RFP describes.
  */

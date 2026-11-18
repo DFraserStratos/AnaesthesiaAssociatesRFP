@@ -16,6 +16,7 @@ import { alertOffice } from '../../store/officeAlertActions'
 import { SEED_LIST_IDS, SEED_MARKERS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
 import { SURGEON_PDFS } from '../../domain/integrations'
 import { DEMO_TRIGGERS, POST_OP_ORIGINAL_LIST_ID } from './registry'
+import { projectedListId } from '../../domain/slots'
 import { demoTriggersFor, initialChoice } from './match'
 import { useDemoTriggerMemory } from './memory'
 import type { DemoContextValues } from './context'
@@ -54,8 +55,13 @@ describe('registry shape', () => {
     }
   })
 
-  it('does not register Run payables (the Billing monitor has its own product button)', () => {
-    expect(DEMO_TRIGGERS.some((t) => /payables/i.test(t.label))).toBe(false)
+  it('registers no Run payables on the bar (the Billing monitor has its own product button)', () => {
+    expect(DEMO_TRIGGERS.some((t) => t.surfaces.includes('bar') && /payables/i.test(t.label))).toBe(false)
+  })
+
+  it('the only label with "payables" is the PWA-only office stand-in (catch-up Phase 36; Phases 38 and 39a rename it)', () => {
+    const payables = DEMO_TRIGGERS.filter((t) => /payables/i.test(t.label))
+    expect(payables.map((t) => [t.id, t.label, t.surfaces, t.badge])).toEqual([['pwa-office-runs-payables', 'Office runs payables', ['pwa'], 'office-stand-in']])
   })
 
   it('every bar entry\'s Open screen link lands where the entry is visible', () => {
@@ -243,16 +249,22 @@ describe('re-homed bodies match the Control Panel', () => {
     const t = byId('billing-failure')
     const ctx = ctxFor('/admin/billing')
     expect(t.disabledReason(api.getState(), ctx)).toBeNull()
+    // The seed's own Contract entries (catch-up Phase 25a's seeded disable) are there before the trigger runs.
+    const contractEntries = (s: ReturnType<typeof api.getState>) => s.audit.filter((a) => a.action.startsWith('contract.')).length
+    const seededContractEntries = contractEntries(api.getState())
     expect(t.run(api, ctx).ok).toBe(true)
     const state = api.getState()
     expect(state.masters.contracts).toEqual(createAppStore().getState().masters.contracts)
-    expect(state.audit.some((a) => a.action.startsWith('contract.'))).toBe(false)
-    const cases = Object.values(state.billing.cases).filter((c) => bookingsForList(state, SEED_LIST_IDS.billingFailure).some((booking) => booking.id === c.bookingId))
-    const losa = cases.find((c) => c.bookingId === SEED_MARKERS['billingFailureBooking']!.entityId)!
+    expect(contractEntries(state)).toBe(seededContractEntries)
+    const pairs = Object.values(state.billing.ledger).flatMap((p) =>
+      p.kind !== 'aaFee' && bookingsForList(state, SEED_LIST_IDS.billingFailure).some((booking) => booking.id === p.bookingId) ? [p] : [],
+    )
+    const losa = pairs.find((p) => p.bookingId === SEED_MARKERS['billingFailureBooking']!.entityId)!
     expect(losa.handoffFailure).toBeDefined()
-    expect(losa.accRecId).toBeUndefined()
-    expect(cases.filter((c) => c.bookingId !== losa.bookingId).every((c) => c.accRecId !== undefined)).toBe(true)
-    expect(cases.some((c) => c.status === 'failed')).toBe(false)
+    expect(losa.receivable.xeroAccRecId).toBeUndefined()
+    expect(pairs.filter((p) => p.bookingId !== losa.bookingId).every((p) => p.receivable.xeroAccRecId !== undefined)).toBe(true)
+    // (catch-up Phase 36: a billing-run failure is a BillingException, not a failed case.)
+    expect(Object.values(state.billing.exceptions).some((x) => x.listId === SEED_LIST_IDS.billingFailure)).toBe(false)
     expect(state.schedule.lists[SEED_LIST_IDS.billingFailure]!.billedAtISO).toBeDefined()
     expect(t.disabledReason(api.getState(), ctx)).toBe('Already triggered')
     expect(t.run(api, ctx).message).toBe('Already triggered.')
@@ -403,7 +415,7 @@ describe('session 2 entries', () => {
     wireBillingRun(api)
     const t = byId('pwa-payment-half')
     const ctx = ctxFor('/mobile/balances')
-    expect(ids(api, '/mobile/balances', 'pwa')).toEqual(['pwa-payment-full', 'pwa-payment-half'])
+    expect(ids(api, '/mobile/balances', 'pwa')).toEqual(['pwa-office-runs-payables', 'pwa-payment-full', 'pwa-payment-half'])
     expect(ids(api, '/mobile/balances', 'bar')).toEqual([])
     expect(t.disabledReason(api.getState(), ctx, initialChoice(t, api.getState(), ctx))).toBe('No open invoices yet')
     authoriseList(api, OFFICE_ACTOR, SEED_LIST_IDS.souterMon20Am)
@@ -698,13 +710,15 @@ describe('AA fee entries (catch-up Phase 16)', () => {
       expect(byId(id).surfaces).toEqual(['bar'])
     }
     // The PWA sheet lists none of them.
-    expect(ids(api, '/mobile/balances', 'pwa')).toEqual(['pwa-payment-full', 'pwa-payment-half'])
+    expect(ids(api, '/mobile/balances', 'pwa')).toEqual(['pwa-office-runs-payables', 'pwa-payment-full', 'pwa-payment-half'])
   })
 
   it('"Record fee payment" shows on a fee pair only, and the payment webhook triggers never do', () => {
     const api = createAppStore()
     const fee = Object.values(api.getState().billing.aaFeeInvoices).find((f) => f.invoiceNumber === 'AA-FEE-2026-H02')!
-    const feePath = `/demo/xero/invoices/${fee.accRecId}`
+    // (catch-up Phase 36: the fee's ACCREC id lives on its `aaFee` ledger pair.)
+    const feeAccRecId = api.getState().billing.ledger[fee.ledgerPairId]!.receivable.xeroAccRecId!
+    const feePath = `/demo/xero/invoices/${feeAccRecId}`
     expect(ids(api, feePath)).toContain('record-fee-payment')
     for (const id of ['payment-full', 'payment-half', 'payment-replay']) expect(ids(api, feePath)).not.toContain(id)
     const procedurePath = '/demo/xero/invoices/XRH01'
@@ -712,7 +726,7 @@ describe('AA fee entries (catch-up Phase 16)', () => {
     expect(ids(api, procedurePath)).toContain('payment-full')
 
     const t = byId('record-fee-payment')
-    const ctx = ctxFor(feePath, { accRecId: fee.accRecId })
+    const ctx = ctxFor(feePath, { accRecId: feeAccRecId })
     expect(t.indexPath(api.getState())).toBe(feePath)
     expect(t.disabledReason(api.getState(), ctx)).toBeNull()
     expect(t.run(api, ctx).message).toMatch(/^AA-FEE-2026-H02 paid: \$[\d,.]+ received into AA's own account\.$/)
@@ -855,5 +869,75 @@ describe('Office sets this session to Public (catch-up Phase 32d; PWA parity)', 
     expect(t.disabledReason(api.getState(), ctx, am)).toBe('Already Public')
     expect(t.disabledReason(api.getState(), ctxFor(path, {}, day('2026-08-17')), `S-${SOUTER}-2026-08-17-AM`)).toBe('This session holds a List')
     expect(t.disabledReason(api.getState(), ctxFor(path, {}, day('2026-07-20')), `S-${SOUTER}-2026-07-20-AM`)).toBe('This session is past')
+  })
+})
+
+describe('the Ledger triggers (catch-up Phase 36)', () => {
+  it('Inject unmatched receipt shows only on the Ledger, both scopes', () => {
+    const api = createAppStore()
+    expect(ids(api, '/admin/ledger')).toContain('inject-unmatched-receipt')
+    expect(ids(api, '/admin/ledger/anaesthetists/34821')).toContain('inject-unmatched-receipt')
+    expect(ids(api, '/admin/billing')).not.toContain('inject-unmatched-receipt')
+    expect(ids(api, '/admin/ledger')).toEqual(expect.arrayContaining(['payment-full', 'payment-half', 'arm-handoff-fault', 'run-archive-job']))
+  })
+
+  it('names Dr Souter by default: one held receipt attributed to her; a second press is disabled until it is cleared', () => {
+    const api = createAppStore()
+    const t = byId('inject-unmatched-receipt')
+    const ctx = ctxFor('/admin/ledger')
+    expect(initialChoice(t, api.getState(), ctx)).toBe('souter')
+    expect(t.disabledReason(api.getState(), ctx)).toBeNull()
+    expect(t.run(api, ctx, 'souter').ok).toBe(true)
+    const held = Object.values(api.getState().billing.unmatchedReceipts)
+    expect(held.map((u) => [u.amount, u.reference, u.anaesthetistId, u.status, u.idempotencyKey])).toEqual([[120, 'Bank deposit · SOUTER JULY', '34821', 'held', 'UNMATCHED-DEMO-1']])
+    expect(t.disabledReason(api.getState(), ctx)).toBe('Resolve the held receipt first')
+  })
+
+  it('"Names no one" holds an unattributed receipt', () => {
+    const api = createAppStore()
+    expect(byId('inject-unmatched-receipt').run(api, ctxFor('/admin/ledger'), 'none').ok).toBe(true)
+    const [u] = Object.values(api.getState().billing.unmatchedReceipts)
+    expect([u?.reference, u?.anaesthetistId]).toEqual(['Bank deposit · JULY', undefined])
+  })
+
+  it('a payment on the Ledger lands in the ledger first, then Xero, on the chosen open receivable', () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    try {
+      authoriseList(api, OFFICE_ACTOR, projectedListId('34821', '2026-07-20', 'AM'))
+    } finally {
+      unwire()
+    }
+    const t = byId('payment-half')
+    const ctx = ctxFor('/admin/ledger')
+    const choices = t.choices!(api.getState(), ctx)
+    expect(choices.length).toBe(openAccRecs(api.getState()).length)
+    const accRecId = choices[0]!.id
+    expect(t.run(api, ctx, accRecId).ok).toBe(true)
+    const pair = Object.values(api.getState().billing.ledger).find((p) => p.receivable.xeroAccRecId === accRecId)!
+    expect(pair.receivable.receivedAmount).toBe(api.getState().xero.accRecs[accRecId]!.amountReceived)
+  })
+
+  it('the PWA stand-in pays out only what is due to Dr Souter, and is disabled when nothing is', () => {
+    const api = createAppStore()
+    const t = byId('pwa-office-runs-payables')
+    const ctx = ctxFor('/mobile/balances')
+    expect(ids(api, '/mobile/balances', 'pwa')).toContain('pwa-office-runs-payables')
+    expect(ids(api, '/mobile/balances', 'bar')).not.toContain('pwa-office-runs-payables')
+    expect(t.disabledReason(api.getState(), ctx)).toBe('Nothing due to pay out')
+    const unwire = wireBillingRun(api)
+    try {
+      authoriseList(api, OFFICE_ACTOR, projectedListId('34821', '2026-07-20', 'AM'))
+    } finally {
+      unwire()
+    }
+    const pay = byId('pwa-payment-half')
+    const choice = pay.choices!(api.getState(), ctx)[0]!.id
+    expect(pay.run(api, ctx, choice).ok).toBe(true)
+    expect(t.disabledReason(api.getState(), ctx)).toBeNull()
+    const out = t.run(api, ctx)
+    expect(out.ok).toBe(true)
+    expect(out.message).toContain('to Dr Souter')
+    expect(t.disabledReason(api.getState(), ctx)).toBe('Nothing due to pay out')
   })
 })

@@ -30,7 +30,7 @@ function nibPair(state: AppState) {
   )
   if (invoice === undefined) throw new Error('expected the S3 nib invoice')
   const pair = xeroInvoicePairViews(state).find(
-    (candidate) => candidate.engine.billingInvoiceId === invoice.id,
+    (candidate) => candidate.ledger.billingInvoiceId === invoice.id,
   )
   if (pair === undefined) throw new Error('expected the S3 nib Xero pair')
   return pair
@@ -41,13 +41,13 @@ describe('Xero invoice-pair view', () => {
     const state = stagedS3State()
     const pair = nibPair(state)
 
-    expect(pair.engine.patientName).toBe('Alan Prentice')
-    expect(pair.engine.bookingId).toBe(SEED_MARKERS.feeSplitBooking?.entityId)
-    expect(pair.engine.caseId).toBe(pair.engine.caseReference)
+    expect(pair.ledger.patientName).toBe('Alan Prentice')
+    expect(pair.ledger.bookingId).toBe(SEED_MARKERS.feeSplitBooking?.entityId)
+    expect(pair.ledger.pairId).toBe(pair.ledger.caseReference)
     expect(pair.accRec.contact?.name).toBe('nib')
     expect(pair.accPay?.contact?.name).toBe('Dr Melanie Souter')
     expect(pair.accPay?.id).toBe(
-      state.billing.cases[pair.engine.caseId ?? '']?.accPayId,
+      (state.billing.ledger[pair.ledger.pairId ?? ''] as { payable?: { xeroAccPayId?: string } } | undefined)?.payable?.xeroAccPayId,
     )
     expect(pair.accPay?.status).toBe('draft')
     expect(pair.accRec.amountDue).toBe(152.38)
@@ -58,8 +58,8 @@ describe('Xero invoice-pair view', () => {
     expect(pair.accPay?.amountAuthorised).toBe(0)
     // Identifiers read from the stored Xero records (US-09.1.1).
     expect(pair.accPay?.billNumber).toBe(`${pair.accRec.invoiceNumber}-P`)
-    expect(pair.accRec.reference).toBe(pair.engine.caseReference)
-    expect(pair.accPay?.reference).toBe(pair.engine.caseReference)
+    expect(pair.accRec.reference).toBe(pair.ledger.caseReference)
+    expect(pair.accPay?.reference).toBe(pair.ledger.caseReference)
     expect(pair.accPay?.amountDisbursed).toBe(0)
     expect(pair.accPay?.remainingAuthorised).toBe(0)
     expect(pair.incomplete).toBe(false)
@@ -89,7 +89,7 @@ describe('Xero invoice-pair view', () => {
     expect(pair?.incomplete).toBe(true)
     expect(pair?.accRec.contact).toBeUndefined()
     expect(pair?.accPay).toBeUndefined()
-    expect(pair?.engine.patientName).toBe('Alan Prentice')
+    expect(pair?.ledger.patientName).toBe('Alan Prentice')
     expect(pair?.accRec.id).toBe(original.accRec.id)
   })
 })

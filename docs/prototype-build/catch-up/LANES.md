@@ -44,32 +44,32 @@ and lock.
 Each lane runs its queue in order, one phase at a time. A phase is **complete on a lane** when the
 lane branch holds a commit whose subject starts `<id> complete:`.
 
-### Current wave: Wave 2
+### Current wave: Wave 3
 
-Wave 1 (Lane A 26, 27, 27a; Lane B 32d, 33) was joined on 18 November 2026 and `master` holds it.
+Wave 1 (Lane A 26, 27, 27a; Lane B 32d, 33) was joined on 18 November 2026, and Wave 2 (Lane A 25a,
+36; Lane B 33a, 17b) on 19 November 2026; `master` holds both.
 
 | Lane | Queue | Sessions |
 |---|---|---|
-| A | 25a, then 36 | 2 + 2 |
-| B | 33a, then 17b | 1 + 2 |
+| A | 37, then 38 | 2 + 2 |
+| B | 34, then 35 | 2 + 2 |
 
-Why this split: every dependency is built. 25a (21a, 25, U6) and 36 (16, 22, 25, 27a, U6) are the
-plan's next billing phases in run order; 25a keeps to Lane A because it edits 25's lock snapshot and
-22's holder layout, and 36 promotes 27a's AA Holding account legs and transfers into the ledger.
-33a needs only 33, and 17b needs 17a and 26 (26 joined in Wave 1). 34 waits for Wave 3: it needs
-17b, 33 and 33a.
+Why this split: every dependency is built. 37 and 38 need only 36 (joined in Wave 2): they are the
+plan's next Money phases, both on the ledger's reads and writes, so they keep to Lane A after 36. 34
+needs 17b, 33 and 33a (all joined in Wave 2); 35 needs 17, 17b, 22a, 25, 32, 33 and 34, so it follows
+34 in Lane B's own queue.
 
-**Who owns what in Wave 2.** Keep to your side and the merges stay mechanical.
+**Who owns what in Wave 3.** Keep to your side and the merges stay mechanical.
 
 | | Owns |
 |---|---|
-| Lane A | Contracts and the lock (25a: Contract change warnings, the Disabled flag, the holder's hospital reference removed; `domain/billing/lock.ts`, the holder layout, `contractRail.ts`, the Contracts screens). The internal ledger and balances (36: ledger legs and entries, `domain/billing/prepayHolding.ts` read for parity, `bcti.ts`'s `prepaymentPairs`, the Ledger screen, Admin and anaesthetist balance views) |
-| Lane B | Stubs on a List (33a: the matching screen's stubs, `domain/intake`, `matchingSelectors.ts`, the List and Day grid's stub rows). Surgeons (17b: surgeon contacts on the surgeon, surgeons' rooms removed: `domain/surgeons.ts`, `surgeonActions.ts`, the surgeon master screens, pairing preferences, the personas' and cheat sheet's surgeon lines) |
+| Lane A | The Xero mirror and the processing monitor (37: `xeroHandoff.ts`, `reconciliationPoll.ts`, the disbursement detected from Xero through `payablesActions.ts`'s one write path, the Billing monitor screen, the Xero simulation and `xeroPairView.ts`'s `ledger.matches`). The anaesthetist's accounts (38: web Accounts, the dashboard's position panel on `anaesthetistLedgerPosition`, the flat outstanding list, the monthly GST report; `selectors.ts`'s anaesthetist money views, `ledgerSelectors.ts`) |
+| Lane B | The rooms' PDF lists and where a List came from (34: `domain/intake`, the matching screen, `matchingActions.ts`, `matchingSelectors.ts`, the List origin). Explicit save and the update email (35: the Booking edit flows' save, the update email, the Booking screens it names) |
 
-- **Where they meet.** 25a's hospital reference removal and 17b's surgeons' rooms removal both touch
-  `masters` and the seed's master records: each removes only its own fields. 36's balance views read
-  the web Accounts and mobile Balances screens that 17b does not touch. Each phase patches the demo
-  guide beats its own doc names; where two touch one file, add your lines by section.
+- **Where they meet.** 35's Booking edit flows and 38's web screens are different screens; 35's update
+  email and 37's monitor are different surfaces. 34 and 35 both touch intake and the Booking: they run
+  in one lane, in order. Each phase patches the demo guide beats its own doc names; where two touch one
+  file, add your lines by section.
 - **Files both lanes add to:** `src/domain/types.ts`, the audit label files
   (`shared/audit/actionLabels.ts`, `fieldLabels.ts`, `auditNarrative.ts`), `src/domain/seed/index.ts`
   and the seed files, `store/mutate.ts`'s `ID_FORMATS`, the store barrel, `src/store/appStore.ts`
@@ -88,7 +88,6 @@ rewrites "Current wave" above.
 
 | Wave | Lane A | Lane B |
 |---|---|---|
-| 3, likely | 37, then 38 | 34, then 35 |
 | 4, likely | 38b, then 39 | 42, then 39b |
 | Later | 39a, 40, 40a, 41, 43, 43a, 43b, then U7 (alone), then 44 (alone) | |
 
@@ -193,12 +192,14 @@ When your last phase in the wave is complete:
      seed, never added up. The S1 to S5 golden tests pass.
    - No hook was lost: `git diff master...wave/<n> -- aa-prototype | grep '^-.*data-'`, and account
      for every line.
-   - Where the lanes meet, check in the running app on your ports. For Wave 2: the seed's masters
-     after 25a's and 17b's removals (a Contract holder, a surgeon and their contacts all still
-     render), 36's balance views beside 17b's changes, and 33a's stubs on a List that 25a's warnings
-     read. (Wave 1's checks, done at its join: a Booking from a hospital row given a prepaid Contract
-     raises its prepayment for its payer; a Public Slot is never offered on the matching screen; Dr
-     Sharma's Tue 14 Jul List still stages post-op.)
+   - Where the lanes meet, check in the running app on your ports. For Wave 3: 37's monitor and Xero
+     sim beside 34's matching screen (a re-sent PDF list matched, then authorised, bills and mirrors);
+     38's web Accounts and dashboard after 35's explicit save (an edited Booking's invoice reads the
+     same in Overdue). (Wave 2's checks, done at its join: the seed's masters after 25a's and 17b's
+     removals, 36's balance views beside 17b's changes, 33a's stubs on a List that 25a's warnings
+     read. Wave 1's: a Booking from a hospital row given a prepaid Contract raises its prepayment for
+     its payer; a Public Slot is never offered on the matching screen; Dr Sharma's Tue 14 Jul List
+     still stages post-op.)
    - Capture: `phase-check --capture` for every recipe either lane's phases list, look at the shots,
      then one `node T/phase-check.mjs --capture all`. Commit the images, `REPORT.md` and ATLAS this
      time.

@@ -253,14 +253,15 @@ describe('buildInvoicesForBooking', () => {
   })
 
   it("each fee line prints the Procedure's invoice description; the holder's layout adds the cross-match and the holder reference", () => {
-    const worded = { ...primary, invoiceDescription: { text: 'Anaesthesia for knee arthroscopy', origin: 'hospital' as const }, billingReference: 'SG-4471' }
+    const worded = { ...primary, invoiceDescription: { text: 'Anaesthesia for knee arthroscopy', origin: 'hospital' as const } }
     const referenced = { ...HOSPITAL_DEFAULT, holderReference: 'SGANAES01' }
     const result = buildInvoicesForBooking(mkBooking(), [worded], { ...mkCtx({ contracts: { [referenced.id]: referenced } }), surgeonName: 'Mr Test Surgeon' })
     if (result.kind !== 'invoices') throw new Error('expected invoices')
     const invoice = result.invoices[0]!
     expect(invoice.lines[0]!.description).toBe('Anaesthesia for knee arthroscopy')
     expect(invoice.holderReference).toBe('SGANAES01')
-    expect(invoice.crossMatch).toEqual({ procedureDateISO: LIST_DATE, surgeon: 'Mr Test Surgeon', hospitalRef: 'SG-4471' })
+    // The cross-match is the date and the surgeon: no hospital reference (catch-up Phase 25a, D82; OQ-142 open).
+    expect(invoice.crossMatch).toEqual({ procedureDateISO: LIST_DATE, surgeon: 'Mr Test Surgeon' })
   })
 
   it('a typed price prints as one fee line at the price: no adjustment line, no reason (catch-up Phase 24)', () => {

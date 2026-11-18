@@ -70,7 +70,7 @@ renders it as `BottomSheet`, web/admin as `Dialog`. A library swap maps this to 
   `aria-invalid`, no field-level error binding.
 - **NameSearchBox** `shared/ui/NameSearchBox.tsx`: `role="searchbox"`, clear button, Escape clears. Admin,
   web, move sheets, CodePickerSheet.
-- **Native `<select>`**: `ContractSelect`, `EditBillingSetupSheet`, `EditProcedureSheet`,
+- **Native `<select>`**: `ContractSelect`, `EditProcedureSheet`,
   `FunderAllocationSheet` (unlabelled), `ManualBookingForm`, `DemoActionsMenu`, `apps/demo/DemoData.tsx`
   (five, unlabelled).
 - **Native `type="date"`**: `EditPatientSheet`, `ManualBookingForm`, `AvailabilityForm`.

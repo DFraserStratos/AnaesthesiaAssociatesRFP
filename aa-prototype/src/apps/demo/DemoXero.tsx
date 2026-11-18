@@ -4,7 +4,8 @@ import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-route
 import { DemoSurface } from './DemoSurface'
 import { OFFICE_ACTOR, disbursePayable, receivePayment, useAppStore } from '../../store'
 import { dateTimeMicroCap, dayMicroCap, formatCurrency } from '../../shared/format'
-import { HELD_UNTIL_AUTHORISED, LEAVES_ONLY_BY_SYSTEM, RELEASE_TRIGGER_CAPTION, transferOfCase } from '../../domain/billing/prepayHolding'
+import { HELD_UNTIL_AUTHORISED, LEAVES_ONLY_BY_SYSTEM, RELEASE_TRIGGER_CAPTION } from '../../domain/billing/prepayHolding'
+import { transferOfPair } from '../../domain/billing/ledger'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { XeroContact } from '../../domain/types'
 import { APP_CONFIG } from '../../shell/appConfig'
@@ -55,7 +56,7 @@ export function DemoXero() {
   return (
     <DemoSurface
       title="Xero simulation"
-      subtitle="The simulated Xero organisation the Billing Engine hands off to: contacts, the ACCREC / ACCPAY invoice pairs and their payment state. All fake and in-browser; the apps never read this, only the Billing Engine's own mirror."
+      subtitle="The simulated Xero organisation that mirrors the Billing Engine's ledger: contacts, the ACCREC and ACCPAY pairs and their payment state. All fake and in-browser. The apps read the ledger, AA's system of record; Xero is the receivables and banking service behind it."
       maxWidth={1440}
       subtitleMaxWidth={820}
     >
@@ -139,8 +140,8 @@ function InvoicesTable({ pairs }: { pairs: XeroInvoicePairView[] }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ fontSize: 12.5, color: neutral.slate }}>
-        Each row is one Billing Engine case: an ACCREC (money in, to the payer) paired with a DRAFT
-        then AUTHORISED ACCPAY (owed to the anaesthetist). The pair is linked by the case, not
+        Each row mirrors one ledger pair in the Billing Engine: an ACCREC (money in, to the payer) paired with a DRAFT
+        then AUTHORISED ACCPAY (owed to the anaesthetist). The two records are linked by the ledger pair, not
         natively in Xero, and carries visibly similar numbers (the ACCPAY suffixed <span className="mono">-P</span>).
         Select any row to inspect both records and their linked identifiers.
       </div>
@@ -228,16 +229,16 @@ function InvoicesTable({ pairs }: { pairs: XeroInvoicePairView[] }) {
 }
 
 function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
-  const accPayId = pair.accPay?.id ?? pair.engine.accPayId
+  const accPayId = pair.accPay?.id ?? pair.ledger.accPayId
   const [settlementMessage, setSettlementMessage] = useState<string | null>(null)
   const fullySettled = pair.accRec.status === 'paid' && pair.accPay?.status === 'paid'
   const canOpenWebAccount =
     pair.accRec.amountReceived > 0 &&
-    pair.engine.anaesthetistId === APP_CONFIG.web.persona.anaesthetistId
+    pair.ledger.anaesthetistId === APP_CONFIG.web.persona.anaesthetistId
 
   const heldInHolding = pair.accPay?.held === true
   // Once transferred, the money has left the AA Holding account: nothing to try from here (catch-up Phase 27a).
-  const transferred = useAppStore((s) => heldInHolding && pair.engine.caseId !== undefined && transferOfCase(s.billing.transfers, pair.engine.caseId) !== undefined)
+  const transferred = useAppStore((s) => heldInHolding && pair.ledger.pairId !== undefined && transferOfPair(s.billing.transfers, pair.ledger.pairId) !== undefined)
   function settleInvoice() {
     if (pair.accPay === undefined) {
       setSettlementMessage('This record has no linked payable to disburse.')
@@ -257,7 +258,8 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
       }
     }
 
-    const payout = disbursePayable(useAppStore, OFFICE_ACTOR, pair.accPay.id)
+    if (pair.ledger.pairId === undefined) return
+    const payout = disbursePayable(useAppStore, OFFICE_ACTOR, pair.ledger.pairId)
     // A prepayment's payable credits the AA Holding account (catch-up Phases 27, 27a): the payment lands, the
     // payout is refused, because money leaves the account only by a transfer or refund the system raises.
     if (!payout.ok && payout.code === 'holdingSystemOnly') {
@@ -368,17 +370,33 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
         </Callout>
       )}
 
-      <Callout tone="info" title="Linked Billing Engine case, not stored on the Xero contact" shot="xero-engine-link">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span>
-            This presenter context comes from the Billing Engine link. Patient:
-            {' '}<strong>{pair.engine.patientName ?? 'Unavailable'}</strong>.
+      <Callout tone="info" title="Ledger pair (the system of record)" shot="xero-engine-link">
+        <div data-shot="xero-ledger-pair" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span>
+              The Billing Engine's ledger pair this record mirrors, not stored on the Xero contact. Patient:
+              {' '}<strong>{pair.ledger.patientName ?? 'Unavailable'}</strong>.
+            </span>
+            {pair.ledger.matches !== undefined && (
+              <Pill tone={pair.ledger.matches ? 'success' : 'warning'} size="sm" shot="xero-ledger-match">
+                {pair.ledger.matches ? 'Matches the ledger' : 'Differs from the ledger'}
+              </Pill>
+            )}
           </span>
           <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
-            <InlineId label="Case reference" value={pair.engine.caseReference ?? pair.engine.caseId ?? 'Unavailable'} />
-            <InlineId label="Booking ID" value={pair.engine.bookingId ?? 'Unavailable'} />
-            <InlineId label="Billing invoice ID" value={pair.engine.billingInvoiceId} />
+            <InlineId label="Ledger pair" value={pair.ledger.caseReference ?? pair.ledger.pairId ?? 'Unavailable'} />
+            <InlineId label="Receivable" value={pair.ledger.receivableNumber ?? 'Unavailable'} />
+            <InlineId label="Payable" value={pair.ledger.payableNumber ?? 'None'} />
+            <InlineId label="Booking ID" value={pair.ledger.bookingId ?? 'Unavailable'} />
           </div>
+          {pair.ledger.received !== undefined && (
+            <div className="mono" style={{ fontSize: 12.5, color: neutral.slate }}>
+              Ledger: received {formatCurrency(pair.ledger.received)}
+              {pair.ledger.released !== undefined && ` · released ${formatCurrency(pair.ledger.released)} · paid out ${formatCurrency(pair.ledger.paidOut ?? 0)}`}
+              {' '}| Xero: received {formatCurrency(pair.accRec.amountReceived)}
+              {pair.accPay !== undefined && ` · authorised ${formatCurrency(pair.accPay.amountAuthorised)} · disbursed ${formatCurrency(pair.accPay.amountDisbursed)}`}
+            </div>
+          )}
           <div style={{ fontSize: 13, color: neutral.ink }}>
             Pair link:{' '}
             <span className="mono" style={{ fontWeight: 700 }}>{pair.accRec.id}</span>
@@ -416,7 +434,7 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
         </div>
       </div>
 
-      {heldInHolding && pair.engine.caseId !== undefined && <TransferJournal caseId={pair.engine.caseId} />}
+      {heldInHolding && pair.ledger.pairId !== undefined && <TransferJournal caseId={pair.ledger.pairId} />}
     </div>
   )
 }
@@ -431,7 +449,7 @@ function TransferJournal({ caseId }: { caseId: string }) {
   const transfers = useAppStore((s) => s.billing.transfers)
   const journals = useAppStore((s) => s.xero.journals)
   const contacts = useAppStore((s) => s.xero.contacts)
-  const transfer = transferOfCase(transfers, caseId)
+  const transfer = transferOfPair(transfers, caseId)
   const journal = transfer?.xeroJournalId !== undefined ? journals[transfer.xeroJournalId] : undefined
   if (transfer === undefined) {
     return (
@@ -491,8 +509,8 @@ function TransferJournal({ caseId }: { caseId: string }) {
 function FeePairDetail({ pair }: { pair: XeroInvoicePairView }) {
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
   const paid = pair.accRec.status === 'paid'
-  const feeId = pair.engine.aaFeeInvoiceId
-  const canOpenWebAccount = pair.engine.anaesthetistId === APP_CONFIG.web.persona.anaesthetistId
+  const feeId = pair.ledger.aaFeeInvoiceId
+  const canOpenWebAccount = pair.ledger.anaesthetistId === APP_CONFIG.web.persona.anaesthetistId
   const anaesthetist = pair.accRec.contact?.name ?? 'Anaesthetist'
 
   function recordPayment() {
@@ -512,8 +530,8 @@ function FeePairDetail({ pair }: { pair: XeroInvoicePairView }) {
             Simulated Xero AA fee invoice
           </div>
           <h2 style={{ margin: '4px 0 0', fontSize: 23, lineHeight: '29px' }}>{pair.accRec.invoiceNumber}</h2>
-          {pair.engine.aaFeeMonthISO !== undefined && (
-            <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>AA's fee for {aaFeeMonthLabel(pair.engine.aaFeeMonthISO)}</div>
+          {pair.ledger.aaFeeMonthISO !== undefined && (
+            <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>AA's fee for {aaFeeMonthLabel(pair.ledger.aaFeeMonthISO)}</div>
           )}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 9 }}>
@@ -687,11 +705,11 @@ function AccPayCard({ pair }: { pair: XeroInvoicePairView }) {
   const pay = pair.accPay
   if (pay === undefined) {
     return (
-      <RecordCard eyebrow="Accounts payable · ACCPAY" title={pair.engine.accPayId ?? 'ACCPAY'}>
+      <RecordCard eyebrow="Accounts payable · ACCPAY" title={pair.ledger.accPayId ?? 'ACCPAY'}>
         <Callout tone="warn" title="ACCPAY unavailable">
           The ACCREC still exists as <span className="mono">{pair.accRec.id}</span>, but its linked
           ACCPAY record could not be loaded. Expected identifier:
-          {' '}<span className="mono">{pair.engine.accPayId ?? 'not recorded'}</span>.
+          {' '}<span className="mono">{pair.ledger.accPayId ?? 'not recorded'}</span>.
         </Callout>
       </RecordCard>
     )
@@ -711,7 +729,7 @@ function AccPayCard({ pair }: { pair: XeroInvoicePairView }) {
         <MetaItem label="Payee" value={pay.contact?.name ?? 'Contact unavailable'} />
         <MetaItem label="ContactID" value={pay.contact?.contactId ?? pay.contactId} mono />
         <MetaItem label="ContactNumber" value={pay.contact?.contactNumber ?? 'Unavailable'} mono />
-        <MetaItem label="Pair reference" value={pair.engine.caseReference ?? pair.engine.caseId ?? 'Unavailable'} mono />
+        <MetaItem label="Pair reference" value={pair.ledger.caseReference ?? pair.ledger.pairId ?? 'Unavailable'} mono />
       </MetaGrid>
 
       <MoneyGrid>

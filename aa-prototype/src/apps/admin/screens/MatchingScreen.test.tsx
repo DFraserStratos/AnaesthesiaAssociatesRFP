@@ -1,9 +1,11 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { SEED_STUB } from '../../../domain/seed/intakeSeed'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { freshAppState, importHospitalDownload, OFFICE_ACTOR, useAppStore } from '../../../store'
 import { SurfaceProvider } from '../../../shared'
 import { MatchingScreen } from './MatchingScreen'
+import { emptyIntakeSlice } from '../../../store/appStore'
 
 afterEach(cleanup)
 
@@ -23,7 +25,8 @@ const stat = (container: HTMLElement, key: string) => container.querySelector(`[
 
 describe('MatchingScreen', () => {
   beforeEach(() => {
-    useAppStore.setState(freshAppState())
+    // Phase 33's flows start from an empty Matching screen; the seeded waiting row and its stub (33a) are tested below.
+    useAppStore.setState({ ...freshAppState(), intake: emptyIntakeSlice() })
   })
 
   it('starts empty with the interim line and the Import button, and never says "download"', () => {
@@ -100,15 +103,47 @@ describe('MatchingScreen', () => {
     expect(decided.decision?.kind === 'match' ? decided.decision.fieldsApplied : []).toEqual(['time', 'procedureText'])
   })
 
-  it('holds a row with no NHI until one is typed', () => {
+  it('holds a row with no NHI until one is added; its stub stands until then (33a)', () => {
     importHospitalDownload(useAppStore, OFFICE_ACTOR, 'SAMPLE_SX')
     const row = Object.values(useAppStore.getState().intake.rows).find((r) => r.incoming.patient.name === 'Tama Henare')!
-    renderScreen({ selectRowId: row.id })
+    const { container } = renderScreen({ selectRowId: row.id })
     const panel = screen.getByTestId('matching-panel')
     expect(within(panel).getByRole('button', { name: 'Choose a decision' })).toBeDisabled()
     expect(within(panel).getAllByText('Add the NHI first.').length).toBeGreaterThan(0)
+    expect(container.ownerDocument.querySelector('[data-shot="matching-stub"]')).toHaveTextContent("A stub stands on Dr Souter's Tue 28 Jul PM List")
     fireEvent.change(within(panel).getByRole('textbox', { name: 'NHI' }), { target: { value: 'ZQA1008' } })
-    expect(useAppStore.getState().intake.rows[row.id]?.corrections?.nhi).toBe('ZQA1008')
-    expect(within(screen.getByTestId('matching-panel')).getByRole('button', { name: 'Create Booking' })).toBeEnabled()
+    // The NHI waits for Add NHI: one audited path (resolveStub).
+    expect(useAppStore.getState().intake.rows[row.id]?.corrections?.nhi).toBeUndefined()
+    fireEvent.click(within(panel).getByRole('button', { name: 'Add NHI' }))
+    const decided = useAppStore.getState().intake.rows[row.id]!
+    expect(decided).toMatchObject({ status: 'applied', decision: { kind: 'createBooking', listId: 'L-34821-2026-07-28-PM' } })
+    expect(container.ownerDocument.querySelector('[data-shot="matching-stub-resolved"]')).toHaveTextContent("The Booking takes the stub's place on the List.")
+  })
+})
+
+describe('MatchingScreen with the seeded stub (catch-up Phase 33a)', () => {
+  beforeEach(() => {
+    useAppStore.setState(freshAppState())
+  })
+
+  it('shows the seeded waiting row; Add NHI refuses an invalid NHI and changes nothing', () => {
+    renderScreen({ selectRowId: SEED_STUB.rowId })
+    const panel = screen.getByTestId('matching-panel')
+    expect(within(panel).getByRole('heading', { name: 'Mere Tipene' })).toBeInTheDocument()
+    const add = within(panel).getByRole('button', { name: 'Add NHI' })
+    expect(add).toBeDisabled()
+    fireEvent.change(within(panel).getByRole('textbox', { name: 'NHI' }), { target: { value: 'ZQA1025' } })
+    expect(within(panel).getByRole('button', { name: 'Add NHI' })).toBeDisabled()
+    expect(useAppStore.getState().intake.stubs[SEED_STUB.stubId]?.status).toBe('standing')
+  })
+
+  it("Reject from the stub removes it with the row, through the panel's reason", () => {
+    renderScreen({ selectRowId: SEED_STUB.rowId })
+    fireEvent.click(within(screen.getByTestId('matching-panel-footer')).getByRole('button', { name: 'Reject' }))
+    fireEvent.click(within(screen.getByTestId('matching-panel')).getByRole('button', { name: 'Not an AA booking' }))
+    const footer = screen.getByTestId('matching-panel-footer')
+    fireEvent.click(within(footer).getByRole('button', { name: /Reject/ }))
+    expect(useAppStore.getState().intake.stubs[SEED_STUB.stubId]?.status).toBe('removed')
+    expect(useAppStore.getState().audit.some((a) => a.action === 'stub.remove')).toBe(true)
   })
 })

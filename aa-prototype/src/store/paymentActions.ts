@@ -1,44 +1,40 @@
 /**
- * Payment detection (Phase 10; WI3, X4) — the RFP's webhook + daily
+ * Payment detection (Phase 10; WI3, X4): the RFP's webhook + daily
  * reconciliation poll, both writing through ONE handler keyed by the payment
  * idempotency key (RFP: "both paths write through the same handler, keyed by
  * InvoiceID, so a duplicate webhook or a poll re-detecting an already-processed
  * payment is a no-op").
  *
- * On a payment against an ACCREC (money into the AA account):
- *   - append a `PaymentIn` (unless Xero already recorded it — the missed-webhook
- *     case the poll catches), bump `XeroAccRec.amountReceived` + status;
- *   - authorise the paired `XeroAccPay` for EXACTLY the cumulative amount
- *     received (`payableReleasedFor`, US-10.2.1), flipping it DRAFT → AUTHORISED;
- *   - stamp the ACCREC's `paidAtISO` once, with the payment that completes it
- *     (webhook or poll; a replay never moves it). The BCTI count reads it;
- *   - mirror the money onto the BillingCase (received/authorised, paidInAt, a
- *     derived status label), so a fully-paid PRE-PAYMENT case reads `paid` and
- *     the `prepaymentUnpaid` warning (catch-up Phase 15a) goes;
- *   - append a `BillingReceipt` (the GST-report source + the idempotency
- *     key-set), GST = gross × 0.15 / 1.15.
+ * Since catch-up Phase 36 the money is recorded in the LEDGER first (US-08.3.2,
+ * US-10.2.1, US-09.2.1), then mirrored to Xero, in one mutate
+ * (`applyReceiptInto`, the one path every receipt takes: webhook, poll, an
+ * office allocation of an unmatched receipt, an AA fee payment):
+ *   - the ledger: the receivable's received, the payable released by 16's
+ *     rule (`payableReleasedFor`, both legs together), `paidInAtISO` once at
+ *     full, and a `LedgerReceipt` (the GST-report source + the idempotency
+ *     key-set), GST = gross × 0.15 / 1.15;
+ *   - the Xero mirror: a `PaymentIn` (unless Xero already holds it, the
+ *     missed-webhook case the poll catches), the ACCREC's received and status,
+ *     the ACCPAY authorised for exactly what was received.
+ * A payment on an ACCREC that no pair links is held as an `UnmatchedReceipt`.
  *
  * All automated money events audit `source:'system'` (convention 7). The
- * anaesthetist ACCPAY equals the ACCREC (FT-10.3): AA's own fee is a separate
- * monthly invoice, never deducted from a payable (catch-up Phase 16).
+ * payable equals the receivable (FT-10.3): AA's own fee is a separate monthly
+ * invoice, never deducted from a payable (catch-up Phase 16).
  */
 
-import type { BillingCase, PaymentIn, XeroAccPay, XeroAccRec } from '../domain/types'
+import type { LedgerPair, LedgerReceipt, LedgerTransfer, PaymentIn, UnmatchedReceipt, XeroAccPay, XeroAccRec } from '../domain/types'
 import { roundToCents, toCents } from '../domain/billing/money'
 import { payableReleasedFor } from '../domain/billing/payableRelease'
-import { transferOfCase, transferReleasedFor } from '../domain/billing/prepayHolding'
-import { GST_RATE } from '../domain/billing/invoicePresentation'
+import { applyReceipt, gstComponentOf, isBookingPair, payeeAnaesthetistOf, transferOfPair } from '../domain/billing/ledger'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
-import type { AppStoreApi } from './appStore'
-import { payeeIdForCase } from './selectors'
+import type { AppState, AppStoreApi } from './appStore'
+import { pairByAccRec } from './ledgerSelectors'
 
-/** GST component of a GST-inclusive amount received (3/23 of the gross). */
-export function gstComponentOf(gross: number): number {
-  return roundToCents((gross * GST_RATE) / (1 + GST_RATE))
-}
+export { gstComponentOf }
 
 /** The system actors for the two detection paths (both audit source=system). */
-const PAYMENT_ACTOR: Record<'webhook' | 'poll', Actor> = {
+export const PAYMENT_ACTOR: Record<'webhook' | 'poll', Actor> = {
   webhook: { who: 'Xero webhook', role: 'system', source: 'system' },
   poll: { who: 'Reconciliation poll', role: 'system', source: 'system' },
 }
@@ -57,160 +53,218 @@ export interface ReceivePaymentInput {
   atISO?: string
 }
 
+/** Whether a key is already processed: a ledger receipt or an unmatched receipt carries it. */
+export function receiptKeySeen(state: Pick<AppState, 'billing'>, key: string): boolean {
+  return Object.values(state.billing.receipts).some((r) => r.idempotencyKey === key) || Object.values(state.billing.unmatchedReceipts).some((u) => u.idempotencyKey === key)
+}
 
 /**
- * Detect a payment on an ACCREC. Idempotent by `idempotencyKey` (the receipts
- * ledger); a replay or a poll re-detect is a no-op. Returns `applied:false`
- * when nothing changed (duplicate key, or the ACCREC is already fully paid).
+ * Who a receipt is the income of: a procedure pair's stamped payee; a
+ * prepayment's transfer payee once transferred, else the List's anaesthetist
+ * now (27a: a Booking moved to the office has none, and its money is the AA
+ * Holding account's); never anyone for an AA fee payment (AA's own money).
  */
-export function receivePayment(api: AppStoreApi, input: ReceivePaymentInput): Outcome<{ applied: boolean }> {
+function receiptAnaesthetist(state: Pick<AppState, 'schedule' | 'billing'>, pair: LedgerPair, transfer: LedgerTransfer | undefined): string | undefined {
+  if (!isBookingPair(pair)) return undefined
+  const stamped = pair.payable !== undefined ? payeeAnaesthetistOf(pair.payable) : undefined
+  if (stamped !== undefined) return stamped
+  if (transfer !== undefined) return payeeAnaesthetistOf(transfer.in)
+  const booking = state.schedule.bookings[pair.bookingId]
+  return booking !== undefined ? state.schedule.lists[booking.listId]?.anaesthetistId : undefined
+}
+
+export interface ReceiptWrite {
+  pairId: string
+  amount: number
+  idempotencyKey: string
+  /** The ledger receipt's source; the Xero `PaymentIn` takes the same (an AA fee's is `aaFee`). */
+  source: LedgerReceipt['source']
+  atISO: string
+}
+
+/**
+ * The one receipt path (catch-up Phase 36): inside a caller's mutate recipe,
+ * apply `w` to its pair in the ledger and mirror it to Xero. Returns the state
+ * patch and the counters, or null when nothing applies (fully received, or no
+ * pair). The caller has checked idempotency.
+ */
+export function applyReceiptInto(
+  s: AppState,
+  counters: Record<string, number>,
+  w: ReceiptWrite,
+  metas: MutationMeta[],
+): { patch: Pick<AppState, 'billing' | 'xero'>; counters: Record<string, number>; added: number } | null {
+  const pair = s.billing.ledger[w.pairId]
+  if (pair === undefined) return null
+  const transfer = isBookingPair(pair) && pair.kind === 'prePayment' ? transferOfPair(s.billing.transfers, pair.id) : undefined
+  const applied = applyReceipt(pair, w.amount, w.atISO, transfer)
+  if (toCents(applied.added) <= 0) return null
+  const next = applied.pair
+  const added = applied.added
+  const ledger = { ...s.billing.ledger, [pair.id]: next }
+  const transfers = applied.transfer !== undefined ? { ...s.billing.transfers, [applied.transfer.id]: applied.transfer } : s.billing.transfers
+  const anaesthetistId = receiptAnaesthetist(s, pair, transfer)
+
+  let c = counters
+  const rct = allocateId(c, 'receipt')
+  c = rct.counters
+  const accRecId = pair.receivable.xeroAccRecId
+  const receipt: LedgerReceipt = {
+    id: rct.id,
+    pairId: pair.id,
+    pairKind: pair.kind,
+    ...(anaesthetistId !== undefined ? { anaesthetistId } : {}),
+    ...(accRecId !== undefined ? { accRecId } : {}),
+    grossAmount: added,
+    gstAmount: gstComponentOf(added),
+    atISO: w.atISO,
+    idempotencyKey: w.idempotencyKey,
+    source: w.source,
+  }
+  const released = isBookingPair(next) ? (applied.transfer?.in.releasedAmount ?? next.payable?.releasedAmount) : undefined
+  metas.push({
+    entityType: 'ledgerPair',
+    entityId: pair.id,
+    action: 'ledger.receiptRecorded',
+    after: { amount: added, cumulative: next.receivable.receivedAmount, ...(released !== undefined ? { released } : {}), source: w.source },
+  })
+  if (applied.transfer !== undefined && transfer !== undefined) {
+    metas.push({ entityType: 'ledgerPair', entityId: pair.id, action: 'prepayment.transferReleased', after: { transferId: transfer.id, released: applied.transfer.in.releasedAmount, increment: applied.releasedIncrement } })
+  }
+
+  // The Xero mirror: the payment, the ACCREC's received, the ACCPAY authorised for exactly what was received.
+  const payments = { ...s.xero.payments }
+  const accRecs = { ...s.xero.accRecs }
+  const accPays = { ...s.xero.accPays }
+  const recNow = accRecId !== undefined ? s.xero.accRecs[accRecId] : undefined
+  if (accRecId !== undefined && recNow !== undefined) {
+    if (!Object.values(s.xero.payments).some((p) => p.idempotencyKey === w.idempotencyKey)) {
+      const pmt = allocateId(c, 'paymentIn')
+      c = pmt.counters
+      payments[pmt.id] = { id: pmt.id, accRecId, amount: added, atISO: w.atISO, idempotencyKey: w.idempotencyKey, source: w.source } satisfies PaymentIn
+    }
+    const newReceived = roundToCents(recNow.amountReceived + added)
+    const fullyPaid = toCents(newReceived) >= toCents(recNow.amountDue)
+    accRecs[accRecId] = {
+      ...recNow,
+      amountReceived: newReceived,
+      status: fullyPaid ? 'paid' : 'awaitingPayment',
+      // Set once, by the completing payment.
+      ...(fullyPaid && recNow.paidAtISO === undefined ? { paidAtISO: w.atISO } : {}),
+    } satisfies XeroAccRec
+    metas.push({
+      entityType: 'xeroAccRec',
+      entityId: accRecId,
+      action: 'xero.paymentReceived',
+      after: { amount: added, cumulative: newReceived, fullyPaid, source: w.source, idempotencyKey: w.idempotencyKey },
+    })
+    const accPayId = isBookingPair(pair) ? pair.payable?.xeroAccPayId : undefined
+    const payNow = accPayId !== undefined ? s.xero.accPays[accPayId] : undefined
+    if (accPayId !== undefined && payNow !== undefined) {
+      const authorised = payableReleasedFor(newReceived, payNow.amountPayable)
+      accPays[accPayId] = { ...payNow, amountAuthorised: authorised, status: authorised > 0 && payNow.status === 'draft' ? 'authorised' : payNow.status } satisfies XeroAccPay
+      metas.push({ entityType: 'xeroAccPay', entityId: accPayId, action: 'xero.accpayAuthorised', after: { authorisedCumulative: authorised, increment: roundToCents(authorised - payNow.amountAuthorised) } })
+    }
+  }
+
+  return {
+    patch: {
+      billing: { ...s.billing, ledger, transfers, receipts: { ...s.billing.receipts, [rct.id]: receipt } },
+      xero: { ...s.xero, payments, accRecs, accPays },
+    },
+    counters: c,
+    added,
+  }
+}
+
+/**
+ * Detect a payment on an ACCREC. Idempotent by `idempotencyKey`; a replay or a
+ * poll re-detect is a no-op. Returns `applied:false` when nothing changed
+ * (duplicate key, or the receivable is already fully received). A payment on
+ * an ACCREC no pair links is held as an unmatched receipt (catch-up Phase 36).
+ */
+export function receivePayment(api: AppStoreApi, input: ReceivePaymentInput): Outcome<{ applied: boolean; unmatchedReceiptId?: string }> {
   const state = api.getState()
   const accRec = state.xero.accRecs[input.accRecId]
   if (accRec === undefined) return refuse('notFound', 'ACCREC not found.')
   // AA's own fee invoice is paid through recordAaFeePayment, never as a
-  // procedure receipt: no payable, no GST receipt (catch-up Phase 16).
+  // procedure receipt (catch-up Phase 16).
   if (accRec.kind === 'aaFee') {
     return refuse('aaFeeInvoice', 'This is an AA fee invoice; record its payment as a fee payment.')
   }
   if (!Number.isFinite(input.amount) || input.amount <= 0) {
     return refuse('invalidAmount', 'The payment amount must be positive.')
   }
-  // Idempotency: a receipt with this key means the payment is already processed.
-  if (Object.values(state.billing.receipts).some((r) => r.idempotencyKey === input.idempotencyKey)) {
-    return ok({ applied: false })
+  if (receiptKeySeen(state, input.idempotencyKey)) return ok({ applied: false })
+
+  const pair = pairByAccRec(state, input.accRecId)
+  if (pair === undefined) {
+    // No pair links it: hold the money in the ledger, out of balance until the office clears it.
+    const out = recordUnmatchedReceipt(api, { amount: input.amount, reference: `${accRec.invoiceNumber} (no matching invoice)`, idempotencyKey: input.idempotencyKey, source: input.source, ...(input.atISO !== undefined ? { atISO: input.atISO } : {}) })
+    return out.ok ? ok({ applied: true, unmatchedReceiptId: out.value.id }) : out
   }
-  const theCase = Object.values(state.billing.cases).find((c) => c.accRecId === input.accRecId)
-  if (theCase === undefined) return refuse('noCase', 'No billing case links this ACCREC.')
-  const anaesthetistId = payeeIdForCase(state, theCase)
-  // A prepayment's money goes to the AA Holding account (catch-up Phase 27a), so it needs no anaesthetist:
-  // a List moved to the office (a Draft List) still takes its payer's payment.
-  if (anaesthetistId === undefined && theCase.prepayLeg !== 'collect') return refuse('noAnaesthetist', 'Could not resolve the anaesthetist for this ACCREC.')
+  if (toCents(pair.receivable.amount - pair.receivable.receivedAmount) <= 0) return ok({ applied: false })
 
-  // Clamp the applied amount to the outstanding balance (a normal ACCREC cannot
-  // over-receive); an already fully-paid ACCREC is a no-op.
-  const added = Math.min(input.amount, roundToCents(accRec.amountDue - accRec.amountReceived))
-  if (toCents(added) <= 0) return ok({ applied: false })
-
-  const newReceived = roundToCents(accRec.amountReceived + added)
-  const accPay = theCase.accPayId !== undefined ? state.xero.accPays[theCase.accPayId] : undefined
-  const accPayTotal = accPay?.amountPayable ?? accRec.amountDue
-  const priorAuthorised = accPay?.amountAuthorised ?? 0
-  const authorisedCumulative = payableReleasedFor(newReceived, accPayTotal)
-  const fullyPaid = toCents(newReceived) >= toCents(accRec.amountDue)
-
-  const gross = added
-  const gst = gstComponentOf(gross)
-  const alreadyHasPaymentIn = Object.values(state.xero.payments).some((p) => p.idempotencyKey === input.idempotencyKey)
-
+  let applied = false
   const metas: MutationMeta[] = []
   mutate(api, PAYMENT_ACTOR[input.source], metas, (s) => {
-    let counters = s.counters
-    // The receipt/PaymentIn/paid-in date is the money's actual receipt instant
-    // (input.atISO for a poll-reconciled miss), else the live clock.
     const atISO = input.atISO ?? clockISO(s.clock)
-    const payments = { ...s.xero.payments }
-    const accRecs = { ...s.xero.accRecs }
-    const accPays = { ...s.xero.accPays }
-    const cases = { ...s.billing.cases }
-    const receipts = { ...s.billing.receipts }
-    let transfers = s.billing.transfers
-
-    // 1) PaymentIn — append unless Xero already holds it (missed-webhook poll).
-    if (!alreadyHasPaymentIn) {
-      const pmt = allocateId(counters, 'paymentIn')
-      counters = pmt.counters
-      const payment: PaymentIn = {
-        id: pmt.id,
-        accRecId: input.accRecId,
-        amount: gross,
-        atISO,
-        idempotencyKey: input.idempotencyKey,
-        source: input.source,
-      }
-      payments[pmt.id] = payment
+    const out = applyReceiptInto(s, s.counters, { pairId: pair.id, amount: input.amount, idempotencyKey: input.idempotencyKey, source: input.source, atISO }, metas)
+    if (out === null) {
+      metas.push({ entityType: 'ledgerPair', entityId: pair.id, action: 'ledger.receiptNoop' })
+      return {}
     }
+    applied = true
+    return { ...out.patch, counters: out.counters }
+  })
+  return ok({ applied })
+}
 
-    // 2) ACCREC — bump received + status.
-    const recNow = s.xero.accRecs[input.accRecId] ?? accRec
-    accRecs[input.accRecId] = {
-      ...recNow,
-      amountReceived: roundToCents(recNow.amountReceived + added),
-      status: fullyPaid ? 'paid' : 'awaitingPayment',
-      // Set once, by the completing payment (the BCTI count's paid month).
-      ...(fullyPaid && recNow.paidAtISO === undefined ? { paidAtISO: atISO } : {}),
-    } satisfies XeroAccRec
+export interface UnmatchedReceiptInput {
+  amount: number
+  reference: string
+  idempotencyKey: string
+  source: 'webhook' | 'poll'
+  /** Set only when the bank reference names an anaesthetist; never guessed from the amount. */
+  anaesthetistId?: string
+  atISO?: string
+}
 
-    // 3) ACCPAY — authorise exactly the amount received (cumulative), flip DRAFT → AUTHORISED.
-    if (theCase.accPayId !== undefined) {
-      const payNow = s.xero.accPays[theCase.accPayId]
-      if (payNow !== undefined) {
-        accPays[theCase.accPayId] = {
-          ...payNow,
-          amountAuthorised: authorisedCumulative,
-          status: authorisedCumulative > 0 && payNow.status === 'draft' ? 'authorised' : payNow.status,
-        } satisfies XeroAccPay
-      }
-    }
-
-    // 4) BillingCase mirror.
-    const caseNow = s.billing.cases[theCase.id]
-    if (caseNow !== undefined) {
-      const next: BillingCase = {
-        ...caseNow,
-        receivedAmount: newReceived,
-        authorisedAmount: authorisedCumulative,
-        status: fullyPaid ? 'paid' : 'partPaid',
-      }
-      if (fullyPaid && next.paidInAtISO === undefined) next.paidInAtISO = atISO
-      cases[theCase.id] = next
-    }
-
-    // 4b) A prepayment already transferred (catch-up Phase 27a): money arriving now goes straight to the
-    // anaesthetist's payable, released exactly as received and never more; the AA Holding account's balance
-    // does not move.
-    const transfer = theCase.prepayLeg === 'collect' ? transferOfCase(s.billing.transfers, theCase.id) : undefined
-    if (transfer !== undefined) {
-      const released = transferReleasedFor(newReceived, transfer)
-      transfers = { ...s.billing.transfers, [transfer.id]: { ...transfer, released } }
-      metas.push({ entityType: 'billingCase', entityId: theCase.id, action: 'prepayment.transferReleased', after: { transferId: transfer.id, released, increment: roundToCents(released - transfer.released) } })
-    }
-
-    // 5) Receipt — GST-report row + idempotency key.
-    const rct = allocateId(counters, 'receipt')
-    counters = rct.counters
-    receipts[rct.id] = {
-      id: rct.id,
-      caseId: theCase.id,
-      ...(anaesthetistId !== undefined ? { anaesthetistId } : {}),
-      accRecId: input.accRecId,
-      grossAmount: gross,
-      gstAmount: gst,
-      atISO,
+/**
+ * A receipt that matches no invoice (catch-up Phase 36; US-08.3.4): held in
+ * the ledger as an `UnmatchedReceipt`, so the ledger reads out of balance by
+ * its amount until the office allocates or refunds it. The Xero webhook's
+ * system actor; idempotent by key; an attribution must be an active
+ * anaesthetist.
+ */
+export function recordUnmatchedReceipt(api: AppStoreApi, input: UnmatchedReceiptInput): Outcome<{ id: string; applied: boolean }> {
+  const state = api.getState()
+  if (!Number.isFinite(input.amount) || toCents(input.amount) <= 0) return refuse('invalidAmount', 'The receipt amount must be positive.')
+  const existing = Object.values(state.billing.unmatchedReceipts).find((u) => u.idempotencyKey === input.idempotencyKey)
+  if (existing !== undefined) return ok({ id: existing.id, applied: false })
+  // A key a ledger receipt already holds was applied to an invoice: never hold it a second time.
+  if (receiptKeySeen(state, input.idempotencyKey)) return refuse('alreadyApplied', 'This payment is already recorded against an invoice.')
+  if (input.anaesthetistId !== undefined) {
+    const a = state.masters.anaesthetists[input.anaesthetistId]
+    if (a === undefined || a.active === false) return refuse('unknownAnaesthetist', 'The receipt names no active anaesthetist.')
+  }
+  let id = ''
+  const metas: MutationMeta[] = []
+  mutate(api, PAYMENT_ACTOR[input.source], metas, (s) => {
+    const allocated = allocateId(s.counters, 'unmatchedReceipt')
+    id = allocated.id
+    metas.push({ entityType: 'unmatchedReceipt', entityId: id, action: 'ledger.unmatchedReceipt', after: { amount: roundToCents(input.amount), reference: input.reference, ...(input.anaesthetistId !== undefined ? { anaesthetistId: input.anaesthetistId } : {}) } })
+    const receipt: UnmatchedReceipt = {
+      id,
+      amount: roundToCents(input.amount),
+      reference: input.reference,
+      atISO: input.atISO ?? clockISO(s.clock),
       idempotencyKey: input.idempotencyKey,
       source: input.source,
+      ...(input.anaesthetistId !== undefined ? { anaesthetistId: input.anaesthetistId } : {}),
+      status: 'held',
     }
-
-    metas.push({
-      entityType: 'xeroAccRec',
-      entityId: input.accRecId,
-      action: 'xero.paymentReceived',
-      after: { amount: gross, cumulative: newReceived, fullyPaid, source: input.source, idempotencyKey: input.idempotencyKey },
-    })
-    if (theCase.accPayId !== undefined) {
-      metas.push({
-        entityType: 'xeroAccPay',
-        entityId: theCase.accPayId,
-        action: 'xero.accpayAuthorised',
-        after: { authorisedCumulative, increment: roundToCents(authorisedCumulative - priorAuthorised) },
-      })
-    }
-
-    return {
-      xero: { ...s.xero, payments, accRecs, accPays },
-      billing: { ...s.billing, cases, receipts, transfers },
-      counters,
-    }
+    return { billing: { ...s.billing, unmatchedReceipts: { ...s.billing.unmatchedReceipts, [id]: receipt } }, counters: allocated.counters }
   })
-
-  return ok({ applied: true })
+  return ok({ id, applied: true })
 }

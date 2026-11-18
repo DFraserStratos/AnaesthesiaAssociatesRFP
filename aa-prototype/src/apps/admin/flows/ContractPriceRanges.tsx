@@ -8,12 +8,19 @@
  * rule and sentence is the store's (`validatePriceRanges`, "never the last").
  * The panel works out nothing: the spans and the range in force come from
  * `priceRanges.ts`.
+ *
+ * Catch-up Phase 25a (US-04.2.15, D79): under the table, a warning counts and
+ * lists the authorised Procedures the ranges left at their locked price (from
+ * the locks only, `keptPriceOnContract`); re-priced ones are never listed.
  */
 
-import { useRef, useState, type KeyboardEvent } from 'react'
+import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import type { Contract, PriceRange } from '../../../domain/types'
 import { formatRangeDate, formatRangePrice, parsePriceText, rangeInForce, rangeSpanText, rangesOf } from '../../../domain/billing/priceRanges'
+import { keptPriceOnContract, keptPriceTitle } from '../../../domain/billing/contractChanges'
+import { shortDay } from '../../../domain/dateText'
 import { addPriceRange, deletePriceRange, editPriceRange, useAppStore, useToday, type Actor } from '../../../store'
+import { ContractChangeNotice } from './ContractChangeNotice'
 import { Button, FieldLabel } from '../../../shared'
 import { TextField, visuallyHidden } from '../../../shared/ui'
 import { TableShell, Td, Th } from '../../../shared/table'
@@ -28,6 +35,8 @@ const PRICE_WIDTH = 96
 export function ContractPriceRanges({ contract, actor, onError }: { contract: Contract; actor: Actor; onError: (message: string | null) => void }) {
   const today = useToday()
   const ranges = rangesOf(contract)
+  const locks = useAppStore((s) => s.billing.locks)
+  const kept = useMemo(() => keptPriceOnContract(locks, contract.id, rangesOf(contract)), [locks, contract])
   const inForce = rangeInForce(contract, today)
   const [editing, setEditing] = useState<string | null>(null)
   const [draftStart, setDraftStart] = useState('')
@@ -224,6 +233,23 @@ export function ContractPriceRanges({ contract, actor, onError }: { contract: Co
       <span style={{ fontSize: 12, color: neutral.mist }}>
         A start may be in the past: every Procedure on this Contract that nothing holds re-prices at once. Invoices already raised stay as they are.
       </span>
+      {kept.length > 0 && (
+        <ContractChangeNotice
+          title={keptPriceTitle(kept.length)}
+          columns={[{ label: 'Date', mono: true }, { label: 'Locked', align: 'right', mono: true }, { label: 'Range', align: 'right', mono: true }]}
+          rows={kept.map((r) => ({
+            key: r.procedureId,
+            bookingId: r.bookingId,
+            dateISO: r.dateISO,
+            patientName: r.patientName,
+            cells: [shortDay(r.dateISO), formatRangePrice(r.lockedPrice), formatRangePrice(r.rangePrice)],
+          }))}
+          shot="price-range-kept"
+          rowShot="price-range-kept-row"
+        >
+          Their Lists were authorised, so they keep the price they were locked at. Their invoices stay as raised.
+        </ContractChangeNotice>
+      )}
     </div>
   )
 }

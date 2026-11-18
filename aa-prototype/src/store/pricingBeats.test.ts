@@ -8,11 +8,15 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList, completeBooking, editProcedure, submitList } from './lifecycle'
-import { handoffListCases, runBillingForList } from './billingRun'
+import { runBillingForList } from './billingRun'
+import { handoffListPairs } from './xeroHandoff'
+import { bctiRecords } from './ledgerSelectors'
+import { pairStatusLabel } from '../domain/billing/ledger'
+import type { BookingLedgerPair } from '../domain/types'
 import { addBackdatedRangeDemo, backdatedRangeAdded } from './demoBackdatedRange'
 import { addPriceRange } from './contractActions'
 import { confirmNoModifiers } from './modifierActions'
-import { bctiRecords, billingContextForBooking, bookingsForList, prepaidHeldFor, proceduresForBooking } from './selectors'
+import { billingContextForBooking, bookingsForList, prepaidHeldFor, proceduresForBooking } from './selectors'
 import { OFFICE_ACTOR } from './demoActors'
 import { bookingFeeView } from './__parity__/phase24Fees'
 import { buildInvoicesForBooking } from '../domain/billing/invoiceBuild'
@@ -70,7 +74,7 @@ describe('a $0 price raises a no-charge invoice (item 9; US-03.5.1)', () => {
     expect(authoriseList(api, OFFICE_ACTOR, listId).ok).toBe(true)
     const run = runBillingForList(api, listId)
     expect(run.ok).toBe(true)
-    handoffListCases(api, listId)
+    handoffListPairs(api, listId)
     const s = api.getState()
     const invoices = Object.values(s.billing.invoices).filter((i) => i.bookingId === bookingId)
     expect(invoices).toHaveLength(1)
@@ -79,13 +83,15 @@ describe('a $0 price raises a no-charge invoice (item 9; US-03.5.1)', () => {
     const lines = Object.values(s.billing.invoiceLines).filter((l) => l.invoiceId === invoices[0]!.id)
     expect(lines.map((l) => [l.kind, l.amount])).toEqual([['fee', 0]])
     expect(lines[0]!.units).toBeGreaterThan(0)
-    const theCase = Object.values(s.billing.cases).find((c) => c.invoiceId === invoices[0]!.id)!
-    expect(theCase.accPayId).toBeUndefined()
-    expect(s.xero.accRecs[theCase.accRecId!]).toMatchObject({ amountDue: 0, status: 'paid' })
-    // Nothing owed: the case reads paid, stamped, and nothing is disbursed.
-    expect(theCase).toMatchObject({ status: 'paid' })
-    expect(theCase.paidInAtISO).toBeDefined()
-    expect(theCase.disbursedAtISO).toBeUndefined()
+    const theCase = Object.values(s.billing.ledger).find((c): c is BookingLedgerPair => c.kind !== 'aaFee' && c.invoiceId === invoices[0]!.id)!
+    // No payable leg at all on a no-charge invoice, so no ACCPAY and nothing to disburse.
+    expect(theCase.payable).toBeUndefined()
+    expect(s.xero.accRecs[theCase.receivable.xeroAccRecId!]).toMatchObject({ amountDue: 0, status: 'paid' })
+    // Nothing owed: the pair reads paid, stamped, and nothing is disbursed.
+    expect(theCase.receivable).toMatchObject({ amount: 0, receivedAmount: 0 })
+    expect(pairStatusLabel(theCase)).toBe('paid')
+    expect(theCase.receivable.paidInAtISO).toBeDefined()
+    expect(theCase.payable?.paidOutAtISO).toBeUndefined()
     // The three-procedure Booking on the same List still bills and pairs as before.
     const other = Object.values(s.billing.invoices).filter((i) => i.bookingId === marker('multiProcedureBooking'))
     expect(other.length).toBeGreaterThan(0)

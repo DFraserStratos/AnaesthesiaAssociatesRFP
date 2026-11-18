@@ -13,7 +13,8 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList } from './lifecycle'
-import { runBillingForList, handoffListCases } from './billingRun'
+import { runBillingForList } from './billingRun'
+import { handoffListPairs } from './xeroHandoff'
 import { approveAllPrepayments } from '../test/approvePrepayments'
 import { receivePayment } from './paymentActions'
 import { runPayables } from './payablesActions'
@@ -38,7 +39,7 @@ describe('no NHI in the Xero slice (convention 8 / Appendix 2)', () => {
     const morrison = SEED_MARKERS.submittedListMorrison!.entityId
     expect(authoriseList(api, OFFICE, morrison).ok).toBe(true)
     expect(runBillingForList(api, morrison).ok).toBe(true)
-    handoffListCases(api, morrison)
+    handoffListPairs(api, morrison)
     // A patient-payer pair (self funded prepayment, approved and sent).
     expect(approveAllPrepayments(api, SEED_MARKERS.prepaymentBooking!.entityId, OFFICE)).toHaveLength(1)
     // Pay everything, then disburse.
@@ -103,7 +104,7 @@ describe('Xero privacy scan (US-09.3.1: no personal information in Xero)', () =>
     for (const listId of [SEED_LIST_IDS.souterMon20Am, SEED_LIST_IDS.souterMon20Pm]) {
       expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
       expect(runBillingForList(api, listId).ok).toBe(true)
-      handoffListCases(api, listId)
+      handoffListPairs(api, listId)
     }
     expect(approveAllPrepayments(api, SEED_MARKERS.prepaymentBooking!.entityId, OFFICE)).toHaveLength(1)
     let i = 0

@@ -44,7 +44,7 @@
         },
         {
           "state": "offer",
-          "caption": "Naming another person offers the same payer to the other Procedure, marked Provisional (OQ-140)",
+          "caption": "Naming another person offers the same payer to the other Procedure",
           "steps": [
             {
               "scroll": "[data-shot=procedure-split-row] >> nth=0"

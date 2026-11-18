@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { neutral, radius, semantic } from '../../theme/tokens'
+import { neutral, radius } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
-import { billingReferenceMissing, isPrepaidContract } from '../../domain/billing'
+import { isPrepaidContract } from '../../domain/billing'
 import { useAppStore, type Actor } from '../../store'
 import { Button, DefList, DefRow, Eyebrow } from '../ui'
 import { formatCurrency } from '../format'
-import { EditBillingSetupSheet, PricingSheet } from '../flows'
+import { PricingSheet } from '../flows'
 import { lockStampText, lockViewFor, type BookingLock } from '../../domain/billing/lock'
 import { LockBadge } from './LockBadge'
 import { BILLS_LABEL, pricingLabel } from '../contracts'
@@ -19,17 +19,17 @@ interface OfficeBillingSetupProps {
   canEdit: boolean
 }
 
-type Sheet = 'none' | 'setup' | 'price'
+type Sheet = 'none' | 'price'
 
 /**
  * The office billing-setup section (Phase 06; catch-up Phase 20), rendered per
- * procedure in `BookingDetailBody` only for an `office` actor: the reference, the typed price (Change price, catch-up Phase 24)
- * and whether a prepayment is required (from a prepaid Contract; INTERIM until
- * Phase 27). The Contract, its holder, who is invoiced and the Split are the
+ * procedure in `BookingDetailBody` only for an `office` actor: the typed price (Change price, catch-up Phase 24)
+ * and whether the Contract is prepaid (catch-up Phase 27). The Contract, its holder, who is invoiced and the Split are the
  * procedure stack's (catch-up Phases 20a and 22), so they are not repeated
  * here. A neutral tint (UI unification README question 14: teal is never a
- * label or status tint). "Edit billing setup" opens
- * "Contract and reference" (the reference; the payer is on the Booking since catch-up Phase 21).
+ * label or status tint). Catch-up Phase 25a: the hospital's reference is gone
+ * (DM-68, D82), and with it the Reference row and the "Contract and reference"
+ * sheet that only edited it; the Contract is chosen on the step rail.
  */
 export function OfficeBillingSetup({ procedure, displayNumber, actor, canEdit }: OfficeBillingSetupProps) {
   const masters = useAppStore((s) => s.masters)
@@ -39,7 +39,6 @@ export function OfficeBillingSetup({ procedure, displayNumber, actor, canEdit }:
   if (lock !== undefined && lock.state === 'locked') return <LockedBillingSetup lock={lock} procedure={procedure} displayNumber={displayNumber} />
 
   const contract = procedure.governingContractId !== undefined ? masters.contracts[procedure.governingContractId] : undefined
-  const refMissing = billingReferenceMissing(procedure, masters.contracts, masters.parties)
   // Prepayment follows a prepaid Contract (catch-up Phase 27); read-only here, the panel above carries its status.
   const prepaymentText = isPrepaidContract(contract) ? 'Prepaid Contract' : 'Not prepaid'
 
@@ -55,19 +54,16 @@ export function OfficeBillingSetup({ procedure, displayNumber, actor, canEdit }:
 
       {/* The Contract, its holder and who is invoiced show in the procedure stack above (catch-up Phase 20a). */}
       <DefList gap={10}>
-        <DefRow labelTone="slate" valueStyle={STACK} label="Reference">{refMissing ? <Missing>Missing</Missing> : (procedure.billingReference ?? 'None')}</DefRow>
         <DefRow labelTone="slate" valueStyle={STACK} label="Price"><span data-shot="office-billing-price">{typedLabel}</span></DefRow>
         <DefRow labelTone="slate" valueStyle={STACK} label="Prepayment">{prepaymentText}</DefRow>
       </DefList>
 
       {canEdit && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
-          <Button variant="secondary" onClick={() => setSheet('setup')}>Edit billing setup</Button>
           <Button variant="secondary" onClick={() => setSheet('price')} shot="change-price">Change price</Button>
         </div>
       )}
 
-      <EditBillingSetupSheet open={sheet === 'setup'} procedure={procedure} actor={actor} onClose={() => setSheet('none')} />
       <PricingSheet open={sheet === 'price'} procedureId={procedure.id} actor={actor} onClose={() => setSheet('none')} />
     </div>
   )
@@ -114,9 +110,3 @@ function LockedBillingSetup({ lock, procedure, displayNumber }: { lock: BookingL
 
 /** The value column stacks a figure over its quiet line, as the card's rows always did. */
 const STACK = { display: 'flex', flexDirection: 'column', gap: 2 } as const
-
-function Missing({ children }: { children: React.ReactNode }) {
-  return (
-    <span style={{ color: semantic.warning.onTint, fontWeight: 600 }}>{children}</span>
-  )
-}

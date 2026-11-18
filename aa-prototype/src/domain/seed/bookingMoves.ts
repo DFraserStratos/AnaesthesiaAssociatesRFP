@@ -49,7 +49,6 @@ export function seedBookingMoveBookings(next: { booking: number; procedure: numb
     modifierClaims: [],
     removedModifierIds: [],
     governingContractId: CONTRACT.cesRvg,
-    billingReference: 'CE-2026-0731',
   }
   return { bookings: [booking], procedures: [procedure], next: { booking: next.booking + 1, procedure: next.procedure + 1 } }
 }

@@ -251,16 +251,11 @@ export { conflictLookups, type MutationResult } from './conflictReconcile'
 export {
   createSurgeon,
   editSurgeon,
-  createSurgeonRoom,
-  editSurgeonRoom,
   createSurgeonGroup,
   editSurgeonGroup,
   type SurgeonFields,
-  type SurgeonRoomFields,
   type SurgeonGroupFields,
 } from './surgeonActions'
-// Catch-up Phase 17a: practice manager and PA contacts on a surgeons' room (US-13.6.5).
-export { addRoomContact, editRoomContact, removeRoomContact, type RoomContactFields } from './roomContactActions'
 export { createParty, editParty, partyContractFacts, type PartyFields } from './partyActions'
 // Catch-up Phase 18a: AA's specialties and funding tags (Admin Master data).
 export { createSpecialty, renameSpecialty, removeSpecialty } from './specialtyActions'
@@ -292,14 +287,17 @@ export {
 } from './contractActions'
 export {
   runBillingForList,
-  retryBillingCase,
+  retryBillingException,
   resendInvoice,
   wireBillingRun,
-  handoffListCases,
   type BillingRunResult,
   type BillingRunException,
 } from './billingRun'
-export { handoffCase, handoffCasesForBooking, type HandoffResult } from './xeroHandoff'
+export { handoffPair, handoffPairsForBooking, handoffListPairs, type HandoffResult } from './xeroHandoff'
+// The internal ledger (catch-up Phase 36): its reads and the office's actions on unmatched receipts.
+export * from './ledgerSelectors'
+export { allocateUnmatchedReceipt, allocationRefusal, markUnmatchedRefunded, OVER_ALLOCATION } from './ledgerActions'
+export { recordUnmatchedReceipt, type UnmatchedReceiptInput } from './paymentActions'
 // The AA Holding account's transfer and its Xero journal (catch-up Phase 27a).
 export { postTransferJournal } from './xeroHandoff'
 export { settlePrepaymentsForList, transfersDueForList } from './prepaymentSettlement'
@@ -429,6 +427,8 @@ export {
   nextPrimaryFor,
 } from './demoMultiProcedure'
 export { reviewFlagsFor, reviewFlagsOnList, reviewInputFor } from './reviewSelectors'
+// The Contract change warnings' lists (catch-up Phase 25a).
+export { keptPriceForRange, stillOnContract } from './contractChangeSelectors'
 export * from './lookback'
 
 // The step rail's writes and reads (catch-up Phase 20).
@@ -476,6 +476,11 @@ export {
   type ImportRowView,
   type MatchingFilter,
 } from './matchingSelectors'
+// Catch-up Phase 33a: stubs on a List (never Bookings) and the office's one resolve path.
+export { resolveStub, type ResolveStubInput, type ResolveStubResult } from './stubActions'
+export { resolvedStubForRow, standingStubCount, standingStubCountsByList, stubForRow, stubsForList, useListStubs, useStubCountsByList } from './stubSelectors'
+// Catch-up Phase 33a: the PWA office stand-in that adds the NHI to a List's stub.
+export { fixtureNhiForRow, officeAddsNhiRefusal, officeAddsNhiToStub } from './stubDemo'
 // Catch-up Phase 33: the matching screen's demo trigger bodies (bar entries and the PWA office stand-in).
 export {
   officeMatchesHospitalRow,

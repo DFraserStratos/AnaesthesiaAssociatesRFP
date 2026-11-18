@@ -1,7 +1,7 @@
 {
   "id": "US-08.3.4",
   "status": "partial",
-  "absentReason": "Receipts and disbursements are tracked per invoice and shown per booking, but there is no equilibrium view for AA overall, per anaesthetist or per patient.",
+  "absentReason": "Per-patient position arrives with the patient screen (catch-up Phase 40).",
   "shots": [
     {
       "name": "money-in-out",
@@ -59,6 +59,118 @@
           "highlight": [
             "[data-shot=billing-payables-run]",
             "[data-shot=billing-pipeline-L-34821-2026-07-20-AM]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ledger-balance",
+      "app": "admin",
+      "caption": "Money in and money out for AA overall: in balance, with receivables outstanding, receipts held, payables due, the AA Holding account and disbursed",
+      "start": "/admin/ledger",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=ledger-balance][data-in-balance=true]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=ledger-balance]",
+            "[data-shot=ledger-tiles]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "anaesthetist-balance",
+      "app": "admin",
+      "caption": "Money in and money out for one anaesthetist: Dr Souter's ledger in balance, collected and paid out",
+      "start": "/admin/ledger/anaesthetists/34821",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=ledger-balance][data-in-balance=true]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=ledger-balance]",
+            "[data-shot=ledger-tiles]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ledger-out-of-balance",
+      "app": "admin",
+      "caption": "A $120.00 receipt naming Dr Souter matches no invoice: the ledger is out of balance by $120.00 until the office deals with it",
+      "start": "/admin/ledger",
+      "setup": [
+        {
+          "goto": "/admin/ledger"
+        },
+        {
+          "trigger": "inject-unmatched-receipt",
+          "choice": "souter"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=ledger-balance][data-in-balance=false]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=ledger-balance]",
+            "[data-shot=ledger-unmatched]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ledger-allocated",
+      "app": "admin",
+      "caption": "Allocated to one of Dr Souter's invoices, the receipt is matched and the ledger is back in balance",
+      "start": "/admin/ledger",
+      "setup": [
+        {
+          "goto": "/admin/ledger"
+        },
+        {
+          "trigger": "inject-unmatched-receipt",
+          "choice": "souter"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=ledger-allocate]"
+            },
+            {
+              "wait": "[data-shot=ledger-allocate-dialog] [data-allocate-pair]"
+            },
+            {
+              "click": "[data-shot=ledger-allocate-dialog] [data-allocate-pair] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=ledger-balance][data-in-balance=true]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=ledger-balance]",
+            "[data-shot=ledger-unmatched]"
           ]
         }
       ]

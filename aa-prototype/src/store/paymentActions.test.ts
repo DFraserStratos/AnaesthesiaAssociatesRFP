@@ -11,12 +11,15 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList, completeBooking, submitList } from './lifecycle'
-import { runBillingForList, handoffListCases } from './billingRun'
+import { runBillingForList } from './billingRun'
+import { handoffListPairs } from './xeroHandoff'
+import { pairStatusLabel } from '../domain/billing/ledger'
+import type { BookingLedgerPair } from '../domain/types'
 import { approveAllPrepayments } from '../test/approvePrepayments'
 import { receivePayment, gstComponentOf } from './paymentActions'
 import { runReconciliationPoll } from './reconciliationPoll'
 import { advanceClockDays } from './clockActions'
-import { casesForList, casesForBooking } from './selectors'
+import { pairsForList, pairsForBooking } from './ledgerSelectors'
 import { prepaymentStatusFor } from './prepaymentSelectors'
 import { warningsForBooking } from './warnings'
 import { roundToCents, toCents } from '../domain/billing/money'
@@ -39,23 +42,29 @@ function listOf(api: BoundAppStore, bookingId: string): string {
   if (booking === undefined) throw new Error(`missing booking ${bookingId}`)
   return booking.listId
 }
-/** Bill + hand off the single-invoice COS list, returning its case + ACCREC. */
-function billCosAndHandoff(api: BoundAppStore): { caseId: string; accRecId: string; amountDue: number; amountPayable: number } {
+/** Bill + hand off the single-invoice COS list, returning its pair + ACCREC. */
+function billCosAndHandoff(api: BoundAppStore): { pairId: string; accRecId: string; amountDue: number; amountPayable: number } {
   const listId = listOf(api, marker('cosAccContractBooking'))
   expect(submitList(api, OFFICE, listId).ok).toBe(true)
   expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
   expect(runBillingForList(api, listId).ok).toBe(true)
-  handoffListCases(api, listId)
-  const c = casesForList(api.getState(), listId).find((x) => x.status !== 'failed')!
-  const accRec = api.getState().xero.accRecs[c.accRecId!]!
-  const accPay = api.getState().xero.accPays[c.accPayId!]!
-  return { caseId: c.id, accRecId: c.accRecId!, amountDue: accRec.amountDue, amountPayable: accPay.amountPayable }
+  handoffListPairs(api, listId)
+  // (catch-up Phase 36: a failed Booking is a BillingException, never a pair.)
+  const p = pairsForList(api.getState(), listId)[0]!
+  const accRec = api.getState().xero.accRecs[p.receivable.xeroAccRecId!]!
+  const accPay = api.getState().xero.accPays[p.payable!.xeroAccPayId!]!
+  return { pairId: p.id, accRecId: p.receivable.xeroAccRecId!, amountDue: accRec.amountDue, amountPayable: accPay.amountPayable }
+}
+function pairOf(api: BoundAppStore, pairId: string): BookingLedgerPair {
+  const p = api.getState().billing.ledger[pairId]!
+  if (p.kind === 'aaFee') throw new Error('expected a Booking pair')
+  return p
 }
 
 describe('webhook payment detection', () => {
   it('a full payment marks the ACCREC paid, authorises the ACCPAY, and mirrors the case', () => {
     const api = store()
-    const { caseId, accRecId, amountDue, amountPayable } = billCosAndHandoff(api)
+    const { pairId, accRecId, amountDue, amountPayable } = billCosAndHandoff(api)
     const res = receivePayment(api, { accRecId, amount: amountDue, idempotencyKey: 'K-full', source: 'webhook' })
     expect(res).toMatchObject({ ok: true, value: { applied: true } })
 
@@ -63,18 +72,18 @@ describe('webhook payment detection', () => {
     const accRec = s.xero.accRecs[accRecId]!
     expect(accRec.amountReceived).toBe(amountDue)
     expect(accRec.status).toBe('paid')
-    const c = s.billing.cases[caseId]!
-    const accPay = s.xero.accPays[c.accPayId!]!
+    const c = pairOf(api, pairId)
+    const accPay = s.xero.accPays[c.payable!.xeroAccPayId!]!
     expect(amountPayable).toBe(amountDue)
     expect(accPay.amountAuthorised).toBe(amountDue)
     expect(accPay.status).toBe('authorised')
     expect(accRec.paidAtISO).toBe(clockISO(s.clock))
-    expect(c.receivedAmount).toBe(amountDue)
-    expect(c.authorisedAmount).toBe(amountPayable)
-    expect(c.status).toBe('paid')
-    expect(c.paidInAtISO).toBeDefined()
-    // One receipt for THIS case (the seed ships historical receipts too), GST = 3/23 of the gross.
-    const receipts = Object.values(s.billing.receipts).filter((r) => r.caseId === caseId)
+    expect(c.receivable.receivedAmount).toBe(amountDue)
+    expect(c.payable!.releasedAmount).toBe(amountPayable)
+    expect(pairStatusLabel(c)).toBe('paid')
+    expect(c.receivable.paidInAtISO).toBeDefined()
+    // One receipt for THIS pair (the seed ships historical receipts too), GST = 3/23 of the gross.
+    const receipts = Object.values(s.billing.receipts).filter((r) => r.pairId === pairId)
     expect(receipts).toHaveLength(1)
     expect(receipts[0]!.grossAmount).toBe(amountDue)
     expect(receipts[0]!.gstAmount).toBe(gstComponentOf(amountDue))
@@ -95,38 +104,38 @@ describe('webhook payment detection', () => {
 
   it('two distinct partials both apply and accumulate; the ACCPAY authorises exactly what was received', () => {
     const api = store()
-    const { caseId, accRecId, amountDue, amountPayable } = billCosAndHandoff(api)
+    const { pairId, accRecId, amountDue, amountPayable } = billCosAndHandoff(api)
     const p1 = roundToCents(amountDue * 0.4)
     const p2 = roundToCents(amountDue - p1)
 
     expect(receivePayment(api, { accRecId, amount: p1, idempotencyKey: 'P1', source: 'webhook' }).ok).toBe(true)
-    let c = api.getState().billing.cases[caseId]!
-    expect(c.receivedAmount).toBe(p1)
-    expect(c.authorisedAmount).toBe(p1)
-    expect(api.getState().xero.accPays[c.accPayId!]!.amountAuthorised).toBe(p1)
-    expect(c.status).toBe('partPaid')
+    let c = pairOf(api, pairId)
+    expect(c.receivable.receivedAmount).toBe(p1)
+    expect(c.payable!.releasedAmount).toBe(p1)
+    expect(api.getState().xero.accPays[c.payable!.xeroAccPayId!]!.amountAuthorised).toBe(p1)
+    expect(pairStatusLabel(c)).toBe('partPaid')
     expect(api.getState().xero.accRecs[accRecId]!.status).toBe('awaitingPayment')
     expect(api.getState().xero.accRecs[accRecId]!.paidAtISO).toBeUndefined()
 
     expect(receivePayment(api, { accRecId, amount: p2, idempotencyKey: 'P2', source: 'webhook' }).ok).toBe(true)
-    c = api.getState().billing.cases[caseId]!
-    expect(c.receivedAmount).toBe(amountDue)
-    expect(c.authorisedAmount).toBe(amountPayable)
-    expect(c.status).toBe('paid')
-    expect(Object.values(api.getState().billing.receipts).filter((r) => r.caseId === caseId)).toHaveLength(2)
+    c = pairOf(api, pairId)
+    expect(c.receivable.receivedAmount).toBe(amountDue)
+    expect(c.payable!.releasedAmount).toBe(amountPayable)
+    expect(pairStatusLabel(c)).toBe('paid')
+    expect(Object.values(api.getState().billing.receipts).filter((r) => r.pairId === pairId)).toHaveLength(2)
     // The completing partial sets the paid date.
     expect(api.getState().xero.accRecs[accRecId]!.paidAtISO).toBe(clockISO(api.getState().clock))
   })
 
   it('a half payment of $152.38 releases exactly $76.19 (US-10.2.1)', () => {
     const api = store()
-    const { caseId, accRecId, amountDue } = billCosAndHandoff(api)
+    const { pairId, accRecId, amountDue } = billCosAndHandoff(api)
     // Scale the rule check to this invoice: half received releases exactly half.
     const half = roundToCents(amountDue / 2)
     expect(receivePayment(api, { accRecId, amount: half, idempotencyKey: 'H1', source: 'webhook' }).ok).toBe(true)
-    const c = api.getState().billing.cases[caseId]!
-    expect(c.authorisedAmount).toBe(half)
-    expect(toCents(c.authorisedAmount)).toBe(toCents(c.receivedAmount))
+    const c = pairOf(api, pairId)
+    expect(c.payable!.releasedAmount).toBe(half)
+    expect(toCents(c.payable!.releasedAmount)).toBe(toCents(c.receivable.receivedAmount))
   })
 
   it('a replay never moves the paid date', () => {
@@ -174,16 +183,16 @@ describe('reconciliation poll (safety net)', () => {
 
   it('webhook then poll causes no double effect on the paid ACCREC (idempotent by key)', () => {
     const api = store()
-    const { caseId, accRecId, amountDue } = billCosAndHandoff(api)
+    const { pairId, accRecId, amountDue } = billCosAndHandoff(api)
     expect(receivePayment(api, { accRecId, amount: amountDue, idempotencyKey: 'WH', source: 'webhook' }).ok).toBe(true)
     const receivedBefore = api.getState().xero.accRecs[accRecId]!.amountReceived
-    const caseReceiptsBefore = Object.values(api.getState().billing.receipts).filter((r) => r.caseId === caseId).length
+    const caseReceiptsBefore = Object.values(api.getState().billing.receipts).filter((r) => r.pairId === pairId).length
 
     // The poll may catch OTHER seeded missed webhooks, but never re-applies this
     // already-mirrored payment (its receipt key is present).
     runReconciliationPoll(api)
     expect(api.getState().xero.accRecs[accRecId]!.amountReceived).toBe(receivedBefore)
-    expect(Object.values(api.getState().billing.receipts).filter((r) => r.caseId === caseId).length).toBe(caseReceiptsBefore)
+    expect(Object.values(api.getState().billing.receipts).filter((r) => r.pairId === pairId).length).toBe(caseReceiptsBefore)
   })
 })
 
@@ -196,8 +205,8 @@ describe('pre-payment webhook clears the prepayment warning (Phase 09; catch-up 
     // Office approves and sends it (catch-up Phase 27) → handoff → ACCREC to the patient.
     expect(approveAllPrepayments(api, riley, OFFICE)).toHaveLength(1)
     expect(prepaymentStatusFor(api.getState(), riley).status).toBe('unpaid')
-    const preCase = casesForBooking(api.getState(), riley)[0]!
-    const accRec = api.getState().xero.accRecs[preCase.accRecId!]!
+    const prePair = pairsForBooking(api.getState(), riley)[0]!
+    const accRec = api.getState().xero.accRecs[prePair.receivable.xeroAccRecId!]!
 
     expect(warningsForBooking(api.getState(), riley).some((w) => w.ruleId === 'prepaymentUnpaid')).toBe(true)
 

@@ -92,7 +92,7 @@ describe('backfillMerge', () => {
 
     // A persisted store whose invoices map was emptied (records deleted in the
     // demo) and that predates the `receipts` sub-key entirely.
-    const persisted = { ...fresh, billing: { invoices: {}, cases: fresh.billing.cases } }
+    const persisted = { ...fresh, billing: { invoices: {}, ledger: fresh.billing.ledger } }
     const merged = backfillMerge(fresh as never, persisted)
 
     // The emptied live map wins wholesale - seed invoices are NOT merged back in.
@@ -574,7 +574,8 @@ describe('office review flags and the movable Booking (catch-up Phase 21a sessio
     const bookings = Object.fromEntries(Object.entries(fresh.schedule.bookings).filter(([, b]) => b.listId !== SEED_LIST_IDS.reviewFlags))
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule: { ...fresh.schedule, bookings } }, version: 42 }))
     const s = createAppStore({ persisted: true }).getState()
-    expect(Object.values(s.schedule.bookings).filter((b) => b.listId === SEED_LIST_IDS.reviewFlags)).toHaveLength(4)
+    // Four from 21a; catch-up Phase 25a adds the Booking on the Disabled Contract.
+    expect(Object.values(s.schedule.bookings).filter((b) => b.listId === SEED_LIST_IDS.reviewFlags)).toHaveLength(5)
   })
 })
 
@@ -658,25 +659,15 @@ describe("surgeons at more than one room and optional room emails (catch-up Phas
   })
   afterEach(() => localStorage.clear())
 
-  it('discards a v45 store whose surgeons hold one roomId and reseeds roomIds and the rooms without an email', () => {
+  it('discards a v45 store whose surgeons hold one roomId, and reseeds the current surgeon shape (no rooms since catch-up Phase 17b)', () => {
     expect(PERSIST_VERSION).toBeGreaterThanOrEqual(46)
     const fresh = freshAppState()
-    // The v45 shape: one roomId per surgeon, every room with an email and a phone string.
-    const surgeons = Object.fromEntries(
-      Object.entries(fresh.masters.surgeons).map(([id, s]) => {
-        const { roomIds, ...rest } = s
-        return [id, { ...rest, roomId: roomIds[0] }]
-      }),
-    )
-    const surgeonRooms = Object.fromEntries(
-      Object.entries(fresh.masters.surgeonRooms).map(([id, r]) => [id, { id, name: r.name, contactEmail: r.contactEmail ?? 'reception@placeholder.example', phone: r.phone ?? '' }]),
-    )
-    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters: { ...fresh.masters, surgeons, surgeonRooms } }, version: 45 }))
+    // The v45 shape: one roomId per surgeon.
+    const surgeons = Object.fromEntries(Object.entries(fresh.masters.surgeons).map(([id, s]) => [id, { ...s, roomId: 'RM-RICC' }]))
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters: { ...fresh.masters, surgeons } }, version: 45 }))
     const s = createAppStore({ persisted: true }).getState()
-    expect(Object.values(s.masters.surgeons).every((x) => Array.isArray(x.roomIds) && x.roomIds.length > 0)).toBe(true)
     expect(Object.values(s.masters.surgeons).some((x) => 'roomId' in x)).toBe(false)
-    expect(s.masters.surgeonRooms['RM-GENERALSUR']?.contactEmail).toBeUndefined()
-    expect(s.masters.surgeons['S-WINSLOW']?.roomIds).toEqual(['RM-RICHMONDFE', 'RM-LINWOODWOM'])
+    expect(s.masters.surgeons['S-WINSLOW']?.officeContacts.length).toBe(2)
   })
 })
 
@@ -790,7 +781,7 @@ describe('the matching screen (catch-up Phase 33)', () => {
   })
   afterEach(() => localStorage.clear())
 
-  it('discards a v52 store with no intake slice and a manual-intervention message, and reseeds an empty intake', () => {
+  it('discards a v52 store with no intake slice and a manual-intervention message, and reseeds the intake', () => {
     expect(PERSIST_VERSION).toBeGreaterThanOrEqual(53)
     const { intake: _i, ...fresh } = freshAppState()
     const messages = {
@@ -798,7 +789,7 @@ describe('the matching screen (catch-up Phase 33)', () => {
     }
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, integrations: { ...fresh.integrations, messages } }, version: 52 }))
     const s = createAppStore({ persisted: true }).getState()
-    expect(s.intake).toEqual({ batches: {}, rows: {} })
+    expect(s.intake).toEqual(freshAppState().intake)
     expect(s.integrations.messages).toEqual({})
   })
 })
@@ -817,7 +808,7 @@ describe('the Wave 1 join (v54: Lane A 27 and Lane B 32d, 33)', () => {
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, appSettings: oldSettings }, version: 53 }))
     const s = createAppStore({ persisted: true }).getState()
     expect(s.appSettings.prepayment.approvalRequired).toBe(true)
-    expect(s.intake).toEqual({ batches: {}, rows: {} })
+    expect(s.intake).toEqual(freshAppState().intake)
   })
 })
 
@@ -833,11 +824,127 @@ describe('the AA Holding account transfer (catch-up Phase 27a)', () => {
     const fresh = freshAppState()
     const { transfers: _t, ...billing } = fresh.billing
     const { journals: _j, ...xero } = fresh.xero
-    const { prepayLeg: _l, ...untagged } = fresh.billing.cases.BC0001!
-    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing: { ...billing, cases: { ...billing.cases, BC0001: untagged } }, xero }, version: 54 }))
+    // (catch-up Phase 36: the collect leg is now the `prePayment` ledger pair; an untagged one is a plain procedure pair.)
+    const untagged = { ...fresh.billing.ledger.BC0001!, kind: 'procedure' }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing: { ...billing, ledger: { ...billing.ledger, BC0001: untagged } }, xero }, version: 54 }))
     const s = createAppStore({ persisted: true }).getState()
     expect(s.billing.transfers).toEqual({})
     expect(s.xero.journals).toEqual({})
-    expect(s.billing.cases.BC0001?.prepayLeg).toBe('collect')
+    const bc0001 = s.billing.ledger.BC0001
+    expect(bc0001?.kind).toBe('prePayment')
+    expect(bc0001?.kind === 'prePayment' ? bc0001.payable?.payee : undefined).toEqual({ kind: 'holding' })
+  })
+})
+
+describe('stubs on a List (catch-up Phase 33a)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v55 store whose intake has no stubs, and reseeds the waiting row and its stub', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(56)
+    const fresh = freshAppState()
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, intake: { batches: {}, rows: {} } }, version: 55 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.keys(s.intake.stubs)).toEqual(['STB0001'])
+    expect(s.intake.stubs.STB0001).toMatchObject({ status: 'standing', listId: 'L-34821-2026-08-04-PM', importRowId: 'IRS001' })
+    expect(s.counters.stub).toBe(2)
+  })
+})
+
+describe('the seeded Disabled Contract (catch-up Phase 25a)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v55 store with no Disabled Contract and reseeds it with its disable entry', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(56)
+    const fresh = freshAppState()
+    const { 'CT-CES-2025': _gone, ...contracts } = fresh.masters.contracts
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters: { ...fresh.masters, contracts } }, version: 55 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.masters.contracts['CT-CES-2025']?.status).toBe('disabled')
+    expect(s.audit.some((a) => a.entityId === 'CT-CES-2025' && a.action === 'contract.disable')).toBe(true)
+  })
+
+  it('discards a v56 store whose Procedures still carry a hospital reference, and reseeds without one (session 2, DM-68)', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(57)
+    const fresh = freshAppState()
+    const [firstId, first] = Object.entries(fresh.schedule.procedures)[0]!
+    const procedures = { ...fresh.schedule.procedures, [firstId]: { ...first, billingReference: 'SG-2026-0001' } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule: { ...fresh.schedule, procedures } }, version: 56 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.values(s.schedule.procedures).some((p) => 'billingReference' in p)).toBe(false)
+  })
+})
+
+describe("no surgeons' rooms, contacts on the surgeon (catch-up Phase 17b)", () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it("discards a v58 store holding surgeons' rooms and roomIds, and reseeds practice names, contacts and the three blank HPI CPNs", () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(59)
+    const fresh = freshAppState()
+    const surgeons = Object.fromEntries(
+      Object.entries(fresh.masters.surgeons).map(([id, s]) => {
+        const { practiceName: _p, personalContact: _c, officeContacts: _o, ...rest } = s
+        return [id, { ...rest, roomIds: ['RM-RICC'], hpiId: s.hpiId ?? '99ZZZZ' }]
+      }),
+    )
+    const surgeonRooms = { 'RM-RICC': { id: 'RM-RICC', name: 'Riccarton Orthopaedic Rooms' } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters: { ...fresh.masters, surgeons, surgeonRooms } }, version: 58 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect('surgeonRooms' in s.masters).toBe(false)
+    expect(Object.values(s.masters.surgeons).some((x) => 'roomIds' in x)).toBe(false)
+    expect(Object.values(s.masters.surgeons).every((x) => Array.isArray(x.officeContacts) && x.personalContact !== undefined)).toBe(true)
+    expect(s.masters.surgeons['S-WAINWRIGHT']?.practiceName).toBe('Upper GI Partners and Hillsborough Colorectal Specialists')
+    expect(['S-WHAANGA', 'S-OSEI', 'S-SELWYN'].map((id) => s.masters.surgeons[id]?.hpiId)).toEqual([undefined, undefined, undefined])
+  })
+})
+
+describe('the internal ledger (catch-up Phase 36)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v58 store that still holds billing cases, and reseeds the ledger', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(59)
+    const fresh = freshAppState()
+    const { ledger: _gone, ...billing } = fresh.billing
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing: { ...billing, cases: { BC0001: { id: 'BC0001', status: 'paid' } } } }, version: 58 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect('cases' in s.billing).toBe(false)
+    expect(s.billing.ledger.BC0001?.kind).toBe('prePayment')
+    expect(s.billing.unmatchedReceipts).toEqual({})
+    expect(s.billing.exceptions).toEqual({})
+  })
+})
+
+describe('the Wave 2 join (v60: Lane A 25a, 36 and Lane B 33a, 17b)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it("discards either lane's v59 store and reseeds the joined seed: the ledger and the surgeons' contacts both present", () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(60)
+    const fresh = freshAppState()
+    // Lane B's v59 shape: no ledger yet (billing cases); Lane A's: surgeons' rooms still there.
+    const { ledger: _l, ...billing } = fresh.billing
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing: { ...billing, cases: {} }, masters: { ...fresh.masters, surgeonRooms: {} } }, version: 59 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.billing.ledger).toEqual(freshAppState().billing.ledger)
+    expect('cases' in s.billing).toBe(false)
+    expect('surgeonRooms' in s.masters).toBe(false)
   })
 })

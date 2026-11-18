@@ -144,12 +144,10 @@ price list) and claims back themselves; nib is billed only through nib's own Con
   record). **Change** opens the Paid by sheet to name anyone else who pays: a parent, a guardian, a
   benefactor or a family trust. The office and the anaesthetist change it until the List is authorised
   (a bottom sheet on the phone, a dialog on web). Changing one Procedure's payer offers the change to
-  the Booking's other Procedures with the same payer, each ticked (untick to keep; labelled
-  "Provisional, OQ-140" in the sheet): Grace Park's two Procedures do this. A Procedure added later
+  the Booking's other Procedures with the same payer, each ticked (untick to keep): Grace Park's two Procedures do this. A Procedure added later
   copies the payer the others share, else the patient. With no Contract the line reads "Payer: not
   billed yet". There is no Booking-level Payer card any more. Two payers typed separately (two ids,
-  same name and email) are never merged: "payers are never matched on name or email". Provisional on
-  OQ-140.
+  same name and email) are never merged: "payers are never matched on name or email". Settled (D85).
 - A billed payer needs an **email or an NZ Post postal address**; a postal address alone is enough
   (that invoice is marked **To post**). Missing both shows **Email or postal address needed** on the
   Paid by line and at Review; it never blocks.
@@ -184,7 +182,7 @@ price list) and claims back themselves; nib is billed only through nib's own Con
 - Flags: **Changed by Dr X: was** the old Contract (**Approve** or **Correct**, then **Approved** with
   the time); **Price typed: $X (computed $Y)**; **Contract not offered on this List**; **Needs a price**;
   **Needs an invoice destination**; **Not marked completed**; **Email or postal address needed**;
-  manual B/T/M notes. A Disabled Contract raises no flag.
+  manual B/T/M notes. A Disabled Contract raises a flag, never a block: a Procedure not yet authorised and dated on or after the day its Contract was disabled reads **Contract disabled on <day>**; earlier-dated ones are not flagged, and **Make active** clears it. In this List Margaret Ellery's cataract, on Christchurch Eye Surgery 2025 rate (disabled Fri 10 Jul by Kirsty W.), reads **Contract disabled on Fri 10 Jul**.
 - One thing blocks authorise: a Procedure that still **Needs a price**. **Authorise for billing** stays
   disabled and names it, with an **Open** link, until a price is typed (Dr Chen's Tue 14 Jul AM List:
   Hemi Walker, No contract · Fixed price). Every other flag and warning never blocks.
@@ -258,7 +256,7 @@ price list) and claims back themselves; nib is billed only through nib's own Con
 - The anaesthetist's GST activity (web Accounts, GST activity) is monthly: the calendar month to date
   ("Month (1 Jul to 21 Jul 2026)"), with no period switch. There is no GST period anywhere.
 - Layout follows the Contract: the holder's layout when it bills its holder (each line's invoice
-  description, the BTM breakdown, a cross-match strip of procedure date, surgeon and hospital reference,
+  description, the BTM breakdown, a cross-match strip of procedure date and surgeon (no hospital reference),
   and the Contract's holder reference code as **Your reference**, for example SGANAES01 or NIBAN2026),
   otherwise the patient's (no BTM breakdown or strip). Master data, Contracts shows Layout and Delivery
   read-only.
@@ -283,6 +281,7 @@ price list) and claims back themselves; nib is billed only through nib's own Con
   Disabled.
 - It is edited in place with an audit, never deleted; a change that must start on a date is a new
   Contract, and the old one is disabled, except a fixed price, which changes through price ranges.
+- Contract change warnings (Master data, Contracts): **Disable** lists the not-yet-authorised Procedures still on the Contract (Merivale's Face lift: Sophie Matthews, Paula Westerman, Fiona Lattimer, Dr Souter's Mon 10 Aug PM List), each with **Open**; nothing moves, and review flags each as **Contract disabled on <day>**. A new Contract with **Replaces** and **From** lists the Procedures dated on or after that date still on the old one, and stores nothing. The backdated-range demo reports "1 authorised Procedure kept its old price: Judith Calloway, $3,100.00."
 - Each priced item is a Contract of its own, with a holder reference code, an invoice description and
   a default RVG code. A fixed price has price ranges: the range in force on the procedure date gives
   the price, and a new range, even backdated, re-prices everything not yet authorised, prepaid or
@@ -350,7 +349,8 @@ Payer -> ACCREC -> AA account -> ACCPAY (full amount) -> Anaesthetist
   transferred to the anaesthetist when the List is authorised (section 8 below).
 - A partial payment releases the payable for exactly the amount received; the rest stays outstanding.
 - Both Xero records carry the InvoiceNumber (the ACCPAY's ends `-P`) and the case Reference.
-- The mobile/web app reads the Billing Engine's mirror, never Xero directly.
+- The mobile/web app reads the Billing Engine's own ledger, AA's system of record, never Xero
+  directly. Xero mirrors the ledger for receivables and banking.
 - Outstanding balances are flat individual payable rows, not a Booking-level rollup and not amounts the
   anaesthetist personally owes.
 - Bank details are master data: the office holds them on each anaesthetist's record (mandatory, with the
@@ -369,6 +369,42 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
   Rutherford $500 + $5 x 40 = $700.00 before GST, $805.00 with GST.
 - Caveat: the fixed schedule, the paid-only count and BCTI granularity (per invoice or per procedure) are
   with AA's accountant; amounts are held ex GST, with GST at the foot of the fee invoice.
+
+### Internal ledger (catch-up Phase 36)
+
+```text
+Receipts held = payables due + the AA Holding account  ->  In balance
+```
+
+- **Pairs:** every invoice is a pair in the Billing Engine's own ledger, created with the invoice
+  (before and whatever happens at the Xero handoff): a receivable from whoever pays and a payable to the
+  anaesthetist (the invoice number, and the same number with `-P`). A prepayment's payable is to the AA
+  Holding account; authorising the List adds a transfer row to whoever did it. An AA fee invoice is a
+  pair with no payable, outside the balance. Xero mirrors the pairs; a pair not yet in Xero is counted
+  ("Not yet in Xero").
+- **The equation:** receipts held less payables due and the AA Holding account is $0.00 when in
+  balance. Fresh seed: Receipts held $1,380.00 = Payables due $0.00 + AA Holding account $1,380.00
+  (Priya Nair's prepayment); Receivables outstanding $11,350.50, Disbursed $27,220.00, AA fees
+  outstanding $580.75 (Dr Souter's unpaid June fee invoice), Not yet in Xero 1.
+- **Two scopes:** the whole ledger, and one anaesthetist. Dr Souter on a fresh seed: AA owes Dr Souter
+  $11,350.50 (due now $0.00, awaiting collection $11,350.50), Dr Souter owes AA $580.75, Collected
+  $27,220.00, Paid out $27,220.00.
+- **The out-of-balance list:** "Anaesthetists out of balance", just a list, each with the amount, the
+  reason and Open. Empty: "Every anaesthetist's ledger is in balance."
+- **The trigger:** **Demo actions → Inject unmatched receipt** on the Ledger, a $120.00 bank receipt that
+  matches no invoice. **Names Dr Souter** (the default): out of balance by $120.00 and Dr Souter on the
+  list. **Names no one**: out by $120.00, the list stays empty. The office clears it with **Allocate to
+  invoice** or **Mark refunded**; the trigger is disabled ("Resolve the held receipt first") while one
+  is held.
+- **Where it lives:** **Admin → Ledger** (`/admin/ledger`, an amber badge counting what puts it out of balance; one
+  anaesthetist at `/admin/ledger/anaesthetists/34821`), linked from the Billing monitor (**Open the
+  ledger**) and each invoice's **Ledger** card. The anaesthetist sees her position on web **Accounts**
+  (Your position) and mobile **Balances** ("Collected $X · Paid out $Y"); on a handset the Demo sheet's
+  **Office runs payables** (office stand-in) pays what is due. The Xero sim's pair detail shows
+  **Ledger pair (the system of record)** with **Matches the ledger**.
+- Note: Dr Souter's outstanding total is $11,350.50 on a fresh seed (it was $7,785.50 before Phase 36),
+  because the seeded AA-2026-S2401 ($3,565.00, Thu 16 Jul Face lift) is now counted though it is not
+  yet in Xero.
 
 ## What each app is for
 
@@ -411,13 +447,18 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Anaesthetist profiles: rate per unit, contact details, registration number, HPI CPN, bank account
   (masked) and GST number on each record (**Edit details** on the Profile card) and in the
   Anaesthetists table; the HPI CPN and bank details are mandatory, every change audited
-- Surgeon profiles: the HPI CPN is each surgeon's unique index (not the patient's NHI), each surgeon
-  holds one or more specialties from AA's list (required; a save with none is refused), belongs to one
-  or more surgeons' rooms (the first the main room, a room card each; Mr N. Wainwright is at two), and
-  surgeons can belong to groups; a room's email and phone are optional and a room may hold none ("No
-  email held", Mr B. Yeoman's room); practice manager and PA contacts show on the profile beside each
-  room card, the office adds, edits and removes them, and a contact is never the To of an office email
-  (Dr H. Dalgety's PA Bev: `/admin/masters/surgeons/S-DALGETY`)
+- Surgeon profiles: the system keeps no surgeons' rooms. Each surgeon holds one or more specialties
+  from AA's list (required; a save with none is refused), a practice name (plain text; Mr N.
+  Wainwright, at two practices, holds both names), one personal contact and one or more office
+  contacts (practice manager, PA or shared inbox: name, email, phone, blanks allowed) entered on the
+  Edit details sheet's plus and minus form ("Add office contact" adds a set, a minus removes an extra
+  set, one set always shows; a two-practice surgeon holds one for each practice); surgeons can belong
+  to groups. The HPI CPN is filled in by admin staff (unique when held; a surgeon saves and is booked
+  without one, shown as "No HPI CPN yet": Dr P. Whaanga, Dr B. Osei and Dr Selwyn). The office's
+  emails go to the first office contact with an email (pill "Office emails go here first"), the others
+  offered, never every contact and never the personal contact (Dr H. Dalgety's PA Bev:
+  `/admin/masters/surgeons/S-DALGETY`). The list is AA's address book of surgeons (columns Name,
+  Specialties, Practice, Office contact, HPI CPN, Pairings)
 - Pairing preferences and priority tiers: kept on both the surgeon profile and the anaesthetist
   record, admin only; a not-preferred pairing warns and never blocks; cover suggestions run in tier
   order, shuffled within a tier; seeded: Ms A. Reid prefers not to work with Dr Sharma, and Mr J.
@@ -481,6 +522,9 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 - Contract locked at authorise, the run and the invoice document reading only the lock, Regenerate
   from locked data, and each Contract's History tab (catch-up Phase 25)
 - Xero collection/payable pairs, payments, reconciliation poll, payables, live balances and GST (Phase 10)
+- The internal ledger with an in-balance view: Admin Ledger (the whole ledger and one anaesthetist),
+  the out-of-balance list, unmatched receipts allocated or refunded, and the anaesthetist's position on
+  web Accounts and mobile Balances (catch-up Phase 36)
 - The anaesthetist's profile: own rate per unit editable on mobile and web, the office's Profile card and
   Anaesthetists columns, HPI CPN and bank details mandatory, the bank number masked (catch-up Phase 26)
 - Hospital file import and the matching screen (Admin, Matching): wording as received, field
@@ -601,8 +645,8 @@ Say:
   nothing expires. An anaesthetist's **Alert the office** with a note joins the pool. Whether an
   alerted Booking may still be submitted is open (the prototype allows it).
 - Answered (OQ-102's 19 October note, D54): the office's pickers order free colleagues by tier, then
-  preferred pairing; the anaesthetist apps stay by availability alone. The names are still open
-  (OQ-102).
+  preferred pairing; the anaesthetist apps stay by availability alone. The tier names are answered
+  (OQ-102, D36).
 - Answered (D44, OQ-43): no warning on the anaesthetist's own move. She sees colleagues by
   availability alone; pairing preferences are the office's alone and warn only on the office's paths.
 - Answered (D61, OQ-85; D54, OQ-113): she can also move a single Booking, to a colleague free in
@@ -694,7 +738,7 @@ Say:
 - The modifier table is the NZSA RVG 2021 table as printed (30 codes, Admin → Master data →
   Modifiers); values that are not plain numbers ("2 + Time", "4-6") are entered at capture.
 - Only the age modifier and a modifier the base units include are pre-applied, and both can be
-  removed; nothing else is pre-filled. The age bands are still to confirm with AA (OQ-95).
+  removed; nothing else is pre-filled. The age bands are settled (OQ-95 answered, D29).
 - Modifiers stack with no limit (a policy matter for AA, not a system rule); the same modifier is
   never added twice. AA's own modifiers (Vanessa's list) are not loaded yet; the office can add one.
 
@@ -730,13 +774,14 @@ Say:
   invoice description taking precedence over both on the invoice (D37, extended 5 November) has not
   been put to Ben and Vanessa yet; present it as a discovery point.
 
-### 15. Surgeons' rooms and practice contacts
+### 15. Surgeon contacts and practice (no surgeons' rooms)
 
-- Open (OQ-127): whether practice manager and PA contacts belong to the room or to the surgeon, and
-  which room's apply to a surgeon at several rooms. Built provisionally: held on the room, optionally
-  named for one surgeon, every room's contacts shown on the profile, the main room's email the To; the
-  profile says this is to be confirmed with AA.
-- Answered (OQ-128): a surgeon can belong to more than one room.
+- Answered for the build (OQ-127 and OQ-126; Donald, not yet seen by AA): no surgeons' rooms are kept;
+  each surgeon holds a practice name, one personal contact and one or more office contacts, and a
+  surgeon at two practices holds an office contact for each.
+- Superseded (OQ-128): a surgeon belonging to more than one room, as there are no rooms.
+- Answered for the build (OQ-129): the HPI CPN is filled in by admin staff; a surgeon can be saved and
+  booked without one ("No HPI CPN yet"). Open (OQ-143): the default is that it never becomes required.
 
 ## Likely evaluator questions
 
@@ -805,6 +850,16 @@ after the first release (US-02.5.1 to US-02.5.4).
 The RFP is internally inconsistent: one section treats NHI as the unique patient identifier, another
 says "where available". The prototype uses a hidden internal ID as the invariant and allows a
 provisional NHI-pending patient.
+
+A hospital row with no NHI waits at intake on Admin Matching; no patient or Booking is made. So the
+anaesthetist still sees the case, a stub stands on the List in its place: a dashed amber row, "Waiting
+at intake: no NHI · The office is resolving this", with the time, name and wording as received. A stub
+is never a Booking: it is never counted ("n of n complete · 1 waiting at intake"), and it never blocks
+submit or authorise. When the office adds the NHI on Matching, the Booking takes the stub's place;
+rejecting the row removes the stub. On Reset, Matching already holds Mere Tipene's row (Southern Cross,
+Dr Souter's Tue 4 Aug PM List): type the NHI **ZQA1024** and press **Add NHI**. The Southern Cross
+import's Tama Henare takes **ZQA1008**. How a stub reads, and that the Booking takes its place, are our
+readings, to confirm with AA.
 
 ### "Is the demo using real patient or integration data?"
 

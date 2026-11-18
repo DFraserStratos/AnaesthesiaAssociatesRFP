@@ -77,7 +77,6 @@ export interface CreateBookingInput {
    * "Different payer". Every creation path without one names the patient.
    */
   payer?: PayerInput
-  billingReference?: string
   notes?: string
   /**
    * Integration provenance (Phase 11): the `{sourceFeedId, externalAppointmentId}`
@@ -196,9 +195,6 @@ export function createBooking(
       if (fill !== null) procedure.rvgGroupId = fill.rvgGroupId
     } else if (input.railAnswers !== undefined) {
       procedure.railAnswers = input.railAnswers
-    }
-    if (input.billingReference !== undefined && input.billingReference.trim() !== '') {
-      procedure.billingReference = input.billingReference.trim()
     }
     // The order of defaults (US-08.4.6, D37): the text, or the Contract's invoice description; never the RVG code.
     procedure.invoiceDescription = refreshedInvoiceDescriptionFor(procedure, s.masters.contracts)

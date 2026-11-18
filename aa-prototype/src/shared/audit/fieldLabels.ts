@@ -54,7 +54,6 @@ export const FIELD_LABELS: Record<string, string> = {
   insuranceApprovalNumber: 'Approval number',
   approval: 'Approval',
   approvalRequired: 'Pre-payment approval',
-  billingReference: 'Billing reference',
   isPrimary: 'Primary procedure',
   // Catch-up Phase 19b: a Procedure's modifiers, by code, never by hidden id.
   modifierClaims: 'Modifiers claimed',
@@ -188,18 +187,16 @@ export const FIELD_LABELS: Record<string, string> = {
   hpiId: 'HPI CPN',
   active: 'Active',
 
-  // --- Surgeons, rooms, groups, hospitals (catch-up Phase 17) ---------------
+  // --- Surgeons, groups, hospitals (catch-up Phase 17) ---------------------
   contactEmail: 'Contact email',
   // Catch-up Phase 18a: a surgeon's or a Contract's specialties and a Contract's tag, audited by name.
   specialties: 'Specialties',
   fundingTag: 'Funding tag',
   funder: 'Funder',
-  roomId: "Surgeons' room",
-  // Catch-up Phase 17a: a surgeon's rooms by name, in order (the main room first), and a room's contacts.
-  rooms: 'Rooms',
-  contact: 'Contact',
-  for: 'For',
-  role: 'Role',
+  // Catch-up Phase 17b: the surgeon's practice name and contacts (no surgeons' rooms).
+  practiceName: 'Practice',
+  personalContact: 'Personal contact',
+  officeContacts: 'Office contacts',
   medicalRegistrationNumber: 'NZ medical registration number',
   memberSurgeonIds: 'Members',
 
@@ -233,8 +230,15 @@ export const FIELD_LABELS: Record<string, string> = {
   invoiceIds: 'Invoices',
   invoiceCount: 'Invoices raised',
   exceptionCount: 'Exceptions',
-  billingCaseId: 'Billing case',
-  retriedCaseId: 'Retried case',
+  billingExceptionId: 'Billing exception',
+  retriedExceptionId: 'Retried exception',
+  // The internal ledger (catch-up Phase 36).
+  pairId: 'Ledger pair',
+  pairIds: 'Ledger pairs',
+  payableNumber: 'Payable number',
+  released: 'Released',
+  payee: 'Payee',
+  reference: 'Reference',
   delivery: 'Delivery',
   code: 'Code',
   increment: 'This payment',

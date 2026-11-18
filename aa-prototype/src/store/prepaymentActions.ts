@@ -5,7 +5,7 @@
  * Nothing is invoiced at setup. Each payer group waits on the admin Invoices
  * screen until an admin approves it; Approve and send generates that payer's
  * invoice through `generatePrepaymentInvoice`, the one place the pair is
- * created (OQ-80, D38): the invoice, its case, then the Xero hand-off makes a
+ * created (OQ-80, D38): the invoice and its ledger pair, then the Xero hand-off makes a
  * receivable from the payer and a DRAFT payable crediting the AA Holding
  * account (`AA_HOLDING_ACCOUNT`), never the anaesthetist; then 22's send step.
  * Approval is a step AA can switch off: off, each ready group is generated
@@ -22,7 +22,7 @@ import type { AppStoreApi } from './appStore'
 import { proceduresForBooking } from './selectors'
 import { ASSIGN_THE_LIST_FIRST, pendingPrepayments, prepaymentGroupsForBooking } from './prepaymentSelectors'
 import { getBooking } from './lifecycle'
-import { handoffCasesForBooking } from './xeroHandoff'
+import { handoffPairsForBooking } from './xeroHandoff'
 
 /** Who sends a prepayment invoice when approval is off. */
 export const PREPAYMENT_AUTO_ACTOR: Actor = { who: 'System', role: 'system', source: 'system' }
@@ -63,10 +63,10 @@ function generatePrepaymentInvoice(api: AppStoreApi, actor: Actor, bookingId: st
     })
     invoiceId = made.invoiceIds[0] ?? ''
     metas.push(...made.metas)
-    return { billing: { ...s.billing, invoices: made.invoices, invoiceLines: made.invoiceLines, cases: made.cases }, counters: made.counters }
+    return { billing: { ...s.billing, invoices: made.invoices, invoiceLines: made.invoiceLines, ledger: made.ledger }, counters: made.counters }
   })
-  // The pair: an ACCREC from the payer and a DRAFT ACCPAY to the AA Holding account (idempotent).
-  handoffCasesForBooking(api, bookingId)
+  // The ledger pair is made with the invoice above; its Xero mirror: an ACCREC from the payer and a DRAFT ACCPAY to the AA Holding account (idempotent).
+  handoffPairsForBooking(api, bookingId)
   return ok({ invoiceId })
 }
 

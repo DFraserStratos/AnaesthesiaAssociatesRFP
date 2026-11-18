@@ -5,10 +5,11 @@
  * invoice (US-05.2.7). Pure (convention 9).
  */
 
-import type { AaFeeInvoice, AaFeeInvoiceLine, AaFeeSettings, XeroAccRec } from '../types'
+import type { AaFeeInvoice, AaFeeInvoiceLine, AaFeeLedgerPair, AaFeeSettings, XeroAccRec } from '../types'
 import { formatMoney, roundToCents, toCents } from './money'
 import { GST_RATE } from './invoicePresentation'
 import type { BctiRecord } from './bcti'
+import { newAaFeePair } from './ledger'
 
 export interface AaFeeBreakdown {
   lines: AaFeeInvoiceLine[]
@@ -67,32 +68,29 @@ export function aaFeeBctiLineLabel(monthISO: string): string {
 }
 
 export interface AaFeeInvoiceDraft {
-  /** The fee invoice id, its number and its ACCREC id, already allocated. */
+  /** The fee invoice id, its number and its ledger pair's id, already allocated. */
   id: string
   invoiceNumber: string
-  accRecId: string
+  ledgerPairId: string
   anaesthetistId: string
-  /** The anaesthetist's existing Xero contact. */
-  contactId: string
   monthISO: string
   settings: AaFeeSettings
   /** The BCTIs `bctisFor` counted for this anaesthetist and month. */
   counted: readonly BctiRecord[]
   raisedAtISO: string
   raisedBy: AaFeeInvoice['raisedBy']
-  /** Seed only: a fee invoice already paid in full on this date. */
-  paidAtISO?: string
 }
 
 /**
- * Build one AA fee invoice and its `kind:'aaFee'` ACCREC (no ACCPAY): the
- * settings and counted BCTIs snapshotted, the fee from `aaFeeFor`. The one
- * shape for an invoice from AA to an anaesthetist, used by the monthly run
- * (`raiseAnaesthetistInvoiceInto`) and the seeded fee history.
+ * Build one AA fee invoice and its `aaFee` ledger pair (a receivable from the
+ * anaesthetist, no payable; catch-up Phase 36): the settings and counted BCTIs
+ * snapshotted, the fee from `aaFeeFor`. The one shape for an invoice from AA
+ * to an anaesthetist, used by the monthly run (`raiseAnaesthetistInvoiceInto`)
+ * and the seeded fee history. Its Xero ACCREC is the hand-off's
+ * (`aaFeeAccRecFor`).
  */
-export function buildAaFeeInvoice(draft: AaFeeInvoiceDraft): { invoice: AaFeeInvoice; accRec: XeroAccRec } {
+export function buildAaFeeInvoice(draft: AaFeeInvoiceDraft): { invoice: AaFeeInvoice; pair: AaFeeLedgerPair } {
   const fee = aaFeeFor(draft.settings, draft.counted.length, aaFeeBctiLineLabel(draft.monthISO))
-  const paid = draft.paidAtISO !== undefined
   const invoice: AaFeeInvoice = {
     id: draft.id,
     invoiceNumber: draft.invoiceNumber,
@@ -114,22 +112,25 @@ export function buildAaFeeInvoice(draft: AaFeeInvoiceDraft): { invoice: AaFeeInv
     total: fee.total,
     raisedAtISO: draft.raisedAtISO,
     raisedBy: draft.raisedBy,
-    accRecId: draft.accRecId,
-    amountReceived: paid ? fee.total : 0,
-    ...(paid ? { paidAtISO: draft.paidAtISO } : {}),
+    ledgerPairId: draft.ledgerPairId,
   }
-  const accRec: XeroAccRec = {
-    id: draft.accRecId,
+  return { invoice, pair: newAaFeePair({ id: draft.ledgerPairId, aaFeeInvoice: invoice, atISO: draft.raisedAtISO }) }
+}
+
+/** The fee pair's Xero mirror: a `kind:'aaFee'` ACCREC against the anaesthetist's existing contact, no ACCPAY (16's shape). */
+export function aaFeeAccRecFor(invoice: Pick<AaFeeInvoice, 'id' | 'invoiceNumber' | 'reference'>, pair: Pick<AaFeeLedgerPair, 'receivable'>, input: { accRecId: string; contactId: string; issuedAtISO: string }): XeroAccRec {
+  const r = pair.receivable
+  return {
+    id: input.accRecId,
     kind: 'aaFee',
     invoiceId: invoice.id,
-    contactId: draft.contactId,
+    contactId: input.contactId,
     invoiceNumber: invoice.invoiceNumber,
     reference: invoice.reference,
-    issuedAtISO: draft.raisedAtISO,
-    amountDue: invoice.total,
-    amountReceived: invoice.amountReceived,
-    ...(paid ? { paidAtISO: draft.paidAtISO } : {}),
-    status: paid ? 'paid' : 'awaitingPayment',
+    issuedAtISO: input.issuedAtISO,
+    amountDue: r.amount,
+    amountReceived: r.receivedAmount,
+    ...(r.paidInAtISO !== undefined ? { paidAtISO: r.paidInAtISO } : {}),
+    status: toCents(r.receivedAmount) >= toCents(r.amount) ? 'paid' : 'awaitingPayment',
   }
-  return { invoice, accRec }
 }

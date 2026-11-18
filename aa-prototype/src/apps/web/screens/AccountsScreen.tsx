@@ -4,20 +4,21 @@ import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { type AgingBucketKey } from '../../../domain/seed'
 import {
   aaFeeInvoicesFor,
+  anaesthetistLedgerPosition,
   gstActivityFor,
   paymentHistoryFor,
   receivablesAgingFor,
   useAppStore,
   useToday,
   type AaFeeInvoiceRow,
-  type AccpayInvoiceRow,
+  type PayableRow,
   type PaymentHistoryRow,
   type PaymentHistoryStatus,
 } from '../../../store'
 import { formatCurrency } from '../../../shared/format'
 import { aaFeeFixedTotal, aaFeeMonthLabel } from '../../../domain/billing/aaFee'
 import { roundToCents } from '../../../domain/billing/money'
-import { Card, Pill } from '../../../shared/ui'
+import { Card, Pill, StatTile, TextAction } from '../../../shared/ui'
 import { HELD_UNTIL_AUTHORISED } from '../../../domain/billing/prepayHolding'
 
 export type AccountsSubTab = 'overdue' | 'payments' | 'gst' | 'fees'
@@ -38,11 +39,11 @@ const AGING_COLS: { key: AgingBucketKey; label: string }[] = [
 
 /**
  * The Accounts area (W4 + M11 GST report). Sub-nav: Overdue (a flat
- * accounts-outstanding table, ordered by date, NO rollup, one row per ACCPAY
- * invoice) and GST activity (a date-ranged transaction list of amounts received
- * with their GST component). BOTH now derive from the billing MIRROR (Phase 10;
- * convention 9 — never `state.xero`): outstanding ACCPAY invoices and the
- * receipts ledger.
+ * accounts-outstanding table, ordered by date, NO rollup, one row per invoice)
+ * and GST activity (a date-ranged transaction list of amounts received with
+ * their GST component). Everything reads the ledger, AA's system of record
+ * (catch-up Phase 36; never `state.xero`), and the "Your position" strip above
+ * the sub-tabs says who owes whom (US-08.3.5).
  */
 export function AccountsScreen({
   anaesthetistId,
@@ -58,6 +59,8 @@ export function AccountsScreen({
           Outstanding accounts, payments, your GST activity and AA's fee invoices to you.
         </div>
       </div>
+
+      <PositionStrip anaesthetistId={anaesthetistId} onOpenFees={() => onSubTab('fees')} />
 
       <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${neutral.line}` }}>
         <SubTabButton active={subTab === 'overdue'} onClick={() => onSubTab('overdue')}>Overdue</SubTabButton>
@@ -80,6 +83,42 @@ export function AccountsScreen({
         <GstReport anaesthetistId={anaesthetistId} />
       )}
     </div>
+  )
+}
+
+/**
+ * "Your position" (catch-up Phase 36; US-08.3.5): what AA owes you (due now, which
+ * AA holds for you, and awaiting collection from the payer), collected for you,
+ * paid out to you, and what you owe AA (unpaid AA fee invoices), from the one
+ * definition the Admin Ledger's anaesthetist scope uses.
+ */
+function PositionStrip({ anaesthetistId, onOpenFees }: { anaesthetistId: string; onOpenFees: () => void }) {
+  const billing = useAppStore((s) => s.billing)
+  const p = useMemo(() => anaesthetistLedgerPosition({ billing }, anaesthetistId), [billing, anaesthetistId])
+  return (
+    <Card padding="panel" title="Your position" shot="web-accounts-position">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }}>
+        <StatTile
+          variant="quiet"
+          label="AA owes you"
+          value={formatCurrency(p.owedToThem)}
+          sub={
+            <>
+              <span style={{ display: 'block' }}>Due now <span className="mono">{formatCurrency(p.dueNow)}</span>, which AA holds for you</span>
+              <span style={{ display: 'block' }}>Awaiting collection from the payer <span className="mono">{formatCurrency(p.awaitingCollection)}</span></span>
+            </>
+          }
+        />
+        <StatTile variant="quiet" label="Collected for you" value={formatCurrency(p.collected)} />
+        <StatTile variant="quiet" label="Paid out to you" value={formatCurrency(p.paidOut)} />
+        <StatTile
+          variant="quiet"
+          label="You owe AA"
+          value={formatCurrency(p.theyOweAa)}
+          sub={<TextAction size="sm" flush onClick={onOpenFees}>Your AA fee invoices</TextAction>}
+        />
+      </div>
+    </Card>
   )
 }
 
@@ -107,7 +146,7 @@ function OverdueTable({ anaesthetistId }: { anaesthetistId: string }) {
   return (
     <Card padding="panel" flush>
       <div style={{ padding: '16px 20px 0', fontSize: 12, color: neutral.mist }}>
-        One row per outstanding ACCPAY invoice, ordered by date raised. No rollup (per the RFP).
+        One row per outstanding invoice, ordered by date raised. No rollup (per the RFP).
       </div>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 820 }}>
@@ -124,8 +163,8 @@ function OverdueTable({ anaesthetistId }: { anaesthetistId: string }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r: AccpayInvoiceRow) => (
-              <tr key={r.caseId} style={{ borderBottom: `1px solid ${neutral.sunken}` }}>
+            {rows.map((r: PayableRow) => (
+              <tr key={r.pairId} style={{ borderBottom: `1px solid ${neutral.sunken}` }}>
                 <Td mono>{r.invoiceNumber}</Td>
                 <Td>{r.patientName}</Td>
                 <Td>{r.counterpartyLabel}</Td>
@@ -230,7 +269,7 @@ function PaymentsTable({
                 const focused = row.invoiceNumber === focusInvoiceNumber
                 return (
                   <tr
-                    key={row.caseId}
+                    key={row.pairId}
                     data-testid={`payment-history-row-${row.invoiceNumber}`}
                     style={{
                       borderBottom: `1px solid ${neutral.sunken}`,
@@ -274,7 +313,7 @@ const inlineLinkStyle: React.CSSProperties = {
 
 /**
  * AA's monthly fee invoices to this anaesthetist (catch-up Phase 16;
- * US-10.3.2): paid or unpaid, from the billing mirror (never Xero). A fee
+ * US-10.3.2): paid or unpaid, from the ledger (never Xero). A fee
  * invoice shows as soon as it is raised.
  */
 function AaFeesTable({ anaesthetistId, focusInvoiceNumber }: { anaesthetistId: string; focusInvoiceNumber?: string }) {

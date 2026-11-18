@@ -40,7 +40,6 @@ export type PayerId = string
 export type AnaesthetistId = string
 export type HospitalId = string
 export type SurgeonId = string
-export type SurgeonRoomId = string
 export type SurgeonGroupId = string
 export type PairingPreferenceId = string
 export type InsurerId = string
@@ -55,6 +54,8 @@ export type InvoiceId = string
 export type ImportBatchId = string
 /** One incoming booking row on the matching screen (catch-up Phase 33; DM-34). */
 export type ImportRowId = string
+/** A stub on a List (catch-up Phase 33a; DM-58): `STB0001`, never the NHI or the hospital's ref. */
+export type StubId = string
 
 /**
  * A day's sessions: AM and PM, generated for every active anaesthetist, and
@@ -372,56 +373,45 @@ export interface Surgeon {
    */
   specialtyIds: SpecialtyId[]
   /**
-   * The surgeon's rooms (US-13.6.1, US-13.6.2; OQ-128 answered, D75; catch-up
-   * Phase 17a): one or more, no duplicates, in order, **the first the main
-   * room**. A room's surgeons are derived from this field, never stored on the
-   * room. Read only through `roomsForSurgeon`, `mainRoomOf` and
-   * `surgeonsInRoom` (`domain/surgeons.ts`).
+   * The practice name as the office knows it (US-13.6.2; catch-up Phase 17b,
+   * D74): plain text for the office to read, nothing depends on it. A surgeon
+   * at two practices holds both names, the main one first. Absent when blank.
    */
-  roomIds: SurgeonRoomId[]
+  practiceName?: string
+  /**
+   * The surgeon's own name, email and phone (US-13.6.5; catch-up Phase 17b):
+   * always present, any field blank. Never the To of an office email.
+   */
+  personalContact: SurgeonContact
+  /**
+   * The surgeon's office contacts (a practice manager, PA or shared inbox;
+   * US-13.6.5, D74), in order; the first with an email is the office's
+   * default To. Empty when none; never an all-blank set. Read for an address
+   * only through `officeAddressFor` (`domain/surgeonContacts.ts`;
+   * `officeAddressGuard.test.ts` keeps it so).
+   */
+  officeContacts: SurgeonContact[]
   /**
    * The HPI CPN: the Health Provider Index Common Person Number, the
    * surgeon's unique index (OQ-52), unique across every practitioner
-   * (surgeons and anaesthetists). Stored trimmed and upper-cased. A
-   * practitioner identifier, never the patient's NHI.
+   * (surgeons and anaesthetists) when held. Stored trimmed and upper-cased.
+   * Optional (OQ-129, D76): admin staff fill it in, absent until then; whether
+   * it is ever required is `surgeonHpiCpnRequired()` (OQ-143). A practitioner
+   * identifier, never the patient's NHI.
    */
-  hpiId: string
+  hpiId?: string
   /** NZ medical registration number, held for information only. */
   medicalRegistrationNumber?: string
 }
 
-/** A surgeons' room (US-13.6.1): the practice that books with AA, with its contacts. */
-export interface SurgeonRoom {
-  id: SurgeonRoomId
-  name: string
-  /**
-   * The room's shared inbox (catch-up Phase 17a, DM-60): optional, absent when
-   * the practice gives none (never `''`). Resolved for the office's emails only
-   * through `domain/roomContacts.ts`.
-   */
-  contactEmail?: string
-  /** Optional, absent when the practice gives none (never `''`). */
-  phone?: string
-  /** Practice manager and PA contacts (US-13.6.5; OQ-127 default, D74, provisional). Absent or empty when none. */
-  contacts?: RoomContact[]
-}
-
-/** A room contact's role (US-13.6.5). Labels in `ROOM_CONTACT_ROLE_LABELS`. */
-export type RoomContactRole = 'PRACTICE_MANAGER' | 'PA'
-
 /**
- * A practice manager or PA (US-13.6.5; catch-up Phase 17a). Held on the room
- * (OQ-127 part 1's default, D74, provisional); `forSurgeonId`, when set, names
- * one surgeon whose `roomIds` include this room, and is the only owner field,
- * so moving contacts to the surgeon later is a small change. Never the To of
- * an office email. No phone.
+ * One contact on a surgeon (US-13.6.5; catch-up Phase 17b, DM-60): a name,
+ * email and phone, each absent when blank (never `''`).
  */
-export interface RoomContact {
-  id: string
-  name: string
-  email: string
-  role: RoomContactRole
-  forSurgeonId?: SurgeonId
+export interface SurgeonContact {
+  name?: string
+  email?: string
+  phone?: string
 }
 
 /** A named group of surgeons (US-13.4.1), beside `organisations`; Phase 18's holders may link to it. */
@@ -436,7 +426,7 @@ export interface SurgeonGroup {
 // Office-private: pairing preferences and priority tiers (catch-up Phase 17)
 // ---------------------------------------------------------------------------
 
-/** Not preferred (formerly the blacklist) or preferred (US-13.6.3, US-13.6.4). Names are OQ-102's, in one label set. */
+/** Not preferred (formerly the blacklist) or preferred (US-13.6.3, US-13.6.4). Names are OQ-102's answer (D36), in one label set. */
 export type PairingKind = 'NOT_PREFERRED' | 'PREFERRED'
 /** Which side asked for the entry (US-13.6.3 "says which side asked"). */
 export type PairingSide = 'SURGEON' | 'ANAESTHETIST'
@@ -875,8 +865,9 @@ export interface Booking {
    *
    * OQ-93 answered: fields on the Booking; no narrowing; the approval number
    * is the one acceptance reference; the only insurance warning is a missing
-   * number on an insurer. D82 (OQ-136 open, default): no other holder
-   * reference is kept on the Booking.
+   * number on an insurer. D82 (OQ-136 answered): a Contract asks the Booking
+   * for no other reference; the hospital's own reference is gone (catch-up
+   * Phase 25a, DM-68).
    */
   funderPartyId?: string
   /** The insurer's approval number for the claim (US-11.4.3): the office and, on the day, the anaesthetist record it; the anaesthetist sees it. */
@@ -973,7 +964,7 @@ export interface Procedure {
   bookingId: BookingId
   /**
    * Who pays for this Procedure when its Contract bills the payer (catch-up
-   * Phase 22a; US-11.2.2, DM-11; provisional on OQ-140): filled in from the
+   * Phase 22a; US-11.2.2, DM-11; D85, OQ-140 answered): filled in from the
    * patient on every creation path, a Procedure added later copying a shared
    * payer (`payerForNewProcedure`), written only by `setProcedurePayer`.
    */
@@ -1014,8 +1005,6 @@ export interface Procedure {
    */
   enteredPrice?: number
 
-  /** The hospital's contract/approval reference (6th review #6; A4's completeness check). */
-  billingReference?: string
   /**
    * The Booking's primary Procedure (catch-up Phase 23; US-03.2.1, US-03.2.2,
    * DM-15): exactly one per Booking that has Procedures, guaranteed by the
@@ -1377,11 +1366,10 @@ export interface InvoiceLineage {
   invoiceId: InvoiceId
 }
 
-/** The holder layout's cross-match fields (US-08.4.1), as at the run. */
+/** The holder layout's cross-match fields (US-08.4.1), as at the run: the procedure date and the surgeon (no Booking reference, D82; the approval number on it is OQ-142, open). */
 export interface InvoiceCrossMatch {
   procedureDateISO: IsoDate
   surgeon?: string
-  hospitalRef?: string
 }
 
 export interface Invoice {
@@ -1470,98 +1458,179 @@ export interface InvoiceLine {
   contractId?: ContractId
 }
 
-export type BillingPipelineStatus =
-  | 'pending'
-  | 'invoiced'
-  | 'handedOff'
-  | 'partPaid'
-  | 'paid'
-  | 'disbursed'
-  | 'failed'
+// ---------------------------------------------------------------------------
+// The internal ledger (catch-up Phase 36; FT-08.3, US-08.3.1, US-08.3.2, DM-22,
+// DM-23). AA's system of record for what is owed and what has moved: every
+// invoice the engine raises is a ledger pair, made in the same mutate as the
+// invoice, before and independent of the Xero hand-off. Xero mirrors the legs
+// (their `xero*Id`s) as a receivables and banking service. The maths is pure,
+// in `domain/billing/ledger.ts`.
+// ---------------------------------------------------------------------------
 
-/** One invoice's journey through the pipeline: invoice ↔ Xero ACCREC/ACCPAY GUIDs + status. */
-export interface BillingCase {
-  id: string
-  bookingId: BookingId
-  /**
-   * The archived account's ACC marker, as the old system recorded it: set only
-   * on the seeded history cases, whose Procedures predate Contracts (catch-up
-   * Phase 18a). Every other case reads ACC from its Procedures' Contract tag.
-   */
-  archivedAccRelated?: true
-  invoiceId?: InvoiceId
-  /**
-   * Who is paid (catch-up Phase 25, DM-42): the List's anaesthetist at
-   * authorise, stamped by the run from the Booking's lock (`lock.payee`). The
-   * Xero hand-off, receipts and BCTIs read it, never a Booking-to-List join.
-   * Absent on a prepayment's collect case (raised before any lock): its money
-   * reaches whoever did the List only by its `PrepayTransfer` (catch-up Phase
-   * 27a), and `payeeIdForCase` reads the transfer's payee, else the List now.
-   */
-  payeeAnaesthetistId?: AnaesthetistId
-  /**
-   * A prepayment invoice's case (catch-up Phase 27a; US-06.5.1, DM-21): the
-   * collect leg, a receivable from the invoice's payer and a payable to the AA
-   * Holding account. Its money reaches the anaesthetist only by a
-   * `PrepayTransfer`. Phase 36 promotes the legs into the ledger: keep the tag.
-   */
-  prepayLeg?: 'collect'
-  accRecId?: string
-  accPayId?: string
-  status: BillingPipelineStatus
-  /**
-   * The MONEY source of truth (Phase 10; D-money-state). "Paid in" and
-   * "disbursed" are two INDEPENDENT axes the single `status` enum cannot hold,
-   * so `status` becomes a derived label and these three cumulative amounts are
-   * authoritative. All default to 0 on every case creator.
-   *   - `receivedAmount`   — cumulative received on the ACCREC (money in to AA).
-   *   - `authorisedAmount` — cumulative authorised on the ACCPAY (exactly the amount received, to the payable).
-   *   - `disbursedAmount`  — cumulative disbursed to the anaesthetist (payables runs).
-   */
+/** Who a payable leg pays: an anaesthetist, or the AA Holding account (US-06.5.1). Stamped when the leg is made and never changed (D38): no repoint exists. */
+export type PayeeRef = { kind: 'anaesthetist'; anaesthetistId: AnaesthetistId } | { kind: 'holding' }
+
+/** Money a billable party owes AA: the invoice. Cumulative amounts, signed so a later credit (Phase 39) can enter. */
+export interface ReceivableLeg {
+  /** The invoice number (US-08.4.3). */
+  number: string
+  /** Who is billed: the invoice's own payer or holder, read from the invoice (22a, D85); the anaesthetist on an AA fee pair. */
+  counterparty: CounterpartyRef | { kind: 'anaesthetist'; id: AnaesthetistId }
+  /** The invoice total, GST inclusive. */
+  amount: number
+  /** CUMULATIVE received (money in to AA). */
   receivedAmount: number
-  authorisedAmount: number
-  disbursedAmount: number
-  /** Stamped when `receivedAmount` first reaches the ACCREC's `amountDue`. */
+  /** Set once, by the receipt that completes it (the BCTI count's paid month); a replay never moves it. */
   paidInAtISO?: IsoDateTime
-  /** Stamped when the case is fully disbursed (disbursed reaches authorised, at full pay-in). */
-  disbursedAtISO?: IsoDateTime
-  /**
-   * A Xero HANDOFF fault (Phase 10; D-handoff) — data, not a throw. The case
-   * stays `status:'invoiced'` with no pair; the monitor surfaces it and a
-   * retry re-invokes the idempotent handoff. Distinct from `failure` (a
-   * billing-RUN fault, keyed off `status:'failed'`).
-   */
-  handoffFailure?: { code: string; message: string }
-  /**
-   * Why a 'failed' case failed — the system of record the Phase 09 monitor
-   * retries against (the audit entry is the history, not the current state).
-   */
-  failure?: { code: string; message: string; procedureId?: ProcedureId }
+  /** The Xero ACCREC mirroring it; absent until the hand-off. */
+  xeroAccRecId?: string
 }
 
 /**
- * A billing-side receipt of money in (Phase 10; D-money-state). Append-only:
- * the GST-report source (each row carries its GST component) AND the payment
- * idempotency key-set (a webhook replay / poll re-detect whose key is already
- * present is a no-op). Attributed to the anaesthetist directly so the GST
- * report needs no booking→list join. `grossAmount` is the amount received;
- * `gstAmount` its GST component (gross × 0.15 / 1.15).
+ * Money AA owes on a receivable: to the anaesthetist, or to the AA Holding
+ * account for a prepayment. On a procedure pair this leg IS the BCTI: one per
+ * receivable invoice, the same value, never one per Procedure (OQ-29 open; the
+ * one-place note is beside `bctiRecordsOf`).
  */
-export interface BillingReceipt {
+export interface PayableLeg {
+  /** `${invoiceNumber}-P` on a pair (US-08.4.3), stored; a transfer's own id on its `in` leg. */
+  number: string
+  payee: PayeeRef
+  /** Equals the receivable's amount (FT-10.3: AA's fee is its own invoice, never deducted). */
+  amount: number
+  /** CUMULATIVE released for the payables run: exactly what was received (`payableReleasedFor`). */
+  releasedAmount: number
+  /** CUMULATIVE paid out (the ledger's record of a payment made in Xero, D53). */
+  disbursedAmount: number
+  /** When it was issued: the date the BCTI counts in under `paidOnly: false`. */
+  issuedAtISO: IsoDateTime
+  /** Stamped when paid out in full. */
+  paidOutAtISO?: IsoDateTime
+  /** The Xero ACCPAY mirroring it; absent until the hand-off (never on a transfer). */
+  xeroAccPayId?: string
+}
+
+/** One Procedure's part of a Booking pair's invoice (information about the one payable, never a split of it). */
+export interface ProcedureShare {
+  procedureId: ProcedureId
+  units?: number
+  amountExGst: number
+}
+
+/** A Xero hand-off fault on a pair (data, not a throw): the pair stands, "Not yet in Xero", and Resolve and retry mirrors it. */
+export interface HandoffFailure {
+  code: string
+  message: string
+}
+
+/**
+ * A Booking's ledger pair: a procedure invoice (`procedure`) or a prepayment
+ * invoice (`prePayment`, its payable to the AA Holding account until 27a's
+ * transfer moves it, 27). Linked to the Booking, its List, the patient (whoever
+ * pays, so a patient's position reaches every invoice of theirs, DM-23) and the
+ * Procedures it bills.
+ */
+export interface BookingLedgerPair {
   id: string
-  caseId: string
-  /**
-   * Absent only on a prepayment received while its List has no anaesthetist
-   * (a List moved to the office; catch-up Phase 27a): the money is the AA
-   * Holding account's, and no anaesthetist's GST activity lists it.
-   */
+  kind: 'procedure' | 'prePayment'
+  invoiceId: InvoiceId
+  bookingId: BookingId
+  listId: ListId
+  /** The payee anaesthetist, the same id as the payable leg's; absent on a `prePayment` pair (its payee is the AA Holding account). */
   anaesthetistId?: AnaesthetistId
-  accRecId: string
+  /** The patient's hidden internal id, set whoever pays. */
+  patientId: PatientId
+  procedureIds: ProcedureId[]
+  procedureShares: ProcedureShare[]
+  createdAtISO: IsoDateTime
+  receivable: ReceivableLeg
+  /** Absent only on a no-charge invoice (catch-up Phase 24: a $0.00 receivable, nothing owed, no BCTI). */
+  payable?: PayableLeg
+  handoffFailure?: HandoffFailure
+  /** The archived account's ACC marker (seeded history only; catch-up Phase 18a). */
+  archivedAccRelated?: true
+}
+
+/** AA's monthly fee invoice to an anaesthetist (catch-up Phase 16; FT-10.3, DM-26): a receivable from the anaesthetist and NO payable. AA's own money, never part of what is held for anaesthetists. */
+export interface AaFeeLedgerPair {
+  id: string
+  kind: 'aaFee'
+  aaFeeInvoiceId: string
+  anaesthetistId: AnaesthetistId
+  createdAtISO: IsoDateTime
+  receivable: ReceivableLeg
+  handoffFailure?: HandoffFailure
+}
+
+/** A ledger pair: every consumer says which kinds it reads. */
+export type LedgerPair = BookingLedgerPair | AaFeeLedgerPair
+
+/**
+ * Money in (Phase 10's billing receipt, a ledger entry since catch-up Phase 36). Append-only: the
+ * GST-report source (each carries its GST component) and the payment
+ * idempotency key-set. An AA fee payment is money in to AA, never the
+ * anaesthetist's income: `pairKind` says so, and it carries no anaesthetist.
+ */
+export interface LedgerReceipt {
+  id: string
+  pairId: string
+  pairKind: LedgerPair['kind']
+  /** The payee anaesthetist on a procedure receipt; absent on a prepayment held in the AA Holding account and on an AA fee payment. */
+  anaesthetistId?: AnaesthetistId
+  accRecId?: string
   grossAmount: number
   gstAmount: number
   atISO: IsoDateTime
   idempotencyKey: string
+  source: 'webhook' | 'poll' | 'allocation' | 'aaFee'
+}
+
+/** Money out to an anaesthetist (the ledger's record of a payment made in Xero, D53). */
+export interface LedgerDisbursement {
+  id: string
+  /** The pair or transfer whose payable it pays. */
+  pairId: string
+  anaesthetistId: AnaesthetistId
+  amount: number
+  atISO: IsoDateTime
+  payablesRunId: string
+  /** The Xero disbursement mirroring it. */
+  xeroDisbursementId?: string
+}
+
+/**
+ * A receipt that matches no invoice (US-08.3.4): held in the ledger, so the
+ * ledger is out of balance until the office allocates or refunds it.
+ * `anaesthetistId` is set only when it arrived attributed (its bank reference
+ * names one), never guessed from the amount; it then counts in that
+ * anaesthetist's scope.
+ */
+export interface UnmatchedReceipt {
+  id: string
+  amount: number
+  reference: string
+  atISO: IsoDateTime
+  idempotencyKey: string
   source: 'webhook' | 'poll'
+  anaesthetistId?: AnaesthetistId
+  status: 'held' | 'allocated' | 'refunded'
+  allocatedToPairId?: string
+  resolvedAtISO?: IsoDateTime
+  resolvedBy?: string
+  note?: string
+}
+
+/** A billing-run failure (OQ-05): no invoice was raised, so it is no pair. One per Booking, which fails whole. */
+export interface BillingException {
+  id: string
+  bookingId: BookingId
+  listId: ListId
+  code: string
+  message: string
+  procedureId?: ProcedureId
+  atISO: IsoDateTime
+  resolvedAtISO?: IsoDateTime
+  resolvedPairIds?: string[]
 }
 
 // ---------------------------------------------------------------------------
@@ -1669,8 +1738,10 @@ export interface PaymentIn {
   /**
    * `aaFee`: an anaesthetist paying AA's monthly fee invoice into AA's own
    * account (catch-up Phase 16). It is never a procedure receipt.
+   * `allocation`: the office allocated an unmatched receipt to this invoice
+   * (catch-up Phase 36), dated the receipt's own day.
    */
-  source: 'webhook' | 'poll' | 'aaFee'
+  source: 'webhook' | 'poll' | 'aaFee' | 'allocation'
 }
 
 // ---------------------------------------------------------------------------
@@ -1716,12 +1787,11 @@ export interface AaFeeCountedBcti {
 }
 
 /**
- * AA's monthly fee invoice to one anaesthetist. It is its own billing case,
- * deliberately OUTSIDE `billing.cases`: every consumer of those cases
- * (payables, GST activity, Overdue, the monitor pipeline, the Invoices screen)
- * assumes a Booking behind it, and FT-10.3 says the fee is distinct from any
- * procedure's receivable and payable. It carries its ACCREC link and its money
- * state itself, has no ACCPAY, and is never netted against a payable.
+ * AA's monthly fee invoice to one anaesthetist: the document. Its money is its
+ * `aaFee` ledger pair's (catch-up Phase 36; DM-26): a receivable from the
+ * anaesthetist and no payable, AA's own income, never netted against a
+ * payable (FT-10.3). Its `bctis` snapshot records what was counted at the
+ * time; it is not a second count.
  */
 export interface AaFeeInvoice {
   id: string
@@ -1744,9 +1814,8 @@ export interface AaFeeInvoice {
   raisedAtISO: IsoDateTime
   /** The office button, or the scheduled month-end run. */
   raisedBy: 'office' | 'scheduled'
-  accRecId: string
-  amountReceived: number
-  paidAtISO?: IsoDateTime
+  /** Its `aaFee` ledger pair: the receivable, its Xero mirror and its money. */
+  ledgerPairId: string
 }
 
 export interface Disbursement {
@@ -1768,31 +1837,34 @@ export interface Disbursement {
  * accounting move, not an invoice, an ACCREC, a `PaymentIn` or a receipt: no
  * GST moves. One per collect case, so one per payer's prepayment invoice.
  * Written only at List authorisation (the trigger provisional, OQ-125, D72).
- * Phases 36, 37 and 39a read these names: keep them.
+ * Promoted into the ledger by catch-up Phase 36 (27a's `PrepayTransfer`): held
+ * as two payable legs, never a receivable, neither money in nor money out of
+ * AA. Phases 37 and 39a read these names: keep them.
  */
-export interface PrepayTransfer {
+export interface LedgerTransfer {
   id: string
-  collectCaseId: string
+  kind: 'prepayTransfer'
+  /** The `prePayment` pair it transfers from. */
+  collectPairId: string
   invoiceId: InvoiceId
   bookingId: BookingId
+  listId: ListId
+  patientId: PatientId
   /** The payer identity of the invoice (22a's `kind:id`), for the entries table only. */
   payerKey?: string
-  atISO: IsoDateTime
-  /** The amount moved: the prepayment invoice's total, gross (FT-10.3), so the anaesthetist's payable equals the one it replaces. */
-  amount: number
-  /** What the AA Holding account held for it at the transfer (received by then): what left the account. */
-  heldAmount: number
-  from: 'aaHoldingAccount'
-  /** Who did the List: the payee locked at authorise (catch-up Phase 25). */
-  toAnaesthetistId: AnaesthetistId
-  /** CUMULATIVE: the part of `amount` released for the payables run, exactly what the payer has paid (`payableReleasedFor`). */
-  released: number
-  /** CUMULATIVE: paid out by the payables run (the payment itself is Xero's, D53). */
-  disbursed: number
+  createdAtISO: IsoDateTime
+  /** The AA Holding account's payable reduced: what it held for the prepayment at the transfer, and so what left it. */
+  out: { amount: number }
+  /**
+   * The payable to the anaesthetist who did the List (the payee locked at
+   * authorise, catch-up Phase 25): the prepayment invoice's total, gross, so it
+   * equals the payable it replaces, released exactly as the payer pays.
+   */
+  in: PayableLeg
   /** The simulated Xero manual journal mirroring it (`postTransferJournal`); absent until posted. */
   xeroJournalId?: string
   /** A Xero posting fault (data, not a throw); the Billing monitor's Resolve and retry posts it once. */
-  journalFailure?: { code: string; message: string }
+  journalFailure?: HandoffFailure
 }
 
 /** One line of a simulated Xero manual journal. */
@@ -1980,6 +2052,40 @@ export interface ImportBatch {
   rowIds: ImportRowId[]
   /** Rows already imported with identical fields, skipped. */
   skippedCount: number
+}
+
+/** Why an incoming booking could not become a Booking. A union so another cause is one member more. */
+export type StubReason = 'noNhi'
+
+/**
+ * A stub on a List (catch-up Phase 33a; FT-02.6, DM-58, D66): stands in a
+ * waiting row's place on the List the row would land on, until the office
+ * resolves the row at intake. Not a Booking: held in the intake slice, never
+ * in `schedule.bookings`, on its own id (never the NHI). Only
+ * `settleStubForRow` (inside `decideImportRow`'s commit) and a Draft List's
+ * removal or re-dating change its status.
+ */
+export interface Stub {
+  id: StubId
+  listId: ListId
+  importRowId: ImportRowId
+  reason: StubReason
+  /** What the row carried, as received (US-02.6.2: what a stub shows is our reading). */
+  asReceived: {
+    patientName: string
+    procedureText?: string
+    scheduledTime?: WallTime
+    hospitalId: HospitalId
+    /** The import it came from, e.g. "Southern Cross theatre list, Tue 28 Jul to Thu 6 Aug". */
+    sourceLabel: string
+  }
+  createdAtISO: IsoDateTime
+  /** `resolved`: the Booking took its place; `removed`: the row was rejected or its Draft List went. */
+  status: 'standing' | 'resolved' | 'removed'
+  settledAtISO?: IsoDateTime
+  settledBy?: string
+  /** The Booking that took its place (status `resolved`). */
+  bookingId?: BookingId
 }
 
 // ---------------------------------------------------------------------------

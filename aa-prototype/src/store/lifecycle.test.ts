@@ -219,7 +219,7 @@ describe('edit rights matrix', () => {
     const procedure = proceduresForBooking(api.getState(), bookingId)[0]
     expect(procedure).toBeDefined()
     if (procedure !== undefined) {
-      const outcome = editProcedure(api, OFFICE, procedure.id, { billingReference: 'X' })
+      const outcome = editProcedure(api, OFFICE, procedure.id, { opNotes: 'X' })
       expect(outcome.ok).toBe(false)
       if (!outcome.ok) expect(outcome.code).toBe('listAuthorised')
     }
@@ -229,9 +229,9 @@ describe('edit rights matrix', () => {
     const api = store()
     const procedure = proceduresForBooking(api.getState(), ELLISON_BOOKING)[0]
     if (procedure === undefined) throw new Error('no procedure')
-    const outcome = editProcedure(api, OFFICE, procedure.id, { billingReference: 'SX-2026-9999' })
+    const outcome = editProcedure(api, OFFICE, procedure.id, { opNotes: 'Seen in recovery' })
     expect(outcome.ok).toBe(true)
-    expect(api.getState().schedule.procedures[procedure.id]?.billingReference).toBe('SX-2026-9999')
+    expect(api.getState().schedule.procedures[procedure.id]?.opNotes).toBe('Seen in recovery')
   })
 })
 

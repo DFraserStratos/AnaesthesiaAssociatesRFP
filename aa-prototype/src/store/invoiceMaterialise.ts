@@ -12,10 +12,16 @@
  * (never a failure). The send step is separable: Phase 27 raises the
  * prepayment invoice unsent and sends it on admin approval.
  *
+ * Each invoice's ledger pair is made here, in the caller's same mutate
+ * (catch-up Phase 36; US-08.3.1): before and independent of the Xero hand-off,
+ * so an invoice is never without its pair. A procedure invoice's payable is to
+ * the locked payee; a prepayment's to the AA Holding account.
+ *
  * AA fee invoices (Phase 16) never come through here: they are AA's own.
  */
 
-import type { BillingCase, Invoice, InvoiceApproval, InvoiceId, InvoiceLine, InvoiceLineage } from '../domain/types'
+import type { Invoice, InvoiceApproval, InvoiceId, InvoiceLine, InvoiceLineage, LedgerPair } from '../domain/types'
+import { anaesthetistPayee, HOLDING_PAYEE, newBookingPair } from '../domain/billing/ledger'
 import type { DraftInvoice, LockedPayee } from '../domain/billing/lock'
 import { AA_AGENT, deliveryStampFor, supplierFor } from '../domain/billing/invoicePresentation'
 import { invoiceDeliveryFor } from '../domain/billing/whoIsBilled'
@@ -35,9 +41,7 @@ export interface MaterialiseArgs {
   createAction: 'invoice.create' | 'invoice.prePaymentApproved' | 'invoice.prePaymentAutoSent'
   /** A prepayment invoice's approval stamp (catch-up Phase 27). */
   approval?: InvoiceApproval
-  /** The retry reuses the failed case's id for its first invoice. */
-  reuseCaseId?: string
-  /** The locked payee (catch-up Phase 25): the supplier block and each case's payee. Absent on a pre-payment: the List's anaesthetist at approval. */
+  /** The locked payee (catch-up Phase 25): the supplier block and each pair's payee. Absent on a pre-payment, whose payable is to the AA Holding account. */
   payee?: LockedPayee
   /** False leaves the anaesthetist off the invoice (a pre-payment's `PREPAYMENT_NAMES_ANAESTHETIST`, OQ-120). */
   namesSupplier?: boolean
@@ -47,8 +51,10 @@ export interface MaterialiseResult {
   counters: Record<string, number>
   invoices: Record<string, Invoice>
   invoiceLines: Record<string, InvoiceLine>
-  cases: Record<string, BillingCase>
+  ledger: Record<string, LedgerPair>
   invoiceIds: InvoiceId[]
+  /** The ledger pairs made, one per invoice. */
+  pairIds: string[]
   metas: MutationMeta[]
   sentCount: number
   toPostCount: number
@@ -64,13 +70,13 @@ export function materialiseInvoices(
   counters: Record<string, number>,
   drafts: readonly DraftInvoice[],
   args: MaterialiseArgs,
-  maps: Pick<MaterialiseResult, 'invoices' | 'invoiceLines' | 'cases'> = {
+  maps: Pick<MaterialiseResult, 'invoices' | 'invoiceLines' | 'ledger'> = {
     invoices: { ...s.billing.invoices },
     invoiceLines: { ...s.billing.invoiceLines },
-    cases: { ...s.billing.cases },
+    ledger: { ...s.billing.ledger },
   },
 ): MaterialiseResult {
-  const { invoices, invoiceLines, cases } = maps
+  const { invoices, invoiceLines, ledger } = maps
   const booking = s.schedule.bookings[args.bookingId]
   const list = booking !== undefined ? s.schedule.lists[booking.listId] : undefined
   const patient = booking !== undefined ? s.masters.patients[booking.patientId] : undefined
@@ -79,20 +85,17 @@ export function materialiseInvoices(
   const supplier = args.namesSupplier === false ? undefined : (args.payee?.supplier ?? (anaesthetist !== undefined ? supplierFor(anaesthetist) : undefined))
 
   const invoiceIds: InvoiceId[] = []
+  const pairIds: string[] = []
   const metas: MutationMeta[] = []
   let sentCount = 0
   let toPostCount = 0
   let notSentCount = 0
 
   // Ids first, so a split's shares can point at each other.
-  const allocated = drafts.map((_, index) => {
-    let caseId: string
-    if (index === 0 && args.reuseCaseId !== undefined) caseId = args.reuseCaseId
-    else {
-      const bc = allocateId(counters, 'billingCase')
-      counters = bc.counters
-      caseId = bc.id
-    }
+  const allocated = drafts.map(() => {
+    const bc = allocateId(counters, 'ledgerPair')
+    counters = bc.counters
+    const caseId = bc.id
     const inv = allocateId(counters, 'invoice')
     counters = inv.counters
     const num = allocateId(counters, 'invoiceNumber')
@@ -146,18 +149,28 @@ export function materialiseInvoices(
       if (line.contractId !== undefined) stored.contractId = line.contractId
       invoiceLines[il.id] = stored
     }
-    cases[caseId] = {
-      id: caseId,
-      bookingId: args.bookingId,
-      ...(args.payee !== undefined ? { payeeAnaesthetistId: args.payee.anaesthetistId } : {}),
-      // A prepayment invoice's case is the collect leg, held in the AA Holding account (catch-up Phase 27a).
-      ...(args.kind === 'prePayment' ? { prepayLeg: 'collect' as const } : {}),
-      invoiceId,
-      status: 'invoiced',
-      receivedAmount: 0,
-      authorisedAmount: 0,
-      disbursedAmount: 0,
-    } satisfies BillingCase
+    // The ledger pair, made with the invoice (US-08.3.1): the payee stamped from the lock, or the AA Holding
+    // account on a prepayment (D38); never re-derived and never changed.
+    const payee = args.kind === 'prePayment' ? HOLDING_PAYEE : args.payee !== undefined ? anaesthetistPayee(args.payee.anaesthetistId) : undefined
+    if (payee !== undefined && booking !== undefined) {
+      const pair = newBookingPair({ id: caseId, kind: args.kind === 'prePayment' ? 'prePayment' : 'procedure', invoice, lines: draft.lines, bookingId: args.bookingId, listId: booking.listId, payee, patientId: booking.patientId, atISO: args.atISO })
+      ledger[caseId] = pair
+      pairIds.push(caseId)
+      metas.push({
+        entityType: 'ledgerPair',
+        entityId: caseId,
+        action: 'ledger.pairCreated',
+        after: {
+          kind: pair.kind,
+          bookingId: args.bookingId,
+          invoiceNumber: pair.receivable.number,
+          ...(pair.payable !== undefined ? { payableNumber: pair.payable.number } : {}),
+          amount: pair.receivable.amount,
+          payee: pair.payable === undefined ? null : pair.payable.payee.kind === 'holding' ? 'AA Holding account' : pair.payable.payee.anaesthetistId,
+        },
+        stampBookingId: null,
+      })
+    }
     invoiceIds.push(invoiceId)
 
     metas.push({
@@ -192,5 +205,5 @@ export function materialiseInvoices(
     }
   })
 
-  return { counters, invoices, invoiceLines, cases, invoiceIds, metas, sentCount, toPostCount, notSentCount }
+  return { counters, invoices, invoiceLines, ledger, invoiceIds, pairIds, metas, sentCount, toPostCount, notSentCount }
 }

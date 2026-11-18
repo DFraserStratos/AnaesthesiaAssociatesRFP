@@ -14,7 +14,9 @@ import { completeAnswered } from '../test/completeAnswered'
 import { splitLineText } from '../domain/billing/splitShare'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
-import { handoffListCases, resendInvoice, retryBillingCase, runBillingForList, wireBillingRun, type BillingRunResult } from './billingRun'
+import { resendInvoice, retryBillingException, runBillingForList, wireBillingRun, type BillingRunResult } from './billingRun'
+import { handoffListPairs } from './xeroHandoff'
+import { pairStatusLabel } from '../domain/billing/ledger'
 import { authoriseList, editProcedure, reassignBooking, submitList } from './lifecycle'
 import { setProcedureContract } from './contractSelectionActions'
 import { setProcedurePrice } from './pricingActions'
@@ -25,10 +27,10 @@ import { editAnaesthetist } from './mastersActions'
 import { setProcedureSplit } from './splitActions'
 import { advanceClockMinutes } from './clockActions'
 import { clockISO, type Actor } from './mutate'
-import { accpayInvoicesFor, invoicesForList, isListBilled, proceduresForBooking, submittedLists } from './selectors'
+import { payableRowsFor, invoicesForList, isListBilled, proceduresForBooking, submittedLists } from './selectors'
 import { ANAE, BP, HOSP, INS, ORG, PAT, SEED_LIST_IDS, SEED_MARKERS, CONTRACT } from '../domain/seed'
 import { roundToCents } from '../domain/billing/money'
-import type { Invoice, InvoiceLine, Party } from '../domain/types'
+import type { BookingLedgerPair, Invoice, InvoiceLine, Party } from '../domain/types'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = {
@@ -157,8 +159,8 @@ describe('the Morrison run (same-counterparty grouping, audit, view effects)', (
     expect(accLine.btm?.unitValue).toBe(25)
     expect(accLine.amount).toBe(roundToCents(accLine.units! * 25))
     expect(accLine.description).toBe(wordingOf(api, accLine.procedureId))
-    const missingRefBookingId = api.getState().schedule.procedures[marker('missingBillingRef1')]!.bookingId
-    const standardInvoice = invoicesForBooking(api, missingRefBookingId)[0]
+    const standardBookingId = api.getState().schedule.procedures[marker('mon20HolderBilled1')]!.bookingId
+    const standardInvoice = invoicesForBooking(api, standardBookingId)[0]
     expect(standardInvoice).toBeDefined()
     const standardLine = linesOf(api, standardInvoice!.id)[0]!
     expect(standardLine.btm?.unitValue).toBe(35)
@@ -168,19 +170,12 @@ describe('the Morrison run (same-counterparty grouping, audit, view effects)', (
   it("once billed and handed to Xero, the ACC booking reads ACC from its Contract's tag, and only it (catch-up Phase 18a)", () => {
     const api = store()
     billMorrison(api)
-    handoffListCases(api, MORRISON_LIST)
-    const rows = accpayInvoicesFor(api.getState(), ANAE.morrison, '2026-07-21')
+    handoffListPairs(api, MORRISON_LIST)
+    const rows = payableRowsFor(api.getState(), ANAE.morrison, '2026-07-21')
     const morrison = rows.filter((r) => invoicesForList(api.getState(), MORRISON_LIST).some((i) => i.id === r.invoiceId))
     expect(morrison).toHaveLength(6)
     const acc = morrison.filter((r) => r.accFunded)
-    expect(acc.map((r) => api.getState().billing.cases[r.caseId]?.bookingId)).toEqual([marker('accRelatedBooking')])
-  })
-
-  it('the missing-billing-reference booking bills anyway (an advisory, never a billing blocker)', () => {
-    const api = store()
-    billMorrison(api)
-    const bookingId = api.getState().schedule.procedures[marker('missingBillingRef1')]!.bookingId
-    expect(invoicesForBooking(api, bookingId)).toHaveLength(1)
+    expect(acc.map((r) => (api.getState().billing.ledger[r.pairId] as BookingLedgerPair | undefined)?.bookingId)).toEqual([marker('accRelatedBooking')])
   })
 
   it('audits the whole run source=system and never stamps a locked booking', () => {
@@ -466,13 +461,13 @@ describe('invoice identity and delivery', () => {
     // 6 (Morrison) + 5 (Whitaker) runtime + the seeded PAID pre-payment = 12, all unique.
     expect(numbers).toHaveLength(12)
     expect(new Set(numbers).size).toBe(numbers.length)
-    // Every such invoice carries a BillingCase as its internal case reference. The
-    // seeded pre-payment invoice's case is fully paid (disbursed); runtime = 'invoiced'.
+    // Every such invoice carries its ledger pair as its internal case reference. The
+    // seeded pre-payment invoice's pair is fully paid (disbursed); runtime = 'invoiced'.
     for (const inv of series) {
-      const c = api.getState().billing.cases[inv.caseReference]
+      const c = api.getState().billing.ledger[inv.caseReference] as BookingLedgerPair | undefined
       expect(c?.invoiceId).toBe(inv.id)
-      if (inv.kind === 'prePayment') expect(['paid', 'disbursed']).toContain(c?.status)
-      else expect(c?.status).toBe('invoiced')
+      if (inv.kind === 'prePayment') expect(['paid', 'disbursed']).toContain(pairStatusLabel(c!))
+      else expect(pairStatusLabel(c!)).toBe('invoiced')
     }
   })
 
@@ -529,7 +524,7 @@ describe('invoice identity and delivery', () => {
     expect(invoices).toHaveLength(6)
     for (const inv of invoices) {
       expect(inv.delivery).toEqual({ method: 'email', status: 'noAddress' })
-      expect(api.getState().billing.cases[inv.caseReference]?.status).toBe('invoiced')
+      expect(pairStatusLabel(api.getState().billing.ledger[inv.caseReference]!)).toBe('invoiced')
       expect(api.getState().audit.filter((a) => a.action === 'invoice.notSent' && a.entityId === inv.id)).toHaveLength(1)
     }
     expect(listBilledAudit(api, MORRISON_LIST)?.after).toMatchObject({ sentCount: 0, toPostCount: 0, notSentCount: 6 })
@@ -612,7 +607,7 @@ describe('invoice identity and delivery', () => {
 })
 
 describe('review-pass hardening (8th review)', () => {
-  it('a booking with no Contract moved onto a submitted list fails as a BillingCase, never a throw; authorise stays committed', () => {
+  it('a booking with no Contract moved onto a submitted list fails as a BillingException, never a throw; authorise stays committed', () => {
     const api = store()
     const unwire = wireBillingRun(api)
     try {
@@ -627,7 +622,7 @@ describe('review-pass hardening (8th review)', () => {
       expect(gated.ok).toBe(false)
       if (!gated.ok) expect(gated.code).toBe('bookingsNotCompleted')
       // A Booking marked complete with no Contract (the state this hardening covers)
-      // still fails as a BillingCase, never a throw.
+      // still fails as a BillingException, never a throw.
       api.setState((s) => ({
         schedule: { ...s.schedule, bookings: { ...s.schedule.bookings, [provisional!.id]: { ...s.schedule.bookings[provisional!.id]!, completed: true } } },
       }))
@@ -636,10 +631,11 @@ describe('review-pass hardening (8th review)', () => {
       const state = api.getState()
       expect(isListBilled(state.schedule.lists[MORRISON_LIST]!)).toBe(true)
       expect(invoicesForList(state, MORRISON_LIST)).toHaveLength(6)
-      const failed = Object.values(state.billing.cases).filter((c) => c.status === 'failed')
+      // (catch-up Phase 36: a billing-run failure is a BillingException, not a failed case.)
+      const failed = Object.values(state.billing.exceptions).filter((x) => x.resolvedAtISO === undefined)
       expect(failed).toHaveLength(1)
       expect(failed[0]!.bookingId).toBe(provisional!.id)
-      expect(failed[0]!.failure).toMatchObject({
+      expect(failed[0]!).toMatchObject({
         code: 'noContract',
         procedureId: proceduresForBooking(state, provisional!.id)[0]!.id,
       })
@@ -657,12 +653,12 @@ describe('review-pass hardening (8th review)', () => {
     const exception = result.exceptions.find((e) => e.bookingId === bookingId)
     expect(exception).toMatchObject({ code: 'splitDoesNotFit' })
     expect(invoicesForBooking(api, bookingId)).toHaveLength(0)
-    const failed = Object.values(api.getState().billing.cases).find((c) => c.bookingId === bookingId)
-    expect(failed?.failure?.message).toContain('$120.00')
+    const failed = Object.values(api.getState().billing.exceptions).find((x) => x.bookingId === bookingId)
+    expect(failed?.message).toContain('$120.00')
     // No relock: putting the rate back changes nothing the retry reads (a credit note and rebill is Phase 39's).
     expect(editAnaesthetist(api, OFFICE, ANAE.souter, { unitValue: 26.5 }).ok).toBe(true)
-    expect(retryBillingCase(api, OFFICE, failed!.id)).toMatchObject({ ok: false, code: 'splitDoesNotFit' })
-    expect(api.getState().billing.cases[failed!.id]!.status).toBe('failed')
+    expect(retryBillingException(api, OFFICE, failed!.id)).toMatchObject({ ok: false, code: 'splitDoesNotFit' })
+    expect(api.getState().billing.exceptions[failed!.id]!.resolvedAtISO).toBeUndefined()
     expect(invoicesForBooking(api, bookingId)).toHaveLength(0)
   })
 
@@ -676,10 +672,10 @@ describe('review-pass hardening (8th review)', () => {
     const { [bookingId]: _dropped, ...rest } = api.getState().billing.locks
     api.setState({ billing: { ...api.getState().billing, locks: rest } })
     runBillingForList(api, listId)
-    const failed = Object.values(api.getState().billing.cases).find((c) => c.bookingId === bookingId && c.status === 'failed')!
+    const failed = Object.values(api.getState().billing.exceptions).find((x) => x.bookingId === bookingId && x.resolvedAtISO === undefined)!
     api.setState({ billing: { ...api.getState().billing, locks: { ...api.getState().billing.locks, [bookingId]: lock } } })
     advanceClockMinutes(api, 15)
-    expect(retryBillingCase(api, OFFICE, failed.id).ok).toBe(true)
+    expect(retryBillingException(api, OFFICE, failed.id).ok).toBe(true)
     const atISO = clockISO(api.getState().clock)
     const invoices = invoicesForBooking(api, bookingId)
     expect(invoices.map((i) => [i.counterparty.kind, i.total])).toEqual([

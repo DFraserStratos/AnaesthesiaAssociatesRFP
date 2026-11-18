@@ -1,4 +1,6 @@
 import { useMemo } from 'react'
+import { StubMarker } from '../../../shared/stubs'
+import { useStubCountsByList } from '../../../store/stubSelectors'
 import { format, parseISO } from 'date-fns'
 import { brand, neutral, radius } from '../../../theme/tokens'
 import { blockFill, resolveDisplayStatus, useDisplayStatus } from '../../../shared'
@@ -147,7 +149,7 @@ function Block({
   labels,
   onOpenList,
   tall,
-  submitted = false,
+  submitted: submittedDone = false,
 }: {
   view: SlotView | undefined
   labels?: { l1: string; l2: string }
@@ -158,6 +160,10 @@ function Block({
 }) {
   const height = tall === true ? 110 : 52
   const resolved = useDisplayStatus(view?.displayKey ?? '')
+  // A List holding a stub (catch-up Phase 33a) shows the marker and never reads done.
+  const stubCounts = useStubCountsByList()
+  const stubCount = view?.list !== undefined ? (stubCounts.get(view.list.id) ?? 0) : 0
+  const submitted = submittedDone && stubCount === 0
   if (view === undefined || labels === undefined) {
     return <div style={{ height, borderRadius: radius.sm, background: neutral.sunken }} aria-hidden />
   }
@@ -196,6 +202,7 @@ function Block({
       <span style={{ fontSize: 11, fontWeight: 600, color: c.onTint, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {labels.l1}
         {submitted && <span aria-hidden> ✓</span>}
+        {stubCount > 0 && <StubMarker count={stubCount} size={10} shot="list-row-stub" style={{ display: 'inline-flex', verticalAlign: 'middle', marginLeft: 4 }} />}
       </span>
       <span style={{ fontSize: 10, color: c.onTint, opacity: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {labels.l2}

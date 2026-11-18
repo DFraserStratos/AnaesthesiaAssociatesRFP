@@ -314,7 +314,7 @@ describe('the child payer sample (catch-up Phase 21; per Procedure since 22a; US
     const key = `${GRACE}:childPayer:${proceduresForBooking(api.getState(), GRACE)[0]!.id}`
     clearWarning(api, OFFICE_ACTOR, GRACE, key)
     expect(childWarnings(api, GRACE)[0]!.clearance).toBeDefined()
-    editProcedure(api, OFFICE_ACTOR, proceduresForBooking(api.getState(), GRACE)[0]!.id, { billingReference: 'X' })
+    editProcedure(api, OFFICE_ACTOR, proceduresForBooking(api.getState(), GRACE)[0]!.id, { opNotes: 'X' })
     expect(childWarnings(api, GRACE)[0]!.clearance).toBeDefined()
     expect(setFirstProcedurePayer(api, OFFICE_ACTOR, GRACE, { kind: 'other', name: 'Hana Park', relationship: 'Mother', email: 'hana.park@example.net' }).ok).toBe(true)
     expect(childWarnings(api, GRACE)).toEqual([])

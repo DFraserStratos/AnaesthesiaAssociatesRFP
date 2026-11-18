@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Printer, Mail, Clock, Send } from 'lucide-react'
 import { accent, fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
 import { invoiceAddresseeName, invoiceLinesFor, resendInvoice, useAppStore } from '../../../store'
-import type { BillingCase, Invoice, InvoiceLineBtm } from '../../../domain/types'
+import type { BookingLedgerPair, Invoice, InvoiceLineBtm } from '../../../domain/types'
 import {
   GST_RATE,
   GST_TREATMENT_CAPTION,
@@ -23,12 +23,14 @@ import {
 import { Button, DemoBadge, Logo } from '../../../shared'
 import { dateTimeMicroCap, formatCurrency } from '../../../shared/format'
 import { dayWithYear } from '../../../domain/dateText'
-import { DefList, DefRow, FormError, Notice, Pill, TextField } from '../../../shared/ui'
+import { DefList, DefRow, FormError, Notice, Pill, TextAction, TextField } from '../../../shared/ui'
 import { lockStampText, lockViewFor, MIGRATED_LOCK_TEXT, partyKeyOf } from '../../../domain/billing/lock'
 import { BILLS_LABEL, pricingLabel } from '../../../shared/contracts'
 import { regenerateSummary, type RegenerateResult } from '../../../store/locks'
 import { useDemoTriggerMemory } from '../../../shared/demoTriggers/memory'
-import { HOLDING_ACCOUNT, transferOfCase } from '../../../domain/billing/prepayHolding'
+import { HOLDING_ACCOUNT } from '../../../domain/billing/prepayHolding'
+import { transferOfPair } from '../../../domain/billing/ledger'
+import { pairForInvoice } from '../../../store/ledgerSelectors'
 import { toCents } from '../../../domain/billing/money'
 
 interface InvoiceDocumentProps {
@@ -67,12 +69,10 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   const lock = lockRecord !== undefined && lockRecord.state === 'locked' ? lockViewFor(lockRecord) : undefined
 
   const lines = useMemo(() => invoiceLinesFor({ billing }, invoiceId), [billing, invoiceId])
-  const theCase = useMemo(
-    () => Object.values(billing.cases).find((c) => c.invoiceId === invoiceId),
-    [billing.cases, invoiceId],
-  )
+  // The invoice's ledger pair (catch-up Phase 36): its legs carry the money, whether or not Xero has it yet.
+  const theCase = useMemo(() => pairForInvoice({ billing }, invoiceId), [billing, invoiceId])
   // A prepayment's money is held, then moved by its transfer (catch-up Phase 27a): the second state reads the transfer.
-  const transfer = theCase?.prepayLeg === 'collect' ? transferOfCase(billing.transfers, theCase.id) : undefined
+  const transfer = theCase?.kind === 'prePayment' ? transferOfPair(billing.transfers, theCase.id) : undefined
 
 
   if (invoice === undefined) return null
@@ -249,7 +249,6 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
           <div data-shot="invoice-cross-match" style={{ display: 'flex', gap: 24, flexWrap: 'wrap', fontSize: 12, color: neutral.slate, background: neutral.bg, borderRadius: radius.ctl, padding: '8px 12px' }}>
             <CrossMatchItem label="Procedure date" value={dayWithYear(invoice.crossMatch.procedureDateISO)} />
             {invoice.crossMatch.surgeon !== undefined && <CrossMatchItem label="Surgeon" value={invoice.crossMatch.surgeon} plain />}
-            {invoice.crossMatch.hospitalRef !== undefined && <CrossMatchItem label="Hospital reference" value={invoice.crossMatch.hospitalRef} />}
           </div>
         )}
 
@@ -265,44 +264,44 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
 
         {/* Two-state money (RFP): paid into the AA account, then disbursed to the
             anaesthetist. Two independent, separately-tracked states. */}
-        {invoice.noCharge === true && theCase?.accRecId !== undefined && (
+        {invoice.noCharge === true && theCase !== undefined && (
           <div data-shot="invoice-money-states" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', borderTop: `1px solid ${neutral.line}`, paddingTop: 12 }}>
             <MoneyStatePill on label="No charge: nothing to pay or disburse" />
           </div>
         )}
-        {theCase !== undefined && theCase.accRecId !== undefined && invoice.noCharge !== true && (
+        {theCase !== undefined && invoice.noCharge !== true && (
           <div data-shot="invoice-money-states" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', borderTop: `1px solid ${neutral.line}`, paddingTop: 12 }}>
             <MoneyStatePill
-              on={theCase.paidInAtISO !== undefined}
+              on={theCase.receivable.paidInAtISO !== undefined}
               label={
-                theCase.paidInAtISO !== undefined
-                  ? `Paid into AA account ${dateTimeMicroCap(theCase.paidInAtISO)}`
-                  : theCase.receivedAmount > 0
-                    ? `Part paid ${formatCurrency(theCase.receivedAmount)} of ${formatCurrency(invoice.total)}`
+                theCase.receivable.paidInAtISO !== undefined
+                  ? `Paid into AA account ${dateTimeMicroCap(theCase.receivable.paidInAtISO)}`
+                  : theCase.receivable.receivedAmount > 0
+                    ? `Part paid ${formatCurrency(theCase.receivable.receivedAmount)} of ${formatCurrency(invoice.total)}`
                     : 'Awaiting payment'
               }
             />
-            {theCase.prepayLeg === 'collect' ? (
+            {theCase.kind === 'prePayment' ? (
               <MoneyStatePill
-                on={transfer !== undefined && toCents(transfer.disbursed) >= toCents(transfer.amount)}
+                on={transfer !== undefined && toCents(transfer.in.disbursedAmount) >= toCents(transfer.in.amount)}
                 label={
                   transfer === undefined
                     ? `Held in the ${HOLDING_ACCOUNT.name}`
-                    : toCents(transfer.disbursed) >= toCents(transfer.amount)
+                    : toCents(transfer.in.disbursedAmount) >= toCents(transfer.in.amount)
                       ? 'Transferred and paid to the anaesthetist'
-                      : transfer.disbursed > 0
-                        ? `Transferred, part paid ${formatCurrency(transfer.disbursed)}`
+                      : transfer.in.disbursedAmount > 0
+                        ? `Transferred, part paid ${formatCurrency(transfer.in.disbursedAmount)}`
                         : 'Transferred to the anaesthetist'
                 }
               />
             ) : (
               <MoneyStatePill
-                on={theCase.disbursedAtISO !== undefined}
+                on={theCase.payable?.paidOutAtISO !== undefined}
                 label={
-                  theCase.disbursedAtISO !== undefined
-                    ? `Disbursed to anaesthetist ${dateTimeMicroCap(theCase.disbursedAtISO)}`
-                    : theCase.disbursedAmount > 0
-                      ? `Part disbursed ${formatCurrency(theCase.disbursedAmount)}`
+                  theCase.payable?.paidOutAtISO !== undefined
+                    ? `Disbursed to anaesthetist ${dateTimeMicroCap(theCase.payable.paidOutAtISO)}`
+                    : (theCase.payable?.disbursedAmount ?? 0) > 0
+                      ? `Part disbursed ${formatCurrency(theCase.payable?.disbursedAmount ?? 0)}`
                       : 'Not yet disbursed'
                 }
               />
@@ -328,25 +327,21 @@ function InvoiceInfoRail({
   onSend,
 }: {
   invoice: Invoice
-  billingCase: BillingCase | undefined
+  billingCase: BookingLedgerPair | undefined
   siblings: readonly { invoice: Invoice; name: string }[]
   error: string | null
   onSend: (to?: string) => boolean
 }) {
+  const navigate = useNavigate()
   const handoffFailed = billingCase?.handoffFailure !== undefined
-  const handoffComplete = billingCase?.accRecId !== undefined
-  // The InvoiceNumbers stored on the Xero records (US-09.1.1), not derived here.
-  const accRecNumber = useAppStore((s) =>
-    billingCase?.accRecId !== undefined ? s.xero.accRecs[billingCase.accRecId]?.invoiceNumber : undefined,
-  )
-  const accPayNumber = useAppStore((s) =>
-    billingCase?.accPayId !== undefined ? s.xero.accPays[billingCase.accPayId]?.invoiceNumber : undefined,
-  )
+  const accRecId = billingCase?.receivable.xeroAccRecId
+  const accPayId = billingCase?.payable?.xeroAccPayId
+  const handoffComplete = accRecId !== undefined
   // A prepayment's payable credits the AA Holding account; once transferred, its journal (catch-up Phase 27a).
-  const collect = billingCase?.prepayLeg === 'collect'
+  const collect = billingCase?.kind === 'prePayment'
   const journalNumber = useAppStore((s) => {
     if (!collect || billingCase === undefined) return undefined
-    const transfer = transferOfCase(s.billing.transfers, billingCase.id)
+    const transfer = transferOfPair(s.billing.transfers, billingCase.id)
     return transfer?.xeroJournalId !== undefined ? s.xero.journals[transfer.xeroJournalId]?.journalNumber : undefined
   })
 
@@ -379,36 +374,45 @@ function InvoiceInfoRail({
         </RailCard>
       )}
 
-      <RailCard title="Xero handoff" warning={handoffFailed}>
-        <div
-          data-testid="xero-handoff-status"
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 8,
-            color: handoffFailed ? semantic.warning.onTint : handoffComplete ? neutral.ink : neutral.slate,
-          }}
-        >
-          <Clock size={15} aria-hidden style={{ marginTop: 1, flex: 'none' }} />
-          <span style={{ fontSize: 12.5, lineHeight: '18px', fontWeight: 600 }}>
-            {handoffFailed ? 'Xero handoff failed' : handoffComplete ? (invoice.noCharge === true ? 'ACCREC created at $0.00, no ACCPAY' : 'ACCREC and ACCPAY created') : 'Xero handoff pending'}
-          </span>
-        </div>
-
-        {handoffFailed ? (
-          <div style={{ fontSize: 12.5, lineHeight: '18px', color: semantic.warning.onTint }}>
-            The invoice remains valid. Resolve and retry in Billing monitor.
+      {/* The invoice's ledger pair (catch-up Phase 36; US-08.3.1): both numbers, each with its Xero id or
+          "Not yet in Xero". The pair stands whether or not Xero has it. */}
+      <RailCard title="Ledger" warning={handoffFailed}>
+        <div data-shot="invoice-ledger-card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div
+            data-testid="xero-handoff-status"
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 8,
+              color: handoffFailed ? semantic.warning.onTint : handoffComplete ? neutral.ink : neutral.slate,
+            }}
+          >
+            <Clock size={15} aria-hidden style={{ marginTop: 1, flex: 'none' }} />
+            <span style={{ fontSize: 12.5, lineHeight: '18px', fontWeight: 600 }}>
+              {handoffFailed ? 'Xero handoff failed' : handoffComplete ? 'Mirrored in Xero' : 'Not yet in Xero'}
+            </span>
           </div>
-        ) : handoffComplete ? (
-          <dl style={{ display: 'flex', flexDirection: 'column', gap: 10, margin: 0 }}>
-            <XeroReference label="ACCREC" value={accRecNumber ?? invoice.invoiceNumber} testId="xero-accrec-reference" />
-            {accPayNumber !== undefined && (
-              <XeroReference label="ACCPAY" value={accPayNumber} testId="xero-accpay-reference" />
-            )}
-            {collect && <XeroReference label="Payee" value={HOLDING_ACCOUNT.name} testId="xero-accpay-payee" />}
-            {journalNumber !== undefined && <XeroReference label="Transfer journal" value={journalNumber} testId="xero-transfer-journal-reference" />}
-          </dl>
-        ) : null}
+          {handoffFailed && (
+            <div style={{ fontSize: 12.5, lineHeight: '18px', color: semantic.warning.onTint }}>
+              The invoice and its ledger pair stand. Resolve and retry in Billing monitor.
+            </div>
+          )}
+          {billingCase !== undefined && (
+            <dl style={{ display: 'flex', flexDirection: 'column', gap: 10, margin: 0 }}>
+              <XeroReference label="Receivable" value={billingCase.receivable.number} testId="ledger-receivable-number" />
+              {accRecId !== undefined ? <XeroReference label="Xero ACCREC" value={accRecId} testId="xero-accrec-reference" /> : null}
+              <XeroReference label="Payable" value={billingCase.payable?.number ?? (invoice.noCharge === true ? 'None (no charge)' : 'None')} testId="ledger-payable-number" />
+              {accPayId !== undefined ? <XeroReference label="Xero ACCPAY" value={accPayId} testId="xero-accpay-reference" /> : null}
+              {collect && <XeroReference label="Payee" value={HOLDING_ACCOUNT.name} testId="xero-accpay-payee" />}
+              {journalNumber !== undefined && <XeroReference label="Transfer journal" value={journalNumber} testId="xero-transfer-journal-reference" />}
+            </dl>
+          )}
+          {billingCase !== undefined && (
+            <TextAction size="sm" flush shot="invoice-open-ledger" onClick={() => navigate(`/admin/ledger?pair=${billingCase.id}`)}>
+              Open in the ledger
+            </TextAction>
+          )}
+        </div>
       </RailCard>
     </aside>
   )

@@ -98,15 +98,14 @@ The office receives a stable schedule on which it can paint assignments and pati
 
 ### Master data the office keeps
 
-In Admin, the office also maintains surgeons (each keyed on their HPI CPN and holding one or more
-specialties), surgeons' rooms, surgeon groups, hospital contact emails, AA's list of specialties, its
+In Admin, the office also maintains surgeons (each holding one or more specialties, a practice name and
+their contacts; the HPI CPN is filled in by admin staff, unique when held), surgeon groups, hospital contact emails, AA's list of specialties, its
 funding tags (SXAP, HNZ, ACC, in the order they are offered), and its private pairing preferences and
 anaesthetist priority tiers.
-A surgeons' room's email and phone are optional (a room may hold none); a surgeon belongs to one or more
-rooms, the first the main room; and each room holds its practice manager and PA contacts (name, email,
-role), for the whole room or named for one surgeon (provisional, OQ-127).
-The surgeon update email (Phase 35) will go to the main room's email when one is held, otherwise to
-nothing (the office types one), with the surgeon's other rooms offered; never to a contact.
+The system keeps no surgeons' rooms: a surgeon holds a practice name, one personal contact and one or
+more office contacts (practice manager, PA or shared inbox: name, email, phone, blanks allowed).
+The surgeon update email (Phase 35) will go to the first office contact with an email, with the others
+offered; never every contact and never the personal contact.
 Anaesthetists never see preferences or tiers, and an anaesthetist handing on their own List gets no
 warning.
 
@@ -170,6 +169,14 @@ The populated List becomes visible to the assigned anaesthetist on mobile and we
 
 From the matching screen (office to anaesthetist): a row the office creates or applies shows on her
 List as a Booking with the hospital's wording as received, source "Hospital download".
+
+A row with no NHI waits at intake on the matching screen, and no patient or Booking is made; meanwhile
+a stub stands on her List in its place (a dashed amber row, "Waiting at intake: no NHI · The office is
+resolving this", with the time, name and wording as received). The stub is never counted ("n of n
+complete · 1 waiting at intake") and never blocks submit or authorise; in Admin it carries a **Resolve on
+Matching** link. When the office adds the NHI, the Booking takes the stub's place; rejecting the row
+removes the stub. Seeded: Mere Tipene on Dr Souter's Tue 4 Aug PM List (NHI ZQA1024). What a stub shows
+and that the Booking takes its place are our readings, to confirm with AA.
 
 ### Key distinction
 
@@ -426,7 +433,7 @@ Every active Booking in the List has been marked complete.
    - flags, which never block authorise: **Changed by Dr X: was** the old Contract, **Price typed: $X
      (computed $Y)**, **Contract not offered on this List** (for example after a move to another
      surgeon's List), **Needs an invoice destination**, **Not marked completed**, **Email or postal
-     address needed** and manual B/T/M notes. A Disabled Contract raises no flag.
+     address needed** and manual B/T/M notes. A Procedure not yet authorised and dated on or after the day its Contract was disabled reads **Contract disabled on <day>** (a flag, never a block; Make active clears it).
    - the one blocker: a Procedure that still **Needs a price**. **Authorise for billing** stays
      disabled, naming the Procedure with an **Open** link, until a price is typed (Dr Chen's Tue 14 Jul
      AM review List shows it on Hemi Walker's No contract · Fixed price Booking).
@@ -503,7 +510,8 @@ The List reaches `AUTHORISED`.
    invoice document prints from the lock (its **Locked record** card on the invoice rail), so it can be
    regenerated exactly (**Regenerate from locked data**: identical), whatever has changed since.
 8. The layout comes from the Contract: the holder's when it bills its holder (invoice descriptions, the
-   BTM breakdown, a cross-match strip and the Contract's holder reference code as "Your reference"),
+   BTM breakdown, a cross-match strip of the procedure date and surgeon (no hospital reference) and the
+   Contract's holder reference code as "Your reference"),
    otherwise the patient's. Prices are held GST exclusive, with GST at the foot.
 9. The run sends or queues each invoice by the Party's delivery: emailed, or **To post** for a payer
    with only a postal address (provisional, OQ-122); a payer with neither raises **No invoice
@@ -561,7 +569,11 @@ An invoice has been generated.
    paid only after the transfer at authorisation (Workflow 8, Pre-payment).
 7. The system tracks **paid into AA** and **disbursed to anaesthetist** separately.
 8. The anaesthetist's flat balance view, persistent payment history and GST activity update from the
-   Billing Engine's mirror, not from direct Xero queries.
+   Billing Engine's own ledger, AA's system of record, not from direct Xero queries. Every invoice is a
+   ledger pair (a receivable from the payer and a payable to the anaesthetist) created with the invoice;
+   payments are recorded in the ledger first, the payables run pays from the payable legs, and Xero
+   mirrors both. The office checks on **Admin → Ledger** that receipts held equal payables due plus the
+   AA Holding account, and follows up any anaesthetist on its out-of-balance list (catch-up Phase 36).
 9. Eligible individual Xero contacts may later be archived to manage active-contact volume. These
    patient and payer contacts carry only the hidden internal ID: no name, NHI or other personal
    information.
@@ -576,6 +588,8 @@ For S3, use the selected invoice's combined **Simulate payment and payout** shor
 direct link to the highlighted Web Payments row. Explain that the shortcut combines the two demo
 events while the underlying receipt and disbursement states remain separate. For a technical
 audience, use a partial payment followed by two payables runs to prove no double payment.
+S3 Beat 5 closes on the Ledger: in balance, then a $120.00 receipt that matches no invoice puts it
+out of balance (and Dr Souter on the out-of-balance list) until the office allocates it.
 
 ### Source
 
@@ -727,6 +741,10 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 #### Hospital rows
 
 - An unmatched row, or one with no NHI, waits in the unmatched queue; nothing is dropped.
+- A row with no NHI that names a List places a stub on that List: the case as received, marked waiting
+  at intake, never a Booking, never counted and never blocking submit or authorise. Adding the NHI on
+  Matching creates the Booking in the stub's place; rejecting the row removes the stub (our reading, to
+  confirm with AA).
 - A duplicate row is skipped.
 - A later update waits for approval, matched by date, surgeon, hospital and session.
 - A Booking moved to another day arrives as a cancellation plus a new Booking.
@@ -759,6 +777,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Addendum, billing monitor/retry | Yes | Phase 09 |
 | Contract locked at authorise, invoices from the lock, Contract history | Yes | Catch-up Phase 25 |
 | Xero pairs, payment, balances and disbursement | Yes | Phase 10 |
+| Internal ledger with in-balance view (whole ledger, one anaesthetist, the out-of-balance list) | Yes | Catch-up Phase 36 |
 | Anaesthetist profile, rate per unit and bank details | Yes | Catch-up Phase 26 |
 | AA's monthly fee invoices (settings, run, AA fees tab) | Yes | Catch-up Phase 16 |
 | Hospital import and matching screen | Yes | Catch-up Phase 33 |

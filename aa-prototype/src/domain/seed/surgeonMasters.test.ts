@@ -1,5 +1,5 @@
 /**
- * Seed invariants for catch-up Phase 17: surgeons' rooms, the HPI CPN, groups,
+ * Seed invariants for catch-up Phase 17: surgeon contacts (17b), the HPI CPN, groups,
  * hospital emails, and the office-private pairings and tiers, checked against
  * the canvas so no seeded List collides with a not-preferred pairing and the
  * S2 path stays clear. (The canvas itself is pinned by canvasFingerprint.test.ts.)
@@ -12,24 +12,17 @@ import { pairingStatus, tierFor } from '../pairingPreferences'
 import { projectedListId, slotIdFor } from '../slots'
 
 const seed = buildSeed()
-const { surgeons, surgeonRooms, surgeonGroups, hospitals, anaesthetists } = seed.masters
+const { surgeons, surgeonGroups, hospitals, anaesthetists } = seed.masters
 const { pairingPreferences, priorityTiers } = seed.officePrivate
 const entries = Object.values(pairingPreferences)
 
 describe('surgeon masters', () => {
-  it('every surgeon has a room and every room has a surgeon', () => {
+  it('every HPI CPN held is plausible and normalised, unique across surgeons and anaesthetists (catch-up Phase 17b: a surgeon may hold none)', () => {
+    const held = Object.values(surgeons).flatMap((s) => (s.hpiId !== undefined ? [s.hpiId] : []))
+    const all = [...held, ...Object.values(anaesthetists).map((a) => a.hpiId)]
     for (const s of Object.values(surgeons)) {
-      expect(s.roomIds.length, s.id).toBeGreaterThan(0)
-      for (const id of s.roomIds) expect(surgeonRooms[id], `${s.id} ${id}`).toBeDefined()
-    }
-    for (const r of Object.values(surgeonRooms)) {
-      expect(Object.values(surgeons).some((s) => s.roomIds.includes(r.id)), r.id).toBe(true)
-    }
-  })
-
-  it('every surgeon has a plausible HPI CPN, unique across surgeons and anaesthetists', () => {
-    const all = [...Object.values(surgeons).map((s) => s.hpiId), ...Object.values(anaesthetists).map((a) => a.hpiId)]
-    for (const s of Object.values(surgeons)) {
+      expect(s.hpiId, s.id).not.toBe('')
+      if (s.hpiId === undefined) continue
       expect(isPlausibleHpiCpn(s.hpiId), s.id).toBe(true)
       expect(s.hpiId).toBe(normaliseHpiCpn(s.hpiId))
     }
@@ -42,12 +35,12 @@ describe('surgeon masters', () => {
     expect(seed.masters.organisations['O-COS']).toBeDefined()
   })
 
-  it('every hospital email and every room email that is held is plausible (a room may hold none, catch-up Phase 17a)', () => {
+  it('every hospital email and every surgeon contact email that is held is plausible', () => {
     for (const h of Object.values(hospitals)) expect(isPlausibleEmail(h.contactEmail ?? ''), h.id).toBe(true)
-    for (const r of Object.values(surgeonRooms)) {
-      if (r.contactEmail !== undefined) expect(isPlausibleEmail(r.contactEmail), r.id).toBe(true)
-      expect(r.contactEmail, r.id).not.toBe('')
-      expect(r.phone, r.id).not.toBe('')
+    for (const s of Object.values(surgeons)) {
+      for (const c of [s.personalContact, ...s.officeContacts]) {
+        if (c.email !== undefined) expect(isPlausibleEmail(c.email), s.id).toBe(true)
+      }
     }
   })
 })

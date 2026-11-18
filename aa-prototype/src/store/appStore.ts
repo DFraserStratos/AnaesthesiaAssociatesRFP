@@ -24,8 +24,7 @@ import { buildSeed, buildSeedBillingSlice, SEED_AUTHORISED_INVOICED_BOOKING_IDS,
 import { INTEGRATION_FEEDS } from '../domain/integrations'
 import type {
   AaFeeInvoice,
-  BillingCase,
-  BillingReceipt,
+  BillingException,
   Disbursement,
   IntegrationFeed,
   IntegrationMessage,
@@ -33,10 +32,16 @@ import type {
   ImportBatchId,
   ImportRow,
   ImportRowId,
+  Stub,
+  StubId,
   Invoice,
   InvoiceLine,
+  LedgerDisbursement,
+  LedgerPair,
+  LedgerReceipt,
+  LedgerTransfer,
   PaymentIn,
-  PrepayTransfer,
+  UnmatchedReceipt,
   XeroAccPay,
   XeroAccRec,
   XeroContact,
@@ -45,6 +50,7 @@ import type {
 import type { AppId } from '../shell/appConfig'
 import type { BookingLock } from '../domain/billing/lock'
 import { seedLocks } from './locks'
+import { seededIntake } from '../domain/seed/intakeSeed'
 
 // ---------------------------------------------------------------------------
 // Slice shapes (typed now, filled in Phases 08 to 11)
@@ -53,9 +59,20 @@ import { seedLocks } from './locks'
 export interface BillingSlice {
   invoices: Record<string, Invoice>
   invoiceLines: Record<string, InvoiceLine>
-  cases: Record<string, BillingCase>
-  /** Append-only receipts ledger (Phase 10) — GST-report source + payment idempotency key-set. */
-  receipts: Record<string, BillingReceipt>
+  /**
+   * The internal ledger (catch-up Phase 36; FT-08.3, US-08.3.2): one pair per
+   * invoice, AA's system of record. Xero mirrors it. `domain/billing/ledger.ts`
+   * holds the maths; `store/ledgerSelectors.ts` the reads.
+   */
+  ledger: Record<string, LedgerPair>
+  /** Append-only money in (Phase 10's receipts, now ledger entries): GST-report source + payment idempotency key-set. */
+  receipts: Record<string, LedgerReceipt>
+  /** Money out to anaesthetists: the ledger's record of each payment (made in Xero, D53). */
+  disbursements: Record<string, LedgerDisbursement>
+  /** Receipts that matched no invoice, held until the office allocates or refunds them (catch-up Phase 36). */
+  unmatchedReceipts: Record<string, UnmatchedReceipt>
+  /** Billing-run failures (OQ-05): no invoice, so no pair, until resolved and retried. */
+  exceptions: Record<string, BillingException>
   /**
    * PMS-side ContactID cache (Phase 10; RFP Appendix 2 contact resolution: a
    * cached ContactID is tried first, then a lookup by ContactNumber, then
@@ -63,10 +80,7 @@ export interface BillingSlice {
    * org namespaces). A hint only: never authoritative, never NHI-derived.
    */
   contactIdCache: Record<string, string>
-  /**
-   * AA's monthly fee invoices to anaesthetists (catch-up Phase 16), each its
-   * own case, deliberately outside `cases` (see `AaFeeInvoice`).
-   */
+  /** AA's monthly fee invoices to anaesthetists (catch-up Phase 16): the documents; each one's money is its `aaFee` ledger pair. */
   aaFeeInvoices: Record<string, AaFeeInvoice>
   /**
    * The pricing snapshot per Booking, written at AUTHORISED (catch-up Phase 25;
@@ -76,11 +90,12 @@ export interface BillingSlice {
   locks: Record<string, BookingLock>
   /**
    * Prepayment transfers from the AA Holding account to the anaesthetist who
-   * did the List (catch-up Phase 27a; US-06.5.1), one per collect case. The
-   * account's balance and entries are derived from these and the cases
-   * (`domain/billing/prepayHolding.ts`), never stored.
+   * did the List (catch-up Phase 27a; US-06.5.1), one per `prePayment` pair,
+   * held as two payable legs (catch-up Phase 36). The account's balance and
+   * entries are derived from these and the pairs (`domain/billing/ledger.ts`),
+   * never stored.
    */
-  transfers: Record<string, PrepayTransfer>
+  transfers: Record<string, LedgerTransfer>
 }
 
 export interface XeroSlice {
@@ -106,6 +121,8 @@ export interface IntegrationsSlice {
 export interface IntakeSlice {
   batches: Record<ImportBatchId, ImportBatch>
   rows: Record<ImportRowId, ImportRow>
+  /** Stubs on Lists for rows waiting at intake (catch-up Phase 33a; DM-58): never Bookings. */
+  stubs: Record<StubId, Stub>
 }
 
 export interface ShellSlice {
@@ -304,10 +321,10 @@ export const PERSIST_KEY = 'aa-demo'
  *  fields). Reseeds on load.
  *  v30: catch-up Phase 32c, the out-of-hours session (`Session` gains `OOH`,
  *  the schedule settings an out-of-hours default, 18:00 to 21:00).
- *  v6: Phase 10 — new BillingCase money fields (received/authorised/disbursed +
+ *  v6: Phase 10 — new billing-case money fields (received/authorised/disbursed +
  *  paidIn/disbursed stamps + handoffFailure), the `receipts` ledger on the
  *  billing slice, DemoSettings.volumeStory + failNextHandoff, seeded historical
- *  billing-mirror + Xero rows (Souter receivables/GST) and the seeded
+ *  ledger + Xero rows (Souter receivables/GST) and the seeded
  *  missed-webhook PaymentIn, new counters (XC/XR/XP/PMT/DSB/PR/RCT).
  *  v5: Phase 09 — new seed bookings (relocated unpaid pre-payment booking, the mixed
  *  + full pre-payment booking, the multi-booking billing-failure list), the seeded
@@ -319,7 +336,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient.
  *  v50: catch-up Phase 25, the pricing snapshot (`billing.locks`, every seeded
  *  AUTHORISED List locked, the history backdrop migrated from its invoices)
- *  and `BillingCase.payeeAnaesthetistId`.
+ *  and the billing case's `payeeAnaesthetistId`.
  *  v51: catch-up Phase 26, the anaesthetist profile (`Anaesthetist.bankAccount`
  *  seeded for all 14 on bank 99; `gstPeriod` removed).
  *  v52: catch-up Phase 27, the prepayment lifecycle (`prepaymentDetail` gone;
@@ -334,11 +351,27 @@ export const PERSIST_KEY = 'aa-demo'
  *  instead of applying (`resultImportRowId`); `manualIntervention` and `integrationImmutable` retired. Reseeds on load.
  *  v54: Wave 1 sync on lane/a, Lane B's 32d and 33 (v52, v53) joined with Lane A's 27 (v52): one past the higher.
  *  v55: catch-up Phase 27a, the AA Holding account's transfer (`billing.transfers`, `xero.journals`,
- *  `BillingCase.prepayLeg` on BC0001, `Disbursement.transferId`). Reseeds on load. */
-export const PERSIST_VERSION = 55
+ *  the billing case's `prepayLeg` on BC0001, `Disbursement.transferId`). Reseeds on load.
+ *  v56: catch-up Phase 25a, the seeded Disabled Contract (Christchurch Eye Surgery 2025 rate, `CT-CES-2025`, its
+ *  `contract.disable` audit entry on Fri 10 Jul) and Margaret Ellery's Booking on it on 21a's review-flags List. Reseeds on load.
+ *  v57: catch-up Phase 25a session 2, the Procedure's hospital reference removed (`Procedure.billingReference`, the
+ *  lock's copy, `InvoiceCrossMatch.hospitalRef`, the seeded values and audit fields; DM-68, D82). Reseeds on load.
+ *  v56: catch-up Phase 33a, stubs on a List (`intake.stubs`, counter `stub`): the seeded intake holds one
+ *  Southern Cross row with no NHI (IRS001, Mere Tipene) and its stub STB0001 on Dr Souter's Tue 4 Aug PM List.
+ *  Reseeds on load.
+ *  v58: Wave 2 sync on lane/a, Lane B's 33a (v56) joined with Lane A's 25a (v56, v57): one past the higher.
+ *  v59: catch-up Phase 36, the internal ledger: the billing cases slice becomes `billing.ledger` (pairs with receivable
+ *  and payable legs), with `disbursements`, `unmatchedReceipts` and `exceptions`; receipts carry `pairId`;
+ *  transfers hold `out`/`in` legs; AA fee invoices point at their `aaFee` pair; counter `ledgerPair`. Reseeds on load.
+ *  v58: Wave 2 sync on lane/b, Lane A's 25a (v57) joined with Lane B's 33a (v56): one past the higher.
+ *  v59: catch-up Phase 17b, no surgeons' rooms (`masters.surgeonRooms`, `Surgeon.roomIds` and room contacts gone);
+ *  each surgeon holds `practiceName`, `personalContact` and `officeContacts`, and three directory surgeons no HPI CPN
+ *  yet (D74, D76). Reseeds on load.
+ *  v60: Wave 2 join, Lane A's 36 (v59) joined with Lane B's 17b (v59): one past the higher. */
+export const PERSIST_VERSION = 60
 
 export function emptyBillingSlice(): BillingSlice {
-  return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {} }
+  return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {} }
 }
 export function emptyXeroSlice(): XeroSlice {
   return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {} }
@@ -349,7 +382,12 @@ export function emptyIntegrationsSlice(): IntegrationsSlice {
 
 /** The intake slice: seeded empty, the presenter imports or a trigger delivers (catch-up Phase 33). */
 export function emptyIntakeSlice(): IntakeSlice {
-  return { batches: {}, rows: {} }
+  return { batches: {}, rows: {}, stubs: {} }
+}
+
+/** The seeded intake slice: one waiting no-NHI row and its stub on a List (catch-up Phase 33a). */
+export function seededIntakeSlice(): IntakeSlice {
+  return seededIntake()
 }
 
 /** The seeded integrations slice: the three feed configs, no messages yet (Phase 11). */
@@ -373,8 +411,11 @@ export function freshAppState(): AppState {
     billing: {
       invoices: seedBilling.invoices,
       invoiceLines: seedBilling.invoiceLines,
-      cases: seedBilling.cases,
+      ledger: seedBilling.ledger,
       receipts: seedBilling.receipts,
+      disbursements: seedBilling.disbursements,
+      unmatchedReceipts: {},
+      exceptions: {},
       contactIdCache: seedBilling.contactIdCache,
       aaFeeInvoices: seedBilling.aaFeeInvoices,
       locks: {},
@@ -382,12 +423,12 @@ export function freshAppState(): AppState {
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
-    intake: emptyIntakeSlice(),
+    intake: seededIntakeSlice(),
     shell: { currentApp: 'mobile', suggestionSeq: 0 },
   }
-  // Every seeded AUTHORISED List is locked (catch-up Phase 25), its cases stamped with the payee.
+  // Every seeded AUTHORISED List is locked (catch-up Phase 25); its pairs carry the same payee from the seed.
   const locked = seedLocks(state)
-  return { ...state, billing: { ...state.billing, locks: locked.locks, cases: locked.cases } }
+  return { ...state, billing: { ...state.billing, locks: locked.locks } }
 }
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {

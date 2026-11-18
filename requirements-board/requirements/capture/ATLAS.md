@@ -246,9 +246,10 @@ Hooks already added:
   Whitaker 36208, Sharma 41267, Chen 45178, Hughes 46822, Strand 47733, Ngata 38455.
 - **Surgeons** (catch-up Phase 17): `S-HALE` Mr T. Hale, `S-REID` Ms A. Reid, `S-WHITFORD` Mr J. Whitford
   (see the seed for the rest). HPI CPNs `40HALT` to `49CAMH` (Reid `47REIA`); Dr Sharma's own HPI CPN is
-  `12SHAP`. Rooms `RM-RICC` (Hale), `RM-MERI` Merivale Eye Rooms (Whitford, Reid), `RM-AVON`,
-  `RM-FEND`, `RM-PAPA`. Groups `SG-COS` Canterbury Orthopaedic Surgeons (Hale), `SG-EYE` Christchurch
-  Eye Surgeons (Whitford, Reid). Runtime ids: surgeons `SN001`, rooms `RMN001`, groups `SGN001`,
+  `12SHAP`. No rooms since catch-up Phase 17b: a surgeon holds a practice name and office contacts
+  (`S-REID`: practice Merivale Eye Rooms, office contact bookings@merivaleeye.example, personal contact
+  a.reid@surgeons.example). Groups `SG-COS` Canterbury Orthopaedic Surgeons (Hale), `SG-EYE` Christchurch
+  Eye Surgeons (Whitford, Reid). Runtime ids: surgeons `SN001`, groups `SGN001`,
   pairing entries `PPN001`.
 
 **IDs**
@@ -320,6 +321,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/web/availability/mine` | My availability (catch-up Phase 29): Dr Souter's month (AM and PM per day), click a day and shift-click to a range; the right rail holds the session panel and the form, then "Your series" and the legend. `?date=YYYY-MM-DD` opens a day in the rail (the capture runner has no shift-click: open `?date=`, click "Change both sessions" and fill the To date for a range). |
 | `/web/accounts/overdue`, `/web/accounts/payments`, `/web/accounts/gst`, `/web/accounts/fees` | Accounts tabs. Add `?invoice=AA-2026-0005` to focus a payment, which exists only after S3 billing. AA fees (catch-up Phase 16) lists Dr Souter's AA fee invoices; `?invoice=AA-FEE-2026-H02` focuses one. |
 | `/web/accounts/gst` (catch-up Phase 26) | The GST tab has no period switch (the GST period is retired): a calendar month, caption `gst-month` "Month (1 Jul to 21 Jul 2026) ...", footer "Month total". Never click a Segmented here. |
+| `/web/accounts/*` (catch-up Phase 36) | Every Accounts tab has the "Your position" strip `web-accounts-position` above the sub-tabs: AA owes you (with "Due now ..., which AA holds for you; awaiting collection ..."), Collected for you, Paid out to you, You owe AA (its link "Your AA fee invoices" opens the AA fees tab). The Overdue caption reads "One row per outstanding invoice, ordered by date raised. No rollup (per the RFP)." (no ACCPAY). Overdue also lists the seed's AA-2026-S2401 ($3,565.00, Thu 16 Jul PM) now. |
 | `/web/profile` | Your profile (catch-up Phase 26; `web-profile`), reached from the nav persona button `[data-shot=web-profile-link]` (aria-label "Your profile, Dr Melanie Souter"); the four nav tabs are unchanged. Panels: Billing `web-billing-panel` (field "Rate per unit ($)", "Save changes" `web-rate-save`, enabled only once the rate differs), Contact `web-contact-panel`, Identity `web-identity-panel` (Registration, HPI CPN), Bank account `web-bank-panel` (name, number masked `99-0101-•••••21-00`). Only the rate is editable; the rest carries lock glyphs. |
 
 **Admin app** (`src/apps/admin/`)
@@ -329,7 +331,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin` | Redirects to `/admin/day/2026-07-21`. |
 | `/admin/day/:date` | Day grid of anaesthetists by time. The right rail has the mini calendar, "Internal notes" and "Awaiting review". Add `?sort=az` for A to Z order. The toolbar is `[data-testid=admin-day-nav]` (see "Date navigation" under "Overlays that need clicks"); its row order is a segmented control, `role=group[name="Row order"]` with buttons "Roster order" and "A to Z" (`aria-pressed`). The header's date input is named "Go to date" (`[aria-label="Go to date"]`). |
 | `/admin/day/:date/bookings/:bookingId` | Admin booking detail with "Office billing setup". A Booking created or changed from a hospital row links back to it (`booking-from-hospital-row`, opens Matching on that row); a newer hospital text waiting on Matching shows the cue `booking-newer-hospital-text` (catch-up Phase 33). |
-| `/admin/matching` | Matching (catch-up Phase 33; Kirsty W.): hospital rows waiting for the office. Empty at reset (`matching-empty`); stage rows with "Import hospital file" (`matching-import-open`, see Overlays) or the Demo actions below. Stat tiles `matching-stats` (`[data-stat=open|new|modification|cancellation|unmatched]`), the filter `[aria-label="Show rows"]` (options whose text starts "Open", "Unmatched", "Decided"), the table `matching-table` with rows `matching-row-<n>` (1-based, ready rows first, then import order). A row click opens its panel `matching-panel` (a right-docked SidePanel with a scrim: press Escape before clicking a row or the header). After an import the batch's first row's panel opens by itself. A row decided stays in place, dimmed, until the panel closes. |
+| `/admin/matching` | Matching (catch-up Phase 33; Kirsty W.): hospital rows waiting for the office. At reset it holds one seeded waiting row (Mere Tipene, no NHI, catch-up Phase 33a; see Stubs on a List below), so `matching-empty` no longer shows; stage rows with "Import hospital file" (`matching-import-open`, see Overlays) or the Demo actions below. Stat tiles `matching-stats` (`[data-stat=open|new|modification|cancellation|unmatched]`), the filter `[aria-label="Show rows"]` (options whose text starts "Open", "Unmatched", "Decided"), the table `matching-table` with rows `matching-row-<n>` (1-based, ready rows first, then import order). A row click opens its panel `matching-panel` (a right-docked SidePanel with a scrim: press Escape before clicking a row or the header). After an import the batch's first row's panel opens by itself. A row decided stays in place, dimmed, until the panel closes. |
 | `/admin/notifications` | The shared notification pool (catch-up Phase 32; US-13.8.1): newest first, six a page, `?page=N`; the table `admin-notifications-table`, rows `[data-notification-row=NT0001]` with "Open List", "Open Draft List" or "Open Booking", the pager `admin-notifications-pager` (Newer / Older). Catch-up Phase 32b: notices are active or resolved; the page shows active ones by default, the count `admin-notifications-page-count`, each active row's tick `notification-tick` ("Resolve"), and the "Show resolved" checkbox `admin-notifications-show-resolved` (`?resolved=1`, kept with `?page=`); resolved rows carry `data-notification-resolved=true` and the line `notification-resolved-line` ("Resolved by Kirsty W., Tue 21 Jul 08:00"). An alert's note is `notification-alert-note`. The provisional caption is gone. Seeds empty: stage it with the `colleague-moves-list-to-office` trigger, or send an alert from a web Booking (same origin) and `goto` here. |
 | `/admin/draft-lists` | Draft Lists (catch-up Phase 31): Unassigned tab (default) and History (`?tab=history`). Since UI unification U5 the two tabs are links inside `role=navigation[name="Draft Lists"]`, not `role=tab`: `a[data-draft-tab=unassigned]` and `a[data-draft-tab=history]`, each with its count inside the link text (so match by the hook, not the name); the current one has `aria-current=page`. `?open=<listId>` opens the Draft List drawer (`admin-draft-list-drawer`); `?assigned=<listId>` shows the assigned confirmation with "Open List". The drawer's "Available that session" Assign opens step 2; the row's Assign opens step 1 (Everyone / Free only, tier filter, groups). "New Draft List" opens `admin-new-draft-list`. |
 | `/admin/conflicts` | Conflicts (catch-up Phase 30): every live conflict, grouped by date (`section[data-conflict-date=<date>]`), one table each (`[data-shot=conflicts-table]` wraps them). Rows are `tr[data-conflict-row=<listId>]` (cleared ones add `data-conflict-cleared=true`). Row actions have accessible names with context (`Reassign, Dr Rutherford Wed 22 Jul AM`, `Clear conflict, ...`, `Open the List, ...`, `Open the day, ...`): match them by regex (`role=button[name=/^Clear conflict/]`). Hospital closures only since catch-up Phase 32b (no reason filter, no Availability column). Filters in the URL: `?when=twoWeeks|canvas|past`, `?hospital=<id>`, `?anaesthetist=<reg>`, `?cleared=1`. After a reassign or clear, `[data-shot=conflicts-confirmation]`. |
@@ -340,9 +342,14 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/billing` | Billing monitor. Its AA fee invoices panel is `[data-shot=billing-aa-fee-invoices]`. The pipeline stage after Invoices generated reads "Sent or to post" (catch-up Phase 22); a List with an invoice that has no invoice address shows `monitor-no-address` ("1 invoice needs an invoice address." with the link "Add an address and send"). |
 | `/admin/billing/aa-fees` | AA fee invoices: month picker, the run preview (`aa-fee-preview-<anaesthetistId>` rows), the teal "Run monthly fee invoices" button and every fee invoice (`aa-fee-row-<number>`, expand for `aa-fee-detail-<number>`). |
 | `/admin/billing/aa-fees/settings` | AA fee settings: fixed items, the charge per BCTI and the worked example (`aa-fee-example`). |
+| `/admin/ledger` | Ledger (catch-up Phase 36; US-13.2.1, US-08.3.4): the Billing Engine's own ledger, AA's system of record. Header `ledger-system-of-record`; the "Scope" segmented control (`role=group[name="Scope"]`, buttons "Whole ledger" and "One anaesthetist"); the balance indicator `ledger-balance` (`data-in-balance=true|false`; "In balance · receipts held equal payables due" or "Out of balance by $120.00", its equation line, and one `li[data-check=<code>]` per failed check); the tiles `ledger-tiles` (Receivables outstanding, Receipts held, Payables due, Disbursed; then Awaiting collection, AA Holding account, AA fees outstanding, Not yet in Xero); "Anaesthetists out of balance" `ledger-anaesthetists-out-of-balance` (empty state "Every anaesthetist's ledger is in balance."; else a table, rows `tr[data-anaesthetist-id=<reg>]` with Open); "Receipts with no matching invoice" `ledger-unmatched` (only once an unmatched receipt exists; rows `tr[data-unmatched-id=UR0001]`, pill Held, "Allocated to ..." or "Refunded", actions `ledger-allocate` and `ledger-refund`); "Pairs" `ledger-pairs` with the filter `role=group[name="Which pairs"]` (buttons "Open", the default, and "All"); rows `tr[data-pair-id=<id>][data-pair-kind=procedure|prePayment|transfer|aaFee]`, columns Receivable, Payable, Kind, Patient, Payer, Payee, Amount, Received, Released, Paid out, Xero ("Mirrored", or the pill "Not yet in Xero", plus "Contact archived in Xero" under an archived payer); a row click opens its invoice (an AA fee row opens `/admin/billing/aa-fees`); `?pair=<id>` tints that row; then `ledger-footnotes`. |
+| `/admin/ledger/anaesthetists/:anaesthetistId` | One anaesthetist's ledger (catch-up Phase 36; US-08.3.5): the same screen scoped, with the select `ledger-anaesthetist-select`; `ledger-balance` reads "Dr Souter's ledger is in balance" (or "... is out of balance by $120.00"); `ledger-tiles` (`data-shot-scope=anaesthetist`) holds `ledger-aa-owes` ("AA owes Dr Souter": Due now, Awaiting collection, Total), `ledger-owes-aa` ("Dr Souter owes AA": Unpaid AA fees) and the Collected for them and Paid out to them tiles; "Dr Souter's pairs" (no Payee column). No out-of-balance list or unmatched card at this scope. Dr Souter is `34821`; an unknown id redirects to `/admin/ledger`. |
+| `/admin/invoices/:invoiceId` (catch-up Phase 36) | The rail's "Xero handoff" card is now the "Ledger" card `invoice-ledger-card` (no `h2` "Xero handoff" any more): `xero-handoff-status` reads "Mirrored in Xero", "Not yet in Xero" or "Xero handoff failed" (then "The invoice and its ledger pair stand. Resolve and retry in Billing monitor."), then `ledger-receivable-number`, `xero-accrec-reference` (now the Xero ID, `XR...`), `ledger-payable-number`, `xero-accpay-reference` (`XP...`), on a prepayment `xero-accpay-payee` and `xero-transfer-journal-reference`, and the link "Open in the ledger" `invoice-open-ledger` (`/admin/ledger?pair=<id>`). The Xero ID rows show only once the pair is in Xero. |
+| `/admin/billing` (catch-up Phase 36) | The intro adds "Money in and out is recorded in the ledger first; Xero mirrors it." The payables panel `billing-payables-run` reads "N payable(s) due · $X to pay out to anaesthetists. A payable is released for exactly what its invoice has received." (or "No payables due. ...") with the link "Open the ledger" `billing-open-ledger`; the "Run payables" button is unchanged. |
 | `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. A message stages a row on `/admin/matching` and applies nothing (catch-up Phase 33); the attention callout `integrations-attention` shows dead-letter only. |
-| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons`, `surgeonRooms`, `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifiers` (catch-up Phase 19b, "Modifiers"; the old `modifierCodes` value opens it), `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). A Contract's panel has Details and History tabs (catch-up Phase 25). |
-| `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip, Identifiers, Surgeons' room and Groups cards, Pairing preferences. "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. Catch-up Phase 17a: Specialties, Identifiers and Groups in the first row, then one row per room (main room first), its Surgeons' room card beside a "Practice manager and PAs" card, then Pairing preferences. |
+| `/admin/masters/surgeons/:surgeonId` | Surgeon profile (`surgeon-profile`, catch-up Phase 17b): cards `surgeon-specialties`, `surgeon-identifiers`, `surgeon-groups`, then the full-width `surgeon-contacts` ("Practice and contacts": Practice `[data-practice]`, `surgeon-personal-contact-card`, `surgeon-office-contacts-card`). "Edit details" opens `surgeon-edit-sheet`. |
+| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons` (the old `surgeonRooms` value opens it, catch-up Phase 17b), `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifiers` (catch-up Phase 19b, "Modifiers"; the old `modifierCodes` value opens it), `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). A Contract's panel has Details and History tabs (catch-up Phase 25). |
+| `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip ("No HPI CPN yet" when blank), "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. Catch-up Phase 17b: Specialties, Identifiers and Groups in the first row, then one full-width "Practice and contacts" card (`surgeon-contacts`), then Pairing preferences. No room cards. |
 | `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Profile, Pairing preferences. Office only. The Profile card (catch-up Phase 26; was "Details", hook `anaesthetist-details` kept) shows Unit value, Status, Phone, Email, HPI CPN and Bank account (masked, row `anaesthetist-bank-account`); it has no action of its own. The page header's secondary button "Edit details" (beside "History") opens the Edit sheet: click `button:text-is("Edit details")` at page level, not inside `anaesthetist-details`. |
 | `/admin/audit` | Audit viewer. |
 
@@ -350,6 +357,9 @@ The side nav has: Day view, Matching (amber badge `[data-shot=nav-badge-matching
 catch-up Phase 33), Conflicts (amber badge `[data-shot=nav-badge-conflicts]`, catch-up
 Phase 30), Review queue, Invoices, Billing monitor, Integrations, Master data, Audit. Every side-nav
 badge carries `data-shot=nav-badge-<section>`.
+
+Catch-up Phase 36 adds "Ledger" after Billing monitor, with an amber badge `[data-shot=nav-badge-ledger]` counting
+the ledger's failed checks (none at reset, so no badge; 1 after "Inject unmatched receipt").
 
 **Mobile app** (`src/apps/mobile/`; on :5174 for shots)
 
@@ -362,6 +372,7 @@ badge carries `data-shot=nav-badge-<section>`.
 | `/mobile/availability` | Find cover: "My availability" (the day's AM and PM chips, a "Move" button on a movable List, `availability-move-am`/`-pm`; "Change" opens the day's bottom sheet, "My calendar" slides the calendar in), and the everyone / free-only grid. The six-day strip's days are `button[data-date=YYYY-MM-DD]` (Tue 21 to Sun 26). A colleague's free cell is tappable only where Dr Souter has a movable List that session (`availability-move-to-<registration>-am`/`-pm`, "Tap to move your List here"). "Moved to you" (`moved-to-you`) tops the screen when a colleague moved a List to her (catch-up Phase 32; the cover request and "Tap to ask" are retired). |
 | `/mobile/availability/calendar` | My calendar (catch-up Phase 29): a month of Dr Souter's sessions, AM over PM, July to the horizon month; the tab bar is hidden; the sticky teal "Add days off" opens the sheet on the form. |
 | `/mobile/balances` | "Your account": Outstanding and GST this month. |
+| `/mobile/balances` (catch-up Phase 36) | The header card adds the line `balances-collected-paid-out` "Collected $X · Paid out $Y" under the unpaid count, and `balances-you-owe-aa` "You owe AA $Z" only when Dr Souter has an unpaid AA fee invoice (she does at reset: AA-FEE-2026-H02). The PWA Demo sheet adds `pwa-office-runs-payables` here. |
 | `/mobile/more` | Settings. The PWA adds a demo panel with a non-deterministic build ID. Avoid shooting that panel. |
 | `/mobile/more` (catch-up Phase 26) | The "Profile" card `mobile-profile` sits between the persona card and the Demo card: rows `mobile-profile-rate` (Rate per unit $26.50, with the "Change" text action `mobile-profile-rate-change`), Phone, Email, Registration, HPI CPN (`mobile-profile-hpi`) and Bank account (`mobile-profile-bank`, masked), the office-held rows with lock glyphs and captions. Its lower rows sit near the fold: `scroll` to `mobile-profile-bank` first. "Change" opens the bottom sheet `mobile-rate-sheet` (field "Rate per unit ($)", "Save rate" `mobile-rate-save`). |
 
@@ -378,6 +389,7 @@ badge carries `data-shot=nav-badge-<section>`.
 | `/demo/xero` | Xero simulation, Contacts tab. |
 | `/demo/xero/invoices` | Invoices tab. |
 | `/demo/xero/invoices/:accRecId` | Pair detail: ACCREC and ACCPAY, money flow, both records' InvoiceNumber and Reference (`xero-invoice-identifiers`); the payable equals the receivable. `XRB0` exists in the seed. An AA fee pair (`XRFH01`, `XRFH02`) shows the fee ACCREC and a "No payable" note (`xero-aa-fee-pair`). |
+| `/demo/xero/invoices/:accRecId` (catch-up Phase 36) | The callout `xero-engine-link` is now titled "Ledger pair (the system of record)"; inside it `xero-ledger-pair` (the patient, then Ledger pair, Receivable and Payable numbers and the ledger's received, released and paid out) and the chip `xero-ledger-match` ("Matches the ledger" or "Differs from the ledger"). The page subtitle says Xero mirrors the Billing Engine's ledger. |
 | `/demo/integrations` | Integration simulator: feeds, message library, raw HL7 to FHIR, then pane 3 "Sent to matching" (a message stages a row on `/admin/matching`, never applies). |
 | `/demo/data` | Data inspector: today's lists, seeded scenario finder, audit trail, lifecycle states, guard console. |
 
@@ -458,26 +470,18 @@ badge carries `data-shot=nav-badge-<section>`.
   `NIB-FIX`, `COS-FIX`, `ARIA-FIX`, `UNI-FIX`). Search "Fixed price" lists them. Tagging `CES-001`
   SXAP and saving makes `CES-SXAP-FIX` at once.
 
-**Surgeons' rooms, surgeons at two rooms, practice manager and PA contacts** (catch-up Phase 17a; Admin, Master data)
+**Surgeon practice and office contacts** (catch-up Phase 17b; Admin, Master data; replaces 17a's rooms)
 
-- Rooms with no email (the row's email cell and the profile's room card read "No email held"; shoot
-  `[data-shot=masters-surgeon-rooms] tr[data-room=RM-GENERALSUR]`): `RM-GENERALSUR` General Surgery
-  Partners (Mr B. Yeoman `S-YEOMAN`), `RM-BURNSIDEEN` Burnside ENT Surgeons, `RM-EYEPARTNER` Eye
-  Partners, `RM-BRYNDWRNEU` Bryndwr Neurosurgery Specialists, `RM-RICHMONDFE`, `RM-IMOGENVAUG` and
-  12 more. `RM-ELODIEBRAM` and `RM-WIGRAMORTH` hold no phone either. The five cast rooms keep their emails.
-- Two-room surgeons (main room first): `S-WAINWRIGHT` Mr N. Wainwright and `S-MORLAND` Mr K. Morland
-  (`RM-UPPERGIPAR` Upper GI Partners, then `RM-HILLSBOROU` Hillsborough Colorectal Specialists),
-  `S-WINSLOW` Dr J. Winslow (`RM-RICHMONDFE`, then `RM-LINWOODWOM`), `S-VAUGHAN` Dr I. Vaughan
-  (`RM-IMOGENVAUG`, then `RM-EDGEWAREOR`). Use `S-WAINWRIGHT` for a two-rooms shot.
-- Contacts (rows `li[data-contact=RC-nnn]`; runtime ids `RCN001`): Avonhead ENT `RM-AVONHEADEN` Bev,
-  PA for Dr H. Dalgety (`/admin/masters/surgeons/S-DALGETY`); Burnside ENT `RM-BURNSIDEEN` Maree (for
-  Mr I. Forsythe `S-FORSYTHE`), Dianne (for `S-MALLORY`), Nicola Holloway (whole room), Leanne (two
-  rows, for `S-CALDER` and `S-WOODVILLE`), so Forsythe's profile shows Maree and Nicola Holloway;
-  Redwood Eye Group `RM-REDWOODEYE` Jodie Yamada (for `S-VASQUEZ`); Bryndwr Neurosurgery
-  `RM-BRYNDWRNEU` Wendy (for `S-MATHIESON`); General Surgery Partners `RM-GENERALSUR` Rosalind
-  Pemberton, Practice manager, whole room (invented). The rooms view's Contacts column reads "5
-  contacts" on Burnside ENT.
-
+- No HPI CPN (the row's cell and the profile chip read "No HPI CPN yet"; `tr[data-surgeon=...][data-hpi=""]`):
+  `S-WHAANGA` Dr P. Whaanga, `S-OSEI` Dr B. Osei, `S-SELWYN`.
+- Two-practice surgeons (practice name joins both, one office contact per practice): `S-WAINWRIGHT`
+  Mr N. Wainwright (Upper GI Partners and Hillsborough Colorectal Specialists; office contacts Upper GI
+  Partners info@uppergi.example, then Hillsborough Colorectal Specialists), `S-WINSLOW`, `S-MORLAND`,
+  `S-VAUGHAN`. Use `S-WAINWRIGHT` for a two-practices shot.
+- Bev first: `S-DALGETY` Dr H. Dalgety, office contacts Bev (bev@avonheadent.example), then the Avonhead
+  ENT inbox. Burnside ENT surgeons (e.g. `S-FORSYTHE`): Maree, then Nicola Holloway, then the Burnside
+  ENT Surgeons phone. The first office contact with an email carries the pill "Office emails go here first"
+  (`office-first-pill`).
 
 **Sessions and Lists** (catch-up Phase 28)
 
@@ -636,7 +640,7 @@ Authorising Morrison raises 6 invoices.
   invoiced to the patient, AIA Health named as insurer with number `AIA-2026-30418`, no warning.
 - A provisional patient with no NHI.
 - Repeat patients: Mitchell and Walker.
-- Procedures missing a billing reference.
+- Two hospital-billed Procedures on Mon 20 Jul, markers `mon20HolderBilled1` and `mon20HolderBilled2` (once the missing billing references; the reference is gone since catch-up Phase 25a).
 
 **AA fee (catch-up Phase 16):** Dr Souter's AA-FEE-2026-H01 (May, paid) and H02 (June, unpaid), ACCRECs
 `XRFH01` / `XRFH02`. Sample settings: $350.00 + $150.00 fixed, $5.00 per BCTI, ex GST. "Seed a month of BCTIs"
@@ -770,6 +774,12 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   (`typedPriceBooking`: "Price typed: $1,200.00 (computed ...)"); BK0180 Hemi Walker (`reviewNeedsPrice`:
   "Needs a price" and "Not marked completed"); BK0181 Rosalind Kerr (`otherSurgeonContract`: "Contract not
   offered on this List"). S2's Morrison Mon 20 List raises no flag.
+  Since catch-up Phase 25a the List has a fifth Booking, BK0190 Margaret Ellery (P0197, `disabledContractBooking`), on the seeded Disabled Contract
+  "Christchurch Eye Surgery 2025 rate" (`CT-CES-2025`, disabled Fri 10 Jul by Kirsty W.): its flag is `review-flag` with `data-rule=contractDisabled`,
+  "Contract disabled on Fri 10 Jul". The List now shows 5 Bookings. The disabled Contract shows in the Contracts master only under Disabled or All.
+  Disable Merivale's Face lift (`CT-MER-FACELIFT`, Contracts master, `contract-disable`) and `/admin/review/L-34821-2026-08-10-PM` flags each Face lift
+  "Contract disabled on Tue 21 Jul"; the panel's warning lists Sophie Matthews, Paula Westerman, Fiona Lattimer and others. The seed marker formerly
+  `missingBillingRef1/2` is now `mon20HolderBilled1/2`.
 - **The movable Booking** (`SEED_MARKERS.movableFixedBooking`): BK0182 Fiona Lattimer, Face lift (Merivale,
   linked to Ms Lim), Souter Mon 10 Aug PM 17:00, ACTIVE. On `/admin/day/2026-08-10` open her PM List
   (`button[data-list-id="L-34821-2026-08-10-PM"]`), click the row's Move, and pick her AM List with Mr Okafor
@@ -1061,7 +1071,7 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 
 ### Hospital sample files and their rows (catch-up Phase 33)
 
-The intake slice is empty at reset; Matching's Import hospital file dialog offers four sample files
+At reset the intake slice holds only the seeded waiting row and its stub (Phase 33a, below); Matching's Import hospital file dialog offers four sample files
 (`domain/intake/hospitalDownloads.ts`, every patient synthetic, the wording from AR-35). Each import
 lands its rows in file order (R1 first); a second import of the same file adds nothing ("All 5 rows
 were already imported. Nothing new.").
@@ -1080,9 +1090,9 @@ were already imported. Nothing new.").
   "Olivia Ratima" (`BK0166`: the corrected name and date of birth, the insurer "nib · Approval 4471203",
   a note); R3 Hemi Walker on the AUTHORISED Wed 18 Mar List (`HBK08`): the "List authorised" flag and the
   footer disabled with "This List is authorised and locked"; R4 Tama Henare with no NHI (Unmatched,
-  "Waiting for an NHI"; typing `ZQA1008` in `matching-nhi` releases it as a New row on Dr Souter's Tue
-  28 Jul PM); R5 Grace Whitu Thu 6 Aug PM (Unmatched, "No List at Southern Cross for Ms Patel on Thu 6 Aug
-  PM"). Two Unmatched rows after import.
+  "Waiting for an NHI"; its stub stands on Dr Souter's Tue 28 Jul PM List; type `ZQA1008` in `matching-nhi`
+  and press Add NHI, `stub-add-nhi`, and the Booking takes the stub's place, Phase 33a); R5 Grace Whitu Thu 6 Aug PM (Unmatched, "No List at Southern Cross for Ms Patel on Thu 6 Aug
+  PM"). Two Unmatched rows from the file after import, three with the seeded row.
 - `SAMPLE_FORTE_SHEET` (Forte Health daily sheet keyed by the office): R1 Peter Langley New onto Mr
   Okafor's Tue 28 Jul AM; R2 Rosa Mendes with a mistyped NHI check digit (flagged, corrected inline);
   R3 Hugh Barnett Fri 31 Jul PM, no Forte List (create a Draft List).
@@ -1090,6 +1100,55 @@ were already imported. Nothing new.").
   Needs an invoice destination card (the banner's "Needs an invoice destination" pill).
 - MSG-STG-1014 (fired from `/admin/integrations` or `/demo/integrations`) stages "Alan Prentice", a change
   to a SUBMITTED List, still appliable.
+
+### Stubs on a List (catch-up Phase 33a)
+
+- Matching is no longer empty at reset: the seed holds one waiting row with no NHI, `IRS001` (batch `IBS001`,
+  "Southern Cross theatre list, Tue 4 Aug"): Mere Tipene, Southern Cross, Ms K. Patel, "Lap chole", 14:00, Tue 4 Aug
+  PM. It sorts after the ready rows (Unmatched), so after an import `matching-row-1` and `matching-received` are still
+  the file's first ready row; the Open and Unmatched counts and `nav-badge-matching` are one higher than in Phase 33.
+  Select it with `[data-shot^='matching-row-'][data-import-row-id=IRS001]` (or router state `{ selectRowId: 'IRS001' }`).
+- Its stub `STB0001` stands on Dr Souter's Tue 4 Aug PM List `L-34821-2026-08-04-PM` (Southern Cross, Ms K. Patel),
+  which has no Bookings, only the stub. The NHI to type on Matching is `ZQA1024`: fill `[data-shot=matching-nhi] >>
+  role=textbox`, then click `[data-shot=stub-add-nhi]` (typing alone no longer releases a row whose stub stands) and
+  wait for `[data-shot=matching-banner]`; the Booking takes the stub's place on that List.
+- Importing `SAMPLE_SX` places a second stub for R4 Tama Henare on Dr Souter's Tue 28 Jul PM List
+  `L-34821-2026-07-28-PM` (2 Bookings, 13:00 and 14:00; the stub at 15:30 sorts after them). Add NHI with `ZQA1008`
+  resolves it the same way.
+- Admin Day: open the drawer with `button[data-list-id="L-34821-2026-08-04-PM"]` on `/admin/day/2026-08-04`.
+  `/admin/review/L-34821-2026-08-04-PM` renders the ACTIVE List with the stub row.
+
+### Internal ledger (catch-up Phase 36)
+
+- **At reset the ledger is in balance and no anaesthetist is out of balance**: `/admin/ledger` shows
+  `[data-shot=ledger-balance][data-in-balance=true]`, the empty out-of-balance list, no unmatched receipts card and
+  no `nav-badge-ledger`. Every invoice is a pair (ids `BC…`; history pairs `HBC…`, AA fee pairs `HBCF01` paid and
+  `HBCF02` unpaid); the old billing cases are gone.
+- **Pairs worth shooting.** Nair's prepayment `BC0001` (AA-2026-0001, $1,380.00) is the one `prePayment` row
+  (`[data-shot=ledger-pairs] tr[data-pair-kind="prePayment"]`), Payee "AA Holding account", held and so on the
+  Open filter. The seed's AA-2026-S2401 (pair `BC-S24-01`, Souter Thu 16 Jul PM, $3,565.00) is the one pair "Not yet
+  in Xero" (the tile reads 1; the Billing monitor's fault badge does not count it), and it now shows in Dr Souter's
+  outstanding rows on web and mobile. After Nair's List (`L-34821-2026-07-24-PM`) is completed, submitted and
+  authorised (the steps under Staging and in US-09.1.3), the transfer row `[data-pair-kind="transfer"]` appears:
+  Receivable "None", Kind "Transfer" with "From AA-2026-0001", Payee Dr Souter; the prepayment row then leaves
+  the Open filter (click "All" to see it). The Billing monitor's payables panel then reads "1 payable due ·
+  $1,380.00 to pay out to anaesthetists." (the 27a section's "authorised" wording is older).
+- **The unmatched receipt** (`inject-unmatched-receipt` on the Ledger): $120.00, id `UR0001`, key
+  `UNMATCHED-DEMO-1`. Choice `souter` ("Names Dr Souter", the default) gives the reference "Bank deposit · SOUTER
+  JULY", attributed to Dr Souter: the indicator reads "Out of balance by $120.00" with one
+  `li[data-check=unmatchedReceiptHeld]`, `nav-badge-ledger` shows 1, Dr Souter is the one row
+  `tr[data-anaesthetist-id="34821"]` of `ledger-anaesthetists-out-of-balance` ("Receipt with no matching invoice,
+  $120.00"), and her scope reads "Dr Souter's ledger is out of balance by $120.00". Choice `none` ("Names no one")
+  gives "Bank deposit · JULY": the whole ledger is out by $120.00 but the list stays empty. Clear it with
+  `[data-shot=ledger-allocate]` ("Allocate to invoice": the dialog `ledger-allocate-dialog` lists invoices whose
+  balance covers it, Dr Souter's first, each `[data-allocate-pair=<id>]`; click `>> nth=0`) or
+  `[data-shot=ledger-refund]` ("Mark refunded": `ledger-refund-dialog`, a Note, `ledger-refund-confirm`). Either
+  puts the ledger back in balance; the row stays with "Allocated to AA-..." or "Refunded".
+- **Archived contacts.** After `run-archive-job` (from the Ledger, the Billing monitor or the Xero sim), an archived
+  payer's pairs keep their rows and money, with "Contact archived in Xero" under the Xero column (Annette Riley's;
+  click "All" first, since a settled pair leaves the Open filter).
+- **Words.** "Ledger", "pair", "receivable", "payable", "released", "paid out"; anaesthetist screens never say ACCREC,
+  ACCPAY or "mirror". Xero mirrors the ledger, never the other way round.
 
 ## Overlays that need clicks
 
@@ -1116,23 +1175,13 @@ were already imported. Nothing new.").
   `[data-shot=surgeon-edit-sheet]` with `[data-shot=surgeon-specialties-field]` (chips named
   "Remove <specialty>", and a select labelled "Specialties", value an id such as `SPC-PLASTIC`).
   Removing every chip and saving shows "Choose at least one specialty." as the sheet's `role=alert`.
-- **Surgeon sheet, rooms** (catch-up Phase 17a): the same sheet holds `[data-shot=surgeon-rooms-field]`
-  ("Surgeons' rooms", below the specialties): a chip per room in order, the first with a "Main room" pill
-  (`[data-main-chip]`), each other with a "Make main" action named "Make main: <room name>", chips named
-  "Remove <room name>", and a select ("Add another room"). Open it on `S-WAINWRIGHT` for two chips.
-- **Room sheet** (catch-up Phase 17a): "Edit <room name>" on the rooms view opens
-  `[data-shot=surgeon-room-sheet]` with "Contact email (optional)" (hint "Leave blank where the practice
-  gives no shared inbox") and "Phone (optional)"; reach a field as
-  `[data-shot=surgeon-room-sheet] label:has(input[type=email])` (or `type=tel`). Editing an existing room
-  adds `[data-shot=room-sheet-contacts]` ("Practice manager and PAs", its rows and Add contact; the
-  contact form swaps in place inside the sheet, no second dialog).
-- **Contacts on a surgeon profile** (catch-up Phase 17a): each `[data-shot=surgeon-contacts]` card's
-  "Add contact" (`[data-shot=room-contact-add]`, named "Add contact to <room name>") opens
-  `[data-shot=room-contact-sheet]` in a `[role=dialog]`: Name, Email, Role (segmented Practice manager,
-  PA), For (the whole room or one of the room's surgeons, defaulting to the profile's surgeon), then
-  "Add contact". A row's Edit (named "Edit <contact name>") opens the same sheet as "Edit contact";
-  its Remove (named "Remove <contact name>") shows the in-card confirm `[data-shot=room-contact-remove]`
-  ("Remove contact", "Keep it"). On a two-room surgeon, scope by `[data-room=<roomId>]`.
+- **Surgeon sheet, practice and contacts** (catch-up Phase 17b): the same sheet holds Practice (optional,
+  `[data-shot=surgeon-practice-field]`), HPI CPN (optional, `[data-shot=surgeon-hpi-field]`), the section
+  `[data-shot=surgeon-personal-contact]` and the section `[data-shot=surgeon-office-contacts]` holding
+  fieldsets `[data-office-contact=1]`, `2`, ...; the plus button is inside `[data-shot=office-contact-add]`
+  ("Add office contact": click `[data-shot=office-contact-add] >> role=button`), and each set from the
+  second has a minus `[data-shot=office-contact-remove]` named "Remove office contact N". There are no
+  room or contact sheets any more.
 
 - **Change status** (Admin Day, catch-up Phase 32b): open a session, `[data-shot="drawer-change-status"]`,
   pick `[data-shot="office-status-choices"] [data-status-choice="unavailable"]`; on a session holding a
@@ -1282,8 +1331,8 @@ were already imported. Nothing new.").
 - **Reassign:** "Reassign list", pick a target like "Sharma, Priya · Free AM", then (the vacated
   session `select[data-shot=reassign-vacated]` defaults to Free and lists the availability statuses in use) "Confirm reassignment".
   `[data-testid=list-reassignment-overlay]` appears.
-- **Admin booking:** "Edit billing setup" (opens "Contract and reference": the Contract row and the
-  Billing reference, "Save reference"; the payer moved to the Booking's Payer row in catch-up Phase 21),
+- **Admin booking:** The Office billing setup card has only Price and Prepayment rows (catch-up Phase 25a removed "Edit billing setup", its
+  "Contract and reference" sheet and the Procedure's billing reference; the Contract is chosen on the Billing card's step rail, the payer on the Paid by line),
   and "Change price" (`[data-shot=office-billing-setup-<n>] >> role=button[name="Change price"]`, hook `change-price`;
   catch-up Phase 24, was "Price override"). It opens `[data-shot=pricing-sheet]` ("Change price"): the row
   `pricing-sheet-computed` ("Computed from the Contract" and the figure), one input `pricing-sheet-price` (label "Price $",
@@ -1320,8 +1369,8 @@ were already imported. Nothing new.").
   `payer-child-hint`, `payer-other-fields` (Name, relationship chips, "Other relationship", Email,
   `payer-postal-address` with Address, "Unit, building or RD (optional)", "Suburb (optional)", "Town or
   city", Postcode, "Phone (optional)"), `payer-contact-ask`. When the payer changes to another person (fill "Name" with a different name) the offer
-  `payer-offer` appears with rows `payer-offer-row` (`data-procedure-id`) and the neutral pill `payer-offer-provisional`
-  ("Provisional, OQ-140"), then the split section `split-sheet` (see Split below). The Insurer or funder section
+  `payer-offer` appears with rows `payer-offer-row` (`data-procedure-id`) (no pill since catch-up Phase 25a)
+  then the split section `split-sheet` (see Split below). The Insurer or funder section
   `booking-funder-row` with "Add" (aria "Add insurer or funder") or "Change" (aria "Change the insurer or
   funder") opening `funder-sheet`: chips `funder-none` ("None"), one per insurer and
   funder by name (for example "nib"), "Approval number", "Save". Row hooks `funder-approval-number`,
@@ -1405,8 +1454,7 @@ were already imported. Nothing new.").
   `[role=dialog] >> role=button[name="Save changes"]`. The Add sheet has the same field.
 - **Master data:** "Edit", "Save changes", and "Add hospital" (field "Hospital name", then the
   optional "Contact email"). Catch-up Phase 17 sheets: "Add surgeon" / a surgeon row's "Edit" /
-  profile "Edit details" (`surgeon-edit-sheet`), "Add room" / "Edit <room name>"
-  (`surgeon-room-sheet`), "Add group" / "Edit <group name>" (`surgeon-group-sheet`), a hospital's
+  profile "Edit details" (`surgeon-edit-sheet`), "Add group" / "Edit <group name>" (`surgeon-group-sheet`), a hospital's
   "Edit <hospital name>" (`edit-hospital-sheet`), "Add pairing" (`pairing-add-sheet`), a pairing
   row's "End" (`pairing-end-sheet`, confirm "End pairing"). The anaesthetist Edit sheet has an
   "Open record" link. A table row (anaesthetist or surgeon) opens its page; the "Edit" link in it
@@ -1437,6 +1485,16 @@ the exception: use the `trigger` step)
   Booking", "Mark as matched", "Create List and Booking", "Create Draft List and Booking", "Reject row"; disabled
   with its reason) and, after a decision, `matching-banner` (`role=status`). On the Admin Booking detail:
   `booking-from-hospital-row` and `booking-newer-hospital-text`. Side nav `nav-badge-matching`.
+- Stubs (catch-up Phase 33a): `list-stub` (the stub row; also `data-stub-id`, `data-import-row-id`; a button on
+  mobile and in tables, a `role=group` in the Admin drawer), `list-stub-row` (its `<tr>` on web List detail and Admin
+  Review; click `[data-shot=list-stub-row] [data-shot=list-stub]` to show the inline details), `stub-sheet` (the
+  mobile bottom sheet, or the inline details panel on web and Review), `stub-readings` (the readings caption inside
+  it), `list-stub-note` ("1 waiting at intake" beside the progress bar on mobile and web List detail), `list-row-stub`
+  (the triangle marker on mobile and web Lists rows), `daygrid-block-stub` (the marker on the Admin Day block beside
+  `daygrid-block-count`), `stub-resolve-link` ("Resolve on Matching" on Admin drawer and Review stub rows). On
+  Matching: `matching-stub` (the panel notice "A stub stands on Dr Souter's Tue 4 Aug PM List"), `stub-add-nhi` (Add
+  NHI beside the NHI field; the field's input carries `data-row-nhi`) and `matching-stub-resolved` (the banner line
+  "The Booking takes the stub's place on the List." after Add NHI).
 - Public status (catch-up Phase 32d, no new hook names): `[data-status-choice=publicHospital]` in the mobile and web availability forms and the Day drawer's Change status sheet; `tr[data-status-row=publicHospital]` in Availability statuses; `[data-shot=drawer-change-status]` opens the sheet; the Day block for a Public session is `button[data-slot-id=<id>]` showing "Public" and its note; the legend and the "Status filters" group gain a "Public status" chip (a Slot status, no longer a List kind).
 - UI unification Phase U6 (every earlier hook kept, none moved off its element): table shells are the shared
   `shared/table/TableShell`. Its `shot`, `testId` and `data-*` sit on the scroller `div` (as before:
@@ -1452,8 +1510,8 @@ the exception: use the `trigger` step)
   names. Cards are the shared `shared/ui/Card`: a `section` named by its `h2` title (`h3` where a page sets it), with
   `data-shot` and `data-*` on the `section`: the Day rail's `admin-notifications-rail`, `admin-warnings-todo`,
   `admin-draft-lists-rail`, `admin-needs-invoice-destination` (heading ids kept), the profile cards `tier-card`,
-  `anaesthetist-details`, `surgeon-specialties`, `surgeon-identifiers`, `surgeon-groups`, `surgeon-room-card` and
-  `surgeon-contacts` (`data-room` kept). The web panels are the same `Card`, so their titles ("Bookings", "Invoices",
+  `anaesthetist-details`, `surgeon-specialties`, `surgeon-identifiers`, `surgeon-groups` and
+  `surgeon-contacts`. The web panels are the same `Card`, so their titles ("Bookings", "Invoices",
   "Leave", "Receivables aging") are `h2`, no longer a `div`. The invoice rail's own `section` and `h2` cards
   (`invoice-info-rail`) are unchanged. Label and value rows are the shared `shared/ui/DefRow` in a `dl`: each row is
   `div > dt + dd` (was `div > span + span`) in the Admin drawers, the Booking detail (Paid by, funder details), Office billing
@@ -1504,6 +1562,14 @@ the exception: use the `trigger` step)
   one fee line). Review: `review-fee` (the Fee cell), `review-fee-computed` ("Computed $265.50" under a typed price),
   `review-no-charge` (a $0.00 Booking's "No charge" pill). Invoice: `invoice-no-charge` (the "No charge" pill under the
   number). Contracts list: `contract-override-pill` (RVG kinds only). Demo action `demo-action-demo-backdated-range`.
+- Catch-up Phase 25a (`data-shot`): Contracts master create panel `contract-replaces` (the "Replaces" select, option values are Contract ids, and the "From" date input);
+  `contract-still-on-warning` ("N Procedures dated on or after ... are still on ...", with rows `contract-still-on-row`, each with an Open link) and
+  `contract-still-on-none` (the neutral note when nothing is on it), shown in the create panel with Replaces and From set and in a Contract's panel after Disable;
+  `contract-created` (the ResultLine after "Create contract", the panel staying open when rows are listed); `contract-disabled-note` ("Disabled on ...: hidden from the
+  Contract list unless asked for ...", in the Disabled Contract's panel). Under `contract-price-ranges`: `price-range-kept` ("1 authorised Procedure kept its old
+  price") with rows `price-range-kept-row`. Admin Review: `review-flag` with `data-rule=contractDisabled` ("Contract disabled on Fri 10 Jul").
+  GONE in 25a: `payer-offer-provisional`, `masters-modifiers-provisional`, `contract-and-reference` (the sheet) and its "Edit billing setup" button,
+  the Billing reference field on Add Booking and phone advice, and the "Hospital reference" cross-match field (`invoice-cross-match` is Procedure date and Surgeon).
   See [Change price and the price line](#change-price-and-the-price-line-catch-up-phase-24). GONE:
   `capture-adjustment-and-charge` (the anaesthetist's "Adjustment and charge" card).
 - Catch-up Phase 23 (`data-shot`): `procedure-primary-pill` (the "Primary" pill in the primary's
@@ -1520,7 +1586,7 @@ the exception: use the `trigger` step)
   is the only way back: `role=button[name="Review queue"]` on `/admin/review/:listId`, and
   `[data-testid=invoice-detail-screen] >> role=button[name="Invoices"]` on `/admin/invoices/:invoiceId`.
 - Catch-up Phase 22a: `paid-by-sheet` (the one Paid by sheet), `paid-by-save`, `paid-by-change` (Change beside the payer), `paid-by-payer` (the payer's name on a
-  Paid by line, `data-procedure-id`), `payer-not-billed`, `payer-offer`, `payer-offer-row`, `payer-offer-provisional`,
+  Paid by line, `data-procedure-id`), `payer-not-billed`, `payer-offer`, `payer-offer-row`,
   `split-start`, `split-another-person`, `split-person`; Review: `review-payer` (per Procedure under its stack, `data-procedure-id`),
   `review-payer-contact` per Procedure, `review-payer-under-18`, `review-insurance` (Billed to column). The phone's Paid by row is
   no longer one tap target: `procedure-split-button` is its Split action. `payer-contact-missing` and `payer-under-18`
@@ -1550,12 +1616,12 @@ the exception: use the `trigger` step)
   `contract-rail-other-price` (the Billing card's "Price by" wrapper), `contract-rail-amount` (the
   input), `contract-rail-outcome`, `contract-rail-enter-rvg`, `contract-rail-only-option`,
   `no-contract-group` (the "No contract" heading and its two backstops, in the Billing card's combo and
-  the creation-form sheet; `contract-rail-pinned` is retired, UI unification U4); the Contract row `procedure-contract-row` in the
-  sheets (`edit-procedure-contract`, `contract-and-reference-contract`); the mobile Billing rows
+  the creation-form sheet; `contract-rail-pinned` is retired, UI unification U4; the sheets' Contract row `procedure-contract-row` went with the "Contract and reference"
+  sheet in catch-up Phase 25a); the mobile Billing rows
   `billing-contract-rows`,
   `needs-invoice-destination`, `contract-set-by-office`, `contract-price-cleared`; the RVG cues
   `rvg-code-optional`, `list-row-contract-cue`; the Admin Day card
-  `admin-needs-invoice-destination` and its rows `needs-destination-row`; `contract-and-reference`,
+  `admin-needs-invoice-destination` and its rows `needs-destination-row`;
   `manual-contract`; the Suggested pill `rail-suggested` on the step tile the Booking's funder suggests
   (catch-up Phase 21; tiles carry `data-rail-option="<value>"`); the add form's payer block
   `add-booking-payer`.
@@ -1749,8 +1815,8 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   `data-modifier-code`), `capture-modifier-claim` (a claimed row), `capture-modifier-removed` (the
   "Removed: A1. Put back" line), `modifier-add`, `modifier-picker`, `modifier-explanation`,
   `modifier-units`; Admin `masters-modifiers`, `masters-modifiers-rvg` (the 30-row table, rows
-  `tr[data-modifier-code=…]`), `masters-modifiers-aa`, `masters-modifiers-provisional` (the one OQ-95
-  note), `add-aa-modifier`, and on the RVG groups table `masters-rvg-included` (the "P1 · 0" cell on
+  `tr[data-modifier-code=…]`), `masters-modifiers-aa`,
+  `add-aa-modifier`, and on the RVG groups table `masters-rvg-included` (the "P1 · 0" cell on
   the 20 Neurosurgery and Spine rows). `capture-asa-status` is gone (no ASA card), as are the
   segmented modifier bands and "Also applies" chips.
 - RVG groups (catch-up Phase 19): `masters-rvg-groups`, `rvg-group-sheet`, `rvg-group-retire`,
@@ -1768,22 +1834,21 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   field's wrapper `div`; its select is `[data-shot=contract-tag-filter] select`), `contract-system-notice`, `contract-system-pill` (the "System" pill), and the row marker
   `tr[data-system=openPriceFallback|noContractRvg]`.
 - Master data tables: `masters-anaesthetists` (rows `tr[data-anaesthetist=<id>]`, tier pills
-  `[data-tier=1..4]`), `masters-surgeons` (rows `tr[data-surgeon=<id>]`), `masters-surgeon-rooms`
-  (`tr[data-room=<id>]`), `masters-surgeon-groups` (`tr[data-group=<id>]`), `masters-hospitals`
+  `[data-tier=1..4]`), `masters-surgeons` (rows `tr[data-surgeon=<id>]`), `masters-surgeon-groups` (`tr[data-group=<id>]`), `masters-hospitals`
   (cards `[data-hospital=<id>]`).
-- Pages: `surgeon-profile`, `surgeon-hpi-chip`, `surgeon-identifiers`, `surgeon-room-card`,
-  `surgeon-groups`; `anaesthetist-record`, `anaesthetist-hpi-chip`, `anaesthetist-details`,
+- Pages: `surgeon-profile`, `surgeon-hpi-chip`, `surgeon-identifiers`,
+  `surgeon-contacts`, `surgeon-groups`; `anaesthetist-record`, `anaesthetist-hpi-chip`, `anaesthetist-details`,
   `tier-card`.
   (`anaesthetist-details` is the Profile card since catch-up Phase 26.)
-- Rooms and contacts (catch-up Phase 17a): `surgeon-room-card` is now one per room, each with
-  `data-room=<roomId>`, the main room first (with a neutral "Main room" pill when there are several), so
-  pick one as `[data-shot=surgeon-room-card][data-room=RM-HILLSBOROU]`; beside each,
-  `surgeon-contacts` ("Practice manager and PAs", also with `data-room`; the first carries the one
-  provisional mist line), rows `li[data-contact=<id>]`; `room-contact-add`, `room-contact-sheet`,
-  `room-contact-remove` (the in-card confirm); on the surgeon sheet `surgeon-rooms-field`; on the room
-  sheet `room-sheet-contacts`. Surgeons table: the Rooms cell is `td[data-rooms=<surgeonId>]` (a room
-  per line, main first). Rooms table: the email cell `td[data-room-email]`, the Contacts cell
-  `td[data-room-contacts-count=<n>]`.
+- Practice and contacts (catch-up Phase 17b): the Surgeons table has columns Name, Specialties, Practice,
+  Office contact, HPI CPN, Pairings; rows `tr[data-surgeon=<id>]` carry `data-practice` and `data-hpi`
+  ('' when blank), the office cell is `td[data-office-to]`. On the profile, `surgeon-contacts` holds
+  `[data-practice]`, `surgeon-personal-contact-card` and `surgeon-office-contacts-card`; each office
+  contact is `[data-office-contact="1"]`, `"2"`, ...; `office-first-pill`. On the surgeon sheet:
+  `surgeon-practice-field`, `surgeon-hpi-field`, `surgeon-personal-contact`, `surgeon-office-contacts`,
+  `office-contact-add`, `office-contact-remove`. GONE in 17b: `masters-surgeon-rooms`, `surgeon-room-card`,
+  `surgeon-rooms-field`, `room-contact-add`, `room-contact-sheet`, `room-contact-remove`,
+  `room-sheet-contacts`, `surgeon-room-sheet`, the "Surgeons' rooms" sub-nav button.
 - Pairing section: `pairing-section`, groups `[data-pairing-group=NOT_PREFERRED|PREFERRED]`, rows
   `[data-pairing=<entryId>]`, `pairing-ended` (a `<details>`: click `[data-shot=pairing-ended] >
   summary` to open), `pairing-add-sheet`, `pairing-counterpart` (the select; a taken counterpart's
@@ -1798,6 +1863,22 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 
 - Draft Lists (catch-up Phase 31): `admin-draft-lists` (page), `admin-draft-list-drawer`, `admin-draft-lists-rail` (Day rail card, with `admin-draft-lists-see-all`), `admin-assign-draft-list` (sheet; becomes `admin-assign-draft-list-not-preferred` when a not-preferred pick is shown; `draft-list-reach`, `draft-list-candidates`, `assign-draft-list-pairing-warning`, `assign-draft-list-closed-warning`, `assign-draft-list-confirm`), `admin-new-draft-list` (`draft-list-hospital`, `draft-list-surgeon`, `draft-list-date`), `admin-redate-draft-list`, `admin-remove-draft-list`, `draft-lists-table`, `draft-lists-history`, `draft-lists-assigned`, `draft-list-available`, `draft-list-add-booking`, `daygrid-draft-band`, `daygrid-block-count`; nav badge `nav-badge-draftLists`. The List drawer's ACTIVE state is plain text in its subtitle, so highlight `[data-testid=admin-list-drawer] > header`.
 
+- Ledger (catch-up Phase 36, `/admin/ledger` and `/admin/ledger/anaesthetists/:anaesthetistId`): `ledger-system-of-record`
+  (the page header), `ledger-anaesthetist-select` (one-anaesthetist scope), `ledger-balance` (the balance indicator,
+  `data-in-balance=true|false`, checks `li[data-check=<code>]`), `ledger-tiles` (whole: the tile rows; one
+  anaesthetist: the grid holding `ledger-aa-owes`, `ledger-owes-aa` and the Collected and Paid out tiles),
+  `ledger-anaesthetists-out-of-balance` (the empty state or the table, rows `tr[data-anaesthetist-id=<reg>]`),
+  `ledger-unmatched` (rows `tr[data-unmatched-id=<id>]`), `ledger-allocate`, `ledger-refund`,
+  `ledger-allocate-dialog` (options `[data-allocate-pair=<pairId>]`), `ledger-refund-dialog`, `ledger-refund-confirm`,
+  `ledger-pairs` (the empty state or the table, rows `tr[data-pair-id=<id>]` with `data-pair-kind=procedure|prePayment|transfer|aaFee`),
+  `ledger-footnotes`; side nav `nav-badge-ledger`.
+- Ledger reads elsewhere (catch-up Phase 36): the invoice rail's `invoice-ledger-card` (replaces the
+  `section:has(h2:text-is("Xero handoff"))` selector; inside it `xero-handoff-status`, `ledger-receivable-number`,
+  `xero-accrec-reference`, `ledger-payable-number`, `xero-accpay-reference`, `xero-accpay-payee`,
+  `xero-transfer-journal-reference`, `invoice-open-ledger`); the Billing monitor's `billing-open-ledger`; web
+  Accounts' `web-accounts-position`; mobile Balances' `balances-collected-paid-out` and `balances-you-owe-aa`; the Xero
+  sim pair's `xero-ledger-pair` and `xero-ledger-match`, inside `xero-engine-link`.
+
 **Other hooks**
 
 - `[data-aa-mobile-product]`
@@ -1806,6 +1887,18 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 - `[data-validation-focus=true]`
 
 ## Demo control panel (`/demo/control`) and Demo actions
+
+- Catch-up Phase 36: "Inject unmatched receipt" (`inject-unmatched-receipt`, bar only) on the Ledger, with
+  choices `souter` ("Names Dr Souter", the default) and `none` ("Names no one"); pass one with the `trigger`
+  step's `"choice"`. Disabled "Resolve the held receipt first" while one is held. `payment-full`,
+  `payment-half`, `payment-replay`, `arm-handoff-fault` and `run-archive-job` are also on the Ledger routes; there
+  the payment entries' choices are the open receivables with a Xero ACCREC ("AA-2026-0002 · payer · $x"),
+  defaulting to the first, and are disabled "No open invoice in Xero" when none is open. `arm-handoff-fault` now
+  means the next authorise still makes every pair, marked "Not yet in Xero"; "Trigger billing failure"
+  (`billing-failure`) shows the same on Losa Tuilagi's invoice deterministically. The PWA-only
+  `pwa-office-runs-payables` ("Office runs payables", office stand-in) on Mobile Balances pays out what is due to
+  Dr Souter (disabled "Nothing due to pay out", as it is at reset). There is still no "Run payables" demo action:
+  it is the Billing monitor's own button.
 
 - Catch-up Phase 27a: no new demo action. The Payables run has nothing due at reset (Nair's seeded prepayment is
   held in the AA Holding account, never in the run); it is due only once her List is authorised and the transfer
@@ -1858,6 +1951,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/mobile/lists[...]`, `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/admin/integrations`, `/demo/integrations` | `fire-hospital-message` (choice: a message id), `replay-hospital-message` | Badged Future scope, **bar only** since catch-up Phase 33 (not in the PWA Demo sheet). It never applies anything: a message stages a row on `/admin/matching` ("Sent ... to matching"), and the Booking changes only once the office decides the row there. On a Booking it defaults to the message addressed to it (MSG-STG-1012 on Foster's `BK0043`). Replay dedupes: no second row |
 | `/admin/matching` | `matching-receive-theatre-list` (choice `stg` or `sx`), `matching-send-update` | Catch-up Phase 33, bar only. "Import hospital file" stages `SAMPLE_STG` or `SAMPLE_SX`'s rows as the hospital sending its theatre list (refused once staged). "Send update for a matched Booking" stages a later row for the Booking matched by the selected row, else Diane Foster's `BK0043` (a later time and the hospital's fuller wording), waiting for approval. Recipes usually stage rows through the product's own Import hospital file dialog instead (see Overlays) |
 | `/mobile/lists[...]` (PWA Demo sheet) | `matching-office-matches-row` (choice by label: "Sarah Mitchell, Tue 28 Jul AM (S1)", "A new hospital booking on this List", "A hospital update for this Booking, approved by the office") | Catch-up Phase 33, badged Office stand-in, PWA only. The hospital's row arrives and the office decides it with the suggestion, every difference ticked, no Contract picked. On Foster's `BK0043` the hospital's fuller wording replaces WLE MM (US-02.5.7's mobile shot). In the framed build use Admin, Matching |
+| `/mobile/lists/<listId>` (PWA Demo sheet only) | `stub-office-adds-nhi` ("Office adds the NHI to this stub") | Catch-up Phase 33a, badged Office stand-in, PWA only. On a List holding a stub, the office adds the NHI its waiting row needs (Mere Tipene `ZQA1024` on `L-34821-2026-08-04-PM`; after the Southern Cross import, Tama Henare `ZQA1008` on `L-34821-2026-07-28-PM`) through the one resolve path, and the Booking takes the stub's place. Disabled on a List with no stub. No choice. |
 | `/admin/day/<date>/bookings/<id>` | `hospital-description-arrives` (choice `ar35-row-2`, `-12`, `-20`, `-25`) | Catch-up Phase 20a, bar only, no badge. AR-35's illustrative hospital wording replaces the procedure text through `replaceProcedureText`; defaults to the row paired with the rooms' text (row 12 on Tane's `BK0006`). Disabled when the Booking already holds that text |
 | `/mobile/lists/<listId>` | `photo-capture-future` | Badged Future scope. Opens the Add a booking sheet on the simulated photo of a paper card (sample cards) for the List in the URL; disabled unless the List is ACTIVE. Also in the PWA Demo sheet. A saved Booking reads "Added by anaesthetist" |
 | `/admin/audit` | `simulate-sign-in` | Five simulated sign-in audit rows |
@@ -1871,10 +1965,12 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/mobile/lists` (PWA Demo sheet) | `office-adds-out-of-hours-list` | Catch-up Phase 32c, badged Office stand-in, PWA only. Opens Dr Souter's out-of-hours session for tonight (18:00 to 21:00) and assigns a List at the hospital and with the surgeon of her latest List; disabled while one is open tonight. In the framed build use Open out-of-hours session on Admin Day instead. |
 | `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `office-approves-contract-change` | Catch-up Phase 21a, badged Office stand-in, PWA only ("Office approves this Contract change"). Approves the Contract the anaesthetist changed on the Booking, as Approve on Review would, so `contract-approval-status` turns from "Awaiting office approval" to "Approved by the office <time>". Disabled when the Booking has no pending change (true of every Souter Booking at reset: change a Contract on the Billing sheet first). In the framed build use Approve on Admin Review. |
 | `/mobile/lists/<listId>`, `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `office-resolves-alert` | Catch-up Phase 32b, badged Office stand-in, PWA only. Ticks the viewed List's or Booking's open alert resolved as the simulated office, so the handset shows "The office has dealt with this". Disabled with no open alert. |
-| `/web/lists/<listId>`, `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/mobile/lists/<listId>[/bookings/<id>]` (bar and PWA) | `load-multi-procedure-booking` | Catch-up Phase 23, "Load 3-procedure Booking (7 modifier units)". Adds the three-procedure worked example (the same spec as the seeded BK0184) to Dr Souter's next open List, Wed 22 Jul AM (`L-34821-2026-07-22-AM`) on a fresh seed, as `BK0190` (catch-up Phase 24's five seeded Bookings took BK0185 to BK0189; BK0185 is now the seeded `discountBooking`), not marked complete; result "Loaded on Dr Souter's ... List: 3 procedures, 7 modifier units, split 3 · 2 · 2." Disabled "Already loaded" on a second run. Open it at `/web/lists/L-34821-2026-07-22-AM/bookings/BK0190` or `/admin/day/2026-07-22/bookings/BK0190` |
-| `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/mobile/lists/<listId>/bookings/<id>` (bar and PWA) | `feed-changes-primary` | Catch-up Phase 23, "Hospital feed changes the primary". Shown only on a Booking with two or more Procedures: the List's hospital feed makes the next Procedure the primary, audited as an integration; it moves to the top with the Primary pill and base units come from it ("... made ... the primary. Base units now come from it."). Disabled on a SUBMITTED List ("A hospital feed cannot change a submitted List"), so not on BK0184 or Holt: run it on Ellison after "Add another procedure", or on BK0190 after `load-multi-procedure-booking` |
+| `/web/lists/<listId>`, `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/mobile/lists/<listId>[/bookings/<id>]` (bar and PWA) | `load-multi-procedure-booking` | Catch-up Phase 23, "Load 3-procedure Booking (7 modifier units)". Adds the three-procedure worked example (the same spec as the seeded BK0184) to Dr Souter's next open List, Wed 22 Jul AM (`L-34821-2026-07-22-AM`) on a fresh seed, as `BK0191` (BK0190 is the Phase 25a seeded `disabledContractBooking`; catch-up Phase 24's five seeded Bookings took BK0185 to BK0189; BK0185 is now the seeded `discountBooking`), not marked complete; result "Loaded on Dr Souter's ... List: 3 procedures, 7 modifier units, split 3 · 2 · 2." Disabled "Already loaded" on a second run. Open it at `/web/lists/L-34821-2026-07-22-AM/bookings/BK0191` or `/admin/day/2026-07-22/bookings/BK0191` |
+| `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/mobile/lists/<listId>/bookings/<id>` (bar and PWA) | `feed-changes-primary` | Catch-up Phase 23, "Hospital feed changes the primary". Shown only on a Booking with two or more Procedures: the List's hospital feed makes the next Procedure the primary, audited as an integration; it moves to the top with the Primary pill and base units come from it ("... made ... the primary. Base units now come from it."). Disabled on a SUBMITTED List ("A hospital feed cannot change a submitted List"), so not on BK0184 or Holt: run it on Ellison after "Add another procedure", or on BK0191 after `load-multi-procedure-booking` |
 | `/admin/masters?view=contracts` (or with Merivale's Face lift open in its detail) | `demo-backdated-range` | Catch-up Phase 24, "Demo: add a backdated price range" (`[data-shot=demo-action-demo-backdated-range]`). Shown on the Contracts view, disabled "Already added" once run; run it from the list (the Contract detail panel is modal, so the bar cannot be clicked while it is open). Adds a range from 1 Jul 2026 at $3,300.00 as the office: the unedited Face lift BK0163 then prices at $3,300.00; BK0187 (typed $2,950.00), BK0188 (AUTHORISED, $3,100.00) stays; the prepaid BK0038 is on another Contract and so never moves. Disabled "Already added" on a second run. Stage it with the `trigger` step, then `goto` the Booking (US-05.2.8 shows the pattern) |
 | `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`: the prepayment and base-units samples); on a Booking, on that Booking (seeded Bookings only). Four rules since catch-up Phase 21: the child payer sample stages on the Booking on screen when its patient is under 18, otherwise on Grace Park's (BK0033: Hana Park out, the patient in); the approval number sample on the Booking on screen when it names an insurer, otherwise BK0074 (its number cleared). Catch-up Phase 22 adds a fifth, `splitDoesNotFit`: on the Booking on screen when its seed carries a split, otherwise the fee-split Booking BK0025, nib's share raised to $250.00 so the rest has nothing left. A Booking whose fee is split cannot take the prepayment sample. Clear restores them. Also in the PWA Demo sheet on a mobile Booking |
+| `/admin/ledger`, `/admin/ledger/anaesthetists/<id>` | `inject-unmatched-receipt` (choice `souter` or `none`), `payment-full`, `payment-half`, `payment-replay` (choice: an open receivable's ACCREC id), `arm-handoff-fault`, `run-archive-job` | Catch-up Phase 36, bar only. The $120.00 unmatched receipt puts the ledger out of balance (see "Internal ledger" under Seed data); US-13.2.1 and US-08.3.4 show the pattern (`goto` `/admin/ledger`, then the trigger in `setup`). The payment entries land the receipt in the ledger first, then Xero, and the ledger stays in balance |
+| `/mobile/balances` (PWA Demo sheet only) | `pwa-office-runs-payables` | Catch-up Phase 36, badged Office stand-in. Runs the payables for Dr Souter; Balances' "Paid out" rises by what was due. Disabled "Nothing due to pay out" until a payment has been received |
 
 The PWA-only entries (`office-authorises-list` on a mobile List, `office-clears-warning` on a
 mobile Booking with an open warning, `office-assigns-next-free` on the mobile Lists home (catch-up

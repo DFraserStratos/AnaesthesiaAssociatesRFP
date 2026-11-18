@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 
 /**
- * Catch-up Phase 17: surgeons, rooms, pairing preferences and priority tiers.
+ * Catch-up Phase 17: surgeons, pairing preferences and priority tiers (no rooms since 17b).
  * The Master data views, Ms A. Reid's profile, Dr Priya Sharma's record, the
  * Edit list warning and the two Reassign list pickers. Admin only: nothing
  * here has a mobile, web or PWA shot (the stories forbid one).
@@ -31,13 +31,6 @@ test('phase 17 master data views', async ({ page }) => {
   await page.waitForTimeout(450)
   await page.screenshot({ path: 'visual/shots/p17-01-surgeons.png', fullPage: true })
 
-  await page.getByRole('button', { name: "Surgeons' rooms", exact: true }).click()
-  await expect(page).toHaveURL(/view=surgeonRooms/)
-  const rooms = page.locator('[data-shot="masters-surgeon-rooms"]')
-  await expect(rooms.locator('tr', { hasText: 'Merivale Eye Rooms' }).getByText('Mr J. Whitford')).toBeVisible()
-  await page.waitForTimeout(450)
-  await page.screenshot({ path: 'visual/shots/p17-02-rooms.png', fullPage: true })
-
   await page.getByRole('button', { name: 'Surgeon groups', exact: true }).click()
   await expect(page.locator('[data-shot="masters-surgeon-groups"]').getByText('Canterbury Orthopaedic Surgeons')).toBeVisible()
 
@@ -49,7 +42,7 @@ test('phase 17 surgeon profile and add sheet', async ({ page }) => {
   await page.goto('/admin/masters/surgeons/S-REID')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot="surgeon-hpi-chip"]')).toContainText('47REIA')
-  await expect(page.locator('[data-shot="surgeon-room-card"]').getByText('Mr J. Whitford')).toBeVisible()
+  await expect(page.locator('[data-shot="surgeon-contacts"]').getByText('bookings@merivaleeye.example')).toBeVisible()
   const section = page.locator('[data-shot="pairing-section"]')
   await expect(section.locator('[data-pairing-group="NOT_PREFERRED"]').getByText('Ms A. Reid prefers not to work with Dr Priya Sharma')).toBeVisible()
   await section.getByText('Ended entries').click()
@@ -74,7 +67,8 @@ test('phase 17 surgeon profile and add sheet', async ({ page }) => {
 test('phase 17 anaesthetist record', async ({ page }) => {
   await page.goto('/admin/masters/anaesthetists/41267')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="tier-card"]').getByText('Tier names are provisional.')).toBeVisible()
+  // OQ-102 answered (D36): no provisional line (catch-up Phase 25a).
+  await expect(page.locator('[data-shot="tier-card"]').getByText('Tier names are provisional.')).toHaveCount(0)
   await expect(page.locator('[data-pairing-group="NOT_PREFERRED"]').getByRole('link', { name: 'Ms A. Reid' })).toBeVisible()
   await expect(page.locator('[data-pairing-group="PREFERRED"]').getByRole('link', { name: 'Mr J. Whitford' })).toBeVisible()
   await page.waitForTimeout(450)

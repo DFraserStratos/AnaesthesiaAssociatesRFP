@@ -62,8 +62,7 @@
       "holderReference": null,
       "crossMatch": {
         "procedureDateISO": "2026-07-20",
-        "surgeon": "Mr C. Okafor",
-        "hospitalRef": "FH-2026-2101"
+        "surgeon": "Mr C. Okafor"
       },
       "split": null,
       "noCharge": false,
@@ -171,8 +170,7 @@
       "holderReference": null,
       "crossMatch": {
         "procedureDateISO": "2026-07-20",
-        "surgeon": "Mr C. Okafor",
-        "hospitalRef": "FH-2026-2103"
+        "surgeon": "Mr C. Okafor"
       },
       "split": null,
       "noCharge": false,
@@ -218,8 +216,7 @@
       "holderReference": null,
       "crossMatch": {
         "procedureDateISO": "2026-07-20",
-        "surgeon": "Ms G. Lim",
-        "hospitalRef": "SG-2026-0791"
+        "surgeon": "Ms G. Lim"
       },
       "split": {
         "procedureId": "P0026",
@@ -321,8 +318,7 @@
       "holderReference": "SGANAES01",
       "crossMatch": {
         "procedureDateISO": "2026-07-20",
-        "surgeon": "Ms G. Lim",
-        "hospitalRef": "SG-2026-0792"
+        "surgeon": "Ms G. Lim"
       },
       "split": null,
       "noCharge": false,
@@ -368,8 +364,7 @@
       "holderReference": "SGANAES01",
       "crossMatch": {
         "procedureDateISO": "2026-07-20",
-        "surgeon": "Ms G. Lim",
-        "hospitalRef": "SG-2026-0793"
+        "surgeon": "Ms G. Lim"
       },
       "split": null,
       "noCharge": false,
@@ -415,8 +410,7 @@
       "holderReference": null,
       "crossMatch": {
         "procedureDateISO": "2026-07-17",
-        "surgeon": "Mr C. Okafor",
-        "hospitalRef": "HNZ-2026-3311"
+        "surgeon": "Mr C. Okafor"
       },
       "split": null,
       "noCharge": false,
@@ -462,8 +456,7 @@
       "holderReference": null,
       "crossMatch": {
         "procedureDateISO": "2026-07-17",
-        "surgeon": "Mr C. Okafor",
-        "hospitalRef": "HNZ-2026-3312"
+        "surgeon": "Mr C. Okafor"
       },
       "split": null,
       "noCharge": false,
@@ -509,8 +502,7 @@
       "holderReference": null,
       "crossMatch": {
         "procedureDateISO": "2026-07-17",
-        "surgeon": "Mr C. Okafor",
-        "hospitalRef": "HNZ-2026-3313"
+        "surgeon": "Mr C. Okafor"
       },
       "split": null,
       "noCharge": false,
@@ -556,8 +548,7 @@
       "holderReference": null,
       "crossMatch": {
         "procedureDateISO": "2026-07-17",
-        "surgeon": "Mr C. Okafor",
-        "hospitalRef": "HNZ-2026-3314"
+        "surgeon": "Mr C. Okafor"
       },
       "split": null,
       "noCharge": false,
@@ -603,8 +594,7 @@
       "holderReference": null,
       "crossMatch": {
         "procedureDateISO": "2026-07-17",
-        "surgeon": "Mr C. Okafor",
-        "hospitalRef": "HNZ-2026-3315"
+        "surgeon": "Mr C. Okafor"
       },
       "split": null,
       "noCharge": false,
@@ -650,8 +640,7 @@
       "holderReference": null,
       "crossMatch": {
         "procedureDateISO": "2026-07-16",
-        "surgeon": "Mr T. Hale",
-        "hospitalRef": "ACC45-118844"
+        "surgeon": "Mr T. Hale"
       },
       "split": null,
       "noCharge": false,
@@ -697,8 +686,7 @@
       "holderReference": "SGANAES01",
       "crossMatch": {
         "procedureDateISO": "2026-07-16",
-        "surgeon": "Mr T. Hale",
-        "hospitalRef": "SG-2026-0810"
+        "surgeon": "Mr T. Hale"
       },
       "split": null,
       "noCharge": false,

@@ -1,4 +1,4 @@
-/** The payer on each Procedure: identity, the offer and the copy rule (catch-up Phase 22a; US-11.2.2, US-08.2.1; D85, provisional on OQ-140). */
+/** The payer on each Procedure: identity, the offer and the copy rule (catch-up Phase 22a; US-11.2.2, US-08.2.1; D85, OQ-140 answered). */
 
 import { describe, expect, it } from 'vitest'
 import { buildSeed } from '../seed'

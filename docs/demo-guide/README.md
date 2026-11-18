@@ -96,6 +96,7 @@ Snapshot date: **24 July 2026**
 | Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), escalating warning, left off the final invoice | Ready | Catch-up Phase 27 |
 | Prepayment held in the AA Holding account (its card on the Billing monitor), transferred to the anaesthetist automatically when the List is authorised, then paid by the payables run | Ready | Catch-up Phase 27a |
 | Xero pairs, payments, payables, payment history, live balances and GST activity | Ready | Phase 10 |
+| Internal ledger with in-balance view: Admin Ledger (the whole ledger and one anaesthetist), the out-of-balance list, unmatched receipts allocated or refunded; Xero mirrors the ledger | Ready | Catch-up Phase 36 |
 | Anaesthetist profile and bank details (own rate per unit on mobile and web; office-held contact, HPI CPN and masked bank details, payments made in Xero) | Ready | Catch-up Phase 26 |
 | Surgeon PDF ingestion | Ready | Phase 11 |
 | Hospital import and matching screen (Import hospital file, match, create or reject each row; nothing applied automatically) | Ready | Catch-up Phase 33 |
@@ -141,6 +142,7 @@ Office schedule
   -> Xero collection and payable pair
   -> Payment into AA
   -> Disbursement to anaesthetist
+  -> The ledger balances
 ```
 
 Every step above is clickable. The [demo script](03-demo-script.md) sequences it as scenario S3

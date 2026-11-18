@@ -63,7 +63,7 @@ export interface RvgGroup {
   includedModifierIds: ModifierId[]
   /**
    * The row is already split by age (H6b, P2), so no age modifier is
-   * pre-applied on it (D29's default; OQ-95 part 1).
+   * pre-applied on it (D29; OQ-95 part 1, answered).
    */
   noAgeModifier?: boolean
 }

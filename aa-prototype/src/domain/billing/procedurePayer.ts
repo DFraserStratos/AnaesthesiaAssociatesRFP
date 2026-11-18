@@ -8,15 +8,12 @@
  * same payer; a payer typed in separately is a new id even with the same name
  * and email. Names and emails are never compared here.
  *
- * Why the offer exists and what changes if AA answers OQ-140 otherwise: the
- * comment beside `setProcedurePayer` (store/payerActions.ts).
+ * Why the offer exists: the comment beside `setProcedurePayer`
+ * (store/payerActions.ts). OQ-140 is answered (D85, 18 November 2026).
  */
 
 import type { Contract, CounterpartyRef, Procedure, ProcedurePayer } from '../types'
 import { isPayerBilled } from './whoIsBilled'
-
-/** The words of the one provisional label, shown on the offer (OQ-140). */
-export const PAYER_OFFER_PROVISIONAL = 'Provisional, OQ-140'
 
 /**
  * A payer's identity: `patient:<patientId>` or `payer:<BP id>`, the same

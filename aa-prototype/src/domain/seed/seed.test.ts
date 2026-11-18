@@ -21,7 +21,7 @@ import { normaliseNzBankAccount } from '../bankAccount'
 import { isPlausibleHpiCpn } from '../surgeons'
 import { nameWithoutTitle } from '../names'
 import { resolveSplit } from '../billing/splitShare'
-import { billingReferenceMissing, validateBookingForBilling, type BookingBillingContext } from '../billing/validateBookingForBilling'
+import { validateBookingForBilling, type BookingBillingContext } from '../billing/validateBookingForBilling'
 import type { Booking, List, Procedure } from '../types'
 import type { SeedState } from './index'
 import { parseISO } from 'date-fns'
@@ -651,16 +651,9 @@ describe('scenario states', () => {
     expect(seed.audit.some((a) => a.entityId === marker.entityId && a.action === 'booking.cancel')).toBe(true)
   })
 
-  it('exactly the two marked holder-billed procedures are missing billing references', () => {
-    // Catch-up Phase 20: a reference is expected where the Contract bills a hospital or surgeon holder.
-    const missing = Object.values(seed.schedule.procedures).filter((p) =>
-      billingReferenceMissing(p, seed.masters.contracts, seed.masters.parties),
-    )
-    const expected = [
-      SEED_MARKERS['missingBillingRef1']?.entityId,
-      SEED_MARKERS['missingBillingRef2']?.entityId,
-    ]
-    expect(missing.map((p) => p.id).sort()).toEqual([...expected].sort())
+  it('no Procedure or audit entry carries a hospital reference (catch-up Phase 25a, DM-68, D82)', () => {
+    for (const p of Object.values(seed.schedule.procedures)) expect('billingReference' in p, p.id).toBe(false)
+    expect(JSON.stringify(seed.audit)).not.toMatch(/billingReference|hospitalRef/)
   })
 
   it('seeds the staged submit audit entries', () => {
@@ -896,6 +889,8 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
       'CT-SOUTER-RHINO-COS': 'SOUTER-004',
       // Catch-up Phase 24: Forte Health RVG less 10%, the seed's discount Contract, appended last.
       'CT-FORTE-DISC': 'FORTE-002',
+      // Catch-up Phase 25a: Christchurch Eye Surgery's old rate, the seeded Disabled Contract, appended last.
+      'CT-CES-2025': 'CES-010',
     })
     expect(Object.fromEntries(Object.values(contracts).filter((c) => c.systemRole === 'rvgFallback').map((c) => [c.id, c.aaCode]))).toEqual(RVG_BACKSTOPS)
     const codes = Object.values(contracts).map((c) => c.aaCode)
@@ -915,7 +910,8 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
     expect(Object.values(contracts).filter((c) => c.prepaid).map((c) => c.id).sort()).toEqual(
       ['CT-SOUTER-BLEPH', 'CT-SOUTER-BREAST', 'CT-SOUTER-RHINO', 'CT-SOUTER-RHINO-COS', Object.values(contracts).find((c) => c.name === 'Prepaid · Fixed price')!.id].sort(),
     )
-    expect(Object.values(contracts).some((c) => c.status !== 'active')).toBe(false)
+    // Every Contract is Active but one: catch-up Phase 25a's Christchurch Eye Surgery 2025 rate, Disabled on Fri 10 Jul.
+    expect(Object.values(contracts).filter((c) => c.status !== 'active').map((c) => c.id)).toEqual(['CT-CES-2025'])
   })
 
   it('keeps the named rates and fixed prices (SXAP $26.50, Health NZ $23, ACC $25 and $24, Unisports $93.47)', () => {

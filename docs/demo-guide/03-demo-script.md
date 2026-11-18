@@ -82,8 +82,10 @@ view respectively.
 | Invoices | `/admin/invoices` |
 | One invoice document | `/admin/invoices/<invoiceId>` |
 | Billing monitor | `/admin/billing` |
+| Ledger (the whole ledger) | `/admin/ledger` |
+| Ledger, one anaesthetist | `/admin/ledger/anaesthetists/<anaesthetistId>` (Dr Souter: `34821`) |
 | Integration monitor | `/admin/integrations` |
-| Master data | `/admin/masters` (one view: `?view=surgeons`, `?view=surgeonRooms`, `?view=anaesthetists`) |
+| Master data | `/admin/masters` (one view: `?view=surgeons`, `?view=anaesthetists`) |
 | Availability statuses | `/admin/masters?view=availability-statuses` |
 | Contracts | `/admin/masters?view=contracts` (one holder: `&holder=PY-COS`) |
 | Specialties | `/admin/masters?view=specialties` |
@@ -91,7 +93,6 @@ view respectively.
 | Recurring bookings | `/admin/masters?view=recurringBookings` |
 | Hospitals & holidays | `/admin/masters?view=hospitals` (List or Calendar) |
 | Surgeon profile | `/admin/masters/surgeons/<surgeonId>` (Ms A. Reid: `S-REID`) |
-| Surgeons' rooms | `/admin/masters?view=surgeonRooms` |
 | Surgeon with a PA | `/admin/masters/surgeons/S-DALGETY` (Dr H. Dalgety, Avonhead ENT: Bev, PA) |
 | Anaesthetist record | `/admin/masters/anaesthetists/<anaesthetistId>` (Dr Priya Sharma: `41267`) |
 | Audit | `/admin/audit` |
@@ -585,7 +586,7 @@ already seeded.
   it; if she had, Review would show **Changed since submitted** with the count. Now it leaves her main
   view and her search finds it.
 - **Optional aside (the review-flags List):** open **Review queue → Dr Alistair Chen, Tue 14 Jul AM
-  (Christchurch Eye Surgery, Dr Whitford)** (`/admin/review/L-45178-2026-07-14-AM`). Diane Fairweather
+  (Christchurch Eye Surgery, Dr Whitford)** (`/admin/review/L-45178-2026-07-14-AM`, five Bookings). Diane Fairweather
   (08:00) reads **Changed by Dr Chen: was Cataract IOL (LA by Anaesthetist)**, now Christchurch Eye
   Surgery RVG: select **Approve** (it reads **Approved** with the time) or **Correct**, which opens the
   Booking's rail. Owen Prendergast (09:00, No contract · RVG) reads **Price typed: $1,200.00 (computed
@@ -595,7 +596,7 @@ already seeded.
   a price and completes her Booking before authorising. Rosalind Kerr (11:00)
   carries a Merivale fixed price linked to Ms Lim, so it reads **Contract not offered on this List**.
   While any change waits, the action bar offers **Approve all N Contract changes**; authorising
-  approves any still waiting, and the confirm says how many. A Disabled Contract raises no flag. On the
+  approves any still waiting, and the confirm says how many. A Disabled Contract raises a flag, never a block: a Procedure not yet authorised and dated on or after the day its Contract was disabled reads **Contract disabled on <day>**; earlier-dated ones are not flagged, and **Make active** clears it. In this List Margaret Ellery's cataract, on Christchurch Eye Surgery 2025 rate (disabled Fri 10 Jul by Kirsty W.), reads **Contract disabled on Fri 10 Jul**. On the
   phone the anaesthetist sees **Awaiting office approval** under the Billing card, then **Approved by the
   office** with the time.
 - **Optional aside (a moved Booking keeps its Contract):** on **Admin Day → Mon 10 Aug**
@@ -643,9 +644,7 @@ a List is asked what the vacated session becomes, Free or Unavailable (OQ-84); s
 active until an admin ticks them resolved, nothing expires, and alerts to the office join List moves in
 the pool (OQ-79); open: the panel's place and layout are our design for AA to check (US-13.8.1), and
 whether an alerted Booking may still be submitted (the prototype allows it); whether monitoring belongs
-in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing
-preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to
-Tier 4 as placeholders; still open); and the pre-op and acute pairing reading (AA rooms as a location; a named surgeon on pre-op and acute Lists).
+in Admin Web or a separate surface (the prototype places it in Admin Web); and the pre-op and acute pairing reading (AA rooms as a location; a named surgeon on pre-op and acute Lists).
 Settled (US-01.1.6, D84): an out-of-hours session after PM is a third kind of session the office opens for an
 anaesthetist on a day, one a day; any List goes in it, new or a Draft List for the evening; it is a full
 session for availability. Open: who opens one when the office is closed. Its Bookings are billed as on any
@@ -656,7 +655,7 @@ List (our reading; no after-hours pricing).
 ## S3 · Money end-to-end
 
 **Serves:** the Billing Engine at the centre, the multi-procedure rule, the Xero pair, the two
-separate money states, and AA's own monthly fee. **Time:** 8 to 10 minutes. This is the money story's payoff, so authorise live.
+separate money states, AA's own monthly fee, and the internal ledger that balances. **Time:** 8 to 10 minutes. This is the money story's payoff, so authorise live.
 
 **Stage it:** use **Reset → Confirm reset**, then go directly to Admin. Both of Dr Souter's Mon 20 Jul
 Lists are already in the Review queue: AM (Forte Health, the multi-procedure Booking) and PM
@@ -697,7 +696,7 @@ them.
       (billed to Alan himself) are the two invoices from the same fee-split Booking at 14:00.
   - Open **AA-2026-0005** ("Emailed to claims@nib.example"): the holder's layout. Point at the line's
     invoice description, the BTM breakdown ("Base 4 + Time 4 + Modifiers 0 = 8 units at $26.50"), the
-    cross-match strip (procedure date, surgeon, hospital reference) and the split note naming
+    cross-match strip (procedure date and surgeon; no hospital reference) and the split note naming
     AA-2026-0006. It carries no **Your reference**: Alan's Procedure is on No contract · RVG and split,
     so nib's share has no holder reference code. The PM List's St George's invoices (its other two
     Bookings, on St George's RVG) print **Your reference SGANAES01**.
@@ -772,7 +771,9 @@ a submitted List: "A hospital feed cannot change a submitted List").
   NHI or other personal information ever crosses into Xero."
 - **Expected:** a matched ACCREC plus draft ACCPAY pair per invoice, each showing its InvoiceNumber
   and Reference (the ACCPAY's number ends `-P`). The patient, Alan Prentice, is named only in the
-  "Linked Billing Engine case" panel, which reads the billing system; read his name from there. On
+  **Ledger pair (the system of record)** panel, which reads the Billing Engine's own ledger; read his
+  name from there. The panel shows the pair's receivable and payable numbers (AA-2026-0005 and
+  AA-2026-0005-P) and a **Matches the ledger** chip. On
   this pair, nib owes $152.38 and the payable to Dr Souter is $152.38: the payee is read from the
   Booking's locked record (who is paid was fixed at authorise), as is nib's share of the split. Each
   ACCPAY carries a
@@ -791,10 +792,13 @@ a submitted List: "A hospital feed cannot change a submitted List").
   AA pays the same $152.38 to Dr Souter. In a real operation those outgoing payments are grouped into
   a payables run. We keep the paid-in and
   paid-out states separate underneath, even though this guided path advances both together. The
-  anaesthetist app reads the Billing Engine's mirror; it never queries Xero directly."
+  anaesthetist app reads the Billing Engine's own ledger, AA's system of record. Xero mirrors it for
+  receivables and banking."
 - **Expected:** ACCREC shows paid, ACCPAY shows disbursed, and the Web Payments row remains visible
   with $152.38 received by AA, $152.38 released to you, $152.38 paid to you and **Paid to you**. It does not
-  remain under Overdue because it is no longer outstanding.
+  remain under Overdue because it is no longer outstanding. The Ledger pair panel reads "Ledger:
+  received $152.38 · released $152.38 · paid out $152.38" beside Xero's same three figures, still
+  **Matches the ledger**.
 
 ### Beat 4: AA's monthly fee
 
@@ -823,7 +827,56 @@ a submitted List: "A hospital feed cannot change a submitted List").
 - **Expected:** Web **Accounts → AA fees** highlights **AA-FEE-2026-H02** as Paid, with May Paid and July
   Unpaid. Payables, GST activity and Overdue do not change when a fee invoice is raised or paid. Read
   Dr Souter's July figures from the app if Beat 3 was skipped (then two BCTIs, $510.00 before GST,
-  $586.50 with GST).
+  $586.50 with GST). The fee invoice is an AA fee pair on the Ledger, with no payable ("None"), outside
+  the balance.
+
+### Beat 5: the ledger balances
+
+- **Click:**
+  - Go to **Admin → Ledger** (`/admin/ledger`). Point at **In balance · receipts held equal payables
+    due**, the equation beneath it, the four tiles and the empty **Anaesthetists out of balance** list
+    ("Every anaesthetist's ledger is in balance.").
+  - Switch the scope to **One anaesthetist → Dr Souter** (`/admin/ledger/anaesthetists/34821`): **AA
+    owes Dr Souter** (Due now and Awaiting collection), **Dr Souter owes AA** (her unpaid AA fees),
+    **Collected for them** and **Paid out to them**.
+  - Back on **Whole ledger**, open **Demo actions → Inject unmatched receipt**, keep **Names Dr
+    Souter**, then **Run**: the indicator turns **Out of balance by $120.00**, the nav's Ledger badge
+    reads 1, and Dr Souter is on the out-of-balance list. Its **Open** shows her scope out of balance
+    by the same $120.00.
+  - In **Receipts with no matching invoice**, select **Allocate to invoice** and pick one of Dr
+    Souter's receivables (her invoices are listed first; **AA-2026-0002 · Brian Holt** is at the top):
+    back in balance, and the list is empty again.
+- **Say:** "Every invoice is a pair in AA's own ledger: a receivable from whoever pays and a payable
+  to the anaesthetist, created the moment the invoice is raised. Money in and money out are
+  recorded here first, so the office can see at a glance that every dollar held is owed to
+  someone. A receipt nobody can match shows up as an imbalance, not a mystery in Xero, and any
+  anaesthetist whose ledger is out of balance is simply on a list."
+- **Expected:** after Beats 1 to 4 as scripted, the whole ledger reads "Receipts held $1,380.00 less
+  payables due $0.00 and the AA Holding account $1,380.00 = $0.00" (the $1,380.00 is Priya Nair's
+  prepayment, held until her List is authorised), with Receivables outstanding $13,148.54, Receipts
+  held $1,380.00, Payables due $0.00 and Disbursed $52,655.13 (Beat 4's seeded month of BCTIs
+  included). Dr Souter's scope: AA owes Dr Souter $13,148.54 (Due now $0.00, Awaiting collection
+  $13,148.54), Dr Souter owes AA $592.25 (her July fee invoice from Beat 4), Collected for them and
+  Paid out to them both $27,372.38, and "Dr Souter's ledger is in balance". After the injected
+  receipt: "Out of balance by $120.00" with the check line "Receipt with no matching invoice: Bank
+  deposit · SOUTER JULY, $120.00"; Dr Souter listed at $120.00 ("Receipt with no matching invoice,
+  $120.00"), and her scope reads "Dr Souter's ledger is out of balance by $120.00". After allocation:
+  in balance, the list reads "Every anaesthetist's ledger is in balance.", the receipt's row reads
+  **Allocated to AA-2026-0002**, and Payables due shows $120.00 (now due to Dr Souter, with the link
+  "Run payables in the Billing monitor"). From a fresh reset with no S3 beats run, the tiles read
+  Receivables outstanding $11,350.50, Receipts held $1,380.00, Payables due $0.00 and Disbursed
+  $27,220.00; read the figures from the app if you skipped any beat.
+- **Optional:** run the trigger again with **Names no one**: the whole ledger is out by $120.00 but
+  the out-of-balance list stays empty. **Mark refunded** with a note returns it to balance, and the
+  row reads Refunded with the note. The Billing monitor's payables panel has an **Open the ledger**
+  link, and each invoice's rail has a **Ledger** card (receivable and payable numbers, their Xero ids,
+  **Open in the ledger**).
+- **Optional (the anaesthetist's side):** web **Accounts** opens on a **Your position** strip (AA owes
+  you, with due now and awaiting collection; Collected for you; Paid out to you; You owe AA), and
+  mobile **Balances** adds one line under Outstanding to you, "Collected $27,220.00 · Paid out
+  $27,220.00" and "You owe AA $580.75" on a fresh reset. On a handset (the PWA), **Demo → Payment
+  received · half**, then **Office runs payables** (office stand-in): Collected moves, then Paid out.
+  The stand-in is disabled with "Nothing due to pay out" when nothing is due.
 
 ### Optional closing moment: finding past work
 
@@ -848,6 +901,10 @@ invoice; per procedure, per payment or per run is open, OQ-29), and whether a pr
 counts as a BCTI (the prototype leaves it out, provisional, OQ-29); what other outputs a Party can have,
 nib's portal among them (OQ-114); posting invoices to a payer with no email (OQ-122); and AA's fee
 schedule and the paid-only BCTI count (with AA's accountant).
+For the ledger (Beat 5): how AA wants unmatched receipts handled (allocate, refund, or hold for
+investigation); whether the two scopes and the out-of-balance list are what the office needs
+(US-13.2.1's acceptance criterion is to come from this prototype); and whether a buyer-created tax
+invoice is one per invoice, as built, or one per procedure (OQ-29, with AA's accountant).
 
 ---
 
@@ -913,7 +970,11 @@ actions** on the screen named in its beat.
   nothing deducted. A move to a colleague changes nothing in the books."
 - **Expected:** awaiting approval, then the sent invoice with its pair to the AA Holding account, part
   paid on all three surfaces, the AA Holding account card holding both prepayments with nothing due in
-  the payables run, and a submit that goes through.
+  the payables run, and a submit that goes through. The Ledger (`/admin/ledger`) shows Riley's
+  Pre-payment pair (AA-2026-0002, Payee "AA Holding account") beside Nair's; its AA Holding account
+  tile rises from $1,380.00 to $2,070.00 with her half while Payables due stays $0.00, and the ledger
+  stays in balance. Authorising the List (Beat 7) adds the transfer, two payable legs and no
+  receivable, to whoever did it.
 
 ### Beat 2: post-op addendum
 
@@ -941,8 +1002,10 @@ actions** on the screen named in its beat.
   here the hand-off to Xero. A List never fails as a whole: the failed Booking is held back and the
   rest of the List bills. The office retries once, without touching the Contract."
 - **Expected:** Losa Tuilagi's Booking reads **Handoff failed** with its reason on the row ("Xero
-  handoff failed (simulated fault). No ACCREC/ACCPAY pair was created; the invoice stands. Resolve and
-  retry from the billing monitor."); Hemi Walker's Booking reads **Handed off**, and the List is not
+  handoff failed (simulated fault). The invoice and its ledger pair stand, not yet in Xero. Resolve
+  and retry from the billing monitor."; it read "No ACCREC/ACCPAY pair was created" before catch-up
+  Phase 36, which creates the pair with the invoice); the Ledger's **Not yet in Xero** tile counts her
+  pair until the retry; Hemi Walker's Booking reads **Handed off**, and the List is not
   failed. **Resolve & retry** hands hers off once: her row reads **Handed off** and her Xero pair
   appears, with no duplicate invoice. Her invoice (AA-2026-0003, Canterbury Orthopaedic Surgeons,
   $303.60) and Hemi Walker's (AA-2026-0004, St George's, $221.38) are unchanged. No Contract changes.
@@ -954,16 +1017,36 @@ actions** on the screen named in its beat.
 - **Click:**
   - Go to **Admin → Matching → Demo actions → Import hospital file** → choose **Southern Cross** →
     **Run**.
-  - Filter **Unmatched**. Open **Tama Henare** (R4, no NHI) and type the NHI **ZQA1008**.
+  - Filter **Unmatched**. Open **Tama Henare** (R4, no NHI): the panel says a stub stands on Dr Souter's
+    Tue 28 Jul PM List. Optionally open that List first (Mobile Lists, or Admin Day, Tue 28 Jul) to show
+    the stub: a dashed amber row at 15:30, after the 13:00 and 14:00 Bookings, reading "Waiting at
+    intake: no NHI · The office is resolving this".
+  - Back on Matching, type the NHI **ZQA1008** and press **Add NHI**.
   - Open **Grace Whitu** (R5, Thu 6 Aug PM, no List) → **Create a List in a session** → confirm.
 - **Say:** "Nothing from a hospital is ever dropped. A row with no NHI waits here until the office adds
-  it, and no patient or Booking is made. A row that matches nothing waits until someone decides: create
+  it, and no patient or Booking is made. So the anaesthetist still sees the case coming, a stub stands
+  on the List in its place: the time, name and wording as received, but it is not a Booking, it is never
+  counted and it never blocks submit or authorise. When the office adds the NHI, the Booking takes the
+  stub's place. A row that matches nothing waits until someone decides: create
   the List, put the Booking on a Draft List for the office to fill, or reject it with a reason."
-- **Expected:** both rows sit under Unmatched; the NHI releases Tama Henare's into a ready row; then
+- **Expected:** both rows sit under Unmatched; Tama Henare's stub stands on Dr Souter's Tue 28 Jul PM
+  List (a triangle marker on the Lists row and the Admin Day block; progress reads "... · 1 waiting at
+  intake" and the bar stays amber). Add NHI creates her Booking on that List with no Contract ("Needs an
+  invoice destination") and the banner reads "The Booking takes the stub's place on the List."; the
+  stub is gone and the audit reads **Stub replaced by Booking**. Then
   the new List and Grace Whitu's Booking show on the Day view for Thu 6 Aug and the row moves under
   **Decided**.
 - **Optional:** R3 (Hemi Walker, on the authorised Wed 18 Mar List) reads **List authorised** with
   Apply disabled.
+- **Optional (seeded stub):** without importing, Matching already holds **Mere Tipene** (Southern Cross,
+  "Lap chole", 14:00, no NHI, from "Southern Cross theatre list, Tue 4 Aug"). Her stub stands on Dr
+  Souter's Tue 4 Aug PM List (Ms K. Patel; `/mobile/lists/L-34821-2026-08-04-PM`), which reads "0 of 0
+  complete · 1 waiting at intake". In Admin, the List drawer, Draft List drawer and Review show the stub
+  with a teal **Resolve on Matching** link that opens her row; type **ZQA1024** and **Add NHI**, or
+  **Reject** with a reason (footer), which removes the stub with the row (audited **Stub removed**).
+- **Optional (handset):** on the PWA, open Dr Souter's List holding a stub, tap the stub (a read-only
+  sheet: what was received and its source), then **Demo → Office adds the NHI to this stub** (office
+  stand-in): "The office added the NHI. The Booking now stands in the stub's place."
 
 ### Beat 5: partial payment
 
@@ -976,7 +1059,9 @@ actions** on the screen named in its beat.
   rest stays outstanding on the invoice. Two payables runs across a part-then-balance payment prove
   there is no double payment."
 - **Expected:** the payable authorises exactly the amount received; each run pays exactly what arrived,
-  and the total paid out equals the invoice total, never more.
+  and the total paid out equals the invoice total, never more. The Ledger's Payables due rises with
+  each part payment and returns to $0.00 after each run: $110.69 after the half (Hemi Walker's
+  AA-2026-0004, $221.38), $0.00 after the first run, $110.69 after the rest, $0.00 after the second.
 
 ### Beat 6: The date approaches
 
@@ -1025,7 +1110,10 @@ $1,380.00 held since Beat 1) to Dr Souter.
   confirm with AA."
 - **Expected:** one Transferred entry naming Dr Souter, the card's balance down by $1,380.00, MJ-0001 on
   XRB0, and a payables run of exactly $1,380.00 to Dr Souter. The transfer itself adds no invoice,
-  ACCREC or payment, and GST does not move (her septoplasty bills on its own invoice as usual).
+  ACCREC or payment, and GST does not move (her septoplasty bills on its own invoice as usual). On the
+  Ledger the transfer is its own row (Kind Transfer, Receivable "None", "From AA-2026-0001", Payee Dr
+  Souter); the AA Holding account tile falls and Payables due rises by the same amount until Run
+  payables, and the ledger stays in balance.
 
 **Discovery points:** settled: billing failure is per Booking, and a List never fails as a whole
 (OQ-05); still to confirm with AA: exactly which fields are frozen at authorise (US-15.0.3: AR-58 2.8
@@ -1033,6 +1121,9 @@ names them, Donald's proposal); which conditions warn, and how strongly; where t
 the office until the List is authorised (US-02.5.4), and one for an authorised List cannot (what happens
 then is not yet decided); a Booking moved to another day arrives as a cancellation plus a new Booking;
 applying hospital changes automatically is Future Work.
+For the stub on a List (Beat 4), our readings, to confirm with AA: the Booking takes the stub's place
+when the office adds the NHI; what a stub shows (time, name and wording as received, marked waiting at
+intake); and how a List holding one reads (counted apart, no prompt or block on submit or authorise).
 For the prepayment beats: still to confirm whether the prepayment
 invoice names the anaesthetist (OQ-120); still to confirm when the AA Holding account releases the
 money (OQ-125: the prototype transfers it when the office authorises the List; Greg said "confirmed and
@@ -1132,7 +1223,8 @@ Xero sim**.
   **Demo actions → Demo: add a backdated price range → Run** adds a range from 1 Jul 2026 at
   $3,300.00 to Merivale's Face lift (MER-001). An ACTIVE Booking follows the change: Sophie Matthews'
   Face lift (`/admin/day/2026-08-10/bookings/BK0163`) now reads $3,300.00. A Booking with a typed
-  price, and the authorised, invoiced one, stay as they were: a locked Booking never follows a change.
+  price, and the authorised, invoiced one, stay as they were: a locked Booking never follows a change. The Run reports **1 authorised Procedure kept its old price: Judith Calloway, $3,100.00.**, and the Contract's price ranges show the same warning with her row; re-priced Procedures (Sophie Matthews at $3,300.00) are never listed.
+- **Worth pointing at (optional, Disable a Contract):** on the Face lift (MER-001), select **Disable**. The panel reads "Disabled on Tue 21 Jul: hidden from the Contract list unless asked for. Procedures already on it keep it; one not yet authorised and dated on or after Tue 21 Jul is flagged at review." A warning lists the not-yet-authorised Face lifts still on it (Sophie Matthews, Paula Westerman and Fiona Lattimer, Dr Souter's Mon 10 Aug PM List), each with **Open**. Nothing moves; Review of that List then flags each, and **Make active** undoes it. A new Contract with **Replaces** and **From** warns the same way ("N Procedures dated on or after Sat 1 Aug are still on Face lift. Nothing moves by itself: open each to move it."), and stores nothing.
 
 ### Optional beat: rate per unit after authorise
 
@@ -1166,7 +1258,7 @@ base units; the RVG code on a Procedure is optional, picked by type-ahead; a ran
 published range, shown to the anaesthetist, and starts at its lower figure (OQ-101); the RVG modifier
 table as printed (values that are not plain numbers are entered at capture); only the age and included
 modifiers are pre-applied and nothing else is pre-filled (settled, Ben, 27 October); the age bands are
-still to confirm (OQ-95); modifiers stack with no limit; AA's own modifiers (Vanessa's list) are not yet
+settled (OQ-95 answered, D29); modifiers stack with no limit; AA's own modifiers (Vanessa's list) are not yet
 loaded; which Procedure is primary (Vanessa: the most expensive; Greg: the first in the list; the
 build keeps the first until someone changes it); base units when the primary is on a fixed price (OQ-132:
 the build bills none); and the concurrency model (single-user by design, audited

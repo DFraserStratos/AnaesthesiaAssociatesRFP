@@ -50,7 +50,7 @@ describe('ageInCompletedYears (string based, no clock)', () => {
   })
 })
 
-describe('the age bands (D29 default; OQ-95 part 1 open)', () => {
+describe('the age bands (D29; OQ-95 part 1 answered)', () => {
   it('reads each boundary, lower bounds inclusive as printed', () => {
     expect(AGE_BANDS).toHaveLength(4)
     expect([0, 1, 2, 69, 70, 79, 80, 95].map(ageModifierCodeFor)).toEqual(['A2', 'A1', undefined, undefined, 'A1', 'A1', 'A2', 'A2'])

@@ -3,13 +3,13 @@
  *
  * The pristine seed ships ONE paid pre-payment slice: the mixed + full
  * pre-payment Booking's full pre-invoice, materialised as an
- * `Invoice{kind:'prePayment'}` + line + a `BillingCase{status:'paid'}` so the
+ * `Invoice{kind:'prePayment'}` + line + a paid `prePayment` ledger pair so the
  * payment-cleared gate demos NOW (Phase 10's webhook flips a case to paid live;
  * this seeds one). `freshAppState()` composes this and `resetDomainState()`
  * restores it through the same seam.
  *
  * Ids are formatted to MIRROR `store/mutate.ts`'s ID_FORMATS for the four
- * billing counter kinds (invoice / invoiceLine / billingCase / invoiceNumber),
+ * billing counter kinds (invoice / invoiceLine / ledgerPair / invoiceNumber),
  * and the returned counters are bumped past what this slice consumes so the
  * first runtime billing run continues the sequence with no collision. Billing
  * and Xero records deliberately receive no simulated runtime audit entries;
@@ -20,8 +20,9 @@ import { AA_AGENT, buyerCreatedTaxInvoiceFor, deliveryStampFor, supplierFor } fr
 import { invoiceDeliveryFor } from '../billing/whoIsBilled'
 import type {
   AaFeeInvoice,
-  BillingCase,
-  BillingReceipt,
+  LedgerDisbursement,
+  LedgerPair,
+  LedgerReceipt,
   Disbursement,
   Invoice,
   InvoiceLine,
@@ -38,6 +39,7 @@ import { xeroIndividualContactName } from '../xeroContact'
 import { billingHospitalId } from '../listPairing'
 import { buildHistory } from './history'
 import { buildSeedAaFeeHistory } from './aaFee'
+import { anaesthetistPayee, applyReceipt, HOLDING_PAYEE, newBookingPair } from '../billing/ledger'
 import type { SeedState } from './index'
 
 /** The seeded Xero slice (shape matches the store's XeroSlice; typed here with domain types for purity). */
@@ -57,9 +59,12 @@ export function emptySeedXeroSlice(): SeedXeroSlice {
 export interface SeedBillingSlice {
   invoices: Record<string, Invoice>
   invoiceLines: Record<string, InvoiceLine>
-  cases: Record<string, BillingCase>
-  /** Append-only receipts ledger (Phase 10) — empty in the pre-payment slice; Step 6 seeds history. */
-  receipts: Record<string, BillingReceipt>
+  /** The seeded ledger (catch-up Phase 36): the history, the paid prepayment, the range beat's invoice and the AA fee pairs. In balance. */
+  ledger: Record<string, LedgerPair>
+  /** Append-only money in (Phase 10's receipts, now ledger entries). */
+  receipts: Record<string, LedgerReceipt>
+  /** Money out to the anaesthetist, as ledger entries. */
+  disbursements: Record<string, LedgerDisbursement>
   /** Seeded Xero mirror (empty in the pre-payment slice; Step 6 seeds history). */
   xero: SeedXeroSlice
   /** PMS-side ContactID cache (empty in the pre-payment slice; Step 6 seeds history). */
@@ -81,7 +86,7 @@ const HOLDING_CONTACT_ID = 'XCHOLD'
 const FORMATS: Record<string, { prefix: string; pad: number }> = {
   invoice: { prefix: 'INV', pad: 4 },
   invoiceLine: { prefix: 'IL', pad: 4 },
-  billingCase: { prefix: 'BC', pad: 4 },
+  ledgerPair: { prefix: 'BC', pad: 4 },
   invoiceNumber: { prefix: 'AA-2026-', pad: 4 },
 }
 
@@ -126,7 +131,7 @@ const BILLING_RUN_SENDER_NAME = 'Billing run'
 const SEED_PREPAYMENT_KEY = 'SEED-PREPAY-BC0001'
 
 /**
- * Build the seeded billing slice: the seeded historical mirror + Xero rows
+ * Build the seeded billing slice: the seeded historical ledger + Xero rows
  * (Phase 10; buildHistory) composed with the ONE PAID pre-payment case (the
  * mixed + full pre-payment exemplar), which gets its own Xero pair + receipt so
  * it reads consistently in the Xero sim and the GST report. Returns just the
@@ -144,8 +149,8 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
 
   const invoices: Record<string, Invoice> = { ...history.invoices }
   const invoiceLines: Record<string, InvoiceLine> = { ...history.invoiceLines }
-  const cases: Record<string, BillingCase> = { ...history.cases }
-  const receipts: Record<string, BillingReceipt> = { ...history.receipts }
+  const ledger: Record<string, LedgerPair> = { ...history.ledger }
+  const receipts: Record<string, LedgerReceipt> = { ...history.receipts }
   const contacts: Record<string, XeroContact> = { ...history.contacts }
   const accRecs: Record<string, XeroAccRec> = { ...history.accRecs }
   const accPays: Record<string, XeroAccPay> = { ...history.accPays }
@@ -153,7 +158,7 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
   const disbursements: Record<string, Disbursement> = { ...history.disbursements }
   const contactIdCache: Record<string, string> = { ...history.contactIdCache }
 
-  const n = { invoice: 0, invoiceLine: 0, billingCase: 0, invoiceNumber: 0 }
+  const n = { invoice: 0, invoiceLine: 0, ledgerPair: 0, invoiceNumber: 0 }
   const next = (kind: keyof typeof n): string => {
     n[kind] += 1
     const f = FORMATS[kind]!
@@ -163,7 +168,8 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
   /**
    * Catch-up Phase 24's range beat: each seeded Booking on an AUTHORISED List
    * gets its standard invoice as the run would build it (lines, BTM and
-   * delivery), a case `invoiced`, no Xero pair yet (so no BCTI). Numbered in
+   * delivery) and its ledger pair (catch-up Phase 36), not yet in Xero (so no
+   * paid BCTI). Numbered in
    * its own seed series (`INV-S24-01`, `AA-2026-S2401`), as the history is,
    * so the runtime run's numbers (S3's AA-2026-0002 on) never move.
    */
@@ -216,21 +222,34 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
           if (line.btm !== undefined) stored.btm = line.btm
           invoiceLines[lineId] = stored
         }
-        cases[caseId] = { id: caseId, bookingId, invoiceId, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 }
+        if (list.anaesthetistId !== undefined) {
+          ledger[caseId] = newBookingPair({
+            id: caseId,
+            kind: 'procedure',
+            invoice: invoices[invoiceId]!,
+            lines: draft.lines,
+            bookingId,
+            listId: list.id,
+            payee: anaesthetistPayee(list.anaesthetistId),
+            patientId: booking.patientId,
+            atISO: raisedISO,
+          })
+        }
       }
     }
   }
 
   const finishAndReturn = (): SeedBillingSlice => {
     invoiceAuthorised()
-    const bumps: Record<string, number> = n.invoice > 0 ? { billingCase: n.billingCase + 1, invoice: n.invoice + 1, invoiceLine: n.invoiceLine + 1, invoiceNumber: n.invoiceNumber + 1 } : {}
-    // AA's fee history last: it counts every seeded BCTI (a prepayment's payable is not one since catch-up Phase 27a; it is paid in July, outside May and June anyway).
-    const fees = buildSeedAaFeeHistory({ accRecs, accPays }, contactIdCache, seed.appSettings.aaFee)
+    const bumps: Record<string, number> = n.invoice > 0 ? { ledgerPair: n.ledgerPair + 1, invoice: n.invoice + 1, invoiceLine: n.invoiceLine + 1, invoiceNumber: n.invoiceNumber + 1 } : {}
+    // AA's fee history last: it counts every seeded BCTI over the ledger's payable legs (a prepayment's payable is not one since catch-up Phase 27a; it is paid in July, outside May and June anyway).
+    const fees = buildSeedAaFeeHistory(ledger, contactIdCache, seed.appSettings.aaFee)
     return {
       invoices,
       invoiceLines,
-      cases,
-      receipts,
+      ledger: { ...ledger, ...fees.ledger },
+      receipts: { ...receipts, ...fees.receipts },
+      disbursements: { ...history.ledgerDisbursements },
       xero: {
         contacts,
         accRecs: { ...accRecs, ...fees.accRecs },
@@ -278,7 +297,7 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
   const patient = seed.masters.patients[booking.patientId]
 
   drafts.forEach((draft, index) => {
-    const caseId = next('billingCase')
+    const caseId = next('ledgerPair')
     const invoiceId = next('invoice')
     const invoiceNumber = next('invoiceNumber')
     invoices[invoiceId] = {
@@ -365,7 +384,8 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
     if (anaesthetistId !== undefined) {
       receipts[`RCTB${index}`] = {
         id: `RCTB${index}`,
-        caseId,
+        pairId: caseId,
+        pairKind: 'prePayment',
         anaesthetistId,
         accRecId,
         grossAmount: draft.total,
@@ -375,19 +395,24 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
         source: 'webhook',
       }
     }
-    cases[caseId] = {
+    // The prepayment's ledger pair (catch-up Phase 36): received in full and released to the AA Holding
+    // account, held there until the List is authorised (27a's transfer then pays whoever did it).
+    const pair = newBookingPair({
       id: caseId,
+      kind: 'prePayment',
+      invoice: invoices[invoiceId]!,
+      lines: draft.lines,
       bookingId: prepaidBookingId,
-      invoiceId,
-      // The collect leg (catch-up Phase 27a): held in the AA Holding account until the List is authorised.
-      prepayLeg: 'collect',
-      accRecId,
-      ...(anaesthetistId !== undefined ? { accPayId } : {}),
-      status: 'paid',
-      receivedAmount: draft.total,
-      authorisedAmount: anaesthetistId !== undefined ? amountPayable : 0,
-      disbursedAmount: 0,
-      paidInAtISO: SEED_PREPAYMENT_RAISED_ISO,
+      listId: booking.listId,
+      payee: HOLDING_PAYEE,
+      patientId: booking.patientId,
+      atISO: SEED_PREPAYMENT_RAISED_ISO,
+    })
+    const paidPair = applyReceipt(pair, draft.total, SEED_PREPAYMENT_RAISED_ISO).pair
+    ledger[caseId] = {
+      ...paidPair,
+      receivable: { ...paidPair.receivable, xeroAccRecId: accRecId },
+      ...(paidPair.payable !== undefined && anaesthetistId !== undefined ? { payable: { ...paidPair.payable, xeroAccPayId: accPayId } } : {}),
     }
   })
 

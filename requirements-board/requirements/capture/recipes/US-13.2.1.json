@@ -1,6 +1,107 @@
 {
   "id": "US-13.2.1",
-  "status": "absent",
-  "absentReason": "No whole-ledger view. Receivables, receipts held, payables due, disbursed and imbalance are never totalled for the office; the billing monitor shows only the payables due for the next payables run and the AA Holding account's balance, and each invoice shows its own paid and disbursed state. Searched apps/admin and apps/demo for ledger, balance, receivable and disbursed.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "whole-ledger",
+      "app": "admin",
+      "caption": "The ledger's position at the whole-ledger scope: in balance, with receivables outstanding, receipts held, payables due, the AA Holding account and disbursed",
+      "start": "/admin/ledger",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=ledger-balance][data-in-balance=true]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=ledger-balance]",
+            "[data-shot=ledger-tiles]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "anaesthetist-scope",
+      "app": "admin",
+      "caption": "The same balance view scoped to one anaesthetist, Dr Souter: what AA owes her and what she owes AA",
+      "start": "/admin/ledger/anaesthetists/34821",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=ledger-aa-owes]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=ledger-balance]",
+            "[data-shot=ledger-aa-owes]",
+            "[data-shot=ledger-owes-aa]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "imbalance",
+      "app": "admin",
+      "caption": "A $120.00 receipt that matches no invoice is held, and the ledger is out of balance by $120.00",
+      "start": "/admin/ledger",
+      "setup": [
+        {
+          "goto": "/admin/ledger"
+        },
+        {
+          "trigger": "inject-unmatched-receipt",
+          "choice": "souter"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=ledger-balance][data-in-balance=false]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=ledger-balance]",
+            "[data-shot=ledger-unmatched]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "out-of-balance-list",
+      "app": "admin",
+      "caption": "Anaesthetists out of balance, just a list: Dr Souter is on it while the receipt naming her is held",
+      "start": "/admin/ledger",
+      "setup": [
+        {
+          "goto": "/admin/ledger"
+        },
+        {
+          "trigger": "inject-unmatched-receipt",
+          "choice": "souter"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=ledger-anaesthetists-out-of-balance] tr[data-anaesthetist-id=\"34821\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=ledger-anaesthetists-out-of-balance]"
+          ]
+        }
+      ]
+    }
+  ]
 }

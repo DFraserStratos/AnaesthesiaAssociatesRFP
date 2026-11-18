@@ -129,12 +129,6 @@ export const ACTION_LABELS: Record<string, string> = {
   'hospital.update': 'Hospital updated',
   'surgeon.create': 'Surgeon added',
   'surgeon.update': 'Surgeon updated',
-  'surgeonRoom.create': "Surgeons' room added",
-  'surgeonRoom.update': "Surgeons' room updated",
-  // Catch-up Phase 17a (US-13.6.5): practice manager and PA contacts on a room.
-  'roomContact.add': 'Room contact added',
-  'roomContact.update': 'Room contact updated',
-  'roomContact.remove': 'Room contact removed',
   'surgeonGroup.create': 'Surgeon group added',
   'surgeonGroup.update': 'Surgeon group updated',
   // Office-private (catch-up Phase 17): only Admin histories read these.
@@ -199,6 +193,11 @@ export const ACTION_LABELS: Record<string, string> = {
   'importRow.decide': 'Hospital row decided',
   'booking.fromHospitalRow': 'Hospital row applied to this Booking',
 
+  // --- Stubs on a List (catch-up Phase 33a) ---------------------------------
+  'stub.place': 'Stub placed on List',
+  'stub.resolve': 'Stub replaced by Booking',
+  'stub.remove': 'Stub removed',
+
   // --- Xero simulation & money movement -----------------------------------
   'xero.pairCreated': 'Xero invoice pair created',
   'xero.handoffFailed': 'Xero handoff failed',
@@ -208,7 +207,6 @@ export const ACTION_LABELS: Record<string, string> = {
   'xero.disbursed': 'Disbursement recorded',
   'xero.contactResolved': 'Xero contact resolved',
   'xero.contactArchived': 'Xero contact archived',
-  'xero.feeAccRecCreated': 'Xero AA fee invoice created',
   // The AA Holding account's transfer and its Xero mirror (catch-up Phase 27a).
   'prepayment.transfer': 'Prepayment transferred to anaesthetist',
   'prepayment.transferNoop': 'Prepayment transfer already done',
@@ -216,6 +214,18 @@ export const ACTION_LABELS: Record<string, string> = {
   'xero.journalPosted': 'Xero transfer journal posted',
   'xero.journalFailed': 'Xero transfer journal failed',
   'xero.journalNoop': 'Xero transfer journal already posted',
+
+  // --- The internal ledger (catch-up Phase 36) ----------------------------
+  'ledger.pairCreated': 'Ledger pair created',
+  'ledger.receiptRecorded': 'Receipt recorded in the ledger',
+  'ledger.receiptNoop': 'Receipt already recorded',
+  'ledger.disbursed': 'Paid out to the anaesthetist',
+  'ledger.disburseNoop': 'Nothing to pay out',
+  'ledger.unmatchedReceipt': 'Receipt with no matching invoice',
+  'ledger.unmatchedAllocated': 'Unmatched receipt allocated',
+  'ledger.unmatchedRefunded': 'Unmatched receipt refunded',
+  'ledger.allocationNoop': 'Allocation already applied',
+  'billing.exceptionResolved': 'Billing exception resolved',
 
   // --- AA's monthly fee (catch-up Phase 16) -------------------------------
   'aaFee.settingsChanged': 'AA fee settings changed',

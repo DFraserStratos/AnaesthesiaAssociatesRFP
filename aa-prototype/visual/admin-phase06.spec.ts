@@ -211,7 +211,8 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   await expect(page.getByLabel('Scheduled time')).toHaveValue('15:00')
   // Catch-up Phase 20: no route or insurer; the Contract is never preselected (US-04.3.4).
   await expect(page.locator('[data-shot=manual-contract]')).toContainText('Not chosen')
-  await expect(page.getByLabel('Billing reference')).toHaveValue('STG-HALE-2107')
+  // Catch-up Phase 25a (DM-68, D82): no hospital reference is asked for.
+  await expect(page.getByLabel('Billing reference')).toHaveCount(0)
   await expect(page.getByText(/Patient and booking details pre-filled/)).toBeVisible()
 
   // Catch-up Phase 20a: the procedure description as told, Told by Phone by default (US-02.4.1).

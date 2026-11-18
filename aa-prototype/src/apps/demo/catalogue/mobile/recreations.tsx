@@ -17,7 +17,7 @@ import type { SlotStatusRecords } from '../../../../domain/slotStatus'
 import { sessionText } from '../../../../domain/outOfHours'
 import {
   isOpenSlotView,
-  outstandingAccpayInvoicesFor,
+  outstandingPayableRowsFor,
   receivablesAgingFor,
   rosterForDate,
   slotViewsForDate,
@@ -508,7 +508,7 @@ export function HeroFigureCardCopy({ anaesthetistId }: { anaesthetistId: string 
   const schedule = useAppStore((s) => s.schedule)
   const masters = useAppStore((s) => s.masters)
   const todayISO = useToday()
-  const outstanding = useMemo(() => outstandingAccpayInvoicesFor({ billing, schedule, masters }, anaesthetistId, todayISO), [billing, schedule, masters, anaesthetistId, todayISO])
+  const outstanding = useMemo(() => outstandingPayableRowsFor({ billing, schedule, masters }, anaesthetistId, todayISO), [billing, schedule, masters, anaesthetistId, todayISO])
   const aging = useMemo(() => receivablesAgingFor({ billing, schedule, masters }, anaesthetistId, todayISO).aging, [billing, schedule, masters, anaesthetistId, todayISO])
   return (
     <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 20, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>

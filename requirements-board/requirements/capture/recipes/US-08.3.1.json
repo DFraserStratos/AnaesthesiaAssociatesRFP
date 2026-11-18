@@ -6,13 +6,18 @@
     {
       "name": "xero-pair",
       "app": "simulator",
-      "caption": "Receivable and payable pair for the prepayment, linked to each other and to the case; the payable credits the AA Holding account",
+      "caption": "The prepayment's Xero pair beside its ledger pair, the system of record, and matching it; the payable credits the AA Holding account",
       "start": "/demo/xero/invoices/XRB0",
       "states": [
         {
-          "steps": [],
+          "steps": [
+            {
+              "wait": "[data-shot=xero-ledger-match]"
+            }
+          ],
           "highlight": [
             "[data-shot=xero-engine-link]",
+            "[data-shot=xero-ledger-pair]",
             "[data-shot=xero-accrec-card]",
             "[data-shot=xero-accpay-card]"
           ]
@@ -22,7 +27,7 @@
     {
       "name": "invoice-handoff",
       "app": "admin",
-      "caption": "Invoice with its linked receivable and payable references",
+      "caption": "Receivable and payable created together with the invoice and linked in the ledger, each with its Xero ID",
       "start": "/admin/invoices",
       "setup": [
         {
@@ -48,14 +53,157 @@
         {
           "steps": [
             {
-              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Brian Holt\")"
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Brian Holt\") >> role=button[name=/^View invoice /]"
             },
             {
-              "wait": 500
+              "wait": "[data-shot=invoice-ledger-card]"
             }
           ],
           "highlight": [
-            "[data-testid=invoice-info-rail] section:has(h2:text-is(\"Xero handoff\"))"
+            "[data-shot=invoice-ledger-card]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pair-not-in-xero",
+      "app": "admin",
+      "caption": "When the Xero handoff fails, the invoice and its ledger pair still stand, not yet in Xero",
+      "start": "/admin/invoices",
+      "setup": [
+        {
+          "goto": "/admin/billing"
+        },
+        {
+          "trigger": "billing-failure"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Losa Tuilagi\") >> role=button[name=/^View invoice /] >> nth=0"
+            },
+            {
+              "wait": "[data-testid=xero-handoff-status]:has-text(\"Xero handoff failed\")"
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-ledger-card]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "prepay-pair",
+      "app": "admin",
+      "caption": "A prepayment's pair in the ledger: its payable goes to the AA Holding account",
+      "start": "/admin/ledger",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=ledger-pairs] tr[data-pair-kind=\"prePayment\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=ledger-pairs] tr[data-pair-kind=\"prePayment\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "prepay-transfer",
+      "app": "admin",
+      "caption": "Once the List is authorised, the prepayment is released by a transfer: no receivable, payable to the anaesthetist who did the List",
+      "start": "/admin/ledger",
+      "setup": [
+        {
+          "goto": "/web/lists/L-34821-2026-07-24-PM"
+        },
+        {
+          "click": "text=\"Priya Nair\" >> nth=0"
+        },
+        {
+          "wait": 700
+        },
+        {
+          "scroll": "[data-shot=capture-modifiers]"
+        },
+        {
+          "click": "[data-shot=modifier-add]"
+        },
+        {
+          "wait": 500
+        },
+        {
+          "click": "[role=dialog] [data-modifier-code=AS3]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+          "value": "ASA III on review"
+        },
+        {
+          "click": "role=button[name=\"Claim\"]"
+        },
+        {
+          "wait": 700
+        },
+        {
+          "press": "Escape"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "role=button[name=\"Mark complete\"]"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "goto": "/web/lists/L-34821-2026-07-24-PM"
+        },
+        {
+          "click": "text=\"Mark list completed\" >> nth=0"
+        },
+        {
+          "click": "text=\"Submit to office\" >> nth=0"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-24-PM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": "[data-shot=review-authorised-banner]"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=ledger-pairs] tr[data-pair-kind=\"transfer\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=ledger-pairs] tr[data-pair-kind=\"transfer\"]"
           ]
         }
       ]

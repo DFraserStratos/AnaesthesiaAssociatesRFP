@@ -12,6 +12,7 @@ import { createAppStore, type BoundAppStore } from './appStore'
 import { approvePrepayment, autoSendPrepayments, setPrepaymentApprovalRequired } from './prepaymentActions'
 import { pendingPrepayments, prepaymentForProcedure, prepaymentStatusFor, upcomingPrepayments } from './prepaymentSelectors'
 import { proceduresForBooking } from './selectors'
+import { pairForInvoice } from './ledgerSelectors'
 import { warningsForBooking } from './warnings'
 import { advanceClockToDate } from './clockActions'
 import { receivePayment } from './paymentActions'
@@ -37,7 +38,7 @@ const NAIR = SEED_PREPAID_BOOKING_ID
 const PATIENT_KEY = (api: BoundAppStore, bookingId: string) => `patient:${api.getState().schedule.bookings[bookingId]!.patientId}`
 
 const rileyProc = (api: BoundAppStore) => proceduresForBooking(api.getState(), RILEY)[0]!
-const casesOf = (api: BoundAppStore, invoiceId: string) => Object.values(api.getState().billing.cases).find((c) => c.invoiceId === invoiceId)!
+const casesOf = (api: BoundAppStore, invoiceId: string) => pairForInvoice(api.getState(), invoiceId)!
 
 describe('the seeded prepayments', () => {
   it('Riley awaits approval at $1,200.00 with no invoice; Nair is paid on INV0001 at $1,200.00 ex GST', () => {
@@ -63,7 +64,7 @@ describe('the seeded prepayments', () => {
   it("INV0001's payable credits the AA Holding account, authorised, never paid by the payables run", () => {
     const api = createAppStore()
     const inv = Object.values(api.getState().billing.invoices).find((i) => i.invoiceNumber === 'AA-2026-0001')!
-    const pay = api.getState().xero.accPays[casesOf(api, inv.id).accPayId!]!
+    const pay = api.getState().xero.accPays[casesOf(api, inv.id).payable!.xeroAccPayId!]!
     expect(pay.payeeAccount).toBe('aaHoldingAccount')
     expect(api.getState().xero.contacts[pay.contactId]?.name).toBe(AA_HOLDING_ACCOUNT.name)
     expect(pay).toMatchObject({ amountAuthorised: 1380, amountDisbursed: 0 })
@@ -90,8 +91,8 @@ describe('Approve and send (US-06.3.1, D6, D38)', () => {
     expect(inv).toMatchObject({ kind: 'prePayment', subtotal: 1200, gst: 180, total: 1380, counterparty: { kind: 'patient' }, approval: { mode: 'approved', by: 'Kirsty W.' } })
     expect(inv.delivery?.status).toBe('sent')
     const c = casesOf(api, inv.id)
-    expect(state.xero.accRecs[c.accRecId!]?.amountDue).toBe(1380)
-    expect(state.xero.accPays[c.accPayId!]).toMatchObject({ status: 'draft', payeeAccount: 'aaHoldingAccount', amountPayable: 1380 })
+    expect(state.xero.accRecs[c.receivable.xeroAccRecId!]?.amountDue).toBe(1380)
+    expect(state.xero.accPays[c.payable!.xeroAccPayId!]).toMatchObject({ status: 'draft', payeeAccount: 'aaHoldingAccount', amountPayable: 1380 })
     expect(state.audit.some((e) => e.action === 'invoice.prePaymentApproved' && e.entityId === inv.id)).toBe(true)
     expect(prepaymentStatusFor(state, RILEY).status).toBe('unpaid')
     expect(pendingPrepayments(state)).toEqual([])
@@ -108,7 +109,7 @@ describe('Approve and send (US-06.3.1, D6, D38)', () => {
     const api = createAppStore()
     const out = approvePrepayment(api, OFFICE, RILEY, PATIENT_KEY(api, RILEY))
     if (!out.ok) throw new Error(out.message)
-    const accRecId = casesOf(api, out.value.invoiceId).accRecId!
+    const accRecId = casesOf(api, out.value.invoiceId).receivable.xeroAccRecId!
     receivePayment(api, { accRecId, amount: 690, idempotencyKey: 'half', source: 'webhook' })
     expect(prepaymentStatusFor(api.getState(), RILEY).groups[0]).toMatchObject({ status: 'partPaid', receivedTotal: 690, invoicedTotal: 1380 })
     receivePayment(api, { accRecId, amount: 690, idempotencyKey: 'rest', source: 'webhook' })

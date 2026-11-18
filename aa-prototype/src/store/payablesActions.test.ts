@@ -11,10 +11,13 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList, submitList } from './lifecycle'
-import { runBillingForList, handoffListCases, wireBillingRun } from './billingRun'
+import { runBillingForList, wireBillingRun } from './billingRun'
+import { handoffListPairs } from './xeroHandoff'
 import { receivePayment } from './paymentActions'
 import { disbursePayable, runPayables, payablesDue, type PayablesRunResult } from './payablesActions'
-import { casesForList, openAccRecs } from './selectors'
+import { openAccRecs } from './selectors'
+import { pairsForList } from './ledgerSelectors'
+import { pairStatusLabel } from '../domain/billing/ledger'
 import { roundToCents, toCents } from '../domain/billing/money'
 import type { Actor } from './mutate'
 import { SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
@@ -35,17 +38,25 @@ function pay(api: BoundAppStore): PayablesRunResult {
   if (!res.ok) throw new Error(`payables refused: ${res.message}`)
   return res.value
 }
-function billCos(api: BoundAppStore): { caseId: string; accRecId: string; accPayId: string; amountDue: number; amountPayable: number } {
+function billCos(api: BoundAppStore): { pairId: string; accRecId: string; accPayId: string; amountDue: number; amountPayable: number } {
   const booking = api.getState().schedule.bookings[marker('cosAccContractBooking')]!
   const listId = booking.listId
   expect(submitList(api, OFFICE, listId).ok).toBe(true)
   expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
   expect(runBillingForList(api, listId).ok).toBe(true)
-  handoffListCases(api, listId)
-  const c = casesForList(api.getState(), listId).find((x) => x.status !== 'failed')!
-  const accRec = api.getState().xero.accRecs[c.accRecId!]!
-  const accPay = api.getState().xero.accPays[c.accPayId!]!
-  return { caseId: c.id, accRecId: c.accRecId!, accPayId: c.accPayId!, amountDue: accRec.amountDue, amountPayable: accPay.amountPayable }
+  handoffListPairs(api, listId)
+  // (catch-up Phase 36: a failed Booking is a BillingException, never a pair, so every pair of the List was raised.)
+  const p = pairsForList(api.getState(), listId)[0]!
+  const accRecId = p.receivable.xeroAccRecId!
+  const accPayId = p.payable!.xeroAccPayId!
+  const accRec = api.getState().xero.accRecs[accRecId]!
+  const accPay = api.getState().xero.accPays[accPayId]!
+  return { pairId: p.id, accRecId, accPayId, amountDue: accRec.amountDue, amountPayable: accPay.amountPayable }
+}
+function pairOf(api: BoundAppStore, pairId: string) {
+  const p = api.getState().billing.ledger[pairId]!
+  if (p.kind === 'aaFee') throw new Error('expected a Booking pair')
+  return p
 }
 
 describe('payables run', () => {
@@ -62,7 +73,7 @@ describe('payables run', () => {
 
   it('successive partials with a run between pay only the increment (no double-pay)', () => {
     const api = store()
-    const { caseId, accRecId, accPayId, amountDue, amountPayable } = billCos(api)
+    const { pairId, accRecId, accPayId, amountDue, amountPayable } = billCos(api)
     const p1 = roundToCents(amountDue * 0.4)
     const p2 = roundToCents(amountDue - p1)
     // The payable is the gross amount; each run pays exactly what arrived.
@@ -76,12 +87,13 @@ describe('payables run', () => {
     const run1 = runPayables(api, OFFICE)
     expect(run1).toMatchObject({ ok: true, value: { disbursedCount: 1, totalDisbursed: authorised1 } })
     let accPay = api.getState().xero.accPays[accPayId]!
-    let c = api.getState().billing.cases[caseId]!
+    let c = pairOf(api, pairId)
     expect(accPay.amountDisbursed).toBe(authorised1)
     expect(accPay.status).toBe('authorised') // not fully paid out yet
-    expect(c.disbursedAmount).toBe(authorised1)
-    expect(c.status).toBe('partPaid')
-    expect(c.disbursedAtISO).toBeUndefined()
+    expect(c.payable!.disbursedAmount).toBe(authorised1)
+    // (catch-up Phase 36: the derived label names a part pay-out 'partPaidOut'; the old stored status stayed 'partPaid'.)
+    expect(pairStatusLabel(c)).toBe('partPaidOut')
+    expect(c.payable!.paidOutAtISO).toBeUndefined()
     // Nothing new to pay until more is authorised.
     expect(payablesDue(api.getState()).total).toBe(0)
     expect(pay(api).disbursedCount).toBe(0)
@@ -93,12 +105,12 @@ describe('payables run', () => {
     expect(run2).toMatchObject({ ok: true, value: { disbursedCount: 1, totalDisbursed: authorised2 } })
 
     accPay = api.getState().xero.accPays[accPayId]!
-    c = api.getState().billing.cases[caseId]!
+    c = pairOf(api, pairId)
     expect(accPay.amountDisbursed).toBe(amountPayable)
     expect(accPay.status).toBe('paid')
-    expect(c.disbursedAmount).toBe(amountPayable)
-    expect(c.status).toBe('disbursed')
-    expect(c.disbursedAtISO).toBeDefined()
+    expect(c.payable!.disbursedAmount).toBe(amountPayable)
+    expect(pairStatusLabel(c)).toBe('disbursed')
+    expect(c.payable!.paidOutAtISO).toBeDefined()
 
     // Total disbursed across the two runs equals the full payable, exactly once.
     const disbursements = Object.values(api.getState().xero.disbursements).filter((d) => d.accPayId === accPayId)
@@ -112,11 +124,11 @@ describe('payables run', () => {
 
   it('a fully-paid ACCREC disburses in full in one run', () => {
     const api = store()
-    const { caseId, accRecId, accPayId, amountDue, amountPayable } = billCos(api)
+    const { pairId, accRecId, accPayId, amountDue, amountPayable } = billCos(api)
     expect(receivePayment(api, { accRecId, amount: amountDue, idempotencyKey: 'FULL', source: 'webhook' }).ok).toBe(true)
     expect(pay(api).totalDisbursed).toBe(amountPayable)
     expect(api.getState().xero.accPays[accPayId]!.status).toBe('paid')
-    expect(api.getState().billing.cases[caseId]!.status).toBe('disbursed')
+    expect(pairStatusLabel(pairOf(api, pairId))).toBe('disbursed')
   })
 
   it('can disburse one selected payable without paying every authorised invoice', () => {
@@ -141,12 +153,13 @@ describe('payables run', () => {
       source: 'webhook',
     }).ok).toBe(true)
 
-    const result = disbursePayable(api, OFFICE, selected.accPayId)
+    // (catch-up Phase 36: a payable is chosen by its pair id, and the result names the pairs paid.)
+    const result = disbursePayable(api, OFFICE, selected.pairId)
     expect(result).toMatchObject({
       ok: true,
       value: {
         disbursedCount: 1,
-        accPayIds: [selected.accPayId],
+        paidIds: [selected.pairId],
       },
     })
     expect(api.getState().xero.accPays[selected.accPayId]!.status).toBe('paid')

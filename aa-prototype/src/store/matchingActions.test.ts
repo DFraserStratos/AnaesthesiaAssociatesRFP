@@ -39,12 +39,13 @@ describe('import (US-02.1.1)', () => {
     const res = importHospitalDownload(api, OFFICE_ACTOR, 'SAMPLE_STG')
     expect(res).toMatchObject({ ok: true, value: { added: 5, skipped: 0 } })
     expect(scheduleOf(api)).toBe(before)
-    expect(matchingAttentionCount(api.getState())).toBe(5)
+    // Five plus the seeded row waiting for an NHI (catch-up Phase 33a).
+    expect(matchingAttentionCount(api.getState())).toBe(6)
     const rows = api.getState().intake.batches[res.ok ? res.value.batchId! : '']!.rowIds
     expect(decideImportRow(api, OFFICE_ACTOR, rows[1]!, { kind: 'reject', reason: 'Duplicate of another row' }).ok).toBe(true)
     expect(correctImportRow(api, OFFICE_ACTOR, rows[0]!, { scheduledTime: '08:45' }).ok).toBe(true)
     expect(importHospitalDownload(api, OFFICE_ACTOR, 'SAMPLE_STG')).toMatchObject({ ok: true, value: { added: 0, skipped: 5 } })
-    expect(Object.keys(api.getState().intake.batches)).toHaveLength(1)
+    expect(Object.keys(api.getState().intake.batches)).toHaveLength(2)
   })
   it('refuses a non-office actor and an unknown sample', () => {
     const api = fresh()

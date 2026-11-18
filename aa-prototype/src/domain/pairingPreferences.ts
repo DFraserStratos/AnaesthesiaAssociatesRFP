@@ -11,8 +11,8 @@
  * fails if a mobile, web, PWA, shell, demo or (non-audit) shared file does.
  * An anaesthetist's own hand-on of a List never calls it (US-01.4.5).
  *
- * The names are OQ-102's, still open: built as owner decision D36's default
- * ("Not preferred", "Preferred", Tier 1 to Tier 4 with Tier 4 the default).
+ * The names are OQ-102's answer (D36, 18 November 2026): "Not preferred",
+ * "Preferred", Tier 1 to Tier 4 with Tier 4 the default, until AA picks names.
  * Every user-facing kind, tier and side word builds from PAIRING_LABELS and
  * TIER_LABELS below, so AA's names are one edit.
  */
@@ -74,9 +74,6 @@ export const TIER_LABELS: Record<PriorityTier, string> = {
   3: 'Tier 3',
   4: 'Tier 4',
 }
-
-/** True while OQ-102 is open: the tier control shows one mist line saying so. */
-export const TIER_NAMES_PROVISIONAL = true
 
 /** An anaesthetist with no tier entry, a new one included, sits here (US-01.3.6 "Default"). */
 export const DEFAULT_PRIORITY_TIER: PriorityTier = 4

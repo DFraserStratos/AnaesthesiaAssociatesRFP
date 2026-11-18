@@ -22,6 +22,13 @@
  * price shows its price ranges (`ContractPriceRanges`), changed straight
  * away through the store's audited range actions; a new fixed-price Contract
  * takes its first range with it.
+ *
+ * Catch-up Phase 25a (US-04.1.2, D79, D81): a new Contract can name the
+ * Contract it replaces and the date it takes over from; the panel then warns
+ * with the Procedures dated on or after that date still on the old one, before
+ * and after the save. Nothing moves and nothing is stored: "Replaces" is
+ * warning-only (a build choice). A Disabled Contract's note gives its disable
+ * day (read from the audit) and lists the Procedures from that day still on it.
  */
 
 import { useMemo, useState } from 'react'
@@ -40,12 +47,19 @@ import {
   disableContract,
   editContract,
   enableContract,
+  stillOnContract,
   useAppStore,
+  useToday,
   type Actor,
 } from '../../../store'
 import { Button, FieldLabel, FormError, Segmented, TextField } from '../../../shared'
-import { FieldHint, LineTab, LineTabs, SelectField } from '../../../shared/ui'
+import { FieldHint, LineTab, LineTabs, Notice, ResultLine, SelectField } from '../../../shared/ui'
 import { ContractHistory } from './ContractHistory'
+import { ContractChangeNotice, type ChangeNoticeRow } from './ContractChangeNotice'
+import { contractDisabledOn } from '../../../domain/billing/contractHistory'
+import { NOTHING_MOVES, stillOnTitle, type StillOnRow } from '../../../domain/billing/contractChanges'
+import { shortDay } from '../../../domain/dateText'
+import { listShortLabel } from '../util'
 import {
   BILLS_LABEL,
   PARTY_KIND_LABEL,
@@ -105,9 +119,35 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
   const [error, setError] = useState<string | null>(null)
   // The panel's two tabs (catch-up Phase 25): the Contract's details, and its History.
   const [tab, setTab] = useState<'details' | 'history'>('details')
+  // A dated change (catch-up Phase 25a): the Contract a new one replaces and the day it takes over. Warning-only.
+  const [replacesId, setReplacesId] = useState('')
+  const [replacesFrom, setReplacesFrom] = useState('')
+  // The new Contract's name once created with "Replaces" set: the panel stays open on the warning.
+  const [created, setCreated] = useState<string | null>(null)
   // The live Contract, so the ranges table shows each range change at once.
   const live = useAppStore((s) => (contract !== undefined ? s.masters.contracts[contract.id] : undefined)) ?? contract
   const defaultGroup = defaultRvgGroupId !== null ? masters.rvgGroups[defaultRvgGroupId] : undefined
+  const schedule = useAppStore((s) => s.schedule)
+  const audit = useAppStore((s) => s.audit)
+  const today = useToday()
+  // A Disabled Contract's day, from its audit (D81): the note and the disable warning read it.
+  const disabledDay = useMemo(() => (live !== undefined && live.status === 'disabled' ? contractDisabledOn(audit, live.id) : null), [audit, live])
+  const replaced = replacesId !== '' ? masters.contracts[replacesId] : undefined
+  const stillOnReplaced = useMemo(
+    () => (replaced !== undefined && replacesFrom !== '' ? stillOnContract({ schedule, masters }, replaced.id, replacesFrom) : []),
+    [replaced, replacesFrom, schedule, masters],
+  )
+  const stillOnDisabled = useMemo(
+    () => (live !== undefined && live.status === 'disabled' ? stillOnContract({ schedule, masters }, live.id, disabledDay ?? today) : []),
+    [live, disabledDay, today, schedule, masters],
+  )
+  // The Active Contracts a new one may replace: the chosen holder's first, then the rest (system Contracts never).
+  const replaceable = useMemo(() => {
+    const active = Object.values(masters.contracts)
+      .filter((c) => c.status === 'active' && c.systemRole === undefined)
+      .sort((a, b) => a.name.localeCompare(b.name))
+    return { holder: active.filter((c) => c.holderId === holderId), other: active.filter((c) => c.holderId !== holderId) }
+  }, [masters.contracts, holderId])
 
   const holder = masters.parties[holderId]
   // The rules come from the model module; the panel only shows them.
@@ -195,6 +235,12 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
       setError(outcome.message)
       return
     }
+    // A dated change that leaves Procedures on the old Contract stays open on its warning (catch-up Phase 25a).
+    if (!editing && stillOnReplaced.length > 0) {
+      setError(null)
+      setCreated(name.trim())
+      return
+    }
     onClose()
   }
 
@@ -219,11 +265,11 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
     <MasterPanel
       open={open}
       onClose={onClose}
-      title={editing ? contract.name : 'New contract'}
+      title={editing ? contract.name : created ?? 'New contract'}
       meta={meta}
       shot="contract-detail"
       footer={
-        tab === 'history' ? (
+        tab === 'history' || created !== null ? (
           <Button variant="secondary" onClick={onClose}>Close</Button>
         ) : (
         <>
@@ -252,19 +298,29 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
       )}
       {editing && tab === 'history' ? (
         <ContractHistory contractId={contract.id} />
+      ) : created !== null && replaced !== undefined ? (
+        <>
+          <ResultLine line={`Created ${created}.`} shot="contract-created" />
+          <StillOnNotice rows={stillOnReplaced} fromISO={replacesFrom} contractName={replaced.name} live />
+        </>
       ) : (
       <>
       {system && (
-        <div data-shot="contract-system-notice" style={{ background: neutral.sunken, color: neutral.slate, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
+        <Notice tone="neutral" shot="contract-system-notice">
           {isOpenPriceFallback(contract)
             ? 'Made by the system: one Fixed price Contract for each place an invoice can go, where a person types the amount on the Procedure. It is always available and never disabled. Only its name, AA code and invoice description can change.'
             : "No contract · RVG is built in and always available. It is held by Anaesthesia Associates, bills the payer and prices at the anaesthetist's rate. Only its name, AA code and invoice description can change."}
-        </div>
+        </Notice>
       )}
-      {editing && contract.status === 'disabled' && (
-        <div style={{ background: neutral.sunken, color: neutral.slate, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
-          Disabled: hidden from the Contract list unless asked for. Procedures already on it keep it and bill as normal.
-        </div>
+      {editing && live?.status === 'disabled' && (
+        <Notice tone="neutral" shot="contract-disabled-note">
+          {disabledDay !== null
+            ? `Disabled on ${shortDay(disabledDay)}: hidden from the Contract list unless asked for. Procedures already on it keep it; one not yet authorised and dated on or after ${shortDay(disabledDay)} is flagged at review.`
+            : 'Disabled: hidden from the Contract list unless asked for. Procedures already on it keep it; one not yet authorised is flagged at review.'}
+        </Notice>
+      )}
+      {editing && live?.status === 'disabled' && stillOnDisabled.length > 0 && (
+        <StillOnNotice rows={stillOnDisabled} fromISO={disabledDay ?? today} contractName={live.name} />
       )}
 
       <PanelSection title="Contract">
@@ -433,6 +489,39 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
 
       </PanelSection>
 
+      {!editing && (
+        <PanelSection title="Replaces" shot="contract-replaces">
+          <PanelGrid>
+            <SelectField label="Replaces" value={replacesId} onChange={setReplacesId} hint="Optional. The Contract this one takes over from.">
+              <option value="">Nothing</option>
+              {replaceable.holder.length > 0 && (
+                <optgroup label={holder?.name ?? 'This holder'}>
+                  {replaceable.holder.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </optgroup>
+              )}
+              <optgroup label={replaceable.holder.length > 0 ? 'Other holders' : 'Contracts'}>
+                {replaceable.other.map((c) => (
+                  <option key={c.id} value={c.id}>{`${c.name} · ${masters.parties[c.holderId]?.name ?? c.holderId}`}</option>
+                ))}
+              </optgroup>
+            </SelectField>
+            <TextField label="From" type="date" value={replacesFrom} onChange={setReplacesFrom} mono hint="The first procedure date it covers." />
+          </PanelGrid>
+          {replaced !== undefined && replacesFrom !== '' && (
+            stillOnReplaced.length > 0 ? (
+              <StillOnNotice rows={stillOnReplaced} fromISO={replacesFrom} contractName={replaced.name} live />
+            ) : (
+              <Notice tone="neutral" shot="contract-still-on-none">
+                {`No Procedure dated on or after ${shortDay(replacesFrom)} is still on ${replaced.name}.`}
+              </Notice>
+            )
+          )}
+          <FieldHint>Nothing moves by itself, and the old Contract stays as it is: disable it when it is no longer needed.</FieldHint>
+        </PanelSection>
+      )}
+
       <FormError message={error} />
       </>
       )}
@@ -447,6 +536,34 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
         onClose={() => setPickerOpen(false)}
       />
     </MasterPanel>
+  )
+}
+
+/** "2 Procedures dated on or after Sat 1 Aug are still on Face lift. Nothing moves by itself: open each to move it." (D79) */
+function StillOnNotice({ rows, fromISO, contractName, live = false }: { rows: readonly StillOnRow[]; fromISO: string; contractName: string; live?: boolean }) {
+  const lists = useAppStore((s) => s.schedule.lists)
+  const masters = useAppStore((s) => s.masters)
+  const noticeRows: ChangeNoticeRow[] = rows.map((r) => {
+    const list = lists[r.listId]
+    return {
+      key: r.procedureId,
+      bookingId: r.bookingId,
+      dateISO: r.dateISO,
+      patientName: r.patientName,
+      cells: [shortDay(r.dateISO), list !== undefined ? listShortLabel(list, masters) : r.listId, r.procedureText ?? ''],
+    }
+  })
+  return (
+    <ContractChangeNotice
+      title={stillOnTitle(rows.length, shortDay(fromISO), contractName)}
+      columns={[{ label: 'Date', mono: true }, { label: 'List' }, { label: 'Procedure' }]}
+      rows={noticeRows}
+      shot="contract-still-on-warning"
+      rowShot="contract-still-on-row"
+      live={live}
+    >
+      {NOTHING_MOVES}
+    </ContractChangeNotice>
   )
 }
 
