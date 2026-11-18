@@ -27,15 +27,17 @@ and lock.
   anything there. The one exception is the fast-forward at a join (below), which is a single git command.
 - A lane belongs to its worktree, not to an account. Either account can resume either lane: all the
   state is in the worktree and in git.
-- Each worktree's `.claude/settings.local.json` (git-ignored, made when the worktree was set up) sets
-  `AA_PROTO_PORT`, `AA_PWA_PORT` and `BOARD_PORT` for every command the session runs. The Vite
-  configs, Playwright, `phase-check.mjs` (`portEnv` on each dev server in `plan.config.json`) and the
-  capture runner (`portEnv` in `board.config.json`) all read them, so `npm run shots`,
-  `phase-check --capture` and `npm run dev` all run on the lane's own ports. No port lock is needed.
-  If `echo $AA_PROTO_PORT` prints nothing, the session was started outside the worktree folder:
-  put `AA_PROTO_PORT=<p> AA_PWA_PORT=<p> BOARD_PORT=<p>` in front of every command that starts a
-  server, Playwright, capture or `phase-check`. Better still, tell the owner to restart the session
-  from the worktree folder.
+- Each worktree holds a git-ignored `.lane.env` at its root (`AA_LANE`, `AA_PROTO_PORT`, `AA_PWA_PORT`,
+  `BOARD_PORT`), written when the worktree was set up. The Vite configs and Playwright
+  (`aa-prototype/laneEnv.ts`), the board's Vite config, `phase-check.mjs` and the capture runner read
+  it themselves, filling any variable not already set. So `npm run dev`, `npm run shots`,
+  `phase-check` and capture all run on the lane's own ports however the session was started, and the
+  dev servers and Playwright workers they start inherit them. `portEnv` in `plan.config.json` and
+  `board.config.json` names the variables. No port lock is needed. If `.lane.env` is missing, stop
+  and tell the owner.
+- **A session can start anywhere.** The owner usually starts both sessions in the main checkout. The
+  lane prompt has the session switch into its worktree with the `EnterWorktree` tool (`path`, never
+  `name`) before doing anything else, so every command and edit after that happens in the worktree.
 
 ## Waves
 
@@ -100,9 +102,10 @@ the dependencies allow.
 
 The owner pastes the same lane prompt every time (the end of this file). The session then does this.
 
-1. **Check where you are.** `pwd` is your lane's worktree and `git branch --show-current` is your
-   lane branch, or you are the joining session on `wave/<n>` (step 6). Otherwise stop and tell the
-   owner. Check `echo $AA_PROTO_PORT` (see "The lanes").
+1. **Check where you are.** After the lane prompt's `EnterWorktree` switch, `pwd` is your lane's
+   worktree and `git branch --show-current` is your lane branch, or `wave/<n>` if you are the session
+   doing the join. Otherwise stop and tell the owner. `cat .lane.env` shows your lane's ports (see
+   "The lanes").
 2. **Pick up `master`.** With a clean tree (no uncommitted changes to tracked files), merge in what
    `master` has gained: `git merge master`. It is a fast-forward after a join. Otherwise it brings in
    the owner's requirements or plan updates. Then re-read this file: the merge may have changed it.
@@ -209,7 +212,7 @@ When your last phase in the wave is complete:
      "Current wave" in this file, and the "Next waves" table if it changed.
    - Update the plan page: `status.json` (every phase in the wave DONE, `next.phases` the first phase
      of each lane's new queue, `guidance.parallel` naming the new wave's two queues, `safe` those two
-     phases, `wait` the rest of the queues), then `node P/build-index.mjs`, which must print no
+     phases, `wait` the rest of the queues, `guidance.lanes` each lane's new `queue`), then `node P/build-index.mjs`, which must print no
      warnings.
    - Commit with the subject `Wave <n> joined: ...`.
 7. **Fast-forward `master`:** `git -C "/Users/d.fraser/Development/Stratos Dev/AnaesthesiaAssociatesRFP"
@@ -249,31 +252,13 @@ This applies at the sync (step 5) and at the join.
 
 ## The lane prompts
 
-Paste the one for the lane, in a session started **in that lane's worktree folder** (`cd` there, then
-`claude` or `claude2`). The same prompt starts, resumes and joins: the session works out which.
+The prompts are in `lanes/lane-a.prompt.md` and `lanes/lane-b.prompt.md`, and on the plan page
+(`index.html`, "Start now": a **Copy Lane A prompt** and a **Copy Lane B prompt** button, and the
+same button on each queued phase's card). The owner pastes Lane A's into a `claude` session and
+Lane B's into a `claude2` session, both usually started in the main checkout. Each prompt names its
+worktree, branch and ports, has the session switch into the worktree with `EnterWorktree`, then
+sends it here. The same prompt starts, resumes and joins: the session works out which.
 
-**Lane A**
-
-```
-Please continue Lane A of the requirements catch-up build of the Anaesthesia Associates prototype.
-You are Lane A: worktree /Users/d.fraser/Development/Stratos Dev/AnaesthesiaAssociatesRFP-laneA,
-branch lane/a, ports 5273 (prototype), 5274 (PWA) and 5280 (board). If this session is not running
-in that folder, stop and tell me.
-Read docs/prototype-build/catch-up/LANES.md whole before anything else and follow "How a lane session
-runs": it says which phase is next in your lane, when you sync with Lane B, and which of its rules
-override the phase's kick-off prompt, the run-build-phase skill and CLAUDE.md. Commit on lane/a as
-it says; never push.
-```
-
-**Lane B**
-
-```
-Please continue Lane B of the requirements catch-up build of the Anaesthesia Associates prototype.
-You are Lane B: worktree /Users/d.fraser/Development/Stratos Dev/AnaesthesiaAssociatesRFP-laneB,
-branch lane/b, ports 5373 (prototype), 5374 (PWA) and 5380 (board). If this session is not running
-in that folder, stop and tell me.
-Read docs/prototype-build/catch-up/LANES.md whole before anything else and follow "How a lane session
-runs": it says which phase is next in your lane, when you sync with Lane A, and which of its rules
-override the phase's kick-off prompt, the run-build-phase skill and CLAUDE.md. Commit on lane/b as
-it says; never push.
-```
+The joining session keeps `status.json`'s `guidance.lanes` up to date (each lane's `queue` for the new
+wave) when it updates the plan page. A phase's own "Copy kick-off prompt" in the full phase list is
+for a single session on `master` only: never paste one into a lane.

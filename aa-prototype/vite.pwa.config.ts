@@ -3,6 +3,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import './laneEnv.ts'
 
 /**
  * The second build target: the Anaesthetist Mobile App as an installable PWA.
@@ -87,7 +88,7 @@ function localStamp(): string {
 
 const buildId = readBuildId()
 
-/** 5174 unless a parallel build lane sets AA_PWA_PORT (always strict). */
+/** 5174 unless AA_PWA_PORT is set (or a lane's .lane.env sets it); always strict. */
 const pwaPort = Number(process.env['AA_PWA_PORT'] ?? 5174)
 
 export default defineConfig({

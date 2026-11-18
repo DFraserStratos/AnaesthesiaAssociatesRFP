@@ -307,6 +307,9 @@ before going on.
      or built), propose new ones for phases that became startable, and ask the user before marking any
      phase safe. A call naming a phase that is done or not in `plan.json` is an index warning. Phases
      whose `blocked_by_oqs` were answered after the baseline are flagged on the page by themselves.
+     If `guidance.lanes` is set (the build runs in parallel worktrees), keep it: check each lane's
+     `queue` against the new dependencies, and change a queue only with the user, recording the
+     change wherever the plan keeps its lane rules.
 2. **Coverage.** `node T/plan-state.mjs --coverage` must report ok, with no `unknown`. Ids only on
    built phases that now Match are listed as `delivered`.
 3. **Screenshot check** (with screenshot capture). `node T/recipe-status.mjs --check` must pass:

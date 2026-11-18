@@ -18,6 +18,7 @@
  * own (jumping to a demo scenario, running a demo action) in the module `capture.steps` names:
  * its default export maps a step key to `run(page, step, ctx)`, with an optional `check(step)`.
  */
+import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -43,6 +44,17 @@ const CAPTURE: CaptureConfig = config.capture
 const RECIPES_DIR = resolve(REQUIREMENTS_DIR, CAPTURE.recipes)
 const REPORT_PATH = resolve(REQUIREMENTS_DIR, CAPTURE.report)
 /** The apps the runner can open: a screenshot app with a URL in `capture.apps`. */
+/** A worktree's git-ignored `.lane.env` (KEY=value lines) at the repo root fills unset variables (the ports). */
+const laneEnvFile = (() => {
+  try {
+    return join(execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(), '.lane.env')
+  } catch {
+    return null
+  }
+})()
+if (laneEnvFile && existsSync(laneEnvFile)) {
+  for (const [, k, v] of readFileSync(laneEnvFile, 'utf8').matchAll(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$/gm)) if (k && process.env[k] === undefined) process.env[k] = v
+}
 /** An app's url with its `portEnv` variable, when set, in place of the port. */
 const withPortEnv = (app: CaptureApp): CaptureApp => {
   const port = app.portEnv && process.env[app.portEnv]

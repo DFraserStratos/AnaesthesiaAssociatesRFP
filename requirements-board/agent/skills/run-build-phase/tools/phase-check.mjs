@@ -34,7 +34,8 @@
 //     ],
 //     "devServers": [ { "name": "app", "port": 5173, "url": "http://localhost:5173", "cwd": ".", "cmd": "npm run dev:app" } ],
 //                                          a server may add "portEnv": "APP_PORT": when that variable is set, it
-//                                          replaces the port (and the url's port), e.g. for a second worktree on its own ports
+//                                          replaces the port (and the url's port), e.g. for a second worktree on its own ports.
+//                                          A git-ignored `.lane.env` (KEY=value lines) at the repo root fills unset variables first.
 //     "devCommand": { "cwd": ".", "cmd": "npm run dev" },   starts every dev server at once (when all are down)
 //     "startTimeout": 120,                 seconds to wait for the dev servers to answer
 //     "node": { "min": "22.18", "paths": ["/opt/homebrew/opt/node@24/bin", "$HOME/.nvm/versions/node/v24.20.0/bin"] },
@@ -101,6 +102,7 @@ function usage(msg) {
 
 // ---- config ----
 const ROOT = repoRoot()
+loadLaneEnv(path.join(ROOT, '.lane.env'))
 const config = loadConfig({ argv: rawArgv, root: ROOT })
 const raw = config.configExists ? JSON.parse(fs.readFileSync(path.join(ROOT, config.configFile), 'utf8')) : {}
 const runner = raw.runner
@@ -123,6 +125,12 @@ const LAST = path.join(LOG_ROOT, 'last.json')
 const rel = p => {
   const r = path.relative(ROOT, p)
   return r.startsWith('..') || path.isAbsolute(r) ? p : r || '.'
+}
+
+/** A worktree's git-ignored `.lane.env` (KEY=value lines): fills unset variables, so every child inherits them. */
+function loadLaneEnv(file) {
+  if (!fs.existsSync(file)) return
+  for (const [, k, v] of fs.readFileSync(file, 'utf8').matchAll(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$/gm)) if (process.env[k] === undefined) process.env[k] = v
 }
 
 function repoRoot() {

@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
+import './laneEnv.ts'
 
 /**
  * Playwright is a visual-testing aid for the build: it boots the dev server and
@@ -19,8 +20,8 @@ import { defineConfig, devices } from '@playwright/test'
  * `vite.pwa.config.ts`, which pins port 5174 with `strictPort`.
  *
  * AA_PROTO_PORT and AA_PWA_PORT move both servers (and every URL here) for a
- * parallel build lane in its own worktree (docs/prototype-build/catch-up/LANES.md);
- * the dev servers it starts inherit them. Unset, the ports are 5173 and 5174.
+ * parallel build lane in its own worktree (docs/prototype-build/catch-up/LANES.md),
+ * set or read from the lane's `.lane.env` (laneEnv.ts); the dev servers and workers inherit them. Unset, the ports are 5173 and 5174.
  */
 const PROTO_URL = `http://localhost:${process.env['AA_PROTO_PORT'] ?? 5173}`
 const PWA_URL = `http://localhost:${process.env['AA_PWA_PORT'] ?? 5174}`

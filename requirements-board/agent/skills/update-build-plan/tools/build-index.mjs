@@ -24,7 +24,12 @@
 //       "headline": "One sentence for the top of the page",
 //       "safe":  { "32a": "why it is safe" },
 //       "wait":  { "18": "what it is waiting for" },
-//       "parallel": "a note on running the safe phases side by side" } }
+//       "parallel": "a note on running the safe phases side by side",
+//       "lanes": [ { "name": "Lane A", "where": "the worktree folder", "queue": ["26", "27"],
+//                    "prompt_file": "lanes/lane-a.prompt.md" } ] } }
+// "lanes" (optional) is for building in parallel worktrees: each lane is listed under "Start now" with
+// its queue and a button copying its prompt (a path beside plan.json), and a queued phase's card
+// copies its lane's prompt instead of its own kick-off prompt.
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
@@ -187,8 +192,19 @@ const chip = (p) => {
   return `<a class="chip s-${s}" href="#p-${esc(p.num)}" title="${esc(`${p.num} ${p.title} (${STATE_WORD[s]})`)}">${esc(p.num)}${marks.join('')}</a>`;
 };
 
-const copyButton = (p, label = 'Copy kick-off prompt') =>
-  p.prompt_file && readText(p.prompt_file) ? `<button class="btn" type="button" data-copy="prompt-${esc(p.num)}">${esc(label)}</button>` : '';
+// Lanes: parallel worktrees, each with a queue and one prompt that wraps its phases' kick-off prompts.
+const LANES = (Array.isArray(G.lanes) ? G.lanes : []).map((l, i) => ({ ...l, id: `lane-${i + 1}`, prompt: l.prompt_file ? readText(l.prompt_file) : null }));
+for (const l of LANES) {
+  if (!l.prompt) warn(`status.json guidance.lanes: ${l.name ?? l.id} has no prompt file (${l.prompt_file ?? 'none given'})`);
+  for (const n of l.queue ?? []) if (!phaseNums.has(n)) warn(`status.json guidance.lanes: ${l.name ?? l.id} queues phase ${n}, which is not in plan.json`);
+}
+const laneOf = (n) => LANES.find((l) => l.prompt && (l.queue ?? []).includes(n));
+
+const copyButton = (p, label = 'Copy kick-off prompt') => {
+  const lane = laneOf(p.num);
+  if (lane) return `<button class="btn" type="button" data-copy="${esc(lane.id)}">Copy ${esc(lane.name ?? 'lane')} prompt</button>`;
+  return p.prompt_file && readText(p.prompt_file) ? `<button class="btn" type="button" data-copy="prompt-${esc(p.num)}">${esc(label)}</button>` : '';
+};
 const docLink = (p) => (p.file ? `<a class="lnk" href="${esc(p.file)}">Phase plan</a>` : '');
 
 // The map: tracks down the side, waves across. A column is what can run once everything to its left is done.
@@ -248,11 +264,20 @@ const headline =
         ? `Can start now: ${listWords(readyUnflagged.map((p) => p.num))}.`
         : 'Nothing is ready to start.');
 
+const laneRows = LANES.length
+  ? `<ul class="rows lanes">${LANES.map(
+      (l) => `<li><span class="chip s-safe">${esc((l.name ?? l.id).replace(/^Lane\s+/i, ''))}</span><div><b>${esc(l.name ?? l.id)}</b>${l.where ? ` · ${inlineMd(l.where)}` : ''}<br>Queue: ${(l.queue ?? []).map((n) => byNum.get(n)).filter(Boolean).map(chip).join(' ')}${
+        l.prompt ? `<details class="pr"><summary>Show the prompt</summary><pre id="${esc(l.id)}">${esc(l.prompt.trim())}</pre></details>` : ''
+      }</div><div class="acts">${l.prompt ? `<button class="btn" type="button" data-copy="${esc(l.id)}">Copy ${esc(l.name ?? 'lane')} prompt</button>` : ''}</div></li>`,
+    ).join('')}</ul>`
+  : '';
+
 const nowSection = `
 <section class="now" aria-labelledby="h-now">
   <h2 id="h-now">Start now</h2>
   ${wip.length ? `<p class="lead">In progress: ${wip.map((p) => `<a href="#p-${esc(p.num)}">${esc(p.num)} ${esc(p.title)}</a>`).join(', ')}.</p>` : ''}
   ${safeNow.length ? `${safeNow.length > 1 ? `<p class="lead">These ${safeNow.length} can run at the same time.${G.parallel ? ` ${inlineMd(G.parallel)}` : ''}</p>` : G.parallel ? `<p class="lead">${inlineMd(G.parallel)}</p>` : ''}
+  ${laneRows}
   <div class="cards">${safeNow.map(startCard).join('')}</div>` : '<p class="lead">No phase is marked safe to start. Add calls to <code>status.json</code> "guidance".</p>'}
   ${
     safeLater.length

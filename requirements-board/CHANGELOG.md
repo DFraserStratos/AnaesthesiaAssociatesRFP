@@ -2,6 +2,11 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.12.3 · 2026-11-18
+
+- Build lanes on the plan page: `status.json` `guidance.lanes` (name, where, queue, prompt file) lists each lane under "Start now" with its queue and a button copying its prompt, and a queued phase's card copies its lane's prompt in place of its own kick-off prompt (update-build-plan's `build-index.mjs`).
+- A worktree's git-ignored `.lane.env` (KEY=value lines) at the repo root fills unset variables for `phase-check.mjs`, the capture runner and the board's dev server, so a session's ports follow the worktree without any session setup.
+
 ## 1.12.2 · 2026-11-18
 
 - Ports for a second worktree. A capture app in `board.config.json` may name `"portEnv"`: when that environment variable is set, it replaces the port in the app's `url`. The run-build-phase `phase-check.mjs` reads the same key on each `runner.devServers` entry (the probe, the start and the capture all use it). Set nothing and every URL is as written. This lets two build sessions in two git worktrees run their own dev servers, Playwright and capture side by side.

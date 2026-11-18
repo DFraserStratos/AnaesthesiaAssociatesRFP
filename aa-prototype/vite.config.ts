@@ -1,9 +1,10 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import './laneEnv.ts'
 
-// The dev port is 5173 unless AA_PROTO_PORT says otherwise: a parallel build lane
-// in its own worktree runs on its own ports (docs/prototype-build/catch-up/LANES.md),
+// The dev port is 5173 unless AA_PROTO_PORT says otherwise (set, or from a lane's .lane.env): a
+// parallel build lane in its own worktree runs on its own ports (docs/prototype-build/catch-up/LANES.md),
 // and then the port is strict, so a busy port fails rather than drifting to 5174.
 const protoPort = process.env['AA_PROTO_PORT']
 
