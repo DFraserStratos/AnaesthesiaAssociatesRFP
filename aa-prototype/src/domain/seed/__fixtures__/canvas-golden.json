@@ -1,5 +1,5 @@
 {
-  "note": "Phase 28 golden canvas. window: captured from the pre-split seed (Phase 17 final, b7e5feb) and must reproduce exactly. farEdge: the last seven horizon days, regenerated once in Phase 28 when generation stopped inventing sessions (US-01.1.1). Catch-up Phase 30 regenerated the conflicts column (facts, not messages; the Wed 22 flags now real) and added recurringBookingId (provenance); every other column checked unchanged first.",
+  "note": "Phase 28 golden canvas. window: captured from the pre-split seed (Phase 17 final, b7e5feb) and must reproduce exactly. farEdge: the last seven horizon days, regenerated once in Phase 28 when generation stopped inventing sessions (US-01.1.1). Catch-up Phase 30 regenerated the conflicts column (facts, not messages; the Wed 22 flags now real) and added recurringBookingId (provenance); every other column checked unchanged first. Catch-up Phase 32d re-pinned by script (public List kind retired, D86): rows whose bookless public List was removed read publicHospital with the note CPH and no List; public Lists holding Bookings read private with no recurring link; nothing else changed.",
   "windowFrom": "2026-07-07",
   "windowTo": "2026-08-16",
   "window": {
@@ -28,14 +28,12 @@
       "recurringBookingId": "RCB037"
     },
     "25490|2026-07-08|AM": {
-      "statusKey": "public",
-      "listId": "L-25490-2026-07-08-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
       "recurringBookingId": null
     },
@@ -913,14 +911,12 @@
       "recurringBookingId": "RCB032"
     },
     "27731|2026-07-07|PM": {
-      "statusKey": "public",
-      "listId": "L-27731-2026-07-07-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
       "recurringBookingId": null
     },
@@ -1039,16 +1035,14 @@
       "recurringBookingId": null
     },
     "27731|2026-07-13|PM": {
-      "statusKey": "public",
-      "listId": "L-27731-2026-07-13-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB031"
+      "recurringBookingId": null
     },
     "27731|2026-07-14|AM": {
       "statusKey": "preop",
@@ -1185,7 +1179,7 @@
       "recurringBookingId": null
     },
     "27731|2026-07-20|PM": {
-      "statusKey": "public",
+      "statusKey": "private",
       "listId": "L-27731-2026-07-20-PM",
       "state": "ACTIVE",
       "hospitalId": "H-CPH",
@@ -1194,7 +1188,7 @@
       "startTime": "13:00",
       "endTime": "17:30",
       "conflicts": [],
-      "recurringBookingId": "RCB031"
+      "recurringBookingId": null
     },
     "27731|2026-07-21|AM": {
       "statusKey": "preop",
@@ -1331,16 +1325,14 @@
       "recurringBookingId": null
     },
     "27731|2026-07-27|PM": {
-      "statusKey": "public",
-      "listId": "L-27731-2026-07-27-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB031"
+      "recurringBookingId": null
     },
     "27731|2026-07-28|AM": {
       "statusKey": "preop",
@@ -1367,14 +1359,12 @@
       "recurringBookingId": null
     },
     "27731|2026-07-29|AM": {
-      "statusKey": "public",
-      "listId": "L-27731-2026-07-29-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-TAN",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
       "recurringBookingId": null
     },
@@ -1483,16 +1473,14 @@
       "recurringBookingId": null
     },
     "27731|2026-08-03|PM": {
-      "statusKey": "public",
-      "listId": "L-27731-2026-08-03-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB031"
+      "recurringBookingId": null
     },
     "27731|2026-08-04|AM": {
       "statusKey": "preop",
@@ -1629,16 +1617,14 @@
       "recurringBookingId": null
     },
     "27731|2026-08-10|PM": {
-      "statusKey": "public",
-      "listId": "L-27731-2026-08-10-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB031"
+      "recurringBookingId": null
     },
     "27731|2026-08-11|AM": {
       "statusKey": "preop",
@@ -2693,14 +2679,12 @@
       "recurringBookingId": "RCB021"
     },
     "31902|2026-07-09|AM": {
-      "statusKey": "public",
-      "listId": "L-31902-2026-07-09-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
       "recurringBookingId": null
     },
@@ -3379,14 +3363,12 @@
       "recurringBookingId": null
     },
     "31902|2026-08-11|AM": {
-      "statusKey": "public",
-      "listId": "L-31902-2026-08-11-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
       "recurringBookingId": null
     },
@@ -3553,16 +3535,14 @@
       "recurringBookingId": null
     },
     "34821|2026-07-09|AM": {
-      "statusKey": "public",
-      "listId": "L-34821-2026-07-09-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB006"
+      "recurringBookingId": null
     },
     "34821|2026-07-09|PM": {
       "statusKey": "preop",
@@ -3707,16 +3687,14 @@
       "recurringBookingId": null
     },
     "34821|2026-07-16|AM": {
-      "statusKey": "public",
-      "listId": "L-34821-2026-07-16-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB006"
+      "recurringBookingId": null
     },
     "34821|2026-07-16|PM": {
       "statusKey": "preop",
@@ -3861,7 +3839,7 @@
       "recurringBookingId": null
     },
     "34821|2026-07-23|AM": {
-      "statusKey": "public",
+      "statusKey": "private",
       "listId": "L-34821-2026-07-23-AM",
       "state": "ACTIVE",
       "hospitalId": "H-CPH",
@@ -3870,7 +3848,7 @@
       "startTime": "07:30",
       "endTime": "12:30",
       "conflicts": [],
-      "recurringBookingId": "RCB006"
+      "recurringBookingId": null
     },
     "34821|2026-07-23|PM": {
       "statusKey": "preop",
@@ -4019,7 +3997,7 @@
       "recurringBookingId": null
     },
     "34821|2026-07-30|AM": {
-      "statusKey": "public",
+      "statusKey": "private",
       "listId": "L-34821-2026-07-30-AM",
       "state": "ACTIVE",
       "hospitalId": "H-CPH",
@@ -4028,7 +4006,7 @@
       "startTime": "07:30",
       "endTime": "12:30",
       "conflicts": [],
-      "recurringBookingId": "RCB006"
+      "recurringBookingId": null
     },
     "34821|2026-07-30|PM": {
       "statusKey": "preop",
@@ -4173,16 +4151,14 @@
       "recurringBookingId": null
     },
     "34821|2026-08-06|AM": {
-      "statusKey": "public",
-      "listId": "L-34821-2026-08-06-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB006"
+      "recurringBookingId": null
     },
     "34821|2026-08-06|PM": {
       "statusKey": "preop",
@@ -4327,16 +4303,14 @@
       "recurringBookingId": null
     },
     "34821|2026-08-13|AM": {
-      "statusKey": "public",
-      "listId": "L-34821-2026-08-13-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB006"
+      "recurringBookingId": null
     },
     "34821|2026-08-13|PM": {
       "statusKey": "preop",
@@ -4411,16 +4385,14 @@
       "recurringBookingId": null
     },
     "36208|2026-07-07|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-07-07-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB040"
+      "recurringBookingId": null
     },
     "36208|2026-07-07|PM": {
       "statusKey": "preop",
@@ -4455,16 +4427,14 @@
       "recurringBookingId": null
     },
     "36208|2026-07-09|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-07-09-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB042"
+      "recurringBookingId": null
     },
     "36208|2026-07-09|PM": {
       "statusKey": "free",
@@ -4477,16 +4447,14 @@
       "recurringBookingId": null
     },
     "36208|2026-07-10|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-07-10-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB043"
+      "recurringBookingId": null
     },
     "36208|2026-07-10|PM": {
       "statusKey": "free",
@@ -4559,16 +4527,14 @@
       "recurringBookingId": null
     },
     "36208|2026-07-14|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-07-14-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB040"
+      "recurringBookingId": null
     },
     "36208|2026-07-14|PM": {
       "statusKey": "preop",
@@ -4603,7 +4569,7 @@
       "recurringBookingId": null
     },
     "36208|2026-07-16|AM": {
-      "statusKey": "public",
+      "statusKey": "private",
       "listId": "L-36208-2026-07-16-AM",
       "state": "ACTIVE",
       "hospitalId": "H-CPH",
@@ -4612,7 +4578,7 @@
       "startTime": "07:30",
       "endTime": "12:30",
       "conflicts": [],
-      "recurringBookingId": "RCB042"
+      "recurringBookingId": null
     },
     "36208|2026-07-16|PM": {
       "statusKey": "free",
@@ -4625,7 +4591,7 @@
       "recurringBookingId": null
     },
     "36208|2026-07-17|AM": {
-      "statusKey": "public",
+      "statusKey": "private",
       "listId": "L-36208-2026-07-17-AM",
       "state": "SUBMITTED",
       "hospitalId": "H-CPH",
@@ -4634,7 +4600,7 @@
       "startTime": "07:30",
       "endTime": "12:30",
       "conflicts": [],
-      "recurringBookingId": "RCB043"
+      "recurringBookingId": null
     },
     "36208|2026-07-17|PM": {
       "statusKey": "free",
@@ -4707,7 +4673,7 @@
       "recurringBookingId": null
     },
     "36208|2026-07-21|AM": {
-      "statusKey": "public",
+      "statusKey": "private",
       "listId": "L-36208-2026-07-21-AM",
       "state": "ACTIVE",
       "hospitalId": "H-CPH",
@@ -4716,7 +4682,7 @@
       "startTime": "07:30",
       "endTime": "12:30",
       "conflicts": [],
-      "recurringBookingId": "RCB040"
+      "recurringBookingId": null
     },
     "36208|2026-07-21|PM": {
       "statusKey": "preop",
@@ -4751,16 +4717,14 @@
       "recurringBookingId": null
     },
     "36208|2026-07-23|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-07-23-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB042"
+      "recurringBookingId": null
     },
     "36208|2026-07-23|PM": {
       "statusKey": "free",
@@ -4773,16 +4737,14 @@
       "recurringBookingId": null
     },
     "36208|2026-07-24|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-07-24-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB043"
+      "recurringBookingId": null
     },
     "36208|2026-07-24|PM": {
       "statusKey": "private",
@@ -4859,16 +4821,14 @@
       "recurringBookingId": null
     },
     "36208|2026-07-28|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-07-28-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB040"
+      "recurringBookingId": null
     },
     "36208|2026-07-28|PM": {
       "statusKey": "preop",
@@ -4903,16 +4863,14 @@
       "recurringBookingId": null
     },
     "36208|2026-07-30|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-07-30-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB042"
+      "recurringBookingId": null
     },
     "36208|2026-07-30|PM": {
       "statusKey": "free",
@@ -4925,16 +4883,14 @@
       "recurringBookingId": null
     },
     "36208|2026-07-31|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-07-31-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB043"
+      "recurringBookingId": null
     },
     "36208|2026-07-31|PM": {
       "statusKey": "free",
@@ -5007,16 +4963,14 @@
       "recurringBookingId": null
     },
     "36208|2026-08-04|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-08-04-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB040"
+      "recurringBookingId": null
     },
     "36208|2026-08-04|PM": {
       "statusKey": "preop",
@@ -5051,16 +5005,14 @@
       "recurringBookingId": null
     },
     "36208|2026-08-06|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-08-06-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB042"
+      "recurringBookingId": null
     },
     "36208|2026-08-06|PM": {
       "statusKey": "free",
@@ -5073,16 +5025,14 @@
       "recurringBookingId": null
     },
     "36208|2026-08-07|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-08-07-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB043"
+      "recurringBookingId": null
     },
     "36208|2026-08-07|PM": {
       "statusKey": "free",
@@ -5155,16 +5105,14 @@
       "recurringBookingId": null
     },
     "36208|2026-08-11|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-08-11-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB040"
+      "recurringBookingId": null
     },
     "36208|2026-08-11|PM": {
       "statusKey": "preop",
@@ -5199,16 +5147,14 @@
       "recurringBookingId": null
     },
     "36208|2026-08-13|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-08-13-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB042"
+      "recurringBookingId": null
     },
     "36208|2026-08-13|PM": {
       "statusKey": "free",
@@ -5221,16 +5167,14 @@
       "recurringBookingId": null
     },
     "36208|2026-08-14|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-08-14-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB043"
+      "recurringBookingId": null
     },
     "36208|2026-08-14|PM": {
       "statusKey": "free",
@@ -5283,16 +5227,14 @@
       "recurringBookingId": null
     },
     "38455|2026-07-07|AM": {
-      "statusKey": "public",
-      "listId": "L-38455-2026-07-07-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB016"
+      "recurringBookingId": null
     },
     "38455|2026-07-07|PM": {
       "statusKey": "free",
@@ -5431,16 +5373,14 @@
       "recurringBookingId": null
     },
     "38455|2026-07-14|AM": {
-      "statusKey": "public",
-      "listId": "L-38455-2026-07-14-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB016"
+      "recurringBookingId": null
     },
     "38455|2026-07-14|PM": {
       "statusKey": "free",
@@ -5453,14 +5393,12 @@
       "recurringBookingId": null
     },
     "38455|2026-07-15|AM": {
-      "statusKey": "public",
-      "listId": "L-38455-2026-07-15-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-TAN",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
       "recurringBookingId": null
     },
@@ -5736,16 +5674,14 @@
       "recurringBookingId": null
     },
     "38455|2026-07-28|AM": {
-      "statusKey": "public",
-      "listId": "L-38455-2026-07-28-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB016"
+      "recurringBookingId": null
     },
     "38455|2026-07-28|PM": {
       "statusKey": "free",
@@ -5862,14 +5798,12 @@
       "recurringBookingId": null
     },
     "38455|2026-08-03|AM": {
-      "statusKey": "public",
-      "listId": "L-38455-2026-08-03-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-TAN",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
       "recurringBookingId": null
     },
@@ -5884,16 +5818,14 @@
       "recurringBookingId": null
     },
     "38455|2026-08-04|AM": {
-      "statusKey": "public",
-      "listId": "L-38455-2026-08-04-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB016"
+      "recurringBookingId": null
     },
     "38455|2026-08-04|PM": {
       "statusKey": "free",
@@ -6034,16 +5966,14 @@
       "recurringBookingId": null
     },
     "38455|2026-08-11|AM": {
-      "statusKey": "public",
-      "listId": "L-38455-2026-08-11-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB016"
+      "recurringBookingId": null
     },
     "38455|2026-08-11|PM": {
       "statusKey": "free",
@@ -6162,28 +6092,24 @@
       "recurringBookingId": null
     },
     "39560|2026-07-07|AM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-07-07-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB027"
+      "recurringBookingId": null
     },
     "39560|2026-07-07|PM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-07-07-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB028"
+      "recurringBookingId": null
     },
     "39560|2026-07-08|AM": {
       "statusKey": "unavailable",
@@ -6208,28 +6134,24 @@
       "recurringBookingId": null
     },
     "39560|2026-07-09|AM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-07-09-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB029"
+      "recurringBookingId": null
     },
     "39560|2026-07-09|PM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-07-09-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB030"
+      "recurringBookingId": null
     },
     "39560|2026-07-10|AM": {
       "statusKey": "private",
@@ -6314,28 +6236,24 @@
       "recurringBookingId": null
     },
     "39560|2026-07-14|AM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-07-14-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB027"
+      "recurringBookingId": null
     },
     "39560|2026-07-14|PM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-07-14-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB028"
+      "recurringBookingId": null
     },
     "39560|2026-07-15|AM": {
       "statusKey": "free",
@@ -6370,16 +6288,14 @@
       "recurringBookingId": null
     },
     "39560|2026-07-16|PM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-07-16-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB030"
+      "recurringBookingId": null
     },
     "39560|2026-07-17|AM": {
       "statusKey": "free",
@@ -6462,19 +6378,17 @@
       "recurringBookingId": null
     },
     "39560|2026-07-21|AM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-07-21-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB027"
+      "recurringBookingId": null
     },
     "39560|2026-07-21|PM": {
-      "statusKey": "public",
+      "statusKey": "private",
       "listId": "L-39560-2026-07-21-PM",
       "state": "ACTIVE",
       "hospitalId": "H-CPH",
@@ -6483,7 +6397,7 @@
       "startTime": "13:00",
       "endTime": "17:30",
       "conflicts": [],
-      "recurringBookingId": "RCB028"
+      "recurringBookingId": null
     },
     "39560|2026-07-22|AM": {
       "statusKey": "free",
@@ -6506,19 +6420,17 @@
       "recurringBookingId": null
     },
     "39560|2026-07-23|AM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-07-23-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB029"
+      "recurringBookingId": null
     },
     "39560|2026-07-23|PM": {
-      "statusKey": "public",
+      "statusKey": "private",
       "listId": "L-39560-2026-07-23-PM",
       "state": "ACTIVE",
       "hospitalId": "H-CPH",
@@ -6527,7 +6439,7 @@
       "startTime": "13:00",
       "endTime": "17:30",
       "conflicts": [],
-      "recurringBookingId": "RCB030"
+      "recurringBookingId": null
     },
     "39560|2026-07-24|AM": {
       "statusKey": "free",
@@ -6610,28 +6522,24 @@
       "recurringBookingId": null
     },
     "39560|2026-07-28|AM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-07-28-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB027"
+      "recurringBookingId": null
     },
     "39560|2026-07-28|PM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-07-28-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB028"
+      "recurringBookingId": null
     },
     "39560|2026-07-29|AM": {
       "statusKey": "free",
@@ -6656,28 +6564,24 @@
       "recurringBookingId": null
     },
     "39560|2026-07-30|AM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-07-30-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB029"
+      "recurringBookingId": null
     },
     "39560|2026-07-30|PM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-07-30-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB030"
+      "recurringBookingId": null
     },
     "39560|2026-07-31|AM": {
       "statusKey": "free",
@@ -6762,28 +6666,24 @@
       "recurringBookingId": null
     },
     "39560|2026-08-04|AM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-08-04-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB027"
+      "recurringBookingId": null
     },
     "39560|2026-08-04|PM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-08-04-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB028"
+      "recurringBookingId": null
     },
     "39560|2026-08-05|AM": {
       "statusKey": "free",
@@ -6806,28 +6706,24 @@
       "recurringBookingId": null
     },
     "39560|2026-08-06|AM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-08-06-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB029"
+      "recurringBookingId": null
     },
     "39560|2026-08-06|PM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-08-06-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB030"
+      "recurringBookingId": null
     },
     "39560|2026-08-07|AM": {
       "statusKey": "free",
@@ -6910,28 +6806,24 @@
       "recurringBookingId": null
     },
     "39560|2026-08-11|AM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-08-11-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB027"
+      "recurringBookingId": null
     },
     "39560|2026-08-11|PM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-08-11-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB028"
+      "recurringBookingId": null
     },
     "39560|2026-08-12|AM": {
       "statusKey": "free",
@@ -6954,28 +6846,24 @@
       "recurringBookingId": null
     },
     "39560|2026-08-13|AM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-08-13-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB029"
+      "recurringBookingId": null
     },
     "39560|2026-08-13|PM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-08-13-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB030"
+      "recurringBookingId": null
     },
     "39560|2026-08-14|AM": {
       "statusKey": "free",
@@ -7038,16 +6926,14 @@
       "recurringBookingId": null
     },
     "41267|2026-07-07|AM": {
-      "statusKey": "public",
-      "listId": "L-41267-2026-07-07-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB013"
+      "recurringBookingId": null
     },
     "41267|2026-07-07|PM": {
       "statusKey": "free",
@@ -7094,14 +6980,12 @@
       "recurringBookingId": "RCB015"
     },
     "41267|2026-07-09|PM": {
-      "statusKey": "public",
-      "listId": "L-41267-2026-07-09-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Acute theatre",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
       "recurringBookingId": null
     },
@@ -7190,7 +7074,7 @@
       "recurringBookingId": null
     },
     "41267|2026-07-14|AM": {
-      "statusKey": "public",
+      "statusKey": "private",
       "listId": "L-41267-2026-07-14-AM",
       "state": "ACTIVE",
       "hospitalId": "H-CPH",
@@ -7199,7 +7083,7 @@
       "startTime": "07:30",
       "endTime": "12:30",
       "conflicts": [],
-      "recurringBookingId": "RCB013"
+      "recurringBookingId": null
     },
     "41267|2026-07-14|PM": {
       "statusKey": "free",
@@ -7336,7 +7220,7 @@
       "recurringBookingId": null
     },
     "41267|2026-07-21|AM": {
-      "statusKey": "public",
+      "statusKey": "private",
       "listId": "L-41267-2026-07-21-AM",
       "state": "ACTIVE",
       "hospitalId": "H-CPH",
@@ -7345,7 +7229,7 @@
       "startTime": "07:30",
       "endTime": "12:00",
       "conflicts": [],
-      "recurringBookingId": "RCB013"
+      "recurringBookingId": null
     },
     "41267|2026-07-21|PM": {
       "statusKey": "free",
@@ -7489,16 +7373,14 @@
       "recurringBookingId": null
     },
     "41267|2026-07-28|AM": {
-      "statusKey": "public",
-      "listId": "L-41267-2026-07-28-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB013"
+      "recurringBookingId": null
     },
     "41267|2026-07-28|PM": {
       "statusKey": "free",
@@ -7637,16 +7519,14 @@
       "recurringBookingId": null
     },
     "41267|2026-08-04|AM": {
-      "statusKey": "public",
-      "listId": "L-41267-2026-08-04-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB013"
+      "recurringBookingId": null
     },
     "41267|2026-08-04|PM": {
       "statusKey": "free",
@@ -7783,16 +7663,14 @@
       "recurringBookingId": null
     },
     "41267|2026-08-11|AM": {
-      "statusKey": "public",
-      "listId": "L-41267-2026-08-11-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB013"
+      "recurringBookingId": null
     },
     "41267|2026-08-11|PM": {
       "statusKey": "free",
@@ -7849,14 +7727,12 @@
       "recurringBookingId": null
     },
     "41267|2026-08-14|AM": {
-      "statusKey": "public",
-      "listId": "L-41267-2026-08-14-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-TAN",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
       "recurringBookingId": null
     },
@@ -8373,14 +8249,12 @@
       "recurringBookingId": "RCB049"
     },
     "43015|2026-07-28|PM": {
-      "statusKey": "public",
-      "listId": "L-43015-2026-07-28-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
       "recurringBookingId": null
     },
@@ -9811,7 +9685,7 @@
       "recurringBookingId": "RCB024"
     },
     "45178|2026-07-15|AM": {
-      "statusKey": "public",
+      "statusKey": "private",
       "listId": "L-45178-2026-07-15-AM",
       "state": "ACTIVE",
       "hospitalId": "H-CPH",
@@ -9869,14 +9743,12 @@
       "recurringBookingId": "RCB026"
     },
     "45178|2026-07-17|PM": {
-      "statusKey": "public",
-      "listId": "L-45178-2026-07-17-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-TAN",
-      "notes": "Acute theatre",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
       "recurringBookingId": null
     },
@@ -10645,16 +10517,14 @@
       "recurringBookingId": null
     },
     "46822|2026-07-13|AM": {
-      "statusKey": "public",
-      "listId": "L-46822-2026-07-13-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB034"
+      "recurringBookingId": null
     },
     "46822|2026-07-13|PM": {
       "statusKey": "free",
@@ -10789,7 +10659,7 @@
       "recurringBookingId": null
     },
     "46822|2026-07-20|AM": {
-      "statusKey": "public",
+      "statusKey": "private",
       "listId": "L-46822-2026-07-20-AM",
       "state": "ACTIVE",
       "hospitalId": "H-CPH",
@@ -10798,7 +10668,7 @@
       "startTime": "07:30",
       "endTime": "12:30",
       "conflicts": [],
-      "recurringBookingId": "RCB034"
+      "recurringBookingId": null
     },
     "46822|2026-07-20|PM": {
       "statusKey": "unavailable",
@@ -10942,16 +10812,14 @@
       "recurringBookingId": null
     },
     "46822|2026-07-27|AM": {
-      "statusKey": "public",
-      "listId": "L-46822-2026-07-27-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB034"
+      "recurringBookingId": null
     },
     "46822|2026-07-27|PM": {
       "statusKey": "free",
@@ -11086,16 +10954,14 @@
       "recurringBookingId": null
     },
     "46822|2026-08-03|AM": {
-      "statusKey": "public",
-      "listId": "L-46822-2026-08-03-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB034"
+      "recurringBookingId": null
     },
     "46822|2026-08-03|PM": {
       "statusKey": "free",
@@ -11148,14 +11014,12 @@
       "recurringBookingId": null
     },
     "46822|2026-08-06|AM": {
-      "statusKey": "public",
-      "listId": "L-46822-2026-08-06-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
       "recurringBookingId": null
     },
@@ -11230,16 +11094,14 @@
       "recurringBookingId": null
     },
     "46822|2026-08-10|AM": {
-      "statusKey": "public",
-      "listId": "L-46822-2026-08-10-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB034"
+      "recurringBookingId": null
     },
     "46822|2026-08-10|PM": {
       "statusKey": "free",
@@ -11600,14 +11462,12 @@
       "recurringBookingId": null
     },
     "47733|2026-07-17|PM": {
-      "statusKey": "public",
-      "listId": "L-47733-2026-07-17-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-TAN",
-      "notes": "Acute theatre",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
       "recurringBookingId": null
     },
@@ -11832,14 +11692,12 @@
       "recurringBookingId": "RCB046"
     },
     "47733|2026-07-28|PM": {
-      "statusKey": "public",
-      "listId": "L-47733-2026-07-28-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
       "recurringBookingId": null
     },
@@ -13605,16 +13463,14 @@
       "recurringBookingId": null
     },
     "27731|2026-11-16|PM": {
-      "statusKey": "public",
-      "listId": "L-27731-2026-11-16-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB031"
+      "recurringBookingId": null
     },
     "27731|2026-11-17|AM": {
       "statusKey": "preop",
@@ -14109,16 +13965,14 @@
       "recurringBookingId": null
     },
     "34821|2026-11-19|AM": {
-      "statusKey": "public",
-      "listId": "L-34821-2026-11-19-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB006"
+      "recurringBookingId": null
     },
     "34821|2026-11-19|PM": {
       "statusKey": "preop",
@@ -14213,16 +14067,14 @@
       "recurringBookingId": null
     },
     "36208|2026-11-17|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-11-17-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB040"
+      "recurringBookingId": null
     },
     "36208|2026-11-17|PM": {
       "statusKey": "preop",
@@ -14257,16 +14109,14 @@
       "recurringBookingId": null
     },
     "36208|2026-11-19|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-11-19-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB042"
+      "recurringBookingId": null
     },
     "36208|2026-11-19|PM": {
       "statusKey": "free",
@@ -14279,16 +14129,14 @@
       "recurringBookingId": null
     },
     "36208|2026-11-20|AM": {
-      "statusKey": "public",
-      "listId": "L-36208-2026-11-20-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB043"
+      "recurringBookingId": null
     },
     "36208|2026-11-20|PM": {
       "statusKey": "free",
@@ -14361,16 +14209,14 @@
       "recurringBookingId": null
     },
     "38455|2026-11-17|AM": {
-      "statusKey": "public",
-      "listId": "L-38455-2026-11-17-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB016"
+      "recurringBookingId": null
     },
     "38455|2026-11-17|PM": {
       "statusKey": "free",
@@ -14507,28 +14353,24 @@
       "recurringBookingId": null
     },
     "39560|2026-11-17|AM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-11-17-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB027"
+      "recurringBookingId": null
     },
     "39560|2026-11-17|PM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-11-17-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB028"
+      "recurringBookingId": null
     },
     "39560|2026-11-18|AM": {
       "statusKey": "free",
@@ -14551,28 +14393,24 @@
       "recurringBookingId": null
     },
     "39560|2026-11-19|AM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-11-19-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB029"
+      "recurringBookingId": null
     },
     "39560|2026-11-19|PM": {
-      "statusKey": "public",
-      "listId": "L-39560-2026-11-19-PM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-PATEL",
-      "notes": "Elective ortho",
-      "startTime": "13:00",
-      "endTime": "17:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB030"
+      "recurringBookingId": null
     },
     "39560|2026-11-20|AM": {
       "statusKey": "free",
@@ -14655,16 +14493,14 @@
       "recurringBookingId": null
     },
     "41267|2026-11-17|AM": {
-      "statusKey": "public",
-      "listId": "L-41267-2026-11-17-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB013"
+      "recurringBookingId": null
     },
     "41267|2026-11-17|PM": {
       "statusKey": "free",
@@ -15221,16 +15057,14 @@
       "recurringBookingId": null
     },
     "46822|2026-11-16|AM": {
-      "statusKey": "public",
-      "listId": "L-46822-2026-11-16-AM",
-      "state": "ACTIVE",
-      "hospitalId": "H-CPH",
-      "surgeonId": "S-OKAFOR",
-      "notes": "Acute theatre",
-      "startTime": "07:30",
-      "endTime": "12:30",
+      "statusKey": "publicHospital",
+      "hospitalId": null,
+      "surgeonId": null,
+      "notes": "CPH",
+      "startTime": null,
+      "endTime": null,
       "conflicts": [],
-      "recurringBookingId": "RCB034"
+      "recurringBookingId": null
     },
     "46822|2026-11-16|PM": {
       "statusKey": "free",

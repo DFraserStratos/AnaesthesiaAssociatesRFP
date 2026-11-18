@@ -197,12 +197,11 @@ describe('edit rights matrix', () => {
     expect(api.getState().schedule.bookings[bookingId]?.notes).toBe('checked with theatre')
   })
 
-  it('integration edit of a SUBMITTED booking is refused as an exception outcome; ACTIVE is allowed', () => {
+  it('no integration branch (catch-up Phase 33): an AUTHORISED List refuses every source, the integration included', () => {
     const api = store()
-    const submittedBooking = firstBookingOf(api, MORRISON_LIST)
-    const refused = editBooking(api, INTEGRATION, submittedBooking, { notes: 'feed update' })
+    const refused = editBooking(api, INTEGRATION, 'HBK08', { notes: 'feed update' })
     expect(refused.ok).toBe(false)
-    if (!refused.ok) expect(refused.code).toBe('integrationImmutable')
+    if (!refused.ok) expect(refused.code).toBe('listAuthorised')
 
     const draftOutcome = editBooking(api, INTEGRATION, ELLISON_BOOKING, { scheduledTime: '16:15' })
     expect(draftOutcome.ok).toBe(true)
@@ -254,12 +253,12 @@ describe('cancelBooking', () => {
     expect(complete.ok).toBe(false)
   })
 
-  it('role/source matrix: office may cancel on SUBMITTED, integration only on ACTIVE, nobody on AUTHORISED', () => {
+  it('role/source matrix: office may cancel on SUBMITTED, nobody on AUTHORISED (no integration branch since catch-up Phase 33)', () => {
     const api = store()
     const submittedBooking = firstBookingOf(api, WHITAKER_LIST)
-    const integrationOnSubmitted = cancelBooking(api, INTEGRATION, submittedBooking, 'S15 cancellation')
-    expect(integrationOnSubmitted.ok).toBe(false)
-    if (!integrationOnSubmitted.ok) expect(integrationOnSubmitted.code).toBe('integrationImmutable')
+    const integrationOnAuthorised = cancelBooking(api, INTEGRATION, 'HBK08', 'S15 cancellation')
+    expect(integrationOnAuthorised.ok).toBe(false)
+    if (!integrationOnAuthorised.ok) expect(integrationOnAuthorised.code).toBe('listAuthorised')
 
     const integrationOnDraft = cancelBooking(api, INTEGRATION, ELLISON_BOOKING, 'S15 cancellation')
     expect(integrationOnDraft.ok).toBe(true)
@@ -298,7 +297,7 @@ describe('reassignBooking', () => {
     expect(auditForEntity(state, ELLISON_BOOKING).at(-1)?.action).toBe('booking.reassign')
   })
 
-  it('office may move a booking onto a SUBMITTED target; integration may not', () => {
+  it('office may move a booking onto a SUBMITTED target; nobody onto an AUTHORISED one', () => {
     const api = store()
     const officeMove = reassignBooking(api, OFFICE, ELLISON_BOOKING, WHITAKER_LIST)
     expect(officeMove.ok).toBe(true)
@@ -306,9 +305,9 @@ describe('reassignBooking', () => {
     const back = reassignBooking(api, OFFICE, ELLISON_BOOKING, SOUTER_PM)
     expect(back.ok).toBe(true)
 
-    const integrationMove = reassignBooking(api, INTEGRATION, ELLISON_BOOKING, WHITAKER_LIST)
+    const integrationMove = reassignBooking(api, INTEGRATION, ELLISON_BOOKING, 'L-HIST-08')
     expect(integrationMove.ok).toBe(false)
-    if (!integrationMove.ok) expect(integrationMove.code).toBe('integrationImmutable')
+    if (!integrationMove.ok) expect(integrationMove.code).toBe('listAuthorised')
   })
 
   it('is rejected when the source or the target list is AUTHORISED', () => {

@@ -1,21 +1,222 @@
 {
   "id": "US-02.1.2",
-  "status": "partial",
-  "absentReason": "No hospital download matching screen. The nearest analogue is the surgeon PDF review: the office picks the target List, and a row whose NHI is already booked on that List updates the existing Booking instead of duplicating it. There is no option to create a new List or to reject a row.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
-      "name": "pdf-row-matching",
+      "name": "as-received",
       "app": "admin",
-      "caption": "Surgeon PDF rows matched to a target List, an existing Booking is updated rather than duplicated",
-      "start": "/admin/integrations",
+      "caption": "Each row shows its procedure text exactly as the hospital sent it",
+      "start": "/admin/matching",
       "states": [
         {
           "steps": [
-            { "click": "role=button[name=\"Surgeon PDFs\"]" },
-            { "click": "role=button[name=\"Open\"] >> nth=0" },
-            { "wait": 500 }
+            {
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_STG]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            }
           ],
-          "highlight": ["[data-shot=pdf-target-list]", "[data-shot=pdf-row-1]"]
+          "highlight": [
+            "[data-shot=matching-received]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "decision",
+      "app": "admin",
+      "caption": "The office decides each row in its panel",
+      "start": "/admin/matching",
+      "states": [
+        {
+          "state": "match",
+          "caption": "Match and apply: the row's ticked changes go to the matched Booking",
+          "steps": [
+            {
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_STG]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot^='matching-row-']:has-text('Diane Foster')"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=matching-decision]"
+          ]
+        },
+        {
+          "state": "create-booking",
+          "caption": "Create a Booking on a List: the List picker, the Procedure as it will land, and Choose Contract",
+          "steps": [
+            {
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_STG]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=matching-stack]",
+            "[data-shot=matching-decision]"
+          ]
+        },
+        {
+          "state": "create-list",
+          "caption": "Create a List in a free anaesthetist's session, holding the row's Booking",
+          "steps": [
+            {
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_STG]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-decision=createList]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=matching-decision]"
+          ]
+        },
+        {
+          "state": "create-draft",
+          "caption": "Create a Draft List that holds the row's Booking until the office assigns an anaesthetist",
+          "steps": [
+            {
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_STG]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-decision=createDraft]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=matching-decision]"
+          ]
+        },
+        {
+          "state": "reject",
+          "caption": "Reject: nothing is created or changed, and a reason is required",
+          "steps": [
+            {
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_STG]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-decision=reject]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=matching-decision]",
+            "[data-shot=matching-apply]"
+          ]
         }
       ]
     }

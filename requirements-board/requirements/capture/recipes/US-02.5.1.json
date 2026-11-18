@@ -1,51 +1,54 @@
 {
   "id": "US-02.5.1",
-  "status": "captured",
-  "absentReason": "",
+  "status": "partial",
+  "absentReason": "Automated application from an integration is Future Work (US-14.6.2). In the first release the office applies a hospital modification on the matching screen, shown here.",
   "shots": [
     {
-      "name": "inbound-message",
-      "app": "simulator",
-      "caption": "Inbound modification applied to an existing Booking",
-      "start": "/demo/integrations",
+      "name": "hospital-row",
+      "app": "admin",
+      "caption": "A hospital modification waits on the matching screen",
+      "start": "/admin/matching",
       "states": [
         {
           "state": "received",
-          "caption": "Hospital modification message received (new time and a booking office note)",
+          "caption": "Diane Foster's modification row: a new time, the hospital's text and a booking office note",
           "steps": [
             {
-              "click": "[data-testid=integration-library] >> text=\"S14 · Modification\""
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_STG]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot^='matching-row-']:has-text('Diane Foster')"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
             },
             {
               "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=integrations-raw-hl7]"
-          ]
-        },
-        {
-          "state": "applied",
-          "caption": "Modification applied to the existing Booking",
-          "steps": [
-            {
-              "click": "[data-testid=integration-library] >> text=\"S14 · Modification\""
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-shot=integrations-replay]"
-            },
-            {
-              "wait": 1500
-            },
-            {
-              "scroll": "[data-shot=integrations-schedule-change]"
-            }
-          ],
-          "highlight": [
-            "[data-shot=integrations-schedule-change]"
+            "[data-shot=matching-diff]"
           ]
         }
       ]
@@ -53,23 +56,53 @@
     {
       "name": "card-history",
       "app": "admin",
-      "caption": "Booking history records who changed the Booking, when, and what changed",
+      "caption": "Once the office applies the row, the Booking's History records the hospital row applied and the text it replaced",
       "start": "/admin/day/2026-08-04/bookings/BK0043",
       "setup": [
         {
-          "goto": "/demo/integrations"
+          "goto": "/admin/matching"
         },
         {
-          "click": "[data-testid=integration-library] >> text=\"S14 · Modification\""
+          "click": "[data-shot=matching-import-open]"
+        },
+        {
+          "wait": "[data-shot=matching-import]"
+        },
+        {
+          "click": "[data-sample-id=SAMPLE_STG]"
+        },
+        {
+          "click": "[data-shot=matching-import-confirm]"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
         },
         {
           "wait": 400
         },
         {
-          "click": "[data-shot=integrations-replay]"
+          "press": "Escape"
         },
         {
-          "wait": 1500
+          "wait": 400
+        },
+        {
+          "click": "[data-shot^='matching-row-']:has-text('Diane Foster')"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=matching-apply]"
+        },
+        {
+          "wait": "[data-shot=matching-banner]"
+        },
+        {
+          "wait": 300
         }
       ],
       "states": [

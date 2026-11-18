@@ -5,8 +5,8 @@
  * ACTIVE → SUBMITTED → AUTHORISED is strictly ordered; AUTHORISED locks
  * Bookings immutable; there is NO Returned transition anywhere. UI can never
  * bypass a guard — every guard returns an `Outcome` (refusals as data;
- * Phase 11's monitor turns integration refusals into manual-intervention
- * items).
+ * the matching screen shows a refused decision's reason, catch-up Phase 33);
+ * no step of a refused decision is kept.
  *
  * The edit window (US-07.2.1, US-07.2.3, FT-07.2):
  *   - anaesthetist: edits their own ACTIVE and SUBMITTED Lists' Bookings until
@@ -67,15 +67,8 @@ export function editRefusal(actor: Actor, list: List): Outcome<never> | null {
   if (list.state === 'AUTHORISED') {
     return refuse('listAuthorised', 'This List is authorised and its Bookings are locked. No edits are possible.')
   }
-  if (actor.source === 'integration') {
-    if (list.state !== 'ACTIVE') {
-      return refuse(
-        'integrationImmutable',
-        'An integration update cannot change a submitted List. This message needs manual intervention.',
-      )
-    }
-    return null
-  }
+  // No integration branch (catch-up Phase 33): an integration never writes a Booking; it stages
+  // rows on the matching screen, and an approved row applies as the office, until AUTHORISED (US-02.5.4).
   if (actor.role === 'anaesthetist') {
     // A Draft List is the office's (FT-01.6; OQ-86 answered no): no anaesthetist adds or edits a Booking on one.
     if (list.state === 'DRAFT') return refuse('notOwnList', 'Anaesthetists can only change Bookings on their own Lists.')
@@ -809,14 +802,7 @@ export function reassignBooking(api: AppStoreApi, actor: Actor, bookingId: strin
   if (source.state === 'AUTHORISED' || target.state === 'AUTHORISED') {
     return refuse('listAuthorised', 'Bookings on an authorised List are locked; an authorised List cannot receive Bookings.')
   }
-  if (actor.source === 'integration') {
-    if (source.state !== 'ACTIVE' || target.state !== 'ACTIVE') {
-      return refuse(
-        'integrationImmutable',
-        'An integration update can only move a Booking between active Lists. This message needs manual intervention.',
-      )
-    }
-  } else if (actor.role === 'anaesthetist') {
+  if (actor.role === 'anaesthetist') {
     if (actor.anaesthetistId !== undefined && actor.anaesthetistId !== source.anaesthetistId) {
       return refuse('notOwnList', 'Anaesthetists can only move Bookings between their own Lists.')
     }

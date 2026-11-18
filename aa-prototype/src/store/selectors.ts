@@ -1360,6 +1360,8 @@ export interface EntityCounts {
   bookings: number
   procedures: number
   billingLines: number
+  importBatches: number
+  importRows: number
   audit: number
 }
 
@@ -1383,6 +1385,8 @@ export function entityCounts(state: AppState): EntityCounts {
     bookings: Object.keys(state.schedule.bookings).length,
     procedures: Object.keys(state.schedule.procedures).length,
     billingLines: Object.keys(state.schedule.billingLines).length,
+    importBatches: Object.keys(state.intake.batches).length,
+    importRows: Object.keys(state.intake.rows).length,
     audit: state.audit.length,
   }
 }
@@ -1442,20 +1446,21 @@ export interface IntegrationMonitorRow {
   displayStatus: string
   attempts: number
   failureReason?: string
-  resultBookingId?: string
+  /** The matching-screen row the message staged (catch-up Phase 33). */
+  resultImportRowId?: string
   atISO: string
 }
 
 function displayStatusFor(m: IntegrationMessage): string {
   switch (m.status) {
     case 'processed':
+      // A parsed message waits on the matching screen for the office (catch-up Phase 33; RV-13).
+      if (m.resultImportRowId !== undefined) return m.attempts > 1 ? 'Retried, sent to matching' : 'Sent to matching'
       return m.attempts > 1 ? 'Retried' : 'Processed'
     case 'duplicate':
       return 'Duplicate'
     case 'deadLetter':
       return 'Dead-letter'
-    case 'manualIntervention':
-      return 'Manual intervention'
     case 'retrying':
       return 'Retrying'
     case 'pending':
@@ -1481,17 +1486,15 @@ export function integrationMonitor(state: Pick<AppState, 'integrations'>): Integ
       if (m.correlationRef !== undefined) row.appointmentId = m.correlationRef.externalAppointmentId
       if (m.patientRef !== undefined) row.patientRef = m.patientRef
       if (m.failureReason !== undefined) row.failureReason = m.failureReason
-      if (m.resultBookingId !== undefined) row.resultBookingId = m.resultBookingId
+      if (m.resultImportRowId !== undefined) row.resultImportRowId = m.resultImportRowId
       return row
     })
     .sort((a, b) => b.atISO.localeCompare(a.atISO) || b.id.localeCompare(a.id))
 }
 
-/** Messages needing office attention (the amber nav badge): dead-letter + manual intervention. */
+/** Messages needing office attention (the amber nav badge): dead-letter only (catch-up Phase 33: nothing parks). */
 export function integrationAttentionCount(state: Pick<AppState, 'integrations'>): number {
-  return Object.values(state.integrations.messages).filter(
-    (m) => m.status === 'deadLetter' || m.status === 'manualIntervention',
-  ).length
+  return Object.values(state.integrations.messages).filter((m) => m.status === 'deadLetter').length
 }
 
 export interface DataQualityItem {

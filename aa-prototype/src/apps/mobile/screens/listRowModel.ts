@@ -2,7 +2,7 @@
  * One List's row on the phone's Lists tab (catch-up Phase 38a): the title,
  * subtitle, right-hand progress and quietness, built once so the main view and
  * the day view read the same List the same way (a pre-op List counts
- * appointments; a public List keeps its template label).
+ * appointments; a pre-op List keeps its template label).
  */
 
 import type { AssignedList, Booking, Hospital, Surgeon } from '../../../domain/types'
@@ -20,8 +20,8 @@ export interface ListRowModel {
 }
 
 function surgeonLine(l: AssignedList, surgeons: Readonly<Record<string, Surgeon>>, specialties: Readonly<Record<string, Specialty>>): string {
-  // A public List keeps its template label ("Acute theatre"); a private one names its surgeon.
-  const surgeon = l.kind !== 'private' && l.notes !== undefined ? undefined : surgeons[l.surgeonId]
+  // A pre-op List keeps its template label; a private one names its surgeon.
+  const surgeon = l.kind === 'preop' && l.notes !== undefined ? undefined : surgeons[l.surgeonId]
   if (surgeon !== undefined) return [surgeon.name, surgeonSpecialtyLabel({ specialties }, surgeon)].filter((p) => p !== '').join(' · ')
   return l.notes ?? ''
 }

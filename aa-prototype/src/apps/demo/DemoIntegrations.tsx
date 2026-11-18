@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Info, Play, Radio, RotateCcw, RotateCw } from 'lucide-react'
 import { useDemoTriggerContext } from '../../shared/demoTriggers'
 import { DemoSurface } from './DemoSurface'
-import { processMessage, resetDemo, useAppStore } from '../../store'
+import { assessImportRow, matchingView, processMessage, resetDemo, useAppStore } from '../../store'
+import { CHANGE_TYPE_LABELS, suggestionText } from '../../domain/intake'
 import { neutral, accent, radius, semantic } from '../../theme/tokens'
 import {
   CANNED_MESSAGES,
@@ -16,7 +17,6 @@ import {
   type ParsedMessage,
 } from '../../domain/integrations'
 import { ANAE } from '../../domain/seed'
-import { sessionText } from '../../domain/outOfHours'
 
 const FEED_ORDER = [FEED.stg, FEED.cph, FEED.sx]
 
@@ -37,10 +37,10 @@ const FEED_ORDER = [FEED.stg, FEED.cph, FEED.sx]
 export function DemoIntegrations() {
   const feeds = useAppStore((s) => s.integrations.feeds)
   const messages = useAppStore((s) => s.integrations.messages)
-  const bookings = useAppStore((s) => s.schedule.bookings)
-  const lists = useAppStore((s) => s.schedule.lists)
-  const patients = useAppStore((s) => s.masters.patients)
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
+  const masters = useAppStore((s) => s.masters)
+  const schedule = useAppStore((s) => s.schedule)
+  const intake = useAppStore((s) => s.intake)
 
   const [feedId, setFeedId] = useState<string>(FEED.stg)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -107,7 +107,15 @@ export function DemoIntegrations() {
       .sort((a, b) => (b.updatedAtISO ?? '').localeCompare(a.updatedAtISO ?? ''))[0]
   }, [messages, selected])
 
-  const resultBooking = row?.resultBookingId !== undefined ? bookings[row.resultBookingId] : undefined
+  // The row the message staged on the matching screen (catch-up Phase 33; RV-13: nothing is applied by itself).
+  const staged = useMemo(() => {
+    const rowId = row?.resultImportRowId
+    if (rowId === undefined || intake.rows[rowId] === undefined) return undefined
+    const state = { masters, schedule, intake }
+    const assessment = assessImportRow(state, rowId)
+    if (assessment === undefined) return undefined
+    return { row: intake.rows[rowId]!, assessment, suggestion: suggestionText(matchingView(state), assessment) }
+  }, [row, intake, masters, schedule])
 
   function replay() {
     if (selected === undefined) return
@@ -257,14 +265,19 @@ export function DemoIntegrations() {
               <Pane shot="integrations-fhir" title={selected.transport === 'fhir' ? 'FHIR R4 · Native source' : '2 · Translated FHIR R4'}>
                 <pre style={codeBlock}>{fhirJson}</pre>
               </Pane>
-              <Pane shot="integrations-schedule-change" title={selected.transport === 'fhir' ? 'Schedule change' : '3 · Schedule change'}>
+              <Pane shot="integrations-schedule-change" title={selected.transport === 'fhir' ? 'Sent to matching' : '3 · Sent to matching'}>
                 <EffectView
                   status={row?.status}
-                  displayLabel={row !== undefined ? statusSentence(row.status, row.attempts) : undefined}
+                  displayLabel={row !== undefined ? statusSentence(row.status, row.attempts, row.resultImportRowId !== undefined) : undefined}
                   failureReason={row?.failureReason}
-                  bookingLabel={
-                    resultBooking !== undefined
-                      ? bookingEffectLabel(resultBooking.id, resultBooking.patientId, resultBooking.listId, patients, lists, anaesthetists)
+                  staged={
+                    staged !== undefined
+                      ? {
+                          rowId: staged.row.id,
+                          changeType: CHANGE_TYPE_LABELS[staged.assessment.changeType],
+                          suggestion: staged.suggestion,
+                          wording: staged.row.incoming.procedure?.text,
+                        }
                       : undefined
                   }
                 />
@@ -477,29 +490,35 @@ function EffectView({
   status,
   displayLabel,
   failureReason,
-  bookingLabel,
+  staged,
 }: {
   status?: string
   displayLabel?: string
   failureReason?: string
-  bookingLabel?: string
+  staged?: { rowId: string; changeType: string; suggestion: string; wording?: string }
 }) {
   if (status === undefined) {
-    return <div style={{ fontSize: 12.5, color: neutral.mist, padding: '4px 0' }}>Not replayed yet. Click Replay to apply this message.</div>
+    return <div style={{ fontSize: 12.5, color: neutral.mist, padding: '4px 0' }}>Not replayed yet. Click Replay to send this message to matching.</div>
   }
   const tone: 'ok' | 'warn' | 'err' | 'muted' =
-    status === 'processed' ? 'ok' : status === 'deadLetter' ? 'err' : status === 'manualIntervention' || status === 'retrying' ? 'warn' : 'muted'
+    status === 'processed' ? 'ok' : status === 'deadLetter' ? 'err' : status === 'retrying' ? 'warn' : 'muted'
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <StatusPill label={displayLabel ?? status} tone={tone} />
-      {bookingLabel !== undefined && (
-        <div style={{ fontSize: 12.5, color: neutral.ink, background: neutral.sunken, borderRadius: radius.ctl, padding: '8px 10px' }}>{bookingLabel}</div>
+      {staged !== undefined && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12.5, color: neutral.ink, background: neutral.sunken, borderRadius: radius.ctl, padding: '8px 10px' }}>
+          <span>
+            <strong>{staged.changeType}</strong> · row <span className="mono">{staged.rowId}</span>
+          </span>
+          <span>Suggested: {staged.suggestion}</span>
+          <span className="mono" style={{ color: neutral.slate }}>{staged.wording !== undefined ? `"${staged.wording}"` : 'No wording supplied'}</span>
+        </div>
       )}
       {failureReason !== undefined && status !== 'processed' && (
         <div style={{ fontSize: 12, color: tone === 'err' ? semantic.error.onTint : semantic.warning.onTint }}>{failureReason}</div>
       )}
       {status === 'processed' && (
-        <div style={{ fontSize: 11.5, color: neutral.mist }}>Open the Anaesthetist Mobile App to see it live on the list.</div>
+        <div style={{ fontSize: 11.5, color: neutral.mist }}>Nothing is applied automatically. Open Admin, Matching to decide.</div>
       )}
     </div>
   )
@@ -544,27 +563,26 @@ function Callout({ tone, title, children }: { tone: 'warn' | 'info'; title: stri
 
 function statusLabelFor(
   controlId: string,
-  messages: Record<string, { messageControlId: string; status: string; attempts: number; updatedAtISO?: string }>,
+  messages: Record<string, { messageControlId: string; status: string; attempts: number; updatedAtISO?: string; resultImportRowId?: string }>,
 ): { label: string; tone: 'ok' | 'warn' | 'err' | 'muted' } | undefined {
   const row = Object.values(messages)
     .filter((m) => m.messageControlId === controlId)
     .sort((a, b) => (b.updatedAtISO ?? '').localeCompare(a.updatedAtISO ?? ''))[0]
   if (row === undefined) return undefined
   const tone: 'ok' | 'warn' | 'err' | 'muted' =
-    row.status === 'processed' ? 'ok' : row.status === 'deadLetter' ? 'err' : row.status === 'manualIntervention' || row.status === 'retrying' ? 'warn' : 'muted'
-  return { label: statusSentence(row.status, row.attempts), tone }
+    row.status === 'processed' ? 'ok' : row.status === 'deadLetter' ? 'err' : row.status === 'retrying' ? 'warn' : 'muted'
+  return { label: statusSentence(row.status, row.attempts, row.resultImportRowId !== undefined), tone }
 }
 
-function statusSentence(status: string, attempts: number): string {
+function statusSentence(status: string, attempts: number, sentToMatching = false): string {
   switch (status) {
     case 'processed':
+      if (sentToMatching) return attempts > 1 ? `Retried · sent to matching (attempt ${attempts})` : 'Sent to matching'
       return attempts > 1 ? `Retried · processed (attempt ${attempts})` : 'Processed'
     case 'retrying':
       return `Retrying (attempt ${attempts})`
     case 'deadLetter':
       return `Dead-letter after ${attempts} attempts`
-    case 'manualIntervention':
-      return 'Manual intervention'
     case 'duplicate':
       return 'Duplicate (deduped)'
     default:
@@ -572,17 +590,3 @@ function statusSentence(status: string, attempts: number): string {
   }
 }
 
-function bookingEffectLabel(
-  bookingId: string,
-  patientId: string,
-  listId: string,
-  patients: Record<string, { name: string }>,
-  lists: Record<string, { anaesthetistId?: string; dateISO: string; session: string }>,
-  anaesthetists: Record<string, { name: string }>,
-): string {
-  const patient = patients[patientId]?.name ?? patientId
-  const list = lists[listId]
-  const who = list?.anaesthetistId !== undefined ? anaesthetists[list.anaesthetistId]?.name ?? list.anaesthetistId : ''
-  const when = list !== undefined ? `${list.dateISO} ${sessionText(list.session)}` : ''
-  return `Booking ${bookingId} · ${patient} · ${who} ${when}`.trim()
-}

@@ -36,6 +36,8 @@ import { fieldLabel } from './fieldLabels'
 import { PAIRING_LABELS, isPriorityTier, tierLabel } from '../../domain/pairingPreferences'
 import { sessionText } from '../../domain/outOfHours'
 import { maskBankAccount } from '../../domain/bankAccount'
+import type { ChangeType, ImportChannel, ImportDecision, IncomingFieldKey } from '../../domain/types'
+import { CHANGE_TYPE_LABELS, DECISION_KIND_LABELS, IMPORT_CHANNEL_LABELS, INCOMING_FIELD_LABELS } from '../../domain/intake/matching'
 
 /** A key present in the patch but holding no value. */
 export const NOT_SET = 'not set'
@@ -210,6 +212,9 @@ export function formatAuditValue(key: string, value: unknown, names?: AuditNames
     if (DATE_ONLY.test(value)) return format(parseISO(value), 'd MMM yyyy')
     // A session reads AM, PM or Out-of-hours (catch-up Phase 32c).
     if (key === 'session' || key === 'sessions') return sessionText(value)
+    // The matching screen's words (catch-up Phase 33).
+    if (key === 'changeType' && Object.hasOwn(CHANGE_TYPE_LABELS, value)) return CHANGE_TYPE_LABELS[value as ChangeType]
+    if (key === 'channel' && Object.hasOwn(IMPORT_CHANNEL_LABELS, value)) return IMPORT_CHANNEL_LABELS[value as ImportChannel]
     if (key === 'source' && Object.hasOwn(BOOKING_SOURCE_LABELS, value)) return BOOKING_SOURCE_LABELS[value as BookingSource]
     if (key === 'source' && Object.hasOwn(SOURCE_LABELS, value)) return SOURCE_LABELS[value as RequestSource]
     if (key === 'origin' && Object.hasOwn(ORIGIN_LABELS, value)) return ORIGIN_LABELS[value as DraftOrigin]
@@ -236,10 +241,19 @@ export function formatAuditValue(key: string, value: unknown, names?: AuditNames
   }
   if (Array.isArray(value)) {
     if (value.length === 0) return 'none'
+    // A hospital row's fields by name (catch-up Phase 33): "time, procedure as received, note".
+    if ((key === 'fields' || key === 'fieldsApplied') && value.every((item) => typeof item === 'string' && Object.hasOwn(INCOMING_FIELD_LABELS, item))) {
+      return value.map((item) => INCOMING_FIELD_LABELS[item as IncomingFieldKey].toLowerCase()).join(', ')
+    }
     if (value.every((item) => typeof item === 'string')) return value.join(', ')
     return value.length === 1 ? '1 item' : `${value.length} items`
   }
   if (isRecord(value)) {
+    // A hospital row's decision (catch-up Phase 33): "Match and apply", "Create a Booking", "Reject: Not an AA booking".
+    if (key === 'decision' && typeof value.kind === 'string' && Object.hasOwn(DECISION_KIND_LABELS, value.kind)) {
+      const label = DECISION_KIND_LABELS[value.kind as ImportDecision['kind']]
+      return value.kind === 'reject' && typeof value.reason === 'string' ? `${label}: ${value.reason}` : label
+    }
     // A fee split (catch-up Phase 22; US-08.2.3): "I-NIB $132.50, Patient PT0004 the rest".
     if (key === 'split' && Array.isArray(value.shares)) {
       return value.shares

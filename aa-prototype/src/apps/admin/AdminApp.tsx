@@ -7,6 +7,7 @@ import {
   billingAttentionCount,
   integrationAttentionCount,
   isOpenSlotView,
+  matchingAttentionCount,
   openConflictCount,
   openWarnings,
   bookingCountsByList,
@@ -43,6 +44,7 @@ function sectionForPath(pathname: string): NavSection {
   const head = pathname.replace(/^\/admin\/?/, '').split('/')[0]
   if (head === 'draft-lists') return 'draftLists'
   if (head === 'notifications') return 'notifications'
+  if (head === 'matching') return 'matching'
   switch (head) {
     case 'conflicts':
     case 'review':
@@ -182,6 +184,9 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   // Active notices (catch-up Phase 32b; US-13.8.1 "Count"): the same count as the rail card and the page.
   const notificationsRecord = useAppStore((s) => s.notifications)
   const notificationBadge = useMemo(() => activeNotificationCount({ notifications: notificationsRecord }), [notificationsRecord])
+  // Open rows on Matching (catch-up Phase 33): the amber badge.
+  const intake = useAppStore((s) => s.intake)
+  const matchingBadge = useMemo(() => matchingAttentionCount({ intake }), [intake])
 
   // The header line counts Lists as sessions and open sessions as free, read
   // from the same views the grid paints (no second derivation), and the day's
@@ -280,6 +285,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
 
   const SECTION_PATH: Record<NavSection, string> = {
     day: `/admin/day/${selectedDate}${sortMode === 'az' ? '?sort=az' : ''}`,
+    matching: '/admin/matching',
     draftLists: '/admin/draft-lists',
     conflicts: '/admin/conflicts',
     notifications: '/admin/notifications',
@@ -301,6 +307,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         conflictBadge={conflictCount}
         draftListBadge={draftListBadge}
         notificationBadge={notificationBadge}
+        matchingBadge={matchingBadge}
         onNavigate={(next) => navigate(SECTION_PATH[next])}
       />
 

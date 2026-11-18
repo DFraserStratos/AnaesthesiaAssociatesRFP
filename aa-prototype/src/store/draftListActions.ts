@@ -99,7 +99,7 @@ export function createDraftList(
   const day = dayRefusal(state, input.dateISO, input.session)
   if (day !== null) return day
   const kind = input.kind ?? 'private'
-  if (!(LIST_KINDS as readonly string[]).includes(kind)) return refuse('invalidKind', 'Choose private, public or pre-op.')
+  if (!(LIST_KINDS as readonly string[]).includes(kind)) return refuse('invalidKind', 'Choose private or pre-op.')
   if (origin === 'request' && (input.source === undefined || !REQUEST_SOURCES.includes(input.source))) {
     return refuse('sourceRequired', 'Choose how the request came in.')
   }

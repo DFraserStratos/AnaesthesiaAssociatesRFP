@@ -51,4 +51,15 @@ describe('Notice', () => {
     render(<Notice tone="neutral" action={<button type="button">Resolve</button>}>Alert from Dr Chen</Notice>)
     expect(screen.getByRole('button', { name: 'Resolve' })).toBeInTheDocument()
   })
+
+  it('enter fades the note in; without it there is no animation', () => {
+    render(
+      <>
+        <Notice tone="success" shot="in" enter live="status">Applied</Notice>
+        <Notice tone="success" shot="still">Applied</Notice>
+      </>,
+    )
+    expect((document.querySelector('[data-shot="in"]') as HTMLElement).style.animation).toContain('aa-fade-in')
+    expect((document.querySelector('[data-shot="still"]') as HTMLElement).style.animation).toBe('')
+  })
 })

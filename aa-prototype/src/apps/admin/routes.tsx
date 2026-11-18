@@ -22,6 +22,7 @@ import { ReviewQueue } from './screens/ReviewQueue'
 import { ConflictsScreen } from './screens/ConflictsScreen'
 import { DraftListsScreen } from './screens/DraftListsScreen'
 import { NotificationsScreen } from './screens/NotificationsScreen'
+import { MatchingScreen } from './screens/MatchingScreen'
 import { ReviewScreen } from './screens/ReviewScreen'
 import { useAdminOutlet, type AdminOutletContext } from './outlet'
 import { dayWithYear } from '../../shared/format'
@@ -275,6 +276,17 @@ function openNotificationTarget(
   if (target.kind === 'list') ctx.onOpenList(target.listId)
   else if (target.kind === 'draftList') ctx.onOpenDraftList(target.listId)
   else if (target.kind === 'booking') openBooking(target.dateISO, target.bookingId)
+}
+
+/**
+ * Matching (catch-up Phase 33; US-02.1.1 to US-02.1.4) — `/admin/matching`. A
+ * link may pass `{ selectRowId }` in router state to open that row (the Admin
+ * Booking's "From hospital row").
+ */
+export function AdminMatchingRoute() {
+  const { actor, todayISO } = useAdminOutlet()
+  const navigate = useNavigate()
+  return <MatchingScreen actor={actor} todayISO={todayISO} onOpenBooking={(d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`)} />
 }
 
 /** The shared notification pool (catch-up Phase 32; US-13.8.1, US-13.8.3) — `/admin/notifications` (`?page=`, `?resolved=1`). */

@@ -44,10 +44,9 @@ const DAYS: { value: number; label: string }[] = [
   { value: 0, label: 'Sunday' },
 ]
 
-/** A recurring booking projects a private, public or pre-op List (catch-up Phase 28: free and leave are session statuses, never a recurring booking). */
+/** A recurring booking projects a private or pre-op List (catch-up Phase 28: free and leave are session statuses, never a recurring booking; since Phase 32d Public is a status too, set on the calendar). */
 const KINDS: { value: ListKind; label: string }[] = [
   { value: 'private', label: 'Private' },
-  { value: 'public', label: 'Public' },
   { value: 'preop', label: 'Pre-op' },
 ]
 

@@ -1,27 +1,27 @@
 /**
  * Integration processing (Phase 11) — the store side of the HL7/FHIR + PDF
- * story. Pure translation lives in `domain/integrations`; this module APPLIES a
- * parsed message to the schedule through the SAME audited write-paths the manual
- * app uses (`createBooking`/`editBooking`/`reassignBooking`/`cancelBooking`, patients via
- * `upsertPatient`), always with an `source:'integration'` actor. That is what
- * makes the lifecycle source guard, the validators and `upsertPatient`'s
- * ethnicity quarantine load-bearing here — no integration-specific domain maths.
+ * story. Pure translation lives in `domain/integrations`. Since catch-up Phase
+ * 33 a parsed message changes nothing by itself (RV-13; US-02.1.5 "No silent
+ * apply"): it stages one row on the matching screen (`stageImportRows`,
+ * channel `feedMessage`) and the office decides it there. The canned S13 to
+ * S15 messages, Future Work as an automated path (US-02.5.1 to US-02.5.3),
+ * become rows like any other; a day move arrives as a New row for the new day
+ * (D62).
  *
- * Correlation keys do two jobs: MSH-10 dedupes MESSAGES (a replay is a no-op,
- * logged `duplicate`); the SCH-2 appointment id correlates APPOINTMENTS
- * (S13/S14/S15 locate their Booking by `{sourceFeedId, externalAppointmentId}`).
+ * MSH-10 still dedupes MESSAGES (a replay is a no-op, logged `duplicate`).
+ * The SCH-2 appointment id travels on the row as its correlation ref, never a
+ * match key.
  *
  * Reliability: `MAX_ATTEMPTS` retries. A transient fault fails once then
- * succeeds; a deterministic fault (a bad NHI under a wrong mapping) fails every
- * time and exhausts the budget into `deadLetter`; a locked target (a
- * non-ACTIVE List) or an unmatched appointment parks as `manualIntervention`.
+ * succeeds; a deterministic fault (an invalid NHI under a wrong mapping) fails
+ * every time and exhausts the budget into `deadLetter`. Nothing parks: every
+ * applicable message now waits for a decision on the matching screen.
  * "Retried" is a derived display label (processed with attempts > 1), never a
  * stored status. Tests drive `processMessage`/`retryMessage` synchronously; the
  * UI wires a short-timer auto-retry (`wireIntegrationRetry`).
  */
 
-import type { IntegrationMessage, Session } from '../domain/types'
-import { effectiveSlotTimes, slotIdFor } from '../domain/slots'
+import type { IncomingBookingFields, IntegrationFeed, IntegrationMessage } from '../domain/types'
 import { validateEthnicityCode } from '../domain/nzhis'
 import { validateNhi } from '../domain/nhi'
 import {
@@ -35,12 +35,12 @@ import {
   type SurgeonPdf,
 } from '../domain/integrations'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
-import type { AppState, AppStoreApi, BoundAppStore } from './appStore'
+import type { AppStoreApi, BoundAppStore } from './appStore'
 import { createBooking } from './bookingActions'
-import { pairingRefusal } from './slotActions'
-import { cancelBooking, editBooking, reassignBooking, type BookingPatch } from './lifecycle'
+import { editBooking } from './lifecycle'
 import { replaceProcedureText } from './procedureTextActions'
-import { bookingsOnListByNhi, findBookingByCorrelation, listInSlot, proceduresForBooking, slotFor } from './selectors'
+import { stageImportRows } from './matchingActions'
+import { bookingsOnListByNhi, listInSlot, proceduresForBooking, slotFor } from './selectors'
 
 export const MAX_ATTEMPTS = 3
 
@@ -66,17 +66,6 @@ function timeToSession(time: string | undefined): 'AM' | 'PM' {
   return Number.isFinite(hour) && hour >= 12 ? 'PM' : 'AM'
 }
 
-/**
- * The session a booked time falls in for an anaesthetist on a day: AM or PM
- * by the hour, or their opened out-of-hours session when the time is at or
- * after its start (catch-up Phase 32c).
- */
-function sessionForTime(state: AppState, anaesthetistId: string, dateISO: string, time: string | undefined): Session {
-  const evening = state.schedule.slots[slotIdFor(anaesthetistId, dateISO, 'OOH')]
-  if (evening !== undefined && time !== undefined && time >= effectiveSlotTimes(evening, state.appSettings.schedule).startTime) return 'OOH'
-  return timeToSession(time)
-}
-
 // ---------------------------------------------------------------------------
 // Message-log row writers
 // ---------------------------------------------------------------------------
@@ -86,7 +75,6 @@ interface RowInit {
   attempts: number
   failureReason?: string
   patientRef?: string
-  resultBookingId?: string
 }
 
 function createMessageRow(api: AppStoreApi, actor: Actor, canned: CannedMessage, init: RowInit): string {
@@ -109,7 +97,6 @@ function createMessageRow(api: AppStoreApi, actor: Actor, canned: CannedMessage,
     }
     if (init.failureReason !== undefined) row.failureReason = init.failureReason
     if (init.patientRef !== undefined) row.patientRef = init.patientRef
-    if (init.resultBookingId !== undefined) row.resultBookingId = init.resultBookingId
     metas.push({
       entityType: 'integrationMessage',
       entityId: id,
@@ -156,152 +143,57 @@ function updateMessageRow(
 }
 
 // ---------------------------------------------------------------------------
-// Effect application (routes a parsed message to the audited write-paths)
+// Staging a parsed message as a matching-screen row (catch-up Phase 33; RV-13)
 // ---------------------------------------------------------------------------
 
-function hospitalNameOf(api: AppStoreApi, hospitalId: string | undefined): string | undefined {
-  return hospitalId !== undefined ? api.getState().masters.hospitals[hospitalId]?.name : undefined
-}
-
 /**
- * A modify message's text (S13, S14): when it differs from the Booking's
- * first Procedure's, the hospital's replaces it through `replaceProcedureText`
- * (the held text goes to the change history); an identical text, or none,
- * changes nothing. Never the RVG code or the Contract. Phase 23's primary
- * Procedure becomes the target.
+ * The row a parsed message stands for: the feed's hospital, the message's
+ * date and time, the session and surgeon the hospital sends (the canned
+ * `rowContext`, or for a create the List in its routed session: the extractor
+ * does not read them, the §10 fence), the patient, the wording exactly as the
+ * message carried it, the note, and booked or cancelled. A message that moves
+ * a Booking to another day is a booked row for the new day (D62).
  */
-function replaceFromFeed(api: AppStoreApi, actor: Actor, bookingId: string, parsed: ParsedMessage): Outcome<{ replaced: boolean }> {
-  if (parsed.operation === undefined || parsed.operation.trim() === '') return ok({ replaced: false })
+function rowFromMessage(api: AppStoreApi, feed: IntegrationFeed, parsed: ParsedMessage, canned: CannedMessage): IncomingBookingFields | undefined {
   const state = api.getState()
-  // The primary Procedure is the intake target (catch-up Phase 23).
-  const first = proceduresForBooking(state, bookingId).find((p) => p.isPrimary)
-  if (first === undefined) return ok({ replaced: false })
-  const list = state.schedule.lists[state.schedule.bookings[bookingId]?.listId ?? '']
-  const from = hospitalNameOf(api, list?.hospitalId)
-  return replaceProcedureText(api, actor, first.id, { text: parsed.operation, source: 'hospitalFeed', ...(from !== undefined ? { from } : {}) })
+  const routing = canned.routing
+  const ctx = canned.rowContext
+  const dateISO = parsed.scheduledDateISO ?? ctx?.dateISO ?? routing?.dateISO
+  if (dateISO === undefined) return undefined
+  let surgeon = ctx?.surgeon
+  if (surgeon === undefined && routing !== undefined) {
+    const slot = slotFor(state, routing.anaesthetistId, routing.dateISO, routing.session)
+    const list = slot !== undefined ? listInSlot(state, slot.id) : undefined
+    const held = list?.surgeonId != null ? state.masters.surgeons[list.surgeonId] : undefined
+    if (held !== undefined) surgeon = { name: held.name, ...(held.hpiId !== undefined ? { hpiId: held.hpiId } : {}) }
+  }
+  const nhi = parsed.patient.nhi?.trim()
+  return {
+    hospitalId: feed.hospitalId,
+    dateISO,
+    session: ctx?.session ?? routing?.session ?? timeToSession(parsed.scheduledTime),
+    externalRef: parsed.appointmentId ?? canned.correlationAppointmentId,
+    ...(surgeon !== undefined ? { surgeon } : {}),
+    ...(parsed.scheduledTime !== undefined ? { scheduledTime: parsed.scheduledTime } : {}),
+    patient: {
+      name: parsed.patient.name ?? 'Unknown patient',
+      ...(nhi !== undefined && nhi !== '' ? { nhi } : {}),
+      ...(parsed.patient.dobISO !== undefined ? { dobISO: parsed.patient.dobISO } : {}),
+      ...(parsed.patient.ethnicityCode !== undefined ? { ethnicityCode: parsed.patient.ethnicityCode } : {}),
+    },
+    ...(parsed.operation !== undefined ? { procedure: { text: parsed.operation } } : {}),
+    ...(parsed.note !== undefined ? { note: parsed.note } : {}),
+    hospitalStatus: canned.eventType === 'S15' ? 'cancelled' : 'booked',
+    ...(parsed.cancelReason !== undefined ? { cancelReason: parsed.cancelReason } : {}),
+  }
 }
 
-function applyEffect(
-  api: AppStoreApi,
-  actor: Actor,
-  parsed: ParsedMessage,
-  canned: CannedMessage,
-): Outcome<{ bookingId: string }> {
-  const appointmentId = parsed.appointmentId ?? canned.correlationAppointmentId
-
-  if (canned.eventType === 'S12') {
-    const routing = canned.routing
-    if (routing === undefined) return refuse('noTargetList', 'This booking has no target session configured.')
-    // Interim until Phase 33's matching screen: a message whose target session
-    // holds no List parks for the office (it never creates a List itself).
-    const slot = slotFor(api.getState(), routing.anaesthetistId, routing.dateISO, routing.session)
-    if (slot === undefined) return refuse('noTargetList', 'The target session for this booking is outside the schedule. Parked for the office.')
-    const list = listInSlot(api.getState(), slot.id)
-    if (list === undefined) return refuse('noTargetList', 'The target session has no List yet. Parked for the office.')
-    // The one pairing rule (US-01.3.1): a List without its hospital and surgeon is never written to; the message parks.
-    const incomplete = pairingRefusal(list, api.getState().masters)
-    if (incomplete !== null) return refuse('pairingIncomplete', 'The message has no surgeon for this List. Parked for the office.')
-    const outcome = createBooking(api, actor, list.id, {
-      patient: {
-        ...(parsed.patient.nhi !== undefined ? { nhi: parsed.patient.nhi } : {}),
-        name: parsed.patient.name ?? 'Unknown patient',
-        dobISO: parsed.patient.dobISO ?? '',
-        ...(parsed.patient.ethnicityCode !== undefined ? { ethnicityCode: parsed.patient.ethnicityCode } : {}),
-      },
-      // The hospital's text exactly as the feed carried it (US-02.5.7; OQ-13:
-      // SCH-7 and FHIR Appointment.description stand in for the hospital's
-      // field). No invented wording: a message with none creates a Procedure
-      // with no text. Phase 33 moves hospital rows behind the matching screen.
-      ...(parsed.operation !== undefined
-        ? { sourceText: { text: parsed.operation, source: 'hospitalFeed' as const, from: hospitalNameOf(api, list.hospitalId) } }
-        : {}),
-      ...(parsed.scheduledTime !== undefined ? { scheduledTime: parsed.scheduledTime } : {}),
-      correlationRef: { sourceFeedId: canned.feedId, externalAppointmentId: appointmentId },
-      // Interim until Phase 33 routes hospital rows through the matching screen:
-      // today's HL7/FHIR create stands in for the hospital download.
-      source: 'hospitalDownload',
-    })
-    if (!outcome.ok) return outcome
-    return ok({ bookingId: outcome.value.bookingId })
-  }
-
-  // Modify events locate the Booking by its appointment correlation ref.
-  const booking = findBookingByCorrelation(api.getState(), { sourceFeedId: canned.feedId, externalAppointmentId: appointmentId })
-  if (booking === undefined) {
-    return refuse('noMatch', 'No booking matches this appointment id. Parked for the office to reconcile.')
-  }
-  const currentList = api.getState().schedule.lists[booking.listId]
-  if (currentList === undefined) return refuse('noMatch', 'The matched Booking has no List. Parked for the office.')
-  // A Booking on a Draft List (no anaesthetist yet) is the office's to place: the update parks.
-  if (currentList.state === 'DRAFT') return refuse('noTargetList', 'The matched Booking is on a List with no anaesthetist yet. Parked for the office.')
-  // A stale update for an appointment the office already cancelled is not applied
-  // (integrations never edit a soft-cancelled Booking); it parks for reconciliation.
-  if (booking.cancellation !== undefined) {
-    return refuse('bookingCancelled', 'The matched appointment is cancelled. This update is not applied; the office should reconcile it.')
-  }
-
-  if (canned.eventType === 'S13') {
-    const targetSlot =
-      parsed.scheduledDateISO !== undefined
-        ? slotFor(api.getState(), currentList.anaesthetistId, parsed.scheduledDateISO, sessionForTime(api.getState(), currentList.anaesthetistId, parsed.scheduledDateISO, parsed.scheduledTime))
-        : undefined
-    if (parsed.scheduledDateISO !== undefined && targetSlot?.id !== currentList.slotId) {
-      // Interim until Phase 33: a reschedule into a session with no List parks
-      // for the office; it is never silently retimed in place.
-      if (targetSlot === undefined) return refuse('noTargetList', 'The new session is outside the schedule. Parked for the office.')
-      const targetList = listInSlot(api.getState(), targetSlot.id)
-      if (targetList === undefined) return refuse('noTargetList', 'The target session has no List yet. Parked for the office.')
-    }
-    const target = targetSlot !== undefined ? listInSlot(api.getState(), targetSlot.id) : undefined
-    if (target !== undefined && target.id !== booking.listId) {
-      // Cross-List reschedule: move the Booking FIRST (the guarded, refusable step),
-      // then set the new time. Reassign-before-edit means a refused move commits
-      // nothing, so a locked target never strands a time change on the source Booking.
-      const moved = reassignBooking(api, actor, booking.id, target.id)
-      if (!moved.ok) return moved
-      if (parsed.scheduledTime !== undefined) {
-        const timed = editBooking(api, actor, booking.id, { scheduledTime: parsed.scheduledTime })
-        if (!timed.ok) return timed
-      }
-      const text = replaceFromFeed(api, actor, booking.id, parsed)
-      if (!text.ok) return text
-      return ok({ bookingId: booking.id })
-    }
-    // Same-List reschedule: a scheduledTime change.
-    const patch: BookingPatch = {}
-    if (parsed.scheduledTime !== undefined) patch.scheduledTime = parsed.scheduledTime
-    const retimed = editBooking(api, actor, booking.id, patch)
-    if (!retimed.ok) return retimed
-    const text = replaceFromFeed(api, actor, booking.id, parsed)
-    if (!text.ok) return text
-    return ok({ bookingId: booking.id })
-  }
-
-  if (canned.eventType === 'S14') {
-    const patch: BookingPatch = {}
-    if (parsed.scheduledTime !== undefined) patch.scheduledTime = parsed.scheduledTime
-    if (parsed.note !== undefined) patch.notes = parsed.note
-    const modified = editBooking(api, actor, booking.id, patch)
-    if (!modified.ok) return modified
-    const text = replaceFromFeed(api, actor, booking.id, parsed)
-    if (!text.ok) return text
-    return ok({ bookingId: booking.id })
-  }
-
-  if (canned.eventType === 'S15') {
-    const cancelled = cancelBooking(api, actor, booking.id, parsed.cancelReason ?? 'Cancelled by the hospital feed')
-    if (!cancelled.ok) return cancelled
-    return ok({ bookingId: booking.id })
-  }
-
-  return refuse('unknownEvent', `Unsupported event type ${canned.eventType}.`)
-}
 
 // ---------------------------------------------------------------------------
 // processMessage / retryMessage / reprocessMessage
 // ---------------------------------------------------------------------------
 
-function attemptMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: string; bookingId?: string }> {
+function attemptMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: string; importRowId?: string }> {
   const state = api.getState()
   const row = state.integrations.messages[rowId]
   if (row === undefined) return refuse('notFound', 'Message not found.')
@@ -336,44 +228,36 @@ function attemptMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: str
     return ok({ outcome: 'retrying' })
   }
 
-  const result = applyEffect(api, actor, parsed, canned)
-  if (!result.ok) {
-    // A locked target, an unmatched appointment or a missing target session is
-    // not a transient error — it needs a human, so it parks for manual review.
-    if (
-      result.code === 'integrationImmutable' ||
-      result.code === 'listAuthorised' ||
-      result.code === 'noMatch' ||
-      result.code === 'noTargetList' ||
-      result.code === 'pairingIncomplete' ||
-      result.code === 'bookingCancelled'
-    ) {
-      updateMessageRow(api, actor, rowId, {
-        status: 'manualIntervention',
-        attempts: nextAttempts,
-        failureReason: result.message,
-        ...(patientRef !== undefined ? { patientRef } : {}),
-      })
-      return ok({ outcome: 'manualIntervention' })
-    }
+  // An invalid NHI is a feed-mapping fault (the wrong field read): it retries,
+  // then dead-letters. A message with no NHI stages a row that waits (D11).
+  const extractedNhi = parsed.patient.nhi?.trim()
+  const fields = extractedNhi !== undefined && extractedNhi !== '' && !validateNhi(extractedNhi).valid ? undefined : rowFromMessage(api, feed, parsed, canned)
+  if (fields === undefined) {
     const status = nextAttempts >= MAX_ATTEMPTS ? 'deadLetter' : 'retrying'
     updateMessageRow(api, actor, rowId, {
       status,
       attempts: nextAttempts,
-      failureReason: result.message,
+      failureReason: extractedNhi !== undefined ? `The NHI "${extractedNhi}" is not valid under this feed mapping.` : 'The message carries no date.',
       ...(patientRef !== undefined ? { patientRef } : {}),
     })
     return ok({ outcome: status })
   }
 
+  const hospital = state.masters.hospitals[feed.hospitalId]?.name ?? 'Hospital'
+  const system = FEED_META[feed.id]?.name.match(/\(([^)]+)\)/)?.[1]
+  const staged = stageImportRows(api, actor, 'feedMessage', feed.hospitalId, `${hospital}${system !== undefined ? ` ${system}` : ''} message ${canned.id}`, [fields], {
+    messageId: canned.id,
+  })
+  if (!staged.ok) return staged
+  const importRowId = staged.value.rowIds[0]
   updateMessageRow(api, actor, rowId, {
     status: 'processed',
     attempts: nextAttempts,
-    resultBookingId: result.value.bookingId,
+    ...(importRowId !== undefined ? { resultImportRowId: importRowId } : {}),
     failureReason: undefined,
     ...(patientRef !== undefined ? { patientRef } : {}),
   })
-  return ok({ outcome: 'processed', bookingId: result.value.bookingId })
+  return ok({ outcome: 'processed', ...(importRowId !== undefined ? { importRowId } : {}) })
 }
 
 /**
@@ -382,7 +266,7 @@ function attemptMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: str
  * effect; an in-flight (retrying/pending) row continues; otherwise a fresh row
  * is created and processed.
  */
-export function processMessage(api: AppStoreApi, cannedId: string): Outcome<{ outcome: string; bookingId?: string }> {
+export function processMessage(api: AppStoreApi, cannedId: string): Outcome<{ outcome: string; importRowId?: string }> {
   const canned = cannedMessage(cannedId)
   if (canned === undefined) return refuse('unknownMessage', 'No such message in the library.')
   const state = api.getState()
@@ -395,7 +279,7 @@ export function processMessage(api: AppStoreApi, cannedId: string): Outcome<{ ou
     createMessageRow(api, integrationActor(feed.id), canned, {
       status: 'duplicate',
       attempts: 1,
-      failureReason: `Duplicate of ${canned.id}, already processed. Deduped by control id, no second Booking created.`,
+      failureReason: `Duplicate of ${canned.id}, already processed. Deduped by control id, no second row staged.`,
       ...(already.patientRef !== undefined ? { patientRef: already.patientRef } : {}),
     })
     return ok({ outcome: 'duplicate' })
@@ -407,12 +291,12 @@ export function processMessage(api: AppStoreApi, cannedId: string): Outcome<{ ou
 }
 
 /** Re-attempt a `retrying` message (the auto-retry timer + the manual retry button). */
-export function retryMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: string; bookingId?: string }> {
+export function retryMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: string; importRowId?: string }> {
   return attemptMessage(api, rowId)
 }
 
 /** Reprocess a dead-lettered / parked message after a fix (feed mapping edit), with a fresh retry budget. */
-export function reprocessMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: string; bookingId?: string }> {
+export function reprocessMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: string; importRowId?: string }> {
   const row = api.getState().integrations.messages[rowId]
   if (row === undefined) return refuse('notFound', 'Message not found.')
   updateMessageRow(api, integrationActor(row.feedId), rowId, { status: 'pending', attempts: 0, failureReason: undefined }, 'integration.reprocess')

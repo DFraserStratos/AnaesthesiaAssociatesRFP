@@ -1,42 +1,68 @@
 {
   "id": "US-02.1.1",
-  "status": "partial",
-  "absentReason": "No hospital booking file import. The nearest analogue is surgeon-emailed PDF operating lists, whose extracted rows are reviewed beside the document and ingested.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
-      "name": "surgeon-pdf-import",
+      "name": "matching-import",
       "app": "admin",
-      "caption": "Surgeon PDF import, the nearest analogue to a booking download",
-      "start": "/admin/integrations",
+      "caption": "A hospital file imported through an integration (sample file)",
+      "start": "/admin/matching",
       "states": [
         {
-          "state": "inbox",
           "steps": [
             {
-              "click": "role=button[name=\"Surgeon PDFs\"]"
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "wait": 400
             }
           ],
           "highlight": [
-            "text=Operating list · Monday 27 July (AM) >> xpath=ancestor::div[.//button[normalize-space()='Open']][1]",
-            "text=Cataract list · Wednesday 29 July (AM) >> xpath=ancestor::div[.//button[normalize-space()='Open']][1]"
-          ],
-          "caption": "Surgeon PDF inbox, the nearest analogue to a booking download"
-        },
+            "[data-shot=matching-import]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "matching-table",
+      "app": "admin",
+      "caption": "Each imported row lands on the matching screen with its procedure text as received",
+      "start": "/admin/matching",
+      "states": [
         {
-          "state": "review-rows",
           "steps": [
             {
-              "click": "role=button[name=\"Surgeon PDFs\"]"
+              "click": "[data-shot=matching-import-open]"
             },
             {
-              "click": "role=button[name=\"Open\"] >> nth=0"
+              "wait": "[data-shot=matching-import]"
             },
             {
-              "wait": 500
+              "click": "[data-sample-id=SAMPLE_STG]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
             }
           ],
-          "highlight": [],
-          "caption": "Extracted rows reviewed beside the PDF before ingesting"
+          "highlight": [
+            "[data-shot=matching-table]"
+          ]
         }
       ]
     }

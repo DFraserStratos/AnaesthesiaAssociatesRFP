@@ -3,7 +3,7 @@ import { Moon, Plus, TriangleAlert } from 'lucide-react'
 import { accent, neutral, semantic, radius, elevation } from '../../../theme/tokens'
 import { AttentionDot } from '../../../shared/warnings/AttentionDot'
 import type { DisplayKey, DraftList } from '../../../domain/types'
-import { isClosedKey } from '../../../domain/slotStatus'
+import { isClosedKey, statusLine } from '../../../domain/slotStatus'
 import type { Anaesthetist } from '../../../domain/types'
 import type { AppState, ListWarningSummary, SlotView } from '../../../store'
 import { useAppStore, useConflictLookups } from '../../../store'
@@ -92,9 +92,8 @@ function segmentsFor(views: SlotView[], statuses: AppState['masters']['slotStatu
 
 /**
  * A note signal is an annotation beyond the subtitle already visible in a
- * block. A public or pre-op List's note is its template label ("Acute theatre",
- * "Pre-op clinic / AA rooms"), shown as the subtitle, so only a private List's
- * note signals.
+ * block. A pre-op List's note is its template label ("Pre-op clinic / AA
+ * rooms"), shown as the subtitle, so only a private List's note signals.
  */
 function hasNoteSignal(view: SlotView): boolean {
   const list = view.list
@@ -397,9 +396,9 @@ function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: Displa
   // AA rooms keeps the design's first line, the kind's long label ("Pre-op Assessment"); its name is in the subtitle.
   const hospitalName = list !== undefined && masters.hospitals[list.hospitalId]?.locationType !== 'aaRooms' ? masters.hospitals[list.hospitalId]?.name : undefined
   const surgeon = list !== undefined ? masters.surgeons[list.surgeonId] : undefined
-  // Every List names its surgeon (US-01.3.1). A public or pre-op block keeps its template label as the subtitle
-  // ("Acute theatre", "Pre-op clinic / AA rooms") and carries the surgeon in its tooltip, as the design shows.
-  const templateLabel = list !== undefined && list.kind !== 'private' && note !== undefined && note.trim() !== '' ? note : undefined
+  // Every List names its surgeon (US-01.3.1). A pre-op block keeps its template label as the subtitle
+  // ("Pre-op clinic / AA rooms") and carries the surgeon in its tooltip, as the design shows.
+  const templateLabel = list !== undefined && list.kind === 'preop' && note !== undefined && note.trim() !== '' ? note : undefined
 
   let l1: string
   let l2: string
@@ -416,6 +415,8 @@ function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: Displa
     l1 = resolved.label
     l2 = evening ? (note ?? OUT_OF_HOURS) : (note ?? '').replace(/^Free\s*\/\s*/i, '') || 'open for cover'
   } else {
+    // A closed session keeps the design's title and detail: its label, then its note (Public, then "CPH";
+    // catch-up Phase 32d), with no hospital, surgeon, theatre, kind or count. Its tooltip is the status line.
     l1 = resolved.label
     l2 = note ?? (evening ? OUT_OF_HOURS : '')
   }
@@ -428,7 +429,8 @@ function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: Displa
   const warningTip = warnings !== undefined ? plural(warnings.open, 'open warning') : ''
   const surgeonTip = (conflict || templateLabel !== undefined) && surgeon !== undefined ? surgeon.name : ''
   const countTip = bookingCount !== undefined ? plural(bookingCount, 'booking') : ''
-  const tooltip = [surgeonTip, ...reasons, warningTip, hasNote && !noteIsSubtitle ? `Note: ${note}` : '', countTip].filter(Boolean).join(' · ')
+  const closedLine = list === undefined && !isOpenEmpty ? statusLine(slot, masters.slotStatuses) : ''
+  const tooltip = [closedLine, surgeonTip, ...reasons, warningTip, hasNote && !noteIsSubtitle ? `Note: ${note}` : '', countTip].filter(Boolean).join(' · ')
 
   return (
     <button

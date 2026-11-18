@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import type { DisplayKey, Session } from '../../../domain/types'
-import type { SlotStatusRecords } from '../../../domain/slotStatus'
+import { statusLine, type SlotStatusRecords } from '../../../domain/slotStatus'
 import { isOpenSlotView, rosterForDate, slotViewsForDate, useAppStore, useToday, type SlotView } from '../../../store'
 import { ChevronRight } from 'lucide-react'
 import { MobileHeader } from '../components'
@@ -92,7 +92,8 @@ export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOp
   function cellSubtitle(view: SlotView | undefined): string {
     if (view === undefined) return ''
     const list = view.list
-    if (list === undefined) return view.open ? 'Open for bookings' : (view.slot.note ?? resolveDisplayStatus(view.slot.status, slotStatuses).longLabel)
+    // A closed session reads its status line ("Public · CPH", catch-up Phase 32d), never List detail.
+    if (list === undefined) return view.open ? 'Open for bookings' : statusLine(view.slot, slotStatuses)
     const hospital = locationName(list.hospitalId, hospitals)
     const surgeon = surgeons[list.surgeonId]?.name ?? ''
     return [hospital, surgeon].filter(Boolean).join(' · ')

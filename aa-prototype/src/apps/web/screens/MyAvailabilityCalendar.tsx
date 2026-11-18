@@ -174,7 +174,8 @@ function DayCell({ session }: { session: CalendarSession | undefined }) {
   const resolved = useDisplayStatus(session?.displayKey ?? '')
   if (session === undefined) return <span aria-hidden style={{ height: 34, borderRadius: 7, background: neutral.sunken }} />
   const v = resolved.visual
-  const line2 = session.list !== undefined ? session.list.hospitalName : (session.series?.line ?? session.note ?? '')
+  // The note first (a Public day reads "CPH", catch-up Phase 32d), else the series line.
+  const line2 = session.list !== undefined ? session.list.hospitalName : (session.note ?? session.series?.line ?? '')
   return (
     <span
       data-slot-id={session.slotId}

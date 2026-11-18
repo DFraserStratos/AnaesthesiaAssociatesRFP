@@ -6,7 +6,7 @@
     {
       "name": "procedure-text",
       "app": "web",
-      "caption": "The procedure text as received",
+      "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
       "start": "/web/lists/L-34821-2026-08-04-AM/bookings/BK0043",
       "states": [
         {
@@ -20,16 +20,68 @@
           "highlight": [
             "[data-shot=procedure-text]"
           ]
+        }
+      ]
+    },
+    {
+      "name": "procedure-text",
+      "app": "web",
+      "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
+      "start": "/web/lists/L-34821-2026-08-04-AM/bookings/BK0043",
+      "setup": [
+        {
+          "goto": "/admin/matching"
         },
         {
+          "click": "[data-shot=matching-import-open]"
+        },
+        {
+          "wait": "[data-shot=matching-import]"
+        },
+        {
+          "click": "[data-sample-id=SAMPLE_STG]"
+        },
+        {
+          "click": "[data-shot=matching-import-confirm]"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "press": "Escape"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot^='matching-row-']:has-text('Diane Foster')"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=matching-apply]"
+        },
+        {
+          "wait": "[data-shot=matching-banner]"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "states": [
+        {
           "state": "hospital-update",
-          "caption": "The hospital's text replaces it",
+          "caption": "The hospital's text, once the office applies the row on Matching",
           "steps": [
             {
-              "trigger": "fire-hospital-message"
-            },
-            {
-              "wait": 500
+              "wait": 400
             }
           ],
           "highlight": [
@@ -41,7 +93,7 @@
     {
       "name": "procedure-text",
       "app": "mobile",
-      "caption": "The procedure text as received",
+      "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
       "start": "/mobile/lists/L-34821-2026-08-04-AM/bookings/BK0043",
       "states": [
         {
@@ -61,10 +113,11 @@
         },
         {
           "state": "hospital-update",
-          "caption": "The hospital's text replaces it",
+          "caption": "The hospital's text, once the office approves the hospital's update",
           "steps": [
             {
-              "trigger": "fire-hospital-message"
+              "trigger": "matching-office-matches-row",
+              "choice": "A hospital update for this Booking"
             },
             {
               "wait": 500
@@ -85,7 +138,7 @@
     {
       "name": "procedure-text",
       "app": "admin",
-      "caption": "The procedure text as received",
+      "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
       "start": "/admin/day/2026-08-04/bookings/BK0043",
       "states": [
         {
@@ -99,20 +152,122 @@
           "highlight": [
             "[data-shot=procedure-text]"
           ]
+        }
+      ]
+    },
+    {
+      "name": "procedure-text",
+      "app": "admin",
+      "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
+      "start": "/admin/day/2026-08-04/bookings/BK0043",
+      "setup": [
+        {
+          "goto": "/admin/matching"
         },
         {
+          "click": "[data-shot=matching-import-open]"
+        },
+        {
+          "wait": "[data-shot=matching-import]"
+        },
+        {
+          "click": "[data-sample-id=SAMPLE_STG]"
+        },
+        {
+          "click": "[data-shot=matching-import-confirm]"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "press": "Escape"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot^='matching-row-']:has-text('Diane Foster')"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=matching-apply]"
+        },
+        {
+          "wait": "[data-shot=matching-banner]"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "states": [
+        {
           "state": "hospital-update",
-          "caption": "The hospital's text replaces it",
+          "caption": "The hospital's text, once the office applies the row on Matching",
           "steps": [
             {
-              "trigger": "fire-hospital-message"
-            },
-            {
-              "wait": 500
+              "wait": 400
             }
           ],
           "highlight": [
             "[data-shot=procedure-text]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "procedure-text",
+      "app": "admin",
+      "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
+      "start": "/admin/matching",
+      "states": [
+        {
+          "state": "matching-row",
+          "caption": "On Matching, the hospital's text shown replacing the rooms' WLE MM before the office applies it",
+          "steps": [
+            {
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_STG]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot^='matching-row-']:has-text('Diane Foster')"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=matching-diff]"
           ]
         }
       ]
@@ -143,6 +298,74 @@
       "app": "mobile",
       "caption": "The rooms' original stays in the Booking's history",
       "start": "/mobile/lists/L-34821-2026-08-04-AM/bookings/BK0164",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"History\"]"
+            },
+            {
+              "wait": 800
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "procedure-text-history",
+      "app": "admin",
+      "caption": "After the office applies the hospital row, WLE MM stays in the Booking's change history",
+      "start": "/admin/day/2026-08-04/bookings/BK0043",
+      "setup": [
+        {
+          "goto": "/admin/matching"
+        },
+        {
+          "click": "[data-shot=matching-import-open]"
+        },
+        {
+          "wait": "[data-shot=matching-import]"
+        },
+        {
+          "click": "[data-sample-id=SAMPLE_STG]"
+        },
+        {
+          "click": "[data-shot=matching-import-confirm]"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "press": "Escape"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot^='matching-row-']:has-text('Diane Foster')"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=matching-apply]"
+        },
+        {
+          "wait": "[data-shot=matching-banner]"
+        },
+        {
+          "wait": 300
+        }
+      ],
       "states": [
         {
           "steps": [

@@ -76,8 +76,9 @@ test('Clear from the drawer, Show cleared and Flag again', async ({ page }) => {
 test('Conflicts screen: closures only, grouped by day, filters in the URL; Simulate sickness never adds a row; reassign from a row', async ({ page }) => {
   await fresh(page, '/admin/conflicts')
   await expect(page.getByRole('heading', { name: 'Conflicts', exact: true })).toBeVisible()
-  // 17 Lists plus Dr Beaumont's two Draft Lists at the Southern Cross closure (catch-up Phase 31); no sickness (32b).
-  await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('19')
+  // 14 Lists plus Dr Beaumont's two Draft Lists at the Southern Cross closure (catch-up Phase 31); no sickness (32b);
+  // three bookless public Lists at a closed Christchurch Public are Public sessions since catch-up Phase 32d.
+  await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('16')
   for (const d of ['2026-07-22', '2026-10-26', '2026-11-13']) await expect(page.locator(`section[data-conflict-date="${d}"]`)).toBeVisible()
   await expect(page.getByText('Anaesthetist unavailable')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Hospital closed' })).toHaveCount(0)
@@ -92,7 +93,7 @@ test('Conflicts screen: closures only, grouped by day, filters in the URL; Simul
   await page.goto('/admin/conflicts')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('section[data-conflict-date="2026-07-21"]')).toHaveCount(0)
-  await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('19')
+  await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('16')
   await page.screenshot({ path: 'visual/shots/p30-05-simulated-sickness.png', fullPage: true })
 
   // Reassign Morrison's Wed 22 PM: the closure goes with the List, so it stays flagged.

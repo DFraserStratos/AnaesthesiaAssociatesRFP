@@ -1,5 +1,5 @@
 import type { CSSProperties, MouseEvent, ReactNode } from 'react'
-import { neutral } from '../../theme/tokens'
+import { neutral, semantic } from '../../theme/tokens'
 import type { DataAttributes } from '../ui/Field'
 import { RowAlignContext } from './cells'
 
@@ -16,13 +16,15 @@ export function isInteractiveRowTarget(target: EventTarget | null): boolean {
  * handle. Without `onOpen` it is a plain row (a free session with nothing to open) that still takes
  * the tones. `today` tints its cells `neutral.bg` (the hover still shows over it); `quiet` sets the
  * text slate (a submitted List). Its cells centre vertically; `align="top"` keeps a multi-line
- * row's cells at the top, as the Draft Lists and AA fee rows always were. `data-*` attributes pass through.
+ * row's cells at the top, as the Draft Lists and AA fee rows always were. `tone="warning"` draws the
+ * warning tint and on-tint text (Matching's changed fields, catch-up Phase 33). `data-*` attributes pass through.
  */
 export function ClickableRow({
   onOpen,
   today = false,
   quiet = false,
   align = 'middle',
+  tone,
   style,
   children,
   ...data
@@ -31,6 +33,8 @@ export function ClickableRow({
   today?: boolean
   quiet?: boolean
   align?: 'top' | 'middle'
+  /** `warning` tints the row and its text (a changed field in Matching's differences table). */
+  tone?: 'warning'
   style?: CSSProperties
   children: ReactNode
 } & DataAttributes) {
@@ -47,7 +51,7 @@ export function ClickableRow({
               }
             : undefined
         }
-        style={{ ...(quiet ? { color: neutral.slate } : {}), ...style }}
+        style={{ ...(quiet ? { color: neutral.slate } : {}), ...(tone === 'warning' ? { background: semantic.warning.tint, color: semantic.warning.onTint } : {}), ...style }}
       >
         {children}
       </tr>

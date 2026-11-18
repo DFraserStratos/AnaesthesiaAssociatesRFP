@@ -181,7 +181,7 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
       expect(list.session).toBe(slot?.session)
       expect(seen.has(list.slotId), `two Lists in ${list.slotId}`).toBe(false)
       seen.add(list.slotId)
-      expect(['private', 'public', 'preop']).toContain(list.kind)
+      expect(['private', 'preop']).toContain(list.kind)
     }
     // Backdrop history names a Slot before the horizon but no Slot record exists.
     for (const list of assignedLists(seed.schedule.lists).filter(isBackdropList)) {
@@ -196,7 +196,7 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
     }
   })
 
-  it('outside the recorded window, invents nothing: every session is free, painted by the calendar, or holds a projected recurring booking', () => {
+  it('outside the recorded window, invents nothing: every session is free, painted by the calendar or a Public series, or holds a projected recurring booking', () => {
     const leave = new Set(SEED_LEAVE.map((w) => `${w.anaesthetistId}|${w.dateISO}|${w.session}`))
     const recurringKeys = new Set(RECURRING_BOOKINGS.map((t) => `${t.anaesthetistId}|${t.dayOfWeek}|${t.session}`))
     const outside = slots.filter((s) => !inWindow(s.dateISO))
@@ -206,6 +206,9 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
       if (list !== undefined) {
         expect(recurringKeys.has(`${slot.anaesthetistId}|${parseISO(slot.dateISO).getDay()}|${slot.session}`), slot.id).toBe(true)
         expect(list.id).toBe(projectedListId(slot.anaesthetistId, slot.dateISO, slot.session))
+      } else if (slot.seriesId !== undefined) {
+        // The seeded weekly Public series (catch-up Phase 32d).
+        expect(slot.status, slot.id).toBe('publicHospital')
       } else if (slot.status !== 'free') {
         expect(leave.has(`${slot.anaesthetistId}|${slot.dateISO}|${slot.session}`), slot.id).toBe(true)
       }
@@ -223,7 +226,8 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
 
   it('uses every status colour somewhere in the horizon, through the one derivation', () => {
     const used = new Set(slots.map((s) => displayStatusKey(s, listBySlot.get(s.id))))
-    for (const key of ['private', 'public', 'preop', 'holiday', 'unavailable', 'free']) {
+    // Catch-up Phase 32d: the public colour is the Public status's (`publicHospital`), no longer a List kind.
+    for (const key of ['private', 'publicHospital', 'preop', 'holiday', 'unavailable', 'free']) {
       expect(used.has(key), `status ${key} in use`).toBe(true)
     }
   })
@@ -285,7 +289,7 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
     expect(conflicted.length).toBeGreaterThan(0)
     for (const list of conflicted) {
       expect(list.hospitalId).toBeDefined()
-      expect(['private', 'public']).toContain(list.kind)
+      expect(['private', 'preop']).toContain(list.kind)
     }
   })
 
@@ -299,7 +303,8 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
   })
 })
 
-const PINNED_CLASHES = 18
+/** 18 until catch-up Phase 32d: the six the public rows raised went with the public List kind. */
+const PINNED_CLASHES = 12
 
 /**
  * The seed's conflicts are facts (catch-up Phase 30). Before this phase the
@@ -310,21 +315,19 @@ const PINNED_CLASHES = 18
  * cause: the closure HH900. Since catch-up Phase 32b Rutherford's Wed 22 AM
  * List is no longer flagged: his sickness returned it as a Draft List (D59).
  */
+/** Catch-up Phase 32d removed three (bookless public Lists at a closed Christchurch Public, now Public sessions): L-27731-2026-10-26-PM, L-36208-2026-11-13-AM, L-46822-2026-10-26-AM. */
 const FLAGGED_BEFORE_PHASE_30 = [
   'L-25490-2026-07-22-PM',
   'L-25490-2026-10-26-AM',
-  'L-27731-2026-10-26-PM',
   'L-27731-2026-11-13-AM',
   'L-29104-2026-10-26-AM',
   'L-31902-2026-10-26-AM',
   'L-31902-2026-11-13-AM',
   'L-34821-2026-10-26-AM',
   'L-34821-2026-10-26-PM',
-  'L-36208-2026-11-13-AM',
   'L-38455-2026-11-13-AM',
   'L-44519-2026-10-26-PM',
   'L-45178-2026-11-13-AM',
-  'L-46822-2026-10-26-AM',
 ]
 const SOUTHERN_CROSS_WED22_ADDITIONS = ['L-38455-2026-07-22-PM', 'L-41267-2026-07-22-PM', 'L-46822-2026-07-22-AM']
 /** Catch-up Phase 31: Dr Beaumont's Wed 22 recurring clashes at Southern Cross are Draft Lists, and carry HH900 like any List. */
@@ -709,22 +712,20 @@ describe('Booking id numbering (catch-up Phase 15)', () => {
 // Draft Lists and the pairing rule (catch-up Phase 31)
 // ---------------------------------------------------------------------------
 
-/** Every seeded Draft List: three requests and the recurring clashes from today on (OQ-81 part 2). */
+/**
+ * Every seeded Draft List: three requests and the recurring clashes from today on (OQ-81 part 2).
+ * Catch-up Phase 32d removed the six the public rows raised (Sharma Tue 15 Sep AM, Ngata Tue 21 Jul
+ * AM, Ropata Tue 25 and Thu 27 Aug AM and PM): the leave stands and the Public series leaves it alone.
+ */
 const SEEDED_DRAFT_LISTS = [
   'L-29104-2026-07-22-AM',
   'LD-001',
   'LD-002',
   'LD-003',
-  'LD-RCB013-2026-09-15-AM',
   'LD-RCB014-2026-09-16-PM',
-  'LD-RCB016-2026-07-21-AM',
   'LD-RCB020-2026-07-22-AM',
   'LD-RCB021-2026-07-22-PM',
   'LD-RCB022-2026-07-24-AM',
-  'LD-RCB027-2026-08-25-AM',
-  'LD-RCB028-2026-08-25-PM',
-  'LD-RCB029-2026-08-27-AM',
-  'LD-RCB030-2026-08-27-PM',
   'LD-RCB044-2026-07-27-PM',
   'LD-RCB045-2026-07-22-AM',
 ]
@@ -733,10 +734,10 @@ describe('seeded Draft Lists (catch-up Phase 31; FT-01.6, US-01.6.1, OQ-81 part 
   const all = Object.values(seed.schedule.lists)
   const drafts = all.filter((l) => l.state === 'DRAFT')
 
-  it("pins the sixteen: three requests, twelve recurring clashes and Rutherford's returned List (catch-up Phase 32b)", () => {
+  it("pins the ten: three requests, six recurring clashes and Rutherford's returned List (catch-up Phase 32b; 32d removed six)", () => {
     expect(drafts.map((l) => l.id).sort()).toEqual(SEEDED_DRAFT_LISTS)
     expect(drafts.filter((l) => l.draft?.origin === 'request')).toHaveLength(3)
-    expect(drafts.filter((l) => l.draft?.origin === 'recurringClash')).toHaveLength(12)
+    expect(drafts.filter((l) => l.draft?.origin === 'recurringClash')).toHaveLength(6)
     expect(drafts.filter((l) => l.draft?.origin === 'unavailableReturn').map((l) => l.id)).toEqual(['L-29104-2026-07-22-AM'])
   })
 

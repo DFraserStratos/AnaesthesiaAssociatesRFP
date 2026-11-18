@@ -35,13 +35,13 @@ Do not confuse these in the demo.
 Examples:
 
 - Private
-- Public
 - Pre-op assessment
 - Holiday
 - Unavailable
+- Public (a status with an optional note such as CPH, never a kind of List, never billed)
 - Free
 
-These describe what the half-day List is being used for.
+These describe what the half-day session is being used for.
 
 ### Approval lifecycle
 
@@ -78,8 +78,10 @@ There is no `RETURNED` state.
    start date to the end of the rolling horizon. Every new session starts Free.
 2. The anaesthetist's calendar (leave, unavailability and their repeating days off) is painted onto
    the session's status; nothing is reconciled, because the calendar sets the session's status directly.
-   The statuses are a list in master data (Free, On holiday, Unavailable to start), next to the fixed
+   The statuses are a list in master data (Free, On holiday, Unavailable and Public to start), next to the fixed
    List types.
+   Seeded public sessions are Public sessions with the note CPH, and each anaesthetist with a weekly
+   public session has a weekly Public series; Public closes the session like Unavailable.
 3. Recurring bookings (the surgeons' standing arrangements) then project their Lists, empty, into
    free sessions, after the anaesthetist's calendar: a session already closed is not painted: a recurring booking that lands on a day the anaesthetist has
    already blocked out becomes a Draft List for the office, since the calendar is painted first. A change to a recurring booking reapplies at once through "Apply to canvas
@@ -124,14 +126,15 @@ session.
 
 **Primary actors:** AA scheduling coordinator, surgeon rooms, hospital/PAS
 
-**Prototype readiness:** Ready. Manual phone booking, mobile and web manual Booking creation, and the
-HL7/FHIR and surgeon-PDF ingestion paths (Phase 11) are all built.
+**Prototype readiness:** Ready. Manual phone booking, mobile and web manual Booking creation, the
+surgeon-PDF path (Phase 11) and the hospital import with its matching screen (Phase 33) are all built.
+HL7/FHIR messaging is Future scope.
 
 ### Triggers
 
 - A recurring booking creates the standing pairing.
 - A surgeon's room calls AA for an ad-hoc List.
-- A hospital sends a new booking or update.
+- Hospital bookings or a sheet arrive (a hospital file is imported).
 - A surgeon's room emails a PDF List.
 - The anaesthetist finds a patient missing on the day.
 
@@ -141,10 +144,12 @@ HL7/FHIR and surgeon-PDF ingestion paths (Phase 11) are all built.
 2. The List is assigned a hospital and surgeon.
 3. Patient appointments are represented as time-ordered Bookings inside the List.
 4. Each Booking points to a patient and contains one or more Procedures.
-5. Later messages or office actions can add, reschedule, modify, move or soft-cancel a Booking while the
-   List remains `ACTIVE`. Each Booking holds its procedure text as received from each channel; when the
-   hospital's text arrives it replaces the surgeon's rooms' text, and the original stays in the
-   Booking's history.
+5. Hospital rows are matched on the matching screen: the office applies, creates (a Booking, a List,
+   or a Draft List holding the Booking) or rejects each one, and sets the invoice destination and
+   Contract there or from Needs an invoice destination; anaesthetists and the office change Bookings
+   directly while the List is `ACTIVE`. Each Booking holds its procedure text as received from each
+   channel; the hospital's later text replaces the surgeon's rooms' text once the office applies its
+   row, and the original stays in the Booking's history.
 6. Every change writes `lastModifiedBy/At` and append-only audit history.
 
 ### Manual fallback paths
@@ -162,6 +167,9 @@ HL7/FHIR and surgeon-PDF ingestion paths (Phase 11) are all built.
 ### Handoff
 
 The populated List becomes visible to the assigned anaesthetist on mobile and web.
+
+From the matching screen (office to anaesthetist): a row the office creates or applies shows on her
+List as a Booking with the hospital's wording as received, source "Hospital download".
 
 ### Key distinction
 
@@ -227,7 +235,9 @@ An anaesthetist becomes unavailable or needs cover at short notice.
 ### Steps
 
 1. Dr Souter keeps her availability in her calendar (mobile or web): days off ahead, repeating days
-   off, one occurrence changed or deleted.
+   off, one occurrence changed or deleted, and public hospital sessions (Public, with an optional note
+   such as CPH; the office can set one too, from Change status, with a note). Public is not open for
+   cover; changing it back to Free reopens the session.
 2. She moves one of her Lists to a free colleague or returns it to the office, also when she marks a
    booked session off: the app asks "Return to the office" or "Hand on to a colleague" first, so no
    List is left with her, and then what her session becomes (the status she is setting, or Free).
@@ -690,11 +700,17 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
   rebuilds from the lock. The fix never edits a Contract or any other master; a wrong price after
   invoicing is corrected by a credit note and rebill (a later build).
 
-#### Integration failure
+#### Hospital rows
 
-- A malformed message retries, then moves to manual intervention without being lost.
-- A duplicate message is an idempotent no-op.
-- A message for a submitted or authorised target is not applied automatically.
+- An unmatched row, or one with no NHI, waits in the unmatched queue; nothing is dropped.
+- A duplicate row is skipped.
+- A later update waits for approval, matched by date, surgeon, hospital and session.
+- A Booking moved to another day arrives as a cancellation plus a new Booking.
+- A row for a submitted List can still be applied by the office; a row for an authorised List cannot
+  be applied.
+
+> **Future scope:** automated hospital changes are Future Work. HL7 v2 messaging, where a malformed
+> message retries and then dead-letters to manual intervention without being lost, is Future scope.
 
 #### Compliance
 
@@ -720,6 +736,8 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Xero pairs, payment, balances and disbursement | Yes | Phase 10 |
 | Anaesthetist profile, rate per unit and bank details | Yes | Catch-up Phase 26 |
 | AA's monthly fee invoices (settings, run, AA fees tab) | Yes | Catch-up Phase 16 |
-| HL7/FHIR/PDF ingestion and monitoring | Yes | Phase 11 |
+| Hospital import and matching screen | Yes | Catch-up Phase 33 |
+| Surgeon PDF ingestion | Yes | Phase 11 |
+| HL7/FHIR ingestion and monitoring | Future scope | Phase 11 (simulator only) |
 | Scenario jump controls and guided script | Yes | Phase 12 |
 | Mobile atmospheric gradient (visual only) | Yes | Phase 13 |

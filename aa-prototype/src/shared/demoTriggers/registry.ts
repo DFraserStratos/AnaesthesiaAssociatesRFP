@@ -44,6 +44,8 @@ import {
   armHandoffFault,
   assignNextFreeSlotAsSimulatedOffice,
   addOutOfHoursListAsSimulatedOffice,
+  officeSetsPublicRefusal,
+  setSessionPublicAsSimulatedOffice,
   outOfHoursStandInRefusal,
   authoriseAsSimulatedOffice,
   nextOpenSlotFor,
@@ -108,6 +110,14 @@ import {
   prepaymentPaymentRefusal,
   prepaymentStandInRefusal,
   twoDaysBeforeRefusal,
+  officeMatchesHospitalRow,
+  receiveTheatreList,
+  sendUpdateRefusal,
+  stageUpdateForBooking,
+  standInRefusal,
+  theatreListRefusal,
+  updateTarget,
+  type StandInChoice,
 } from '../../store'
 import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
 import { contractCandidatesFor, destinationOf } from '../../domain/billing/contractRail'
@@ -115,8 +125,8 @@ import { noContractRvg } from '../../domain/billing/contracts'
 import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, SEED_LIST_IDS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
 import { MULTI_PROCEDURE_DEMO } from '../../domain/seed/multiProcedureDemo'
 import { DRAFT_LIST, DRAFT_LISTS, SOURCE_LABELS } from '../scheduleTerms'
-import { projectedListId } from '../../domain/slots'
-import { SEED_STATUS, statusFor } from '../../domain/slotStatus'
+import { projectedListId, slotIdFor } from '../../domain/slots'
+import { SEED_STATUS, statusFor, statusLine } from '../../domain/slotStatus'
 import { roundToCents } from '../../domain/billing/money'
 import { aaFeeFor, aaFeeMonthLabel } from '../../domain/billing/aaFee'
 import { drSurname, formatCurrency, plural, shortDay } from '../format'
@@ -148,6 +158,7 @@ export const BILLING_MONITOR_SCREEN = 'Admin · Billing monitor'
 const XERO_SIM = ['/demo/xero', '/demo/xero/invoices', '/demo/xero/invoices/:accRecId'] as const
 const INVOICE_PAGES = ['/admin/invoices/:invoiceId', '/demo/xero/invoices/:accRecId'] as const
 const ADMIN_INTEGRATIONS = '/admin/integrations'
+const ADMIN_MATCHING = '/admin/matching'
 const AA_FEE_INVOICES = '/admin/billing/aa-fees'
 const XERO_PAIR = '/demo/xero/invoices/:accRecId'
 const INTEGRATIONS_SIM = '/demo/integrations'
@@ -436,6 +447,29 @@ function sicknessChoices(state: AppState, ctx: DemoTriggerCtx): { id: string; la
 function sicknessChoiceParts(choiceId: string): { listId: string; route: SicknessRoute } {
   const [listId = '', route] = choiceId.split('|')
   return { listId, route: route === 'colleague' ? 'colleague' : 'office' }
+}
+
+/** The PWA office stand-in's choice from the route (catch-up Phase 33): S1, this List, or this Booking. */
+function standInChoice(ctx: DemoTriggerCtx, choiceId: string | undefined): StandInChoice {
+  if (choiceId === 'booking' && ctx.params['bookingId'] !== undefined) return { kind: 'booking', bookingId: ctx.params['bookingId'] }
+  if (choiceId === 'list' && ctx.params['listId'] !== undefined) return { kind: 'list', listId: ctx.params['listId'] }
+  return { kind: 's1' }
+}
+
+/**
+ * The AM and PM sessions of the day open in My calendar (catch-up Phase 32d's
+ * office stand-in), each named with its status line; a session that cannot take
+ * Public stays listed and its disabled reason says why.
+ */
+function officePublicChoices(state: AppState, ctx: DemoTriggerCtx): { id: string; label: string }[] {
+  const day = ctx.published['mobileCalendar.day']
+  if (day === undefined) return []
+  const [anaesthetistId, dateISO] = day.split('|') as [string, string]
+  return (['AM', 'PM'] as const).flatMap((session) => {
+    const slot = state.schedule.slots[slotIdFor(anaesthetistId, dateISO, session)]
+    if (slot === undefined) return []
+    return [{ id: slot.id, label: `${shortDay(dateISO)} ${sessionText(session)}, now ${statusLine(slot, state.masters.slotStatuses)}` }]
+  })
 }
 
 /** Closed, empty colleague sessions for the List an open picker is assigning or moving (the stand-in's choices). */
@@ -905,6 +939,34 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => null,
     indexEmptyReason: 'PWA only: the framed build plays the office in Admin (Open out-of-hours session on Admin Day).',
+  },
+  // ── Mobile · My calendar: the office sets a session to Public (catch-up Phase 32d; PWA parity) ──
+  {
+    id: 'availability-office-sets-public',
+    label: 'Office sets this session to Public',
+    description:
+      'Stands in for the office on the phone: sets the AM or PM session of the last day you opened in My calendar to Public with the note "CPH", as Kirsty would with Change status in the Admin Day drawer. Open a day, close it, then run this. Not on a session that holds a List, is already Public or is past.',
+    screen: 'Mobile · My calendar, the day last opened',
+    routes: [`${MOBILE_AVAILABILITY}/calendar`],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    when: (_state, ctx) => ctx.published['mobileCalendar.day'] !== undefined,
+    choices: (state, ctx) => officePublicChoices(state, ctx),
+    disabledReason: (state, ctx, choiceId) => {
+      const slotId = choiceId ?? officePublicChoices(state, ctx)[0]?.id
+      if (slotId === undefined) return 'Open a day in My calendar, then close it'
+      return officeSetsPublicRefusal(state, slotId)
+    },
+    run: (api, ctx, choiceId) => {
+      const slotId = choiceId ?? officePublicChoices(api.getState(), ctx)[0]?.id
+      if (slotId === undefined) return { ok: false, message: 'Open a day in My calendar' }
+      const res = setSessionPublicAsSimulatedOffice(api, slotId)
+      if (!res.ok) return { ok: false, message: res.message }
+      const status = api.getState().schedule.slots[slotId]
+      return { ok: true, message: `The office set this session to ${status !== undefined ? statusLine(status, api.getState().masters.slotStatuses) : 'Public'}.` }
+    },
+    indexPath: () => null,
+    indexEmptyReason: 'PWA only: the framed build plays the office in Admin (Change status in the Day drawer).',
   },
   // ── Mobile · Lists: the office assigns a waiting request (catch-up Phase 31) ──
   {
@@ -1453,34 +1515,108 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => `/mobile/lists/${PHOTO_CAPTURE_INDEX_LIST_ID}`,
   },
+  // ── Admin · Matching (catch-up Phase 33) ──────────────────────────────
+  {
+    id: 'matching-receive-theatre-list',
+    label: 'Import hospital file',
+    description:
+      "Stands in for the hospital's file arriving: stages the sample theatre list's rows on Matching (St George's: a new Booking, a No change, a modification, and a day move as a cancellation plus a new Booking; Southern Cross: a new Booking, a modification with an insurer and approval number, a change for an authorised List, a row with no NHI and a row for a session with no List). Nothing changes the schedule until the office decides.",
+    screen: 'Admin · Matching',
+    routes: [ADMIN_MATCHING],
+    surfaces: ['bar'],
+    choices: () => [
+      { id: 'stg', label: "St George's" },
+      { id: 'sx', label: 'Southern Cross' },
+    ],
+    disabledReason: (state, _ctx, choiceId) => theatreListRefusal(state, choiceId === 'sx' ? 'sx' : 'stg'),
+    run: (api, _ctx, choiceId) => {
+      const hospital = choiceId === 'sx' ? 'sx' : 'stg'
+      const res = receiveTheatreList(api, OFFICE_ACTOR, hospital)
+      if (!res.ok) return { ok: false, message: res.message }
+      const name = hospital === 'sx' ? 'Southern Cross' : "St George's"
+      const n = res.value.rowIds.length
+      return { ok: true, message: `${name} sent its theatre list: ${n} ${n === 1 ? 'row is' : 'rows are'} waiting on Matching. Nothing changes the schedule until the office decides.` }
+    },
+    indexPath: () => ADMIN_MATCHING,
+  },
+  {
+    id: 'matching-send-update',
+    label: 'Send update for a matched Booking',
+    description:
+      "Stands in for the hospital sending a later update: for the Booking matched by the row selected on Matching (if open and not authorised), else Diane Foster's (Tue 4 Aug AM), a row for the same List and patient with a later time and the hospital's fuller wording. It waits for the office to check the differences and approve it.",
+    screen: 'Admin · Matching',
+    routes: [ADMIN_MATCHING],
+    surfaces: ['bar'],
+    disabledReason: (state, ctx) => sendUpdateRefusal(state, ctx.published['matching.selectedRowId']),
+    run: (api, ctx) => {
+      const state = api.getState()
+      const reason = sendUpdateRefusal(state, ctx.published['matching.selectedRowId'])
+      const target = updateTarget(state, ctx.published['matching.selectedRowId'])
+      if (reason !== null || target === undefined) return { ok: false, message: reason ?? 'Select a row matched to an open Booking' }
+      const res = stageUpdateForBooking(api, OFFICE_ACTOR, target)
+      if (!res.ok) return { ok: false, message: res.message }
+      return { ok: true, message: `${res.value.hospital} sent an update for ${res.value.patient}: a new time and fuller wording. Check the differences and approve it.` }
+    },
+    indexPath: () => ADMIN_MATCHING,
+  },
+  {
+    id: 'matching-office-matches-row',
+    label: 'Hospital row arrives and the office matches it',
+    description:
+      "Stands in for the office on the phone: the hospital's row arrives and the office matches it with the suggested decision, every difference ticked and no Contract picked (the office sets the Contract later). Sarah Mitchell's S1 booking; on a St George's or Southern Cross List, a new hospital booking; on a Booking, a hospital update approved by the office (on Diane Foster's, the hospital's fuller wording replaces WLE MM).",
+    screen: 'Mobile · Lists and the Booking screen',
+    routes: [...MOBILE_LISTS],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    choices: (_state, ctx) => {
+      const out = [{ id: 's1', label: 'Sarah Mitchell, Tue 28 Jul AM (S1)' }]
+      if (ctx.params['bookingId'] !== undefined) out.push({ id: 'booking', label: 'A hospital update for this Booking, approved by the office' })
+      else if (ctx.params['listId'] !== undefined) out.push({ id: 'list', label: 'A new hospital booking on this List' })
+      return out
+    },
+    disabledReason: (state, ctx, choiceId) => standInRefusal(state, standInChoice(ctx, choiceId)),
+    run: (api, ctx, choiceId) => {
+      const res = officeMatchesHospitalRow(api, standInChoice(ctx, choiceId))
+      if (!res.ok) return { ok: false, message: res.message }
+      return choiceId === 'booking'
+        ? { ok: true, message: `The hospital sent an update for ${res.value.patient} and the office approved it.` }
+        : { ok: true, message: `${res.value.hospital} sent ${res.value.patient}'s booking and the office matched it. ${res.value.patient} is now on your ${res.value.where} List; the office will set the Contract.` }
+    },
+    indexPath: () => null,
+    indexEmptyReason: 'PWA only: the framed build plays the office in Admin, Matching.',
+  },
   // ── Hospital messages (Future scope) ──────────────────────────────────
   {
     id: 'fire-hospital-message',
     label: 'Fire hospital message',
     description:
-      "Sends a canned hospital HL7 v2 or FHIR message into the mock backend, including the Christchurch Public dead-letter case (MSG-CPH-2001). A new Booking arrives with no Contract and waits on Admin Day's Needs an invoice destination until the office sets one. On a Booking (mobile, web and Admin) it defaults to the message addressed to that Booking: on Diane Foster's, MSG-STG-1012's hospital description replaces the rooms' text, the original kept in the History. Also on Admin · Integrations and the Integrations simulator.",
+      "Sends a canned hospital HL7 v2 or FHIR message into the mock backend, including the Christchurch Public dead-letter case (MSG-CPH-2001). Stages the hospital's row on Admin, Matching. The Booking changes only once the office applies it. On a Booking (mobile, web and Admin) it defaults to the message addressed to that Booking: on Diane Foster's, MSG-STG-1012's hospital text replaces the rooms' once the office applies its row. Also on Admin · Integrations and the Integrations simulator. No scripted beat uses the S13 to S15 messages.",
     screen: 'Mobile · Lists',
     routes: [...MOBILE_LISTS, WEB_BOOKING, ADMIN_BOOKING, ADMIN_INTEGRATIONS, INTEGRATIONS_SIM],
-    surfaces: ['bar', 'pwa'],
+    // Bar only (catch-up Phase 33): a row on a handset has no office to decide it; the PWA has the office stand-in.
+    surfaces: ['bar'],
     badge: 'future-scope',
     choices: () => CANNED_MESSAGES.map((m) => ({ id: m.id, label: `${m.label} · ${m.id}` })),
     // On a Booking, the message addressed to it (catch-up Phase 20a); else the simulator's pick or the S1 create.
     defaultChoice: (state, ctx) =>
       cannedMessageForBooking(state, ctx.params['bookingId']) ?? ctx.published['integrationsSim.selectedMessageId'] ?? DEFAULT_MESSAGE_ID,
     disabledReason: () => null,
-    run: (api, _ctx, choiceId) => {
+    run: (api, ctx, choiceId) => {
       const selectedId = choiceId ?? DEFAULT_MESSAGE_ID
-      const replacesBefore = api.getState().audit.filter((a) => a.action === 'procedure.procedureText.replace').length
       const res = processMessage(api, selectedId)
       useDemoTriggerMemory.getState().rememberMessage(selectedId)
-      const replaced = api.getState().audit.filter((a) => a.action === 'procedure.procedureText.replace').length > replacesBefore
+      // Outside Admin, the presenter switches apps to decide the row (catch-up Phase 33).
+      const elsewhere = !ctx.pathname.startsWith('/admin') && !ctx.pathname.startsWith('/demo') ? ' Switch to Admin, Matching, to apply it.' : ''
+      const staged = res.ok && res.value.importRowId !== undefined
       return {
         ok: res.ok,
         message: !res.ok
           ? `Refused: ${res.message}`
-          : replaced
-            ? `Fired ${selectedId}: the hospital's description replaced the rooms' text; the original is in the History.`
-            : `Fired ${selectedId}: ${res.value.outcome}. See the three-pane view in the integration simulator and the log in the Admin app Integrations monitor.`,
+          : staged && selectedId === 'MSG-STG-1012'
+            ? `Sent MSG-STG-1012 to matching: the hospital's text replaces the rooms' once the office applies the row.${elsewhere}`
+            : staged
+              ? `Sent ${selectedId} to matching: the row waits for the office to decide.${elsewhere}`
+              : `Fired ${selectedId}: ${res.value.outcome}. See the three-pane view in the integration simulator and the log in the Admin app Integrations monitor.`,
       }
     },
     indexPath: () => '/mobile/lists',
@@ -1489,10 +1625,10 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'replay-hospital-message',
     label: 'Replay last message (dedupe)',
     description:
-      'Replays the last hospital message fired, to show idempotent dedupe: same message control ID, no second Booking.',
+      'Replays the last hospital message fired, to show idempotent dedupe: same message control ID, no second row on Matching.',
     screen: 'Mobile · Lists',
     routes: [...MOBILE_LISTS, ADMIN_INTEGRATIONS, INTEGRATIONS_SIM],
-    surfaces: ['bar', 'pwa'],
+    surfaces: ['bar'],
     badge: 'future-scope',
     disabledReason: (state) => messageReplayDisabledReason(state),
     run: (api) => {
@@ -1504,7 +1640,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         ok: res.ok,
         message: res.ok
           ? res.value.outcome === 'duplicate'
-            ? 'Deduplicated: same message control ID, no second Booking created.'
+            ? 'Deduplicated: same message control ID, no second row staged.'
             : `Replayed ${last}: ${res.value.outcome}.`
           : `Refused: ${res.message}`,
       }

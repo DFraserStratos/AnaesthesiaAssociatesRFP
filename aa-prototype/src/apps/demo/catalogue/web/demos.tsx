@@ -831,7 +831,7 @@ export function AvailabilityCellDemo({ f }: F) {
       return { l1: status.longLabel, l2: view.slot.note ?? '' }
     }
     if (list.kind === 'preop') return { l1: 'Pre-op clinic', l2: locationName(list.hospitalId, hospitals) }
-    const l2 = list.kind !== 'private' && list.notes !== undefined ? list.notes : (surgeons[list.surgeonId]?.name ?? '')
+    const l2 = surgeons[list.surgeonId]?.name ?? ''
     return { l1: locationName(list.hospitalId, hospitals), l2 }
   }
 

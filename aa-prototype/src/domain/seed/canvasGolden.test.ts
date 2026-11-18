@@ -70,6 +70,13 @@
  * Souter's Mon 27 Jul AM, BK0187 on her Mon 10 Aug PM, BK0188 on her Thu 16
  * Jul PM (now AUTHORISED and invoiced, the range beat) and BK0189 on her Mon 13
  * Jul AM, appended after BK0184.
+ *
+ * Catch-up Phase 32d re-pinned by script, checking every changed row first
+ * (the public List kind retired, D86): 71 window and 12 far-edge rows whose
+ * bookless public List was removed read `publicHospital` with the note "CPH",
+ * no List and no times; the 12 window rows whose public List holds Bookings
+ * read `private` with no recurring link (same id, state, hospital, surgeon and
+ * note). Nothing else changed; no Booking moved.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -188,7 +195,7 @@ describe('golden canvas (Phase 28: the split keeps the demo window)', () => {
     expect(mismatches).toEqual([])
   })
 
-  it('leaves every far-edge session free unless the calendar or a recurring booking painted it', () => {
+  it('leaves every far-edge session free unless the calendar, a series or a recurring booking painted it', () => {
     const horizon = horizonFor(DEMO_TODAY, seed.appSettings.schedule.horizonMonths)
     const farDates = new Set(enumerateDatesISO(horizon.startISO, horizon.endISO).slice(-7))
     const leave = new Set(SEED_LEAVE.map((w) => `${w.anaesthetistId}|${w.dateISO}|${w.session}`))
@@ -202,6 +209,9 @@ describe('golden canvas (Phase 28: the split keeps the demo window)', () => {
       if (list !== undefined) {
         expect(recurringKeys.has(`${slot.anaesthetistId}|${dow}|${slot.session}`), slot.id).toBe(true)
         expect(list.id.startsWith('L-'), slot.id).toBe(true)
+      } else if (slot.seriesId !== undefined) {
+        // The seeded weekly Public series (catch-up Phase 32d).
+        expect(slot.status, slot.id).toBe('publicHospital')
       } else if (slot.status !== 'free') {
         expect(leave.has(`${slot.anaesthetistId}|${slot.dateISO}|${slot.session}`), slot.id).toBe(true)
       }

@@ -27,6 +27,7 @@ import {
   type SlotView,
 } from '../../../../store'
 import { Avatar, blockFill, resolveDisplayStatus, useDefaultStatus, useDisplayStatus, useSlotStatusRecords } from '../../../../shared'
+import { statusLine } from '../../../../domain/slotStatus'
 import { AttentionDot } from '../../../../shared/warnings/AttentionDot'
 import { TickBadge } from '../../../../shared/ui'
 import {
@@ -367,7 +368,7 @@ export function ColleagueCellsCopy({ dateISO, excludeId, limit, moveTargets, onM
   function cellSubtitle(view: SlotView | undefined): string {
     if (view === undefined) return ''
     const list = view.list
-    if (list === undefined) return view.open ? 'Open for bookings' : (view.slot.note ?? resolveDisplayStatus(view.slot.status, slotStatuses).longLabel)
+    if (list === undefined) return view.open ? 'Open for bookings' : statusLine(view.slot, slotStatuses)
     return [locationName(list.hospitalId, hospitals), surgeons[list.surgeonId]?.name ?? ''].filter(Boolean).join(' · ')
   }
 

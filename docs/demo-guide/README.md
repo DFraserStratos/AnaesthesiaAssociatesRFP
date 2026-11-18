@@ -96,9 +96,10 @@ Snapshot date: **24 July 2026**
 | Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), AA Holding account, escalating warning, left off the final invoice | Ready | Catch-up Phase 27 |
 | Xero pairs, payments, payables, payment history, live balances and GST activity | Ready | Phase 10 |
 | Anaesthetist profile and bank details (own rate per unit on mobile and web; office-held contact, HPI CPN and masked bank details, payments made in Xero) | Ready | Catch-up Phase 26 |
-| HL7/FHIR/PDF ingestion and integration monitoring | Ready | Phase 11 |
+| Surgeon PDF ingestion | Ready | Phase 11 |
+| Hospital import and matching screen (Import hospital file, match, create or reject each row; nothing applied automatically) | Ready | Catch-up Phase 33 |
 | Demo control panel (the index) with S1 to S5 scenario jumps; demo actions on each screen under **Demo actions** in the top bar, and a **Demo** sheet on a handset | Ready | Phase 12; per-screen actions from catch-up Phase 14 |
-| HL7/FHIR integration simulator and monitor tabs | Ready, badged Future scope | Phase 11; in-scope hospital download arrives in catch-up Phase 34 |
+| HL7/FHIR integration simulator and monitor tabs | Ready, badged Future scope (messages are sent to the matching screen) | Phase 11; re-routed in catch-up Phase 33 |
 | Mobile atmospheric gradient (visual only) | Upcoming | Phase 13, does not change any workflow |
 
 Phases 00 to 12 are built and clickable. Phase 13 is the only remaining phase and is purely a visual

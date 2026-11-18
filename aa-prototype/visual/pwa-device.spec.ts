@@ -441,3 +441,25 @@ test('the 3-procedure Booking loads from the Demo sheet, and the hospital feed c
   await expectNoDocumentScroll(page, 'multi-procedure Booking')
   await page.screenshot({ path: 'visual/shots/pwa-23-feed-changes-primary.png' })
 })
+
+test('the hospital row arrives and the office matches it, from the Lists Demo sheet (catch-up Phase 33)', async ({ page }) => {
+  await page.goto('/mobile/lists')
+  await page.evaluate(() => window.localStorage.clear())
+  await page.goto('/mobile/lists')
+  await page.waitForLoadState('networkidle')
+  await page.locator('[data-shot="pwa-demo-actions"]').click()
+  const row = page.locator('[data-shot="pwa-demo-action-matching-office-matches-row"]')
+  await expect(row).toBeVisible()
+  // "Fire hospital message" is bar only now: a row on a handset has no office to decide it.
+  await expect(page.locator('[data-shot="pwa-demo-action-fire-hospital-message"]')).toHaveCount(0)
+  await row.getByRole('button', { name: 'Run' }).click()
+  await expect(row.getByRole('status')).toContainText("St George's sent Sarah Mitchell's booking and the office matched it.")
+  await page.screenshot({ path: 'visual/shots/pwa-24-office-matches-row.png' })
+  await page.keyboard.press('Escape')
+
+  await page.goto('/mobile/lists/L-34821-2026-07-28-AM')
+  await page.waitForLoadState('networkidle')
+  await settleSlide(page)
+  await expect(page.getByText('Sarah Mitchell').first()).toBeVisible()
+  await expect(page.getByText('lap appy ?conv to open').first()).toBeVisible()
+})

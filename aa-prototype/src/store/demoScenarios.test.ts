@@ -14,7 +14,7 @@ import { wireBillingRun } from './billingRun'
 import { authoriseList, editBooking } from './lifecycle'
 import { claimModifier, removeModifier } from './modifierActions'
 import { seedModifierId } from '../domain/seed/modifiers'
-import { ingestPdfRow, processMessage } from './integrationActions'
+import { ingestPdfRow } from './integrationActions'
 import { advanceClockToDate } from './clockActions'
 import { receivePayment } from './paymentActions'
 import { payablesDue, runPayables } from './payablesActions'
@@ -23,6 +23,8 @@ import { regenerateInvoiceFromLock } from './locks'
 import type { Actor } from './mutate'
 import { ANAE, HOSP, INS, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
 import { SURGEON_PDFS } from '../domain/integrations'
+import { decideImportRow, importHospitalDownload } from './matchingActions'
+import { assessImportRow } from './matchingSelectors'
 import type { Invoice } from '../domain/types'
 import { projectedListId } from '../domain/slots'
 
@@ -30,7 +32,7 @@ const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 
 describe('S1 · booking to theatre', () => {
-  it('the St George\'s S12 booking lands a new Booking on Souter\'s ACTIVE Tue 28 Jul AM List', () => {
+  it("St George's file is imported and the office creates Sarah Mitchell's Booking on Souter's ACTIVE Tue 28 Jul AM List (catch-up Phase 33)", () => {
     const api = createAppStore()
     const listId = projectedListId(ANAE.souter, '2026-07-28', 'AM')
     const before = bookingsForList(api.getState(), listId)
@@ -38,12 +40,26 @@ describe('S1 · booking to theatre', () => {
     expect(before).toHaveLength(3)
     expect(before.every((c) => !c.completed)).toBe(true)
 
-    const res = processMessage(api, 'MSG-STG-1001')
-    expect(res.ok).toBe(true)
+    const imported = importHospitalDownload(api, OFFICE, 'SAMPLE_STG')
+    if (!imported.ok) throw new Error(imported.message)
+    // Nothing changes the schedule until the office decides (RV-13).
+    expect(bookingsForList(api.getState(), listId)).toHaveLength(3)
+    const r1 = api.getState().intake.batches[imported.value.batchId!]!.rowIds[0]!
+    const suggestion = assessImportRow(api.getState(), r1)!.suggestion
+    expect(suggestion).toEqual({ kind: 'createBooking', listId })
+    const res = decideImportRow(api, OFFICE, r1, { kind: 'createBooking', listId })
+    if (!res.ok) throw new Error(res.message)
 
-    const list = api.getState().schedule.lists[listId]
-    expect(list?.state).toBe('ACTIVE')
-    expect(bookingsForList(api.getState(), listId)).toHaveLength(4)
+    const s = api.getState()
+    expect(s.schedule.lists[listId]?.state).toBe('ACTIVE')
+    expect(bookingsForList(s, listId)).toHaveLength(4)
+    const sarah = s.schedule.bookings[res.value.bookingId!]!
+    expect(sarah).toMatchObject({ scheduledTime: '08:30', source: 'hospitalDownload' })
+    expect(s.masters.patients[sarah.patientId]!.name).toBe('Sarah Mitchell')
+    const procedure = Object.values(s.schedule.procedures).find((p) => p.bookingId === sarah.id)!
+    expect(procedure.procedureText?.text).toBe('lap appy ?conv to open')
+    // No Contract until the office sets it (S1 Beat 1, Phase 20's step rail).
+    expect(procedure.governingContractId).toBeUndefined()
   })
 
   it('Jump to procedure day advances forward to Tue 28 Jul 08:00', () => {

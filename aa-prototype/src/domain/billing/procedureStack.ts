@@ -132,6 +132,7 @@ export function procedureTextKind(source: ProcedureTextSource): 'rooms' | 'hospi
       return 'rooms'
     case 'hospitalDownload':
     case 'hospitalFeed':
+    case 'hospitalSheet':
       return 'hospital'
     case 'phone':
     case 'anaesthetist':

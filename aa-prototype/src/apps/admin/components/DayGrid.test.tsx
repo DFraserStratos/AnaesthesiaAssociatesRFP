@@ -67,13 +67,13 @@ function renderGrid() {
   const hospitalId = Object.keys(masters.hospitals)[0]!
   // A List needs attention for a live conflict (no List lacks a surgeon since catch-up Phase 31).
   const attention = view('A1', {
-    kind: 'public',
+    kind: 'preop',
     id: 'attention',
     patch: { conflicts: [{ kind: 'holiday', cause: 'holiday:HHX', holidayId: 'HHX', raisedAtISO: '2026-07-21T08:00:00' }] },
   })
-  // A private List's note is an office annotation (a public or pre-op List's note is its subtitle).
+  // A private List's note is an office annotation (a pre-op List's note is its subtitle).
   const noted = view('A2', { kind: 'private', id: 'noted', patch: { surgeonId, notes: 'Called hospital' } })
-  const warned = view('A3', { kind: 'public', id: 'warned', patch: { hospitalId } })
+  const warned = view('A3', { kind: 'preop', id: 'warned', patch: { hospitalId } })
   const holiday = view('A4', { status: 'holiday', note: 'Annual leave' })
 
   return render(
@@ -252,9 +252,10 @@ describe('DayGrid conflicts (catch-up Phase 30: the List changes colour)', () =>
 })
 
 describe('DayGrid pairing (catch-up Phase 31: every List names a hospital and a surgeon)', () => {
-  it('an acute or pre-op block keeps its template label and carries its surgeon in the tooltip; no block reads Surgeon TBC', () => {
+  it('a pre-op block keeps its template label and carries its surgeon in the tooltip; a re-homed acute List reads as private; no block reads Surgeon TBC', () => {
     const masters = useAppStore.getState().masters
-    const acute = view('A1', { kind: 'public', id: 'acute', patch: { hospitalId: 'H-CPH', surgeonId: 'S-OKAFOR', notes: 'Acute theatre' } })
+    // Catch-up Phase 32d: a former public List that kept its Bookings is an ordinary private List.
+    const acute = view('A1', { kind: 'private', id: 'acute', patch: { hospitalId: 'H-CPH', surgeonId: 'S-OKAFOR', notes: 'Acute theatre' } })
     const preop = view('A2', { kind: 'preop', id: 'preop', patch: { hospitalId: 'H-AAROOMS', surgeonId: 'S-PATEL', notes: 'Pre-op clinic / AA rooms' } })
     const { container } = render(
       <DayGrid
@@ -267,13 +268,14 @@ describe('DayGrid pairing (catch-up Phase 31: every List names a hospital and a 
     )
     const acuteBlock = container.querySelector('[data-list-id="acute"]') as HTMLElement
     expect(acuteBlock.textContent).toContain('Christchurch Public')
-    expect(acuteBlock.textContent).toContain('Acute theatre')
-    expect(acuteBlock.getAttribute('title')).toContain('Mr C. Okafor')
+    expect(acuteBlock.textContent).toContain('Mr C. Okafor')
+    // Its note is kept on the List, as any private List's note: in the tooltip, not the subtitle.
+    expect(acuteBlock.getAttribute('title')).toContain('Note: Acute theatre')
     const preopBlock = container.querySelector('[data-list-id="preop"]') as HTMLElement
     expect(preopBlock.textContent).toContain('Pre-op clinic / AA rooms')
     expect(preopBlock.getAttribute('title')).toContain('Ms K. Patel')
-    // A template label is the subtitle, not an office note: no note dot.
-    expect(screen.queryByTitle(/^Note:/)).toBeNull()
+    // A template label is the subtitle, not an office note.
+    expect(preopBlock.getAttribute('title') ?? '').not.toContain('Note:')
     expect(container.textContent).not.toContain('Surgeon TBC')
   })
 })
@@ -303,13 +305,14 @@ describe('DayGrid Draft Lists band and booking counts (catch-up Phase 31; US-13.
     const { container } = renderWithDrafts(true)
     const band = container.querySelector('[data-shot="daygrid-draft-band"]') as HTMLElement
     expect(band).not.toBeNull()
-    expect(band.getAttribute('data-draft-band-count')).toBe('2')
+    // One since catch-up Phase 32d: Dr Ngata's acute AM clash went with the public List kind.
+    expect(band.getAttribute('data-draft-band-count')).toBe('1')
     const stg = container.querySelector('[data-draft-block="LD-001"]') as HTMLElement
     expect(stg).toHaveTextContent('UNASSIGNED')
     expect(stg).toHaveTextContent("St George's · Mr S. Tan")
     expect(stg).toHaveTextContent('16 h')
-    expect(container.querySelector('[data-draft-block="LD-RCB016-2026-07-21-AM"]')).toHaveTextContent('Dr Ngata unavailable')
-    expect(screen.getByText(/2 Draft Lists unassigned/)).toBeInTheDocument()
+    expect(container.querySelector('[data-draft-block="LD-RCB016-2026-07-21-AM"]')).toBeNull()
+    expect(screen.getByText(/1 Draft List unassigned/)).toBeInTheDocument()
   })
 
   it('has no band on a day without Draft Lists', () => {

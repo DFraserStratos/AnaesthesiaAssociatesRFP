@@ -62,7 +62,7 @@
               "wait": 500
             },
             {
-              "click": "[data-draft-list-row=\"LD-RCB016-2026-07-21-AM\"] >> role=button[name=/^Assign/]"
+              "click": "[data-draft-list-row=\"LD-RCB022-2026-07-24-AM\"] >> role=button[name=/^Assign/]"
             },
             {
               "wait": 500
@@ -78,7 +78,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=\"candidates-not-available\"] [data-candidate-closed=\"38455\"]"
+            "[data-shot=\"candidates-not-available\"]"
           ]
         },
         {

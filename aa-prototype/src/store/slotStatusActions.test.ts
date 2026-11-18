@@ -18,7 +18,7 @@ const OFFICE = OFFICE_ACTOR
 const SOUTER = SOUTER_ACTOR
 
 const publicHospital: SlotStatusDraft = {
-  label: 'Public hospital',
+  label: 'Teaching',
   longLabel: 'At the public hospital',
   description: 'Working at the public hospital. Same effect as Unavailable.',
   colour: 'unavailable',
@@ -103,7 +103,7 @@ describe('availability status master actions', () => {
     createAvailabilitySeries(api, SOUTER, { anaesthetistId: ANAE.souter, statusKey: 'ST0001', sessions: 'PM', weekdays: [5], everyWeeks: 2, startISO: '2026-07-31' })
     const used = retireSlotStatus(api, OFFICE, 'ST0001')
     expect(used.ok ? '' : used.message).toBe('1 repeating series uses this status. Delete it first.')
-    deleteAvailabilitySeries(api, SOUTER, 'AS0001')
+    deleteAvailabilitySeries(api, SOUTER, 'AS0008')
     setAvailabilityRange(api, SOUTER, { anaesthetistId: ANAE.souter, fromISO: '2026-08-21', toISO: '2026-08-21', sessions: 'PM', statusKey: 'ST0001' })
     expect(retireSlotStatus(api, OFFICE, 'ST0001').ok).toBe(true)
     const st = api.getState()

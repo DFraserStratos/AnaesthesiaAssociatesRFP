@@ -94,9 +94,12 @@ export function resolveStatusVisual(input: { colour: StatusColourToken; treatmen
   return { ...p, treatment: 'solid', blockBackground: p.tint, solidBackground: p.solid, leftBar: p.solid }
 }
 
-/** Each List kind's fixed token: a List renders exactly as before. */
+/**
+ * Each List kind's fixed token: a List renders exactly as before. Public left
+ * the List kinds in catch-up Phase 32d: its `public` token is the palette the
+ * Public status record (`publicHospital`) uses.
+ */
 export const LIST_KIND_VISUAL: Record<ListKind, { colour: StatusColourToken; treatment: 'solid' }> = {
   private: { colour: 'private', treatment: 'solid' },
-  public: { colour: 'public', treatment: 'solid' },
   preop: { colour: 'preop', treatment: 'solid' },
 }

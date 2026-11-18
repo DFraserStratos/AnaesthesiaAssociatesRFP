@@ -12,7 +12,36 @@
 import type { ListKind, RecurringBooking } from '../types'
 import { ANAE, HOSP, SURG } from './cast'
 
+/**
+ * A weekly public hospital session (catch-up Phase 32d, D86): until Phase 32d a
+ * recurring booking of the retired `public` List kind. Seed-only: it keeps the
+ * `RCB` id it always had (so no other row's id moves) and the hospital, surgeon
+ * and note its projected Lists carried, because the seed still projects it in
+ * the first pass to keep every draw and Booking identical
+ * (`seed/publicSessions.ts`), then re-homes it as each anaesthetist's weekly
+ * Public series. It is never a recurring booking in the app.
+ */
+export interface PublicSessionPattern extends Omit<RecurringBooking, 'kind'> {
+  kind: 'publicSession'
+}
+
 let n = 0
+function nextId(): string {
+  n += 1
+  return `RCB${String(n).padStart(3, '0')}`
+}
+
+function pub(
+  anaesthetistId: string,
+  dayOfWeek: 1 | 2 | 3 | 4 | 5,
+  session: 'AM' | 'PM',
+  hospitalId: string,
+  surgeonId: string,
+  notes: string,
+): PublicSessionPattern {
+  return { id: nextId(), anaesthetistId, dayOfWeek, session, kind: 'publicSession', hospitalId, surgeonId, notes }
+}
+
 function rb(
   anaesthetistId: string,
   dayOfWeek: 1 | 2 | 3 | 4 | 5,
@@ -22,9 +51,8 @@ function rb(
   surgeonId: string,
   notes?: string,
 ): RecurringBooking {
-  n += 1
   const row: RecurringBooking = {
-    id: `RCB${String(n).padStart(3, '0')}`,
+    id: nextId(),
     anaesthetistId,
     dayOfWeek,
     session,
@@ -49,14 +77,16 @@ const ACUTE_NOTE = 'Acute theatre'
  * The pairing rule (catch-up Phase 31; US-01.3.1): every recurring booking names
  * a hospital (or the AA rooms location) and a surgeon, because it projects
  * Lists. Our reading, logged for the owner (no OQ): a pre-op clinic names the
- * surgeon whose patients it assesses, and an acute or public theatre names its
- * on-call surgeon. Each pick holds no Contract, sits in no surgeon group and
+ * surgeon whose patients it assesses. The public patterns' on-call surgeon is
+ * used only by the seed's first pass (the Lists that keep Bookings keep it); a
+ * Public session names nobody (catch-up Phase 32d supersedes Phase 31's reading
+ * that an acute or public theatre names its on-call surgeon). Each pick holds no Contract, sits in no surgeon group and
  * has no pairing preference, so no fee, Contract fit or picker group moves.
  */
 const ACUTE_ON_CALL = SURG.okafor
 const ELECTIVE_ORTHO = SURG.patel
 
-export const RECURRING_BOOKINGS: readonly RecurringBooking[] = [
+const SEED_PATTERN_ROWS: readonly (RecurringBooking | PublicSessionPattern)[] = [
   // --- Souter: the design week (Mon Forte/Okafor + STG/Lim; Tue STG/Hale +
   // SX/Patel; Wed CES/Whitford AM; Thu CPH acute AM + pre-op PM) ---
   rb(ANAE.souter, 1, 'AM', 'private', HOSP.forte, SURG.okafor),
@@ -64,7 +94,7 @@ export const RECURRING_BOOKINGS: readonly RecurringBooking[] = [
   rb(ANAE.souter, 2, 'AM', 'private', HOSP.stg, SURG.hale),
   rb(ANAE.souter, 2, 'PM', 'private', HOSP.sx, SURG.patel),
   rb(ANAE.souter, 3, 'AM', 'private', HOSP.ces, SURG.whitford),
-  rb(ANAE.souter, 4, 'AM', 'public', HOSP.cph, ACUTE_ON_CALL, ACUTE_NOTE),
+  pub(ANAE.souter, 4, 'AM', HOSP.cph, ACUTE_ON_CALL, ACUTE_NOTE),
   rb(ANAE.souter, 4, 'PM', 'preop', HOSP.aaRooms, SURG.patel, PREOP_NOTE),
 
   // --- Rutherford ---
@@ -75,12 +105,12 @@ export const RECURRING_BOOKINGS: readonly RecurringBooking[] = [
   rb(ANAE.rutherford, 4, 'PM', 'private', HOSP.stg, SURG.hale),
 
   // --- Sharma ---
-  rb(ANAE.sharma, 2, 'AM', 'public', HOSP.cph, ACUTE_ON_CALL, ACUTE_NOTE),
+  pub(ANAE.sharma, 2, 'AM', HOSP.cph, ACUTE_ON_CALL, ACUTE_NOTE),
   rb(ANAE.sharma, 3, 'PM', 'private', HOSP.sx, SURG.patel),
   rb(ANAE.sharma, 4, 'AM', 'private', HOSP.forte, SURG.lim),
 
   // --- Ngata ---
-  rb(ANAE.ngata, 2, 'AM', 'public', HOSP.cph, ACUTE_ON_CALL, ACUTE_NOTE),
+  pub(ANAE.ngata, 2, 'AM', HOSP.cph, ACUTE_ON_CALL, ACUTE_NOTE),
   rb(ANAE.ngata, 4, 'PM', 'private', HOSP.sx, SURG.doyle),
   rb(ANAE.ngata, 5, 'AM', 'private', HOSP.forte, SURG.okafor),
 
@@ -97,18 +127,18 @@ export const RECURRING_BOOKINGS: readonly RecurringBooking[] = [
   rb(ANAE.chen, 5, 'AM', 'private', HOSP.ces, SURG.reid),
 
   // --- Ropata ---
-  rb(ANAE.ropata, 2, 'AM', 'public', HOSP.cph, ELECTIVE_ORTHO, 'Elective ortho'),
-  rb(ANAE.ropata, 2, 'PM', 'public', HOSP.cph, ELECTIVE_ORTHO, 'Elective ortho'),
-  rb(ANAE.ropata, 4, 'AM', 'public', HOSP.cph, ELECTIVE_ORTHO, 'Elective ortho'),
-  rb(ANAE.ropata, 4, 'PM', 'public', HOSP.cph, ELECTIVE_ORTHO, 'Elective ortho'),
+  pub(ANAE.ropata, 2, 'AM', HOSP.cph, ELECTIVE_ORTHO, 'Elective ortho'),
+  pub(ANAE.ropata, 2, 'PM', HOSP.cph, ELECTIVE_ORTHO, 'Elective ortho'),
+  pub(ANAE.ropata, 4, 'AM', HOSP.cph, ELECTIVE_ORTHO, 'Elective ortho'),
+  pub(ANAE.ropata, 4, 'PM', HOSP.cph, ELECTIVE_ORTHO, 'Elective ortho'),
 
   // --- Delaney ---
-  rb(ANAE.delaney, 1, 'PM', 'public', HOSP.cph, ACUTE_ON_CALL, ACUTE_NOTE),
+  pub(ANAE.delaney, 1, 'PM', HOSP.cph, ACUTE_ON_CALL, ACUTE_NOTE),
   rb(ANAE.delaney, 2, 'AM', 'preop', HOSP.aaRooms, SURG.okafor, PREOP_NOTE),
   rb(ANAE.delaney, 5, 'AM', 'private', HOSP.stg, SURG.doyle),
 
   // --- Hughes (mostly free by design) ---
-  rb(ANAE.hughes, 1, 'AM', 'public', HOSP.cph, ACUTE_ON_CALL, ACUTE_NOTE),
+  pub(ANAE.hughes, 1, 'AM', HOSP.cph, ACUTE_ON_CALL, ACUTE_NOTE),
 
   // --- Morrison ---
   rb(ANAE.morrison, 1, 'AM', 'private', HOSP.stg, SURG.tan),
@@ -118,10 +148,10 @@ export const RECURRING_BOOKINGS: readonly RecurringBooking[] = [
   rb(ANAE.morrison, 4, 'PM', 'private', HOSP.forte, SURG.okafor),
 
   // --- Whitaker ---
-  rb(ANAE.whitaker, 2, 'AM', 'public', HOSP.cph, ACUTE_ON_CALL, ACUTE_NOTE),
+  pub(ANAE.whitaker, 2, 'AM', HOSP.cph, ACUTE_ON_CALL, ACUTE_NOTE),
   rb(ANAE.whitaker, 2, 'PM', 'preop', HOSP.aaRooms, SURG.lim, PREOP_NOTE),
-  rb(ANAE.whitaker, 4, 'AM', 'public', HOSP.cph, ACUTE_ON_CALL, ACUTE_NOTE),
-  rb(ANAE.whitaker, 5, 'AM', 'public', HOSP.cph, ACUTE_ON_CALL, ACUTE_NOTE),
+  pub(ANAE.whitaker, 4, 'AM', HOSP.cph, ACUTE_ON_CALL, ACUTE_NOTE),
+  pub(ANAE.whitaker, 5, 'AM', HOSP.cph, ACUTE_ON_CALL, ACUTE_NOTE),
 
   // --- Ngatai ---
   rb(ANAE.ngatai, 1, 'PM', 'private', HOSP.sx, SURG.patel),
@@ -142,3 +172,13 @@ export const RECURRING_BOOKINGS: readonly RecurringBooking[] = [
   rb(ANAE.fitzgerald, 4, 'AM', 'private', HOSP.sx, SURG.patel),
   rb(ANAE.fitzgerald, 4, 'PM', 'preop', HOSP.aaRooms, SURG.tan, PREOP_NOTE),
 ] as const
+
+const isPublicPattern = (row: RecurringBooking | PublicSessionPattern): row is PublicSessionPattern => row.kind === 'publicSession'
+
+/** The surgeons' recurring bookings (private and pre-op only since catch-up Phase 32d), ids as before. */
+export const RECURRING_BOOKINGS: readonly RecurringBooking[] = SEED_PATTERN_ROWS.filter(
+  (row): row is RecurringBooking => !isPublicPattern(row),
+)
+
+/** The twelve weekly public hospital sessions (catch-up Phase 32d), with the `RCB` ids they always had. */
+export const PUBLIC_SESSION_PATTERNS: readonly PublicSessionPattern[] = SEED_PATTERN_ROWS.filter(isPublicPattern)

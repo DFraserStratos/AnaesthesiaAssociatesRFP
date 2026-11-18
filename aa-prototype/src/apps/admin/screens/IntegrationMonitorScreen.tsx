@@ -20,6 +20,7 @@ import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { DemoBadge } from '../../../shared/DemoBadge'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
 import { compareSessions, sessionText } from '../../../domain/outOfHours'
+import { RowField } from '../components/RowField'
 
 interface Props {
   actor: Actor
@@ -40,7 +41,7 @@ const head = adminHead()
  * flow), the surgeon-PDF inbox + extraction review, the ethnicity data-quality
  * queue, and the NHI/ethnicity validators. It surfaces the RFP's reliability
  * posture: per-message acknowledgement, store-then-process, retry with a
- * dead-letter queue and manual intervention.
+ * dead-letter queue (parsed messages wait on the matching screen, catch-up Phase 33).
  */
 export function IntegrationMonitorScreen({ actor }: Props) {
   const [tab, setTab] = useState<Tab>('messages')
@@ -84,13 +85,13 @@ export function IntegrationMonitorScreen({ actor }: Props) {
 function MessagesTab() {
   const integrations = useAppStore((s) => s.integrations)
   const rows = useMemo(() => integrationMonitor({ integrations }), [integrations])
-  const attention = rows.filter((r) => r.status === 'deadLetter' || r.status === 'manualIntervention')
+  const attention = rows.filter((r) => r.status === 'deadLetter')
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {attention.length > 0 && (
         <div data-shot="integrations-attention" style={{ background: semantic.warning.tint, border: `1px solid ${semantic.warning.solid}44`, borderRadius: radius.card, padding: '10px 14px', fontSize: 13, color: semantic.warning.onTint }}>
-          {plural(attention.length, 'message')} need attention (dead-letter or manual intervention). Reprocess after fixing the cause below.
+          {plural(attention.length, 'message')} need attention (dead-letter). Reprocess after fixing the cause below.
         </div>
       )}
       {rows.length === 0 ? (
@@ -108,16 +109,17 @@ function MessagesTab() {
         </div>
       )}
       <div style={{ fontSize: 12, color: neutral.mist, lineHeight: 1.5 }}>
-        "Retried" is a processed message that took more than one attempt. Duplicates are deduped by the
-        message control ID (no second Booking). Dead-letter and manual-intervention rows are retained for the
-        office to action, never dropped.
+        Parsed messages are sent to the matching screen for the office to decide. Nothing is applied
+        automatically. "Retried" is a processed message that took more than one attempt. Duplicates are deduped
+        by the message control ID (no second row). Dead-letter rows are retained for the office to action, never
+        dropped.
       </div>
     </div>
   )
 }
 
 function MessageLogRow({ row }: { row: IntegrationMonitorRow }) {
-  const needsAction = row.status === 'deadLetter' || row.status === 'manualIntervention'
+  const needsAction = row.status === 'deadLetter'
   return (
     <tr>
       <td className="mono" style={cell}>{hhmm(row.atISO)}</td>
@@ -344,21 +346,6 @@ function PdfReview({ pdf, actor, onBack }: { pdf: SurgeonPdf; actor: Actor; onBa
   )
 }
 
-function RowField({ label, value, onChange, width, mono, invalid, readOnly }: { label: string; value: string; onChange?: (v: string) => void; width: number; mono?: boolean; invalid?: boolean; readOnly?: boolean }) {
-  return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist }}>{label}</span>
-      <input
-        value={value}
-        readOnly={readOnly === true}
-        onChange={(e) => onChange?.(e.target.value)}
-        className={mono === true ? 'mono' : undefined}
-        style={{ font: 'inherit', ...(mono === true ? { fontFamily: fontFamily.mono } : {}), fontSize: 12.5, padding: '5px 8px', borderRadius: radius.ctl, border: `1px solid ${invalid === true ? semantic.error.solid : readOnly === true ? neutral.line : neutral.lineStrong}`, background: readOnly === true ? neutral.bg : neutral.surface, color: neutral.ink, width }}
-      />
-    </label>
-  )
-}
-
 // ---------------------------------------------------------------------------
 // Data quality tab
 // ---------------------------------------------------------------------------
@@ -532,7 +519,6 @@ const STATUS_TONE: Record<string, { bg: string; fg: string }> = {
   processed: { bg: semantic.success.tint, fg: semantic.success.onTint },
   duplicate: { bg: neutral.sunken, fg: neutral.slate },
   retrying: { bg: semantic.warning.tint, fg: semantic.warning.onTint },
-  manualIntervention: { bg: semantic.warning.tint, fg: semantic.warning.onTint },
   deadLetter: { bg: semantic.error.tint, fg: semantic.error.onTint },
   pending: { bg: neutral.sunken, fg: neutral.slate },
 }

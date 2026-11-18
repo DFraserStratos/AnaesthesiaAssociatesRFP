@@ -210,15 +210,16 @@ describe('assignDraftList (US-01.6.3)', () => {
 
   it('refuses a session marked not available (US-01.6.3, D59): it is made available first, then assigns', () => {
     const api = store()
-    const clash = 'LD-RCB016-2026-07-21-AM'
+    // Dr Beaumont's Fri 24 Jul AM clash (Dr Ngata's Tue 21 acute clash left with the public List kind, catch-up Phase 32d).
+    const clash = 'LD-RCB022-2026-07-24-AM'
     const before = api.getState().schedule
-    const out = assignDraftList(api, OFFICE, clash, { anaesthetistId: ANAE.ngata })
+    const out = assignDraftList(api, OFFICE, clash, { anaesthetistId: ANAE.beaumont })
     expect(code(out)).toBe('sessionNotOpen')
-    expect(out.ok ? '' : out.message).toBe('Dr Ngata has marked this session not available. They need to make it available first.')
+    expect(out.ok ? '' : out.message).toBe('Dr Beaumont has marked this session not available. They need to make it available first.')
     expect(api.getState().schedule).toBe(before)
-    // Dr Ngata agrees and makes it available: the assignment goes through, with no conflict.
-    expect(setAvailability(api, OFFICE, ANAE.ngata, TUE21, 'AM', 'free').ok).toBe(true)
-    const again = assignDraftList(api, OFFICE, clash, { anaesthetistId: ANAE.ngata })
+    // Dr Beaumont agrees and makes it available: the assignment goes through, with no conflict.
+    expect(setAvailability(api, OFFICE, ANAE.beaumont, '2026-07-24', 'AM', 'free').ok).toBe(true)
+    const again = assignDraftList(api, OFFICE, clash, { anaesthetistId: ANAE.beaumont })
     expect(again.ok).toBe(true)
     expect(again.ok && again.value.warnings.some((w) => /flags a conflict/.test(w))).toBe(false)
     expect(assigned(api.getState().schedule.lists[clash]).conflicts).toEqual([])
@@ -250,7 +251,9 @@ describe('assignDraftList (US-01.6.3)', () => {
     const s = api.getState()
     expect(draftListFitsAnaesthetist(s, SEED_DRAFT_LIST_IDS.forte, ANAE.souter)).toBe(true)
     expect(draftListFitsAnaesthetist(s, SEED_DRAFT_LIST_IDS.eyeSurgery, ANAE.sharma)).toBe(false)
-    expect(draftListFitsAnaesthetist(s, 'LD-RCB016-2026-07-21-AM', ANAE.ngata)).toBe(false)
+    // Dr Beaumont's own Fri 24 AM clash does not fit her: that session is closed (catch-up Phase 32d removed Dr Ngata's).
+    expect(s.schedule.lists['LD-RCB022-2026-07-24-AM']).toBeDefined()
+    expect(draftListFitsAnaesthetist(s, 'LD-RCB022-2026-07-24-AM', ANAE.beaumont)).toBe(false)
   })
 })
 

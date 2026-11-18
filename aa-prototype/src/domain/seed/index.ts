@@ -69,7 +69,8 @@ import { CONTRACT, CONTRACTS } from './contracts'
 import { PARTIES, PARTY } from './parties'
 import { SPECIALTIES } from './specialties'
 import { FUNDING_TAGS } from './fundingTags'
-import { RECURRING_BOOKINGS } from './recurringBookings'
+import { PUBLIC_SESSION_PATTERNS, RECURRING_BOOKINGS } from './recurringBookings'
+import { publicPatternsForFirstPass, rehomePublicLists } from './publicSessions'
 import { HOSPITAL_HOLIDAYS, SEED_LEAVE } from './availabilityAndHolidays'
 import { PAT, SEED_PAYER_COUNTER, buildPatients } from './patients'
 import { DAY_NOTES, DAY_NOTE_NEXT } from './dayNotes'
@@ -411,9 +412,13 @@ interface SeedBuild {
 
 function buildSeedInternal(): SeedBuild {
   const slotStatuses = byId(SEED_SLOT_STATUSES, (s) => s.key)
+  // Catch-up Phase 32d: the first pass still projects the public patterns (as
+  // private Lists) so every draw and Booking holds; `rehomePublicLists` settles them below.
+  const firstPassRecurring = [...RECURRING_BOOKINGS, ...publicPatternsForFirstPass()]
+  const publicPatternIds = new Set(PUBLIC_SESSION_PATTERNS.map((p) => p.id))
   const canvasMasters: CanvasMasters = {
     anaesthetists: canvasAnaesthetists(ANAESTHETISTS),
-    recurringBookings: RECURRING_BOOKINGS,
+    recurringBookings: firstPassRecurring,
     leave: SEED_LEAVE,
     series: [],
     statuses: slotStatuses,
@@ -425,17 +430,21 @@ function buildSeedInternal(): SeedBuild {
   const lists = byId(generated.lists, (l) => l.id)
   const canvas: Canvas = { slots, lists }
 
-  seedRecordedWindow(lists, slots, {
+  const publicListIds = new Set(generated.lists.filter((l) => l.recurringBookingId !== undefined && publicPatternIds.has(l.recurringBookingId)).map((l) => l.id))
+  const acuteListIds = seedRecordedWindow(lists, slots, {
     seed: SEED,
     anaesthetistIds: ANAESTHETISTS.map((a) => a.registrationNumber),
-    recurringBookings: RECURRING_BOOKINGS,
+    recurringBookings: firstPassRecurring,
     leave: SEED_LEAVE,
   })
+  for (const id of acuteListIds) publicListIds.add(id)
   applyDesignFixups(canvas)
   applyWed22Facts(canvas)
   applyPhase09Slots(canvas)
   // A clash under a Slot a fixup later freed is not a clash any more.
+  // A public pattern meeting leave raises nothing (catch-up Phase 32d): the leave stands and the series leaves it alone.
   const clashes = generated.clashes.filter((c) => {
+    if (publicPatternIds.has(c.recurringBookingId)) return false
     const slot = slots[c.slotId]
     return slot !== undefined && isClosedKey(slotStatuses, slot.status) && listInSlotOf(lists, c.slotId) === undefined
   })
@@ -562,6 +571,16 @@ function buildSeedInternal(): SeedBuild {
   if (aia !== undefined) bookingsRec[aia.id] = { ...aia, funderPartyId: PARTY.aia, insuranceApprovalNumber: 'AIA-2026-30418' }
   // Catch-up Phase 20a: each seeded Procedure's text source and time, and its invoice description.
   finaliseSeedProcedureTexts(proceduresRec, bookingsRec, lists, byId(CONTRACTS, (c) => c.id))
+  // Catch-up Phase 32d (D86): after the last Booking is placed, the public Lists are re-homed: one
+  // holding a Booking stays a private List, a bookless one becomes a Public session ("CPH").
+  const rehomed = rehomePublicLists({
+    lists,
+    slots,
+    publicListIds,
+    bookedListIds: new Set(Object.values(bookingsRec).map((b) => b.listId)),
+    canvasStartISO: horizon.startISO,
+    canvasEndISO: horizon.endISO,
+  })
   // Conflicts come from facts, by the same rule `mutate()` runs (catch-up Phase 30).
   // Stamped at the seed clock (08:00), as a live mutation at that moment would be.
   const reconciled = reconcileAllConflicts(lists, { holidays: HOSPITAL_HOLIDAYS }, `${DEMO_TODAY}T08:00:00`)
@@ -640,7 +659,8 @@ function buildSeedInternal(): SeedBuild {
       procedures: proceduresRec,
       billingLines: billingLinesRec,
       warningClearances: {},
-      availabilitySeries: {},
+      // Catch-up Phase 32d: each anaesthetist's weekly Public series (AS0001 to AS0007).
+      availabilitySeries: byId(rehomed.series, (x) => x.id),
     },
     audit,
     settings: {
@@ -667,7 +687,7 @@ function buildSeedInternal(): SeedBuild {
       hospital: 1,
       contract: 1,
       slotStatus: 1,
-      availabilitySeries: 1,
+      availabilitySeries: rehomed.series.length + 1,
     },
   }
 
@@ -1157,7 +1177,7 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       label: 'Integration booking · locked target (SUBMITTED list)',
       entityType: 'booking',
       entityId: scenario.integrationLockedTarget,
-      detail: 'Delaney Fri 17 (SUBMITTED); the locked-target S14 message parks as manual intervention, booking unchanged.',
+      detail: 'Delaney Fri 17 (SUBMITTED); the S14 message for it stages an ordinary row on Matching, which the office can apply until AUTHORISED.',
     },
     includedModifierBooking: {
       label: 'Included modifier · P1 on a Spine group (S3a)',

@@ -17,8 +17,8 @@ import { AssignDraftListSheet } from './AssignDraftListSheet'
 import { DraftListDrawer } from '../components/DraftListDrawer'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-/** Seeded recurring clashes: Dr Ngata's acute Tue 21 AM (RCB016) and Dr Beaumont's Fri 24 AM at CES (RCB022). */
-const NGATA_CLASH = recurringClashListId('RCB016', '2026-07-21', 'AM')
+/** Seeded recurring clash: Dr Beaumont's Fri 24 AM at CES (RCB022). Dr Ngata's acute Tue 21 AM went with the public List kind (catch-up Phase 32d). */
+const CLOSED_CLASH = recurringClashListId('RCB022', '2026-07-24', 'AM')
 const BEAUMONT_FRI = recurringClashListId('RCB022', '2026-07-24', 'AM')
 
 function renderSheet(listId: string, initialAnaesthetistId?: string) {
@@ -114,8 +114,8 @@ describe('AssignDraftListSheet', () => {
 
   it('a closed session is shown but never selectable; the colleague stand-in makes it available, then it assigns with the success moment (US-01.6.3, D59)', () => {
     vi.useFakeTimers()
-    const { container, onAssigned } = renderSheet(NGATA_CLASH)
-    const row = container.querySelector(`[data-shot="candidates-not-available"] [data-candidate-closed="${ANAE.ngata}"]`) as HTMLElement
+    const { container, onAssigned } = renderSheet(CLOSED_CLASH)
+    const row = container.querySelector(`[data-shot="candidates-not-available"] [data-candidate-closed="${ANAE.beaumont}"]`) as HTMLElement
     expect(row).not.toBeNull()
     expect(row.tagName).not.toBe('BUTTON')
     expect(row.getAttribute('role')).toBe('group')
@@ -123,16 +123,16 @@ describe('AssignDraftListSheet', () => {
     expect(row).toHaveTextContent('Not available this session')
     expect(container.textContent).not.toMatch(/flags a conflict/)
     expect(rowsIn(container, 'candidates-not-available')).toEqual([])
-    fireEvent.click(within(row).getByRole('button', { name: 'Ask Dr Ngata to make this session available' }))
-    const ngata = rowsIn(container, 'candidates-clear').find((r) => r.getAttribute('data-candidate') === ANAE.ngata)!
-    expect(ngata).toBeDefined()
-    fireEvent.click(ngata)
+    fireEvent.click(within(row).getByRole('button', { name: 'Ask Dr Beaumont to make this session available' }))
+    const beaumont = rowsIn(container, 'candidates-clear').find((r) => r.getAttribute('data-candidate') === ANAE.beaumont)!
+    expect(beaumont).toBeDefined()
+    fireEvent.click(beaumont)
     expect(container.querySelector('[data-shot="assign-draft-list-closed-warning"]')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Assign Draft List' }))
     expect(screen.getByText('Draft List assigned')).toBeInTheDocument()
     act(() => vi.advanceTimersByTime(1100))
-    expect(onAssigned).toHaveBeenCalledWith(NGATA_CLASH, slotIdFor(ANAE.ngata, '2026-07-21', 'AM'))
-    expect(useAppStore.getState().schedule.lists[NGATA_CLASH]?.state).toBe('ACTIVE')
+    expect(onAssigned).toHaveBeenCalledWith(CLOSED_CLASH, slotIdFor(ANAE.beaumont, '2026-07-24', 'AM'))
+    expect(useAppStore.getState().schedule.lists[CLOSED_CLASH]?.state).toBe('ACTIVE')
   })
 
   it('a passed day disables assignment and says why', () => {

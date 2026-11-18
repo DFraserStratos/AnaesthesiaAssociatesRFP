@@ -1009,7 +1009,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
 
   // Locked target on a SUBMITTED List (Delaney Fri 17, St George's / Mr Doyle):
   // completed + valid, so index.ts marks the List SUBMITTED. The S14
-  // locked-target message addresses it and parks as manual-intervention.
+  // locked-target message addresses it and stages an ordinary row on the matching screen (catch-up Phase 33).
   const lockedTargetBooking = addBooking({
     listId: delaneyFri17Am,
     patientId: PAT.prentice,
@@ -1206,7 +1206,8 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   }
 
   const bookable = (list: AssignedList): boolean =>
-    (list.kind === 'private' || list.kind === 'public') && !pinnedListIds.has(list.id)
+    // Catch-up Phase 32d: the public sessions' Lists are projected as private in the first pass, so this selects exactly what it did.
+    list.kind === 'private' && !pinnedListIds.has(list.id)
 
   let pastBudget = 50
   let todayBudget = 20

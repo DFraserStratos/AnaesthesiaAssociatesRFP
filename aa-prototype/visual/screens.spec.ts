@@ -9,6 +9,7 @@ const ROUTES = [
   { name: 'mobile', path: '/mobile' },
   { name: 'web', path: '/web' },
   { name: 'admin', path: '/admin' },
+  { name: 'admin-matching', path: '/admin/matching' },
   { name: 'demo-control', path: '/demo/control' },
   { name: 'demo-xero', path: '/demo/xero' },
   { name: 'demo-integrations', path: '/demo/integrations' },

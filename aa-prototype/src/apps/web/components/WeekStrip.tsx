@@ -72,12 +72,12 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
     if (list === undefined) {
       const status = resolveDisplayStatus(v.slot.status, slotStatuses)
       if (v.open) return { l1: `${status.label} · ${sessionText(v.slot.session)}`, l2: v.slot.note ?? 'Open for cover' }
+      // A closed session: its label, then its note (Public, then "CPH"; catch-up Phase 32d), never List detail.
       return { l1: status.longLabel, l2: v.slot.note ?? '' }
     }
     if (list.kind === 'preop') return { l1: 'Pre-op clinic', l2: locationName(list.hospitalId, hospitals) }
     const hospital = locationName(list.hospitalId, hospitals)
-    // A public List keeps its template label ("Acute theatre"); a private one names its surgeon.
-    const surgeon = list.kind !== 'private' && list.notes !== undefined ? list.notes : (surgeons[list.surgeonId]?.name ?? '')
+    const surgeon = surgeons[list.surgeonId]?.name ?? ''
     return { l1: hospital, l2: `${surgeon}${surgeon !== '' ? ' · ' : ''}${sessionText(list.session)}` }
   }
 

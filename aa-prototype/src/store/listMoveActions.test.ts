@@ -297,7 +297,7 @@ describe('mark unavailable while holding a List (US-01.5.5)', () => {
     for (const slotId of slotIds) expect(markUnavailableAndMoveList(api, SOUTER, slotId, 'unavailable', { route: 'office' }).ok).toBe(true)
     const out = createAvailabilitySeries(api, SOUTER, series, { adoptSlotIds: slotIds })
     expect(out.ok && [out.value.set, out.value.leftAsIs]).toEqual([3, 0])
-    for (const slotId of slotIds) expect(api.getState().schedule.slots[slotId]?.seriesId).toBe('AS0001')
+    for (const slotId of slotIds) expect(api.getState().schedule.slots[slotId]?.seriesId).toBe('AS0008')
   })
 
   it('a SUBMITTED List in the session is refused outright, naming it, with no prompt to open (review fix)', () => {

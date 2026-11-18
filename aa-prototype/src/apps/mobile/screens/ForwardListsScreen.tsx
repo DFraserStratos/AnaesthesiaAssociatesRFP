@@ -174,8 +174,9 @@ export function ForwardListsScreen({
         return {
           ...base,
           variant: 'closed',
-          title: v.slot.note ?? status.longLabel,
-          subtitle: status.longLabel,
+          // Its label, then its note (Public hospital, then "CPH"; catch-up Phase 32d), as every view: never List detail.
+          title: status.longLabel,
+          ...(v.slot.note !== undefined ? { subtitle: v.slot.note } : {}),
           right: { kind: 'chip', statusKey: v.slot.status, label: status.label },
         }
       }

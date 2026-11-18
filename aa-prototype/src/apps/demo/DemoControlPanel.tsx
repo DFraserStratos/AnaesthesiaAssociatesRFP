@@ -232,16 +232,16 @@ const SCENARIOS: readonly Scenario[] = [
   {
     id: 'S1',
     title: 'S1 · Booking to theatre',
-    blurb: 'A hospital HL7 booking (Future scope, shown as an illustration) lands on a booked list, then captures live on procedure day.',
+    blurb: 'A hospital booking is imported and matched by the office onto a booked list, then captures live on procedure day.',
     run: () => {
       resetDemo(useAppStore)
       return {
         ok: true,
         message:
-          'Reset to a clean S1 state. Note: HL7 v2 and FHIR are Future scope, so present this beat as an illustration of intake; the in-scope path, a hospital download matched by the office, arrives in a later build. Start in Mobile to introduce the AM and PM Lists, then open Demo actions in the harness bar and run Fire hospital message with MSG-STG-1001 (the Integrations simulator is the alternative). Sarah Mitchell arrives as a fourth Booking on Dr Souter\'s Tue 28 Jul AM List, alongside its three booked cases, with no Contract: in Admin she waits on Day\'s Needs an invoice destination card. Open her Booking: its Billing card shows the steps inline. Choose Patient (Standard fills itself in), then No contract · RVG in Choose the Contract, which hands the RVG code to the anaesthetist (on the PWA, Office sets this Booking\'s Contract stands in). Use "Procedure day · 28 Jul", then pick her RVG code by typing "appendicectomy" (A3 · Appendicectomy, laparoscopic, B 5) and complete her Booking. The List itself stays active, because its other three Bookings are still to be captured.',
+          'Reset to a clean S1 state. Start in Mobile, then import the St George\'s bookings on Admin, Matching, set Sarah Mitchell\'s Contract and create her Booking. Open her row: Choose Contract shows the steps. Choose Patient (Standard fills itself in), then No contract · RVG, which hands the RVG code to the anaesthetist, then Create Booking. Sarah Mitchell arrives as a fourth Booking on Dr Souter\'s Tue 28 Jul AM List, alongside its three booked cases (on the PWA, Hospital row arrives and the office matches it stands in; the office then sets her Contract from Day\'s Needs an invoice destination card). Use "Procedure day · 28 Jul", then pick her RVG code by typing "appendicectomy" (A3 · Appendicectomy, laparoscopic, B 5) and complete her Booking. The List itself stays active, because its other three Bookings are still to be captured.',
         nav: [
           { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
-          { label: 'Go to Integrations', path: APP_CONFIG['demo-integrations'].path },
+          { label: 'Go to Matching', path: '/admin/matching' },
         ],
       }
     },
@@ -283,13 +283,13 @@ const SCENARIOS: readonly Scenario[] = [
   {
     id: 'S4',
     title: 'S4 · Exceptions',
-    blurb: 'Pre-payment from a prepaid Contract, post-op addendum, billing failure + retry, integration dead-letter + fix, partial payment, the date approaches.',
+    blurb: 'Pre-payment from a prepaid Contract, post-op addendum, billing failure + retry, the unmatched hospital queue, partial payment, the date approaches.',
     run: () => {
       resetDemo(useAppStore)
       return {
         ok: true,
         message:
-          'Reset. Walk the exceptions: (1) Pre-payment from a prepaid Contract: in Admin Day, Tue 21 Jul, Annette Riley is on the Pre-payments card and her warning on the To-do card; open her Booking (Rhinoplasty on Dr Souter\'s prepaid Contract, $1,200.00), go to Invoices, Approve and send (the payable credits the AA Holding account), then Payment received · half; on Mobile, Souter Fri 24 AM, Annette Riley, see the triangle and the prepaid panel, Mark complete and submit (no block, no confirm step), then clear her mild warning from the Admin to-do list; (2) in Admin open Sarah Mitchell\'s Booking on Dr Sharma\'s Tue 14 AM List, Demo actions, Stage post-op scenario, then Add post-op event; (3) Admin Billing monitor, Demo actions, Trigger billing failure: each Booking bills from what was locked at authorise, so the failure is outside the lock, Losa Tuilagi\'s Xero hand-off; she is held back while Hemi Walker\'s Booking bills and the List is not failed; then Resolve & retry Losa Tuilagi (no Contract changes); (4) Admin Integrations, Demo actions, Fire hospital message MSG-CPH-2001, then on the Feed config tab (badged Future scope) change Christchurch Public patientNhi from PID-2 to PID-3, save and reprocess; (5) open Hemi Walker\'s St George\'s clean-sibling invoice, Demo actions, Payment received · half, then the Billing monitor\'s own Run payables button, which pays exactly the amount received; pay the balance and run again. (6) last, on Admin Day, Demo actions, Move to 2 days before procedure, choose Annette Riley: the clock jumps to Wed 22 Jul and her warning turns strong and re-opens.',
+          'Reset. Walk the exceptions: (1) Pre-payment from a prepaid Contract: in Admin Day, Tue 21 Jul, Annette Riley is on the Pre-payments card and her warning on the To-do card; open her Booking (Rhinoplasty on Dr Souter\'s prepaid Contract, $1,200.00), go to Invoices, Approve and send (the payable credits the AA Holding account), then Payment received · half; on Mobile, Souter Fri 24 AM, Annette Riley, see the triangle and the prepaid panel, Mark complete and submit (no block, no confirm step), then clear her mild warning from the Admin to-do list; (2) in Admin open Sarah Mitchell\'s Booking on Dr Sharma\'s Tue 14 AM List, Demo actions, Stage post-op scenario, then Add post-op event; (3) Admin Billing monitor, Demo actions, Trigger billing failure: each Booking bills from what was locked at authorise, so the failure is outside the lock, Losa Tuilagi\'s Xero hand-off; she is held back while Hemi Walker\'s Booking bills and the List is not failed; then Resolve & retry Losa Tuilagi (no Contract changes); (4) Admin, Matching, Demo actions, Import hospital file, Southern Cross: under Unmatched, type NHI ZQA1008 on Tama Henare\'s row to release it, then Create a List in a session for Grace Whitu\'s row; (5) open Hemi Walker\'s St George\'s clean-sibling invoice, Demo actions, Payment received · half, then the Billing monitor\'s own Run payables button, which pays exactly the amount received; pay the balance and run again. (6) last, on Admin Day, Demo actions, Move to 2 days before procedure, choose Annette Riley: the clock jumps to Wed 22 Jul and her warning turns strong and re-opens.',
         nav: [
           { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
           { label: 'Go to Billing monitor', path: '/admin/billing' },
@@ -323,7 +323,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset to rich seeded Booking histories, added three live edits to David Chen\'s trail, and authorised Dr Whitaker\'s Fri 17 Jul List, which locks the Health NZ agreed rate and the price in force on 17 Jul onto each Procedure and raises its invoices from that record. Compliance tour: (1) open David Chen\'s History; (2) in Admin Integrations open Demo actions and fire MSG-STG-1002 for the new-format NHI; (3) in the Xero simulation\'s Contacts tab, show that no NHI or patient name crosses to Xero, only hidden IDs; (4) Contract history and the invoice recipe: in Admin, Master data, Contracts, open Health NZ agreed rate, change its rate and save, then open its History tab: the change with who, when and the values before and after, and Dr Whitaker\'s Procedures locked against it; open Hemi Walker\'s invoice, Demo actions, Regenerate from locked data: identical.',
+          'Reset to rich seeded Booking histories, added three live edits to David Chen\'s trail, and authorised Dr Whitaker\'s Fri 17 Jul List, which locks the Health NZ agreed rate and the price in force on 17 Jul onto each Procedure and raises its invoices from that record. Compliance tour: (1) open David Chen\'s History; (2) in Admin Integrations open Demo actions and fire MSG-STG-1002 for the new-format NHI: it is sent to matching, and its row on Admin, Matching shows the validated NHI; (3) in the Xero simulation\'s Contacts tab, show that no NHI or patient name crosses to Xero, only hidden IDs; (4) Contract history and the invoice recipe: in Admin, Master data, Contracts, open Health NZ agreed rate, change its rate and save, then open its History tab: the change with who, when and the values before and after, and Dr Whitaker\'s Procedures locked against it; open Hemi Walker\'s invoice, Demo actions, Regenerate from locked data: identical.',
         nav: [
           { label: 'Go to Admin app', path: APP_CONFIG.admin.path },
           { label: 'Go to Xero sim', path: APP_CONFIG['demo-xero'].path },

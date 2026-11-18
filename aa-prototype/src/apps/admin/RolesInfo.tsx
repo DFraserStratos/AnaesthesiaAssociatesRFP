@@ -30,9 +30,9 @@ const ROLES: RoleEntry[] = [
     edit: 'Edits Bookings on ACTIVE and SUBMITTED Lists, corrects billing setup, reassigns, authorises for billing, and manages master data, including each anaesthetist profile with its bank details and HPI CPN. Cannot edit an AUTHORISED List (locked).',
   },
   {
-    role: 'Integration (HL7 / FHIR feed · source integration)',
-    view: 'Writes appointment Bookings through the feed; no interactive UI.',
-    edit: 'Creates and updates Bookings only while the List is ACTIVE; never completes or authorises. A write to a SUBMITTED / AUTHORISED List is refused into a monitor manual-intervention item.',
+    role: 'Integration (hospital feeds · source integration)',
+    view: 'Brings rows in for the office to match; no interactive UI.',
+    edit: 'Integration (hospital feeds): brings rows in for the office to match. It never changes a Booking itself.',
   },
   {
     role: 'System / Demo (automated · source system/demo)',

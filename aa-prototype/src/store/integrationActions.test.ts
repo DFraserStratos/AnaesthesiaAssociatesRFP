@@ -1,6 +1,6 @@
 /**
- * Phase 11 store tests — processing HL7/FHIR messages through the audited
- * write-paths, the correlation-key locate, the lifecycle source guard, retry vs
+ * Phase 11 store tests, reworked in catch-up Phase 33: a parsed HL7/FHIR message
+ * stages one matching-screen row and changes nothing (RV-13); retry vs
  * dead-letter, dedupe, the ethnicity quarantine + manual fix, the feed-mapping
  * fix, and PDF ingestion (create vs update-not-duplicate). Every test uses an
  * isolated non-persisted store and drives retry synchronously (no timers).
@@ -16,7 +16,9 @@ import {
   correctEthnicityCode,
   ingestPdfRow,
 } from './integrationActions'
-import { cancelBooking } from './lifecycle'
+import { decideImportRow } from './matchingActions'
+import { assessImportRow } from './matchingSelectors'
+import { validNhiOf } from '../domain/intake'
 import {
   bookingsForList,
   feedsForHospital,
@@ -26,7 +28,7 @@ import {
   dataQualityItems,
 } from './selectors'
 import type { Actor } from './mutate'
-import { ANAE, HOSP, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
+import { ANAE, HOSP, SEED_LIST_IDS } from '../domain/seed'
 import { APPT, FEED, CPH_NHI_FIX, SURGEON_PDFS } from '../domain/integrations'
 import { projectedListId } from '../domain/slots'
 
@@ -37,193 +39,146 @@ function store(): BoundAppStore {
 }
 
 const STG_LIST = SEED_LIST_IDS.integrationStgList
-const STG_MODIFY_LIST = SEED_LIST_IDS.integrationModifyStgList
-const SX_LIST = SEED_LIST_IDS.integrationSxList
-const CPH_LIST = SEED_LIST_IDS.integrationCphList
-const S13_MOVE_SOURCE = SEED_LIST_IDS.integrationMoveSourceStgList
 
 function rowFor(api: BoundAppStore, controlId: string) {
   return Object.values(api.getState().integrations.messages).find((m) => m.messageControlId === controlId)
 }
 
-describe('S12 create', () => {
-  it('creates a Booking on the routing List, stamps the correlation ref, audits source=integration, and reuses a repeat patient', () => {
+/** A snapshot of everything a message must never change by itself (RV-13). */
+function scheduleSnapshot(api: BoundAppStore): string {
+  const s = api.getState()
+  return JSON.stringify({ schedule: s.schedule, patients: s.masters.patients })
+}
+
+function stagedRow(api: BoundAppStore, controlId: string) {
+  const id = rowFor(api, controlId)?.resultImportRowId
+  return id !== undefined ? api.getState().intake.rows[id] : undefined
+}
+
+describe('no silent apply: every message stages one row and changes nothing (catch-up Phase 33; RV-13)', () => {
+  const EXPECTED: Record<string, { changeType: string; text?: string }> = {
+    'MSG-STG-1001': { changeType: 'new', text: 'lap appy ?conv to open' },
+    'MSG-STG-1002': { changeType: 'new' },
+    'MSG-STG-1003': { changeType: 'new' },
+    'FHIR-SX-2001': { changeType: 'new', text: 'Diagnostic knee arthroscopy' },
+    'MSG-STG-1010': { changeType: 'modification', text: 'Knee arthroscopy' },
+    'MSG-STG-1011': { changeType: 'new', text: 'Wrist ORIF, distal radius' },
+    'MSG-STG-1012': { changeType: 'modification' },
+    'MSG-STG-1013': { changeType: 'cancellation' },
+    'MSG-STG-1014': { changeType: 'modification' },
+  }
+  for (const [controlId, expected] of Object.entries(EXPECTED)) {
+    it(`${controlId} stages a ${expected.changeType} row, its wording verbatim`, () => {
+      const api = store()
+      const before = scheduleSnapshot(api)
+      const out = processMessage(api, controlId)
+      expect(out.ok && out.value.outcome).toBe('processed')
+      expect(scheduleSnapshot(api)).toBe(before)
+      const row = stagedRow(api, controlId)!
+      expect(row).toMatchObject({ channel: 'feedMessage', source: 'hospital', status: 'open', messageId: controlId })
+      if (expected.text !== undefined) expect(row.incoming.procedure?.text).toBe(expected.text)
+      expect(assessImportRow(api.getState(), row.id)?.changeType).toBe(expected.changeType)
+      expect(integrationMonitor(api.getState()).find((m) => m.messageControlId === controlId)?.displayStatus).toBe('Sent to matching')
+    })
+  }
+
+  it("the S13 that moves a Booking to another day stages a New row for the new day and leaves the old Booking where it is (D62)", () => {
     const api = store()
-    const patientsBefore = Object.keys(api.getState().masters.patients).length
-    const before = bookingsForList(api.getState(), STG_LIST).length
-
-    const out = processMessage(api, 'MSG-STG-1001')
-    expect(out.ok).toBe(true)
-
-    const state = api.getState()
-    const bookings = bookingsForList(state, STG_LIST)
-    expect(bookings.length).toBe(before + 1)
-    const created = findBookingByCorrelation(state, { sourceFeedId: FEED.stg, externalAppointmentId: APPT.s12 })
-    expect(created).toBeDefined()
-    expect(created!.listId).toBe(STG_LIST)
-    // Sarah Mitchell (CQY9304) is a seeded patient → reused, no duplicate row.
-    expect(Object.keys(state.masters.patients).length).toBe(patientsBefore)
-    // The create audit and the booking-create audit carry source=integration.
-    expect(state.audit.some((a) => a.entityId === created!.id && a.source === 'integration')).toBe(true)
+    const old = findBookingByCorrelation(api.getState(), { sourceFeedId: FEED.stg, externalAppointmentId: APPT.s13Move })!
+    processMessage(api, 'MSG-STG-1011')
+    const row = stagedRow(api, 'MSG-STG-1011')!
+    expect(row.incoming).toMatchObject({ dateISO: '2026-08-04', session: 'AM', hospitalStatus: 'booked' })
+    expect(api.getState().schedule.bookings[old.id]).toMatchObject({ listId: old.listId })
+    expect(api.getState().schedule.bookings[old.id]!.cancellation).toBeUndefined()
   })
 
-  it('processes a FHIR-native booking onto the Southern Cross List (no HL7 involved)', () => {
+  it('MSG-STG-1014 (a SUBMITTED List) stages an ordinary row the office can apply until AUTHORISED', () => {
     const api = store()
-    const before = bookingsForList(api.getState(), SX_LIST).length
-    const out = processMessage(api, 'FHIR-SX-2001')
-    expect(out.ok).toBe(true)
-    const created = findBookingByCorrelation(api.getState(), { sourceFeedId: FEED.sx, externalAppointmentId: APPT.fhirCreate })
-    expect(created?.listId).toBe(SX_LIST)
-    expect(bookingsForList(api.getState(), SX_LIST).length).toBe(before + 1)
+    processMessage(api, 'MSG-STG-1014')
+    const row = stagedRow(api, 'MSG-STG-1014')!
+    const a = assessImportRow(api.getState(), row.id)!
+    expect(a.flags).toEqual([])
+    expect(decideImportRow(api, OFFICE, row.id, { kind: 'match', bookingId: a.match!.bookingId, fieldsApplied: ['time'] }).ok).toBe(true)
+    expect(api.getState().schedule.bookings[a.match!.bookingId]!.scheduledTime).toBe('10:15')
   })
 
-  it('quarantines an out-of-range ethnicity code (booking created, code never stored) and the manual fix supplies a valid one', () => {
+  it("MSG-STG-1012's row, applied, replaces Foster's WLE MM (kept in her change history) and changes neither her Contract nor her RVG code", () => {
     const api = store()
-    const out = processMessage(api, 'MSG-STG-1003')
-    expect(out.ok).toBe(true)
-    const created = findBookingByCorrelation(api.getState(), { sourceFeedId: FEED.stg, externalAppointmentId: APPT.s12Ethnicity })
-    expect(created).toBeDefined()
-    const patient = api.getState().masters.patients[created!.patientId]!
+    processMessage(api, 'MSG-STG-1012')
+    const row = stagedRow(api, 'MSG-STG-1012')!
+    const foster = findBookingByCorrelation(api.getState(), { sourceFeedId: FEED.stg, externalAppointmentId: APPT.s14 })!
+    const p = Object.values(api.getState().schedule.procedures).find((x) => x.bookingId === foster.id)!
+    expect(p.procedureText?.text).toBe('WLE MM')
+    expect(decideImportRow(api, OFFICE, row.id, { kind: 'match', bookingId: foster.id, fieldsApplied: ['time', 'procedureText', 'note'] }).ok).toBe(true)
+    const after = api.getState().schedule.procedures[p.id]!
+    expect(after.procedureText).toMatchObject({ text: 'WLE MM, left shoulder + flap repair + SNB + excision SCC and flap, left sternum + BCC', source: 'hospitalFeed', from: "St George's" })
+    expect(after.governingContractId).toBe(p.governingContractId)
+    expect(after.rvgGroupId).toBe(p.rvgGroupId)
+    const history = api.getState().audit.filter((a) => a.action === 'procedure.procedureText.replace' && a.entityId === p.id)
+    expect(history).toHaveLength(1)
+    expect(history[0]!.before).toMatchObject({ procedureText: { text: 'WLE MM' } })
+  })
+
+  it('a created Booking from a feed row quarantines an out-of-range ethnicity code, and the manual fix supplies a valid one', () => {
+    const api = store()
+    processMessage(api, 'MSG-STG-1003')
+    const row = stagedRow(api, 'MSG-STG-1003')!
+    const a = assessImportRow(api.getState(), row.id)!
+    expect(a.suggestion?.kind).toBe('createBooking')
+    const created = decideImportRow(api, OFFICE, row.id, { kind: 'createBooking', listId: STG_LIST })
+    expect(created.ok).toBe(true)
+    const booking = api.getState().schedule.bookings[created.ok ? created.value.bookingId! : '']!
+    expect(booking.source).toBe('hospitalDownload')
+    const patient = api.getState().masters.patients[booking.patientId]!
     expect(patient.ethnicityCode).toBeUndefined()
     expect(patient.ethnicityPending?.receivedCode).toBe('77777')
-    // A data-quality item is raised.
     expect(dataQualityItems(api.getState()).some((d) => d.patientId === patient.hiddenInternalId)).toBe(true)
-    // Manual fix supplies a valid NZHIS code.
     expect(correctEthnicityCode(api, OFFICE, patient.hiddenInternalId, '11111').ok).toBe(true)
-    const fixed = api.getState().masters.patients[created!.patientId]!
-    expect(fixed.ethnicityCode).toBe('11111')
-    expect(fixed.ethnicityPending).toBeUndefined()
-    expect(dataQualityItems(api.getState()).some((d) => d.patientId === patient.hiddenInternalId)).toBe(false)
-  })
-})
-
-describe('modify events located by correlation ref', () => {
-  it('S14 updates the correlated Booking (time + note)', () => {
-    const api = store()
-    const target = SEED_MARKERS['integrationS14']!.entityId
-    expect(processMessage(api, 'MSG-STG-1012').ok).toBe(true)
-    const booking = api.getState().schedule.bookings[target]!
-    expect(booking.scheduledTime).toBe('12:15')
-    expect(booking.notes).toBe('Bumped 15 min at surgeon request')
-    expect(api.getState().audit.some((a) => a.entityId === target && a.source === 'integration' && a.action === 'booking.update')).toBe(true)
+    expect(api.getState().masters.patients[booking.patientId]!.ethnicityCode).toBe('11111')
   })
 
-  it('S15 soft-cancels the correlated Booking (retained, cancelled, audited)', () => {
+  it('the integration actor no longer writes Bookings, and nothing parks: the attention count is dead-letter only', () => {
     const api = store()
-    const target = SEED_MARKERS['integrationS15']!.entityId
-    expect(processMessage(api, 'MSG-STG-1013').ok).toBe(true)
-    const booking = api.getState().schedule.bookings[target]!
-    expect(booking.cancellation).toBeDefined()
-    expect(booking.cancellation?.source).toBe('integration')
-  })
-
-  it('same-List S13 retimes the correlated Booking in place', () => {
-    const api = store()
-    const target = SEED_MARKERS['integrationS13Time']!.entityId
-    const before = api.getState().schedule.bookings[target]!.listId
-    expect(processMessage(api, 'MSG-STG-1010').ok).toBe(true)
-    const booking = api.getState().schedule.bookings[target]!
-    expect(booking.listId).toBe(before)
-    expect(booking.listId).toBe(STG_MODIFY_LIST)
-    expect(booking.scheduledTime).toBe('11:30')
-  })
-
-  it('cross-List S13 reassigns the correlated Booking, leaving both Lists\' other bookings untouched', () => {
-    const api = store()
-    const target = SEED_MARKERS['integrationS13Move']!.entityId
-    const stgOthersBefore = bookingsForList(api.getState(), STG_MODIFY_LIST).map((c) => c.id).sort()
-    expect(api.getState().schedule.bookings[target]!.listId).toBe(S13_MOVE_SOURCE)
-
-    expect(processMessage(api, 'MSG-STG-1011').ok).toBe(true)
-
-    const booking = api.getState().schedule.bookings[target]!
-    expect(booking.listId).toBe(STG_MODIFY_LIST)
-    expect(booking.scheduledTime).toBe('09:00')
-    // The source list no longer holds it; the STG list's prior bookings are all still present.
-    expect(bookingsForList(api.getState(), S13_MOVE_SOURCE).some((c) => c.id === target)).toBe(false)
-    for (const id of stgOthersBefore) {
-      expect(api.getState().schedule.bookings[id]!.listId).toBe(STG_MODIFY_LIST)
-    }
-  })
-
-  it('a modify targeting a soft-cancelled Booking is not applied and parks as manual intervention', () => {
-    const api = store()
-    const target = SEED_MARKERS['integrationS14']!.entityId
-    // The office cancels the appointment first; then a stale S14 arrives for it.
-    expect(cancelBooking(api, OFFICE, target, 'Patient deferred').ok).toBe(true)
-    const timeBefore = api.getState().schedule.bookings[target]!.scheduledTime
-
-    const out = processMessage(api, 'MSG-STG-1012')
-    expect(out.ok && out.value.outcome).toBe('manualIntervention')
-    const booking = api.getState().schedule.bookings[target]!
-    // Unchanged apart from staying cancelled: no time/note edit slipped through.
-    expect(booking.scheduledTime).toBe(timeBefore)
-    expect(booking.notes).toBeUndefined()
-    expect(booking.cancellation).toBeDefined()
-  })
-
-  it('a message targeting a Booking on a SUBMITTED List is NOT applied and parks as manual intervention', () => {
-    const api = store()
-    const target = SEED_MARKERS['integrationLockedTarget']!.entityId
-    const before = api.getState().schedule.bookings[target]!
-    // The locked target sits on a coherent booked SUBMITTED St George's list.
-    const lockedList = api.getState().schedule.lists[before.listId]!
-    expect(lockedList.state).toBe('SUBMITTED')
-    expect(lockedList.kind).toBe('private')
-    expect(lockedList.hospitalId).toBe('H-STG')
-    const out = processMessage(api, 'MSG-STG-1014')
-    expect(out.ok).toBe(true)
-    if (out.ok) expect(out.value.outcome).toBe('manualIntervention')
-    // Booking unchanged.
-    expect(api.getState().schedule.bookings[target]).toEqual(before)
-    const row = rowFor(api, 'MSG-STG-1014')
-    expect(row?.status).toBe('manualIntervention')
-    expect(integrationAttentionCount(api.getState())).toBeGreaterThan(0)
+    const seeded = api.getState().audit.length
+    for (const id of ['MSG-STG-1012', 'MSG-STG-1013', 'MSG-STG-1014']) processMessage(api, id)
+    expect(api.getState().audit.slice(seeded).filter((a) => a.entityType === 'booking' || a.entityType === 'procedure')).toEqual([])
+    expect(integrationAttentionCount(api.getState())).toBe(0)
   })
 })
 
 describe('retry vs dead-letter', () => {
-  it('a transient message fails once then succeeds on retry, with the attempt count shown', () => {
+  it('a transient message fails once then stages its row on retry, with the attempt count shown', () => {
     const api = store()
     const first = processMessage(api, 'MSG-STG-1004')
     expect(first.ok && first.value.outcome).toBe('retrying')
     const row = rowFor(api, 'MSG-STG-1004')!
     expect(row.status).toBe('retrying')
     expect(row.attempts).toBe(1)
-
     const second = retryMessage(api, row.id)
     expect(second.ok && second.value.outcome).toBe('processed')
     const done = rowFor(api, 'MSG-STG-1004')!
-    expect(done.status).toBe('processed')
-    expect(done.attempts).toBe(2)
-    // The derived display label is "Retried" (processed with attempts > 1).
-    const mon = integrationMonitor(api.getState()).find((m) => m.messageControlId === 'MSG-STG-1004')!
-    expect(mon.displayStatus).toBe('Retried')
+    expect(done).toMatchObject({ status: 'processed', attempts: 2 })
+    expect(stagedRow(api, 'MSG-STG-1004')).toBeDefined()
+    expect(integrationMonitor(api.getState()).find((m) => m.messageControlId === 'MSG-STG-1004')!.displayStatus).toBe('Retried, sent to matching')
   })
 
-  it('a malformed message under a wrong mapping exhausts its retries into dead-letter, then a mapping fix + reprocess recovers it', () => {
+  it('a malformed message under a wrong mapping exhausts its retries into dead-letter, then a mapping fix + reprocess stages a valid row', () => {
     const api = store()
-    const cphBefore = bookingsForList(api.getState(), CPH_LIST).length
-
-    // Attempt 1 (fails: PID-2 holds a local MRN, not the NHI).
     expect(processMessage(api, 'MSG-CPH-2001').ok).toBe(true)
     const row = rowFor(api, 'MSG-CPH-2001')!
     expect(row.status).toBe('retrying')
-    // Exhaust the budget synchronously.
     retryMessage(api, row.id)
     retryMessage(api, row.id)
     const dead = rowFor(api, 'MSG-CPH-2001')!
-    expect(dead.status).toBe('deadLetter')
-    expect(dead.attempts).toBe(3)
-    expect(bookingsForList(api.getState(), CPH_LIST).length).toBe(cphBefore)
-
-    // Fix the feed mapping (nhi <- PID-3) and reprocess.
+    expect(dead).toMatchObject({ status: 'deadLetter', attempts: 3 })
+    expect(Object.keys(api.getState().intake.rows)).toHaveLength(0)
+    expect(integrationAttentionCount(api.getState())).toBe(1)
     expect(setFeedMapping(api, OFFICE, FEED.cph, 'nhi', CPH_NHI_FIX).ok).toBe(true)
     const recovered = reprocessMessage(api, dead.id)
     expect(recovered.ok && recovered.value.outcome).toBe('processed')
-    expect(bookingsForList(api.getState(), CPH_LIST).length).toBe(cphBefore + 1)
-    const created = findBookingByCorrelation(api.getState(), { sourceFeedId: FEED.cph, externalAppointmentId: APPT.malformedCph })
-    expect(created).toBeDefined()
+    const staged = stagedRow(api, 'MSG-CPH-2001')!
+    expect(staged.incoming).toMatchObject({ hospitalId: HOSP.cph })
+    expect(validNhiOf(staged.incoming)).toBeDefined()
   })
 })
 
@@ -289,63 +244,10 @@ describe('feed mapping edit is audited and office-only', () => {
   })
 })
 
-describe('the pairing rule on the feed (catch-up Phase 31; US-01.3.1)', () => {
-  it('a message whose target List has no surgeon parks for the office and writes nothing', () => {
-    const api = store()
-    const target = api.getState().schedule.lists[STG_LIST]!
-    // Force the impossible state the rule guards against (no store path can write it).
-    api.setState({ schedule: { ...api.getState().schedule, lists: { ...api.getState().schedule.lists, [STG_LIST]: { ...target, surgeonId: '' } } } })
-    const before = bookingsForList(api.getState(), STG_LIST).length
-    const out = processMessage(api, 'MSG-STG-1001')
-    expect(out.ok && out.value.outcome).toBe('manualIntervention')
-    expect(rowFor(api, 'MSG-STG-1001')?.failureReason).toBe('The message has no surgeon for this List. Parked for the office.')
-    expect(bookingsForList(api.getState(), STG_LIST)).toHaveLength(before)
-  })
-})
-
 describe('the procedure text from every intake path (catch-up Phase 20a; US-02.5.7)', () => {
   const firstProc = (api: BoundAppStore, bookingId: string) =>
     Object.values(api.getState().schedule.procedures).filter((p) => p.bookingId === bookingId).sort((a, b) => a.id.localeCompare(b.id))[0]!
 
-  it('S12 stores the SCH-7 text verbatim as the hospital feed\'s, from the hospital', () => {
-    const api = store()
-    expect(processMessage(api, 'MSG-STG-1001').ok).toBe(true)
-    const booking = findBookingByCorrelation(api.getState(), { sourceFeedId: FEED.stg, externalAppointmentId: APPT.s12 })!
-    expect(firstProc(api, booking.id).procedureText).toMatchObject({ text: 'lap appy ?conv to open', source: 'hospitalFeed', from: "St George's" })
-    expect(firstProc(api, booking.id).invoiceDescription).toEqual({ text: 'lap appy ?conv to open', origin: 'hospital' })
-  })
-
-  it('FHIR-SX-2001 stores Appointment.description', () => {
-    const api = store()
-    expect(processMessage(api, 'FHIR-SX-2001').ok).toBe(true)
-    const created = api.getState().audit.filter((a) => a.action === 'procedure.create').at(-1)!
-    const p = api.getState().schedule.procedures[created.entityId]!
-    expect(p.procedureText?.source).toBe('hospitalFeed')
-    expect(p.procedureText?.text.length).toBeGreaterThan(0)
-  })
-
-  it('MSG-STG-1012 replaces Foster\'s rooms\' "WLE MM" with the hospital\'s wording, keeps "WLE MM" in the history, switches the invoice description; a replay changes nothing', () => {
-    const api = store()
-    const target = SEED_MARKERS['integrationS14']!.entityId
-    expect(firstProc(api, target).procedureText).toMatchObject({ text: 'WLE MM', source: 'surgeonPdf' })
-    expect(firstProc(api, target).rvgGroupId).toBeUndefined()
-    expect(processMessage(api, 'MSG-STG-1012').ok).toBe(true)
-    const p = firstProc(api, target)
-    expect(p.procedureText).toMatchObject({ text: 'WLE MM, left shoulder + flap repair + SNB + excision SCC and flap, left sternum + BCC', source: 'hospitalFeed' })
-    expect(p.invoiceDescription).toMatchObject({ origin: 'hospital', text: p.procedureText!.text })
-    expect(p.rvgGroupId).toBeUndefined()
-    expect(p.governingContractId).toBe('CT-NO-CONTRACT')
-    const replace = api.getState().audit.filter((a) => a.action === 'procedure.procedureText.replace' && a.entityId === p.id)
-    expect(replace).toHaveLength(1)
-    expect(replace[0]!.before).toMatchObject({ procedureText: { text: 'WLE MM', source: 'surgeonPdf' } })
-    expect(replace[0]!.source).toBe('integration')
-    // The time and note change as before.
-    expect(api.getState().schedule.bookings[target]!.scheduledTime).toBe('12:15')
-    // A replay applies again: the identical text changes nothing.
-    expect(reprocessMessage(api, rowFor(api, 'MSG-STG-1012')!.id).ok).toBe(true)
-    expect(firstProc(api, target).procedureText?.text).toBe(p.procedureText!.text)
-    expect(api.getState().audit.filter((a) => a.action === 'procedure.procedureText.replace' && a.entityId === p.id)).toHaveLength(1)
-  })
 
   it('a PDF row creates with the rooms\' text; a later different row replaces a rooms\' text but never a hospital\'s; an identical row changes nothing', () => {
     const api = store()

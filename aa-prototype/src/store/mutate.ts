@@ -11,13 +11,13 @@
  *     fields and the log can never drift apart).
  *
  * Refusals are data, not exceptions: guards return `Outcome` so Phase 11's
- * monitor can surface integration refusals as manual-intervention items.
+ * the matching screen can show a refused decision's reason and change nothing.
  */
 
 import type { ActorRole, AuditEntry, AuditSource, BookingId } from '../domain/types'
 import { buildSeed, buildSeedBillingSlice, SEED_AUTHORISED_INVOICED_BOOKING_IDS, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
-import { seededIntegrationsSlice, type AppState, type AppStoreApi } from './appStore'
+import { emptyIntakeSlice, seededIntegrationsSlice, type AppState, type AppStoreApi } from './appStore'
 import { reconcileConflictsInPatch, type MutationResult } from './conflictReconcile'
 import { seedLocks } from './locks'
 
@@ -123,6 +123,9 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   aaFeeInvoiceNumber: { prefix: 'AA-FEE-2026-', pad: 4 },
   // Integration message-log rows (Phase 11).
   integrationMessage: { prefix: 'IM', pad: 4 },
+  // The matching screen's import batches and rows (catch-up Phase 33).
+  importBatch: { prefix: 'IB', pad: 4 },
+  importRow: { prefix: 'IR', pad: 4 },
 }
 
 /** Allocate the next deterministic id of a kind from the counters record. */
@@ -168,6 +171,7 @@ export type DomainPatch = Partial<
     | 'billing'
     | 'xero'
     | 'integrations'
+    | 'intake'
     | 'dayNotes'
     | 'officePrivate'
     | 'notifications'
@@ -262,6 +266,36 @@ export function mutate(
 }
 
 /**
+ * Run several guarded writes as one decision (catch-up Phase 33's
+ * `decideImportRow`): when a step is refused, every domain slice and the
+ * audit go back to exactly what they were, so a refused step strands nothing
+ * (the Phase 11 review-fix rule). Callers still check their guards first;
+ * this is the backstop. Lives here because mutate.ts is the one permitted
+ * raw writer of domain slices.
+ */
+export function transaction<T>(api: AppStoreApi, run: () => Outcome<T>): Outcome<T> {
+  const before = api.getState()
+  const snapshot: DomainPatch & Pick<AppState, 'audit'> = {
+    masters: before.masters,
+    schedule: before.schedule,
+    settings: before.settings,
+    appSettings: before.appSettings,
+    counters: before.counters,
+    billing: before.billing,
+    xero: before.xero,
+    integrations: before.integrations,
+    intake: before.intake,
+    dayNotes: before.dayNotes,
+    officePrivate: before.officePrivate,
+    notifications: before.notifications,
+    audit: before.audit,
+  }
+  const result = run()
+  if (!result.ok) api.setState(snapshot)
+  return result
+}
+
+/**
  * Restore the pristine seed (the demo Reset). Domain slices, clock and the
  * empty Phase 08 to 11 scaffolds reset; the shell slice is preserved. Lives
  * here because mutate.ts is the one permitted raw writer of domain slices —
@@ -294,6 +328,7 @@ export function resetDomainState(api: AppStoreApi): void {
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
+    intake: emptyIntakeSlice(),
     // The shell slice survives a Reset, except the office picker counter
     // (catch-up Phase 17): zeroing it makes a fresh Reset replay the same
     // within-tier orders.

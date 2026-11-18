@@ -211,6 +211,8 @@ short-notice cover.
     it, a new one or a Draft List for that evening; close an empty one from its drawer.
 16. Set the primary Procedure from the rooms' sheet (**Make primary** on the Admin Booking), and
     correct it at review; the office can do this on `ACTIVE` and `SUBMITTED` Lists.
+17. **Import hospital file**, match each row on the matching screen (Admin, Matching), and set each
+    new Booking's invoice destination and Contract.
 
 ### Permissions
 
@@ -313,7 +315,9 @@ The prototype plans to place the monitoring in or alongside the Admin Web App.
 
 ### Goals and actions
 
-- Monitor hospital HL7 and FHIR messages.
+- Work the matching screen (Admin, Matching): import hospital files, and match, create or reject
+  each row, with unmatched rows and rows with no NHI waiting in the unmatched queue.
+- Monitor hospital HL7 and FHIR messages (Future scope).
 - Review failed, duplicate, retried and manual-intervention items.
 - Correct partner-specific field mappings.
 - Reprocess failed messages without creating duplicate Bookings.
@@ -329,9 +333,12 @@ The prototype plans to place the monitoring in or alongside the Admin Web App.
 
 ### Prototype status
 
-Built in Phase 11. The Admin Integrations monitor (Messages, Feed config, Surgeon PDFs, Data quality,
-Validators) and the badged Integrations simulator are clickable: fire a canned HL7/FHIR message, watch
-the HL7-to-FHIR transform, dedupe a replay, fix a feed mapping and reprocess a dead-letter.
+The matching screen (Admin, Matching, catch-up Phase 33) is the in-scope surface: hospital rows land
+there with their wording as received and nothing applies until the office decides. The HL7/FHIR monitor
+is Future scope: the Admin Integrations monitor (Messages, Feed config, Surgeon PDFs, Data quality,
+Validators) and the badged Integrations simulator, built in Phase 11, remain clickable, but a fired
+HL7/FHIR message is now only sent to matching; the HL7-to-FHIR transform, a deduped replay and a
+feed-mapping dead-letter can still be shown as Future scope.
 
 ## Secondary admin responsibility: finance and reconciliation
 

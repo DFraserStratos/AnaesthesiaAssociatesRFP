@@ -14,14 +14,15 @@ import { handoffListCases, runBillingForList } from './billingRun'
 import { OFFICE_SIMULATION_ACTOR } from './demoActors'
 import { authoriseBlockersFor, authoriseList, incompleteBookingsOn } from './lifecycle'
 import { ok, refuse, type Outcome } from './mutate'
-import { isListBilled, isOpenSlotView, scheduleHorizon, slotViewsForAnaesthetist, waitingDraftLists } from './selectors'
+import { isListBilled, isOpenSlotView, listInSlot, scheduleHorizon, slotViewsForAnaesthetist, waitingDraftLists } from './selectors'
 import { assignDraftList, createDraftList, draftListFitsAnaesthetist, surgeonFitsAnaesthetist } from './draftListActions'
 import { CANNED_DRAFT_LIST_REQUESTS } from '../domain/seed'
-import { assignListToSlot } from './slotActions'
+import { assignListToSlot, setAvailability } from './slotActions'
 import { approvePrepayment, PREPAYMENT_ALREADY_SENT, PREPAYMENT_NOT_NEEDED } from './prepaymentActions'
 import { prepaymentStatusFor } from './prepaymentSelectors'
 import { TYPE_AN_AMOUNT_FIRST } from '../domain/billing/prepayment'
 import { formatMoney } from '../domain/billing/money'
+import { SEED_STATUS } from '../domain/slotStatus'
 import type { Slot } from '../domain/types'
 import { OUT_OF_HOURS, compareSessions } from '../domain/outOfHours'
 import { isAssignedList } from '../domain/draftLists'
@@ -225,4 +226,37 @@ export function addOutOfHoursListAsSimulatedOffice(api: AppStoreApi, anaesthetis
     return assigned
   }
   return ok({ listId: assigned.value.listId, startTime: api.getState().appSettings.schedule.defaultTimes.OOH.startTime })
+}
+
+/** The note the office stand-in writes on a Public session (catch-up Phase 32d). */
+export const OFFICE_PUBLIC_NOTE = 'CPH'
+
+/**
+ * Why the office stand-in cannot set this session to Public, or null (catch-up
+ * Phase 32d; PWA parity for US-01.2.1's "the office sets it for them"): the
+ * session holds a List (the office runs the return-or-hand-on choice in
+ * Admin), is already Public, or is past.
+ */
+export function officeSetsPublicRefusal(state: AppState, slotId: string): string | null {
+  const slot = state.schedule.slots[slotId]
+  if (slot === undefined) return 'Session not found'
+  if (slot.dateISO < state.clock.todayISO) return 'This session is past'
+  if (listInSlot(state, slotId) !== undefined) return 'This session holds a List'
+  if (slot.status === SEED_STATUS.publicHospital) return 'Already Public'
+  return null
+}
+
+/**
+ * "Office sets this session to Public" (catch-up Phase 32d): stands in for the
+ * office, acting as `OFFICE_SIMULATION_ACTOR`, through the same
+ * `setAvailability` the office's Change status uses, with the note "CPH".
+ */
+export function setSessionPublicAsSimulatedOffice(api: AppStoreApi, slotId: string): Outcome<{ slotId: string }> {
+  const state = api.getState()
+  const reason = officeSetsPublicRefusal(state, slotId)
+  if (reason !== null) return refuse('notEligible', reason)
+  const slot = state.schedule.slots[slotId]!
+  const out = setAvailability(api, OFFICE_SIMULATION_ACTOR, slot.anaesthetistId, slot.dateISO, slot.session, SEED_STATUS.publicHospital, OFFICE_PUBLIC_NOTE)
+  if (!out.ok) return out
+  return ok({ slotId })
 }

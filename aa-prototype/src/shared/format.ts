@@ -168,6 +168,7 @@ export const PROCEDURE_TEXT_SOURCE_LABELS: Record<ProcedureTextSource, string> =
   email: 'Email',
   hospitalDownload: 'Hospital download',
   hospitalFeed: 'Hospital feed',
+  hospitalSheet: 'Hospital sheet',
   phone: 'Phone',
   anaesthetist: 'Anaesthetist',
   unrecorded: 'Source not recorded',

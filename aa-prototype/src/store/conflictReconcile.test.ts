@@ -116,7 +116,7 @@ describe('the "no stale flag anywhere" invariant over a scripted run', () => {
     step('a series over empty sessions (the office)', () =>
       createAvailabilitySeries(api, OFFICE, { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: 'AM', weekdays: [6], everyWeeks: 2, startISO: '2026-08-01' }),
     )
-    const instance = Object.values(api.getState().schedule.slots).find((s) => s.anaesthetistId === ANAE.souter && s.seriesId !== undefined)!
+    const instance = Object.values(api.getState().schedule.slots).find((s) => s.anaesthetistId === ANAE.souter && s.seriesId === 'AS0008')!
     step('clear one instance', () => clearAvailability(api, SOUTER, instance.id))
     step('relabel a status', () => {
       const u = api.getState().masters.slotStatuses.unavailable!

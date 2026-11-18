@@ -400,7 +400,7 @@ export function assignListToSlot(
   // The one pairing rule (US-01.3.1, catch-up Phase 31): its first issue, with 28's codes.
   const issue = pairingIssues(fields, state.masters)[0]
   if (issue !== undefined) return refuse(issue.code === 'hospitalUnknown' || issue.code === 'surgeonUnknown' ? 'notFound' : issue.code, issue.message)
-  if (!(LIST_KINDS as readonly string[]).includes(fields.kind)) return refuse('invalidKind', 'Choose private, public or pre-op.')
+  if (!(LIST_KINDS as readonly string[]).includes(fields.kind)) return refuse('invalidKind', 'Choose private or pre-op.')
 
   const metas: MutationMeta[] = []
   let listId = ''

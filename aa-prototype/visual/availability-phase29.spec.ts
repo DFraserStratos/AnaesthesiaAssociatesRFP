@@ -42,7 +42,8 @@ test('mobile: My calendar, Add days off for a week, a fortnightly Friday PM seri
   await page.locator('[data-shot="mobile-add-days-off"]').click()
   const sheet = page.locator('[data-shot="mobile-availability-sheet"]')
   await expect(sheet).toBeVisible()
-  await expect(sheet.locator('[data-status-choice]')).toHaveCount(3)
+  // Four since catch-up Phase 32d: Public joins Free, On holiday and Unavailable.
+  await expect(sheet.locator('[data-status-choice]')).toHaveCount(4)
   await expect(sheet.locator('[data-status-choice="holiday"]')).toHaveAttribute('aria-pressed', 'true')
   await sheet.getByLabel('From').fill('2026-08-14')
   await sheet.getByLabel('To').fill('2026-08-16')
@@ -103,7 +104,7 @@ test('web: My availability, click then shift-click a range, the rail form', asyn
 test('admin: Availability statuses, the sheet with its live preview, and a rename every view follows', async ({ page }) => {
   await fresh(page, '/admin/masters?view=availability-statuses')
   const table = page.locator('[data-shot="admin-availability-statuses"]')
-  await expect(table.locator('tr[data-status-row]')).toHaveCount(3)
+  await expect(table.locator('tr[data-status-row]')).toHaveCount(4)
   for (const state of ['Draft', 'Active', 'Submitted', 'Authorised']) {
     await expect(table.locator('tr[data-status-row]').filter({ hasText: new RegExp(`^\\s*${state}\\b`) })).toHaveCount(0)
   }

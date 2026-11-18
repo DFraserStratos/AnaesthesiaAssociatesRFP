@@ -44,7 +44,8 @@
 ACTIVE -> SUBMITTED -> AUTHORISED -> Billing run completed
 ```
 
-- `ACTIVE`: anaesthetist, office and integrations may update.
+- `ACTIVE`: anaesthetist and office may update; a hospital row changes a Booking only when the office
+  applies it on the matching screen.
 - `SUBMITTED`: the office reviews and corrects; the anaesthetist sees it less prominent ("Done ·
   unbilled") and can still change it until it is authorised. The last change stands, and Review
   shows "Changed since submitted".
@@ -62,8 +63,8 @@ ACTIVE -> SUBMITTED -> AUTHORISED -> Billing run completed
 |---|---:|---:|---:|
 | View own Lists/Bookings | Yes | Yes, all | As needed |
 | View colleague patient details | No | Yes | As needed |
-| Edit a Booking on an `ACTIVE` List | Yes, own | Yes | Yes |
-| Edit a `SUBMITTED` Booking | Yes, own, until authorised | Yes | No, park for intervention |
+| Edit a Booking on an `ACTIVE` List | Yes, own | Yes | No; brings rows in, never changes a Booking |
+| Edit a `SUBMITTED` Booking | Yes, own, until authorised | Yes | No; brings rows in, never changes a Booking |
 | Edit an `AUTHORISED` Booking | No | No | No |
 | Submit a List | Yes, own | No; office receives it after submission | No |
 | Authorise a List | No | Yes | No |
@@ -377,8 +378,8 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Complete Booking and submit List
 - Add a missing Booking
 - Photo of the booking card: Future Work (Demo actions, badged)
-- Availability and cover: mark days off ahead, repeating days off, change or delete one occurrence
-  (My calendar, a bottom sheet)
+- Availability and cover: mark Free, On holiday, Unavailable or Public (with an optional note) ahead,
+  repeating days off, change or delete one occurrence (My calendar, a bottom sheet)
 - Move a List to a colleague or the office; hand one Booking to a free colleague (Move to a colleague)
 - Profile (More tab): her rate per unit, which she changes with **Change**; contact details, HPI CPN and
   bank account (masked) read-only with a lock
@@ -389,8 +390,8 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Wider dashboard and date ranges
 - A main view from today with earlier un-authorised Lists, and past work by patient name, NHI or date
 - Same List/Booking detail and capture functions
-- Availability and cover: mark days off ahead, repeating days off, change or delete one occurrence
-  (My availability, the same form as the phone)
+- Availability and cover: mark Free, On holiday, Unavailable or Public (with an optional note) ahead,
+  repeating days off, change or delete one occurrence (My availability, the same form as the phone)
 - Move a List to a colleague or the office; hand one Booking to a free colleague (Move to a colleague)
 - Accounts and GST activity (the calendar month to date)
 - Profile (her name and avatar in the top nav): rate per unit editable, the rest read-only
@@ -425,7 +426,7 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Find available (Day header): office only; the free anaesthetists for a session in tier order,
   shuffled within a tier, with not-preferred pairings apart once a surgeon is chosen; picking one opens
   Assign List
-- Availability statuses (Master data): rename, recolour or add a status and every app follows; rules
+- Availability statuses (Master data): four to start (Free, On holiday, Unavailable, Public); rename, recolour or add a status and every app follows; rules
   read the status's ID; it is availability only, never a List's state (Active, Submitted or
   Authorised, or Draft for a Draft List)
 - Out-of-hours sessions: **Open out-of-hours session** on an anaesthetist's Day row (hover the name or
@@ -480,7 +481,10 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 - Xero collection/payable pairs, payments, reconciliation poll, payables, live balances and GST (Phase 10)
 - The anaesthetist's profile: own rate per unit editable on mobile and web, the office's Profile card and
   Anaesthetists columns, HPI CPN and bank details mandatory, the bank number masked (catch-up Phase 26)
-- HL7/FHIR/PDF ingestion, integration monitor, mapping fix and dedupe (Phase 11)
+- Hospital file import and the matching screen (Admin, Matching): wording as received, field
+  differences, create a Booking, a List or a Draft List, the unmatched queue (catch-up Phase 33)
+- Surgeon PDF ingestion (Phase 11); the HL7/FHIR integration monitor, mapping fix and dedupe are
+  built but Future scope
 - The demo control panel with S1 to S5 scenario jumps (Phase 12), now the index of the per-screen
   Demo actions (catch-up Phase 14)
 
@@ -519,10 +523,16 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   opens tonight's out-of-hours session and puts a List in it, at the hospital and with the surgeon of
   her latest List; in the framed build play the office with **Open out-of-hours session** on Admin Day.
   **Alert the office**, the tick and **Show resolved** are product actions, not demo actions.
+- Hospital triggers: on **Admin, Matching**, **Demo actions → Import hospital file** (St George's or
+  Southern Cross) and **Send update for a matched Booking** (Diane Foster by default); elsewhere the
+  Future-scope **Fire hospital message**, which only stages a row on Matching. On a handset's Lists or Booking,
+  **Hospital row arrives and the office matches it** (badged "Office stand-in") plays the import and
+  the office's decision in one step.
 - **Future scope** badges (grey, telescope icon) mark the HL7 v2 and FHIR tooling: the Integrations
-  simulator, the Admin Integrations Messages and Feed config tabs, and the hospital-message demo
-  actions. Say so plainly: in scope today is the St George's and Southern Cross download into a
-  matching screen, which a later build shows.
+  simulator, the Admin Integrations Messages and Feed config tabs, and **Fire hospital message** and
+  **Replay last message** (bar only). Say so plainly: in scope today is the hospital import into the
+  matching screen; a fired message is only sent to matching, and the simulator's pane 3 reads "Sent to
+  matching".
 - **Play the office** (PWA More tab) is off by default and badged "Simulated office" while on. It
   auto-authorises every submitted List and is a scaffold, not the proposed flow: use **Office
   authorises this List** instead.
@@ -732,6 +742,14 @@ like AM and PM, one a day, 18:00 to 21:00 by default: the anaesthetist can mark 
 finders offer it while it is free, and its Bookings are captured, submitted and billed like any List
 (S2 Beat 3e).
 
+### "What about public work?"
+
+Public hospital sessions are a status on the session, with an optional note such as CPH, set by the
+anaesthetist on their calendar or by the office from the Day view (Change status). It is never a kind
+of List and is never billed. Public is not open for bookings or cover; changing it back to Free
+reopens the session. What else the office needs to know about public sessions is a discovery point
+(OQ-139).
+
 ### "Can an anaesthetist edit after submission?"
 
 Yes, until the office authorises the List. A submitted List stays on the anaesthetist's main view, less
@@ -751,8 +769,11 @@ anaesthetist-facing views. Xero is the AR and banking add-on.
 
 ### "How do late hospital changes work?"
 
-While the List is `ACTIVE`, mapped hospital messages can update the Booking in near real time. Once the
-List is `SUBMITTED` or `AUTHORISED`, an inbound change must park for manual intervention.
+Hospital rows land on the matching screen with their wording exactly as received. A later update is
+matched to its Booking by date, surgeon, hospital and session and waits for the office to approve it;
+the office can apply rows up to `AUTHORISED` (a row for an authorised List cannot be applied). Nothing
+applies itself, and the hospital never sets the Contract. Applying hospital changes automatically comes
+after the first release (US-02.5.1 to US-02.5.4).
 
 ### "What if the patient has no NHI?"
 

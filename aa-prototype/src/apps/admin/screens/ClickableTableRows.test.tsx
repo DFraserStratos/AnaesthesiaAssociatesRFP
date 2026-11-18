@@ -1,10 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { freshAppState, isBackdropInvoice, useAppStore, type Actor } from '../../../store'
+import { assessImportRow, decideImportRow, freshAppState, importHospitalDownload, isBackdropInvoice, useAppStore, type Actor } from '../../../store'
 import { SurfaceProvider } from '../../../shared'
 import { AdminBookingDetailRoute } from '../routes'
 import { InvoicesScreen } from './InvoicesScreen'
+import { MatchingScreen } from './MatchingScreen'
 import { ReviewQueue } from './ReviewQueue'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -128,4 +129,54 @@ describe('admin clickable table rows', () => {
     fireEvent.click(screen.getByRole('button', { name: `Invoice ${invoice.invoiceNumber}` }))
     expect(screen.getByText('Returned to invoice')).toBeInTheDocument()
   })
+
+  it('opens a hospital row on Matching when its row is clicked (catch-up Phase 33)', () => {
+    importHospitalDownload(useAppStore, OFFICE, 'SAMPLE_STG')
+    render(
+      <MemoryRouter>
+        <SurfaceProvider variant="web">
+          <MatchingScreen actor={OFFICE} todayISO="2026-07-21" onOpenBooking={vi.fn()} />
+        </SurfaceProvider>
+      </MemoryRouter>,
+    )
+
+    const row = screen.getByTestId('matching-table-shell').querySelector('tbody tr')!
+    expect(row).toHaveClass('aa-clickable-table-row')
+    fireEvent.click(row)
+    expect(screen.getByTestId('matching-panel')).toHaveAttribute('data-import-row-id', row.getAttribute('data-import-row-id'))
+  })
+
+  it("links a Booking made from a hospital row back to that row on Matching (catch-up Phase 33)", () => {
+    importHospitalDownload(useAppStore, OFFICE, 'SAMPLE_STG')
+    const rowId = useAppStore.getState().intake.batches[Object.keys(useAppStore.getState().intake.batches)[0]!]!.rowIds[0]!
+    const suggestion = assessImportRow(useAppStore.getState(), rowId)?.suggestion
+    const listId = suggestion?.kind === 'createBooking' ? suggestion.listId : ''
+    const out = decideImportRow(useAppStore, OFFICE, rowId, { kind: 'createBooking', listId })
+    expect(out.ok).toBe(true)
+    const bookingId = out.ok ? out.value.bookingId! : ''
+
+    render(
+      <MemoryRouter initialEntries={[`/admin/day/2026-07-28/bookings/${bookingId}`]}>
+        <SurfaceProvider variant="web">
+          <Routes>
+            <Route path="/admin" element={<Outlet context={{ actor: OFFICE, todayISO: '2026-07-21' }} />}>
+              <Route path="day/:dateISO/bookings/:bookingId" element={<AdminBookingDetailRoute />} />
+            </Route>
+          </Routes>
+          <LocationProbe />
+          <SelectRowProbe />
+        </SurfaceProvider>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: `From hospital row ${rowId}` }))
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/admin/matching')
+    expect(screen.getByTestId('select-row-probe')).toHaveTextContent(rowId)
+  })
 })
+
+function SelectRowProbe() {
+  const { state } = useLocation()
+  const id = typeof state === 'object' && state !== null && 'selectRowId' in state ? String(state.selectRowId) : ''
+  return <output data-testid="select-row-probe">{id}</output>
+}

@@ -12,6 +12,8 @@ export interface DemoContextValues {
   'integrations.tab': 'messages' | 'feeds' | 'pdfs' | 'quality' | 'validators'
   /** Integrations simulator: the message selected in the library. */
   'integrationsSim.selectedMessageId': string
+  /** Admin · Matching: the row open in the detail panel (an import row id; catch-up Phase 33's "Send update for a matched Booking"). */
+  'matching.selectedRowId': string
   /** Admin · AA fee invoices: the month in the picker (`YYYY-MM`; catch-up Phase 16). */
   'aaFees.month': string
   /**
@@ -27,6 +29,8 @@ export interface DemoContextValues {
   'adminPicker.listId': string
   /** Admin · Master data: the Contract open in its detail (catch-up Phase 24's backdated range trigger). */
   'adminContracts.openContractId': string
+  /** Mobile · My calendar: the last day opened in the session panel, `<anaesthetistId>|<dateISO>`, while the calendar shows (catch-up Phase 32d's office stand-in). */
+  'mobileCalendar.day': string
 }
 
 export type DemoContextKey = keyof DemoContextValues

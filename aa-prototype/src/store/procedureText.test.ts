@@ -88,13 +88,14 @@ describe('replaceProcedureText', () => {
     expect(replaceProcedureText(api, FEED, TANE_PROC, { text: '   ', source: 'hospitalFeed' })).toMatchObject({ ok: false, code: 'procedureTextBlank' })
   })
 
-  it('follows editRefusal: another anaesthetist is refused; an integration is refused on a SUBMITTED List', () => {
+  it('follows editRefusal: another anaesthetist is refused; every source is refused on an AUTHORISED List', () => {
     const api = store()
     expect(replaceProcedureText(api, COLLEAGUE, TANE_PROC, { text: 'lap chole', source: 'anaesthetist' })).toMatchObject({ ok: false, code: 'notOwnList' })
     const submitted = SEED_LIST_IDS.morrisonMon20
     expect(api.getState().schedule.lists[submitted]!.state).toBe('SUBMITTED')
     const turp = proceduresForBooking(api.getState(), bookingsForList(api.getState(), submitted)[0]!.id)[0]!
-    expect(replaceProcedureText(api, FEED, turp.id, { text: 'TURP, bipolar', source: 'hospitalFeed' })).toMatchObject({ ok: false, code: 'integrationImmutable' })
+    expect(replaceProcedureText(api, FEED, turp.id, { text: 'TURP, bipolar', source: 'hospitalFeed' }).ok).toBe(true)
+    expect(replaceProcedureText(api, FEED, 'HP08', { text: 'Knee scope', source: 'hospitalFeed' })).toMatchObject({ ok: false, code: 'listAuthorised' })
   })
 
   it('leaves a Contract\'s invoice description in place, with the newer cue only for an edit', () => {

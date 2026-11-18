@@ -650,7 +650,7 @@ export interface NewRecurringBookingFields {
 /** Kind and optional session times, checked the same on add and edit (catch-up Phase 28). */
 function recurringBookingRefusal(t: { kind?: ListKind; startTime?: string; endTime?: string }): Outcome<never> | null {
   if (t.kind !== undefined && !(LIST_KINDS as readonly string[]).includes(t.kind)) {
-    return refuse('invalidKind', 'A recurring booking is a private, public or pre-op List.')
+    return refuse('invalidKind', 'A recurring booking is a private or pre-op List.')
   }
   for (const v of [t.startTime, t.endTime]) {
     if (v !== undefined && v !== '' && !isWallTime(v)) return refuse('invalidTime', 'Times are HH:mm, for example 13:30.')

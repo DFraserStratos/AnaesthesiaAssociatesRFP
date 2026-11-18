@@ -5,6 +5,13 @@ import { CardExample, DefRowExample, EyebrowExample, PageHeaderExample, TableKit
 import { ReviewQueue } from '../../admin/screens/ReviewQueue'
 import { AuditViewer } from '../../admin/screens/AuditViewer'
 import { IntegrationMonitorScreen } from '../../admin/screens/IntegrationMonitorScreen'
+import { RowField } from '../../admin/components/RowField'
+import { DiffTable } from '../../admin/matching/DiffTable'
+import { DecisionCards, type DecisionKind } from '../../admin/matching/DecisionCards'
+import type { IncomingFieldKey } from '../../../domain/types'
+import type { FieldDiff } from '../../../domain/intake'
+import { OptionRow, Pill, RadioCard, useRovingRadio } from '../../../shared/ui'
+import { useState } from 'react'
 import { HospitalsView } from '../../admin/screens/masters/HospitalsView'
 import { RvgGroupsView } from '../../admin/screens/masters/RvgGroupsView'
 import {
@@ -260,6 +267,15 @@ export function AdminCatalogue() {
         <CatalogueRow name="RailOptionGroup" source="shared/contracts/railParts.tsx" usedIn={AWM} what="One step of the Contract chooser as a named radio group (UI unification U4): list rows with a count (the step rail sheet) or tiles with None for this List (the Billing card), a Suggested pill on the funder's path, unselectable answers dimmed. Arrow keys move focus only; Space, Enter or a click picks, because a pick saves and moves on." replaceWith="shadcn RadioGroup (card items)" note="Static options here; Phase 23 builds Make primary on it. Nothing writes to the demo data.">
           <RailOptionGroupExample />
         </CatalogueRow>
+        <CatalogueRow name="RadioCard" source="shared/ui/RadioCard.tsx" usedIn={A} what="One option of a radio group drawn as a card (catch-up Phase 33's review): the radio dot, a title with an optional pill or count beside it, slate lines, and the checked card's own controls under it. Checked is the teal accent (an accent border doubled by a 1px inset ring, the rail tiles' edge) on white; a disabled card sits on the bg fill with its reason. Keyboard from useRovingRadio; Space, Enter or a click selects. Matching's import dialog and decision cards use it." replaceWith="shadcn RadioGroup (card items)">
+          <RadioCardExample />
+        </CatalogueRow>
+        <CatalogueRow name="DecisionCards (Matching)" source="apps/admin/matching/DecisionCards.tsx" usedIn={A} what={`The Matching row panel's decision: RadioCards for Match and apply, Create a Booking, Create a List, Create a ${DRAFT_LIST} and Reject, the suggested one marked with the Contract rail's Suggested pill, a disabled card showing why, and the chosen card opening its own controls.`} replaceWith="shadcn RadioGroup (card items)" note="Static options here; nothing writes to the demo data.">
+          <DecisionCardsExample />
+        </CatalogueRow>
+        <CatalogueRow name="OptionRow" source="shared/ui/OptionRow.tsx" usedIn={A} what="One result in a short pick list under a search box (catch-up Phase 33's review, Matching's Match to another Booking): a full-width bordered button, words left and mono facts right; the current pick in the teal accent edge and tint, with aria-pressed. A table row that opens a record is ClickableRow instead." replaceWith="shadcn Command (items)">
+          <OptionRowExample />
+        </CatalogueRow>
         <CatalogueRow name="Switch" source="shared/ui/Switch.tsx" usedIn={AWM} what="The one on/off switch (UI unification U4): a button with role=switch and aria-checked, so click and Space toggle it; sm is the 36 by 20 track, lg the 52 by 32 touch track, with a label and an optional description." replaceWith="shadcn Switch" note="No product screen uses it yet: Phase 27 builds its approval-step toggle on it. The PWA panel's ToggleRow stays its own (a demo surface).">
           <SwitchExample />
         </CatalogueRow>
@@ -319,6 +335,12 @@ export function AdminCatalogue() {
       <LibraryGroup id="forms">
         <CatalogueRow name="TextField" source="shared/ui/Field.tsx" usedIn={AWM} what="The one labelled single-line input, about 77 uses in Admin: text, date, time, number, email or phone; mono; a FieldHint tied by aria-describedby; and since UI unification U4 invalid (aria-invalid and the error border), inputMode and align for amounts, min, max, step, list, size (48px field or 36px compact), fill (well or surface) and hideLabel." replaceWith="shadcn Field + Input (React Hook Form)" note="Every default keeps the old look (48px, grey well). The library would bind errors to the field.">
           <TextFieldExample />
+        </CatalogueRow>
+        <CatalogueRow name="RowField" source="apps/admin/components/RowField.tsx" usedIn={A} what="The small labelled in-row input for correcting one field of an incoming row: the Integrations PDF review's extracted rows and the Matching panel's name, date of birth and time (catch-up Phase 33 moved it out of PdfReview so both use it). Mono, an invalid border, and a read-only look for wording kept as received." replaceWith="shadcn Field + Input" note="A near twin of TextField's compact size; fold it into TextField in the migration.">
+          <RowFieldExample />
+        </CatalogueRow>
+        <CatalogueRow name="DiffTable (Matching)" source="apps/admin/matching/DiffTable.tsx" usedIn={A} what="Matching's differences between a Booking and the hospital's row: Field, On the Booking now, From the hospital, on the shared table kit (nested, dense). Every row is a changed field in the warning tone (ClickableRow tone=warning); a field the office may apply carries its tick, named by the field; an NHI is shown but never applied." replaceWith="TanStack Table + shadcn Table + Checkbox">
+          <DiffTableExample />
         </CatalogueRow>
         <CatalogueRow name="TextArea" source="shared/ui/Field.tsx" usedIn={AWM} what="The one multi-line input: a visible label or ariaLabel, a hint, and since UI unification U4 a counter (maxLength, cap, countTrimmed), compact density (the rail's day note), fill and resize. The rail's day note, the modifier reason and the Alert the office note moved onto it." replaceWith="shadcn Field + Textarea">
           <TextAreaExample />
@@ -460,4 +482,100 @@ function ContractHistoryExample() {
     return s.billing.locks[bookingId]?.procedures[0]?.contract?.id ?? ''
   })
   return contractId === '' ? null : <ContractHistory contractId={contractId} />
+}
+
+/** RowField (catch-up Phase 33's move): an editable NHI flagged invalid, a name, and wording kept as received. */
+function RowFieldExample() {
+  const [nhi, setNhi] = useState('ZQA2111')
+  const [name, setName] = useState('Rosa Mendes')
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <RowField label="NHI" value={nhi} mono onChange={setNhi} width={110} invalid={nhi === 'ZQA2111'} />
+      <RowField label="Name" value={name} onChange={setName} width={150} />
+      <RowField label="Procedure text" value="carpal tunnel decomp L" mono readOnly width={210} />
+    </div>
+  )
+}
+
+/** RadioCard: three sample files, one disabled, the checked one opening its controls. */
+function RadioCardExample() {
+  const values = ['stg', 'mercy', 'sx'] as const
+  const [value, setValue] = useState<string | undefined>('stg')
+  const radio = useRovingRadio<string>({ values, value, onChange: setValue, isDisabled: (v) => v === 'sx' })
+  return (
+    <div {...radio.groupProps} aria-label="Sample files" style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 440 }}>
+      <RadioCard radio={radio.itemProps(0)} checked={value === 'stg'} onSelect={() => setValue('stg')} title="St George's" titleExtra={<span className="mono" style={{ fontSize: 12 }}>5 rows</span>} description="Theatre list, week of 27 July">
+        <span style={{ fontSize: 12.5 }}>The checked card's own controls sit here.</span>
+      </RadioCard>
+      <RadioCard radio={radio.itemProps(1)} checked={value === 'mercy'} onSelect={() => setValue('mercy')} title="Mercy Hospital" titleExtra={<Pill size="sm">Suggested</Pill>} description="Bookings export" />
+      <RadioCard radio={radio.itemProps(2)} checked={value === 'sx'} onSelect={() => setValue('sx')} title="Southern Cross" description="Admissions file" disabledReason="No file this week." />
+    </div>
+  )
+}
+
+/** DecisionCards: Create a Booking suggested, Create a List disabled, Reject with its reason. */
+function DecisionCardsExample() {
+  const [kind, setKind] = useState<DecisionKind | undefined>('createBooking')
+  return (
+    <div style={{ maxWidth: 440 }}>
+      <DecisionCards
+        options={[
+          { kind: 'createBooking', title: 'Create a Booking on a List', description: 'Add the Booking to a List at this hospital that day.' },
+          { kind: 'createList', title: 'Create a List in a session', description: 'A new List holding this Booking.', disabledReason: 'No anaesthetist is free on Tue 28 Jul AM.' },
+          { kind: 'reject', title: 'Reject', description: 'Nothing is created or changed. The reason is kept with the row.' },
+        ]}
+        value={kind}
+        suggested="createBooking"
+        onChange={setKind}
+        detail={<span style={{ fontSize: 12.5 }}>{kind === 'reject' ? 'The reason field and quick reasons.' : 'The List picker.'}</span>}
+      />
+    </div>
+  )
+}
+
+/** OptionRow: two search results, the first the current pick. */
+function OptionRowExample() {
+  const [picked, setPicked] = useState('B1')
+  return (
+    <div role="list" style={{ display: 'flex', flexDirection: 'column', gap: 4, maxWidth: 440 }}>
+      {[
+        { id: 'B1', name: 'Rosa Mendes', facts: 'AM · 08:30 · Dr Souter' },
+        { id: 'B2', name: 'Ana Ruiz', facts: 'AM · 10:15 · Dr Souter' },
+      ].map((b) => (
+        <div role="listitem" key={b.id}>
+          <OptionRow selected={picked === b.id} trailing={b.facts} onClick={() => setPicked(b.id)}>
+            {b.name}
+          </OptionRow>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** DiffTable: a time and a note to apply, the wording replaced, an NHI shown but never applied. */
+function DiffTableExample() {
+  const diffs: FieldDiff[] = [
+    { key: 'time', label: 'Time', current: '08:30', incoming: '09:15', effect: 'sets' },
+    { key: 'procedureText', label: 'Procedure', current: 'WLE L breast', incoming: 'WLE MM L breast', effect: 'replaces' },
+    { key: 'note', label: 'Note', current: null, incoming: 'Latex allergy', effect: 'appends' },
+    { key: 'nhi', label: 'NHI', current: 'ZAB1234', incoming: 'ZAB1243', effect: 'flagged' },
+  ]
+  const [unticked, setUnticked] = useState<ReadonlySet<IncomingFieldKey>>(new Set())
+  return (
+    <div style={{ maxWidth: 440 }}>
+      <DiffTable
+        diffs={diffs}
+        tickable={(d) => d.effect !== 'flagged'}
+        unticked={unticked}
+        onToggle={(key) =>
+          setUnticked((cur) => {
+            const next = new Set(cur)
+            if (next.has(key)) next.delete(key)
+            else next.add(key)
+            return next
+          })
+        }
+      />
+    </div>
+  )
 }

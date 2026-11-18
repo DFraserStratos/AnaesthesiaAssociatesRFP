@@ -25,12 +25,11 @@ async function cleanCopy(page: Page, where: string) {
 
 test('Draft Lists: soonest first, the band and rail card, and assigning St George\'s to Dr Fitzgerald makes it ACTIVE', async ({ page }) => {
   await fresh(page, '/admin/draft-lists')
-  // Sixteen since catch-up Phase 32b: Dr Rutherford's returned Wed 22 AM List.
-  await expect(page.locator('[data-shot="nav-badge-draftLists"]')).toHaveText('16')
+  // Ten since catch-up Phase 32d (sixteen at 32b): the six recurring clashes the public rows raised went with the public List kind.
+  await expect(page.locator('[data-shot="nav-badge-draftLists"]')).toHaveText('10')
   const rows = page.locator('tr[data-draft-list-row]')
-  await expect(rows).toHaveCount(16)
-  await expect(rows.first()).toHaveAttribute('data-draft-list-row', 'LD-RCB016-2026-07-21-AM')
-  await expect(rows.nth(1)).toHaveAttribute('data-draft-list-row', 'LD-001')
+  await expect(rows).toHaveCount(10)
+  await expect(rows.first()).toHaveAttribute('data-draft-list-row', 'LD-001')
   await expect(page.locator('tr[data-draft-list-row="LD-003"]')).toContainText('3 d 22 h')
   await page.screenshot({ path: 'visual/shots/p31-01-draft-lists.png', fullPage: true })
   await cleanCopy(page, 'Draft Lists')
@@ -38,9 +37,9 @@ test('Draft Lists: soonest first, the band and rail card, and assigning St Georg
   await page.goto('/admin/day/2026-07-21')
   await page.waitForLoadState('networkidle')
   const band = page.locator('[data-shot="daygrid-draft-band"]')
-  await expect(band).toHaveAttribute('data-draft-band-count', '2')
-  await expect(page.locator('[data-shot="admin-draft-lists-rail"]')).toContainText('See all 16')
-  await expect(page.getByText(/· 2 Draft Lists$/)).toBeVisible()
+  await expect(band).toHaveAttribute('data-draft-band-count', '1')
+  await expect(page.locator('[data-shot="admin-draft-lists-rail"]')).toContainText('See all 10')
+  await expect(page.getByText(/· 1 Draft List$/)).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p31-02-day-band.png', fullPage: true })
 
   await page.locator('[data-draft-block="LD-001"]').click()
@@ -58,7 +57,8 @@ test('Draft Lists: soonest first, the band and rail card, and assigning St Georg
   await page.goto('/admin/day/2026-07-21')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-slot-id="S-43015-2026-07-21-PM"]')).toContainText("St George's")
-  await expect(page.locator('[data-shot="daygrid-draft-band"]')).toHaveAttribute('data-draft-band-count', '1')
+  // The band empties (catch-up Phase 32d: LD-001 was the day's only Draft List).
+  await expect(page.locator('[data-shot="daygrid-draft-band"]')).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p31-03-assigned.png', fullPage: true })
 })
 
@@ -123,7 +123,8 @@ test('Draft Lists by keyboard (UI unification U6, bug 3): Tab to a row handle pa
   // Rows never take focus; the handle does.
   await expect(sixth).not.toHaveAttribute('tabindex', /.*/)
   // Tab in from the row above: its last control, then Tab lands on this row's handle.
-  await page.locator('tr[data-draft-list-row]').nth(4).getByRole('button').last().focus()
+  // Its last enabled control (catch-up Phase 32d: the row above may hold Bookings, so its Remove is disabled).
+  await page.locator('tr[data-draft-list-row]').nth(4).locator('button:not([disabled])').last().focus()
   await page.keyboard.press('Tab')
   await expect(handle).toBeFocused()
   await page.keyboard.press('Enter')

@@ -7,7 +7,7 @@ import { bookingCountLabel, DRAFT_LIST, DRAFT_LISTS } from '../../../shared/sche
 import { assignDraftList, bookingMovesOntoList, closeOutOfHoursRefusal, closeOutOfHoursSession, draftListsForDate, latestNotificationForList, listInSlot, procedureStackViewFor, useAppStore, useSlotView, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
-import { displayStatusLabel, isClosedKey } from '../../../domain/slotStatus'
+import { displayStatusLabel, isClosedKey, statusLine } from '../../../domain/slotStatus'
 import { strongestOpen, useListWarnings, WarningTriangle, warningTone } from '../../../shared/warnings'
 import { HistorySheet, ProcedureStack } from '../../../shared/booking'
 import { OfficeAlertLine, useBookingMoveEntries } from '../../../shared/flows'
@@ -352,7 +352,8 @@ function EmptySessionDrawer({
           <Section label="Session">
             <DefList>
               <DefRow label="Status">
-                {displayStatusLabel(slot.status, statuses, true)}
+                {/* The status line (catch-up Phase 32d): "Public hospital · CPH", no List detail. */}
+                {statusLine(slot, statuses, true)}
                 {/* The office sets the anaesthetist's status here, a sickness phoned in included (catch-up Phase 32b). */}
                 <TextAction size="sm" flush shot="drawer-change-status" onClick={() => setSheet({ status: slot.id })} style={{ marginLeft: 10 }}>
                   Change status
@@ -362,7 +363,7 @@ function EmptySessionDrawer({
                 {slotTimeRange(times)}
                 <span style={{ marginLeft: 8, fontSize: 12, color: neutral.mist }}>{times.overridden ? 'Own times' : 'Default'}</span>
               </DefRow>
-              {slot.note !== undefined && slot.note.trim() !== '' && <DefRow label="Note">{slot.note}</DefRow>}
+              {open && slot.note !== undefined && slot.note.trim() !== '' && <DefRow label="Note">{slot.note}</DefRow>}
             </DefList>
           </Section>
           {open ? (

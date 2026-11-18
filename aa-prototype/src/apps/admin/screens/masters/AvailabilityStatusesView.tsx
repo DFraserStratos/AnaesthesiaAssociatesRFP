@@ -81,9 +81,9 @@ export function AvailabilityStatusesView({ actor }: { actor: Actor }) {
         })}
       </Table>
       <div data-shot="availability-statuses-list-types" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12.5, color: neutral.slate }}>
-        <span>List types are fixed attributes of a List, not availability:</span>
+        {/* Catch-up Phase 32d: Public is a status above, so only Private and Pre-op are kinds of List. */}
         {LIST_KINDS.map((k) => <StatusChip key={k} status={k} />)}
-        <span>A session holding a List shows the List in place of its status.</span>
+        <span>Private and Pre-op are kinds of List, shown on the List, not availability.</span>
       </div>
       {sheet !== null && <SlotStatusSheet key={sheet.status?.key ?? 'new'} status={sheet.status} actor={actor} onClose={() => setSheet(null)} />}
       {retiring !== null && <RetireConfirm status={retiring} actor={actor} onClose={() => setRetiring(null)} />}

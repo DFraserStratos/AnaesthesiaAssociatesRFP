@@ -102,11 +102,11 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
     if (list === undefined) {
       const status = resolveDisplayStatus(view.slot.status, slotStatuses)
       if (view.open) return { l1: status.label, l2: 'Open for booking' }
+      // A closed session: its label, then its note (Public, then "CPH"; catch-up Phase 32d), never List detail.
       return { l1: status.longLabel, l2: view.slot.note ?? '' }
     }
     if (list.kind === 'preop') return { l1: 'Pre-op clinic', l2: locationName(list.hospitalId, hospitals) }
-    // A public List keeps its template label ("Acute theatre"); a private one names its surgeon.
-    const l2 = list.kind !== 'private' && list.notes !== undefined ? list.notes : (surgeons[list.surgeonId]?.name ?? '')
+    const l2 = surgeons[list.surgeonId]?.name ?? ''
     return { l1: locationName(list.hospitalId, hospitals), l2 }
   }
 

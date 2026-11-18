@@ -51,6 +51,10 @@ export type SlotId = string
 export type BookingId = string
 export type ProcedureId = string
 export type InvoiceId = string
+/** One hospital import, sheet or feed message on the matching screen (catch-up Phase 33; DM-34). */
+export type ImportBatchId = string
+/** One incoming booking row on the matching screen (catch-up Phase 33; DM-34). */
+export type ImportRowId = string
 
 /**
  * A day's sessions: AM and PM, generated for every active anaesthetist, and
@@ -121,25 +125,27 @@ export type SlotStatusKey = string
 
 /**
  * A List's kind (catch-up Phase 28). The catalogue models no List kind
- * (DM-04: private, public and pre-op appear only as RFP candidate statuses);
- * it is kept as a List attribute so the six-colour design language and the
- * seed's acute and pre-op Lists still read. Logged for the owner.
+ * (DM-04: private and pre-op appear only as RFP candidate statuses); it is
+ * kept as a List attribute so the six-colour design language and the seed's
+ * pre-op Lists still read. Logged for the owner. Public is not a kind of List:
+ * since catch-up Phase 32d (D86, RV-43) it is a Slot status (`publicHospital`)
+ * with an optional note and no List detail.
  */
-export const LIST_KINDS = ['private', 'public', 'preop'] as const
+export const LIST_KINDS = ['private', 'preop'] as const
 export type ListKind = (typeof LIST_KINDS)[number]
 
 /** The List kinds' fixed labels (chip, then long label); not master data (catch-up Phase 29). */
 export const LIST_KIND_LABELS: Record<ListKind, { label: string; longLabel: string }> = {
   private: { label: 'Private', longLabel: 'Private' },
-  public: { label: 'Public', longLabel: 'Public' },
   preop: { label: 'Pre-op', longLabel: 'Pre-op Assessment' },
 }
 
 /**
  * What a session shows (catch-up Phase 29: one display key space): the List's
  * kind when a List is in the Slot, otherwise the Slot's status ID unchanged.
- * No status ID can equal a List kind (seeded IDs are availability words,
- * generated ones `ST####`), so the space cannot collide. Never a List state.
+ * No status ID can equal a List kind (seeded IDs are availability words, Public
+ * is `publicHospital` since Phase 32d, generated ones `ST####`), so the space
+ * cannot collide. Never a List state.
  */
 export type DisplayKey = ListKind | SlotStatusKey
 
@@ -720,7 +726,7 @@ export interface ListBase {
   id: ListId
   dateISO: IsoDate
   session: Session
-  /** Private, public or pre-op (outside the catalogue's model; see `ListKind`). */
+  /** Private or pre-op (outside the catalogue's model; see `ListKind`). Public is a Slot status since catch-up Phase 32d. */
   kind: ListKind
   hospitalId: HospitalId
   surgeonId: SurgeonId
@@ -922,6 +928,8 @@ export type ProcedureTextSource =
   | 'email'
   | 'hospitalDownload'
   | 'hospitalFeed'
+  /** A hospital's daily sheet keyed by the office (catch-up Phase 33's `manualSheet` channel). */
+  | 'hospitalSheet'
   | 'phone'
   | 'anaesthetist'
   | 'unrecorded'
@@ -1758,7 +1766,6 @@ export type IntegrationMessageStatus =
   | 'processed'
   | 'retrying'
   | 'deadLetter'
-  | 'manualIntervention'
   | 'duplicate'
 
 export interface IntegrationMessage {
@@ -1777,10 +1784,124 @@ export interface IntegrationMessage {
   raw?: string
   /** Why the last attempt failed / parked (Phase 11) — rendered in the monitor. */
   failureReason?: string
-  /** The Booking this message created or affected (Phase 11), for the monitor's link. */
-  resultBookingId?: BookingId
+  /**
+   * The matching-screen row this message staged (catch-up Phase 33; RV-13): a
+   * parsed message never changes a Booking itself, it waits for the office.
+   */
+  resultImportRowId?: ImportRowId
   /** Extracted patient display name (Phase 11), for the log's patient-ref column. */
   patientRef?: string
+}
+
+// ---------------------------------------------------------------------------
+// Intake: import batches and rows on the matching screen (catch-up Phase 33)
+// ---------------------------------------------------------------------------
+
+/**
+ * How a row arrived (DM-34): `download` is a hospital's file imported through
+ * an integration (app copy says "import", US-02.1.1; no sync, D52),
+ * `manualSheet` a daily sheet the office keys, `feedMessage` the Future-scope
+ * HL7/FHIR simulator's message.
+ */
+export type ImportChannel = 'download' | 'manualSheet' | 'feedMessage'
+
+/**
+ * Whose text and booking the row is (OQ-108 answered, D51): the hospital's,
+ * or the surgeon's rooms' (Phase 34's PDF rows). Every channel built in Phase
+ * 33 is `hospital`.
+ */
+export type ImportSource = 'hospital' | 'rooms'
+
+/**
+ * What the hospital sent (OQ-13 open: a superset of the plausible fields).
+ * Only the hospital, date, session and patient name are required; a field not
+ * supplied is never a change and never blanks a Booking field.
+ */
+export interface IncomingBookingFields {
+  hospitalId: HospitalId
+  dateISO: IsoDate
+  session: Session
+  /** The hospital's appointment id when it sends one: the duplicate key and the correlation ref, never a match key (D62). */
+  externalRef?: string
+  /** `hpiId` is the HPI CPN (OQ-52), matched first. */
+  surgeon?: { name: string; hpiId?: string }
+  scheduledTime?: WallTime
+  /** No NHI means the row waits on the unmatched queue and creates nothing (D11). */
+  patient: { name: string; nhi?: string; dobISO?: IsoDate; ethnicityCode?: string }
+  /** `text`: the wording exactly as sent, never trimmed (US-02.1.2, US-02.5.7); `code`: the hospital's own code, shown, never mapped. */
+  procedure?: { text?: string; code?: string }
+  /** The insurer or funder as sent (US-11.4.3): shown and recorded as source data (D28), never who is billed. */
+  insurer?: { text: string; insurerPartyId?: string; approvalNumber?: string }
+  note?: string
+  hospitalStatus: 'booked' | 'cancelled'
+  cancelReason?: string
+}
+
+/** The identifying fields the office may correct on a row; never the procedure wording. */
+export interface ImportRowCorrections {
+  nhi?: string
+  patientName?: string
+  dobISO?: IsoDate
+  scheduledTime?: WallTime
+  /** A surgeon the office picked from the master (when the row's did not resolve). */
+  surgeonId?: SurgeonId
+}
+
+export type ChangeType = 'new' | 'modification' | 'cancellation' | 'noChange'
+
+export type IncomingFieldKey = 'time' | 'patientName' | 'dob' | 'nhi' | 'procedureText' | 'insurer' | 'note'
+
+/** Only what the office chose in the panel; never derived from the row (FT-02.1, OQ-78). */
+export interface OfficePicks {
+  rvgGroupId?: string
+  /** The Contract the office picked on the step rail, with the price typed on an open-price Contract. */
+  contract?: { contractId: ContractId; enteredPrice?: number }
+  /** Record the row's insurer or funder on the Booking (default on, the office may untick). */
+  recordInsurer?: boolean
+}
+
+/** The office's decision on a row (US-02.1.2): there is no move (D62). */
+export type ImportDecision =
+  | { kind: 'match'; bookingId: BookingId; changeType: ChangeType; fieldsApplied: IncomingFieldKey[]; picks?: OfficePicks }
+  | { kind: 'createBooking'; listId: ListId; bookingId: BookingId; picks?: OfficePicks }
+  | { kind: 'createList'; slotId: SlotId; listId: ListId; bookingId: BookingId; picks?: OfficePicks }
+  | { kind: 'createDraft'; listId: ListId; bookingId: BookingId; picks?: OfficePicks }
+  | { kind: 'reject'; reason: string }
+
+/**
+ * One incoming row (DM-34). "Unmatched" and "waiting for an NHI" are derived
+ * by the matcher, never stored, so a row cannot be unmatched and forgotten.
+ */
+export interface ImportRow {
+  id: ImportRowId
+  batchId: ImportBatchId
+  channel: ImportChannel
+  source: ImportSource
+  receivedAtISO: IsoDateTime
+  incoming: IncomingBookingFields
+  corrections?: ImportRowCorrections
+  status: 'open' | 'applied' | 'rejected'
+  decision?: ImportDecision
+  decidedBy?: string
+  decidedAtISO?: IsoDateTime
+  /** The feed message that staged it (channel `feedMessage`). */
+  messageId?: string
+}
+
+/** One import: a hospital's file, a keyed sheet or a feed message. */
+export interface ImportBatch {
+  id: ImportBatchId
+  channel: ImportChannel
+  source: ImportSource
+  hospitalId: HospitalId
+  label: string
+  /** The sample file it came from (OQ-13 interim). */
+  sampleId?: string
+  importedBy: string
+  importedAtISO: IsoDateTime
+  rowIds: ImportRowId[]
+  /** Rows already imported with identical fields, skipped. */
+  skippedCount: number
 }
 
 // ---------------------------------------------------------------------------

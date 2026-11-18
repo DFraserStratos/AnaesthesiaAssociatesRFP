@@ -160,7 +160,8 @@ describe('conflict selectors', () => {
 
   it('counts open conflicts from today: Wed 22, Mon 26 Oct and Fri 13 Nov (Rutherford no longer one)', () => {
     const api = store()
-    expect(openConflictCount(api.getState())).toBe(19)
+    // 19 until catch-up Phase 32d: three bookless public Lists at Christchurch Public on a closure day are now Public sessions.
+    expect(openConflictCount(api.getState())).toBe(16)
   })
 
   it('hospitalMonth: closures, Lists and conflicted Lists per day', () => {

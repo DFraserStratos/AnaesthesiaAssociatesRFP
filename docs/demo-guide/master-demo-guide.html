@@ -503,7 +503,7 @@
   <h2>The lifecycle</h2>
   <pre class="tree">ACTIVE &#8594; SUBMITTED &#8594; AUTHORISED &#8594; Billing run completed</pre>
   <ul class="tight">
-    <li><code>ACTIVE</code>: anaesthetist, office and integrations may update.</li>
+    <li><code>ACTIVE</code>: anaesthetist and office may update; a hospital row changes a Booking only when the office applies it on the matching screen.</li>
     <li><code>SUBMITTED</code>: the office reviews and corrects; the anaesthetist sees it less prominent ("Done · unbilled") and can still change it until it is authorised. The last change stands, and Review shows "Changed since submitted".</li>
     <li><code>AUTHORISED</code>: Bookings are locked, and each Procedure's Contract and price are locked onto it
       ("Contract locked at authorise"); the whole List hands to billing. The List leaves the
@@ -518,10 +518,10 @@
   carries its label, never colour alone.</p>
   <div class="legend">
     <span class="swatch"><span class="dot" style="background:var(--s-private)"></span>Private</span>
-    <span class="swatch"><span class="dot" style="background:var(--s-public)"></span>Public</span>
     <span class="swatch"><span class="dot" style="background:var(--s-preop)"></span>Pre-op assessment</span>
     <span class="swatch"><span class="dot" style="background:var(--s-holiday)"></span>Holiday</span>
     <span class="swatch"><span class="dot" style="background:var(--s-unavail)"></span>Unavailable</span>
+    <span class="swatch"><span class="dot" style="background:var(--s-public)"></span>Public</span>
     <span class="swatch"><span class="dot" style="background:var(--s-free)"></span>Free</span>
   </div>
 
@@ -540,9 +540,10 @@
     <tr><td>Warnings: To-do card, triangle on Bookings, warning on opening, Day view outline</td><td><span class="chip ready">Ready</span></td><td>Catch-up 15a</td></tr>
     <tr><td>Xero pairs, payments, payables, live balances, GST</td><td><span class="chip ready">Ready</span></td><td>Phase 10</td></tr>
     <tr><td>Anaesthetist profile and bank details: own rate per unit on mobile and web; office-held contact, HPI CPN and masked bank details, payments made in Xero</td><td><span class="chip ready">Ready</span></td><td>Catch-up 26</td></tr>
-    <tr><td>HL7/FHIR/PDF ingestion and integration monitoring</td><td><span class="chip ready">Ready</span></td><td>Phase 11</td></tr>
+    <tr><td>Hospital import and matching screen</td><td><span class="chip ready">Ready</span></td><td>Catch-up Phase 33</td></tr>
+    <tr><td>Surgeon PDF ingestion</td><td><span class="chip ready">Ready</span></td><td>Phase 11</td></tr>
     <tr><td>Demo control panel (the index) with S1 to S5 scenario jumps; demo actions on each screen under Demo actions in the top bar, and a Demo sheet on a handset</td><td><span class="chip ready">Ready</span></td><td>Phase 12; per-screen actions from catch-up Phase 14</td></tr>
-    <tr><td>HL7/FHIR integration simulator and monitor tabs</td><td><span class="chip ready">Ready</span> <span class="chip">Future scope</span></td><td>Phase 11; in-scope hospital download arrives in catch-up Phase 34</td></tr>
+    <tr><td>HL7/FHIR integration simulator and monitor tabs</td><td><span class="chip ready">Ready</span> <span class="chip">Future scope</span></td><td>Phase 11; a fired message is only sent to matching</td></tr>
     <tr><td>Anaesthetist's own List move and the shared notifications</td><td><span class="chip ready">Ready</span></td><td>Catch-up 32</td></tr>
     <tr><td>Single-Booking move to a colleague and the doer rule</td><td><span class="chip ready">Ready</span></td><td>Catch-up 32a</td></tr>
     <tr><td>Mobile atmospheric gradient (visual only)</td><td><span class="chip ready">Ready</span></td><td>Phase 13</td></tr>
@@ -577,9 +578,13 @@
   the framed build use Open out-of-hours session on Admin Day instead. Alert the office, the
   tick and Show resolved are product actions. The control panel is the index, with
   an Open screen link per entry.
+  Hospital triggers: on Admin, Matching, <strong>Import hospital file</strong> (St George's or Southern
+  Cross) and <strong>Send update for a matched Booking</strong> (Diane Foster by default); on a handset's
+  Lists or Booking, <strong>Hospital row arrives and the office matches it</strong> (Office stand-in).
   Grey <span class="chip">Future scope</span> badges mark the HL7 v2 and FHIR tooling (the Integrations
-  simulator, the Admin Integrations Messages and Feed config tabs, the hospital-message actions): in scope
-  today is the St George's and Southern Cross download into a matching screen. <strong>Play the office</strong>
+  simulator, the Admin Integrations Messages and Feed config tabs, and Fire hospital message and Replay
+  last message, bar only): in scope today is the hospital import into the matching screen; a fired message
+  is only sent to matching (the simulator's pane 3 reads "Sent to matching"). <strong>Play the office</strong>
   on the PWA More tab is off by default and badged Simulated office while on; it is a scaffold, not the
   proposed flow. Optional Admin Audit aside: Demo actions &#8594; Simulate sign-in attempts adds five audited
   sign-in rows (set Entity type to account).</div>
@@ -646,7 +651,7 @@
       standing arrangements, ad-hoc bookings, hospital changes, cancellations and short-notice cover.</p>
       <p style="font-size:13px">The one-day dashboard is the control tower: move one Booking for a routine
       reschedule, reassign a whole List for illness cover, preserving Bookings and audit through every change.
-      Sees the team's notifications of Lists anaesthetists have moved and their alerts to the office, ticks each one resolved once dealt with (it leaves for the whole office; Show resolved brings it back), and assigns the Draft Lists they return. Records a sickness phoned in with Change status on the Day view: the List goes back to the office or on to a colleague there and then. Opens an out-of-hours session for an emergency or late case (Open out-of-hours session on an anaesthetist's Day row, any day from today, one a day, 18:00 to 21:00 by default) and puts a List in it, a new one or a Draft List for that evening; closes an empty one from its drawer. Sets the primary Procedure from the rooms' sheet (Make primary on the Admin Booking), and corrects it at review.
+      Sees the team's notifications of Lists anaesthetists have moved and their alerts to the office, ticks each one resolved once dealt with (it leaves for the whole office; Show resolved brings it back), and assigns the Draft Lists they return. Records a sickness phoned in with Change status on the Day view: the List goes back to the office or on to a colleague there and then. Opens an out-of-hours session for an emergency or late case (Open out-of-hours session on an anaesthetist's Day row, any day from today, one a day, 18:00 to 21:00 by default) and puts a List in it, a new one or a Draft List for that evening; closes an empty one from its drawer. Sets the primary Procedure from the rooms' sheet (Make primary on the Admin Booking), and corrects it at review. Imports hospital files, matches each row on the matching screen (Admin, Matching), and sets each new Booking's invoice destination and Contract. As integration operator, the matching screen is her in-scope surface; the HL7/FHIR monitor is Future scope.
       Maintains schedule-related master data such as anaesthetists, recurring bookings and hospital holidays (adding, editing and deleting closures),
       and surgeons, their rooms and groups, the office's private pairing preferences and the anaesthetists'
       priority tiers. Holds each anaesthetist's profile on their record (the Profile card's Edit details): rate
@@ -672,8 +677,8 @@
     <tr><th>Action</th><th>Anaesthetist</th><th>Office</th><th>System / integration</th></tr>
     <tr><td>View own Lists/Bookings</td><td class="yes">Yes</td><td class="yes">Yes, all</td><td>As needed</td></tr>
     <tr><td>View colleague patient details</td><td class="no">No</td><td class="yes">Yes</td><td>As needed</td></tr>
-    <tr><td>Edit a Booking on an ACTIVE List</td><td class="yes">Yes, own</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
-    <tr><td>Edit a SUBMITTED Booking</td><td class="yes">Yes, own, until authorised</td><td class="yes">Yes</td><td class="no">No, park for intervention</td></tr>
+    <tr><td>Edit a Booking on an ACTIVE List</td><td class="yes">Yes, own</td><td class="yes">Yes</td><td class="no">No; brings rows in, never changes a Booking</td></tr>
+    <tr><td>Edit a SUBMITTED Booking</td><td class="yes">Yes, own, until authorised</td><td class="yes">Yes</td><td class="no">No; brings rows in, never changes a Booking</td></tr>
     <tr><td>Edit an AUTHORISED Booking</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
     <tr><td>Submit a List</td><td class="yes">Yes, own</td><td class="no">Receives after submission</td><td class="no">No</td></tr>
     <tr><td>Authorise a List</td><td class="no">No</td><td class="yes">Yes</td><td class="no">No</td></tr>
@@ -742,15 +747,15 @@
   </div>
 
   <div class="callout"><strong>The two kinds of state.</strong> Do not confuse operational List status
-  (Private, Public, Pre-op, Holiday, Unavailable, Free, what the session is used for) with the approval
+  (Private, Pre-op, Holiday, Unavailable, Public, Free, what the session is used for; Public is a status with an optional note such as CPH, never a kind of List, never billed) with the approval
   lifecycle (DRAFT for a Draft List, then ACTIVE, SUBMITTED, AUTHORISED, who may edit it).</div>
 
   <h2>The workflows</h2>
 
   <details><summary>0 · Create and maintain the schedule canvas</summary><div class="details-body">
     <p>The system ensures every active anaesthetist has two Lists a day across the rolling horizon;
-    the anaesthetist's calendar (days off and repeating days off) sets each session's status directly,
-    nothing reconciled; recurring bookings then project their Lists, empty, after the calendar (a closed
+    the anaesthetist's calendar (days off, repeating days off and Public sessions) sets each session's status directly,
+    nothing reconciled; the seeded public sessions are Public with the note CPH, each anaesthetist with a weekly one having a weekly Public series; recurring bookings then project their Lists, empty, after the calendar (a closed
     session is not painted; Phase 31 makes it a Draft List), and a change reapplies at once through "Apply
     to canvas now"; hospital holidays flag Lists; conflicts surface without deleting the List and clear
     when the clash goes or the office clears them. <span class="chip ready">Ready</span></p>
@@ -768,9 +773,9 @@
   </div></details>
 
   <details><summary>1 · Reserve a List and populate patient Bookings</summary><div class="details-body">
-    <p>Triggers: a recurring booking, a surgeon's call, a hospital message, an emailed PDF, or a missing Booking
-    found on the day. Manual fallbacks are first-class: phone advice (office), mobile/web manual Booking,
-    and PDF review-and-ingest (deduped by NHI); hand entry keeps the procedure as typed or told. Each Booking holds its procedure text as received from each channel; the hospital's replaces the surgeon's rooms' and the original stays in the history. A request with no anaesthetist yet becomes a Draft List, which can take Bookings before it is assigned. Every change writes
+    <p>Triggers: a recurring booking, a surgeon's call, hospital bookings or a sheet arriving (a hospital file imported), an emailed PDF, or a missing Booking
+    found on the day. Hospital rows are matched on the matching screen: the office applies, creates (a Booking, a List, or a Draft List holding the Booking) or rejects each one, and sets the invoice destination and Contract there or from Needs an invoice destination; anaesthetists and the office change Bookings directly while the List is ACTIVE. Handoff: the Booking appears on her List with the hospital's wording. Manual fallbacks are first-class: phone advice (office), mobile/web manual Booking,
+    and PDF review-and-ingest (deduped by NHI); hand entry keeps the procedure as typed or told. Each Booking holds its procedure text as received from each channel; the hospital's later text replaces the surgeon's rooms' once the office applies its row, and the original stays in the history. A request with no anaesthetist yet becomes a Draft List, which can take Bookings before it is assigned. Every change writes
     <code>lastModifiedBy/At</code> and append-only audit. <span class="chip ready">Ready</span></p>
   </div></details>
 
@@ -781,7 +786,7 @@
   </div></details>
 
   <details><summary>3 · Find cover: the anaesthetist's own move, or the office's reassignment</summary><div class="details-body">
-    <p>The anaesthetist moves one of her Lists to a free colleague or returns it to the office, at once,
+    <p>She keeps her availability in her calendar (days off, repeating days off and public hospital sessions, Public with an optional note such as CPH; the office can set one too, from Change status). Public is not open for cover; Free reopens it. The anaesthetist moves one of her Lists to a free colleague or returns it to the office, at once,
     also when she marks a booked session off (the app asks where the List goes first). She sees
     colleagues by availability alone, with no preference warning, and the move posts to the office's
     shared notifications; nothing about billing or prepayment is recalculated. When nobody has
@@ -899,9 +904,12 @@
     immutable. <strong>Billing failure:</strong> per Booking, and a List never fails as a whole (OQ-05):
     the run prices only from the lock, so what can still fail is outside it (here the Xero hand-off); the
     failed Booking is held back while the rest of the List bills, and the office retries it once from the
-    Billing monitor without editing any Contract or other master. <strong>Integration failure:</strong> a malformed message retries then dead-letters
-    for manual intervention; a duplicate is an idempotent no-op; a message for a SUBMITTED/AUTHORISED target
-    is parked. <strong>Compliance:</strong> everything is audited, both NHI formats validate, and
+    Billing monitor without editing any Contract or other master. <strong>Hospital rows:</strong> an unmatched row, or one with no NHI, waits in the unmatched
+    queue; a duplicate row is skipped; a later update waits for approval, matched by date, surgeon, hospital
+    and session; a Booking moved to another day arrives as a cancellation plus a new Booking; a row for a
+    submitted List can still be applied by the office; a row for an authorised List cannot be applied.
+    Future scope: automated hospital changes are Future Work, and an HL7 v2 message that fails retries then
+    dead-letters for manual intervention. <strong>Compliance:</strong> everything is audited, both NHI formats validate, and
     no NHI or other personal information enters Xero, patient names included (confirmed with AA). <span class="chip ready">Ready</span></p>
   </div></details>
 </section>
@@ -970,6 +978,7 @@
     <div class="table-wrap"><table>
       <tr><th>Admin Web App</th><th>URL</th></tr>
       <tr><td>Day view</td><td><code>/admin/day/2026-07-21</code> (A to Z order: add <code>?sort=az</code>)</td></tr>
+      <tr><td>Matching</td><td><code>/admin/matching</code></td></tr>
       <tr><td>Booking detail</td><td><code>/admin/day/2026-07-21/bookings/&lt;bookingId&gt;</code></td></tr>
       <tr><td>Conflicts</td><td><code>/admin/conflicts</code> (filters in the URL, e.g. <code>?hospital=</code>, <code>?cleared=1</code>; hospital closures only)</td></tr>
       <tr><td>Review queue</td><td><code>/admin/review</code></td></tr>
@@ -1004,19 +1013,18 @@
 
   <details class="demo-scenario print-first" open><summary>S1 · Booking to theatre</summary><div class="details-body">
     <div class="scenario-head">
-      <span style="font-size:14px;color:var(--slate)">Serves near-real-time hospital integration, the Booking
-      as the billing anchor, and BTM capture. 5 to 6 minutes.</span>
-      <span class="stage"><strong>Caveat:</strong> HL7 v2 and FHIR are Future scope; present Beat 1 as an illustration of intake. The in-scope path, a hospital download matched by the office, arrives in a later build.</span>
+      <span style="font-size:14px;color:var(--slate)">Serves importing hospital bookings and the matching
+      screen, the Booking as the billing anchor, and BTM capture. 5 to 6 minutes.</span>
+      <span class="stage"><strong>Caveat:</strong> the HL7/FHIR simulator is not how S1 is shown; HL7 v2 and FHIR are Future scope, and a message fired there is only sent to matching.</span>
       <span class="stage">Stage it: Reset &#8594; Confirm reset. Start in Mobile; the Tue 28 Jul St George's AM List holds three booked, uncaptured cases, so the booking arrives into a working List.</span>
     </div>
     <div class="beat">
       <h4>Beat 1 · the booking arrives</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>In Mobile Lists, open the Tue 28 Jul St George's AM session and read its three booked cases (07:45, 09:45, 11:15); two read as the surgeon's rooms sent them, "L knee scope + partial menisectomy" and "ORIF # R dist radius" (illustrative demo wording, not AA's).</li><li>Mobile Lists &#8594; Demo actions &#8594; Fire hospital message &#8594; S12 · New booking · MSG-STG-1001 &#8594; Run (alternative: Integrations &#8594; S12 · New booking &#8594; Replay).</li><li>Pause on the result line.</li><li>Reopen the Tue 28 AM List.</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"Hospitals may still send HL7 v2, but the target is FHIR-native. Messages are mapped per hospital, processed near real time and audited. This booking created a Booking without re-keying."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The List now carries a fourth Booking for Sarah Mitchell, slotted into her 08:30 place between the first two cases; her NHI matched an existing record, so intake reused it. Her Booking shows the hospital's text as received, "lap appy ?conv to open" (Hospital feed), with its Contract and RVG code still to choose.</span></div>
-      <div class="row"><span class="k">Expect</span><span>Sarah Mitchell arrives with no Contract: in Admin she shows on Day's <strong>Needs an invoice destination</strong> card.</span></div>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Day view &#8594; Tue 28 Jul &#8594; her row on Needs an invoice destination. On her Booking the Billing card shows the steps inline: Patient &#8594; Standard (the payment type is always asked) &#8594; Choose the Contract &#8594; No contract · RVG. She leaves the card. (On the PWA, Demo &#8594; Office sets this Booking's Contract.)</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"The office answers what it knows first: where the invoice goes, then the Contract. Where the Contract prices from the RVG, the code is the anaesthetist's."</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>In Mobile Lists, open the Tue 28 Jul St George's AM session and read its three booked cases (07:45, 09:45, 11:15); two read as the surgeon's rooms sent them, "L knee scope + partial menisectomy" and "ORIF # R dist radius" (illustrative demo wording, not AA's).</li><li>Admin &#8594; Matching (under Day view; the amber badge counts open rows) &#8594; Import hospital file &#8594; St George's theatre list, Tue 28 Jul to Tue 4 Aug. The stats strip fills: OPEN, NEW, MODIFICATIONS, CANCELLATIONS, UNMATCHED.</li><li>Open Sarah Mitchell's row (R1, New): read "lap appy ?conv to open" as the hospital sent it, and the suggestion, Create Booking on Dr Souter, Tue 28 Jul AM.</li><li>In the Procedure stack, Choose Contract &#8594; Patient &#8594; Standard (the payment type is always asked) &#8594; No contract · RVG through its step rail; leave Choose RVG code to the anaesthetist.</li><li><strong>Create Booking</strong>.</li><li>Back in Mobile, reopen the Tue 28 AM List.</li><li>Handset variant: Mobile Lists &#8594; Demo &#8594; Hospital row arrives and the office matches it &#8594; Sarah Mitchell, Tue 28 Jul AM (S1); the office then sets her Contract from Admin Day's Needs an invoice destination card (on the PWA, Demo &#8594; Office sets this Booking's Contract), or narrate it.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"Hospital bookings are how most bookings reach AA today. They land on the matching screen with the hospital's wording exactly as sent, the office sees what each row would change, and nothing reaches the schedule until someone decides, even an update to a Booking already matched. This one is new, so it becomes a Booking on Dr Souter's List. The hospital does not choose the Contract; the office does, here or from its Needs an invoice destination list."</span></div>
+      <div class="row"><span class="k">Expect</span><span>The row moves under Decided; the List carries a fourth Booking for Sarah Mitchell at 08:30, between the first two cases, source <strong>Hospital download</strong>. Her NHI matched an existing record, so her patient record is reused. Her stack shows the wording as received, "lap appy ?conv to open", on the Contract the office picked, with the RVG code still to choose; her invoice description starts as the hospital's text (the Contract's invoice description replaces it where filled in). Left without a Contract, she would wait on Admin Day's <strong>Needs an invoice destination</strong> card.</span></div>
+      <div class="row"><span class="k">Optional 1b</span><span>On Matching open R3 (Diane Foster), a Modification: the field differences with their tick boxes (time 11:00 to 12:15, the note "Bumped 15 min at surgeon request") and the hospital's long text replacing "WLE MM" (kept in the history, with a line saying it also becomes the invoice description); untick a field. Or import St George's theatre list, a day later, to show Sarah Mitchell's update waiting for approval, matched by date, surgeon, hospital and session.</span></div>
+      <div class="row"><span class="k">Do not</span><span>Fire the S13 to S15 hospital messages in any beat: automated changes are Future Work. If asked: "Applying hospital changes automatically comes after the first release; until then every change waits for the office here."</span></div>
     </div>
     <div class="beat">
       <h4>Beat 2 · the Booking fills over the days</h4>
@@ -1024,7 +1032,7 @@
       <div class="row"><span class="k">Say</span><span class="say">"Patient and booking data can change right up to the day. The canvas rolls forward deterministically as the clock advances."</span></div>
       <div class="row"><span class="k">Expect</span><span>The clock reads Tuesday 28 July 2026, 9:00.</span></div>
       <div class="row"><span class="k">Optional</span><span>Dr Souter's <strong>Tue 4 Aug AM</strong> List &#8594; the 09:30 "right total knee" Booking (Sione Davies): "The rooms sent 'RTK'; when the hospital's list arrived it replaced that with 'right total knee', and the original is in the Booking's history. The Booking shows only the latest text; the Contract and its RVG code sit together in the Billing card below it." History shows "Procedure text replaced" naming 'RTK'. Illustrative demo wording, not AA's.</span></div>
-      <div class="row"><span class="k">Optional</span><span>On the same List, Diane Foster (11:00, "WLE MM", RVG code to choose) &#8594; Demo actions &#8594; Fire hospital message (defaults to MSG-STG-1012; Future-scope badge) &#8594; Run: the hospital's fuller wording replaces "WLE MM", the original goes to the History, and her time moves to 12:15. Firing again changes nothing.</span></div>
+      <div class="row"><span class="k">Optional</span><span>On the same List, Diane Foster (11:00, "WLE MM", RVG code to choose). On Admin, Matching, Demo actions &#8594; Send update for a matched Booking (defaults to Diane Foster; or R3 of the St George's import) &#8594; open the row &#8594; Apply 3 changes: the hospital's fuller text replaces "WLE MM", which stays in the Booking's change history, and it also becomes her invoice description unless the Contract's invoice description is filled in or an admin edited it; her time moves to 12:15. Handset: the stand-in's A hospital update for this Booking, approved by the office.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 3 · capture on mobile</h4>
@@ -1037,6 +1045,7 @@
       <div class="row"><span class="k">Aside</span><span>Optional, who may type a price: Dr Souter's Mon 27 Jul AM List at Forte (<code>/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0186</code>). Tama Rewiri (No contract · RVG) reads <strong>4 units x $26.50 = $106.00</strong> with a <strong>Price $</strong> field: she may type a price, no reason asked, and at $0.00 the card says "The RVG detail stays recorded. This gives a no-charge invoice." Natalie Brennan (Forte Health RVG less 10%) reads <strong>6 units x $26.50 = $159.00</strong>, <strong>Discount 10% · minus $15.90</strong>, Price <strong>$143.10</strong>, read-only: "Set by Forte Health RVG less 10%. To use a different price, change the Contract or alert the office." Heather Sinclair (Aria Skin and Laser Clinic, RVG at the Contract's rate, $26.50 a unit) is read-only the same way. Her own prepaid price list (Annette Riley, Fri 24 Jul AM) is read-only too.</span></div>
     </div>
     <div class="callout">Discovery, settled: a part time interval always rounds up under the RVG tiers (confirmed with AA, OQ-75); the tiers are held as data, shown read only under Admin &#8594; Master data &#8594; RVG groups, and the T row reads "From start and finish stamps · RVG time tiers".</div>
+    <div class="callout warn">Discovery (hospital bookings): OQ-13, how each hospital provides its bookings, the fields and cadence, and whether they carry the insurer, the procedure wording and an appointment id; OQ-108 answered, both sources are built and the rooms' PDF lists arrive as rows on this same screen in Phase 34; removals from a re-sent list (US-02.2.3, Future); bulk apply; AI-assisted matching later. If Greg's "why is this a manual task" comes up: the first release keeps the import gate with no automated decisions, and automatic matching and updates are Future Work (US-14.6.2).</div>
   </div></details>
 
   <details class="demo-scenario"><summary>S2 · Office day</summary><div class="details-body">
@@ -1047,7 +1056,7 @@
     </div>
     <div class="beat">
       <h4>Optional opening · days off, repeating days off and the status list</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>On the Anaesthetist Mobile App, open Availability &#8594; My calendar. Page to August.</li><li>Add days off: keep On holiday and Both, set From to Fri 14 Aug and To to Sun 16 Aug, then Save and Done.</li><li>Add days off again: choose Unavailable, PM, Every 2 weeks, set Starts to Fri 14 Aug (Friday is already chosen), then Save and Done.</li><li>Tap Fri 28 Aug and select Delete this one.</li><li>Switch to the Admin Web App &#8594; Day view &#8594; Fri 14 Aug, then Fri 11 Sep.</li><li>Open Master data &#8594; Availability statuses. Either rename Unavailable to Blocked, or select Add status and add Public hospital (not open for bookings, the grey colour, hatched). Then show the phone's Add days off choices.</li></ul></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>On the Anaesthetist Mobile App, open Availability &#8594; My calendar. Page to August.</li><li>Add days off: keep On holiday and Both, set From to Fri 14 Aug and To to Sun 16 Aug, then Save and Done.</li><li>Add days off again: choose Unavailable, PM, Every 2 weeks, set Starts to Fri 14 Aug (Friday is already chosen), then Save and Done.</li><li>Tap Fri 28 Aug and select Delete this one.</li><li>Switch to the Admin Web App &#8594; Day view &#8594; Fri 14 Aug, then Fri 11 Sep.</li><li>Open Master data &#8594; Availability statuses. Either rename Unavailable to Blocked, or select Add status and add Teaching (not open for bookings). Point at the four rows (Free, On holiday, Unavailable, Public). Then show the phone's Add days off choices, Public among them with its optional note.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Availability belongs to each session. Anaesthetists mark days off weeks ahead from the phone or the web, set repeating days off, and change or delete one occurrence. The office sees it straight away. The statuses themselves are a list the office maintains: rename, recolour or add one, and every app follows, because the rules read the status, not its name."</span></div>
       <div class="row"><span class="k">Expect</span><span>The first save reads "6 sessions set to On holiday, 14 Aug to 16 Aug." The series saves with "1 already set left as it is" (Fri 14 Aug, already on holiday), and "Your series" lists "Unavailable, Friday PM, every 2 weeks, no end date". Fri 28 Aug returns to Free. The Day view shows Dr Souter on holiday on Fri 14 Aug and Unavailable on Fri 11 Sep PM. The renamed or added status shows in the table with its fixed ID (<code>unavailable</code>, or <code>ST0001</code>) and reaches the phone's choices at once.</span></div>
       <div class="row"><span class="k">Note</span><span>Dr Souter has recurring Lists Monday to Thursday, so keep this opening's days off to Fridays and weekends. A day off over a session that holds a List asks where each List goes first (return to the office or hand on to a colleague, one List at a time); Beat 3c shows it. Reset before Beat 1 (Reset &#8594; Confirm reset).</span></div>
@@ -1056,14 +1065,14 @@
       <h4>Beat 1 · read the day</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin &#8594; Day view &#8594; Tue 21 Jul.</li><li>Pause on the day grid.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Every active anaesthetist has two sessions a day, AM and PM, four months ahead, from their start date, whether or not anything is booked. A session is free until the anaesthetist marks it otherwise, and when the office puts a List in it, the List shows instead. Requests that arrive before an anaesthetist is found wait here as Draft Lists, flagged unassigned and soonest first, right beside the day, so nothing sits on a pile of paper. When a surgeon's recurring booking lands on a day the anaesthetist has already blocked out, the system makes it a Draft List too, rather than leaving it on someone who will not be there."</span></div>
-      <div class="row"><span class="k">Expect</span><span>A legible status-coloured grid; every block carries its label. The dashed Free blocks are empty sessions; the coloured blocks are Lists. The legend reads the three List types, then the availability statuses from master data (the same six labels as before). A Draft Lists card in the right rail and a Draft Lists band above the grid hold Dr Ngata's acute AM (he is unavailable) and St George's PM, Mr S. Tan, waiting 16 h; every List block shows its booking count; the nav shows Draft Lists 16.</span></div>
+      <div class="row"><span class="k">Expect</span><span>A legible status-coloured grid; every block carries its label. The dashed Free blocks are empty sessions; the coloured blocks are Lists. The legend reads Private, Pre-op, then the availability statuses from master data: Holiday, Unavailable, Public, Free. Dr Ropata's AM reads "Public &middot; CPH" (a Public session shows its note and no List detail; it is a status, never a List). Dr Ngata's AM is Unavailable (his leave) with no Draft List. A Draft Lists card in the right rail and a Draft Lists band above the grid hold only St George's PM, Mr S. Tan, waiting 16 h; every List block shows its booking count; the nav shows Draft Lists 10 and Conflicts 16.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 1b · a List with no anaesthetist yet</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Open the band's St George's block, point at Available that session and the tier pills, then Assign &#8594; Dr Emma Fitzgerald (Free) &#8594; Assign Draft List.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"A Draft List has its hospital, surgeon, day and session, and can already hold Bookings, but has no anaesthetist and changes nobody's schedule. Only the office assigns it, by picking the anaesthetist; the session is already set. Everyone who could take it is shown, ordered by the office's priority tiers, with any not-preferred pairing set apart. Those warn, and never block, and anaesthetists never see them. Once assigned, it is an active List in that anaesthetist's day. A cancelled request is removed, or its date changed."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The band keeps only Dr Ngata's acute AM; Fitzgerald's PM shows St George's, Mr S. Tan; the drawer shows ACTIVE and its History shows the Draft List created and assigned on the same List.</span></div>
-      <div class="row"><span class="k">Optional</span><span>Draft Lists in the side nav: show the date order and Dr Beaumont's Wednesday Lists waiting while she is on leave, then open Forte Health &middot; Mr V. Nand (2 bookings) to show Bookings already on a Draft List. Or Demo actions &#8594; Simulate incoming request (Christchurch Eye Surgery, Ms A. Reid, Thu 23 Jul PM) &#8594; Assign, point at Dr Sharma in Not preferred with Ms Reid, and pick a Free anaesthetist instead.</span></div>
+      <div class="row"><span class="k">Expect</span><span>The band empties; Fitzgerald's PM shows St George's, Mr S. Tan; the drawer shows ACTIVE and its History shows the Draft List created and assigned on the same List.</span></div>
+      <div class="row"><span class="k">Optional</span><span>Draft Lists in the side nav: show the date order and Dr Beaumont's Wednesday 22 Jul Lists at Southern Cross (LD-RCB020, LD-RCB021) or the Fri 24 Jul AM one (LD-RCB022) waiting, recurring bookings that landed on days Dr Beaumont is away, then open Forte Health &middot; Mr V. Nand (2 bookings) to show Bookings already on a Draft List. Or Demo actions &#8594; Simulate incoming request (Christchurch Eye Surgery, Ms A. Reid, Thu 23 Jul PM) &#8594; Assign, point at Dr Sharma in Not preferred with Ms Reid, and pick a Free anaesthetist instead.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 2 · a phone-advice booking</h4>
@@ -1140,7 +1149,7 @@
       <div class="row"><span class="k">Aside</span><span>Optional, the review-flags List: Review queue &#8594; Dr Alistair Chen, Tue 14 Jul AM (Christchurch Eye Surgery, Dr Whitford; <code>/admin/review/L-45178-2026-07-14-AM</code>). Diane Fairweather (08:00) reads <strong>Changed by Dr Chen: was Cataract IOL (LA by Anaesthetist)</strong>, now Christchurch Eye Surgery RVG: Approve (it reads Approved with the time) or Correct (opens the Booking's rail). Owen Prendergast (09:00, No contract · RVG) reads <strong>Price typed: $1,200.00 (computed $265.50)</strong>. Hemi Walker (10:15, No contract · Fixed price, no amount) reads <strong>Needs a price</strong> and <strong>Not marked completed</strong>, and Authorise for billing stays disabled, naming her ("Hemi Walker: Needs a price: No contract · Fixed price has no price of its own.", with an Open link): type a price and complete her Booking before authorising. Rosalind Kerr (11:00), a Merivale fixed price linked to Ms Lim, reads <strong>Contract not offered on this List</strong>. While any change waits the action bar offers <strong>Approve all N Contract changes</strong>; authorising approves any still waiting and the confirm says how many. A Disabled Contract raises no flag. On the phone the anaesthetist sees Awaiting office approval under the Billing card, then Approved by the office with the time.</span></div>
       <div class="row"><span class="k">Aside</span><span>Optional, a moved Booking keeps its Contract: Admin Day &#8594; Mon 10 Aug (<code>/admin/day/2026-08-10</code>), Move Fiona Lattimer (Merivale Face lift, Dr Souter's PM List, St George's, Ms Lim) to her Mon 10 Aug AM List (Forte, Mr Okafor). It keeps its Contract and review flags it <strong>Contract not offered on this List</strong>; move it back and the flag clears. No move ever resets a Procedure's Contract or typed price.</span></div>
     </div>
-    <div class="callout warn">Discovery: settled: soft warning (OQ-09), and the Draft List questions (OQ-44, OQ-64 and OQ-86 are answered); settled: the anaesthetist's calendar is painted before recurring bookings, a recurring booking on an unavailable session becomes a Draft List (Phase 31), and an anaesthetist who marks a booked session unavailable returns the List to the office or hands it to a colleague (OQ-64, OQ-81); settled: an anaesthetist moves her own List at once, with no acceptance and no office confirmation (OQ-39), every move posts to one shared notification pool for the whole office (OQ-65), and her own move shows no preference warning (OQ-43); settled: she moves a single Booking to a colleague free in that session, found by name or from the free list, always as a new List in their session, with telling the office her option (OQ-85), colleagues by availability alone, never by tier or pairing (OQ-113), and a prepaid Booking's payable stays the AA Holding account with nothing recalculated (OQ-80); a move into an existing List is not allowed for now and may change if it does not work in practice (OQ-85); settled: short-notice sickness never leaves a List in place, the office returns it or hands it on there and then, and the conflict flag covers hospital closures only (OQ-81 part 3); settled context rather than a question: availability is a status on each session, kept from the anaesthetist's own calendar (one mechanism; OQ-17, OQ-27 and OQ-64 answered), and the status values are a list AA maintains, starting from Free, On holiday and Unavailable, with the final values to be agreed with AA's users and kept apart from a List's state (Active, Submitted, Authorised; Draft for Draft Lists from Phase 31; US-01.2.2); settled: whoever moves a List is asked what the vacated session becomes, Free or Unavailable (OQ-84); settled: notices are active until an admin ticks them resolved, nothing expires, and alerts to the office join List moves in the pool (OQ-79); open: the panel's place and layout are our design for AA to check (US-13.8.1), and whether an alerted Booking may still be submitted (the prototype allows it); whether monitoring belongs in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to Tier 4 as placeholders; still open); and the pre-op and acute pairing reading (AA rooms as a location; a named surgeon on pre-op and acute Lists). Settled (US-01.1.6, D84): an out-of-hours session after PM is a third kind of session the office opens for an anaesthetist on a day, one a day; any List goes in it, new or a Draft List for the evening; it is a full session for availability. Open: who opens one when the office is closed. Its Bookings are billed as on any List (our reading; no after-hours pricing).</div>
+    <div class="callout warn">Discovery: open (OQ-139): what the office needs to know about public sessions. The prototype keeps Public as a status with an optional note (such as CPH), set by the anaesthetist or the office, never a List and never billed; reopen if Vanessa says the office uses more. Settled: soft warning (OQ-09), and the Draft List questions (OQ-44, OQ-64 and OQ-86 are answered); settled: the anaesthetist's calendar is painted before recurring bookings, a recurring booking on an unavailable session becomes a Draft List (Phase 31), and an anaesthetist who marks a booked session unavailable returns the List to the office or hands it to a colleague (OQ-64, OQ-81); settled: an anaesthetist moves her own List at once, with no acceptance and no office confirmation (OQ-39), every move posts to one shared notification pool for the whole office (OQ-65), and her own move shows no preference warning (OQ-43); settled: she moves a single Booking to a colleague free in that session, found by name or from the free list, always as a new List in their session, with telling the office her option (OQ-85), colleagues by availability alone, never by tier or pairing (OQ-113), and a prepaid Booking's payable stays the AA Holding account with nothing recalculated (OQ-80); a move into an existing List is not allowed for now and may change if it does not work in practice (OQ-85); settled: short-notice sickness never leaves a List in place, the office returns it or hands it on there and then, and the conflict flag covers hospital closures only (OQ-81 part 3); settled context rather than a question: availability is a status on each session, kept from the anaesthetist's own calendar (one mechanism; OQ-17, OQ-27 and OQ-64 answered), and the status values are a list AA maintains, starting from Free, On holiday, Unavailable and Public, with the final values to be agreed with AA's users and kept apart from a List's state (Active, Submitted, Authorised; Draft for Draft Lists from Phase 31; US-01.2.2); settled: whoever moves a List is asked what the vacated session becomes, Free or Unavailable (OQ-84); settled: notices are active until an admin ticks them resolved, nothing expires, and alerts to the office join List moves in the pool (OQ-79); open: the panel's place and layout are our design for AA to check (US-13.8.1), and whether an alerted Booking may still be submitted (the prototype allows it); whether monitoring belongs in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to Tier 4 as placeholders; still open); and the pre-op and acute pairing reading (AA rooms as a location; a named surgeon on pre-op and acute Lists). Settled (US-01.1.6, D84): an out-of-hours session after PM is a third kind of session the office opens for an anaesthetist on a day, one a day; any List goes in it, new or a Draft List for the evening; it is a full session for availability. Open: who opens one when the office is closed. Its Bookings are billed as on any List (our reading; no after-hours pricing).</div>
   </div></details>
 
   <details class="demo-scenario"><summary>S3 · Money end-to-end</summary><div class="details-body">
@@ -1206,10 +1215,11 @@
       <div class="row"><span class="k">Say</span><span class="say">"The engine prices only from what was locked at authorise, so a Contract edit can no longer break a run, and nothing is ever swapped for a default. What can still fail is outside the lock, here the hand-off to Xero. A List never fails as a whole: the failed Booking is held back and the rest of the List bills. The office retries once, without touching the Contract."</span></div>
       <div class="row"><span class="k">Expect</span><span>Losa Tuilagi's Booking reads <strong>Handoff failed</strong> with its reason on the row ("Xero handoff failed (simulated fault). No ACCREC/ACCPAY pair was created; the invoice stands. Resolve and retry from the billing monitor."); Hemi Walker's reads <strong>Handed off</strong>, and the List is not failed. Resolve &amp; retry hands hers off once: her row reads Handed off and her Xero pair appears, with no duplicate invoice. Her invoice (AA-2026-0003, Canterbury Orthopaedic Surgeons, $303.60) and Hemi Walker's (AA-2026-0004, St George's, $221.38) are unchanged. No Contract changes. (The numbers follow Riley's prepayment invoice, AA-2026-0002, raised in Beat 1; skip that approve and they are AA-2026-0002 and AA-2026-0003.)</span></div>
     </div>
-    <div class="beat"><h4>Beat 4 · integration dead-letter and fix</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Integrations &#8594; Demo actions &#8594; Fire hospital message &#8594; MSG-CPH-2001 &#8594; Run.</li><li>Feed config &#8594; Christchurch Public (say the tab is badged Future scope).</li><li>Change patientNhi from PID-2 to PID-3 &#8594; Save.</li><li>Message log &#8594; Reprocess MSG-CPH-2001.</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"Christchurch Public sends the NHI in PID-3 but the feed was onboarded reading PID-2. The bad NHI dead-letters after retries; fixing the mapping and reprocessing recovers it, without a duplicate."</span></div>
-      <div class="row"><span class="k">Expect</span><span>Dead-letter, then a clean reprocess after the mapping fix.</span></div>
+    <div class="beat"><h4>Beat 4 · the unmatched queue</h4>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin &#8594; Matching &#8594; Demo actions &#8594; Import hospital file &#8594; Southern Cross &#8594; Run.</li><li>Filter Unmatched; open Tama Henare (R4, no NHI) and type the NHI ZQA1008.</li><li>Open Grace Whitu (R5, Thu 6 Aug PM, no List) &#8594; Create a List in a session.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"Nothing from a hospital is ever dropped. A row with no NHI waits here until the office adds it, and no patient or Booking is made. A row that matches nothing waits until someone decides: create the List, put the Booking on a Draft List for the office to fill, or reject it with a reason."</span></div>
+      <div class="row"><span class="k">Expect</span><span>Both rows in Unmatched; the NHI releases Tama Henare's into a ready row; then the new List and Grace Whitu's Booking on the Day view (Thu 6 Aug) and the row under Decided.</span></div>
+      <div class="row"><span class="k">Narrate</span><span>Future scope (HL7 v2), rather than click: Christchurch Public sends the NHI in PID-3 but the feed was onboarded reading PID-2, so MSG-CPH-2001 dead-letters until the Feed config mapping is fixed and it is reprocessed.</span></div>
     </div>
     <div class="beat"><h4>Beat 5 · partial payment</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Invoices &#8594; Hemi Walker · St George's (the clean-sibling invoice).</li><li>Demo actions &#8594; Payment received · half &#8594; Run; then the Billing monitor's own Run payables button.</li><li>Back on the invoice, Payment received · full &#8594; Run; Run payables again.</li></ul></div>
@@ -1221,7 +1231,7 @@
       <div class="row"><span class="k">Say</span><span class="say">"Two days out and still not paid in full, so the same warning is now strong. It re-opens even though the office cleared the mild one. Still never a block: the office chases the payment, and the anaesthetist sees it on opening the Booking."</span></div>
       <div class="row"><span class="k">Expect</span><span>The warning turns strong and the cleared mild one re-opens; the jump is forward only and Reset restores the seeded date.</span></div>
     </div>
-    <div class="callout warn">Discovery: settled, billing failure is per Booking and a List never fails as a whole (OQ-05); still to confirm with AA, exactly which fields are frozen at authorise (US-15.0.3: AR-58 2.8 names them, Donald's proposal); which conditions warn, and how strongly; where the to-do list sits on the dashboard; and how inbound messages targeting a SUBMITTED/AUTHORISED List are parked. For the prepayment beats: still to confirm whether the prepayment invoice names the anaesthetist (OQ-120). Stated as facts: the prepaid price is never editable by the anaesthetist and is kept (OQ-96, OQ-104), the prepaid Procedure is left off the final invoice (OQ-116), and a Contract changed after sending is handled as a cancellation, built in Phase 41 (OQ-119). One prepayment invoice per payer, each payer locked once theirs is raised, is built from Donald's answer and not yet discussed with AA (OQ-140); a prepaid Contract always billing the Procedure's payer is a working reading awaiting AA's confirmation (OQ-73).</div>
+    <div class="callout warn">Discovery: settled, billing failure is per Booking and a List never fails as a whole (OQ-05); still to confirm with AA, exactly which fields are frozen at authorise (US-15.0.3: AR-58 2.8 names them, Donald's proposal); which conditions warn, and how strongly; where the to-do list sits on the dashboard; a hospital row for a submitted List can still be applied by the office until the List is authorised (US-02.5.4), and one for an authorised List cannot (what happens then is not yet decided); a Booking moved to another day arrives as a cancellation plus a new Booking; applying hospital changes automatically is Future Work. For the prepayment beats: still to confirm whether the prepayment invoice names the anaesthetist (OQ-120). Stated as facts: the prepaid price is never editable by the anaesthetist and is kept (OQ-96, OQ-104), the prepaid Procedure is left off the final invoice (OQ-116), and a Contract changed after sending is handled as a cancellation, built in Phase 41 (OQ-119). One prepayment invoice per payer, each payer locked once theirs is raised, is built from Donald's answer and not yet discussed with AA (OQ-140); a prepaid Contract always billing the Procedure's payer is a working reading awaiting AA's confirmation (OQ-73).</div>
   </div></details>
 
   <details class="demo-scenario"><summary>S5 · Compliance tour</summary><div class="details-body">
@@ -1237,9 +1247,9 @@
       <div class="row"><span class="k">Point at</span><span>A price change reads <strong>Price changed</strong>, with the price before and after and no reason, because none is ever asked. Paula Westerman's Face lift on Dr Souter's Mon 10 Aug PM List (<code>/admin/day/2026-08-10/bookings/BK0187</code>) shows Price changed · Kirsty W. · office · Price not set &#8594; $2,950.00; clearing a typed price reads <strong>cleared, computed again</strong>.</span></div>
     </div>
     <div class="beat"><h4>Beat 2 · NHI dual-format validator</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Integrations &#8594; Demo actions &#8594; Fire hospital message &#8594; MSG-STG-1002 (new-format NHI) &#8594; Run.</li><li>Optional: add a Booking manually and try both NHI formats.</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"Both NHI formats validate using the official check-digit algorithms. A new-format NHI with a mod-23 check letter validates and processes end to end."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The new-format NHI validates; an invalid one is rejected with a reason.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Integrations &#8594; Demo actions &#8594; Fire hospital message &#8594; MSG-STG-1002 (new-format NHI) &#8594; Run (Future scope: it applies nothing, it stages a row).</li><li>Admin &#8594; Matching &#8594; open the new row.</li><li>Optional: add a Booking manually and try both NHI formats.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"Both NHI formats validate using the official check-digit algorithms. A new-format NHI with a mod-23 check letter validates; the row still waits for the office to decide."</span></div>
+      <div class="row"><span class="k">Expect</span><span>The message is sent to matching; the row on Admin, Matching shows the validated new-format NHI. An invalid one is rejected with a reason.</span></div>
     </div>
     <div class="beat"><h4>Beat 3 · no personal information in Xero</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Demo: Billing Monitor &amp; Xero.</li><li>Pause on the No personal information in Xero callout, then the Contacts tab: patient and guardian contacts are named only by their hidden ID ("Patient PT0017", "Billable party BP0001").</li></ul></div>
@@ -1266,7 +1276,7 @@
     <tr><th>Audience</th><th>Order</th><th>Time</th></tr>
     <tr><td>General evaluation</td><td>S1, S2, S3</td><td>15 to 18 min</td></tr>
     <tr><td>Finance-led</td><td>S3, S4 money beats, S5</td><td>15 min</td></tr>
-    <tr><td>Integration-led</td><td>S1, S4 integration beat, S2</td><td>15 min</td></tr>
+    <tr><td>Integration-led</td><td>S1, S4 unmatched queue beat, S2</td><td>15 min</td></tr>
     <tr><td>Full deep-dive</td><td>S1 through S5</td><td>30 to 35 min</td></tr>
   </table></div>
 
@@ -1275,7 +1285,7 @@
   Jump &#8594; Confirm jump preparation. The control panel and Integration
   simulator also expose the same whole-demo reset. Lost the screen a demo action lives on? The control
   panel's Demo actions by screen has an Open screen link for every entry. Reset returns the clock to Tue 21 Jul 2026, 8:00 and
-  restarts identifiers, so invoice numbers begin at the same point every time. If Finish now was stamped too early,
+  restarts identifiers, so invoice numbers begin at the same point every time. Imported the same sample twice: nothing new is added. Applied the wrong row: fix the Booking by hand; the row's decision and any wording it added stay in the history. If Finish now was stamped too early,
   reset and advance the clock before reopening the Booking. A stray refresh is no longer a problem: it returns
   you to the same screen, the back button retraces your steps, and you can paste a beat's address from
   Direct URLs.</div>
@@ -1468,10 +1478,10 @@
       own.</li>
     <li>Find available (Day header): office only; the free anaesthetists for a session in tier order,
       shuffled within a tier, with not-preferred pairings apart once a surgeon is chosen.</li>
-    <li>Availability statuses (Master data): rename, recolour or add a status and every app follows; rules
+    <li>Availability statuses (Master data): four to start (Free, On holiday, Unavailable, Public); rename, recolour or add a status and every app follows; rules
       read the status's ID; it is availability only, never a List's state (Active, Submitted or
       Authorised, or Draft for a Draft List).</li>
-    <li>Availability and cover on mobile and web: mark days off ahead, repeating days off, change or delete
+    <li>Availability and cover on mobile and web: mark Free, On holiday, Unavailable or Public (with an optional note) ahead, repeating days off, change or delete
       one occurrence (My calendar on the phone, My availability on the web, the same form).</li>
     <li>Move to a colleague on any of her Bookings: a colleague free that session takes it as a new List
       of theirs; no warning, and telling the office is optional (catch-up Phase 32a).</li>
@@ -1623,6 +1633,11 @@
     like AM and PM, one a day, 18:00 to 21:00 by default: the anaesthetist can mark it available or not, the
     finders offer it while it is free, and its Bookings are captured, submitted and billed like any List
     (S2 Beat 3e).</p></div></details>
+  <details><summary>What about public work?</summary><div class="details-body">
+    <p>Public hospital sessions are a status on the session, with an optional note such as CPH, set by the
+    anaesthetist on their calendar or by the office from the Day view (Change status). It is never a kind of
+    List and is never billed. Public is not open for bookings or cover; changing it back to Free reopens the
+    session. What else the office needs to know about public sessions is a discovery point (OQ-139).</p></div></details>
   <details><summary>Can an anaesthetist edit after submission?</summary><div class="details-body">
     <p>Yes, until the office authorises the List. A submitted List stays on the anaesthetist's main view,
     less prominent, and they can still change it; every change is audited and Review shows "Changed since
@@ -1635,8 +1650,11 @@
     <p>AA has agency-specific billing rules and needs Procedure-level calculation, grouping and
     anaesthetist-facing views. Xero is the AR and banking add-on.</p></div></details>
   <details><summary>How do late hospital changes work?</summary><div class="details-body">
-    <p>While the List is ACTIVE, mapped hospital messages update the Booking in near real time. Once SUBMITTED or
-    AUTHORISED, an inbound change parks for manual intervention.</p></div></details>
+    <p>Hospital rows land on the matching screen with their wording exactly as received. A later update is
+    matched to its Booking by date, surgeon, hospital and session and waits for the office to approve it;
+    the office can apply rows up to AUTHORISED (a row for an authorised List cannot be applied). Nothing
+    applies itself, and the hospital never sets the Contract. Applying hospital changes automatically comes
+    after the first release (US-02.5.1 to US-02.5.4).</p></div></details>
   <details><summary>What if the patient has no NHI?</summary><div class="details-body">
     <p>The RFP is internally inconsistent (unique identifier vs "where available"). The prototype uses a
     hidden internal ID as the invariant and allows a provisional NHI-pending patient.</p></div></details>

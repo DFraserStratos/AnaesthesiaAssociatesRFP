@@ -235,7 +235,7 @@ export const ORGANISATIONS: readonly ContractHolderOrganisation[] = [
 // owner's starting set, keyed by the IDs Phase 28 stores on Slots, with the
 // Design Language colours. The final values are to be agreed with AA's users;
 // an admin adds, renames, recolours or retires them in Master data. The List
-// kinds (private, public, pre-op) are not here: they are a List attribute.
+// kinds (private, pre-op) are not here: they are a List attribute.
 // ---------------------------------------------------------------------------
 
 export const SEED_SLOT_STATUSES: readonly SlotStatus[] = [
@@ -272,5 +272,19 @@ export const SEED_SLOT_STATUSES: readonly SlotStatus[] = [
     bookable: false,
     anaesthetistCanSet: true,
     order: 3,
+  },
+  // Catch-up Phase 32d (D86, OQ-139 answered): Public works like Unavailable, a
+  // status with an optional note ("CPH"), never a kind of List. Its key is not
+  // `public`, so no status key can equal a List kind.
+  {
+    key: 'publicHospital',
+    label: 'Public',
+    longLabel: 'Public hospital',
+    description: 'Working at a public hospital. Not open for bookings or cover.',
+    colour: 'public',
+    treatment: 'solid',
+    bookable: false,
+    anaesthetistCanSet: true,
+    order: 4,
   },
 ]

@@ -23,15 +23,16 @@ interface StatusLegendProps {
 /** Design-Language sample text for the six seeded keys (the §02 blocks); any other status uses its own words. */
 const SAMPLE: Record<string, { title: string; detail: string }> = {
   private: { title: "St George's", detail: 'Mr Hale · Ortho' },
-  public: { title: 'Chch Public', detail: 'Acute list' },
   preop: { title: 'Pre-op clinic', detail: '6 appts' },
+  // Public is a status since catch-up Phase 32d: its note, never List detail.
+  [SEED_STATUS.publicHospital]: { title: 'Public', detail: 'CPH' },
   [SEED_STATUS.holiday]: { title: 'Annual leave', detail: 'Back Mon 27' },
   [SEED_STATUS.unavailable]: { title: 'Not available', detail: 'All day' },
   [SEED_STATUS.free]: { title: 'Free to book', detail: 'Tap to assign' },
 }
 
 /**
- * The legend's keys: the three List types, then the active availability
+ * The legend's keys: the List types (Private, Pre-op), then the active availability
  * statuses in their order, with the default (Free) closing the legend as the
  * Design Language legend does.
  */
