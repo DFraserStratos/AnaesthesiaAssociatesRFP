@@ -66,11 +66,17 @@ h3 { font-size:16px; margin:0; }
 .node { cursor:pointer; outline:none; }
 .node:hover rect.body, .node:focus-visible rect.body { stroke:var(--teal); }
 .node.sel rect.body { stroke:var(--teal); stroke-width:2.5; }
-.node.dim { opacity:.5; }
-.edge { fill:none; stroke:var(--edge); stroke-width:1.4; }
-.edge.in { stroke:var(--teal); stroke-width:2.2; }
-.edge.out { stroke:var(--warn-on); stroke-width:2.2; stroke-dasharray:5 4; }
-.edge.dim { opacity:.25; }
+.node.dim { opacity:.35; }
+.node.need rect.body { stroke:var(--teal); stroke-width:2; }
+.node.waits rect.body { stroke:var(--warn-on); stroke-width:2; stroke-dasharray:6 4; }
+.node .tag { font:700 9.5px var(--font); letter-spacing:.06em; text-transform:uppercase; display:none; }
+.node.need .tag.need { display:inline; fill:var(--teal); }
+.node.waits .tag.waits { display:inline; fill:var(--warn-on); }
+.node .after { fill:var(--mist); font:600 10.5px var(--font); }
+.spine { fill:none; stroke:var(--mist); stroke-width:1.6; stroke-linejoin:round; }
+.spine.lane { stroke-dasharray:5 4; }
+.arrowhead { fill:var(--mist); }
+svg.focus .spine, svg.focus .arrowhead { opacity:.3; }
 .colhead { fill:var(--mist); font:600 11px var(--font); letter-spacing:.06em; text-transform:uppercase; }
 .lanebg { fill:var(--sunken); }
 .lanelabel { fill:var(--slate); font:600 11px var(--font); letter-spacing:.06em; text-transform:uppercase; }
@@ -151,8 +157,8 @@ footer { margin:56px 0 40px; font-size:13px; color:var(--mist); }
 
 <main class="wrap">
   <h2 id="map">Programme map</h2>
-  <p>Phases flow left to right. App phases run one at a time in the numbered order; the two agent-tool phases run alongside in their own worktrees. Select a phase to see what it depends on (solid) and what waits on it (dashed), and to open its detail below.</p>
-  <div class="card mapbox"><svg id="mapsvg" viewBox="0 0 1150 560" role="group" aria-label="Phase map"></svg>
+  <p>Phases flow left to right. App phases run one at a time in the numbered order; the two agent-tool phases run alongside in their own worktrees. The line is the build order. Select a phase to see what it needs first (teal) and what waits on it (amber dashed), and to open its detail below.</p>
+  <div class="card mapbox"><svg id="mapsvg" viewBox="0 0 1150 612" role="group" aria-label="Phase map"></svg>
     <div class="legend" id="legend"></div>
   </div>
 
@@ -340,11 +346,11 @@ document.getElementById('tiles').append(...tiles.map(([n,t])=>el('div',{class:'t
 
 // Map
 const svg = document.getElementById('mapsvg');
-const COLX = [62, 344, 626, 908], NW = 230, NH = 64, TOP = 46, GAP = 14;
+const COLX = [62, 344, 626, 908], NW = 230, NH = 64, TOP = 46, GAP = 24;
 const cols = ['Foundations','Write path','Surfaces','Docs and close'];
 cols.forEach((c,i)=>svg.append(sv('text',{x:COLX[i],y:24,class:'colhead'},c)));
-const LANE_TOP = 470;
-svg.append(sv('rect',{x:COLX[1]-14,y:LANE_TOP-30,width:COLX[2]+NW-COLX[1]+28,height:NH+46,rx:12,class:'lanebg'}));
+const LANE_TOP = 506;
+svg.append(sv('rect',{x:COLX[1]-14,y:LANE_TOP-30,width:COLX[2]+NW-COLX[1]+28,height:NH+60,rx:12,class:'lanebg'}));
 svg.append(sv('text',{x:COLX[1],y:LANE_TOP-12,class:'lanelabel'},'Agent tools · parallel worktrees'));
 const pos = {};
 const rowsIn = c => PHASES.filter(p=>p.col===c && !p.lane).length;
@@ -354,21 +360,22 @@ PHASES.forEach(p=>{
   else { const n = rowsIn(p.col), span = n*(NH+GAP)-GAP, total = 5*(NH+GAP)-GAP; y = TOP + (total-span)/2 + p.row*(NH+GAP); }
   pos[p.id] = {x,y};
 });
-const edges = [];
-PHASES.forEach(p=>p.deps.forEach(d=>edges.push([d,p.id])));
-const edgeG = sv('g'); svg.append(edgeG);
-const edgeEls = edges.map(([a,b])=>{
-  const A=pos[a], B=pos[b]; let d;
-  if (byId[a].col===byId[b].col && !byId[a].lane && !byId[b].lane) {
-    const x=A.x, y1=A.y+NH/2, y2=B.y+NH/2, bend=Math.min(60, 18+Math.abs(y2-y1)/6);
-    d=`M${x},${y1} C${x-bend},${y1} ${x-bend},${y2} ${x},${y2}`;
-  } else {
-    const x1=A.x+NW, y1=A.y+NH/2, x2=B.x, y2=B.y+NH/2, mx=(x1+x2)/2;
-    d=`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
-  }
-  const path = sv('path',{d,class:'edge','data-a':a,'data-b':b});
-  edgeG.append(path); return path;
+// Build-order line only: dependencies are shown by highlighting on selection, never as lines.
+const defs = sv('defs'), mk = sv('marker',{id:'arr',viewBox:'0 0 10 10',refX:'9',refY:'5',markerWidth:'7',markerHeight:'7',orient:'auto-start-reverse'});
+mk.append(sv('path',{d:'M0,1 L9,5 L0,9 z',class:'arrowhead'})); defs.append(mk); svg.append(defs);
+const spineG = sv('g'); svg.append(spineG);
+const line = (d, lane) => spineG.append(sv('path',{d,class:'spine'+(lane?' lane':''),'marker-end':'url(#arr)'}));
+// elbow from a node's right side, up or down the gutter, into the next node's left side
+const elbow = (x1,y1,gx,y2,x2) => { const r=10, s=Math.sign(y2-y1)||1; return `M${x1},${y1} H${gx-r} Q${gx},${y1} ${gx},${y1+s*r} V${y2-s*r} Q${gx},${y2} ${gx+r},${y2} H${x2-2}`; };
+SERIAL.forEach((id,i)=>{
+  const nx = SERIAL[i+1]; if (!nx) return;
+  const A=pos[id], B=pos[nx];
+  if (byId[id].col===byId[nx].col) line(`M${A.x+NW/2},${A.y+NH} V${B.y-2}`);
+  else line(elbow(A.x+NW, A.y+NH/2, (A.x+NW+B.x)/2, B.y+NH/2, B.x));
 });
+// both parallel phases join the main line before B14
+{ const B=pos.B14, x1=COLX[2]+NW+14, gx=(COLX[2]+NW+COLX[3])/2+10;
+  line(elbow(x1, LANE_TOP+NH/2, gx, B.y+NH/2+16, B.x), true); }
 svg.append(sv('text',{x:COLX[3],y:pos.B15.y+NH+20,class:'sub',fill:css('--mist'),'font-size':'11.5'},'B15 waits on every phase'));
 const nodeEls = {};
 PHASES.forEach(p=>{
@@ -381,14 +388,16 @@ PHASES.forEach(p=>{
   g.append(sv('text',{x:16,y:42,class:'sub'},`${THEMES[p.theme].label} · ${n ? n+' findings' : 'audit'}`));
   if (m) g.append(sv('text',{x:16,y:56,class:'med'},`${m} medium`));
   if (p.order) { g.append(sv('circle',{cx:NW-18,cy:18,r:11,fill:css('--sunken')})); g.append(sv('text',{x:NW-18,y:22,'text-anchor':'middle',class:'num'},String(p.order))); }
-  else g.append(sv('text',{x:NW-12,y:22,'text-anchor':'end',class:'num'},'∥'));
+  else { g.append(sv('text',{x:NW-12,y:22,'text-anchor':'end',class:'num'},'∥')); g.append(sv('text',{x:0,y:NH+17,class:'after'},`Starts after ${p.deps.join(', ')}`)); }
+  g.append(sv('text',{x:NW-12,y:56,'text-anchor':'end',class:'tag need'},'needed first'));
+  g.append(sv('text',{x:NW-12,y:56,'text-anchor':'end',class:'tag waits'},'waits on it'));
   g.addEventListener('click',()=>select(p.id,true));
   g.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); select(p.id,true);} });
   svg.append(g); nodeEls[p.id]=g;
 });
 const legend = document.getElementById('legend');
 Object.values(THEMES).forEach(t=>legend.append(el('span',{},[el('i',{style:`background:${css(t.v)}`}),t.label])));
-legend.append(el('span',{text:'Numbers: serial order · ∥ parallel · solid: depends on · dashed: waits on it'}));
+legend.append(el('span',{text:'Numbers and line: build order · dashed line: parallel worktrees joining before B14 · selected phase: teal needed first, amber waits on it'}));
 
 // Order strip
 const order = document.getElementById('order');
@@ -435,8 +444,10 @@ function select(id, scroll){
   const p = byId[id];
   Object.entries(nodeEls).forEach(([k,g])=>{ g.classList.toggle('sel',k===id); });
   const related = new Set([id]);
-  edgeEls.forEach(e=>{ const a=e.dataset.a,b=e.dataset.b; const inn=b===id, out=a===id; e.classList.toggle('in',inn); e.classList.toggle('out',out); e.classList.toggle('dim',!(inn||out)); if(inn) related.add(a); if(out) related.add(b); });
-  Object.entries(nodeEls).forEach(([k,g])=>g.classList.toggle('dim',!related.has(k)));
+  const needs = new Set(p.deps), waits = new Set(PHASES.filter(q=>q.deps.includes(id)).map(q=>q.id));
+  needs.forEach(k=>related.add(k)); waits.forEach(k=>related.add(k));
+  svg.classList.add('focus');
+  Object.entries(nodeEls).forEach(([k,g])=>{ g.classList.toggle('dim',!related.has(k)); g.classList.toggle('need',needs.has(k)); g.classList.toggle('waits',waits.has(k)); });
   order.querySelectorAll('.pill').forEach(b=>{ const on=b.dataset.id===id; b.classList.toggle('on',on); b.setAttribute('aria-selected',on); });
   const unblocks = PHASES.filter(q=>q.deps.includes(id)).map(q=>q.id);
   const ids = uniq(p.owns).sort((a,b)=>a-b);
