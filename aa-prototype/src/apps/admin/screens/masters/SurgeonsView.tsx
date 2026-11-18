@@ -2,15 +2,13 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { neutral } from '../../../../theme/tokens'
 import { pairingCounts } from '../../../../domain/pairingPreferences'
-import { compareBySurname, roomsForSurgeon, surgeonsInRoom } from '../../../../domain/surgeons'
-import { contactsForRoom, NO_ROOM_EMAIL, roomContactEmail } from '../../../../domain/roomContacts'
-import type { Surgeon, SurgeonGroup, SurgeonRoom } from '../../../../domain/types'
+import { compareBySurname, NO_HPI_CPN } from '../../../../domain/surgeons'
+import { officeAddressFor } from '../../../../domain/surgeonContacts'
+import type { Surgeon, SurgeonGroup } from '../../../../domain/types'
 import { useAppStore, type Actor } from '../../../../store'
 import { surgeonSpecialtyLabel } from '../../../../domain/specialties'
-import { plural } from '../../../../shared/format'
 import { Button } from '../../../../shared'
 import { SurgeonEditSheet } from '../../flows/SurgeonEditSheet'
-import { SurgeonRoomSheet } from '../../flows/SurgeonRoomSheet'
 import { SurgeonGroupSheet } from '../../flows/SurgeonGroupSheet'
 import { NotPreferredPill, PreferredPill, usePairingEntries } from '../../components/pairing'
 import { isInteractiveRowTarget } from '../../tableChrome'
@@ -19,9 +17,12 @@ import { rowCellStyle } from './tableStyles'
 import { surgeonProfilePath } from '../../mastersPaths'
 
 /**
- * Surgeons, Surgeons' rooms and Surgeon groups (catch-up Phase 17; US-13.4.1,
- * US-13.6.1, US-13.6.2). Editable by the office; a surgeon row opens the
- * profile. No delete or deactivate here (Phase 42).
+ * Surgeons and Surgeon groups (catch-up Phase 17; US-13.4.1, US-13.6.2).
+ * Editable by the office; a surgeon row opens the profile. No delete or
+ * deactivate here (Phase 42). Catch-up Phase 17b (D74, OQ-126): no surgeons'
+ * rooms; the surgeon list is AA's address book of surgeons, showing each
+ * surgeon's practice, the office contact the office's emails go to first
+ * (`officeAddressFor`) and the HPI CPN or "No HPI CPN yet".
  */
 
 const mist = { color: neutral.mist }
@@ -36,7 +37,6 @@ function SurgeonLink({ id, name }: { id: string; name: string }) {
 
 export function SurgeonsView({ actor }: { actor: Actor }) {
   const surgeons = useAppStore((s) => s.masters.surgeons)
-  const rooms = useAppStore((s) => s.masters.surgeonRooms)
   const specialties = useAppStore((s) => s.masters.specialties)
   const entries = usePairingEntries()
   const navigate = useNavigate()
@@ -47,16 +47,19 @@ export function SurgeonsView({ actor }: { actor: Actor }) {
     <>
       <Header
         title="Surgeons"
-        sub="One record per surgeon, keyed on the HPI CPN. Open a surgeon for their rooms, contacts, groups and pairing preferences."
+        sub="AA's address book of surgeons. Open a surgeon for their contacts, groups and pairing preferences."
         action={<Button variant="secondary" onClick={() => setSheet({})}>Add surgeon</Button>}
       />
-      <Table heads={['Name', 'Specialties', 'Rooms', 'HPI CPN', 'Pairings', '']} rightAlign={[5]} shot="masters-surgeons">
+      <Table heads={['Name', 'Specialties', 'Practice', 'Office contact', 'HPI CPN', 'Pairings', '']} rightAlign={[6]} shot="masters-surgeons">
         {rows.map((s) => {
           const counts = pairingCounts(entries, { surgeonId: s.id })
+          const to = officeAddressFor({ surgeons }, s.id).to
           return (
             <tr
               key={s.id}
               data-surgeon={s.id}
+              data-practice={s.practiceName ?? ''}
+              data-hpi={s.hpiId ?? ''}
               className="aa-clickable-table-row"
               onClick={(event) => {
                 if (!isInteractiveRowTarget(event.target)) navigate(surgeonProfilePath(s.id))
@@ -64,10 +67,18 @@ export function SurgeonsView({ actor }: { actor: Actor }) {
             >
               <td style={rowCellStyle}><SurgeonLink id={s.id} name={s.name} /></td>
               <td style={rowCellStyle}>{surgeonSpecialtyLabel({ specialties }, s)}</td>
-              <td style={rowCellStyle} data-rooms={s.id}>
-                {roomsForSurgeon({ surgeons, surgeonRooms: rooms }, s.id).map((room) => <div key={room.id}>{room.name}</div>)}
+              <td style={rowCellStyle}>{s.practiceName ?? <span style={mist}>Not recorded</span>}</td>
+              <td style={rowCellStyle} data-office-to={to?.email ?? ''}>
+                {to === null ? (
+                  <span style={mist}>None held</span>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
+                    {to.name !== undefined && <span>{to.name}</span>}
+                    <span className="mono" style={{ fontSize: 12.5, color: neutral.slate, overflowWrap: 'anywhere' }}>{to.email}</span>
+                  </div>
+                )}
               </td>
-              <td className="mono" style={rowCellStyle}>{s.hpiId}</td>
+              <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>{s.hpiId !== undefined ? <span className="mono">{s.hpiId}</span> : <span style={mist}>{NO_HPI_CPN}</span>}</td>
               <td style={rowCellStyle}>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {counts.NOT_PREFERRED > 0 && <NotPreferredPill count={counts.NOT_PREFERRED} />}
@@ -81,51 +92,6 @@ export function SurgeonsView({ actor }: { actor: Actor }) {
         })}
       </Table>
       {sheet !== null && <SurgeonEditSheet key={sheet.surgeon?.id ?? 'new'} surgeon={sheet.surgeon} actor={actor} onClose={() => setSheet(null)} />}
-    </>
-  )
-}
-
-export function SurgeonRoomsView({ actor }: { actor: Actor }) {
-  const rooms = useAppStore((s) => s.masters.surgeonRooms)
-  const surgeons = useAppStore((s) => s.masters.surgeons)
-  const [sheet, setSheet] = useState<{ room?: SurgeonRoom } | null>(null)
-  const rows = Object.values(rooms).sort((a, b) => a.name.localeCompare(b.name))
-
-  return (
-    <>
-      <Header
-        title="Surgeons' rooms"
-        sub="Each room holds its contact email and phone where the practice gives them, and its surgeons. A surgeon joins one or more rooms from their own record."
-        action={<Button variant="secondary" onClick={() => setSheet({})}>Add room</Button>}
-      />
-      <Table heads={['Name', 'Contact email', 'Phone', 'Surgeons', 'Contacts', '']} rightAlign={[5]} shot="masters-surgeon-rooms">
-        {rows.map((r) => {
-          const members = surgeonsInRoom(surgeons, r.id)
-          const email = roomContactEmail(r)
-          const contactCount = contactsForRoom(r, surgeons).length
-          return (
-            <tr key={r.id} data-room={r.id}>
-              <td style={{ ...rowCellStyle, fontWeight: 600 }}>{r.name}</td>
-              <td style={rowCellStyle} data-room-email>{email !== '' ? <span className="mono">{email}</span> : <span style={mist}>{NO_ROOM_EMAIL}</span>}</td>
-              <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>{r.phone ?? <span style={mist}>·</span>}</td>
-              <td style={rowCellStyle}>
-                {members.length === 0 ? (
-                  <span style={mist}>No surgeons yet</span>
-                ) : (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', columnGap: 12, rowGap: 2 }}>
-                    {members.map((m) => <SurgeonLink key={m.id} id={m.id} name={m.name} />)}
-                  </div>
-                )}
-              </td>
-              <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }} data-room-contacts-count={contactCount}>
-                {contactCount === 0 ? <span style={mist}>·</span> : plural(contactCount, 'contact')}
-              </td>
-              <EditCell onClick={() => setSheet({ room: r })} label={`Edit ${r.name}`} style={rowCellStyle} />
-            </tr>
-          )
-        })}
-      </Table>
-      {sheet !== null && <SurgeonRoomSheet key={sheet.room?.id ?? 'new'} room={sheet.room} actor={actor} onClose={() => setSheet(null)} />}
     </>
   )
 }

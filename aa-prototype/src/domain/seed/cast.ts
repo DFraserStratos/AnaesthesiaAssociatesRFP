@@ -16,8 +16,8 @@ import type {
   Insurer,
   SlotStatus,
   Surgeon,
+  SurgeonContact,
   SurgeonGroup,
-  SurgeonRoom,
 } from '../types'
 
 // ---------------------------------------------------------------------------
@@ -115,44 +115,44 @@ export const SURG = {
 } as const
 
 /**
- * Surgeons' rooms (catch-up Phase 17, US-13.6.1). Fictional names, `.example`
- * emails and 03 555 phones. A room's surgeons are derived from
- * `Surgeon.roomIds`; every room has at least one.
+ * The cast's practices (catch-up Phase 17b, D74): plain text on each surgeon,
+ * with the practice's shared inbox as the surgeon's one office contact.
+ * Fictional names, `.example` emails and 03 555 phones (the five rooms Phase
+ * 17 seeded, kept as practice names; the system holds no room record).
  */
-export const ROOM = {
-  riccarton: 'RM-RICC',
-  merivale: 'RM-MERI',
-  avonside: 'RM-AVON',
-  fendalton: 'RM-FEND',
-  papanui: 'RM-PAPA',
+const PRACTICE = {
+  riccarton: { name: 'Riccarton Orthopaedic Rooms', email: 'reception@riccartonortho.example', phone: '03 555 0141' },
+  merivale: { name: 'Merivale Eye Rooms', email: 'bookings@merivaleeye.example', phone: '03 555 0172' },
+  avonside: { name: 'Avonside Surgical Rooms', email: 'admin@avonsidesurgical.example', phone: '03 555 0118' },
+  fendalton: { name: 'Fendalton Specialist Rooms', email: 'rooms@fendaltonspecialists.example', phone: '03 555 0193' },
+  papanui: { name: 'Papanui Specialist Rooms', email: 'reception@papanuispecialists.example', phone: '03 555 0127' },
 } as const
 
-export const SURGEON_ROOMS: readonly SurgeonRoom[] = [
-  { id: ROOM.riccarton, name: 'Riccarton Orthopaedic Rooms', contactEmail: 'reception@riccartonortho.example', phone: '03 555 0141' },
-  { id: ROOM.merivale, name: 'Merivale Eye Rooms', contactEmail: 'bookings@merivaleeye.example', phone: '03 555 0172' },
-  { id: ROOM.avonside, name: 'Avonside Surgical Rooms', contactEmail: 'admin@avonsidesurgical.example', phone: '03 555 0118' },
-  { id: ROOM.fendalton, name: 'Fendalton Specialist Rooms', contactEmail: 'rooms@fendaltonspecialists.example', phone: '03 555 0193' },
-  { id: ROOM.papanui, name: 'Papanui Specialist Rooms', contactEmail: 'reception@papanuispecialists.example', phone: '03 555 0127' },
-] as const
+/** A practice's shared inbox as an office contact, named for the practice. */
+function practiceInbox(practice: (typeof PRACTICE)[keyof typeof PRACTICE]): SurgeonContact {
+  return { name: practice.name, email: practice.email, phone: practice.phone }
+}
 
 /**
- * Every surgeon carries a room, a fictional HPI CPN (`NNAAAA`, 40 to 49, so
- * none clashes with the anaesthetists' 10 to 23) and a fictional NZ medical
- * registration number held for information. The canvas's pick arrays
- * (`CES_SURGEONS`, `GENERAL_SURGEONS`) read only the ids, so these fields move
- * no List (canvasFingerprint.test.ts).
+ * Every surgeon carries a practice name, a personal contact (an invented
+ * `.example` email and a 021 555 phone), the practice inbox as their office
+ * contact, a fictional HPI CPN (`NNAAAA`, 40 to 49, so none clashes with the
+ * anaesthetists' 10 to 23) and a fictional NZ medical registration number held
+ * for information. The canvas's pick arrays (`CES_SURGEONS`,
+ * `GENERAL_SURGEONS`) read only the ids, so these fields move no List
+ * (canvasFingerprint.test.ts).
  */
 export const SURGEONS: readonly Surgeon[] = [
-  { id: SURG.hale, name: 'Mr T. Hale', specialtyIds: [SPC.orthopaedics], roomIds: [ROOM.riccarton], hpiId: '40HALT', medicalRegistrationNumber: '70412' },
-  { id: SURG.patel, name: 'Ms K. Patel', specialtyIds: [SPC.generalSurgery], roomIds: [ROOM.avonside], hpiId: '41PATK', medicalRegistrationNumber: '71588' },
-  { id: SURG.whitford, name: 'Mr J. Whitford', specialtyIds: [SPC.ophthalmology], roomIds: [ROOM.merivale], hpiId: '42WHIJ', medicalRegistrationNumber: '72905' },
-  { id: SURG.okafor, name: 'Mr C. Okafor', specialtyIds: [SPC.generalSurgery], roomIds: [ROOM.avonside], hpiId: '43OKAC', medicalRegistrationNumber: '73318' },
-  { id: SURG.lim, name: 'Ms G. Lim', specialtyIds: [SPC.plasticSurgery], roomIds: [ROOM.fendalton], hpiId: '44LIMG', medicalRegistrationNumber: '74071' },
-  { id: SURG.doyle, name: 'Mr P. Doyle', specialtyIds: [SPC.generalSurgery], roomIds: [ROOM.avonside], hpiId: '45DOYP', medicalRegistrationNumber: '75264' },
-  { id: SURG.tan, name: 'Mr S. Tan', specialtyIds: [SPC.urology], roomIds: [ROOM.papanui], hpiId: '46TANS', medicalRegistrationNumber: '76630' },
-  { id: SURG.reid, name: 'Ms A. Reid', specialtyIds: [SPC.ophthalmology], roomIds: [ROOM.merivale], hpiId: '47REIA', medicalRegistrationNumber: '77149' },
-  { id: SURG.nand, name: 'Mr V. Nand', specialtyIds: [SPC.ent], roomIds: [ROOM.fendalton], hpiId: '48NANV', medicalRegistrationNumber: '78852' },
-  { id: SURG.cameron, name: 'Ms H. Cameron', specialtyIds: [SPC.gynaecology], roomIds: [ROOM.papanui], hpiId: '49CAMH', medicalRegistrationNumber: '79503' },
+  { id: SURG.hale, name: 'Mr T. Hale', specialtyIds: [SPC.orthopaedics], practiceName: PRACTICE.riccarton.name, personalContact: { name: 'Mr T. Hale', email: 't.hale@surgeons.example', phone: '021 555 0401' }, officeContacts: [practiceInbox(PRACTICE.riccarton)], hpiId: '40HALT', medicalRegistrationNumber: '70412' },
+  { id: SURG.patel, name: 'Ms K. Patel', specialtyIds: [SPC.generalSurgery], practiceName: PRACTICE.avonside.name, personalContact: { name: 'Ms K. Patel', email: 'k.patel@surgeons.example', phone: '021 555 0412' }, officeContacts: [practiceInbox(PRACTICE.avonside)], hpiId: '41PATK', medicalRegistrationNumber: '71588' },
+  { id: SURG.whitford, name: 'Mr J. Whitford', specialtyIds: [SPC.ophthalmology], practiceName: PRACTICE.merivale.name, personalContact: { name: 'Mr J. Whitford', email: 'j.whitford@surgeons.example', phone: '021 555 0423' }, officeContacts: [practiceInbox(PRACTICE.merivale)], hpiId: '42WHIJ', medicalRegistrationNumber: '72905' },
+  { id: SURG.okafor, name: 'Mr C. Okafor', specialtyIds: [SPC.generalSurgery], practiceName: PRACTICE.avonside.name, personalContact: { name: 'Mr C. Okafor', email: 'c.okafor@surgeons.example', phone: '021 555 0434' }, officeContacts: [practiceInbox(PRACTICE.avonside)], hpiId: '43OKAC', medicalRegistrationNumber: '73318' },
+  { id: SURG.lim, name: 'Ms G. Lim', specialtyIds: [SPC.plasticSurgery], practiceName: PRACTICE.fendalton.name, personalContact: { name: 'Ms G. Lim', email: 'g.lim@surgeons.example', phone: '021 555 0445' }, officeContacts: [practiceInbox(PRACTICE.fendalton)], hpiId: '44LIMG', medicalRegistrationNumber: '74071' },
+  { id: SURG.doyle, name: 'Mr P. Doyle', specialtyIds: [SPC.generalSurgery], practiceName: PRACTICE.avonside.name, personalContact: { name: 'Mr P. Doyle', email: 'p.doyle@surgeons.example', phone: '021 555 0456' }, officeContacts: [practiceInbox(PRACTICE.avonside)], hpiId: '45DOYP', medicalRegistrationNumber: '75264' },
+  { id: SURG.tan, name: 'Mr S. Tan', specialtyIds: [SPC.urology], practiceName: PRACTICE.papanui.name, personalContact: { name: 'Mr S. Tan', email: 's.tan@surgeons.example', phone: '021 555 0467' }, officeContacts: [practiceInbox(PRACTICE.papanui)], hpiId: '46TANS', medicalRegistrationNumber: '76630' },
+  { id: SURG.reid, name: 'Ms A. Reid', specialtyIds: [SPC.ophthalmology], practiceName: PRACTICE.merivale.name, personalContact: { name: 'Ms A. Reid', email: 'a.reid@surgeons.example', phone: '021 555 0478' }, officeContacts: [practiceInbox(PRACTICE.merivale)], hpiId: '47REIA', medicalRegistrationNumber: '77149' },
+  { id: SURG.nand, name: 'Mr V. Nand', specialtyIds: [SPC.ent], practiceName: PRACTICE.fendalton.name, personalContact: { name: 'Mr V. Nand', email: 'v.nand@surgeons.example', phone: '021 555 0489' }, officeContacts: [practiceInbox(PRACTICE.fendalton)], hpiId: '48NANV', medicalRegistrationNumber: '78852' },
+  { id: SURG.cameron, name: 'Ms H. Cameron', specialtyIds: [SPC.gynaecology], practiceName: PRACTICE.papanui.name, personalContact: { name: 'Ms H. Cameron', email: 'h.cameron@surgeons.example', phone: '021 555 0490' }, officeContacts: [practiceInbox(PRACTICE.papanui)], hpiId: '49CAMH', medicalRegistrationNumber: '79503' },
 ] as const
 
 /**

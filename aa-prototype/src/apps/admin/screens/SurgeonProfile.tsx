@@ -1,10 +1,8 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { neutral } from '../../../theme/tokens'
-import { groupsForSurgeon, mainRoomOf, roomsForSurgeon, surgeonsInRoom } from '../../../domain/surgeons'
-import { NO_ROOM_EMAIL, ROOM_CONTACTS_PROVISIONAL_NOTE, roomContactEmail } from '../../../domain/roomContacts'
-import { RoomContactsList } from '../components/RoomContactsList'
-import type { Surgeon, SurgeonRoom } from '../../../domain/types'
+import { neutral, radius } from '../../../theme/tokens'
+import { groupsForSurgeon, NO_HPI_CPN } from '../../../domain/surgeons'
+import { cleanContact, officeAddressFor } from '../../../domain/surgeonContacts'
+import type { SurgeonContact } from '../../../domain/types'
 import { useAppStore, type Actor } from '../../../store'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { Pill } from '../components/MasterPills'
@@ -13,21 +11,20 @@ import { PairingSection, useProfileHistory } from '../components/pairing'
 import { HeaderActions, IdChip, PROFILE_CARD, ProfileHeader, ProfilePage } from '../components/ProfileChrome'
 import { BackLink, Card, DefList, DefRow } from '../../../shared/ui'
 import { SurgeonEditSheet } from '../flows/SurgeonEditSheet'
-import { mastersViewPath, surgeonProfilePath } from '../mastersPaths'
-import { EmptyState } from '../../../shared/ui/EmptyState'
+import { mastersViewPath } from '../mastersPaths'
 
 /**
- * The surgeon profile (catch-up Phase 17; US-13.6.2, US-13.6.1, US-13.6.3,
- * US-13.6.4): one identified record keyed on the HPI CPN, the surgeon's room
- * and its contacts, the groups, and the office's private pairing preferences.
- * Catch-up Phase 17a (US-13.6.5; D75, D74): a room card per room, the main
- * room first, each beside its practice manager and PA contacts card.
- * `/admin/masters/surgeons/:surgeonId`.
+ * The surgeon profile (catch-up Phase 17; US-13.6.2, US-13.6.3, US-13.6.4):
+ * one identified record, the groups, and the office's private pairing
+ * preferences. Catch-up Phase 17b (US-13.6.5; D74, D76): no surgeons' rooms;
+ * one "Practice and contacts" card holds the practice name, the personal
+ * contact and each office contact, the one the office's emails go to first
+ * marked (`officeAddressFor`); a surgeon with no HPI CPN reads "No HPI CPN
+ * yet". `/admin/masters/surgeons/:surgeonId`.
  */
 export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor: Actor }) {
   const surgeon = useAppStore((s) => s.masters.surgeons[surgeonId])
   const surgeons = useAppStore((s) => s.masters.surgeons)
-  const rooms = useAppStore((s) => s.masters.surgeonRooms)
   const groups = useAppStore((s) => s.masters.surgeonGroups)
   const specialties = useAppStore((s) => s.masters.specialties)
   const [editing, setEditing] = useState(false)
@@ -35,16 +32,17 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
   const profileHistory = useProfileHistory('surgeon', surgeonId)
   if (surgeon === undefined) return null
 
-  const surgeonRooms = roomsForSurgeon({ surgeons, surgeonRooms: rooms }, surgeon.id)
   const memberOf = groupsForSurgeon(groups, surgeon.id)
+  const firstTo = officeAddressFor({ surgeons }, surgeon.id).to?.email.toLowerCase()
+  const firstIndex = firstTo === undefined ? -1 : surgeon.officeContacts.findIndex((c) => cleanContact(c).email?.toLowerCase() === firstTo)
 
   return (
     <ProfilePage shot="surgeon-profile">
       <BackLink to={mastersViewPath('surgeons')} size="desktop">Surgeons</BackLink>
       <ProfileHeader
         name={surgeon.name}
-        chip={<IdChip label="HPI CPN" value={surgeon.hpiId} shot="surgeon-hpi-chip" />}
-        sub={[surgeonSpecialtyLabel({ specialties }, surgeon), mainRoomOf({ surgeons, surgeonRooms: rooms }, surgeon.id)?.name].filter((v) => v !== undefined && v !== '').join(' · ')}
+        chip={<IdChip label="HPI CPN" value={surgeon.hpiId} empty={NO_HPI_CPN} shot="surgeon-hpi-chip" />}
+        sub={[surgeonSpecialtyLabel({ specialties }, surgeon), surgeon.practiceName].filter((v) => v !== undefined && v !== '').join(' · ')}
         action={<HeaderActions onHistory={() => setHistory(true)} onEdit={() => setEditing(true)} />}
       />
 
@@ -60,7 +58,9 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
 
         <Card style={PROFILE_CARD} title="Identifiers" shot="surgeon-identifiers">
           <DefList gap={10}>
-            <DefRow layout="stacked" label="HPI CPN" mono note="Unique index on the Health Provider Index. Not the patient's NHI.">{surgeon.hpiId}</DefRow>
+            <DefRow layout="stacked" label="HPI CPN" mono={surgeon.hpiId !== undefined} note="Unique index on the Health Provider Index. Not the patient's NHI." data-hpi={surgeon.hpiId ?? ''}>
+              {surgeon.hpiId ?? <span style={{ color: neutral.mist }}>{NO_HPI_CPN}</span>}
+            </DefRow>
             <DefRow layout="stacked" label="NZ medical registration number" mono={surgeon.medicalRegistrationNumber !== undefined} note="For information">
               {surgeon.medicalRegistrationNumber ?? <span style={{ color: neutral.mist }}>Not recorded</span>}
             </DefRow>
@@ -82,21 +82,38 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
         </Card>
       </div>
 
-      {surgeonRooms.length === 0 ? (
-        <Card style={PROFILE_CARD} title="Surgeons' room" shot="surgeon-room-card">
-          <div style={{ fontSize: 13, color: neutral.mist }}>No room recorded.</div>
-        </Card>
-      ) : (
-        surgeonRooms.map((room, index) => (
-          <div key={room.id} data-room-row={room.id} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, alignItems: 'stretch' }}>
-            <RoomCard room={room} main={index === 0} several={surgeonRooms.length > 1} surgeon={surgeon} surgeons={surgeons} />
-            <Card style={PROFILE_CARD} title="Practice manager and PAs" shot="surgeon-contacts" data-room={room.id}>
-              {index === 0 && <div style={{ fontSize: 12, color: neutral.mist }}>{ROOM_CONTACTS_PROVISIONAL_NOTE}</div>}
-              <RoomContactsList room={room} surgeonId={surgeon.id} actor={actor} />
-            </Card>
-          </div>
-        ))
-      )}
+      <Card style={PROFILE_CARD} title="Practice and contacts" shot="surgeon-contacts">
+        <DefList gap={14}>
+          <DefRow layout="stacked" label="Practice" data-practice={surgeon.practiceName ?? ''}>
+            {surgeon.practiceName ?? <span style={{ color: neutral.mist }}>Not recorded</span>}
+          </DefRow>
+          <DefRow layout="stacked" label="Personal contact" shot="surgeon-personal-contact-card">
+            <ContactLines contact={surgeon.personalContact} />
+          </DefRow>
+          <DefRow layout="stacked" label="Office contacts" shot="surgeon-office-contacts-card">
+            {surgeon.officeContacts.length === 0 ? (
+              <span style={{ color: neutral.mist }}>None held</span>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12, marginTop: 4 }}>
+                {surgeon.officeContacts.map((contact, index) => (
+                  <div
+                    key={index}
+                    data-office-contact={index + 1}
+                    style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 12px', borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, minWidth: 0 }}
+                  >
+                    <ContactLines contact={contact} />
+                    {index === firstIndex && (
+                      <div>
+                        <Pill size="sm" shot="office-first-pill">Office emails go here first</Pill>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </DefRow>
+        </DefList>
+      </Card>
 
       <PairingSection perspective="surgeon" subjectId={surgeon.id} actor={actor} />
 
@@ -106,35 +123,15 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
   )
 }
 
-/** One of the surgeon's rooms: its email (or that none is held), phone and the room's other surgeons. */
-function RoomCard({ room, main, several, surgeon, surgeons }: { room: SurgeonRoom; main: boolean; several: boolean; surgeon: Surgeon; surgeons: Readonly<Record<string, Surgeon>> }) {
-  const email = roomContactEmail(room)
-  const colleagues = surgeonsInRoom(surgeons, room.id).filter((s) => s.id !== surgeon.id)
+/** A contact's name, mono email and phone, "Not recorded" in mist for each blank. */
+function ContactLines({ contact }: { contact: SurgeonContact }) {
+  const c = cleanContact(contact)
+  const missing = <span style={{ color: neutral.mist }}>Not recorded</span>
   return (
-    <Card
-      style={PROFILE_CARD}
-      title="Surgeons' room"
-      shot="surgeon-room-card"
-      data-room={room.id}
-      action={several && main ? <Pill size="sm">Main room</Pill> : undefined}
-    >
-      <div style={{ fontSize: 14, fontWeight: 600 }}>{room.name}</div>
-      <DefList gap={10}>
-        <DefRow layout="stacked" label="Contact email" mono={email !== ''}>{email !== '' ? email : <span style={{ color: neutral.mist }}>{NO_ROOM_EMAIL}</span>}</DefRow>
-        <DefRow layout="stacked" label="Phone">{room.phone ?? <span style={{ color: neutral.mist }}>Not recorded</span>}</DefRow>
-      </DefList>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: neutral.mist }}>Also in this room</div>
-        {colleagues.length === 0 ? (
-          <EmptyState>No other surgeons.</EmptyState>
-        ) : (
-          colleagues.map((c) => (
-            <Link key={c.id} to={surgeonProfilePath(c.id)} className="aa-table-entity-link" style={{ fontSize: 14 }}>
-              <span className="aa-table-entity-link-title" style={{ fontWeight: 500 }}>{c.name}</span>
-            </Link>
-          ))
-        )}
-      </div>
-    </Card>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+      <span style={{ fontSize: 14, fontWeight: 600, color: c.name !== undefined ? neutral.ink : neutral.mist }}>{c.name ?? 'No name recorded'}</span>
+      <span className={c.email !== undefined ? 'mono' : undefined} style={{ fontSize: 13, overflowWrap: 'anywhere' }}>{c.email ?? missing}</span>
+      <span style={{ fontSize: 13 }}>{c.phone ?? missing}</span>
+    </div>
   )
 }

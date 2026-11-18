@@ -10,7 +10,6 @@ export type MastersView =
   | 'recurringBookings'
   | 'hospitals'
   | 'surgeons'
-  | 'surgeonRooms'
   | 'surgeonGroups'
   | 'parties'
   | 'specialties'
@@ -34,7 +33,6 @@ export const MASTERS_NAV: readonly { view: MastersView; label: string }[] = [
   { view: 'surgeons', label: 'Surgeons' },
   // Catch-up Phase 18a (US-13.4.4): AA's broad specialties, beside the surgeons who hold them.
   { view: 'specialties', label: 'Specialties' },
-  { view: 'surgeonRooms', label: "Surgeons' rooms" },
   { view: 'surgeonGroups', label: 'Surgeon groups' },
   // Catch-up Phase 19 (US-05.1.1): the RVG groups as published plus AA's own; replaces the view-only RVG codes.
   { view: 'rvgGroups', label: 'RVG groups' },
@@ -58,5 +56,7 @@ export function parseMastersView(param: string | null): MastersView {
   if (param === 'rvgCodes') return 'rvgGroups'
   // The demo Modifier codes table became Modifiers (catch-up Phase 19b).
   if (param === 'modifierCodes') return 'modifiers'
+  // The surgeons' rooms master went with catch-up Phase 17b (D74): its old URL opens Surgeons.
+  if (param === 'surgeonRooms') return 'surgeons'
   return MASTERS_NAV.find((n) => n.view === param)?.view ?? DEFAULT_MASTERS_VIEW
 }

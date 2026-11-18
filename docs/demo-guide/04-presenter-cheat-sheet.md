@@ -410,13 +410,18 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Anaesthetist profiles: rate per unit, contact details, registration number, HPI CPN, bank account
   (masked) and GST number on each record (**Edit details** on the Profile card) and in the
   Anaesthetists table; the HPI CPN and bank details are mandatory, every change audited
-- Surgeon profiles: the HPI CPN is each surgeon's unique index (not the patient's NHI), each surgeon
-  holds one or more specialties from AA's list (required; a save with none is refused), belongs to one
-  or more surgeons' rooms (the first the main room, a room card each; Mr N. Wainwright is at two), and
-  surgeons can belong to groups; a room's email and phone are optional and a room may hold none ("No
-  email held", Mr B. Yeoman's room); practice manager and PA contacts show on the profile beside each
-  room card, the office adds, edits and removes them, and a contact is never the To of an office email
-  (Dr H. Dalgety's PA Bev: `/admin/masters/surgeons/S-DALGETY`)
+- Surgeon profiles: the system keeps no surgeons' rooms. Each surgeon holds one or more specialties
+  from AA's list (required; a save with none is refused), a practice name (plain text; Mr N.
+  Wainwright, at two practices, holds both names), one personal contact and one or more office
+  contacts (practice manager, PA or shared inbox: name, email, phone, blanks allowed) entered on the
+  Edit details sheet's plus and minus form ("Add office contact" adds a set, a minus removes an extra
+  set, one set always shows; a two-practice surgeon holds one for each practice); surgeons can belong
+  to groups. The HPI CPN is filled in by admin staff (unique when held; a surgeon saves and is booked
+  without one, shown as "No HPI CPN yet": Dr P. Whaanga, Dr B. Osei and Dr Selwyn). The office's
+  emails go to the first office contact with an email (pill "Office emails go here first"), the others
+  offered, never every contact and never the personal contact (Dr H. Dalgety's PA Bev:
+  `/admin/masters/surgeons/S-DALGETY`). The list is AA's address book of surgeons (columns Name,
+  Specialties, Practice, Office contact, HPI CPN, Pairings)
 - Pairing preferences and priority tiers: kept on both the surgeon profile and the anaesthetist
   record, admin only; a not-preferred pairing warns and never blocks; cover suggestions run in tier
   order, shuffled within a tier; seeded: Ms A. Reid prefers not to work with Dr Sharma, and Mr J.
@@ -729,13 +734,14 @@ Say:
   invoice description taking precedence over both on the invoice (D37, extended 5 November) has not
   been put to Ben and Vanessa yet; present it as a discovery point.
 
-### 15. Surgeons' rooms and practice contacts
+### 15. Surgeon contacts and practice (no surgeons' rooms)
 
-- Open (OQ-127): whether practice manager and PA contacts belong to the room or to the surgeon, and
-  which room's apply to a surgeon at several rooms. Built provisionally: held on the room, optionally
-  named for one surgeon, every room's contacts shown on the profile, the main room's email the To; the
-  profile says this is to be confirmed with AA.
-- Answered (OQ-128): a surgeon can belong to more than one room.
+- Answered for the build (OQ-127 and OQ-126; Donald, not yet seen by AA): no surgeons' rooms are kept;
+  each surgeon holds a practice name, one personal contact and one or more office contacts, and a
+  surgeon at two practices holds an office contact for each.
+- Superseded (OQ-128): a surgeon belonging to more than one room, as there are no rooms.
+- Answered for the build (OQ-129): the HPI CPN is filled in by admin staff; a surgeon can be saved and
+  booked without one ("No HPI CPN yet"). Open (OQ-143): the default is that it never becomes required.
 
 ## Likely evaluator questions
 

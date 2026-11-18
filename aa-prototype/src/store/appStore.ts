@@ -347,8 +347,11 @@ export const PERSIST_KEY = 'aa-demo'
  *  `contract.disable` audit entry on Fri 10 Jul) and Margaret Ellery's Booking on it on 21a's review-flags List. Reseeds on load.
  *  v57: catch-up Phase 25a session 2, the Procedure's hospital reference removed (`Procedure.billingReference`, the
  *  lock's copy, `InvoiceCrossMatch.hospitalRef`, the seeded values and audit fields; DM-68, D82). Reseeds on load.
- *  v58: Wave 2 sync on lane/b, Lane A's 25a (v57) joined with Lane B's 33a (v56): one past the higher. */
-export const PERSIST_VERSION = 58
+ *  v58: Wave 2 sync on lane/b, Lane A's 25a (v57) joined with Lane B's 33a (v56): one past the higher.
+ *  v59: catch-up Phase 17b, no surgeons' rooms (`masters.surgeonRooms`, `Surgeon.roomIds` and room contacts gone);
+ *  each surgeon holds `practiceName`, `personalContact` and `officeContacts`, and three directory surgeons no HPI CPN
+ *  yet (D74, D76). Reseeds on load. */
+export const PERSIST_VERSION = 59
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {} }

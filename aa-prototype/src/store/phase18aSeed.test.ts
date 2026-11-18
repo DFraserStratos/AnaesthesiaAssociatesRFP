@@ -14,7 +14,7 @@ import baseline from './__parity__/phase-18a-baseline.json'
 import { freshAppState } from './appStore'
 import { accpayInvoicesFor } from './selectors'
 import { SEED_MARKERS, SPECIALTY_FOR_DIRECTORY_TEXT } from '../domain/seed'
-import { DIRECTORY_ROOMS, DIRECTORY_SURGEONS } from '../domain/seed/specialistDirectory'
+import { DIRECTORY_SURGEONS } from '../domain/seed/specialistDirectory'
 import { contractFitsSpecialties, surgeonSpecialtyLabel } from '../domain/specialties'
 import { destinationKey, destinationOf, findFallback, impliedDestinations, isOfficeContract, isOpenPriceFallback, isRvgFallback, seedFallbackId } from '../domain/billing/fallbacks'
 import { fundingTagsInOrder, procedureAccFunded } from '../domain/billing/fundingTags'
@@ -44,9 +44,9 @@ describe('specialties and funding tags (seed)', () => {
 describe("surgeons' specialties (US-13.6.6)", () => {
   it('keeps the directory counts', () => {
     expect(DIRECTORY_SURGEONS.length).toBe(131)
-    expect(DIRECTORY_ROOMS.length).toBe(40)
     expect(Object.keys(masters.surgeons).length).toBe(baseline.surgeonCount)
-    expect(Object.keys(masters.surgeonRooms).length).toBe(baseline.rooms)
+    // Catch-up Phase 17b: no surgeons' rooms are held any more (baseline.rooms is 18a's count).
+    expect('surgeonRooms' in masters).toBe(false)
   })
 
   it("maps every surgeon's free text onto AA's list, one specialty each", () => {

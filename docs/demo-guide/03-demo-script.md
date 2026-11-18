@@ -83,7 +83,7 @@ view respectively.
 | One invoice document | `/admin/invoices/<invoiceId>` |
 | Billing monitor | `/admin/billing` |
 | Integration monitor | `/admin/integrations` |
-| Master data | `/admin/masters` (one view: `?view=surgeons`, `?view=surgeonRooms`, `?view=anaesthetists`) |
+| Master data | `/admin/masters` (one view: `?view=surgeons`, `?view=anaesthetists`) |
 | Availability statuses | `/admin/masters?view=availability-statuses` |
 | Contracts | `/admin/masters?view=contracts` (one holder: `&holder=PY-COS`) |
 | Specialties | `/admin/masters?view=specialties` |
@@ -91,7 +91,6 @@ view respectively.
 | Recurring bookings | `/admin/masters?view=recurringBookings` |
 | Hospitals & holidays | `/admin/masters?view=hospitals` (List or Calendar) |
 | Surgeon profile | `/admin/masters/surgeons/<surgeonId>` (Ms A. Reid: `S-REID`) |
-| Surgeons' rooms | `/admin/masters?view=surgeonRooms` |
 | Surgeon with a PA | `/admin/masters/surgeons/S-DALGETY` (Dr H. Dalgety, Avonhead ENT: Bev, PA) |
 | Anaesthetist record | `/admin/masters/anaesthetists/<anaesthetistId>` (Dr Priya Sharma: `41267`) |
 | Audit | `/admin/audit` |

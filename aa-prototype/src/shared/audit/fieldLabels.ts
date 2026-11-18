@@ -187,18 +187,16 @@ export const FIELD_LABELS: Record<string, string> = {
   hpiId: 'HPI CPN',
   active: 'Active',
 
-  // --- Surgeons, rooms, groups, hospitals (catch-up Phase 17) ---------------
+  // --- Surgeons, groups, hospitals (catch-up Phase 17) ---------------------
   contactEmail: 'Contact email',
   // Catch-up Phase 18a: a surgeon's or a Contract's specialties and a Contract's tag, audited by name.
   specialties: 'Specialties',
   fundingTag: 'Funding tag',
   funder: 'Funder',
-  roomId: "Surgeons' room",
-  // Catch-up Phase 17a: a surgeon's rooms by name, in order (the main room first), and a room's contacts.
-  rooms: 'Rooms',
-  contact: 'Contact',
-  for: 'For',
-  role: 'Role',
+  // Catch-up Phase 17b: the surgeon's practice name and contacts (no surgeons' rooms).
+  practiceName: 'Practice',
+  personalContact: 'Personal contact',
+  officeContacts: 'Office contacts',
   medicalRegistrationNumber: 'NZ medical registration number',
   memberSurgeonIds: 'Members',
 

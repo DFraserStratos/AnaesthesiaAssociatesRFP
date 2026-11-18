@@ -40,7 +40,6 @@ export type PayerId = string
 export type AnaesthetistId = string
 export type HospitalId = string
 export type SurgeonId = string
-export type SurgeonRoomId = string
 export type SurgeonGroupId = string
 export type PairingPreferenceId = string
 export type InsurerId = string
@@ -374,56 +373,45 @@ export interface Surgeon {
    */
   specialtyIds: SpecialtyId[]
   /**
-   * The surgeon's rooms (US-13.6.1, US-13.6.2; OQ-128 answered, D75; catch-up
-   * Phase 17a): one or more, no duplicates, in order, **the first the main
-   * room**. A room's surgeons are derived from this field, never stored on the
-   * room. Read only through `roomsForSurgeon`, `mainRoomOf` and
-   * `surgeonsInRoom` (`domain/surgeons.ts`).
+   * The practice name as the office knows it (US-13.6.2; catch-up Phase 17b,
+   * D74): plain text for the office to read, nothing depends on it. A surgeon
+   * at two practices holds both names, the main one first. Absent when blank.
    */
-  roomIds: SurgeonRoomId[]
+  practiceName?: string
+  /**
+   * The surgeon's own name, email and phone (US-13.6.5; catch-up Phase 17b):
+   * always present, any field blank. Never the To of an office email.
+   */
+  personalContact: SurgeonContact
+  /**
+   * The surgeon's office contacts (a practice manager, PA or shared inbox;
+   * US-13.6.5, D74), in order; the first with an email is the office's
+   * default To. Empty when none; never an all-blank set. Read for an address
+   * only through `officeAddressFor` (`domain/surgeonContacts.ts`;
+   * `officeAddressGuard.test.ts` keeps it so).
+   */
+  officeContacts: SurgeonContact[]
   /**
    * The HPI CPN: the Health Provider Index Common Person Number, the
    * surgeon's unique index (OQ-52), unique across every practitioner
-   * (surgeons and anaesthetists). Stored trimmed and upper-cased. A
-   * practitioner identifier, never the patient's NHI.
+   * (surgeons and anaesthetists) when held. Stored trimmed and upper-cased.
+   * Optional (OQ-129, D76): admin staff fill it in, absent until then; whether
+   * it is ever required is `surgeonHpiCpnRequired()` (OQ-143). A practitioner
+   * identifier, never the patient's NHI.
    */
-  hpiId: string
+  hpiId?: string
   /** NZ medical registration number, held for information only. */
   medicalRegistrationNumber?: string
 }
 
-/** A surgeons' room (US-13.6.1): the practice that books with AA, with its contacts. */
-export interface SurgeonRoom {
-  id: SurgeonRoomId
-  name: string
-  /**
-   * The room's shared inbox (catch-up Phase 17a, DM-60): optional, absent when
-   * the practice gives none (never `''`). Resolved for the office's emails only
-   * through `domain/roomContacts.ts`.
-   */
-  contactEmail?: string
-  /** Optional, absent when the practice gives none (never `''`). */
-  phone?: string
-  /** Practice manager and PA contacts (US-13.6.5; OQ-127 default, D74, provisional). Absent or empty when none. */
-  contacts?: RoomContact[]
-}
-
-/** A room contact's role (US-13.6.5). Labels in `ROOM_CONTACT_ROLE_LABELS`. */
-export type RoomContactRole = 'PRACTICE_MANAGER' | 'PA'
-
 /**
- * A practice manager or PA (US-13.6.5; catch-up Phase 17a). Held on the room
- * (OQ-127 part 1's default, D74, provisional); `forSurgeonId`, when set, names
- * one surgeon whose `roomIds` include this room, and is the only owner field,
- * so moving contacts to the surgeon later is a small change. Never the To of
- * an office email. No phone.
+ * One contact on a surgeon (US-13.6.5; catch-up Phase 17b, DM-60): a name,
+ * email and phone, each absent when blank (never `''`).
  */
-export interface RoomContact {
-  id: string
-  name: string
-  email: string
-  role: RoomContactRole
-  forSurgeonId?: SurgeonId
+export interface SurgeonContact {
+  name?: string
+  email?: string
+  phone?: string
 }
 
 /** A named group of surgeons (US-13.4.1), beside `organisations`; Phase 18's holders may link to it. */

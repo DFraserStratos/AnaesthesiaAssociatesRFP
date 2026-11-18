@@ -1,27 +1,33 @@
 /**
- * Surgeon master data (catch-up Phase 17; FT-13.6, US-13.6.1, US-13.6.2,
- * US-13.4.1): surgeons, surgeons' rooms and surgeon groups. Office-only, one
- * audited `mutate()` commit each, plain-English refusals. No delete or
- * deactivate yet (Phase 42).
+ * Surgeon master data (catch-up Phase 17; FT-13.6, US-13.6.2, US-13.4.1):
+ * surgeons and surgeon groups. Office-only, one audited `mutate()` commit
+ * each, plain-English refusals. No delete or deactivate yet (Phase 42).
  *
- * The surgeon's HPI CPN (OQ-52) is required, stored trimmed and upper-cased,
- * shape-checked, and unique across every practitioner, surgeons and
- * anaesthetists alike. A room's surgeons are derived from `Surgeon.roomIds`.
- *
- * Catch-up Phase 17a (DM-60; OQ-128 answered, D75): a surgeon belongs to one
- * or more rooms, in order, the first the main room (none, or an unknown one,
- * is refused; duplicates are dropped); a room's email and phone are optional,
- * absent when blank, and audit as '' when cleared. Taking a room off a surgeon
- * turns that room's contacts named for them into whole-room contacts.
+ * Catch-up Phase 17b (D74, D76; OQ-143's default): the system keeps no
+ * surgeons' rooms. A surgeon holds a practice name (plain text), one personal
+ * contact and one or more office contacts, each cleaned (blank fields
+ * dropped), a non-blank email shape-checked and named in the refusal, and an
+ * all-blank office set dropped. The HPI CPN is optional unless
+ * `surgeonHpiCpnRequired()` says otherwise (never, today): blank is held as
+ * absent; a number held is shape-checked and unique across every
+ * practitioner, surgeons and anaesthetists alike. The anaesthetist's HPI CPN
+ * stays mandatory in `mastersActions.ts` (catch-up Phase 26).
  *
  * Catch-up Phase 18a (US-13.6.6): a surgeon holds one or more specialties from
  * AA's list, required here (not only in the form): a save with none, or with
  * an unknown one, is refused. The audit prints them by name.
  */
 
-import type { RoomContact, Surgeon, SurgeonGroup, SurgeonRoom } from '../domain/types'
-import { WHOLE_ROOM_LABEL } from '../domain/roomContacts'
-import { HPI_CPN_INVALID, hpiCpnHolder, isPlausibleEmail, isPlausibleHpiCpn, normaliseHpiCpn } from '../domain/surgeons'
+import type { Surgeon, SurgeonContact, SurgeonGroup } from '../domain/types'
+import {
+  HPI_CPN_INVALID,
+  hpiCpnHolder,
+  isPlausibleEmail,
+  isPlausibleHpiCpn,
+  normaliseHpiCpn,
+  surgeonHpiCpnRequired,
+} from '../domain/surgeons'
+import { cleanContact, isBlankContact } from '../domain/surgeonContacts'
 import { cleanSpecialtyIds, specialtyNames } from '../domain/specialties'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
@@ -34,10 +40,20 @@ export interface SurgeonFields {
   name: string
   /** One or more, from AA's list; the first is shown first. */
   specialtyIds: string[]
-  /** One or more (catch-up Phase 17a, D75), in order, the first the main room; duplicates are dropped. */
-  roomIds: readonly string[]
-  hpiId: string
+  /** Plain text; blank holds none. */
+  practiceName?: string
+  /** The surgeon's own contact; any field blank. */
+  personalContact?: SurgeonContact
+  /** In order, the first with an email the office's default To; all-blank sets are dropped. */
+  officeContacts?: readonly SurgeonContact[]
+  /** Blank holds none (OQ-129, D76) unless `surgeonHpiCpnRequired()`. */
+  hpiId?: string
   medicalRegistrationNumber?: string
+}
+
+/** The refusal for a contact's malformed email, naming the contact ("Personal contact", "Office contact 2"). */
+function invalidContactEmail(label: string): Outcome<Omit<Surgeon, 'id'>> {
+  return refuse('invalidEmail', `${label}: that email does not look right. Use the form name@example.co.nz.`)
 }
 
 function cleanSurgeonFields(
@@ -49,40 +65,78 @@ function cleanSurgeonFields(
   if (name === '') return refuse('nameRequired', 'A surgeon name is required.')
   const specialties = cleanSpecialtyIds(fields.specialtyIds, state.masters.specialties)
   if (!specialties.ok) return refuse(specialties.code, specialties.message)
-  const roomIds = [...new Set(fields.roomIds)]
-  if (roomIds.length === 0) return refuse('roomRequired', "Choose at least one surgeons' room.")
-  if (roomIds.some((id) => state.masters.surgeonRooms[id] === undefined)) {
-    return refuse('notFound', "One of the chosen surgeons' rooms was not found.")
+  const personalContact = cleanContact(fields.personalContact)
+  if (personalContact.email !== undefined && !isPlausibleEmail(personalContact.email)) {
+    return invalidContactEmail('Personal contact')
   }
-  const hpiId = normaliseHpiCpn(fields.hpiId)
-  if (hpiId === '') return refuse('hpiCpnRequired', 'An HPI CPN is required. It is the surgeon\'s unique number on the Health Provider Index.')
-  if (!isPlausibleHpiCpn(hpiId)) {
-    return refuse('invalidHpiCpn', HPI_CPN_INVALID)
+  const officeContacts: SurgeonContact[] = []
+  const given = fields.officeContacts ?? []
+  for (let i = 0; i < given.length; i += 1) {
+    if (isBlankContact(given[i])) continue
+    const contact = cleanContact(given[i])
+    if (contact.email !== undefined && !isPlausibleEmail(contact.email)) return invalidContactEmail(`Office contact ${i + 1}`)
+    officeContacts.push(contact)
   }
-  const holder = hpiCpnHolder(state.masters, hpiId, excludeSurgeonId !== undefined ? { surgeonId: excludeSurgeonId } : undefined)
-  if (holder !== null) return refuse('duplicateHpiCpn', `That HPI CPN already belongs to ${holder.name}.`)
+  const hpiId = normaliseHpiCpn(fields.hpiId ?? '')
+  if (hpiId === '' && surgeonHpiCpnRequired()) {
+    return refuse('hpiCpnRequired', "An HPI CPN is required. It is the surgeon's unique number on the Health Provider Index.")
+  }
+  if (hpiId !== '') {
+    if (!isPlausibleHpiCpn(hpiId)) return refuse('invalidHpiCpn', HPI_CPN_INVALID)
+    const holder = hpiCpnHolder(state.masters, hpiId, excludeSurgeonId !== undefined ? { surgeonId: excludeSurgeonId } : undefined)
+    if (holder !== null) return refuse('duplicateHpiCpn', `That HPI CPN already belongs to ${holder.name}.`)
+  }
+  const practiceName = fields.practiceName?.trim() ?? ''
   const registration = fields.medicalRegistrationNumber?.trim() ?? ''
   return ok({
     name,
     specialtyIds: specialties.ids,
-    roomIds,
-    hpiId,
+    ...(practiceName !== '' ? { practiceName } : {}),
+    personalContact,
+    officeContacts,
+    ...(hpiId !== '' ? { hpiId } : {}),
     ...(registration !== '' ? { medicalRegistrationNumber: registration } : {}),
   })
 }
 
+/** A contact as the audit prints it: "name · email · phone", blanks left out; "None" when all are blank. */
+export function contactAuditText(contact: SurgeonContact | undefined): string {
+  const c = cleanContact(contact)
+  const parts = [c.name, c.email, c.phone].filter((v): v is string => v !== undefined)
+  return parts.length === 0 ? 'None' : parts.join(' · ')
+}
+
+/** The audited fields of a surgeon, in display order. */
+const AUDITED = ['name', 'specialtyIds', 'practiceName', 'personalContact', 'officeContacts', 'hpiId', 'medicalRegistrationNumber'] as const
+type AuditedKey = (typeof AUDITED)[number]
+
 /**
- * A surgeon's audit values with the specialties (`specialties: ['ENT']`) and
- * the rooms (`rooms: ['Avonhead ENT']`, in order, the main room first) as
- * names, never ids.
+ * One audited field as text the History shows: specialties by name, a contact
+ * as "name · email · phone", office contacts one per line, a blank practice
+ * or registration as '' and a blank HPI CPN as "None" (never `undefined`).
  */
-function auditValues(values: Partial<Omit<Surgeon, 'id'>>, state: Pick<AppState, 'masters'>): Record<string, unknown> {
-  const { specialtyIds, roomIds, ...rest } = values
-  return {
-    ...rest,
-    ...(specialtyIds !== undefined ? { specialties: specialtyNames(state.masters, specialtyIds) } : {}),
-    ...(roomIds !== undefined ? { rooms: roomIds.map((id) => state.masters.surgeonRooms[id]?.name ?? id) } : {}),
+function auditValue(key: AuditedKey, surgeon: Omit<Surgeon, 'id'>, state: Pick<AppState, 'masters'>): unknown {
+  switch (key) {
+    case 'specialtyIds':
+      return specialtyNames(state.masters, surgeon.specialtyIds)
+    case 'personalContact':
+      return contactAuditText(surgeon.personalContact)
+    case 'officeContacts':
+      return surgeon.officeContacts.length === 0 ? 'None' : surgeon.officeContacts.map(contactAuditText)
+    case 'hpiId':
+      return surgeon.hpiId ?? 'None'
+    default:
+      return surgeon[key] ?? ''
   }
+}
+
+/** The audit key a field is recorded under (`specialties` for `specialtyIds`, as 18a left it). */
+function auditKey(key: AuditedKey): string {
+  return key === 'specialtyIds' ? 'specialties' : key
+}
+
+function auditRecord(keys: readonly AuditedKey[], surgeon: Omit<Surgeon, 'id'>, state: Pick<AppState, 'masters'>): Record<string, unknown> {
+  return Object.fromEntries(keys.map((k) => [auditKey(k), auditValue(k, surgeon, state)]))
 }
 
 /** Add a surgeon. Audited `surgeon.create`. */
@@ -96,7 +150,8 @@ export function createSurgeon(api: AppStoreApi, actor: Actor, fields: SurgeonFie
     const alloc = allocateId(s.counters, 'surgeon')
     id = alloc.id
     const surgeon: Surgeon = { id, ...cleaned.value }
-    metas.push({ entityType: 'surgeon', entityId: id, action: 'surgeon.create', after: auditValues(cleaned.value, s), stampBookingId: null })
+    const shown = AUDITED.filter((k) => k === 'hpiId' || k === 'personalContact' || k === 'officeContacts' || cleaned.value[k] !== undefined)
+    metas.push({ entityType: 'surgeon', entityId: id, action: 'surgeon.create', after: auditRecord(shown, cleaned.value, s), stampBookingId: null })
     return { masters: { ...s.masters, surgeons: { ...s.masters.surgeons, [id]: surgeon } }, counters: alloc.counters }
   })
   return ok({ id })
@@ -111,143 +166,20 @@ export function editSurgeon(api: AppStoreApi, actor: Actor, surgeonId: string, f
   const cleaned = cleanSurgeonFields(state, fields, surgeonId)
   if (!cleaned.ok) return cleaned
   const next: Surgeon = { id: surgeonId, ...cleaned.value }
-  const keys = ['name', 'specialtyIds', 'roomIds', 'hpiId', 'medicalRegistrationNumber'] as const
-  const changed = keys.filter((k) => JSON.stringify(existing[k] ?? '') !== JSON.stringify(next[k] ?? ''))
-  if (changed.length === 0) return ok(undefined)
-  // A room taken off the surgeon: its contacts named for them become whole-room
-  // contacts in the same commit, so no contact names a surgeon outside its room.
-  const leftRooms = existing.roomIds.filter((id) => !next.roomIds.includes(id))
-  const roomPatches: Record<string, SurgeonRoom> = {}
-  const metas: MutationMeta[] = [
-    {
-      entityType: 'surgeon',
-      entityId: surgeonId,
-      action: 'surgeon.update',
-      before: auditValues(Object.fromEntries(changed.map((k) => [k, existing[k] ?? ''])), state),
-      after: auditValues(Object.fromEntries(changed.map((k) => [k, next[k] ?? ''])), state),
-      stampBookingId: null,
-    },
-  ]
-  for (const roomId of leftRooms) {
-    const room = state.masters.surgeonRooms[roomId]
-    const stale = (room?.contacts ?? []).filter((c) => c.forSurgeonId === surgeonId)
-    if (room === undefined || stale.length === 0) continue
-    // A named contact whose whole-room twin (same email and role) is already on
-    // the room is merged into it (removed), so the room never holds a duplicate.
-    const wholeRoom = (room.contacts ?? []).filter((c) => c.forSurgeonId === undefined)
-    const twin = (c: RoomContact) => wholeRoom.some((w) => w.email.toLowerCase() === c.email.toLowerCase() && w.role === c.role)
-    const contacts: RoomContact[] = []
-    for (const c of room.contacts ?? []) {
-      if (c.forSurgeonId !== surgeonId) {
-        contacts.push(c)
-        continue
-      }
-      if (twin(c)) {
-        metas.push({ entityType: 'surgeonRoom', entityId: roomId, action: 'roomContact.remove', before: { contact: c.name, for: existing.name }, stampBookingId: null })
-        continue
-      }
-      const cleared = withoutSurgeon(c)
-      contacts.push(cleared)
-      wholeRoom.push(cleared)
-      metas.push({
-        entityType: 'surgeonRoom',
-        entityId: roomId,
-        action: 'roomContact.update',
-        before: { contact: c.name, for: existing.name },
-        after: { contact: c.name, for: WHOLE_ROOM_LABEL },
-        stampBookingId: null,
-      })
-    }
-    roomPatches[roomId] = { ...room, contacts }
-  }
-  mutate(api, actor, metas, (s) => ({
-    masters: {
-      ...s.masters,
-      surgeons: { ...s.masters.surgeons, [surgeonId]: next },
-      surgeonRooms: { ...s.masters.surgeonRooms, ...roomPatches },
-    },
-  }))
-  return ok(undefined)
-}
-
-function withoutSurgeon(contact: RoomContact): RoomContact {
-  const { forSurgeonId: _dropped, ...rest } = contact
-  return rest
-}
-
-// ---------------------------------------------------------------------------
-// Surgeons' rooms
-// ---------------------------------------------------------------------------
-
-export interface SurgeonRoomFields {
-  name: string
-  /** Optional (catch-up Phase 17a, DM-60): blank holds no email. */
-  contactEmail?: string
-  /** Optional: blank holds no phone. */
-  phone?: string
-}
-
-/** The room's own fields; its contacts are kept by the contact actions, never here. */
-type RoomOwnFields = Pick<SurgeonRoom, 'name' | 'contactEmail' | 'phone'>
-
-function cleanRoomFields(fields: SurgeonRoomFields): Outcome<RoomOwnFields> {
-  const name = fields.name.trim()
-  if (name === '') return refuse('nameRequired', 'A room name is required.')
-  const contactEmail = fields.contactEmail?.trim() ?? ''
-  if (contactEmail !== '' && !isPlausibleEmail(contactEmail)) {
-    return refuse('invalidEmail', 'That contact email does not look right. Use the form name@example.co.nz.')
-  }
-  const phone = fields.phone?.trim() ?? ''
-  return ok({ name, ...(contactEmail !== '' ? { contactEmail } : {}), ...(phone !== '' ? { phone } : {}) })
-}
-
-/** Add a surgeons' room. Audited `surgeonRoom.create`. */
-export function createSurgeonRoom(api: AppStoreApi, actor: Actor, fields: SurgeonRoomFields): Outcome<{ id: string }> {
-  if (actor.role !== 'office') return refuse('officeOnly', "Only the office can add a surgeons' room.")
-  const cleaned = cleanRoomFields(fields)
-  if (!cleaned.ok) return cleaned
-  const metas: MutationMeta[] = []
-  let id = ''
-  mutate(api, actor, metas, (s) => {
-    const alloc = allocateId(s.counters, 'surgeonRoom')
-    id = alloc.id
-    metas.push({ entityType: 'surgeonRoom', entityId: id, action: 'surgeonRoom.create', after: { ...cleaned.value }, stampBookingId: null })
-    return {
-      masters: { ...s.masters, surgeonRooms: { ...s.masters.surgeonRooms, [id]: { id, ...cleaned.value } } },
-      counters: alloc.counters,
-    }
-  })
-  return ok({ id })
-}
-
-/** Edit a surgeons' room. Membership is changed from the surgeon, never here. Audited `surgeonRoom.update`. */
-export function editSurgeonRoom(api: AppStoreApi, actor: Actor, roomId: string, fields: SurgeonRoomFields): Outcome {
-  if (actor.role !== 'office') return refuse('officeOnly', "Only the office can edit a surgeons' room.")
-  const existing = api.getState().masters.surgeonRooms[roomId]
-  if (existing === undefined) return refuse('notFound', 'Room not found.')
-  const cleaned = cleanRoomFields(fields)
-  if (!cleaned.ok) return cleaned
-  const next: SurgeonRoom = {
-    id: roomId,
-    ...cleaned.value,
-    ...(existing.contacts !== undefined ? { contacts: existing.contacts } : {}),
-  }
-  const keys = ['name', 'contactEmail', 'phone'] as const
-  // An absent email or phone audits as '' (never `undefined`).
-  const changed = keys.filter((k) => (existing[k] ?? '') !== (next[k] ?? ''))
+  const changed = AUDITED.filter((k) => JSON.stringify(existing[k] ?? '') !== JSON.stringify(next[k] ?? ''))
   if (changed.length === 0) return ok(undefined)
   mutate(
     api,
     actor,
     {
-      entityType: 'surgeonRoom',
-      entityId: roomId,
-      action: 'surgeonRoom.update',
-      before: Object.fromEntries(changed.map((k) => [k, existing[k] ?? ''])),
-      after: Object.fromEntries(changed.map((k) => [k, next[k] ?? ''])),
+      entityType: 'surgeon',
+      entityId: surgeonId,
+      action: 'surgeon.update',
+      before: auditRecord(changed, existing, state),
+      after: auditRecord(changed, next, state),
       stampBookingId: null,
     },
-    (s) => ({ masters: { ...s.masters, surgeonRooms: { ...s.masters.surgeonRooms, [roomId]: next } } }),
+    (s) => ({ masters: { ...s.masters, surgeons: { ...s.masters.surgeons, [surgeonId]: next } } }),
   )
   return ok(undefined)
 }

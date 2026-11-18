@@ -6,46 +6,52 @@
     {
       "name": "surgeon-contacts",
       "app": "admin",
-      "caption": "Practice manager and PA contacts shown on the surgeon's profile, provisional until AA confirms where contacts belong",
+      "caption": "The surgeon's office contacts shown on their profile, with the practice and personal contact",
       "start": "/admin/masters/surgeons/S-DALGETY",
       "states": [
         {
           "state": "profile",
-          "caption": "Practice manager and PA contacts shown on the surgeon's profile: Bev, PA for Dr H. Dalgety, with a name and email. Provisional until AA confirms where contacts belong",
+          "caption": "Office contacts on Dr H. Dalgety's profile: Bev first, with a name and email, then the Avonhead ENT inbox",
           "steps": [
             {
               "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=surgeon-contacts]"
+            "[data-shot=surgeon-office-contacts-card]"
           ]
         },
         {
           "state": "add",
-          "caption": "The office adds a contact with a name, email and role, for the whole room or one surgeon (provisional)",
+          "caption": "The office adds another office contact on the surgeon's edit sheet with the plus button",
           "steps": [
             {
-              "click": "[data-shot=room-contact-add]"
+              "click": "role=button[name=\"Edit details\"]"
             },
             {
-              "wait": "[data-shot=room-contact-sheet]"
+              "wait": "[data-shot=surgeon-edit-sheet]"
+            },
+            {
+              "click": "[data-shot=office-contact-add] >> role=button"
+            },
+            {
+              "wait": "[data-shot=surgeon-office-contacts] [data-office-contact=\"3\"]"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[data-shot=surgeon-office-contacts]"
           ]
         }
       ]
     },
     {
-      "name": "whole-room",
+      "name": "two-practices",
       "app": "admin",
-      "caption": "A PA for this surgeon and a PA for the whole room, on Mr I. Forsythe's profile (provisional)",
-      "start": "/admin/masters/surgeons/S-FORSYTHE",
+      "caption": "A surgeon who works from two practices holds an office contact for each, on Mr N. Wainwright's profile",
+      "start": "/admin/masters/surgeons/S-WAINWRIGHT",
       "states": [
         {
           "steps": [
@@ -54,7 +60,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=surgeon-contacts]"
+            "[data-shot=surgeon-office-contacts-card]"
           ]
         }
       ]

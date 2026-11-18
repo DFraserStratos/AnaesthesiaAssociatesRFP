@@ -39,7 +39,6 @@ import type {
   FundingTag,
   Surgeon,
   SurgeonGroup,
-  SurgeonRoom,
 } from '../types'
 import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
 import { SEED_MODIFIERS } from './modifiers'
@@ -61,9 +60,8 @@ import {
   SURG,
   SURGEONS,
   SURGEON_GROUPS,
-  SURGEON_ROOMS,
 } from './cast'
-import { DIRECTORY_ROOMS, DIRECTORY_SURGEONS } from './specialistDirectory'
+import { DIRECTORY_SURGEONS } from './specialistDirectory'
 import { buildOfficePrivate } from './officePrivate'
 import { CONTRACT, CONTRACTS } from './contracts'
 import { PARTIES, PARTY } from './parties'
@@ -109,7 +107,7 @@ export { RECORDED_WINDOW } from './recordedWindow'
 export { SEED_DRAFT_LIST_IDS, SEED_DRAFT_LISTS, SEED_CLASH_RUN_ISO, SEED_CLASH_BY, CANNED_DRAFT_LIST_REQUESTS, CANNED_DAY_DRAFT_LISTS } from './draftLists'
 export { SEED_LEAVE } from './availabilityAndHolidays'
 export { slotRng, hashStringToSeed } from './slotHash'
-export { ANAE, HOSP, INS, SURG, ORG, ROOM, ANAESTHETISTS, SEED_SLOT_STATUSES } from './cast'
+export { ANAE, HOSP, INS, SURG, ORG, ANAESTHETISTS, SEED_SLOT_STATUSES } from './cast'
 
 /** The seeded availability statuses keyed by ID (generator input for tests and tools). */
 export function seedSlotStatusRecords(): Record<string, SlotStatus> {
@@ -141,8 +139,6 @@ export const SEED = 20260721
 export interface SeedMasters {
   anaesthetists: Record<string, Anaesthetist>
   surgeons: Record<string, Surgeon>
-  /** Surgeons' rooms (catch-up Phase 17, US-13.6.1); members derived from `Surgeon.roomIds`. */
-  surgeonRooms: Record<string, SurgeonRoom>
   /** Surgeon groups (catch-up Phase 17, US-13.4.1), beside `organisations`. */
   surgeonGroups: Record<string, SurgeonGroup>
   hospitals: Record<string, Hospital>
@@ -644,7 +640,6 @@ function buildSeedInternal(): SeedBuild {
     masters: {
       anaesthetists: anaesthetistsRec,
       surgeons: surgeonsRec,
-      surgeonRooms: byId([...SURGEON_ROOMS, ...DIRECTORY_ROOMS], (r) => r.id),
       surgeonGroups: byId(SURGEON_GROUPS, (g) => g.id),
       hospitals: hospitalsRec,
       parties: byId(PARTIES, (p) => p.id),

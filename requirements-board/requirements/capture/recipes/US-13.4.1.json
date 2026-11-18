@@ -1,7 +1,7 @@
 {
   "id": "US-13.4.1",
   "status": "partial",
-  "absentReason": "Anaesthetists, Contracts, Parties, recurring bookings, hospitals (with a contact email) and their holiday calendars (closures added, edited and deleted), surgeons, surgeons' rooms and surgeon groups are editable. Availability statuses are editable (added, renamed, recoloured, retired). The RVG modifier rows are as printed (AA's own can be added), and public holidays are held per hospital with no separate master calendar.",
+  "absentReason": "Anaesthetists, Contracts, Parties, recurring bookings, hospitals (with a contact email) and their holiday calendars (closures added, edited and deleted), surgeons (with their practice and contacts) and surgeon groups are editable. Availability statuses are editable (added, renamed, recoloured, retired). The RVG modifier rows are as printed (AA's own can be added), and public holidays are held per hospital with no separate master calendar.",
   "shots": [
     {
       "name": "master-data",
@@ -69,23 +69,10 @@
         },
         {
           "state": "surgeons",
-          "caption": "Master data, surgeons with their specialties, rooms, HPI CPN and pairing counts, editable",
+          "caption": "Master data, surgeons with their specialties, practice, office contact, HPI CPN and pairing counts, editable",
           "steps": [
             {
               "click": "[data-masters-view=surgeons]"
-            },
-            {
-              "wait": 500
-            }
-          ],
-          "highlight": []
-        },
-        {
-          "state": "surgeon-rooms",
-          "caption": "Master data, surgeons' rooms with contact email and phone where held, surgeons and contacts",
-          "steps": [
-            {
-              "click": "[data-masters-view=surgeonRooms]"
             },
             {
               "wait": 500

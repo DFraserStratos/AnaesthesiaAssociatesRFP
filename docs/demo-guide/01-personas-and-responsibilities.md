@@ -189,7 +189,7 @@ short-notice cover.
 7. Find a Free replacement anaesthetist and reassign the entire List for illness cover.
 8. Add internal day notes.
 9. Maintain schedule-related master data such as anaesthetists, recurring bookings and hospital
-   holidays (adding, editing and deleting closures), and surgeons, their rooms and groups, the office's private pairing preferences and the
+   holidays (adding, editing and deleting closures), and surgeons, their contacts and groups, the office's private pairing preferences and the
    anaesthetists' priority tiers.
 9a. Keep each anaesthetist's profile on their record (Master data, Anaesthetists, open a row: the
    Profile card's **Edit details**): rate per unit, phone, email, registration number, HPI CPN, bank
