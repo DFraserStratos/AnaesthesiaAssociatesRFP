@@ -35,6 +35,20 @@ Read in full before execution; update the verified result last. One writer at a 
     after it (agent-tool phases included).
 14. **Worktree versions:** B12 and B13 take their board version at merge time (master's version plus
     their bump; CHANGELOG entry on top; lock file regenerated with `npm install`).
+15. **Light phase review** (accepted decision 14; replaces the review step in every SPEC's execution
+    obligations and BUILD-BOOK Section 5's three-reviewer minimum). After implementation and initial
+    verification, launch **two fresh reviewer subagents on Sonnet** (`model: sonnet`), in parallel,
+    given the SPEC, the owned findings and the diff, not the session's conclusions:
+    - **Reviewer 1, completeness and correctness:** every owned finding and SPEC acceptance item is
+      met, and the changed code has no bugs, edge-case failures or tests that do not prove their claim.
+    - **Reviewer 2, quality plus the phase's lens** (security, data integrity and so on, as named in
+      the kick-off prompt).
+    If the phase's diff is small (under about 300 changed lines, tests excluded), **one** Sonnet
+    reviewer covering both briefs is enough. The session verifies every finding itself against the
+    code (no separate verifier agents), fixes confirmed issues, adds missing regression tests and
+    reruns the checks. No further reviewers unless a finding cannot be settled from the code; then at
+    most one more, recorded with its reason. B15 keeps its three closing lenses (B15-REQ-14), on
+    Sonnet.
 
 ## Phase ownership and sequencing gates
 
@@ -149,6 +163,10 @@ decisions" section and resolved in that phase's planning.
       - **B01-Q3, unsafe IDs: refuse only clearly unsafe ones**: a path separator (`/` or `\`),
         a `..` segment, NUL or another control character. No project ID pattern, so the shared
         kit keeps working with other projects' IDs.
+- 2026-11-19, user:
+  14. **Lighter phase reviews.** The user judged four reviewers per phase too heavy. Phases use
+      convention 15: two Sonnet reviewers (one for a small diff), verified by the session itself;
+      B15's three closing lenses run on Sonnet.
 
 ## Planning handoff
 

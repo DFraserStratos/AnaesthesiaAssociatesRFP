@@ -244,7 +244,9 @@ The quality and conventions lens (genericity, no project vocabulary in generic c
 About page in step with skills), the origin-security lens (outcome 6) and the agent-tools-truth lens
 (outcome 7, live-plan compatibility) are each covered, by a dedicated reviewer or explicitly assigned
 to one above. Reviewers return ranked findings with evidence and a failure scenario and persist them
-to files under `docs/board-fixes/review/`.
+to files under `docs/board-fixes/review/`. **Reviewers run on Sonnet** (`model: sonnet`; PROGRESS
+convention 15, accepted decision 14), the three named lenses only, with the other lenses assigned to
+them rather than given dedicated reviewers.
 
 **B15-REQ-15 Outcome verdicts.** Each of the seven programme outcomes gets a verdict, Met, Met with
 accepted deviations, or Not met, with the evidence and the findings, decisions and reviewer results

@@ -191,7 +191,7 @@ footer { margin:56px 0 40px; font-size:13px; color:var(--mist); }
     <div class="card"><b>2 · Decide</b><span>Settle the phase's decision gates and open questions with you; record them in PROGRESS.md.</span></div>
     <div class="card"><b>3 · Plan</b><span>Save IMPLEMENTATION.md beside the SPEC: choices, bites, checks, recovery.</span></div>
     <div class="card"><b>4 · Build</b><span>Small verified bites, a failing-then-passing test per finding, verify:board green.</span></div>
-    <div class="card"><b>5 · Review</b><span>Independent quality, completeness and correctness reviewers; fix what they confirm.</span></div>
+    <div class="card"><b>5 · Review</b><span>Two fresh Sonnet reviewers (one for a small diff): completeness and correctness; quality plus the phase's lens. The session verifies and fixes.</span></div>
     <div class="card"><b>6 · Record</b><span>PROGRESS entry last: every finding's disposition, doc facts, what later phases need. Commit; never push.</span></div>
   </div>
 
@@ -463,7 +463,7 @@ ${p.notes}
 
 Finish green: npm run verify:board from the repo root${agentTests}; Playwright specs you touch pass on a free port (never 5173, 5174, 5180 or 5181). Bump the board version and add a CHANGELOG entry. Update the doc lines your change affects and list them as Doc facts.
 
-After implementation and initial verification, launch independent adversarial subagents for: quality and maintainability; completeness against every SPEC requirement and acceptance item; bugs and correctness; and ${p.lens}. Verify their findings yourself, fix confirmed issues, add missing regression tests, and rerun the verification.
+${p.id==='B15' ? 'Run the closing reviewers as B15-REQ-14 sets out: the three named lenses only, as fresh subagents on Sonnet (model: sonnet). Triage and verify their findings yourself (B15-REQ-16).' : `After implementation and initial verification, run the light review (PROGRESS convention 15): two fresh reviewer subagents on Sonnet (model: sonnet), in parallel, given the SPEC, the owned findings and the diff, not your conclusions. Reviewer 1: completeness against every owned finding and SPEC acceptance item, plus bugs and correctness in the changed code. Reviewer 2: quality and maintainability, plus ${p.lens}. If the diff is small (under about 300 changed lines, tests excluded), one Sonnet reviewer covering both is enough. Verify each finding yourself against the code, fix confirmed issues, add missing regression tests, and rerun the verification.`}
 
 Update PROGRESS.md last: a phase entry with every owned finding's disposition (Fixed / Not reproducible at HEAD / Won't fix, which I must accept / Moved), what shipped, deviations, verification, review outcomes, touch-rights edits, Doc facts, and what later phases need. Update the phase's row in the status table. Commit only this phase's files, staged by path; never push. Do not mark the phase COMPLETE while required work remains.`;
 }
