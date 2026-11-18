@@ -11,6 +11,7 @@ import { UNASSIGNED_LANE, firstLaneName, type Artifact, type ArtifactRec, type C
 import { DEFAULT_CONFIG, componentNames, type BoardConfig, type ConfigPatch } from '../shared/config.ts'
 import { isOpenQuestion, isRetired, statusCodes } from '../shared/statuses.ts'
 import { ApiError, api } from './api.ts'
+import { fields, isBoolean, isStringArray, oneOf, readJson, writeJson } from './storage.ts'
 import { idMatch } from './itemSearch.ts'
 
 type PosPatch = Record<string, { x: number; y: number } | null>
@@ -602,10 +603,14 @@ export function ancestorsOf(index: Index, id: string): Item[] {
   return out
 }
 
+/** Everything under a card, each once, never the card itself, whatever parent cycles the data holds. */
 export function descendantsOf(index: Index, id: string): Item[] {
   const out: Item[] = []
+  const seen = new Set([id])
   const walk = (pid: string) => {
     for (const c of index.children.get(pid) ?? []) {
+      if (seen.has(c.id)) continue
+      seen.add(c.id)
       out.push(c)
       walk(c.id)
     }
@@ -645,13 +650,23 @@ const DEFAULT_PREFS: ViewPrefs = {
   collapsedLanes: [],
 }
 
+/**
+ * Saved view preferences, field by field (`storage.ts`): a field of the wrong type falls back alone.
+ * Only types are judged here; whether a saved status code still exists is `dropUnknownStatuses`'s
+ * call (B02's rule), never this one's.
+ */
+const prefsShape = fields<ViewPrefs>(DEFAULT_PREFS, {
+  statuses: isStringArray,
+  components: isStringArray,
+  types: isStringArray,
+  onlyWithQuestions: isBoolean,
+  showRetired: isBoolean,
+  boardMode: oneOf<BoardMode>('freeform', 'mapped'),
+  collapsedLanes: isStringArray,
+})
+
 function readPrefs(): ViewPrefs {
-  try {
-    const raw = localStorage.getItem(PREFS_KEY)
-    return raw ? { ...DEFAULT_PREFS, ...(JSON.parse(raw) as Partial<ViewPrefs>), search: '' } : DEFAULT_PREFS
-  } catch {
-    return DEFAULT_PREFS
-  }
+  return { ...readJson(PREFS_KEY, 'board view settings', DEFAULT_PREFS, prefsShape), search: '' }
 }
 
 interface ViewState extends ViewPrefs {
@@ -663,12 +678,8 @@ export const useView = create<ViewState>((set, get) => ({
   ...readPrefs(),
   set(patch) {
     set(patch)
-    try {
-      const { set: _s, clearFilters: _c, ...prefs } = get()
-      localStorage.setItem(PREFS_KEY, JSON.stringify(prefs))
-    } catch {
-      /* private window: prefs just don't persist */
-    }
+    const { set: _s, clearFilters: _c, ...prefs } = get()
+    writeJson(PREFS_KEY, prefs) // a private window: prefs just don't persist
   },
   clearFilters() {
     get().set({ search: '', statuses: [], components: [], types: [], onlyWithQuestions: false })

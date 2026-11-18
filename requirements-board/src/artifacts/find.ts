@@ -7,18 +7,26 @@
 /** How text in separate elements joins: SVG `<text>` elements are separate lines, a PDF text layer marks line ends with `<br>`, a document has its own whitespace. */
 export type Joint = 'svg' | 'pdf' | 'doc'
 
-export const normQuery = (q: string) => q.trim().replace(/\s+/g, ' ').toLowerCase()
+export const normQuery = (q: string) => normText(q.trim())
 
-/** Text as find reads it: lower case, every run of whitespace one space. */
+/**
+ * Text as find reads it: lower case, every run of whitespace one space. Each character is lowered
+ * on its own (as `findRanges` does), never the whole string at once, so a word-final sigma or a
+ * character whose lower case is longer ("İ" is two code units) reads the same everywhere and the
+ * count before a page is drawn equals the matches found on it.
+ */
 export function normText(s: string): string {
   let out = ''
   for (const ch of s) {
     if (/\s/.test(ch)) {
       if (out && !out.endsWith(' ')) out += ' '
-    } else out += ch.toLowerCase()
+    } else out += lower(ch)
   }
   return out
 }
+
+/** One character in lower case; a word-final sigma reads as any sigma, so "ς" typed finds "Σ". */
+const lower = (ch: string) => (ch === 'ς' ? 'σ' : ch.toLowerCase())
 
 /** Start offsets of every non-overlapping occurrence of `needle` in `hay`. */
 function occurrences(hay: string, needle: string): number[] {
@@ -39,32 +47,41 @@ export function findRanges(root: Node, query: string, joint: Joint, skip?: (n: T
   const needle = normQuery(query)
   if (!needle) return []
   let text = ''
-  const at: [Text, number][] = []
+  // For each code unit of `text`: the node and the source character it came from (start, end).
+  // A character whose lower case is longer than it gets one entry per unit, so offsets never drift.
+  const at: [Text, number, number][] = []
   let prev: Text | null = null
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
   for (let n = walker.nextNode() as Text | null; n; n = walker.nextNode() as Text | null) {
     if (n.parentElement?.closest('style, script, title') || skip?.(n)) continue
     if (prev && text && !text.endsWith(' ') && joins(prev, n, joint)) {
       text += ' '
-      at.push([n, 0])
+      at.push([n, 0, 0])
     }
     const t = n.data
-    for (let i = 0; i < t.length; i++) {
-      const ch = t[i]!
+    for (let i = 0; i < t.length; ) {
+      const ch = String.fromCodePoint(t.codePointAt(i)!)
+      const end = i + ch.length
       if (/\s/.test(ch)) {
-        if (!text || text.endsWith(' ')) continue
-        text += ' '
-      } else text += ch.toLowerCase()
-      at.push([n, i])
+        if (text && !text.endsWith(' ')) {
+          text += ' '
+          at.push([n, i, end])
+        }
+      } else {
+        const low = lower(ch)
+        text += low
+        for (let k = 0; k < low.length; k++) at.push([n, i, end])
+      }
+      i = end
     }
     prev = n
   }
   return occurrences(text, needle).map((i) => {
     const r = document.createRange()
     const [sn, so] = at[i]!
-    const [en, eo] = at[i + needle.length - 1]!
+    const [en, , eo] = at[i + needle.length - 1]!
     r.setStart(sn, so)
-    r.setEnd(en, Math.min(en.data.length, eo + 1))
+    r.setEnd(en, Math.min(en.data.length, eo))
     return r
   })
 }

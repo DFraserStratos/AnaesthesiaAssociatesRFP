@@ -24,6 +24,7 @@
  * old or new, because no recode may target a code that is a source in it or in an earlier recode
  * (`recodeProblems`).
  */
+import { stripBom } from './bom.ts'
 import type { BoardConfig } from './config.ts'
 import type { Item, Question } from './types.ts'
 
@@ -288,7 +289,7 @@ export interface Recode {
 export function parseRecodes(text: string | null): Recode[] {
   if (!text) return []
   try {
-    const raw: unknown = JSON.parse(text)
+    const raw: unknown = JSON.parse(stripBom(text))
     if (!Array.isArray(raw)) return []
     return raw.filter(isObj).map((r) => ({
       date: String(r.date ?? ''),

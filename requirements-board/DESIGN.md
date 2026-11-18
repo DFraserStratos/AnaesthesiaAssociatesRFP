@@ -64,8 +64,11 @@ UI copy (use a middot, a comma or "to").
 problem pill appears at the right while there is a problem, naming it ("Offline", "3 errors", "Card
 moves not saved") or, with more than one, counting them ("2 problems"). Amber while offline, since
 nothing is being saved, and offline leads its list; red otherwise. It opens one list grouped as
-Connection, Card moves and Checks. When the last problem clears, a green "All clear" shows for about
-three seconds and fades. Check notes are not problems: they never raise the pill and are read under
+Connection, Card moves, This page (a part of the page that failed to show, with Try again and Close
+card, and uncaught errors, dismissable), Saved preferences (a browser preference that was reset,
+dismissable) and Checks. A part of the page that fails shows its own quiet recovery panel in its
+place too; nothing else (no toast, no banner) reports a problem. When the last problem clears, a
+green "All clear" shows for about three seconds and fades. Check notes are not problems: they never raise the pill and are read under
 Checks on Settings (and under the errors in the pill's list).
 
 ## Cards

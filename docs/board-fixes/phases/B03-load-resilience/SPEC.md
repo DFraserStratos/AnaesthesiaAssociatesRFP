@@ -1,6 +1,6 @@
 # Phase B03: Bad data becomes an issue, never a crash or a silent omission
 
-**Status:** PLANNED
+**Status:** COMPLETE (2026-11-19; see PROGRESS.md)
 
 **Requirements:** R-10, R-11, R-47, R-48, R-49, R-50, R-51, R-52, R-53, R-65, R-66, R-121, R-122,
 R-160 (14 findings), each under "#### R-nn" in [FINDINGS.md](../../FINDINGS.md); systemic issue 5
@@ -475,7 +475,11 @@ implementation-planning conversation and record the answer there before building
 - **Boundary impact:** none on territories; it completes the issue-surface contract B06, B10 and
   B11 follow.
 
-Still open, besides D-06: B03-Q2 and B03-Q3 (below). B03-Q1, Q4, Q5 and Q6 are answered.
+**Answered 2026-11-19** (accepted decision 17, PROGRESS.md): D-06 both surfaces (recovery panel in
+place and a "This page" group in the problem pill; auto-retry on a catalogue change; copyable
+details; page-wide capture of uncaught errors; a reset browser preference mentioned), B03-Q2 the next
+save drops damaged layout entries, B03-Q3 a byte-order mark is tolerated in records and all three JSON
+files and kept on rewrite. B03-Q1, Q4, Q5 and Q6 were answered earlier.
 
 ### B03-Q1 · Freeform placement of cycle members
 

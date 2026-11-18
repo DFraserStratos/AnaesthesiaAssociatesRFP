@@ -13,7 +13,7 @@
 import { DEFAULT_CONFIG } from './config.ts'
 import { compareSiblings } from './ids.ts'
 import { retiredTest } from './statuses.ts'
-import { PARENT_TYPES, type Item } from './types.ts'
+import { parentTypesOf, type Item } from './types.ts'
 
 /** Is a card retired? The board passes its config's (`retiredTest(config)`); unset, the default config's. */
 export type RetiredTest = (it: Item) => boolean
@@ -49,7 +49,7 @@ export const laneOf = (it: Item): string | null => (it.type === 'story' ? it.swi
 /** Can `it` sit under `parent` (null: at the top, as an epic)? */
 export function canParent(it: Item, parent: Item | null): boolean {
   if (it.type === 'epic') return parent === null
-  return !!parent && parent.id !== it.id && PARENT_TYPES[it.type].includes(parent.type)
+  return !!parent && parent.id !== it.id && parentTypesOf(it.type).includes(parent.type)
 }
 
 /** The cards a slot index counts among at the destination, in drawing order. */

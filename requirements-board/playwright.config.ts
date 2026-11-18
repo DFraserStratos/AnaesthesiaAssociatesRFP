@@ -20,14 +20,14 @@ export default defineConfig({
   projects: [
     ...(REAL ? [{ name: 'real', testMatch: ['board-edges.spec.ts', 'artifacts-real.spec.ts'], use: { baseURL: 'http://localhost:5181' } }] : []),
     // One worker: every fixture spec resets the same folder, so two at once would race.
-    { name: 'fixture', testMatch: ['board-mapped.spec.ts', 'status-picker.spec.ts', 'question-delete.spec.ts', 'question-answer.spec.ts', 'question-step.spec.ts', 'board-search.spec.ts', 'item-links.spec.ts', 'item-delete.spec.ts', 'artifacts.spec.ts', 'sources.spec.ts', 'settings.spec.ts', 'diff.spec.ts', 'origin.spec.ts'], workers: 1, use: { baseURL: 'http://localhost:5182' } },
+    { name: 'fixture', testMatch: ['board-mapped.spec.ts', 'status-picker.spec.ts', 'question-delete.spec.ts', 'question-answer.spec.ts', 'question-step.spec.ts', 'board-search.spec.ts', 'item-links.spec.ts', 'item-delete.spec.ts', 'artifacts.spec.ts', 'sources.spec.ts', 'settings.spec.ts', 'diff.spec.ts', 'origin.spec.ts', 'bad-data.spec.ts'], workers: 1, use: { baseURL: 'http://localhost:5182' } },
   ],
   webServer: [
     // Its own change journal, so a test run never writes into the one beside the board on 5180.
-    ...(REAL ? [{ command: 'npx vite --port 5181 --strictPort', env: { HISTORY_DIR: join(tmpdir(), 'requirements-board-e2e-history') }, url: 'http://localhost:5181', reuseExistingServer: false }] : []),
+    ...(REAL ? [{ command: 'npx vite --port 5181 --strictPort', env: { HISTORY_DIR: join(tmpdir(), 'requirements-board-e2e-history'), PDF_FACTS_DIR: join(tmpdir(), 'requirements-board-e2e-pdf-facts') }, url: 'http://localhost:5181', reuseExistingServer: false }] : []),
     {
       command: `node e2e/fixtureCatalogue.ts "${FIXTURE_DIR}" && npx vite --port 5182 --strictPort`,
-      env: { REQUIREMENTS_DIR: FIXTURE_DIR },
+      env: { REQUIREMENTS_DIR: FIXTURE_DIR, PDF_FACTS_DIR: join(tmpdir(), 'requirements-board-e2e-pdf-facts') },
       url: 'http://localhost:5182',
       reuseExistingServer: false,
     },

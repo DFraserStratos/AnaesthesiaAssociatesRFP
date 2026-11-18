@@ -5,6 +5,7 @@
  */
 import { useCallback, useRef, useState } from 'react'
 import type { Entry } from '../../shared/diffModel.ts'
+import { isRecord, isString, readJson, writeJson, type Coerce } from '../storage.ts'
 
 const VIEWED_KEY = 'requirements-board:diff-viewed'
 const KEEP_COMPARISONS = 20
@@ -12,27 +13,40 @@ const KEEP_COMPARISONS = 20
 /** Ticked records by key, with the fingerprint each had when ticked. */
 export type Viewed = Record<string, string>
 
-function readStore(): Record<string, Viewed> {
-  try {
-    return JSON.parse(localStorage.getItem(VIEWED_KEY) ?? '{}') as Record<string, Viewed>
-  } catch {
+/** Comparisons by key, each an object of fingerprints; anything else is no ticks (FINDINGS R-51). */
+const viewedShape: Coerce<Record<string, Viewed>> = (raw, bad) => {
+  if (!isRecord(raw)) {
+    bad()
     return {}
   }
+  const out: Record<string, Viewed> = {}
+  for (const [comparison, ticks] of Object.entries(raw)) {
+    if (!isRecord(ticks)) {
+      bad()
+      continue
+    }
+    const viewed: Viewed = {}
+    for (const [key, fp] of Object.entries(ticks)) {
+      if (isString(fp)) viewed[key] = fp
+      else bad()
+    }
+    out[comparison] = viewed
+  }
+  return out
 }
+
+const readStore = () => readJson(VIEWED_KEY, "Diff review's Viewed ticks", {}, viewedShape)
 
 const readViewed = (comparison: string): Viewed => (comparison ? (readStore()[comparison] ?? {}) : {})
 
+/** Save one comparison's ticks; a damaged stored value is replaced, so the repair sticks. A blocked store keeps them until the page closes. */
 function writeViewed(comparison: string, viewed: Viewed) {
-  try {
-    const store = readStore()
-    delete store[comparison]
-    store[comparison] = viewed
-    const keys = Object.keys(store)
-    for (const k of keys.slice(0, Math.max(0, keys.length - KEEP_COMPARISONS))) delete store[k]
-    localStorage.setItem(VIEWED_KEY, JSON.stringify(store))
-  } catch {
-    // Private window or storage blocked: Viewed lasts until the page closes.
-  }
+  const store = readStore()
+  delete store[comparison]
+  store[comparison] = viewed
+  const keys = Object.keys(store)
+  for (const k of keys.slice(0, Math.max(0, keys.length - KEEP_COMPARISONS))) delete store[k]
+  writeJson(VIEWED_KEY, store)
 }
 
 /** Ticked, and not changed since. */

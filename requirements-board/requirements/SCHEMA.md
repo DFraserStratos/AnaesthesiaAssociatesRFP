@@ -441,7 +441,8 @@ entry is a `check` error and is left at its default (a pattern that does not com
 ## Rules the tools enforce
 
 The check (`npm run check` in the board) and every save in the board run the same checks: unique IDs,
-ID shape per type, file name matches ID, parent exists and has the right type, vocabulary values
+ID shape per type, file name matches ID, parent exists and has the right type, no card is (through its
+parents) under itself, vocabulary values
 (statuses, and the components and screenshot apps `board.config.json` lists),
 `affects` targets exist, `related` entries are existing items (not the item itself, not a question),
 a text link to an epic, feature or story names one that exists, image files exist under `assets/`,

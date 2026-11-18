@@ -5,6 +5,7 @@
  * file the board runs on neutral defaults and accepts any component or screenshot app. Item types
  * and question kinds are behaviour, not vocabulary, so a project can reword a kind but not add one.
  */
+import { stripBom } from './bom.ts'
 import {
   DEFAULT_ITEM_STATUSES,
   DEFAULT_QUESTION_STATUSES,
@@ -168,7 +169,7 @@ export function parseConfig(text: string, recodes: readonly Recode[] = []): { co
   const problems: string[] = []
   let raw: unknown
   try {
-    raw = JSON.parse(text)
+    raw = JSON.parse(stripBom(text))
   } catch (e) {
     const problem = `${CONFIG_FILE} is not valid JSON (${(e as Error).message})`
     return { config: unreadable(problem), problems: [problem] }

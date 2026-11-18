@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { existsSync, readFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { cataloguePlugin } from './server/cataloguePlugin.ts'
 
 // A second worktree's ports: a git-ignored `.lane.env` (KEY=value lines) beside the board folder
@@ -27,6 +29,8 @@ export default defineConfig({
   optimizeDeps: { include: ['mermaid', 'pdfjs-dist'] },
   test: {
     environment: 'node',
+    // Tests keep their own stored PDF facts, apart from the real board's `.pdf-facts/`.
+    env: { PDF_FACTS_DIR: join(tmpdir(), 'requirements-board-test-pdf-facts') },
     include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],
   },
 })

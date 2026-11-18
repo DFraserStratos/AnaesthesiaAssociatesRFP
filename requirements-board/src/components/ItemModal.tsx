@@ -4,7 +4,7 @@ import { tidyText } from '../../shared/files.ts'
 import { plainText } from '../../shared/links.ts'
 import { planDelete, type DeletePlan } from '../../shared/remove.ts'
 import { defaultStatus, isRetired, isRetiredStatus, roleCode, statusClasses } from '../../shared/statuses.ts'
-import { TYPE_LABEL, firstLaneName, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
+import { typeLabel, firstLaneName, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
 import { setLeaveGuard, useEditOnOpen, useOpen } from '../nav.ts'
 import { ancestorsOf, openQuestionsFor, readingWalk, relatedFor, useCatalogue, useComponents, useConfig, useIndex, useShownIndex, useView, type Index } from '../store.ts'
@@ -220,7 +220,7 @@ const count = (n: number, one: string) => `${n} ${n === 1 ? one : one === 'story
 
 /** The delete question names everything that goes and everything that changes, and points at Retire for keeping a record. */
 function deleteConfirm(item: Item, plan: DeletePlan, onCancel: () => void, onConfirm: () => void): SheetConfirm {
-  const noun = TYPE_LABEL[item.type].toLowerCase()
+  const noun = typeLabel(item.type).toLowerCase()
   const under = plan.doomed.filter((i) => i.id !== item.id)
   const features = under.filter((i) => i.type === 'feature').length
   const stories = under.filter((i) => i.type === 'story').length

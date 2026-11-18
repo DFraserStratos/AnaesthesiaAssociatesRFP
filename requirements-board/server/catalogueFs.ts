@@ -2,16 +2,17 @@
  * Node-side access to the requirements folder: load everything, write one record
  * atomically. Used by the dev-server API and the npm scripts.
  */
-import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
+import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, readFileSync, readSync, renameSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { hasBom, stripBom } from '../shared/bom.ts'
 import { checkCatalogue } from '../shared/check.ts'
 import { ParseError, lintArtifact, lintFrontmatter, lintItem, lintQuestion, parseArtifact, parseItem, parseQuestion, revOf, serialiseArtifact, serialiseItem, serialiseQuestion } from '../shared/files.ts'
 import { compareIds } from '../shared/ids.ts'
 import { CONFIG_FILE, DEFAULT_CONFIG, parseConfig, type BoardConfig } from '../shared/config.ts'
 import { RECODES_FILE, parseRecodes, type Recode } from '../shared/statuses.ts'
 import type { Artifact, ArtifactRec, CatalogueSnapshot, Issue, Item, Layout, Question, Rev } from '../shared/types.ts'
-import { artifactInfo } from './artifactFiles.ts'
+import { artifactInfo, primePdfs } from './artifactFiles.ts'
 import { linkOut as linkOutOf } from './realPaths.ts'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -47,7 +48,7 @@ export interface LoadedFile<T> {
 export function readRecord<T>(file: string, parse: (text: string) => T, lint: (text: string, data: T) => string[] = () => []): LoadedFile<T> {
   let text: string
   try {
-    text = readFileSync(file, 'utf8')
+    text = stripBom(readFileSync(file, 'utf8')) // a byte-order mark is no part of the record, nor of its revision
   } catch (e) {
     return { file, error: (e as Error).message, missing: (e as NodeJS.ErrnoException).code === 'ENOENT' }
   }
@@ -63,8 +64,12 @@ export const readItemFile = (file: string) => readRecord<Item>(file, parseItem, 
 export const readQuestionFile = (file: string) => readRecord<Question>(file, parseQuestion, lintQuestion)
 export const readArtifactFile = (file: string) => readRecord<Artifact>(file, parseArtifact, lintArtifact)
 
-/** Sidecar records with what their files hold (format, size, pages, headings). */
+/**
+ * Sidecar records with what their files hold (format, size, pages, headings). One artifact's file
+ * never stops the rest loading: `artifactInfo` turns its own failures into the artifact's issue.
+ */
 export function withMeta(records: Record<string, Rev<Artifact>>, root = REQUIREMENTS_DIR): Record<string, ArtifactRec> {
+  primePdfs(Object.values(records).map((r) => r.data), root) // every unread PDF in one extractor run
   const out: Record<string, ArtifactRec> = {}
   for (const [id, r] of Object.entries(records)) out[id] = { ...r, meta: artifactInfo(r.data, root).meta }
   return out
@@ -78,7 +83,7 @@ function listMd(dir: string): string[] {
     return [] // missing folder, or removed mid-read by a git checkout
   }
   return names
-    .filter((f) => f.endsWith('.md'))
+    .filter((f) => f.endsWith('.md') && !f.startsWith('.')) // `._X.md` (macOS), `.#X.md` (Emacs): never records
     .sort()
     .map((f) => join(dir, f))
 }
@@ -88,22 +93,65 @@ const baseId = (file: string) => file.slice(file.lastIndexOf(sep) + 1).replace(/
 /** Every ID a file already claims, by file name, whether or not the file parses. */
 export const takenIds = (dir: string) => listMd(dir).map(baseId)
 
-export function readLayout(root = REQUIREMENTS_DIR): { layout: Layout; error?: string } {
+export interface LayoutRead {
+  /** Only well-formed positions (finite `x` and `y`). */
+  layout: Layout
+  /** Set when the file exists but cannot be used at all; layout writes are refused until it is fixed. */
+  error?: string
+  /**
+   * Set when some of `positions` was ignored: the card IDs whose entries are not `{ x, y }` numbers,
+   * or `['positions']` when `positions` itself is not an object. The next layout write drops them
+   * (accepted decision 17).
+   */
+  damaged?: string[]
+}
+
+const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
+
+export function readLayout(root = REQUIREMENTS_DIR): LayoutRead {
   let text: string
   try {
     text = readFileSync(layoutPath(root), 'utf8')
   } catch {
     return { layout: { positions: {}, lanes: [] } } // no layout yet: every card is in its story-map place
   }
+  let raw: unknown
   try {
-    const raw = JSON.parse(text) as Partial<Layout>
-    const lanes = Array.isArray(raw.lanes) ? raw.lanes.filter((l): l is string => typeof l === 'string' && l.trim() !== '') : []
-    const layout: Layout = { positions: raw.positions ?? {}, lanes }
-    if (typeof raw.firstLane === 'string' && raw.firstLane.trim()) layout.firstLane = raw.firstLane.trim()
-    return { layout }
+    raw = JSON.parse(stripBom(text))
   } catch (e) {
     return { layout: { positions: {}, lanes: [] }, error: `board-layout.json is not valid JSON (${(e as Error).message}); fix or delete it` }
   }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { layout: { positions: {}, lanes: [] }, error: 'board-layout.json does not hold an object ({ "positions": ... }); fix or delete it' }
+  }
+  const r = raw as Record<string, unknown>
+  const lanes = Array.isArray(r.lanes) ? r.lanes.filter((l): l is string => typeof l === 'string' && l.trim() !== '') : []
+  const positions: Layout['positions'] = {}
+  const damaged: string[] = []
+  if (r.positions === undefined) {
+    // none yet
+  } else if (!r.positions || typeof r.positions !== 'object' || Array.isArray(r.positions)) {
+    damaged.push('positions')
+  } else {
+    for (const [id, p] of Object.entries(r.positions as Record<string, unknown>)) {
+      if (id === '__proto__') {
+        damaged.push(id) // never set: it would change the object's prototype
+        continue
+      }
+      const xy = p as { x?: unknown; y?: unknown } | null
+      if (xy && typeof xy === 'object' && !Array.isArray(xy) && finite(xy.x) && finite(xy.y)) positions[id] = { x: xy.x, y: xy.y }
+      else damaged.push(id)
+    }
+  }
+  const layout: Layout = { positions, lanes }
+  if (typeof r.firstLane === 'string' && r.firstLane.trim()) layout.firstLane = r.firstLane.trim()
+  return damaged.length ? { layout, damaged } : { layout }
+}
+
+/** The issue for ignored layout entries (`readLayout`'s `damaged`). */
+export function layoutDamageIssue(damaged: string[]): Issue {
+  const what = damaged[0] === 'positions' ? '"positions" is not an object' : `the positions of ${damaged.join(', ')} are not x and y numbers`
+  return { severity: 'error', id: 'layout', message: `board-layout.json: ${what}; ignored, and the next card move drops them` }
 }
 
 /**
@@ -168,9 +216,9 @@ export function issuesFor(
   artifacts: Record<string, Rev<Artifact>> = {},
   config: BoardConfig = DEFAULT_CONFIG,
 ): Issue[] {
-  return [
-    ...parseIssues,
-    ...checkCatalogue({
+  let checked: Issue[]
+  try {
+    checked = checkCatalogue({
       items: Object.values(items).map((r) => r.data),
       questions: Object.values(questions).map((r) => r.data),
       fileExists: fileExistsIn(root),
@@ -178,8 +226,13 @@ export function issuesFor(
       lanes,
       config,
       ...artifactCheck(artifacts, root),
-    }),
-  ]
+    })
+  } catch (e) {
+    // A backstop: unexpected data must never stop the load. Say the check did not finish, and why.
+    console.error('[catalogue] the check could not finish:', e)
+    checked = [{ severity: 'error', id: 'check', message: `the check could not finish (${(e as Error)?.message ?? String(e)}); the other issues may be incomplete` }]
+  }
+  return [...parseIssues, ...checked]
 }
 
 /** The artifact part of a check's input: the sidecars, and what their files hold. */
@@ -224,18 +277,22 @@ export function loadCatalogue(root = REQUIREMENTS_DIR): LoadResult {
   const items = collect(listMd(storiesDir(root)), readItemFile, parseIssues)
   const questions = collect(listMd(questionsDir(root)), readQuestionFile, parseIssues)
   const artifacts = withMeta(collect(listMd(artifactsDir(root)), readArtifactFile, parseIssues), root)
-  const { layout, error } = readLayout(root)
+  const { layout, error, damaged } = readLayout(root)
   if (error) parseIssues.push({ severity: 'error', id: 'layout', message: error })
+  if (damaged) parseIssues.push(layoutDamageIssue(damaged))
   const { config, problems } = readConfig(root)
   for (const message of problems) parseIssues.push({ severity: 'error', id: 'config', message })
   return { items, questions, artifacts, layout, config, layoutReadable: !error, parseIssues, issues: issuesFor(items, questions, parseIssues, root, layout.lanes, artifacts, config) }
 }
 
-/** Write via a temp file + rename so a reader (or the watcher) never sees half a file. */
+/**
+ * Write via a temp file + rename so a reader (or the watcher) never sees half a file. A file that
+ * starts with a byte-order mark keeps it, so a rewrite changes only what the writer changed.
+ */
 export function writeAtomic(file: string, text: string) {
   mkdirSync(dirname(file), { recursive: true })
   const tmp = `${file}.${process.pid}.tmp`
-  writeFileSync(tmp, text, 'utf8')
+  writeFileSync(tmp, !hasBom(text) && startsWithBom(file) ? '\uFEFF' + text : text, 'utf8')
   renameSync(tmp, file)
 }
 
@@ -279,9 +336,23 @@ export function deleteQuestionFile(id: string, root = REQUIREMENTS_DIR) {
   unlinkSync(questionPath(id, root))
 }
 
-/** Remove an item's file. The caller has already rewritten everything that pointed at it. */
+/** Remove an item's file (already gone is fine). The caller has already rewritten everything that pointed at it. */
 export function deleteItemFile(id: string, root = REQUIREMENTS_DIR) {
-  unlinkSync(itemPath(id, root))
+  rmSync(itemPath(id, root), { force: true })
+}
+
+/** Whether an existing file starts with a UTF-8 byte-order mark (a missing or unreadable file does not). */
+function startsWithBom(file: string): boolean {
+  let fd: number | undefined
+  try {
+    fd = openSync(file, 'r')
+    const head = Buffer.alloc(3)
+    return readSync(fd, head, 0, 3, 0) === 3 && head[0] === 0xef && head[1] === 0xbb && head[2] === 0xbf
+  } catch {
+    return false
+  } finally {
+    if (fd !== undefined) closeSync(fd)
+  }
 }
 
 /** Remove an item's screenshot folder, `assets/<ID>/`, if it has one. */

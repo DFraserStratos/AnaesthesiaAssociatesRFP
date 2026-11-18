@@ -89,22 +89,59 @@ export function createJournal(dir: string, now: () => Date = () => new Date()): 
 
   const shotsFile = (id: string) => join(dir, `${id}.shots.json`)
 
+  /**
+   * A card's screenshot record (`<id>.shots.json`), or null when there is none or it cannot be read
+   * (half-written, hand-edited): the scan then starts afresh and rewrites it, rather than failing on
+   * every sync.
+   */
+  const readShots = (id: string): ShotState | null => {
+    try {
+      const raw: unknown = JSON.parse(readFileSync(shotsFile(id), 'utf8'))
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
+      const out: ShotState = {}
+      for (const [name, v] of Object.entries(raw as Record<string, unknown>)) {
+        const e = v as { sha?: unknown; size?: unknown; mtimeMs?: unknown } | null
+        if (e && typeof e.sha === 'string' && typeof e.size === 'number' && typeof e.mtimeMs === 'number') out[name] = { sha: e.sha, size: e.size, mtimeMs: e.mtimeMs }
+      }
+      return out
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Record screenshot changes under `assets/<id>/`. Never throws: an entry that can't be stat-ed (a
+   * dangling link, a folder removed mid-scan) is skipped, and an image that can't be read keeps its
+   * last record without abandoning the rest of its folder.
+   */
   function screenshots(assetsDir: string, opts: { offline?: boolean } = {}) {
-    if (!existsSync(assetsDir)) return
-    for (const id of readdirSync(assetsDir)) {
-      const folder = join(assetsDir, id)
-      if (!safe(id) || !statSync(folder).isDirectory()) continue
+    let ids: string[]
+    try {
+      ids = readdirSync(assetsDir)
+    } catch {
+      return // no assets folder, or it can't be listed
+    }
+    for (const id of ids) {
       quietly(`record screenshots of ${id}`, () => {
-        const known = existsSync(shotsFile(id)) ? (JSON.parse(readFileSync(shotsFile(id), 'utf8')) as ShotState) : null
+        const folder = join(assetsDir, id)
+        if (!safe(id) || !statSync(folder).isDirectory()) return
+        const known = readShots(id)
         const next: ShotState = {}
         const changes: FieldChange[] = []
         for (const name of readdirSync(folder).sort()) {
           if (!IMAGE_EXT.has(extname(name).toLowerCase())) continue
-          const st = statSync(join(folder, name))
-          if (!st.isFile()) continue
           const was = known?.[name]
-          const same = was && was.size === st.size && was.mtimeMs === st.mtimeMs
-          const sha = same ? was.sha : gitBlobSha(readFileSync(join(folder, name)))
+          let st, sha: string
+          try {
+            st = statSync(join(folder, name))
+            if (!st.isFile()) continue
+            const same = was && was.size === st.size && was.mtimeMs === st.mtimeMs
+            sha = same ? was.sha : gitBlobSha(readFileSync(join(folder, name)))
+          } catch (e) {
+            console.warn(`[history] could not read screenshot ${id}/${name}: ${(e as Error).message}`)
+            if (was) next[name] = was // try again next time; the rest of the folder is still recorded
+            continue
+          }
           next[name] = { sha, size: st.size, mtimeMs: st.mtimeMs }
           const src = `assets/${id}/${name}`
           if (was && was.sha !== sha) changes.push({ field: 'screenshot', from: { src, sha: was.sha }, to: { src, sha } })

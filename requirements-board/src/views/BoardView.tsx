@@ -30,9 +30,11 @@ import { boundsOf, clampViewport, panExtent, type Bounds } from '../board/panLim
 import { Glyph, StatusLabel } from '../components/bits.tsx'
 import { PanelResizer, readPanel, writePanel } from '../components/PanelResizer.tsx'
 import { ItemModal } from '../components/ItemModal.tsx'
+import { RegionBoundary } from '../components/RegionBoundary.tsx'
 import { rankMatches } from '../itemSearch.ts'
 import { guarded, useOpen } from '../nav.ts'
 import { ancestorsOf, descendantsOf, filtersActive, matchesFilters, shownIndex, useCatalogue, useComponents, useConfig, useIndex, useView, type BoardMode, type Index } from '../store.ts'
+import { isFiniteNumber, isRecord, readJson, writeJson } from '../storage.ts'
 import { useDismiss } from '../useDismiss.ts'
 
 const nodeTypes = { card: CardNode, lane: LaneNode, add: AddNode, marker: MarkerNode }
@@ -54,13 +56,13 @@ const FIT = { padding: { top: '84px', bottom: '64px', left: '24px', right: '24px
 /** How much of a wide card (an epic) must be on screen to count as in view. */
 const CARD_PEEK = 240
 
-function readViewport(mode: BoardMode): Viewport | undefined {
-  try {
-    const raw = localStorage.getItem(VIEWPORT_KEY[mode])
-    return raw ? (JSON.parse(raw) as Viewport) : undefined
-  } catch {
+/** A saved viewport, or none (the board fits the map) when it is not finite x, y and a positive zoom. */
+export function readViewport(mode: BoardMode): Viewport | undefined {
+  return readJson<Viewport | undefined>(VIEWPORT_KEY[mode], 'board position', undefined, (raw, bad) => {
+    if (isRecord(raw) && isFiniteNumber(raw.x) && isFiniteNumber(raw.y) && isFiniteNumber(raw.zoom) && raw.zoom > 0) return { x: raw.x, y: raw.y, zoom: raw.zoom }
+    bad()
     return undefined
-  }
+  })
 }
 /** Semantic zoom bands: overview (epic names, status blocks), far (titles only), mid, near (excerpt). */
 const zoomBand = (z: number) => (z < 0.3 ? 'zoom-far zoom-overview' : z < 0.5 ? 'zoom-far' : z >= 0.95 ? 'zoom-near' : 'zoom-mid')
@@ -445,7 +447,9 @@ function Board({ mode }: { mode: BoardMode }) {
     <div className={`board-split${selected ? ' has-panel' : ''}`} style={{ '--panel-w': `${panelW}%` } as CSSProperties}>
       {selected && (
         <aside className="dock" aria-label="Item details">
-          <ItemModal key={selected} id={selected} docked />
+          <RegionBoundary key={selected} region="dock:item" label="This card" frame="docked" closes="item">
+            <ItemModal id={selected} docked />
+          </RegionBoundary>
         </aside>
       )}
       {selected && <PanelResizer width={panelW} onChange={setPanelW} />}
@@ -466,13 +470,7 @@ function Board({ mode }: { mode: BoardMode }) {
           onNodeDrag={onNodeDrag}
           onNodeDragStop={onNodeDragStop}
           onMove={(_, vp) => setZoomClass((z) => (zoomBand(vp.zoom) === z ? z : zoomBand(vp.zoom)))}
-          onMoveEnd={(_, vp) => {
-            try {
-              localStorage.setItem(VIEWPORT_KEY[mode], JSON.stringify(vp))
-            } catch {
-              /* not persisted */
-            }
-          }}
+          onMoveEnd={(_, vp) => writeJson(VIEWPORT_KEY[mode], vp)}
           defaultViewport={initialViewport}
           fitView={!initialViewport}
           fitViewOptions={FIT}

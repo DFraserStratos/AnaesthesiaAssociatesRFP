@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { componentCodeIn } from '../../shared/config.ts'
 import { statusClasses, statusLabel, type StatusKind } from '../../shared/statuses.ts'
 import { stepOf } from '../../shared/steps.ts'
-import { TYPE_LABEL, parseArtifactRef, type Artifact, type ArtifactKind, type ArtifactStatus, type Item, type ItemType, type Question } from '../../shared/types.ts'
+import { typeLabel, parseArtifactRef, type Artifact, type ArtifactKind, type ArtifactStatus, type Item, type ItemType, type Question } from '../../shared/types.ts'
 import { spotName } from '../artifactIndex.ts'
 import { recordUrl } from '../nav.ts'
 import { useCatalogue, useConfig } from '../store.ts'
@@ -79,11 +79,11 @@ export function Lineage({ chain, onPick }: { chain: Item[]; onPick?: (id: string
           </>
         )
         return !onPick ? (
-          <span key={it.id} className={`seg ${typeClass(it.type)}`} title={`${TYPE_LABEL[it.type]} · ${it.title}`}>
+          <span key={it.id} className={`seg ${typeClass(it.type)}`} title={`${typeLabel(it.type)} · ${it.title}`}>
             {body}
           </span>
         ) : (
-          <button key={it.id} type="button" className={`seg ${typeClass(it.type)}`} title={`${TYPE_LABEL[it.type]} · ${it.title}`} onClick={() => onPick(it.id)}>
+          <button key={it.id} type="button" className={`seg ${typeClass(it.type)}`} title={`${typeLabel(it.type)} · ${it.title}`} onClick={() => onPick(it.id)}>
             {body}
           </button>
         )

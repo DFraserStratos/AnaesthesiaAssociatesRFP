@@ -21,11 +21,15 @@ export interface DeletePlan {
 /** Every item under `id`, not including it. */
 export function descendantsOf(items: Item[], id: string): Item[] {
   const kids = new Map<string, Item[]>()
-  for (const it of items) if (it.parent) kids.set(it.parent, [...(kids.get(it.parent) ?? []), it])
+  for (const it of items) if (it.parent) (kids.get(it.parent) ?? kids.set(it.parent, []).get(it.parent)!).push(it)
   const out: Item[] = []
+  // Seeded with the start: in a parent cycle (a self-parent included) the walk comes back round to
+  // it, and it must never count as its own descendant (FINDINGS R-53). A cycle is the check's to name.
+  const seen = new Set([id])
   const walk = (at: string) => {
     for (const k of kids.get(at) ?? []) {
-      if (out.includes(k)) continue // a parent cycle is the check's problem, not a reason to loop
+      if (seen.has(k.id)) continue
+      seen.add(k.id)
       out.push(k)
       walk(k.id)
     }

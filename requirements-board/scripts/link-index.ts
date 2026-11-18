@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url'
 import { depthFirst } from '../shared/csv.ts'
 import { itemLinkTargets, linkTargets, plainText } from '../shared/links.ts'
 import { isOpenQuestion, isRetired, statusLabel } from '../shared/statuses.ts'
-import { TYPE_LABEL, type Item } from '../shared/types.ts'
+import { typeLabel, type Item } from '../shared/types.ts'
 import { REQUIREMENTS_DIR, loadCatalogue } from '../server/catalogueFs.ts'
 
 const { items, questions, config } = loadCatalogue()
@@ -39,7 +39,7 @@ const lines = [
 ]
 for (const it of live) {
   const extras = [it.related.length ? `related: ${it.related.join(', ')}` : '', itemLinkTargets(it).length ? `links: ${itemLinkTargets(it).join(', ')}` : ''].filter(Boolean)
-  const head = `${'  '.repeat(depth(it))}- ${it.id} · ${TYPE_LABEL[it.type]} · ${statusLabel(config, 'item', it.status)} · ${it.title}`
+  const head = `${'  '.repeat(depth(it))}- ${it.id} · ${typeLabel(it.type)} · ${statusLabel(config, 'item', it.status)} · ${it.title}`
   lines.push(`${head}${it.description ? `: ${gist(it.description)}` : ''}${extras.length ? ` [${extras.join('; ')}]` : ''}`)
 }
 lines.push('', '## Open questions', '')

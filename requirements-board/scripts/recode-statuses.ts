@@ -26,6 +26,7 @@ import { join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { REQUIREMENTS_DIR, configPath, formatJson, writeAtomic } from '../server/catalogueFs.ts'
 import { boardsRunning, historyDirFor } from '../server/historyDir.ts'
+import { stripBom } from '../shared/bom.ts'
 import { CONFIG_FILE, DEFAULT_CONFIG, parseConfig, type BoardConfig } from '../shared/config.ts'
 import { RECODES_FILE, STATUS_CODE, STATUS_FIELDS, highestCode, parseRecodes, recodedCodes, recodeProblems, statusesOf, type Recode, type StatusKind } from '../shared/statuses.ts'
 
@@ -178,7 +179,7 @@ function main(): number {
   let recordedRaw: unknown[] = []
   if (existsSync(recodesPath)) {
     try {
-      const raw: unknown = JSON.parse(readFileSync(recodesPath, 'utf8'))
+      const raw: unknown = JSON.parse(stripBom(readFileSync(recodesPath, 'utf8')))
       if (!Array.isArray(raw) || !raw.every((r) => r && typeof r === 'object' && !Array.isArray(r))) throw new Error('it must be a list of { date, items, questions }')
       recordedRaw = raw
     } catch (e) {
@@ -284,7 +285,7 @@ function main(): number {
 
   if (configText !== null) {
     try {
-      const raw = JSON.parse(readFileSync(configFile, 'utf8')) as Record<string, unknown>
+      const raw = JSON.parse(stripBom(readFileSync(configFile, 'utf8'))) as Record<string, unknown>
       const next = { ...raw }
       for (const kind of ['item', 'question'] as const) {
         const field = STATUS_FIELDS[kind]

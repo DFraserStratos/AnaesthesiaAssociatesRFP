@@ -10,7 +10,7 @@ import type { BoardConfig } from './config.ts'
 import { compareIds, compareSiblings } from './ids.ts'
 import { plainText } from './links.ts'
 import { statusLabel } from './statuses.ts'
-import { TYPE_LABEL, type Item, type Question } from './types.ts'
+import { typeLabel, type Item, type Question } from './types.ts'
 
 export const REQUIREMENT_COLUMNS = ['ID', 'Type', 'Parent', 'Title', 'Description', 'Notes', 'Component', 'Status', 'Source', 'Acceptance criteria', 'Technical discussion', 'Related']
 export const QUESTION_COLUMNS = ['ID', 'Title', 'Question', 'Affects', 'Owner', 'Status', 'Source']
@@ -52,7 +52,7 @@ export function requirementsCsv(items: Item[], config: BoardConfig): string {
       .map((it) =>
         row([
           it.id,
-          TYPE_LABEL[it.type],
+          typeLabel(it.type),
           it.parent ?? '',
           it.title,
           plainText(it.description),

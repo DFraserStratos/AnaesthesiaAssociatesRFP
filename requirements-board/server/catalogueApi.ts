@@ -35,6 +35,7 @@
  */
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { stripBom } from '../shared/bom.ts'
 import { checkCatalogue, issueKey } from '../shared/check.ts'
 import { artifactRoundTripProblems, itemRoundTripProblems, normaliseItem, normaliseQuestion, parseItem, parseQuestion, questionRoundTripProblems, serialiseItem, serialiseQuestion, withArtifactDetails } from '../shared/files.ts'
 import { compareSiblings, nextItemId, nextQuestionId } from '../shared/ids.ts'
@@ -151,13 +152,19 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
   const itemList = () => Object.values(state.items).map((r) => r.data)
   const readVoice = (): { text: string | null; rev: string | null } => {
     try {
-      const text = readFileSync(join(root, 'VOICE.md'), 'utf8')
+      const text = stripBom(readFileSync(join(root, 'VOICE.md'), 'utf8')) // its mark is kept on save (writeAtomic)
       return { text, rev: revOf(text) }
     } catch {
       return { text: null, rev: null }
     }
   }
   const questionList = () => Object.values(state.questions).map((r) => r.data)
+  /** After writing a well-formed layout: drop its read problems. True when there were any. */
+  const layoutRewritten = () => {
+    const had = state.parseIssues.some((i) => i.id === 'layout')
+    if (had) state.parseIssues = state.parseIssues.filter((i) => i.id !== 'layout')
+    return had
+  }
   const refreshIssues = () => {
     state.issues = issuesFor(state.items, state.questions, state.parseIssues, root, state.layout.lanes, state.artifacts, state.config)
   }
@@ -412,13 +419,19 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
         journal.forget(x)
         emit({ kind: 'item', id: x, record: null })
       }
-      const onDisk = readLayout(root)
-      if (!onDisk.error && doomed.some((x) => onDisk.layout.positions[x])) {
-        const positions = { ...onDisk.layout.positions }
-        for (const x of doomed) delete positions[x]
-        state.layout = { ...onDisk.layout, positions }
-        writeLayout(state.layout, root)
-        emit({ kind: 'layout', layout: state.layout })
+      // The records are gone: a layout that can't be tidied never turns that into a failure.
+      try {
+        const onDisk = readLayout(root)
+        if (!onDisk.error && doomed.some((x) => onDisk.layout.positions[x])) {
+          const positions = { ...onDisk.layout.positions }
+          for (const x of doomed) delete positions[x]
+          state.layout = { ...onDisk.layout, positions }
+          writeLayout(state.layout, root)
+          layoutRewritten()
+          emit({ kind: 'layout', layout: state.layout })
+        }
+      } catch (e) {
+        console.warn(`[catalogue] deleted ${doomed.join(', ')}, but board-layout.json could not be tidied: ${(e as Error).message}`)
       }
       refreshIssues()
       emit({ kind: 'issues', issues: state.issues })
@@ -541,7 +554,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       // Patch the file as it is on disk now: only the fields sent change, every other setting stays as written.
       let raw: Record<string, unknown> = {}
       try {
-        raw = JSON.parse(readFileSync(configPath(root), 'utf8')) as Record<string, unknown>
+        raw = JSON.parse(stripBom(readFileSync(configPath(root), 'utf8'))) as Record<string, unknown>
       } catch (e) {
         if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw new HttpError(422, 'board.config.json cannot be read; fix it on disk first')
       }
@@ -652,10 +665,10 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       state.layout = { positions, lanes } as Layout
       if (firstLane) state.layout.firstLane = firstLane
       state.layoutReadable = true
-      writeLayout(state.layout, root)
+      writeLayout(state.layout, root) // only well-formed positions: damaged entries are dropped here (accepted decision 17)
       for (const id of moved) journal.position(id, onDisk.layout.positions[id] ?? null, positions[id] ?? null, 'board')
       emit({ kind: 'layout', layout: state.layout })
-      if (lanesChanged) {
+      if (layoutRewritten() || lanesChanged) {
         refreshIssues() // lane names feed the swimlane check
         emit({ kind: 'issues', issues: state.issues })
       }

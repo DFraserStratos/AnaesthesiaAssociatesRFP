@@ -13,6 +13,7 @@ import { useCatalogue, useConfig, useIndex, useShownIndex } from './store.ts'
 import { useArtifactIndex } from './artifactIndex.ts'
 import { BrandMark } from './components/BrandMark.tsx'
 import { ProblemPill } from './components/ProblemPill.tsx'
+import { RegionBoundary } from './components/RegionBoundary.tsx'
 import { AboutView } from './views/AboutView.tsx'
 import { ArtifactPage } from './views/ArtifactPage.tsx'
 import { ArtifactsView } from './views/ArtifactsView.tsx'
@@ -32,7 +33,8 @@ export function App() {
   const applyEvent = useCatalogue((s) => s.applyEvent)
   const [connected, setConnected] = useState(true)
   const open = useOpen()
-  const onBoard = useLocation().pathname === '/board'
+  const pathname = useLocation().pathname
+  const onBoard = pathname === '/board'
 
   useEffect(() => {
     void load()
@@ -84,6 +86,16 @@ export function App() {
           </div>
         )}
         {status === 'ready' && (
+          // One view at a time, each with a fresh boundary (keyed by path): a failed view leaves the
+          // masthead, its problem list and the open sheets working.
+          <RegionBoundary
+            key={pathname}
+            region="view"
+            label={viewLabel(pathname)}
+            toBoard={!onBoard}
+            closes={itemId && questionId ? 'both' : itemId ? 'item' : questionId ? 'question' : undefined}
+            resetKey={`${itemId ?? ''}|${questionId ?? ''}`}
+          >
           <Routes>
             <Route path="/board" element={<BoardView />} />
             <Route path="/artifacts" element={<ArtifactsView />} />
@@ -102,14 +114,36 @@ export function App() {
             <Route path="/about" element={<AboutView />} />
             <Route path="*" element={<Navigate to="/board" replace />} />
           </Routes>
+          </RegionBoundary>
         )}
         {status === 'ready' && !onArtifact && <NewCardButton />}
       </main>
       {/* On the board the item docks beside the map (BoardView); elsewhere it is a modal. */}
-      {status === 'ready' && itemId && !onBoard && <ItemModal key={itemId} id={itemId} />}
-      {status === 'ready' && questionId && <QuestionModal key={questionId} id={questionId} />}
+      {status === 'ready' && itemId && !onBoard && (
+        <RegionBoundary key={itemId} region="sheet:item" label="This card" frame="sheet" closes="item">
+          <ItemModal id={itemId} />
+        </RegionBoundary>
+      )}
+      {status === 'ready' && questionId && (
+        <RegionBoundary key={questionId} region="sheet:question" label="This outstanding item" frame="sheet" closes="question">
+          <QuestionModal id={questionId} />
+        </RegionBoundary>
+      )}
     </div>
   )
+}
+
+/** A view's name, as a recovery panel's sentence starts ("The Board couldn't be shown."). */
+function viewLabel(pathname: string): string {
+  if (pathname === '/board') return 'The Board'
+  if (pathname === '/artifacts') return 'The Artifacts list'
+  if (pathname.startsWith('/artifacts/')) return "This artifact's page"
+  if (pathname === '/questions') return 'Outstanding items'
+  if (pathname === '/outline') return 'The Outline'
+  if (pathname === '/diff') return 'The Diff review'
+  if (pathname === '/settings') return 'Settings'
+  if (pathname === '/about') return 'About'
+  return 'This page'
 }
 
 function Masthead({ connected }: { connected: boolean }) {

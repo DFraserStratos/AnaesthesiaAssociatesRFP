@@ -88,7 +88,9 @@ server/
   cataloguePlugin.ts Vite dev-server plugin: wires the API, serves assets and artifact files (and guards the origin), folder watcher → HMR events
   realPaths.ts       real-path rules: containment across linked folders, symbolic links that lead out
   artifactFiles.ts   an artifact's file: where it is, what it holds (cached per version), for the check and the board
-  pdfFacts.ts        a PDF's page sizes and text, in a child process (pdf.js is async; the catalogue loads sync)
+  pdfFacts.ts        PDFs' page sizes and text, in a child process (pdf.js is async; the catalogue loads sync); many per run
+  pdfFactsStore.ts   PDF facts kept between runs in .pdf-facts/ (gitignored; PDF_FACTS_DIR overrides), keyed by content and extractor;
+                     never pruned (an old version's entry stays): delete the folder any time, it only costs speed
 scripts/       check, export-csv, capture (+ captureFiles: generated-file naming, testable),
                link-index, apply-links (+ linkProposals: the applier, testable), new-artifact, shoot-steps
 src/
@@ -98,6 +100,8 @@ src/
   useDismiss.ts  Esc / outside-press close for popovers
   useCatalogueRefresh.ts  re-run on record changes on disk or window focus; usePersistentState.ts a per-browser pick
   dates.ts       dates and times, in New Zealand English
+  storage.ts     the one rule for JSON kept in browser storage: wrong shapes read as defaults, never a crash
+  clientProblems.ts  problems found in the browser (a part of the page that failed, an uncaught error, a reset preference) for the problem pill
   diff/          the Diff review, loaded with its route: DiffView (the page), useDiffData (loading), viewedStore,
                  useProgressiveDraw, useDiffKeys + scroll, DiffBar, DiffCard (typed field definitions),
                  DiffFields, DiffProse, DiffFile, diffMarks (remark plugin), diff.css, useUncommittedCount
@@ -107,7 +111,8 @@ src/
                  ArtifactHistory, VisualCompare, Thumb
   board/         autoLayout (Freeform, pure), mappedLayout (Mapped + drop hit-test, pure), graph (nodes + edges
                  from the catalogue, pure), cardData, CardNode, LaneNode (lane rule, add slot, drop bar), LaneHeaders
-  components/    ItemModal, QuestionModal, Screenshots (gallery, lightbox, image editor), Sheet,
+  components/    ItemModal, QuestionModal, Screenshots (gallery, lightbox, image editor), Sheet, ProblemPill,
+                 RegionBoundary (the error boundary round each view and sheet, with its recovery panel),
                  useEditableRecord (edit/conflict/draft logic) + EditChrome (its banners, footer, orphaned draft), bits
 tests/         Vitest, on a synthetic fixture catalogue (plus a few that the project's catalogue, if any, is valid)
 requirements/  the project's requirements catalogue and board.config.json (see its README.md and SCHEMA.md)
@@ -120,6 +125,23 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
 - `GET /api/catalogue` returns every record with a `rev` (content hash). Saves must send `baseRev`;
   the server re-reads the file from disk and answers 409 (with the current copy) if it changed,
   and the sheet offers keep mine / load theirs.
+- **One file never stops the load.** A record that can't be read or parsed, an artifact file that
+  can't be read (or whose contents can't be made sense of), a junk entry in `board-layout.json`, a
+  screenshot folder that can't be fully read: each becomes an issue naming the file, and the rest
+  loads (the dev server starts, every sync and `npm run check` finish). If the check itself fails on
+  unexpected data, one error says so. Names starting with `.` in the record folders (`._EP-01.md`
+  from macOS, `.#US-01.1.1.md` from Emacs) are ignored and claim no ID. A byte-order mark at the
+  start of a record or of the JSON files is read past, and kept when the board rewrites the file.
+  Layout positions that are not `{ x, y }` numbers are ignored and named (an error on `layout`);
+  the next card move writes the file without them. A parent cycle (a card under itself) is named
+  by the check on each card in it, and the board still shows every card in it: in the Outline's last
+  group "Not under an epic" (with cards whose parent is missing), and below the Freeform map.
+- **A crash stays in its part of the page.** Each view and each sheet sits in an error boundary
+  (`RegionBoundary`): if one fails to draw, a panel takes its place (what failed, Close card, Try
+  again, Go to board, Details to copy), the masthead keeps working, and the problem pill lists it
+  under "This page" until it recovers; it tries once more by itself when the catalogue changes.
+  Uncaught errors from clicks and promises are listed there too, and a saved browser preference
+  that could not be read (and was reset) under "Saved preferences". Unsaved drafts survive.
 - Every write normalises the record, refuses one that would not survive a round trip, and runs
   `checkCatalogue` on exactly what will be written (422 if it adds an error). Files are written via
   temp file + rename in a fixed key order, so a one-field edit is a one-line diff. Creates use an

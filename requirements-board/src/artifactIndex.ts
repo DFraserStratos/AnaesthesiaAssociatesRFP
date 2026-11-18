@@ -9,6 +9,7 @@ import { isArtifactId, itemTexts, mentions } from '../shared/links.ts'
 import { stepOf } from '../shared/steps.ts'
 import { ARTIFACT_KINDS, ARTIFACT_STATUSES, linesOfRegionId, pageOfRegionId, pageRegionId, parseArtifactRef, type ArtifactKind, type ArtifactRec, type ArtifactStatus, type Item, type Question, type Region, type Step } from '../shared/types.ts'
 import { useCatalogue, useIndex, type Index } from './store.ts'
+import { fields, isBoolean, isFiniteNumber, isStringArray, oneOf, readJson, writeJson } from './storage.ts'
 
 export interface ArtifactLink {
   item: Item
@@ -127,16 +128,21 @@ export interface ArtifactPrefs {
 const PREFS_KEY = 'requirements-board:artifacts'
 const DEFAULTS: ArtifactPrefs = { layout: 'grid', kinds: [], statuses: [], components: [], showRetired: false, panelW: null, pdfPages: true }
 
+/** Saved preferences, field by field through the shared storage rule (`storage.ts`). */
+const prefsShape = fields<ArtifactPrefs>(DEFAULTS, {
+  layout: oneOf<ArtifactLayout>('grid', 'list'),
+  kinds: isStringArray,
+  statuses: isStringArray,
+  components: isStringArray,
+  showRetired: isBoolean,
+  panelW: (v) => v === null || isFiniteNumber(v),
+  pdfPages: isBoolean,
+})
+
 function readPrefs(): ArtifactPrefs {
-  try {
-    const raw = localStorage.getItem(PREFS_KEY)
-    if (!raw) return DEFAULTS
-    const prefs = { ...DEFAULTS, ...(JSON.parse(raw) as Partial<ArtifactPrefs>) }
-    // A status filter saved before a status went away (Superseded, now Retired) would match nothing.
-    return { ...prefs, statuses: prefs.statuses.filter((s) => (ARTIFACT_STATUSES as readonly string[]).includes(s)) }
-  } catch {
-    return DEFAULTS
-  }
+  const prefs = readJson(PREFS_KEY, 'Artifacts view settings', DEFAULTS, prefsShape)
+  // A status filter saved before a status went away (Superseded, now Retired) would match nothing.
+  return { ...prefs, statuses: prefs.statuses.filter((s) => (ARTIFACT_STATUSES as readonly string[]).includes(s)) }
 }
 
 interface ArtifactViewState extends ArtifactPrefs {
@@ -147,12 +153,8 @@ export const useArtifactView = create<ArtifactViewState>((set, get) => ({
   ...readPrefs(),
   set(patch) {
     set(patch)
-    try {
-      const { set: _s, ...prefs } = get()
-      localStorage.setItem(PREFS_KEY, JSON.stringify(prefs))
-    } catch {
-      /* private window: prefs just don't persist */
-    }
+    const { set: _s, ...prefs } = get()
+    writeJson(PREFS_KEY, prefs) // a private window: prefs just don't persist
   },
 }))
 

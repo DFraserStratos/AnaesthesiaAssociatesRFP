@@ -5,6 +5,7 @@
  * to one field produces a one-line diff, and parse(serialise(x)) === x for any
  * record that `roundTripProblems` passes.
  */
+import { stripBom } from './bom.ts'
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
 import type { Artifact, ArtifactKind, ArtifactStatus, Box, Citation, ImageRef, Item, ItemStatus, ItemType, Question, QuestionKind, QuestionStatus, Region, Step, StepBalance, StepMove, Viewport } from './types.ts'
 
@@ -25,7 +26,7 @@ export const ANSWER_HEADING = '## Answer'
 export class ParseError extends Error {}
 
 function splitFrontmatter(text: string): { yamlText: string; meta: Record<string, unknown>; body: string } {
-  const normalised = text.replace(/\r\n/g, '\n')
+  const normalised = stripBom(text).replace(/\r\n/g, '\n')
   if (!normalised.startsWith(FENCE + '\n')) throw new ParseError('file must start with a --- frontmatter fence')
   const end = normalised.indexOf('\n' + FENCE, FENCE.length)
   if (end < 0) throw new ParseError('frontmatter has no closing --- fence')

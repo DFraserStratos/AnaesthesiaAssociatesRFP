@@ -4,6 +4,7 @@ dist
 /playwright-report/
 /shots/
 /.history/
+/.pdf-facts/
 /.links/
 /requirements/exports/
 __pycache__/

@@ -46,7 +46,8 @@ export function decodeEntities(s: string): string {
   return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (all, e: string) => {
     if (e[0] === '#') {
       const code = e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)
-      return Number.isFinite(code) ? String.fromCodePoint(code) : all
+      // Only real code points: one past U+10FFFF would throw out of the whole catalogue load.
+      return Number.isInteger(code) && code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : all
     }
     return ENTITIES[e.toLowerCase()] ?? all
   })

@@ -15,6 +15,7 @@
 import { Panel, useReactFlow, useStore, type Node, type Viewport } from '@xyflow/react'
 import { Map as MapIcon, ZoomIn, ZoomOut } from 'lucide-react'
 import { memo, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { typeRank } from '../../shared/types.ts'
 import type { CardData } from './cardData.ts'
 import type { LaneBand } from './mappedLayout.ts'
 import type { Bounds } from './panLimits.ts'
@@ -30,6 +31,10 @@ const INSET = 0.04
 /** Blocks by type. SVG fills, not CSS, so these mirror the --ty-* tokens in styles.css. */
 const TYPE_HEX = { epic: '#e06c00', feature: '#773b93', story: '#009ccc' } as const
 const TYPE_OPACITY = { epic: 0.9, feature: 0.75, story: 0.45 } as const
+/** A card whose type is not an item type (bad data): a neutral grey, drawn like a story. */
+const OTHER_HEX = '#8a8f98'
+const hexOf = (t: string) => (Object.hasOwn(TYPE_HEX, t) ? TYPE_HEX[t as keyof typeof TYPE_HEX] : OTHER_HEX)
+const opacityOf = (t: string) => (Object.hasOwn(TYPE_OPACITY, t) ? TYPE_OPACITY[t as keyof typeof TYPE_OPACITY] : TYPE_OPACITY.story)
 
 const motion = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 200)
 
@@ -183,8 +188,7 @@ export function BoardMinimap({ bounds, nodes, lanes, selected, dock, minZoom, ma
 const MinimapContent = memo(function MinimapContent({ nodes, lanes, selected, left, width }: { nodes: Node[]; lanes?: LaneBand[]; selected: string | null; left: number; width: number }) {
   const cards = nodes.filter((n) => n.type === 'card' && !n.hidden)
   // Epics first, then features, then stories on top, as on the board.
-  const order = { epic: 0, feature: 1, story: 2 } as const
-  cards.sort((a, b) => order[(a.data as CardData).item.type] - order[(b.data as CardData).item.type])
+  cards.sort((a, b) => typeRank((a.data as CardData).item.type) - typeRank((b.data as CardData).item.type))
   const open = cards.find((n) => n.id === selected)
   return (
     <g>
@@ -202,8 +206,8 @@ const MinimapContent = memo(function MinimapContent({ nodes, lanes, selected, le
             width={d.w}
             height={d.h}
             rx={t === 'story' ? 4 : 6}
-            fill={TYPE_HEX[t]}
-            opacity={TYPE_OPACITY[t] * (d.tone === 'is-faded' ? 0.25 : 1)}
+            fill={hexOf(t)}
+            opacity={opacityOf(t) * (d.tone === 'is-faded' ? 0.25 : 1)}
           />
         )
       })}

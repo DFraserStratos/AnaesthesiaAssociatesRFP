@@ -403,7 +403,7 @@ function Anatomy() {
         <div className="about-tile">
           <h3>Outline and checks</h3>
           <p>
-            <Link to="/outline">Outline</Link> lists everything as a document, ready to read top to bottom. The masthead stays clear while all is well. A pill appears only when something needs attention: amber <em>Offline</em> when the board has lost its server and nothing is being saved, red when a file is wrong or a card move didn’t save. Click it to see why. The checks also note when a description carries history that belongs in Notes, by the patterns listed under <code>voice</code> in <code>board.config.json</code>; notes never raise the pill, and Settings lists them under Checks.
+            <Link to="/outline">Outline</Link> lists everything as a document, ready to read top to bottom; a card no epic reaches (its parent missing, or in a parent cycle) is listed in a last group, Not under an epic, so nothing counted is hidden. The masthead stays clear while all is well. A pill appears only when something needs attention: amber <em>Offline</em> when the board has lost its server and nothing is being saved, red when a file is wrong, a card move didn’t save or a part of the page failed to show. Click it to see why. The checks also note when a description carries history that belongs in Notes, by the patterns listed under <code>voice</code> in <code>board.config.json</code>; notes never raise the pill, and Settings lists them under Checks.
           </p>
         </div>
       </div>

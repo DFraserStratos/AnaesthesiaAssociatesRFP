@@ -101,6 +101,26 @@ export function checkCatalogue({ items, questions, fileExists, linkOut, lanes, a
     byId.set(it.id, it)
   }
 
+  // Parent cycles: a card that is (through its parents) under itself. Named on every member, so the
+  // problem list leads to each; a self-parent is a cycle of one. Each card is followed once.
+  const done = new Set<string>()
+  for (const start of items) {
+    const path: string[] = []
+    const at = new Map<string, number>()
+    let cur: Item | undefined = start
+    while (cur && !done.has(cur.id) && !at.has(cur.id)) {
+      at.set(cur.id, path.length)
+      path.push(cur.id)
+      cur = cur.parent ? byId.get(cur.parent) : undefined
+    }
+    if (cur && at.has(cur.id)) {
+      const members = path.slice(at.get(cur.id))
+      const message = members.length === 1 ? 'is its own parent; a card can never be under itself' : `is in a parent cycle (${members.join(', ')}); a card can never be under itself`
+      for (const id of members) err(id, message)
+    }
+    for (const id of path) done.add(id)
+  }
+
   for (const it of items) {
     if (!ITEM_TYPES.includes(it.type)) {
       err(it.id, `type "${it.type}" is not one of ${ITEM_TYPES.join(', ')}`)

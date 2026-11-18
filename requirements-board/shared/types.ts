@@ -14,6 +14,21 @@ export const TYPE_LABEL: Record<ItemType, string> = { epic: 'Epic', feature: 'Fe
 /** What an item of this type may sit under: a feature under an epic, a story under a feature or straight under an epic. */
 export const PARENT_TYPES: Record<ItemType, readonly ItemType[]> = { epic: [], feature: ['epic'], story: ['feature', 'epic'] }
 
+/**
+ * A type in words. A file can hold any text as its type (the check reports one that is not an item
+ * type); such a card shows the type as stored, never `undefined`.
+ */
+export const typeLabel = (t: string): string => (Object.hasOwn(TYPE_LABEL, t) ? TYPE_LABEL[t as ItemType] : t)
+
+/** Where a type sorts: epic, feature, story, then any type that is not an item type. */
+export const typeRank = (t: string): number => {
+  const n = (ITEM_TYPES as readonly string[]).indexOf(t)
+  return n < 0 ? ITEM_TYPES.length : n
+}
+
+/** The types an item of this type may sit under; none for a type that is not an item type. */
+export const parentTypesOf = (t: string): readonly ItemType[] => (Object.hasOwn(PARENT_TYPES, t) ? PARENT_TYPES[t as ItemType] : [])
+
 /** A status code from the project's config (`statuses.ts`): what it means and how it shows live there. */
 export type ItemStatus = string
 export type QuestionStatus = string

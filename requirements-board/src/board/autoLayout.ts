@@ -52,6 +52,7 @@ export function autoLayout(items: Item[], retired?: RetiredTest): Record<string,
   const stack = (list: Item[], x: number, y0: number) => {
     let y = y0
     for (const s of list) {
+      if (out[s.id]) continue // placed already: a parent cycle leads back round
       out[s.id] = { x, y, w: CARD.story.w, h: CARD.story.h }
       y += CARD.story.h + STACK_GAP
       // Anything nested deeper than the map expects (bad data) still gets a spot.
@@ -86,6 +87,11 @@ export function autoLayout(items: Item[], retired?: RetiredTest): Record<string,
     bandBottom = Math.max(bandBottom, bottom)
     x += width + EPIC_GAP
   }
-  if (orphans.length) stack(orphans.sort(order), 0, bandBottom + BAND_GAP)
+  // Cards no epic reaches go in one stack below the map: a missing parent first, then anything still
+  // unplaced (members of a parent cycle, and what hangs under them), so every card has a place.
+  let y = bandBottom + BAND_GAP
+  if (orphans.length) y = stack(orphans.sort(order), 0, y)
+  const rest = items.filter((i) => !out[i.id]).sort(order)
+  if (rest.length) stack(rest, 0, y)
   return out
 }

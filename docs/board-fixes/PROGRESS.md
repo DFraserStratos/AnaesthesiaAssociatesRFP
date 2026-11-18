@@ -91,7 +91,7 @@ Agent tools in parallel: B12 (after B02), B13 (REQ-07b after B04); both before B
 |---|---|---|---|---|
 | B01 | Origin security | COMPLETE | D-01 and B01-Q1 to Q3 recorded (accepted decision 13) | 2026-11-19, board 1.13.0; R-35 Won't fix (warned instead), user's choice |
 | B02 | Status identity | COMPLETE | D-02 and B02-Q3 to Q6 recorded (accepted decision 16); no migration needed | 2026-11-19, board 1.14.0; R-01 and R-07 board halves delivered (B06, B12 close); A-2 confirmed and fixed |
-| B03 | Load resilience | PLANNED | after B01; D-06 before build | |
+| B03 | Load resilience | COMPLETE | D-06 and B03-Q2, Q3 recorded (accepted decision 17) | 2026-11-19, board 1.15.0; all 14 findings fixed; issue-surface contract in the entry |
 | B04 | One rule, one helper | PLANNED | after B03; D-03 before build | D-03 also settled before B12 builds if B12 needs it |
 | B08 | Git history reader | PLANNED | after B03; D-07 before build; D-05 with B05-Q2/Q3 recorded (planning-only gate) | |
 | B05 | Server write model | PLANNED | after B02, B03, B04, B08; D-04 and D-05 before build | D-05 is the user's call |
@@ -120,7 +120,7 @@ decisions" section and resolved in that phase's planning.
 | D-03 | How agent `.mjs` tools share `shared/*.ts` rules, including the note-cite resolution rule | B04 | B12, B13 | B04 build (and before B12 builds if needed) | B13-REQ-07b (R-141) shape; parity tests | Open |
 | D-04 | Write protocol (patch + base rev vs three-way merge; conflict reply; in-place YAML scope; config writes) | B05 | B06, B07 | B05 build | All client save flows; one-line-diff convention if items are edited in place | Open |
 | D-05 | ID reuse rule: SCHEMA "never reused" vs deliberate documented reuse (A-1, R-54); with B05-Q2/Q3 | B05 (user) | B08, B14 | B08 build (planning-only gate in a B05 planning conversation) | SCHEMA text; journal and history handling; possible deleted-ID list (data migration) | Open |
-| D-06 | Bad-data issue surface and error-boundary recovery | B03 | B06, B10, B11 | B03 build | How later phases report bad data | Open |
+| D-06 | Bad-data issue surface and error-boundary recovery | B03 | B06, B10, B11 | B03 build | How later phases report bad data | **Accepted 2026-11-19** (accepted decision 17): panel in place and a "This page" group in the pill; auto-retry on catalogue change; copyable details; page-wide error capture; repaired storage mentioned |
 | D-07 | Git reader contract (cache key/bounds, SHA-256, unstaged moves, deletion and rename bounds) | B08 | B05, B09 | B08 build | Timeline and diff inputs; R-54 history cut | Open |
 | D-08 | Lane-aware plan state on master | B12 | catch-up lanes | B12 build | update-build-plan behaviour while lanes run | Open |
 | D-09 | Kit export source and target refusal rules | B14 | none | B14 build | Export behaviour and docs | Open |
@@ -250,6 +250,28 @@ decisions" section and resolved in that phase's planning.
         D-03 is not needed for this (accepted decision 8). `status-recodes.json` stays an array of
         `{ date, note?, items, questions }`.
 
+- 2026-11-19, user (B03's planning questions, asked in the B03 session):
+  17. **D-06, B03-Q2 and B03-Q3:**
+      - **D-06, both surfaces.** A crash caught by the error boundary shows a recovery panel in the
+        failed region (a plain sentence, the message, Close card when a card or question is open, Try
+        again, Go to board for other views, and a collapsed Details with the stack and a Copy button),
+        and the problem pill gains a **This page** group naming the failed region, with the same
+        actions, until it recovers; "All clear" waits for recovery. Boundaries sit round each routed
+        view and each sheet (modal and docked); B10 and B11 reuse the same component for viewers and
+        the canvas. A failed region **retries once by itself when the catalogue changes** (an agent
+        fixes the file); a retry that fails again shows the panel again, never a loop. **Uncaught
+        errors from event handlers and promises** are caught page-wide and listed in the pill
+        (dismissable). A browser preference **reset because it was damaged** is mentioned in the pill
+        (dismissable). Later phases report their own client-side failures through the same store
+        (`src/clientProblems.ts`), never a new masthead mark, toast or banner.
+      - **B03-Q2, damaged layout entries are dropped by the next save.** Until then they are ignored
+        on read and named in an error issue on `layout`; only layout bytes change, never requirement
+        content. A layout whose top level is not an object still blocks saves, as unparseable JSON does.
+      - **B03-Q3, a byte-order mark is tolerated everywhere and kept.** Record files and
+        `board-layout.json`, `board.config.json` and `status-recodes.json` read as if it were absent;
+        when the board or its scripts rewrite such a file, the mark is kept, so nothing changes that
+        the user did not change. (The user, owner of B02's config format, agreed.)
+
 ## Planning handoff
 
 - 2026-11-18: orchestrator created FINDINGS.md (copy of the verified review report), PLAN.md, this
@@ -284,7 +306,7 @@ decisions" section and resolved in that phase's planning.
 | Fixture e2e port 5182 is fixed, so two lanes collide | B14 author (B14-Q3) | B14 | |
 | `/history-blob/<sha>?src=assets/x.png` serves any blob in the repository by full sha, typed by `src`'s extension (same-origin only; needs the hash) | B01 security review | B08 | gate the `src` case with `blobWasAt` as the `file` case is |
 | `catalogueDiff.ts:135` compares git's real top with `REPO_ROOT` as given (the E7a mixed-path defect) | B01 completeness review | B09 | use `realPaths.ts` (`realPath` both sides) |
-| A base folder that is itself an escaping link (`assets/` linked out of the requirements folder) is not warned: `linkOut` compares against the base's real path | B01 completeness review | B03 | decide with R-47's isolation; a check warning would suffice |
+| A base folder that is itself an escaping link (`assets/` linked out of the requirements folder) is not warned: `linkOut` compares against the base's real path | B01 completeness review | B14 (moved by B03) | not built in B03 (outside its 14 findings; R-47's isolation does not depend on it); a check warning would suffice |
 | A top-level visit from another site can still open Vite's `/__open-in-editor` (navigations are allowed so links to the board work); Vite still serves the board's own source, `node_modules` and any `.html` outside the catalogue as same-origin pages (SPEC residual) | B01 | B15 | Vite's dev model; consider refusing cross-site navigations to `/__open-in-editor` |
 | A screenshot whose file name holds a backslash cannot be served (`\` is read as `/`, as the file system on Windows would) | B01 correctness review | B14 (docs) | rare; document, or keep `%5C` apart |
 | `verify:board` saw 5 s Vitest timeouts in `gitHistory.test.ts` under full parallel load (once in four runs; passes alone) | B01 | B12 or B14 | the live origin test adds a Vite boot to the load; consider raising git-test timeouts |
@@ -292,8 +314,128 @@ decisions" section and resolved in that phase's planning.
 | The Settings Add row's use of the high-water mark has no browser test (the helper and the server refusal are unit-tested) | B02 review | B06 | B06 owns the Settings UI and can prove it with the lock-out |
 | A lock left by a crashed board whose process ID is later reused makes `statuses:recode` refuse until the file is deleted (the message names the file) | B02 review | B14 (docs) | rare; a start-time marker would settle it |
 | `statuses:recode` writes `board.config.json` through `formatJson`, so a hand layout it would lay out differently is reflowed (data unchanged; Settings does the same) | B02 review | none | accepted: `formatJson` is the file's house layout |
+| The write routes' `guard()` runs `checkCatalogue` unguarded, so a check that throws on unexpected data turns a save into a 500 (the load is backstopped, writes are not) | B03 | B05 | backstop it as `issuesFor` does |
+| `scripts/resolve-source.ts` runs `pdfFacts.ts` with no timeout and no try; `scripts/new-artifact.ts` derives SVG and Markdown facts unguarded | B03 | B14 | the board's load is safe; the scripts are not |
+| `.pdf-facts/` is never pruned (an old version's entry stays) and a killed write leaves a `.tmp` | B03 review | none | documented in README; delete the folder any time |
+| `tsconfig.node.json` now carries `jsx` and `vite/client` types so tests can import `.tsx`; a tests-only tsconfig would keep them out of server code | B03 review | B14 | |
 
 ## Phase entries
+
+### B03 · Load resilience · COMPLETE · 2026-11-19
+
+Board 1.14.0 to **1.15.0**. Plan and evidence: `phases/B03-load-resilience/IMPLEMENTATION.md`.
+Decisions: accepted decision 17 (D-06, B03-Q2, B03-Q3), asked in this session; the SPEC marks them
+answered. No master merge was needed (master had nothing `board-fixes` lacked). All 14 findings
+reproduced at HEAD `277e8381` before the build (line drift only).
+
+**Dispositions**
+
+| Finding | Disposition | Proof (each failed on the pre-B03 code, passes after) |
+|---|---|---|
+| R-10 | **Fixed** at the root: store `descendantsOf` seeded with the start; Freeform places every card no epic reaches below the map, cycle members once each; the check names each cycle on every member. The boundary is only the backstop | `tests/loadResilience.test.ts` "parent cycles"; `e2e/bad-data.spec.ts` self-parent on the board in both modes and on reload; manual on 5480 |
+| R-11 | **Fixed**: `canParent` via `parentTypesOf`; `typeLabel`/`typeRank` (`shared/types.ts`) at every type lookup (ItemModal delete question, CardNode, bits, itemSearch, BoardMinimap, csv, DiffFields, `scripts/link-index.ts`) | unit tests (canParent, mappedLayout, CSV); e2e unknown type: Mapped board, sheet, "Delete this user-story?", tooltip |
+| R-47 | **Fixed**: `artifactInfo` never throws; a read or contents failure is the artifact's error and is not cached; `withMeta`'s load primes PDFs safely; the check is backstopped (`issuesFor`: one "the check could not finish" error) | unreadable SVG then readable in one process; check backstop test |
+| R-48 | **Fixed**: only code points 0 to U+10FFFF decode | entity tests; sidecar SVG with `&#99999999;` loads |
+| R-49 | **Fixed**: scan never throws; unstat-able entries skipped; an unreadable image keeps its last record; a torn or wrong-shape `shots.json` read as none and rewritten | `tests/loadResilienceApi.test.ts` (dangling link, mode-000 image, torn record; start, sync and DELETE succeed) |
+| R-50 | **Fixed** (B03-Q2: next save drops): `readLayout` returns `{ layout, error?, damaged? }`; damaged entries named in an error on `layout`; layout PUT drops them and clears the issue; delete's tidy cannot fail the delete; a non-object top level says so and still blocks; `__proto__` keys never set | readLayout tests; API layout PUT and DELETE over junk; `null` top level 422, file unchanged |
+| R-51 | **Fixed**: `src/storage.ts` (`readJson` + `fields`, `writeJson`) used by the Viewed store, view prefs (types only; B02's R-46 pruning untouched), Artifacts prefs, board viewport and Outline folds; a repair is mentioned once per store (Saved preferences) | `tests/browserResilience.test.ts` (five bad Viewed values, each store wrong top level and wrong field); jsdom before-proof on the pre-B03 modules |
+| R-52 | **Fixed**: one `at` entry per lowered code unit, by code point; `normQuery` and `normText` lower per character; word-final sigma folds to sigma | find tests ("İ", Greek); the pre-B03 find threw |
+| R-53 | **Fixed**: `shared/remove.ts` seeds the walk with the root; `deleteItemFile` tolerates an already-missing file (`rmSync force`) | planDelete tests; DELETE over a self-parent and a two-card cycle (files gone, layout cleaned, 200) |
+| R-65 | **Fixed**: `listMd` skips names starting with `.` (so `takenIds` too) | `._EP-01.md` and `.#US-01.1.1.md`: no issue, no ID |
+| R-66 | **Fixed** (B03-Q3: tolerate everywhere, keep the mark): `shared/bom.ts`; records, layout, config, recodes (and the config PUT, `statuses:recode`, VOICE.md) read past it; revisions taken without it; `writeAtomic` keeps a file's mark, never adds one | parse equality live and via `parseItem` (the Diff's path); JSON reads; mark kept on rewrite; API save then save again (no false 409) |
+| R-121 | **Fixed**: `questionGroups` (configured, then unconfigured statuses as stored, always shown); walk and page use it | questionWalk test; e2e (listed, count 1, sheet opens, no "Nothing matches.") |
+| R-122 | **Fixed**: Outline's last group "Not under an epic" (`unplacedRoots`: no parent, missing parent, then each cycle rooted at its lowest member), reasons shown, each card once, searchable, keyboard reachable | unplacedRoots tests (incl. a tail off a cycle); e2e |
+| R-160 | **Fixed**: `server/pdfFactsStore.ts` (`.pdf-facts/`, `PDF_FACTS_DIR`); key SHA-256 of content plus extractor identity; atomic writes; shape-checked reads; facts kept only when the extractor's own read matches the key; passing failures never stored, retried after 60 s; misses read in one `pdfFacts.ts --batch` run, retried one by one if the run fails | `tests/pdfFactsStore.test.ts` (new process: 0 runs; one changed PDF: 1 run; damaged entry rebuilt; two processes at once; failed run not kept; mid-read change not kept); facts identical to the pre-B03 extractor for all 7 catalogue PDFs |
+
+**Issue-surface contract (D-06 as built, for B06, B10, B11):** client-side problems go to
+`src/clientProblems.ts` (`crashed`/`recovered`/`retry`, `pageError`, `repaired`), shown by the one
+problem pill in groups Connection, Card moves, **This page**, **Saved preferences**, Checks; no other
+masthead mark, toast or banner. Wrap a region in `RegionBoundary` (`region`, `label`, `frame`
+page/sheet/docked, `closes`, `toBoard`, `resetKey`); it resets only when something changed since it
+failed (Try again, the open card, the view, the catalogue), never loops, and clears its entry on
+unmount. Mounts today: the routed view (keyed by path) and both modal sheets in `App.tsx`, the docked
+sheet in `BoardView.tsx`. Page-wide capture: `watchPageErrors` in `main.tsx`; a crash a boundary
+caught is matched by message within 2 s (React's development replay throws a fresh error object), and
+connection failures and aborts are the Offline entry's. Tests drive a region's crash with
+`window.__BOARD_CRASH_TEST__` (development only).
+
+**What shipped:** new `shared/bom.ts`, `server/pdfFactsStore.ts`, `src/storage.ts`,
+`src/clientProblems.ts`, `src/components/RegionBoundary.tsx`; changed `server/catalogueFs.ts`
+(readRecord, listMd, readLayout, layoutDamageIssue, issuesFor backstop, writeAtomic, deleteItemFile,
+withMeta), `server/artifactFiles.ts`, `server/pdfFacts.ts` (`--batch`, `sha`), `server/historyJournal.ts`,
+`shared/artifacts.ts`, `shared/remove.ts`, `shared/check.ts` (cycles), `shared/files.ts`, `shared/move.ts`,
+`shared/types.ts`, `src/store.ts`, `src/board/autoLayout.ts`, `src/artifacts/find.ts`,
+`src/diff/viewedStore.ts`, `src/questionWalk.ts`, `src/views/QuestionsView.tsx`,
+`src/views/OutlineView.tsx`, `src/components/ProblemPill.tsx`, `src/styles.css`, `.gitignore`
+(`/.pdf-facts/`). Tests: `tests/loadResilience.test.ts`, `tests/loadResilienceApi.test.ts`,
+`tests/pdfFactsStore.test.ts`, `tests/browserResilience.test.ts`, `e2e/bad-data.spec.ts`.
+
+**Touch-rights edits (convention 11):** `src/App.tsx`, `src/main.tsx`, `src/views/BoardView.tsx`
+(boundary mounts, storage reader, exported `readViewport`); `src/components/ItemModal.tsx`,
+`CardNode.tsx`, `bits.tsx`, `BoardMinimap.tsx`, `src/itemSearch.ts`, `src/diff/DiffFields.tsx`,
+`shared/csv.ts`, `scripts/link-index.ts` (type labels); `src/artifactIndex.ts` (storage reader);
+`server/catalogueApi.ts` (layout PUT and delete tidy, config PUT and VOICE.md reads past a BOM;
+B05's: `deleteItemFile` now tolerates a missing file); `shared/config.ts`, `shared/statuses.ts`,
+`scripts/recode-statuses.ts` (BOM); `vite.config.ts`, `playwright.config.ts` (`PDF_FACTS_DIR`, the new
+spec); `tsconfig.node.json` (`jsx` and `vite/client` types so tests import `.tsx`; commented);
+`src/views/AboutView.tsx` (doc line); `docs/board-fixes/index.html` (B03 status).
+
+**Deviations:** (1) The bad-data e2e reuses the 5182 fixture board (specs reset it themselves) rather
+than a second server on 5183. (2) Matching a caught crash to page errors is by message within 2 s,
+not by error object: React's development replay throws a fresh object (found by e2e). (3) Find also
+folds word-final sigma (found by a test; same rule, one line). (4) The PDF extractor reports the hash
+of what it read, and the store keeps facts only when it matches (review). (5) `requirements/SCHEMA.md`
+is a catalogue doc; only its check-rules sentence changed, no requirement.
+
+**Verification:** `npm run verify:board` green (702 tests, check OK). Earlier runs under a load
+average of 30 to 43 timed out in the known git tests (Discovered), which pass alone. Fixture e2e on
+5182: 107 passed (100 before plus 7). Before-proofs against `git archive 277e8381` in the scratchpad:
+23 of 25 new node tests fail there (the 2 that pass are preservation checks), the browser and PDF
+files fail on import (new modules) so their behaviour was shown failing with an existing-module
+variant (3 of 3 fail, pass after), and all 7 e2e tests fail there. Real catalogue: `npm run check`
+output byte-identical to the baseline, cold and warm; no file under `requirements/` changed but
+SCHEMA.md. **Timings** (same load, back to back): pre-B03 2.3 s every run; now 1.5 s cold (one
+extractor start), 0.55 s with facts kept. **Manual** on 5480 with a scratch copy of the real catalogue
+plus a self-parented card and an unknown-type card: pre-B03 white screen on opening either; after,
+board, reload, Outline and both sheets render with no recovery panel needed. **Migration:** none.
+
+**Review outcomes (convention 15):** two Sonnet reviewers (diff about 2,300 added lines with tests).
+Confirmed and fixed: a passing PDF failure was cached per file version; one bad PDF failed a whole
+batch, and a lasting failure reran on every sync; facts could be stored under bytes the extractor did
+not read; the Outline rooted a cycle at a tail card; `__proto__` layout key; unbounded message maps;
+connection failures listed twice; duplicated `nodeBinary`; the check backstop had no test; VOICE.md
+revision with a BOM; `link-index` type label; tsconfig comment; JSX indentation. Regression tests
+added for each behaviour change, the PDF mismatch and backstop tests shown failing first. Not
+reproducible: a repair notice raised during render warns (zustand's store sync handles it; the
+notice is deferred anyway, and the test does not claim to prove it); a hidden parent's reason in the
+Outline (`shownIndex` hides everything under a retired card). Not taken: one element for problem
+rows (cosmetic), sweeping stale `.tmp` files (harmless, documented).
+
+**Doc facts (convention 12):** `requirements-board/README.md` server map (`pdfFacts.ts`,
+`pdfFactsStore.ts`), src map (`storage.ts`, `clientProblems.ts`, `ProblemPill`, `RegionBoundary`),
+"How it works" (new bullets: one file never stops the load; a crash stays in its part of the page);
+`DESIGN.md` masthead paragraph (This page, Saved preferences, recovery panel);
+`requirements/SCHEMA.md` "Rules the tools enforce" (no parent cycle); About page "Outline and checks";
+`CHANGELOG.md` 1.15.0; headers of the new modules. SKILL.md and ADOPTING lines checked: none
+describes this behaviour.
+
+**What later phases need:**
+- **B04:** keep `decodeEntities`' range rule, `splitFrontmatter`'s BOM strip, `shared/remove.ts`'s seeded
+  walk and the check's cycle block (`shared/check.ts`, after the duplicate-ID loop).
+- **B05:** build on `readLayout`'s `{ layout, error?, damaged? }` and `layoutRewritten()` in the layout
+  PUT; keep `writeAtomic`'s mark-keeping, `readRecord`'s BOM-free revisions and the tolerant
+  `deleteItemFile`. `guard()` still runs the check unguarded on writes (Discovered).
+- **B06, B10, B11:** the issue-surface contract above; put viewers and the canvas in a `RegionBoundary`
+  or report through `clientProblems.ts`. B06: a crashed sheet's draft survives in
+  `useEditableRecord`'s map and comes back when the sheet remounts.
+- **B07:** keep the boundary mounts in `App.tsx` and `BoardView.tsx`; the problem pill's structure.
+- **B08:** the screenshot scan's per-entry `quietly` and `readShots`.
+- **B09:** the Viewed store reads through `readJson`.
+- **B10:** read the filter preferences through `fields`/`readJson`; `find.ts` is correct for long lower cases.
+- **B11:** `canParent` never throws; `unplacedRoots` and the Outline's last group.
+- **B14:** `/.pdf-facts/` in the board's `.gitignore` (kit export must not ship the folder);
+  `PDF_FACTS_DIR` with the other env paths. Also the B01-found escaping base folder (Discovered), moved here from B03.
+- **B15:** rerun the four new test files and `e2e/bad-data.spec.ts`.
 
 ### B02 · Status identity · COMPLETE · 2026-11-19
 
