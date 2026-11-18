@@ -750,3 +750,23 @@ describe('anaesthetist profile (catch-up Phase 26)', () => {
     expect(s.masters.anaesthetists[ANAE.souter]?.bankAccount).toEqual({ accountName: 'Melanie Souter', accountNumber: '99-0101-0034821-00' })
   })
 })
+
+describe('the matching screen (catch-up Phase 33)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v52 store with no intake slice and a manual-intervention message, and reseeds an empty intake', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(53)
+    const { intake: _i, ...fresh } = freshAppState()
+    const messages = {
+      IM0001: { id: 'IM0001', feedId: 'FEED-STG', messageControlId: 'MSG-STG-1014', eventType: 'S14', status: 'manualIntervention', attempts: 1, receivedAtISO: '2026-07-21T09:00:00', resultBookingId: 'BK0001' },
+    }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, integrations: { ...fresh.integrations, messages } }, version: 52 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.intake).toEqual({ batches: {}, rows: {} })
+    expect(s.integrations.messages).toEqual({})
+  })
+})

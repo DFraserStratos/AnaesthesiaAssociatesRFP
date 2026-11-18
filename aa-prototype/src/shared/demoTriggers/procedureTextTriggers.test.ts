@@ -32,9 +32,10 @@ beforeEach(() => {
 })
 
 describe('Fire hospital message on a Booking', () => {
-  it('shows on the mobile, web and Admin Booking routes, and on the PWA', () => {
+  it('shows on the mobile, web and Admin Booking routes in the bar only (catch-up Phase 33: the PWA has the office stand-in)', () => {
     const api = createAppStore()
-    expect(ids(api, `/mobile/lists/L-34821-2026-08-04-AM/bookings/${FOSTER}`, 'pwa')).toContain('fire-hospital-message')
+    expect(ids(api, `/mobile/lists/L-34821-2026-08-04-AM/bookings/${FOSTER}`, 'pwa')).not.toContain('fire-hospital-message')
+    expect(ids(api, `/mobile/lists/L-34821-2026-08-04-AM/bookings/${FOSTER}`, 'bar')).toContain('fire-hospital-message')
     expect(ids(api, `/web/lists/L-34821-2026-08-04-AM/bookings/${FOSTER}`, 'bar')).toContain('fire-hospital-message')
     expect(ids(api, `/admin/day/2026-08-04/bookings/${FOSTER}`, 'bar')).toContain('fire-hospital-message')
     expect(byId('fire-hospital-message').badge).toBe('future-scope')
@@ -47,13 +48,15 @@ describe('Fire hospital message on a Booking', () => {
     expect(cannedMessageForBooking(api.getState(), RTK_BOOKING_ID)).toBeUndefined()
   })
 
-  it('says the hospital description replaced the rooms\' text, and a second firing changes nothing', () => {
+  it("sends the message to matching and changes nothing until the office applies the row (catch-up Phase 33; RV-13)", () => {
     const api = createAppStore()
-    const first = byId('fire-hospital-message').run(api, adminCtx(api, FOSTER), 'MSG-STG-1012')
-    expect(first.message).toContain("the hospital's description replaced the rooms' text")
     const text = primaryProcedureOf(api.getState(), FOSTER)!.procedureText
-    byId('fire-hospital-message').run(api, adminCtx(api, FOSTER), 'MSG-STG-1012')
+    const first = byId('fire-hospital-message').run(api, adminCtx(api, FOSTER), 'MSG-STG-1012')
+    expect(first.message).toBe("Sent MSG-STG-1012 to matching: the hospital's text replaces the rooms' once the office applies the row.")
     expect(primaryProcedureOf(api.getState(), FOSTER)!.procedureText).toEqual(text)
+    expect(Object.values(api.getState().intake.rows)).toHaveLength(1)
+    byId('fire-hospital-message').run(api, adminCtx(api, FOSTER), 'MSG-STG-1012')
+    expect(Object.values(api.getState().intake.rows)).toHaveLength(1)
   })
 })
 

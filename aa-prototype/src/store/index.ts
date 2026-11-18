@@ -425,3 +425,27 @@ export {
 } from './selectors'
 export * from './locks'
 export { stageBillingFailure, BILLING_FAILURE_ALREADY } from './demoStaging'
+// Catch-up Phase 33: the matching screen (intake rows, the office's decision, its selectors).
+// `stageImportRows` is the one place rows enter; it stays internal to the store.
+export {
+  correctImportRow,
+  decideImportRow,
+  importHospitalDownload,
+  INVALID_NHI_MESSAGE,
+  LIST_LOCKED_MESSAGE,
+  NHI_REQUIRED_MESSAGE,
+  SURGEON_REQUIRED_MESSAGE,
+  WORDING_KEPT_MESSAGE,
+  WORDING_OR_CODE_MESSAGE,
+  type DecisionInput,
+} from './matchingActions'
+export {
+  assessImportRow,
+  importRowViews,
+  matchingAttentionCount,
+  matchingCounts,
+  matchingView,
+  rowStackViews,
+  type ImportRowView,
+  type MatchingFilter,
+} from './matchingSelectors'

@@ -117,6 +117,11 @@ export interface CannedMessage {
   fhirBundle?: FhirBundle
   /** Create-only: which Souter List the new Booking lands on. */
   routing?: { anaesthetistId: string; dateISO: string; session: 'AM' | 'PM' }
+  /**
+   * Modify messages (S13 to S15): the session and surgeon the hospital sends, which the extractor
+   * does not read (the §10 fence), and the date when the message carries none (catch-up Phase 33).
+   */
+  rowContext?: { dateISO?: string; session: 'AM' | 'PM'; surgeon: { name: string; hpiId?: string } }
   /** Fails once then succeeds on retry (the auto-retry demo). */
   simulatedFault?: 'transient'
 }
@@ -157,7 +162,7 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
     eventType: 'S12',
     transport: 'hl7v2',
     label: 'S12 · New booking',
-    description: 'A new appointment from St George\'s for a repeat patient (Sarah Mitchell). Her NHI matches an existing record, so intake reuses it, no duplicate.',
+    description: 'A new appointment from St George\'s for a repeat patient (Sarah Mitchell). Stages a New row on the matching screen; when the office creates the Booking, her NHI matches her existing record, so intake reuses it, no duplicate.',
     correlationAppointmentId: APPT.s12,
     routing: STG_LIST,
     raw: buildHl7({
@@ -196,7 +201,7 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
     eventType: 'S12',
     transport: 'hl7v2',
     label: 'S12 · Out-of-range ethnicity',
-    description: 'A new booking, for a patient new to AA, carrying an ethnicity code outside the NZHIS demo subset. The Booking is still created, but the bad code is quarantined "pending correction", never stored, and a data-quality item is raised.',
+    description: 'A new booking, for a patient new to AA, carrying an ethnicity code outside the NZHIS demo subset. It stages a row; when the office creates the Booking, the bad code is quarantined "pending correction", never stored, and a data-quality item is raised.',
     correlationAppointmentId: APPT.s12Ethnicity,
     routing: STG_LIST,
     raw: buildHl7({
@@ -264,9 +269,10 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
     feedId: FEED.stg,
     eventType: 'S13',
     transport: 'hl7v2',
-    label: 'S13 · Reschedule (same list, new time)',
-    description: 'A reschedule that keeps the appointment on the same session but changes its time. Locates its Booking by the appointment id and updates the scheduled time in place.',
+    label: 'S13 · New time, same List',
+    description: 'A new time for an appointment on the same session. Stages a Modification row on the matching screen; the Booking changes only once the office applies it.',
     correlationAppointmentId: APPT.s13Time,
+    rowContext: { session: 'AM', surgeon: { name: 'Mr T. Hale', hpiId: '40HALT' } },
     raw: buildHl7({
       event: 'S13',
       controlId: 'MSG-STG-1010',
@@ -282,9 +288,10 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
     feedId: FEED.stg,
     eventType: 'S13',
     transport: 'hl7v2',
-    label: 'S13 · Reschedule (moves to another day)',
-    description: 'A reschedule that moves the appointment to a different day/session. Locates its Booking by the appointment id and reassigns it to the target List, leaving both Lists\' other Bookings untouched.',
+    label: 'S13 · Booking on another day (arrives as a new row)',
+    description: 'The hospital moved the appointment to another day. Lists never move day (D62): it stages a New row for the new day, and the Booking on the old day stays for the office to cancel.',
     correlationAppointmentId: APPT.s13Move,
+    rowContext: { session: 'AM', surgeon: { name: 'Mr T. Hale', hpiId: '40HALT' } },
     raw: buildHl7({
       event: 'S13',
       controlId: 'MSG-STG-1011',
@@ -301,8 +308,9 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
     eventType: 'S14',
     transport: 'hl7v2',
     label: 'S14 · Modification',
-    description: 'A modification to an existing appointment (a new time plus a note from the booking office). Locates its Booking by the appointment id and applies the update.',
+    description: 'A modification to an existing appointment (a new time, a note from the booking office and fuller wording). Stages a Modification row on the matching screen for the office to approve.',
     correlationAppointmentId: APPT.s14,
+    rowContext: { session: 'AM', surgeon: { name: 'Mr T. Hale', hpiId: '40HALT' } },
     raw: buildHl7({
       event: 'S14',
       controlId: 'MSG-STG-1012',
@@ -321,8 +329,9 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
     eventType: 'S15',
     transport: 'hl7v2',
     label: 'S15 · Cancellation',
-    description: 'A cancellation from St George\'s. Locates its Booking by the appointment id and soft-cancels it (retained, visibly cancelled, excluded from billing), the same audited mechanism as a manual cancel.',
+    description: 'A cancellation from St George\'s. Stages a Cancellation row on the matching screen; the office cancels the Booking (soft-cancel, retained and visibly cancelled) only when it applies the row.',
     correlationAppointmentId: APPT.s15,
+    rowContext: { dateISO: STG_MODIFY_LIST.dateISO, session: 'AM', surgeon: { name: 'Mr T. Hale', hpiId: '40HALT' } },
     raw: buildHl7({
       event: 'S15',
       controlId: 'MSG-STG-1013',
@@ -338,9 +347,10 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
     feedId: FEED.stg,
     eventType: 'S14',
     transport: 'hl7v2',
-    label: 'S14 · Locked target (manual intervention)',
-    description: 'A modification addressing a Booking that sits on a SUBMITTED List (closed to integrations). Integration writes obey the lifecycle: it is NOT applied, and parks as a manual-intervention item for the office to action. Nothing is lost.',
+    label: 'S14 · Change to a submitted List',
+    description: 'A modification for a Booking on a SUBMITTED List. Stages an ordinary row: the office can apply it until the List is authorised (US-02.5.4).',
     correlationAppointmentId: APPT.lockedTarget,
+    rowContext: { session: 'AM', surgeon: { name: 'Mr P. Doyle', hpiId: '45DOYP' } },
     raw: buildHl7({
       event: 'S14',
       controlId: 'MSG-STG-1014',

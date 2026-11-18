@@ -290,6 +290,25 @@ export const FIELD_LABELS: Record<string, string> = {
   defaultStatus: 'Default for new sessions',
   previousDefault: 'Previous default',
   retiredAtISO: 'Retired',
+  // --- Matching screen (catch-up Phase 33) ----------------------------------
+  importRowId: 'Hospital row',
+  hospital: 'From',
+  channel: 'Arrived as',
+  changeType: 'Change',
+  fieldsApplied: 'Fields applied',
+  fields: 'Fields',
+  decision: 'Decision',
+  picks: 'Office picks',
+  externalRef: 'Hospital appointment id',
+  hospitalStatus: 'Hospital status',
+  'procedure.text': 'Procedure as received',
+  'procedure.code': "Hospital's code",
+  insurer: 'Insurer (as sent)',
+  patientName: 'Patient name',
+  label: 'Label',
+  rows: 'Rows',
+  skipped: 'Already imported',
+  batchId: 'Import',
 }
 
 /**

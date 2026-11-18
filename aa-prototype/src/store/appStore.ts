@@ -29,6 +29,10 @@ import type {
   Disbursement,
   IntegrationFeed,
   IntegrationMessage,
+  ImportBatch,
+  ImportBatchId,
+  ImportRow,
+  ImportRowId,
   Invoice,
   InvoiceLine,
   PaymentIn,
@@ -83,6 +87,16 @@ export interface IntegrationsSlice {
   messages: Record<string, IntegrationMessage>
 }
 
+/**
+ * The matching screen's staged rows (catch-up Phase 33; DM-34): one batch per
+ * hospital import, keyed sheet or feed message, each holding its rows. Seeded
+ * empty; no sync state (US-02.1.5 is Future Work, D52).
+ */
+export interface IntakeSlice {
+  batches: Record<ImportBatchId, ImportBatch>
+  rows: Record<ImportRowId, ImportRow>
+}
+
 export interface ShellSlice {
   currentApp: AppId
   /**
@@ -100,6 +114,7 @@ export interface AppState extends SeedState {
   billing: BillingSlice
   xero: XeroSlice
   integrations: IntegrationsSlice
+  intake: IntakeSlice
   shell: ShellSlice
 }
 
@@ -298,8 +313,10 @@ export const PERSIST_KEY = 'aa-demo'
  *  seeded for all 14 on bank 99; `gstPeriod` removed).
  *  v52: catch-up Phase 32d, Public as a Slot status (`publicHospital`, D86): the `public` List kind retired; the
  *  public Lists holding Bookings are private Lists (same ids), the bookless ones Public sessions ("CPH"), seven
- *  weekly Public series (AS0001 to AS0007), six recurring-clash Draft Lists gone. Reseeds on load. */
-export const PERSIST_VERSION = 52
+ *  weekly Public series (AS0001 to AS0007), six recurring-clash Draft Lists gone. Reseeds on load.
+ *  v53: catch-up Phase 33, the intake slice (import batches and rows, seeded empty); HL7/FHIR messages stage rows
+ *  instead of applying (`resultImportRowId`); `manualIntervention` and `integrationImmutable` retired. Reseeds on load. */
+export const PERSIST_VERSION = 53
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {} }
@@ -309,6 +326,11 @@ export function emptyXeroSlice(): XeroSlice {
 }
 export function emptyIntegrationsSlice(): IntegrationsSlice {
   return { feeds: {}, messages: {} }
+}
+
+/** The intake slice: seeded empty, the presenter imports or a trigger delivers (catch-up Phase 33). */
+export function emptyIntakeSlice(): IntakeSlice {
+  return { batches: {}, rows: {} }
 }
 
 /** The seeded integrations slice: the three feed configs, no messages yet (Phase 11). */
@@ -340,6 +362,7 @@ export function freshAppState(): AppState {
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
+    intake: emptyIntakeSlice(),
     shell: { currentApp: 'mobile', suggestionSeq: 0 },
   }
   // Every seeded AUTHORISED List is locked (catch-up Phase 25), its cases stamped with the payee.

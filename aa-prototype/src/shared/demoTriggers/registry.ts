@@ -1403,29 +1403,33 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'fire-hospital-message',
     label: 'Fire hospital message',
     description:
-      "Sends a canned hospital HL7 v2 or FHIR message into the mock backend, including the Christchurch Public dead-letter case (MSG-CPH-2001). A new Booking arrives with no Contract and waits on Admin Day's Needs an invoice destination until the office sets one. On a Booking (mobile, web and Admin) it defaults to the message addressed to that Booking: on Diane Foster's, MSG-STG-1012's hospital description replaces the rooms' text, the original kept in the History. Also on Admin · Integrations and the Integrations simulator.",
+      "Sends a canned hospital HL7 v2 or FHIR message into the mock backend, including the Christchurch Public dead-letter case (MSG-CPH-2001). Stages the hospital's row on Admin, Matching. The Booking changes only once the office applies it. On a Booking (mobile, web and Admin) it defaults to the message addressed to that Booking: on Diane Foster's, MSG-STG-1012's hospital text replaces the rooms' once the office applies its row. Also on Admin · Integrations and the Integrations simulator. No scripted beat uses the S13 to S15 messages.",
     screen: 'Mobile · Lists',
     routes: [...MOBILE_LISTS, WEB_BOOKING, ADMIN_BOOKING, ADMIN_INTEGRATIONS, INTEGRATIONS_SIM],
-    surfaces: ['bar', 'pwa'],
+    // Bar only (catch-up Phase 33): a row on a handset has no office to decide it; the PWA has the office stand-in.
+    surfaces: ['bar'],
     badge: 'future-scope',
     choices: () => CANNED_MESSAGES.map((m) => ({ id: m.id, label: `${m.label} · ${m.id}` })),
     // On a Booking, the message addressed to it (catch-up Phase 20a); else the simulator's pick or the S1 create.
     defaultChoice: (state, ctx) =>
       cannedMessageForBooking(state, ctx.params['bookingId']) ?? ctx.published['integrationsSim.selectedMessageId'] ?? DEFAULT_MESSAGE_ID,
     disabledReason: () => null,
-    run: (api, _ctx, choiceId) => {
+    run: (api, ctx, choiceId) => {
       const selectedId = choiceId ?? DEFAULT_MESSAGE_ID
-      const replacesBefore = api.getState().audit.filter((a) => a.action === 'procedure.procedureText.replace').length
       const res = processMessage(api, selectedId)
       useDemoTriggerMemory.getState().rememberMessage(selectedId)
-      const replaced = api.getState().audit.filter((a) => a.action === 'procedure.procedureText.replace').length > replacesBefore
+      // Outside Admin, the presenter switches apps to decide the row (catch-up Phase 33).
+      const elsewhere = !ctx.pathname.startsWith('/admin') && !ctx.pathname.startsWith('/demo') ? ' Switch to Admin, Matching, to apply it.' : ''
+      const staged = res.ok && res.value.importRowId !== undefined
       return {
         ok: res.ok,
         message: !res.ok
           ? `Refused: ${res.message}`
-          : replaced
-            ? `Fired ${selectedId}: the hospital's description replaced the rooms' text; the original is in the History.`
-            : `Fired ${selectedId}: ${res.value.outcome}. See the three-pane view in the integration simulator and the log in the Admin app Integrations monitor.`,
+          : staged && selectedId === 'MSG-STG-1012'
+            ? `Sent MSG-STG-1012 to matching: the hospital's text replaces the rooms' once the office applies the row.${elsewhere}`
+            : staged
+              ? `Sent ${selectedId} to matching: the row waits for the office to decide.${elsewhere}`
+              : `Fired ${selectedId}: ${res.value.outcome}. See the three-pane view in the integration simulator and the log in the Admin app Integrations monitor.`,
       }
     },
     indexPath: () => '/mobile/lists',
@@ -1434,10 +1438,10 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'replay-hospital-message',
     label: 'Replay last message (dedupe)',
     description:
-      'Replays the last hospital message fired, to show idempotent dedupe: same message control ID, no second Booking.',
+      'Replays the last hospital message fired, to show idempotent dedupe: same message control ID, no second row on Matching.',
     screen: 'Mobile · Lists',
     routes: [...MOBILE_LISTS, ADMIN_INTEGRATIONS, INTEGRATIONS_SIM],
-    surfaces: ['bar', 'pwa'],
+    surfaces: ['bar'],
     badge: 'future-scope',
     disabledReason: (state) => messageReplayDisabledReason(state),
     run: (api) => {
@@ -1449,7 +1453,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         ok: res.ok,
         message: res.ok
           ? res.value.outcome === 'duplicate'
-            ? 'Deduplicated: same message control ID, no second Booking created.'
+            ? 'Deduplicated: same message control ID, no second row staged.'
             : `Replayed ${last}: ${res.value.outcome}.`
           : `Refused: ${res.message}`,
       }

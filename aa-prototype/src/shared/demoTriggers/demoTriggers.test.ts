@@ -219,11 +219,11 @@ describe('route scoping', () => {
     expect(ids(api, '/admin/integrations', 'bar', { 'integrations.tab': 'pdfs' })).toContain('ingest-pdf-row')
   })
 
-  it('hospital messages show on the three mobile Lists layers, on both surfaces', () => {
+  it('hospital messages show on the three mobile Lists layers, in the bar only (catch-up Phase 33)', () => {
     const api = createAppStore()
     for (const path of ['/mobile/lists', '/mobile/lists/L1', '/mobile/lists/L1/bookings/BK1']) {
       expect(ids(api, path, 'bar')).toContain('fire-hospital-message')
-      expect(ids(api, path, 'pwa')).toContain('fire-hospital-message')
+      expect(ids(api, path, 'pwa')).not.toContain('fire-hospital-message')
     }
     expect(ids(api, '/mobile/more', 'pwa')).not.toContain('fire-hospital-message')
   })

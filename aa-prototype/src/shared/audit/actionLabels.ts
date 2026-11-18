@@ -188,6 +188,13 @@ export const ACTION_LABELS: Record<string, string> = {
   'integration.receive': 'Message received',
   'feed.update': 'Feed mapping updated',
 
+  // --- Matching screen (catch-up Phase 33) ----------------------------------
+  'importBatch.create': 'Hospital bookings imported',
+  'importRow.receive': 'Hospital row received',
+  'importRow.correct': 'Hospital row corrected',
+  'importRow.decide': 'Hospital row decided',
+  'booking.fromHospitalRow': 'Hospital row applied to this Booking',
+
   // --- Xero simulation & money movement -----------------------------------
   'xero.pairCreated': 'Xero invoice pair created',
   'xero.handoffFailed': 'Xero handoff failed',

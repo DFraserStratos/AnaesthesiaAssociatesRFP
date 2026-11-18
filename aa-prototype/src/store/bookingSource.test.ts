@@ -9,7 +9,8 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { addPostOpAddendum, createBooking } from './bookingActions'
 import { authoriseList, submitList } from './lifecycle'
-import { ingestPdfRow, processMessage } from './integrationActions'
+import { ingestPdfRow } from './integrationActions'
+import { decideImportRow, importHospitalDownload } from './matchingActions'
 import { bookingsForList } from './selectors'
 import type { Actor } from './mutate'
 import { ANAE, HOSP, SEED_LIST_IDS, SEED_MARKERS, buildSeed } from '../domain/seed'
@@ -54,10 +55,14 @@ describe('creation paths stamp their source', () => {
     expect(api.getState().schedule.bookings[outcome.value.bookingId]).not.toHaveProperty('source')
   })
 
-  it('a hospital message create stamps hospitalDownload (interim until Phase 33)', () => {
+  it('a Booking created from a hospital row on the matching screen stamps hospitalDownload (catch-up Phase 33)', () => {
     const api = store()
-    const res = processMessage(api, 'MSG-STG-1001')
+    const imported = importHospitalDownload(api, OFFICE, 'SAMPLE_FORTE_SHEET')
+    if (!imported.ok) throw new Error(imported.message)
+    const r1 = api.getState().intake.batches[imported.value.batchId!]!.rowIds[0]!
+    const res = decideImportRow(api, OFFICE, r1, { kind: 'createBooking', listId: 'L-29104-2026-07-28-AM' })
     if (!res.ok) throw new Error(res.message)
+    // A keyed sheet is the hospital pathway too: its channel lives on the row and the text's source.
     expect(api.getState().schedule.bookings[res.value.bookingId ?? '']?.source).toBe('hospitalDownload')
   })
 

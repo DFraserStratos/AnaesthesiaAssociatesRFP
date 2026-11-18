@@ -1012,7 +1012,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
 
   // Locked target on a SUBMITTED List (Delaney Fri 17, St George's / Mr Doyle):
   // completed + valid, so index.ts marks the List SUBMITTED. The S14
-  // locked-target message addresses it and parks as manual-intervention.
+  // locked-target message addresses it and stages an ordinary row on the matching screen (catch-up Phase 33).
   const lockedTargetBooking = addBooking({
     listId: delaneyFri17Am,
     patientId: PAT.prentice,

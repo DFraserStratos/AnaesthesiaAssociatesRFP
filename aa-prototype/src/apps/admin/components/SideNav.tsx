@@ -19,7 +19,7 @@ interface SideNavProps {
   reviewBadge: number
   /** Billing-monitor exceptions count (Phase 09) — amber, distinct from the crimson review badge. */
   billingBadge?: number
-  /** Integration-monitor attention count (Phase 11; dead-letter + manual intervention) — amber. */
+  /** Integration-monitor attention count (Phase 11; dead-letter only since catch-up Phase 33) — amber. */
   integrationBadge?: number
   /** Open conflicts from today to the horizon (catch-up Phase 30; US-01.5.4) — amber. */
   conflictBadge?: number

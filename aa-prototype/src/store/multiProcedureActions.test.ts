@@ -165,13 +165,13 @@ describe('setPrimaryProcedure (Make primary)', () => {
     expect(setPrimaryProcedure(api, OFFICE, primary)).toMatchObject({ ok: false, code: 'alreadyPrimary' })
   })
 
-  it('an inbound feed may change it on an ACTIVE List (audited integration) and is refused on a SUBMITTED one', () => {
+  it('an inbound feed may change it on an ACTIVE List (audited integration); nobody on an AUTHORISED one', () => {
     const { api, additional } = twoProcedures()
     expect(setPrimaryProcedure(api, FEED, additional).ok).toBe(true)
     expect(api.getState().audit.filter((a) => a.action === 'procedure.setPrimary').every((a) => a.source === 'integration')).toBe(true)
     const holt = createAppStore()
     const [, holtAdditional] = procs(holt, HOLT)
-    expect(setPrimaryProcedure(holt, FEED, holtAdditional!.id)).toMatchObject({ ok: false, code: 'integrationImmutable' })
+    // No integration branch since catch-up Phase 33: a SUBMITTED List refuses only by state at AUTHORISED.
     // The office corrects a SUBMITTED Booking at review.
     expect(setPrimaryProcedure(holt, OFFICE, holtAdditional!.id).ok).toBe(true)
   })
