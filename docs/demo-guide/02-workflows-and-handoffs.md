@@ -171,6 +171,14 @@ The populated List becomes visible to the assigned anaesthetist on mobile and we
 From the matching screen (office to anaesthetist): a row the office creates or applies shows on her
 List as a Booking with the hospital's wording as received, source "Hospital download".
 
+A row with no NHI waits at intake on the matching screen, and no patient or Booking is made; meanwhile
+a stub stands on her List in its place (a dashed amber row, "Waiting at intake: no NHI · The office is
+resolving this", with the time, name and wording as received). The stub is never counted ("n of n
+complete · 1 waiting at intake") and never blocks submit or authorise; in Admin it carries a **Resolve on
+Matching** link. When the office adds the NHI, the Booking takes the stub's place; rejecting the row
+removes the stub. Seeded: Mere Tipene on Dr Souter's Tue 4 Aug PM List (NHI ZQA1024). What a stub shows
+and that the Booking takes its place are our readings, to confirm with AA.
+
 ### Key distinction
 
 A hospital or surgeon supplies booking information; they are not shown as logged-in users of the
@@ -728,6 +736,10 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 #### Hospital rows
 
 - An unmatched row, or one with no NHI, waits in the unmatched queue; nothing is dropped.
+- A row with no NHI that names a List places a stub on that List: the case as received, marked waiting
+  at intake, never a Booking, never counted and never blocking submit or authorise. Adding the NHI on
+  Matching creates the Booking in the stub's place; rejecting the row removes the stub (our reading, to
+  confirm with AA).
 - A duplicate row is skipped.
 - A later update waits for approval, matched by date, surgeon, hospital and session.
 - A Booking moved to another day arrives as a cancellation plus a new Booking.

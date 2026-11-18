@@ -329,7 +329,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin` | Redirects to `/admin/day/2026-07-21`. |
 | `/admin/day/:date` | Day grid of anaesthetists by time. The right rail has the mini calendar, "Internal notes" and "Awaiting review". Add `?sort=az` for A to Z order. The toolbar is `[data-testid=admin-day-nav]` (see "Date navigation" under "Overlays that need clicks"); its row order is a segmented control, `role=group[name="Row order"]` with buttons "Roster order" and "A to Z" (`aria-pressed`). The header's date input is named "Go to date" (`[aria-label="Go to date"]`). |
 | `/admin/day/:date/bookings/:bookingId` | Admin booking detail with "Office billing setup". A Booking created or changed from a hospital row links back to it (`booking-from-hospital-row`, opens Matching on that row); a newer hospital text waiting on Matching shows the cue `booking-newer-hospital-text` (catch-up Phase 33). |
-| `/admin/matching` | Matching (catch-up Phase 33; Kirsty W.): hospital rows waiting for the office. Empty at reset (`matching-empty`); stage rows with "Import hospital file" (`matching-import-open`, see Overlays) or the Demo actions below. Stat tiles `matching-stats` (`[data-stat=open|new|modification|cancellation|unmatched]`), the filter `[aria-label="Show rows"]` (options whose text starts "Open", "Unmatched", "Decided"), the table `matching-table` with rows `matching-row-<n>` (1-based, ready rows first, then import order). A row click opens its panel `matching-panel` (a right-docked SidePanel with a scrim: press Escape before clicking a row or the header). After an import the batch's first row's panel opens by itself. A row decided stays in place, dimmed, until the panel closes. |
+| `/admin/matching` | Matching (catch-up Phase 33; Kirsty W.): hospital rows waiting for the office. At reset it holds one seeded waiting row (Mere Tipene, no NHI, catch-up Phase 33a; see Stubs on a List below), so `matching-empty` no longer shows; stage rows with "Import hospital file" (`matching-import-open`, see Overlays) or the Demo actions below. Stat tiles `matching-stats` (`[data-stat=open|new|modification|cancellation|unmatched]`), the filter `[aria-label="Show rows"]` (options whose text starts "Open", "Unmatched", "Decided"), the table `matching-table` with rows `matching-row-<n>` (1-based, ready rows first, then import order). A row click opens its panel `matching-panel` (a right-docked SidePanel with a scrim: press Escape before clicking a row or the header). After an import the batch's first row's panel opens by itself. A row decided stays in place, dimmed, until the panel closes. |
 | `/admin/notifications` | The shared notification pool (catch-up Phase 32; US-13.8.1): newest first, six a page, `?page=N`; the table `admin-notifications-table`, rows `[data-notification-row=NT0001]` with "Open List", "Open Draft List" or "Open Booking", the pager `admin-notifications-pager` (Newer / Older). Catch-up Phase 32b: notices are active or resolved; the page shows active ones by default, the count `admin-notifications-page-count`, each active row's tick `notification-tick` ("Resolve"), and the "Show resolved" checkbox `admin-notifications-show-resolved` (`?resolved=1`, kept with `?page=`); resolved rows carry `data-notification-resolved=true` and the line `notification-resolved-line` ("Resolved by Kirsty W., Tue 21 Jul 08:00"). An alert's note is `notification-alert-note`. The provisional caption is gone. Seeds empty: stage it with the `colleague-moves-list-to-office` trigger, or send an alert from a web Booking (same origin) and `goto` here. |
 | `/admin/draft-lists` | Draft Lists (catch-up Phase 31): Unassigned tab (default) and History (`?tab=history`). Since UI unification U5 the two tabs are links inside `role=navigation[name="Draft Lists"]`, not `role=tab`: `a[data-draft-tab=unassigned]` and `a[data-draft-tab=history]`, each with its count inside the link text (so match by the hook, not the name); the current one has `aria-current=page`. `?open=<listId>` opens the Draft List drawer (`admin-draft-list-drawer`); `?assigned=<listId>` shows the assigned confirmation with "Open List". The drawer's "Available that session" Assign opens step 2; the row's Assign opens step 1 (Everyone / Free only, tier filter, groups). "New Draft List" opens `admin-new-draft-list`. |
 | `/admin/conflicts` | Conflicts (catch-up Phase 30): every live conflict, grouped by date (`section[data-conflict-date=<date>]`), one table each (`[data-shot=conflicts-table]` wraps them). Rows are `tr[data-conflict-row=<listId>]` (cleared ones add `data-conflict-cleared=true`). Row actions have accessible names with context (`Reassign, Dr Rutherford Wed 22 Jul AM`, `Clear conflict, ...`, `Open the List, ...`, `Open the day, ...`): match them by regex (`role=button[name=/^Clear conflict/]`). Hospital closures only since catch-up Phase 32b (no reason filter, no Availability column). Filters in the URL: `?when=twoWeeks|canvas|past`, `?hospital=<id>`, `?anaesthetist=<reg>`, `?cleared=1`. After a reassign or clear, `[data-shot=conflicts-confirmation]`. |
@@ -1067,7 +1067,7 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 
 ### Hospital sample files and their rows (catch-up Phase 33)
 
-The intake slice is empty at reset; Matching's Import hospital file dialog offers four sample files
+At reset the intake slice holds only the seeded waiting row and its stub (Phase 33a, below); Matching's Import hospital file dialog offers four sample files
 (`domain/intake/hospitalDownloads.ts`, every patient synthetic, the wording from AR-35). Each import
 lands its rows in file order (R1 first); a second import of the same file adds nothing ("All 5 rows
 were already imported. Nothing new.").
@@ -1086,9 +1086,9 @@ were already imported. Nothing new.").
   "Olivia Ratima" (`BK0166`: the corrected name and date of birth, the insurer "nib · Approval 4471203",
   a note); R3 Hemi Walker on the AUTHORISED Wed 18 Mar List (`HBK08`): the "List authorised" flag and the
   footer disabled with "This List is authorised and locked"; R4 Tama Henare with no NHI (Unmatched,
-  "Waiting for an NHI"; typing `ZQA1008` in `matching-nhi` releases it as a New row on Dr Souter's Tue
-  28 Jul PM); R5 Grace Whitu Thu 6 Aug PM (Unmatched, "No List at Southern Cross for Ms Patel on Thu 6 Aug
-  PM"). Two Unmatched rows after import.
+  "Waiting for an NHI"; its stub stands on Dr Souter's Tue 28 Jul PM List; type `ZQA1008` in `matching-nhi`
+  and press Add NHI, `stub-add-nhi`, and the Booking takes the stub's place, Phase 33a); R5 Grace Whitu Thu 6 Aug PM (Unmatched, "No List at Southern Cross for Ms Patel on Thu 6 Aug
+  PM"). Two Unmatched rows from the file after import, three with the seeded row.
 - `SAMPLE_FORTE_SHEET` (Forte Health daily sheet keyed by the office): R1 Peter Langley New onto Mr
   Okafor's Tue 28 Jul AM; R2 Rosa Mendes with a mistyped NHI check digit (flagged, corrected inline);
   R3 Hugh Barnett Fri 31 Jul PM, no Forte List (create a Draft List).
@@ -1096,6 +1096,23 @@ were already imported. Nothing new.").
   Needs an invoice destination card (the banner's "Needs an invoice destination" pill).
 - MSG-STG-1014 (fired from `/admin/integrations` or `/demo/integrations`) stages "Alan Prentice", a change
   to a SUBMITTED List, still appliable.
+
+### Stubs on a List (catch-up Phase 33a)
+
+- Matching is no longer empty at reset: the seed holds one waiting row with no NHI, `IRS001` (batch `IBS001`,
+  "Southern Cross theatre list, Tue 4 Aug"): Mere Tipene, Southern Cross, Ms K. Patel, "Lap chole", 14:00, Tue 4 Aug
+  PM. It sorts after the ready rows (Unmatched), so after an import `matching-row-1` and `matching-received` are still
+  the file's first ready row; the Open and Unmatched counts and `nav-badge-matching` are one higher than in Phase 33.
+  Select it with `[data-shot^='matching-row-'][data-import-row-id=IRS001]` (or router state `{ selectRowId: 'IRS001' }`).
+- Its stub `STB0001` stands on Dr Souter's Tue 4 Aug PM List `L-34821-2026-08-04-PM` (Southern Cross, Ms K. Patel),
+  which has no Bookings, only the stub. The NHI to type on Matching is `ZQA1024`: fill `[data-shot=matching-nhi] >>
+  role=textbox`, then click `[data-shot=stub-add-nhi]` (typing alone no longer releases a row whose stub stands) and
+  wait for `[data-shot=matching-banner]`; the Booking takes the stub's place on that List.
+- Importing `SAMPLE_SX` places a second stub for R4 Tama Henare on Dr Souter's Tue 28 Jul PM List
+  `L-34821-2026-07-28-PM` (2 Bookings, 13:00 and 14:00; the stub at 15:30 sorts after them). Add NHI with `ZQA1008`
+  resolves it the same way.
+- Admin Day: open the drawer with `button[data-list-id="L-34821-2026-08-04-PM"]` on `/admin/day/2026-08-04`.
+  `/admin/review/L-34821-2026-08-04-PM` renders the ACTIVE List with the stub row.
 
 ## Overlays that need clicks
 
@@ -1443,6 +1460,16 @@ the exception: use the `trigger` step)
   Booking", "Mark as matched", "Create List and Booking", "Create Draft List and Booking", "Reject row"; disabled
   with its reason) and, after a decision, `matching-banner` (`role=status`). On the Admin Booking detail:
   `booking-from-hospital-row` and `booking-newer-hospital-text`. Side nav `nav-badge-matching`.
+- Stubs (catch-up Phase 33a): `list-stub` (the stub row; also `data-stub-id`, `data-import-row-id`; a button on
+  mobile and in tables, a `role=group` in the Admin drawer), `list-stub-row` (its `<tr>` on web List detail and Admin
+  Review; click `[data-shot=list-stub-row] [data-shot=list-stub]` to show the inline details), `stub-sheet` (the
+  mobile bottom sheet, or the inline details panel on web and Review), `stub-readings` (the readings caption inside
+  it), `list-stub-note` ("1 waiting at intake" beside the progress bar on mobile and web List detail), `list-row-stub`
+  (the triangle marker on mobile and web Lists rows), `daygrid-block-stub` (the marker on the Admin Day block beside
+  `daygrid-block-count`), `stub-resolve-link` ("Resolve on Matching" on Admin drawer and Review stub rows). On
+  Matching: `matching-stub` (the panel notice "A stub stands on Dr Souter's Tue 4 Aug PM List"), `stub-add-nhi` (Add
+  NHI beside the NHI field; the field's input carries `data-row-nhi`) and `matching-stub-resolved` (the banner line
+  "The Booking takes the stub's place on the List." after Add NHI).
 - Public status (catch-up Phase 32d, no new hook names): `[data-status-choice=publicHospital]` in the mobile and web availability forms and the Day drawer's Change status sheet; `tr[data-status-row=publicHospital]` in Availability statuses; `[data-shot=drawer-change-status]` opens the sheet; the Day block for a Public session is `button[data-slot-id=<id>]` showing "Public" and its note; the legend and the "Status filters" group gain a "Public status" chip (a Slot status, no longer a List kind).
 - UI unification Phase U6 (every earlier hook kept, none moved off its element): table shells are the shared
   `shared/table/TableShell`. Its `shot`, `testId` and `data-*` sit on the scroller `div` (as before:
@@ -1872,6 +1899,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/mobile/lists[...]`, `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/admin/integrations`, `/demo/integrations` | `fire-hospital-message` (choice: a message id), `replay-hospital-message` | Badged Future scope, **bar only** since catch-up Phase 33 (not in the PWA Demo sheet). It never applies anything: a message stages a row on `/admin/matching` ("Sent ... to matching"), and the Booking changes only once the office decides the row there. On a Booking it defaults to the message addressed to it (MSG-STG-1012 on Foster's `BK0043`). Replay dedupes: no second row |
 | `/admin/matching` | `matching-receive-theatre-list` (choice `stg` or `sx`), `matching-send-update` | Catch-up Phase 33, bar only. "Import hospital file" stages `SAMPLE_STG` or `SAMPLE_SX`'s rows as the hospital sending its theatre list (refused once staged). "Send update for a matched Booking" stages a later row for the Booking matched by the selected row, else Diane Foster's `BK0043` (a later time and the hospital's fuller wording), waiting for approval. Recipes usually stage rows through the product's own Import hospital file dialog instead (see Overlays) |
 | `/mobile/lists[...]` (PWA Demo sheet) | `matching-office-matches-row` (choice by label: "Sarah Mitchell, Tue 28 Jul AM (S1)", "A new hospital booking on this List", "A hospital update for this Booking, approved by the office") | Catch-up Phase 33, badged Office stand-in, PWA only. The hospital's row arrives and the office decides it with the suggestion, every difference ticked, no Contract picked. On Foster's `BK0043` the hospital's fuller wording replaces WLE MM (US-02.5.7's mobile shot). In the framed build use Admin, Matching |
+| `/mobile/lists/<listId>` (PWA Demo sheet only) | `stub-office-adds-nhi` ("Office adds the NHI to this stub") | Catch-up Phase 33a, badged Office stand-in, PWA only. On a List holding a stub, the office adds the NHI its waiting row needs (Mere Tipene `ZQA1024` on `L-34821-2026-08-04-PM`; after the Southern Cross import, Tama Henare `ZQA1008` on `L-34821-2026-07-28-PM`) through the one resolve path, and the Booking takes the stub's place. Disabled on a List with no stub. No choice. |
 | `/admin/day/<date>/bookings/<id>` | `hospital-description-arrives` (choice `ar35-row-2`, `-12`, `-20`, `-25`) | Catch-up Phase 20a, bar only, no badge. AR-35's illustrative hospital wording replaces the procedure text through `replaceProcedureText`; defaults to the row paired with the rooms' text (row 12 on Tane's `BK0006`). Disabled when the Booking already holds that text |
 | `/mobile/lists/<listId>` | `photo-capture-future` | Badged Future scope. Opens the Add a booking sheet on the simulated photo of a paper card (sample cards) for the List in the URL; disabled unless the List is ACTIVE. Also in the PWA Demo sheet. A saved Booking reads "Added by anaesthetist" |
 | `/admin/audit` | `simulate-sign-in` | Five simulated sign-in audit rows |

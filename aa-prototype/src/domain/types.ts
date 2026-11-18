@@ -55,6 +55,8 @@ export type InvoiceId = string
 export type ImportBatchId = string
 /** One incoming booking row on the matching screen (catch-up Phase 33; DM-34). */
 export type ImportRowId = string
+/** A stub on a List (catch-up Phase 33a; DM-58): `STB0001`, never the NHI or the hospital's ref. */
+export type StubId = string
 
 /**
  * A day's sessions: AM and PM, generated for every active anaesthetist, and
@@ -1978,6 +1980,40 @@ export interface ImportBatch {
   rowIds: ImportRowId[]
   /** Rows already imported with identical fields, skipped. */
   skippedCount: number
+}
+
+/** Why an incoming booking could not become a Booking. A union so another cause is one member more. */
+export type StubReason = 'noNhi'
+
+/**
+ * A stub on a List (catch-up Phase 33a; FT-02.6, DM-58, D66): stands in a
+ * waiting row's place on the List the row would land on, until the office
+ * resolves the row at intake. Not a Booking: held in the intake slice, never
+ * in `schedule.bookings`, on its own id (never the NHI). Only
+ * `settleStubForRow` (inside `decideImportRow`'s commit) and a Draft List's
+ * removal or re-dating change its status.
+ */
+export interface Stub {
+  id: StubId
+  listId: ListId
+  importRowId: ImportRowId
+  reason: StubReason
+  /** What the row carried, as received (US-02.6.2: what a stub shows is our reading). */
+  asReceived: {
+    patientName: string
+    procedureText?: string
+    scheduledTime?: WallTime
+    hospitalId: HospitalId
+    /** The import it came from, e.g. "Southern Cross theatre list, Tue 28 Jul to Thu 6 Aug". */
+    sourceLabel: string
+  }
+  createdAtISO: IsoDateTime
+  /** `resolved`: the Booking took its place; `removed`: the row was rejected or its Draft List went. */
+  status: 'standing' | 'resolved' | 'removed'
+  settledAtISO?: IsoDateTime
+  settledBy?: string
+  /** The Booking that took its place (status `resolved`). */
+  bookingId?: BookingId
 }
 
 // ---------------------------------------------------------------------------

@@ -18,6 +18,9 @@ import { NEEDS_PRICE_LABEL } from '../../../domain/billing/priceRanges'
 import { AddRowButton } from '../../../shared/ui/AddRowButton'
 import { BackLink, Button, Card, PageHeader, ProgressBar } from '../../../shared/ui'
 import { ClickableRow, RowOpenButton, TableShell, Td, Th } from '../../../shared/table'
+import { withStubsInTimeOrder } from '../../../domain/intake/stubs'
+import { useListStubs } from '../../../store/stubSelectors'
+import { ListStubNote, StubTableRow } from '../../../shared/stubs'
 
 /** The totals row keeps no divider under it (the table's last line), as before the kit. */
 const TOTALS_CELL = { borderBottom: 'none' } as const
@@ -132,6 +135,9 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
   }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, invoicedByBooking, cueState])
 
   const warningsByBooking = useListWarnings(listId)
+  // Stubs for rows waiting at intake (catch-up Phase 33a): in time order, never counted or totalled.
+  const stubs = useListStubs(listId)
+  const entries = useMemo(() => withStubsInTimeOrder(model?.rows ?? [], (r) => r.booking.scheduledTime, stubs), [model, stubs])
 
   if (list === undefined || model === undefined) return null
 
@@ -200,7 +206,8 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
             <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>
               {model.done} of {model.activeCount} complete
             </span>
-            <ProgressBar done={model.done} total={model.activeCount} width={200} />
+            <ProgressBar done={model.done} total={model.activeCount} width={200} tone={stubs.length > 0 ? 'held' : 'done'} />
+            <ListStubNote count={stubs.length} />
           </span>
         }
       >
@@ -223,14 +230,16 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
               </tr>
             </thead>
             <tbody>
-              {model.rows.length === 0 && (
+              {model.rows.length === 0 && stubs.length === 0 && (
                 <tr>
                   <td colSpan={authorised ? 5 : 6} style={{ padding: '24px 20px', textAlign: 'center', color: neutral.mist }}>
                     No bookings on this List yet.
                   </td>
                 </tr>
               )}
-              {model.rows.map((r) => {
+              {entries.map((entry) => {
+                if (entry.kind === 'stub') return <StubTableRow key={entry.stub.id} stub={entry.stub} colSpan={authorised ? 5 : 6} />
+                const r = entry.booking
                 const cancelled = r.booking.cancellation !== undefined
                 return (
                   <ClickableRow

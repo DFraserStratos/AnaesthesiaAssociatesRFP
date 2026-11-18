@@ -6,6 +6,7 @@
  * isolated non-persisted store and drives retry synchronously (no timers).
  */
 
+import { SEED_STUB } from '../domain/seed/intakeSeed'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import {
@@ -171,7 +172,7 @@ describe('retry vs dead-letter', () => {
     retryMessage(api, row.id)
     const dead = rowFor(api, 'MSG-CPH-2001')!
     expect(dead).toMatchObject({ status: 'deadLetter', attempts: 3 })
-    expect(Object.keys(api.getState().intake.rows)).toHaveLength(0)
+    expect(Object.keys(api.getState().intake.rows).filter((id) => id !== SEED_STUB.rowId)).toHaveLength(0)
     expect(integrationAttentionCount(api.getState())).toBe(1)
     expect(setFeedMapping(api, OFFICE, FEED.cph, 'nhi', CPH_NHI_FIX).ok).toBe(true)
     const recovered = reprocessMessage(api, dead.id)

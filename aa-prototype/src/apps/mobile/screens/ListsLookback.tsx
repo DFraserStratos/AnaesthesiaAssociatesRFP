@@ -7,6 +7,7 @@
  * nothing under 44px tall.
  */
 
+import { useStubCountsByList } from '../../../store/stubSelectors'
 import { useMemo, useState } from 'react'
 import { CalendarDays, ChevronRight } from 'lucide-react'
 import { accent, elevation, neutral, radius } from '../../../theme/tokens'
@@ -145,6 +146,8 @@ function DateSheetBody({ anaesthetistId, todayISO, selectedISO, onPick }: { anae
 export function LookbackDayView({ anaesthetistId, dateISO, todayISO, onOpenList }: { anaesthetistId: string; dateISO: string; todayISO: string; onOpenList: (listId: string) => void }) {
   const schedule = useAppStore((s) => s.schedule)
   const masters = useAppStore((s) => s.masters)
+  // Stubs on each List (catch-up Phase 33a): the marker on the row.
+  const stubCounts = useStubCountsByList()
   const appSettings = useAppStore((s) => s.appSettings)
   const day = useMemo(
     () => listsOnDayFor({ schedule, masters, appSettings }, anaesthetistId, dateISO, todayISO),
@@ -166,6 +169,7 @@ export function LookbackDayView({ anaesthetistId, dateISO, todayISO, onOpenList 
               time={l.startTime}
               {...model}
               listId={l.list.id}
+              stubCount={stubCounts.get(l.list.id) ?? 0}
               onClick={() => onOpenList(l.list.id)}
             />
           )

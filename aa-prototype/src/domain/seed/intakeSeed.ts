@@ -1,0 +1,71 @@
+/**
+ * The seeded intake (catch-up Phase 33a; FT-02.6, D66): one Southern Cross
+ * import holding one row with no NHI, waiting in the unmatched queue, and its
+ * stub on Dr Souter's Tue 4 Aug PM List (Ms Patel), a List no scripted beat
+ * uses. Synthetic patient; AR-35-style wording. No RNG draw, no patient
+ * record (a waiting row creates none, D11), so no seeded id moves.
+ *
+ * Seeded ids use their own namespace (`IBS`, `IRS`) so the first runtime
+ * import is still IB0001 / IR0001; the stub is STB0001 and the `stub` counter
+ * starts at 2.
+ */
+
+import type { ImportBatch, ImportRow, Stub } from '../types'
+import { DEMO_TODAY } from '../clock'
+import { ANAE, HOSP } from './cast'
+import { projectedListId } from '../slots'
+
+export const SEED_STUB = {
+  batchId: 'IBS001',
+  rowId: 'IRS001',
+  stubId: 'STB0001',
+  listId: projectedListId(ANAE.souter, '2026-08-04', 'PM'),
+  patientName: 'Mere Tipene',
+  /** The NHI the office types on Matching (and the PWA stand-in adds): synthetic, valid, held by no seeded patient. */
+  nhiToType: 'ZQA1024',
+} as const
+
+const RECEIVED_AT = `${DEMO_TODAY}T07:30:00`
+const SOURCE_LABEL = 'Southern Cross theatre list, Tue 4 Aug'
+
+export function seededIntake(): { batches: Record<string, ImportBatch>; rows: Record<string, ImportRow>; stubs: Record<string, Stub> } {
+  const row: ImportRow = {
+    id: SEED_STUB.rowId,
+    batchId: SEED_STUB.batchId,
+    channel: 'download',
+    source: 'hospital',
+    receivedAtISO: RECEIVED_AT,
+    incoming: {
+      hospitalId: HOSP.sx,
+      dateISO: '2026-08-04',
+      session: 'PM',
+      surgeon: { name: 'Ms K. Patel', hpiId: '41PATK' },
+      scheduledTime: '14:00',
+      patient: { name: SEED_STUB.patientName, dobISO: '1981-06-14' },
+      procedure: { text: 'Lap chole', code: 'G4' },
+      hospitalStatus: 'booked',
+    },
+    status: 'open',
+  }
+  const batch: ImportBatch = {
+    id: SEED_STUB.batchId,
+    channel: 'download',
+    source: 'hospital',
+    hospitalId: HOSP.sx,
+    label: SOURCE_LABEL,
+    importedBy: 'Kirsty W.',
+    importedAtISO: RECEIVED_AT,
+    rowIds: [row.id],
+    skippedCount: 0,
+  }
+  const stub: Stub = {
+    id: SEED_STUB.stubId,
+    listId: SEED_STUB.listId,
+    importRowId: row.id,
+    reason: 'noNhi',
+    asReceived: { patientName: SEED_STUB.patientName, procedureText: 'Lap chole', scheduledTime: '14:00', hospitalId: HOSP.sx, sourceLabel: SOURCE_LABEL },
+    createdAtISO: RECEIVED_AT,
+    status: 'standing',
+  }
+  return { batches: { [batch.id]: batch }, rows: { [row.id]: row }, stubs: { [stub.id]: stub } }
+}

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { StubMarker } from '../stubs/StubMarker'
 import { ChevronRight } from 'lucide-react'
 import { elevation, neutral, radius } from '../../theme/tokens'
 import type { DisplayKey } from '../../domain/types'
@@ -46,6 +47,8 @@ interface ListRowProps {
   listId?: string
   /** A small neutral pill after the title, e.g. "New" on a List a colleague moved to her (catch-up Phase 32). */
   badge?: string
+  /** Stubs standing on the List (catch-up Phase 33a): the triangle marker after the title. Never counted as Bookings. */
+  stubCount?: number
   /**
    * Less prominent than active work: a submitted List (US-07.4.2, FT-07.2). Still a
    * normal tap target and still editable; only the weight and lift drop.
@@ -73,14 +76,15 @@ function RowPill({ bg, color, children }: { bg: string; color: string; children:
   )
 }
 
-function RightCluster({ right }: { right: ListRowRight }) {
+function RightCluster({ right, held = false }: { right: ListRowRight; held?: boolean }) {
   if (right.kind === 'custom') return <>{right.node}</>
   if (right.kind === 'progress') {
     const label = progressLabel(right.progress)
     const tone = progressTone(right.progress)
     // Submitted and ready to submit share the design's done tick cluster (stacked,
-    // narrow, no chevron); a submitted row is also quieter (`quiet`).
-    if (tone === 'done') {
+    // narrow, no chevron); a submitted row is also quieter (`quiet`). A List holding
+    // a stub never reads complete (catch-up Phase 33a): its done label is an amber pill, no tick.
+    if (tone === 'done' && !held) {
       return (
         <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flex: 'none' }}>
           <TickBadge size={24} />
@@ -90,7 +94,7 @@ function RightCluster({ right }: { right: ListRowRight }) {
     }
     return (
       <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}>
-        <RowPill bg={PILL_TONES[tone].tint} color={PILL_TONES[tone].onTint}>
+        <RowPill bg={PILL_TONES[tone === 'done' ? 'warning' : tone].tint} color={PILL_TONES[tone === 'done' ? 'warning' : tone].onTint}>
           {label}
         </RowPill>
         <Chevron />
@@ -153,6 +157,7 @@ export function ListRow({
   slotId,
   listId,
   badge,
+  stubCount = 0,
   quiet = false,
   outOfHours: outOfHoursProp = false,
 }: ListRowProps) {
@@ -223,6 +228,7 @@ export function ListRow({
               {badge}
             </span>
           )}
+          <StubMarker count={stubCount} shot="list-row-stub" />
         </span>
         {(subtitle !== undefined || outOfHours) && (
           <span style={{ fontSize: 12, color: subColor, opacity: isOpen || isClosed ? 0.85 : 1 }}>
@@ -230,7 +236,7 @@ export function ListRow({
           </span>
         )}
       </span>
-      <RightCluster right={right} />
+      <RightCluster right={right} held={stubCount > 0} />
     </Tag>
   )
 }

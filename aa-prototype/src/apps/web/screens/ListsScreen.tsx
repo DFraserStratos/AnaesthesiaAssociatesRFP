@@ -11,6 +11,8 @@ import { searchCountLine, useBookingSearch, useFieldText } from '../../../shared
 import { NameSearchBox } from '../../../shared/ui/NameSearchBox'
 import { PageHeader, TextAction } from '../../../shared/ui'
 import { ClickableRow, GroupRow, RowOpenButton, TableShell, Td, Th } from '../../../shared/table'
+import { StubMarker } from '../../../shared/stubs'
+import { useStubCountsByList } from '../../../store/stubSelectors'
 import { FilterDateInput } from '../../../shared/ui/DateFields'
 import { WebDayTable, WebGoToDate, WebResultsTable } from './ListsLookback'
 import { DayChip } from '../../../shared/ui'
@@ -72,6 +74,8 @@ export function ListsScreen({
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const slotsRecord = useAppStore((s) => s.schedule.slots)
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
+  // Stubs standing on each List (catch-up Phase 33a): a marker on the row, never in its progress.
+  const stubCounts = useStubCountsByList()
   const appSettings = useAppStore((s) => s.appSettings)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
@@ -168,7 +172,12 @@ export function ListsScreen({
         <Td mono>{sessionText(r.session)}</Td>
         <Td mono>{showTimes ? r.times.startTime : '·'}</Td>
         <Td mono>{showTimes ? r.times.endTime : '·'}</Td>
-        <Td>{r.description}</Td>
+        <Td>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            {r.description}
+            {r.list !== undefined && <StubMarker count={stubCounts.get(r.list.id) ?? 0} shot="list-row-stub" />}
+          </span>
+        </Td>
         <Td><StatusChip status={r.displayKey} /></Td>
         <Td>{r.progress !== undefined ? <ProgressPill progress={r.progress} /> : null}</Td>
       </ClickableRow>

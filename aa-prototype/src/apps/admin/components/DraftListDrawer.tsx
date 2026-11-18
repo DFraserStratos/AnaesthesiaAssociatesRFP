@@ -38,6 +38,10 @@ import { SidePanel } from './SidePanel'
 import { sessionText } from '../../../domain/outOfHours'
 import { Notice } from '../../../shared/ui/Notice'
 import { EmptyState } from '../../../shared/ui/EmptyState'
+import { withStubsInTimeOrder } from '../../../domain/intake/stubs'
+import { useListStubs } from '../../../store/stubSelectors'
+import { StubRow } from '../../../shared/stubs'
+import { StubResolveLink } from './StubResolveLink'
 
 type Sheet = 'none' | 'assign' | 'edit' | 'redate' | 'remove' | 'history' | 'addBooking' | { move: string } | { assignTo: string }
 
@@ -86,6 +90,8 @@ function DraftBody({
     .filter((b) => b.listId === list.id)
     .sort((a, b) => a.id.localeCompare(b.id))
   const active = bookings.filter((b) => b.cancellation === undefined)
+  // Stubs for rows waiting at intake (catch-up Phase 33a): drawn among the Bookings, never counted.
+  const stubs = useListStubs(list.id)
   // One suggestion key per opening of the drawer, shared with the assign sheet,
   // so the short list is the first five of the order "See everyone" shows.
   const requestKey = useSuggestionKey(list.id, true)
@@ -199,8 +205,12 @@ function DraftBody({
           )}
 
           <Section label={`Bookings (${active.length})`}>
-            {bookings.length === 0 && <EmptyState>No Bookings on this {DRAFT_LIST} yet.</EmptyState>}
-            {bookings.map((booking) => {
+            {bookings.length === 0 && stubs.length === 0 && <EmptyState>No Bookings on this {DRAFT_LIST} yet.</EmptyState>}
+            {withStubsInTimeOrder(bookings, (b) => b.scheduledTime, stubs).map((entry) => {
+              if (entry.kind === 'stub') {
+                return <StubRow key={entry.stub.id} stub={entry.stub} density="table" trailing={<StubResolveLink stub={entry.stub} />} style={{ margin: '6px 0' }} />
+              }
+              const booking = entry.booking
               const patient = masters.patients[booking.patientId]
               const cancelled = booking.cancellation !== undefined
               return (

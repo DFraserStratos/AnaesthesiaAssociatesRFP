@@ -1,0 +1,171 @@
+{
+  "id": "US-02.6.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "stub-marked",
+      "app": "mobile",
+      "caption": "The stub is clearly marked for the anaesthetist and the office as a booking the office must resolve",
+      "start": "/mobile/lists/L-34821-2026-08-04-PM",
+      "states": [
+        {
+          "state": "list",
+          "caption": "The stub on the anaesthetist's List: the patient, wording and time as received, marked as waiting at intake",
+          "steps": [
+            {
+              "wait": "[data-shot=list-stub]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=list-stub]"
+          ]
+        },
+        {
+          "state": "sheet",
+          "caption": "Tapped, the stub shows what was received, why it waits and where it came from; it never opens as a Booking",
+          "steps": [
+            {
+              "click": "[data-shot=list-stub]"
+            },
+            {
+              "wait": "[data-shot=stub-sheet]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=stub-sheet]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "stub-marked",
+      "app": "web",
+      "caption": "The stub is clearly marked for the anaesthetist and the office as a booking the office must resolve",
+      "start": "/web/lists/L-34821-2026-08-04-PM",
+      "states": [
+        {
+          "state": "list",
+          "caption": "The stub row on the web List, outside the progress count",
+          "steps": [
+            {
+              "wait": "[data-shot=list-stub-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=list-stub-row]"
+          ]
+        },
+        {
+          "state": "details",
+          "caption": "Selected, the stub shows what was received, why it waits and where it came from",
+          "steps": [
+            {
+              "click": "[data-shot=list-stub-row] [data-shot=list-stub]"
+            },
+            {
+              "wait": "[data-shot=stub-sheet]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=list-stub-row]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "stub-marked",
+      "app": "admin",
+      "caption": "The stub is clearly marked for the anaesthetist and the office as a booking the office must resolve",
+      "start": "/admin/day/2026-08-04",
+      "states": [
+        {
+          "state": "grid",
+          "caption": "On the day grid, a marker beside the List's Booking count, which leaves the stub out",
+          "steps": [
+            {
+              "wait": "[data-shot=daygrid-block-stub]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "button[data-list-id=\"L-34821-2026-08-04-PM\"]"
+          ]
+        },
+        {
+          "state": "drawer",
+          "caption": "In the List drawer, the stub among the Bookings with Resolve on Matching",
+          "steps": [
+            {
+              "click": "button[data-list-id=\"L-34821-2026-08-04-PM\"]"
+            },
+            {
+              "wait": "[data-testid=admin-list-drawer]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-testid=admin-list-drawer] [data-shot=list-stub]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "stub-review",
+      "app": "admin",
+      "caption": "The stub is clearly marked for the anaesthetist and the office as a booking the office must resolve",
+      "start": "/admin/review/L-34821-2026-08-04-PM",
+      "states": [
+        {
+          "state": "row",
+          "caption": "On Review, the stub row with Resolve on Matching, outside the stats and totals",
+          "steps": [
+            {
+              "wait": "[data-shot=list-stub-row]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=list-stub-row]"
+          ]
+        },
+        {
+          "state": "details",
+          "caption": "Selected on Review, the stub shows what was received and why it waits",
+          "steps": [
+            {
+              "click": "[data-shot=list-stub-row] [data-shot=list-stub]"
+            },
+            {
+              "wait": "[data-shot=stub-sheet]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=list-stub-row]"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -199,6 +199,11 @@ export const ACTION_LABELS: Record<string, string> = {
   'importRow.decide': 'Hospital row decided',
   'booking.fromHospitalRow': 'Hospital row applied to this Booking',
 
+  // --- Stubs on a List (catch-up Phase 33a) ---------------------------------
+  'stub.place': 'Stub placed on List',
+  'stub.resolve': 'Stub replaced by Booking',
+  'stub.remove': 'Stub removed',
+
   // --- Xero simulation & money movement -----------------------------------
   'xero.pairCreated': 'Xero invoice pair created',
   'xero.handoffFailed': 'Xero handoff failed',

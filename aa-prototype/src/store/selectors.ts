@@ -1396,6 +1396,8 @@ export interface EntityCounts {
   billingLines: number
   importBatches: number
   importRows: number
+  /** Stubs on Lists, every status (catch-up Phase 33a). */
+  stubs: number
   audit: number
 }
 
@@ -1421,6 +1423,7 @@ export function entityCounts(state: AppState): EntityCounts {
     billingLines: Object.keys(state.schedule.billingLines).length,
     importBatches: Object.keys(state.intake.batches).length,
     importRows: Object.keys(state.intake.rows).length,
+    stubs: Object.keys(state.intake.stubs).length,
     audit: state.audit.length,
   }
 }

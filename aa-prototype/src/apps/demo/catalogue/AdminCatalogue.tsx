@@ -1,4 +1,5 @@
 import { OFFICE_ACTOR } from '../../../store'
+import { StubSetExample } from './stubExamples'
 import { DRAFT_LIST, DRAFT_LISTS, UNASSIGNED } from '../../../shared/scheduleTerms'
 import { CataloguePage, CatalogueRow, LibraryGroup, StageHint } from './CatalogueKit'
 import { CardExample, DefRowExample, EyebrowExample, PageHeaderExample, TableKitExample } from './admin/pageChromeExamples'
@@ -221,6 +222,9 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="AttentionDot" source="shared/warnings/AttentionDot.tsx" usedIn={AWM} what="The solid attention disc (UI unification U3, from ConflictDot): a 13px '!' for a conflict or a List that needs the office, a triangle for warnings, muted once cleared. A marker, never a control: aria-hidden unless labelled. WarningTriangle and the Day grid and calendar marks draw it." replaceWith="shadcn Badge (dot) + Tooltip">
           <AttentionDotExample />
+        </CatalogueRow>
+        <CatalogueRow name="StubRow and StubMarker" source="shared/stubs/StubParts.tsx" usedIn={AWM} what="A stub on a List (catch-up Phase 33a): a booking waiting at intake, not a Booking. StubRow is the Booking row with the dashed placeholder edge on the mild warning tint and the triangle disc: time, name and wording as received, the reason and who resolves it. StubTableRow holds it in a Bookings table and shows what was received inline; StubMarker is the triangle beside a List's count (Lists rows, the Day grid block); ListStubNote reads '1 waiting at intake' beside the progress. On Admin it ends in StubResolveLink, 'Resolve on Matching'." replaceWith="shadcn Item + Badge + Collapsible" note="A fixed example stub; nothing writes to the demo data.">
+          <StubSetExample />
         </CatalogueRow>
         <CatalogueRow name="WarningTriangle" source="shared/warnings/WarningTriangle.tsx" usedIn={AWM} what="The warning mark on a booking, coloured by the strongest open warning." replaceWith="shadcn Tooltip + Badge" note="Its detail is reachable by keyboard once it is a Tooltip.">
           <WarningTriangleExample />

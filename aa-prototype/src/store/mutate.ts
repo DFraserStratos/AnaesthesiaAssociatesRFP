@@ -17,7 +17,7 @@
 import type { ActorRole, AuditEntry, AuditSource, BookingId } from '../domain/types'
 import { buildSeed, buildSeedBillingSlice, SEED_AUTHORISED_INVOICED_BOOKING_IDS, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
-import { emptyIntakeSlice, seededIntegrationsSlice, type AppState, type AppStoreApi } from './appStore'
+import { seededIntakeSlice, seededIntegrationsSlice, type AppState, type AppStoreApi } from './appStore'
 import { reconcileConflictsInPatch, type MutationResult } from './conflictReconcile'
 import { seedLocks } from './locks'
 
@@ -126,6 +126,8 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   // The matching screen's import batches and rows (catch-up Phase 33).
   importBatch: { prefix: 'IB', pad: 4 },
   importRow: { prefix: 'IR', pad: 4 },
+  // Stubs on Lists for rows waiting at intake (catch-up Phase 33a; DM-58), never the NHI.
+  stub: { prefix: 'STB', pad: 4 },
   // Prepayment transfers from the AA Holding account and their Xero manual journals (catch-up Phase 27a).
   prepayTransfer: { prefix: 'PXT', pad: 4 },
   xeroJournal: { prefix: 'XJ', pad: 4 },
@@ -333,7 +335,7 @@ export function resetDomainState(api: AppStoreApi): void {
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
-    intake: emptyIntakeSlice(),
+    intake: seededIntakeSlice(),
     // The shell slice survives a Reset, except the office picker counter
     // (catch-up Phase 17): zeroing it makes a fresh Reset replay the same
     // within-tier orders.

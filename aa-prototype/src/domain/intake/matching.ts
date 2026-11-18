@@ -514,7 +514,8 @@ export function suggestDecision(view: MatchingView, row: ImportRow): RowAssessme
   if (earlier !== undefined) flag('earlierRowOpen', undefined, earlier.id)
 
   const atKey = surgeonId !== undefined ? listsAtKey(view, fields, surgeonId) : []
-  const targetListId = (atKey.find((l) => l.state !== 'AUTHORISED') ?? atKey[0])?.id
+  // A List that can take Bookings first, as a New row's target does (33a: the stub stands where the Booking would land).
+  const targetListId = (atKey.find((l) => l.state === 'ACTIVE' || l.state === 'SUBMITTED') ?? atKey.find((l) => l.state !== 'AUTHORISED') ?? atKey[0])?.id
   const where = `${hospitalLabel(view, fields.hospitalId)} for ${surgeonLabel(view, surgeonId, fields)} on ${sessionLabel(fields.dateISO, fields.session)}`
   const base = { rowId: row.id, fields, ...(surgeonId !== undefined ? { surgeonId } : {}) }
 

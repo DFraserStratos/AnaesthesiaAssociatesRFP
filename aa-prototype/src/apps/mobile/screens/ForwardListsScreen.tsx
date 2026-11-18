@@ -26,7 +26,7 @@ import type { AssignedList, Booking, DisplayKey, Session } from '../../../domain
 import { sessionRank } from '../../../domain/outOfHours'
 import { hasLeftMainView, listProgress } from '../../../domain/listProgress'
 import { isAssignedList } from '../../../domain/draftLists'
-import { mainViewFor, timesForList, useAppStore, useToday, type SlotView } from '../../../store'
+import { mainViewFor, timesForList, useAppStore, useStubCountsByList, useToday, type SlotView } from '../../../store'
 import { ListRow, MobileHeader, type ListRowRight } from '../components'
 import { listRowModel } from './listRowModel'
 import { dayHeading, drSurname } from '../../../shared/format'
@@ -126,6 +126,8 @@ export function ForwardListsScreen({
   const movedToMeList = useMovedToMe(anaesthetistId)
   // A List made for a single Booking a colleague handed her (Phase 32a) is new to her too.
   const bookingsMovedToMe = useBookingsMovedToMe(anaesthetistId)
+  // Stubs standing on each List (catch-up Phase 33a): a marker on the row, never in its count.
+  const stubCounts = useStubCountsByList()
   const movedToMeIds = useMemo(() => new Set([...movedToMeList.map((n) => n.listId), ...bookingsMovedToMe.map((m) => m.listId)]), [movedToMeList, bookingsMovedToMe])
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const hospitals = useAppStore((s) => s.masters.hospitals)
@@ -215,7 +217,8 @@ export function ForwardListsScreen({
     // Authorised Lists appear under no chip (they have left the main view).
     const inChip = (l: AssignedList): boolean => {
       if (filter === 'todo') return (l.state === 'ACTIVE' || l.state === 'SUBMITTED') && activeBookings(l.id).some((c) => !c.completed)
-      if (filter === 'done') return progressOf(l) === 'submitted'
+      // A List holding a stub never reads complete (catch-up Phase 33a): never under Done.
+      if (filter === 'done') return progressOf(l) === 'submitted' && (stubCounts.get(l.id) ?? 0) === 0
       return true
     }
 
@@ -231,7 +234,7 @@ export function ForwardListsScreen({
       forwardRows = view.upcoming.map(viewRow).filter((r): r is Row => r !== null)
     }
     return { earlier: groupByDate(earlierRows), forward: groupByDate(forwardRows) }
-  }, [listsRecord, slotsRecord, appSettings, slotStatuses, bookingsRecord, hospitals, surgeons, todayISO, filter, anaesthetistId, onOpenList])
+  }, [listsRecord, slotsRecord, appSettings, slotStatuses, bookingsRecord, hospitals, surgeons, todayISO, filter, anaesthetistId, onOpenList, stubCounts])
 
   const earlierCount = earlier.reduce((n, s) => n + s.rows.length, 0)
   const todaySection = forward[0]?.date === todayISO ? forward[0] : undefined
@@ -278,6 +281,7 @@ export function ForwardListsScreen({
             {...(r.slotId !== undefined ? { slotId: r.slotId } : {})}
             {...(r.listId !== undefined ? { listId: r.listId } : {})}
             {...(r.listId !== undefined && movedToMeIds.has(r.listId) ? { badge: 'New' } : {})}
+            stubCount={r.listId !== undefined ? (stubCounts.get(r.listId) ?? 0) : 0}
           />
         ))}
       </div>

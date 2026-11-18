@@ -4,6 +4,7 @@
  * nothing is applied except through `decideImportRow`.
  */
 
+import { SEED_STUB } from '../../domain/seed/intakeSeed'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from '../../store/appStore'
 import { proceduresForBooking } from '../../store/selectors'
@@ -32,7 +33,7 @@ describe('Matching bar entries', () => {
     const t = byId('matching-receive-theatre-list')
     const res = t.run(api, matchingCtx(), 'sx')
     expect(res).toMatchObject({ ok: true, message: 'Southern Cross sent its theatre list: 5 rows are waiting on Matching. Nothing changes the schedule until the office decides.' })
-    expect(Object.keys(api.getState().intake.rows)).toHaveLength(5)
+    expect(Object.keys(api.getState().intake.rows).filter((id) => id !== SEED_STUB.rowId)).toHaveLength(5)
     expect(snapshot(api)).toBe(before)
     expect(t.disabledReason?.(api.getState(), matchingCtx(), 'sx')).toBe('This list is already on Matching')
     expect(t.disabledReason?.(api.getState(), matchingCtx(), 'stg')).toBeNull()
@@ -44,7 +45,7 @@ describe('Matching bar entries', () => {
     const before = snapshot(api)
     expect(t.run(api, matchingCtx(), undefined).message).toBe("St George's sent an update for Diane Foster: a new time and fuller wording. Check the differences and approve it.")
     expect(snapshot(api)).toBe(before)
-    const row = Object.values(api.getState().intake.rows)[0]!
+    const row = Object.values(api.getState().intake.rows).filter((r) => r.id !== SEED_STUB.rowId)[0]!
     expect(row.incoming).toMatchObject({ scheduledTime: '12:15', procedure: { text: FOSTER_HOSPITAL_WORDING } })
     expect(t.disabledReason?.(api.getState(), matchingCtx(), undefined)).toBe('This update is already waiting on Matching')
   })
@@ -66,7 +67,7 @@ describe('the PWA office stand-in', () => {
     const ctx: DemoTriggerCtx = { pathname: '/mobile/lists', params: {}, published: {} }
     const res = t.run(api, ctx, 's1')
     expect(res.ok).toBe(true)
-    const row = Object.values(api.getState().intake.rows)[0]!
+    const row = Object.values(api.getState().intake.rows).filter((r) => r.id !== SEED_STUB.rowId)[0]!
     expect(row).toMatchObject({ status: 'applied', decidedBy: 'AA office (simulated)' })
     const bookingId = row.decision!.kind === 'createBooking' ? row.decision!.bookingId : ''
     const [p] = proceduresForBooking(api.getState(), bookingId)
