@@ -217,7 +217,7 @@ export const ORGANISATIONS: readonly ContractHolderOrganisation[] = [
 // owner's starting set, keyed by the IDs Phase 28 stores on Slots, with the
 // Design Language colours. The final values are to be agreed with AA's users;
 // an admin adds, renames, recolours or retires them in Master data. The List
-// kinds (private, public, pre-op) are not here: they are a List attribute.
+// kinds (private, pre-op) are not here: they are a List attribute.
 // ---------------------------------------------------------------------------
 
 export const SEED_SLOT_STATUSES: readonly SlotStatus[] = [

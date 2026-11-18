@@ -286,7 +286,7 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
     expect(conflicted.length).toBeGreaterThan(0)
     for (const list of conflicted) {
       expect(list.hospitalId).toBeDefined()
-      expect(['private', 'public']).toContain(list.kind)
+      expect(['private', 'preop']).toContain(list.kind)
     }
   })
 

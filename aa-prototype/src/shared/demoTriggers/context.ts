@@ -27,7 +27,7 @@ export interface DemoContextValues {
   'adminPicker.listId': string
   /** Admin · Master data: the Contract open in its detail (catch-up Phase 24's backdated range trigger). */
   'adminContracts.openContractId': string
-  /** Mobile · My calendar: the day open in the session panel, `<anaesthetistId>|<dateISO>` (catch-up Phase 32d's office stand-in). */
+  /** Mobile · My calendar: the last day opened in the session panel, `<anaesthetistId>|<dateISO>`, while the calendar shows (catch-up Phase 32d's office stand-in). */
   'mobileCalendar.day': string
 }
 

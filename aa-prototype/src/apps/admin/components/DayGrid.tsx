@@ -398,7 +398,7 @@ function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: Displa
   const surgeon = list !== undefined ? masters.surgeons[list.surgeonId] : undefined
   // Every List names its surgeon (US-01.3.1). A pre-op block keeps its template label as the subtitle
   // ("Pre-op clinic / AA rooms") and carries the surgeon in its tooltip, as the design shows.
-  const templateLabel = list !== undefined && list.kind !== 'private' && note !== undefined && note.trim() !== '' ? note : undefined
+  const templateLabel = list !== undefined && list.kind === 'preop' && note !== undefined && note.trim() !== '' ? note : undefined
 
   let l1: string
   let l2: string
@@ -415,10 +415,10 @@ function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: Displa
     l1 = resolved.label
     l2 = evening ? (note ?? OUT_OF_HOURS) : (note ?? '').replace(/^Free\s*\/\s*/i, '') || 'open for cover'
   } else {
-    // A closed session (Public among them, catch-up Phase 32d) reads its status line, "Public · CPH",
-    // with no hospital, surgeon, theatre, kind or count.
-    l1 = statusLine(slot, masters.slotStatuses)
-    l2 = evening ? OUT_OF_HOURS : ''
+    // A closed session keeps the design's title and detail: its label, then its note (Public, then "CPH";
+    // catch-up Phase 32d), with no hospital, surgeon, theatre, kind or count. Its tooltip is the status line.
+    l1 = resolved.label
+    l2 = note ?? (evening ? OUT_OF_HOURS : '')
   }
 
   // The has-note dot marks a genuine office annotation, not a note already shown
@@ -429,7 +429,8 @@ function GridBlock({ seg, masters, ruler, bookingCount, onClick }: { seg: Displa
   const warningTip = warnings !== undefined ? plural(warnings.open, 'open warning') : ''
   const surgeonTip = (conflict || templateLabel !== undefined) && surgeon !== undefined ? surgeon.name : ''
   const countTip = bookingCount !== undefined ? plural(bookingCount, 'booking') : ''
-  const tooltip = [surgeonTip, ...reasons, warningTip, hasNote && !noteIsSubtitle ? `Note: ${note}` : '', countTip].filter(Boolean).join(' · ')
+  const closedLine = list === undefined && !isOpenEmpty ? statusLine(slot, masters.slotStatuses) : ''
+  const tooltip = [closedLine, surgeonTip, ...reasons, warningTip, hasNote && !noteIsSubtitle ? `Note: ${note}` : '', countTip].filter(Boolean).join(' · ')
 
   return (
     <button

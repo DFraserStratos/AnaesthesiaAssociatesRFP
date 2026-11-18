@@ -32,7 +32,6 @@ import { listRowModel } from './listRowModel'
 import { dayHeading, drSurname } from '../../../shared/format'
 import { DockSpacer } from '../../../shared/ui/DockSpacer'
 import { resolveDisplayStatus } from '../../../shared'
-import { statusLine } from '../../../domain/slotStatus'
 import { LookbackDayView, LookbackResults, LookbackSearchRow } from './ListsLookback'
 import { DayChip } from '../../../shared/ui/DayChip'
 import { searchCountLine, useBookingSearch } from '../../../shared/schedule'
@@ -175,9 +174,9 @@ export function ForwardListsScreen({
         return {
           ...base,
           variant: 'closed',
-          // The status line ("Public · CPH", catch-up Phase 32d): label and note, no List detail.
-          title: statusLine(v.slot, slotStatuses),
-          subtitle: status.longLabel,
+          // Its label, then its note (Public hospital, then "CPH"; catch-up Phase 32d), as every view: never List detail.
+          title: status.longLabel,
+          ...(v.slot.note !== undefined ? { subtitle: v.slot.note } : {}),
           right: { kind: 'chip', statusKey: v.slot.status, label: status.label },
         }
       }

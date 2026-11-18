@@ -8,7 +8,8 @@
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
-import { assignListToSlot, setAvailability } from './slotActions'
+import { assignListToSlot, setAvailability, setHorizonMonths } from './slotActions'
+import { assignDraftList } from './draftListActions'
 import { markUnavailableAndMoveList, pushListToSlot } from './listMoveActions'
 import { setAvailabilityRange } from './availabilityActions'
 import { advanceClockDays } from './clockActions'
@@ -47,6 +48,7 @@ describe('Public as a Slot status (catch-up Phase 32d)', () => {
     expect(api.getState().schedule.slots[slotIdFor(ANAE.souter, FRI21AUG, 'PM')]).toMatchObject({ status: PUBLIC, note: 'CPH' })
     const range = setAvailabilityRange(api, SOUTER_ACTOR, { anaesthetistId: ANAE.souter, fromISO: '2026-08-22', toISO: '2026-08-23', sessions: 'both', statusKey: PUBLIC, note: 'CPH' })
     expect(range.ok).toBe(true)
+    for (const d of ['2026-08-22', '2026-08-23']) for (const s of ['AM', 'PM'] as const) expect(api.getState().schedule.slots[slotIdFor(ANAE.souter, d, s)]).toMatchObject({ status: PUBLIC, note: 'CPH' })
     const audit = api.getState().audit.filter((a) => a.entityId === slotIdFor(ANAE.souter, FRI21AUG, 'PM'))
     expect(audit.at(-1)?.role).toBe('office')
   })
@@ -92,5 +94,42 @@ describe('Public as a Slot status (catch-up Phase 32d)', () => {
     const ctx = { path: `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`, params: { listId: POST_OP_ORIGINAL_LIST_ID }, surface: 'bar' as const, screen: {} }
     expect(t.run(api, ctx as never).ok).toBe(true)
     expect(api.getState().schedule.lists[POST_OP_ORIGINAL_LIST_ID]?.state).toBe('AUTHORISED')
+  })
+
+  it('the post-op trigger is enabled on its Review before it runs', () => {
+    const api = createAppStore()
+    const t = DEMO_TRIGGERS.find((x) => x.id === 'stage-post-op')!
+    const ctx = { pathname: `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`, params: { listId: POST_OP_ORIGINAL_LIST_ID }, published: {} }
+    expect(t.when?.(api.getState(), ctx) ?? true).toBe(true)
+    expect(t.disabledReason(api.getState(), ctx)).toBeNull()
+  })
+
+  it('a Draft List is never assigned into a Public session; back to Free it is', () => {
+    const api = createAppStore()
+    // St George's request LD-001 is for Tue 21 Jul PM: Dr Hughes is free then.
+    expect(setAvailability(api, OFFICE_ACTOR, ANAE.hughes, '2026-07-21', 'PM', PUBLIC, 'CPH').ok).toBe(true)
+    const refused = assignDraftList(api, OFFICE_ACTOR, 'LD-001', { anaesthetistId: ANAE.hughes })
+    expect(refused.ok ? '' : refused.code).toBe('sessionNotOpen')
+    expect(setAvailability(api, OFFICE_ACTOR, ANAE.hughes, '2026-07-21', 'PM', SEED_STATUS.free).ok).toBe(true)
+    expect(assignDraftList(api, OFFICE_ACTOR, 'LD-001', { anaesthetistId: ANAE.hughes }).ok).toBe(true)
+  })
+
+  it('a List is never handed on into a colleague\'s Public session (32b\'s receive rule)', () => {
+    const api = createAppStore()
+    const from = slotIdFor(ANAE.souter, '2026-08-17', 'AM')
+    const to = slotIdFor(ANAE.hughes, '2026-08-17', 'PM')
+    expect(setAvailability(api, OFFICE_ACTOR, ANAE.hughes, '2026-08-17', 'PM', PUBLIC, 'CPH').ok).toBe(true)
+    const out = markUnavailableAndMoveList(api, SOUTER_ACTOR, from, 'unavailable', { route: 'colleague', toSlotId: to })
+    expect(out.ok).toBe(false)
+    expect(api.getState().schedule.lists[projectedListId(ANAE.souter, '2026-08-17', 'AM')]?.slotId).toBe(from)
+  })
+
+  it('extending the horizon paints the weekly Public series onto the added months, never a List', () => {
+    const api = createAppStore()
+    const before = horizonFor(api.getState().clock.todayISO, api.getState().appSettings.schedule.horizonMonths).endISO
+    expect(setHorizonMonths(api, OFFICE_ACTOR, api.getState().appSettings.schedule.horizonMonths + 1).ok).toBe(true)
+    const added = Object.values(api.getState().schedule.slots).filter((s) => s.dateISO > before)
+    expect(added.some((s) => s.status === PUBLIC && s.note === 'CPH')).toBe(true)
+    expect(Object.values(api.getState().schedule.lists).some((l) => l.dateISO > before && l.hospitalId === HOSP.cph)).toBe(false)
   })
 })

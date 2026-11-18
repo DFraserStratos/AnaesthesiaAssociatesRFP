@@ -18,7 +18,7 @@ const OFFICE = OFFICE_ACTOR
 const SOUTER = SOUTER_ACTOR
 
 const publicHospital: SlotStatusDraft = {
-  label: 'Public hospital',
+  label: 'Teaching',
   longLabel: 'At the public hospital',
   description: 'Working at the public hospital. Same effect as Unavailable.',
   colour: 'unavailable',

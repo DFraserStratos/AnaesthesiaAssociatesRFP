@@ -4,7 +4,6 @@ import { neutral, radius } from '../../../theme/tokens'
 import type { Session } from '../../../domain/types'
 import { isOpenSlotView, rosterForDate, slotViewsForDate, useAppStore, type SlotView } from '../../../store'
 import { Avatar, blockFill, resolveDisplayStatus, StatusLegend, useDisplayStatus } from '../../../shared'
-import { statusLine } from '../../../domain/slotStatus'
 import { initialsOf, locationName, matchesNameQuery, longDayNoYear } from '../../../shared/format'
 import { Button, Card, Eyebrow, FilterPills, IconButton, NameSearchBox, PageHeader, TextAction } from '../../../shared/ui'
 import { AvailabilityPageSwitch } from '../components'
@@ -103,8 +102,8 @@ export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: A
     if (list === undefined) {
       const status = resolveDisplayStatus(view.slot.status, slotStatuses)
       if (view.open) return { l1: status.label, l2: 'Open for booking' }
-      // A closed session (Public among them, catch-up Phase 32d) reads its status line, "Public · CPH", and no List detail.
-      return { l1: statusLine(view.slot, slotStatuses), l2: '' }
+      // A closed session: its label, then its note (Public, then "CPH"; catch-up Phase 32d), never List detail.
+      return { l1: status.longLabel, l2: view.slot.note ?? '' }
     }
     if (list.kind === 'preop') return { l1: 'Pre-op clinic', l2: locationName(list.hospitalId, hospitals) }
     const l2 = surgeons[list.surgeonId]?.name ?? ''

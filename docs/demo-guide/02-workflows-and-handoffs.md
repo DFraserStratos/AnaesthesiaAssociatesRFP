@@ -35,13 +35,13 @@ Do not confuse these in the demo.
 Examples:
 
 - Private
-- Public
 - Pre-op assessment
 - Holiday
 - Unavailable
+- Public (a status with an optional note such as CPH, never a kind of List, never billed)
 - Free
 
-These describe what the half-day List is being used for.
+These describe what the half-day session is being used for.
 
 ### Approval lifecycle
 
@@ -78,8 +78,10 @@ There is no `RETURNED` state.
    start date to the end of the rolling horizon. Every new session starts Free.
 2. The anaesthetist's calendar (leave, unavailability and their repeating days off) is painted onto
    the session's status; nothing is reconciled, because the calendar sets the session's status directly.
-   The statuses are a list in master data (Free, On holiday, Unavailable to start), next to the fixed
+   The statuses are a list in master data (Free, On holiday, Unavailable and Public to start), next to the fixed
    List types.
+   Seeded public sessions are Public sessions with the note CPH, and each anaesthetist with a weekly
+   public session has a weekly Public series; Public closes the session like Unavailable.
 3. Recurring bookings (the surgeons' standing arrangements) then project their Lists, empty, into
    free sessions, after the anaesthetist's calendar: a session already closed is not painted: a recurring booking that lands on a day the anaesthetist has
    already blocked out becomes a Draft List for the office, since the calendar is painted first. A change to a recurring booking reapplies at once through "Apply to canvas
@@ -227,7 +229,9 @@ An anaesthetist becomes unavailable or needs cover at short notice.
 ### Steps
 
 1. Dr Souter keeps her availability in her calendar (mobile or web): days off ahead, repeating days
-   off, one occurrence changed or deleted.
+   off, one occurrence changed or deleted, and public hospital sessions (Public, with an optional note
+   such as CPH; the office can set one too, from Change status, with a note). Public is not open for
+   cover; changing it back to Free reopens the session.
 2. She moves one of her Lists to a free colleague or returns it to the office, also when she marks a
    booked session off: the app asks "Return to the office" or "Hand on to a colleague" first, so no
    List is left with her, and then what her session becomes (the status she is setting, or Free).

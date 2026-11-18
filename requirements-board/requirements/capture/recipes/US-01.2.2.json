@@ -11,7 +11,7 @@
       "states": [
         {
           "state": "table",
-          "caption": "Availability statuses: live chips, the fixed ID, open for bookings, anaesthetists can set, default, in use; no List state",
+          "caption": "Availability statuses: four rows with Public, live chips, the fixed ID, open for bookings, anaesthetists can set, default, in use; Public works like Unavailable; no List state",
           "steps": [
             {
               "wait": 400

@@ -21,7 +21,7 @@
     {
       "name": "calendar",
       "app": "mobile",
-      "caption": "Anaesthetist marks a session Free, On holiday or Unavailable, with an optional note",
+      "caption": "Anaesthetist marks a session Free, On holiday, Unavailable or Public, with an optional note",
       "start": "/mobile/availability/calendar",
       "states": [
         {
@@ -38,13 +38,23 @@
         },
         {
           "state": "sheet",
-          "caption": "Add days off: Free, On holiday or Unavailable, a session, a day or a range, with an optional note",
+          "caption": "Free, On holiday, Unavailable or Public, a session, a day or a range, with an optional note",
           "steps": [
             {
               "click": "[data-shot=mobile-add-days-off]"
             },
             {
               "wait": 500
+            },
+            {
+              "click": "[data-shot=mobile-availability-sheet] [data-status-choice=publicHospital]"
+            },
+            {
+              "fill": "[data-shot=mobile-availability-sheet] input[placeholder=\"For example, CPH\"]",
+              "value": "CPH"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [
@@ -181,6 +191,22 @@
           ],
           "highlight": [
             "button[data-slot-id=\"S-34821-2026-08-14-AM\"]"
+          ],
+          "state": "holiday"
+        },
+        {
+          "state": "public",
+          "caption": "A session set to Public with the note CPH: Public hospital, no List",
+          "steps": [
+            {
+              "goto": "/admin/day/2026-07-21"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "button[data-slot-id=\"S-39560-2026-07-21-AM\"]"
           ]
         }
       ]

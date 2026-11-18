@@ -709,7 +709,7 @@ export interface ListBase {
   id: ListId
   dateISO: IsoDate
   session: Session
-  /** Private, public or pre-op (outside the catalogue's model; see `ListKind`). */
+  /** Private or pre-op (outside the catalogue's model; see `ListKind`). Public is a Slot status since catch-up Phase 32d. */
   kind: ListKind
   hospitalId: HospitalId
   surgeonId: SurgeonId

@@ -251,7 +251,9 @@ describe('assignDraftList (US-01.6.3)', () => {
     const s = api.getState()
     expect(draftListFitsAnaesthetist(s, SEED_DRAFT_LIST_IDS.forte, ANAE.souter)).toBe(true)
     expect(draftListFitsAnaesthetist(s, SEED_DRAFT_LIST_IDS.eyeSurgery, ANAE.sharma)).toBe(false)
-    expect(draftListFitsAnaesthetist(s, 'LD-RCB016-2026-07-21-AM', ANAE.ngata)).toBe(false)
+    // Dr Beaumont's own Fri 24 AM clash does not fit her: that session is closed (catch-up Phase 32d removed Dr Ngata's).
+    expect(s.schedule.lists['LD-RCB022-2026-07-24-AM']).toBeDefined()
+    expect(draftListFitsAnaesthetist(s, 'LD-RCB022-2026-07-24-AM', ANAE.beaumont)).toBe(false)
   })
 })
 

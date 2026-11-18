@@ -49,7 +49,7 @@ export interface CanvasMasters {
   /**
    * The active availability series' instances on the dates being generated
    * (catch-up Phase 29: `seriesCalendarFor`), painted after `leave` with the
-   * series fill rule. Empty for the seed (no series is seeded).
+   * series fill rule. Empty for the seed's first pass; the seed's Public series (catch-up Phase 32d) are written after it.
    */
   series: readonly SeriesCalendarEntry[]
   /** The status master: the default status and the closed test read it, never a literal. */

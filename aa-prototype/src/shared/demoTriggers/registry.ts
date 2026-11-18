@@ -409,7 +409,6 @@ function sicknessChoiceParts(choiceId: string): { listId: string; route: Sicknes
   return { listId, route: route === 'colleague' ? 'colleague' : 'office' }
 }
 
-/** Closed, empty colleague sessions for the List an open picker is assigning or moving (the stand-in's choices). */
 /**
  * The AM and PM sessions of the day open in My calendar (catch-up Phase 32d's
  * office stand-in), each named with its status line; a session that cannot take
@@ -426,6 +425,7 @@ function officePublicChoices(state: AppState, ctx: DemoTriggerCtx): { id: string
   })
 }
 
+/** Closed, empty colleague sessions for the List an open picker is assigning or moving (the stand-in's choices). */
 function makeAvailableChoices(state: AppState, ctx: DemoTriggerCtx): { id: string; label: string }[] {
   const listId = ctx.published['adminPicker.listId']
   if (listId === undefined) return []
@@ -894,8 +894,8 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'availability-office-sets-public',
     label: 'Office sets this session to Public',
     description:
-      'Stands in for the office on the phone: sets the AM or PM session of the day open in My calendar to Public with the note "CPH", as Kirsty would with Change status in the Admin Day drawer. Not on a session that holds a List, is already Public or is past.',
-    screen: 'Mobile · My calendar, the session panel',
+      'Stands in for the office on the phone: sets the AM or PM session of the last day you opened in My calendar to Public with the note "CPH", as Kirsty would with Change status in the Admin Day drawer. Open a day, close it, then run this. Not on a session that holds a List, is already Public or is past.',
+    screen: 'Mobile · My calendar, the day last opened',
     routes: [`${MOBILE_AVAILABILITY}/calendar`],
     surfaces: ['pwa'],
     badge: 'office-stand-in',
@@ -903,7 +903,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     choices: (state, ctx) => officePublicChoices(state, ctx),
     disabledReason: (state, ctx, choiceId) => {
       const slotId = choiceId ?? officePublicChoices(state, ctx)[0]?.id
-      if (slotId === undefined) return 'Open a day in My calendar'
+      if (slotId === undefined) return 'Open a day in My calendar, then close it'
       return officeSetsPublicRefusal(state, slotId)
     },
     run: (api, ctx, choiceId) => {

@@ -241,8 +241,11 @@ export function MobileAvailabilityRoute() {
   // "Add days off" opens on On holiday (its fixed ID) while it is offered, else the first closed choice.
   const choices = useAnaesthetistStatusChoices()
   const presetStatus = (choices.find((s) => s.key === SEED_STATUS.holiday) ?? choices.find((s) => !s.bookable))?.key
-  // The day open in the session panel, for the PWA's "Office sets this session to Public" (catch-up Phase 32d).
-  useDemoTriggerContextWhile('mobileCalendar.day', `${anaesthetistId}|${sheet?.fromISO ?? ''}`, sheet !== null)
+  // The last day opened in My calendar's session panel, for the PWA's "Office sets this session to Public"
+  // (catch-up Phase 32d). Kept after the panel closes, while My calendar shows: the PWA hides its Demo chip
+  // while any sheet is open. Add days off (a range form) never sets it.
+  const [lastDayISO, setLastDayISO] = useState<string | null>(null)
+  useDemoTriggerContextWhile('mobileCalendar.day', `${anaesthetistId}|${lastDayISO ?? ''}`, lastDayISO !== null && depth === 1 && sheet === null)
   // Seen once, the calendar stays mounted so it can slide out when popped.
   const seenCalendar = useRef(false)
   if (depth === 1) seenCalendar.current = true
@@ -270,7 +273,10 @@ export function MobileAvailabilityRoute() {
           actor={actor}
           anaesthetistId={anaesthetistId}
           onBack={backToFindCover}
-          onOpenDay={(dateISO) => setSheet({ fromISO: dateISO })}
+          onOpenDay={(dateISO) => {
+            setLastDayISO(dateISO)
+            setSheet({ fromISO: dateISO })
+          }}
           onAddDaysOff={(fromISO) => setSheet({ fromISO, addDaysOff: true })}
         />
       ),

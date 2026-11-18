@@ -263,8 +263,9 @@ already seeded.
   - Tap **Fri 28 Aug** and select **Delete this one**.
   - Switch to the **Admin Web App → Day view → Fri 14 Aug**, then **Fri 11 Sep**.
   - Open **Master data → Availability statuses**. Either rename **Unavailable** to **Blocked**, or select
-    **Add status** and add **Public hospital** (not open for bookings, the grey colour, hatched). Then
-    show the phone's **Add days off** choices.
+    **Add status** and add **Teaching** (not open for bookings). Point at the four rows (Free, On holiday,
+    Unavailable, Public). Then show the phone's **Add days off** choices, Public among them with its
+    optional note.
 - **Say:** "Availability belongs to each session. Anaesthetists mark days off weeks ahead from the phone
   or the web, set repeating days off, and change or delete one occurrence. The office sees it straight
   away. The statuses themselves are a list the office maintains: rename, recolour or add one, and every
@@ -292,11 +293,12 @@ already seeded.
   the anaesthetist has already blocked out, the system makes it a Draft List too, rather than leaving
   it on someone who will not be there."
 - **Expected:** a legible status-coloured grid; every block carries its label, never colour alone. The
-  dashed Free blocks are empty sessions; the coloured blocks are Lists. The legend reads the three List
-  types, then the availability statuses from master data (the same six labels as before). A Draft Lists
-  card in the right rail and a Draft Lists band above the grid hold Dr Ngata's acute AM (he is
-  unavailable) and St George's PM, Mr S. Tan, waiting 16 h; every List block shows its booking count;
-  the nav shows Draft Lists 16.
+  dashed Free blocks are empty sessions; the coloured blocks are Lists. The legend reads Private, Pre-op,
+  then the availability statuses from master data: Holiday, Unavailable, Public, Free. Dr Ropata's AM
+  reads Public with its note, CPH (a Public session shows its note and no List detail; it is a status, never a
+  List). Dr Ngata's AM is Unavailable (his leave) with no Draft List. A Draft Lists card in the right
+  rail and a Draft Lists band above the grid hold only St George's PM, Mr S. Tan, waiting 16 h; every
+  List block shows its booking count; the nav shows Draft Lists 10 and Conflicts 16.
 
 ### Beat 1b: a List with no anaesthetist yet
 
@@ -304,7 +306,8 @@ already seeded.
   - Open the band's **St George's** block, point at **Available that session** and the tier pills, then
     select **Assign → Dr Emma Fitzgerald** (Free) **→ Assign Draft List**.
   - Optional, if time allows: **Draft Lists** in the side nav. Show the date order and Dr Beaumont's
-    Wednesday Lists waiting while she is on leave, then open **Forte Health · Mr V. Nand** (2 bookings)
+    Wednesday 22 Jul Lists at Southern Cross (LD-RCB020, LD-RCB021) or the Fri 24 Jul AM one (LD-RCB022)
+    waiting, recurring bookings that landed on days Dr Beaumont is away, then open **Forte Health · Mr V. Nand** (2 bookings)
     to show Bookings already on a Draft List. Or, in Demo actions, **Simulate incoming request**
     (Christchurch Eye Surgery, Ms A. Reid, Thu 23 Jul PM) **→ Assign**, point at Dr Sharma in **Not
     preferred with Ms Reid**, and pick a Free anaesthetist instead.
@@ -314,7 +317,7 @@ already seeded.
   office's priority tiers, with any not-preferred pairing set apart. Those warn, and never block, and
   anaesthetists never see them. Once assigned, it is an active List in that anaesthetist's day. A
   cancelled request is removed, or its date changed."
-- **Expected:** the band keeps only Dr Ngata's acute AM; Fitzgerald's PM shows St George's, Mr S. Tan;
+- **Expected:** the band empties; Fitzgerald's PM shows St George's, Mr S. Tan;
   the drawer shows ACTIVE and its History shows the Draft List created and assigned on the same List.
 
 ### Beat 2: a phone-advice booking
@@ -592,7 +595,7 @@ already seeded.
   (Fri 24: two Procedures, both paid by Hana Park, Mother), and **Clear sample warnings** puts Hana
   Park back as the payer.
 
-**Discovery points:** settled: soft warning (OQ-09), and the Draft List questions (OQ-44, OQ-64 and OQ-86 are answered); settled: the anaesthetist's calendar is painted
+**Discovery points:** open (OQ-139): what the office needs to know about public sessions. The prototype keeps Public as a status with an optional note (such as CPH), set by the anaesthetist or the office, never a List and never billed; reopen if Vanessa says the office uses more. Settled: soft warning (OQ-09), and the Draft List questions (OQ-44, OQ-64 and OQ-86 are answered); settled: the anaesthetist's calendar is painted
 before recurring bookings, a recurring booking on an unavailable session becomes a Draft List (Phase
 31), and an anaesthetist who marks a booked session unavailable returns the List to the office or hands
 it to a colleague (OQ-64, OQ-81); settled: an anaesthetist moves her own List at once, with no
@@ -606,8 +609,8 @@ may change if it does not work in practice (OQ-85); settled: short-notice sickne
 in place, the office returns it or hands it on there and then, and the conflict flag covers hospital
 closures only (OQ-81 part 3); settled context rather than a question: availability is a status on
 each session, kept from the anaesthetist's own calendar (one mechanism; OQ-17, OQ-27 and OQ-64
-answered), and the status values are a list AA maintains, starting from Free, On holiday and
-Unavailable, with the final values to be agreed with AA's users and kept apart from a List's state
+answered), and the status values are a list AA maintains, starting from Free, On holiday,
+Unavailable and Public, with the final values to be agreed with AA's users and kept apart from a List's state
 (Active, Submitted, Authorised; Draft for Draft Lists from Phase 31; US-01.2.2); settled: whoever moves
 a List is asked what the vacated session becomes, Free or Unavailable (OQ-84); settled: notices are
 active until an admin ticks them resolved, nothing expires, and alerts to the office join List moves in

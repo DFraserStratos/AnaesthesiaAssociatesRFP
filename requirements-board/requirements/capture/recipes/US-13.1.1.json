@@ -13,10 +13,9 @@
           "state": "day",
           "steps": [],
           "highlight": [
-            "[data-shot=daygrid-draft-band]",
-            "[data-shot=daygrid-block-count] >> nth=0"
+            "button[data-slot-id=\"S-39560-2026-07-21-AM\"]"
           ],
-          "caption": "One-day view of every anaesthetist's Lists, Draft Lists and booking counts"
+          "caption": "One-day view: Lists with hospital, surgeon and count; a Public session shows its note and no List detail"
         },
         {
           "state": "drill-down",

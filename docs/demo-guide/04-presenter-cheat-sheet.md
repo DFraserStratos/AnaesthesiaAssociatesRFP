@@ -371,8 +371,8 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Complete Booking and submit List
 - Add a missing Booking
 - Photo of the booking card: Future Work (Demo actions, badged)
-- Availability and cover: mark days off ahead, repeating days off, change or delete one occurrence
-  (My calendar, a bottom sheet)
+- Availability and cover: mark Free, On holiday, Unavailable or Public (with an optional note) ahead,
+  repeating days off, change or delete one occurrence (My calendar, a bottom sheet)
 - Move a List to a colleague or the office; hand one Booking to a free colleague (Move to a colleague)
 - Later: balances
 
@@ -381,8 +381,8 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Wider dashboard and date ranges
 - A main view from today with earlier un-authorised Lists, and past work by patient name, NHI or date
 - Same List/Booking detail and capture functions
-- Availability and cover: mark days off ahead, repeating days off, change or delete one occurrence
-  (My availability, the same form as the phone)
+- Availability and cover: mark Free, On holiday, Unavailable or Public (with an optional note) ahead,
+  repeating days off, change or delete one occurrence (My availability, the same form as the phone)
 - Move a List to a colleague or the office; hand one Booking to a free colleague (Move to a colleague)
 - Accounts and GST activity
 
@@ -413,7 +413,7 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Find available (Day header): office only; the free anaesthetists for a session in tier order,
   shuffled within a tier, with not-preferred pairings apart once a surgeon is chosen; picking one opens
   Assign List
-- Availability statuses (Master data): rename, recolour or add a status and every app follows; rules
+- Availability statuses (Master data): four to start (Free, On holiday, Unavailable, Public); rename, recolour or add a status and every app follows; rules
   read the status's ID; it is availability only, never a List's state (Active, Submitted or
   Authorised, or Draft for a Draft List)
 - Out-of-hours sessions: **Open out-of-hours session** on an anaesthetist's Day row (hover the name or
@@ -703,6 +703,14 @@ a List in it: a new one, or a request already waiting as a Draft List for that e
 like AM and PM, one a day, 18:00 to 21:00 by default: the anaesthetist can mark it available or not, the
 finders offer it while it is free, and its Bookings are captured, submitted and billed like any List
 (S2 Beat 3e).
+
+### "What about public work?"
+
+Public hospital sessions are a status on the session, with an optional note such as CPH, set by the
+anaesthetist on their calendar or by the office from the Day view (Change status). It is never a kind
+of List and is never billed. Public is not open for bookings or cover; changing it back to Free
+reopens the session. What else the office needs to know about public sessions is a discovery point
+(OQ-139).
 
 ### "Can an anaesthetist edit after submission?"
 

@@ -207,7 +207,7 @@ describe('series (US-01.5.3)', () => {
     for (const statusKey of ['unavailable', 'ST0001']) {
       const api = store()
       if (statusKey === 'ST0001') {
-        addSlotStatus(api, OFFICE, { label: 'Public hospital', longLabel: 'At the public hospital', description: 'Same effect as Unavailable.', colour: 'unavailable', treatment: 'hatched', bookable: false, anaesthetistCanSet: true, isDefault: false })
+        addSlotStatus(api, OFFICE, { label: 'Teaching', longLabel: 'Teaching session', description: 'Same effect as Unavailable.', colour: 'unavailable', treatment: 'hatched', bookable: false, anaesthetistCanSet: true, isDefault: false })
       }
       const end = scheduleHorizon(api.getState()).endISO
       // Souter's Monday PM is a recurring List; the series starts on the last horizon day, so no existing session is touched.

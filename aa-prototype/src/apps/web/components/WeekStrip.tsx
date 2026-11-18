@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import { format, parseISO } from 'date-fns'
 import { brand, neutral, radius } from '../../../theme/tokens'
 import { blockFill, resolveDisplayStatus, useDisplayStatus } from '../../../shared'
-import { statusLine } from '../../../domain/slotStatus'
 import type { Session } from '../../../domain/types'
 import { slotViewsForAnaesthetist, useAppStore, type SlotView } from '../../../store'
 import { hasLeftMainView, LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
@@ -73,8 +72,8 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
     if (list === undefined) {
       const status = resolveDisplayStatus(v.slot.status, slotStatuses)
       if (v.open) return { l1: `${status.label} · ${sessionText(v.slot.session)}`, l2: v.slot.note ?? 'Open for cover' }
-      // A closed session (Public among them, catch-up Phase 32d) reads its status line, "Public · CPH", and no List detail.
-      return { l1: statusLine(v.slot, slotStatuses), l2: '' }
+      // A closed session: its label, then its note (Public, then "CPH"; catch-up Phase 32d), never List detail.
+      return { l1: status.longLabel, l2: v.slot.note ?? '' }
     }
     if (list.kind === 'preop') return { l1: 'Pre-op clinic', l2: locationName(list.hospitalId, hospitals) }
     const hospital = locationName(list.hospitalId, hospitals)
