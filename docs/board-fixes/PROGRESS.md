@@ -49,6 +49,27 @@ Read in full before execution; update the verified result last. One writer at a 
     reruns the checks. No further reviewers unless a finding cannot be settled from the code; then at
     most one more, recorded with its reason. B15 keeps its three closing lenses (B15-REQ-14), on
     Sonnet.
+16. **Programme branch** (accepted decision 15). All programme work, code and these planning docs
+    alike, is committed to the local branch **`board-fixes`**, never to master.
+    - **Where:** its worktree `/Users/d.fraser/Development/Stratos Dev/AnaesthesiaAssociatesRFP-board`. A phase session switches into it with the `EnterWorktree`
+      tool (`path`, never `name`) before doing anything else. Its git-ignored `.lane.env` gives
+      its ports (prototype 5473, PWA 5474, board 5480). The main checkout stays the owner's (master;
+      5173, 5174, 5180), and the catch-up lane worktrees are untouched.
+    - **Keeping current:** at phase start, if master has commits that `board-fixes` lacks, run
+      `git merge master` in the worktree first (merge, never rebase), so the phase builds on the
+      current board and catalogue. Resolve conflicts (on the board version, keep the higher version
+      and put the phase's CHANGELOG entry on top), keep `verify:board` green, and note the merge in
+      the phase entry.
+    - **B12 and B13** each work in their own worktree on a branch made from `board-fixes`
+      (`board-fixes-b12`, `board-fixes-b13`; ports 5573/5574/5580 and 5673/5674/5680 in their own
+      `.lane.env`), and merge back into `board-fixes`, from the programme worktree, when no serial
+      phase has uncommitted work there. In convention 14 and PLAN.md, "master's version" means
+      `board-fixes`' version.
+    - **Into master:** `board-fixes` merges into master once, after B15 closes, or earlier only when
+      the owner asks (for example to give the live lanes B12's fixes). The board version is settled
+      at that merge as in convention 14. Until then the live catch-up plan keeps using master's board
+      and tools, which also keeps convention 8 safe.
+    - Never push.
 
 ## Phase ownership and sequencing gates
 
@@ -167,6 +188,9 @@ decisions" section and resolved in that phase's planning.
   14. **Lighter phase reviews.** The user judged four reviewers per phase too heavy. Phases use
       convention 15: two Sonnet reviewers (one for a small diff), verified by the session itself;
       B15's three closing lenses run on Sonnet.
+  15. **Programme branch.** The user asked for all board-fixes work on its own branch. Convention 16:
+      branch `board-fixes` from master at the commit recording this decision, worked in its own
+      worktree, merged into master after B15 or on request.
 
 ## Planning handoff
 

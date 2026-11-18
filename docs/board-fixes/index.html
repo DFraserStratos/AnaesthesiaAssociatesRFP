@@ -168,7 +168,7 @@ footer { margin:56px 0 40px; font-size:13px; color:var(--mist); }
   </div>
 
   <h2 id="phase">Phase detail and prompts</h2>
-  <p>Each phase's outcome, findings, prerequisites, decisions, specification and kick-off prompt. Paste the prompt into a fresh Claude Code session at the repo root.</p>
+  <p>Each phase's outcome, findings, prerequisites, decisions, specification and kick-off prompt. Paste the prompt into a fresh Claude Code session at the repo root; it switches itself into the <code>board-fixes</code> worktree (<code>AnaesthesiaAssociatesRFP-board</code>), where all programme work is committed. Open this page from that worktree to see current progress.</p>
   <div class="order" id="order" role="tablist" aria-label="Phases in build order"></div>
   <article class="card detail" id="detail" aria-live="polite"></article>
 
@@ -192,7 +192,7 @@ footer { margin:56px 0 40px; font-size:13px; color:var(--mist); }
     <div class="card"><b>3 · Plan</b><span>Save IMPLEMENTATION.md beside the SPEC: choices, bites, checks, recovery.</span></div>
     <div class="card"><b>4 · Build</b><span>Small verified bites, a failing-then-passing test per finding, verify:board green.</span></div>
     <div class="card"><b>5 · Review</b><span>Two fresh Sonnet reviewers (one for a small diff): completeness and correctness; quality plus the phase's lens. The session verifies and fixes.</span></div>
-    <div class="card"><b>6 · Record</b><span>PROGRESS entry last: every finding's disposition, doc facts, what later phases need. Commit; never push.</span></div>
+    <div class="card"><b>6 · Record</b><span>PROGRESS entry last: every finding's disposition, doc facts, what later phases need. Commit on board-fixes; never push.</span></div>
   </div>
 
   <div class="card" style="padding:14px 18px;margin-top:12px;font-size:14px">
@@ -317,7 +317,6 @@ const PHASES = [
 ];
 // R-07: B02 delivers the board half, B12 the plan-tool half and closes it. Both list it.
 const STATUS = Object.fromEntries(PHASES.map(p=>[p.id,'PLANNED']));
-STATUS.B01 = 'COMPLETE';
 // Which mode to open each phase's session in. Plan mode for any phase with an open programme decision.
 const MODE = {
   B01:['auto','Its decisions are already recorded (accepted decision 13), so it can plan and build straight through.'],
@@ -436,13 +435,19 @@ order.append(el('span',{class:'lbl',text:'  Parallel'}));
 ['B12','B13'].forEach(id=>order.append(el('button',{class:'pill',role:'tab','data-id':id,title:MODE[id][0]==='plan'?'Open in plan mode':'Open in auto mode'},[id, el('span',{class:'m',text:MODE[id][0]==='plan'?'PLAN':'AUTO'})])));
 order.addEventListener('click',e=>{ const b=e.target.closest('.pill'); if(b) select(b.dataset.id,false); });
 
+const WT = '/Users/d.fraser/Development/Stratos Dev/AnaesthesiaAssociatesRFP-board';
 function prompt(p){
   const ids = uniq(p.owns).sort((a,b)=>a-b).map(i=>'R-'+String(i).padStart(2,'0'));
   const idText = ids.length ? ids.join(', ') + (p.extra? '; plus '+p.extra.join(', '):'') : (p.extra||[]).join(', ');
   const deps = p.deps.length ? (p.depNote ? `${p.deps.join(', ')} (${p.depNote})` : p.deps.join(', ')) : 'none';
   const dec = p.decisions.length ? `the programme decision${p.decisions.length>1?'s':''} ${p.decisions.join(' and ')} (see the decision register in PROGRESS.md)` : 'no programme decision (inherit the accepted answers your phase consumes)';
   const agentTests = p.agent ? ' and the agent tools\' node --test suites' : '';
+  const where = p.lane
+    ? `Work on your own branch (PROGRESS convention 16). Before anything else, if it does not exist yet, create your worktree from the programme branch: git worktree add "${WT}-${p.id}" -b board-fixes-${p.id.toLowerCase()} board-fixes, write its .lane.env (AA_LANE=${p.id}, AA_PROTO_PORT=${p.id==='B12'?5573:5673}, AA_PWA_PORT=${p.id==='B12'?5574:5674}, BOARD_PORT=${p.id==='B12'?5580:5680}) and run npm install at its root and in requirements-board. Then switch into it with the EnterWorktree tool (path "${WT}-${p.id}"). Every command, edit and commit happens there. When the phase is complete, merge board-fixes-${p.id.toLowerCase()} into board-fixes from the programme worktree (${WT}) if no serial phase has uncommitted work there; otherwise stop and tell me. Never touch master.`
+    : `Work on the programme branch (PROGRESS convention 16). Before anything else, switch into the board-fixes worktree with the EnterWorktree tool (path "${WT}"). Every command, edit and commit happens there, on branch board-fixes, never in the main checkout or on master. If master has commits that board-fixes lacks, run git merge master there first.`;
   return `Please execute Phase ${p.id} (${p.title}) of the Board fixes Buildbook.
+
+${where}
 
 Follow docs/BUILD-BOOK.md Section 5 (executing a phase).
 
@@ -466,7 +471,7 @@ Finish green: npm run verify:board from the repo root${agentTests}; Playwright s
 
 ${p.id==='B15' ? 'Run the closing reviewers as B15-REQ-14 sets out: the three named lenses only, as fresh subagents on Sonnet (model: sonnet). Triage and verify their findings yourself (B15-REQ-16).' : `After implementation and initial verification, run the light review (PROGRESS convention 15): two fresh reviewer subagents on Sonnet (model: sonnet), in parallel, given the SPEC, the owned findings and the diff, not your conclusions. Reviewer 1: completeness against every owned finding and SPEC acceptance item, plus bugs and correctness in the changed code. Reviewer 2: quality and maintainability, plus ${p.lens}. If the diff is small (under about 300 changed lines, tests excluded), one Sonnet reviewer covering both is enough. Verify each finding yourself against the code, fix confirmed issues, add missing regression tests, and rerun the verification.`}
 
-Update PROGRESS.md last: a phase entry with every owned finding's disposition (Fixed / Not reproducible at HEAD / Won't fix, which I must accept / Moved), what shipped, deviations, verification, review outcomes, touch-rights edits, Doc facts, and what later phases need. Update the phase's row in the status table. Commit only this phase's files, staged by path; never push. Do not mark the phase COMPLETE while required work remains.`;
+Update PROGRESS.md last: a phase entry with every owned finding's disposition (Fixed / Not reproducible at HEAD / Won't fix, which I must accept / Moved), what shipped, deviations, verification, review outcomes, touch-rights edits, Doc facts, and what later phases need. Update the phase's row in the status table. Commit only this phase's files, staged by path, on ${p.lane ? 'your branch' : 'board-fixes'}; never push. Do not mark the phase COMPLETE while required work remains.`;
 }
 
 function select(id, scroll){
@@ -546,7 +551,7 @@ const stb = el('tbody');
 SERIAL.concat(['B12','B13']).forEach(id=>{ const p=byId[id]; stb.append(el('tr',{},[el('td',{class:'mono',text:id}),el('td',{text:p.title}),el('td',{},el('span',{class:'b',text:STATUS[id]})),el('td',{},modeBadge(id)),el('td',{},el('span',{class:'b b-ok',text:'Yes'})),el('td',{text:id==='B01'?'now; D-01 and B01-Q1 to Q3 recorded':[p.deps.length?'after '+(p.depNote||p.deps.join(', ')):'', p.decisions.length?p.decisions.join(', ')+' recorded':'', p.gateExtra||''].filter(Boolean).join('; ')||'now'})])); });
 st.append(stb);
 
-document.getElementById('reviewnote').textContent = "Both planning reviews ran on all 15 specifications. Integration: 32 of 32 findings resolved. Fidelity: 19 of 19 resolved, coverage 164 of 164. D-01 accepted 2026-11-19. Next action: start B01.";
+document.getElementById('reviewnote').textContent = "Both planning reviews ran on all 15 specifications. Integration: 32 of 32 findings resolved. Fidelity: 19 of 19 resolved, coverage 164 of 164. D-01 accepted 2026-11-19. All programme work is on branch board-fixes (convention 16).";
 const start = (location.hash||'').slice(1); select(byId[start]?start:'B01', false);
 </script>
 </body>

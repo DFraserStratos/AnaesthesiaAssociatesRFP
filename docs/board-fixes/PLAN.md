@@ -59,9 +59,12 @@ reason), or **Moved** (to a named owner).
   status registry) must leave `npm run check` green and must be reviewed by the user before it runs
   on the real catalogue.
 - **Live agents.** Build lanes run in other worktrees (`-laneA`, `-laneB`, `-U2`, `-U3`) and use the
-  B12 tools through merges from master. Tool changes stay backward compatible with the in-flight
+  B12 tools through merges from master, so B12's fixes reach them only when `board-fixes` merges
+  into master (convention 16). Tool changes stay backward compatible with the in-flight
   catch-up plan and its phase docs, or ship with a migration the plan's owner accepts.
-- **Git.** Work on master (or a local branch merged back). Commit and merge, never push. Stage by
+- **Git.** All programme work goes on the local branch `board-fixes`, in its own worktree
+  (`AnaesthesiaAssociatesRFP-board`), never on master; it merges into master after B15 or when the
+  owner asks (PROGRESS convention 16). Commit and merge, never push. Stage by
   path at commit time only; never stage mid-phase (use `mv`/`rm`, not `git mv`/`git rm`), because
   other sessions' commits sweep in staged changes.
 - **Ports.** Do not take 5180 (board), 5173/5174 (prototype) or 5181 (contract picker) for tests;
@@ -247,7 +250,7 @@ are settled in a short planning conversation of the owning phase ahead of time:
   `shared/statuses.ts` (it does not if D-02 chooses the no-overlap rule), and before B13-REQ-07b.
 
 **Version numbers in worktree phases.** B12 and B13 pick their board version at merge time:
-master's current version plus their bump, with their CHANGELOG entry placed above the newest one.
+`board-fixes`' current version plus their bump, with their CHANGELOG entry placed above the newest one.
 They resolve the lock file by re-running `npm install` in the board folder, and B12's `verify`
 script edit is merged by hand.
 
