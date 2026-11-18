@@ -8,8 +8,10 @@
 
 import { describe, expect, it } from 'vitest'
 import { freshAppState } from './appStore'
-import { aaFeeInvoicesFor, bctiRecords, isBackdropList, outstandingAccpayInvoicesFor, receivablesAgingFor } from './selectors'
+import { aaFeeInvoicesFor, isBackdropList, outstandingPayableRowsFor, receivablesAgingFor } from './selectors'
+import { bctiRecords } from './ledgerSelectors'
 import { bctisFor } from '../domain/billing/bcti'
+import { pairStatusLabel } from '../domain/billing/ledger'
 import { horizonFor } from '../domain/clock'
 import { ANAE, PAT, SEED_LOOKBACK } from '../domain/seed'
 import type { AssignedList } from '../domain/types'
@@ -47,12 +49,12 @@ describe('the browsable history', () => {
 
   it('settles every new account before 1 April 2026: paid in and disbursed', () => {
     const ids = new Set(lookback.flatMap((l) => bookingsOn(l.id).map((b) => b.id)))
-    const cases = Object.values(state.billing.cases).filter((c) => ids.has(c.bookingId))
-    expect(cases).toHaveLength(29)
-    for (const c of cases) {
-      expect(c.status, c.id).toBe('disbursed')
-      expect(c.paidInAtISO! < '2026-04-01').toBe(true)
-      expect(c.disbursedAtISO! < '2026-04-01').toBe(true)
+    const pairs = Object.values(state.billing.ledger).flatMap((p) => (p.kind !== 'aaFee' && ids.has(p.bookingId) ? [p] : []))
+    expect(pairs).toHaveLength(29)
+    for (const p of pairs) {
+      expect(pairStatusLabel(p), p.id).toBe('disbursed')
+      expect(p.receivable.paidInAtISO! < '2026-04-01').toBe(true)
+      expect(p.payable!.paidOutAtISO! < '2026-04-01').toBe(true)
     }
   })
 
@@ -87,7 +89,7 @@ describe('the browsable history', () => {
 
 describe('no money figure moves', () => {
   it('outstanding balances and aging are as before', () => {
-    expect(outstandingAccpayInvoicesFor(state, ANAE.souter, TODAY).map((r) => [r.invoiceNumber, r.outstanding])).toEqual([
+    expect(outstandingPayableRowsFor(state, ANAE.souter, TODAY).map((r) => [r.invoiceNumber, r.outstanding])).toEqual([
       ['AA-2026-H08', 250],
       ['AA-2026-H07', 610],
       ['AA-2026-H06', 1930],
@@ -96,8 +98,11 @@ describe('no money figure moves', () => {
       ['AA-2026-H03', 520.5],
       ['AA-2026-H02', 1240],
       ['AA-2026-H01', 845],
+      // (catch-up Phase 36: an unmirrored invoice is owed. The seed range beat AA-2026-S2401, never handed off,
+      // is now Dr Souter's: +1 row, +$3,565.00 current. Every other figure is as before.)
+      ['AA-2026-S2401', 3565],
     ])
-    expect(receivablesAgingFor(state, ANAE.souter, TODAY).aging).toEqual({ current: 2605.5, d31_60: 2390, d61_90: 1930, d90plus: 860, total: 7785.5 })
+    expect(receivablesAgingFor(state, ANAE.souter, TODAY).aging).toEqual({ current: 2605.5 + 3565, d31_60: 2390, d61_90: 1930, d90plus: 860, total: 7785.5 + 3565 })
   })
 
   it('the seeded AA fee invoices and their totals are as before; the new BCTIs fall in January to March only', () => {

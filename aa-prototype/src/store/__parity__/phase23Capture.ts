@@ -13,7 +13,8 @@
  */
 
 import type { AppState } from '../appStore'
-import { bctiRecords, bctisToChargeFor, billingContextForBooking, bookingsForList, prepaidHeldFor, proceduresForBooking } from '../selectors'
+import { bctiRecords } from '../ledgerSelectors'
+import { bctisToChargeFor, billingContextForBooking, bookingsForList, prepaidHeldFor, proceduresForBooking } from '../selectors'
 import { buildInvoicesForBooking, type InvoiceBuildContext } from '../../domain/billing/invoiceBuild'
 import { prepaymentDraftsAsRaised } from './phase22aCapture'
 import type { FeeResult } from '../../domain/billing/fee'

@@ -25,8 +25,7 @@ import type {
   AssignedList,
   DraftList,
   AaFeeInvoice,
-  BillingCase,
-  BillingPipelineStatus,
+  BookingLedgerPair,
   Booking,
   RecurringBooking,
   ConflictClear,
@@ -75,8 +74,9 @@ import { FEED_META } from '../domain/integrations'
 import { roundToCents, toCents } from '../domain/billing/money'
 import { maskBankAccount } from '../domain/bankAccount'
 import { procedureAccFunded } from '../domain/billing/fundingTags'
-import { BCTI_COUNT_RULE, bctiFeeHistory, bctiRecordsFrom, bctisFor, type BctiFeeHistory, type BctiRecord } from '../domain/billing/bcti'
-import { transferOfCase } from '../domain/billing/prepayHolding'
+import { BCTI_COUNT_RULE, bctiFeeHistory, bctisFor, type BctiFeeHistory, type BctiRecord } from '../domain/billing/bcti'
+import { isBookingPair, patientPosition, transferOfPair, type PairStatus } from '../domain/billing/ledger'
+import { bctiRecords, incomeReceiptsFor, openBillingExceptions, pairsForList, pairStatusOf } from './ledgerSelectors'
 import { aaFeeFixedTotal, aaFeeFor } from '../domain/billing/aaFee'
 import { bucketForAgingDays, epochDayOf, type AgingBucketKey } from '../domain/dateDays'
 import { useMemo } from 'react'
@@ -508,44 +508,6 @@ export function invoiceCountsByList(state: Pick<AppState, 'schedule' | 'billing'
   return counts
 }
 
-// ---------------------------------------------------------------------------
-// Billing cases (Phase 08 record; Phase 09 monitor + retry)
-// ---------------------------------------------------------------------------
-
-/** Every BillingCase for a Booking, in id order. */
-export function casesForBooking(state: Pick<AppState, 'billing'>, bookingId: string): BillingCase[] {
-  return Object.values(state.billing.cases)
-    .filter((c) => c.bookingId === bookingId)
-    .sort((a, b) => a.id.localeCompare(b.id))
-}
-
-/** Every BillingCase for the Bookings on a List, in id order. */
-export function casesForList(state: Pick<AppState, 'schedule' | 'billing'>, listId: string): BillingCase[] {
-  const bookingIds = new Set(bookingsForList(state, listId).map((c) => c.id))
-  return Object.values(state.billing.cases)
-    .filter((c) => bookingIds.has(c.bookingId))
-    .sort((a, b) => a.id.localeCompare(b.id))
-}
-
-/** Every failed BillingCase (the monitor's exceptions), in id order. */
-export function failedCases(state: Pick<AppState, 'billing'>): BillingCase[] {
-  return Object.values(state.billing.cases)
-    .filter((c) => c.status === 'failed')
-    .sort((a, b) => a.id.localeCompare(b.id))
-}
-
-/** Every case whose Xero handoff faulted (Phase 10) — invoiced, carries a `handoffFailure`. */
-export function handoffFailedCases(state: Pick<AppState, 'billing'>): BillingCase[] {
-  return Object.values(state.billing.cases)
-    .filter((c) => c.handoffFailure !== undefined && c.accRecId === undefined)
-    .sort((a, b) => a.id.localeCompare(b.id))
-}
-
-/** Count of cases needing office attention (the billing-monitor nav badge): billing failures + handoff faults. */
-export function billingAttentionCount(state: Pick<AppState, 'billing'>): number {
-  return failedCases(state).length + handoffFailedCases(state).length
-}
-
 export interface PaymentCandidate {
   accRecId: string
   invoiceId: string
@@ -595,32 +557,21 @@ export function openAccRecs(state: Pick<AppState, 'xero' | 'billing' | 'masters'
 }
 
 /**
- * The remaining (unpaid) amount on a case's ACCREC, from the MIRROR only
- * (convention 9): invoice total minus received. 0 when there is no invoice.
- */
-export function caseOutstandingAmount(state: Pick<AppState, 'billing'>, c: BillingCase): number {
-  if (c.invoiceId === undefined) return 0
-  const total = state.billing.invoices[c.invoiceId]?.total ?? 0
-  const remaining = total - c.receivedAmount
-  return toCents(remaining) > 0 ? remaining : 0
-}
-
-/**
- * WI2a intake check: does this patient have an unpaid PRIOR episode (a different
- * Booking whose billing case still has money outstanding)? Reads the billing mirror
- * + schedule only — the NHI dedupe is the contact-resolution keying on the
- * hidden id, not this balance check. Excludes cancelled bookings.
+ * WI2a intake check: does this patient have an unpaid PRIOR episode (a
+ * different Booking with money still owed on any invoice, whoever pays)? Reads
+ * the ledger's patient position (catch-up Phase 36, DM-23) and the schedule
+ * only. Excludes cancelled bookings.
  */
 export function patientHasOutstandingPriorEpisode(
   state: Pick<AppState, 'billing' | 'schedule'>,
   patientId: string,
   excludeBookingId: string,
 ): boolean {
-  for (const c of Object.values(state.billing.cases)) {
-    if (c.bookingId === excludeBookingId) continue
-    const booking = state.schedule.bookings[c.bookingId]
-    if (booking === undefined || booking.patientId !== patientId || booking.cancellation !== undefined) continue
-    if (caseOutstandingAmount(state, c) > 0) return true
+  for (const row of patientPosition(Object.values(state.billing.ledger), patientId).rows) {
+    if (row.bookingId === excludeBookingId || toCents(row.outstanding) <= 0) continue
+    const booking = state.schedule.bookings[row.bookingId]
+    if (booking === undefined || booking.cancellation !== undefined) continue
+    return true
   }
   return false
 }
@@ -733,21 +684,35 @@ export function prepaidLeftOffText(leftOff: PrepaidLeftOff): string {
   return leftOff.all ? `Prepaid in full, no final invoice (${numbers})` : `Prepaid, left off the final invoice (${numbers})`
 }
 
+/** The pipeline status a Booking reads on the monitor (Phase 09's labels, derived from its pairs since catch-up Phase 36). */
+export type MonitorStatus = 'pending' | 'invoiced' | 'handedOff' | 'partPaid' | 'paid' | 'disbursed' | 'failed'
+
+/** A pair's label on the monitor: a hand-off fault reads invoiced (its own flag says why); part paid out reads by what was received. */
+function monitorStatusOf(label: PairStatus, fullyReceived: boolean): MonitorStatus {
+  if (label === 'handoffFailed') return 'invoiced'
+  if (label === 'partPaidOut') return fullyReceived ? 'paid' : 'partPaid'
+  return label
+}
+
 export interface MonitorBookingRow {
   bookingId: string
   patientName: string
-  status: BillingPipelineStatus | 'cancelled'
-  caseId?: string
+  status: MonitorStatus | 'cancelled'
+  /** The Booking's first run pair (or the one whose hand-off faulted). */
+  pairId?: string
+  /** The open billing exception (OQ-05), when the Booking failed. */
+  exceptionId?: string
   invoiceIds: string[]
   failure?: { code: string; message: string; procedureId?: ProcedureId }
-  /** A Xero handoff fault on this booking's case (Phase 10) — retry re-invokes the handoff. */
+  /** A Xero hand-off fault on this booking's pair (Phase 10): retry re-invokes the hand-off. */
   handoffFailure?: { code: string; message: string }
   /** A prepayment transfer whose Xero journal faulted (catch-up Phase 27a) — retry posts it once. */
   journalFailure?: { transferId: string; code: string; message: string }
   /** WI2a: this booking's patient has an unpaid prior episode (repeat patient). */
   outstandingPriorBalance?: boolean
-  /** Money mirror for the two-state display (paid-in / disbursed). */
+  /** The ledger's money for the two-state display (paid in / paid out). */
   receivedAmount: number
+  /** Released to the anaesthetist (Phase 10's "authorised" on the ACCPAY). */
   authorisedAmount: number
   disbursedAmount: number
   paidInAtISO?: string
@@ -768,7 +733,7 @@ export interface MonitorListRow {
   /** The first such invoice, for the monitor's link. */
   firstNoAddressInvoiceId?: string
   failedCount: number
-  /** Cases whose Xero handoff faulted (Phase 10). */
+  /** Pairs whose Xero hand-off faulted (Phase 10). */
   handoffFailedCount: number
   stages: MonitorStage[]
   bookingRows: MonitorBookingRow[]
@@ -795,19 +760,18 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
       return a.id.localeCompare(b.id)
     })
 
-  const isPrePaymentCase = (c: BillingCase): boolean =>
-    c.invoiceId !== undefined && state.billing.invoices[c.invoiceId]?.kind === 'prePayment'
+  const exceptions = openBillingExceptions(state)
 
   return lists.map((list) => {
     const bookings = bookingsForList(state, list.id)
     // The monitor tracks the billing RUN, so it counts only standard (run)
-    // invoices and cases — never the pre-payment pre-invoice, which is raised
-    // separately (else a booking with a paid deposit would read 'paid' and mask
-    // its unpaid run invoice, and its list would overcount).
+    // invoices and pairs, never the prepayment's (raised separately: else a
+    // booking with a paid prepayment would read 'paid' and mask its unpaid run
+    // invoice, and its list would overcount).
     const stdInvoices = invoicesForList(state, list.id).filter((i) => i.kind === 'standard')
-    const cases = casesForList(state, list.id)
-    const caseByBooking = new Map<string, BillingCase[]>()
-    for (const c of cases) caseByBooking.set(c.bookingId, [...(caseByBooking.get(c.bookingId) ?? []), c])
+    const runPairs = pairsForList(state, list.id).filter((p) => p.kind === 'procedure')
+    const pairsByBooking = new Map<string, BookingLedgerPair[]>()
+    for (const p of runPairs) pairsByBooking.set(p.bookingId, [...(pairsByBooking.get(p.bookingId) ?? []), p])
 
     const bookingRows: MonitorBookingRow[] = bookings.map((booking) => {
       if (booking.cancellation !== undefined) {
@@ -821,29 +785,32 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
           disbursedAmount: 0,
         }
       }
-      const runCases = (caseByBooking.get(booking.id) ?? []).filter((c) => !isPrePaymentCase(c))
-      const failed = runCases.find((c) => c.status === 'failed')
-      const handoffFailed = runCases.find((c) => c.handoffFailure !== undefined)
-      const invoiceIds = runCases.filter((c) => c.invoiceId !== undefined).map((c) => c.invoiceId as string)
-      // Prefer a billing failure, then a handoff fault, for the retry action.
-      const primary = failed ?? handoffFailed ?? runCases[0]
+      const pairs = pairsByBooking.get(booking.id) ?? []
+      const exception = exceptions.find((x) => x.bookingId === booking.id)
+      const faulted = pairs.find((p) => p.handoffFailure !== undefined && p.receivable.xeroAccRecId === undefined)
+      // Prefer a hand-off fault for the retry action, then the first pair.
+      const primary = faulted ?? pairs[0]
+      const fullyReceived = (p: BookingLedgerPair) => toCents(p.receivable.receivedAmount) >= toCents(p.receivable.amount)
       const row: MonitorBookingRow = {
         bookingId: booking.id,
         patientName: patientNameFor(state, booking.patientId),
-        status: failed !== undefined ? 'failed' : primary?.status ?? 'pending',
-        invoiceIds,
-        receivedAmount: runCases.reduce((n, c) => n + c.receivedAmount, 0),
-        authorisedAmount: runCases.reduce((n, c) => n + c.authorisedAmount, 0),
-        disbursedAmount: runCases.reduce((n, c) => n + c.disbursedAmount, 0),
+        status: exception !== undefined ? 'failed' : primary !== undefined ? monitorStatusOf(pairStatusOf(state, primary), fullyReceived(primary)) : 'pending',
+        invoiceIds: pairs.map((p) => p.invoiceId),
+        receivedAmount: pairs.reduce((n, p) => n + p.receivable.receivedAmount, 0),
+        authorisedAmount: pairs.reduce((n, p) => n + (p.payable?.releasedAmount ?? 0), 0),
+        disbursedAmount: pairs.reduce((n, p) => n + (p.payable?.disbursedAmount ?? 0), 0),
       }
-      if (primary !== undefined) row.caseId = primary.id
-      if (failed?.failure !== undefined) row.failure = failed.failure
-      if (handoffFailed?.handoffFailure !== undefined) row.handoffFailure = handoffFailed.handoffFailure
-      const faulted = Object.values(state.billing.transfers).find((t) => t.bookingId === booking.id && t.journalFailure !== undefined && t.xeroJournalId === undefined)
-      if (faulted?.journalFailure !== undefined) row.journalFailure = { transferId: faulted.id, ...faulted.journalFailure }
-      const paidInAtISO = runCases.find((c) => c.paidInAtISO !== undefined)?.paidInAtISO
+      if (primary !== undefined) row.pairId = primary.id
+      if (exception !== undefined) {
+        row.exceptionId = exception.id
+        row.failure = { code: exception.code, message: exception.message, ...(exception.procedureId !== undefined ? { procedureId: exception.procedureId } : {}) }
+      }
+      if (faulted?.handoffFailure !== undefined) row.handoffFailure = faulted.handoffFailure
+      const faultedJournal = Object.values(state.billing.transfers).find((t) => t.bookingId === booking.id && t.journalFailure !== undefined && t.xeroJournalId === undefined)
+      if (faultedJournal?.journalFailure !== undefined) row.journalFailure = { transferId: faultedJournal.id, ...faultedJournal.journalFailure }
+      const paidInAtISO = pairs.find((p) => p.receivable.paidInAtISO !== undefined)?.receivable.paidInAtISO
       if (paidInAtISO !== undefined) row.paidInAtISO = paidInAtISO
-      const disbursedAtISO = runCases.find((c) => c.disbursedAtISO !== undefined)?.disbursedAtISO
+      const disbursedAtISO = pairs.find((p) => p.payable?.paidOutAtISO !== undefined)?.payable?.paidOutAtISO
       if (disbursedAtISO !== undefined) row.disbursedAtISO = disbursedAtISO
       if (patientHasOutstandingPriorEpisode(state, booking.patientId, booking.id)) row.outstandingPriorBalance = true
       const leftOff = prepaidLeftOffFor(state, booking.id)
@@ -851,13 +818,11 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
       return row
     })
 
-    // Run cases across the list (non-prepayment), for the Xero-stage aggregate.
-    const listRunCases = cases.filter((c) => !isPrePaymentCase(c))
-    const handedOff = listRunCases.filter((c) => c.accRecId !== undefined).length
+    // The run's pairs across the list, for the Xero-stage aggregate.
+    const handedOff = runPairs.filter((p) => p.receivable.xeroAccRecId !== undefined).length
     // A faulted transfer journal (catch-up Phase 27a) needs attention like a hand-off fault.
-    const handoffFailedCount =
-      listRunCases.filter((c) => c.handoffFailure !== undefined && c.accRecId === undefined).length + bookingRows.filter((r) => r.journalFailure !== undefined).length
-    const handoffEligible = listRunCases.filter((c) => c.invoiceId !== undefined && c.status !== 'failed').length
+    const handoffFailedCount = runPairs.filter((p) => p.handoffFailure !== undefined && p.receivable.xeroAccRecId === undefined).length + bookingRows.filter((r) => r.journalFailure !== undefined).length
+    const handoffEligible = runPairs.length
 
     const failedCount = bookingRows.filter((r) => r.status === 'failed').length
     const emailedCount = stdInvoices.filter((i) => i.delivery?.status === 'sent').length
@@ -945,17 +910,18 @@ export function patientNameFor(state: Pick<AppState, 'masters'>, patientId: stri
 }
 
 // ---------------------------------------------------------------------------
-// Anaesthetist money-view MIRROR selectors (Phase 10; WI6, M11, W1/W4).
-// These read the Billing Engine's mirror (`billing`) + `masters` + the clock
-// ONLY — NEVER `state.xero` (convention 9; the greppable source-scan enforces
-// it for the mobile/web apps). Each ACCPAY invoice is a case→invoice join,
-// attributed to the anaesthetist via booking→list. Outstanding balance is a FLAT
-// list, one row per ACCPAY invoice, no rollup (RFP). An invoice shows as soon as
-// it is raised: Xero returns its ID at once, so there is no next-day handover
-// (US-07.4.1, FT-07.4; Greg 19 October; catch-up Phase 38a removed the rule).
+// Anaesthetist money views (Phase 10; WI6, M11, W1/W4), read from the LEDGER
+// (catch-up Phase 36; US-08.3.2), the system of record: `billing` + `masters`
+// + the clock ONLY, NEVER `state.xero` (the source scan in
+// `apps/moneyViewPurity.test.ts` enforces it). Each row is a pair's receivable
+// and payable, attributed by the payee stamped on the pair, never a List join.
+// Outstanding balance is a FLAT list, one row per invoice, no rollup (RFP). An
+// invoice shows as soon as it is raised, mirrored in Xero or not: the ledger
+// says the money is owed (catch-up Phase 36).
 // ---------------------------------------------------------------------------
 
-type MirrorState = Pick<AppState, 'billing' | 'schedule' | 'masters'>
+export type { LedgerState } from './ledgerSelectors'
+type ViewState = Pick<AppState, 'billing' | 'schedule' | 'masters'>
 
 export interface AgingBuckets {
   current: number
@@ -965,8 +931,8 @@ export interface AgingBuckets {
   total: number
 }
 
-export interface AccpayInvoiceRow {
-  caseId: string
+export interface PayableRow {
+  pairId: string
   invoiceId: string
   invoiceNumber: string
   patientId: string
@@ -988,44 +954,58 @@ export interface AccpayInvoiceRow {
 }
 
 /**
- * Who a case pays (catch-up Phase 25, DM-42): the payee stamped from the
- * Booking's lock at the run. A prepayment's collect case (catch-up Phase 27a)
- * is the transfer's payee once transferred, else the List's anaesthetist now
- * (so a moved Booking's prepayment shows to whoever has the List, never the
- * old anaesthetist); nothing reaches them until the transfer.
+ * Whose views a pair shows in: a procedure pair's stamped payee (catch-up
+ * Phase 25's lock); a prepayment's transfer payee once transferred, else the
+ * anaesthetist who has the List now (27a: a held prepayment shows to whoever
+ * has the List, read-only, never the old anaesthetist). The ledger's position
+ * puts a held prepayment in no one's scope; this is display only.
  */
-export function payeeIdForCase(state: Pick<AppState, 'schedule'> & { billing?: Pick<AppState['billing'], 'transfers'> }, theCase: BillingCase): string | undefined {
-  if (theCase.payeeAnaesthetistId !== undefined) return theCase.payeeAnaesthetistId
-  if (theCase.prepayLeg === 'collect' && state.billing !== undefined) {
-    const transfer = transferOfCase(state.billing.transfers, theCase.id)
-    if (transfer !== undefined) return transfer.toAnaesthetistId
-  }
-  const booking = state.schedule.bookings[theCase.bookingId]
-  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
-  return list?.anaesthetistId
+export function viewerOfPair(state: Pick<AppState, 'schedule' | 'billing'>, pair: BookingLedgerPair): string | undefined {
+  if (pair.anaesthetistId !== undefined) return pair.anaesthetistId
+  if (pair.kind !== 'prePayment') return undefined
+  const transfer = transferOfPair(state.billing.transfers, pair.id)
+  if (transfer !== undefined) return transfer.in.payee.kind === 'anaesthetist' ? transfer.in.payee.anaesthetistId : undefined
+  const booking = state.schedule.bookings[pair.bookingId]
+  return booking !== undefined ? state.schedule.lists[booking.listId]?.anaesthetistId : undefined
 }
 
-function accpayRowForCase(state: MirrorState, c: BillingCase, todayISO: string): AccpayInvoiceRow | undefined {
-  if (c.invoiceId === undefined || c.accRecId === undefined) return undefined
-  const invoice = state.billing.invoices[c.invoiceId]
+function bookingPairs(state: Pick<AppState, 'billing'>): BookingLedgerPair[] {
+  return Object.values(state.billing.ledger).filter((p): p is BookingLedgerPair => isBookingPair(p))
+}
+
+/**
+ * What a pair has released to the anaesthetist and paid out (catch-up Phase
+ * 27a, read from the ledger since 36): a procedure pair's own payable; a
+ * prepayment nothing while the AA Holding account holds it, then its
+ * transfer's `in` leg.
+ */
+export function releasedAndPaidFor(state: { billing: Pick<AppState['billing'], 'transfers'> }, pair: BookingLedgerPair): { held: boolean; released: number; disbursed: number } {
+  if (pair.kind !== 'prePayment') return { held: false, released: pair.payable?.releasedAmount ?? 0, disbursed: pair.payable?.disbursedAmount ?? 0 }
+  const transfer = transferOfPair(state.billing.transfers, pair.id)
+  return transfer === undefined ? { held: true, released: 0, disbursed: 0 } : { held: false, released: transfer.in.releasedAmount, disbursed: transfer.in.disbursedAmount }
+}
+
+function payableRowFor(state: ViewState, pair: BookingLedgerPair, todayISO: string): PayableRow | undefined {
+  const invoice = state.billing.invoices[pair.invoiceId]
   if (invoice === undefined || invoice.raisedAtISO === undefined) return undefined
-  const booking = state.schedule.bookings[c.bookingId]
+  const booking = state.schedule.bookings[pair.bookingId]
   if (booking === undefined) return undefined
   const agingDays = epochDayOf(todayISO) - epochDayOf(invoice.raisedAtISO)
-  const outstanding = Math.max(0, roundToCents(invoice.total - c.receivedAmount))
-  const money = releasedAndPaidFor(state, c)
+  const r = pair.receivable
+  const outstanding = Math.max(0, roundToCents(r.amount - r.receivedAmount))
+  const money = releasedAndPaidFor(state, pair)
   return {
-    caseId: c.id,
-    invoiceId: c.invoiceId,
-    invoiceNumber: invoice.invoiceNumber,
+    pairId: pair.id,
+    invoiceId: pair.invoiceId,
+    invoiceNumber: r.number,
     patientId: booking.patientId,
     patientName: patientNameFor(state, booking.patientId),
     counterparty: invoice.counterparty,
     counterpartyLabel: invoiceAddresseeName(state, invoice),
     // An archived account keeps the old system's marker; every other reads its Contract's tag.
-    accFunded: c.archivedAccRelated === true || proceduresForBooking(state, c.bookingId).some((p) => procedureAccFunded(state.masters, p)),
+    accFunded: pair.archivedAccRelated === true || proceduresForBooking(state, pair.bookingId).some((p) => procedureAccFunded(state.masters, p)),
     amountTotal: invoice.total,
-    receivedAmount: c.receivedAmount,
+    receivedAmount: r.receivedAmount,
     disbursedAmount: money.disbursed,
     held: money.held,
     outstanding,
@@ -1036,40 +1016,39 @@ function accpayRowForCase(state: MirrorState, c: BillingCase, todayISO: string):
 }
 
 /**
- * Every ACCPAY invoice for an anaesthetist (handed off), oldest first, shown the
- * moment it is raised: an authorised List's invoices are in balances at once
- * (catch-up Phase 38a). The flat, no-rollup list.
+ * Every invoice for an anaesthetist, oldest first, shown the moment it is
+ * raised, mirrored in Xero or not (catch-up Phase 36: a hand-off fault no
+ * longer hides money the ledger says is owed). The flat, no-rollup list.
  */
-export function accpayInvoicesFor(state: MirrorState, anaesthetistId: string, todayISO: string): AccpayInvoiceRow[] {
-  const rows: AccpayInvoiceRow[] = []
-  for (const c of Object.values(state.billing.cases)) {
-    if (payeeIdForCase(state, c) !== anaesthetistId) continue
-    const row = accpayRowForCase(state, c, todayISO)
-    if (row === undefined) continue
-    rows.push(row)
+export function payableRowsFor(state: ViewState, anaesthetistId: string, todayISO: string): PayableRow[] {
+  const rows: PayableRow[] = []
+  for (const pair of bookingPairs(state)) {
+    if (viewerOfPair(state, pair) !== anaesthetistId) continue
+    const row = payableRowFor(state, pair, todayISO)
+    if (row !== undefined) rows.push(row)
   }
   return rows.sort((a, b) => a.raisedAtISO.localeCompare(b.raisedAtISO) || a.invoiceNumber.localeCompare(b.invoiceNumber))
 }
 
-/** Outstanding (unpaid) ACCPAY invoices — the flat balances list (M11 / W4 overdue). */
-export function outstandingAccpayInvoicesFor(state: MirrorState, anaesthetistId: string, todayISO: string): AccpayInvoiceRow[] {
-  return accpayInvoicesFor(state, anaesthetistId, todayISO).filter((r) => toCents(r.outstanding) > 0)
+/** Outstanding (unpaid) invoices: the flat balances list (M11 / W4 overdue). */
+export function outstandingPayableRowsFor(state: ViewState, anaesthetistId: string, todayISO: string): PayableRow[] {
+  return payableRowsFor(state, anaesthetistId, todayISO).filter((r) => toCents(r.outstanding) > 0)
 }
 
-/** The W4 Overdue accounts view — the flat outstanding ACCPAY list (alias for clarity at the call sites). */
-export function overdueAccountsFor(state: MirrorState, anaesthetistId: string, todayISO: string): AccpayInvoiceRow[] {
-  return outstandingAccpayInvoicesFor(state, anaesthetistId, todayISO)
+/** The W4 Overdue accounts view: the flat outstanding list (alias for clarity at the call sites). */
+export function overdueAccountsFor(state: ViewState, anaesthetistId: string, todayISO: string): PayableRow[] {
+  return outstandingPayableRowsFor(state, anaesthetistId, todayISO)
 }
 
 export interface ReceivablesAging {
   aging: AgingBuckets
   accountsOver60: number
-  rows: AccpayInvoiceRow[]
+  rows: PayableRow[]
 }
 
-/** Receivables aging over the outstanding rows (the dashboard aging panel; W1). */
-export function receivablesAgingFor(state: MirrorState, anaesthetistId: string, todayISO: string): ReceivablesAging {
-  const rows = outstandingAccpayInvoicesFor(state, anaesthetistId, todayISO)
+/** Receivables aging over the outstanding rows (the dashboard aging panel; W1). Phase 38 replaces it with the flat list (D8). */
+export function receivablesAgingFor(state: ViewState, anaesthetistId: string, todayISO: string): ReceivablesAging {
+  const rows = outstandingPayableRowsFor(state, anaesthetistId, todayISO)
   const aging: AgingBuckets = { current: 0, d31_60: 0, d61_90: 0, d90plus: 0, total: 0 }
   for (const r of rows) {
     aging[r.bucket] = roundToCents(aging[r.bucket] + r.outstanding)
@@ -1094,9 +1073,10 @@ export interface GstActivity {
 
 /**
  * The GST activity report (M11 / W's periodic summary): a date-ranged list of
- * amounts RECEIVED, each with its GST component, for one anaesthetist. Reads the
- * receipts ledger; the window (`fromISO`..`toISO`, inclusive date bounds) is the
- * calendar month to date (catch-up Phase 26: no GST period; Phase 38 rebuilds it).
+ * amounts RECEIVED, each with its GST component, for one anaesthetist. Reads
+ * the ledger's income receipts (never an AA fee payment, AA's own money); the
+ * window (`fromISO`..`toISO`, inclusive date bounds) is the calendar month to
+ * date (catch-up Phase 26: no GST period; Phase 38 rebuilds it).
  */
 export function gstActivityFor(
   state: Pick<AppState, 'billing' | 'masters'>,
@@ -1104,14 +1084,14 @@ export function gstActivityFor(
   fromISO: string,
   toISO: string,
 ): GstActivity {
-  const rows: GstActivityRow[] = Object.values(state.billing.receipts)
+  const rows: GstActivityRow[] = incomeReceiptsFor(state, anaesthetistId)
     .filter((r) => {
       const d = r.atISO.slice(0, 10)
-      return r.anaesthetistId === anaesthetistId && d >= fromISO && d <= toISO
+      return d >= fromISO && d <= toISO
     })
     .map((r) => {
-      const c = state.billing.cases[r.caseId]
-      const invoice = c?.invoiceId !== undefined ? state.billing.invoices[c.invoiceId] : undefined
+      const pair = state.billing.ledger[r.pairId]
+      const invoice = pair !== undefined && isBookingPair(pair) ? state.billing.invoices[pair.invoiceId] : undefined
       return {
         receiptId: r.id,
         atISO: r.atISO,
@@ -1134,22 +1114,8 @@ export type PaymentHistoryStatus =
   | 'partPaidOut'
   | 'paidOut'
 
-/**
- * What a case has released to the anaesthetist and paid out (catch-up Phase
- * 27a): an ordinary case's own mirror; a prepayment's collect case nothing
- * while the AA Holding account holds it, then its transfer's.
- */
-export function releasedAndPaidFor(
-  state: { billing: Pick<AppState['billing'], 'transfers'> },
-  c: BillingCase,
-): { held: boolean; released: number; disbursed: number } {
-  if (c.prepayLeg !== 'collect') return { held: false, released: c.authorisedAmount, disbursed: c.disbursedAmount }
-  const transfer = transferOfCase(state.billing.transfers, c.id)
-  return transfer === undefined ? { held: true, released: 0, disbursed: 0 } : { held: false, released: transfer.released, disbursed: transfer.disbursed }
-}
-
 export interface PaymentHistoryRow {
-  caseId: string
+  pairId: string
   invoiceNumber: string
   patientName: string
   payerLabel: string
@@ -1162,37 +1128,34 @@ export interface PaymentHistoryRow {
 }
 
 /**
- * Payment history for the anaesthetist account. Unlike the outstanding balance
- * handover, this is an immediate transaction history: a received payment
- * remains visible after it leaves Overdue and shows what was released and paid out.
- * It reads only the Billing Engine mirror, never Xero.
+ * Payment history for the anaesthetist account: an immediate transaction
+ * history read from the ledger (a received payment stays visible after it
+ * leaves Overdue and shows what was released and paid out). Never Xero.
  */
 export function paymentHistoryFor(
-  state: MirrorState,
+  state: ViewState,
   anaesthetistId: string,
 ): PaymentHistoryRow[] {
-  const latestReceiptByCase = new Map<string, string>()
-  for (const receipt of Object.values(state.billing.receipts)) {
-    if (receipt.anaesthetistId !== anaesthetistId) continue
-    const prior = latestReceiptByCase.get(receipt.caseId)
-    if (prior === undefined || receipt.atISO > prior) latestReceiptByCase.set(receipt.caseId, receipt.atISO)
+  const latestReceiptByPair = new Map<string, string>()
+  for (const receipt of incomeReceiptsFor(state, anaesthetistId)) {
+    const prior = latestReceiptByPair.get(receipt.pairId)
+    if (prior === undefined || receipt.atISO > prior) latestReceiptByPair.set(receipt.pairId, receipt.atISO)
   }
 
   const rows: PaymentHistoryRow[] = []
-  for (const c of Object.values(state.billing.cases)) {
-    if (payeeIdForCase(state, c) !== anaesthetistId) continue
-    if (toCents(c.receivedAmount) <= 0 || c.invoiceId === undefined) continue
-    const invoice = state.billing.invoices[c.invoiceId]
-    const booking = state.schedule.bookings[c.bookingId]
-    const receivedAtISO = latestReceiptByCase.get(c.id) ?? c.paidInAtISO
+  for (const pair of bookingPairs(state)) {
+    if (viewerOfPair(state, pair) !== anaesthetistId) continue
+    const received = pair.receivable.receivedAmount
+    if (toCents(received) <= 0) continue
+    const invoice = state.billing.invoices[pair.invoiceId]
+    const booking = state.schedule.bookings[pair.bookingId]
+    const receivedAtISO = latestReceiptByPair.get(pair.id) ?? pair.receivable.paidInAtISO
     if (invoice === undefined || booking === undefined || receivedAtISO === undefined) continue
 
-    const fullyReceived = toCents(c.receivedAmount) >= toCents(invoice.total)
-    const money = releasedAndPaidFor(state, c)
+    const fullyReceived = toCents(received) >= toCents(invoice.total)
+    const money = releasedAndPaidFor(state, pair)
     const anyDisbursed = toCents(money.disbursed) > 0
-    const fullyDisbursed =
-      toCents(money.released) > 0 &&
-      toCents(money.disbursed) >= toCents(money.released)
+    const fullyDisbursed = toCents(money.released) > 0 && toCents(money.disbursed) >= toCents(money.released)
     const status: PaymentHistoryStatus = money.held
       ? 'held'
       : fullyDisbursed && fullyReceived
@@ -1204,12 +1167,12 @@ export function paymentHistoryFor(
             : 'partPayment'
 
     rows.push({
-      caseId: c.id,
+      pairId: pair.id,
       invoiceNumber: invoice.invoiceNumber,
       patientName: patientNameFor(state, booking.patientId),
       payerLabel: invoiceAddresseeName(state, invoice),
       receivedAtISO,
-      grossReceived: c.receivedAmount,
+      grossReceived: received,
       releasedAmount: money.released,
       disbursedAmount: money.disbursed,
       status,
@@ -1575,23 +1538,13 @@ export function useClockTimeLabel(): string {
 // AA's monthly fee (catch-up Phase 16; FT-10.3, US-10.3.1, US-10.3.2)
 // ---------------------------------------------------------------------------
 
-/**
- * The BCTI record list: the ONLY source `bctisFor` is fed from (one record per
- * procedure ACCPAY, a prepayment's left out by `BCTI_COUNT_RULE.prepaymentPairs`, catch-up Phase 27a; fee ACCRECs have no
- * ACCPAY so are never counted). See `bctiRecordsFrom` for the feeders later
- * phases add.
- */
-export function bctiRecords(state: Pick<AppState, 'xero'>): BctiRecord[] {
-  return bctiRecordsFrom(state.xero)
-}
-
 /** What an anaesthetist's fee invoices already hold, for `bctisFor` (charged BCTIs, invoiced months). */
 export function bctiFeeHistoryFor(state: Pick<AppState, 'billing'>, anaesthetistId: string): BctiFeeHistory {
   return bctiFeeHistory(Object.values(state.billing.aaFeeInvoices), anaesthetistId)
 }
 
 /** The BCTIs `anaesthetistId` would be charged for `monthISO` on the next run (the one count, with its fee history). */
-export function bctisToChargeFor(state: Pick<AppState, 'xero' | 'billing'>, anaesthetistId: string, monthISO: string): BctiRecord[] {
+export function bctisToChargeFor(state: Pick<AppState, 'billing'>, anaesthetistId: string, monthISO: string): BctiRecord[] {
   return bctisFor(bctiRecords(state), anaesthetistId, monthISO, BCTI_COUNT_RULE, bctiFeeHistoryFor(state, anaesthetistId))
 }
 
@@ -1614,7 +1567,7 @@ export interface AaFeeRunPreviewRow {
  * count for one not yet invoiced, or the raised invoice's own snapshot.
  */
 export function aaFeeRunPreview(
-  state: Pick<AppState, 'xero' | 'billing' | 'masters' | 'appSettings'>,
+  state: Pick<AppState, 'billing' | 'masters' | 'appSettings'>,
   monthISO: string,
 ): AaFeeRunPreviewRow[] {
   const records = bctiRecords(state)
@@ -1662,27 +1615,35 @@ export type AaFeeInvoiceStatus = 'unpaid' | 'paid'
 
 export interface AaFeeInvoiceRow extends AaFeeInvoice {
   status: AaFeeInvoiceStatus
+  /** Received on its `aaFee` ledger pair. */
+  amountReceived: number
+  paidAtISO?: string
 }
 
-function aaFeeRow(f: AaFeeInvoice): AaFeeInvoiceRow {
-  return { ...f, status: toCents(f.amountReceived) >= toCents(f.total) ? 'paid' : 'unpaid' }
+/** A fee invoice with its status and paid date read from its `aaFee` ledger pair (catch-up Phase 36). */
+function aaFeeRow(state: Pick<AppState, 'billing'>): (f: AaFeeInvoice) => AaFeeInvoiceRow {
+  return (f) => {
+    const r = state.billing.ledger[f.ledgerPairId]?.receivable
+    const received = r?.receivedAmount ?? 0
+    return { ...f, status: toCents(received) >= toCents(f.total) ? 'paid' : 'unpaid', amountReceived: received, ...(r?.paidInAtISO !== undefined ? { paidAtISO: r.paidInAtISO } : {}) }
+  }
 }
 
 function newestFirst(a: AaFeeInvoice, b: AaFeeInvoice): number {
   return b.monthISO.localeCompare(a.monthISO) || b.raisedAtISO.localeCompare(a.raisedAtISO) || a.invoiceNumber.localeCompare(b.invoiceNumber)
 }
 
-/** One anaesthetist's fee invoices, newest first. Reads the billing mirror only, never Xero. */
+/** One anaesthetist's fee invoices, newest first. Reads the ledger, never Xero. */
 export function aaFeeInvoicesFor(state: Pick<AppState, 'billing'>, anaesthetistId: string): AaFeeInvoiceRow[] {
   return Object.values(state.billing.aaFeeInvoices)
     .filter((f) => f.anaesthetistId === anaesthetistId)
     .sort(newestFirst)
-    .map(aaFeeRow)
+    .map(aaFeeRow(state))
 }
 
-/** Every fee invoice, newest first. Reads the billing mirror only. */
+/** Every fee invoice, newest first. Reads the ledger. */
 export function allAaFeeInvoices(state: Pick<AppState, 'billing'>): AaFeeInvoiceRow[] {
-  return Object.values(state.billing.aaFeeInvoices).sort(newestFirst).map(aaFeeRow)
+  return Object.values(state.billing.aaFeeInvoices).sort(newestFirst).map(aaFeeRow(state))
 }
 
 /** A List's session times as a hook (stable: selects the records, derives with useMemo). */
@@ -1843,6 +1804,11 @@ export interface ConflictRowFilter {
 }
 
 const rosterRank = (id: string): number => SEEDED_ORDER.get(id) ?? Number.MAX_SAFE_INTEGER
+
+/** Every anaesthetist in roster order (the seeded order, then by id). */
+export function anaesthetistsInRosterOrder(state: { masters: Pick<AppState['masters'], 'anaesthetists'> }): Anaesthetist[] {
+  return Object.values(state.masters.anaesthetists).sort((a, b) => rosterRank(a.registrationNumber) - rosterRank(b.registrationNumber) || a.registrationNumber.localeCompare(b.registrationNumber))
+}
 
 let conflictRowCache: { lists: object; masters: object; bookings: object; rows: ConflictRow[] } | null = null
 
@@ -2175,7 +2141,7 @@ export function bookingContractCue(state: Pick<AppState, 'masters' | 'schedule'>
 export function procedureStackViewFor(
   state: Pick<AppState, 'masters'> & {
     schedule: Pick<AppState['schedule'], 'procedures' | 'bookings' | 'lists'> & Partial<Pick<AppState['schedule'], 'billingLines'>>
-    billing?: Pick<AppState['billing'], 'invoices' | 'invoiceLines'> & Partial<Pick<AppState['billing'], 'locks' | 'cases' | 'transfers'>>
+    billing?: Pick<AppState['billing'], 'invoices' | 'invoiceLines'> & Partial<Pick<AppState['billing'], 'locks' | 'ledger' | 'transfers'>>
   },
   procedureId: string,
   surface: StackSurface,
@@ -2222,7 +2188,7 @@ export function procedureStackViewFor(
   }
   // A prepaid Procedure's basis reads its prepaid amount (catch-up Phase 27, US-03.1.8): needs the billing slice.
   const prepay =
-    state.billing?.cases !== undefined && state.schedule.billingLines !== undefined
+    state.billing?.ledger !== undefined && state.schedule.billingLines !== undefined
       ? prepaymentForProcedure(
           // The transfers only say where the money is (catch-up Phase 27a), which the stack never reads.
           { ...state, billing: { ...state.billing, transfers: state.billing.transfers ?? {} } } as Parameters<typeof prepaymentForProcedure>[0],

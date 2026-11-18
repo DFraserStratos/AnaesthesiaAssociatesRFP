@@ -213,7 +213,6 @@ export const ACTION_LABELS: Record<string, string> = {
   'xero.disbursed': 'Disbursement recorded',
   'xero.contactResolved': 'Xero contact resolved',
   'xero.contactArchived': 'Xero contact archived',
-  'xero.feeAccRecCreated': 'Xero AA fee invoice created',
   // The AA Holding account's transfer and its Xero mirror (catch-up Phase 27a).
   'prepayment.transfer': 'Prepayment transferred to anaesthetist',
   'prepayment.transferNoop': 'Prepayment transfer already done',
@@ -221,6 +220,18 @@ export const ACTION_LABELS: Record<string, string> = {
   'xero.journalPosted': 'Xero transfer journal posted',
   'xero.journalFailed': 'Xero transfer journal failed',
   'xero.journalNoop': 'Xero transfer journal already posted',
+
+  // --- The internal ledger (catch-up Phase 36) ----------------------------
+  'ledger.pairCreated': 'Ledger pair created',
+  'ledger.receiptRecorded': 'Receipt recorded in the ledger',
+  'ledger.receiptNoop': 'Receipt already recorded',
+  'ledger.disbursed': 'Paid out to the anaesthetist',
+  'ledger.disburseNoop': 'Nothing to pay out',
+  'ledger.unmatchedReceipt': 'Receipt with no matching invoice',
+  'ledger.unmatchedAllocated': 'Unmatched receipt allocated',
+  'ledger.unmatchedRefunded': 'Unmatched receipt refunded',
+  'ledger.allocationNoop': 'Allocation already applied',
+  'billing.exceptionResolved': 'Billing exception resolved',
 
   // --- AA's monthly fee (catch-up Phase 16) -------------------------------
   'aaFee.settingsChanged': 'AA fee settings changed',

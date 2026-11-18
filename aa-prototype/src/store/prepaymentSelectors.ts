@@ -24,7 +24,9 @@ import {
 } from '../domain/billing/prepayment'
 import { bookingFeesFor } from '../domain/billing/validateBookingForBilling'
 import { roundToCents, toCents } from '../domain/billing/money'
-import { heldBookingIds, holdingBalance, holdingEntries, transferOfCase, type HoldingEntry } from '../domain/billing/prepayHolding'
+import { heldBookingIds, holdingBalance, holdingEntries, type HoldingEntry } from '../domain/billing/prepayHolding'
+import { transferOfPair } from '../domain/billing/ledger'
+import { pairForInvoice } from './ledgerSelectors'
 import { daysBetween } from '../domain/dateDays'
 import { billingContextForBooking, counterpartyName, patientNameFor, prePaymentInvoicesForBooking, proceduresForBooking } from './selectors'
 import { useMemo } from 'react'
@@ -122,7 +124,8 @@ export function prepaymentStatusFor(state: PrepaymentState, bookingId: string): 
   const views = groups.map((g): PrepaymentGroupView => {
     const invoice = g.invoice !== undefined ? state.billing.invoices[g.invoice.invoiceId] : undefined
     const invoicedTotal = invoice?.total ?? 0
-    const receivedTotal = invoice !== undefined ? roundToCents(Object.values(state.billing.cases).filter((c) => c.invoiceId === invoice.id).reduce((s, c) => s + c.receivedAmount, 0)) : 0
+    // Received from the prepayment's ledger pair (catch-up Phase 36): its receivable leg.
+    const receivedTotal = invoice !== undefined ? roundToCents(pairForInvoice(state, invoice.id)?.receivable.receivedAmount ?? 0) : 0
     const holding = invoice !== undefined ? prepaymentHoldingFor(state, invoice.id) : undefined
     return {
       key: g.key,
@@ -165,7 +168,7 @@ export interface ProcedurePrepayment {
  * Where a sent prepayment's money is (catch-up Phase 27a; US-06.5.1): held in
  * the AA Holding account until the List is authorised, then transferred to the
  * anaesthetist who did it and paid out by the payables run. Read from the
- * mirror only.
+ * ledger only.
  */
 export interface PrepaymentHolding {
   state: 'held' | 'transferred' | 'paidOut'
@@ -176,12 +179,13 @@ export interface PrepaymentHolding {
 }
 
 export function prepaymentHoldingFor(state: Pick<AppState, 'billing'>, invoiceId: InvoiceId): PrepaymentHolding | undefined {
-  const collect = Object.values(state.billing.cases).find((c) => c.invoiceId === invoiceId && c.prepayLeg === 'collect')
-  if (collect === undefined) return undefined
-  const transfer = transferOfCase(state.billing.transfers, collect.id)
-  if (transfer === undefined) return toCents(collect.receivedAmount) > 0 ? { state: 'held', released: 0, disbursed: 0 } : undefined
-  const paidOut = toCents(transfer.disbursed) >= toCents(transfer.amount)
-  return { state: paidOut ? 'paidOut' : 'transferred', toAnaesthetistId: transfer.toAnaesthetistId, released: transfer.released, disbursed: transfer.disbursed }
+  const collect = pairForInvoice(state, invoiceId)
+  if (collect === undefined || collect.kind !== 'prePayment') return undefined
+  const transfer = transferOfPair(state.billing.transfers, collect.id)
+  if (transfer === undefined) return toCents(collect.receivable.receivedAmount) > 0 ? { state: 'held', released: 0, disbursed: 0 } : undefined
+  const leg = transfer.in
+  const paidOut = toCents(leg.disbursedAmount) >= toCents(leg.amount)
+  return { state: paidOut ? 'paidOut' : 'transferred', ...(leg.payee.kind === 'anaesthetist' ? { toAnaesthetistId: leg.payee.anaesthetistId } : {}), released: leg.releasedAmount, disbursed: leg.disbursedAmount }
 }
 
 /**

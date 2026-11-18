@@ -47,7 +47,7 @@ describe('Xero invoice-pair view', () => {
     expect(pair.accRec.contact?.name).toBe('nib')
     expect(pair.accPay?.contact?.name).toBe('Dr Melanie Souter')
     expect(pair.accPay?.id).toBe(
-      state.billing.cases[pair.engine.caseId ?? '']?.accPayId,
+      (state.billing.ledger[pair.engine.caseId ?? ''] as { payable?: { xeroAccPayId?: string } } | undefined)?.payable?.xeroAccPayId,
     )
     expect(pair.accPay?.status).toBe('draft')
     expect(pair.accRec.amountDue).toBe(152.38)

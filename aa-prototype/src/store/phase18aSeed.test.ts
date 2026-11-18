@@ -12,7 +12,7 @@
 import { describe, expect, it } from 'vitest'
 import baseline from './__parity__/phase-18a-baseline.json'
 import { freshAppState } from './appStore'
-import { accpayInvoicesFor } from './selectors'
+import { payableRowsFor } from './selectors'
 import { SEED_MARKERS, SPECIALTY_FOR_DIRECTORY_TEXT } from '../domain/seed'
 import { DIRECTORY_ROOMS, DIRECTORY_SURGEONS } from '../domain/seed/specialistDirectory'
 import { contractFitsSpecialties, surgeonSpecialtyLabel } from '../domain/specialties'
@@ -21,6 +21,7 @@ import { fundingTagsInOrder, procedureAccFunded } from '../domain/billing/fundin
 
 const state = freshAppState()
 const { masters, schedule } = state
+const bookingPairs = Object.values(state.billing.ledger).flatMap((p) => (p.kind !== 'aaFee' ? [p] : []))
 
 describe('specialties and funding tags (seed)', () => {
   it('seeds the twelve broad specialties', () => {
@@ -249,17 +250,17 @@ describe('ACC is a funding tag (FT-05.5, US-05.5.1)', () => {
       const p = schedule.procedures[id]!
       // Catch-up Phase 20: on their hospital's plain RVG Contract (one Contract per Procedure), never an ACC-tagged one.
       expect(procedureAccFunded(masters, p), id).toBe(false)
-      const theCase = Object.values(state.billing.cases).find((c) => c.bookingId === p.bookingId)
-      expect(theCase?.archivedAccRelated, id).toBe(true)
+      const thePair = bookingPairs.find((c) => c.bookingId === p.bookingId)
+      expect(thePair?.archivedAccRelated, id).toBe(true)
     }
-    expect(Object.values(state.billing.cases).filter((c) => c.archivedAccRelated === true)).toHaveLength(3)
+    expect(bookingPairs.filter((c) => c.archivedAccRelated === true)).toHaveLength(3)
   })
 
   it("Dr Souter's accounts still mark the archived ACC accounts (Prentice and Foster among them), and nothing else", () => {
-    const rows = accpayInvoicesFor(state, '34821', '2026-07-21')
+    const rows = payableRowsFor(state, '34821', '2026-07-21')
     const flagged = rows.filter((r) => r.accFunded)
     expect(flagged.map((r) => r.patientName)).toEqual(expect.arrayContaining(['Alan Prentice', 'Diane Foster']))
-    for (const r of rows) expect(r.accFunded, r.invoiceNumber).toBe(state.billing.cases[r.caseId]?.archivedAccRelated === true)
+    for (const r of rows) expect(r.accFunded, r.invoiceNumber).toBe(bookingPairs.find((c) => c.id === r.pairId)?.archivedAccRelated === true)
   })
 
   it('the Procedure no longer stores an ACC flag', () => {

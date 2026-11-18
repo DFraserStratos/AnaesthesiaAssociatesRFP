@@ -96,13 +96,15 @@ describe('DemoXero invoice table', () => {
 
   it('shows an AA fee pair with no payable, and Record fee payment in place of payment and payout', () => {
     const fee = Object.values(useAppStore.getState().billing.aaFeeInvoices).find((f) => f.invoiceNumber === 'AA-FEE-2026-H02')!
-    renderInvoices(`/demo/xero/invoices/${fee.accRecId}`)
+    // (catch-up Phase 36: the fee's ACCREC id and paid date live on its `aaFee` ledger pair.)
+    const feeAccRecId = useAppStore.getState().billing.ledger[fee.ledgerPairId]!.receivable.xeroAccRecId!
+    renderInvoices(`/demo/xero/invoices/${feeAccRecId}`)
     expect(screen.queryByRole('button', { name: 'Simulate payment and payout' })).toBeNull()
     expect(screen.getByTestId('xero-aa-fee-no-payable')).toHaveTextContent('never netted')
     expect(screen.getByTestId('xero-money-flow-grid')).toHaveTextContent("Anaesthesia Associates (AA's own account)")
     fireEvent.click(screen.getByRole('button', { name: 'Record fee payment' }))
     expect(screen.getByRole('status')).toHaveTextContent('AA-FEE-2026-H02 paid')
-    expect(useAppStore.getState().billing.aaFeeInvoices[fee.id]?.paidAtISO).toBeDefined()
+    expect(useAppStore.getState().billing.ledger[fee.ledgerPairId]?.receivable.paidInAtISO).toBeDefined()
     expect(screen.getByRole('link', { name: /View in Dr Souter's account/ })).toHaveAttribute(
       'href',
       '/web/accounts/fees?invoice=AA-FEE-2026-H02',

@@ -44,13 +44,15 @@ describe('seeded locks', () => {
     }
   })
 
-  it("every non-prepayment case of a locked Booking names its List's anaesthetist as payee", () => {
-    for (const c of Object.values(state.billing.cases)) {
+  it("every non-prepayment pair of a locked Booking names its List's anaesthetist as payee", () => {
+    for (const c of Object.values(state.billing.ledger)) {
+      if (c.kind !== 'procedure') continue
       const lock = state.billing.locks[c.bookingId]
-      const invoice = c.invoiceId !== undefined ? state.billing.invoices[c.invoiceId] : undefined
-      if (lock === undefined || invoice?.kind === 'prePayment') continue
+      if (lock === undefined) continue
       const list = state.schedule.lists[lock.listId]!
-      expect(c.payeeAnaesthetistId, c.id).toBe(list.anaesthetistId)
+      if (c.payable === undefined) continue // a no-charge invoice has no payable, and no payee
+      expect(c.anaesthetistId, c.id).toBe(list.anaesthetistId)
+      expect(c.payable.payee, c.id).toEqual({ kind: 'anaesthetist', anaesthetistId: list.anaesthetistId })
     }
   })
 

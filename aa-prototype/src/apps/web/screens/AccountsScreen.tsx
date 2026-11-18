@@ -10,7 +10,7 @@ import {
   useAppStore,
   useToday,
   type AaFeeInvoiceRow,
-  type AccpayInvoiceRow,
+  type PayableRow,
   type PaymentHistoryRow,
   type PaymentHistoryStatus,
 } from '../../../store'
@@ -124,8 +124,8 @@ function OverdueTable({ anaesthetistId }: { anaesthetistId: string }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r: AccpayInvoiceRow) => (
-              <tr key={r.caseId} style={{ borderBottom: `1px solid ${neutral.sunken}` }}>
+            {rows.map((r: PayableRow) => (
+              <tr key={r.pairId} style={{ borderBottom: `1px solid ${neutral.sunken}` }}>
                 <Td mono>{r.invoiceNumber}</Td>
                 <Td>{r.patientName}</Td>
                 <Td>{r.counterpartyLabel}</Td>
@@ -230,7 +230,7 @@ function PaymentsTable({
                 const focused = row.invoiceNumber === focusInvoiceNumber
                 return (
                   <tr
-                    key={row.caseId}
+                    key={row.pairId}
                     data-testid={`payment-history-row-${row.invoiceNumber}`}
                     style={{
                       borderBottom: `1px solid ${neutral.sunken}`,
@@ -274,7 +274,7 @@ const inlineLinkStyle: React.CSSProperties = {
 
 /**
  * AA's monthly fee invoices to this anaesthetist (catch-up Phase 16;
- * US-10.3.2): paid or unpaid, from the billing mirror (never Xero). A fee
+ * US-10.3.2): paid or unpaid, from the ledger (never Xero). A fee
  * invoice shows as soon as it is raised.
  */
 function AaFeesTable({ anaesthetistId, focusInvoiceNumber }: { anaesthetistId: string; focusInvoiceNumber?: string }) {

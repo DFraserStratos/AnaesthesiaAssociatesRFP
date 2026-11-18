@@ -26,6 +26,8 @@ import { completeAnswered } from '../test/completeAnswered'
 import { approveAllPrepayments } from '../test/approvePrepayments'
 import { SEED_LIST_IDS, SEED_MARKERS, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
 import { HOLDING_SYSTEM_ONLY, holdingBalance, holdingEntries } from '../domain/billing/prepayHolding'
+import { pairForInvoice } from './ledgerSelectors'
+import type { LedgerTransfer } from '../domain/types'
 import type { Actor } from './mutate'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -60,11 +62,15 @@ function authorise(listId: string) {
   if (!out.ok) throw new Error(out.message)
 }
 function caseOfInvoice(invoiceId: string) {
-  return Object.values(api.getState().billing.cases).find((c) => c.invoiceId === invoiceId)!
+  return pairForInvoice(api.getState(), invoiceId)!
+}
+/** Whoever a transfer pays (its `in` leg's payee). */
+function toOf(t: LedgerTransfer | undefined): string | undefined {
+  return t !== undefined && t.in.payee.kind === 'anaesthetist' ? t.in.payee.anaesthetistId : undefined
 }
 function pay(invoiceId: string, amount: number, key: string) {
   const c = caseOfInvoice(invoiceId)
-  const out = receivePayment(api, { accRecId: c.accRecId!, amount, idempotencyKey: key, source: 'webhook' })
+  const out = receivePayment(api, { accRecId: c.receivable.xeroAccRecId!, amount, idempotencyKey: key, source: 'webhook' })
   if (!out.ok) throw new Error(out.message)
 }
 
@@ -73,19 +79,22 @@ describe('held in the AA Holding account', () => {
     const entries = holdingEntries(api.getState().billing)
     expect(entries.map((e) => [e.kind, e.amount, e.invoiceNumber, e.bookingId])).toEqual([['received', 1380, 'AA-2026-0001', NAIR]])
     expect(balance()).toBe(1380)
-    expect(payablesDue(api.getState())).toEqual({ count: 0, total: 0 })
-    expect(api.getState().billing.cases.BC0001?.prepayLeg).toBe('collect')
+    expect(payablesDue(api.getState())).toEqual({ count: 0, total: 0, byAnaesthetist: [] })
+    expect(api.getState().billing.ledger.BC0001?.kind).toBe('prePayment')
   })
 
   it('a manual payout of the held payable is refused; the run pays nothing out of the account', () => {
-    expect(disbursePayable(api, OFFICE, 'XPB0')).toMatchObject({ ok: false, code: 'holdingSystemOnly', message: HOLDING_SYSTEM_ONLY })
+    // (catch-up Phase 36: a payable is named by its pair; BC0001's is the held ACCPAY XPB0.)
+    const held = api.getState().billing.ledger.BC0001
+    expect(held?.kind === 'prePayment' && held.payable?.xeroAccPayId).toBe('XPB0')
+    expect(disbursePayable(api, OFFICE, 'BC0001')).toMatchObject({ ok: false, code: 'holdingSystemOnly', message: HOLDING_SYSTEM_ONLY })
     expect(runPayables(api, OFFICE)).toMatchObject({ ok: true, value: { disbursedCount: 0 } })
     expect(api.getState().xero.accPays.XPB0).toMatchObject({ amountDisbursed: 0, status: 'authorised' })
   })
 
   it("Riley approved and half paid: the balance rises by half; nothing reaches Dr Souter; a new collect case is tagged", () => {
     const [invoiceId] = approveAllPrepayments(api, RILEY)
-    expect(caseOfInvoice(invoiceId!).prepayLeg).toBe('collect')
+    expect(caseOfInvoice(invoiceId!).kind).toBe('prePayment')
     pay(invoiceId!, 690, 'T-RILEY-HALF')
     expect(balance()).toBe(2070)
     expect(payablesDue(api.getState()).count).toBe(0)
@@ -102,7 +111,15 @@ describe('the transfer at authorisation (OQ-125 provisional)', () => {
     authorise(NAIR_LIST)
     expect(transfers()).toHaveLength(1)
     const t = transfers()[0]!
-    expect(t).toMatchObject({ collectCaseId: 'BC0001', invoiceId: 'INV0001', bookingId: NAIR, amount: 1380, heldAmount: 1380, released: 1380, disbursed: 0, toAnaesthetistId: '34821', from: 'aaHoldingAccount' })
+    // (catch-up Phase 36: the transfer is two legs, `out` from the AA Holding account and `in` to the anaesthetist.)
+    expect(t).toMatchObject({
+      kind: 'prepayTransfer',
+      collectPairId: 'BC0001',
+      invoiceId: 'INV0001',
+      bookingId: NAIR,
+      out: { amount: 1380 },
+      in: { amount: 1380, releasedAmount: 1380, disbursedAmount: 0, payee: { kind: 'anaesthetist', anaesthetistId: '34821' } },
+    })
     // The journal: MJ- numbered, two lines, the invoice number, no patient name.
     const journal = api.getState().xero.journals[t.xeroJournalId!]!
     expect(journal.journalNumber).toMatch(/^MJ-\d{4}$/)
@@ -119,10 +136,10 @@ describe('the transfer at authorisation (OQ-125 provisional)', () => {
     expect(gstActivityFor(api.getState(), '34821', '2026-07-01', '2026-07-31')).toEqual(gstBefore)
     // The account falls; exactly the transferred payable is due.
     expect(balance()).toBe(0)
-    expect(payablesDue(api.getState())).toEqual({ count: 1, total: 1380 })
+    expect(payablesDue(api.getState())).toEqual({ count: 1, total: 1380, byAnaesthetist: [{ anaesthetistId: '34821', count: 1, total: 1380 }] })
     const run = runPayables(api, OFFICE)
-    expect(run).toMatchObject({ ok: true, value: { disbursedCount: 1, totalDisbursed: 1380, accPayIds: [t.id] } })
-    expect(api.getState().billing.transfers[t.id]!.disbursed).toBe(1380)
+    expect(run).toMatchObject({ ok: true, value: { disbursedCount: 1, totalDisbursed: 1380, paidIds: [t.id] } })
+    expect(api.getState().billing.transfers[t.id]!.in.disbursedAmount).toBe(1380)
     const dsb = Object.values(api.getState().xero.disbursements).find((d) => d.transferId === t.id)
     expect(dsb).toMatchObject({ amount: 1380 })
     expect(dsb?.accPayId).toBeUndefined()
@@ -146,11 +163,11 @@ describe('the transfer at authorisation (OQ-125 provisional)', () => {
     pay(invoiceId!, 690, 'T-RILEY-HALF')
     authorise(listOf(RILEY))
     const t = transfers().find((x) => x.invoiceId === invoiceId)!
-    expect(t).toMatchObject({ amount: 1380, heldAmount: 690, released: 690 })
+    expect(t).toMatchObject({ in: { amount: 1380, releasedAmount: 690 }, out: { amount: 690 } })
     expect(balance()).toBe(1380) // Nair's, still held: her List is not authorised.
-    expect(payablesDue(api.getState())).toEqual({ count: 1, total: 690 })
+    expect(payablesDue(api.getState())).toEqual({ count: 1, total: 690, byAnaesthetist: [{ anaesthetistId: toOf(t), count: 1, total: 690 }] })
     pay(invoiceId!, 690, 'T-RILEY-REST')
-    expect(api.getState().billing.transfers[t.id]!.released).toBe(1380)
+    expect(api.getState().billing.transfers[t.id]!.in.releasedAmount).toBe(1380)
     expect(balance()).toBe(1380)
     expect(runPayables(api, OFFICE)).toMatchObject({ ok: true, value: { totalDisbursed: 1380 } })
     expect(paymentHistoryFor(api.getState(), '34821').find((r) => r.invoiceNumber === api.getState().billing.invoices[invoiceId!]!.invoiceNumber)).toMatchObject({ status: 'paidOut', releasedAmount: 1380, disbursedAmount: 1380 })
@@ -171,8 +188,8 @@ describe('the transfer at authorisation (OQ-125 provisional)', () => {
     expect(payers).toEqual(['patient', 'payer'])
     for (const id of invoiceIds) {
       const c = caseOfInvoice(id)
-      expect(c.prepayLeg).toBe('collect')
-      expect(api.getState().xero.accPays[c.accPayId!]?.payeeAccount).toBe('aaHoldingAccount')
+      expect(c.kind).toBe('prePayment')
+      expect(api.getState().xero.accPays[c.payable!.xeroAccPayId!]?.payeeAccount).toBe('aaHoldingAccount')
       pay(id, api.getState().billing.invoices[id]!.total, `T-TWO-${id}`)
     }
     const held = balance()
@@ -216,9 +233,9 @@ describe('a move changes nothing; the transfer pays whoever did the List', () =>
     const newListId = api.getState().schedule.bookings[RILEY]!.listId
     authorise(newListId)
     const t = transfers().find((x) => x.invoiceId === invoiceId)!
-    expect(t.toAnaesthetistId).toBe(to)
-    expect(paymentHistoryFor(api.getState(), '34821').some((r) => r.caseId === t.collectCaseId)).toBe(false)
-    expect(paymentHistoryFor(api.getState(), to).some((r) => r.caseId === t.collectCaseId)).toBe(true)
+    expect(toOf(t)).toBe(to)
+    expect(paymentHistoryFor(api.getState(), '34821').some((r) => r.pairId === t.collectPairId)).toBe(false)
+    expect(paymentHistoryFor(api.getState(), to).some((r) => r.pairId === t.collectPairId)).toBe(true)
   })
 
   it('the office moves the single Booking to a colleague: nothing here changes until that List is authorised', () => {
@@ -235,7 +252,7 @@ describe('a move changes nothing; the transfer pays whoever did the List', () =>
     expect(moved).toBeDefined()
     expect(JSON.stringify({ a: api.getState().xero.accPays, t: api.getState().billing.transfers })).toBe(before)
     authorise(moved!.id)
-    expect(transfers().find((x) => x.invoiceId === invoiceId)?.toAnaesthetistId).toBe(moved!.anaesthetistId)
+    expect(toOf(transfers().find((x) => x.invoiceId === invoiceId))).toBe(moved!.anaesthetistId)
     expect(api.getState().audit.filter((e) => e.entityId === RILEY && e.action === 'prepayment.transfer')).toHaveLength(1)
     expect(proceduresForBooking(api.getState(), RILEY)).toHaveLength(1)
   })
@@ -259,7 +276,7 @@ describe("the anaesthetist's own moves change nothing here either", () => {
     expect(moves.some((a) => a.startsWith('prepayment.') || a.startsWith('xero.'))).toBe(false)
     expect(JSON.stringify({ a: api.getState().xero.accPays, c: caseOfInvoice(invoiceId!), t: api.getState().billing.transfers })).toBe(before)
     authorise(api.getState().schedule.bookings[RILEY]!.listId)
-    expect(transfers().find((t) => t.invoiceId === invoiceId)?.toAnaesthetistId).toBe(to)
+    expect(toOf(transfers().find((t) => t.invoiceId === invoiceId))).toBe(to)
   })
 
   it('Dr Souter moves the single prepaid Booking to a colleague (32a): untouched until that List is authorised, then the colleague is paid', () => {
@@ -270,8 +287,8 @@ describe("the anaesthetist's own moves change nothing here either", () => {
     expect(to, 'a colleague who can take the Booking').toBeDefined()
     expect(JSON.stringify({ a: api.getState().xero.accPays, c: caseOfInvoice(invoiceId!), t: api.getState().billing.transfers })).toBe(before)
     authorise(api.getState().schedule.bookings[RILEY]!.listId)
-    expect(transfers().find((t) => t.invoiceId === invoiceId)?.toAnaesthetistId).toBe(to)
-    expect(paymentHistoryFor(api.getState(), '34821').some((r) => r.caseId === caseOfInvoice(invoiceId!).id)).toBe(false)
+    expect(toOf(transfers().find((t) => t.invoiceId === invoiceId))).toBe(to)
+    expect(paymentHistoryFor(api.getState(), '34821').some((r) => r.pairId === caseOfInvoice(invoiceId!).id)).toBe(false)
   })
 })
 
@@ -302,7 +319,7 @@ describe('two prepaid Procedures billing one payer', () => {
     authorise(listOf(RILEY))
     const mine = transfers().filter((t) => t.bookingId === RILEY)
     expect(mine).toHaveLength(1)
-    expect(mine[0]).toMatchObject({ invoiceId: ids[0], amount: invoice.total, released: invoice.total })
+    expect(mine[0]).toMatchObject({ invoiceId: ids[0], in: { amount: invoice.total, releasedAmount: invoice.total } })
   })
 })
 

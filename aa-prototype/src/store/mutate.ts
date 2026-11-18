@@ -106,7 +106,8 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   // deliberately pinned like DEMO_TODAY — the demo lives in July 2026.
   invoice: { prefix: 'INV', pad: 4 },
   invoiceLine: { prefix: 'IL', pad: 4 },
-  billingCase: { prefix: 'BC', pad: 4 },
+  // A ledger pair (catch-up Phase 36; was the billing case): the BC prefix kept, so every case reference stays valid.
+  ledgerPair: { prefix: 'BC', pad: 4 },
   invoiceNumber: { prefix: 'AA-2026-', pad: 4 },
   // Xero simulation + payments (Phase 10). Top-level counters on AppState (not
   // under `billing`), like the billing kinds above.
@@ -132,6 +133,10 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   prepayTransfer: { prefix: 'PXT', pad: 4 },
   xeroJournal: { prefix: 'XJ', pad: 4 },
   xeroJournalNumber: { prefix: 'MJ-', pad: 4 },
+  // The internal ledger (catch-up Phase 36): billing-run exceptions, receipts matching no invoice, and money out.
+  billingException: { prefix: 'BX', pad: 4 },
+  unmatchedReceipt: { prefix: 'UR', pad: 4 },
+  ledgerDisbursement: { prefix: 'LD', pad: 4 },
 }
 
 /** Allocate the next deterministic id of a kind from the counters record. */
@@ -326,8 +331,11 @@ export function resetDomainState(api: AppStoreApi): void {
     billing: {
       invoices: seedBilling.invoices,
       invoiceLines: seedBilling.invoiceLines,
-      cases: seedBilling.cases,
+      ledger: seedBilling.ledger,
       receipts: seedBilling.receipts,
+      disbursements: seedBilling.disbursements,
+      unmatchedReceipts: {},
+      exceptions: {},
       contactIdCache: seedBilling.contactIdCache,
       aaFeeInvoices: seedBilling.aaFeeInvoices,
       locks: {},
@@ -343,5 +351,5 @@ export function resetDomainState(api: AppStoreApi): void {
   })
   // Every seeded AUTHORISED List locked, as `freshAppState` does (catch-up Phase 25).
   const locked = seedLocks(api.getState())
-  api.setState({ billing: { ...api.getState().billing, locks: locked.locks, cases: locked.cases } })
+  api.setState({ billing: { ...api.getState().billing, locks: locked.locks } })
 }

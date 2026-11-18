@@ -80,11 +80,10 @@ function FeeInvoicesTab({ actor }: { actor: Actor }) {
   useDemoTriggerContext('aaFees.month', month)
 
   const billing = useAppStore((s) => s.billing)
-  const xero = useAppStore((s) => s.xero)
   const masters = useAppStore((s) => s.masters)
   const appSettings = useAppStore((s) => s.appSettings)
   const clock = useAppStore((s) => s.clock)
-  const preview = useMemo(() => aaFeeRunPreview({ billing, xero, masters, appSettings }, month), [billing, xero, masters, appSettings, month])
+  const preview = useMemo(() => aaFeeRunPreview({ billing, masters, appSettings }, month), [billing, masters, appSettings, month])
   const invoices = useMemo(() => allAaFeeInvoices({ billing }), [billing])
   const disabledReason = aaFeeRunDisabledReason({ clock, masters, billing }, month)
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null)

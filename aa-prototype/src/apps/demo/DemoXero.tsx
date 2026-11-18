@@ -4,7 +4,8 @@ import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-route
 import { DemoSurface } from './DemoSurface'
 import { OFFICE_ACTOR, disbursePayable, receivePayment, useAppStore } from '../../store'
 import { dateTimeMicroCap, dayMicroCap, formatCurrency } from '../../shared/format'
-import { HELD_UNTIL_AUTHORISED, LEAVES_ONLY_BY_SYSTEM, RELEASE_TRIGGER_CAPTION, transferOfCase } from '../../domain/billing/prepayHolding'
+import { HELD_UNTIL_AUTHORISED, LEAVES_ONLY_BY_SYSTEM, RELEASE_TRIGGER_CAPTION } from '../../domain/billing/prepayHolding'
+import { transferOfPair as transferOfCase } from '../../domain/billing/ledger'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { XeroContact } from '../../domain/types'
 import { APP_CONFIG } from '../../shell/appConfig'
@@ -257,7 +258,7 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
       }
     }
 
-    const payout = disbursePayable(useAppStore, OFFICE_ACTOR, pair.accPay.id)
+    const payout = disbursePayable(useAppStore, OFFICE_ACTOR, pair.engine.caseId ?? pair.accPay.id)
     // A prepayment's payable credits the AA Holding account (catch-up Phases 27, 27a): the payment lands, the
     // payout is refused, because money leaves the account only by a transfer or refund the system raises.
     if (!payout.ok && payout.code === 'holdingSystemOnly') {

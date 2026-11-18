@@ -18,7 +18,7 @@ import { billablePartyForProcedure } from '../../domain/billing/whoIsBilled'
 import type { BookingBillingContext } from '../../domain/billing/validateBookingForBilling'
 import type { Contract, Procedure } from '../../domain/types'
 import { approveAllPrepayments } from '../../test/approvePrepayments'
-import { handoffCasesForBooking } from '../xeroHandoff'
+import { handoffPairsForBooking } from '../xeroHandoff'
 import { SEED_MARKERS } from '../../domain/seed'
 import type { AppState } from '../appStore'
 import type { Actor } from '../mutate'
@@ -129,7 +129,7 @@ export function capturePrepayments(): PrepaymentParityRow[] {
   const riley = marker('prepaymentBooking')
   const raised = approveAllPrepayments(api, riley, OFFICE)
   if (raised.length === 0) throw new Error("Riley's prepayment was refused")
-  handoffCasesForBooking(api, riley)
+  handoffPairsForBooking(api, riley)
   const nair = marker('prepaymentPaidBooking')
   return [prepaymentRow(api.getState(), riley), prepaymentRow(api.getState(), nair)]
 }

@@ -20,10 +20,11 @@ import { runDemoAction } from './demoActions'
  * because the point is to observe the payload actually containing what the flow
  * just produced, not to guess at a duration.
  */
-interface PersistedBillingCase {
+/** A persisted ledger pair (catch-up Phase 36): the invoice it was made with, its legs' Xero mirror ids and any hand-off fault. */
+interface PersistedLedgerPair {
   invoiceId?: string
-  accRecId?: string
-  accPayId?: string
+  receivable?: { xeroAccRecId?: string }
+  payable?: { xeroAccPayId?: string }
   handoffFailure?: unknown
 }
 
@@ -45,9 +46,9 @@ async function persistedInvoiceIdWhere(
           const raw = localStorage.getItem('aa-demo')
           if (raw === null) return null
           const persisted = JSON.parse(raw) as {
-            state?: { billing?: { cases?: Record<string, PersistedBillingCase> } }
+            state?: { billing?: { ledger?: Record<string, PersistedLedgerPair> } }
           }
-          const hit = Object.values(persisted.state?.billing?.cases ?? {}).find(
+          const hit = Object.values(persisted.state?.billing?.ledger ?? {}).find(
             (candidate) => candidate.invoiceId !== undefined && candidate.handoffFailure !== undefined,
           )
           return hit?.invoiceId ?? null
@@ -70,10 +71,10 @@ async function waitForPersistedCaseOfOpenInvoice(page: Page): Promise<void> {
           const raw = localStorage.getItem('aa-demo')
           if (raw === null) return false
           const persisted = JSON.parse(raw) as {
-            state?: { billing?: { cases?: Record<string, PersistedBillingCase> } }
+            state?: { billing?: { ledger?: Record<string, PersistedLedgerPair> } }
           }
           const invoiceId = window.location.pathname.split('/').at(-1)
-          return Object.values(persisted.state?.billing?.cases ?? {}).some(
+          return Object.values(persisted.state?.billing?.ledger ?? {}).some(
             (candidate) => candidate.invoiceId === invoiceId,
           )
         }),
@@ -221,21 +222,21 @@ test('authorise raises and sends invoices; contract-holder document, Resend and 
     const persisted = JSON.parse(raw) as {
       state: {
         billing: {
-          cases: Record<string, {
+          ledger: Record<string, {
             invoiceId?: string
-            accRecId?: string
-            accPayId?: string
+            receivable?: { xeroAccRecId?: string }
+            payable?: { xeroAccPayId?: string }
             handoffFailure?: unknown
           }>
         }
       }
     }
     const invoiceId = window.location.pathname.split('/').at(-1)
-    const billingCase = Object.values(persisted.state.billing.cases).find((candidate) => candidate.invoiceId === invoiceId)
-    if (billingCase === undefined) throw new Error('Current invoice case is missing')
-    delete billingCase.accRecId
-    delete billingCase.accPayId
-    delete billingCase.handoffFailure
+    const pair = Object.values(persisted.state.billing.ledger).find((candidate) => candidate.invoiceId === invoiceId)
+    if (pair === undefined) throw new Error('Current invoice ledger pair is missing')
+    if (pair.receivable !== undefined) delete pair.receivable.xeroAccRecId
+    if (pair.payable !== undefined) delete pair.payable.xeroAccPayId
+    delete pair.handoffFailure
     localStorage.setItem('aa-demo', JSON.stringify(persisted))
   })
   await page.reload()

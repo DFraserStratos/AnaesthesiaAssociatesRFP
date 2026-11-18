@@ -1,6 +1,6 @@
 import { roundToCents } from '../../domain/billing'
 import { isHeldPayable } from '../../domain/billing/prepayHolding'
-import type { BuyerCreatedTaxInvoice, InvoiceLine, XeroAccRec, XeroContact } from '../../domain/types'
+import type { BookingLedgerPair, BuyerCreatedTaxInvoice, InvoiceLine, XeroAccRec, XeroContact } from '../../domain/types'
 import type { AppState } from '../../store'
 
 export interface XeroContactView {
@@ -82,10 +82,11 @@ function contactView(contact: XeroContact | undefined): XeroContactView | undefi
  * NHI can enter the Xero-facing record views.
  */
 export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[] {
+  // The ledger pair each ACCREC mirrors (catch-up Phase 36).
   const casesByAccRecId = new Map(
-    Object.values(state.billing.cases)
-      .filter((theCase) => theCase.accRecId !== undefined)
-      .map((theCase) => [theCase.accRecId as string, theCase]),
+    Object.values(state.billing.ledger)
+      .filter((pair): pair is BookingLedgerPair => pair.kind !== 'aaFee' && pair.receivable.xeroAccRecId !== undefined)
+      .map((pair) => [pair.receivable.xeroAccRecId as string, pair]),
   )
   const accPaysByAccRecId = new Map(
     Object.values(state.xero.accPays).map((accPay) => [accPay.accRecId, accPay]),
@@ -102,10 +103,8 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
       if (rec.kind === 'aaFee') return feePairView(state, rec)
       const linkedCase = casesByAccRecId.get(rec.id)
       const invoice = state.billing.invoices[rec.invoiceId]
-      const accPay =
-        linkedCase?.accPayId !== undefined
-          ? state.xero.accPays[linkedCase.accPayId]
-          : accPaysByAccRecId.get(rec.id)
+      const linkedAccPayId = linkedCase?.payable?.xeroAccPayId
+      const accPay = linkedAccPayId !== undefined ? state.xero.accPays[linkedAccPayId] : accPaysByAccRecId.get(rec.id)
       const bookingId = linkedCase?.bookingId ?? invoice?.bookingId
       const booking = bookingId !== undefined ? state.schedule.bookings[bookingId] : undefined
       const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
@@ -168,7 +167,7 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
               ? { caseReference: linkedCase.id }
               : {}),
           billingInvoiceId: rec.invoiceId,
-          ...(linkedCase?.accPayId !== undefined ? { accPayId: linkedCase.accPayId } : {}),
+          ...(linkedAccPayId !== undefined ? { accPayId: linkedAccPayId } : {}),
           ...(bookingId !== undefined ? { bookingId } : {}),
           ...(patientName !== undefined ? { patientName } : {}),
           ...(list?.anaesthetistId !== undefined ? { anaesthetistId: list.anaesthetistId } : {}),

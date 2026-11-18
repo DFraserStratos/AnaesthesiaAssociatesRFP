@@ -92,7 +92,7 @@ describe('backfillMerge', () => {
 
     // A persisted store whose invoices map was emptied (records deleted in the
     // demo) and that predates the `receipts` sub-key entirely.
-    const persisted = { ...fresh, billing: { invoices: {}, cases: fresh.billing.cases } }
+    const persisted = { ...fresh, billing: { invoices: {}, ledger: fresh.billing.ledger } }
     const merged = backfillMerge(fresh as never, persisted)
 
     // The emptied live map wins wholesale - seed invoices are NOT merged back in.
@@ -834,12 +834,15 @@ describe('the AA Holding account transfer (catch-up Phase 27a)', () => {
     const fresh = freshAppState()
     const { transfers: _t, ...billing } = fresh.billing
     const { journals: _j, ...xero } = fresh.xero
-    const { prepayLeg: _l, ...untagged } = fresh.billing.cases.BC0001!
-    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing: { ...billing, cases: { ...billing.cases, BC0001: untagged } }, xero }, version: 54 }))
+    // (catch-up Phase 36: the collect leg is now the `prePayment` ledger pair; an untagged one is a plain procedure pair.)
+    const untagged = { ...fresh.billing.ledger.BC0001!, kind: 'procedure' }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing: { ...billing, ledger: { ...billing.ledger, BC0001: untagged } }, xero }, version: 54 }))
     const s = createAppStore({ persisted: true }).getState()
     expect(s.billing.transfers).toEqual({})
     expect(s.xero.journals).toEqual({})
-    expect(s.billing.cases.BC0001?.prepayLeg).toBe('collect')
+    const bc0001 = s.billing.ledger.BC0001
+    expect(bc0001?.kind).toBe('prePayment')
+    expect(bc0001?.kind === 'prePayment' ? bc0001.payable?.payee : undefined).toEqual({ kind: 'holding' })
   })
 })
 
@@ -886,5 +889,25 @@ describe('stubs on a List (catch-up Phase 33a)', () => {
     expect(Object.keys(s.intake.stubs)).toEqual(['STB0001'])
     expect(s.intake.stubs.STB0001).toMatchObject({ status: 'standing', listId: 'L-34821-2026-08-04-PM', importRowId: 'IRS001' })
     expect(s.counters.stub).toBe(2)
+  })
+})
+
+describe('the internal ledger (catch-up Phase 36)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v58 store that still holds billing cases, and reseeds the ledger', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(59)
+    const fresh = freshAppState()
+    const { ledger: _gone, ...billing } = fresh.billing
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing: { ...billing, cases: { BC0001: { id: 'BC0001', status: 'paid' } } } }, version: 58 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect('cases' in s.billing).toBe(false)
+    expect(s.billing.ledger.BC0001?.kind).toBe('prePayment')
+    expect(s.billing.unmatchedReceipts).toEqual({})
+    expect(s.billing.exceptions).toEqual({})
   })
 })

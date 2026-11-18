@@ -1,37 +1,56 @@
 /**
- * Mechanical enforcement of PROGRESS convention 9 / 2nd-review #9: the
- * anaesthetist apps (mobile + web) read the Billing Engine's MIRROR only, NEVER
- * the Xero-sim slice. A greppable source-scan: no file under `src/apps/mobile`
- * or `src/apps/web` may reference `state.xero` / `s.xero` / `.xero.`.
- *
- * The Admin app (the office / billing-engine surface) and the demo Xero sim are
- * exempt — they legitimately drive Xero (payables, archiving, the sim itself).
- * The store's money-view selectors are written to read `billing` only; that is
- * asserted by the money-view tests (dashboard.test), which exercise them.
+ * Mechanical enforcement of US-08.3.2 (catch-up Phase 36; PROGRESS convention
+ * 9 / 2nd-review #9): every app money view reads the LEDGER, AA's system of
+ * record, never the Xero simulation's slice. A greppable source scan: no file
+ * under `src/apps/mobile`, `src/apps/web`, `src/apps/admin` or `src/shared`
+ * may reference `.xero`, except the named allow-list below (each a Xero
+ * administration or demo surface, never a money figure). The demo Xero
+ * simulation itself (`src/apps/demo`) is not scanned: it IS the Xero view.
+ * The store's money selectors read `billing` only; the ledger tests exercise
+ * them (`payablesDue` is proved the same with or without `xero`).
  */
 
 import { describe, expect, it } from 'vitest'
 
 const MOBILE = import.meta.glob('./mobile/**/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
 const WEB = import.meta.glob('./web/**/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
-const SOURCES = { ...MOBILE, ...WEB }
+const ADMIN = import.meta.glob('./admin/**/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+const SHARED = import.meta.glob('../shared/**/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+const SOURCES = { ...MOBILE, ...WEB, ...ADMIN, ...SHARED }
+
+/** The reads of Xero allowed outside the simulation, with why. */
+const ALLOWED: Record<string, string> = {
+  './admin/screens/masters/ReferenceViews.tsx': 'Xero contact archiving (a Xero administration view, not a money view)',
+  '../shared/demoTriggers/registry.ts': "the demo triggers pick ACCRECs through openAccRecs (Phase 14's demo-surface exemption)",
+  './admin/screens/InvoiceDocument.tsx': "the Ledger card's Xero identifiers beside the ledger's numbers (no money figure)",
+}
 
 /** Strip block + line comments so a comment mentioning `state.xero` never trips the scan. */
 function stripComments(src: string): string {
   return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 }
 
-describe('money-view purity (apps read the billing mirror, not Xero)', () => {
-  const files = Object.keys(SOURCES)
+describe('money-view purity (apps read the ledger, not Xero)', () => {
+  const files = Object.keys(SOURCES).filter((f) => !/\.test\.tsx?$/.test(f))
 
-  it('finds the mobile + web sources', () => {
-    expect(files.length).toBeGreaterThan(10)
+  it('finds the mobile, web, admin and shared sources', () => {
+    expect(files.length).toBeGreaterThan(100)
+    expect(files.some((f) => f.startsWith('./admin/'))).toBe(true)
+    expect(files.some((f) => f.startsWith('../shared/'))).toBe(true)
   })
 
-  it('never reads the Xero slice from a mobile or web app file', () => {
+  it('never reads the Xero slice outside the named allow-list', () => {
     for (const file of files) {
+      if (ALLOWED[file] !== undefined) continue
       const code = stripComments(SOURCES[file] ?? '')
-      expect(/\.xero\b/.test(code), `${file} must not read state.xero (convention 9)`).toBe(false)
+      expect(/\.xero\b/.test(code), `${file} must not read state.xero: money views read the ledger (US-08.3.2)`).toBe(false)
+    }
+  })
+
+  it('every allow-list entry still exists and still needs its exemption', () => {
+    for (const file of Object.keys(ALLOWED)) {
+      expect(SOURCES[file], file).toBeDefined()
+      expect(/\.xero\b/.test(stripComments(SOURCES[file] ?? '')), `${file} no longer reads Xero: drop it from the allow-list`).toBe(true)
     }
   })
 })

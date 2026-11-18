@@ -24,7 +24,8 @@ import { wireBillingRun } from '../store/billingRun'
 import { authoriseAsSimulatedOffice } from '../store/officeStandIn'
 import { advanceClockMinutes, resetDemo } from '../store/clockActions'
 import { clockISO, type Actor } from '../store/mutate'
-import { casesForList, invoicesForList, isListBilled, proceduresForBooking } from '../store/selectors'
+import { invoicesForList, isListBilled, proceduresForBooking } from '../store/selectors'
+import { pairsForList } from '../store/ledgerSelectors'
 import { ANAE, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
 import {
   isOfficeSimulationEnabled,
@@ -157,7 +158,7 @@ describe('the trigger', () => {
       expect(listState(api, SOUTER_PM)).toBe('AUTHORISED')
       expect(isListBilled(state.schedule.lists[SOUTER_PM]!)).toBe(true)
       expect(invoicesForList(state, SOUTER_PM)).toHaveLength(4)
-      expect(casesForList(state, SOUTER_PM)).toHaveLength(4)
+      expect(pairsForList(state, SOUTER_PM)).toHaveLength(4)
     } finally {
       unwire()
       unwireBilling()
@@ -211,10 +212,10 @@ describe('the trigger', () => {
       const state = api.getState()
       expect(isListBilled(state.schedule.lists[SOUTER_PM]!)).toBe(true)
       expect(invoicesForList(state, SOUTER_PM)).toHaveLength(4)
-      // handoffListCases ran: every case of the run carries its Xero receivable.
-      const cases = casesForList(state, SOUTER_PM)
-      expect(cases).toHaveLength(4)
-      for (const c of cases) expect(c.accRecId).toBeDefined()
+      // handoffListPairs ran: every pair of the run carries its Xero receivable.
+      const pairs = pairsForList(state, SOUTER_PM)
+      expect(pairs).toHaveLength(4)
+      for (const p of pairs) expect(p.receivable.xeroAccRecId).toBeDefined()
       expect(Object.keys(state.xero.accRecs).length).toBe(accRecsBefore + 4)
     } finally {
       unwire()
@@ -344,7 +345,7 @@ describe('idempotence and teardown', () => {
       vi.advanceTimersByTime(OFFICE_SIM_DELAY_MS * 3)
       expect(authorisersOf(api, SOUTER_PM)).toEqual([SIMULATED_OFFICE])
       expect(invoicesForList(api.getState(), SOUTER_PM)).toHaveLength(4)
-      expect(casesForList(api.getState(), SOUTER_PM)).toHaveLength(4)
+      expect(pairsForList(api.getState(), SOUTER_PM)).toHaveLength(4)
       expect(api.getState().audit.filter((a) => a.action === 'list.billed' && a.entityId === SOUTER_PM)).toHaveLength(1)
     } finally {
       first()

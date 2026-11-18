@@ -8,7 +8,9 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList } from './lifecycle'
-import { runBillingForList, handoffListCases } from './billingRun'
+import { runBillingForList } from './billingRun'
+import { handoffListPairs as handoffListCases } from './xeroHandoff'
+import { bctiRecords } from './ledgerSelectors'
 import { receivePayment } from './paymentActions'
 import { runReconciliationPoll } from './reconciliationPoll'
 import { payablesDue, runPayables } from './payablesActions'
@@ -21,7 +23,7 @@ import {
   runMonthlyFeeInvoices,
   saveAaFeeSettings,
 } from './aaFeeActions'
-import { aaFeeInvoicesFor, aaFeeRunPreview, allAaFeeInvoices, bctiRecords, billingMonitor, gstActivityFor, openAccRecs } from './selectors'
+import { aaFeeInvoicesFor, aaFeeRunPreview, allAaFeeInvoices, billingMonitor, gstActivityFor, openAccRecs } from './selectors'
 import { advanceClockDays } from './clockActions'
 import { seedMonthOfBctis } from './demoBctiSeed'
 import { DEMO_TRIGGER_ACTOR } from './demoActors'
@@ -40,13 +42,22 @@ function activeCount(api: BoundAppStore): number {
   return Object.values(api.getState().masters.anaesthetists).filter((a) => a.active).length
 }
 
+/** A fee invoice's ACCREC id, read from its `aaFee` ledger pair (catch-up Phase 36). */
+function feeAccRecId(api: BoundAppStore, fee: { ledgerPairId: string }): string {
+  const id = api.getState().billing.ledger[fee.ledgerPairId]?.receivable.xeroAccRecId
+  if (id === undefined) throw new Error(`fee pair ${fee.ledgerPairId} has no ACCREC`)
+  return id
+}
+
 function moneySnapshot(api: BoundAppStore) {
   const s = api.getState()
   return {
     accPays: Object.values(s.xero.accPays).map((p) => [p.id, p.amountPayable, p.amountAuthorised, p.amountDisbursed]),
     disbursements: s.xero.disbursements,
-    receipts: s.billing.receipts,
-    cases: s.billing.cases,
+    // (catch-up Phase 36: a fee pair and a fee payment's receipt now live in the ledger too; they are AA's
+    // own money, so the procedure ledger and procedure receipts are what must not move.)
+    receipts: Object.values(s.billing.receipts).filter((r) => r.pairKind !== 'aaFee'),
+    ledger: Object.values(s.billing.ledger).filter((p) => p.kind !== 'aaFee'),
     due: payablesDue(s),
     gst: gstActivityFor(s, ANAE.souter, '2026-01-01', '2026-12-31'),
     open: openAccRecs(s),
@@ -55,7 +66,8 @@ function moneySnapshot(api: BoundAppStore) {
 
 describe('seeded fee history (Dr Souter)', () => {
   it('seeds May paid and June unpaid, each computed from the BCTIs paid that month', () => {
-    const state = store().getState()
+    const api = store()
+    const state = api.getState()
     const rows = aaFeeInvoicesFor(state, ANAE.souter)
     expect(rows.map((r) => [r.invoiceNumber, r.monthISO, r.status])).toEqual([
       ['AA-FEE-2026-H02', '2026-06', 'unpaid'],
@@ -70,10 +82,11 @@ describe('seeded fee history (Dr Souter)', () => {
       expect(row.bctis.map((b) => b.accPayId)).toEqual(counted.map((r) => r.accPayId))
       for (const b of row.bctis) expect(b.receivablePaidAtISO?.slice(0, 7)).toBe(row.monthISO)
       // Its ACCREC is an AA fee receivable against her payee contact, with no ACCPAY.
-      const accRec = state.xero.accRecs[row.accRecId]!
+      const accRecId = feeAccRecId(api, row)
+      const accRec = state.xero.accRecs[accRecId]!
       expect(accRec.kind).toBe('aaFee')
       expect(accRec.contactId).toBe(state.billing.contactIdCache[`anaesthetist:${ANAE.souter}`])
-      expect(Object.values(state.xero.accPays).some((p) => p.accRecId === row.accRecId)).toBe(false)
+      expect(Object.values(state.xero.accPays).some((p) => p.accRecId === accRecId)).toBe(false)
     }
     // Only Dr Souter has seeded billing history, so only she has fee history.
     expect(allAaFeeInvoices(state)).toHaveLength(2)
@@ -115,7 +128,7 @@ describe('runMonthlyFeeInvoices', () => {
     runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
     const s = api.getState()
     const souterFee = aaFeeInvoicesFor(s, ANAE.souter).find((f) => f.monthISO === '2026-07')!
-    expect(s.xero.accRecs[souterFee.accRecId]!.contactId).toBe('XCH01')
+    expect(s.xero.accRecs[feeAccRecId(api, souterFee)]!.contactId).toBe('XCH01')
     const numbers = Object.values(s.xero.contacts).map((c) => c.contactNumber).filter((n) => n.startsWith('ANAE-'))
     expect(new Set(numbers).size).toBe(numbers.length)
     expect(numbers).toHaveLength(activeCount(api))
@@ -151,11 +164,16 @@ describe('runMonthlyFeeInvoices', () => {
 
   it('the scheduled run is audited as the system actor', () => {
     const api = store()
+    const auditBefore = api.getState().audit.length
     runMonthlyFeeInvoices(api, AA_FEE_RUN_ACTOR, { monthISO: '2026-07' })
     const raised = api.getState().audit.filter((e) => e.action === 'aaFee.invoiceRaised')
     expect(raised).toHaveLength(activeCount(api))
     for (const e of raised) expect([e.who, e.role, e.source]).toEqual(['AA fee run (scheduled)', 'system', 'system'])
-    expect(api.getState().audit.filter((e) => e.action === 'xero.feeAccRecCreated')).toHaveLength(activeCount(api))
+    // (catch-up Phase 36: each fee raise audits its ledger pair, and the fee pairs are handed off after commit,
+    // so each fee ACCREC is audited `xero.pairCreated` on the fee invoice, not `xero.feeAccRecCreated`.)
+    const after = api.getState().audit.slice(auditBefore)
+    expect(after.filter((e) => e.action === 'ledger.pairCreated')).toHaveLength(activeCount(api))
+    expect(after.filter((e) => e.action === 'xero.pairCreated' && e.entityType === 'aaFeeInvoice')).toHaveLength(activeCount(api))
     expect(allAaFeeInvoices(api.getState()).filter((f) => f.monthISO === '2026-07').every((f) => f.raisedBy === 'scheduled')).toBe(true)
   })
 
@@ -207,18 +225,25 @@ describe('saveAaFeeSettings', () => {
 })
 
 describe('recordAaFeePayment', () => {
-  it('marks the fee invoice and its ACCREC paid, once, with no BillingReceipt', () => {
+  it('marks the fee invoice and its ACCREC paid, once, with one AA fee ledger receipt and no anaesthetist income', () => {
     const api = store()
     const h02 = aaFeeInvoicesFor(api.getState(), ANAE.souter).find((f) => f.invoiceNumber === 'AA-FEE-2026-H02')!
     const receiptsBefore = api.getState().billing.receipts
+    const auditBefore = api.getState().audit.length
     expect(recordAaFeePayment(api, { aaFeeInvoiceId: h02.id, idempotencyKey: 'FEE-1' })).toMatchObject({ ok: true, value: { applied: true } })
     const s = api.getState()
     const paid = aaFeeInvoicesFor(s, ANAE.souter).find((f) => f.id === h02.id)!
     expect(paid.status).toBe('paid')
     expect(paid.paidAtISO).toBeDefined()
-    expect(s.xero.accRecs[h02.accRecId]).toMatchObject({ status: 'paid', amountReceived: h02.total, paidAtISO: paid.paidAtISO })
-    expect(s.billing.receipts).toEqual(receiptsBefore)
-    const entry = s.audit.at(-1)!
+    expect(s.xero.accRecs[feeAccRecId(api, h02)]).toMatchObject({ status: 'paid', amountReceived: h02.total, paidAtISO: paid.paidAtISO })
+    // (catch-up Phase 36: an AA fee payment now writes one ledger receipt, `pairKind: 'aaFee'`, on its fee
+    // pair and with no anaesthetist: AA's own income, never the anaesthetist's.)
+    const added = Object.values(s.billing.receipts).filter((r) => receiptsBefore[r.id] === undefined)
+    expect(added).toHaveLength(1)
+    expect(added[0]).toMatchObject({ pairId: h02.ledgerPairId, pairKind: 'aaFee', grossAmount: h02.total, source: 'aaFee' })
+    expect(added[0]!.anaesthetistId).toBeUndefined()
+    // (catch-up Phase 36: the one receipt path audits its own entries after the fee entry, so find it.)
+    const entry = s.audit.slice(auditBefore).find((e) => e.action === 'aaFee.paymentRecorded')!
     expect([entry.action, entry.who, entry.source]).toEqual(['aaFee.paymentRecorded', AA_FEE_PAYMENT_ACTOR.who, 'system'])
     // Idempotent by key, and a second payment on a paid invoice is a no-op.
     expect(recordAaFeePayment(api, { aaFeeInvoiceId: h02.id, idempotencyKey: 'FEE-1' })).toMatchObject({ ok: true, value: { applied: false } })
@@ -231,11 +256,11 @@ describe('guards on the procedure money paths', () => {
     const api = store()
     runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
     const fee = allAaFeeInvoices(api.getState())[0]!
-    expect(receivePayment(api, { accRecId: fee.accRecId, amount: 10, idempotencyKey: 'X', source: 'webhook' })).toMatchObject({
+    expect(receivePayment(api, { accRecId: feeAccRecId(api, fee), amount: 10, idempotencyKey: 'X', source: 'webhook' })).toMatchObject({
       ok: false,
       code: 'aaFeeInvoice',
     })
-    const feeAccRecIds = new Set(allAaFeeInvoices(api.getState()).map((f) => f.accRecId))
+    const feeAccRecIds = new Set(allAaFeeInvoices(api.getState()).map((f) => feeAccRecId(api, f)))
     expect(openAccRecs(api.getState()).some((c) => feeAccRecIds.has(c.accRecId))).toBe(false)
   })
 
@@ -249,7 +274,10 @@ describe('guards on the procedure money paths', () => {
     const receiptsBefore = api.getState().billing.receipts
     expect(runReconciliationPoll(api)).toBe(0)
     expect(api.getState().billing.receipts).toEqual(receiptsBefore)
-    expect(Object.values(api.getState().billing.receipts).some((r) => r.accRecId === h01.accRecId || r.accRecId === h02.accRecId)).toBe(false)
+    // (catch-up Phase 36: the fee payment itself now writes an `aaFee` ledger receipt; the poll never writes one.)
+    const feeAccRecs = new Set([feeAccRecId(api, h01), feeAccRecId(api, h02)])
+    expect(Object.values(api.getState().billing.receipts).some((r) => r.accRecId !== undefined && feeAccRecs.has(r.accRecId) && r.source !== 'aaFee')).toBe(false)
+    expect(Object.values(api.getState().billing.receipts).some((r) => r.pairKind === 'aaFee' && r.source === 'poll')).toBe(false)
   })
 
   it('the fee is never netted: raising and paying fee invoices leaves every payable, the payables run, GST and Overdue unchanged', () => {

@@ -11,12 +11,13 @@ import { createAppStore, type BoundAppStore } from './appStore'
 import {
   dashboardFiguresFor,
   gstActivityFor,
-  outstandingAccpayInvoicesFor,
+  outstandingPayableRowsFor,
   paymentHistoryFor,
   receivablesAgingFor,
 } from './selectors'
 import { authoriseList, submitList } from './lifecycle'
-import { runBillingForList, handoffListCases } from './billingRun'
+import { runBillingForList } from './billingRun'
+import { handoffListPairs as handoffListCases } from './xeroHandoff'
 import { advanceClockDays } from './clockActions'
 import { authoriseAsSimulatedOffice } from './officeStandIn'
 import { deriveDashboardFigures, ANAESTHETIST_DASHBOARD, ANAE, SEED_LIST_IDS } from '../domain/seed'
@@ -59,11 +60,13 @@ describe('dashboardFiguresFor (store selector, view-scoped)', () => {
 describe('receivables aging (billing mirror)', () => {
   it('buckets the seeded outstanding ACCPAY invoices against today', () => {
     const { aging, accountsOver60 } = receivablesAgingFor(mirror(store()), SOUTER, DEMO_TODAY)
-    expect(aging.current).toBe(2605.5)
+    // (catch-up Phase 36: an unmirrored invoice is owed. The seed range beat AA-2026-S2401, never handed off,
+    // adds $3,565.00 to current and the total; every other bucket is as before.)
+    expect(aging.current).toBe(2605.5 + 3565)
     expect(aging.d31_60).toBe(2390)
     expect(aging.d61_90).toBe(1930)
     expect(aging.d90plus).toBe(860)
-    expect(aging.total).toBe(7785.5)
+    expect(aging.total).toBe(7785.5 + 3565)
     expect(accountsOver60).toBe(3)
   })
 
@@ -84,8 +87,10 @@ describe('receivables aging (billing mirror)', () => {
 
 describe('outstanding ACCPAY invoices (flat, no rollup)', () => {
   it('lists one row per unpaid ACCPAY invoice, oldest first', () => {
-    const rows = outstandingAccpayInvoicesFor(mirror(store()), SOUTER, DEMO_TODAY)
-    expect(rows).toHaveLength(8)
+    const rows = outstandingPayableRowsFor(mirror(store()), SOUTER, DEMO_TODAY)
+    // (catch-up Phase 36: an unmirrored invoice is owed: the seed range beat AA-2026-S2401 is the ninth row.)
+    expect(rows).toHaveLength(9)
+    expect(rows.some((r) => r.invoiceNumber === 'AA-2026-S2401' && r.outstanding === 3565)).toBe(true)
     const dates = rows.map((r) => r.raisedAtISO)
     expect(dates).toEqual([...dates].sort())
     // Every row is its own ACCPAY invoice — no aggregation.
@@ -132,7 +137,7 @@ describe('invoices in balances at once (catch-up Phase 38a; US-07.4.1, FT-07.4)'
   it('a freshly billed invoice is in the outstanding balances the same day', () => {
     const api = store()
     const today = api.getState().clock.todayISO
-    const before = outstandingAccpayInvoicesFor(mirror(api), SOUTER, today).length
+    const before = outstandingPayableRowsFor(mirror(api), SOUTER, today).length
 
     // Bill Souter's design-day AM list today.
     const listId = SEED_LIST_IDS.souterAm21
@@ -143,15 +148,15 @@ describe('invoices in balances at once (catch-up Phase 38a; US-07.4.1, FT-07.4)'
 
     // Raised today and visible today: no next-day handover.
     expect(api.getState().clock.todayISO).toBe(today)
-    expect(outstandingAccpayInvoicesFor(mirror(api), SOUTER, today).length).toBeGreaterThan(before)
+    expect(outstandingPayableRowsFor(mirror(api), SOUTER, today).length).toBeGreaterThan(before)
   })
 
   it('the office stand-in (PWA "Office authorises this List") lands its invoices in balances at once', () => {
     const api = store()
     const today = api.getState().clock.todayISO
-    const before = outstandingAccpayInvoicesFor(mirror(api), SOUTER, today).length
+    const before = outstandingPayableRowsFor(mirror(api), SOUTER, today).length
     const outcome = authoriseAsSimulatedOffice(api, SEED_LIST_IDS.souterMon20Pm)
     expect(outcome.ok).toBe(true)
-    expect(outstandingAccpayInvoicesFor(mirror(api), SOUTER, today).length).toBeGreaterThan(before)
+    expect(outstandingPayableRowsFor(mirror(api), SOUTER, today).length).toBeGreaterThan(before)
   })
 })

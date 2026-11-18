@@ -4,26 +4,29 @@
  * AA invoices each active anaesthetist once a month: the fixed items in
  * `appSettings.aaFee` plus the per-BCTI charge times their BCTIs paid that
  * month (counted only by `bctisFor` over `bctiRecords`), every amount ex GST
- * with GST at the foot. Each fee invoice is its own case in
- * `billing.aaFeeInvoices` with a `kind:'aaFee'` ACCREC against the
- * anaesthetist's existing Xero contact and NO ACCPAY: AA charging its own fee,
- * not money passing through. It is always a separate invoice, paid into AA's
+ * with GST at the foot. Each fee invoice (`billing.aaFeeInvoices`) is an
+ * `aaFee` ledger pair (catch-up Phase 36): a receivable from the anaesthetist
+ * and NO payable, mirrored by a `kind:'aaFee'` ACCREC against their existing
+ * Xero contact: AA charging its own fee, not money passing through. It is always a separate invoice, paid into AA's
  * own bank account, and NEVER netted: nothing here or anywhere deducts it from
  * a payable, a payables run or a disbursement (Greg, 2026-10-02: "Under trust
- * law it mustn't"). A fee payment is not the anaesthetist's income, so it makes
- * no BillingReceipt and never reaches GST activity.
+ * law it mustn't"). A fee payment is AA's money, not the anaesthetist's income:
+ * its ledger receipt is `pairKind: 'aaFee'` and never reaches GST activity,
+ * payment history or the BCTI count.
  *
  * Every write goes through `mutate()`; time comes from the demo clock.
  */
 
-import type { AaFeeInvoice, AaFeeSettings, Anaesthetist, PaymentIn, XeroAccRec, XeroContact } from '../domain/types'
+import type { AaFeeInvoice, AaFeeSettings, Anaesthetist, LedgerPair } from '../domain/types'
 import { aaFeeMonthLabel, buildAaFeeInvoice, validateAaFeeSettings } from '../domain/billing/aaFee'
 import { BCTI_COUNT_RULE, bctisFor, type BctiRecord } from '../domain/billing/bcti'
 import { roundToCents, toCents } from '../domain/billing/money'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
-import { bctiFeeHistoryFor, bctiRecords } from './selectors'
-import { anaesthetistContactSpec, contactResolvedMeta, resolveContactInto } from './xeroHandoff'
+import { bctiFeeHistoryFor } from './selectors'
+import { bctiRecords } from './ledgerSelectors'
+import { handoffPair } from './xeroHandoff'
+import { applyReceiptInto, receiptKeySeen } from './paymentActions'
 
 /** The scheduled month-end fee run (the demo trigger stands in for it). */
 export const AA_FEE_RUN_ACTOR: Actor = { who: 'AA fee run (scheduled)', role: 'system', source: 'system' }
@@ -72,9 +75,7 @@ export function saveAaFeeSettings(api: AppStoreApi, actor: Actor, next: AaFeeSet
 /** Recipe-local copies the raise writes into (mutated in place). */
 export interface AnaesthetistInvoiceDraft {
   aaFeeInvoices: Record<string, AaFeeInvoice>
-  accRecs: Record<string, XeroAccRec>
-  contacts: Record<string, XeroContact>
-  cache: Record<string, string>
+  ledger: Record<string, LedgerPair>
   counters: Record<string, number>
 }
 
@@ -90,34 +91,28 @@ export interface RaiseAnaesthetistInvoiceInput {
 
 /**
  * Raise one invoice from AA to an anaesthetist into `draft`: the fee invoice
- * record (its own case, with the settings and counted BCTIs snapshotted) plus
- * its `kind:'aaFee'` ACCREC against the anaesthetist's existing Xero contact,
- * with no ACCPAY. The ONE path for an invoice from AA to an anaesthetist
- * (Phase 36 gives it its ledger pair; no later phase builds a second).
+ * record (the settings and counted BCTIs snapshotted) and its `aaFee` ledger
+ * pair, a receivable with no payable (catch-up Phase 36). Its `kind:'aaFee'`
+ * ACCREC is the hand-off's, after commit. The ONE path for an invoice from AA
+ * to an anaesthetist (no later phase builds a second).
  */
 export function raiseAnaesthetistInvoiceInto(
   draft: AnaesthetistInvoiceDraft,
   input: RaiseAnaesthetistInvoiceInput,
 ): { invoice: AaFeeInvoice; metas: MutationMeta[] } {
   const metas: MutationMeta[] = []
-  const spec = anaesthetistContactSpec(input.anaesthetist)
-  const contact = resolveContactInto(spec, draft.contacts, draft.cache, draft.counters)
-  draft.counters = contact.counters
-  if (contact.via === 'created') metas.push(contactResolvedMeta(contact.contactId, spec, contact))
-
   const id = allocateId(draft.counters, 'aaFeeInvoice')
   draft.counters = id.counters
   const number = allocateId(draft.counters, 'aaFeeInvoiceNumber')
   draft.counters = number.counters
-  const xr = allocateId(draft.counters, 'xeroAccRec')
-  draft.counters = xr.counters
+  const bc = allocateId(draft.counters, 'ledgerPair')
+  draft.counters = bc.counters
 
-  const { invoice, accRec } = buildAaFeeInvoice({
+  const { invoice, pair } = buildAaFeeInvoice({
     id: id.id,
     invoiceNumber: number.id,
-    accRecId: xr.id,
+    ledgerPairId: bc.id,
     anaesthetistId: input.anaesthetist.registrationNumber,
-    contactId: contact.contactId,
     monthISO: input.monthISO,
     settings: input.settings,
     counted: input.counted,
@@ -125,7 +120,7 @@ export function raiseAnaesthetistInvoiceInto(
     raisedBy: input.raisedBy,
   })
   draft.aaFeeInvoices[invoice.id] = invoice
-  draft.accRecs[accRec.id] = accRec
+  draft.ledger[pair.id] = pair
   metas.push({
     entityType: 'aaFeeInvoice',
     entityId: invoice.id,
@@ -142,10 +137,10 @@ export function raiseAnaesthetistInvoiceInto(
     },
   })
   metas.push({
-    entityType: 'xeroAccRec',
-    entityId: xr.id,
-    action: 'xero.feeAccRecCreated',
-    after: { invoiceNumber: invoice.invoiceNumber, contactId: contact.contactId, amountDue: invoice.total },
+    entityType: 'ledgerPair',
+    entityId: pair.id,
+    action: 'ledger.pairCreated',
+    after: { kind: 'aaFee', invoiceNumber: invoice.invoiceNumber, anaesthetistId: invoice.anaesthetistId, amount: invoice.total, payee: null },
   })
   return { invoice, metas }
 }
@@ -211,9 +206,7 @@ export function runMonthlyFeeInvoices(
   mutate(api, actor, metas, (s) => {
     const draft: AnaesthetistInvoiceDraft = {
       aaFeeInvoices: { ...s.billing.aaFeeInvoices },
-      accRecs: { ...s.xero.accRecs },
-      contacts: { ...s.xero.contacts },
-      cache: { ...s.billing.contactIdCache },
+      ledger: { ...s.billing.ledger },
       counters: s.counters,
     }
     const raisedAtISO = clockISO(s.clock)
@@ -230,11 +223,12 @@ export function runMonthlyFeeInvoices(
       raised.push(result.invoice)
     }
     return {
-      billing: { ...s.billing, aaFeeInvoices: draft.aaFeeInvoices, contactIdCache: draft.cache },
-      xero: { ...s.xero, accRecs: draft.accRecs, contacts: draft.contacts },
+      billing: { ...s.billing, aaFeeInvoices: draft.aaFeeInvoices, ledger: draft.ledger },
       counters: draft.counters,
     }
   })
+  // Mirror the new fee pairs in Xero after commit, as the billing run does: each a `kind:'aaFee'` ACCREC.
+  for (const f of raised) handoffPair(api, f.ledgerPairId)
   return ok({
     raisedCount: raised.length,
     invoiceIds: raised.map((f) => f.id),
@@ -250,15 +244,17 @@ export function runMonthlyFeeInvoices(
 export function aaFeePaymentDisabledReason(state: Pick<AppState, 'billing'>, aaFeeInvoiceId: string | undefined): string | null {
   const fee = aaFeeInvoiceId !== undefined ? state.billing.aaFeeInvoices[aaFeeInvoiceId] : undefined
   if (fee === undefined) return 'Not an AA fee invoice'
-  if (toCents(fee.amountReceived) >= toCents(fee.total)) return 'Already paid'
+  const pair = state.billing.ledger[fee.ledgerPairId]
+  if (pair !== undefined && toCents(pair.receivable.receivedAmount) >= toCents(pair.receivable.amount)) return 'Already paid'
   return null
 }
 
 /**
- * The anaesthetist pays a fee invoice in full, into AA's own bank account: a
- * `PaymentIn` on the fee ACCREC (source `aaFee`), the ACCREC paid with its paid
- * date, and the fee invoice's mirror. Idempotent by key. No BillingReceipt and
- * no payable: it is AA's income, not the anaesthetist's.
+ * The anaesthetist pays a fee invoice in full, into AA's own bank account:
+ * recorded on its `aaFee` pair through the one receipt path (a ledger receipt
+ * with `pairKind: 'aaFee'`), mirrored as a `PaymentIn` on the fee ACCREC
+ * (source `aaFee`) and the ACCREC paid with its paid date. Idempotent by key.
+ * No payable moves: it is AA's income, not the anaesthetist's.
  */
 export function recordAaFeePayment(
   api: AppStoreApi,
@@ -267,42 +263,24 @@ export function recordAaFeePayment(
   const state = api.getState()
   const fee = state.billing.aaFeeInvoices[input.aaFeeInvoiceId]
   if (fee === undefined) return refuse('notFound', 'AA fee invoice not found.')
-  if (state.xero.accRecs[fee.accRecId]?.kind !== 'aaFee') return refuse('noAccRec', 'The Xero record for this AA fee invoice is missing.')
-  if (Object.values(state.xero.payments).some((p) => p.idempotencyKey === input.idempotencyKey)) return ok({ applied: false })
-  const amount = roundToCents(fee.total - fee.amountReceived)
+  const pair = state.billing.ledger[fee.ledgerPairId]
+  const accRecId = pair?.receivable.xeroAccRecId
+  if (pair === undefined || accRecId === undefined || state.xero.accRecs[accRecId]?.kind !== 'aaFee') return refuse('noAccRec', 'The Xero record for this AA fee invoice is missing.')
+  if (receiptKeySeen(state, input.idempotencyKey) || Object.values(state.xero.payments).some((p) => p.idempotencyKey === input.idempotencyKey)) return ok({ applied: false })
+  const amount = roundToCents(pair.receivable.amount - pair.receivable.receivedAmount)
   if (toCents(amount) <= 0) return ok({ applied: false })
 
-  mutate(
-    api,
-    AA_FEE_PAYMENT_ACTOR,
+  const metas: MutationMeta[] = [
     {
       entityType: 'aaFeeInvoice',
       entityId: fee.id,
       action: 'aaFee.paymentRecorded',
-      after: { invoiceNumber: fee.invoiceNumber, amount, accRecId: fee.accRecId, idempotencyKey: input.idempotencyKey },
+      after: { invoiceNumber: fee.invoiceNumber, amount, accRecId, idempotencyKey: input.idempotencyKey },
     },
-    (s) => {
-      const atISO = clockISO(s.clock)
-      const pmt = allocateId(s.counters, 'paymentIn')
-      const payment: PaymentIn = { id: pmt.id, accRecId: fee.accRecId, amount, atISO, idempotencyKey: input.idempotencyKey, source: 'aaFee' }
-      const accRec = s.xero.accRecs[fee.accRecId]
-      const feeNow = s.billing.aaFeeInvoices[fee.id] ?? fee
-      return {
-        xero: {
-          ...s.xero,
-          payments: { ...s.xero.payments, [pmt.id]: payment },
-          accRecs:
-            accRec === undefined
-              ? s.xero.accRecs
-              : { ...s.xero.accRecs, [accRec.id]: { ...accRec, amountReceived: accRec.amountDue, status: 'paid', paidAtISO: accRec.paidAtISO ?? atISO } },
-        },
-        billing: {
-          ...s.billing,
-          aaFeeInvoices: { ...s.billing.aaFeeInvoices, [fee.id]: { ...feeNow, amountReceived: feeNow.total, paidAtISO: feeNow.paidAtISO ?? atISO } },
-        },
-        counters: pmt.counters,
-      }
-    },
-  )
+  ]
+  mutate(api, AA_FEE_PAYMENT_ACTOR, metas, (s) => {
+    const out = applyReceiptInto(s, s.counters, { pairId: pair.id, amount, idempotencyKey: input.idempotencyKey, source: 'aaFee', atISO: clockISO(s.clock) }, metas)
+    return out === null ? {} : { ...out.patch, counters: out.counters }
+  })
   return ok({ applied: true })
 }

@@ -5,7 +5,7 @@
  * activity) go LIVE over the Billing Engine's mirror in Phase 10. To have them
  * populated on load for Dr Souter, we seed a set of PAST accounts as a full,
  * coherent graph: a billed List + completed Booking + Procedure, an Invoice + line,
- * a BillingCase carrying the money (received / authorised / disbursed + dates),
+ * a ledger pair carrying the money (received / authorised / disbursed + dates),
  * and the Xero side (payer + payee contacts, ACCREC, ACCPAY, payments,
  * disbursements) + the contact-id cache.
  *
@@ -28,8 +28,9 @@
 import { slotIdFor } from '../slots'
 import type {
   Anaesthetist,
-  BillingCase,
-  BillingReceipt,
+  BookingLedgerPair,
+  LedgerDisbursement,
+  LedgerReceipt,
   Booking,
   ContractHolderOrganisation,
   CounterpartyRef,
@@ -265,8 +266,11 @@ export interface HistoryBuild {
   procedures: Record<string, Procedure>
   invoices: Record<string, Invoice>
   invoiceLines: Record<string, InvoiceLine>
-  cases: Record<string, BillingCase>
-  receipts: Record<string, BillingReceipt>
+  /** The seeded ledger pairs (catch-up Phase 36): one per account, in balance. */
+  ledger: Record<string, BookingLedgerPair>
+  receipts: Record<string, LedgerReceipt>
+  /** Money out to the anaesthetist, as ledger entries (each Xero disbursement has its match). */
+  ledgerDisbursements: Record<string, LedgerDisbursement>
   contacts: Record<string, XeroContact>
   accRecs: Record<string, XeroAccRec>
   accPays: Record<string, XeroAccPay>
@@ -287,8 +291,8 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
   const anaesthetistId = ANAE.souter
   const souter = masters.anaesthetists[anaesthetistId]
   const build: HistoryBuild = {
-    lists: {}, bookings: {}, procedures: {}, invoices: {}, invoiceLines: {}, cases: {},
-    receipts: {}, contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, contactIdCache: {},
+    lists: {}, bookings: {}, procedures: {}, invoices: {}, invoiceLines: {}, ledger: {},
+    receipts: {}, ledgerDisbursements: {}, contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, contactIdCache: {},
   }
 
   let xc = 0
@@ -335,6 +339,7 @@ export interface HistoryIds {
   payment: (n: string) => string
   receipt: (n: string) => string
   disbursement: (n: string) => string
+  ledgerDisbursement: (n: string) => string
   paymentKey: (accountKey: string) => string
 }
 
@@ -353,6 +358,7 @@ export function historyIds(ns: string): HistoryIds {
     payment: (n) => `PMT${ns}${n}`,
     receipt: (n) => `RCT${ns}${n}`,
     disbursement: (n) => `DSB${ns}${n}`,
+    ledgerDisbursement: (n) => `LD${ns}${n}`,
     paymentKey: (accountKey) => (ns === 'H' ? `HIST-PAY-${accountKey}` : `${ns}-PAY-${accountKey}`),
   }
 }
@@ -381,7 +387,7 @@ export interface HistoryAccountsOptions {
 /**
  * Add billed accounts to `build` as one coherent graph each: a billed List
  * (shared by accounts with the same `listKey`), a completed Booking and
- * Procedure, an Invoice and line, a BillingCase carrying the money, and the
+ * Procedure, an Invoice and line, a ledger pair carrying the money, and the
  * Xero side (payer contact, ACCREC and ACCPAY with their stored identifiers,
  * payments, receipts, disbursements). Dr Souter's history and the "Seed a
  * month of BCTIs" demo action both build through here. Pure and deterministic.
@@ -474,7 +480,7 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
     if (acc.legacyCode !== undefined) procedure.rvgGroupId = rvgGroupIdForLegacyCode(acc.legacyCode)
     build.procedures[procId] = procedure
 
-    // --- billing mirror: Invoice + line + Case ---
+    // --- billing: Invoice + line + ledger pair ---
     const invoiceId = ids.invoice(n)
     const caseId = ids.billingCase(n)
     const invoice: Invoice = {
@@ -544,21 +550,38 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       ...(supplier !== undefined ? { taxInvoice: buyerCreatedTaxInvoiceFor(invoice, supplier) } : {}),
     }
 
-    const theCase: BillingCase = {
+    // The ledger pair (catch-up Phase 36): both legs, the payee stamped, mirrored by the ACCREC and ACCPAY above.
+    build.ledger[caseId] = {
       id: caseId,
-      bookingId,
+      kind: 'procedure',
       invoiceId,
-      accRecId,
-      accPayId,
-      status: paid ? 'disbursed' : 'handedOff',
-      receivedAmount: received,
-      authorisedAmount: paid ? amountPayable : 0,
-      disbursedAmount: disbursed,
+      bookingId,
+      listId,
+      anaesthetistId,
+      patientId: acc.patientId,
+      procedureIds: [procId],
+      procedureShares: [{ procedureId: procId, amountExGst: subtotal }],
+      createdAtISO: acc.raisedISO,
+      receivable: {
+        number: invoice.invoiceNumber,
+        counterparty: acc.counterparty,
+        amount: acc.total,
+        receivedAmount: received,
+        ...(paid && acc.paidAtISO !== undefined ? { paidInAtISO: acc.paidAtISO } : {}),
+        xeroAccRecId: accRecId,
+      },
+      payable: {
+        number: `${invoice.invoiceNumber}-P`,
+        payee: { kind: 'anaesthetist', anaesthetistId },
+        amount: amountPayable,
+        releasedAmount: paid ? amountPayable : 0,
+        disbursedAmount: disbursed,
+        issuedAtISO: acc.raisedISO,
+        ...(paid && acc.disbursedAtISO !== undefined ? { paidOutAtISO: acc.disbursedAtISO } : {}),
+        xeroAccPayId: accPayId,
+      },
+      ...(acc.accRelated ? { archivedAccRelated: true as const } : {}),
     }
-    if (paid && acc.paidAtISO !== undefined) theCase.paidInAtISO = acc.paidAtISO
-    if (acc.accRelated) theCase.archivedAccRelated = true
-    if (paid && acc.disbursedAtISO !== undefined) theCase.disbursedAtISO = acc.disbursedAtISO
-    build.cases[caseId] = theCase
 
     // --- payments / receipts / disbursements ---
     if (paid && acc.paidAtISO !== undefined) {
@@ -566,7 +589,8 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       build.payments[ids.payment(n)] = { id: ids.payment(n), accRecId, amount: acc.total, atISO: acc.paidAtISO, idempotencyKey: key, source: 'webhook' }
       build.receipts[ids.receipt(n)] = {
         id: ids.receipt(n),
-        caseId,
+        pairId: caseId,
+        pairKind: 'procedure',
         anaesthetistId,
         accRecId,
         grossAmount: acc.total,
@@ -577,6 +601,16 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       }
       if (acc.disbursedAtISO !== undefined) {
         build.disbursements[ids.disbursement(n)] = { id: ids.disbursement(n), accPayId, amount: amountPayable, atISO: acc.disbursedAtISO, payablesRunId: dsbRunId }
+      }
+      // The ledger's record of the payment out (every paid account was paid out in full).
+      build.ledgerDisbursements[ids.ledgerDisbursement(n)] = {
+        id: ids.ledgerDisbursement(n),
+        pairId: caseId,
+        anaesthetistId,
+        amount: amountPayable,
+        atISO: acc.disbursedAtISO ?? acc.paidAtISO,
+        payablesRunId: dsbRunId,
+        ...(acc.disbursedAtISO !== undefined ? { xeroDisbursementId: ids.disbursement(n) } : {}),
       }
     } else if (acc.paidState === 'missedWebhook') {
       // An unmirrored PaymentIn: Xero recorded it but no receipt exists, so the

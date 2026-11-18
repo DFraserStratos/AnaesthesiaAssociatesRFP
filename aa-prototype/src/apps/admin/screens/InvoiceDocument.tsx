@@ -5,7 +5,7 @@ import { Printer, Mail, Clock, Send } from 'lucide-react'
 import { accent, fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
 import { invoiceAddresseeName, invoiceLinesFor, resendInvoice, useAppStore } from '../../../store'
-import type { BillingCase, Invoice, InvoiceLineBtm } from '../../../domain/types'
+import type { BookingLedgerPair, Invoice, InvoiceLineBtm } from '../../../domain/types'
 import {
   GST_RATE,
   GST_TREATMENT_CAPTION,
@@ -28,7 +28,9 @@ import { lockStampText, lockViewFor, MIGRATED_LOCK_TEXT, partyKeyOf } from '../.
 import { BILLS_LABEL, pricingLabel } from '../../../shared/contracts'
 import { regenerateSummary, type RegenerateResult } from '../../../store/locks'
 import { useDemoTriggerMemory } from '../../../shared/demoTriggers/memory'
-import { HOLDING_ACCOUNT, transferOfCase } from '../../../domain/billing/prepayHolding'
+import { HOLDING_ACCOUNT } from '../../../domain/billing/prepayHolding'
+import { transferOfPair } from '../../../domain/billing/ledger'
+import { pairForInvoice } from '../../../store/ledgerSelectors'
 import { toCents } from '../../../domain/billing/money'
 
 interface InvoiceDocumentProps {
@@ -67,12 +69,10 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   const lock = lockRecord !== undefined && lockRecord.state === 'locked' ? lockViewFor(lockRecord) : undefined
 
   const lines = useMemo(() => invoiceLinesFor({ billing }, invoiceId), [billing, invoiceId])
-  const theCase = useMemo(
-    () => Object.values(billing.cases).find((c) => c.invoiceId === invoiceId),
-    [billing.cases, invoiceId],
-  )
+  // The invoice's ledger pair (catch-up Phase 36): its legs carry the money, whether or not Xero has it yet.
+  const theCase = useMemo(() => pairForInvoice({ billing }, invoiceId), [billing, invoiceId])
   // A prepayment's money is held, then moved by its transfer (catch-up Phase 27a): the second state reads the transfer.
-  const transfer = theCase?.prepayLeg === 'collect' ? transferOfCase(billing.transfers, theCase.id) : undefined
+  const transfer = theCase?.kind === 'prePayment' ? transferOfPair(billing.transfers, theCase.id) : undefined
 
 
   if (invoice === undefined) return null
@@ -264,44 +264,44 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
 
         {/* Two-state money (RFP): paid into the AA account, then disbursed to the
             anaesthetist. Two independent, separately-tracked states. */}
-        {invoice.noCharge === true && theCase?.accRecId !== undefined && (
+        {invoice.noCharge === true && theCase !== undefined && (
           <div data-shot="invoice-money-states" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', borderTop: `1px solid ${neutral.line}`, paddingTop: 12 }}>
             <MoneyStatePill on label="No charge: nothing to pay or disburse" />
           </div>
         )}
-        {theCase !== undefined && theCase.accRecId !== undefined && invoice.noCharge !== true && (
+        {theCase !== undefined && invoice.noCharge !== true && (
           <div data-shot="invoice-money-states" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', borderTop: `1px solid ${neutral.line}`, paddingTop: 12 }}>
             <MoneyStatePill
-              on={theCase.paidInAtISO !== undefined}
+              on={theCase.receivable.paidInAtISO !== undefined}
               label={
-                theCase.paidInAtISO !== undefined
-                  ? `Paid into AA account ${dateTimeMicroCap(theCase.paidInAtISO)}`
-                  : theCase.receivedAmount > 0
-                    ? `Part paid ${formatCurrency(theCase.receivedAmount)} of ${formatCurrency(invoice.total)}`
+                theCase.receivable.paidInAtISO !== undefined
+                  ? `Paid into AA account ${dateTimeMicroCap(theCase.receivable.paidInAtISO)}`
+                  : theCase.receivable.receivedAmount > 0
+                    ? `Part paid ${formatCurrency(theCase.receivable.receivedAmount)} of ${formatCurrency(invoice.total)}`
                     : 'Awaiting payment'
               }
             />
-            {theCase.prepayLeg === 'collect' ? (
+            {theCase.kind === 'prePayment' ? (
               <MoneyStatePill
-                on={transfer !== undefined && toCents(transfer.disbursed) >= toCents(transfer.amount)}
+                on={transfer !== undefined && toCents(transfer.in.disbursedAmount) >= toCents(transfer.in.amount)}
                 label={
                   transfer === undefined
                     ? `Held in the ${HOLDING_ACCOUNT.name}`
-                    : toCents(transfer.disbursed) >= toCents(transfer.amount)
+                    : toCents(transfer.in.disbursedAmount) >= toCents(transfer.in.amount)
                       ? 'Transferred and paid to the anaesthetist'
-                      : transfer.disbursed > 0
-                        ? `Transferred, part paid ${formatCurrency(transfer.disbursed)}`
+                      : transfer.in.disbursedAmount > 0
+                        ? `Transferred, part paid ${formatCurrency(transfer.in.disbursedAmount)}`
                         : 'Transferred to the anaesthetist'
                 }
               />
             ) : (
               <MoneyStatePill
-                on={theCase.disbursedAtISO !== undefined}
+                on={theCase.payable?.paidOutAtISO !== undefined}
                 label={
-                  theCase.disbursedAtISO !== undefined
-                    ? `Disbursed to anaesthetist ${dateTimeMicroCap(theCase.disbursedAtISO)}`
-                    : theCase.disbursedAmount > 0
-                      ? `Part disbursed ${formatCurrency(theCase.disbursedAmount)}`
+                  theCase.payable?.paidOutAtISO !== undefined
+                    ? `Disbursed to anaesthetist ${dateTimeMicroCap(theCase.payable.paidOutAtISO)}`
+                    : (theCase.payable?.disbursedAmount ?? 0) > 0
+                      ? `Part disbursed ${formatCurrency(theCase.payable?.disbursedAmount ?? 0)}`
                       : 'Not yet disbursed'
                 }
               />
@@ -327,25 +327,23 @@ function InvoiceInfoRail({
   onSend,
 }: {
   invoice: Invoice
-  billingCase: BillingCase | undefined
+  billingCase: BookingLedgerPair | undefined
   siblings: readonly { invoice: Invoice; name: string }[]
   error: string | null
   onSend: (to?: string) => boolean
 }) {
   const handoffFailed = billingCase?.handoffFailure !== undefined
-  const handoffComplete = billingCase?.accRecId !== undefined
+  const accRecId = billingCase?.receivable.xeroAccRecId
+  const accPayId = billingCase?.payable?.xeroAccPayId
+  const handoffComplete = accRecId !== undefined
   // The InvoiceNumbers stored on the Xero records (US-09.1.1), not derived here.
-  const accRecNumber = useAppStore((s) =>
-    billingCase?.accRecId !== undefined ? s.xero.accRecs[billingCase.accRecId]?.invoiceNumber : undefined,
-  )
-  const accPayNumber = useAppStore((s) =>
-    billingCase?.accPayId !== undefined ? s.xero.accPays[billingCase.accPayId]?.invoiceNumber : undefined,
-  )
+  const accRecNumber = useAppStore((s) => (accRecId !== undefined ? s.xero.accRecs[accRecId]?.invoiceNumber : undefined))
+  const accPayNumber = useAppStore((s) => (accPayId !== undefined ? s.xero.accPays[accPayId]?.invoiceNumber : undefined))
   // A prepayment's payable credits the AA Holding account; once transferred, its journal (catch-up Phase 27a).
-  const collect = billingCase?.prepayLeg === 'collect'
+  const collect = billingCase?.kind === 'prePayment'
   const journalNumber = useAppStore((s) => {
     if (!collect || billingCase === undefined) return undefined
-    const transfer = transferOfCase(s.billing.transfers, billingCase.id)
+    const transfer = transferOfPair(s.billing.transfers, billingCase.id)
     return transfer?.xeroJournalId !== undefined ? s.xero.journals[transfer.xeroJournalId]?.journalNumber : undefined
   })
 

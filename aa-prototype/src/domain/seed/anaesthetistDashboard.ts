@@ -5,7 +5,7 @@
  * years", which the 4-month demo canvas cannot produce, and leave has no master.
  *
  * RECEIVABLES / OVERDUE / GST have moved to billing-mirror derivation over the
- * real Invoice / BillingCase / receipt data (Phase 10; see `store/selectors.ts`
+ * real invoice, ledger pair and receipt data (Phase 10; see `store/selectors.ts`
  * `outstandingAccpayInvoicesFor` / `receivablesAgingFor` / `gstActivityFor`, fed
  * by the seeded historical rows in `seed/history.ts`). This module no longer
  * carries the outstanding accounts.

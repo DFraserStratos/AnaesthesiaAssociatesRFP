@@ -13,7 +13,7 @@ import { bookingsForList, dashboardFiguresFor, needsInvoiceDestinationBookings }
 import { authoriseList, completionBlockersFor, submitList } from './lifecycle'
 import { openWarnings } from './warnings'
 import { searchBookingsFor } from './lookback'
-import { bctiRecordsFrom } from '../domain/billing/bcti'
+import { bctiRecords } from './ledgerSelectors'
 import { SEED_STUB } from '../domain/seed/intakeSeed'
 import { importHospitalDownload } from './matchingActions'
 import type { Actor } from './mutate'
@@ -39,7 +39,7 @@ function bookingPaths(s: AppState) {
     dashboard: dashboardFiguresFor(s, SOUTER),
     warningsAndTodo: openWarnings(s).map((r) => JSON.stringify(r.warning)),
     needsInvoiceDestination: needsInvoiceDestinationBookings(s).map((r) => r.bookingId),
-    bcti: bctiRecordsFrom(s.xero).length,
+    bcti: bctiRecords(s).length,
     search: [searchBookingsFor(s, SOUTER, 'Tipene', today).total, searchBookingsFor(s, SOUTER, 'Tama Henare', today).total],
   }
 }

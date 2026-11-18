@@ -292,14 +292,17 @@ export {
 } from './contractActions'
 export {
   runBillingForList,
-  retryBillingCase,
+  retryBillingException,
   resendInvoice,
   wireBillingRun,
-  handoffListCases,
   type BillingRunResult,
   type BillingRunException,
 } from './billingRun'
-export { handoffCase, handoffCasesForBooking, type HandoffResult } from './xeroHandoff'
+export { handoffPair, handoffPairsForBooking, handoffListPairs, type HandoffResult } from './xeroHandoff'
+// The internal ledger (catch-up Phase 36): its reads and the office's actions on unmatched receipts.
+export * from './ledgerSelectors'
+export { allocateUnmatchedReceipt, allocationRefusal, markUnmatchedRefunded, OVER_ALLOCATION } from './ledgerActions'
+export { recordUnmatchedReceipt, type UnmatchedReceiptInput } from './paymentActions'
 // The AA Holding account's transfer and its Xero journal (catch-up Phase 27a).
 export { postTransferJournal } from './xeroHandoff'
 export { settlePrepaymentsForList, transfersDueForList } from './prepaymentSettlement'

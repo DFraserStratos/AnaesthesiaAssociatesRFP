@@ -38,11 +38,14 @@ describe('the seeded paid pre-payment slice', () => {
     expect(invoice.approval).toMatchObject({ mode: 'approved', by: 'Kirsty W.', role: 'office' })
 
     // The pre-payment case is fully paid in; its payable credits the AA Holding account, authorised and not disbursed.
-    const preCase = Object.values(billing.cases).find((c) => c.invoiceId === invoice.id)!
-    expect(preCase.bookingId).toBe(SEED_PREPAID_BOOKING_ID)
-    expect(preCase.receivedAmount).toBe(invoice.total)
-    expect(preCase.disbursedAmount).toBe(0)
-    const accPay = api.getState().xero.accPays[preCase.accPayId!]!
+    const prePair = Object.values(billing.ledger).find((p) => p.kind === 'prePayment' && p.invoiceId === invoice.id)!
+    expect(prePair.kind).toBe('prePayment')
+    if (prePair.kind !== 'prePayment') throw new Error('expected the prepayment pair')
+    expect(prePair.bookingId).toBe(SEED_PREPAID_BOOKING_ID)
+    expect(prePair.receivable.receivedAmount).toBe(invoice.total)
+    expect(prePair.payable?.payee).toEqual({ kind: 'holding' })
+    expect(prePair.payable?.disbursedAmount).toBe(0)
+    const accPay = api.getState().xero.accPays[prePair.payable!.xeroAccPayId!]!
     expect(accPay).toMatchObject({ payeeAccount: 'aaHoldingAccount', status: 'authorised', amountDisbursed: 0 })
     expect(api.getState().xero.contacts[accPay.contactId]?.name).toBe('AA Holding account')
 
@@ -99,14 +102,17 @@ describe('the seeded paid pre-payment slice', () => {
 describe('seeded Xero pairs (catch-up Phase 16)', () => {
   it('every seeded payable equals its receivable and releases exactly what was received', () => {
     const state = createAppStore().getState()
-    const pairs = Object.values(state.billing.cases).filter((c) => c.accRecId !== undefined && c.accPayId !== undefined)
+    const pairs = Object.values(state.billing.ledger).flatMap((p) =>
+      p.kind !== 'aaFee' && p.receivable.xeroAccRecId !== undefined && p.payable?.xeroAccPayId !== undefined ? [{ pair: p, payable: p.payable }] : [],
+    )
     expect(pairs.length).toBeGreaterThan(5)
-    for (const c of pairs) {
-      const accRec = state.xero.accRecs[c.accRecId!]!
-      const accPay = state.xero.accPays[c.accPayId!]!
+    for (const { pair, payable } of pairs) {
+      const accRec = state.xero.accRecs[pair.receivable.xeroAccRecId!]!
+      const accPay = state.xero.accPays[payable.xeroAccPayId!]!
       expect(accPay.amountPayable).toBe(accRec.amountDue)
-      expect(c.authorisedAmount).toBe(Math.min(c.receivedAmount, accPay.amountPayable))
-      expect(accPay.amountAuthorised).toBe(c.authorisedAmount)
+      expect(payable.amount).toBe(pair.receivable.amount)
+      expect(payable.releasedAmount).toBe(Math.min(pair.receivable.receivedAmount, accPay.amountPayable))
+      expect(accPay.amountAuthorised).toBe(payable.releasedAmount)
       expect(accPay.amountDisbursed).toBeLessThanOrEqual(accPay.amountAuthorised)
     }
   })

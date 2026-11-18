@@ -176,11 +176,10 @@ function invoicedAmounts(invoices: readonly Invoice[], state: Pick<AppState, 'bi
  * Every AUTHORISED List in the seed locked (work item 6): a Booking whose
  * invoices were loaded by hand (the history backdrop) gets a `migrated` lock
  * frozen from those invoices; any other goes through `buildBookingLock`.
- * Every case of a locked Booking is stamped with its payee.
+ * The seed's ledger pairs carry the same payee (the List's anaesthetist).
  */
-export function seedLocks(state: AppState): Pick<AppState['billing'], 'locks' | 'cases'> {
+export function seedLocks(state: AppState): Pick<AppState['billing'], 'locks'> {
   const locks: Record<BookingId, BookingLock> = {}
-  const cases = { ...state.billing.cases }
   for (const list of Object.values(state.schedule.lists)) {
     if (list.state !== 'AUTHORISED' || list.anaesthetistId === undefined) continue
     const anaesthetist = state.masters.anaesthetists[list.anaesthetistId]
@@ -215,15 +214,9 @@ export function seedLocks(state: AppState): Pick<AppState['billing'], 'locks' | 
       }
       if (lock === undefined) continue
       locks[booking.id] = lock
-      for (const c of Object.values(cases)) {
-        if (c.bookingId !== booking.id) continue
-        const invoice = c.invoiceId !== undefined ? state.billing.invoices[c.invoiceId] : undefined
-        if (invoice?.kind === 'prePayment') continue
-        cases[c.id] = { ...c, payeeAnaesthetistId: lock.payee.anaesthetistId }
-      }
     }
   }
-  return { locks, cases }
+  return { locks }
 }
 
 /** The history backdrop's Lists (`seed/history.ts`). */

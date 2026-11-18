@@ -9,7 +9,8 @@
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
-import { handoffListCases, runBillingForList, type BillingRunResult } from './billingRun'
+import { runBillingForList, type BillingRunResult } from './billingRun'
+import { handoffListPairs } from './xeroHandoff'
 import { authoriseList, submitList } from './lifecycle'
 import { setProcedurePrice } from './pricingActions'
 import { setProcedurePayer } from './payerActions'
@@ -279,12 +280,13 @@ describe("the ACCPAY's tax invoice is a snapshot", () => {
   it('survives a later change to the GST number on the anaesthetist', () => {
     const api = store()
     stageAndBill(api, PRENTICE_PM)
-    handoffListCases(api, PRENTICE_PM)
+    handoffListPairs(api, PRENTICE_PM)
     const invoices = invoicesForBooking(api, FEE_SPLIT_BOOKING)
     expect(invoices).toHaveLength(2)
     const accPayFor = (inv: Invoice) => {
-      const c = api.getState().billing.cases[inv.caseReference]
-      return c?.accPayId !== undefined ? api.getState().xero.accPays[c.accPayId] : undefined
+      const c = api.getState().billing.ledger[inv.caseReference]
+      const accPayId = c !== undefined && c.kind !== 'aaFee' ? c.payable?.xeroAccPayId : undefined
+      return accPayId !== undefined ? api.getState().xero.accPays[accPayId] : undefined
     }
     for (const inv of invoices) {
       expect(inv.supplier).toEqual({ anaesthetistId: ANAE.souter, name: 'Dr Melanie Souter', gstNumber: '104348211' })

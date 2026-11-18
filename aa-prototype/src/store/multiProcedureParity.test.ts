@@ -30,8 +30,9 @@ import baselineJson from './__parity__/phase-23-baseline.json'
 import { capturePhase23, type FeeRow23, type Phase23Baseline } from './__parity__/phase23Capture'
 import { createAppStore, freshAppState } from './appStore'
 import { authoriseList } from './lifecycle'
-import { handoffListCases, runBillingForList } from './billingRun'
-import { bctiRecords } from './selectors'
+import { runBillingForList } from './billingRun'
+import { handoffListPairs } from './xeroHandoff'
+import { bctiRecords } from './ledgerSelectors'
 import { MULTI_PROCEDURE_IDS, SEED_MARKERS } from '../domain/seed'
 
 const baseline = baselineJson as unknown as Phase23Baseline
@@ -162,7 +163,7 @@ describe('Phase 23 census of multi-procedure Bookings (FT-03.2 and US-05.3.5 car
     const before = bctiRecords(api.getState()).length
     expect(authoriseList(api, { who: 'Kirsty W.', role: 'office', source: 'office' }, booking.listId).ok).toBe(true)
     expect(runBillingForList(api, booking.listId).ok).toBe(true)
-    handoffListCases(api, booking.listId)
+    handoffListPairs(api, booking.listId)
     const invoices = Object.values(api.getState().billing.invoices).filter((i) => i.bookingId === booking.id && i.kind === 'standard')
     expect(invoices).toHaveLength(1)
     expect(bctiRecords(api.getState()).length - before).toBe(1)

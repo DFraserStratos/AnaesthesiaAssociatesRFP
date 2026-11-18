@@ -5,7 +5,7 @@ import { neutral, semantic, radius } from '../../../theme/tokens'
 import { STATUS_PALETTE } from '../../../theme/statusColours'
 import {
   gstActivityFor,
-  outstandingAccpayInvoicesFor,
+  outstandingPayableRowsFor,
   receivablesAgingFor,
   useAppStore,
   useToday,
@@ -21,7 +21,7 @@ import { HELD_UNTIL_AUTHORISED } from '../../../domain/billing/prepayHolding'
 type Section = 'outstanding' | 'gst'
 
 /**
- * Balances tab (M11) — the anaesthetist's money, from the Billing Engine MIRROR
+ * Balances tab (M11) — the anaesthetist's money, from the ledger (AA's system of record)
  * (never Xero; convention 9). Outstanding is a FLAT list of individual ACCPAY
  * invoices, no rollup (RFP); a fully-mobile card list, not a table. A GST peek
  * lists the amounts received this month with their GST component. An invoice
@@ -35,7 +35,7 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
   const [section, setSection] = useState<Section>('outstanding')
 
   const outstanding = useMemo(
-    () => outstandingAccpayInvoicesFor({ billing, schedule, masters }, anaesthetistId, todayISO),
+    () => outstandingPayableRowsFor({ billing, schedule, masters }, anaesthetistId, todayISO),
     [billing, schedule, masters, anaesthetistId, todayISO],
   )
   const aging = useMemo(
@@ -90,7 +90,7 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
             <EmptyState variant="card">No outstanding invoices. A List's invoices show here once the office authorises it.</EmptyState>
           ) : (
             outstanding.map((r) => (
-              <div key={r.caseId} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div key={r.pairId} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }}>
                   <span style={{ fontSize: 15, fontWeight: 600 }}>{r.patientName}</span>
                   <span className="mono" style={{ fontSize: 15, fontWeight: 700 }}>{formatCurrency(r.outstanding)}</span>

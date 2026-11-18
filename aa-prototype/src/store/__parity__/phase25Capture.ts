@@ -18,6 +18,9 @@ import { runBillingForList } from '../billingRun'
 import { bookingsForList } from '../selectors'
 import { SEED_LIST_IDS } from '../../domain/seed'
 import type { Actor } from '../mutate'
+import { isBookingPair, pairStatusLabel } from '../../domain/billing/ledger'
+import { toCents } from '../../domain/billing/money'
+import type { BookingLedgerPair } from '../../domain/types'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
@@ -110,14 +113,23 @@ export function capturePhase25(afterAuthorise?: (api: BoundAppStore) => void): P
       gst: i.gst,
       total: i.total,
     })),
-    cases: Object.values(state.billing.cases)
-      .filter((c) => bookingIds.has(c.bookingId))
-      .sort((a, b) => a.bookingId.localeCompare(b.bookingId) || (state.billing.invoices[a.invoiceId ?? '']?.invoiceNumber ?? '').localeCompare(state.billing.invoices[b.invoiceId ?? '']?.invoiceNumber ?? ''))
-      .map((c) => ({
-        bookingId: c.bookingId,
-        status: c.status,
-        invoiceNumber: c.invoiceId !== undefined ? (state.billing.invoices[c.invoiceId]?.invoiceNumber ?? null) : null,
-        failure: c.failure !== undefined ? `${c.failure.code}: ${c.failure.message}` : null,
-      })),
+    // Catch-up Phase 36: the Booking's ledger pairs, plus an open billing exception
+    // as the old 'failed' case (no invoice), re-expressed as the old case rows.
+    cases: [
+      ...Object.values(state.billing.ledger)
+        .filter((p): p is BookingLedgerPair => isBookingPair(p) && bookingIds.has(p.bookingId))
+        .map((p): CaseRow25 => ({ bookingId: p.bookingId, status: oldCaseStatus(p), invoiceNumber: state.billing.invoices[p.invoiceId]?.invoiceNumber ?? null, failure: null })),
+      ...Object.values(state.billing.exceptions)
+        .filter((x) => bookingIds.has(x.bookingId) && x.resolvedAtISO === undefined)
+        .map((x): CaseRow25 => ({ bookingId: x.bookingId, status: 'failed', invoiceNumber: null, failure: `${x.code}: ${x.message}` })),
+    ].sort((a, b) => a.bookingId.localeCompare(b.bookingId) || (a.invoiceNumber ?? '').localeCompare(b.invoiceNumber ?? '')),
   }
+}
+
+/** The status the pre-Phase 36 BillingCase would have stored for this pair (a hand-off fault left it 'invoiced'; a part pay-out kept its paid status). */
+export function oldCaseStatus(p: BookingLedgerPair): string {
+  const s = pairStatusLabel(p)
+  if (s === 'handoffFailed') return 'invoiced'
+  if (s === 'partPaidOut') return toCents(p.receivable.receivedAmount) >= toCents(p.receivable.amount) ? 'paid' : 'partPaid'
+  return s
 }

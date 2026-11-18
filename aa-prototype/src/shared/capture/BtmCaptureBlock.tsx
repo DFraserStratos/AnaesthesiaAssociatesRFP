@@ -133,12 +133,12 @@ export function BtmCaptureBlock({
   const invoices = useAppStore((s) => s.billing.invoices)
   const invoiceLines = useAppStore((s) => s.billing.invoiceLines)
   const locks = useAppStore((s) => s.billing.locks)
-  // The cases too: a prepaid Procedure's basis reads its prepayment status (catch-up Phase 27).
-  const cases = useAppStore((s) => s.billing.cases)
+  // The ledger too: a prepaid Procedure's basis reads its prepayment status (catch-up Phase 27; the ledger since 36).
+  const ledger = useAppStore((s) => s.billing.ledger)
   const stackSurface = actor.role === 'office' ? 'office' : 'anaesthetist'
   const stackView = useMemo(
-    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines }, billing: { invoices, invoiceLines, locks, cases } }, procedure.id, stackSurface),
-    [masters, procedures, bookings, lists, billingLines, invoices, invoiceLines, locks, cases, procedure.id, stackSurface],
+    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines }, billing: { invoices, invoiceLines, locks, ledger } }, procedure.id, stackSurface),
+    [masters, procedures, bookings, lists, billingLines, invoices, invoiceLines, locks, ledger, procedure.id, stackSurface],
   )
 
   return (

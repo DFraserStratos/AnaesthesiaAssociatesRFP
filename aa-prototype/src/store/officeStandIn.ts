@@ -10,7 +10,8 @@
  */
 
 import type { AppState, AppStoreApi } from './appStore'
-import { handoffListCases, runBillingForList } from './billingRun'
+import { runBillingForList } from './billingRun'
+import { handoffListPairs } from './xeroHandoff'
 import { OFFICE_SIMULATION_ACTOR } from './demoActors'
 import { authoriseBlockersFor, authoriseList, incompleteBookingsOn } from './lifecycle'
 import { ok, refuse, type Outcome } from './mutate'
@@ -67,7 +68,7 @@ export function authoriseAsSimulatedOffice(api: AppStoreApi, listId: string): Ou
   if (isListBilled(after)) return ok({ billed: true })
   const run = runBillingForList(api, listId)
   if (!run.ok) return ok({ billed: false })
-  handoffListCases(api, listId)
+  handoffListPairs(api, listId)
   return ok({ billed: isListBilled(api.getState().schedule.lists[listId] ?? after) })
 }
 

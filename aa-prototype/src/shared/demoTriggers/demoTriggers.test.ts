@@ -250,12 +250,15 @@ describe('re-homed bodies match the Control Panel', () => {
     const state = api.getState()
     expect(state.masters.contracts).toEqual(createAppStore().getState().masters.contracts)
     expect(contractEntries(state)).toBe(seededContractEntries)
-    const cases = Object.values(state.billing.cases).filter((c) => bookingsForList(state, SEED_LIST_IDS.billingFailure).some((booking) => booking.id === c.bookingId))
-    const losa = cases.find((c) => c.bookingId === SEED_MARKERS['billingFailureBooking']!.entityId)!
+    const pairs = Object.values(state.billing.ledger).flatMap((p) =>
+      p.kind !== 'aaFee' && bookingsForList(state, SEED_LIST_IDS.billingFailure).some((booking) => booking.id === p.bookingId) ? [p] : [],
+    )
+    const losa = pairs.find((p) => p.bookingId === SEED_MARKERS['billingFailureBooking']!.entityId)!
     expect(losa.handoffFailure).toBeDefined()
-    expect(losa.accRecId).toBeUndefined()
-    expect(cases.filter((c) => c.bookingId !== losa.bookingId).every((c) => c.accRecId !== undefined)).toBe(true)
-    expect(cases.some((c) => c.status === 'failed')).toBe(false)
+    expect(losa.receivable.xeroAccRecId).toBeUndefined()
+    expect(pairs.filter((p) => p.bookingId !== losa.bookingId).every((p) => p.receivable.xeroAccRecId !== undefined)).toBe(true)
+    // (catch-up Phase 36: a billing-run failure is a BillingException, not a failed case.)
+    expect(Object.values(state.billing.exceptions).some((x) => x.listId === SEED_LIST_IDS.billingFailure)).toBe(false)
     expect(state.schedule.lists[SEED_LIST_IDS.billingFailure]!.billedAtISO).toBeDefined()
     expect(t.disabledReason(api.getState(), ctx)).toBe('Already triggered')
     expect(t.run(api, ctx).message).toBe('Already triggered.')
@@ -707,7 +710,9 @@ describe('AA fee entries (catch-up Phase 16)', () => {
   it('"Record fee payment" shows on a fee pair only, and the payment webhook triggers never do', () => {
     const api = createAppStore()
     const fee = Object.values(api.getState().billing.aaFeeInvoices).find((f) => f.invoiceNumber === 'AA-FEE-2026-H02')!
-    const feePath = `/demo/xero/invoices/${fee.accRecId}`
+    // (catch-up Phase 36: the fee's ACCREC id lives on its `aaFee` ledger pair.)
+    const feeAccRecId = api.getState().billing.ledger[fee.ledgerPairId]!.receivable.xeroAccRecId!
+    const feePath = `/demo/xero/invoices/${feeAccRecId}`
     expect(ids(api, feePath)).toContain('record-fee-payment')
     for (const id of ['payment-full', 'payment-half', 'payment-replay']) expect(ids(api, feePath)).not.toContain(id)
     const procedurePath = '/demo/xero/invoices/XRH01'
@@ -715,7 +720,7 @@ describe('AA fee entries (catch-up Phase 16)', () => {
     expect(ids(api, procedurePath)).toContain('payment-full')
 
     const t = byId('record-fee-payment')
-    const ctx = ctxFor(feePath, { accRecId: fee.accRecId })
+    const ctx = ctxFor(feePath, { accRecId: feeAccRecId })
     expect(t.indexPath(api.getState())).toBe(feePath)
     expect(t.disabledReason(api.getState(), ctx)).toBeNull()
     expect(t.run(api, ctx).message).toMatch(/^AA-FEE-2026-H02 paid: \$[\d,.]+ received into AA's own account\.$/)

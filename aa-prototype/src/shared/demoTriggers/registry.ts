@@ -233,7 +233,7 @@ export function recordFeePaymentFor(api: AppStoreApi, aaFeeInvoiceId: string | u
   return {
     ok: true,
     message: res.value.applied
-      ? `${fee.invoiceNumber} paid: ${formatCurrency(fee.total - fee.amountReceived)} received into AA's own account.`
+      ? `${fee.invoiceNumber} paid: ${formatCurrency(fee.total)} received into AA's own account.`
       : 'No change (already paid).',
   }
 }
@@ -867,7 +867,8 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     run: (api, ctx) => recordFeePaymentFor(api, feeInvoiceIdOnScreen(api.getState(), ctx)),
     indexPath: (state) => {
       const oldestUnpaid = allAaFeeInvoices(state).filter((f) => f.status === 'unpaid').at(-1)
-      return oldestUnpaid === undefined ? null : `/demo/xero/invoices/${oldestUnpaid.accRecId}`
+      const accRecId = oldestUnpaid !== undefined ? state.billing.ledger[oldestUnpaid.ledgerPairId]?.receivable.xeroAccRecId : undefined
+      return accRecId === undefined ? null : `/demo/xero/invoices/${accRecId}`
     },
     indexEmptyReason: 'Every AA fee invoice is paid',
   },

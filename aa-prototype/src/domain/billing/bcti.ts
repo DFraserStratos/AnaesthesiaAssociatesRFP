@@ -1,7 +1,8 @@
 /**
  * The BCTI count (catch-up Phase 16; FT-10.3, US-10.3.1). AA's monthly fee
  * charges per buyer-created tax invoice (BCTI), and BCTIs are counted HERE and
- * nowhere else, over the one record list the store's `bctiRecords` builds.
+ * nowhere else, over the one record list the ledger's payable legs give
+ * (`bctiRecordsOf` in `ledger.ts`, catch-up Phase 36; the store's `bctiRecords`).
  *
  * The rules, in one place:
  *  - One BCTI per receivable invoice: its ACCPAY, of the same value as the
@@ -25,8 +26,7 @@
  * Pure (convention 9).
  */
 
-import type { AnaesthetistId, IsoDateTime, XeroAccPay, XeroAccRec } from '../types'
-import { isHeldPayable } from './prepayHolding'
+import type { AnaesthetistId, IsoDateTime } from '../types'
 
 export interface BctiRecord {
   /** The ACCPAY: the BCTI itself. */
@@ -121,39 +121,3 @@ export function bctisFor(
   return counted.sort((a, b) => (dateOf(a) ?? '').localeCompare(dateOf(b) ?? '') || a.accPayId.localeCompare(b.accPayId))
 }
 
-/**
- * The BCTI record list: one record per procedure ACCPAY (the ACCPAY is the
- * BCTI), carrying its stored number, anaesthetist and issue date and its
- * ACCREC's paid date. A prepayment invoice's ACCPAY (crediting the AA Holding
- * account) is left out unless `rule.prepaymentPairs` is on (catch-up Phase
- * 27a). AA fee ACCRECs have no ACCPAY, so they are never counted. The store's
- * `bctiRecords(state)` is this over the Xero slice; the seed's fee history uses
- * it directly. Later phases that add invoices (22: a Split Contract's two
- * receivables; 36: the ledger's payable legs, with a parity test; 38b:
- * additional invoices; 39: re-issued invoices after a credit; 39b: event
- * invoices) feed this list and never count BCTIs anywhere else.
- */
-export function bctiRecordsFrom(
-  xero: {
-    accRecs: Readonly<Record<string, XeroAccRec>>
-    accPays: Readonly<Record<string, XeroAccPay>>
-  },
-  rule: BctiCountRule = BCTI_COUNT_RULE,
-): BctiRecord[] {
-  const records: BctiRecord[] = []
-  for (const pay of Object.values(xero.accPays)) {
-    const rec = xero.accRecs[pay.accRecId]
-    if (rec === undefined || rec.kind !== 'procedure') continue
-    if (isHeldPayable(pay) && rule.prepaymentPairs !== true) continue
-    records.push({
-      accPayId: pay.id,
-      billNumber: pay.invoiceNumber,
-      receivableInvoiceNumber: rec.invoiceNumber,
-      anaesthetistId: pay.anaesthetistId,
-      issuedAtISO: pay.issuedAtISO,
-      ...(rec.paidAtISO !== undefined ? { receivablePaidAtISO: rec.paidAtISO } : {}),
-      voided: rec.status === 'voided',
-    })
-  }
-  return records.sort((a, b) => a.accPayId.localeCompare(b.accPayId))
-}

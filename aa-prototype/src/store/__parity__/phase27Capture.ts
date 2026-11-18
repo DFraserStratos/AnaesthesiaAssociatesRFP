@@ -22,6 +22,9 @@ import { warningsForBooking } from '../warnings'
 import { SEED_LIST_IDS, SEED_MARKERS } from '../../domain/seed'
 import type { Actor } from '../mutate'
 import type { AppState } from '../appStore'
+import { isBookingPair } from '../../domain/billing/ledger'
+import type { BookingLedgerPair } from '../../domain/types'
+import { oldCaseStatus } from './phase25Capture'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
@@ -50,9 +53,10 @@ function pairRows(state: AppState, bookingId: string): PairRow27[] {
     .filter((i) => i.bookingId === bookingId && i.kind === 'prePayment')
     .sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber))
     .map((i) => {
-      const c = Object.values(state.billing.cases).find((x) => x.invoiceId === i.id)
-      const rec = c?.accRecId !== undefined ? state.xero.accRecs[c.accRecId] : undefined
-      const pay = c?.accPayId !== undefined ? state.xero.accPays[c.accPayId] : undefined
+      // Catch-up Phase 36: the invoice's ledger pair (was its BillingCase); its Xero ids are on the legs.
+      const c = Object.values(state.billing.ledger).find((x): x is BookingLedgerPair => isBookingPair(x) && x.invoiceId === i.id)
+      const rec = c?.receivable.xeroAccRecId !== undefined ? state.xero.accRecs[c.receivable.xeroAccRecId] : undefined
+      const pay = c?.payable?.xeroAccPayId !== undefined ? state.xero.accPays[c.payable.xeroAccPayId] : undefined
       const contact = (id: string) => state.xero.contacts[id]
       return {
         invoiceNumber: i.invoiceNumber,
@@ -81,7 +85,7 @@ function pairRows(state: AppState, bookingId: string): PairRow27[] {
                 status: pay.status,
                 taxInvoice: pay.taxInvoice !== undefined,
               },
-        caseStatus: c?.status ?? null,
+        caseStatus: c !== undefined ? oldCaseStatus(c) : null,
       }
     })
 }

@@ -42,7 +42,8 @@ describe('Accounts payment history', () => {
       idempotencyKey: 'ACCOUNTS-S3',
       source: 'webhook',
     }).ok).toBe(true)
-    expect(disbursePayable(useAppStore, OFFICE, pair.accPay.id).ok).toBe(true)
+    // Paid out by its ledger pair (catch-up Phase 36: the payable is the pair's leg).
+    expect(disbursePayable(useAppStore, OFFICE, pair.engine.caseId ?? '').ok).toBe(true)
 
     render(
       <AccountsScreen

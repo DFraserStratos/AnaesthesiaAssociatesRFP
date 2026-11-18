@@ -24,16 +24,17 @@
  *
  * See AR-52 (#holding-account, #pp-transfer, #release-trigger, #trust-bank,
  * #creditors), AR-24 (#prepayment-settlement, #prepayment-move) and AR-58
- * section 5.9. Phase 36 promotes these legs into the ledger and reads this
- * module for its parity test: keep `prepayLeg`, `PrepayTransfer`,
- * `payeeAccount` and these function names stable.
+ * section 5.9. Catch-up Phase 36 promoted these legs into the ledger
+ * (`ledger.ts`): the collect pair is a `prePayment` pair whose payable is to
+ * the account, and the transfer a `LedgerTransfer` of two payable legs. This
+ * module keeps the account's entries and the transfer rule, over those.
  */
 
-import type { AnaesthetistId, BillingCase, BillingReceipt, Invoice, PrepayTransfer, XeroAccPay } from '../types'
+import type { AnaesthetistId, BookingLedgerPair, Invoice, LedgerPair, LedgerReceipt, LedgerTransfer, XeroAccPay } from '../types'
 import { AA_HOLDING_ACCOUNT } from './prepayment'
-import { roundToCents, toCents } from './money'
-import { payableReleasedFor } from './payableRelease'
+import { toCents } from './money'
 import { refKey } from './procedurePayer'
+import { isBookingPair, isHoldingLeg, transferOfPair } from './ledger'
 
 /** The account itself (Phase 27's constant, the one concept): its name, Xero contact and payee flag. */
 export const HOLDING_ACCOUNT = AA_HOLDING_ACCOUNT
@@ -81,18 +82,18 @@ export interface HoldingEntry {
 }
 
 export interface HoldingInput {
-  cases: Readonly<Record<string, BillingCase>>
-  receipts: Readonly<Record<string, BillingReceipt>>
-  transfers: Readonly<Record<string, PrepayTransfer>>
+  ledger: Readonly<Record<string, LedgerPair>>
+  receipts: Readonly<Record<string, LedgerReceipt>>
+  transfers: Readonly<Record<string, LedgerTransfer>>
   invoices: Readonly<Record<string, Pick<Invoice, 'id' | 'invoiceNumber' | 'counterparty'>>>
 }
 
-/** The transfer of a collect case, if one was written. */
-export function transferOfCase(transfers: Readonly<Record<string, PrepayTransfer>>, caseId: string): PrepayTransfer | undefined {
-  return Object.values(transfers).find((t) => t.collectCaseId === caseId)
+/** The `prePayment` pairs whose payable is to the account. */
+function heldPairs(ledger: Readonly<Record<string, LedgerPair>>): BookingLedgerPair[] {
+  return Object.values(ledger).filter((p): p is BookingLedgerPair => isBookingPair(p) && p.kind === 'prePayment' && p.payable !== undefined && isHoldingLeg(p.payable))
 }
 
-function receiptOrder(a: BillingReceipt, b: BillingReceipt): number {
+function receiptOrder(a: LedgerReceipt, b: LedgerReceipt): number {
   return a.atISO.localeCompare(b.atISO) || a.id.localeCompare(b.id, undefined, { numeric: true })
 }
 
@@ -105,36 +106,36 @@ function receiptOrder(a: BillingReceipt, b: BillingReceipt): number {
  */
 export function holdingEntries(input: HoldingInput): HoldingEntry[] {
   const entries: HoldingEntry[] = []
-  const receiptsByCase = new Map<string, BillingReceipt[]>()
+  const receiptsByPair = new Map<string, LedgerReceipt[]>()
   for (const r of Object.values(input.receipts)) {
-    const list = receiptsByCase.get(r.caseId)
-    if (list === undefined) receiptsByCase.set(r.caseId, [r])
+    const list = receiptsByPair.get(r.pairId)
+    if (list === undefined) receiptsByPair.set(r.pairId, [r])
     else list.push(r)
   }
-  for (const c of Object.values(input.cases)) {
-    if (c.prepayLeg !== 'collect' || c.invoiceId === undefined) continue
+  for (const c of heldPairs(input.ledger)) {
     const invoice = input.invoices[c.invoiceId]
     if (invoice === undefined) continue
     const payerKey = refKey(invoice.counterparty)
-    const transfer = transferOfCase(input.transfers, c.id)
+    const transfer = transferOfPair(input.transfers, c.id)
     // What reached the account: every receipt before its transfer, never more than it then held.
-    let room = transfer !== undefined ? toCents(transfer.heldAmount) : Number.POSITIVE_INFINITY
-    for (const r of (receiptsByCase.get(c.id) ?? []).sort(receiptOrder)) {
+    let room = transfer !== undefined ? toCents(transfer.out.amount) : Number.POSITIVE_INFINITY
+    for (const r of (receiptsByPair.get(c.id) ?? []).sort(receiptOrder)) {
       if (room <= 0) break
       const cents = Math.min(toCents(r.grossAmount), room)
       room -= cents
       entries.push({ atISO: r.atISO, kind: 'received', amount: cents / 100, bookingId: c.bookingId, invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber, payerKey, receiptId: r.id })
     }
     if (transfer !== undefined) {
+      const to = transfer.in.payee.kind === 'anaesthetist' ? transfer.in.payee.anaesthetistId : undefined
       entries.push({
-        atISO: transfer.atISO,
+        atISO: transfer.createdAtISO,
         kind: 'transferred',
-        amount: transfer.heldAmount,
+        amount: transfer.out.amount,
         bookingId: c.bookingId,
         invoiceId: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
         payerKey,
-        anaesthetistId: transfer.toAnaesthetistId,
+        ...(to !== undefined ? { anaesthetistId: to } : {}),
         transferId: transfer.id,
       })
     }
@@ -162,12 +163,12 @@ export function heldBookingIds(entries: readonly HoldingEntry[]): string[] {
   return [...new Set([...heldByInvoice.values()].filter((r) => r.cents > 0).map((r) => r.bookingId))].sort()
 }
 
-/** Why a collect case gets no transfer at authorisation, or null when it does. */
+/** Why a `prePayment` pair gets no transfer at authorisation. */
 export type TransferSkip = 'notCollect' | 'alreadyTransferred' | 'notSent' | 'voided' | 'cancelled' | 'noPayee'
 
 export interface TransferCandidate {
-  collectCase: Pick<BillingCase, 'id' | 'prepayLeg' | 'receivedAmount' | 'invoiceId'>
-  invoice: Pick<Invoice, 'kind' | 'total' | 'approval'> | undefined
+  collectPair: LedgerPair
+  invoice: Pick<Invoice, 'kind' | 'approval'> | undefined
   /** Whether the invoice's receivable was voided (a withdrawn invoice). */
   voided: boolean
   bookingCancelled: boolean
@@ -176,83 +177,20 @@ export interface TransferCandidate {
   payeeAnaesthetistId: AnaesthetistId | undefined
 }
 
-/** The amounts and payee of a transfer. */
-export interface TransferPlan {
-  /** The invoice total, gross: the anaesthetist's payable equals the account's payable it replaces (FT-10.3). */
-  amount: number
-  /** What the account holds for it now, and so what leaves it. */
-  heldAmount: number
-  /** Released for the payables run now: exactly what the payer has paid (`payableReleasedFor`). */
-  released: number
-  toAnaesthetistId: AnaesthetistId
-}
-
 /**
- * Whether a collect case is transferred at authorisation, and how: the sent,
- * non-cancelled prepayment invoices only (a cancelled Booking's is Phase 41's
- * credit or refund), once each, to whoever did the List. An unpaid or part-paid
- * prepayment still moves in full, released as money arrives.
+ * Whether a `prePayment` pair is transferred at authorisation, and to whom:
+ * the sent, non-cancelled prepayment invoices only (a cancelled Booking's is
+ * Phase 41's credit or refund), once each, to whoever did the List. An unpaid
+ * or part-paid prepayment still moves in full, released as money arrives. The
+ * legs are `ledger.ts`'s `newPrepayTransfer`.
  */
-export function transferFor(candidate: TransferCandidate): { skip: TransferSkip } | { plan: TransferPlan } {
-  const { collectCase, invoice } = candidate
-  if (collectCase.prepayLeg !== 'collect' || invoice === undefined || invoice.kind !== 'prePayment') return { skip: 'notCollect' }
+export function transferFor(candidate: TransferCandidate): { skip: TransferSkip } | { to: AnaesthetistId } {
+  const { collectPair, invoice } = candidate
+  if (!isBookingPair(collectPair) || collectPair.kind !== 'prePayment' || invoice === undefined || invoice.kind !== 'prePayment') return { skip: 'notCollect' }
   if (candidate.alreadyTransferred) return { skip: 'alreadyTransferred' }
   if (invoice.approval === undefined) return { skip: 'notSent' }
   if (candidate.voided) return { skip: 'voided' }
   if (candidate.bookingCancelled) return { skip: 'cancelled' }
   if (candidate.payeeAnaesthetistId === undefined) return { skip: 'noPayee' }
-  const released = payableReleasedFor(collectCase.receivedAmount, invoice.total)
-  return {
-    plan: {
-      amount: invoice.total,
-      heldAmount: released,
-      released,
-      toAnaesthetistId: candidate.payeeAnaesthetistId,
-    },
-  }
-}
-
-/** The transfer's released amount once the payer has paid `receivedCumulative` in all: never more than was paid. */
-export function transferReleasedFor(receivedCumulative: number, transfer: Pick<PrepayTransfer, 'amount'>): number {
-  return payableReleasedFor(receivedCumulative, transfer.amount)
-}
-
-/**
- * One payable the payables run may pay: an ACCPAY to an anaesthetist, or a
- * transferred prepayment. The run and its due total read both through this
- * one adapter; a payable crediting the AA Holding account is never one.
- * Phase 37 moves the payment to the Xero simulator behind this seam (D53).
- */
-export interface PayableLeg {
-  kind: 'accPay' | 'transfer'
-  /** The ACCPAY id, or the transfer id. */
-  id: string
-  /** The ACCPAY the leg pays or replaced (a transfer's collect payable). */
-  accPayId: string | undefined
-  anaesthetistId: AnaesthetistId
-  /** The full payable. */
-  payable: number
-  authorised: number
-  disbursed: number
-}
-
-export function payableLegsFrom(
-  accPays: Readonly<Record<string, XeroAccPay>>,
-  transfers: Readonly<Record<string, PrepayTransfer>>,
-  accPayOfCase: (caseId: string) => string | undefined,
-): PayableLeg[] {
-  const legs: PayableLeg[] = []
-  for (const p of Object.values(accPays)) {
-    if (isHeldPayable(p)) continue
-    legs.push({ kind: 'accPay', id: p.id, accPayId: p.id, anaesthetistId: p.anaesthetistId, payable: p.amountPayable, authorised: p.amountAuthorised, disbursed: p.amountDisbursed })
-  }
-  for (const t of Object.values(transfers)) {
-    legs.push({ kind: 'transfer', id: t.id, accPayId: accPayOfCase(t.collectCaseId), anaesthetistId: t.toAnaesthetistId, payable: t.amount, authorised: t.released, disbursed: t.disbursed })
-  }
-  return legs
-}
-
-/** What a leg has to pay now: released less paid out. */
-export function legIncrement(leg: Pick<PayableLeg, 'authorised' | 'disbursed'>): number {
-  return roundToCents(leg.authorised - leg.disbursed)
+  return { to: candidate.payeeAnaesthetistId }
 }

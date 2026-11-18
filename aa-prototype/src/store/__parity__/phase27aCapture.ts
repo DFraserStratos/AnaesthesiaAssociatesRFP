@@ -32,6 +32,9 @@ import { projectedListId } from '../../domain/slots'
 import { roundToCents, toCents } from '../../domain/billing/money'
 import type { Actor } from '../mutate'
 import type { AppState } from '../appStore'
+import { isBookingPair, payeeAnaesthetistOf } from '../../domain/billing/ledger'
+import type { BookingLedgerPair } from '../../domain/types'
+import { oldCaseStatus } from './phase25Capture'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr M. Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
@@ -78,12 +81,18 @@ export function payablesDueByAnaesthetist(state: AppState): { anaesthetistId: st
     if (inc > 0) due.set(p.anaesthetistId, (due.get(p.anaesthetistId) ?? 0) + inc)
   }
   // The transferred payables (27a): absent from the build the baseline was written from.
-  const transfers = (state.billing as { transfers?: Record<string, { toAnaesthetistId: string; released: number; disbursed: number }> }).transfers ?? {}
-  for (const t of Object.values(transfers)) {
-    const inc = toCents(t.released - t.disbursed)
-    if (inc > 0) due.set(t.toAnaesthetistId, (due.get(t.toAnaesthetistId) ?? 0) + inc)
+  // Catch-up Phase 36: a transfer is a `LedgerTransfer`, its anaesthetist payable the `in` leg.
+  for (const t of Object.values(state.billing.transfers)) {
+    const to = payeeAnaesthetistOf(t.in)
+    const inc = toCents(t.in.releasedAmount - t.in.disbursedAmount)
+    if (to !== undefined && inc > 0) due.set(to, (due.get(to) ?? 0) + inc)
   }
   return [...due.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([anaesthetistId, cents]) => ({ anaesthetistId, total: cents / 100 }))
+}
+
+/** An invoice's ledger pair (catch-up Phase 36; was its BillingCase). */
+function pairOfInvoice(state: AppState, invoiceId: string): BookingLedgerPair | undefined {
+  return Object.values(state.billing.ledger).find((x): x is BookingLedgerPair => isBookingPair(x) && x.invoiceId === invoiceId)
 }
 
 function julyPreview(state: AppState): FeeRow27a[] {
@@ -95,9 +104,10 @@ function pairShapes(state: AppState, bookingId: string): PairShape27a[] {
     .filter((i) => i.bookingId === bookingId && i.kind === 'prePayment')
     .sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber))
     .map((i) => {
-      const c = Object.values(state.billing.cases).find((x) => x.invoiceId === i.id)
-      const rec = c?.accRecId !== undefined ? state.xero.accRecs[c.accRecId] : undefined
-      const pay = c?.accPayId !== undefined ? state.xero.accPays[c.accPayId] : undefined
+      // Catch-up Phase 36: the invoice's ledger pair (was its BillingCase); its Xero ids are on the legs.
+      const c = pairOfInvoice(state, i.id)
+      const rec = c?.receivable.xeroAccRecId !== undefined ? state.xero.accRecs[c.receivable.xeroAccRecId] : undefined
+      const pay = c?.payable?.xeroAccPayId !== undefined ? state.xero.accPays[c.payable.xeroAccPayId] : undefined
       const contact = (id: string) => state.xero.contacts[id]
       return {
         invoiceNumber: i.invoiceNumber,
@@ -135,8 +145,8 @@ function pairShapes(state: AppState, bookingId: string): PairShape27a[] {
                 payeeAccount: pay.payeeAccount ?? null,
                 taxInvoice: pay.taxInvoice?.relatesToInvoiceNumber ?? null,
               },
-        caseStatus: c?.status ?? null,
-        caseMoney: c === undefined ? null : { received: c.receivedAmount, authorised: c.authorisedAmount, disbursed: c.disbursedAmount },
+        caseStatus: c !== undefined ? oldCaseStatus(c) : null,
+        caseMoney: c === undefined ? null : { received: c.receivable.receivedAmount, authorised: c.payable?.releasedAmount ?? 0, disbursed: c.payable?.disbursedAmount ?? 0 },
       }
     })
 }
@@ -170,9 +180,9 @@ export function capturePhase27a(): Phase27aCapture {
     authoriseList(s3, OFFICE, projectedListId(ANAE.souter, '2026-07-20', 'PM'))
   })
   const nib = Object.values(s3.getState().billing.invoices).find((i) => i.invoiceNumber === 'AA-2026-0005')
-  const nibCase = nib !== undefined ? Object.values(s3.getState().billing.cases).find((c) => c.invoiceId === nib.id) : undefined
-  if (nibCase?.accRecId !== undefined) {
-    receivePayment(s3, { accRecId: nibCase.accRecId, amount: nib!.total, idempotencyKey: 'PARITY-27A-S3', source: 'webhook' })
+  const nibCase = nib !== undefined ? pairOfInvoice(s3.getState(), nib.id) : undefined
+  if (nibCase?.receivable.xeroAccRecId !== undefined) {
+    receivePayment(s3, { accRecId: nibCase.receivable.xeroAccRecId, amount: nib!.total, idempotencyKey: 'PARITY-27A-S3', source: 'webhook' })
   }
 
   // S4 Beat 5: the billing failure staged, then Hemi Walker's clean-sibling invoice paid half, run, full, run.
@@ -181,11 +191,11 @@ export function capturePhase27a(): Phase27aCapture {
   const losa = SEED_MARKERS['billingFailureBooking']!.entityId
   const hemiBooking = bookingsForList(s4.getState(), SEED_LIST_IDS.billingFailure).find((b) => b.id !== losa && b.cancellation === undefined)!
   const hemiInvoice = Object.values(s4.getState().billing.invoices).find((i) => i.bookingId === hemiBooking.id)!
-  const hemiCase = () => Object.values(s4.getState().billing.cases).find((c) => c.invoiceId === hemiInvoice.id)!
+  const hemiCase = () => pairOfInvoice(s4.getState(), hemiInvoice.id)!
   const half = roundToCents(hemiInvoice.total / 2)
-  receivePayment(s4, { accRecId: hemiCase().accRecId!, amount: half, idempotencyKey: 'PARITY-27A-HALF', source: 'webhook' })
+  receivePayment(s4, { accRecId: hemiCase().receivable.xeroAccRecId!, amount: half, idempotencyKey: 'PARITY-27A-HALF', source: 'webhook' })
   const halfRun = runRow(s4)
-  receivePayment(s4, { accRecId: hemiCase().accRecId!, amount: roundToCents(hemiInvoice.total - half), idempotencyKey: 'PARITY-27A-REST', source: 'webhook' })
+  receivePayment(s4, { accRecId: hemiCase().receivable.xeroAccRecId!, amount: roundToCents(hemiInvoice.total - half), idempotencyKey: 'PARITY-27A-REST', source: 'webhook' })
   const fullRun = runRow(s4)
 
   // Riley's prepayment raised live by Approve and send.
@@ -205,7 +215,7 @@ export function capturePhase27a(): Phase27aCapture {
     souterFeeHistory,
     julyFresh: julyPreview(s0),
     julyAfterS3: julyPreview(s3.getState()),
-    beat5: { invoiceNumber: hemiInvoice.invoiceNumber, half: halfRun, full: fullRun, disbursed: hemiCase().disbursedAmount },
+    beat5: { invoiceNumber: hemiInvoice.invoiceNumber, half: halfRun, full: fullRun, disbursed: hemiCase().payable?.disbursedAmount ?? 0 },
     seededPair: pairShapes(s0, SEED_MARKERS.prepaymentPaidBooking!.entityId),
     livePair: pairShapes(live.getState(), riley),
     nairAuthorisedDue: payablesDueByAnaesthetist(nair.getState()),

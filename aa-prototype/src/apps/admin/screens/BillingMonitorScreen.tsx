@@ -6,13 +6,13 @@ import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
 import {
   billingMonitor,
-  handoffCase,
-  handoffCasesForBooking,
+  handoffPair,
+  handoffPairsForBooking,
   allAaFeeInvoices,
   payablesDue,
   postTransferJournal,
   prepaidLeftOffText,
-  retryBillingCase,
+  retryBillingException,
   runPayables,
   useAppStore,
   type MonitorBookingRow,
@@ -55,13 +55,13 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
   const schedule = useAppStore((s) => s.schedule)
   const billing = useAppStore((s) => s.billing)
   const masters = useAppStore((s) => s.masters)
-  const xero = useAppStore((s) => s.xero)
   const [error, setError] = useState<string | null>(null)
   const [payRunMsg, setPayRunMsg] = useState<string | null>(null)
 
   const rows = useMemo(() => billingMonitor({ schedule, billing, masters }), [schedule, billing, masters])
   const failedTotal = rows.reduce((n, r) => n + r.failedCount + r.handoffFailedCount, 0)
-  const due = useMemo(() => payablesDue({ xero, billing }), [xero, billing])
+  // From the ledger alone (catch-up Phase 36): the one source of what is due.
+  const due = useMemo(() => payablesDue({ billing }), [billing])
 
   function doRunPayables() {
     const res = runPayables(useAppStore, actor)
@@ -84,12 +84,11 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
       setError(outcome.ok ? null : outcome.message)
       return
     }
-    if (row.caseId === undefined) return
-    // A Xero handoff fault: the fault flag was cleared when it faulted, so a
-    // plain re-invoke of the idempotent handoff now creates the pair. (Distinct
-    // from a billing-run failure, which rebuilds the invoice below.)
-    if (row.handoffFailure !== undefined && row.status !== 'failed') {
-      const outcome = handoffCase(useAppStore, row.caseId)
+    // A Xero hand-off fault: the pair stands in the ledger, not yet in Xero; the fault flag was cleared when
+    // it faulted, so a plain re-invoke of the idempotent hand-off now mirrors it. (Distinct from a
+    // billing-run exception, which raises the invoices it never got, below.)
+    if (row.handoffFailure !== undefined && row.status !== 'failed' && row.pairId !== undefined) {
+      const outcome = handoffPair(useAppStore, row.pairId)
       setError(outcome.ok ? null : outcome.message)
       return
     }
@@ -97,16 +96,15 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
   }
 
   function retry(row: MonitorBookingRow) {
-    if (row.caseId === undefined) return
-    const outcome = retryBillingCase(useAppStore, actor, row.caseId)
+    if (row.exceptionId === undefined) return
+    const outcome = retryBillingException(useAppStore, actor, row.exceptionId)
     if (!outcome.ok) {
       setError(outcome.message)
       return
     }
     setError(null)
-    // A billing-failure retry rebuilds the Booking's invoices (a split raises two); hand each off to Xero
-    // so every resolved case gets its ACCREC/ACCPAY pair (else it would never be payable).
-    handoffCasesForBooking(useAppStore, row.bookingId)
+    // The retry raised the Booking's invoices with their pairs (a split raises two); mirror each in Xero.
+    handoffPairsForBooking(useAppStore, row.bookingId)
   }
 
   return (
