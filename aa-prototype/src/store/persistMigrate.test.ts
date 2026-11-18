@@ -928,3 +928,23 @@ describe('the internal ledger (catch-up Phase 36)', () => {
     expect(s.billing.exceptions).toEqual({})
   })
 })
+
+describe('the Wave 2 join (v60: Lane A 25a, 36 and Lane B 33a, 17b)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it("discards either lane's v59 store and reseeds the joined seed: the ledger and the surgeons' contacts both present", () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(60)
+    const fresh = freshAppState()
+    // Lane B's v59 shape: no ledger yet (billing cases); Lane A's: surgeons' rooms still there.
+    const { ledger: _l, ...billing } = fresh.billing
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing: { ...billing, cases: {} }, masters: { ...fresh.masters, surgeonRooms: {} } }, version: 59 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.billing.ledger).toEqual(freshAppState().billing.ledger)
+    expect('cases' in s.billing).toBe(false)
+    expect('surgeonRooms' in s.masters).toBe(false)
+  })
+})
