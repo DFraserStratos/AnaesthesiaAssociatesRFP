@@ -803,6 +803,24 @@ describe('the matching screen (catch-up Phase 33)', () => {
   })
 })
 
+describe('the Wave 1 join (v54: Lane A 27 and Lane B 32d, 33)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it("discards Lane B's v53 store (no prepayment approval setting) and reseeds the joined seed", () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(54)
+    const fresh = freshAppState()
+    const { prepayment: _p, ...oldSettings } = fresh.appSettings
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, appSettings: oldSettings }, version: 53 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.appSettings.prepayment.approvalRequired).toBe(true)
+    expect(s.intake).toEqual({ batches: {}, rows: {} })
+  })
+})
+
 describe('the AA Holding account transfer (catch-up Phase 27a)', () => {
   beforeEach(() => {
     flushPersist()

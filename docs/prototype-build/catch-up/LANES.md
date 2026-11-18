@@ -44,31 +44,32 @@ and lock.
 Each lane runs its queue in order, one phase at a time. A phase is **complete on a lane** when the
 lane branch holds a commit whose subject starts `<id> complete:`.
 
-### Current wave: Wave 1
+### Current wave: Wave 2
+
+Wave 1 (Lane A 26, 27, 27a; Lane B 32d, 33) was joined on 18 November 2026 and `master` holds it.
 
 | Lane | Queue | Sessions |
 |---|---|---|
-| A | 26, then 27, then 27a | 1 + 2 + 1 |
-| B | 32d, then 33 | 2 + 2 |
+| A | 25a, then 36 | 2 + 2 |
+| B | 33a, then 17b | 1 + 2 |
 
-Why this split: all five phases have every dependency built. 26, 27 and 27a are the plan's next three
-in run order. 32d and 33 depend on nothing unfinished: the plan runs them after 25a and 17b by
-preference, not dependency ("none needs another, any order"). 33's doc already copes without 27
-("not guaranteed before 33"). 32d goes before 33 because 33 creates Lists in sessions, and it should
-do so after Public has become a Slot status.
+Why this split: every dependency is built. 25a (21a, 25, U6) and 36 (16, 22, 25, 27a, U6) are the
+plan's next billing phases in run order; 25a keeps to Lane A because it edits 25's lock snapshot and
+22's holder layout, and 36 promotes 27a's AA Holding account legs and transfers into the ledger.
+33a needs only 33, and 17b needs 17a and 26 (26 joined in Wave 1). 34 waits for Wave 3: it needs
+17b, 33 and 33a.
 
-**Who owns what in Wave 1.** Keep to your side and the merges stay mechanical.
+**Who owns what in Wave 2.** Keep to your side and the merges stay mechanical.
 
 | | Owns |
 |---|---|
-| Lane A | The `Anaesthetist` type and its profile (bank details, HPI CPN mandatory, `gstPeriod` removed: `AnaesthetistRecord`, `AnaesthetistsView`, `AddAnaesthetistFlow`, `EditAnaesthetistSheet`, `mastersActions.ts`, web `AccountsScreen`'s GST period switch, the mobile and web profile, `ProfileRow`). Prepayment (`src/domain/billing` prepayment rules, the prepayment invoice and its pair, the outgoing-invoices approval screen, the AA setting, the AA Holding account, the Xero simulator's pairs, `OfficeBillingSetup`, `BillingCard`, `PricingSheet`, `PaidBySheet`, `ContractRail`'s Prepaid branch, `prepaymentDetail`'s removal) |
-| Lane B | Slot statuses and List kinds (Public as a Slot status, the `public` List kind retired: `resolveDisplayStatus`, `statusColours.ts`, `recurringBookings.ts`, `recordedWindow.ts`, `DraftListSheet`, `AssignListFields`, `RecurringBookingSheet`, the Day grid, availability grid and calendars). Intake (import batches and rows, the matching screen, `src/domain/integrations`, `Booking.source`, the matcher, the no-NHI queue) |
+| Lane A | Contracts and the lock (25a: Contract change warnings, the Disabled flag, the holder's hospital reference removed; `domain/billing/lock.ts`, the holder layout, `contractRail.ts`, the Contracts screens). The internal ledger and balances (36: ledger legs and entries, `domain/billing/prepayHolding.ts` read for parity, `bcti.ts`'s `prepaymentPairs`, the Ledger screen, Admin and anaesthetist balance views) |
+| Lane B | Stubs on a List (33a: the matching screen's stubs, `domain/intake`, `matchingSelectors.ts`, the List and Day grid's stub rows). Surgeons (17b: surgeon contacts on the surgeon, surgeons' rooms removed: `domain/surgeons.ts`, `surgeonActions.ts`, the surgeon master screens, pairing preferences, the personas' and cheat sheet's surgeon lines) |
 
-- **Where they meet.** Booking and Procedure store actions: 33 creates Bookings only through 22a's
-  existing creation path, while 27 adds its re-check to the Procedure, Contract and payer mutations.
-  Neither rewrites the other's function; each adds its own lines. In the seed, 26 adds bank details,
-  27 adds prepayment states, and 32d re-kinds public Lists (Dr Sharma's Tue 14 Jul List stays private,
-  with the same id). Demo guide beats: 27 has S4 Beat 1, 33 has S1 Beat 1 and S4 Beat 4, 32d has S2.
+- **Where they meet.** 25a's hospital reference removal and 17b's surgeons' rooms removal both touch
+  `masters` and the seed's master records: each removes only its own fields. 36's balance views read
+  the web Accounts and mobile Balances screens that 17b does not touch. Each phase patches the demo
+  guide beats its own doc names; where two touch one file, add your lines by section.
 - **Files both lanes add to:** `src/domain/types.ts`, the audit label files
   (`shared/audit/actionLabels.ts`, `fieldLabels.ts`, `auditNarrative.ts`), `src/domain/seed/index.ts`
   and the seed files, `store/mutate.ts`'s `ID_FORMATS`, the store barrel, `src/store/appStore.ts`
@@ -87,7 +88,6 @@ rewrites "Current wave" above.
 
 | Wave | Lane A | Lane B |
 |---|---|---|
-| 2 | 25a, then 36 | 33a, then 17b (17b needs 26, joined in Wave 1) |
 | 3, likely | 37, then 38 | 34, then 35 |
 | 4, likely | 38b, then 39 | 42, then 39b |
 | Later | 39a, 40, 40a, 41, 43, 43a, 43b, then U7 (alone), then 44 (alone) | |
@@ -193,10 +193,12 @@ When your last phase in the wave is complete:
      seed, never added up. The S1 to S5 golden tests pass.
    - No hook was lost: `git diff master...wave/<n> -- aa-prototype | grep '^-.*data-'`, and account
      for every line.
-   - Where the lanes meet, check in the running app on your ports. For Wave 1: a Booking created from
-     a hospital row (33) and then given a prepaid Contract (27) raises its prepayment invoice for its
-     payer. A Public Slot (32d) is never offered as a free session on 33's matching screen. Dr
-     Sharma's Tue 14 Jul List still stages the post-op scenario.
+   - Where the lanes meet, check in the running app on your ports. For Wave 2: the seed's masters
+     after 25a's and 17b's removals (a Contract holder, a surgeon and their contacts all still
+     render), 36's balance views beside 17b's changes, and 33a's stubs on a List that 25a's warnings
+     read. (Wave 1's checks, done at its join: a Booking from a hospital row given a prepaid Contract
+     raises its prepayment for its payer; a Public Slot is never offered on the matching screen; Dr
+     Sharma's Tue 14 Jul List still stages post-op.)
    - Capture: `phase-check --capture` for every recipe either lane's phases list, look at the shots,
      then one `node T/phase-check.mjs --capture all`. Commit the images, `REPORT.md` and ATLAS this
      time.

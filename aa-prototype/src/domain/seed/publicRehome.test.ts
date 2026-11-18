@@ -61,7 +61,7 @@ describe('Phase 32d parity: what must not move', () => {
 
   // Wave 1 sync: Lane A's Phase 27 (built beside 32d) re-seeded Riley's and Nair's Rhinoplasty Procedures on Dr
   // Souter's prepaid Contract, after this fixture was written. Only those fields moved; the fixture is never rewritten.
-  it("Phase 27's prepayment re-seed moved only Riley's and Nair's Rhinoplasty, and only their prepayment fields", () => {
+  it("Phase 27's prepayment re-seed moved only Riley's and Nair's Rhinoplasty: their prepayment detail, and Nair's Contract and invoice description", () => {
     for (const id of PHASE_27_MOVED) {
       const { prepaymentDetail: _a, governingContractId: _b, invoiceDescription: _c, ...was } = before.procedures[id] as typeof before.procedures[string] & { prepaymentDetail?: unknown }
       const { governingContractId: _d, invoiceDescription: _e, ...is } = now.procedures[id]!
@@ -69,6 +69,7 @@ describe('Phase 32d parity: what must not move', () => {
       expect('prepaymentDetail' in now.procedures[id]!).toBe(false)
     }
     expect(now.procedures.P0036!.governingContractId).toBe(before.procedures.P0036!.governingContractId)
+    expect(now.procedures.P0036!.invoiceDescription).toEqual(before.procedures.P0036!.invoiceDescription)
     expect(now.procedures.P0041).toMatchObject({ governingContractId: 'CT-SOUTER-RHINO', invoiceDescription: { origin: 'contract', text: 'Rhinoplasty' } })
   })
 

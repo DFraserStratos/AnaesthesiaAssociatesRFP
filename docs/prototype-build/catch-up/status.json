@@ -2,34 +2,32 @@
   "in_progress": [],
   "next": {
     "phases": [
-      "26",
-      "32d"
+      "25a",
+      "33a"
     ],
-    "note": "Wave 1 of the two build lanes (LANES.md; the owner, 18 November 2026). Lane A (worktree AnaesthesiaAssociatesRFP-laneA, branch lane/a, ports 5273, 5274, 5280) runs 26, then 27, then 27a. Lane B (AnaesthesiaAssociatesRFP-laneB, lane/b, 5373, 5374, 5380) runs 32d, then 33. Copy each lane's prompt from the plan page (or lanes/) into its own session; it moves itself into its worktree, and the same prompt starts, resumes and joins. The lane that finishes second joins both on wave/1, re-runs every check and the full capture, updates this page with Wave 2 and fast-forwards master. U6 is committed (4933a70f); no seed change since (PERSIST_VERSION 50)."
+    "note": "Wave 2 of the two build lanes (LANES.md). Wave 1 (Lane A 26, 27, 27a; Lane B 32d, 33) was joined on wave/1 on 18 November 2026 and master was fast-forwarded to it (PERSIST_VERSION 55). Lane A (worktree AnaesthesiaAssociatesRFP-laneA, branch lane/a, ports 5273, 5274, 5280) runs 25a, then 36. Lane B (AnaesthesiaAssociatesRFP-laneB, lane/b, 5373, 5374, 5380) runs 33a, then 17b. Paste each lane's prompt into its own session; it moves itself into its worktree, merges master, and the same prompt starts, resumes and joins. The lane that finishes second joins both on wave/2."
   },
   "guidance": {
     "as_of": "2026-11-18",
-    "headline": "Wave 1 in two lanes: start Lane A (26) and Lane B (32d) now.",
-    "headline_sub": "The catch-up now builds in two git worktrees side by side, in waves (LANES.md). Lane A: 26, then 27 and 27a. Lane B: 32d, then 33. Each lane commits on its own branch; the second to finish joins them and fast-forwards master. Wave 2 (provisional): Lane A 25a and 36, Lane B 33a and 17b.",
-    "parallel": "Wave 1 runs in two lanes, each in its own git worktree with its own ports. Copy each lane's prompt below into its own Claude session (claude for Lane A, claude2 for Lane B); a session started in the main folder moves itself into its worktree. The same prompt starts, resumes and joins.",
+    "headline": "Wave 2 in two lanes: start Lane A (25a) and Lane B (33a) now.",
+    "headline_sub": "Wave 1 is joined and on master: the anaesthetist profile (26), the prepayment lifecycle (27), the AA Holding account and its transfer at authorisation (27a), Public as a Slot status (32d) and the hospital matching screen (33). Wave 2: Lane A 25a, then 36; Lane B 33a, then 17b. Nothing is pushed.",
+    "parallel": "Wave 2 runs in two lanes, each in its own git worktree with its own ports. Copy each lane's prompt below into its own Claude session (claude for Lane A, claude2 for Lane B); a session started in the main folder moves itself into its worktree. The same prompt starts, resumes and joins.",
     "safe": {
-      "26": "Lane A's first phase. Its dependencies (17, U6) are done and it is first in run order.",
-      "32d": "Lane B's first phase. Its dependencies (29, 31, 32b, U6) are done; the plan orders it after 25a and 17b by preference only."
+      "25a": "Lane A's first phase in Wave 2. Its dependencies (21a, 25, U6) are done; it keeps to Lane A because it edits 25's lock snapshot and 22's holder layout. Wave 1 is joined on master.",
+      "33a": "Lane B's first phase in Wave 2. Its one dependency, 33, is done and on master."
     },
     "wait": {
-      "27": "Lane A, after 26. Its dependencies (15a, 21, 22a, 25, U6) are done.",
-      "27a": "Lane A, after 27.",
-      "33": "Lane B, after 32d. Its dependencies (20a, 22a, 31, U6) are done; it builds on its defaults for OQ-13.",
-      "25a": "Wave 2, Lane A (LANES.md, provisional): after Wave 1 joins. Its dependencies (21a, 25, U6) are done."
+      "36": "Lane A, after 25a. Its dependencies (16, 22, 25, 27a, U6) are done.",
+      "17b": "Lane B, after 33a. Its dependencies (17a, 26, U6) are done.",
+      "34": "Wave 3 (LANES.md, likely): needs 17b and 33a."
     },
     "lanes": [
       {
         "name": "Lane A",
         "where": "`AnaesthesiaAssociatesRFP-laneA`, branch `lane/a`, ports 5273, 5274, 5280, usually `claude`",
         "queue": [
-          "26",
-          "27",
-          "27a"
+          "25a",
+          "36"
         ],
         "prompt_file": "lanes/lane-a.prompt.md"
       },
@@ -37,8 +35,8 @@
         "name": "Lane B",
         "where": "`AnaesthesiaAssociatesRFP-laneB`, branch `lane/b`, ports 5373, 5374, 5380, usually `claude2`",
         "queue": [
-          "32d",
-          "33"
+          "33a",
+          "17b"
         ],
         "prompt_file": "lanes/lane-b.prompt.md"
       }
