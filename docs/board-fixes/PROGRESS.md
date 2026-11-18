@@ -47,7 +47,7 @@ Agent tools in parallel: B12 (after B02), B13 (REQ-07b after B04); both before B
 
 | Phase | Outcome | Status | Planning/build gate | Notes |
 |---|---|---|---|---|
-| B01 | Origin security | PLANNED | D-01 before build | first; ready to plan |
+| B01 | Origin security | PLANNED | D-01 and B01-Q1 to Q3 recorded (accepted decision 13) | first; ready to plan and build |
 | B02 | Status identity | PLANNED | after B01; D-02 before build; migration shown to user | can plan now |
 | B03 | Load resilience | PLANNED | after B01; D-06 before build | |
 | B04 | One rule, one helper | PLANNED | after B03; D-03 before build | D-03 also settled before B12 builds if B12 needs it |
@@ -73,7 +73,7 @@ decisions" section and resolved in that phase's planning.
 
 | ID | Question / source gap | Owner phase | Depends on this | Resolve before | Boundary / acceptance impact | Status / answer |
 |---|---|---|---|---|---|---|
-| D-01 | Origin security model (fs.deny vs normalisation, CORS, SVG CSP, write token) | B01 | B10 | B01 build | B10's link handling; whether B01-REQ-10 applies | Open |
+| D-01 | Origin security model (fs.deny vs normalisation, CORS, SVG CSP, write token) | B01 | B10 | B01 build | B10's link handling; whether B01-REQ-10 applies | **Accepted 2026-11-19** (accepted decision 13): deny rule and normalisation; CORS off plus cross-site refusal; no page CSP; no write token |
 | D-02 | Status registry format, recode versioning, migration; plan-tool readability | B02 | B06, B12, B14 | B02 build | Settings UI, plan-tool status rule, SCHEMA and starter docs; whether B02 touches `catalogueDiff.ts` | Open |
 | D-03 | How agent `.mjs` tools share `shared/*.ts` rules, including the note-cite resolution rule | B04 | B12, B13 | B04 build (and before B12 builds if needed) | B13-REQ-07b (R-141) shape; parity tests | Open |
 | D-04 | Write protocol (patch + base rev vs three-way merge; conflict reply; in-place YAML scope; config writes) | B05 | B06, B07 | B05 build | All client save flows; one-line-diff convention if items are edited in place | Open |
@@ -123,6 +123,32 @@ decisions" section and resolved in that phase's planning.
       owners), B15-Q6 (B15 marks the programme closed).
   11. **REPO_ROOT symlink case of R-47** goes to B01 (path rules); B03 reuses it.
   12. **R-139 closes only when the committed capture report is correct**, not merely flagged stale.
+- 2026-11-19, user (B01's opening questions, asked ahead of the B01 session):
+  13. **D-01 and B01-Q1 to Q3:**
+      - **D-01a, raw-file boundary: both.** A Vite deny rule on the catalogue folders (following
+        `REQUIREMENTS_DIR` and the in-tree folder, every spelling, case-insensitive) is the
+        boundary, and the plugin normalises paths so every spelling of its own prefix reaches the
+        board's file route or a 404.
+      - **D-01b, other origins: CORS off plus server-side cross-site refusal** (fetch-metadata or
+        an equivalent), so other pages can neither read board responses nor embed board files. The
+        board's own new-tab file links and HEAD probes keep working.
+      - **D-01c: no page-wide CSP.** The sanitiser and click interception (REQ-01 to REQ-03) carry
+        the boundary; raw SVG responses keep their own no-script CSP (REQ-05).
+      - **D-01d: no write token.** B01-REQ-10 adds nothing.
+      - **B01-Q1, shortcuts (symlinks): warn, do not block.** The user chose "a simple warning"
+        over refusing links. A file route or reader that meets a symlink whose real target lies
+        outside its base still serves it, and a warning names the link and its target (at least
+        in the server log and in `npm run check`; B01's planning picks the exact surface). This
+        replaces REQ-07's "no file route or reader follows a link out of its base" and the
+        refusal half of PR-07: the proof becomes "an escaping link produces the warning".
+        R-35 closes as **Won't fix (warned instead), user's choice**. The R-47 REPO_ROOT case in
+        REQ-07 and PR-07 (correct resolution, `meta.path` and inside/outside classification
+        across a symlinked parent) is unchanged.
+      - **B01-Q2, a link to another spot in the same drawing: bring that spot into view** with
+        the viewer's existing reveal behaviour; a missing target does nothing. B10 builds on this.
+      - **B01-Q3, unsafe IDs: refuse only clearly unsafe ones**: a path separator (`/` or `\`),
+        a `..` segment, NUL or another control character. No project ID pattern, so the shared
+        kit keeps working with other projects' IDs.
 
 ## Planning handoff
 

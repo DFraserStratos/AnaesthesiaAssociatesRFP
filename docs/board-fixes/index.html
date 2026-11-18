@@ -97,6 +97,11 @@ svg.focus .spine, svg.focus .arrowhead { opacity:.3; }
 .b-warn { background:var(--warn-tint); color:var(--warn-on); }
 .b-err { background:var(--err-tint); color:var(--err-on); }
 .b-ok { background:var(--ok-tint); color:var(--ok-on); }
+.b-plan { background:var(--warn-tint); color:var(--warn-on); }
+.b-auto { background:var(--ok-tint); color:var(--ok-on); }
+.modenote { display:flex; gap:10px; align-items:flex-start; margin:0 0 10px; font-size:14px; color:var(--slate); }
+.modenote .b { margin-top:2px; }
+.pill .m { font:700 9.5px var(--font); letter-spacing:.04em; margin-left:5px; opacity:.75; }
 .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px 22px; margin-top:16px; }
 .grid2 section h4, .block h4 { margin:0 0 6px; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--mist); font-weight:600; }
 .grid2 section p, .grid2 section li { font-size:14px; margin:0; }
@@ -188,6 +193,10 @@ footer { margin:56px 0 40px; font-size:13px; color:var(--mist); }
     <div class="card"><b>4 · Build</b><span>Small verified bites, a failing-then-passing test per finding, verify:board green.</span></div>
     <div class="card"><b>5 · Review</b><span>Independent quality, completeness and correctness reviewers; fix what they confirm.</span></div>
     <div class="card"><b>6 · Record</b><span>PROGRESS entry last: every finding's disposition, doc facts, what later phases need. Commit; never push.</span></div>
+  </div>
+
+  <div class="card" style="padding:14px 18px;margin-top:12px;font-size:14px">
+    <b>Plan mode or auto mode.</b> Open a phase in <b>plan mode</b> when it has an open decision for you: the session reads, rechecks its findings, asks you the questions and shows its plan, and nothing changes until you approve. The other phases can open in <b>auto mode</b>; their prompt still brings any product question to you. Each phase's detail, the order strip and the status table say which. <b>D-05 is the exception:</b> after B04, open B05 in plan mode to settle D-05 only, then run B08, then come back to B05.
   </div>
 
   <h2 id="sources">Sources and reviews</h2>
@@ -308,6 +317,25 @@ const PHASES = [
 ];
 // R-07: B02 delivers the board half, B12 the plan-tool half and closes it. Both list it.
 const STATUS = Object.fromEntries(PHASES.map(p=>[p.id,'PLANNED']));
+// Which mode to open each phase's session in. Plan mode for any phase with an open programme decision.
+const MODE = {
+  B01:['auto','Its decisions are already recorded (accepted decision 13), so it can plan and build straight through.'],
+  B02:['plan','D-02 is open (status format and migration), and the migration is shown to you on a copy first. Plan mode stops for your answers before anything changes.'],
+  B03:['plan','D-06 is open. Plan mode stops for your answer before anything changes.'],
+  B04:['plan','D-03 is open (how the agent tools share the board\'s rules). Plan mode stops for your answer before anything changes.'],
+  B08:['plan','D-07 is open. Before this phase builds, D-05 must already be settled in a short B05 planning session (see B05).'],
+  B05:['plan','D-04 and D-05 are open. Open it twice: first, after B04, in plan mode to settle D-05 only, record it and stop; then, after B08, in plan mode again to plan and build the rest.'],
+  B07:['plan','D-10 is open (the change signal later phases use). Plan mode stops for your answer before anything changes.'],
+  B06:['auto','No programme decision of its own; it inherits accepted answers. Any open product question still comes to you.'],
+  B09:['auto','No programme decision of its own; it inherits accepted answers. Any open product question still comes to you.'],
+  B10:['auto','No programme decision of its own; D-01c, B01-Q2 and D-10 are answered before it starts. Any open product question still comes to you.'],
+  B11:['auto','No programme decision of its own; it inherits accepted answers. Any open product question still comes to you.'],
+  B12:['plan','D-08 is open (how master learns which phases the lanes have built), agreed with you while the lanes run. Plan mode stops for your answer before anything changes.'],
+  B13:['auto','No programme decision of its own; it inherits accepted answers. Any open product question still comes to you.'],
+  B14:['plan','D-09 is open (what the kit is built from). Plan mode stops for your answer before anything changes.'],
+  B15:['auto','An audit with no decisions; it reports what it finds.'],
+};
+const modeBadge = id => MODE[id][0]==='plan' ? el('span',{class:'b b-plan',text:'Open in plan mode'}) : el('span',{class:'b b-auto',text:'Open in auto mode'});
 const DECISIONS = [
  ['D-01','Origin security model: Vite fs.deny versus path normalisation; CORS policy; CSP on inline and raw SVG; whether write routes need a per-session token','B01','B10','B01 build'],
  ['D-02','Status registry: where the high-water mark and removed codes live, how a recode records the versions it applies to, how config and journal migrate; plan tools must still read it','B02','B06, B12, B14','B02 build'],
@@ -402,9 +430,9 @@ legend.append(el('span',{text:'Numbers and line: build order · dashed line: par
 // Order strip
 const order = document.getElementById('order');
 order.append(el('span',{class:'lbl',text:'Serial order'}));
-SERIAL.forEach((id,i)=>{ if(i) order.append(el('span',{class:'arrow',text:'→'})); order.append(el('button',{class:'pill',role:'tab','data-id':id,text:id})); });
+SERIAL.forEach((id,i)=>{ if(i) order.append(el('span',{class:'arrow',text:'→'})); order.append(el('button',{class:'pill',role:'tab','data-id':id,title:MODE[id][0]==='plan'?'Open in plan mode':'Open in auto mode'},[id, el('span',{class:'m',text:MODE[id][0]==='plan'?'PLAN':'AUTO'})])); });
 order.append(el('span',{class:'lbl',text:'  Parallel'}));
-['B12','B13'].forEach(id=>order.append(el('button',{class:'pill',role:'tab','data-id':id,text:id})));
+['B12','B13'].forEach(id=>order.append(el('button',{class:'pill',role:'tab','data-id':id,title:MODE[id][0]==='plan'?'Open in plan mode':'Open in auto mode'},[id, el('span',{class:'m',text:MODE[id][0]==='plan'?'PLAN':'AUTO'})])));
 order.addEventListener('click',e=>{ const b=e.target.closest('.pill'); if(b) select(b.dataset.id,false); });
 
 function prompt(p){
@@ -455,10 +483,11 @@ function select(id, scroll){
   const head = el('div',{class:'dhead'},[el('div',{class:'id',text:p.id}), el('div',{style:'flex:1;min-width:240px'},[
     el('h3',{text:p.title}), el('p',{text:p.outcome}),
     el('div',{class:'badges'},[
+      modeBadge(id),
       el('span',{class:'b b-teal',text:p.order?`Serial step ${p.order} of 13`:'Parallel worktree'}),
       el('span',{class:'b',text:STATUS[id]}),
       el('span',{class:'b b-ok',text:'Ready to plan'}),
-      el('span',{class:'b b-warn',text:p.decisions.length?`Build gate: ${p.decisions.join(', ')}`:'Build gate: prerequisites'}),
+      (p.id==='B01'?el('span',{class:'b b-ok',text:'D-01 accepted'}):el('span',{class:'b b-warn',text:p.decisions.length?`Build gate: ${p.decisions.join(', ')}`:'Build gate: prerequisites'})),
       ids.length?el('span',{class:'b',text:`${ids.length} findings`}):null,
       medCount(p)?el('span',{class:'b b-err',text:`${medCount(p)} medium`}):null
     ])])]);
@@ -485,7 +514,7 @@ function select(id, scroll){
   const links = el('div',{class:'block'},[el('h4',{text:'Specification'}),
     el('p',{style:'margin:0;font-size:14px'},[el('a',{href:`phases/${p.dir}/SPEC.md`,text:`phases/${p.dir}/SPEC.md`}), document.createTextNode(' · implementation plan written at the start of the phase: '), el('code',{text:`phases/${p.dir}/IMPLEMENTATION.md`})])]);
   d.append(links);
-  const pb = el('div',{class:'block'},[el('h4',{text:'Kick-off prompt'})]);
+  const pb = el('div',{class:'block'},[el('h4',{text:'Kick-off prompt'}), el('p',{class:'modenote'},[modeBadge(id), el('span',{text:MODE[id][1]})])]);
   const box = el('div',{class:'prompt'}); const pre=el('pre',{text:prompt(p)});
   const btn=el('button',{class:'copy',type:'button',text:'Copy prompt'});
   btn.addEventListener('click',async()=>{ const txt=pre.textContent; try{ await navigator.clipboard.writeText(txt);}catch(e){ const ta=document.createElement('textarea'); ta.value=txt; document.body.append(ta); ta.select(); try{document.execCommand('copy');}catch(_){} ta.remove(); } btn.textContent='Copied'; btn.classList.add('done'); setTimeout(()=>{btn.textContent='Copy prompt'; btn.classList.remove('done');},1600); });
@@ -507,16 +536,16 @@ mx.append(tb);
 // Decisions
 const dt = document.getElementById('dtable');
 dt.append(el('thead',{},el('tr',{},['ID','Question','Owner','Waits on it','Resolve before','Status'].map(h=>el('th',{text:h})))));
-const dtb = el('tbody'); DECISIONS.forEach(r=>dtb.append(el('tr',{},[el('td',{class:'mono',text:r[0]}),el('td',{text:r[1]}),el('td',{class:'mono',text:r[2]}),el('td',{text:r[3]}),el('td',{text:r[4]}),el('td',{},el('span',{class:'b b-warn',text:'Open'}))]))); dt.append(dtb);
+const dtb = el('tbody'); DECISIONS.forEach(r=>dtb.append(el('tr',{},[el('td',{class:'mono',text:r[0]}),el('td',{text:r[1]}),el('td',{class:'mono',text:r[2]}),el('td',{text:r[3]}),el('td',{text:r[4]}),el('td',{},r[0]==='D-01'?el('span',{class:'b b-ok',text:'Accepted'}):el('span',{class:'b b-warn',text:'Open'}))]))); dt.append(dtb);
 
 // Status
 const st = document.getElementById('stable');
-st.append(el('thead',{},el('tr',{},['Phase','Outcome','Status','Ready to plan','Ready to build when'].map(h=>el('th',{text:h})))));
+st.append(el('thead',{},el('tr',{},['Phase','Outcome','Status','Open in','Ready to plan','Ready to build when'].map(h=>el('th',{text:h})))));
 const stb = el('tbody');
-SERIAL.concat(['B12','B13']).forEach(id=>{ const p=byId[id]; stb.append(el('tr',{},[el('td',{class:'mono',text:id}),el('td',{text:p.title}),el('td',{},el('span',{class:'b',text:STATUS[id]})),el('td',{},el('span',{class:'b b-ok',text:'Yes'})),el('td',{text:[p.deps.length?'after '+(p.depNote||p.deps.join(', ')):'', p.decisions.length?p.decisions.join(', ')+' recorded':'', p.gateExtra||''].filter(Boolean).join('; ')||'now'})])); });
+SERIAL.concat(['B12','B13']).forEach(id=>{ const p=byId[id]; stb.append(el('tr',{},[el('td',{class:'mono',text:id}),el('td',{text:p.title}),el('td',{},el('span',{class:'b',text:STATUS[id]})),el('td',{},modeBadge(id)),el('td',{},el('span',{class:'b b-ok',text:'Yes'})),el('td',{text:id==='B01'?'now; D-01 and B01-Q1 to Q3 recorded':[p.deps.length?'after '+(p.depNote||p.deps.join(', ')):'', p.decisions.length?p.decisions.join(', ')+' recorded':'', p.gateExtra||''].filter(Boolean).join('; ')||'now'})])); });
 st.append(stb);
 
-document.getElementById('reviewnote').textContent = "Both planning reviews ran on all 15 specifications. Integration: 32 of 32 findings resolved. Fidelity: 19 of 19 resolved, coverage 164 of 164. Next action: start B01.";
+document.getElementById('reviewnote').textContent = "Both planning reviews ran on all 15 specifications. Integration: 32 of 32 findings resolved. Fidelity: 19 of 19 resolved, coverage 164 of 164. D-01 accepted 2026-11-19. Next action: start B01.";
 const start = (location.hash||'').slice(1); select(byId[start]?start:'B01', false);
 </script>
 </body>
