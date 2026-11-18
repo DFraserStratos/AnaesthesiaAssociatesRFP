@@ -24,6 +24,7 @@ import {
   PHASE_27_REASON,
   prepaymentBuildBefore27,
 } from './__parity__/phase27Declared'
+import { PHASE_27A_REASON, withPhase27aBctis } from './__parity__/phase27aDeclared'
 import baselineJson from './__parity__/phase-23-baseline.json'
 import { capturePhase23, type FeeRow23, type Phase23Baseline } from './__parity__/phase23Capture'
 import { createAppStore, freshAppState } from './appStore'
@@ -91,8 +92,8 @@ describe('Phase 23 multi-procedure parity', () => {
     expect(now.bookings.filter((r) => !added.has(r.bookingId) && keptBooking(r.bookingId)).map(prepaymentBuildBefore27)).toEqual(withPhase25Codes(baseline.bookings.filter((r) => keptBooking(r.bookingId))))
   })
 
-  it("the BCTI count per anaesthetist and month (16's bctisFor) is unchanged", () => {
-    expect(now.bctis).toEqual(baseline.bctis)
+  it(`the BCTI count per anaesthetist and month (16's bctisFor) is unchanged (declared: ${PHASE_27A_REASON})`, () => {
+    expect(now.bctis).toEqual(withPhase27aBctis(baseline.bctis))
   })
 
   it("S3's Holt invoice holds: one invoice to St George's at its baseline figure, the additional line T 2 at $53", () => {

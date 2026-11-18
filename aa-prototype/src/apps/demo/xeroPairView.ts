@@ -1,4 +1,5 @@
 import { roundToCents } from '../../domain/billing'
+import { isHeldPayable } from '../../domain/billing/prepayHolding'
 import type { BuyerCreatedTaxInvoice, InvoiceLine, XeroAccRec, XeroContact } from '../../domain/types'
 import type { AppState } from '../../store'
 
@@ -41,6 +42,8 @@ export interface XeroInvoicePairView {
     amountAuthorised: number
     amountDisbursed: number
     remainingAuthorised: number
+    /** A payable crediting the AA Holding account (catch-up Phase 27a): never disbursed, so nothing is ready to pay. */
+    held: boolean
     status: 'draft' | 'authorised' | 'paid'
     /** The buyer-created tax invoice as stored at handoff (catch-up Phase 22; US-09.1.4), passed through. */
     taxInvoice?: BuyerCreatedTaxInvoice
@@ -148,9 +151,10 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
                 totalPayable: accPay.amountPayable,
                 amountAuthorised: accPay.amountAuthorised,
                 amountDisbursed: accPay.amountDisbursed,
-                remainingAuthorised: roundToCents(
-                  Math.max(0, accPay.amountAuthorised - accPay.amountDisbursed),
-                ),
+                remainingAuthorised: isHeldPayable(accPay)
+                  ? 0
+                  : roundToCents(Math.max(0, accPay.amountAuthorised - accPay.amountDisbursed)),
+                held: isHeldPayable(accPay),
                 status: accPay.status,
                 ...(accPay.taxInvoice !== undefined ? { taxInvoice: accPay.taxInvoice } : {}),
               },

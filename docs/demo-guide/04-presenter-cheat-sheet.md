@@ -346,6 +346,8 @@ Payer -> ACCREC -> AA account -> ACCPAY (full amount) -> Anaesthetist
 - `ACCPAY`: the full amount AA owes the anaesthetist; it equals the ACCREC. AA's own fee is never
   deducted from it (it is invoiced to the anaesthetist separately).
 - Paid into AA and disbursed to the anaesthetist are separate states.
+- A prepayment's ACCPAY credits the AA Holding account instead, and is never paid itself; the money is
+  transferred to the anaesthetist when the List is authorised (section 8 below).
 - A partial payment releases the payable for exactly the amount received; the rest stays outstanding.
 - Both Xero records carry the InvoiceNumber (the ACCPAY's ends `-P`) and the case Reference.
 - The mobile/web app reads the Billing Engine's mirror, never Xero directly.
@@ -475,7 +477,7 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   (catch-up Phase 22)
 - The anaesthetist's edit window to `AUTHORISED`, the main view from today, and search by patient
   name, NHI or date over months of history (catch-up Phase 38a)
-- Pre-payment from a prepaid Contract (catch-up Phase 27), post-op addendum and billing monitor with per-booking isolation and retry (Phase 09)
+- Pre-payment from a prepaid Contract (catch-up Phase 27), held in the AA Holding account and transferred to the anaesthetist when the List is authorised (catch-up Phase 27a), post-op addendum and billing monitor with per-booking isolation and retry (Phase 09)
 - Contract locked at authorise, the run and the invoice document reading only the lock, Regenerate
   from locked data, and each Contract's History tab (catch-up Phase 25)
 - Xero collection/payable pairs, payments, reconciliation poll, payables, live balances and GST (Phase 10)
@@ -608,8 +610,8 @@ Say:
   pairing). It always becomes a new List in their session, never added to an existing List (the rule
   for now; it may change if it does not work in practice). Telling the office is her option.
 - Answered (D38, OQ-80): the payable follows the Booking; a prepaid Booking's payable stays the AA
-  Holding account, the new anaesthetist claims the prepaid amount, and nothing is recalculated or
-  repointed. Whoever submits a List did every procedure on it (the doer rule).
+  Holding account, nothing is recalculated or repointed, and the transfer when the List is authorised
+  pays whoever did it. Whoever submits a List did every procedure on it (the doer rule).
 
 ### 6. Hospital-closure conflicts (unavailability is never one)
 
@@ -647,12 +649,28 @@ Say:
   it two grand" case).
 - Approve and send is a switchable step (Admin Invoices, "Prepayment approval", on by default):
   approving generates the invoice to the payer, its pair, and sends it. The payable credits the AA
-  Holding account, not the anaesthetist, and nothing is disbursed.
+  Holding account, not the anaesthetist.
+- The AA Holding account is a payables creditor, kept like an anaesthetist's account: not a bank account
+  (the money sits in the trust bank account), not a Xero ledger account, and never paid itself. Money
+  leaves it only by a transfer or a refund the system raises (the refund is Phase 41). Admin → Billing
+  monitor shows its card: the balance, the prepaid Bookings it holds for, and its Received and
+  Transferred entries (fresh reset: $1,380.00, Priya Nair, AA-2026-0001).
+- Two steps: the payer's money is **collected into the AA Holding account** (nothing is paid to the
+  anaesthetist; Run payables pays nothing), then **transferred** automatically when the office
+  authorises the List, with no office step. The transfer is not a payment: no new invoice, no GST
+  movement; the Xero simulator shows it as a manual journal (MJ-0001 for Nair), and how it posts in
+  Xero is still to be confirmed. The next payables run pays the anaesthetist; the payment itself is made
+  in Xero (OQ-111). The trigger is provisional (OQ-125: Greg said "confirmed and submitted").
+- Money paid after the transfer goes straight to the anaesthetist's payable; a part-paid prepayment
+  moves in full and is released as money arrives. Two payers mean two invoices, two payables to the
+  AA Holding account and two transfers.
+- A prepayment's payable is not counted as a BCTI for AA's fee (provisional, OQ-29).
 - AA decided not to block (OQ-57): an unpaid prepayment is a warning in both apps that escalates as the
   date nears (mild, then strong from two days before; D5), and completing, submitting and authorising
   all go through. There is no override.
 - After the procedure the prepaid Procedure is left off the final invoice with nothing deducted, and
-  nothing more happens automatically. A move to a colleague changes nothing in the books.
+  nothing more happens automatically. A move to a colleague changes nothing in the books: nothing is
+  repointed, the transfer pays whoever did the List, and the old anaesthetist never sees it.
 - Demo seed: Annette Riley (awaiting approval, $1,200.00 plus GST) and Priya Nair (the mixed case, paid,
   AA-2026-0001). Demo actions: Payment received · half / full, Move to 2 days before procedure, Add
   prepaid Booking (One payer / Two payers).
@@ -766,6 +784,13 @@ anaesthetist can also correct it themselves until the office authorises it.
 
 AA has agency-specific billing rules and needs Procedure-level calculation, grouping and
 anaesthetist-facing views. Xero is the AR and banking add-on.
+
+### "Does the anaesthetist get paid before the procedure?"
+
+No. A prepayment is held in the AA Holding account until the office authorises the List, then
+transferred to the anaesthetist who did it automatically, with no office step, and paid by the next
+payables run. The payment itself is made in Xero (OQ-111). Authorisation as the trigger is provisional
+(OQ-125).
 
 ### "How do late hospital changes work?"
 

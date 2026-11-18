@@ -45,6 +45,7 @@ import type { AppState, AppStoreApi } from './appStore'
 import { bookingsForList, casesForList } from './selectors'
 import { onAppEvent } from './events'
 import { handoffCase } from './xeroHandoff'
+import { settlePrepaymentsForList } from './prepaymentSettlement'
 
 const BILLING_RUN_ACTOR: Actor = { who: 'Billing run', role: 'system', source: 'system' }
 
@@ -160,7 +161,7 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
         stampBookingId: null,
       })
       // Prepaid Procedures left off the final invoice, nothing deducted (catch-up Phase 27; US-08.2.2, D57).
-      // An all-prepaid Booking raises no invoice and reads billed; 27a's transfer reads the lock's record.
+      // An all-prepaid Booking raises no invoice and reads billed; its prepayment moves by 27a's transfer.
       const settled = s.billing.locks[bookingId]?.settledByPrepayment ?? {}
       const settledIds = Object.keys(settled)
       if (settledIds.length > 0) {
@@ -326,12 +327,18 @@ export function handoffListCases(api: AppStoreApi, listId: string): void {
 /**
  * Subscribe the billing run to `listAuthorised` for one store. Call once at
  * app bootstrap for the singleton; returns the unsubscribe (tests use it). The
- * run commits synchronously, then its cases are handed off to Xero (Phase 10).
+ * run commits synchronously, then its cases are handed off to Xero (Phase 10),
+ * then the List's prepayments move from the AA Holding account to whoever did
+ * it (catch-up Phase 27a).
  */
 export function wireBillingRun(api: AppStoreApi): () => void {
   return onAppEvent((event) => {
     if (event.type !== 'listAuthorised') return
     const result = runBillingForList(api, event.listId)
     if (result.ok) handoffListCases(api, event.listId)
+    // The prepayment transfer's trigger, in this one place (catch-up Phase 27a; OQ-125 open, D72,
+    // provisional): the office authorising the List. If AA answers "confirmed and submitted", this
+    // line moves to that event and the Billing monitor's caption changes; nothing else does.
+    settlePrepaymentsForList(api, event.listId)
   })
 }

@@ -126,6 +126,10 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   // The matching screen's import batches and rows (catch-up Phase 33).
   importBatch: { prefix: 'IB', pad: 4 },
   importRow: { prefix: 'IR', pad: 4 },
+  // Prepayment transfers from the AA Holding account and their Xero manual journals (catch-up Phase 27a).
+  prepayTransfer: { prefix: 'PXT', pad: 4 },
+  xeroJournal: { prefix: 'XJ', pad: 4 },
+  xeroJournalNumber: { prefix: 'MJ-', pad: 4 },
 }
 
 /** Allocate the next deterministic id of a kind from the counters record. */
@@ -325,6 +329,7 @@ export function resetDomainState(api: AppStoreApi): void {
       contactIdCache: seedBilling.contactIdCache,
       aaFeeInvoices: seedBilling.aaFeeInvoices,
       locks: {},
+      transfers: {},
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),

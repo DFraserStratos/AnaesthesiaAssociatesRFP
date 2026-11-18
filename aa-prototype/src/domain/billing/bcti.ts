@@ -26,6 +26,7 @@
  */
 
 import type { AnaesthetistId, IsoDateTime, XeroAccPay, XeroAccRec } from '../types'
+import { isHeldPayable } from './prepayHolding'
 
 export interface BctiRecord {
   /** The ACCPAY: the BCTI itself. */
@@ -41,12 +42,21 @@ export interface BctiRecord {
   voided: boolean
 }
 
-/** The one switch on the count. `paidOnly: false` counts by issue month instead. */
+/** The switches on the count. `paidOnly: false` counts by issue month instead. */
 export interface BctiCountRule {
   paidOnly: boolean
+  /**
+   * Whether a prepayment's payables count (catch-up Phase 27a; OQ-29 open,
+   * provisional): off, a prepayment's collect payable to the AA Holding account
+   * is not a BCTI, and its transfer to the anaesthetist is not an ACCPAY, so
+   * neither is counted. Greg floated a BCTI per payment or per weekly run; flip
+   * this if AA's accountant says a prepayment's payable is one. Phase 36 reads
+   * the same switch. Supersedes 16's reading that a prepayment ACCPAY is a BCTI.
+   */
+  prepaymentPairs?: boolean
 }
 
-export const BCTI_COUNT_RULE: BctiCountRule = { paidOnly: true }
+export const BCTI_COUNT_RULE: BctiCountRule = { paidOnly: true, prepaymentPairs: false }
 
 /** What the anaesthetist's fee invoices already hold: the BCTIs charged and the months invoiced. */
 export interface BctiFeeHistory {
@@ -114,22 +124,27 @@ export function bctisFor(
 /**
  * The BCTI record list: one record per procedure ACCPAY (the ACCPAY is the
  * BCTI), carrying its stored number, anaesthetist and issue date and its
- * ACCREC's paid date. A pre-payment invoice's ACCPAY is a BCTI too. AA fee
- * ACCRECs have no ACCPAY, so they are never counted. The store's
+ * ACCREC's paid date. A prepayment invoice's ACCPAY (crediting the AA Holding
+ * account) is left out unless `rule.prepaymentPairs` is on (catch-up Phase
+ * 27a). AA fee ACCRECs have no ACCPAY, so they are never counted. The store's
  * `bctiRecords(state)` is this over the Xero slice; the seed's fee history uses
  * it directly. Later phases that add invoices (22: a Split Contract's two
  * receivables; 36: the ledger's payable legs, with a parity test; 38b:
  * additional invoices; 39: re-issued invoices after a credit; 39b: event
  * invoices) feed this list and never count BCTIs anywhere else.
  */
-export function bctiRecordsFrom(xero: {
-  accRecs: Readonly<Record<string, XeroAccRec>>
-  accPays: Readonly<Record<string, XeroAccPay>>
-}): BctiRecord[] {
+export function bctiRecordsFrom(
+  xero: {
+    accRecs: Readonly<Record<string, XeroAccRec>>
+    accPays: Readonly<Record<string, XeroAccPay>>
+  },
+  rule: BctiCountRule = BCTI_COUNT_RULE,
+): BctiRecord[] {
   const records: BctiRecord[] = []
   for (const pay of Object.values(xero.accPays)) {
     const rec = xero.accRecs[pay.accRecId]
     if (rec === undefined || rec.kind !== 'procedure') continue
+    if (isHeldPayable(pay) && rule.prepaymentPairs !== true) continue
     records.push({
       accPayId: pay.id,
       billNumber: pay.invoiceNumber,

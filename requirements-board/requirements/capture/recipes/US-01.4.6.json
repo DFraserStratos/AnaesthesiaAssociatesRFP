@@ -37,7 +37,7 @@
       "states": [
         {
           "state": "prepaid",
-          "caption": "Moving a prepaid Booking: the prepaid amount stays as agreed and the new anaesthetist claims it; nothing is recalculated",
+          "caption": "Moving a prepaid Booking: the prepaid amount stays as agreed and moves to the new anaesthetist once the List is authorised; nothing is recalculated",
           "steps": [
             {
               "scroll": "[data-shot=\"move-booking-action\"]"

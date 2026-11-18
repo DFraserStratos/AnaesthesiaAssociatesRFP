@@ -95,6 +95,6 @@ describe('Move to a colleague on the Booking screen', () => {
     const doc = container.ownerDocument
     fireEvent.click(doc.querySelector('[data-shot="move-booking-receiver"]')!)
     const honour = doc.querySelector('[data-shot="move-booking-honour"]')
-    expect(honour?.textContent).toMatch(/^This Booking is prepaid\. The prepaid amount stays as agreed, and Dr \w+ claims it\.$/)
+    expect(honour?.textContent).toMatch(/^This Booking is prepaid\. The prepaid amount stays as agreed, and moves to Dr \w+ once the List is authorised\.$/)
   })
 })

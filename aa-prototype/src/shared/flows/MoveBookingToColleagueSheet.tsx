@@ -226,7 +226,7 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
             </div>
             {snapshot.prepaid && (
               <div data-shot="move-booking-honour" style={{ background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, lineHeight: '19px', color: neutral.ink }}>
-                This Booking is prepaid. The prepaid amount stays as agreed, and {receiverShort} claims it.
+                This Booking is prepaid. The prepaid amount stays as agreed, and moves to {receiverShort} once the List is authorised.
               </div>
             )}
 

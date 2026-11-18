@@ -14,6 +14,7 @@ import {
   PREPAYMENT_STATUS_LABEL,
   prepaidAmountText,
   prepaidContractText,
+  prepaymentHoldingText,
   prepaymentTitle,
   prepaymentTone,
 } from './prepaymentText'
@@ -149,6 +150,17 @@ function GroupBlock({
           </DefRow>
         )}
       </DefList>
+      {/* Where the money is (catch-up Phase 27a): held by AA until the List is authorised, then moved to whoever did it. */}
+      {group.holding !== undefined && (
+        <div data-shot="prepayment-holding" data-holding-state={group.holding.state} style={{ fontSize: 13, color: group.holding.state === 'held' ? neutral.slate : semantic.success.onTint }}>
+          {prepaymentHoldingText(group.holding, {
+            you: !office,
+            ...(group.holding.toAnaesthetistId !== undefined && masters.anaesthetists[group.holding.toAnaesthetistId] !== undefined
+              ? { anaesthetistName: masters.anaesthetists[group.holding.toAnaesthetistId]!.name }
+              : {}),
+          })}
+        </div>
+      )}
       {office && group.status === 'awaitingApproval' && (
         <div>
           {group.ready ? (

@@ -300,6 +300,9 @@ export {
   type BillingRunException,
 } from './billingRun'
 export { handoffCase, handoffCasesForBooking, type HandoffResult } from './xeroHandoff'
+// The AA Holding account's transfer and its Xero journal (catch-up Phase 27a).
+export { postTransferJournal } from './xeroHandoff'
+export { settlePrepaymentsForList, transfersDueForList } from './prepaymentSettlement'
 export { setArchiveWindowDays, armHandoffFault } from './demoSettingsActions'
 export { anaesthetistActor, OFFICE_ACTOR, SOUTER_ACTOR, OFFICE_SIMULATION_ACTOR, DEMO_TRIGGER_ACTOR, DEMO_OFFICE_ACTOR, OFFICE_ACCOUNT_ID } from './demoActors'
 export {

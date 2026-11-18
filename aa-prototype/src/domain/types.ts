@@ -1494,10 +1494,18 @@ export interface BillingCase {
    * Who is paid (catch-up Phase 25, DM-42): the List's anaesthetist at
    * authorise, stamped by the run from the Booking's lock (`lock.payee`). The
    * Xero hand-off, receipts and BCTIs read it, never a Booking-to-List join.
-   * Absent on a pre-payment case (raised at setup, before any lock: the live
-   * join until Phases 27 and 41).
+   * Absent on a prepayment's collect case (raised before any lock): its money
+   * reaches whoever did the List only by its `PrepayTransfer` (catch-up Phase
+   * 27a), and `payeeIdForCase` reads the transfer's payee, else the List now.
    */
   payeeAnaesthetistId?: AnaesthetistId
+  /**
+   * A prepayment invoice's case (catch-up Phase 27a; US-06.5.1, DM-21): the
+   * collect leg, a receivable from the invoice's payer and a payable to the AA
+   * Holding account. Its money reaches the anaesthetist only by a
+   * `PrepayTransfer`. Phase 36 promotes the legs into the ledger: keep the tag.
+   */
+  prepayLeg?: 'collect'
   accRecId?: string
   accPayId?: string
   status: BillingPipelineStatus
@@ -1542,7 +1550,12 @@ export interface BillingCase {
 export interface BillingReceipt {
   id: string
   caseId: string
-  anaesthetistId: AnaesthetistId
+  /**
+   * Absent only on a prepayment received while its List has no anaesthetist
+   * (a List moved to the office; catch-up Phase 27a): the money is the AA
+   * Holding account's, and no anaesthetist's GST activity lists it.
+   */
+  anaesthetistId?: AnaesthetistId
   accRecId: string
   grossAmount: number
   gstAmount: number
@@ -1738,10 +1751,75 @@ export interface AaFeeInvoice {
 
 export interface Disbursement {
   id: string
-  accPayId: string
+  /** The ACCPAY paid. Absent when the run paid a transferred prepayment: the AA Holding account's payable is never paid. */
+  accPayId?: string
+  /** Set when the run paid a transferred prepayment (catch-up Phase 27a): the transfer, not an ACCPAY, was paid. */
+  transferId?: string
   amount: number
   atISO: IsoDateTime
   payablesRunId: string
+}
+
+/**
+ * The transfer of a prepayment from the AA Holding account to the anaesthetist
+ * who did the List (catch-up Phase 27a; US-06.5.1, US-09.1.3, DM-21, D38): one
+ * entry with both legs (the account's payable for the prepayment reduced, a
+ * payable to the anaesthetist created), linked to its prepayment invoice. An
+ * accounting move, not an invoice, an ACCREC, a `PaymentIn` or a receipt: no
+ * GST moves. One per collect case, so one per payer's prepayment invoice.
+ * Written only at List authorisation (the trigger provisional, OQ-125, D72).
+ * Phases 36, 37 and 39a read these names: keep them.
+ */
+export interface PrepayTransfer {
+  id: string
+  collectCaseId: string
+  invoiceId: InvoiceId
+  bookingId: BookingId
+  /** The payer identity of the invoice (22a's `kind:id`), for the entries table only. */
+  payerKey?: string
+  atISO: IsoDateTime
+  /** The amount moved: the prepayment invoice's total, gross (FT-10.3), so the anaesthetist's payable equals the one it replaces. */
+  amount: number
+  /** What the AA Holding account held for it at the transfer (received by then): what left the account. */
+  heldAmount: number
+  from: 'aaHoldingAccount'
+  /** Who did the List: the payee locked at authorise (catch-up Phase 25). */
+  toAnaesthetistId: AnaesthetistId
+  /** CUMULATIVE: the part of `amount` released for the payables run, exactly what the payer has paid (`payableReleasedFor`). */
+  released: number
+  /** CUMULATIVE: paid out by the payables run (the payment itself is Xero's, D53). */
+  disbursed: number
+  /** The simulated Xero manual journal mirroring it (`postTransferJournal`); absent until posted. */
+  xeroJournalId?: string
+  /** A Xero posting fault (data, not a throw); the Billing monitor's Resolve and retry posts it once. */
+  journalFailure?: { code: string; message: string }
+}
+
+/** One line of a simulated Xero manual journal. */
+export interface XeroJournalLine {
+  /** The creditor the line moves: the AA Holding account's contact, or the anaesthetist's. */
+  contactId: string
+  description: string
+  debit: number
+  credit: number
+}
+
+/**
+ * A simulated Xero manual journal (catch-up Phase 27a): the mirror of a
+ * prepayment transfer, two lines (debit the AA Holding account's payable,
+ * credit the anaesthetist's), referencing the prepayment invoice number and
+ * never naming the patient. How the real system posts the move is still open
+ * (US-06.5.1's Technical discussion): only `postTransferJournal` writes it.
+ */
+export interface XeroJournal {
+  id: string
+  /** `MJ-0001`. */
+  journalNumber: string
+  transferId: string
+  /** The prepayment invoice's number. */
+  reference: string
+  dateISO: IsoDateTime
+  lines: XeroJournalLine[]
 }
 
 // ---------------------------------------------------------------------------

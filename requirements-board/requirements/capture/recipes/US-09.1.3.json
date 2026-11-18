@@ -6,7 +6,7 @@
     {
       "name": "prepayment-pair",
       "app": "simulator",
-      "caption": "Pre-payment invoice handed off as the same ACCREC and ACCPAY pair, the payable crediting the AA Holding account",
+      "caption": "Prepayment invoice paired as ACCREC to that invoice's payer and draft ACCPAY to the AA Holding account",
       "start": "/demo/xero/invoices/XRB0",
       "states": [
         {
@@ -17,6 +17,103 @@
           ],
           "highlight": [
             "[data-testid=xero-money-flow-grid]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "transfer-journal",
+      "app": "simulator",
+      "caption": "Released by a transfer to the anaesthetist who did the List",
+      "start": "/demo/xero/invoices/XRB0",
+      "states": [
+        {
+          "steps": [
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Priya Nair\" >> nth=0"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "scroll": "[data-shot=capture-modifiers]"
+            },
+            {
+              "click": "[data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+              "value": "ASA III on review"
+            },
+            {
+              "click": "role=button[name=\"Claim\"]"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Mark complete\"]"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Mark list completed\" >> nth=0"
+            },
+            {
+              "click": "text=\"Submit to office\" >> nth=0"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/admin/review/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": "[data-shot=review-authorised-banner]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/demo/xero/invoices/XRB0"
+            },
+            {
+              "wait": "[data-testid=xero-transfer-journal]"
+            },
+            {
+              "scroll": "[data-testid=xero-transfer-journal]"
+            }
+          ],
+          "highlight": [
+            "[data-testid=xero-transfer-journal]"
           ]
         }
       ]

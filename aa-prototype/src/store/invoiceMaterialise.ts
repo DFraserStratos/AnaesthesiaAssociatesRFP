@@ -146,7 +146,18 @@ export function materialiseInvoices(
       if (line.contractId !== undefined) stored.contractId = line.contractId
       invoiceLines[il.id] = stored
     }
-    cases[caseId] = { id: caseId, bookingId: args.bookingId, ...(args.payee !== undefined ? { payeeAnaesthetistId: args.payee.anaesthetistId } : {}), invoiceId, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 } satisfies BillingCase
+    cases[caseId] = {
+      id: caseId,
+      bookingId: args.bookingId,
+      ...(args.payee !== undefined ? { payeeAnaesthetistId: args.payee.anaesthetistId } : {}),
+      // A prepayment invoice's case is the collect leg, held in the AA Holding account (catch-up Phase 27a).
+      ...(args.kind === 'prePayment' ? { prepayLeg: 'collect' as const } : {}),
+      invoiceId,
+      status: 'invoiced',
+      receivedAmount: 0,
+      authorisedAmount: 0,
+      disbursedAmount: 0,
+    } satisfies BillingCase
     invoiceIds.push(invoiceId)
 
     metas.push({

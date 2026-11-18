@@ -29,6 +29,7 @@ import type {
   XeroAccPay,
   XeroAccRec,
   XeroContact,
+  XeroJournal,
 } from '../types'
 import { buildInvoicesForBooking, type InvoiceBuildContext } from '../billing/invoiceBuild'
 import { AA_HOLDING_ACCOUNT, prepaymentGroupsFor, prepaymentInvoiceDraftFor } from '../billing/prepayment'
@@ -46,10 +47,11 @@ export interface SeedXeroSlice {
   accPays: Record<string, XeroAccPay>
   payments: Record<string, PaymentIn>
   disbursements: Record<string, Disbursement>
+  journals: Record<string, XeroJournal>
 }
 
 export function emptySeedXeroSlice(): SeedXeroSlice {
-  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {} }
+  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {} }
 }
 
 export interface SeedBillingSlice {
@@ -222,7 +224,7 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
   const finishAndReturn = (): SeedBillingSlice => {
     invoiceAuthorised()
     const bumps: Record<string, number> = n.invoice > 0 ? { billingCase: n.billingCase + 1, invoice: n.invoice + 1, invoiceLine: n.invoiceLine + 1, invoiceNumber: n.invoiceNumber + 1 } : {}
-    // AA's fee history last: it counts every seeded BCTI, the pre-payment pair's included.
+    // AA's fee history last: it counts every seeded BCTI (a prepayment's payable is not one since catch-up Phase 27a; it is paid in July, outside May and June anyway).
     const fees = buildSeedAaFeeHistory({ accRecs, accPays }, contactIdCache, seed.appSettings.aaFee)
     return {
       invoices,
@@ -235,6 +237,7 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
         accPays,
         payments: { ...payments, ...fees.payments },
         disbursements,
+        journals: {},
       },
       contactIdCache,
       aaFeeInvoices: fees.aaFeeInvoices,
@@ -307,8 +310,8 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
       invoiceLines[lineId] = stored
     }
 
-    // Seeded PAID pre-payment: fully received, authorised and disbursed.
-    // Give it a Xero pair + receipt so it reads consistently (D-pre-invoice-pair).
+    // Seeded PAID prepayment: fully received and held in the AA Holding account,
+    // nothing disbursed; the List is not yet authorised, so no transfer (catch-up Phase 27a).
     const cp = draft.counterparty
     const payerKey = `${individual(cp.kind)}:${cp.id}`
     let payerContactId = contactIdCache[payerKey]
@@ -376,6 +379,8 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
       id: caseId,
       bookingId: prepaidBookingId,
       invoiceId,
+      // The collect leg (catch-up Phase 27a): held in the AA Holding account until the List is authorised.
+      prepayLeg: 'collect',
       accRecId,
       ...(anaesthetistId !== undefined ? { accPayId } : {}),
       status: 'paid',

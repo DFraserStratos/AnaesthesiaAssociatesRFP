@@ -802,3 +802,24 @@ describe('the matching screen (catch-up Phase 33)', () => {
     expect(s.integrations.messages).toEqual({})
   })
 })
+
+describe('the AA Holding account transfer (catch-up Phase 27a)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v54 store with no transfers or journals and an untagged collect case, and reseeds BC0001 as the collect leg', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(55)
+    const fresh = freshAppState()
+    const { transfers: _t, ...billing } = fresh.billing
+    const { journals: _j, ...xero } = fresh.xero
+    const { prepayLeg: _l, ...untagged } = fresh.billing.cases.BC0001!
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing: { ...billing, cases: { ...billing.cases, BC0001: untagged } }, xero }, version: 54 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.billing.transfers).toEqual({})
+    expect(s.xero.journals).toEqual({})
+    expect(s.billing.cases.BC0001?.prepayLeg).toBe('collect')
+  })
+})

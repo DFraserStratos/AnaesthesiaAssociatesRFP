@@ -12,6 +12,7 @@ import type { PrepaidAmount, PrepaymentStatus } from '../../domain/billing/prepa
 import type { PillTone } from '../ui/Pill'
 import { formatMoney } from '../format'
 import { NEEDS_PRICE_LABEL } from '../../domain/billing/priceRanges'
+import type { PrepaymentHolding } from '../../store/prepaymentSelectors'
 
 /** The panel's title for the Booking's least settled group. */
 export function prepaymentTitle(status: PrepaymentStatus, money?: { received: number; total: number }): string {
@@ -76,6 +77,29 @@ export function daysToGoText(days: number): string {
   if (days === 1) return 'Tomorrow'
   if (days === -1) return 'Yesterday'
   return days > 0 ? `In ${days} days` : `${-days} days ago`
+}
+
+/**
+ * Where a prepayment's money is, in words (catch-up Phase 27a; US-06.5.1):
+ * held by AA until the List is authorised, then transferred to whoever did it,
+ * then paid. The anaesthetist reads "you"; the office reads the name.
+ */
+export function prepaymentHoldingText(holding: Pick<PrepaymentHolding, 'state'>, viewer: HoldingViewer): string {
+  if (holding.state === 'held') return `Held by AA until the List is authorised`
+  const who = viewer.you ? 'you' : (viewer.anaesthetistName ?? 'the anaesthetist')
+  return holding.state === 'paidOut' ? `Paid to ${who}` : `Transferred to ${who}`
+}
+
+/** Who reads the holding line: the anaesthetist ("you") or the office (the anaesthetist's name). */
+export interface HoldingViewer {
+  you: boolean
+  anaesthetistName?: string
+}
+
+/** The same, mid-sentence ("held by AA until the List is authorised"), for the given reader. */
+export function prepaymentHoldingWords(holding: Pick<PrepaymentHolding, 'state'>, viewer: HoldingViewer): string {
+  const text = prepaymentHoldingText(holding, viewer)
+  return text.charAt(0).toLowerCase() + text.slice(1)
 }
 
 /** A Procedure's number on its Booking in display order (the primary is 1): the label's fallback when it has no text. */

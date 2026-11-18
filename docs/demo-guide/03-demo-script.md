@@ -502,18 +502,18 @@ already seeded.
   whom is the office's business, not hers. It becomes a List for them; it never goes into someone
   else's List. Someone on leave is not offered until they mark themselves available, which is how
   they say yes. Telling the office is her choice. Whoever does a Booking is the one paid for it; if it
-  was prepaid, the amount sits with the AA Holding account, the new anaesthetist claims it and nothing
-  is recalculated."
+  was prepaid, the amount sits in the AA Holding account and is transferred to whoever did the List
+  when the office authorises it; nothing is recalculated."
 - **Expected:** the done state ("Moved to Dr Whitaker." and "The office has been told."), her List
   one Booking shorter and still there, a new List on Dr Whitaker's row, and the pool row (only because
   the box was ticked; without it there is no pool row, and Dr Whitaker still sees the move on his
   side). No warning, preference or tier anywhere on her side. The submit sheet on any of her Lists
   carries one sentence: "Submitting says you did every procedure on this List. If a colleague is doing
   one, move it to them first."
-- **Presenter note:** in this build the AA Holding account and its transfer at authorisation are not
-  built yet (later phases); say the prepaid line, do not open the ledger. A prepaid Booking (Fri 24
-  PM, Mr Nair) shows "This Booking is prepaid. The prepaid amount stays as agreed, and Dr ... claims
-  it." on the confirm step; Reset after moving one.
+- **Presenter note:** say the prepaid line here; the AA Holding account and its transfer at
+  authorisation are shown in S4 Beat 7. A moved prepaid Booking needs no change: the transfer pays
+  whoever did the List. A prepaid Booking (Fri 24 PM, Priya Nair) shows "This Booking is prepaid. The prepaid amount stays as agreed, and moves to Dr ...
+  once the List is authorised." on the confirm step; Reset after moving one.
 
 ### Beat 3e (optional): an emergency case after hours
 
@@ -808,8 +808,9 @@ a submitted List: "A hospital feed cannot change a submitted List").
     **$700.00**.
   - Select **Run monthly fee invoices**. Every active anaesthetist gets a July fee invoice. Expand Dr
     Rutherford's: **$700.00 + GST $105.00 = $805.00**, with his 40 counted BCTIs. Dr Souter's July invoice
-    counts four BCTIs, including **AA-2026-0005**, because Beat 3 paid it: **$520.00 + GST $78.00 =
-    $598.00**.
+    counts three BCTIs, including **AA-2026-0005**, because Beat 3 paid it: **$515.00 + GST $77.25 =
+    $592.25**. Priya Nair's prepayment (AA-2026-0001) is not one of them: a prepayment's payable is not
+    counted as a BCTI.
   - Go to **Demo: Billing Monitor & Xero → Invoices → AA-FEE-2026-H02** (the AA fee chip). Pause on the
     money flow to **Anaesthesia Associates (AA's own account)** and the **No payable** note, then
     select **Record fee payment** and **View in Dr Souter's account**.
@@ -821,7 +822,8 @@ a submitted List: "A hospital feed cannot change a submitted List").
   invoice, are with AA's accountant."
 - **Expected:** Web **Accounts → AA fees** highlights **AA-FEE-2026-H02** as Paid, with May Paid and July
   Unpaid. Payables, GST activity and Overdue do not change when a fee invoice is raised or paid. Read
-  Dr Souter's July figures from the app if Beat 3 was skipped (then three BCTIs, $515.00 before GST).
+  Dr Souter's July figures from the app if Beat 3 was skipped (then two BCTIs, $510.00 before GST,
+  $586.50 with GST).
 
 ### Optional closing moment: finding past work
 
@@ -842,7 +844,8 @@ office needs this search too; the invoice count (one invoice per billable party 
 on the Booking gives one invoice per share); the split's open details (whether typed % shares must
 total 100, and what the split lines say); the agency wording on the invoice and the buyer-created tax
 invoice, and IRD's new name for that document (OQ-29); BCTI granularity (the prototype builds one per
-invoice; per procedure, per payment or per run is open, OQ-29); what other outputs a Party can have,
+invoice; per procedure, per payment or per run is open, OQ-29), and whether a prepayment's payable
+counts as a BCTI (the prototype leaves it out, provisional, OQ-29); what other outputs a Party can have,
 nib's portal among them (OQ-114); posting invoices to a payer with no email (OQ-122); and AA's fee
 schedule and the paid-only BCTI count (with AA's accountant).
 
@@ -871,15 +874,26 @@ actions** on the screen named in its beat.
     receivable from the patient and a payable crediting the AA Holding account.
   - Back on Riley's Booking, **Demo actions → Payment received · half → Run**: it reads "Pre-payment
     part paid · $690.00 of $1,380.00 received".
+  - Go to **Admin → Billing monitor**: the **AA Holding account** card under the AA fee invoices panel.
+    On a fresh reset it held $1,380.00 for Priya Nair (AA-2026-0001, one Received entry); Riley's
+    $690.00 now shows as a second Received entry and the balance rises by it. The card reads "Leaves only
+    by a system transfer or refund" and carries the pill "Moves to the anaesthetist when the List is
+    authorised · to confirm with AA". The payables run shows nothing due: nothing is paid to the
+    anaesthetist yet.
+  - Optional, in the **Xero sim → Invoices → XRB0** (Nair's pair): "Held in the AA Holding account", its
+    ACCPAY card reading "Held until the List is authorised". The settle button, **Pay out of the AA
+    Holding account**, is refused: "The customer payment is recorded. Money leaves the AA Holding account
+    only by a transfer or refund the system raises."
   - Go to **Anaesthetist Mobile App → Dr Souter's Fri 24 Jul AM List → Annette Riley**: the triangle,
-    the warning on opening, the read-only prepayment panel, and "Prepaid $1,200.00 · part paid" in the
+    the warning on opening, the read-only prepayment panel ("To you: Held by AA until the List is
+    authorised"), and "Prepaid $1,200.00 · part paid · held by AA until the List is authorised" in the
     units block, with the price card reading **Prepaid amount** and no price field. Complete and
     submit: no confirm step, nothing blocks, no second invoice.
   - Optional, the mixed case: **Priya Nair** (Souter Fri 24 Jul PM) has her rhinoplasty prepaid
     (invoice AA-2026-0001, $1,200.00 plus GST, approved by Kirsty W., paid, its payable to the AA
-    Holding account, not disbursed) and her septoplasty on Forte's Contract, billed as usual. On
+    Holding account and held there) and her septoplasty on Forte's Contract, billed as usual. On
     **Authorise** the prepaid Procedure reads "Prepaid, left off the final invoice (AA-2026-0001)",
-    with nothing deducted.
+    with nothing deducted. Beat 7 authorises her List and follows the money.
   - Optional asides: on a Booking with no prepaid Contract, **Patient › Prepaid**, the **No contract**
     heading at the top of the list, **No contract · Fixed price**, type $2,000 ("just make it two
     grand"): it awaits approval at $2,000.00 plus GST ($2,300.00). **Demo actions → Add prepaid
@@ -893,11 +907,13 @@ actions** on the screen named in its beat.
   prepayment: the price, in full, not an estimate, and fixed once the invoice is raised. Whoever pays
   for this procedure is invoiced; if two procedures have different payers, each gets their own
   prepayment invoice. By default we approve it here, and AA can switch that step off. Approving sends
-  it and credits the AA Holding account, not Dr Souter. Nothing blocks: the warning strengthens as the
-  day approaches. After the procedure it is left off the final invoice, nothing deducted, nothing more
-  automatic. A move to a colleague changes nothing in the books."
+  it and credits the AA Holding account, not Dr Souter. The money is held there: nothing is paid to
+  the anaesthetist yet, and it leaves only by a transfer or refund the system raises. Nothing blocks:
+  the warning strengthens as the day approaches. After the procedure it is left off the final invoice,
+  nothing deducted. A move to a colleague changes nothing in the books."
 - **Expected:** awaiting approval, then the sent invoice with its pair to the AA Holding account, part
-  paid on all three surfaces, and a submit that goes through.
+  paid on all three surfaces, the AA Holding account card holding both prepayments with nothing due in
+  the payables run, and a submit that goes through.
 
 ### Beat 2: post-op addendum
 
@@ -964,8 +980,8 @@ actions** on the screen named in its beat.
 
 ### Beat 6: The date approaches
 
-Last on purpose, so Beats 2 to 5 run on the seeded date (Tue 21 Jul). If a jump leaves Beat 2 without
-its ACTIVE today List, keep the jump last and say so in Stage it.
+Late on purpose, so Beats 2 to 5 run on the seeded date (Tue 21 Jul); only Beat 7 follows it. If a
+jump leaves Beat 2 without its ACTIVE today List, keep the jump late and say so in Stage it.
 
 - **Click:**
   - Go to **Admin Day view → Tue 21 Jul** (Riley's mild warning cleared in Beat 1).
@@ -977,6 +993,40 @@ its ACTIVE today List, keep the jump last and say so in Stage it.
 - **Expected:** the warning turns strong and the cleared mild one re-opens; the jump is forward only and
   **Reset** restores the seeded date.
 
+### Beat 7: Held, then transferred
+
+Runs on the seeded date or after Beat 6's jump. It follows Priya Nair's prepayment (AA-2026-0001,
+$1,380.00 held since Beat 1) to Dr Souter.
+
+- **Click:**
+  - Switch to the **Anaesthetist Mobile App** as Dr Souter. Open her **Fri 24 Jul PM List**, select
+    **Mark complete** on each Booking, then **Mark list completed** and **Submit to office**. On Nair's
+    Booking the units row reads "Prepaid $1,200.00 · paid · held by AA until the List is authorised".
+  - Go to **Admin → Review queue → Dr Melanie Souter, Fri 24 Jul PM → Review** and select **Authorise
+    for billing**, then confirm. Nothing else: there is no transfer button. (On a handset, the PWA's
+    **Office authorises this List** does the same.)
+  - Go to **Admin → Billing monitor**. The **AA Holding account** card shows a **Transferred** entry
+    naming Dr Melanie Souter, and the balance falls by $1,380.00 (to $0.00 from a fresh reset; Riley's
+    $690.00 stays held if Beat 1 paid half of hers).
+  - Open the **Xero sim → Invoices → XRB0**: a **Manual journal MJ-0001** with two lines, debit AA
+    Holding account $1,380.00 and credit Dr Melanie Souter $1,380.00, marked "Transfer, not a payment"
+    and "How this posts in Xero is still to be confirmed".
+  - Optional: **Admin Invoices → INV0001** shows Payee "AA Holding account" and "Transfer journal
+    MJ-0001".
+  - Back on the **Billing monitor**, select **Run payables**: it pays the transferred $1,380.00 (1
+    payable) to Dr Souter, never the AA Holding account's own payable.
+  - Optional: **Anaesthetist Web App → Accounts → Payments** (`/web/accounts/payments`): Nair's
+    prepayment read "Held until the List is authorised" before, and now reads **Paid to you**.
+- **Say:** "The patient paid before the procedure, but the money was held, not paid to Dr Souter. When the office
+  authorised her List the system moved it from the AA Holding account to her, with no office step.
+  That is a transfer, not a payment: no new invoice, no GST, nothing more from the patient. The next
+  payables run pays her. If the Booking had moved to a colleague, the transfer would pay whoever did
+  the List, with nothing changed in between. Whether authorisation is the right moment is still to
+  confirm with AA."
+- **Expected:** one Transferred entry naming Dr Souter, the card's balance down by $1,380.00, MJ-0001 on
+  XRB0, and a payables run of exactly $1,380.00 to Dr Souter. The transfer itself adds no invoice,
+  ACCREC or payment, and GST does not move (her septoplasty bills on its own invoice as usual).
+
 **Discovery points:** settled: billing failure is per Booking, and a List never fails as a whole
 (OQ-05); still to confirm with AA: exactly which fields are frozen at authorise (US-15.0.3: AR-58 2.8
 names them, Donald's proposal); which conditions warn, and how strongly; where the to-do list sits on the dashboard; a hospital row for a submitted List can still be applied by
@@ -984,7 +1034,11 @@ the office until the List is authorised (US-02.5.4), and one for an authorised L
 then is not yet decided); a Booking moved to another day arrives as a cancellation plus a new Booking;
 applying hospital changes automatically is Future Work.
 For the prepayment beats: still to confirm whether the prepayment
-invoice names the anaesthetist (OQ-120). Stated as facts: the prepaid price is never editable by the
+invoice names the anaesthetist (OQ-120); still to confirm when the AA Holding account releases the
+money (OQ-125: the prototype transfers it when the office authorises the List; Greg said "confirmed and
+submitted"); payments, the transferred prepayment's included, are made in Xero, and Run payables
+stands in for that here (OQ-111); and whether a prepayment's payable counts as a BCTI (the prototype
+leaves it out, provisional, beside the BCTI granularity point in S3, OQ-29). Stated as facts: the prepaid price is never editable by the
 anaesthetist and is kept (OQ-96, OQ-104), the prepaid Procedure is left off the final invoice (OQ-116),
 and a Contract changed after sending is handled as a cancellation, built in Phase 41 (OQ-119). One
 prepayment invoice per payer, each payer locked once theirs is raised, is built from Donald's answer and

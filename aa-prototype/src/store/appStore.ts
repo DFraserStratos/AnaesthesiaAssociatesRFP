@@ -36,9 +36,11 @@ import type {
   Invoice,
   InvoiceLine,
   PaymentIn,
+  PrepayTransfer,
   XeroAccPay,
   XeroAccRec,
   XeroContact,
+  XeroJournal,
 } from '../domain/types'
 import type { AppId } from '../shell/appConfig'
 import type { BookingLock } from '../domain/billing/lock'
@@ -72,6 +74,13 @@ export interface BillingSlice {
    * this. Keyed by Booking id; `domain/billing/lock.ts` holds the shape.
    */
   locks: Record<string, BookingLock>
+  /**
+   * Prepayment transfers from the AA Holding account to the anaesthetist who
+   * did the List (catch-up Phase 27a; US-06.5.1), one per collect case. The
+   * account's balance and entries are derived from these and the cases
+   * (`domain/billing/prepayHolding.ts`), never stored.
+   */
+  transfers: Record<string, PrepayTransfer>
 }
 
 export interface XeroSlice {
@@ -80,6 +89,8 @@ export interface XeroSlice {
   accPays: Record<string, XeroAccPay>
   payments: Record<string, PaymentIn>
   disbursements: Record<string, Disbursement>
+  /** Simulated manual journals mirroring prepayment transfers (catch-up Phase 27a). */
+  journals: Record<string, XeroJournal>
 }
 
 export interface IntegrationsSlice {
@@ -321,14 +332,16 @@ export const PERSIST_KEY = 'aa-demo'
  *  weekly Public series (AS0001 to AS0007), six recurring-clash Draft Lists gone. Reseeds on load.
  *  v53: catch-up Phase 33, the intake slice (import batches and rows, seeded empty); HL7/FHIR messages stage rows
  *  instead of applying (`resultImportRowId`); `manualIntervention` and `integrationImmutable` retired. Reseeds on load.
- *  v54: Wave 1 sync on lane/a, Lane B's 32d and 33 (v52, v53) joined with Lane A's 27 (v52): one past the higher. */
-export const PERSIST_VERSION = 54
+ *  v54: Wave 1 sync on lane/a, Lane B's 32d and 33 (v52, v53) joined with Lane A's 27 (v52): one past the higher.
+ *  v55: catch-up Phase 27a, the AA Holding account's transfer (`billing.transfers`, `xero.journals`,
+ *  `BillingCase.prepayLeg` on BC0001, `Disbursement.transferId`). Reseeds on load. */
+export const PERSIST_VERSION = 55
 
 export function emptyBillingSlice(): BillingSlice {
-  return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {} }
+  return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {} }
 }
 export function emptyXeroSlice(): XeroSlice {
-  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {} }
+  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {} }
 }
 export function emptyIntegrationsSlice(): IntegrationsSlice {
   return { feeds: {}, messages: {} }
@@ -365,6 +378,7 @@ export function freshAppState(): AppState {
       contactIdCache: seedBilling.contactIdCache,
       aaFeeInvoices: seedBilling.aaFeeInvoices,
       locks: {},
+      transfers: {},
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),

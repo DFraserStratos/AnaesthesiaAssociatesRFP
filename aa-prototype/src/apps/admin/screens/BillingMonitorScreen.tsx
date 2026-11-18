@@ -10,6 +10,7 @@ import {
   handoffCasesForBooking,
   allAaFeeInvoices,
   payablesDue,
+  postTransferJournal,
   prepaidLeftOffText,
   retryBillingCase,
   runPayables,
@@ -23,6 +24,7 @@ import { dayMicroCap, formatCurrency, hhmm, plural } from '../../../shared/forma
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
 import { FormError } from '../../../shared'
 import { sessionText } from '../../../domain/outOfHours'
+import { HoldingAccountPanel } from '../components/HoldingAccountPanel'
 
 interface BillingMonitorScreenProps {
   actor: Actor
@@ -59,7 +61,7 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
 
   const rows = useMemo(() => billingMonitor({ schedule, billing, masters }), [schedule, billing, masters])
   const failedTotal = rows.reduce((n, r) => n + r.failedCount + r.handoffFailedCount, 0)
-  const due = useMemo(() => payablesDue({ xero }), [xero])
+  const due = useMemo(() => payablesDue({ xero, billing }), [xero, billing])
 
   function doRunPayables() {
     const res = runPayables(useAppStore, actor)
@@ -76,6 +78,12 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
   }
 
   function resolveAndRetry(row: MonitorBookingRow) {
+    // A prepayment transfer's journal fault (catch-up Phase 27a): post the journal again, once.
+    if (row.journalFailure !== undefined) {
+      const outcome = postTransferJournal(useAppStore, row.journalFailure.transferId)
+      setError(outcome.ok ? null : outcome.message)
+      return
+    }
     if (row.caseId === undefined) return
     // A Xero handoff fault: the fault flag was cleared when it faulted, so a
     // plain re-invoke of the idempotent handoff now creates the pair. (Distinct
@@ -150,6 +158,8 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
       </div>
 
       <AaFeePanel />
+
+      <HoldingAccountPanel />
 
       <FormError message={error} />
 
@@ -232,6 +242,8 @@ function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveR
                     </span>
                   ) : bookingRow.handoffFailure !== undefined ? (
                     <span style={{ color: semantic.warning.onTint }}>{bookingRow.handoffFailure.message}</span>
+                  ) : bookingRow.journalFailure !== undefined ? (
+                    <span data-shot="monitor-journal-fault" style={{ color: semantic.warning.onTint }}>{bookingRow.journalFailure.message}</span>
                   ) : bookingRow.status === 'cancelled' ? (
                     <span style={{ color: neutral.mist }}>Cancelled · excluded from billing.</span>
                   ) : bookingRow.invoiceIds.length > 0 ? (
@@ -246,7 +258,7 @@ function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveR
                   )}
                 </td>
                 <td style={cellStyle}>
-                  {(bookingRow.status === 'failed' || bookingRow.handoffFailure !== undefined) && (
+                  {(bookingRow.status === 'failed' || bookingRow.handoffFailure !== undefined || bookingRow.journalFailure !== undefined) && (
                     <button
                       onClick={() => onResolveRetry(bookingRow)}
                       style={{ minHeight: 34, padding: '0 12px', borderRadius: radius.ctl, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}

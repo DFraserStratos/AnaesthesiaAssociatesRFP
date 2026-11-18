@@ -124,7 +124,7 @@ test('prepaid: the confirm step shows the honour-system line, never estimate or 
   const sheet = page.locator('[data-shot="move-booking-sheet"]')
   await sheet.locator('[data-shot="move-booking-receiver"]').first().click()
   const honour = sheet.locator('[data-shot="move-booking-honour"]')
-  await expect(honour).toHaveText(/^This Booking is prepaid\. The prepaid amount stays as agreed, and Dr \w+ claims it\.$/)
+  await expect(honour).toHaveText(/^This Booking is prepaid\. The prepaid amount stays as agreed, and moves to Dr \w+ once the List is authorised\.$/)
   await clean(page, '[data-shot="move-booking-confirm"]', 'prepaid confirm')
   await page.screenshot({ path: 'visual/shots/p32a-10-prepaid-honour.png' })
 })
@@ -164,7 +164,7 @@ test('no warning for a not-preferred receiver: Mrs Riley (Ms Lim) to Dr Ropata r
   await sheet.locator('[data-shot="move-booking-receiver"][data-anaesthetist-id="39560"]').click()
   const confirm = sheet.locator('[data-shot="move-booking-confirm"]')
   await expect(confirm).toContainText("A new List is created in Dr Ropata's Fri 24 Jul AM session at Forte Health.")
-  await expect(confirm.locator('[data-shot="move-booking-honour"]')).toContainText('Dr Ropata claims it.')
+  await expect(confirm.locator('[data-shot="move-booking-honour"]')).toContainText('moves to Dr Ropata once the List is authorised.')
   await clean(page, '[data-shot="move-booking-confirm"]', 'not-preferred confirm')
   // Web footer (UI unification U2, question 13): Back hugging first, the primary last.
   await expect(confirm.getByRole('button')).toHaveText(['Back', 'Move Booking'])

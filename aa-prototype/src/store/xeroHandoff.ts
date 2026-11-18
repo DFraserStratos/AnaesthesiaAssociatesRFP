@@ -240,8 +240,8 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
   }
 
   const payerSpec = payerContactSpec(invoice.counterparty, state.masters)
-  // A prepayment's payable credits the AA Holding account, not the anaesthetist (FT-06.3, D38; catch-up Phase 27).
-  const toHolding = invoice.kind === 'prePayment'
+  // A prepayment's collect leg: its payable credits the AA Holding account, not the anaesthetist (FT-06.3, D38; catch-up Phases 27, 27a).
+  const toHolding = theCase.prepayLeg === 'collect'
   const payeeSpec = toHolding ? holdingAccountContactSpec() : anaesthetistContactSpec({ registrationNumber: payeeRecord.anaesthetistId, name: payeeRecord.name })
 
   const metas: MutationMeta[] = []
@@ -368,10 +368,10 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
 }
 
 /**
- * Hand off every eligible (invoiced, not-yet-paired, not-failed) case for a Booking
- * — the pre-payment pre-invoice seam (D-pre-invoice-pair: the pre-invoice gets
- * the full ACCREC+ACCPAY pair, so a fully-prepaid procedure still has a
- * disbursement path). Idempotent.
+ * Hand off every eligible (invoiced, not-yet-paired, not-failed) case for a
+ * Booking. Idempotent. (A prepayment invoice's pair credits the AA Holding
+ * account; its transfer at authorisation is the disbursement path, catch-up
+ * Phase 27a, superseding Phase 09/10's D-pre-invoice-pair.)
  */
 export function handoffCasesForBooking(api: AppStoreApi, bookingId: string): void {
   for (const c of casesForBooking(api.getState(), bookingId)) {
@@ -393,4 +393,99 @@ function payeeForCase(state: Pick<AppState, 'schedule' | 'masters' | 'billing'>,
   const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
   const anaesthetist = list?.anaesthetistId !== undefined ? state.masters.anaesthetists[list.anaesthetistId] : undefined
   return anaesthetist !== undefined ? { anaesthetistId: anaesthetist.registrationNumber, name: anaesthetist.name, supplier: supplierFor(anaesthetist) } : undefined
+}
+
+const JOURNAL_FAULT = {
+  code: 'journalFault',
+  message: 'Xero did not accept the transfer journal (simulated fault). The transfer stands; resolve and retry from the billing monitor.',
+}
+
+/**
+ * Mirror a prepayment transfer to Xero (catch-up Phase 27a; US-06.5.1,
+ * US-09.1.3): a simulated manual journal, `MJ-` numbered, two lines (debit the
+ * AA Holding account's payable, credit the anaesthetist's), referencing the
+ * prepayment invoice number and never naming the patient (convention 8). How
+ * the real system posts the move is still open (US-06.5.1's Technical
+ * discussion): it is kept in this one function. The same shape as
+ * `handoffCase`: one mutate, idempotent (a posted transfer is a no-op), a fault
+ * recorded on the transfer and never thrown (`failNextHandoff`, scoped to a
+ * Booking by `failHandoffBookingId`), retried by the Billing monitor.
+ */
+export function postTransferJournal(api: AppStoreApi, transferId: string): Outcome<{ journalId?: string; failed?: boolean }> {
+  const state = api.getState()
+  const transfer = state.billing.transfers[transferId]
+  if (transfer === undefined) return refuse('notFound', 'Transfer not found.')
+  if (transfer.xeroJournalId !== undefined) return ok({ journalId: transfer.xeroJournalId })
+  const invoice = state.billing.invoices[transfer.invoiceId]
+  const anaesthetist = state.masters.anaesthetists[transfer.toAnaesthetistId]
+  if (invoice === undefined || anaesthetist === undefined) return refuse('notFound', 'The transfer has no invoice or anaesthetist to post against.')
+
+  const scoped = state.settings.failHandoffBookingId
+  if (state.settings.failNextHandoff === true && (scoped === undefined || scoped === transfer.bookingId)) {
+    mutate(api, HANDOFF_ACTOR, { entityType: 'billingCase', entityId: transfer.collectCaseId, action: 'xero.journalFailed', after: { transferId, ...JOURNAL_FAULT } }, (s) => {
+      const existing = s.billing.transfers[transferId]
+      if (existing === undefined) return {}
+      const { failHandoffBookingId: _scoped, ...rest } = s.settings
+      return {
+        billing: { ...s.billing, transfers: { ...s.billing.transfers, [transferId]: { ...existing, journalFailure: { ...JOURNAL_FAULT } } } },
+        settings: { ...rest, failNextHandoff: false },
+      }
+    })
+    return ok({ failed: true })
+  }
+
+  const holdingSpec = holdingAccountContactSpec()
+  const anaesthetistSpec = anaesthetistContactSpec(anaesthetist)
+  const metas: MutationMeta[] = []
+  let journalId: string | undefined
+  mutate(api, HANDOFF_ACTOR, metas, (s) => {
+    const existing = s.billing.transfers[transferId]
+    if (existing === undefined || existing.xeroJournalId !== undefined) {
+      metas.push({ entityType: 'billingCase', entityId: transfer.collectCaseId, action: 'xero.journalNoop' })
+      return {}
+    }
+    let counters = s.counters
+    const contacts = { ...s.xero.contacts }
+    const cache = { ...s.billing.contactIdCache }
+    const holding = resolveContactInto(holdingSpec, contacts, cache, counters)
+    counters = holding.counters
+    metas.push(contactResolvedMeta(holding.contactId, holdingSpec, holding))
+    const payee = resolveContactInto(anaesthetistSpec, contacts, cache, counters)
+    counters = payee.counters
+    metas.push(contactResolvedMeta(payee.contactId, anaesthetistSpec, payee))
+    const xj = allocateId(counters, 'xeroJournal')
+    counters = xj.counters
+    const mj = allocateId(counters, 'xeroJournalNumber')
+    counters = mj.counters
+    journalId = xj.id
+    const description = `Transfer of prepayment ${invoice.invoiceNumber}`
+    const journals = {
+      ...s.xero.journals,
+      [xj.id]: {
+        id: xj.id,
+        journalNumber: mj.id,
+        transferId,
+        reference: invoice.invoiceNumber,
+        dateISO: existing.atISO,
+        lines: [
+          { contactId: holding.contactId, description, debit: existing.amount, credit: 0 },
+          { contactId: payee.contactId, description, debit: 0, credit: existing.amount },
+        ],
+      },
+    }
+    const posted = { ...existing, xeroJournalId: xj.id }
+    delete posted.journalFailure
+    metas.push({
+      entityType: 'billingCase',
+      entityId: existing.collectCaseId,
+      action: 'xero.journalPosted',
+      after: { transferId, journalNumber: mj.id, reference: invoice.invoiceNumber, amount: existing.amount },
+    })
+    return {
+      xero: { ...s.xero, contacts, journals },
+      billing: { ...s.billing, contactIdCache: cache, transfers: { ...s.billing.transfers, [transferId]: posted } },
+      counters,
+    }
+  })
+  return ok(journalId !== undefined ? { journalId } : {})
 }

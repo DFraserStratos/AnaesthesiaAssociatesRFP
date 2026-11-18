@@ -119,8 +119,11 @@ describe('payment history', () => {
     const rows = paymentHistoryFor(mirror(store()), SOUTER)
     expect(rows.length).toBeGreaterThan(0)
     expect(rows.every((row) => row.grossReceived > 0)).toBe(true)
-    // Everything received is released in full (no fee is netted; catch-up Phase 16).
-    expect(rows.every((row) => toCents(row.releasedAmount) === toCents(row.grossReceived))).toBe(true)
+    // Everything received is released in full (no fee is netted; catch-up Phase 16), except a prepayment the
+    // AA Holding account holds until the List is authorised (catch-up Phase 27a): Nair's AA-2026-0001.
+    const held = rows.filter((row) => row.status === 'held')
+    expect(held.map((row) => [row.invoiceNumber, row.releasedAmount, row.disbursedAmount])).toEqual([['AA-2026-0001', 0, 0]])
+    expect(rows.filter((row) => row.status !== 'held').every((row) => toCents(row.releasedAmount) === toCents(row.grossReceived))).toBe(true)
     expect(rows.some((row) => row.status === 'paidOut')).toBe(true)
   })
 })

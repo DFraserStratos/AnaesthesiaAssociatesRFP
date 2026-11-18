@@ -1,6 +1,259 @@
 {
   "id": "US-06.5.1",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 41 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "holding-account",
+      "app": "admin",
+      "caption": "A prepayment is credited to the AA Holding account and transferred to the anaesthetist who did the List; money leaves it only by a transfer or refund the system raises",
+      "start": "/admin/billing",
+      "states": [
+        {
+          "state": "held",
+          "caption": "The AA Holding account holds Priya Nair's $1,380.00 prepayment until her List is authorised; it leaves only by a system transfer or refund",
+          "steps": [
+            {
+              "scroll": "[data-shot=billing-prepay-holding]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-prepay-holding]"
+          ]
+        },
+        {
+          "state": "transferred",
+          "caption": "Authorising the List transfers the prepayment to Dr Melanie Souter, who did it: the balance falls to $0.00",
+          "steps": [
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Priya Nair\" >> nth=0"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "scroll": "[data-shot=capture-modifiers]"
+            },
+            {
+              "click": "[data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+              "value": "ASA III on review"
+            },
+            {
+              "click": "role=button[name=\"Claim\"]"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Mark complete\"]"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Mark list completed\" >> nth=0"
+            },
+            {
+              "click": "text=\"Submit to office\" >> nth=0"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/admin/review/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": "[data-shot=review-authorised-banner]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "wait": "[data-shot=holding-entry][data-entry-kind=transferred]"
+            },
+            {
+              "scroll": "[data-shot=billing-prepay-holding]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-prepay-holding]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "payment-held",
+      "app": "web",
+      "caption": "A prepayment is credited to the AA Holding account and transferred to the anaesthetist who did the List; money leaves it only by a transfer or refund the system raises",
+      "start": "/web/accounts/payments",
+      "states": [
+        {
+          "state": "held",
+          "caption": "The anaesthetist sees the prepayment held until the List is authorised",
+          "steps": [
+            {
+              "wait": "[data-testid=payment-history-row-AA-2026-0001]"
+            }
+          ],
+          "highlight": [
+            "[data-testid=payment-history-row-AA-2026-0001]"
+          ]
+        },
+        {
+          "state": "released",
+          "caption": "Transferred at authorise and paid in the payables run: Paid to you",
+          "steps": [
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Priya Nair\" >> nth=0"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "scroll": "[data-shot=capture-modifiers]"
+            },
+            {
+              "click": "[data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+              "value": "ASA III on review"
+            },
+            {
+              "click": "role=button[name=\"Claim\"]"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Mark complete\"]"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Mark list completed\" >> nth=0"
+            },
+            {
+              "click": "text=\"Submit to office\" >> nth=0"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/admin/review/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": "[data-shot=review-authorised-banner]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "click": "[data-shot=billing-payables-run] >> role=button[name=\"Run payables\"]"
+            },
+            {
+              "wait": "[data-shot=billing-payables-run] >> text=/Run PR0001/"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/web/accounts/payments"
+            },
+            {
+              "wait": "[data-testid=payment-history-row-AA-2026-0001]"
+            }
+          ],
+          "highlight": [
+            "[data-testid=payment-history-row-AA-2026-0001]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "prepayment-held",
+      "app": "mobile",
+      "caption": "On the phone, the prepaid Booking says AA holds the prepayment until the List is authorised",
+      "start": "/mobile/lists/L-34821-2026-07-24-PM/bookings/BK0038",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=prepayment-holding]"
+            },
+            {
+              "scroll": "[data-shot=booking-prepayment]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-prepayment]"
+          ]
+        }
+      ]
+    }
+  ]
 }

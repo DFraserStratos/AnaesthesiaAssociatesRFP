@@ -107,7 +107,8 @@ describe('no money figure moves', () => {
     ])
     const records = bctiRecords(state)
     const count = (m: string) => bctisFor(records, ANAE.souter, m).length
-    expect(['2026-04', '2026-05', '2026-06', '2026-07'].map(count)).toEqual([0, 2, 1, 3])
+    // July was 3 until catch-up Phase 27a: Nair's prepayment payable credits the AA Holding account and is not a BCTI.
+    expect(['2026-04', '2026-05', '2026-06', '2026-07'].map(count)).toEqual([0, 2, 1, 2])
     expect(['2026-01', '2026-02', '2026-03'].map(count)).toEqual([2, 10, 17])
   })
 })

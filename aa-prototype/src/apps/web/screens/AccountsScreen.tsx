@@ -17,7 +17,8 @@ import {
 import { formatCurrency } from '../../../shared/format'
 import { aaFeeFixedTotal, aaFeeMonthLabel } from '../../../domain/billing/aaFee'
 import { roundToCents } from '../../../domain/billing/money'
-import { Card } from '../../../shared/ui'
+import { Card, Pill } from '../../../shared/ui'
+import { HELD_UNTIL_AUTHORISED } from '../../../domain/billing/prepayHolding'
 
 export type AccountsSubTab = 'overdue' | 'payments' | 'gst' | 'fees'
 
@@ -170,6 +171,8 @@ function OverdueTable({ anaesthetistId }: { anaesthetistId: string }) {
 }
 
 const PAYMENT_STATUS_LABEL: Record<PaymentHistoryStatus, string> = {
+  // A prepayment in the AA Holding account (catch-up Phase 27a): nothing released until the List is authorised.
+  held: HELD_UNTIL_AUTHORISED,
   partPayment: 'Part payment received',
   customerPaid: 'Customer paid',
   partPaidOut: 'Part paid to you',
@@ -197,7 +200,8 @@ function PaymentsTable({
     <Card padding="panel" flush>
       <div style={{ padding: '16px 20px 0', fontSize: 12, lineHeight: 1.5, color: neutral.mist }}>
         Received invoices remain here after they leave Overdue. Everything AA receives for an
-        invoice is released to you in full. AA's own fee is{' '}
+        invoice is released to you in full. A prepayment is held by AA until the List is
+        authorised, then moves to you. AA's own fee is{' '}
         <button type="button" onClick={onOpenFees} style={inlineLinkStyle}>invoiced to you monthly</button>.
       </div>
       <div style={{ overflowX: 'auto' }}>
@@ -242,20 +246,9 @@ function PaymentsTable({
                     <Td mono right bold>{formatCurrency(row.releasedAmount)}</Td>
                     <Td mono right>{formatCurrency(row.disbursedAmount)}</Td>
                     <Td>
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          padding: '4px 8px',
-                          borderRadius: radius.pill,
-                          whiteSpace: 'nowrap',
-                          fontSize: 11.5,
-                          fontWeight: 600,
-                          color: row.status === 'paidOut' ? semantic.success.onTint : neutral.slate,
-                          background: row.status === 'paidOut' ? semantic.success.tint : neutral.sunken,
-                        }}
-                      >
+                      <Pill size="lg" tone={row.status === 'paidOut' ? 'success' : 'neutral'} shot={row.status === 'held' ? 'payment-held' : undefined}>
                         {PAYMENT_STATUS_LABEL[row.status]}
-                      </span>
+                      </Pill>
                     </Td>
                   </tr>
                 )

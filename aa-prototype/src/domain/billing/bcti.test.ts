@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { BCTI_COUNT_RULE, bctiFeeHistory, bctisFor, type BctiRecord } from './bcti'
+import { BCTI_COUNT_RULE, bctiFeeHistory, bctiRecordsFrom, bctisFor, type BctiRecord } from './bcti'
+import type { XeroAccPay, XeroAccRec } from '../types'
 
 function rec(id: string, anaesthetistId: string, issuedAtISO: string, receivablePaidAtISO?: string, voided = false): BctiRecord {
   return {
@@ -91,5 +92,23 @@ describe('bctisFor never misses a paid BCTI (fee history)', () => {
     const months = ['2026-06', '2026-07', '2026-08', '2026-09', '2026-10']
     const counted = months.flatMap((m) => ids(bctisFor(RECORDS, 'A', m, BCTI_COUNT_RULE, history)))
     expect(counted.sort()).toEqual(['P2', 'P3'])
+  })
+})
+
+describe("a prepayment's payable and the count (catch-up Phase 27a; OQ-29 provisional)", () => {
+  const accRec = (id: string): XeroAccRec => ({ id, kind: 'procedure', invoiceId: `INV-${id}`, contactId: 'XC', invoiceNumber: `AA-${id}`, reference: 'BC', issuedAtISO: '2026-07-14T09:00:00', amountDue: 100, amountReceived: 100, paidAtISO: '2026-07-14T09:00:00', status: 'paid' })
+  const accPay = (id: string, held: boolean): XeroAccPay => ({
+    id: `P-${id}`, accRecId: id, contactId: 'XC', invoiceNumber: `AA-${id}-P`, reference: 'BC', issuedAtISO: '2026-07-14T09:00:00', anaesthetistId: 'A',
+    amountPayable: 100, amountAuthorised: 100, amountDisbursed: 0, status: 'authorised', ...(held ? { payeeAccount: 'aaHoldingAccount' as const } : {}),
+  })
+  const xero = { accRecs: { R1: accRec('R1'), R2: accRec('R2') }, accPays: { P1: accPay('R1', false), P2: accPay('R2', true) } }
+
+  it('is off by default: the AA Holding account payable is not a BCTI', () => {
+    expect(BCTI_COUNT_RULE.prepaymentPairs).toBe(false)
+    expect(ids(bctiRecordsFrom(xero))).toEqual(['P-R1'])
+  })
+
+  it('switched on, it counts again', () => {
+    expect(ids(bctiRecordsFrom(xero, { ...BCTI_COUNT_RULE, prepaymentPairs: true })).sort()).toEqual(['P-R1', 'P-R2'])
   })
 })

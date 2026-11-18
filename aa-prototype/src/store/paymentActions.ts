@@ -26,6 +26,7 @@
 import type { BillingCase, PaymentIn, XeroAccPay, XeroAccRec } from '../domain/types'
 import { roundToCents, toCents } from '../domain/billing/money'
 import { payableReleasedFor } from '../domain/billing/payableRelease'
+import { transferOfCase, transferReleasedFor } from '../domain/billing/prepayHolding'
 import { GST_RATE } from '../domain/billing/invoicePresentation'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppStoreApi } from './appStore'
@@ -81,7 +82,9 @@ export function receivePayment(api: AppStoreApi, input: ReceivePaymentInput): Ou
   const theCase = Object.values(state.billing.cases).find((c) => c.accRecId === input.accRecId)
   if (theCase === undefined) return refuse('noCase', 'No billing case links this ACCREC.')
   const anaesthetistId = payeeIdForCase(state, theCase)
-  if (anaesthetistId === undefined) return refuse('noAnaesthetist', 'Could not resolve the anaesthetist for this ACCREC.')
+  // A prepayment's money goes to the AA Holding account (catch-up Phase 27a), so it needs no anaesthetist:
+  // a List moved to the office (a Draft List) still takes its payer's payment.
+  if (anaesthetistId === undefined && theCase.prepayLeg !== 'collect') return refuse('noAnaesthetist', 'Could not resolve the anaesthetist for this ACCREC.')
 
   // Clamp the applied amount to the outstanding balance (a normal ACCREC cannot
   // over-receive); an already fully-paid ACCREC is a no-op.
@@ -110,6 +113,7 @@ export function receivePayment(api: AppStoreApi, input: ReceivePaymentInput): Ou
     const accPays = { ...s.xero.accPays }
     const cases = { ...s.billing.cases }
     const receipts = { ...s.billing.receipts }
+    let transfers = s.billing.transfers
 
     // 1) PaymentIn — append unless Xero already holds it (missed-webhook poll).
     if (!alreadyHasPaymentIn) {
@@ -161,13 +165,23 @@ export function receivePayment(api: AppStoreApi, input: ReceivePaymentInput): Ou
       cases[theCase.id] = next
     }
 
+    // 4b) A prepayment already transferred (catch-up Phase 27a): money arriving now goes straight to the
+    // anaesthetist's payable, released exactly as received and never more; the AA Holding account's balance
+    // does not move.
+    const transfer = theCase.prepayLeg === 'collect' ? transferOfCase(s.billing.transfers, theCase.id) : undefined
+    if (transfer !== undefined) {
+      const released = transferReleasedFor(newReceived, transfer)
+      transfers = { ...s.billing.transfers, [transfer.id]: { ...transfer, released } }
+      metas.push({ entityType: 'billingCase', entityId: theCase.id, action: 'prepayment.transferReleased', after: { transferId: transfer.id, released, increment: roundToCents(released - transfer.released) } })
+    }
+
     // 5) Receipt — GST-report row + idempotency key.
     const rct = allocateId(counters, 'receipt')
     counters = rct.counters
     receipts[rct.id] = {
       id: rct.id,
       caseId: theCase.id,
-      anaesthetistId,
+      ...(anaesthetistId !== undefined ? { anaesthetistId } : {}),
       accRecId: input.accRecId,
       grossAmount: gross,
       gstAmount: gst,
@@ -193,7 +207,7 @@ export function receivePayment(api: AppStoreApi, input: ReceivePaymentInput): Ou
 
     return {
       xero: { ...s.xero, payments, accRecs, accPays },
-      billing: { ...s.billing, cases, receipts },
+      billing: { ...s.billing, cases, receipts, transfers },
       counters,
     }
   })

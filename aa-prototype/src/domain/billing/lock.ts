@@ -178,7 +178,7 @@ export interface BookingLock {
    * The Procedures left off the final invoice because their prepayment is
    * raised (catch-up Phase 27; US-08.2.2, D57): each priced at its prepaid
    * amount (ex GST) with the prepayment invoice that holds it. Nothing is
-   * deducted anywhere. 27a's transfer reads it.
+   * deducted anywhere. (27a's transfer moves each prepayment invoice's total and does not read it; a removed or cancelled prepaid Procedure's part is Phase 41's credit or refund.)
    */
   settledByPrepayment: Record<ProcedureId, { amount: number; prepaymentInvoiceId: InvoiceId }>
   /** Checksum: the drafts' sum. */

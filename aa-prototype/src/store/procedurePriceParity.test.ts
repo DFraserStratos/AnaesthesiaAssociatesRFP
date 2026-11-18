@@ -41,6 +41,7 @@ import {
   PHASE_27_REASON,
   prepaymentBuildBefore27,
 } from './__parity__/phase27Declared'
+import { PHASE_27A_REASON, withPhase27aBctis } from './__parity__/phase27aDeclared'
 
 const baseline = baselineJson as unknown as Phase24Baseline
 const state = freshAppState()
@@ -131,8 +132,8 @@ describe('Phase 24 price parity', () => {
     expect(fee('priceCaptureBooking')).toMatchObject({ needsPrice: false })
   })
 
-  it('the BCTI count per anaesthetist and month is unchanged', () => {
-    expect(now.bctis).toEqual(baseline.bctis)
+  it(`the BCTI count per anaesthetist and month is unchanged (declared: ${PHASE_27A_REASON})`, () => {
+    expect(now.bctis).toEqual(withPhase27aBctis(baseline.bctis))
   })
 
   it("S3's Holt and Prentice figures, the bariatric $2,800 and the Contract-rate Bookings hold (part of the full comparison; named here)", () => {

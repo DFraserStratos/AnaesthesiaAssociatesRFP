@@ -88,6 +88,7 @@ import {
   WarningsToDoExample,
   PrepaymentsRailCardExample,
   PrepaymentApprovalStripExample,
+  HoldingAccountPanelExample,
 } from './admin/storeExamples'
 import {
   CheckboxExample,
@@ -257,6 +258,9 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="PrepaymentApprovalStrip" source="apps/admin/components/PrepaymentApprovalStrip.tsx" usedIn={A} what="The Invoices screen's Awaiting approval strip (catch-up Phase 27): one row per Booking and payer, Approve and send (disabled with its reason until there is an amount), and the Prepayment approval Switch in its header; switching off confirms in a ConfirmSheet." replaceWith="shadcn Card + Table + Switch" note="On the shared Card, TableShell, Button (disabledReason), Switch and ConfirmSheet. Approve and send writes to the demo store.">
           <PrepaymentApprovalStripExample />
+        </CatalogueRow>
+        <CatalogueRow name="HoldingAccountPanel" source="apps/admin/components/HoldingAccountPanel.tsx" usedIn={A} what="The Billing monitor's AA Holding account card (catch-up Phase 27a): the balance, the prepaid Bookings it holds money for, the entries (Received or Transferred, with the anaesthetist), how money leaves it and the provisional release trigger. Read-only; empty, the shared EmptyState." replaceWith="shadcn Card + Table + Badge" note="On the shared Card (padding card), TableShell (nested, compact), Th and Td, Pill and EmptyState. Reads useHoldingAccount.">
+          <HoldingAccountPanelExample />
         </CatalogueRow>
         <CatalogueRow name="NotificationsCard" source="apps/admin/components/NotificationsCard.tsx" usedIn={A} what="The rail's shared notification pool: active notices with Resolve, See all and Show resolved. Its count is the shared CountBadge (read as 2 active), still showing 0." replaceWith="shadcn Card + Button" note="On the shared Card (U6) with headingRef: after a tick focus returns to its heading. Resolve writes to the demo store. The fresh seed has no notices, so it shows the empty state until one is raised.">
           <NotificationsCardExample />

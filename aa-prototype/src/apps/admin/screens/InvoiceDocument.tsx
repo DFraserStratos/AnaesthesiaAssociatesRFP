@@ -28,6 +28,8 @@ import { lockStampText, lockViewFor, MIGRATED_LOCK_TEXT, partyKeyOf } from '../.
 import { BILLS_LABEL, pricingLabel } from '../../../shared/contracts'
 import { regenerateSummary, type RegenerateResult } from '../../../store/locks'
 import { useDemoTriggerMemory } from '../../../shared/demoTriggers/memory'
+import { HOLDING_ACCOUNT, transferOfCase } from '../../../domain/billing/prepayHolding'
+import { toCents } from '../../../domain/billing/money'
 
 interface InvoiceDocumentProps {
   invoiceId: string
@@ -69,6 +71,8 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
     () => Object.values(billing.cases).find((c) => c.invoiceId === invoiceId),
     [billing.cases, invoiceId],
   )
+  // A prepayment's money is held, then moved by its transfer (catch-up Phase 27a): the second state reads the transfer.
+  const transfer = theCase?.prepayLeg === 'collect' ? transferOfCase(billing.transfers, theCase.id) : undefined
 
 
   if (invoice === undefined) return null
@@ -278,16 +282,31 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
                     : 'Awaiting payment'
               }
             />
-            <MoneyStatePill
-              on={theCase.disbursedAtISO !== undefined}
-              label={
-                theCase.disbursedAtISO !== undefined
-                  ? `Disbursed to anaesthetist ${dateTimeMicroCap(theCase.disbursedAtISO)}`
-                  : theCase.disbursedAmount > 0
-                    ? `Part disbursed ${formatCurrency(theCase.disbursedAmount)}`
-                    : 'Not yet disbursed'
-              }
-            />
+            {theCase.prepayLeg === 'collect' ? (
+              <MoneyStatePill
+                on={transfer !== undefined && toCents(transfer.disbursed) >= toCents(transfer.amount)}
+                label={
+                  transfer === undefined
+                    ? `Held in the ${HOLDING_ACCOUNT.name}`
+                    : toCents(transfer.disbursed) >= toCents(transfer.amount)
+                      ? 'Transferred and paid to the anaesthetist'
+                      : transfer.disbursed > 0
+                        ? `Transferred, part paid ${formatCurrency(transfer.disbursed)}`
+                        : 'Transferred to the anaesthetist'
+                }
+              />
+            ) : (
+              <MoneyStatePill
+                on={theCase.disbursedAtISO !== undefined}
+                label={
+                  theCase.disbursedAtISO !== undefined
+                    ? `Disbursed to anaesthetist ${dateTimeMicroCap(theCase.disbursedAtISO)}`
+                    : theCase.disbursedAmount > 0
+                      ? `Part disbursed ${formatCurrency(theCase.disbursedAmount)}`
+                      : 'Not yet disbursed'
+                }
+              />
+            )}
           </div>
         )}
 
@@ -323,6 +342,13 @@ function InvoiceInfoRail({
   const accPayNumber = useAppStore((s) =>
     billingCase?.accPayId !== undefined ? s.xero.accPays[billingCase.accPayId]?.invoiceNumber : undefined,
   )
+  // A prepayment's payable credits the AA Holding account; once transferred, its journal (catch-up Phase 27a).
+  const collect = billingCase?.prepayLeg === 'collect'
+  const journalNumber = useAppStore((s) => {
+    if (!collect || billingCase === undefined) return undefined
+    const transfer = transferOfCase(s.billing.transfers, billingCase.id)
+    return transfer?.xeroJournalId !== undefined ? s.xero.journals[transfer.xeroJournalId]?.journalNumber : undefined
+  })
 
   return (
     <aside
@@ -379,6 +405,8 @@ function InvoiceInfoRail({
             {accPayNumber !== undefined && (
               <XeroReference label="ACCPAY" value={accPayNumber} testId="xero-accpay-reference" />
             )}
+            {collect && <XeroReference label="Payee" value={HOLDING_ACCOUNT.name} testId="xero-accpay-payee" />}
+            {journalNumber !== undefined && <XeroReference label="Transfer journal" value={journalNumber} testId="xero-transfer-journal-reference" />}
           </dl>
         ) : null}
       </RailCard>

@@ -93,7 +93,8 @@ Snapshot date: **24 July 2026**
 | Admin day view, changes, cover, review, authorisation, masters and audit | Ready | Strong primary workflow |
 | Billing run and invoice documents | Ready | Phase 08 |
 | Post-op addendum and billing monitor | Ready | Phase 09 |
-| Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), AA Holding account, escalating warning, left off the final invoice | Ready | Catch-up Phase 27 |
+| Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), escalating warning, left off the final invoice | Ready | Catch-up Phase 27 |
+| Prepayment held in the AA Holding account (its card on the Billing monitor), transferred to the anaesthetist automatically when the List is authorised, then paid by the payables run | Ready | Catch-up Phase 27a |
 | Xero pairs, payments, payables, payment history, live balances and GST activity | Ready | Phase 10 |
 | Anaesthetist profile and bank details (own rate per unit on mobile and web; office-held contact, HPI CPN and masked bank details, payments made in Xero) | Ready | Catch-up Phase 26 |
 | Surgeon PDF ingestion | Ready | Phase 11 |

@@ -47,8 +47,8 @@ export const PREPAYMENT_NAMES_ANAESTHETIST = true
 /**
  * The AA Holding account (FT-06.3, US-06.5.1; D38): the payee a prepayment's
  * payable credits instead of the anaesthetist, and its Xero contact. The
- * payables run never pays it; 27a builds its balance and the transfer to
- * whoever did the List.
+ * payables run never pays it. Its balance, entries and the transfer to
+ * whoever did the List live in `prepayHolding.ts` (catch-up Phase 27a).
  */
 export const AA_HOLDING_ACCOUNT = {
   payeeAccount: 'aaHoldingAccount',

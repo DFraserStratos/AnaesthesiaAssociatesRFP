@@ -23,7 +23,8 @@ import {
   type PrepaymentStatus,
 } from '../domain/billing/prepayment'
 import { bookingFeesFor } from '../domain/billing/validateBookingForBilling'
-import { roundToCents } from '../domain/billing/money'
+import { roundToCents, toCents } from '../domain/billing/money'
+import { heldBookingIds, holdingBalance, holdingEntries, transferOfCase, type HoldingEntry } from '../domain/billing/prepayHolding'
 import { daysBetween } from '../domain/dateDays'
 import { billingContextForBooking, counterpartyName, patientNameFor, prePaymentInvoicesForBooking, proceduresForBooking } from './selectors'
 import { useMemo } from 'react'
@@ -52,6 +53,8 @@ export interface PrepaymentGroupView {
   invoicedTotal: number
   /** Received on it, from the mirror (0 while pending). */
   receivedTotal: number
+  /** Where its money is (catch-up Phase 27a): held in the AA Holding account, transferred, or paid out. */
+  holding?: PrepaymentHolding
 }
 
 export interface BookingPrepayment {
@@ -120,6 +123,7 @@ export function prepaymentStatusFor(state: PrepaymentState, bookingId: string): 
     const invoice = g.invoice !== undefined ? state.billing.invoices[g.invoice.invoiceId] : undefined
     const invoicedTotal = invoice?.total ?? 0
     const receivedTotal = invoice !== undefined ? roundToCents(Object.values(state.billing.cases).filter((c) => c.invoiceId === invoice.id).reduce((s, c) => s + c.receivedAmount, 0)) : 0
+    const holding = invoice !== undefined ? prepaymentHoldingFor(state, invoice.id) : undefined
     return {
       key: g.key,
       payer: g.payer,
@@ -134,6 +138,7 @@ export function prepaymentStatusFor(state: PrepaymentState, bookingId: string): 
       ...(invoice !== undefined ? { invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber } : {}),
       invoicedTotal,
       receivedTotal,
+      ...(holding !== undefined ? { holding } : {}),
     }
   })
   return { groups: views, status: leastSettled(views.map((v) => v.status)) }
@@ -152,6 +157,31 @@ export interface ProcedurePrepayment {
   payerName: string
   invoiceId?: InvoiceId
   invoiceNumber?: string
+  /** Where its money is (catch-up Phase 27a), once anything was received or it was transferred. */
+  holding?: PrepaymentHolding
+}
+
+/**
+ * Where a sent prepayment's money is (catch-up Phase 27a; US-06.5.1): held in
+ * the AA Holding account until the List is authorised, then transferred to the
+ * anaesthetist who did it and paid out by the payables run. Read from the
+ * mirror only.
+ */
+export interface PrepaymentHolding {
+  state: 'held' | 'transferred' | 'paidOut'
+  /** Transferred and paid out: who did the List. */
+  toAnaesthetistId?: string
+  released: number
+  disbursed: number
+}
+
+export function prepaymentHoldingFor(state: Pick<AppState, 'billing'>, invoiceId: InvoiceId): PrepaymentHolding | undefined {
+  const collect = Object.values(state.billing.cases).find((c) => c.invoiceId === invoiceId && c.prepayLeg === 'collect')
+  if (collect === undefined) return undefined
+  const transfer = transferOfCase(state.billing.transfers, collect.id)
+  if (transfer === undefined) return toCents(collect.receivedAmount) > 0 ? { state: 'held', released: 0, disbursed: 0 } : undefined
+  const paidOut = toCents(transfer.disbursed) >= toCents(transfer.amount)
+  return { state: paidOut ? 'paidOut' : 'transferred', toAnaesthetistId: transfer.toAnaesthetistId, released: transfer.released, disbursed: transfer.disbursed }
 }
 
 /**
@@ -168,6 +198,7 @@ export function prepaymentForProcedure(state: PrepaymentState, procedureId: stri
   const holding = [...status.groups].reverse().find((g) => g.lines.some((l) => l.procedureId === procedureId && l.stillPrepaid)) ?? status.groups.find((g) => g.procedureIds.includes(procedureId))
   if (holding === undefined) return undefined
   const line = holding.lines.find((l) => l.procedureId === procedureId)!
+  const money = holding.holding
   return {
     groupKey: holding.key,
     // A Procedure that has left its sent invoice's prepaid Contract reads "no longer needed" itself.
@@ -175,6 +206,7 @@ export function prepaymentForProcedure(state: PrepaymentState, procedureId: stri
     amount: line.amount,
     payerName: holding.payerName,
     ...(holding.invoiceId !== undefined ? { invoiceId: holding.invoiceId, invoiceNumber: holding.invoiceNumber! } : {}),
+    ...(money !== undefined ? { holding: money } : {}),
   }
 }
 
@@ -312,6 +344,51 @@ export function useUpcomingPrepayments(): UpcomingPrepaymentRow[] {
   const masters = useAppStore((s) => s.masters)
   const clock = useAppStore((s) => s.clock)
   return useMemo(() => upcomingPrepayments({ schedule, billing, masters, clock }), [schedule, billing, masters, clock])
+}
+
+/** One row of the AA Holding account's entries table, with what the screen names. */
+export interface HoldingAccountRow extends HoldingEntry {
+  patientName: string
+  /** The Booking's List date (its Admin detail route). */
+  dateISO: string | undefined
+  anaesthetistName?: string
+}
+
+export interface HoldingAccountView {
+  balance: number
+  /** Prepaid Bookings it holds money for now. */
+  bookingsCovered: number
+  /** Newest first, as the screen lists them. */
+  rows: HoldingAccountRow[]
+}
+
+/**
+ * The AA Holding account as Admin reads it (catch-up Phase 27a; US-06.5.1):
+ * its balance, the Bookings it covers and its entries, all derived from the
+ * mirror by `prepayHolding.ts`, never stored.
+ */
+export function holdingAccountView(state: Pick<AppState, 'schedule' | 'billing' | 'masters'>): HoldingAccountView {
+  const entries = holdingEntries(state.billing)
+  const rows = entries
+    .map((e): HoldingAccountRow => {
+      const booking = state.schedule.bookings[e.bookingId]
+      const name = e.anaesthetistId !== undefined ? state.masters.anaesthetists[e.anaesthetistId]?.name : undefined
+      return {
+        ...e,
+        patientName: booking !== undefined ? patientNameFor(state, booking.patientId) : e.bookingId,
+        dateISO: booking !== undefined ? state.schedule.lists[booking.listId]?.dateISO : undefined,
+        ...(name !== undefined ? { anaesthetistName: name } : {}),
+      }
+    })
+    .reverse()
+  return { balance: holdingBalance(entries), bookingsCovered: heldBookingIds(entries).length, rows }
+}
+
+export function useHoldingAccount(): HoldingAccountView {
+  const schedule = useAppStore((s) => s.schedule)
+  const billing = useAppStore((s) => s.billing)
+  const masters = useAppStore((s) => s.masters)
+  return useMemo(() => holdingAccountView({ schedule, billing, masters }), [schedule, billing, masters])
 }
 
 /**

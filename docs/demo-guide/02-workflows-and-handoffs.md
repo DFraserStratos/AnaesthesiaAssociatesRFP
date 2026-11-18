@@ -253,8 +253,8 @@ An anaesthetist becomes unavailable or needs cover at short notice.
    is offered only once they set that session available themselves. Telling the office is a tick she
    may leave off. This is also the doer rule: whoever submits a List did every procedure on it, so a
    Booking a colleague does moves to a new List of theirs before the procedure, and its payable
-   follows. A prepaid Booking's payable stays the AA Holding account: the new anaesthetist claims the
-   prepaid amount and nothing is recalculated.
+   follows. A prepaid Booking's payable stays the AA Holding account: nothing is repointed or
+   recalculated, and the transfer when the List is authorised pays whoever did it.
 5. When nobody has arranged cover, Kirsty receives the phone call and records the sickness on the
    Day view (Change status). Unavailability is never a conflict: the same "Where does this List go?"
    step asks her to return the List to the office (a Draft List) or hand it to a colleague there and
@@ -556,7 +556,9 @@ An invoice has been generated.
 4. A Xero webhook notifies the Billing Engine; a daily poll is the safety net.
 5. The matching payable becomes `AUTHORISED` for exactly the amount received, including a partial
    payment; the rest stays outstanding on the invoice.
-6. AA runs payables and disburses the authorised amount to the anaesthetist.
+6. AA runs payables and disburses the authorised amount to the anaesthetist. A prepayment is the
+   exception: its payable credits the AA Holding account and is never paid itself; the anaesthetist is
+   paid only after the transfer at authorisation (Workflow 8, Pre-payment).
 7. The system tracks **paid into AA** and **disbursed to anaesthetist** separately.
 8. The anaesthetist's flat balance view, persistent payment history and GST activity update from the
    Billing Engine's mirror, not from direct Xero queries.
@@ -597,7 +599,8 @@ Admin → Billing → AA fee invoices, or the "Run scheduled month-end fee run" 
 1. The office maintains **AA fee settings**: several fixed items and a charge per BCTI, every amount held
    excluding GST. A change applies from the next run; raised fee invoices keep their settings.
 2. For the chosen month the Billing Engine counts each anaesthetist's BCTIs: one per receivable invoice,
-   once, against the anaesthetist who did the procedure, in the month its invoice is paid in full.
+   once, against the anaesthetist who did the procedure, in the month its invoice is paid in full. A
+   prepayment's payable is not counted (provisional, OQ-29).
 3. It raises one **AA-FEE** invoice to each active anaesthetist: the fixed items plus the charge per BCTI
    times the count, with GST worked out at the foot. Each is its own case with a Xero ACCREC against the
    anaesthetist's existing contact and no ACCPAY.
@@ -629,10 +632,31 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
   office types on No contract · Fixed price.
 - The office approves and sends it from Admin Invoices (a switchable step, on by default). The invoice's
   pair credits the AA Holding account, not the anaesthetist.
+- The AA Holding account is a payables creditor, kept like an anaesthetist's account. It is not a bank
+  account (the money itself sits in the trust bank account) and not a Xero ledger account, and it is
+  never paid itself. Money leaves it only by a transfer or a refund the system raises (the refund is
+  Phase 41).
+- Two steps, and the anaesthetist is paid only after the second:
+  1. **Collected into the AA Holding account.** The payer's money lands; the payable to the AA Holding
+     account is authorised for what was received, and nothing is paid to the anaesthetist. The Billing
+     monitor's **AA Holding account** card shows the balance and a Received entry. Run payables pays
+     nothing.
+  2. **Transferred at authorisation.** When the office authorises the List, the system writes a
+     transfer from the AA Holding account to the anaesthetist who did the List, with no office step: a
+     Transferred entry on the card, the balance falls, and the Xero simulator shows a manual journal on
+     the prepayment pair. No new invoice or payment appears and GST does not move. The next payables
+     run pays the anaesthetist. The trigger is provisional (OQ-125: authorisation, or "confirmed and
+     submitted"); the payment itself is made in Xero (OQ-111).
+- Money paid after the transfer goes straight to the anaesthetist's payable, released exactly as it
+  arrives. A part-paid prepayment moves in full at authorisation and is released as money arrives.
+- Two payers on one Booking: two prepayment invoices, each with its own payable to the AA Holding
+  account and its own transfer.
 - An unpaid prepayment never blocks (AA's decision, OQ-57): a warning that turns strong as the date
   nears, so the anaesthetist sees it before surgery starts. There is no override.
-- After the procedure it is left off the final invoice with nothing deducted; a move to a colleague
-  changes nothing in the books.
+- After the procedure it is left off the final invoice with nothing deducted. A move to a colleague
+  changes nothing in the books: nothing is repointed, the transfer pays whoever did the List, and the
+  old anaesthetist never sees it.
+- A prepayment's payable is not counted as a BCTI for AA's monthly fee (provisional, OQ-29).
 
 #### Warnings and the to-do list
 
@@ -730,7 +754,8 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | BTM capture, completion and submit | Yes | Phase 04 |
 | Office review and authorisation | Yes | Phase 07 |
 | Invoice calculation and documents | Yes | Phase 08 |
-| Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), AA Holding account, escalating warning, left off the final invoice | Yes | Catch-up Phase 27 |
+| Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), escalating warning, left off the final invoice | Yes | Catch-up Phase 27 |
+| Prepayment held in the AA Holding account, transferred to the anaesthetist when the List is authorised, then paid by the payables run | Yes | Catch-up Phase 27a |
 | Addendum, billing monitor/retry | Yes | Phase 09 |
 | Contract locked at authorise, invoices from the lock, Contract history | Yes | Catch-up Phase 25 |
 | Xero pairs, payment, balances and disbursement | Yes | Phase 10 |

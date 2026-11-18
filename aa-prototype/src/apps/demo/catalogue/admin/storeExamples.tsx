@@ -20,6 +20,7 @@ import { RightRail } from '../../../admin/components/RightRail'
 import { WarningsToDo } from '../../../admin/components/WarningsToDo'
 import { PrepaymentsRailCard } from '../../../admin/components/PrepaymentsRailCard'
 import { PrepaymentApprovalStrip } from '../../../admin/components/PrepaymentApprovalStrip'
+import { HoldingAccountPanel } from '../../../admin/components/HoldingAccountPanel'
 import { NotificationsCard } from '../../../admin/components/NotificationsCard'
 import { ChipMultiSelect } from '../../../admin/components/ChipMultiSelect'
 import { RoomContactsList } from '../../../admin/components/RoomContactsList'
@@ -454,6 +455,11 @@ export function PrepaymentsRailCardExample() {
       <Echo>{last}</Echo>
     </div>
   )
+}
+
+/** The Billing monitor's AA Holding account card on the live seed (catch-up Phase 27a): Nair's prepayment held. Read-only. */
+export function HoldingAccountPanelExample() {
+  return <HoldingAccountPanel />
 }
 
 /** The Invoices screen's Awaiting approval strip with its approval switch, on the live seed (catch-up Phase 27). Approve and send writes to the demo store. */

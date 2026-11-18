@@ -209,6 +209,13 @@ export const ACTION_LABELS: Record<string, string> = {
   'xero.contactResolved': 'Xero contact resolved',
   'xero.contactArchived': 'Xero contact archived',
   'xero.feeAccRecCreated': 'Xero AA fee invoice created',
+  // The AA Holding account's transfer and its Xero mirror (catch-up Phase 27a).
+  'prepayment.transfer': 'Prepayment transferred to anaesthetist',
+  'prepayment.transferNoop': 'Prepayment transfer already done',
+  'prepayment.transferReleased': 'Transferred prepayment released',
+  'xero.journalPosted': 'Xero transfer journal posted',
+  'xero.journalFailed': 'Xero transfer journal failed',
+  'xero.journalNoop': 'Xero transfer journal already posted',
 
   // --- AA's monthly fee (catch-up Phase 16) -------------------------------
   'aaFee.settingsChanged': 'AA fee settings changed',

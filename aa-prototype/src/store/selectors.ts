@@ -76,6 +76,7 @@ import { roundToCents, toCents } from '../domain/billing/money'
 import { maskBankAccount } from '../domain/bankAccount'
 import { procedureAccFunded } from '../domain/billing/fundingTags'
 import { BCTI_COUNT_RULE, bctiFeeHistory, bctiRecordsFrom, bctisFor, type BctiFeeHistory, type BctiRecord } from '../domain/billing/bcti'
+import { transferOfCase } from '../domain/billing/prepayHolding'
 import { aaFeeFixedTotal, aaFeeFor } from '../domain/billing/aaFee'
 import { bucketForAgingDays, epochDayOf, type AgingBucketKey } from '../domain/dateDays'
 import { useMemo } from 'react'
@@ -741,6 +742,8 @@ export interface MonitorBookingRow {
   failure?: { code: string; message: string; procedureId?: ProcedureId }
   /** A Xero handoff fault on this booking's case (Phase 10) — retry re-invokes the handoff. */
   handoffFailure?: { code: string; message: string }
+  /** A prepayment transfer whose Xero journal faulted (catch-up Phase 27a) — retry posts it once. */
+  journalFailure?: { transferId: string; code: string; message: string }
   /** WI2a: this booking's patient has an unpaid prior episode (repeat patient). */
   outstandingPriorBalance?: boolean
   /** Money mirror for the two-state display (paid-in / disbursed). */
@@ -836,6 +839,8 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
       if (primary !== undefined) row.caseId = primary.id
       if (failed?.failure !== undefined) row.failure = failed.failure
       if (handoffFailed?.handoffFailure !== undefined) row.handoffFailure = handoffFailed.handoffFailure
+      const faulted = Object.values(state.billing.transfers).find((t) => t.bookingId === booking.id && t.journalFailure !== undefined && t.xeroJournalId === undefined)
+      if (faulted?.journalFailure !== undefined) row.journalFailure = { transferId: faulted.id, ...faulted.journalFailure }
       const paidInAtISO = runCases.find((c) => c.paidInAtISO !== undefined)?.paidInAtISO
       if (paidInAtISO !== undefined) row.paidInAtISO = paidInAtISO
       const disbursedAtISO = runCases.find((c) => c.disbursedAtISO !== undefined)?.disbursedAtISO
@@ -849,7 +854,9 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
     // Run cases across the list (non-prepayment), for the Xero-stage aggregate.
     const listRunCases = cases.filter((c) => !isPrePaymentCase(c))
     const handedOff = listRunCases.filter((c) => c.accRecId !== undefined).length
-    const handoffFailedCount = listRunCases.filter((c) => c.handoffFailure !== undefined && c.accRecId === undefined).length
+    // A faulted transfer journal (catch-up Phase 27a) needs attention like a hand-off fault.
+    const handoffFailedCount =
+      listRunCases.filter((c) => c.handoffFailure !== undefined && c.accRecId === undefined).length + bookingRows.filter((r) => r.journalFailure !== undefined).length
     const handoffEligible = listRunCases.filter((c) => c.invoiceId !== undefined && c.status !== 'failed').length
 
     const failedCount = bookingRows.filter((r) => r.status === 'failed').length
@@ -971,6 +978,8 @@ export interface AccpayInvoiceRow {
   amountTotal: number
   receivedAmount: number
   disbursedAmount: number
+  /** A prepayment the AA Holding account holds until the List is authorised (catch-up Phase 27a): nothing released yet. */
+  held: boolean
   /** Remaining balance due (total − received), >= 0. */
   outstanding: number
   raisedAtISO: string
@@ -980,11 +989,17 @@ export interface AccpayInvoiceRow {
 
 /**
  * Who a case pays (catch-up Phase 25, DM-42): the payee stamped from the
- * Booking's lock at the run. A pre-payment case, raised at setup before any
- * lock, has none and keeps the Booking-to-List join until Phases 27 and 41.
+ * Booking's lock at the run. A prepayment's collect case (catch-up Phase 27a)
+ * is the transfer's payee once transferred, else the List's anaesthetist now
+ * (so a moved Booking's prepayment shows to whoever has the List, never the
+ * old anaesthetist); nothing reaches them until the transfer.
  */
-export function payeeIdForCase(state: Pick<AppState, 'schedule'>, theCase: BillingCase): string | undefined {
+export function payeeIdForCase(state: Pick<AppState, 'schedule'> & { billing?: Pick<AppState['billing'], 'transfers'> }, theCase: BillingCase): string | undefined {
   if (theCase.payeeAnaesthetistId !== undefined) return theCase.payeeAnaesthetistId
+  if (theCase.prepayLeg === 'collect' && state.billing !== undefined) {
+    const transfer = transferOfCase(state.billing.transfers, theCase.id)
+    if (transfer !== undefined) return transfer.toAnaesthetistId
+  }
   const booking = state.schedule.bookings[theCase.bookingId]
   const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
   return list?.anaesthetistId
@@ -998,6 +1013,7 @@ function accpayRowForCase(state: MirrorState, c: BillingCase, todayISO: string):
   if (booking === undefined) return undefined
   const agingDays = epochDayOf(todayISO) - epochDayOf(invoice.raisedAtISO)
   const outstanding = Math.max(0, roundToCents(invoice.total - c.receivedAmount))
+  const money = releasedAndPaidFor(state, c)
   return {
     caseId: c.id,
     invoiceId: c.invoiceId,
@@ -1010,7 +1026,8 @@ function accpayRowForCase(state: MirrorState, c: BillingCase, todayISO: string):
     accFunded: c.archivedAccRelated === true || proceduresForBooking(state, c.bookingId).some((p) => procedureAccFunded(state.masters, p)),
     amountTotal: invoice.total,
     receivedAmount: c.receivedAmount,
-    disbursedAmount: c.disbursedAmount,
+    disbursedAmount: money.disbursed,
+    held: money.held,
     outstanding,
     raisedAtISO: invoice.raisedAtISO,
     agingDays,
@@ -1111,10 +1128,25 @@ export function gstActivityFor(
 }
 
 export type PaymentHistoryStatus =
+  | 'held'
   | 'partPayment'
   | 'customerPaid'
   | 'partPaidOut'
   | 'paidOut'
+
+/**
+ * What a case has released to the anaesthetist and paid out (catch-up Phase
+ * 27a): an ordinary case's own mirror; a prepayment's collect case nothing
+ * while the AA Holding account holds it, then its transfer's.
+ */
+export function releasedAndPaidFor(
+  state: { billing: Pick<AppState['billing'], 'transfers'> },
+  c: BillingCase,
+): { held: boolean; released: number; disbursed: number } {
+  if (c.prepayLeg !== 'collect') return { held: false, released: c.authorisedAmount, disbursed: c.disbursedAmount }
+  const transfer = transferOfCase(state.billing.transfers, c.id)
+  return transfer === undefined ? { held: true, released: 0, disbursed: 0 } : { held: false, released: transfer.released, disbursed: transfer.disbursed }
+}
 
 export interface PaymentHistoryRow {
   caseId: string
@@ -1156,12 +1188,14 @@ export function paymentHistoryFor(
     if (invoice === undefined || booking === undefined || receivedAtISO === undefined) continue
 
     const fullyReceived = toCents(c.receivedAmount) >= toCents(invoice.total)
-    const anyDisbursed = toCents(c.disbursedAmount) > 0
+    const money = releasedAndPaidFor(state, c)
+    const anyDisbursed = toCents(money.disbursed) > 0
     const fullyDisbursed =
-      toCents(c.authorisedAmount) > 0 &&
-      toCents(c.disbursedAmount) >= toCents(c.authorisedAmount)
-    const status: PaymentHistoryStatus =
-      fullyDisbursed && fullyReceived
+      toCents(money.released) > 0 &&
+      toCents(money.disbursed) >= toCents(money.released)
+    const status: PaymentHistoryStatus = money.held
+      ? 'held'
+      : fullyDisbursed && fullyReceived
         ? 'paidOut'
         : anyDisbursed
           ? 'partPaidOut'
@@ -1176,8 +1210,8 @@ export function paymentHistoryFor(
       payerLabel: invoiceAddresseeName(state, invoice),
       receivedAtISO,
       grossReceived: c.receivedAmount,
-      releasedAmount: c.authorisedAmount,
-      disbursedAmount: c.disbursedAmount,
+      releasedAmount: money.released,
+      disbursedAmount: money.disbursed,
       status,
     })
   }
@@ -1540,7 +1574,7 @@ export function useClockTimeLabel(): string {
 
 /**
  * The BCTI record list: the ONLY source `bctisFor` is fed from (one record per
- * procedure ACCPAY, the pre-payment invoice's included; fee ACCRECs have no
+ * procedure ACCPAY, a prepayment's left out by `BCTI_COUNT_RULE.prepaymentPairs`, catch-up Phase 27a; fee ACCRECs have no
  * ACCPAY so are never counted). See `bctiRecordsFrom` for the feeders later
  * phases add.
  */
@@ -2138,7 +2172,7 @@ export function bookingContractCue(state: Pick<AppState, 'masters' | 'schedule'>
 export function procedureStackViewFor(
   state: Pick<AppState, 'masters'> & {
     schedule: Pick<AppState['schedule'], 'procedures' | 'bookings' | 'lists'> & Partial<Pick<AppState['schedule'], 'billingLines'>>
-    billing?: Pick<AppState['billing'], 'invoices' | 'invoiceLines'> & Partial<Pick<AppState['billing'], 'locks' | 'cases'>>
+    billing?: Pick<AppState['billing'], 'invoices' | 'invoiceLines'> & Partial<Pick<AppState['billing'], 'locks' | 'cases' | 'transfers'>>
   },
   procedureId: string,
   surface: StackSurface,
@@ -2186,7 +2220,11 @@ export function procedureStackViewFor(
   // A prepaid Procedure's basis reads its prepaid amount (catch-up Phase 27, US-03.1.8): needs the billing slice.
   const prepay =
     state.billing?.cases !== undefined && state.schedule.billingLines !== undefined
-      ? prepaymentForProcedure(state as Parameters<typeof prepaymentForProcedure>[0], procedureId)
+      ? prepaymentForProcedure(
+          // The transfers only say where the money is (catch-up Phase 27a), which the stack never reads.
+          { ...state, billing: { ...state.billing, transfers: state.billing.transfers ?? {} } } as Parameters<typeof prepaymentForProcedure>[0],
+          procedureId,
+        )
       : undefined
   const prepaid = isStillPrepaid(prepay) ? { amount: prepay.amount.kind === 'priced' ? prepay.amount.amount : null, status: prepay.status } : undefined
   return procedureStackView(procedure, {

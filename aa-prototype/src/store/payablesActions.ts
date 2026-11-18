@@ -11,10 +11,19 @@
  * partial payment authorises (and this run disburses) exactly the amount
  * received, and the balance follows on later payments + runs. AA's own fee is a
  * separate monthly invoice and is never deducted here (FT-10.3). Audited `source:'system'` (`xero.disbursed`).
+ *
+ * The run reads every payable through one adapter (`payableLegsFrom`, catch-up
+ * Phase 27a): an ACCPAY to an anaesthetist, or a transferred prepayment. A
+ * payable crediting the AA Holding account is never one (`isHeldPayable`):
+ * money leaves the account only by a transfer or refund the system raises
+ * (`canPayOutOfHolding`, US-06.5.1). The payment itself is Xero's (D53): this
+ * run stands in until Phase 37 moves it to the Xero simulator, behind the same
+ * adapter.
  */
 
-import type { BillingCase, Disbursement, XeroAccPay } from '../domain/types'
+import type { BillingCase, Disbursement, PrepayTransfer, XeroAccPay } from '../domain/types'
 import { roundToCents, toCents } from '../domain/billing/money'
+import { canPayOutOfHolding, HOLDING_SYSTEM_ONLY, isHeldPayable, legIncrement, payableLegsFrom, type PayableLeg } from '../domain/billing/prepayHolding'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 
@@ -24,6 +33,7 @@ export interface PayablesRunResult {
   payablesRunId?: string
   disbursedCount: number
   totalDisbursed: number
+  /** The ACCPAY ids paid; a transferred prepayment's transfer id. */
   accPayIds: string[]
 }
 
@@ -32,24 +42,17 @@ export interface PayablesDue {
   total: number
 }
 
-/**
- * Whether the payables run pays this ACCPAY: never one crediting the AA
- * Holding account (catch-up Phase 27; FT-06.3, D38). 27a's transfer pays the
- * anaesthetist who did the List from the holding account.
- */
-export const HELD_IN_HOLDING_ACCOUNT = 'This payable credits the AA Holding account. It is not paid out to the anaesthetist from here.'
-
-export function paidByPayablesRun(p: Pick<XeroAccPay, 'payeeAccount'>): boolean {
-  return p.payeeAccount === undefined
+/** Every payable the run may pay: anaesthetists' ACCPAYs and transferred prepayments, never the AA Holding account's. */
+function legsOf(state: Pick<AppState, 'xero' | 'billing'>): PayableLeg[] {
+  return payableLegsFrom(state.xero.accPays, state.billing.transfers, (caseId) => state.billing.cases[caseId]?.accPayId)
 }
 
-/** The payables due right now: count of ACCPAYs and the total increment to disburse. */
-export function payablesDue(state: Pick<AppState, 'xero'>): PayablesDue {
+/** The payables due right now: count of payables and the total increment to disburse. */
+export function payablesDue(state: Pick<AppState, 'xero' | 'billing'>): PayablesDue {
   let count = 0
   let total = 0
-  for (const p of Object.values(state.xero.accPays)) {
-    if (!paidByPayablesRun(p)) continue
-    const increment = roundToCents(p.amountAuthorised - p.amountDisbursed)
+  for (const leg of legsOf(state)) {
+    const increment = legIncrement(leg)
     if (toCents(increment) > 0) {
       count += 1
       total = roundToCents(total + increment)
@@ -59,25 +62,22 @@ export function payablesDue(state: Pick<AppState, 'xero'>): PayablesDue {
 }
 
 /**
- * Run the payables (office action). Disburses `amountAuthorised − amountDisbursed`
- * on every ACCPAY that has anything to pay, records a Disbursement per pay,
- * and mirrors the cumulative disbursed amount + a fully-paid-out timestamp onto
- * the BillingCase. Returns `disbursedCount:0` (no run id, no mutation) when there
- * is nothing to pay.
+ * Run the payables (office action). Disburses released less disbursed on every
+ * payable that has anything to pay, records a Disbursement per pay (naming the
+ * transfer when it pays one), and mirrors the cumulative disbursed amount and a
+ * fully-paid-out timestamp onto an ACCPAY's BillingCase. Returns
+ * `disbursedCount:0` (no run id, no mutation) when there is nothing to pay.
  */
 function disbursePayables(
   api: AppStoreApi,
   eligibleIds: ReadonlySet<string>,
 ): Outcome<PayablesRunResult> {
   const state = api.getState()
-  const eligible = Object.values(state.xero.accPays).filter(
-    (p) => eligibleIds.has(p.id) && paidByPayablesRun(p) && toCents(p.amountAuthorised - p.amountDisbursed) > 0,
-  )
-  if (eligible.length === 0) {
+  const eligible = new Set(legsOf(state).filter((leg) => eligibleIds.has(leg.id) && toCents(legIncrement(leg)) > 0).map((leg) => leg.id))
+  if (eligible.size === 0) {
     return ok({ disbursedCount: 0, totalDisbursed: 0, accPayIds: [] })
   }
 
-  const eligibleIdSet = new Set(eligible.map((payable) => payable.id))
   const metas: MutationMeta[] = []
   const result: PayablesRunResult = { disbursedCount: 0, totalDisbursed: 0, accPayIds: [] }
 
@@ -90,65 +90,79 @@ function disbursePayables(
 
     const atISO = clockISO(s.clock)
     const accPays = { ...s.xero.accPays }
+    const transfers = { ...s.billing.transfers }
     const disbursements = { ...s.xero.disbursements }
     const cases = { ...s.billing.cases }
     // case lookup by accPayId (one case per pair).
     const caseByAccPay = new Map<string, BillingCase>()
     for (const c of Object.values(cases)) if (c.accPayId !== undefined) caseByAccPay.set(c.accPayId, c)
 
-    for (const original of Object.values(s.xero.accPays)) {
-      if (!eligibleIdSet.has(original.id)) continue
-      const increment = roundToCents(original.amountAuthorised - original.amountDisbursed)
+    for (const leg of legsOf(s)) {
+      if (!eligible.has(leg.id)) continue
+      const increment = legIncrement(leg)
       if (toCents(increment) <= 0) continue
 
       const dsb = allocateId(counters, 'disbursement')
       counters = dsb.counters
       disbursements[dsb.id] = {
         id: dsb.id,
-        accPayId: original.id,
+        ...(leg.kind === 'transfer' ? { transferId: leg.id } : { accPayId: leg.id }),
         amount: increment,
         atISO,
         payablesRunId,
       } satisfies Disbursement
 
-      const newDisbursed = roundToCents(original.amountDisbursed + increment)
+      const newDisbursed = roundToCents(leg.disbursed + increment)
       // Fully paid out = cumulative disbursement reaches the FULL payable,
       // not merely the currently-authorised slice.
-      const fullPayable = original.amountPayable
-      const fullyPaidOut = toCents(newDisbursed) >= toCents(fullPayable)
-      accPays[original.id] = {
-        ...original,
-        amountDisbursed: newDisbursed,
-        status: fullyPaidOut ? 'paid' : 'authorised',
-      } satisfies XeroAccPay
+      const fullyPaidOut = toCents(newDisbursed) >= toCents(leg.payable)
 
-      const linkedCase = caseByAccPay.get(original.id)
-      if (linkedCase !== undefined) {
-        const caseNow = cases[linkedCase.id] ?? linkedCase
-        const next: BillingCase = {
-          ...caseNow,
-          disbursedAmount: newDisbursed,
-          ...(fullyPaidOut ? { status: 'disbursed' as const } : {}),
+      if (leg.kind === 'transfer') {
+        // A transferred prepayment: the anaesthetist's payable is the transfer's own leg. The collect
+        // pair (its ACCPAY to the AA Holding account, its case) is never paid (US-06.5.1).
+        const transfer = transfers[leg.id]!
+        transfers[leg.id] = { ...transfer, disbursed: newDisbursed } satisfies PrepayTransfer
+        metas.push({
+          entityType: 'billingCase',
+          entityId: transfer.collectCaseId,
+          action: 'xero.disbursed',
+          after: { transferId: leg.id, increment, cumulative: newDisbursed, payablesRunId, fullyPaidOut },
+        })
+      } else {
+        const original = accPays[leg.id]!
+        accPays[leg.id] = {
+          ...original,
+          amountDisbursed: newDisbursed,
+          status: fullyPaidOut ? 'paid' : 'authorised',
+        } satisfies XeroAccPay
+
+        const linkedCase = caseByAccPay.get(leg.id)
+        if (linkedCase !== undefined) {
+          const caseNow = cases[linkedCase.id] ?? linkedCase
+          const next: BillingCase = {
+            ...caseNow,
+            disbursedAmount: newDisbursed,
+            ...(fullyPaidOut ? { status: 'disbursed' as const } : {}),
+          }
+          if (fullyPaidOut && next.disbursedAtISO === undefined) next.disbursedAtISO = atISO
+          cases[linkedCase.id] = next
         }
-        if (fullyPaidOut && next.disbursedAtISO === undefined) next.disbursedAtISO = atISO
-        cases[linkedCase.id] = next
+        metas.push({
+          entityType: 'xeroAccPay',
+          entityId: leg.id,
+          action: 'xero.disbursed',
+          after: { increment, cumulative: newDisbursed, payablesRunId, fullyPaidOut },
+        })
       }
 
       result.disbursedCount += 1
       result.totalDisbursed = roundToCents(result.totalDisbursed + increment)
-      result.accPayIds.push(original.id)
-
-      metas.push({
-        entityType: 'xeroAccPay',
-        entityId: original.id,
-        action: 'xero.disbursed',
-        after: { increment, cumulative: newDisbursed, payablesRunId, fullyPaidOut },
-      })
+      result.accPayIds.push(leg.id)
     }
 
     return {
       xero: { ...s.xero, accPays, disbursements },
-      billing: { ...s.billing, cases },
+      billing: { ...s.billing, cases, transfers },
       counters,
     }
   })
@@ -160,15 +174,16 @@ export function runPayables(api: AppStoreApi, actor: Actor): Outcome<PayablesRun
   const state = api.getState()
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can run payables.')
 
-  const eligibleIds = new Set(Object.values(state.xero.accPays).filter(
-    (p) => toCents(p.amountAuthorised - p.amountDisbursed) > 0,
-  ).map((payable) => payable.id))
+  const eligibleIds = new Set(legsOf(state).filter((leg) => toCents(legIncrement(leg)) > 0).map((leg) => leg.id))
   return disbursePayables(api, eligibleIds)
 }
 
 /**
  * Disburse one selected payable. This is used by the invoice-detail demo
  * shortcut; the normal office payables run remains available for batch work.
+ * A payable crediting the AA Holding account is refused: money leaves the
+ * account only by a transfer or refund the system raises (catch-up Phase 27a;
+ * US-06.5.1, D38, D53).
  */
 export function disbursePayable(
   api: AppStoreApi,
@@ -179,7 +194,6 @@ export function disbursePayable(
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can disburse a payable.')
   const accPay = state.xero.accPays[accPayId]
   if (accPay === undefined) return refuse('notFound', 'ACCPAY not found.')
-  // A prepayment's payable credits the AA Holding account: never paid out here (catch-up Phase 27; FT-06.3, D38).
-  if (!paidByPayablesRun(accPay)) return refuse('heldInHoldingAccount', HELD_IN_HOLDING_ACCOUNT)
+  if (isHeldPayable(accPay) && !canPayOutOfHolding('manual')) return refuse('holdingSystemOnly', HOLDING_SYSTEM_ONLY)
   return disbursePayables(api, new Set([accPayId]))
 }

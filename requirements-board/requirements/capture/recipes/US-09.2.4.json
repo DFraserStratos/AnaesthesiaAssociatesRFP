@@ -1,7 +1,7 @@
 {
   "id": "US-09.2.4",
-  "status": "partial",
-  "absentReason": "The payables run shot is retired: a prepayment's payable credits the AA Holding account and is never disbursed, so there is no prepayment to run it on. Disbursement of an anaesthetist's payable is shown on a billed History pair (accpay-disbursed), and a run over an authorised List's payables is not staged here.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "accpay-disbursed",
@@ -37,6 +37,196 @@
           ],
           "highlight": [
             "[data-shot=xero-accpay-card]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "payables-run",
+      "app": "admin",
+      "caption": "The payables run pays the prepayment transferred to the anaesthetist when the List was authorised",
+      "start": "/admin/billing",
+      "states": [
+        {
+          "state": "due",
+          "caption": "Payables run with the transferred prepayment authorised to disburse: 1 payable, $1,380.00",
+          "steps": [
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Priya Nair\" >> nth=0"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "scroll": "[data-shot=capture-modifiers]"
+            },
+            {
+              "click": "[data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+              "value": "ASA III on review"
+            },
+            {
+              "click": "role=button[name=\"Claim\"]"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Mark complete\"]"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Mark list completed\" >> nth=0"
+            },
+            {
+              "click": "text=\"Submit to office\" >> nth=0"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/admin/review/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": "[data-shot=review-authorised-banner]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "wait": "[data-shot=billing-payables-run]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-payables-run]"
+          ]
+        },
+        {
+          "state": "run",
+          "caption": "Payables run disbursed $1,380.00 to Dr Melanie Souter and recorded it",
+          "steps": [
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Priya Nair\" >> nth=0"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "scroll": "[data-shot=capture-modifiers]"
+            },
+            {
+              "click": "[data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+              "value": "ASA III on review"
+            },
+            {
+              "click": "role=button[name=\"Claim\"]"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Mark complete\"]"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Mark list completed\" >> nth=0"
+            },
+            {
+              "click": "text=\"Submit to office\" >> nth=0"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/admin/review/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": "[data-shot=review-authorised-banner]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "click": "[data-shot=billing-payables-run] >> role=button[name=\"Run payables\"]"
+            },
+            {
+              "wait": "[data-shot=billing-payables-run] >> text=/Run PR0001/"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-payables-run]"
           ]
         }
       ]

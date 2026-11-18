@@ -1,0 +1,282 @@
+{
+  "payablesDue": [],
+  "souterFeeHistory": [
+    {
+      "monthISO": "2026-05",
+      "bctiCount": 2,
+      "subtotal": 510,
+      "total": 586.5,
+      "status": "paid"
+    },
+    {
+      "monthISO": "2026-06",
+      "bctiCount": 1,
+      "subtotal": 505,
+      "total": 580.75,
+      "status": "unpaid"
+    }
+  ],
+  "julyFresh": [
+    {
+      "anaesthetistId": "45178",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "44519",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "36208",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "43015",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "39560",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "29104",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "25490",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "27731",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "34821",
+      "bctiCount": 3,
+      "subtotal": 515,
+      "total": 592.25
+    },
+    {
+      "anaesthetistId": "47733",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "41267",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "46822",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "31902",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "38455",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    }
+  ],
+  "julyAfterS3": [
+    {
+      "anaesthetistId": "45178",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "44519",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "36208",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "43015",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "39560",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "29104",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "25490",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "27731",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "34821",
+      "bctiCount": 4,
+      "subtotal": 520,
+      "total": 598
+    },
+    {
+      "anaesthetistId": "47733",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "41267",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "46822",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "31902",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    },
+    {
+      "anaesthetistId": "38455",
+      "bctiCount": 0,
+      "subtotal": 500,
+      "total": 575
+    }
+  ],
+  "beat5": {
+    "invoiceNumber": "AA-2026-0003",
+    "half": {
+      "disbursedCount": 1,
+      "totalDisbursed": 110.69
+    },
+    "full": {
+      "disbursedCount": 1,
+      "totalDisbursed": 110.69
+    },
+    "disbursed": 221.38
+  },
+  "seededPair": [
+    {
+      "invoiceNumber": "AA-2026-0001",
+      "counterparty": "patient:PT0008",
+      "total": 1380,
+      "accRec": {
+        "kind": "procedure",
+        "contactType": "patient",
+        "contactNumber": "PT0008",
+        "invoiceNumber": "AA-2026-0001",
+        "reference": "BC0001",
+        "amountDue": 1380,
+        "amountReceived": 1380,
+        "status": "paid",
+        "paid": true
+      },
+      "accPay": {
+        "contact": "AA Holding account",
+        "contactType": "organisation",
+        "contactNumber": "AA-HOLDING",
+        "invoiceNumber": "AA-2026-0001-P",
+        "reference": "BC0001",
+        "linked": true,
+        "anaesthetistId": "34821",
+        "amountPayable": 1380,
+        "amountAuthorised": 1380,
+        "amountDisbursed": 0,
+        "status": "authorised",
+        "payeeAccount": "aaHoldingAccount",
+        "taxInvoice": "AA-2026-0001"
+      },
+      "caseStatus": "paid",
+      "caseMoney": {
+        "received": 1380,
+        "authorised": 1380,
+        "disbursed": 0
+      }
+    }
+  ],
+  "livePair": [
+    {
+      "invoiceNumber": "AA-2026-0002",
+      "counterparty": "patient:PT0017",
+      "total": 1380,
+      "accRec": {
+        "kind": "procedure",
+        "contactType": "patient",
+        "contactNumber": "PT0017",
+        "invoiceNumber": "AA-2026-0002",
+        "reference": "BC0002",
+        "amountDue": 1380,
+        "amountReceived": 0,
+        "status": "awaitingPayment",
+        "paid": false
+      },
+      "accPay": {
+        "contact": "AA Holding account",
+        "contactType": "organisation",
+        "contactNumber": "AA-HOLDING",
+        "invoiceNumber": "AA-2026-0002-P",
+        "reference": "BC0002",
+        "linked": true,
+        "anaesthetistId": "34821",
+        "amountPayable": 1380,
+        "amountAuthorised": 0,
+        "amountDisbursed": 0,
+        "status": "draft",
+        "payeeAccount": "aaHoldingAccount",
+        "taxInvoice": "AA-2026-0002"
+      },
+      "caseStatus": "handedOff",
+      "caseMoney": {
+        "received": 0,
+        "authorised": 0,
+        "disbursed": 0
+      }
+    }
+  ],
+  "nairAuthorisedDue": []
+}

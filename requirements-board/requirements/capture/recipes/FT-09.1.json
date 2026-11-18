@@ -6,12 +6,15 @@
     {
       "name": "invoice-pairs",
       "app": "simulator",
-      "caption": "Xero invoice pairs",
+      "caption": "Each invoice pair: ACCREC to the invoice's payer, draft ACCPAY to the anaesthetist, or for a prepayment to the AA Holding account",
       "start": "/demo/xero/invoices",
       "states": [
         {
           "steps": [],
-          "highlight": []
+          "highlight": [
+            "[data-testid=xero-invoice-row-XRB0]",
+            "[data-testid=xero-invoice-table] tbody tr:nth-child(2)"
+          ]
         }
       ]
     }

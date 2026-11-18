@@ -263,7 +263,7 @@ Hooks already added:
 | History Booking | `HBK01`… | The billed history backdrop (Lists `L-HIST-NN`, Procedures `HP`, cases `HBC`). Before catch-up Phase 15 these were `HC01`…. Catch-up Phase 38a appended `HBK14` to `HBK42` on twelve Lists keyed by date and session, `L-HIST-2026-01-12-PM` to `L-HIST-2026-03-27-AM`, all paid before April. |
 | Pinned history List | `L-HIST-2026-03-13-AM` | `SEED_LOOKBACK`: Fri 13 Mar 2026 AM, St George's, Mr P. Doyle, three Bookings (Sarah Mitchell `HBK36`), invoices `AA-2026-H36` to `H38`, paid. |
 | Invoice | `INV0001` / `AA-2026-0001` | `INV0001` is Priya Nair's seeded paid pre-payment: $1,200.00 plus GST = $1,380.00, approved by Kirsty W. Riley's, once approved on the Invoices strip, is the next runtime invoice. Runtime invoices otherwise start at `INV0002` once a list is authorised. |
-| Xero pair | `XRB0` | The seeded pre-payment: its ACCPAY credits the "AA Holding account" (contact `XCHOLD`), not the anaesthetist, and is not disbursed. History pairs are `XRH01`… and runtime pairs `XR0001`…. |
+| Xero pair | `XRB0` | The seeded pre-payment: its ACCPAY (`XPB0`) credits the "AA Holding account" (contact `XCHOLD`), not the anaesthetist, and is held, never disbursed itself; authorising Nair's List transfers it to Dr Souter (catch-up Phase 27a: transfer `PXT0001`, journal `MJ-0001`). History pairs are `XRH01`… and runtime pairs `XR0001`…. |
 
 **Named lists** (`SEED_LIST_IDS`)
 
@@ -1021,6 +1021,44 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   (see Demo actions). Nair's final invoice needs the PM List completed, submitted and authorised (`/web/lists/...-PM`,
   "Mark complete", "Mark list completed", "Submit to office", then `/admin/review/L-34821-2026-07-24-PM`).
 
+### AA Holding account (catch-up Phase 27a)
+
+- **Seed.** Nair's prepayment `INV0001` = `AA-2026-0001` ($1,380.00, paid 14 Jul) is **held**: its pair `XRB0`
+  (ACCREC) and `XPB0` (ACCPAY) credits the AA Holding account (Xero contact `XCHOLD`, contact number `AA-HOLDING`),
+  authorised $1,380.00, disbursed $0.00. Case `BC0001` is the collect leg. **No transfer at reset**, and the
+  Payables run panel (`[data-shot=billing-payables-run]`) shows nothing due: a held payable is never in the run.
+- **Billing monitor** `/admin/billing`: the card `[data-shot=billing-prepay-holding]` "AA Holding account": the
+  balance (mono, `data-holding-balance`, $1,380.00 at reset), "Held for 1 prepaid Booking. Leaves only by a system
+  transfer or refund.", a warning pill "Moves to the anaesthetist when the List is authorised · to confirm with AA",
+  and entry rows `[data-shot=holding-entry]` (`data-entry-kind` received|transferred, `data-booking-id`); empty
+  state "Nothing held". A journal fault shows on the List's pipeline Booking row as
+  `[data-shot=monitor-journal-fault]` with "Resolve & retry".
+- **The transfer at authorise.** Authorising Nair's List (complete, submit, authorise: the steps under
+  Staging above; US-06.5.1 and US-09.1.3 carry them) writes the transfer `PXT0001` and its Xero manual journal
+  `MJ-0001` automatically, with no office step. Then: the card shows a Transferred row naming "Dr Melanie Souter",
+  balance $0.00; the Payables run reads "1 payable authorised · $1,380.00 ..."; clicking "Run payables"
+  (`[data-shot=billing-payables-run] >> role=button[name="Run payables"]`) shows "Run PR0001: disbursed $1,380.00
+  across 1 payable."
+- **Xero sim** `/demo/xero/invoices/XRB0`: the ACCPAY card's flow text "Held until the List is authorised, then
+  moved by a transfer to the anaesthetist who did the List. Leaves only by a system transfer or refund."; before
+  the transfer the callout `[data-shot=xero-holding-held]` "Held in the AA Holding account"; after it
+  `[data-testid=xero-transfer-journal]` (Manual journal MJ-0001, "Transfer, not a payment", two lines, "How this
+  posts in Xero is still to be confirmed"). The settle button reads "Pay out of the AA Holding account" and is
+  refused ("The customer payment is recorded. Money leaves the AA Holding account only by a transfer or refund the
+  system raises.").
+- **Admin invoice** `/admin/invoices/INV0001`: the rail's `[data-testid=xero-accpay-payee]` "AA Holding account";
+  after authorise `[data-testid=xero-transfer-journal-reference]` "MJ-0001".
+- **Anaesthetist.** Web `/web/accounts/payments`: row `[data-testid=payment-history-row-AA-2026-0001]`, its pill
+  `[data-shot=payment-held]` "Held until the List is authorised"; after authorise and Run payables, "Paid to you"
+  (no `payment-held` then). Units row `[data-shot=capture-prepaid]` "Prepaid $1,200.00 · paid · held by AA until
+  the List is authorised" (inner `[data-shot=capture-prepaid-holding]`); the Pre-payment panel line
+  `[data-shot=prepayment-holding]` (`data-holding-state` held|transferred|paidOut): "Held by AA until the List is
+  authorised" for the anaesthetist; Admin reads "Transferred to Dr Melanie Souter", then "Paid to Dr Melanie
+  Souter". Mobile Balances' `[data-shot=balances-payment-held]` shows only on a part-paid held prepayment (not Nair).
+- **AA fees** `/admin/billing/aa-fees`: a prepayment payable is not a BCTI, so Dr Souter's July preview is 2 BCTIs,
+  $510.00 at reset (was 3, $515.00).
+- **Words.** "AA Holding account" and "transfer"; never "prepay holding account" or "second pair".
+
 ### Hospital sample files and their rows (catch-up Phase 33)
 
 The intake slice is empty at reset; Matching's Import hospital file dialog offers four sample files
@@ -1422,6 +1460,13 @@ the exception: use the `trigger` step)
   setup, the Assign Draft List sheet, the invoice's Locked record and the profile facts. Page titles are the shared `PageHeader` (the `h1` text unchanged);
   eyebrows are the shared `Eyebrow` (CSS caps, so `text=` still matches the DOM's mixed case). The phone's day chip
   is the shared `DayChip`, test id `mobile-lists-day-chip` kept.
+- Catch-up Phase 27a (AA Holding account): `data-shot` `billing-prepay-holding` (the Billing monitor card), `holding-entry`
+  (its rows, `data-entry-kind`, `data-booking-id`), `monitor-journal-fault` (a pipeline Booking row's journal fault),
+  `xero-holding-held` (the Xero pair's "Held in the AA Holding account" callout), `payment-held` (web Accounts payments
+  pill), `balances-payment-held` (mobile Balances pill, part-paid held prepayment only), `prepayment-holding` (the
+  Pre-payment panel line, `data-holding-state`), `capture-prepaid-holding` (inside `capture-prepaid`); `data-testid`
+  `xero-transfer-journal` (the Xero manual journal), `xero-accpay-payee` and `xero-transfer-journal-reference` (the
+  Admin invoice rail). See [AA Holding account](#aa-holding-account-catch-up-phase-27a).
 - Catch-up Phase 26 (`data-shot`): mobile `/mobile/more` `mobile-profile` (the Profile card), `mobile-profile-rate`,
   `mobile-profile-rate-change` (its "Change"), `mobile-profile-hpi`, `mobile-profile-bank` (masked), the bottom sheet
   `mobile-rate-sheet` with `mobile-rate-save` ("Save rate"); web `web-profile` (`/web/profile`), `web-profile-link` (the
@@ -1762,6 +1807,9 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 
 ## Demo control panel (`/demo/control`) and Demo actions
 
+- Catch-up Phase 27a: no new demo action. The Payables run has nothing due at reset (Nair's seeded prepayment is
+  held in the AA Holding account, never in the run); it is due only once her List is authorised and the transfer
+  is written. `payment-full` and `payment-half` are unchanged.
 - Catch-up Phase 20: the PWA-only "Office sets this Booking's Contract"
   (`[data-shot=pwa-demo-action-office-sets-booking-contract]`) on a mobile Booking with a Procedure that
   needs an invoice destination sets the List's hospital's first Contract on offer, else No contract ·

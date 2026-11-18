@@ -20,7 +20,7 @@ import { Pill } from '../ui/Pill'
 import { rvgDetailFor } from '../../domain/billing/rvgDetail'
 import { priceStatusFor } from '../../domain/billing/priceStatus'
 import { needsPriceMessage } from '../../domain/billing/priceRanges'
-import { prepaidAmountText, prepaymentStatusWords, prepaymentTone } from '../booking/prepaymentText'
+import { prepaidAmountText, prepaymentHoldingWords, prepaymentStatusWords, prepaymentTone } from '../booking/prepaymentText'
 
 /** Fields the Contract row anchors (the step rail and "Contract and reference" own them; catch-up Phase 20). */
 // The Contract fields' failures, shown under the Billing card, which Mark complete focuses.
@@ -255,7 +255,7 @@ export function BtmCaptureBlock({
       )}
 
       {/* The prepaid amount where units are recorded (catch-up Phase 27, US-03.1.8): read-only, with its status. */}
-      <PrepaidRow procedureId={procedure.id} />
+      <PrepaidRow procedureId={procedure.id} office={actor.role === 'office'} />
 
       <Pair>
         {/* What the price comes to (catch-up Phase 24, US-03.3.10): the reasoned Adjustment and charge card is gone (RV-04). */}
@@ -292,8 +292,12 @@ export function BtmCaptureBlock({
 }
 
 /** "Prepaid $1,200.00 · paid": a prepaid Procedure's amount and status, read-only (catch-up Phase 27; US-03.1.8, D30). */
-function PrepaidRow({ procedureId }: { procedureId: string }) {
+function PrepaidRow({ procedureId, office }: { procedureId: string; office: boolean }) {
   const prepayment = useProcedurePrepayment(procedureId)
+  const payeeName = useAppStore((s) => {
+    const id = prepayment?.holding?.toAnaesthetistId
+    return id !== undefined ? s.masters.anaesthetists[id]?.name : undefined
+  })
   if (!isStillPrepaid(prepayment)) return null
   const tone = prepaymentTone(prepayment.status) === 'success' ? semantic.success : semantic.warning
   return (
@@ -308,6 +312,13 @@ function PrepaidRow({ procedureId }: { procedureId: string }) {
         </span>
         {' · '}
         {prepaymentStatusWords(prepayment.status)}
+        {/* Held by AA until the List is authorised, then paid to the anaesthetist (catch-up Phase 27a). */}
+        {prepayment.holding !== undefined && (
+          <>
+            {' · '}
+            <span data-shot="capture-prepaid-holding">{prepaymentHoldingWords(prepayment.holding, { you: !office, ...(payeeName !== undefined ? { anaesthetistName: payeeName } : {}) })}</span>
+          </>
+        )}
       </span>
     </div>
   )

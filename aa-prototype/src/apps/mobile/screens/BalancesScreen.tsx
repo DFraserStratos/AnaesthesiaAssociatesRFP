@@ -15,6 +15,8 @@ import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedCont
 import { DockSpacer } from '../../../shared/ui/DockSpacer'
 import { MobileHeader } from '../components'
 import { EmptyState } from '../../../shared/ui/EmptyState'
+import { Pill } from '../../../shared/ui/Pill'
+import { HELD_UNTIL_AUTHORISED } from '../../../domain/billing/prepayHolding'
 
 type Section = 'outstanding' | 'gst'
 
@@ -99,6 +101,12 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
                   </span>
                   <AgeChip days={r.agingDays} accFunded={r.accFunded} />
                 </div>
+                {/* A prepayment held by AA (catch-up Phase 27a): nothing reaches you until the List is authorised. */}
+                {r.held && (
+                  <Pill shot="balances-payment-held" style={{ alignSelf: 'flex-start' }}>
+                    {HELD_UNTIL_AUTHORISED}
+                  </Pill>
+                )}
               </div>
             ))
           )}

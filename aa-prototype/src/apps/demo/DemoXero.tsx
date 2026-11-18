@@ -3,7 +3,8 @@ import { AlertTriangle, ArrowRight, ChevronLeft, ExternalLink, Info } from 'luci
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { DemoSurface } from './DemoSurface'
 import { OFFICE_ACTOR, disbursePayable, receivePayment, useAppStore } from '../../store'
-import { dateTimeMicroCap, formatCurrency } from '../../shared/format'
+import { dateTimeMicroCap, dayMicroCap, formatCurrency } from '../../shared/format'
+import { HELD_UNTIL_AUTHORISED, LEAVES_ONLY_BY_SYSTEM, RELEASE_TRIGGER_CAPTION, transferOfCase } from '../../domain/billing/prepayHolding'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { XeroContact } from '../../domain/types'
 import { APP_CONFIG } from '../../shell/appConfig'
@@ -234,7 +235,9 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
     pair.accRec.amountReceived > 0 &&
     pair.engine.anaesthetistId === APP_CONFIG.web.persona.anaesthetistId
 
-  const heldInHolding = pair.accPay?.contact?.contactNumber === AA_HOLDING_ACCOUNT.contactNumber
+  const heldInHolding = pair.accPay?.held === true
+  // Once transferred, the money has left the AA Holding account: nothing to try from here (catch-up Phase 27a).
+  const transferred = useAppStore((s) => heldInHolding && pair.engine.caseId !== undefined && transferOfCase(s.billing.transfers, pair.engine.caseId) !== undefined)
   function settleInvoice() {
     if (pair.accPay === undefined) {
       setSettlementMessage('This record has no linked payable to disburse.')
@@ -254,12 +257,13 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
       }
     }
 
-    // A prepayment's payable credits the AA Holding account (catch-up Phase 27): the payment is all there is to simulate.
-    if (heldInHolding) {
-      setSettlementMessage(`Done. The customer payment is recorded; the ${AA_HOLDING_ACCOUNT.name} holds it.`)
+    const payout = disbursePayable(useAppStore, OFFICE_ACTOR, pair.accPay.id)
+    // A prepayment's payable credits the AA Holding account (catch-up Phases 27, 27a): the payment lands, the
+    // payout is refused, because money leaves the account only by a transfer or refund the system raises.
+    if (!payout.ok && payout.code === 'holdingSystemOnly') {
+      setSettlementMessage(`The customer payment is recorded. ${payout.message}`)
       return
     }
-    const payout = disbursePayable(useAppStore, OFFICE_ACTOR, pair.accPay.id)
     if (!payout.ok) {
       setSettlementMessage(`The anaesthetist payout could not be completed: ${payout.message}`)
       return
@@ -293,22 +297,24 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
             <button
               type="button"
               onClick={settleInvoice}
-              disabled={pair.accPay === undefined || fullySettled || (heldInHolding && pair.accRec.status === 'paid')}
+              disabled={pair.accPay === undefined || fullySettled || transferred}
               style={{
                 font: 'inherit',
                 fontSize: 13,
                 fontWeight: 700,
                 padding: '9px 14px',
                 borderRadius: radius.ctl,
-                border: `1px solid ${fullySettled ? neutral.lineStrong : accent.base}`,
-                background: fullySettled ? neutral.sunken : accent.base,
-                color: fullySettled ? neutral.mist : '#FFFFFF',
-                cursor: fullySettled ? 'default' : 'pointer',
+                border: `1px solid ${fullySettled || transferred ? neutral.lineStrong : accent.base}`,
+                background: fullySettled || transferred ? neutral.sunken : accent.base,
+                color: fullySettled || transferred ? neutral.mist : '#FFFFFF',
+                cursor: fullySettled || transferred ? 'default' : 'pointer',
               }}
             >
               {heldInHolding
-                ? pair.accRec.status === 'paid'
-                  ? 'Payment recorded'
+                ? transferred
+                  ? 'Transferred to the anaesthetist'
+                  : pair.accRec.status === 'paid'
+                  ? `Pay out of the ${AA_HOLDING_ACCOUNT.name}`
                   : 'Simulate payment'
                 : fullySettled
                 ? 'Payment and payout complete'
@@ -402,13 +408,77 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
             from="Anaesthesia Associates"
             to={pair.accPay?.contact?.name ?? 'Anaesthetist'}
           >
-            {pair.accPay?.contact?.contactNumber === AA_HOLDING_ACCOUNT.contactNumber
-              ? `Simulated payable crediting the ${AA_HOLDING_ACCOUNT.name}, not the anaesthetist: a prepayment is held there until the List is authorised. The payables run never pays it.`
+            {heldInHolding
+              ? `Simulated payable crediting the ${AA_HOLDING_ACCOUNT.name}, not the anaesthetist. ${HELD_UNTIL_AUTHORISED}, then moved by a transfer to the anaesthetist who did the List. ${LEAVES_ONLY_BY_SYSTEM}.`
               : <>Simulated payable to the anaesthetist. This record tracks the full amount AA will disburse. {`Held as a ${BCTI_DOCUMENT_NAME.toLowerCase()} from the anaesthetist, one for each invoice and the same value.`}</>}
           </MoneyFlowCard>
           <AccPayCard pair={pair} />
         </div>
       </div>
+
+      {heldInHolding && pair.engine.caseId !== undefined && <TransferJournal caseId={pair.engine.caseId} />}
+    </div>
+  )
+}
+
+/**
+ * The transfer of a prepayment out of the AA Holding account, as the Xero sim
+ * mirrors it (catch-up Phase 27a; US-06.5.1, US-09.1.3): a manual journal with
+ * two lines, referencing the prepayment invoice, never naming the patient. How
+ * the real system posts the move is still open, so the record says so.
+ */
+function TransferJournal({ caseId }: { caseId: string }) {
+  const transfers = useAppStore((s) => s.billing.transfers)
+  const journals = useAppStore((s) => s.xero.journals)
+  const contacts = useAppStore((s) => s.xero.contacts)
+  const transfer = transferOfCase(transfers, caseId)
+  const journal = transfer?.xeroJournalId !== undefined ? journals[transfer.xeroJournalId] : undefined
+  if (transfer === undefined) {
+    return (
+      <Callout tone="info" title={`Held in the ${AA_HOLDING_ACCOUNT.name}`} shot="xero-holding-held">
+        {RELEASE_TRIGGER_CAPTION}, by a transfer, not a payment. How this posts in Xero is still to be confirmed.
+      </Callout>
+    )
+  }
+  if (journal === undefined) {
+    return (
+      <Callout tone="warn" title="Transfer journal not posted">
+        {transfer.journalFailure?.message ?? 'The transfer stands; its journal is waiting to post.'}
+      </Callout>
+    )
+  }
+  return (
+    <div data-testid="xero-transfer-journal">
+      <RecordCard eyebrow="Manual journal" title={journal.journalNumber} status={<span style={{ fontSize: 12, fontWeight: 700, color: semantic.success.onTint }}>Transfer, not a payment</span>}>
+        <MetaGrid>
+          <MetaItem label="Date" value={dayMicroCap(journal.dateISO.slice(0, 10))} />
+          <MetaItem label="Reference" value={journal.reference} mono />
+          <MetaItem label="Transfer" value={transfer.id} mono />
+        </MetaGrid>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${neutral.line}`, color: neutral.slate, textAlign: 'left' }}>
+                <th style={{ padding: '6px 8px', fontWeight: 600 }}>Creditor</th>
+                <th style={{ padding: '6px 8px', fontWeight: 600 }}>Description</th>
+                <th style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'right' }}>Debit</th>
+                <th style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'right' }}>Credit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {journal.lines.map((line) => (
+                <tr key={line.contactId} style={{ borderBottom: `1px solid ${neutral.sunken}` }}>
+                  <td style={{ padding: '6px 8px' }}>{contacts[line.contactId]?.name ?? line.contactId}</td>
+                  <td style={{ padding: '6px 8px', color: neutral.slate }}>{line.description}</td>
+                  <td className="mono" style={{ padding: '6px 8px', textAlign: 'right' }}>{line.debit > 0 ? formatCurrency(line.debit) : ''}</td>
+                  <td className="mono" style={{ padding: '6px 8px', textAlign: 'right' }}>{line.credit > 0 ? formatCurrency(line.credit) : ''}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <span style={{ fontSize: 12, color: neutral.mist }}>How this posts in Xero is still to be confirmed.</span>
+      </RecordCard>
     </div>
   )
 }
@@ -651,8 +721,15 @@ function AccPayCard({ pair }: { pair: XeroInvoicePairView }) {
         <MoneyStat label="Ready to disburse" value={pay.remainingAuthorised} />
       </MoneyGrid>
 
-      {/* The ACCPAY held as a buyer-created tax invoice (catch-up Phase 22; US-09.1.4; provisional, OQ-29). */}
-      {pay.taxInvoice !== undefined && (
+      {/* A payable to the AA Holding account (catch-up Phase 27a): held, and not counted as a BCTI (OQ-29 provisional). */}
+      {pay.held && (
+        <div data-shot="xero-accpay-held" style={{ fontSize: 12.5, color: neutral.slate, borderTop: `1px solid ${neutral.line}`, paddingTop: 14 }}>
+          {HELD_UNTIL_AUTHORISED}. Not counted as a buyer-created tax invoice while AA&apos;s accountant confirms how prepayments are treated.
+        </div>
+      )}
+
+      {/* The ACCPAY held as a buyer-created tax invoice (catch-up Phase 22; US-09.1.4; provisional, OQ-29). Not for a held prepayment payable. */}
+      {pay.taxInvoice !== undefined && !pay.held && (
         <div data-shot="xero-accpay-buyer-created" style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: `1px solid ${neutral.line}`, paddingTop: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
             <h4 style={{ margin: 0, fontSize: 14 }}>{pay.taxInvoice.documentName}</h4>
