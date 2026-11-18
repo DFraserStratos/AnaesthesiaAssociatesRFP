@@ -34,11 +34,17 @@ export function ProfileHeader({ name, chip, sub, action }: { name: string; chip?
 }
 
 /** An identifier as a mono chip: "HPI CPN 47REIA". */
-export function IdChip({ label, value, shot }: { label: string; value: string; shot?: string }) {
+export function IdChip({ label, value, empty, shot }: { label: string; value: string | undefined; empty?: string; shot?: string }) {
+  // No value held (catch-up Phase 17b: a surgeon with no HPI CPN yet): `empty` in mist, not mono.
+  const held = value !== undefined && value !== ''
   return (
     <span data-shot={shot} style={{ display: 'inline-flex', alignItems: 'baseline', gap: 6, padding: '3px 10px', borderRadius: radius.pill, background: neutral.sunken, border: `1px solid ${neutral.line}` }}>
       <span style={{ fontSize: 11, fontWeight: 600, color: neutral.mist }}>{label}</span>
-      <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: neutral.ink }}>{value}</span>
+      {held ? (
+        <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: neutral.ink }}>{value}</span>
+      ) : (
+        <span style={{ fontSize: 13, fontWeight: 500, color: neutral.mist }}>{empty ?? 'None'}</span>
+      )}
     </span>
   )
 }

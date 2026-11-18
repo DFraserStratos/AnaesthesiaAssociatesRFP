@@ -658,7 +658,7 @@
       reschedule, reassign a whole List for illness cover, preserving Bookings and audit through every change.
       Sees the team's notifications of Lists anaesthetists have moved and their alerts to the office, ticks each one resolved once dealt with (it leaves for the whole office; Show resolved brings it back), and assigns the Draft Lists they return. Records a sickness phoned in with Change status on the Day view: the List goes back to the office or on to a colleague there and then. Opens an out-of-hours session for an emergency or late case (Open out-of-hours session on an anaesthetist's Day row, any day from today, one a day, 18:00 to 21:00 by default) and puts a List in it, a new one or a Draft List for that evening; closes an empty one from its drawer. Sets the primary Procedure from the rooms' sheet (Make primary on the Admin Booking), and corrects it at review. Imports hospital files, matches each row on the matching screen (Admin, Matching), and sets each new Booking's invoice destination and Contract. As integration operator, the matching screen is her in-scope surface; the HL7/FHIR monitor is Future scope.
       Maintains schedule-related master data such as anaesthetists, recurring bookings and hospital holidays (adding, editing and deleting closures),
-      and surgeons, their rooms and groups, the office's private pairing preferences and the anaesthetists'
+      and surgeons, their contacts and groups, the office's private pairing preferences and the anaesthetists'
       priority tiers. Holds each anaesthetist's profile on their record (the Profile card's Edit details): rate
       per unit, phone, email, registration number, HPI CPN, bank account and GST number. The HPI CPN and bank
       details are mandatory on every anaesthetist record; every change is audited, the bank number masked.</p>
@@ -766,15 +766,14 @@
     session is not painted; Phase 31 makes it a Draft List), and a change reapplies at once through "Apply
     to canvas now"; hospital holidays flag Lists; conflicts surface without deleting the List and clear
     when the clash goes or the office clears them. <span class="chip ready">Ready</span></p>
-    <p>In Admin, the office also maintains surgeons (each keyed on their HPI CPN and holding one or more
-    specialties), surgeons' rooms, surgeon groups, hospital contact emails, AA's list of specialties, its
+    <p>In Admin, the office also maintains surgeons (each holding one or more specialties, a practice name and
+    their contacts; the HPI CPN is filled in by admin staff, unique when held), surgeon groups, hospital contact emails, AA's list of specialties, its
     funding tags (SXAP, HNZ, ACC, in the order they are offered), and its private pairing preferences and
     anaesthetist priority tiers.
-    A surgeons' room's email and phone are optional (a room may hold none); a surgeon belongs to one or more
-    rooms, the first the main room; and each room holds its practice manager and PA contacts (name, email,
-    role), for the whole room or named for one surgeon (provisional, OQ-127).
-    The surgeon update email (Phase 35) will go to the main room's email when one is held, otherwise to
-    nothing (the office types one), with the surgeon's other rooms offered; never to a contact.
+    The system keeps no surgeons' rooms: a surgeon holds a practice name, one personal contact and one or
+    more office contacts (practice manager, PA or shared inbox: name, email, phone, blanks allowed).
+    The surgeon update email (Phase 35) will go to the first office contact with an email, with the others
+    offered; never every contact and never the personal contact.
     Anaesthetists never see preferences or tiers, and an anaesthetist handing on their own List gets no
     warning.</p>
   </div></details>
@@ -1013,7 +1012,7 @@
       <tr><td>Ledger (the whole ledger)</td><td><code>/admin/ledger</code></td></tr>
       <tr><td>Ledger, one anaesthetist</td><td><code>/admin/ledger/anaesthetists/&lt;anaesthetistId&gt;</code> (Dr Souter: <code>34821</code>)</td></tr>
       <tr><td>Integration monitor</td><td><code>/admin/integrations</code></td></tr>
-      <tr><td>Master data</td><td><code>/admin/masters</code> (one view: <code>?view=surgeons</code>, <code>?view=surgeonRooms</code>, <code>?view=anaesthetists</code>)</td></tr>
+      <tr><td>Master data</td><td><code>/admin/masters</code> (one view: <code>?view=surgeons</code>, <code>?view=anaesthetists</code>)</td></tr>
       <tr><td>Availability statuses</td><td><code>/admin/masters?view=availability-statuses</code></td></tr>
       <tr><td>Contracts</td><td><code>/admin/masters?view=contracts</code> (one holder: <code>&amp;holder=PY-COS</code>)</td></tr>
       <tr><td>Specialties</td><td><code>/admin/masters?view=specialties</code></td></tr>
@@ -1021,7 +1020,6 @@
       <tr><td>Recurring bookings</td><td><code>/admin/masters?view=recurringBookings</code></td></tr>
       <tr><td>Hospitals &amp; holidays</td><td><code>/admin/masters?view=hospitals</code> (List or Calendar)</td></tr>
       <tr><td>Surgeon profile</td><td><code>/admin/masters/surgeons/&lt;surgeonId&gt;</code> (Ms A. Reid: <code>S-REID</code>)</td></tr>
-      <tr><td>Surgeons' rooms</td><td><code>/admin/masters?view=surgeonRooms</code></td></tr>
       <tr><td>Surgeon with a PA</td><td><code>/admin/masters/surgeons/S-DALGETY</code> (Dr H. Dalgety, Avonhead ENT: Bev, PA)</td></tr>
       <tr><td>Anaesthetist record</td><td><code>/admin/masters/anaesthetists/&lt;anaesthetistId&gt;</code> (Dr Priya Sharma: <code>41267</code>)</td></tr>
       <tr><td>Audit</td><td><code>/admin/audit</code></td></tr>
@@ -1524,8 +1522,8 @@
 
   <h2>Surgeons, pairings and tiers</h2>
   <ul>
-    <li>Surgeon profiles: the HPI CPN is each surgeon's unique index (not the patient's NHI), each surgeon
-      holds one or more specialties from AA's list (required), belongs to one or more surgeons' rooms (the first the main room, a room card each; Mr N. Wainwright is at two), and surgeons can belong to groups; a room's email and phone are optional and a room may hold none ("No email held", Mr B. Yeoman's room); practice manager and PA contacts show on the profile beside each room card, the office adds, edits and removes them, and a contact is never the To of an office email (Dr H. Dalgety's PA Bev: <code>/admin/masters/surgeons/S-DALGETY</code>).</li>
+    <li>Surgeon profiles: the system keeps no surgeons' rooms. Each surgeon holds one or more specialties
+      from AA's list (required), a practice name (plain text; Mr N. Wainwright, at two practices, holds both names), one personal contact and one or more office contacts (practice manager, PA or shared inbox: name, email, phone, blanks allowed) entered on the Edit details sheet's plus and minus form ("Add office contact" adds a set, a minus removes an extra set, one set always shows; a two-practice surgeon holds one for each practice); surgeons can belong to groups. The HPI CPN is filled in by admin staff (unique when held; a surgeon saves and is booked without one, shown as "No HPI CPN yet": Dr P. Whaanga, Dr B. Osei and Dr Selwyn). The office's emails go to the first office contact with an email (pill "Office emails go here first"), the others offered, never every contact and never the personal contact (Dr H. Dalgety's PA Bev: <code>/admin/masters/surgeons/S-DALGETY</code>). The list is AA's address book of surgeons (columns Name, Specialties, Practice, Office contact, HPI CPN, Pairings).</li>
     <li>Pairing preferences and priority tiers: kept on both the surgeon profile and the anaesthetist
       record, admin only; a not-preferred pairing warns and never blocks; cover suggestions run in tier
       order, shuffled within a tier; seeded: Ms A. Reid prefers not to work with Dr Sharma, and Mr J.
@@ -1682,11 +1680,13 @@
       under Gynaecology) until AA's spreadsheet replaces the list. A surgeon may hold more than one
       specialty (Ben said it is "not a thing"; for AA to confirm), and a Contract is offered when it shares
       any one. Each funding tag may name its funder. A specialty or tag in use cannot be removed.</p></div>
-    <div class="card"><h3>15 · Surgeons' rooms and practice contacts</h3><p style="font-size:14px">Open
-      (OQ-127): whether practice manager and PA contacts belong to the room or to the surgeon, and which
-      room's apply to a surgeon at several rooms. Built provisionally: held on the room, optionally named for
-      one surgeon, every room's contacts shown on the profile, the main room's email the To; the profile says
-      this is to be confirmed with AA. Answered (OQ-128): a surgeon can belong to more than one room.</p></div>
+    <div class="card"><h3>15 · Surgeon contacts and practice (no surgeons' rooms)</h3><p style="font-size:14px">Answered
+      for the build (OQ-127 and OQ-126; Donald, not yet seen by AA): no surgeons' rooms are kept; each surgeon
+      holds a practice name, one personal contact and one or more office contacts, and a surgeon at two
+      practices holds an office contact for each. Superseded (OQ-128): a surgeon belonging to more than one
+      room, as there are no rooms. Answered for the build (OQ-129): the HPI CPN is filled in by admin staff; a
+      surgeon can be saved and booked without one ("No HPI CPN yet"). Open (OQ-143): the default is that it
+      never becomes required.</p></div>
   </div>
 
   <h2>Likely evaluator questions</h2>

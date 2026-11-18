@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import type { Actor } from './mutate'
-import { createSurgeon, createSurgeonGroup, createSurgeonRoom, editSurgeon, editSurgeonGroup, editSurgeonRoom } from './surgeonActions'
+import { contactAuditText, createSurgeon, createSurgeonGroup, editSurgeon, editSurgeonGroup, type SurgeonFields } from './surgeonActions'
 import { addAnaesthetist, createHospital, editAnaesthetist, editHospital } from './mastersActions'
-import { editRoomContact } from './roomContactActions'
-import { ANAE, HOSP, ROOM, SPC, SURG } from '../domain/seed'
+import { ANAE, HOSP, SPC, SURG } from '../domain/seed'
+import type { Surgeon } from '../domain/types'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 
-const NEW_SURGEON = { name: 'Ms R. Kerr', specialtyIds: [SPC.orthopaedics], roomIds: [ROOM.riccarton], hpiId: ' 50kerr ', medicalRegistrationNumber: '80123' }
+const NEW_SURGEON: SurgeonFields = { name: 'Ms R. Kerr', specialtyIds: [SPC.orthopaedics], practiceName: 'Riccarton Orthopaedic Rooms', hpiId: ' 50kerr ', medicalRegistrationNumber: '80123' }
+
+/** A surgeon's fields as the edit sheet sends them back unchanged. */
+const fieldsOf = (s: Surgeon): SurgeonFields => ({ ...s, hpiId: s.hpiId ?? '' })
 
 describe('surgeons', () => {
   it('adds a surgeon with a normalised HPI CPN, a runtime id and an audit entry', () => {
@@ -19,23 +22,20 @@ describe('surgeons', () => {
     const id = outcome.ok ? outcome.value.id : ''
     expect(id).toBe('SN001')
     const s = api.getState()
-    expect(s.masters.surgeons[id]).toMatchObject({ name: 'Ms R. Kerr', hpiId: '50KERR', roomIds: [ROOM.riccarton], medicalRegistrationNumber: '80123' })
+    expect(s.masters.surgeons[id]).toMatchObject({ name: 'Ms R. Kerr', hpiId: '50KERR', practiceName: 'Riccarton Orthopaedic Rooms', personalContact: {}, officeContacts: [], medicalRegistrationNumber: '80123' })
     const entry = s.audit.at(-1)
     expect(entry).toMatchObject({ action: 'surgeon.create', entityType: 'surgeon', entityId: id, who: 'Kirsty W.' })
     expect(entry?.after).toMatchObject({ hpiId: '50KERR' })
   })
 
-  it('refuses an anaesthetist actor, a blank name, an unknown room and a bad HPI CPN', () => {
+  it('refuses an anaesthetist actor, a blank name and a malformed HPI CPN', () => {
     const api = createAppStore()
     const codes = [
       createSurgeon(api, SOUTER, NEW_SURGEON),
       createSurgeon(api, OFFICE, { ...NEW_SURGEON, name: '  ' }),
-      createSurgeon(api, OFFICE, { ...NEW_SURGEON, roomIds: ['RM-NOPE'] }),
-      createSurgeon(api, OFFICE, { ...NEW_SURGEON, roomIds: [] }),
-      createSurgeon(api, OFFICE, { ...NEW_SURGEON, hpiId: '' }),
       createSurgeon(api, OFFICE, { ...NEW_SURGEON, hpiId: '1ABCDE' }),
     ].map((o) => (o.ok ? 'ok' : o.code))
-    expect(codes).toEqual(['officeOnly', 'nameRequired', 'notFound', 'roomRequired', 'hpiCpnRequired', 'invalidHpiCpn'])
+    expect(codes).toEqual(['officeOnly', 'nameRequired', 'invalidHpiCpn'])
   })
 
   it('refuses an HPI CPN held by an anaesthetist or another surgeon, naming the holder', () => {
@@ -49,35 +49,17 @@ describe('surgeons', () => {
   it('edits a surgeon, keeping its own HPI CPN, and audits only the changed fields', () => {
     const api = createAppStore()
     const reid = api.getState().masters.surgeons[SURG.reid]!
-    const outcome = editSurgeon(api, OFFICE, SURG.reid, { name: reid.name, roomIds: reid.roomIds, hpiId: reid.hpiId, specialtyIds: reid.specialtyIds, medicalRegistrationNumber: '77150' })
+    const outcome = editSurgeon(api, OFFICE, SURG.reid, { ...fieldsOf(reid), medicalRegistrationNumber: '77150' })
     expect(outcome.ok).toBe(true)
     const entry = api.getState().audit.at(-1)
     expect(entry).toMatchObject({ action: 'surgeon.update', before: { medicalRegistrationNumber: '77149' }, after: { medicalRegistrationNumber: '77150' } })
-    const clash = editSurgeon(api, OFFICE, SURG.reid, { name: reid.name, specialtyIds: reid.specialtyIds, roomIds: reid.roomIds, hpiId: '40HALT' })
+    const clash = editSurgeon(api, OFFICE, SURG.reid, { ...fieldsOf(reid), hpiId: '40HALT' })
     expect(clash.ok ? '' : clash.code).toBe('duplicateHpiCpn')
-    expect(editSurgeon(api, SOUTER, SURG.reid, { name: reid.name, specialtyIds: reid.specialtyIds, roomIds: reid.roomIds, hpiId: reid.hpiId }).ok).toBe(false)
+    expect(editSurgeon(api, SOUTER, SURG.reid, fieldsOf(reid)).ok).toBe(false)
   })
 })
 
-describe("surgeons' rooms and groups", () => {
-  it('adds and edits a room, refusing a blank name or an implausible email', () => {
-    const api = createAppStore()
-    const fields = { name: 'Sumner Rooms', contactEmail: 'hello@sumner.example', phone: '03 555 0100' }
-    const added = createSurgeonRoom(api, OFFICE, fields)
-    expect(added.ok && added.value.id).toBe('RMN001')
-    expect(createSurgeonRoom(api, OFFICE, { ...fields, contactEmail: 'nope' }).ok).toBe(false)
-    expect(createSurgeonRoom(api, OFFICE, { ...fields, name: '' }).ok).toBe(false)
-    expect(createSurgeonRoom(api, SOUTER, fields).ok).toBe(false)
-    const bad = editSurgeonRoom(api, OFFICE, ROOM.merivale, { name: 'Merivale Eye Rooms', contactEmail: 'bookings at merivale', phone: '03 555 0172' })
-    expect(bad.ok ? '' : bad.code).toBe('invalidEmail')
-    expect(editSurgeonRoom(api, OFFICE, ROOM.merivale, { name: 'Merivale Eye Rooms', contactEmail: 'eyes@merivale.example', phone: '03 555 0172' }).ok).toBe(true)
-    expect(api.getState().audit.at(-1)).toMatchObject({
-      action: 'surgeonRoom.update',
-      before: { contactEmail: 'bookings@merivaleeye.example' },
-      after: { contactEmail: 'eyes@merivale.example' },
-    })
-  })
-
+describe('surgeon groups', () => {
   it('adds and edits a group, de-duplicating members and refusing unknown ones', () => {
     const api = createAppStore()
     const added = createSurgeonGroup(api, OFFICE, { name: 'General surgeons', memberSurgeonIds: [SURG.patel, SURG.patel, SURG.doyle] })
@@ -150,96 +132,82 @@ describe('hospitals and the anaesthetist HPI CPN', () => {
   })
 })
 
-describe('catch-up Phase 17a: rooms without an email, surgeons at more than one room', () => {
-  const noUndefined = (value: unknown) => expect(JSON.stringify(value ?? null)).not.toContain('undefined')
+describe("catch-up Phase 17b: contacts on the surgeon, the HPI CPN optional (D74, D76; OQ-143's default)", () => {
+  const noUndefined = (value: unknown) => expect(JSON.stringify(value ?? null)).not.toMatch(/undefined|""/)
 
-  it('adds a room with no email and no phone, holding neither as an empty string', () => {
+  it('saves a surgeon with no HPI CPN, held as absent, audited as "None"', () => {
     const api = createAppStore()
-    const added = createSurgeonRoom(api, OFFICE, { name: 'Halswell Rooms', contactEmail: '  ', phone: '' })
-    expect(added.ok).toBe(true)
-    const room = api.getState().masters.surgeonRooms[added.ok ? added.value.id : '']!
-    expect(room).toEqual({ id: 'RMN001', name: 'Halswell Rooms' })
-    expect(api.getState().audit.at(-1)?.after).toEqual({ name: 'Halswell Rooms' })
-    expect(createSurgeonRoom(api, OFFICE, { name: 'No fields' }).ok).toBe(true)
-  })
-
-  it("clears an existing room's email and audits '' after, never undefined; a bad email still refuses", () => {
-    const api = createAppStore()
-    const bad = editSurgeonRoom(api, OFFICE, ROOM.merivale, { name: 'Merivale Eye Rooms', contactEmail: 'nope', phone: '03 555 0172' })
-    expect(bad.ok ? '' : bad.message).toBe('That contact email does not look right. Use the form name@example.co.nz.')
-    expect(editSurgeonRoom(api, OFFICE, ROOM.merivale, { name: 'Merivale Eye Rooms', contactEmail: '', phone: '' }).ok).toBe(true)
-    const room = api.getState().masters.surgeonRooms[ROOM.merivale]!
-    expect('contactEmail' in room).toBe(false)
-    expect('phone' in room).toBe(false)
+    const created = createSurgeon(api, OFFICE, { ...NEW_SURGEON, hpiId: '   ' })
+    expect(created.ok).toBe(true)
+    const id = created.ok ? created.value.id : ''
+    expect(api.getState().masters.surgeons[id]).not.toHaveProperty('hpiId')
+    expect(api.getState().audit.at(-1)?.after).toMatchObject({ hpiId: 'None' })
+    // Clearing a held one on edit.
+    const reid = api.getState().masters.surgeons[SURG.reid]!
+    expect(editSurgeon(api, OFFICE, SURG.reid, { ...fieldsOf(reid), hpiId: '' }).ok).toBe(true)
+    expect(api.getState().masters.surgeons[SURG.reid]).not.toHaveProperty('hpiId')
     const entry = api.getState().audit.at(-1)
-    expect(entry).toMatchObject({
-      action: 'surgeonRoom.update',
-      before: { contactEmail: 'bookings@merivaleeye.example', phone: '03 555 0172' },
-      after: { contactEmail: '', phone: '' },
-    })
+    expect(entry).toMatchObject({ action: 'surgeon.update', before: { hpiId: '47REIA' }, after: { hpiId: 'None' } })
     noUndefined(entry?.before)
     noUndefined(entry?.after)
-    // Saving it unchanged writes nothing.
-    const count = api.getState().audit.length
-    expect(editSurgeonRoom(api, OFFICE, ROOM.merivale, { name: 'Merivale Eye Rooms' }).ok).toBe(true)
-    expect(api.getState().audit).toHaveLength(count)
   })
 
-  it('a room edit keeps its contacts', () => {
+  it("the anaesthetist's HPI CPN stays mandatory (catch-up Phase 26): a blank one is still refused", () => {
     const api = createAppStore()
-    const before = api.getState().masters.surgeonRooms['RM-AVONHEADEN']!
-    expect(editSurgeonRoom(api, OFFICE, 'RM-AVONHEADEN', { name: 'Avonhead ENT Rooms', contactEmail: before.contactEmail, phone: before.phone }).ok).toBe(true)
-    expect(api.getState().masters.surgeonRooms['RM-AVONHEADEN']?.contacts).toEqual(before.contacts)
+    const base = { registrationNumber: '50003', name: 'Dr Blank Number', phone: '', email: '', unitValue: 30, bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, startDateISO: '2026-07-21' }
+    expect(addAnaesthetist(api, OFFICE, { ...base, hpiId: '' })).toMatchObject({ ok: false, code: 'hpiCpnRequired' })
   })
 
-  it('creates and edits a surgeon at two rooms, duplicates dropped, the rooms audited by name in order', () => {
+  it('cleans contacts: blank fields dropped, all-blank office sets dropped, order kept', () => {
     const api = createAppStore()
-    const created = createSurgeon(api, OFFICE, { ...NEW_SURGEON, roomIds: [ROOM.riccarton, ROOM.merivale, ROOM.riccarton] })
-    const id = created.ok ? created.value.id : ''
-    expect(api.getState().masters.surgeons[id]?.roomIds).toEqual([ROOM.riccarton, ROOM.merivale])
-    expect(api.getState().audit.at(-1)?.after).toMatchObject({ rooms: ['Riccarton Orthopaedic Rooms', 'Merivale Eye Rooms'] })
-    // Make the second the main room.
-    const s = api.getState().masters.surgeons[id]!
-    expect(editSurgeon(api, OFFICE, id, { ...s, roomIds: [ROOM.merivale, ROOM.riccarton] }).ok).toBe(true)
-    const entry = api.getState().audit.at(-1)
-    expect(entry).toMatchObject({
-      action: 'surgeon.update',
-      before: { rooms: ['Riccarton Orthopaedic Rooms', 'Merivale Eye Rooms'] },
-      after: { rooms: ['Merivale Eye Rooms', 'Riccarton Orthopaedic Rooms'] },
+    const created = createSurgeon(api, OFFICE, {
+      ...NEW_SURGEON,
+      personalContact: { name: ' Ms R. Kerr ', email: '', phone: ' 021 555 0999 ' },
+      officeContacts: [{ name: '', email: '  ', phone: '' }, { name: 'Pat', email: 'pat@kerr.example' }, {}, { phone: '03 555 0101' }],
     })
-    expect(entry?.after).not.toHaveProperty('roomIds')
-    // Clearing every room refuses and leaves the surgeon as they were.
-    const cleared = editSurgeon(api, OFFICE, id, { ...s, roomIds: [] })
-    expect(cleared.ok ? '' : cleared.code).toBe('roomRequired')
-    expect(editSurgeon(api, OFFICE, id, { ...s, roomIds: ['RM-NOPE'] }).ok).toBe(false)
-    expect(api.getState().masters.surgeons[id]?.roomIds).toEqual([ROOM.merivale, ROOM.riccarton])
+    const id = created.ok ? created.value.id : ''
+    const s = api.getState().masters.surgeons[id]!
+    expect(s.personalContact).toEqual({ name: 'Ms R. Kerr', phone: '021 555 0999' })
+    expect(s.officeContacts).toEqual([{ name: 'Pat', email: 'pat@kerr.example' }, { phone: '03 555 0101' }])
   })
 
-  it("taking a room off a surgeon turns that room's contacts named for them into whole-room contacts, in one commit", () => {
+  it('refuses a bad contact email by the contact it is in, saving nothing', () => {
+    const api = createAppStore()
+    const personal = createSurgeon(api, OFFICE, { ...NEW_SURGEON, personalContact: { email: 'kerr at home' } })
+    expect(personal).toMatchObject({ ok: false, code: 'invalidEmail', message: 'Personal contact: that email does not look right. Use the form name@example.co.nz.' })
+    const office = createSurgeon(api, OFFICE, { ...NEW_SURGEON, officeContacts: [{ name: 'Pat', email: 'pat@kerr.example' }, { email: 'nope' }] })
+    expect(office.ok ? '' : office.message).toMatch(/^Office contact 2: /)
+    // A blank set before it keeps the numbering the form shows.
+    const third = createSurgeon(api, OFFICE, { ...NEW_SURGEON, officeContacts: [{ name: 'Pat' }, {}, { email: 'nope' }] })
+    expect(third.ok ? '' : third.message).toMatch(/^Office contact 3: /)
+    expect(Object.values(api.getState().masters.surgeons).some((s) => s.name === 'Ms R. Kerr')).toBe(false)
+  })
+
+  it('audits the practice and contacts as text: "name · email · phone", office contacts one per entry, never undefined', () => {
     const api = createAppStore()
     const dalgety = api.getState().masters.surgeons['S-DALGETY']!
-    const named = api.getState().masters.surgeonRooms['RM-AVONHEADEN']!.contacts!.filter((c) => c.forSurgeonId === 'S-DALGETY')
-    expect(named.length).toBeGreaterThan(0)
-    const before = api.getState().audit.length
-    expect(editSurgeon(api, OFFICE, 'S-DALGETY', { ...dalgety, roomIds: [ROOM.riccarton] }).ok).toBe(true)
-    const contacts = api.getState().masters.surgeonRooms['RM-AVONHEADEN']!.contacts!
-    expect(contacts.some((c) => c.forSurgeonId === 'S-DALGETY')).toBe(false)
-    for (const c of named) expect(contacts.find((x) => x.id === c.id)).toEqual({ id: c.id, name: c.name, email: c.email, role: c.role })
-    const added = api.getState().audit.slice(before)
-    expect(added.map((e) => e.action)).toEqual(['surgeon.update', ...named.map(() => 'roomContact.update')])
-    expect(added[1]).toMatchObject({ entityId: 'RM-AVONHEADEN', before: { for: 'Dr H. Dalgety' }, after: { for: 'Whole room' } })
-  })
-
-  it('merges a named contact into its whole-room twin when the room is taken off, so the room never holds a duplicate', () => {
-    const api = createAppStore()
-    const forRoom = (id: string) => ({ ...api.getState().masters.surgeons[id]!, roomIds: [ROOM.riccarton] })
-    // Leanne is named for Calder (RC-005) and for Woodville (RC-006) at Burnside.
-    expect(editSurgeon(api, OFFICE, 'S-CALDER', forRoom('S-CALDER')).ok).toBe(true)
-    expect(editSurgeon(api, OFFICE, 'S-WOODVILLE', forRoom('S-WOODVILLE')).ok).toBe(true)
-    const leanne = api.getState().masters.surgeonRooms['RM-BURNSIDEEN']!.contacts!.filter((c) => c.name === 'Leanne')
-    expect(leanne).toEqual([{ id: 'RC-005', name: 'Leanne', email: 'leanne@burnsideent.example', role: 'PA' }])
-    expect(api.getState().audit.at(-1)).toMatchObject({ action: 'roomContact.remove', entityId: 'RM-BURNSIDEEN', before: { contact: 'Leanne', for: 'Mr U. Woodville' } })
-    // The merged contact can still be edited (no duplicate left to clash with).
-    expect(editRoomContact(api, OFFICE, 'RM-BURNSIDEEN', 'RC-005', { name: 'Leanne Ward', email: 'leanne@burnsideent.example', role: 'PA' }).ok).toBe(true)
+    const outcome = editSurgeon(api, OFFICE, 'S-DALGETY', {
+      ...fieldsOf(dalgety),
+      practiceName: 'Avonhead ENT Rooms',
+      personalContact: { name: 'Dr H. Dalgety', email: 'h.dalgety@avonhead.example' },
+      officeContacts: [dalgety.officeContacts[1]!],
+    })
+    expect(outcome.ok).toBe(true)
+    const entry = api.getState().audit.at(-1)!
+    expect(entry.before).toEqual({
+      practiceName: 'Avonhead ENT',
+      personalContact: 'Dr H. Dalgety',
+      officeContacts: ['Bev · bev@avonheadent.example', 'Avonhead ENT · info@avonheadent.example · 03 555 1000'],
+    })
+    expect(entry.after).toEqual({
+      practiceName: 'Avonhead ENT Rooms',
+      personalContact: 'Dr H. Dalgety · h.dalgety@avonhead.example',
+      officeContacts: ['Avonhead ENT · info@avonheadent.example · 03 555 1000'],
+    })
+    expect(contactAuditText({})).toBe('None')
+    // Unchanged: nothing written.
+    const count = api.getState().audit.length
+    expect(editSurgeon(api, OFFICE, 'S-DALGETY', fieldsOf(api.getState().masters.surgeons['S-DALGETY']!)).ok).toBe(true)
+    expect(api.getState().audit).toHaveLength(count)
   })
 })

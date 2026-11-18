@@ -6,13 +6,13 @@
     {
       "name": "surgeon-profile",
       "app": "admin",
-      "caption": "Each surgeon belongs to one or more rooms, holds one or more specialties and has a profile page",
+      "caption": "Each surgeon holds one or more specialties, a practice name and their contacts on a profile page",
       "start": "/admin/masters/surgeons/S-WAINWRIGHT",
       "states": [
         {
           "steps": [
             {
-              "wait": "[data-shot=surgeon-room-card][data-room=RM-HILLSBOROU]"
+              "wait": "[data-shot=surgeon-contacts]"
             },
             {
               "wait": 400
@@ -20,8 +20,7 @@
           ],
           "highlight": [
             "[data-shot=surgeon-specialties]",
-            "[data-shot=surgeon-room-card][data-room=RM-UPPERGIPAR]",
-            "[data-shot=surgeon-room-card][data-room=RM-HILLSBOROU]"
+            "[data-shot=surgeon-contacts]"
           ]
         }
       ]

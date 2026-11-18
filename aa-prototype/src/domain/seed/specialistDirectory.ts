@@ -1,11 +1,14 @@
 /**
- * The specialist directory: AA's wider list of Christchurch surgeons and their
- * rooms (FT-13.6), loaded beside the scripted cast in `cast.ts`. Built from
+ * The specialist directory: AA's wider list of Christchurch surgeons and how to
+ * reach them (FT-13.6, AA's address book of surgeons, OQ-126), loaded beside the scripted cast in `cast.ts`. Built from
  * the fictional copy of the list AA sent on 3 November 2026
  * (`docs/discovery-reference/Other docs/Christchurch_Specialists_fictional.xlsx`)
  * and now edited by hand: no generator is in the repo, and any regeneration
- * must read only that fictional file, never the real list beside it. Every
- * name, phone and email is invented, `.example` domains only.
+ * must read only that fictional file, never the real list beside it. (Catch-up
+ * Phase 17b derived the practice names and office contacts once, by a
+ * throwaway script, from its pinned copy of 17a's rooms,
+ * `store/__parity__/phase-17b-baseline.json`.) Every name, phone and email is
+ * invented, `.example` domains only.
  *
  * Each surgeon's specialty is the list's free text mapped onto AA's broad list
  * (`SPECIALTY_FOR_DIRECTORY_TEXT` in `specialties.ts`), subspecialties folded
@@ -13,233 +16,158 @@
  * under Gynaecology, Plastics as Plastic surgery (catch-up Phase 18a). One
  * specialty each.
  *
- * Rooms are matched to the list by its Practice column (catch-up Phase 17a,
- * DM-60). A room's contact email is the practice's shared inbox; a practice
- * with no email on any row of the list holds none (16 rooms), and Burnside
- * ENT Surgeons and Bryndwr Neurosurgery Specialists hold none either, because
- * the list's only addresses there are PA inboxes, which are the rooms' PA
- * contacts instead (`DIRECTORY_ROOM_CONTACTS`). A practice with no phone holds
- * none. A surgeon listed at two practices holds both rooms (OQ-128, D75), the
- * room this seed first gave them (the smaller practice) first, as the main
- * room: Winslow, Wainwright, Morland and Vaughan. HPI CPNs (50 to 99) and
- * registration numbers are fictional: the list does not carry them. Rows with
- * a first name only are left out. No canvas pick array names these surgeons,
- * so they move no List (canvasFingerprint.test.ts); they are master data to
- * search, pick and pair.
+ * The system keeps no surgeons' rooms (catch-up Phase 17b, D74). Each surgeon
+ * holds the list's Practice column as a practice name (plain text) and, our
+ * reading of the list, office contacts in this order: the PA the list names
+ * for the surgeon, then the practice's contacts named for no one surgeon
+ * (Burnside's Nicola Holloway; General Surgery Partners' practice manager
+ * Rosalind Pemberton, INVENTED, since the list holds no practice managers),
+ * then the practice's shared inbox, named for the practice, where the list
+ * gives it an email or a phone. A practice with neither gives no office set.
+ * A surgeon listed at two practices (Winslow, Wainwright, Morland and Vaughan)
+ * holds both names, the smaller practice first, joined with " and ", and an
+ * office contact for each, in that order (OQ-128 superseded, D75). The
+ * personal contact holds the surgeon's name only: the list gives no personal
+ * email or phone. HPI CPNs (50 to 99) and registration numbers are fictional:
+ * the list does not carry them. Three surgeons no List, Contract, pairing or
+ * group names hold no HPI CPN yet (Whaanga, Osei and Selwyn; OQ-129, D76:
+ * admin staff fill it in). Rows with a first name only are left out. No
+ * canvas pick array names these surgeons, so they move no List
+ * (canvasFingerprint.test.ts); they are master data to search, pick and pair.
  */
 
-import type { RoomContact, Surgeon, SurgeonRoom } from '../types'
-
-/**
- * Practice manager and PA contacts (catch-up Phase 17a; US-13.6.5, OQ-127's
- * default, D74, provisional): the list's PA Contact and Email columns, held on
- * the room and named for the surgeon the row gives (Nicola Holloway serves
- * three of Burnside's surgeons, so she is the whole room's). Ben holds no
- * practice managers: General Surgery Partners' is INVENTED, so a room with no
- * email shows a contact beside "No email held".
- */
-export const DIRECTORY_ROOM_CONTACTS: Readonly<Record<string, readonly RoomContact[]>> = {
-  'RM-AVONHEADEN': [
-    { id: 'RC-001', name: 'Bev', email: 'bev@avonheadent.example', role: 'PA', forSurgeonId: 'S-DALGETY' },
-  ],
-  'RM-BURNSIDEEN': [
-    { id: 'RC-002', name: 'Maree', email: 'maree@burnsideent.example', role: 'PA', forSurgeonId: 'S-FORSYTHE' },
-    { id: 'RC-003', name: 'Dianne', email: 'dianne@burnsideent.example', role: 'PA', forSurgeonId: 'S-MALLORY' },
-    { id: 'RC-004', name: 'Nicola Holloway', email: 'nicola@burnsideent.example', role: 'PA' },
-    { id: 'RC-005', name: 'Leanne', email: 'leanne@burnsideent.example', role: 'PA', forSurgeonId: 'S-CALDER' },
-    { id: 'RC-006', name: 'Leanne', email: 'leanne@burnsideent.example', role: 'PA', forSurgeonId: 'S-WOODVILLE' },
-  ],
-  'RM-REDWOODEYE': [
-    { id: 'RC-007', name: 'Jodie Yamada', email: 'jodie@redwoodeye.example', role: 'PA', forSurgeonId: 'S-VASQUEZ' },
-  ],
-  'RM-BRYNDWRNEU': [
-    { id: 'RC-008', name: 'Wendy', email: 'wendy@bryndwrneurosurgery.example', role: 'PA', forSurgeonId: 'S-MATHIESON' },
-  ],
-  // INVENTED: not on the list (Ben holds no practice managers).
-  'RM-GENERALSUR': [
-    { id: 'RC-009', name: 'Rosalind Pemberton', email: 'manager@generalsurgerypartners.example', role: 'PRACTICE_MANAGER' },
-  ],
-}
-
-const DIRECTORY_ROOM_RECORDS: readonly SurgeonRoom[] = [
-  { id: 'RM-AVONHEADEN', name: 'Avonhead ENT', contactEmail: 'info@avonheadent.example', phone: '03 555 1000' },
-  { id: 'RM-BURNSIDEEN', name: 'Burnside ENT Surgeons', phone: '03 555 1037' },
-  { id: 'RM-LINWOODWOM', name: 'Linwood Women\'s Health Group', contactEmail: 'admin@linwoodwomens.example', phone: '03 555 1185' },
-  { id: 'RM-GYNAECOLOG', name: 'Gynaecology Canterbury', contactEmail: 'info@gynaecology.example', phone: '03 555 1222' },
-  { id: 'RM-RICHMONDFE', name: 'Richmond Fertility Specialists · Canterbury', phone: '03 555 1259' },
-  { id: 'RM-ELODIEBRAM', name: 'Elodie Bramley · Gynaecological Oncologist' },
-  { id: 'RM-GENERALSUR', name: 'General Surgery Partners', phone: '03 555 1296' },
-  { id: 'RM-HILLSBOROU', name: 'Hillsborough Colorectal Specialists', contactEmail: 'info@hillsboroughcolorectal.example', phone: '03 555 1333' },
-  { id: 'RM-MAIREHAUCO', name: 'Mairehau Colorectal Centre · Canterbury', contactEmail: 'info@mairehaucolorectal.example', phone: '03 555 1370' },
-  { id: 'RM-UPPERGIPAR', name: 'Upper GI Partners', contactEmail: 'info@uppergi.example', phone: '03 555 1333' },
-  { id: 'RM-GENERALSURX', name: 'General Surgery Canterbury', contactEmail: 'enquiries@generalsurgery.example', phone: '03 555 1407' },
-  { id: 'RM-REDWOODEYE', name: 'Redwood Eye Group', contactEmail: 'info@redwoodeye.example', phone: '03 555 1444' },
-  { id: 'RM-BECKENHAME', name: 'Beckenham Eye', contactEmail: 'info@beckenhameye.example', phone: '03 555 1481' },
-  { id: 'RM-EYEPARTNER', name: 'Eye Partners', phone: '03 555 1518' },
-  { id: 'RM-MATTHIASDU', name: 'Matthias Dunmore · Ophthalmologist', phone: '03 555 1555' },
-  { id: 'RM-OTTOPICKER', name: 'Otto Pickering · Ophthalmologist', contactEmail: 'office@ottopickering.example', phone: '03 555 1592' },
-  { id: 'RM-ALISTAIROG', name: 'Alistair Ogilvie · Oral & Maxillofacial Surgeon', contactEmail: 'reception@alistairogilvie.example', phone: '03 555 1629' },
-  { id: 'RM-RAFAELKINL', name: 'Rafael Kinloch · Oral & Maxillofacial Surgeon', phone: '03 555 1666' },
-  { id: 'RM-ISLABARCLA', name: 'Isla Barclay and Associates', phone: '03 555 1703' },
-  { id: 'RM-FREYAFONOT', name: 'Freya Fonoti · Oral & Maxillofacial Surgeon', phone: '03 555 1740' },
-  { id: 'RM-OTTILIEFEN', name: 'Ottilie Fenwick · Oral & Maxillofacial Surgeon', phone: '03 555 1777' },
-  { id: 'RM-ADDINGTONO', name: 'Addington Orthopaedic Group', contactEmail: 'admin@addingtonorthopaedic.example', phone: '03 555 1814' },
-  { id: 'RM-IMOGENVAUG', name: 'Imogen Vaughan · Orthopaedic Surgeon', phone: '03 555 1851' },
-  { id: 'RM-WIGRAMORTH', name: 'Wigram Orthopaedic Centre' },
-  { id: 'RM-HOONHAYORT', name: 'Hoon Hay Orthopaedic Specialists', contactEmail: 'admin@hoonhay.example', phone: '03 555 1888' },
-  { id: 'RM-SOMERFIELD', name: 'Somerfield Orthopaedic Specialists', contactEmail: 'admin@kingsleyorthopaedic.example', phone: '03 555 1925' },
-  { id: 'RM-EDGEWAREOR', name: 'Edgeware Orthopaedic Specialists', contactEmail: 'info@vaughanorthopaedic.example', phone: '03 555 2073' },
-  { id: 'RM-SASKIASOTO', name: 'Saskia Soto · Orthopaedic Surgeon', contactEmail: 'office@saskiasoto.example', phone: '03 555 2184' },
-  { id: 'RM-HAREWOODOR', name: 'Harewood Orthopaedic', contactEmail: 'info@harewoodorthopaedic.example', phone: '03 555 2221' },
-  { id: 'RM-MIHAKAWOLF', name: 'Mihaka Wolfenden and Associates', contactEmail: 'info@mihakawolfenden.example', phone: '03 555 2258' },
-  { id: 'RM-TOBIASIRED', name: 'Tobias Iredale · Plastic Surgeon', contactEmail: 'info@tobiasiredale.example', phone: '03 555 2295' },
-  { id: 'RM-PLASTICSUR', name: 'Plastic Surgery Associates St Albans', phone: '03 555 2332' },
-  { id: 'RM-ORSONLECKI', name: 'Orson Leckie · Plastic & Reconstructive Surgeon', contactEmail: 'info@orsonleckie.example', phone: '03 555 2369' },
-  { id: 'RM-HEATHCOTEP', name: 'Heathcote Plastic Surgery', contactEmail: 'secretary@heathcoteplastic.example', phone: '03 555 2406' },
-  { id: 'RM-CORMACCORR', name: 'Cormac Corrigan · Plastic Surgeon', phone: '03 555 2443' },
-  { id: 'RM-UROLOGYASS', name: 'Urology Associates Hornby', phone: '03 555 2554' },
-  { id: 'RM-YALDHURSTV', name: 'Yaldhurst Vascular', contactEmail: 'office@yaldhurstvascular.example', phone: '03 555 2591' },
-  { id: 'RM-SUMNERNEUR', name: 'Sumner Neurosurgery', phone: '03 555 2628' },
-  { id: 'RM-BRYNDWRNEU', name: 'Bryndwr Neurosurgery Specialists', phone: '03 555 2665' },
-  { id: 'RM-ORTHOPAEDI', name: 'Orthopaedic Associates Spreydon', phone: '03 555 2702' },
-] as const
-
-/** The directory's rooms, each with its contacts where it has any. */
-export const DIRECTORY_ROOMS: readonly SurgeonRoom[] = DIRECTORY_ROOM_RECORDS.map((room) => {
-  const contacts = DIRECTORY_ROOM_CONTACTS[room.id]
-  return contacts !== undefined ? { ...room, contacts: contacts.map((c) => ({ ...c })) } : room
-})
+import type { Surgeon } from '../types'
 
 export const DIRECTORY_SURGEONS: readonly Surgeon[] = [
-  { id: 'S-DALGETY', name: 'Dr H. Dalgety', specialtyIds: ['SPC-ENT'], roomIds: ['RM-AVONHEADEN'], hpiId: '50DALH', medicalRegistrationNumber: '80000' },
-  { id: 'S-GARSIDE', name: 'Dr B. Garside', specialtyIds: ['SPC-ENT'], roomIds: ['RM-AVONHEADEN'], hpiId: '51GARB', medicalRegistrationNumber: '80061' },
-  { id: 'S-HARGREAVE', name: 'Dr R. Hargreave', specialtyIds: ['SPC-ENT'], roomIds: ['RM-AVONHEADEN'], hpiId: '52HARR', medicalRegistrationNumber: '80122' },
-  { id: 'S-WHAANGA', name: 'Dr P. Whaanga', specialtyIds: ['SPC-ENT'], roomIds: ['RM-AVONHEADEN'], hpiId: '53WHAP', medicalRegistrationNumber: '80183' },
-  { id: 'S-JARDINE', name: 'Dr W. Jardine', specialtyIds: ['SPC-ENT'], roomIds: ['RM-AVONHEADEN'], hpiId: '54JARW', medicalRegistrationNumber: '80244' },
-  { id: 'S-FORSYTHE', name: 'Mr I. Forsythe', specialtyIds: ['SPC-ENT'], roomIds: ['RM-BURNSIDEEN'], hpiId: '55FORI', medicalRegistrationNumber: '80305' },
-  { id: 'S-CALDER', name: 'Dr T. Calder', specialtyIds: ['SPC-ENT'], roomIds: ['RM-BURNSIDEEN'], hpiId: '56CALT', medicalRegistrationNumber: '80366' },
-  { id: 'S-ACHTERBERG', name: 'Mr B. Achterberg', specialtyIds: ['SPC-ENT'], roomIds: ['RM-BURNSIDEEN'], hpiId: '57ACHB', medicalRegistrationNumber: '80427' },
-  { id: 'S-MALLORY', name: 'Mr R. Mallory', specialtyIds: ['SPC-ENT'], roomIds: ['RM-BURNSIDEEN'], hpiId: '58MALR', medicalRegistrationNumber: '80488' },
-  { id: 'S-PAEWAI', name: 'Dr E. Paewai', specialtyIds: ['SPC-ENT'], roomIds: ['RM-BURNSIDEEN'], hpiId: '59PAEE', medicalRegistrationNumber: '80549' },
-  { id: 'S-WOODVILLE', name: 'Mr U. Woodville', specialtyIds: ['SPC-ENT'], roomIds: ['RM-BURNSIDEEN'], hpiId: '60WOOU', medicalRegistrationNumber: '80610' },
-  { id: 'S-ELLERY', name: 'Mr O. Ellery', specialtyIds: ['SPC-ENT'], roomIds: ['RM-BURNSIDEEN'], hpiId: '61ELLO', medicalRegistrationNumber: '80671' },
-  { id: 'S-TRELAWNEY', name: 'Dr L. Trelawney', specialtyIds: ['SPC-ENT'], roomIds: ['RM-BURNSIDEEN'], hpiId: '62TREL', medicalRegistrationNumber: '80732' },
-  { id: 'S-IYER', name: 'Dr R. Iyer', specialtyIds: ['SPC-ENT'], roomIds: ['RM-BURNSIDEEN'], hpiId: '63IYER', medicalRegistrationNumber: '80793' },
-  { id: 'S-PENROSE', name: 'Dr F. Penrose', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-LINWOODWOM'], hpiId: '64PENF', medicalRegistrationNumber: '80854' },
-  { id: 'S-WINSLOW', name: 'Dr J. Winslow', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-RICHMONDFE', 'RM-LINWOODWOM'], hpiId: '65WINJ', medicalRegistrationNumber: '80915' },
-  { id: 'S-KEREAMA', name: 'Dr H. Kereama', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-LINWOODWOM'], hpiId: '66KERH', medicalRegistrationNumber: '80976' },
-  { id: 'S-OSEI', name: 'Dr B. Osei', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-LINWOODWOM'], hpiId: '67OSEB', medicalRegistrationNumber: '81037' },
-  { id: 'S-PEMBERTON', name: 'Dr C. Pemberton', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-LINWOODWOM'], hpiId: '68PEMC', medicalRegistrationNumber: '81098' },
-  { id: 'S-TREMAINE', name: 'Dr A. Tremaine', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-LINWOODWOM'], hpiId: '69TREA', medicalRegistrationNumber: '81159' },
-  { id: 'S-QUIGLEY', name: 'Dr J. Quigley', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-GYNAECOLOG'], hpiId: '70QUIJ', medicalRegistrationNumber: '81220' },
-  { id: 'S-CHEUNG', name: 'Dr I. Cheung', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-GYNAECOLOG'], hpiId: '71CHEI', medicalRegistrationNumber: '81281' },
-  { id: 'S-KEATING', name: 'Mr F. Keating', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-GYNAECOLOG'], hpiId: '72KEAF', medicalRegistrationNumber: '81342' },
-  { id: 'S-LOWRY', name: 'Mr G. Lowry', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-GYNAECOLOG'], hpiId: '73LOWG', medicalRegistrationNumber: '81403' },
-  { id: 'S-EMBLING', name: 'Mr F. Embling', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-GYNAECOLOG'], hpiId: '74EMBF', medicalRegistrationNumber: '81464' },
-  { id: 'S-BEAUMONT', name: 'Mr M. Beaumont', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-GYNAECOLOG'], hpiId: '75BEAM', medicalRegistrationNumber: '81525' },
-  { id: 'S-COLVILLE', name: 'Dr V. Colville', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-GYNAECOLOG'], hpiId: '76COLV', medicalRegistrationNumber: '81586' },
-  { id: 'S-ORMSBY', name: 'Dr V. Ormsby', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-GYNAECOLOG'], hpiId: '77ORMV', medicalRegistrationNumber: '81647' },
-  { id: 'S-LACHLAN', name: 'Dr L. Lachlan', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-GYNAECOLOG'], hpiId: '78LACL', medicalRegistrationNumber: '81708' },
-  { id: 'S-WARBURTON', name: 'Dr C. Warburton', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-GYNAECOLOG'], hpiId: '79WARC', medicalRegistrationNumber: '81769' },
-  { id: 'S-LINDQVIST', name: 'Dr M. Lindqvist', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-GYNAECOLOG'], hpiId: '80LINM', medicalRegistrationNumber: '81830' },
-  { id: 'S-CARMODY', name: 'Dr S. Carmody', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-RICHMONDFE'], hpiId: '81CARS', medicalRegistrationNumber: '81891' },
-  { id: 'S-JESSOP', name: 'Dr C. Jessop', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-RICHMONDFE'], hpiId: '82JESC', medicalRegistrationNumber: '81952' },
-  { id: 'S-HUXLEY', name: 'Dr R. Huxley', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-RICHMONDFE'], hpiId: '83HUXR', medicalRegistrationNumber: '82013' },
-  { id: 'S-BANCROFT', name: 'Dr H. Bancroft', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-RICHMONDFE'], hpiId: '84BANH', medicalRegistrationNumber: '82074' },
-  { id: 'S-BRAMLEY', name: 'Dr E. Bramley', specialtyIds: ['SPC-GYNAE'], roomIds: ['RM-ELODIEBRAM'], hpiId: '85BRAE', medicalRegistrationNumber: '82135' },
-  { id: 'S-YEOMAN', name: 'Mr B. Yeoman', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-GENERALSUR'], hpiId: '86YEOB', medicalRegistrationNumber: '82196' },
-  { id: 'S-CHATTERJEE', name: 'Mr K. Chatterjee', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-GENERALSUR'], hpiId: '87CHAK', medicalRegistrationNumber: '82257' },
-  { id: 'S-STANHOPE', name: 'Mr H. Stanhope', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-GENERALSUR'], hpiId: '88STAH', medicalRegistrationNumber: '82318' },
-  { id: 'S-SETON', name: 'Dr W. Seton', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-HILLSBOROU'], hpiId: '89SETW', medicalRegistrationNumber: '82379' },
-  { id: 'S-DENHOLM', name: 'Prof A. Denholm', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-HILLSBOROU'], hpiId: '90DENA', medicalRegistrationNumber: '82440' },
-  { id: 'S-NAKAMURA', name: 'Prof G. Nakamura', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-HILLSBOROU'], hpiId: '91NAKG', medicalRegistrationNumber: '82501' },
-  { id: 'S-XU', name: 'Mr M. Xu', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-HILLSBOROU'], hpiId: '92XUXM', medicalRegistrationNumber: '82562' },
-  { id: 'S-FITZGERALD', name: 'Dr E. Fitzgerald', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-HILLSBOROU'], hpiId: '93FITE', medicalRegistrationNumber: '82623' },
-  { id: 'S-WAINWRIGHT', name: 'Mr N. Wainwright', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-UPPERGIPAR', 'RM-HILLSBOROU'], hpiId: '94WAIN', medicalRegistrationNumber: '82684' },
-  { id: 'S-MORLAND', name: 'Mr K. Morland', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-UPPERGIPAR', 'RM-HILLSBOROU'], hpiId: '95MORK', medicalRegistrationNumber: '82745' },
-  { id: 'S-RAHMAN', name: 'Mr S. Rahman', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-HILLSBOROU'], hpiId: '96RAHS', medicalRegistrationNumber: '82806' },
-  { id: 'S-HAWTHORNE', name: 'Mr H. Hawthorne', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-HILLSBOROU'], hpiId: '97HAWH', medicalRegistrationNumber: '82867' },
-  { id: 'S-DRAYCOTT', name: 'Dr E. Draycott', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-HILLSBOROU'], hpiId: '98DRAE', medicalRegistrationNumber: '82928' },
-  { id: 'S-GRIEVE', name: 'Mr D. Grieve', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-HILLSBOROU'], hpiId: '99GRID', medicalRegistrationNumber: '82989' },
-  { id: 'S-RUTHERFORD', name: 'Mr C. Rutherford', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-HILLSBOROU'], hpiId: '50RUTC', medicalRegistrationNumber: '83050' },
-  { id: 'S-WHITCOMBE', name: 'Mr N. Whitcombe', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-HILLSBOROU'], hpiId: '51WHIN', medicalRegistrationNumber: '83111' },
-  { id: 'S-UPTON', name: 'Prof P. Upton', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-MAIREHAUCO'], hpiId: '52UPTP', medicalRegistrationNumber: '83172' },
-  { id: 'S-LOCKHART', name: 'Prof C. Lockhart', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-MAIREHAUCO'], hpiId: '53LOCC', medicalRegistrationNumber: '83233' },
-  { id: 'S-AINSWORTH', name: 'Dr N. Ainsworth', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-MAIREHAUCO'], hpiId: '54AINN', medicalRegistrationNumber: '83294' },
-  { id: 'S-DASGUPTA', name: 'Dr Z. Dasgupta', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-GENERALSURX'], hpiId: '55DASZ', medicalRegistrationNumber: '83355' },
-  { id: 'S-JUAREZ', name: 'Dr Y. Juarez', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-GENERALSURX'], hpiId: '56JUAY', medicalRegistrationNumber: '83416' },
-  { id: 'S-MACALISTER', name: 'Dr M. Macalister', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-GENERALSURX'], hpiId: '57MACM', medicalRegistrationNumber: '83477' },
-  { id: 'S-DACRE', name: 'Dr A. Dacre', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-GENERALSURX'], hpiId: '58DACA', medicalRegistrationNumber: '83538' },
-  { id: 'S-RIDLEY', name: 'Dr L. Ridley', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-GENERALSURX'], hpiId: '59RIDL', medicalRegistrationNumber: '83599' },
-  { id: 'S-THACKERAY', name: 'Dr I. Thackeray', specialtyIds: ['SPC-GENSURG'], roomIds: ['RM-GENERALSURX'], hpiId: '60THAI', medicalRegistrationNumber: '83660' },
-  { id: 'S-CLEMENT', name: 'Dr N. Clement', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-REDWOODEYE'], hpiId: '61CLEN', medicalRegistrationNumber: '83721' },
-  { id: 'S-MAITLAND', name: 'Dr J. Maitland', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-REDWOODEYE'], hpiId: '62MAIJ', medicalRegistrationNumber: '83782' },
-  { id: 'S-TALBOT', name: 'Dr C. Talbot', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-REDWOODEYE'], hpiId: '63TALC', medicalRegistrationNumber: '83843' },
-  { id: 'S-RATHBONE', name: 'Dr R. Rathbone', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-REDWOODEYE'], hpiId: '64RATR', medicalRegistrationNumber: '83904' },
-  { id: 'S-KAVANAGH', name: 'Dr A. Kavanagh', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-REDWOODEYE'], hpiId: '65KAVA', medicalRegistrationNumber: '83965' },
-  { id: 'S-SALTMARSH', name: 'Dr H. Saltmarsh', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-REDWOODEYE'], hpiId: '66SALH', medicalRegistrationNumber: '84026' },
-  { id: 'S-RAJAN', name: 'Dr X. Rajan', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-REDWOODEYE'], hpiId: '67RAJX', medicalRegistrationNumber: '84087' },
-  { id: 'S-MARWICK', name: 'Dr W. Marwick', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-REDWOODEYE'], hpiId: '68MARW', medicalRegistrationNumber: '84148' },
-  { id: 'S-RENWICK', name: 'Dr I. Renwick', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-REDWOODEYE'], hpiId: '69RENI', medicalRegistrationNumber: '84209' },
-  { id: 'S-NORTHCOTE', name: 'Dr B. Northcote', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-REDWOODEYE'], hpiId: '70NORB', medicalRegistrationNumber: '84270' },
-  { id: 'S-HENDRY', name: 'Dr C. Hendry', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-REDWOODEYE'], hpiId: '71HENC', medicalRegistrationNumber: '84331' },
-  { id: 'S-SHACKLETON', name: 'Dr T. Shackleton', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-REDWOODEYE'], hpiId: '72SHAT', medicalRegistrationNumber: '84392' },
-  { id: 'S-VASQUEZ', name: 'Dr K. Vasquez', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-REDWOODEYE'], hpiId: '73VASK', medicalRegistrationNumber: '84453' },
-  { id: 'S-HARTIGAN', name: 'Dr C. Hartigan', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-BECKENHAME'], hpiId: '74HARC', medicalRegistrationNumber: '84514' },
-  { id: 'S-WYNDHAM', name: 'Dr I. Wyndham', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-BECKENHAME'], hpiId: '75WYNI', medicalRegistrationNumber: '84575' },
-  { id: 'S-ERIKSEN', name: 'Dr R. Eriksen', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-EYEPARTNER'], hpiId: '76ERIR', medicalRegistrationNumber: '84636' },
-  { id: 'S-DUNMORE', name: 'Dr M. Dunmore', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-MATTHIASDU'], hpiId: '77DUNM', medicalRegistrationNumber: '84697' },
-  { id: 'S-PICKERING', name: 'Prof O. Pickering', specialtyIds: ['SPC-OPHTH'], roomIds: ['RM-OTTOPICKER'], hpiId: '78PICO', medicalRegistrationNumber: '84758' },
-  { id: 'S-OGILVIE', name: 'Mr A. Ogilvie', specialtyIds: ['SPC-OMFS'], roomIds: ['RM-ALISTAIROG'], hpiId: '79OGIA', medicalRegistrationNumber: '84819' },
-  { id: 'S-KINLOCH', name: 'Mr R. Kinloch', specialtyIds: ['SPC-OMFS'], roomIds: ['RM-RAFAELKINL'], hpiId: '80KINR', medicalRegistrationNumber: '84880' },
-  { id: 'S-BARCLAY', name: 'Dr I. Barclay', specialtyIds: ['SPC-OMFS'], roomIds: ['RM-ISLABARCLA'], hpiId: '81BARI', medicalRegistrationNumber: '84941' },
-  { id: 'S-FONOTI', name: 'Dr F. Fonoti', specialtyIds: ['SPC-OMFS'], roomIds: ['RM-FREYAFONOT'], hpiId: '82FONF', medicalRegistrationNumber: '85002' },
-  { id: 'S-FENWICK', name: 'Dr O. Fenwick', specialtyIds: ['SPC-OMFS'], roomIds: ['RM-OTTILIEFEN'], hpiId: '83FENO', medicalRegistrationNumber: '85063' },
-  { id: 'S-EASTWOOD', name: 'Mr J. Eastwood', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-ADDINGTONO'], hpiId: '84EASJ', medicalRegistrationNumber: '85124' },
-  { id: 'S-VAUGHAN', name: 'Dr I. Vaughan', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-IMOGENVAUG', 'RM-EDGEWAREOR'], hpiId: '85VAUI', medicalRegistrationNumber: '85185' },
-  { id: 'S-LARKIN', name: 'Dr K. Larkin', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-WIGRAMORTH'], hpiId: '86LARK', medicalRegistrationNumber: '85246' },
-  { id: 'S-SELWYN', name: 'Dr A. Selwyn', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-WIGRAMORTH'], hpiId: '87SELA', medicalRegistrationNumber: '85307' },
-  { id: 'S-TAVENER', name: 'Dr D. Tavener', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-HOONHAYORT'], hpiId: '88TAVD', medicalRegistrationNumber: '85368' },
-  { id: 'S-KINGSLEY', name: 'A. Kingsley', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-SOMERFIELD'], hpiId: '89KINA', medicalRegistrationNumber: '85429' },
-  { id: 'S-FARQUHAR', name: 'Mr V. Farquhar', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-SOMERFIELD'], hpiId: '90FARV', medicalRegistrationNumber: '85490' },
-  { id: 'S-SINCLAIR', name: 'Mr H. Sinclair', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-SOMERFIELD'], hpiId: '91SINH', medicalRegistrationNumber: '85551' },
-  { id: 'S-BELLAMY', name: 'Mr P. Bellamy', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-SOMERFIELD'], hpiId: '92BELP', medicalRegistrationNumber: '85612' },
-  { id: 'S-MARCHETTI', name: 'Mr E. Marchetti', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-EDGEWAREOR'], hpiId: '93MARE', medicalRegistrationNumber: '85673' },
-  { id: 'S-SUTHERLAND', name: 'Dr O. Sutherland', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-EDGEWAREOR'], hpiId: '94SUTO', medicalRegistrationNumber: '85734' },
-  { id: 'S-MERRIMAN', name: 'Mr K. Merriman', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-EDGEWAREOR'], hpiId: '95MERK', medicalRegistrationNumber: '85795' },
-  { id: 'S-SOTO', name: 'Dr S. Soto', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-SASKIASOTO'], hpiId: '96SOTS', medicalRegistrationNumber: '85856' },
-  { id: 'S-UNDERHILL', name: 'T. Underhill', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-HAREWOODOR'], hpiId: '97UNDT', medicalRegistrationNumber: '85917' },
-  { id: 'S-MULGREW', name: 'Mr T. Mulgrew', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-HAREWOODOR'], hpiId: '98MULT', medicalRegistrationNumber: '85978' },
-  { id: 'S-WOLFENDEN', name: 'Mr M. Wolfenden', specialtyIds: ['SPC-PLASTIC'], roomIds: ['RM-MIHAKAWOLF'], hpiId: '99WOLM', medicalRegistrationNumber: '86039' },
-  { id: 'S-IREDALE', name: 'Dr T. Iredale', specialtyIds: ['SPC-PLASTIC'], roomIds: ['RM-TOBIASIRED'], hpiId: '50IRET', medicalRegistrationNumber: '86100' },
-  { id: 'S-WILBERFORCE', name: 'Mr D. Wilberforce', specialtyIds: ['SPC-PLASTIC'], roomIds: ['RM-PLASTICSUR'], hpiId: '51WILD', medicalRegistrationNumber: '86161' },
-  { id: 'S-LECKIE', name: 'Mr O. Leckie', specialtyIds: ['SPC-PLASTIC'], roomIds: ['RM-ORSONLECKI'], hpiId: '52LECO', medicalRegistrationNumber: '86222' },
-  { id: 'S-GILLESPIE', name: 'Mr D. Gillespie', specialtyIds: ['SPC-PLASTIC'], roomIds: ['RM-HEATHCOTEP'], hpiId: '53GILD', medicalRegistrationNumber: '86283' },
-  { id: 'S-CORRIGAN', name: 'Mr C. Corrigan', specialtyIds: ['SPC-PLASTIC'], roomIds: ['RM-CORMACCORR'], hpiId: '54CORC', medicalRegistrationNumber: '86344' },
-  { id: 'S-NAKASHIMA', name: 'Dr A. Nakashima', specialtyIds: ['SPC-PLASTIC'], roomIds: ['RM-PLASTICSUR'], hpiId: '55NAKA', medicalRegistrationNumber: '86405' },
-  { id: 'S-ROCHFORD', name: 'Mr I. Rochford', specialtyIds: ['SPC-PLASTIC'], roomIds: ['RM-PLASTICSUR'], hpiId: '56ROCI', medicalRegistrationNumber: '86466' },
-  { id: 'S-ALDERTON', name: 'Dr Q. Alderton', specialtyIds: ['SPC-PLASTIC'], roomIds: ['RM-PLASTICSUR'], hpiId: '57ALDQ', medicalRegistrationNumber: '86527' },
-  { id: 'S-CROWTHER', name: 'Mr L. Crowther', specialtyIds: ['SPC-PLASTIC'], roomIds: ['RM-PLASTICSUR'], hpiId: '58CROL', medicalRegistrationNumber: '86588' },
-  { id: 'S-DARNELL', name: 'N. Darnell', specialtyIds: ['SPC-UROLOGY'], roomIds: ['RM-UROLOGYASS'], hpiId: '59DARN', medicalRegistrationNumber: '86649' },
-  { id: 'S-LATTIMORE', name: 'V. Lattimore', specialtyIds: ['SPC-UROLOGY'], roomIds: ['RM-UROLOGYASS'], hpiId: '60LATV', medicalRegistrationNumber: '86710' },
-  { id: 'S-VENNING', name: 'T. Venning', specialtyIds: ['SPC-UROLOGY'], roomIds: ['RM-UROLOGYASS'], hpiId: '61VENT', medicalRegistrationNumber: '86771' },
-  { id: 'S-TIERNEY', name: 'A. Tierney', specialtyIds: ['SPC-UROLOGY'], roomIds: ['RM-UROLOGYASS'], hpiId: '62TIEA', medicalRegistrationNumber: '86832' },
-  { id: 'S-MAHUIKA', name: 'L. Mahuika', specialtyIds: ['SPC-UROLOGY'], roomIds: ['RM-UROLOGYASS'], hpiId: '63MAHL', medicalRegistrationNumber: '86893' },
-  { id: 'S-GORMAN', name: 'K. Gorman', specialtyIds: ['SPC-UROLOGY'], roomIds: ['RM-UROLOGYASS'], hpiId: '64GORK', medicalRegistrationNumber: '86954' },
-  { id: 'S-GALLOWAY', name: 'J. Galloway', specialtyIds: ['SPC-UROLOGY'], roomIds: ['RM-UROLOGYASS'], hpiId: '65GALJ', medicalRegistrationNumber: '87015' },
-  { id: 'S-SANDFORD', name: 'Z. Sandford', specialtyIds: ['SPC-UROLOGY'], roomIds: ['RM-UROLOGYASS'], hpiId: '66SANZ', medicalRegistrationNumber: '87076' },
-  { id: 'S-NESBITT', name: 'G. Nesbitt', specialtyIds: ['SPC-UROLOGY'], roomIds: ['RM-UROLOGYASS'], hpiId: '67NESG', medicalRegistrationNumber: '87137' },
-  { id: 'S-LANGFORD', name: 'Mr A. Langford', specialtyIds: ['SPC-VASCULAR'], roomIds: ['RM-YALDHURSTV'], hpiId: '68LANA', medicalRegistrationNumber: '87198' },
-  { id: 'S-ROSCOE', name: 'Mr B. Roscoe', specialtyIds: ['SPC-VASCULAR'], roomIds: ['RM-YALDHURSTV'], hpiId: '69ROSB', medicalRegistrationNumber: '87259' },
-  { id: 'S-THORNBURY', name: 'Mr R. Thornbury', specialtyIds: ['SPC-VASCULAR'], roomIds: ['RM-YALDHURSTV'], hpiId: '70THOR', medicalRegistrationNumber: '87320' },
-  { id: 'S-TUILAGI', name: 'Mr O. Tuilagi', specialtyIds: ['SPC-NEURO'], roomIds: ['RM-SUMNERNEUR'], hpiId: '71TUIO', medicalRegistrationNumber: '87381' },
-  { id: 'S-MATHIESON', name: 'Mr T. Mathieson', specialtyIds: ['SPC-NEURO'], roomIds: ['RM-BRYNDWRNEU'], hpiId: '72MATT', medicalRegistrationNumber: '87442' },
-  { id: 'S-ABERNETHY', name: 'Mr S. Abernethy', specialtyIds: ['SPC-NEURO'], roomIds: ['RM-BRYNDWRNEU'], hpiId: '73ABES', medicalRegistrationNumber: '87503' },
-  { id: 'S-BHATNAGAR', name: 'Mr S. Bhatnagar', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-ORTHOPAEDI'], hpiId: '74BHAS', medicalRegistrationNumber: '87564' },
-  { id: 'S-GOODWIN', name: 'Mr J. Goodwin', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-ORTHOPAEDI'], hpiId: '75GOOJ', medicalRegistrationNumber: '87625' },
-  { id: 'S-DELACROIX', name: 'Mr G. Delacroix', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-ORTHOPAEDI'], hpiId: '76DELG', medicalRegistrationNumber: '87686' },
-  { id: 'S-BRENNAN', name: 'Mr D. Brennan', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-ORTHOPAEDI'], hpiId: '77BRED', medicalRegistrationNumber: '87747' },
-  { id: 'S-PRENDERGAST', name: 'Mr A. Prendergast', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-ORTHOPAEDI'], hpiId: '78PREA', medicalRegistrationNumber: '87808' },
-  { id: 'S-MOFFAT', name: 'Mr E. Moffat', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-ORTHOPAEDI'], hpiId: '79MOFE', medicalRegistrationNumber: '87869' },
-  { id: 'S-ZELINSKI', name: 'Mr E. Zelinski', specialtyIds: ['SPC-ORTHO'], roomIds: ['RM-ORTHOPAEDI'], hpiId: '80ZELE', medicalRegistrationNumber: '87930' },
+  { id: 'S-DALGETY', name: 'Dr H. Dalgety', specialtyIds: ['SPC-ENT'], practiceName: 'Avonhead ENT', personalContact: { name: 'Dr H. Dalgety' }, officeContacts: [{ name: 'Bev', email: 'bev@avonheadent.example' }, { name: 'Avonhead ENT', email: 'info@avonheadent.example', phone: '03 555 1000' }], hpiId: '50DALH', medicalRegistrationNumber: '80000' },
+  { id: 'S-GARSIDE', name: 'Dr B. Garside', specialtyIds: ['SPC-ENT'], practiceName: 'Avonhead ENT', personalContact: { name: 'Dr B. Garside' }, officeContacts: [{ name: 'Avonhead ENT', email: 'info@avonheadent.example', phone: '03 555 1000' }], hpiId: '51GARB', medicalRegistrationNumber: '80061' },
+  { id: 'S-HARGREAVE', name: 'Dr R. Hargreave', specialtyIds: ['SPC-ENT'], practiceName: 'Avonhead ENT', personalContact: { name: 'Dr R. Hargreave' }, officeContacts: [{ name: 'Avonhead ENT', email: 'info@avonheadent.example', phone: '03 555 1000' }], hpiId: '52HARR', medicalRegistrationNumber: '80122' },
+  { id: 'S-WHAANGA', name: 'Dr P. Whaanga', specialtyIds: ['SPC-ENT'], practiceName: 'Avonhead ENT', personalContact: { name: 'Dr P. Whaanga' }, officeContacts: [{ name: 'Avonhead ENT', email: 'info@avonheadent.example', phone: '03 555 1000' }], medicalRegistrationNumber: '80183' },
+  { id: 'S-JARDINE', name: 'Dr W. Jardine', specialtyIds: ['SPC-ENT'], practiceName: 'Avonhead ENT', personalContact: { name: 'Dr W. Jardine' }, officeContacts: [{ name: 'Avonhead ENT', email: 'info@avonheadent.example', phone: '03 555 1000' }], hpiId: '54JARW', medicalRegistrationNumber: '80244' },
+  { id: 'S-FORSYTHE', name: 'Mr I. Forsythe', specialtyIds: ['SPC-ENT'], practiceName: 'Burnside ENT Surgeons', personalContact: { name: 'Mr I. Forsythe' }, officeContacts: [{ name: 'Maree', email: 'maree@burnsideent.example' }, { name: 'Nicola Holloway', email: 'nicola@burnsideent.example' }, { name: 'Burnside ENT Surgeons', phone: '03 555 1037' }], hpiId: '55FORI', medicalRegistrationNumber: '80305' },
+  { id: 'S-CALDER', name: 'Dr T. Calder', specialtyIds: ['SPC-ENT'], practiceName: 'Burnside ENT Surgeons', personalContact: { name: 'Dr T. Calder' }, officeContacts: [{ name: 'Leanne', email: 'leanne@burnsideent.example' }, { name: 'Nicola Holloway', email: 'nicola@burnsideent.example' }, { name: 'Burnside ENT Surgeons', phone: '03 555 1037' }], hpiId: '56CALT', medicalRegistrationNumber: '80366' },
+  { id: 'S-ACHTERBERG', name: 'Mr B. Achterberg', specialtyIds: ['SPC-ENT'], practiceName: 'Burnside ENT Surgeons', personalContact: { name: 'Mr B. Achterberg' }, officeContacts: [{ name: 'Nicola Holloway', email: 'nicola@burnsideent.example' }, { name: 'Burnside ENT Surgeons', phone: '03 555 1037' }], hpiId: '57ACHB', medicalRegistrationNumber: '80427' },
+  { id: 'S-MALLORY', name: 'Mr R. Mallory', specialtyIds: ['SPC-ENT'], practiceName: 'Burnside ENT Surgeons', personalContact: { name: 'Mr R. Mallory' }, officeContacts: [{ name: 'Dianne', email: 'dianne@burnsideent.example' }, { name: 'Nicola Holloway', email: 'nicola@burnsideent.example' }, { name: 'Burnside ENT Surgeons', phone: '03 555 1037' }], hpiId: '58MALR', medicalRegistrationNumber: '80488' },
+  { id: 'S-PAEWAI', name: 'Dr E. Paewai', specialtyIds: ['SPC-ENT'], practiceName: 'Burnside ENT Surgeons', personalContact: { name: 'Dr E. Paewai' }, officeContacts: [{ name: 'Nicola Holloway', email: 'nicola@burnsideent.example' }, { name: 'Burnside ENT Surgeons', phone: '03 555 1037' }], hpiId: '59PAEE', medicalRegistrationNumber: '80549' },
+  { id: 'S-WOODVILLE', name: 'Mr U. Woodville', specialtyIds: ['SPC-ENT'], practiceName: 'Burnside ENT Surgeons', personalContact: { name: 'Mr U. Woodville' }, officeContacts: [{ name: 'Leanne', email: 'leanne@burnsideent.example' }, { name: 'Nicola Holloway', email: 'nicola@burnsideent.example' }, { name: 'Burnside ENT Surgeons', phone: '03 555 1037' }], hpiId: '60WOOU', medicalRegistrationNumber: '80610' },
+  { id: 'S-ELLERY', name: 'Mr O. Ellery', specialtyIds: ['SPC-ENT'], practiceName: 'Burnside ENT Surgeons', personalContact: { name: 'Mr O. Ellery' }, officeContacts: [{ name: 'Nicola Holloway', email: 'nicola@burnsideent.example' }, { name: 'Burnside ENT Surgeons', phone: '03 555 1037' }], hpiId: '61ELLO', medicalRegistrationNumber: '80671' },
+  { id: 'S-TRELAWNEY', name: 'Dr L. Trelawney', specialtyIds: ['SPC-ENT'], practiceName: 'Burnside ENT Surgeons', personalContact: { name: 'Dr L. Trelawney' }, officeContacts: [{ name: 'Nicola Holloway', email: 'nicola@burnsideent.example' }, { name: 'Burnside ENT Surgeons', phone: '03 555 1037' }], hpiId: '62TREL', medicalRegistrationNumber: '80732' },
+  { id: 'S-IYER', name: 'Dr R. Iyer', specialtyIds: ['SPC-ENT'], practiceName: 'Burnside ENT Surgeons', personalContact: { name: 'Dr R. Iyer' }, officeContacts: [{ name: 'Nicola Holloway', email: 'nicola@burnsideent.example' }, { name: 'Burnside ENT Surgeons', phone: '03 555 1037' }], hpiId: '63IYER', medicalRegistrationNumber: '80793' },
+  { id: 'S-PENROSE', name: 'Dr F. Penrose', specialtyIds: ['SPC-GYNAE'], practiceName: 'Linwood Women\'s Health Group', personalContact: { name: 'Dr F. Penrose' }, officeContacts: [{ name: 'Linwood Women\'s Health Group', email: 'admin@linwoodwomens.example', phone: '03 555 1185' }], hpiId: '64PENF', medicalRegistrationNumber: '80854' },
+  { id: 'S-WINSLOW', name: 'Dr J. Winslow', specialtyIds: ['SPC-GYNAE'], practiceName: 'Richmond Fertility Specialists · Canterbury and Linwood Women\'s Health Group', personalContact: { name: 'Dr J. Winslow' }, officeContacts: [{ name: 'Richmond Fertility Specialists · Canterbury', phone: '03 555 1259' }, { name: 'Linwood Women\'s Health Group', email: 'admin@linwoodwomens.example', phone: '03 555 1185' }], hpiId: '65WINJ', medicalRegistrationNumber: '80915' },
+  { id: 'S-KEREAMA', name: 'Dr H. Kereama', specialtyIds: ['SPC-GYNAE'], practiceName: 'Linwood Women\'s Health Group', personalContact: { name: 'Dr H. Kereama' }, officeContacts: [{ name: 'Linwood Women\'s Health Group', email: 'admin@linwoodwomens.example', phone: '03 555 1185' }], hpiId: '66KERH', medicalRegistrationNumber: '80976' },
+  { id: 'S-OSEI', name: 'Dr B. Osei', specialtyIds: ['SPC-GYNAE'], practiceName: 'Linwood Women\'s Health Group', personalContact: { name: 'Dr B. Osei' }, officeContacts: [{ name: 'Linwood Women\'s Health Group', email: 'admin@linwoodwomens.example', phone: '03 555 1185' }], medicalRegistrationNumber: '81037' },
+  { id: 'S-PEMBERTON', name: 'Dr C. Pemberton', specialtyIds: ['SPC-GYNAE'], practiceName: 'Linwood Women\'s Health Group', personalContact: { name: 'Dr C. Pemberton' }, officeContacts: [{ name: 'Linwood Women\'s Health Group', email: 'admin@linwoodwomens.example', phone: '03 555 1185' }], hpiId: '68PEMC', medicalRegistrationNumber: '81098' },
+  { id: 'S-TREMAINE', name: 'Dr A. Tremaine', specialtyIds: ['SPC-GYNAE'], practiceName: 'Linwood Women\'s Health Group', personalContact: { name: 'Dr A. Tremaine' }, officeContacts: [{ name: 'Linwood Women\'s Health Group', email: 'admin@linwoodwomens.example', phone: '03 555 1185' }], hpiId: '69TREA', medicalRegistrationNumber: '81159' },
+  { id: 'S-QUIGLEY', name: 'Dr J. Quigley', specialtyIds: ['SPC-GYNAE'], practiceName: 'Gynaecology Canterbury', personalContact: { name: 'Dr J. Quigley' }, officeContacts: [{ name: 'Gynaecology Canterbury', email: 'info@gynaecology.example', phone: '03 555 1222' }], hpiId: '70QUIJ', medicalRegistrationNumber: '81220' },
+  { id: 'S-CHEUNG', name: 'Dr I. Cheung', specialtyIds: ['SPC-GYNAE'], practiceName: 'Gynaecology Canterbury', personalContact: { name: 'Dr I. Cheung' }, officeContacts: [{ name: 'Gynaecology Canterbury', email: 'info@gynaecology.example', phone: '03 555 1222' }], hpiId: '71CHEI', medicalRegistrationNumber: '81281' },
+  { id: 'S-KEATING', name: 'Mr F. Keating', specialtyIds: ['SPC-GYNAE'], practiceName: 'Gynaecology Canterbury', personalContact: { name: 'Mr F. Keating' }, officeContacts: [{ name: 'Gynaecology Canterbury', email: 'info@gynaecology.example', phone: '03 555 1222' }], hpiId: '72KEAF', medicalRegistrationNumber: '81342' },
+  { id: 'S-LOWRY', name: 'Mr G. Lowry', specialtyIds: ['SPC-GYNAE'], practiceName: 'Gynaecology Canterbury', personalContact: { name: 'Mr G. Lowry' }, officeContacts: [{ name: 'Gynaecology Canterbury', email: 'info@gynaecology.example', phone: '03 555 1222' }], hpiId: '73LOWG', medicalRegistrationNumber: '81403' },
+  { id: 'S-EMBLING', name: 'Mr F. Embling', specialtyIds: ['SPC-GYNAE'], practiceName: 'Gynaecology Canterbury', personalContact: { name: 'Mr F. Embling' }, officeContacts: [{ name: 'Gynaecology Canterbury', email: 'info@gynaecology.example', phone: '03 555 1222' }], hpiId: '74EMBF', medicalRegistrationNumber: '81464' },
+  { id: 'S-BEAUMONT', name: 'Mr M. Beaumont', specialtyIds: ['SPC-GYNAE'], practiceName: 'Gynaecology Canterbury', personalContact: { name: 'Mr M. Beaumont' }, officeContacts: [{ name: 'Gynaecology Canterbury', email: 'info@gynaecology.example', phone: '03 555 1222' }], hpiId: '75BEAM', medicalRegistrationNumber: '81525' },
+  { id: 'S-COLVILLE', name: 'Dr V. Colville', specialtyIds: ['SPC-GYNAE'], practiceName: 'Gynaecology Canterbury', personalContact: { name: 'Dr V. Colville' }, officeContacts: [{ name: 'Gynaecology Canterbury', email: 'info@gynaecology.example', phone: '03 555 1222' }], hpiId: '76COLV', medicalRegistrationNumber: '81586' },
+  { id: 'S-ORMSBY', name: 'Dr V. Ormsby', specialtyIds: ['SPC-GYNAE'], practiceName: 'Gynaecology Canterbury', personalContact: { name: 'Dr V. Ormsby' }, officeContacts: [{ name: 'Gynaecology Canterbury', email: 'info@gynaecology.example', phone: '03 555 1222' }], hpiId: '77ORMV', medicalRegistrationNumber: '81647' },
+  { id: 'S-LACHLAN', name: 'Dr L. Lachlan', specialtyIds: ['SPC-GYNAE'], practiceName: 'Gynaecology Canterbury', personalContact: { name: 'Dr L. Lachlan' }, officeContacts: [{ name: 'Gynaecology Canterbury', email: 'info@gynaecology.example', phone: '03 555 1222' }], hpiId: '78LACL', medicalRegistrationNumber: '81708' },
+  { id: 'S-WARBURTON', name: 'Dr C. Warburton', specialtyIds: ['SPC-GYNAE'], practiceName: 'Gynaecology Canterbury', personalContact: { name: 'Dr C. Warburton' }, officeContacts: [{ name: 'Gynaecology Canterbury', email: 'info@gynaecology.example', phone: '03 555 1222' }], hpiId: '79WARC', medicalRegistrationNumber: '81769' },
+  { id: 'S-LINDQVIST', name: 'Dr M. Lindqvist', specialtyIds: ['SPC-GENSURG'], practiceName: 'Gynaecology Canterbury', personalContact: { name: 'Dr M. Lindqvist' }, officeContacts: [{ name: 'Gynaecology Canterbury', email: 'info@gynaecology.example', phone: '03 555 1222' }], hpiId: '80LINM', medicalRegistrationNumber: '81830' },
+  { id: 'S-CARMODY', name: 'Dr S. Carmody', specialtyIds: ['SPC-GYNAE'], practiceName: 'Richmond Fertility Specialists · Canterbury', personalContact: { name: 'Dr S. Carmody' }, officeContacts: [{ name: 'Richmond Fertility Specialists · Canterbury', phone: '03 555 1259' }], hpiId: '81CARS', medicalRegistrationNumber: '81891' },
+  { id: 'S-JESSOP', name: 'Dr C. Jessop', specialtyIds: ['SPC-GYNAE'], practiceName: 'Richmond Fertility Specialists · Canterbury', personalContact: { name: 'Dr C. Jessop' }, officeContacts: [{ name: 'Richmond Fertility Specialists · Canterbury', phone: '03 555 1259' }], hpiId: '82JESC', medicalRegistrationNumber: '81952' },
+  { id: 'S-HUXLEY', name: 'Dr R. Huxley', specialtyIds: ['SPC-GYNAE'], practiceName: 'Richmond Fertility Specialists · Canterbury', personalContact: { name: 'Dr R. Huxley' }, officeContacts: [{ name: 'Richmond Fertility Specialists · Canterbury', phone: '03 555 1259' }], hpiId: '83HUXR', medicalRegistrationNumber: '82013' },
+  { id: 'S-BANCROFT', name: 'Dr H. Bancroft', specialtyIds: ['SPC-GYNAE'], practiceName: 'Richmond Fertility Specialists · Canterbury', personalContact: { name: 'Dr H. Bancroft' }, officeContacts: [{ name: 'Richmond Fertility Specialists · Canterbury', phone: '03 555 1259' }], hpiId: '84BANH', medicalRegistrationNumber: '82074' },
+  { id: 'S-BRAMLEY', name: 'Dr E. Bramley', specialtyIds: ['SPC-GYNAE'], practiceName: 'Elodie Bramley · Gynaecological Oncologist', personalContact: { name: 'Dr E. Bramley' }, officeContacts: [], hpiId: '85BRAE', medicalRegistrationNumber: '82135' },
+  { id: 'S-YEOMAN', name: 'Mr B. Yeoman', specialtyIds: ['SPC-GENSURG'], practiceName: 'General Surgery Partners', personalContact: { name: 'Mr B. Yeoman' }, officeContacts: [{ name: 'Rosalind Pemberton', email: 'manager@generalsurgerypartners.example' }, { name: 'General Surgery Partners', phone: '03 555 1296' }], hpiId: '86YEOB', medicalRegistrationNumber: '82196' },
+  { id: 'S-CHATTERJEE', name: 'Mr K. Chatterjee', specialtyIds: ['SPC-GENSURG'], practiceName: 'General Surgery Partners', personalContact: { name: 'Mr K. Chatterjee' }, officeContacts: [{ name: 'Rosalind Pemberton', email: 'manager@generalsurgerypartners.example' }, { name: 'General Surgery Partners', phone: '03 555 1296' }], hpiId: '87CHAK', medicalRegistrationNumber: '82257' },
+  { id: 'S-STANHOPE', name: 'Mr H. Stanhope', specialtyIds: ['SPC-GENSURG'], practiceName: 'General Surgery Partners', personalContact: { name: 'Mr H. Stanhope' }, officeContacts: [{ name: 'Rosalind Pemberton', email: 'manager@generalsurgerypartners.example' }, { name: 'General Surgery Partners', phone: '03 555 1296' }], hpiId: '88STAH', medicalRegistrationNumber: '82318' },
+  { id: 'S-SETON', name: 'Dr W. Seton', specialtyIds: ['SPC-GENSURG'], practiceName: 'Hillsborough Colorectal Specialists', personalContact: { name: 'Dr W. Seton' }, officeContacts: [{ name: 'Hillsborough Colorectal Specialists', email: 'info@hillsboroughcolorectal.example', phone: '03 555 1333' }], hpiId: '89SETW', medicalRegistrationNumber: '82379' },
+  { id: 'S-DENHOLM', name: 'Prof A. Denholm', specialtyIds: ['SPC-GENSURG'], practiceName: 'Hillsborough Colorectal Specialists', personalContact: { name: 'Prof A. Denholm' }, officeContacts: [{ name: 'Hillsborough Colorectal Specialists', email: 'info@hillsboroughcolorectal.example', phone: '03 555 1333' }], hpiId: '90DENA', medicalRegistrationNumber: '82440' },
+  { id: 'S-NAKAMURA', name: 'Prof G. Nakamura', specialtyIds: ['SPC-GENSURG'], practiceName: 'Hillsborough Colorectal Specialists', personalContact: { name: 'Prof G. Nakamura' }, officeContacts: [{ name: 'Hillsborough Colorectal Specialists', email: 'info@hillsboroughcolorectal.example', phone: '03 555 1333' }], hpiId: '91NAKG', medicalRegistrationNumber: '82501' },
+  { id: 'S-XU', name: 'Mr M. Xu', specialtyIds: ['SPC-GENSURG'], practiceName: 'Hillsborough Colorectal Specialists', personalContact: { name: 'Mr M. Xu' }, officeContacts: [{ name: 'Hillsborough Colorectal Specialists', email: 'info@hillsboroughcolorectal.example', phone: '03 555 1333' }], hpiId: '92XUXM', medicalRegistrationNumber: '82562' },
+  { id: 'S-FITZGERALD', name: 'Dr E. Fitzgerald', specialtyIds: ['SPC-GENSURG'], practiceName: 'Hillsborough Colorectal Specialists', personalContact: { name: 'Dr E. Fitzgerald' }, officeContacts: [{ name: 'Hillsborough Colorectal Specialists', email: 'info@hillsboroughcolorectal.example', phone: '03 555 1333' }], hpiId: '93FITE', medicalRegistrationNumber: '82623' },
+  { id: 'S-WAINWRIGHT', name: 'Mr N. Wainwright', specialtyIds: ['SPC-GENSURG'], practiceName: 'Upper GI Partners and Hillsborough Colorectal Specialists', personalContact: { name: 'Mr N. Wainwright' }, officeContacts: [{ name: 'Upper GI Partners', email: 'info@uppergi.example', phone: '03 555 1333' }, { name: 'Hillsborough Colorectal Specialists', email: 'info@hillsboroughcolorectal.example', phone: '03 555 1333' }], hpiId: '94WAIN', medicalRegistrationNumber: '82684' },
+  { id: 'S-MORLAND', name: 'Mr K. Morland', specialtyIds: ['SPC-GENSURG'], practiceName: 'Upper GI Partners and Hillsborough Colorectal Specialists', personalContact: { name: 'Mr K. Morland' }, officeContacts: [{ name: 'Upper GI Partners', email: 'info@uppergi.example', phone: '03 555 1333' }, { name: 'Hillsborough Colorectal Specialists', email: 'info@hillsboroughcolorectal.example', phone: '03 555 1333' }], hpiId: '95MORK', medicalRegistrationNumber: '82745' },
+  { id: 'S-RAHMAN', name: 'Mr S. Rahman', specialtyIds: ['SPC-GENSURG'], practiceName: 'Hillsborough Colorectal Specialists', personalContact: { name: 'Mr S. Rahman' }, officeContacts: [{ name: 'Hillsborough Colorectal Specialists', email: 'info@hillsboroughcolorectal.example', phone: '03 555 1333' }], hpiId: '96RAHS', medicalRegistrationNumber: '82806' },
+  { id: 'S-HAWTHORNE', name: 'Mr H. Hawthorne', specialtyIds: ['SPC-GENSURG'], practiceName: 'Hillsborough Colorectal Specialists', personalContact: { name: 'Mr H. Hawthorne' }, officeContacts: [{ name: 'Hillsborough Colorectal Specialists', email: 'info@hillsboroughcolorectal.example', phone: '03 555 1333' }], hpiId: '97HAWH', medicalRegistrationNumber: '82867' },
+  { id: 'S-DRAYCOTT', name: 'Dr E. Draycott', specialtyIds: ['SPC-GENSURG'], practiceName: 'Hillsborough Colorectal Specialists', personalContact: { name: 'Dr E. Draycott' }, officeContacts: [{ name: 'Hillsborough Colorectal Specialists', email: 'info@hillsboroughcolorectal.example', phone: '03 555 1333' }], hpiId: '98DRAE', medicalRegistrationNumber: '82928' },
+  { id: 'S-GRIEVE', name: 'Mr D. Grieve', specialtyIds: ['SPC-GENSURG'], practiceName: 'Hillsborough Colorectal Specialists', personalContact: { name: 'Mr D. Grieve' }, officeContacts: [{ name: 'Hillsborough Colorectal Specialists', email: 'info@hillsboroughcolorectal.example', phone: '03 555 1333' }], hpiId: '99GRID', medicalRegistrationNumber: '82989' },
+  { id: 'S-RUTHERFORD', name: 'Mr C. Rutherford', specialtyIds: ['SPC-GENSURG'], practiceName: 'Hillsborough Colorectal Specialists', personalContact: { name: 'Mr C. Rutherford' }, officeContacts: [{ name: 'Hillsborough Colorectal Specialists', email: 'info@hillsboroughcolorectal.example', phone: '03 555 1333' }], hpiId: '50RUTC', medicalRegistrationNumber: '83050' },
+  { id: 'S-WHITCOMBE', name: 'Mr N. Whitcombe', specialtyIds: ['SPC-GENSURG'], practiceName: 'Hillsborough Colorectal Specialists', personalContact: { name: 'Mr N. Whitcombe' }, officeContacts: [{ name: 'Hillsborough Colorectal Specialists', email: 'info@hillsboroughcolorectal.example', phone: '03 555 1333' }], hpiId: '51WHIN', medicalRegistrationNumber: '83111' },
+  { id: 'S-UPTON', name: 'Prof P. Upton', specialtyIds: ['SPC-GENSURG'], practiceName: 'Mairehau Colorectal Centre · Canterbury', personalContact: { name: 'Prof P. Upton' }, officeContacts: [{ name: 'Mairehau Colorectal Centre · Canterbury', email: 'info@mairehaucolorectal.example', phone: '03 555 1370' }], hpiId: '52UPTP', medicalRegistrationNumber: '83172' },
+  { id: 'S-LOCKHART', name: 'Prof C. Lockhart', specialtyIds: ['SPC-GENSURG'], practiceName: 'Mairehau Colorectal Centre · Canterbury', personalContact: { name: 'Prof C. Lockhart' }, officeContacts: [{ name: 'Mairehau Colorectal Centre · Canterbury', email: 'info@mairehaucolorectal.example', phone: '03 555 1370' }], hpiId: '53LOCC', medicalRegistrationNumber: '83233' },
+  { id: 'S-AINSWORTH', name: 'Dr N. Ainsworth', specialtyIds: ['SPC-GENSURG'], practiceName: 'Mairehau Colorectal Centre · Canterbury', personalContact: { name: 'Dr N. Ainsworth' }, officeContacts: [{ name: 'Mairehau Colorectal Centre · Canterbury', email: 'info@mairehaucolorectal.example', phone: '03 555 1370' }], hpiId: '54AINN', medicalRegistrationNumber: '83294' },
+  { id: 'S-DASGUPTA', name: 'Dr Z. Dasgupta', specialtyIds: ['SPC-GENSURG'], practiceName: 'General Surgery Canterbury', personalContact: { name: 'Dr Z. Dasgupta' }, officeContacts: [{ name: 'General Surgery Canterbury', email: 'enquiries@generalsurgery.example', phone: '03 555 1407' }], hpiId: '55DASZ', medicalRegistrationNumber: '83355' },
+  { id: 'S-JUAREZ', name: 'Dr Y. Juarez', specialtyIds: ['SPC-GENSURG'], practiceName: 'General Surgery Canterbury', personalContact: { name: 'Dr Y. Juarez' }, officeContacts: [{ name: 'General Surgery Canterbury', email: 'enquiries@generalsurgery.example', phone: '03 555 1407' }], hpiId: '56JUAY', medicalRegistrationNumber: '83416' },
+  { id: 'S-MACALISTER', name: 'Dr M. Macalister', specialtyIds: ['SPC-GENSURG'], practiceName: 'General Surgery Canterbury', personalContact: { name: 'Dr M. Macalister' }, officeContacts: [{ name: 'General Surgery Canterbury', email: 'enquiries@generalsurgery.example', phone: '03 555 1407' }], hpiId: '57MACM', medicalRegistrationNumber: '83477' },
+  { id: 'S-DACRE', name: 'Dr A. Dacre', specialtyIds: ['SPC-GENSURG'], practiceName: 'General Surgery Canterbury', personalContact: { name: 'Dr A. Dacre' }, officeContacts: [{ name: 'General Surgery Canterbury', email: 'enquiries@generalsurgery.example', phone: '03 555 1407' }], hpiId: '58DACA', medicalRegistrationNumber: '83538' },
+  { id: 'S-RIDLEY', name: 'Dr L. Ridley', specialtyIds: ['SPC-GENSURG'], practiceName: 'General Surgery Canterbury', personalContact: { name: 'Dr L. Ridley' }, officeContacts: [{ name: 'General Surgery Canterbury', email: 'enquiries@generalsurgery.example', phone: '03 555 1407' }], hpiId: '59RIDL', medicalRegistrationNumber: '83599' },
+  { id: 'S-THACKERAY', name: 'Dr I. Thackeray', specialtyIds: ['SPC-GENSURG'], practiceName: 'General Surgery Canterbury', personalContact: { name: 'Dr I. Thackeray' }, officeContacts: [{ name: 'General Surgery Canterbury', email: 'enquiries@generalsurgery.example', phone: '03 555 1407' }], hpiId: '60THAI', medicalRegistrationNumber: '83660' },
+  { id: 'S-CLEMENT', name: 'Dr N. Clement', specialtyIds: ['SPC-OPHTH'], practiceName: 'Redwood Eye Group', personalContact: { name: 'Dr N. Clement' }, officeContacts: [{ name: 'Redwood Eye Group', email: 'info@redwoodeye.example', phone: '03 555 1444' }], hpiId: '61CLEN', medicalRegistrationNumber: '83721' },
+  { id: 'S-MAITLAND', name: 'Dr J. Maitland', specialtyIds: ['SPC-OPHTH'], practiceName: 'Redwood Eye Group', personalContact: { name: 'Dr J. Maitland' }, officeContacts: [{ name: 'Redwood Eye Group', email: 'info@redwoodeye.example', phone: '03 555 1444' }], hpiId: '62MAIJ', medicalRegistrationNumber: '83782' },
+  { id: 'S-TALBOT', name: 'Dr C. Talbot', specialtyIds: ['SPC-OPHTH'], practiceName: 'Redwood Eye Group', personalContact: { name: 'Dr C. Talbot' }, officeContacts: [{ name: 'Redwood Eye Group', email: 'info@redwoodeye.example', phone: '03 555 1444' }], hpiId: '63TALC', medicalRegistrationNumber: '83843' },
+  { id: 'S-RATHBONE', name: 'Dr R. Rathbone', specialtyIds: ['SPC-OPHTH'], practiceName: 'Redwood Eye Group', personalContact: { name: 'Dr R. Rathbone' }, officeContacts: [{ name: 'Redwood Eye Group', email: 'info@redwoodeye.example', phone: '03 555 1444' }], hpiId: '64RATR', medicalRegistrationNumber: '83904' },
+  { id: 'S-KAVANAGH', name: 'Dr A. Kavanagh', specialtyIds: ['SPC-OPHTH'], practiceName: 'Redwood Eye Group', personalContact: { name: 'Dr A. Kavanagh' }, officeContacts: [{ name: 'Redwood Eye Group', email: 'info@redwoodeye.example', phone: '03 555 1444' }], hpiId: '65KAVA', medicalRegistrationNumber: '83965' },
+  { id: 'S-SALTMARSH', name: 'Dr H. Saltmarsh', specialtyIds: ['SPC-OPHTH'], practiceName: 'Redwood Eye Group', personalContact: { name: 'Dr H. Saltmarsh' }, officeContacts: [{ name: 'Redwood Eye Group', email: 'info@redwoodeye.example', phone: '03 555 1444' }], hpiId: '66SALH', medicalRegistrationNumber: '84026' },
+  { id: 'S-RAJAN', name: 'Dr X. Rajan', specialtyIds: ['SPC-OPHTH'], practiceName: 'Redwood Eye Group', personalContact: { name: 'Dr X. Rajan' }, officeContacts: [{ name: 'Redwood Eye Group', email: 'info@redwoodeye.example', phone: '03 555 1444' }], hpiId: '67RAJX', medicalRegistrationNumber: '84087' },
+  { id: 'S-MARWICK', name: 'Dr W. Marwick', specialtyIds: ['SPC-OPHTH'], practiceName: 'Redwood Eye Group', personalContact: { name: 'Dr W. Marwick' }, officeContacts: [{ name: 'Redwood Eye Group', email: 'info@redwoodeye.example', phone: '03 555 1444' }], hpiId: '68MARW', medicalRegistrationNumber: '84148' },
+  { id: 'S-RENWICK', name: 'Dr I. Renwick', specialtyIds: ['SPC-OPHTH'], practiceName: 'Redwood Eye Group', personalContact: { name: 'Dr I. Renwick' }, officeContacts: [{ name: 'Redwood Eye Group', email: 'info@redwoodeye.example', phone: '03 555 1444' }], hpiId: '69RENI', medicalRegistrationNumber: '84209' },
+  { id: 'S-NORTHCOTE', name: 'Dr B. Northcote', specialtyIds: ['SPC-OPHTH'], practiceName: 'Redwood Eye Group', personalContact: { name: 'Dr B. Northcote' }, officeContacts: [{ name: 'Redwood Eye Group', email: 'info@redwoodeye.example', phone: '03 555 1444' }], hpiId: '70NORB', medicalRegistrationNumber: '84270' },
+  { id: 'S-HENDRY', name: 'Dr C. Hendry', specialtyIds: ['SPC-OPHTH'], practiceName: 'Redwood Eye Group', personalContact: { name: 'Dr C. Hendry' }, officeContacts: [{ name: 'Redwood Eye Group', email: 'info@redwoodeye.example', phone: '03 555 1444' }], hpiId: '71HENC', medicalRegistrationNumber: '84331' },
+  { id: 'S-SHACKLETON', name: 'Dr T. Shackleton', specialtyIds: ['SPC-OPHTH'], practiceName: 'Redwood Eye Group', personalContact: { name: 'Dr T. Shackleton' }, officeContacts: [{ name: 'Redwood Eye Group', email: 'info@redwoodeye.example', phone: '03 555 1444' }], hpiId: '72SHAT', medicalRegistrationNumber: '84392' },
+  { id: 'S-VASQUEZ', name: 'Dr K. Vasquez', specialtyIds: ['SPC-OPHTH'], practiceName: 'Redwood Eye Group', personalContact: { name: 'Dr K. Vasquez' }, officeContacts: [{ name: 'Jodie Yamada', email: 'jodie@redwoodeye.example' }, { name: 'Redwood Eye Group', email: 'info@redwoodeye.example', phone: '03 555 1444' }], hpiId: '73VASK', medicalRegistrationNumber: '84453' },
+  { id: 'S-HARTIGAN', name: 'Dr C. Hartigan', specialtyIds: ['SPC-OPHTH'], practiceName: 'Beckenham Eye', personalContact: { name: 'Dr C. Hartigan' }, officeContacts: [{ name: 'Beckenham Eye', email: 'info@beckenhameye.example', phone: '03 555 1481' }], hpiId: '74HARC', medicalRegistrationNumber: '84514' },
+  { id: 'S-WYNDHAM', name: 'Dr I. Wyndham', specialtyIds: ['SPC-OPHTH'], practiceName: 'Beckenham Eye', personalContact: { name: 'Dr I. Wyndham' }, officeContacts: [{ name: 'Beckenham Eye', email: 'info@beckenhameye.example', phone: '03 555 1481' }], hpiId: '75WYNI', medicalRegistrationNumber: '84575' },
+  { id: 'S-ERIKSEN', name: 'Dr R. Eriksen', specialtyIds: ['SPC-OPHTH'], practiceName: 'Eye Partners', personalContact: { name: 'Dr R. Eriksen' }, officeContacts: [{ name: 'Eye Partners', phone: '03 555 1518' }], hpiId: '76ERIR', medicalRegistrationNumber: '84636' },
+  { id: 'S-DUNMORE', name: 'Dr M. Dunmore', specialtyIds: ['SPC-OPHTH'], practiceName: 'Matthias Dunmore · Ophthalmologist', personalContact: { name: 'Dr M. Dunmore' }, officeContacts: [{ name: 'Matthias Dunmore · Ophthalmologist', phone: '03 555 1555' }], hpiId: '77DUNM', medicalRegistrationNumber: '84697' },
+  { id: 'S-PICKERING', name: 'Prof O. Pickering', specialtyIds: ['SPC-OPHTH'], practiceName: 'Otto Pickering · Ophthalmologist', personalContact: { name: 'Prof O. Pickering' }, officeContacts: [{ name: 'Otto Pickering · Ophthalmologist', email: 'office@ottopickering.example', phone: '03 555 1592' }], hpiId: '78PICO', medicalRegistrationNumber: '84758' },
+  { id: 'S-OGILVIE', name: 'Mr A. Ogilvie', specialtyIds: ['SPC-OMFS'], practiceName: 'Alistair Ogilvie · Oral & Maxillofacial Surgeon', personalContact: { name: 'Mr A. Ogilvie' }, officeContacts: [{ name: 'Alistair Ogilvie · Oral & Maxillofacial Surgeon', email: 'reception@alistairogilvie.example', phone: '03 555 1629' }], hpiId: '79OGIA', medicalRegistrationNumber: '84819' },
+  { id: 'S-KINLOCH', name: 'Mr R. Kinloch', specialtyIds: ['SPC-OMFS'], practiceName: 'Rafael Kinloch · Oral & Maxillofacial Surgeon', personalContact: { name: 'Mr R. Kinloch' }, officeContacts: [{ name: 'Rafael Kinloch · Oral & Maxillofacial Surgeon', phone: '03 555 1666' }], hpiId: '80KINR', medicalRegistrationNumber: '84880' },
+  { id: 'S-BARCLAY', name: 'Dr I. Barclay', specialtyIds: ['SPC-OMFS'], practiceName: 'Isla Barclay and Associates', personalContact: { name: 'Dr I. Barclay' }, officeContacts: [{ name: 'Isla Barclay and Associates', phone: '03 555 1703' }], hpiId: '81BARI', medicalRegistrationNumber: '84941' },
+  { id: 'S-FONOTI', name: 'Dr F. Fonoti', specialtyIds: ['SPC-OMFS'], practiceName: 'Freya Fonoti · Oral & Maxillofacial Surgeon', personalContact: { name: 'Dr F. Fonoti' }, officeContacts: [{ name: 'Freya Fonoti · Oral & Maxillofacial Surgeon', phone: '03 555 1740' }], hpiId: '82FONF', medicalRegistrationNumber: '85002' },
+  { id: 'S-FENWICK', name: 'Dr O. Fenwick', specialtyIds: ['SPC-OMFS'], practiceName: 'Ottilie Fenwick · Oral & Maxillofacial Surgeon', personalContact: { name: 'Dr O. Fenwick' }, officeContacts: [{ name: 'Ottilie Fenwick · Oral & Maxillofacial Surgeon', phone: '03 555 1777' }], hpiId: '83FENO', medicalRegistrationNumber: '85063' },
+  { id: 'S-EASTWOOD', name: 'Mr J. Eastwood', specialtyIds: ['SPC-ORTHO'], practiceName: 'Addington Orthopaedic Group', personalContact: { name: 'Mr J. Eastwood' }, officeContacts: [{ name: 'Addington Orthopaedic Group', email: 'admin@addingtonorthopaedic.example', phone: '03 555 1814' }], hpiId: '84EASJ', medicalRegistrationNumber: '85124' },
+  { id: 'S-VAUGHAN', name: 'Dr I. Vaughan', specialtyIds: ['SPC-ORTHO'], practiceName: 'Imogen Vaughan · Orthopaedic Surgeon and Edgeware Orthopaedic Specialists', personalContact: { name: 'Dr I. Vaughan' }, officeContacts: [{ name: 'Imogen Vaughan · Orthopaedic Surgeon', phone: '03 555 1851' }, { name: 'Edgeware Orthopaedic Specialists', email: 'info@vaughanorthopaedic.example', phone: '03 555 2073' }], hpiId: '85VAUI', medicalRegistrationNumber: '85185' },
+  { id: 'S-LARKIN', name: 'Dr K. Larkin', specialtyIds: ['SPC-ORTHO'], practiceName: 'Wigram Orthopaedic Centre', personalContact: { name: 'Dr K. Larkin' }, officeContacts: [], hpiId: '86LARK', medicalRegistrationNumber: '85246' },
+  { id: 'S-SELWYN', name: 'Dr A. Selwyn', specialtyIds: ['SPC-ORTHO'], practiceName: 'Wigram Orthopaedic Centre', personalContact: { name: 'Dr A. Selwyn' }, officeContacts: [], medicalRegistrationNumber: '85307' },
+  { id: 'S-TAVENER', name: 'Dr D. Tavener', specialtyIds: ['SPC-ORTHO'], practiceName: 'Hoon Hay Orthopaedic Specialists', personalContact: { name: 'Dr D. Tavener' }, officeContacts: [{ name: 'Hoon Hay Orthopaedic Specialists', email: 'admin@hoonhay.example', phone: '03 555 1888' }], hpiId: '88TAVD', medicalRegistrationNumber: '85368' },
+  { id: 'S-KINGSLEY', name: 'A. Kingsley', specialtyIds: ['SPC-ORTHO'], practiceName: 'Somerfield Orthopaedic Specialists', personalContact: { name: 'A. Kingsley' }, officeContacts: [{ name: 'Somerfield Orthopaedic Specialists', email: 'admin@kingsleyorthopaedic.example', phone: '03 555 1925' }], hpiId: '89KINA', medicalRegistrationNumber: '85429' },
+  { id: 'S-FARQUHAR', name: 'Mr V. Farquhar', specialtyIds: ['SPC-ORTHO'], practiceName: 'Somerfield Orthopaedic Specialists', personalContact: { name: 'Mr V. Farquhar' }, officeContacts: [{ name: 'Somerfield Orthopaedic Specialists', email: 'admin@kingsleyorthopaedic.example', phone: '03 555 1925' }], hpiId: '90FARV', medicalRegistrationNumber: '85490' },
+  { id: 'S-SINCLAIR', name: 'Mr H. Sinclair', specialtyIds: ['SPC-ORTHO'], practiceName: 'Somerfield Orthopaedic Specialists', personalContact: { name: 'Mr H. Sinclair' }, officeContacts: [{ name: 'Somerfield Orthopaedic Specialists', email: 'admin@kingsleyorthopaedic.example', phone: '03 555 1925' }], hpiId: '91SINH', medicalRegistrationNumber: '85551' },
+  { id: 'S-BELLAMY', name: 'Mr P. Bellamy', specialtyIds: ['SPC-ORTHO'], practiceName: 'Somerfield Orthopaedic Specialists', personalContact: { name: 'Mr P. Bellamy' }, officeContacts: [{ name: 'Somerfield Orthopaedic Specialists', email: 'admin@kingsleyorthopaedic.example', phone: '03 555 1925' }], hpiId: '92BELP', medicalRegistrationNumber: '85612' },
+  { id: 'S-MARCHETTI', name: 'Mr E. Marchetti', specialtyIds: ['SPC-ORTHO'], practiceName: 'Edgeware Orthopaedic Specialists', personalContact: { name: 'Mr E. Marchetti' }, officeContacts: [{ name: 'Edgeware Orthopaedic Specialists', email: 'info@vaughanorthopaedic.example', phone: '03 555 2073' }], hpiId: '93MARE', medicalRegistrationNumber: '85673' },
+  { id: 'S-SUTHERLAND', name: 'Dr O. Sutherland', specialtyIds: ['SPC-ORTHO'], practiceName: 'Edgeware Orthopaedic Specialists', personalContact: { name: 'Dr O. Sutherland' }, officeContacts: [{ name: 'Edgeware Orthopaedic Specialists', email: 'info@vaughanorthopaedic.example', phone: '03 555 2073' }], hpiId: '94SUTO', medicalRegistrationNumber: '85734' },
+  { id: 'S-MERRIMAN', name: 'Mr K. Merriman', specialtyIds: ['SPC-ORTHO'], practiceName: 'Edgeware Orthopaedic Specialists', personalContact: { name: 'Mr K. Merriman' }, officeContacts: [{ name: 'Edgeware Orthopaedic Specialists', email: 'info@vaughanorthopaedic.example', phone: '03 555 2073' }], hpiId: '95MERK', medicalRegistrationNumber: '85795' },
+  { id: 'S-SOTO', name: 'Dr S. Soto', specialtyIds: ['SPC-ORTHO'], practiceName: 'Saskia Soto · Orthopaedic Surgeon', personalContact: { name: 'Dr S. Soto' }, officeContacts: [{ name: 'Saskia Soto · Orthopaedic Surgeon', email: 'office@saskiasoto.example', phone: '03 555 2184' }], hpiId: '96SOTS', medicalRegistrationNumber: '85856' },
+  { id: 'S-UNDERHILL', name: 'T. Underhill', specialtyIds: ['SPC-ORTHO'], practiceName: 'Harewood Orthopaedic', personalContact: { name: 'T. Underhill' }, officeContacts: [{ name: 'Harewood Orthopaedic', email: 'info@harewoodorthopaedic.example', phone: '03 555 2221' }], hpiId: '97UNDT', medicalRegistrationNumber: '85917' },
+  { id: 'S-MULGREW', name: 'Mr T. Mulgrew', specialtyIds: ['SPC-ORTHO'], practiceName: 'Harewood Orthopaedic', personalContact: { name: 'Mr T. Mulgrew' }, officeContacts: [{ name: 'Harewood Orthopaedic', email: 'info@harewoodorthopaedic.example', phone: '03 555 2221' }], hpiId: '98MULT', medicalRegistrationNumber: '85978' },
+  { id: 'S-WOLFENDEN', name: 'Mr M. Wolfenden', specialtyIds: ['SPC-PLASTIC'], practiceName: 'Mihaka Wolfenden and Associates', personalContact: { name: 'Mr M. Wolfenden' }, officeContacts: [{ name: 'Mihaka Wolfenden and Associates', email: 'info@mihakawolfenden.example', phone: '03 555 2258' }], hpiId: '99WOLM', medicalRegistrationNumber: '86039' },
+  { id: 'S-IREDALE', name: 'Dr T. Iredale', specialtyIds: ['SPC-PLASTIC'], practiceName: 'Tobias Iredale · Plastic Surgeon', personalContact: { name: 'Dr T. Iredale' }, officeContacts: [{ name: 'Tobias Iredale · Plastic Surgeon', email: 'info@tobiasiredale.example', phone: '03 555 2295' }], hpiId: '50IRET', medicalRegistrationNumber: '86100' },
+  { id: 'S-WILBERFORCE', name: 'Mr D. Wilberforce', specialtyIds: ['SPC-PLASTIC'], practiceName: 'Plastic Surgery Associates St Albans', personalContact: { name: 'Mr D. Wilberforce' }, officeContacts: [{ name: 'Plastic Surgery Associates St Albans', phone: '03 555 2332' }], hpiId: '51WILD', medicalRegistrationNumber: '86161' },
+  { id: 'S-LECKIE', name: 'Mr O. Leckie', specialtyIds: ['SPC-PLASTIC'], practiceName: 'Orson Leckie · Plastic & Reconstructive Surgeon', personalContact: { name: 'Mr O. Leckie' }, officeContacts: [{ name: 'Orson Leckie · Plastic & Reconstructive Surgeon', email: 'info@orsonleckie.example', phone: '03 555 2369' }], hpiId: '52LECO', medicalRegistrationNumber: '86222' },
+  { id: 'S-GILLESPIE', name: 'Mr D. Gillespie', specialtyIds: ['SPC-PLASTIC'], practiceName: 'Heathcote Plastic Surgery', personalContact: { name: 'Mr D. Gillespie' }, officeContacts: [{ name: 'Heathcote Plastic Surgery', email: 'secretary@heathcoteplastic.example', phone: '03 555 2406' }], hpiId: '53GILD', medicalRegistrationNumber: '86283' },
+  { id: 'S-CORRIGAN', name: 'Mr C. Corrigan', specialtyIds: ['SPC-PLASTIC'], practiceName: 'Cormac Corrigan · Plastic Surgeon', personalContact: { name: 'Mr C. Corrigan' }, officeContacts: [{ name: 'Cormac Corrigan · Plastic Surgeon', phone: '03 555 2443' }], hpiId: '54CORC', medicalRegistrationNumber: '86344' },
+  { id: 'S-NAKASHIMA', name: 'Dr A. Nakashima', specialtyIds: ['SPC-PLASTIC'], practiceName: 'Plastic Surgery Associates St Albans', personalContact: { name: 'Dr A. Nakashima' }, officeContacts: [{ name: 'Plastic Surgery Associates St Albans', phone: '03 555 2332' }], hpiId: '55NAKA', medicalRegistrationNumber: '86405' },
+  { id: 'S-ROCHFORD', name: 'Mr I. Rochford', specialtyIds: ['SPC-PLASTIC'], practiceName: 'Plastic Surgery Associates St Albans', personalContact: { name: 'Mr I. Rochford' }, officeContacts: [{ name: 'Plastic Surgery Associates St Albans', phone: '03 555 2332' }], hpiId: '56ROCI', medicalRegistrationNumber: '86466' },
+  { id: 'S-ALDERTON', name: 'Dr Q. Alderton', specialtyIds: ['SPC-PLASTIC'], practiceName: 'Plastic Surgery Associates St Albans', personalContact: { name: 'Dr Q. Alderton' }, officeContacts: [{ name: 'Plastic Surgery Associates St Albans', phone: '03 555 2332' }], hpiId: '57ALDQ', medicalRegistrationNumber: '86527' },
+  { id: 'S-CROWTHER', name: 'Mr L. Crowther', specialtyIds: ['SPC-PLASTIC'], practiceName: 'Plastic Surgery Associates St Albans', personalContact: { name: 'Mr L. Crowther' }, officeContacts: [{ name: 'Plastic Surgery Associates St Albans', phone: '03 555 2332' }], hpiId: '58CROL', medicalRegistrationNumber: '86588' },
+  { id: 'S-DARNELL', name: 'N. Darnell', specialtyIds: ['SPC-UROLOGY'], practiceName: 'Urology Associates Hornby', personalContact: { name: 'N. Darnell' }, officeContacts: [{ name: 'Urology Associates Hornby', phone: '03 555 2554' }], hpiId: '59DARN', medicalRegistrationNumber: '86649' },
+  { id: 'S-LATTIMORE', name: 'V. Lattimore', specialtyIds: ['SPC-UROLOGY'], practiceName: 'Urology Associates Hornby', personalContact: { name: 'V. Lattimore' }, officeContacts: [{ name: 'Urology Associates Hornby', phone: '03 555 2554' }], hpiId: '60LATV', medicalRegistrationNumber: '86710' },
+  { id: 'S-VENNING', name: 'T. Venning', specialtyIds: ['SPC-UROLOGY'], practiceName: 'Urology Associates Hornby', personalContact: { name: 'T. Venning' }, officeContacts: [{ name: 'Urology Associates Hornby', phone: '03 555 2554' }], hpiId: '61VENT', medicalRegistrationNumber: '86771' },
+  { id: 'S-TIERNEY', name: 'A. Tierney', specialtyIds: ['SPC-UROLOGY'], practiceName: 'Urology Associates Hornby', personalContact: { name: 'A. Tierney' }, officeContacts: [{ name: 'Urology Associates Hornby', phone: '03 555 2554' }], hpiId: '62TIEA', medicalRegistrationNumber: '86832' },
+  { id: 'S-MAHUIKA', name: 'L. Mahuika', specialtyIds: ['SPC-UROLOGY'], practiceName: 'Urology Associates Hornby', personalContact: { name: 'L. Mahuika' }, officeContacts: [{ name: 'Urology Associates Hornby', phone: '03 555 2554' }], hpiId: '63MAHL', medicalRegistrationNumber: '86893' },
+  { id: 'S-GORMAN', name: 'K. Gorman', specialtyIds: ['SPC-UROLOGY'], practiceName: 'Urology Associates Hornby', personalContact: { name: 'K. Gorman' }, officeContacts: [{ name: 'Urology Associates Hornby', phone: '03 555 2554' }], hpiId: '64GORK', medicalRegistrationNumber: '86954' },
+  { id: 'S-GALLOWAY', name: 'J. Galloway', specialtyIds: ['SPC-UROLOGY'], practiceName: 'Urology Associates Hornby', personalContact: { name: 'J. Galloway' }, officeContacts: [{ name: 'Urology Associates Hornby', phone: '03 555 2554' }], hpiId: '65GALJ', medicalRegistrationNumber: '87015' },
+  { id: 'S-SANDFORD', name: 'Z. Sandford', specialtyIds: ['SPC-UROLOGY'], practiceName: 'Urology Associates Hornby', personalContact: { name: 'Z. Sandford' }, officeContacts: [{ name: 'Urology Associates Hornby', phone: '03 555 2554' }], hpiId: '66SANZ', medicalRegistrationNumber: '87076' },
+  { id: 'S-NESBITT', name: 'G. Nesbitt', specialtyIds: ['SPC-UROLOGY'], practiceName: 'Urology Associates Hornby', personalContact: { name: 'G. Nesbitt' }, officeContacts: [{ name: 'Urology Associates Hornby', phone: '03 555 2554' }], hpiId: '67NESG', medicalRegistrationNumber: '87137' },
+  { id: 'S-LANGFORD', name: 'Mr A. Langford', specialtyIds: ['SPC-VASCULAR'], practiceName: 'Yaldhurst Vascular', personalContact: { name: 'Mr A. Langford' }, officeContacts: [{ name: 'Yaldhurst Vascular', email: 'office@yaldhurstvascular.example', phone: '03 555 2591' }], hpiId: '68LANA', medicalRegistrationNumber: '87198' },
+  { id: 'S-ROSCOE', name: 'Mr B. Roscoe', specialtyIds: ['SPC-VASCULAR'], practiceName: 'Yaldhurst Vascular', personalContact: { name: 'Mr B. Roscoe' }, officeContacts: [{ name: 'Yaldhurst Vascular', email: 'office@yaldhurstvascular.example', phone: '03 555 2591' }], hpiId: '69ROSB', medicalRegistrationNumber: '87259' },
+  { id: 'S-THORNBURY', name: 'Mr R. Thornbury', specialtyIds: ['SPC-VASCULAR'], practiceName: 'Yaldhurst Vascular', personalContact: { name: 'Mr R. Thornbury' }, officeContacts: [{ name: 'Yaldhurst Vascular', email: 'office@yaldhurstvascular.example', phone: '03 555 2591' }], hpiId: '70THOR', medicalRegistrationNumber: '87320' },
+  { id: 'S-TUILAGI', name: 'Mr O. Tuilagi', specialtyIds: ['SPC-NEURO'], practiceName: 'Sumner Neurosurgery', personalContact: { name: 'Mr O. Tuilagi' }, officeContacts: [{ name: 'Sumner Neurosurgery', phone: '03 555 2628' }], hpiId: '71TUIO', medicalRegistrationNumber: '87381' },
+  { id: 'S-MATHIESON', name: 'Mr T. Mathieson', specialtyIds: ['SPC-NEURO'], practiceName: 'Bryndwr Neurosurgery Specialists', personalContact: { name: 'Mr T. Mathieson' }, officeContacts: [{ name: 'Wendy', email: 'wendy@bryndwrneurosurgery.example' }, { name: 'Bryndwr Neurosurgery Specialists', phone: '03 555 2665' }], hpiId: '72MATT', medicalRegistrationNumber: '87442' },
+  { id: 'S-ABERNETHY', name: 'Mr S. Abernethy', specialtyIds: ['SPC-NEURO'], practiceName: 'Bryndwr Neurosurgery Specialists', personalContact: { name: 'Mr S. Abernethy' }, officeContacts: [{ name: 'Bryndwr Neurosurgery Specialists', phone: '03 555 2665' }], hpiId: '73ABES', medicalRegistrationNumber: '87503' },
+  { id: 'S-BHATNAGAR', name: 'Mr S. Bhatnagar', specialtyIds: ['SPC-ORTHO'], practiceName: 'Orthopaedic Associates Spreydon', personalContact: { name: 'Mr S. Bhatnagar' }, officeContacts: [{ name: 'Orthopaedic Associates Spreydon', phone: '03 555 2702' }], hpiId: '74BHAS', medicalRegistrationNumber: '87564' },
+  { id: 'S-GOODWIN', name: 'Mr J. Goodwin', specialtyIds: ['SPC-ORTHO'], practiceName: 'Orthopaedic Associates Spreydon', personalContact: { name: 'Mr J. Goodwin' }, officeContacts: [{ name: 'Orthopaedic Associates Spreydon', phone: '03 555 2702' }], hpiId: '75GOOJ', medicalRegistrationNumber: '87625' },
+  { id: 'S-DELACROIX', name: 'Mr G. Delacroix', specialtyIds: ['SPC-ORTHO'], practiceName: 'Orthopaedic Associates Spreydon', personalContact: { name: 'Mr G. Delacroix' }, officeContacts: [{ name: 'Orthopaedic Associates Spreydon', phone: '03 555 2702' }], hpiId: '76DELG', medicalRegistrationNumber: '87686' },
+  { id: 'S-BRENNAN', name: 'Mr D. Brennan', specialtyIds: ['SPC-ORTHO'], practiceName: 'Orthopaedic Associates Spreydon', personalContact: { name: 'Mr D. Brennan' }, officeContacts: [{ name: 'Orthopaedic Associates Spreydon', phone: '03 555 2702' }], hpiId: '77BRED', medicalRegistrationNumber: '87747' },
+  { id: 'S-PRENDERGAST', name: 'Mr A. Prendergast', specialtyIds: ['SPC-ORTHO'], practiceName: 'Orthopaedic Associates Spreydon', personalContact: { name: 'Mr A. Prendergast' }, officeContacts: [{ name: 'Orthopaedic Associates Spreydon', phone: '03 555 2702' }], hpiId: '78PREA', medicalRegistrationNumber: '87808' },
+  { id: 'S-MOFFAT', name: 'Mr E. Moffat', specialtyIds: ['SPC-ORTHO'], practiceName: 'Orthopaedic Associates Spreydon', personalContact: { name: 'Mr E. Moffat' }, officeContacts: [{ name: 'Orthopaedic Associates Spreydon', phone: '03 555 2702' }], hpiId: '79MOFE', medicalRegistrationNumber: '87869' },
+  { id: 'S-ZELINSKI', name: 'Mr E. Zelinski', specialtyIds: ['SPC-ORTHO'], practiceName: 'Orthopaedic Associates Spreydon', personalContact: { name: 'Mr E. Zelinski' }, officeContacts: [{ name: 'Orthopaedic Associates Spreydon', phone: '03 555 2702' }], hpiId: '80ZELE', medicalRegistrationNumber: '87930' },
 ] as const

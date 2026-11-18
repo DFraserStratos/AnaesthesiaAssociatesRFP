@@ -98,15 +98,14 @@ The office receives a stable schedule on which it can paint assignments and pati
 
 ### Master data the office keeps
 
-In Admin, the office also maintains surgeons (each keyed on their HPI CPN and holding one or more
-specialties), surgeons' rooms, surgeon groups, hospital contact emails, AA's list of specialties, its
+In Admin, the office also maintains surgeons (each holding one or more specialties, a practice name and
+their contacts; the HPI CPN is filled in by admin staff, unique when held), surgeon groups, hospital contact emails, AA's list of specialties, its
 funding tags (SXAP, HNZ, ACC, in the order they are offered), and its private pairing preferences and
 anaesthetist priority tiers.
-A surgeons' room's email and phone are optional (a room may hold none); a surgeon belongs to one or more
-rooms, the first the main room; and each room holds its practice manager and PA contacts (name, email,
-role), for the whole room or named for one surgeon (provisional, OQ-127).
-The surgeon update email (Phase 35) will go to the main room's email when one is held, otherwise to
-nothing (the office types one), with the surgeon's other rooms offered; never to a contact.
+The system keeps no surgeons' rooms: a surgeon holds a practice name, one personal contact and one or
+more office contacts (practice manager, PA or shared inbox: name, email, phone, blanks allowed).
+The surgeon update email (Phase 35) will go to the first office contact with an email, with the others
+offered; never every contact and never the personal contact.
 Anaesthetists never see preferences or tiers, and an anaesthetist handing on their own List gets no
 warning.
 

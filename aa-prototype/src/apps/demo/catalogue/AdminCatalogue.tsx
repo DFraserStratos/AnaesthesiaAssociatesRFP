@@ -59,8 +59,7 @@ import {
 import {
   AnaesthetistCandidatesExample,
   ChipMultiSelectExample,
-  RoomContactsListExample,
-  OrderedChipMultiSelectExample,
+  ContactFieldsExample,
   ClearConflictExample,
   CodePickerExample,
   ConflictCalloutExample,
@@ -241,12 +240,11 @@ export function AdminCatalogue() {
         <CatalogueRow name="NotPreferredWarning" source="apps/admin/components/pairing/NotPreferredWarning.tsx" usedIn={A} what="An amber callout when the chosen surgeon is not preferred with the anaesthetist, on the shared Notice; it warns, never blocks." replaceWith="shadcn Alert" note="Fed by the real useNotPreferredWarning hook for a seeded not-preferred pairing.">
           <NotPreferredWarningExample />
         </CatalogueRow>
-        <CatalogueRow name="ChipMultiSelect" source="apps/admin/components/ChipMultiSelect.tsx" usedIn={A} what="A native 'Add a...' select plus removable chips: a Contract's specialties and, since UI unification U4, its linked surgeons (the editor's private SurgeonPicker is gone). The select draws the one field chrome and its hint is the shared FieldHint. Catch-up Phase 17a's `ordered` variant gives a surgeon's rooms: the first chip carries a Main room pill, the others a Make main action." replaceWith="Base UI Combobox (multiple, chips)" note="Searchable, with Backspace to remove.">
+        <CatalogueRow name="ChipMultiSelect" source="apps/admin/components/ChipMultiSelect.tsx" usedIn={A} what="A native 'Add a...' select plus removable chips: a Contract's specialties and, since UI unification U4, its linked surgeons (the editor's private SurgeonPicker is gone). The select draws the one field chrome and its hint is the shared FieldHint. Also a surgeon's specialties." replaceWith="Base UI Combobox (multiple, chips)" note="Searchable, with Backspace to remove.">
           <ChipMultiSelectExample />
-          <OrderedChipMultiSelectExample />
         </CatalogueRow>
-        <CatalogueRow name="RoomContactsList" source="apps/admin/components/RoomContactsList.tsx" usedIn={A} what="A surgeons' room's practice manager and PA contacts (catch-up Phase 17a): name, neutral role pill, mono email, who it is for in mist; Edit, Remove with the shared InlineConfirm, and Add contact opening RoomContactSheet (or the form in place inside the room sheet). One list for the surgeon profile's contacts cards and SurgeonRoomSheet." replaceWith="shadcn Table or list + Sheet" note="Writes to the demo store.">
-          <RoomContactsListExample />
+        <CatalogueRow name="ContactFields" source="apps/admin/components/ContactFields.tsx" usedIn={A} what="One contact's Name, Email (mono) and Phone on the shared TextField, in a fieldset its legend names (catch-up Phase 17b, US-13.6.5). The surgeon edit sheet uses it for the personal contact and for each office contact set; a set after the first carries a minus IconButton that removes it whole, and the store's refusal for a bad email shows under the set." replaceWith="shadcn Field + Fieldset" note="Local state only.">
+          <ContactFieldsExample />
         </CatalogueRow>
         <CatalogueRow name="CodePickerSheet" source="shared/capture/CodePickerSheet.tsx" usedIn={AWM} what="The RVG code type-ahead in an Overlay titled by an OverlayHeader: search by code or description, every match rendered. Its search is the shared NameSearchBox in the well fill (UI unification U4)." replaceWith="Base UI Combobox + TanStack Virtual" note="The library would add combobox and listbox roles and arrow and Enter selection.">
           <CodePickerExample />
@@ -290,7 +288,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="Switch" source="shared/ui/Switch.tsx" usedIn={AWM} what="The one on/off switch (UI unification U4): a button with role=switch and aria-checked, so click and Space toggle it; sm is the 36 by 20 track, lg the 52 by 32 touch track, with a label and an optional description." replaceWith="shadcn Switch" note="No product screen uses it yet: Phase 27 builds its approval-step toggle on it. The PWA panel's ToggleRow stays its own (a demo surface).">
           <SwitchExample />
         </CatalogueRow>
-        <CatalogueRow name="ProfileChrome" source="apps/admin/components/ProfileChrome.tsx" usedIn={A} what="The surgeon and anaesthetist record pages' header (the shared PageHeader, admin size, the id chip beside it), and their cards and facts on the shared Card (padding card) and DefRow stacked, with History and Edit actions (UI unification U6). Card passes data-* attributes through (catch-up Phase 17a: data-room on the room and contacts cards)." replaceWith="shadcn Card (+ Breadcrumb for BackLink)" note="Its back link is the shared BackLink since UI unification U5 (teal, a real link), left out here because it would leave this page.">
+        <CatalogueRow name="ProfileChrome" source="apps/admin/components/ProfileChrome.tsx" usedIn={A} what="The surgeon and anaesthetist record pages' header (the shared PageHeader, admin size, the id chip beside it), and their cards and facts on the shared Card (padding card) and DefRow stacked, with History and Edit actions (UI unification U6). Card passes data-* attributes through. The id chip shows a mist placeholder when no value is held (catch-up Phase 17b, a surgeon with no HPI CPN yet)." replaceWith="shadcn Card (+ Breadcrumb for BackLink)" note="Its back link is the shared BackLink since UI unification U5 (teal, a real link), left out here because it would leave this page.">
           <ProfileChromeExample />
         </CatalogueRow>
         <CatalogueRow name="drawerParts (Section, DrawerLink)" source="apps/admin/components/drawerParts.tsx" usedIn={A} what="The drawers' section headings (an Eyebrow over the body) and inline links, shared by SlotDrawer and DraftListDrawer (one copy since U2); their label and value rows are the shared DefRow since UI unification U6, and their action buttons the shared Button at the compact size, a disabled one printing its reason (U5)." replaceWith="shadcn Button + DropdownMenu" note="ActionBtn folded into Button in UI unification U5.">
@@ -344,7 +342,7 @@ export function AdminCatalogue() {
 
       {/* ------------------------------------------------------------------ */}
       <LibraryGroup id="forms">
-        <CatalogueRow name="TextField" source="shared/ui/Field.tsx" usedIn={AWM} what="The one labelled single-line input, about 77 uses in Admin: text, date, time, number, email or phone; mono; a FieldHint tied by aria-describedby; and since UI unification U4 invalid (aria-invalid and the error border), inputMode and align for amounts, min, max, step, list, size (48px field or 36px compact), fill (well or surface) and hideLabel." replaceWith="shadcn Field + Input (React Hook Form)" note="Every default keeps the old look (48px, grey well). The library would bind errors to the field.">
+        <CatalogueRow name="TextField" source="shared/ui/Field.tsx" usedIn={AWM} what="The one labelled single-line input, about 77 uses in Admin: text, date, time, number, email or phone; mono; a FieldHint tied by aria-describedby; and since UI unification U4 invalid (aria-invalid and the error border), inputMode and align for amounts, min, max, step, list, size (48px field or 36px compact), fill (well or surface) and hideLabel. Catch-up Phase 17b adds accessibleName, a fuller name where the visible label repeats on the page (Office contact 2 email)." replaceWith="shadcn Field + Input (React Hook Form)" note="Every default keeps the old look (48px, grey well). The library would bind errors to the field.">
           <TextFieldExample />
         </CatalogueRow>
         <CatalogueRow name="RowField" source="apps/admin/components/RowField.tsx" usedIn={A} what="The small labelled in-row input for correcting one field of an incoming row: the Integrations PDF review's extracted rows and the Matching panel's name, date of birth and time (catch-up Phase 33 moved it out of PdfReview so both use it). Mono, an invalid border, and a read-only look for wording kept as received." replaceWith="shadcn Field + Input" note="A near twin of TextField's compact size; fold it into TextField in the migration.">

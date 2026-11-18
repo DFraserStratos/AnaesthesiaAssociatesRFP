@@ -246,9 +246,10 @@ Hooks already added:
   Whitaker 36208, Sharma 41267, Chen 45178, Hughes 46822, Strand 47733, Ngata 38455.
 - **Surgeons** (catch-up Phase 17): `S-HALE` Mr T. Hale, `S-REID` Ms A. Reid, `S-WHITFORD` Mr J. Whitford
   (see the seed for the rest). HPI CPNs `40HALT` to `49CAMH` (Reid `47REIA`); Dr Sharma's own HPI CPN is
-  `12SHAP`. Rooms `RM-RICC` (Hale), `RM-MERI` Merivale Eye Rooms (Whitford, Reid), `RM-AVON`,
-  `RM-FEND`, `RM-PAPA`. Groups `SG-COS` Canterbury Orthopaedic Surgeons (Hale), `SG-EYE` Christchurch
-  Eye Surgeons (Whitford, Reid). Runtime ids: surgeons `SN001`, rooms `RMN001`, groups `SGN001`,
+  `12SHAP`. No rooms since catch-up Phase 17b: a surgeon holds a practice name and office contacts
+  (`S-REID`: practice Merivale Eye Rooms, office contact bookings@merivaleeye.example, personal contact
+  a.reid@surgeons.example). Groups `SG-COS` Canterbury Orthopaedic Surgeons (Hale), `SG-EYE` Christchurch
+  Eye Surgeons (Whitford, Reid). Runtime ids: surgeons `SN001`, groups `SGN001`,
   pairing entries `PPN001`.
 
 **IDs**
@@ -346,8 +347,9 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/invoices/:invoiceId` (catch-up Phase 36) | The rail's "Xero handoff" card is now the "Ledger" card `invoice-ledger-card` (no `h2` "Xero handoff" any more): `xero-handoff-status` reads "Mirrored in Xero", "Not yet in Xero" or "Xero handoff failed" (then "The invoice and its ledger pair stand. Resolve and retry in Billing monitor."), then `ledger-receivable-number`, `xero-accrec-reference` (now the Xero ID, `XR...`), `ledger-payable-number`, `xero-accpay-reference` (`XP...`), on a prepayment `xero-accpay-payee` and `xero-transfer-journal-reference`, and the link "Open in the ledger" `invoice-open-ledger` (`/admin/ledger?pair=<id>`). The Xero ID rows show only once the pair is in Xero. |
 | `/admin/billing` (catch-up Phase 36) | The intro adds "Money in and out is recorded in the ledger first; Xero mirrors it." The payables panel `billing-payables-run` reads "N payable(s) due · $X to pay out to anaesthetists. A payable is released for exactly what its invoice has received." (or "No payables due. ...") with the link "Open the ledger" `billing-open-ledger`; the "Run payables" button is unchanged. |
 | `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. A message stages a row on `/admin/matching` and applies nothing (catch-up Phase 33); the attention callout `integrations-attention` shows dead-letter only. |
-| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons`, `surgeonRooms`, `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifiers` (catch-up Phase 19b, "Modifiers"; the old `modifierCodes` value opens it), `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). A Contract's panel has Details and History tabs (catch-up Phase 25). |
-| `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip, Identifiers, Surgeons' room and Groups cards, Pairing preferences. "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. Catch-up Phase 17a: Specialties, Identifiers and Groups in the first row, then one row per room (main room first), its Surgeons' room card beside a "Practice manager and PAs" card, then Pairing preferences. |
+| `/admin/masters/surgeons/:surgeonId` | Surgeon profile (`surgeon-profile`, catch-up Phase 17b): cards `surgeon-specialties`, `surgeon-identifiers`, `surgeon-groups`, then the full-width `surgeon-contacts` ("Practice and contacts": Practice `[data-practice]`, `surgeon-personal-contact-card`, `surgeon-office-contacts-card`). "Edit details" opens `surgeon-edit-sheet`. |
+| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons` (the old `surgeonRooms` value opens it, catch-up Phase 17b), `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifiers` (catch-up Phase 19b, "Modifiers"; the old `modifierCodes` value opens it), `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). A Contract's panel has Details and History tabs (catch-up Phase 25). |
+| `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip ("No HPI CPN yet" when blank), "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. Catch-up Phase 17b: Specialties, Identifiers and Groups in the first row, then one full-width "Practice and contacts" card (`surgeon-contacts`), then Pairing preferences. No room cards. |
 | `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Profile, Pairing preferences. Office only. The Profile card (catch-up Phase 26; was "Details", hook `anaesthetist-details` kept) shows Unit value, Status, Phone, Email, HPI CPN and Bank account (masked, row `anaesthetist-bank-account`); it has no action of its own. The page header's secondary button "Edit details" (beside "History") opens the Edit sheet: click `button:text-is("Edit details")` at page level, not inside `anaesthetist-details`. |
 | `/admin/audit` | Audit viewer. |
 
@@ -468,26 +470,18 @@ the ledger's failed checks (none at reset, so no badge; 1 after "Inject unmatche
   `NIB-FIX`, `COS-FIX`, `ARIA-FIX`, `UNI-FIX`). Search "Fixed price" lists them. Tagging `CES-001`
   SXAP and saving makes `CES-SXAP-FIX` at once.
 
-**Surgeons' rooms, surgeons at two rooms, practice manager and PA contacts** (catch-up Phase 17a; Admin, Master data)
+**Surgeon practice and office contacts** (catch-up Phase 17b; Admin, Master data; replaces 17a's rooms)
 
-- Rooms with no email (the row's email cell and the profile's room card read "No email held"; shoot
-  `[data-shot=masters-surgeon-rooms] tr[data-room=RM-GENERALSUR]`): `RM-GENERALSUR` General Surgery
-  Partners (Mr B. Yeoman `S-YEOMAN`), `RM-BURNSIDEEN` Burnside ENT Surgeons, `RM-EYEPARTNER` Eye
-  Partners, `RM-BRYNDWRNEU` Bryndwr Neurosurgery Specialists, `RM-RICHMONDFE`, `RM-IMOGENVAUG` and
-  12 more. `RM-ELODIEBRAM` and `RM-WIGRAMORTH` hold no phone either. The five cast rooms keep their emails.
-- Two-room surgeons (main room first): `S-WAINWRIGHT` Mr N. Wainwright and `S-MORLAND` Mr K. Morland
-  (`RM-UPPERGIPAR` Upper GI Partners, then `RM-HILLSBOROU` Hillsborough Colorectal Specialists),
-  `S-WINSLOW` Dr J. Winslow (`RM-RICHMONDFE`, then `RM-LINWOODWOM`), `S-VAUGHAN` Dr I. Vaughan
-  (`RM-IMOGENVAUG`, then `RM-EDGEWAREOR`). Use `S-WAINWRIGHT` for a two-rooms shot.
-- Contacts (rows `li[data-contact=RC-nnn]`; runtime ids `RCN001`): Avonhead ENT `RM-AVONHEADEN` Bev,
-  PA for Dr H. Dalgety (`/admin/masters/surgeons/S-DALGETY`); Burnside ENT `RM-BURNSIDEEN` Maree (for
-  Mr I. Forsythe `S-FORSYTHE`), Dianne (for `S-MALLORY`), Nicola Holloway (whole room), Leanne (two
-  rows, for `S-CALDER` and `S-WOODVILLE`), so Forsythe's profile shows Maree and Nicola Holloway;
-  Redwood Eye Group `RM-REDWOODEYE` Jodie Yamada (for `S-VASQUEZ`); Bryndwr Neurosurgery
-  `RM-BRYNDWRNEU` Wendy (for `S-MATHIESON`); General Surgery Partners `RM-GENERALSUR` Rosalind
-  Pemberton, Practice manager, whole room (invented). The rooms view's Contacts column reads "5
-  contacts" on Burnside ENT.
-
+- No HPI CPN (the row's cell and the profile chip read "No HPI CPN yet"; `tr[data-surgeon=...][data-hpi=""]`):
+  `S-WHAANGA` Dr P. Whaanga, `S-OSEI` Dr B. Osei, `S-SELWYN`.
+- Two-practice surgeons (practice name joins both, one office contact per practice): `S-WAINWRIGHT`
+  Mr N. Wainwright (Upper GI Partners and Hillsborough Colorectal Specialists; office contacts Upper GI
+  Partners info@uppergi.example, then Hillsborough Colorectal Specialists), `S-WINSLOW`, `S-MORLAND`,
+  `S-VAUGHAN`. Use `S-WAINWRIGHT` for a two-practices shot.
+- Bev first: `S-DALGETY` Dr H. Dalgety, office contacts Bev (bev@avonheadent.example), then the Avonhead
+  ENT inbox. Burnside ENT surgeons (e.g. `S-FORSYTHE`): Maree, then Nicola Holloway, then the Burnside
+  ENT Surgeons phone. The first office contact with an email carries the pill "Office emails go here first"
+  (`office-first-pill`).
 
 **Sessions and Lists** (catch-up Phase 28)
 
@@ -1181,23 +1175,13 @@ were already imported. Nothing new.").
   `[data-shot=surgeon-edit-sheet]` with `[data-shot=surgeon-specialties-field]` (chips named
   "Remove <specialty>", and a select labelled "Specialties", value an id such as `SPC-PLASTIC`).
   Removing every chip and saving shows "Choose at least one specialty." as the sheet's `role=alert`.
-- **Surgeon sheet, rooms** (catch-up Phase 17a): the same sheet holds `[data-shot=surgeon-rooms-field]`
-  ("Surgeons' rooms", below the specialties): a chip per room in order, the first with a "Main room" pill
-  (`[data-main-chip]`), each other with a "Make main" action named "Make main: <room name>", chips named
-  "Remove <room name>", and a select ("Add another room"). Open it on `S-WAINWRIGHT` for two chips.
-- **Room sheet** (catch-up Phase 17a): "Edit <room name>" on the rooms view opens
-  `[data-shot=surgeon-room-sheet]` with "Contact email (optional)" (hint "Leave blank where the practice
-  gives no shared inbox") and "Phone (optional)"; reach a field as
-  `[data-shot=surgeon-room-sheet] label:has(input[type=email])` (or `type=tel`). Editing an existing room
-  adds `[data-shot=room-sheet-contacts]` ("Practice manager and PAs", its rows and Add contact; the
-  contact form swaps in place inside the sheet, no second dialog).
-- **Contacts on a surgeon profile** (catch-up Phase 17a): each `[data-shot=surgeon-contacts]` card's
-  "Add contact" (`[data-shot=room-contact-add]`, named "Add contact to <room name>") opens
-  `[data-shot=room-contact-sheet]` in a `[role=dialog]`: Name, Email, Role (segmented Practice manager,
-  PA), For (the whole room or one of the room's surgeons, defaulting to the profile's surgeon), then
-  "Add contact". A row's Edit (named "Edit <contact name>") opens the same sheet as "Edit contact";
-  its Remove (named "Remove <contact name>") shows the in-card confirm `[data-shot=room-contact-remove]`
-  ("Remove contact", "Keep it"). On a two-room surgeon, scope by `[data-room=<roomId>]`.
+- **Surgeon sheet, practice and contacts** (catch-up Phase 17b): the same sheet holds Practice (optional,
+  `[data-shot=surgeon-practice-field]`), HPI CPN (optional, `[data-shot=surgeon-hpi-field]`), the section
+  `[data-shot=surgeon-personal-contact]` and the section `[data-shot=surgeon-office-contacts]` holding
+  fieldsets `[data-office-contact=1]`, `2`, ...; the plus button is inside `[data-shot=office-contact-add]`
+  ("Add office contact": click `[data-shot=office-contact-add] >> role=button`), and each set from the
+  second has a minus `[data-shot=office-contact-remove]` named "Remove office contact N". There are no
+  room or contact sheets any more.
 
 - **Change status** (Admin Day, catch-up Phase 32b): open a session, `[data-shot="drawer-change-status"]`,
   pick `[data-shot="office-status-choices"] [data-status-choice="unavailable"]`; on a session holding a
@@ -1470,8 +1454,7 @@ were already imported. Nothing new.").
   `[role=dialog] >> role=button[name="Save changes"]`. The Add sheet has the same field.
 - **Master data:** "Edit", "Save changes", and "Add hospital" (field "Hospital name", then the
   optional "Contact email"). Catch-up Phase 17 sheets: "Add surgeon" / a surgeon row's "Edit" /
-  profile "Edit details" (`surgeon-edit-sheet`), "Add room" / "Edit <room name>"
-  (`surgeon-room-sheet`), "Add group" / "Edit <group name>" (`surgeon-group-sheet`), a hospital's
+  profile "Edit details" (`surgeon-edit-sheet`), "Add group" / "Edit <group name>" (`surgeon-group-sheet`), a hospital's
   "Edit <hospital name>" (`edit-hospital-sheet`), "Add pairing" (`pairing-add-sheet`), a pairing
   row's "End" (`pairing-end-sheet`, confirm "End pairing"). The anaesthetist Edit sheet has an
   "Open record" link. A table row (anaesthetist or surgeon) opens its page; the "Edit" link in it
@@ -1527,8 +1510,8 @@ the exception: use the `trigger` step)
   names. Cards are the shared `shared/ui/Card`: a `section` named by its `h2` title (`h3` where a page sets it), with
   `data-shot` and `data-*` on the `section`: the Day rail's `admin-notifications-rail`, `admin-warnings-todo`,
   `admin-draft-lists-rail`, `admin-needs-invoice-destination` (heading ids kept), the profile cards `tier-card`,
-  `anaesthetist-details`, `surgeon-specialties`, `surgeon-identifiers`, `surgeon-groups`, `surgeon-room-card` and
-  `surgeon-contacts` (`data-room` kept). The web panels are the same `Card`, so their titles ("Bookings", "Invoices",
+  `anaesthetist-details`, `surgeon-specialties`, `surgeon-identifiers`, `surgeon-groups` and
+  `surgeon-contacts`. The web panels are the same `Card`, so their titles ("Bookings", "Invoices",
   "Leave", "Receivables aging") are `h2`, no longer a `div`. The invoice rail's own `section` and `h2` cards
   (`invoice-info-rail`) are unchanged. Label and value rows are the shared `shared/ui/DefRow` in a `dl`: each row is
   `div > dt + dd` (was `div > span + span`) in the Admin drawers, the Booking detail (Paid by, funder details), Office billing
@@ -1851,22 +1834,21 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   field's wrapper `div`; its select is `[data-shot=contract-tag-filter] select`), `contract-system-notice`, `contract-system-pill` (the "System" pill), and the row marker
   `tr[data-system=openPriceFallback|noContractRvg]`.
 - Master data tables: `masters-anaesthetists` (rows `tr[data-anaesthetist=<id>]`, tier pills
-  `[data-tier=1..4]`), `masters-surgeons` (rows `tr[data-surgeon=<id>]`), `masters-surgeon-rooms`
-  (`tr[data-room=<id>]`), `masters-surgeon-groups` (`tr[data-group=<id>]`), `masters-hospitals`
+  `[data-tier=1..4]`), `masters-surgeons` (rows `tr[data-surgeon=<id>]`), `masters-surgeon-groups` (`tr[data-group=<id>]`), `masters-hospitals`
   (cards `[data-hospital=<id>]`).
-- Pages: `surgeon-profile`, `surgeon-hpi-chip`, `surgeon-identifiers`, `surgeon-room-card`,
-  `surgeon-groups`; `anaesthetist-record`, `anaesthetist-hpi-chip`, `anaesthetist-details`,
+- Pages: `surgeon-profile`, `surgeon-hpi-chip`, `surgeon-identifiers`,
+  `surgeon-contacts`, `surgeon-groups`; `anaesthetist-record`, `anaesthetist-hpi-chip`, `anaesthetist-details`,
   `tier-card`.
   (`anaesthetist-details` is the Profile card since catch-up Phase 26.)
-- Rooms and contacts (catch-up Phase 17a): `surgeon-room-card` is now one per room, each with
-  `data-room=<roomId>`, the main room first (with a neutral "Main room" pill when there are several), so
-  pick one as `[data-shot=surgeon-room-card][data-room=RM-HILLSBOROU]`; beside each,
-  `surgeon-contacts` ("Practice manager and PAs", also with `data-room`; the first carries the one
-  provisional mist line), rows `li[data-contact=<id>]`; `room-contact-add`, `room-contact-sheet`,
-  `room-contact-remove` (the in-card confirm); on the surgeon sheet `surgeon-rooms-field`; on the room
-  sheet `room-sheet-contacts`. Surgeons table: the Rooms cell is `td[data-rooms=<surgeonId>]` (a room
-  per line, main first). Rooms table: the email cell `td[data-room-email]`, the Contacts cell
-  `td[data-room-contacts-count=<n>]`.
+- Practice and contacts (catch-up Phase 17b): the Surgeons table has columns Name, Specialties, Practice,
+  Office contact, HPI CPN, Pairings; rows `tr[data-surgeon=<id>]` carry `data-practice` and `data-hpi`
+  ('' when blank), the office cell is `td[data-office-to]`. On the profile, `surgeon-contacts` holds
+  `[data-practice]`, `surgeon-personal-contact-card` and `surgeon-office-contacts-card`; each office
+  contact is `[data-office-contact="1"]`, `"2"`, ...; `office-first-pill`. On the surgeon sheet:
+  `surgeon-practice-field`, `surgeon-hpi-field`, `surgeon-personal-contact`, `surgeon-office-contacts`,
+  `office-contact-add`, `office-contact-remove`. GONE in 17b: `masters-surgeon-rooms`, `surgeon-room-card`,
+  `surgeon-rooms-field`, `room-contact-add`, `room-contact-sheet`, `room-contact-remove`,
+  `room-sheet-contacts`, `surgeon-room-sheet`, the "Surgeons' rooms" sub-nav button.
 - Pairing section: `pairing-section`, groups `[data-pairing-group=NOT_PREFERRED|PREFERRED]`, rows
   `[data-pairing=<entryId>]`, `pairing-ended` (a `<details>`: click `[data-shot=pairing-ended] >
   summary` to open), `pairing-add-sheet`, `pairing-counterpart` (the select; a taken counterpart's

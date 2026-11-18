@@ -362,8 +362,13 @@ export const PERSIST_KEY = 'aa-demo'
  *  v58: Wave 2 sync on lane/a, Lane B's 33a (v56) joined with Lane A's 25a (v56, v57): one past the higher.
  *  v59: catch-up Phase 36, the internal ledger: the billing cases slice becomes `billing.ledger` (pairs with receivable
  *  and payable legs), with `disbursements`, `unmatchedReceipts` and `exceptions`; receipts carry `pairId`;
- *  transfers hold `out`/`in` legs; AA fee invoices point at their `aaFee` pair; counter `ledgerPair`. Reseeds on load. */
-export const PERSIST_VERSION = 59
+ *  transfers hold `out`/`in` legs; AA fee invoices point at their `aaFee` pair; counter `ledgerPair`. Reseeds on load.
+ *  v58: Wave 2 sync on lane/b, Lane A's 25a (v57) joined with Lane B's 33a (v56): one past the higher.
+ *  v59: catch-up Phase 17b, no surgeons' rooms (`masters.surgeonRooms`, `Surgeon.roomIds` and room contacts gone);
+ *  each surgeon holds `practiceName`, `personalContact` and `officeContacts`, and three directory surgeons no HPI CPN
+ *  yet (D74, D76). Reseeds on load.
+ *  v60: Wave 2 join, Lane A's 36 (v59) joined with Lane B's 17b (v59): one past the higher. */
+export const PERSIST_VERSION = 60
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {} }

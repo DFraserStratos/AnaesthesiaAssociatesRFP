@@ -6,7 +6,7 @@
     {
       "name": "surgeons-table",
       "app": "admin",
-      "caption": "The room or rooms and the specialties each surgeon holds, with the HPI CPN and pairing counts; Mr N. Wainwright is at two rooms",
+      "caption": "The practice, office contact, specialties, HPI CPN and pairing counts each surgeon holds; Mr N. Wainwright works from two practices, and Dr P. Whaanga shows No HPI CPN yet",
       "start": "/admin/masters?view=surgeons",
       "states": [
         {
@@ -16,15 +16,17 @@
             }
           ],
           "highlight": [
-            "[data-shot=masters-surgeons] tr[data-surgeon=S-WAINWRIGHT]"
-          ]
+            "[data-shot=masters-surgeons] tr[data-surgeon=S-WAINWRIGHT]",
+            "[data-shot=masters-surgeons] tr[data-surgeon=S-WHAANGA]"
+          ],
+          "caption": "Surgeons table: Mr N. Wainwright's two practices and office contact, and Dr P. Whaanga's blank HPI CPN reading No HPI CPN yet"
         }
       ]
     },
     {
       "name": "surgeon-profile",
       "app": "admin",
-      "caption": "One identified record per surgeon, keyed on the HPI CPN, with private pairings only the office sees",
+      "caption": "One identified record per surgeon, with the HPI CPN admin staff fill in, and private pairings only the office sees",
       "start": "/admin/masters/surgeons/S-REID",
       "states": [
         {
@@ -38,13 +40,13 @@
             "[data-shot=surgeon-specialties]",
             "[data-shot=surgeon-hpi-chip]",
             "[data-shot=surgeon-identifiers]",
-            "[data-shot=surgeon-room-card]",
+            "[data-shot=surgeon-contacts]",
             "[data-shot=surgeon-groups]"
           ]
         },
         {
           "state": "edit",
-          "caption": "A surgeon belongs to one or more rooms, the first the main room; specialties are required too",
+          "caption": "Editing a surgeon: the practice and HPI CPN are optional; specialties are required",
           "steps": [
             {
               "goto": "/admin/masters/surgeons/S-WAINWRIGHT"
@@ -53,15 +55,15 @@
               "click": "role=button[name=\"Edit details\"]"
             },
             {
-              "wait": "[data-shot=surgeon-rooms-field]"
+              "wait": "[data-shot=surgeon-practice-field]"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=surgeon-specialties-field]",
-            "[data-shot=surgeon-rooms-field]"
+            "[data-shot=surgeon-practice-field]",
+            "[data-shot=surgeon-hpi-field]"
           ]
         }
       ]

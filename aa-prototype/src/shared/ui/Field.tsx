@@ -51,6 +51,12 @@ interface TextFieldProps extends DataAttributes {
   fill?: FieldFill
   /** No visible label: the label becomes the control's literal `aria-label`. */
   hideLabel?: boolean
+  /**
+   * The control's accessible name where the visible label alone repeats on the
+   * page (catch-up Phase 17b: "Office contact 2 email" under a visible "Email").
+   * Absent, the visible label names it, as it always has.
+   */
+  accessibleName?: string
   width?: number | string
   /** `data-shot` on the input itself. */
   shot?: string
@@ -70,7 +76,7 @@ interface TextFieldProps extends DataAttributes {
 export function TextField(props: TextFieldProps) {
   const {
     label, value, onChange, placeholder, type = 'text', mono, hint, inputMode, align, invalid = false, list, min, max, step,
-    size = 'field', fill = 'well', hideLabel = false, width, shot, disabled, autoFocus, maxLength, autoComplete, onBlur, onKeyDown,
+    size = 'field', fill = 'well', hideLabel = false, accessibleName, width, shot, disabled, autoFocus, maxLength, autoComplete, onBlur, onKeyDown,
   } = props
   const hintId = useId()
   const input = (
@@ -81,7 +87,7 @@ export function TextField(props: TextFieldProps) {
       onChange={(e) => onChange(e.target.value)}
       onBlur={onBlur}
       onKeyDown={onKeyDown}
-      aria-label={hideLabel ? label : undefined}
+      aria-label={hideLabel ? label : accessibleName}
       aria-describedby={hint !== undefined ? hintId : undefined}
       aria-invalid={invalid ? true : undefined}
       inputMode={inputMode}

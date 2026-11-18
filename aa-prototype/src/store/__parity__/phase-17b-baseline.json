@@ -1,0 +1,3006 @@
+{
+ "surgeonCount": 141,
+ "surgeonOrder": [
+  "S-HALE",
+  "S-PATEL",
+  "S-WHITFORD",
+  "S-OKAFOR",
+  "S-LIM",
+  "S-DOYLE",
+  "S-TAN",
+  "S-REID",
+  "S-NAND",
+  "S-CAMERON",
+  "S-DALGETY",
+  "S-GARSIDE",
+  "S-HARGREAVE",
+  "S-WHAANGA",
+  "S-JARDINE",
+  "S-FORSYTHE",
+  "S-CALDER",
+  "S-ACHTERBERG",
+  "S-MALLORY",
+  "S-PAEWAI",
+  "S-WOODVILLE",
+  "S-ELLERY",
+  "S-TRELAWNEY",
+  "S-IYER",
+  "S-PENROSE",
+  "S-WINSLOW",
+  "S-KEREAMA",
+  "S-OSEI",
+  "S-PEMBERTON",
+  "S-TREMAINE",
+  "S-QUIGLEY",
+  "S-CHEUNG",
+  "S-KEATING",
+  "S-LOWRY",
+  "S-EMBLING",
+  "S-BEAUMONT",
+  "S-COLVILLE",
+  "S-ORMSBY",
+  "S-LACHLAN",
+  "S-WARBURTON",
+  "S-LINDQVIST",
+  "S-CARMODY",
+  "S-JESSOP",
+  "S-HUXLEY",
+  "S-BANCROFT",
+  "S-BRAMLEY",
+  "S-YEOMAN",
+  "S-CHATTERJEE",
+  "S-STANHOPE",
+  "S-SETON",
+  "S-DENHOLM",
+  "S-NAKAMURA",
+  "S-XU",
+  "S-FITZGERALD",
+  "S-WAINWRIGHT",
+  "S-MORLAND",
+  "S-RAHMAN",
+  "S-HAWTHORNE",
+  "S-DRAYCOTT",
+  "S-GRIEVE",
+  "S-RUTHERFORD",
+  "S-WHITCOMBE",
+  "S-UPTON",
+  "S-LOCKHART",
+  "S-AINSWORTH",
+  "S-DASGUPTA",
+  "S-JUAREZ",
+  "S-MACALISTER",
+  "S-DACRE",
+  "S-RIDLEY",
+  "S-THACKERAY",
+  "S-CLEMENT",
+  "S-MAITLAND",
+  "S-TALBOT",
+  "S-RATHBONE",
+  "S-KAVANAGH",
+  "S-SALTMARSH",
+  "S-RAJAN",
+  "S-MARWICK",
+  "S-RENWICK",
+  "S-NORTHCOTE",
+  "S-HENDRY",
+  "S-SHACKLETON",
+  "S-VASQUEZ",
+  "S-HARTIGAN",
+  "S-WYNDHAM",
+  "S-ERIKSEN",
+  "S-DUNMORE",
+  "S-PICKERING",
+  "S-OGILVIE",
+  "S-KINLOCH",
+  "S-BARCLAY",
+  "S-FONOTI",
+  "S-FENWICK",
+  "S-EASTWOOD",
+  "S-VAUGHAN",
+  "S-LARKIN",
+  "S-SELWYN",
+  "S-TAVENER",
+  "S-KINGSLEY",
+  "S-FARQUHAR",
+  "S-SINCLAIR",
+  "S-BELLAMY",
+  "S-MARCHETTI",
+  "S-SUTHERLAND",
+  "S-MERRIMAN",
+  "S-SOTO",
+  "S-UNDERHILL",
+  "S-MULGREW",
+  "S-WOLFENDEN",
+  "S-IREDALE",
+  "S-WILBERFORCE",
+  "S-LECKIE",
+  "S-GILLESPIE",
+  "S-CORRIGAN",
+  "S-NAKASHIMA",
+  "S-ROCHFORD",
+  "S-ALDERTON",
+  "S-CROWTHER",
+  "S-DARNELL",
+  "S-LATTIMORE",
+  "S-VENNING",
+  "S-TIERNEY",
+  "S-MAHUIKA",
+  "S-GORMAN",
+  "S-GALLOWAY",
+  "S-SANDFORD",
+  "S-NESBITT",
+  "S-LANGFORD",
+  "S-ROSCOE",
+  "S-THORNBURY",
+  "S-TUILAGI",
+  "S-MATHIESON",
+  "S-ABERNETHY",
+  "S-BHATNAGAR",
+  "S-GOODWIN",
+  "S-DELACROIX",
+  "S-BRENNAN",
+  "S-PRENDERGAST",
+  "S-MOFFAT",
+  "S-ZELINSKI"
+ ],
+ "surgeons": {
+  "S-HALE": {
+   "name": "Mr T. Hale",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "40HALT",
+   "medicalRegistrationNumber": "70412",
+   "roomIds": [
+    "RM-RICC"
+   ]
+  },
+  "S-PATEL": {
+   "name": "Ms K. Patel",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "41PATK",
+   "medicalRegistrationNumber": "71588",
+   "roomIds": [
+    "RM-AVON"
+   ]
+  },
+  "S-WHITFORD": {
+   "name": "Mr J. Whitford",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "42WHIJ",
+   "medicalRegistrationNumber": "72905",
+   "roomIds": [
+    "RM-MERI"
+   ]
+  },
+  "S-OKAFOR": {
+   "name": "Mr C. Okafor",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "43OKAC",
+   "medicalRegistrationNumber": "73318",
+   "roomIds": [
+    "RM-AVON"
+   ]
+  },
+  "S-LIM": {
+   "name": "Ms G. Lim",
+   "specialtyIds": [
+    "SPC-PLASTIC"
+   ],
+   "hpiId": "44LIMG",
+   "medicalRegistrationNumber": "74071",
+   "roomIds": [
+    "RM-FEND"
+   ]
+  },
+  "S-DOYLE": {
+   "name": "Mr P. Doyle",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "45DOYP",
+   "medicalRegistrationNumber": "75264",
+   "roomIds": [
+    "RM-AVON"
+   ]
+  },
+  "S-TAN": {
+   "name": "Mr S. Tan",
+   "specialtyIds": [
+    "SPC-UROLOGY"
+   ],
+   "hpiId": "46TANS",
+   "medicalRegistrationNumber": "76630",
+   "roomIds": [
+    "RM-PAPA"
+   ]
+  },
+  "S-REID": {
+   "name": "Ms A. Reid",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "47REIA",
+   "medicalRegistrationNumber": "77149",
+   "roomIds": [
+    "RM-MERI"
+   ]
+  },
+  "S-NAND": {
+   "name": "Mr V. Nand",
+   "specialtyIds": [
+    "SPC-ENT"
+   ],
+   "hpiId": "48NANV",
+   "medicalRegistrationNumber": "78852",
+   "roomIds": [
+    "RM-FEND"
+   ]
+  },
+  "S-CAMERON": {
+   "name": "Ms H. Cameron",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "49CAMH",
+   "medicalRegistrationNumber": "79503",
+   "roomIds": [
+    "RM-PAPA"
+   ]
+  },
+  "S-DALGETY": {
+   "name": "Dr H. Dalgety",
+   "specialtyIds": [
+    "SPC-ENT"
+   ],
+   "hpiId": "50DALH",
+   "medicalRegistrationNumber": "80000",
+   "roomIds": [
+    "RM-AVONHEADEN"
+   ]
+  },
+  "S-GARSIDE": {
+   "name": "Dr B. Garside",
+   "specialtyIds": [
+    "SPC-ENT"
+   ],
+   "hpiId": "51GARB",
+   "medicalRegistrationNumber": "80061",
+   "roomIds": [
+    "RM-AVONHEADEN"
+   ]
+  },
+  "S-HARGREAVE": {
+   "name": "Dr R. Hargreave",
+   "specialtyIds": [
+    "SPC-ENT"
+   ],
+   "hpiId": "52HARR",
+   "medicalRegistrationNumber": "80122",
+   "roomIds": [
+    "RM-AVONHEADEN"
+   ]
+  },
+  "S-WHAANGA": {
+   "name": "Dr P. Whaanga",
+   "specialtyIds": [
+    "SPC-ENT"
+   ],
+   "hpiId": "53WHAP",
+   "medicalRegistrationNumber": "80183",
+   "roomIds": [
+    "RM-AVONHEADEN"
+   ]
+  },
+  "S-JARDINE": {
+   "name": "Dr W. Jardine",
+   "specialtyIds": [
+    "SPC-ENT"
+   ],
+   "hpiId": "54JARW",
+   "medicalRegistrationNumber": "80244",
+   "roomIds": [
+    "RM-AVONHEADEN"
+   ]
+  },
+  "S-FORSYTHE": {
+   "name": "Mr I. Forsythe",
+   "specialtyIds": [
+    "SPC-ENT"
+   ],
+   "hpiId": "55FORI",
+   "medicalRegistrationNumber": "80305",
+   "roomIds": [
+    "RM-BURNSIDEEN"
+   ]
+  },
+  "S-CALDER": {
+   "name": "Dr T. Calder",
+   "specialtyIds": [
+    "SPC-ENT"
+   ],
+   "hpiId": "56CALT",
+   "medicalRegistrationNumber": "80366",
+   "roomIds": [
+    "RM-BURNSIDEEN"
+   ]
+  },
+  "S-ACHTERBERG": {
+   "name": "Mr B. Achterberg",
+   "specialtyIds": [
+    "SPC-ENT"
+   ],
+   "hpiId": "57ACHB",
+   "medicalRegistrationNumber": "80427",
+   "roomIds": [
+    "RM-BURNSIDEEN"
+   ]
+  },
+  "S-MALLORY": {
+   "name": "Mr R. Mallory",
+   "specialtyIds": [
+    "SPC-ENT"
+   ],
+   "hpiId": "58MALR",
+   "medicalRegistrationNumber": "80488",
+   "roomIds": [
+    "RM-BURNSIDEEN"
+   ]
+  },
+  "S-PAEWAI": {
+   "name": "Dr E. Paewai",
+   "specialtyIds": [
+    "SPC-ENT"
+   ],
+   "hpiId": "59PAEE",
+   "medicalRegistrationNumber": "80549",
+   "roomIds": [
+    "RM-BURNSIDEEN"
+   ]
+  },
+  "S-WOODVILLE": {
+   "name": "Mr U. Woodville",
+   "specialtyIds": [
+    "SPC-ENT"
+   ],
+   "hpiId": "60WOOU",
+   "medicalRegistrationNumber": "80610",
+   "roomIds": [
+    "RM-BURNSIDEEN"
+   ]
+  },
+  "S-ELLERY": {
+   "name": "Mr O. Ellery",
+   "specialtyIds": [
+    "SPC-ENT"
+   ],
+   "hpiId": "61ELLO",
+   "medicalRegistrationNumber": "80671",
+   "roomIds": [
+    "RM-BURNSIDEEN"
+   ]
+  },
+  "S-TRELAWNEY": {
+   "name": "Dr L. Trelawney",
+   "specialtyIds": [
+    "SPC-ENT"
+   ],
+   "hpiId": "62TREL",
+   "medicalRegistrationNumber": "80732",
+   "roomIds": [
+    "RM-BURNSIDEEN"
+   ]
+  },
+  "S-IYER": {
+   "name": "Dr R. Iyer",
+   "specialtyIds": [
+    "SPC-ENT"
+   ],
+   "hpiId": "63IYER",
+   "medicalRegistrationNumber": "80793",
+   "roomIds": [
+    "RM-BURNSIDEEN"
+   ]
+  },
+  "S-PENROSE": {
+   "name": "Dr F. Penrose",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "64PENF",
+   "medicalRegistrationNumber": "80854",
+   "roomIds": [
+    "RM-LINWOODWOM"
+   ]
+  },
+  "S-WINSLOW": {
+   "name": "Dr J. Winslow",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "65WINJ",
+   "medicalRegistrationNumber": "80915",
+   "roomIds": [
+    "RM-RICHMONDFE",
+    "RM-LINWOODWOM"
+   ]
+  },
+  "S-KEREAMA": {
+   "name": "Dr H. Kereama",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "66KERH",
+   "medicalRegistrationNumber": "80976",
+   "roomIds": [
+    "RM-LINWOODWOM"
+   ]
+  },
+  "S-OSEI": {
+   "name": "Dr B. Osei",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "67OSEB",
+   "medicalRegistrationNumber": "81037",
+   "roomIds": [
+    "RM-LINWOODWOM"
+   ]
+  },
+  "S-PEMBERTON": {
+   "name": "Dr C. Pemberton",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "68PEMC",
+   "medicalRegistrationNumber": "81098",
+   "roomIds": [
+    "RM-LINWOODWOM"
+   ]
+  },
+  "S-TREMAINE": {
+   "name": "Dr A. Tremaine",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "69TREA",
+   "medicalRegistrationNumber": "81159",
+   "roomIds": [
+    "RM-LINWOODWOM"
+   ]
+  },
+  "S-QUIGLEY": {
+   "name": "Dr J. Quigley",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "70QUIJ",
+   "medicalRegistrationNumber": "81220",
+   "roomIds": [
+    "RM-GYNAECOLOG"
+   ]
+  },
+  "S-CHEUNG": {
+   "name": "Dr I. Cheung",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "71CHEI",
+   "medicalRegistrationNumber": "81281",
+   "roomIds": [
+    "RM-GYNAECOLOG"
+   ]
+  },
+  "S-KEATING": {
+   "name": "Mr F. Keating",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "72KEAF",
+   "medicalRegistrationNumber": "81342",
+   "roomIds": [
+    "RM-GYNAECOLOG"
+   ]
+  },
+  "S-LOWRY": {
+   "name": "Mr G. Lowry",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "73LOWG",
+   "medicalRegistrationNumber": "81403",
+   "roomIds": [
+    "RM-GYNAECOLOG"
+   ]
+  },
+  "S-EMBLING": {
+   "name": "Mr F. Embling",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "74EMBF",
+   "medicalRegistrationNumber": "81464",
+   "roomIds": [
+    "RM-GYNAECOLOG"
+   ]
+  },
+  "S-BEAUMONT": {
+   "name": "Mr M. Beaumont",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "75BEAM",
+   "medicalRegistrationNumber": "81525",
+   "roomIds": [
+    "RM-GYNAECOLOG"
+   ]
+  },
+  "S-COLVILLE": {
+   "name": "Dr V. Colville",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "76COLV",
+   "medicalRegistrationNumber": "81586",
+   "roomIds": [
+    "RM-GYNAECOLOG"
+   ]
+  },
+  "S-ORMSBY": {
+   "name": "Dr V. Ormsby",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "77ORMV",
+   "medicalRegistrationNumber": "81647",
+   "roomIds": [
+    "RM-GYNAECOLOG"
+   ]
+  },
+  "S-LACHLAN": {
+   "name": "Dr L. Lachlan",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "78LACL",
+   "medicalRegistrationNumber": "81708",
+   "roomIds": [
+    "RM-GYNAECOLOG"
+   ]
+  },
+  "S-WARBURTON": {
+   "name": "Dr C. Warburton",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "79WARC",
+   "medicalRegistrationNumber": "81769",
+   "roomIds": [
+    "RM-GYNAECOLOG"
+   ]
+  },
+  "S-LINDQVIST": {
+   "name": "Dr M. Lindqvist",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "80LINM",
+   "medicalRegistrationNumber": "81830",
+   "roomIds": [
+    "RM-GYNAECOLOG"
+   ]
+  },
+  "S-CARMODY": {
+   "name": "Dr S. Carmody",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "81CARS",
+   "medicalRegistrationNumber": "81891",
+   "roomIds": [
+    "RM-RICHMONDFE"
+   ]
+  },
+  "S-JESSOP": {
+   "name": "Dr C. Jessop",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "82JESC",
+   "medicalRegistrationNumber": "81952",
+   "roomIds": [
+    "RM-RICHMONDFE"
+   ]
+  },
+  "S-HUXLEY": {
+   "name": "Dr R. Huxley",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "83HUXR",
+   "medicalRegistrationNumber": "82013",
+   "roomIds": [
+    "RM-RICHMONDFE"
+   ]
+  },
+  "S-BANCROFT": {
+   "name": "Dr H. Bancroft",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "84BANH",
+   "medicalRegistrationNumber": "82074",
+   "roomIds": [
+    "RM-RICHMONDFE"
+   ]
+  },
+  "S-BRAMLEY": {
+   "name": "Dr E. Bramley",
+   "specialtyIds": [
+    "SPC-GYNAE"
+   ],
+   "hpiId": "85BRAE",
+   "medicalRegistrationNumber": "82135",
+   "roomIds": [
+    "RM-ELODIEBRAM"
+   ]
+  },
+  "S-YEOMAN": {
+   "name": "Mr B. Yeoman",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "86YEOB",
+   "medicalRegistrationNumber": "82196",
+   "roomIds": [
+    "RM-GENERALSUR"
+   ]
+  },
+  "S-CHATTERJEE": {
+   "name": "Mr K. Chatterjee",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "87CHAK",
+   "medicalRegistrationNumber": "82257",
+   "roomIds": [
+    "RM-GENERALSUR"
+   ]
+  },
+  "S-STANHOPE": {
+   "name": "Mr H. Stanhope",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "88STAH",
+   "medicalRegistrationNumber": "82318",
+   "roomIds": [
+    "RM-GENERALSUR"
+   ]
+  },
+  "S-SETON": {
+   "name": "Dr W. Seton",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "89SETW",
+   "medicalRegistrationNumber": "82379",
+   "roomIds": [
+    "RM-HILLSBOROU"
+   ]
+  },
+  "S-DENHOLM": {
+   "name": "Prof A. Denholm",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "90DENA",
+   "medicalRegistrationNumber": "82440",
+   "roomIds": [
+    "RM-HILLSBOROU"
+   ]
+  },
+  "S-NAKAMURA": {
+   "name": "Prof G. Nakamura",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "91NAKG",
+   "medicalRegistrationNumber": "82501",
+   "roomIds": [
+    "RM-HILLSBOROU"
+   ]
+  },
+  "S-XU": {
+   "name": "Mr M. Xu",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "92XUXM",
+   "medicalRegistrationNumber": "82562",
+   "roomIds": [
+    "RM-HILLSBOROU"
+   ]
+  },
+  "S-FITZGERALD": {
+   "name": "Dr E. Fitzgerald",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "93FITE",
+   "medicalRegistrationNumber": "82623",
+   "roomIds": [
+    "RM-HILLSBOROU"
+   ]
+  },
+  "S-WAINWRIGHT": {
+   "name": "Mr N. Wainwright",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "94WAIN",
+   "medicalRegistrationNumber": "82684",
+   "roomIds": [
+    "RM-UPPERGIPAR",
+    "RM-HILLSBOROU"
+   ]
+  },
+  "S-MORLAND": {
+   "name": "Mr K. Morland",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "95MORK",
+   "medicalRegistrationNumber": "82745",
+   "roomIds": [
+    "RM-UPPERGIPAR",
+    "RM-HILLSBOROU"
+   ]
+  },
+  "S-RAHMAN": {
+   "name": "Mr S. Rahman",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "96RAHS",
+   "medicalRegistrationNumber": "82806",
+   "roomIds": [
+    "RM-HILLSBOROU"
+   ]
+  },
+  "S-HAWTHORNE": {
+   "name": "Mr H. Hawthorne",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "97HAWH",
+   "medicalRegistrationNumber": "82867",
+   "roomIds": [
+    "RM-HILLSBOROU"
+   ]
+  },
+  "S-DRAYCOTT": {
+   "name": "Dr E. Draycott",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "98DRAE",
+   "medicalRegistrationNumber": "82928",
+   "roomIds": [
+    "RM-HILLSBOROU"
+   ]
+  },
+  "S-GRIEVE": {
+   "name": "Mr D. Grieve",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "99GRID",
+   "medicalRegistrationNumber": "82989",
+   "roomIds": [
+    "RM-HILLSBOROU"
+   ]
+  },
+  "S-RUTHERFORD": {
+   "name": "Mr C. Rutherford",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "50RUTC",
+   "medicalRegistrationNumber": "83050",
+   "roomIds": [
+    "RM-HILLSBOROU"
+   ]
+  },
+  "S-WHITCOMBE": {
+   "name": "Mr N. Whitcombe",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "51WHIN",
+   "medicalRegistrationNumber": "83111",
+   "roomIds": [
+    "RM-HILLSBOROU"
+   ]
+  },
+  "S-UPTON": {
+   "name": "Prof P. Upton",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "52UPTP",
+   "medicalRegistrationNumber": "83172",
+   "roomIds": [
+    "RM-MAIREHAUCO"
+   ]
+  },
+  "S-LOCKHART": {
+   "name": "Prof C. Lockhart",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "53LOCC",
+   "medicalRegistrationNumber": "83233",
+   "roomIds": [
+    "RM-MAIREHAUCO"
+   ]
+  },
+  "S-AINSWORTH": {
+   "name": "Dr N. Ainsworth",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "54AINN",
+   "medicalRegistrationNumber": "83294",
+   "roomIds": [
+    "RM-MAIREHAUCO"
+   ]
+  },
+  "S-DASGUPTA": {
+   "name": "Dr Z. Dasgupta",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "55DASZ",
+   "medicalRegistrationNumber": "83355",
+   "roomIds": [
+    "RM-GENERALSURX"
+   ]
+  },
+  "S-JUAREZ": {
+   "name": "Dr Y. Juarez",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "56JUAY",
+   "medicalRegistrationNumber": "83416",
+   "roomIds": [
+    "RM-GENERALSURX"
+   ]
+  },
+  "S-MACALISTER": {
+   "name": "Dr M. Macalister",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "57MACM",
+   "medicalRegistrationNumber": "83477",
+   "roomIds": [
+    "RM-GENERALSURX"
+   ]
+  },
+  "S-DACRE": {
+   "name": "Dr A. Dacre",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "58DACA",
+   "medicalRegistrationNumber": "83538",
+   "roomIds": [
+    "RM-GENERALSURX"
+   ]
+  },
+  "S-RIDLEY": {
+   "name": "Dr L. Ridley",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "59RIDL",
+   "medicalRegistrationNumber": "83599",
+   "roomIds": [
+    "RM-GENERALSURX"
+   ]
+  },
+  "S-THACKERAY": {
+   "name": "Dr I. Thackeray",
+   "specialtyIds": [
+    "SPC-GENSURG"
+   ],
+   "hpiId": "60THAI",
+   "medicalRegistrationNumber": "83660",
+   "roomIds": [
+    "RM-GENERALSURX"
+   ]
+  },
+  "S-CLEMENT": {
+   "name": "Dr N. Clement",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "61CLEN",
+   "medicalRegistrationNumber": "83721",
+   "roomIds": [
+    "RM-REDWOODEYE"
+   ]
+  },
+  "S-MAITLAND": {
+   "name": "Dr J. Maitland",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "62MAIJ",
+   "medicalRegistrationNumber": "83782",
+   "roomIds": [
+    "RM-REDWOODEYE"
+   ]
+  },
+  "S-TALBOT": {
+   "name": "Dr C. Talbot",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "63TALC",
+   "medicalRegistrationNumber": "83843",
+   "roomIds": [
+    "RM-REDWOODEYE"
+   ]
+  },
+  "S-RATHBONE": {
+   "name": "Dr R. Rathbone",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "64RATR",
+   "medicalRegistrationNumber": "83904",
+   "roomIds": [
+    "RM-REDWOODEYE"
+   ]
+  },
+  "S-KAVANAGH": {
+   "name": "Dr A. Kavanagh",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "65KAVA",
+   "medicalRegistrationNumber": "83965",
+   "roomIds": [
+    "RM-REDWOODEYE"
+   ]
+  },
+  "S-SALTMARSH": {
+   "name": "Dr H. Saltmarsh",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "66SALH",
+   "medicalRegistrationNumber": "84026",
+   "roomIds": [
+    "RM-REDWOODEYE"
+   ]
+  },
+  "S-RAJAN": {
+   "name": "Dr X. Rajan",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "67RAJX",
+   "medicalRegistrationNumber": "84087",
+   "roomIds": [
+    "RM-REDWOODEYE"
+   ]
+  },
+  "S-MARWICK": {
+   "name": "Dr W. Marwick",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "68MARW",
+   "medicalRegistrationNumber": "84148",
+   "roomIds": [
+    "RM-REDWOODEYE"
+   ]
+  },
+  "S-RENWICK": {
+   "name": "Dr I. Renwick",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "69RENI",
+   "medicalRegistrationNumber": "84209",
+   "roomIds": [
+    "RM-REDWOODEYE"
+   ]
+  },
+  "S-NORTHCOTE": {
+   "name": "Dr B. Northcote",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "70NORB",
+   "medicalRegistrationNumber": "84270",
+   "roomIds": [
+    "RM-REDWOODEYE"
+   ]
+  },
+  "S-HENDRY": {
+   "name": "Dr C. Hendry",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "71HENC",
+   "medicalRegistrationNumber": "84331",
+   "roomIds": [
+    "RM-REDWOODEYE"
+   ]
+  },
+  "S-SHACKLETON": {
+   "name": "Dr T. Shackleton",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "72SHAT",
+   "medicalRegistrationNumber": "84392",
+   "roomIds": [
+    "RM-REDWOODEYE"
+   ]
+  },
+  "S-VASQUEZ": {
+   "name": "Dr K. Vasquez",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "73VASK",
+   "medicalRegistrationNumber": "84453",
+   "roomIds": [
+    "RM-REDWOODEYE"
+   ]
+  },
+  "S-HARTIGAN": {
+   "name": "Dr C. Hartigan",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "74HARC",
+   "medicalRegistrationNumber": "84514",
+   "roomIds": [
+    "RM-BECKENHAME"
+   ]
+  },
+  "S-WYNDHAM": {
+   "name": "Dr I. Wyndham",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "75WYNI",
+   "medicalRegistrationNumber": "84575",
+   "roomIds": [
+    "RM-BECKENHAME"
+   ]
+  },
+  "S-ERIKSEN": {
+   "name": "Dr R. Eriksen",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "76ERIR",
+   "medicalRegistrationNumber": "84636",
+   "roomIds": [
+    "RM-EYEPARTNER"
+   ]
+  },
+  "S-DUNMORE": {
+   "name": "Dr M. Dunmore",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "77DUNM",
+   "medicalRegistrationNumber": "84697",
+   "roomIds": [
+    "RM-MATTHIASDU"
+   ]
+  },
+  "S-PICKERING": {
+   "name": "Prof O. Pickering",
+   "specialtyIds": [
+    "SPC-OPHTH"
+   ],
+   "hpiId": "78PICO",
+   "medicalRegistrationNumber": "84758",
+   "roomIds": [
+    "RM-OTTOPICKER"
+   ]
+  },
+  "S-OGILVIE": {
+   "name": "Mr A. Ogilvie",
+   "specialtyIds": [
+    "SPC-OMFS"
+   ],
+   "hpiId": "79OGIA",
+   "medicalRegistrationNumber": "84819",
+   "roomIds": [
+    "RM-ALISTAIROG"
+   ]
+  },
+  "S-KINLOCH": {
+   "name": "Mr R. Kinloch",
+   "specialtyIds": [
+    "SPC-OMFS"
+   ],
+   "hpiId": "80KINR",
+   "medicalRegistrationNumber": "84880",
+   "roomIds": [
+    "RM-RAFAELKINL"
+   ]
+  },
+  "S-BARCLAY": {
+   "name": "Dr I. Barclay",
+   "specialtyIds": [
+    "SPC-OMFS"
+   ],
+   "hpiId": "81BARI",
+   "medicalRegistrationNumber": "84941",
+   "roomIds": [
+    "RM-ISLABARCLA"
+   ]
+  },
+  "S-FONOTI": {
+   "name": "Dr F. Fonoti",
+   "specialtyIds": [
+    "SPC-OMFS"
+   ],
+   "hpiId": "82FONF",
+   "medicalRegistrationNumber": "85002",
+   "roomIds": [
+    "RM-FREYAFONOT"
+   ]
+  },
+  "S-FENWICK": {
+   "name": "Dr O. Fenwick",
+   "specialtyIds": [
+    "SPC-OMFS"
+   ],
+   "hpiId": "83FENO",
+   "medicalRegistrationNumber": "85063",
+   "roomIds": [
+    "RM-OTTILIEFEN"
+   ]
+  },
+  "S-EASTWOOD": {
+   "name": "Mr J. Eastwood",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "84EASJ",
+   "medicalRegistrationNumber": "85124",
+   "roomIds": [
+    "RM-ADDINGTONO"
+   ]
+  },
+  "S-VAUGHAN": {
+   "name": "Dr I. Vaughan",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "85VAUI",
+   "medicalRegistrationNumber": "85185",
+   "roomIds": [
+    "RM-IMOGENVAUG",
+    "RM-EDGEWAREOR"
+   ]
+  },
+  "S-LARKIN": {
+   "name": "Dr K. Larkin",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "86LARK",
+   "medicalRegistrationNumber": "85246",
+   "roomIds": [
+    "RM-WIGRAMORTH"
+   ]
+  },
+  "S-SELWYN": {
+   "name": "Dr A. Selwyn",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "87SELA",
+   "medicalRegistrationNumber": "85307",
+   "roomIds": [
+    "RM-WIGRAMORTH"
+   ]
+  },
+  "S-TAVENER": {
+   "name": "Dr D. Tavener",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "88TAVD",
+   "medicalRegistrationNumber": "85368",
+   "roomIds": [
+    "RM-HOONHAYORT"
+   ]
+  },
+  "S-KINGSLEY": {
+   "name": "A. Kingsley",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "89KINA",
+   "medicalRegistrationNumber": "85429",
+   "roomIds": [
+    "RM-SOMERFIELD"
+   ]
+  },
+  "S-FARQUHAR": {
+   "name": "Mr V. Farquhar",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "90FARV",
+   "medicalRegistrationNumber": "85490",
+   "roomIds": [
+    "RM-SOMERFIELD"
+   ]
+  },
+  "S-SINCLAIR": {
+   "name": "Mr H. Sinclair",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "91SINH",
+   "medicalRegistrationNumber": "85551",
+   "roomIds": [
+    "RM-SOMERFIELD"
+   ]
+  },
+  "S-BELLAMY": {
+   "name": "Mr P. Bellamy",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "92BELP",
+   "medicalRegistrationNumber": "85612",
+   "roomIds": [
+    "RM-SOMERFIELD"
+   ]
+  },
+  "S-MARCHETTI": {
+   "name": "Mr E. Marchetti",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "93MARE",
+   "medicalRegistrationNumber": "85673",
+   "roomIds": [
+    "RM-EDGEWAREOR"
+   ]
+  },
+  "S-SUTHERLAND": {
+   "name": "Dr O. Sutherland",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "94SUTO",
+   "medicalRegistrationNumber": "85734",
+   "roomIds": [
+    "RM-EDGEWAREOR"
+   ]
+  },
+  "S-MERRIMAN": {
+   "name": "Mr K. Merriman",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "95MERK",
+   "medicalRegistrationNumber": "85795",
+   "roomIds": [
+    "RM-EDGEWAREOR"
+   ]
+  },
+  "S-SOTO": {
+   "name": "Dr S. Soto",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "96SOTS",
+   "medicalRegistrationNumber": "85856",
+   "roomIds": [
+    "RM-SASKIASOTO"
+   ]
+  },
+  "S-UNDERHILL": {
+   "name": "T. Underhill",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "97UNDT",
+   "medicalRegistrationNumber": "85917",
+   "roomIds": [
+    "RM-HAREWOODOR"
+   ]
+  },
+  "S-MULGREW": {
+   "name": "Mr T. Mulgrew",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "98MULT",
+   "medicalRegistrationNumber": "85978",
+   "roomIds": [
+    "RM-HAREWOODOR"
+   ]
+  },
+  "S-WOLFENDEN": {
+   "name": "Mr M. Wolfenden",
+   "specialtyIds": [
+    "SPC-PLASTIC"
+   ],
+   "hpiId": "99WOLM",
+   "medicalRegistrationNumber": "86039",
+   "roomIds": [
+    "RM-MIHAKAWOLF"
+   ]
+  },
+  "S-IREDALE": {
+   "name": "Dr T. Iredale",
+   "specialtyIds": [
+    "SPC-PLASTIC"
+   ],
+   "hpiId": "50IRET",
+   "medicalRegistrationNumber": "86100",
+   "roomIds": [
+    "RM-TOBIASIRED"
+   ]
+  },
+  "S-WILBERFORCE": {
+   "name": "Mr D. Wilberforce",
+   "specialtyIds": [
+    "SPC-PLASTIC"
+   ],
+   "hpiId": "51WILD",
+   "medicalRegistrationNumber": "86161",
+   "roomIds": [
+    "RM-PLASTICSUR"
+   ]
+  },
+  "S-LECKIE": {
+   "name": "Mr O. Leckie",
+   "specialtyIds": [
+    "SPC-PLASTIC"
+   ],
+   "hpiId": "52LECO",
+   "medicalRegistrationNumber": "86222",
+   "roomIds": [
+    "RM-ORSONLECKI"
+   ]
+  },
+  "S-GILLESPIE": {
+   "name": "Mr D. Gillespie",
+   "specialtyIds": [
+    "SPC-PLASTIC"
+   ],
+   "hpiId": "53GILD",
+   "medicalRegistrationNumber": "86283",
+   "roomIds": [
+    "RM-HEATHCOTEP"
+   ]
+  },
+  "S-CORRIGAN": {
+   "name": "Mr C. Corrigan",
+   "specialtyIds": [
+    "SPC-PLASTIC"
+   ],
+   "hpiId": "54CORC",
+   "medicalRegistrationNumber": "86344",
+   "roomIds": [
+    "RM-CORMACCORR"
+   ]
+  },
+  "S-NAKASHIMA": {
+   "name": "Dr A. Nakashima",
+   "specialtyIds": [
+    "SPC-PLASTIC"
+   ],
+   "hpiId": "55NAKA",
+   "medicalRegistrationNumber": "86405",
+   "roomIds": [
+    "RM-PLASTICSUR"
+   ]
+  },
+  "S-ROCHFORD": {
+   "name": "Mr I. Rochford",
+   "specialtyIds": [
+    "SPC-PLASTIC"
+   ],
+   "hpiId": "56ROCI",
+   "medicalRegistrationNumber": "86466",
+   "roomIds": [
+    "RM-PLASTICSUR"
+   ]
+  },
+  "S-ALDERTON": {
+   "name": "Dr Q. Alderton",
+   "specialtyIds": [
+    "SPC-PLASTIC"
+   ],
+   "hpiId": "57ALDQ",
+   "medicalRegistrationNumber": "86527",
+   "roomIds": [
+    "RM-PLASTICSUR"
+   ]
+  },
+  "S-CROWTHER": {
+   "name": "Mr L. Crowther",
+   "specialtyIds": [
+    "SPC-PLASTIC"
+   ],
+   "hpiId": "58CROL",
+   "medicalRegistrationNumber": "86588",
+   "roomIds": [
+    "RM-PLASTICSUR"
+   ]
+  },
+  "S-DARNELL": {
+   "name": "N. Darnell",
+   "specialtyIds": [
+    "SPC-UROLOGY"
+   ],
+   "hpiId": "59DARN",
+   "medicalRegistrationNumber": "86649",
+   "roomIds": [
+    "RM-UROLOGYASS"
+   ]
+  },
+  "S-LATTIMORE": {
+   "name": "V. Lattimore",
+   "specialtyIds": [
+    "SPC-UROLOGY"
+   ],
+   "hpiId": "60LATV",
+   "medicalRegistrationNumber": "86710",
+   "roomIds": [
+    "RM-UROLOGYASS"
+   ]
+  },
+  "S-VENNING": {
+   "name": "T. Venning",
+   "specialtyIds": [
+    "SPC-UROLOGY"
+   ],
+   "hpiId": "61VENT",
+   "medicalRegistrationNumber": "86771",
+   "roomIds": [
+    "RM-UROLOGYASS"
+   ]
+  },
+  "S-TIERNEY": {
+   "name": "A. Tierney",
+   "specialtyIds": [
+    "SPC-UROLOGY"
+   ],
+   "hpiId": "62TIEA",
+   "medicalRegistrationNumber": "86832",
+   "roomIds": [
+    "RM-UROLOGYASS"
+   ]
+  },
+  "S-MAHUIKA": {
+   "name": "L. Mahuika",
+   "specialtyIds": [
+    "SPC-UROLOGY"
+   ],
+   "hpiId": "63MAHL",
+   "medicalRegistrationNumber": "86893",
+   "roomIds": [
+    "RM-UROLOGYASS"
+   ]
+  },
+  "S-GORMAN": {
+   "name": "K. Gorman",
+   "specialtyIds": [
+    "SPC-UROLOGY"
+   ],
+   "hpiId": "64GORK",
+   "medicalRegistrationNumber": "86954",
+   "roomIds": [
+    "RM-UROLOGYASS"
+   ]
+  },
+  "S-GALLOWAY": {
+   "name": "J. Galloway",
+   "specialtyIds": [
+    "SPC-UROLOGY"
+   ],
+   "hpiId": "65GALJ",
+   "medicalRegistrationNumber": "87015",
+   "roomIds": [
+    "RM-UROLOGYASS"
+   ]
+  },
+  "S-SANDFORD": {
+   "name": "Z. Sandford",
+   "specialtyIds": [
+    "SPC-UROLOGY"
+   ],
+   "hpiId": "66SANZ",
+   "medicalRegistrationNumber": "87076",
+   "roomIds": [
+    "RM-UROLOGYASS"
+   ]
+  },
+  "S-NESBITT": {
+   "name": "G. Nesbitt",
+   "specialtyIds": [
+    "SPC-UROLOGY"
+   ],
+   "hpiId": "67NESG",
+   "medicalRegistrationNumber": "87137",
+   "roomIds": [
+    "RM-UROLOGYASS"
+   ]
+  },
+  "S-LANGFORD": {
+   "name": "Mr A. Langford",
+   "specialtyIds": [
+    "SPC-VASCULAR"
+   ],
+   "hpiId": "68LANA",
+   "medicalRegistrationNumber": "87198",
+   "roomIds": [
+    "RM-YALDHURSTV"
+   ]
+  },
+  "S-ROSCOE": {
+   "name": "Mr B. Roscoe",
+   "specialtyIds": [
+    "SPC-VASCULAR"
+   ],
+   "hpiId": "69ROSB",
+   "medicalRegistrationNumber": "87259",
+   "roomIds": [
+    "RM-YALDHURSTV"
+   ]
+  },
+  "S-THORNBURY": {
+   "name": "Mr R. Thornbury",
+   "specialtyIds": [
+    "SPC-VASCULAR"
+   ],
+   "hpiId": "70THOR",
+   "medicalRegistrationNumber": "87320",
+   "roomIds": [
+    "RM-YALDHURSTV"
+   ]
+  },
+  "S-TUILAGI": {
+   "name": "Mr O. Tuilagi",
+   "specialtyIds": [
+    "SPC-NEURO"
+   ],
+   "hpiId": "71TUIO",
+   "medicalRegistrationNumber": "87381",
+   "roomIds": [
+    "RM-SUMNERNEUR"
+   ]
+  },
+  "S-MATHIESON": {
+   "name": "Mr T. Mathieson",
+   "specialtyIds": [
+    "SPC-NEURO"
+   ],
+   "hpiId": "72MATT",
+   "medicalRegistrationNumber": "87442",
+   "roomIds": [
+    "RM-BRYNDWRNEU"
+   ]
+  },
+  "S-ABERNETHY": {
+   "name": "Mr S. Abernethy",
+   "specialtyIds": [
+    "SPC-NEURO"
+   ],
+   "hpiId": "73ABES",
+   "medicalRegistrationNumber": "87503",
+   "roomIds": [
+    "RM-BRYNDWRNEU"
+   ]
+  },
+  "S-BHATNAGAR": {
+   "name": "Mr S. Bhatnagar",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "74BHAS",
+   "medicalRegistrationNumber": "87564",
+   "roomIds": [
+    "RM-ORTHOPAEDI"
+   ]
+  },
+  "S-GOODWIN": {
+   "name": "Mr J. Goodwin",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "75GOOJ",
+   "medicalRegistrationNumber": "87625",
+   "roomIds": [
+    "RM-ORTHOPAEDI"
+   ]
+  },
+  "S-DELACROIX": {
+   "name": "Mr G. Delacroix",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "76DELG",
+   "medicalRegistrationNumber": "87686",
+   "roomIds": [
+    "RM-ORTHOPAEDI"
+   ]
+  },
+  "S-BRENNAN": {
+   "name": "Mr D. Brennan",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "77BRED",
+   "medicalRegistrationNumber": "87747",
+   "roomIds": [
+    "RM-ORTHOPAEDI"
+   ]
+  },
+  "S-PRENDERGAST": {
+   "name": "Mr A. Prendergast",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "78PREA",
+   "medicalRegistrationNumber": "87808",
+   "roomIds": [
+    "RM-ORTHOPAEDI"
+   ]
+  },
+  "S-MOFFAT": {
+   "name": "Mr E. Moffat",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "79MOFE",
+   "medicalRegistrationNumber": "87869",
+   "roomIds": [
+    "RM-ORTHOPAEDI"
+   ]
+  },
+  "S-ZELINSKI": {
+   "name": "Mr E. Zelinski",
+   "specialtyIds": [
+    "SPC-ORTHO"
+   ],
+   "hpiId": "80ZELE",
+   "medicalRegistrationNumber": "87930",
+   "roomIds": [
+    "RM-ORTHOPAEDI"
+   ]
+  }
+ },
+ "rooms": {
+  "RM-RICC": {
+   "id": "RM-RICC",
+   "name": "Riccarton Orthopaedic Rooms",
+   "contactEmail": "reception@riccartonortho.example",
+   "phone": "03 555 0141"
+  },
+  "RM-MERI": {
+   "id": "RM-MERI",
+   "name": "Merivale Eye Rooms",
+   "contactEmail": "bookings@merivaleeye.example",
+   "phone": "03 555 0172"
+  },
+  "RM-AVON": {
+   "id": "RM-AVON",
+   "name": "Avonside Surgical Rooms",
+   "contactEmail": "admin@avonsidesurgical.example",
+   "phone": "03 555 0118"
+  },
+  "RM-FEND": {
+   "id": "RM-FEND",
+   "name": "Fendalton Specialist Rooms",
+   "contactEmail": "rooms@fendaltonspecialists.example",
+   "phone": "03 555 0193"
+  },
+  "RM-PAPA": {
+   "id": "RM-PAPA",
+   "name": "Papanui Specialist Rooms",
+   "contactEmail": "reception@papanuispecialists.example",
+   "phone": "03 555 0127"
+  },
+  "RM-AVONHEADEN": {
+   "id": "RM-AVONHEADEN",
+   "name": "Avonhead ENT",
+   "contactEmail": "info@avonheadent.example",
+   "phone": "03 555 1000",
+   "contacts": [
+    {
+     "id": "RC-001",
+     "name": "Bev",
+     "email": "bev@avonheadent.example",
+     "role": "PA",
+     "forSurgeonId": "S-DALGETY"
+    }
+   ]
+  },
+  "RM-BURNSIDEEN": {
+   "id": "RM-BURNSIDEEN",
+   "name": "Burnside ENT Surgeons",
+   "phone": "03 555 1037",
+   "contacts": [
+    {
+     "id": "RC-002",
+     "name": "Maree",
+     "email": "maree@burnsideent.example",
+     "role": "PA",
+     "forSurgeonId": "S-FORSYTHE"
+    },
+    {
+     "id": "RC-003",
+     "name": "Dianne",
+     "email": "dianne@burnsideent.example",
+     "role": "PA",
+     "forSurgeonId": "S-MALLORY"
+    },
+    {
+     "id": "RC-004",
+     "name": "Nicola Holloway",
+     "email": "nicola@burnsideent.example",
+     "role": "PA"
+    },
+    {
+     "id": "RC-005",
+     "name": "Leanne",
+     "email": "leanne@burnsideent.example",
+     "role": "PA",
+     "forSurgeonId": "S-CALDER"
+    },
+    {
+     "id": "RC-006",
+     "name": "Leanne",
+     "email": "leanne@burnsideent.example",
+     "role": "PA",
+     "forSurgeonId": "S-WOODVILLE"
+    }
+   ]
+  },
+  "RM-LINWOODWOM": {
+   "id": "RM-LINWOODWOM",
+   "name": "Linwood Women's Health Group",
+   "contactEmail": "admin@linwoodwomens.example",
+   "phone": "03 555 1185"
+  },
+  "RM-GYNAECOLOG": {
+   "id": "RM-GYNAECOLOG",
+   "name": "Gynaecology Canterbury",
+   "contactEmail": "info@gynaecology.example",
+   "phone": "03 555 1222"
+  },
+  "RM-RICHMONDFE": {
+   "id": "RM-RICHMONDFE",
+   "name": "Richmond Fertility Specialists · Canterbury",
+   "phone": "03 555 1259"
+  },
+  "RM-ELODIEBRAM": {
+   "id": "RM-ELODIEBRAM",
+   "name": "Elodie Bramley · Gynaecological Oncologist"
+  },
+  "RM-GENERALSUR": {
+   "id": "RM-GENERALSUR",
+   "name": "General Surgery Partners",
+   "phone": "03 555 1296",
+   "contacts": [
+    {
+     "id": "RC-009",
+     "name": "Rosalind Pemberton",
+     "email": "manager@generalsurgerypartners.example",
+     "role": "PRACTICE_MANAGER"
+    }
+   ]
+  },
+  "RM-HILLSBOROU": {
+   "id": "RM-HILLSBOROU",
+   "name": "Hillsborough Colorectal Specialists",
+   "contactEmail": "info@hillsboroughcolorectal.example",
+   "phone": "03 555 1333"
+  },
+  "RM-MAIREHAUCO": {
+   "id": "RM-MAIREHAUCO",
+   "name": "Mairehau Colorectal Centre · Canterbury",
+   "contactEmail": "info@mairehaucolorectal.example",
+   "phone": "03 555 1370"
+  },
+  "RM-UPPERGIPAR": {
+   "id": "RM-UPPERGIPAR",
+   "name": "Upper GI Partners",
+   "contactEmail": "info@uppergi.example",
+   "phone": "03 555 1333"
+  },
+  "RM-GENERALSURX": {
+   "id": "RM-GENERALSURX",
+   "name": "General Surgery Canterbury",
+   "contactEmail": "enquiries@generalsurgery.example",
+   "phone": "03 555 1407"
+  },
+  "RM-REDWOODEYE": {
+   "id": "RM-REDWOODEYE",
+   "name": "Redwood Eye Group",
+   "contactEmail": "info@redwoodeye.example",
+   "phone": "03 555 1444",
+   "contacts": [
+    {
+     "id": "RC-007",
+     "name": "Jodie Yamada",
+     "email": "jodie@redwoodeye.example",
+     "role": "PA",
+     "forSurgeonId": "S-VASQUEZ"
+    }
+   ]
+  },
+  "RM-BECKENHAME": {
+   "id": "RM-BECKENHAME",
+   "name": "Beckenham Eye",
+   "contactEmail": "info@beckenhameye.example",
+   "phone": "03 555 1481"
+  },
+  "RM-EYEPARTNER": {
+   "id": "RM-EYEPARTNER",
+   "name": "Eye Partners",
+   "phone": "03 555 1518"
+  },
+  "RM-MATTHIASDU": {
+   "id": "RM-MATTHIASDU",
+   "name": "Matthias Dunmore · Ophthalmologist",
+   "phone": "03 555 1555"
+  },
+  "RM-OTTOPICKER": {
+   "id": "RM-OTTOPICKER",
+   "name": "Otto Pickering · Ophthalmologist",
+   "contactEmail": "office@ottopickering.example",
+   "phone": "03 555 1592"
+  },
+  "RM-ALISTAIROG": {
+   "id": "RM-ALISTAIROG",
+   "name": "Alistair Ogilvie · Oral & Maxillofacial Surgeon",
+   "contactEmail": "reception@alistairogilvie.example",
+   "phone": "03 555 1629"
+  },
+  "RM-RAFAELKINL": {
+   "id": "RM-RAFAELKINL",
+   "name": "Rafael Kinloch · Oral & Maxillofacial Surgeon",
+   "phone": "03 555 1666"
+  },
+  "RM-ISLABARCLA": {
+   "id": "RM-ISLABARCLA",
+   "name": "Isla Barclay and Associates",
+   "phone": "03 555 1703"
+  },
+  "RM-FREYAFONOT": {
+   "id": "RM-FREYAFONOT",
+   "name": "Freya Fonoti · Oral & Maxillofacial Surgeon",
+   "phone": "03 555 1740"
+  },
+  "RM-OTTILIEFEN": {
+   "id": "RM-OTTILIEFEN",
+   "name": "Ottilie Fenwick · Oral & Maxillofacial Surgeon",
+   "phone": "03 555 1777"
+  },
+  "RM-ADDINGTONO": {
+   "id": "RM-ADDINGTONO",
+   "name": "Addington Orthopaedic Group",
+   "contactEmail": "admin@addingtonorthopaedic.example",
+   "phone": "03 555 1814"
+  },
+  "RM-IMOGENVAUG": {
+   "id": "RM-IMOGENVAUG",
+   "name": "Imogen Vaughan · Orthopaedic Surgeon",
+   "phone": "03 555 1851"
+  },
+  "RM-WIGRAMORTH": {
+   "id": "RM-WIGRAMORTH",
+   "name": "Wigram Orthopaedic Centre"
+  },
+  "RM-HOONHAYORT": {
+   "id": "RM-HOONHAYORT",
+   "name": "Hoon Hay Orthopaedic Specialists",
+   "contactEmail": "admin@hoonhay.example",
+   "phone": "03 555 1888"
+  },
+  "RM-SOMERFIELD": {
+   "id": "RM-SOMERFIELD",
+   "name": "Somerfield Orthopaedic Specialists",
+   "contactEmail": "admin@kingsleyorthopaedic.example",
+   "phone": "03 555 1925"
+  },
+  "RM-EDGEWAREOR": {
+   "id": "RM-EDGEWAREOR",
+   "name": "Edgeware Orthopaedic Specialists",
+   "contactEmail": "info@vaughanorthopaedic.example",
+   "phone": "03 555 2073"
+  },
+  "RM-SASKIASOTO": {
+   "id": "RM-SASKIASOTO",
+   "name": "Saskia Soto · Orthopaedic Surgeon",
+   "contactEmail": "office@saskiasoto.example",
+   "phone": "03 555 2184"
+  },
+  "RM-HAREWOODOR": {
+   "id": "RM-HAREWOODOR",
+   "name": "Harewood Orthopaedic",
+   "contactEmail": "info@harewoodorthopaedic.example",
+   "phone": "03 555 2221"
+  },
+  "RM-MIHAKAWOLF": {
+   "id": "RM-MIHAKAWOLF",
+   "name": "Mihaka Wolfenden and Associates",
+   "contactEmail": "info@mihakawolfenden.example",
+   "phone": "03 555 2258"
+  },
+  "RM-TOBIASIRED": {
+   "id": "RM-TOBIASIRED",
+   "name": "Tobias Iredale · Plastic Surgeon",
+   "contactEmail": "info@tobiasiredale.example",
+   "phone": "03 555 2295"
+  },
+  "RM-PLASTICSUR": {
+   "id": "RM-PLASTICSUR",
+   "name": "Plastic Surgery Associates St Albans",
+   "phone": "03 555 2332"
+  },
+  "RM-ORSONLECKI": {
+   "id": "RM-ORSONLECKI",
+   "name": "Orson Leckie · Plastic & Reconstructive Surgeon",
+   "contactEmail": "info@orsonleckie.example",
+   "phone": "03 555 2369"
+  },
+  "RM-HEATHCOTEP": {
+   "id": "RM-HEATHCOTEP",
+   "name": "Heathcote Plastic Surgery",
+   "contactEmail": "secretary@heathcoteplastic.example",
+   "phone": "03 555 2406"
+  },
+  "RM-CORMACCORR": {
+   "id": "RM-CORMACCORR",
+   "name": "Cormac Corrigan · Plastic Surgeon",
+   "phone": "03 555 2443"
+  },
+  "RM-UROLOGYASS": {
+   "id": "RM-UROLOGYASS",
+   "name": "Urology Associates Hornby",
+   "phone": "03 555 2554"
+  },
+  "RM-YALDHURSTV": {
+   "id": "RM-YALDHURSTV",
+   "name": "Yaldhurst Vascular",
+   "contactEmail": "office@yaldhurstvascular.example",
+   "phone": "03 555 2591"
+  },
+  "RM-SUMNERNEUR": {
+   "id": "RM-SUMNERNEUR",
+   "name": "Sumner Neurosurgery",
+   "phone": "03 555 2628"
+  },
+  "RM-BRYNDWRNEU": {
+   "id": "RM-BRYNDWRNEU",
+   "name": "Bryndwr Neurosurgery Specialists",
+   "phone": "03 555 2665",
+   "contacts": [
+    {
+     "id": "RC-008",
+     "name": "Wendy",
+     "email": "wendy@bryndwrneurosurgery.example",
+     "role": "PA",
+     "forSurgeonId": "S-MATHIESON"
+    }
+   ]
+  },
+  "RM-ORTHOPAEDI": {
+   "id": "RM-ORTHOPAEDI",
+   "name": "Orthopaedic Associates Spreydon",
+   "phone": "03 555 2702"
+  }
+ },
+ "surgeonGroups": {
+  "SG-COS": {
+   "id": "SG-COS",
+   "name": "Canterbury Orthopaedic Surgeons",
+   "description": "Orthopaedic group; holds an externally held ACC contract.",
+   "memberSurgeonIds": [
+    "S-HALE"
+   ]
+  },
+  "SG-EYE": {
+   "id": "SG-EYE",
+   "name": "Christchurch Eye Surgeons",
+   "description": "The eye surgeons who operate at Christchurch Eye Surgery.",
+   "memberSurgeonIds": [
+    "S-WHITFORD",
+    "S-REID"
+   ]
+  }
+ },
+ "officePrivate": {
+  "pairingPreferences": {
+   "PP-001": {
+    "id": "PP-001",
+    "kind": "NOT_PREFERRED",
+    "raisedBy": "SURGEON",
+    "anaesthetistId": "41267",
+    "surgeonId": "S-REID",
+    "reason": "Surgeon's preference",
+    "addedAtISO": "2026-03-10T10:00:00",
+    "addedBy": "Kirsty W."
+   },
+   "PP-002": {
+    "id": "PP-002",
+    "kind": "NOT_PREFERRED",
+    "raisedBy": "ANAESTHETIST",
+    "anaesthetistId": "46822",
+    "surgeonId": "S-REID",
+    "reason": "Asked after a difficult cataract list",
+    "addedAtISO": "2025-11-03T09:30:00",
+    "addedBy": "Kirsty W.",
+    "endedAtISO": "2026-05-12T14:15:00",
+    "endedBy": "Kirsty W.",
+    "endReason": "Resolved with the surgeon's rooms"
+   },
+   "PP-003": {
+    "id": "PP-003",
+    "kind": "PREFERRED",
+    "raisedBy": "SURGEON",
+    "anaesthetistId": "41267",
+    "surgeonId": "S-WHITFORD",
+    "reason": "Asks for Dr Sharma on long eye lists",
+    "addedAtISO": "2026-02-18T11:20:00",
+    "addedBy": "Kirsty W."
+   },
+   "PP-004": {
+    "id": "PP-004",
+    "kind": "PREFERRED",
+    "raisedBy": "ANAESTHETIST",
+    "anaesthetistId": "38455",
+    "surgeonId": "S-CAMERON",
+    "reason": "Works well together on gynaecology lists",
+    "addedAtISO": "2026-04-07T15:45:00",
+    "addedBy": "Kirsty W."
+   },
+   "PP-005": {
+    "id": "PP-005",
+    "kind": "NOT_PREFERRED",
+    "raisedBy": "ANAESTHETIST",
+    "anaesthetistId": "39560",
+    "surgeonId": "S-LIM",
+    "reason": "Prefers not to do long plastics lists",
+    "addedAtISO": "2026-06-02T09:10:00",
+    "addedBy": "Kirsty W."
+   }
+  },
+  "priorityTiers": {
+   "25490": 1,
+   "27731": 1,
+   "29104": 1,
+   "31902": 3,
+   "34821": 1,
+   "38455": 3,
+   "41267": 2,
+   "43015": 2,
+   "45178": 2,
+   "46822": 3,
+   "47733": 1
+  }
+ },
+ "listSurgeons": {
+  "L-34821-2026-07-07-AM": "S-HALE",
+  "L-34821-2026-07-07-PM": "S-PATEL",
+  "L-29104-2026-07-07-AM": "S-OKAFOR",
+  "L-29104-2026-07-07-PM": "S-OKAFOR",
+  "L-45178-2026-07-07-AM": "S-WHITFORD",
+  "L-45178-2026-07-07-PM": "S-REID",
+  "L-27731-2026-07-07-AM": "S-OKAFOR",
+  "L-43015-2026-07-07-AM": "S-DOYLE",
+  "L-25490-2026-07-07-AM": "S-TAN",
+  "L-25490-2026-07-07-PM": "S-NAND",
+  "L-36208-2026-07-07-PM": "S-LIM",
+  "L-47733-2026-07-07-AM": "S-REID",
+  "L-34821-2026-07-08-AM": "S-WHITFORD",
+  "L-41267-2026-07-08-PM": "S-PATEL",
+  "L-31902-2026-07-08-AM": "S-PATEL",
+  "L-31902-2026-07-08-PM": "S-PATEL",
+  "L-43015-2026-07-08-AM": "S-LIM",
+  "L-44519-2026-07-08-AM": "S-REID",
+  "L-47733-2026-07-08-PM": "S-WHITFORD",
+  "L-34821-2026-07-09-PM": "S-PATEL",
+  "L-29104-2026-07-09-AM": "S-HALE",
+  "L-29104-2026-07-09-PM": "S-HALE",
+  "L-41267-2026-07-09-AM": "S-LIM",
+  "L-38455-2026-07-09-PM": "S-DOYLE",
+  "L-45178-2026-07-09-AM": "S-WHITFORD",
+  "L-43015-2026-07-09-AM": "S-PATEL",
+  "L-43015-2026-07-09-PM": "S-TAN",
+  "L-25490-2026-07-09-AM": "S-TAN",
+  "L-25490-2026-07-09-PM": "S-OKAFOR",
+  "L-47733-2026-07-09-AM": "S-REID",
+  "L-38455-2026-07-10-AM": "S-OKAFOR",
+  "L-31902-2026-07-10-AM": "S-WHITFORD",
+  "L-45178-2026-07-10-AM": "S-REID",
+  "L-27731-2026-07-10-AM": "S-DOYLE",
+  "L-34821-2026-07-13-AM": "S-OKAFOR",
+  "L-34821-2026-07-13-PM": "S-LIM",
+  "L-29104-2026-07-13-AM": "S-DOYLE",
+  "L-25490-2026-07-13-AM": "S-TAN",
+  "L-44519-2026-07-13-PM": "S-PATEL",
+  "L-34821-2026-07-14-AM": "S-HALE",
+  "L-34821-2026-07-14-PM": "S-PATEL",
+  "L-29104-2026-07-14-AM": "S-OKAFOR",
+  "L-29104-2026-07-14-PM": "S-OKAFOR",
+  "L-41267-2026-07-14-AM": "S-OKAFOR",
+  "L-45178-2026-07-14-AM": "S-WHITFORD",
+  "L-45178-2026-07-14-PM": "S-REID",
+  "L-27731-2026-07-14-AM": "S-OKAFOR",
+  "L-43015-2026-07-14-AM": "S-DOYLE",
+  "L-25490-2026-07-14-AM": "S-TAN",
+  "L-25490-2026-07-14-PM": "S-NAND",
+  "L-36208-2026-07-14-PM": "S-LIM",
+  "L-47733-2026-07-14-AM": "S-REID",
+  "L-34821-2026-07-15-AM": "S-WHITFORD",
+  "L-41267-2026-07-15-PM": "S-PATEL",
+  "L-43015-2026-07-15-AM": "S-LIM",
+  "L-44519-2026-07-15-AM": "S-REID",
+  "L-47733-2026-07-15-PM": "S-WHITFORD",
+  "L-34821-2026-07-16-PM": "S-PATEL",
+  "L-29104-2026-07-16-AM": "S-HALE",
+  "L-29104-2026-07-16-PM": "S-HALE",
+  "L-41267-2026-07-16-AM": "S-LIM",
+  "L-38455-2026-07-16-PM": "S-DOYLE",
+  "L-45178-2026-07-16-AM": "S-WHITFORD",
+  "L-39560-2026-07-16-AM": "S-HALE",
+  "L-43015-2026-07-16-AM": "S-PATEL",
+  "L-43015-2026-07-16-PM": "S-TAN",
+  "L-25490-2026-07-16-AM": "S-TAN",
+  "L-25490-2026-07-16-PM": "S-OKAFOR",
+  "L-36208-2026-07-16-AM": "S-OKAFOR",
+  "L-47733-2026-07-16-AM": "S-REID",
+  "L-38455-2026-07-17-AM": "S-OKAFOR",
+  "L-45178-2026-07-17-AM": "S-REID",
+  "L-27731-2026-07-17-AM": "S-DOYLE",
+  "L-36208-2026-07-17-AM": "S-OKAFOR",
+  "L-34821-2026-07-20-AM": "S-OKAFOR",
+  "L-34821-2026-07-20-PM": "S-LIM",
+  "L-29104-2026-07-20-AM": "S-DOYLE",
+  "L-27731-2026-07-20-PM": "S-OKAFOR",
+  "L-46822-2026-07-20-AM": "S-OKAFOR",
+  "L-25490-2026-07-20-AM": "S-TAN",
+  "L-34821-2026-07-21-AM": "S-HALE",
+  "L-34821-2026-07-21-PM": "S-PATEL",
+  "L-29104-2026-07-21-AM": "S-OKAFOR",
+  "L-29104-2026-07-21-PM": "S-OKAFOR",
+  "L-41267-2026-07-21-AM": "S-OKAFOR",
+  "L-45178-2026-07-21-AM": "S-WHITFORD",
+  "L-45178-2026-07-21-PM": "S-REID",
+  "L-39560-2026-07-21-PM": "S-PATEL",
+  "L-27731-2026-07-21-AM": "S-OKAFOR",
+  "L-43015-2026-07-21-AM": "S-DOYLE",
+  "L-25490-2026-07-21-AM": "S-TAN",
+  "L-25490-2026-07-21-PM": "S-NAND",
+  "L-36208-2026-07-21-AM": "S-OKAFOR",
+  "L-36208-2026-07-21-PM": "S-LIM",
+  "L-47733-2026-07-21-AM": "S-REID",
+  "L-34821-2026-07-22-AM": "S-WHITFORD",
+  "L-41267-2026-07-22-PM": "S-PATEL",
+  "L-43015-2026-07-22-AM": "S-LIM",
+  "L-47733-2026-07-22-PM": "S-WHITFORD",
+  "L-34821-2026-07-23-AM": "S-OKAFOR",
+  "L-34821-2026-07-23-PM": "S-PATEL",
+  "L-29104-2026-07-23-AM": "S-HALE",
+  "L-29104-2026-07-23-PM": "S-HALE",
+  "L-41267-2026-07-23-AM": "S-LIM",
+  "L-38455-2026-07-23-PM": "S-DOYLE",
+  "L-45178-2026-07-23-AM": "S-WHITFORD",
+  "L-39560-2026-07-23-PM": "S-PATEL",
+  "L-43015-2026-07-23-AM": "S-PATEL",
+  "L-43015-2026-07-23-PM": "S-TAN",
+  "L-25490-2026-07-23-AM": "S-TAN",
+  "L-25490-2026-07-23-PM": "S-OKAFOR",
+  "L-47733-2026-07-23-AM": "S-REID",
+  "L-38455-2026-07-24-AM": "S-OKAFOR",
+  "L-45178-2026-07-24-AM": "S-REID",
+  "L-27731-2026-07-24-AM": "S-DOYLE",
+  "L-34821-2026-07-27-AM": "S-OKAFOR",
+  "L-34821-2026-07-27-PM": "S-LIM",
+  "L-29104-2026-07-27-AM": "S-DOYLE",
+  "L-31902-2026-07-27-AM": "S-HALE",
+  "L-25490-2026-07-27-AM": "S-TAN",
+  "L-34821-2026-07-28-AM": "S-HALE",
+  "L-34821-2026-07-28-PM": "S-PATEL",
+  "L-29104-2026-07-28-AM": "S-OKAFOR",
+  "L-29104-2026-07-28-PM": "S-OKAFOR",
+  "L-45178-2026-07-28-AM": "S-WHITFORD",
+  "L-45178-2026-07-28-PM": "S-REID",
+  "L-27731-2026-07-28-AM": "S-OKAFOR",
+  "L-43015-2026-07-28-AM": "S-DOYLE",
+  "L-25490-2026-07-28-AM": "S-TAN",
+  "L-25490-2026-07-28-PM": "S-NAND",
+  "L-36208-2026-07-28-PM": "S-LIM",
+  "L-47733-2026-07-28-AM": "S-REID",
+  "L-34821-2026-07-29-AM": "S-WHITFORD",
+  "L-41267-2026-07-29-PM": "S-PATEL",
+  "L-31902-2026-07-29-AM": "S-PATEL",
+  "L-31902-2026-07-29-PM": "S-PATEL",
+  "L-43015-2026-07-29-AM": "S-LIM",
+  "L-44519-2026-07-29-AM": "S-REID",
+  "L-47733-2026-07-29-PM": "S-WHITFORD",
+  "L-34821-2026-07-30-AM": "S-OKAFOR",
+  "L-34821-2026-07-30-PM": "S-PATEL",
+  "L-29104-2026-07-30-AM": "S-HALE",
+  "L-29104-2026-07-30-PM": "S-HALE",
+  "L-41267-2026-07-30-AM": "S-LIM",
+  "L-38455-2026-07-30-PM": "S-DOYLE",
+  "L-45178-2026-07-30-AM": "S-WHITFORD",
+  "L-43015-2026-07-30-AM": "S-PATEL",
+  "L-43015-2026-07-30-PM": "S-TAN",
+  "L-25490-2026-07-30-AM": "S-TAN",
+  "L-25490-2026-07-30-PM": "S-OKAFOR",
+  "L-47733-2026-07-30-AM": "S-REID",
+  "L-38455-2026-07-31-AM": "S-OKAFOR",
+  "L-31902-2026-07-31-AM": "S-WHITFORD",
+  "L-45178-2026-07-31-AM": "S-REID",
+  "L-27731-2026-07-31-AM": "S-DOYLE",
+  "L-34821-2026-08-03-AM": "S-OKAFOR",
+  "L-34821-2026-08-03-PM": "S-LIM",
+  "L-29104-2026-08-03-AM": "S-DOYLE",
+  "L-31902-2026-08-03-AM": "S-HALE",
+  "L-25490-2026-08-03-AM": "S-TAN",
+  "L-44519-2026-08-03-PM": "S-PATEL",
+  "L-34821-2026-08-04-AM": "S-HALE",
+  "L-34821-2026-08-04-PM": "S-PATEL",
+  "L-29104-2026-08-04-AM": "S-OKAFOR",
+  "L-29104-2026-08-04-PM": "S-OKAFOR",
+  "L-45178-2026-08-04-AM": "S-WHITFORD",
+  "L-45178-2026-08-04-PM": "S-REID",
+  "L-27731-2026-08-04-AM": "S-OKAFOR",
+  "L-43015-2026-08-04-AM": "S-DOYLE",
+  "L-25490-2026-08-04-AM": "S-TAN",
+  "L-25490-2026-08-04-PM": "S-NAND",
+  "L-36208-2026-08-04-PM": "S-LIM",
+  "L-47733-2026-08-04-AM": "S-REID",
+  "L-34821-2026-08-05-AM": "S-WHITFORD",
+  "L-41267-2026-08-05-PM": "S-PATEL",
+  "L-31902-2026-08-05-AM": "S-PATEL",
+  "L-31902-2026-08-05-PM": "S-PATEL",
+  "L-43015-2026-08-05-AM": "S-LIM",
+  "L-44519-2026-08-05-AM": "S-REID",
+  "L-47733-2026-08-05-PM": "S-WHITFORD",
+  "L-34821-2026-08-06-PM": "S-PATEL",
+  "L-29104-2026-08-06-AM": "S-HALE",
+  "L-29104-2026-08-06-PM": "S-HALE",
+  "L-41267-2026-08-06-AM": "S-LIM",
+  "L-38455-2026-08-06-PM": "S-DOYLE",
+  "L-45178-2026-08-06-AM": "S-WHITFORD",
+  "L-43015-2026-08-06-AM": "S-PATEL",
+  "L-43015-2026-08-06-PM": "S-TAN",
+  "L-25490-2026-08-06-AM": "S-TAN",
+  "L-25490-2026-08-06-PM": "S-OKAFOR",
+  "L-47733-2026-08-06-AM": "S-REID",
+  "L-38455-2026-08-07-AM": "S-OKAFOR",
+  "L-31902-2026-08-07-AM": "S-WHITFORD",
+  "L-45178-2026-08-07-AM": "S-REID",
+  "L-27731-2026-08-07-AM": "S-DOYLE",
+  "L-34821-2026-08-10-AM": "S-OKAFOR",
+  "L-34821-2026-08-10-PM": "S-LIM",
+  "L-29104-2026-08-10-AM": "S-DOYLE",
+  "L-31902-2026-08-10-AM": "S-HALE",
+  "L-25490-2026-08-10-AM": "S-TAN",
+  "L-44519-2026-08-10-PM": "S-PATEL",
+  "L-34821-2026-08-11-AM": "S-HALE",
+  "L-34821-2026-08-11-PM": "S-PATEL",
+  "L-29104-2026-08-11-AM": "S-OKAFOR",
+  "L-29104-2026-08-11-PM": "S-OKAFOR",
+  "L-45178-2026-08-11-AM": "S-WHITFORD",
+  "L-45178-2026-08-11-PM": "S-REID",
+  "L-27731-2026-08-11-AM": "S-OKAFOR",
+  "L-43015-2026-08-11-AM": "S-DOYLE",
+  "L-25490-2026-08-11-AM": "S-TAN",
+  "L-25490-2026-08-11-PM": "S-NAND",
+  "L-36208-2026-08-11-PM": "S-LIM",
+  "L-47733-2026-08-11-AM": "S-REID",
+  "L-34821-2026-08-12-AM": "S-WHITFORD",
+  "L-41267-2026-08-12-PM": "S-PATEL",
+  "L-31902-2026-08-12-AM": "S-PATEL",
+  "L-31902-2026-08-12-PM": "S-PATEL",
+  "L-43015-2026-08-12-AM": "S-LIM",
+  "L-44519-2026-08-12-AM": "S-REID",
+  "L-47733-2026-08-12-PM": "S-WHITFORD",
+  "L-34821-2026-08-13-PM": "S-PATEL",
+  "L-29104-2026-08-13-AM": "S-HALE",
+  "L-29104-2026-08-13-PM": "S-HALE",
+  "L-41267-2026-08-13-AM": "S-LIM",
+  "L-38455-2026-08-13-PM": "S-DOYLE",
+  "L-45178-2026-08-13-AM": "S-WHITFORD",
+  "L-43015-2026-08-13-AM": "S-PATEL",
+  "L-43015-2026-08-13-PM": "S-TAN",
+  "L-25490-2026-08-13-AM": "S-TAN",
+  "L-25490-2026-08-13-PM": "S-OKAFOR",
+  "L-47733-2026-08-13-AM": "S-REID",
+  "L-38455-2026-08-14-AM": "S-OKAFOR",
+  "L-31902-2026-08-14-AM": "S-WHITFORD",
+  "L-45178-2026-08-14-AM": "S-REID",
+  "L-27731-2026-08-14-AM": "S-DOYLE",
+  "L-34821-2026-08-17-AM": "S-OKAFOR",
+  "L-34821-2026-08-17-PM": "S-LIM",
+  "L-29104-2026-08-17-AM": "S-DOYLE",
+  "L-31902-2026-08-17-AM": "S-HALE",
+  "L-25490-2026-08-17-AM": "S-TAN",
+  "L-44519-2026-08-17-PM": "S-PATEL",
+  "L-34821-2026-08-18-AM": "S-HALE",
+  "L-34821-2026-08-18-PM": "S-PATEL",
+  "L-29104-2026-08-18-AM": "S-OKAFOR",
+  "L-29104-2026-08-18-PM": "S-OKAFOR",
+  "L-45178-2026-08-18-AM": "S-WHITFORD",
+  "L-45178-2026-08-18-PM": "S-REID",
+  "L-27731-2026-08-18-AM": "S-OKAFOR",
+  "L-43015-2026-08-18-AM": "S-DOYLE",
+  "L-25490-2026-08-18-AM": "S-TAN",
+  "L-25490-2026-08-18-PM": "S-NAND",
+  "L-36208-2026-08-18-PM": "S-LIM",
+  "L-47733-2026-08-18-AM": "S-REID",
+  "L-34821-2026-08-19-AM": "S-WHITFORD",
+  "L-41267-2026-08-19-PM": "S-PATEL",
+  "L-31902-2026-08-19-AM": "S-PATEL",
+  "L-31902-2026-08-19-PM": "S-PATEL",
+  "L-43015-2026-08-19-AM": "S-LIM",
+  "L-44519-2026-08-19-AM": "S-REID",
+  "L-47733-2026-08-19-PM": "S-WHITFORD",
+  "L-34821-2026-08-20-PM": "S-PATEL",
+  "L-29104-2026-08-20-AM": "S-HALE",
+  "L-29104-2026-08-20-PM": "S-HALE",
+  "L-41267-2026-08-20-AM": "S-LIM",
+  "L-38455-2026-08-20-PM": "S-DOYLE",
+  "L-45178-2026-08-20-AM": "S-WHITFORD",
+  "L-43015-2026-08-20-AM": "S-PATEL",
+  "L-43015-2026-08-20-PM": "S-TAN",
+  "L-25490-2026-08-20-AM": "S-TAN",
+  "L-25490-2026-08-20-PM": "S-OKAFOR",
+  "L-47733-2026-08-20-AM": "S-REID",
+  "L-38455-2026-08-21-AM": "S-OKAFOR",
+  "L-31902-2026-08-21-AM": "S-WHITFORD",
+  "L-45178-2026-08-21-AM": "S-REID",
+  "L-27731-2026-08-21-AM": "S-DOYLE",
+  "L-34821-2026-08-24-AM": "S-OKAFOR",
+  "L-34821-2026-08-24-PM": "S-LIM",
+  "L-29104-2026-08-24-AM": "S-DOYLE",
+  "L-31902-2026-08-24-AM": "S-HALE",
+  "L-25490-2026-08-24-AM": "S-TAN",
+  "L-44519-2026-08-24-PM": "S-PATEL",
+  "L-34821-2026-08-25-AM": "S-HALE",
+  "L-34821-2026-08-25-PM": "S-PATEL",
+  "L-29104-2026-08-25-AM": "S-OKAFOR",
+  "L-29104-2026-08-25-PM": "S-OKAFOR",
+  "L-45178-2026-08-25-AM": "S-WHITFORD",
+  "L-45178-2026-08-25-PM": "S-REID",
+  "L-27731-2026-08-25-AM": "S-OKAFOR",
+  "L-43015-2026-08-25-AM": "S-DOYLE",
+  "L-25490-2026-08-25-AM": "S-TAN",
+  "L-25490-2026-08-25-PM": "S-NAND",
+  "L-36208-2026-08-25-PM": "S-LIM",
+  "L-47733-2026-08-25-AM": "S-REID",
+  "L-34821-2026-08-26-AM": "S-WHITFORD",
+  "L-41267-2026-08-26-PM": "S-PATEL",
+  "L-31902-2026-08-26-AM": "S-PATEL",
+  "L-31902-2026-08-26-PM": "S-PATEL",
+  "L-43015-2026-08-26-AM": "S-LIM",
+  "L-44519-2026-08-26-AM": "S-REID",
+  "L-47733-2026-08-26-PM": "S-WHITFORD",
+  "L-34821-2026-08-27-PM": "S-PATEL",
+  "L-29104-2026-08-27-AM": "S-HALE",
+  "L-29104-2026-08-27-PM": "S-HALE",
+  "L-41267-2026-08-27-AM": "S-LIM",
+  "L-38455-2026-08-27-PM": "S-DOYLE",
+  "L-45178-2026-08-27-AM": "S-WHITFORD",
+  "L-43015-2026-08-27-AM": "S-PATEL",
+  "L-43015-2026-08-27-PM": "S-TAN",
+  "L-25490-2026-08-27-AM": "S-TAN",
+  "L-25490-2026-08-27-PM": "S-OKAFOR",
+  "L-47733-2026-08-27-AM": "S-REID",
+  "L-38455-2026-08-28-AM": "S-OKAFOR",
+  "L-31902-2026-08-28-AM": "S-WHITFORD",
+  "L-45178-2026-08-28-AM": "S-REID",
+  "L-27731-2026-08-28-AM": "S-DOYLE",
+  "L-34821-2026-08-31-AM": "S-OKAFOR",
+  "L-34821-2026-08-31-PM": "S-LIM",
+  "L-29104-2026-08-31-AM": "S-DOYLE",
+  "L-31902-2026-08-31-AM": "S-HALE",
+  "L-25490-2026-08-31-AM": "S-TAN",
+  "L-44519-2026-08-31-PM": "S-PATEL",
+  "L-34821-2026-09-01-AM": "S-HALE",
+  "L-34821-2026-09-01-PM": "S-PATEL",
+  "L-29104-2026-09-01-AM": "S-OKAFOR",
+  "L-29104-2026-09-01-PM": "S-OKAFOR",
+  "L-45178-2026-09-01-AM": "S-WHITFORD",
+  "L-45178-2026-09-01-PM": "S-REID",
+  "L-27731-2026-09-01-AM": "S-OKAFOR",
+  "L-43015-2026-09-01-AM": "S-DOYLE",
+  "L-25490-2026-09-01-AM": "S-TAN",
+  "L-25490-2026-09-01-PM": "S-NAND",
+  "L-36208-2026-09-01-PM": "S-LIM",
+  "L-47733-2026-09-01-AM": "S-REID",
+  "L-34821-2026-09-02-AM": "S-WHITFORD",
+  "L-41267-2026-09-02-PM": "S-PATEL",
+  "L-31902-2026-09-02-AM": "S-PATEL",
+  "L-31902-2026-09-02-PM": "S-PATEL",
+  "L-43015-2026-09-02-AM": "S-LIM",
+  "L-44519-2026-09-02-AM": "S-REID",
+  "L-47733-2026-09-02-PM": "S-WHITFORD",
+  "L-34821-2026-09-03-PM": "S-PATEL",
+  "L-29104-2026-09-03-AM": "S-HALE",
+  "L-29104-2026-09-03-PM": "S-HALE",
+  "L-41267-2026-09-03-AM": "S-LIM",
+  "L-38455-2026-09-03-PM": "S-DOYLE",
+  "L-45178-2026-09-03-AM": "S-WHITFORD",
+  "L-43015-2026-09-03-AM": "S-PATEL",
+  "L-43015-2026-09-03-PM": "S-TAN",
+  "L-25490-2026-09-03-AM": "S-TAN",
+  "L-25490-2026-09-03-PM": "S-OKAFOR",
+  "L-47733-2026-09-03-AM": "S-REID",
+  "L-38455-2026-09-04-AM": "S-OKAFOR",
+  "L-31902-2026-09-04-AM": "S-WHITFORD",
+  "L-45178-2026-09-04-AM": "S-REID",
+  "L-27731-2026-09-04-AM": "S-DOYLE",
+  "L-34821-2026-09-07-AM": "S-OKAFOR",
+  "L-34821-2026-09-07-PM": "S-LIM",
+  "L-29104-2026-09-07-AM": "S-DOYLE",
+  "L-31902-2026-09-07-AM": "S-HALE",
+  "L-25490-2026-09-07-AM": "S-TAN",
+  "L-44519-2026-09-07-PM": "S-PATEL",
+  "L-34821-2026-09-08-AM": "S-HALE",
+  "L-34821-2026-09-08-PM": "S-PATEL",
+  "L-29104-2026-09-08-AM": "S-OKAFOR",
+  "L-29104-2026-09-08-PM": "S-OKAFOR",
+  "L-45178-2026-09-08-AM": "S-WHITFORD",
+  "L-45178-2026-09-08-PM": "S-REID",
+  "L-27731-2026-09-08-AM": "S-OKAFOR",
+  "L-43015-2026-09-08-AM": "S-DOYLE",
+  "L-25490-2026-09-08-AM": "S-TAN",
+  "L-25490-2026-09-08-PM": "S-NAND",
+  "L-36208-2026-09-08-PM": "S-LIM",
+  "L-47733-2026-09-08-AM": "S-REID",
+  "L-34821-2026-09-09-AM": "S-WHITFORD",
+  "L-41267-2026-09-09-PM": "S-PATEL",
+  "L-31902-2026-09-09-AM": "S-PATEL",
+  "L-31902-2026-09-09-PM": "S-PATEL",
+  "L-43015-2026-09-09-AM": "S-LIM",
+  "L-44519-2026-09-09-AM": "S-REID",
+  "L-47733-2026-09-09-PM": "S-WHITFORD",
+  "L-34821-2026-09-10-PM": "S-PATEL",
+  "L-29104-2026-09-10-AM": "S-HALE",
+  "L-29104-2026-09-10-PM": "S-HALE",
+  "L-41267-2026-09-10-AM": "S-LIM",
+  "L-38455-2026-09-10-PM": "S-DOYLE",
+  "L-45178-2026-09-10-AM": "S-WHITFORD",
+  "L-43015-2026-09-10-AM": "S-PATEL",
+  "L-43015-2026-09-10-PM": "S-TAN",
+  "L-25490-2026-09-10-AM": "S-TAN",
+  "L-25490-2026-09-10-PM": "S-OKAFOR",
+  "L-47733-2026-09-10-AM": "S-REID",
+  "L-38455-2026-09-11-AM": "S-OKAFOR",
+  "L-31902-2026-09-11-AM": "S-WHITFORD",
+  "L-45178-2026-09-11-AM": "S-REID",
+  "L-27731-2026-09-11-AM": "S-DOYLE",
+  "L-34821-2026-09-14-AM": "S-OKAFOR",
+  "L-34821-2026-09-14-PM": "S-LIM",
+  "L-29104-2026-09-14-AM": "S-DOYLE",
+  "L-31902-2026-09-14-AM": "S-HALE",
+  "L-25490-2026-09-14-AM": "S-TAN",
+  "L-44519-2026-09-14-PM": "S-PATEL",
+  "L-34821-2026-09-15-AM": "S-HALE",
+  "L-34821-2026-09-15-PM": "S-PATEL",
+  "L-29104-2026-09-15-AM": "S-OKAFOR",
+  "L-29104-2026-09-15-PM": "S-OKAFOR",
+  "L-45178-2026-09-15-AM": "S-WHITFORD",
+  "L-45178-2026-09-15-PM": "S-REID",
+  "L-27731-2026-09-15-AM": "S-OKAFOR",
+  "L-43015-2026-09-15-AM": "S-DOYLE",
+  "L-25490-2026-09-15-AM": "S-TAN",
+  "L-25490-2026-09-15-PM": "S-NAND",
+  "L-36208-2026-09-15-PM": "S-LIM",
+  "L-47733-2026-09-15-AM": "S-REID",
+  "L-34821-2026-09-16-AM": "S-WHITFORD",
+  "L-31902-2026-09-16-AM": "S-PATEL",
+  "L-31902-2026-09-16-PM": "S-PATEL",
+  "L-43015-2026-09-16-AM": "S-LIM",
+  "L-44519-2026-09-16-AM": "S-REID",
+  "L-47733-2026-09-16-PM": "S-WHITFORD",
+  "L-34821-2026-09-17-PM": "S-PATEL",
+  "L-29104-2026-09-17-AM": "S-HALE",
+  "L-29104-2026-09-17-PM": "S-HALE",
+  "L-41267-2026-09-17-AM": "S-LIM",
+  "L-38455-2026-09-17-PM": "S-DOYLE",
+  "L-45178-2026-09-17-AM": "S-WHITFORD",
+  "L-43015-2026-09-17-AM": "S-PATEL",
+  "L-43015-2026-09-17-PM": "S-TAN",
+  "L-25490-2026-09-17-AM": "S-TAN",
+  "L-25490-2026-09-17-PM": "S-OKAFOR",
+  "L-47733-2026-09-17-AM": "S-REID",
+  "L-38455-2026-09-18-AM": "S-OKAFOR",
+  "L-31902-2026-09-18-AM": "S-WHITFORD",
+  "L-45178-2026-09-18-AM": "S-REID",
+  "L-27731-2026-09-18-AM": "S-DOYLE",
+  "L-34821-2026-09-21-AM": "S-OKAFOR",
+  "L-34821-2026-09-21-PM": "S-LIM",
+  "L-29104-2026-09-21-AM": "S-DOYLE",
+  "L-31902-2026-09-21-AM": "S-HALE",
+  "L-25490-2026-09-21-AM": "S-TAN",
+  "L-44519-2026-09-21-PM": "S-PATEL",
+  "L-34821-2026-09-22-AM": "S-HALE",
+  "L-34821-2026-09-22-PM": "S-PATEL",
+  "L-29104-2026-09-22-AM": "S-OKAFOR",
+  "L-29104-2026-09-22-PM": "S-OKAFOR",
+  "L-45178-2026-09-22-AM": "S-WHITFORD",
+  "L-45178-2026-09-22-PM": "S-REID",
+  "L-27731-2026-09-22-AM": "S-OKAFOR",
+  "L-43015-2026-09-22-AM": "S-DOYLE",
+  "L-25490-2026-09-22-AM": "S-TAN",
+  "L-25490-2026-09-22-PM": "S-NAND",
+  "L-36208-2026-09-22-PM": "S-LIM",
+  "L-47733-2026-09-22-AM": "S-REID",
+  "L-34821-2026-09-23-AM": "S-WHITFORD",
+  "L-41267-2026-09-23-PM": "S-PATEL",
+  "L-31902-2026-09-23-AM": "S-PATEL",
+  "L-31902-2026-09-23-PM": "S-PATEL",
+  "L-43015-2026-09-23-AM": "S-LIM",
+  "L-44519-2026-09-23-AM": "S-REID",
+  "L-47733-2026-09-23-PM": "S-WHITFORD",
+  "L-34821-2026-09-24-PM": "S-PATEL",
+  "L-29104-2026-09-24-AM": "S-HALE",
+  "L-29104-2026-09-24-PM": "S-HALE",
+  "L-41267-2026-09-24-AM": "S-LIM",
+  "L-38455-2026-09-24-PM": "S-DOYLE",
+  "L-45178-2026-09-24-AM": "S-WHITFORD",
+  "L-43015-2026-09-24-AM": "S-PATEL",
+  "L-43015-2026-09-24-PM": "S-TAN",
+  "L-25490-2026-09-24-AM": "S-TAN",
+  "L-25490-2026-09-24-PM": "S-OKAFOR",
+  "L-47733-2026-09-24-AM": "S-REID",
+  "L-38455-2026-09-25-AM": "S-OKAFOR",
+  "L-31902-2026-09-25-AM": "S-WHITFORD",
+  "L-45178-2026-09-25-AM": "S-REID",
+  "L-27731-2026-09-25-AM": "S-DOYLE",
+  "L-34821-2026-09-28-AM": "S-OKAFOR",
+  "L-34821-2026-09-28-PM": "S-LIM",
+  "L-29104-2026-09-28-AM": "S-DOYLE",
+  "L-31902-2026-09-28-AM": "S-HALE",
+  "L-25490-2026-09-28-AM": "S-TAN",
+  "L-44519-2026-09-28-PM": "S-PATEL",
+  "L-34821-2026-09-29-AM": "S-HALE",
+  "L-34821-2026-09-29-PM": "S-PATEL",
+  "L-29104-2026-09-29-AM": "S-OKAFOR",
+  "L-29104-2026-09-29-PM": "S-OKAFOR",
+  "L-45178-2026-09-29-AM": "S-WHITFORD",
+  "L-45178-2026-09-29-PM": "S-REID",
+  "L-27731-2026-09-29-AM": "S-OKAFOR",
+  "L-43015-2026-09-29-AM": "S-DOYLE",
+  "L-25490-2026-09-29-AM": "S-TAN",
+  "L-25490-2026-09-29-PM": "S-NAND",
+  "L-36208-2026-09-29-PM": "S-LIM",
+  "L-47733-2026-09-29-AM": "S-REID",
+  "L-34821-2026-09-30-AM": "S-WHITFORD",
+  "L-41267-2026-09-30-PM": "S-PATEL",
+  "L-31902-2026-09-30-AM": "S-PATEL",
+  "L-31902-2026-09-30-PM": "S-PATEL",
+  "L-43015-2026-09-30-AM": "S-LIM",
+  "L-44519-2026-09-30-AM": "S-REID",
+  "L-47733-2026-09-30-PM": "S-WHITFORD",
+  "L-34821-2026-10-01-PM": "S-PATEL",
+  "L-29104-2026-10-01-AM": "S-HALE",
+  "L-29104-2026-10-01-PM": "S-HALE",
+  "L-41267-2026-10-01-AM": "S-LIM",
+  "L-38455-2026-10-01-PM": "S-DOYLE",
+  "L-45178-2026-10-01-AM": "S-WHITFORD",
+  "L-43015-2026-10-01-AM": "S-PATEL",
+  "L-43015-2026-10-01-PM": "S-TAN",
+  "L-25490-2026-10-01-AM": "S-TAN",
+  "L-25490-2026-10-01-PM": "S-OKAFOR",
+  "L-47733-2026-10-01-AM": "S-REID",
+  "L-38455-2026-10-02-AM": "S-OKAFOR",
+  "L-31902-2026-10-02-AM": "S-WHITFORD",
+  "L-45178-2026-10-02-AM": "S-REID",
+  "L-27731-2026-10-02-AM": "S-DOYLE",
+  "L-34821-2026-10-05-AM": "S-OKAFOR",
+  "L-34821-2026-10-05-PM": "S-LIM",
+  "L-29104-2026-10-05-AM": "S-DOYLE",
+  "L-31902-2026-10-05-AM": "S-HALE",
+  "L-25490-2026-10-05-AM": "S-TAN",
+  "L-44519-2026-10-05-PM": "S-PATEL",
+  "L-34821-2026-10-06-AM": "S-HALE",
+  "L-34821-2026-10-06-PM": "S-PATEL",
+  "L-29104-2026-10-06-AM": "S-OKAFOR",
+  "L-29104-2026-10-06-PM": "S-OKAFOR",
+  "L-45178-2026-10-06-AM": "S-WHITFORD",
+  "L-45178-2026-10-06-PM": "S-REID",
+  "L-27731-2026-10-06-AM": "S-OKAFOR",
+  "L-43015-2026-10-06-AM": "S-DOYLE",
+  "L-25490-2026-10-06-AM": "S-TAN",
+  "L-25490-2026-10-06-PM": "S-NAND",
+  "L-36208-2026-10-06-PM": "S-LIM",
+  "L-47733-2026-10-06-AM": "S-REID",
+  "L-34821-2026-10-07-AM": "S-WHITFORD",
+  "L-41267-2026-10-07-PM": "S-PATEL",
+  "L-31902-2026-10-07-AM": "S-PATEL",
+  "L-31902-2026-10-07-PM": "S-PATEL",
+  "L-43015-2026-10-07-AM": "S-LIM",
+  "L-44519-2026-10-07-AM": "S-REID",
+  "L-47733-2026-10-07-PM": "S-WHITFORD",
+  "L-34821-2026-10-08-PM": "S-PATEL",
+  "L-29104-2026-10-08-AM": "S-HALE",
+  "L-29104-2026-10-08-PM": "S-HALE",
+  "L-41267-2026-10-08-AM": "S-LIM",
+  "L-38455-2026-10-08-PM": "S-DOYLE",
+  "L-45178-2026-10-08-AM": "S-WHITFORD",
+  "L-43015-2026-10-08-AM": "S-PATEL",
+  "L-43015-2026-10-08-PM": "S-TAN",
+  "L-25490-2026-10-08-AM": "S-TAN",
+  "L-25490-2026-10-08-PM": "S-OKAFOR",
+  "L-47733-2026-10-08-AM": "S-REID",
+  "L-38455-2026-10-09-AM": "S-OKAFOR",
+  "L-31902-2026-10-09-AM": "S-WHITFORD",
+  "L-45178-2026-10-09-AM": "S-REID",
+  "L-27731-2026-10-09-AM": "S-DOYLE",
+  "L-34821-2026-10-12-AM": "S-OKAFOR",
+  "L-34821-2026-10-12-PM": "S-LIM",
+  "L-29104-2026-10-12-AM": "S-DOYLE",
+  "L-31902-2026-10-12-AM": "S-HALE",
+  "L-25490-2026-10-12-AM": "S-TAN",
+  "L-44519-2026-10-12-PM": "S-PATEL",
+  "L-34821-2026-10-13-AM": "S-HALE",
+  "L-34821-2026-10-13-PM": "S-PATEL",
+  "L-29104-2026-10-13-AM": "S-OKAFOR",
+  "L-29104-2026-10-13-PM": "S-OKAFOR",
+  "L-45178-2026-10-13-AM": "S-WHITFORD",
+  "L-45178-2026-10-13-PM": "S-REID",
+  "L-27731-2026-10-13-AM": "S-OKAFOR",
+  "L-43015-2026-10-13-AM": "S-DOYLE",
+  "L-25490-2026-10-13-AM": "S-TAN",
+  "L-25490-2026-10-13-PM": "S-NAND",
+  "L-36208-2026-10-13-PM": "S-LIM",
+  "L-47733-2026-10-13-AM": "S-REID",
+  "L-34821-2026-10-14-AM": "S-WHITFORD",
+  "L-41267-2026-10-14-PM": "S-PATEL",
+  "L-31902-2026-10-14-AM": "S-PATEL",
+  "L-31902-2026-10-14-PM": "S-PATEL",
+  "L-43015-2026-10-14-AM": "S-LIM",
+  "L-44519-2026-10-14-AM": "S-REID",
+  "L-47733-2026-10-14-PM": "S-WHITFORD",
+  "L-34821-2026-10-15-PM": "S-PATEL",
+  "L-29104-2026-10-15-AM": "S-HALE",
+  "L-29104-2026-10-15-PM": "S-HALE",
+  "L-41267-2026-10-15-AM": "S-LIM",
+  "L-38455-2026-10-15-PM": "S-DOYLE",
+  "L-45178-2026-10-15-AM": "S-WHITFORD",
+  "L-43015-2026-10-15-AM": "S-PATEL",
+  "L-43015-2026-10-15-PM": "S-TAN",
+  "L-25490-2026-10-15-AM": "S-TAN",
+  "L-25490-2026-10-15-PM": "S-OKAFOR",
+  "L-47733-2026-10-15-AM": "S-REID",
+  "L-38455-2026-10-16-AM": "S-OKAFOR",
+  "L-31902-2026-10-16-AM": "S-WHITFORD",
+  "L-45178-2026-10-16-AM": "S-REID",
+  "L-27731-2026-10-16-AM": "S-DOYLE",
+  "L-34821-2026-10-19-AM": "S-OKAFOR",
+  "L-34821-2026-10-19-PM": "S-LIM",
+  "L-29104-2026-10-19-AM": "S-DOYLE",
+  "L-31902-2026-10-19-AM": "S-HALE",
+  "L-25490-2026-10-19-AM": "S-TAN",
+  "L-44519-2026-10-19-PM": "S-PATEL",
+  "L-34821-2026-10-20-AM": "S-HALE",
+  "L-34821-2026-10-20-PM": "S-PATEL",
+  "L-29104-2026-10-20-AM": "S-OKAFOR",
+  "L-29104-2026-10-20-PM": "S-OKAFOR",
+  "L-45178-2026-10-20-AM": "S-WHITFORD",
+  "L-45178-2026-10-20-PM": "S-REID",
+  "L-27731-2026-10-20-AM": "S-OKAFOR",
+  "L-43015-2026-10-20-AM": "S-DOYLE",
+  "L-25490-2026-10-20-AM": "S-TAN",
+  "L-25490-2026-10-20-PM": "S-NAND",
+  "L-36208-2026-10-20-PM": "S-LIM",
+  "L-47733-2026-10-20-AM": "S-REID",
+  "L-34821-2026-10-21-AM": "S-WHITFORD",
+  "L-41267-2026-10-21-PM": "S-PATEL",
+  "L-31902-2026-10-21-AM": "S-PATEL",
+  "L-31902-2026-10-21-PM": "S-PATEL",
+  "L-43015-2026-10-21-AM": "S-LIM",
+  "L-44519-2026-10-21-AM": "S-REID",
+  "L-47733-2026-10-21-PM": "S-WHITFORD",
+  "L-34821-2026-10-22-PM": "S-PATEL",
+  "L-29104-2026-10-22-AM": "S-HALE",
+  "L-29104-2026-10-22-PM": "S-HALE",
+  "L-41267-2026-10-22-AM": "S-LIM",
+  "L-38455-2026-10-22-PM": "S-DOYLE",
+  "L-45178-2026-10-22-AM": "S-WHITFORD",
+  "L-43015-2026-10-22-AM": "S-PATEL",
+  "L-43015-2026-10-22-PM": "S-TAN",
+  "L-25490-2026-10-22-AM": "S-TAN",
+  "L-25490-2026-10-22-PM": "S-OKAFOR",
+  "L-47733-2026-10-22-AM": "S-REID",
+  "L-38455-2026-10-23-AM": "S-OKAFOR",
+  "L-31902-2026-10-23-AM": "S-WHITFORD",
+  "L-45178-2026-10-23-AM": "S-REID",
+  "L-27731-2026-10-23-AM": "S-DOYLE",
+  "L-34821-2026-10-26-AM": "S-OKAFOR",
+  "L-34821-2026-10-26-PM": "S-LIM",
+  "L-29104-2026-10-26-AM": "S-DOYLE",
+  "L-31902-2026-10-26-AM": "S-HALE",
+  "L-25490-2026-10-26-AM": "S-TAN",
+  "L-44519-2026-10-26-PM": "S-PATEL",
+  "L-34821-2026-10-27-AM": "S-HALE",
+  "L-34821-2026-10-27-PM": "S-PATEL",
+  "L-29104-2026-10-27-AM": "S-OKAFOR",
+  "L-29104-2026-10-27-PM": "S-OKAFOR",
+  "L-45178-2026-10-27-AM": "S-WHITFORD",
+  "L-45178-2026-10-27-PM": "S-REID",
+  "L-27731-2026-10-27-AM": "S-OKAFOR",
+  "L-43015-2026-10-27-AM": "S-DOYLE",
+  "L-25490-2026-10-27-AM": "S-TAN",
+  "L-25490-2026-10-27-PM": "S-NAND",
+  "L-36208-2026-10-27-PM": "S-LIM",
+  "L-47733-2026-10-27-AM": "S-REID",
+  "L-34821-2026-10-28-AM": "S-WHITFORD",
+  "L-41267-2026-10-28-PM": "S-PATEL",
+  "L-31902-2026-10-28-AM": "S-PATEL",
+  "L-31902-2026-10-28-PM": "S-PATEL",
+  "L-43015-2026-10-28-AM": "S-LIM",
+  "L-44519-2026-10-28-AM": "S-REID",
+  "L-47733-2026-10-28-PM": "S-WHITFORD",
+  "L-34821-2026-10-29-PM": "S-PATEL",
+  "L-29104-2026-10-29-AM": "S-HALE",
+  "L-29104-2026-10-29-PM": "S-HALE",
+  "L-41267-2026-10-29-AM": "S-LIM",
+  "L-38455-2026-10-29-PM": "S-DOYLE",
+  "L-45178-2026-10-29-AM": "S-WHITFORD",
+  "L-43015-2026-10-29-AM": "S-PATEL",
+  "L-43015-2026-10-29-PM": "S-TAN",
+  "L-25490-2026-10-29-AM": "S-TAN",
+  "L-25490-2026-10-29-PM": "S-OKAFOR",
+  "L-47733-2026-10-29-AM": "S-REID",
+  "L-38455-2026-10-30-AM": "S-OKAFOR",
+  "L-31902-2026-10-30-AM": "S-WHITFORD",
+  "L-45178-2026-10-30-AM": "S-REID",
+  "L-27731-2026-10-30-AM": "S-DOYLE",
+  "L-34821-2026-11-02-AM": "S-OKAFOR",
+  "L-34821-2026-11-02-PM": "S-LIM",
+  "L-29104-2026-11-02-AM": "S-DOYLE",
+  "L-31902-2026-11-02-AM": "S-HALE",
+  "L-25490-2026-11-02-AM": "S-TAN",
+  "L-44519-2026-11-02-PM": "S-PATEL",
+  "L-34821-2026-11-03-AM": "S-HALE",
+  "L-34821-2026-11-03-PM": "S-PATEL",
+  "L-29104-2026-11-03-AM": "S-OKAFOR",
+  "L-29104-2026-11-03-PM": "S-OKAFOR",
+  "L-45178-2026-11-03-AM": "S-WHITFORD",
+  "L-45178-2026-11-03-PM": "S-REID",
+  "L-27731-2026-11-03-AM": "S-OKAFOR",
+  "L-43015-2026-11-03-AM": "S-DOYLE",
+  "L-25490-2026-11-03-AM": "S-TAN",
+  "L-25490-2026-11-03-PM": "S-NAND",
+  "L-36208-2026-11-03-PM": "S-LIM",
+  "L-47733-2026-11-03-AM": "S-REID",
+  "L-34821-2026-11-04-AM": "S-WHITFORD",
+  "L-41267-2026-11-04-PM": "S-PATEL",
+  "L-31902-2026-11-04-AM": "S-PATEL",
+  "L-31902-2026-11-04-PM": "S-PATEL",
+  "L-43015-2026-11-04-AM": "S-LIM",
+  "L-44519-2026-11-04-AM": "S-REID",
+  "L-47733-2026-11-04-PM": "S-WHITFORD",
+  "L-34821-2026-11-05-PM": "S-PATEL",
+  "L-29104-2026-11-05-AM": "S-HALE",
+  "L-29104-2026-11-05-PM": "S-HALE",
+  "L-41267-2026-11-05-AM": "S-LIM",
+  "L-38455-2026-11-05-PM": "S-DOYLE",
+  "L-45178-2026-11-05-AM": "S-WHITFORD",
+  "L-43015-2026-11-05-AM": "S-PATEL",
+  "L-43015-2026-11-05-PM": "S-TAN",
+  "L-25490-2026-11-05-AM": "S-TAN",
+  "L-25490-2026-11-05-PM": "S-OKAFOR",
+  "L-47733-2026-11-05-AM": "S-REID",
+  "L-38455-2026-11-06-AM": "S-OKAFOR",
+  "L-31902-2026-11-06-AM": "S-WHITFORD",
+  "L-45178-2026-11-06-AM": "S-REID",
+  "L-27731-2026-11-06-AM": "S-DOYLE",
+  "L-34821-2026-11-09-AM": "S-OKAFOR",
+  "L-34821-2026-11-09-PM": "S-LIM",
+  "L-29104-2026-11-09-AM": "S-DOYLE",
+  "L-31902-2026-11-09-AM": "S-HALE",
+  "L-25490-2026-11-09-AM": "S-TAN",
+  "L-44519-2026-11-09-PM": "S-PATEL",
+  "L-34821-2026-11-10-AM": "S-HALE",
+  "L-34821-2026-11-10-PM": "S-PATEL",
+  "L-29104-2026-11-10-AM": "S-OKAFOR",
+  "L-29104-2026-11-10-PM": "S-OKAFOR",
+  "L-45178-2026-11-10-AM": "S-WHITFORD",
+  "L-45178-2026-11-10-PM": "S-REID",
+  "L-27731-2026-11-10-AM": "S-OKAFOR",
+  "L-43015-2026-11-10-AM": "S-DOYLE",
+  "L-25490-2026-11-10-AM": "S-TAN",
+  "L-25490-2026-11-10-PM": "S-NAND",
+  "L-36208-2026-11-10-PM": "S-LIM",
+  "L-47733-2026-11-10-AM": "S-REID",
+  "L-34821-2026-11-11-AM": "S-WHITFORD",
+  "L-41267-2026-11-11-PM": "S-PATEL",
+  "L-31902-2026-11-11-AM": "S-PATEL",
+  "L-31902-2026-11-11-PM": "S-PATEL",
+  "L-43015-2026-11-11-AM": "S-LIM",
+  "L-44519-2026-11-11-AM": "S-REID",
+  "L-47733-2026-11-11-PM": "S-WHITFORD",
+  "L-34821-2026-11-12-PM": "S-PATEL",
+  "L-29104-2026-11-12-AM": "S-HALE",
+  "L-29104-2026-11-12-PM": "S-HALE",
+  "L-41267-2026-11-12-AM": "S-LIM",
+  "L-38455-2026-11-12-PM": "S-DOYLE",
+  "L-45178-2026-11-12-AM": "S-WHITFORD",
+  "L-43015-2026-11-12-AM": "S-PATEL",
+  "L-43015-2026-11-12-PM": "S-TAN",
+  "L-25490-2026-11-12-AM": "S-TAN",
+  "L-25490-2026-11-12-PM": "S-OKAFOR",
+  "L-47733-2026-11-12-AM": "S-REID",
+  "L-38455-2026-11-13-AM": "S-OKAFOR",
+  "L-31902-2026-11-13-AM": "S-WHITFORD",
+  "L-45178-2026-11-13-AM": "S-REID",
+  "L-27731-2026-11-13-AM": "S-DOYLE",
+  "L-34821-2026-11-16-AM": "S-OKAFOR",
+  "L-34821-2026-11-16-PM": "S-LIM",
+  "L-29104-2026-11-16-AM": "S-DOYLE",
+  "L-31902-2026-11-16-AM": "S-HALE",
+  "L-25490-2026-11-16-AM": "S-TAN",
+  "L-44519-2026-11-16-PM": "S-PATEL",
+  "L-34821-2026-11-17-AM": "S-HALE",
+  "L-34821-2026-11-17-PM": "S-PATEL",
+  "L-29104-2026-11-17-AM": "S-OKAFOR",
+  "L-29104-2026-11-17-PM": "S-OKAFOR",
+  "L-45178-2026-11-17-AM": "S-WHITFORD",
+  "L-45178-2026-11-17-PM": "S-REID",
+  "L-27731-2026-11-17-AM": "S-OKAFOR",
+  "L-43015-2026-11-17-AM": "S-DOYLE",
+  "L-25490-2026-11-17-AM": "S-TAN",
+  "L-25490-2026-11-17-PM": "S-NAND",
+  "L-36208-2026-11-17-PM": "S-LIM",
+  "L-47733-2026-11-17-AM": "S-REID",
+  "L-34821-2026-11-18-AM": "S-WHITFORD",
+  "L-41267-2026-11-18-PM": "S-PATEL",
+  "L-31902-2026-11-18-AM": "S-PATEL",
+  "L-31902-2026-11-18-PM": "S-PATEL",
+  "L-43015-2026-11-18-AM": "S-LIM",
+  "L-44519-2026-11-18-AM": "S-REID",
+  "L-47733-2026-11-18-PM": "S-WHITFORD",
+  "L-34821-2026-11-19-PM": "S-PATEL",
+  "L-29104-2026-11-19-AM": "S-HALE",
+  "L-29104-2026-11-19-PM": "S-HALE",
+  "L-41267-2026-11-19-AM": "S-LIM",
+  "L-38455-2026-11-19-PM": "S-DOYLE",
+  "L-45178-2026-11-19-AM": "S-WHITFORD",
+  "L-43015-2026-11-19-AM": "S-PATEL",
+  "L-43015-2026-11-19-PM": "S-TAN",
+  "L-25490-2026-11-19-AM": "S-TAN",
+  "L-25490-2026-11-19-PM": "S-OKAFOR",
+  "L-47733-2026-11-19-AM": "S-REID",
+  "L-38455-2026-11-20-AM": "S-OKAFOR",
+  "L-31902-2026-11-20-AM": "S-WHITFORD",
+  "L-45178-2026-11-20-AM": "S-REID",
+  "L-27731-2026-11-20-AM": "S-DOYLE",
+  "L-45178-2026-07-08-PM": "S-WHITFORD",
+  "L-39560-2026-07-08-PM": "S-OKAFOR",
+  "L-46822-2026-07-08-AM": "S-WHITFORD",
+  "L-46822-2026-07-09-PM": "S-PATEL",
+  "L-44519-2026-07-09-AM": "S-PATEL",
+  "L-38455-2026-07-10-PM": "S-CAMERON",
+  "L-39560-2026-07-10-AM": "S-WHITFORD",
+  "L-27731-2026-07-10-PM": "S-LIM",
+  "L-25490-2026-07-10-PM": "S-WHITFORD",
+  "L-47733-2026-07-10-AM": "S-REID",
+  "L-41267-2026-07-13-AM": "S-CAMERON",
+  "L-41267-2026-07-13-PM": "S-NAND",
+  "L-43015-2026-07-13-PM": "S-OKAFOR",
+  "L-29104-2026-07-15-PM": "S-CAMERON",
+  "L-38455-2026-07-15-PM": "S-CAMERON",
+  "L-45178-2026-07-15-AM": "S-TAN",
+  "L-45178-2026-07-15-PM": "S-LIM",
+  "L-47733-2026-07-15-AM": "S-OKAFOR",
+  "L-43015-2026-07-17-AM": "S-REID",
+  "L-46822-2026-07-17-PM": "S-REID",
+  "L-25490-2026-07-17-PM": "S-CAMERON",
+  "L-38455-2026-07-20-AM": "S-NAND",
+  "L-45178-2026-07-20-AM": "S-HALE",
+  "L-47733-2026-07-20-AM": "S-TAN",
+  "L-29104-2026-07-22-AM": "S-WHITFORD",
+  "L-38455-2026-07-22-PM": "S-TAN",
+  "L-46822-2026-07-22-AM": "S-TAN",
+  "L-46822-2026-07-22-PM": "S-REID",
+  "L-25490-2026-07-22-PM": "S-LIM",
+  "L-36208-2026-07-24-PM": "S-PATEL",
+  "L-45178-2026-07-27-AM": "S-NAND",
+  "L-43015-2026-07-27-PM": "S-LIM",
+  "L-36208-2026-07-27-AM": "S-TAN",
+  "L-27731-2026-07-28-PM": "S-CAMERON",
+  "L-39560-2026-07-29-PM": "S-PATEL",
+  "L-46822-2026-07-30-PM": "S-LIM",
+  "L-44519-2026-07-30-PM": "S-WHITFORD",
+  "L-29104-2026-07-31-PM": "S-NAND",
+  "L-41267-2026-08-03-PM": "S-HALE",
+  "L-39560-2026-08-03-AM": "S-DOYLE",
+  "L-27731-2026-08-03-AM": "S-TAN",
+  "L-31902-2026-08-04-PM": "S-NAND",
+  "L-43015-2026-08-04-PM": "S-CAMERON",
+  "L-38455-2026-08-05-AM": "S-LIM",
+  "L-25490-2026-08-05-PM": "S-LIM",
+  "L-29104-2026-08-07-AM": "S-DOYLE",
+  "L-31902-2026-08-07-PM": "S-REID",
+  "L-45178-2026-08-07-PM": "S-LIM",
+  "L-44519-2026-08-07-AM": "S-CAMERON",
+  "L-47733-2026-08-07-PM": "S-WHITFORD",
+  "L-38455-2026-08-10-AM": "S-REID",
+  "L-46822-2026-08-11-AM": "S-NAND",
+  "L-44519-2026-08-11-AM": "S-LIM",
+  "L-44519-2026-08-11-PM": "S-OKAFOR",
+  "L-45178-2026-08-12-PM": "S-NAND",
+  "L-47733-2026-08-12-AM": "S-NAND",
+  "L-44519-2026-08-13-AM": "S-TAN",
+  "L-38455-2026-08-14-PM": "S-LIM",
+  "L-25490-2026-08-14-AM": "S-REID",
+  "L-34821-2026-07-24-AM": "S-LIM",
+  "L-34821-2026-07-24-PM": "S-NAND",
+  "L-HIST-01": "S-HALE",
+  "L-HIST-02": "S-PATEL",
+  "L-HIST-03": "S-HALE",
+  "L-HIST-04": "S-DOYLE",
+  "L-HIST-05": "S-TAN",
+  "L-HIST-06": "S-OKAFOR",
+  "L-HIST-07": "S-HALE",
+  "L-HIST-08": "S-PATEL",
+  "L-HIST-09": "S-HALE",
+  "L-HIST-10": "S-PATEL",
+  "L-HIST-11": "S-TAN",
+  "L-HIST-12": "S-LIM",
+  "L-HIST-13": "S-REID",
+  "L-HIST-2026-01-12-PM": "S-LIM",
+  "L-HIST-2026-01-20-AM": "S-HALE",
+  "L-HIST-2026-01-29-AM": "S-OKAFOR",
+  "L-HIST-2026-02-03-PM": "S-PATEL",
+  "L-HIST-2026-02-09-PM": "S-LIM",
+  "L-HIST-2026-02-17-AM": "S-HALE",
+  "L-HIST-2026-02-26-AM": "S-OKAFOR",
+  "L-HIST-2026-03-03-PM": "S-PATEL",
+  "L-HIST-2026-03-10-AM": "S-HALE",
+  "L-HIST-2026-03-13-AM": "S-DOYLE",
+  "L-HIST-2026-03-24-PM": "S-PATEL",
+  "L-HIST-2026-03-27-AM": "S-DOYLE",
+  "LD-001": "S-TAN",
+  "LD-002": "S-NAND",
+  "LD-003": "S-REID",
+  "LD-RCB020-2026-07-22-AM": "S-PATEL",
+  "LD-RCB021-2026-07-22-PM": "S-PATEL",
+  "LD-RCB045-2026-07-22-AM": "S-REID",
+  "LD-RCB022-2026-07-24-AM": "S-WHITFORD",
+  "LD-RCB044-2026-07-27-PM": "S-PATEL",
+  "LD-RCB014-2026-09-16-PM": "S-PATEL"
+ }
+}

@@ -659,25 +659,15 @@ describe("surgeons at more than one room and optional room emails (catch-up Phas
   })
   afterEach(() => localStorage.clear())
 
-  it('discards a v45 store whose surgeons hold one roomId and reseeds roomIds and the rooms without an email', () => {
+  it('discards a v45 store whose surgeons hold one roomId, and reseeds the current surgeon shape (no rooms since catch-up Phase 17b)', () => {
     expect(PERSIST_VERSION).toBeGreaterThanOrEqual(46)
     const fresh = freshAppState()
-    // The v45 shape: one roomId per surgeon, every room with an email and a phone string.
-    const surgeons = Object.fromEntries(
-      Object.entries(fresh.masters.surgeons).map(([id, s]) => {
-        const { roomIds, ...rest } = s
-        return [id, { ...rest, roomId: roomIds[0] }]
-      }),
-    )
-    const surgeonRooms = Object.fromEntries(
-      Object.entries(fresh.masters.surgeonRooms).map(([id, r]) => [id, { id, name: r.name, contactEmail: r.contactEmail ?? 'reception@placeholder.example', phone: r.phone ?? '' }]),
-    )
-    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters: { ...fresh.masters, surgeons, surgeonRooms } }, version: 45 }))
+    // The v45 shape: one roomId per surgeon.
+    const surgeons = Object.fromEntries(Object.entries(fresh.masters.surgeons).map(([id, s]) => [id, { ...s, roomId: 'RM-RICC' }]))
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters: { ...fresh.masters, surgeons } }, version: 45 }))
     const s = createAppStore({ persisted: true }).getState()
-    expect(Object.values(s.masters.surgeons).every((x) => Array.isArray(x.roomIds) && x.roomIds.length > 0)).toBe(true)
     expect(Object.values(s.masters.surgeons).some((x) => 'roomId' in x)).toBe(false)
-    expect(s.masters.surgeonRooms['RM-GENERALSUR']?.contactEmail).toBeUndefined()
-    expect(s.masters.surgeons['S-WINSLOW']?.roomIds).toEqual(['RM-RICHMONDFE', 'RM-LINWOODWOM'])
+    expect(s.masters.surgeons['S-WINSLOW']?.officeContacts.length).toBe(2)
   })
 })
 
@@ -846,6 +836,24 @@ describe('the AA Holding account transfer (catch-up Phase 27a)', () => {
   })
 })
 
+describe('stubs on a List (catch-up Phase 33a)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v55 store whose intake has no stubs, and reseeds the waiting row and its stub', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(56)
+    const fresh = freshAppState()
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, intake: { batches: {}, rows: {} } }, version: 55 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.keys(s.intake.stubs)).toEqual(['STB0001'])
+    expect(s.intake.stubs.STB0001).toMatchObject({ status: 'standing', listId: 'L-34821-2026-08-04-PM', importRowId: 'IRS001' })
+    expect(s.counters.stub).toBe(2)
+  })
+})
+
 describe('the seeded Disabled Contract (catch-up Phase 25a)', () => {
   beforeEach(() => {
     flushPersist()
@@ -874,21 +882,30 @@ describe('the seeded Disabled Contract (catch-up Phase 25a)', () => {
   })
 })
 
-describe('stubs on a List (catch-up Phase 33a)', () => {
+describe("no surgeons' rooms, contacts on the surgeon (catch-up Phase 17b)", () => {
   beforeEach(() => {
     flushPersist()
     localStorage.clear()
   })
   afterEach(() => localStorage.clear())
 
-  it('discards a v55 store whose intake has no stubs, and reseeds the waiting row and its stub', () => {
-    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(56)
+  it("discards a v58 store holding surgeons' rooms and roomIds, and reseeds practice names, contacts and the three blank HPI CPNs", () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(59)
     const fresh = freshAppState()
-    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, intake: { batches: {}, rows: {} } }, version: 55 }))
+    const surgeons = Object.fromEntries(
+      Object.entries(fresh.masters.surgeons).map(([id, s]) => {
+        const { practiceName: _p, personalContact: _c, officeContacts: _o, ...rest } = s
+        return [id, { ...rest, roomIds: ['RM-RICC'], hpiId: s.hpiId ?? '99ZZZZ' }]
+      }),
+    )
+    const surgeonRooms = { 'RM-RICC': { id: 'RM-RICC', name: 'Riccarton Orthopaedic Rooms' } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters: { ...fresh.masters, surgeons, surgeonRooms } }, version: 58 }))
     const s = createAppStore({ persisted: true }).getState()
-    expect(Object.keys(s.intake.stubs)).toEqual(['STB0001'])
-    expect(s.intake.stubs.STB0001).toMatchObject({ status: 'standing', listId: 'L-34821-2026-08-04-PM', importRowId: 'IRS001' })
-    expect(s.counters.stub).toBe(2)
+    expect('surgeonRooms' in s.masters).toBe(false)
+    expect(Object.values(s.masters.surgeons).some((x) => 'roomIds' in x)).toBe(false)
+    expect(Object.values(s.masters.surgeons).every((x) => Array.isArray(x.officeContacts) && x.personalContact !== undefined)).toBe(true)
+    expect(s.masters.surgeons['S-WAINWRIGHT']?.practiceName).toBe('Upper GI Partners and Hillsborough Colorectal Specialists')
+    expect(['S-WHAANGA', 'S-OSEI', 'S-SELWYN'].map((id) => s.masters.surgeons[id]?.hpiId)).toEqual([undefined, undefined, undefined])
   })
 })
 
