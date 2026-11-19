@@ -6,8 +6,8 @@
  *
  * A Slot is the AM or PM box every active anaesthetist has on every horizon
  * day; its status is the one availability mechanism. A List is created only
- * here (assignment), by the recurring-booking projection, or by the post-op
- * addendum, and moves between Slots intact. Every write goes through
+ * here (assignment) or by the recurring-booking projection,
+ * and moves between Slots intact. Every write goes through
  * `mutate()` with before and after metas and timestamps from the demo clock.
  * "Slot" never reaches app copy: refusals and audit labels say session.
  */

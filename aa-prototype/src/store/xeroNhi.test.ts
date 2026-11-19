@@ -23,6 +23,7 @@ import { validateNhi } from '../domain/nhi'
 import type { Actor } from './mutate'
 import { SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
 import type { AppState } from './appStore'
+import { addProcedureEvent, approveProcedureEvent, runEventInvoicing } from './procedureEventActions'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
@@ -112,6 +113,29 @@ describe('Xero privacy scan (US-09.3.1: no personal information in Xero)', () =>
       receivePayment(api, { accRecId: cand.accRecId, amount: cand.remaining, idempotencyKey: `P${i++}`, source: 'webhook' })
     }
     expect(runPayables(api, OFFICE).ok).toBe(true)
+    expectNoPersonalInformation(api.getState())
+  })
+})
+
+describe('an additional invoice in Xero (catch-up Phase 38b)', () => {
+  it('its Xero pair carries no NHI, patient name or "Another person" detail', () => {
+    const api = store()
+    // The seeded event (David Chen, St George's) and one billed to another person by name.
+    expect(approveProcedureEvent(api, OFFICE, 'EV0001').ok).toBe(true)
+    const named = addProcedureEvent(api, OFFICE, 'HP03', {
+      kind: 'additionalInvoice',
+      occurredOnISO: '2026-06-23',
+      party: { sameAs: false, personInput: { kind: 'other', name: 'Mei Chen', email: 'mei.chen@example.com' } },
+      lines: [{ description: 'Ward review', quantity: 1, unitAmount: 40 }],
+    })
+    if (!named.ok) throw new Error(named.message)
+    expect(approveProcedureEvent(api, OFFICE, named.value.eventId).ok).toBe(true)
+    const run = runEventInvoicing(api, OFFICE)
+    expect(run.ok && run.value.invoiceIds).toHaveLength(2)
+    const serialised = JSON.stringify(api.getState().xero)
+    for (const value of ['Mei Chen', 'mei.chen@example.com', 'David Chen', api.getState().masters.patients[api.getState().schedule.bookings['HBK03']!.patientId]!.nhi ?? 'none']) {
+      expect(serialised, `"${value}" must not appear in the Xero slice`).not.toContain(value)
+    }
     expectNoPersonalInformation(api.getState())
   })
 })

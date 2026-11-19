@@ -6,6 +6,7 @@ import * as D from './web/demos'
 import { ProcedureStackExample } from './procedureStackExample'
 import { FunderDetailsExample, PayerFieldsExample } from './payerExamples'
 import { PaidByRowExample, PaidBySheetExample, PartyPickerExample } from './splitExamples'
+import { AdditionalInvoiceButtonExample, AdditionalInvoiceSheetExample, ProcedureEventsListExample } from './eventExamples'
 
 const W = 'Web'
 const WA = 'Web · Admin'
@@ -213,6 +214,15 @@ export function WebCatalogue() {
             </CatalogueRow>
             <CatalogueRow name="PaidBySheet (with SplitFeeSection)" source="shared/flows/PaidBySheet.tsx, shared/flows/SplitFeeSection.tsx" usedIn={ALL} what="The one Paid by sheet (catch-up Phase 22a; US-11.2.2, US-08.2.3): a bottom sheet on the phone, a dialog on web and Admin. Opened by Change, it holds who pays (the Different payer tick, the patient's details or the other payer's fields, the Under 18 hint and the contact ask) and, when the payer changes, the offer (the Booking's other Procedures with the same payer, each ticked, never forced). Opened by Split, it holds the split alone (a party or Another person, a $ or % share and Takes the rest per row, each amount live). Save writes it or refuses it whole." replaceWith="Custom (shadcn Sheet, Checkbox and Input inside)" note="Opens on Grace Park's first seeded Procedure; Save writes to the demo store.">
               <PaidBySheetExample />
+            </CatalogueRow>
+            <CatalogueRow name="ProcedureEventsList (the anaesthetist)" source="shared/booking/ProcedureEventsList.tsx" usedIn={ALL} what="A Procedure's events (catch-up Phase 38b; US-03.7.3) as the anaesthetist sees them on their own Procedure: the kind, the date, the first line's description, Raised by you, the total ex GST and the party, the status pill, a declined reason, and Edit and Remove on what they raised while it awaits review or was declined. No review action, invoice link or Booking total; the section shows only when the Procedure has an event." replaceWith="Custom (the shared Pill, TextAction and overlay)" note="Over the seeded event EV0001 (Dr Souter, David Chen's HP03); writes go to the demo store.">
+              <ProcedureEventsListExample as="anaesthetist" />
+            </CatalogueRow>
+            <CatalogueRow name="AdditionalInvoiceSheet (Raise additional invoice)" source="shared/booking/AdditionalInvoiceForm.tsx" usedIn={ALL} what="The free-form additional invoice (catch-up Phase 38b; US-08.6.3): Raise additional invoice on the anaesthetist's own invoiced Procedure (reached through search) opens it. The date of the charge, Same as the original invoice (ticked by default, unticks to the PartyPicker with Another person), the lines with their totals and the live subtotal, GST and total; Save for review." replaceWith="Custom (the shared Pill, TextAction and overlay)" note="Over the seeded event EV0001 (Dr Souter, David Chen's HP03); writes go to the demo store.">
+              <AdditionalInvoiceSheetExample as="anaesthetist" />
+            </CatalogueRow>
+            <CatalogueRow name="AdditionalInvoiceButton" source="shared/booking/AdditionalInvoiceButton.tsx" usedIn={ALL} what="The button on the Procedure's Paid by row, beside Split (catch-up Phase 38b; US-08.6.3 Button): Create additional invoice for the office on any invoiced Procedure, Raise additional invoice for the anaesthetist on their own; absent on a colleague's or before the List is authorised; disabled with the refusal sentence otherwise." replaceWith="Custom (the shared Pill, TextAction and overlay)" note="Over the seeded event EV0001 (Dr Souter, David Chen's HP03); writes go to the demo store.">
+              <AdditionalInvoiceButtonExample />
             </CatalogueRow>
           <CatalogueRow name="Cell (AvailabilityGrid)" source="apps/web/screens/AvailabilityGrid.tsx" usedIn={W} what="One colleague session on Find cover: status bar, two lines and a Move or Move here action when her List can go there." replaceWith="Custom cell on a grid + shadcn Tooltip" note="Recreated: local to AvailabilityGrid.tsx; its fill from blockFill (U6). Non-actionable cells are disabled buttons, unreachable by keyboard.">
             <D.AvailabilityCellDemo f={f} />

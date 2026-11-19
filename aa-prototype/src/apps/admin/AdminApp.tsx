@@ -22,6 +22,7 @@ import {
   warningSummaryByList,
   useToday,
   officeActorOf,
+  eventsAwaitingReview,
 } from '../../store'
 import { isISODate } from '../../shell/routeParams'
 import { SideNav, type NavSection } from './components/SideNav'
@@ -78,6 +79,9 @@ export function AdminApp() {
  */
 function AdminShell({ todayISO }: { todayISO: string }) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
+  // Events awaiting the office's review join the Review item's count (catch-up Phase 38b).
+  const procedureEvents = useAppStore((s) => s.schedule.procedureEvents)
+  const eventsAwaiting = useMemo(() => eventsAwaitingReview({ schedule: { procedureEvents } }).length, [procedureEvents])
   const slotsRecord = useAppStore((s) => s.schedule.slots)
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const schedule = useAppStore((s) => s.schedule)
@@ -304,7 +308,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     <div ref={shellRef} style={{ display: 'flex', minHeight: '100%', minWidth: 1320, background: neutral.bg, color: neutral.ink }}>
       <SideNav
         active={sectionForPath(pathname)}
-        reviewBadge={reviewLists.length}
+        reviewBadge={reviewLists.length + eventsAwaiting}
         billingBadge={exceptionCount}
         ledgerBadge={ledgerCount}
         conflictBadge={conflictCount}

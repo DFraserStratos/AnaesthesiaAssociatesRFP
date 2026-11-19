@@ -407,8 +407,11 @@ export const PERSIST_KEY = 'aa-demo'
  *  v62: the Wave 3 sync of 34 into lane/a (Phase 37 and Phase 34 both took v61). Reseeds on load.
  *  v63: catch-up Phase 38: seeded dashboard figures removed (`dashboards`, the Productivity and Leave panels); ageing
  *  buckets gone. Reseeds on load.
- *  v64: Wave 3 join, Lane A's 38 (v63, holding 37 and the 34 sync) joined with Lane B's 35 (v62): one past the higher. */
-export const PERSIST_VERSION = 64
+ *  v64: Wave 3 join, Lane A's 38 (v63, holding 37 and the 34 sync) joined with Lane B's 35 (v62): one past the higher.
+ *  v65: catch-up Phase 38b, events on a Procedure: `schedule.procedureEvents` (seeded EV0001, Dr Souter's
+ *  additional invoice on HP03 awaiting review; counter `procedureEvent`), the `additional` invoice kind and the
+ *  `additionalTo` lineage; the post-op addendum Booking (`bookingType`, `addendumOfBookingId`) is gone. Reseeds on load. */
+export const PERSIST_VERSION = 65
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {} }

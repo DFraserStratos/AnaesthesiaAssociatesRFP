@@ -1,7 +1,7 @@
 {
   "id": "US-04.2.11",
   "status": "partial",
-  "absentReason": "Fee extras billed as events or additional invoices are Phases 38b and 39b's.",
+  "absentReason": "Additional invoices are built (Phase 38b); fee extras billed as events are Phase 39b's.",
   "shots": [
     {
       "name": "combination-contracts",

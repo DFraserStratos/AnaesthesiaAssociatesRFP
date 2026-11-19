@@ -165,6 +165,7 @@ import { useDemoTriggerMemory } from './memory'
 import { simulateSickness, sicknessCandidates, sicknessColleagueSlot, sicknessRefusal, type SicknessRoute } from '../../store/demoSimulations'
 import { BILLING_FAILURE_ALREADY, stageBillingFailure } from '../../store/demoStaging'
 import { regenerateInvoiceFromLock, regenerateRefusal, regenerateSummary } from '../../store/locks'
+import { nextRunRefusal, officeReviewRefusal, officeReviewsAdditionalInvoice, runNextBillingRun } from '../../store/eventDemo'
 import type { DemoTrigger, DemoTriggerChoice, DemoTriggerCtx, DemoTriggerResult } from './types'
 import { injectUnmatchedReceipt, injectUnmatchedRefusal, officeRunsPayables, officeRunsPayablesRefusal, UNMATCHED_RECEIPT_DEMO } from '../../store/ledgerDemo'
 import { sessionText } from '../../domain/outOfHours'
@@ -826,7 +827,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'stage-post-op',
     label: 'Stage post-op scenario',
     description:
-      'Submits and authorises Dr Sharma\'s Tue 14 Jul AM List, so "Add post-op event" can run on its locked Booking. It lands on a new List in her free Tue 21 PM session.',
+      "Authorises Dr Sharma's Tue 14 Jul AM List so its invoiced Bookings can take an additional invoice.",
     screen: 'Admin · Review and Booking detail',
     routes: ['/admin/review/:listId', '/admin/day/:dateISO/bookings/:bookingId'],
     surfaces: ['bar'],
@@ -836,11 +837,10 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     disabledReason: (state) =>
       state.schedule.lists[POST_OP_ORIGINAL_LIST_ID]?.state === 'AUTHORISED'
-        ? 'Already staged: use Add post-op event on the Booking'
+        ? 'Already staged: use Create additional invoice on the Procedure'
         : null,
-    // Phase 09 demo trigger: authorise (lock + bill) an original episode and keep
-    // a free empty session today for its anaesthetist, so "Add post-op event" on
-    // the locked booking has somewhere to land.
+    // Authorise (lock and bill) the original episode, so Sarah Mitchell's Procedure can take an
+    // additional invoice (catch-up Phase 38b; the Phase 09 addendum Booking is gone).
     run: (api) => {
       const listId = POST_OP_ORIGINAL_LIST_ID
       const list = api.getState().schedule.lists[listId]
@@ -855,10 +855,29 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return {
         ok: true,
         message:
-          'Done. Dr Sharma\'s Tue 14 Jul list is authorised and locked. In the Admin day view jump to Tue 14, open its booking and use "Add post-op event"; it lands on a new List in her free Tue 21 PM session.',
+          "Authorised and billed. Open Sarah Mitchell's Booking and use Create additional invoice on the Procedure's Contract row.",
       }
     },
     indexPath: () => `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`,
+  },
+  // ── Admin · Billing monitor and Review: the next billing run for events (catch-up Phase 38b) ──
+  {
+    id: 'run-next-billing-run',
+    label: 'Run the next billing run',
+    description:
+      'Invoices every approved additional invoice: each becomes its own invoice with its own number, ledger pair and Xero pair, linked to the original. Stands in for the scheduled run of the real system.',
+    screen: BILLING_MONITOR_SCREEN,
+    routes: [...BILLING_MONITOR, '/admin/review'],
+    surfaces: ['bar'],
+    disabledReason: (state) => nextRunRefusal(state),
+    run: (api) => {
+      const out = runNextBillingRun(api)
+      if (!out.ok) return { ok: false, message: out.message }
+      const n = out.value.numbers.length
+      const skipped = out.value.skipped.length > 0 ? ` ${out.value.skipped.length} not invoiced: ${out.value.skipped[0]!.message}` : ''
+      return { ok: true, message: `Billing run done: ${n} additional ${n === 1 ? 'invoice' : 'invoices'} raised (${out.value.numbers.join(', ')}).${skipped}` }
+    },
+    indexPath: () => '/admin/billing',
   },
 
   // ── Admin · Intake, PDF lists (catch-up Phase 34) ────────────────────
@@ -898,7 +917,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'regenerate-invoice',
     label: 'Regenerate from locked data',
     description:
-      "Rebuilds the invoice on screen from its Booking's locked record (the pricing snapshot taken at authorise) and compares it with the invoice as stored: identical, with its line count and total, or the differences. Read-only. Try it after a Contract edit, a Disable, a backdated price range, an RVG group edit, a unit-value edit, or a patient address or payer email change.",
+      "Rebuilds the invoice on screen from its Booking's locked record (the pricing snapshot taken at authorise) and compares it with the invoice as stored: identical, with its line count and total, or the differences. Read-only. Try it after a Contract edit, a Disable, a backdated price range, an RVG group edit, a unit-value edit, or a patient address or payer email change. An additional invoice regenerates from its event's lines.",
     screen: 'Admin · Invoice',
     routes: ['/admin/invoices/:invoiceId'],
     surfaces: ['bar'],
@@ -1157,6 +1176,25 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
           ? 'Done. The office authorised this List and the billing run raised its invoices. They are in Balances now, and search finds the List.'
           : 'The office authorised this List, but the billing run raised no invoices for it.',
       }
+    },
+    indexPath: () => null,
+  },
+  // ── Mobile · Booking, installed PWA only: the office reviews an additional invoice (catch-up Phase 38b) ──
+  {
+    id: 'office-reviews-additional-invoice',
+    label: 'Office reviews this additional invoice',
+    description:
+      'Stands in for the office, which has no app on the phone: approves the additional invoice awaiting review on this Booking and invoices it in the next billing run, as Kirsty would from Admin Review.',
+    screen: 'Mobile · Booking',
+    routes: [MOBILE_BOOKING],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    disabledReason: (state, ctx) => officeReviewRefusal(state, ctx.params['bookingId'] ?? ''),
+    run: (api, ctx) => {
+      const res = officeReviewsAdditionalInvoice(api, ctx.params['bookingId'] ?? '')
+      return res.ok
+        ? { ok: true, message: `Approved by the office and invoiced in the next billing run (${res.value.number}).` }
+        : { ok: false, message: res.message }
     },
     indexPath: () => null,
   },

@@ -26,6 +26,7 @@ import type { Actor } from '../../store'
 import { DefList, DefRow, Pill } from '../ui'
 import { TextAction } from '../ui/TextAction'
 import { PaidBySheet } from '../flows/PaidBySheet'
+import { AdditionalInvoiceButton } from './AdditionalInvoiceButton'
 
 export interface PaidByRowProps {
   /** The stack view's Contract part; null while the Procedure has no Contract. */
@@ -146,6 +147,8 @@ export function PaidByRow({ contract, procedureId, actor, canEdit, variant, paye
                 Split
               </TextAction>
             )}
+            {/* On an invoiced Procedure (catch-up Phase 38b): Create (Admin) or Raise (anaesthetist, own Procedure) additional invoice. */}
+            <AdditionalInvoiceButton procedureId={procedureId} actor={actor} />
             {sheet}
           </>
         }

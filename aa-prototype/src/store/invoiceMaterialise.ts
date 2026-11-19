@@ -38,7 +38,13 @@ export interface MaterialiseArgs {
   /** Stamp delivery now (the run, the retry, today's prepayment raise). */
   send: boolean
   /** The audit action each invoice is created under (a prepayment's: approved, or sent with approval off). */
-  createAction: 'invoice.create' | 'invoice.prePaymentApproved' | 'invoice.prePaymentAutoSent'
+  createAction: 'invoice.create' | 'invoice.prePaymentApproved' | 'invoice.prePaymentAutoSent' | 'invoice.additionalCreated'
+  /** More fields for the create entry's `after` (an additional invoice's original, Procedure, lines and raiser; catch-up Phase 38b). */
+  createAfter?: Record<string, unknown>
+  /** Links beyond a split's siblings (an additional invoice's `additionalTo`, catch-up Phase 38b). */
+  lineage?: InvoiceLineage[]
+  /** The event an additional invoice is raised from (catch-up Phase 38b). */
+  eventId?: string
   /** A prepayment invoice's approval stamp (catch-up Phase 27). */
   approval?: InvoiceApproval
   /** The locked payee (catch-up Phase 25): the supplier block and each pair's payee. Absent on a pre-payment, whose payable is to the AA Holding account. */
@@ -105,10 +111,13 @@ export function materialiseInvoices(
 
   drafts.forEach((draft, index) => {
     const { caseId, invoiceId, invoiceNumber } = allocated[index]!
-    const lineage: InvoiceLineage[] = (draft.splitSiblings ?? []).flatMap((i) => {
-      const sibling = allocated[i]
-      return sibling !== undefined ? [{ role: 'otherShareOfSplit' as const, invoiceId: sibling.invoiceId }] : []
-    })
+    const lineage: InvoiceLineage[] = [
+      ...(draft.splitSiblings ?? []).flatMap((i) => {
+        const sibling = allocated[i]
+        return sibling !== undefined ? [{ role: 'otherShareOfSplit' as const, invoiceId: sibling.invoiceId }] : []
+      }),
+      ...(args.lineage ?? []).map((l) => ({ ...l })),
+    ]
     const invoice: Invoice = {
       id: invoiceId,
       invoiceNumber,
@@ -118,6 +127,7 @@ export function materialiseInvoices(
       ...(draft.billedTo !== undefined ? { billedTo: draft.billedTo } : {}),
       layout: draft.layout,
       kind: args.kind,
+      ...(args.eventId !== undefined ? { eventId: args.eventId } : {}),
       subtotal: draft.subtotal,
       gst: draft.gst,
       total: draft.total,
@@ -147,6 +157,8 @@ export function materialiseInvoices(
       if (line.units !== undefined) stored.units = line.units
       if (line.btm !== undefined) stored.btm = line.btm
       if (line.contractId !== undefined) stored.contractId = line.contractId
+      if (line.quantity !== undefined) stored.quantity = line.quantity
+      if (line.unitAmount !== undefined) stored.unitAmount = line.unitAmount
       invoiceLines[il.id] = stored
     }
     // The ledger pair, made with the invoice (US-08.3.1): the payee stamped from the lock, or the AA Holding
@@ -186,6 +198,7 @@ export function materialiseInvoices(
         gst: draft.gst,
         total: draft.total,
         ...(draft.split !== undefined ? { split: draft.split.shareLabel } : {}),
+        ...(args.createAfter ?? {}),
       },
       stampBookingId: null,
     })

@@ -79,6 +79,8 @@ Bookings and capture the data AA needs for billing.
     number, HPI CPN and bank account (masked, such as 99-0101-•••••21-00). **Change** beside Rate per
     unit opens a bottom sheet; the new rate applies to Bookings on Lists not yet authorised, while
     authorised Lists keep their locked rate. The other rows show a lock: the office holds them.
+14. On her own invoiced Procedure (found through search), **Raise additional invoice** for a late
+    charge such as a ward review; she can edit or remove it until the office reviews it.
 
 ### Permissions
 
@@ -309,6 +311,9 @@ allowing billing to proceed.
 10. After the run: the Billing Engine emails each invoice or marks it **To post**; the office does not
     email invoices itself. It uses **Resend** on the invoice rail, and on **No invoice address** types
     an address and selects **Send**.
+11. Record an additional invoice for a late charge (**Create additional invoice** on the Procedure's
+    Contract row), and review every event, the anaesthetists' included, on **Review → Events**; an
+    approved event is invoiced in the next billing run.
 
 ### Critical rule
 

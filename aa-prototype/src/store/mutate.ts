@@ -67,12 +67,14 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   booking: { prefix: 'BK', pad: 4 },
   procedure: { prefix: 'P', pad: 4 },
   billingLine: { prefix: 'BL', pad: 4 },
+  // Events on a Procedure (catch-up Phase 38b; DM-17): seeded EV0001.
+  procedureEvent: { prefix: 'EV', pad: 4 },
   patient: { prefix: 'PT', pad: 4 },
   billableParty: { prefix: 'BP', pad: 4 },
   dayNote: { prefix: 'DN', pad: 4 },
   // The shared notification pool (catch-up Phase 32; DM-41).
   notification: { prefix: 'NT', pad: 4 },
-  // Lists created at runtime (assignment, phone advice, the post-op addendum);
+  // Lists created at runtime (assignment, phone advice);
   // projected and seeded Lists keep their `L-<reg>-<date>-<session>` ids.
   list: { prefix: 'LG', pad: 4 },
   // Availability statuses an admin adds and repeating days off (catch-up Phase 29).

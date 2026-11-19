@@ -782,8 +782,14 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 #### Post-operative addition
 
 - A later pain consult or ward review can create another charge.
-- The original authorised Booking stays immutable.
-- The prototype adds a linked addendum Booking that follows its own submit, authorise and bill cycle.
+- The original authorised Booking stays immutable and locked.
+- The office, or the anaesthetist on their own invoiced Procedure (found through search), records a
+  free-form additional invoice as an event on the Procedure, to whoever should pay.
+- One office review step approves it; it is then invoiced in the next billing run, with its own number,
+  pair and Xero pair, linked both ways to the original.
+- After a prepaid or fixed-price procedure nothing is billed automatically; the anaesthetist or office
+  raises an additional invoice by hand.
+- The anaesthetist's own pre-op and post-op events come with catch-up Phase 39b.
 
 #### Billing failure
 
@@ -833,7 +839,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Invoice calculation and documents | Yes | Phase 08 |
 | Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), escalating warning, left off the final invoice | Yes | Catch-up Phase 27 |
 | Prepayment held in the AA Holding account, transferred to the anaesthetist when the List is authorised, then paid by the payables run | Yes | Catch-up Phase 27a |
-| Addendum, billing monitor/retry | Yes | Phase 09 |
+| Prepayment warning, events and additional invoices, billing monitor/retry | Yes | Phase 09; events and additional invoices from catch-up Phase 38b |
 | Contract locked at authorise, invoices from the lock, Contract history | Yes | Catch-up Phase 25 |
 | Xero pairs, payment, balances and disbursement | Yes | Phase 10 |
 | Xero resilience: payables run in Xero, sync queue and outage, voids and edits flagged, bulk remittance matched in Xero, Reconciliation card; Billing monitor grouped by anaesthetist with filters | Yes | Catch-up Phase 37 |

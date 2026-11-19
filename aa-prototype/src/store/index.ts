@@ -174,7 +174,6 @@ export {
   createBooking,
   addProcedure,
   removeProcedure,
-  addPostOpAddendum,
   setPrimaryProcedure,
   PRIMARY_NOT_REMOVABLE_MESSAGE,
   PRIMARY_COMPLETED_MESSAGE,
@@ -565,3 +564,31 @@ export {
 export { changeSetEntries, lastChangeSetFor, type ChangeSetSummary } from './changeSetSelectors'
 // Catch-up Phase 35: the PWA's office stand-in for an office save.
 export { officeEditsBooking, officeEditsBookingRefusal } from './officeSaveDemo'
+
+// Catch-up Phase 38b: events on a Procedure, their review step and the next billing run.
+export {
+  procedureOwner,
+  liveInvoiceForProcedure,
+  eventsForProcedure,
+  eventsForBooking,
+  eventsAwaitingReview,
+  approvedEventsAwaitingRun,
+  additionalInvoicesFor,
+  additionalInvoicesForProcedure,
+  originalInvoiceFor,
+  eventForInvoice,
+  resolvedPartyOf,
+  eventPartyName,
+  originalForEvent,
+  pricingOf,
+  raiseRefusal,
+  addProcedureEvent,
+  updateProcedureEvent,
+  removeProcedureEvent,
+  approveProcedureEvent,
+  declineProcedureEvent,
+  runEventInvoicing,
+  type ProcedureEventInput,
+  type EventRunResult,
+  type EventPartyInput,
+} from './procedureEventActions'

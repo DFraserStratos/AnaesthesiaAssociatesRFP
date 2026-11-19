@@ -854,15 +854,6 @@ export interface Booking {
   /** Completion is validation-gated; submission is completion-gated (1st review #1). */
   completed: boolean
   completedAtISO?: IsoDateTime
-  /**
-   * Post-op addendum Bookings (B8; Phase 09) carry `bookingType: 'postOpAddendum'`
-   * and link back to the original episode via `addendumOfBookingId`. The addendum
-   * is a NEW Booking that runs its own capture->submit->authorise->bill cycle; the
-   * original stays locked and immutable (the RFP's immutability answer). Both
-   * fields absent on ordinary Bookings.
-   */
-  bookingType?: 'postOpAddendum'
-  addendumOfBookingId?: BookingId
   correlationRef?: IntegrationCorrelationRef
   /**
    * How the Booking entered the system, where the creating path knows it
@@ -1137,6 +1128,67 @@ export interface BillingLine {
 }
 
 // ---------------------------------------------------------------------------
+// Events on a Procedure (catch-up Phase 38b; DM-17, DM-18, D13, FT-03.7).
+// "Event" is the one element for everything recorded against a Procedure after
+// setup. One thin record in `schedule.procedureEvents`; its rules live only in
+// `domain/billing/procedureEvent.ts` (`EVENT_KINDS`), its status is derived
+// (`eventStatus`), never stored. It is never a List, Slot or schedule entry.
+// ---------------------------------------------------------------------------
+
+/** An event's kind. Phase 39 adds `'credit'`; Phase 39b adds `'preOp'` and `'postOp'` (and the billing event). */
+export type ProcedureEventKind = 'additionalInvoice'
+
+/**
+ * Who an event bills (US-03.7.1; Greg's courier-style "same as" tick, 2026-10-02
+ * #24): the same party as the original invoice (else the Procedure's own), or a
+ * named one. "Another person" (22a's PartyPicker) carries their own contact in
+ * `person`, as a split share does; `party` is then `{ kind: 'payer', id: person.id }`.
+ */
+export type EventParty =
+  | { sameAs: true }
+  | { sameAs: false; party: CounterpartyRef; person?: OtherPayer; invoiceEmail?: string }
+
+/** One free-form line (D10, OQ-45: "Desc, Qnt, $"): ex GST, in dollars to the cent. The line amount is computed (`priceFreeFormInvoice`), never stored. */
+export interface FreeFormLine {
+  description: string
+  quantity: number
+  unitAmount: number
+}
+
+/** The kind's own detail. Phase 39 and 39b add their members. No modifier, ASA, unit, RVG or Contract field. */
+export type ProcedureEventDetail = { kind: 'additionalInvoice'; lines: FreeFormLine[] }
+
+/** The one standard review step (D13): the office approves or declines, whoever raised it. */
+export interface EventReview {
+  state: 'awaitingReview' | 'approved' | 'declined'
+  by?: { who: string; role: ActorRole }
+  atISO?: IsoDateTime
+  reason?: string
+}
+
+export interface ProcedureEvent {
+  id: string
+  procedureId: ProcedureId
+  bookingId: BookingId
+  kind: ProcedureEventKind
+  /** The date of the charge or the event. */
+  occurredOnISO: IsoDate
+  /** For the kinds that need one (39b). */
+  startTime?: WallTime
+  /** The invoice tick. Fixed on for an additional invoice (`EVENT_KINDS.additionalInvoice.tick`). */
+  billable: boolean
+  party: EventParty
+  detail: ProcedureEventDetail
+  review: EventReview
+  /** Stamped once, by the next billing run (`runEventInvoicing`), with `Invoice.eventId`. */
+  invoiceId?: InvoiceId
+  /** `anaesthetistId` is set when an anaesthetist raised it ("Raised by you" and the edit rule need no name match). */
+  addedBy: { who: string; role: ActorRole; anaesthetistId?: AnaesthetistId }
+  addedAtISO: IsoDateTime
+  updatedAtISO?: IsoDateTime
+}
+
+// ---------------------------------------------------------------------------
 // RVG & modifier masters
 // ---------------------------------------------------------------------------
 
@@ -1398,9 +1450,9 @@ export interface InvoiceSplitInfo {
   isRest: boolean
 }
 
-/** Links between invoices (Phase 38b adds `additionalTo`, Phase 39 `rebillOf`). */
+/** Links between invoices (Phase 39 adds `rebillOf`). `additionalTo` (catch-up Phase 38b): an additional invoice points at the original it relates to; the original's back-link is derived, never stored. */
 export interface InvoiceLineage {
-  role: 'otherShareOfSplit'
+  role: 'otherShareOfSplit' | 'additionalTo'
   invoiceId: InvoiceId
 }
 
@@ -1420,7 +1472,10 @@ export interface Invoice {
   billedTo?: InvoiceBilledTo
   /** The holder's layout or the patient's, from the Contract (`invoiceLayoutFor`, catch-up Phase 22), snapshotted at the run. */
   layout: 'contractHolder' | 'patient'
-  kind: 'standard' | 'prePayment'
+  /** `additional` (catch-up Phase 38b; US-08.6.3): a free-form additional invoice, raised by the next billing run from an event. */
+  kind: 'standard' | 'prePayment' | 'additional'
+  /** The event an additional invoice was raised from (catch-up Phase 38b); written once, by the run, with the event's `invoiceId`. */
+  eventId?: string
   subtotal: number
   gst: number
   total: number
@@ -1489,6 +1544,9 @@ export interface InvoiceLine {
   amount: number
   /** Holder layout fee lines only. */
   btm?: InvoiceLineBtm
+  /** A free-form line's quantity and unit amount (catch-up Phase 38b; an additional invoice): `amount` is quantity x unit amount. */
+  quantity?: number
+  unitAmount?: number
   /**
    * A prepayment line's Contract when it was raised (catch-up Phase 27): the
    * re-check reads it to tell a Procedure that changed Contract after sending.

@@ -4,6 +4,7 @@
  */
 
 import { cleanup, act, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { editBooking, freshAppState, uncompleteBooking, useAppStore, type Actor } from '../../../store'
 import { SurfaceProvider } from '../../../shared'
@@ -50,7 +51,7 @@ describe('Changed since submitted', () => {
     act(() => {
       editBooking(useAppStore, SOUTER, firstBooking().id, { notes: 'next-day fix' })
     })
-    render(<ReviewQueue onOpen={vi.fn()} onViewInvoices={vi.fn()} />)
+    render(<MemoryRouter><ReviewQueue onOpen={vi.fn()} onViewInvoices={vi.fn()} /></MemoryRouter>)
     expect(document.querySelectorAll('[data-shot="review-changed-since-submitted"]')).toHaveLength(1)
   })
 

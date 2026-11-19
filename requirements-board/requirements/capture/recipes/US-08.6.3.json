@@ -1,6 +1,389 @@
 {
   "id": "US-08.6.3",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 38b builds this (raised by the office, or by the anaesthetist on their own Procedure).",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "additional-invoice-button",
+      "app": "admin",
+      "caption": "Create additional invoice sits on the Procedure's Contract row, beside Split",
+      "start": "/admin/day/2026-07-14/bookings/BK0032",
+      "setup": [
+        {
+          "goto": "/admin/review/L-41267-2026-07-14-AM"
+        },
+        {
+          "trigger": "stage-post-op"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=additional-invoice-button]"
+            },
+            {
+              "scroll": "[data-shot=additional-invoice-button] >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[data-shot=additional-invoice-button]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "review-step",
+      "app": "admin",
+      "caption": "The standard review step: the Events tab, then the event's review sheet, before the next billing run",
+      "start": "/admin/day/2026-07-14/bookings/BK0032",
+      "setup": [
+        {
+          "goto": "/admin/review/L-41267-2026-07-14-AM"
+        },
+        {
+          "trigger": "stage-post-op"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=additional-invoice-button] >> nth=0"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "input[data-shot=line-description]",
+              "value": "Post-op ward review, Wed 15 Jul, 15 min"
+            },
+            {
+              "fill": "input[data-shot=line-amount]",
+              "value": "30.00"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=additional-invoice-save]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr[data-event-id] >> nth=-1"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=event-review-sheet]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "own-invoice",
+      "app": "admin",
+      "caption": "An additional invoice is always its own document with its own number, linked both ways with the original",
+      "start": "/admin/day/2026-07-14/bookings/BK0032",
+      "setup": [
+        {
+          "goto": "/admin/review/L-41267-2026-07-14-AM"
+        },
+        {
+          "trigger": "stage-post-op"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "state": "document",
+          "caption": "The additional invoice names the invoice it is additional to",
+          "steps": [
+            {
+              "click": "[data-shot=additional-invoice-button] >> nth=0"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "input[data-shot=line-description]",
+              "value": "Post-op ward review, Wed 15 Jul, 15 min"
+            },
+            {
+              "fill": "input[data-shot=line-amount]",
+              "value": "30.00"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=additional-invoice-save]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr[data-event-id] >> nth=-1"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            },
+            {
+              "click": "[data-shot=event-review-approve]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "trigger": "run-next-billing-run"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/day/2026-07-14/bookings/BK0032"
+            },
+            {
+              "wait": "[data-shot=procedure-event-invoice]"
+            },
+            {
+              "click": "[data-shot=procedure-event-invoice] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-additional-of]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-additional-of]"
+          ]
+        },
+        {
+          "state": "original",
+          "caption": "The original invoice's rail lists the additional invoice",
+          "steps": [
+            {
+              "click": "[data-shot=additional-invoice-button] >> nth=0"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "input[data-shot=line-description]",
+              "value": "Post-op ward review, Wed 15 Jul, 15 min"
+            },
+            {
+              "fill": "input[data-shot=line-amount]",
+              "value": "30.00"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=additional-invoice-save]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr[data-event-id] >> nth=-1"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            },
+            {
+              "click": "[data-shot=event-review-approve]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "trigger": "run-next-billing-run"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/day/2026-07-14/bookings/BK0032"
+            },
+            {
+              "wait": "[data-shot=procedure-event-invoice]"
+            },
+            {
+              "click": "[data-shot=procedure-event-invoice] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-additional-of]"
+            },
+            {
+              "click": "[data-shot=invoice-additional-of] a >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-additional-links]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-additional-links]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "any-party",
+      "app": "admin",
+      "caption": "Any billable party: the same-as tick cleared and another party picked",
+      "start": "/admin/day/2026-07-14/bookings/BK0032",
+      "setup": [
+        {
+          "goto": "/admin/review/L-41267-2026-07-14-AM"
+        },
+        {
+          "trigger": "stage-post-op"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=additional-invoice-button] >> nth=0"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "input[data-shot=line-description]",
+              "value": "Post-op ward review, Wed 15 Jul, 15 min"
+            },
+            {
+              "fill": "input[data-shot=line-amount]",
+              "value": "30.00"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=event-same-as-row]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=event-party-picker]",
+            "[data-shot=event-same-as-row]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mobile-raise-additional-invoice",
+      "app": "mobile",
+      "caption": "The anaesthetist raises an additional invoice on their own Procedure, on the phone",
+      "start": "/mobile/lists/L-HIST-03/bookings/HBK03",
+      "states": [
+        {
+          "state": "button",
+          "steps": [
+            {
+              "wait": "[data-shot=additional-invoice-button]"
+            },
+            {
+              "scroll": "[data-shot=additional-invoice-button] >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [data-shot=additional-invoice-button]"
+          ]
+        },
+        {
+          "state": "sheet",
+          "steps": [
+            {
+              "click": "[data-aa-mobile-product] [data-shot=additional-invoice-button] >> nth=0"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [data-shot=additional-invoice-sheet]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "web-raise-additional-invoice",
+      "app": "web",
+      "caption": "The anaesthetist raises an additional invoice on their own Procedure",
+      "start": "/web/lists/L-HIST-03/bookings/HBK03",
+      "states": [
+        {
+          "state": "button",
+          "steps": [
+            {
+              "wait": "[data-shot=additional-invoice-button]"
+            },
+            {
+              "scroll": "[data-shot=additional-invoice-button] >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[data-shot=additional-invoice-button]"
+          ]
+        },
+        {
+          "state": "sheet",
+          "steps": [
+            {
+              "click": "[data-shot=additional-invoice-button] >> nth=0"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=additional-invoice-sheet]"
+          ]
+        }
+      ]
+    }
+  ]
 }

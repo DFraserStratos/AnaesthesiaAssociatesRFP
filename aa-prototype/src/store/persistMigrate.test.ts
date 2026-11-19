@@ -1075,3 +1075,32 @@ describe('the Wave 3 join (v64: Lane A 38 at v63 joined with Lane B 35 at v62)',
     expect('dashboards' in s).toBe(false)
   })
 })
+
+describe('catch-up Phase 38b (v65: events on a Procedure, the addendum Booking gone)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v64 store with no `procedureEvents`, and reseeds the one seeded event', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(65)
+    const fresh = freshAppState()
+    const { procedureEvents: _e, ...schedule } = fresh.schedule
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule }, version: 64 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.keys(s.schedule.procedureEvents)).toEqual(['EV0001'])
+    expect(s.counters['procedureEvent']).toBe(2)
+  })
+
+  it('discards a stale v64 store that still holds an addendum Booking, and reseeds without it', () => {
+    const fresh = freshAppState()
+    const original = Object.values(fresh.schedule.bookings)[0]!
+    const addendum = { ...original, id: 'BK9999', bookingType: 'postOpAddendum', addendumOfBookingId: original.id }
+    const stale = { ...fresh, schedule: { ...fresh.schedule, bookings: { ...fresh.schedule.bookings, BK9999: addendum } } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 64 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.schedule.bookings['BK9999']).toBeUndefined()
+    expect(Object.values(s.schedule.bookings).some((b) => 'bookingType' in b || 'addendumOfBookingId' in b)).toBe(false)
+  })
+})

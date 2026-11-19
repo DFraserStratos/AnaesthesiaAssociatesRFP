@@ -4,7 +4,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Printer, Mail, Clock, Send } from 'lucide-react'
 import { accent, fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
-import { invoiceAddresseeName, invoiceLinesFor, resendInvoice, useAppStore } from '../../../store'
+import { additionalInvoicesFor, eventForInvoice, invoiceAddresseeName, invoiceLinesFor, originalInvoiceFor, raiseRefusal, resendInvoice, useAppStore } from '../../../store'
+import { procedureLabel } from '../../../domain/billing/procedureStack'
+import { ADDITIONAL_INVOICE_COPY, EVENT_LABELS, raisedByText } from '../../../shared/procedureEventCopy'
+import { AdditionalInvoiceSheet } from '../../../shared/booking/AdditionalInvoiceForm'
 import type { BookingLedgerPair, Invoice, InvoiceLineBtm } from '../../../domain/types'
 import {
   GST_RATE,
@@ -89,9 +92,16 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   const careOf = lock !== undefined ? lock.patientName : patient?.name
   // The split's other shares, by number and addressee (US-08.2.3).
   const siblings = (invoice.lineage ?? [])
+    .filter((l) => l.role === 'otherShareOfSplit')
     .map((l) => billing.invoices[l.invoiceId])
     .filter((i): i is Invoice => i !== undefined)
     .map((i) => ({ invoice: i, name: lock?.addressees[partyKeyOf(i.counterparty)] ?? invoiceAddresseeName({ masters, schedule: { procedures: proceduresRecord } }, i) }))
+  // An additional invoice's original and its Procedure (catch-up Phase 38b), derived from its lineage.
+  const originalLink = invoice.kind === 'additional' ? invoice.lineage?.find((l) => l.role === 'additionalTo') : undefined
+  const original = originalLink !== undefined ? billing.invoices[originalLink.invoiceId] : undefined
+  const firstProcedure = proceduresRecord[invoice.procedureIds?.[0] ?? '']
+  const additionalProcedure = firstProcedure !== undefined ? procedureLabel(firstProcedure, masters.rvgGroups, 1) : 'the Procedure'
+  const freeForm = invoice.kind === 'additional'
   const procedureDateISO = invoice.crossMatch?.procedureDateISO ?? list?.dateISO
   const gstLabel = `GST (${GST_RATE * 100}%)`
 
@@ -135,6 +145,22 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontFamily: fontFamily.serif, fontSize: 21, letterSpacing: '0.12em', color: neutral.ink }}>TAX INVOICE</div>
             <div className="mono" style={{ fontSize: 13.5, fontWeight: 700, marginTop: 4 }}>{invoice.invoiceNumber}</div>
+            {/* An additional invoice names the original it relates to (catch-up Phase 38b; US-08.6.3 "Linked"). */}
+            {original !== undefined && (
+              <div data-shot="invoice-additional-of" style={{ marginTop: 6, fontSize: 12.5, color: neutral.slate }}>
+                <Link to={`/admin/invoices/${original.id}`} style={{ color: neutral.slate }}>
+                  {ADDITIONAL_INVOICE_COPY.relatesTo(original.invoiceNumber, additionalProcedure)}
+                </Link>
+                {list !== undefined && (
+                  <>
+                    {' · '}
+                    <Link to={`/admin/day/${list.dateISO}/bookings/${invoice.bookingId}`} data-shot="invoice-additional-booking" style={{ color: neutral.slate }}>
+                      {ADDITIONAL_INVOICE_COPY.openBooking}
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
             {/* A Procedure priced at $0 (catch-up Phase 24): raised and delivered like any other, headed so. */}
             {invoice.noCharge === true && (
               <div data-shot="invoice-no-charge" style={{ marginTop: 6, display: 'flex', justifyContent: 'flex-end' }}>
@@ -225,7 +251,8 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
           <thead>
             <tr>
               <th style={{ ...docHead, textAlign: 'left' }}>Description</th>
-              <th style={{ ...docHead, textAlign: 'right', width: 70 }}>Units</th>
+              <th style={{ ...docHead, textAlign: 'right', width: 70 }}>{freeForm ? 'Qty' : 'Units'}</th>
+              {freeForm && <th style={{ ...docHead, textAlign: 'right', width: 110 }}>Unit amount</th>}
               <th style={{ ...docHead, textAlign: 'right', width: 110 }}>Amount</th>
             </tr>
           </thead>
@@ -237,7 +264,8 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
                   <div>{line.description}</div>
                   {line.btm !== undefined && <BtmBreakdown btm={line.btm} />}
                 </td>
-                <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{line.units ?? ''}</td>
+                <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{freeForm ? (line.quantity ?? '') : (line.units ?? '')}</td>
+                {freeForm && <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{line.unitAmount !== undefined ? formatCurrency(line.unitAmount) : ''}</td>}
                 <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{formatCurrency(line.amount)}</td>
               </tr>
             ))}
@@ -314,19 +342,21 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
         </div>
       </div>
 
-      <InvoiceInfoRail invoice={invoice} billingCase={theCase} siblings={siblings} error={error} onSend={doSend} />
+      <InvoiceInfoRail invoice={invoice} actor={actor} billingCase={theCase} siblings={siblings} error={error} onSend={doSend} />
     </div>
   )
 }
 
 function InvoiceInfoRail({
   invoice,
+  actor,
   billingCase,
   siblings,
   error,
   onSend,
 }: {
   invoice: Invoice
+  actor: Actor
   billingCase: BookingLedgerPair | undefined
   siblings: readonly { invoice: Invoice; name: string }[]
   error: string | null
@@ -360,6 +390,8 @@ function InvoiceInfoRail({
       </RailCard>
 
       <LockedRecordCard invoice={invoice} />
+
+      <AdditionalInvoicesCard invoice={invoice} actor={actor} />
 
       {siblings.length > 0 && (
         <RailCard title="Related invoices">
@@ -747,11 +779,73 @@ function TotalRow({ label, value }: { label: string; value: string }) {
  * full; every other invoice is due on receipt (a prepaid Procedure is left off
  * it, so there is no balance to explain). The letters are Phase 41's.
  */
-export function patientInvoiceNote(invoiceKind: 'standard' | 'prePayment'): { badge: string; text: string } {
+export function patientInvoiceNote(invoiceKind: Invoice['kind']): { badge: string; text: string } {
   if (invoiceKind === 'prePayment') {
     return { badge: 'Prepayment (before the procedure)', text: 'This invoice is the prepaid amount for the procedure. It is the price for the anaesthetic.' }
   }
   return { badge: 'Payment', text: 'Payment is due on receipt of this invoice.' }
+}
+
+/**
+ * The Additional invoices rail card (catch-up Phase 38b; US-08.6.3 "Linked"):
+ * on an original, its additional invoices (derived from their lineage, never
+ * stored on it), each with number, total, status and who raised it, and
+ * Create additional invoice for its Procedure; on an additional invoice, the
+ * original it relates to and the event it was raised from.
+ */
+function AdditionalInvoicesCard({ invoice, actor }: { invoice: Invoice; actor: Actor }) {
+  const state = useAppStore((s) => s)
+  const [open, setOpen] = useState<string | null>(null)
+  if (invoice.kind === 'additional') {
+    const original = originalInvoiceFor(state, invoice.id)
+    const event = eventForInvoice(state, invoice.id)
+    if (original === undefined) return null
+    return (
+      <RailCard title={ADDITIONAL_INVOICE_COPY.additionalInvoicesCard}>
+        <div data-shot="invoice-additional-links" style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5 }}>
+          <span style={{ color: neutral.slate }}>{ADDITIONAL_INVOICE_COPY.additionalTo(original.invoiceNumber)}</span>
+          <Link to={`/admin/invoices/${original.id}`} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, color: neutral.ink, textDecoration: 'none' }}>
+            <span className="mono" style={{ fontWeight: 600, color: accent.base }}>{original.invoiceNumber}</span>
+            <span className="mono">{formatMoney(original.total)}</span>
+          </Link>
+          {event !== undefined && <span style={{ color: neutral.slate }}>{raisedByText(event.addedBy)}</span>}
+        </div>
+      </RailCard>
+    )
+  }
+  const additional = additionalInvoicesFor(state, invoice.id)
+  const procedureIds = (invoice.procedureIds ?? []).filter((id) => state.schedule.procedures[id] !== undefined)
+  const raisable = procedureIds.filter((id) => raiseRefusal(state, { role: 'office' }, id) === null)
+  if (additional.length === 0 && raisable.length === 0) return null
+  return (
+    <RailCard title={ADDITIONAL_INVOICE_COPY.additionalInvoicesCard}>
+      <div data-shot="invoice-additional-links" style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5 }}>
+        {additional.map((a) => {
+          const ev = eventForInvoice(state, a.id)
+          const pair = pairForInvoice(state, a.id)
+          const paid = pair?.receivable.paidInAtISO !== undefined
+          return (
+            <Link key={a.id} to={`/admin/invoices/${a.id}`} data-invoice-id={a.id} style={{ display: 'flex', flexDirection: 'column', gap: 2, color: neutral.ink, textDecoration: 'none' }}>
+              <span style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                <span className="mono" style={{ fontWeight: 600, color: accent.base }}>{a.invoiceNumber}</span>
+                <span className="mono">{formatMoney(a.total)}</span>
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', color: neutral.slate }}>
+                <Pill size="sm" tone={paid ? 'success' : 'neutral'}>{paid ? 'Paid' : 'Unpaid'}</Pill>
+                {ev !== undefined ? raisedByText(ev.addedBy) : ''}
+              </span>
+            </Link>
+          )
+        })}
+        {raisable.map((id) => (
+          <TextAction key={id} size="sm" onClick={() => setOpen(id)} shot="invoice-create-additional">
+            {procedureIds.length > 1 ? `${EVENT_LABELS.createAdditional} · ${procedureLabel(state.schedule.procedures[id]!, state.masters.rvgGroups, procedureIds.indexOf(id) + 1)}` : EVENT_LABELS.createAdditional}
+          </TextAction>
+        ))}
+        {open !== null && <AdditionalInvoiceSheet open procedureId={open} actor={actor} onClose={() => setOpen(null)} />}
+      </div>
+    </RailCard>
+  )
 }
 
 function PatientInvoiceNote({ badge, text }: { badge: string; text: string }) {

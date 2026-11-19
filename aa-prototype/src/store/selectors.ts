@@ -794,7 +794,8 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
     // booking with a paid prepayment would read 'paid' and mask its unpaid run
     // invoice, and its list would overcount).
     const stdInvoices = invoicesForList(state, list.id).filter((i) => i.kind === 'standard')
-    const runPairs = pairsForList(state, list.id).filter((p) => p.kind === 'procedure')
+    // An additional invoice's pair is a procedure pair too, but not the run's (catch-up Phase 38b): the row says "+1 additional invoice".
+    const runPairs = pairsForList(state, list.id).filter((p) => p.kind === 'procedure' && state.billing.invoices[p.invoiceId]?.kind !== 'additional')
     const pairsByBooking = new Map<string, BookingLedgerPair[]>()
     for (const p of runPairs) pairsByBooking.set(p.bookingId, [...(pairsByBooking.get(p.bookingId) ?? []), p])
 

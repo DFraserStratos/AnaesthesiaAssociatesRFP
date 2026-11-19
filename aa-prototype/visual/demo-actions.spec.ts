@@ -7,10 +7,11 @@ import { runDemoAction } from './demoActions'
  * in the URL (a part payment on the invoice page moves that invoice's money).
  */
 
-test('demo actions: absent on the Review queue, ten on the Day view, six on the Billing monitor', async ({ page }) => {
+test('demo actions: one on the Review queue, ten on the Day view, seven on the Billing monitor', async ({ page }) => {
+  // The Review queue holds "Run the next billing run" (catch-up Phase 38b).
   await page.goto('/admin/review')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="demo-actions"]')).toHaveCount(0)
+  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 1')
 
   // The Day view carries the sample warnings (catch-up Phase 15a), Simulate sickness (catch-up Phase 30), Add Draft List for this day (catch-up Phase 31), Colleague moves a List to the office (catch-up Phase 32) and Colleague hands a Booking to Dr Souter (catch-up Phase 32a), Move to 2 days before procedure and Add prepaid Booking (catch-up Phase 27), Inject unmatched receipt for the Reconciliation card (catch-up Phase 37), and Switch office user (catch-up Phase 35).
   await page.goto('/admin/day/2026-07-21')
@@ -24,16 +25,16 @@ test('demo actions: absent on the Review queue, ten on the Day view, six on the 
   // The Billing monitor keeps its entries with its filters in the URL (catch-up Phase 37).
   await page.goto('/admin/billing?anaesthetist=34821&problems=1&sort=date-asc')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 6')
+  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 7')
 
   await page.goto('/admin/billing')
   await page.waitForLoadState('networkidle')
   const pill = page.locator('[data-shot="demo-actions"]')
-  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 6')
+  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 7')
   await pill.focus()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('dialog')).toBeVisible()
-  for (const id of ['billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job']) {
+  for (const id of ['billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job', 'run-next-billing-run']) {
     await expect(page.locator(`[data-shot="demo-action-${id}"]`)).toBeVisible()
   }
   // The screen's own "Run payables in Xero" panel (badged Simulated Xero, not a registry entry) is untouched.
