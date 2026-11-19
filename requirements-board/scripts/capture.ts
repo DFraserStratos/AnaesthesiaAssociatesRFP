@@ -25,7 +25,6 @@ import { pathToFileURL } from 'node:url'
 import { chromium, type Browser, type BrowserContext, type Locator, type Page } from '@playwright/test'
 import { REQUIREMENTS_DIR, itemPath, loadCatalogue, readConfig, readItemFile, writeItem } from '../server/catalogueFs.ts'
 import { CONFIG_FILE, type CaptureApp, type CaptureConfig, type ScreenshotApp } from '../shared/config.ts'
-import { serialiseItem } from '../shared/files.ts'
 import { HIGHLIGHT } from '../shared/highlight.ts'
 import { compareIds } from '../shared/ids.ts'
 import type { ImageRef, Item } from '../shared/types.ts'
@@ -482,10 +481,8 @@ function linkItem(recipe: Recipe): boolean {
   const item: Item = loaded.record.data
   const kept = item.images.filter((i) => !isGenerated(recipe.id, i.src, APP_KEYS))
   const next: Item = { ...item, images: [...kept, ...imagesFor(recipe)] }
-  const before = readFileSync(itemPath(recipe.id), 'utf8')
-  if (serialiseItem(next) === before) return false
-  writeItem(next)
-  return true
+  // writeItem edits the file in place and writes nothing when nothing changed: the rev says which.
+  return writeItem(next).rev !== loaded.record.rev
 }
 
 /** Delete generated files for this item that the recipe no longer produces. */

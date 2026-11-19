@@ -6,9 +6,16 @@ import { item } from './fixtures.ts'
 const putLayout = vi.fn<(patch: { positions: Record<string, { x: number; y: number } | null> }) => Promise<Layout>>()
 const catalogue = vi.fn()
 const batchItems = vi.fn()
+const changeLane = vi.fn()
 vi.mock('../src/api.ts', () => ({
-  api: { putLayout: (p: never) => putLayout(p), catalogue: () => catalogue(), batchItems: (c: never) => batchItems(c) },
-  ApiError: class extends Error {},
+  api: { putLayout: (p: never) => putLayout(p), catalogue: () => catalogue(), batchItems: (c: never) => batchItems(c), changeLane: (c: never) => changeLane(c) },
+  ApiError: class extends Error {
+    blocked?: unknown[]
+    constructor(message: string, blocked?: unknown[]) {
+      super(message)
+      this.blocked = blocked
+    }
+  },
 }))
 
 const stored = new Map<string, string>()
@@ -218,11 +225,87 @@ describe('undo and redo', () => {
   })
 
   it('keeps lane renames out of card-move history', async () => {
-    echo()
-    putLayout.mockResolvedValue({ positions: {}, lanes: ['Later'] })
-    useCatalogue.setState({ items: { ...recs(), 'US-01.1.1': { data: item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, swimlane: 'MVP' }), rev: 'r1' } }, layout: { positions: {}, lanes: ['MVP'] } })
+    changeLane.mockResolvedValue({ records: [{ data: item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, swimlane: 'Later' }), rev: 'r2' }], layout: { positions: {}, lanes: ['Later'], lanesRev: 'L2' } })
+    useCatalogue.setState({ items: { ...recs(), 'US-01.1.1': { data: item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, swimlane: 'MVP' }), rev: 'r1' } }, layout: { positions: {}, lanes: ['MVP'], lanesRev: 'L1' } })
     expect(await s().renameLane('MVP', 'Later')).toBe(true)
     expect(s().past).toEqual([])
+  })
+})
+
+describe('renaming or removing a lane is one write (R-56)', () => {
+  const inMvp = () => ({
+    'US-01.1.1': { data: item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, swimlane: 'MVP' }), rev: 'r1' },
+    'US-01.1.2': { data: item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2, swimlane: 'MVP' }), rev: 'r2' },
+    'US-01.1.3': { data: item({ id: 'US-01.1.3', parent: 'FT-01.1', order: 3, swimlane: 'Later' }), rev: 'r3' },
+  })
+  beforeEach(() => {
+    changeLane.mockReset()
+    batchItems.mockReset()
+    putLayout.mockClear()
+    useCatalogue.setState({ items: inMvp(), layout: { positions: {}, lanes: ['MVP', 'Later'], lanesRev: 'L1' }, moveError: undefined, past: [] })
+  })
+  const swimlanes = () => Object.values(s().items).map((r) => [r.data.id, r.data.swimlane])
+
+  it('a rename sends one request carrying every story in the lane and the lane list rev, and takes both back from the answer', async () => {
+    changeLane.mockResolvedValue({
+      records: [
+        { data: item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, swimlane: 'Now' }), rev: 'r1b' },
+        { data: item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2, swimlane: 'Now' }), rev: 'r2b' },
+      ],
+      layout: { positions: {}, lanes: ['Now', 'Later'], lanesRev: 'L2' },
+    })
+    expect(await s().renameLane('MVP', 'Now')).toBe(true)
+    expect(changeLane).toHaveBeenCalledTimes(1)
+    expect(changeLane).toHaveBeenCalledWith({ op: 'rename', from: 'MVP', to: 'Now', lanesRev: 'L1', stories: { 'US-01.1.1': 'r1', 'US-01.1.2': 'r2' } })
+    expect(batchItems).not.toHaveBeenCalled()
+    expect(putLayout).not.toHaveBeenCalled()
+    expect(swimlanes()).toEqual([
+      ['US-01.1.1', 'Now'],
+      ['US-01.1.2', 'Now'],
+      ['US-01.1.3', 'Later'],
+    ])
+    expect(s().layout).toMatchObject({ lanes: ['Now', 'Later'], lanesRev: 'L2' })
+  })
+
+  it('a refused rename leaves the stories and the lanes as they were, and says why', async () => {
+    changeLane.mockRejectedValue(new Error('board-layout.json cannot be read; fix or delete it before changing lanes'))
+    expect(await s().renameLane('MVP', 'Now')).toBe(false)
+    expect(swimlanes()).toEqual(Object.values(inMvp()).map((r) => [r.data.id, r.data.swimlane]))
+    expect(s().layout.lanes).toEqual(['MVP', 'Later'])
+    expect(s().moveError).toMatch(/^Lane not renamed: board-layout.json cannot be read/)
+  })
+
+  it('a removal refused for a stale story leaves everything, and shows the newer copy it was given', async () => {
+    const { ApiError } = await import('../src/api.ts')
+    const newer = { data: item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 8, swimlane: 'MVP' }), rev: 'r2-agent' }
+    changeLane.mockRejectedValue(new (ApiError as unknown as new (m: string, b: unknown[]) => Error)('the stories in "MVP" changed on disk since you looked; look again', [{ id: 'US-01.1.2', current: newer }]))
+    expect(await s().deleteLane('MVP')).toBe(false)
+    expect(changeLane).toHaveBeenCalledWith({ op: 'remove', from: 'MVP', lanesRev: 'L1', stories: { 'US-01.1.1': 'r1', 'US-01.1.2': 'r2' } })
+    expect(s().items['US-01.1.1']!.data.swimlane).toBe('MVP')
+    expect(s().items['US-01.1.2']).toEqual(newer)
+    expect(s().layout.lanes).toEqual(['MVP', 'Later'])
+    expect(s().moveError).toMatch(/^Lane not removed: /)
+  })
+
+  it('a good removal clears the stories and drops the lane', async () => {
+    changeLane.mockResolvedValue({
+      records: [
+        { data: item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, swimlane: null }), rev: 'r1b' },
+        { data: item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2, swimlane: null }), rev: 'r2b' },
+      ],
+      layout: { positions: {}, lanes: ['Later'], lanesRev: 'L2' },
+    })
+    expect(await s().deleteLane('MVP')).toBe(true)
+    expect(swimlanes().filter(([, l]) => l === 'MVP')).toEqual([])
+    expect(s().layout.lanes).toEqual(['Later'])
+  })
+
+  it('the lane list rev follows layout events and lane saves', async () => {
+    s().applyEvent({ kind: 'layout', layout: { positions: {}, lanes: ['MVP', 'Later', 'New'], lanesRev: 'L9' } })
+    expect(s().layout.lanesRev).toBe('L9')
+    putLayout.mockResolvedValue({ positions: {}, lanes: ['MVP', 'Later'], lanesRev: 'L10' })
+    await s().setLanes(['MVP', 'Later'])
+    expect(s().layout.lanesRev).toBe('L10')
   })
 })
 

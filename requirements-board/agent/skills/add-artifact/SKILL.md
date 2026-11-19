@@ -55,8 +55,8 @@ npm --prefix BOARD run artifact:new -- --mermaid <file.mmd> --title "<name>" --d
   section from 1). For a cited name that should open one spot, add `spot: <spot>` to the entry in
   the sidecar by hand: a region or step ID, a page `p27`, a line range `L1-10` or a heading slug. Then check a few with `npm --prefix BOARD run source -- "<source>"`.
 - The file comes into `REQ/artifacts/files/`: an SVG or image is copied in as `AR-nn.<ext>`; a
-  transcript, document or PDF from elsewhere in the repo keeps its name and is moved in (`git mv` when
-  tracked; fix any links to its old place). A file already in the requirements folder stays put.
+  transcript, document or PDF from elsewhere in the repo keeps its name and is moved in (not staged:
+  add both paths when you commit; fix any links to its old place). A file already in the requirements folder stays put.
   `--keep` leaves it where it is, with a `/`-rooted path from the repository root; use it only for a
   file that must stay outside. A mermaid diagram lives in the sidecar under `## Source`.
 

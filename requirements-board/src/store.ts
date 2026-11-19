@@ -73,11 +73,13 @@ interface CatalogueState {
   /** Undo the last card move. Refused (and that history dropped) if a moved card has changed since. Resolves true when it applied. */
   undo: () => Promise<boolean>
   redo: () => Promise<boolean>
-  /** Replace the lane list. Rename and delete also repoint the lane's stories, in one batch, first. */
+  /** Replace the lane list (adding or reordering lanes; rename and delete go through `changeLane`). */
   setLanes: (lanes: string[]) => Promise<boolean>
   /** Rename a lane: a named one (its stories follow), one only a story names (it becomes a lane), or the first lane (null). */
   renameLane: (from: string | null, to: string) => Promise<boolean>
   deleteLane: (name: string) => Promise<boolean>
+  /** Rename or remove a named lane and repoint its stories in one server write; `refused` starts the error shown. */
+  changeLane: (change: { op: 'rename'; from: string; to: string } | { op: 'remove'; from: string }, refused: string) => Promise<boolean>
   setPositions: (patch: PosPatch, opts?: MoveOpts) => void
   /** Send any card moves not yet saved. Resolves true when nothing is left pending. */
   flushLayout: () => Promise<boolean>
@@ -112,7 +114,7 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
         if (p) positions[id] = p
         else delete positions[id]
       }
-      set({ status: 'ready', error: undefined, ...snap, artifacts: snap.artifacts ?? {}, config: snap.config ?? DEFAULT_CONFIG, layout: withFirst({ positions, lanes: snap.layout.lanes ?? [] }, snap.layout.firstLane) })
+      set({ status: 'ready', error: undefined, ...snap, artifacts: snap.artifacts ?? {}, config: snap.config ?? DEFAULT_CONFIG, layout: withFirst({ positions, lanes: snap.layout.lanes ?? [], lanesRev: snap.layout.lanesRev }, snap.layout.firstLane) })
       dropUnknownStatuses(get().config)
     } catch (e) {
       set({ status: 'error', error: (e as Error).message })
@@ -144,7 +146,7 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
       if (pending && !layoutTimer) void get().flushLayout()
       // Our own debounced write echoes back; don't let it undo moves still in flight. Lanes have no such race.
       const positions = !layoutTimer && !pending ? e.layout.positions : s.layout.positions
-      const next = withFirst({ positions, lanes: e.layout.lanes ?? [] }, e.layout.firstLane)
+      const next = withFirst({ positions, lanes: e.layout.lanes ?? [], lanesRev: e.layout.lanesRev }, e.layout.firstLane)
       if (JSON.stringify(next) !== JSON.stringify(s.layout)) set({ layout: next })
     } else if (e.kind === 'config') {
       set({ config: e.config })
@@ -274,7 +276,7 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
     set({ layout: { ...prev, lanes } })
     try {
       const saved = await api.putLayout({ lanes })
-      set({ layout: { ...get().layout, lanes: saved.lanes }, moveError: undefined })
+      set({ layout: { ...get().layout, lanes: saved.lanes, lanesRev: saved.lanesRev }, moveError: undefined })
       return true
     } catch (e) {
       set({ layout: { ...get().layout, lanes: prev.lanes }, moveError: `Lanes not saved: ${(e as Error).message}` })
@@ -294,8 +296,8 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
       }
       set({ layout: withFirst({ ...layout }, to) })
       try {
-        const saved = await api.putLayout({ firstLane: to === UNASSIGNED_LANE ? null : to })
-        set({ layout: withFirst({ ...get().layout }, saved.firstLane), moveError: undefined })
+        const saved = await api.putLayout({ firstLane: to === UNASSIGNED_LANE ? null : to, lanesRev: layout.lanesRev })
+        set({ layout: { ...withFirst({ ...get().layout }, saved.firstLane), lanesRev: saved.lanesRev }, moveError: undefined })
         return true
       } catch (e) {
         set({ layout: withFirst({ ...get().layout }, layout.firstLane), moveError: `Lane not renamed: ${(e as Error).message}` })
@@ -305,19 +307,40 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
     if (from === to) return true
     // A name only a story uses (not a lane yet) becomes a lane under its new name.
     const next = layout.lanes.includes(from) ? layout.lanes.map((l) => (l === from ? to : l)) : [...layout.lanes, to]
-    // Check the name before touching any story, so a refused name never leaves stories pointing at nothing.
+    // Check the name before sending, so an obviously refused name never makes a request.
     const problem = laneListProblem([first, ...next])
     if (problem) {
       set({ moveError: `Lane not renamed: ${problem}` })
       return false
     }
-    if (!(await get().moveItems(storiesIn(get().items, from).map((id) => ({ id, swimlane: to })), { record: false }))) return false
-    return get().setLanes(next)
+    return get().changeLane({ op: 'rename', from, to }, 'Lane not renamed')
   },
 
-  async deleteLane(name) {
-    if (!(await get().moveItems(storiesIn(get().items, name).map((id) => ({ id, swimlane: null })), { record: false }))) return false
-    return get().setLanes(get().layout.lanes.filter((l) => l !== name))
+  deleteLane(name) {
+    return get().changeLane({ op: 'remove', from: name }, 'Lane not removed')
+  },
+
+  /**
+   * One write for a lane rename or removal: the stories in the lane and the lane list change together on
+   * the server or not at all (FINDINGS R-56). Nothing changes here until it answers; a refusal leaves the
+   * stories and lanes as they were. Outside undo, as lane changes always were.
+   */
+  async changeLane(change, refused) {
+    const { items, layout } = get()
+    const stories = Object.fromEntries(storiesIn(items, change.from).map((id) => [id, items[id]!.rev]))
+    try {
+      const saved = await api.changeLane({ ...change, lanesRev: layout.lanesRev ?? '', stories } as Parameters<typeof api.changeLane>[0])
+      set({ items: { ...get().items, ...Object.fromEntries(saved.records.map((r) => [r.data.id, r])) }, layout: { ...get().layout, lanes: saved.layout.lanes, firstLane: saved.layout.firstLane, lanesRev: saved.layout.lanesRev }, moveError: undefined })
+      return true
+    } catch (e) {
+      // A newer copy of a story that blocked it is news: show it, so a second try can work.
+      if (e instanceof ApiError && e.blocked) {
+        const fresh = e.blocked.map((b) => b.current as Rev<Item> | null).filter((r): r is Rev<Item> => !!r?.data)
+        if (fresh.length) set({ items: { ...get().items, ...Object.fromEntries(fresh.map((r) => [r.data.id, r])) } })
+      }
+      set({ moveError: `${refused}: ${(e as Error).message}` })
+      return false
+    }
   },
 
   setPositions(patch, opts) {

@@ -11,6 +11,7 @@
  * needs no reorder) keeps its `order`, so no other file is rewritten.
  */
 import { DEFAULT_CONFIG } from './config.ts'
+import { revOf } from './files.ts'
 import { compareSiblings } from './ids.ts'
 import { retiredTest } from './statuses.ts'
 import { parentTypesOf, type Item } from './types.ts'
@@ -138,17 +139,43 @@ export const applyMove = (items: Item[], move: Move, retired?: RetiredTest): Ite
 
 const MAX_LANE_NAME = 40
 
-/** Why a set of lane names (the first lane's name, then the named lanes) cannot be saved, or null when it can. */
-export function laneListProblem(lanes: unknown): string | null {
-  if (!Array.isArray(lanes)) return 'lanes must be a list of names'
+/**
+ * Every reason a set of lane names (the first lane's name, then the named lanes) cannot be saved: a
+ * blank or non-text name, spaces around a name, a name over 40 characters, a name that repeats another
+ * regardless of case (the first lane's included, so a lane called "unassigned" clashes with the default).
+ * One message per problem, so a write can tell a problem it adds from one already there.
+ */
+export function laneListProblems(lanes: unknown): string[] {
+  if (!Array.isArray(lanes)) return ['lanes must be a list of names']
+  const out: string[] = []
   const seen = new Set<string>()
   for (const raw of lanes) {
-    if (typeof raw !== 'string' || !raw.trim()) return 'a lane needs a name'
+    if (typeof raw !== 'string' || !raw.trim()) {
+      out.push('a lane needs a name')
+      continue
+    }
     const name = raw.trim()
-    if (name !== raw) return `lane "${raw}" has spaces around its name`
-    if (name.length > MAX_LANE_NAME) return `lane "${name}" is longer than ${MAX_LANE_NAME} characters`
-    if (seen.has(name.toLowerCase())) return `there is already a lane called "${name}"`
+    if (name !== raw) out.push(`lane "${raw}" has spaces around its name`)
+    if (name.length > MAX_LANE_NAME) out.push(`lane "${name}" is longer than ${MAX_LANE_NAME} characters`)
+    if (seen.has(name.toLowerCase())) out.push(`there is already a lane called "${name}"`)
     seen.add(name.toLowerCase())
   }
-  return null
+  return out
 }
+
+/** The first reason a set of lane names cannot be saved, or null when it can (see `laneListProblems`). */
+export const laneListProblem = (lanes: unknown): string | null => laneListProblems(lanes)[0] ?? null
+
+/** The problems in `after` that `before` does not already have (a repeated message counts each time). */
+export function addedProblems(before: string[], after: string[]): string[] {
+  const left = new Map<string, number>()
+  for (const p of before) left.set(p, (left.get(p) ?? 0) + 1)
+  return after.filter((p) => {
+    const n = left.get(p) ?? 0
+    if (n) left.set(p, n - 1)
+    return !n
+  })
+}
+
+/** The lane list's revision (the first lane's name and the named lanes): a lane write sends the one it started from. */
+export const lanesRevOf = (layout: { firstLane?: string; lanes: string[] }): string => revOf(JSON.stringify({ firstLane: layout.firstLane ?? null, lanes: layout.lanes }))

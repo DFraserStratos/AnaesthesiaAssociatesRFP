@@ -94,8 +94,8 @@ Agent tools in parallel: B12 (after B02), B13 (REQ-07b after B04); both before B
 | B03 | Load resilience | COMPLETE | D-06 and B03-Q2, Q3 recorded (accepted decision 17) | 2026-11-19, board 1.15.0; all 14 findings fixed; issue-surface contract in the entry |
 | B04 | One rule, one helper | COMPLETE | D-03 and B04-Q1 to Q3 recorded (accepted decision 18) | 2026-11-19, board 1.16.0; all 18 findings fixed; D-03 contract for B13 in the entry |
 | B08 | Git history reader | COMPLETE | D-07, D-05 with B05-Q2/Q3, B08-Q1 to Q3, Q5, Q6 recorded (accepted decision 19) | 2026-11-19, board 1.17.0; all 10 findings fixed; deletion bound and contracts for B05 and B09 in the entry |
-| B05 | Server write model | PLANNED | after B02, B03, B04, B08; D-04 before build (D-05 recorded, decision 19) | D-05, B05-Q2, B05-Q3 answered in the B08 session |
-| B07 | Store sync and layout | PLANNED | after B05 (D-04 recorded); D-10 before build | |
+| B05 | Server write model | COMPLETE | D-04, B05-Q5, Q6 recorded (accepted decision 20); D-05 recorded (decision 19) | 2026-11-19, board 1.18.0; all 7 findings fixed; R-45 and R-111 server halves delivered (B06 closes); write protocol for B07 and B06 in the entry |
+| B07 | Store sync and layout | PLANNED | after B05 (D-04 recorded, decision 20); D-10 before build | B05's protocol contract in its entry |
 | B06 | Edit sheets and Settings | PLANNED | after B05, B07, B02, B03 | |
 | B09 | Diff and history UI | PLANNED | after B08, B07 (D-10) | |
 | B10 | Artifact viewers | PLANNED | after B01, B03, B04, B07; D-01c, B01-Q2 and D-10 recorded | |
@@ -118,7 +118,7 @@ decisions" section and resolved in that phase's planning.
 | D-01 | Origin security model (fs.deny vs normalisation, CORS, SVG CSP, write token) | B01 | B10 | B01 build | B10's link handling; whether B01-REQ-10 applies | **Accepted 2026-11-19** (accepted decision 13): deny rule and normalisation; CORS off plus cross-site refusal; no page CSP; no write token |
 | D-02 | Status registry format, recode versioning, migration; plan-tool readability | B02 | B06, B12, B14 | B02 build | Settings UI, plan-tool status rule, SCHEMA and starter docs; whether B02 touches `catalogueDiff.ts` | **Accepted 2026-11-19** (accepted decision 16): no-overlap recodes; removed statuses under `removedStatuses` in `board.config.json`; no migration; `catalogueDiff.ts` untouched |
 | D-03 | How agent `.mjs` tools share `shared/*.ts` rules, including the note-cite resolution rule | B04 | B12, B13 | B04 build (and before B12 builds if needed) | B13-REQ-07b (R-141) shape; parity tests | **Accepted 2026-11-19** (accepted decision 18): direct import of `shared/*.ts` from the catalogue path; not in the workflow runtime or generated pages |
-| D-04 | Write protocol (patch + base rev vs three-way merge; conflict reply; in-place YAML scope; config writes) | B05 | B06, B07 | B05 build | All client save flows; one-line-diff convention if items are edited in place | Open |
+| D-04 | Write protocol (patch + base rev vs three-way merge; conflict reply; in-place YAML scope; config writes) | B05 | B06, B07 | B05 build | All client save flows; one-line-diff convention if items are edited in place | **Accepted 2026-11-19** (accepted decision 20): patch + base rev + optional base values, merged when nothing overlaps; `collisions` and `blocked` in the 409; in place for every record kind; config bases per section; lane route with a lane-list base |
 | D-05 | ID reuse rule: SCHEMA "never reused" vs deliberate documented reuse (A-1, R-54); with B05-Q2/Q3 | B05 (user) | B08, B14 | B08 build (planning-only gate in a B05 planning conversation) | SCHEMA text; journal and history handling; possible deleted-ID list (data migration) | **Accepted 2026-11-19** (accepted decision 19): reuse stays; a restore continues its history; journal cut only at a committed deletion |
 | D-06 | Bad-data issue surface and error-boundary recovery | B03 | B06, B10, B11 | B03 build | How later phases report bad data | **Accepted 2026-11-19** (accepted decision 17): panel in place and a "This page" group in the pill; auto-retry on catalogue change; copyable details; page-wide error capture; repaired storage mentioned |
 | D-07 | Git reader contract (cache key/bounds, SHA-256, unstaged moves, deletion and rename bounds) | B08 | B05, B09 | B08 build | Timeline and diff inputs; R-54 history cut | **Accepted 2026-11-19** (accepted decision 19): HEAD + index identity keys, bounded LRUs, hybrid clean-form names, unchanged unstaged moves followed, full lists with `deleted` markers |
@@ -327,6 +327,49 @@ decisions" section and resolved in that phase's planning.
         `index.lock` unless optional locks are off; every reader's git runs with `GIT_OPTIONAL_LOCKS=0`
         (proof in the B08 entry).
 
+- 2026-11-19, user and B05 session (B05's planning questions):
+  20. **D-04, B05-Q5, B05-Q6 and R-54's mentions and history rule:**
+      - **D-05 not reopened** (decision 19 stands: reuse stays). No deleted-ID list, no migration.
+      - **D-04a, stale writes merge when nothing overlaps** (user). A record write sends `patch` (the
+        fields it changed), `baseRev` and optionally `base` (each patched field's value as the client
+        started from it). Disk at `baseRev`: the patch applies. Disk moved on, with `base`: each patched
+        field's disk value is compared with its base value; none changed, the patch merges onto the file
+        as it is now; any changed, 409 naming them. Without `base` the check stays strict (any disk change
+        is a 409, today's batch rule). "Keep mine" resends the same patch on the current rev.
+      - **D-04b, conflict body:** `{ error, current }` as today, plus `collisions?: string[]` (the patched
+        fields that changed on disk) and, for a multi-record write, `blocked: [{ id, current, collisions? }]`
+        naming every blocker (`current` is the first, so today's store rollback still works). Status
+        meanings unchanged (400 malformed, 404 missing, 409 changed on disk, 422 not answerable by Keep
+        mine, 503 no free ID).
+      - **D-04c, in place for every record kind** (user): items and questions as well as artifact
+        sidecars. A save to an existing file changes only the lines of the fields it changes; creates
+        are written in the canonical form. A change that cannot be written without losing data is
+        refused with 422, the file untouched.
+      - **D-04d, config bases per section:** `config.revs` (`project`, `components`, `statuses`,
+        `questionStatuses`; the rev of each section as on disk) is derived, never written, and travels in
+        the snapshot and config events (B07 keeps it). `PUT /api/config` may send `bases`; a stale section
+        is a 409 with `section` and `current: { data, rev }`. B02's guards run on the merged result.
+      - **D-04e, transition:** today's shapes (`{ record, baseRev }`, a base-less config write, a
+        base-less `lanes`) stay accepted with at least today's guarantees; a whole record at the right
+        base is reduced to the fields that differ from disk. Each is retired by the phase that removes its
+        last caller (B06: record and config; B07 or B11: `setLanes`), which records it.
+      - **D-04f, lanes:** one route, `POST /api/lanes { op: 'rename' | 'remove', from, to?, lanesRev,
+        stories: { id: rev } }`, all or nothing; a rename onto an existing lane is a lane-rule refusal
+        (B11 adds the merge).
+      - **B05-Q5, lane lists carry a base** (user): `layout.lanesRev`, derived and never written. The lane
+        route requires it; a layout write that sends `lanes` or `firstLane` may send it (409 when stale).
+        Position patches never carry a precondition.
+      - **B05-Q6, `artifact:new` never stages** (user, kick-off prompt; convention 9): a plain,
+        non-overwriting move, no `git mv`. B08 follows an unchanged unstaged move (D-07(d)).
+      - **R-54, bare mentions kept and documented** (user): plain-text mentions of a deleted ID stay as
+        written and name a card that later takes the ID; README says so, B14 writes the SCHEMA line.
+      - **R-54, history rule** (session, from decision 19 and B08's contract): a board create at an ID
+        sets any leftover journal aside first; `created` journal entries carry the record; a card that
+        reappears in a sync as a different record starts a new life in its journal (old lines kept in the
+        file). On read, the timeline starts at the newest life start: a committed deletion whose two sides
+        differ (a restore continues), or a `created` journal entry whose record differs from the newest
+        git version before it. The artifact timeline cuts at its deletion bound the same way.
+
 ## Planning handoff
 
 - 2026-11-18: orchestrator created FINDINGS.md (copy of the verified review report), PLAN.md, this
@@ -357,7 +400,7 @@ decisions" section and resolved in that phase's planning.
 | `git status` may take the index lock in lane worktrees and break an agent's commit | B08 author (B08-Q6) | B08 | **Confirmed and fixed in B08** (`GIT_OPTIONAL_LOCKS=0` on every reader call) |
 | HistoryView's screenshot `Shot` labels every load failure "never committed" (same flaw as R-103) | B09 author | B10 | taken into B10 scope |
 | Two layout saves that both succeed can land out of order; StrictMode double start-up load | B07 author | B07 | taken into scope |
-| `artifact:new` uses `git mv`, which stages mid-phase | B05 author (B05-Q6) | B05, then B14 | conflicts with convention 9 |
+| `artifact:new` uses `git mv`, which stages mid-phase | B05 author (B05-Q6) | B05 | **Done in B05** (decision 20): a plain, non-overwriting move, never staged |
 | Fixture e2e port 5182 is fixed, so two lanes collide | B14 author (B14-Q3) | B14 | |
 | `/history-blob/<sha>?src=assets/x.png` serves any blob in the repository by full sha, typed by `src`'s extension (same-origin only; needs the hash) | B01 security review | B08 | **Done in B08**: the `src` case is gated by `blobWasAt` |
 | `catalogueDiff.ts:135` compares git's real top with `REPO_ROOT` as given (the E7a mixed-path defect) | B01 completeness review | B09 | use `realPaths.ts` (`realPath` both sides) |
@@ -369,7 +412,7 @@ decisions" section and resolved in that phase's planning.
 | The Settings Add row's use of the high-water mark has no browser test (the helper and the server refusal are unit-tested) | B02 review | B06 | B06 owns the Settings UI and can prove it with the lock-out |
 | A lock left by a crashed board whose process ID is later reused makes `statuses:recode` refuse until the file is deleted (the message names the file) | B02 review | B14 (docs) | rare; a start-time marker would settle it |
 | `statuses:recode` writes `board.config.json` through `formatJson`, so a hand layout it would lay out differently is reflowed (data unchanged; Settings does the same) | B02 review | none | accepted: `formatJson` is the file's house layout |
-| The write routes' `guard()` runs `checkCatalogue` unguarded, so a check that throws on unexpected data turns a save into a 500 (the load is backstopped, writes are not) | B03 | B05 | backstop it as `issuesFor` does |
+| The write routes' `guard()` runs `checkCatalogue` unguarded, so a check that throws on unexpected data turns a save into a 500 (the load is backstopped, writes are not) | B03 | B05 | **Done in B05**: backstopped with `issuesFor`'s wording, so only a new such error refuses |
 | `scripts/resolve-source.ts` runs `pdfFacts.ts` with no timeout and no try; `scripts/new-artifact.ts` derives SVG and Markdown facts unguarded | B03 | B14 | the board's load is safe; the scripts are not |
 | `.pdf-facts/` is never pruned (an old version's entry stays) and a killed write leaves a `.tmp` | B03 review | none | documented in README; delete the folder any time |
 | `tsconfig.node.json` now carries `jsx` and `vite/client` types so tests can import `.tsx`; a tests-only tsconfig would keep them out of server code | B03 review | B14 | |
@@ -382,10 +425,263 @@ decisions" section and resolved in that phase's planning.
 | The 5 s Vitest timeouts in git and live-server tests recurred in B04 (load 20 to 34); the same files time out on the pre-B04 board too | B04 | B12 or B14 | same item as B01's and B02's |
 | git's own rename detection (`-M`) can pair a deleted card with a similar new card added in the same commit, so the new card inherits the old one's history with no deletion bound | B08 review | B05 | the same case as REQ-11.4 (reuse with no committed deletion); B05-REQ-20's own cut covers it |
 | An LFS version is served as its pointer (`GIT_LFS_SKIP_SMUDGE`, so a request never fetches); viewers show the pointer text | B08 review | B10 | a viewer could say "stored in LFS" instead |
+| `e2e/one-rule.spec.ts` R-101 ("a decomposed passage is boxed over exactly its words") fails 2 runs in 3 on this machine, on the pre-B05 board as well (pixel box off by more than its tolerance) | B05 | B10, then B15 | passed in B04's runs; viewer geometry, not the write model |
+| An artifact ID reissued before the old sidecar's deletion is committed shows the old sidecar's commits as its past (artifacts have no journal to mark a new life; git sees an edit) | B05 review | none (B15 to confirm) | the card case is cut by the journal; an artifact would need a marker kept outside the catalogue |
+| A card deleted by hand and re-created as another card inside one watcher debounce (600 ms) reads as an edit, so no new life starts | B05 review | none | same class as B08's `-M` pairing row |
+| `writeAll` (`server/catalogueApi.ts`) reads a file's bytes for put-back a moment before the writer's own read; an agent write in that window would be put back over if a later file then failed | B05 review | none | microseconds, on a failure path only |
+| `src/components/useEditableRecord.ts` and `shared/steps.ts` keep their own JSON equality; B05's three copies became `sameValue` (`shared/patch.ts`) | B05 review | B06, B09 | adopt `sameValue` when touching those files |
+| `setLanes` (adding and reordering lanes) sends no `lanesRev`, so two tabs can still undo each other's lane additions | B05 (D-04e) | B07 or B11 | send `layout.lanesRev`; the server already checks it when sent |
 | The history readers' per-read costs: one `ls-files --deleted` per read, the whole-history rename log re-run per HEAD (as before B08), negative history-blob checks not cached | B08 review | none | measured acceptable here (card history 2.6 s cold, was 5.5 s); revisit on a much larger repository |
 | The B08-territory git test files now set a 60 s test timeout (the readers run one more git process per read); other live-server and Diff tests keep 5 s | B08 | B12 or B14 | same item as the 5 s timeout rows above |
 
 ## Phase entries
+
+### B05 · Server write model · COMPLETE · 2026-11-19
+
+Board 1.17.0 to **1.18.0**. Plan and evidence: `phases/B05-server-write-model/IMPLEMENTATION.md` (its "As
+built" section lists what changed from the plan). Decisions: accepted decision 20 (D-04, B05-Q5, B05-Q6,
+R-54's mentions and history rule), asked in this session. D-05 was not reopened (decision 19). The SPEC
+marks them answered. No master merge was needed. Every owned finding was checked at HEAD `429b35ce`
+before the build: line drift only, plus B01 to B08's changes.
+
+**Dispositions**
+
+Each proof failed on the pre-B05 board (a `git archive` of `429b35ce` in the scratchpad) and passes after,
+except where marked as a preservation check.
+
+| Finding | Disposition | Proof |
+|---|---|---|
+| R-26 | **Fixed**: a per-request notifier holds record events. The issues are checked once and sent once at the end of a write request, after its record events, even after a refusal (adopted records are still news). `guard` brings issues up to date first when the request adopted a disk version | `tests/writeCost.test.ts`: batch of 1 and 12 (2 checks, 1 issues event), lane rename over 1 and 12 (3: one folder load), delete with 11 rewrites (3). The 12-record cases fail before; the batch of 1 is a preservation check |
+| R-37 | **Fixed**: the artifact PUT edits the sidecar in place (`shared/inPlace.ts`). Untouched keys, comments, `cited_as` in any shape, unknown keys, unreadable values and the whole `## Source` section stay byte for byte. A lossy change is a 422 and nothing is written | `tests/writeModel.test.ts` R-37 block: the FINDINGS sidecar, a title-only save is one line, every detail at once, a lossy flow-mapping sidecar refused, and every real sidecar saved in a scratch copy through the API changes only its author line. `tests/inPlace.test.ts`, and `tests/inPlaceReal.test.ts` over every real story, question and sidecar (each editable field alone; LF and CRLF; on a canonical file the result equals `serialise(next)`) |
+| R-54 | **Fixed** (decisions 19 and 20): `currentLife` (`shared/history.ts`) starts a timeline at the newer of two marks. One is a committed deletion whose two sides differ (a restore continues). The other is the journal's newest `created` entry, whose record differs from the newest git version before it. A board create sets a leftover journal aside, and `created` entries carry the record. A card that reappears in a sync as a different record (a missing file, not an unreadable one) starts a new life; its old lines stay in the file. The artifact timeline cuts at its sidecar's and file's deletion bounds | `tests/reuse.test.ts`: unit cases (bound, restore, uncommitted reissue, same-second commit, legacy entries, screenshots, artifacts). End to end with a journal and real git: commit, board delete, create the reused ID, commit (shows only the new card; the SPEC's FID-18 case, fails before). Also: hand delete then commit then create; an agent re-creating the ID; a board delete undone by `git checkout`; a committed deletion reverted; a file unreadable for one sync then repaired. `tests/writeModel.test.ts`: a create sets the old journal aside |
+| R-55 | **Fixed**: a positions-only layout write is never judged on lanes. A lane write is refused only for a problem it adds (`laneListProblems`, `addedProblems`). The check reports every lane rule, and entries `readLayout` drops; SCHEMA states 40 characters | `tests/writeModel.test.ts` lane-list block: 46-character, case-duplicate and `Unassigned` clash cases (drag saves, check reports, no-worse write saves, worsening write refused, fix clears); dropped entries reported |
+| R-56 | **Fixed** (whole): `POST /api/lanes` renames or removes a lane, its stories and the list in one all-or-nothing write. It needs every story's rev and `lanesRev`, and puts back on a failure part way. The store's `renameLane` and `deleteLane` use it (`changeLane`); a refusal changes nothing and is shown in `moveError` | server: good rename and removal; unreadable layout, refused name, stale story, stale `lanesRev`, each with no file changed; an injected failure part way puts back (lanes, batch, delete); a stale story named with its current copy. Store (`tests/store.test.ts`): one request, refusal leaves stories and lanes, newer copy adopted, removal, `lanesRev` follows events and saves |
+| R-64 | **Fixed**: `createAtomic` falls back to an exclusive `wx` claim and a rename where links fail (EPERM, ENOTSUP, EOPNOTSUPP, EXDEV, ENOSYS); no temp file is left behind. The gap (an empty file visible for a moment, or left by a crash; the check reports it) is recorded in IMPLEMENTATION.md | `tests/writeModel.test.ts` with link forced to fail per code (the old code has no injection point, so its before-proof is the manual check). **Manual, real exFAT image** (`hdiutil create -fs ExFAT`): pre-B05 create fails `ENOTSUP`; B05 creates, refuses a second create (`FileExistsError`), leaves no temp file |
+| R-67 | **Fixed**: `artifact:new` claims the next `AR-nn` with `claimNext` (the API's rule) before touching any file. It copies exclusively or moves without overwriting and without staging (B05-Q6). A drawing name already taken in `files/` moves it to the next ID. A failed file step gives the claim back and leaves no copy behind | `tests/newArtifact.test.ts` (real script, scratch repository): stale snapshot (an `--import` preload hides AR-02) ends on AR-03 with its own file; tracked document moved with nothing staged; failed file step (read-only `files/`) leaves no sidecar, nothing staged, original in place; a stray `AR-02.svg` makes it take AR-03; a taken document name refused before claiming; two concurrent runs give two IDs, each with its own file |
+| R-45 (server half) | **Delivered; B06 closes**: `config.revs` per section in the snapshot and config events; `PUT /api/config` with `bases` answers 409 for a stale section (`section`, `current: { data, rev }`, `blocked`); B02's guards run after | `tests/writeModel.test.ts` Settings block (second write from one base refused, file unchanged; another section saves; an agent's added status survives; B02's 422) |
+| R-111 (server half) | **Delivered; B06 closes**: an unchanged patch, an empty patch, an identical whole record and a no-op batch write nothing, journal nothing and emit nothing | `tests/writeModel.test.ts` "write nothing, journal nothing and send nothing" |
+
+**Write protocol (the contract for B07 and B06; also at the top of `server/catalogueApi.ts`):**
+1. **Request shapes.**
+   - Records: `PUT /api/items/:id`, `/api/questions/:id` and `/api/artifacts/:id` take
+     `{ patch, baseRev, base? }`. `patch` names only changed fields: for items, `PATCH_FIELDS.item` in
+     `shared/patch.ts`, with `extra` merged key by key; `id`, and an item's `type`, may be sent only
+     unchanged.
+   - Batch: `POST /api/items/batch` takes `{ changes: [{ id, baseRev, patch, base? }] }`.
+   - Lanes: `POST /api/lanes` takes `{ op: 'rename' | 'remove', from, to?, lanesRev, stories: { id: rev } }`,
+     where `stories` is every story the client holds in that lane.
+   - Layout: `PUT /api/layout` may add `lanesRev` when it sends `lanes` or `firstLane`.
+   - Config: `PUT /api/config` may add `bases: { section: rev }`.
+   - Transport in `src/api.ts`: `patchItem`, `patchQuestion`, `patchArtifact`, `changeLane`, and
+     `putConfig` / `putLayout` with the new fields. The old functions stay.
+2. **Stale writes.**
+   - Disk at `baseRev`: the patch applies onto the file as it is.
+   - Disk moved on, with `base`: the patch merges when every patched field's disk value equals its base
+     value (tidied by the same reader, so `3` and `"3"` match). Otherwise it is a 409 naming the fields.
+   - Without `base`: any disk change is a 409, with no `collisions`. "Keep mine" resends the same patch on
+     `current.rev`.
+   - Example: an agent adds `artifacts:` while a sheet edits the description. With
+     `base: { description: <as opened> }` the save goes through and keeps the artifacts.
+3. **Conflict body.** A 409 carries:
+   - `{ error, current }`, where `current` is the record as it is now, with its rev;
+   - `collisions?: string[]`;
+   - `blocked: [{ id, current, collisions? }]` for a batch, a lane change (a story the client did not know
+     about is a blocker too) or config sections; `current` is then the first blocker;
+   - for config, `section` and `current: { data, rev }`;
+   - for lanes, `current: { data: { firstLane, lanes }, rev }` when the list moved on.
+   - Status meanings are unchanged: 400 malformed (unknown patch field, missing `baseRev`, a patched field
+     with no base value), 404, 409, 422 (including a lossy in-place edit), 503.
+4. **Success body.** `Rev<T>` with the new rev (batch `{ records }`, lanes `{ records, layout }`). A no-op
+   returns the record as it is, rev unchanged: nothing written, journalled or emitted.
+5. **Config bases.** `config.revs` holds `project`, `components`, `statuses` and `questionStatuses`, each
+   the rev of that section's raw JSON on disk (`null` when absent). It arrives in the snapshot, in config
+   events, and in the config PUT's answer. **B07 keeps it** through its event rework.
+6. **Layout.**
+   - Position patches are idempotent, carry no precondition, and are never refused for lanes. The server
+     does not order client batches (B07 does).
+   - `layout.lanesRev` is derived (`lanesRevOf`) and never written; the store carries it through load,
+     events, `setLanes` and lane changes.
+   - The lane rules are refused only when a write adds a problem.
+7. **Legacy shapes.**
+   - `{ record, baseRev }` stays: strict on any disk change, written as the fields that differ from the
+     file. So do a base-less config write and a base-less `lanes` write.
+   - Each is retired by the phase that removes its last caller: B06 for the record shape (sheets) and the
+     base-less config (Settings); B07 or B11 for `setLanes`, which today adds and reorders lanes without
+     `lanesRev`. That phase records it.
+8. **IDs and history (D-05, decision 19).**
+   - Reuse stays: the top freed ID is reissued by the API and `artifact:new` alike, through `claimNext`.
+   - The journal is cut on read only (B05-Q2), except that a board delete still sets it aside, and so
+     does a board create at an ID with a leftover journal.
+   - `currentLife` is the cut. **B09 keeps it** in `buildTimeline` and `buildArtifactTimeline`; **B07
+     keeps** the `syncFromDisk` journal step: `reappeared` only when the file was missing (not unreadable)
+     in the previous load.
+   - Commit times are compared to the second.
+9. **Store lane actions.** `renameLane` (named lanes) and `deleteLane` call `changeLane`: one request,
+   no optimistic change, newer copies of blocking stories adopted. The first-lane rename stays a layout
+   write (with `lanesRev`). Lane changes are outside undo. **B11** extends `/api/lanes` for R-119's
+   merge, keeping all-or-nothing; a rename onto an existing lane is a 422 today.
+
+**ID rule for B14's SCHEMA wording:** item, question and artifact IDs are reissued when the highest under a
+prefix is deleted. The next record created there takes it, and its History starts with it; a record
+restored as it was keeps its history. Plain-text mentions of a deleted ID stay as written and name
+whichever record later takes the ID (the check warns while none does). SCHEMA lines 73, 274 ("Never
+reused") and 469 to 470 ("No deletes") need this.
+
+**What shipped:**
+- **New:** `shared/inPlace.ts`, `shared/patch.ts`.
+- **Changed:**
+  - `server/catalogueApi.ts`: patch routes, legacy reduction, conflicts, no-op, notifier, `writeAll` with
+    preflight and put-back, the lane route, the layout lane rule, config bases, the guard backstop,
+    `claimNext` creates, the route comment.
+  - `server/catalogueFs.ts`: in-place writers, `createAtomic` fallback, `claimNext`, `readLayout`
+    `lanesRev` and `droppedLanes`, `firstLane` into the check.
+  - `shared/files.ts`: exported frontmatter builders and `YAML_OPTIONS`, lint wording, header.
+  - Also: `src/api.ts`, `scripts/new-artifact.ts`, and the touch-rights files below.
+- **Tests:**
+  - new: `tests/inPlace.test.ts` (17), `tests/inPlaceReal.test.ts` (4), `tests/writeModel.test.ts` (37),
+    `tests/writeCost.test.ts` (5), `tests/newArtifact.test.ts` (6), `tests/reuse.test.ts` (14);
+  - additions to `tests/store.test.ts` (5).
+
+**Tests changed on purpose (REQ-21):**
+- `tests/loadResilience.test.ts`: two whole-layout equality checks now include the derived `lanesRev`.
+- `tests/oneRule.test.ts`: four `cited_as` lint messages now say a save keeps what it cannot read.
+- `tests/store.test.ts`: "keeps lane renames out of card-move history" mocks `changeLane` instead of the
+  batch plus `putLayout`.
+- No other existing test changed. `tests/historyJournal.test.ts:173` (a new card at a reused ID starts
+  clean) is kept and passes.
+
+**Touch-rights edits (convention 11):**
+- `src/store.ts` (B07/B06's):
+  - `renameLane`, `deleteLane` and the new `changeLane`;
+  - `lanesRev` carried in the start-up load, the layout event, `setLanes` and the first-lane rename.
+- `server/catalogueApi.ts` `syncFromDisk` (B07's): events through the notifier when a request calls it;
+  `reappeared` passed to the journal.
+- `server/historyJournal.ts`: `created` entries carry the record; the `reappeared` option.
+- `shared/history.ts` (B09's): `currentLife`, `assetLife`; `item?` on `JournalEntry`; `start` to the second.
+- `shared/check.ts`: the lane-list report and the `firstLane` input.
+- `shared/config.ts`: `revs`, `CONFIG_SECTIONS`, `configRevs`, the `ConfigPatch.bases` type.
+- `shared/move.ts`: `laneListProblems`, `addedProblems`, `lanesRevOf`.
+- `shared/types.ts`: `Layout.lanesRev`.
+- `scripts/new-artifact.ts` (B14 sweeps paths later).
+- `scripts/capture.ts` (B12/B14's): "changed" judged by the writer's rev.
+- `agent/skills/add-artifact/SKILL.md`: the move line.
+- `requirements/SCHEMA.md`: catalogue doc lines only, no requirement.
+- `docs/board-fixes/index.html`: B05 status.
+
+**Deviations:**
+1. **The lane route re-reads the folder before planning**, as delete does.
+   - Measured on 400 synthetic cards, a 40-story rename: before (batch then layout) 58 ms and 82 events;
+     B05's lane route 117 ms and 42 events (the extra is that one folder load); the batch path alone is
+     now 46 ms and 43 events.
+   - REQ-14's bound holds: one load and constant checks, not records times catalogue size.
+2. **A drawing name already taken in `files/` moves `artifact:new` to the next ID** rather than failing
+   (review). A taken document name still fails before claiming.
+3. **The canonical fallback** (a file the splice cannot handle, such as anchors or a flow mapping) is
+   allowed to add keys the board always writes (an empty `components`) but never to change or drop one.
+4. **Timeline times are compared to the second** (git's resolution), including `buildTimeline`'s
+   journal-start divider rule (review).
+5. **IMPLEMENTATION.md** is the approved plan file plus "As built", "Recovery" and "Handoff" sections.
+
+**Verification:**
+- **`npm run verify:board` green:** 891 tests, check OK.
+- **Real catalogue:** `npm run check` output byte-identical to the pre-B05 board's on the same folder; no
+  file under `requirements/` changed but SCHEMA.md.
+- **Agent tool suites:** 29 pass (SKILL.md touched).
+- **Fixture e2e (5182):** 109 of 110 pass.
+  - The failure is `one-rule.spec.ts` R-101 (a viewer pixel box), which fails 2 runs in 3 on the
+    pre-B05 board too (Discovered).
+  - `board-mapped.spec.ts` (lane rename through `/api/lanes`), `item-delete`, `settings`, `artifacts`,
+    `status-picker` and `question-answer` pass (65).
+  - Under a load average of 16, one run saw `board-mapped` "clicking a lane name renames it" fail once in
+    three, and one full run saw its undo test fail once. Neither reproduced in 6 single runs, 4 whole-spec
+    runs (52 of 52) and a full-suite rerun.
+- **Before-proofs** (scratchpad `git archive 429b35ce`):
+  - `writeModel` 30 of 31 fail (R-64's block left out: the old code has no link injection; the one that
+    passes is a preservation check);
+  - `reuse` 8 of 12 (the 4 that pass are restore and preservation cases);
+  - `newArtifact` 4 of 5;
+  - `writeCost` 4 of 5;
+  - the store's lane tests 6 of 6.
+  - `inPlace*.test.ts` fail on import there; their behaviour is shown failing through the API in
+    `writeModel`'s R-37 block.
+  - The review regression tests were each shown failing with the fix taken out (parse gap, preflight) or
+    before the fix (same second, repeated heading, empty-value comment, stray drawing, unreadable-layout
+    422).
+- **Manual:** exFAT image (R-64, above). **Migration:** none.
+
+**Review outcomes (convention 15):** two Sonnet reviewers (diff about 2,000 changed lines outside tests).
+- **Confirmed and fixed, each with a regression test:**
+  - a card whose file was unreadable for one sync, then repaired with a change, started a new life and hid
+    its history (both reviewers);
+  - a repeated or out-of-order body heading was reordered on a title edit (the yardstick now takes the body
+    as `next` holds it, and the read-back requires the result to parse as intended);
+  - a key with an empty value lost its trailing comment when given a value;
+  - the canonical fallback refused harmless added default keys (anchors, flow-mapping files);
+  - a commit in the same second as a board create was dropped as the old card's;
+  - a write of several files could write and put back before refusing a lossy edit (a preflight dry run
+    now runs first);
+  - `writeAll` read any error as "no file" and could delete on put-back, and missed a step that wrote and
+    then failed;
+  - `artifact:new` left a copy behind after a late failure, and dead-ended on a stray `AR-nn` drawing;
+  - a lane change on an unreadable layout with no `lanesRev` answered 400, not 422;
+  - three copies of the JSON equality helper (now `sameValue` in `shared/patch.ts`);
+  - the README `artifact:new` sentence;
+  - the `writeRecordFile` comment;
+  - the CHANGELOG exFAT wording.
+- **Not reproducible:** the reviewer's "no exFAT manual check" (done; recorded above).
+- **Recorded, not changed** (Discovered):
+  - an artifact ID reissued before its deletion is committed (artifacts have no journal, so there is no
+    mark);
+  - a hand delete and re-create inside one watcher debounce reads as an edit;
+  - `writeAll` reads a file's bytes a moment before the writer's own read, so an agent write in that
+    window would be put back over on a later failure;
+  - the empty-file moment in `createAtomic`'s fallback (documented);
+  - `useEditableRecord.ts` and `shared/steps.ts` keep their own JSON equality.
+
+**Doc facts (convention 12):**
+- **`requirements-board/README.md`:**
+  - the shared map (`inPlace.ts`, `patch.ts`) and the server map (`catalogueFs.ts`, `catalogueApi.ts`);
+  - "How it works": the save and conflict bullet (patch, base, collisions, blocked, no-op, legacy,
+    Settings revs); the write bullet (in place, 422 on loss, creates without hard links, put-back, one
+    check);
+  - the Mapped lanes text (`POST /api/lanes`, `lanesRev`, 40 characters, rules reported, moves never
+    refused);
+  - the Delete bullet (ID reuse, restore, plain-text mentions);
+  - the `artifact:new` paragraph (never staged, claimed first, stray drawing).
+- **`requirements/SCHEMA.md`:** the `lanes` paragraph (40 characters, the check, same change) and the
+  `cited_as` row (a save keeps unread keys).
+- **`agent/skills/add-artifact/SKILL.md`:** the move line.
+- **Headers:** `server/catalogueApi.ts` (routes and the write protocol), `shared/files.ts`,
+  `shared/inPlace.ts`, `shared/patch.ts`, `scripts/new-artifact.ts`.
+- **`CHANGELOG.md`** 1.18.0.
+- **Checked, nothing changed:** the About page says only "Rename and add them from the board's lane
+  headers". ADOPTING says none of this.
+- **For B14:** the ID rule above for SCHEMA lines 73, 274 and 469 to 470.
+
+**What later phases need:**
+- **B07:**
+  - the contract above (items 5, 6, 8 and 9);
+  - keep `config.revs` and `layout.lanesRev` through the event rework;
+  - keep the notifier (`pending`, `notify`, `issuesChanged`, `flush`) or replace it with its own
+    batching (R-159), still sending one issues event per request;
+  - keep the `syncFromDisk` journal step;
+  - `setLanes` still sends no `lanesRev` (legacy, D-04e);
+  - the lane route's folder re-read is a candidate for B07's incremental re-sync.
+- **B06:**
+  - switch sheets to `patchItem` / `patchQuestion` / `patchArtifact` with `base` (R-02, R-41: rebase on
+    the returned rev; read `collisions` for Keep mine / Load theirs);
+  - switch Settings to `bases` from `config.revs`, closing R-45 (the 409 carries `section` and `current`);
+  - gate saves on a real change, closing R-111 (the server already writes nothing);
+  - then retire the legacy record and base-less config shapes (D-04e) and record it.
+- **B09:** keep `currentLife` in both timeline builders; per-file screenshot bounds (`screenshotsEnded`)
+  within one card's life are not cut, and B09 may draw them. `start` and the cut compare to the second.
+- **B11:** extend `/api/lanes` for R-119's merge (a rename onto an existing lane), keeping all-or-nothing
+  and the `lanesRev` check.
+- **B12/B14:** `capture.ts` judges "changed" by `writeItem`'s rev. `artifact:new` paths are B14's
+  (`filesDir`, `REPO_ROOT`).
+- **B14:** the ID-rule wording above; the README lines above in the whole-file pass.
+- **B15:** rerun `tests/{inPlace,inPlaceReal,writeModel,writeCost,newArtifact,reuse}.test.ts`, the store's
+  lane tests and `e2e/board-mapped.spec.ts`; repeat the exFAT check if a machine allows.
 
 ### B08 · Git history reader · COMPLETE · 2026-11-19
 

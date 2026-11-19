@@ -1,6 +1,6 @@
 # Phase B05: Server write model
 
-**Status:** PLANNED
+**Status:** COMPLETE (2026-11-19; see PROGRESS B05 entry and IMPLEMENTATION.md)
 
 **Requirements:** R-26, R-37, R-54, R-55, R-56, R-64, R-67 ([FINDINGS.md](../../FINDINGS.md), "Findings in
 detail", `#### R-nn`); systemic issue 1 (writes rebuilt from a stale or lossy model) and the R-54 part
@@ -452,7 +452,7 @@ Shared register: [PROGRESS.md](../../PROGRESS.md) "Deferred decisions". Answers 
 decisions before the gate named for each. B07 and B06 are blocked on D-04; B08 is blocked on D-05 with
 B05-Q2 and B05-Q3; B14's SCHEMA ID wording is blocked on D-05.
 
-**D-04 · Write protocol.** Owner B05. Waits on it: B07, B06. Gate: before B05 builds. Affects REQ-01 to
+**D-04 · Write protocol.** **Answered (accepted decision 20, 2026-11-19): patch + base rev + optional base values, merged when nothing overlaps; `collisions` and `blocked` in the 409; in place for every record kind; config bases per section; a lane route with a lane-list base.** Owner B05. Waits on it: B07, B06. Gate: before B05 builds. Affects REQ-01 to
 REQ-09, REQ-13. Sub-questions and options:
 - *Change shape.* (a) Field patch plus a base rev, merged on the server onto the file as on disk (the
   batch route's model, extended to every route). (b) Field patch plus the expected prior value of each
@@ -513,11 +513,11 @@ Phase questions:
   always; moot under "never reuse". Affects REQ-20 and B08's bound.
 - **B05-Q4 · Unlisted shared files.** Answered (accepted decision 10, 2026-11-18): the rows are in PLAN's
   shared-files table, and `src/api.ts` transport is B05's (accepted decision 5).
-- **B05-Q5 · Lane list writes have no conflict check.** Open. Owner B05; the user decides. Gate: before
+- **B05-Q5 · Lane list writes have no conflict check.** **Answered (decision 20): yes, lane-list writes carry a base (`layout.lanesRev`).** Owner B05; the user decides. Gate: before
   B05 builds. Adding, removing or reordering lanes replaces the whole list, so two tabs can each undo the
   other's change. No finding covers it. Options: give lane-list writes a base like config sections
   (REQ-06), or leave as is. Affects REQ-13's request and B11's merge extension.
-- **B05-Q6 · `artifact:new` stages files.** Open. Owner B05; then B14 if unresolved (PROGRESS "Discovered
+- **B05-Q6 · `artifact:new` stages files.** **Answered (decision 20): it never stages (a plain, non-overwriting move).** Owner B05; then B14 if unresolved (PROGRESS "Discovered
   for later"). Gate: before B05 builds. It moves a tracked file with `git mv`, which stages the move,
   against convention 9 (agents run `artifact:new` inside phases). Options: move without staging (git sees
   a delete and an add until commit), or keep `git mv` and document it. Affects REQ-18.

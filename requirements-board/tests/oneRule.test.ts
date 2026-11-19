@@ -355,11 +355,11 @@ describe('frontmatter lint that tells the truth (R-38, R-85)', () => {
     return [...lintFrontmatter(text), ...lintArtifact(text, parseArtifact(text))]
   }
   it('cited_as is linted: not a list, an odd entry, an unknown or misspelt key', () => {
-    expect(lint('cited_as:\n  as: Board pack\n')).toEqual(['cited_as is not a list (write each prefix as a "- " line), so it is ignored, and dropped on the next board save'])
-    expect(lint('cited_as:\n  - 12\n')).toEqual(['a cited_as entry is neither a prefix nor a mapping (as, page_offset, within, spot), so it is ignored, and dropped on the next board save'])
+    expect(lint('cited_as:\n  as: Board pack\n')).toEqual(['cited_as is not a list (write each prefix as a "- " line), so the board ignores it (a save keeps it as written)'])
+    expect(lint('cited_as:\n  - 12\n')).toEqual(['a cited_as entry is neither a prefix nor a mapping (as, page_offset, within, spot), so the board ignores it (a save keeps it as written)'])
     expect(lint('cited_as:\n  - as: Board pack\n    pageOffset: 1\n    colour: red\n')).toEqual([
-      'cited_as "Board pack" has a key the board ignores, "pageOffset" (did you mean "page_offset"?); it is dropped on the next board save',
-      'cited_as "Board pack" has a key the board ignores, "colour"; it is dropped on the next board save',
+      'cited_as "Board pack" has a key the board ignores, "pageOffset" (did you mean "page_offset"?); a save keeps it as written',
+      'cited_as "Board pack" has a key the board ignores, "colour"; a save keeps it as written',
     ])
     expect(lint('cited_as:\n  - Board pack\n  - as: Board pack v2\n    page_offset: 1\n')).toEqual([])
   })

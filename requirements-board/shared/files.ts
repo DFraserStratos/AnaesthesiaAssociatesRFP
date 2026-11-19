@@ -1,9 +1,11 @@
 /**
  * Parse and serialise catalogue files: YAML frontmatter + Markdown body.
  *
- * Serialisation is deterministic (fixed key order, no line folding) so an edit
- * to one field produces a one-line diff, and parse(serialise(x)) === x for any
- * record that `roundTripProblems` passes.
+ * Serialisation is deterministic (fixed key order, no line folding), and
+ * parse(serialise(x)) === x for any record that `roundTripProblems` passes. New
+ * records are written whole this way; a save to an existing file edits it in place
+ * (`inPlace.ts`), writing changed keys in this same form, so a one-field edit is a
+ * one-line diff even in a file an agent formatted by hand.
  */
 import { stripBom } from './bom.ts'
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
@@ -16,7 +18,7 @@ export const ACCEPTANCE_HEADING = '## Acceptance criteria'
 export const TECHNICAL_HEADING = '## Technical discussion'
 export const NOTES_HEADING = '## Notes'
 /** An item body's level-2 sections after the description, in the order they are written. */
-const ITEM_SECTIONS = [
+export const ITEM_SECTIONS = [
   { heading: ACCEPTANCE_HEADING, field: 'acceptance', label: 'Acceptance criteria' },
   { heading: TECHNICAL_HEADING, field: 'technical', label: 'Technical discussion' },
   { heading: NOTES_HEADING, field: 'notes', label: 'Notes' },
@@ -25,7 +27,7 @@ export const ANSWER_HEADING = '## Answer'
 
 export class ParseError extends Error {}
 
-function splitFrontmatter(text: string): { yamlText: string; meta: Record<string, unknown>; body: string } {
+export function splitFrontmatter(text: string): { yamlText: string; meta: Record<string, unknown>; body: string } {
   const normalised = stripBom(text).replace(/\r\n/g, '\n')
   if (!normalised.startsWith(FENCE + '\n')) throw new ParseError('file must start with a --- frontmatter fence')
   const end = normalised.indexOf('\n' + FENCE, FENCE.length)
@@ -47,7 +49,7 @@ function splitFrontmatter(text: string): { yamlText: string; meta: Record<string
 /** Drop leading blank lines and trailing whitespace, but keep a first line's indent (code blocks). */
 export const tidyText = (s: string) => s.replace(/^(?:[ \t]*\n)+/, '').trimEnd()
 
-const isHeading = (line: string, heading: string) => line.trimEnd() === heading
+export const isHeading = (line: string, heading: string) => line.trimEnd() === heading
 
 /** Split a body at a level-2 heading: text before, text after. */
 function splitSection(body: string, heading: string): [string, string] {
@@ -255,12 +257,12 @@ export function lintItem(text: string, item: Item): string[] {
   }
   const out: string[] = []
   if (!Number.isFinite(Number(meta.order)) || meta.order === null || meta.order === undefined || meta.order === '') {
-    out.push(`order is missing or not a number (${String(meta.order)}); it sorts as 0, and 0 is written back on the next save`)
+    out.push(`order is missing or not a number (${String(meta.order)}); it sorts as 0, and the board writes 0 when it next moves the card`)
   }
   for (const raw of Array.isArray(meta.images) ? meta.images : []) {
     if (!raw || typeof raw !== 'object') continue
     const unknown = Object.keys(raw).filter((k) => !IMAGE_KEYS.includes(k))
-    if (unknown.length) out.push(`image ${str((raw as Record<string, unknown>).src)} has keys the board does not keep (${unknown.join(', ')}); they are dropped on the next save`)
+    if (unknown.length) out.push(`image ${str((raw as Record<string, unknown>).src)} has keys the board does not keep (${unknown.join(', ')}); they are dropped when the board next changes this card's images`)
   }
   for (const p of itemRoundTripProblems(item)) out.push(`the board cannot save this item until it is fixed: ${p}`)
   return out
@@ -270,8 +272,11 @@ export function lintQuestion(_text: string, q: Question): string[] {
   return questionRoundTripProblems(q).map((p) => `the board cannot save this question until it is fixed: ${p}`)
 }
 
+/** The YAML options every board-written frontmatter uses (in-place edits render changed keys with them too). */
+export const YAML_OPTIONS = { lineWidth: 0, flowCollectionPadding: false } as const
+
 function yamlBlock(meta: Record<string, unknown>): string {
-  return stringifyYaml(meta, { lineWidth: 0, flowCollectionPadding: false })
+  return stringifyYaml(meta, YAML_OPTIONS)
 }
 
 function assemble(meta: Record<string, unknown>, sections: [string | null, string][]): string {
@@ -294,7 +299,8 @@ const withExtra = (meta: Record<string, unknown>, extra: Record<string, unknown>
 /** A status code is a whole number: written bare (`status: 4`), not as a quoted string. */
 const statusValue = (s: string): string | number => (/^[1-9]\d*$/.test(s) ? Number(s) : s)
 
-export function serialiseItem(item: Item): string {
+/** An item's frontmatter as the board writes it: fixed key order, empty optional keys left out, then `extra`. */
+export function itemMeta(item: Item): Record<string, unknown> {
   const meta: Record<string, unknown> = { id: item.id, type: item.type }
   if (item.parent) meta.parent = item.parent
   meta.title = item.title
@@ -311,14 +317,18 @@ export function serialiseItem(item: Item): string {
     if (i.caption) img.caption = i.caption
     return img
   })
-  withExtra(meta, item.extra, ITEM_KEYS)
-  return assemble(meta, [
+  return withExtra(meta, item.extra, ITEM_KEYS)
+}
+
+export function serialiseItem(item: Item): string {
+  return assemble(itemMeta(item), [
     [null, item.description],
     ...ITEM_SECTIONS.map((s): [string, string] => [s.heading, item[s.field]]),
   ])
 }
 
-export function serialiseQuestion(q: Question): string {
+/** A question's frontmatter as the board writes it. */
+export function questionMeta(q: Question): Record<string, unknown> {
   const meta: Record<string, unknown> = {
     id: q.id,
     kind: q.kind,
@@ -328,8 +338,11 @@ export function serialiseQuestion(q: Question): string {
     affects: q.affects,
     sources: q.sources,
   }
-  withExtra(meta, q.extra, QUESTION_KEYS)
-  return assemble(meta, [
+  return withExtra(meta, q.extra, QUESTION_KEYS)
+}
+
+export function serialiseQuestion(q: Question): string {
+  return assemble(questionMeta(q), [
     [null, q.question],
     [ANSWER_HEADING, q.answer],
   ])
@@ -475,7 +488,8 @@ export function parseArtifact(text: string): Artifact {
   return toArtifact({ ...meta, extra: pickExtra(meta, ARTIFACT_KEYS) }, description, mermaidOf(sourceSection))
 }
 
-export function serialiseArtifact(a: Artifact): string {
+/** An artifact's frontmatter as the board writes it. */
+export function artifactMeta(a: Artifact): Record<string, unknown> {
   const meta: Record<string, unknown> = { id: a.id, title: a.title, kind: a.kind, status: a.status }
   if (a.supersededBy) meta.superseded_by = a.supersededBy
   if (a.date) meta.date = a.date
@@ -516,8 +530,11 @@ export function serialiseArtifact(a: Artifact): string {
     })
   }
   if (a.stepView) meta.step_view = a.stepView
-  withExtra(meta, a.extra, ARTIFACT_KEYS)
-  return assemble(meta, [
+  return withExtra(meta, a.extra, ARTIFACT_KEYS)
+}
+
+export function serialiseArtifact(a: Artifact): string {
+  return assemble(artifactMeta(a), [
     [null, a.description],
     [SOURCE_HEADING, a.source ? '```mermaid\n' + a.source + '\n```' : ''],
   ])
@@ -569,20 +586,20 @@ export function lintArtifact(text: string, a: Artifact): string[] {
     return []
   }
   const out: string[] = []
-  // cited_as: what the board cannot read it ignores, and drops on the next board save (FINDINGS R-38, R-37).
+  // cited_as: what the board cannot read it ignores; a board save keeps it as written (FINDINGS R-38, R-37).
   const cited = parts.meta.cited_as
-  const dropped = 'so it is ignored, and dropped on the next board save'
-  if (cited !== undefined && cited !== null && !Array.isArray(cited)) out.push(`cited_as is not a list (write each prefix as a "- " line), ${dropped}`)
+  const ignored = 'so the board ignores it (a save keeps it as written)'
+  if (cited !== undefined && cited !== null && !Array.isArray(cited)) out.push(`cited_as is not a list (write each prefix as a "- " line), ${ignored}`)
   for (const raw of Array.isArray(cited) ? cited : []) {
     if (typeof raw === 'string') continue
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-      out.push(`a cited_as entry is neither a prefix nor a mapping (as, page_offset, within, spot), ${dropped}`)
+      out.push(`a cited_as entry is neither a prefix nor a mapping (as, page_offset, within, spot), ${ignored}`)
       continue
     }
     const loose = (k: string) => k.toLowerCase().replace(/[_-]/g, '')
     for (const k of Object.keys(raw).filter((x) => !CITATION_KEYS.includes(x))) {
       const meant = CITATION_KEYS.find((c) => loose(c) === loose(k))
-      out.push(`cited_as "${str((raw as Record<string, unknown>).as)}" has a key the board ignores, "${k}"${meant ? ` (did you mean "${meant}"?)` : ''}; it is dropped on the next board save`)
+      out.push(`cited_as "${str((raw as Record<string, unknown>).as)}" has a key the board ignores, "${k}"${meant ? ` (did you mean "${meant}"?)` : ''}; a save keeps it as written`)
     }
   }
   const regions = parts.meta.regions

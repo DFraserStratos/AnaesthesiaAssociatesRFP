@@ -41,6 +41,8 @@ export interface JournalEntry {
   changes: FieldChange[]
   /** Changed on disk while the board was not running: noticed at the next start. */
   offline?: true
+  /** On a `created` entry: the record as it began, so the timeline can tell a new card reusing the ID from a restore. */
+  item?: Item
 }
 
 export interface CommitInfo {
@@ -258,13 +260,65 @@ export function collapse(entries: JournalEntry[]): JournalEntry[] {
  * show only as dividers (the journal already has their detail). An edit git sees as uncommitted
  * but the journal never saw (made before it started) becomes a "not committed yet" entry.
  */
+/**
+ * A record's current life (FINDINGS R-54; accepted decisions 19 and 20): an ID can be reissued after its
+ * record is deleted, and the new record's history must not show the old one's as its own. The life starts
+ * at the newer of two marks:
+ * - a committed deletion (B08's bound, `deleted`) whose two sides read as different records; when the
+ *   record re-added reads as the one deleted (same type, no field changed: a revert, an undo) it is a
+ *   restore and its history carries on across the gap;
+ * - the journal's newest `created` entry, when the record it began as differs from the newest git version
+ *   before it (or nothing in git came before it). That catches an ID reissued before the deletion was
+ *   committed, where git sees only an edit. An entry from before `created` entries held the record counts
+ *   only when the board made it (the board's create is never a restore).
+ * Git versions, journal lines and screenshot rewrites before the start are dropped; nothing is deleted
+ * from the journal or git, only left out of the timeline.
+ */
+export function currentLife<T>(journal: JournalEntry[], git: Pick<GitFileHistory<T>, 'versions' | 'working'>, diff: (a: T, b: T) => FieldChange[]): { versions: GitVersion<T>[]; journal: JournalEntry[]; own: (at: string) => boolean } {
+  const kind = (r: T) => (r as { type?: unknown }).type
+  const sameRecord = (a: T | null, b: T | null) => !!a && !!b && kind(a) === kind(b) && diff(a, b).length === 0
+  let versions = git.versions
+  let journalFrom = 0
+  let own = (_at: string) => true
+  for (let i = 0; i < versions.length; i++) {
+    const v = versions[i]!
+    if (!v.deleted) continue
+    const readded = i > 0 ? versions[i - 1]!.item : git.working
+    const deleted = versions.slice(i + 1).find((x) => x.item)?.item ?? null
+    if (sameRecord(deleted, readded)) continue // a restore
+    const bound = Date.parse(v.commit.at)
+    versions = versions.slice(0, i)
+    own = (at) => Date.parse(at) > bound
+    break
+  }
+  let created = -1
+  for (let j = journal.length - 1; j >= 0 && created < 0; j--) if (journal[j]!.kind === 'created') created = j
+  if (created >= 0) {
+    const e = journal[created]!
+    // Commit times have one-second resolution (`%aI`): a commit in the same second as the start is the new record's.
+    const second = Math.floor(Date.parse(e.at) / 1000) * 1000
+    const before = versions.find((v) => v.item && Date.parse(v.commit.at) < second)?.item ?? null
+    const fresh = e.item ? !before || !sameRecord(before, e.item as unknown as T) : e.source === 'board'
+    // A start moves the life on only when it is newer than the deletion bound.
+    if (fresh && own(e.at)) {
+      versions = versions.filter((v) => Date.parse(v.commit.at) >= second)
+      journalFrom = created
+      own = (x) => Date.parse(x) >= second
+    }
+  }
+  return { versions, journal: journal.slice(journalFrom).filter((e) => own(e.at)), own }
+}
+
 export function buildTimeline<T = Item>(
-  journal: JournalEntry[],
-  git: GitFileHistory<T>,
+  journalIn: JournalEntry[],
+  gitIn: GitFileHistory<T>,
   diff: (a: T, b: T) => FieldChange[] = diffItems as unknown as (a: T, b: T) => FieldChange[],
 ): TimelineEntry[] {
-  const collapsed = collapse(journal)
-  const start = collapsed.length ? Date.parse(collapsed[0]!.at) : Infinity
+  const life = currentLife(journalIn, gitIn, diff)
+  const git: GitFileHistory<T> = { ...gitIn, versions: life.versions, screenshots: gitIn.screenshots?.filter((s) => life.own(s.commit.at)) }
+  const collapsed = collapse(life.journal)
+  // To the second, as git dates are: a commit in the same second as the first journal entry is after it.
+  const start = collapsed.length ? Math.floor(Date.parse(collapsed[0]!.at) / 1000) * 1000 : Infinity
   const out: TimelineEntry[] = []
 
   let prev: T | null = null
@@ -340,15 +394,33 @@ export interface AssetHistory {
 const version = (sha: string | null): ContentVersion | null => (sha ? { sha } : null)
 
 /**
+ * An artifact file's commits in its current life: up to its newest deletion whose file came back as
+ * other content (the same content back is a restore, and the history carries on).
+ */
+function assetLife(commits: AssetCommit[]): AssetCommit[] {
+  for (let i = 0; i < commits.length; i++) {
+    const c = commits[i]!
+    if (!c.deleted) continue
+    const back = i > 0 ? commits[i - 1]!.to : null
+    if (back && back === c.from) continue
+    return commits.slice(0, i)
+  }
+  return commits
+}
+
+/**
  * An artifact's timeline, newest first: its sidecar's commits as field changes (`buildTimeline`
  * with no journal), and its file's commits as `content` changes, folded into the same commit's
  * entry where both changed together. A file or sidecar changed and not yet committed shows as a
  * "not committed yet" entry.
  */
-export function buildArtifactTimeline(git: GitFileHistory<Artifact>, asset: AssetHistory | null): TimelineEntry[] {
+export function buildArtifactTimeline(gitIn: GitFileHistory<Artifact>, asset: AssetHistory | null): TimelineEntry[] {
+  // An artifact ID can be reissued too: its sidecar's history and its file's start at the current life (R-54).
+  const life = currentLife<Artifact>([], gitIn, diffArtifacts)
+  const git = { ...gitIn, versions: life.versions }
   const out = buildTimeline<Artifact>([], git, diffArtifacts)
   if (!git.versions.length && git.working) out.push({ type: 'change', at: git.mtime ?? new Date(0).toISOString(), source: 'disk', kind: 'created', changes: [], uncommitted: true })
-  for (const c of asset?.commits ?? []) {
+  for (const c of assetLife(asset?.commits ?? []).filter((x) => life.own(x.commit.at))) {
     const change: FieldChange = { field: 'content', from: version(c.from), to: version(c.to) }
     const same = out.find((e) => e.type === 'change' && e.commit?.sha === c.commit.sha)
     if (same?.type === 'change') {

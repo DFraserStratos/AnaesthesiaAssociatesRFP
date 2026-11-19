@@ -1,6 +1,6 @@
 /**
  * Node-side access to the requirements folder: load everything, write one record
- * atomically. Used by the dev-server API and the npm scripts.
+ * atomically (in place, for a file that exists). Used by the dev-server API and the npm scripts.
  */
 import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, readFileSync, readSync, renameSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'
@@ -8,7 +8,9 @@ import { fileURLToPath } from 'node:url'
 import { hasBom, stripBom } from '../shared/bom.ts'
 import { checkCatalogue } from '../shared/check.ts'
 import { ParseError, lintArtifact, lintFrontmatter, lintItem, lintQuestion, parseArtifact, parseItem, parseQuestion, revOf, serialiseArtifact, serialiseItem, serialiseQuestion } from '../shared/files.ts'
+import { editArtifactText, editItemText, editQuestionText } from '../shared/inPlace.ts'
 import { compareIds } from '../shared/ids.ts'
+import { lanesRevOf } from '../shared/move.ts'
 import { CONFIG_FILE, DEFAULT_CONFIG, parseConfig, type BoardConfig } from '../shared/config.ts'
 import { RECODES_FILE, parseRecodes, type Recode } from '../shared/statuses.ts'
 import type { Artifact, ArtifactRec, CatalogueSnapshot, Issue, Item, Layout, Question, Rev } from '../shared/types.ts'
@@ -104,6 +106,8 @@ export interface LayoutRead {
    * (accepted decision 17).
    */
   damaged?: string[]
+  /** Entries of `lanes` that are not names (blank, or not text), by position from 1: ignored, and dropped by the next layout write. */
+  droppedLanes?: number[]
 }
 
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
@@ -113,7 +117,7 @@ export function readLayout(root = REQUIREMENTS_DIR): LayoutRead {
   try {
     text = readFileSync(layoutPath(root), 'utf8')
   } catch {
-    return { layout: { positions: {}, lanes: [] } } // no layout yet: every card is in its story-map place
+    return { layout: { positions: {}, lanes: [], lanesRev: lanesRevOf({ lanes: [] }) } } // no layout yet: every card is in its story-map place
   }
   let raw: unknown
   try {
@@ -125,7 +129,9 @@ export function readLayout(root = REQUIREMENTS_DIR): LayoutRead {
     return { layout: { positions: {}, lanes: [] }, error: 'board-layout.json does not hold an object ({ "positions": ... }); fix or delete it' }
   }
   const r = raw as Record<string, unknown>
-  const lanes = Array.isArray(r.lanes) ? r.lanes.filter((l): l is string => typeof l === 'string' && l.trim() !== '') : []
+  const lanes: string[] = []
+  const droppedLanes: number[] = []
+  if (Array.isArray(r.lanes)) r.lanes.forEach((l, i) => (typeof l === 'string' && l.trim() !== '' ? lanes.push(l) : droppedLanes.push(i + 1)))
   const positions: Layout['positions'] = {}
   const damaged: string[] = []
   if (r.positions === undefined) {
@@ -145,7 +151,13 @@ export function readLayout(root = REQUIREMENTS_DIR): LayoutRead {
   }
   const layout: Layout = { positions, lanes }
   if (typeof r.firstLane === 'string' && r.firstLane.trim()) layout.firstLane = r.firstLane.trim()
-  return damaged.length ? { layout, damaged } : { layout }
+  layout.lanesRev = lanesRevOf(layout)
+  return { layout, ...(damaged.length ? { damaged } : {}), ...(droppedLanes.length ? { droppedLanes } : {}) }
+}
+
+/** The issue for lane entries that are not names (`readLayout`'s `droppedLanes`; FINDINGS R-55). */
+export function droppedLanesIssue(at: number[]): Issue {
+  return { severity: 'error', id: 'layout', message: `board-layout.json: lane entr${at.length === 1 ? 'y' : 'ies'} ${at.join(', ')} ${at.length === 1 ? 'is' : 'are'} not a name; ignored, and the next layout save drops ${at.length === 1 ? 'it' : 'them'}` }
 }
 
 /** The issue for ignored layout entries (`readLayout`'s `damaged`). */
@@ -215,6 +227,7 @@ export function issuesFor(
   lanes?: string[],
   artifacts: Record<string, Rev<Artifact>> = {},
   config: BoardConfig = DEFAULT_CONFIG,
+  firstLane?: string,
 ): Issue[] {
   let checked: Issue[]
   try {
@@ -224,6 +237,7 @@ export function issuesFor(
       fileExists: fileExistsIn(root),
       linkOut: (rel) => linkOutOf(resolve(root, rel), resolve(root, 'assets')),
       lanes,
+      firstLane,
       config,
       ...artifactCheck(artifacts, root),
     })
@@ -277,12 +291,13 @@ export function loadCatalogue(root = REQUIREMENTS_DIR): LoadResult {
   const items = collect(listMd(storiesDir(root)), readItemFile, parseIssues)
   const questions = collect(listMd(questionsDir(root)), readQuestionFile, parseIssues)
   const artifacts = withMeta(collect(listMd(artifactsDir(root)), readArtifactFile, parseIssues), root)
-  const { layout, error, damaged } = readLayout(root)
+  const { layout, error, damaged, droppedLanes } = readLayout(root)
   if (error) parseIssues.push({ severity: 'error', id: 'layout', message: error })
   if (damaged) parseIssues.push(layoutDamageIssue(damaged))
+  if (droppedLanes) parseIssues.push(droppedLanesIssue(droppedLanes))
   const { config, problems } = readConfig(root)
   for (const message of problems) parseIssues.push({ severity: 'error', id: 'config', message })
-  return { items, questions, artifacts, layout, config, layoutReadable: !error, parseIssues, issues: issuesFor(items, questions, parseIssues, root, layout.lanes, artifacts, config) }
+  return { items, questions, artifacts, layout, config, layoutReadable: !error, parseIssues, issues: issuesFor(items, questions, parseIssues, root, layout.lanes, artifacts, config, layout.firstLane) }
 }
 
 /**
@@ -296,37 +311,114 @@ export function writeAtomic(file: string, text: string) {
   renameSync(tmp, file)
 }
 
-/** Like writeAtomic, but fails with FileExistsError instead of replacing an existing file. */
-export function createAtomic(file: string, text: string) {
+/** Errors a filesystem gives when it cannot make hard links (exFAT, FAT, some network mounts). */
+const NO_HARD_LINKS = new Set(['EPERM', 'ENOTSUP', 'EOPNOTSUPP', 'EXDEV', 'ENOSYS'])
+
+/**
+ * Like writeAtomic, but fails with FileExistsError instead of replacing an existing file. A hard link
+ * from a temp file makes it atomic and exclusive in one step. Where the filesystem has no hard links
+ * (FINDINGS R-64), the name is claimed with an exclusive create (`wx`) and the temp file renamed over
+ * that claim: still exclusive, but a reader can see an empty file for a moment, and a crash between the
+ * two steps leaves an empty file, which `npm run check` reports (delete it). No temp file is left behind.
+ * `link` is replaceable for tests.
+ */
+export function createAtomic(file: string, text: string, link: (from: string, to: string) => void = linkSync) {
   mkdirSync(dirname(file), { recursive: true })
   const tmp = `${file}.${process.pid}.tmp`
   writeFileSync(tmp, text, 'utf8')
   try {
-    linkSync(tmp, file) // atomic, and refuses an existing target
-  } catch (e) {
-    if ((e as NodeJS.ErrnoException).code === 'EEXIST') throw new FileExistsError(`${file} already exists`)
-    throw e
+    try {
+      link(tmp, file) // atomic, and refuses an existing target
+    } catch (e) {
+      const code = (e as NodeJS.ErrnoException).code ?? ''
+      if (code === 'EEXIST') throw new FileExistsError(`${file} already exists`)
+      if (!NO_HARD_LINKS.has(code)) throw e
+      let fd: number
+      try {
+        fd = openSync(file, 'wx') // the claim: refuses an existing file
+      } catch (e2) {
+        if ((e2 as NodeJS.ErrnoException).code === 'EEXIST') throw new FileExistsError(`${file} already exists`)
+        throw e2
+      }
+      closeSync(fd)
+      try {
+        renameSync(tmp, file)
+      } catch (e3) {
+        rmSync(file, { force: true }) // give the claim back
+        throw e3
+      }
+    }
   } finally {
-    unlinkSync(tmp)
+    rmSync(tmp, { force: true })
   }
 }
 
+/**
+ * Create a record under the next free ID: `next` picks one not in `taken`, `write` creates it
+ * exclusively. If another writer (the board, `artifact:new`, an agent) took that ID first, move on to
+ * the next, up to `attempts` times; null when every attempt was taken. The board's create routes and
+ * `artifact:new` both claim IDs this way.
+ */
+export function claimNext<T extends { id: string }>(taken: Set<string>, next: (taken: Set<string>) => T, write: (rec: T) => void, attempts = 5): T | null {
+  for (let i = 0; i < attempts; i++) {
+    const rec = next(taken)
+    try {
+      write(rec)
+      return rec
+    } catch (e) {
+      if (!(e instanceof FileExistsError)) throw e
+      taken.add(rec.id)
+    }
+  }
+  return null
+}
+
+/**
+ * Write a record to its file. A create is written whole, in the board's form, and never replaces a
+ * file. A save to an existing file edits it in place (`shared/inPlace.ts`): only the changed fields'
+ * lines change, and a save that changes nothing writes nothing (the rev comes back unchanged). A file
+ * that cannot be read is replaced whole, as before; a change that cannot be written without losing data
+ * throws `LossyEditError` and writes nothing.
+ */
+function writeRecordFile<T>(file: string, rec: T, serialise: (r: T) => string, edit: (text: string, r: T) => string, create: boolean): string {
+  if (create) {
+    const text = serialise(rec)
+    createAtomic(file, text)
+    return text
+  }
+  let current: string | null = null
+  try {
+    current = stripBom(readFileSync(file, 'utf8'))
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e
+  }
+  let text: string
+  if (current === null) text = serialise(rec)
+  else {
+    try {
+      text = edit(current, rec)
+    } catch (e) {
+      if (!(e instanceof ParseError)) throw e
+      text = serialise(rec) // unreadable: replaced whole, as before (the board refuses to save over an unreadable file before it gets here)
+    }
+  }
+  if (text !== current) writeAtomic(file, text)
+  return text
+}
+
 export function writeItem(item: Item, root = REQUIREMENTS_DIR, opts: { create?: boolean } = {}): Rev<Item> {
-  const text = serialiseItem(item)
-  ;(opts.create ? createAtomic : writeAtomic)(itemPath(item.id, root), text)
+  const text = writeRecordFile(itemPath(item.id, root), item, serialiseItem, editItemText, !!opts.create)
   return { data: parseItem(text), rev: revOf(text) }
 }
 
 export function writeQuestion(q: Question, root = REQUIREMENTS_DIR, opts: { create?: boolean } = {}): Rev<Question> {
-  const text = serialiseQuestion(q)
-  ;(opts.create ? createAtomic : writeAtomic)(questionPath(q.id, root), text)
+  const text = writeRecordFile(questionPath(q.id, root), q, serialiseQuestion, editQuestionText, !!opts.create)
   return { data: parseQuestion(text), rev: revOf(text) }
 }
 
-/** Rewrite an artifact's sidecar (its details, from the board). Its file is never touched. */
+/** Write an artifact's sidecar (its details, from the board), in place. Its file is never touched. */
 export function writeArtifact(a: Artifact, root = REQUIREMENTS_DIR): ArtifactRec {
-  const text = serialiseArtifact(a)
-  writeAtomic(artifactSidecarPath(a.id, root), text)
+  const text = writeRecordFile(artifactSidecarPath(a.id, root), a, serialiseArtifact, editArtifactText, false)
   const data = parseArtifact(text)
   return { data, rev: revOf(text), meta: artifactInfo(data, root).meta }
 }

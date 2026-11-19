@@ -11,7 +11,7 @@ import { checkCatalogue } from '../shared/check.ts'
 import { DEFAULT_CONFIG, parseConfig } from '../shared/config.ts'
 import { requirementsCsv } from '../shared/csv.ts'
 import { parseArtifact, parseItem, parseQuestion, serialiseArtifact, serialiseItem, serialiseQuestion } from '../shared/files.ts'
-import { canParent } from '../shared/move.ts'
+import { canParent, lanesRevOf } from '../shared/move.ts'
 import { planDelete } from '../shared/remove.ts'
 import { parseRecodes } from '../shared/statuses.ts'
 import type { Artifact, Item } from '../shared/types.ts'
@@ -181,7 +181,7 @@ describe('record and layout files parse robustly (R-66, R-50)', () => {
   it('the three JSON files read with a byte-order mark', () => {
     writeLayout({ positions: { 'EP-01': { x: 1, y: 2 } }, lanes: ['MVP'] }, root)
     writeFileSync(layoutPath(root), BOM + readFileSync(layoutPath(root), 'utf8'))
-    expect(readLayout(root)).toEqual({ layout: { positions: { 'EP-01': { x: 1, y: 2 } }, lanes: ['MVP'] } })
+    expect(readLayout(root)).toEqual({ layout: { positions: { 'EP-01': { x: 1, y: 2 } }, lanes: ['MVP'], lanesRev: lanesRevOf({ lanes: ['MVP'] }) } })
     expect(parseConfig(BOM + '{ "project": { "name": "P" } }').problems).toEqual([])
     expect(parseRecodes(BOM + '[{ "date": "2026-10-20", "items": { "A": "1" }, "questions": {} }]')).toHaveLength(1)
   })
@@ -228,7 +228,7 @@ describe('record and layout files parse robustly (R-66, R-50)', () => {
     const layout = { positions: { 'EP-01': { x: 10, y: 20 }, 'FT-01.1': { x: -3, y: 4 } }, lanes: ['MVP', 'Later'], firstLane: 'Now' }
     writeLayout(layout, root)
     const text = readFileSync(layoutPath(root), 'utf8')
-    expect(readLayout(root)).toEqual({ layout })
+    expect(readLayout(root)).toEqual({ layout: { ...layout, lanesRev: lanesRevOf(layout) } }) // lanesRev: derived, never written (B05)
     expect(serialiseLayout(readLayout(root).layout)).toBe(text)
   })
 })

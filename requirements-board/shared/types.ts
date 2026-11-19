@@ -97,6 +97,8 @@ export interface Layout {
   lanes: string[]
   /** What the implicit first lane (stories with no `swimlane`) is called. Unset: `UNASSIGNED_LANE`. */
   firstLane?: string
+  /** The lane list's revision (`lanesRevOf`), sent by a lane write; derived by the server, never written. */
+  lanesRev?: string
 }
 
 /** The implicit first lane's name until it is renamed. */

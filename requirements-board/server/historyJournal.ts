@@ -21,8 +21,13 @@ import type { Item, Rev } from '../shared/types.ts'
 type Position = { x: number; y: number } | null
 
 export interface Journal {
-  /** Note a card's new version. A rev the journal has already seen is ignored, so an echo never logs twice. */
-  item: (rec: Rev<Item>, source: HistorySource, opts?: { offline?: boolean }) => void
+  /**
+   * Note a card's new version. A rev the journal has already seen is ignored, so an echo never logs twice.
+   * `reappeared`: the card's file was missing and is back. Read as the record last seen, it is a restore
+   * and its history carries on; read as a different record, it is a new card reusing the ID, so a new
+   * life starts (a `created` entry; the earlier lines stay in the file, and the timeline starts after them).
+   */
+  item: (rec: Rev<Item>, source: HistorySource, opts?: { offline?: boolean; reappeared?: boolean }) => void
   /** Note a Freeform drag (null: put back in its story-map place). */
   position: (id: string, from: Position, to: Position, source: HistorySource) => void
   /** At start: log what changed on disk while the board was off, and baseline cards seen for the first time. */
@@ -30,7 +35,10 @@ export interface Journal {
   /** Look for screenshots rewritten in place under `assetsDir` (the catalogue's `assets/`). */
   screenshots: (assetsDir: string, opts?: { offline?: boolean }) => void
   read: (id: string) => JournalEntry[]
-  /** The card was deleted from the board: set its journal aside, so a new card given the same ID starts clean. */
+  /**
+   * Set the card's journal aside (into `deleted/`), so a new card given the same ID starts clean: when the
+   * board deletes a card, and when it creates one at an ID an earlier card's journal still holds.
+   */
   forget: (id: string) => void
 }
 
@@ -78,16 +86,19 @@ export function createJournal(dir: string, now: () => Date = () => new Date()): 
     appendFileSync(log(id), `${JSON.stringify(e)}\n`)
   }
 
-  function item(rec: Rev<Item>, source: HistorySource, opts: { offline?: boolean } = {}) {
+  function item(rec: Rev<Item>, source: HistorySource, opts: { offline?: boolean; reappeared?: boolean } = {}) {
     const id = rec.data.id
     if (!safe(id)) return
     quietly(`record ${id}`, () => {
       const prev = readLast(id)
       if (prev?.rev === rec.rev) return
       const changes = prev ? diffItems(prev.data, rec.data) : []
-      if (!prev || changes.length) {
-        append(id, { at: now().toISOString(), source, kind: prev ? 'changed' : 'created', rev: rec.rev, changes, ...(opts.offline ? { offline: true as const } : {}) })
-      }
+      // Back as a different record: a new card under a reused ID, not an edit of the old one (FINDINGS R-54).
+      const reused = !!prev && !!opts.reappeared && (prev.data.type !== rec.data.type || changes.length > 0)
+      const offline = opts.offline ? { offline: true as const } : {}
+      // A `created` entry carries the record, so the timeline can tell a new life from a restore.
+      if (!prev || reused) append(id, { at: now().toISOString(), source, kind: 'created', rev: rec.rev, changes: [], item: rec.data, ...offline })
+      else if (changes.length) append(id, { at: now().toISOString(), source, kind: 'changed', rev: rec.rev, changes, ...offline })
       writeLast(rec)
     })
   }

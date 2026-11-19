@@ -13,6 +13,7 @@ import {
   STEP_VIEWS,
   VIEWPORTS,
   artifactFormat,
+  firstLaneName,
   isPastArtifact,
   linesOfRegionId,
   pageOfRegionId,
@@ -26,6 +27,7 @@ import {
   type Question,
   type Rect,
 } from './types.ts'
+import { laneListProblems } from './move.ts'
 import { ARTIFACT_REF, isArtifactId, isQuestionId, itemTexts, mentionsOf } from './links.ts'
 import { buildSourceIndex, citationProblems, resolveSource, spotExists, type SpotFacts } from './sources.ts'
 import { appKeys, componentNames, DEFAULT_CONFIG, voiceRegex, type BoardConfig } from './config.ts'
@@ -67,8 +69,10 @@ export interface CheckInput {
   fileExists?: (relPath: string) => boolean
   /** Where a catalogue-relative path really leads when a symbolic link takes it out of its folder, else null. Omit to skip. */
   linkOut?: (relPath: string) => string | null
-  /** The board's named swim lanes (`board-layout.json`). Omit to skip the lane check. */
+  /** The board's named swim lanes (`board-layout.json`). Omit to skip the lane checks. */
   lanes?: string[]
+  /** What the first lane is called (`board-layout.json` `firstLane`); its name takes part in the lane-list rules. */
+  firstLane?: string
   artifacts?: Artifact[]
   /** What each artifact's file holds. Omit (or return null) to skip the file and region checks. */
   artifactFacts?: (a: Artifact) => ArtifactFacts | null
@@ -76,7 +80,7 @@ export interface CheckInput {
   config?: BoardConfig
 }
 
-export function checkCatalogue({ items, questions, fileExists, linkOut, lanes, artifacts = [], artifactFacts, config = DEFAULT_CONFIG }: CheckInput): Issue[] {
+export function checkCatalogue({ items, questions, fileExists, linkOut, lanes, firstLane, artifacts = [], artifactFacts, config = DEFAULT_CONFIG }: CheckInput): Issue[] {
   const issues: Issue[] = []
   const components = componentNames(config)
   // A card's status is judged against the project's own list only. While that list is damaged the
@@ -441,6 +445,10 @@ export function checkCatalogue({ items, questions, fileExists, linkOut, lanes, a
     for (const q of questions) sourcesOf(q.id, q.sources)
     for (const a of artifacts) sourcesOf(a.id, a.sources, a.id)
   }
+
+  // The lane list breaks a rule the board enforces on lane writes (the same rule, `laneListProblems`):
+  // say so here, where it can be fixed, rather than only when a lane change is refused (FINDINGS R-55).
+  if (lanes) for (const p of laneListProblems([firstLaneName({ firstLane }), ...lanes])) err('layout', `board-layout.json: ${p}; the board refuses lane changes that add a problem like this, so fix it in the file or rename the lane on the Mapped board`)
 
   return issues
 }

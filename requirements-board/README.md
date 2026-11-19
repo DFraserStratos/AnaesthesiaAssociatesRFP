@@ -66,6 +66,8 @@ shared/        code shared by server, scripts and browser
   types.ts       record shapes and vocabularies
   config.ts      the project's vocabulary (board.config.json): parse, defaults, lookups
   files.ts       parse / serialise one catalogue file (deterministic, round-trips byte for byte)
+  inPlace.ts     a save edits the file in place: only the changed fields' lines change (`editItemText` ...)
+  patch.ts       field patches: what a record write may change, how it lays over the file, which fields clash
   check.ts       integrity rules
   ids.ts         next-ID assignment, sibling order
   move.ts        Mapped board moves (pure): planMove / applyMove / invertChanges, lane-name rules
@@ -83,8 +85,8 @@ shared/        code shared by server, scripts and browser
   highlight.ts   the red box, shared by the capture runner and the artifact viewers
   csv.ts         CSV export in the old generator's shape
 server/
-  catalogueFs.ts     load the folder, atomic / exclusive writes, layout file; REQUIREMENTS_DIR (env override for fixtures)
-  catalogueApi.ts    the /api routes as a plain function (no Vite), so tests drive it directly
+  catalogueFs.ts     load the folder, atomic / exclusive / in-place writes, ID claiming, layout file; REQUIREMENTS_DIR (env override for fixtures)
+  catalogueApi.ts    the /api routes as a plain function (no Vite), so tests drive it directly; its header holds the write protocol
   historyJournal.ts  the per-card change journal (.history/, gitignored); screenshot hashes in the repository's width
   gitCore.ts         how every reader calls git: no locks (GIT_OPTIONAL_LOCKS=0), literal paths, NUL output, either hash width, bounded caches
   gitHistory.ts      a card's, sidecar's, artifact file's and screenshot's history (one first-parent walk), read-only and asynchronous
@@ -128,9 +130,17 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
 
 ## How it works
 
-- `GET /api/catalogue` returns every record with a `rev` (content hash). Saves must send `baseRev`;
-  the server re-reads the file from disk and answers 409 (with the current copy) if it changed,
-  and the sheet offers keep mine / load theirs.
+- `GET /api/catalogue` returns every record with a `rev` (content hash). A save sends the fields it
+  changed (`patch`) with the `baseRev` it edited, and may send each field's starting value (`base`).
+  The server re-reads the file and lays the patch over it as it is now, so a field the save did not
+  touch keeps whatever an agent or a drag wrote there meanwhile. If the file changed since `baseRev`,
+  a save with `base` still goes through when none of its own fields changed on disk; otherwise it is a
+  409 with the current copy and the fields that clash (`collisions`), and the sheet offers keep mine /
+  load theirs. A write of several records names every record that blocked it (`blocked`). A save
+  that changes nothing writes nothing. The protocol is at the top of `server/catalogueApi.ts`;
+  today's whole-record saves stay accepted (refused on any change on disk) until the sheets move to
+  patches. Settings sections each carry a revision (`config.revs`) and a write may send the ones it
+  edited from (`bases`), so a section an agent changed meanwhile is a 409, never an overwrite.
 - **One file never stops the load.** A record that can't be read or parsed, an artifact file that
   can't be read (or whose contents can't be made sense of), a junk entry in `board-layout.json`, a
   screenshot folder that can't be fully read: each becomes an issue naming the file, and the rest
@@ -149,10 +159,17 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   Uncaught errors from clicks and promises are listed there too, and a saved browser preference
   that could not be read (and was reset) under "Saved preferences". Unsaved drafts survive.
 - Every write normalises the record, refuses one that would not survive a round trip, and runs
-  `checkCatalogue` on exactly what will be written (422 if it adds an error). Files are written via
-  temp file + rename in a fixed key order, so a one-field edit is a one-line diff. Creates use an
-  exclusive link, and new IDs come from the file names on disk, so a new item never overwrites a
-  file, even one that fails to parse.
+  `checkCatalogue` on exactly what will be written (422 if it adds an error). A save edits the file
+  in place (`shared/inPlace.ts`): only the lines of the fields it changes are rewritten, and every
+  other key, its quoting and style, comments, keys the board does not know, values it cannot read and
+  body sections it did not touch stay byte for byte (an artifact's `## Source` is never touched). A
+  change that cannot be written without losing something is refused (422), never written. New records
+  are written whole in a fixed key order. Files are written via temp file + rename. Creates claim the
+  next ID with an exclusive link (on a filesystem without hard links, exFAT or some network mounts, an
+  exclusive create then a rename), moving on if another writer took it; new IDs come from the file
+  names on disk, so a new item never overwrites a file, even one that fails to parse. A write that
+  changes several files (a move, a delete, a lane rename) puts back the files it already wrote if one
+  fails, and runs the check and sends the issues once, whatever its size.
 - Writes must be `application/json` from the board's own origin, so another web page cannot write
   to the catalogue while the board is running.
 - The server watches the requirements folder (debounced, at most 600ms behind) and pushes
@@ -175,8 +192,13 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
     record checked against its `baseRev`, the integrity rules run once over the result). The store
     applies the move at once and rolls it back if the server refuses. The lane list is
     `lanes` in `board-layout.json`; a story names its lane in its own `swimlane` field, so renaming
-    a lane rewrites its stories in one batch; the first lane (stories with no `swimlane`) is renamed
-    through `firstLane` instead, so no story changes. Collapsed lanes are a per-browser preference.
+    or removing a lane rewrites its stories and the lane list in one request (`POST /api/lanes`, all or
+    nothing, refused if a story or the list changed on disk since: `layout.lanesRev`); the first lane
+    (stories with no `swimlane`) is renamed through `firstLane` instead, so no story changes. A lane
+    name is at most 40 characters, has no spaces around it and repeats no other (case aside, the first
+    lane's included); the check reports a list on disk that breaks a rule, and a lane change is
+    refused only if it adds a problem, so a card move never is. Collapsed lanes are a per-browser
+    preference.
 - **Delete** (item sheet footer) removes a card for good, after asking: everything under it goes
   too, and `shared/remove.ts` (`planDelete`) works out the rest, shown in the question and applied
   by `DELETE /api/items/:id`: other cards drop it from `related`, outstanding items from `affects`,
@@ -184,7 +206,11 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   journal is set aside under `.history/deleted/` so a new card given the ID starts clean. The request
   carries the IDs the user was shown and is refused if what sits under the card has changed since.
   Retire is still the way to keep a record. Deleting a file by hand works too (the watcher drops the
-  card), but leaves any references to it for `npm run check` to report.
+  card), but leaves any references to it for `npm run check` to report. A deleted card's ID is
+  reissued to the next card created under the same parent when it was the highest; that card's
+  History starts with it (a restored card, read as it was, keeps its history). Plain-text mentions of
+  a deleted ID in other records stay as written, as history, and name whichever card later takes the
+  ID; while none does, the check warns about them.
 - Every card has a **History** (sheet footer): a newest-first timeline of its changes. The dev
   server journals every change it sees to a card, its own saves and moves and anyone's edit on
   disk, to `.history/<ID>.jsonl` in this folder (gitignored, per machine; `HISTORY_DIR`
@@ -355,8 +381,10 @@ catalogue. It is optional: a project with no `capture` section in `board.config.
 
 `npm run artifact:new -- <file> --title "Name" --kind diagram` (or `--mermaid <file.mmd>`) takes the
 next `AR-nn`, brings the file into `requirements/artifacts/files/` (a drawing copied in as
-`AR-nn.<ext>`, a transcript or document moved in under its own name, `git mv` when tracked; `--keep`
-leaves it where it is) and writes the sidecar for you to fill in: regions, sources, description, and
+`AR-nn.<ext>`, a transcript or document moved in under its own name, never staged; `--keep`
+leaves it where it is). The ID is claimed before the file is touched, so two sessions at once get two
+IDs; nothing is copied or moved over an existing file (a stray `AR-nn.<ext>` already there makes it take
+the next ID). Then it writes the sidecar for you to fill in: regions, sources, description, and
 for a stepped diagram its steps. Then link items to it (`artifacts: [AR-nn#spot]`) and run
 `npm run check`. With the board running, `npm run artifact:steps -- AR-nn` screenshots a stepped
 diagram, the whole drawing and then each step (`00-whole.png`, `01-<step-id>.png` ...), into a temp

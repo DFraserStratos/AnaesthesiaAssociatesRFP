@@ -6,6 +6,7 @@
  * and question kinds are behaviour, not vocabulary, so a project can reword a kind but not add one.
  */
 import { stripBom } from './bom.ts'
+import { revOf } from './files.ts'
 import {
   DEFAULT_ITEM_STATUSES,
   DEFAULT_QUESTION_STATUSES,
@@ -106,6 +107,12 @@ export interface BoardConfig {
   questionStatuses: StatusDef[]
   /** Statuses taken off each list: their codes are spent and never handed out again. */
   removedStatuses: Record<StatusField, RemovedStatus[]>
+  /**
+   * Each section Settings writes, as a revision of what the file holds for it (derived, never written).
+   * A config write sends the revisions it started from (`bases`), so a section changed on disk since is
+   * a conflict rather than overwritten (B05, accepted decision 20; FINDINGS R-45).
+   */
+  revs: Record<ConfigSection, string>
   /** How each status list read (healthy, degraded, damaged), with its problems and high-water mark. Derived, never written. */
   statusState: Record<StatusField, StatusListState>
   questionKinds: Partial<Record<QuestionKind, Wording>>
@@ -115,7 +122,19 @@ export interface BoardConfig {
 }
 
 /** What the Settings page may change: each field sent replaces that field, the rest of the file stays as written. */
-export type ConfigPatch = Partial<Pick<BoardConfig, 'project' | 'components' | 'statuses' | 'questionStatuses'>>
+/** The sections of `board.config.json` that Settings writes, each with its own revision. */
+export const CONFIG_SECTIONS = ['project', 'components', 'statuses', 'questionStatuses'] as const
+export type ConfigSection = (typeof CONFIG_SECTIONS)[number]
+
+/** A section's revision: of its JSON as the file holds it (a missing section is `null`). */
+export function configRevs(raw: Record<string, unknown> | null): Record<ConfigSection, string> {
+  const out = {} as Record<ConfigSection, string>
+  for (const k of CONFIG_SECTIONS) out[k] = revOf(JSON.stringify(raw && Object.hasOwn(raw, k) ? raw[k] : null))
+  return out
+}
+
+/** A Settings write: the sections sent replace those in the file; `bases` are the revisions each was edited from. */
+export type ConfigPatch = Partial<Pick<BoardConfig, 'project' | 'components' | 'statuses' | 'questionStatuses'>> & { bases?: Partial<Record<ConfigSection, string>> }
 
 /** The board's own name, in the masthead and the browser tab. Fixed: the project's name is what varies. */
 export const BOARD_NAME = 'Requirements board'
@@ -131,6 +150,7 @@ export const DEFAULT_CONFIG: BoardConfig = {
   statuses: DEFAULT_ITEM_STATUSES,
   questionStatuses: DEFAULT_QUESTION_STATUSES,
   removedStatuses: { statuses: [], questionStatuses: [] },
+  revs: configRevs({}),
   statusState: {
     statuses: { state: 'healthy', problems: [], highWater: highestCode(DEFAULT_ITEM_STATUSES.map((d) => d.code)) },
     questionStatuses: { state: 'healthy', problems: [], highWater: highestCode(DEFAULT_QUESTION_STATUSES.map((d) => d.code)) },
@@ -143,7 +163,7 @@ export const DEFAULT_CONFIG: BoardConfig = {
 /** A config file that can't be read: neutral defaults, except that the status lists are damaged and empty, never the built-in ones. */
 function unreadable(problem: string): BoardConfig {
   const damaged = { state: 'damaged' as const, problems: [problem], highWater: 0 }
-  return { ...DEFAULT_CONFIG, statuses: [], questionStatuses: [], statusState: { statuses: damaged, questionStatuses: damaged } }
+  return { ...DEFAULT_CONFIG, statuses: [], questionStatuses: [], statusState: { statuses: damaged, questionStatuses: damaged }, revs: configRevs(null) }
 }
 
 export const DEFAULT_KIND_HELP: Record<QuestionKind, string> = {
@@ -178,7 +198,7 @@ export function parseConfig(text: string, recodes: readonly Recode[] = []): { co
     const problem = `${CONFIG_FILE} must hold an object`
     return { config: unreadable(problem), problems: [problem] }
   }
-  const config: BoardConfig = { ...DEFAULT_CONFIG, project: { name: '' }, components: [], screenshotApps: [], questionKinds: {} }
+  const config: BoardConfig = { ...DEFAULT_CONFIG, project: { name: '' }, components: [], screenshotApps: [], questionKinds: {}, revs: configRevs(raw) }
 
   if (isObj(raw.project)) {
     config.project.name = str(raw.project.name) ?? ''

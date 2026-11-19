@@ -280,7 +280,7 @@ The four steps from an Order line's inputs to a priced, invoiced line ...
 | `author` | Optional: who made it. |
 | `components` | Optional: the same vocabulary as an item's. |
 | `sources` | Where it came from, as for an item (`check` warns when empty). |
-| `cited_as` | Optional: how sources cite this artifact, when not by the notes convention. A list of entries, each `as` (the prefix a source starts with) and optionally `page_offset` (a PDF: added to a cited page), `within` (a heading slug: cited points are looked for in that section only) and `spot` (the spot a source with no spot of its own opens: a region, a step, a page `p27`, a line range `L1-10` or a heading slug). Agents write it (`artifact:new --cited-as`); the board keeps it. `check` errors on an entry with no `as`, a prefix two artifacts claim, a `within` or `spot` the file lacks, a `page_offset` off a PDF, and an entry for a note in `notes/` (cited by its file name already); it warns on a prefix one artifact lists twice, on two sidecars with the same `file`, and on a `cited_as` that is not a list or has keys the board ignores (`pageOffset` for `page_offset`), which are dropped on the next board save. See Sources above. |
+| `cited_as` | Optional: how sources cite this artifact, when not by the notes convention. A list of entries, each `as` (the prefix a source starts with) and optionally `page_offset` (a PDF: added to a cited page), `within` (a heading slug: cited points are looked for in that section only) and `spot` (the spot a source with no spot of its own opens: a region, a step, a page `p27`, a line range `L1-10` or a heading slug). Agents write it (`artifact:new --cited-as`); the board keeps it. `check` errors on an entry with no `as`, a prefix two artifacts claim, a `within` or `spot` the file lacks, a `page_offset` off a PDF, and an entry for a note in `notes/` (cited by its file name already); it warns on a prefix one artifact lists twice, on two sidecars with the same `file`, and on a `cited_as` that is not a list or has keys the board ignores (`pageOffset` for `page_offset`); a board save keeps them as written. See Sources above. |
 | `file` | The file it shows. A plain path is relative to this folder (`artifacts/files/AR-01.svg`, `notes/2026-10-01-client-meeting.md`), and is the norm: every artifact file lives here. A path starting `/` is relative to the repository root (`/docs/some-file.pdf`), for a file that has to stay outside. It must stay inside its base. `.svg`, `.png`, `.jpg`, `.jpeg`, `.webp`, `.md` or `.pdf`; a Markdown document never lives directly in `artifacts/`, where every `.md` is a sidecar: it goes in `artifacts/files/`. Omit it for a mermaid diagram. |
 | `regions` | Optional: the named spots items can link to, each drawn as a red box. See below. |
 | `steps` | Optional, an SVG drawing only: makes it a stepped diagram the board plays one step at a time. Each step is a spot too. See Steps below. |
@@ -376,7 +376,10 @@ Written by the board; safe to hand-edit while it is closed.
 `lanes` (omitted while empty): the Mapped board's named swim lanes, top to bottom. The first lane
 (stories with no `swimlane`) is implicit and always first; `firstLane` (omitted until renamed) is
 what it is called, `Unassigned` by default. Renaming it changes no story. All lane names, the first
-lane's included, are unique regardless of case.
+lane's included, are unique regardless of case, at most 40 characters, with no spaces round them.
+`check` reports a list on disk that breaks one of these rules, or holds an entry that is not a name;
+the board refuses a lane change that would add such a problem, never a card move. Renaming or
+removing a named lane rewrites the `swimlane` of every story in it in the same change.
 
 ## Board config file (`board.config.json`)
 
