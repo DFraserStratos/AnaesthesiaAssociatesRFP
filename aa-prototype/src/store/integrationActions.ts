@@ -28,7 +28,9 @@ import {
   cannedMessage,
   extractFromFhir,
   extractViaMapping,
+  FEED,
   FEED_META,
+  FUTURE_SCOPE_CPH_BATCH_LABEL,
   INTEGRATION_FEEDS,
   type CannedMessage,
   type ParsedMessage,
@@ -239,7 +241,9 @@ function attemptMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: str
 
   const hospital = state.masters.hospitals[feed.hospitalId]?.name ?? 'Hospital'
   const system = FEED_META[feed.id]?.name.match(/\(([^)]+)\)/)?.[1]
-  const staged = stageImportRows(api, actor, 'feedMessage', feed.hospitalId, `${hospital}${system !== undefined ? ` ${system}` : ''} message ${canned.id}`, [fields], {
+  // Christchurch Public is not integrated today (catch-up Phase 34, RV-16): its row says it came from the Future-scope demo.
+  const label = feed.id === FEED.cph ? `${FUTURE_SCOPE_CPH_BATCH_LABEL} · message ${canned.id}` : `${hospital}${system !== undefined ? ` ${system}` : ''} message ${canned.id}`
+  const staged = stageImportRows(api, actor, 'feedMessage', feed.hospitalId, label, [fields], {
     messageId: canned.id,
   })
   if (!staged.ok) return staged

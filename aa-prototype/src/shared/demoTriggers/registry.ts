@@ -113,6 +113,7 @@ import {
   prepaymentStandInRefusal,
   twoDaysBeforeRefusal,
   officeMatchesHospitalRow,
+  officeImportsS1File,
   officeAddsNhiRefusal,
   officeAddsNhiToStub,
   receiveTheatreList,
@@ -146,7 +147,6 @@ import { injectUnmatchedReceipt, injectUnmatchedRefusal, officeRunsPayables, off
 import { sessionText } from '../../domain/outOfHours'
 import { newerInvoiceDescription } from '../../domain/billing/procedureStack'
 import {
-  cannedMessageForBooking,
   defaultHospitalDescription,
   primaryProcedureOf,
   hospitalDescriptionChoices,
@@ -170,11 +170,16 @@ function onLedger(ctx: DemoTriggerCtx): boolean {
   return ctx.pathname.startsWith('/admin/ledger')
 }
 const INVOICE_PAGES = ['/admin/invoices/:invoiceId', '/demo/xero/invoices/:accRecId'] as const
-const ADMIN_INTEGRATIONS = '/admin/integrations'
-const ADMIN_MATCHING = '/admin/matching'
+/** Admin Intake's tabs (catch-up Phase 34): Matching and the rooms' PDF lists. */
+const ADMIN_MATCHING = '/admin/intake/matching'
+const ADMIN_PDF_LISTS = '/admin/intake/pdfs'
+/** The Admin Intake index heading (catch-up Phase 34). */
+const ADMIN_INTAKE_SCREEN = 'Admin · Intake'
 const AA_FEE_INVOICES = '/admin/billing/aa-fees'
 const XERO_PAIR = '/demo/xero/invoices/:accRecId'
-const INTEGRATIONS_SIM = '/demo/integrations'
+/** Future scope: HL7 and FHIR (catch-up Phase 34): the simulator, its message log and feed mapping. */
+const FUTURE_SCOPE_ROUTES = ['/demo/integrations', '/demo/integrations/log', '/demo/integrations/mapping'] as const
+const FUTURE_SCOPE_SCREEN = 'Future scope: HL7 and FHIR'
 /** The mobile Lists tab is one splat route; registered as its three explicit layers (`listsStackLocation`). */
 const MOBILE_LISTS = ['/mobile/lists', '/mobile/lists/:listId', '/mobile/lists/:listId/bookings/:bookingId'] as const
 const ADMIN_DAY = '/admin/day/:dateISO'
@@ -717,16 +722,15 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     indexPath: () => `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`,
   },
 
-  // ── Admin · Integrations, PDF lists tab (catch-up Phase 34) ──────────
+  // ── Admin · Intake, PDF lists (catch-up Phase 34) ────────────────────
   {
     id: 'pdf-list-resend',
     label: 'Receive updated PDF from rooms',
     description:
       "The rooms re-send a PDF list already sent to matching, with one changed time and one new patient. It lands in the inbox as received, marked Re-sent, with the address it came from. Once sent, the matching screen shows the change as a difference for approval and the new patient as a new row.",
-    screen: 'Admin · Integrations',
-    routes: [ADMIN_INTEGRATIONS],
+    screen: ADMIN_INTAKE_SCREEN,
+    routes: [ADMIN_PDF_LISTS],
     surfaces: ['bar'],
-    when: (_state, ctx) => ctx.published['integrations.tab'] === 'pdfs',
     choices: (state) =>
       PDF_LIST_SAMPLES.filter((s) => Object.values(state.intake.pdfLists).some((l) => l.sampleId === s.id)).map((s) => ({
         id: s.id,
@@ -747,8 +751,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
           : `Refused: ${res.message}`,
       }
     },
-    indexPath: () => ADMIN_INTEGRATIONS,
-    indexHint: 'Then open the PDF lists tab',
+    indexPath: () => ADMIN_PDF_LISTS,
   },
 
   // ── Admin · Invoice (and the Xero sim pair) ───────────────────────────
@@ -1549,13 +1552,13 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => `/mobile/lists/${PHOTO_CAPTURE_INDEX_LIST_ID}`,
   },
-  // ── Admin · Matching (catch-up Phase 33) ──────────────────────────────
+  // ── Admin · Intake, Matching (catch-up Phase 33; Intake since Phase 34) ──
   {
     id: 'matching-receive-theatre-list',
     label: 'Import hospital file',
     description:
       "Stands in for the hospital's file arriving: stages the sample theatre list's rows on Matching (St George's: a new Booking, a No change, a modification, and a day move as a cancellation plus a new Booking; Southern Cross: a new Booking, a modification with an insurer and approval number, a change for an authorised List, a row with no NHI and a row for a session with no List). Nothing changes the schedule until the office decides.",
-    screen: 'Admin · Matching',
+    screen: ADMIN_INTAKE_SCREEN,
     routes: [ADMIN_MATCHING],
     surfaces: ['bar'],
     choices: () => [
@@ -1578,7 +1581,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     label: 'Send update for a matched Booking',
     description:
       "Stands in for the hospital sending a later update: for the Booking matched by the row selected on Matching (if open and not authorised), else Diane Foster's (Tue 4 Aug AM), a row for the same List and patient with a later time and the hospital's fuller wording. It waits for the office to check the differences and approve it.",
-    screen: 'Admin · Matching',
+    screen: ADMIN_INTAKE_SCREEN,
     routes: [ADMIN_MATCHING],
     surfaces: ['bar'],
     disabledReason: (state, ctx) => sendUpdateRefusal(state, ctx.published['matching.selectedRowId']),
@@ -1595,29 +1598,42 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
   },
   {
     id: 'matching-office-matches-row',
-    label: 'Hospital row arrives and the office matches it',
+    label: 'Hospital file imported and my booking matched',
     description:
-      "Stands in for the office on the phone: the hospital's row arrives and the office matches it with the suggested decision, every difference ticked and no Contract picked (the office sets the Contract later). Sarah Mitchell's S1 booking; on a St George's or Southern Cross List, a new hospital booking; on a Booking, a hospital update approved by the office (on Diane Foster's, the hospital's fuller wording replaces WLE MM).",
+      "Stands in for the office on the phone (catch-up Phase 34): the office imports St George's file, as on Admin, Intake, decides the rows for your Tue 28 Jul AM List with the suggested decision, and answers where each new Booking's invoice goes (Patient, Standard: No contract · RVG; the RVG code stays yours). Sarah Mitchell arrives with the hospital's wording as received; the file's other rows wait for the office. On a St George's or Southern Cross List, a new hospital booking; on a Booking, a hospital update approved by the office (on Diane Foster's, the hospital's fuller wording replaces WLE MM).",
     screen: 'Mobile · Lists and the Booking screen',
     routes: [...MOBILE_LISTS],
     surfaces: ['pwa'],
     badge: 'office-stand-in',
     choices: (_state, ctx) => {
-      const out = [{ id: 's1', label: 'Sarah Mitchell, Tue 28 Jul AM (S1)' }]
+      const out = [{ id: 's1', label: "St George's file, Tue 28 Jul AM (S1)" }]
       if (ctx.params['bookingId'] !== undefined) out.push({ id: 'booking', label: 'A hospital update for this Booking, approved by the office' })
       else if (ctx.params['listId'] !== undefined) out.push({ id: 'list', label: 'A new hospital booking on this List' })
       return out
     },
     disabledReason: (state, ctx, choiceId) => standInRefusal(state, standInChoice(ctx, choiceId)),
     run: (api, ctx, choiceId) => {
-      const res = officeMatchesHospitalRow(api, standInChoice(ctx, choiceId))
+      const choice = standInChoice(ctx, choiceId)
+      if (choice.kind === 's1') {
+        const s1 = officeImportsS1File(api)
+        if (!s1.ok) return { ok: false, message: s1.message }
+        const n = s1.value.patients.length
+        return {
+          ok: true,
+          message:
+            n > 0
+              ? `The office imported St George's file and matched it. ${s1.value.patients.join(' and ')} ${n === 1 ? 'is' : 'are'} now on your Tue 28 Jul AM List, the invoice going to the patient at the standard rate (No contract · RVG). The RVG code is yours to add.`
+              : "The office imported St George's file and matched it. Your Tue 28 Jul AM List already held everything it sent.",
+        }
+      }
+      const res = officeMatchesHospitalRow(api, choice)
       if (!res.ok) return { ok: false, message: res.message }
-      return choiceId === 'booking'
+      return choice.kind === 'booking'
         ? { ok: true, message: `The hospital sent an update for ${res.value.patient} and the office approved it.` }
         : { ok: true, message: `${res.value.hospital} sent ${res.value.patient}'s booking and the office matched it. ${res.value.patient} is now on your ${res.value.where} List; the office will set the Contract.` }
     },
     indexPath: () => null,
-    indexEmptyReason: 'PWA only: the framed build plays the office in Admin, Matching.',
+    indexEmptyReason: 'PWA only: the framed build plays the office in Admin, Intake.',
   },
   {
     id: 'stub-office-adds-nhi',
@@ -1639,51 +1655,45 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         : { ok: true, message: `The office added ${res.value.patient}'s NHI. The row now waits for the office's decision on Matching.` }
     },
     indexPath: () => null,
-    indexEmptyReason: 'PWA only: the framed build plays the office in Admin, Matching (Add NHI).',
+    indexEmptyReason: 'PWA only: the framed build plays the office in Admin, Intake (Add NHI).',
   },
-  // ── Hospital messages (Future scope) ──────────────────────────────────
+  // ── Future scope: HL7 and FHIR (catch-up Phase 34) ───────────────────
   {
     id: 'fire-hospital-message',
     label: 'Fire hospital message',
     description:
-      "Sends a canned hospital HL7 v2 or FHIR message into the mock backend, including the Christchurch Public dead-letter case (MSG-CPH-2001). Stages the hospital's row on Admin, Matching. The Booking changes only once the office applies it. On a Booking (mobile, web and Admin) it defaults to the message addressed to that Booking: on Diane Foster's, MSG-STG-1012's hospital text replaces the rooms' once the office applies its row. Also on Admin · Integrations and the Integrations simulator. No scripted beat uses the S13 to S15 messages.",
-    screen: 'Mobile · Lists',
-    routes: [...MOBILE_LISTS, WEB_BOOKING, ADMIN_BOOKING, ADMIN_INTEGRATIONS, INTEGRATIONS_SIM],
-    // Bar only (catch-up Phase 33): a row on a handset has no office to decide it; the PWA has the office stand-in.
+      "Sends a canned hospital HL7 v2 or FHIR message into the mock backend (Future scope, for discussion), including the Christchurch Public dead-letter case (MSG-CPH-2001); Christchurch Public is not integrated today. A message that reads stages one row on Admin, Intake, for the office to decide; nothing is applied by itself. Defaults to the message selected in the simulator.",
+    screen: FUTURE_SCOPE_SCREEN,
+    routes: [...FUTURE_SCOPE_ROUTES],
     surfaces: ['bar'],
     badge: 'future-scope',
     choices: () => CANNED_MESSAGES.map((m) => ({ id: m.id, label: `${m.label} · ${m.id}` })),
-    // On a Booking, the message addressed to it (catch-up Phase 20a); else the simulator's pick or the S1 create.
-    defaultChoice: (state, ctx) =>
-      cannedMessageForBooking(state, ctx.params['bookingId']) ?? ctx.published['integrationsSim.selectedMessageId'] ?? DEFAULT_MESSAGE_ID,
+    // The simulator's pick, else its first message.
+    defaultChoice: (_state, ctx) => ctx.published['integrationsSim.selectedMessageId'] ?? DEFAULT_MESSAGE_ID,
     disabledReason: () => null,
-    run: (api, ctx, choiceId) => {
+    run: (api, _ctx, choiceId) => {
       const selectedId = choiceId ?? DEFAULT_MESSAGE_ID
       const res = processMessage(api, selectedId)
       useDemoTriggerMemory.getState().rememberMessage(selectedId)
-      // Outside Admin, the presenter switches apps to decide the row (catch-up Phase 33).
-      const elsewhere = !ctx.pathname.startsWith('/admin') && !ctx.pathname.startsWith('/demo') ? ' Switch to Admin, Matching, to apply it.' : ''
       const staged = res.ok && res.value.importRowId !== undefined
       return {
         ok: res.ok,
         message: !res.ok
           ? `Refused: ${res.message}`
-          : staged && selectedId === 'MSG-STG-1012'
-            ? `Sent MSG-STG-1012 to matching: the hospital's text replaces the rooms' once the office applies the row.${elsewhere}`
-            : staged
-              ? `Sent ${selectedId} to matching: the row waits for the office to decide.${elsewhere}`
-              : `Fired ${selectedId}: ${res.value.outcome}. See the three-pane view in the integration simulator and the log in the Admin app Integrations monitor.`,
+          : staged
+            ? `Sent ${selectedId}: its row waits on Admin, Intake, for the office to decide.`
+            : `Fired ${selectedId}: ${res.value.outcome}. See it on the Message log.`,
       }
     },
-    indexPath: () => '/mobile/lists',
+    indexPath: () => '/demo/integrations',
   },
   {
     id: 'replay-hospital-message',
     label: 'Replay last message (dedupe)',
     description:
       'Replays the last hospital message fired, to show idempotent dedupe: same message control ID, no second row on Matching.',
-    screen: 'Mobile · Lists',
-    routes: [...MOBILE_LISTS, ADMIN_INTEGRATIONS, INTEGRATIONS_SIM],
+    screen: FUTURE_SCOPE_SCREEN,
+    routes: [...FUTURE_SCOPE_ROUTES],
     surfaces: ['bar'],
     badge: 'future-scope',
     disabledReason: (state) => messageReplayDisabledReason(state),
@@ -1701,7 +1711,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
           : `Refused: ${res.message}`,
       }
     },
-    indexPath: () => '/mobile/lists',
+    indexPath: () => '/demo/integrations',
   },
 
   // ── Mobile · Balances, installed PWA only ─────────────────────────────

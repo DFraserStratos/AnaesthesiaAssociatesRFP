@@ -208,7 +208,7 @@ export function placeListOnSlot(
       entityType: 'list',
       entityId: alloc.id,
       action: 'list.create',
-      after: { state: 'ACTIVE', slotId: slot.id, kind: list.kind, hospitalId: list.hospitalId, surgeonId: list.surgeonId },
+      after: { state: 'ACTIVE', slotId: slot.id, kind: list.kind, hospitalId: list.hospitalId, surgeonId: list.surgeonId, origin: list.origin },
       stampBookingId: null,
     },
   }

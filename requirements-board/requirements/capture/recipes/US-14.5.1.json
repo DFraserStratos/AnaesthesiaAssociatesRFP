@@ -5,12 +5,15 @@
   "shots": [
     {
       "name": "dead-letter",
-      "app": "admin",
-      "caption": "Failed integration message flagged for manual reprocessing",
-      "start": "/admin/integrations",
+      "app": "simulator",
+      "caption": "Future scope: a hospital message that cannot be read is kept on the dead-letter queue and flagged for the office to reprocess",
+      "start": "/demo/integrations/log",
       "setup": [
         {
-          "goto": "/admin/integrations"
+          "goto": "/demo/integrations/log"
+        },
+        {
+          "wait": "[data-shot=future-scope-log]"
         },
         {
           "trigger": "fire-hospital-message",
@@ -22,10 +25,14 @@
       ],
       "states": [
         {
-          "steps": [],
+          "steps": [
+            {
+              "wait": "[data-shot=integrations-attention]"
+            }
+          ],
           "highlight": [
             "[data-shot=integrations-attention]",
-            "table"
+            "[data-shot=future-scope-log] table"
           ]
         }
       ]

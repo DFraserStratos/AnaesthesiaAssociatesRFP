@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { extractViaMapping } from './hl7'
 import { toFhirBundle, extractFromFhir, practitionerHpiOf, NHI_SYSTEM } from './fhir'
-import { INTEGRATION_FEEDS, FEED, CPH_NHI_FIX } from './feeds'
+import { INTEGRATION_FEEDS, FEED, CPH_NHI_FIX, LIVE_FEED_IDS, isIntegratedFeed } from './feeds'
 import { CANNED_MESSAGES, cannedMessage, APPT } from './messages'
 import { validateNhi } from '../nhi'
 
@@ -136,5 +136,14 @@ describe('canned library integrity', () => {
       if (msg.eventType === 'S12') expect(msg.routing, `${msg.id} routing`).toBeDefined()
       else expect(msg.correlationAppointmentId, `${msg.id} correlation`).toBeTruthy()
     }
+  })
+})
+
+describe('the Live drip (catch-up Phase 34; RV-16)', () => {
+  it('streams only the two integrated hospitals: Christchurch Public is not integrated today', () => {
+    expect(LIVE_FEED_IDS).toEqual([FEED.stg, FEED.sx])
+    expect(isIntegratedFeed(FEED.cph)).toBe(false)
+    // Its messages still exist, to be fired by hand on the Future-scope surface.
+    expect(CANNED_MESSAGES.some((m) => m.feedId === FEED.cph)).toBe(true)
   })
 })

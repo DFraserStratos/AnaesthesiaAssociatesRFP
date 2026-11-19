@@ -14,7 +14,8 @@ import { DRAFT_LIST } from '../../../shared/scheduleTerms'
 export const CHANNEL_CAPS: Record<ImportChannel, string> = {
   download: 'Sample file',
   manualSheet: 'Keyed sheet',
-  feedMessage: 'Feed message',
+  // Fired from Future scope: HL7 and FHIR (catch-up Phase 34): never presented as an in-scope feed.
+  feedMessage: 'Future-scope HL7 demo',
   pdfList: 'Rooms PDF',
 }
 

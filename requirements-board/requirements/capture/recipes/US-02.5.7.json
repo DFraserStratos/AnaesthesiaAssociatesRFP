@@ -30,7 +30,7 @@
       "start": "/web/lists/L-34821-2026-08-04-AM/bookings/BK0043",
       "setup": [
         {
-          "goto": "/admin/matching"
+          "goto": "/admin/intake/matching"
         },
         {
           "click": "[data-shot=matching-import-open]"
@@ -162,7 +162,7 @@
       "start": "/admin/day/2026-08-04/bookings/BK0043",
       "setup": [
         {
-          "goto": "/admin/matching"
+          "goto": "/admin/intake/matching"
         },
         {
           "click": "[data-shot=matching-import-open]"
@@ -226,7 +226,7 @@
       "name": "procedure-text",
       "app": "admin",
       "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
-      "start": "/admin/matching",
+      "start": "/admin/intake/matching",
       "states": [
         {
           "state": "matching-row",
@@ -321,7 +321,7 @@
       "start": "/admin/day/2026-08-04/bookings/BK0043",
       "setup": [
         {
-          "goto": "/admin/matching"
+          "goto": "/admin/intake/matching"
         },
         {
           "click": "[data-shot=matching-import-open]"

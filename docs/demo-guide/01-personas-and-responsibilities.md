@@ -212,8 +212,11 @@ short-notice cover.
     it, a new one or a Draft List for that evening; close an empty one from its drawer.
 16. Set the primary Procedure from the rooms' sheet (**Make primary** on the Admin Booking), and
     correct it at review; the office can do this on `ACTIVE` and `SUBMITTED` Lists.
-17. **Import hospital file**, match each row on the matching screen (Admin, Matching), and set each
-    new Booking's invoice destination and Contract.
+17. **Import hospital file**, match each row on the matching screen (Admin, Intake, Matching), and set
+    each new Booking's invoice destination and Contract.
+18. Open the rooms' PDF lists (Admin, Intake, PDF lists) with the address each came from, correct a row
+    beside the facsimile and **Send to matching**; the List made from it keeps its sender, so replies go
+    back there.
 
 ### Permissions
 
@@ -290,7 +293,7 @@ allowing billing to proceed.
 6. Authorise the List. A $0.00 Booking raises a $0.00 "No charge" invoice: no payable, no BCTI.
 7. Confirm that the Bookings lock, each Procedure's Contract and price locked onto it ("Contract locked
    at authorise"), and the List hands to billing.
-8. Later, monitor invoice and integration failures: a failed Booking is held back while the rest of
+8. Later, monitor invoice failures and rows still waiting on Intake: a failed Booking is held back while the rest of
    the List bills, and she retries it from the Billing monitor without editing any Contract.
 9. Split a Procedure's fee on a Booking when more than one party pays (**Split** in its Billing card's Paid by), before authorising.
    Change a Procedure's payer there too (a dialog on web) until the List is authorised; each payer gets one invoice.
@@ -318,14 +321,14 @@ The prototype plans to place the monitoring in or alongside the Admin Web App.
 
 ### Goals and actions
 
-- Work the matching screen (Admin, Matching): import hospital files, and match, create or reject
-  each row, with unmatched rows and rows with no NHI waiting in the unmatched queue.
-- Monitor hospital HL7 and FHIR messages (Future scope).
-- Review failed, duplicate, retried and manual-intervention items.
-- Correct partner-specific field mappings.
-- Reprocess failed messages without creating duplicate Bookings.
-- Review PDF extraction before ingesting a surgeon's List.
+- Work **Admin, Intake** (one side-nav item under Day view): on **Matching**, import hospital files and
+  match, create or reject each row, with unmatched rows and rows with no NHI waiting in the unmatched
+  queue; on **PDF lists**, open each rooms' list with its sender, correct its rows and send it to
+  matching (a re-sent list's differences wait for approval); on **Data quality** and **Validators**,
+  check what was received and test NHIs.
 - Handle an inbound change that targets a `SUBMITTED` or `AUTHORISED` List.
+- Future scope: automatic hospital sync and HL7 and FHIR monitoring (failed, duplicate, retried and
+  dead-lettered messages, partner field mappings, reprocessing without duplicates).
 
 ### Pain points
 
@@ -336,12 +339,15 @@ The prototype plans to place the monitoring in or alongside the Admin Web App.
 
 ### Prototype status
 
-The matching screen (Admin, Matching, catch-up Phase 33) is the in-scope surface: hospital rows land
-there with their wording as received and nothing applies until the office decides. The HL7/FHIR monitor
-is Future scope: the Admin Integrations monitor (Messages, Feed config, Surgeon PDFs, Data quality,
-Validators) and the badged Integrations simulator, built in Phase 11, remain clickable, but a fired
-HL7/FHIR message is now only sent to matching; the HL7-to-FHIR transform, a deduped replay and a
-feed-mapping dead-letter can still be shown as Future scope.
+**Admin, Intake** (catch-up Phases 33 and 34) is the in-scope surface, with tabs Matching, PDF lists,
+Data quality and Validators: hospital files from St George's and Southern Cross and the rooms' PDF lists
+land there with their wording as received, and nothing applies until the office decides. Every List
+records where it came from. Hospital files are imported by the office; nothing syncs. The HL7/FHIR
+tooling is Future scope on its own demo surface, **Demo: Future scope, HL7 and FHIR**
+(`/demo/integrations`, its message log at `/demo/integrations/log` and feed mapping at
+`/demo/integrations/mapping`): a fired message only lands on Admin Intake as a row; the HL7-to-FHIR
+transform, a deduped replay and a feed-mapping dead-letter can be shown there as a labelled aside.
+Christchurch Public is not integrated today.
 
 ## Secondary admin responsibility: finance and reconciliation
 

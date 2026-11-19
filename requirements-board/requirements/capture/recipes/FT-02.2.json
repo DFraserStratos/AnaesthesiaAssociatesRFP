@@ -6,13 +6,13 @@
     {
       "name": "surgeon-pdf-inbox",
       "app": "admin",
-      "caption": "Surgeon PDF inbox",
-      "start": "/admin/integrations",
+      "caption": "The rooms' PDF lists, read and sent to the same matching screen as the hospital files",
+      "start": "/admin/intake/pdfs",
       "states": [
         {
           "steps": [
             {
-              "click": "role=button[name=\"Surgeon PDFs\"]"
+              "wait": "[data-shot=pdf-inbox]"
             }
           ],
           "highlight": []

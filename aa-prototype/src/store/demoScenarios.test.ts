@@ -22,6 +22,13 @@ import { regenerateInvoiceFromLock } from './locks'
 import type { Actor } from './mutate'
 import { ANAE, HOSP, INS, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
 import { decideImportRow, importHospitalDownload } from './matchingActions'
+import { correctPdfListRow, sendPdfListToMatching } from './pdfListActions'
+import { setProcedureContract } from './contractSelectionActions'
+import { stubsForList } from './stubSelectors'
+import { needsInvoiceDestinationBookings } from './selectors'
+import { CONTRACT } from '../domain/seed/contracts'
+import { SEED_PDF_LIST, SEED_STUB } from '../domain/seed/intakeSeed'
+import { SEED_ORIGIN_LISTS } from '../domain/seed/listOrigins'
 import { assessImportRow } from './matchingSelectors'
 import type { Invoice } from '../domain/types'
 import { projectedListId } from '../domain/slots'
@@ -29,35 +36,95 @@ import { projectedListId } from '../domain/slots'
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 
-describe('S1 · booking to theatre', () => {
-  it("St George's file is imported and the office creates Sarah Mitchell's Booking on Souter's ACTIVE Tue 28 Jul AM List (catch-up Phase 33)", () => {
-    const api = createAppStore()
-    const listId = projectedListId(ANAE.souter, '2026-07-28', 'AM')
-    const before = bookingsForList(api.getState(), listId)
-    // Three seeded, booked, uncaptured Bookings: Sarah arrives as the fourth row.
-    expect(before).toHaveLength(3)
-    expect(before.every((c) => !c.completed)).toBe(true)
+describe('S1 · booking to theatre (rebuilt in catch-up Phase 34)', () => {
+  const listId = projectedListId(ANAE.souter, '2026-07-28', 'AM')
 
+  /** Beat 1: import the St George's file and Create Booking for Sarah Mitchell's row. */
+  function importAndCreateSarah(api: ReturnType<typeof createAppStore>) {
     const imported = importHospitalDownload(api, OFFICE, 'SAMPLE_STG')
     if (!imported.ok) throw new Error(imported.message)
+    const r1 = api.getState().intake.batches[imported.value.batchId!]!.rowIds[0]!
+    return { r1, decide: () => decideImportRow(api, OFFICE, r1, { kind: 'createBooking', listId }) }
+  }
+
+  it("Beat 1: St George's file is imported, Sarah Mitchell's row keeps the hospital's wording, and nothing changes until the office decides", () => {
+    const api = createAppStore()
+    const before = bookingsForList(api.getState(), listId)
+    // Three seeded, booked, uncaptured Bookings: Sarah arrives as the fourth.
+    expect(before).toHaveLength(3)
+    expect(before.every((c) => !c.completed)).toBe(true)
+    const { r1 } = importAndCreateSarah(api)
     // Nothing changes the schedule until the office decides (RV-13).
     expect(bookingsForList(api.getState(), listId)).toHaveLength(3)
-    const r1 = api.getState().intake.batches[imported.value.batchId!]!.rowIds[0]!
-    const suggestion = assessImportRow(api.getState(), r1)!.suggestion
-    expect(suggestion).toEqual({ kind: 'createBooking', listId })
-    const res = decideImportRow(api, OFFICE, r1, { kind: 'createBooking', listId })
+    expect(api.getState().intake.rows[r1]!.incoming.procedure?.text).toBe('lap appy ?conv to open')
+    expect(assessImportRow(api.getState(), r1)!.suggestion).toEqual({ kind: 'createBooking', listId })
+  })
+
+  it('Beats 1 and 1a: the decision creates her Booking with no RVG code and no Contract; the rail answers Patient › Standard: No contract · RVG', () => {
+    const api = createAppStore()
+    const seededSarah = Object.values(api.getState().masters.patients).find((p) => p.nhi === 'CQY9304')!
+    const res = importAndCreateSarah(api).decide()
     if (!res.ok) throw new Error(res.message)
 
     const s = api.getState()
-    expect(s.schedule.lists[listId]?.state).toBe('ACTIVE')
-    expect(bookingsForList(s, listId)).toHaveLength(4)
     const sarah = s.schedule.bookings[res.value.bookingId!]!
-    expect(sarah).toMatchObject({ scheduledTime: '08:30', source: 'hospitalDownload' })
-    expect(s.masters.patients[sarah.patientId]!.name).toBe('Sarah Mitchell')
-    const procedure = Object.values(s.schedule.procedures).find((p) => p.bookingId === sarah.id)!
-    expect(procedure.procedureText?.text).toBe('lap appy ?conv to open')
-    // No Contract until the office sets it (S1 Beat 1, Phase 20's step rail).
-    expect(procedure.governingContractId).toBeUndefined()
+    expect(sarah).toMatchObject({ scheduledTime: '08:30', source: 'hospitalDownload', patientId: seededSarah.hiddenInternalId })
+    const procedures = proceduresForBooking(s, sarah.id)
+    expect(procedures).toHaveLength(1)
+    const [procedure] = procedures
+    // The only source text, exactly as the hospital sent it (20a); the RVG code is the anaesthetist's (D33).
+    expect(procedure!.procedureText?.text).toBe('lap appy ?conv to open')
+    expect(procedure!.rvgGroupId).toBeUndefined()
+    expect(procedure!.governingContractId).toBeUndefined()
+    expect(needsInvoiceDestinationBookings(s).map((r) => r.bookingId)).toContain(sarah.id)
+
+    // The office's answer on 20's rail: Patient, Standard, No contract · RVG.
+    expect(setProcedureContract(api, OFFICE, procedure!.id, CONTRACT.noContractRvg).ok).toBe(true)
+    expect(needsInvoiceDestinationBookings(api.getState()).map((r) => r.bookingId)).not.toContain(sarah.id)
+
+    // The List reads 0 of 4 complete and stays ACTIVE (never DRAFT).
+    const list = bookingsForList(api.getState(), listId)
+    expect(list).toHaveLength(4)
+    expect(list.filter((c) => c.completed)).toHaveLength(0)
+    expect(api.getState().schedule.lists[listId]?.state).toBe('ACTIVE')
+  })
+
+  it("Beat 1b: the Southern Cross file's row with no NHI waits, its stub on the List, never a Booking", () => {
+    const api = createAppStore()
+    const imported = importHospitalDownload(api, OFFICE, 'SAMPLE_SX')
+    if (!imported.ok) throw new Error(imported.message)
+    const s = api.getState()
+    const noNhi = imported.value.batchId !== undefined ? s.intake.batches[imported.value.batchId]!.rowIds.map((id) => s.intake.rows[id]!).find((r) => r.incoming.patient.nhi === undefined) : undefined
+    expect(noNhi?.status).toBe('open')
+    const stub = Object.values(s.intake.stubs).find((x) => x.importRowId === noNhi!.id)
+    expect(stub).toBeDefined()
+    expect(stubsForList(s, stub!.listId).map((x) => x.id)).toContain(stub!.id)
+    expect(Object.values(s.schedule.bookings).some((b) => s.masters.patients[b.patientId]?.name === noNhi!.incoming.patient.name)).toBe(false)
+  })
+
+  it("Beat 1c: Mr Okafor's PDF list, corrected and sent, creates a List that keeps the upload's sender; the rest land on it", () => {
+    const api = createAppStore()
+    const okafor = SEED_PDF_LIST.id
+    const sender = api.getState().intake.pdfLists[okafor]!.senderEmail
+    expect(correctPdfListRow(api, OFFICE, okafor, 'R2', { nhi: 'ZAA0067' }).ok).toBe(true)
+    const sent = sendPdfListToMatching(api, OFFICE, okafor)
+    if (!sent.ok) throw new Error(sent.message)
+    const [first, ...rest] = api.getState().intake.batches[sent.value.batchId!]!.rowIds
+    const made = decideImportRow(api, OFFICE, first!, { kind: 'createList', slotId: 'S-29104-2026-08-05-AM' })
+    if (!made.ok) throw new Error(made.message)
+    expect(api.getState().schedule.lists[made.value.listId!]!.origin).toEqual({ kind: 'pdf', senderEmail: sender, pdfListId: okafor })
+    for (const id of rest) {
+      const suggestion = assessImportRow(api.getState(), id)!.suggestion
+      expect(suggestion).toEqual({ kind: 'createBooking', listId: made.value.listId })
+    }
+  })
+
+  it('the seeded PDF list and the pinned origins touch no scripted List', () => {
+    const s = createAppStore().getState()
+    const scripted = [listId, projectedListId(ANAE.souter, '2026-07-28', 'PM'), SEED_STUB.listId, ...Object.values(SEED_LIST_IDS)]
+    const target = s.intake.pdfLists[SEED_PDF_LIST.id]!.target
+    expect(scripted).not.toContain(projectedListId(target.anaesthetistId, target.dateISO, target.session))
+    for (const id of Object.values(SEED_ORIGIN_LISTS)) expect(scripted).not.toContain(id)
   })
 
   it('Jump to procedure day advances forward to Tue 28 Jul 08:00', () => {

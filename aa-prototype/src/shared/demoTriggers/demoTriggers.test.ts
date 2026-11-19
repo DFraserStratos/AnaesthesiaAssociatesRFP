@@ -71,7 +71,7 @@ describe('registry shape', () => {
       if (!t.surfaces.includes('bar')) continue
       const path = t.indexPath(state)
       if (path === null) continue
-      const published: Partial<DemoContextValues> = t.indexHint?.includes('PDF lists') === true ? { 'integrations.tab': 'pdfs' } : {}
+      const published: Partial<DemoContextValues> = {}
       // A Master data view rides in `?view=`, which the screen publishes (catch-up Phase 31).
       const view = new URLSearchParams(path.split('?')[1] ?? '').get('view')
       if (view !== null) published['adminMasters.view'] = view
@@ -218,20 +218,30 @@ describe('route scoping', () => {
     expect(ids(api, `/admin/review/${SEED_LIST_IDS.souterMon20Am}`)).not.toContain('stage-post-op')
   })
 
-  it('Receive updated PDF from rooms shows only on the PDF lists tab (catch-up Phase 34)', () => {
+  it('Receive updated PDF from rooms shows only on Intake\'s PDF lists (catch-up Phase 34)', () => {
     const api = createAppStore()
-    expect(ids(api, '/admin/integrations')).not.toContain('pdf-list-resend')
-    expect(ids(api, '/admin/integrations', 'bar', { 'integrations.tab': 'messages' })).not.toContain('pdf-list-resend')
-    expect(ids(api, '/admin/integrations', 'bar', { 'integrations.tab': 'pdfs' })).toContain('pdf-list-resend')
+    expect(ids(api, '/admin/intake/pdfs')).toContain('pdf-list-resend')
+    expect(ids(api, '/admin/intake/matching')).not.toContain('pdf-list-resend')
+    expect(ids(api, '/admin/intake/pdfs', 'pwa')).not.toContain('pdf-list-resend')
   })
 
-  it('hospital messages show on the three mobile Lists layers, in the bar only (catch-up Phase 33)', () => {
+  it('the Intake entries sit on Intake\'s routes, the HL7 entries only on the Future-scope surface (catch-up Phase 34)', () => {
     const api = createAppStore()
-    for (const path of ['/mobile/lists', '/mobile/lists/L1', '/mobile/lists/L1/bookings/BK1']) {
-      expect(ids(api, path, 'bar')).toContain('fire-hospital-message')
-      expect(ids(api, path, 'pwa')).not.toContain('fire-hospital-message')
+    expect(ids(api, '/admin/intake/matching')).toEqual(expect.arrayContaining(['matching-receive-theatre-list', 'matching-send-update']))
+    for (const path of ['/mobile/lists', '/mobile/lists/L1', '/mobile/lists/L1/bookings/BK1', '/admin/intake/matching', '/admin/intake/pdfs', '/admin/integrations', '/admin/matching']) {
+      expect(ids(api, path, 'bar')).not.toContain('fire-hospital-message')
+      expect(ids(api, path, 'bar')).not.toContain('replay-hospital-message')
     }
-    expect(ids(api, '/mobile/more', 'pwa')).not.toContain('fire-hospital-message')
+    expect(ids(api, '/demo/integrations/log')).toEqual(expect.arrayContaining(['fire-hospital-message', 'replay-hospital-message']))
+    for (const id of ['matching-receive-theatre-list', 'matching-send-update', 'pdf-list-resend']) expect(byId(id).screen).toBe('Admin · Intake')
+    for (const id of ['fire-hospital-message', 'replay-hospital-message']) expect(byId(id).screen).toBe('Future scope: HL7 and FHIR')
+  })
+
+  it('no entry outside the Future-scope surface names Christchurch Public (catch-up Phase 34; RV-16)', () => {
+    for (const t of DEMO_TRIGGERS) {
+      if (t.routes.every((r) => r.startsWith('/demo/integrations'))) continue
+      expect(`${t.label} ${t.description}`).not.toMatch(/Christchurch Public/)
+    }
   })
 
   it('the simulator\'s published selection preselects the message', () => {
@@ -290,7 +300,7 @@ describe('re-homed bodies match the Control Panel', () => {
   it('Receive updated PDF from rooms waits for a sent list, then lands the re-sent one once (catch-up Phase 34)', () => {
     const api = createAppStore()
     const t = byId('pdf-list-resend')
-    const ctx = ctxFor('/admin/integrations', {}, { 'integrations.tab': 'pdfs' })
+    const ctx = ctxFor('/admin/intake/pdfs')
     expect(t.disabledReason(api.getState(), ctx, 'PDF-OKAFOR-0805')).toBe('Send the first version to matching first.')
     expect(correctPdfListRow(api, OFFICE_ACTOR, 'PDL0001', 'R2', { nhi: 'ZAA0067' }).ok).toBe(true)
     expect(sendPdfListToMatching(api, OFFICE_ACTOR, 'PDL0001').ok).toBe(true)

@@ -332,7 +332,7 @@ function applyRoomsSender(api: AppStoreApi, actor: Actor, row: ImportRow, listId
   const list = state.schedule.lists[listId]
   const batch = state.intake.batches[row.batchId]
   if (list === undefined) return
-  const next = originAfterRoomsRow(list.origin, batch?.senderEmail, batch?.pdfListId)
+  const next = originAfterRoomsRow(list.origin, batch?.senderEmail, batch?.pdfListId, (id) => state.intake.pdfLists[id]?.receivedAtISO)
   if (next === undefined) return
   mutate(
     api,

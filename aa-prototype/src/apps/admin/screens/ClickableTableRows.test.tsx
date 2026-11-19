@@ -171,7 +171,7 @@ describe('admin clickable table rows', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: `From hospital row ${rowId}` }))
-    expect(screen.getByTestId('location-probe')).toHaveTextContent('/admin/matching')
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/admin/intake/matching')
     expect(screen.getByTestId('select-row-probe')).toHaveTextContent(rowId)
   })
 })

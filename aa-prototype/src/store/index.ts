@@ -494,6 +494,7 @@ export { fixtureNhiForRow, officeAddsNhiRefusal, officeAddsNhiToStub } from './s
 // Catch-up Phase 33: the matching screen's demo trigger bodies (bar entries and the PWA office stand-in).
 export {
   officeMatchesHospitalRow,
+  officeImportsS1File,
   receiveTheatreList,
   sendUpdateRefusal,
   stageUpdateForBooking,

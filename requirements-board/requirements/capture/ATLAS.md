@@ -281,7 +281,7 @@ Hooks already added:
 | Souter Fri 24 PM | `L-34821-2026-07-24-PM` | Pre-payment **paid** (Priya Nair, `BK0038`, `INV0001`); mixed Booking. |
 | Ropata Thu 16 | `L-39560-2026-07-16-AM` | SUBMITTED. The billing-failure target (Losa Tuilagi BK0039 held at the Xero hand-off, Hemi Walker BK0040 bills). |
 | Delaney Fri 17 | `L-27731-2026-07-17-AM` | SUBMITTED. Integration-locked target. |
-| Souter Tue 28 AM | `L-34821-2026-07-28-AM` | The S1 destination: creating `SAMPLE_STG` R1 on Matching (or applying MSG-STG-1001's row) adds Sarah Mitchell. Its 07:45 and 11:15 cases read as the rooms sent them (AR-35 rows 6 and 8); Sarah Mitchell arrives with "lap appy ?conv to open" (Hospital feed). |
+| Souter Tue 28 AM | `L-34821-2026-07-28-AM` | The S1 destination: creating `SAMPLE_STG` R1 on Matching (Import hospital file, then the decision; catch-up Phase 34 dropped the MSG-STG-1001 path) adds Sarah Mitchell; her Contract is answered on the rail, No contract · RVG. Its 07:45 and 11:15 cases read as the rooms sent them (AR-35 rows 6 and 8); Sarah Mitchell arrives with "lap appy ?conv to open" (Hospital feed). |
 | Souter Tue 4 Aug AM | `L-34821-2026-08-04-AM` | Targets for S13, S14 and S15. |
 | Souter Mon 3 Aug PM | `L-34821-2026-08-03-PM` | Source list for the S13 move. |
 | Souter Mon 10 Aug PM | `L-34821-2026-08-10-PM` | St George's, Ms G. Lim, ACTIVE. Merivale's Face lift BK0163, and catch-up Phase 21a's BK0176 (fixed price, no times), BK0177 (Needs a price) and BK0182 (the movable Booking). |
@@ -331,7 +331,11 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin` | Redirects to `/admin/day/2026-07-21`. |
 | `/admin/day/:date` | Day grid of anaesthetists by time. The right rail has the mini calendar, "Internal notes" and "Awaiting review". Add `?sort=az` for A to Z order. The toolbar is `[data-testid=admin-day-nav]` (see "Date navigation" under "Overlays that need clicks"); its row order is a segmented control, `role=group[name="Row order"]` with buttons "Roster order" and "A to Z" (`aria-pressed`). The header's date input is named "Go to date" (`[aria-label="Go to date"]`). |
 | `/admin/day/:date/bookings/:bookingId` | Admin booking detail with "Office billing setup". A Booking created or changed from a hospital row links back to it (`booking-from-hospital-row`, opens Matching on that row); a newer hospital text waiting on Matching shows the cue `booking-newer-hospital-text` (catch-up Phase 33). |
-| `/admin/matching` | Matching (catch-up Phase 33; Kirsty W.): hospital rows waiting for the office. At reset it holds one seeded waiting row (Mere Tipene, no NHI, catch-up Phase 33a; see Stubs on a List below), so `matching-empty` no longer shows; stage rows with "Import hospital file" (`matching-import-open`, see Overlays) or the Demo actions below. Stat tiles `matching-stats` (`[data-stat=open|new|modification|cancellation|unmatched]`), the filter `[aria-label="Show rows"]` (options whose text starts "Open", "Unmatched", "Decided"), the table `matching-table` with rows `matching-row-<n>` (1-based, ready rows first, then import order). A row click opens its panel `matching-panel` (a right-docked SidePanel with a scrim: press Escape before clicking a row or the header). After an import the batch's first row's panel opens by itself. A row decided stays in place, dimmed, until the panel closes. |
+| `/admin/intake` | Admin Intake (catch-up Phase 34; `admin-intake`): redirects to `/admin/intake/matching`. The page header "Intake" sits over the tab strip `intake-tabs` (links, URL-routed: Matching, PDF lists, Data quality, Validators; the current one has `aria-current=page`), so never click a tab: open its route. The old `/admin/matching` and `/admin/integrations` redirect (replace, router state kept) to `/admin/intake/matching`. |
+| `/admin/intake/pdfs` | PDF lists (catch-up Phase 34; product, unbadged): the rooms' PDF lists. "Upload PDF list" `pdf-upload-open` opens the dialog `pdf-upload`; the inbox table `pdf-inbox` (rows `tr[data-pdf-list-id=PDL0001][data-status=received|sent]`; columns Sent from, Surgeon, Hospital, Received, Suggested List, Rows, Status with a "Re-sent" pill on a re-sent list). A row click opens its review in place (`pdf-list-header`, rows `pdf-row-<n>`; "Back to PDF lists" returns). See "Rooms' PDF lists" under Seed data and the hooks under Existing hooks. Demo action `pdf-list-resend`. |
+| `/admin/intake/quality` | Data quality (catch-up Phase 34): the data-quality items; at reset the empty card `data-quality-empty`. |
+| `/admin/intake/validators` | Validators (catch-up Phase 34; was the Integrations Validators tab): the NHI validator `integrations-nhi-validator` (fill its `input`). No tab click. |
+| `/admin/intake/matching` (was `/admin/matching`) | Matching (catch-up Phase 33; Kirsty W.): hospital rows waiting for the office. At reset it holds one seeded waiting row (Mere Tipene, no NHI, catch-up Phase 33a; see Stubs on a List below), so `matching-empty` no longer shows; stage rows with "Import hospital file" (`matching-import-open`, see Overlays) or the Demo actions below. Stat tiles `matching-stats` (`[data-stat=open|new|modification|cancellation|unmatched]`), the filter `[aria-label="Show rows"]` (options whose text starts "Open", "Unmatched", "Decided"), the table `matching-table` with rows `matching-row-<n>` (1-based, ready rows first, then import order). A row click opens its panel `matching-panel` (a right-docked SidePanel with a scrim: press Escape before clicking a row or the header). After an import the batch's first row's panel opens by itself. A row decided stays in place, dimmed, until the panel closes. |
 | `/admin/notifications` | The shared notification pool (catch-up Phase 32; US-13.8.1): newest first, six a page, `?page=N`; the table `admin-notifications-table`, rows `[data-notification-row=NT0001]` with "Open List", "Open Draft List" or "Open Booking", the pager `admin-notifications-pager` (Newer / Older). Catch-up Phase 32b: notices are active or resolved; the page shows active ones by default, the count `admin-notifications-page-count`, each active row's tick `notification-tick` ("Resolve"), and the "Show resolved" checkbox `admin-notifications-show-resolved` (`?resolved=1`, kept with `?page=`); resolved rows carry `data-notification-resolved=true` and the line `notification-resolved-line` ("Resolved by Kirsty W., Tue 21 Jul 08:00"). An alert's note is `notification-alert-note`. The provisional caption is gone. Seeds empty: stage it with the `colleague-moves-list-to-office` trigger, or send an alert from a web Booking (same origin) and `goto` here. |
 | `/admin/draft-lists` | Draft Lists (catch-up Phase 31): Unassigned tab (default) and History (`?tab=history`). Since UI unification U5 the two tabs are links inside `role=navigation[name="Draft Lists"]`, not `role=tab`: `a[data-draft-tab=unassigned]` and `a[data-draft-tab=history]`, each with its count inside the link text (so match by the hook, not the name); the current one has `aria-current=page`. `?open=<listId>` opens the Draft List drawer (`admin-draft-list-drawer`); `?assigned=<listId>` shows the assigned confirmation with "Open List". The drawer's "Available that session" Assign opens step 2; the row's Assign opens step 1 (Everyone / Free only, tier filter, groups). "New Draft List" opens `admin-new-draft-list`. |
 | `/admin/conflicts` | Conflicts (catch-up Phase 30): every live conflict, grouped by date (`section[data-conflict-date=<date>]`), one table each (`[data-shot=conflicts-table]` wraps them). Rows are `tr[data-conflict-row=<listId>]` (cleared ones add `data-conflict-cleared=true`). Row actions have accessible names with context (`Reassign, Dr Rutherford Wed 22 Jul AM`, `Clear conflict, ...`, `Open the List, ...`, `Open the day, ...`): match them by regex (`role=button[name=/^Clear conflict/]`). Hospital closures only since catch-up Phase 32b (no reason filter, no Availability column). Filters in the URL: `?when=twoWeeks|canvas|past`, `?hospital=<id>`, `?anaesthetist=<reg>`, `?cleared=1`. After a reassign or clear, `[data-shot=conflicts-confirmation]`. |
@@ -346,16 +350,16 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/ledger/anaesthetists/:anaesthetistId` | One anaesthetist's ledger (catch-up Phase 36; US-08.3.5): the same screen scoped, with the select `ledger-anaesthetist-select`; `ledger-balance` reads "Dr Souter's ledger is in balance" (or "... is out of balance by $120.00"); `ledger-tiles` (`data-shot-scope=anaesthetist`) holds `ledger-aa-owes` ("AA owes Dr Souter": Due now, Awaiting collection, Total), `ledger-owes-aa` ("Dr Souter owes AA": Unpaid AA fees) and the Collected for them and Paid out to them tiles; "Dr Souter's pairs" (no Payee column). No out-of-balance list or unmatched card at this scope. Dr Souter is `34821`; an unknown id redirects to `/admin/ledger`. |
 | `/admin/invoices/:invoiceId` (catch-up Phase 36) | The rail's "Xero handoff" card is now the "Ledger" card `invoice-ledger-card` (no `h2` "Xero handoff" any more): `xero-handoff-status` reads "Mirrored in Xero", "Not yet in Xero" or "Xero handoff failed" (then "The invoice and its ledger pair stand. Resolve and retry in Billing monitor."), then `ledger-receivable-number`, `xero-accrec-reference` (now the Xero ID, `XR...`), `ledger-payable-number`, `xero-accpay-reference` (`XP...`), on a prepayment `xero-accpay-payee` and `xero-transfer-journal-reference`, and the link "Open in the ledger" `invoice-open-ledger` (`/admin/ledger?pair=<id>`). The Xero ID rows show only once the pair is in Xero. |
 | `/admin/billing` (catch-up Phase 36) | The intro adds "Money in and out is recorded in the ledger first; Xero mirrors it." The payables panel `billing-payables-run` reads "N payable(s) due · $X to pay out to anaesthetists. A payable is released for exactly what its invoice has received." (or "No payables due. ...") with the link "Open the ledger" `billing-open-ledger`; the "Run payables" button is unchanged. |
-| `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. A message stages a row on `/admin/matching` and applies nothing (catch-up Phase 33); the attention callout `integrations-attention` shows dead-letter only. |
+| `/admin/integrations` | Redirects to `/admin/intake/matching` (catch-up Phase 34). Its tabs are gone: Surgeon PDFs, Data quality and Validators are Intake routes; the Messages log and Feed config moved to the Future-scope pages `/demo/integrations/log` and `/demo/integrations/mapping`. |
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (`surgeon-profile`, catch-up Phase 17b): cards `surgeon-specialties`, `surgeon-identifiers`, `surgeon-groups`, then the full-width `surgeon-contacts` ("Practice and contacts": Practice `[data-practice]`, `surgeon-personal-contact-card`, `surgeon-office-contacts-card`). "Edit details" opens `surgeon-edit-sheet`. |
 | `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons` (the old `surgeonRooms` value opens it, catch-up Phase 17b), `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifiers` (catch-up Phase 19b, "Modifiers"; the old `modifierCodes` value opens it), `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). A Contract's panel has Details and History tabs (catch-up Phase 25). |
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip ("No HPI CPN yet" when blank), "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. Catch-up Phase 17b: Specialties, Identifiers and Groups in the first row, then one full-width "Practice and contacts" card (`surgeon-contacts`), then Pairing preferences. No room cards. |
 | `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Profile, Pairing preferences. Office only. The Profile card (catch-up Phase 26; was "Details", hook `anaesthetist-details` kept) shows Unit value, Status, Phone, Email, HPI CPN and Bank account (masked, row `anaesthetist-bank-account`); it has no action of its own. The page header's secondary button "Edit details" (beside "History") opens the Edit sheet: click `button:text-is("Edit details")` at page level, not inside `anaesthetist-details`. |
 | `/admin/audit` | Audit viewer. |
 
-The side nav has: Day view, Matching (amber badge `[data-shot=nav-badge-matching]`, the open rows,
-catch-up Phase 33), Conflicts (amber badge `[data-shot=nav-badge-conflicts]`, catch-up
-Phase 30), Review queue, Invoices, Billing monitor, Integrations, Master data, Audit. Every side-nav
+The side nav has: Day view, Intake (amber badge `[data-shot=nav-badge-intake]`, the open Matching rows;
+catch-up Phase 34, was Matching with `nav-badge-matching`), Conflicts (amber badge `[data-shot=nav-badge-conflicts]`, catch-up
+Phase 30), Review queue, Invoices, Billing monitor, Master data, Audit (Integrations removed in catch-up Phase 34). Every side-nav
 badge carries `data-shot=nav-badge-<section>`.
 
 Catch-up Phase 36 adds "Ledger" after Billing monitor, with an amber badge `[data-shot=nav-badge-ledger]` counting
@@ -390,7 +394,9 @@ the ledger's failed checks (none at reset, so no badge; 1 after "Inject unmatche
 | `/demo/xero/invoices` | Invoices tab. |
 | `/demo/xero/invoices/:accRecId` | Pair detail: ACCREC and ACCPAY, money flow, both records' InvoiceNumber and Reference (`xero-invoice-identifiers`); the payable equals the receivable. `XRB0` exists in the seed. An AA fee pair (`XRFH01`, `XRFH02`) shows the fee ACCREC and a "No payable" note (`xero-aa-fee-pair`). |
 | `/demo/xero/invoices/:accRecId` (catch-up Phase 36) | The callout `xero-engine-link` is now titled "Ledger pair (the system of record)"; inside it `xero-ledger-pair` (the patient, then Ledger pair, Receivable and Payable numbers and the ledger's received, released and paid out) and the chip `xero-ledger-match` ("Matches the ledger" or "Differs from the ledger"). The page subtitle says Xero mirrors the Billing Engine's ledger. |
-| `/demo/integrations` | Integration simulator: feeds, message library, raw HL7 to FHIR, then pane 3 "Sent to matching" (a message stages a row on `/admin/matching`, never applies). |
+| `/demo/integrations` | Future scope: HL7 and FHIR (catch-up Phase 34), the integration simulator: feeds, message library, raw HL7 to FHIR, then pane 3 "Sent to matching" (a message stages a row on `/admin/intake/matching`, never applies). Header line `demo-surface-future-scope`, page strip `future-scope-pages` (Simulator, Message log, Feed mapping). App `simulator`. |
+| `/demo/integrations/log` | Future scope: the HL7 message log (catch-up Phase 34; was Admin Integrations' Messages tab): `future-scope-log` (its table is `[data-shot=future-scope-log] table`), the dead-letter callout `integrations-attention`. Empty until a message is replayed or fired. |
+| `/demo/integrations/mapping` | Future scope: feed mapping (catch-up Phase 34; was Admin Integrations' Feed config tab): `future-scope-mapping`, one card per feed `[data-feed-id=<id>]`. |
 | `/demo/data` | Data inspector: today's lists, seeded scenario finder, audit trail, lifecycle states, guard console. |
 
 ## Seed data worth shooting
@@ -1098,7 +1104,7 @@ were already imported. Nothing new.").
   R3 Hugh Barnett Fri 31 Jul PM, no Forte List (create a Draft List).
 - A Booking created from a row has no Contract unless the office chose one, so it lands on Admin Day's
   Needs an invoice destination card (the banner's "Needs an invoice destination" pill).
-- MSG-STG-1014 (fired from `/admin/integrations` or `/demo/integrations`) stages "Alan Prentice", a change
+- MSG-STG-1014 (fired from a `/demo/integrations` route since catch-up Phase 34) stages "Alan Prentice", a change
   to a SUBMITTED List, still appliable.
 
 ### Stubs on a List (catch-up Phase 33a)
@@ -1106,7 +1112,7 @@ were already imported. Nothing new.").
 - Matching is no longer empty at reset: the seed holds one waiting row with no NHI, `IRS001` (batch `IBS001`,
   "Southern Cross theatre list, Tue 4 Aug"): Mere Tipene, Southern Cross, Ms K. Patel, "Lap chole", 14:00, Tue 4 Aug
   PM. It sorts after the ready rows (Unmatched), so after an import `matching-row-1` and `matching-received` are still
-  the file's first ready row; the Open and Unmatched counts and `nav-badge-matching` are one higher than in Phase 33.
+  the file's first ready row; the Open and Unmatched counts and `nav-badge-intake` (was `nav-badge-matching`) are one higher than in Phase 33.
   Select it with `[data-shot^='matching-row-'][data-import-row-id=IRS001]` (or router state `{ selectRowId: 'IRS001' }`).
 - Its stub `STB0001` stands on Dr Souter's Tue 4 Aug PM List `L-34821-2026-08-04-PM` (Southern Cross, Ms K. Patel),
   which has no Bookings, only the stub. The NHI to type on Matching is `ZQA1024`: fill `[data-shot=matching-nhi] >>
@@ -1117,6 +1123,40 @@ were already imported. Nothing new.").
   resolves it the same way.
 - Admin Day: open the drawer with `button[data-list-id="L-34821-2026-08-04-PM"]` on `/admin/day/2026-08-04`.
   `/admin/review/L-34821-2026-08-04-PM` renders the ACTIVE List with the stub row.
+
+### Rooms' PDF lists and where a List came from (catch-up Phase 34)
+
+- **The seeded PDF list `PDL0001`** (`domain/seed/intakeSeed.ts`; the `pdfList` counter starts at 2, so the next upload
+  or re-send is `PDL0002`): Mr C. Okafor, Forte Health, "Operating list · Wednesday 5 August (AM)", suggested List
+  Dr Rutherford Wed 5 Aug AM (a session with no List, so the first decision creates it), sent from
+  `leanne.pa@avonsidesurgical.example`, received 07:10, status `received`. Rows: R1 Brian Holt, R2 Margaret Ellison
+  with NHI printed `ZAA0068` (fails its check digit; red border, Send refused until corrected to `ZAA0067`), R3 Hemi Parata.
+  Open it with `[data-shot=pdf-inbox] tr[data-pdf-list-id=PDL0001]`; correct with `[data-shot=pdf-row-2] input >> nth=0`
+  (the NHI field) then `[data-shot=pdf-row-2-apply]` ("Save correction"); the line "NHI ZAA0068 corrected to ZAA0067 ·
+  <who>, <when>" shows in `pdf-correction`. `pdf-send` stages the 3 rows on Matching (micro-cap "Rooms PDF"), and the
+  result line's `pdf-open-matching` link opens `/admin/intake/matching`.
+- **Upload samples** (`domain/intake/pdfLists.ts`, the dialog `pdf-upload` badged "Sample files"; cards
+  `[data-sample-id=...]`, "Sent from" `pdf-upload-sender`, prefilled and required, confirm `pdf-upload-confirm`):
+  `PDF-OKAFOR-0805` (already received at reset, so not offered) and `PDF-WHITFORD-0812` (Mr J. Whitford, Christchurch
+  Eye Surgery, Dr Strand's existing Wed 12 Aug PM List, sent from `bookings@merivaleeye.example`; R3 Joan Pickering has
+  no NHI, so she waits at intake with a stub). After Upload the review opens on the new list.
+- **The re-sent list** (`pdf-list-resend`, choice `PDF-OKAFOR-0805`): enabled once Okafor's list has been sent. It
+  arrives from `admin@avonsidesurgical.example`, marked Re-sent, status received (`tr[data-status=received]` is then
+  the only received row): Margaret Ellison moved to 09:45 and Ruth Calder added. Send skips the unchanged rows. To show
+  the changed time as a difference, decide Margaret Ellison's first row first (her panel: `role=radio[name=/Create a
+  List in a session/]`, then `role=button[name=/Rutherford/] >> nth=0`, then `matching-apply`), as US-02.2.1's `resent`
+  state does. In `visual/intake-pdf-lists.spec.ts` the first decision (Brian Holt) creates `BK0191` on
+  `/admin/day/2026-08-05/bookings/BK0191`, whose `booking-list-origin` reads the PDF origin and its sender.
+- **List origins.** Every List has an `origin`: Lists a recurring booking projects read "From a recurring booking",
+  every other seeded List "Entered by hand". Two pinned Lists (`domain/seed/listOrigins.ts`, `SEED_ORIGIN_LISTS`), both
+  with no Bookings:
+  - `pdf`: Dr Hughes Tue 11 Aug AM `L-46822-2026-08-11-AM` (Forte Health, Mr Nand), "From a rooms' PDF · sent from
+    anna.pa@fendaltonspecialists.example" with "Replies go to" that address (the sender wins over Mr Nand's first office
+    contact). Open on `/admin/day/2026-08-11` with `button[data-list-id="L-46822-2026-08-11-AM"]`.
+  - `hospital`: Dr Sharma Mon 3 Aug PM `L-41267-2026-08-03-PM` (Southern Cross, Mr Hale), "From the hospital's list ·
+    Southern Cross". Open on `/admin/day/2026-08-03`.
+  - A by-hand List with a Booking: Dr Souter Fri 24 Jul AM `L-34821-2026-07-24-AM` (`BK0034`); open its drawer on
+    `/admin/day/2026-07-24`, its Booking at `/admin/day/2026-07-24/bookings/BK0034`.
 
 ### Internal ledger (catch-up Phase 36)
 
@@ -1469,7 +1509,19 @@ the exception: use the `trigger` step)
 
 ## Existing hooks
 
-- Matching (catch-up Phase 33, `/admin/matching`): `admin-matching` (the screen), `matching-empty`,
+- Intake (catch-up Phase 34): `admin-intake` (the Intake page), `intake-tabs` (its link strip); side nav
+  `nav-badge-intake` (replaces `nav-badge-matching`). Matching: `row-new` (the first "New" chip in the table). PDF lists
+  (`/admin/intake/pdfs`): `pdf-upload-open`, `pdf-inbox` (rows `data-pdf-list-id`, `data-status`), `pdf-upload` (the
+  upload dialog body; `pdf-upload-sender`, `pdf-upload-confirm`, cards `[data-sample-id=...]`), `pdf-list-header`,
+  `pdf-row-<n>` (1-based; `data-row-id`), `pdf-row-<n>-apply` ("Save correction", shown once a field changes),
+  `pdf-correction` (the correction lines under a row), `pdf-send` ("Send to matching", disabled while an NHI is invalid),
+  `pdf-open-matching` (the result line's link). List origin: `list-origin` (the "Origin" row in the Admin session drawer
+  and the Draft List drawer: the origin in words, its note "Replies go to <address>" or "No address held for replies";
+  `data-origin=pdf|hospital|manual|recurring`), `booking-list-origin` (the Admin Booking header line "List origin · ...",
+  same `data-origin`). Validators: `integrations-nhi-validator` (now on `/admin/intake/validators`); Data quality:
+  `data-quality-empty`. Future scope: `demo-surface-future-scope`, `future-scope-pages`, `future-scope-log`,
+  `future-scope-mapping` (cards `data-feed-id`), `integrations-cph-not-integrated`.
+- Matching (catch-up Phase 33, `/admin/intake/matching` since catch-up Phase 34): `admin-matching` (the screen), `matching-empty`,
   `matching-import-open` (header button), `matching-import` (the dialog body; sample cards
   `[data-sample-id=SAMPLE_STG|SAMPLE_STG_UPDATE|SAMPLE_SX|SAMPLE_FORTE_SHEET]`), `matching-import-confirm`,
   `matching-import-result` (its ResultLine), `matching-interim` (the sample-file note), `matching-stats`
@@ -1484,7 +1536,7 @@ the exception: use the `trigger` step)
   `matching-pairing-warning`, the footer primary `matching-apply` ("Create Booking", "Apply 3 changes", "Cancel
   Booking", "Mark as matched", "Create List and Booking", "Create Draft List and Booking", "Reject row"; disabled
   with its reason) and, after a decision, `matching-banner` (`role=status`). On the Admin Booking detail:
-  `booking-from-hospital-row` and `booking-newer-hospital-text`. Side nav `nav-badge-matching`.
+  `booking-from-hospital-row` and `booking-newer-hospital-text`. Side nav `nav-badge-intake` (was `nav-badge-matching`).
 - Stubs (catch-up Phase 33a): `list-stub` (the stub row; also `data-stub-id`, `data-import-row-id`; a button on
   mobile and in tables, a `role=group` in the Admin drawer), `list-stub-row` (its `<tr>` on web List detail and Admin
   Review; click `[data-shot=list-stub-row] [data-shot=list-stub]` to show the inline details), `stub-sheet` (the
@@ -1927,7 +1979,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 
 | Scenario | What the jump does | Story |
 |---|---|---|
-| S1 · Booking to theatre | Reset only. | On Admin, Matching, import `SAMPLE_STG` and create Sarah Mitchell's Booking (R1, "Create Booking"); she then appears on Souter Tue 28 Jul AM. On the PWA, `matching-office-matches-row` (S1 choice) plays it. |
+| S1 · Booking to theatre | Reset only. | On Admin, Intake, Matching (`/admin/intake/matching`), Import hospital file `SAMPLE_STG` and create Sarah Mitchell's Booking (R1, "Create Booking", her text `lap appy ?conv to open`); she then appears on Souter Tue 28 Jul AM, and her Contract is answered on the rail (No contract · RVG). No MSG-STG-1001, sync or default Contract (catch-up Phase 34). On the PWA, `matching-office-matches-row` (S1 choice "St George's file, Tue 28 Jul AM (S1)") plays it. |
 | S2 · Office day | Reset only. | Admin work. |
 | S3 · Money end to end | Reset, then checks both Souter Mon 20 lists are SUBMITTED. | Authorise them in `/admin/review/...`. Billing then gives AA-2026-0005 in Xero (nib, $152.38, its share of the fee-split Booking) and emails every invoice. |
 | S4 · Exceptions | Reset only. | Admin Day, then Invoices and Mobile. Beat 1 is the prepayment: Riley's $1,200.00 (Dr Souter's Fri 24 Jul AM, prepaid Rhinoplasty) awaits approval; the office approves and sends it on `/admin/invoices` (Approve and send), the patient pays (`payment-full` / `payment-half`), and Nair is the paid, mixed case whose rhinoplasty is left off the final invoice. |
@@ -1943,14 +1995,14 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/demo/xero/invoices/<accRecId>` of an AA fee pair | `record-fee-payment` | Only on a fee pair; the payment triggers below are hidden there |
 | `/admin/billing/aa-fees` | `run-scheduled-fee-run`, `seed-month-of-bctis` | The scheduled run raises the month in the picker as the system actor; "Run monthly fee invoices" is the screen's own product button |
 | `/admin/review/L-41267-2026-07-14-AM` or that List's Booking detail | `stage-post-op` | Shown only for Dr Sharma's Tue 14 AM List |
-| `/admin/integrations`, Surgeon PDFs tab | `ingest-pdf-row` | Click the "Surgeon PDFs" tab first; the entry shows only there |
+| `/admin/intake/pdfs` | `pdf-list-resend` ("Receive updated PDF from rooms", choice the sample id, `PDF-OKAFOR-0805`) | Catch-up Phase 34, bar only, no badge (screen "Admin · Intake"). The rooms re-send a PDF list already sent to matching: it lands in the inbox as received, marked Re-sent, from its new address. Disabled until that list has been sent. `ingest-pdf-row` is gone (no direct ingest: PDF rows go through Matching) |
 | `/admin/invoices/<invoiceId>`, `/demo/xero/invoices/<accRecId>`, `/admin/day/<date>/bookings/<bookingId>` | `payment-full`, `payment-half`, `payment-replay` | Acts on the invoice in the URL; the payable authorises for exactly the amount received. On a Booking detail the choices are that Booking's sent prepayment ACCRECs, disabled "Not approved yet" before approval. After the S3 AM authorise, AA-2026-0002 is the first open invoice; Riley's prepayment invoice once approved on the strip is `XR0001` |
 | `/admin/day/<date>` (choice = booking id), `/admin/day/<date>/bookings/<bookingId>` (acts on that Booking), `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `prepayment-two-days-before` | Catch-up Phase 27: moves the demo clock to 2 days before the procedure, so the prepayment warning turns strong. On Admin Day use `"choice": "BK0034"`. Forward only; disabled "No outstanding pre-payments" or "Already 2 days or less before" |
 | `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>` | `add-prepaid-booking` (choices `one-payer`, `two-payers`) | Catch-up Phase 27: as the office stand-in, adds Fiona Gray on Dr Souter's next ACTIVE List where her prepaid Contracts are offered. `two-payers`: Rhinoplasty $1,200.00 to the patient and Blepharoplasty, upper lids $900.00 to Ian Gray, so two strip rows. With approval off each is sent at once. Disabled "No ACTIVE List for Dr Souter" or "Already added (Reset to repeat)" |
 | `/mobile/lists/<listId>/bookings/<bookingId>` (PWA Demo sheet only) | `pwa-office-approves-prepayment`, `pwa-payment-full`, `pwa-payment-half` | Catch-up Phase 27: the office approves and sends this Booking's first ready payer group; the patient pays half or all of its sent prepayment. Not in the framed build's bar |
-| `/mobile/lists[...]`, `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/admin/integrations`, `/demo/integrations` | `fire-hospital-message` (choice: a message id), `replay-hospital-message` | Badged Future scope, **bar only** since catch-up Phase 33 (not in the PWA Demo sheet). It never applies anything: a message stages a row on `/admin/matching` ("Sent ... to matching"), and the Booking changes only once the office decides the row there. On a Booking it defaults to the message addressed to it (MSG-STG-1012 on Foster's `BK0043`). Replay dedupes: no second row |
-| `/admin/matching` | `matching-receive-theatre-list` (choice `stg` or `sx`), `matching-send-update` | Catch-up Phase 33, bar only. "Import hospital file" stages `SAMPLE_STG` or `SAMPLE_SX`'s rows as the hospital sending its theatre list (refused once staged). "Send update for a matched Booking" stages a later row for the Booking matched by the selected row, else Diane Foster's `BK0043` (a later time and the hospital's fuller wording), waiting for approval. Recipes usually stage rows through the product's own Import hospital file dialog instead (see Overlays) |
-| `/mobile/lists[...]` (PWA Demo sheet) | `matching-office-matches-row` (choice by label: "Sarah Mitchell, Tue 28 Jul AM (S1)", "A new hospital booking on this List", "A hospital update for this Booking, approved by the office") | Catch-up Phase 33, badged Office stand-in, PWA only. The hospital's row arrives and the office decides it with the suggestion, every difference ticked, no Contract picked. On Foster's `BK0043` the hospital's fuller wording replaces WLE MM (US-02.5.7's mobile shot). In the framed build use Admin, Matching |
+| `/demo/integrations`, `/demo/integrations/log`, `/demo/integrations/mapping` | `fire-hospital-message` (choice: a message id), `replay-hospital-message` | Badged Future scope, **bar only**, screen "Future scope: HL7 and FHIR". Since catch-up Phase 34 only on these three routes (no longer on mobile, web or Admin Booking routes, nor Admin Integrations), and with no per-Booking default. It never applies anything: a message stages a row on `/admin/intake/matching` ("Sent ... to matching"), and the Booking changes only once the office decides the row there. To stage a row for an Admin shot, fire it in `setup` from `/demo/integrations`, then `start` on Matching (US-02.5.4). Replay dedupes: no second row |
+| `/admin/intake/matching` (was `/admin/matching`) | `matching-receive-theatre-list` (choice `stg` or `sx`), `matching-send-update` | Catch-up Phase 33, bar only. "Import hospital file" stages `SAMPLE_STG` or `SAMPLE_SX`'s rows as the hospital sending its theatre list (refused once staged). "Send update for a matched Booking" stages a later row for the Booking matched by the selected row, else Diane Foster's `BK0043` (a later time and the hospital's fuller wording), waiting for approval. Recipes usually stage rows through the product's own Import hospital file dialog instead (see Overlays) |
+| `/mobile/lists[...]` (PWA Demo sheet) | `matching-office-matches-row` ("Hospital file imported and my booking matched" since catch-up Phase 34; choice by label: "St George's file, Tue 28 Jul AM (S1)", "A new hospital booking on this List", "A hospital update for this Booking, approved by the office") | Catch-up Phase 33, badged Office stand-in, PWA only. The S1 choice imports the St George's file and decides the confident rows for Tue 28 Jul AM (Sarah Mitchell created, No contract · RVG on her Procedures); refused "Nothing new from the hospital for your Lists" once done. The other choices: the hospital's row arrives and the office decides it with the suggestion, every difference ticked, no Contract picked. On Foster's `BK0043` the hospital's fuller wording replaces WLE MM (US-02.5.7's mobile shot). In the framed build use Admin, Matching |
 | `/mobile/lists/<listId>` (PWA Demo sheet only) | `stub-office-adds-nhi` ("Office adds the NHI to this stub") | Catch-up Phase 33a, badged Office stand-in, PWA only. On a List holding a stub, the office adds the NHI its waiting row needs (Mere Tipene `ZQA1024` on `L-34821-2026-08-04-PM`; after the Southern Cross import, Tama Henare `ZQA1008` on `L-34821-2026-07-28-PM`) through the one resolve path, and the Booking takes the stub's place. Disabled on a List with no stub. No choice. |
 | `/admin/day/<date>/bookings/<id>` | `hospital-description-arrives` (choice `ar35-row-2`, `-12`, `-20`, `-25`) | Catch-up Phase 20a, bar only, no badge. AR-35's illustrative hospital wording replaces the procedure text through `replaceProcedureText`; defaults to the row paired with the rooms' text (row 12 on Tane's `BK0006`). Disabled when the Booking already holds that text |
 | `/mobile/lists/<listId>` | `photo-capture-future` | Badged Future scope. Opens the Add a booking sheet on the simulated photo of a paper card (sample cards) for the List in the URL; disabled unless the List is ACTIVE. Also in the PWA Demo sheet. A saved Booking reads "Added by anaesthetist" |
@@ -1983,14 +2035,21 @@ until `{ "trigger": "office-authorises-list" }` runs (US-07.4.1 and US-08.6.1 sh
 
 **Integration simulator** (`/demo/integrations`)
 
-- **Feeds:** St George's (HL7 v2), Christchurch Public (HL7 v2) and Southern Cross (FHIR-native).
+- **Future scope (catch-up Phase 34).** The simulator, the message log (`/demo/integrations/log`) and feed mapping
+  (`/demo/integrations/mapping`) sit under the header "Future scope: HL7 and FHIR" (`demo-surface-future-scope`,
+  page strip `future-scope-pages`). Shots use app `simulator`; no caption may call the simulator, a sync or
+  Christchurch Public in scope.
+- **Feeds:** St George's (HL7 v2), Christchurch Public (HL7 v2) and Southern Cross (FHIR-native). St George's is
+  selected by default. Christchurch Public is **not integrated today**: its card reads "Not integrated today ·
+  example of a further feed (Future Work)" (`integrations-cph-not-integrated`), it has no live feed ("Start live feed"
+  is disabled on it), and its messages replay one at a time. Only St George's and Southern Cross stream.
 - **Messages never apply anything (catch-up Phase 33).** A message that parses stages a row on
-  `/admin/matching`, and the Booking changes only when the office decides that row. Pane 3
+  `/admin/intake/matching`, and the Booking changes only when the office decides that row. Pane 3
   (`[data-shot=integrations-schedule-change]`) reads "Sent to matching". There is no manual-intervention
-  status or park code anywhere; the Integrations monitor's attention callout (`integrations-attention`)
-  shows dead-letter only.
+  status or park code anywhere; the message log's attention callout (`integrations-attention`, on
+  `/demo/integrations/log`) shows dead-letter only.
 - **Messages:**
-  - MSG-STG-1001: "S12 · New booking" (Sarah Mitchell). Selected by default.
+  - MSG-STG-1001: "S12 · New booking" (Sarah Mitchell). Selected by default. Not part of S1 since catch-up Phase 34 (S1 imports the St George's file on Matching).
   - MSG-STG-1002: new-format NHI.
   - MSG-STG-1003: out-of-range ethnicity. It raises a data-quality item.
   - MSG-STG-1004: transient failure, then auto-retry.
@@ -2004,9 +2063,10 @@ until `{ "trigger": "office-authorises-list" }` runs (US-07.4.1 and US-08.6.1 sh
   `[data-testid=integration-library] >> text="S15 · Cancellation"`.
 - **Replaying:** `[data-shot=integrations-replay]` replays the selected message. Each library row
   also has its own Replay button.
-- **After a replay,** `/admin/integrations` shows the message log. Use a `setup` that replays,
-  then set `start` to `/admin/integrations`. To show a message's row, set `start` to `/admin/matching`
-  instead (US-02.5.4 fires MSG-STG-1014 from `/admin/integrations` in `setup`, then opens Matching).
+- **After a replay,** `/demo/integrations/log` shows the message log. Use a `setup` that replays,
+  then set `start` to `/demo/integrations/log` (US-14.1.1's `message-log`). To show a message's row, set `start` to
+  `/admin/intake/matching` instead (US-02.5.4 fires MSG-STG-1014 from `/demo/integrations` in `setup`, then opens
+  Matching). A dead letter: fire MSG-CPH-2001 from `/demo/integrations/log` in `setup` (US-14.5.1).
 
 **Data inspector** (`/demo/data`)
 

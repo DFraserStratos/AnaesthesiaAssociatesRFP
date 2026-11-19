@@ -1,34 +1,14 @@
 /**
- * The pure parts of catch-up Phase 20a's two Booking-route demo triggers:
- * "Fire hospital message" re-pointed onto the Booking routes (its default is
- * the canned message addressed to the Booking on screen), and the new
+ * The pure parts of catch-up Phase 20a's Booking-route demo trigger
  * "Hospital description arrives" (AR-35's illustrative hospital wordings,
  * through `replaceProcedureText`). Kept apart from the registry so each rule
  * has a test.
  */
 
 import type { AppState } from '../../store'
-import { CANNED_MESSAGES } from '../../domain/integrations'
 import { HOSPITAL_DESCRIPTION_CHOICES } from '../../domain/seed/sourceWording'
 import { replacesProcedureText } from '../../domain/billing/procedureStack'
 import type { InvoiceDescriptionOrigin, Procedure } from '../../domain/types'
-
-/**
- * The canned modify message (S13, S14 or S15) addressed to this Booking, by its
- * correlation ref: MSG-STG-1012 on Diane Foster's Booking. Undefined when the
- * Booking has none or no message names its appointment.
- */
-export function cannedMessageForBooking(state: Pick<AppState, 'schedule'>, bookingId: string | undefined): string | undefined {
-  if (bookingId === undefined) return undefined
-  const ref = state.schedule.bookings[bookingId]?.correlationRef
-  if (ref === undefined) return undefined
-  const modify = CANNED_MESSAGES.filter(
-    (m) => m.eventType !== 'S12' && m.feedId === ref.sourceFeedId && m.correlationAppointmentId === ref.externalAppointmentId,
-  )
-  // The modification (S14) first: it carries the new text; then a reschedule; a cancellation last.
-  const order = ['S14', 'S13', 'S15']
-  return modify.sort((a, b) => order.indexOf(a.eventType) - order.indexOf(b.eventType))[0]?.id
-}
 
 /** The Booking's primary Procedure (the intake target, catch-up Phase 23). */
 export function primaryProcedureOf(state: Pick<AppState, 'schedule'>, bookingId: string | undefined): Procedure | undefined {

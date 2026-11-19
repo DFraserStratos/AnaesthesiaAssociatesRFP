@@ -31,6 +31,9 @@ export {
   FEED_META,
   INTEGRATION_FEEDS,
   CPH_NHI_FIX,
+  LIVE_FEED_IDS,
+  isIntegratedFeed,
+  FUTURE_SCOPE_CPH_BATCH_LABEL,
   type FeedMeta,
 } from './feeds'
 export {

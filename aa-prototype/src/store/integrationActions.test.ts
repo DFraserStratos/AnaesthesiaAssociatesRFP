@@ -178,6 +178,8 @@ describe('retry vs dead-letter', () => {
     const staged = stagedRow(api, 'MSG-CPH-2001')!
     expect(staged.incoming).toMatchObject({ hospitalId: HOSP.cph })
     expect(validNhiOf(staged.incoming)).toBeDefined()
+    // Not integrated today (catch-up Phase 34; RV-16): its row says it came from the Future-scope demo.
+    expect(api.getState().intake.batches[staged.batchId]!.label).toBe('Future-scope HL7 demo · Christchurch Public · message MSG-CPH-2001')
   })
 })
 

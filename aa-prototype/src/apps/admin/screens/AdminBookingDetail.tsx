@@ -102,7 +102,7 @@ export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLab
             </div>
             {fromRowId !== undefined && (
               <div style={{ marginTop: 4 }}>
-                <TextAction size="sm" flush shot="booking-from-hospital-row" onClick={() => navigate('/admin/matching', { state: { selectRowId: fromRowId } })} style={{ color: neutral.slate }}>
+                <TextAction size="sm" flush shot="booking-from-hospital-row" onClick={() => navigate('/admin/intake/matching', { state: { selectRowId: fromRowId } })} style={{ color: neutral.slate }}>
                   From hospital row {fromRowId}
                 </TextAction>
               </div>

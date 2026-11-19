@@ -477,7 +477,10 @@ Receipts held = payables due + the AA Holding account  ->  In balance
   default; it works like any session: Assign List, a Draft List for the evening (session Out-of-hours),
   availability and the finders; an empty one closes from its drawer (US-01.1.6)
 - The app never says "slot": it says session, AM, PM or Out-of-hours
-- Later: billing and integration monitoring
+- Intake (one side-nav item under Day view; `/admin/intake`): tabs **Matching**, **PDF lists**, **Data
+  quality** and **Validators**. Hospital files from St George's and Southern Cross and the rooms' PDF
+  lists arrive here, every row waiting for the office's decision; nothing syncs
+- Later: billing monitoring and the rows still waiting on Intake
 
 ## Strong phrases to use
 
@@ -527,10 +530,16 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   web Accounts and mobile Balances (catch-up Phase 36)
 - The anaesthetist's profile: own rate per unit editable on mobile and web, the office's Profile card and
   Anaesthetists columns, HPI CPN and bank details mandatory, the bank number masked (catch-up Phase 26)
-- Hospital file import and the matching screen (Admin, Matching): wording as received, field
+- Hospital file import and the matching screen (Admin, Intake, Matching): wording as received, field
   differences, create a Booking, a List or a Draft List, the unmatched queue (catch-up Phase 33)
-- Surgeon PDF ingestion (Phase 11); the HL7/FHIR integration monitor, mapping fix and dedupe are
-  built but Future scope
+- The rooms' PDF lists (Admin, Intake, PDF lists): upload with the address it came from, correct a
+  row beside the facsimile, Send to matching; every List records where it came from and who replies go
+  to; a re-sent list's differences wait for approval (catch-up Phase 34)
+- S1 in one line: import the St George's file, match Sarah Mitchell (`lap appy ?conv to open`) onto Dr
+  Souter's Tue 28 Jul AM List, answer "Where does the invoice go?" with Patient, then No contract ·
+  RVG, a no-NHI row waiting as a stub, Mr Okafor's PDF list keeping its sender, then capture A3 live
+- The HL7/FHIR simulator, message log (retry and dead-letter) and feed mapping are built but Future
+  scope, on their own demo surface
 - The demo control panel with S1 to S5 scenario jumps (Phase 12), now the index of the per-screen
   Demo actions (catch-up Phase 14)
 
@@ -569,16 +578,22 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   opens tonight's out-of-hours session and puts a List in it, at the hospital and with the surgeon of
   her latest List; in the framed build play the office with **Open out-of-hours session** on Admin Day.
   **Alert the office**, the tick and **Show resolved** are product actions, not demo actions.
-- Hospital triggers: on **Admin, Matching**, **Demo actions → Import hospital file** (St George's or
-  Southern Cross) and **Send update for a matched Booking** (Diane Foster by default); elsewhere the
-  Future-scope **Fire hospital message**, which only stages a row on Matching. On a handset's Lists or Booking,
-  **Hospital row arrives and the office matches it** (badged "Office stand-in") plays the import and
-  the office's decision in one step.
-- **Future scope** badges (grey, telescope icon) mark the HL7 v2 and FHIR tooling: the Integrations
-  simulator, the Admin Integrations Messages and Feed config tabs, and **Fire hospital message** and
-  **Replay last message** (bar only). Say so plainly: in scope today is the hospital import into the
-  matching screen; a fired message is only sent to matching, and the simulator's pane 3 reads "Sent to
-  matching".
+- Hospital triggers: on **Admin, Intake, Matching**, **Demo actions → Import hospital file** (St
+  George's or Southern Cross; the same as the screen's own **Import hospital file** button) and **Send
+  update for a matched Booking** (Diane Foster by default). On a handset's Lists, List or Booking,
+  **Hospital file imported and my booking matched** (badged "Office stand-in"), choice **St George's
+  file, Tue 28 Jul AM (S1)**, imports the file, decides the rows for that List and sets No contract ·
+  RVG on Sarah's new Booking; then it reads **Nothing new from the hospital for your Lists**.
+- PDF lists: **Upload PDF list** picks from sample files (badged Sample files; the reading is
+  simulated, no OCR, no mailbox) with the sender's address entered; on **Admin, Intake, PDF lists**,
+  **Demo actions → Receive updated PDF from rooms** plays the rooms re-sending a list already sent, once
+  per reset.
+- **Future scope** badges (grey, telescope icon) mark the HL7 v2 and FHIR tooling, now on its own
+  demo surface, **Demo: Future scope, HL7 and FHIR** (`/demo/integrations`, with
+  `/demo/integrations/log` and `/demo/integrations/mapping`). **Fire hospital message** and **Replay
+  last message (dedupe)** run only there, never from a Booking or Mobile Lists. Christchurch Public is
+  not integrated today. Say so plainly: in scope today is the office importing hospital files and the
+  rooms' PDF lists into Intake; a fired message only lands on Admin Intake as a row.
 - **Play the office** (PWA More tab) is off by default and badged "Simulated office" while on. It
   auto-authorises every submitted List and is a scaffold, not the proposed flow: use **Office
   authorises this List** instead.
@@ -851,7 +866,7 @@ The RFP is internally inconsistent: one section treats NHI as the unique patient
 says "where available". The prototype uses a hidden internal ID as the invariant and allows a
 provisional NHI-pending patient.
 
-A hospital row with no NHI waits at intake on Admin Matching; no patient or Booking is made. So the
+A hospital row with no NHI waits at intake on Admin, Intake, Matching; no patient or Booking is made. So the
 anaesthetist still sees the case, a stub stands on the List in its place: a dashed amber row, "Waiting
 at intake: no NHI · The office is resolving this", with the time, name and wording as received. A stub
 is never a Booking: it is never counted ("n of n complete · 1 waiting at intake"), and it never blocks
@@ -861,10 +876,18 @@ Dr Souter's Tue 4 Aug PM List): type the NHI **ZQA1024** and press **Add NHI**. 
 import's Tama Henare takes **ZQA1008**. How a stub reads, and that the Booking takes its place, are our
 readings, to confirm with AA.
 
+### "Who do updates go to?"
+
+The List's sender when the List came from a rooms' PDF (the address it arrived from, shown as "Replies
+go to" on the List and its Bookings); otherwise the surgeon's first office contact with an email, the
+others offered. A re-sent PDF from a newer address, once applied, makes that address the sender, the
+earlier one kept in History.
+
 ### "Is the demo using real patient or integration data?"
 
-No. All names and data are fictional. Hospital, PDF/OCR, NHI, email, Xero and payment events are
-simulated in-browser.
+No. All names and data are fictional. The hospital files and the rooms' PDF lists are sample files,
+their procedure wording illustrative (AI-made, not AA's); NHI, email, Xero and payment events are
+simulated in-browser. Nothing syncs with a hospital: the office imports each file.
 
 ## One-line close
 

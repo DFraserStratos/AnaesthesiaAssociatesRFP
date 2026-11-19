@@ -5,7 +5,6 @@ import { CataloguePage, CatalogueRow, LibraryGroup, StageHint } from './Catalogu
 import { CardExample, DefRowExample, EyebrowExample, PageHeaderExample, TableKitExample } from './admin/pageChromeExamples'
 import { ReviewQueue } from '../../admin/screens/ReviewQueue'
 import { AuditViewer } from '../../admin/screens/AuditViewer'
-import { IntegrationMonitorScreen } from '../../admin/screens/IntegrationMonitorScreen'
 import { RowField } from '../../admin/components/RowField'
 import { PdfListsTab } from '../../admin/intake/PdfListsTab'
 import { ListOriginRow } from '../../admin/components/ListOriginRow'
@@ -193,11 +192,6 @@ export function AdminCatalogue() {
         <CatalogueRow name="Master data sub-nav" source="apps/admin/screens/masters/MasterData.tsx" usedIn={A} what="The vertical list of the 15 master views, with aria-current on the open one." replaceWith="shadcn Sidebar group / NavigationMenu" note="Rebuilt from MasterData's markup and the real MASTERS_NAV: the real nav writes ?view= and renders every master view." height={420}>
           <MastersSubNavExample />
         </CatalogueRow>
-        <CatalogueRow name="TabButton (Integrations)" source="apps/admin/screens/IntegrationMonitorScreen.tsx" usedIn={A} what="Five underlined tab buttons switching the Integrations monitor between messages, feeds, PDFs, data quality and validators." replaceWith="shadcn Tabs" note="Not exported: the row mounts the real Integrations screen. Adds tab roles and arrow keys. Some tab actions write to the demo store." height={420}>
-          <Wide minWidth={1000}>
-            <IntegrationMonitorScreen actor={OFFICE_ACTOR} />
-          </Wide>
-        </CatalogueRow>
         <CatalogueRow name="PdfListsTab and PdfListReview (PDF lists)" source="apps/admin/intake/PdfListsTab.tsx" usedIn={A} what="The rooms' PDF lists (catch-up Phase 34): an inbox on the shared table kit (sender, surgeon, hospital, received, suggested List, a Re-sent Pill and a status Pill), Upload PDF list (PdfUploadDialog: the surface's Overlay with OverlayHeader, RadioCards badged Sample files, a Sent from TextField and SheetActions), and the review beside the facsimile: compact TextFields per row, each correction listed under its row, Send to matching (Button) and a ResultLine." replaceWith="TanStack Table + shadcn Dialog + Field" note="Uploading, correcting and sending write to the demo store." height={460}>
           <Wide minWidth={1000}>
             <PdfListsTab actor={OFFICE_ACTOR} />
@@ -206,7 +200,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="ListOriginRow" source="apps/admin/components/ListOriginRow.tsx" usedIn={A} what={`Where a List came from (catch-up Phase 34; US-02.2.4): one DefRow on the session and ${DRAFT_LIST} drawers, the origin in words and, as its note, who the office's replies go to through the one email helper (the List's sender first).`} replaceWith="shadcn (DefRow's replacement)">
           <ListOriginExample />
         </CatalogueRow>
-        <CatalogueRow name="LineTabs" source="shared/ui/LineTabs.tsx" usedIn={AWM} what={`The underline tab strip (UI unification U5): LineTabLink for sibling routes (AA fees, ${DRAFT_LISTS}, the web Availability page switch), a labelled navigation with aria-current; LineTab for local panels (Phase 25's Contract History tab), buttons with aria-pressed; a badge after the label for a count.`} replaceWith="shadcn Tabs (as links)" note="Was AA fees' TabLink. Shown with LineTab so nothing leaves this page.">
+        <CatalogueRow name="LineTabs" source="shared/ui/LineTabs.tsx" usedIn={AWM} what={`The underline tab strip (UI unification U5): LineTabLink for sibling routes (AA fees, ${DRAFT_LISTS}, the web Availability page switch, Admin Intake's four tabs, the Future-scope pages), a labelled navigation with aria-current; LineTab for local panels (Phase 25's Contract History tab), buttons with aria-pressed; a badge after the label for a count.`} replaceWith="shadcn Tabs (as links)" note="Was AA fees' TabLink. Shown with LineTab so nothing leaves this page.">
           <LineTabsExample />
         </CatalogueRow>
         <CatalogueRow name="DayNav (with SortToggle)" source="apps/admin/components/DayNav.tsx" usedIn={A} what="The Day view toolbar: week and day steppers, Today, the shared DateJumpInput (36px, named Go to date, bounded by the horizon; UI unification U4), the Roster order or A to Z choice and Find available. Since UI unification U5 the step buttons are IconButtons named Previous day and Next day, the week steps and Today are the compact Button, and SortToggle is the small SlidingSegmentedControl (Row order)." replaceWith="shadcn Button Group + ToggleGroup + Date Picker" note="Its title is the shared PageHeader (admin, 24/30) since UI unification U6.">

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Info, Play, Radio, RotateCcw, RotateCw } from 'lucide-react'
 import { useDemoTriggerContext } from '../../shared/demoTriggers'
-import { DemoSurface } from './DemoSurface'
+import { FutureScopeChrome } from './futureScope/FutureScopeChrome'
 import { assessImportRow, matchingView, processMessage, resetDemo, useAppStore } from '../../store'
 import { CHANGE_TYPE_LABELS, suggestionText } from '../../domain/intake'
 import { neutral, accent, radius, semantic } from '../../theme/tokens'
@@ -9,6 +9,7 @@ import {
   CANNED_MESSAGES,
   FEED,
   FEED_META,
+  isIntegratedFeed,
   cannedMessage,
   extractFromFhir,
   extractViaMapping,
@@ -60,9 +61,12 @@ export function DemoIntegrations() {
     [souter],
   )
 
-  // Live drip: process each of the feed's messages ~1/sec, then stop.
+  // Live drip: process each of the feed's messages ~1/sec, then stop. Only the
+  // integrated hospitals stream (catch-up Phase 34, RV-16): Christchurch Public
+  // is not integrated today, so its messages are fired by hand only.
+  const canStream = isIntegratedFeed(feedId)
   useEffect(() => {
-    if (!live) return
+    if (!live || !canStream) return
     const ids = library.map((m) => m.id)
     let i = 0
     const timer = setInterval(() => {
@@ -75,7 +79,7 @@ export function DemoIntegrations() {
       i += 1
     }, 1000)
     return () => clearInterval(timer)
-  }, [live, library])
+  }, [live, canStream, library])
 
   // The parsed message + FHIR bundle for the selected message, using the LIVE
   // feed mapping (so a mapping fix is reflected here).
@@ -132,12 +136,9 @@ export function DemoIntegrations() {
   }
 
   return (
-    <DemoSurface
-      title="Integration simulator"
-      subtitle="Replay hospital messages through the mock integration pipeline, from source payload to schedule change."
+    <FutureScopeChrome
+      subtitle="Replay hospital messages through the mock integration pipeline, from source payload to translated FHIR. Fired messages land on Admin Intake as rows for the office to decide."
       maxWidth={1440}
-      subtitleMaxWidth={1440}
-      futureScope="HL7 v2, FHIR R4 and near real time are Future scope. In scope today is the St George's and Southern Cross download into a matching screen."
     >
       <div
         data-testid="integration-workspace"
@@ -197,6 +198,11 @@ export function DemoIntegrations() {
                     <span style={{ fontSize: 10.5, lineHeight: 1.3, fontWeight: 600, color: neutral.slate }}>
                       {meta?.transport === 'fhir' ? 'FHIR-native' : 'HL7 v2 · translated'}
                     </span>
+                    {!isIntegratedFeed(id) && (
+                      <span data-shot="integrations-cph-not-integrated" style={{ fontSize: 10.5, lineHeight: 1.3, color: neutral.mist }}>
+                        Not integrated today · example of a further feed (Future Work)
+                      </span>
+                    )}
                   </button>
                 )
               })}
@@ -207,8 +213,9 @@ export function DemoIntegrations() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <button
                 type="button"
+                disabled={!canStream}
                 onClick={() => setLive((v) => !v)}
-                style={{ ...pillButton, background: live ? semantic.warning.tint : neutral.surface, borderColor: live ? semantic.warning.solid : neutral.lineStrong, color: live ? semantic.warning.onTint : neutral.ink }}
+                style={{ ...pillButton, ...(canStream ? {} : { opacity: 0.5, cursor: 'default' }), background: live ? semantic.warning.tint : neutral.surface, borderColor: live ? semantic.warning.solid : neutral.lineStrong, color: live ? semantic.warning.onTint : neutral.ink }}
               >
                 <Radio size={14} strokeWidth={2.5} aria-hidden />
                 {live ? 'Streaming live feed...' : 'Start live feed'}
@@ -238,7 +245,7 @@ export function DemoIntegrations() {
               </div>
             ) : (
               <span style={{ fontSize: 11.5, color: neutral.mist }}>
-                Live feed processes one message per second.
+                {canStream ? 'Live feed processes one message per second.' : 'Christchurch Public is not integrated today, so it has no live feed. Replay its messages one at a time.'}
               </span>
             )}
           </div>
@@ -332,15 +339,16 @@ export function DemoIntegrations() {
       )}
 
       <Callout tone="info" title="Target state: FHIR-first, via the Digital Services Hub">
-        Health NZ's direction is FHIR-first. This prototype translates each hospital's HL7 v2 into FHIR
-        R4 on the way in (per-hospital field mapping) and treats a FHIR-native feed as the target. Today
-        these messages arrive as SFTP batches; the target is near-real-time, per-message processing, which
-        the replay and live drip here demonstrate. Patient identity is validated (NHI format and check
-        digit) and deduped into a single record, and provider identity carries the HPI; a production build
-        would confirm identity against the NHI FHIR API and authenticate to the Hub with Keycloak
+        In scope today, St George&rsquo;s and Southern Cross send their files through an integration and the office
+        imports each one on Admin Intake, where every row waits for its decision; there is no automatic sync. Health
+        NZ&rsquo;s direction is FHIR-first: this demo translates each hospital&rsquo;s HL7 v2 into FHIR R4 (per-hospital
+        field mapping) and treats a FHIR-native feed as the target, with near real time, per-message processing. That
+        is Future scope, shown for discussion. Patient identity is validated (NHI format and check digit) and deduped
+        into a single record, and provider identity carries the HPI. Looking up an NHI is in scope (Phase 40a); a
+        production build would confirm identity against the NHI FHIR API and authenticate to the Hub with Keycloak
         (referenced here, not implemented).
       </Callout>
-    </DemoSurface>
+    </FutureScopeChrome>
   )
 }
 
@@ -518,7 +526,7 @@ function EffectView({
         <div style={{ fontSize: 12, color: tone === 'err' ? semantic.error.onTint : semantic.warning.onTint }}>{failureReason}</div>
       )}
       {status === 'processed' && (
-        <div style={{ fontSize: 11.5, color: neutral.mist }}>Nothing is applied automatically. Open Admin, Matching to decide.</div>
+        <div style={{ fontSize: 11.5, color: neutral.mist }}>Nothing is applied automatically. Open Admin, Intake to decide.</div>
       )}
     </div>
   )

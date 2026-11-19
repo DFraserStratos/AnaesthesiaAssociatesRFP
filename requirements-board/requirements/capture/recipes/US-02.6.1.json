@@ -54,7 +54,7 @@
       "start": "/admin/day/2026-07-28",
       "setup": [
         {
-          "goto": "/admin/matching"
+          "goto": "/admin/intake/matching"
         },
         {
           "click": "[data-shot=matching-import-open]"

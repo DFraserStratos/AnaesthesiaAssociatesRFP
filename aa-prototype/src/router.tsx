@@ -30,7 +30,11 @@ import {
   AdminBookingDetailRoute,
   AdminDayRoute,
   AdminIndexRedirect,
-  AdminIntegrationsRoute,
+  AdminIntakeRoute,
+  AdminIntakeRedirect,
+  AdminPdfListsRoute,
+  AdminDataQualityRoute,
+  AdminValidatorsRoute,
   AdminInvoicesRoute,
   AdminMastersRoute,
   AdminMatchingRoute,
@@ -45,6 +49,8 @@ import {
 import { DemoControlPanel } from './apps/demo/DemoControlPanel'
 import { DemoXero } from './apps/demo/DemoXero'
 import { DemoIntegrations } from './apps/demo/DemoIntegrations'
+import { FutureScopeMessageLog } from './apps/demo/futureScope/MessageLog'
+import { FutureScopeFeedMapping } from './apps/demo/futureScope/FeedMapping'
 import { DemoData } from './apps/demo/DemoData'
 import { ComponentCatalogue } from './apps/demo/catalogue/ComponentCatalogue'
 import { useAppStore } from './store'
@@ -111,7 +117,15 @@ export function AppRouter() {
               <Route path="bookings/:bookingId" element={<AdminBookingDetailRoute />} />
               <Route path="cards/:cardId" element={<LegacyBookingRedirect />} />
             </Route>
-            <Route path="matching" element={<AdminMatchingRoute />} />
+            {/* Admin Intake (catch-up Phase 34): matching, the rooms' PDF lists, data quality and the validators. */}
+            <Route path="intake" element={<AdminIntakeRoute />}>
+              <Route index element={<Navigate to="matching" replace />} />
+              <Route path="matching" element={<AdminMatchingRoute />} />
+              <Route path="pdfs" element={<AdminPdfListsRoute />} />
+              <Route path="quality" element={<AdminDataQualityRoute />} />
+              <Route path="validators" element={<AdminValidatorsRoute />} />
+            </Route>
+            <Route path="matching" element={<AdminIntakeRedirect />} />
             <Route path="conflicts" element={<AdminConflictsRoute />} />
             <Route path="draft-lists" element={<AdminDraftListsRoute />} />
             <Route path="notifications" element={<AdminNotificationsRoute />} />
@@ -132,7 +146,7 @@ export function AppRouter() {
               <Route index element={<AdminLedgerRoute />} />
               <Route path="anaesthetists/:anaesthetistId" element={<AdminAnaesthetistLedgerRoute />} />
             </Route>
-            <Route path="integrations" element={<AdminIntegrationsRoute />} />
+            <Route path="integrations" element={<AdminIntakeRedirect />} />
             <Route path="masters">
               <Route index element={<AdminMastersRoute />} />
               <Route path="surgeons/:surgeonId" element={<AdminSurgeonProfileRoute />} />
@@ -164,7 +178,12 @@ export function AppRouter() {
               <Route path=":accRecId" element={<DemoXero />} />
             </Route>
           </Route>
-          <Route path="demo/integrations" element={<DemoIntegrations />} />
+          {/* Future scope: HL7 and FHIR (catch-up Phase 34): the simulator, its message log and feed mapping. */}
+          <Route path="demo/integrations">
+            <Route index element={<DemoIntegrations />} />
+            <Route path="log" element={<FutureScopeMessageLog />} />
+            <Route path="mapping" element={<FutureScopeFeedMapping />} />
+          </Route>
           <Route path="demo/data" element={<DemoData />} />
           {/* UI component catalogue (docs/ui-library-research): URL only, not in the app switcher. */}
           <Route path="demo/catalogue" element={<Navigate to="/demo/catalogue/admin" replace />} />

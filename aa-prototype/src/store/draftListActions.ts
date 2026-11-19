@@ -152,6 +152,7 @@ export function createDraftList(
         surgeonId: draft.surgeonId,
         kind,
         origin,
+        listOrigin,
         ...(draft.draft.source !== undefined ? { source: draft.draft.source } : {}),
       },
       stampBookingId: null,

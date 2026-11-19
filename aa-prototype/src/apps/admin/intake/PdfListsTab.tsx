@@ -33,7 +33,7 @@ export function PdfListsTab({ actor }: { actor: Actor }) {
           with the address it came from, check and correct its rows, then send them to Matching, where each waits for
           your decision.
         </div>
-        <Button variant="primary" size="compact" onClick={() => setUploading(true)} shot="pdf-upload-open">
+        <Button variant="primary" size="compact" onClick={() => setUploading(true)} shot="pdf-upload-open" style={{ marginLeft: 'auto' }}>
           Upload PDF list
         </Button>
       </div>
@@ -57,8 +57,17 @@ export function PdfListsTab({ actor }: { actor: Actor }) {
           <tbody>
             {rows.map((l) => (
               <ClickableRow key={l.id} onOpen={() => setOpenId(l.id)} data-pdf-list-id={l.id} data-status={l.status}>
-                <Td>
-                  <span className="mono" style={{ fontSize: 12.5 }}>{l.senderEmail}</span>
+                <Td nowrap={false}>
+                  {/* Breaks after the @ when the table is tight, so the row's Open stays in view. */}
+                  <span className="mono" style={{ fontSize: 12.5 }}>
+                    {l.senderEmail.split('@')[0]}
+                    {l.senderEmail.includes('@') && (
+                      <>
+                        @<wbr />
+                        {l.senderEmail.slice(l.senderEmail.indexOf('@') + 1)}
+                      </>
+                    )}
+                  </span>
                 </Td>
                 <Td>{masters.surgeons[l.surgeonId]?.name ?? l.surgeonId}</Td>
                 <Td>{locationName(l.hospitalId, masters.hospitals)}</Td>

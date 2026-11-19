@@ -1,5 +1,7 @@
 /**
- * Matching (catch-up Phase 33; US-02.1.1 to US-02.1.4, FT-02.5; AR-21
+ * Matching (catch-up Phase 33; US-02.1.1 to US-02.1.4, FT-02.5; AR-21; Admin
+ * Intake's first tab since Phase 34, so its title is a section heading under
+ * Intake's;
  * `matching-screen`, `rows-wait`). Hospital bookings and sheets land here as
  * rows; the office matches each to a Booking or List, creates what is
  * missing, or rejects it. Nothing changes the schedule until it decides (no
@@ -138,7 +140,7 @@ export function MatchingScreen({ actor, todayISO, onOpenBooking }: { actor: Acto
   return (
     <div data-shot="admin-matching" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader
-        size="admin"
+        size="section"
         title="Matching"
         subStyle={{ maxWidth: 760, lineHeight: '19px' }}
         sub={

@@ -12,7 +12,7 @@ afterEach(cleanup)
 function renderScreen(state?: unknown) {
   const onOpenBooking = vi.fn()
   const utils = render(
-    <MemoryRouter initialEntries={[{ pathname: '/admin/matching', state }]}>
+    <MemoryRouter initialEntries={[{ pathname: '/admin/intake/matching', state }]}>
       <SurfaceProvider variant="web">
         <MatchingScreen actor={OFFICE_ACTOR} todayISO="2026-07-21" onOpenBooking={onOpenBooking} />
       </SurfaceProvider>

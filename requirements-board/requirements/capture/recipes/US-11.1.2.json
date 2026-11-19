@@ -7,15 +7,12 @@
       "name": "nhi-validator",
       "app": "admin",
       "caption": "NHI validator for both formats",
-      "start": "/admin/integrations",
+      "start": "/admin/intake/validators",
       "states": [
         {
           "state": "current",
           "caption": "Current format NHI validated",
           "steps": [
-            {
-              "click": "role=button[name=\"Validators\"]"
-            },
             {
               "fill": "[data-shot=integrations-nhi-validator] input",
               "value": "ZAA0067"
@@ -30,9 +27,6 @@
           "caption": "New format NHI validated",
           "steps": [
             {
-              "click": "role=button[name=\"Validators\"]"
-            },
-            {
               "fill": "[data-shot=integrations-nhi-validator] input",
               "value": "ACA31FM"
             }
@@ -45,9 +39,6 @@
           "state": "invalid",
           "caption": "NHI with a wrong check digit rejected",
           "steps": [
-            {
-              "click": "role=button[name=\"Validators\"]"
-            },
             {
               "fill": "[data-shot=integrations-nhi-validator] input",
               "value": "ZAA0068"

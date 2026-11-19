@@ -15,7 +15,7 @@
 
 import type { List } from '../types'
 import { projectedListId } from '../slots'
-import { ANAE, HOSP } from './cast'
+import { ANAE } from './cast'
 
 export const SEED_ORIGIN_LISTS = {
   pdf: projectedListId(ANAE.hughes, '2026-08-11', 'AM'),
@@ -31,5 +31,5 @@ export function applySeedListOrigins(lists: Record<string, List>): void {
   lists[pdf.id] = { ...pdf, origin: { kind: 'pdf', senderEmail: SEED_PDF_LIST_SENDER } }
   const hospital = lists[SEED_ORIGIN_LISTS.hospital]
   if (hospital === undefined) throw new Error(`seed: the pinned hospital-origin List ${SEED_ORIGIN_LISTS.hospital} is missing`)
-  lists[hospital.id] = { ...hospital, origin: { kind: 'hospital', hospitalId: HOSP.sx } }
+  lists[hospital.id] = { ...hospital, origin: { kind: 'hospital', hospitalId: hospital.hospitalId } }
 }

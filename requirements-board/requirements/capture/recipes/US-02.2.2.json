@@ -6,53 +6,59 @@
     {
       "name": "correct-and-ingest",
       "app": "admin",
-      "caption": "Correct an extracted PDF row, then ingest it",
-      "start": "/admin/integrations",
+      "caption": "Correct an extracted PDF row, then send it to matching",
+      "start": "/admin/intake/pdfs",
       "states": [
         {
           "state": "flagged",
           "caption": "Extracted row with an invalid NHI flagged for correction",
           "steps": [
             {
-              "click": "role=button[name=\"Surgeon PDFs\"]"
+              "click": "[data-shot=pdf-inbox] tr[data-pdf-list-id=PDL0001]"
             },
             {
-              "click": "role=button[name=\"Open\"] >> nth=0"
+              "wait": "[data-shot=pdf-list-header]"
             },
             {
-              "wait": 500
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=pdf-row-3]"
+            "[data-shot=pdf-row-2]"
           ]
         },
         {
           "state": "ingested",
-          "caption": "NHI corrected and the row ingested as a new Booking",
+          "caption": "NHI corrected, with who and when, and the rows sent to matching for the office's decision",
           "steps": [
             {
-              "click": "role=button[name=\"Surgeon PDFs\"]"
+              "click": "[data-shot=pdf-inbox] tr[data-pdf-list-id=PDL0001]"
             },
             {
-              "click": "role=button[name=\"Open\"] >> nth=0"
+              "wait": "[data-shot=pdf-list-header]"
             },
             {
-              "wait": 500
-            },
-            {
-              "fill": "[data-shot=pdf-row-3] input >> nth=0",
+              "fill": "[data-shot=pdf-row-2] input >> nth=0",
               "value": "ZAA0067"
             },
             {
-              "click": "[data-shot=pdf-row-3] >> role=button[name=\"Ingest row\"]"
+              "click": "[data-shot=pdf-row-2-apply]"
             },
             {
-              "wait": 500
+              "wait": "[data-shot=pdf-correction]"
+            },
+            {
+              "click": "[data-shot=pdf-send]"
+            },
+            {
+              "wait": "[data-shot=pdf-open-matching]"
+            },
+            {
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=pdf-row-3]"
+            "[data-shot=pdf-row-2]"
           ]
         }
       ]

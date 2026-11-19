@@ -126,15 +126,17 @@ session.
 **Primary actors:** AA scheduling coordinator, surgeon rooms, hospital/PAS
 
 **Prototype readiness:** Ready. Manual phone booking, mobile and web manual Booking creation, the
-surgeon-PDF path (Phase 11) and the hospital import with its matching screen (Phase 33) are all built.
-HL7/FHIR messaging is Future scope.
+hospital file import with its matching screen (catch-up Phase 33) and the rooms' PDF lists through the
+same screen (catch-up Phase 34) are all built, under **Admin, Intake**. Automatic hospital sync and
+HL7/FHIR messaging are Future scope.
 
 ### Triggers
 
 - A recurring booking creates the standing pairing.
 - A surgeon's room calls AA for an ad-hoc List.
-- Hospital bookings or a sheet arrive (a hospital file is imported).
-- A surgeon's room emails a PDF List.
+- Hospital bookings arrive: the office imports the hospital's file (St George's and Southern Cross;
+  one theatre list a day).
+- A surgeon's rooms email a PDF List; the office uploads it with the address it came from.
 - The anaesthetist finds a patient missing on the day.
 
 ### Main path
@@ -143,9 +145,12 @@ HL7/FHIR messaging is Future scope.
 2. The List is assigned a hospital and surgeon.
 3. Patient appointments are represented as time-ordered Bookings inside the List.
 4. Each Booking points to a patient and contains one or more Procedures.
-5. Hospital rows are matched on the matching screen: the office applies, creates (a Booking, a List,
+5. Rows from a hospital file or a rooms' PDF list (or a Booking entered by hand) reach the schedule
+   through the matching screen on Admin, Intake: the office applies, creates (a Booking, a List,
    or a Draft List holding the Booking) or rejects each one, and sets the invoice destination and
-   Contract there or from Needs an invoice destination; anaesthetists and the office change Bookings
+   Contract there or from Needs an invoice destination; nothing reaches a Booking, List or Patient until
+   the office decides. Every List records where it came from (a rooms' PDF with its sender, the
+   hospital's list, by hand, or a recurring booking) and keeps it after assignment; anaesthetists and the office change Bookings
    directly while the List is `ACTIVE`. Each Booking holds its procedure text as received from each
    channel; the hospital's later text replaces the surgeon's rooms' text once the office applies its
    row, and the original stays in the Booking's history.
@@ -160,8 +165,12 @@ HL7/FHIR messaging is Future scope.
 - **Mobile/web manual Booking:** Dr Souter enters the missing Booking, with the procedure as written on
   the hospital's list (kept exactly as typed) and, if she knows it, its Contract on the step rail; otherwise it waits on the office's Needs an invoice destination list.
 - **Photo of the booking card:** Future Work (US-02.4.4); a badged Future-scope demo on the mobile List.
-- **PDF:** the office reviews extracted rows, corrects a mistyped NHI, and ingests them (deduped by
-  NHI, so a re-ingest updates rather than duplicates).
+- **PDF list:** on **Intake, PDF lists** the office opens the rooms' list beside its facsimile,
+  corrects a row (an invalid NHI, say), and selects **Send to matching**: its rows land on the matching
+  screen with the rooms' wording, like a hospital file's. A re-sent list is matched to the earlier one
+  by surgeon, hospital, date and session (our reading): unchanged rows are skipped, a changed field waits
+  as a difference for approval, a new patient arrives as a new row; a dropped patient is not yet detected
+  (Future Work).
 
 ### Handoff
 
@@ -177,6 +186,10 @@ complete · 1 waiting at intake") and never blocks submit or authorise; in Admin
 Matching** link. When the office adds the NHI, the Booking takes the stub's place; rejecting the row
 removes the stub. Seeded: Mere Tipene on Dr Souter's Tue 4 Aug PM List (NHI ZQA1024). What a stub shows
 and that the Booking takes its place are our readings, to confirm with AA.
+
+A List created from a rooms' PDF reads "From a rooms' PDF · sent from <address>" with **Replies go to**
+that address, on the List and its Bookings: updates and NHI requests go to the List's sender, else the
+surgeon's first office contact, the others offered.
 
 ### Key distinction
 
@@ -738,7 +751,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
   rebuilds from the lock. The fix never edits a Contract or any other master; a wrong price after
   invoicing is corrected by a credit note and rebill (a later build).
 
-#### Hospital rows
+#### Row the office cannot match
 
 - An unmatched row, or one with no NHI, waits in the unmatched queue; nothing is dropped.
 - A row with no NHI that names a List places a stub on that List: the case as received, marked waiting
@@ -751,8 +764,9 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 - A row for a submitted List can still be applied by the office; a row for an authorised List cannot
   be applied.
 
-> **Future scope:** automated hospital changes are Future Work. HL7 v2 messaging, where a malformed
-> message retries and then dead-letters to manual intervention without being lost, is Future scope.
+> **Future scope:** automatic hospital sync and automated hospital changes are Future Work. HL7 v2
+> messaging, where a malformed message retries and then dead-letters to manual intervention without
+> being lost, is Future scope, shown only on **Demo: Future scope, HL7 and FHIR** (`/demo/integrations`).
 
 #### Compliance
 
@@ -781,7 +795,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Anaesthetist profile, rate per unit and bank details | Yes | Catch-up Phase 26 |
 | AA's monthly fee invoices (settings, run, AA fees tab) | Yes | Catch-up Phase 16 |
 | Hospital import and matching screen | Yes | Catch-up Phase 33 |
-| Surgeon PDF ingestion | Yes | Phase 11 |
-| HL7/FHIR ingestion and monitoring | Future scope | Phase 11 (simulator only) |
+| The rooms' PDF lists through matching, and where a List came from | Yes | Catch-up Phase 34 |
+| HL7/FHIR ingestion and monitoring | Future scope | Phase 11 (simulator only; its own demo surface from catch-up Phase 34) |
 | Scenario jump controls and guided script | Yes | Phase 12 |
 | Mobile atmospheric gradient (visual only) | Yes | Phase 13 |

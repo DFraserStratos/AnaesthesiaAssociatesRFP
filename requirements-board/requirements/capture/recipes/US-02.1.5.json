@@ -1,6 +1,6 @@
 {
   "id": "US-02.1.5",
   "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 34 builds this.",
+  "absentReason": "Future Work: the automatic sync from St George's and Southern Cross is not in the first release, so there is no shot. Hospital files come in through Import hospital file on the matching screen (US-02.1.1).",
   "shots": []
 }

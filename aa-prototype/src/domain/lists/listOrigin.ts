@@ -51,7 +51,8 @@ export function originForNewList(cause: NewListCause): ListOrigin {
       if (cause.source === 'rooms' && sender !== '') {
         return { kind: 'pdf', senderEmail: sender, ...(cause.pdfListId !== undefined ? { pdfListId: cause.pdfListId } : {}) }
       }
-      return { kind: 'hospital', hospitalId: cause.hospitalId }
+      // A rooms row with no sender (never today: upload requires one) is not the hospital's list.
+      return cause.source === 'rooms' ? { kind: 'manual' } : { kind: 'hospital', hospitalId: cause.hospitalId }
     }
     case 'recurring':
       return { kind: 'recurring' }
@@ -63,14 +64,31 @@ export function originForNewList(cause: NewListCause): ListOrigin {
 /**
  * The later-address rule (US-02.2.4 build choice): the origin a List takes
  * when a rooms row from a PDF that arrived from `senderEmail` is decided onto
- * it, or `undefined` when it does not change. Only a `pdf` List changes, and
- * only for a different address (ignoring case).
+ * it, or `undefined` when it does not change. Only a `pdf` List changes, only
+ * for a different address (ignoring case), and only from a PDF list that
+ * arrived after the one the List's sender came from (`receivedAt` reads each
+ * PDF list's received time; an origin with no PDF list, the seed's or a
+ * request's, counts as older). A row still open from an earlier PDF never
+ * puts the older address back.
  */
-export function originAfterRoomsRow(origin: ListOrigin, senderEmail: string | undefined, pdfListId: PdfListId | undefined): ListOrigin | undefined {
+export function originAfterRoomsRow(
+  origin: ListOrigin,
+  senderEmail: string | undefined,
+  pdfListId: PdfListId | undefined,
+  receivedAt: (id: PdfListId) => string | undefined = () => undefined,
+): ListOrigin | undefined {
   if (origin.kind !== 'pdf') return undefined
   const sender = senderEmail?.trim() ?? ''
   if (sender === '' || sender.toLowerCase() === origin.senderEmail.toLowerCase()) return undefined
+  if (pdfListId !== undefined && origin.pdfListId !== undefined && !isLaterPdf(pdfListId, origin.pdfListId, receivedAt)) return undefined
   return { kind: 'pdf', senderEmail: sender, ...(pdfListId !== undefined ? { pdfListId } : {}) }
+}
+
+/** Whether PDF list `a` arrived after `b`: by received time, then by id (ids are issued in order). */
+function isLaterPdf(a: PdfListId, b: PdfListId, receivedAt: (id: PdfListId) => string | undefined): boolean {
+  const ta = receivedAt(a) ?? ''
+  const tb = receivedAt(b) ?? ''
+  return ta !== tb ? ta > tb : a > b
 }
 
 /** The address a List holds, where it came from a PDF. */

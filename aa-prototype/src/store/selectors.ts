@@ -1496,7 +1496,7 @@ export function integrationMonitor(state: Pick<AppState, 'integrations'>): Integ
     .sort((a, b) => b.atISO.localeCompare(a.atISO) || b.id.localeCompare(a.id))
 }
 
-/** Messages needing office attention (the amber nav badge): dead-letter only (catch-up Phase 33: nothing parks). */
+/** Messages needing attention: dead-letter only (catch-up Phase 33: nothing parks). No nav badge since Phase 34: the message log is Future scope. */
 export function integrationAttentionCount(state: Pick<AppState, 'integrations'>): number {
   return Object.values(state.integrations.messages).filter((m) => m.status === 'deadLetter').length
 }

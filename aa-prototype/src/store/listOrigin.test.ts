@@ -36,6 +36,13 @@ describe('the later-address rule', () => {
     expect(originAfterRoomsRow(pdf, 'inbox@rooms.example', 'PDL0003')).toEqual({ kind: 'pdf', senderEmail: 'inbox@rooms.example', pdfListId: 'PDL0003' })
     expect(originAfterRoomsRow(pdf, 'PA@rooms.example', 'PDL0003')).toBeUndefined()
   })
+  it('a row from an earlier PDF never puts the older address back (review fix)', () => {
+    const at: Record<string, string> = { PDL0001: '2026-07-21T07:10', PDL0003: '2026-07-21T09:00' }
+    const fromLater = { kind: 'pdf' as const, senderEmail: 'inbox@rooms.example', pdfListId: 'PDL0003' }
+    expect(originAfterRoomsRow(fromLater, 'pa@rooms.example', 'PDL0001', (id) => at[id])).toBeUndefined()
+    const fromEarlier = { kind: 'pdf' as const, senderEmail: 'pa@rooms.example', pdfListId: 'PDL0001' }
+    expect(originAfterRoomsRow(fromEarlier, 'inbox@rooms.example', 'PDL0003', (id) => at[id])).toEqual(fromLater)
+  })
   it('a hospital, by-hand or recurring List never takes a sender', () => {
     for (const o of [{ kind: 'hospital' as const, hospitalId: 'H-1' }, { kind: 'manual' as const }, { kind: 'recurring' as const }]) {
       expect(originAfterRoomsRow(o, 'pa@rooms.example', 'PDL0003')).toBeUndefined()

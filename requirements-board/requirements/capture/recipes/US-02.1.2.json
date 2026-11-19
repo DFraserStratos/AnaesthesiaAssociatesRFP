@@ -7,7 +7,7 @@
       "name": "as-received",
       "app": "admin",
       "caption": "Each row shows its procedure text exactly as the hospital sent it",
-      "start": "/admin/matching",
+      "start": "/admin/intake/matching",
       "states": [
         {
           "steps": [
@@ -46,7 +46,7 @@
       "name": "decision",
       "app": "admin",
       "caption": "The office decides each row in its panel",
-      "start": "/admin/matching",
+      "start": "/admin/intake/matching",
       "states": [
         {
           "state": "match",

@@ -7,9 +7,9 @@
  * for the office's decision: nothing reaches the schedule from here.
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { neutral, radius, semantic } from '../../../theme/tokens'
+import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import type { PdfListRow, SurgeonPdfList } from '../../../domain/types'
 import { effectivePdfRow, PDF_ROW_FIELD_LABELS, pdfRowIssues, sessionLabel } from '../../../domain/intake'
 import { validateNhi } from '../../../domain/nhi'
@@ -17,7 +17,7 @@ import { correctPdfListRow, sendPdfListToMatching, useAppStore, type Actor, type
 import { BackLink, Button, Eyebrow, Notice, Pill, ResultLine, TextAction, TextField } from '../../../shared/ui'
 import { dateTimeMicroCap, locationName, plural } from '../../../shared/format'
 
-export const MATCHING_PATH = '/admin/matching'
+export const MATCHING_PATH = '/admin/intake/matching'
 
 export function PdfListReview({ list, actor, onBack }: { list: SurgeonPdfList; actor: Actor; onBack: () => void }) {
   const masters = useAppStore((s) => s.masters)
@@ -27,6 +27,16 @@ export function PdfListReview({ list, actor, onBack }: { list: SurgeonPdfList; a
   const surgeon = masters.surgeons[list.surgeonId]
   const replaces = list.replacesId !== undefined ? lists[list.replacesId] : undefined
   const blocking = list.rows.some((r) => pdfRowIssues(r).some((i) => i.blocksSend))
+  // Rows with a correction typed but not saved: Send waits for them, so nothing typed is lost (review fix).
+  const [unsaved, setUnsaved] = useState<ReadonlySet<string>>(new Set())
+  const markUnsaved = (rowId: string, dirty: boolean) =>
+    setUnsaved((cur) => {
+      if (cur.has(rowId) === dirty) return cur
+      const next = new Set(cur)
+      if (dirty) next.add(rowId)
+      else next.delete(rowId)
+      return next
+    })
   const editable = list.status === 'received'
 
   function send() {
@@ -37,7 +47,7 @@ export function PdfListReview({ list, actor, onBack }: { list: SurgeonPdfList; a
     }
     setSendError(null)
     const { staged, unchanged } = out.value
-    setSent(`Sent to Matching: ${plural(staged, 'row')} waiting for your decision${unchanged > 0 ? `, ${unchanged} unchanged since the earlier list` : ''}.`)
+    setSent(`Sent to matching: ${plural(staged, 'row')} waiting for your decision${unchanged > 0 ? `, ${unchanged} unchanged since the earlier list` : ''}.`)
   }
 
   return (
@@ -46,7 +56,7 @@ export function PdfListReview({ list, actor, onBack }: { list: SurgeonPdfList; a
       <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
         <div style={{ flex: '0 0 auto' }}>
           <Eyebrow style={{ marginBottom: 6 }}>The emailed PDF</Eyebrow>
-          <img src={list.file.facsimile} alt={`${list.subject} facsimile`} style={{ width: 380, maxWidth: '100%', border: `1px solid ${neutral.line}`, borderRadius: radius.card, boxShadow: '0 1px 2px rgba(23,35,32,0.06)' }} />
+          <img src={list.file.facsimile} alt={`${list.subject} facsimile`} style={{ width: 380, maxWidth: '100%', border: `1px solid ${neutral.line}`, borderRadius: radius.card, boxShadow: elevation.e1 }} />
         </div>
         <div style={{ flex: 1, minWidth: 340, display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div data-shot="pdf-list-header" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -70,7 +80,7 @@ export function PdfListReview({ list, actor, onBack }: { list: SurgeonPdfList; a
 
           <Eyebrow>{editable ? 'Rows as read · check and correct' : 'Rows as sent'}</Eyebrow>
           {list.rows.map((row, i) => (
-            <PdfRowCard key={row.id} list={list} row={row} index={i} editable={editable} actor={actor} />
+            <PdfRowCard key={row.id} list={list} row={row} index={i} editable={editable} actor={actor} onDirty={(d) => markUnsaved(row.id, d)} />
           ))}
 
           {editable && (
@@ -79,8 +89,8 @@ export function PdfListReview({ list, actor, onBack }: { list: SurgeonPdfList; a
                 variant="primary"
                 size="compact"
                 onClick={send}
-                disabled={blocking}
-                disabledReason={blocking ? 'Correct the invalid NHI before sending.' : undefined}
+                disabled={blocking || unsaved.size > 0}
+                disabledReason={blocking ? 'Correct the invalid NHI before sending.' : unsaved.size > 0 ? 'Save or undo the correction typed on a row before sending.' : undefined}
                 shot="pdf-send"
               >
                 Send to matching
@@ -91,8 +101,9 @@ export function PdfListReview({ list, actor, onBack }: { list: SurgeonPdfList; a
           {sendError !== null && <Notice tone="error">{sendError}</Notice>}
           {(sent !== null || list.status === 'sent') && (
             <ResultLine
-              line={sent ?? 'Sent to Matching. Each row waits there for your decision.'}
-              actions={<Link to={MATCHING_PATH} data-shot="pdf-open-matching" style={{ fontSize: 13, fontWeight: 600, color: 'inherit' }}>Open Matching</Link>}
+              shot="pdf-sent"
+              line={sent ?? 'Sent to matching. Each row waits there for your decision.'}
+              actions={<Link to={MATCHING_PATH} data-shot="pdf-open-matching" style={{ fontSize: 13, fontWeight: 600, color: accent.base }}>Open Matching</Link>}
             />
           )}
         </div>
@@ -108,11 +119,12 @@ function draftOf(row: PdfListRow): Draft {
   return { nhi: r.nhi ?? '', name: r.name, dobISO: r.dobISO ?? '', scheduledTime: r.scheduledTime ?? '', ethnicityCode: r.ethnicityCode ?? '' }
 }
 
-function PdfRowCard({ list, row, index, editable, actor }: { list: SurgeonPdfList; row: PdfListRow; index: number; editable: boolean; actor: Actor }) {
+function PdfRowCard({ list, row, index, editable, actor, onDirty }: { list: SurgeonPdfList; row: PdfListRow; index: number; editable: boolean; actor: Actor; onDirty: (dirty: boolean) => void }) {
   const saved = draftOf(row)
   const [draft, setDraft] = useState<Draft>(saved)
   const [error, setError] = useState<string | null>(null)
   const dirty = (Object.keys(draft) as (keyof Draft)[]).some((k) => draft[k].trim() !== saved[k])
+  useEffect(() => onDirty(editable && dirty), [editable, dirty, onDirty])
   const typedNhi = draft.nhi.trim()
   const nhiVerdict = typedNhi !== '' ? validateNhi(typedNhi) : undefined
   const issues = pdfRowIssues(row)

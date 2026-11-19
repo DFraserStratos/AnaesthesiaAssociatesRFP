@@ -1,0 +1,93 @@
+{
+  "id": "US-02.2.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "list-origin",
+      "app": "admin",
+      "caption": "Each List records where it came from, and the address a rooms' PDF arrived from",
+      "start": "/admin/day/2026-08-11",
+      "states": [
+        {
+          "state": "pdf",
+          "caption": "A List from a rooms' PDF: sent from the PA's address, and replies go back to it",
+          "steps": [
+            {
+              "click": "button[data-list-id=\"L-46822-2026-08-11-AM\"]"
+            },
+            {
+              "wait": "[data-testid=admin-list-drawer]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-testid=admin-list-drawer] [data-shot=list-origin]"
+          ]
+        },
+        {
+          "state": "by-hand",
+          "caption": "A List entered by hand records that, and holds no sender address",
+          "steps": [
+            {
+              "goto": "/admin/day/2026-07-24"
+            },
+            {
+              "click": "button[data-list-id=\"L-34821-2026-07-24-AM\"]"
+            },
+            {
+              "wait": "[data-testid=admin-list-drawer]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-testid=admin-list-drawer] [data-shot=list-origin]"
+          ]
+        },
+        {
+          "state": "hospital",
+          "caption": "A List from the hospital's list records that hospital, and holds no sender address",
+          "steps": [
+            {
+              "goto": "/admin/day/2026-08-03"
+            },
+            {
+              "click": "button[data-list-id=\"L-41267-2026-08-03-PM\"]"
+            },
+            {
+              "wait": "[data-testid=admin-list-drawer]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-testid=admin-list-drawer] [data-shot=list-origin]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "booking-origin",
+      "app": "admin",
+      "caption": "A Booking shows where its List came from",
+      "start": "/admin/day/2026-07-24/bookings/BK0034",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=booking-list-origin]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-list-origin]"
+          ]
+        }
+      ]
+    }
+  ]
+}
