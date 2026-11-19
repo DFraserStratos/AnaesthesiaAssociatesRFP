@@ -31,6 +31,7 @@ import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta
 import type { AppState, AppStoreApi } from './appStore'
 import { pairByAccRec } from './ledgerSelectors'
 import { enqueueXeroWork, XERO_OUTAGE_ERROR, xeroAvailable } from './xeroGate'
+import { CREDIT_MESSAGES } from '../shared/procedureEventCopy'
 
 export { gstComponentOf }
 
@@ -201,6 +202,9 @@ export function receivePayment(api: AppStoreApi, input: ReceivePaymentInput): Ou
   if (accRec.status === 'voided') return refuse('voidedInXero', 'Voided in Xero')
 
   const pair = pairByAccRec(state, input.accRecId)
+  // A credited invoice (catch-up Phase 39): Xero refuses payment on a fully credited invoice, and the engine never applies
+  // one to the ledger or holds it as an unmatched receipt. A payment Xero took before its credit landed is flagged by the poll.
+  if (accRec.status === 'credited' || (pair !== undefined && isBookingPair(pair) && pair.credit !== undefined)) return refuse('invoiceCredited', CREDIT_MESSAGES.invoiceCredited)
   if (pair === undefined) {
     // No pair links it: hold the money in the ledger, out of balance until the office clears it.
     const out = recordUnmatchedReceipt(api, { amount: input.amount, reference: `${accRec.invoiceNumber} (no matching invoice)`, idempotencyKey: input.idempotencyKey, source: input.source, ...(input.atISO !== undefined ? { atISO: input.atISO } : {}) })
@@ -299,6 +303,8 @@ export function deliverPaymentWebhook(api: AppStoreApi, input: PaymentWebhookInp
   if (accRec === undefined) return refuse('notFound', 'ACCREC not found.')
   if (accRec.kind === 'aaFee') return refuse('aaFeeInvoice', 'This is an AA fee invoice; record its payment as a fee payment.')
   if (accRec.status === 'voided') return refuse('voidedInXero', 'Voided in Xero')
+  // Xero refuses a payment on a credited invoice (catch-up Phase 39).
+  if (accRec.status === 'credited') return refuse('invoiceCredited', CREDIT_MESSAGES.invoiceCredited)
   if (!Number.isFinite(input.amount) || toCents(input.amount) <= 0) return refuse('invalidAmount', 'The payment amount must be positive.')
   if (xeroAvailable(state)) {
     return receivePayment(api, { accRecId: input.accRecId, amount: input.amount, idempotencyKey: input.idempotencyKey, source: 'webhook', ...(input.atISO !== undefined ? { atISO: input.atISO } : {}) })

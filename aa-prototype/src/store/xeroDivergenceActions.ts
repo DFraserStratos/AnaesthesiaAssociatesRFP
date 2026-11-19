@@ -12,6 +12,7 @@
 import type { XeroDivergence } from '../domain/types'
 import { detectXeroDivergences, type EngineReceivable } from '../domain/xero/divergence'
 import { isBookingPair } from '../domain/billing/ledger'
+import { toCents } from '../domain/billing/money'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 
@@ -24,12 +25,25 @@ export const DIVERGENCE_OUTCOMES: readonly { id: NonNullable<XeroDivergence['res
   { id: 'noAction', label: 'No action' },
 ]
 
-/** The engine's mirrored Booking receivables, as the divergence check reads them. */
-function engineReceivables(state: Pick<AppState, 'billing'>): EngineReceivable[] {
+/**
+ * The engine's mirrored Booking receivables, as the divergence check reads
+ * them. A pair the engine credited (catch-up Phase 39) is `creditedByEngine`,
+ * so its credit is never read as drift; what Xero holds paid on it that the
+ * engine never recorded is a payment after the credit.
+ */
+function engineReceivables(state: Pick<AppState, 'billing' | 'xero'>): EngineReceivable[] {
+  const recorded = new Set(Object.values(state.billing.receipts).map((r) => r.idempotencyKey))
   const out: EngineReceivable[] = []
   for (const pair of Object.values(state.billing.ledger)) {
     if (!isBookingPair(pair) || pair.receivable.xeroAccRecId === undefined) continue
-    out.push({ pairId: pair.id, invoiceId: pair.invoiceId, accRecId: pair.receivable.xeroAccRecId, amount: pair.receivable.amount, receivedAmount: pair.receivable.receivedAmount })
+    const accRecId = pair.receivable.xeroAccRecId
+    const base = { pairId: pair.id, invoiceId: pair.invoiceId, accRecId, amount: pair.receivable.amount, receivedAmount: pair.receivable.receivedAmount }
+    if (pair.credit === undefined) {
+      out.push(base)
+      continue
+    }
+    const unrecorded = Object.values(state.xero.payments).filter((p) => p.accRecId === accRecId && !recorded.has(p.idempotencyKey)).reduce((n, p) => n + toCents(p.amount), 0)
+    out.push({ ...base, creditedByEngine: true, ...(unrecorded > 0 ? { paidInXeroAfterCredit: unrecorded / 100 } : {}) })
   }
   return out
 }

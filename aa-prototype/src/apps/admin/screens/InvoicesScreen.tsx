@@ -1,20 +1,21 @@
 import { useMemo } from 'react'
+import { Fragment } from 'react'
 import { ChevronRight } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { neutral, radius, semantic } from '../../../theme/tokens'
-import type { Invoice } from '../../../domain/types'
+import type { CreditNote, Invoice } from '../../../domain/types'
 import { invoiceDeliveryLabel, layoutShortLabel } from '../../../domain/billing'
 import { Card, Eyebrow, PageHeader, Pill, TextAction } from '../../../shared/ui'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 import type { Actor } from '../../../store'
-import { billedLists, invoiceAddresseeName, invoiceCountsByList, isBackdropInvoice, originalInvoiceFor, useAppStore, openBillingExceptions } from '../../../store'
-import { ADDITIONAL_INVOICE_COPY } from '../../../shared/procedureEventCopy'
+import { billedLists, invoiceAddresseeName, invoiceCountsByList, invoiceStanding, isBackdropInvoice, originalInvoiceFor, rebillOriginFor, useAppStore, openBillingExceptions } from '../../../store'
+import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS } from '../../../shared/procedureEventCopy'
 import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm, plural } from '../../../shared/format'
 import { listShortLabel, listSourceLabels } from '../util'
 import { InvoiceDocument } from './InvoiceDocument'
 import { PrepaymentApprovalStrip } from '../components/PrepaymentApprovalStrip'
 
-/** The Kind column's words (catch-up Phase 38b; Phase 39 adds the credit note). */
+/** The Kind column's words (catch-up Phase 38b). A credit note's row reads `CREDIT_LABELS.kind` (catch-up Phase 39): it is its own record, never an invoice kind. */
 const INVOICE_KIND_LABEL: Record<Invoice['kind'], string> = {
   standard: 'Invoice',
   prePayment: 'Prepayment',
@@ -40,6 +41,40 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
   const originalOf = (invoice: Invoice) => originalInvoiceFor({ billing }, invoice.id)
   const schedule = useAppStore((s) => s.schedule)
   const masters = useAppStore((s) => s.masters)
+  const navigate = useNavigate()
+  // Credit notes join the table (catch-up Phase 39), each just above the invoice it credits.
+  const creditNotesByOriginal = useMemo(() => {
+    const out = new Map<string, CreditNote[]>()
+    for (const cn of Object.values(billing.creditNotes).sort((a, b) => b.id.localeCompare(a.id))) out.set(cn.originalInvoiceId, [...(out.get(cn.originalInvoiceId) ?? []), cn])
+    return out
+  }, [billing.creditNotes])
+  // A credit note of an invoice this table leaves out (the seeded history) still lists, at the top.
+  const shownIds = useMemo(() => new Set(Object.values(billing.invoices).filter((i) => !isBackdropInvoice(i)).map((i) => i.id)), [billing.invoices])
+  const looseCreditNotes = useMemo(
+    () => Object.values(billing.creditNotes).filter((cn) => !shownIds.has(cn.originalInvoiceId)).sort((a, b) => b.id.localeCompare(a.id)),
+    [billing.creditNotes, shownIds],
+  )
+  const creditRow = (cn: CreditNote) => {
+    const original = billing.invoices[cn.originalInvoiceId]
+    const booking = schedule.bookings[cn.bookingId]
+    const list = booking !== undefined ? schedule.lists[booking.listId] : undefined
+    const patient = booking !== undefined ? masters.patients[booking.patientId] : undefined
+    const anaesthetist = list?.anaesthetistId !== undefined ? masters.anaesthetists[list.anaesthetistId] : undefined
+    if (original === undefined) return null
+    return (
+      <CreditNoteRow
+        key={cn.id}
+        creditNote={cn}
+        original={original}
+        patientName={booking === undefined ? 'Booking unavailable' : (patient?.name ?? 'Unknown patient')}
+        bookingLabel={booking?.scheduledTime !== undefined ? `Booking ${booking.scheduledTime}` : 'Booking time not set'}
+        anaesthetistName={anaesthetist?.name}
+        listDateISO={list?.dateISO}
+        addressee={invoiceAddresseeName({ masters, schedule, billing }, cn)}
+        onOpen={() => navigate(`/admin/credit-notes/${cn.id}`)}
+      />
+    )
+  }
 
   const invoices = useMemo(
     // The seeded historical backdrop (Phase 10) belongs to the anaesthetist money
@@ -148,6 +183,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
               </tr>
             </thead>
             <tbody>
+              {looseCreditNotes.map(creditRow)}
               {rows.map(({ invoice, booking, list, patient, anaesthetist, source }) => {
                 const patientName = booking === undefined ? 'Booking unavailable' : (patient?.name ?? 'Unknown patient')
                 const bookingLabel =
@@ -156,13 +192,27 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                     : booking.scheduledTime !== undefined
                       ? `Booking ${booking.scheduledTime}`
                       : 'Booking time not set'
+                const standing = invoiceStanding({ schedule, billing }, invoice.id)
+                const rebillOrigin = rebillOriginFor({ billing }, invoice.id)
                 return (
-                  <ClickableRow key={invoice.id} onOpen={() => onSelect(invoice.id)}>
+                  <Fragment key={invoice.id}>
+                  {(creditNotesByOriginal.get(invoice.id) ?? []).map(creditRow)}
+                  <ClickableRow onOpen={() => onSelect(invoice.id)} data-invoice-id={invoice.id}>
                   <Td mono bold nowrap>
                     {invoice.invoiceNumber}
                     {/* An additional invoice names its original (catch-up Phase 38b). */}
                     {invoice.kind === 'additional' && originalOf(invoice) !== undefined && (
                       <div data-shot="invoice-list-additional-to" style={{ marginTop: 2, fontSize: 11.5, fontWeight: 400, color: neutral.mist }}>{ADDITIONAL_INVOICE_COPY.additionalTo(originalOf(invoice)!.invoiceNumber)}</div>
+                    )}
+                    {/* A replacement names the invoice it rebills (catch-up Phase 39). */}
+                    {rebillOrigin !== undefined && (
+                      <div data-shot="invoice-list-rebills" style={{ marginTop: 2, fontSize: 11.5, fontWeight: 400, color: neutral.mist }}>{CREDIT_LABELS.rebills(rebillOrigin.invoiceNumber)}</div>
+                    )}
+                    {/* Its standing (catch-up Phase 39): derived, neutral. */}
+                    {standing !== 'live' && (
+                      <div style={{ marginTop: 4 }}>
+                        <Pill size="sm" shot="invoice-list-standing" data-standing={standing}>{standing === 'credited' ? CREDIT_LABELS.creditedPill : CREDIT_LABELS.pendingPill}</Pill>
+                      </div>
                     )}
                   </Td>
                   <Td nowrap><span data-shot="invoice-list-kind" data-kind={invoice.kind}>{INVOICE_KIND_LABEL[invoice.kind]}</span></Td>
@@ -230,6 +280,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                     </TextAction>
                   </Td>
                   </ClickableRow>
+                  </Fragment>
                 )
               })}
             </tbody>
@@ -239,12 +290,68 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
   )
 }
 
-/** The invoice's delivery as the run stamped it (catch-up Phase 22; FT-08.4), on U3's `Pill`. */
-function DeliveryPill({ invoice }: { invoice: Invoice }) {
-  const label = invoiceDeliveryLabel(invoice.delivery)
+/**
+ * A credit note's row (catch-up Phase 39): kind "Credit note", "Credits
+ * AA-2026-0007" under its number, the original's patient, anaesthetist and
+ * List date, the party it goes to, its total as issued (never red) and how
+ * the engine sent it. Opens the credit note's document.
+ */
+function CreditNoteRow({
+  creditNote,
+  original,
+  patientName,
+  bookingLabel,
+  anaesthetistName,
+  listDateISO,
+  addressee,
+  onOpen,
+}: {
+  creditNote: CreditNote
+  original: Invoice
+  patientName: string
+  bookingLabel: string
+  anaesthetistName: string | undefined
+  listDateISO: string | undefined
+  addressee: string
+  onOpen: () => void
+}) {
+  return (
+    <ClickableRow onOpen={onOpen} data-credit-note-id={creditNote.id}>
+      <Td mono bold nowrap>
+        {creditNote.creditNoteNumber}
+        <div data-shot="invoice-list-credits" style={{ marginTop: 2, fontSize: 11.5, fontWeight: 400, color: neutral.mist }}>{CREDIT_LABELS.credits(original.invoiceNumber)}</div>
+      </Td>
+      <Td nowrap><span data-shot="invoice-list-kind" data-kind="creditNote">{CREDIT_LABELS.kind}</span></Td>
+      <Td>
+        <div style={{ fontWeight: 600 }}>{patientName}</div>
+        <div className="mono" style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist, whiteSpace: 'nowrap' }}>{bookingLabel}</div>
+      </Td>
+      <Td bold>{anaesthetistName ?? 'Anaesthetist unavailable'}</Td>
+      <Td>·</Td>
+      <Td mono nowrap>{listDateISO !== undefined ? dayMicroCap(listDateISO) : '·'}</Td>
+      <Td mono nowrap>{dateTimeMicroCap(creditNote.issuedAtISO)}</Td>
+      <Td>{addressee}</Td>
+      <Td>{layoutShortLabel(original.layout)}</Td>
+      <Td mono bold nowrap align="right">{formatCurrency(creditNote.total)}</Td>
+      <Td>
+        <DeliveryPill delivery={creditNote.delivery} />
+      </Td>
+      <Td nowrap>
+        <TextAction size="sm" flush label={`View credit note ${creditNote.creditNoteNumber}`} onClick={onOpen}>
+          View →
+        </TextAction>
+      </Td>
+    </ClickableRow>
+  )
+}
+
+/** The invoice's delivery as the run stamped it (catch-up Phase 22; FT-08.4), on U3's `Pill`; a credit note's as the engine sent it (catch-up Phase 39). */
+function DeliveryPill({ invoice, delivery: given }: { invoice?: Invoice; delivery?: Invoice['delivery'] }) {
+  const delivery = invoice !== undefined ? invoice.delivery : given
+  const label = invoiceDeliveryLabel(delivery)
   const text = label.short
   return (
-    <Pill tone={label.tone} shot="invoice-list-delivery" data-delivery={invoice.delivery?.status ?? 'none'} title={label.text} style={{ whiteSpace: 'nowrap' }}>
+    <Pill tone={label.tone} shot="invoice-list-delivery" data-delivery={delivery?.status ?? 'none'} title={label.text} style={{ whiteSpace: 'nowrap' }}>
       {text}
     </Pill>
   )

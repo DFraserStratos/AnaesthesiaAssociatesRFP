@@ -152,6 +152,11 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   publicHoliday: { prefix: 'PHN', pad: 3 },
   masterLoad: { prefix: 'ML', pad: 3 },
   goLiveBatch: { prefix: 'GL', pad: 2 },
+  // Catch-up Phase 39: credit notes (record id and human-facing number), negative invoices and their Xero credit notes.
+  creditNote: { prefix: 'CRN', pad: 4 },
+  creditNoteNumber: { prefix: 'CN-2026-', pad: 4 },
+  negativeInvoice: { prefix: 'NEG', pad: 4 },
+  xeroCreditNote: { prefix: 'XCN', pad: 4 },
 }
 
 /** Allocate the next deterministic id of a kind from the counters record. */
@@ -457,6 +462,9 @@ function resetDomainStateOnly(api: AppStoreApi): void {
       // The seed ships no queue and no flags; settings come from the seed, so the outage clears (catch-up Phase 37).
       xeroQueue: {},
       xeroDivergences: {},
+      // No credit notes or negative invoices in the seed (catch-up Phase 39).
+      creditNotes: {},
+      negativeInvoices: {},
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),

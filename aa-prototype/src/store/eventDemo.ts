@@ -22,12 +22,16 @@ export function nextRunRefusal(state: Pick<AppState, 'schedule'>): string | null
   return approvedEventsAwaitingRun(state).length === 0 ? EVENT_MESSAGES.nothingToRun : null
 }
 
-/** The next billing run for events, as the simulated office: the new invoices' numbers. */
-export function runNextBillingRun(api: AppStoreApi): Outcome<{ numbers: string[]; skipped: { eventId: string; message: string }[] }> {
+/** The next billing run for events, as the simulated office: the new invoices' numbers, and the credit notes' (catch-up Phase 39). */
+export function runNextBillingRun(api: AppStoreApi): Outcome<{ numbers: string[]; creditNoteNumbers: string[]; skipped: { eventId: string; message: string }[] }> {
   const out = runEventInvoicing(api, OFFICE_SIMULATION_ACTOR)
   if (!out.ok) return out
-  const invoices = api.getState().billing.invoices
-  return ok({ numbers: out.value.invoiceIds.map((id) => invoices[id]?.invoiceNumber ?? id), skipped: out.value.skipped })
+  const { invoices, creditNotes } = api.getState().billing
+  return ok({
+    numbers: out.value.invoiceIds.map((id) => invoices[id]?.invoiceNumber ?? id),
+    creditNoteNumbers: out.value.creditNoteIds.map((id) => creditNotes[id]?.creditNoteNumber ?? id),
+    skipped: out.value.skipped,
+  })
 }
 
 /** The oldest event awaiting review on a Booking. */

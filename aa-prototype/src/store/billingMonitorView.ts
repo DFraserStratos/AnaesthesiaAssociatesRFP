@@ -23,7 +23,7 @@ import { surnameOf } from '../shared/format'
 export const MONITOR_EXPAND_ALL_UP_TO = 12
 
 /** What makes an authorised List a problem. Not yet emailed, or not yet paid, is not a problem. */
-export type MonitorProblem = 'billingException' | 'waitingForXero' | 'xeroAlert' | 'voidedInXero' | 'amendedInXero'
+export type MonitorProblem = 'billingException' | 'waitingForXero' | 'xeroAlert' | 'voidedInXero' | 'amendedInXero' | 'paidAfterCredit'
 
 export type MonitorSortKey = 'date' | 'hospital' | 'status' | 'invoices' | 'run'
 export type SortDir = 'asc' | 'desc'
@@ -110,7 +110,7 @@ function problemsByList(state: ViewState, rows: readonly MonitorListRow[]): Map<
   return out
 }
 
-const PROBLEM_ORDER: readonly MonitorProblem[] = ['billingException', 'waitingForXero', 'xeroAlert', 'voidedInXero', 'amendedInXero']
+const PROBLEM_ORDER: readonly MonitorProblem[] = ['billingException', 'waitingForXero', 'xeroAlert', 'voidedInXero', 'amendedInXero', 'paidAfterCredit']
 
 function statusOf(row: MonitorListRow, problems: readonly MonitorProblem[]): MonitorListStatus {
   if (problems.includes('voidedInXero')) return 'Voided in Xero'

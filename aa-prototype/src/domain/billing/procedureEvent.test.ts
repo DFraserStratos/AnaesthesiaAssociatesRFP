@@ -3,7 +3,9 @@ import type { ProcedureEvent } from '../types'
 import {
   EVENT_KINDS,
   EVENT_RULES,
+  creditDetailOf,
   defaultEventDate,
+  eventLines,
   eventInvoicing,
   eventStatus,
   mayEditEvent,
@@ -43,6 +45,27 @@ describe('EVENT_RULES and EVENT_KINDS', () => {
   it('builds the readings as constants', () => {
     expect(EVENT_RULES).toEqual({ model: 'ownElement', review: 'office', nextRun: 'explicitRun', sameAsDefault: true, anaesthetistSees: 'ownTotalsAndParty' })
     expect(EVENT_KINDS.additionalInvoice).toEqual({ addedBy: ['office', 'anaesthetist'], anaesthetistOwnOnly: true, tick: 'fixedOn', reviewed: true, mayBundle: false, needsInvoicedProcedure: true })
+  })
+})
+
+describe('the credit kind (catch-up Phase 39)', () => {
+  const credit = (creditNoteId?: string) =>
+    event({ kind: 'credit', review: { state: 'approved' }, detail: { kind: 'credit', credit: { originalInvoiceId: 'INV0001', reason: 'Wrong amount', cause: 'correction', replacementEventIds: [], ...(creditNoteId !== undefined ? { creditNoteId } : {}) } } })
+
+  it('is raised by the office on any Procedure, the anaesthetist on their own, through the review step, never bundled', () => {
+    expect(EVENT_KINDS.credit).toEqual({ addedBy: ['office', 'anaesthetist'], anaesthetistOwnOnly: true, tick: 'fixedOn', reviewed: true, mayBundle: false, needsInvoicedProcedure: true })
+    expect(mayRaise('credit', { role: 'office' }, OWNER)).toBe(true)
+    expect(mayRaise('credit', { role: 'anaesthetist', anaesthetistId: OWNER }, OWNER)).toBe(true)
+    expect(mayRaise('credit', { role: 'anaesthetist', anaesthetistId: COLLEAGUE }, OWNER)).toBe(false)
+  })
+
+  it('has no lines, its detail read through creditDetailOf, and reads invoiced once its credit note is issued', () => {
+    expect(eventLines(credit())).toEqual([])
+    expect(eventLines(event())).toHaveLength(1)
+    expect(creditDetailOf(credit())?.originalInvoiceId).toBe('INV0001')
+    expect(creditDetailOf(event())).toBeUndefined()
+    expect(eventStatus(credit())).toBe('approved')
+    expect(eventStatus(credit('CRN0001'))).toBe('invoiced')
   })
 })
 

@@ -166,6 +166,7 @@ import { simulateSickness, sicknessCandidates, sicknessColleagueSlot, sicknessRe
 import { BILLING_FAILURE_ALREADY, stageBillingFailure } from '../../store/demoStaging'
 import { regenerateInvoiceFromLock, regenerateRefusal, regenerateSummary } from '../../store/locks'
 import { nextRunRefusal, officeReviewRefusal, officeReviewsAdditionalInvoice, runNextBillingRun } from '../../store/eventDemo'
+import { CREDIT_COPY, CREDIT_LABELS } from '../procedureEventCopy'
 import type { DemoTrigger, DemoTriggerChoice, DemoTriggerCtx, DemoTriggerResult } from './types'
 import { injectUnmatchedReceipt, injectUnmatchedRefusal, officeRunsPayables, officeRunsPayablesRefusal, UNMATCHED_RECEIPT_DEMO } from '../../store/ledgerDemo'
 import { sessionText } from '../../domain/outOfHours'
@@ -375,6 +376,8 @@ export function paymentDisabledReason(state: AppState, accRecId: string | undefi
   const accRec = state.xero.accRecs[accRecId]
   if (accRec === undefined) return 'Not handed off to Xero'
   if (accRec.status === 'voided') return 'Voided in Xero'
+  // Catch-up Phase 39: a credited invoice takes no payment, in Xero or the ledger (its correction may still be on its way to Xero).
+  if (accRec.status === 'credited' || Object.values(state.billing.ledger).some((p) => 'credit' in p && p.credit !== undefined && p.receivable.xeroAccRecId === accRecId)) return CREDIT_LABELS.paymentDisabled
   if (roundToCents(accRec.amountDue - accRec.amountReceived) <= 0) return 'Fully paid'
   if (!openAccRecs(state).some((c) => c.accRecId === accRecId)) return 'Seeded history invoice'
   return null
@@ -923,9 +926,10 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     run: (api) => {
       const out = runNextBillingRun(api)
       if (!out.ok) return { ok: false, message: out.message }
-      const n = out.value.numbers.length
       const skipped = out.value.skipped.length > 0 ? ` ${out.value.skipped.length} not invoiced: ${out.value.skipped[0]!.message}` : ''
-      return { ok: true, message: `Billing run done: ${n} additional ${n === 1 ? 'invoice' : 'invoices'} raised (${out.value.numbers.join(', ')}).${skipped}` }
+      // Catch-up Phase 39: a credit note and its replacements are raised by the same run.
+      const numbers = [...out.value.creditNoteNumbers, ...out.value.numbers].join(', ')
+      return { ok: true, message: `Billing run done: ${CREDIT_COPY.runResult(out.value.creditNoteNumbers.length, out.value.numbers.length)} (${numbers}).${skipped}` }
     },
     indexPath: () => '/admin/billing',
   },

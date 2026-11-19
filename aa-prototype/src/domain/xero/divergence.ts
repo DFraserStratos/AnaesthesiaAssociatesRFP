@@ -20,6 +20,8 @@ export interface EngineReceivable {
   receivedAmount: number
   /** True when the engine itself voided or credited it (Phase 39's credit note): never drift. */
   creditedByEngine?: boolean
+  /** On a credited receivable: what Xero holds paid on it that the engine never recorded (a payment after the credit, catch-up Phase 39). */
+  paidInXeroAfterCredit?: number
 }
 
 /** One new finding, before the store gives it an id and a time. */
@@ -32,7 +34,7 @@ export interface DivergenceFinding {
   engineHolds: XeroDivergence['engineHolds']
 }
 
-const KIND_ORDER: Record<XeroDivergence['kind'], number> = { voidedInXero: 0, amendedInXero: 1 }
+const KIND_ORDER: Record<XeroDivergence['kind'], number> = { voidedInXero: 0, amendedInXero: 1, paidAfterCredit: 2 }
 
 /**
  * New findings: `voidedInXero` for an ACCREC Xero shows voided while the
@@ -41,6 +43,9 @@ const KIND_ORDER: Record<XeroDivergence['kind'], number> = { voidedInXero: 0, am
  * that kind for the same change in Xero (open, or resolved by the office: a
  * resolution moves no money, so the mismatch stays and is never re-flagged
  * unless Xero changes again), an AA fee ACCREC, or one the engine credited.
+ * An engine-credited receivable is flagged only as `paidAfterCredit`, when
+ * Xero holds a payment on it the engine never recorded (catch-up Phase 39:
+ * flagged on the pair, never applied to the ledger).
  * In ACCREC id order, then kind.
  */
 export function detectXeroDivergences(
@@ -55,7 +60,14 @@ export function detectXeroDivergences(
   const seen = (accRecId: string, kind: string, shows: { total: number; changedAtISO?: string }) => legacy.has(`${accRecId}:${kind}`) || flagged.has(flagKey(accRecId, kind, shows))
   const out: DivergenceFinding[] = []
   for (const r of engineReceivables) {
-    if (r.creditedByEngine === true) continue
+    if (r.creditedByEngine === true) {
+      const rec = xeroAccRecs[r.accRecId]
+      const paid = toCents(r.paidInXeroAfterCredit ?? 0)
+      if (rec === undefined || rec.kind !== 'procedure' || paid <= 0) continue
+      const shows = { status: rec.status, total: paid / 100 }
+      if (!seen(r.accRecId, 'paidAfterCredit', shows)) out.push({ kind: 'paidAfterCredit', accRecId: r.accRecId, pairId: r.pairId, invoiceId: r.invoiceId, xeroShows: shows, engineHolds: { amount: r.amount, outstanding: 0 } })
+      continue
+    }
     const rec = xeroAccRecs[r.accRecId]
     if (rec === undefined || rec.kind !== 'procedure') continue
     const outstanding = Math.max(0, toCents(r.amount) - toCents(r.receivedAmount)) / 100

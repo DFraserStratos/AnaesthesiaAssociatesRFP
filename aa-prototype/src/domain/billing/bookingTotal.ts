@@ -14,7 +14,7 @@ import type { ProcedureEvent } from '../types'
 import { freeFormSubtotal } from './additionalInvoice'
 import { gstOn } from './invoicePresentation'
 import { roundToCents } from './money'
-import { eventStatus } from './procedureEvent'
+import { eventLines, eventStatus } from './procedureEvent'
 
 export interface BookingTotalWithEvents {
   procedures: { procedureId: string; price: number; events: { eventId: string; total: number }[] }[]
@@ -39,7 +39,7 @@ export function bookingTotalWithEvents(prices: readonly { procedureId: string; p
     price: p.price,
     events: events
       .filter((e) => e.procedureId === p.procedureId && countsTowardBookingTotal(e))
-      .map((e) => ({ eventId: e.id, total: freeFormSubtotal(e.detail.lines) })),
+      .map((e) => ({ eventId: e.id, total: freeFormSubtotal(eventLines(e)) })),
   }))
   const eventsTotal = roundToCents(procedures.reduce((sum, p) => sum + p.events.reduce((s, e) => s + e.total, 0), 0))
   const price = opts.bookingPrice ?? procedures.reduce((sum, p) => sum + p.price, 0)

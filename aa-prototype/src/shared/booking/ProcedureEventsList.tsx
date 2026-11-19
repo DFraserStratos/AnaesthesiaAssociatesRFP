@@ -11,19 +11,25 @@
  * - The office always sees the section (with its empty line), the totals and
  *   party, Review while awaiting review, Edit and Remove, and the invoice
  *   number linking to the invoice once invoiced.
+ * - A credit (catch-up Phase 39) is a row of its own (`procedure-credit-event`):
+ *   "Credit", its date, "Credits AA-2026-0007 in full" and the reason, the
+ *   credited invoice's total, "Issued" once the run issued it, and in Admin the
+ *   credit note's link. Edit opens the credit sheet; its replacements read
+ *   "Rebill of AA-2026-0007" and are removed only with their credit.
  *
  * Every word from `procedureEventCopy.ts`. PWA-safe.
  */
 
 import { useMemo, useState } from 'react'
 import { neutral, radius } from '../../theme/tokens'
-import { eventStatus, mayEditEvent, type ProcedureEventStatus } from '../../domain/billing/procedureEvent'
+import { creditDetailOf, eventLines, eventStatus, mayEditEvent, type ProcedureEventStatus } from '../../domain/billing/procedureEvent'
 import { freeFormSubtotal } from '../../domain/billing/additionalInvoice'
 import { eventPartyName, eventsForProcedure, procedureOwner, removeProcedureEvent, useAppStore, type Actor } from '../../store'
 import { Eyebrow, FormError, InlineConfirm, Pill, TextAction, type PillTone } from '../ui'
 import { formatCurrency, shortDay } from '../format'
-import { ADDITIONAL_INVOICE_COPY, EVENT_KIND_LABEL, EVENT_LABELS, EVENT_STATUS_LABEL, raisedByText } from '../procedureEventCopy'
+import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, eventStatusLabel, raisedByText } from '../procedureEventCopy'
 import { AdditionalInvoiceSheet } from './AdditionalInvoiceForm'
+import { useCreditSheet } from './CreditSheetSlot'
 import { useSurface } from '../surface'
 import { useBookingStore, useCommandBlock } from './draft'
 
@@ -43,9 +49,11 @@ export interface ProcedureEventsListProps {
   onReview?: (eventId: string) => void
   /** Admin: open an invoice. */
   onOpenInvoice?: (invoiceId: string) => void
+  /** Admin: open a credit note (catch-up Phase 39). */
+  onOpenCreditNote?: (creditNoteId: string) => void
 }
 
-export function ProcedureEventsList({ procedureId, actor, onReview, onOpenInvoice }: ProcedureEventsListProps) {
+export function ProcedureEventsList({ procedureId, actor, onReview, onOpenInvoice, onOpenCreditNote }: ProcedureEventsListProps) {
   const state = useBookingStore((s) => s)
   const all = state.schedule.procedureEvents
   const events = useMemo(() => eventsForProcedure({ schedule: { procedureEvents: all } }, procedureId), [all, procedureId])
@@ -53,6 +61,8 @@ export function ProcedureEventsList({ procedureId, actor, onReview, onOpenInvoic
   // Thumb-sized actions on the phone (convention 16).
   const actionSize = useSurface().variant === 'mobile' ? 'lg' : 'sm'
   const [editing, setEditing] = useState<string | null>(null)
+  const [editingCredit, setEditingCredit] = useState<{ eventId: string; invoiceId: string } | null>(null)
+  const CreditSheet = useCreditSheet()
   const [confirming, setConfirming] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -81,17 +91,27 @@ export function ProcedureEventsList({ procedureId, actor, onReview, onOpenInvoic
       {events.length === 0 && <span style={{ fontSize: 13, color: neutral.slate }}>{EVENT_LABELS.empty}</span>}
       {events.map((e, i) => {
         const status = eventStatus(e)
-        const lines = e.detail.lines
-        const first = lines[0]?.description ?? ''
+        const lines = eventLines(e)
+        // A credit (catch-up Phase 39) credits its original in full: the row shows that invoice and its total, never $0.
+        const credit = creditDetailOf(e)
+        const credited = credit !== undefined ? state.billing.invoices[credit.originalInvoiceId] : undefined
+        const creditNote = credit?.creditNoteId !== undefined ? state.billing.creditNotes[credit.creditNoteId] : undefined
+        // A replacement reads as part of its correction: "Rebill of AA-2026-0007".
+        const rebillOf = e.replaces !== undefined ? state.billing.invoices[e.replaces.originalInvoiceId] : undefined
+        const first = credit !== undefined ? `${credited !== undefined ? CREDIT_LABELS.creditsInFull(credited.invoiceNumber) : ''}${credit.reason !== '' ? ` · ${credit.reason}` : ''}` : (lines[0]?.description ?? '')
+        const amount = credit !== undefined ? (credited?.subtotal ?? 0) : freeFormSubtotal(lines)
         const editable = mayEditEvent(e, { role: actor.role, ...(actor.anaesthetistId !== undefined ? { anaesthetistId: actor.anaesthetistId } : {}) }, owner)
+        // A replacement is removed only with its credit.
+        const removable = editable && e.replaces === undefined
         const invoice = e.invoiceId !== undefined ? state.billing.invoices[e.invoiceId] : undefined
         const party = showMoney ? eventPartyName(state, e) : undefined
         return (
           <div
             key={e.id}
-            data-shot="procedure-event-row"
+            data-shot={credit !== undefined ? 'procedure-credit-event' : 'procedure-event-row'}
             data-event-id={e.id}
             data-status={status}
+            data-kind={e.kind}
             style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: i === 0 ? 0 : 10, borderTop: i === 0 ? 'none' : `1px solid ${neutral.line}` }}
           >
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
@@ -99,17 +119,24 @@ export function ProcedureEventsList({ procedureId, actor, onReview, onOpenInvoic
               <span className="mono" style={{ fontSize: 12.5, color: neutral.slate }}>{shortDay(e.occurredOnISO)}</span>
               {showMoney && (
                 <span className="mono" data-shot="procedure-event-total" style={{ marginLeft: 'auto', fontSize: 14, color: neutral.ink, fontVariantNumeric: 'tabular-nums' }}>
-                  {formatCurrency(freeFormSubtotal(lines))} <span style={{ fontSize: 12, color: neutral.slate }}>{EVENT_LABELS.exGst}</span>
+                  {formatCurrency(amount)} <span style={{ fontSize: 12, color: neutral.slate }}>{EVENT_LABELS.exGst}</span>
                 </span>
               )}
             </div>
             <div style={{ fontSize: 13.5, color: neutral.ink }}>
+              {rebillOf !== undefined && <span data-shot="procedure-event-rebill-of" style={{ color: neutral.slate }}>{CREDIT_LABELS.rebillOf(rebillOf.invoiceNumber)} · </span>}
               {first}
-              {lines.length > 1 && <span style={{ color: neutral.slate }}> {EVENT_LABELS.moreLines(lines.length - 1)}</span>}
+              {credit === undefined && lines.length > 1 && <span style={{ color: neutral.slate }}> {EVENT_LABELS.moreLines(lines.length - 1)}</span>}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <Pill size="sm" tone={EVENT_STATUS_TONE[status]} shot="procedure-event-status">{EVENT_STATUS_LABEL[status]}</Pill>
-              {invoice !== undefined && isOffice && onOpenInvoice !== undefined ? (
+              <Pill size="sm" tone={EVENT_STATUS_TONE[status]} shot="procedure-event-status">{eventStatusLabel(e.kind, status)}</Pill>
+              {creditNote !== undefined && isOffice && onOpenCreditNote !== undefined ? (
+                <TextAction size="sm" flush onClick={() => onOpenCreditNote(creditNote.id)} shot="procedure-event-credit-note">
+                  <span className="mono">{creditNote.creditNoteNumber}</span>
+                </TextAction>
+              ) : creditNote !== undefined && isOffice ? (
+                <span className="mono" style={{ fontSize: 12.5, color: neutral.slate }}>{creditNote.creditNoteNumber}</span>
+              ) : invoice !== undefined && isOffice && onOpenInvoice !== undefined ? (
                 <TextAction size="sm" flush onClick={() => onOpenInvoice(invoice.id)} shot="procedure-event-invoice">
                   <span className="mono">{invoice.invoiceNumber}</span>
                 </TextAction>
@@ -130,12 +157,19 @@ export function ProcedureEventsList({ procedureId, actor, onReview, onOpenInvoic
                 )}
                 {editable && (
                   <>
-                    <TextAction size={actionSize} onClick={() => setEditing(e.id)} shot="procedure-event-edit" disabled={blocked !== null}>
+                    <TextAction
+                      size={actionSize}
+                      onClick={() => (credit !== undefined ? setEditingCredit({ eventId: e.id, invoiceId: credit.originalInvoiceId }) : setEditing(e.id))}
+                      shot="procedure-event-edit"
+                      disabled={blocked !== null}
+                    >
                       {EVENT_LABELS.edit}
                     </TextAction>
-                    <TextAction size={actionSize} onClick={() => setConfirming(e.id)} shot="procedure-event-remove" disabled={blocked !== null}>
-                      {EVENT_LABELS.remove}
-                    </TextAction>
+                    {removable && (
+                      <TextAction size={actionSize} onClick={() => setConfirming(e.id)} shot="procedure-event-remove" disabled={blocked !== null}>
+                        {EVENT_LABELS.remove}
+                      </TextAction>
+                    )}
                   </>
                 )}
               </div>
@@ -162,6 +196,9 @@ export function ProcedureEventsList({ procedureId, actor, onReview, onOpenInvoic
         {...(editing !== null ? { eventId: editing } : {})}
         onClose={() => setEditing(null)}
       />
+      {editingCredit !== null && (
+        <CreditSheet open invoiceId={editingCredit.invoiceId} actor={actor} editing={editingCredit.eventId} onClose={() => setEditingCredit(null)} />
+      )}
     </section>
   )
 }

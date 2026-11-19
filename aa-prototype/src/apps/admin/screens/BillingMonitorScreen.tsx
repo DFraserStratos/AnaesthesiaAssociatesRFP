@@ -33,7 +33,8 @@ import { sessionText } from '../../../domain/outOfHours'
 import { HoldingAccountPanel } from '../components/HoldingAccountPanel'
 import { approvedEventsAwaitingRun } from '../../../store/procedureEventActions'
 import { freeFormSubtotal } from '../../../domain/billing/additionalInvoice'
-import { ADDITIONAL_INVOICE_COPY, EVENT_KIND_LABEL, EVENT_LABELS } from '../../../shared/procedureEventCopy'
+import { creditDetailOf, eventLines } from '../../../domain/billing/procedureEvent'
+import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, XERO_FLAG_LABEL } from '../../../shared/procedureEventCopy'
 import { PayablesPanel, XeroConnectionLine, XeroDivergencePanel, XeroQueuePanel } from '../components/XeroPanels'
 
 interface BillingMonitorScreenProps {
@@ -440,7 +441,7 @@ const LIST_STATUS_TONE: Record<MonitorListStatus, PillTone> = {
 }
 
 function xeroCell(row: MonitorAuthorisedRow): ReactNode {
-  if (row.problems.includes('voidedInXero') || row.problems.includes('amendedInXero')) return <span style={{ color: semantic.error.onTint, fontWeight: 600 }}>Flagged</span>
+  if (row.problems.includes('voidedInXero') || row.problems.includes('amendedInXero') || row.problems.includes('paidAfterCredit')) return <span style={{ color: semantic.error.onTint, fontWeight: 600 }}>Flagged</span>
   if (row.problems.includes('xeroAlert')) return <span style={{ color: semantic.error.onTint, fontWeight: 600 }}>Alert raised</span>
   if (row.problems.includes('waitingForXero')) return <span style={{ color: semantic.warning.onTint, fontWeight: 600 }}>Waiting for Xero</span>
   return <span className="mono">{`${row.inXeroCount} of ${row.invoiceCount} in Xero`}</span>
@@ -578,7 +579,11 @@ function BookingDetail({ row }: { row: MonitorBookingRow }) {
   if (row.xeroFlag !== undefined) {
     return (
       <span data-shot="monitor-xero-flag" style={{ color: semantic.error.onTint }}>
-        {row.xeroFlag.kind === 'voidedInXero' ? 'Voided in Xero · flagged for the office.' : `Amended in Xero · total ${formatCurrency(row.xeroFlag.xeroTotal)} · flagged for the office.`}
+        {row.xeroFlag.kind === 'voidedInXero'
+          ? 'Voided in Xero · flagged for the office.'
+          : row.xeroFlag.kind === 'paidAfterCredit'
+            ? `${XERO_FLAG_LABEL.paidAfterCredit} · ${formatCurrency(row.xeroFlag.xeroTotal)} · flagged for the office.`
+            : `Amended in Xero · total ${formatCurrency(row.xeroFlag.xeroTotal)} · flagged for the office.`}
       </span>
     )
   }
@@ -669,6 +674,8 @@ const BOOKING_STATUS: Record<string, { label: string; tone: PillTone }> = {
   partPaid: { label: 'Part paid', tone: 'warning' },
   paid: { label: 'Paid', tone: 'success' },
   disbursed: { label: 'Disbursed', tone: 'success' },
+  // Catch-up Phase 39: the Booking's invoice was credited in full.
+  credited: { label: 'Credited', tone: 'neutral' },
   failed: { label: 'Failed', tone: 'error' },
   cancelled: { label: 'Cancelled', tone: 'neutral' },
   pending: { label: 'Pending', tone: 'neutral' },
@@ -680,7 +687,7 @@ function BookingStatusPill({ row }: { row: MonitorBookingRow }) {
     row.prepaidLeftOff?.all === true && row.invoiceIds.length === 0 && row.status !== 'failed'
       ? { label: 'Prepaid', tone: 'success' as const }
       : row.xeroFlag !== undefined && row.status !== 'failed'
-        ? { label: row.xeroFlag.kind === 'voidedInXero' ? 'Voided in Xero' : 'Amended in Xero', tone: 'error' as const }
+        ? { label: XERO_FLAG_LABEL[row.xeroFlag.kind], tone: 'error' as const }
         : row.waitingForXero !== undefined && row.status !== 'failed'
           ? row.waitingForXero.alerted
             ? { label: 'Alert raised', tone: 'error' as const }
@@ -710,15 +717,18 @@ function EventsAwaitingRunPanel() {
         const booking = state.schedule.bookings[e.bookingId]
         const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
         const patient = booking !== undefined ? state.masters.patients[booking.patientId] : undefined
+        // A credit (catch-up Phase 39) names the invoice it credits and its total, never $0.
+        const creditDetail = creditDetailOf(e)
+        const credited = creditDetail !== undefined ? state.billing.invoices[creditDetail.originalInvoiceId] : undefined
         return (
-          <div key={e.id} data-event-id={e.id} style={{ display: 'flex', alignItems: 'baseline', gap: 12, fontSize: 13 }}>
+          <div key={e.id} data-event-id={e.id} data-kind={e.kind} style={{ display: 'flex', alignItems: 'baseline', gap: 12, fontSize: 13 }}>
             {list !== undefined ? (
               <Link to={`/admin/day/${list.dateISO}/bookings/${e.bookingId}`} style={{ color: neutral.ink, fontWeight: 600 }}>{patient?.name ?? e.bookingId}</Link>
             ) : (
               <span style={{ fontWeight: 600 }}>{patient?.name ?? e.bookingId}</span>
             )}
-            <span style={{ color: neutral.slate }}>{EVENT_KIND_LABEL[e.kind]}</span>
-            <span className="mono" style={{ marginLeft: 'auto', color: neutral.ink }}>{formatCurrency(freeFormSubtotal(e.detail.lines))} <span style={{ color: neutral.slate }}>{EVENT_LABELS.exGst}</span></span>
+            <span style={{ color: neutral.slate }}>{credited !== undefined ? CREDIT_LABELS.creditsInFull(credited.invoiceNumber) : EVENT_KIND_LABEL[e.kind]}</span>
+            <span className="mono" style={{ marginLeft: 'auto', color: neutral.ink }}>{formatCurrency(credited !== undefined ? credited.subtotal : freeFormSubtotal(eventLines(e)))} <span style={{ color: neutral.slate }}>{EVENT_LABELS.exGst}</span></span>
           </div>
         )
       })}

@@ -7,6 +7,7 @@ import {
   actionLabel,
   auditFieldChanges,
   auditNamesFor,
+  auditViewerEntries,
   formatAuditStamp,
   sortAuditNewestFirst,
   summariseAuditChanges,
@@ -39,7 +40,9 @@ const CAP = 500
  * entry stays one row.
  */
 export function AuditViewer() {
-  const audit = useAppStore((s) => s.audit)
+  const stored = useAppStore((s) => s.audit)
+  // Payments, receipts and disbursements are recorded in Xero, not here (catch-up Phase 39; US-13.5.2).
+  const audit = useMemo(() => auditViewerEntries(stored), [stored])
   const contracts = useAppStore((s) => s.masters.contracts)
   const parties = useAppStore((s) => s.masters.parties)
   const specialties = useAppStore((s) => s.masters.specialties)

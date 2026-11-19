@@ -22,7 +22,7 @@ import {
   warningSummaryByList,
   useToday,
   officeActorOf,
-  eventsAwaitingReview,
+  reviewRowsAwaiting,
 } from '../../store'
 import { isISODate } from '../../shell/routeParams'
 import { SideNav, type NavSection } from './components/SideNav'
@@ -37,6 +37,8 @@ import type { AssignedList } from '../../domain/types'
 import { ADMIN_PAGE_HORIZONTAL_PADDING } from './layout'
 import { sessionText } from '../../domain/outOfHours'
 import { OpenOutOfHoursSheet } from './flows/OpenOutOfHoursSheet'
+import { CreditSheet } from './flows/CreditSheet'
+import { CreditSheetSlot } from '../../shared/booking/CreditSheetSlot'
 
 /** The office persona actor, built once (Decisions log 2026-07-21). */
 
@@ -46,6 +48,8 @@ function sectionForPath(pathname: string): NavSection {
   if (head === 'draft-lists') return 'draftLists'
   if (head === 'notifications') return 'notifications'
   if (head === 'intake') return 'intake'
+  // A credit note's document sits under Invoices (catch-up Phase 39).
+  if (head === 'credit-notes') return 'invoices'
   switch (head) {
     case 'conflicts':
     case 'review':
@@ -64,7 +68,10 @@ export function AdminApp() {
   const todayISO = useToday()
   return (
     <SurfaceProvider variant="web">
-      <AdminShell todayISO={todayISO} />
+      {/* The credit form opens in Admin's side sheet wherever a shared control asks for it (catch-up Phase 39). */}
+      <CreditSheetSlot.Provider value={CreditSheet}>
+        <AdminShell todayISO={todayISO} />
+      </CreditSheetSlot.Provider>
     </SurfaceProvider>
   )
 }
@@ -81,7 +88,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
   // Events awaiting the office's review join the Review item's count (catch-up Phase 38b).
   const procedureEvents = useAppStore((s) => s.schedule.procedureEvents)
-  const eventsAwaiting = useMemo(() => eventsAwaitingReview({ schedule: { procedureEvents } }).length, [procedureEvents])
+  const eventsAwaiting = useMemo(() => reviewRowsAwaiting({ schedule: { procedureEvents } }).length, [procedureEvents])
   const slotsRecord = useAppStore((s) => s.schedule.slots)
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const schedule = useAppStore((s) => s.schedule)

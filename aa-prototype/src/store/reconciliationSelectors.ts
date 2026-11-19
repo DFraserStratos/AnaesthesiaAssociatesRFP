@@ -65,6 +65,8 @@ function ledgerAgainstXeroCheck(state: ReconState): Omit<ReconciliationCheck, 'i
     let amount = 0
     if (q.kind === 'handoff' && row.pairId !== undefined) amount = state.billing.ledger[row.pairId]?.receivable.amount ?? 0
     else if (q.kind === 'journal' && q.target.transferId !== undefined) amount = state.billing.transfers[q.target.transferId]?.in.amount ?? 0
+    // A credit's correction (catch-up Phase 39): the credit note's total waits to reach Xero.
+    else if (q.kind === 'correction' && q.target.creditNoteId !== undefined) amount = state.billing.creditNotes[q.target.creditNoteId]?.total ?? 0
     else if (q.kind === 'paymentSync' && q.target.xeroPaymentId !== undefined) amount = state.xero.payments[q.target.xeroPaymentId]?.amount ?? 0
     else if (q.kind === 'disbursementSync' && q.target.xeroDisbursementId !== undefined) amount = state.xero.disbursements[q.target.xeroDisbursementId]?.amount ?? 0
     else continue // the poll itself moves no money
@@ -72,8 +74,10 @@ function ledgerAgainstXeroCheck(state: ReconState): Omit<ReconciliationCheck, 'i
   }
   const flagged: UnresolvedItem[] = openXeroDivergences(state).map((d) => {
     const number = state.billing.invoices[d.invoiceId]?.invoiceNumber ?? d.invoiceId
-    const amount = d.kind === 'voidedInXero' ? d.engineHolds.outstanding : roundToCents(d.engineHolds.amount - d.xeroShows.total)
-    return { id: d.id, label: `${number} ${d.kind === 'voidedInXero' ? 'voided' : 'amended'} in Xero`, amount, sinceISO: d.detectedAtISO, source: 'xeroDivergence' }
+    // A payment after the engine's credit (catch-up Phase 39): what Xero took and the ledger never applied.
+    const amount = d.kind === 'voidedInXero' ? d.engineHolds.outstanding : d.kind === 'paidAfterCredit' ? d.xeroShows.total : roundToCents(d.engineHolds.amount - d.xeroShows.total)
+    const what = d.kind === 'voidedInXero' ? 'voided in Xero' : d.kind === 'paidAfterCredit' ? 'paid in Xero after its credit' : 'amended in Xero'
+    return { id: d.id, label: `${number} ${what}`, amount, sinceISO: d.detectedAtISO, source: 'xeroDivergence' }
   })
   const items = [...queued, ...flagged]
   return { difference: sum(items), items }

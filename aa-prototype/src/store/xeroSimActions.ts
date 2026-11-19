@@ -60,6 +60,9 @@ export function xeroBillPayable(state: Pick<AppState, 'xero' | 'billing'>, bill:
   if ('accPayId' in bill) {
     const pay = state.xero.accPays[bill.accPayId]
     if (pay === undefined || pay.payeeAccount === 'aaHoldingAccount') return 0
+    // A voided or credited bill (catch-up Phase 39) is never paid, nor one whose ledger payable a credit reversed.
+    if (pay.status === 'voided' || pay.status === 'credited') return 0
+    if (Object.values(state.billing.ledger).some((p) => p.kind !== 'aaFee' && p.payable?.xeroAccPayId === bill.accPayId && p.payable.reversedAmount !== undefined)) return 0
     return Math.max(0, roundToCents(pay.amountAuthorised - pay.amountDisbursed))
   }
   const t = state.billing.transfers[bill.transferId]
@@ -140,6 +143,7 @@ export function voidInXeroRefusal(state: Pick<AppState, 'xero'>, accRecId: strin
   const rec = accRecId !== undefined ? state.xero.accRecs[accRecId] : undefined
   if (rec === undefined) return 'No invoice in Xero'
   if (rec.status === 'voided') return 'Already voided in Xero'
+  if (rec.status === 'credited') return 'Credited in full by the engine'
   if (rec.kind === 'aaFee') return 'Fee invoices are outside this check'
   if (toCents(rec.amountReceived) > 0 || Object.values(state.xero.payments).some((p) => p.accRecId === rec.id)) return 'Xero cannot void an invoice with payments applied; remove the payment in Xero first'
   return null
@@ -166,6 +170,7 @@ export function amendInXeroRefusal(state: Pick<AppState, 'xero'>, accRecId: stri
   const rec = accRecId !== undefined ? state.xero.accRecs[accRecId] : undefined
   if (rec === undefined) return 'No invoice in Xero'
   if (rec.status === 'voided') return 'Voided in Xero'
+  if (rec.status === 'credited') return 'Credited in full by the engine'
   if (rec.kind === 'aaFee') return 'Fee invoices are outside this check'
   if (rec.amendedAtISO !== undefined) return 'Already amended in Xero'
   if (toCents(rec.amountReceived) > 0 || Object.values(state.xero.payments).some((p) => p.accRecId === rec.id)) return 'A payment is applied in Xero'

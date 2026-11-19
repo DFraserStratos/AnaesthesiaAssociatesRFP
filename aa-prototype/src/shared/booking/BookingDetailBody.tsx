@@ -800,6 +800,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
               actor={actor}
               {...(onReviewEvent !== undefined ? { onReview: onReviewEvent } : {})}
               {...(officeLinks !== undefined ? { onOpenInvoice: officeLinks.onOpenInvoice } : {})}
+              {...(officeLinks?.onOpenCreditNote !== undefined ? { onOpenCreditNote: officeLinks.onOpenCreditNote } : {})}
             />
           </div>
         ))}

@@ -48,6 +48,9 @@ import type {
   XeroAccPay,
   XeroAccRec,
   XeroBankLine,
+  XeroCreditNote,
+  CreditNote,
+  NegativeInvoice,
   XeroContact,
   XeroDivergence,
   XeroJournal,
@@ -111,6 +114,10 @@ export interface BillingSlice {
   xeroQueue: Record<string, XeroQueueItem>
   /** Voids and amendments made directly in Xero, flagged by the reconciliation poll (catch-up Phase 37). */
   xeroDivergences: Record<string, XeroDivergence>
+  /** Credit notes (catch-up Phase 39; DM-24): each its own record, never an `Invoice` kind. */
+  creditNotes: Record<string, CreditNote>
+  /** Negative invoices to anaesthetists reversing a credited payable (catch-up Phase 39; DM-25). */
+  negativeInvoices: Record<string, NegativeInvoice>
 }
 
 export interface XeroSlice {
@@ -124,6 +131,8 @@ export interface XeroSlice {
   /** Bulk remittance advices and their bank lines (catch-up Phase 37; US-10.2.4): Xero side only, never read by the engine. */
   remittances: Record<string, XeroRemittance>
   bankLines: Record<string, XeroBankLine>
+  /** ACCRECCREDIT and ACCPAYCREDIT records made by the engine's corrections (catch-up Phase 39). */
+  creditNotes: Record<string, XeroCreditNote>
 }
 
 export interface IntegrationsSlice {
@@ -417,14 +426,18 @@ export const PERSIST_KEY = 'aa-demo'
  *  v65: catch-up Phase 42: master public-holiday calendar replaces per-hospital statutory rows (`masters.publicHolidays`
  *  PH001 to PH007; Labour Day and Canterbury Anniversary Day leave `masters.holidays`); retire fields on masters
  *  (hospitals, surgeons, groups, AA modifiers); `masterLoads` slice. Reseeds on load.
- *  v66: the Wave 4 sync of Lane B's 42 into lane/a (Phase 38b and Phase 42 both took v65). Reseeds on load. */
-export const PERSIST_VERSION = 66
+ *  v66: the Wave 4 sync of Lane B's 42 into lane/a (Phase 38b and Phase 42 both took v65). Reseeds on load.
+ *  v67: catch-up Phase 39, credit notes: `billing.creditNotes`, `billing.negativeInvoices` and `xero.creditNotes`
+ *  (empty in the seed; counters `creditNote`, `creditNoteNumber`, `negativeInvoice`, `xeroCreditNote`), the `credit`
+ *  event kind, the `rebillOf` lineage, the legs' `creditedAmount` / `reversedAmount` and the pair's `credit`, the
+ *  `credited` / `voided` Xero statuses and the `correction` queue kind. Reseeds on load. */
+export const PERSIST_VERSION = 67
 
 export function emptyBillingSlice(): BillingSlice {
-  return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {} }
+  return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {}, creditNotes: {}, negativeInvoices: {} }
 }
 export function emptyXeroSlice(): XeroSlice {
-  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {} }
+  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {}, creditNotes: {} }
 }
 export function emptyIntegrationsSlice(): IntegrationsSlice {
   return { feeds: {}, messages: {} }
@@ -472,6 +485,8 @@ export function freshAppState(): AppState {
       transfers: {},
       xeroQueue: {},
       xeroDivergences: {},
+      creditNotes: {},
+      negativeInvoices: {},
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),

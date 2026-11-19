@@ -582,6 +582,7 @@ export {
   originalForEvent,
   pricingOf,
   raiseRefusal,
+  namedPartyDelivery,
   addProcedureEvent,
   updateProcedureEvent,
   removeProcedureEvent,
@@ -592,6 +593,37 @@ export {
   type EventRunResult,
   type EventPartyInput,
 } from './procedureEventActions'
+
+// Catch-up Phase 39: credit notes and credit-and-rebill (the correction), its derived standing and the Xero correction.
+export {
+  submitCredit,
+  updateCredit,
+  approveCreditUnit,
+  declineCreditUnit,
+  removeCreditUnit,
+  updateCreditPart,
+  issueCreditInto,
+  planCreditIssue,
+  creditRefusalFor,
+  creditNoteForInvoice,
+  creditEventForInvoice,
+  pendingCreditEventFor,
+  replacementsOf,
+  rebillOriginFor,
+  invoiceStanding,
+  negativeInvoicesFor,
+  replacementEventsOf,
+  reviewRowsAwaiting,
+  creditEventOf,
+  currentReversalPlan,
+  pairCreditedBy,
+  type CreditInput,
+  type CreditReplacementInput,
+  type CreditIssuePlan,
+  type CreditRunDraft,
+  type InvoiceStanding,
+} from './creditActions'
+export { handoffCorrection, createXeroCorrection, type CorrectionHandoffResult } from './xeroHandoff'
 
 // Catch-up Phase 42: retire and reinstate, the public-holiday calendar, the time rule, the seed load and go-live.
 export { retireMaster, reinstateMaster, retireFactsFor, editAaModifier, retiredRefusal, partyRenameFollowing, type AaModifierPatch } from './masterLifecycleActions'

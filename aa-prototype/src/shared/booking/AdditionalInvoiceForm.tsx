@@ -17,8 +17,8 @@
 import { useMemo, useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import { neutral, radius } from '../../theme/tokens'
-import type { CounterpartyRef, FreeFormLine } from '../../domain/types'
-import { defaultEventDate, EVENT_RULES } from '../../domain/billing/procedureEvent'
+import type { CounterpartyRef, EventParty, FreeFormLine } from '../../domain/types'
+import { defaultEventDate, eventLines, EVENT_RULES } from '../../domain/billing/procedureEvent'
 import { priceFreeFormInvoice } from '../../domain/billing/additionalInvoice'
 import { parseAmount } from '../../domain/billing/money'
 import { procedureLabel } from '../../domain/billing/procedureStack'
@@ -146,6 +146,14 @@ export function FreeFormTotals({ subtotal, gst, total, shot }: { subtotal: numbe
 
 export type PartyDraft = { sameAs: true } | { sameAs: false; party: CounterpartyRef | null; person: OtherPayerDraft | null; personId?: string }
 
+/** A stored party as the field edits it (an event's; a credit's and its replacements', catch-up Phase 39). */
+export function partyDraftOf(p: EventParty): PartyDraft {
+  if (p.sameAs) return { sameAs: true }
+  return p.person !== undefined
+    ? { sameAs: false, party: null, person: { name: p.person.name, relationship: p.person.relationship ?? '', email: p.person.email ?? '', phone: p.person.phone ?? '', address: { ...EMPTY_OTHER_PAYER.address, ...(p.person.postalAddress ?? {}) } }, personId: p.person.id }
+    : { sameAs: false, party: p.party, person: null }
+}
+
 /** The party as the store takes it, or null while nothing is picked. */
 export function partyInputOf(d: PartyDraft): EventPartyInput | null {
   if (d.sameAs) return { sameAs: true }
@@ -157,12 +165,27 @@ export function partyInputOf(d: PartyDraft): EventPartyInput | null {
 }
 
 /** "Same as the original invoice (name)", ticked by default, unticking to 22a's PartyPicker with "Another person". */
-export function EventPartyField({ procedureId, sameAsName, value, onChange }: { procedureId: string; sameAsName: string; value: PartyDraft; onChange: (next: PartyDraft) => void }) {
+export function EventPartyField({
+  procedureId,
+  sameAsName,
+  value,
+  onChange,
+  label = COPY.partyLabel,
+  shot = 'event-party',
+}: {
+  procedureId: string
+  sameAsName: string
+  value: PartyDraft
+  onChange: (next: PartyDraft) => void
+  /** The field's label: "Billed to" by default; the credit note's own party reads "Credit note to" (catch-up Phase 39). */
+  label?: string
+  shot?: string
+}) {
   const state = useBookingStore((s) => s)
   const options = useMemo(() => partyOptionsForProcedure(state, procedureId), [state, procedureId])
   return (
-    <div data-shot="event-party" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <FieldLabel>{COPY.partyLabel}</FieldLabel>
+    <div data-shot={shot} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <FieldLabel>{label}</FieldLabel>
       <Checkbox
         checked={value.sameAs}
         onChange={(checked) => onChange(checked ? { sameAs: true } : { sameAs: false, party: null, person: null })}
@@ -224,13 +247,10 @@ function AdditionalInvoiceForm({ procedureId, actor, onClose, eventId, onSaved }
   const variant = useSurface().variant
 
   const [date, setDate] = useState(existing?.occurredOnISO ?? defaultEventDate(list?.dateISO ?? state.clock.todayISO, state.clock.todayISO))
-  const [lines, setLines] = useState<LineDraft[]>(existing !== undefined ? existing.detail.lines.map(lineDraftOf) : [{ ...EMPTY_LINE }])
+  const [lines, setLines] = useState<LineDraft[]>(existing !== undefined ? eventLines(existing).map(lineDraftOf) : [{ ...EMPTY_LINE }])
   const [party, setParty] = useState<PartyDraft>(() => {
     if (existing === undefined || existing.party.sameAs) return EVENT_RULES.sameAsDefault ? { sameAs: true } : { sameAs: false, party: null, person: null }
-    const p = existing.party
-    return p.person !== undefined
-      ? { sameAs: false, party: null, person: { name: p.person.name, relationship: p.person.relationship ?? '', email: p.person.email ?? '', phone: p.person.phone ?? '', address: { ...EMPTY_OTHER_PAYER.address, ...(p.person.postalAddress ?? {}) } }, personId: p.person.id }
-      : { sameAs: false, party: p.party, person: null }
+    return partyDraftOf(existing.party)
   })
   const [error, setError] = useState<{ message: string; lineIndex?: number; field?: string } | null>(null)
 

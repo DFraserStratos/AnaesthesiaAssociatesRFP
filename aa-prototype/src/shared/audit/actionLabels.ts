@@ -1,5 +1,5 @@
 import { PAIRING_LABELS } from '../../domain/pairingPreferences'
-import { EVENT_ACTION_LABELS } from '../procedureEventCopy'
+import { CREDIT_ACTION_LABELS, EVENT_ACTION_LABELS } from '../procedureEventCopy'
 import { DRAFT_LIST } from '../scheduleTerms'
 
 /**
@@ -213,6 +213,8 @@ export const ACTION_LABELS: Record<string, string> = {
   'invoice.partyChanged': 'Billed to another party',
   // The event actions' words live in the one copy map (the name "event" is provisional).
   ...EVENT_ACTION_LABELS,
+  // Catch-up Phase 39: credit notes, negative invoices and the Xero correction.
+  ...CREDIT_ACTION_LABELS,
 
   // --- Integrations --------------------------------------------------------
   'integration.receive': 'Message received',

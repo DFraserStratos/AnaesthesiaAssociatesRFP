@@ -1144,3 +1144,30 @@ describe('Wave 4 sync (v66): Lane B\'s 42 joined into lane/a beside 38b', () => 
     expect(Object.keys(s.masters.publicHolidays)).toHaveLength(7)
   })
 })
+
+describe('catch-up Phase 39 (v67): credit notes, negative invoices and Xero credit notes', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v66 store without the new slices to the fresh seed, which has them empty', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(67)
+    const fresh = freshAppState()
+    const { creditNotes: _c, negativeInvoices: _n, ...billing } = fresh.billing
+    const { creditNotes: _x, ...xero } = fresh.xero
+    const stale = { ...fresh, billing, xero, schedule: { ...fresh.schedule, bookings: { ...fresh.schedule.bookings, BK9999: { ...Object.values(fresh.schedule.bookings)[0]!, id: 'BK9999' } } } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 66 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.schedule.bookings['BK9999']).toBeUndefined()
+    expect([s.billing.creditNotes, s.billing.negativeInvoices, s.xero.creditNotes]).toEqual([{}, {}, {}])
+  })
+
+  it('two fresh seeds deep-equal, with the new slices empty', () => {
+    const a = freshAppState()
+    const b = freshAppState()
+    expect(a).toEqual(b)
+    expect([a.billing.creditNotes, a.billing.negativeInvoices, a.xero.creditNotes]).toEqual([{}, {}, {}])
+  })
+})

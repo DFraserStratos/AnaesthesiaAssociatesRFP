@@ -24,6 +24,7 @@ import {
 import { supplierFor } from '../domain/billing/invoicePresentation'
 import { formatMoney, roundToCents } from '../domain/billing/money'
 import { priceFreeFormInvoice } from '../domain/billing/additionalInvoice'
+import { eventLines } from '../domain/billing/procedureEvent'
 import type { HeldPrices } from '../domain/billing/procedurePrice'
 export { authorisedPricesFromLock } from '../domain/billing/lock'
 import { listHospitalFor } from '../domain/listPairing'
@@ -170,7 +171,7 @@ export function regenerateInvoiceFromLock(state: Pick<AppState, 'billing'> & Par
 function regenerateAdditionalInvoice(state: Pick<AppState, 'billing'> & Partial<Pick<AppState, 'schedule'>>, invoice: Invoice, lock: BookingLock | undefined): RegenerateResult {
   const event = invoice.eventId !== undefined ? state.schedule?.procedureEvents[invoice.eventId] : undefined
   if (event === undefined) return { ok: false, reason: 'This additional invoice has no event to regenerate from' }
-  const priced = priceFreeFormInvoice(event.detail.lines)
+  const priced = priceFreeFormInvoice(eventLines(event))
   if (priced.kind === 'refused') return { ok: false, reason: priced.message }
   const stored = Object.values(state.billing.invoiceLines)
     .filter((l) => l.invoiceId === invoice.id)

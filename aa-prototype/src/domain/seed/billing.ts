@@ -31,6 +31,7 @@ import type {
   XeroAccRec,
   XeroContact,
   XeroBankLine,
+  XeroCreditNote,
   XeroJournal,
   XeroRemittance,
 } from '../types'
@@ -55,10 +56,12 @@ export interface SeedXeroSlice {
   /** Bulk remittances and bank lines (catch-up Phase 37): the seed ships none. */
   remittances: Record<string, XeroRemittance>
   bankLines: Record<string, XeroBankLine>
+  /** The engine's Xero credit notes (catch-up Phase 39): the seed ships none. */
+  creditNotes: Record<string, XeroCreditNote>
 }
 
 export function emptySeedXeroSlice(): SeedXeroSlice {
-  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {} }
+  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {}, creditNotes: {} }
 }
 
 export interface SeedBillingSlice {
@@ -264,6 +267,7 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
         journals: {},
         remittances: {},
         bankLines: {},
+        creditNotes: {},
       },
       contactIdCache,
       aaFeeInvoices: fees.aaFeeInvoices,

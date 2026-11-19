@@ -37,6 +37,7 @@ import {
   AdminDataQualityRoute,
   AdminValidatorsRoute,
   AdminInvoicesRoute,
+  AdminCreditNoteRoute,
   AdminMastersRoute,
   AdminMatchingRoute,
   AdminSurgeonProfileRoute,
@@ -137,6 +138,8 @@ const routeTree = (
               <Route index element={<AdminInvoicesRoute />} />
               <Route path=":invoiceId" element={<AdminInvoicesRoute />} />
             </Route>
+            {/* A credit note's document (catch-up Phase 39), under Invoices in the side nav. */}
+            <Route path="credit-notes/:creditNoteId" element={<AdminCreditNoteRoute />} />
             <Route path="billing">
               <Route index element={<AdminBillingPage />} />
               <Route path="aa-fees" element={<AdminAaFeesRoute />} />

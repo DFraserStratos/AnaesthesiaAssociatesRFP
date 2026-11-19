@@ -27,7 +27,7 @@ export interface XeroInvoicePairView {
     balance: number
     /** Payments landed in Xero during an outage whose sync to the Billing Engine still waits in its queue (catch-up Phase 37). */
     landedAwaitingSync?: number
-    status: 'awaitingPayment' | 'paid' | 'voided'
+    status: XeroAccRec['status']
     raisedAtISO?: string
     /** When AA staff voided it directly in Xero (catch-up Phase 37). */
     voidedAtISO?: string
@@ -50,7 +50,7 @@ export interface XeroInvoicePairView {
     remainingAuthorised: number
     /** A payable crediting the AA Holding account (catch-up Phase 27a): never disbursed, so nothing is ready to pay. */
     held: boolean
-    status: 'draft' | 'authorised' | 'paid'
+    status: XeroAccPay['status']
     /** The buyer-created tax invoice as stored at handoff (catch-up Phase 22; US-09.1.4), passed through. */
     taxInvoice?: BuyerCreatedTaxInvoice
     /** Xero's bill payments on this ACCPAY, oldest first, each with what the Billing Engine knows of it (catch-up Phase 37). */
