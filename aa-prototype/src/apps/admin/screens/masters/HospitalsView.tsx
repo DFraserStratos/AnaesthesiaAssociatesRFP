@@ -180,8 +180,12 @@ function HospitalCalendar({
           const inHorizon = dateISO >= horizon.startISO && dateISO <= horizon.endISO
           const closures = day?.closures ?? []
           const closure = closures[0]
+          // The master public holidays closing it that day (catch-up Phase 42): read-only here.
+          const publicClosures = day?.publicClosures ?? []
+          const closed = closure !== undefined || publicClosures.length > 0
           const listCount = day?.listCount ?? 0
-          const label = `${longDayNoYear(dateISO)}: ${closure !== undefined ? `closed, ${closures.map((c) => c.name).join(' and ')}` : 'open'}, ${plural(listCount, 'List')}`
+          const names = [...closures.map((c) => c.name), ...publicClosures.map((p) => `${p.name} (public holiday)`)]
+          const label = `${longDayNoYear(dateISO)}: ${closed ? `closed, ${names.join(' and ')}` : 'open'}, ${plural(listCount, 'List')}`
           return (
             <button
               key={dateISO}
@@ -190,7 +194,7 @@ function HospitalCalendar({
               data-calendar-day={dateISO}
               disabled={!inHorizon && closure === undefined}
               onClick={() => (closure !== undefined ? onEdit(closure.id) : onAdd(hospitalId, dateISO))}
-              style={{ minHeight: 84, padding: 6, borderRadius: radius.ctl, border: `1px solid ${closure !== undefined ? HOLIDAY.solid : neutral.line}`, background: inHorizon ? neutral.surface : neutral.bg, display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'stretch', textAlign: 'left', fontFamily: 'inherit', cursor: inHorizon || closure !== undefined ? 'pointer' : 'default' }}
+              style={{ minHeight: 84, padding: 6, borderRadius: radius.ctl, border: `1px solid ${closed ? HOLIDAY.solid : neutral.line}`, background: inHorizon ? neutral.surface : neutral.bg, display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'stretch', textAlign: 'left', fontFamily: 'inherit', cursor: inHorizon || closure !== undefined ? 'pointer' : 'default' }}
             >
               <span className="mono" style={{ fontSize: 12, fontWeight: 600, color: inHorizon ? neutral.ink : neutral.mist }}>{Number(dateISO.slice(8))}</span>
               {closures.map((c) => (
@@ -198,9 +202,15 @@ function HospitalCalendar({
                   {c.name}
                 </span>
               ))}
+              {publicClosures.map((p) => (
+                <span key={p.id} data-public-holiday={p.id} title={`${p.name}: public holiday`} style={{ background: HOLIDAY.tint, color: HOLIDAY.onTint, boxShadow: `inset 3px 0 0 ${HOLIDAY.solid}`, borderRadius: radius.xs, padding: '3px 6px 3px 8px', fontSize: 11, fontWeight: 600, lineHeight: '14px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                  <span style={{ fontWeight: 500, opacity: 0.85 }}>Public holiday</span>
+                </span>
+              ))}
               <span style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: neutral.slate }}>
                 {listCount > 0 && <span>{plural(listCount, 'List')}</span>}
-                {closure !== undefined && (day?.conflictedCount ?? 0) > 0 && (
+                {closed && (day?.conflictedCount ?? 0) > 0 && (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: semantic.warning.onTint, fontWeight: 600 }}>
                     <AttentionDot size={12} />
                     {day?.conflictedCount} flagged

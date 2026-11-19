@@ -359,8 +359,9 @@ export function pairingRefusal(
   input: { hospitalId?: string | null; surgeonId?: string | null },
   masters: Pick<AppState['masters'], 'hospitals' | 'surgeons'>,
   code = 'pairingIncomplete',
+  prev?: { hospitalId?: string | null; surgeonId?: string | null },
 ): Outcome<never> | null {
-  const issues = pairingIssues(input, masters)
+  const issues = pairingIssues(input, masters, prev)
   if (issues.length === 0) return null
   return refuse(code, issues.map((i) => i.message).join(' '), { issues })
 }

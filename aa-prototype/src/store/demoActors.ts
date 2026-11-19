@@ -20,6 +20,14 @@ export const OFFICE_ACTOR: Actor = { who: 'Kirsty W.', role: 'office', source: '
  */
 export const SECOND_OFFICE_ACTOR: Actor = { who: 'Sam T.', role: 'office', source: 'office' }
 
+/**
+ * The developer's one-off seed load (catch-up Phase 42; US-13.4.3): office
+ * shaped, so a loaded row passes exactly the guards a hand-made one does, and
+ * named so nobody reads it as a person. The Seed load and Go-live load views
+ * and their demo triggers act as it; the office never loads master data.
+ */
+export const SEED_LOAD_ACTOR: Actor = { who: 'Developer seed load (simulated)', role: 'office', source: 'office' }
+
 export type OfficeUserId = 'kirsty' | 'sam'
 
 /** The office users the harness bar's Switch office user toggles between. */

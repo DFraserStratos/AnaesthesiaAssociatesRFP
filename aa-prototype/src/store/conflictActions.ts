@@ -11,6 +11,7 @@
  */
 
 import { CONFLICT_REASONS, conflictFactsFor, describeConflict, expectedConflicts, holidayIndex, liveClears } from '../domain/conflicts'
+import { closureSourcesOf } from '../domain/holidays'
 import type { ConflictClear, List } from '../domain/types'
 import { clockISO, mutate, ok, refuse, type Actor, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
@@ -19,7 +20,7 @@ import { conflictLookups } from './conflictReconcile'
 function expectedFor(state: AppState, list: List) {
   return expectedConflicts(
     list,
-    conflictFactsFor(list, { holidays: holidayIndex(state.masters.holidays) }),
+    conflictFactsFor(list, { holidays: holidayIndex(closureSourcesOf(state.masters)) }),
   )
 }
 

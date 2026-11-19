@@ -35,6 +35,8 @@ const OFFICE_CONTACT_FILES = new Set([
   'domain/surgeonContacts.ts',
   'domain/types.ts',
   'store/surgeonActions.ts',
+  // The seed load's surgeons sheet (catch-up Phase 42) writes the list's practice emails and PA names as office contacts; it reads no address.
+  'store/masterLoadSpecs.ts',
   'apps/admin/flows/SurgeonEditSheet.tsx',
   'apps/admin/screens/SurgeonProfile.tsx',
   'shared/audit/fieldLabels.ts',

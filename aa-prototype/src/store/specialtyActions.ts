@@ -9,28 +9,35 @@
  */
 
 import { specialtyNameRefusal, specialtyUsage, specialtyUsageText } from '../domain/specialties'
-import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
-import type { AppStoreApi } from './appStore'
+import { allocateId, mutate, ok, refuse, type Actor, type Outcome } from './mutate'
+import type { AppState, AppStoreApi } from './appStore'
+import { slicesOf, withSource, type Plan, type PlanSource } from './masterPlanners'
+
+/** Plan a specialty's create (the seed load folds the same planner). */
+export function planSpecialtyCreate(state: AppState, actor: Actor, fields: { name: string }, source?: PlanSource): Outcome<Plan> {
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can change the specialties list.')
+  const refused = specialtyNameRefusal(fields.name, state.masters.specialties)
+  if (refused !== null) return refuse(refused.code, refused.message)
+  const trimmed = fields.name.trim()
+  const alloc = allocateId(state.counters, 'specialty')
+  const id = alloc.id
+  return ok({
+    id,
+    next: {
+      ...slicesOf(state),
+      masters: { ...state.masters, specialties: { ...state.masters.specialties, [id]: { id, name: trimmed } } },
+      counters: alloc.counters,
+    },
+    metas: withSource([{ entityType: 'specialty', entityId: id, action: 'specialty.create', after: { name: trimmed }, stampBookingId: null }], source),
+  })
+}
 
 /** Add a specialty. Audited `specialty.create`. */
 export function createSpecialty(api: AppStoreApi, actor: Actor, name: string): Outcome<{ id: string }> {
-  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can change the specialties list.')
-  const state = api.getState()
-  const refused = specialtyNameRefusal(name, state.masters.specialties)
-  if (refused !== null) return refuse(refused.code, refused.message)
-  const trimmed = name.trim()
-  const metas: MutationMeta[] = []
-  let id = ''
-  mutate(api, actor, metas, (s) => {
-    const alloc = allocateId(s.counters, 'specialty')
-    id = alloc.id
-    metas.push({ entityType: 'specialty', entityId: id, action: 'specialty.create', after: { name: trimmed }, stampBookingId: null })
-    return {
-      masters: { ...s.masters, specialties: { ...s.masters.specialties, [id]: { id, name: trimmed } } },
-      counters: alloc.counters,
-    }
-  })
-  return ok({ id })
+  const plan = planSpecialtyCreate(api.getState(), actor, { name })
+  if (!plan.ok) return plan
+  mutate(api, actor, plan.value.metas, () => plan.value.next)
+  return ok({ id: plan.value.id })
 }
 
 /** Rename a specialty. Audited `specialty.update`, the name before and after. */

@@ -7,6 +7,7 @@ import type { CompletionContext } from '../domain/billing/completion'
  * every snapshot.
  */
 
+import { closuresAt, closuresIndex, closureSourcesOf } from '../domain/holidays'
 import { rvgCodeToFill } from '../domain/billing/rvgDetail'
 import { procedureStackView, type ProcedureStackView, type StackSurface } from '../domain/billing/procedureStack'
 import { isOpenPriceFallback } from '../domain/billing/fallbacks'
@@ -31,6 +32,7 @@ import type {
   RecurringBooking,
   ConflictClear,
   HospitalHoliday,
+  PublicHoliday,
   ListConflict,
   CounterpartyRef,
   DayNote,
@@ -1895,6 +1897,11 @@ export function openConflictCount(state: Pick<AppState, 'schedule' | 'masters' |
 export interface HospitalDay {
   dateISO: string
   closures: HospitalHoliday[]
+  /**
+   * The master public holidays closing the hospital that day (catch-up Phase
+   * 42), read through `closuresFor`: read-only on the hospital's calendar.
+   */
+  publicClosures: PublicHoliday[]
   /** Lists at the hospital that day (backdrop history excluded). */
   listCount: number
   /** How many of them carry a live closure conflict (hospital closed). */
@@ -1915,12 +1922,17 @@ export function hospitalMonth(state: Pick<AppState, 'schedule' | 'masters'>, hos
     byDate.set(l.dateISO, e)
   }
   const holidays = Object.values(state.masters.holidays).filter((h) => h.hospitalId === hospitalId)
+  const index = closuresIndex(closureSourcesOf(state.masters))
   for (let d = 1; d <= days; d++) {
     const dateISO = `${monthISO}-${String(d).padStart(2, '0')}`
     const e = byDate.get(dateISO)
+    const publicClosures = closuresAt(index, dateISO, hospitalId).flatMap((c) =>
+      c.source === 'public' && state.masters.publicHolidays[c.publicHolidayId] !== undefined ? [state.masters.publicHolidays[c.publicHolidayId]!] : [],
+    )
     out.push({
       dateISO,
       closures: holidays.filter((h) => h.dateISO === dateISO).sort((a, b) => a.id.localeCompare(b.id)),
+      publicClosures,
       listCount: e?.lists ?? 0,
       conflictedCount: e?.conflicted ?? 0,
     })

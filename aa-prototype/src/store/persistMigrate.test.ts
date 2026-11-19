@@ -161,7 +161,7 @@ describe('conflicts from facts and recurring bookings (catch-up Phase 30)', () =
     expect(flagged.length).toBeGreaterThan(0)
     for (const c of flagged) {
       expect('message' in c).toBe(false)
-      expect(c.cause).toMatch(/^(holiday|availability):/)
+      expect(c.cause).toMatch(/^(holiday|publicHoliday|availability):/)
     }
   })
 })
@@ -1073,5 +1073,26 @@ describe('the Wave 3 join (v64: Lane A 38 at v63 joined with Lane B 35 at v62)',
     const s = createAppStore({ persisted: true }).getState()
     expect(s.masters.emailTemplates).toEqual(freshAppState().masters.emailTemplates)
     expect('dashboards' in s).toBe(false)
+  })
+})
+
+describe('catch-up Phase 42 (v65): the master public-holiday calendar and the masterLoads slice', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v64 store holding per-hospital Labour Day rows and no public holidays, and reseeds the calendar', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(65)
+    const fresh = freshAppState()
+    const { publicHolidays: _p, ...masters } = fresh.masters
+    const holidays = { ...masters.holidays, HH001: { id: 'HH001', hospitalId: 'H-STG', dateISO: '2026-10-26', name: 'Labour Day' } }
+    const { masterLoads: _m, ...rest } = fresh
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...rest, masters: { ...masters, holidays } }, version: 64 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.keys(s.masters.publicHolidays).sort()).toEqual(['PH001', 'PH002', 'PH003', 'PH004', 'PH005', 'PH006', 'PH007'])
+    expect(s.masters.holidays['HH001']).toBeUndefined()
+    expect(s.masterLoads).toEqual({ loads: {}, goLive: null })
   })
 })

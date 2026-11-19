@@ -21,6 +21,7 @@ import type {
   DemoSettings,
   Hospital,
   HospitalHoliday,
+  PublicHoliday,
   Insurer,
   IsoDate,
   List,
@@ -69,7 +70,7 @@ import { SPECIALTIES } from './specialties'
 import { FUNDING_TAGS } from './fundingTags'
 import { PUBLIC_SESSION_PATTERNS, RECURRING_BOOKINGS } from './recurringBookings'
 import { publicPatternsForFirstPass, rehomePublicLists } from './publicSessions'
-import { HOSPITAL_HOLIDAYS, SEED_LEAVE } from './availabilityAndHolidays'
+import { HOSPITAL_HOLIDAYS, PUBLIC_HOLIDAYS, SEED_LEAVE } from './availabilityAndHolidays'
 import { PAT, SEED_PAYER_COUNTER, buildPatients } from './patients'
 import { DAY_NOTES, DAY_NOTE_NEXT } from './dayNotes'
 import { RVG_GROUPS } from './rvgGroups'
@@ -107,7 +108,7 @@ export {
 } from './canvas'
 export { RECORDED_WINDOW } from './recordedWindow'
 export { SEED_DRAFT_LIST_IDS, SEED_DRAFT_LISTS, SEED_CLASH_RUN_ISO, SEED_CLASH_BY, CANNED_DRAFT_LIST_REQUESTS, CANNED_DAY_DRAFT_LISTS } from './draftLists'
-export { SEED_LEAVE } from './availabilityAndHolidays'
+export { PUBLIC_HOLIDAYS, SEED_LEAVE } from './availabilityAndHolidays'
 export { slotRng, hashStringToSeed } from './slotHash'
 export { ANAE, HOSP, INS, SURG, ORG, ANAESTHETISTS, SEED_SLOT_STATUSES } from './cast'
 
@@ -165,6 +166,8 @@ export interface SeedMasters {
   slotStatuses: Record<string, SlotStatus>
   recurringBookings: Record<string, RecurringBooking>
   holidays: Record<string, HospitalHoliday>
+  /** The master public-holiday calendar (catch-up Phase 42; DM-38): closes every hospital not listed open. */
+  publicHolidays: Record<string, PublicHoliday>
   patients: Record<string, Patient>
   /** The update email templates, one per kind of change at seed (catch-up Phase 35; US-02.3.4). */
   emailTemplates: Record<string, EmailTemplate>
@@ -578,7 +581,7 @@ function buildSeedInternal(): SeedBuild {
   })
   // Conflicts come from facts, by the same rule `mutate()` runs (catch-up Phase 30).
   // Stamped at the seed clock (08:00), as a live mutation at that moment would be.
-  const reconciled = reconcileAllConflicts(lists, { holidays: HOSPITAL_HOLIDAYS }, `${DEMO_TODAY}T08:00:00`)
+  const reconciled = reconcileAllConflicts(lists, { holidays: HOSPITAL_HOLIDAYS, publicHolidays: PUBLIC_HOLIDAYS }, `${DEMO_TODAY}T08:00:00`)
   for (const [id, l] of Object.entries(reconciled)) lists[id] = l
   const sicknessSlot = slots[slotIdFor(SEED_SICKNESS.anaesthetistId, SEED_SICKNESS.dateISO, SEED_SICKNESS.session)]!
   const audit = buildSeedAudit({
@@ -646,6 +649,7 @@ function buildSeedInternal(): SeedBuild {
       slotStatuses,
       recurringBookings: byId(RECURRING_BOOKINGS, (p) => p.id),
       holidays: byId(HOSPITAL_HOLIDAYS, (h) => h.id),
+      publicHolidays: byId(PUBLIC_HOLIDAYS.map((p) => ({ ...p, openHospitalIds: [...p.openHospitalIds] })), (p) => p.id),
       patients: patientsRec,
       // Catch-up Phase 35: added after everything else, no RNG draws.
       emailTemplates: byId(SEED_EMAIL_TEMPLATES.map((t) => ({ ...t })), (t) => t.id),

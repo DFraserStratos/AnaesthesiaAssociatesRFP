@@ -36,6 +36,66 @@ import { partyRefusal, suggestCodePrefix } from '../domain/billing/parties'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { originForNewList } from '../domain/lists/listOrigin'
+import { partyRenameFollowing } from './masterLifecycleActions'
+import { slicesOf, withSource, type Plan, type PlanSource } from './masterPlanners'
+import { hospitalFieldsRefusal, hospitalHolidayRefusal } from '../domain/masterValidation'
+
+/** Plan a hospital's create with its hospital Party (the seed load folds the same planner). */
+export function planHospitalCreate(
+  state: AppState,
+  actor: Actor,
+  fields: { name: string; contactEmail?: string },
+  source?: PlanSource,
+): Outcome<Plan & { hospital: Hospital; party: Party }> {
+  if (actor.role !== 'office') {
+    return refuse('officeOnly', 'Only the office can add a hospital.')
+  }
+  const invalid = hospitalFieldsRefusal(fields, state.masters.hospitals)
+  if (invalid !== null) return refuse(invalid.code, invalid.message)
+  const trimmed = fields.name.trim()
+  const email = fields.contactEmail?.trim() ?? ''
+
+  // Its hospital Party, bare until a Contract bills it (A43), through the one Party rule source.
+  const hospitalAlloc = allocateId(state.counters, 'hospital')
+  const partyAlloc = allocateId(hospitalAlloc.counters, 'party')
+  const hospital: Hospital = { id: hospitalAlloc.id, name: trimmed, locationType: 'hospital', ...(email !== '' ? { contactEmail: email } : {}) }
+  const party: Party = {
+    id: partyAlloc.id,
+    kind: 'hospital',
+    name: trimmed,
+    codePrefix: suggestCodePrefix(trimmed, new Set(Object.values(state.masters.parties).map((p) => p.codePrefix))),
+    hospitalId: hospital.id,
+    ...(email !== '' ? { email } : {}),
+  }
+  const refused = partyRefusal(party, {
+    parties: state.masters.parties,
+    hospitals: { ...state.masters.hospitals, [hospital.id]: hospital },
+    holdsContracts: false,
+    billedByAContract: false,
+  })
+  if (refused !== null) return refuse(refused.code, refused.message)
+  return ok({
+    id: hospital.id,
+    hospital,
+    party,
+    next: {
+      ...slicesOf(state),
+      masters: {
+        ...state.masters,
+        hospitals: { ...state.masters.hospitals, [hospital.id]: hospital },
+        parties: { ...state.masters.parties, [party.id]: party },
+      },
+      counters: partyAlloc.counters,
+    },
+    metas: withSource(
+      [
+        { entityType: 'hospital', entityId: hospital.id, action: 'hospital.create', after: { name: trimmed, ...(email !== '' ? { contactEmail: email } : {}) } },
+        { entityType: 'party', entityId: party.id, action: 'party.create', after: { ...party } },
+      ],
+      source,
+    ),
+  })
+}
 
 export function createHospital(
   api: AppStoreApi,
@@ -43,64 +103,10 @@ export function createHospital(
   name: string,
   contactEmail?: string,
 ): Outcome<{ hospital: Hospital; party: Party }> {
-  if (actor.role !== 'office') {
-    return refuse('officeOnly', 'Only the office can add a hospital.')
-  }
-  const trimmed = name.trim()
-  if (trimmed === '') return refuse('nameRequired', 'A hospital name is required.')
-  const state = api.getState()
-  if (Object.values(state.masters.hospitals).some((h) => h.name === trimmed)) {
-    return refuse('duplicateName', 'A hospital with that name already exists.')
-  }
-  const email = contactEmail?.trim() ?? ''
-  if (email !== '' && !isPlausibleEmail(email)) {
-    return refuse('invalidEmail', 'That contact email does not look right. Use the form name@example.co.nz.')
-  }
-
-  // Its hospital Party, bare until a Contract bills it (A43), through the one Party rule source.
-  const hospitalAlloc = allocateId(state.counters, 'hospital')
-  const partyAlloc = allocateId(hospitalAlloc.counters, 'party')
-  const draftHospital: Hospital = { id: hospitalAlloc.id, name: trimmed, locationType: 'hospital', ...(email !== '' ? { contactEmail: email } : {}) }
-  const draftParty: Party = {
-    id: partyAlloc.id,
-    kind: 'hospital',
-    name: trimmed,
-    codePrefix: suggestCodePrefix(trimmed, new Set(Object.values(state.masters.parties).map((p) => p.codePrefix))),
-    hospitalId: draftHospital.id,
-    ...(email !== '' ? { email } : {}),
-  }
-  const refused = partyRefusal(draftParty, {
-    parties: state.masters.parties,
-    hospitals: { ...state.masters.hospitals, [draftHospital.id]: draftHospital },
-    holdsContracts: false,
-    billedByAContract: false,
-  })
-  if (refused !== null) return refuse(refused.code, refused.message)
-
-  let hospital: Hospital | undefined
-  let party: Party | undefined
-  const metas: MutationMeta[] = []
-  mutate(api, actor, metas, (s) => {
-    hospital = draftHospital
-    party = draftParty
-    metas.push(
-      { entityType: 'hospital', entityId: hospital.id, action: 'hospital.create', after: { name: trimmed, ...(email !== '' ? { contactEmail: email } : {}) } },
-      { entityType: 'party', entityId: party.id, action: 'party.create', after: { ...party } },
-    )
-    return {
-      masters: {
-        ...s.masters,
-        hospitals: { ...s.masters.hospitals, [hospital.id]: hospital },
-        parties: { ...s.masters.parties, [party.id]: party },
-      },
-      counters: partyAlloc.counters,
-    }
-  })
-
-  if (hospital === undefined || party === undefined) {
-    return refuse('createFailed', 'The hospital could not be created.')
-  }
-  return ok({ hospital, party })
+  const plan = planHospitalCreate(api.getState(), actor, { name, ...(contactEmail !== undefined ? { contactEmail } : {}) })
+  if (!plan.ok) return plan
+  mutate(api, actor, plan.value.metas, () => plan.value.next)
+  return ok({ hospital: plan.value.hospital, party: plan.value.party })
 }
 
 /** Editable hospital fields (catch-up Phase 17). Blank `contactEmail` clears it. */
@@ -145,9 +151,9 @@ export function editHospital(api: AppStoreApi, actor: Actor, hospitalId: Hospita
   }
   // Only the fields that changed are audited; a save that changes nothing writes nothing.
   if (Object.keys(clean).length === 0) return ok(undefined)
-  mutate(
-    api,
-    actor,
+  // A rename carries the hospital's Party along while its short name still matches (catch-up Phase 42).
+  const follow = partyRenameFollowing(state.masters, { kind: 'hospital', hospitalId }, existing.name, next.name)
+  const metas: MutationMeta[] = [
     {
       entityType: 'hospital',
       entityId: hospitalId,
@@ -156,8 +162,15 @@ export function editHospital(api: AppStoreApi, actor: Actor, hospitalId: Hospita
       after: clean,
       stampBookingId: null,
     },
-    (s) => ({ masters: { ...s.masters, hospitals: { ...s.masters.hospitals, [hospitalId]: next } } }),
-  )
+    ...(follow !== null ? [follow.meta] : []),
+  ]
+  mutate(api, actor, metas, (s) => ({
+    masters: {
+      ...s.masters,
+      hospitals: { ...s.masters.hospitals, [hospitalId]: next },
+      ...(follow !== null ? { parties: { ...s.masters.parties, [follow.party.id]: follow.party } } : {}),
+    },
+  }))
   return ok(undefined)
 }
 
@@ -192,7 +205,7 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
  * required, two digits then four letters, and unique across practitioners
  * whichever record is saved first (Phase 17). Returns it normalised.
  */
-function checkAnaesthetistHpiCpn(state: ReturnType<AppStoreApi['getState']>, raw: string, anaesthetistId?: string): Outcome<string> {
+function checkAnaesthetistHpiCpn(state: Pick<AppState, 'masters'>, raw: string, anaesthetistId?: string): Outcome<string> {
   const hpiId = normaliseHpiCpn(raw)
   if (hpiId === '') return refuse('hpiCpnRequired', ANAESTHETIST_HPI_CPN_REQUIRED)
   if (!isPlausibleHpiCpn(hpiId)) return refuse('invalidHpiCpn', HPI_CPN_INVALID)
@@ -427,22 +440,14 @@ export interface NewAnaesthetistFields {
   gstNumber?: string
 }
 
-/**
- * Add an anaesthetist AND create their Slots (catch-up Phase 28; US-01.1.3:
- * "creates their Slots from their start date"): an AM and a PM Slot, all free,
- * for every horizon day from the later of the start date and the demo clock's
- * today, through the one generator (a new anaesthetist has no recurring
- * booking, so nothing is projected). A start date beyond the horizon end
- * creates none yet: the roll-forward creates them when the horizon reaches it.
- * Audits `anaesthetist.create` + one `canvas.generate` summary, one commit.
- */
-export function addAnaesthetist(
-  api: AppStoreApi,
+/** Plan an anaesthetist's create with their Slots (the seed load folds the same planner). */
+export function planAnaesthetistCreate(
+  state: AppState,
   actor: Actor,
   fields: NewAnaesthetistFields,
-): Outcome<{ registrationNumber: string; generatedSlots: number; generatedLists: number; fromISO: string }> {
+  source?: PlanSource,
+): Outcome<Plan & { generatedSlots: number; generatedLists: number; fromISO: string }> {
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can add an anaesthetist.')
-  const state = api.getState()
   const reg = fields.registrationNumber.trim()
   if (reg === '') return refuse('registrationRequired', 'A registration number is required.')
   if (fields.name.trim() === '') return refuse('nameRequired', 'A name is required.')
@@ -491,15 +496,39 @@ export function addAnaesthetist(
       after: { slots: generated.slots.length, lists: generated.lists.length, fromISO, toISO },
     },
   ]
-  mutate(api, actor, metas, (s) => {
-    const applied = applyGenerated(s, generated, actor.who, metas)
-    return {
-      masters: { ...s.masters, anaesthetists: { ...s.masters.anaesthetists, [reg]: anaesthetist } },
+  const applied = applyGenerated(state, generated, actor.who, metas)
+  return ok({
+    id: reg,
+    generatedSlots: generated.slots.length,
+    generatedLists: generated.lists.length,
+    fromISO,
+    next: {
+      masters: { ...state.masters, anaesthetists: { ...state.masters.anaesthetists, [reg]: anaesthetist } },
       schedule: applied.schedule,
       counters: applied.counters,
-    }
+    },
+    metas: withSource(metas, source),
   })
-  return ok({ registrationNumber: reg, generatedSlots: generated.slots.length, generatedLists: generated.lists.length, fromISO })
+}
+
+/**
+ * Add an anaesthetist AND create their Slots (catch-up Phase 28; US-01.1.3:
+ * "creates their Slots from their start date"): an AM and a PM Slot, all free,
+ * for every horizon day from the later of the start date and the demo clock's
+ * today, through the one generator (a new anaesthetist has no recurring
+ * booking, so nothing is projected). A start date beyond the horizon end
+ * creates none yet: the roll-forward creates them when the horizon reaches it.
+ * Audits `anaesthetist.create` + one `canvas.generate` summary, one commit.
+ */
+export function addAnaesthetist(
+  api: AppStoreApi,
+  actor: Actor,
+  fields: NewAnaesthetistFields,
+): Outcome<{ registrationNumber: string; generatedSlots: number; generatedLists: number; fromISO: string }> {
+  const plan = planAnaesthetistCreate(api.getState(), actor, fields)
+  if (!plan.ok) return plan
+  mutate(api, actor, plan.value.metas, () => plan.value.next)
+  return ok({ registrationNumber: plan.value.id, generatedSlots: plan.value.generatedSlots, generatedLists: plan.value.generatedLists, fromISO: plan.value.fromISO })
 }
 
 // ---------------------------------------------------------------------------
@@ -513,6 +542,34 @@ export function addAnaesthetist(
  * comes from its result (catch-up Phase 30). Future rolled days pick the
  * holiday up the same way.
  */
+/** Plan a hospital holiday's create (the seed load folds the same planner). */
+export function planHospitalHolidayCreate(
+  state: AppState,
+  actor: Actor,
+  fields: { hospitalId: string; dateISO: string; name: string },
+  source?: PlanSource,
+): Outcome<Plan> {
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can add a hospital holiday.')
+  const invalid = hospitalHolidayRefusal(fields, state.masters)
+  if (invalid !== null) return refuse(invalid.code, invalid.message)
+  const { hospitalId, dateISO } = fields
+  const trimmedName = fields.name.trim()
+  const alloc = allocateId(state.counters, 'holiday')
+  const holiday: HospitalHoliday = { id: alloc.id, hospitalId, dateISO, name: trimmedName }
+  return ok({
+    id: alloc.id,
+    next: {
+      ...slicesOf(state),
+      masters: { ...state.masters, holidays: { ...state.masters.holidays, [alloc.id]: holiday } },
+      counters: alloc.counters,
+    },
+    metas: withSource(
+      [{ entityType: 'holiday', entityId: alloc.id, action: 'holiday.create', after: { hospitalId, dateISO, name: trimmedName }, stampBookingId: null }],
+      source,
+    ),
+  })
+}
+
 export function addHospitalHoliday(
   api: AppStoreApi,
   actor: Actor,
@@ -520,35 +577,10 @@ export function addHospitalHoliday(
   dateISO: string,
   name: string,
 ): Outcome<{ holidayId: string; flaggedListCount: number }> {
-  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can add a hospital holiday.')
-  const state = api.getState()
-  if (state.masters.hospitals[hospitalId] === undefined) return refuse('notFound', 'Hospital not found.')
-  const trimmedName = name.trim()
-  if (trimmedName === '') return refuse('nameRequired', 'A holiday name is required.')
-  if (!ISO_DATE.test(dateISO)) return refuse('dateRequired', 'A valid date is required.')
-  if (Object.values(state.masters.holidays).some((h) => h.hospitalId === hospitalId && h.dateISO === dateISO)) {
-    return refuse('duplicateHoliday', 'That hospital already has a holiday recorded on that date.')
-  }
-
-  const metas: MutationMeta[] = []
-  let holidayId = ''
-  const result = mutate(api, actor, metas, (s) => {
-    const alloc = allocateId(s.counters, 'holiday')
-    holidayId = alloc.id
-    const holiday: HospitalHoliday = { id: alloc.id, hospitalId, dateISO, name: trimmedName }
-    metas.push({
-      entityType: 'holiday',
-      entityId: alloc.id,
-      action: 'holiday.create',
-      after: { hospitalId, dateISO, name: trimmedName },
-      stampBookingId: null,
-    })
-    return {
-      masters: { ...s.masters, holidays: { ...s.masters.holidays, [alloc.id]: holiday } },
-      counters: alloc.counters,
-    }
-  })
-  return ok({ holidayId, flaggedListCount: result.conflictsRaised.length })
+  const plan = planHospitalHolidayCreate(api.getState(), actor, { hospitalId, dateISO, name })
+  if (!plan.ok) return plan
+  const result = mutate(api, actor, plan.value.metas, () => plan.value.next)
+  return ok({ holidayId: plan.value.id, flaggedListCount: result.conflictsRaised.length })
 }
 
 /**
@@ -934,7 +966,7 @@ export function editRecurringBooking(
   // The end-in-past check applies only to a date this edit sets: a row that has
   // already ended can still be edited (and an unchanged past end is no new claim).
   const endChanged = 'effectiveToISO' in patch && patch.effectiveToISO !== existing.effectiveToISO
-  const invalid = pairingRefusal(next, state.masters, 'pairingRequired') ?? recurringBookingRefusal(next) ?? rangeRefusal(endChanged ? next : { ...next, effectiveToISO: undefined }, state.clock.todayISO) ?? (next.effectiveFromISO !== undefined && next.effectiveToISO !== undefined && next.effectiveToISO < next.effectiveFromISO ? refuse('invalidRange', 'The last date must be on or after the first date.') : null)
+  const invalid = pairingRefusal(next, state.masters, 'pairingRequired', existing) ?? recurringBookingRefusal(next) ?? rangeRefusal(endChanged ? next : { ...next, effectiveToISO: undefined }, state.clock.todayISO) ?? (next.effectiveFromISO !== undefined && next.effectiveToISO !== undefined && next.effectiveToISO < next.effectiveFromISO ? refuse('invalidRange', 'The last date must be on or after the first date.') : null)
   if (invalid !== null) return invalid
   const metas: MutationMeta[] = []
   // Only a changed pairing records the acknowledgement (a notes-only edit

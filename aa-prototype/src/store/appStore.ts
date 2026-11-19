@@ -15,6 +15,7 @@
  * whenever the seed shape or content changes.
  */
 
+import { emptyMasterLoadsSlice, type MasterLoadsSlice } from '../domain/masterLoad/types'
 import { create, type StateCreator, type StoreApi, type UseBoundStore } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { resilientLocalStorage } from './persistStorage'
@@ -169,6 +170,8 @@ export interface AppState extends SeedState {
   xero: XeroSlice
   integrations: IntegrationsSlice
   intake: IntakeSlice
+  /** The seed load's checked sheets and the go-live batch (catch-up Phase 42; US-13.4.3): work items, not master data. */
+  masterLoads: MasterLoadsSlice
   shell: ShellSlice
 }
 
@@ -407,8 +410,11 @@ export const PERSIST_KEY = 'aa-demo'
  *  v62: the Wave 3 sync of 34 into lane/a (Phase 37 and Phase 34 both took v61). Reseeds on load.
  *  v63: catch-up Phase 38: seeded dashboard figures removed (`dashboards`, the Productivity and Leave panels); ageing
  *  buckets gone. Reseeds on load.
- *  v64: Wave 3 join, Lane A's 38 (v63, holding 37 and the 34 sync) joined with Lane B's 35 (v62): one past the higher. */
-export const PERSIST_VERSION = 64
+ *  v64: Wave 3 join, Lane A's 38 (v63, holding 37 and the 34 sync) joined with Lane B's 35 (v62): one past the higher.
+ *  v65: catch-up Phase 42: master public-holiday calendar replaces per-hospital statutory rows (`masters.publicHolidays`
+ *  PH001 to PH007; Labour Day and Canterbury Anniversary Day leave `masters.holidays`); retire fields on masters
+ *  (hospitals, surgeons, groups, AA modifiers); `masterLoads` slice. Reseeds on load. */
+export const PERSIST_VERSION = 65
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {} }
@@ -466,6 +472,7 @@ export function freshAppState(): AppState {
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
     intake: seededIntakeSlice(),
+    masterLoads: emptyMasterLoadsSlice(),
     shell: { currentApp: 'mobile', suggestionSeq: 0 },
   }
   // Every seeded AUTHORISED List is locked (catch-up Phase 25); its pairs carry the same payee from the seed.

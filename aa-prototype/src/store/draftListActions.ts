@@ -207,7 +207,7 @@ function assignDraftListUnscoped(
   if (anaesthetist === undefined) return refuse('anaesthetistNotFound', 'Anaesthetist not found.')
   if (!anaesthetist.active) return refuse('anaesthetistInactive', `${drName(state.masters, anaesthetist.registrationNumber)} is not active.`)
   if (list.dateISO < state.clock.todayISO) return refuse('datePassed', "This Draft List's day has passed. Change its date or remove it.")
-  const pairing = pairingRefusal(list, state.masters)
+  const pairing = pairingRefusal(list, state.masters, undefined, list)
   if (pairing !== null) return pairing
   const slot = slotFor(state, input.anaesthetistId, list.dateISO, list.session)
   if (slot === undefined) {
