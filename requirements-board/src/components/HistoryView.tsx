@@ -16,13 +16,23 @@ import { ArtifactRefName, ItemName, RecordName, StatusLabel } from './bits.tsx'
 
 export const TEXT_LABEL: Record<string, string> = { description: 'Description', acceptance: 'Acceptance criteria', technical: 'Technical discussion', notes: 'Notes', source: 'Diagram source' }
 
+/** A card's screenshot versions as one string (`src=version`, in path order): what its timeline re-reads on. */
+export function shotVersionsOf(assets: Record<string, string>, id: string): string {
+  const prefix = `assets/${id}/`
+  const out: string[] = []
+  for (const src in assets) if (src.startsWith(prefix)) out.push(`${src}=${assets[src]}`)
+  return out.sort().join('\n')
+}
+
 export function HistoryView({ item, index }: { item: Item; index: Index }) {
   const rev = useCatalogue((s) => s.items[item.id]?.rev)
   const pos = useCatalogue((s) => JSON.stringify(s.layout.positions[item.id] ?? null))
+  // The card's screenshot versions (D-10): a re-capture changes one, other cards' leave this alone.
+  const shots = useCatalogue((s) => shotVersionsOf(s.assets, item.id))
   const [entries, setEntries] = useState<TimelineEntry[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Live, like the rest of the board: a save, an agent's edit or a drag adds its entry while open.
+  // Live, like the rest of the board: a save, an agent's edit, a drag or a re-captured screenshot adds its entry while open.
   useEffect(() => {
     let live = true
     api
@@ -32,7 +42,7 @@ export function HistoryView({ item, index }: { item: Item; index: Index }) {
     return () => {
       live = false
     }
-  }, [item.id, rev, pos])
+  }, [item.id, rev, pos, shots])
 
   const changes = entries?.filter((e) => e.type === 'change').length ?? 0
   return (
@@ -86,15 +96,16 @@ export type ChangeEntry = Extract<TimelineEntry, { type: 'change' }>
  */
 export function HistoryTimeline({ entries, children }: { entries: TimelineEntry[]; children: (e: ChangeEntry) => ReactNode }) {
   const firstUncommitted = entries.findIndex((e) => e.type === 'change' && e.uncommitted)
+  const keys = useMemo(() => entryKeys(entries), [entries])
   let day = ''
   return (
     <ol className="hist-list">
       {entries.map((e, i) => {
         const d = dayLabel(e.at)
-        const head = d !== day ? <li className="hist-day" key={`d${i}`}>{(day = d)}</li> : null
+        const head = d !== day ? <li className="hist-day" key={`d:${d}`}>{(day = d)}</li> : null
         if (e.type === 'commit') {
           return (
-            <Fragment key={i}>
+            <Fragment key={keys[i]}>
               {head}
               <li className="hist-commit" title={`${e.commit.sha.slice(0, 7)} by ${e.commit.author}`}>
                 <time className="hist-time">{timeLabel(e.at)}</time>
@@ -106,7 +117,7 @@ export function HistoryTimeline({ entries, children }: { entries: TimelineEntry[
           )
         }
         return (
-          <Fragment key={i}>
+          <Fragment key={keys[i]}>
             {head}
             {i === firstUncommitted && <li className="hist-pending-label">Not committed yet</li>}
             <li className={`hist-entry src-${e.source}${e.uncommitted ? ' uncommitted' : ''}`}>
@@ -126,6 +137,21 @@ export function HistoryTimeline({ entries, children }: { entries: TimelineEntry[
       })}
     </ol>
   )
+}
+
+/**
+ * Each entry's key, from what it is (type, time, commit by its full name, source and kind) and a count
+ * for repeats, so an entry's open disclosure and "Not kept" stay with it when a refresh adds entries
+ * round it (FINDINGS R-95). Works for commit names of either width.
+ */
+export function entryKeys(entries: TimelineEntry[]): string[] {
+  const seen = new Map<string, number>()
+  return entries.map((e) => {
+    const base = e.type === 'commit' ? `c|${e.at}|${e.commit.sha}` : `e|${e.at}|${e.commit?.sha ?? ''}|${e.source}|${e.kind}`
+    const n = seen.get(base) ?? 0
+    seen.set(base, n + 1)
+    return n ? `${base}#${n}` : base
+  })
 }
 
 export function sourceLabel(e: Extract<TimelineEntry, { type: 'change' }>): ReactNode {
@@ -345,10 +371,11 @@ export function Counts({ add, del, unit }: { add: number; del: number; unit?: st
   )
 }
 
-/** Changed lines with one line of context; longer unchanged runs fold to a count. */
+/** Changed lines with one line of context; longer unchanged runs fold to a count. A text's first and last lines are context only beside a change. */
 export function Diff({ lines }: { lines: DiffLine[] }) {
   const rows = useMemo(() => {
-    const near = (i: number) => lines[i - 1]?.op !== 'same' || lines[i + 1]?.op !== 'same'
+    const changed = (i: number) => lines[i] !== undefined && lines[i].op !== 'same'
+    const near = (i: number) => changed(i - 1) || changed(i + 1)
     const out: (DiffLine | { fold: number })[] = []
     lines.forEach((l, i) => {
       if (l.op !== 'same' || near(i)) out.push(l)

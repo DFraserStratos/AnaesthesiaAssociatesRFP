@@ -60,21 +60,21 @@ function DocumentRows({ rec, tag }: { rec: ArtifactDiff; tag: string }) {
   return <TextRows before={loaded.value[0]} after={loaded.value[1]} expanded={false} tag={tag} />
 }
 
-/** The file rows of an edited artifact, its name on the seam: the pictures, or the document's changed paragraphs. */
+/**
+ * The file rows of an edited artifact, its name on the seam: the pictures, or the document's changed
+ * paragraphs. A mermaid diagram's two drawings say whether the drawing changed. A file that changed
+ * format shows each side as what it is: a Markdown side typeset (its opening), the other its picture.
+ */
 export function FileRows({ rec, changed }: { rec: ArtifactDiff; changed: boolean }) {
   const format = formatOf(rec)
-  const tag = format === 'pdf' && changed ? 'File replaced' : changed ? 'File' : 'File, unchanged'
-  const markdown = formatOf(rec, 'before') === 'markdown' && formatOf(rec, 'after') === 'markdown'
+  const before = formatOf(rec, 'before')
+  const after = formatOf(rec, 'after')
+  const tag = format === 'mermaid' ? (changed ? 'Drawing changed' : 'Drawing, unchanged') : format === 'pdf' && changed ? 'File replaced' : changed ? 'File' : 'File, unchanged'
+  const markdown = before === 'markdown' && after === 'markdown'
   if (markdown && changed) return <DocumentRows rec={rec} tag={tag} />
   if (markdown || (format === 'pdf' && !changed)) return <Pair op="same" tag={tag} before={<Empty>Unchanged</Empty>} after={<Empty>Unchanged</Empty>} />
-  return (
-    <Pair
-      op={changed ? 'edited' : 'same'}
-      tag={tag}
-      before={<Picture rec={rec} side="before" format={formatOf(rec, 'before')} />}
-      after={<Picture rec={rec} side="after" format={formatOf(rec, 'after')} />}
-    />
-  )
+  const side = (s: Side, f: ArtifactFormat | null) => (f === 'markdown' ? <OneDocument rec={rec} side={s} /> : <Picture rec={rec} side={s} format={f} />)
+  return <Pair op={changed ? 'edited' : 'same'} tag={tag} before={side('before', before)} after={side('after', after)} />
 }
 
 /** One side's file, for an added or removed artifact. */

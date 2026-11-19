@@ -1,6 +1,6 @@
 # Phase B09: Diffs and timelines show what really changed
 
-**Status:** PLANNED
+**Status:** COMPLETE (2026-11-20, board 1.21.0; see PROGRESS.md)
 
 **Requirements:** R-25, R-32, R-87, R-88, R-89, R-90, R-91, R-92, R-93, R-94, R-95, R-96, R-97
 ([FINDINGS.md](../../FINDINGS.md): "Findings in detail", entries `#### R-25`, `#### R-32` (Medium) and
@@ -422,9 +422,9 @@ change signal; resolve before B07 build; B09-REQ-13 is blocked until it is recor
 | ID | Question | Affects | Owner | Dependent phases | Resolve before | Boundary / acceptance impact |
 |---|---|---|---|---|---|---|
 | B09-Q1 | Who produces the screenshot change signal R-96 and R-104 need. **Answered (accepted decisions 5 and 9, 2026-11-18):** B07 produces it as D-10; B09 and B10 consume it. | B09-REQ-13 | answered | none | none | B09-REQ-13 consumes D-10 |
-| B09-Q2 | The timing targets in B09-REQ-01 rule 5 (100 ms, 250 ms, 50 ms) are an addition beyond FINDINGS.md and are non-gating. Keep them as recorded targets, tighten them, or drop them? | B09-REQ-01 rule 5 | B09 planning (user) | none | B09 build | None on R-25's disposition, which closes on rules 1 to 4 and 6 |
-| B09-Q3 | When only a numbered list's starting number changes (which Markdown renders), is it a marked change or unchanged? | B09-REQ-02 rule 5, B09-REQ-03 rule 4 | B09 planning | none | B09 build | One test case |
-| B09-Q4 | Should an open Diff tab reflect another tab's Viewed ticks live (B09-REQ-09 rule 3), or only on the next read? | B09-REQ-09 | B09 planning | none | B09 build | Optional proof |
+| B09-Q2 | The timing targets in B09-REQ-01 rule 5 (100 ms, 250 ms, 50 ms) are an addition beyond FINDINGS.md and are non-gating. Keep them as recorded targets, tighten them, or drop them? **Answered (accepted decision 23, 2026-11-20, user):** kept as recorded targets, not gating. | B09-REQ-01 rule 5 | B09 planning (user) | none | B09 build | None on R-25's disposition, which closes on rules 1 to 4 and 6 |
+| B09-Q3 | When only a numbered list's starting number changes (which Markdown renders), is it a marked change or unchanged? **Answered (accepted decision 23, user):** a marked change, not minor. | B09-REQ-02 rule 5, B09-REQ-03 rule 4 | B09 planning | none | B09 build | One test case |
+| B09-Q4 | Should an open Diff tab reflect another tab's Viewed ticks live (B09-REQ-09 rule 3), or only on the next read? **Answered (accepted decision 23, user):** live (a `storage` listener). | B09-REQ-09 | B09 planning | none | B09 build | Optional proof |
 
 ## Risks and recovery requirements
 

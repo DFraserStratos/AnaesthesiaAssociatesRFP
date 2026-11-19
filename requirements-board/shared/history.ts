@@ -3,6 +3,7 @@
  * (`diffItems`), a line diff for its Markdown fields (`lineDiff`), and the timeline the sheet
  * shows (`buildTimeline`), merged from the dev server's journal and the file's git commits.
  */
+import { sameBlocks } from './proseDiff.ts'
 import { lcsPairs, squashSpace } from './textCompare.ts'
 import type { Artifact, Item, Question } from './types.ts'
 
@@ -31,11 +32,15 @@ export interface FieldChange {
 /** Who made a change: the board's own API, or someone else's edit to the file (an agent, an editor, git). */
 export type HistorySource = 'board' | 'disk'
 
-/** One line of the server's per-card journal. */
+/**
+ * One line of the server's per-card journal. `seen` marks when the journal first saw a card it had no
+ * record of (at a start), with no changes: from then on the journal has the detail (FINDINGS R-87). It
+ * is never shown, and a board from before it ignores it (a line with no changes that is not `created`).
+ */
 export interface JournalEntry {
   at: string
   source: HistorySource
-  kind: 'created' | 'changed' | 'position'
+  kind: 'created' | 'changed' | 'position' | 'seen'
   /** The file's rev after the change (not for `position`). */
   rev?: string
   changes: FieldChange[]
@@ -96,7 +101,7 @@ export type TimelineEntry =
       type: 'change'
       at: string
       source: HistorySource | 'git'
-      kind: JournalEntry['kind']
+      kind: Exclude<JournalEntry['kind'], 'seen'>
       changes: FieldChange[]
       offline?: true
       commit?: CommitInfo
@@ -147,14 +152,22 @@ export function diffQuestions(a: Question, b: Question): FieldChange[] {
 const LIST_FIELDS: ReadonlySet<string> = new Set(['components', 'sources', 'related', 'artifacts', 'affects'])
 const sortedJson = (v: unknown) => JSON.stringify(Array.isArray(v) ? v.map((x) => JSON.stringify(x)).sort() : v)
 
+/** A diagram's source line by line, blank lines left out and each line's spacing squashed: line breaks are its syntax. */
+const sourceLines = (v: unknown) => String(v ?? '').split(/\r?\n/).map(squashSpace).filter(Boolean)
+
 /**
  * A change that alters nothing a reader would notice: a reorder among siblings, a list reordered
- * without anything added or removed, or text that differs only in its spacing.
+ * without anything added or removed, a one-line text that differs only in its spacing, a Markdown
+ * field with the same blocks each differing only in spacing or a list's marker (`sameBlocks`), or a
+ * diagram source with the same lines. Joined or split paragraphs and list items, a new depth or
+ * heading, and lines added, removed, joined or split are changes.
  */
 export function isMinorChange(c: FieldChange): boolean {
   if (c.field === 'order' || c.field === 'position') return true
   if (LIST_FIELDS.has(c.field) || c.field === 'images' || c.field === 'regions') return sortedJson(c.from ?? []) === sortedJson(c.to ?? [])
-  if (TEXT_FIELDS.has(c.field) || c.field === 'title' || c.field === 'question' || c.field === 'answer' || c.field === 'author') return squashSpace(c.from) === squashSpace(c.to)
+  if (c.field === 'source') return JSON.stringify(sourceLines(c.from)) === JSON.stringify(sourceLines(c.to))
+  if (TEXT_FIELDS.has(c.field) || c.field === 'question' || c.field === 'answer') return sameBlocks(String(c.from ?? ''), String(c.to ?? ''))
+  if (c.field === 'title' || c.field === 'author') return squashSpace(c.from) === squashSpace(c.to)
   return false
 }
 
@@ -180,15 +193,18 @@ export interface DiffLine {
   text: string
 }
 
-/** Longer than this (lines, either side) and the diff is shown as everything removed, then everything added. */
+/** The line diff's table budget: this many lines a side (between the texts' common start and end) are compared in full. */
 const MAX_DIFF_LINES = 400
 
-/** A line diff of two texts (LCS). Empty text has no lines. Past `max` lines a side, everything removed then added. */
+/**
+ * A line diff of two texts (LCS). Empty text has no lines. The common start and end are matched at any
+ * length; past `max` lines a side in between, lines found once on each side anchor the rest, and a
+ * part with nothing in common reads as everything removed, then added.
+ */
 export function lineDiff(a: string, b: string, max = MAX_DIFF_LINES): DiffLine[] {
   const x = a ? a.split('\n') : []
   const y = b ? b.split('\n') : []
-  const pairs = x.length > max || y.length > max ? null : lcsPairs(x, y, (p, q) => p === q, (max + 1) * (max + 1))
-  if (!pairs) return [...x.map((text) => ({ op: 'del' as const, text })), ...y.map((text) => ({ op: 'add' as const, text }))]
+  const pairs = lcsPairs(x, y, (p, q) => p === q, (max + 1) * (max + 1))
   const out: DiffLine[] = []
   let i = 0
   let j = 0
@@ -316,10 +332,21 @@ export function buildTimeline<T = Item>(
 ): TimelineEntry[] {
   const life = currentLife(journalIn, gitIn, diff)
   const git: GitFileHistory<T> = { ...gitIn, versions: life.versions, screenshots: gitIn.screenshots?.filter((s) => life.own(s.commit.at)) }
-  const collapsed = collapse(life.journal)
-  // To the second, as git dates are: a commit in the same second as the first journal entry is after it.
-  const start = collapsed.length ? Math.floor(Date.parse(collapsed[0]!.at) / 1000) * 1000 : Infinity
+  const seen = life.journal.find((e) => e.kind === 'seen')
+  const collapsed = collapse(life.journal.filter((e) => e.kind !== 'seen')) as (JournalEntry & { kind: Exclude<JournalEntry['kind'], 'seen'> })[]
+  // The journal has the detail from when it first saw the card (R-87), or else from its first entry
+  // (journals from before `seen`). To the second, as git dates are: a commit in that second is after it.
+  const first = Math.min(seen ? Date.parse(seen.at) : Infinity, collapsed.length ? Date.parse(collapsed[0]!.at) : Infinity)
+  const start = Number.isFinite(first) ? Math.floor(first / 1000) * 1000 : Infinity
   const out: TimelineEntry[] = []
+
+  // A card the journal saw first, in a repository, with no version in git before then: its beginning is
+  // that first sight ("Not committed yet" until git has a version of it), unless the journal saw it created.
+  const inGit = git.versions.some((v) => v.item)
+  const before = git.versions.some((v) => v.item && Date.parse(v.commit.at) < start)
+  if (seen && (inGit || git.dirty) && !before && !collapsed.some((e) => e.kind === 'created')) {
+    out.push({ type: 'change', at: seen.at, source: 'disk', kind: 'created', changes: [], ...(inGit ? {} : { uncommitted: true as const }) })
+  }
 
   let prev: T | null = null
   for (const v of [...git.versions].reverse()) {

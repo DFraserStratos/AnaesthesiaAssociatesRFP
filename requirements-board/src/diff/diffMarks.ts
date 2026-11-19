@@ -49,9 +49,18 @@ export function remarkDiffMarks(tag: 'del' | 'ins') {
           }
           return on ? [mark([child])] : [child]
         }
-        // Code, an image, a break: no sentinels kept in them; marked whole while a change is open.
-        if (child.value !== undefined) child.value = child.value.replace(MARK_ANY, '').replace(ELLIPSIS_ANY, '…')
-        return on && PHRASING.has(child.type) ? [mark([child])] : [child]
+        // Code, an image, raw HTML, a break: marked whole when a change is open at it or opens inside it,
+        // its sentinels read for where the change ends (a change ending inside a code span closes there),
+        // then stripped.
+        let touched = on
+        if (child.value !== undefined) {
+          for (const ch of child.value) {
+            if (ch === MARK_OPEN) touched = on = true
+            else if (ch === MARK_CLOSE) on = false
+          }
+          child.value = child.value.replace(MARK_ANY, '').replace(ELLIPSIS_ANY, '…')
+        }
+        return touched && PHRASING.has(child.type) ? [mark([child])] : [child]
       })
     }
     walk(tree)

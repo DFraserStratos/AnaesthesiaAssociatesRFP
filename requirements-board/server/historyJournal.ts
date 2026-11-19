@@ -31,7 +31,10 @@ export interface Journal {
   item: (rec: Rev<Item>, source: HistorySource, opts?: { offline?: boolean; reappeared?: boolean }) => void
   /** Note a Freeform drag (null: put back in its story-map place). */
   position: (id: string, from: Position, to: Position, source: HistorySource) => void
-  /** At start: log what changed on disk while the board was off, and baseline cards seen for the first time. */
+  /**
+   * At start: log what changed on disk while the board was off, and baseline cards seen for the first
+   * time, with a `seen` line saying when (the timeline's detail starts there).
+   */
   baseline: (items: Record<string, Rev<Item>>) => void
   /**
    * Look for screenshots rewritten in place under `assetsDir` (the catalogue's `assets/`), in every
@@ -232,8 +235,11 @@ export function createJournal(dir: string, now: () => Date = () => new Date()): 
         if (!safe(rec.data.id)) continue
         quietly(`baseline ${rec.data.id}`, () => {
           const prev = readLast(rec.data.id)
-          if (!prev) writeLast(rec) // first sight: history before now comes from git
-          else if (prev.rev !== rec.rev) item(rec, 'disk', { offline: true })
+          if (!prev) {
+            // First sight: history before now comes from git, and the journal has the detail from now on.
+            append(rec.data.id, { at: now().toISOString(), source: 'disk', kind: 'seen', rev: rec.rev, changes: [] })
+            writeLast(rec)
+          } else if (prev.rev !== rec.rev) item(rec, 'disk', { offline: true })
         })
       }
     },

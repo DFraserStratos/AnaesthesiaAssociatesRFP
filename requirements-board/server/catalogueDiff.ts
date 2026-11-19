@@ -21,6 +21,7 @@ import { parseArtifact, parseItem, parseQuestion } from '../shared/files.ts'
 import { normaliseStatus, type Recode } from '../shared/statuses.ts'
 import type { Artifact, Item, Question } from '../shared/types.ts'
 import { repoRootFor } from './artifactFiles.ts'
+import { realPath } from './realPaths.ts'
 import { RECORD_DIRS, readRecodes } from './catalogueFs.ts'
 import { Lru, memo, nulSplit, workingNames } from './gitCore.ts'
 import { emptyTree, git, readBlobs, repoTop, tryParse } from './gitHistory.ts'
@@ -96,7 +97,8 @@ function fileInRepo(repo: Repo, base: string, file: string): string | null {
   if (file.startsWith('/')) {
     const rest = contained(file.slice(1))
     if (!rest) return null
-    const p = relative(repo.top, resolve(repoRootFor(repo.top), rest)).split(sep).join('/')
+    // git names its top by its real path; REPO_ROOT may be given through a link, so compare real with real.
+    const p = relative(repo.top, resolve(realPath(repoRootFor(repo.top)), rest)).split(sep).join('/')
     return contained(p)
   }
   const rest = contained(file)

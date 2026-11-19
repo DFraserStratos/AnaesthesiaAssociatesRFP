@@ -395,14 +395,19 @@ the catalogue. Laptop first: the width goes to the two columns, the controls to 
 - **Keys**: j goes up to the previous change and k down to the next (a row, or a summary line),
   ringing it, both cells of a row together; Shift J and Shift K go up and down card by card (n stays
   the board's new card); v ticks the card in view Viewed and goes to the next one not yet viewed.
-  Every move lands the target 12px under the bar, however far down the page. Not while typing, with
-  a sheet, picker, popover or dialog open, or while a new comparison is being read.
+  Every move lands the target 12px under the bar, however far down the page. One move at a time: a new
+  one replaces the last, and the reader's own wheel, touch, click or scroll key ends it, so the page
+  is never pulled back once the reader moves it; a target the page cannot bring up (near the bottom)
+  stops where the page stops. Not while typing, with a sheet, picker, popover or dialog open, or while
+  a new comparison is being read.
 - **Default**: the last commit that changed the catalogue against Uncommitted; with nothing
   uncommitted, what that commit changed, with a quiet line saying so. A pick goes in the URL. While
   To is Uncommitted the page refreshes in place as files change, and when the window regains focus.
   A new pick names its commits in the bar at once; the comparison on the page stays, dimmed and out
   of reach, under a quiet "Reading git" line until the new one arrives, then the page starts from the
-  top. The first cards draw at once and the rest fill in a few at a time, nearest the view first;
+  top. Nothing the old comparison said ("No card differs", "Nothing matches the filters", a git
+  error) shows under the new pick; only "Reading git" until it is read.
+  The first cards draw at once and the rest fill in a few at a time, nearest the view first;
   until drawn, a card is its head and a quiet space about its size, so the scrollbar holds its place.
 - **Order** follows the Mapped view: each epic, its features, each feature's stories (by lane, then
   order). Unchanged parents of changed cards are slim headings (a type-colour rule across, thicker
@@ -412,8 +417,9 @@ the catalogue. Laptop first: the width goes to the two columns, the controls to 
 - **A card** is a white sheet with its type's top rule (artifacts indigo, outstanding items amber).
   Head: type mark, title and the ID quiet in mono (a click copies the ID itself, "Copied" for a
   moment), then only marks worth noticing: Added, Removed, Moved, Minor, as squared
-  outlined tags so they never read as a status pill. Right: Whole card, Open (not for a removed one),
-  the Viewed tick. Body: a grid of rows, Before | seam | After. The before column sits a shade back
+  outlined tags so they never read as a status pill. Right: Whole card, Open (only for a record on
+  the board now: not for a removed one, nor one deleted since), the Viewed tick.
+  Body: a grid of rows, Before | seam | After. The before column sits a shade back
   (`--card-soft`), the after one full white. **The seam** is a hairline with a short band on every row
   that changed: rose over green for an edit, green for an addition, rose for a removal, so changes can
   be found by running an eye down the seam.
@@ -429,7 +435,11 @@ the catalogue. Laptop first: the width goes to the two columns, the controls to 
   links are inert until it opens, so a click anywhere on it opens it. An edited
   paragraph shows only the sentences that hold a change; the rest is a small "…" that opens the whole
   paragraph. Changed words: struck on the rose tint (before), on the green tint (after). A paragraph
-  mostly rewritten is tinted whole, both sides, rather than marked word by word. Other fields are
+  mostly rewritten is tinted whole, both sides, rather than marked word by word; length alone never
+  tints it (a one-word change in a long transcript is one row and one word). A list renumbered by an
+  insert, or with another bullet character, reads unchanged; a bullet turned into a number, or a list
+  that starts at another number, shows as an edit with the marker marked. An edited row always shows
+  its change: where no word differs (a heading's level), it is tinted whole. Other fields are
   drawn as on the sheet: lineage pills for a move, rows for related cards, artifacts and sources (the
   ones only on one side tinted; each named as it stood at that side, so a source citing an artifact
   since removed still shows its name), screenshots, highlights. Whole card turns off the previews and the
@@ -442,11 +452,16 @@ the catalogue. Laptop first: the width goes to the two columns, the controls to 
 - **Added or removed** keeps both columns: the whole card on its side, tinted, and a dashed
   placeholder ("Didn't exist yet", "Deleted") opposite that keeps pace as the page scrolls.
 - **An artifact's file** by kind: drawings and images as two pictures (each opens full size), a
-  mermaid diagram drawn from each source, Markdown paired by paragraph, a PDF by its first page
-  ("File replaced").
-- **Minor changes** (a reorder among siblings, a list reordered, spacing only) hide behind Show minor
-  changes. Status renumbering is no change at all.
-- Viewed is per browser, per comparison, and clears itself when the record changes again.
+  mermaid diagram drawn from each source (its source edited: both drawings, "Drawing changed" on the
+  seam, beside the source's line diff), Markdown paired by paragraph, a PDF by its first page
+  ("File replaced"). A file that changed format shows each side as what it is: a Markdown side
+  typeset (its opening), the other its picture.
+- **Minor changes** (a reorder among siblings, a list reordered, spacing only: a paragraph re-wrapped,
+  a list renumbered or its bullets changed, a diagram line re-spaced) hide behind Show minor changes.
+  Joining or splitting paragraphs, list items or diagram lines, a new depth or heading, is never
+  minor. Status renumbering is no change at all.
+- Viewed is per browser, per comparison, and clears itself when the record changes again. A tick in
+  one tab never undoes another tab's, and shows in the other tabs at once.
 - Outside git, the tab says there is nothing to compare and how to start.
 
 ## Settings

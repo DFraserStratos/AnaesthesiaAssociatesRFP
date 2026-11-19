@@ -1,6 +1,6 @@
 /** The Diff review's git reading, on a throwaway repository: which commits and records it finds, and both versions of each. */
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -188,6 +188,29 @@ describe.skipIf(!hasGit)('catalogue diff', () => {
       ['Notes', 2],
       ['Catalogue', 6],
     ])
+  })
+
+  it('reads a file from the repository when REPO_ROOT names it through a link (B01 discovered row, owner B09)', async () => {
+    seed()
+    write('artifacts/AR-03.md', serialiseArtifact(artifact({ id: 'AR-03', file: '/docs/AR-03.svg' })))
+    mkdirSync(join(repo, 'docs'), { recursive: true })
+    writeFileSync(join(repo, 'docs', 'AR-03.svg'), '<svg>one</svg>')
+    commit('Docs drawing')
+    const base = head()
+    writeFileSync(join(repo, 'docs', 'AR-03.svg'), '<svg>two</svg>')
+    const link = `${repo}-link`
+    symlinkSync(repo, link)
+    const was = process.env.REPO_ROOT
+    process.env.REPO_ROOT = link
+    try {
+      const d = await catalogueDiff(root, base, WORKTREE)
+      const r = d.records.find((x) => x.id === 'AR-03')
+      expect(r?.kind === 'artifact' && r.fileBefore && r.fileAfter && r.fileBefore !== r.fileAfter).toBe(true)
+    } finally {
+      if (was === undefined) delete process.env.REPO_ROOT
+      else process.env.REPO_ROOT = was
+      rmSync(link, { force: true })
+    }
   })
 
   it('counts a file named for nothing with the sidecar that names it, not as a record of its own', async () => {

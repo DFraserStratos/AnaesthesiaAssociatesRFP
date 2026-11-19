@@ -97,7 +97,7 @@ Agent tools in parallel: B12 (after B02), B13 (REQ-07b after B04); both before B
 | B05 | Server write model | COMPLETE | D-04, B05-Q5, Q6 recorded (accepted decision 20); D-05 recorded (decision 19) | 2026-11-19, board 1.18.0; all 7 findings fixed; R-45 and R-111 server halves delivered (B06 closes); write protocol for B07 and B06 in the entry |
 | B07 | Store sync and layout | COMPLETE | D-10, B07-Q5, Q6 recorded (accepted decision 21) | 2026-11-19, board 1.19.0; all 6 findings fixed; delivery shape, D-10 signal and unsaved-moves signal for B06, B09, B10, B11 in the entry |
 | B06 | Edit sheets and Settings | COMPLETE | B06-Q2 to Q5 and D-04e retirement recorded (accepted decision 22) | 2026-11-19, board 1.20.0; all 16 findings fixed; Q4 lock-out added scope; whole-record and base-less config writes retired |
-| B09 | Diff and history UI | PLANNED | after B08, B07 (D-10) | |
+| B09 | Diff and history UI | COMPLETE | B09-Q2 to Q4 and the Open rule recorded (accepted decision 23) | 2026-11-20, board 1.21.0; all 13 findings fixed; Diff count can rise (stricter minor rule); journal gains `seen` lines (additive) |
 | B10 | Artifact viewers | PLANNED | after B01, B03, B04, B07; D-01c, B01-Q2 and D-10 recorded | |
 | B11 | Board canvas and views | PLANNED | after B03, B05, B07; D-06 recorded | |
 | B12 | Build-plan tools | PLANNED | after B02; D-08 before build; D-03 if needed; live-plan compatibility | parallel worktree |
@@ -423,6 +423,23 @@ decisions" section and resolved in that phase's planning.
         write (`putItem`, `putQuestion`, `putArtifact`) and of the base-less config write, so the server
         stops accepting both (`{ record }` is a 400; a Settings section sent without its base is a 400).
 
+- 2026-11-20, user and B09 session (B09's planning questions, asked in the B09 session):
+  23. **B09-Q2 to Q4, and the Open rule:**
+      - **B09-Q2, timings recorded, not gating** (user). B09-REQ-01 rule 5's targets (two 2,000-block
+        documents with up to 50 changed blocks paired in under 100 ms; no input holding the pairing step over
+        250 ms; one 5,000-token paragraph pair marked in under 50 ms) are measured in Node and recorded in
+        the B09 entry; a miss is recorded with its figure and does not block R-25.
+      - **B09-Q3, a new starting number is a marked change** (user). The first item of a numbered list keeps
+        its number in the comparison key, so a list that now starts at another number shows that item as
+        edited with its marker marked, and is not minor. Items renumbered after an insert or removal, and a
+        bullet character change (`-`, `*`, `+`), read as unchanged and are minor.
+      - **B09-Q4, Viewed ticks are live across tabs** (user). An open Diff review shows ticks made in another
+        tab of the same browser at once (a `storage` listener), besides never erasing them (R-93).
+      - **Open rule** (session, from DESIGN.md "Open (not for a removed one)"; the SPEC's assumption
+        confirmed): a Diff review card offers Open only when its record is on the board now, never for a
+        Removed card or one unreadable on its After side.
+      - **Downstream:** none outside B09. B15 reruns the B09 proofs.
+
 ## Planning handoff
 
 - 2026-11-18: orchestrator created FINDINGS.md (copy of the verified review report), PLAN.md, this
@@ -456,7 +473,7 @@ decisions" section and resolved in that phase's planning.
 | `artifact:new` uses `git mv`, which stages mid-phase | B05 author (B05-Q6) | B05 | **Done in B05** (decision 20): a plain, non-overwriting move, never staged |
 | Fixture e2e port 5182 is fixed, so two lanes collide | B14 author (B14-Q3) | B14 | |
 | `/history-blob/<sha>?src=assets/x.png` serves any blob in the repository by full sha, typed by `src`'s extension (same-origin only; needs the hash) | B01 security review | B08 | **Done in B08**: the `src` case is gated by `blobWasAt` |
-| `catalogueDiff.ts:135` compares git's real top with `REPO_ROOT` as given (the E7a mixed-path defect) | B01 completeness review | B09 | use `realPaths.ts` (`realPath` both sides) |
+| `catalogueDiff.ts:135` compares git's real top with `REPO_ROOT` as given (the E7a mixed-path defect) | B01 completeness review | B09 | **Done in B09**: `fileInRepo` resolves `REPO_ROOT` through `realPath` (test in `tests/catalogueDiff.test.ts`) |
 | A base folder that is itself an escaping link (`assets/` linked out of the requirements folder) is not warned: `linkOut` compares against the base's real path | B01 completeness review | B14 (moved by B03) | not built in B03 (outside its 14 findings; R-47's isolation does not depend on it); a check warning would suffice |
 | A top-level visit from another site can still open Vite's `/__open-in-editor` (navigations are allowed so links to the board work); Vite still serves the board's own source, `node_modules` and any `.html` outside the catalogue as same-origin pages (SPEC residual) | B01 | B15 | Vite's dev model; consider refusing cross-site navigations to `/__open-in-editor` |
 | A screenshot whose file name holds a backslash cannot be served (`\` is read as `/`, as the file system on Windows would) | B01 correctness review | B14 (docs) | rare; document, or keep `%5C` apart |
@@ -497,8 +514,139 @@ decisions" section and resolved in that phase's planning.
 | Unsaved Settings edits are not counted by the leave prompt (`hasUnsavedWork`), and Discard changes in Settings does not ask | B06 review | none (a product choice) | pre-existing; DESIGN's "every way out asks" is about sheets |
 | The veil markup and its Escape handling exist in `Sheet.tsx` and in the artifact panel's `PanelVeil` / `usePanelKeys` (now exported from `ArtifactPanel.tsx` for the artifact page's orphan state) | B06 review | B10 | B10 owns `src/artifacts/*`; one shared veil component would do |
 | The Writing voice section hand-rolls the conflict banner and save bar the other sections now share (`ConflictBanner`, `SaveBar`) | B06 review | none | cosmetic duplication |
+| A long paragraph whose every word recurs, edited at two distant places, still tints whole: past the word table's budget nothing is unique to anchor on | B09 review | none | REQ-01 promises one-word changes; real prose has once-only words |
+| Pairing two wholly different 2,000-paragraph documents of long (30-word) paragraphs takes about 380 ms at load 12, over B09's non-gating 250 ms target | B09 review | none | recorded (decision 23); short paragraphs 150 ms |
+| A run of Freeform drags or screenshot re-captures that grows (collapse keeps the latest time) changes its timeline key, so its open disclosure closes | B09 review | none | R-95's stated case (a newer entry above) holds |
+| A card first seen outside any repository (or clean with no git history) shows no "Created" entry; a second `seen` after an offline delete and re-create is not a life start | B09 review | none | REQ-12 rule 3 covers the uncommitted case; the board's own create starts a life |
+| `shared/steps.ts` still writes `lcsPairs(...) ?? []`, now unreachable; `alike` is exported for tests only | B09 review | B14 | harmless; `steps.ts` left untouched (P-06) |
+| `shared/proseDiff.ts` keeps its own fence heuristics (B04's row) | B04 | none | not needed by any B09 finding; left |
+| `e2e/artifacts.spec.ts` "stepping back, a jump from the panel ... reduced motion fly nothing" failed once in B09's full fixture run (load about 12) and passed 3 of 3 alone | B09 | B15 | viewer animation timing, no diff code |
+| `tests/catalogue.test.ts` "round-trips every item file" failed once in a `verify:board` run at load 22 and passed alone and in the next full run | B09 | B12 or B14 | the timeout rows above |
 
 ## Phase entries
+
+### B09 · Diff and history UI · COMPLETE · 2026-11-20
+
+Board 1.20.0 to **1.21.0**. Plan and evidence: `phases/B09-diff-and-history-ui/IMPLEMENTATION.md` (plan, "As built").
+Decisions: accepted decision 23 (B09-Q2 timings recorded only, B09-Q3 a new start number is a marked change, B09-Q4
+live ticks, all asked in this session; the Open rule settled from DESIGN.md); the SPEC marks them answered. No master
+merge was needed. All 13 findings reproduced at HEAD `f7edee77` (R-25, R-88, R-89 run with the real functions; the rest
+by reading, line drift only). Another session committed the plan page meanwhile (`851631c5`); nothing of theirs is in
+this commit.
+
+**Dispositions**
+
+Proof files: `tests/diffTruth.test.ts` (pure: comparison, lists, minor rule, marks, mermaid, timeline, journal),
+`tests/diffUi.test.ts`, `tests/diffScroll.test.ts`, `tests/historyUi.test.ts` (jsdom), additions to
+`tests/viewedStore.test.ts` and `tests/catalogueDiff.test.ts`, and three tests at the end of `e2e/diff.spec.ts`.
+
+| Finding | Disposition | Proof |
+|---|---|---|
+| R-25 | **Fixed**: `lcsPairs` matches the common start (always), then the old table on the rest when it fits (so every input the old table held gives the old pairs), else trims the common end and cuts the middle at values found once on each side, recursively. Never null. `pairBlocks` makes equal-key pairs `same`; `pairRun` reads each block's words once and, past 40,000 comparisons, looks 100 blocks ahead. `wordDiff` and `lineDiff` (no 400-line bail) inherit it | diffTruth: 800, 1,538 and 2,000-paragraph one-word changes (one edited row, two folds); 5,000-token paragraph marks one word; 2,000-line line diff is one line; identical blocks never edited; past-the-cap pairs valid; P-06 2,000 random inputs equal to the old function; `stepChanges` unchanged |
+| R-89 | **Fixed** (B09-Q3): keys carry an item's bullet-or-number and its text without the marker; `markerChanged` (bullet against number, or two list starts at different numbers) makes an edit whose marker is marked (the item drawn as a paragraph led by a marked marker); an edited pair with no mark either side is tinted whole | diffTruth: insert at item 2 and at the top, removal at the top, bullet characters, bullet to number, new start, the no-blank-row invariant over five cases |
+| R-88 | **Fixed**: Markdown fields are minor only with the same blocks (`sameBlocks`: keys and markers); `source` line by line; title and author squashed as before | diffTruth: joined paragraphs, merged and split bullets, depth, heading, mermaid joins both ways not minor; re-wrap, spaces, bullets, renumbering minor; merged bullets counted on the card |
+| R-90 | **Fixed**: a leaf's sentinels set the mark state; a leaf a change touches is marked whole | diffTruth: change ending inside a line-crossing code span, change starting inside one |
+| R-91 | **Fixed**: a mermaid source change that is not minor is a drawing change (`fileChanged`), so the card shows both drawings tagged "Drawing changed" and is not minor; Open only for a record on the board now (decision 23) | diffTruth mermaid; diffUi "Drawing changed" with two pictures, Open absent for a record gone since |
+| R-92 | **Fixed**: a file that changed format draws each side as what it is (Markdown typeset, opening only) | diffUi md to svg and svg to md |
+| R-93 | **Fixed** (B09-Q4): a tick merges its one key into the stored comparison read fresh; other tabs pick it up through `storage`; a blocked store keeps the tab's own ticks | viewedStore: two hooks over one storage (tick, untick, retick); storage event; blocked untick keeps another tick (review) |
+| R-94 | **Fixed**: the error is kept with its comparison and dropped when another is named; "Reading git" whenever stale with no cards to dim | e2e "B09 R-94" (old "No card differs" and an old error never shown under new refs) |
+| R-95 | **Fixed**: entries keyed by type, time, full commit name, source and kind with a repeat count; day headings by day | historyUi: an open disclosure stays on its entry when a newer one is added; unique keys for equal times and both hash widths (preservation) |
+| R-96 | **Fixed** (D-10): the History view re-reads when the card's own screenshot versions in the store's `assets` change | historyUi: another card's version change causes no read, this card's causes one |
+| R-97 | **Fixed**: a missing neighbour is unchanged | historyUi: one change in 60 lines shows lines 30, 31, the change, 32 |
+| R-87 | **Fixed**: the journal appends `{ kind: 'seen' }` when `baseline` first sees a card; `buildTimeline` starts the journal's detail at the earlier of `seen` and the first entry, never shows `seen`, and gives a card first seen with no earlier git version a "Created" entry (not committed yet while git has none). Old journals read as before; an older board drops `seen` lines (`collapse`) | diffTruth: offline committed retitle once; first seen uncommitted; then committed; old journal unchanged (preservation); the journal writes `seen` once |
+| R-32 | **Fixed**: one landing per page (`land` returns a cancel; `cancelLanding` on leaving the tab); wheel, touchstart, mousedown and scroll keys cancel; a glide that cannot move waits for nothing, else one correction at `scrollend` or a 900 ms fallback; the jump loop ends when a write does not move the page | diffScroll (9, controlled container); e2e "B09 R-32" with reduced motion and without, in Chromium: k to the bottom, wheel up, not pulled back, j stays up |
+
+**Before-proofs** (new tests on a `git archive f7edee77` in the scratchpad, `cancelLanding` and `entryKeys` stubbed there):
+41 of the 48 new unit tests fail before (the review's top-of-list test included), and so does the `catalogueDiff` link
+test. The 7 passing before are preservation checks: P-06 random and steps, "a new starting number is not minor" and
+"re-spaced source" (the old rule agreed), the old-journal case, unique keys, Open offered on the board. The
+blocked-storage untick (a flaw of this phase's first cut, not of the old board) was shown failing with that cut's
+read-back restored. The e2e proofs ran with the pre-B09 `scroll.ts`, `DiffView.tsx` and `useDiffData.ts` swapped in: R-94 showed
+"No card ... differs" under the new refs; R-32 was pulled back to the bottom with reduced motion (1,796 against
+under 1,496) and without (moved 302 px after the reader stopped). All pass after.
+
+**Timings (B09-REQ-01 rule 5, recorded, decision 23)**, Node, best of runs, load 4 to 12:
+
+| Case | After | Before |
+|---|---|---|
+| 2,000 blocks, 50 changed, pairing | 3 to 5 ms (target 100) | 4 ms, but wrong (every block edited) |
+| Two wholly different 1,000-block documents (short paragraphs) | 83 to 99 ms | 1,190 ms |
+| Two wholly different 2,000-block documents (short paragraphs) | 150 ms (target 250) | 4,809 ms |
+| Wholly different 30-word paragraphs, 1,000 x 1,000 / 2,000 x 2,000 | 211 / 380 ms (**2,000 x 2,000 misses 250**) | (review: 290 / 558 ms with the first window) |
+| 5,000-token paragraph, one word / 100 scattered words, marking | 0.5 / 1.7 ms (target 50) | 0.2 ms, but tinted whole |
+
+**What shipped:**
+- **Changed:** `shared/textCompare.ts` (`lcsPairs` rewritten round `table`, `anchors`, `middle`); `shared/proseDiff.ts`
+  (`Block.start`, `shownMark`, `markerChanged`, `bodyOf`, `keyOf`, `sameBlocks`, `alikeWords`, `pairRun` window and
+  `same` rows, `markPair` marker and no-blank rule, `wordDiff` without the null path); `shared/history.ts` (`seen` kind,
+  `isMinorChange`, `lineDiff`, `buildTimeline` start and "Created"); `shared/diffModel.ts` (mermaid `fileChanged`);
+  `server/historyJournal.ts` (`seen` at first sight); `server/catalogueDiff.ts` (`realPath`); `src/diff/diffMarks.ts`,
+  `scroll.ts`, `DiffView.tsx`, `useDiffData.ts`, `viewedStore.ts`, `DiffCard.tsx`, `DiffFile.tsx`;
+  `src/components/HistoryView.tsx` (`shotVersionsOf`, `entryKeys`, `Diff` context).
+- **New tests:** `tests/diffTruth.test.ts` (28), `tests/diffUi.test.ts` (5), `tests/diffScroll.test.ts` (9),
+  `tests/historyUi.test.ts` (4); additions to `tests/viewedStore.test.ts` (2 and a blocked-untick case),
+  `tests/catalogueDiff.test.ts` (1), `e2e/diff.spec.ts` (3).
+
+**Tests changed on purpose:** `tests/writeModel.test.ts` "an unchanged save ... journal nothing" asserted no journal file
+exists; it now holds the start's `seen` line, so the test compares the file before and after (intent kept).
+
+**Touch-rights edits (convention 11):**
+- `server/historyJournal.ts` (shared row; B09's first-sight part), `server/catalogueDiff.ts` (B08's git side; the B01
+  discovered row assigned to B09: one `realPath`).
+- `tests/writeModel.test.ts` (B05's), above.
+- `docs/board-fixes/index.html`: B09 status.
+
+**Deviations:**
+1. List starts are compared between paired list starts, not in the key (the review found the keyed start mis-paired a
+   top-of-list insert); the user's answer to B09-Q3 holds.
+2. `pairRun`'s window (100 past 40,000 comparisons) is an addition for speed: past it, a removed block pairs only with
+   the next 100 added blocks.
+3. A line-diff over its table budget no longer shows everything removed then added: lines found once each side anchor it.
+4. An edited row with no visible mark is tinted whole (heading level, table alignment), beyond REQ-02's list cases.
+5. The 2,000 x 2,000 long-paragraph pairing misses the non-gating 250 ms target (recorded, decision 23).
+
+**Verification:**
+- **`npm run verify:board` green:** 1,063 tests (64 files), check OK. One earlier run lost `catalogue.test.ts`'
+  round-trip at load 22 (passes alone and in the final run; Discovered).
+- **`e2e/diff.spec.ts` (fixture, 5182):** 17 of 17 after the review fixes. **Full fixture project** (before the review
+  fixes): 112 of 114; failures `one-rule` R-101 (the known viewer flake) and once a stepped-diagram animation test that
+  passed 3 of 3 alone (Discovered).
+- **R-32 in a real browser with reduced motion:** Playwright Chromium with `reducedMotion: 'reduce'` emulated (and without),
+  before and after as above.
+- **Real catalogue:** `npm run check` OK, no errors; no file under `requirements/` changed. **Journal compatibility:** old
+  journals read as before (test); no journal is rewritten. **Migration:** none.
+
+**Review outcomes (convention 15):** two Sonnet reviewers (about 470 changed lines outside tests).
+- **Confirmed and fixed, each with a test shown failing first:** a list's start number in the first item's key
+  mis-paired an insert or removal at the top of a numbered list (both reviewers; the fix was in flight when reviewer 1
+  read it, which it reported as Q3 unimplemented); an untick with storage blocked dropped the tab's other ticks.
+- **Also fixed:** an old error could show again on returning to its comparison before the new read failed (cleared when
+  another comparison is named); the start scan's quadratic walk (`break`); marker digits counted as words in pairing;
+  the pairing window tightened after the reviewer's timings; `setError` renamed `setFailed`; two DESIGN lines my edits
+  had joined; a long argument spread in `lcsPairs` (found in self-review).
+- **Recorded, not changed** (Discovered): distant edits in a paragraph with no once-only words; the 2,000 x 2,000
+  long-paragraph timing; a growing drag or re-capture run's key; "Created" for a card outside git; the dead `?? []` in
+  `steps.ts` and the test-only `alike`; the `collapse` cast (safe: filtered first). A reviewer's "spurious Created after
+  a deletion bound" does not arise: `currentLife` drops a `seen` line before the bound.
+- **Not reproducible:** none.
+
+**Doc facts (convention 12):**
+- **`requirements-board/DESIGN.md`** (Diff review): Keys (one landing, the reader wins, unreachable targets); Default
+  (nothing old speaks under a new pick); the card head's Open; changed words (length never tints, list markers, no blank
+  edit); an artifact's file (mermaid drawings, format change); Minor changes; Viewed across tabs.
+- **`requirements-board/README.md`:** the History bullet (`seen`, first sight, old journals), the screenshot paragraph
+  (an open History re-reads on its own versions), the Diff review's page paragraph (`textCompare.ts`, the minor rule).
+- **`CHANGELOG.md`** 1.21.0, naming that the Diff tab's count can rise. **Headers:** `textCompare.ts`, `scroll.ts`,
+  `viewedStore.ts` `writeViewed`, `historyJournal.ts` `baseline`, `history.ts` `JournalEntry`, `isMinorChange`, `lineDiff`.
+- **Checked, nothing changed:** the About page (Diff review paragraph still true), SCHEMA (the journal is outside the
+  catalogue), ADOPTING, the SKILL.md files.
+
+**What later phases need:**
+- **B10:** `HistoryView.tsx`'s `Shot` label is untouched (yours); `HistoryTimeline` now keys entries with `entryKeys` and
+  `Diff` shows only real context, for the artifact timeline too. `land()` returns a cancel.
+- **B14:** README and DESIGN lines above in the whole-file pass; the `steps.ts` `?? []` row.
+- **B15:** rerun `tests/{diffTruth,diffUi,diffScroll,historyUi,viewedStore}.test.ts` and `e2e/diff.spec.ts`; A-5 (the
+  timeline's line diff on card moves) is still B15's to confirm.
 
 ### B06 · Edit sheets and Settings · COMPLETE · 2026-11-19
 

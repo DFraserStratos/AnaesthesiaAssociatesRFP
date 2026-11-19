@@ -39,7 +39,10 @@ export function useDiffData(from: string | null, to: string | null, onNewCompari
   const [initial] = useState(() => (kept?.key === key ? kept : null))
   const [commits, setCommits] = useState<CommitsResponse | null>(initial?.commits ?? null)
   const [data, setData] = useState<Loaded | null>(initial?.data ?? null)
-  const [error, setError] = useState<string | null>(null)
+  // An error belongs to the request that raised it: another comparison picked never shows it (R-94).
+  const [failed, setFailed] = useState<{ key: string; message: string } | null>(null)
+  // Picking another comparison drops the error, so coming back never shows it before a new read fails.
+  if (failed && failed.key !== key) setFailed(null)
   const seq = useRef(0)
   const commitsRef = useRef(commits)
   const dataRef = useRef(data)
@@ -57,7 +60,7 @@ export function useDiffData(from: string | null, to: string | null, onNewCompari
         commitsRef.current = c
         setCommits(c)
       }
-      setError(null)
+      setFailed(null)
       if (!c.available || !raw.available) {
         kept = { key, commits: c, data: null }
         dataRef.current = null
@@ -82,7 +85,7 @@ export function useDiffData(from: string | null, to: string | null, onNewCompari
       dataRef.current = next
       setData(next)
     } catch (e) {
-      if (n === seq.current) setError((e as Error).message)
+      if (n === seq.current) setFailed({ key, message: (e as Error).message })
     }
   }, [auto, from, to, key])
 
@@ -114,5 +117,6 @@ export function useDiffData(from: string | null, to: string | null, onNewCompari
 
   /** Picked, and still being read: the old comparison stays up, dimmed, until the new one comes. */
   const stale = !!data && data.key !== key
+  const error = failed?.key === key ? failed.message : null
   return { auto, commits, data, error, stale }
 }

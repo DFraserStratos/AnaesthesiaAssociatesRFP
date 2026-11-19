@@ -257,7 +257,10 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   server journals every change it sees to a card, its own saves and moves and anyone's edit on
   disk, to `.history/<ID>.jsonl` in this folder (gitignored, per machine; `HISTORY_DIR`
   overrides; a catalogue other than the real one journals to a temp folder). At start it logs what
-  changed while it was off. Commits older than a card's first journal entry fill in its past from
+  changed while it was off, and a `seen` line for a card it has never seen before (never shown: the
+  journal's detail starts there, so a change committed while the board was off shows once, and a card
+  first seen uncommitted has a "Created" entry; a journal from before `seen` reads as it did). Commits
+  older than a card's first sight (or first journal entry) fill in its past from
   git along HEAD's **first parents**, each commit against its first parent: a lane merged with
   `--no-ff` shows as the merge, never as its lane commits interleaved with master's. The file is
   followed through its renames (committed, staged, or a plain `mv` of an unchanged file not yet
@@ -268,7 +271,8 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   repositories, and reading never takes git's index lock. Newer commits show as dividers. Changes
   newer than the last commit are marked not committed yet. View only.
   Screenshots count too: a file under `assets/<ID>/` rewritten in place (a `npm run capture` run)
-  logs a "Screenshot updated" entry with a before and after. The journal keeps each image's git
+  logs a "Screenshot updated" entry with a before and after; an open History re-reads when the
+  card's own screenshot versions change (the store's `assets`), never for another card's. The journal keeps each image's git
   blob hash in the repository's width (`<ID>.shots.json`, rehashed only when size or mtime changes,
   or when a kept hash is in the other width), so the before image is read back out of git
   (`/history-blob/<sha>`); a version that was never committed is not kept. Git backfill follows each
@@ -349,7 +353,10 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
     file never reads as changed.
 
   The page pairs Markdown fields paragraph by paragraph and marks changed words
-  (`shared/proseDiff.ts`); entries, minor changes, filters and order are `shared/diffModel.ts`, so the
+  (`shared/proseDiff.ts`, over `shared/textCompare.ts`'s one comparison: common start and end matched
+  at any length, the rest by a table up to a budget and past it cut at lines or words found once each
+  side, so long transcripts and paragraphs still mark only what changed); entries, minor changes
+  (block structure, not squashed text), filters and order are `shared/diffModel.ts`, so the
   server's count and the page agree. It loads the commit list and the comparison side by side, draws
   the first cards whole and the rest a few at a time (nearest the view first; off-screen cards skip
   layout through `content-visibility`), keeps unchanged cards memoised across refreshes, and keeps

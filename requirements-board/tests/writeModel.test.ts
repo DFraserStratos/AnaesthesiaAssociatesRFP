@@ -196,6 +196,9 @@ describe('saves edit the file in place (REQ-09, REQ-11; R-111 server half)', () 
       const rec = a.getState().items['US-01.1.1']!
       events.length = 0
       const journalBefore = readdirSync(dir).sort()
+      // Only the start's first-sight line (B09, R-87): the saves below must add nothing to it.
+      const linesBefore = readFileSync(join(dir, 'US-01.1.1.jsonl'), 'utf8')
+      expect(linesBefore.trim().split('\n').map((l) => JSON.parse(l).kind)).toEqual(['seen'])
       const answers = [
         call(a, 'PUT', '/api/items/US-01.1.1', { patch: {}, baseRev: rec.rev }),
         call(a, 'PUT', '/api/items/US-01.1.1', { patch: { title: 'First: story', order: 1 }, baseRev: rec.rev }),
@@ -207,7 +210,7 @@ describe('saves edit the file in place (REQ-09, REQ-11; R-111 server half)', () 
       expect(answers[3]).toEqual({ records: [rec] })
       expect(events).toEqual([])
       expect(readdirSync(dir).sort()).toEqual(journalBefore)
-      expect(existsSync(join(dir, 'US-01.1.1.jsonl'))).toBe(false)
+      expect(readFileSync(join(dir, 'US-01.1.1.jsonl'), 'utf8')).toBe(linesBefore)
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }

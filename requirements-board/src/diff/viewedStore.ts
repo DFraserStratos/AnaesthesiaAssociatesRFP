@@ -3,7 +3,7 @@
  * had when ticked, so a tick clears itself when the record changes again. The last few comparisons
  * are kept.
  */
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Entry } from '../../shared/diffModel.ts'
 import { isRecord, isString, readJson, writeJson, type Coerce } from '../storage.ts'
 
@@ -39,14 +39,25 @@ const readStore = () => readJson(VIEWED_KEY, "Diff review's Viewed ticks", {}, v
 
 const readViewed = (comparison: string): Viewed => (comparison ? (readStore()[comparison] ?? {}) : {})
 
-/** Save one comparison's ticks; a damaged stored value is replaced, so the repair sticks. A blocked store keeps them until the page closes. */
-function writeViewed(comparison: string, viewed: Viewed) {
+/**
+ * Tick (a fingerprint) or untick (null) one record in one comparison, merged into the ticks stored now,
+ * so ticks another tab made are kept (FINDINGS R-93). The comparison moves to the newest of the kept
+ * ones. A damaged stored value is replaced, so the repair sticks. Returns the comparison's ticks as
+ * stored, or null when the store is blocked (the tab keeps its own until the page closes).
+ */
+function writeViewed(comparison: string, key: string, fingerprint: string | null): Viewed | null {
   const store = readStore()
+  const viewed = { ...store[comparison] }
+  if (fingerprint == null) delete viewed[key]
+  else viewed[key] = fingerprint
   delete store[comparison]
   store[comparison] = viewed
   const keys = Object.keys(store)
   for (const k of keys.slice(0, Math.max(0, keys.length - KEEP_COMPARISONS))) delete store[k]
   writeJson(VIEWED_KEY, store)
+  // Read back: a blocked store keeps no comparison at all (an untick must not look stored there).
+  const back = readStore()[comparison]
+  return back && back[key] === (fingerprint ?? undefined) ? viewed : null
 }
 
 /** Ticked, and not changed since. */
@@ -68,12 +79,25 @@ export function useViewed(comparison: string) {
   ref.current = current
   const set = useCallback((e: Entry, on: boolean) => {
     const { comparison: c, viewed } = ref.current
-    const next = { ...viewed }
+    let next = { ...viewed }
     if (on) next[e.key] = e.fingerprint
     else delete next[e.key]
+    // Stored: the ticks as stored now, other tabs' included. Blocked: this tab's own.
+    if (c) next = writeViewed(c, e.key, on ? e.fingerprint : null) ?? next
     ref.current = { comparison: c, viewed: next }
     setState(ref.current)
-    if (c) writeViewed(c, next)
+  }, [])
+  // Ticks made in another tab show here at once (B09-Q4).
+  useEffect(() => {
+    const onStorage = (ev: StorageEvent) => {
+      if (ev.key !== VIEWED_KEY && ev.key !== null) return
+      const c = ref.current.comparison
+      if (!c) return
+      ref.current = { comparison: c, viewed: readViewed(c) }
+      setState(ref.current)
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }, [])
   const now = useCallback(() => ref.current.viewed, [])
   return { viewed: current.viewed, set, now }
