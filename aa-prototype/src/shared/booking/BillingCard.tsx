@@ -1,3 +1,4 @@
+import { useBookingApi, useBookingStore, useBookingStoreMode } from './draft'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Check, ChevronDown, RotateCcw, Search } from 'lucide-react'
 import { accent, neutral, radius } from '../../theme/tokens'
@@ -24,7 +25,6 @@ import {
   railStartFor,
   setProcedureContract,
   setRailAnswers,
-  useAppStore,
   type Actor,
 } from '../../store'
 import { useSurface } from '../surface'
@@ -102,8 +102,8 @@ export function BillingCard(props: BillingCardProps) {
 }
 
 function useBilling(procedure: Procedure) {
-  const masters = useAppStore((s) => s.masters)
-  const schedule = useAppStore((s) => s.schedule)
+  const masters = useBookingStore((s) => s.masters)
+  const schedule = useBookingStore((s) => s.schedule)
   const booking = schedule.bookings[procedure.bookingId]
   const list = booking !== undefined ? schedule.lists[booking.listId] : undefined
   const context = useMemo(() => (list !== undefined ? railContextForList({ masters }, list, booking) : undefined), [masters, list, booking])
@@ -144,14 +144,14 @@ function InlineBillingCard(props: BillingCardProps) {
  * "Payer: not billed yet" until the Procedure has a Contract.
  */
 function usePaidBy({ procedure, actor, canEdit }: BillingCardProps): Omit<PaidByRowProps, 'variant'> | null {
-  const masters = useAppStore((s) => s.masters)
-  const procedures = useAppStore((s) => s.schedule.procedures)
-  const bookings = useAppStore((s) => s.schedule.bookings)
-  const lists = useAppStore((s) => s.schedule.lists)
-  const billingLines = useAppStore((s) => s.schedule.billingLines)
-  const invoices = useAppStore((s) => s.billing.invoices)
-  const invoiceLines = useAppStore((s) => s.billing.invoiceLines)
-  const locks = useAppStore((s) => s.billing.locks)
+  const masters = useBookingStore((s) => s.masters)
+  const procedures = useBookingStore((s) => s.schedule.procedures)
+  const bookings = useBookingStore((s) => s.schedule.bookings)
+  const lists = useBookingStore((s) => s.schedule.lists)
+  const billingLines = useBookingStore((s) => s.schedule.billingLines)
+  const invoices = useBookingStore((s) => s.billing.invoices)
+  const invoiceLines = useBookingStore((s) => s.billing.invoiceLines)
+  const locks = useBookingStore((s) => s.billing.locks)
   const surface = actor.role === 'office' ? 'office' : 'anaesthetist'
   const view = useMemo(
     () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines }, billing: { invoices, invoiceLines, locks } }, procedure.id, surface),
@@ -185,6 +185,7 @@ function usePaidBy({ procedure, actor, canEdit }: BillingCardProps): Omit<PaidBy
  * (`sheet`, the rail across the top), so both edit through the same flow.
  */
 function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFailures, onError, layout }: BillingCardProps & { layout: 'side' | 'sheet' }) {
+  const bookingApi = useBookingApi()
   const { masters, context, contract, start } = useBilling(procedure)
   const sheet = layout === 'sheet'
   const railActor = railActorOf(actor)
@@ -200,10 +201,10 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
   const [recheck, setRecheck] = useState<string | null>(null)
   /** Run a change and say what it did to the prepayment. */
   const withRecheck = <T,>(run: () => T): T => {
-    const before = prepaymentStatusFor(useAppStore.getState(), procedure.bookingId)
+    const before = prepaymentStatusFor(bookingApi.getState(), procedure.bookingId)
     const out = run()
     // A pick that changes nothing keeps the line the step before set (a release, then the new Contract).
-    const line = prepaymentRecheckLine(before, prepaymentStatusFor(useAppStore.getState(), procedure.bookingId))
+    const line = prepaymentRecheckLine(before, prepaymentStatusFor(bookingApi.getState(), procedure.bookingId))
     setRecheck((prev) => line ?? prev)
     return out
   }
@@ -245,10 +246,10 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
     // An answer that still leads to the Contract (the same path, or the start of it) keeps it; one that does not releases it.
     const onPath = next === undefined || (start !== undefined && next.destination === start.destination && (next.narrow === undefined || next.narrow === start.narrow))
     if (procedure.governingContractId === undefined) {
-      const res = setRailAnswers(useAppStore, actor, procedure.id, next)
+      const res = setRailAnswers(bookingApi, actor, procedure.id, next)
       if (!res.ok) setError(res.message)
     } else if (!onPath) {
-      const res = withRecheck(() => setRailAnswers(useAppStore, actor, procedure.id, next, { releaseContract: true }))
+      const res = withRecheck(() => setRailAnswers(bookingApi, actor, procedure.id, next, { releaseContract: true }))
       if (!res.ok) {
         setError(res.message)
         return
@@ -263,7 +264,7 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
 
   const choose = (contractId: ContractId, enteredPrice?: number) => {
     const changing = procedure.governingContractId !== undefined && procedure.governingContractId !== contractId
-    const res = withRecheck(() => setProcedureContract(useAppStore, actor, procedure.id, contractId, enteredPrice !== undefined ? { enteredPrice } : {}))
+    const res = withRecheck(() => setProcedureContract(bookingApi, actor, procedure.id, contractId, enteredPrice !== undefined ? { enteredPrice } : {}))
     if (!res.ok) {
       setError(res.message)
       return
@@ -483,8 +484,8 @@ function ContractCombo({
   /** Drop the list down in the page flow (inside the phone's sheet) rather than floating. */
   inFlow?: boolean
 }) {
-  const parties = useAppStore((s) => s.masters.parties)
-  const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
+  const parties = useBookingStore((s) => s.masters.parties)
+  const rvgGroups = useBookingStore((s) => s.masters.rvgGroups)
   // The one popover behaviour (U2): outside click closes; Escape closes this
   // list only (never the sheet under it) and puts focus back on the combo.
   const { open, setOpen, rootRef, panelId, triggerProps } = usePopover()
@@ -657,7 +658,7 @@ function PriceBlock({
   /** Price at the Other price: a typed amount, or none where the office types it. */
   onAmount: (amount: number | undefined) => void
 }) {
-  const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
+  const rvgGroups = useBookingStore((s) => s.masters.rvgGroups)
   const [referenceOpen, setReferenceOpen] = useState(false)
   const mobile = look === 'sheet'
   const coded = procedure.rvgGroupId !== undefined
@@ -751,13 +752,24 @@ function AmountEntry({
   onAmount: (amount: number | undefined) => void
 }) {
   const saved = onFallback ? procedure.enteredPrice : undefined
+  // In the Admin draft (catch-up Phase 35) the amount writes to the draft as typed, so the save bar and
+  // the leave guard see it at once; elsewhere it saves on blur or Enter.
+  const draftMode = useBookingStoreMode() === 'draft'
   const [text, setText] = useState(saved !== undefined ? saved.toFixed(2) : '')
   useEffect(() => {
-    setText(saved !== undefined ? saved.toFixed(2) : '')
-  }, [saved])
+    const formatted = saved !== undefined ? saved.toFixed(2) : ''
+    // A draft write of what is being typed keeps the text as typed (no "1" to "1.00" mid-entry).
+    setText((prev) => (draftMode && prev.trim() !== '' && parseAmount(prev) === saved ? prev : formatted))
+  }, [saved, draftMode])
   const typed = parseAmount(text)
   const commit = () => {
     if (typed !== undefined && typed !== saved) onAmount(typed)
+  }
+  const change = (value: string) => {
+    setText(value)
+    if (!draftMode) return
+    const next = parseAmount(value)
+    if (next !== undefined && next !== saved) onAmount(next)
   }
   const todo = saved === undefined && editable
   const label = (
@@ -772,7 +784,7 @@ function AmountEntry({
         label={label}
         ariaLabel="Fixed price, ex GST"
         value={text}
-        onChange={setText}
+        onChange={change}
         onCommit={commit}
         invalid={text.trim() !== '' && typed === undefined}
         block={mobile}

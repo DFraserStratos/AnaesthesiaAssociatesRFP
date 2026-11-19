@@ -129,7 +129,9 @@ describe('both legs move together', () => {
 
   it('the status label follows the legs', () => {
     expect(pairStatusLabel(pair('A', 100, { mirrored: false }))).toBe('invoiced')
-    expect(pairStatusLabel({ ...pair('A', 100, { mirrored: false }), handoffFailure: { code: 'x', message: 'y' } })).toBe('handoffFailed')
+    // A hand-off waiting in the Xero sync queue (catch-up Phase 37): the caller says so.
+    expect(pairStatusLabel(pair('A', 100, { mirrored: false }), undefined, true)).toBe('waitingForXero')
+    expect(pairStatusLabel(pair('A', 100), undefined, true)).toBe('handedOff')
     expect(pairStatusLabel(pair('A', 100))).toBe('handedOff')
     const half = receive(pair('A', 100), 50)
     expect(pairStatusLabel(half)).toBe('partPaid')

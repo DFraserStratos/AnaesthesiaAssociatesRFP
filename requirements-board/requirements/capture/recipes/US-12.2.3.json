@@ -6,9 +6,79 @@
     {
       "name": "dashboard",
       "app": "web",
-      "caption": "Web dashboard: week calendar, receivables, productivity and cover",
+      "caption": "Web dashboard: week calendar, financial position (owed, collected, paid out) and cover",
       "start": "/web",
-      "states": [ { "steps": [], "highlight": [] } ]
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=web-financial-position]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dashboard-paid-out",
+      "app": "web",
+      "caption": "After a payment comes in and AA pays you in Xero's payables run, Collected and Paid out to you rise on the dashboard",
+      "start": "/web",
+      "states": [
+        {
+          "steps": [
+            {
+              "goto": "/admin/review/L-34821-2026-07-20-AM"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/web"
+            },
+            {
+              "wait": "[data-shot=web-financial-position]"
+            },
+            {
+              "trigger": "web-payment-full"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "wait": "[data-shot=billing-payables-run]"
+            },
+            {
+              "click": "[data-shot=billing-run-payables-in-xero]"
+            },
+            {
+              "wait": "[data-shot=billing-payables-result]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/web"
+            },
+            {
+              "wait": "[data-shot=web-financial-position]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=web-financial-position]"
+          ]
+        }
+      ]
     }
   ]
 }

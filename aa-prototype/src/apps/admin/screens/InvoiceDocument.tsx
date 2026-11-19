@@ -22,7 +22,7 @@ import {
 } from '../../../domain/billing'
 import { Button, DemoBadge, Logo } from '../../../shared'
 import { dateTimeMicroCap, formatCurrency } from '../../../shared/format'
-import { dayWithYear } from '../../../domain/dateText'
+import { dayWithYear, hhmm } from '../../../domain/dateText'
 import { DefList, DefRow, FormError, Notice, Pill, TextAction, TextField } from '../../../shared/ui'
 import { lockStampText, lockViewFor, MIGRATED_LOCK_TEXT, partyKeyOf } from '../../../domain/billing/lock'
 import { BILLS_LABEL, pricingLabel } from '../../../shared/contracts'
@@ -30,7 +30,7 @@ import { regenerateSummary, type RegenerateResult } from '../../../store/locks'
 import { useDemoTriggerMemory } from '../../../shared/demoTriggers/memory'
 import { HOLDING_ACCOUNT } from '../../../domain/billing/prepayHolding'
 import { transferOfPair } from '../../../domain/billing/ledger'
-import { pairForInvoice } from '../../../store/ledgerSelectors'
+import { handoffQueuedFor, openDivergenceFor, pairForInvoice } from '../../../store/ledgerSelectors'
 import { toCents } from '../../../domain/billing/money'
 
 interface InvoiceDocumentProps {
@@ -333,7 +333,10 @@ function InvoiceInfoRail({
   onSend: (to?: string) => boolean
 }) {
   const navigate = useNavigate()
-  const handoffFailed = billingCase?.handoffFailure !== undefined
+  // Catch-up Phase 37: a hand-off waiting in the Xero sync queue, or a change made directly in Xero flagged by the poll.
+  const queued = useAppStore((s) => (billingCase !== undefined ? handoffQueuedFor(s, billingCase.id) : undefined))
+  const flag = useAppStore((s) => (billingCase !== undefined ? openDivergenceFor(s, billingCase.id) : undefined))
+  const handoffFailed = queued !== undefined || flag !== undefined
   const accRecId = billingCase?.receivable.xeroAccRecId
   const accPayId = billingCase?.payable?.xeroAccPayId
   const handoffComplete = accRecId !== undefined
@@ -384,17 +387,37 @@ function InvoiceInfoRail({
               display: 'flex',
               alignItems: 'flex-start',
               gap: 8,
-              color: handoffFailed ? semantic.warning.onTint : handoffComplete ? neutral.ink : neutral.slate,
+              color: flag !== undefined ? semantic.error.onTint : queued !== undefined ? semantic.warning.onTint : handoffComplete ? neutral.ink : neutral.slate,
             }}
           >
             <Clock size={15} aria-hidden style={{ marginTop: 1, flex: 'none' }} />
             <span style={{ fontSize: 12.5, lineHeight: '18px', fontWeight: 600 }}>
-              {handoffFailed ? 'Xero handoff failed' : handoffComplete ? 'Mirrored in Xero' : 'Not yet in Xero'}
+              {flag !== undefined
+                ? `${flag.kind === 'voidedInXero' ? 'Voided in Xero' : 'Amended in Xero'} · flagged`
+                : queued !== undefined
+                  ? 'Waiting for Xero'
+                  : handoffComplete
+                    ? 'Mirrored in Xero'
+                    : 'Not yet in Xero'}
             </span>
           </div>
-          {handoffFailed && (
-            <div style={{ fontSize: 12.5, lineHeight: '18px', color: semantic.warning.onTint }}>
-              The invoice and its ledger pair stand. Resolve and retry in Billing monitor.
+          {queued !== undefined && (
+            <div data-shot="invoice-waiting-for-xero" style={{ fontSize: 12.5, lineHeight: '18px', color: semantic.warning.onTint }}>
+              {`The invoice and its ledger pair stand. Attempt ${queued.attempts} · next try `}
+              <span className="mono">{hhmm(queued.nextAttemptAtISO)}</span>
+              {'; the Xero sync queue retries it.'}
+            </div>
+          )}
+          {flag !== undefined && billingCase !== undefined && (
+            <div data-shot="invoice-xero-flag" style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12.5, lineHeight: '18px', color: semantic.error.onTint }}>
+              <span>
+                {flag.kind === 'voidedInXero'
+                  ? 'AA staff voided this invoice directly in Xero. The ledger keeps the amount issued.'
+                  : `Xero now shows a total of ${formatMoney(flag.xeroShows.total)}. The ledger keeps the amount issued.`}
+              </span>
+              <TextAction size="sm" flush shot="invoice-open-billing-monitor" onClick={() => navigate(`/admin/billing?list=${billingCase.listId}`)}>
+                Resolve in the Billing monitor
+              </TextAction>
             </div>
           )}
           {billingCase !== undefined && (

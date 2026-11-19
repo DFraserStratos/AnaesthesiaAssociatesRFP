@@ -77,7 +77,6 @@ import { defaultAppSettings } from '../warnings/settings'
 import { SAMPLE_AA_FEE_SETTINGS } from './aaFee'
 import type { AppSettings, WarningClearance } from '../warnings/types'
 import { buildBookings, type BookingScenarioIds } from './bookings'
-import { ANAESTHETIST_DASHBOARD, type AnaesthetistDashboardSeed } from './anaesthetistDashboard'
 import { buildHistory, LOOKBACK_DATE_ISO, LOOKBACK_LIST_ID } from './history'
 import { SEED_DRAFT_LIST_IDS, SEED_DRAFT_LISTS, seedDraftListAudit, seedDraftListBookings, seedRecurringClashDraftLists } from './draftLists'
 import { buildSeedAudit } from './audit'
@@ -92,6 +91,9 @@ import { seedCompletionBookings, type CompletionBookingKey } from './completionB
 import { REVIEW_FLAGS_LIST_ID, seedReviewFlagBookings, type ReviewFlagBookingKey } from './reviewFlagBookings'
 import { seedDisabledContractBooking } from './disabledContractBooking'
 import { RANGE_AUTHORISED_BILLED_ISO, RANGE_AUTHORISED_LIST_ID, seedPricingBookings, type PricingBookingKey } from './pricingBookings'
+import { applySeedListOrigins } from './listOrigins'
+import { SEED_EMAIL_TEMPLATES, SEED_EMAIL_TEMPLATE_NEXT } from './emailTemplates'
+import type { EmailTemplate } from '../types'
 
 export {
   canvasAnaesthetists,
@@ -119,15 +121,7 @@ export { SPC, SPECIALTIES, SPECIALTY_FOR_DIRECTORY_TEXT } from './specialties'
 export { TAG, FUNDING_TAGS } from './fundingTags'
 export { RVG_GROUP, RVG_GROUPS, LEGACY_CODE_TO_RVG_GROUP, AA_OWN_ROW_KEYS } from './rvgGroups'
 export { BP, PAT, PAT_REVIEW, HANA_PARK_PAYER } from './patients'
-export {
-  ANAESTHETIST_DASHBOARD,
-  deriveDashboardFigures,
-  type AnaesthetistDashboardSeed,
-  type DashboardFigures,
-  type ProductivitySeed,
-  type LeaveSeed,
-} from './anaesthetistDashboard'
-export { bucketForAgingDays, epochDayOf, daysBetween, type AgingBucketKey } from '../dateDays'
+export { epochDayOf, daysBetween } from '../dateDays'
 
 /** The demo seed constant (the pinned demo date as a number). */
 export const SEED = 20260721
@@ -172,6 +166,8 @@ export interface SeedMasters {
   recurringBookings: Record<string, RecurringBooking>
   holidays: Record<string, HospitalHoliday>
   patients: Record<string, Patient>
+  /** The update email templates, one per kind of change at seed (catch-up Phase 35; US-02.3.4). */
+  emailTemplates: Record<string, EmailTemplate>
 }
 
 export interface SeedSchedule {
@@ -206,12 +202,6 @@ export interface SeedState {
    * screen edits it (US-13.7.4 is Future).
    */
   appSettings: AppSettings
-  /**
-   * Seeded anaesthetist-dashboard figures (Phase 05; W1/W4), keyed by
-   * registration number. Labelled demo figures; Phase 10 replaces the
-   * receivables/overdue portion with ledger derivation.
-   */
-  dashboards: Record<string, AnaesthetistDashboardSeed>
   /** Per-day internal office notes (Phase 06), keyed by calendar date. */
   dayNotes: Record<IsoDate, DayNote[]>
   /**
@@ -476,6 +466,8 @@ function buildSeedInternal(): SeedBuild {
 
   // Catch-up Phase 32b: the sickness the office recorded returned Rutherford's List (D59).
   applySicknessReturn(canvas)
+  // Catch-up Phase 34: the two pinned List origins (a rooms' PDF with its sender, the hospital's list).
+  applySeedListOrigins(lists)
 
   const patients = buildPatients(SEED)
 
@@ -655,6 +647,8 @@ function buildSeedInternal(): SeedBuild {
       recurringBookings: byId(RECURRING_BOOKINGS, (p) => p.id),
       holidays: byId(HOSPITAL_HOLIDAYS, (h) => h.id),
       patients: patientsRec,
+      // Catch-up Phase 35: added after everything else, no RNG draws.
+      emailTemplates: byId(SEED_EMAIL_TEMPLATES.map((t) => ({ ...t })), (t) => t.id),
     },
     schedule: {
       slots,
@@ -674,7 +668,6 @@ function buildSeedInternal(): SeedBuild {
       volumeStory: { invoicesPerYear: 28000, oneTimePct: 99, activeContacts: 9820, softLimit: 10000 },
     },
     appSettings,
-    dashboards: ANAESTHETIST_DASHBOARD,
     dayNotes: DAY_NOTES,
     officePrivate: buildOfficePrivate(),
     notifications: {},
@@ -694,6 +687,10 @@ function buildSeedInternal(): SeedBuild {
       availabilitySeries: rehomed.series.length + 1,
       // Catch-up Phase 33a: the seeded stub is STB0001 (`intakeSeed.ts`).
       stub: 2,
+      // Catch-up Phase 34: the seeded PDF list is PDL0001 (`intakeSeed.ts`).
+      pdfList: 2,
+      // Catch-up Phase 35: the seeded update email templates are ET001 to ET004 (`emailTemplates.ts`).
+      emailTemplate: SEED_EMAIL_TEMPLATE_NEXT,
     },
   }
 

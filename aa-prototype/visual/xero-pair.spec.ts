@@ -98,6 +98,13 @@ test('S3: the nib invoice opens its routed ACCREC and ACCPAY pair', async ({ pag
   await page.getByRole('button', { name: 'Simulate payment and payout' }).click()
   await expect(page.getByRole('button', { name: 'Payment and payout complete' })).toBeDisabled()
   await expect(page.getByRole('status')).toContainText('$152.38')
+  // Catch-up Phase 37: the payout is a bill payment made in Xero, and the engine records the disbursement from its webhook.
+  await expect(accPayCard.locator('[data-shot=xero-accpay-paid-in-xero]')).toContainText('$152.38')
+  const detection = accPayCard.locator('[data-shot=xero-accpay-engine-detection] [data-engine-state]')
+  await expect(detection).toHaveCount(1)
+  await expect(detection).toHaveAttribute('data-engine-state', 'recorded')
+  await expect(detection).toContainText(/disbursement recorded .*by webhook/)
+  await expect(accPayCard).toContainText('Disbursed')
   await page.screenshot({ path: 'visual/shots/xero-s3-pair-settled.png', fullPage: true })
   await page.getByRole('link', { name: /View in Dr Souter's account/ }).click()
   await expect(page).toHaveURL(/\/web\/accounts\/payments\?invoice=AA-2026-0005$/)

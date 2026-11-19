@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { createBrowserRouter, createRoutesFromElements, Navigate, Route, RouterProvider } from 'react-router-dom'
 import { AppShell } from './shell/AppShell'
 import { PhoneFrame } from './shell/PhoneFrame'
 import { MobileApp } from './apps/mobile/MobileApp'
@@ -6,6 +6,7 @@ import { WebApp } from './apps/web/WebApp'
 import { AdminApp } from './apps/admin/AdminApp'
 import {
   WebAccountsRoute,
+  WebAccountsOverdueRedirect,
   WebAvailabilityRoute,
   WebMyAvailabilityRoute,
   WebBookingDetailRoute,
@@ -30,7 +31,11 @@ import {
   AdminBookingDetailRoute,
   AdminDayRoute,
   AdminIndexRedirect,
-  AdminIntegrationsRoute,
+  AdminIntakeRoute,
+  AdminIntakeRedirect,
+  AdminPdfListsRoute,
+  AdminDataQualityRoute,
+  AdminValidatorsRoute,
   AdminInvoicesRoute,
   AdminMastersRoute,
   AdminMatchingRoute,
@@ -45,6 +50,8 @@ import {
 import { DemoControlPanel } from './apps/demo/DemoControlPanel'
 import { DemoXero } from './apps/demo/DemoXero'
 import { DemoIntegrations } from './apps/demo/DemoIntegrations'
+import { FutureScopeMessageLog } from './apps/demo/futureScope/MessageLog'
+import { FutureScopeFeedMapping } from './apps/demo/futureScope/FeedMapping'
 import { DemoData } from './apps/demo/DemoData'
 import { ComponentCatalogue } from './apps/demo/catalogue/ComponentCatalogue'
 import { useAppStore } from './store'
@@ -75,10 +82,7 @@ function RootRedirect() {
  * `anaesthetists/:anaesthetistId`) are each ONE child route of `masters`, so
  * an unknown id falls back to `/admin/masters`.
  */
-export function AppRouter() {
-  return (
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <Routes>
+const routeTree = (
         <Route element={<AppShell />}>
           <Route index element={<RootRedirect />} />
 
@@ -96,7 +100,9 @@ export function AppRouter() {
             <Route path="availability" element={<WebAvailabilityRoute />} />
             <Route path="availability/mine" element={<WebMyAvailabilityRoute />} />
             <Route path="accounts">
-              <Route index element={<Navigate to="overdue" replace />} />
+              <Route index element={<Navigate to="outstanding" replace />} />
+              {/* The Overdue tab became Outstanding (catch-up Phase 38, D8): old links and guide URLs land there. */}
+              <Route path="overdue" element={<WebAccountsOverdueRedirect />} />
               <Route path=":subTab" element={<WebAccountsRoute />} />
             </Route>
             <Route path="profile" element={<WebProfileRoute />} />
@@ -111,7 +117,15 @@ export function AppRouter() {
               <Route path="bookings/:bookingId" element={<AdminBookingDetailRoute />} />
               <Route path="cards/:cardId" element={<LegacyBookingRedirect />} />
             </Route>
-            <Route path="matching" element={<AdminMatchingRoute />} />
+            {/* Admin Intake (catch-up Phase 34): matching, the rooms' PDF lists, data quality and the validators. */}
+            <Route path="intake" element={<AdminIntakeRoute />}>
+              <Route index element={<Navigate to="matching" replace />} />
+              <Route path="matching" element={<AdminMatchingRoute />} />
+              <Route path="pdfs" element={<AdminPdfListsRoute />} />
+              <Route path="quality" element={<AdminDataQualityRoute />} />
+              <Route path="validators" element={<AdminValidatorsRoute />} />
+            </Route>
+            <Route path="matching" element={<AdminIntakeRedirect />} />
             <Route path="conflicts" element={<AdminConflictsRoute />} />
             <Route path="draft-lists" element={<AdminDraftListsRoute />} />
             <Route path="notifications" element={<AdminNotificationsRoute />} />
@@ -132,7 +146,7 @@ export function AppRouter() {
               <Route index element={<AdminLedgerRoute />} />
               <Route path="anaesthetists/:anaesthetistId" element={<AdminAnaesthetistLedgerRoute />} />
             </Route>
-            <Route path="integrations" element={<AdminIntegrationsRoute />} />
+            <Route path="integrations" element={<AdminIntakeRedirect />} />
             <Route path="masters">
               <Route index element={<AdminMastersRoute />} />
               <Route path="surgeons/:surgeonId" element={<AdminSurgeonProfileRoute />} />
@@ -163,15 +177,43 @@ export function AppRouter() {
               <Route index element={<DemoXero />} />
               <Route path=":accRecId" element={<DemoXero />} />
             </Route>
+            <Route path="bank" element={<DemoXero />} />
           </Route>
-          <Route path="demo/integrations" element={<DemoIntegrations />} />
+          {/* Future scope: HL7 and FHIR (catch-up Phase 34): the simulator, its message log and feed mapping. */}
+          <Route path="demo/integrations">
+            <Route index element={<DemoIntegrations />} />
+            <Route path="log" element={<FutureScopeMessageLog />} />
+            <Route path="mapping" element={<FutureScopeFeedMapping />} />
+          </Route>
           <Route path="demo/data" element={<DemoData />} />
           {/* UI component catalogue (docs/ui-library-research): URL only, not in the app switcher. */}
           <Route path="demo/catalogue" element={<Navigate to="/demo/catalogue/admin" replace />} />
           <Route path="demo/catalogue/:app" element={<ComponentCatalogue />} />
           <Route path="*" element={<RootRedirect />} />
         </Route>
-      </Routes>
-    </BrowserRouter>
-  )
+)
+
+/**
+ * A data router (catch-up Phase 35), so the Admin Booking detail's unsaved
+ * changes guard can block navigation (`useBlocker`). Same route tree and
+ * URLs as the `BrowserRouter` it replaced. Created once, on first render,
+ * never inside a component's render path twice. The PWA keeps its own
+ * `BrowserRouter` (pwa/main.tsx): it has no Admin.
+ */
+let router: ReturnType<typeof createBrowserRouter> | null = null
+function appRouter(): ReturnType<typeof createBrowserRouter> {
+  router ??= createBrowserRouter(createRoutesFromElements(routeTree), {
+    future: {
+      v7_relativeSplatPath: true,
+      v7_fetcherPersist: true,
+      v7_normalizeFormMethod: true,
+      v7_partialHydration: true,
+      v7_skipActionErrorRevalidation: true,
+    },
+  })
+  return router
+}
+
+export function AppRouter() {
+  return <RouterProvider router={appRouter()} future={{ v7_startTransition: true }} />
 }

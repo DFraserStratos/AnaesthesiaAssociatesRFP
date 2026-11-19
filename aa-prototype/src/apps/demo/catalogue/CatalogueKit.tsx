@@ -32,10 +32,6 @@ export const LIBRARY_GROUPS = {
     title: 'react-day-picker (shadcn Calendar / Date Picker)',
     blurb: 'Calendar grids and date inputs, keeping our own day-cell content.',
   },
-  recharts: {
-    title: 'Recharts (shadcn Chart)',
-    blurb: 'Charts with an accessible fallback.',
-  },
   numberflow: {
     title: 'NumberFlow',
     blurb: 'Optional like-for-like swap for figures that already animate. No new animation.',

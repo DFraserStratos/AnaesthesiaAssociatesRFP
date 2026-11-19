@@ -26,7 +26,14 @@ export interface Persona {
 export const PERSONAS = {
   souter: { name: 'Dr Melanie Souter', initials: 'MS', role: 'Anaesthetist', anaesthetistId: '34821' },
   kirsty: { name: 'Kirsty W.', initials: 'KW', role: 'Office' },
+  /** The second named office user (catch-up Phase 35), shown while Switch office user acts as her. */
+  sam: { name: 'Sam T.', initials: 'ST', role: 'Office' },
 } as const satisfies Record<string, Persona>
+
+/** The office persona the Admin app shows now: Kirsty W. unless Switch office user chose Sam T. */
+export function officePersona(officeUser: 'kirsty' | 'sam' | undefined): Persona {
+  return officeUser === 'sam' ? PERSONAS.sam : PERSONAS.kirsty
+}
 
 export interface AppConfig {
   id: AppId
@@ -70,7 +77,7 @@ export const APP_CONFIG: Record<AppId, AppConfig> = {
   },
   'demo-integrations': {
     id: 'demo-integrations',
-    label: 'Demo: Integrations',
+    label: 'Demo: Future scope, HL7 and FHIR',
     path: '/demo/integrations',
     persona: PERSONAS.kirsty,
     group: 'demo',

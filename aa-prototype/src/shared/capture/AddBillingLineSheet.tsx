@@ -1,8 +1,9 @@
+import { useBookingApi } from '../booking/draft'
 import { useEffect, useState } from 'react'
 import { neutral } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
 import { parseAmount } from '../../domain/billing/money'
-import { addBillingLine, useAppStore, type Actor } from '../../store'
+import { addBillingLine, type Actor } from '../../store'
 import { Button, FormError, TextField } from '../ui'
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
@@ -23,6 +24,7 @@ interface AddBillingLineSheetProps {
  * Phase 24, RV-03).
  */
 export function AddBillingLineSheet({ open, procedure, actor, onClose }: AddBillingLineSheetProps) {
+  const bookingApi = useBookingApi()
   const { Overlay } = useSurface()
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
@@ -41,7 +43,7 @@ export function AddBillingLineSheet({ open, procedure, actor, onClose }: AddBill
 
   function add() {
     setError(null)
-    const outcome = addBillingLine(useAppStore, actor, procedure.id, { chargeBasis: 'fixed', description: description.trim(), amount: parsedAmount ?? 0 })
+    const outcome = addBillingLine(bookingApi, actor, procedure.id, { chargeBasis: 'fixed', description: description.trim(), amount: parsedAmount ?? 0 })
     if (!outcome.ok) {
       setError(outcome.message)
       return

@@ -1,6 +1,7 @@
+import { useBookingApi, useBookingStore } from '../booking/draft'
 import { useEffect, useMemo, useState } from 'react'
 import { neutral } from '../../theme/tokens'
-import { proceduresForBooking, setPrimaryProcedure, useAppStore, type Actor } from '../../store'
+import { proceduresForBooking, setPrimaryProcedure, type Actor } from '../../store'
 import { modifierFactsFor } from '../../store/modifierFacts'
 import { FormError } from '../ui'
 import { ConfirmSheet } from '../surface/ConfirmSheet'
@@ -26,8 +27,9 @@ interface MakePrimarySheetProps {
  * shows in the sheet.
  */
 export function MakePrimarySheet({ open, procedureId, actor, onClose, onDone }: MakePrimarySheetProps) {
-  const schedule = useAppStore((s) => s.schedule)
-  const masters = useAppStore((s) => s.masters)
+  const bookingApi = useBookingApi()
+  const schedule = useBookingStore((s) => s.schedule)
+  const masters = useBookingStore((s) => s.masters)
   const procedure = schedule.procedures[procedureId]
   const [error, setError] = useState<string | null>(null)
 
@@ -58,7 +60,7 @@ export function MakePrimarySheet({ open, procedureId, actor, onClose, onDone }: 
 
   function submit() {
     setError(null)
-    const outcome = setPrimaryProcedure(useAppStore, actor, procedureId)
+    const outcome = setPrimaryProcedure(bookingApi, actor, procedureId)
     if (!outcome.ok) {
       setError(outcome.message)
       return

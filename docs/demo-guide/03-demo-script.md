@@ -25,6 +25,9 @@ capture.
 3. Under **Clock & reset**, select **Reset demo data**, then **Confirm reset**.
 4. Confirm the demo clock reads Tuesday 21 July 2026, 8:00.
 5. Keep this document (or the master HTML) open in a second tab. Do not present from the Data Inspector.
+6. Optional check: **Admin → Intake** opens on Matching with one seeded row waiting (Mere Tipene, no
+   NHI), and its **PDF lists** tab holds Mr Okafor's list, not yet sent. Hospital files are imported by
+   the office; nothing syncs.
 
 The control panel is the **index**, grouped: **Clock & reset**, **Scenario jumps (S1 to S5)** and
 **Demo actions by screen**. Each scenario jump confirms first, resets the data, applies any extra
@@ -68,23 +71,26 @@ view respectively.
 | Booking detail | `/web/lists/<listId>/bookings/<bookingId>` |
 | Availability grid (Find cover) | `/web/availability` |
 | My availability | `/web/availability/mine` (one day: `?date=2026-08-14`) |
-| Accounts, outstanding | `/web/accounts/overdue` |
-| Accounts, GST activity | `/web/accounts/gst` |
+| Accounts, outstanding | `/web/accounts/outstanding` (the old `/web/accounts/overdue` opens it) |
+| Accounts, payments | `/web/accounts/payments` |
+| Accounts, GST report | `/web/accounts/gst` |
 
 | Admin Web App | URL |
 |---|---|
 | Day view | `/admin/day/2026-07-21` (A to Z order: add `?sort=az`) |
-| Matching | `/admin/matching` |
+| Intake, Matching | `/admin/intake/matching` (`/admin/intake`, and the old `/admin/matching` and `/admin/integrations`, open it) |
+| Intake, PDF lists | `/admin/intake/pdfs` |
+| Intake, Data quality | `/admin/intake/quality` |
+| Intake, Validators | `/admin/intake/validators` |
 | Booking detail | `/admin/day/2026-07-21/bookings/<bookingId>` |
 | Conflicts | `/admin/conflicts` (hospital closures only; filters in the URL, e.g. `?hospital=`, `?cleared=1`) |
 | Review queue | `/admin/review` |
 | One List under review | `/admin/review/<listId>` |
 | Invoices | `/admin/invoices` |
 | One invoice document | `/admin/invoices/<invoiceId>` |
-| Billing monitor | `/admin/billing` |
+| Billing monitor | `/admin/billing` (filters in the URL: `?problems=1`, `?anaesthetist=34821`, `?hospital=`, `?from=`, `?to=`) |
 | Ledger (the whole ledger) | `/admin/ledger` |
 | Ledger, one anaesthetist | `/admin/ledger/anaesthetists/<anaesthetistId>` (Dr Souter: `34821`) |
-| Integration monitor | `/admin/integrations` |
 | Master data | `/admin/masters` (one view: `?view=surgeons`, `?view=anaesthetists`) |
 | Availability statuses | `/admin/masters?view=availability-statuses` |
 | Contracts | `/admin/masters?view=contracts` (one holder: `&holder=PY-COS`) |
@@ -95,11 +101,16 @@ view respectively.
 | Surgeon profile | `/admin/masters/surgeons/<surgeonId>` (Ms A. Reid: `S-REID`) |
 | Surgeon with a PA | `/admin/masters/surgeons/S-DALGETY` (Dr H. Dalgety, Avonhead ENT: Bev, PA) |
 | Anaesthetist record | `/admin/masters/anaesthetists/<anaesthetistId>` (Dr Priya Sharma: `41267`) |
-| Audit | `/admin/audit` |
+| Notifications (the shared pool) | `/admin/notifications` |
+| Email templates | `/admin/masters?view=emailTemplates` |
+| Audit | `/admin/audit` (a change set's id filters it to that save) |
 
-The demo surfaces are `/demo/control`, `/demo/xero`, `/demo/integrations` and `/demo/data`. The
+The demo surfaces are `/demo/control`, `/demo/xero`, `/demo/integrations` and `/demo/data`.
+`/demo/integrations` is **Demo: Future scope, HL7 and FHIR** in the app switcher: the simulator, with
+its message log (retry and dead-letter) at `/demo/integrations/log` and its feed mapping at
+`/demo/integrations/mapping`. The
 Xero invoice-pair list is `/demo/xero/invoices`; one pair is
-`/demo/xero/invoices/<accRecId>`.
+`/demo/xero/invoices/<accRecId>`; Xero's bank reconciliation is `/demo/xero/bank`.
 
 Two things worth knowing. The seed is deterministic, so the ids in a URL you copied stay valid across
 a **Reset demo data** — you can bookmark a beat and re-open it after every reset. And a URL that has
@@ -120,60 +131,107 @@ mobile background and changes nothing here.
 
 ## S1 · Booking to theatre
 
-**Serves:** importing hospital bookings and the matching screen, the Booking as the billing anchor,
-and BTM capture. **Time:** 5 to 6 minutes.
+**Serves:** the hospital's file imported onto the matching screen, the wording kept as received, the
+office's Contract choice, a booking with no NHI waiting as a stub, the rooms' PDF list and where a List
+came from, and BTM capture. **Time:** 6 to 8 minutes (5 without the optional Beat 1b).
 
-> **Caveat: the HL7/FHIR simulator is not how S1 is shown.** HL7 v2 and FHIR messaging is Future
-> scope; the Integrations simulator and the Admin Integrations Messages and Feed config tabs are badged
-> **Future scope**, and a message fired there is only sent to matching.
+**Stage it:** use **Reset → Confirm reset** (or control panel, **S1 · Booking to theatre → Jump**),
+then open the Anaesthetist Mobile App. The Tue 28 Jul St George's AM List holds three booked,
+not-yet-captured cases, so the hospital's booking arrives into a working List rather than an empty one.
 
-**Stage it:** use **Reset → Confirm reset**, then open the Anaesthetist Mobile App. The Tue 28 Jul
-St George's AM List holds three booked, not-yet-captured cases, so the hospital booking arrives into a
-working List rather than an empty one.
-
-### Beat 1: the booking arrives from the hospital
+### Beat 1: the hospital's file arrives
 
 - **Click:**
-  - In Mobile Lists, open the Tue 28 Jul St George's AM session and read its three booked cases
+  - In Mobile Lists, open Dr Souter's Tue 28 Jul St George's AM List and read its three booked cases
     (07:45 knee arthroscopy, 09:45 shoulder arthroscopy, 11:15 wrist ORIF). Two of them read as the
     surgeon's rooms sent them: "L knee scope + partial menisectomy" and "ORIF # R dist radius"
     (illustrative demo wording, AI-made, not AA's).
-  - Go to **Admin → Matching** (under Day view; the amber badge counts open rows) → **Import hospital
-    file** → **St George's theatre list, Tue 28 Jul to Tue 4 Aug**. The stats strip fills: OPEN, NEW,
-    MODIFICATIONS, CANCELLATIONS, UNMATCHED.
+  - Go to **Admin → Intake** (under Day view; the amber badge counts open rows). It opens on the
+    **Matching** tab. Select **Import hospital file** (or **Demo actions → Import hospital file**) →
+    **St George's theatre list, Tue 28 Jul to Tue 4 Aug**. Five rows are imported and the stats strip
+    fills: OPEN, NEW, MODIFICATIONS, CANCELLATIONS, UNMATCHED.
   - Open **Sarah Mitchell**'s row (R1, New). Read the wording as the hospital sent it,
-    "lap appy ?conv to open", and the suggestion, **Create Booking on Dr Souter, Tue 28 Jul AM**.
-  - In the Procedure stack, **Choose Contract** and set **Patient** → **Standard** (the payment type
-    is always asked) → **No contract · RVG** through its step rail; leave **Choose RVG code** to the
-    anaesthetist.
+    `lap appy ?conv to open`, and the suggestion, **Create Booking on Dr Souter, Tue 28 Jul AM**.
   - Select **Create Booking** in the footer.
   - Back in Mobile, reopen the Tue 28 Jul AM List.
-  - Handset variant (PWA): Mobile Lists → **Demo** → **Hospital row arrives and the office matches
-    it** → **Sarah Mitchell, Tue 28 Jul AM (S1)**. The office then sets her Contract from Admin Day's
-    **Needs an invoice destination** card (on the PWA, **Demo → Office sets this Booking's Contract**),
-    or narrate it.
-- **Say:** "Hospital bookings are how most bookings reach AA today. They land on the matching screen
-  with the hospital's wording exactly as sent, the office sees what each row would change, and nothing
-  reaches the schedule until someone decides, even an update to a Booking already matched. This one is
-  new, so it becomes a Booking on Dr Souter's List. The hospital does not choose the Contract; the
-  office does, here or from its Needs an invoice destination list."
+- **Say:** "The office imports each hospital's file through the integration, one theatre list a day.
+  Every row lands here, and nothing reaches the schedule until the office decides, even an update to a
+  Booking already matched. The hospital's text is kept exactly as sent; on a Booking the rooms sent
+  first it replaces the rooms' text, and the original stays in its change history. Automatic sync is
+  later work."
 - **Expected:** the row moves under **Decided**; the List now carries a fourth Booking for Sarah
-  Mitchell at 08:30, between the first two cases, source **Hospital download**. Her NHI matched an
-  existing record, so her patient record is reused, no duplicate. Her stack shows the wording as
-  received, "lap appy ?conv to open", on the Contract the office picked, with the RVG code still to
-  choose; her invoice description starts as the hospital's text (the Contract's invoice description
-  replaces it where filled in). Had the office left the Contract unset, she would wait on Admin Day's
-  **Needs an invoice destination** card.
-- **Optional beat 1b:** on Matching open **R3 (Diane Foster)**, a Modification: the field differences
+  Mitchell at 08:30, between the first two cases, source **Hospital download**, with no RVG code and no
+  Contract. Her NHI matched an existing record, so her patient record is reused, no duplicate. The List
+  reads **0 of 4 complete** and stays `ACTIVE`.
+- **Optional aside:** on Matching open **R3 (Diane Foster)**, a Modification: the field differences
   with their tick boxes (time 11:00 to 12:15, the note "Bumped 15 min at surgeon request"), and the
   hospital's long text replacing "WLE MM" (the old text kept in the history, with a line saying it also
   becomes the invoice description). Untick a field and the footer count drops. Or import **St George's
   theatre list, a day later** to show Sarah Mitchell's update (09:00, a note, "Laparoscopic
   appendicectomy, may convert to open") waiting for approval, matched by date, surgeon, hospital and
   session.
-- **Do not** fire the S13 to S15 hospital messages in any beat: applying hospital changes automatically
-  is Future Work. If asked, say "Applying hospital changes automatically comes after the first release;
-  until then every change waits for the office here."
+- **Handset variant (PWA):** Mobile Lists (or the List or Booking) → **Demo** → **Hospital file
+  imported and my booking matched** → **St George's file, Tue 28 Jul AM (S1)**. It stands in for the
+  office: it imports the file, decides the rows for that List and sets **No contract · RVG** on Sarah's
+  new Booking (Beats 1 and 1a in one). Run again, it reads **Nothing new from the hospital for your
+  Lists**.
+
+### Beat 1a: the office answers who pays
+
+- **Click:**
+  - Go to **Admin Day view**. Sarah Mitchell's Booking is on the **Needs an invoice destination** card;
+    open it.
+  - The step rail asks **Where does the invoice go?** Choose Payment type **Patient**, then
+    **Standard: No contract · RVG** (pinned first).
+  - Leave the RVG code empty, then **Save changes** in the save bar.
+- **Say:** "The hospital does not choose the Contract; the office does. The payment type is always
+  asked, and for a patient paying on the RVG the code is the anaesthetist's to pick when she captures."
+- **Expected:** her Procedure reads **No contract · RVG** with the RVG code still to choose; once saved
+  (the green strip reads "Saved · ... · Kirsty W." with its change-set id) she leaves the Needs an
+  invoice destination card. Her invoice description starts as the hospital's text
+  (the Contract's invoice description replaces it where filled in).
+
+### Beat 1b (optional): a booking with no NHI
+
+- **Click:**
+  - On **Admin → Intake → Matching**, **Import hospital file** → **Southern Cross theatre list, Tue 28
+    Jul to Thu 6 Aug**.
+  - Filter **Unmatched** and open **Tama Henare** (no NHI). Optionally open Dr Souter's Tue 28 Jul PM
+    List to show the stub in her place.
+  - Optionally type the NHI **ZQA1008** and press **Add NHI**.
+- **Say:** "A row with no NHI never becomes a Booking until the office adds the NHI, but the
+  anaesthetist still sees the case coming: a stub stands on the List in its place."
+- **Expected:** the row waits under Unmatched; the stub stands on Dr Souter's Tue 28 Jul PM List,
+  "Waiting at intake: no NHI · The office is resolving this". Add NHI makes the Booking take the stub's
+  place. S4 Beat 4 tells this in full.
+
+### Beat 1c: the rooms' PDF list
+
+- **Click:**
+  - On **Admin → Intake**, open the **PDF lists** tab. Open **Mr Okafor's** list (Forte Health, Wed 5 Aug
+    AM, a session in Dr Rutherford's schedule with no List yet), sent from
+    **leanne.pa@avonsidesurgical.example**.
+  - Row 2, **Margaret Ellison**: the NHI printed **ZAA0068** is flagged invalid. Correct it to
+    **ZAA0067**; the correction shows under the row.
+  - Select **Send to matching**. Three rows land on Matching, marked **Rooms PDF**, with the rooms'
+    wording.
+  - On **Matching**, open **Brian Holt**'s row → **Create a List in a session** → Dr Rutherford →
+    confirm. Then open **Margaret Ellison**'s and **Hemi Parata**'s rows and **Create Booking** on the
+    new List (their suggestion). The re-send below shows a difference only for a row already decided.
+  - Open the new List (or one of its Bookings): it reads **From a rooms' PDF · sent from
+    leanne.pa@avonsidesurgical.example** and **Replies go to** that address.
+  - Back on **PDF lists**, **Demo actions → Receive updated PDF from rooms** → **Run**. The re-sent list
+    arrives from **admin@avonsidesurgical.example**, marked **Re-sent**. Open it and **Send to
+    matching**.
+- **Say:** "Both sources land on one screen. The List keeps who sent it, so updates and NHI requests go
+  back to whoever sent it, not just the surgeon's first office contact. The rooms send the whole List
+  again whenever it changes: a re-sent List is matched to the earlier one by surgeon, hospital, date and
+  session, which is our reading. A patient dropped from a re-sent List is not yet detected; that is
+  Future Work."
+- **Expected:** after the re-send, unchanged rows are skipped; Margaret Ellison's changed time (09:15
+  to 09:45) waits as a difference for approval, and a new patient, **Ruth Calder**, arrives as a new
+  row. Applying a re-sent row makes the List's sender the newer address, the earlier one kept in
+  History.
 
 ### Beat 2: the Booking fills over the days before theatre
 
@@ -189,7 +247,7 @@ working List rather than an empty one.
   text; the Contract and its RVG code sit together in the Billing card below it." Open **History** to show "Procedure text replaced" naming 'RTK' (Surgeon's rooms PDF). The
   wording is illustrative demo data, not AA's.
 - **Optional, live:** on the same List open **Diane Foster** (11:00, "WLE MM", RVG code to choose).
-  Then on **Admin → Matching**, **Demo actions → Send update for a matched Booking** (it defaults to
+  Then on **Admin → Intake → Matching**, **Demo actions → Send update for a matched Booking** (it defaults to
   Diane Foster; or use R3 of the St George's import) → open the row → **Apply 3 changes**. The
   hospital's fuller text replaces "WLE MM", which stays in the Booking's change history, and it also
   becomes her invoice description unless the Contract's invoice description is filled in or an admin
@@ -200,7 +258,7 @@ working List rather than an empty one.
 
 - **Click:**
   - Go to **Anaesthetist Mobile App → Tue 28 Jul St George's List → Sarah Mitchell**.
-  - She reads the procedure text first: "lap appy ?conv to open", what the hospital wrote. Her Booking
+  - She reads the procedure text first: `lap appy ?conv to open`, what the hospital wrote. Her Booking
     arrives with no RVG code (the hospital sends the text only). Tap the **Billing** card to open
     its sheet, type **appendicectomy** in the RVG code field and pick **A3 · Appendicectomy,
     laparoscopic · B 5**, tap **Done**, then **Start now**.
@@ -263,12 +321,14 @@ working List rather than an empty one.
 AA, OQ-75); the tiers are held as data, shown read only under **Admin → Master data → RVG groups**, and
 the T row reads **From start and finish stamps · RVG time tiers**.
 
-**Discovery points (hospital bookings):** OQ-13, how each hospital provides its bookings, the fields
-and cadence, and whether they carry the insurer, the procedure wording and an appointment id; OQ-108
-answered: both sources are built, and the rooms' PDF lists arrive as rows on this same screen in Phase
-34; removals from a re-sent list (US-02.2.3, Future); bulk apply; and AI-assisted matching later. If
-Greg's "why is this a manual task" comes up: the first release keeps the import gate with no automated
-decisions, and automatic matching and updates are Future Work (US-14.6.2).
+**Discovery points (intake):** OQ-13, the shape of each hospital's file: the fields and cadence, and
+whether it carries the insurer, the procedure wording and an appointment id. Two build choices to
+confirm: when a re-sent PDF comes from a later address, applying its row makes that address the List's
+sender (the earlier one kept in History); and a List made by a recurring booking records its own
+origin, "From a recurring booking", with no sender. Removals from a re-sent list (US-02.2.3) are Future Work, as are
+bulk apply and AI-assisted matching. If Greg's "why is this a manual task" comes up: the first release
+keeps the import gate with no automated decisions, and automatic sync, matching and updates are Future
+Work (US-14.6.2).
 
 ---
 
@@ -366,11 +426,18 @@ already seeded.
   **Procedure description** (what the caller said, kept exactly as typed, **Told by: Phone**). The saved
   Booking's Procedure card shows that wording with "Phone". The session now
   holds a Private List with the new Booking, and the anaesthetist's web and mobile views and the
-  availability finders show it as booked.
+  availability finders show it as booked. A List that already has Bookings offers the same **Add
+  Booking** in its drawer (below).
 - **Worth pointing at:** "Where does the invoice go, then the Contract. Each step only offers Contracts
   that fit this List, and typing finds one among hundreds. No contract · RVG and No contract · Fixed price,
   first in every list, cover anything no price list has yet. The anaesthetist sees the same steps and can finish or change it until the list is authorised."
 - **Optional one-liner:** "Assign List does the same without a patient, for a session booked ahead."
+- **Optional, the office adds to a booked List:** open any List that already has Bookings (Dr Souter's
+  **Wed 22 Jul AM**, Christchurch Eye Surgery) and select **Add Booking** in its drawer. The same form
+  opens, with the **Procedure description** ("The procedure as it was told or written to you, kept
+  exactly as typed.") and **Told by** Phone or Email. Say: "The office can add a Booking to any List it
+  may edit, and keeps the description exactly as it was told." The drawer offers it on every List
+  until the List is authorised.
 - **Optional office aside, "the hospital's wording arrives":** **Admin Day → Tue 21** → Dr Souter's PM
   List → **Wiremu Tane** (the rooms' "lap chole +/- IOC", illustrative) → **Demo actions → Hospital
   description arrives** (defaults to "lap chole") → **Run**. The Procedure card now shows the hospital's
@@ -394,8 +461,15 @@ already seeded.
     closed show under **Not available**, read only: the office never assigns onto an unavailable
     session.
   - Select **Assign Draft List**.
+  - Close the drawer and open the List on **Dr Sharma's AM** row. Select **Draft update email** in its
+    drawer: the **Draft cover-change email** opens with the change ticked ("Anaesthetist: was Dr James
+    Rutherford, now Dr Priya Sharma"), template **Change of anaesthetist**, **Send to Hospital**
+    (bookings@chcheyesurgery.example) and the preview. **Open in mail client** opens it in your own
+    mail; or **Close**.
 - **Say:** "Sickness is never left as a flag. The List comes straight back to the office and is
   handed on from one screen."
+- **Say:** "Vanessa's main need: the hospital hears about a cover change without her typing it. It is
+  on demand, so nobody is nagged after every change."
 - **Say:** "The List moves with its Bookings and history to Dr Sharma; nothing is re-keyed, and nothing
   about billing is recalculated. It is different from moving one patient Booking, which Beat 3d
   shows."
@@ -405,7 +479,12 @@ already seeded.
 - **Expected:** a brief **Draft List assigned** moment; the List on Sharma's AM row, ACTIVE; Rutherford's
   AM still Unavailable; no conflict. **Conflicts** shows only the Southern Cross closure rows (Wed 22,
   Mon 26 Oct and Fri 13 Nov). (Rutherford's List carries no Bookings in the seed; Beat 3a shows a
-  sickness on a List with Bookings.)
+  sickness on a List with Bookings.) The cover-change email's preview reads "Dr James Rutherford is no
+  longer the anaesthetist for the Wed 22 Jul AM List at Christchurch Eye Surgery. Dr Priya Sharma will
+  be the anaesthetist.", signed by the office user, with "Opens in your mail client. The system does not
+  send it." The picker also lists the earlier **Returned to the office** row, not emailable ("No new
+  anaesthetist yet. Assign the Draft List first."). Nothing is sent, and skipping it loses nothing: the
+  button stays on the List drawer.
 - **Optional pointer:** to show the office recording a sickness itself, open any booked session on the
   Day view, **Change status → Unavailable → Continue**: the sheet asks **Where does this List go?**
   (Return to the office, or a colleague in tier order), then what the session becomes. Or open **Dr
@@ -454,6 +533,10 @@ already seeded.
   - Switch to the **Admin Web App → Day view → Mon 27 Jul**: the List sits on Dr Ropata's row, and
     the rail's **Notifications** card (under Draft Lists) reads "Dr Souter moved Mon 27 Jul PM (St
     George's, Ms G. Lim) to Dr Ropata". Open it: the drawer says "Moved here by Dr Souter".
+  - The office side: open **Notifications** in the side nav (`/admin/notifications`). Her move's row
+    carries **Draft cover-change email**: it opens with the move ticked ("Anaesthetist: was Dr Melanie
+    Souter, now Dr Hannah Ropata"), template **Change of anaesthetist**, to St George's
+    (bookings@stgeorges.example). Close it: drafting never resolves or moves the notice.
   - Optional: on **mobile Availability**, pick **Thu 23**, select **Change Thu 23 Jul**, then the
     PM session's **Change → Unavailable → Save**. The app asks where its List goes: **Return to the
     office** or **Hand on to a colleague**, then what her session becomes (**Unavailable**, already
@@ -473,9 +556,16 @@ already seeded.
   If she marks a booked session off, the app asks where its List goes, so no List is left with
   someone who will not be there. Every move lands in the office's shared notifications, which are
   not to-dos: nothing needs approving. A notice stays until someone in the office ticks it."
+- **Say:** "The office sees every move in the shared pool and sends the hospital the cover email from
+  there."
+- **If asked why it is not sent automatically:** AA chose manual for the first release, so the office
+  keeps a check while trust builds; automatic sending is a later phase (OQ-82, US-02.3.5).
 - **Expected:** the done state ("Moved to Dr Ropata. Dr Ropata and the office can see it now."), the
-  List on Dr Ropata's row, the notification on the rail and on **Notifications**, nothing new on the
-  To-do card, and no preference, tier or warning anywhere on the anaesthetist's side. (Dr Ropata has
+  List on Dr Ropata's row, the notification on the rail and on **Notifications** (the email button is
+  on the Notifications page, not the rail card), nothing new on the To-do card, and no preference,
+  tier or warning anywhere on the anaesthetist's side. A List returned to the office instead offers no
+  email on its row ("Assign this Draft List first. Its cover email is drafted from the List drawer
+  after."). (Dr Ropata has
   a not-preferred pairing with Ms Lim in the office's private data: that is the point. The office's
   own Reassign of the same List would still warn.)
 
@@ -593,7 +683,7 @@ already seeded.
   $265.50)**. Hemi Walker (10:15, No contract · Fixed price, no amount) reads **Needs a price** and **Not
   marked completed**, and **Authorise for billing** stays disabled, naming her ("Hemi Walker: Needs a
   price: No contract · Fixed price has no price of its own.", with an **Open** link): the office types
-  a price and completes her Booking before authorising. Rosalind Kerr (11:00)
+  a price and completes her Booking (then **Save changes**) before authorising. Rosalind Kerr (11:00)
   carries a Merivale fixed price linked to Ms Lim, so it reads **Contract not offered on this List**.
   While any change waits, the action bar offers **Approve all N Contract changes**; authorising
   approves any still waiting, and the confirm says how many. A Disabled Contract raises a flag, never a block: a Procedure not yet authorised and dated on or after the day its Contract was disabled reads **Contract disabled on <day>**; earlier-dated ones are not flagged, and **Make active** clears it. In this List Margaret Ellery's cataract, on Christchurch Eye Surgery 2025 rate (disabled Fri 10 Jul by Kirsty W.), reads **Contract disabled on Fri 10 Jul**. On the
@@ -618,7 +708,7 @@ already seeded.
   two Procedures with Erik Halvorsen (Son) typed in separately on each, so authorising raises two
   invoices, one per payer: "payers are never matched on name or email". The child warning ("Under 18")
   shows on each of her Procedures, with one to-do row per Booking. Kevin Doherty's **Email or postal
-  address needed** clears once a postal address is typed on his Paid by. On Admin Day,
+  address needed** clears once a postal address is typed on his Paid by and saved (**Save changes**). On Admin Day,
   **Demo actions → Raise sample warnings** brings a child payer warning back on Grace Park's Booking
   (Fri 24: two Procedures, both paid by Hana Park, Mother), and **Clear sample warnings** puts Hana
   Park back as the payer.
@@ -730,7 +820,8 @@ them.
   Jul → Alan Prentice**). The Billing card's Paid by line reads "nib $132.50, Alan Prentice $79.50 (the rest)"; press **Split** on its right (the phone has the same Split): the Paid by sheet opens with the split alone
   (**Change**, beside the payer's name, opens it with who pays). The split section shows the fee, $212.00, and each party
   with a $ or % share or **Takes the rest**, every amount live, and "$212.00 of $212.00". Type nib's
-  share as **62.5%** instead of $132.50: the same split. Any user can split, including the anaesthetist
+  share as **62.5%** instead of $132.50: the same split. On the Admin Booking, the sheet's change waits
+  in the save bar until **Save changes**. Any user can split, including the anaesthetist
   on her own Booking (phone and web) until the List is authorised, and there is no split setting on
   the Contract. A share can also go to **Another person** (a name and an email or postal address).
   (Saving nib at 60% instead gives $127.20 and $84.80, $146.28 and $97.52 after GST, so
@@ -749,7 +840,8 @@ pre-applied from his age (74): 7 modifier units, recorded once on the primary an
 remainder to the primary. The Booking total is **$636.00** (15, 4 and 5 units at $26.50). Select **Make
 primary** on the umbilical hernia and confirm ("Make this the primary procedure?"): it moves to the
 top, takes base 4 from its own RVG group and the 3 modifier units, and the total reads **$583.00**.
-Make the cholecystectomy primary again and **$636.00** returns. Authorising the List gives one invoice,
+On the Admin Booking the swap waits in the save bar ("4 unsaved changes") until **Save changes**, or
+**Discard** puts it back. Make the cholecystectomy primary again and **$636.00** returns. Authorising the List gives one invoice,
 to the patient. For the mixed Booking, open Mr Doyle's bariatric Booking
 (`/admin/day/2026-07-14/bookings/BK0028`): a **$2,800** fixed-price primary ("Primary · fixed
 price"), its hernia repair billed on its own time units ($61), and the note "No base units billed
@@ -788,17 +880,35 @@ a submitted List: "A hospital feed cannot change a submitted List").
   - Pause on the updated ACCREC and ACCPAY states.
   - Select **View in Dr Souter's account**.
   - Pause on the highlighted **AA-2026-0005** row under **Accounts → Payments**.
-- **Say:** "One demo action is standing in for two real money events: nib pays $152.38 into AA, then
-  AA pays the same $152.38 to Dr Souter. In a real operation those outgoing payments are grouped into
-  a payables run. We keep the paid-in and
-  paid-out states separate underneath, even though this guided path advances both together. The
-  anaesthetist app reads the Billing Engine's own ledger, AA's system of record. Xero mirrors it for
-  receivables and banking."
-- **Expected:** ACCREC shows paid, ACCPAY shows disbursed, and the Web Payments row remains visible
-  with $152.38 received by AA, $152.38 released to you, $152.38 paid to you and **Paid to you**. It does not
-  remain under Overdue because it is no longer outstanding. The Ledger pair panel reads "Ledger:
-  received $152.38 · released $152.38 · paid out $152.38" beside Xero's same three figures, still
-  **Matches the ledger**.
+- **Say:** "One demo action stands in for three real events: nib pays into AA's Xero, the engine
+  learns it by webhook and authorises the payable, then Xero's payables run pays Dr Souter (made in
+  Xero, not by us) and a bill-paid webhook tells the engine, which records the disbursement. We keep
+  the paid-in and paid-out states separate underneath, even though this guided path advances both
+  together. The anaesthetist app reads the Billing Engine's own ledger, AA's system of record. Xero
+  mirrors it for receivables and banking."
+- **Expected:** the pair's head reads **Disbursed** and "Payment and payout complete", with the line
+  "nib's payment of $152.38 landed in Xero and the webhook told the engine; Xero's payables run paid
+  Dr Melanie Souter $152.38 and the bill-paid webhook recorded the disbursement." The ACCREC reads
+  **Paid** (received $152.38, balance $0.00). The ACCPAY reads **Paid**, and its **Paid in Xero**
+  block shows the Xero bill payment (DSB0001, Tue 21 Jul · 08:00, $152.38) and "Billing Engine:
+  disbursement recorded 08:00 by webhook." The Web Payments row remains visible
+  with $152.38 received by AA, $152.38 released to you, $152.38 paid to you and **Paid to you**. It leaves
+  Outstanding because AA has now paid Dr Souter. The web dashboard's **Financial position** shows
+  Collected and Paid out to you each $152.38 higher, and the GST report for July (**Accounts → GST
+  report**) gains **AA-2026-0005** on today's date (Tue 21 Jul 2026): paid to you $152.38, GST $19.88.
+  The Ledger pair panel reads "Ledger: received $152.38 · released $152.38 · paid out $152.38" beside
+  Xero's same three figures, still **Matches the ledger**.
+- **Optional (the two steps apart, instead of Simulate payment and payout):** on web **Accounts →
+  Outstanding** (`/web/accounts/outstanding`), **Demo actions → Payment received · full**, choose
+  **AA-2026-0005 · Alan Prentice · $152.38 due**, then **Run**: "Payment received. It reaches your GST
+  report when AA pays you." Collected rises by $152.38, but the row stays, its stage now **Paid in, due
+  to you**, and the GST report gains no row. Then **Admin → Billing monitor → Run payables in Xero**
+  (badged **Simulated Xero**): the payment to Dr Souter is made in Xero and recorded, the row leaves
+  Outstanding, Paid out to you rises by $152.38, and the July GST report gains AA-2026-0005 dated Tue 21
+  Jul 2026, $152.38 with its GST $19.88. Say: "GST here is on a cash basis: what AA has paid you, in the
+  month AA paid it, with the GST from the invoice itself." Optionally show the report's **Download**
+  (a CSV), **Print** (the report alone) and **Email to me** (a demo confirmation, "Sent to" her email;
+  no mail is sent).
 
 ### Beat 4: AA's monthly fee
 
@@ -825,7 +935,7 @@ a submitted List: "A hospital feed cannot change a submitted List").
   charged twice. The real fixed schedule, and confirmation of the paid-only count and of one BCTI per
   invoice, are with AA's accountant."
 - **Expected:** Web **Accounts → AA fees** highlights **AA-FEE-2026-H02** as Paid, with May Paid and July
-  Unpaid. Payables, GST activity and Overdue do not change when a fee invoice is raised or paid. Read
+  Unpaid. Payments, the GST report and Outstanding do not change when a fee invoice is raised or paid. Read
   Dr Souter's July figures from the app if Beat 3 was skipped (then two BCTIs, $510.00 before GST,
   $586.50 with GST). The fee invoice is an AA fee pair on the Ledger, with no payable ("None"), outside
   the balance.
@@ -871,12 +981,26 @@ a submitted List: "A hospital feed cannot change a submitted List").
   row reads Refunded with the note. The Billing monitor's payables panel has an **Open the ledger**
   link, and each invoice's rail has a **Ledger** card (receivable and payable numbers, their Xero ids,
   **Open in the ledger**).
-- **Optional (the anaesthetist's side):** web **Accounts** opens on a **Your position** strip (AA owes
-  you, with due now and awaiting collection; Collected for you; Paid out to you; You owe AA), and
-  mobile **Balances** adds one line under Outstanding to you, "Collected $27,220.00 · Paid out
+- **Optional (the anaesthetist's side):** web **Accounts** opens on a **Your position** strip (Owed to
+  you, with awaiting collection and due to you now; Collected; Paid out to you; You owe AA), and
+  mobile **Balances** adds lines under Outstanding to you, "Collected $27,220.00", "Paid out to you
   $27,220.00" and "You owe AA $580.75" on a fresh reset. On a handset (the PWA), **Demo → Payment
-  received · half**, then **Office runs payables** (office stand-in): Collected moves, then Paid out.
-  The stand-in is disabled with "Nothing due to pay out" when nothing is due.
+  received · half**, then **Office runs payables in Xero** (office stand-in): Collected moves, then
+  Paid out, as Xero reports the bill paid; a fully paid invoice leaves Outstanding and shows under
+  **GST this month**. The stand-in is disabled with "Nothing due to pay out" when
+  nothing is due.
+
+### Close: one status for the books
+
+- **Click:** go to **Admin → Day view** (`/admin`) and point at the **Reconciliation** card in the right
+  rail.
+- **Say:** "One status tells the office, and whoever approves the payment run, whether everything that
+  should balance does, and lists anything left to resolve with how long it has been waiting."
+- **Expected:** **Books square**, "The ledger, its Xero mirror and Xero's bank lines all agree." (after
+  Beat 5's allocation, and on a fresh reset). Optional: **Demo actions → Inject unmatched receipt** is
+  on Admin Day too; it turns the card **Out of balance** with "1 item to resolve", the **Ledger** check
+  off by $120.00 and the item (Unmatched receipt "Bank deposit · SOUTER JULY", $120.00) aged 0 days,
+  linked to the Ledger's unmatched receipts. Allocate it on the Ledger and the card squares again.
 
 ### Optional closing moment: finding past work
 
@@ -905,6 +1029,9 @@ For the ledger (Beat 5): how AA wants unmatched receipts handled (allocate, refu
 investigation); whether the two scopes and the out-of-balance list are what the office needs
 (US-13.2.1's acceptance criterion is to come from this prototype); and whether a buyer-created tax
 invoice is one per invoice, as built, or one per procedure (OQ-29, with AA's accountant).
+For the anaesthetist's money (Beat 3): whether the monthly GST report (payments passed, with the GST
+component) is what AA's accountant expects (agency treatment, OQ-29), and whether a BCTI is one per
+invoice or one per procedure.
 
 ---
 
@@ -953,7 +1080,7 @@ actions** on the screen named in its beat.
     with nothing deducted. Beat 7 authorises her List and follows the money.
   - Optional asides: on a Booking with no prepaid Contract, **Patient › Prepaid**, the **No contract**
     heading at the top of the list, **No contract · Fixed price**, type $2,000 ("just make it two
-    grand"): it awaits approval at $2,000.00 plus GST ($2,300.00). **Demo actions → Add prepaid
+    grand"), then **Save changes**: it awaits approval at $2,000.00 plus GST ($2,300.00). **Demo actions → Add prepaid
     Booking → Two payers** (Admin Day or Booking detail) adds Fiona Gray with Rhinoplasty $1,200.00 to
     the patient and Blepharoplasty, upper lids $900.00 to Ian Gray: two rows on the strip, one invoice
     per payer, and approving one locks only that payer. Switching **Prepayment approval** off asks to
@@ -993,30 +1120,43 @@ actions** on the screen named in its beat.
 - **Click:**
   - Go to **Admin Billing monitor → Demo actions → Trigger billing failure → Run**. It authorises Dr
     Ropata's Thu 16 Jul List with the Xero hand-off set to fail for one Booking.
-  - Pause on the monitor's intro ("Each booking prices from its locked record, taken when the list was
-    authorised. A failed booking is held back on its own while the rest of the list bills.") and on
-    Dr Hannah Ropata's St George's AM List.
-  - On the same screen, **Losa Tuilagi → Resolve & retry**.
+  - Pause on the monitor's intro ("Every list awaiting approval or authorised, grouped by anaesthetist:
+    whether it has been invoiced, sent and mirrored to Xero, and why anything failed. A failed booking
+    blocks only its own invoice, never the rest of the list."), the four tiles (Awaiting approval,
+    Authorised, With problems, Payables due) and the filter bar (Anaesthetist, Hospital, From, To).
+  - Turn on **Problems only** (in the filter bar, or select the **With problems** tile).
+  - In the **Xero sync queue** panel, on the row **Hand off AA-2026-0003**, select **Retry now**.
+  - Optional: on any group, a List still awaiting approval has **Open in Review**; Review opens with
+    **Back to Billing monitor**, which returns with the filters kept. There is no Authorise button on
+    the monitor.
 - **Say:** "The engine prices only from what was locked at authorise, so a Contract edit can no longer
   break a run, and nothing is ever swapped for a default. What can still fail is outside the lock,
   here the hand-off to Xero. A List never fails as a whole: the failed Booking is held back and the
-  rest of the List bills. The office retries once, without touching the Contract."
-- **Expected:** Losa Tuilagi's Booking reads **Handoff failed** with its reason on the row ("Xero
-  handoff failed (simulated fault). The invoice and its ledger pair stand, not yet in Xero. Resolve
-  and retry from the billing monitor."; it read "No ACCREC/ACCPAY pair was created" before catch-up
-  Phase 36, which creates the pair with the invoice); the Ledger's **Not yet in Xero** tile counts her
-  pair until the retry; Hemi Walker's Booking reads **Handed off**, and the List is not
-  failed. **Resolve & retry** hands hers off once: her row reads **Handed off** and her Xero pair
-  appears, with no duplicate invoice. Her invoice (AA-2026-0003, Canterbury Orthopaedic Surgeons,
-  $303.60) and Hemi Walker's (AA-2026-0004, St George's, $221.38) are unchanged. No Contract changes.
-  (The numbers follow Riley's prepayment invoice, AA-2026-0002, raised in Beat 1; skip that approve and
-  they are AA-2026-0002 and AA-2026-0003.)
+  rest of the List bills. Every call to Xero goes through a queue that retries by itself, and the
+  office can retry now, without touching the Contract. The monitor is grouped by anaesthetist and
+  filters down to just the problems, because over a year this list gets large. Lists still waiting for
+  approval show here too, and open in Review, where they are authorised."
+- **Expected:** with **Problems only** on, the count reads "1 list" and only Dr Hannah Ropata's group
+  shows, her Thu 16 Jul · AM St George's List expanded and reading **Needs attention**, its Xero column
+  **Waiting for Xero**, and the stage strip's Xero handoff "in part. 1 waiting for Xero · next try
+  08:02". Losa Tuilagi's row reads **Waiting for Xero** with "Waiting for Xero · attempt 1 · next try
+  08:02. The invoice and its ledger pair stand; the Xero sync queue retries it."; Hemi Walker's reads
+  **Handed off**, and the List is not failed. The queue row reads 1 attempt, next try 08:02, "Xero
+  rejected the call (simulated fault)", Waiting; the Xero line above the tiles reads "Connected · 1
+  waiting for their next try", and the Ledger's **Not yet in Xero** tile counts her pair until the
+  retry. **Retry now** hands hers off once ("Hand off AA-2026-0003: sent to Xero.", and **Sent after
+  waiting (1)**): her row reads **Handed off** and her Xero pair appears, with no duplicate invoice.
+  The filter then reads "0 lists" and "No problems. Every authorised list has billed, been sent and
+  reached Xero." Her invoice (AA-2026-0003, Canterbury Orthopaedic Surgeons, $303.60) and Hemi
+  Walker's (AA-2026-0004, St George's, $221.38) are unchanged. No Contract changes. Left alone, the
+  queue retries it itself when the clock moves on. (The numbers follow Riley's prepayment invoice,
+  AA-2026-0002, raised in Beat 1; skip that approve and they are AA-2026-0002 and AA-2026-0003.)
 
 ### Beat 4: the unmatched queue
 
 - **Click:**
-  - Go to **Admin → Matching → Demo actions → Import hospital file** → choose **Southern Cross** →
-    **Run**.
+  - Go to **Admin → Intake → Matching → Demo actions → Import hospital file** → choose **Southern
+    Cross** → **Run**.
   - Filter **Unmatched**. Open **Tama Henare** (R4, no NHI): the panel says a stub stands on Dr Souter's
     Tue 28 Jul PM List. Optionally open that List first (Mobile Lists, or Admin Day, Tue 28 Jul) to show
     the stub: a dashed amber row at 15:30, after the 13:00 and 14:00 Bookings, reading "Waiting at
@@ -1047,19 +1187,31 @@ actions** on the screen named in its beat.
 - **Optional (handset):** on the PWA, open Dr Souter's List holding a stub, tap the stub (a read-only
   sheet: what was received and its source), then **Demo → Office adds the NHI to this stub** (office
   stand-in): "The office added the NHI. The Booking now stands in the stub's place."
+- **Future-scope aside (label it as such):** Christchurch Public is not integrated today; there is no
+  live feed. If asked how a mis-mapped feed would be handled, open **Demo: Future scope, HL7 and FHIR**
+  (`/demo/integrations`) and its **Feed mapping** page (`/demo/integrations/mapping`): a message that
+  reads the NHI from the wrong field dead-letters on the **Message log** until the mapping is fixed and it
+  is reprocessed. A fired message only lands on Admin Intake as a row for the office to decide. Say:
+  "That is later work; today the office imports each hospital's file."
 
 ### Beat 5: partial payment
 
 - **Click:**
   - Go to **Admin Invoices → Hemi Walker · St George's** (the clean-sibling invoice from Beat 3).
   - Open **Demo actions → Payment received · half → Run**.
-  - Go to **Billing monitor** and select its own **Run payables** button.
-  - Back on the invoice, **Demo actions → Payment received · full → Run**, then **Run payables** again.
+  - Go to **Billing monitor**: the payables panel, **Authorised, awaiting Xero's payables run**, is read
+    only and lists the payable. Select its **Run payables in Xero** (badged **Simulated Xero**).
+  - Back on the invoice, **Demo actions → Payment received · full → Run**, then **Run payables in Xero**
+    again.
 - **Say:** "A partial payment authorises a payable for exactly the amount received, to the cent; the
-  rest stays outstanding on the invoice. Two payables runs across a part-then-balance payment prove
-  there is no double payment."
-- **Expected:** the payable authorises exactly the amount received; each run pays exactly what arrived,
-  and the total paid out equals the invoice total, never more. The Ledger's Payables due rises with
+  rest stays outstanding on the invoice. The payment to the anaesthetist is made in Xero; we record and
+  track it. Two payables runs across a part-then-balance payment prove there is no double payment."
+- **Expected:** the payable authorises exactly the amount received; the panel lists it ("1 payable due
+  · $110.69", Dr Ropata, AA-2026-0004, bill AA-2026-0004-P). **Run payables in Xero** empties the list
+  ("No payables are awaiting the payables run.") with "Xero paid 1 bill ($110.69); the Billing Engine
+  recorded 1 disbursement from the bill-paid webhooks.": each disbursement is recorded as Xero reports
+  the bill paid. Each run pays exactly what arrived, and the total paid out equals the invoice total,
+  never more. The Ledger's Payables due rises with
   each part payment and returns to $0.00 after each run: $110.69 after the half (Hemi Walker's
   AA-2026-0004, $221.38), $0.00 after the first run, $110.69 after the rest, $0.00 after the second.
 
@@ -1098,8 +1250,9 @@ $1,380.00 held since Beat 1) to Dr Souter.
     and "How this posts in Xero is still to be confirmed".
   - Optional: **Admin Invoices → INV0001** shows Payee "AA Holding account" and "Transfer journal
     MJ-0001".
-  - Back on the **Billing monitor**, select **Run payables**: it pays the transferred $1,380.00 (1
-    payable) to Dr Souter, never the AA Holding account's own payable.
+  - Back on the **Billing monitor**, select **Run payables in Xero**: Xero pays the transferred
+    $1,380.00 (1 payable) to Dr Souter, never the AA Holding account's own payable, and the engine
+    records the disbursement from the bill-paid webhook.
   - Optional: **Anaesthetist Web App → Accounts → Payments** (`/web/accounts/payments`): Nair's
     prepayment read "Held until the List is authorised" before, and now reads **Paid to you**.
 - **Say:** "The patient paid before the procedure, but the money was held, not paid to Dr Souter. When the office
@@ -1113,7 +1266,83 @@ $1,380.00 held since Beat 1) to Dr Souter.
   ACCREC or payment, and GST does not move (her septoplasty bills on its own invoice as usual). On the
   Ledger the transfer is its own row (Kind Transfer, Receivable "None", "From AA-2026-0001", Payee Dr
   Souter); the AA Holding account tile falls and Payables due rises by the same amount until Run
-  payables, and the ledger stays in balance.
+  payables in Xero, and the ledger stays in balance.
+
+### Optional asides: Xero resilience
+
+Three short asides for a technical or finance audience. Run them after Beats 3 and 5 (or at the end of
+S4): the outage aside authorises a List, which takes the next invoice number, and the remittance pays
+seeded invoices. Each names its screen and its **Demo actions** entry.
+
+**Xero outage** (Billing monitor, Dr Mark Delaney's Fri 17 Jul AM List at St George's)
+
+- **Click:**
+  - On **Admin → Billing monitor**, **Demo actions → Simulate Xero outage → Run**. The Xero line above
+    the tiles reads "Xero unavailable since 08:00 · 0 waiting" (the time is the demo clock's).
+  - Set **Anaesthetist** to **Dr Mark Delaney**. His Fri 17 Jul · AM List at St George's (Alan Prentice,
+    TURP, $297.00) reads **Awaiting approval**; select **Open in Review**, then **Authorise for billing**
+    and confirm: "1 invoice raised. 1 emailed, 0 to post."
+  - **Back to Billing monitor** (the Delaney filter is kept). Then the clock: **+15 min**.
+  - **Demo actions → Restore Xero → Run**.
+- **Say:** "Xero going down never stops the office. Authorising and invoicing carry on; every call to
+  Xero is written to a queue first and retried with growing gaps. When Xero comes back the queue drains
+  in order, with nothing sent twice."
+- **Expected:** after authorising, the List reads **Needs attention** with **Waiting for Xero**; the
+  **Xero sync queue** has its hand-off row ("Xero API unavailable (simulated outage)", Waiting, next try
+  two minutes on) and the Xero line reads "1 waiting". After **+15 min** the row shows attempt 2,
+  **Retrying**, and a later next try. **Restore Xero** reports "Xero is back. The queue sent 1 waiting
+  call in order."; the line reads **Connected**, the queue "Nothing is waiting for Xero." with **Sent
+  after waiting (1)**, and the List reads **Complete**, "1 of 1 in Xero".
+
+**A void or edit made in Xero** (Xero simulation, Dr Souter's seeded AA-2026-H05 and AA-2026-H06)
+
+- **Click:**
+  - **Demo: Billing Monitor & Xero → Invoices → AA-2026-H05** (Christchurch Public, $1,410.00), then
+    **Demo actions → Void this invoice in Xero → Run**. Optionally, on **AA-2026-H06** (Canterbury
+    Orthopaedic Surgeons, $1,930.00), **Demo actions → Edit this invoice's total in Xero → Run**.
+  - **Admin → Billing monitor → Demo actions → Run reconciliation poll → Run**.
+  - In the **Changed directly in Xero** panel, select **Resolve** on AA-2026-H05, pick an outcome, add a
+    note and **Record resolution**.
+- **Say:** "Someone at AA voided or edited an invoice directly in Xero. The engine finds out at the
+  daily reconciliation poll and flags it for the office; the ledger keeps what it issued, and nothing
+  moves until someone decides."
+- **Expected:** the void reads "AA-2026-H05 is voided in Xero. The engine does not know yet: run the
+  reconciliation poll (or Next day) and it is flagged on the Billing monitor." and the pair reads
+  **Voided**; the edit reads "AA-2026-H06 now totals $1,910.00 in Xero" ($20.00 lower) and the pair's
+  Ledger panel reads **Differs from the ledger**. The poll reports "Reconciliation poll applied 1 missed
+  payment, flagged 2 invoices changed directly in Xero." (the missed payment is a seeded one on
+  AA-2026-H02, $1,240.00, so Payables due rises by that; if a clock jump has already run the daily
+  poll, it reads no missed payment). The panel lists AA-2026-H05 "Voided in Xero"
+  against "Receivable open, $1,410.00", and AA-2026-H06 "Amended in Xero · total $1,910.00" against
+  "Receivable open, $1,930.00". Resolve offers "Re-issue it in Xero as the engine issued it", "Credit
+  it in the engine" or "No action", needs a note, and says "Recording a resolution moves no money: the
+  ledger keeps the amount the engine issued." and "Provisional: the policy for each mismatch is to be
+  agreed with AA." Admin Day's **Reconciliation** card reads **Out of balance**, the **Ledger against
+  Xero** check off by the flagged amounts, until each is resolved.
+
+**Bulk hospital remittance** (Xero simulation, Invoices and Bank reconciliation)
+
+Run it after the S3 and S4 money beats, or reset afterwards: it pays two of Dr Souter's seeded backdrop
+invoices (AA-2026-H01, $845.00, and AA-2026-H03, $520.50), which lowers the outstanding figures those
+beats quote.
+
+- **Click:**
+  - **Demo: Billing Monitor & Xero → Invoices → Demo actions → Simulate bulk hospital remittance → Run**.
+  - Open the **Bank reconciliation** tab (`/demo/xero/bank`). Under **Unmatched items**, the line
+    quoting AA-2026-H40: **Choose an invoice → AA-2026-H04 · $980.00 open**, then **Match in Xero**.
+  - Optional: before matching, Admin Day's **Reconciliation** card shows the bank line.
+- **Say:** "Hospitals pay many invoices in one deposit. Bulk remittances are matched in Xero, not by
+  the engine: Xero's remittance add-on matches each line by the invoice number it quotes, and the engine
+  learns each payment by the normal webhook. A line Xero cannot match waits for the office in Xero."
+- **Expected:** "St George's remittance landed in Xero: 2 lines matched by invoice number ($1,365.50),
+  and the engine learned each payment by webhook. 1 line could not be matched and waits in Bank
+  reconciliation." The tab reads "Bank reconciliation (1 unmatched)": a $2,345.50 St George's deposit,
+  AA-2026-H01 $845.00 and AA-2026-H03 $520.50 **Matched by the remittance add-on**, and a $980.00 line
+  quoting AA-2026-H40, "which matches no invoice". The Reconciliation card reads **Out of balance**,
+  **Xero bank lines** off by $980.00 ("Bank line quoting AA-2026-H40"). **Match in Xero** reads
+  "Matched in Xero: $980.00 paid AA-2026-H04, and the payment webhook told the Billing Engine, which
+  recorded the receipt."; the line reads **Matched by the office**, "Every line is matched.", and the
+  card **Books square**. Running the action again is refused ("Already received").
 
 **Discovery points:** settled: billing failure is per Booking, and a List never fails as a whole
 (OQ-05); still to confirm with AA: exactly which fields are frozen at authorise (US-15.0.3: AR-58 2.8
@@ -1127,8 +1356,8 @@ intake); and how a List holding one reads (counted apart, no prompt or block on 
 For the prepayment beats: still to confirm whether the prepayment
 invoice names the anaesthetist (OQ-120); still to confirm when the AA Holding account releases the
 money (OQ-125: the prototype transfers it when the office authorises the List; Greg said "confirmed and
-submitted"); payments, the transferred prepayment's included, are made in Xero, and Run payables
-stands in for that here (OQ-111); and whether a prepayment's payable counts as a BCTI (the prototype
+submitted"); payments, the transferred prepayment's included, are made in Xero, and the badged
+**Run payables in Xero** stands in for Xero's payables run here (OQ-111); and whether a prepayment's payable counts as a BCTI (the prototype
 leaves it out, provisional, beside the BCTI granularity point in S3, OQ-29). Stated as facts: the prepaid price is never editable by the
 anaesthetist and is kept (OQ-96, OQ-104), the prepaid Procedure is left off the final invoice (OQ-116),
 and a Contract changed after sending is handled as a cancellation, built in Phase 41 (OQ-119). One
@@ -1145,7 +1374,7 @@ governance the evaluators will probe. **Time:** 5 to 6 minutes.
 
 **Stage it:** control panel, Scenario jumps, **S5 · Compliance tour → Jump → Confirm jump**. This
 resets to rich booking-to-clinical histories on every Booking, adds three live edits to David Chen's
-trail, and authorises Dr Whitaker's Fri 17 Jul List, which locks the Health NZ agreed rate and the
+trail (among them the office's grouped save: the note and the time, one change set), and authorises Dr Whitaker's Fri 17 Jul List, which locks the Health NZ agreed rate and the
 price in force on 17 Jul onto each Procedure and raises its five invoices from that record
 (AA-2026-0002 to AA-2026-0006, Hemi Walker's first at $264.50). Use **Go to Admin app** and **Go to
 Xero sim**.
@@ -1155,15 +1384,38 @@ Xero sim**.
 - **Click:**
   - Go to **Admin Day view → Tue 21 Jul → Dr Souter PM**.
   - Open **David Chen → History**.
-  - Pause on the audit trail.
+  - Pause on the audit trail, then on the office's grouped save, **Saved by Kirsty W. · 2 changes**.
+  - Close History. **Demo actions → Switch office user → Run** ("The office is now Sam T."). On the
+    Booking, select **5 minutes later** beside the time and type a new note under **Notes for the
+    office**: the save bar reads "2 unsaved changes · Notes · Time" (**Draft update email** waits:
+    "Save your changes first. The email uses saved changes."). Select **Save changes**.
+  - Open **History** again: **Saved by Sam T.** sits above **Saved by Kirsty W.** Select **View as
+    at** on Kirsty's save.
+  - Close it, then select **Draft update email**. Sam's save is ticked; tick Kirsty's save too.
+    Point at the template (**Booking change**), the recipient (the surgeon's office) and the preview.
+    Close (or **Open in mail client**). Afterwards **Switch office user** back to Kirsty W.
 - **Say:** "Every Booking and Procedure change, including automated ones, writes an append-only audit entry
   with who, role, source and before/after. The captured inputs stay reproducible, not just the final
   total."
+- **Say:** "The office saves explicitly, and each save is one change set. With several people in the
+  office, every change names who made it. We can show the Booking as it was at any point."
+- **Say:** "AA asked for a button they use when it matters, picking the changes to report, starting
+  from their own templates."
 - **Expected:** a multi-entry trail from booking and Procedure setup through capture and completion,
   followed by the staged anaesthetist and office edits: an ASA III modifier claimed with its explanation,
-  the office note, then the claim removed, so Chen's fee ends where it started. Every row shows who, role,
-  source and before/after, and the manual time-unit adjustment retains overridden provenance. Any other Booking
-  can also be opened to demonstrate its seeded history without staging first.
+  the office's save as one row (**Saved by Kirsty W.**, 2 changes, CS0001: Scheduled time 15:10 → 15:25
+  and the note), then the claim removed, so Chen's fee ends where it started, beside the per-field
+  entries. Every row shows who, role, source and before/after, and the manual time-unit adjustment
+  retains overridden provenance. Sam's save shows the strip "Saved · 2 changes · 08:00 · Sam T. CS0002"
+  and a second grouped row; View as at on Kirsty's save shows the Booking at 15:25 with her note. The
+  email nets both saves into one line, "Time: was 15:10, now 15:30" (the note never goes in an email),
+  to admin@avonsidesurgical.example, signed Sam T., subject "Booking update: David Chen, Tue 21 Jul
+  PM", with "Opens in your mail client. The system does not send it." Any other Booking can also be
+  opened to demonstrate its seeded history without staging first.
+- **Presenter note:** use **View as at** on an office save, not the top rows: the seeded capture rows
+  are stamped 16:00 and 16:02, after the demo clock's 08:00 edits, so their as-at view leaves the
+  morning's saves out. The top bar keeps showing Kirsty W. after **Switch office user**; the save
+  strip, History and the email name the user who saved.
 - **Worth pointing at:** a price change reads **Price changed**, with the price before and after and no
   reason, because none is ever asked. Paula Westerman's Face lift on Dr Souter's Mon 10 Aug PM List
   (`/admin/day/2026-08-10/bookings/BK0187`) shows **Price changed · Kirsty W. · office · Price not set
@@ -1172,14 +1424,18 @@ Xero sim**.
 ### Beat 2: NHI dual-format validator
 
 - **Click:**
-  - Go to **Admin Integrations → Demo actions → Fire hospital message → MSG-STG-1002 (new-format
-    NHI) → Run** (Future scope: it applies nothing, it stages a row).
-  - Go to **Admin → Matching** and open the new row.
-  - Optional: add a Booking manually and try both NHI formats.
+  - Go to **Admin → Intake → Validators** (`/admin/intake/validators`) and try an old-format and a
+    new-format NHI, then an invalid one.
+  - Optional: on **Intake → PDF lists**, Mr Okafor's row 2 shows a printed NHI (ZAA0068) flagged invalid
+    beside the facsimile (S1 Beat 1c corrects it).
+  - Optional, a labelled Future-scope aside: on **Demo: Future scope, HL7 and FHIR**
+    (`/demo/integrations`), **Demo actions → Fire hospital message → MSG-STG-1002 (new-format NHI) →
+    Run**; then on **Admin → Intake → Matching** open the new row.
 - **Say:** "The prototype validates both NHI formats using the official check-digit algorithms. A
   new-format NHI with a mod-23 check letter validates; the row still waits for the office to decide."
-- **Expected:** the message is sent to matching; the row on Admin, Matching shows the validated
-  new-format NHI. An invalid NHI is rejected with a reason.
+- **Expected:** both formats validate on the Validators tab and an invalid NHI is rejected with a reason.
+  In the aside, the fired message lands as a row on Admin, Intake, Matching showing the validated
+  new-format NHI; nothing is applied until the office decides.
 
 ### Beat 3: no personal information in Xero
 
@@ -1261,8 +1517,11 @@ modifiers are pre-applied and nothing else is pre-filled (settled, Ben, 27 Octob
 settled (OQ-95 answered, D29); modifiers stack with no limit; AA's own modifiers (Vanessa's list) are not yet
 loaded; which Procedure is primary (Vanessa: the most expensive; Greg: the first in the list; the
 build keeps the first until someone changes it); base units when the primary is on a fixed price (OQ-132:
-the build bills none); and the concurrency model (single-user by design, audited
-last-write-wins, with the multi-source reality shown via the audit trail and live integration updates).
+the build bills none); and concurrency: the office saves explicitly and every save is one change set;
+handling two sources editing at once is Future Work with the automated integrations (US-02.5.6), and
+the prototype applies each save in order, audited. Settled: the update email is drafted on demand and
+sent by hand from the office's own mail client in the first release, automatic sending later (OQ-82,
+US-02.3.5).
 
 ---
 
@@ -1272,7 +1531,7 @@ last-write-wins, with the multi-source reality shown via the audit trail and liv
 |---|---|---:|
 | General evaluation | S1, S2, S3 | 15 to 18 min |
 | Finance-led | S3, S4 (money beats), S5 | 15 min |
-| Integration-led | S1, S4 (unmatched queue beat), S2 | 15 min |
+| Integration-led | S1 (Beats 1 to 1c), S4 (unmatched queue beat), S2 | 15 to 18 min |
 | Full deep-dive | S1 through S5 | 30 to 35 min |
 
 ## What to narrate rather than click
@@ -1281,10 +1540,16 @@ last-write-wins, with the multi-source reality shown via the audit trail and liv
 - The roughly 28,000 annual invoices and Xero active-contact volume (the archive job reduces a seeded
   aggregate counter to make the point).
 - Health NZ's FHIR-first policy and real OAuth/Keycloak setup.
-- Real email, OCR, Xero and hospital integrations: the prototype simulates them in-browser.
-- Future scope (HL7 v2): a feed-mapping dead-letter. Christchurch Public sends the NHI in PID-3 but the
-  feed was onboarded reading PID-2, so the message dead-letters until the mapping is fixed and it is
-  reprocessed (Admin Integrations, MSG-CPH-2001, Feed config; all badged **Future scope**).
+- Real email, Xero and hospital integrations: the prototype simulates them in-browser. A PDF list's
+  reading is simulated from sample files (no OCR is built, and nothing reads the mailbox); the office
+  uploads it with the address it came from. The hospital files are samples and their wording
+  illustrative.
+- Not built or later work: automatic hospital sync, automatic matching, HL7 v2 and FHIR messaging,
+  further hospital feeds (Christchurch Public is not integrated today), OCR and the mailbox read.
+- Future scope (HL7 v2), only as a labelled aside: a feed-mapping dead-letter. In the simulator a
+  Christchurch Public message sends the NHI in PID-3 but the feed reads PID-2, so it dead-letters until
+  the mapping is fixed and it is reprocessed (**Demo: Future scope, HL7 and FHIR**, MSG-CPH-2001,
+  `/demo/integrations/log` and `/demo/integrations/mapping`).
 
 The most persuasive clicks are the state changes: a matched hospital row or a manual booking creates a Booking; Finish
 now changes Time units and fee; Booking completion enables submission; submission changes who may edit;
@@ -1298,13 +1563,24 @@ payment and payout; the Web Payments history keeps the settled invoice visible.
 - Or use **Reset → Confirm reset** in the shared top bar from any app. The same control remains under
   **Clock & reset** in the control panel. Reset returns the clock to Tuesday 21 July 2026, 8:00 and
   restarts deterministic identifiers, so invoice numbers begin at the same point every time.
-- The Integration simulator also has **Reset demo data → Confirm reset** beside Start live feed. It
-  performs the same whole-demo reset without making you return to the control panel.
+- The Future-scope simulator (`/demo/integrations`) also has **Reset demo data → Confirm reset** beside
+  Start live feed. It performs the same whole-demo reset without making you return to the control panel.
+- **Receive updated PDF from rooms** works once per list (and only after its first version is sent to
+  matching): once used it reads "The updated list has already arrived.", so a second run of S1 Beat 1c
+  needs **Reset → Confirm reset** (or the S1 jump) first.
 - Lost the screen a demo action lives on? The control panel's **Demo actions by screen** has an
-  **Open screen** link for every entry (with a hint where a tab is needed, such as Surgeon PDFs).
+  **Open screen** link for every entry (Intake's PDF lists entry opens `/admin/intake/pdfs`).
 - Imported the same sample twice: nothing new is added. Applied the wrong row: fix the Booking by
   hand; the row's decision and any wording it added stay in the history.
 - If **Finish now** was stamped too early, reset and advance the clock before reopening the Booking.
+- An Admin Booking edit gets stuck or goes wrong before saving: **Discard** in the save bar. Leaving
+  with unsaved changes asks first (**Keep editing** or **Discard and leave**); a demo **Reset** discards
+  the draft ("This Booking was reset. Your unsaved changes were discarded.").
+- Skipped an update email? Nothing is lost: **Draft update email** is always on the Booking, and on the
+  List drawer after a cover change. Nothing is sent automatically: AA chose manual for the first
+  release (OQ-82).
+- **Switch office user** is disabled while the Booking has unsaved changes ("Save or discard this
+  Booking's changes first"); run it again to switch back to Kirsty W.
 - A stray refresh is no longer a problem: it returns you to the same screen. If you have clicked
   somewhere unexpected, the browser back button retraces your steps, or paste the beat's address from
   **Direct URLs** above.

@@ -6,24 +6,22 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 206 | 185 |
-| Partial | 32 | 32 |
-| Absent from the app | 69 | 68 |
+| Captured | 215 | 193 |
+| Partial | 31 | 31 |
+| Absent from the app | 66 | 65 |
 | Failed recipe | 0 | 0 |
-| No recipe | 17 | 17 |
+| No recipe | 13 | 13 |
 
-819 screenshots. Items per app: admin 175, web 88, mobile 86, simulator 32.
+866 screenshots. Items per app: admin 182, web 88, mobile 86, simulator 34.
 
 ## Failed recipes (0)
 
 None.
 
-## Absent from the app (69)
+## Absent from the app (66)
 
 - **FT-11.4** Insurers · Retired: removed in Phase 18
-- **US-02.1.5** Automatic sync from St George's and Southern Cross · Not built yet: catch-up Phase 34 builds this.
-- **US-02.3.2** Save Booking changes explicitly · Not built yet: catch-up Phase 35 builds this.
-- **US-02.3.3** Draft a booking update email · Not built yet: catch-up Phase 35 builds this.
+- **US-02.1.5** Automatic sync from St George's and Southern Cross · Future Work: the automatic sync from St George's and Southern Cross is not in the first release, so there is no shot. Hospital files come in through Import hospital file on the matching screen (US-02.1.1).
 - **US-02.4.2** Photo capture of the physical card · Retired: photo capture is US-02.4.4 (Future Work); the Add a booking choice was removed in Phase 15b
 - **US-02.4.3** Copy a Booking · Retired: removed in Phase 15b
 - **US-02.4.4** Add a Booking from a photo of the booking card · Future Work lane: photo capture is Future Work; Phase 15b took it out of the Add a booking sheet and keeps it only as a badged Future-scope demo action on the mobile List
@@ -68,7 +66,6 @@ None.
 - **US-08.6.4** Split a combined Procedure into additional invoices · Not built yet: catch-up Phase 39 builds this.
 - **US-08.6.5** Credit note option on additional invoices · Not built yet: catch-up Phase 39 builds this.
 - **US-08.6.6** Start a rebill from a copy of the original lines · Not built yet: catch-up Phase 39 builds this.
-- **US-10.2.4** Bulk remittance stays in Xero · Bulk remittance and bank reconciliation stay in Xero by design, so the prototype has no screen for them. Searched the Xero simulator, admin and control panel for remittance and bank reconciliation; only a note on the Xero simulator mentions remittance matching.
 - **US-10.2.5** Negative invoices netted in the payment run · Not built yet: catch-up Phase 39a builds this.
 - **US-10.2.6** Approve the period's BCTIs for payment · Not built yet: catch-up Phase 39a builds this.
 - **US-10.2.7** Weekly payment cycle · Not built yet: catch-up Phase 39a builds this.
@@ -90,10 +87,9 @@ None.
 - **US-15.0.4** Volumes · Not demonstrated. The prototype runs on a small seeded in-browser data set (14 anaesthetists, a few weeks of lists); scale is only narrated in copy on the admin day grid and the Xero simulation, never simulated or load tested.
 - **US-15.0.5** Testable billing rules · No screen shows this. It is met in the prototype's code rather than its UI: fee, unit, Contract and split logic is pure and deterministic in aa-prototype/src/domain/billing with Vitest suites of worked examples.
 
-## Partial (32)
+## Partial (31)
 
 - **US-01.4.1** Reassign a List with its bookings · Reassignment moves the List (same id, Bookings and history) into a colleague's free session, and the vacated session returns to Free unless marked otherwise; the update email to the hospital is Phase 35's on-demand button.
-- **US-02.3.1** Create or amend a Booking · The office can amend any Booking (patient, procedure, times, billing setup), each change audited against the user. It can create a Booking only on a free session through the phone-advice booking, which assigns the List first; there is no way for the office to add a Booking to a List that already has one.
 - **US-02.5.1** Apply a modification · Automated application from an integration is Future Work (US-14.6.2). In the first release the office applies a hospital modification on the matching screen, shown here.
 - **US-02.5.2** Reschedule to another day arrives as cancel and new Booking · Detecting the move or the missing Booking from a re-sent List, and automated handling, are Future Work (US-02.2.3). In the first release the office decides each row.
 - **US-02.5.3** Record a cancellation · Automated cancellation from an integration is Future Work. In the first release the office records a hospital cancellation on the matching screen.
@@ -125,27 +121,23 @@ None.
 - **US-14.4.1** NHI lookup via Digital Services Hub · The NHI lookup is simulated against a small set of demo records, not the NHI FHIR API, and anaesthetists carry an HPI only as an optional field; nothing is validated against HPI.
 - **US-15.0.1** Ease of use · Ease of use is a quality that screenshots can only suggest: the shots show the calm, large-target capture screen and the operational day view. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had.
 
-## No recipe (17)
+## No recipe (13)
 
 - **US-01.1.5** Split a session between two surgeons
 - **US-02.2.3** Detect Bookings removed from a re-sent List
-- **US-02.2.4** A List keeps where it came from
-- **US-02.3.4** Update email templates per kind of change
 - **US-02.3.5** Send booking change emails automatically
-- **US-02.5.8** See a Booking's change history
 - **US-03.1.10** Booking total on the office's Booking page
 - **US-03.7.3** See a Procedure's events
 - **US-03.7.4** Bill a pre-op consult held in AA's room
 - **US-04.2.13** Export and re-import Contracts
 - **US-04.4.2** Default RVG Contract for every procedure
 - **US-06.3.7** Contract changed after a prepayment is sent or paid
-- **US-13.2.4** Reconciliation status at a glance
 - **US-13.5.3** Sign in to the anaesthetist app
 - **US-15.0.7** Changes show without signing out
 - **US-15.0.8** Help line for app users
 - **US-15.0.9** Product support for AA
 
-## Captured (206)
+## Captured (215)
 
 - **FT-01.6** Draft Lists · admin
 - **FT-02.2** Surgeon PDF list ingest · admin
@@ -164,6 +156,7 @@ None.
 - **FT-08.5** Processing status and failures · admin
 - **FT-09.1** Invoice pair creation · simulator
 - **FT-09.3** Contact management and archiving · simulator
+- **FT-10.2** Releasing payables · admin
 - **FT-13.1** Schedule dashboard · admin
 - **FT-13.3** Billing flow monitoring · admin
 - **FT-13.4** Master data management · admin
@@ -202,9 +195,15 @@ None.
 - **US-02.1.4** Unmatched queue · admin
 - **US-02.2.1** Read, correct and ingest a surgeon PDF list · admin
 - **US-02.2.2** Edit then ingest · admin
+- **US-02.2.4** A List keeps where it came from · admin
+- **US-02.3.1** Create or amend a Booking · admin
+- **US-02.3.2** Save Booking changes explicitly · admin
+- **US-02.3.3** Draft a booking update email · admin
+- **US-02.3.4** Update email templates per kind of change · admin
 - **US-02.4.1** Add a Booking manually · web, mobile
 - **US-02.5.5** Append-only change history · admin
 - **US-02.5.7** The hospital's procedure text replaces the rooms' · web, mobile, admin
+- **US-02.5.8** See a Booking's change history · admin
 - **US-02.6.1** Stub in place of a booking that could not be posted · mobile, web, admin
 - **US-02.6.2** Stub clearly marked for anaesthetists and the office · mobile, web, admin
 - **US-02.6.3** Office resolves a stub from intake · admin, mobile
@@ -301,8 +300,8 @@ None.
 - **US-09.1.3** Prepayment invoices also paired · simulator
 - **US-09.1.4** ACCPAY as buyer-created tax invoice · simulator
 - **US-09.2.1** Webhook on INVOICE events · simulator
-- **US-09.2.2** Daily reconciliation poll · simulator
-- **US-09.2.3** Idempotent by InvoiceID · simulator
+- **US-09.2.2** Daily reconciliation poll · simulator, admin
+- **US-09.2.3** Idempotent by InvoiceID · simulator, admin
 - **US-09.2.4** Detect disbursement · simulator, admin
 - **US-09.3.1** Contact identification without NHI · simulator
 - **US-09.3.2** NHI never sent to Xero · simulator
@@ -313,6 +312,7 @@ None.
 - **US-10.2.1** Payable released to match the amount received · simulator, admin
 - **US-10.2.2** Partial payment releases exactly that amount · simulator
 - **US-10.2.3** Reconcile back to the ledger · web, simulator
+- **US-10.2.4** Bulk remittance stays in Xero · simulator
 - **US-10.3.1** Generate AA fee invoices · admin, simulator
 - **US-10.3.3** AA fee settings · admin
 - **US-11.1.2** Dual-format NHI validation · admin
@@ -330,6 +330,7 @@ None.
 - **US-13.1.1** One-day dashboard · admin
 - **US-13.1.2** Review future days in the day view · admin
 - **US-13.2.1** Ledger balance views · admin
+- **US-13.2.4** Reconciliation status at a glance · admin
 - **US-13.3.1** Processing monitor · admin
 - **US-13.3.2** Manual intervention · admin
 - **US-13.4.4** Specialties · admin
@@ -346,10 +347,10 @@ None.
 - **US-13.8.1** See the team's notifications · admin
 - **US-13.8.2** Notify the team when an anaesthetist moves a List · admin
 - **US-13.8.3** Resolve a notice · admin
-- **US-14.1.1** Parse SIU messages · simulator, admin
+- **US-14.1.1** Parse SIU messages · simulator
 - **US-14.2.1** Internal booking model · simulator
 - **US-14.3.1** Real-time processing · simulator
-- **US-14.5.1** Integration failure visibility · admin
+- **US-14.5.1** Integration failure visibility · simulator
 - **US-15.0.2** Mobile-first for anaesthetists · mobile, web
 - **US-15.0.3** Enter once · web, admin
 - **US-15.0.6** Privacy and data minimisation · simulator

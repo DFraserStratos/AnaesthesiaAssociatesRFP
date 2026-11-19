@@ -36,8 +36,9 @@ export function setArchiveWindowDays(api: AppStoreApi, actor: Actor, days: numbe
 }
 
 /**
- * Arm the NEXT Xero handoff to fault (badged demo-only trigger; D-handoff). The
- * handoff records a `handoffFailure`, clears this flag and creates no pair.
+ * Arm the NEXT Xero hand-off to fault once (badged demo-only trigger; D-handoff,
+ * re-based in catch-up Phase 37): the gate queues it as one failed attempt, which
+ * the Xero sync queue retries after its backoff, and clears this flag.
  * With `bookingId` the fault waits for that Booking's hand-off (catch-up Phase
  * 25's staged billing failure), so the List's other Bookings hand off.
  */

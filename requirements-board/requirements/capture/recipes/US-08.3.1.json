@@ -68,7 +68,7 @@
     {
       "name": "pair-not-in-xero",
       "app": "admin",
-      "caption": "When the Xero handoff fails, the invoice and its ledger pair still stand, not yet in Xero",
+      "caption": "While the Xero hand-off waits in the sync queue, the invoice and its ledger pair still stand: Waiting for Xero, with its attempt and next try",
       "start": "/admin/invoices",
       "setup": [
         {
@@ -88,7 +88,7 @@
               "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Losa Tuilagi\") >> role=button[name=/^View invoice /] >> nth=0"
             },
             {
-              "wait": "[data-testid=xero-handoff-status]:has-text(\"Xero handoff failed\")"
+              "wait": "[data-testid=xero-handoff-status]:has-text(\"Waiting for Xero\")"
             }
           ],
           "highlight": [

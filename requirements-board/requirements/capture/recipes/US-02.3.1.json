@@ -1,7 +1,7 @@
 {
   "id": "US-02.3.1",
-  "status": "partial",
-  "absentReason": "The office can amend any Booking (patient, procedure, times, billing setup), each change audited against the user. It can create a Booking only on a free session through the phone-advice booking, which assigns the List first; there is no way for the office to add a Booking to a List that already has one.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "phone-advice-booking",
@@ -54,16 +54,116 @@
       "start": "/admin/day/2026-07-21/bookings/BK0009",
       "states": [
         {
+          "state": "edit-patient",
+          "caption": "Edit patient details, with the NHI the office can correct; Apply adds the change to the Booking's unsaved changes",
           "steps": [
             {
               "click": "[data-shot=booking-patient] >> role=button[name=\"Edit\"]"
             },
             {
-              "wait": 600
+              "wait": "[data-shot=patient-nhi-field]"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [
             "[role=dialog]"
+          ]
+        },
+        {
+          "state": "unsaved",
+          "caption": "The patient's name, the time and a note: 3 unsaved changes wait in the bar until the office saves them",
+          "steps": [
+            {
+              "click": "[data-shot=booking-patient] >> role=button[name=\"Edit\"]"
+            },
+            {
+              "wait": "[data-shot=patient-nhi-field]"
+            },
+            {
+              "fill": "[role=dialog] input >> nth=0",
+              "value": "Margaret J. Ellison"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Apply\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]"
+            },
+            {
+              "fill": "[data-shot=booking-notes-for-the-office] textarea",
+              "value": "Patient asked for an earlier start."
+            },
+            {
+              "wait": "[data-shot=booking-save-bar]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-save-bar]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "add-booking-booked-list",
+      "app": "admin",
+      "caption": "The office creates a Booking on any List, with the procedure as it was told, or amends any field until the List is authorised, and each change is recorded against them",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "state": "drawer",
+          "caption": "An ACTIVE List that already has Bookings offers Add Booking",
+          "steps": [
+            {
+              "click": "button[data-list-id=\"L-34821-2026-07-21-PM\"]"
+            },
+            {
+              "wait": "[data-shot=list-add-booking]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=list-add-booking]"
+          ]
+        },
+        {
+          "state": "as-given",
+          "caption": "The procedure description as the rooms told it, kept exactly as typed, and how it was told",
+          "steps": [
+            {
+              "click": "button[data-list-id=\"L-34821-2026-07-21-PM\"]"
+            },
+            {
+              "wait": "[data-shot=list-add-booking]"
+            },
+            {
+              "click": "[data-shot=list-add-booking]"
+            },
+            {
+              "wait": "[role=dialog]:not([data-testid=admin-list-drawer]) [data-shot=procedure-description]"
+            },
+            {
+              "fill": "[role=dialog]:not([data-testid=admin-list-drawer]) [data-shot=procedure-description] input",
+              "value": "lap appy ?conv to open"
+            },
+            {
+              "click": "[role=dialog]:not([data-testid=admin-list-drawer]) [data-shot=procedure-description] >> role=button[name=\"Email\"]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[role=dialog]:not([data-testid=admin-list-drawer]) [data-shot=procedure-description]"
           ]
         }
       ]

@@ -12,7 +12,7 @@ afterEach(cleanup)
 function renderScreen(state?: unknown) {
   const onOpenBooking = vi.fn()
   const utils = render(
-    <MemoryRouter initialEntries={[{ pathname: '/admin/matching', state }]}>
+    <MemoryRouter initialEntries={[{ pathname: '/admin/intake/matching', state }]}>
       <SurfaceProvider variant="web">
         <MatchingScreen actor={OFFICE_ACTOR} todayISO="2026-07-21" onOpenBooking={onOpenBooking} />
       </SurfaceProvider>
@@ -31,7 +31,7 @@ describe('MatchingScreen', () => {
 
   it('starts empty with the interim line and the Import button, and never says "download"', () => {
     const { container } = renderScreen()
-    expect(screen.getByText('No rows waiting. Import a hospital file to start.')).toBeInTheDocument()
+    expect(screen.getByText("No rows waiting. Imported St George's and Southern Cross files, the rooms' PDF lists and received sheets land here.")).toBeInTheDocument()
     expect(container.querySelector('[data-shot="matching-interim"]')).toHaveTextContent('Sample files stand in for each hospital')
     expect(screen.getByRole('button', { name: /Import hospital file/ })).toBeInTheDocument()
     expect(container.textContent?.toLowerCase()).not.toContain('download')

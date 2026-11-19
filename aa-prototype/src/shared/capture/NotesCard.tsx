@@ -1,7 +1,8 @@
+import { useBookingApi, useBookingStoreMode } from '../booking/draft'
 import { useEffect, useState } from 'react'
 import { neutral } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
-import { editProcedure, useAppStore, type Actor } from '../../store'
+import { editProcedure, type Actor } from '../../store'
 import { TextArea } from '../ui'
 import { useSurface } from '../surface'
 import { CaptureSection, Caption } from './ui'
@@ -15,11 +16,16 @@ interface NotesCardProps {
 
 /**
  * The legacy Outcome panel's Int Notes / Op Notes, committed on blur when
- * changed (free text never writes per keystroke — the capture-UX decision).
+ * changed (free text never writes per keystroke, the capture-UX decision),
+ * except in the Admin draft (catch-up Phase 35), where each keystroke writes
+ * to the private draft so the save bar and the leave guard see it at once;
+ * nothing reaches the real store until Save changes.
  * The two fields go through `useSurface().Pair`: stacked on the phone, side by
  * side on a desktop, where two 72px boxes in one row read as one notes step.
  */
 export function NotesCard({ procedure, actor, canCapture, onError }: NotesCardProps) {
+  const bookingApi = useBookingApi()
+  const draftMode = useBookingStoreMode() === 'draft'
   const { Pair } = useSurface()
   const [intNotes, setIntNotes] = useState(procedure.intNotes ?? '')
   const [opNotes, setOpNotes] = useState(procedure.opNotes ?? '')
@@ -31,7 +37,7 @@ export function NotesCard({ procedure, actor, canCapture, onError }: NotesCardPr
 
   function commit(field: 'intNotes' | 'opNotes', value: string, stored: string | undefined) {
     if (value === (stored ?? '')) return
-    const outcome = editProcedure(useAppStore, actor, procedure.id, {
+    const outcome = editProcedure(bookingApi, actor, procedure.id, {
       [field]: value.trim() === '' ? undefined : value,
     })
     if (!outcome.ok) onError(outcome.message)
@@ -56,14 +62,20 @@ export function NotesCard({ procedure, actor, canCapture, onError }: NotesCardPr
         <TextArea
           label="Int notes"
           value={intNotes}
-          onChange={setIntNotes}
+          onChange={(v) => {
+            setIntNotes(v)
+            if (draftMode) commit('intNotes', v, procedure.intNotes)
+          }}
           onBlur={() => commit('intNotes', intNotes, procedure.intNotes)}
           placeholder="Internal notes for AA"
         />
         <TextArea
           label="Op notes"
           value={opNotes}
-          onChange={setOpNotes}
+          onChange={(v) => {
+            setOpNotes(v)
+            if (draftMode) commit('opNotes', v, procedure.opNotes)
+          }}
           onBlur={() => commit('opNotes', opNotes, procedure.opNotes)}
           placeholder="Operation notes"
         />

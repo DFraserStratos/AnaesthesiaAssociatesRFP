@@ -7,6 +7,11 @@ interface CompleteBarProps {
   canAmend: boolean
   onComplete: () => void
   onAmend: () => void
+  /**
+   * Why completing or amending must wait (catch-up Phase 35): the Admin draft
+   * holds unsaved changes. Both are commands on the saved Booking.
+   */
+  blocked?: string | null
 }
 
 /**
@@ -18,7 +23,8 @@ interface CompleteBarProps {
  * absolute bar vs web sticky bar), so this renders only the inner control and
  * is identical on both platforms; the caller wraps it in `useSurface().Footer`.
  */
-export function CompleteBar({ completed, canAmend, onComplete, onAmend }: CompleteBarProps) {
+export function CompleteBar({ completed, canAmend, onComplete, onAmend, blocked = null }: CompleteBarProps) {
+  const isBlocked = blocked !== null
   return completed ? (
     <div
       style={{
@@ -46,33 +52,44 @@ export function CompleteBar({ completed, canAmend, onComplete, onAmend }: Comple
       </svg>
       Booking complete
       {canAmend && (
-        <TextAction inline onClick={onAmend} style={{ marginLeft: 6, fontSize: 14, padding: '4px 0' }}>
+        <TextAction inline onClick={onAmend} disabled={isBlocked} {...(isBlocked ? { title: blocked } : {})} style={{ marginLeft: 6, fontSize: 14, padding: '4px 0' }}>
           Amend
         </TextAction>
       )}
     </div>
   ) : (
-    <button
-      type="button"
-      onClick={onComplete}
-      style={{
-        height: 56,
-        borderRadius: radius.card,
-        border: 'none',
-        background: accent.base,
-        color: neutral.surface,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'inherit',
-        fontSize: 17,
-        fontWeight: 700,
-        width: '100%',
-        cursor: 'pointer',
-        boxShadow: elevation.e2,
-      }}
-    >
-      Mark complete
-    </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <button
+        type="button"
+        onClick={isBlocked ? undefined : onComplete}
+        disabled={isBlocked}
+        title={blocked ?? undefined}
+        style={{
+          height: 56,
+          borderRadius: radius.card,
+          border: 'none',
+          // The one disabled treatment (Button's, README U08) while a command must wait.
+          background: isBlocked ? neutral.line : accent.base,
+          color: isBlocked ? neutral.mist : neutral.surface,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'inherit',
+          fontSize: 17,
+          fontWeight: 700,
+          width: '100%',
+          cursor: isBlocked ? 'default' : 'pointer',
+          boxShadow: isBlocked ? 'none' : elevation.e2,
+        }}
+      >
+        Mark complete
+      </button>
+      {/* The reason shows, as under Cancel booking (catch-up Phase 35): the Admin draft has unsaved changes. */}
+      {isBlocked && (
+        <span data-shot="complete-blocked-reason" style={{ fontSize: 12.5, lineHeight: '17px', color: neutral.slate }}>
+          {blocked}
+        </span>
+      )}
+    </div>
   )
 }

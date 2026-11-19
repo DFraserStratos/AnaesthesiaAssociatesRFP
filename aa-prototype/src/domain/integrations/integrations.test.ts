@@ -8,9 +8,8 @@
 import { describe, expect, it } from 'vitest'
 import { extractViaMapping } from './hl7'
 import { toFhirBundle, extractFromFhir, practitionerHpiOf, NHI_SYSTEM } from './fhir'
-import { INTEGRATION_FEEDS, FEED, CPH_NHI_FIX } from './feeds'
+import { INTEGRATION_FEEDS, FEED, CPH_NHI_FIX, LIVE_FEED_IDS, isIntegratedFeed } from './feeds'
 import { CANNED_MESSAGES, cannedMessage, APPT } from './messages'
-import { SURGEON_PDFS } from './pdfSamples'
 import { validateNhi } from '../nhi'
 
 const feed = (id: string) => {
@@ -140,21 +139,11 @@ describe('canned library integrity', () => {
   })
 })
 
-describe('surgeon PDFs', () => {
-  it('each PDF carries a facsimile data URL, a target list, and rows', () => {
-    for (const pdf of SURGEON_PDFS) {
-      expect(pdf.facsimile.startsWith('data:image/svg+xml,')).toBe(true)
-      expect(pdf.rows.length).toBeGreaterThan(0)
-      expect(pdf.targetList.anaesthetistId).toBeTruthy()
-    }
-  })
-
-  it('has exactly one deliberately-wrong row whose printed NHI fails validation and whose correction validates', () => {
-    const wrong = SURGEON_PDFS.flatMap((p) => p.rows).filter((r) => r.deliberateError !== undefined)
-    expect(wrong.length).toBe(1)
-    const row = wrong[0]!
-    expect(validateNhi(row.nhi).valid).toBe(false)
-    expect(row.correctedNhi).toBeDefined()
-    expect(validateNhi(row.correctedNhi!).valid).toBe(true)
+describe('the Live drip (catch-up Phase 34; RV-16)', () => {
+  it('streams only the two integrated hospitals: Christchurch Public is not integrated today', () => {
+    expect(LIVE_FEED_IDS).toEqual([FEED.stg, FEED.sx])
+    expect(isIntegratedFeed(FEED.cph)).toBe(false)
+    // Its messages still exist, to be fired by hand on the Future-scope surface.
+    expect(CANNED_MESSAGES.some((m) => m.feedId === FEED.cph)).toBe(true)
   })
 })

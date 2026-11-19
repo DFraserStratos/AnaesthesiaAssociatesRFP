@@ -70,6 +70,12 @@
               "wait": 400
             },
             {
+              "click": "[data-shot=booking-save]"
+            },
+            {
+              "wait": "[data-shot=booking-saved-strip]"
+            },
+            {
               "goto": "/admin/invoices"
             },
             {
@@ -112,6 +118,12 @@
             },
             {
               "wait": 600
+            },
+            {
+              "click": "[data-shot=booking-save]"
+            },
+            {
+              "wait": "[data-shot=booking-saved-strip]"
             },
             {
               "goto": "/admin/invoices"

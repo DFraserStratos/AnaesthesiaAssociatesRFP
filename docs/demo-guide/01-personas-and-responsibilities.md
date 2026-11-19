@@ -34,7 +34,7 @@ Bookings and capture the data AA needs for billing.
 - Complete work and hand the whole List to the AA office.
 - See availability, and move one of her Lists to a free colleague or back to the office.
 - Hand one Booking to a colleague who is free that session (it becomes a new List of theirs).
-- Later, see outstanding amounts and her GST activity for the month to date.
+- Later, see outstanding amounts and her monthly GST report.
 - See her own profile and set her rate per unit (the dollar value of one RVG unit).
 
 ### Core actions
@@ -140,7 +140,8 @@ underlying List, Booking and BTM actions.
   is more convenient.
 - Find Free colleagues and move one of her Lists to a free colleague or back to the office.
 - Hand one Booking to a colleague who is free that session, from the Booking's screen.
-- Review accounts outstanding and GST activity for the calendar month to date (Accounts, GST activity).
+- See her financial position on the dashboard, review accounts outstanding and payments, and read
+  her monthly GST report (Accounts, GST report).
 - Open her Profile from her name and avatar in the top nav (`/web/profile`) and change her rate per
   unit; contact details, HPI CPN and bank details are read-only there, as on the phone.
 
@@ -152,14 +153,15 @@ functionality.
 
 ### Current prototype caveats
 
-- Balances, payment history and GST activity are now live: the anaesthetist money views read the
-  Billing Engine's own ledger, AA's system of record (her position on web Accounts, "Collected ·
-  Paid out" on mobile Balances, outstanding payables, received and paid-out invoices, receivables aging,
-  GST transaction list), over seeded historical rows plus anything a demo payment adds. They never
+- Balances, payment history and the GST report are live: the anaesthetist money views read the
+  Billing Engine's own ledger, AA's system of record (her financial position of owed to you, collected
+  and paid out to you on the web dashboard and web Accounts, "Collected" and "Paid out to you" on
+  mobile Balances; the outstanding list, one row per unpaid payable, oldest first; received and
+  paid-out invoices; and the monthly GST report of the payments AA passed to her, on a cash basis,
+  with each one's GST), over seeded historical rows plus anything a demo payment adds. They never
   query Xero directly.
 - Days off are kept in the availability calendar (My calendar on mobile, My availability on the web),
-  which sets each session's status directly. The web dashboard's seeded Leave panel is read-only
-  planning context and stays until Phase 38.
+  which sets each session's status directly.
 
 ## Primary persona 3: Kirsty W., AA scheduling coordinator
 
@@ -212,8 +214,17 @@ short-notice cover.
     it, a new one or a Draft List for that evening; close an empty one from its drawer.
 16. Set the primary Procedure from the rooms' sheet (**Make primary** on the Admin Booking), and
     correct it at review; the office can do this on `ACTIVE` and `SUBMITTED` Lists.
-17. **Import hospital file**, match each row on the matching screen (Admin, Matching), and set each
-    new Booking's invoice destination and Contract.
+17. **Import hospital file**, match each row on the matching screen (Admin, Intake, Matching), and set
+    each new Booking's invoice destination and Contract.
+18. Open the rooms' PDF lists (Admin, Intake, PDF lists) with the address each came from, correct a row
+    beside the facsimile and **Send to matching**; the List made from it keeps its sender, so replies go
+    back there.
+19. Save each Booking's changes explicitly (**Save changes**, one change set named for her), and draft
+    the update email on demand when a change matters: from the Booking, the List drawer after a cover
+    change, or the notification of an anaesthetist's move, picking the changes and starting from the
+    email templates the office maintains (Master data · Email templates). This is Vanessa's main need,
+    the hospital hearing about a cover change without her typing it; the email opens in her own mail
+    client and nothing is sent automatically (OQ-82).
 
 ### Permissions
 
@@ -229,7 +240,8 @@ short-notice cover.
 
 - Phone, email and PDF remain major booking channels.
 - Existing integrations are unreliable.
-- Several sources may change the same Booking.
+- Several sources may change the same Booking (each office save is one named change set; handling
+  simultaneous edits from automated sources is Future Work, US-02.5.6).
 - Manual checking creates bottlenecks and data-quality risk.
 - Illness and late schedule changes must be resolved quickly.
 
@@ -290,7 +302,7 @@ allowing billing to proceed.
 6. Authorise the List. A $0.00 Booking raises a $0.00 "No charge" invoice: no payable, no BCTI.
 7. Confirm that the Bookings lock, each Procedure's Contract and price locked onto it ("Contract locked
    at authorise"), and the List hands to billing.
-8. Later, monitor invoice and integration failures: a failed Booking is held back while the rest of
+8. Later, monitor invoice failures and rows still waiting on Intake: a failed Booking is held back while the rest of
    the List bills, and she retries it from the Billing monitor without editing any Contract.
 9. Split a Procedure's fee on a Booking when more than one party pays (**Split** in its Billing card's Paid by), before authorising.
    Change a Procedure's payer there too (a dialog on web) until the List is authorised; each payer gets one invoice.
@@ -318,14 +330,14 @@ The prototype plans to place the monitoring in or alongside the Admin Web App.
 
 ### Goals and actions
 
-- Work the matching screen (Admin, Matching): import hospital files, and match, create or reject
-  each row, with unmatched rows and rows with no NHI waiting in the unmatched queue.
-- Monitor hospital HL7 and FHIR messages (Future scope).
-- Review failed, duplicate, retried and manual-intervention items.
-- Correct partner-specific field mappings.
-- Reprocess failed messages without creating duplicate Bookings.
-- Review PDF extraction before ingesting a surgeon's List.
+- Work **Admin, Intake** (one side-nav item under Day view): on **Matching**, import hospital files and
+  match, create or reject each row, with unmatched rows and rows with no NHI waiting in the unmatched
+  queue; on **PDF lists**, open each rooms' list with its sender, correct its rows and send it to
+  matching (a re-sent list's differences wait for approval); on **Data quality** and **Validators**,
+  check what was received and test NHIs.
 - Handle an inbound change that targets a `SUBMITTED` or `AUTHORISED` List.
+- Future scope: automatic hospital sync and HL7 and FHIR monitoring (failed, duplicate, retried and
+  dead-lettered messages, partner field mappings, reprocessing without duplicates).
 
 ### Pain points
 
@@ -336,12 +348,15 @@ The prototype plans to place the monitoring in or alongside the Admin Web App.
 
 ### Prototype status
 
-The matching screen (Admin, Matching, catch-up Phase 33) is the in-scope surface: hospital rows land
-there with their wording as received and nothing applies until the office decides. The HL7/FHIR monitor
-is Future scope: the Admin Integrations monitor (Messages, Feed config, Surgeon PDFs, Data quality,
-Validators) and the badged Integrations simulator, built in Phase 11, remain clickable, but a fired
-HL7/FHIR message is now only sent to matching; the HL7-to-FHIR transform, a deduped replay and a
-feed-mapping dead-letter can still be shown as Future scope.
+**Admin, Intake** (catch-up Phases 33 and 34) is the in-scope surface, with tabs Matching, PDF lists,
+Data quality and Validators: hospital files from St George's and Southern Cross and the rooms' PDF lists
+land there with their wording as received, and nothing applies until the office decides. Every List
+records where it came from. Hospital files are imported by the office; nothing syncs. The HL7/FHIR
+tooling is Future scope on its own demo surface, **Demo: Future scope, HL7 and FHIR**
+(`/demo/integrations`, its message log at `/demo/integrations/log` and feed mapping at
+`/demo/integrations/mapping`): a fired message only lands on Admin Intake as a row; the HL7-to-FHIR
+transform, a deduped replay and a feed-mapping dead-letter can be shown there as a labelled aside.
+Christchurch Public is not integrated today.
 
 ## Secondary admin responsibility: finance and reconciliation
 
@@ -355,9 +370,13 @@ organisational assumption.
 - Monitor invoices generated and sent by the Billing Engine (the Billing monitor's **Sent or to post**
   stage), resend one, and fix a missing invoice address.
 - Reconcile payments into AA.
-- Handle partial payments and unmatched remittances.
+- Handle partial payments, and match any bulk remittance line Xero could not match (in Xero's bank
+  reconciliation, not in the Billing Engine).
 - Confirm the related anaesthetist payable becomes available for a payables run.
-- Run disbursements and distinguish paid-in from paid-out.
+- Run the payables in Xero (the Billing Engine records each disbursement when Xero reports the bill
+  paid) and distinguish paid-in from paid-out.
+- Watch the **Reconciliation** card on Admin Day, and on the Billing monitor the Xero sync queue and
+  any invoice changed directly in Xero.
 - Manage individual Xero contact archiving at scale.
 - Maintain AA fee settings and run the monthly fee invoices (AA's own fee to each anaesthetist, never
   deducted from a payment to them).
@@ -373,7 +392,10 @@ the monthly fee invoice run and the anaesthetist's AA fees tab followed in catch
 catch-up Phase 22 the run sends each invoice itself (emailed, or marked To post), in the
 anaesthetist's name with AA as agent, and a fee can be split on the Booking. Since catch-up Phase 36
 the Billing Engine's own ledger is AA's system of record (every invoice a receivable and payable pair,
-Xero mirroring it), with the Admin Ledger screen's in-balance view and out-of-balance list.
+Xero mirroring it), with the Admin Ledger screen's in-balance view and out-of-balance list. Since
+catch-up Phase 37 the payables run is made in Xero and the engine records each disbursement by webhook
+or poll; every call to Xero waits in a sync queue that retries through an outage; voids and edits made
+in Xero are flagged at the poll; and Admin Day's Reconciliation card says whether everything squares.
 
 ## External actors, not prototype login personas
 

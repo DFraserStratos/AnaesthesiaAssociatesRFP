@@ -1,0 +1,166 @@
+{
+  "id": "US-02.5.8",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "history",
+      "app": "admin",
+      "caption": "Every change to a Booking shows when, who made it and what changed, including the text a hospital list replaced",
+      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "states": [
+        {
+          "state": "button",
+          "caption": "The History button on the Booking, after two office users have each saved a change",
+          "steps": [
+            {
+              "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]"
+            },
+            {
+              "click": "[data-shot=booking-save]"
+            },
+            {
+              "wait": "[data-shot=booking-saved-strip]"
+            },
+            {
+              "trigger": "switch-office-user"
+            },
+            {
+              "fill": "[data-shot=booking-notes-for-the-office] textarea",
+              "value": "Patient asked for an earlier start."
+            },
+            {
+              "wait": "[data-shot=booking-save-bar]"
+            },
+            {
+              "click": "[data-shot=booking-save]"
+            },
+            {
+              "wait": "[data-shot=booking-saved-strip]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-history-button]"
+          ]
+        },
+        {
+          "state": "open",
+          "caption": "The history: each save with when, which office user made it and each field's before and after",
+          "steps": [
+            {
+              "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]"
+            },
+            {
+              "click": "[data-shot=booking-save]"
+            },
+            {
+              "wait": "[data-shot=booking-saved-strip]"
+            },
+            {
+              "trigger": "switch-office-user"
+            },
+            {
+              "fill": "[data-shot=booking-notes-for-the-office] textarea",
+              "value": "Patient asked for an earlier start."
+            },
+            {
+              "wait": "[data-shot=booking-save-bar]"
+            },
+            {
+              "click": "[data-shot=booking-save]"
+            },
+            {
+              "wait": "[data-shot=booking-saved-strip]"
+            },
+            {
+              "click": "[data-shot=booking-history-button]"
+            },
+            {
+              "wait": "[data-shot=booking-history]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-history]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "from-hospital",
+      "app": "admin",
+      "caption": "A change from the hospital's list names the list it came from and shows the procedure text it replaced",
+      "start": "/admin/day/2026-08-04/bookings/BK0043",
+      "setup": [
+        {
+          "goto": "/admin/intake/matching"
+        },
+        {
+          "click": "[data-shot=matching-import-open]"
+        },
+        {
+          "wait": "[data-shot=matching-import]"
+        },
+        {
+          "click": "[data-sample-id=SAMPLE_STG]"
+        },
+        {
+          "click": "[data-shot=matching-import-confirm]"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "press": "Escape"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot^='matching-row-']:has-text('Diane Foster')"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=matching-apply]"
+        },
+        {
+          "wait": "[data-shot=matching-banner]"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=booking-history-button]"
+            },
+            {
+              "wait": "[data-shot=booking-history]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-history] [data-shot=history-change-set]:has-text(\"Updated from the hospital\")"
+          ]
+        }
+      ]
+    }
+  ]
+}

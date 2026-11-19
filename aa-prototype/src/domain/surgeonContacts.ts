@@ -10,14 +10,15 @@
  * **The one email helper.** `officeAddressFor` is the only way the office's
  * emails find a surgeon's address: the first office contact with an email is
  * the To and the other office contacts with an email are offered, never every
- * contact at once and never the personal contact. Phase 34 puts the List's
- * sender in front of it (adding `'listSender'` to `OfficeAddress.source`);
+ * contact at once and never the personal contact. Given a List that came
+ * from a rooms' PDF (catch-up Phase 34, US-02.2.4), the address the PDF
+ * arrived from is the To instead, and the office contacts are all offered;
  * Phase 35's update email and Phase 40's NHI request read it and nothing else
  * (`apps/officeAddressGuard.test.ts` keeps every other reader of
  * `officeContacts` out).
  */
 
-import type { Surgeon, SurgeonContact, SurgeonId } from './types'
+import type { ListOrigin, Surgeon, SurgeonContact, SurgeonId } from './types'
 
 /** Trim each field and drop the blank ones (never `''`). */
 export function cleanContact(c: SurgeonContact | undefined): SurgeonContact {
@@ -37,11 +38,11 @@ export function isBlankContact(c: SurgeonContact | undefined): boolean {
   return cleaned.name === undefined && cleaned.email === undefined && cleaned.phone === undefined
 }
 
-/** One address the office can send to. `source` is where it came from: 34 adds `'listSender'`. */
+/** One address the office can send to: an office contact, or the address the List's PDF arrived from (Phase 34). */
 export interface OfficeAddress {
   email: string
   name?: string
-  source: 'officeContact'
+  source: 'officeContact' | 'listSender'
 }
 
 /** The To and the addresses offered beside it. `to` is `null` when none is held. */
@@ -54,16 +55,25 @@ export interface OfficeAddresses {
  * The address the office's emails use for a surgeon: the first office contact
  * with a non-blank email is `to`; `others` are the remaining office contacts
  * with an email, in order, de-duplicated by email (ignoring case), never
- * repeating `to`. Never the personal contact. An unknown surgeon, or one with
- * no office email held, gives `{ to: null, others: [] }`. Never throws.
+ * repeating `to`. Never the personal contact. Given a `list` whose origin is a
+ * rooms' PDF (US-02.2.4), its sender is `to` and every office contact is
+ * offered (an office contact with the sender's address is dropped). An unknown
+ * surgeon, or one with no address held, gives `{ to: null, others: [] }`.
+ * Never throws.
  */
 export function officeAddressFor(
   masters: { surgeons: Readonly<Record<string, Surgeon>> },
   surgeonId: SurgeonId,
+  list?: { origin: ListOrigin },
 ): OfficeAddresses {
   const surgeon = masters.surgeons[surgeonId]
   const seen = new Set<string>()
   const addresses: OfficeAddress[] = []
+  const sender = list?.origin.kind === 'pdf' ? list.origin.senderEmail.trim() : ''
+  if (sender !== '') {
+    seen.add(sender.toLowerCase())
+    addresses.push({ email: sender, source: 'listSender' })
+  }
   for (const contact of surgeon?.officeContacts ?? []) {
     const { name, email } = cleanContact(contact)
     if (email === undefined) continue

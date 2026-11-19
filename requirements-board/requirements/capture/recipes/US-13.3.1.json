@@ -6,7 +6,42 @@
     {
       "name": "billing-monitor",
       "app": "admin",
-      "caption": "Billing monitor, each authorised List through billing run, invoices, emailing and Xero handoff",
+      "caption": "Billing monitor, each authorised List inside its anaesthetist's group: whether it has been invoiced, sent and mirrored to Xero",
+      "start": "/admin/billing?list=L-25490-2026-07-20-AM",
+      "setup": [
+        {
+          "goto": "/admin/review/L-25490-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 1500
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 2200
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-pipeline-L-25490-2026-07-20-AM]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "grouped",
+      "app": "admin",
+      "caption": "Grouped by anaesthetist: Dr Souter's Lists awaiting approval, each opening in Review, where it is authorised",
       "start": "/admin/billing",
       "setup": [
         {
@@ -27,9 +62,90 @@
       ],
       "states": [
         {
+          "steps": [
+            {
+              "wait": "[data-shot=billing-awaiting-L-34821-2026-07-20-AM]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-group-34821]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "filtered",
+      "app": "admin",
+      "caption": "Standard filtering: one anaesthetist, Dr Morrison",
+      "start": "/admin/billing?anaesthetist=25490",
+      "setup": [
+        {
+          "goto": "/admin/review/L-25490-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 1500
+        }
+      ],
+      "states": [
+        {
+          "state": "filter-bar",
+          "caption": "Standard filtering: the filter bar set to one anaesthetist, with the count of Lists in view",
           "steps": [],
           "highlight": [
-            "[data-shot=billing-pipeline-L-25490-2026-07-20-AM]"
+            "[data-shot=billing-monitor-filters]"
+          ]
+        },
+        {
+          "state": "group",
+          "caption": "Filtered to one anaesthetist, only Dr Morrison's group shows, its authorised List expanded",
+          "steps": [],
+          "highlight": [
+            "[data-shot=billing-group-25490]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "problems-only",
+      "app": "admin",
+      "caption": "Problems only: just the Lists where something needs the office, with why it failed",
+      "start": "/admin/billing?problems=1",
+      "setup": [
+        {
+          "goto": "/admin/billing"
+        },
+        {
+          "trigger": "billing-failure"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "state": "filter-bar",
+          "caption": "Problems only, from the With problems tile or the filter bar",
+          "steps": [],
+          "highlight": [
+            "[data-shot=billing-tile-problems]",
+            "[data-shot=billing-monitor-filters]"
+          ]
+        },
+        {
+          "state": "list",
+          "caption": "Only Dr Ropata's List shows, expanded: Losa Tuilagi's Booking waits for Xero, with why and its next try",
+          "steps": [],
+          "highlight": [
+            "[data-shot=billing-pipeline-L-39560-2026-07-16-AM]"
           ]
         }
       ]

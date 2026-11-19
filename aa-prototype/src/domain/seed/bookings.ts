@@ -138,7 +138,7 @@ const FILLER_CONTRACT_BY_HOSPITAL: Record<string, string> = {
 
 /** Hospitals with a seeded hospital feed (`domain/integrations` feeds). */
 const FEED_HOSPITALS: ReadonlySet<string> = new Set([HOSP.stg, HOSP.sx, HOSP.cph])
-/** The surgeon-PDF hospitals (`domain/integrations/pdfSamples.ts`). */
+/** The rooms' PDF list hospitals (`domain/intake/pdfLists.ts`'s samples). */
 const PDF_HOSPITALS: ReadonlySet<string> = new Set([HOSP.forte, HOSP.ces])
 
 /**

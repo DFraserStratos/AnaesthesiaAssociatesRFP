@@ -2,10 +2,9 @@ import { fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
 
 /**
  * A small labelled in-row input for correcting one field of an incoming row:
- * the Integrations PDF review's extracted rows (Phase 11) and the Matching
- * panel's identifying fields (catch-up Phase 33). Moved out of
- * `IntegrationMonitorScreen`'s `PdfReview` so both use the one component; it
- * lives in `apps/admin/components` because it serves both screens.
+ * the Matching panel's identifying fields (catch-up Phase 33). It began in
+ * Phase 11's PDF review; the rooms' PDF lists (catch-up Phase 34) correct
+ * their rows with the shared `TextField` instead.
  * `readOnly` shows a value that is kept as received (never corrected).
  */
 export function RowField({

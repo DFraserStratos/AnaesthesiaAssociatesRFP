@@ -31,6 +31,7 @@ import {
   type Actor,
   type MutationMeta,
   type Outcome,
+  withChangeSet,
 } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { bookingsForList, completionContextFor, heldPricesForBooking, proceduresForBooking } from './selectors'
@@ -43,6 +44,7 @@ import { BASE_UNITS_WHOLE_MESSAGE, isRecordableBaseUnits, rvgGroupPickRefusal } 
 import { claimsAuditView } from '../domain/billing/modifiers'
 import { reconciledForGroup } from './modifierFacts'
 import { approvalsAtAuthorise } from './contractApprovalActions'
+import { isDraftStore } from './draftMode'
 
 // ---------------------------------------------------------------------------
 // Shared checks
@@ -363,7 +365,8 @@ export function authoriseList(api: AppStoreApi, actor: Actor, listId: string): O
       billing: { ...s.billing, locks: { ...s.billing.locks, ...locks } },
     }),
   )
-  emitAppEvent({ type: 'listAuthorised', listId })
+  // A Booking draft's store never reaches the billing run (catch-up Phase 35).
+  if (!isDraftStore(api)) emitAppEvent({ type: 'listAuthorised', listId })
   return ok(undefined)
 }
 
@@ -471,7 +474,7 @@ export function logListNote(api: AppStoreApi, actor: Actor, listId: string, text
  * billing; never a hard delete. Phase 11's S15 message calls this same guard
  * with source=integration (ACTIVE Lists only).
  */
-export function cancelBooking(api: AppStoreApi, actor: Actor, bookingId: string, reason: string): Outcome {
+function cancelBookingUnscoped(api: AppStoreApi, actor: Actor, bookingId: string, reason: string): Outcome {
   const state = api.getState()
   const found = getBooking(state, bookingId)
   if (found === undefined) return refuse('notFound', 'Booking not found.')
@@ -789,7 +792,7 @@ export function editList(api: AppStoreApi, actor: Actor, listId: string, patch: 
  * (catch-up Phase 38a). A Booking moved onto a SUBMITTED List counts toward its
  * completeness check at authorise.
  */
-export function reassignBooking(api: AppStoreApi, actor: Actor, bookingId: string, toListId: string): Outcome {
+function reassignBookingUnscoped(api: AppStoreApi, actor: Actor, bookingId: string, toListId: string): Outcome {
   const state = api.getState()
   const found = getBooking(state, bookingId)
   if (found === undefined) return refuse('notFound', 'Booking not found.')
@@ -846,3 +849,19 @@ export function reassignBookingCore(schedule: AppState['schedule'], bookingId: s
   return { ...schedule, bookings: { ...schedule.bookings, [bookingId]: { ...booking, listId: toListId } } }
 }
 
+
+/**
+ * `cancelBookingUnscoped`; the office's call is one change set (`cancel`), so the update
+ * email can pick it (catch-up Phase 35; DM-35). Anaesthetists' calls pass none.
+ */
+export function cancelBooking(...args: Parameters<typeof cancelBookingUnscoped>): ReturnType<typeof cancelBookingUnscoped> {
+  return args[1].role === 'office' ? withChangeSet(args[0], 'cancel', () => cancelBookingUnscoped(...args)) : cancelBookingUnscoped(...args)
+}
+
+/**
+ * `reassignBookingUnscoped`; the office's call is one change set (`move`), so the update
+ * email can pick it (catch-up Phase 35; DM-35). Anaesthetists' calls pass none.
+ */
+export function reassignBooking(...args: Parameters<typeof reassignBookingUnscoped>): ReturnType<typeof reassignBookingUnscoped> {
+  return args[1].role === 'office' ? withChangeSet(args[0], 'move', () => reassignBookingUnscoped(...args)) : reassignBookingUnscoped(...args)
+}

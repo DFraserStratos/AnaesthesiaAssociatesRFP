@@ -18,6 +18,7 @@ export type MastersView =
   | 'modifiers'
   | 'scheduleSettings'
   | 'availability-statuses'
+  | 'emailTemplates'
   | 'xeroArchiving'
 
 /** Sub-nav order (the phase doc's). */
@@ -41,6 +42,8 @@ export const MASTERS_NAV: readonly { view: MastersView; label: string }[] = [
   { view: 'scheduleSettings', label: 'Schedule settings' },
   // Catch-up Phase 29 (US-01.2.2): the user-maintained availability statuses; never "slot" in the UI (OQ-64).
   { view: 'availability-statuses', label: 'Availability statuses' },
+  // Catch-up Phase 35 (US-02.3.4): the update email's wording per kind of change.
+  { view: 'emailTemplates', label: 'Email templates' },
   { view: 'xeroArchiving', label: 'Xero & archiving' },
 ]
 

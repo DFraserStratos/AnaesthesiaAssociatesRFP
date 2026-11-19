@@ -1,9 +1,10 @@
+import { useBookingApi } from '../booking/draft'
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { semantic } from '../../theme/tokens'
 import type { BillingLine, Procedure } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
-import { removeBillingLine, useAppStore, type Actor, useProcedurePrepayment } from '../../store'
+import { removeBillingLine, type Actor, useProcedurePrepayment } from '../../store'
 import { AddBillingLineSheet } from './AddBillingLineSheet'
 import { CaptureSection, Caption, FailureNotes } from './ui'
 import { formatMoney } from '../format'
@@ -32,6 +33,7 @@ export function BillingLinesCard({
   canCapture,
   failures,
 }: BillingLinesCardProps) {
+  const bookingApi = useBookingApi()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // A prepaid Procedure is billed by its prepayment, in full: no add-on lines (catch-up Phase 27; the store refuses them too).
@@ -40,7 +42,7 @@ export function BillingLinesCard({
 
   function remove(lineId: string) {
     setError(null)
-    const outcome = removeBillingLine(useAppStore, actor, lineId)
+    const outcome = removeBillingLine(bookingApi, actor, lineId)
     if (!outcome.ok) setError(outcome.message)
   }
 

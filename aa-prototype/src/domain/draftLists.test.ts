@@ -30,7 +30,7 @@ const draft = (over: Partial<DraftList> = {}): DraftList => ({
   kind: 'private',
   hospitalId: 'H-STG',
   surgeonId: 'S-TAN',
-  conflicts: [],
+  conflicts: [], origin: { kind: 'manual' as const },
   draft: { origin: 'request', source: 'phone', sinceISO: '2026-07-21T08:00:00', by: 'Kirsty W.' },
   ...over,
 })
@@ -135,7 +135,7 @@ describe('recurringClashDraft (OQ-81 part 2: the one rule)', () => {
       surgeonId: 'S-OKAFOR',
       notes: 'Acute theatre',
       recurringBookingId: 'RCB099',
-      conflicts: [],
+      conflicts: [], origin: { kind: 'recurring' as const },
       draft: { origin: 'recurringClash', sinceISO: '2026-07-21T00:05:00', by: 'System', fromAnaesthetistId: 'A1', projectedFor: { recurringBookingId: 'RCB099', dateISO: '2026-07-22', session: 'AM' } },
     })
     expect(out.anaesthetistId).toBeUndefined()

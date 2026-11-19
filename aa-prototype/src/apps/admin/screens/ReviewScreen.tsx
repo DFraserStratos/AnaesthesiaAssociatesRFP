@@ -48,7 +48,7 @@ import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { allocationNote, inDisplayOrder } from '../../../domain/billing/multiProcedure'
-import { FormError, Notice, PageHeader, Pill, ResultLine, StatTile, TickButton } from '../../../shared/ui'
+import { BackLink, FormError, Notice, PageHeader, Pill, ResultLine, StatTile, TickButton } from '../../../shared/ui'
 import { TextAction } from '../../../shared/ui/TextAction'
 import { ClearWarningButton } from '../../../shared/warnings'
 import { withStubsInTimeOrder } from '../../../domain/intake/stubs'
@@ -60,6 +60,8 @@ interface ReviewScreenProps {
   listId: string
   actor: Actor
   onBack: () => void
+  /** Opened from the Billing monitor's "Open in Review" (catch-up Phase 37): the back link returns there instead of the breadcrumb. */
+  backToBillingMonitor?: boolean
   /** Open another list using the persistent queue navigation. */
   onOpen: (listId: string) => void
   /** Jump to the Invoices section. */
@@ -81,7 +83,7 @@ const REVIEW_NOWRAP_HEADINGS = new Set(['Time', 'Times', 'B · T · M', 'Units',
  * the one review-flag list, `domain/billing/reviewFlags.ts` (catch-up Phase 21a: never a block;
  * no invented duration-outlier flag).
  */
-export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, onOpenBooking }: ReviewScreenProps) {
+export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = false, onOpen, onViewInvoices, onOpenBooking }: ReviewScreenProps) {
   const { Overlay } = useSurface()
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
@@ -249,12 +251,17 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices, on
 
   return (
     <div data-testid="review-detail-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
+      {backToBillingMonitor && (
+        <BackLink onClick={onBack} shot="review-back-to-billing">Back to Billing monitor</BackLink>
+      )}
       {/* Breadcrumb */}
+      {!backToBillingMonitor && (
       <div style={{ fontSize: 13, color: neutral.mist }}>
         <button onClick={onBack} style={{ border: 'none', background: 'none', padding: 0, color: neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Review queue</button>
         <span style={{ color: neutral.lineStrong }}> / </span>
         <span>{anaesthetist !== undefined ? anaesthetist.name : list.anaesthetistId} · {hospitalName} {sessionText(list.session)}</span>
       </div>
+      )}
 
       {/* Header */}
       <PageHeader

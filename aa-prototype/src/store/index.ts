@@ -31,10 +31,15 @@ export {
   clockISO,
   ok,
   refuse,
+  copyStateIntoDraft,
+  onDomainReset,
+  withChangeSet,
   type Actor,
   type Outcome,
   type MutationMeta,
   type DomainPatch,
+  type MutateOptions,
+  type MutateResult,
 } from './mutate'
 export {
   completeBooking,
@@ -159,6 +164,8 @@ export {
 export {
   upsertPatient,
   editPatient,
+  PATIENT_NHI_REQUIRED_MESSAGE,
+  PATIENT_NHI_OFFICE_ONLY_MESSAGE,
   type PatientIntakeDetails,
   type IntakeResult,
   type PatientEditPatch,
@@ -294,6 +301,7 @@ export {
   type BillingRunException,
 } from './billingRun'
 export { handoffPair, handoffPairsForBooking, handoffListPairs, type HandoffResult } from './xeroHandoff'
+export { createXeroPair } from './xeroHandoff'
 // The internal ledger (catch-up Phase 36): its reads and the office's actions on unmatched receipts.
 export * from './ledgerSelectors'
 export { allocateUnmatchedReceipt, allocationRefusal, markUnmatchedRefunded, OVER_ALLOCATION } from './ledgerActions'
@@ -302,7 +310,7 @@ export { recordUnmatchedReceipt, type UnmatchedReceiptInput } from './paymentAct
 export { postTransferJournal } from './xeroHandoff'
 export { settlePrepaymentsForList, transfersDueForList } from './prepaymentSettlement'
 export { setArchiveWindowDays, armHandoffFault } from './demoSettingsActions'
-export { anaesthetistActor, OFFICE_ACTOR, SOUTER_ACTOR, OFFICE_SIMULATION_ACTOR, DEMO_TRIGGER_ACTOR, DEMO_OFFICE_ACTOR, OFFICE_ACCOUNT_ID } from './demoActors'
+export { anaesthetistActor, OFFICE_ACTOR, SECOND_OFFICE_ACTOR, OFFICE_USERS, officeActorOf, otherOfficeUser, SOUTER_ACTOR, OFFICE_SIMULATION_ACTOR, DEMO_TRIGGER_ACTOR, DEMO_OFFICE_ACTOR, OFFICE_ACCOUNT_ID, type OfficeUserId } from './demoActors'
 export {
   WARNING_SAMPLES,
   WARNING_RULE_COUNT,
@@ -366,7 +374,35 @@ export {
 } from './draftListDemo'
 export { simulateSignInAttempts } from './authDemoActions'
 export { receivePayment, gstComponentOf, type ReceivePaymentInput } from './paymentActions'
-export { wireReconciliationPoll, runReconciliationPoll } from './reconciliationPoll'
+export { wireReconciliationPoll, runReconciliationPoll, type PollResult } from './reconciliationPoll'
+// Xero mirror resilience (catch-up Phase 37; EP-09, US-09.2.4): the gate, the sync queue, detection, divergence, and the Xero side.
+export { deliverPaymentWebhook, xeroBalanceOf, XERO_SIDE_ACTOR, type PaymentWebhookInput } from './paymentActions'
+export { xeroAvailable, gateFor, XERO_OUTAGE_ERROR, XERO_FAULT_ERROR, XERO_QUEUE_ACTOR } from './xeroGate'
+export { setXeroOutage, processXeroQueue, retryXeroItemNow, wireXeroQueue, type ProcessResult } from './xeroQueue'
+export { recordDisbursement, disbursementKeySeen, DETECTION_ACTOR, type RecordDisbursementInput } from './disbursementDetection'
+export { flagXeroDivergences, resolveXeroDivergence, DIVERGENCE_OUTCOMES } from './xeroDivergenceActions'
+export {
+  payBillsInXero,
+  xeroBillPayable,
+  voidAccRecInXero,
+  voidInXeroRefusal,
+  amendAccRecInXero,
+  amendInXeroRefusal,
+  XERO_DEMO_AMENDMENT,
+  XERO_PAYABLES_ACTOR,
+  XERO_STAFF_ACTOR,
+  XERO_REMITTANCE_ACTOR,
+  bulkRemittanceRefusal,
+  receiveBulkRemittance,
+  bankLineMatchRefusal,
+  matchBankLineInXero,
+  type BulkRemittanceResult,
+  type XeroBill,
+  type BillPaid,
+  type PayBillsResult,
+} from './xeroSimActions'
+export * from './reconciliationSelectors'
+export * from './billingMonitorView'
 export {
   saveAaFeeSettings,
   runMonthlyFeeInvoices,
@@ -384,10 +420,12 @@ export {
   runPayables,
   disbursePayable,
   payablesDue,
+  payableLegsDue,
+  type DueLeg,
   type PayablesRunResult,
   type PayablesDue,
 } from './payablesActions'
-export { runArchiveJob, eligibleArchiveContactIds, wireArchiveJob, type ArchiveJobResult } from './archiveActions'
+export { runArchiveJob, eligibleArchiveContactIds, wireArchiveJob, ARCHIVE_SKIPPED_OUTAGE, type ArchiveJobResult } from './archiveActions'
 export {
   advanceClockMinutes,
   advanceClockDays,
@@ -401,7 +439,6 @@ export {
   reprocessMessage,
   setFeedMapping,
   correctEthnicityCode,
-  ingestPdfRow,
   wireIntegrationRetry,
   MAX_ATTEMPTS,
 } from './integrationActions'
@@ -466,6 +503,17 @@ export {
   WORDING_OR_CODE_MESSAGE,
   type DecisionInput,
 } from './matchingActions'
+// The rooms' PDF lists (catch-up Phase 34; DM-61): upload, correct, send to matching; the re-send trigger's body.
+export {
+  correctPdfListRow,
+  INVALID_NHI_SEND_MESSAGE,
+  receiveResentPdfList,
+  resendRefusal,
+  sendPdfListToMatching,
+  SENDER_REQUIRED_MESSAGE,
+  uploadPdfList,
+  type PdfRowPatch,
+} from './pdfListActions'
 export {
   assessImportRow,
   importRowViews,
@@ -484,6 +532,7 @@ export { fixtureNhiForRow, officeAddsNhiRefusal, officeAddsNhiToStub } from './s
 // Catch-up Phase 33: the matching screen's demo trigger bodies (bar entries and the PWA office stand-in).
 export {
   officeMatchesHospitalRow,
+  officeImportsS1File,
   receiveTheatreList,
   sendUpdateRefusal,
   stageUpdateForBooking,
@@ -492,3 +541,27 @@ export {
   updateTarget,
   type StandInChoice,
 } from './matchingDemo'
+// Catch-up Phase 35: the office's explicit save, one change set per save (US-02.3.2, DM-35).
+export {
+  SAVE_NHI_REQUIRED_MESSAGE,
+  RECEIVED_TEXT_MESSAGE,
+  SAVE_NO_CHANGES_MESSAGE,
+  SAVE_OFFICE_ONLY_MESSAGE,
+  saveBookingChanges,
+  saveBookingPatch,
+  type BookingDraftChanges,
+  type FieldRef,
+} from './bookingSaveActions'
+export { isDraftStore, markDraftStore } from './draftMode'
+// Catch-up Phase 35: the update email templates and the drafted-email record (US-02.3.3, US-02.3.4).
+export {
+  addEmailTemplate,
+  recordUpdateEmailDrafted,
+  saveEmailTemplate,
+  setEmailTemplateActive,
+  type EmailTemplateFields,
+  type UpdateEmailDraftRecord,
+} from './emailTemplateActions'
+export { changeSetEntries, lastChangeSetFor, type ChangeSetSummary } from './changeSetSelectors'
+// Catch-up Phase 35: the PWA's office stand-in for an office save.
+export { officeEditsBooking, officeEditsBookingRefusal } from './officeSaveDemo'

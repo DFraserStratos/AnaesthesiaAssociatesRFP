@@ -14,7 +14,10 @@ import { AuditViewer } from './screens/AuditViewer'
 import { BillingMonitorScreen } from './screens/BillingMonitorScreen'
 import { LedgerScreen } from './screens/LedgerScreen'
 import { AaFeesScreen } from './screens/AaFeesScreen'
-import { IntegrationMonitorScreen } from './screens/IntegrationMonitorScreen'
+import { IntakeScreen } from './screens/IntakeScreen'
+import { PdfListsTab } from './intake/PdfListsTab'
+import { DataQualityTab } from './intake/DataQualityTab'
+import { ValidatorsTab } from './intake/ValidatorsTab'
 import { InvoicesScreen } from './screens/InvoicesScreen'
 import { MasterData } from './screens/masters/MasterData'
 import { SurgeonProfile } from './screens/SurgeonProfile'
@@ -203,18 +206,33 @@ export function AdminReviewQueueRoute() {
   )
 }
 
+/** Router state "Open in Review" passes from the Billing monitor: where to return, with its search. */
+export interface BillingMonitorReturnState {
+  from: 'billing'
+  search: string
+}
+
+export function billingMonitorReturn(state: unknown): BillingMonitorReturnState | null {
+  if (typeof state !== 'object' || state === null) return null
+  const s = state as Partial<BillingMonitorReturnState>
+  return s.from === 'billing' ? { from: 'billing', search: typeof s.search === 'string' ? s.search : '' } : null
+}
+
 export function AdminReviewRoute() {
   const { listId = '' } = useParams()
   const { actor } = useAdminOutlet()
   const navigate = useNavigate()
   const exists = useAppStore((s) => s.schedule.lists[listId] !== undefined)
+  // Opened from the Billing monitor's "Open in Review" (catch-up Phase 37): back returns there with its filters.
+  const from = billingMonitorReturn(useLocation().state)
 
   return (
     <RequireEntity exists={exists}>
       <ReviewScreen
         listId={listId}
         actor={actor}
-        onBack={() => navigate('/admin/review')}
+        backToBillingMonitor={from !== null}
+        onBack={() => navigate(from !== null ? `/admin/billing${from.search}` : '/admin/review')}
         onOpen={(next) => navigate(`/admin/review/${next}`)}
         onViewInvoices={() => navigate('/admin/invoices')}
         onOpenBooking={(dateISO, bookingId) => navigate(`/admin/day/${dateISO}/bookings/${bookingId}`)}
@@ -280,9 +298,26 @@ function openNotificationTarget(
 }
 
 /**
- * Matching (catch-up Phase 33; US-02.1.1 to US-02.1.4) — `/admin/matching`. A
- * link may pass `{ selectRowId }` in router state to open that row (the Admin
- * Booking's "From hospital row").
+ * Admin Intake (catch-up Phase 34) — `/admin/intake/<tab>`: the header and the
+ * route strip, its tab page in the outlet.
+ */
+export function AdminIntakeRoute() {
+  return <IntakeScreen />
+}
+
+/**
+ * `/admin/matching` and `/admin/integrations` before catch-up Phase 34: both
+ * land on Intake's Matching tab, keeping any router state (`{ selectRowId }`).
+ */
+export function AdminIntakeRedirect() {
+  const { state } = useLocation()
+  return <Navigate to="/admin/intake/matching" replace state={state} />
+}
+
+/**
+ * Matching (catch-up Phase 33; US-02.1.1 to US-02.1.4) — `/admin/intake/matching`
+ * since Phase 34. A link may pass `{ selectRowId }` in router state to open that
+ * row (the Admin Booking's "From hospital row").
  */
 export function AdminMatchingRoute() {
   const { actor, todayISO } = useAdminOutlet()
@@ -328,9 +363,21 @@ export function AdminAaFeeSettingsRoute() {
   return <AaFeesScreen actor={actor} tab="settings" />
 }
 
-export function AdminIntegrationsRoute() {
+/** The rooms' PDF lists (catch-up Phase 34; FT-02.2, US-02.2.1) — `/admin/intake/pdfs`. */
+export function AdminPdfListsRoute() {
   const { actor } = useAdminOutlet()
-  return <IntegrationMonitorScreen actor={actor} />
+  return <PdfListsTab actor={actor} />
+}
+
+/** Data quality (Phase 11) — `/admin/intake/quality`. */
+export function AdminDataQualityRoute() {
+  const { actor } = useAdminOutlet()
+  return <DataQualityTab actor={actor} />
+}
+
+/** The NHI and ethnicity validators (Phase 11; US-11.1.2) — `/admin/intake/validators`. */
+export function AdminValidatorsRoute() {
+  return <ValidatorsTab />
 }
 
 export function AdminMastersRoute() {

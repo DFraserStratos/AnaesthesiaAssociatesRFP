@@ -1,6 +1,7 @@
+import { useBookingStore } from './draft'
 import { useMemo } from 'react'
 import { neutral } from '../../theme/tokens'
-import { contractChangeFor, useAppStore } from '../../store'
+import { contractChangeFor } from '../../store'
 import { stampText } from '../../domain/dateText'
 
 export const AWAITING_OFFICE_APPROVAL = 'Awaiting office approval'
@@ -14,8 +15,8 @@ export const APPROVED_BY_THE_OFFICE = 'Approved by the office'
  * a block, no money.
  */
 export function ContractApprovalLine({ procedureId }: { procedureId: string }) {
-  const audit = useAppStore((s) => s.audit)
-  const masters = useAppStore((s) => s.masters)
+  const audit = useBookingStore((s) => s.audit)
+  const masters = useBookingStore((s) => s.masters)
   const change = useMemo(() => contractChangeFor({ audit, masters }, procedureId), [audit, masters, procedureId])
   if (change === undefined) return null
   const approved = change.status === 'approved' && change.approval !== undefined ? change.approval : undefined

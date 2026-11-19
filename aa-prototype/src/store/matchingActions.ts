@@ -26,6 +26,7 @@ import type {
   ImportSource,
   IncomingBookingFields,
   IncomingFieldKey,
+  ListOrigin,
   OfficePicks,
   Session,
 } from '../domain/types'
@@ -48,7 +49,7 @@ import {
   type FieldDiff,
 } from '../domain/intake/matching'
 import { hospitalDownloadSample, hospitalSourceKey } from '../domain/intake/hospitalDownloads'
-import { allocateId, clockISO, mutate, ok, refuse, transaction, type Actor, type MutationMeta, type Outcome } from './mutate'
+import { allocateId, clockISO, mutate, ok, refuse, transaction, type Actor, type MutationMeta, type Outcome, withChangeSet } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { createBooking } from './bookingActions'
 import { cancelBooking, editBooking, editRefusal } from './lifecycle'
@@ -61,6 +62,7 @@ import { assignListToSlot } from './slotActions'
 import { createDraftList } from './draftListActions'
 import { assessImportRow, matchingView } from './matchingSelectors'
 import { placeStubsForRows, settleStubForRow, stubOutcomeForDecision } from './stubSettle'
+import { listSenderEmail, originAfterRoomsRow, originForNewList } from '../domain/lists/listOrigin'
 
 function officeOnly(actor: Actor): Outcome<never> | null {
   return actor.role === 'office' ? null : refuse('officeOnly', 'Only the AA office decides rows on the matching screen.')
@@ -86,6 +88,9 @@ export interface StageExtras {
   messageId?: string
   /** Whose rows these are (D51): the hospital's (every Phase 33 channel) or the rooms' (Phase 34). */
   source?: ImportSource
+  /** Channel `pdfList` (Phase 34): the PDF list and the address it arrived from, kept on the batch. */
+  pdfListId?: string
+  senderEmail?: string
 }
 
 /**
@@ -162,6 +167,8 @@ export function stageImportRows(
       hospitalId,
       label,
       ...(extras.sampleId !== undefined ? { sampleId: extras.sampleId } : {}),
+      ...(extras.pdfListId !== undefined ? { pdfListId: extras.pdfListId } : {}),
+      ...(extras.senderEmail !== undefined ? { senderEmail: extras.senderEmail } : {}),
       importedBy: actor.who,
       importedAtISO: atISO,
       rowIds: [...rowIds],
@@ -295,9 +302,48 @@ export const SURGEON_REQUIRED_MESSAGE = 'Choose the surgeon first.'
 export const WORDING_OR_CODE_MESSAGE = 'This row has no procedure wording. Choose an RVG code first.'
 
 
+/** Who sent the row, in words: the hospital, its daily sheet, or the surgeon's rooms (a PDF list, Phase 34). */
 function hospitalFrom(state: AppState, row: ImportRow): string {
+  if (row.source === 'rooms') return `${row.incoming.surgeon?.name ?? 'The surgeon'}'s rooms`
   const name = state.masters.hospitals[row.incoming.hospitalId]?.name ?? 'The hospital'
   return row.channel === 'manualSheet' ? `${name} daily sheet` : name
+}
+
+/** The origin a List created from this row records (US-02.2.4): the rooms' PDF with its sender, or the hospital's list. */
+function originFromRow(state: AppState, row: ImportRow): ListOrigin {
+  const batch = state.intake.batches[row.batchId]
+  return originForNewList({
+    kind: 'importRow',
+    source: row.source,
+    hospitalId: row.incoming.hospitalId,
+    ...(batch?.senderEmail !== undefined ? { senderEmail: batch.senderEmail } : {}),
+    ...(batch?.pdfListId !== undefined ? { pdfListId: batch.pdfListId } : {}),
+  })
+}
+
+/**
+ * US-02.2.4's later-address rule, applied when a rooms row is decided onto an
+ * existing List: a `pdf` List takes the newer sender, the earlier address to
+ * its History (`list.senderChanged`). Anything else changes nothing.
+ */
+function applyRoomsSender(api: AppStoreApi, actor: Actor, row: ImportRow, listId: string): void {
+  if (row.source !== 'rooms') return
+  const state = api.getState()
+  const list = state.schedule.lists[listId]
+  const batch = state.intake.batches[row.batchId]
+  if (list === undefined) return
+  const next = originAfterRoomsRow(list.origin, batch?.senderEmail, batch?.pdfListId, (id) => state.intake.pdfLists[id]?.receivedAtISO)
+  if (next === undefined) return
+  mutate(
+    api,
+    actor,
+    { entityType: 'list', entityId: listId, action: 'list.senderChanged', before: { senderEmail: listSenderEmail(list) }, after: { senderEmail: listSenderEmail({ origin: next }), importRowId: row.id }, stampBookingId: null },
+    (s) => {
+      const cur = s.schedule.lists[listId]
+      if (cur === undefined) return {}
+      return { schedule: { ...s.schedule, lists: { ...s.schedule.lists, [listId]: { ...cur, origin: next } } } }
+    },
+  )
 }
 
 function hospitalName(state: AppState, hospitalId: string): string {
@@ -322,7 +368,8 @@ function createInput(state: AppState, row: ImportRow, fields: IncomingBookingFie
     ...(fields.scheduledTime !== undefined ? { scheduledTime: fields.scheduledTime } : {}),
     ...(note !== undefined ? { notes: note } : {}),
     ...(fields.externalRef !== undefined ? { correlationRef: { sourceFeedId: hospitalSourceKey(fields.hospitalId), externalAppointmentId: fields.externalRef } } : {}),
-    source: 'hospitalDownload' as const,
+    // A rooms row's Booking is from the surgeon's PDF (Phase 34); every other row's from the hospital.
+    source: row.source === 'rooms' ? ('surgeonPdf' as const) : ('hospitalDownload' as const),
   }
 }
 
@@ -360,7 +407,7 @@ function stale(): Outcome<never> {
  * once AUTHORISED (US-02.5.4). A Booking never moves through a row (D62); a row
  * never sets a Contract, an RVG code, a payer or a billable party itself.
  */
-export function decideImportRow(
+function decideImportRowUnscoped(
   api: AppStoreApi,
   actor: Actor,
   rowId: string,
@@ -411,6 +458,7 @@ export function decideImportRow(
     return transaction(api, () => {
       const done = applyMatch(api, actor, row, fields, booking.id, changeType, applied, picks)
       if (!done.ok) return done
+      if (changeType !== 'cancellation' && changeType !== 'noChange') applyRoomsSender(api, actor, row, booking.listId)
       const target = targetProcedure(matchingView(api.getState()).bookings[booking.id]!)
       if (input.useNewerText === true && applied.includes('procedureText') && target !== undefined) {
         const used = applyDefaultInvoiceDescription(api, actor, target.id)
@@ -441,6 +489,7 @@ export function decideImportRow(
     return transaction(api, () => {
       const created = createOnList(api, actor, row, fields, list.id, picks)
       if (!created.ok) return created
+      applyRoomsSender(api, actor, row, list.id)
       const decision: ImportDecision = { kind: 'createBooking', listId: list.id, bookingId: created.value, ...(picks !== undefined ? { picks } : {}) }
       record(api, actor, row, decision, { bookingId: created.value, changeType: 'new', fields: createdFields(fields) })
       return ok({ decision, bookingId: created.value, listId: list.id })
@@ -455,7 +504,7 @@ export function decideImportRow(
     if (slot === undefined) return refuse('notFound', 'Session not found.')
     if (!openSlotsForRow(view, fields).some((s) => s.id === slot.id)) return stale()
     return transaction(api, () => {
-      const placed = assignListToSlot(api, actor, slot.id, { hospitalId: fields.hospitalId, surgeonId, kind: 'private' })
+      const placed = assignListToSlot(api, actor, slot.id, { hospitalId: fields.hospitalId, surgeonId, kind: 'private', origin: originFromRow(state, row) })
       if (!placed.ok) return placed
       const created = createOnList(api, actor, row, fields, placed.value.listId, picks)
       if (!created.ok) return created
@@ -468,11 +517,11 @@ export function decideImportRow(
   // createDraft (US-01.6.1, OQ-44): all four fields, holding the row's Booking.
   return transaction(api, () => {
     const text = fields.procedure?.text
-    const note = `From ${row.channel === 'manualSheet' ? hospitalFrom(state, row) : `${hospitalName(state, fields.hospitalId)} theatre list`}: ${fields.patient.name}${fields.scheduledTime !== undefined ? `, ${fields.scheduledTime}` : ''}${text !== undefined && !isBlankText(text) ? `, ${text}` : ''}`
+    const note = `From ${row.source === 'rooms' ? `${hospitalFrom(state, row)} PDF list` : row.channel === 'manualSheet' ? hospitalFrom(state, row) : `${hospitalName(state, fields.hospitalId)} theatre list`}: ${fields.patient.name}${fields.scheduledTime !== undefined ? `, ${fields.scheduledTime}` : ''}${text !== undefined && !isBlankText(text) ? `, ${text}` : ''}`
     const draft = createDraftList(
       api,
       actor,
-      { hospitalId: fields.hospitalId, surgeonId, dateISO: fields.dateISO, session: fields.session as Session, note },
+      { hospitalId: fields.hospitalId, surgeonId, dateISO: fields.dateISO, session: fields.session as Session, note, listOrigin: originFromRow(state, row) },
       'hospitalRow',
     )
     if (!draft.ok) return draft
@@ -628,4 +677,9 @@ function record(
     if (settled !== undefined) metas.push(settled.meta)
     return { intake: { ...s.intake, rows: { ...s.intake.rows, [row.id]: next }, ...(settled !== undefined ? { stubs: settled.stubs } : {}) } }
   })
+}
+
+/** `decideImportRowUnscoped` as one change set (`match`), whichever app calls it (catch-up Phase 35; DM-35). */
+export function decideImportRow(...args: Parameters<typeof decideImportRowUnscoped>): ReturnType<typeof decideImportRowUnscoped> {
+  return withChangeSet(args[0], 'match', () => decideImportRowUnscoped(...args))
 }

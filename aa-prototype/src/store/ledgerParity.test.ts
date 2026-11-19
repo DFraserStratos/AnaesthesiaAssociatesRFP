@@ -15,9 +15,10 @@
 import baselineJson from './__parity__/phase-36-baseline.json'
 import { describe, expect, it } from 'vitest'
 import { capturePhase36, type Phase36Capture } from './__parity__/phase36Capture'
-import { DECLARED_36, withoutDeclared36 } from './__parity__/phase36Declared'
+import { DECLARED_36, withoutDeclared36, withoutRetired38 } from './__parity__/phase36Declared'
 
-const BASELINE = baselineJson as unknown as Phase36Capture
+// Read without the views catch-up Phase 38 retired (ageing, receipts-based GST activity).
+const BASELINE = withoutRetired38(baselineJson as unknown) as Phase36Capture
 const raw = capturePhase36()
 /** The capture with the one declared move taken out: everything else must match the baseline exactly. */
 const captured = withoutDeclared36(raw)
@@ -25,7 +26,7 @@ const captured = withoutDeclared36(raw)
 describe(`Phase 36 parity: declared (${DECLARED_36.reason})`, () => {
   it("Dr Souter's views gain AA-2026-S2401 ($3,565.00 outstanding, current); it is in no baseline", () => {
     const row = raw.seed.anaesthetists[DECLARED_36.anaesthetistId]!.rows.find((r) => r.invoiceNumber === DECLARED_36.invoiceNumber)
-    expect(row).toEqual({ invoiceNumber: DECLARED_36.invoiceNumber, total: 3565, received: 0, disbursed: 0, outstanding: 3565, held: false, bucket: 'current' })
+    expect(row).toEqual({ invoiceNumber: DECLARED_36.invoiceNumber, total: 3565, received: 0, disbursed: 0, outstanding: 3565, held: false })
     expect(JSON.stringify(BASELINE.seed.anaesthetists)).not.toContain(DECLARED_36.invoiceNumber)
   })
   it('its BCTI record counts only by issue (July +1); every paid-only count is unchanged', () => {
@@ -37,7 +38,7 @@ describe(`Phase 36 parity: declared (${DECLARED_36.reason})`, () => {
 })
 
 describe('Phase 36 parity: the seed reads the same from the ledger', () => {
-  it("every anaesthetist's outstanding rows, aging, payment history and GST activity", () => {
+  it("every anaesthetist's outstanding rows and payment history (ageing and GST activity retired by catch-up Phase 38)", () => {
     expect(captured.seed.anaesthetists).toEqual(BASELINE.seed.anaesthetists)
   })
   it('payables due, the AA Holding account and every prepayment status', () => {
@@ -66,7 +67,11 @@ describe('Phase 36 parity: the scripted flows, step by step', () => {
     expect(captured.s3).toEqual(BASELINE.s3)
   })
   it('S4 Beat 3: the billing failure and its retry', () => {
-    expect(captured.s4Beat3).toEqual(BASELINE.s4Beat3)
+    // Catch-up Phase 37's declared move: a hand-off waiting in the Xero sync queue reads "partial" (warning, retried by
+    // the queue), where Phase 36's fault read "failed". Everything else in the beat, the retry included, is unchanged.
+    const baselineStaged = JSON.parse(JSON.stringify(BASELINE.s4Beat3).replaceAll('"xero:failed"', '"xero:partial"')) as typeof BASELINE.s4Beat3
+    expect(JSON.stringify(BASELINE.s4Beat3)).toContain('"xero:failed"')
+    expect(captured.s4Beat3).toEqual(baselineStaged)
   })
   it('S4 Beat 5: Hemi Walker half, run, rest, run', () => {
     expect(captured.s4Beat5).toEqual(BASELINE.s4Beat5)

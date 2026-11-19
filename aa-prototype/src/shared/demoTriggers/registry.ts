@@ -55,15 +55,34 @@ import {
   setProcedureContract,
   railContextForList,
   railMastersOf,
-  ingestPdfRow,
+  receiveResentPdfList,
+  resendRefusal,
   openAccRecs,
   processMessage,
-  receivePayment,
   runArchiveJob,
   runReconciliationPoll,
+  deliverPaymentWebhook,
+  setXeroOutage,
+  xeroAvailable,
+  payBillsInXero,
+  xeroBillPayable,
+  voidAccRecInXero,
+  bulkRemittanceRefusal,
+  receiveBulkRemittance,
+  voidInXeroRefusal,
+  amendAccRecInXero,
+  amendInXeroRefusal,
+  XERO_DEMO_AMENDMENT,
+  XERO_PAYABLES_ACTOR,
+  XERO_STAFF_ACTOR,
+  pairByAccRec,
+  releasedAndPaidFor,
+  viewerOfPair,
+  transferForPair,
+  type PollResult,
+  type XeroBill,
   simulateSignInAttempts,
   submitList,
-  slotFor,
   listInSlot,
   addDraftListForDay,
   assignDraftListAsSimulatedOffice,
@@ -113,6 +132,7 @@ import {
   prepaymentStandInRefusal,
   twoDaysBeforeRefusal,
   officeMatchesHospitalRow,
+  officeImportsS1File,
   officeAddsNhiRefusal,
   officeAddsNhiToStub,
   receiveTheatreList,
@@ -122,8 +142,13 @@ import {
   theatreListRefusal,
   updateTarget,
   type StandInChoice,
+  officeEditsBooking,
+  officeEditsBookingRefusal,
+  OFFICE_USERS,
+  otherOfficeUser,
 } from '../../store'
-import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
+import { CANNED_MESSAGES } from '../../domain/integrations'
+import { PDF_LIST_SAMPLES, resendSampleFor } from '../../domain/intake'
 import { contractCandidatesFor, destinationOf } from '../../domain/billing/contractRail'
 import { noContractRvg } from '../../domain/billing/contracts'
 import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, SEED_LIST_IDS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
@@ -143,9 +168,10 @@ import { regenerateInvoiceFromLock, regenerateRefusal, regenerateSummary } from 
 import type { DemoTrigger, DemoTriggerChoice, DemoTriggerCtx, DemoTriggerResult } from './types'
 import { injectUnmatchedReceipt, injectUnmatchedRefusal, officeRunsPayables, officeRunsPayablesRefusal, UNMATCHED_RECEIPT_DEMO } from '../../store/ledgerDemo'
 import { sessionText } from '../../domain/outOfHours'
+import { isBookingPair } from '../../domain/billing/ledger'
+import { APP_CONFIG } from '../../shell/appConfig'
 import { newerInvoiceDescription } from '../../domain/billing/procedureStack'
 import {
-  cannedMessageForBooking,
   defaultHospitalDescription,
   primaryProcedureOf,
   hospitalDescriptionChoices,
@@ -161,7 +187,9 @@ import {
 const BILLING_MONITOR = ['/admin/billing'] as const
 /** The Billing monitor's index heading (the Control Panel adds its Run payables note under it). */
 export const BILLING_MONITOR_SCREEN = 'Admin · Billing monitor'
-const XERO_SIM = ['/demo/xero', '/demo/xero/invoices', '/demo/xero/invoices/:accRecId'] as const
+const XERO_SIM = ['/demo/xero', '/demo/xero/invoices', '/demo/xero/invoices/:accRecId', '/demo/xero/bank'] as const
+/** The Xero simulator's Bank reconciliation tab (catch-up Phase 37; US-10.2.4). */
+const XERO_BANK = '/demo/xero/bank'
 /** The Admin Ledger, whole and one anaesthetist (catch-up Phase 36). */
 const LEDGER = ['/admin/ledger', '/admin/ledger/anaesthetists/:anaesthetistId'] as const
 
@@ -169,11 +197,16 @@ function onLedger(ctx: DemoTriggerCtx): boolean {
   return ctx.pathname.startsWith('/admin/ledger')
 }
 const INVOICE_PAGES = ['/admin/invoices/:invoiceId', '/demo/xero/invoices/:accRecId'] as const
-const ADMIN_INTEGRATIONS = '/admin/integrations'
-const ADMIN_MATCHING = '/admin/matching'
+/** Admin Intake's tabs (catch-up Phase 34): Matching and the rooms' PDF lists. */
+const ADMIN_MATCHING = '/admin/intake/matching'
+const ADMIN_PDF_LISTS = '/admin/intake/pdfs'
+/** The Admin Intake index heading (catch-up Phase 34). */
+const ADMIN_INTAKE_SCREEN = 'Admin · Intake'
 const AA_FEE_INVOICES = '/admin/billing/aa-fees'
 const XERO_PAIR = '/demo/xero/invoices/:accRecId'
-const INTEGRATIONS_SIM = '/demo/integrations'
+/** Future scope: HL7 and FHIR (catch-up Phase 34): the simulator, its message log and feed mapping. */
+const FUTURE_SCOPE_ROUTES = ['/demo/integrations', '/demo/integrations/log', '/demo/integrations/mapping'] as const
+const FUTURE_SCOPE_SCREEN = 'Future scope: HL7 and FHIR'
 /** The mobile Lists tab is one splat route; registered as its three explicit layers (`listsStackLocation`). */
 const MOBILE_LISTS = ['/mobile/lists', '/mobile/lists/:listId', '/mobile/lists/:listId/bookings/:bookingId'] as const
 const ADMIN_DAY = '/admin/day/:dateISO'
@@ -204,22 +237,6 @@ const SAMPLE_WARNING_ROUTES = [ADMIN_DAY, ADMIN_BOOKING, MOBILE_BOOKING] as cons
 
 /** Stage post-op: Dr Sharma's Tue 14 Jul AM List (Sarah Mitchell's first episode). */
 export const POST_OP_ORIGINAL_LIST_ID = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
-
-/** The List in a surgeon PDF's target session (catch-up Phase 28: a session may hold none). */
-function pdfTargetListId(
-  state: AppState,
-  pdf: { targetList: { anaesthetistId: string; dateISO: string; session: 'AM' | 'PM' } },
-): string | undefined {
-  const slot = slotFor(state, pdf.targetList.anaesthetistId, pdf.targetList.dateISO, pdf.targetList.session)
-  return slot === undefined ? undefined : listInSlot(state, slot.id)?.id
-}
-
-/** The ingest-PDF sample: the first surgeon PDF's reviewed row R2. */
-function samplePdfRow() {
-  const pdf = SURGEON_PDFS[0]
-  const row = pdf?.rows.find((r) => r.id === 'R2')
-  return pdf === undefined || row === undefined ? undefined : { pdf, row }
-}
 
 const DEFAULT_MESSAGE_ID = CANNED_MESSAGES[0]?.id ?? 'MSG-STG-1001'
 
@@ -306,6 +323,7 @@ export function paymentDisabledReason(state: AppState, accRecId: string | undefi
   if (accRecId === undefined) return 'Not handed off to Xero'
   const accRec = state.xero.accRecs[accRecId]
   if (accRec === undefined) return 'Not handed off to Xero'
+  if (accRec.status === 'voided') return 'Voided in Xero'
   if (roundToCents(accRec.amountDue - accRec.amountReceived) <= 0) return 'Fully paid'
   if (!openAccRecs(state).some((c) => c.accRecId === accRecId)) return 'Seeded history invoice'
   return null
@@ -319,9 +337,10 @@ export function paymentDisabledReason(state: AppState, accRecId: string | undefi
 function nextWebhookN(state: AppState, accRecId: string): number {
   const prefix = `WEBHOOK-${accRecId}-`
   let used = 0
-  for (const r of Object.values(state.billing.receipts)) {
-    if (!r.idempotencyKey.startsWith(prefix)) continue
-    const n = Number(r.idempotencyKey.slice(prefix.length))
+  // Xero's own payments too (catch-up Phase 37): an outage's landed payment has no receipt yet.
+  for (const key of [...Object.values(state.billing.receipts), ...Object.values(state.xero.payments)].map((r) => r.idempotencyKey)) {
+    if (!key.startsWith(prefix)) continue
+    const n = Number(key.slice(prefix.length))
     if (Number.isInteger(n) && n > used) used = n
   }
   return Math.max(used, useDemoTriggerMemory.getState().webhookCounter) + 1
@@ -329,24 +348,72 @@ function nextWebhookN(state: AppState, accRecId: string): number {
 
 /** Simulate a Xero payment webhook, full or half, exactly as the Control Panel's "Record payment" did. */
 export function sendPaymentWebhook(api: AppStoreApi, accRecId: string | undefined, mode: 'full' | 'partial'): DemoTriggerResult {
+  return paymentWebhook(api, accRecId, mode).result
+}
+
+/** The webhook body, and whether the engine received the money into the ledger (not queued by an outage, not a no-op). */
+function paymentWebhook(api: AppStoreApi, accRecId: string | undefined, mode: 'full' | 'partial'): { result: DemoTriggerResult; received: boolean } {
   const state = api.getState()
   const reason = paymentDisabledReason(state, accRecId)
   const active = openAccRecs(state).find((c) => c.accRecId === accRecId)
-  if (reason !== null || active === undefined) return { ok: false, message: reason ?? 'Not handed off to Xero' }
+  if (reason !== null || active === undefined) return { result: { ok: false, message: reason ?? 'Not handed off to Xero' }, received: false }
   const partial = roundToCents(active.remaining / 2)
   const amount = mode === 'partial' && partial > 0 ? partial : active.remaining
   const n = nextWebhookN(state, active.accRecId)
   const key = `WEBHOOK-${active.accRecId}-${n}`
-  const res = receivePayment(api, { accRecId: active.accRecId, amount, idempotencyKey: key, source: 'webhook' })
+  // Through the outage-aware webhook (catch-up Phase 37): during an outage the money lands in Xero and the engine's sync queues.
+  const res = deliverPaymentWebhook(api, { accRecId: active.accRecId, amount, idempotencyKey: key })
   useDemoTriggerMemory.getState().rememberWebhook({ accRecId: active.accRecId, key, amount }, n)
+  const received = res.ok && res.value.queued !== true && res.value.applied
   return {
+    received,
+    result: {
     ok: res.ok,
     message: res.ok
-      ? res.value.applied
-        ? `Webhook for ${active.invoiceNumber}: ${formatCurrency(amount)} received, the paired ACCPAY is authorised for exactly ${formatCurrency(amount)}.`
-        : 'No change (already fully paid).'
+      ? res.value.queued === true
+        ? `${formatCurrency(amount)} landed in Xero for ${active.invoiceNumber}. Xero is unavailable to the engine, so the payment sync waits in the Xero sync queue: nothing is received in the ledger yet.`
+        : res.value.applied
+          ? `Webhook for ${active.invoiceNumber}: ${formatCurrency(amount)} received, the paired ACCPAY is authorised for exactly ${formatCurrency(amount)}.`
+          : 'No change (already fully paid).'
       : `Refused: ${res.message}`,
+    },
   }
+}
+
+/** The poll trigger's result line: payments, bill payments and changes made in Xero (catch-up Phase 37). */
+export function pollMessage(r: PollResult): string {
+  if (r.queued === true) return 'Xero is unavailable, so the reconciliation poll waits in the Xero sync queue.'
+  const parts = [
+    r.payments > 0 ? `applied ${plural(r.payments, 'missed payment')}` : null,
+    r.disbursements > 0 ? `recorded ${plural(r.disbursements, 'missed bill payment')}` : null,
+    r.divergences > 0 ? `flagged ${plural(r.divergences, 'invoice')} changed directly in Xero` : null,
+  ].filter((p): p is string => p !== null)
+  return parts.length > 0 ? `Reconciliation poll ${parts.join(', ')}.` : 'Reconciliation poll ran: nothing missed and nothing changed in Xero.'
+}
+
+/** The bill on a Xero pair that Xero's payables run would pay: its ACCPAY, or, for a prepayment, its transfer once posted. */
+function billOnPair(state: AppState, accRecId: string | undefined): XeroBill | undefined {
+  if (accRecId === undefined) return undefined
+  const pair = pairByAccRec(state, accRecId)
+  if (pair === undefined || pair.kind === 'aaFee' || pair.payable?.xeroAccPayId === undefined) return undefined
+  if (pair.kind === 'prePayment') {
+    const transfer = transferForPair(state, pair.id)
+    return transfer !== undefined ? { transferId: transfer.id } : undefined
+  }
+  return { accPayId: pair.payable.xeroAccPayId }
+}
+
+/** Why "Pay anaesthetist in Xero" is disabled on this pair, or null. */
+function payBillRefusal(state: AppState, accRecId: string | undefined): string | null {
+  const rec = accRecId !== undefined ? state.xero.accRecs[accRecId] : undefined
+  if (rec === undefined) return 'No invoice in Xero'
+  if (rec.kind === 'aaFee') return 'Fee invoices have no bill'
+  if (rec.status === 'voided') return 'Voided in Xero'
+  const pair = pairByAccRec(state, rec.id)
+  if (pair === undefined || pair.kind === 'aaFee' || pair.payable?.xeroAccPayId === undefined) return 'No bill to pay'
+  const bill = billOnPair(state, rec.id)
+  if (bill === undefined) return 'Held in the AA Holding account until the List is authorised'
+  return xeroBillPayable(state, bill) > 0 ? null : 'Nothing authorised to pay yet'
 }
 
 /**
@@ -358,32 +425,65 @@ export function sendPaymentWebhook(api: AppStoreApi, accRecId: string | undefine
 function replayDisabledReason(state: AppState): string | null {
   const last = useDemoTriggerMemory.getState().lastWebhook
   if (last === null) return 'No payment event to replay yet'
-  const received = Object.values(state.billing.receipts).some((r) => r.idempotencyKey === last.key)
+  // Recorded by the engine, or landed in Xero and waiting for the engine (catch-up Phase 37's outage).
+  const received = Object.values(state.billing.receipts).some((r) => r.idempotencyKey === last.key) || Object.values(state.xero.payments).some((p) => p.idempotencyKey === last.key)
   if (state.xero.accRecs[last.accRecId] === undefined || !received) return 'The last payment event was cleared by a reset'
   return null
 }
 
-/** The PWA's Balances choices: Dr Souter's open invoices (the demo-surface exemption `openAccRecs` documents). */
-function souterOpenAccRecs(state: AppState) {
+/**
+ * An anaesthetist's open invoices, for the money screens' payment choosers (the PWA's Balances, and since
+ * catch-up Phase 38 the web dashboard and Accounts): every open ACCREC whose pair shows in that
+ * anaesthetist's views (`viewerOfPair`: the payee stamped on the pair, a prepayment's transfer payee, or
+ * while held the anaesthetist who has the List), never a List join (the demo-surface exemption
+ * `openAccRecs` documents).
+ */
+function personaOpenAccRecs(state: AppState, anaesthetistId: string, opts: { positionOnly?: boolean } = {}) {
   return openAccRecs(state).filter((c) => {
-    const invoice = state.billing.invoices[c.invoiceId]
-    const booking = invoice !== undefined ? state.schedule.bookings[invoice.bookingId] : undefined
-    const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
-    return list?.anaesthetistId === ANAE.souter
+    const pair = pairByAccRec(state, c.accRecId)
+    if (pair === undefined || !isBookingPair(pair) || viewerOfPair(state, pair) !== anaesthetistId) return false
+    // The web money screens show only what reaches the anaesthetist's position: never a prepayment the AA Holding account holds.
+    return opts.positionOnly !== true || !releasedAndPaidFor(state, pair).held
   })
 }
 
-function souterPaymentChoices(state: AppState) {
-  return souterOpenAccRecs(state).map((c) => ({
+function personaPaymentChoices(state: AppState, anaesthetistId: string, opts: { positionOnly?: boolean } = {}) {
+  return personaOpenAccRecs(state, anaesthetistId, opts).map((c) => ({
     id: c.accRecId,
     label: `${c.invoiceNumber} · ${c.patientName} · ${formatCurrency(c.remaining)} due`,
   }))
 }
 
-function souterPaymentDisabled(state: AppState, choiceId: string | undefined): string | null {
-  if (souterOpenAccRecs(state).length === 0) return 'No open invoices yet'
+function personaPaymentDisabled(state: AppState, anaesthetistId: string, choiceId: string | undefined, opts: { positionOnly?: boolean } = {}): string | null {
+  if (personaOpenAccRecs(state, anaesthetistId, opts).length === 0) return 'No open invoices yet'
   if (choiceId === undefined) return 'Choose an invoice'
   return paymentDisabledReason(state, choiceId)
+}
+
+/** The web app's persona (`WebApp.tsx` reads the same): the web payment entries choose among her invoices. */
+const WEB_PERSONA_ID: string = APP_CONFIG.web.persona.anaesthetistId ?? ANAE.souter
+
+/** The web money screens' payment (catch-up Phase 38): the shared webhook body, and where the money goes next. */
+function webPaymentEntry(id: 'web-payment-full' | 'web-payment-half', mode: 'full' | 'partial'): DemoTrigger {
+  return {
+    id,
+    label: mode === 'full' ? 'Payment received · full' : 'Payment received · half',
+    description:
+      mode === 'full'
+        ? "A Xero payment webhook for the full balance of one of the persona's open invoices, chosen below. Collected rises at once; the Outstanding row stays as paid in, due to you; the GST report gains no row until AA pays the anaesthetist."
+        : "A Xero payment webhook for half the balance of one of the persona's open invoices, chosen below (a part payment). The Outstanding row stays; the GST report gains no row until AA pays the anaesthetist.",
+    screen: 'Web · Dashboard and Accounts',
+    routes: ['/web', '/web/accounts/:subTab'],
+    surfaces: ['bar'],
+    choices: (state) => personaPaymentChoices(state, WEB_PERSONA_ID, { positionOnly: true }),
+    disabledReason: (state, _ctx, choiceId) => personaPaymentDisabled(state, WEB_PERSONA_ID, choiceId, { positionOnly: true }),
+    run: (api, _ctx, choiceId) => {
+      const out = paymentWebhook(api, choiceId, mode)
+      // Only money the ledger received is collected; a queued or no-op webhook says so in its own words.
+      return out.received ? { ok: true, message: `Payment received. It reaches the GST report when AA pays the anaesthetist. ${out.result.message}` } : out.result
+    },
+    indexPath: () => '/web/accounts/outstanding',
+  }
 }
 
 /**
@@ -529,7 +629,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'billing-failure',
     label: 'Trigger billing failure',
     description:
-      "Arms the Xero hand-off to fault for Losa Tuilagi's Booking alone and authorises Dr Ropata's Thu 16 Jul List. Each Booking bills from its locked record: hers is held back at the hand-off, Hemi Walker's bills, and the List is not failed. Resolve & retry hands hers off once. No Contract changes.",
+      "Arms the Xero hand-off to fault for Losa Tuilagi's Booking alone and authorises Dr Ropata's Thu 16 Jul List. Each Booking bills from its locked record: hers waits for Xero in the sync queue, Hemi Walker's bills and hands off, and the List is not failed. Retry now (or the clock) hands hers off once. No Contract changes.",
     screen: BILLING_MONITOR_SCREEN,
     routes: BILLING_MONITOR,
     surfaces: ['bar'],
@@ -545,7 +645,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return {
         ok: staged.ok,
         message: staged.ok
-          ? "Done. In the billing monitor Losa Tuilagi's Booking is held back at the Xero hand-off while Hemi Walker's billed. Use Resolve & retry on her row."
+          ? "Done. In the billing monitor Losa Tuilagi's invoice waits for Xero in the sync queue while Hemi Walker's billed. Use Retry now on its queue row, or move the clock on."
           : staged.message === BILLING_FAILURE_ALREADY
             ? 'Already triggered.'
             : `Refused: ${staged.message}`,
@@ -557,7 +657,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'arm-handoff-fault',
     label: 'Arm handoff failure',
     description:
-      'Arms the next Xero handoff to fault once. Then authorise a List: every invoice still gets its ledger pair, marked Not yet in Xero, and the monitor offers Resolve & retry to mirror it.',
+      'The next Xero call fails once. The queue retries it automatically after a short backoff; advance the clock to see it land.',
     screen: BILLING_MONITOR_SCREEN,
     // Also on the Ledger (catch-up Phase 36): the next authorise still makes every pair, marked "Not yet in Xero".
     routes: [...BILLING_MONITOR, ...LEDGER],
@@ -565,7 +665,41 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     disabledReason: (state) => (state.settings.failNextHandoff === true ? 'Armed' : null),
     run: (api) => {
       armHandoffFault(api, OFFICE_ACTOR)
-      return { ok: true, message: 'Armed. The next Xero handoff will fault once, then clear.' }
+      return { ok: true, message: 'Armed. The next Xero hand-off fails once and waits in the sync queue, which retries it after its backoff.' }
+    },
+    indexPath: () => '/admin/billing',
+  },
+  // ── Xero outage (catch-up Phase 37; EP-09): the Billing monitor and every Xero tab ──
+  {
+    id: 'xero-outage-start',
+    label: 'Simulate Xero outage',
+    description:
+      "Xero's API stops answering the Billing Engine. New hand-offs, payment syncs, disbursement syncs and the poll wait in the Xero sync queue and retry with increasing gaps. Authorising a List still works and bills.",
+    screen: BILLING_MONITOR_SCREEN,
+    routes: [...BILLING_MONITOR, ...XERO_SIM],
+    surfaces: ['bar'],
+    disabledReason: (state) => (xeroAvailable(state) ? null : 'Xero is already unavailable'),
+    run: (api) => {
+      const out = setXeroOutage(api, DEMO_TRIGGER_ACTOR, true)
+      return out.ok
+        ? { ok: true, message: "Xero is unavailable to the Billing Engine. Authorise a List: its hand-offs wait in the Xero sync queue, and every clock change retries what is due." }
+        : { ok: false, message: out.message }
+    },
+    indexPath: () => '/admin/billing',
+  },
+  {
+    id: 'xero-outage-restore',
+    label: 'Restore Xero',
+    description: 'Xero answers again. The queue drains at once, in order, with no duplicate pair, contact, receipt or disbursement.',
+    screen: BILLING_MONITOR_SCREEN,
+    routes: [...BILLING_MONITOR, ...XERO_SIM],
+    surfaces: ['bar'],
+    disabledReason: (state) => (xeroAvailable(state) ? 'Xero is connected' : null),
+    run: (api) => {
+      const out = setXeroOutage(api, DEMO_TRIGGER_ACTOR, false)
+      return out.ok
+        ? { ok: true, message: out.value.sent > 0 ? `Xero is back. The queue sent ${plural(out.value.sent, 'waiting call')} in order.` : 'Xero is back. Nothing was waiting.' }
+        : { ok: false, message: out.message }
     },
     indexPath: () => '/admin/billing',
   },
@@ -576,7 +710,8 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     description:
       'A bank-feed notification arrives for $120.00 that matches no invoice number. The ledger goes out of balance by $120.00; naming Dr Souter puts her on the out-of-balance list. The office clears it with Allocate to invoice or Mark refunded.',
     screen: 'Admin · Ledger',
-    routes: LEDGER,
+    // Also on the Admin Day dashboard, whose Reconciliation card it puts out of balance (catch-up Phase 37; US-13.2.4).
+    routes: [...LEDGER, ADMIN_DAY],
     surfaces: ['bar'],
     choices: () => [
       { id: UNMATCHED_RECEIPT_DEMO.namesSouter.id, label: UNMATCHED_RECEIPT_DEMO.namesSouter.label },
@@ -594,20 +729,14 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'run-reconciliation-poll',
     label: 'Run reconciliation poll',
     description:
-      'Runs the daily missed-webhook safety net now, without advancing the clock. Also in the Xero simulation.',
+      'Runs the daily safety net now, without advancing the clock: payments and bill payments a webhook missed, and invoices voided or edited directly in Xero. During an outage it waits in the queue. Also in the Xero simulation.',
     screen: BILLING_MONITOR_SCREEN,
     routes: [...BILLING_MONITOR, ...XERO_SIM],
     surfaces: ['bar'],
     disabledReason: () => null,
     run: (api) => {
-      const n = runReconciliationPoll(api)
-      return {
-        ok: true,
-        message:
-          n > 0
-            ? `Reconciliation poll applied ${plural(n, 'previously-missed payment')}.`
-            : 'Reconciliation poll ran: no missed payments to catch.',
-      }
+      const r = runReconciliationPoll(api)
+      return { ok: true, message: pollMessage(r) }
     },
     indexPath: () => '/admin/billing',
   },
@@ -732,37 +861,36 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     indexPath: () => `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`,
   },
 
-  // ── Admin · Integrations, Surgeon PDFs tab ────────────────────────────
+  // ── Admin · Intake, PDF lists (catch-up Phase 34) ────────────────────
   {
-    id: 'ingest-pdf-row',
-    label: 'Ingest PDF row',
+    id: 'pdf-list-resend',
+    label: 'Receive updated PDF from rooms',
     description:
-      'A surgeon\'s emailed PDF arrives: ingests its reviewed row R2 onto Dr Souter\'s Mon 27 Jul AM List, deduped by NHI. Re-firing updates the same Booking.',
-    screen: 'Admin · Integrations',
-    routes: [ADMIN_INTEGRATIONS],
+      "The rooms re-send a PDF list already sent to matching, with one changed time and one new patient. It lands in the inbox as received, marked Re-sent, with the address it came from. Once sent, the matching screen shows the change as a difference for approval and the new patient as a new row.",
+    screen: ADMIN_INTAKE_SCREEN,
+    routes: [ADMIN_PDF_LISTS],
     surfaces: ['bar'],
-    when: (_state, ctx) => ctx.published['integrations.tab'] === 'pdfs',
-    disabledReason: (state) => {
-      const sample = samplePdfRow()
-      if (sample === undefined) return 'The sample PDF row is not present in this build.'
-      return pdfTargetListId(state, sample.pdf) === undefined ? "The PDF's target session has no List" : null
+    choices: (state) =>
+      PDF_LIST_SAMPLES.filter((s) => Object.values(state.intake.pdfLists).some((l) => l.sampleId === s.id)).map((s) => ({
+        id: s.id,
+        label: `${s.surgeonName}, ${s.subject.split(' · ')[1] ?? s.subject}`,
+      })),
+    disabledReason: (state, _ctx, choiceId) => {
+      const sampleId = choiceId ?? PDF_LIST_SAMPLES.find((s) => Object.values(state.intake.pdfLists).some((l) => l.sampleId === s.id))?.id
+      return sampleId === undefined ? 'No PDF list has been sent to matching yet.' : resendRefusal(state, sampleId)
     },
-    run: (api) => {
-      const sample = samplePdfRow()
-      if (sample === undefined) return { ok: false, message: 'The sample PDF row is not present in this build.' }
-      const { pdf, row } = sample
-      const listId = pdfTargetListId(api.getState(), pdf)
-      if (listId === undefined) return { ok: false, message: "The PDF's target session has no List." }
-      const res = ingestPdfRow(api, OFFICE_ACTOR, listId, row)
+    run: (api, _ctx, choiceId) => {
+      const sampleId = choiceId ?? PDF_LIST_SAMPLES[0]!.id
+      const res = receiveResentPdfList(api, OFFICE_ACTOR, sampleId)
+      const resend = resendSampleFor(sampleId)
       return {
         ok: res.ok,
         message: res.ok
-          ? `${res.value.outcome === 'created' ? 'Created' : 'Updated'} a Booking for ${row.name} on Dr Souter's Mon 27 Jul AM List from ${pdf.fromSurgeon}'s emailed list. Re-firing updates the same Booking (deduped by NHI), never a duplicate. The full review-and-edit-before-ingest flow, including the deliberately mistyped NHI row, opens from the PDF in this tab.`
+          ? `The updated list arrived from ${resend?.defaultSender ?? 'the rooms'}, marked Re-sent. Open it and Send to matching: unchanged rows are skipped, the changed time waits as a difference for approval and the new patient arrives as a new row.`
           : `Refused: ${res.message}`,
       }
     },
-    indexPath: () => ADMIN_INTEGRATIONS,
-    indexHint: 'Then open the Surgeon PDFs tab',
+    indexPath: () => ADMIN_PDF_LISTS,
   },
 
   // ── Admin · Invoice (and the Xero sim pair) ───────────────────────────
@@ -837,10 +965,10 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const last = useDemoTriggerMemory.getState().lastWebhook
       const reason = replayDisabledReason(api.getState())
       if (last === null || reason !== null) return { ok: false, message: reason ?? 'No payment event to replay yet' }
-      const res = receivePayment(api, { accRecId: last.accRecId, amount: last.amount, idempotencyKey: last.key, source: 'webhook' })
+      const res = deliverPaymentWebhook(api, { accRecId: last.accRecId, amount: last.amount, idempotencyKey: last.key })
       return {
         ok: res.ok,
-        message: res.ok && !res.value.applied ? 'Duplicate webhook ignored (idempotent by key). No double effect.' : 'Replayed.',
+        message: !res.ok ? `Refused: ${res.message}` : !res.value.applied ? 'Duplicate webhook ignored (idempotent by key). No double effect.' : 'Replayed.',
       }
     },
     indexPath: firstOpenInvoicePath,
@@ -910,6 +1038,102 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return accRecId === undefined ? null : `/demo/xero/invoices/${accRecId}`
     },
     indexEmptyReason: 'Every AA fee invoice is paid',
+  },
+
+  // ── Xero simulation · a pair: what AA staff and Xero do there (catch-up Phase 37) ──
+  {
+    id: 'xero-amend-invoice',
+    label: "Edit this invoice's total in Xero",
+    description: `AA staff edit a line on this invoice directly in Xero and its total drops by ${formatCurrency(XERO_DEMO_AMENDMENT)}. The engine keeps the amount it issued and does not know until the next reconciliation poll.`,
+    screen: 'Xero simulation · pair',
+    routes: [XERO_PAIR],
+    surfaces: ['bar'],
+    when: (state, ctx) => !isFeePairOnScreen(state, ctx),
+    disabledReason: (state, ctx) => amendInXeroRefusal(state, ctx.params['accRecId']),
+    run: (api, ctx) => {
+      const out = amendAccRecInXero(api, XERO_STAFF_ACTOR, ctx.params['accRecId'] ?? '')
+      return out.ok
+        ? { ok: true, message: `${out.value.invoiceNumber} now totals ${formatCurrency(out.value.total)} in Xero. The engine still holds the amount it issued and finds out at the next poll (Run reconciliation poll, or Next day).` }
+        : { ok: false, message: out.message }
+    },
+    indexPath: firstOpenInvoicePath,
+    indexEmptyReason: 'No open invoice yet: authorise a List first',
+  },
+  {
+    id: 'xero-void-invoice',
+    label: 'Void this invoice in Xero',
+    description: 'AA staff void this invoice directly in Xero. The engine does not know until the next reconciliation poll, which flags it for the office.',
+    screen: 'Xero simulation · pair',
+    routes: [XERO_PAIR],
+    surfaces: ['bar'],
+    when: (state, ctx) => !isFeePairOnScreen(state, ctx),
+    disabledReason: (state, ctx) => voidInXeroRefusal(state, ctx.params['accRecId']),
+    run: (api, ctx) => {
+      const out = voidAccRecInXero(api, XERO_STAFF_ACTOR, ctx.params['accRecId'] ?? '')
+      return out.ok
+        ? { ok: true, message: `${out.value.invoiceNumber} is voided in Xero. The engine does not know yet: run the reconciliation poll (or Next day) and it is flagged on the Billing monitor.` }
+        : { ok: false, message: out.message }
+    },
+    indexPath: firstOpenInvoicePath,
+    indexEmptyReason: 'No open invoice yet: authorise a List first',
+  },
+  {
+    id: 'xero-pay-bill',
+    label: 'Pay anaesthetist in Xero (payables run)',
+    description:
+      "Xero's payables run pays this pair's bill to the anaesthetist, as AA does in Xero. The Billing Engine records the disbursement when the bill-paid webhook arrives, or at the next poll if it is missed.",
+    screen: 'Xero simulation · pair',
+    routes: [XERO_PAIR],
+    surfaces: ['bar'],
+    when: (state, ctx) => !isFeePairOnScreen(state, ctx),
+    choices: () => [
+      { id: 'deliver', label: 'Bill-paid webhook delivers' },
+      { id: 'missed', label: 'Webhook missed (the poll catches it)' },
+    ],
+    defaultChoice: () => 'deliver',
+    disabledReason: (state, ctx) => payBillRefusal(state, ctx.params['accRecId']),
+    run: (api, ctx, choiceId) => {
+      const accRecId = ctx.params['accRecId']
+      const reason = payBillRefusal(api.getState(), accRecId)
+      const bill = billOnPair(api.getState(), accRecId)
+      if (reason !== null || bill === undefined) return { ok: false, message: reason ?? 'No bill to pay' }
+      const missed = choiceId === 'missed'
+      const out = payBillsInXero(api, XERO_PAYABLES_ACTOR, [bill], { webhook: missed ? 'missed' : 'deliver' })
+      if (!out.ok) return { ok: false, message: out.message }
+      const paid = out.value.paid[0]
+      if (paid === undefined) return { ok: false, message: 'Nothing authorised to pay yet' }
+      return {
+        ok: true,
+        message: missed
+          ? `Paid ${formatCurrency(paid.amount)} in Xero. The webhook was missed, so the engine still shows it released and not disbursed until the next poll.`
+          : paid.queued
+            ? `Paid ${formatCurrency(paid.amount)} in Xero. Xero is unavailable to the engine, so recording the disbursement waits in the sync queue.`
+            : `Paid ${formatCurrency(paid.amount)} in Xero. The bill-paid webhook told the engine, which recorded the disbursement.`,
+      }
+    },
+    indexPath: firstOpenInvoicePath,
+    indexEmptyReason: 'No open invoice yet: authorise a List first',
+  },
+  {
+    id: 'xero-bulk-remittance',
+    label: 'Simulate bulk hospital remittance',
+    description:
+      "St George's pays several invoices in one deposit. Xero's remittance add-on matches the lines by invoice number and the engine learns each payment by webhook; one line quotes a mistyped number and waits in Bank reconciliation for the office.",
+    screen: 'Xero simulation · invoices',
+    routes: ['/demo/xero/invoices', XERO_BANK],
+    surfaces: ['bar'],
+    disabledReason: (state) => bulkRemittanceRefusal(state),
+    run: (api) => {
+      const out = receiveBulkRemittance(api)
+      if (!out.ok) return { ok: false, message: out.message }
+      const r = out.value
+      const learned = r.queued > 0 ? 'Xero is unavailable to the engine, so the payment syncs wait in the queue' : 'the engine learned each payment by webhook'
+      return {
+        ok: true,
+        message: `St George's remittance landed in Xero: ${plural(r.matchedCount, 'line')} matched by invoice number (${formatCurrency(r.matchedTotal)}), and ${learned}. ${plural(r.unmatchedCount, 'line')} could not be matched and waits in Bank reconciliation.`,
+      }
+    },
+    indexPath: () => '/demo/xero/invoices',
   },
 
   // ── Mobile · List, installed PWA only: the office stand-in ───────────
@@ -1563,13 +1787,13 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => `/mobile/lists/${PHOTO_CAPTURE_INDEX_LIST_ID}`,
   },
-  // ── Admin · Matching (catch-up Phase 33) ──────────────────────────────
+  // ── Admin · Intake, Matching (catch-up Phase 33; Intake since Phase 34) ──
   {
     id: 'matching-receive-theatre-list',
     label: 'Import hospital file',
     description:
       "Stands in for the hospital's file arriving: stages the sample theatre list's rows on Matching (St George's: a new Booking, a No change, a modification, and a day move as a cancellation plus a new Booking; Southern Cross: a new Booking, a modification with an insurer and approval number, a change for an authorised List, a row with no NHI and a row for a session with no List). Nothing changes the schedule until the office decides.",
-    screen: 'Admin · Matching',
+    screen: ADMIN_INTAKE_SCREEN,
     routes: [ADMIN_MATCHING],
     surfaces: ['bar'],
     choices: () => [
@@ -1592,7 +1816,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     label: 'Send update for a matched Booking',
     description:
       "Stands in for the hospital sending a later update: for the Booking matched by the row selected on Matching (if open and not authorised), else Diane Foster's (Tue 4 Aug AM), a row for the same List and patient with a later time and the hospital's fuller wording. It waits for the office to check the differences and approve it.",
-    screen: 'Admin · Matching',
+    screen: ADMIN_INTAKE_SCREEN,
     routes: [ADMIN_MATCHING],
     surfaces: ['bar'],
     disabledReason: (state, ctx) => sendUpdateRefusal(state, ctx.published['matching.selectedRowId']),
@@ -1609,29 +1833,42 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
   },
   {
     id: 'matching-office-matches-row',
-    label: 'Hospital row arrives and the office matches it',
+    label: 'Hospital file imported and my booking matched',
     description:
-      "Stands in for the office on the phone: the hospital's row arrives and the office matches it with the suggested decision, every difference ticked and no Contract picked (the office sets the Contract later). Sarah Mitchell's S1 booking; on a St George's or Southern Cross List, a new hospital booking; on a Booking, a hospital update approved by the office (on Diane Foster's, the hospital's fuller wording replaces WLE MM).",
+      "Stands in for the office on the phone (catch-up Phase 34): the office imports St George's file, as on Admin, Intake, decides the rows for your Tue 28 Jul AM List with the suggested decision, and answers where each new Booking's invoice goes (Patient, Standard: No contract · RVG; the RVG code stays yours). Sarah Mitchell arrives with the hospital's wording as received; the file's other rows wait for the office. On a St George's or Southern Cross List, a new hospital booking; on a Booking, a hospital update approved by the office (on Diane Foster's, the hospital's fuller wording replaces WLE MM).",
     screen: 'Mobile · Lists and the Booking screen',
     routes: [...MOBILE_LISTS],
     surfaces: ['pwa'],
     badge: 'office-stand-in',
     choices: (_state, ctx) => {
-      const out = [{ id: 's1', label: 'Sarah Mitchell, Tue 28 Jul AM (S1)' }]
+      const out = [{ id: 's1', label: "St George's file, Tue 28 Jul AM (S1)" }]
       if (ctx.params['bookingId'] !== undefined) out.push({ id: 'booking', label: 'A hospital update for this Booking, approved by the office' })
       else if (ctx.params['listId'] !== undefined) out.push({ id: 'list', label: 'A new hospital booking on this List' })
       return out
     },
     disabledReason: (state, ctx, choiceId) => standInRefusal(state, standInChoice(ctx, choiceId)),
     run: (api, ctx, choiceId) => {
-      const res = officeMatchesHospitalRow(api, standInChoice(ctx, choiceId))
+      const choice = standInChoice(ctx, choiceId)
+      if (choice.kind === 's1') {
+        const s1 = officeImportsS1File(api)
+        if (!s1.ok) return { ok: false, message: s1.message }
+        const n = s1.value.patients.length
+        return {
+          ok: true,
+          message:
+            n > 0
+              ? `The office imported St George's file and matched it. ${s1.value.patients.join(' and ')} ${n === 1 ? 'is' : 'are'} now on your Tue 28 Jul AM List, the invoice going to the patient at the standard rate (No contract · RVG). The RVG code is yours to add.`
+              : "The office imported St George's file and matched it. Your Tue 28 Jul AM List already held everything it sent.",
+        }
+      }
+      const res = officeMatchesHospitalRow(api, choice)
       if (!res.ok) return { ok: false, message: res.message }
-      return choiceId === 'booking'
+      return choice.kind === 'booking'
         ? { ok: true, message: `The hospital sent an update for ${res.value.patient} and the office approved it.` }
         : { ok: true, message: `${res.value.hospital} sent ${res.value.patient}'s booking and the office matched it. ${res.value.patient} is now on your ${res.value.where} List; the office will set the Contract.` }
     },
     indexPath: () => null,
-    indexEmptyReason: 'PWA only: the framed build plays the office in Admin, Matching.',
+    indexEmptyReason: 'PWA only: the framed build plays the office in Admin, Intake.',
   },
   {
     id: 'stub-office-adds-nhi',
@@ -1653,51 +1890,45 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         : { ok: true, message: `The office added ${res.value.patient}'s NHI. The row now waits for the office's decision on Matching.` }
     },
     indexPath: () => null,
-    indexEmptyReason: 'PWA only: the framed build plays the office in Admin, Matching (Add NHI).',
+    indexEmptyReason: 'PWA only: the framed build plays the office in Admin, Intake (Add NHI).',
   },
-  // ── Hospital messages (Future scope) ──────────────────────────────────
+  // ── Future scope: HL7 and FHIR (catch-up Phase 34) ───────────────────
   {
     id: 'fire-hospital-message',
     label: 'Fire hospital message',
     description:
-      "Sends a canned hospital HL7 v2 or FHIR message into the mock backend, including the Christchurch Public dead-letter case (MSG-CPH-2001). Stages the hospital's row on Admin, Matching. The Booking changes only once the office applies it. On a Booking (mobile, web and Admin) it defaults to the message addressed to that Booking: on Diane Foster's, MSG-STG-1012's hospital text replaces the rooms' once the office applies its row. Also on Admin · Integrations and the Integrations simulator. No scripted beat uses the S13 to S15 messages.",
-    screen: 'Mobile · Lists',
-    routes: [...MOBILE_LISTS, WEB_BOOKING, ADMIN_BOOKING, ADMIN_INTEGRATIONS, INTEGRATIONS_SIM],
-    // Bar only (catch-up Phase 33): a row on a handset has no office to decide it; the PWA has the office stand-in.
+      "Sends a canned hospital HL7 v2 or FHIR message into the mock backend (Future scope, for discussion), including the Christchurch Public dead-letter case (MSG-CPH-2001); Christchurch Public is not integrated today. A message that reads stages one row on Admin, Intake, for the office to decide; nothing is applied by itself. Defaults to the message selected in the simulator.",
+    screen: FUTURE_SCOPE_SCREEN,
+    routes: [...FUTURE_SCOPE_ROUTES],
     surfaces: ['bar'],
     badge: 'future-scope',
     choices: () => CANNED_MESSAGES.map((m) => ({ id: m.id, label: `${m.label} · ${m.id}` })),
-    // On a Booking, the message addressed to it (catch-up Phase 20a); else the simulator's pick or the S1 create.
-    defaultChoice: (state, ctx) =>
-      cannedMessageForBooking(state, ctx.params['bookingId']) ?? ctx.published['integrationsSim.selectedMessageId'] ?? DEFAULT_MESSAGE_ID,
+    // The simulator's pick, else its first message.
+    defaultChoice: (_state, ctx) => ctx.published['integrationsSim.selectedMessageId'] ?? DEFAULT_MESSAGE_ID,
     disabledReason: () => null,
-    run: (api, ctx, choiceId) => {
+    run: (api, _ctx, choiceId) => {
       const selectedId = choiceId ?? DEFAULT_MESSAGE_ID
       const res = processMessage(api, selectedId)
       useDemoTriggerMemory.getState().rememberMessage(selectedId)
-      // Outside Admin, the presenter switches apps to decide the row (catch-up Phase 33).
-      const elsewhere = !ctx.pathname.startsWith('/admin') && !ctx.pathname.startsWith('/demo') ? ' Switch to Admin, Matching, to apply it.' : ''
       const staged = res.ok && res.value.importRowId !== undefined
       return {
         ok: res.ok,
         message: !res.ok
           ? `Refused: ${res.message}`
-          : staged && selectedId === 'MSG-STG-1012'
-            ? `Sent MSG-STG-1012 to matching: the hospital's text replaces the rooms' once the office applies the row.${elsewhere}`
-            : staged
-              ? `Sent ${selectedId} to matching: the row waits for the office to decide.${elsewhere}`
-              : `Fired ${selectedId}: ${res.value.outcome}. See the three-pane view in the integration simulator and the log in the Admin app Integrations monitor.`,
+          : staged
+            ? `Sent ${selectedId}: its row waits on Admin, Intake, for the office to decide.`
+            : `Fired ${selectedId}: ${res.value.outcome}. See it on the Message log.`,
       }
     },
-    indexPath: () => '/mobile/lists',
+    indexPath: () => '/demo/integrations',
   },
   {
     id: 'replay-hospital-message',
     label: 'Replay last message (dedupe)',
     description:
       'Replays the last hospital message fired, to show idempotent dedupe: same message control ID, no second row on Matching.',
-    screen: 'Mobile · Lists',
-    routes: [...MOBILE_LISTS, ADMIN_INTEGRATIONS, INTEGRATIONS_SIM],
+    screen: FUTURE_SCOPE_SCREEN,
+    routes: [...FUTURE_SCOPE_ROUTES],
     surfaces: ['bar'],
     badge: 'future-scope',
     disabledReason: (state) => messageReplayDisabledReason(state),
@@ -1715,15 +1946,15 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
           : `Refused: ${res.message}`,
       }
     },
-    indexPath: () => '/mobile/lists',
+    indexPath: () => '/demo/integrations',
   },
 
   // ── Mobile · Balances, installed PWA only ─────────────────────────────
   {
     id: 'pwa-office-runs-payables',
-    label: 'Office runs payables',
+    label: 'Office runs payables in Xero',
     description:
-      "Stands in for the office, which has no app on the phone: runs the payables for Dr Souter, paying out what is due to her. Balances' Paid out rises by it.",
+      "Stands in for the office, which has no app on the phone: runs Dr Souter's payables in Xero, paying what is due to her there. The Billing Engine records each payment when Xero reports it, and Balances' Paid out rises by it.",
     screen: 'Mobile · Balances',
     routes: ['/mobile/balances'],
     surfaces: ['pwa'],
@@ -1743,13 +1974,13 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     routes: ['/mobile/balances', MOBILE_BOOKING],
     surfaces: ['pwa'],
     // On a Booking (catch-up Phase 27): its sent prepayment invoices only.
-    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : souterPaymentChoices(state)),
+    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : personaPaymentChoices(state, ANAE.souter)),
     disabledReason: (state, ctx, choiceId) =>
       ctx.params['bookingId'] !== undefined
         ? prepaymentAccRecChoices(state, ctx.params['bookingId']).length === 0
           ? 'No sent pre-payment invoice yet'
           : paymentDisabledReason(state, paymentTargetOnScreen(state, ctx, choiceId))
-        : souterPaymentDisabled(state, choiceId),
+        : personaPaymentDisabled(state, ANAE.souter, choiceId),
     run: (api, ctx, choiceId) => sendPaymentWebhook(api, ctx.params['bookingId'] !== undefined ? paymentTargetOnScreen(api.getState(), ctx, choiceId) : choiceId, 'full'),
     indexPath: () => null,
   },
@@ -1761,16 +1992,19 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     routes: ['/mobile/balances', MOBILE_BOOKING],
     surfaces: ['pwa'],
     // On a Booking (catch-up Phase 27): its sent prepayment invoices only.
-    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : souterPaymentChoices(state)),
+    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : personaPaymentChoices(state, ANAE.souter)),
     disabledReason: (state, ctx, choiceId) =>
       ctx.params['bookingId'] !== undefined
         ? prepaymentAccRecChoices(state, ctx.params['bookingId']).length === 0
           ? 'No sent pre-payment invoice yet'
           : paymentDisabledReason(state, paymentTargetOnScreen(state, ctx, choiceId))
-        : souterPaymentDisabled(state, choiceId),
+        : personaPaymentDisabled(state, ANAE.souter, choiceId),
     run: (api, ctx, choiceId) => sendPaymentWebhook(api, ctx.params['bookingId'] !== undefined ? paymentTargetOnScreen(api.getState(), ctx, choiceId) : choiceId, 'partial'),
     indexPath: () => null,
   },
+  // ── Web · Dashboard and Accounts: the persona's payments (catch-up Phase 38) ──
+  webPaymentEntry('web-payment-full', 'full'),
+  webPaymentEntry('web-payment-half', 'partial'),
   // ── List and Booking detail, all three apps: the multi-procedure rule (catch-up Phase 23) ──
   {
     id: 'load-multi-procedure-booking',
@@ -1823,5 +2057,41 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return list !== undefined && staged !== undefined ? `/admin/day/${list.dateISO}/bookings/${staged.id}` : null
     },
     indexEmptyReason: 'Load the 3-procedure Booking first, or open any ACTIVE Booking with two procedures.',
+  },
+  // ── Explicit save and named office users (catch-up Phase 35) ─────────
+  {
+    id: 'switch-office-user',
+    label: 'Switch office user',
+    description:
+      'Stands in for each office user signing in as themselves (US-13.5.1, not built): the Admin app now acts as the other named office user (Kirsty W. or Sam T.), so two users\' saves show named in one Booking\'s History. No audit entry is changed.',
+    screen: 'Admin · Day view and Booking detail',
+    routes: ['/admin/day/:dateISO', '/admin/day/:dateISO/bookings/:bookingId'],
+    surfaces: ['bar'],
+    disabledReason: (_state, ctx) => (ctx.published['adminBooking.dirtyBookingId'] !== undefined ? 'Save or discard this Booking\'s changes first' : null),
+    run: (api) => {
+      const next = otherOfficeUser(api.getState().shell)
+      api.getState().setOfficeUser(next)
+      return { ok: true, message: `The office is now ${OFFICE_USERS[next].who}` }
+    },
+    indexPath: (state) => `/admin/day/${state.clock.todayISO}`,
+  },
+  {
+    id: 'office-edits-booking',
+    label: 'Office edits this Booking',
+    description:
+      'Stands in for the office (catch-up Phase 35): Kirsty W. saves one change on this Booking, its time 30 minutes later, as one change set. The handset shows that the office saved changes, and History shows the grouped office save.',
+    screen: 'Mobile · Booking detail',
+    routes: ['/mobile/lists/:listId/bookings/:bookingId'],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    disabledReason: (state, ctx) => officeEditsBookingRefusal(state, ctx.params['bookingId']),
+    run: (api, ctx) => {
+      const bookingId = ctx.params['bookingId']
+      if (bookingId === undefined) return { ok: false, message: 'Open a Booking first' }
+      const res = officeEditsBooking(api, bookingId)
+      return res.ok ? { ok: true, message: `The office moved this Booking to ${res.value.time}.` } : { ok: false, message: res.message }
+    },
+    indexPath: () => null,
+    indexEmptyReason: 'PWA only: the framed build makes the change in Admin and saves it.',
   },
 ]

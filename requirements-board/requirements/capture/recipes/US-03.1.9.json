@@ -150,7 +150,7 @@
       "name": "matching-stack",
       "app": "admin",
       "caption": "The matching screen shows each Procedure's text as received, then its Contract",
-      "start": "/admin/matching",
+      "start": "/admin/intake/matching",
       "states": [
         {
           "steps": [

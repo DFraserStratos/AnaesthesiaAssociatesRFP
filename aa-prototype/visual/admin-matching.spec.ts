@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 /**
- * Catch-up Phase 33: Admin, Matching. Import a sample hospital file, read the
+ * Catch-up Phase 33: Admin, Matching (on Admin Intake since Phase 34). Import a sample hospital file, read the
  * wording as received, decide rows (create, apply ticked differences, a day
  * move's two rows, reject), the later update waiting for approval, and the
  * no-NHI row released by typing one. Nothing changes the schedule until the
@@ -9,9 +9,9 @@ import { expect, test, type Page } from '@playwright/test'
  */
 
 async function fresh(page: Page): Promise<void> {
-  await page.goto('/admin/matching')
+  await page.goto('/admin/intake/matching')
   await page.evaluate(() => window.localStorage.clear())
-  await page.goto('/admin/matching')
+  await page.goto('/admin/intake/matching')
   await page.waitForLoadState('networkidle')
 }
 

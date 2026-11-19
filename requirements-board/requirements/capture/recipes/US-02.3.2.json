@@ -1,6 +1,143 @@
 {
   "id": "US-02.3.2",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 35 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "save-bar",
+      "app": "admin",
+      "caption": "Edits wait as unsaved changes: the bar lists the changed fields, with Discard and Save changes",
+      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]"
+            },
+            {
+              "fill": "[data-shot=booking-notes-for-the-office] textarea",
+              "value": "Patient asked for an earlier start."
+            },
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=contract-combo-list]"
+            },
+            {
+              "click": "[data-shot=contract-combo-list] [role=option]:has-text(\"No contract\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=booking-save-bar]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-save-bar]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "leave-guard",
+      "app": "admin",
+      "caption": "Leaving with unsaved changes asks first: Keep editing, or Discard and leave",
+      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]"
+            },
+            {
+              "fill": "[data-shot=booking-notes-for-the-office] textarea",
+              "value": "Patient asked for an earlier start."
+            },
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=contract-combo-list]"
+            },
+            {
+              "click": "[data-shot=contract-combo-list] [role=option]:has-text(\"No contract\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=booking-save-bar]"
+            },
+            {
+              "click": "nav[aria-label=\"Admin\"] >> text=\"Day view\""
+            },
+            {
+              "wait": "[data-shot=leave-without-saving]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=leave-without-saving]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "saved-history",
+      "app": "admin",
+      "caption": "Save changes records the edits as one change set: History shows it as one save, and View as at shows the Booking as it was",
+      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]"
+            },
+            {
+              "fill": "[data-shot=booking-notes-for-the-office] textarea",
+              "value": "Patient asked for an earlier start."
+            },
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=contract-combo-list]"
+            },
+            {
+              "click": "[data-shot=contract-combo-list] [role=option]:has-text(\"No contract\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=booking-save-bar]"
+            },
+            {
+              "click": "[data-shot=booking-save]"
+            },
+            {
+              "wait": "[data-shot=booking-saved-strip]"
+            },
+            {
+              "click": "[data-shot=booking-history-button]"
+            },
+            {
+              "wait": "[data-shot=booking-history]"
+            },
+            {
+              "click": "[data-shot=booking-history] [data-shot=history-view-as-at] >> nth=1"
+            },
+            {
+              "wait": "[data-shot=booking-as-at]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-as-at]",
+            "[data-shot=history-change-set] >> nth=0"
+          ]
+        }
+      ]
+    }
+  ]
 }

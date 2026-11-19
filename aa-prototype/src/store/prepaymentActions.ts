@@ -23,6 +23,7 @@ import { proceduresForBooking } from './selectors'
 import { ASSIGN_THE_LIST_FIRST, pendingPrepayments, prepaymentGroupsForBooking } from './prepaymentSelectors'
 import { getBooking } from './lifecycle'
 import { handoffPairsForBooking } from './xeroHandoff'
+import { isDraftStore } from './draftMode'
 
 /** Who sends a prepayment invoice when approval is off. */
 export const PREPAYMENT_AUTO_ACTOR: Actor = { who: 'System', role: 'system', source: 'system' }
@@ -107,6 +108,8 @@ export function approvePrepayment(api: AppStoreApi, actor: Actor, bookingId: str
  * generated again. A no-op while approval is on.
  */
 export function autoSendPrepayments(api: AppStoreApi, bookingId?: string): string[] {
+  // A Booking draft never raises money; the save runs this once on the real store (catch-up Phase 35).
+  if (isDraftStore(api)) return []
   if (api.getState().appSettings.prepayment.approvalRequired) return []
   const ids: string[] = []
   const rows = pendingPrepayments(api.getState()).filter((r) => r.ready && (bookingId === undefined || r.bookingId === bookingId))

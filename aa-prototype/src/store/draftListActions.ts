@@ -25,9 +25,11 @@ import { notPreferredEntryIds, notPreferredWarning, pairingAcknowledgement } fro
 import { DRAFT_ASSIGN_WARNINGS, isDraftList, isRemoved, removeBlockedReason } from '../domain/draftLists'
 import { isOpenSlot } from '../domain/slotStatus'
 import { sessionNotOpenRefusal } from '../domain/listMoves'
-import { LIST_KINDS, type DraftList, type ListKind, type RequestSource, type Session } from '../domain/types'
+import { LIST_KINDS, type DraftList, type ListKind, type ListOrigin, type RequestSource, type Session } from '../domain/types'
+import { originForNewList } from '../domain/lists/listOrigin'
+import { isEmailShaped } from '../domain/billing/payer'
 import { drName } from './conflictReconcile'
-import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
+import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome, withChangeSet } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { listInSlot, moveInputOf, scheduleHorizon, slotFor } from './selectors'
 import { attachListToSlot, insertDraftList, pairingRefusal } from './slotActions'
@@ -76,6 +78,10 @@ export interface NewDraftListInput {
   note?: string
   /** How the request came in: required for origin `request` only (Phase 33's `hospitalRow` passes none). */
   source?: RequestSource
+  /** Source `pdf` only (catch-up Phase 34, US-02.2.4): the address the PDF arrived from, recorded as the List's sender. */
+  senderEmail?: string
+  /** Phase 33's row path only: the origin its row gives (`originForNewList`'s `importRow` cause). */
+  listOrigin?: ListOrigin
 }
 
 /**
@@ -104,6 +110,9 @@ export function createDraftList(
   if (origin === 'request' && (input.source === undefined || !REQUEST_SOURCES.includes(input.source))) {
     return refuse('sourceRequired', 'Choose how the request came in.')
   }
+  const sender = input.senderEmail?.trim() ?? ''
+  if (sender !== '' && !isEmailShaped(sender)) return refuse('invalidEmail', 'Enter the address the PDF was sent from as an email address.')
+  const listOrigin = input.listOrigin ?? originForNewList({ kind: 'request', ...(input.source !== undefined ? { source: input.source } : {}), senderEmail: sender })
 
   const metas: MutationMeta[] = []
   let listId = ''
@@ -120,6 +129,7 @@ export function createDraftList(
       hospitalId: input.hospitalId,
       surgeonId: input.surgeonId,
       conflicts: [],
+      origin: listOrigin,
       ...(note !== '' ? { notes: note } : {}),
       draft: {
         origin,
@@ -142,6 +152,7 @@ export function createDraftList(
         surgeonId: draft.surgeonId,
         kind,
         origin,
+        listOrigin,
         ...(draft.draft.source !== undefined ? { source: draft.draft.source } : {}),
       },
       stampBookingId: null,
@@ -180,7 +191,7 @@ export interface AssignDraftListResult {
  * available first, with the anaesthetist's agreement. A not-preferred pairing
  * is never refused (US-01.3.5): it writes 17's `list.pairingAcknowledged`.
  */
-export function assignDraftList(
+function assignDraftListUnscoped(
   api: AppStoreApi,
   actor: Actor,
   listId: string,
@@ -375,4 +386,9 @@ export function draftListFitsAnaesthetist(state: Pick<AppState, 'schedule' | 'ma
  */
 export function surgeonFitsAnaesthetist(state: Pick<AppState, 'officePrivate'>, anaesthetistId: string, surgeonId: string): boolean {
   return notPreferredEntryIds(state.officePrivate.pairingPreferences, anaesthetistId, surgeonId).length === 0
+}
+
+/** `assignDraftListUnscoped` as one change set (`listReassign`), whichever app calls it (catch-up Phase 35; DM-35). */
+export function assignDraftList(...args: Parameters<typeof assignDraftListUnscoped>): ReturnType<typeof assignDraftListUnscoped> {
+  return withChangeSet(args[0], 'listReassign', () => assignDraftListUnscoped(...args))
 }

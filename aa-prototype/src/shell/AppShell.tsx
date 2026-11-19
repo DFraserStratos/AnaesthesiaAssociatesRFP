@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
-import { APP_CONFIG, appIdForPath, type AppId } from './appConfig'
+import { APP_CONFIG, appIdForPath, officePersona, PERSONAS, type AppId } from './appConfig'
 import { AppSwitcher } from './AppSwitcher'
 import { DemoActionsMenu } from './DemoActionsMenu'
 import { DemoClockMenu } from './DemoClockMenu'
@@ -31,7 +31,9 @@ export function AppShell() {
     if (routeApp && routeApp !== currentApp) setCurrentApp(routeApp)
   }, [routeApp, currentApp, setCurrentApp])
 
-  const persona = APP_CONFIG[activeApp].persona
+  const officeUser = useAppStore((s) => s.shell.officeUser)
+  // The office persona follows Switch office user (catch-up Phase 35).
+  const persona = APP_CONFIG[activeApp].persona === PERSONAS.kirsty ? officePersona(officeUser) : APP_CONFIG[activeApp].persona
 
   function handleSelect(id: AppId) {
     setCurrentApp(id)

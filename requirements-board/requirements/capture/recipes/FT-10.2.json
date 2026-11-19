@@ -1,0 +1,125 @@
+{
+  "id": "FT-10.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "payables-awaiting-xero-run",
+      "app": "admin",
+      "caption": "Once its receivable is paid, the payable is authorised and joins the next payables run, paid in Xero: listed as awaiting Xero's payables run, nothing disbursed yet",
+      "start": "/admin/billing",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/demo/xero/invoices"
+        },
+        {
+          "click": "[data-testid=xero-invoice-table] tr:has-text(\"AA-2026-0002\")"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "trigger": "payment-full"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=billing-payables-due]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-payables-run]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "after-xero-run",
+      "app": "admin",
+      "caption": "After Run payables in Xero (simulated): the bill is paid in Xero and the Billing Engine records the disbursement; nothing is left awaiting the run",
+      "start": "/admin/billing",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/demo/xero/invoices"
+        },
+        {
+          "click": "[data-testid=xero-invoice-table] tr:has-text(\"AA-2026-0002\")"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "trigger": "payment-full"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=billing-run-payables-in-xero]"
+            },
+            {
+              "wait": "[data-shot=billing-payables-result]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-payables-run]"
+          ]
+        }
+      ]
+    }
+  ]
+}

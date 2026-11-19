@@ -148,6 +148,90 @@
             "[data-testid=xero-accpay-payee]",
             "[data-testid=xero-transfer-journal-reference]"
           ]
+        },
+        {
+          "state": "waiting",
+          "caption": "While Xero does not answer, the hand-off waits in the Xero sync queue: Waiting for Xero, with its attempt and next try; the invoice and its ledger pair stand",
+          "steps": [
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "trigger": "billing-failure"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Losa Tuilagi\") >> role=button[name=/^View invoice /] >> nth=0"
+            },
+            {
+              "wait": "[data-testid=xero-handoff-status]:has-text(\"Waiting for Xero\")"
+            }
+          ],
+          "highlight": [
+            "[data-testid=xero-handoff-status]",
+            "[data-shot=invoice-waiting-for-xero]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pair-after-outage",
+      "app": "admin",
+      "caption": "After Restore Xero the sync queue sends every hand-off that waited, in order: each invoice handed off once, one ACCREC and ACCPAY pair each",
+      "start": "/admin/billing",
+      "setup": [
+        {
+          "goto": "/admin/billing"
+        },
+        {
+          "trigger": "xero-outage-start"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-25490-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "goto": "/admin/billing"
+        },
+        {
+          "trigger": "xero-outage-restore"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=billing-xero-sent-toggle]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-xero-queue]"
+          ]
         }
       ]
     }

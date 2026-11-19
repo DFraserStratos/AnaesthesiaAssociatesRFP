@@ -6,7 +6,7 @@
     {
       "name": "duplicate-number-setting",
       "app": "simulator",
-      "caption": "Duplicate invoice number prevention, noted as an open setting",
+      "caption": "Duplicate invoice number prevention, noted as an open setting: the unique InvoiceNumber is the key Xero's bank reconciliation matches remittances on",
       "start": "/demo/xero",
       "states": [
         {

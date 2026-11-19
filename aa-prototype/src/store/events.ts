@@ -1,12 +1,15 @@
 /**
  * Tiny typed app-event emitter — the subscription seams later phases hook:
  * Phase 08's billing run consumes `listAuthorised`; Phase 10's reconciliation
- * poll and archive job hook `dayAdvanced`.
+ * poll and archive job hook `dayAdvanced`; catch-up Phase 37's Xero sync queue
+ * hooks `clockAdvanced` (every clock change, after `dayAdvanced` when both
+ * fire, so a day advance polls first and then works the queue).
  */
 
 export type AppEvent =
   | { type: 'listAuthorised'; listId: string }
   | { type: 'dayAdvanced'; todayISO: string }
+  | { type: 'clockAdvanced'; fromISO: string; toISO: string }
 
 type Listener = (event: AppEvent) => void
 

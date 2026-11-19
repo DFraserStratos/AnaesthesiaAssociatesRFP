@@ -7,7 +7,7 @@
       "name": "card-failure",
       "app": "admin",
       "caption": "One Booking is held back while the rest of the List bills",
-      "start": "/admin/billing",
+      "start": "/admin/billing?list=L-39560-2026-07-16-AM",
       "setup": [
         {
           "goto": "/admin/billing"
@@ -22,21 +22,25 @@
       "states": [
         {
           "state": "failed",
-          "caption": "Losa Tuilagi's Booking is held back at the hand-off while Hemi Walker's bills; the List is not failed",
-          "steps": [],
+          "caption": "Losa Tuilagi's Booking waits for Xero while Hemi Walker's bills; the List is not failed",
+          "steps": [
+            {
+              "wait": 2200
+            }
+          ],
           "highlight": [
             "[data-shot=billing-pipeline-L-39560-2026-07-16-AM]"
           ]
         },
         {
           "state": "retried",
-          "caption": "The office retries the held Booking once: it hands off on its own, and nothing else on the List is billed again",
+          "caption": "Retry now on the Xero sync queue hands the held Booking off once, on its own; nothing else on the List is billed again",
           "steps": [
             {
-              "click": "[data-shot=billing-pipeline-L-39560-2026-07-16-AM] tr:has-text(\"Losa Tuilagi\") >> role=button[name=\"Resolve & retry\"]"
+              "click": "[data-shot=billing-xero-queue] [data-queue-item] >> role=button[name=\"Retry now\"]"
             },
             {
-              "wait": 1200
+              "wait": 2200
             }
           ],
           "highlight": [

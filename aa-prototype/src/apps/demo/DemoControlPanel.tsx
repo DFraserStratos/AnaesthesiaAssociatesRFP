@@ -8,7 +8,7 @@ import {
   OFFICE_ACTOR,
   SOUTER_ACTOR,
   authoriseList,
-  editBooking,
+  saveBookingPatch,
   claimModifier,
   removeModifier,
   proceduresForBooking,
@@ -232,16 +232,16 @@ const SCENARIOS: readonly Scenario[] = [
   {
     id: 'S1',
     title: 'S1 · Booking to theatre',
-    blurb: 'A hospital booking is imported and matched by the office onto a booked list, then captures live on procedure day.',
+    blurb: "A St George's file is imported with the hospital's own wording; the office matches Sarah Mitchell onto a booked List and says where the invoice goes; a booking with no NHI waits in its place; a rooms' PDF list keeps who sent it; it captures live on procedure day.",
     run: () => {
       resetDemo(useAppStore)
       return {
         ok: true,
         message:
-          'Reset to a clean S1 state. Start in Mobile, then import the St George\'s bookings on Admin, Matching, set Sarah Mitchell\'s Contract and create her Booking. Open her row: Choose Contract shows the steps. Choose Patient (Standard fills itself in), then No contract · RVG, which hands the RVG code to the anaesthetist, then Create Booking. Sarah Mitchell arrives as a fourth Booking on Dr Souter\'s Tue 28 Jul AM List, alongside its three booked cases (on the PWA, Hospital row arrives and the office matches it stands in; the office then sets her Contract from Day\'s Needs an invoice destination card). Use "Procedure day · 28 Jul", then pick her RVG code by typing "appendicectomy" (A3 · Appendicectomy, laparoscopic, B 5) and complete her Booking. The List itself stays active, because its other three Bookings are still to be captured.',
+          "Reset to a clean S1 state. Start in Mobile on Dr Souter's Tue 28 Jul AM List (three booked cases). On Admin, Intake, Matching, Import hospital file, St George's: Sarah Mitchell's row reads lap appy ?conv to open, kept exactly as the hospital sent it; Create Booking puts her on that List at 08:30, nothing else changing until the office decides. Her Booking waits on Day's Needs an invoice destination card: open it and answer Where does the invoice go? with Patient, then Standard: No contract · RVG, which leaves the RVG code to the anaesthetist (on the PWA, Hospital file imported and my booking matched stands in for all of this). Optionally import the Southern Cross file: its row with no NHI waits, its stub on the List, until the office adds the NHI. Then PDF lists: open Mr Okafor's list, see who sent it, correct the flagged NHI, Send to matching and create the List from its first row and put its other two rows on it; the List reads where it came from and who replies go to. Receive updated PDF from rooms, then Send: the unchanged row is skipped, Margaret Ellison's changed time waits as a difference for approval, and a new patient arrives as a new row. Finally use Procedure day · 28 Jul, pick Sarah's RVG code by typing appendicectomy (A3), Start now, and complete her Booking; the List stays active because its other three Bookings are still to be captured.",
         nav: [
           { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
-          { label: 'Go to Matching', path: '/admin/matching' },
+          { label: 'Go to Admin Intake', path: '/admin/intake/matching' },
         ],
       }
     },
@@ -275,7 +275,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset. Both of Dr Souter\'s Mon 20 Jul Lists are already in the Review queue: AM (Forte Health, the multi-procedure Booking) and PM (St George\'s, the fee-split Booking: nib $132.50, Alan Prentice the rest). In Admin, authorise both: the run raises and emails the invoices, and each invoice\'s pair goes into the ledger, mirrored in Xero. Open AA-2026-0005 in the Xero simulation, use its payment and payout button (the full $152.38 is paid to Dr Souter), then follow the direct link to Dr Souter\'s payment history. Beat 4: Admin Billing monitor, Open AA fee invoices, Demo actions, Seed a month of BCTIs, then Run monthly fee invoices (Dr Rutherford $700.00 before GST), and Record fee payment on AA-FEE-2026-H02 in the Xero simulation. Beat 5: Admin Ledger reads In balance, with no anaesthetist out of balance; switch to Dr Souter to show what AA owes her and what she owes AA. Then Demo actions, Inject unmatched receipt, Names Dr Souter: out of balance by $120.00 and Dr Souter on the list. Allocate to invoice on one of her receivables puts it back in balance.',
+          'Reset. Both of Dr Souter\'s Mon 20 Jul Lists are already in the Review queue: AM (Forte Health, the multi-procedure Booking) and PM (St George\'s, the fee-split Booking: nib $132.50, Alan Prentice the rest). In Admin, authorise both: the run raises and emails the invoices, and each invoice\'s pair goes into the ledger, mirrored in Xero. Open AA-2026-0005 in the Xero simulation, use its payment and payout button (nib pays $152.38 into AA, then Xero\'s payables run pays Dr Souter the full $152.38 and the bill-paid webhook tells the engine, which records the disbursement), then follow the direct link to Dr Souter\'s payment history. Beat 4: Admin Billing monitor, Open AA fee invoices, Demo actions, Seed a month of BCTIs, then Run monthly fee invoices (Dr Rutherford $700.00 before GST), and Record fee payment on AA-FEE-2026-H02 in the Xero simulation. Beat 5: Admin Ledger reads In balance, with no anaesthetist out of balance; switch to Dr Souter to show what AA owes her and what she owes AA. Then Demo actions, Inject unmatched receipt, Names Dr Souter: out of balance by $120.00 and Dr Souter on the list. Allocate to invoice on one of her receivables puts it back in balance. Close on Admin Day: the Reconciliation card reads Books square.',
         nav: [{ label: 'Go to Admin app', path: APP_CONFIG.admin.path }],
       }
     },
@@ -289,7 +289,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset. Walk the exceptions: (1) Pre-payment from a prepaid Contract: in Admin Day, Tue 21 Jul, Annette Riley is on the Pre-payments card and her warning on the To-do card; open her Booking (Rhinoplasty on Dr Souter\'s prepaid Contract, $1,200.00), go to Invoices, Approve and send (the payable credits the AA Holding account), then Payment received · half; on the Billing monitor the AA Holding account card holds it beside Priya Nair\'s $1,380.00, and nothing is paid to the anaesthetist yet; on Mobile, Souter Fri 24 AM, Annette Riley, see the triangle and the prepaid panel, Mark complete and submit (no block, no confirm step), then clear her mild warning from the Admin to-do list; (2) in Admin open Sarah Mitchell\'s Booking on Dr Sharma\'s Tue 14 AM List, Demo actions, Stage post-op scenario, then Add post-op event; (3) Admin Billing monitor, Demo actions, Trigger billing failure: each Booking bills from what was locked at authorise, so the failure is outside the lock, Losa Tuilagi\'s Xero hand-off; she is held back while Hemi Walker\'s Booking bills and the List is not failed; then Resolve & retry Losa Tuilagi (no Contract changes); (4) Admin, Matching, Demo actions, Import hospital file, Southern Cross: under Unmatched, Tama Henare\'s row has no NHI, so a stub stands on Dr Souter\'s Tue 28 Jul PM List; type NHI ZQA1008 and Add NHI, and the Booking takes the stub\'s place, then Create a List in a session for Grace Whitu\'s row; (5) open Hemi Walker\'s St George\'s clean-sibling invoice, Demo actions, Payment received · half, then the Billing monitor\'s own Run payables button, which pays exactly the amount received; pay the balance and run again. (6) late, on Admin Day, Demo actions, Move to 2 days before procedure, choose Annette Riley: the clock jumps to Wed 22 Jul and her warning turns strong and re-opens; (7) held, then transferred: on Mobile, Mark complete and submit Souter\'s Fri 24 PM List, then Authorise for billing on Admin Review: the AA Holding account card shows Nair\'s $1,380.00 transferred to Dr Melanie Souter, the Xero sim shows journal MJ-0001 on XRB0, and Run payables pays her $1,380.00.',
+          'Reset. Walk the exceptions: (1) Pre-payment from a prepaid Contract: in Admin Day, Tue 21 Jul, Annette Riley is on the Pre-payments card and her warning on the To-do card; open her Booking (Rhinoplasty on Dr Souter\'s prepaid Contract, $1,200.00), go to Invoices, Approve and send (the payable credits the AA Holding account), then Payment received · half; on the Billing monitor the AA Holding account card holds it beside Priya Nair\'s $1,380.00, and nothing is paid to the anaesthetist yet; on Mobile, Souter Fri 24 AM, Annette Riley, see the triangle and the prepaid panel, Mark complete and submit (no block, no confirm step), then clear her mild warning from the Admin to-do list; (2) in Admin open Sarah Mitchell\'s Booking on Dr Sharma\'s Tue 14 AM List, Demo actions, Stage post-op scenario, then Add post-op event; (3) Admin Billing monitor, Demo actions, Trigger billing failure: each Booking bills from what was locked at authorise, so the failure is outside the lock, Losa Tuilagi\'s Xero hand-off; she is held back while Hemi Walker\'s Booking bills and the List is not failed; her invoice waits for Xero in the sync queue, so use Retry now on its queue row (no Contract changes); (4) Admin, Intake, Matching, Demo actions, Import hospital file, Southern Cross: under Unmatched, Tama Henare\'s row has no NHI, so a stub stands on Dr Souter\'s Tue 28 Jul PM List; type NHI ZQA1008 and Add NHI, and the Booking takes the stub\'s place, then Create a List in a session for Grace Whitu\'s row; (5) open Hemi Walker\'s St George\'s clean-sibling invoice, Demo actions, Payment received · half, then the Billing monitor\'s Run payables in Xero (badged Simulated Xero): Xero pays exactly the amount received and the engine records it from the bill-paid webhook; pay the balance and run again. (6) late, on Admin Day, Demo actions, Move to 2 days before procedure, choose Annette Riley: the clock jumps to Wed 22 Jul and her warning turns strong and re-opens; (7) held, then transferred: on Mobile, Mark complete and submit Souter\'s Fri 24 PM List, then Authorise for billing on Admin Review: the AA Holding account card shows Nair\'s $1,380.00 transferred to Dr Melanie Souter, the Xero sim shows journal MJ-0001 on XRB0, and Run payables in Xero pays her $1,380.00.',
         nav: [
           { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
           { label: 'Go to Billing monitor', path: '/admin/billing' },
@@ -313,7 +313,13 @@ const SCENARIOS: readonly Scenario[] = [
       if (as3 === undefined) return { ok: false, message: 'Reset done, but the RVG modifier AS3 was not found to stage the audit trail.' }
       const staged = [
         claimModifier(useAppStore, SOUTER_ACTOR, chenProcedure.id, { modifierId: as3.id, explanation: 'Pre-op review: ASA III' }),
-        editBooking(useAppStore, OFFICE_ACTOR, chenBookingId, { notes: 'Rooms called: confirmed self-funded account details ahead of invoicing.' }),
+        // The office's grouped save (catch-up Phase 35): the note and a time change in one change set.
+        saveBookingPatch(useAppStore, OFFICE_ACTOR, chenBookingId, {
+          booking: {
+            notes: 'Rooms called: confirmed self-funded account details ahead of invoicing.',
+            scheduledTime: shiftedTime(useAppStore.getState().schedule.bookings[chenBookingId]?.scheduledTime, 15),
+          },
+        }),
         removeModifier(useAppStore, SOUTER_ACTOR, chenProcedure.id, as3.id),
       ]
       const refused = staged.find((r) => !r.ok)
@@ -323,7 +329,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset to rich seeded Booking histories, added three live edits to David Chen\'s trail, and authorised Dr Whitaker\'s Fri 17 Jul List, which locks the Health NZ agreed rate and the price in force on 17 Jul onto each Procedure and raises its invoices from that record. Compliance tour: (1) open David Chen\'s History; (2) in Admin Integrations open Demo actions and fire MSG-STG-1002 for the new-format NHI: it is sent to matching, and its row on Admin, Matching shows the validated NHI; (3) in the Xero simulation\'s Contacts tab, show that no NHI or patient name crosses to Xero, only hidden IDs; (4) Contract history and the invoice recipe: in Admin, Master data, Contracts, open Health NZ agreed rate, change its rate and save, then open its History tab: the change with who, when and the values before and after, and Dr Whitaker\'s Procedures locked against it; open Hemi Walker\'s invoice, Demo actions, Regenerate from locked data: identical.',
+          'Reset to rich seeded Booking histories, added live edits to David Chen\'s trail, among them the office\'s grouped save (the note and the time, one change set), and authorised Dr Whitaker\'s Fri 17 Jul List, which locks the Health NZ agreed rate and the price in force on 17 Jul onto each Procedure and raises its invoices from that record. Compliance tour: (1) open David Chen\'s History: the office\'s save is one row, with View as at; (2) on Admin, Intake, Validators try an old-format and a new-format NHI, then an invalid one (optionally, as a labelled Future-scope aside, fire MSG-STG-1002 from Future scope: HL7 and FHIR and open its row on Admin, Intake, Matching); (3) in the Xero simulation\'s Contacts tab, show that no NHI or patient name crosses to Xero, only hidden IDs; (4) Contract history and the invoice recipe: in Admin, Master data, Contracts, open Health NZ agreed rate, change its rate and save, then open its History tab: the change with who, when and the values before and after, and Dr Whitaker\'s Procedures locked against it; open Hemi Walker\'s invoice, Demo actions, Regenerate from locked data: identical.',
         nav: [
           { label: 'Go to Admin app', path: APP_CONFIG.admin.path },
           { label: 'Go to Xero sim', path: APP_CONFIG['demo-xero'].path },
@@ -332,6 +338,13 @@ const SCENARIOS: readonly Scenario[] = [
     },
   },
 ]
+
+/** A wall time moved by `minutes` (the S5 jump's grouped save). */
+function shiftedTime(time: string | undefined, minutes: number): string {
+  const [h, m] = (time ?? '08:00').split(':').map(Number)
+  const total = Math.min(23 * 60 + 55, (h ?? 8) * 60 + (m ?? 0) + minutes)
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
+}
 
 /** The guided-script scenario jumps (S1 to S5): confirm, reset, stage, then point onward. */
 function ScenarioJumps() {
@@ -485,7 +498,7 @@ function DemoActionsIndex() {
             })}
             {g.screen === BILLING_MONITOR_SCREEN && (
               <div style={{ fontSize: 12.5, color: neutral.slate }}>
-                <strong style={{ fontWeight: 600 }}>Run payables:</strong> the Billing monitor's own button (product UI, not a demo action).
+                <strong style={{ fontWeight: 600 }}>Run payables in Xero:</strong> the Billing monitor's button, badged Simulated Xero: Xero pays the bills and the Billing Engine records each payment it reports (not a demo action).
               </div>
             )}
           </div>

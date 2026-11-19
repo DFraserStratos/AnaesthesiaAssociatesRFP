@@ -11,7 +11,7 @@ import type { DisplayKey, Procedure, RvgGroupId } from '../../../../domain/types
 import type { ListProgress } from '../../../../domain/listProgress'
 import type { Warning, WarningStrength } from '../../../../domain/warnings'
 import { isAssignedList } from '../../../../domain/draftLists'
-import { editRefusal, receivablesAgingFor, slotViewsForDate, useAppStore, type SlotView } from '../../../../store'
+import { anaesthetistLedgerPosition, editRefusal, POSITION_LABEL, slotViewsForDate, useAppStore, type SlotView } from '../../../../store'
 import {
   ProgressPill,
   resolveDisplayStatus,
@@ -45,16 +45,13 @@ import { sessionText } from '../../../../domain/outOfHours'
 import { AvailabilityPageSwitch, WebNav, WeekStrip, type WebTab } from '../../../web/components'
 import { AccountsScreen, AvailabilityGrid, ListDetailView, ListsScreen, MyAvailabilityCalendar, type AccountsSubTab } from '../../../web/screens'
 import { WebDayTable, WebGoToDate, WebResultsTable } from '../../../web/screens/ListsLookback'
-import { useDashboardFigures } from '../../../web/useDashboardFigures'
 import { StageHint } from '../CatalogueKit'
 import type { WebFixtures } from './fixtures'
 import { KnobButton, Knobs, NavSandbox, RowBoundary, Sandboxed, Wide } from './sandbox'
 import {
-  AgingBars,
   AvailabilityCell,
   DayPill,
   SubmitAction,
-  SubTabButton,
   WhosFreeChip,
 } from './recreations'
 import { OverlayHeader } from '../../../../shared/surface/OverlayHeader'
@@ -100,26 +97,6 @@ export function PageSwitchDemo() {
   )
 }
 
-const SUB_TABS: { key: AccountsSubTab; label: string }[] = [
-  { key: 'overdue', label: 'Overdue' },
-  { key: 'payments', label: 'Payments' },
-  { key: 'gst', label: 'GST activity' },
-  { key: 'fees', label: 'AA fees' },
-]
-
-export function SubTabsDemo() {
-  const [tab, setTab] = useState<AccountsSubTab>('overdue')
-  return (
-    <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${neutral.line}` }}>
-      {SUB_TABS.map((t) => (
-        <SubTabButton key={t.key} active={tab === t.key} onClick={() => setTab(t.key)}>
-          {t.label}
-        </SubTabButton>
-      ))}
-    </div>
-  )
-}
-
 export function BackLinkDemo() {
   const [said, setSaid] = useState<string | null>(null)
   return (
@@ -143,7 +120,7 @@ export function PanelDemo() {
   return (
     <>
       <Knobs label="Padding" value={flush} options={[{ value: 'padded', label: 'Padded' }, { value: 'flush', label: 'Flush' }]} onChange={setFlush} />
-      <Card padding="panel" title="Leave" action={<span className="mono" style={{ fontSize: 14, fontWeight: 600 }}>2 booked</span>} flush={flush === 'flush'}>
+      <Card padding="panel" title="Financial position" action={<span className="mono" style={{ fontSize: 14, fontWeight: 600 }}>$11,350.50 owed</span>} flush={flush === 'flush'}>
         <div style={{ fontSize: 13, color: neutral.slate }}>Any content: a list, a table or a chart.</div>
       </Card>
     </>
@@ -151,15 +128,13 @@ export function PanelDemo() {
 }
 
 export function StatTileDemo({ f }: F) {
-  const figures = useDashboardFigures(f.anaesthetistId)
-  if (figures === undefined) return <Missing what="productivity figures" />
-  const p = figures.productivity
+  const billing = useAppStore((s) => s.billing)
+  const p = useMemo(() => anaesthetistLedgerPosition({ billing }, f.anaesthetistId), [billing, f.anaesthetistId])
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-      <StatTile variant="quiet" label="UNITS" value={String(p.units)} pill={`+${p.unitsChangePct}%`} />
-      <StatTile variant="quiet" label="LISTS" value={String(p.lists)} />
-      <StatTile variant="quiet" label="AVG UNITS / LIST" value={p.avgUnitsPerList.toFixed(1)} />
-      <StatTile variant="quiet" label="FEES INVOICED" value={formatCurrency(p.feesInvoiced)} />
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
+      <StatTile variant="quiet" label={POSITION_LABEL.owedToThem} value={formatCurrency(p.owedToThem)} />
+      <StatTile variant="quiet" label={POSITION_LABEL.collected} value={formatCurrency(p.collected)} />
+      <StatTile variant="quiet" label={POSITION_LABEL.paidOut} value={formatCurrency(p.paidOut)} />
     </div>
   )
 }
@@ -395,7 +370,7 @@ export function LinkButtonDemo() {
   return (
     <>
       <div style={{ fontSize: 13, color: neutral.slate }}>
-        3 accounts over 60 days · <TextAction size="sm" flush onClick={() => setSaid('Would open Accounts, Overdue.')}>view overdue accounts</TextAction>
+        9 unpaid invoices · <TextAction size="sm" flush onClick={() => setSaid('Would open Accounts, Outstanding.')}>View outstanding invoices</TextAction>
       </div>
       <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginTop: 10 }}>
         <TextAction size="sm" onClick={() => setSaid('sm: 12.5 in a table')}>Open</TextAction>
@@ -696,7 +671,7 @@ export function DayTableDemo({ f }: F) {
 }
 
 export function AccountsDemo({ f }: F) {
-  const [tab, setTab] = useState<AccountsSubTab>('overdue')
+  const [tab, setTab] = useState<AccountsSubTab>('outstanding')
   return (
     <Wide width={1100}>
       <AccountsScreen anaesthetistId={f.anaesthetistId} subTab={tab} onSubTab={setTab} />
@@ -869,20 +844,6 @@ export function AvailabilityGridDemo({ f }: F) {
 // ---------------------------------------------------------------------------
 // Charts, numbers and motion
 // ---------------------------------------------------------------------------
-
-export function AgingBarsDemo({ f }: F) {
-  const billing = useAppStore((s) => s.billing)
-  const schedule = useAppStore((s) => s.schedule)
-  const masters = useAppStore((s) => s.masters)
-  const r = useMemo(() => receivablesAgingFor({ billing, schedule, masters }, f.anaesthetistId, f.todayISO), [billing, schedule, masters, f.anaesthetistId, f.todayISO])
-  if (r.rows.length === 0) return <div style={{ fontSize: 13, color: neutral.mist }}>No outstanding accounts. Receivables appear here once billed work goes unpaid.</div>
-  return (
-    <>
-      <div className="mono" style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>{formatCurrency(r.aging.total)} outstanding</div>
-      <AgingBars aging={r.aging} />
-    </>
-  )
-}
 
 export function BookingTotalDemo({ f }: F) {
   const rate = useAppStore((s) => s.masters.anaesthetists[f.anaesthetistId]?.unitValue ?? 26.5)

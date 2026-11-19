@@ -134,6 +134,28 @@ Contract holder) and one surgeon. Draft Lists never reach the mobile, web or PWA
   drawer (the store's `procedureStackViewFor` builds it).
 - The seed carries AR-35's illustrative, AI-made wording (`domain/seed/sourceWording.ts`), not AA's data.
 
+## Intake, the rooms' PDF lists and where a List came from (catch-up Phase 34)
+
+- **Admin Intake** (`/admin/intake`, one side-nav item, its badge the open rows on matching) holds four
+  URL-routed tabs: `/admin/intake/matching` (Phase 33's matching screen), `/admin/intake/pdfs` (the rooms'
+  PDF lists), `/admin/intake/quality` and `/admin/intake/validators`. `/admin/matching` and
+  `/admin/integrations` redirect to `/admin/intake/matching`. Hospital rows arrive only through Import
+  hospital file; there is no sync.
+- **The rooms' PDF lists** are stored `SurgeonPdfList` records (`intake.pdfLists`, PDL ids) with the address
+  each arrived from. Upload (`uploadPdfList`, a sample and "Sent from"), correct (`correctPdfListRow`, each
+  correction kept with who and when, the wording as read) and send (`sendPdfListToMatching`, through
+  `stageImportRows` with source `rooms`). Nothing reaches a Booking, List or Patient until the office
+  decides on matching. A re-sent list (`resentPdfListOf`, matched by surgeon, hospital, date and session)
+  brings only its differences. Pure rules in `domain/intake/pdfLists.ts`.
+- **Every List records its origin** (`List.origin`: `pdf` with its sender, `hospital`, `manual` or
+  `recurring`), stamped on every creation path through `originForNewList` in `domain/lists/listOrigin.ts`,
+  the one place for its build choices (the later-address rule). `officeAddressFor(masters, surgeonId,
+  list?)` (`domain/surgeonContacts.ts`) puts the List's sender first, then the surgeon's first office contact.
+- **Future scope: HL7 and FHIR** (`/demo/integrations`, `/log`, `/mapping`; `apps/demo/futureScope/`) holds
+  the simulator, the message log with retry and dead-letter, and the feed mapping, shown for discussion.
+  Christchurch Public is not integrated today: the Live drip streams St George's and Southern Cross only
+  (`LIVE_FEED_IDS`).
+
 ## Folder map (`src/`)
 
 - **`domain/`** — pure, no React: `types.ts`, the deterministic `seed/` (Bookings in
@@ -141,7 +163,12 @@ Contract holder) and one surgeon. Draft Lists never reach the mobile, web or PWA
   `seed/recordedWindow.ts`; the seeded Draft Lists in `seed/draftLists.ts`), the Slot module
   `slots.ts`, the pairing rule `listPairing.ts`, the Draft List rules `draftLists.ts`, billing maths (`billing/`, including
   `validateBookingForBilling.ts`), the advanceable `clock.ts`, NHI/NZHIS validators, and the
-  integration message/PDF fixtures (`integrations/`). Fully unit-tested.
+  integration message/PDF fixtures (`integrations/`). Fully unit-tested. `domain/xero/` holds the
+  engine's pure Xero rules (catch-up Phase 37: the sync queue's backoff in `queue.ts`, the void and
+  amendment check in `divergence.ts`); `billing/reconciliation.ts` derives the reconciliation status.
+  `domain/xeroSim/` simulates Xero's own bank reconciliation and remittance add-on: **the engine never
+  imports it** (only `store/xeroSimActions.ts` and the Xero simulator UI may; `xeroSim/scopeFence.test.ts`
+  fails otherwise), because bulk remittance matching stays in Xero (US-10.2.4).
 - **`store/`** — the one Zustand store: the audit-writing `mutate()` wrapper, lifecycle guards,
   Slot and List actions (`slotActions.ts`: assign, move and reassign, availability, session
   times, default times, the horizon, cover markers, and the Draft List internals), the Draft List
@@ -149,6 +176,13 @@ Contract holder) and one surgeon. Draft Lists never reach the mobile, web or PWA
   and invoice description (`procedureTextActions.ts`: `replaceProcedureText`, `setInvoiceDescription`,
   `applyDefaultInvoiceDescription`), patient intake, master-data invariants, the billing run, Xero/payment/payables/archive actions, the
   integration processor, and the live demo clock. Components read and write only through here.
+  Xero mirror resilience (catch-up Phase 37): every engine-to-Xero call goes through `xeroGate.ts` into
+  the durable keyed queue in `xeroQueue.ts` (backoff on the demo clock, no timers);
+  `disbursementDetection.ts` (`recordDisbursement`) is the one writer of a payable leg's disbursement,
+  called when Xero reports a bill paid; `xeroSimActions.ts` is the Xero side (its payables run, a void
+  or amendment made in Xero, the bulk remittance); `billingMonitorView.ts` groups, filters and sorts the
+  Billing monitor (its options live in the URL); `reconciliationSelectors.ts` is the table of checks
+  behind the Admin Day Reconciliation card.
 - **`apps/mobile/`**, **`apps/web/`**, **`apps/admin/`** — the three user-facing apps. Each has the same
   three top-level files: `<App>.tsx` is the app's **layout** route (nav, persona actor, shared
   derivations, transient overlays) and hands them down through `<Outlet context>`; `outlet.ts` types
@@ -156,7 +190,8 @@ Contract holder) and one surgeon. Draft Lists never reach the mobile, web or PWA
   screens' `onBack` / `onOpen…` callbacks to `navigate()`. Screens themselves know nothing about
   routing. Mobile adds `navigation.ts` (the Lists slide-stack depth derived from the URL).
 - **`apps/demo/`** — demo-only surfaces: the control panel (the demo-action index), the Xero +
-  billing-monitor simulator, the integration simulator, and the seed-data inspector.
+  billing-monitor simulator, Future scope: HL7 and FHIR (the integration simulator, its message log and
+  feed mapping, `futureScope/`), and the seed-data inspector.
 - **`shared/`** — cross-app components (the capture suite, `booking/BookingDetailBody`, the
   procedure stack `booking/ProcedureStack`, schedule rows, flows, status chips, the legacy
   `/cards/` link redirect in `legacy/`, `format.ts` for NZ number/currency/date output,

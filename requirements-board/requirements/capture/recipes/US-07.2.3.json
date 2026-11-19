@@ -33,7 +33,7 @@
         },
         {
           "state": "saved",
-          "caption": "The price saved straight onto the Booking, no return to the anaesthetist",
+          "caption": "The price applied and saved with Save changes, no return to the anaesthetist",
           "steps": [
             {
               "click": "[data-shot=office-billing-setup-1] >> role=button[name=\"Change price\"]"
@@ -47,6 +47,12 @@
             },
             {
               "click": "[data-shot=pricing-sheet-save]"
+            },
+            {
+              "click": "[data-shot=booking-save]"
+            },
+            {
+              "wait": "[data-shot=booking-saved-strip]"
             },
             {
               "wait": 700

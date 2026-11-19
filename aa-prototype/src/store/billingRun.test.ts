@@ -171,7 +171,7 @@ describe('the Morrison run (same-counterparty grouping, audit, view effects)', (
     const api = store()
     billMorrison(api)
     handoffListPairs(api, MORRISON_LIST)
-    const rows = payableRowsFor(api.getState(), ANAE.morrison, '2026-07-21')
+    const rows = payableRowsFor(api.getState(), ANAE.morrison)
     const morrison = rows.filter((r) => invoicesForList(api.getState(), MORRISON_LIST).some((i) => i.id === r.invoiceId))
     expect(morrison).toHaveLength(6)
     const acc = morrison.filter((r) => r.accFunded)

@@ -56,6 +56,8 @@ export type ImportBatchId = string
 export type ImportRowId = string
 /** A stub on a List (catch-up Phase 33a; DM-58): `STB0001`, never the NHI or the hospital's ref. */
 export type StubId = string
+/** A rooms' PDF list as received (catch-up Phase 34; DM-61): `PDL0001`. */
+export type PdfListId = string
 
 /**
  * A day's sessions: AM and PM, generated for every active anaesthetist, and
@@ -708,6 +710,19 @@ export interface DraftTrail {
 }
 
 /**
+ * Where a List came from (catch-up Phase 34; US-02.2.4, DM-70): a surgeon's
+ * rooms' PDF with the address it arrived from, the hospital's list, entry by
+ * hand, or a recurring booking. Set when the List is created
+ * (`originForNewList`, `domain/lists/listOrigin.ts`) and kept after
+ * assignment, a return to the office or a re-date. Separate from `DraftTrail`.
+ */
+export type ListOrigin =
+  | { kind: 'pdf'; senderEmail: string; pdfListId?: PdfListId }
+  | { kind: 'hospital'; hospitalId: HospitalId }
+  | { kind: 'manual' }
+  | { kind: 'recurring' }
+
+/**
  * The fields every List has, Draft Lists included. Every List has exactly one
  * hospital (or AA rooms) and one surgeon (US-01.3.1, EP-01; catch-up Phase 31
  * made both required).
@@ -721,6 +736,8 @@ export interface ListBase {
   hospitalId: HospitalId
   surgeonId: SurgeonId
   conflicts: ListConflict[]
+  /** Where the List came from (catch-up Phase 34; US-02.2.4). */
+  origin: ListOrigin
   /** Office clears of a live conflict (catch-up Phase 30); absent reads as none. */
   conflictClears?: ConflictClear[]
   /**
@@ -1303,6 +1320,18 @@ export interface DayNote {
  * source 'system'; 6th review #7) writes one. `entityType` stays a plain
  * string so later phases can audit new entities without reshaping.
  */
+/** A change set's id, `CS####` (catch-up Phase 35; DM-35). */
+export type ChangeSetId = string
+
+/**
+ * What a change set records (catch-up Phase 35; DM-35): an office save, a
+ * Booking created or cancelled, a Booking moved to another List (32a's
+ * single-Booking move included), any change of a List's anaesthetist (the
+ * office's reassignment, a Draft List's assignment, an anaesthetist's own
+ * move), or a hospital row the office applied on the matching screen.
+ */
+export type ChangeSetKind = 'save' | 'create' | 'cancel' | 'move' | 'listReassign' | 'match'
+
 export interface AuditEntry {
   id: string
   entityType: string
@@ -1314,6 +1343,15 @@ export interface AuditEntry {
   before?: unknown
   after?: unknown
   atISO: IsoDateTime
+  /**
+   * The change set this entry belongs to (catch-up Phase 35; DM-35): every
+   * entry of one save (or one create, cancel, move, reassignment or applied
+   * hospital row) shares the id, so the history shows it as one row. A
+   * change set is a group of audit entries, not a collection of its own.
+   */
+  changeSetId?: ChangeSetId
+  /** On the first entry of a change set only: what kind it is. */
+  changeSetKind?: ChangeSetKind
 }
 
 // ---------------------------------------------------------------------------
@@ -1517,12 +1555,6 @@ export interface ProcedureShare {
   amountExGst: number
 }
 
-/** A Xero hand-off fault on a pair (data, not a throw): the pair stands, "Not yet in Xero", and Resolve and retry mirrors it. */
-export interface HandoffFailure {
-  code: string
-  message: string
-}
-
 /**
  * A Booking's ledger pair: a procedure invoice (`procedure`) or a prepayment
  * invoice (`prePayment`, its payable to the AA Holding account until 27a's
@@ -1546,7 +1578,6 @@ export interface BookingLedgerPair {
   receivable: ReceivableLeg
   /** Absent only on a no-charge invoice (catch-up Phase 24: a $0.00 receivable, nothing owed, no BCTI). */
   payable?: PayableLeg
-  handoffFailure?: HandoffFailure
   /** The archived account's ACC marker (seeded history only; catch-up Phase 18a). */
   archivedAccRelated?: true
 }
@@ -1559,7 +1590,6 @@ export interface AaFeeLedgerPair {
   anaesthetistId: AnaesthetistId
   createdAtISO: IsoDateTime
   receivable: ReceivableLeg
-  handoffFailure?: HandoffFailure
 }
 
 /** A ledger pair: every consumer says which kinds it reads. */
@@ -1567,8 +1597,8 @@ export type LedgerPair = BookingLedgerPair | AaFeeLedgerPair
 
 /**
  * Money in (Phase 10's billing receipt, a ledger entry since catch-up Phase 36). Append-only: the
- * GST-report source (each carries its GST component) and the payment
- * idempotency key-set. An AA fee payment is money in to AA, never the
+ * payment idempotency key-set, Collected and the Payments tab. It carries its GST component, but
+ * the GST report reads the disbursements, never receipts (catch-up Phase 38: cash basis, RV-33). An AA fee payment is money in to AA, never the
  * anaesthetist's income: `pairKind` says so, and it carries no anaesthetist.
  */
 export interface LedgerReceipt {
@@ -1593,9 +1623,14 @@ export interface LedgerDisbursement {
   anaesthetistId: AnaesthetistId
   amount: number
   atISO: IsoDateTime
+  /** The Xero payables run that paid it. */
   payablesRunId: string
-  /** The Xero disbursement mirroring it. */
+  /** The Xero bill payment it records (catch-up Phase 37: set on every detected entry). */
   xeroDisbursementId?: string
+  /** The Xero bill payment's key (`BILLPAY-`): the key-set that makes detection idempotent, as receipts are for payments. */
+  idempotencyKey: string
+  /** How the engine learned of the bill payment: Xero's bill-paid webhook or the reconciliation poll. */
+  detectedBy: 'webhook' | 'poll'
 }
 
 /**
@@ -1671,6 +1706,10 @@ export interface XeroAccRec {
   /** Set once, by the payment that completes it (the BCTI count reads it). */
   paidAtISO?: IsoDateTime
   status: 'awaitingPayment' | 'paid' | 'voided'
+  /** When AA staff voided it directly in Xero (catch-up Phase 37): invisible to the engine until the poll. */
+  voidedAtISO?: IsoDateTime
+  /** When AA staff edited its total directly in Xero (catch-up Phase 37); the engine keeps the issued total on its receivable leg. */
+  amendedAtISO?: IsoDateTime
 }
 
 export interface XeroAccPay {
@@ -1827,6 +1866,75 @@ export interface Disbursement {
   amount: number
   atISO: IsoDateTime
   payablesRunId: string
+  /** The bill payment's key (`BILLPAY-<id>`, catch-up Phase 37): the engine records it once, by webhook or poll. */
+  idempotencyKey: string
+}
+
+/**
+ * The Billing Engine's durable Xero sync queue (catch-up Phase 37; EP-09's
+ * resilience brief): every engine-to-Xero call that could not complete waits
+ * here with its attempt count and an exponential-backoff next attempt on the
+ * demo clock, and is retried until Xero answers. Keyed, so a retry never
+ * duplicates. Engine-side (`billing.xeroQueue`); sent items stay as history.
+ */
+export interface XeroQueueItem {
+  /** `XQ####`. */
+  id: string
+  kind: 'handoff' | 'journal' | 'paymentSync' | 'disbursementSync' | 'poll'
+  /** `HANDOFF-<pairId>`, `JOURNAL-<transferId>`, the payment's own key, the bill payment's key, `POLL-<dateISO>`. */
+  idempotencyKey: string
+  target: { pairId?: string; transferId?: string; accRecId?: string; accPayId?: string; xeroPaymentId?: string; xeroDisbursementId?: string }
+  enqueuedAtISO: IsoDateTime
+  /** Attempts made, the first (failed) call included. */
+  attempts: number
+  nextAttemptAtISO: IsoDateTime
+  lastError?: string
+  status: 'waiting' | 'alerted' | 'sent'
+  sentAtISO?: IsoDateTime
+}
+
+/**
+ * A mismatch the reconciliation poll found between what the engine issued and
+ * what Xero now shows (catch-up Phase 37; EP-09, US-09.2.2): an invoice voided
+ * or amended directly in Xero. The ledger keeps the issued amount; the
+ * office's resolution is recorded (provisional: the policy is AA's to agree)
+ * and moves no money.
+ */
+export interface XeroDivergence {
+  /** `XD####`. */
+  id: string
+  kind: 'voidedInXero' | 'amendedInXero'
+  accRecId: string
+  pairId: string
+  invoiceId: InvoiceId
+  /** What Xero shows, with when AA staff changed it there. */
+  xeroShows: { status: XeroAccRec['status']; total: number; changedAtISO?: IsoDateTime }
+  engineHolds: { amount: number; outstanding: number }
+  detectedAtISO: IsoDateTime
+  status: 'open' | 'resolved'
+  resolution?: { outcome: 'reissueInXero' | 'creditInEngine' | 'noAction'; note: string; who: string; atISO: IsoDateTime }
+}
+
+/** A remittance advice a payer sent with one bulk deposit (catch-up Phase 37; US-10.2.4). Xero side only. */
+export interface XeroRemittance {
+  /** `RMT####`. */
+  id: string
+  payerContactId: string
+  receivedAtISO: IsoDateTime
+  reference: string
+  lineIds: string[]
+}
+
+/** One line of a bulk deposit in Xero's bank reconciliation (catch-up Phase 37). Xero side only: an unmatched line never reaches the engine. */
+export interface XeroBankLine {
+  /** `BKL####`. */
+  id: string
+  remittanceId: string
+  quotedReference: string
+  amount: number
+  status: 'matchedByAddOn' | 'unmatched' | 'matchedByOffice'
+  accRecId?: string
+  paymentInId?: string
 }
 
 /**
@@ -1861,10 +1969,8 @@ export interface LedgerTransfer {
    * equals the payable it replaces, released exactly as the payer pays.
    */
   in: PayableLeg
-  /** The simulated Xero manual journal mirroring it (`postTransferJournal`); absent until posted. */
+  /** The simulated Xero manual journal mirroring it (`postTransferJournal`); absent until posted. A failed post waits in the Xero sync queue (catch-up Phase 37). */
   xeroJournalId?: string
-  /** A Xero posting fault (data, not a throw); the Billing monitor's Resolve and retry posts it once. */
-  journalFailure?: HandoffFailure
 }
 
 /** One line of a simulated Xero manual journal. */
@@ -1951,9 +2057,10 @@ export interface IntegrationMessage {
  * How a row arrived (DM-34): `download` is a hospital's file imported through
  * an integration (app copy says "import", US-02.1.1; no sync, D52),
  * `manualSheet` a daily sheet the office keys, `feedMessage` the Future-scope
- * HL7/FHIR simulator's message.
+ * HL7/FHIR simulator's message, `pdfList` a surgeon's rooms' PDF list sent to
+ * matching (catch-up Phase 34; source `rooms`).
  */
-export type ImportChannel = 'download' | 'manualSheet' | 'feedMessage'
+export type ImportChannel = 'download' | 'manualSheet' | 'feedMessage' | 'pdfList'
 
 /**
  * Whose text and booking the row is (OQ-108 answered, D51): the hospital's,
@@ -2052,6 +2159,72 @@ export interface ImportBatch {
   rowIds: ImportRowId[]
   /** Rows already imported with identical fields, skipped. */
   skippedCount: number
+  /** Channel `pdfList` only (catch-up Phase 34): the PDF list it came from and the address it arrived from. */
+  pdfListId?: PdfListId
+  senderEmail?: string
+}
+
+// ---------------------------------------------------------------------------
+// The rooms' PDF lists (catch-up Phase 34; FT-02.2, US-02.2.1, DM-61)
+// ---------------------------------------------------------------------------
+
+/** The fields of a PDF list row the office may correct before sending (never the wording, US-02.5.7). */
+export type PdfRowField = 'nhi' | 'name' | 'dobISO' | 'scheduledTime' | 'ethnicityCode'
+
+/** One row as read from the PDF (the reading is simulated: no OCR). */
+export interface PdfRowAsRead {
+  nhi?: string
+  name: string
+  dobISO?: IsoDate
+  scheduledTime?: WallTime
+  ethnicityCode?: string
+  /** The rooms' wording, exactly as printed; never corrected. */
+  procedureText: string
+}
+
+export interface PdfRowCorrection {
+  field: PdfRowField
+  from: string
+  to: string
+  atISO: IsoDateTime
+  by: string
+}
+
+export interface PdfListRow {
+  id: string
+  asRead: PdfRowAsRead
+  /** In the order made; the latest per field wins (`effectivePdfRow`). */
+  corrections: PdfRowCorrection[]
+}
+
+/**
+ * A surgeon's rooms' PDF list as the office received it (DM-61): the file, the
+ * sending surgeon, the address it arrived from, when, the List it suggests,
+ * its status and the rows as read with each correction. Sent to matching, its
+ * rows become import rows with the rooms as their source. No room record (17b).
+ */
+export interface SurgeonPdfList {
+  id: PdfListId
+  /** The sample it was uploaded from (the reading is simulated). */
+  sampleId: string
+  file: { name: string; facsimile: string }
+  surgeonId: SurgeonId
+  /** The email address the PDF arrived from, entered with the upload (US-02.2.4). */
+  senderEmail: string
+  hospitalId: HospitalId
+  subject: string
+  receivedAtISO: IsoDateTime
+  receivedBy: string
+  /** The List it suggests: whose session, which day, which session. */
+  target: { anaesthetistId: AnaesthetistId; dateISO: IsoDate; session: Session }
+  status: 'received' | 'sent'
+  /** An earlier sent list for the same surgeon, hospital, date and session (our reading, DM-61). */
+  replacesId?: PdfListId
+  /** Set on send: the import batch its rows went to (absent when every row was unchanged). */
+  batchId?: ImportBatchId
+  sentAtISO?: IsoDateTime
+  sentBy?: string
+  rows: PdfListRow[]
 }
 
 /** Why an incoming booking could not become a Booking. A union so another cause is one member more. */
@@ -2113,11 +2286,13 @@ export interface XeroVolumeStory {
 export interface DemoSettings {
   contactArchiveInactivityDays: number
   /**
-   * When set, the NEXT Xero handoff records a `handoffFailure` and creates no
-   * pair, then clears this flag (Phase 10 demo control; D-handoff). Badged
-   * demo-only trigger.
+   * When set, the NEXT engine-to-Xero call fails once and waits in the Xero
+   * sync queue, which retries it after its backoff (Phase 10's demo control,
+   * re-based in catch-up Phase 37), then this flag clears. Badged demo-only.
    */
   failNextHandoff?: boolean
+  /** Xero's API is unavailable to the engine (catch-up Phase 37's simulated outage): every call queues. */
+  xeroOutage?: { sinceISO: IsoDateTime }
   /**
    * The Booking the armed hand-off fault waits for (catch-up Phase 25's staged
    * billing failure, a built default): absent, the next hand-off faults.
@@ -2126,4 +2301,33 @@ export interface DemoSettings {
   failHandoffBookingId?: string
   /** Seeded aggregate contact-volume counters for the Xero-sim callout. */
   volumeStory: XeroVolumeStory
+}
+
+// ---------------------------------------------------------------------------
+// Update email templates (catch-up Phase 35; US-02.3.4, DM-35)
+// ---------------------------------------------------------------------------
+
+/**
+ * The kind of change an update email is about: fixed ids, the catalogue's
+ * three examples plus a general change. The history picks the default kind
+ * (`defaultKindFor`); `correction` is only ever the admin's choice.
+ */
+export type UpdateEmailKind = 'anaesthetistChange' | 'cancellation' | 'correction' | 'bookingChange'
+
+/** Who an update email goes to by default: the surgeon's office, the hospital, or both. */
+export type UpdateEmailRecipient = 'office' | 'hospital' | 'both'
+
+/**
+ * One update email template (`masters.emailTemplates`, id `ET###`): plain
+ * text with placeholders (`{patient}`, `{changes}`, ...; `domain/updateEmail.ts`
+ * lists them). Each kind always keeps at least one active template.
+ */
+export interface EmailTemplate {
+  id: string
+  name: string
+  kind: UpdateEmailKind
+  recipient: UpdateEmailRecipient
+  subject: string
+  body: string
+  active: boolean
 }

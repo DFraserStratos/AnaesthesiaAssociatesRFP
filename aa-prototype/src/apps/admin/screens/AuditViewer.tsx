@@ -2,6 +2,7 @@ import { contractLabel } from '../../../shared/contracts'
 import { useMemo, useState } from 'react'
 import { accent, neutral } from '../../../theme/tokens'
 import { useAppStore } from '../../../store'
+import { TextAction } from '../../../shared/ui'
 import {
   actionLabel,
   auditFieldChanges,
@@ -44,7 +45,7 @@ export function AuditViewer() {
   const specialties = useAppStore((s) => s.masters.specialties)
   const fundingTags = useAppStore((s) => s.masters.fundingTags)
   const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
-  const names = useMemo(() => auditNamesFor({ rvgGroups }), [rvgGroups])
+  const names = useMemo(() => auditNamesFor({ rvgGroups, contracts }), [rvgGroups, contracts])
   const [entityType, setEntityType] = useState('all')
 
   // A Contract reads by its AA code and name, a Party by its name (catch-up Phase 18).
@@ -64,11 +65,14 @@ export function AuditViewer() {
   const [source, setSource] = useState('all')
   const [fromISO, setFromISO] = useState('')
   const [toISO, setToISO] = useState('')
+  // One change set at a time (catch-up Phase 35): set by clicking its id in the Change set column.
+  const [changeSetId, setChangeSetId] = useState<string | null>(null)
 
   const entityTypes = useMemo(() => ['all', ...Array.from(new Set(audit.map((a) => a.entityType))).sort()], [audit])
 
   const filtered = useMemo(() => {
     const rows = audit.filter((a) => {
+      if (changeSetId !== null) return a.changeSetId === changeSetId
       if (entityType !== 'all' && a.entityType !== entityType) return false
       if (source !== 'all' && a.source !== source) return false
       const date = a.atISO.slice(0, 10)
@@ -79,7 +83,7 @@ export function AuditViewer() {
     // Sorted on `atISO` (id as the tiebreak), not insertion order — the same
     // shared sort the Booking history sheet uses, so the two agree (finding 01.3).
     return sortAuditNewestFirst(rows)
-  }, [audit, entityType, source, fromISO, toISO])
+  }, [audit, entityType, source, fromISO, toISO, changeSetId])
 
   const shown = filtered.slice(0, CAP)
 
@@ -101,12 +105,20 @@ export function AuditViewer() {
         <FilterDateInput label="From" value={fromISO} onChange={setFromISO} />
         <FilterDateInput label="To" value={toISO} onChange={setToISO} />
         <span style={{ fontSize: 12.5, color: neutral.mist, paddingBottom: 9 }}>{filtered.length} entries</span>
+        {changeSetId !== null && (
+          <span data-shot="audit-change-set-filter" style={{ fontSize: 12.5, color: neutral.slate, paddingBottom: 9 }}>
+            Change set <span className="mono">{changeSetId}</span> ·{' '}
+            <TextAction size="sm" flush onClick={() => setChangeSetId(null)}>
+              Show all
+            </TextAction>
+          </span>
+        )}
       </div>
 
       <TableShell label="Audit" density="dense" minWidth={900}>
           <thead>
             <tr>
-              {['At', 'Action', 'Who', 'Role · source', 'Entity', 'Change'].map((h) => (
+              {['At', 'Action', 'Who', 'Role · source', 'Entity', 'Change set', 'Change'].map((h) => (
                 <Th key={h}>{h}</Th>
               ))}
             </tr>
@@ -114,7 +126,7 @@ export function AuditViewer() {
           <tbody>
             {shown.length === 0 && (
               <tr>
-                <Td colSpan={6}>No matching audit entries.</Td>
+                <Td colSpan={7}>No matching audit entries.</Td>
               </tr>
             )}
             {shown.map((entry) => {
@@ -131,6 +143,13 @@ export function AuditViewer() {
                   <Td>
                     <div style={{ fontSize: 12 }}>{entry.entityType}</div>
                     <div className="mono" style={{ fontSize: 11, color: neutral.mist }}>{entityName(entry.entityType, entry.entityId)}</div>
+                  </Td>
+                  <Td mono nowrap>
+                    {entry.changeSetId !== undefined && (
+                      <TextAction size="sm" flush shot="audit-change-set" onClick={() => setChangeSetId(entry.changeSetId!)}>
+                        {entry.changeSetId}
+                      </TextAction>
+                    )}
                   </Td>
                   <Td mono style={{ fontSize: 11.5, maxWidth: 300, color: neutral.slate }}>{change}</Td>
                 </tr>

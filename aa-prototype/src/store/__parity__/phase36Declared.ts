@@ -39,17 +39,19 @@ function strip(value: Json): Json {
   const out: Record<string, Json> = {}
   for (const [k, v] of Object.entries(obj)) out[k] = strip(v)
 
-  // An anaesthetist's views: the row and its share of the aging.
-  if (Array.isArray(out.rows) && out.aging !== undefined && typeof out.aging === 'object') {
+  // An anaesthetist's views: the row (and, on a baseline, its share of the aging).
+  if (Array.isArray(out.rows) && Array.isArray(out.history)) {
     const rows = out.rows as { invoiceNumber?: string; outstanding?: number; bucket?: string }[]
     const declared = rows.find((r) => r.invoiceNumber === DECLARED_36.invoiceNumber)
     if (declared !== undefined) {
       out.rows = rows.filter((r) => r !== declared)
-      const aging = { ...(out.aging as Record<string, number>) }
-      const bucket = declared.bucket ?? 'current'
-      aging[bucket] = centsSub(aging[bucket] ?? 0, declared.outstanding ?? 0)
-      aging.total = centsSub(aging.total ?? 0, declared.outstanding ?? 0)
-      out.aging = aging
+      if (out.aging !== undefined && typeof out.aging === 'object') {
+        const aging = { ...(out.aging as Record<string, number>) }
+        const bucket = declared.bucket ?? 'current'
+        aging[bucket] = centsSub(aging[bucket] ?? 0, declared.outstanding ?? 0)
+        aging.total = centsSub(aging.total ?? 0, declared.outstanding ?? 0)
+        out.aging = aging
+      }
     }
   }
   // The BCTI records and the by-issue count.
@@ -61,6 +63,33 @@ function strip(value: Json): Json {
       const month = counts[DECLARED_36.anaesthetistId]?.[DECLARED_36.issuedMonth]
       if (month !== undefined) month.byIssue -= 1
     }
+  }
+  return out
+}
+
+/**
+ * Catch-up Phase 38's retirement (D8, RV-33): the ageing buckets, the receipts-based GST activity and
+ * the fee flow's GST snapshot are gone from the app, so the baseline is read without them. Every
+ * ledger figure the capture still takes (rows, history, payables, BCTIs, flows) is compared unchanged.
+ */
+export function withoutRetired38<T>(value: T): T {
+  return retire(value) as T
+}
+
+function retire(value: Json): Json {
+  if (Array.isArray(value)) return value.map(retire)
+  if (value === null || typeof value !== 'object') return value
+  const obj = value as Record<string, Json>
+  const views = Array.isArray(obj.rows) && Array.isArray(obj.history)
+  const out: Record<string, Json> = {}
+  for (const [k, v] of Object.entries(obj)) {
+    if (k === 'souterGst') continue
+    if (views && (k === 'aging' || k === 'gst')) continue
+    if (views && k === 'rows') {
+      out[k] = (v as Record<string, Json>[]).map(({ bucket: _b, ...row }) => retire(row))
+      continue
+    }
+    out[k] = retire(v)
   }
   return out
 }

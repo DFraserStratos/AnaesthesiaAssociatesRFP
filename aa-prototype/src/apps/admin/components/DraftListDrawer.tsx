@@ -42,6 +42,8 @@ import { withStubsInTimeOrder } from '../../../domain/intake/stubs'
 import { useListStubs } from '../../../store/stubSelectors'
 import { StubRow } from '../../../shared/stubs'
 import { StubResolveLink } from './StubResolveLink'
+import { ListOriginRow } from './ListOriginRow'
+import { useListUpdateEmail } from '../flows/UpdateEmailActions'
 
 type Sheet = 'none' | 'assign' | 'edit' | 'redate' | 'remove' | 'history' | 'addBooking' | { move: string } | { assignTo: string }
 
@@ -92,6 +94,8 @@ function DraftBody({
   const active = bookings.filter((b) => b.cancellation === undefined)
   // Stubs for rows waiting at intake (catch-up Phase 33a): drawn among the Bookings, never counted.
   const stubs = useListStubs(list.id)
+  // A Draft List that had an anaesthetist before: its earlier change of anaesthetist can still be emailed (catch-up Phase 35).
+  const updateEmail = useListUpdateEmail(list.id, actor, DRAWER_ACTION)
   // One suggestion key per opening of the drawer, shared with the assign sheet,
   // so the short list is the first five of the order "See everyone" shows.
   const requestKey = useSuggestionKey(list.id, true)
@@ -140,6 +144,7 @@ function DraftBody({
           <Button variant="secondary" size="compact" style={DRAWER_ACTION} onClick={() => setSheet('redate')}>Change date</Button>
           <Button variant="secondary" size="compact" style={DRAWER_ACTION} disabled={active.length > 0} {...(active.length > 0 ? { title: removeBlockedReason(active.length), disabledReason: removeBlockedReason(active.length) } : {})} onClick={() => setSheet('remove')}>Remove</Button>
           <Button variant="secondary" size="compact" style={DRAWER_ACTION} onClick={() => setSheet('history')}>History</Button>
+          {updateEmail.button}
           </>
         }
       >
@@ -156,6 +161,7 @@ function DraftBody({
               <DefRow label="Surgeon">{masters.surgeons[list.surgeonId]?.name ?? list.surgeonId}</DefRow>
               <DefRow label="Kind">{LIST_KIND_LABELS[list.kind].label}</DefRow>
               {list.notes !== undefined && list.notes.trim() !== '' && <DefRow label="Note">{list.notes}</DefRow>}
+              <ListOriginRow list={list} />
               {trail !== undefined && (
                 <DefRow label="Came from">
                   {trail.origin === 'request' && trail.source !== undefined ? `${ORIGIN_LABELS.request} · ${SOURCE_LABELS[trail.source]}` : ORIGIN_LABELS[trail.origin]}
@@ -250,6 +256,7 @@ function DraftBody({
       <RedateDraftListSheet open={sheet === 'redate'} listId={list.id} actor={actor} onClose={() => setSheet('none')} onDone={() => setSheet('none')} />
       <RemoveDraftListSheet open={sheet === 'remove'} listId={list.id} actor={actor} onClose={() => setSheet('none')} onDone={() => { setSheet('none'); onClose() }} />
       <HistorySheet open={sheet === 'history'} entityIds={[list.id]} title={`${DRAFT_LIST} history`} onClose={() => setSheet('none')} />
+      {updateEmail.composer}
       <AddBookingFlow open={sheet === 'addBooking'} listId={list.id} actor={actor} onClose={() => setSheet('none')} onCreated={() => setSheet('none')} />
       {typeof sheet === 'object' && 'move' in sheet && (
         <MoveBookingFlow open bookingId={sheet.move} actor={actor} onClose={() => setSheet('none')} onMoved={() => setSheet('none')} />

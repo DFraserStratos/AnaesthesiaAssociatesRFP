@@ -1,3 +1,4 @@
+import { useBookingStore } from '../booking/draft'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Check } from 'lucide-react'
 import { accent, neutral, radius } from '../../theme/tokens'
@@ -11,7 +12,7 @@ import {
   type RailContext,
 } from '../../domain/billing/contractRail'
 import { isRvgKind } from '../../domain/billing/contracts'
-import { railMastersOf, useAppStore } from '../../store'
+import { railMastersOf } from '../../store'
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { NameSearchBox } from '../ui/NameSearchBox'
@@ -75,7 +76,7 @@ const STEP_TITLE: Record<Step, string> = { 1: 'Invoice to', 2: 'Payment type', 3
 
 export function ContractRail({ open, actor, context, start, currentContractId, currentEnteredPrice, onDone, onLeave, onClose }: ContractRailProps) {
   const { Overlay, variant } = useSurface()
-  const masters = useAppStore((s) => s.masters)
+  const masters = useBookingStore((s) => s.masters)
   const [given, setGiven] = useState<RailAnswers | undefined>(start)
   const [editing, setEditing] = useState<Step | null>(null)
   const [query, setQuery] = useState('')

@@ -173,7 +173,7 @@ describe('each path raises once and resolves the right conflict', () => {
     expect(result.conflictsRaised.length).toBeGreaterThan(0)
     const before = api.getState().audit.length
     const none = mutate(api, OFFICE, { entityType: 'list', entityId: SEED_LIST_IDS.souterAm21, action: 'list.phoneNote', stampBookingId: null }, () => ({}))
-    expect(none).toEqual({ conflictsRaised: [], conflictsResolved: [] })
+    expect(none).toEqual({ conflictsRaised: [], conflictsResolved: [], changeSetId: null })
     expect(api.getState().audit.length).toBe(before + 1)
   })
 

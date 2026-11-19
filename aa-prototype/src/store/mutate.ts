@@ -14,7 +14,7 @@
  * the matching screen can show a refused decision's reason and change nothing.
  */
 
-import type { ActorRole, AuditEntry, AuditSource, BookingId } from '../domain/types'
+import type { ActorRole, AuditEntry, AuditSource, BookingId, ChangeSetId, ChangeSetKind } from '../domain/types'
 import { buildSeed, buildSeedBillingSlice, SEED_AUTHORISED_INVOICED_BOOKING_IDS, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
 import { seededIntakeSlice, seededIntegrationsSlice, type AppState, type AppStoreApi } from './appStore'
@@ -126,6 +126,8 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   importRow: { prefix: 'IR', pad: 4 },
   // Stubs on Lists for rows waiting at intake (catch-up Phase 33a; DM-58), never the NHI.
   stub: { prefix: 'STB', pad: 4 },
+  // The rooms' PDF lists as received (catch-up Phase 34; DM-61).
+  pdfList: { prefix: 'PDL', pad: 4 },
   // Prepayment transfers from the AA Holding account and their Xero manual journals (catch-up Phase 27a).
   prepayTransfer: { prefix: 'PXT', pad: 4 },
   xeroJournal: { prefix: 'XJ', pad: 4 },
@@ -134,6 +136,15 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   billingException: { prefix: 'BX', pad: 4 },
   unmatchedReceipt: { prefix: 'UR', pad: 4 },
   ledgerDisbursement: { prefix: 'LD', pad: 4 },
+  // A save's (or create's, cancel's, move's, reassignment's, applied row's) change set (catch-up Phase 35; DM-35).
+  changeSet: { prefix: 'CS', pad: 4 },
+  // The update email templates the office adds (catch-up Phase 35; US-02.3.4): seeded ET001 to ET004.
+  emailTemplate: { prefix: 'ET', pad: 3 },
+  // Xero mirror resilience (catch-up Phase 37): the sync queue, divergence flags, and the Xero side's remittances and bank lines.
+  xeroQueueItem: { prefix: 'XQ', pad: 4 },
+  xeroDivergence: { prefix: 'XD', pad: 4 },
+  remittance: { prefix: 'RMT', pad: 4 },
+  bankLine: { prefix: 'BKL', pad: 4 },
 }
 
 /** Allocate the next deterministic id of a kind from the counters record. */
@@ -207,12 +218,64 @@ function deriveStampBookingId(meta: MutationMeta, schedule: AppState['schedule']
  * `list.conflictResolved` metas to the same commit; the result says which
  * Lists gained or lost a conflict, so actions can report counts.
  */
+/**
+ * `mutate`'s options (catch-up Phase 35): `changeSet` groups every entry of
+ * the call under one fresh `CS####` id and records its kind on the first.
+ */
+export interface MutateOptions {
+  changeSet?: ChangeSetKind
+}
+
+/** What `mutate` returns: the conflict result, and the change set it allocated (null without one). */
+export interface MutateResult extends MutationResult {
+  changeSetId: ChangeSetId | null
+}
+
+/** The audit's own fields a recipe never reports as a change (catch-up Phase 35). */
+const STAMP_FIELDS = ['lastModifiedBy', 'lastModifiedAtISO'] as const
+
+/** Strip the Booking stamps from an audit `before` or `after` object (they are never a change). */
+function withoutStamps(value: unknown): unknown {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return value
+  if (!STAMP_FIELDS.some((k) => k in (value as Record<string, unknown>))) return value
+  const out = { ...(value as Record<string, unknown>) }
+  for (const k of STAMP_FIELDS) delete out[k]
+  return out
+}
+
+/** The change set every `mutate` on one store joins while `withChangeSet` runs (catch-up Phase 35). */
+interface ActiveChangeSet {
+  api: AppStoreApi
+  kind: ChangeSetKind
+  id: ChangeSetId | null
+}
+let activeChangeSet: ActiveChangeSet | null = null
+
+/**
+ * Run an action whose writes form ONE change set (catch-up Phase 35; DM-35):
+ * every `mutate` on `api` inside `run` stamps the same `CS####` id, allocated
+ * at the first write (none when nothing is written), and the first entry
+ * records `kind`. Used for actions that write in several commits (a create,
+ * a cancel, a move, a reassignment, an applied hospital row). A nested call
+ * joins the outer change set. Synchronous only.
+ */
+export function withChangeSet<T>(api: AppStoreApi, kind: ChangeSetKind, run: () => T): T {
+  if (activeChangeSet !== null) return run()
+  activeChangeSet = { api, kind, id: null }
+  try {
+    return run()
+  } finally {
+    activeChangeSet = null
+  }
+}
+
 export function mutate(
   api: AppStoreApi,
   actor: Actor,
   metas: MutationMeta | readonly MutationMeta[],
   recipe: (state: AppState) => DomainPatch,
-): MutationResult {
+  options?: MutateOptions,
+): MutateResult {
   const state = api.getState()
   const recipePatch = recipe(state)
   const atISO = clockISO(state.clock)
@@ -229,6 +292,18 @@ export function mutate(
   const metaList = reconciled.metas.length === 0 ? recipeMetas : [...recipeMetas, ...reconciled.metas]
 
   let counters = patch.counters ?? state.counters
+  let changeSetId: ChangeSetId | null = null
+  let changeSetKind: ChangeSetKind | null = null
+  const scope = activeChangeSet !== null && activeChangeSet.api === api ? activeChangeSet : null
+  if (scope !== null && scope.id !== null) {
+    changeSetId = scope.id
+  } else if (options?.changeSet !== undefined || scope !== null) {
+    const allocated = allocateId(counters, 'changeSet')
+    counters = allocated.counters
+    changeSetId = allocated.id
+    changeSetKind = scope?.kind ?? options!.changeSet!
+    if (scope !== null) scope.id = allocated.id
+  }
   const entries: AuditEntry[] = []
   for (const meta of metaList) {
     const allocated = allocateId(counters, 'audit')
@@ -243,8 +318,12 @@ export function mutate(
       action: meta.action,
       atISO,
     }
-    if (meta.before !== undefined) entry.before = meta.before
-    if (meta.after !== undefined) entry.after = meta.after
+    if (meta.before !== undefined) entry.before = withoutStamps(meta.before)
+    if (meta.after !== undefined) entry.after = withoutStamps(meta.after)
+    if (changeSetId !== null) {
+      entry.changeSetId = changeSetId
+      if (entries.length === 0 && changeSetKind !== null) entry.changeSetKind = changeSetKind
+    }
     entries.push(entry)
   }
 
@@ -270,7 +349,7 @@ export function mutate(
     counters,
     audit: [...state.audit, ...entries],
   })
-  return reconciled.result
+  return { ...reconciled.result, changeSetId }
 }
 
 /**
@@ -304,12 +383,41 @@ export function transaction<T>(api: AppStoreApi, run: () => Outcome<T>): Outcome
 }
 
 /**
+ * Copy the real store's state into a Booking draft's private store (catch-up
+ * Phase 35): a wholesale replace by reference, not an audited mutation,
+ * because nothing is written to the real store. The draft keeps its own
+ * functions. Lives here because mutate.ts is the one permitted raw writer.
+ */
+export function copyStateIntoDraft(draft: AppStoreApi, source: AppState): void {
+  const out: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(source)) if (typeof v !== 'function') out[k] = v
+  draft.setState(out as Partial<AppState>)
+}
+
+/**
  * Restore the pristine seed (the demo Reset). Domain slices, clock and the
  * empty Phase 08 to 11 scaffolds reset; the shell slice is preserved. Lives
  * here because mutate.ts is the one permitted raw writer of domain slices —
  * a reset is a wholesale replace, not an audited mutation.
  */
+const resetListeners = new Set<(api: AppStoreApi) => void>()
+
+/**
+ * Hear each demo Reset (catch-up Phase 35): a Booking draft discards itself,
+ * even when the reset store is identical to the one it copied. Returns the
+ * unsubscribe function.
+ */
+export function onDomainReset(listener: (api: AppStoreApi) => void): () => void {
+  resetListeners.add(listener)
+  return () => resetListeners.delete(listener)
+}
+
 export function resetDomainState(api: AppStoreApi): void {
+  resetDomainStateOnly(api)
+  for (const listener of resetListeners) listener(api)
+}
+
+function resetDomainStateOnly(api: AppStoreApi): void {
   const seed = buildSeed()
   // Restore the seeded PAID pre-payment slice through the same seam as
   // freshAppState (Phase 09), with the counters it bumped.
@@ -337,6 +445,9 @@ export function resetDomainState(api: AppStoreApi): void {
       aaFeeInvoices: seedBilling.aaFeeInvoices,
       locks: {},
       transfers: {},
+      // The seed ships no queue and no flags; settings come from the seed, so the outage clears (catch-up Phase 37).
+      xeroQueue: {},
+      xeroDivergences: {},
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),

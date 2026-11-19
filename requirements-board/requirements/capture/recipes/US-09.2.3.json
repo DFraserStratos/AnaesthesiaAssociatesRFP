@@ -59,6 +59,62 @@
           "wait": 800
         }
       ]
+    },
+    {
+      "name": "restore-no-duplicate",
+      "app": "admin",
+      "caption": "A payment that landed during a Xero outage syncs once when Xero is restored: one receipt, no double effect",
+      "start": "/admin/billing",
+      "setup": [
+        {
+          "goto": "/admin/invoices"
+        },
+        {
+          "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
+        },
+        {
+          "click": "[data-shot=awaiting-approval-row][data-booking-id=BK0034] [data-shot=approve-and-send]"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "goto": "/demo/xero/invoices/XR0001"
+        },
+        {
+          "trigger": "xero-outage-start"
+        },
+        {
+          "trigger": "payment-full"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "trigger": "xero-outage-restore"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "goto": "/admin/billing"
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=billing-xero-sent-toggle]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-xero-queue]"
+          ]
+        }
+      ]
     }
   ]
 }

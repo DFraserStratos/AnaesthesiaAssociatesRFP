@@ -79,6 +79,18 @@ describe('ConfirmSheet', () => {
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Keep it' }))
   })
 
+  it('opens on the primary when the primary is the safe choice (initialFocus confirm), web and phone', () => {
+    for (const variant of ['web', 'mobile'] as const) {
+      const { unmount } = render(
+        <SurfaceProvider variant={variant}>
+          <ConfirmSheet open initialFocus="confirm" onClose={() => {}} title="Leave without saving?" confirmLabel="Keep editing" cancelLabel="Discard and leave" onConfirm={() => {}} />
+        </SurfaceProvider>,
+      )
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Keep editing' }))
+      unmount()
+    }
+  })
+
   it('runs the primary once on a double click, even when the run re-renders the sheet', () => {
     const attempts = vi.fn()
     function Rerendering() {

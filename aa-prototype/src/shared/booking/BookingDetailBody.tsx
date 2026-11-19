@@ -25,7 +25,7 @@ import {
   useToday,
   type Actor,
 } from '../../store'
-import { Button, DefList, DefRow } from '../ui'
+import { Button, DefList, DefRow, TextArea, TextField } from '../ui'
 import { Notice } from '../ui/Notice'
 import { ResultLine } from '../ui/ResultLine'
 import { useSurface, type BookingTotalLine } from '../surface'
@@ -52,6 +52,8 @@ import { PrepaymentPanel, type PrepaymentOfficeLinks } from './PrepaymentPanel'
 import { FunderDetailsView } from './FunderDetailsView'
 import { startForAddedProcedure } from '../../domain/billing/contractRail'
 import { HistorySheet } from './HistorySheet'
+import { OfficeSavedNotice } from './OfficeSavedNotice'
+import { useBookingApi, useBookingStore, useBookingStoreMode, useCommandBlock } from './draft'
 
 interface BookingDetailBodyProps {
   bookingId: string
@@ -77,6 +79,9 @@ type SheetState =
   | 'funder'
   | { kind: 'removeProcedure'; procedureId: string; displayNumber: number }
   | { kind: 'makePrimary'; procedureId: string }
+
+/** A whole 24-hour time, as the draft's time field takes it. */
+const TIME_24H = /^([01]\d|2[0-3]):[0-5]\d$/
 
 function shiftTime(time: string, deltaMin: number): string {
   const base = time === '' ? 8 * 60 : Number(time.slice(0, 2)) * 60 + Number(time.slice(3))
@@ -128,19 +133,24 @@ function EditLink({ onClick, label = 'Edit', ariaLabel }: { onClick: () => void;
  */
 export function BookingDetailBody({ bookingId, actor, onBack, header, officeLinks }: BookingDetailBodyProps) {
   const { BookingLayout, BookingTotal } = useSurface()
-  const booking = useAppStore((s) => s.schedule.bookings[bookingId])
-  const listsRecord = useAppStore((s) => s.schedule.lists)
-  const proceduresRecord = useAppStore((s) => s.schedule.procedures)
-  const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
+  const booking = useBookingStore((s) => s.schedule.bookings[bookingId])
+  const listsRecord = useBookingStore((s) => s.schedule.lists)
+  const proceduresRecord = useBookingStore((s) => s.schedule.procedures)
+  const billingLinesRecord = useBookingStore((s) => s.schedule.billingLines)
   // The price ladder's held amounts (catch-up Phase 24) read the invoices.
-  const invoices = useAppStore((s) => s.billing.invoices)
-  const invoiceLines = useAppStore((s) => s.billing.invoiceLines)
-  const locks = useAppStore((s) => s.billing.locks)
-  const masters = useAppStore((s) => s.masters)
+  const invoices = useBookingStore((s) => s.billing.invoices)
+  const invoiceLines = useBookingStore((s) => s.billing.invoiceLines)
+  const locks = useBookingStore((s) => s.billing.locks)
+  const masters = useBookingStore((s) => s.masters)
   const prepaymentStatus = useBookingPrepayment(bookingId).status
   const warnings = useBookingWarnings(bookingId)
+  // The history reads the saved audit, never a draft's own entries (catch-up Phase 35).
   const audit = useAppStore((s) => s.audit)
   const todayISO = useToday()
+  // Drafted edits go to the Booking's store (the Admin draft, else the real one); commands
+  // (complete, amend, cancel, move, post-op) act on the real store and wait while the draft is unsaved.
+  const bookingApi = useBookingApi()
+  const blocked = useCommandBlock()
 
   const list = booking !== undefined ? listsRecord[booking.listId] : undefined
   const procedures: Procedure[] = useMemo(() => {
@@ -151,6 +161,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
   }, [booking, bookingId, proceduresRecord])
 
   const [notes, setNotes] = useState(booking?.notes ?? '')
+  /** The draft's time as typed (24-hour HH:MM); written once it is a whole time. */
+  const [timeText, setTimeText] = useState(booking?.scheduledTime ?? '')
   const [error, setError] = useState<string | null>(null)
   const [sheet, setSheet] = useState<SheetState>('none')
   /** Validation renders only after a refused Mark-complete (the latch) —
@@ -172,6 +184,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
   useEffect(() => {
     setNotes(booking?.notes ?? '')
   }, [booking?.notes])
+  useEffect(() => {
+    setTimeText(booking?.scheduledTime ?? '')
+  }, [booking?.scheduledTime])
 
   useEffect(
     () => () => {
@@ -395,12 +410,27 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
   }
 
   function stepTime(delta: number) {
-    run(editBooking(useAppStore, actor, bookingId, { scheduledTime: shiftTime(booking!.scheduledTime ?? '', delta) }))
+    run(editBooking(bookingApi, actor, bookingId, { scheduledTime: shiftTime(booking!.scheduledTime ?? '', delta) }))
+  }
+
+  // In the Admin draft (catch-up Phase 35) the notes and time write to the draft as typed; Save changes saves them.
+  const draftMode = useBookingStoreMode() === 'draft'
+  // Empty text is no notes (undefined), so typing then deleting leaves the draft clean.
+  const notesValue = (text: string): string | undefined => (text === '' ? undefined : text)
+  function changeNotes(text: string) {
+    setNotes(text)
+    if (draftMode && notesValue(text) !== booking!.notes) run(editBooking(bookingApi, actor, bookingId, { notes: notesValue(text) }))
+  }
+
+  function changeTime(text: string) {
+    setTimeText(text)
+    if (TIME_24H.test(text) && text !== booking!.scheduledTime) run(editBooking(bookingApi, actor, bookingId, { scheduledTime: text }))
   }
 
   function saveNotes() {
+    if (draftMode) return
     if (notes === (booking!.notes ?? '')) return
-    run(editBooking(useAppStore, actor, bookingId, { notes }))
+    run(editBooking(bookingApi, actor, bookingId, { notes: notesValue(notes) }))
   }
 
   // "Add another procedure" (US-03.2.3): the new Procedure picks its own
@@ -408,9 +438,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
   // answers when that Contract still fits (answers only, never a Contract
   // stored silently), else at the first step.
   function doAddProcedure() {
-    const added = addProcedure(useAppStore, actor, bookingId)
+    const added = addProcedure(bookingApi, actor, bookingId)
     if (!added.ok) return run(added)
-    if (addRailStart !== undefined) run(setRailAnswers(useAppStore, actor, added.value.procedureId, addRailStart))
+    if (addRailStart !== undefined) run(setRailAnswers(bookingApi, actor, added.value.procedureId, addRailStart))
   }
 
   function markComplete() {
@@ -510,14 +540,19 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
   /* History affordance (Phase 07) — the booking's reconstructable audit trail,
      available on every platform (A6/A7). Own-data view is fine per A8. */
   const history = (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* Another actor's save landed while this screen was open (catch-up Phase 35). */}
+      <OfficeSavedNotice bookingId={bookingId} actor={actor} onViewHistory={() => setHistoryOpen(true)} />
     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
       <button
         type="button"
+        data-shot="booking-history-button"
         onClick={() => setHistoryOpen(true)}
         style={{ minHeight: 44, border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '0 2px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
       >
         <History size={15} aria-hidden /> History
       </button>
+    </div>
     </div>
   )
 
@@ -630,13 +665,32 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
             trailing={
               canEdit && (
                 <>
+                  {draftMode && (
+                    // 24-hour HH:MM as typed (the browser's time input showed 12-hour); the shared field's compact chrome.
+                    <TextField
+                      label="Scheduled time"
+                      hideLabel
+                      mono
+                      size="compact"
+                      width={84}
+                      inputMode="numeric"
+                      maxLength={5}
+                      placeholder="HH:MM"
+                      shot="booking-time-input"
+                      value={timeText}
+                      invalid={timeText !== '' && !TIME_24H.test(timeText)}
+                      onChange={changeTime}
+                      onBlur={() => setTimeText(booking.scheduledTime ?? '')}
+                    />
+                  )}
                   <Stepper label="5 minutes earlier" icon={<Minus size={16} aria-hidden />} onClick={() => stepTime(-5)} />
                   <Stepper label="5 minutes later" icon={<Plus size={16} aria-hidden />} onClick={() => stepTime(5)} />
                 </>
               )
             }
           >
-            {booking.scheduledTime ?? 'Not set'}
+            {/* In the Admin draft the time input shows the value; the text beside it was clipped to "16:". */}
+            {canEdit && draftMode ? null : (booking.scheduledTime ?? 'Not set')}
           </DefRow>
         </DefList>
       </Section>
@@ -677,12 +731,12 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
       {/* Notes for the office */}
       <Section label="Notes for the office">
         {canEdit ? (
-          <textarea
+          <TextArea
+            ariaLabel="Notes for the office"
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={changeNotes}
             onBlur={saveNotes}
             placeholder="Anything the office should know…"
-            style={{ width: '100%', boxSizing: 'border-box', minHeight: 72, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, padding: 12, fontFamily: 'inherit', fontSize: 15, resize: 'none', background: neutral.bg }}
           />
         ) : (
           <div style={{ fontSize: 14, color: booking.notes !== undefined ? neutral.ink : neutral.mist }}>{booking.notes ?? 'No notes.'}</div>
@@ -772,6 +826,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
           <Button
             variant="secondary"
             block
+            disabled={blocked !== null}
+            disabledReason={blocked}
             onClick={() => {
               setMoveMounted(true)
               setMoveOpen(true)
@@ -786,7 +842,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
       )}
       {canEdit && (
         <div style={{ display: 'flex', flexDirection: 'column', marginTop: 4 }}>
-          <Button variant="danger" block onClick={() => setSheet('cancel')}>
+          <Button variant="danger" block disabled={blocked !== null} disabledReason={blocked} onClick={() => setSheet('cancel')}>
             <XCircle size={16} aria-hidden /> Cancel booking
           </Button>
         </div>
@@ -799,7 +855,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
       {!cancelled && list.state === 'AUTHORISED' && !isBackdropList(list) && booking.bookingType !== 'postOpAddendum' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
           <ResultLine line={postOpMsg} />
-          <Button variant="secondary" block onClick={doAddPostOp}>
+          <Button variant="secondary" block disabled={blocked !== null} disabledReason={blocked} onClick={doAddPostOp}>
             <Stethoscope size={16} aria-hidden /> Add post-op event
           </Button>
           <span style={{ fontSize: 11.5, color: neutral.mist }}>
@@ -847,6 +903,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
               canAmend={canEdit}
               onComplete={markComplete}
               onAmend={amend}
+              blocked={blocked}
             />
           ) : null
         }
@@ -907,6 +964,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
         {...(historyEntityLabels !== undefined ? { entityLabels: historyEntityLabels } : {})}
         title="Booking history"
         onClose={() => setHistoryOpen(false)}
+        coverListId={booking.listId}
+        {...(draftMode ? { asAtBookingId: bookingId } : {})}
       />
     </>
   )

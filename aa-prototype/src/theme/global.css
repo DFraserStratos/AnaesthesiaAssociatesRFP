@@ -531,6 +531,18 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
   }
 }
 
+/* Admin Review's bannerIn (catch-up Phase 34): a newly staged Matching row settles in. Reduced motion: 80ms (below). */
+@keyframes aa-banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes aa-card-in {
   from {
     transform: translateX(103%);
@@ -791,6 +803,38 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
     margin: 0;
     border: none !important;
     box-shadow: none !important;
+  }
+}
+
+/*
+ * The same pattern for the anaesthetist's GST report (catch-up Phase 38; US-12.2.2): Print shows the
+ * report alone (title, month, anaesthetist, table), never the nav, the harness bar or its own buttons.
+ * `.aa-print-only` (the printed heading) is hidden on screen.
+ */
+.aa-print-only {
+  display: none;
+}
+@media print {
+  .aa-print-report,
+  .aa-print-report * {
+    visibility: visible;
+  }
+  .aa-print-report {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+  }
+  .aa-print-report > * {
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .aa-print-report .aa-print-hide {
+    display: none !important;
+  }
+  .aa-print-report .aa-print-only {
+    display: block;
   }
 }
 

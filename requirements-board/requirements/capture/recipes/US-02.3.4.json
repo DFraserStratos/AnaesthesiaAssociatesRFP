@@ -1,0 +1,55 @@
+{
+  "id": "US-02.3.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "template-list",
+      "app": "admin",
+      "caption": "Admins keep a template per kind of change; the update email starts from it",
+      "start": "/admin/masters?view=emailTemplates",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=email-templates]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=email-templates]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "template-edit",
+      "app": "admin",
+      "caption": "Editing a template: its name, who it goes to by default, the subject and body with placeholders, and a preview against a sample Booking",
+      "start": "/admin/masters?view=emailTemplates",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=email-templates]"
+            },
+            {
+              "click": "[data-shot=email-templates] tr[data-email-template=ET004] >> role=button[name=/^Edit /]"
+            },
+            {
+              "wait": "[data-shot=email-template-editor]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=email-template-editor]"
+          ]
+        }
+      ]
+    }
+  ]
+}

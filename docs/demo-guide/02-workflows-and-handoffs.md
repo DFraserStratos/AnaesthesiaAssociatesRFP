@@ -104,7 +104,7 @@ funding tags (SXAP, HNZ, ACC, in the order they are offered), and its private pa
 anaesthetist priority tiers.
 The system keeps no surgeons' rooms: a surgeon holds a practice name, one personal contact and one or
 more office contacts (practice manager, PA or shared inbox: name, email, phone, blanks allowed).
-The surgeon update email (Phase 35) will go to the first office contact with an email, with the others
+The update email to a surgeon goes to the List's sender when the List came from a rooms' PDF, otherwise to the first office contact with an email, with the others
 offered; never every contact and never the personal contact.
 Anaesthetists never see preferences or tiers, and an anaesthetist handing on their own List gets no
 warning.
@@ -126,15 +126,17 @@ session.
 **Primary actors:** AA scheduling coordinator, surgeon rooms, hospital/PAS
 
 **Prototype readiness:** Ready. Manual phone booking, mobile and web manual Booking creation, the
-surgeon-PDF path (Phase 11) and the hospital import with its matching screen (Phase 33) are all built.
-HL7/FHIR messaging is Future scope.
+hospital file import with its matching screen (catch-up Phase 33) and the rooms' PDF lists through the
+same screen (catch-up Phase 34) are all built, under **Admin, Intake**. Automatic hospital sync and
+HL7/FHIR messaging are Future scope.
 
 ### Triggers
 
 - A recurring booking creates the standing pairing.
 - A surgeon's room calls AA for an ad-hoc List.
-- Hospital bookings or a sheet arrive (a hospital file is imported).
-- A surgeon's room emails a PDF List.
+- Hospital bookings arrive: the office imports the hospital's file (St George's and Southern Cross;
+  one theatre list a day).
+- A surgeon's rooms email a PDF List; the office uploads it with the address it came from.
 - The anaesthetist finds a patient missing on the day.
 
 ### Main path
@@ -143,9 +145,12 @@ HL7/FHIR messaging is Future scope.
 2. The List is assigned a hospital and surgeon.
 3. Patient appointments are represented as time-ordered Bookings inside the List.
 4. Each Booking points to a patient and contains one or more Procedures.
-5. Hospital rows are matched on the matching screen: the office applies, creates (a Booking, a List,
+5. Rows from a hospital file or a rooms' PDF list (or a Booking entered by hand) reach the schedule
+   through the matching screen on Admin, Intake: the office applies, creates (a Booking, a List,
    or a Draft List holding the Booking) or rejects each one, and sets the invoice destination and
-   Contract there or from Needs an invoice destination; anaesthetists and the office change Bookings
+   Contract there or from Needs an invoice destination; nothing reaches a Booking, List or Patient until
+   the office decides. Every List records where it came from (a rooms' PDF with its sender, the
+   hospital's list, by hand, or a recurring booking) and keeps it after assignment; anaesthetists and the office change Bookings
    directly while the List is `ACTIVE`. Each Booking holds its procedure text as received from each
    channel; the hospital's later text replaces the surgeon's rooms' text once the office applies its
    row, and the original stays in the Booking's history.
@@ -160,8 +165,12 @@ HL7/FHIR messaging is Future scope.
 - **Mobile/web manual Booking:** Dr Souter enters the missing Booking, with the procedure as written on
   the hospital's list (kept exactly as typed) and, if she knows it, its Contract on the step rail; otherwise it waits on the office's Needs an invoice destination list.
 - **Photo of the booking card:** Future Work (US-02.4.4); a badged Future-scope demo on the mobile List.
-- **PDF:** the office reviews extracted rows, corrects a mistyped NHI, and ingests them (deduped by
-  NHI, so a re-ingest updates rather than duplicates).
+- **PDF list:** on **Intake, PDF lists** the office opens the rooms' list beside its facsimile,
+  corrects a row (an invalid NHI, say), and selects **Send to matching**: its rows land on the matching
+  screen with the rooms' wording, like a hospital file's. A re-sent list is matched to the earlier one
+  by surgeon, hospital, date and session (our reading): unchanged rows are skipped, a changed field waits
+  as a difference for approval, a new patient arrives as a new row; a dropped patient is not yet detected
+  (Future Work).
 
 ### Handoff
 
@@ -177,6 +186,10 @@ complete · 1 waiting at intake") and never blocks submit or authorise; in Admin
 Matching** link. When the office adds the NHI, the Booking takes the stub's place; rejecting the row
 removes the stub. Seeded: Mere Tipene on Dr Souter's Tue 4 Aug PM List (NHI ZQA1024). What a stub shows
 and that the Booking takes its place are our readings, to confirm with AA.
+
+A List created from a rooms' PDF reads "From a rooms' PDF · sent from <address>" with **Replies go to**
+that address, on the List and its Bookings: updates and NHI requests go to the List's sender, else the
+surgeon's first office contact, the others offered.
 
 ### Key distinction
 
@@ -212,11 +225,21 @@ A hospital, surgeon, patient or anaesthetist reports a change.
 8. She can add an internal day note for colleagues.
 9. She plans the day from the Draft Lists rail card and band, soonest first. The assign picker is
    grouped and tier-ordered, and every List block shows its booking count.
+10. Her changes on an Admin Booking are a draft until she selects **Save changes**: each save is one
+   change set, one grouped row in the Booking's History naming who saved it, and History can show the
+   Booking as it was at any point. With two office users, each save names its own.
+11. When a change matters to someone outside, she drafts an update email on demand from any Booking
+   (**Draft update email**), picking the changes to report from its saved history and starting from one
+   of AA's templates (Master data · Email templates). It goes to the List's sender, else the surgeon's
+   first office contact, the others offered. She sends it from her own mail client: every email is
+   drafted and sent by hand in the first release (OQ-82).
+12. She can add a Booking to any List she may edit, booked or not, with the description she was told
+   kept exactly as typed, and edit any field until the List is `AUTHORISED`.
 
 ### Handoff
 
-The updated List and Bookings are immediately visible in Dr Souter's mobile and web views while the List
-is `ACTIVE`.
+Once saved, the updated List and Bookings are immediately visible in Dr Souter's mobile and web views
+while the List is `ACTIVE`; a Booking she has open shows one line saying the office saved changes.
 
 ### Demo point
 
@@ -290,6 +313,12 @@ Notifications page), the same for the whole office; a single Booking posts there
 The office then assigns any Draft List returned to it. A notice, or an alert, stays active until an
 admin ticks it resolved, which hides it for the whole office; "Show resolved" brings it back with who
 resolved it and when. Nothing expires.
+
+Cover changes email the hospital contact: after an office reassignment or a Draft List assignment, the
+List drawer offers **Draft update email**; after an anaesthetist's own move to a colleague, the
+notification's **Draft cover-change email** on the Notifications page. Each opens a draft with the
+change ticked and the Change of anaesthetist template; the office sends it by hand (OQ-82). A List
+returned to the office gets its email once the Draft List is assigned.
 
 ### Requirement
 
@@ -564,12 +593,16 @@ An invoice has been generated.
 4. A Xero webhook notifies the Billing Engine; a daily poll is the safety net.
 5. The matching payable becomes `AUTHORISED` for exactly the amount received, including a partial
    payment; the rest stays outstanding on the invoice.
-6. AA runs payables and disburses the authorised amount to the anaesthetist. A prepayment is the
-   exception: its payable credits the AA Holding account and is never paid itself; the anaesthetist is
-   paid only after the transfer at authorisation (Workflow 8, Pre-payment).
+6. AA runs payables in Xero; a bill-paid webhook, or the daily poll, tells the Billing Engine, which
+   records the disbursement. The payment itself is made in Xero, never by the app; the Billing
+   monitor's payables panel (**Authorised, awaiting Xero's payables run**) only shows what is waiting.
+   A prepayment is the exception: its payable credits the AA Holding account and is never paid itself;
+   the anaesthetist is paid only after the transfer at authorisation (Workflow 8, Pre-payment).
 7. The system tracks **paid into AA** and **disbursed to anaesthetist** separately.
-8. The anaesthetist's flat balance view, persistent payment history and GST activity update from the
-   Billing Engine's own ledger, AA's system of record, not from direct Xero queries. Every invoice is a
+8. The anaesthetist's financial position (owed to you, collected, paid out to you), the flat list of
+   unpaid payables (one row per payable, oldest first, kept as "Paid in, due to you" until AA pays
+   her), the persistent payment history and the monthly GST report of the payments AA passed on to her
+   (cash basis, with each payment's GST) update from the Billing Engine's own ledger, AA's system of record, not from direct Xero queries. Every invoice is a
    ledger pair (a receivable from the payer and a payable to the anaesthetist) created with the invoice;
    payments are recorded in the ledger first, the payables run pays from the payable legs, and Xero
    mirrors both. The office checks on **Admin → Ledger** that receipts held equal payables due plus the
@@ -589,7 +622,31 @@ direct link to the highlighted Web Payments row. Explain that the shortcut combi
 events while the underlying receipt and disbursement states remain separate. For a technical
 audience, use a partial payment followed by two payables runs to prove no double payment.
 S3 Beat 5 closes on the Ledger: in balance, then a $120.00 receipt that matches no invoice puts it
-out of balance (and Dr Souter on the out-of-balance list) until the office allocates it.
+out of balance (and Dr Souter on the out-of-balance list) until the office allocates it. S3 then ends
+on Admin Day's **Reconciliation** card: **Books square**.
+
+### Xero resilience (catch-up Phase 37)
+
+1. Every call to Xero (a hand-off, a payment or disbursement sync, the poll) is written to the **Xero
+   sync queue** first. If Xero does not answer, the call waits and retries with growing gaps; the
+   Billing monitor shows each waiting call, and **Retry now** retries one at once.
+2. Authorising and invoicing carry on during an outage: the invoice and its ledger pair stand, and the
+   List reads **Waiting for Xero** until its hand-off lands.
+3. When Xero is back, the queue drains in order, with no duplicate pair, contact, receipt or
+   disbursement.
+4. An invoice voided or edited directly in Xero is found at the daily reconciliation poll and flagged
+   on the Billing monitor (**Changed directly in Xero**). The ledger keeps what the engine issued; the
+   office records a resolution, which moves no money (provisional: the policy for each mismatch is to be
+   agreed with AA).
+5. Admin Day's **Reconciliation** card says whether the ledger, its Xero mirror and Xero's bank lines
+   agree (**Books square**) or not (**Out of balance**), listing each item to resolve and how long it
+   has waited.
+
+Bulk remittances: a hospital that pays several invoices in one deposit is matched in Xero, not by the
+engine. Xero's remittance add-on matches each line by the InvoiceNumber it quotes, and the engine learns
+each payment through the normal payment webhook. A line Xero cannot match waits in Xero's bank
+reconciliation for the office to match there (the demo: **Simulate bulk hospital remittance**, then
+**Match in Xero** on the Bank reconciliation tab).
 
 ### Source
 
@@ -619,7 +676,7 @@ Admin → Billing → AA fee invoices, or the "Run scheduled month-end fee run" 
    times the count, with GST worked out at the foot. Each is its own case with a Xero ACCREC against the
    anaesthetist's existing contact and no ACCPAY.
 4. The anaesthetist pays it by bank transfer into AA's own account. It is never deducted from a payment
-   to them (trust law), and it is not their income, so it never reaches their GST activity.
+   to them (trust law), and it is not their income, so it never reaches their GST report.
 5. Admin and the web **Accounts → AA fees** tab show each fee invoice paid or unpaid.
 
 ### Demo point
@@ -653,8 +710,8 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 - Two steps, and the anaesthetist is paid only after the second:
   1. **Collected into the AA Holding account.** The payer's money lands; the payable to the AA Holding
      account is authorised for what was received, and nothing is paid to the anaesthetist. The Billing
-     monitor's **AA Holding account** card shows the balance and a Received entry. Run payables pays
-     nothing.
+     monitor's **AA Holding account** card shows the balance and a Received entry. The payables run
+     pays nothing.
   2. **Transferred at authorisation.** When the office authorises the List, the system writes a
      transfer from the AA Holding account to the anaesthetist who did the List, with no office step: a
      Transferred entry on the card, the balance falls, and the Xero simulator shows a manual journal on
@@ -734,11 +791,12 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
   the lock, such as the Xero hand-off.
 - Failure is per Booking and a List never fails as a whole (OQ-05, answered): the failed Booking is held
   back (a split Booking's invoices with it) while the rest of the List bills.
-- The office retries once from the Billing monitor: **Resolve & retry** re-sends a hand-off, **Retry**
-  rebuilds from the lock. The fix never edits a Contract or any other master; a wrong price after
+- A failed hand-off waits in the Xero sync queue, which retries it by itself; the office can use
+  **Retry now** on its queue row. A failed billing run keeps the booking row's **Retry**, which rebuilds
+  from the lock. On the Billing monitor, **Problems only** narrows the list to just these. The fix never edits a Contract or any other master; a wrong price after
   invoicing is corrected by a credit note and rebill (a later build).
 
-#### Hospital rows
+#### Row the office cannot match
 
 - An unmatched row, or one with no NHI, waits in the unmatched queue; nothing is dropped.
 - A row with no NHI that names a List places a stub on that List: the case as received, marked waiting
@@ -751,8 +809,9 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 - A row for a submitted List can still be applied by the office; a row for an authorised List cannot
   be applied.
 
-> **Future scope:** automated hospital changes are Future Work. HL7 v2 messaging, where a malformed
-> message retries and then dead-letters to manual intervention without being lost, is Future scope.
+> **Future scope:** automatic hospital sync and automated hospital changes are Future Work. HL7 v2
+> messaging, where a malformed message retries and then dead-letters to manual intervention without
+> being lost, is Future scope, shown only on **Demo: Future scope, HL7 and FHIR** (`/demo/integrations`).
 
 #### Compliance
 
@@ -777,11 +836,12 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Addendum, billing monitor/retry | Yes | Phase 09 |
 | Contract locked at authorise, invoices from the lock, Contract history | Yes | Catch-up Phase 25 |
 | Xero pairs, payment, balances and disbursement | Yes | Phase 10 |
+| Xero resilience: payables run in Xero, sync queue and outage, voids and edits flagged, bulk remittance matched in Xero, Reconciliation card; Billing monitor grouped by anaesthetist with filters | Yes | Catch-up Phase 37 |
 | Internal ledger with in-balance view (whole ledger, one anaesthetist, the out-of-balance list) | Yes | Catch-up Phase 36 |
 | Anaesthetist profile, rate per unit and bank details | Yes | Catch-up Phase 26 |
 | AA's monthly fee invoices (settings, run, AA fees tab) | Yes | Catch-up Phase 16 |
 | Hospital import and matching screen | Yes | Catch-up Phase 33 |
-| Surgeon PDF ingestion | Yes | Phase 11 |
-| HL7/FHIR ingestion and monitoring | Future scope | Phase 11 (simulator only) |
+| The rooms' PDF lists through matching, and where a List came from | Yes | Catch-up Phase 34 |
+| HL7/FHIR ingestion and monitoring | Future scope | Phase 11 (simulator only; its own demo surface from catch-up Phase 34) |
 | Scenario jump controls and guided script | Yes | Phase 12 |
 | Mobile atmospheric gradient (visual only) | Yes | Phase 13 |

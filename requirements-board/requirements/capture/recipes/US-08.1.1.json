@@ -56,7 +56,7 @@
       "name": "billing-run",
       "app": "admin",
       "caption": "The billing run raises its invoices from each Procedure's locked record, one invoice per payer, and sends each by its party's delivery; the Procedures on a Booking billing the same payer share an invoice",
-      "start": "/admin/billing",
+      "start": "/admin/billing?list=L-34821-2026-07-20-AM",
       "setup": [
         {
           "scenario": "S3"
@@ -79,7 +79,11 @@
       ],
       "states": [
         {
-          "steps": [],
+          "steps": [
+            {
+              "wait": 2200
+            }
+          ],
           "highlight": [
             "[data-shot=billing-pipeline-L-34821-2026-07-20-AM]"
           ]

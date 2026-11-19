@@ -8,11 +8,9 @@ import { create } from 'zustand'
  * add keys here.
  */
 export interface DemoContextValues {
-  /** Admin · Integrations: the open tab. */
-  'integrations.tab': 'messages' | 'feeds' | 'pdfs' | 'quality' | 'validators'
-  /** Integrations simulator: the message selected in the library. */
+  /** Future scope: HL7 and FHIR, the simulator: the message selected in the library. */
   'integrationsSim.selectedMessageId': string
-  /** Admin · Matching: the row open in the detail panel (an import row id; catch-up Phase 33's "Send update for a matched Booking"). */
+  /** Admin · Intake, Matching: the row open in the detail panel (an import row id; catch-up Phase 33's "Send update for a matched Booking"). */
   'matching.selectedRowId': string
   /** Admin · AA fee invoices: the month in the picker (`YYYY-MM`; catch-up Phase 16). */
   'aaFees.month': string
@@ -31,6 +29,8 @@ export interface DemoContextValues {
   'adminContracts.openContractId': string
   /** Mobile · My calendar: the last day opened in the session panel, `<anaesthetistId>|<dateISO>`, while the calendar shows (catch-up Phase 32d's office stand-in). */
   'mobileCalendar.day': string
+  /** Admin · Booking detail: the Booking whose draft holds unsaved changes (catch-up Phase 35's Switch office user waits on it). */
+  'adminBooking.dirtyBookingId': string
 }
 
 export type DemoContextKey = keyof DemoContextValues

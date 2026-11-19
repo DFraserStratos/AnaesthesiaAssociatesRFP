@@ -25,6 +25,7 @@ import {
   wireBillingRun,
   wireIntegrationRetry,
   wireReconciliationPoll,
+  wireXeroQueue,
 } from '../src/store'
 
 /**
@@ -61,6 +62,8 @@ wireBillingRun(useAppStore)
 wireReconciliationPoll(useAppStore)
 wireArchiveJob(useAppStore)
 wireIntegrationRetry(useAppStore)
+// Catch-up Phase 37, for parity: the Xero sync queue on the demo clock (an outage cannot be switched on in the PWA).
+wireXeroQueue(useAppStore)
 // PWA-only, and OFF by default ("Play the office" on More switches it on): with
 // no Admin app on the phone there is nobody to play the office. The handset
 // story uses the per-List "Office authorises this List" in the Demo sheet; this

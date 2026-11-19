@@ -8,7 +8,7 @@
  */
 
 import { contractChoosableForProcedure } from '../../domain/billing/fallbacks'
-import { useMemo, type CSSProperties } from 'react'
+import { useMemo } from 'react'
 import { contractSearch } from '../../domain/billing/contracts'
 import { useAppStore } from '../../store'
 import { SelectField } from '../ui'
@@ -17,11 +17,6 @@ import { contractLabel } from './labels'
 interface ContractSelectProps {
   value: string
   onChange: (contractId: string) => void
-  /**
-   * Accepted and ignored since UI unification U4: the select draws the one
-   * field chrome (48px, grey well), which is what every caller passed.
-   */
-  selectStyle?: CSSProperties
   label?: string
   /** The empty choice's words; omit to require a Contract. */
   emptyLabel?: string

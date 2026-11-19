@@ -39,6 +39,22 @@ export const FEED_META: Readonly<Record<string, FeedMeta>> = {
 }
 
 /**
+ * The feeds the simulator's Live drip streams (catch-up Phase 34, RV-16): the
+ * two integrated hospitals only. Christchurch Public is not integrated today,
+ * an example of a further feed (Future Work); its messages can still be fired
+ * by hand on the Future-scope surface.
+ */
+export const LIVE_FEED_IDS: readonly string[] = [FEED.stg, FEED.sx]
+
+/** Whether a feed belongs to a hospital integrated today (St George's, Southern Cross; D52). */
+export function isIntegratedFeed(feedId: string): boolean {
+  return LIVE_FEED_IDS.includes(feedId)
+}
+
+/** The batch label a fired Christchurch Public message's row carries on Admin Intake. */
+export const FUTURE_SCOPE_CPH_BATCH_LABEL = 'Future-scope HL7 demo · Christchurch Public'
+
+/**
  * The correct HL7 demographic mapping (St George's puts the NHI in PID-2). The
  * SCH-2 appointment id, SCH-7 procedure and AIS-4 start-time positions follow
  * the RFP's own annotated SIU sample (RFP.md's worked example).

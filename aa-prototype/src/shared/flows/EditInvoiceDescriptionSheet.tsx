@@ -1,6 +1,7 @@
+import { useBookingApi, useBookingStore, usePrimaryEditLabel } from '../booking/draft'
 import { useEffect, useState } from 'react'
 import { neutral } from '../../theme/tokens'
-import { setInvoiceDescription, useAppStore, type Actor } from '../../store'
+import { setInvoiceDescription, type Actor } from '../../store'
 import { Button, FieldLabel, FormError, TextArea } from '../ui'
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
@@ -22,8 +23,11 @@ interface EditInvoiceDescriptionSheetProps {
  * A dialog on Admin (the office's surface). Phase 35's amend flow reuses it.
  */
 export function EditInvoiceDescriptionSheet({ open, procedureId, actor, onClose }: EditInvoiceDescriptionSheetProps) {
+  const bookingApi = useBookingApi()
+  // "Apply" in the Admin draft (catch-up Phase 35): the draft's Save changes saves.
+  const primaryLabel = usePrimaryEditLabel('Save invoice description')
   const { Overlay } = useSurface()
-  const procedure = useAppStore((s) => s.schedule.procedures[procedureId])
+  const procedure = useBookingStore((s) => s.schedule.procedures[procedureId])
   const [text, setText] = useState(procedure?.invoiceDescription?.text ?? '')
   const [error, setError] = useState<string | null>(null)
 
@@ -39,7 +43,7 @@ export function EditInvoiceDescriptionSheet({ open, procedureId, actor, onClose 
   if (procedure === undefined) return null
 
   function save() {
-    const outcome = setInvoiceDescription(useAppStore, actor, procedureId, text)
+    const outcome = setInvoiceDescription(bookingApi, actor, procedureId, text)
     if (!outcome.ok) {
       setError(outcome.message)
       return
@@ -68,7 +72,7 @@ export function EditInvoiceDescriptionSheet({ open, procedureId, actor, onClose 
         <SheetActions
           primary={
             <Button variant="primary" block onClick={save}>
-              Save invoice description
+              {primaryLabel}
             </Button>
           }
         />

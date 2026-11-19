@@ -6,7 +6,7 @@
     {
       "name": "fhir-model",
       "app": "simulator",
-      "caption": "Inbound booking held as FHIR R4",
+      "caption": "Future scope: an inbound booking held as FHIR R4",
       "start": "/demo/integrations",
       "states": [
         {

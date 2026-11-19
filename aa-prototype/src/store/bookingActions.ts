@@ -24,6 +24,7 @@ import {
   type Actor,
   type MutationMeta,
   type Outcome,
+  withChangeSet,
 } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal, getBooking } from './lifecycle'
@@ -43,6 +44,7 @@ import { contractPickRefusal } from './contractSelectionActions'
 import { PREPAID_OFFICE_ONLY_MESSAGE, contractAllowedOn } from '../domain/billing/contractRail'
 import { railContextForList, railMastersOf } from './selectors'
 import { autoSendPrepayments } from './prepaymentActions'
+import { originForNewList } from '../domain/lists/listOrigin'
 
 // ---------------------------------------------------------------------------
 // createBooking
@@ -103,7 +105,7 @@ export const PROCEDURE_OR_CODE_REQUIRED_MESSAGE = 'Type the procedure as told, o
  * Phase 23: the first entered is the primary by default), audited `booking.create` +
  * `procedure.create`. The patient audit comes from `upsertPatient`.
  */
-export function createBooking(
+function createBookingUnscoped(
   api: AppStoreApi,
   actor: Actor,
   listId: string,
@@ -301,6 +303,8 @@ export function addPostOpAddendum(
       kind: originalList.kind,
       hospitalId: originalList.hospitalId,
       surgeonId: originalList.surgeonId,
+      // A List made from another keeps the origin of the List it came from (US-02.2.4 build choice).
+      origin: originForNewList({ kind: 'derived', from: originalList }),
     })
     listId = placed.list.id
     metas.push(placed.meta)
@@ -678,4 +682,12 @@ function withoutBookingModifiers(procedure: Procedure): Procedure {
   delete copy.modifierUnitsCaptured
   delete copy.modifiersConfirmed
   return copy
+}
+
+/**
+ * `createBookingUnscoped`; the office's call is one change set (`create`), so the update
+ * email can pick it (catch-up Phase 35; DM-35). Anaesthetists' calls pass none.
+ */
+export function createBooking(...args: Parameters<typeof createBookingUnscoped>): ReturnType<typeof createBookingUnscoped> {
+  return args[1].role === 'office' ? withChangeSet(args[0], 'create', () => createBookingUnscoped(...args)) : createBookingUnscoped(...args)
 }

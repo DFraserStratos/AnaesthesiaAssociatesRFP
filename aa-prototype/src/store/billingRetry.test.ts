@@ -16,6 +16,8 @@ import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList } from './lifecycle'
 import { runBillingForList, retryBillingException } from './billingRun'
 import { handoffListPairs, handoffPair } from './xeroHandoff'
+import { retryXeroItemNow } from './xeroQueue'
+import { handoffQueuedFor } from './ledgerSelectors'
 import { addPriceRange, disableContract, editContract } from './contractActions'
 import { editAnaesthetist } from './mastersActions'
 import { stageBillingFailure } from './demoStaging'
@@ -136,24 +138,27 @@ describe('the S4 billing failure, re-based on the Xero hand-off (stageBillingFai
     const pairs = pairsForList(api.getState(), LIST)
     const losa = pairs.find((c) => c.bookingId === LOSA())!
     const sibling = pairs.find((c) => c.bookingId !== LOSA())!
-    expect(losa.handoffFailure).toBeDefined()
+    // Catch-up Phase 37: her hand-off is one failed attempt waiting in the Xero sync queue.
+    expect(handoffQueuedFor(api.getState(), losa.id)).toBeDefined()
     expect(losa.receivable.xeroAccRecId).toBeUndefined()
     expect(sibling.receivable.xeroAccRecId).toBeDefined()
-    expect(sibling.handoffFailure).toBeUndefined()
+    expect(handoffQueuedFor(api.getState(), sibling.id)).toBeUndefined()
     expect(openBillingExceptions(api.getState())).toHaveLength(0)
     expect(api.getState().settings.failNextHandoff).toBe(false)
     expect(api.getState().settings.failHandoffBookingId).toBeUndefined()
   })
 
-  it('Resolve & retry hands hers off once; a second press creates nothing more; no Contract changed', () => {
+  it('Retry now on her queue row hands her off once; a second press creates nothing more; no Contract changed', () => {
     const api = staged()
     const contracts = api.getState().masters.contracts
     const losa = pairsForBooking(api.getState(), LOSA())[0]!
-    expect(handoffPair(api, losa.id).ok).toBe(true)
+    const item = handoffQueuedFor(api.getState(), losa.id)!
+    expect(retryXeroItemNow(api, OFFICE, item.id).ok).toBe(true)
     const after = api.getState().billing.ledger[losa.id]!
     expect(after.receivable.xeroAccRecId).toBeDefined()
-    expect(after.handoffFailure).toBeUndefined()
+    expect(handoffQueuedFor(api.getState(), losa.id)).toBeUndefined()
     const accRecs = Object.keys(api.getState().xero.accRecs).length
+    expect(retryXeroItemNow(api, OFFICE, item.id).ok).toBe(false)
     expect(handoffPair(api, losa.id).ok).toBe(true)
     expect(Object.keys(api.getState().xero.accRecs)).toHaveLength(accRecs)
     expect(api.getState().masters.contracts).toBe(contracts)

@@ -18,6 +18,7 @@ import { enumerateDatesISO } from '../clock'
 import { projectedListId, slotIdFor } from '../slots'
 import { slotRng } from './slotHash'
 import { HOSP, SURG } from './cast'
+import { originForNewList } from '../lists/listOrigin'
 
 /** The recorded window: the demo's fixed past and near future. */
 export const RECORDED_WINDOW = { fromISO: '2026-07-07', toISO: '2026-08-16' } as const
@@ -109,6 +110,7 @@ export function placeList(
       hospitalId: placement.hospitalId,
       surgeonId: placement.surgeonId,
       conflicts: [],
+      origin: originForNewList({ kind: 'office' }),
     }
     setSlot(slots, anaesthetistId, dateISO, session, { status: 'free', note: null })
   }

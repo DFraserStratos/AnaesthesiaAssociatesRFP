@@ -34,6 +34,7 @@ import type { List, RecurringBooking, SeedLeaveWindow, Session, Slot, SlotStatus
 import { projectedListId, slotDatesFor, slotIdFor } from '../slots'
 import { defaultSlotStatusKey, isClosedKey, type SlotStatusRecords } from '../slotStatus'
 import { activeOn } from '../recurringBookingProjection'
+import { originForNewList } from '../lists/listOrigin'
 
 export interface CanvasAnaesthetist {
   id: string
@@ -160,6 +161,7 @@ export function generateCanvasForDates(masters: CanvasMasters, datesISO: readonl
               hospitalId: recurring.hospitalId,
               surgeonId: recurring.surgeonId,
               conflicts: [],
+              origin: originForNewList({ kind: 'recurring' }),
               recurringBookingId: recurring.id,
             }
             if (recurring.notes !== undefined) list.notes = recurring.notes

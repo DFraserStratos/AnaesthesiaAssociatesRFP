@@ -1,17 +1,14 @@
 import { useMemo, useState } from 'react'
 import { format, parseISO, addDays } from 'date-fns'
-import { accent, neutral, semantic, radius } from '../../../theme/tokens'
-import { STATUS_PALETTE } from '../../../theme/statusColours'
+import { neutral, radius } from '../../../theme/tokens'
 import { hasLeftMainView } from '../../../domain/listProgress'
 import type { Slot } from '../../../domain/types'
-import { type AgingBucketKey } from '../../../domain/seed'
-import { openSlotViews, receivablesAgingFor, useAppStore } from '../../../store'
+import { anaesthetistLedgerPosition, openSlotViews, outstandingPayableRowsFor, POSITION_LABEL, useAppStore } from '../../../store'
 import { drSurname, formatCurrency, plural, shortDay, longDayNoYear } from '../../../shared/format'
 import { useDefaultStatus, useSurface } from '../../../shared'
 import { sessionKey, useMovableLists, useMoveListPrompt, useMoveTargets } from '../../../shared/flows'
 import { locationName } from '../../../shared/format'
 import { WeekStrip } from '../components'
-import { useDashboardFigures } from '../useDashboardFigures'
 import { SESSIONS_IN_ORDER, sessionText } from '../../../domain/outOfHours'
 import { OverlayHeader } from '../../../shared/surface/OverlayHeader'
 import { EmptyState } from '../../../shared/ui/EmptyState'
@@ -25,24 +22,19 @@ interface DashboardScreenProps {
   onPrevWeek: () => void
   onNextWeek: () => void
   onOpenList: (listId: string) => void
-  onViewOverdue: () => void
+  onViewOutstanding: () => void
+  onViewPayments: () => void
   onOpenAvailability: () => void
 }
 
-const AGING_ROWS: { key: AgingBucketKey; label: string; color: string; opacity: number }[] = [
-  { key: 'current', label: 'Current', color: accent.base, opacity: 1 },
-  { key: 'd31_60', label: '31 to 60 d', color: accent.base, opacity: 0.55 },
-  { key: 'd61_90', label: '61 to 90 d', color: STATUS_PALETTE.preop.solid, opacity: 1 },
-  { key: 'd90plus', label: '90 d +', color: semantic.error.solid, opacity: 1 },
-]
-
 /**
- * The anaesthetist web dashboard (Web Dashboard mockup is authoritative; W1).
- * Five panels over seeded figures + live schedule: welcome + day summary,
- * the week strip, receivables aging, productivity, leave, and the
- * live "who's free" locum panel. Receivables + productivity + leave are seeded
- * demo figures (Phase 10 replaces receivables); "who's free" is live so the
- * names can differ from the mockup (Discovered-for-later note).
+ * The anaesthetist web dashboard (Web Dashboard mockup is authoritative; W1;
+ * US-12.2.3): the greeting and day summary, the week strip, then one row of two
+ * panels: the financial position (owed, collected, paid out) from the ledger
+ * (catch-up Phase 38; the same selector and labels as Accounts' "Your
+ * position"), in the mockup's Receivables slot, and the live "Who's free"
+ * locum panel. No seeded figures remain (the Productivity and Leave panels are
+ * gone, RV-34); leave shows as holiday blocks in the week strip.
  */
 export function DashboardScreen({
   anaesthetistId,
@@ -52,7 +44,8 @@ export function DashboardScreen({
   onPrevWeek,
   onNextWeek,
   onOpenList,
-  onViewOverdue,
+  onViewOutstanding,
+  onViewPayments,
   onOpenAvailability,
 }: DashboardScreenProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
@@ -76,12 +69,13 @@ export function DashboardScreen({
   // Who's free spans five days from today: her movable Lists there, and the colleagues each could go to.
   const moveTargets = useMoveTargets(anaesthetistId, todayISO, format(addDays(parseISO(todayISO), 4), 'yyyy-MM-dd'))
 
-  const figures = useDashboardFigures(anaesthetistId)
-  // Receivables aging derives from the ledger (Phase 10; W1/W4; the ledger since catch-up Phase 36).
-  const receivables = useMemo(
-    () => receivablesAgingFor({ billing, schedule, masters }, anaesthetistId, todayISO),
-    [billing, schedule, masters, anaesthetistId, todayISO],
+  // The financial position: the one ledger position (catch-up Phase 36) and the flat Outstanding list it equals (38).
+  const position = useMemo(() => anaesthetistLedgerPosition({ billing }, anaesthetistId), [billing, anaesthetistId])
+  const unpaidCount = useMemo(
+    () => outstandingPayableRowsFor({ billing, schedule, masters }, anaesthetistId).length,
+    [billing, schedule, masters, anaesthetistId],
   )
+  const nothingBilled = position.owedToThem === 0 && position.collected === 0 && position.paidOut === 0
 
   // The mockup greets by surname ("Kia ora, Dr Souter"); mobile does the same.
   const greetingName = drSurname(personaName)
@@ -185,102 +179,46 @@ export function DashboardScreen({
       />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 16 }}>
-        {/* Receivables */}
+        {/* Financial position (catch-up Phase 38; US-12.2.3 with US-08.3.5) */}
         <Card
           padding="panel"
-          title="Receivables aging"
+          title="Financial position"
+          shot="web-financial-position"
           action={
-            <span className="mono" style={{ fontSize: 14, fontWeight: 600 }}>
-              {receivables.aging.total > 0 ? `${formatCurrency(receivables.aging.total)} outstanding` : ''}
-            </span>
+            nothingBilled ? undefined : (
+              <span className="mono" style={{ fontSize: 14, fontWeight: 600 }}>
+                {formatCurrency(position.owedToThem)} owed
+              </span>
+            )
           }
-          style={{ gridColumn: 'span 7' }}
+          // Its own height, not Who's free's: a long free list would leave the panel mostly empty.
+          style={{ gridColumn: 'span 7', alignSelf: 'start' }}
         >
-          {receivables.rows.length === 0 ? (
-            <EmptyState style={{ padding: '4px 0' }}>No outstanding accounts. Receivables appear here once billed work goes unpaid.</EmptyState>
+          {nothingBilled ? (
+            <EmptyState style={{ padding: '4px 0' }}>No billed work yet.</EmptyState>
           ) : (
             <>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {AGING_ROWS.map((r) => {
-                  const amount = receivables.aging[r.key]
-                  const pct = receivables.aging.total > 0 ? Math.round((amount / receivables.aging.total) * 100) : 0
-                  return (
-                    <div key={r.key} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <span style={{ width: 72, fontSize: 12, fontWeight: 600, color: neutral.slate }}>{r.label}</span>
-                      <span style={{ flex: 1, height: 14, borderRadius: radius.pill, background: neutral.sunken, overflow: 'hidden', display: 'block' }}>
-                        <span style={{ display: 'block', height: '100%', borderRadius: radius.pill, background: r.color, opacity: r.opacity, width: `${pct}%` }} />
-                      </span>
-                      <span className="mono" style={{ width: 72, textAlign: 'right', fontSize: 12 }}>{formatCurrency(amount)}</span>
-                    </div>
-                  )
-                })}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
+                <StatTile variant="quiet" label={POSITION_LABEL.owedToThem} value={formatCurrency(position.owedToThem)} />
+                <StatTile variant="quiet" label={POSITION_LABEL.collected} value={formatCurrency(position.collected)} />
+                <StatTile variant="quiet" label={POSITION_LABEL.paidOut} value={formatCurrency(position.paidOut)} />
               </div>
-              <div style={{ fontSize: 13, color: neutral.slate, borderTop: `1px solid ${neutral.sunken}`, paddingTop: 12 }}>
-                {plural(receivables.accountsOver60, 'account')} over 60 days ·{' '}
-                <TextAction size="sm" flush onClick={onViewOverdue} style={{ fontSize: 13 }}>view overdue accounts</TextAction>
+              <div style={{ fontSize: 12, color: neutral.mist }}>
+                To date, from the Billing Engine&apos;s ledger. New invoices appear as soon as the office authorises a List.
+              </div>
+              <div style={{ fontSize: 13, color: neutral.slate, borderTop: `1px solid ${neutral.sunken}`, paddingTop: 12, display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 6, rowGap: 4 }}>
+                <span>{plural(unpaidCount, 'unpaid invoice')}</span>
+                <span aria-hidden>·</span>
+                <span><span className="mono">{formatCurrency(position.awaitingCollection)}</span> {POSITION_LABEL.awaitingCollection.toLowerCase()}</span>
+                <span aria-hidden>·</span>
+                <span><span className="mono">{formatCurrency(position.dueNow)}</span> {POSITION_LABEL.dueNow.toLowerCase()}</span>
+                <span aria-hidden>·</span>
+                <TextAction size="sm" flush onClick={onViewOutstanding} style={{ fontSize: 13 }}>View outstanding invoices</TextAction>
+                <span aria-hidden>·</span>
+                <TextAction size="sm" flush onClick={onViewPayments} style={{ fontSize: 13 }}>View payments</TextAction>
               </div>
             </>
           )}
-        </Card>
-
-        {/* Productivity */}
-        <Card
-          padding="panel"
-          title="Productivity"
-          action={<span style={{ fontSize: 12, color: neutral.mist }}>{figures?.productivity.periodLabel}</span>}
-          style={{ gridColumn: 'span 5' }}
-        >
-          {figures === undefined ? (
-            <EmptyState style={{ padding: '4px 0' }}>No productivity history yet.</EmptyState>
-          ) : (
-            <>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <StatTile variant="quiet" label="UNITS" value={String(figures.productivity.units)} pill={`+${figures.productivity.unitsChangePct}%`} />
-                <StatTile variant="quiet" label="LISTS" value={String(figures.productivity.lists)} />
-                <StatTile variant="quiet" label="AVG UNITS / LIST" value={figures.productivity.avgUnitsPerList.toFixed(1)} />
-                <StatTile variant="quiet" label="FEES INVOICED" value={formatCurrency(figures.productivity.feesInvoiced)} />
-              </div>
-              <div style={{ fontSize: 12, color: neutral.slate, borderTop: `1px solid ${neutral.sunken}`, paddingTop: 10 }}>
-                6 months: <strong className="mono">{figures.productivity.sixMonthUnits.toLocaleString('en-NZ')}</strong> units ·{' '}
-                {(() => {
-                  const p = figures.productivity
-                  const delta = p.sixMonthPriorYearUnits > 0
-                    ? Math.round(((p.sixMonthUnits - p.sixMonthPriorYearUnits) / p.sixMonthPriorYearUnits) * 100)
-                    : 0
-                  return (
-                    <span style={{ color: delta >= 0 ? semantic.success.onTint : semantic.error.onTint, fontWeight: 600 }}>
-                      {delta >= 0 ? '+' : ''}{delta}%
-                    </span>
-                  )
-                })()}{' '}
-                vs last year
-              </div>
-            </>
-          )}
-        </Card>
-
-        {/* Leave */}
-        <Card padding="panel" title="Leave" style={{ gridColumn: 'span 5' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {figures !== undefined && figures.leave.length > 0 ? (
-              figures.leave.map((l, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: neutral.bg, borderRadius: radius.ctl }}>
-                  <span style={{ width: 4, height: 34, borderRadius: radius.pill, background: STATUS_PALETTE.holiday.solid, flex: 'none' }} />
-                  <span style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: 14, fontWeight: 600 }}>{leaveRange(l.fromISO, l.toISO)}</span>
-                    <span style={{ fontSize: 12, color: neutral.slate }}>{l.label}</span>
-                  </span>
-                  {l.status === 'approved' ? (
-                    <span style={{ padding: '4px 10px', borderRadius: radius.pill, background: semantic.success.tint, fontSize: 11, fontWeight: 600, color: semantic.success.onTint }}>Approved</span>
-                  ) : (
-                    <span style={{ padding: '4px 10px', borderRadius: radius.pill, background: semantic.warning.tint, fontSize: 11, fontWeight: 600, color: semantic.warning.onTint }}>Pending</span>
-                  )}
-                </div>
-              ))
-            ) : (
-              <EmptyState style={{ padding: '4px 0' }}>No leave booked.</EmptyState>
-            )}
-          </div>
         </Card>
 
         {/* Who's free (live) */}
@@ -288,7 +226,7 @@ export function DashboardScreen({
           padding="panel"
           title="Who's free · next 5 days"
           action={<TextAction size="sm" flush onClick={onOpenAvailability} style={{ fontSize: 13 }}>Full availability grid →</TextAction>}
-          style={{ gridColumn: 'span 7' }}
+          style={{ gridColumn: 'span 5' }}
         >
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {locumRows.length === 0 && <EmptyState style={{ padding: '4px 0' }}>No free sessions in the next 5 days.</EmptyState>}
@@ -344,14 +282,4 @@ export function DashboardScreen({
       </div>
     </div>
   )
-}
-
-function leaveRange(fromISO: string, toISO: string): string {
-  const from = parseISO(fromISO)
-  const to = parseISO(toISO)
-  if (fromISO === toISO) return format(from, 'EEE d MMM')
-  const sameMonth = format(from, 'MMM') === format(to, 'MMM')
-  return sameMonth
-    ? `${format(from, 'EEE d')} to ${format(to, 'EEE d MMM')}`
-    : `${format(from, 'EEE d MMM')} to ${format(to, 'EEE d MMM')}`
 }

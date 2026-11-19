@@ -9,3 +9,5 @@ export { PartyPicker, type PartyPickerProps } from './PartyPicker'
 export { LockBadge } from './LockBadge'
 export { PrepaymentPanel, type PrepaymentOfficeLinks } from './PrepaymentPanel'
 export * from './prepaymentText'
+// The Admin Booking detail's draft-then-save (catch-up Phase 35).
+export * from './draft'

@@ -1,5 +1,7 @@
 /**
- * Matching (catch-up Phase 33; US-02.1.1 to US-02.1.4, FT-02.5; AR-21
+ * Matching (catch-up Phase 33; US-02.1.1 to US-02.1.4, FT-02.5; AR-21; Admin
+ * Intake's first tab since Phase 34, so its title is a section heading under
+ * Intake's;
  * `matching-screen`, `rows-wait`). Hospital bookings and sheets land here as
  * rows; the office matches each to a Booking or List, creates what is
  * missing, or rejects it. Nothing changes the schedule until it decides (no
@@ -27,7 +29,7 @@ import { MatchingTable } from '../matching/MatchingTable'
 import { RowPanel } from '../matching/RowPanel'
 
 const EMPTY: Record<MatchingFilter, string> = {
-  open: 'No rows waiting. Import a hospital file to start.',
+  open: "No rows waiting. Imported St George's and Southern Cross files, the rooms' PDF lists and received sheets land here.",
   unmatched: 'No unmatched rows. Rows with no match, or waiting for an NHI, show here.',
   decided: 'Nothing decided yet. Applied and rejected rows show here, newest first.',
 }
@@ -138,7 +140,7 @@ export function MatchingScreen({ actor, todayISO, onOpenBooking }: { actor: Acto
   return (
     <div data-shot="admin-matching" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader
-        size="admin"
+        size="section"
         title="Matching"
         subStyle={{ maxWidth: 760, lineHeight: '19px' }}
         sub={

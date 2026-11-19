@@ -1,7 +1,8 @@
+import { useBookingApi, useBookingStore } from '../booking/draft'
 import { accent, neutral, semantic } from '../../theme/tokens'
 import type { CapturedUnits, Procedure, RvgGroup } from '../../domain/types'
 import { describeTimeRule, resolveStartingUnits, type BillingValidationFailure, type BtmBreakdown, type ProcedureAllocation, type ProcedureModifier } from '../../domain/billing'
-import { editProcedure, useAppStore, type Actor, type ProcedurePatch } from '../../store'
+import { editProcedure, type Actor, type ProcedurePatch } from '../../store'
 import { ModifiersSection } from './ModifiersSection'
 import { Caption, CaptureSection, NumberStepper } from './ui'
 
@@ -42,13 +43,14 @@ interface UnitsCardProps {
  * fee.
  */
 export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, allocation, modifiersRequired = false, showValidation = false, modifierFailures = [], onError }: UnitsCardProps) {
+  const bookingApi = useBookingApi()
   const additional = allocation.role === 'additional'
   // OQ-132's default, provisional: a primary on a fixed or open price bills no base units.
   const unbilledBase = !additional && !allocation.rvgPriced
   // The RVG time tiers held as data (catch-up Phase 19a; US-05.2.2): the T caption's title words the rule.
-  const timeRule = useAppStore((s) => s.masters.rvgTimeRule)
+  const timeRule = useBookingStore((s) => s.masters.rvgTimeRule)
   function write(patch: ProcedurePatch) {
-    const outcome = editProcedure(useAppStore, actor, procedure.id, patch)
+    const outcome = editProcedure(bookingApi, actor, procedure.id, patch)
     if (!outcome.ok) onError(outcome.message)
   }
 

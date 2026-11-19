@@ -117,7 +117,8 @@ export const INCOMING_FIELD_LABELS: Record<IncomingFieldKey, string> = {
 export const IMPORT_CHANNEL_LABELS: Record<ImportChannel, string> = {
   download: 'Hospital import',
   manualSheet: 'Keyed sheet',
-  feedMessage: 'Feed message',
+  feedMessage: 'Future-scope HL7 demo',
+  pdfList: 'Rooms PDF',
 }
 
 /** The office's decisions, in words. */
@@ -143,6 +144,8 @@ export function sourceTextChannelFor(channel: ImportChannel): ProcedureTextSourc
       return 'hospitalFeed'
     case 'manualSheet':
       return 'hospitalSheet'
+    case 'pdfList':
+      return 'surgeonPdf'
   }
 }
 

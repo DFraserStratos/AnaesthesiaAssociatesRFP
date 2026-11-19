@@ -34,6 +34,8 @@ import type {
   ImportRowId,
   Stub,
   StubId,
+  PdfListId,
+  SurgeonPdfList,
   Invoice,
   InvoiceLine,
   LedgerDisbursement,
@@ -44,8 +46,12 @@ import type {
   UnmatchedReceipt,
   XeroAccPay,
   XeroAccRec,
+  XeroBankLine,
   XeroContact,
+  XeroDivergence,
   XeroJournal,
+  XeroQueueItem,
+  XeroRemittance,
 } from '../domain/types'
 import type { AppId } from '../shell/appConfig'
 import type { BookingLock } from '../domain/billing/lock'
@@ -96,6 +102,14 @@ export interface BillingSlice {
    * never stored.
    */
   transfers: Record<string, LedgerTransfer>
+  /**
+   * The durable Xero sync queue (catch-up Phase 37; EP-09): every engine call
+   * Xero did not take, retried with backoff on the demo clock. Engine-side,
+   * because the queue belongs to the engine. Sent items stay as history.
+   */
+  xeroQueue: Record<string, XeroQueueItem>
+  /** Voids and amendments made directly in Xero, flagged by the reconciliation poll (catch-up Phase 37). */
+  xeroDivergences: Record<string, XeroDivergence>
 }
 
 export interface XeroSlice {
@@ -106,6 +120,9 @@ export interface XeroSlice {
   disbursements: Record<string, Disbursement>
   /** Simulated manual journals mirroring prepayment transfers (catch-up Phase 27a). */
   journals: Record<string, XeroJournal>
+  /** Bulk remittance advices and their bank lines (catch-up Phase 37; US-10.2.4): Xero side only, never read by the engine. */
+  remittances: Record<string, XeroRemittance>
+  bankLines: Record<string, XeroBankLine>
 }
 
 export interface IntegrationsSlice {
@@ -123,6 +140,8 @@ export interface IntakeSlice {
   rows: Record<ImportRowId, ImportRow>
   /** Stubs on Lists for rows waiting at intake (catch-up Phase 33a; DM-58): never Bookings. */
   stubs: Record<StubId, Stub>
+  /** The rooms' PDF lists as received (catch-up Phase 34; DM-61). */
+  pdfLists: Record<PdfListId, SurgeonPdfList>
 }
 
 export interface ShellSlice {
@@ -135,6 +154,13 @@ export interface ShellSlice {
    * clock). UI state, not a domain mutation, so not audited.
    */
   suggestionSeq: number
+  /**
+   * Which named office user the Admin app acts as (catch-up Phase 35;
+   * US-02.5.8): a demo stand-in for each office user signing in as
+   * themselves (US-13.5.1, not built), switched from the harness bar. Absent
+   * means Kirsty W. The names live in `demoActors.ts`.
+   */
+  officeUser?: 'kirsty' | 'sam'
 }
 
 export interface AppState extends SeedState {
@@ -150,6 +176,8 @@ export interface AppActions {
   setCurrentApp: (app: AppId) => void
   /** Bump `shell.suggestionSeq` and return the new value (one office picker opening). */
   nextSuggestionSeq: () => number
+  /** Switch the named office user the Admin app acts as (catch-up Phase 35; a demo stand-in for sign-in). */
+  setOfficeUser: (user: 'kirsty' | 'sam') => void
 }
 
 export type AppStore = AppState & AppActions
@@ -322,7 +350,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  v30: catch-up Phase 32c, the out-of-hours session (`Session` gains `OOH`,
  *  the schedule settings an out-of-hours default, 18:00 to 21:00).
  *  v6: Phase 10 — new billing-case money fields (received/authorised/disbursed +
- *  paidIn/disbursed stamps + handoffFailure), the `receipts` ledger on the
+ *  paidIn/disbursed stamps + the hand-off fault flag), the `receipts` ledger on the
  *  billing slice, DemoSettings.volumeStory + failNextHandoff, seeded historical
  *  ledger + Xero rows (Souter receivables/GST) and the seeded
  *  missed-webhook PaymentIn, new counters (XC/XR/XP/PMT/DSB/PR/RCT).
@@ -367,14 +395,26 @@ export const PERSIST_KEY = 'aa-demo'
  *  v59: catch-up Phase 17b, no surgeons' rooms (`masters.surgeonRooms`, `Surgeon.roomIds` and room contacts gone);
  *  each surgeon holds `practiceName`, `personalContact` and `officeContacts`, and three directory surgeons no HPI CPN
  *  yet (D74, D76). Reseeds on load.
- *  v60: Wave 2 join, Lane A's 36 (v59) joined with Lane B's 17b (v59): one past the higher. */
-export const PERSIST_VERSION = 60
+ *  v60: Wave 2 join, Lane A's 36 (v59) joined with Lane B's 17b (v59): one past the higher.
+ *  v61: catch-up Phase 37, Xero mirror resilience: `billing.xeroQueue` and `billing.xeroDivergences`, `xero.remittances`
+ *  and `xero.bankLines` (empty in the seed); ledger disbursements carry `idempotencyKey` and `detectedBy`, Xero bill
+ *  payments `idempotencyKey`; the pair's and the transfer's fault fields are gone (a failed call is a queue item). Reseeds on load.
+ *  v61: catch-up Phase 34, the rooms' PDF lists and where a List came from: `intake.pdfLists` (seeded PDL0001, Mr
+ *  Okafor's list as received; counter `pdfList`), every List's `origin` (two pinned: a rooms' PDF with its sender, the
+ *  hospital's list). Reseeds on load.
+ *  v62: catch-up Phase 35, the update email templates: `masters.emailTemplates` (seeded ET001 to ET004, one per kind
+ *  of change; counter `emailTemplate`). Reseeds on load.
+ *  v62: the Wave 3 sync of 34 into lane/a (Phase 37 and Phase 34 both took v61). Reseeds on load.
+ *  v63: catch-up Phase 38: seeded dashboard figures removed (`dashboards`, the Productivity and Leave panels); ageing
+ *  buckets gone. Reseeds on load.
+ *  v64: Wave 3 join, Lane A's 38 (v63, holding 37 and the 34 sync) joined with Lane B's 35 (v62): one past the higher. */
+export const PERSIST_VERSION = 64
 
 export function emptyBillingSlice(): BillingSlice {
-  return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {} }
+  return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {} }
 }
 export function emptyXeroSlice(): XeroSlice {
-  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {} }
+  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {} }
 }
 export function emptyIntegrationsSlice(): IntegrationsSlice {
   return { feeds: {}, messages: {} }
@@ -382,7 +422,7 @@ export function emptyIntegrationsSlice(): IntegrationsSlice {
 
 /** The intake slice: seeded empty, the presenter imports or a trigger delivers (catch-up Phase 33). */
 export function emptyIntakeSlice(): IntakeSlice {
-  return { batches: {}, rows: {}, stubs: {} }
+  return { batches: {}, rows: {}, stubs: {}, pdfLists: {} }
 }
 
 /** The seeded intake slice: one waiting no-NHI row and its stub on a List (catch-up Phase 33a). */
@@ -420,6 +460,8 @@ export function freshAppState(): AppState {
       aaFeeInvoices: seedBilling.aaFeeInvoices,
       locks: {},
       transfers: {},
+      xeroQueue: {},
+      xeroDivergences: {},
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
@@ -478,6 +520,7 @@ export function createAppStore(options: CreateAppStoreOptions = {}): BoundAppSto
     ...freshAppState(),
     setCurrentApp: (app: AppId) =>
       set((state) => ({ shell: { ...state.shell, currentApp: app } })),
+    setOfficeUser: (user: 'kirsty' | 'sam') => set((state) => ({ shell: { ...state.shell, officeUser: user } })),
     nextSuggestionSeq: () => {
       const next = (get().shell.suggestionSeq ?? 0) + 1
       set((state) => ({ shell: { ...state.shell, suggestionSeq: next } }))

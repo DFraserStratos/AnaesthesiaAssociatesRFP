@@ -24,6 +24,7 @@ const ALLOWED: Record<string, string> = {
   '../shared/demoTriggers/registry.ts': "the demo triggers pick ACCRECs through openAccRecs (Phase 14's demo-surface exemption)",
   './admin/screens/InvoiceDocument.tsx': "the Ledger card's Xero identifiers beside the ledger's numbers (no money figure)",
   './admin/screens/LedgerScreen.tsx': "the Xero column's 'Contact archived in Xero' note beside ledger data (no money figure)",
+  './admin/components/ReconciliationCard.tsx': 'the reconciliation status compares the ledger against the Xero mirror and its bank lines (US-13.2.4, catch-up Phase 37); it is a check of agreement, not a money view',
 }
 
 /** Strip block + line comments so a comment mentioning `state.xero` never trips the scan. */

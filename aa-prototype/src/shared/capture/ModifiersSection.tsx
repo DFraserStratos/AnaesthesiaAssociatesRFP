@@ -1,9 +1,10 @@
+import { useBookingApi, useBookingStore } from '../booking/draft'
 import { useMemo, useState } from 'react'
 import { accent, fontFamily, neutral, semantic, radius } from '../../theme/tokens'
 import type { BillingValidationFailure, ProcedureModifier } from '../../domain/billing'
 import { claimCompletionProblems, removedPreAppliedModifiers } from '../../domain/billing/modifiers'
 import type { ModifierId, Procedure } from '../../domain/types'
-import { confirmNoModifiers, modifierFactsFor, removeModifier, restoreModifier, useAppStore, type Actor } from '../../store'
+import { confirmNoModifiers, modifierFactsFor, removeModifier, restoreModifier, type Actor } from '../../store'
 import { useSurface } from '../surface'
 import { ModifierPickerSheet } from './ModifierPickerSheet'
 import { FailureNotes, RequiredCaption } from './ui'
@@ -50,10 +51,11 @@ interface ModifiersSectionProps {
 const INSET_REACH = 12
 
 export function ModifiersSection({ procedure, items, actor, editable, required = false, latched = false, failures, onError }: ModifiersSectionProps) {
+  const bookingApi = useBookingApi()
   const { variant } = useSurface()
   const web = variant === 'web'
-  const schedule = useAppStore((s) => s.schedule)
-  const masters = useAppStore((s) => s.masters)
+  const schedule = useBookingStore((s) => s.schedule)
+  const masters = useBookingStore((s) => s.masters)
   const [picker, setPicker] = useState<{ editing?: ModifierId } | null>(null)
 
   const removed = useMemo(
@@ -118,7 +120,7 @@ export function ModifiersSection({ procedure, items, actor, editable, required =
               shot="capture-modifier-applied"
               note={`${item.detail}.${item.origin === 'included' ? ' Cannot be added twice.' : ''}`}
               noteTone="quiet"
-              actions={editable ? [{ label: 'Remove', ariaLabel: `Remove ${item.code}`, onClick: () => run(removeModifier(useAppStore, actor, procedure.id, item.modifierId, 'preApplied')) }] : []}
+              actions={editable ? [{ label: 'Remove', ariaLabel: `Remove ${item.code}`, onClick: () => run(removeModifier(bookingApi, actor, procedure.id, item.modifierId, 'preApplied')) }] : []}
             />
           ))}
           {claimed.map((item, index) => {
@@ -135,7 +137,7 @@ export function ModifiersSection({ procedure, items, actor, editable, required =
                   editable
                     ? [
                         ...(item.refused === undefined ? [{ label: problem !== undefined ? 'Add a short explanation' : 'Edit', ariaLabel: `${problem !== undefined ? 'Add a short explanation for' : 'Edit'} ${item.code}`, onClick: () => setPicker({ editing: item.modifierId }) }] : []),
-                        { label: 'Remove', ariaLabel: `Remove ${item.code}`, onClick: () => run(removeModifier(useAppStore, actor, procedure.id, item.modifierId)) },
+                        { label: 'Remove', ariaLabel: `Remove ${item.code}`, onClick: () => run(removeModifier(bookingApi, actor, procedure.id, item.modifierId)) },
                       ]
                     : []
                 }
@@ -149,7 +151,7 @@ export function ModifiersSection({ procedure, items, actor, editable, required =
         <div key={r.modifierId} data-shot="capture-modifier-removed" style={{ fontSize: 12.5, color: neutral.mist, lineHeight: '18px' }}>
           Removed: <span className="mono">{r.code}</span>.{' '}
           {editable && (
-            <TextAction size="sm" label={`Put back ${r.code}`} onClick={() => run(restoreModifier(useAppStore, actor, procedure.id, r.modifierId))}>
+            <TextAction size="sm" label={`Put back ${r.code}`} onClick={() => run(restoreModifier(bookingApi, actor, procedure.id, r.modifierId))}>
               Put back
             </TextAction>
           )}
@@ -185,7 +187,7 @@ export function ModifiersSection({ procedure, items, actor, editable, required =
           is owed must be as easy as none. */}
       {asking && editable && (
         <div style={{ display: 'flex', gap: 8 }}>
-          <Button variant="secondary" shot="capture-modifiers-none" style={{ flex: web ? '0 0 auto' : 1 }} onClick={() => run(confirmNoModifiers(useAppStore, actor, procedure.id))}>
+          <Button variant="secondary" shot="capture-modifiers-none" style={{ flex: web ? '0 0 auto' : 1 }} onClick={() => run(confirmNoModifiers(bookingApi, actor, procedure.id))}>
             None apply
           </Button>
           <Button variant="secondary" shot="modifier-add" style={{ flex: web ? '0 0 auto' : 1 }} onClick={() => setPicker({})}>

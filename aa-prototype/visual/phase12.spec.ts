@@ -4,7 +4,7 @@ import { runDemoAction } from './demoActions'
 /**
  * Phase 12 — the demo control panel, now the index (catch-up Phase 14). A
  * real-browser click-through of the scenario jumps and procedure-day jump, then
- * the re-homed PDF arrival (Admin Integrations, Surgeon PDFs tab) and job run
+ * the PDF arrival (Admin Intake, PDF lists) and job run
  * (Billing monitor) from the harness bar's Demo actions, asserting the console
  * stays clean across the interaction.
  */
@@ -37,12 +37,15 @@ test('control panel: scenario jump, procedure-day jump, PDF ingest and jobs run 
   await page.getByRole('button', { name: 'Go to Mobile app' }).click()
   await expect(page).toHaveURL(/\/mobile/)
 
-  // PDF arrival: from Admin Integrations, Surgeon PDFs tab, ingest a row.
-  await page.goto('/admin/integrations')
+  // PDF arrival (catch-up Phase 34): Admin Intake, PDF lists, correct the flagged NHI and send to matching.
+  await page.goto('/admin/intake/pdfs')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot="demo-actions"]')).toHaveCount(1)
-  await page.getByRole('button', { name: 'Surgeon PDFs' }).click()
-  expect(await runDemoAction(page, 'ingest-pdf-row', { close: true })).toMatch(/Brian Holt/)
+  await page.locator('[data-shot="pdf-inbox"] tbody tr').first().click()
+  await page.locator('[data-shot="pdf-row-2"]').getByLabel('NHI').fill('ZAA0067')
+  await page.locator('[data-shot="pdf-row-2-apply"]').click()
+  await page.locator('[data-shot="pdf-send"]').click()
+  await expect(page.getByText(/Sent to matching: 3 rows/)).toBeVisible()
 
   // Automated jobs: run the reconciliation poll from the Billing monitor.
   await page.goto('/admin/billing')

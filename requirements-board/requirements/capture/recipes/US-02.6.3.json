@@ -7,7 +7,7 @@
       "name": "add-nhi",
       "app": "admin",
       "caption": "The office adds the NHI at intake and the Booking takes the stub's place (our reading)",
-      "start": "/admin/matching",
+      "start": "/admin/intake/matching",
       "states": [
         {
           "state": "waiting",
@@ -78,7 +78,7 @@
       "start": "/admin/day/2026-08-04",
       "setup": [
         {
-          "goto": "/admin/matching"
+          "goto": "/admin/intake/matching"
         },
         {
           "click": "[data-shot^='matching-row-'][data-import-row-id=IRS001]"

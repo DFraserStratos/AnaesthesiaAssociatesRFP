@@ -9,10 +9,13 @@ const ROUTES = [
   { name: 'mobile', path: '/mobile' },
   { name: 'web', path: '/web' },
   { name: 'admin', path: '/admin' },
-  { name: 'admin-matching', path: '/admin/matching' },
+  { name: 'admin-matching', path: '/admin/intake/matching' },
+  { name: 'admin-intake-pdfs', path: '/admin/intake/pdfs' },
   { name: 'demo-control', path: '/demo/control' },
   { name: 'demo-xero', path: '/demo/xero' },
   { name: 'demo-integrations', path: '/demo/integrations' },
+  { name: 'demo-integrations-log', path: '/demo/integrations/log' },
+  { name: 'demo-integrations-mapping', path: '/demo/integrations/mapping' },
   { name: 'demo-data', path: '/demo/data' },
 ] as const
 

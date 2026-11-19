@@ -173,15 +173,21 @@ const OWN_MOVE_CAUSE_LABELS = { move: 'Moved by its anaesthetist', unavailable: 
  */
 export interface AuditNames {
   rvgGroup?: (id: string) => string | undefined
+  /** A Contract by its name, never its id (catch-up Phase 35 test pass). */
+  contract?: (id: string) => string | undefined
 }
 
 /** The names a reader passes from its masters: an RVG group as "H4 · Complex procedures…". */
-export function auditNamesFor(masters: { rvgGroups: Readonly<Record<string, { code: string; description: string }>> }): AuditNames {
+export function auditNamesFor(masters: {
+  rvgGroups: Readonly<Record<string, { code: string; description: string }>>
+  contracts?: Readonly<Record<string, { name: string }>>
+}): AuditNames {
   return {
     rvgGroup: (id) => {
       const g = masters.rvgGroups[id]
       return g !== undefined ? `${g.code} · ${g.description}` : undefined
     },
+    ...(masters.contracts !== undefined ? { contract: (id: string) => masters.contracts?.[id]?.name } : {}),
   }
 }
 
@@ -208,6 +214,8 @@ export function formatAuditValue(key: string, value: unknown, names?: AuditNames
       if (names?.rvgGroup === undefined) return 'an RVG code'
       return names.rvgGroup(value) ?? 'an RVG code no longer listed'
     }
+    // A Contract by its name, never its id (names over ids).
+    if (key === 'governingContractId' && names?.contract !== undefined) return names.contract(value) ?? value
     if (DATE_TIME.test(value)) return format(parseISO(value), 'd MMM HH:mm')
     if (DATE_ONLY.test(value)) return format(parseISO(value), 'd MMM yyyy')
     // A session reads AM, PM or Out-of-hours (catch-up Phase 32c).
@@ -378,6 +386,8 @@ export function sortAuditNewestFirst<T extends AuditEntry>(entries: readonly T[]
 
 /** Two entries are the same gesture when everything but the value matches. */
 function sameGesture(a: AuditEntry, b: AuditEntry): boolean {
+  // A change set is its own row (catch-up Phase 35): coalescing never merges into or across one.
+  if (a.changeSetId !== undefined || b.changeSetId !== undefined) return false
   return (
     a.action === b.action &&
     a.entityId === b.entityId &&

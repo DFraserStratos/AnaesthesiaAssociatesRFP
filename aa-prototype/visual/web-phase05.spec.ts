@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test'
  * Phase 05 web walkthrough — dashboard, lists table, list detail, booking detail
  * (shared BTM capture), availability grid + the move sheet (catch-up Phase 32;
  * the cover request is retired), and the accounts
- * (overdue + GST) surfaces. Working artifacts for eyeballing, plus a few
+ * (Outstanding + the monthly GST report, catch-up Phase 38) surfaces. Working artifacts for eyeballing, plus a few
  * assertions that the shared flows actually reach the web app.
  */
 
@@ -15,6 +15,9 @@ test('web phase 05 walkthrough', async ({ page }) => {
 
   // Dashboard.
   await expect(page.getByRole('heading', { name: /Kia ora, Dr Souter/ })).toBeVisible()
+  // Catch-up Phase 38: Financial position beside Who's free; no Productivity, Leave or ageing panels.
+  await expect(page.locator('[data-shot=web-financial-position]')).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Productivity|Leave|Receivables/ })).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/w-01-dashboard.png', fullPage: true })
 
   // Lists table.
@@ -65,16 +68,19 @@ test('web phase 05 walkthrough', async ({ page }) => {
   await page.screenshot({ path: 'visual/shots/w-08-move-done.png', fullPage: true })
   await page.getByRole('button', { name: 'Done' }).click()
 
-  // Accounts → Overdue.
+  // Accounts → Outstanding (catch-up Phase 38).
   await page.getByRole('button', { name: 'Accounts', exact: true }).click()
   await page.waitForTimeout(300)
   await expect(page.getByRole('heading', { name: 'Accounts' })).toBeVisible()
-  await page.screenshot({ path: 'visual/shots/w-09-overdue.png', fullPage: true })
+  await expect(page.locator('[data-shot=web-accounts-outstanding]')).toBeVisible()
+  await page.screenshot({ path: 'visual/shots/w-09-outstanding.png', fullPage: true })
 
-  // Accounts → GST activity.
-  await page.getByRole('button', { name: 'GST activity' }).click()
+  // Accounts → GST report: the month picker and its actions.
+  await page.getByRole('link', { name: 'GST report' }).click()
   await page.waitForTimeout(300)
-  await page.screenshot({ path: 'visual/shots/w-10-gst.png', fullPage: true })
+  await expect(page.locator('[data-shot=web-gst-month-picker]')).toBeVisible()
+  await expect(page.locator('[data-shot=web-gst-actions]')).toBeVisible()
+  await page.screenshot({ path: 'visual/shots/w-10-gst-report.png', fullPage: true })
 })
 
 test('web List detail: each Booking opens by keyboard from the patient name (UI unification U1)', async ({ page }) => {

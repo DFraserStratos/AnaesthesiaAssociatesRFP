@@ -5,13 +5,13 @@ import { useDemoContextStore, useDemoTriggerContext, type DemoContextValues } fr
 describe('useDemoTriggerContext', () => {
   it('publishes on mount, updates on change and withdraws on unmount', () => {
     const { rerender, unmount } = renderHook(
-      ({ tab }: { tab: DemoContextValues['integrations.tab'] }) => useDemoTriggerContext('integrations.tab', tab),
-      { initialProps: { tab: 'messages' as DemoContextValues['integrations.tab'] } },
+      ({ month }: { month: DemoContextValues['aaFees.month'] }) => useDemoTriggerContext('aaFees.month', month),
+      { initialProps: { month: '2026-06' as DemoContextValues['aaFees.month'] } },
     )
-    expect(useDemoContextStore.getState().values['integrations.tab']).toBe('messages')
-    rerender({ tab: 'pdfs' })
-    expect(useDemoContextStore.getState().values['integrations.tab']).toBe('pdfs')
+    expect(useDemoContextStore.getState().values['aaFees.month']).toBe('2026-06')
+    rerender({ month: '2026-07' })
+    expect(useDemoContextStore.getState().values['aaFees.month']).toBe('2026-07')
     unmount()
-    expect('integrations.tab' in useDemoContextStore.getState().values).toBe(false)
+    expect('aaFees.month' in useDemoContextStore.getState().values).toBe(false)
   })
 })

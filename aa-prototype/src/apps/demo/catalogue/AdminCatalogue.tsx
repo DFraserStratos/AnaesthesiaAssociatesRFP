@@ -5,16 +5,19 @@ import { CataloguePage, CatalogueRow, LibraryGroup, StageHint } from './Catalogu
 import { CardExample, DefRowExample, EyebrowExample, PageHeaderExample, TableKitExample } from './admin/pageChromeExamples'
 import { ReviewQueue } from '../../admin/screens/ReviewQueue'
 import { AuditViewer } from '../../admin/screens/AuditViewer'
-import { IntegrationMonitorScreen } from '../../admin/screens/IntegrationMonitorScreen'
 import { RowField } from '../../admin/components/RowField'
+import { PdfListsTab } from '../../admin/intake/PdfListsTab'
+import { ListOriginRow } from '../../admin/components/ListOriginRow'
+import { SEED_ORIGIN_LISTS } from '../../../domain/seed/listOrigins'
 import { DiffTable } from '../../admin/matching/DiffTable'
 import { DecisionCards, type DecisionKind } from '../../admin/matching/DecisionCards'
 import type { IncomingFieldKey } from '../../../domain/types'
 import type { FieldDiff } from '../../../domain/intake'
-import { OptionRow, Pill, RadioCard, useRovingRadio } from '../../../shared/ui'
+import { DefList, OptionRow, Pill, RadioCard, useRovingRadio } from '../../../shared/ui'
 import { useMemo, useState } from 'react'
 import { HospitalsView } from '../../admin/screens/masters/HospitalsView'
 import { RvgGroupsView } from '../../admin/screens/masters/RvgGroupsView'
+import { EmailTemplatesView } from '../../admin/screens/masters/EmailTemplatesView'
 import {
   AnatomyDatalistExample,
   ButtonExample,
@@ -77,6 +80,8 @@ import {
   PricingSheetExample,
   InvoiceDocumentExample,
   NotificationsCardExample,
+  UpdateEmailComposerExample,
+  BookingUpdateEmailButtonExample,
   NotPreferredWarningExample,
   PipelineStepperExample,
   ReviewScreenExample,
@@ -89,7 +94,10 @@ import {
   PrepaymentsRailCardExample,
   PrepaymentApprovalStripExample,
   HoldingAccountPanelExample,
+  ReconciliationCardExample,
+  XeroPanelsExample,
 } from './admin/storeExamples'
+import { BookingAsAtPanelExample, BookingSaveBarExample, LeaveWithoutSavingDialogExample, OfficeSavedNoticeExample } from './admin/draftExamples'
 import {
   CheckboxExample,
   DateJumpInputExample,
@@ -129,7 +137,7 @@ export function AdminCatalogue() {
     >
       {/* ------------------------------------------------------------------ */}
       <LibraryGroup id="shadcn">
-        <CatalogueRow name="Button" source="shared/ui/Button.tsx" usedIn={AWM} what="The one button (UI unification U5): primary, secondary, the teal outline the mockups draw, the tinted pill and the one red danger outline (Cancel booking only, question 8); the touch size (54, 48, 44: sheet footers keep the 54px primary, question 7), desktop (44, radius 12) and compact (36); one disabled treatment and a printed disabled reason; the teal focus ring and a desktop hover." replaceWith="shadcn Button (cva variants)" note="Replaced ActionBtn, PanelAction and the hand-rolled teal outlines. Press feedback stays in global.css.">
+        <CatalogueRow name="Button" source="shared/ui/Button.tsx" usedIn={AWM} what="The one button (UI unification U5): primary, secondary, the teal outline the mockups draw, the tinted pill and the one red danger outline (Cancel booking only, question 8); the touch size (54, 48, 44: sheet footers keep the 54px primary, question 7), desktop (44, radius 12) and compact (36); one disabled treatment and a printed disabled reason; the teal focus ring and a desktop hover. Catch-up Phase 35 adds href: a link styled as the button (the update email's mailto:), the same disabled button while disabled." replaceWith="shadcn Button (cva variants)" note="Replaced ActionBtn, PanelAction and the hand-rolled teal outlines. Press feedback stays in global.css.">
           <ButtonExample />
         </CatalogueRow>
         <CatalogueRow name="TickButton" source="shared/ui/TickButton.tsx" usedIn={AW} what="The office's 'dealt with' control: a teal outline button with a check, used by To-do Clear and notice Resolve." replaceWith="shadcn Button (outline variant + icon)">
@@ -156,7 +164,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="SheetActions" source="shared/surface/SheetActions.tsx" usedIn={AWM} what="The one sheet footer, laid out by the surface: stacked primary over secondary on the phone, one row on web with the secondary hugging its label first and the primary last, filling the rest. Footer buttons stay 54px." replaceWith="shadcn DialogFooter" note="Pass the buttons as they are, so labels, disabled state and handlers stay on them.">
           <SheetActionsExample />
         </CatalogueRow>
-        <CatalogueRow name="ConfirmSheet" source="shared/surface/ConfirmSheet.tsx" usedIn={AWM} what="The one sheet confirm: the surface's Overlay with an OverlayHeader and SheetActions. Focus opens on the safe button, and a double click runs the primary once. The body between header and footer is the caller's." replaceWith="shadcn AlertDialog" note="Used by ClearConflictSheet, SubmitListSheet, RemoveProcedureSheet and MakePrimarySheet (catch-up Phase 23). Labels are the caller's.">
+        <CatalogueRow name="ConfirmSheet" source="shared/surface/ConfirmSheet.tsx" usedIn={AWM} what="The one sheet confirm: the surface's Overlay with an OverlayHeader and SheetActions. Focus opens on the safe button, and a double click runs the primary once. The body between header and footer is the caller's. Catch-up Phase 35 adds onCancel (the secondary's own action) and initialFocus: confirm opens on the primary where the primary is the safe choice (Leave without saving: Keep editing)." replaceWith="shadcn AlertDialog" note="Used by ClearConflictSheet, SubmitListSheet, RemoveProcedureSheet, MakePrimarySheet (catch-up Phase 23) and LeaveWithoutSavingDialog. Labels are the caller's.">
           <ConfirmSheetExample />
         </CatalogueRow>
         <CatalogueRow name="MasterPanel / PanelGrid / PanelSection" source="apps/admin/components/MasterPanel.tsx" usedIn={A} what="The 600px record preset of SidePanel the Contract and Party editors open in: the h2 at 18/700 names the dialog, the footer is right-aligned with the primary last." replaceWith="shadcn Sheet (side)" note="Since U2 one shell with the drawers (SidePanel); a sheet opened over it (the RVG code picker) closes first on Escape.">
@@ -190,12 +198,15 @@ export function AdminCatalogue() {
         <CatalogueRow name="Master data sub-nav" source="apps/admin/screens/masters/MasterData.tsx" usedIn={A} what="The vertical list of the 15 master views, with aria-current on the open one." replaceWith="shadcn Sidebar group / NavigationMenu" note="Rebuilt from MasterData's markup and the real MASTERS_NAV: the real nav writes ?view= and renders every master view." height={420}>
           <MastersSubNavExample />
         </CatalogueRow>
-        <CatalogueRow name="TabButton (Integrations)" source="apps/admin/screens/IntegrationMonitorScreen.tsx" usedIn={A} what="Five underlined tab buttons switching the Integrations monitor between messages, feeds, PDFs, data quality and validators." replaceWith="shadcn Tabs" note="Not exported: the row mounts the real Integrations screen. Adds tab roles and arrow keys. Some tab actions write to the demo store." height={420}>
+        <CatalogueRow name="PdfListsTab and PdfListReview (PDF lists)" source="apps/admin/intake/PdfListsTab.tsx" usedIn={A} what="The rooms' PDF lists (catch-up Phase 34): an inbox on the shared table kit (sender, surgeon, hospital, received, suggested List, a Re-sent Pill and a status Pill), Upload PDF list (PdfUploadDialog: the surface's Overlay with OverlayHeader, RadioCards badged Sample files, a Sent from TextField and SheetActions), and the review beside the facsimile: compact TextFields per row, each correction listed under its row, Send to matching (Button) and a ResultLine." replaceWith="TanStack Table + shadcn Dialog + Field" note="Uploading, correcting and sending write to the demo store." height={460}>
           <Wide minWidth={1000}>
-            <IntegrationMonitorScreen actor={OFFICE_ACTOR} />
+            <PdfListsTab actor={OFFICE_ACTOR} />
           </Wide>
         </CatalogueRow>
-        <CatalogueRow name="LineTabs" source="shared/ui/LineTabs.tsx" usedIn={AWM} what={`The underline tab strip (UI unification U5): LineTabLink for sibling routes (AA fees, ${DRAFT_LISTS}, the web Availability page switch), a labelled navigation with aria-current; LineTab for local panels (Phase 25's Contract History tab), buttons with aria-pressed; a badge after the label for a count.`} replaceWith="shadcn Tabs (as links)" note="Was AA fees' TabLink. Shown with LineTab so nothing leaves this page.">
+        <CatalogueRow name="ListOriginRow" source="apps/admin/components/ListOriginRow.tsx" usedIn={A} what={`Where a List came from (catch-up Phase 34; US-02.2.4): one DefRow on the session and ${DRAFT_LIST} drawers, the origin in words and, as its note, who the office's replies go to through the one email helper (the List's sender first).`} replaceWith="shadcn (DefRow's replacement)">
+          <ListOriginExample />
+        </CatalogueRow>
+        <CatalogueRow name="LineTabs" source="shared/ui/LineTabs.tsx" usedIn={AWM} what={`The underline tab strip (UI unification U5): LineTabLink for sibling routes (the web Accounts sub-tabs, ${DRAFT_LISTS}, the web Availability page switch, Admin Intake's four tabs, the Future-scope pages), a labelled navigation with aria-current; LineTab for local panels (Phase 25's Contract History tab), buttons with aria-pressed; a badge after the label for a count.`} replaceWith="shadcn Tabs (as links)" note="Was AA fees' TabLink. Shown with LineTab so nothing leaves this page.">
           <LineTabsExample />
         </CatalogueRow>
         <CatalogueRow name="DayNav (with SortToggle)" source="apps/admin/components/DayNav.tsx" usedIn={A} what="The Day view toolbar: week and day steppers, Today, the shared DateJumpInput (36px, named Go to date, bounded by the horizon; UI unification U4), the Roster order or A to Z choice and Find available. Since UI unification U5 the step buttons are IconButtons named Previous day and Next day, the week steps and Today are the compact Button, and SortToggle is the small SlidingSegmentedControl (Row order)." replaceWith="shadcn Button Group + ToggleGroup + Date Picker" note="Its title is the shared PageHeader (admin, 24/30) since UI unification U6.">
@@ -231,7 +242,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="NameSearchBox" source="shared/ui/NameSearchBox.tsx" usedIn={AWM} what="The one search box in all three apps since UI unification U4: field (48px) and pill (36px, or 38px on the web Lists row) sizes; fill well (grey) inside a sheet, card or drawer and surface (white, the default) on the page; a clear button (clearLabel, a 44px touch target on the phone), Escape clears, testId and shot hooks. Each caller filters its own rows." replaceWith="shadcn Input Group (search)" note="WebSearchField and the mobile Lists input are gone: both Lists pages use it. The aa-field class gives it the one teal focus ring.">
           <NameSearchBoxExample />
         </CatalogueRow>
-        <CatalogueRow name="ContractSelect (SelectField)" source="shared/contracts/ContractSelect.tsx" usedIn={A} what="A native select of every active Contract grouped by holder, on the shared SelectField (UI unification U4): 48px, grey well, its label above it." replaceWith="shadcn Select (or NativeSelect)" note="Its old selectStyle prop is accepted and ignored. A select without a visible label takes SelectField's hideLabel, which names it.">
+        <CatalogueRow name="ContractSelect (SelectField)" source="shared/contracts/ContractSelect.tsx" usedIn={A} what="A native select of every active Contract grouped by holder, on the shared SelectField (UI unification U4): 48px, grey well, its label above it." replaceWith="shadcn Select (or NativeSelect)" note="A select without a visible label takes SelectField's hideLabel, which names it.">
           <ContractSelectExample />
         </CatalogueRow>
         <CatalogueRow name="SurgeonPicker" source="apps/admin/components/pairing/SurgeonPicker.tsx" usedIn={A} what="A native select of surgeons with a 'Not preferred with Dr X' optgroup for the chosen anaesthetist, on the shared SelectField (UI unification U4): a label (or hideLabel), size, fill and width." replaceWith="Base UI Combobox (with groups)" note="Stays a native select (the catch-up 17 ruling). The list is long and not searchable. Opens on an anaesthetist with a not-preferred surgeon, so the second optgroup shows.">
@@ -258,6 +269,12 @@ export function AdminCatalogue() {
         <CatalogueRow name="WarningsToDo" source="apps/admin/components/WarningsToDo.tsx" usedIn={A} what="The rail's To-do card: every open warning, soonest first, each with Open and Clear, and a show-more toggle. Its count is the shared CountBadge (read as 3 to do)." replaceWith="shadcn Card + Collapsible" note="On the shared Card (padding card, flat; UI unification U6), its h2 naming the section. Clear writes a clearance to the demo store.">
           <WarningsToDoExample />
         </CatalogueRow>
+        <CatalogueRow name="ReconciliationCard" source="apps/admin/components/ReconciliationCard.tsx" usedIn={A} what="The rail's Reconciliation card (catch-up Phase 37; US-13.2.4): Books square or Out of balance, derived and never stored, each failing check with its difference, then up to five unresolved items oldest first with amount and age, each linking to where it is handled." replaceWith="shadcn Card + Badge" note="On the shared Card, under the To-do. Reads reconciliationStatusOf; Inject unmatched receipt on the Ledger puts it out of balance.">
+          <ReconciliationCardExample />
+        </CatalogueRow>
+        <CatalogueRow name="Xero panels (XeroConnectionLine · XeroQueuePanel · XeroDivergencePanel · PayablesPanel)" source="apps/admin/components/XeroPanels.tsx" usedIn={A} what="The Billing monitor's Xero panels (catch-up Phase 37): the connection line, the Xero sync queue with Retry now, the invoices changed directly in Xero with the Resolve side panel, and the payables awaiting Xero's payables run with the badged Run payables in Xero." replaceWith="shadcn Card + Table + Badge + Sheet" note="On the shared Card, TableShell (nested, compact), Pill, Notice, Button, EmptyState and SidePanel. Simulate Xero outage on the Billing monitor fills the queue.">
+          <XeroPanelsExample />
+        </CatalogueRow>
         <CatalogueRow name="PrepaymentsRailCard" source="apps/admin/components/PrepaymentsRailCard.tsx" usedIn={A} what="The rail's Pre-payments card (catch-up Phase 27): every upcoming prepaid Booking, one row per payer, with its amount, a status pill and the days to go. An awaiting row opens the Invoices strip; the others open the Booking. Its count is the shared CountBadge; empty, the shared EmptyState." replaceWith="shadcn Card + Badge" note="On the shared Card (padding card, flat), under the To-do card. Reads useUpcomingPrepayments.">
           <PrepaymentsRailCardExample />
         </CatalogueRow>
@@ -269,6 +286,24 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="NotificationsCard" source="apps/admin/components/NotificationsCard.tsx" usedIn={A} what="The rail's shared notification pool: active notices with Resolve, See all and Show resolved. Its count is the shared CountBadge (read as 2 active), still showing 0." replaceWith="shadcn Card + Button" note="On the shared Card (U6) with headingRef: after a tick focus returns to its heading. Resolve writes to the demo store. The fresh seed has no notices, so it shows the empty state until one is raised.">
           <NotificationsCardExample />
+        </CatalogueRow>
+        <CatalogueRow name="UpdateEmailComposer (with UpdateEmailPreview)" source="apps/admin/flows/UpdateEmailComposer.tsx" usedIn={A} what="The update email composer (catch-up Phase 35): a wide two-column Overlay. Left, Pick changes: the saved history newest first on the shared Checkbox, rows that cannot be emailed disabled with their reason, an earlier-draft hint Pill and the cancelled-out note. Right: Template (SelectField), Send to (Segmented), the resolved To with the other office contacts to switch to, and the preview badged Demo preview with its character count and a Shortened to fit Pill. Open in mail client is the shared Button rendered as a real mailto: link." replaceWith="shadcn Dialog + Checkbox + Select + ToggleGroup" note="Open in mail client records one updateEmail.drafted entry in the demo store; nothing is sent. The Button's href prop (added here) renders an anchor while enabled.">
+          <UpdateEmailComposerExample />
+        </CatalogueRow>
+        <CatalogueRow name="BookingUpdateEmailButton / NotificationEmailAction / useListUpdateEmail" source="apps/admin/flows/UpdateEmailActions.tsx" usedIn={A} what="Where the update email opens from: the Admin Booking header's Draft update email (outline Button with the Mail icon, disabled with its reason while the page has unsaved changes or nothing saved to email), the List drawers' Draft update email once a List has an emailable change of anaesthetist, and the notification page's Draft cover-change email on a List moved to a colleague (a return to the office points to the unassigned List instead)." replaceWith="shadcn Button" note="Shown here: the Booking button on a seeded Booking, outside any draft.">
+          <BookingUpdateEmailButtonExample />
+        </CatalogueRow>
+        <CatalogueRow name="BookingSaveBar / BookingSavedStrip" source="apps/admin/components/BookingSaveBar.tsx" usedIn={A} what="The Admin Booking detail's explicit save (catch-up Phase 35): a sticky warning Notice with the unsaved count, the changed fields and compact Discard and Save changes Buttons (a refused save prints its reason), then a success Notice: Saved, the count, the time, who and the change-set id, with Dismiss. Both count by label (shared/booking/changeLabels.ts), as the leave dialog does." replaceWith="shadcn Alert + Button" note="Sample changes here: Save and Discard write nothing.">
+          <BookingSaveBarExample />
+        </CatalogueRow>
+        <CatalogueRow name="OfficeSavedNotice" source="shared/booking/OfficeSavedNotice.tsx" usedIn={AWM} what="One dismissible neutral Notice when another actor's save lands on an open Booking: who saved and the fields, with View history. A notice, not concurrency handling." replaceWith="shadcn Alert" note="The button saves a note as Sam T. in the demo store, which raises the notice here.">
+          <OfficeSavedNoticeExample />
+        </CatalogueRow>
+        <CatalogueRow name="BookingAsAtPanel" source="shared/booking/BookingAsAtPanel.tsx" usedIn={A} what="View as at, from a History row (catch-up Phase 35): the Booking rebuilt from the audit at that point on the sunken panel, its rows the shared DefRow, each Procedure under an Eyebrow; Paid by as the live line decides it (the payer only where the Contract bills the payer). No money. A gap in the record reads as incomplete, in words." replaceWith="Custom (shadcn Card)" note="Read-only; shown at the Booking's newest entry.">
+          <BookingAsAtPanelExample />
+        </CatalogueRow>
+        <CatalogueRow name="LeaveWithoutSavingDialog" source="shared/booking/draft/useUnsavedChangesGuard.tsx" usedIn={A} what="Leave without saving? (catch-up Phase 35): a ConfirmSheet over a blocked navigation with the unsaved count; Keep editing (the primary, which takes the initial focus) stays, Discard and leave throws the draft away and goes on." replaceWith="shadcn AlertDialog" note="On a stand-in blocker here; on the Booking detail useBlocker (the data router) blocks the navigation.">
+          <LeaveWithoutSavingDialogExample />
         </CatalogueRow>
         <CatalogueRow name="VacatedSessionChoice / StatusRadioGroup" source="shared/flows/VacatedSessionChoice.tsx" usedIn={AWM} what="A radio group of status chips: what the vacated session becomes after a move. Its keyboard is the shared useRovingRadio (UI unification U4): one Tab stop, arrows move and select, Home and End jump to the ends." replaceWith="shadcn RadioGroup" note="The same hook drives the Contract rail's answers (RailOptionGroup), where a move only focuses.">
           <VacatedChoiceExample />
@@ -308,7 +343,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="Table / Header / TextAction / EditCell" source="apps/admin/screens/masters/chrome.tsx" usedIn={A} what="The master views' table chrome: a page header, a table on the shared TableShell (dense) and Th since UI unification U6 (the Admin Review header, sunken dividers, e1), text actions and an Edit cell." replaceWith="TanStack Table + shadcn Table" note="Phase 42 renames heads to columns, adds GroupRow and ClickableRow and wraps Header as MasterHeader over PageHeader. The signature is unchanged until then.">
           <MasterTableExample />
         </CatalogueRow>
-        <CatalogueRow name="Table kit (TableShell · Th · Td · GroupRow · ClickableRow)" source="shared/table/" usedIn={AWM} what="The one table kit (UI unification U6, question 19): TableShell (white, line, radius 14, e1; a named focusable region only when it overflows), Th (scope col) on the Admin Review header, Td with sunken dividers, GroupRow (th scope colgroup), and ClickableRow with one RowOpenButton as the keyboard handle. Density comfortable (web), compact (admin) or dense (audit and masters) keeps each table's row height." replaceWith="TanStack Table + shadcn Table" note={`The ${DRAFT_LISTS} table is built this way: Tab to a session, Enter opens the ${DRAFT_LIST} drawer (bug 3). An inner button does only its own action.`}>
+        <CatalogueRow name="Table kit (TableShell · Th · Td · GroupRow · ClickableRow)" source="shared/table/" usedIn={AWM} what="The one table kit (UI unification U6, question 19): TableShell (white, line, radius 14, e1; a named focusable region only when it overflows), Th (scope col) on the Admin Review header, sortable with `sort` (aria-sort and a button, teal underline on the active column; the Billing monitor), Td with sunken dividers, GroupRow (th scope colgroup), and ClickableRow with one RowOpenButton as the keyboard handle. Density comfortable (web), compact (admin) or dense (audit and masters) keeps each table's row height." replaceWith="TanStack Table + shadcn Table" note={`The ${DRAFT_LISTS} table is built this way: Tab to a session, Enter opens the ${DRAFT_LIST} drawer (bug 3). An inner button does only its own action.`}>
           <TableKitExample />
         </CatalogueRow>
         <CatalogueRow name="PageHeader" source="shared/ui/PageHeader.tsx" usedIn={AW} what="A page's title row (U6): web 28/34, admin 24/30, or the 18/700 section title; an h1, a slate sub-line, right-aligned actions, a count inside the heading or an aside beside it, headingRef for focus return." replaceWith="Custom (layout)">
@@ -333,6 +368,11 @@ export function AdminCatalogue() {
             <RvgGroupsView actor={OFFICE_ACTOR} />
           </Wide>
         </CatalogueRow>
+        <CatalogueRow name="EmailTemplatesView (template editor with live preview)" source="apps/admin/screens/masters/EmailTemplatesView.tsx" usedIn={A} what="The update email templates (catch-up Phase 35): a table of name, kind, sends to and active, with Edit, Retire and Restore. Edit opens a wide sheet with the fields, placeholder buttons that insert into the subject or body, validateTemplate's messages inline and a preview against a sample Booking badged Sample." replaceWith="TanStack Table + shadcn Table, shadcn Sheet + Form" note="Edits write to the demo store. The placeholder buttons are plain buttons until a token-insert input exists." height={420}>
+          <Wide minWidth={980}>
+            <EmailTemplatesView actor={OFFICE_ACTOR} />
+          </Wide>
+        </CatalogueRow>
         <CatalogueRow name="AuditViewer" source="apps/admin/screens/AuditViewer.tsx" usedIn={A} what="The global audit feed with a filter bar, capped at 500 rows. Since UI unification U4 the bar is shared parts: two SelectFields (compact, surface fill) and a FilterDateInput From and To." replaceWith="TanStack Table + TanStack Virtual" note="On the shared table kit (U6, dense). Virtualisation or pagination replaces the 500-row cap later." height={460}>
           <Wide minWidth={980}>
             <AuditViewer />
@@ -345,7 +385,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="TextField" source="shared/ui/Field.tsx" usedIn={AWM} what="The one labelled single-line input, about 77 uses in Admin: text, date, time, number, email or phone; mono; a FieldHint tied by aria-describedby; and since UI unification U4 invalid (aria-invalid and the error border), inputMode and align for amounts, min, max, step, list, size (48px field or 36px compact), fill (well or surface) and hideLabel. Catch-up Phase 17b adds accessibleName, a fuller name where the visible label repeats on the page (Office contact 2 email)." replaceWith="shadcn Field + Input (React Hook Form)" note="Every default keeps the old look (48px, grey well). The library would bind errors to the field.">
           <TextFieldExample />
         </CatalogueRow>
-        <CatalogueRow name="RowField" source="apps/admin/components/RowField.tsx" usedIn={A} what="The small labelled in-row input for correcting one field of an incoming row: the Integrations PDF review's extracted rows and the Matching panel's name, date of birth and time (catch-up Phase 33 moved it out of PdfReview so both use it). Mono, an invalid border, and a read-only look for wording kept as received." replaceWith="shadcn Field + Input" note="A near twin of TextField's compact size; fold it into TextField in the migration.">
+        <CatalogueRow name="RowField" source="apps/admin/components/RowField.tsx" usedIn={A} what="The small labelled in-row input for correcting one field of an incoming row: the Matching panel's name, date of birth and time (catch-up Phase 33 moved it out of PdfReview; Phase 34's PDF list review uses the shared TextField, compact, instead). Mono, an invalid border, and a read-only look for wording kept as received." replaceWith="shadcn Field + Input" note="A near twin of TextField's compact size; fold it into TextField in the migration.">
           <RowFieldExample />
         </CatalogueRow>
         <CatalogueRow name="DiffTable (Matching)" source="apps/admin/matching/DiffTable.tsx" usedIn={A} what="Matching's differences between a Booking and the hospital's row: Field, On the Booking now, From the hospital, on the shared table kit (nested, dense). Every row is a changed field in the warning tone (ClickableRow tone=warning); a field the office may apply carries its tick, named by the field; an NHI is shown but never applied." replaceWith="TanStack Table + shadcn Table + Checkbox">
@@ -470,7 +510,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="Review summary tiles (ReviewScreen)" source="shared/ui/StatTile.tsx" usedIn={A} what="The review page's four summary tiles, then the bookings table: each Procedure's stack with its own flags and Approve or Correct on a Contract change (catch-up Phase 21a), the payer and insurer, alerts, warnings with Clear, totals and flags on the shared Pill, the action bar (Approve all Contract changes, Authorise) and the authorise confirm." replaceWith="Custom on shadcn Card + Table + AlertDialog" note="Tile is not exported: the row mounts the real ReviewScreen. Authorise writes to the demo store." height={560}>
           <ReviewScreenExample />
         </CatalogueRow>
-        <CatalogueRow name="Billing pipeline stepper (PipelineCard)" source="apps/admin/screens/BillingMonitorScreen.tsx" usedIn={A} what="Each billed List's stages (authorised, run, invoices, emailed, Xero) as tinted chips joined by arrows." replaceWith="Custom on shadcn Badge + Tooltip" note="Not exported, and the real screen's AA fee link leaves the page: rebuilt from StageChip, fed by the real billingMonitor selector. Chips are buttons here so the detail can be shown.">
+        <CatalogueRow name="Billing pipeline (PipelineDetail)" source="apps/admin/screens/BillingMonitorScreen.tsx" usedIn={A} what="Inside an expanded List on the Billing monitor (catch-up Phase 37 restyle): each stage (authorised, run, invoices, emailed, Xero) as the shared Pill, joined by arrows, in an ol named Billing pipeline with each stage's state in text." replaceWith="Custom on shadcn Badge + Tooltip" note="Not exported: rebuilt here from the shared Pill, fed by the real billingMonitor selector. The monitor's status pills and Retry are the shared Pill and Button.">
           <PipelineStepperExample />
         </CatalogueRow>
         <CatalogueRow name="InvoiceDocument" source="apps/admin/screens/InvoiceDocument.tsx" usedIn={A} what="The invoice as a print-styled document (serif voice): the anaesthetist as supplier with their GST number, AA's agent block with the Provisional (OQ-29) pill, the holder's or the patient's layout (the BTM breakdown, cross-match strip and Your reference on the holder's), a split share's note, GST at the foot, and its rail: the Delivery card (Emailed, To post or No invoice address, with Resend or Send), Related invoices and the Xero handoff. Shown at half size." replaceWith="Custom (print-styled page)" note="Keep it out of a fixed Dialog for print isolation. Its rail actions write to the demo store. The Locked record's rows are the shared DefRow (UI unification U6); the rail cards keep their print voice until Phase 37." height={520}>
@@ -610,3 +650,14 @@ function DiffTableExample() {
     </div>
   )
 }
+
+/** The seeded rooms' PDF List and the hospital's List, as the drawer shows them (catch-up Phase 34). */
+function ListOriginExample() {
+  const lists = useAppStore((s) => s.schedule.lists)
+  return (
+    <DefList>
+      {[SEED_ORIGIN_LISTS.pdf, SEED_ORIGIN_LISTS.hospital].map((id) => (lists[id] !== undefined ? <ListOriginRow key={id} list={lists[id]!} /> : null))}
+    </DefList>
+  )
+}
+

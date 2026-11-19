@@ -22,6 +22,8 @@ export const ACTION_LABELS: Record<string, string> = {
   // --- Bookings ---------------------------------------------------------------
   'booking.create': 'Booking created',
   'booking.update': 'Booking updated',
+  // The office's explicit save's header (catch-up Phase 35): one per change set.
+  'booking.save': 'Booking saved',
   'booking.complete': 'Booking completed',
   'booking.uncomplete': 'Booking reopened for amendment',
   'booking.cancel': 'Booking cancelled',
@@ -197,14 +199,20 @@ export const ACTION_LABELS: Record<string, string> = {
   'stub.place': 'Stub placed on List',
   'stub.resolve': 'Stub replaced by Booking',
   'stub.remove': 'Stub removed',
+  // The rooms' PDF lists and where a List came from (catch-up Phase 34).
+  'pdfList.upload': 'PDF list uploaded',
+  'pdfList.resend': 'Updated PDF list received',
+  'pdfList.correct': 'PDF list row corrected',
+  'pdfList.send': 'PDF list sent to matching',
+  'list.senderChanged': 'List sender changed',
 
   // --- Xero simulation & money movement -----------------------------------
   'xero.pairCreated': 'Xero invoice pair created',
-  'xero.handoffFailed': 'Xero handoff failed',
   'xero.handoffNoop': 'Xero handoff already done',
   'xero.paymentReceived': 'Payment received',
   'xero.accpayAuthorised': 'Xero bill authorised',
-  'xero.disbursed': 'Disbursement recorded',
+  // The bill payment made in Xero's payables run (Xero side only since catch-up Phase 37); `ledger.disbursed` is the engine's record of it.
+  'xero.disbursed': 'Bill paid in Xero',
   'xero.contactResolved': 'Xero contact resolved',
   'xero.contactArchived': 'Xero contact archived',
   // The AA Holding account's transfer and its Xero mirror (catch-up Phase 27a).
@@ -212,8 +220,22 @@ export const ACTION_LABELS: Record<string, string> = {
   'prepayment.transferNoop': 'Prepayment transfer already done',
   'prepayment.transferReleased': 'Transferred prepayment released',
   'xero.journalPosted': 'Xero transfer journal posted',
-  'xero.journalFailed': 'Xero transfer journal failed',
   'xero.journalNoop': 'Xero transfer journal already posted',
+  // Xero mirror resilience (catch-up Phase 37): the outage, the sync queue, detection, divergence and the Xero side.
+  'xero.outageStarted': 'Xero outage started (simulated)',
+  'xero.outageEnded': 'Xero restored (simulated)',
+  'xero.queued': 'Waiting for Xero',
+  'xero.retryFailed': 'Xero retry failed',
+  'xero.retryAlert': 'Xero alert raised',
+  'xero.queueSent': 'Sent to Xero',
+  'xero.paymentLanded': 'Payment landed in Xero',
+  'xero.voidedInXero': 'Invoice voided in Xero',
+  'xero.amendedInXero': 'Invoice total edited in Xero',
+  'xero.divergenceFlagged': 'Change made in Xero flagged',
+  'xero.divergenceResolved': 'Change made in Xero resolved',
+  'xero.remittanceReceived': 'Bulk remittance received in Xero',
+  'xero.bankLineUnmatched': 'Remittance line left for bank reconciliation',
+  'xero.bankLineMatched': 'Remittance line matched in Xero',
 
   // --- The internal ledger (catch-up Phase 36) ----------------------------
   'ledger.pairCreated': 'Ledger pair created',
@@ -242,6 +264,13 @@ export const ACTION_LABELS: Record<string, string> = {
   'auth.signIn': 'Signed in',
   'auth.signInFailed': 'Sign-in failed',
   'auth.passwordReset': 'Password reset by user',
+
+  // --- Update emails (catch-up Phase 35; US-02.3.3, US-02.3.4) -------------
+  'emailTemplate.create': 'Email template added',
+  'emailTemplate.update': 'Email template updated',
+  'emailTemplate.retire': 'Email template retired',
+  'emailTemplate.restore': 'Email template restored',
+  'updateEmail.drafted': 'Update email drafted (not sent)',
 }
 
 /** "someWord" -> "some word" (the shared camelCase splitter). */

@@ -20,10 +20,11 @@ import {
   type DemoClockState,
 } from '../domain/clock'
 import { generateCanvasForDates, seriesPaintedCount } from '../domain/seed'
-import { mutate, resetDomainState, type Actor, type MutationMeta } from './mutate'
+import { clockISO, mutate, resetDomainState, type Actor, type MutationMeta } from './mutate'
 import type { AppStoreApi } from './appStore'
 import { emitAppEvent } from './events'
 import { applyGenerated, canvasMastersFrom } from './slotActions'
+import { isDraftStore } from './draftMode'
 
 const DEMO_ACTOR: Actor = { who: 'Demo control', role: 'system', source: 'demo' }
 
@@ -70,8 +71,13 @@ function applyClock(api: AppStoreApi, next: DemoClockState): void {
   api.setState({ clock: next })
   if (next.todayISO !== previous.todayISO) {
     rollCanvasForward(api, previous.todayISO, next.todayISO)
-    emitAppEvent({ type: 'dayAdvanced', todayISO: next.todayISO })
+    if (!isDraftStore(api)) emitAppEvent({ type: 'dayAdvanced', todayISO: next.todayISO })
   }
+  // Every clock change (catch-up Phase 37): the Xero sync queue works what is due, after the day's poll. Never from a
+  // Booking draft (catch-up Phase 35: a draft's shared app events are no-ops).
+  const fromISO = clockISO(previous)
+  const toISO = clockISO(next)
+  if (toISO !== fromISO && !isDraftStore(api)) emitAppEvent({ type: 'clockAdvanced', fromISO, toISO })
 }
 
 /** Advance the clock by minutes; rolling past midnight advances the day (and the canvas). */

@@ -1,10 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { neutral } from '../../theme/tokens'
 import { useAppStore } from '../../store'
 import { sortAuditNewestFirst } from '../audit'
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { HistoryTimeline } from './HistoryTimeline'
+import { BookingAsAtPanel } from './BookingAsAtPanel'
 
 interface HistorySheetProps {
   open: boolean
@@ -23,6 +24,13 @@ interface HistorySheetProps {
   entityLabels?: Record<string, string>
   title: string
   onClose: () => void
+  /**
+   * A Booking's history also shows its List's changes of anaesthetist
+   * (catch-up Phase 35; US-01.4.1): the List's `listReassign` change sets.
+   */
+  coverListId?: string
+  /** Admin only (catch-up Phase 35): each row offers View as at for this Booking. */
+  asAtBookingId?: string
 }
 
 /**
@@ -44,7 +52,8 @@ function subjectFrom(title: string): string {
   return word === '' || word.includes(' ') ? 'record' : word
 }
 
-export function HistorySheet({ open, entityIds, entityLabels, title, onClose }: HistorySheetProps) {
+export function HistorySheet({ open, entityIds, entityLabels, title, onClose, coverListId, asAtBookingId }: HistorySheetProps) {
+  const [asAt, setAsAt] = useState<string | null>(null)
   const { Overlay } = useSurface()
   const audit = useAppStore((s) => s.audit)
   const idSet = entityIds.join('|')
@@ -60,16 +69,31 @@ export function HistorySheet({ open, entityIds, entityLabels, title, onClose }: 
       const listed = (a.after as { draftListIds?: unknown } | undefined)?.draftListIds
       return Array.isArray(listed) && listed.some((id) => ids.has(id as string))
     }
-    return sortAuditNewestFirst(audit.filter((a) => ids.has(a.entityId) || named(a)))
-  }, [audit, idSet])
+    // The List's changes of anaesthetist while this Booking was on it (catch-up Phase 35): its listReassign
+    // change sets made after the Booking's own first entry (its creation, or its first seeded entry).
+    const coverSets = new Set<string>()
+    if (coverListId !== undefined) {
+      const born = audit.findIndex((a) => ids.has(a.entityId))
+      const kinds = new Map<string, string>()
+      for (const a of audit) if (a.changeSetId !== undefined && a.changeSetKind !== undefined) kinds.set(a.changeSetId, a.changeSetKind)
+      audit.forEach((a, i) => {
+        if (born !== -1 && i <= born) return
+        if (a.entityId === coverListId && a.changeSetId !== undefined && kinds.get(a.changeSetId) === 'listReassign') coverSets.add(a.changeSetId)
+      })
+    }
+    const cover = (a: (typeof audit)[number]) => a.changeSetId !== undefined && coverSets.has(a.changeSetId) && a.entityType === 'list'
+    return sortAuditNewestFirst(audit.filter((a) => ids.has(a.entityId) || named(a) || cover(a)))
+  }, [audit, idSet, coverListId])
 
   return (
     <Overlay open={open} onClose={onClose}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div data-shot={coverListId !== undefined ? 'booking-history' : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <OverlayHeader title={title} />
         <div style={{ fontSize: 12.5, color: neutral.mist }}>Every change to this record, most recent first.</div>
+        {asAt !== null && asAtBookingId !== undefined && <BookingAsAtPanel bookingId={asAtBookingId} entryId={asAt} onClose={() => setAsAt(null)} />}
         <HistoryTimeline
           entries={entries}
+          {...(asAtBookingId !== undefined ? { onViewAsAt: setAsAt } : {})}
           subject={subjectFrom(title)}
           {...(entityLabels !== undefined ? { entityLabels } : {})}
         />

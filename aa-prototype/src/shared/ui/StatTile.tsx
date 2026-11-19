@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react'
-import { neutral, radius, semantic } from '../../theme/tokens'
+import type { CSSProperties, ReactNode } from 'react'
+import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import { Eyebrow } from './Eyebrow'
 import type { DataAttributes } from './Field'
 
@@ -20,6 +20,8 @@ export function StatTile({
   sub,
   pill,
   tone,
+  onClick,
+  pressed,
   shot,
   ...data
 }: {
@@ -29,6 +31,10 @@ export function StatTile({
   sub?: ReactNode
   pill?: ReactNode
   tone?: 'warning'
+  /** The outlined tile as a button (catch-up Phase 37: the Billing monitor's "With problems" turns its filter on). */
+  onClick?: () => void
+  /** With `onClick`: the filter the tile turns on is on. */
+  pressed?: boolean
   shot?: string
 } & DataAttributes) {
   const figureColour = tone === 'warning' ? semantic.warning.onTint : undefined
@@ -46,8 +52,30 @@ export function StatTile({
       </div>
     )
   }
+  const outlined: CSSProperties = { background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.md, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 4 }
+  // The button form is the outlined tile only (the quiet tile has no clickable use).
+  if (onClick !== undefined) {
+    return (
+      <button
+        type="button"
+        className="aa-ctl"
+        {...data}
+        data-shot={shot}
+        aria-pressed={pressed}
+        onClick={onClick}
+        style={{ ...outlined, font: 'inherit', textAlign: 'left', cursor: 'pointer', ...(pressed === true ? { borderColor: accent.base, boxShadow: `inset 0 0 0 1px ${accent.base}` } : {}) }}
+      >
+        <Eyebrow as="span">{label}</Eyebrow>
+        <span className="mono" style={{ fontSize: 22, fontWeight: 700, color: figureColour ?? neutral.ink }}>{value}</span>
+        {sub !== undefined && <span style={{ fontSize: 11, color: neutral.mist }}>{sub}</span>}
+        {pill !== undefined && (
+          <span style={{ alignSelf: 'flex-start', fontSize: 11, fontWeight: 600, color: semantic.success.onTint, background: semantic.success.tint, borderRadius: radius.pill, padding: '2px 7px' }}>{pill}</span>
+        )}
+      </button>
+    )
+  }
   return (
-    <div {...data} data-shot={shot} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.md, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div {...data} data-shot={shot} style={outlined}>
       <Eyebrow as="span">{label}</Eyebrow>
       <span className="mono" style={{ fontSize: 22, fontWeight: 700, color: figureColour ?? neutral.ink }}>{value}</span>
       {sub !== undefined && <span style={{ fontSize: 11, color: neutral.mist }}>{sub}</span>}

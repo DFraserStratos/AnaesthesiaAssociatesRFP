@@ -7,7 +7,7 @@
       "name": "two-states",
       "app": "admin",
       "caption": "Paid into AA and disbursed to the anaesthetist tracked separately",
-      "start": "/admin/billing",
+      "start": "/admin/billing?list=L-34821-2026-07-20-AM",
       "setup": [
         {
           "scenario": "S3"
@@ -50,24 +50,31 @@
         {
           "state": "paid-in",
           "caption": "Paid into AA, not yet disbursed",
-          "steps": [],
+          "steps": [
+            {
+              "wait": 2200
+            }
+          ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-34821-2026-07-20-AM] tr:has-text(\"Brian Holt\")"
+            "[data-shot=billing-pipeline-L-34821-2026-07-20-AM] tr[data-booking-id=BK0022]"
           ]
         },
         {
           "state": "disbursed",
-          "caption": "After the payables run, disbursed to the anaesthetist",
+          "caption": "After Xero's payables run pays the bill, the Billing Engine records the disbursement: disbursed to the anaesthetist",
           "steps": [
             {
-              "click": "role=button[name=\"Run payables\"]"
+              "click": "[data-shot=billing-run-payables-in-xero]"
             },
             {
-              "wait": 600
+              "wait": "[data-shot=billing-payables-result]"
+            },
+            {
+              "wait": 2200
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-34821-2026-07-20-AM] tr:has-text(\"Brian Holt\")"
+            "[data-shot=billing-pipeline-L-34821-2026-07-20-AM] tr[data-booking-id=BK0022]"
           ]
         }
       ]

@@ -36,16 +36,13 @@ export function WebCatalogue() {
           <CatalogueRow name="AvailabilityPageSwitch" source="apps/web/components/AvailabilityPageSwitch.tsx" usedIn={W} what="Switches between the two Availability pages, Find cover and My availability. Since UI unification U5 (question 18) an underline tab strip of links on the shared LineTabs: a labelled navigation, the current page marked aria-current." replaceWith="shadcn Tabs (as links)" note="Was a sliding segmented control doing a tab bar's job; now real links, so the route and the browser's back work as links do.">
             <D.PageSwitchDemo />
           </CatalogueRow>
-          <CatalogueRow name="SubTabButton" source="apps/web/screens/AccountsScreen.tsx" usedIn={W} what="The Accounts underline sub-tabs: Overdue, Payments, GST activity and AA fees." replaceWith="shadcn Tabs" note="Recreated: local to AccountsScreen.tsx. No tab roles, aria-selected or arrow keys today.">
-            <D.SubTabsDemo />
-          </CatalogueRow>
           <CatalogueRow name="Back link" source="shared/ui/BackLink.tsx" usedIn={ALL} what="The teal chevron that returns to the parent screen (UI unification U5): a real link where a route exists, else a button; desktop 14px, the phone's 15px with a 44px target, a sheet's 13px step back. Review and Invoices keep only their breadcrumb (question 9)." replaceWith="shadcn Breadcrumb" note="One component for the five desktop copies, the phone's header backs, the move sheets' step back and ProfileChrome's link.">
             <D.BackLinkDemo />
           </CatalogueRow>
           <CatalogueRow name="Card (panel)" source="shared/ui/Card.tsx" usedIn={W} what="The white card every web screen is built from, the shared Card at padding panel (UI unification U6): 20px, gap 14, e1, a 17/600 heading; optional right-aligned action, padded or flush for a full-bleed table. The web Panel is gone." replaceWith="shadcn Card" note="Its title is a real h2 naming the section (it was a div), so screen-reader users can jump between panels. The same Card at padding card is the Admin rail and profile card and the phone card.">
             <D.PanelDemo />
           </CatalogueRow>
-          <CatalogueRow name="StatTile" source="shared/ui/StatTile.tsx" usedIn={W} what="A dashboard figure, the shared StatTile variant quiet (UI unification U6): an Eyebrow label, a large mono value and an optional green change pill. Seeded productivity figures." replaceWith="shadcn Card + Badge" note="The same component's outlined variant is Admin Review's summary tile. Static figures; no animation to add.">
+          <CatalogueRow name="StatTile" source="shared/ui/StatTile.tsx" usedIn={W} what="A dashboard figure, the shared StatTile variant quiet (UI unification U6): an Eyebrow label, a large mono value and an optional green change pill. The dashboard's Financial position and Accounts' Your position (catch-up Phase 38)." replaceWith="shadcn Card + Badge" note="The same component's outlined variant is Admin Review's summary tile, and with onClick a button (the Billing monitor's With problems tile turns its filter on). Static figures; no animation to add.">
             <D.StatTileDemo f={f} />
           </CatalogueRow>
           <CatalogueRow name="SlidingSegmentedControl" source="shared/ui/SlidingSegmentedControl.tsx" usedIn={ALL} what="A single-choice segmented control whose highlight slides between options. Two colour variants (teal, surface) and two sizes: md, and sm for a 36px toolbar (Admin Day's row order, UI unification U5). The ink variant went with question 17." replaceWith="shadcn ToggleGroup (single)" note="aria-pressed buttons rather than radios, no roving focus (question 3 keeps them buttons). Keep the slide with Motion layoutId.">
@@ -81,7 +78,7 @@ export function WebCatalogue() {
           <CatalogueRow name="Day stepper" source="apps/web/screens/AvailabilityGrid.tsx" usedIn={W} what="Previous day, the day's name, next day and Today, for Find cover." replaceWith="shadcn Button Group" note="Recreated: inline in AvailabilityGrid.tsx, on the shared IconButton and Button (outline). No arrow-key or T-for-today shortcuts.">
             <D.DayStepperDemo f={f} />
           </CatalogueRow>
-          <CatalogueRow name="TextAction" source="shared/ui/TextAction.tsx" usedIn={ALL} what="A borderless teal word that does one thing (UI unification U5): sm 12.5 in tables, md 14 in cards, lg 15 with a 44px target on the phone, flush, inline inside a sentence, and a printed reason when disabled. The dashboard's view overdue accounts is one." replaceWith="shadcn Button (variant link)" note="Was the dashboard's LinkButton, SeriesList's linkStyle and about forty inline teal copies.">
+          <CatalogueRow name="TextAction" source="shared/ui/TextAction.tsx" usedIn={ALL} what="A borderless teal word that does one thing (UI unification U5): sm 12.5 in tables, md 14 in cards, lg 15 with a 44px target on the phone, flush, inline inside a sentence, and a printed reason when disabled. The dashboard's View outstanding invoices is one." replaceWith="shadcn Button (variant link)" note="Was the dashboard's LinkButton, SeriesList's linkStyle and about forty inline teal copies.">
             <D.LinkButtonDemo />
           </CatalogueRow>
           <CatalogueRow name="SubmitAction" source="apps/web/screens/ListDetailView.tsx" usedIn={W} what="List detail's primary action in four states: blocked (count left, opens the real blockers sheet), ready, submitted and authorised." replaceWith="shadcn Button variants + Badge" note="Recreated: local to ListDetailView.tsx. Submitting just swaps the button for a green pill, with no live region or toast.">
@@ -147,7 +144,7 @@ export function WebCatalogue() {
           <CatalogueRow name="WebDayTable" source="shared/table/" usedIn={W} what="One day's Lists for Go to date: session, start time, location, Booking count, status and progress." replaceWith="TanStack Table + shadcn Table" note="Pick a day with the date input above it. On the shared table kit (U6): its own TableShell, a RowOpenButton per List." height={360}>
             <D.DayTableDemo f={f} />
           </CatalogueRow>
-          <CatalogueRow name="Accounts tables (tfoot totals)" source="apps/web/screens/AccountsScreen.tsx" usedIn={W} what="Overdue, Payments, GST activity and AA fees, each a table; Overdue, GST and AA fees close with totals in a tfoot." replaceWith="TanStack Table + shadcn Table (footer)" note="The real AccountsScreen; its sub-tabs switch the table. Totals rows have no row headers." height={560}>
+          <CatalogueRow name="Accounts tables (tfoot totals)" source="apps/web/screens/AccountsScreen.tsx" usedIn={W} what="Outstanding, Payments, the GST report and AA fees, each on the table kit (catch-up Phase 38); Outstanding, the GST report and AA fees close with totals in a tfoot. Outstanding rows open their Booking; the GST report has a month picker and Download, Print and Email to me." replaceWith="TanStack Table + shadcn Table (footer)" note="The real AccountsScreen. Its sub-tabs are the shared LineTabLink (catch-up Phase 38 migrated SubTabButton), real links to /web/accounts/*, so a tab here leaves the catalogue. Totals rows have no row headers." height={560}>
             <D.AccountsDemo f={f} />
           </CatalogueRow>
           <CatalogueRow name="List detail Bookings table" source="shared/table/" usedIn={W} what="A List's Bookings with time, patient and NHI, procedure, units, fee and status, then a totals row; plus the page's actions and panels." replaceWith="TanStack Table + shadcn Table" note="The real ListDetailView in a scrolling stage, on the shared table kit (U6) inside a flush panel Card (TableShell bare). The patient's name is each row's RowOpenButton; the row click stays for the mouse. Move, alert and add a booking open real flows that change the demo data." height={700}>
@@ -179,11 +176,6 @@ export function WebCatalogue() {
           </CatalogueRow>
         </LibraryGroup>
 
-        <LibraryGroup id="recharts">
-          <CatalogueRow name="Receivables aging bars" source="apps/web/screens/DashboardScreen.tsx" usedIn={W} what="Outstanding receivables by age bucket as horizontal bars with amounts, from the ledger." replaceWith="Recharts bar chart (shadcn Chart)" note="Recreated: inline in DashboardScreen.tsx. Spans with no chart semantics or table fallback.">
-            <D.AgingBarsDemo f={f} />
-          </CatalogueRow>
-        </LibraryGroup>
 
         <LibraryGroup id="numberflow">
           <CatalogueRow name="BookingTotalPanel · useTickingValue" source="shared/capture/BookingTotalPanel.tsx" usedIn={WA} what="The ink Booking total: breakdown lines, units and fee, rate and override note. Units and fee tick to new values with a green flash. On a multi-procedure Booking its rows say each Procedure's place in the rule (Primary · B + T + M 3 of 7) and plain captions follow (Modifiers 7, split 3 · 2 · 2), all under booking-total-split (catch-up Phase 23)." replaceWith="NumberFlow (optional swap for useTickingValue)" note="Fed local figures here. Keep the flash and the reduced-motion jump; animate nothing that is static today.">
@@ -228,7 +220,7 @@ export function WebCatalogue() {
           <CatalogueRow name="AvailabilityGrid" source="apps/web/screens/AvailabilityGrid.tsx" usedIn={W} what="Find cover: every anaesthetist's AM and PM for a day, filters, name search and legend, with Move and Move here gestures." replaceWith="Custom grid (role grid, roving focus) on library primitives" note="The real screen; its navigation is intercepted. Move opens the real move sheet, which changes the demo data if confirmed." height={640}>
             <D.AvailabilityGridDemo f={f} />
           </CatalogueRow>
-          <CatalogueRow name="HistoryTimeline" source="shared/booking/HistoryTimeline.tsx" usedIn={ALL} what="A record's audit trail in plain English, newest first, under day headings, with coalesced runs that expand. Shown for the seeded Booking with the longest history." replaceWith="Custom, its expandable groups on shadcn Collapsible" note="The ledger layout is ours; only the expand and collapse is a library job. Its day and change labels are the shared Eyebrow (UI unification U6)." height={460}>
+          <CatalogueRow name="HistoryTimeline" source="shared/booking/HistoryTimeline.tsx" usedIn={ALL} what="A record's audit trail in plain English, newest first, under day headings, with coalesced runs that expand. Since catch-up Phase 35 a change set (a save, a create, a move, a List's change of anaesthetist, an applied hospital row) is one row: who and how many changes, each field's before and after beneath, and View as at on the Admin Booking. Shown for the seeded Booking with the longest history." replaceWith="Custom, its expandable groups on shadcn Collapsible" note="The ledger layout is ours; only the expand and collapse is a library job. Its day and change labels are the shared Eyebrow (UI unification U6)." height={460}>
             <D.HistoryTimelineDemo f={f} />
           </CatalogueRow>
         </LibraryGroup>

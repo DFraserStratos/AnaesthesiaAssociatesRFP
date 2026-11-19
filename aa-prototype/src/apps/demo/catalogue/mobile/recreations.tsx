@@ -11,14 +11,13 @@ import { ChevronLeft, ChevronRight, CircleDollarSign, LayoutGrid, List as ListIc
 import type { LucideIcon } from 'lucide-react'
 import { accent, brand, elevation, neutral, radius, semantic } from '../../../../theme/tokens'
 import { motion } from '../../../../theme/motion'
-import { STATUS_PALETTE } from '../../../../theme/statusColours'
 import type { DisplayKey } from '../../../../domain/types'
 import type { SlotStatusRecords } from '../../../../domain/slotStatus'
 import { sessionText } from '../../../../domain/outOfHours'
 import {
   isOpenSlotView,
   outstandingPayableRowsFor,
-  receivablesAgingFor,
+  outstandingTotalFor,
   rosterForDate,
   slotViewsForDate,
   useAppStore,
@@ -29,7 +28,7 @@ import {
 import { Avatar, blockFill, resolveDisplayStatus, useDefaultStatus, useDisplayStatus, useSlotStatusRecords } from '../../../../shared'
 import { statusLine } from '../../../../domain/slotStatus'
 import { AttentionDot } from '../../../../shared/warnings/AttentionDot'
-import { TickBadge } from '../../../../shared/ui'
+import { Card, TickBadge } from '../../../../shared/ui'
 import {
   describeDayForScreenReaders,
   monthCells,
@@ -38,7 +37,7 @@ import {
   useAvailabilityBounds,
   useAvailabilityMonth,
 } from '../../../../shared/availability'
-import { formatCurrency, locationName } from '../../../../shared/format'
+import { formatCurrency, locationName, plural } from '../../../../shared/format'
 import { MonthHeaderRow, MonthStepButton } from '../../../../shared/calendar'
 
 // ---------------------------------------------------------------------------
@@ -500,37 +499,27 @@ export function MyCalendarGridCopy({ anaesthetistId, onOpenDay }: { anaesthetist
 }
 
 // ---------------------------------------------------------------------------
-// BalancesScreen.tsx: the hero figure card, AgeChip, EmptyCard
+// BalancesScreen.tsx: the hero figure card (on the shared Card since catch-up Phase 38)
 // ---------------------------------------------------------------------------
 
 export function HeroFigureCardCopy({ anaesthetistId }: { anaesthetistId: string }) {
   const billing = useAppStore((s) => s.billing)
   const schedule = useAppStore((s) => s.schedule)
   const masters = useAppStore((s) => s.masters)
-  const todayISO = useToday()
-  const outstanding = useMemo(() => outstandingPayableRowsFor({ billing, schedule, masters }, anaesthetistId, todayISO), [billing, schedule, masters, anaesthetistId, todayISO])
-  const aging = useMemo(() => receivablesAgingFor({ billing, schedule, masters }, anaesthetistId, todayISO).aging, [billing, schedule, masters, anaesthetistId, todayISO])
+  const outstanding = useMemo(() => outstandingPayableRowsFor({ billing, schedule, masters }, anaesthetistId), [billing, schedule, masters, anaesthetistId])
   return (
-    <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 20, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
-      <span style={{ width: 44, height: 44, borderRadius: 999, background: neutral.sunken, display: 'flex', alignItems: 'center', justifyContent: 'center', color: neutral.slate, flex: 'none' }}>
-        <CircleDollarSign size={22} strokeWidth={2} aria-hidden />
-      </span>
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <span style={{ fontSize: 12, color: neutral.slate }}>Outstanding to you</span>
-        <span className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{formatCurrency(aging.total)}</span>
-        <span style={{ fontSize: 12, color: neutral.mist }}>{outstanding.length} unpaid invoice{outstanding.length === 1 ? '' : 's'}</span>
+    <Card padding="panel" elevation="flat">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <span style={{ width: 44, height: 44, borderRadius: 999, background: neutral.sunken, display: 'flex', alignItems: 'center', justifyContent: 'center', color: neutral.slate, flex: 'none' }}>
+          <CircleDollarSign size={22} strokeWidth={2} aria-hidden />
+        </span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontSize: 12, color: neutral.slate }}>Outstanding to you</span>
+          <span className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{formatCurrency(outstandingTotalFor(outstanding))}</span>
+          <span style={{ fontSize: 12, color: neutral.mist }}>{plural(outstanding.length, 'unpaid invoice')}</span>
+        </div>
       </div>
-    </div>
-  )
-}
-
-export function AgeChipCopy({ days, accFunded }: { days: number; accFunded: boolean }) {
-  const overdue = days > 60
-  return (
-    <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-      {accFunded && <span style={{ fontSize: 10.5, fontWeight: 600, color: STATUS_PALETTE.preop.onTint, background: STATUS_PALETTE.preop.tint, borderRadius: 999, padding: '2px 8px' }}>ACC</span>}
-      <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 999, padding: '2px 9px', background: overdue ? semantic.warning.tint : neutral.sunken, color: overdue ? semantic.warning.onTint : neutral.slate }}>{days}d</span>
-    </span>
+    </Card>
   )
 }
 

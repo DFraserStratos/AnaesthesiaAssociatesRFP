@@ -14,7 +14,14 @@ import { DRAFT_LIST } from '../../../shared/scheduleTerms'
 export const CHANNEL_CAPS: Record<ImportChannel, string> = {
   download: 'Sample file',
   manualSheet: 'Keyed sheet',
-  feedMessage: 'Feed message',
+  // Fired from Future scope: HL7 and FHIR (catch-up Phase 34): never presented as an in-scope feed.
+  feedMessage: 'Future-scope HL7 demo',
+  pdfList: 'Rooms PDF',
+}
+
+/** A rooms row's micro-cap (catch-up Phase 34): "Rooms PDF · Mr C. Okafor". */
+export function roomsCap(fields: IncomingBookingFields): string {
+  return `Rooms PDF · ${fields.surgeon?.name ?? 'the surgeon'}`
 }
 
 /** Change-type pills: neutral sunken for New, Modification and No change; the error tint only for a Cancellation. */

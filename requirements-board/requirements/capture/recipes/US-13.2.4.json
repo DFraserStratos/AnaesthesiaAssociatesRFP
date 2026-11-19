@@ -1,0 +1,43 @@
+{
+  "id": "US-13.2.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "reconciliation-status",
+      "app": "admin",
+      "caption": "One reconciliation status on the admin dashboard says whether the books are square",
+      "start": "/admin",
+      "states": [
+        {
+          "state": "square",
+          "caption": "Books square: the ledger, its Xero mirror and Xero's bank lines all agree",
+          "steps": [
+            {
+              "wait": "[data-shot=dashboard-reconciliation][data-status=square]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=dashboard-reconciliation]"
+          ]
+        },
+        {
+          "state": "out-of-balance",
+          "caption": "Out of balance: the failing check and its difference, then each unresolved item with its amount and how long it has been outstanding",
+          "steps": [
+            {
+              "trigger": "inject-unmatched-receipt",
+              "choice": "souter"
+            },
+            {
+              "wait": "[data-shot=dashboard-reconciliation] [data-shot=reconciliation-item]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=dashboard-reconciliation]"
+          ]
+        }
+      ]
+    }
+  ]
+}

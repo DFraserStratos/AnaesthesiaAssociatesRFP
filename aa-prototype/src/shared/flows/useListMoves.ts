@@ -1,18 +1,19 @@
+import { useBookingStore } from '../booking/draft'
 import { useMemo, useRef } from 'react'
 import { isAssignedList } from '../../domain/draftLists'
 import { isMovableByOwner, movableListsFor, pushTargets, type ListMoveInput } from '../../domain/listMoves'
 import { addDaysISO } from '../../domain/clock'
 import type { AssignedList, Notification, Session } from '../../domain/types'
 import { useShallow } from 'zustand/react/shallow'
-import { bookingMovedToMe, bookingMoveEntries, bookingsMovedToMe, movedToMe, movedToMeForList, useAppStore, useToday, type AppState, type BookingMove } from '../../store'
+import { bookingMovedToMe, bookingMoveEntries, bookingsMovedToMe, movedToMe, movedToMeForList, useToday, type AppState, type BookingMove } from '../../store'
 import { SESSIONS_IN_ORDER } from '../../domain/outOfHours'
 
 /** The slices a move reads, memoised on exactly those four (not every schedule edit). */
 export function useMoveInput(): ListMoveInput {
-  const lists = useAppStore((s) => s.schedule.lists)
-  const slots = useAppStore((s) => s.schedule.slots)
-  const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
-  const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
+  const lists = useBookingStore((s) => s.schedule.lists)
+  const slots = useBookingStore((s) => s.schedule.slots)
+  const anaesthetists = useBookingStore((s) => s.masters.anaesthetists)
+  const slotStatuses = useBookingStore((s) => s.masters.slotStatuses)
   return useMemo(() => ({ lists, slots, anaesthetists, slotStatuses }), [lists, slots, anaesthetists, slotStatuses])
 }
 
@@ -61,7 +62,7 @@ export function useMovableSessions(anaesthetistId: string, dateISO: string): Par
 
 /** Whether one List is hers to move now (List detail's "Move this List"). */
 export function useIsMovable(listId: string, anaesthetistId: string | undefined): boolean {
-  const lists = useAppStore((s) => s.schedule.lists)
+  const lists = useBookingStore((s) => s.schedule.lists)
   const todayISO = useToday()
   return useMemo(
     () => anaesthetistId !== undefined && isMovableByOwner({ lists }, listId, anaesthetistId, todayISO),
@@ -71,14 +72,14 @@ export function useIsMovable(listId: string, anaesthetistId: string | undefined)
 
 /** Her movable Lists from today for the next `days` days (the web dashboard's "Move a List" picker). */
 export function useMovableLists(anaesthetistId: string, days = 6): AssignedList[] {
-  const lists = useAppStore((s) => s.schedule.lists)
+  const lists = useBookingStore((s) => s.schedule.lists)
   const todayISO = useToday()
   return useMemo(() => movableListsFor({ lists }, anaesthetistId, todayISO, addDaysISO(todayISO, days)), [lists, anaesthetistId, todayISO, days])
 }
 
 /** Lists colleagues moved to her in the notice window, newest first (US-01.4.3 AC2), from the shared pool's records. */
 export function useMovedToMe(anaesthetistId: string): Notification[] {
-  const notifications = useAppStore((s) => s.notifications)
+  const notifications = useBookingStore((s) => s.notifications)
   const todayISO = useToday()
   return useMemo(() => movedToMe({ notifications }, anaesthetistId, todayISO), [notifications, anaesthetistId, todayISO])
 }
@@ -88,7 +89,7 @@ export function useMovedToMe(anaesthetistId: string): Notification[] {
  * component re-renders only when a move lands, not on every audited write.
  */
 export function useBookingMoveEntries(): AppState['audit'] {
-  return useAppStore(useShallow(bookingMoveEntries))
+  return useBookingStore(useShallow(bookingMoveEntries))
 }
 
 /**
@@ -98,9 +99,9 @@ export function useBookingMoveEntries(): AppState['audit'] {
  * audit event.
  */
 export function useMovedToMeNotice(listId: string, anaesthetistId: string | undefined): { atISO: string; fromName: string | undefined } | undefined {
-  const notifications = useAppStore((s) => s.notifications)
+  const notifications = useBookingStore((s) => s.notifications)
   const moves = useBookingMoveEntries()
-  const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
+  const anaesthetists = useBookingStore((s) => s.masters.anaesthetists)
   const todayISO = useToday()
   return useMemo(() => {
     if (anaesthetistId === undefined) return undefined
@@ -121,8 +122,8 @@ export function useBookingsMovedToMe(anaesthetistId: string): BookingMove[] {
 /** The received Booking's "Moved to you by" line (Phase 32a): the move that put it on her List, inside the window, and who made it. */
 export function useBookingMovedToMeNotice(bookingId: string, anaesthetistId: string | undefined): { atISO: string; fromName: string | undefined } | undefined {
   const moves = useBookingMoveEntries()
-  const bookings = useAppStore((s) => s.schedule.bookings)
-  const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
+  const bookings = useBookingStore((s) => s.schedule.bookings)
+  const anaesthetists = useBookingStore((s) => s.masters.anaesthetists)
   const todayISO = useToday()
   return useMemo(() => {
     if (anaesthetistId === undefined) return undefined
@@ -142,7 +143,7 @@ export function useBookingMovedToMeNotice(bookingId: string, anaesthetistId: str
  * or a later visit to a colleague's Booking still falls back.
  */
 export function useOwnBookingInView(bookingId: string | null, anaesthetistId: string): boolean {
-  const ownership = useAppStore((s): 'none' | 'hers' | 'notHers' => {
+  const ownership = useBookingStore((s): 'none' | 'hers' | 'notHers' => {
     if (bookingId === null) return 'none'
     const booking = s.schedule.bookings[bookingId]
     if (booking === undefined) return 'none'

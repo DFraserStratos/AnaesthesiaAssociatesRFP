@@ -92,16 +92,19 @@ Snapshot date: **24 July 2026**
 | Anaesthetist web dashboard, Lists, availability and accounts views | Ready | Strong supporting workflow |
 | Admin day view, changes, cover, review, authorisation, masters and audit | Ready | Strong primary workflow |
 | Billing run and invoice documents | Ready | Phase 08 |
-| Post-op addendum and billing monitor | Ready | Phase 09 |
+| Post-op addendum and billing monitor (grouped by anaesthetist, with filters for one anaesthetist, hospital, dates and Problems only; Lists awaiting approval open in Review) | Ready | Phase 09; grouping and filters from catch-up Phase 37 |
 | Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), escalating warning, left off the final invoice | Ready | Catch-up Phase 27 |
 | Prepayment held in the AA Holding account (its card on the Billing monitor), transferred to the anaesthetist automatically when the List is authorised, then paid by the payables run | Ready | Catch-up Phase 27a |
-| Xero pairs, payments, payables, payment history, live balances and GST activity | Ready | Phase 10 |
+| Xero pairs, payments, payables, payment history, live balances and GST report | Ready | Phase 10 |
+| Xero resilience: the payables run made in Xero (each disbursement recorded by webhook or poll), the Xero sync queue through an outage, voids and edits made in Xero flagged at the poll, bulk remittances matched in Xero, and the Reconciliation card on Admin Day | Ready | Catch-up Phase 37 |
 | Internal ledger with in-balance view: Admin Ledger (the whole ledger and one anaesthetist), the out-of-balance list, unmatched receipts allocated or refunded; Xero mirrors the ledger | Ready | Catch-up Phase 36 |
 | Anaesthetist profile and bank details (own rate per unit on mobile and web; office-held contact, HPI CPN and masked bank details, payments made in Xero) | Ready | Catch-up Phase 26 |
-| Surgeon PDF ingestion | Ready | Phase 11 |
-| Hospital import and matching screen (Import hospital file, match, create or reject each row; nothing applied automatically) | Ready | Catch-up Phase 33 |
+| Admin Intake (one home: Matching, PDF lists, Data quality, Validators; `/admin/intake`) | Ready | Catch-up Phase 34 |
+| Hospital file import and matching screen (Import hospital file, match, create or reject each row; nothing applied automatically, nothing synced) | Ready | Catch-up Phase 33; under Intake from Phase 34 |
+| The rooms' PDF lists through matching (upload with its sender, correct a row, Send to matching; a re-sent list's differences wait for approval) and where each List came from (its sender, "Replies go to") | Ready | Catch-up Phase 34 |
+| Explicit save on the Admin Booking (one change set a save, History grouped, View as at), Switch office user, the on-demand update email (drafted, opened in the office's own mail client, never sent by the system) and Master data · Email templates | Ready | Catch-up Phase 35 |
 | Demo control panel (the index) with S1 to S5 scenario jumps; demo actions on each screen under **Demo actions** in the top bar, and a **Demo** sheet on a handset | Ready | Phase 12; per-screen actions from catch-up Phase 14 |
-| HL7/FHIR integration simulator and monitor tabs | Ready, badged Future scope (messages are sent to the matching screen) | Phase 11; re-routed in catch-up Phase 33 |
+| HL7/FHIR simulator, message log and feed mapping (**Demo: Future scope, HL7 and FHIR**, `/demo/integrations`) | Ready, badged Future scope (a fired message lands on Admin Intake as a row; Christchurch Public not integrated today) | Phase 11; re-routed in catch-up Phase 33; its own demo surface from Phase 34 |
 | Mobile atmospheric gradient (visual only) | Upcoming | Phase 13, does not change any workflow |
 
 Phases 00 to 12 are built and clickable. Phase 13 is the only remaining phase and is purely a visual
@@ -109,7 +112,10 @@ polish of the mobile background; it changes nothing in the workflows, data, web 
 
 Demo-only surfaces stay honestly labelled. The Xero simulator, integration simulator and the control
 panel carry a "demo simulation" badge: they simulate external systems and are not proposed end-user
-product screens. The billing monitor is proposed product UI; only its simulation triggers are badged.
+product screens. The billing monitor is proposed product UI; only its simulation triggers are badged,
+and its **Run payables in Xero** (badged Simulated Xero). It is grouped by anaesthetist and filters by
+anaesthetist, hospital, dates and **Problems only**; Lists awaiting approval open in Review, where they
+are authorised.
 
 The anaesthetist Booking (Mobile and Anaesthetist Web) shows what the price comes to as she records,
 on every Contract: a quiet **Price** card in the capture and the Booking total above **Mark complete**

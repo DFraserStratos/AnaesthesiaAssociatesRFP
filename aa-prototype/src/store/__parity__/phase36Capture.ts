@@ -35,6 +35,7 @@ import { receivePayment } from '../paymentActions'
 import { payablesDue, runPayables } from '../payablesActions'
 import { stageBillingFailure } from '../demoStaging'
 import { handoffPair } from '../xeroHandoff'
+import { processXeroQueue } from '../xeroQueue'
 import { seedMonthOfBctis } from '../demoBctiSeed'
 import { recordAaFeePayment, runMonthlyFeeInvoices } from '../aaFeeActions'
 import { addPrepaidBooking } from '../prepaymentDemo'
@@ -49,18 +50,15 @@ import {
   allAaFeeInvoices,
   billingMonitor,
   bookingsForList,
-  gstActivityFor,
   openAccRecs,
   paymentHistoryFor,
   patientHasOutstandingPriorEpisode,
   proceduresForBooking,
-  receivablesAgingFor,
 } from '../selectors'
 import { bctiRecords, openBillingExceptions } from '../ledgerSelectors'
 import { BCTI_COUNT_RULE, bctisFor } from '../../domain/billing/bcti'
 import { roundToCents, toCents } from '../../domain/billing/money'
 import { ANAE, CONTRACT, SEED_LIST_IDS, SEED_MARKERS } from '../../domain/seed'
-import { DEMO_TODAY } from '../../domain/clock'
 import { projectedListId } from '../../domain/slots'
 import type { Actor } from '../mutate'
 
@@ -76,24 +74,18 @@ function anaesthetistIds(state: AppState): string[] {
   return Object.keys(state.masters.anaesthetists).sort()
 }
 
-const LAST_DAY: Record<string, string> = { '2026-03': '31', '2026-04': '30', '2026-05': '31', '2026-06': '30', '2026-07': '31' }
-
-function lastDay(monthISO: string): string {
-  return `${monthISO}-${LAST_DAY[monthISO] ?? '28'}`
-}
-
 /** One anaesthetist's money views, as Web Accounts, mobile Balances and the dashboard read them. */
 function anaesthetistViews(state: AppState, id: string) {
-  const rows = payableRowsFor(state, id, DEMO_TODAY).map((r) => ({
+  // Catch-up Phase 38 retired the ageing buckets and the receipts-based GST activity (D8, RV-33): the
+  // capture keeps every ledger figure (the receivable still owed among them) and drops only those views.
+  const rows = payableRowsFor(state, id).map((r) => ({
     invoiceNumber: r.invoiceNumber,
     total: r.amountTotal,
     received: r.receivedAmount,
     disbursed: r.disbursedAmount,
-    outstanding: r.outstanding,
+    outstanding: Math.max(0, roundToCents(r.amountTotal - r.receivedAmount)),
     held: r.held,
-    bucket: r.bucket,
   }))
-  const aging = receivablesAgingFor(state, id, DEMO_TODAY)
   const history = paymentHistoryFor(state, id).map((r) => ({
     invoiceNumber: r.invoiceNumber,
     receivedAtISO: r.receivedAtISO,
@@ -102,18 +94,14 @@ function anaesthetistViews(state: AppState, id: string) {
     paidOut: r.disbursedAmount,
     status: r.status,
   }))
-  const gst = MONTHS.map((m) => {
-    const g = gstActivityFor(state, id, `${m}-01`, lastDay(m))
-    return { month: m, rows: g.rows.length, gross: g.totalGross, gst: g.totalGst }
-  })
-  return { rows, aging: { ...aging.aging, accountsOver60: aging.accountsOver60 }, history, gst }
+  return { rows, history }
 }
 
 function allAnaesthetistViews(state: AppState) {
   const out: Record<string, ReturnType<typeof anaesthetistViews>> = {}
   for (const id of anaesthetistIds(state)) {
     const v = anaesthetistViews(state, id)
-    if (v.rows.length > 0 || v.history.length > 0 || v.gst.some((g) => g.rows > 0)) out[id] = v
+    if (v.rows.length > 0 || v.history.length > 0) out[id] = v
   }
   return out
 }
@@ -184,7 +172,8 @@ function monitor(state: AppState) {
     listId: l.listId,
     invoiceCount: l.invoiceCount,
     failedCount: l.failedCount,
-    handoffFailedCount: l.handoffFailedCount,
+    // Phase 37: a hand-off fault is a queued call; the count keeps its baseline name.
+    handoffFailedCount: l.waitingForXeroCount,
     stages: l.stages.map((st) => `${st.key}:${st.state}`),
     bookings: l.bookingRows.map((b) => ({ bookingId: b.bookingId, status: b.status, received: b.receivedAmount, released: b.authorisedAmount, disbursed: b.disbursedAmount, prior: b.outstandingPriorBalance === true })),
   }))
@@ -310,10 +299,11 @@ function s4Beat3Flow() {
   const api = createAppStore()
   withWiredRun(api, () => stageBillingFailure(api))
   const staged = { ...step(api.getState()), monitor: monitor(api.getState()) }
-  // Resolve and retry: Losa Tuilagi's invoice stands; the retry hands it off once (the pair id is its case reference).
+  // The retry: Losa Tuilagi's invoice stands; the retry hands it off once (the pair id is its case reference).
+  // Since catch-up Phase 37 the hand-off waits in the Xero sync queue, and the office's retry is the queue's.
   const losa = SEED_MARKERS['billingFailureBooking']!.entityId
   const invoice = Object.values(api.getState().billing.invoices).find((i) => i.bookingId === losa && i.kind === 'standard')
-  const handed = invoice !== undefined ? handoffPair(api, invoice.caseReference).ok : false
+  const handed = invoice !== undefined ? processXeroQueue(api, { force: true }).sent === 1 && handoffPair(api, invoice.caseReference).ok : false
   return { staged, losaInvoice: invoice?.invoiceNumber ?? null, handed, retried: { ...step(api.getState()), monitor: monitor(api.getState()) } }
 }
 
@@ -399,7 +389,6 @@ function feeRunFlow() {
     paid,
     due: due(api.getState()),
     dueBy: dueByAnaesthetist(api.getState()),
-    souterGst: anaesthetistViews(api.getState(), ANAE.rutherford).gst,
     bctiCount: bctis(api.getState()).counts[ANAE.rutherford] ?? null,
   }
 }

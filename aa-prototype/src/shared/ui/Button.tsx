@@ -41,6 +41,12 @@ interface ButtonProps extends DataAttributes {
   buttonRef?: Ref<HTMLButtonElement>
   /** `data-shot` on the button. */
   shot?: string
+  /**
+   * A link styled as this button: renders a real `<a href>` (a `mailto:` link, catch-up Phase 35)
+   * while enabled, and the same disabled `<button>` as every other variant while `disabled`.
+   * Omitted: the button, as before.
+   */
+  href?: string
 }
 
 const DESK_SIZE = {
@@ -103,6 +109,7 @@ export function Button({
   ariaLabel,
   buttonRef,
   shot,
+  href,
   ...rest
 }: ButtonProps) {
   const reasonId = useId()
@@ -122,7 +129,20 @@ export function Button({
     ...style,
   }
 
-  const button = (
+  const button = href !== undefined && !disabled ? (
+    <a
+      href={href}
+      className={`aa-ctl aa-btn aa-btn-${variant}`}
+      data-shot={shot}
+      title={title}
+      aria-label={ariaLabel}
+      onClick={onClick}
+      style={{ ...css, textDecoration: 'none' }}
+      {...dataAttributesOf(rest)}
+    >
+      {children}
+    </a>
+  ) : (
     <button
       ref={buttonRef}
       type={type}
