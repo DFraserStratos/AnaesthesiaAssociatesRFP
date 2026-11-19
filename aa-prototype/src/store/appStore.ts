@@ -417,8 +417,10 @@ export const PERSIST_KEY = 'aa-demo'
  *  v65: catch-up Phase 38b, events on a Procedure: `schedule.procedureEvents` (seeded EV0001, Dr Souter's
  *  additional invoice on HP03 awaiting review; counter `procedureEvent`), the `additional` invoice kind and the
  *  `additionalTo` lineage; the post-op addendum Booking (`bookingType`, `addendumOfBookingId`) is gone. Reseeds on load.
- *  v66: the Wave 4 sync of 38b into lane/b (Phase 42 and Phase 38b both took v65): one past the higher. Reseeds on load. */
-export const PERSIST_VERSION = 66
+ *  v66: the Wave 4 sync of 38b into lane/b (Phase 42 and Phase 38b both took v65): one past the higher. Reseeds on load.
+ *  v67: catch-up Phase 43, the raw hospital row: `ImportRow.raw` (the row as sent, held under restricted access;
+ *  the seeded IRS001 carries it). Reseeds on load. */
+export const PERSIST_VERSION = 67
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {} }

@@ -8,11 +8,11 @@
 
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, Gauge } from 'lucide-react'
-import { Notice } from '../ui'
+import { Notice, TextAction } from '../ui'
 import { formatCount } from '../format'
 import { medianOf, useScaleMode, type ScaleModeState } from '../../store/scaleMode'
 import { TIMED_SCREENS } from './useScreenTiming'
-import { accent, fontFamily, neutral } from '../../theme/tokens'
+import { fontFamily, neutral } from '../../theme/tokens'
 
 const MONO: React.CSSProperties = { fontFamily: fontFamily.mono, fontVariantNumeric: 'tabular-nums' }
 
@@ -66,16 +66,12 @@ export function ScaleBanner() {
         live="status"
         icon={<Gauge size={16} />}
         action={
-          <button
-            type="button"
-            data-shot="scale-timings-toggle"
-            aria-expanded={open}
-            onClick={() => setOpen((o) => !o)}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, font: 'inherit', fontSize: 13, fontWeight: 600, color: accent.base, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-          >
-            {open ? <ChevronDown size={14} aria-hidden /> : <ChevronRight size={14} aria-hidden />}
-            Timings
-          </button>
+          <TextAction size="sm" flush shot="scale-timings-toggle" ariaExpanded={open} onClick={() => setOpen((o) => !o)}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              {open ? <ChevronDown size={14} aria-hidden /> : <ChevronRight size={14} aria-hidden />}
+              Timings
+            </span>
+          </TextAction>
         }
       >
         <span>{scaleLoadedLine(scale)}</span>

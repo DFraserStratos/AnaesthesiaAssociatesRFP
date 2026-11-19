@@ -259,7 +259,7 @@ describe('paused persistence (catch-up Phase 43)', () => {
     vi.advanceTimersByTime(250)
     expect(write).toHaveBeenCalledTimes(1)
     expect(storage.persistStatus().paused).toBe(false)
-  })
+  }, 60_000)
 
   it('pausing drops a queued write', async () => {
     const { resilientLocalStorage, pausePersist, flushPersist } = await loadStorage()

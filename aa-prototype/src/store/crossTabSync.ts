@@ -50,8 +50,9 @@
  * 5173 and cannot sync with it; two tabs of either one can.
  */
 
+import { reportDiagnostic } from './diagnostics'
 import type { BoundAppStore } from './appStore'
-import { adoptExternal, withoutWrites } from './persistStorage'
+import { isPersistPaused, adoptExternal, withoutWrites } from './persistStorage'
 
 /** zustand types the bound store without the persist mutator; this is the slice of it used here. */
 interface PersistApi {
@@ -82,6 +83,9 @@ export function bindCrossTabSync(store: BoundAppStore, key: string): () => void 
     } catch {
       return
     }
+    // Full-scale data is held in memory only (catch-up Phase 43): while saving is paused this tab
+    // ignores the other tab's writes, rather than swapping its data under a full-scale banner.
+    if (isPersistPaused()) return
     const newValue = event.key === null ? null : event.newValue
     try {
       adoptExternal(key, newValue)
@@ -93,7 +97,7 @@ export function bindCrossTabSync(store: BoundAppStore, key: string): () => void 
       })
     } catch (error) {
       // A malformed payload must not take the tab down; it keeps its state.
-      console.warn('cross-tab sync skipped an update it could not read', error)
+      reportDiagnostic('warn', 'cross-tab sync skipped an update it could not read', { error })
     }
   }
 

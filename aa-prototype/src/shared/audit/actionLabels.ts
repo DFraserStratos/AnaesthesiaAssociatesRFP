@@ -223,6 +223,9 @@ export const ACTION_LABELS: Record<string, string> = {
   'importRow.receive': 'Hospital row received',
   'importRow.correct': 'Hospital row corrected',
   'importRow.decide': 'Hospital row decided',
+  // Catch-up Phase 43: the restricted raw row.
+  'importRow.rawViewed': 'Raw row viewed',
+  'importRow.rawViewDenied': 'Raw row view refused',
   'booking.fromHospitalRow': 'Hospital row applied to this Booking',
 
   // --- Stubs on a List (catch-up Phase 33a) ---------------------------------

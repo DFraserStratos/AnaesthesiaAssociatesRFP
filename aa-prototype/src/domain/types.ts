@@ -2219,6 +2219,15 @@ export type ImportDecision =
  * One incoming row (DM-34). "Unmatched" and "waiting for an NHI" are derived
  * by the matcher, never stored, so a row cannot be unmatched and forgotten.
  */
+/**
+ * The row exactly as the sender sent it (catch-up Phase 43; US-15.0.6): every
+ * column, mapped or not. Held under restricted access: office only, a reason
+ * asked, each view audited without its values, masked by `RAW_ROW_MASKING`.
+ */
+export interface RawImportRow {
+  columns: readonly { name: string; value: string }[]
+}
+
 export interface ImportRow {
   id: ImportRowId
   batchId: ImportBatchId
@@ -2233,6 +2242,8 @@ export interface ImportRow {
   decidedAtISO?: IsoDateTime
   /** The feed message that staged it (channel `feedMessage`). */
   messageId?: string
+  /** As sent (catch-up Phase 43): written once at staging, never edited, never shown unmasked. */
+  raw?: RawImportRow
 }
 
 /** One import: a hospital's file, a keyed sheet or a feed message. */

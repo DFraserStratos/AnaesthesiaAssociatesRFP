@@ -10,7 +10,8 @@
 
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
 import { formatCount } from '../../../shared/format'
-import { accent, fontFamily, neutral, radius } from '../../../theme/tokens'
+import { accent, fontFamily, neutral } from '../../../theme/tokens'
+import { IconButton } from '../../../shared/ui'
 
 /** The page window for `total` rows at `size` per page, with the page clamped into range. */
 export function pageWindow(total: number, size: number, page: number): { page: number; pages: number; start: number; end: number } {
@@ -46,35 +47,6 @@ export interface PagerProps {
 
 const MONO = { fontFamily: fontFamily.mono, fontVariantNumeric: 'tabular-nums' as const }
 
-function PageButton({ label, disabled, onClick, children }: { label: string; disabled: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      disabled={disabled}
-      onClick={onClick}
-      className="aa-ctl"
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 28,
-        height: 28,
-        borderRadius: radius.ctl,
-        border: `1px solid ${disabled ? neutral.line : neutral.lineStrong}`,
-        background: neutral.surface,
-        color: disabled ? neutral.mist : accent.base,
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        padding: 0,
-        opacity: disabled ? 0.6 : 1,
-      }}
-    >
-      {children}
-    </button>
-  )
-}
-
 export function Pager({ total, size, page, onPage, lead = 'Showing', shot, nested = false }: PagerProps) {
   const w = pageWindow(total, size, page)
   const range = total === 0 ? `${lead} 0 of 0` : `${lead} ${formatCount(w.start + 1)} to ${formatCount(w.end)} of ${formatCount(total)}`
@@ -84,25 +56,25 @@ export function Pager({ total, size, page, onPage, lead = 'Showing', shot, neste
       data-shot={shot}
       data-page={w.page}
       data-pages={w.pages}
-      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: nested ? '6px 0' : '8px 0', fontSize: nested ? 12 : 12.5, color: neutral.slate }}
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: nested ? '6px 0' : '8px 0', fontSize: nested ? 'inherit' : 12.5, color: nested ? 'inherit' : neutral.slate }}
     >
       <span style={MONO} data-pager-range>{range}</span>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-        <PageButton label="First page" disabled={w.page <= 1} onClick={() => onPage(1)}>
+        <IconButton size={32} tone="action" title="First page" label="First page" disabled={w.page <= 1} onClick={() => onPage(1)}>
           <ChevronsLeft size={15} aria-hidden />
-        </PageButton>
-        <PageButton label="Previous page" disabled={w.page <= 1} onClick={() => onPage(w.page - 1)}>
+        </IconButton>
+        <IconButton size={32} tone="action" title="Previous page" label="Previous page" disabled={w.page <= 1} onClick={() => onPage(w.page - 1)}>
           <ChevronLeft size={15} aria-hidden />
-        </PageButton>
+        </IconButton>
         <span aria-current="page" style={{ ...MONO, minWidth: 56, textAlign: 'center', color: accent.base, fontWeight: 600 }} data-pager-page>
           {w.page} of {w.pages}
         </span>
-        <PageButton label="Next page" disabled={w.page >= w.pages} onClick={() => onPage(w.page + 1)}>
+        <IconButton size={32} tone="action" title="Next page" label="Next page" disabled={w.page >= w.pages} onClick={() => onPage(w.page + 1)}>
           <ChevronRight size={15} aria-hidden />
-        </PageButton>
-        <PageButton label="Last page" disabled={w.page >= w.pages} onClick={() => onPage(w.pages)}>
+        </IconButton>
+        <IconButton size={32} tone="action" title="Last page" label="Last page" disabled={w.page >= w.pages} onClick={() => onPage(w.pages)}>
           <ChevronsRight size={15} aria-hidden />
-        </PageButton>
+        </IconButton>
       </span>
     </nav>
   )

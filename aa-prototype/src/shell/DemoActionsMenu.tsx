@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { FlaskConical } from 'lucide-react'
 import { DemoBadge } from '../shared/DemoBadge'
 import { DemoTriggerBadge, useDemoTriggerRows } from '../shared/demoTriggers'
-import { PopoverPanel, usePopover } from '../shared/ui'
+import { Notice, PopoverPanel, TextAction, usePopover } from '../shared/ui'
 import { accent, neutral, radius, semantic } from '../theme/tokens'
 import { CountBadge } from '../shared/ui/CountBadge'
 
@@ -120,12 +120,9 @@ export function DemoActionsMenu() {
                   )}
                   {reason !== null && <span style={{ fontSize: 12, color: neutral.mist }}>{reason}</span>}
                   {confirming && trigger.confirm !== undefined && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: 12.5, lineHeight: 1.45, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: radius.ctl, padding: '8px 10px' }}>
-                      <span>{trigger.confirm}</span>
-                      <button type="button" onClick={cancelConfirm} style={{ font: 'inherit', fontSize: 12.5, fontWeight: 600, background: 'none', border: 'none', color: accent.base, cursor: 'pointer', padding: 0, flex: 'none' }}>
-                        Cancel
-                      </button>
-                    </div>
+                    <Notice tone="warning" icon={false} shot="demo-action-confirm-line" action={<TextAction size="sm" flush onClick={cancelConfirm}>Cancel</TextAction>}>
+                      {trigger.confirm}
+                    </Notice>
                   )}
                   <div role="status" aria-live="polite">
                     {result !== undefined && (

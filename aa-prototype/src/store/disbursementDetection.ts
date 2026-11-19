@@ -13,6 +13,7 @@
  * payments. A payable to the AA Holding account is never disbursed (27a).
  */
 
+import { idempotencyKeysOf } from './indexes'
 import type { LedgerDisbursement, PayableLeg } from '../domain/types'
 import { toCents } from '../domain/billing/money'
 import { applyDisbursement, isBookingPair, payeeAnaesthetistOf } from '../domain/billing/ledger'
@@ -43,7 +44,8 @@ export interface RecordDisbursementInput {
 
 /** Whether the ledger already holds a disbursement with this bill payment's key. */
 export function disbursementKeySeen(state: Pick<AppState, 'billing'>, key: string): boolean {
-  return Object.values(state.billing.disbursements).some((d) => d.idempotencyKey === key)
+  // Indexed (catch-up Phase 43): the poll asks this per Xero bill payment.
+  return idempotencyKeysOf(state.billing.disbursements).has(key)
 }
 
 interface LegRef {

@@ -91,3 +91,11 @@ export function anaesthetistActor(state: Pick<AppState, 'masters'>, anaesthetist
   const a = state.masters.anaesthetists[anaesthetistId]
   return a === undefined ? undefined : { who: a.name, role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: a.registrationNumber }
 }
+
+/**
+ * The hospital feed as an actor (catch-up Phase 43): the Matching screen's
+ * "View raw row as another role" shows a system integration refused. `ActorRole`
+ * has no integration role, so the role is `system` and the source `integration`.
+ */
+export const HOSPITAL_FEED_ACTOR: Actor = { who: 'Hospital feed', role: 'system', source: 'integration' }
+

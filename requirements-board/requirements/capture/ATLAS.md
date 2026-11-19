@@ -380,6 +380,13 @@ unsaved-changes guard can block a navigation). No URL changed; the Admin Booking
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip ("No HPI CPN yet" when blank), "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. Catch-up Phase 17b: Specialties, Identifiers and Groups in the first row, then one full-width "Practice and contacts" card (`surgeon-contacts`), then Pairing preferences. No room cards. |
 | `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Profile, Pairing preferences. Office only. The Profile card (catch-up Phase 26; was "Details", hook `anaesthetist-details` kept) shows Unit value, Status, Phone, Email, HPI CPN and Bank account (masked, row `anaesthetist-bank-account`); it has no action of its own. The page header's secondary button "Edit details" (beside "History") opens the Edit sheet: click `button:text-is("Edit details")` at page level, not inside `anaesthetist-details`. |
 | `/admin/audit` | Audit viewer. Catch-up Phase 35 adds a Change set column: each grouped entry's id is a link `audit-change-set` that filters the viewer to that change set (the filter line `audit-change-set-filter`). |
+| `/admin/day/:date` (catch-up Phase 43) | With more than 30 rows (full-scale data only) the grid pages: the footer `day-grid-footer` holds the pager `day-grid-pager` ("Anaesthetists 1 to 30 of 85", buttons "First page", "Previous page", "Next page", "Last page"; `data-page`, `data-pages`). `?page=2` is a replaceable view param. At demo scale there is no pager and the footer reads as before. |
+| `/admin/invoices` (catch-up Phase 43) | The search field "Find by invoice number or payer" (`invoices-search`, on the `<input>`) filters before paging and returns to page 1; the pager `invoices-pager` ("Showing 1 to 50 of 28,248" style) shows only above 50 matches, so only at full scale. Generated invoice numbers use the series `AA-S-000001`. |
+| `/admin/audit` (catch-up Phase 43) | The 500-row cap note is gone: the count `audit-count` ("N entries") sits in the filter row and the viewer pages by 100 with `audit-pager` under the table (shown only above 100 entries). A change-set link or a filter returns to page 1. At full scale the newest entry is "Full-scale data loaded" (`demo.fullScaleLoaded`). |
+| `/admin/billing` (catch-up Phase 43) | New view param `page=<n>` for the groups pager `billing-monitor-pager` ("Anaesthetists 1 to 20 of 77" at full scale: 77 groups, as six cast anaesthetists hold no monitored Lists), shown only above 20 groups; per group, "Show all N" `billing-group-show-all-<anaesthetistId>` and the nested pager `billing-group-pager-<anaesthetistId>` when a group holds more than 25 Lists. At demo scale neither shows, so the screen is unchanged. Problems only: the "Problems only" pill in `billing-monitor-filters` (`role=button[name="Problems only"]`) or the tile `billing-tile-problems`. |
+| `/admin/ledger` (catch-up Phase 43) | The pager `ledger-pager` shows only when there are more rows than a page (full scale). |
+| `/admin/intake/matching` (catch-up Phase 43) | The row panel shows only the fields needed to match, with the line `matching-restricted` ("Only the fields needed to match are shown. The rest of what the hospital sent is held under restricted access."). On a row that needs resolving (open, and unmatched, waiting for its NHI or blocked by a flag; the seeded `IRS001` Mere Tipene is one) the line adds the link `matching-raw-row` ("View raw row"), which opens the raw-row sheet (see Overlays); after a view, `matching-raw-row-views` ("Raw row viewed once · last Kirsty W. 08:00"). Demo action `matching-raw-row-other-role`. |
+| `/admin/masters?view=xeroArchiving` (catch-up Phase 43) | The archive volume line `archive-scale-line`. |
 
 The side nav has: Day view, Intake (amber badge `[data-shot=nav-badge-intake]`, the open Matching rows;
 catch-up Phase 34, was Matching with `nav-badge-matching`), Conflicts (amber badge `[data-shot=nav-badge-conflicts]`, catch-up
@@ -403,6 +410,7 @@ the ledger's failed checks (none at reset, so no badge; 1 after "Inject unmatche
 | `/mobile/balances` (catch-up Phase 36) | The header card adds the line `balances-collected-paid-out` "Collected $X · Paid out $Y" under the unpaid count, and `balances-you-owe-aa` "You owe AA $Z" only when Dr Souter has an unpaid AA fee invoice (she does at reset: AA-FEE-2026-H02). The PWA Demo sheet adds `pwa-office-runs-payables` here (labelled "Office runs payables in Xero" since catch-up Phase 37). |
 | `/mobile/more` | Settings. The PWA adds a demo panel with a non-deterministic build ID. Avoid shooting that panel. |
 | `/mobile/more` (catch-up Phase 26) | The "Profile" card `mobile-profile` sits between the persona card and the Demo card: rows `mobile-profile-rate` (Rate per unit $26.50, with the "Change" text action `mobile-profile-rate-change`), Phone, Email, Registration, HPI CPN (`mobile-profile-hpi`) and Bank account (`mobile-profile-bank`, masked), the office-held rows with lock glyphs and captions. Its lower rows sit near the fold: `scroll` to `mobile-profile-bank` first. "Change" opens the bottom sheet `mobile-rate-sheet` (field "Rate per unit ($)", "Save rate" `mobile-rate-save`). |
+| `/mobile/more` (catch-up Phase 43) | The Demo card ("Demo prototype") also holds the "Synthetic data only" badge `synthetic-data-badge`. On the PWA the build panel sits below that card: keep it out of frame. |
 
 - The tab bar is `[data-testid=mobile-tab-bar]`, with buttons Lists, Availability, Balances and
   More.
@@ -424,6 +432,8 @@ the ledger's failed checks (none at reset, so no badge; 1 after "Inject unmatche
 | `/demo/integrations/log` | Future scope: the HL7 message log (catch-up Phase 34; was Admin Integrations' Messages tab): `future-scope-log` (its table is `[data-shot=future-scope-log] table`), the dead-letter callout `integrations-attention`. Empty until a message is replayed or fired. |
 | `/demo/integrations/mapping` | Future scope: feed mapping (catch-up Phase 34; was Admin Integrations' Feed config tab): `future-scope-mapping`, one card per feed `[data-feed-id=<id>]`. |
 | `/demo/data` | Data inspector: today's lists, seeded scenario finder, audit trail, lifecycle states, guard console. |
+| `/demo/data` (catch-up Phase 43) | A "Privacy checks" panel `nhi-scan-panel` sits above Today's canvas; its report `nhi-scan-report` reads "No scan yet" (`data-scanned="false"`) until the `scan-nhi-leaks` demo action runs, then a table (`data-scanned="true"`) with one row per area, `tr[data-scan-area=<key>]` with `data-hits` (`xero` with "NHIs or personal details", `diagnostics`, `failures`, `planted` only with the planted choice, and core rows marked "Held by design"). At full scale the line `data-saving-paused` shows. Selectors already scoped to `data-guard-console` are unaffected; it now sits lower, so a highlight scrolls to it. |
+| `/demo/xero` (catch-up Phase 43) | The callout `xero-volume-callout` ("Contact archiving & volume"); at full scale each table caps at 200 rows with `xero-table-cap` ("Showing 200 of N"). |
 
 ## Seed data worth shooting
 
@@ -1278,8 +1288,64 @@ were already imported. Nothing new.").
   Solutions Plus operation names (5 excluded as junk, 2 not approved). Rows `tr[data-scan-row=<n>]` carry
   `data-decision=approved|notApproved|junk`; each staged row's one button is "Approve" or "Unapprove <name>".
 
+### Scale and privacy (catch-up Phase 43)
+
+- **Load full-scale data** (`load-full-scale`, bar only, on `/admin/day/:date`, `/admin/invoices` and
+  `/admin/invoices/:invoiceId`; it has a confirm step, which the `trigger` step clicks). It replaces the demo data with
+  the whole practice, built in the browser from the same seed: 85 anaesthetists, their sessions over the scheduling
+  horizon and about 28,000 invoices from the last 12 months. The trigger returns at once; generation takes about 2 to 3
+  seconds, during which the banner `scale-banner` reads "Generating full-scale data from the seed. This takes a few
+  seconds." Once loaded the banner (under the harness bar, so it shows in shots) reads "Full-scale data · 85
+  anaesthetists · N sessions over the scheduling horizon (M months) · N invoices in the last 12 months · generated in
+  X s · saving paused ..." with the Timings toggle `scale-timings-toggle`, which opens `scale-timings` (one row per
+  timed screen, `tr[data-timing=<key>]`: Demo data, Full scale, Full scale painted). Wait for the toggle, not the
+  banner: the banner also shows while generating. The generation time and the timings differ on every run.
+- **In memory only.** The full-scale data is never saved: any `goto`, reload or Reset returns to the demo data. In a
+  recipe, load it in the state's steps (or in `setup`, since the move to `start` does not reload) and move between
+  Admin screens by clicking the side nav, `nav[aria-label="Admin"] >> role=button[name="Audit"]` (names carrying a
+  count badge still match, as the name match is a substring: `role=button[name="Billing monitor"]`). Each state is a
+  fresh context, so every state loads it again. Worked example: `recipes/US-15.0.4.json`.
+- **Paged screens at full scale:** Day view (30 anaesthetists a page, `day-grid-pager`), Invoices (50 a page,
+  `invoices-pager`), Audit (100 a page, `audit-pager`), Ledger (`ledger-pager`), Billing monitor (20 anaesthetists a
+  page, `billing-monitor-pager`, "Anaesthetists 1 to 20 of 77"; per group "Show all N" and a nested pager). Every pager
+  is the one `Pager` (`nav[aria-label="Pages"]`, the range `[data-pager-range]`, "1 of 3" `[data-pager-page]`, buttons
+  "First page", "Previous page", "Next page", "Last page"). At demo scale none shows.
+- **Raw hospital row** (`/admin/intake/matching`): the seeded row waiting for its NHI, `IRS001` Mere Tipene, is the
+  one to shoot (`[data-shot^='matching-row-'][data-import-row-id=IRS001]`). A rooms' PDF row reaches Matching only after
+  `PDL0001` is corrected and sent (the steps in [Rooms' PDF lists](#rooms-pdf-lists-and-where-a-list-came-from-catch-up-phase-34));
+  its panel also shows `matching-restricted`. `matching-raw-row-other-role` (bar, choices `souter` "As Dr Melanie Souter
+  (anaesthetist)" and `feed` "As the hospital feed (integration)") acts on the selected row or, with none selected,
+  the oldest row needing resolving, and is refused: "Refused: only office staff can view a raw hospital row (Mere
+  Tipene's row). The attempt is in the audit trail." Run it with no row panel open (the panel covers the harness bar).
+- **NHI leak scan** (`scan-nhi-leaks`, bar, `/demo/data`, choices `now` "Scan now" and `planted` "Scan with a planted
+  test leak (proves the scan finds one)"): fills `nhi-scan-report`. Scan now finds none (the `xero` row also checks
+  personal details; core rows read "Held by design"); planted adds the row `tr[data-scan-area=planted]` with one masked
+  hit.
+- **Synthetic data only** badge `synthetic-data-badge`: in the harness bar (hidden in shots), the Admin side nav under
+  ADMIN (outside `nav[aria-label="Admin"]`), the web top nav before the persona, and the phone's More card (the Demo
+  card, `/mobile/more`). The framed copies sit inside `[data-aa-modal-scope]` (the routed app), the harness one does
+  not, so scope a highlight `[data-aa-modal-scope] [data-shot=synthetic-data-badge]`.
+- **Changes show without signing out** (US-15.0.7): an Admin save on `BK0009` (Margaret Ellison, Dr Souter Tue 21 PM,
+  16:00; six "5 minutes later" clicks then `booking-save` make it 16:30) shows on the web List after a `setup` (same
+  origin). The PWA (:5174) cannot see an Admin save, so its shot uses the `office-edits-booking` stand-in (the time 30
+  minutes later, also 16:30), then the header's "List" back button.
+
 ## Overlays that need clicks
 
+- **Load full-scale data's confirm (catch-up Phase 43).** The `load-full-scale` row asks for a second click: Run turns
+  into "Confirm" (the button carries `data-shot=demo-action-confirm` while confirming), with the line "Replaces the
+  current demo data. Reset returns to it." The `trigger` step clicks Confirm itself. Then wait for
+  `[data-shot=scale-timings-toggle]` (add a `{ "wait": 3000 }` first: generation takes 2 to 3 seconds and a selector
+  wait times out at 6 seconds).
+- **Raw hospital row (catch-up Phase 43).** On Matching, the row panel's link `matching-raw-row` ("View raw row") opens
+  a second right-docked panel `matching-raw-row-sheet` ("Raw hospital row", "Restricted. Viewing is recorded with your
+  reason.") over the row panel. Its reason step `matching-raw-row-reason` offers three quick reasons as pressed buttons
+  (`role=button[name="Find why this row did not match"]`, "Check what the hospital sent", "Hospital asked us to confirm
+  a value") and the free text `matching-raw-row-reason-text`; the teal `matching-raw-row-view` ("View raw row") is
+  disabled until a reason is given. Then `matching-raw-row-columns` shows the masked row (`tr[data-raw-column=<name>]`)
+  under the notice `matching-raw-row-policy` ("Masking policy is for AA to agree. ..."). The footer then has one
+  "Close"; the header also has a "Close" X, so scope it `[data-shot=matching-raw-row-sheet] >> role=button[name="Close"] >> nth=-1`.
+  Opening it again asks for a reason again (each view is a fresh, audited request).
 - **Additional invoice (catch-up Phase 38b).** Admin: `[data-shot=additional-invoice-button]` ("Create additional
   invoice") opens `[data-shot=additional-invoice-sheet]` (a dialog); web the same button reads "Raise additional invoice"
   (dialog); mobile it is a bottom sheet, scope it `[data-aa-mobile-product] [data-shot=additional-invoice-sheet]`. Fill
@@ -2168,6 +2234,20 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   `[data-testid=balances-outstanding-<invoiceNumber>]`), `balances-gst-month`, `balances-gst-month-header`. Demo action
   rows `demo-action-web-payment-full` and `demo-action-web-payment-half`. Removed: the Overdue tab and its ageing
   columns and bars, "GST activity", the Productivity, Leave and "Receivables aging" panels.
+- Scale and privacy (catch-up Phase 43). Harness chrome: `scale-banner` (generating, loaded or failed), inside it
+  `scale-timings-toggle` (only once loaded) and `scale-timings` (rows `tr[data-timing=<key>]`); `demo-action-confirm`
+  (a Run button while it asks to confirm). Pagers (the one `Pager`, `nav[aria-label="Pages"]` with `data-page` and
+  `data-pages`, `[data-pager-range]`, `[data-pager-page]`): `day-grid-pager` (inside `day-grid-footer`),
+  `invoices-pager`, `audit-pager`, `ledger-pager`, `billing-monitor-pager`, per group `billing-group-pager-<anaesthetistId>`
+  and `billing-group-show-all-<anaesthetistId>`. Invoices `invoices-search` (on the `<input>`); Audit `audit-count`.
+  Matching: `matching-restricted`, `matching-raw-row` (the link), `matching-raw-row-views`, `matching-raw-row-sheet`,
+  `matching-raw-row-reason`, `matching-raw-row-reason-text`, `matching-raw-row-view`, `matching-raw-row-columns` (rows
+  `tr[data-raw-column=<name>]`), `matching-raw-row-policy`. Data inspector: `nhi-scan-panel`, `nhi-scan-report`
+  (`data-scanned`), rows `tr[data-scan-area=<key>]` with `data-hits`, `data-saving-paused` (full scale only),
+  `data-lifecycle-cap`. Xero simulation: `xero-volume-callout`, `xero-table-cap` (full scale only). Master data, Xero
+  & archiving: `archive-scale-line`. Every shell: `synthetic-data-badge` (harness bar, Admin side nav, web top nav,
+  mobile More card). Demo action rows `demo-action-load-full-scale`, `demo-action-scan-nhi-leaks`,
+  `demo-action-matching-raw-row-other-role`.
 
 **Other hooks**
 
@@ -2308,6 +2388,9 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/admin/day/<date>` (and `/admin`, which redirects there) | `inject-unmatched-receipt` (choice `souter` or `none`) | Catch-up Phase 37, bar only: the same entry as on the Ledger; it puts the right rail's Reconciliation card (`dashboard-reconciliation`) out of balance with one unresolved item. US-13.2.4 shows the pattern (`start` `/admin`, then the trigger as a step) |
 | `/web`, `/web/accounts/<subTab>` | `web-payment-full`, `web-payment-half` | Catch-up Phase 38, bar only, "Payment received · full" or "· half": a Xero payment webhook on one of Dr Souter's open invoices, chosen in the row's select (option values are runtime ACCREC ids, so omit `choice`: it defaults to the first open invoice by number, AA-2026-0002 after the S3 AM authorise). Disabled "No open invoices yet" on a fresh seed (the history invoices take no payment): authorise a List first. Collected rises at once and the Outstanding row reads "Paid in, due to you"; the GST report gains its row only when AA pays out (`/admin/billing`, `billing-run-payables-in-xero`). US-12.2.1 and US-12.2.3 show the pattern |
 | `/mobile/balances` (PWA Demo sheet only) | `pwa-office-runs-payables` | Catch-up Phase 36, badged Office stand-in, labelled "Office runs payables in Xero" since catch-up Phase 37. Runs the payables for Dr Souter; Balances' "Paid out" rises by what was due. Disabled "Nothing due to pay out" until a payment has been received |
+| `/admin/day/<date>`, `/admin/invoices`, `/admin/invoices/<invoiceId>` | `load-full-scale` ("Load full-scale data") | Catch-up Phase 43, bar only, with a confirm step (the `trigger` step clicks Confirm). Message "Generating full-scale data. Timings appear in the banner."; the data is ready only when `scale-timings-toggle` shows (2 to 3 seconds). Disabled while generating or once loaded. Lost on any `goto` or reload. Index path the Day view |
+| `/demo/data` | `scan-nhi-leaks` ("Scan for NHI leaks", choice `now` or `planted`) | Catch-up Phase 43, bar only. Fills the Privacy checks report `nhi-scan-report`; the result line summarises what was found |
+| `/admin/intake/matching` | `matching-raw-row-other-role` ("View raw row as another role", choice `souter` or `feed`) | Catch-up Phase 43, bar only. Acts on the selected row or, with none selected, the oldest row needing resolving; refused, "Refused: only office staff can view a raw hospital row (Mere Tipene's row). The attempt is in the audit trail." Close the row panel first: it covers the harness bar's right side |
 
 The PWA-only entries (`office-reviews-additional-invoice` on a mobile Booking with an event awaiting review (catch-up Phase 38b: the office approves it and runs the next run, narrowed to that event), `office-authorises-list` on a mobile List, `office-clears-warning` on a
 mobile Booking with an open warning, `office-assigns-next-free` on the mobile Lists home (catch-up
@@ -2403,6 +2486,22 @@ until `{ "trigger": "office-authorises-list" }` runs (US-07.4.1 and US-08.6.1 sh
   `[data-shot=admin-day-beyond-horizon]` instead of a grid.
 - **Stale IDs redirect** instead of showing a blank page. If a shot shows a list page when you
   expected a booking, the ID is wrong.
+- **The Synthetic data only badge sits in every shell** (catch-up Phase 43): the harness bar, the Admin side nav, the
+  web top nav and the phone's More card. Nearly every web, admin and mobile image moves by a few pixels; check that no
+  highlight box overlaps it. A bare `[data-shot=synthetic-data-badge]` finds the hidden harness copy first on :5173, so
+  scope it `[data-aa-modal-scope] [data-shot=synthetic-data-badge]`.
+- **Full-scale generation takes a few seconds** (catch-up Phase 43). After the `load-full-scale` trigger add
+  `{ "wait": 3000 }`, then wait for `[data-shot=scale-timings-toggle]` (it shows only once loaded; the banner itself
+  also shows while generating). The banner's generation time and the Timings differ on every run, so those images
+  change on every capture.
+- **Full-scale data is lost on any `goto`** or reload (catch-up Phase 43): it lives in memory only and saving is
+  paused. Move between Admin screens by clicking the side nav, or load it in `setup` and let the runner's move to
+  `start` (no reload) open the screen.
+- **The Matching row panel covers the harness bar's right side** (catch-up Phase 43), where the Demo actions pill
+  sits. Close the panel (Escape) before a `trigger` step on Matching.
+- **The PWA cannot see an Admin save.** :5174 and :5173 are different origins with separate stores, so a change made in
+  Admin never reaches a mobile shot; stage it on the phone with an Office stand-in entry (for example
+  `office-edits-booking`), or show it on web after a `setup` in Admin (see `recipes/US-15.0.7.json`).
 
 ## Worked examples
 

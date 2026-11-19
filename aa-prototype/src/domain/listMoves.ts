@@ -35,6 +35,12 @@ export interface ListMoveInput {
   slots: Readonly<Record<string, Slot>>
   anaesthetists: Readonly<Record<string, Anaesthetist>>
   slotStatuses: SlotStatusRecords
+  /**
+   * The sessions holding a List, when the caller has them already (catch-up
+   * Phase 43: the store passes its memoised index, so a candidate loop is not
+   * a scan of every List per candidate). Absent: computed from `lists`.
+   */
+  occupied?: ReadonlySet<string>
 }
 
 export interface MoveRefusal {
@@ -110,7 +116,7 @@ export function receiveRefusal(
   if (to.dateISO !== fromSlot.dateISO || to.session !== fromSlot.session) {
     return { code: 'differentSession', message: 'A List moves to the same day and session.' }
   }
-  const occupied = options.occupied ?? occupiedSlotIds(input.lists)
+  const occupied = options.occupied ?? input.occupied ?? occupiedSlotIds(input.lists)
   if (occupied.has(to.id)) return { code: 'slotOccupied', message: 'That session already holds a List.' }
   const colleague = input.anaesthetists[to.anaesthetistId]
   if (colleague?.active !== true) return { code: 'targetNotOpen', message: `${surnameLine(colleague)}'s session cannot take a List.` }
@@ -171,7 +177,7 @@ export function pushTargets(input: ListMoveInput, listId: string): PushTarget[] 
   if (list === undefined || list.state === 'DRAFT') return []
   const from = input.slots[list.slotId]
   if (from === undefined) return []
-  const occupied = occupiedSlotIds(input.lists)
+  const occupied = input.occupied ?? occupiedSlotIds(input.lists)
   const out: PushTarget[] = []
   for (const colleague of Object.values(input.anaesthetists)) {
     if (colleague.registrationNumber === list.anaesthetistId) continue

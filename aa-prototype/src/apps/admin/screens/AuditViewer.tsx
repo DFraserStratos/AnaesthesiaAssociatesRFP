@@ -8,16 +8,19 @@ import {
   auditFieldChanges,
   auditNamesFor,
   formatAuditStamp,
-  sortAuditNewestFirst,
   summariseAuditChanges,
 } from '../../../shared/audit'
 import { FilterDateInput, PageHeader, SelectField } from '../../../shared/ui'
 import { TableShell, Td, Th } from '../../../shared/table'
+import { auditNewestFirst } from '../../../store/indexes'
+import { FULL_SCALE } from '../../../domain/seed/fullScale/constants'
+import { Pager, pageOf } from '../components/Pager'
+import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
+import { formatCount } from '../../../shared/format'
 
 
 const SOURCES = ['all', 'anaesthetist', 'office', 'integration', 'system', 'demo'] as const
 
-const CAP = 500
 
 /**
  * The global audit viewer (Phase 07): a filterable feed over the one append-only
@@ -31,7 +34,7 @@ const CAP = 500
  * with the machine code beneath it (this is the compliance surface, so the code
  * stays greppable), and the change cell is a COMPACT one-liner — the leading
  * field's movement plus a count of the rest. The full field ledger belongs on the
- * Booking history sheet, where someone is reading a single record; a 500-row feed
+ * Booking history sheet, where someone is reading a single record; a long feed
  * has to stay scannable.
  *
  * Unlike the Booking sheet, this surface never collapses `Role · source` and never
@@ -68,10 +71,14 @@ export function AuditViewer() {
   // One change set at a time (catch-up Phase 35): set by clicking its id in the Change set column.
   const [changeSetId, setChangeSetId] = useState<string | null>(null)
 
-  const entityTypes = useMemo(() => ['all', ...Array.from(new Set(audit.map((a) => a.entityType))).sort()], [audit])
+  // Sorted and its entity types gathered once per audit array (catch-up Phase 43: indexed, so a
+  // filter change is one linear pass over tens of thousands of entries, never a re-sort).
+  const indexed = useMemo(() => auditNewestFirst(audit), [audit])
+  const entityTypes = useMemo(() => ['all', ...indexed.entityTypes], [indexed])
+  const [page, setPage] = useState(1)
 
   const filtered = useMemo(() => {
-    const rows = audit.filter((a) => {
+    return indexed.sorted.filter((a) => {
       if (changeSetId !== null) return a.changeSetId === changeSetId
       if (entityType !== 'all' && a.entityType !== entityType) return false
       if (source !== 'all' && a.source !== source) return false
@@ -80,35 +87,41 @@ export function AuditViewer() {
       if (toISO !== '' && date > toISO) return false
       return true
     })
-    // Sorted on `atISO` (id as the tiebreak), not insertion order — the same
+    // Sorted on `atISO` (id as the tiebreak), not insertion order: the same
     // shared sort the Booking history sheet uses, so the two agree (finding 01.3).
-    return sortAuditNewestFirst(rows)
-  }, [audit, entityType, source, fromISO, toISO, changeSetId])
+  }, [indexed, entityType, source, fromISO, toISO, changeSetId])
 
-  const shown = filtered.slice(0, CAP)
+  // Pages of 100 (catch-up Phase 43; US-15.0.4): one stored entry stays one row; a filter returns to page 1.
+  const pageSize = FULL_SCALE.pageSizes.audit
+  const shown = pageOf(filtered, pageSize, page)
+  useScreenTiming('audit', [audit, entityType, source, fromISO, toISO, changeSetId, page])
+  const filterThen = <T,>(set: (v: T) => void) => (v: T) => {
+    set(v)
+    setPage(1)
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>
       <PageHeader size="admin" title="Audit" sub="Every recorded action, with the acting role and source. Nothing here is ever edited or deleted." />
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <SelectField label="Entity type" size="compact" fill="surface" value={entityType} onChange={setEntityType}>
+        <SelectField label="Entity type" size="compact" fill="surface" value={entityType} onChange={filterThen(setEntityType)}>
           {entityTypes.map((t) => (
             <option key={t} value={t}>{t}</option>
           ))}
         </SelectField>
-        <SelectField label="Source" size="compact" fill="surface" value={source} onChange={setSource}>
+        <SelectField label="Source" size="compact" fill="surface" value={source} onChange={filterThen(setSource)}>
           {SOURCES.map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
         </SelectField>
-        <FilterDateInput label="From" value={fromISO} onChange={setFromISO} />
-        <FilterDateInput label="To" value={toISO} onChange={setToISO} />
-        <span style={{ fontSize: 12.5, color: neutral.mist, paddingBottom: 9 }}>{filtered.length} entries</span>
+        <FilterDateInput label="From" value={fromISO} onChange={filterThen(setFromISO)} />
+        <FilterDateInput label="To" value={toISO} onChange={filterThen(setToISO)} />
+        <span className="mono" data-shot="audit-count" style={{ fontSize: 12.5, color: neutral.mist, paddingBottom: 9 }}>{formatCount(filtered.length)} entries</span>
         {changeSetId !== null && (
           <span data-shot="audit-change-set-filter" style={{ fontSize: 12.5, color: neutral.slate, paddingBottom: 9 }}>
             Change set <span className="mono">{changeSetId}</span> ·{' '}
-            <TextAction size="sm" flush onClick={() => setChangeSetId(null)}>
+            <TextAction size="sm" flush onClick={() => { setChangeSetId(null); setPage(1) }}>
               Show all
             </TextAction>
           </span>
@@ -146,7 +159,7 @@ export function AuditViewer() {
                   </Td>
                   <Td mono nowrap>
                     {entry.changeSetId !== undefined && (
-                      <TextAction size="sm" flush shot="audit-change-set" onClick={() => setChangeSetId(entry.changeSetId!)}>
+                      <TextAction size="sm" flush shot="audit-change-set" onClick={() => { setChangeSetId(entry.changeSetId!); setPage(1) }}>
                         {entry.changeSetId}
                       </TextAction>
                     )}
@@ -157,9 +170,7 @@ export function AuditViewer() {
             })}
           </tbody>
       </TableShell>
-      {filtered.length > CAP && (
-        <div style={{ fontSize: 12, color: neutral.mist }}>Showing the {CAP} most recent of {filtered.length} matching entries. Narrow the filters to see older ones.</div>
-      )}
+      {filtered.length > pageSize && <Pager total={filtered.length} size={pageSize} page={page} onPage={setPage} shot="audit-pager" />}
     </div>
   )
 }

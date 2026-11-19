@@ -16,6 +16,7 @@
  * Every write goes through the audited `mutate()`.
  */
 
+import { rawRowFor } from '../domain/intake/rawRow'
 import type {
   ChangeType,
   ImportBatch,
@@ -158,6 +159,8 @@ export function stageImportRows(
         incoming,
         status: 'open',
         ...(extras.messageId !== undefined ? { messageId: extras.messageId } : {}),
+        // The row as sent, held under restricted access (catch-up Phase 43; US-15.0.6): written once, never edited.
+        raw: rawRowFor(incoming, channel),
       }
     }
     const batch: ImportBatch = {

@@ -57,7 +57,9 @@ import { ProcedureStack } from '../../../shared/booking'
 import { ContractRail } from '../../../shared/flows/ContractRail'
 import { CodePickerSheet } from '../../../shared/capture/CodePickerSheet'
 import { Button, Checkbox, DefList, DefRow, Eyebrow, FormError, NameSearchBox, Notice, OptionRow, Pill, SelectField, TextAction, TextField, TickBadge } from '../../../shared/ui'
-import { locationName, stampText } from '../../../shared/format'
+import { hhmm, locationName, stampText } from '../../../shared/format'
+import { rawRowEligible, rawViewsFor } from '../../../store'
+import { RawRowSheet } from './RawRowSheet'
 import { SidePanel } from '../components/SidePanel'
 import { AnaesthetistCandidates, NotPreferredWarning, SurgeonPicker, useNotPreferredWarning, useSuggestionKey } from '../components/pairing'
 import { RowField } from '../components/RowField'
@@ -124,6 +126,11 @@ export function RowPanel({
   const [error, setError] = useState<string | null>(null)
   /** After Add NHI stops short of a decision (33a): what the office does next. */
   const [stubNote, setStubNote] = useState<string | null>(null)
+  // The restricted raw row (catch-up Phase 43): eligible while the row needs resolving; each view audited.
+  const [rawOpen, setRawOpen] = useState(false)
+  const audit = useAppStore((s) => s.audit)
+  const rawEligible = useMemo(() => rawRowEligible({ intake, schedule, masters }, rowId), [intake, schedule, masters, rowId])
+  const rawViews = useMemo(() => rawViewsFor({ audit }, rowId), [audit, rowId])
 
   const open = row?.status === 'open'
   const fields = assessment?.fields ?? (row !== undefined ? effectiveIncoming(row) : undefined)
@@ -466,6 +473,23 @@ export function RowPanel({
           )}
         </div>
       )}
+
+      {/* Only what the office needs to resolve the row (catch-up Phase 43; US-15.0.6): the rest of what the
+          hospital sent is held under restricted access, viewed with a reason and audited. */}
+      <div data-shot="matching-restricted" style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12.5, color: neutral.slate }}>
+        <span>Only the fields needed to match are shown. The rest of what the hospital sent is held under restricted access.</span>
+        {rawEligible && (
+          <span style={{ display: 'flex', gap: 12, alignItems: 'baseline', flexWrap: 'wrap' }}>
+            <TextAction size="sm" flush shot="matching-raw-row" onClick={() => setRawOpen(true)}>View raw row</TextAction>
+            {rawViews.count > 0 && rawViews.last !== undefined && (
+              <span data-shot="matching-raw-row-views" style={{ fontSize: 12, color: neutral.mist }}>
+                {`Raw row viewed ${rawViews.count === 1 ? 'once' : `${rawViews.count} times`} · last ${rawViews.last.who} ${hhmm(rawViews.last.atISO)}`}
+              </span>
+            )}
+          </span>
+        )}
+      </div>
+      {rawOpen && <RawRowSheet rowId={rowId} patientName={fields.patient.name} actor={actor} onClose={() => setRawOpen(false)} />}
 
       {/* The wording as received, verbatim (US-02.1.2): never an edit field. */}
       <section style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

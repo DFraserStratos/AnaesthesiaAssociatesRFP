@@ -61,6 +61,7 @@
  * reliable on mobile, so it is deliberately not used.
  */
 
+import { reportDiagnostic } from './diagnostics'
 import type { PersistStorage, StateStorage } from 'zustand/middleware'
 
 /**
@@ -113,7 +114,7 @@ function backingStore(): Storage | null {
 function disablePersistence(error: unknown): void {
   persistDisabled = true
   persistDisabledReason = error instanceof Error ? `${error.name}: ${error.message}` : String(error)
-  console.warn('persistence paused after a storage error', error)
+  reportDiagnostic('warn', 'persistence paused after a storage error', { error })
 }
 
 /**

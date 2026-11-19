@@ -1,4 +1,5 @@
 import { PersonaChip, Wordmark } from '../../../shared'
+import { SyntheticDataBadge } from '../../../shared/SyntheticDataBadge'
 import { brand, neutral, semantic, radius } from '../../../theme/tokens'
 import { RolesInfo } from '../RolesInfo'
 import { officePersona } from '../../../shell/appConfig'
@@ -62,6 +63,8 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, conflictBadge =
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, padding: '0 8px' }}>
         <Wordmark tone="dark" size={15} />
         <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.14em', color: brand.onDarkMuted, paddingLeft: 2 }}>ADMIN</span>
+        {/* Catch-up Phase 43 (US-15.0.6): an environment marker, neutral. */}
+        <span style={{ marginTop: 4 }}><SyntheticDataBadge tone="onInk" /></span>
       </div>
 
       <nav aria-label="Admin" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

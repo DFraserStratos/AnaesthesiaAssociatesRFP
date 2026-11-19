@@ -23,6 +23,7 @@
  * invoice, never deducted from a payable (catch-up Phase 16).
  */
 
+import { idempotencyKeysOf } from './indexes'
 import type { LedgerPair, LedgerReceipt, LedgerTransfer, PaymentIn, UnmatchedReceipt, XeroAccPay, XeroAccRec } from '../domain/types'
 import { roundToCents, toCents } from '../domain/billing/money'
 import { payableReleasedFor } from '../domain/billing/payableRelease'
@@ -56,7 +57,7 @@ export interface ReceivePaymentInput {
 
 /** Whether a key is already processed: a ledger receipt or an unmatched receipt carries it. */
 export function receiptKeySeen(state: Pick<AppState, 'billing'>, key: string): boolean {
-  return Object.values(state.billing.receipts).some((r) => r.idempotencyKey === key) || Object.values(state.billing.unmatchedReceipts).some((u) => u.idempotencyKey === key)
+  return idempotencyKeysOf(state.billing.receipts).has(key) || idempotencyKeysOf(state.billing.unmatchedReceipts).has(key)
 }
 
 /**
@@ -139,7 +140,7 @@ export function applyReceiptInto(
   const accPays = { ...s.xero.accPays }
   const recNow = accRecId !== undefined ? s.xero.accRecs[accRecId] : undefined
   if (accRecId !== undefined && recNow !== undefined) {
-    if (!Object.values(s.xero.payments).some((p) => p.idempotencyKey === w.idempotencyKey)) {
+    if (!idempotencyKeysOf(s.xero.payments).has(w.idempotencyKey)) {
       const pmt = allocateId(c, 'paymentIn')
       c = pmt.counters
       payments[pmt.id] = { id: pmt.id, accRecId, amount: added, atISO: w.atISO, idempotencyKey: w.idempotencyKey, source: w.source } satisfies PaymentIn

@@ -15,6 +15,7 @@ import { buildFacsimile, PDF_LIST_SAMPLES } from '../intake/pdfLists'
 import { DEMO_TODAY } from '../clock'
 import { ANAE, HOSP } from './cast'
 import { projectedListId } from '../slots'
+import { rawRowFor } from '../intake/rawRow'
 
 export const SEED_STUB = {
   batchId: 'IBS001',
@@ -78,6 +79,8 @@ export function seededIntake(): { batches: Record<string, ImportBatch>; rows: Re
     },
     status: 'open',
   }
+  // The row as the hospital sent it (catch-up Phase 43), from its own fields: no RNG draw.
+  row.raw = rawRowFor(row.incoming, row.channel)
   const batch: ImportBatch = {
     id: SEED_STUB.batchId,
     channel: 'download',

@@ -1,15 +1,18 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { neutral, radius, semantic } from '../../../theme/tokens'
 import type { Invoice } from '../../../domain/types'
 import { invoiceDeliveryLabel, layoutShortLabel } from '../../../domain/billing'
-import { Card, Eyebrow, PageHeader, Pill, TextAction } from '../../../shared/ui'
+import { Card, Eyebrow, PageHeader, Pill, TextAction, TextField } from '../../../shared/ui'
+import { FULL_SCALE } from '../../../domain/seed/fullScale/constants'
+import { Pager, pageOf } from '../components/Pager'
+import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 import type { Actor } from '../../../store'
 import { billedLists, invoiceAddresseeName, invoiceCountsByList, isBackdropInvoice, originalInvoiceFor, useAppStore, openBillingExceptions } from '../../../store'
 import { ADDITIONAL_INVOICE_COPY } from '../../../shared/procedureEventCopy'
-import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm, plural } from '../../../shared/format'
+import { dateTimeMicroCap, dayMicroCap, formatCount, formatCurrency, hhmm, plural } from '../../../shared/format'
 import { listShortLabel, listSourceLabels } from '../util'
 import { InvoiceDocument } from './InvoiceDocument'
 import { PrepaymentApprovalStrip } from '../components/PrepaymentApprovalStrip'
@@ -48,9 +51,22 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
     [billing.invoices],
   )
 
+  // Search then page (catch-up Phase 43; US-15.0.4): 50 a page over the existing sort; the search
+  // ("Find by invoice number or payer") filters before paging and returns to page 1.
+  const [query, setQuery] = useState('')
+  const [page, setPage] = useState(1)
+  const matching = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (q === '') return invoices
+    return invoices.filter((i) => i.invoiceNumber.toLowerCase().includes(q) || invoiceAddresseeName({ masters, schedule, billing }, i).toLowerCase().includes(q))
+  }, [invoices, query, masters, schedule, billing])
+  const pageSize = FULL_SCALE.pageSizes.invoices
+  const shownInvoices = useMemo(() => pageOf(matching, pageSize, page), [matching, pageSize, page])
+  useScreenTiming('invoices', [invoices, query, page])
+
   const rows = useMemo(
     () =>
-      invoices.map((invoice) => {
+      shownInvoices.map((invoice) => {
         const booking = schedule.bookings[invoice.bookingId]
         const list = booking !== undefined ? schedule.lists[booking.listId] : undefined
         const patient = booking !== undefined ? masters.patients[booking.patientId] : undefined
@@ -59,7 +75,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
         const source = list !== undefined ? listSourceLabels(list, masters) : undefined
         return { invoice, booking, list, patient, anaesthetist, source }
       }),
-    [invoices, schedule.bookings, schedule.lists, masters],
+    [shownInvoices, schedule.bookings, schedule.lists, masters],
   )
 
   const billed = useMemo(() => billedLists({ schedule }), [schedule])
@@ -67,6 +83,8 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
 
   // Billing-run exceptions not yet resolved (catch-up Phase 36; the Phase 09 monitor's seam).
   const failedCases = useMemo(() => openBillingExceptions({ billing }), [billing])
+  // At scale the strip names the first few; the monitor holds the rest.
+  const failedShown = failedCases.slice(0, 5)
 
   if (selectedInvoiceId !== null && billing.invoices[selectedInvoiceId] !== undefined) {
     const invoice = billing.invoices[selectedInvoiceId]
@@ -123,11 +141,12 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
           <span style={{ fontSize: 13, fontWeight: 700, color: semantic.warning.onTint }}>
             {plural(failedCases.length, 'booking')} raised a billing exception
           </span>
-          {failedCases.map((c) => (
+          {failedShown.map((c) => (
             <div key={c.id} style={{ fontSize: 12.5, color: semantic.warning.onTint }}>
               <span className="mono">{c.bookingId}</span> · {c.message}
             </div>
           ))}
+          {failedCases.length > failedShown.length && <span style={{ fontSize: 12.5, color: semantic.warning.onTint }}>{`and ${formatCount(failedCases.length - failedShown.length)} more`}</span>}
           <span style={{ fontSize: 12, color: semantic.warning.onTint }}>Open Billing monitor to resolve and retry.</span>
         </div>
       )}
@@ -137,6 +156,25 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
           No invoices yet. Authorise a submitted list and the billing run raises its invoices immediately.
         </div>
       ) : (
+        <>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <TextField
+            label="Find by invoice number or payer"
+            size="compact"
+            fill="surface"
+            value={query}
+            onChange={(v) => {
+              setQuery(v)
+              setPage(1)
+            }}
+            shot="invoices-search"
+            width={320}
+          />
+          {matching.length > pageSize && <Pager total={matching.length} size={pageSize} page={page} onPage={setPage} shot="invoices-pager" />}
+        </div>
+        {matching.length === 0 ? (
+          <div style={{ fontSize: 13, color: neutral.mist }}>No invoice matches that number or payer.</div>
+        ) : (
         <TableShell testId="invoice-list-table-shell" label="Invoices" density="compact" minWidth={1460}>
             <thead>
               <tr>
@@ -234,6 +272,9 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
               })}
             </tbody>
         </TableShell>
+        )}
+        {matching.length > pageSize && <Pager total={matching.length} size={pageSize} page={page} onPage={setPage} />}
+        </>
       )}
     </div>
   )

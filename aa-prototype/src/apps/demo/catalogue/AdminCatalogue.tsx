@@ -1,4 +1,9 @@
 import { OFFICE_ACTOR } from '../../../store'
+import { SyntheticDataBadge } from '../../../shared/SyntheticDataBadge'
+import { Notice } from '../../../shared/ui'
+import { neutral } from '../../../theme/tokens'
+import { Pager } from '../../admin/components/Pager'
+import { SCALE_GENERATING_LINE } from '../../../shared/scale/ScaleBanner'
 import { StubSetExample } from './stubExamples'
 import { DRAFT_LIST, DRAFT_LISTS, UNASSIGNED } from '../../../shared/scheduleTerms'
 import { CataloguePage, CatalogueRow, LibraryGroup, StageHint } from './CatalogueKit'
@@ -180,6 +185,9 @@ export function AdminCatalogue() {
         <CatalogueRow name="MasterPanel / PanelGrid / PanelSection" source="apps/admin/components/MasterPanel.tsx" usedIn={A} what="The 600px record preset of SidePanel the Contract and Party editors open in: the h2 at 18/700 names the dialog, the footer is right-aligned with the primary last." replaceWith="shadcn Sheet (side)" note="Since U2 one shell with the drawers (SidePanel); a sheet opened over it (the RVG code picker) closes first on Escape.">
           <MasterPanelExample />
         </CatalogueRow>
+        <CatalogueRow name="RawRowSheet" source="apps/admin/matching/RawRowSheet.tsx" usedIn={A} what="The restricted raw hospital row (catch-up Phase 43; US-15.0.6): a record SidePanel over Matching's row panel that asks for a reason (FilterPills quick reasons or a TextField), then shows the masked columns on the table kit with the Notice that the masking policy is for AA to agree. Teal only on View raw row." replaceWith="shadcn Sheet (side)" note="Each view writes an audit entry, so it is not mounted here.">
+          <StageHint>Opens from View raw row on an unmatched Matching row.</StageHint>
+        </CatalogueRow>
         <CatalogueRow name="SidePanel" source="apps/admin/components/SidePanel.tsx" usedIn={A} what="The one Admin right-docked panel (U2): scrim, an h2 header at 18/700 that names the dialog, the corner X, e3, a scrolling body and a footer. 440px list (the drawers) or 600px record (MasterPanel). On the one modal stack." replaceWith="shadcn Sheet (side)">
           <SidePanelExample />
         </CatalogueRow>
@@ -225,8 +233,20 @@ export function AdminCatalogue() {
         <CatalogueRow name="StatusChip" source="shared/StatusChip.tsx" usedIn={AWM} what="A small tinted chip for a List kind or availability status, coloured from the status master." replaceWith="shadcn Badge (6 status variants)">
           <StatusChipExample />
         </CatalogueRow>
-        <CatalogueRow name="Pill" source="shared/ui/Pill.tsx" usedIn={AWM} what="The one label pill (UI unification U3): neutral, success, warning and error tones; sm, md (inline) and lg (table, the Admin Review size); a tint or a full-alpha outline; a leading icon or dot. Never teal or crimson, so no pill reads as a button." replaceWith="shadcn Badge">
+        <CatalogueRow name="Pill" source="shared/ui/Pill.tsx" usedIn={AWM} what="The one label pill (UI unification U3): neutral, success, warning and error tones; sm, md (inline) and lg (table, the Admin Review size); a tint, a full-alpha outline, or onInk (catch-up Phase 43: quiet white on the dark harness bar and admin side nav); a leading icon or dot. Never teal or crimson, so no pill reads as a button." replaceWith="shadcn Badge">
           <PillExample />
+        </CatalogueRow>
+        <CatalogueRow name="SyntheticDataBadge" source="shared/SyntheticDataBadge.tsx" usedIn={AWM} what="Synthetic data only (catch-up Phase 43; US-15.0.6): an environment marker on a Pill with a shield icon and its tooltip, onInk in the harness bar and admin side nav, the neutral outline on the web nav and the mobile More card. Neutral: never crimson, teal or the demo warning tint." replaceWith="shadcn Badge">
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <span style={{ background: neutral.ink, padding: 8, borderRadius: 8 }}><SyntheticDataBadge tone="onInk" /></span>
+            <SyntheticDataBadge tone="onLight" />
+          </div>
+        </CatalogueRow>
+        <CatalogueRow name="Pager" source="apps/admin/components/Pager.tsx" usedIn={A} what="The one admin pager (catch-up Phase 43; US-15.0.4): the range in mono, first, previous, the teal page count, next and last. Shown only past one page: the Day view (30 anaesthetists), Invoices (50), Audit (100), the Ledger (50), the Billing monitor's groups (20) and each group's Lists (25)." replaceWith="TanStack Table pagination">
+          <Pager total={28114} size={50} page={2} onPage={() => {}} />
+        </CatalogueRow>
+        <CatalogueRow name="ScaleBanner" source="shared/scale/ScaleBanner.tsx" usedIn={A} what="The full-scale data's banner (catch-up Phase 43): harness chrome under the bar, on the shared Notice (warning tint) while generating or loaded, every figure counted, a Timings disclosure with each timed screen's demo and full-scale render median. Never in the PWA." replaceWith="shadcn Alert" note="Shows only while Load full-scale data is running or loaded.">
+          <Notice tone="warning">{SCALE_GENERATING_LINE}</Notice>
         </CatalogueRow>
         <CatalogueRow name="MasterPills" source="apps/admin/components/MasterPills.tsx" usedIn={A} what="Admin's import path for Pill, used for Party kinds, Contract tags, Active and RVG anatomy headings." replaceWith="shadcn Badge" note="A re-export only: delete it in the migration.">
           <MasterPillsExample />

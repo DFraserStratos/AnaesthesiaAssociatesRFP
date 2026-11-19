@@ -54,6 +54,7 @@ import type {
   XeroAccPay,
   XeroAccRec,
   XeroContact,
+  XeroJournal,
   XeroVolumeStory,
   AaFeeInvoice,
   AaFeeSettings,
@@ -62,6 +63,7 @@ import type {
   Stub,
 } from '../../types'
 import { stubFor } from '../../intake/stubs'
+import { rawRowFor } from '../../intake/rawRow'
 import type { AppSettings } from '../../warnings/types'
 import type { BookingLock, InvoiceBuildContext } from '../../billing/lock'
 import type { HeldPrices } from '../../billing/procedurePrice'
@@ -154,6 +156,7 @@ export interface FullScaleInput {
     accPays: Record<string, XeroAccPay>
     payments: Record<string, PaymentIn>
     disbursements: Record<string, Disbursement>
+    journals: Record<string, XeroJournal>
   }
   intake: {
     batches: Record<string, ImportBatch>
@@ -228,6 +231,19 @@ function time(minutes: number): string {
   return `${pad(Math.floor(minutes / 60), 2)}:${pad(minutes % 60, 2)}`
 }
 
+/** One second after an ISO date-time (to the second). */
+function latestAfter(iso: string): string {
+  const [d, t] = iso.split('T') as [string, string]
+  const [h, m, sec] = t.slice(0, 8).split(':').map(Number) as [number, number, number]
+  const total = h * 3600 + m * 60 + (sec || 0) + 1
+  if (total >= 86400) return `${d}T23:59:59`
+  return `${d}T${pad(Math.floor(total / 3600), 2)}:${pad(Math.floor((total % 3600) / 60), 2)}:${pad(total % 60, 2)}`
+}
+
+function earlier(a: string, b: string): string {
+  return a < b ? a : b
+}
+
 function dayOfWeek(dateISO: string): number {
   return parseISO(dateISO).getDay()
 }
@@ -255,12 +271,17 @@ const FORMATS: Record<string, { prefix: string; pad: number }> = {
   receipt: { prefix: 'RCT', pad: 4 },
   billingException: { prefix: 'BX', pad: 4 },
   aaFeeInvoice: { prefix: 'AF', pad: 4 },
-  transfer: { prefix: 'TR', pad: 4 },
+  prepayTransfer: { prefix: 'PXT', pad: 4 },
+  xeroJournal: { prefix: 'XJ', pad: 4 },
+  xeroJournalNumber: { prefix: 'MJ-', pad: 4 },
   ledgerDisbursement: { prefix: 'LD', pad: 4 },
   importBatch: { prefix: 'IB', pad: 4 },
   importRow: { prefix: 'IR', pad: 4 },
   stub: { prefix: 'STB', pad: 4 },
 }
+
+/** Three-letter prefixes the app's seven-character ids start with (the generator keeps patient NHIs off them). */
+const ID_PREFIXES: ReadonlySet<string> = new Set(['PMT', 'DSB', 'RCT', 'STB', 'PDL', 'MOD'])
 
 function makeAllocator(counters: Record<string, number>) {
   return (kind: string): string => {
@@ -279,7 +300,7 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   const todayISO = options.todayISO
   const officeWho = options.officeWho ?? 'Kirsty W.'
   const horizon = horizonFor(todayISO, base.appSettings.schedule.horizonMonths)
-  const historyStartISO = addDaysISO(todayISO, -365)
+  const historyStartISO = addDaysISO(todayISO, -Math.round((FULL_SCALE.historyMonths * 365) / 12))
   const counters: Record<string, number> = { ...base.counters }
   const nextId = makeAllocator(counters)
   const stream = (...parts: string[]): Rng => slotRng(FULL_SCALE_SEED, 'fullScale', ...parts)
@@ -310,6 +331,7 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   const accPays = { ...base.xero.accPays }
   const payments = { ...base.xero.payments }
   const xeroDisbursements = { ...base.xero.disbursements }
+  const journals = { ...base.xero.journals }
   const audit: AuditEntry[] = []
 
   const audited = (entry: Omit<AuditEntry, 'id'>): void => {
@@ -651,8 +673,9 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   const newPatient = (): Patient => {
     patientN += 1
     const format = patientN % 9 === 0 ? 'new' : 'current'
+    // Unique, and never on a prefix the app's own record ids use (PMT0004 passes the check digit too).
     let nhi = generateNhi(format, patRng)
-    while (usedNhis.has(nhi)) nhi = generateNhi(format, patRng)
+    while (usedNhis.has(nhi) || ID_PREFIXES.has(nhi.slice(0, 3))) nhi = generateNhi(format, patRng)
     usedNhis.add(nhi)
     const id = nextId('patient')
     // Mostly adults; a few children (their Procedures' payer is a guardian).
@@ -670,7 +693,8 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
     return patient
   }
   const patientFor = (): Patient => {
-    if (generatedPatientIds.length > 50 && patRng() >= FULL_SCALE.oneTimePatientShare) {
+    // The one-time share is the narrated figure (`settings.volumeStory.oneTimePct`), never a second copy.
+    if (generatedPatientIds.length > 50 && patRng() >= base.settings.volumeStory.oneTimePct / 100) {
       return patients[pick(patRng, generatedPatientIds)]!
     }
     return newPatient()
@@ -698,7 +722,9 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
     const duration = 35 + Math.floor(rng() * 50)
     const start = startMinutes + Math.floor(rng() * 8)
     const end = start + duration
-    const atISO = completed ? `${list.dateISO}T${time(end + 4)}:00` : `${addDaysISO(list.dateISO, -7)}T09:00:00`
+    // Booked a week before the List, never after the demo clock (an audit stamp is never in the future).
+    const bookedISO = earlier(`${addDaysISO(list.dateISO, -7)}T09:00:00`, `${addDaysISO(todayISO, -1)}T16:00:00`)
+    const atISO = completed ? `${list.dateISO}T${time(end + 4)}:00` : bookedISO
     const booking: Booking = {
       id: bookingId,
       listId: list.id,
@@ -708,7 +734,7 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
       ...(completed ? { completedAtISO: atISO } : {}),
       source: list.hospitalId === HOSP.forte || list.hospitalId === HOSP.ces ? 'surgeonPdf' : 'hospitalDownload',
       lastModifiedBy: completed ? (anaesthetists[list.anaesthetistId]?.name ?? 'Anaesthetist') : officeWho,
-      lastModifiedAtISO: completed ? atISO : `${addDaysISO(list.dateISO, -7)}T09:00:00`,
+      lastModifiedAtISO: completed ? atISO : bookedISO,
     }
     // The payer (22a, D85): the patient, or a synthetic guardian below `guardianPayerAgeUnder`.
     let payer: ProcedurePayer = { kind: 'patient' }
@@ -735,7 +761,7 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
         id: nextId('procedure'),
         bookingId,
         // A second Procedure's payer is copied from the first (the same BP id), or, on a few, another person.
-        payer: k === 1 && rng() < FULL_SCALE.twoPayerBookingShare * 12 ? { kind: 'other', id: nextId('billableParty'), name: `${pick(rng, FIRST_NAMES)} ${pick(rng, SURNAMES)}`, relationship: 'Employer', email: `payer.${bookingId.toLowerCase()}@example.net` } : payer,
+        payer: k === 1 && rng() < FULL_SCALE.secondPayerShare ? { kind: 'other', id: nextId('billableParty'), name: `${pick(rng, FIRST_NAMES)} ${pick(rng, SURNAMES)}`, relationship: 'Employer', email: `payer.${bookingId.toLowerCase()}@example.net` } : payer,
         procedureText: seedText(legacy.description, booking.source === 'surgeonPdf' ? 'surgeonPdf' : 'hospitalDownload'),
         invoiceDescription: null,
         governingContractId: contract.id,
@@ -750,12 +776,18 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
         procedure.modifiersConfirmed = true
       }
       // A typed price where the Contract allows it (24): the office on a fixed price, or an RVG Contract with the override.
-      if (!prepaid && contract.systemRole === undefined && contract.anaesthetistMayOverridePrice && rng() < FULL_SCALE.typedPriceShare * 5) {
+      if (!prepaid && contract.systemRole === undefined && contract.anaesthetistMayOverridePrice && rng() < FULL_SCALE.typedPriceShare) {
         procedure.enteredPrice = 300 + intBetween(rng, 0, 30) * 20
       }
       procs.push(procedure)
     }
     if (prepaid) prepaidBookings += 1
+    // A few insured patients (D28): the insurer, a Party, and an approval number on the Booking, so billed
+    // history raises no missing-approval warning. The insurer only suggests a path; it never decides who is billed.
+    if (!prepaid && insurerParties.length > 0 && rng() < FULL_SCALE.insuredShare) {
+      booking.funderPartyId = pick(rng, insurerParties)
+      booking.insuranceApprovalNumber = `AP-${bookingId.slice(2)}`
+    }
     if (index === 0 && procs.length > 0) {
       // Nothing more: the primary is the first (23).
     }
@@ -1065,10 +1097,26 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
     for (const pairId of pairIds) {
       const pair = ledger[pairId]
       if (pair === undefined || pair.kind !== 'prePayment') continue
-      const id = nextId('transfer')
+      const id = nextId('prepayTransfer')
       const made = newPrepayTransfer({ id, collectPair: pair as BookingLedgerPair, listId: list.id, payerKey: refKey(payerCounterparty(built.procedures[0]!, built.patient.hiddenInternalId)), payeeAnaesthetistId: list.anaesthetistId, atISO, transfers })
       if (!made.ok) continue
-      transfers[id] = made.transfer
+      // Its Xero manual journal, as the runtime posts it (27a: debit the AA Holding account, credit the anaesthetist).
+      const invoice = invoices[made.transfer.invoiceId]
+      const journalId = nextId('xeroJournal')
+      const description = `Transfer of prepayment ${invoice?.invoiceNumber ?? made.transfer.invoiceId}`
+      const anaesthetist = anaesthetists[list.anaesthetistId]!
+      journals[journalId] = {
+        id: journalId,
+        journalNumber: nextId('xeroJournalNumber'),
+        transferId: id,
+        reference: invoice?.invoiceNumber ?? made.transfer.invoiceId,
+        dateISO: atISO,
+        lines: [
+          { contactId: holdingContactId(), description, debit: made.transfer.in.amount, credit: 0 },
+          { contactId: contactFor('anaesthetist', anaesthetist.registrationNumber, anaesthetist.name, 'organisation'), description, debit: 0, credit: made.transfer.in.amount },
+        ],
+      }
+      transfers[id] = { ...made.transfer, xeroJournalId: journalId }
       audited({ entityType: 'ledgerPair', entityId: pairId, who: 'Billing run', role: 'system', source: 'system', action: 'prepayment.transfer', atISO, after: { transferId: id, to: list.anaesthetistId, amount: made.transfer.in.amount } })
     }
   }
@@ -1083,6 +1131,8 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
     const submittedAtISO = `${list.dateISO}T17:30:00`
     for (const b of built) {
       audited({ entityType: 'booking', entityId: b.booking.id, who: officeWho, role: 'office', source: 'office', action: 'booking.create', atISO: `${addDaysISO(list.dateISO, -7)}T09:00:00`, after: { listId: list.id, patientId: b.patient.hiddenInternalId } })
+      // The office set each Procedure's Contract on the rail (the runtime's code).
+      for (const proc of b.procedures) audited({ entityType: 'procedure', entityId: proc.id, who: officeWho, role: 'office', source: 'office', action: 'procedure.contract', atISO: `${addDaysISO(list.dateISO, -7)}T09:05:00`, after: { contractId: proc.governingContractId } })
       audited({ entityType: 'booking', entityId: b.booking.id, who: anaesthetistName, role: 'anaesthetist', source: 'anaesthetist', action: 'booking.complete', atISO: b.booking.completedAtISO ?? submittedAtISO })
     }
     audited({ entityType: 'list', entityId: list.id, who: anaesthetistName, role: 'anaesthetist', source: 'anaesthetist', action: 'list.submit', atISO: submittedAtISO, after: { state: 'SUBMITTED' } })
@@ -1176,6 +1226,7 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
       },
       status: 'open',
     }
+    row.raw = rawRowFor(row.incoming, row.channel)
     const stub = stubFor(row, { id: list.id, state: list.state }, label, receivedAtISO)
     if (stub === undefined) continue
     rows[rowId] = row
@@ -1280,7 +1331,8 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
     role: 'office',
     source: 'demo',
     action: 'demo.fullScaleLoaded',
-    atISO: `${todayISO}T08:00:00`,
+    // The newest entry: just after the latest already in the trail (the seed holds a few later today).
+    atISO: latestAfter([...base.audit, ...audit].reduce((m, e) => (e.atISO > m ? e.atISO : m), `${todayISO}T08:00:00`)),
     after: { anaesthetists: Object.keys(anaesthetists).length, sessions: slotsInHorizon, invoices: invoicesLast12Months, auditEntries },
   }
 
@@ -1303,6 +1355,7 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
     activeContacts,
     auditEntries,
     stubs: stubCount,
+    // Events (38b) are not generated: their raising and billing live in the store's actions, not a pure builder (logged for the owner).
     events: 0,
     publicSessions,
     problemLists,
@@ -1317,7 +1370,7 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
     masters: { ...base.masters, anaesthetists, surgeons, parties, contracts, patients, recurringBookings },
     schedule: { ...base.schedule, slots, lists, bookings, procedures },
     billing: { ...base.billing, invoices, invoiceLines, ledger, receipts, disbursements: ledgerDisbursements, exceptions, contactIdCache, aaFeeInvoices, locks, transfers },
-    xero: { ...base.xero, contacts, accRecs, accPays, payments, disbursements: xeroDisbursements },
+    xero: { ...base.xero, contacts, accRecs, accPays, payments, disbursements: xeroDisbursements, journals },
     intake: { ...base.intake, batches, rows, stubs },
     audit: [...base.audit, ...audit, loaded],
     counters,

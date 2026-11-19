@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
 import { useSearchParams } from 'react-router-dom'
 import { accent, fontFamily, neutral } from '../../../theme/tokens'
 import { billedLists, changedSinceSubmitted, eventPartyName, eventsAwaitingReview, invoiceCountsByList, procedureOwner, useAppStore, OFFICE_ACTOR, type Actor } from '../../../store'
@@ -77,6 +78,8 @@ export function ReviewQueue({ onOpen, onViewInvoices, actor = OFFICE_ACTOR }: Re
   }, [submitted, schedule, audit, masters])
 
   const recentlyBilled = useMemo(() => billedLists({ schedule }).slice(0, 6), [schedule])
+  // Timed at both scales, indexed, not paged: its backlog is a few hundred Lists at most (catch-up Phase 43).
+  useScreenTiming('review', [submitted, tab])
   const invoiceCountByList = useMemo(() => invoiceCountsByList({ schedule, billing }), [schedule, billing])
 
   return (

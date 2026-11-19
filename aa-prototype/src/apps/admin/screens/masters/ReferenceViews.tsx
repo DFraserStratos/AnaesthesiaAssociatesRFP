@@ -10,7 +10,8 @@ import {
   type Actor,
 } from '../../../../store'
 import { Button, StatusChip, TextField } from '../../../../shared'
-import { shortDay, locationName } from '../../../../shared/format'
+import { formatCount, shortDay, locationName } from '../../../../shared/format'
+import { useScaleMode } from '../../../../store/scaleMode'
 import { applyAllLine } from '../../recurringBookingCopy'
 import { useNavigate } from 'react-router-dom'
 import { RecurringBookingSheet } from '../../flows/RecurringBookingSheet'
@@ -138,6 +139,8 @@ export function XeroArchivingView({ actor }: { actor: Actor }) {
   )
   const archivedCount = useMemo(() => Object.values(xero.contacts).filter((c) => c.archived).length, [xero.contacts])
   const vs = settings.volumeStory
+  const scaleCounts = useScaleMode((s) => (s.mode === 'fullScale' ? s.counts : null))
+  const contactCount = Object.keys(xero.contacts).length
 
   function saveWindow() {
     const outcome = setArchiveWindowDays(useAppStore, actor, Number(windowInput))
@@ -189,9 +192,19 @@ export function XeroArchivingView({ actor }: { actor: Actor }) {
           archive currently-eligible contacts. {eligible.length} contact{eligible.length === 1 ? '' : 's'} eligible right now;
           {' '}{archivedCount} already archived.
         </div>
-        <div style={{ fontSize: 12, color: neutral.mist, background: neutral.sunken, borderRadius: radius.ctl, padding: '8px 12px' }}>
-          Scale (narrated, not simulated): ~{vs.invoicesPerYear.toLocaleString('en-NZ')} invoices/year, ~{vs.oneTimePct}% one-time
-          clients, {vs.activeContacts.toLocaleString('en-NZ')} active contacts against Xero's ~{vs.softLimit.toLocaleString('en-NZ')} soft limit.
+        <div data-shot="archive-scale-line" style={{ fontSize: 12, color: neutral.mist, background: neutral.sunken, borderRadius: radius.ctl, padding: '8px 12px' }}>
+          {scaleCounts !== null ? (
+            // Catch-up Phase 43: counted from the loaded full-scale data.
+            <>
+              Scale (counted from the loaded data): <span className="mono">{formatCount(scaleCounts.invoicesLast12Months)}</span> invoices in the last 12 months,{' '}
+              <span className="mono">{formatCount(contactCount)}</span> contacts, <span className="mono">{formatCount(vs.activeContacts)}</span> active against Xero&apos;s ~{formatCount(vs.softLimit)} soft limit.
+            </>
+          ) : (
+            <>
+              Scale (narrated, not simulated): ~{vs.invoicesPerYear.toLocaleString('en-NZ')} invoices/year, ~{vs.oneTimePct}% one-time
+              clients, {vs.activeContacts.toLocaleString('en-NZ')} active contacts against Xero&apos;s ~{vs.softLimit.toLocaleString('en-NZ')} soft limit.
+            </>
+          )}
         </div>
         <div>
           <Button variant="secondary" onClick={runNow}>Run nightly archive job now</Button>

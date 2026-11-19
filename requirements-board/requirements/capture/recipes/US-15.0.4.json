@@ -1,3 +1,143 @@
-{ "id": "US-15.0.4", "status": "absent",
-  "absentReason": "Not demonstrated. The prototype runs on a small seeded in-browser data set (14 anaesthetists, a few weeks of lists); scale is only narrated in copy on the admin day grid and the Xero simulation, never simulated or load tested.",
-  "shots": [] }
+{
+  "id": "US-15.0.4",
+  "status": "partial",
+  "absentReason": "full-scale volumes are generated in memory and timed on screen; formal performance testing is a Testing-milestone task",
+  "shots": [
+    {
+      "name": "full-scale-day",
+      "app": "admin",
+      "caption": "Demonstration at full practice volume with measured screen timings",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "state": "banner",
+          "caption": "Load full-scale data: the banner counts the anaesthetists, the sessions over the scheduling horizon and the invoices of the last 12 months, built in this browser, with each timed screen's demo and full-scale times",
+          "steps": [
+            { "trigger": "load-full-scale" },
+            { "wait": 3000 },
+            { "wait": "[data-shot=scale-timings-toggle]" },
+            { "click": "[data-shot=scale-timings-toggle]" },
+            { "wait": "[data-shot=scale-timings]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=scale-banner]"]
+        },
+        {
+          "state": "paged",
+          "caption": "The Day view at full scale shows 30 anaesthetists a page, with the pager under the grid",
+          "steps": [
+            { "trigger": "load-full-scale" },
+            { "wait": 3000 },
+            { "wait": "[data-shot=scale-timings-toggle]" },
+            { "wait": "[data-shot=day-grid-pager]" },
+            { "click": "[data-shot=day-grid-pager] >> role=button[name=\"Next page\"]" },
+            { "wait": "[data-shot=day-grid-pager][data-page=\"2\"]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=day-grid-pager]"]
+        }
+      ]
+    },
+    {
+      "name": "full-scale-invoices",
+      "app": "admin",
+      "caption": "Demonstration at full practice volume with measured screen timings",
+      "start": "/admin/invoices",
+      "states": [
+        {
+          "state": "paged",
+          "caption": "Invoices at full scale: a year of invoices, 50 a page, with the search by invoice number or payer",
+          "steps": [
+            { "trigger": "load-full-scale" },
+            { "wait": 3000 },
+            { "wait": "[data-shot=scale-timings-toggle]" },
+            { "wait": "[data-shot=invoices-pager]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=invoices-search]", "[data-shot=invoices-pager]"]
+        },
+        {
+          "state": "search",
+          "caption": "Finding an invoice by its number among the full-scale invoices",
+          "steps": [
+            { "trigger": "load-full-scale" },
+            { "wait": 3000 },
+            { "wait": "[data-shot=scale-timings-toggle]" },
+            { "fill": "[data-shot=invoices-search]", "value": "AA-S-000001" },
+            { "wait": 600 }
+          ],
+          "highlight": ["[data-shot=invoices-search]"]
+        }
+      ]
+    },
+    {
+      "name": "full-scale-audit",
+      "app": "admin",
+      "caption": "Demonstration at full practice volume with measured screen timings",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "state": "newest",
+          "caption": "The Audit viewer at full scale: the entry count, and the newest entry is Full-scale data loaded",
+          "steps": [
+            { "trigger": "load-full-scale" },
+            { "wait": 3000 },
+            { "wait": "[data-shot=scale-timings-toggle]" },
+            { "click": "nav[aria-label=\"Admin\"] >> role=button[name=\"Audit\"]" },
+            { "wait": "[data-shot=audit-count]" },
+            { "wait": 600 }
+          ],
+          "highlight": ["[data-shot=audit-count]", "tbody tr:has-text(\"Full-scale data loaded\")"]
+        },
+        {
+          "state": "paged",
+          "caption": "The Audit viewer shows 100 entries a page, with the pager under the table",
+          "steps": [
+            { "trigger": "load-full-scale" },
+            { "wait": 3000 },
+            { "wait": "[data-shot=scale-timings-toggle]" },
+            { "click": "nav[aria-label=\"Admin\"] >> role=button[name=\"Audit\"]" },
+            { "wait": "[data-shot=audit-pager]" },
+            { "wait": 600 }
+          ],
+          "highlight": ["[data-shot=audit-pager]"]
+        }
+      ]
+    },
+    {
+      "name": "full-scale-billing-monitor",
+      "app": "admin",
+      "caption": "Demonstration at full practice volume with measured screen timings",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "state": "paged",
+          "caption": "The Billing monitor at full scale shows 20 anaesthetists a page, with the pager above the groups",
+          "steps": [
+            { "trigger": "load-full-scale" },
+            { "wait": 3000 },
+            { "wait": "[data-shot=scale-timings-toggle]" },
+            { "click": "[data-shot=nav-badge-billing]" },
+            { "wait": "[data-shot=billing-monitor-pager]" },
+            { "wait": 600 }
+          ],
+          "highlight": ["[data-shot=billing-monitor-pager]"]
+        },
+        {
+          "state": "problems",
+          "caption": "Problems only at full scale: the tiles and the filter narrow the monitor to the Lists with a problem",
+          "steps": [
+            { "trigger": "load-full-scale" },
+            { "wait": 3000 },
+            { "wait": "[data-shot=scale-timings-toggle]" },
+            { "click": "[data-shot=nav-badge-billing]" },
+            { "wait": "[data-shot=billing-monitor-filters]" },
+            { "click": "[data-shot=billing-monitor-filters] >> role=button[name=\"Problems only\"]" },
+            { "wait": 800 }
+          ],
+          "highlight": ["[data-shot=billing-monitor-tiles]", "[data-shot=billing-monitor-filters]"]
+        }
+      ]
+    }
+  ]
+}

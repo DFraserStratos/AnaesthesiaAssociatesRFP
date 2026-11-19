@@ -13,7 +13,7 @@ import {
   unmatchedBankLines,
   useAppStore,
 } from '../../store'
-import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm } from '../../shared/format'
+import { dateTimeMicroCap, dayMicroCap, formatCount, formatCurrency, hhmm } from '../../shared/format'
 import { HELD_UNTIL_AUTHORISED, LEAVES_ONLY_BY_SYSTEM, RELEASE_TRIGGER_CAPTION } from '../../domain/billing/prepayHolding'
 import { transferOfPair } from '../../domain/billing/ledger'
 import { toCents } from '../../domain/billing/money'
@@ -27,6 +27,9 @@ import { BCTI_DOCUMENT_NAME, GST_NUMBER_NOT_HELD, OQ29_CAPTION, OQ29_PILL, forma
 import { Button, Card, EmptyState, FormError, Notice, Pill, ResultLine, SelectField } from '../../shared/ui'
 import { TableShell as KitTableShell, Td as KitTd, Th as KitTh } from '../../shared/table'
 import type { XeroAccRec, XeroBankLine, XeroContact, XeroRemittance } from '../../domain/types'
+import { FULL_SCALE } from '../../domain/seed/fullScale/constants'
+import { useScaleMode } from '../../store/scaleMode'
+import { useShallow } from 'zustand/react/shallow'
 
 /**
  * The simulated Xero organisation. Contacts are a read-only reference table;
@@ -48,15 +51,33 @@ export function DemoXero() {
     () => Object.values(xero.contacts).sort((a, b) => a.contactNumber.localeCompare(b.contactNumber)),
     [xero.contacts],
   )
+  // A safety cap (catch-up Phase 43): at full scale the tables show the first 200 rows of each,
+  // and only those (and the pair opened) are built.
+  const cap = FULL_SCALE.pageSizes.demoTables
+  const accRecCount = Object.keys(xero.accRecs).length
+  const shownAccRecIds = useMemo(() => {
+    if (accRecCount <= cap) return undefined
+    // The first 200 by invoice number, the order the table shows.
+    const ids = Object.values(xero.accRecs)
+      .sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber))
+      .slice(0, cap)
+      .map((r) => r.id)
+    return accRecId !== undefined && !ids.includes(accRecId) ? [...ids, accRecId] : ids
+  }, [xero.accRecs, accRecCount, cap, accRecId])
   const pairs = useMemo(
-    () => xeroInvoicePairViews({ xero, billing, schedule, masters, audit }),
-    [xero, billing, schedule, masters, audit],
+    () => xeroInvoicePairViews({ xero, billing, schedule, masters, audit }, shownAccRecIds !== undefined ? { accRecIds: shownAccRecIds } : {}),
+    [xero, billing, schedule, masters, audit, shownAccRecIds],
   )
+  const scale = useScaleMode(useShallow((s) => ({ mode: s.mode, counts: s.counts })))
   const selectedPair = useMemo(
     () => (accRecId !== undefined ? pairs.find((pair) => pair.accRec.id === accRecId) : undefined),
     [accRecId, pairs],
   )
 
+  // Counted before the redirect below, so the hook order never changes.
+  const activePatientContacts = useMemo(() => contacts.filter((c) => c.type !== 'organisation' && !c.archived).length, [contacts])
+  const archivedContacts = useMemo(() => contacts.filter((c) => c.archived).length, [contacts])
+  const activeContacts = useMemo(() => contacts.filter((c) => !c.archived).length, [contacts])
   if (accRecId !== undefined && selectedPair === undefined) {
     return <Navigate to="/demo/xero/invoices" replace />
   }
@@ -65,8 +86,6 @@ export function DemoXero() {
   const bankTab = location.pathname.startsWith('/demo/xero/bank')
   const unmatchedCount = unmatchedBankLines({ xero }).length
   const vs = settings.volumeStory
-  const activePatientContacts = contacts.filter((c) => c.type !== 'organisation' && !c.archived).length
-  const archivedContacts = contacts.filter((c) => c.archived).length
 
   return (
     <DemoSurface
@@ -100,36 +119,46 @@ export function DemoXero() {
       </Callout>
 
       <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${neutral.line}` }}>
-        <TabLink active={!invoicesTab && !bankTab} to="/demo/xero">Contacts ({contacts.length})</TabLink>
-        <TabLink active={invoicesTab} to="/demo/xero/invoices">Invoices ({pairs.length})</TabLink>
+        <TabLink active={!invoicesTab && !bankTab} to="/demo/xero">Contacts ({formatCount(contacts.length)})</TabLink>
+        <TabLink active={invoicesTab} to="/demo/xero/invoices">Invoices ({formatCount(accRecCount)})</TabLink>
         <TabLink active={bankTab} to="/demo/xero/bank">Bank reconciliation ({unmatchedCount} unmatched)</TabLink>
       </div>
 
       {bankTab ? (
         <BankReconciliation />
       ) : !invoicesTab ? (
-        <ContactsTable contacts={contacts} />
+        <ContactsTable contacts={contacts.slice(0, cap)} total={contacts.length} />
       ) : selectedPair !== undefined ? (
         selectedPair.kind === 'aaFee' ? <FeePairDetail key={selectedPair.accRec.id} pair={selectedPair} /> : <PairDetail key={selectedPair.accRec.id} pair={selectedPair} />
       ) : (
-        <InvoicesTable pairs={pairs} />
+        <InvoicesTable pairs={pairs.slice(0, cap)} total={accRecCount} />
       )}
 
       {selectedPair === undefined && !bankTab && (
-        <Callout tone="info" title="Contact archiving & volume">
+        <Callout tone="info" title="Contact archiving & volume" shot="xero-volume-callout">
+          {scale.mode === 'fullScale' && scale.counts !== null ? (
+            <>
+              Counted from the loaded data: <strong className="mono">{formatCount(scale.counts.invoicesLast12Months)}</strong> invoices in the last 12 months,{' '}
+              <strong className="mono">{formatCount(contacts.length)}</strong> contacts, of which <strong className="mono">{formatCount(activeContacts)}</strong> are
+              active against Xero&apos;s soft limit of about {formatCount(vs.softLimit)}. The nightly job archives individual contacts once fully paid and inactive (the window is a setting in Master data).
+            </>
+          ) : (
+          <>
           Xero has a soft limit of about {vs.softLimit.toLocaleString('en-NZ')} contacts. AA raises roughly
           {' '}{vs.invoicesPerYear.toLocaleString('en-NZ')} invoices a year, and about {vs.oneTimePct}% of patients are one-time,
           so a nightly job archives individual contacts once fully paid and inactive (the window is a setting
           in Master data). Active contacts: <strong className="mono">{vs.activeContacts.toLocaleString('en-NZ')}</strong>
           {' '}(narrated scale) · in this demo {activePatientContacts} active and {archivedContacts} archived individual
-          contact{archivedContacts === 1 ? '' : 's'}. Scale is narrated with counters, not simulated as records.
+          contact{archivedContacts === 1 ? '' : 's'}. Scale is narrated with counters here; Load full-scale data counts it from records.
+          </>
+          )}
         </Callout>
       )}
     </DemoSurface>
   )
 }
 
-function ContactsTable({ contacts }: { contacts: XeroContact[] }) {
+function ContactsTable({ contacts, total }: { contacts: XeroContact[]; total: number }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ fontSize: 12.5, color: neutral.slate }}>
@@ -160,11 +189,21 @@ function ContactsTable({ contacts }: { contacts: XeroContact[] }) {
           </table>
         </TableShell>
       )}
+      {total > contacts.length && <CapLine shown={contacts.length} total={total} />}
     </div>
   )
 }
 
-function InvoicesTable({ pairs }: { pairs: XeroInvoicePairView[] }) {
+/** The safety cap's line (catch-up Phase 43): "Showing 200 of 5,464". */
+function CapLine({ shown, total }: { shown: number; total: number }) {
+  return (
+    <div data-shot="xero-table-cap" className="mono" style={{ fontSize: 12.5, color: neutral.slate }}>
+      Showing {formatCount(shown)} of {formatCount(total)}
+    </div>
+  )
+}
+
+function InvoicesTable({ pairs, total }: { pairs: XeroInvoicePairView[]; total: number }) {
   const navigate = useNavigate()
 
   return (
@@ -254,6 +293,7 @@ function InvoicesTable({ pairs }: { pairs: XeroInvoicePairView[] }) {
           </table>
         </TableShell>
       )}
+      {total > pairs.length && <CapLine shown={pairs.length} total={total} />}
     </div>
   )
 }

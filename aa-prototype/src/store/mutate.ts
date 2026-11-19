@@ -22,6 +22,7 @@ import { seededIntakeSlice, seededIntegrationsSlice, type AppState, type AppStor
 import { reconcileConflictsInPatch, type MutationResult } from './conflictReconcile'
 import { seedLocks } from './locks'
 import { clearScaleMode } from './scaleMode'
+import { reportDiagnostic } from './diagnostics'
 import { resumePersist } from './persistStorage'
 
 export type { MutationResult } from './conflictReconcile'
@@ -48,6 +49,8 @@ export function ok<T>(value: T): Outcome<T> {
 }
 
 export function refuse<T = undefined>(code: string, message: string, details?: unknown): Outcome<T> {
+  // The messages people see are part of what the NHI leak scan reads (catch-up Phase 43).
+  reportDiagnostic('refusal', message, { code })
   const outcome: Outcome<T> = { ok: false, code, message }
   if (details !== undefined) outcome.details = details
   return outcome

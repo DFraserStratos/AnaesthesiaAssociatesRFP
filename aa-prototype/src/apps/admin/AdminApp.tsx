@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { bookingsByList } from '../../store/indexes'
 import { Outlet, useLocation, useMatch, useNavigate, useSearchParams } from 'react-router-dom'
 import { neutral } from '../../theme/tokens'
 import { SurfaceProvider } from '../../shared'
@@ -19,7 +20,7 @@ import {
   slotViewsForDate,
   type SlotView,
   useAppStore,
-  warningSummaryByList,
+  warningSummaryFromRows,
   useToday,
   officeActorOf,
   eventsAwaitingReview,
@@ -217,7 +218,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
       reviewLists.map((l) => {
         const anae = masters.anaesthetists[l.anaesthetistId]
         const hospital = locationName(l.hospitalId, masters.hospitals)
-        const count = Object.values(bookingsRecord).filter((c) => c.listId === l.id && c.cancellation === undefined).length
+        const count = (bookingsByList(bookingsRecord).get(l.id) ?? []).filter((c) => c.cancellation === undefined).length
         return {
           listId: l.id,
           title: `${anae !== undefined ? surnameOf(anae.name) : l.anaesthetistId} · ${hospital} ${sessionText(l.session)}`,
@@ -242,8 +243,9 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   // per-List outline on the selected date and every open warning for the
   // To-do card (all dates).
   const warningState = useMemo(() => ({ schedule, billing, appSettings, clock, masters }), [schedule, billing, appSettings, clock, masters])
-  const warningFlags = useMemo(() => warningSummaryByList(warningState, selectedDate), [warningState, selectedDate])
   const todoRows = useMemo(() => openWarnings(warningState), [warningState])
+  // From the rows above, so the routine runs once per change, not once more per date (catch-up Phase 43).
+  const warningFlags = useMemo(() => warningSummaryFromRows(todoRows, selectedDate), [todoRows, selectedDate])
 
   const notes = dayNotesRecord[selectedDate] ?? []
 

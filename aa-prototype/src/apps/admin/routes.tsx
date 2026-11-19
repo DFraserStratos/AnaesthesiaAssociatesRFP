@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { pageParam } from './components/Pager'
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { neutral, radius, elevation } from '../../theme/tokens'
 import { TextAction } from '../../shared/ui'
@@ -77,7 +78,10 @@ export function AdminDayRoute() {
 
   /** Moving day is a navigation step, but it keeps the chosen row order. */
   function goToDay(next: string) {
-    const query = params.toString()
+    // A new day starts on the first page of anaesthetists (catch-up Phase 43).
+    const kept = new URLSearchParams(params)
+    kept.delete('page')
+    const query = kept.toString()
     navigate(`/admin/day/${next}${query === '' ? '' : `?${query}`}`)
   }
 
@@ -117,6 +121,14 @@ export function AdminDayRoute() {
             bookingCounts={ctx.bookingCounts}
             onOpenDraftList={ctx.onOpenDraftList}
             {...(ctx.onOpenOutOfHours !== undefined ? { onOpenOutOfHours: ctx.onOpenOutOfHours } : {})}
+            page={pageParam(params.get('page'))}
+            onPage={(p) => {
+              // The page is a view preference, like the sort: replace, so Back is not a pager.
+              const next = new URLSearchParams(params)
+              if (p <= 1) next.delete('page')
+              else next.set('page', String(p))
+              setParams(next, { replace: true })
+            }}
           />
         )}
         <RightRail

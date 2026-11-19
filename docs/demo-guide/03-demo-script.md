@@ -28,6 +28,9 @@ capture.
 6. Optional check: **Admin → Intake** opens on Matching with one seeded row waiting (Mere Tipene, no
    NHI), and its **PDF lists** tab holds Mr Okafor's list, not yet sent. Hospital files are imported by
    the office; nothing syncs.
+7. Point at the **Synthetic data only** badge in the top bar (it also sits in the Admin side nav, the
+   web top nav and the mobile More card, which reads "All patients, NHIs, Lists and figures are
+   synthetic."): nothing in the prototype is real patient or integration data.
 
 The control panel is the **index**, grouped: **Clock & reset**, **Scenario jumps (S1 to S5)** and
 **Demo actions by screen**. Each scenario jump confirms first, resets the data, applies any extra
@@ -743,6 +746,45 @@ Settled (US-01.1.6, D84): an out-of-hours session after PM is a third kind of se
 anaesthetist on a day, one a day; any List goes in it, new or a Draft List for the evening; it is a full
 session for availability. Open: who opens one when the office is closed. Its Bookings are billed as on any
 List (our reading; no after-hours pricing).
+
+### Optional aside: Full scale
+
+About 2 minutes, after S2 or whenever an evaluator asks about volume. The full-scale data lives in
+memory only, so move between screens with the Admin side nav, never the address bar or **Direct
+URLs**: a reload returns to the demo data.
+
+- **Click:**
+  - Go to **Admin → Day view**, then **Demo actions → Load full-scale data → Run → Confirm** ("Replaces
+    the current demo data. Reset returns to it.").
+  - Pause on the banner under the top bar, then page the Day view with its pager.
+  - Side nav **Invoices**: page on, or type a generated number such as AA-S-000123 in **Find by invoice
+    number or payer**. Then side nav **Audit**.
+  - Side nav **Billing monitor**, then **Problems only**.
+  - Open the banner's **Timings**.
+  - Close with **Reset → Confirm reset**.
+- **Say:** "This is the whole practice: 85 anaesthetists, twenty thousand sessions across the
+  scheduling horizon and a year of invoices, built in the browser from the same seed. The billing
+  monitor still finds the few Lists that need attention. Each screen shows its render time at demo size
+  and at this size."
+- **Expected:** the banner reads "Full-scale data · 85 anaesthetists · 21,080 sessions over the
+  scheduling horizon (4 months) · 28,290 invoices in the last 12 months · generated in 2.0 s · saving
+  paused. Reset or reload returns to the demo data." (the generation time varies a little). The Day view
+  pages 30 anaesthetists at a time ("Anaesthetists 1 to 30 of 85", 1 of 3), with the same ACTIVE Lists,
+  Draft List strip and Public sessions as at demo size. Invoices page 50 at a time ("Showing 1 to 50 of
+  28,248"). Audit pages 100 at a time, the newest entry **Full-scale data loaded**. The Billing monitor
+  pages anaesthetist groups 20 at a time ("Anaesthetists 1 to 20 of 77": the anaesthetists with a List
+  awaiting approval or authorised); its tiles count everything kept (Awaiting approval 125, Authorised
+  14,345, With problems 18), and **Problems only** shows the 18 problem Lists across 15 anaesthetists. A
+  long group shows 25 Lists, then **Show all N**. The Ledger pages 50 at a time. **Timings** lists each
+  timed screen at demo size and at full size: on the build laptop Day view about 80 to 100 ms (painted
+  about 350 to 400 ms), Invoices about 90 ms, Audit under 25 ms, Review queue and Ledger about 20 to 35
+  ms, the Billing monitor the heaviest at about 200 to 260 ms (painted about 600 to 670 ms), JS heap
+  about 260 to 290 MB; figures vary run to run and by machine. The 14 demo anaesthetists are untouched,
+  so S1 to S5 still run and Dr Souter's figures do not move. If you open a generated Booking: the same
+  three-part stack and the same Contract rules at full size. After Reset the banner goes and saving
+  resumes.
+- **Presenter note:** the Timings panel says it plainly: "Formal performance testing is a
+  Testing-milestone task." Call them sessions, as the app does.
 
 ---
 
@@ -1487,11 +1529,48 @@ Xero sim**.
   - Open **Demo: Billing Monitor & Xero**.
   - Pause on the **No personal information in Xero** callout, then the **Contacts** tab: patient and
     guardian contacts are named only by their hidden ID ("Patient PT0017", "Billable party BP0001").
+  - Open **Demo: Data Inspector** (`/demo/data`) and pause on its **Privacy checks** panel. **Demo
+    actions → Scan for NHI leaks → Scan now → Run**; then run it again with **Scan with a planted test
+    leak (proves the scan finds one)**.
 - **Say:** "No personal information goes into Xero: no NHI and no patient name, only a hidden
   internal ID that links each transaction back to the billing system. AA confirmed this rule."
+- **Say:** "AA's rule is no personal information in Xero. We do not just avoid sending it; we check
+  the Xero records for any NHI or patient detail, and the diagnostic log, error messages and failure
+  reasons for anything that looks like an NHI."
 - **Expected:** the callout states the confirmed rule (no RFP-contradiction callout), and no patient
   or guardian name shows on any Xero contact or record; hospitals, insurers and the anaesthetist
-  payees keep their names.
+  payees keep their names. **Scan now** reads "Scanned 3 areas and 170 items in 5 ms. No NHI outside
+  the core platform, and no personal details in Xero." (the time varies): **0 found** in each area
+  (Xero, checked for NHIs and personal details; Diagnostic log; Failure reasons), and **Held by
+  design** beside Patients, Bookings, Hospital rows and Audit trail. The planted choice reads "One hit
+  found, the planted test line.": one masked hit in **Diagnostic log (planted test line)** (ZBC••••),
+  every other area still 0. After the Full scale aside's load, the same scan covers about 114,500 items
+  in under a second and finds none.
+
+### Beat 3a (optional): restricted raw data
+
+- **Click:**
+  - Go to **Admin → Intake → Matching** and open Mere Tipene's row (the seeded row waiting for its
+    NHI). Point at "Only the fields needed to match are shown. The rest of what the hospital sent is
+    held under restricted access."
+  - Select **View raw row**, pick the reason **Find why this row did not match** (or **Check what the
+    hospital sent**, **Hospital asked us to confirm a value**, or type one), then **View raw row**.
+    Pause on the masked sheet, then **Close**.
+  - Close the row panel (it covers the top bar), then **Demo actions → View raw row as another role**,
+    choose **As Dr Melanie Souter (anaesthetist)** (or **As the hospital feed (integration)**) **→ Run**.
+  - Optional: **Audit**, Entity type **importRow**.
+- **Say:** "The office sees what it needs to fix the row. The rest of what the hospital sent is
+  restricted, masked and every view is recorded with a reason."
+- **Expected:** View raw row stays disabled until a reason is given ("Give a reason first."). The sheet
+  reads "Mere Tipene · Restricted. Viewing is recorded with your reason." and "Masking policy is for AA
+  to agree.", and shows the row as the hospital sent it with identifiers masked: the hospital patient
+  number and phone as their last three digits (•••017), the date of birth as the year only (1981-••-••),
+  the address as its suburb (•••, Ilam), the email as its domain (•••@example.net), the next of kin as
+  initials (J. T.); her NHI is blank (an NHI shows as its first three characters, then dots). The panel
+  then reads "Raw row viewed once · last Kirsty W. 08:00". The other role is refused: "Refused: only
+  office staff can view a raw hospital row (Mere Tipene's row). The attempt is in the audit trail."
+  Audit shows **Raw row view refused** (Dr Melanie Souter, anaesthetist) above **Raw row viewed**
+  (Kirsty W., with the reason), and no values from the row.
 
 ### Beat 4: Contract history and the invoice recipe
 
@@ -1616,9 +1695,6 @@ Work (OQ-100, answered 5 November), and master data loads once at go-live, then 
 
 ## What to narrate rather than click
 
-- The full four-month scale and the production population of about 85 anaesthetists.
-- The roughly 28,000 annual invoices and Xero active-contact volume (the archive job reduces a seeded
-  aggregate counter to make the point).
 - Health NZ's FHIR-first policy and real OAuth/Keycloak setup.
 - Real email, Xero and hospital integrations: the prototype simulates them in-browser. A PDF list's
   reading is simulated from sample files (no OCR is built, and nothing reads the mailbox); the office

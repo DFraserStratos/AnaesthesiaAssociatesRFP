@@ -26,7 +26,10 @@ import {
   type MonitorStage,
   type PrepaidLeftOff,
 } from '../../../store'
-import { dayMicroCap, formatCurrency, hhmm, plural, shortDay } from '../../../shared/format'
+import { dayMicroCap, formatCount, formatCurrency, hhmm, plural, shortDay } from '../../../shared/format'
+import { FULL_SCALE } from '../../../domain/seed/fullScale/constants'
+import { Pager, pageOf, pageParam } from '../components/Pager'
+import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
 import { Button, Card, CountBadge, EmptyState, FilterDateInput, FilterPills, FormError, Notice, PageHeader, Pill, SelectField, StatTile, TextAction, visuallyHidden, type PillTone } from '../../../shared/ui'
 import { ClickableRow, Td, Th, TableShell } from '../../../shared/table'
 import { sessionText } from '../../../domain/outOfHours'
@@ -48,7 +51,7 @@ export const BILLING_MONITOR_INTRO =
   'Every list awaiting approval or authorised, grouped by anaesthetist: whether it has been invoiced, sent and mirrored to Xero, and why anything failed. A failed booking blocks only its own invoice, never the rest of the list.'
 
 /** The URL search params this screen owns (filters, sort, expansion); nothing here is stored. */
-const PARAM = { anaesthetist: 'anaesthetist', hospital: 'hospital', from: 'from', to: 'to', problems: 'problems', sort: 'sort', list: 'list', open: 'open', shut: 'shut', fold: 'fold' } as const
+const PARAM = { anaesthetist: 'anaesthetist', hospital: 'hospital', from: 'from', to: 'to', problems: 'problems', sort: 'sort', list: 'list', open: 'open', shut: 'shut', fold: 'fold', page: 'page' } as const
 const FILTER_PARAMS = [PARAM.anaesthetist, PARAM.hospital, PARAM.from, PARAM.to, PARAM.problems] as const
 
 const idsOf = (params: URLSearchParams, key: string): Set<string> => new Set((params.get(key) ?? '').split(',').filter((s) => s !== ''))
@@ -98,6 +101,8 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
       if (v === null || v === '') next.delete(k)
       else next.set(k, v)
     }
+    // A filter or the sort changing returns the groups to page 1 (catch-up Phase 43).
+    if (Object.keys(changes).some((k) => (FILTER_PARAMS as readonly string[]).includes(k) || k === PARAM.sort)) next.delete(PARAM.page)
     setParams(next, { replace })
   }
 
@@ -160,6 +165,17 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
     handoffPairsForBooking(useAppStore, row.bookingId)
   }
 
+  // The anaesthetist groups page at 20 (catch-up Phase 43; US-13.3.1, US-15.0.4), after every filter,
+  // the sort and Problems only; the tiles above count everything kept, never the page. `?list=`
+  // lands on the page that holds its List.
+  const groupPageSize = FULL_SCALE.pageSizes.monitorGroups
+  const listGroupIndex = options.listId !== undefined ? view.groups.findIndex((g) => g.authorised.some((r) => r.listId === options.listId) || g.awaiting.some((a) => a.list.id === options.listId)) : -1
+  const groupPage = listGroupIndex >= 0 ? Math.floor(listGroupIndex / groupPageSize) + 1 : pageParam(params.get(PARAM.page))
+  const shownGroups = pageOf(view.groups, groupPageSize, groupPage)
+  const groupsPaged = view.groups.length > groupPageSize
+  const setGroupPage = (p: number) => update({ [PARAM.page]: p <= 1 ? null : String(p), [PARAM.list]: null }, true)
+  useScreenTiming('monitor', [view, groupPage])
+
   const nothingAtAll = view.anaesthetistOptions.length === 0
   const panelAnaesthetist = view.applied.anaesthetistId
 
@@ -171,12 +187,12 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
 
       {/* Summary tiles: Admin Review's tile anatomy. "With problems" turns its filter on; "Payables due" goes to the payables panel. */}
       <div data-shot="billing-monitor-tiles" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }}>
-        <StatTile variant="outlined" label="Awaiting approval" value={view.totals.awaiting} shot="billing-tile-awaiting" />
-        <StatTile variant="outlined" label="Authorised" value={view.totals.authorised} shot="billing-tile-authorised" />
+        <StatTile variant="outlined" label="Awaiting approval" value={formatCount(view.totals.awaiting)} shot="billing-tile-awaiting" />
+        <StatTile variant="outlined" label="Authorised" value={formatCount(view.totals.authorised)} shot="billing-tile-authorised" />
         <StatTile
           variant="outlined"
           label="With problems"
-          value={view.totals.withProblems}
+          value={formatCount(view.totals.withProblems)}
           {...(view.totals.withProblems > 0 ? { tone: 'warning' as const } : {})}
           sub="Show problems only"
           pressed={view.applied.problemsOnly}
@@ -259,10 +275,13 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
           )}
         </EmptyState>
       ) : (
-        view.groups.map((group) => (
+        <>
+        {groupsPaged && <Pager total={view.groups.length} size={groupPageSize} page={groupPage} onPage={setGroupPage} lead="Anaesthetists" shot="billing-monitor-pager" />}
+        {shownGroups.map((group) => (
           <AnaesthetistGroup
             key={group.anaesthetistId}
             group={group}
+            focusRowListId={options.listId}
             folded={folded.has(group.anaesthetistId) && !group.authorised.some((r) => r.listId === options.listId)}
             onFold={(fold) => setFolded(group.anaesthetistId, fold)}
             sort={view.applied.sort}
@@ -274,7 +293,9 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
             onOpenInReview={openInReview}
             onRetry={retry}
           />
-        ))
+        ))}
+        {groupsPaged && <Pager total={view.groups.length} size={groupPageSize} page={groupPage} onPage={setGroupPage} lead="Anaesthetists" />}
+        </>
       )}
     </div>
   )
@@ -298,6 +319,7 @@ const SORT_HEADS: { key: MonitorSortKey | null; label: string; align?: 'right' }
 
 function AnaesthetistGroup({
   group,
+  focusRowListId,
   folded,
   onFold,
   sort,
@@ -310,6 +332,8 @@ function AnaesthetistGroup({
   onRetry,
 }: {
   group: MonitorGroup
+  /** `?list=`: its group shows all its rows, on the page that holds it. */
+  focusRowListId?: string | undefined
   folded: boolean
   onFold: (fold: boolean) => void
   sort: { key: MonitorSortKey; dir: 'asc' | 'desc' }
@@ -322,6 +346,15 @@ function AnaesthetistGroup({
   onRetry: (row: MonitorBookingRow) => void
 }) {
   const headingId = `billing-group-${group.anaesthetistId}-name`
+  // The first 25 authorised Lists in the sort, then "Show all N" pages them (catch-up Phase 43).
+  const rowLimit = FULL_SCALE.pageSizes.monitorListsPerGroup
+  const focusIndex = focusRowListId !== undefined ? group.authorised.findIndex((r) => r.listId === focusRowListId) : -1
+  const [showAll, setShowAll] = useState(false)
+  const [rowPage, setRowPage] = useState(1)
+  const expanded = showAll || focusIndex >= rowLimit
+  const effectiveRowPage = focusIndex >= rowLimit && !showAll ? Math.floor(focusIndex / rowLimit) + 1 : rowPage
+  const capped = group.authorised.length > rowLimit
+  const rows = !capped ? group.authorised : expanded ? pageOf(group.authorised, rowLimit, effectiveRowPage) : group.authorised.slice(0, rowLimit)
   const allOpen = group.authorised.length > 0 && group.authorised.every(isOpen)
   return (
     <Card
@@ -385,10 +418,23 @@ function AnaesthetistGroup({
               ))}
             </tbody>
           )}
-          {group.authorised.map((row) => (
+          {rows.map((row) => (
             <AuthorisedRows key={row.listId} row={row} open={isOpen(row)} focused={focusListId === row.listId} onToggle={() => onToggle(row)} onRetry={onRetry} />
           ))}
         </TableShell>
+      )}
+      {!folded && capped && (
+        <div style={{ margin: '0 12px 12px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          {expanded ? (
+            <div style={{ flex: 1 }}>
+              <Pager total={group.authorised.length} size={rowLimit} page={effectiveRowPage} onPage={(p) => { setShowAll(true); setRowPage(p) }} lead="Lists" shot={`billing-group-pager-${group.anaesthetistId}`} nested />
+            </div>
+          ) : (
+            <TextAction size="sm" flush onClick={() => { setShowAll(true); setRowPage(1) }} shot={`billing-group-show-all-${group.anaesthetistId}`}>
+              {`Show all ${formatCount(group.authorised.length)}`}
+            </TextAction>
+          )}
+        </div>
       )}
     </Card>
   )

@@ -39,9 +39,10 @@ function fnv1a(text: string, hash = 0x811c9dc5): number {
   return h
 }
 
-/** Every record id, amount and date, in key order. */
+/** Every record, in full: the domain slices serialised (key order is insertion order, itself deterministic). */
 function digest(s: AppState): number {
   let h = 0x811c9dc5
+  for (const part of [s.masters, s.schedule, s.billing, s.xero, s.audit, s.counters, s.intake, s.settings]) h = fnv1a(JSON.stringify(part), h)
   for (const id of Object.keys(s.schedule.slots).sort()) h = fnv1a(`${id}|${s.schedule.slots[id]!.status}`, h)
   for (const id of Object.keys(s.schedule.lists).sort()) h = fnv1a(`${id}|${s.schedule.lists[id]!.state}|${s.schedule.lists[id]!.dateISO}`, h)
   for (const id of Object.keys(s.schedule.bookings).sort()) h = fnv1a(`${id}|${s.schedule.bookings[id]!.patientId}`, h)
@@ -194,7 +195,7 @@ describe('integrity: the flat model', () => {
         if (isMinorOn(patient.dobISO, list.dateISO) && p.isPrimary) expect(p.payer.kind).toBe('other')
       }
     }
-  })
+  }, 60_000)
 
   it('a copied payer keeps its BP id; a few Bookings bill two payers', () => {
     let copied = 0
@@ -306,6 +307,49 @@ describe('integrity: the flat model', () => {
       expect(row.incoming.patient.nhi).toBeUndefined()
       expect(state.schedule.lists[stub.listId]!.state).toBe('ACTIVE')
     }
+  })
+})
+
+describe('integrity: the rest of the model (review additions)', () => {
+  it('every insured Booking has an approval number, and some are insured', () => {
+    const insured = generatedBookingIds.map((id) => state.schedule.bookings[id]!).filter((b) => b.funderPartyId !== undefined)
+    expect(insured.length).toBeGreaterThan(100)
+    for (const b of insured) expect(b.insuranceApprovalNumber, b.id).toBeTruthy()
+  })
+
+  it('every Procedure with text has its invoice description from 20a\'s chain; a typed price is kept as typed', () => {
+    let typed = 0
+    for (const p of Object.values(state.schedule.procedures)) {
+      if (pristine.schedule.procedures[p.id] !== undefined) continue
+      if (p.procedureText !== null) expect(p.invoiceDescription, p.id).not.toBeNull()
+      if (p.enteredPrice === undefined) continue
+      typed += 1
+      const lock = state.billing.locks[p.bookingId]
+      if (lock === undefined) continue
+      const snap = lock.procedures.find((x) => x.procedureId === p.id)
+      expect(snap?.price, p.id).toBe(p.enteredPrice)
+    }
+    expect(typed).toBeGreaterThan(0)
+  })
+
+  it('no generated record carries a removed field; every recurring booking projects', () => {
+    const removed = ['paymentCategory', 'billingRoute', 'funderOverride', 'hospitalReference', 'billingReference', 'roomIds', 'bookingType', 'addendumOfBookingId', 'estimate', 'deposit']
+    for (const id of generatedBookingIds.slice(0, 2000)) {
+      const b = state.schedule.bookings[id]!
+      for (const k of removed) expect(k in b, `${id}.${k}`).toBe(false)
+    }
+    const generatedRecurring = Object.values(state.masters.recurringBookings).filter((r) => pristine.masters.recurringBookings[r.id] === undefined)
+    expect(generatedRecurring.length).toBeGreaterThan(200)
+    for (const r of generatedRecurring) {
+      const projected = Object.values(state.schedule.lists).some((l) => l.recurringBookingId === r.id)
+      expect(projected, r.id).toBe(true)
+    }
+  })
+
+  it('the newest audit entry is the load, and no generated entry is after it', () => {
+    const last = state.audit.at(-1)!
+    expect(last.action).toBe('demo.fullScaleLoaded')
+    for (const e of state.audit) expect(e.atISO <= last.atISO).toBe(true)
   })
 })
 

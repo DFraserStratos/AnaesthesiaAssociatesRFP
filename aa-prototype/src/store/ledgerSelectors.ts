@@ -6,7 +6,7 @@
  * `domain/billing/ledger.ts`; these feed it from the store.
  */
 
-import { openDivergenceByPair, openQueueIndex, pairsByBooking } from './indexes'
+import { byIdOrder, openDivergenceByPair, pairByAccRecIndex, pairByInvoice, openQueueIndex, pairsByBooking } from './indexes'
 import type { AnaesthetistId, BillingException, BookingLedgerPair, LedgerPair, LedgerReceipt, LedgerTransfer, UnmatchedReceipt, XeroDivergence, XeroQueueItem } from '../domain/types'
 import { BCTI_COUNT_RULE, type BctiRecord } from '../domain/billing/bcti'
 import {
@@ -57,17 +57,18 @@ export function pairsForList(state: Pick<AppState, 'schedule' | 'billing'>, list
   const byBooking = pairsByBooking(state.billing.ledger)
   return bookingsForList(state, listId)
     .flatMap((b) => byBooking.get(b.id) ?? [])
-    .sort((a, b) => a.id.localeCompare(b.id))
+    .sort(byIdOrder)
 }
 
 /** The pair an invoice made. */
 export function pairForInvoice(state: BillingState, invoiceId: string): BookingLedgerPair | undefined {
-  return allPairs(state).find((p): p is BookingLedgerPair => isBookingPair(p) && p.invoiceId === invoiceId)
+  const pair = pairByInvoice(state.billing.ledger).get(invoiceId)
+  return pair !== undefined && isBookingPair(pair) ? pair : undefined
 }
 
 /** The pair a Xero ACCREC mirrors (the webhook's lookup). */
 export function pairByAccRec(state: BillingState, accRecId: string): LedgerPair | undefined {
-  return allPairs(state).find((p) => p.receivable.xeroAccRecId === accRecId)
+  return pairByAccRecIndex(state.billing.ledger).get(accRecId)
 }
 
 /** The transfer of a `prePayment` pair, once its List is authorised. */

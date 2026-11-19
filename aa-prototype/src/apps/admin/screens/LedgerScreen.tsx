@@ -10,7 +10,7 @@
  * Review tile row and table and the Admin Day nav. URL-driven, so Back works.
  */
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CircleCheck } from 'lucide-react'
 import { neutral } from '../../../theme/tokens'
@@ -38,6 +38,9 @@ import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface
 import { Button, Card, EmptyState, FilterPills, FormError, Notice, OptionRow, PageHeader, Pill, Segmented, SelectField, StatTile, TextAction, TextArea } from '../../../shared/ui'
 import { dateTimeMicroCap, drSurname, formatCurrency, plural } from '../../../shared/format'
 import type { LedgerPair, UnmatchedReceipt } from '../../../domain/types'
+import { FULL_SCALE } from '../../../domain/seed/fullScale/constants'
+import { Pager, pageOf } from '../components/Pager'
+import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
 
 type Scope = 'whole' | 'one'
 type RowFilter = 'open' | 'all'
@@ -86,6 +89,16 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
 
   // The footer totals the pairs; a transfer moves money already counted on its prepayment pair, so it is left out.
   const totals = useMemo(() => ledgerRowTotals(rows), [rows])
+  // The pairs page at 50 at full scale (catch-up Phase 43); `?pair=` lands on the page that holds it. Totals count every row.
+  const pageSize = FULL_SCALE.pageSizes.ledger
+  // Null until the presenter pages: then `?pair=` decides the page (it lands on the highlighted row); after that, paging is explicit (review fix).
+  const [page, setPage] = useState<number | null>(null)
+  const highlightIndex = highlightId !== null ? rows.findIndex((r) => r.id === highlightId) : -1
+  const shownPage = page ?? (highlightIndex >= 0 ? Math.floor(highlightIndex / pageSize) + 1 : 1)
+  const pageRows = useMemo(() => pageOf(rows, pageSize, shownPage), [rows, pageSize, shownPage])
+  // Another anaesthetist's ledger starts on its first page.
+  useEffect(() => setPage(null), [anaesthetistId])
+  useScreenTiming('ledger', [rows, shownPage])
 
   function openRow(row: LedgerRow) {
     if (row.kind === 'aaFee') navigate('/admin/billing/aa-fees')
@@ -294,7 +307,10 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
           <FilterPills
             ariaLabel="Which pairs"
             value={filter}
-            onSelect={setFilter}
+            onSelect={(v) => {
+              setFilter(v)
+              setPage(1)
+            }}
             options={[
               { value: 'open', label: 'Open' },
               { value: 'all', label: 'All' },
@@ -321,7 +337,7 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {pageRows.map((row) => (
                 <ClickableRow
                   key={row.id}
                   onOpen={() => openRow(row)}
@@ -365,12 +381,13 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
             </tbody>
           </TableShell>
         )}
+        {rows.length > pageSize && <Pager total={rows.length} size={pageSize} page={shownPage} onPage={setPage} shot="ledger-pager" />}
       </section>
 
       <div data-shot="ledger-footnotes" style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11.5, color: neutral.mist, maxWidth: 820 }}>
         <span>Receipts held is the money AA holds for anaesthetists, including pre-payments received, which sit in the AA Holding account until the List is authorised.</span>
         <span>One payable per invoice, for the same amount.</span>
-        <span>At around 28,000 invoices a year this table pages.</span>
+        <span>At full practice volume this table pages.</span>
       </div>
 
       <AllocateDialog key={`allocate-${allocating?.id ?? 'none'}`} receipt={allocating} actor={actor} onClose={() => setAllocating(null)} />

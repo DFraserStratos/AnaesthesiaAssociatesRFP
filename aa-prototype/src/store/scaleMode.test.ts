@@ -75,6 +75,19 @@ describe('loading full-scale data', () => {
     expect(Object.keys(reloaded.getState().masters.anaesthetists)).toHaveLength(14)
   }, 120_000)
 
+  it('a Reset while generating wins: the pending load never installs (review fix)', async () => {
+    const api = createAppStore()
+    const done = new Promise<void>((resolve) => {
+      loadFullScaleData(api, { frame: SYNC, onDone: resolve })
+    })
+    // The load has reset and set "generating", and waits on the dynamic import: Reset now.
+    resetDomainState(api)
+    await done
+    expect(scaleMode().mode).toBe('demo')
+    expect(Object.keys(api.getState().masters.anaesthetists)).toHaveLength(14)
+    expect(persistStatus().paused).toBe(false)
+  }, 120_000)
+
   it('refuses a second load while generating', () => {
     const api = createAppStore()
     const res = loadFullScaleData(api, { frame: () => {} })

@@ -142,6 +142,12 @@ export const FIELD_LABELS: Record<string, string> = {
   text: 'Note',
   message: 'Message',
   reason: 'Reason',
+  // Catch-up Phase 43: the raw row's view and the full-scale load.
+  columnsShown: 'Columns shown',
+  auditEntries: 'Audit entries',
+  anaesthetists: 'Anaesthetists',
+  invoices: 'Invoices',
+  role: 'Role',
   kind: 'Kind',
   targetAnaesthetistId: 'Asked of',
 

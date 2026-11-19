@@ -58,12 +58,24 @@ export function loadFullScaleData(api: AppStoreApi, options: LoadFullScaleOption
   return ok(undefined)
 }
 
+/**
+ * Each load's token. A Reset (or scenario jump) while generating clears the mode, so the load that
+ * started before it must not install afterwards: it checks it is still the current load in
+ * `generating` mode after its one wait (the dynamic import).
+ */
+let loadToken = 0
+
 async function run(api: AppStoreApi, frame: FrameScheduler, options: LoadFullScaleOptions): Promise<void> {
+  const token = ++loadToken
   try {
     // On top of the untouched pristine seed (and saving resumed by the reset, so the pristine seed is what was last written).
     resetDomainState(api)
     setScaleMode({ mode: 'generating' })
     const { buildFullScaleDataset } = await import('../domain/seed/fullScale')
+    if (token !== loadToken || scaleMode().mode !== 'generating') {
+      options.onDone?.()
+      return
+    }
     const base = api.getState()
     const generatedAt = timed(() => buildFullScaleDataset(base, { todayISO: base.clock.todayISO }))
     pausePersist(FULL_SCALE_PAUSE_REASON)
@@ -86,6 +98,7 @@ async function run(api: AppStoreApi, frame: FrameScheduler, options: LoadFullSca
       }),
     )
   } catch (error) {
+    if (token !== loadToken) return
     const message = error instanceof Error ? error.message : String(error)
     options.report?.(`Full-scale data could not be generated: ${message}`)
     resetDomainState(api)

@@ -1073,3 +1073,42 @@ describe('the web money screens\' payment entries (catch-up Phase 38)', () => {
     expect(out.message).toMatch(/^Payment received\. It reaches the GST report when AA pays the anaesthetist\./)
   })
 })
+
+describe('Phase 43 entries (scale and privacy)', () => {
+  const byId = (id: string) => DEMO_TRIGGERS.find((t) => t.id === id)!
+
+  it('Load full-scale data sits on the Day view and Invoices, bar only, with a confirm line', () => {
+    const api = createAppStore()
+    expect(ids(api, '/admin/day/2026-07-21')).toContain('load-full-scale')
+    expect(ids(api, '/admin/invoices')).toContain('load-full-scale')
+    expect(ids(api, '/admin/billing')).not.toContain('load-full-scale')
+    expect(ids(api, '/mobile/lists', 'pwa')).not.toContain('load-full-scale')
+    expect(byId('load-full-scale').confirm).toBe('Replaces the current demo data. Reset returns to it.')
+    expect(byId('load-full-scale').disabledReason(api.getState(), ctxFor('/admin/invoices'))).toBeNull()
+  })
+
+  it('Scan for NHI leaks sits on the Data inspector, offers a planted choice, and stores its report', () => {
+    const api = createAppStore()
+    expect(ids(api, '/demo/data')).toContain('scan-nhi-leaks')
+    const t = byId('scan-nhi-leaks')
+    const out = t.run(api, ctxFor('/demo/data'), 'planted')
+    expect(out.ok).toBe(true)
+    expect(useDemoTriggerMemory.getState().nhiScan?.planted).toBe(true)
+    expect(out.message).toMatch(/^Scanned 3 areas and [\d,]+ items in \d+ ms\. One hit found, the planted test line\.$/)
+  })
+
+  it('View raw row as another role: acts on the selected row, else the oldest row needing resolving; refuses and audits', () => {
+    const api = createAppStore()
+    const t = byId('matching-raw-row-other-role')
+    // With no row selected it falls back to the seeded row waiting for its NHI.
+    expect(t.disabledReason(api.getState(), ctxFor('/admin/intake/matching'))).toBeNull()
+    const published = { 'matching.selectedRowId': 'IRS001' }
+    expect(ids(api, '/admin/intake/matching', 'bar', published)).toContain(t.id)
+    expect(t.disabledReason(api.getState(), ctxFor('/admin/intake/matching', {}, published))).toBeNull()
+    const before = api.getState().audit.length
+    const out = t.run(api, ctxFor('/admin/intake/matching', {}, published), 'souter')
+    expect(out).toEqual({ ok: true, message: 'Refused: only office staff can view a raw hospital row. The attempt is in the audit trail.' })
+    expect(api.getState().audit.slice(before).map((e) => e.action)).toEqual(['importRow.rawViewDenied'])
+  })
+})
+

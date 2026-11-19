@@ -1,4 +1,5 @@
 import { isBookingPair, payableReleasedFor, roundToCents, toCents } from '../../domain/billing'
+import { paymentsByAccRec } from '../../store/indexes'
 import { isHeldPayable } from '../../domain/billing/prepayHolding'
 import type { BookingLedgerPair, BuyerCreatedTaxInvoice, InvoiceLine, LedgerDisbursement, LedgerPair, XeroAccPay, XeroAccRec, XeroContact } from '../../domain/types'
 import type { AppState } from '../../store'
@@ -120,7 +121,7 @@ function contactView(contact: XeroContact | undefined): XeroContactView | undefi
  * is reduced to a display name and kept under `ledger`; no Patient object or
  * NHI can enter the Xero-facing record views.
  */
-export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[] {
+export function xeroInvoicePairViews(state: XeroPairState, opts: { accRecIds?: readonly string[] } = {}): XeroInvoicePairView[] {
   // The ledger pair each ACCREC mirrors (catch-up Phase 36).
   const pairsByAccRecId = new Map(
     Object.values(state.billing.ledger)
@@ -137,7 +138,9 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
     linesByInvoiceId.set(line.invoiceId, lines)
   }
 
-  return Object.values(state.xero.accRecs)
+  // Only the records asked for (catch-up Phase 43: the sim's tables show the first 200 at full scale).
+  const recs = opts.accRecIds !== undefined ? opts.accRecIds.flatMap((id) => (state.xero.accRecs[id] !== undefined ? [state.xero.accRecs[id]] : [])) : Object.values(state.xero.accRecs)
+  return recs
     .map((rec): XeroInvoicePairView => {
       if (rec.kind === 'aaFee') return feePairView(state, rec)
       const linkedPair = pairsByAccRecId.get(rec.id)
@@ -308,8 +311,9 @@ function recordedAt(state: XeroPairState, entry: LedgerDisbursement, pairId: str
 /** Payments Xero holds on an ACCREC whose sync waits in the engine's Xero sync queue (an outage's), totalled; absent when none. */
 function landedAwaitingSync(state: XeroPairState, accRecId: string): { landedAwaitingSync?: number } {
   const waiting = new Set(Object.values(state.billing.xeroQueue).filter((q) => q.kind === 'paymentSync' && q.status !== 'sent').map((q) => q.idempotencyKey))
-  const cents = Object.values(state.xero.payments)
-    .filter((p) => p.accRecId === accRecId && waiting.has(p.idempotencyKey))
+  if (waiting.size === 0) return {}
+  const cents = (paymentsByAccRec(state.xero.payments).get(accRecId) ?? [])
+    .filter((p) => waiting.has(p.idempotencyKey))
     .reduce((n, p) => n + toCents(p.amount), 0)
   return cents > 0 ? { landedAwaitingSync: cents / 100 } : {}
 }

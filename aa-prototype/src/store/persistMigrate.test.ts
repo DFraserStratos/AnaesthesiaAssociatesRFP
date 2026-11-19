@@ -1125,3 +1125,21 @@ describe('catch-up Phase 38b (v65: events on a Procedure, the addendum Booking g
     expect(Object.values(s.schedule.bookings).some((b) => 'bookingType' in b || 'addendumOfBookingId' in b)).toBe(false)
   })
 })
+
+describe('catch-up Phase 43 (v67): the raw hospital row', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v66 store whose import rows hold no raw payload, and reseeds the row with it', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(67)
+    const fresh = freshAppState()
+    const rows = Object.fromEntries(Object.entries(fresh.intake.rows).map(([id, r]) => { const { raw: _raw, ...rest } = r; return [id, rest] }))
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, intake: { ...fresh.intake, rows } }, version: 66 }))
+    const s = createAppStore({ persisted: true }).getState()
+    for (const row of Object.values(s.intake.rows)) expect(row.raw?.columns.length).toBeGreaterThan(0)
+  })
+})
+

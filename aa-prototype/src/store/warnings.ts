@@ -13,6 +13,7 @@
  * straight from a zustand selector.
  */
 
+import { bookingsByList, proceduresByBooking as proceduresByBookingIndex } from './indexes'
 import {
   evaluateWarnings,
   strengthRank,
@@ -36,17 +37,6 @@ import { compareSessions } from '../domain/outOfHours'
 
 /** The state slices the warning selectors read. */
 export type WarningState = Pick<AppState, 'schedule' | 'billing' | 'appSettings' | 'clock' | 'masters'>
-
-function proceduresByBooking(state: Pick<AppState, 'schedule'>): Map<string, Procedure[]> {
-  const out = new Map<string, Procedure[]>()
-  for (const p of Object.values(state.schedule.procedures)) {
-    const arr = out.get(p.bookingId)
-    if (arr === undefined) out.set(p.bookingId, [p])
-    else arr.push(p)
-  }
-  for (const arr of out.values()) arr.sort((a, b) => a.id.localeCompare(b.id))
-  return out
-}
 
 function factsFor(state: WarningState, booking: Booking, procedures: readonly Procedure[]): WarningFacts | undefined {
   const list = state.schedule.lists[booking.listId]
@@ -104,10 +94,7 @@ function splitFeesFor(state: WarningState, booking: Booking, procedures: readonl
 export function warningFactsFor(state: WarningState, bookingId: string): WarningFacts | undefined {
   const booking = state.schedule.bookings[bookingId]
   if (booking === undefined) return undefined
-  const procedures = Object.values(state.schedule.procedures)
-    .filter((p) => p.bookingId === bookingId)
-    .sort((a, b) => a.id.localeCompare(b.id))
-  return factsFor(state, booking, procedures)
+  return factsFor(state, booking, proceduresByBookingIndex(state.schedule.procedures).get(bookingId) ?? [])
 }
 
 function evaluate(state: WarningState, facts: WarningFacts | undefined, rules: readonly WarningRule[]): Warning[] {
@@ -130,9 +117,8 @@ export function warningsForList(
   listId: string,
   rules: readonly WarningRule[] = WARNING_RULES,
 ): Warning[] {
-  const byBooking = proceduresByBooking(state)
-  return Object.values(state.schedule.bookings)
-    .filter((b) => b.listId === listId)
+  const byBooking = proceduresByBookingIndex(state.schedule.procedures)
+  return [...(bookingsByList(state.schedule.bookings).get(listId) ?? [])]
     .sort((a, b) => (a.scheduledTime ?? '99:99').localeCompare(b.scheduledTime ?? '99:99') || a.id.localeCompare(b.id))
     .flatMap((b) => evaluate(state, factsFor(state, b, byBooking.get(b.id) ?? []), rules))
 }
@@ -167,7 +153,7 @@ const FOLDED_PER_BOOKING: ReadonlySet<WarningRuleId> = new Set<WarningRuleId>(['
  * (`foldedKeys`).
  */
 export function openWarnings(state: WarningState, rules: readonly WarningRule[] = WARNING_RULES): OpenWarningRow[] {
-  const byBooking = proceduresByBooking(state)
+  const byBooking = proceduresByBookingIndex(state.schedule.procedures)
   const rows: OpenWarningRow[] = []
   for (const booking of Object.values(state.schedule.bookings)) {
     if (booking.cancellation !== undefined) continue
@@ -216,8 +202,13 @@ export function warningSummaryByList(
   dateISO: string,
   rules: readonly WarningRule[] = WARNING_RULES,
 ): Map<string, ListWarningSummary> {
+  return warningSummaryFromRows(openWarnings(state, rules), dateISO)
+}
+
+/** The same summary from rows already computed (the Day view reads `openWarnings` once; catch-up Phase 43). */
+export function warningSummaryFromRows(rows: readonly OpenWarningRow[], dateISO: string): Map<string, ListWarningSummary> {
   const out = new Map<string, ListWarningSummary>()
-  for (const row of openWarnings(state, rules)) {
+  for (const row of rows) {
     if (row.dateISO !== dateISO) continue
     const prev = out.get(row.listId)
     out.set(

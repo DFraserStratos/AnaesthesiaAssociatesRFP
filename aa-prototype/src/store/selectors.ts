@@ -7,7 +7,7 @@ import type { CompletionContext } from '../domain/billing/completion'
  * every snapshot.
  */
 
-import { bookingsByList, invoicesByBooking, openExceptionByBooking, pairsByPatient, proceduresByBooking, transfersByBooking } from './indexes'
+import { byIdOrder, occupiedSlotIdsOf, pairByAccRecIndex, bookingsByList, invoicesByBooking, openExceptionByBooking, pairsByPatient, proceduresByBooking, transfersByBooking } from './indexes'
 import { closuresAt, closuresIndex, closureSourcesOf } from '../domain/holidays'
 import { rvgCodeToFill } from '../domain/billing/rvgDetail'
 import { procedureStackView, type ProcedureStackView, type StackSurface } from '../domain/billing/procedureStack'
@@ -475,7 +475,7 @@ export function invoicesForList(state: Pick<AppState, 'schedule' | 'billing'>, l
   const byBooking = invoicesByBooking(state.billing.invoices)
   return bookingsForList(state, listId)
     .flatMap((b) => byBooking.get(b.id) ?? [])
-    .sort((a, b) => a.id.localeCompare(b.id))
+    .sort(byIdOrder)
 }
 
 /** An invoice's lines, in emit order (Phase 08). */
@@ -532,7 +532,7 @@ export function openAccRecs(state: Pick<AppState, 'xero' | 'billing' | 'masters'
     // A void made in Xero takes no payment (catch-up Phase 37).
     .filter((r) => r.status !== 'voided')
     // Only ACCRECs a ledger pair links (catch-up Phase 36): a payment always lands on its pair.
-    .filter((r) => Object.values(state.billing.ledger).some((p) => p.receivable.xeroAccRecId === r.id))
+    .filter((r) => pairByAccRecIndex(state.billing.ledger).has(r.id))
     .filter((r) => owing(r) > 0)
     // Exclude the seeded historical backdrop (its aged receivables are the
     // anaesthetist money-view story; the missed webhook is caught by the poll).
@@ -1364,7 +1364,7 @@ export interface EntityCounts {
   rvgGroups: number
   modifiers: number
   recurringBookings: number
-  slots: number
+  sessions: number
   patients: number
   lists: number
   /** Live Draft Lists (catch-up Phase 31). */
@@ -1378,6 +1378,9 @@ export interface EntityCounts {
   stubs: number
   pdfLists: number
   audit: number
+  invoices: number
+  ledgerPairs: number
+  xeroContacts: number
 }
 
 export function entityCounts(state: AppState): EntityCounts {
@@ -1394,7 +1397,8 @@ export function entityCounts(state: AppState): EntityCounts {
     modifiers: Object.keys(state.masters.modifiers).length,
     recurringBookings: Object.keys(state.masters.recurringBookings).length,
     patients: Object.keys(state.masters.patients).length,
-    slots: Object.keys(state.schedule.slots).length,
+    // The app says sessions (OQ-64; catch-up Phase 43): the Data Inspector shows this key.
+    sessions: Object.keys(state.schedule.slots).length,
     lists: Object.keys(state.schedule.lists).length,
     draftLists: waitingDraftLists(state).length,
     bookings: Object.keys(state.schedule.bookings).length,
@@ -1405,6 +1409,10 @@ export function entityCounts(state: AppState): EntityCounts {
     stubs: Object.keys(state.intake.stubs).length,
     pdfLists: Object.keys(state.intake.pdfLists).length,
     audit: state.audit.length,
+    // Catch-up Phase 43: the money at scale.
+    invoices: Object.keys(state.billing.invoices).length,
+    ledgerPairs: Object.keys(state.billing.ledger).length,
+    xeroContacts: Object.keys(state.xero.contacts).length,
   }
 }
 
@@ -2015,7 +2023,7 @@ export function bookingCountsByList(bookings: Readonly<Record<string, Booking>>)
 
 /** The slices a List move reads (catch-up Phase 32; `domain/listMoves.ts`): the one builder. */
 export function moveInputOf(state: Pick<AppState, 'schedule' | 'masters'>): ListMoveInput {
-  return { lists: state.schedule.lists, slots: state.schedule.slots, anaesthetists: state.masters.anaesthetists, slotStatuses: state.masters.slotStatuses }
+  return { lists: state.schedule.lists, slots: state.schedule.slots, anaesthetists: state.masters.anaesthetists, slotStatuses: state.masters.slotStatuses, occupied: occupiedSlotIdsOf(state.schedule.lists) }
 }
 
 /** The slices a single-Booking move reads (catch-up Phase 32a): Phase 32's, plus the Bookings. No preference or tier. */

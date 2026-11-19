@@ -11,7 +11,8 @@
  * returned, in the same order (`indexes.test.ts`).
  */
 
-import type { AuditEntry, BillingException, Booking, BookingLedgerPair, Invoice, LedgerPair, LedgerTransfer, List, Procedure, XeroDivergence, XeroQueueItem } from '../domain/types'
+import { sortAuditNewestFirst } from '../shared/audit/auditNarrative'
+import type { InvoiceLine, PaymentIn, AuditEntry, BillingException, Booking, BookingLedgerPair, Invoice, LedgerPair, LedgerTransfer, List, Procedure, XeroDivergence, XeroQueueItem } from '../domain/types'
 import { isBookingPair } from '../domain/billing/ledger'
 
 /** Memoise `build` on the identity of `source`. */
@@ -38,14 +39,14 @@ function groupBy<T>(items: Iterable<T>, keyOf: (item: T) => string | undefined):
   return out
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id)
+/** Creation order: numeric-aware, so BK10000 follows BK9999 at full scale (review fix). */
+export const byIdOrder = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, undefined, { numeric: true })
+const byId = byIdOrder
 
 function sortedGroups<T extends { id: string }>(groups: Map<string, T[]>): Map<string, T[]> {
   for (const bucket of groups.values()) bucket.sort(byId)
   return groups
 }
-
-const EMPTY: readonly never[] = Object.freeze([])
 
 /** Bookings by List, each in id order. */
 export const bookingsByList = memoOn((bookings: Readonly<Record<string, Booking>>) => sortedGroups(groupBy(Object.values(bookings), (b) => b.listId)))
@@ -56,10 +57,8 @@ export const proceduresByBooking = memoOn((procedures: Readonly<Record<string, P
 /** Invoices by Booking, each in id order. */
 export const invoicesByBooking = memoOn((invoices: Readonly<Record<string, Invoice>>) => sortedGroups(groupBy(Object.values(invoices), (i) => i.bookingId)))
 
-/** Every invoice, newest raised first (ties by number, newest first). */
-export const invoicesNewestFirst = memoOn((invoices: Readonly<Record<string, Invoice>>) =>
-  Object.values(invoices).sort((a, b) => (b.raisedAtISO ?? '').localeCompare(a.raisedAtISO ?? '') || b.invoiceNumber.localeCompare(a.invoiceNumber)),
-)
+/** Invoice lines by invoice, each in id order. */
+export const linesByInvoice = memoOn((lines: Readonly<Record<string, InvoiceLine>>) => sortedGroups(groupBy(Object.values(lines), (l) => l.invoiceId)))
 
 /** Booking ledger pairs by Booking, each in id order. */
 export const pairsByBooking = memoOn((ledger: Readonly<Record<string, LedgerPair>>) =>
@@ -79,9 +78,9 @@ export const pairByInvoice = memoOn((ledger: Readonly<Record<string, LedgerPair>
 })
 
 /** The ledger pair mirrored by each ACCREC. */
-export const pairByAccRec = memoOn((ledger: Readonly<Record<string, LedgerPair>>) => {
+export const pairByAccRecIndex = memoOn((ledger: Readonly<Record<string, LedgerPair>>) => {
   const out = new Map<string, LedgerPair>()
-  for (const p of Object.values(ledger)) if (p.receivable.xeroAccRecId !== undefined) out.set(p.receivable.xeroAccRecId, p)
+  for (const p of Object.values(ledger)) if (p.receivable.xeroAccRecId !== undefined && !out.has(p.receivable.xeroAccRecId)) out.set(p.receivable.xeroAccRecId, p)
   return out
 })
 
@@ -107,6 +106,19 @@ export const openExceptionByBooking = memoOn((exceptions: Readonly<Record<string
   return out
 })
 
+/** Xero payments by ACCREC. */
+export const paymentsByAccRec = memoOn((payments: Readonly<Record<string, PaymentIn>>) => groupBy(Object.values(payments), (p) => p.accRecId))
+
+/** The sessions holding a List (a Draft List holds none). */
+export const occupiedSlotIdsOf = memoOn((lists: Readonly<Record<string, List>>) => {
+  const out = new Set<string>()
+  for (const l of Object.values(lists)) if (l.slotId !== undefined) out.add(l.slotId)
+  return out as ReadonlySet<string>
+})
+
+/** The idempotency keys a record map holds (receipts, unmatched receipts, ledger disbursements, Xero payments). */
+export const idempotencyKeysOf = memoOn((records: Readonly<Record<string, { idempotencyKey: string }>>) => new Set(Object.values(records).map((r) => r.idempotencyKey)) as ReadonlySet<string>)
+
 /** Lists by date. */
 export const listsByDate = memoOn((lists: Readonly<Record<string, List>>) => groupBy(Object.values(lists), (l) => l.dateISO))
 
@@ -115,7 +127,8 @@ export const listsByAnaesthetist = memoOn((lists: Readonly<Record<string, List>>
 
 /** The audit trail newest first, and its entity types (the Audit viewer's sort and filter). */
 export const auditNewestFirst = memoOn((audit: readonly AuditEntry[]) => {
-  const sorted = [...audit].sort((a, b) => b.atISO.localeCompare(a.atISO) || b.id.localeCompare(a.id))
+  // The shared sort the Booking history sheet uses (`sortAuditNewestFirst`), so the two agree.
+  const sorted = sortAuditNewestFirst(audit)
   const entityTypes = [...new Set(audit.map((a) => a.entityType))].sort()
   return { sorted, entityTypes }
 })
@@ -127,7 +140,3 @@ export const openDivergenceByPair = memoOn((divergences: Readonly<Record<string,
   return out
 })
 
-/** A shared empty bucket. */
-export function none<T>(): readonly T[] {
-  return EMPTY
-}

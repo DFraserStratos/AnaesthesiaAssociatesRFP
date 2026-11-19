@@ -24,6 +24,7 @@ import type { Actor } from './mutate'
 import { SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
 import type { AppState } from './appStore'
 import { addProcedureEvent, approveProcedureEvent, runEventInvoicing } from './procedureEventActions'
+import { scanForNhiLeaks } from './privacyScan'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
@@ -139,3 +140,11 @@ describe('an additional invoice in Xero (catch-up Phase 38b)', () => {
     expectNoPersonalInformation(api.getState())
   })
 })
+
+describe('the leak scan over the Xero slice (catch-up Phase 43)', () => {
+  it('finds no NHI and no personal detail in the seeded Xero slice', () => {
+    const report = scanForNhiLeaks(store().getState())
+    expect(report.areas.find((a) => a.key === 'xero')!.hits).toEqual([])
+  })
+})
+

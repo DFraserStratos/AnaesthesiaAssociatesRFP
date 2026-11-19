@@ -10,6 +10,7 @@
  * changes nothing here.
  */
 
+import { invoicesByBooking, linesByInvoice } from './indexes'
 import type { Booking, CounterpartyRef, InvoiceId, Procedure, ProcedureId } from '../domain/types'
 import {
   isPrepaidContract,
@@ -70,7 +71,8 @@ const NONE: BookingPrepayment = { groups: [], status: 'none' }
 /** Whether the Booking could have a prepayment at all: a prepaid Procedure or an issued prepayment invoice. Cheap. */
 function mayHavePrepayment(state: PrepaymentState, booking: Booking, procedures: readonly Procedure[]): boolean {
   if (procedures.some((p) => p.governingContractId !== undefined && isPrepaidContract(state.masters.contracts[p.governingContractId]))) return true
-  return Object.values(state.billing.invoices).some((i) => i.bookingId === booking.id && i.kind === 'prePayment')
+  // Indexed (catch-up Phase 43): this runs per Booking in the warning routine.
+  return (invoicesByBooking(state.billing.invoices).get(booking.id) ?? []).some((i) => i.kind === 'prePayment')
 }
 
 function issuedFor(state: PrepaymentState, bookingId: string): IssuedPrepayment[] {
@@ -78,8 +80,8 @@ function issuedFor(state: PrepaymentState, bookingId: string): IssuedPrepayment[
     invoiceId: inv.id,
     invoiceNumber: inv.invoiceNumber,
     payer: inv.counterparty,
-    lines: Object.values(state.billing.invoiceLines)
-      .filter((l) => l.invoiceId === inv.id && l.procedureId !== undefined)
+    lines: (linesByInvoice(state.billing.invoiceLines).get(inv.id) ?? [])
+      .filter((l) => l.procedureId !== undefined)
       .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
       .map((l) => ({ procedureId: l.procedureId!, ...(l.contractId !== undefined ? { contractId: l.contractId } : {}), amount: l.amount })),
   }))

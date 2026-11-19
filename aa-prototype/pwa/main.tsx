@@ -1,4 +1,5 @@
 import { StrictMode } from 'react'
+import { wireDiagnostics } from '../src/store/diagnostics'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import '../src/theme/global.css'
@@ -58,6 +59,8 @@ import {
 // The same four store jobs the prototype entry wires, for the same reasons
 // (see `src/main.tsx`): the billing run consumes `listAuthorised`, then the
 // `dayAdvanced` hooks in order, then the integration retry timer.
+// Uncaught errors and rejections into the redacted diagnostic log (catch-up Phase 43).
+wireDiagnostics()
 wireBillingRun(useAppStore)
 wireReconciliationPoll(useAppStore)
 wireArchiveJob(useAppStore)

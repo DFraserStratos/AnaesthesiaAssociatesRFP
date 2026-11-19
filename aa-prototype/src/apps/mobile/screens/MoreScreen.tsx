@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
+import { SyntheticDataBadge } from '../../../shared/SyntheticDataBadge'
 import { neutral, type as typeScale } from '../../../theme/tokens'
 import { profileFor, useAppStore, type Actor } from '../../../store'
 import { Avatar, DemoBadge, DockSpacer } from '../../../shared'
@@ -94,10 +95,13 @@ export function MoreScreen({ personaName, personaRole, initials, actor, anaesthe
       )}
 
       <Card as="div" style={{ marginTop: 16, gap: 12 }}>
-        <DemoBadge label="Demo prototype" />
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <DemoBadge label="Demo prototype" />
+          <SyntheticDataBadge tone="onLight" />
+        </div>
         <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
-          This is a demonstration of the Anaesthesia Associates mobile app. All patients, lists and
-          figures are fictional.{' '}
+          This is a demonstration of the Anaesthesia Associates mobile app. All patients, NHIs, Lists and
+          figures are synthetic.{' '}
           {extra === undefined
             ? 'Use the demo control panel to advance the clock or reset the data.'
             : 'The controls below stand in for the presenter harness.'}

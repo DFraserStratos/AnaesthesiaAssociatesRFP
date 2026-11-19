@@ -538,6 +538,7 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - "Everything after setup is an event on the Procedure, reviewed once and invoiced in the next run."
 - "Extra work after a fixed price is billed by hand, by the anaesthetist or the office."
 - "Nothing comes across because it exists in Solutions Plus."
+- "The NHI never leaves the core platform, no personal information goes to Xero, and we check it."
 - "This is a candidate design we would validate during discovery."
 
 ## Statements to avoid
@@ -681,6 +682,20 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   (account provisioned with no admin access to credentials, Admin sign-in with MFA, a failed attempt,
   a self-service password reset, an Apple social-login sign-in on mobile). Set Entity type to
   **account** to see them together. The identity service (Auth0 or Entra External ID) is simulated.
+- **Load full-scale data** (catch-up Phase 43; **Demo actions** on Admin Day view and Invoices, with a
+  confirm): builds the whole practice in memory from the same seed (85 anaesthetists, 21,080 sessions,
+  28,290 invoices) with a banner reading "saving paused" and a **Timings** disclosure. It is a demo
+  stand-in for production volume, not a product feature: move with the side nav while it is loaded, and
+  **Reset** or a reload returns to the demo data.
+- **Scan for NHI leaks** (Data Inspector, `/demo/data`; **Scan now**, or **Scan with a planted test
+  leak (proves the scan finds one)**): checks the Xero records and their sync queue for any NHI or
+  personal detail, and the diagnostic log and failure reasons for anything that looks like an NHI. The
+  planted choice adds one test line to that scan only, to prove the scan finds one.
+- **View raw row as another role** (Admin, Intake, Matching; **As Dr Melanie Souter** or **As the
+  hospital feed**): plays someone other than the office asking for a raw hospital row, so the refusal
+  ("Refused: only office staff can view a raw hospital row") and its audit entry, **Raw row view
+  refused**, show. **View raw row** itself, with its reason and masking, is proposed product UI; the
+  masking policy is for AA to agree.
 
 ### Still upcoming
 
@@ -982,9 +997,23 @@ earlier one kept in History.
 
 ### "Is the demo using real patient or integration data?"
 
-No. All names and data are fictional. The hospital files and the rooms' PDF lists are sample files,
+No. Point at the **Synthetic data only** badge: it is in the top bar, the Admin side nav, the web top
+nav and the mobile More card ("All patients, NHIs, Lists and figures are synthetic."). All names and
+data are fictional. The hospital files and the rooms' PDF lists are sample files,
 their procedure wording illustrative (AI-made, not AA's); NHI, email, Xero and payment events are
 simulated in-browser. Nothing syncs with a hospital: the office imports each file.
+
+### "Can it handle 85 anaesthetists and 28,000 invoices a year?"
+
+Show it: **Admin → Day view → Demo actions → Load full-scale data → Confirm** builds the whole practice
+in the browser from the same seed in about 2 seconds: 85 anaesthetists, 21,080 sessions over the
+scheduling horizon (four months by default) and 28,290 invoices in the last 12 months. The Day view,
+Invoices, Audit, the Billing monitor and the Ledger page through it, and the banner's **Timings** shows
+each screen's render time at demo size and at full size (most about a tenth of a second or less; the
+Billing monitor, the heaviest, about a quarter of a second). The honest caveat: these are timings in
+one browser on one laptop, with no server; formal performance testing is a Testing-milestone task.
+**Reset** (or a reload) returns to the demo data. The script's "Full scale" aside after S2 is the click
+path.
 
 ## One-line close
 

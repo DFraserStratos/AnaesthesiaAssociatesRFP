@@ -160,7 +160,10 @@ HL7/FHIR messaging are Future scope.
    hospital's list, by hand, or a recurring booking) and keeps it after assignment; anaesthetists and the office change Bookings
    directly while the List is `ACTIVE`. Each Booking holds its procedure text as received from each
    channel; the hospital's later text replaces the surgeon's rooms' text once the office applies its
-   row, and the original stays in the Booking's history.
+   row, and the original stays in the Booking's history. The matching screen shows only the fields
+   needed to match; the rest of what the hospital sent is held under restricted access. The office
+   sees it masked with **View raw row**, giving a reason each time, and every view is audited with
+   that reason and no values ("Raw row viewed"); anyone else is refused ("Raw row view refused").
 6. Every change writes `lastModifiedBy/At` and append-only audit history.
 
 ### Manual fallback paths

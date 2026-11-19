@@ -195,6 +195,7 @@ export {
   warningsForList,
   openWarnings,
   warningSummaryByList,
+  warningSummaryFromRows,
   clearWarning,
   type WarningState,
   type OpenWarningRow,
@@ -609,3 +610,7 @@ export {
   type EventRunResult,
   type EventPartyInput,
 } from './procedureEventActions'
+// Catch-up Phase 43: scale and privacy.
+export { viewRawImportRow, rawViewsFor, rawRowRefusal, rawRowEligible, RAW_ROW_REASONS, RAW_ROW_NOT_ELIGIBLE, RAW_ROW_OFFICE_ONLY, type RawViews } from './rawRowActions'
+export { loadFullScaleData, loadFullScaleRefusal, FULL_SCALE_PAUSE_REASON } from './fullScaleActions'
+export { reportDiagnostic, recentDiagnostics, wireDiagnostics } from './diagnostics'

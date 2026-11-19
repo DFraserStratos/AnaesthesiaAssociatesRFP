@@ -186,7 +186,10 @@ import { SAMPLE_SHEETS, type SampleSheet } from '../../domain/masterLoad/samples
 import type { LoadEntity } from '../../domain/masterLoad/types'
 import { stageMasterLoad, stagedLoadFor } from '../../store/masterLoadActions'
 import { stageGoLiveLoad } from '../../store/goLiveActions'
-import { SEED_LOAD_ACTOR } from '../../store/demoActors'
+import { HOSPITAL_FEED_ACTOR, SEED_LOAD_ACTOR, SOUTER_ACTOR } from '../../store/demoActors'
+import { leakScanSummary, scanForNhiLeaks } from '../../store/privacyScan'
+import { rawRowRefusal, rawRowTarget, viewRawImportRow } from '../../store/rawRowActions'
+import { reportDiagnostic } from '../../store/diagnostics'
 
 // ---------------------------------------------------------------------------
 // Route patterns (checked against `src/router.tsx` and `pwa/main.tsx`)
@@ -2245,9 +2248,53 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     confirm: 'Replaces the current demo data. Reset returns to it.',
     disabledReason: () => loadFullScaleRefusal(),
     run: (api) => {
-      const res = loadFullScaleData(api)
+      const res = loadFullScaleData(api, { report: (message) => reportDiagnostic('error', message) })
       return res.ok ? { ok: true, message: 'Generating full-scale data. Timings appear in the banner.' } : { ok: false, message: res.message }
     },
     indexPath: (state) => `/admin/day/${state.clock.todayISO}`,
+  },
+  {
+    id: 'scan-nhi-leaks',
+    label: 'Scan for NHI leaks',
+    description:
+      'Searches the Xero records and their sync queue for any NHI or personal detail (no personal information in Xero), and the diagnostic log, the messages people see and every failure reason for anything that looks like an NHI. The planted choice adds one test line to the scan to prove it finds one.',
+    screen: 'Demo · Data inspector',
+    routes: ['/demo/data'],
+    surfaces: ['bar'],
+    choices: () => [
+      { id: 'now', label: 'Scan now' },
+      { id: 'planted', label: 'Scan with a planted test leak (proves the scan finds one)' },
+    ],
+    disabledReason: () => null,
+    run: (api, _ctx, choiceId) => {
+      const report = scanForNhiLeaks(api.getState(), { plantTestLeak: choiceId === 'planted' })
+      useDemoTriggerMemory.getState().rememberNhiScan(report)
+      return { ok: true, message: leakScanSummary(report, formatCount) }
+    },
+    indexPath: () => '/demo/data',
+  },
+  {
+    id: 'matching-raw-row-other-role',
+    label: 'View raw row as another role',
+    description:
+      'Shows the restriction working: the same View raw row request, with the reason "Demo: access check", made as an anaesthetist or as the hospital feed, on the selected row (or the oldest row needing resolving). Only office staff can view a raw hospital row, and the refused attempt is recorded in the audit trail. No payload is shown.',
+    screen: 'Admin · Intake, Matching',
+    routes: [ADMIN_MATCHING],
+    surfaces: ['bar'],
+    choices: () => [
+      { id: 'souter', label: 'As Dr Melanie Souter (anaesthetist)' },
+      { id: 'feed', label: 'As the hospital feed (integration)' },
+    ],
+    disabledReason: (state, ctx) => rawRowRefusal(state, rawRowTarget(state, ctx.published['matching.selectedRowId'])),
+    run: (api, ctx, choiceId) => {
+      const state = api.getState()
+      const rowId = rawRowTarget(state, ctx.published['matching.selectedRowId'])
+      if (rowId === undefined) return { ok: false, message: 'No hospital row needs resolving' }
+      const res = viewRawImportRow(api, choiceId === 'feed' ? HOSPITAL_FEED_ACTOR : SOUTER_ACTOR, rowId, 'Demo: access check')
+      return res.ok
+        ? { ok: false, message: 'The view was not refused.' }
+        : { ok: true, message: res.code === 'officeOnly' ? 'Refused: only office staff can view a raw hospital row. The attempt is in the audit trail.' : res.message }
+    },
+    indexPath: () => ADMIN_MATCHING,
   },
 ]
