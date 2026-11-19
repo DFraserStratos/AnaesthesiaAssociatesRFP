@@ -1,6 +1,6 @@
 import { isBookingPair, payableReleasedFor, roundToCents, toCents } from '../../domain/billing'
 import { isHeldPayable } from '../../domain/billing/prepayHolding'
-import type { BookingLedgerPair, BuyerCreatedTaxInvoice, InvoiceLine, LedgerPair, XeroAccPay, XeroAccRec, XeroContact } from '../../domain/types'
+import type { BookingLedgerPair, BuyerCreatedTaxInvoice, InvoiceLine, LedgerDisbursement, LedgerPair, XeroAccPay, XeroAccRec, XeroContact } from '../../domain/types'
 import type { AppState } from '../../store'
 
 export interface XeroContactView {
@@ -25,8 +25,14 @@ export interface XeroInvoicePairView {
     amountDue: number
     amountReceived: number
     balance: number
+    /** Payments landed in Xero during an outage whose sync to the Billing Engine still waits in its queue (catch-up Phase 37). */
+    landedAwaitingSync?: number
     status: 'awaitingPayment' | 'paid' | 'voided'
     raisedAtISO?: string
+    /** When AA staff voided it directly in Xero (catch-up Phase 37). */
+    voidedAtISO?: string
+    /** When AA staff edited its total directly in Xero; `amountDue` is then Xero's new total (catch-up Phase 37). */
+    amendedAtISO?: string
     subtotal?: number
     gst?: number
     total?: number
@@ -47,6 +53,8 @@ export interface XeroInvoicePairView {
     status: 'draft' | 'authorised' | 'paid'
     /** The buyer-created tax invoice as stored at handoff (catch-up Phase 22; US-09.1.4), passed through. */
     taxInvoice?: BuyerCreatedTaxInvoice
+    /** Xero's bill payments on this ACCPAY, oldest first, each with what the Billing Engine knows of it (catch-up Phase 37). */
+    billPayments: XeroBillPaymentView[]
   }
   /**
    * The ledger pair this Xero record mirrors (catch-up Phase 36; FT-09.1): the
@@ -76,7 +84,25 @@ export interface XeroInvoicePairView {
   incomplete: boolean
 }
 
-type XeroPairState = Pick<AppState, 'xero' | 'billing' | 'schedule' | 'masters'>
+/**
+ * One Xero bill payment (Xero's payables run paid the bill), and the Billing
+ * Engine's side of it: recorded by the bill-paid webhook or the poll, waiting
+ * in the Xero sync queue (an outage), or not yet detected (the webhook was
+ * missed; the next poll picks it up).
+ */
+export interface XeroBillPaymentView {
+  id: string
+  amount: number
+  atISO: string
+  payablesRunId: string
+  engine:
+    | { state: 'recorded'; detectedBy: 'webhook' | 'poll'; recordedAtISO?: string }
+    | { state: 'queued' }
+    | { state: 'notDetected' }
+}
+
+/** `audit` is optional: with it, a poll-detected disbursement shows when the poll recorded it. */
+type XeroPairState = Pick<AppState, 'xero' | 'billing' | 'schedule' | 'masters'> & Partial<Pick<AppState, 'audit'>>
 
 function contactView(contact: XeroContact | undefined): XeroContactView | undefined {
   if (contact === undefined) return undefined
@@ -141,8 +167,11 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
           amountDue: rec.amountDue,
           amountReceived: rec.amountReceived,
           balance: roundToCents(Math.max(0, rec.amountDue - rec.amountReceived)),
+          ...landedAwaitingSync(state, rec.id),
           status: rec.status,
           raisedAtISO: rec.issuedAtISO,
+          ...(rec.voidedAtISO !== undefined ? { voidedAtISO: rec.voidedAtISO } : {}),
+          ...(rec.amendedAtISO !== undefined ? { amendedAtISO: rec.amendedAtISO } : {}),
           ...(invoice !== undefined
             ? {
                 subtotal: invoice.subtotal,
@@ -169,6 +198,7 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
                 held: isHeldPayable(accPay),
                 status: accPay.status,
                 ...(accPay.taxInvoice !== undefined ? { taxInvoice: accPay.taxInvoice } : {}),
+                billPayments: billPaymentViews(state, accPay.id, linkedPair?.id),
               },
             }
           : {}),
@@ -231,6 +261,57 @@ function feePairView(state: XeroPairState, rec: XeroAccRec): XeroInvoicePairView
     },
     incomplete: fee === undefined || payer === undefined,
   }
+}
+
+/** Xero's bill payments on one ACCPAY, each matched to the engine's disbursement by `xeroDisbursementId`. */
+function billPaymentViews(state: XeroPairState, accPayId: string, pairId: string | undefined): XeroBillPaymentView[] {
+  const recorded = new Map(
+    Object.values(state.billing.disbursements)
+      .filter((d) => d.xeroDisbursementId !== undefined)
+      .map((d) => [d.xeroDisbursementId as string, d]),
+  )
+  const queued = new Set(
+    Object.values(state.billing.xeroQueue)
+      .filter((q) => q.kind === 'disbursementSync' && q.status !== 'sent' && q.target.xeroDisbursementId !== undefined)
+      .map((q) => q.target.xeroDisbursementId as string),
+  )
+  return Object.values(state.xero.disbursements)
+    .filter((d) => d.accPayId === accPayId)
+    .sort((a, b) => a.atISO.localeCompare(b.atISO) || a.id.localeCompare(b.id))
+    .map((d): XeroBillPaymentView => {
+      const entry = recorded.get(d.id)
+      const engine: XeroBillPaymentView['engine'] =
+        entry !== undefined
+          ? { state: 'recorded', detectedBy: entry.detectedBy, ...recordedAt(state, entry, pairId) }
+          : queued.has(d.id)
+            ? { state: 'queued' }
+            : { state: 'notDetected' }
+      return { id: d.id, amount: d.amount, atISO: d.atISO, payablesRunId: d.payablesRunId, engine }
+    })
+}
+
+/**
+ * When the engine recorded a disbursement. The webhook records it as Xero pays,
+ * so its time is the bill payment's; the poll records it later with Xero's
+ * date, so its own time is read from the `ledger.disbursed` audit row.
+ */
+function recordedAt(state: XeroPairState, entry: LedgerDisbursement, pairId: string | undefined): { recordedAtISO?: string } {
+  if (entry.detectedBy === 'webhook') return { recordedAtISO: entry.atISO }
+  const row = (state.audit ?? []).find((a) => {
+    if (a.action !== 'ledger.disbursed' || a.entityId !== (pairId ?? entry.pairId)) return false
+    const after = a.after as { payablesRunId?: unknown; detectedBy?: unknown } | undefined
+    return after?.payablesRunId === entry.payablesRunId && after?.detectedBy === 'poll'
+  })
+  return row !== undefined ? { recordedAtISO: row.atISO } : {}
+}
+
+/** Payments Xero holds on an ACCREC whose sync waits in the engine's Xero sync queue (an outage's), totalled; absent when none. */
+function landedAwaitingSync(state: XeroPairState, accRecId: string): { landedAwaitingSync?: number } {
+  const waiting = new Set(Object.values(state.billing.xeroQueue).filter((q) => q.kind === 'paymentSync' && q.status !== 'sent').map((q) => q.idempotencyKey))
+  const cents = Object.values(state.xero.payments)
+    .filter((p) => p.accRecId === accRecId && waiting.has(p.idempotencyKey))
+    .reduce((n, p) => n + toCents(p.amount), 0)
+  return cents > 0 ? { landedAwaitingSync: cents / 100 } : {}
 }
 
 /** The ledger's own figures for a pair, and whether Xero's mirror matches them (read only). */

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { runDemoAction } from './demoActions'
+import { advanceClock, runDemoAction } from './demoActions'
 
 /**
  * Phase 08 walkthrough — authorise → the synchronous billing run raises
@@ -349,6 +349,12 @@ test('invoice rail shows a hand-off waiting for Xero', async ({ page }) => {
   await expect(page.getByTestId('xero-accrec-reference')).toHaveCount(0)
   await expect(page.getByTestId('xero-accpay-reference')).toHaveCount(0)
   await expect(status.locator('xpath=ancestor::section')).toHaveCSS('background-color', 'rgb(249, 240, 220)')
+
+  // The queue's next tick (clock +15 min, past the 08:02 next try) lands it in Xero with no manual step.
+  await advanceClock(page)
+  await expect(status).toHaveText('Mirrored in Xero')
+  await expect(page.locator('[data-shot="invoice-waiting-for-xero"]')).toHaveCount(0)
+  await expect(page.getByTestId('xero-accrec-reference')).toHaveCount(1)
 })
 
 test('exemplar staging via the guard console: patient layout and the fee split', async ({ page }) => {

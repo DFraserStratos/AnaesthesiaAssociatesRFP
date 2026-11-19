@@ -9,7 +9,7 @@
  */
 
 import { createContext, useContext, type CSSProperties, type ReactNode } from 'react'
-import { neutral, type as typeScale } from '../../theme/tokens'
+import { accent, neutral, type as typeScale } from '../../theme/tokens'
 import type { DataAttributes } from '../ui/Field'
 
 export type TableDensity = 'comfortable' | 'compact' | 'dense'
@@ -53,12 +53,23 @@ export function densityHeadCellStyle(density: TableDensity): CSSProperties {
   }
 }
 
-/** A column header (`scope="col"`). `nowrap` keeps a short head like "B · T · M" on one line. */
+/** A sortable column's state (catch-up Phase 37's Billing monitor): `aria-sort` on the head, a button inside. */
+export interface ThSort {
+  direction: 'ascending' | 'descending' | 'none'
+  onSort: () => void
+}
+
+/**
+ * A column header (`scope="col"`). `nowrap` keeps a short head like "B · T · M" on one line. `sort`
+ * makes it sortable: the head carries `aria-sort` and its label becomes a button, with a teal
+ * underline and an arrow on the active column; without it the head is today's plain label.
+ */
 export function Th({
   children,
   align,
   width,
   nowrap,
+  sort,
   style,
   ...data
 }: {
@@ -66,12 +77,15 @@ export function Th({
   align?: CellAlign
   width?: number | string
   nowrap?: boolean
+  sort?: ThSort
   style?: CSSProperties
 } & DataAttributes) {
   const density = useContext(TableDensityContext)
+  const active = sort !== undefined && sort.direction !== 'none'
   return (
     <th
       scope="col"
+      {...(sort !== undefined ? { 'aria-sort': sort.direction } : {})}
       {...data}
       style={{
         ...densityHeadCellStyle(density),
@@ -81,7 +95,28 @@ export function Th({
         ...style,
       }}
     >
-      {children}
+      {sort === undefined ? (
+        children
+      ) : (
+        <button
+          type="button"
+          className="aa-ctl"
+          onClick={sort.onSort}
+          style={{
+            all: 'unset',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            paddingBottom: 2,
+            borderBottom: `2px solid ${active ? accent.base : 'transparent'}`,
+            color: active ? accent.pressed : 'inherit',
+          }}
+        >
+          {children}
+          <span aria-hidden style={{ fontSize: 10, opacity: active ? 1 : 0.45 }}>{sort.direction === 'ascending' ? '↑' : sort.direction === 'descending' ? '↓' : '↕'}</span>
+        </button>
+      )}
     </th>
   )
 }

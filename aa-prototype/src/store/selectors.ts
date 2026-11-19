@@ -422,7 +422,7 @@ export function dayNotesFor(state: AppState, dateISO: string): DayNote[] {
  * The admin review-queue badge count derives from this rather than a hardcoded
  * figure, so a live submit grows it. Ordered by date then anaesthetist.
  */
-export function submittedLists(state: AppState): AssignedList[] {
+export function submittedLists(state: Pick<AppState, 'schedule'>): AssignedList[] {
   return Object.values(state.schedule.lists)
     .filter((l): l is AssignedList => l.state === 'SUBMITTED')
     .sort((a, b) =>

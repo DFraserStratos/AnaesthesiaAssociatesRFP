@@ -37,16 +37,22 @@ const KIND_ORDER: Record<XeroDivergence['kind'], number> = { voidedInXero: 0, am
 /**
  * New findings: `voidedInXero` for an ACCREC Xero shows voided while the
  * engine's receivable is still open; `amendedInXero` for one whose Xero total
- * differs from what the engine issued. None for an ACCREC with an open finding
- * of that kind already, an AA fee ACCREC, or one the engine credited itself.
+ * differs from what the engine issued. None for an ACCREC already flagged with
+ * that kind for the same change in Xero (open, or resolved by the office: a
+ * resolution moves no money, so the mismatch stays and is never re-flagged
+ * unless Xero changes again), an AA fee ACCREC, or one the engine credited.
  * In ACCREC id order, then kind.
  */
 export function detectXeroDivergences(
   engineReceivables: readonly EngineReceivable[],
   xeroAccRecs: Readonly<Record<string, XeroAccRec>>,
-  existingFlags: readonly Pick<XeroDivergence, 'accRecId' | 'kind' | 'status'>[],
+  existingFlags: readonly (Pick<XeroDivergence, 'accRecId' | 'kind' | 'status'> & { xeroShows?: Pick<XeroDivergence['xeroShows'], 'total' | 'changedAtISO'> })[],
 ): DivergenceFinding[] {
-  const open = new Set(existingFlags.filter((f) => f.status === 'open').map((f) => `${f.accRecId}:${f.kind}`))
+  // A flag covers its change in Xero: the same kind, total and change time. Open or resolved, it is never raised twice.
+  const flagKey = (accRecId: string, kind: string, shows: { total?: number; changedAtISO?: string } | undefined) => `${accRecId}:${kind}:${shows?.total !== undefined ? toCents(shows.total) : ''}:${shows?.changedAtISO ?? ''}`
+  const flagged = new Set(existingFlags.map((f) => flagKey(f.accRecId, f.kind, f.xeroShows)))
+  const legacy = new Set(existingFlags.filter((f) => f.xeroShows === undefined).map((f) => `${f.accRecId}:${f.kind}`))
+  const seen = (accRecId: string, kind: string, shows: { total: number; changedAtISO?: string }) => legacy.has(`${accRecId}:${kind}`) || flagged.has(flagKey(accRecId, kind, shows))
   const out: DivergenceFinding[] = []
   for (const r of engineReceivables) {
     if (r.creditedByEngine === true) continue
@@ -62,10 +68,10 @@ export function detectXeroDivergences(
     }
     if (rec.status === 'voided') {
       // A paid receivable is never flagged as voided (Xero refuses to void one with payments applied).
-      if (outstanding > 0 && !open.has(`${r.accRecId}:voidedInXero`)) out.push({ kind: 'voidedInXero', ...base })
+      if (outstanding > 0 && !seen(r.accRecId, 'voidedInXero', base.xeroShows)) out.push({ kind: 'voidedInXero', ...base })
       continue
     }
-    if (toCents(rec.amountDue) !== toCents(r.amount) && !open.has(`${r.accRecId}:amendedInXero`)) out.push({ kind: 'amendedInXero', ...base })
+    if (toCents(rec.amountDue) !== toCents(r.amount) && !seen(r.accRecId, 'amendedInXero', base.xeroShows)) out.push({ kind: 'amendedInXero', ...base })
   }
   return out.sort((a, b) => a.accRecId.localeCompare(b.accRecId) || KIND_ORDER[a.kind] - KIND_ORDER[b.kind])
 }

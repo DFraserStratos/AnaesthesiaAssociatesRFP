@@ -1,6 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import { INS, SEED_MARKERS, ANAE } from '../../domain/seed'
-import { authoriseList, createAppStore, wireBillingRun } from '../../store'
+import {
+  DEMO_TRIGGER_ACTOR,
+  XERO_PAYABLES_ACTOR,
+  XERO_STAFF_ACTOR,
+  advanceClockMinutes,
+  amendAccRecInXero,
+  authoriseList,
+  createAppStore,
+  deliverPaymentWebhook,
+  payBillsInXero,
+  runReconciliationPoll,
+  setXeroOutage,
+  voidAccRecInXero,
+  wireBillingRun,
+} from '../../store'
 import type { Actor, AppState } from '../../store'
 import { xeroInvoicePairViews } from './xeroPairView'
 import { projectedListId } from '../../domain/slots'
@@ -91,5 +105,89 @@ describe('Xero invoice-pair view', () => {
     expect(pair?.accPay).toBeUndefined()
     expect(pair?.ledger.patientName).toBe('Alan Prentice')
     expect(pair?.accRec.id).toBe(original.accRec.id)
+  })
+})
+
+describe('Xero invoice-pair view: the Xero side and the engine side (catch-up Phase 37)', () => {
+  function stagedS3Api() {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    try {
+      expect(authoriseList(api, OFFICE, projectedListId(ANAE.souter, '2026-07-20', 'PM')).ok).toBe(true)
+    } finally {
+      unwire()
+    }
+    return api
+  }
+
+  it('starts with no bill payment on the ACCPAY', () => {
+    const pair = nibPair(stagedS3State())
+    expect(pair.accPay?.billPayments).toEqual([])
+    expect(pair.accRec.voidedAtISO).toBeUndefined()
+    expect(pair.accRec.amendedAtISO).toBeUndefined()
+  })
+
+  it('shows a bill payment the engine has not detected, then the poll recording it at its own time', () => {
+    const api = stagedS3Api()
+    const start = nibPair(api.getState())
+    expect(deliverPaymentWebhook(api, { accRecId: start.accRec.id, amount: start.accRec.balance, idempotencyKey: 'TEST-PAY' }).ok).toBe(true)
+    const paid = payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId: start.accPay!.id }], { webhook: 'missed' })
+    if (!paid.ok) throw new Error(paid.message)
+
+    const missed = nibPair(api.getState()).accPay!.billPayments
+    expect(missed).toHaveLength(1)
+    expect(missed[0]).toMatchObject({ id: paid.value.paid[0]!.xeroDisbursementId, amount: 152.38, engine: { state: 'notDetected' } })
+
+    advanceClockMinutes(api, 45)
+    expect(runReconciliationPoll(api).disbursements).toBe(1)
+    const polled = nibPair(api.getState()).accPay!.billPayments[0]!
+    expect(polled.engine).toMatchObject({ state: 'recorded', detectedBy: 'poll' })
+    // The poll's own time, read from its audit row, not Xero's payment time.
+    const recordedAtISO = polled.engine.state === 'recorded' ? polled.engine.recordedAtISO : undefined
+    expect(recordedAtISO).toBeDefined()
+    expect(recordedAtISO! > polled.atISO).toBe(true)
+  })
+
+  it('shows a delivered bill-paid webhook as recorded by webhook, and a queued one during an outage', () => {
+    const api = stagedS3Api()
+    const start = nibPair(api.getState())
+    expect(deliverPaymentWebhook(api, { accRecId: start.accRec.id, amount: start.accRec.balance, idempotencyKey: 'TEST-PAY' }).ok).toBe(true)
+    expect(setXeroOutage(api, DEMO_TRIGGER_ACTOR, true).ok).toBe(true)
+    expect(payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId: start.accPay!.id }], { webhook: 'deliver' }).ok).toBe(true)
+    expect(nibPair(api.getState()).accPay!.billPayments[0]!.engine).toEqual({ state: 'queued' })
+
+    expect(setXeroOutage(api, DEMO_TRIGGER_ACTOR, false).ok).toBe(true)
+    const restored = nibPair(api.getState()).accPay!.billPayments[0]!
+    expect(restored.engine).toMatchObject({ state: 'recorded' })
+  })
+
+  it('shows a payment landed in Xero during an outage until its sync reaches the engine; a second payment never overpays', () => {
+    const api = stagedS3Api()
+    const start = nibPair(api.getState())
+    expect(start.accRec.landedAwaitingSync).toBeUndefined()
+    expect(setXeroOutage(api, DEMO_TRIGGER_ACTOR, true).ok).toBe(true)
+    expect(deliverPaymentWebhook(api, { accRecId: start.accRec.id, amount: 50, idempotencyKey: 'TEST-HALF' }).ok).toBe(true)
+    expect(nibPair(api.getState()).accRec.landedAwaitingSync).toBe(50)
+    // Xero shows $102.38 still owing; a payment above it is refused.
+    expect(deliverPaymentWebhook(api, { accRecId: start.accRec.id, amount: start.accRec.balance, idempotencyKey: 'TEST-OVER' })).toMatchObject({ ok: false, code: 'aboveBalance' })
+    expect(setXeroOutage(api, DEMO_TRIGGER_ACTOR, false).ok).toBe(true)
+    const restored = nibPair(api.getState())
+    expect(restored.accRec.landedAwaitingSync).toBeUndefined()
+    expect(restored.ledger.received).toBe(50)
+  })
+
+  it('passes through when AA staff voided or amended the invoice in Xero', () => {
+    const api = stagedS3Api()
+    const pair = nibPair(api.getState())
+    expect(amendAccRecInXero(api, XERO_STAFF_ACTOR, pair.accRec.id).ok).toBe(true)
+    const amended = nibPair(api.getState())
+    expect(amended.accRec.amendedAtISO).toBeDefined()
+    expect(amended.accRec.amountDue).toBe(132.38)
+    expect(amended.accRec.total).toBe(152.38)
+
+    expect(voidAccRecInXero(api, XERO_STAFF_ACTOR, pair.accRec.id).ok).toBe(true)
+    const voided = nibPair(api.getState())
+    expect(voided.accRec.status).toBe('voided')
+    expect(voided.accRec.voidedAtISO).toBeDefined()
   })
 })

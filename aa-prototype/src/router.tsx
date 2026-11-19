@@ -163,6 +163,7 @@ export function AppRouter() {
               <Route index element={<DemoXero />} />
               <Route path=":accRecId" element={<DemoXero />} />
             </Route>
+            <Route path="bank" element={<DemoXero />} />
           </Route>
           <Route path="demo/integrations" element={<DemoIntegrations />} />
           <Route path="demo/data" element={<DemoData />} />

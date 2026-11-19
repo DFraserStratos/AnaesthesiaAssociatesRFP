@@ -141,7 +141,12 @@ Contract holder) and one surgeon. Draft Lists never reach the mobile, web or PWA
   `seed/recordedWindow.ts`; the seeded Draft Lists in `seed/draftLists.ts`), the Slot module
   `slots.ts`, the pairing rule `listPairing.ts`, the Draft List rules `draftLists.ts`, billing maths (`billing/`, including
   `validateBookingForBilling.ts`), the advanceable `clock.ts`, NHI/NZHIS validators, and the
-  integration message/PDF fixtures (`integrations/`). Fully unit-tested.
+  integration message/PDF fixtures (`integrations/`). Fully unit-tested. `domain/xero/` holds the
+  engine's pure Xero rules (catch-up Phase 37: the sync queue's backoff in `queue.ts`, the void and
+  amendment check in `divergence.ts`); `billing/reconciliation.ts` derives the reconciliation status.
+  `domain/xeroSim/` simulates Xero's own bank reconciliation and remittance add-on: **the engine never
+  imports it** (only `store/xeroSimActions.ts` and the Xero simulator UI may; `xeroSim/scopeFence.test.ts`
+  fails otherwise), because bulk remittance matching stays in Xero (US-10.2.4).
 - **`store/`** — the one Zustand store: the audit-writing `mutate()` wrapper, lifecycle guards,
   Slot and List actions (`slotActions.ts`: assign, move and reassign, availability, session
   times, default times, the horizon, cover markers, and the Draft List internals), the Draft List
@@ -149,6 +154,13 @@ Contract holder) and one surgeon. Draft Lists never reach the mobile, web or PWA
   and invoice description (`procedureTextActions.ts`: `replaceProcedureText`, `setInvoiceDescription`,
   `applyDefaultInvoiceDescription`), patient intake, master-data invariants, the billing run, Xero/payment/payables/archive actions, the
   integration processor, and the live demo clock. Components read and write only through here.
+  Xero mirror resilience (catch-up Phase 37): every engine-to-Xero call goes through `xeroGate.ts` into
+  the durable keyed queue in `xeroQueue.ts` (backoff on the demo clock, no timers);
+  `disbursementDetection.ts` (`recordDisbursement`) is the one writer of a payable leg's disbursement,
+  called when Xero reports a bill paid; `xeroSimActions.ts` is the Xero side (its payables run, a void
+  or amendment made in Xero, the bulk remittance); `billingMonitorView.ts` groups, filters and sorts the
+  Billing monitor (its options live in the URL); `reconciliationSelectors.ts` is the table of checks
+  behind the Admin Day Reconciliation card.
 - **`apps/mobile/`**, **`apps/web/`**, **`apps/admin/`** — the three user-facing apps. Each has the same
   three top-level files: `<App>.tsx` is the app's **layout** route (nav, persona actor, shared
   derivations, transient overlays) and hands them down through `<Outlet context>`; `outlet.ts` types

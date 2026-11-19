@@ -6,7 +6,7 @@
     {
       "name": "xero-organisation",
       "app": "simulator",
-      "caption": "The simulated Xero organisation, holding only contacts, invoice pairs and payments",
+      "caption": "The simulated Xero organisation, holding only contacts, invoice pairs, their payments and the bank reconciliation",
       "start": "/demo/xero/invoices",
       "states": [
         {

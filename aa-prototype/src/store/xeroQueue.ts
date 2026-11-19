@@ -57,7 +57,7 @@ export interface ProcessResult {
   failed: number
 }
 
-/** Run one item's own idempotent handler against Xero. A refusal (a target since gone) still clears the item, with its reason. */
+/** Run one item's own idempotent handler against Xero. A refusal returns its reason; the item then stays open as a failed attempt. */
 function runHandler(api: AppStoreApi, item: XeroQueueItem): string | undefined {
   const t = item.target
   switch (item.kind) {
@@ -147,7 +147,14 @@ export function processXeroQueue(api: AppStoreApi, opts: { force?: boolean; item
       continue
     }
     const refused = runHandler(api, item)
-    markSent(api, item, refused)
+    if (refused !== undefined) {
+      // Xero answered but the call could not complete (a target gone, an amount above what was released): it stays open,
+      // counts as a problem and alerts after five tries, rather than reading as sent.
+      recordFailure(api, item, refused)
+      result.failed += 1
+      continue
+    }
+    markSent(api, item)
     result.sent += 1
   }
   return result

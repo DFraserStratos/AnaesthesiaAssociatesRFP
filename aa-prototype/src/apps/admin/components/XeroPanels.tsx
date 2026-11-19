@@ -11,15 +11,18 @@
 
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Button, Card, EmptyState, FormError, Notice, Pill, RadioCard, ResultLine, TextAction, TextArea, useRovingRadio } from '../../../shared/ui'
+import { Button, Card, EmptyState, FormError, Notice, Pill, RadioCard, ResultLine, TextAction, TextArea, useRovingRadio, visuallyHidden } from '../../../shared/ui'
 import { Td, Th, TableShell } from '../../../shared/table'
 import { DemoBadge } from '../../../shared/DemoBadge'
-import { drSurname, formatCurrency, hhmm, plural } from '../../../shared/format'
-import { neutral, semantic } from '../../../theme/tokens'
+import { drSurname, formatCurrency, hhmm, plural, shortDay } from '../../../shared/format'
+import { today } from '../../../domain/clock'
+import { neutral, radius, semantic } from '../../../theme/tokens'
 import {
   DIVERGENCE_OUTCOMES,
   openXeroDivergences,
   payableLegsDue,
+  payablesDue,
+  counterpartyName,
   resolveXeroDivergence,
   retryXeroItemNow,
   runPayables,
@@ -31,6 +34,7 @@ import {
 } from '../../../store'
 import { XERO_ALERT_AFTER_ATTEMPTS } from '../../../domain/xero/queue'
 import type { XeroDivergence } from '../../../domain/types'
+import { dueOn } from '../../../domain/billing/ledger'
 import { SidePanel } from './SidePanel'
 
 /** "Connected", or "Xero unavailable since HH:mm · N waiting", read from the queue and the engine's view. */
@@ -40,16 +44,28 @@ export function XeroConnectionLine() {
   const waiting = useMemo(() => xeroQueueView({ billing }).open.length, [billing])
   const down = outage !== undefined
   const tone = down ? semantic.warning : waiting > 0 ? semantic.warning : semantic.success
-  const text = down
-    ? `Xero unavailable since ${hhmm(outage.sinceISO)} · ${waiting} waiting`
-    : waiting > 0
-      ? `Connected · ${waiting} waiting for their next try`
-      : 'Connected'
+  const text = down ? (
+    <>
+      {'Xero unavailable since '}
+      <span className="mono">{hhmm(outage.sinceISO)}</span>
+      {' · '}
+      <span className="mono">{waiting}</span>
+      {' waiting'}
+    </>
+  ) : waiting > 0 ? (
+    <>
+      {'Connected · '}
+      <span className="mono">{waiting}</span>
+      {' waiting for their next try'}
+    </>
+  ) : (
+    'Connected'
+  )
   return (
     <div data-shot="billing-xero-connection" role="status" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: tone.onTint }}>
-      <span aria-hidden style={{ width: 8, height: 8, borderRadius: 999, background: tone.solid, flex: 'none' }} />
+      <span aria-hidden style={{ width: 8, height: 8, borderRadius: radius.pill, background: tone.solid, flex: 'none' }} />
       <span style={{ fontWeight: 600 }}>Xero</span>
-      <span className="mono">{text}</span>
+      <span>{text}</span>
     </div>
   )
 }
@@ -64,9 +80,12 @@ const QUEUE_TONE: Record<XeroQueueRow['status'], 'warning' | 'error' | 'success'
 /** The Xero sync queue: what waits, its attempts and next try, with Retry now; then what drained. */
 export function XeroQueuePanel({ actor, anaesthetistId }: { actor: Actor; anaesthetistId?: string }) {
   const billing = useAppStore((s) => s.billing)
+  const todayISO = useAppStore((s) => today(s.clock))
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showSent, setShowSent] = useState(false)
+  /** "08:02", or "Wed 22 Jul 08:02" when the next try is not today. */
+  const when = (iso: string | undefined) => (iso === undefined ? '' : iso.slice(0, 10) === todayISO ? hhmm(iso) : `${shortDay(iso)} ${hhmm(iso)}`)
   const view = useMemo(() => {
     const v = xeroQueueView({ billing })
     const keep = (r: XeroQueueRow) => anaesthetistId === undefined || r.anaesthetistId === anaesthetistId
@@ -105,7 +124,9 @@ export function XeroQueuePanel({ actor, anaesthetistId }: { actor: Actor; anaest
               <Th>Next try</Th>
               <Th>Last error</Th>
               <Th>Status</Th>
-              <Th />
+              <Th>
+                <span style={visuallyHidden}>Action</span>
+              </Th>
             </tr>
           </thead>
           <tbody>
@@ -113,7 +134,7 @@ export function XeroQueuePanel({ actor, anaesthetistId }: { actor: Actor; anaest
               <tr key={r.item.id} data-queue-item={r.item.id} data-queue-kind={r.item.kind}>
                 <Td>{r.what}</Td>
                 <Td mono align="right">{r.item.attempts}</Td>
-                <Td mono nowrap>{hhmm(r.item.nextAttemptAtISO)}</Td>
+                <Td mono nowrap>{when(r.item.nextAttemptAtISO)}</Td>
                 <Td style={{ color: neutral.slate }}>{r.item.lastError ?? ''}</Td>
                 <Td><Pill tone={QUEUE_TONE[r.status]}>{r.status}</Pill></Td>
                 <Td align="right">
@@ -128,8 +149,8 @@ export function XeroQueuePanel({ actor, anaesthetistId }: { actor: Actor; anaest
       <FormError message={error} />
       {view.sent.length > 0 && (
         <div>
-          <TextAction size="sm" flush onClick={() => setShowSent((v) => !v)} shot="billing-xero-sent-toggle">
-            {showSent ? 'Hide what was sent' : `Sent after waiting (${view.sent.length})`}
+          <TextAction size="sm" flush ariaExpanded={showSent} onClick={() => setShowSent((v) => !v)} shot="billing-xero-sent-toggle">
+            {`Sent after waiting (${view.sent.length})`}
           </TextAction>
           {showSent && (
             <TableShell label="Sent to Xero" density="compact" nested style={{ marginTop: 8 }}>
@@ -146,7 +167,7 @@ export function XeroQueuePanel({ actor, anaesthetistId }: { actor: Actor; anaest
                   <tr key={r.item.id} data-queue-item={r.item.id}>
                     <Td>{r.what}</Td>
                     <Td mono align="right">{r.item.attempts}</Td>
-                    <Td mono nowrap>{hhmm(r.item.sentAtISO)}</Td>
+                    <Td mono nowrap>{when(r.item.sentAtISO)}</Td>
                     <Td><Pill tone="success">Sent</Pill></Td>
                   </tr>
                 ))}
@@ -169,7 +190,12 @@ export function xeroShowsText(d: Pick<XeroDivergence, 'kind' | 'detectedAtISO' |
 export function XeroDivergencePanel({ actor, anaesthetistId }: { actor: Actor; anaesthetistId?: string }) {
   const billing = useAppStore((s) => s.billing)
   const invoices = useAppStore((s) => s.billing.invoices)
+  const masters = useAppStore((s) => s.masters)
   const [resolving, setResolving] = useState<XeroDivergence | null>(null)
+  const payerOf = (d: XeroDivergence): string => {
+    const invoice = invoices[d.invoiceId]
+    return invoice?.billedTo?.name ?? (invoice !== undefined ? counterpartyName({ masters }, invoice.counterparty, invoice.bookingId) : '')
+  }
   const flags = useMemo(
     () =>
       openXeroDivergences({ billing }).filter((d) => {
@@ -189,10 +215,13 @@ export function XeroDivergencePanel({ actor, anaesthetistId }: { actor: Actor; a
         <thead>
           <tr>
             <Th>Invoice</Th>
+            <Th>Payer</Th>
             <Th>Xero shows</Th>
             <Th>The engine holds</Th>
             <Th>Found</Th>
-            <Th />
+            <Th>
+              <span style={visuallyHidden}>Action</span>
+            </Th>
           </tr>
         </thead>
         <tbody>
@@ -202,6 +231,7 @@ export function XeroDivergencePanel({ actor, anaesthetistId }: { actor: Actor; a
                 <Td mono>
                   <Link to={`/admin/invoices/${d.invoiceId}`} style={{ color: neutral.ink }}>{invoices[d.invoiceId]?.invoiceNumber ?? d.invoiceId}</Link>
                 </Td>
+                <Td>{payerOf(d)}</Td>
                 <Td><Pill tone="error">{xeroShowsText(d)}</Pill></Td>
                 <Td mono>{`Receivable open, ${formatCurrency(d.engineHolds.outstanding)}`}</Td>
                 <Td mono nowrap>{hhmm(d.detectedAtISO)}</Td>
@@ -300,7 +330,7 @@ export function PayablesPanel({ actor, anaesthetistId }: { actor: Actor; anaesth
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const legs = useMemo(() => payableLegsDue({ billing }, anaesthetistId !== undefined ? { anaesthetistId } : {}), [billing, anaesthetistId])
-  const total = legs.reduce((n, l) => n + Math.round((l.leg.releasedAmount - l.leg.disbursedAmount) * 100), 0) / 100
+  const total = useMemo(() => payablesDue({ billing }, anaesthetistId !== undefined ? { anaesthetistId } : {}).total, [billing, anaesthetistId])
 
   function run() {
     const out = runPayables(useAppStore, actor, anaesthetistId !== undefined ? { anaesthetistId } : {})
@@ -324,9 +354,9 @@ export function PayablesPanel({ actor, anaesthetistId }: { actor: Actor; anaesth
       title="Authorised, awaiting Xero's payables run"
       shot="billing-payables-run"
       action={
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '4px 8px', maxWidth: 360, textAlign: 'right' }}>
           <DemoBadge label="Simulated Xero" />
-          <Button variant="outline" size="compact" onClick={run} disabled={legs.length === 0} disabledReason={legs.length === 0 ? 'Nothing authorised to pay' : undefined} shot="billing-run-payables-in-xero">
+          <Button variant="outline" size="compact" onClick={run} disabled={legs.length === 0} disabledReason={legs.length === 0 ? 'Nothing authorised to pay' : undefined} shot="billing-run-payables-in-xero" style={{ whiteSpace: 'nowrap' }}>
             Run payables in Xero
           </Button>
         </span>
@@ -359,7 +389,7 @@ export function PayablesPanel({ actor, anaesthetistId }: { actor: Actor; anaesth
                     <Td>{drSurname(anaesthetists[l.anaesthetistId]?.name ?? l.anaesthetistId)}</Td>
                     <Td mono>{n.invoiceId !== undefined ? <Link to={`/admin/invoices/${n.invoiceId}`} style={{ color: neutral.ink }}>{n.invoiceNumber}</Link> : n.invoiceNumber}</Td>
                     <Td mono>{l.leg.number}</Td>
-                    <Td mono align="right">{formatCurrency(Math.round((l.leg.releasedAmount - l.leg.disbursedAmount) * 100) / 100)}</Td>
+                    <Td mono align="right">{formatCurrency(dueOn(l.leg))}</Td>
                   </tr>
                 )
               })}

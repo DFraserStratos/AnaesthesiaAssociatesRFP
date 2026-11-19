@@ -384,10 +384,18 @@ export {
   XERO_DEMO_AMENDMENT,
   XERO_PAYABLES_ACTOR,
   XERO_STAFF_ACTOR,
+  XERO_REMITTANCE_ACTOR,
+  bulkRemittanceRefusal,
+  receiveBulkRemittance,
+  bankLineMatchRefusal,
+  matchBankLineInXero,
+  type BulkRemittanceResult,
   type XeroBill,
   type BillPaid,
   type PayBillsResult,
 } from './xeroSimActions'
+export * from './reconciliationSelectors'
+export * from './billingMonitorView'
 export {
   saveAaFeeSettings,
   runMonthlyFeeInvoices,

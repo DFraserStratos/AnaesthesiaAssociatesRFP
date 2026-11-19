@@ -1,6 +1,54 @@
 {
   "id": "US-10.2.4",
-  "status": "absent",
-  "absentReason": "Bulk remittance and bank reconciliation stay in Xero by design, so the prototype has no screen for them. Searched the Xero simulator, admin and control panel for remittance and bank reconciliation; only a note on the Xero simulator mentions remittance matching.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "bank-reconciliation",
+      "app": "simulator",
+      "caption": "Bulk remittances are matched by Xero's bank reconciliation and remittance add-on, not by the Billing Engine",
+      "start": "/demo/xero/bank",
+      "setup": [
+        {
+          "goto": "/demo/xero/invoices"
+        },
+        {
+          "trigger": "xero-bulk-remittance"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "state": "remittance",
+          "caption": "St George's remittance in Xero: the add-on matches two lines by InvoiceNumber, and the Billing Engine learns each payment by the normal payment webhook",
+          "steps": [
+            {
+              "wait": "[data-shot=xero-remittance-rmt0001]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=xero-bank-scope]",
+            "[data-shot=xero-remittance-rmt0001]"
+          ]
+        },
+        {
+          "state": "unmatched",
+          "caption": "The line quoting AA-2026-H40 ($980.00) matches no invoice: left as an unmatched item in Xero's bank reconciliation, for office staff to handle there",
+          "steps": [
+            {
+              "wait": "[data-shot=xero-bank-unmatched]"
+            },
+            {
+              "scroll": "[data-shot=xero-bank-unmatched]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=xero-bank-unmatched]"
+          ]
+        }
+      ]
+    }
+  ]
 }

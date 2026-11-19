@@ -66,6 +66,8 @@ import {
   payBillsInXero,
   xeroBillPayable,
   voidAccRecInXero,
+  bulkRemittanceRefusal,
+  receiveBulkRemittance,
   voidInXeroRefusal,
   amendAccRecInXero,
   amendInXeroRefusal,
@@ -176,7 +178,9 @@ import {
 const BILLING_MONITOR = ['/admin/billing'] as const
 /** The Billing monitor's index heading (the Control Panel adds its Run payables note under it). */
 export const BILLING_MONITOR_SCREEN = 'Admin · Billing monitor'
-const XERO_SIM = ['/demo/xero', '/demo/xero/invoices', '/demo/xero/invoices/:accRecId'] as const
+const XERO_SIM = ['/demo/xero', '/demo/xero/invoices', '/demo/xero/invoices/:accRecId', '/demo/xero/bank'] as const
+/** The Xero simulator's Bank reconciliation tab (catch-up Phase 37; US-10.2.4). */
+const XERO_BANK = '/demo/xero/bank'
 /** The Admin Ledger, whole and one anaesthetist (catch-up Phase 36). */
 const LEDGER = ['/admin/ledger', '/admin/ledger/anaesthetists/:anaesthetistId'] as const
 
@@ -667,7 +671,8 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     description:
       'A bank-feed notification arrives for $120.00 that matches no invoice number. The ledger goes out of balance by $120.00; naming Dr Souter puts her on the out-of-balance list. The office clears it with Allocate to invoice or Mark refunded.',
     screen: 'Admin · Ledger',
-    routes: LEDGER,
+    // Also on the Admin Day dashboard, whose Reconciliation card it puts out of balance (catch-up Phase 37; US-13.2.4).
+    routes: [...LEDGER, ADMIN_DAY],
     surfaces: ['bar'],
     choices: () => [
       { id: UNMATCHED_RECEIPT_DEMO.namesSouter.id, label: UNMATCHED_RECEIPT_DEMO.namesSouter.label },
@@ -1070,6 +1075,27 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: firstOpenInvoicePath,
     indexEmptyReason: 'No open invoice yet: authorise a List first',
+  },
+  {
+    id: 'xero-bulk-remittance',
+    label: 'Simulate bulk hospital remittance',
+    description:
+      "St George's pays several invoices in one deposit. Xero's remittance add-on matches the lines by invoice number and the engine learns each payment by webhook; one line quotes a mistyped number and waits in Bank reconciliation for the office.",
+    screen: 'Xero simulation · invoices',
+    routes: ['/demo/xero/invoices', XERO_BANK],
+    surfaces: ['bar'],
+    disabledReason: (state) => bulkRemittanceRefusal(state),
+    run: (api) => {
+      const out = receiveBulkRemittance(api)
+      if (!out.ok) return { ok: false, message: out.message }
+      const r = out.value
+      const learned = r.queued > 0 ? 'Xero is unavailable to the engine, so the payment syncs wait in the queue' : 'the engine learned each payment by webhook'
+      return {
+        ok: true,
+        message: `St George's remittance landed in Xero: ${plural(r.matchedCount, 'line')} matched by invoice number (${formatCurrency(r.matchedTotal)}), and ${learned}. ${plural(r.unmatchedCount, 'line')} could not be matched and waits in Bank reconciliation.`,
+      }
+    },
+    indexPath: () => '/demo/xero/invoices',
   },
 
   // ── Mobile · List, installed PWA only: the office stand-in ───────────

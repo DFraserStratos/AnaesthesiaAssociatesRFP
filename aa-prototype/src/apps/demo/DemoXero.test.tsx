@@ -2,9 +2,19 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
+  DEMO_TRIGGER_ACTOR,
+  XERO_PAYABLES_ACTOR,
+  XERO_STAFF_ACTOR,
+  amendAccRecInXero,
   authoriseList,
+  deliverPaymentWebhook,
   freshAppState,
+  payBillsInXero,
+  receiveBulkRemittance,
+  runReconciliationPoll,
+  setXeroOutage,
   useAppStore,
+  voidAccRecInXero,
   wireBillingRun,
   type Actor,
 } from '../../store'
@@ -15,14 +25,34 @@ import { xeroInvoicePairViews } from './xeroPairView'
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
 function renderInvoices(initialEntry = '/demo/xero/invoices') {
-  render(
+  return render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
+        <Route path="/demo/xero" element={<DemoXero />} />
+        <Route path="/demo/xero/bank" element={<DemoXero />} />
         <Route path="/demo/xero/invoices" element={<DemoXero />} />
         <Route path="/demo/xero/invoices/:accRecId" element={<DemoXero />} />
       </Routes>
     </MemoryRouter>,
   )
+}
+
+/** Authorise Dr Souter's Mon 20 lists and return the S3 nib pair (unpaid, its ACCPAY a draft). */
+function stageNibPair() {
+  const unwire = wireBillingRun(useAppStore)
+  try {
+    expect(authoriseList(useAppStore, OFFICE, SEED_LIST_IDS.souterMon20Am).ok).toBe(true)
+    expect(authoriseList(useAppStore, OFFICE, SEED_LIST_IDS.souterMon20Pm).ok).toBe(true)
+  } finally {
+    unwire()
+  }
+  const target = xeroInvoicePairViews(useAppStore.getState()).find((pair) => pair.accRec.invoiceNumber === 'AA-2026-0005')
+  if (target === undefined || target.accPay === undefined) throw new Error('expected the S3 nib invoice pair')
+  return { accRecId: target.accRec.id, accPayId: target.accPay.id, balance: target.accRec.balance }
+}
+
+function shot(name: string): HTMLElement | null {
+  return document.querySelector(`[data-shot="${name}"]`)
 }
 
 describe('DemoXero invoice table', () => {
@@ -89,6 +119,11 @@ describe('DemoXero invoice table', () => {
       )
       expect(screen.getByRole('status')).toHaveTextContent('$152.38')
       expect(screen.getByRole('status')).not.toHaveTextContent('$144.76')
+      // The two Xero events and the bill-paid webhook, named (catch-up Phase 37).
+      expect(screen.getByRole('status')).toHaveTextContent("nib's payment of $152.38 landed in Xero and the webhook told the engine")
+      expect(screen.getByRole('status')).toHaveTextContent("Xero's payables run paid Dr Melanie Souter $152.38 and the bill-paid webhook recorded the disbursement")
+      expect(shot('xero-accpay-paid-in-xero')).toHaveTextContent('$152.38')
+      expect(shot('xero-accpay-engine-detection')).toHaveTextContent(/Billing Engine: disbursement recorded \d\d:\d\d by webhook/)
     } finally {
       unwire()
     }
@@ -109,5 +144,128 @@ describe('DemoXero invoice table', () => {
       'href',
       '/web/accounts/fees?invoice=AA-FEE-2026-H02',
     )
+  })
+})
+
+describe('DemoXero mirror resilience (catch-up Phase 37)', () => {
+  beforeEach(() => {
+    useAppStore.setState(freshAppState())
+  })
+
+  it('shows the outage banner on every tab only while Xero is unavailable', () => {
+    const before = renderInvoices()
+    expect(screen.getByTestId('xero-invoice-table')).toBeInTheDocument()
+    expect(shot('xero-outage-banner')).toBeNull()
+    before.unmount()
+
+    expect(setXeroOutage(useAppStore, DEMO_TRIGGER_ACTOR, true).ok).toBe(true)
+    for (const path of ['/demo/xero', '/demo/xero/invoices', '/demo/xero/bank']) {
+      const view = renderInvoices(path)
+      expect(shot('xero-outage-banner')).toHaveTextContent('Xero API unavailable to the Billing Engine (simulated).')
+      expect(shot('xero-outage-banner')).toHaveTextContent("Payments and bill payments still land here; the engine's calls wait in its queue.")
+      view.unmount()
+    }
+
+    expect(setXeroOutage(useAppStore, DEMO_TRIGGER_ACTOR, false).ok).toBe(true)
+    renderInvoices()
+    expect(shot('xero-outage-banner')).toBeNull()
+  })
+
+  it('separates Paid in Xero from the engine: a missed webhook is not yet detected until the poll records it', () => {
+    const nib = stageNibPair()
+    expect(deliverPaymentWebhook(useAppStore, { accRecId: nib.accRecId, amount: nib.balance, idempotencyKey: 'TEST-NIB-PAY' }).ok).toBe(true)
+    const paid = payBillsInXero(useAppStore, XERO_PAYABLES_ACTOR, [{ accPayId: nib.accPayId }], { webhook: 'missed' })
+    if (!paid.ok) throw new Error(paid.message)
+    expect(paid.value.paid).toHaveLength(1)
+    const billPaymentId = paid.value.paid[0]!.xeroDisbursementId
+
+    const view = renderInvoices(`/demo/xero/invoices/${nib.accRecId}`)
+    expect(shot('xero-accpay-card')).not.toBeNull()
+    expect(shot('xero-accpay-paid-in-xero')).toHaveTextContent(billPaymentId)
+    expect(shot('xero-accpay-paid-in-xero')).toHaveTextContent('$152.38')
+    expect(shot('xero-accpay-engine-detection')).toHaveTextContent('Billing Engine: not yet detected; the next poll picks it up.')
+    view.unmount()
+
+    expect(runReconciliationPoll(useAppStore).disbursements).toBe(1)
+    renderInvoices(`/demo/xero/invoices/${nib.accRecId}`)
+    expect(shot('xero-accpay-engine-detection')).toHaveTextContent(/Billing Engine: disbursement recorded \d\d:\d\d by the poll\./)
+  })
+
+  it('shows the engine recording the disbursement when the bill-paid webhook is delivered', () => {
+    const nib = stageNibPair()
+    expect(deliverPaymentWebhook(useAppStore, { accRecId: nib.accRecId, amount: nib.balance, idempotencyKey: 'TEST-NIB-PAY' }).ok).toBe(true)
+    // "Pay Dr ... now": the payout-only state, through Xero's payables run with the webhook delivered.
+    renderInvoices(`/demo/xero/invoices/${nib.accRecId}`)
+    fireEvent.click(screen.getByRole('button', { name: 'Pay Dr Melanie Souter now' }))
+    expect(screen.getByRole('status')).toHaveTextContent("Xero's payables run paid Dr Melanie Souter $152.38 and the bill-paid webhook recorded the disbursement.")
+    expect(screen.getByRole('status')).not.toHaveTextContent('landed in Xero')
+    expect(shot('xero-accpay-engine-detection')).toHaveTextContent(/Billing Engine: disbursement recorded \d\d:\d\d by webhook\./)
+    expect(Object.values(useAppStore.getState().billing.disbursements).filter((d) => d.detectedBy === 'webhook' && d.amount === 152.38)).toHaveLength(1)
+  })
+
+  it('renders a voided invoice as Voided with its time, and hides Simulate payment and payout', () => {
+    const nib = stageNibPair()
+    expect(voidAccRecInXero(useAppStore, XERO_STAFF_ACTOR, nib.accRecId).ok).toBe(true)
+    renderInvoices(`/demo/xero/invoices/${nib.accRecId}`)
+    expect(screen.queryByRole('button', { name: 'Simulate payment and payout' })).toBeNull()
+    expect(shot('xero-accrec-voided')).toHaveTextContent('Voided in Xero')
+    expect(shot('xero-accrec-voided')).toHaveTextContent(/\d\d:\d\d/)
+    expect(shot('xero-accrec-card')).toHaveTextContent('Voided')
+  })
+
+  it('shows an amended invoice\'s new total beside "Amended in Xero" and its time', () => {
+    const nib = stageNibPair()
+    expect(amendAccRecInXero(useAppStore, XERO_STAFF_ACTOR, nib.accRecId).ok).toBe(true)
+    renderInvoices(`/demo/xero/invoices/${nib.accRecId}`)
+    expect(shot('xero-accrec-amended')).toHaveTextContent(/Amended in Xero \d\d:\d\d/)
+    expect(shot('xero-accrec-amended')).toHaveTextContent('$132.38')
+    expect(shot('xero-accrec-card')).toHaveTextContent('Issued total')
+    expect(screen.getByRole('button', { name: 'Simulate payment and payout' })).toBeInTheDocument()
+  })
+
+  it('shows an empty Bank reconciliation until the remittance arrives', () => {
+    renderInvoices('/demo/xero/bank')
+    expect(screen.getByRole('link', { name: 'Bank reconciliation (0 unmatched)' })).toHaveAttribute('aria-current', 'page')
+    expect(shot('xero-bank-scope')).toHaveTextContent('The Billing Engine does not match bulk remittances.')
+    expect(shot('xero-bank-empty')).toHaveTextContent('Simulate bulk hospital remittance')
+    expect(shot('xero-bank-unmatched')).toBeNull()
+  })
+
+  it('lists the remittance and matches its unmatched line to XRH04 in Xero', () => {
+    expect(receiveBulkRemittance(useAppStore).ok).toBe(true)
+    renderInvoices('/demo/xero/bank')
+
+    expect(screen.getByRole('link', { name: 'Bank reconciliation (1 unmatched)' })).toBeInTheDocument()
+    const bank = shot('xero-bank-reconciliation')!
+    expect(bank.querySelectorAll('[data-line-status="matchedByAddOn"]')).toHaveLength(2)
+    const unmatchedRows = bank.querySelectorAll('[data-line-status="unmatched"]')
+    expect(unmatchedRows).toHaveLength(1)
+    expect(unmatchedRows[0]).toHaveTextContent('AA-2026-H40')
+    expect(unmatchedRows[0]).toHaveTextContent('$980.00')
+    expect(bank).toHaveTextContent('Matched by the remittance add-on')
+    expect(bank).toHaveTextContent('AA-2026-H01')
+    expect(shot('xero-bank-unmatched')).toHaveTextContent('Unmatched items · for office staff, handled in Xero')
+    expect(shot('xero-bank-unmatched')).toHaveTextContent('$980.00')
+
+    // No choice yet: the refusal shows as a form error and nothing is paid.
+    fireEvent.click(screen.getByRole('button', { name: 'Match in Xero' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Choose an invoice')
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Invoice to match AA-2026-H40 to' }), { target: { value: 'XRH04' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Match in Xero' }))
+
+    const receipts = Object.values(useAppStore.getState().billing.receipts).filter((r) => r.accRecId === 'XRH04')
+    expect(receipts).toHaveLength(1)
+    expect(screen.queryByRole('button', { name: 'Match in Xero' })).toBeNull()
+    expect(screen.getByRole('link', { name: 'Bank reconciliation (0 unmatched)' })).toBeInTheDocument()
+    expect(bank.querySelectorAll('[data-line-status="matchedByOffice"]')).toHaveLength(1)
+    expect(bank).toHaveTextContent('Matched by the office')
+    expect(shot('xero-bank-match-result')).toHaveTextContent('Matched in Xero: $980.00 paid AA-2026-H04')
+  })
+
+  it('points the duplicate-invoice-number callout to the Bank reconciliation tab', () => {
+    renderInvoices()
+    const callout = shot('xero-duplicate-number-policy')!
+    expect(callout.querySelector('a[href="/demo/xero/bank"]')).not.toBeNull()
   })
 })

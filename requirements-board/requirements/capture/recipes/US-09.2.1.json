@@ -6,7 +6,7 @@
     {
       "name": "payment-webhook",
       "app": "simulator",
-      "caption": "Xero invoice webhook marking an ACCREC paid",
+      "caption": "Xero payment webhook: the ACCREC paid and its ACCPAY authorised",
       "start": "/demo/xero/invoices/XR0001",
       "states": [
         {
@@ -30,6 +30,26 @@
             }
           ],
           "highlight": [
+            "[data-shot=demo-action-payment-full]"
+          ]
+        },
+        {
+          "state": "during-outage",
+          "caption": "During a Xero outage the payment still lands in Xero; the engine's payment sync waits in its Xero sync queue, so nothing is received in the ledger yet",
+          "steps": [
+            {
+              "trigger": "xero-outage-start"
+            },
+            {
+              "trigger": "payment-full",
+              "open": true
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=xero-outage-banner]",
             "[data-shot=demo-action-payment-full]"
           ]
         }

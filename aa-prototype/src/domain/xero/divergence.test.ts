@@ -18,9 +18,12 @@ describe('detectXeroDivergences (catch-up Phase 37)', () => {
     expect(detectXeroDivergences([engine('XR1')], recs, [{ accRecId: 'XR1', kind: 'voidedInXero', status: 'open' }])).toEqual([])
   })
 
-  it('re-flags only after the earlier finding is resolved', () => {
-    const recs = { XR1: accRec('XR1', { status: 'voided' }) }
-    expect(detectXeroDivergences([engine('XR1')], recs, [{ accRecId: 'XR1', kind: 'voidedInXero', status: 'resolved' }])).toHaveLength(1)
+  it('never re-flags a change the office resolved; flags again only if Xero changes again', () => {
+    const recs = { XR1: accRec('XR1', { amountDue: 480, amendedAtISO: '2026-07-21T10:00:00' }) }
+    const resolved = { accRecId: 'XR1', kind: 'amendedInXero' as const, status: 'resolved' as const, xeroShows: { total: 480, changedAtISO: '2026-07-21T10:00:00' } }
+    expect(detectXeroDivergences([engine('XR1')], recs, [resolved])).toEqual([])
+    const changedAgain = { XR1: accRec('XR1', { amountDue: 460, amendedAtISO: '2026-07-22T10:00:00' }) }
+    expect(detectXeroDivergences([engine('XR1')], changedAgain, [resolved])).toHaveLength(1)
   })
 
   it('flags an amended total, never an unchanged one', () => {

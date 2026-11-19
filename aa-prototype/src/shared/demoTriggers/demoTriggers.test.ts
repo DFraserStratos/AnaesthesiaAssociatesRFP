@@ -113,8 +113,12 @@ describe("the backdated range trigger (catch-up Phase 24)", () => {
   })
 })
 
+/** What the Xero simulator's Invoices list and Bank reconciliation tab offer (catch-up Phase 37). */
+const PINNED_XERO_INVOICES = ['xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job', 'xero-bulk-remittance']
+const PINNED_XERO_BANK = PINNED_XERO_INVOICES
+
 describe('route scoping', () => {
-  it('the Billing monitor shows exactly its six entries (catch-up Phase 37 adds the outage pair), with search params on the URL too', () => {
+  it('the Billing monitor shows exactly its six entries (catch-up Phase 37 adds the outage pair); routes match the path, so search params never change them', () => {
     const api = createAppStore()
     const six = ['billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job']
     expect(ids(api, '/admin/billing')).toEqual(six)
@@ -130,12 +134,27 @@ describe('route scoping', () => {
     expect(start.run(api, ctx).ok).toBe(true)
     expect(start.disabledReason(api.getState(), ctx)).toBe('Xero is already unavailable')
     expect(restore.run(api, ctx).ok).toBe(true)
-    for (const id of ['xero-outage-start', 'xero-outage-restore', 'xero-void-invoice', 'xero-amend-invoice', 'xero-pay-bill']) {
+    for (const id of ['xero-outage-start', 'xero-outage-restore', 'xero-void-invoice', 'xero-amend-invoice', 'xero-pay-bill', 'xero-bulk-remittance']) {
       const t = DEMO_TRIGGERS.find((e) => e.id === id)!
       expect(t.surfaces, id).toEqual(['bar'])
       expect(`${t.label} ${t.description}`, id).not.toMatch(/[–—]/)
     }
-    expect(ids(api, '/demo/xero/invoices')).toEqual(expect.arrayContaining(['xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll']))
+    expect(ids(api, '/demo/xero/invoices')).toEqual(PINNED_XERO_INVOICES)
+    expect(ids(api, '/demo/xero/bank')).toEqual(PINNED_XERO_BANK)
+  })
+
+  it('the bulk remittance runs once from Xero Invoices or Bank reconciliation, then reads Already received (catch-up Phase 37)', () => {
+    const api = createAppStore()
+    const t = DEMO_TRIGGERS.find((e) => e.id === 'xero-bulk-remittance')!
+    expect(t.routes).toEqual(['/demo/xero/invoices', '/demo/xero/bank'])
+    const ctx = ctxFor('/demo/xero/bank')
+    expect(t.disabledReason(api.getState(), ctx)).toBeNull()
+    expect(t.run(api, ctx).ok).toBe(true)
+    expect(t.disabledReason(api.getState(), ctx)).toBe('Already received')
+  })
+
+  it('Inject unmatched receipt also shows on the Admin Day dashboard, for its Reconciliation card (catch-up Phase 37)', () => {
+    expect(ids(createAppStore(), '/admin/day/2026-07-21')).toContain('inject-unmatched-receipt')
   })
 
   it('the Admin day view shows the sample-warning entries (15a) and Simulate sickness (catch-up Phase 30)', () => {

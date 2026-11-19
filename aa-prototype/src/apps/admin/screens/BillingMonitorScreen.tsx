@@ -1,24 +1,34 @@
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { aaFeeMonthLabel } from '../../../domain/billing/aaFee'
 import { needAddressText } from '../../../domain/billing/invoicePresentation'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
 import {
-  billingMonitor,
+  billingMonitorView,
   handoffPairsForBooking,
   allAaFeeInvoices,
+  monitorOptionsFromSearch,
+  payablesDue,
   prepaidLeftOffText,
   retryBillingException,
+  startsExpanded,
   useAppStore,
+  DEFAULT_MONITOR_SORT,
+  MONITOR_EXPAND_ALL_UP_TO,
+  type MonitorAuthorisedRow,
+  type MonitorAwaitingRow,
   type MonitorBookingRow,
-  type MonitorListRow,
+  type MonitorGroup,
+  type MonitorListStatus,
+  type MonitorSortKey,
   type MonitorStage,
   type PrepaidLeftOff,
 } from '../../../store'
-import { dayMicroCap, formatCurrency, hhmm, plural } from '../../../shared/format'
-import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
-import { FormError } from '../../../shared'
+import { dayMicroCap, formatCurrency, hhmm, plural, shortDay } from '../../../shared/format'
+import { Button, Card, EmptyState, FilterDateInput, FilterPills, FormError, PageHeader, Pill, SelectField, StatTile, TextAction, visuallyHidden, type PillTone } from '../../../shared/ui'
+import { ClickableRow, Td, Th, TableShell } from '../../../shared/table'
 import { sessionText } from '../../../domain/outOfHours'
 import { HoldingAccountPanel } from '../components/HoldingAccountPanel'
 import { PayablesPanel, XeroConnectionLine, XeroDivergencePanel, XeroQueuePanel } from '../components/XeroPanels'
@@ -27,39 +37,112 @@ interface BillingMonitorScreenProps {
   actor: Actor
 }
 
-const cellStyle = adminCell()
-
 /** Under a failure the run raised (not a hand-off fault): what the Retry does (catch-up Phase 25). */
 export const RETRY_FROM_LOCK_NOTE = 'Retry rebuilds from the locked record. A wrong price after invoicing is corrected by a credit note and rebill.'
-const headCellStyle = adminHead()
+
+/** The intro (catch-up Phase 37; US-13.3.1, FT-13.3 Confirmed in the Admin App). */
+export const BILLING_MONITOR_INTRO =
+  'Every list awaiting approval or authorised, grouped by anaesthetist: whether it has been invoiced, sent and mirrored to Xero, and why anything failed. A failed booking blocks only its own invoice, never the rest of the list.'
+
+/** The URL search params this screen owns (filters, sort, expansion); nothing here is stored. */
+const PARAM = { anaesthetist: 'anaesthetist', hospital: 'hospital', from: 'from', to: 'to', problems: 'problems', sort: 'sort', list: 'list', open: 'open', shut: 'shut', fold: 'fold' } as const
+const FILTER_PARAMS = [PARAM.anaesthetist, PARAM.hospital, PARAM.from, PARAM.to, PARAM.problems] as const
+
+const idsOf = (params: URLSearchParams, key: string): Set<string> => new Set((params.get(key) ?? '').split(',').filter((s) => s !== ''))
+
+/** Columns of every group's table: chevron, then the List's columns; awaiting rows use the same columns. */
+const COLUMNS = 11
 
 /**
- * The billing-flow monitor (Phase 09; A5). One pipeline per authorised List:
- * List authorised -> Billing run -> Invoices generated -> Emailed -> Xero
- * hand-off, with a per-Booking row underneath. Each Booking prices from its
- * locked record (catch-up Phase 25). A billing-run failure shows its reason
- * and a "Retry" that rebuilds from the lock; a hand-off waiting for Xero is
- * retried by the Xero sync queue (catch-up Phase 37), with "Retry now" on its
- * queue row. Nothing here edits a Contract or a Procedure.
+ * The billing-flow monitor, restyled as the processing monitor (Phase 09;
+ * catch-up Phase 37, US-13.3.1). Grouped by anaesthetist: each group lists the
+ * anaesthetist's Lists awaiting approval (they open in Review, where approval
+ * stays) and their authorised Lists, sortable, each expanding to its pipeline
+ * (List authorised, billing run, invoices, emailed, Xero) and per-Booking rows.
+ * Filters, sort and expansion live in the URL (`billingMonitorView`'s options),
+ * never in the store. A billing-run failure shows its reason and a "Retry"
+ * that rebuilds from the lock; a hand-off waiting for Xero is retried by the
+ * Xero sync queue, with "Retry now" on its queue row. Nothing here authorises
+ * a List or edits a Contract or a Procedure.
  *
- * Two RFP-open readings are stated in the copy here: this surface lives in the
- * Admin Web App (vs a separate Billing Engine screen), and a failed Booking blocks
- * only its own invoice (per-booking isolation). The monitor itself is proposed
- * product UI, so it carries NO demo badge; only its simulation triggers (in the
- * harness bar's Demo actions menu on this screen) are badged (convention 13).
+ * Proposed product UI, so it carries NO demo badge; only its simulation
+ * triggers (in the harness bar's Demo actions on this screen) and the
+ * simulated "Run payables in Xero" are badged (convention 13).
  */
 export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
   const schedule = useAppStore((s) => s.schedule)
   const billing = useAppStore((s) => s.billing)
   const masters = useAppStore((s) => s.masters)
+  const audit = useAppStore((s) => s.audit)
+  const [params, setParams] = useSearchParams()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
+  const [focusListId, setFocusListId] = useState<string | null>(null)
 
-  const rows = useMemo(() => billingMonitor({ schedule, billing, masters }), [schedule, billing, masters])
-  const attentionTotal = rows.reduce((n, r) => n + r.failedCount + r.waitingForXeroCount + r.xeroFlaggedCount, 0)
+  const options = useMemo(() => monitorOptionsFromSearch(params), [params])
+  const view = useMemo(() => billingMonitorView({ schedule, billing, masters, audit }, options), [schedule, billing, masters, audit, options])
+  const payablesDueTotal = useMemo(() => payablesDue({ billing }, view.applied.anaesthetistId !== undefined ? { anaesthetistId: view.applied.anaesthetistId } : {}).total, [billing, view.applied.anaesthetistId])
+  const opened = idsOf(params, PARAM.open)
+  const shut = idsOf(params, PARAM.shut)
+  const folded = idsOf(params, PARAM.fold)
+  const filtersOn = FILTER_PARAMS.some((k) => params.get(k) !== null)
 
-  // A billing-run exception only (a hand-off waiting for Xero is retried by the Xero sync queue, catch-up Phase 37).
-  function resolveAndRetry(row: MonitorBookingRow) {
-    retry(row)
+  /** Write search params, dropping empty ones; `replace` for view toggles so Back is not flooded. */
+  function update(changes: Record<string, string | null>, replace = false) {
+    const next = new URLSearchParams(params)
+    for (const [k, v] of Object.entries(changes)) {
+      if (v === null || v === '') next.delete(k)
+      else next.set(k, v)
+    }
+    setParams(next, { replace })
+  }
+
+  const isOpen = (row: MonitorAuthorisedRow): boolean => {
+    if (row.listId === options.listId) return true
+    if (shut.has(row.listId)) return false
+    if (opened.has(row.listId)) return true
+    return startsExpanded(row, view.authorisedInView, MONITOR_EXPAND_ALL_UP_TO)
+  }
+  function setOpen(listIds: readonly string[], open: boolean) {
+    const o = new Set(opened)
+    const s = new Set(shut)
+    for (const id of listIds) {
+      if (open) {
+        o.add(id)
+        s.delete(id)
+      } else {
+        s.add(id)
+        o.delete(id)
+      }
+    }
+    update({ [PARAM.open]: [...o].sort().join(','), [PARAM.shut]: [...s].sort().join(','), ...(open ? {} : listIds.includes(options.listId ?? '') ? { [PARAM.list]: null } : {}) }, true)
+  }
+  function setFolded(anaesthetistId: string, fold: boolean) {
+    const f = new Set(folded)
+    if (fold) f.add(anaesthetistId)
+    else f.delete(anaesthetistId)
+    update({ [PARAM.fold]: [...f].sort().join(',') }, true)
+  }
+  function sortBy(key: MonitorSortKey) {
+    const current = view.applied.sort
+    const dir = current.key === key ? (current.dir === 'asc' ? 'desc' : 'asc') : key === 'run' || key === 'invoices' ? 'desc' : 'asc'
+    update({ [PARAM.sort]: key === DEFAULT_MONITOR_SORT.key && dir === DEFAULT_MONITOR_SORT.dir ? null : `${key}-${dir}` }, true)
+  }
+
+  // `?list=` (the invoice rail's link): open that List, bring it into view and ring it briefly.
+  useEffect(() => {
+    const id = options.listId
+    if (id === undefined) return
+    const el = document.querySelector(`[data-shot="billing-pipeline-${CSS.escape(id)}"]`)
+    if (el instanceof HTMLElement && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'start', behavior: 'auto' })
+    setFocusListId(id)
+    const t = window.setTimeout(() => setFocusListId(null), 2000)
+    return () => window.clearTimeout(t)
+  }, [options.listId])
+
+  function openInReview(listId: string) {
+    navigate(`/admin/review/${listId}`, { state: { from: 'billing', search: location.search } })
   }
 
   function retry(row: MonitorBookingRow) {
@@ -74,36 +157,82 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
     handoffPairsForBooking(useAppStore, row.bookingId)
   }
 
+  const nothingAtAll = view.anaesthetistOptions.length === 0
+  const panelAnaesthetist = view.applied.anaesthetistId
+
   return (
-    <>
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>
-      <div>
-        <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>Billing monitor</h1>
-        <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4, maxWidth: 780 }}>
-          The billing engine's office view: every authorised list, its pipeline from authorisation
-          to Xero handoff, and any booking that needs attention. Each booking prices from its locked
-          record, taken when the list was authorised. A failed booking is held back on its own while
-          the rest of the list bills. Where the RFP leaves open whether this surface sits in
-          the Admin app or a separate Billing Engine screen, the prototype puts it here. The "Prior
-          balance" flag reads any open (unpaid) prior episode; whether to separately distinguish open
-          from genuinely overdue is held as a discovery question, since invoices carry a raised date
-          but no due date. AA's own fee is invoiced to each anaesthetist monthly; it is never deducted
-          from a payable. Money in and out is recorded in the ledger first; Xero mirrors it.
-        </div>
-      </div>
+      <PageHeader size="admin" title="Billing monitor" sub={BILLING_MONITOR_INTRO} />
 
       <XeroConnectionLine />
 
-      {attentionTotal > 0 && (
-        <div style={{ background: semantic.warning.tint, border: `1px solid ${semantic.warning.solid}44`, borderRadius: radius.card, padding: '10px 14px', fontSize: 13, color: semantic.warning.onTint }}>
-          {plural(attentionTotal, 'booking')} across the pipeline need attention. A failed booking retries from its row; a call waiting for Xero retries from the Xero sync queue.
-        </div>
-      )}
+      {/* Summary tiles: Admin Review's tile anatomy. "With problems" turns its filter on; "Payables due" goes to the payables panel. */}
+      <div data-shot="billing-monitor-tiles" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }}>
+        <StatTile variant="outlined" label="Awaiting approval" value={view.totals.awaiting} shot="billing-tile-awaiting" />
+        <StatTile variant="outlined" label="Authorised" value={view.totals.authorised} shot="billing-tile-authorised" />
+        <StatTile
+          variant="outlined"
+          label="With problems"
+          value={view.totals.withProblems}
+          {...(view.totals.withProblems > 0 ? { tone: 'warning' as const } : {})}
+          sub="Show problems only"
+          pressed={view.applied.problemsOnly}
+          onClick={() => update({ [PARAM.problems]: view.applied.problemsOnly ? null : '1' })}
+          shot="billing-tile-problems"
+        />
+        <StatTile
+          variant="outlined"
+          label="Payables due"
+          value={formatCurrency(payablesDueTotal)}
+          sub="Go to the payables run"
+          onClick={() => document.querySelector('[data-shot="billing-payables-run"]')?.scrollIntoView({ block: 'start' })}
+          shot="billing-tile-payables"
+        />
+      </div>
 
-      {/* The Xero panels (catch-up Phase 37): the sync queue, changes made in Xero, and the payables awaiting Xero's run. */}
-      <XeroQueuePanel actor={actor} />
-      <XeroDivergencePanel actor={actor} />
-      <PayablesPanel actor={actor} />
+      {/* Filter bar: AuditViewer's label-over-control pattern from the shared fields. */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div data-shot="billing-monitor-filters" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <SelectField label="Anaesthetist" size="compact" fill="surface" value={view.applied.anaesthetistId ?? ''} onChange={(v) => update({ [PARAM.anaesthetist]: v })} shot="billing-filter-anaesthetist">
+          <option value="">All anaesthetists</option>
+          {view.anaesthetistOptions.map((a) => (
+            <option key={a.id} value={a.id}>{a.name}</option>
+          ))}
+        </SelectField>
+        <SelectField label="Hospital" size="compact" fill="surface" value={view.applied.hospitalId ?? ''} onChange={(v) => update({ [PARAM.hospital]: v })} shot="billing-filter-hospital">
+          <option value="">All hospitals</option>
+          {view.hospitalOptions.map((h) => (
+            <option key={h.id} value={h.id}>{h.name}</option>
+          ))}
+        </SelectField>
+        <FilterDateInput label="From" value={view.applied.fromISO ?? ''} onChange={(v) => update({ [PARAM.from]: v })} shot="billing-filter-from" />
+        <FilterDateInput label="To" value={view.applied.toISO ?? ''} onChange={(v) => update({ [PARAM.to]: v })} shot="billing-filter-to" />
+        <FilterPills
+          ariaLabel="Which lists"
+          value={view.applied.problemsOnly ? 'problems' : 'all'}
+          options={[
+            { value: 'all', label: 'All lists' },
+            { value: 'problems', label: 'Problems only' },
+          ]}
+          onSelect={(v) => update({ [PARAM.problems]: v === 'problems' ? '1' : null })}
+          style={{ paddingBottom: 2 }}
+        />
+        <span className="mono" data-shot="billing-monitor-count" style={{ fontSize: 12.5, color: neutral.mist, paddingBottom: 9 }}>{plural(view.listsInView, 'list')}</span>
+        {filtersOn && (
+          <span style={{ paddingBottom: 7 }}>
+            <TextAction size="sm" flush onClick={() => update({ [PARAM.anaesthetist]: null, [PARAM.hospital]: null, [PARAM.from]: null, [PARAM.to]: null, [PARAM.problems]: null })} shot="billing-filter-clear">
+              Clear filters
+            </TextAction>
+          </span>
+        )}
+      </div>
+      <div style={{ fontSize: 12.5, color: neutral.slate }}>Lists awaiting approval open in Review, where they are authorised.</div>
+      </div>
+
+      {/* The Xero panels (catch-up Phase 37): the sync queue, changes made in Xero, and the payables awaiting Xero's run; the anaesthetist filter narrows them. */}
+      <XeroQueuePanel actor={actor} {...(panelAnaesthetist !== undefined ? { anaesthetistId: panelAnaesthetist } : {})} />
+      <XeroDivergencePanel actor={actor} {...(panelAnaesthetist !== undefined ? { anaesthetistId: panelAnaesthetist } : {})} />
+      <PayablesPanel actor={actor} {...(panelAnaesthetist !== undefined ? { anaesthetistId: panelAnaesthetist } : {})} />
 
       <AaFeePanel />
 
@@ -111,43 +240,264 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
 
       <FormError message={error} />
 
-      {rows.length === 0 ? (
-        <div style={{ fontSize: 13, color: neutral.mist }}>
-          No lists have been authorised yet. Authorise a submitted list and its billing run appears here.
-        </div>
+      {nothingAtAll ? (
+        <EmptyState variant="inline">No lists are awaiting approval or authorised yet.</EmptyState>
+      ) : view.groups.length === 0 ? (
+        <EmptyState variant="inline">
+          <span data-shot="billing-monitor-empty">
+            {view.applied.problemsOnly && view.totals.withProblems === 0 ? 'No problems. Every authorised list has billed, been sent and reached Xero.' : 'No lists match these filters.'}{' '}
+          </span>
+          {filtersOn && (
+            <TextAction size="sm" flush onClick={() => update({ [PARAM.anaesthetist]: null, [PARAM.hospital]: null, [PARAM.from]: null, [PARAM.to]: null, [PARAM.problems]: null })}>
+              Clear filters
+            </TextAction>
+          )}
+        </EmptyState>
       ) : (
-        rows.map((row) => <PipelineCard key={row.listId} row={row} onResolveRetry={resolveAndRetry} />)
+        view.groups.map((group) => (
+          <AnaesthetistGroup
+            key={group.anaesthetistId}
+            group={group}
+            folded={folded.has(group.anaesthetistId) && !group.authorised.some((r) => r.listId === options.listId)}
+            onFold={(fold) => setFolded(group.anaesthetistId, fold)}
+            sort={view.applied.sort}
+            onSort={sortBy}
+            isOpen={isOpen}
+            onToggle={(row) => setOpen([row.listId], !isOpen(row))}
+            onExpandAll={(open) => setOpen(group.authorised.map((r) => r.listId), open)}
+            focusListId={focusListId}
+            onOpenInReview={openInReview}
+            onRetry={retry}
+          />
+        ))
       )}
     </div>
-    </>
   )
 }
 
-function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveRetry: (r: MonitorBookingRow) => void }) {
-  const context = [row.hospitalName ?? row.list.hospitalId, sessionText(row.list.session), dayMicroCap(row.list.dateISO)].join(' · ')
-  return (
-    <div data-shot={`billing-pipeline-${row.listId}`} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>{row.anaesthetistName}</div>
-          <div style={{ fontSize: 12.5, color: neutral.slate }}>{context}</div>
-        </div>
-        <div style={{ fontSize: 12, color: neutral.mist }}>
-          {row.list.billedAtISO !== undefined ? `Run ${hhmm(row.list.billedAtISO)} · ` : ''}
-          {plural(row.invoiceCount, 'invoice')}
-          {row.failedCount > 0 ? ` · ${row.failedCount} failed` : ''}
-        </div>
-      </div>
+// ---------------------------------------------------------------------------
+// One anaesthetist's group: awaiting approval first, then authorised Lists
+// ---------------------------------------------------------------------------
 
-      {/* Pipeline stages */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+const SORT_HEADS: { key: MonitorSortKey | null; label: string; align?: 'right' }[] = [
+  { key: 'date', label: 'Date · session' },
+  { key: 'hospital', label: 'Hospital' },
+  { key: 'status', label: 'Status' },
+  { key: 'invoices', label: 'Invoices', align: 'right' },
+  { key: null, label: 'Sent' },
+  { key: null, label: 'Xero' },
+  { key: null, label: 'Paid in' },
+  { key: null, label: 'Disbursed' },
+  { key: 'run', label: 'Run' },
+]
+
+function AnaesthetistGroup({
+  group,
+  folded,
+  onFold,
+  sort,
+  onSort,
+  isOpen,
+  onToggle,
+  onExpandAll,
+  focusListId,
+  onOpenInReview,
+  onRetry,
+}: {
+  group: MonitorGroup
+  folded: boolean
+  onFold: (fold: boolean) => void
+  sort: { key: MonitorSortKey; dir: 'asc' | 'desc' }
+  onSort: (key: MonitorSortKey) => void
+  isOpen: (row: MonitorAuthorisedRow) => boolean
+  onToggle: (row: MonitorAuthorisedRow) => void
+  onExpandAll: (open: boolean) => void
+  focusListId: string | null
+  onOpenInReview: (listId: string) => void
+  onRetry: (row: MonitorBookingRow) => void
+}) {
+  const headingId = `billing-group-${group.anaesthetistId}-name`
+  const allOpen = group.authorised.length > 0 && group.authorised.every(isOpen)
+  return (
+    <Card
+      shot={`billing-group-${group.anaesthetistId}`}
+      headingId={headingId}
+      flush
+      title={
+        <button
+          type="button"
+          className="aa-ctl"
+          aria-expanded={!folded}
+          onClick={() => onFold(!folded)}
+          style={{ all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+        >
+          <Chevron open={!folded} />
+          {group.name}
+        </button>
+      }
+      aside={
+        <span className="mono" style={{ fontSize: 12.5, fontWeight: 400, color: neutral.slate }}>
+          {`${group.counts.awaiting} awaiting approval · ${group.counts.authorised} authorised · `}
+          <span style={{ color: group.counts.withProblems > 0 ? semantic.warning.onTint : neutral.slate, fontWeight: group.counts.withProblems > 0 ? 600 : 400 }}>{`${group.counts.withProblems} with problems`}</span>
+        </span>
+      }
+      action={
+        !folded && group.authorised.length > 1 ? (
+          <TextAction size="sm" flush onClick={() => onExpandAll(!allOpen)} shot={`billing-group-expand-${group.anaesthetistId}`}>
+            {allOpen ? 'Collapse all' : 'Expand all'}
+          </TextAction>
+        ) : undefined
+      }
+    >
+      {!folded && (
+        <TableShell label={`${group.name}: lists`} density="compact" nested minWidth={960} style={{ margin: '0 12px 12px' }}>
+          <thead>
+            <tr>
+              <Th width={28}>
+                <span style={visuallyHidden}>Expand</span>
+              </Th>
+              {SORT_HEADS.map((h) => (
+                <Th
+                  key={h.label}
+                  {...(h.align !== undefined ? { align: h.align } : {})}
+                  nowrap
+                  {...(h.key !== null
+                    ? { sort: { direction: sort.key === h.key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none', onSort: () => onSort(h.key!) } as const }
+                    : {})}
+                >
+                  {h.label}
+                </Th>
+              ))}
+              <Th>
+                <span style={visuallyHidden}>Action</span>
+              </Th>
+            </tr>
+          </thead>
+          {group.awaiting.length > 0 && (
+            <tbody>
+              {group.awaiting.map((a) => (
+                <AwaitingRow key={a.list.id} row={a} onOpenInReview={onOpenInReview} />
+              ))}
+            </tbody>
+          )}
+          {group.authorised.map((row) => (
+            <AuthorisedRows key={row.listId} row={row} open={isOpen(row)} focused={focusListId === row.listId} onToggle={() => onToggle(row)} onRetry={onRetry} />
+          ))}
+        </TableShell>
+      )}
+    </Card>
+  )
+}
+
+function Chevron({ open }: { open: boolean }) {
+  return open ? <ChevronDown size={16} aria-hidden color={neutral.slate} /> : <ChevronRight size={16} aria-hidden color={neutral.slate} />
+}
+
+function dateSession(list: { dateISO: string; session: string }): string {
+  return `${shortDay(list.dateISO)} · ${sessionText(list.session)}`
+}
+
+function AwaitingRow({ row, onOpenInReview }: { row: MonitorAwaitingRow; onOpenInReview: (listId: string) => void }) {
+  return (
+    <tr data-shot={`billing-awaiting-${row.list.id}`} data-list-id={row.list.id}>
+      <Td />
+      <Td mono nowrap>{dateSession(row.list)}</Td>
+      <Td>{row.hospitalName ?? row.list.hospitalId}</Td>
+      <Td>
+        <Pill tone="neutral" size="sm">Awaiting approval</Pill>
+      </Td>
+      <Td mono align="right" nowrap>{plural(row.bookingCount, 'booking')}</Td>
+      <Td colSpan={4} style={{ color: neutral.mist }}>
+        {row.submittedAtISO !== undefined ? (
+          <>
+            {'Submitted '}
+            <span className="mono">{`${shortDay(row.submittedAtISO)} ${hhmm(row.submittedAtISO)}`}</span>
+          </>
+        ) : (
+          'Submitted, not yet authorised'
+        )}
+      </Td>
+      <Td />
+      <Td align="right" nowrap>
+        <Button variant="outline" size="compact" onClick={() => onOpenInReview(row.list.id)} shot={`billing-open-in-review-${row.list.id}`}>
+          Open in Review
+        </Button>
+      </Td>
+    </tr>
+  )
+}
+
+const LIST_STATUS_TONE: Record<MonitorListStatus, PillTone> = {
+  'Voided in Xero': 'error',
+  'Needs attention': 'warning',
+  Billing: 'success',
+  Complete: 'success',
+}
+
+function xeroCell(row: MonitorAuthorisedRow): ReactNode {
+  if (row.problems.includes('voidedInXero') || row.problems.includes('amendedInXero')) return <span style={{ color: semantic.error.onTint, fontWeight: 600 }}>Flagged</span>
+  if (row.problems.includes('xeroAlert')) return <span style={{ color: semantic.error.onTint, fontWeight: 600 }}>Alert raised</span>
+  if (row.problems.includes('waitingForXero')) return <span style={{ color: semantic.warning.onTint, fontWeight: 600 }}>Waiting for Xero</span>
+  return <span className="mono">{`${row.inXeroCount} of ${row.invoiceCount} in Xero`}</span>
+}
+
+function moneyCounts(row: MonitorAuthorisedRow): { paid: number; disbursed: number; billed: number } {
+  const billed = row.bookingRows.filter((b) => b.invoiceIds.length > 0)
+  return { billed: billed.length, paid: billed.filter((b) => b.paidInAtISO !== undefined).length, disbursed: billed.filter((b) => b.disbursedAtISO !== undefined).length }
+}
+
+function AuthorisedRows({ row, open, focused, onToggle, onRetry }: { row: MonitorAuthorisedRow; open: boolean; focused: boolean; onToggle: () => void; onRetry: (r: MonitorBookingRow) => void }) {
+  const money = moneyCounts(row)
+  const detailId = `billing-detail-${row.listId}`
+  return (
+    <tbody
+      data-shot={`billing-pipeline-${row.listId}`}
+      data-list-id={row.listId}
+      data-problems={row.problems.join(' ')}
+      style={focused ? { outline: `2px solid ${accent.base}`, outlineOffset: -2 } : undefined}
+    >
+      <ClickableRow onOpen={onToggle} style={{ background: open ? neutral.bg : undefined }}>
+        <Td>
+          <button type="button" className="aa-ctl" aria-expanded={open} aria-controls={detailId} aria-label={`${dateSession(row.list)} details`} onClick={onToggle} style={{ all: 'unset', cursor: 'pointer', padding: '0 4px' }}>
+            <Chevron open={open} />
+          </button>
+        </Td>
+        <Td mono nowrap bold>{dateSession(row.list)}</Td>
+        <Td>{row.hospitalName ?? row.list.hospitalId}</Td>
+        <Td>
+          <Pill tone={LIST_STATUS_TONE[row.status]} size="sm">{row.status}</Pill>
+        </Td>
+        <Td mono align="right">{row.invoiceCount}</Td>
+        <Td mono nowrap>{`${row.deliveredCount} of ${row.invoiceCount}`}</Td>
+        <Td nowrap>{xeroCell(row)}</Td>
+        <Td mono nowrap style={{ color: money.paid > 0 ? semantic.success.onTint : neutral.mist }}>{`${money.paid} of ${money.billed}`}</Td>
+        <Td mono nowrap style={{ color: money.disbursed > 0 ? semantic.success.onTint : neutral.mist }}>{`${money.disbursed} of ${money.billed}`}</Td>
+        <Td mono nowrap style={{ color: neutral.slate }}>{row.list.billedAtISO !== undefined ? `${shortDay(row.list.billedAtISO)} ${hhmm(row.list.billedAtISO)}` : 'Not yet run'}</Td>
+        <Td />
+      </ClickableRow>
+      {open && (
+        <tr id={detailId}>
+          <Td colSpan={COLUMNS} style={{ background: neutral.bg, padding: '4px 12px 14px 40px' }}>
+            <PipelineDetail row={row} onRetry={onRetry} />
+          </Td>
+        </tr>
+      )}
+    </tbody>
+  )
+}
+
+/** Today's detail, inside an expanded List: the stage strip, the no-address line and the per-Booking table. */
+function PipelineDetail({ row, onRetry }: { row: MonitorAuthorisedRow; onRetry: (r: MonitorBookingRow) => void }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <ol aria-label="Billing pipeline" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', listStyle: 'none', margin: 0, padding: 0 }}>
         {row.stages.map((stage, i) => (
-          <div key={stage.key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <li key={stage.key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <StageChip stage={stage} />
             {i < row.stages.length - 1 && <span aria-hidden style={{ color: neutral.lineStrong, fontSize: 13 }}>→</span>}
-          </div>
+          </li>
         ))}
-      </div>
+      </ol>
 
       {/* An invoice raised with no invoice address (catch-up Phase 22): the office adds one and sends it from the invoice. */}
       {row.noAddressCount > 0 && row.firstNoAddressInvoiceId !== undefined && (
@@ -159,90 +509,114 @@ function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveR
         </div>
       )}
 
-      {/* Per-booking rows */}
-      <div style={{ overflowX: 'auto', border: `1px solid ${neutral.line}`, borderRadius: radius.ctl }}>
-        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 720 }}>
-          <thead>
-            <tr>
-              {['Booking', 'Patient', 'Status', 'Detail', ''].map((h) => (
-                <th key={h === '' ? 'action' : h} style={headCellStyle}>{h}</th>
-              ))}
+      <TableShell label="Bookings on this list" density="compact" nested minWidth={720} style={{ background: neutral.surface }}>
+        <thead>
+          <tr>
+            <Th>Booking</Th>
+            <Th>Patient</Th>
+            <Th>Status</Th>
+            <Th>Detail</Th>
+            <Th>
+              <span style={visuallyHidden}>Action</span>
+            </Th>
+          </tr>
+        </thead>
+        <tbody>
+          {row.bookingRows.map((bookingRow) => (
+            <tr key={bookingRow.bookingId} data-booking-id={bookingRow.bookingId}>
+              <Td mono>{bookingRow.bookingId}</Td>
+              <Td data-shot={bookingRow.outstandingPriorBalance === true ? 'billing-prior-balance' : undefined}>
+                {bookingRow.patientName}
+                {bookingRow.outstandingPriorBalance === true && (
+                  <Pill
+                    tone="warning"
+                    size="sm"
+                    title="This patient has an open (unpaid) prior episode at the intake check. Open versus genuinely overdue is not yet distinguished: invoices carry a raised date but no due date. A discovery point for AA."
+                    style={{ marginLeft: 8 }}
+                  >
+                    Prior balance
+                  </Pill>
+                )}
+              </Td>
+              <Td>
+                <BookingStatusPill row={bookingRow} />
+              </Td>
+              <Td>
+                <BookingDetail row={bookingRow} />
+              </Td>
+              <Td align="right">
+                {bookingRow.status === 'failed' && (
+                  <Button variant="primary" size="compact" onClick={() => onRetry(bookingRow)} shot={`billing-retry-${bookingRow.bookingId}`}>
+                    Retry
+                  </Button>
+                )}
+              </Td>
             </tr>
-          </thead>
-          <tbody>
-            {row.bookingRows.map((bookingRow) => (
-              <tr key={bookingRow.bookingId}>
-                <td className="mono" style={cellStyle}>{bookingRow.bookingId}</td>
-                <td style={cellStyle} data-shot={bookingRow.outstandingPriorBalance === true ? 'billing-prior-balance' : undefined}>
-                  {bookingRow.patientName}
-                  {bookingRow.outstandingPriorBalance === true && (
-                    <span title="This patient has an open (unpaid) prior episode at the intake check. Open versus genuinely overdue is not yet distinguished: invoices carry a raised date but no due date. A discovery point for AA." style={{ marginLeft: 8, fontSize: 10.5, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: radius.pill, padding: '2px 8px', whiteSpace: 'nowrap' }}>
-                      Prior balance
-                    </span>
-                  )}
-                </td>
-                <td style={cellStyle}><BookingStatusPill row={bookingRow} /></td>
-                <td style={cellStyle}>
-                  {bookingRow.status === 'failed' ? (
-                    <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <span style={{ color: semantic.error.onTint }}>{bookingRow.failure?.message ?? 'Needs manual review.'}</span>
-                      <span data-shot="monitor-retry-note" style={{ fontSize: 12, color: neutral.slate }}>{RETRY_FROM_LOCK_NOTE}</span>
-                    </span>
-                  ) : bookingRow.xeroFlag !== undefined ? (
-                    <span data-shot="monitor-xero-flag" style={{ color: semantic.error.onTint }}>
-                      {bookingRow.xeroFlag.kind === 'voidedInXero' ? 'Voided in Xero · flagged for the office.' : `Amended in Xero · total ${formatCurrency(bookingRow.xeroFlag.xeroTotal)} · flagged for the office.`}
-                    </span>
-                  ) : bookingRow.waitingForXero !== undefined ? (
-                    <span data-shot={bookingRow.waitingForXero.kind === 'journal' ? 'monitor-journal-fault' : 'monitor-waiting-for-xero'} style={{ color: semantic.warning.onTint }}>
-                      {`${bookingRow.waitingForXero.kind === 'journal' ? 'Transfer journal waiting for Xero' : 'Waiting for Xero'} · attempt ${bookingRow.waitingForXero.attempts} · next try `}
-                      <span className="mono">{hhmm(bookingRow.waitingForXero.nextAttemptAtISO)}</span>
-                      {'. The invoice and its ledger pair stand; the Xero sync queue retries it.'}
-                    </span>
-                  ) : bookingRow.status === 'cancelled' ? (
-                    <span style={{ color: neutral.mist }}>Cancelled · excluded from billing.</span>
-                  ) : bookingRow.invoiceIds.length > 0 ? (
-                    <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <MoneyDetail row={bookingRow} />
-                      {bookingRow.prepaidLeftOff !== undefined && <PrepaidLeftOffLine leftOff={bookingRow.prepaidLeftOff} />}
-                    </span>
-                  ) : bookingRow.prepaidLeftOff !== undefined ? (
-                    <PrepaidLeftOffLine leftOff={bookingRow.prepaidLeftOff} />
-                  ) : (
-                    <span style={{ color: neutral.mist }}>No invoice (nothing to bill).</span>
-                  )}
-                </td>
-                <td style={cellStyle}>
-                  {bookingRow.status === 'failed' && (
-                    <button
-                      onClick={() => onResolveRetry(bookingRow)}
-                      style={{ minHeight: 34, padding: '0 12px', borderRadius: radius.ctl, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-                    >
-                      Retry
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </TableShell>
     </div>
   )
 }
 
-const STAGE_TONE: Record<MonitorStage['state'], { background: string; color: string }> = {
-  done: { background: semantic.success.tint, color: semantic.success.onTint },
-  partial: { background: semantic.warning.tint, color: semantic.warning.onTint },
-  failed: { background: semantic.error.tint, color: semantic.error.onTint },
-  pending: { background: neutral.sunken, color: neutral.slate },
+function BookingDetail({ row }: { row: MonitorBookingRow }) {
+  if (row.status === 'failed') {
+    return (
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span style={{ color: semantic.error.onTint }}>{row.failure?.message ?? 'Needs manual review.'}</span>
+        <span data-shot="monitor-retry-note" style={{ fontSize: 12, color: neutral.slate }}>{RETRY_FROM_LOCK_NOTE}</span>
+      </span>
+    )
+  }
+  if (row.xeroFlag !== undefined) {
+    return (
+      <span data-shot="monitor-xero-flag" style={{ color: semantic.error.onTint }}>
+        {row.xeroFlag.kind === 'voidedInXero' ? 'Voided in Xero · flagged for the office.' : `Amended in Xero · total ${formatCurrency(row.xeroFlag.xeroTotal)} · flagged for the office.`}
+      </span>
+    )
+  }
+  if (row.waitingForXero !== undefined) {
+    return (
+      <span data-shot={row.waitingForXero.kind === 'journal' ? 'monitor-journal-fault' : 'monitor-waiting-for-xero'} style={{ color: semantic.warning.onTint }}>
+        {`${row.waitingForXero.kind === 'journal' ? 'Transfer journal waiting for Xero' : 'Waiting for Xero'} · attempt ${row.waitingForXero.attempts} · next try `}
+        <span className="mono">{hhmm(row.waitingForXero.nextAttemptAtISO)}</span>
+        {'. The invoice and its ledger pair stand; the Xero sync queue retries it.'}
+      </span>
+    )
+  }
+  if (row.status === 'cancelled') return <span style={{ color: neutral.mist }}>Cancelled · excluded from billing.</span>
+  if (row.invoiceIds.length > 0) {
+    return (
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <MoneyDetail row={row} />
+        {row.prepaidLeftOff !== undefined && <PrepaidLeftOffLine leftOff={row.prepaidLeftOff} />}
+      </span>
+    )
+  }
+  if (row.prepaidLeftOff !== undefined) return <PrepaidLeftOffLine leftOff={row.prepaidLeftOff} />
+  return <span style={{ color: neutral.mist }}>No invoice (nothing to bill).</span>
 }
 
+const STAGE_TONE: Record<MonitorStage['state'], PillTone> = {
+  done: 'success',
+  partial: 'warning',
+  failed: 'error',
+  pending: 'neutral',
+}
+const STAGE_STATE_TEXT: Record<MonitorStage['state'], string> = {
+  done: 'done',
+  partial: 'in part',
+  failed: 'needs attention',
+  pending: 'not yet',
+}
+
+/** One pipeline stage; its state is in the text for assistive tech, not only in colour and `title`. */
 function StageChip({ stage }: { stage: MonitorStage }) {
-  const tone = STAGE_TONE[stage.state]
   return (
-    <span title={stage.detail} style={{ fontSize: 11.5, fontWeight: 600, borderRadius: radius.pill, padding: '4px 10px', whiteSpace: 'nowrap', ...tone }}>
+    <Pill tone={STAGE_TONE[stage.state]} size="sm" title={stage.detail} data-stage={stage.key} data-stage-state={stage.state}>
       {stage.label}
-    </span>
+      <span style={visuallyHidden}>{`: ${STAGE_STATE_TEXT[stage.state]}. ${stage.detail}`}</span>
+    </Pill>
   )
 }
 
@@ -281,32 +655,33 @@ function MoneyDetail({ row }: { row: MonitorBookingRow }) {
   )
 }
 
+const BOOKING_STATUS: Record<string, { label: string; tone: PillTone }> = {
+  invoiced: { label: 'Invoiced', tone: 'success' },
+  handedOff: { label: 'Handed off', tone: 'success' },
+  partPaid: { label: 'Part paid', tone: 'warning' },
+  paid: { label: 'Paid', tone: 'success' },
+  disbursed: { label: 'Disbursed', tone: 'success' },
+  failed: { label: 'Failed', tone: 'error' },
+  cancelled: { label: 'Cancelled', tone: 'neutral' },
+  pending: { label: 'Pending', tone: 'neutral' },
+}
+
 function BookingStatusPill({ row }: { row: MonitorBookingRow }) {
-  const map: Record<string, { label: string; background: string; color: string }> = {
-    invoiced: { label: 'Invoiced', background: semantic.success.tint, color: semantic.success.onTint },
-    handedOff: { label: 'Handed off', background: semantic.success.tint, color: semantic.success.onTint },
-    partPaid: { label: 'Part paid', background: semantic.warning.tint, color: semantic.warning.onTint },
-    paid: { label: 'Paid', background: semantic.success.tint, color: semantic.success.onTint },
-    disbursed: { label: 'Disbursed', background: semantic.success.tint, color: semantic.success.onTint },
-    failed: { label: 'Failed', background: semantic.error.tint, color: semantic.error.onTint },
-    cancelled: { label: 'Cancelled', background: neutral.sunken, color: neutral.mist },
-    pending: { label: 'Pending', background: neutral.sunken, color: neutral.slate },
-  }
   // A pair waiting for Xero keeps `invoiced`; surface it, and a change flagged in Xero, as its own pill (catch-up Phase 37).
   const it =
     row.prepaidLeftOff?.all === true && row.invoiceIds.length === 0 && row.status !== 'failed'
-      ? { label: 'Prepaid', background: semantic.success.tint, color: semantic.success.onTint }
+      ? { label: 'Prepaid', tone: 'success' as const }
       : row.xeroFlag !== undefined && row.status !== 'failed'
-      ? { label: row.xeroFlag.kind === 'voidedInXero' ? 'Voided in Xero' : 'Amended in Xero', background: semantic.error.tint, color: semantic.error.onTint }
-      : row.waitingForXero !== undefined && row.status !== 'failed'
-      ? row.waitingForXero.alerted
-        ? { label: 'Alert raised', background: semantic.error.tint, color: semantic.error.onTint }
-        : { label: 'Waiting for Xero', background: semantic.warning.tint, color: semantic.warning.onTint }
-      : map[row.status] ?? { label: row.status, background: neutral.sunken, color: neutral.slate }
+        ? { label: row.xeroFlag.kind === 'voidedInXero' ? 'Voided in Xero' : 'Amended in Xero', tone: 'error' as const }
+        : row.waitingForXero !== undefined && row.status !== 'failed'
+          ? row.waitingForXero.alerted
+            ? { label: 'Alert raised', tone: 'error' as const }
+            : { label: 'Waiting for Xero', tone: 'warning' as const }
+          : BOOKING_STATUS[row.status] ?? { label: row.status, tone: 'neutral' as const }
   return (
-    <span style={{ fontSize: 11.5, fontWeight: 600, borderRadius: radius.pill, padding: '3px 9px', whiteSpace: 'nowrap', background: it.background, color: it.color }}>
+    <Pill tone={it.tone} size="sm">
       {it.label}
-    </span>
+    </Pill>
   )
 }
 
@@ -336,3 +711,4 @@ function AaFeePanel() {
     </div>
   )
 }
+

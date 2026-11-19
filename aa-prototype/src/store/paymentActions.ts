@@ -305,6 +305,9 @@ export function deliverPaymentWebhook(api: AppStoreApi, input: PaymentWebhookInp
   }
   if (receiptKeySeen(state, input.idempotencyKey)) return ok({ applied: false })
   let paymentId = Object.values(state.xero.payments).find((p) => p.idempotencyKey === input.idempotencyKey)?.id
+  if (paymentId === undefined && toCents(input.amount) > toCents(xeroBalanceOf(state, input.accRecId))) {
+    return refuse('aboveBalance', 'More than Xero shows owing on this invoice')
+  }
   if (paymentId === undefined) {
     const metas: MutationMeta[] = []
     mutate(api, XERO_SIDE_ACTOR, metas, (s) => {

@@ -81,7 +81,7 @@ view respectively.
 | One List under review | `/admin/review/<listId>` |
 | Invoices | `/admin/invoices` |
 | One invoice document | `/admin/invoices/<invoiceId>` |
-| Billing monitor | `/admin/billing` |
+| Billing monitor | `/admin/billing` (filters in the URL: `?problems=1`, `?anaesthetist=34821`, `?hospital=`, `?from=`, `?to=`) |
 | Ledger (the whole ledger) | `/admin/ledger` |
 | Ledger, one anaesthetist | `/admin/ledger/anaesthetists/<anaesthetistId>` (Dr Souter: `34821`) |
 | Integration monitor | `/admin/integrations` |
@@ -99,7 +99,7 @@ view respectively.
 
 The demo surfaces are `/demo/control`, `/demo/xero`, `/demo/integrations` and `/demo/data`. The
 Xero invoice-pair list is `/demo/xero/invoices`; one pair is
-`/demo/xero/invoices/<accRecId>`.
+`/demo/xero/invoices/<accRecId>`; Xero's bank reconciliation is `/demo/xero/bank`.
 
 Two things worth knowing. The seed is deterministic, so the ids in a URL you copied stay valid across
 a **Reset demo data** — you can bookmark a beat and re-open it after every reset. And a URL that has
@@ -788,13 +788,18 @@ a submitted List: "A hospital feed cannot change a submitted List").
   - Pause on the updated ACCREC and ACCPAY states.
   - Select **View in Dr Souter's account**.
   - Pause on the highlighted **AA-2026-0005** row under **Accounts → Payments**.
-- **Say:** "One demo action is standing in for two real money events: nib pays $152.38 into AA, then
-  AA pays the same $152.38 to Dr Souter. In a real operation those outgoing payments are grouped into
-  a payables run. We keep the paid-in and
-  paid-out states separate underneath, even though this guided path advances both together. The
-  anaesthetist app reads the Billing Engine's own ledger, AA's system of record. Xero mirrors it for
-  receivables and banking."
-- **Expected:** ACCREC shows paid, ACCPAY shows disbursed, and the Web Payments row remains visible
+- **Say:** "One demo action stands in for three real events: nib pays into AA's Xero, the engine
+  learns it by webhook and authorises the payable, then Xero's payables run pays Dr Souter (made in
+  Xero, not by us) and a bill-paid webhook tells the engine, which records the disbursement. We keep
+  the paid-in and paid-out states separate underneath, even though this guided path advances both
+  together. The anaesthetist app reads the Billing Engine's own ledger, AA's system of record. Xero
+  mirrors it for receivables and banking."
+- **Expected:** the pair's head reads **Disbursed** and "Payment and payout complete", with the line
+  "nib's payment of $152.38 landed in Xero and the webhook told the engine; Xero's payables run paid
+  Dr Melanie Souter $152.38 and the bill-paid webhook recorded the disbursement." The ACCREC reads
+  **Paid** (received $152.38, balance $0.00). The ACCPAY reads **Paid**, and its **Paid in Xero**
+  block shows the Xero bill payment (DSB0001, Tue 21 Jul · 08:00, $152.38) and "Billing Engine:
+  disbursement recorded 08:00 by webhook." The Web Payments row remains visible
   with $152.38 received by AA, $152.38 released to you, $152.38 paid to you and **Paid to you**. It does not
   remain under Overdue because it is no longer outstanding. The Ledger pair panel reads "Ledger:
   received $152.38 · released $152.38 · paid out $152.38" beside Xero's same three figures, still
@@ -875,8 +880,21 @@ a submitted List: "A hospital feed cannot change a submitted List").
   you, with due now and awaiting collection; Collected for you; Paid out to you; You owe AA), and
   mobile **Balances** adds one line under Outstanding to you, "Collected $27,220.00 · Paid out
   $27,220.00" and "You owe AA $580.75" on a fresh reset. On a handset (the PWA), **Demo → Payment
-  received · half**, then **Office runs payables** (office stand-in): Collected moves, then Paid out.
-  The stand-in is disabled with "Nothing due to pay out" when nothing is due.
+  received · half**, then **Office runs payables in Xero** (office stand-in): Collected moves, then
+  Paid out, as Xero reports the bill paid. The stand-in is disabled with "Nothing due to pay out" when
+  nothing is due.
+
+### Close: one status for the books
+
+- **Click:** go to **Admin → Day view** (`/admin`) and point at the **Reconciliation** card in the right
+  rail.
+- **Say:** "One status tells the office, and whoever approves the payment run, whether everything that
+  should balance does, and lists anything left to resolve with how long it has been waiting."
+- **Expected:** **Books square**, "The ledger, its Xero mirror and Xero's bank lines all agree." (after
+  Beat 5's allocation, and on a fresh reset). Optional: **Demo actions → Inject unmatched receipt** is
+  on Admin Day too; it turns the card **Out of balance** with "1 item to resolve", the **Ledger** check
+  off by $120.00 and the item (Unmatched receipt "Bank deposit · SOUTER JULY", $120.00) aged 0 days,
+  linked to the Ledger's unmatched receipts. Allocate it on the Ledger and the card squares again.
 
 ### Optional closing moment: finding past work
 
@@ -993,24 +1011,37 @@ actions** on the screen named in its beat.
 - **Click:**
   - Go to **Admin Billing monitor → Demo actions → Trigger billing failure → Run**. It authorises Dr
     Ropata's Thu 16 Jul List with the Xero hand-off set to fail for one Booking.
-  - Pause on the monitor's intro ("Each booking prices from its locked record, taken when the list was
-    authorised. A failed booking is held back on its own while the rest of the list bills.") and on
-    Dr Hannah Ropata's St George's AM List.
-  - On the same screen, **Losa Tuilagi → Resolve & retry**.
+  - Pause on the monitor's intro ("Every list awaiting approval or authorised, grouped by anaesthetist:
+    whether it has been invoiced, sent and mirrored to Xero, and why anything failed. A failed booking
+    blocks only its own invoice, never the rest of the list."), the four tiles (Awaiting approval,
+    Authorised, With problems, Payables due) and the filter bar (Anaesthetist, Hospital, From, To).
+  - Turn on **Problems only** (in the filter bar, or select the **With problems** tile).
+  - In the **Xero sync queue** panel, on the row **Hand off AA-2026-0003**, select **Retry now**.
+  - Optional: on any group, a List still awaiting approval has **Open in Review**; Review opens with
+    **Back to Billing monitor**, which returns with the filters kept. There is no Authorise button on
+    the monitor.
 - **Say:** "The engine prices only from what was locked at authorise, so a Contract edit can no longer
   break a run, and nothing is ever swapped for a default. What can still fail is outside the lock,
   here the hand-off to Xero. A List never fails as a whole: the failed Booking is held back and the
-  rest of the List bills. The office retries once, without touching the Contract."
-- **Expected:** Losa Tuilagi's Booking reads **Handoff failed** with its reason on the row ("Xero
-  handoff failed (simulated fault). The invoice and its ledger pair stand, not yet in Xero. Resolve
-  and retry from the billing monitor."; it read "No ACCREC/ACCPAY pair was created" before catch-up
-  Phase 36, which creates the pair with the invoice); the Ledger's **Not yet in Xero** tile counts her
-  pair until the retry; Hemi Walker's Booking reads **Handed off**, and the List is not
-  failed. **Resolve & retry** hands hers off once: her row reads **Handed off** and her Xero pair
-  appears, with no duplicate invoice. Her invoice (AA-2026-0003, Canterbury Orthopaedic Surgeons,
-  $303.60) and Hemi Walker's (AA-2026-0004, St George's, $221.38) are unchanged. No Contract changes.
-  (The numbers follow Riley's prepayment invoice, AA-2026-0002, raised in Beat 1; skip that approve and
-  they are AA-2026-0002 and AA-2026-0003.)
+  rest of the List bills. Every call to Xero goes through a queue that retries by itself, and the
+  office can retry now, without touching the Contract. The monitor is grouped by anaesthetist and
+  filters down to just the problems, because over a year this list gets large. Lists still waiting for
+  approval show here too, and open in Review, where they are authorised."
+- **Expected:** with **Problems only** on, the count reads "1 list" and only Dr Hannah Ropata's group
+  shows, her Thu 16 Jul · AM St George's List expanded and reading **Needs attention**, its Xero column
+  **Waiting for Xero**, and the stage strip's Xero handoff "in part. 1 waiting for Xero · next try
+  08:02". Losa Tuilagi's row reads **Waiting for Xero** with "Waiting for Xero · attempt 1 · next try
+  08:02. The invoice and its ledger pair stand; the Xero sync queue retries it."; Hemi Walker's reads
+  **Handed off**, and the List is not failed. The queue row reads 1 attempt, next try 08:02, "Xero
+  rejected the call (simulated fault)", Waiting; the Xero line above the tiles reads "Connected · 1
+  waiting for their next try", and the Ledger's **Not yet in Xero** tile counts her pair until the
+  retry. **Retry now** hands hers off once ("Hand off AA-2026-0003: sent to Xero.", and **Sent after
+  waiting (1)**): her row reads **Handed off** and her Xero pair appears, with no duplicate invoice.
+  The filter then reads "0 lists" and "No problems. Every authorised list has billed, been sent and
+  reached Xero." Her invoice (AA-2026-0003, Canterbury Orthopaedic Surgeons, $303.60) and Hemi
+  Walker's (AA-2026-0004, St George's, $221.38) are unchanged. No Contract changes. Left alone, the
+  queue retries it itself when the clock moves on. (The numbers follow Riley's prepayment invoice,
+  AA-2026-0002, raised in Beat 1; skip that approve and they are AA-2026-0002 and AA-2026-0003.)
 
 ### Beat 4: the unmatched queue
 
@@ -1053,13 +1084,19 @@ actions** on the screen named in its beat.
 - **Click:**
   - Go to **Admin Invoices → Hemi Walker · St George's** (the clean-sibling invoice from Beat 3).
   - Open **Demo actions → Payment received · half → Run**.
-  - Go to **Billing monitor** and select its own **Run payables** button.
-  - Back on the invoice, **Demo actions → Payment received · full → Run**, then **Run payables** again.
+  - Go to **Billing monitor**: the payables panel, **Authorised, awaiting Xero's payables run**, is read
+    only and lists the payable. Select its **Run payables in Xero** (badged **Simulated Xero**).
+  - Back on the invoice, **Demo actions → Payment received · full → Run**, then **Run payables in Xero**
+    again.
 - **Say:** "A partial payment authorises a payable for exactly the amount received, to the cent; the
-  rest stays outstanding on the invoice. Two payables runs across a part-then-balance payment prove
-  there is no double payment."
-- **Expected:** the payable authorises exactly the amount received; each run pays exactly what arrived,
-  and the total paid out equals the invoice total, never more. The Ledger's Payables due rises with
+  rest stays outstanding on the invoice. The payment to the anaesthetist is made in Xero; we record and
+  track it. Two payables runs across a part-then-balance payment prove there is no double payment."
+- **Expected:** the payable authorises exactly the amount received; the panel lists it ("1 payable due
+  · $110.69", Dr Ropata, AA-2026-0004, bill AA-2026-0004-P). **Run payables in Xero** empties the list
+  ("No payables are awaiting the payables run.") with "Xero paid 1 bill ($110.69); the Billing Engine
+  recorded 1 disbursement from the bill-paid webhooks.": each disbursement is recorded as Xero reports
+  the bill paid. Each run pays exactly what arrived, and the total paid out equals the invoice total,
+  never more. The Ledger's Payables due rises with
   each part payment and returns to $0.00 after each run: $110.69 after the half (Hemi Walker's
   AA-2026-0004, $221.38), $0.00 after the first run, $110.69 after the rest, $0.00 after the second.
 
@@ -1098,8 +1135,9 @@ $1,380.00 held since Beat 1) to Dr Souter.
     and "How this posts in Xero is still to be confirmed".
   - Optional: **Admin Invoices → INV0001** shows Payee "AA Holding account" and "Transfer journal
     MJ-0001".
-  - Back on the **Billing monitor**, select **Run payables**: it pays the transferred $1,380.00 (1
-    payable) to Dr Souter, never the AA Holding account's own payable.
+  - Back on the **Billing monitor**, select **Run payables in Xero**: Xero pays the transferred
+    $1,380.00 (1 payable) to Dr Souter, never the AA Holding account's own payable, and the engine
+    records the disbursement from the bill-paid webhook.
   - Optional: **Anaesthetist Web App → Accounts → Payments** (`/web/accounts/payments`): Nair's
     prepayment read "Held until the List is authorised" before, and now reads **Paid to you**.
 - **Say:** "The patient paid before the procedure, but the money was held, not paid to Dr Souter. When the office
@@ -1113,7 +1151,83 @@ $1,380.00 held since Beat 1) to Dr Souter.
   ACCREC or payment, and GST does not move (her septoplasty bills on its own invoice as usual). On the
   Ledger the transfer is its own row (Kind Transfer, Receivable "None", "From AA-2026-0001", Payee Dr
   Souter); the AA Holding account tile falls and Payables due rises by the same amount until Run
-  payables, and the ledger stays in balance.
+  payables in Xero, and the ledger stays in balance.
+
+### Optional asides: Xero resilience
+
+Three short asides for a technical or finance audience. Run them after Beats 3 and 5 (or at the end of
+S4): the outage aside authorises a List, which takes the next invoice number, and the remittance pays
+seeded invoices. Each names its screen and its **Demo actions** entry.
+
+**Xero outage** (Billing monitor, Dr Mark Delaney's Fri 17 Jul AM List at St George's)
+
+- **Click:**
+  - On **Admin → Billing monitor**, **Demo actions → Simulate Xero outage → Run**. The Xero line above
+    the tiles reads "Xero unavailable since 08:00 · 0 waiting" (the time is the demo clock's).
+  - Set **Anaesthetist** to **Dr Mark Delaney**. His Fri 17 Jul · AM List at St George's (Alan Prentice,
+    TURP, $297.00) reads **Awaiting approval**; select **Open in Review**, then **Authorise for billing**
+    and confirm: "1 invoice raised. 1 emailed, 0 to post."
+  - **Back to Billing monitor** (the Delaney filter is kept). Then the clock: **+15 min**.
+  - **Demo actions → Restore Xero → Run**.
+- **Say:** "Xero going down never stops the office. Authorising and invoicing carry on; every call to
+  Xero is written to a queue first and retried with growing gaps. When Xero comes back the queue drains
+  in order, with nothing sent twice."
+- **Expected:** after authorising, the List reads **Needs attention** with **Waiting for Xero**; the
+  **Xero sync queue** has its hand-off row ("Xero API unavailable (simulated outage)", Waiting, next try
+  two minutes on) and the Xero line reads "1 waiting". After **+15 min** the row shows attempt 2,
+  **Retrying**, and a later next try. **Restore Xero** reports "Xero is back. The queue sent 1 waiting
+  call in order."; the line reads **Connected**, the queue "Nothing is waiting for Xero." with **Sent
+  after waiting (1)**, and the List reads **Complete**, "1 of 1 in Xero".
+
+**A void or edit made in Xero** (Xero simulation, Dr Souter's seeded AA-2026-H05 and AA-2026-H06)
+
+- **Click:**
+  - **Demo: Billing Monitor & Xero → Invoices → AA-2026-H05** (Christchurch Public, $1,410.00), then
+    **Demo actions → Void this invoice in Xero → Run**. Optionally, on **AA-2026-H06** (Canterbury
+    Orthopaedic Surgeons, $1,930.00), **Demo actions → Edit this invoice's total in Xero → Run**.
+  - **Admin → Billing monitor → Demo actions → Run reconciliation poll → Run**.
+  - In the **Changed directly in Xero** panel, select **Resolve** on AA-2026-H05, pick an outcome, add a
+    note and **Record resolution**.
+- **Say:** "Someone at AA voided or edited an invoice directly in Xero. The engine finds out at the
+  daily reconciliation poll and flags it for the office; the ledger keeps what it issued, and nothing
+  moves until someone decides."
+- **Expected:** the void reads "AA-2026-H05 is voided in Xero. The engine does not know yet: run the
+  reconciliation poll (or Next day) and it is flagged on the Billing monitor." and the pair reads
+  **Voided**; the edit reads "AA-2026-H06 now totals $1,910.00 in Xero" ($20.00 lower) and the pair's
+  Ledger panel reads **Differs from the ledger**. The poll reports "Reconciliation poll applied 1 missed
+  payment, flagged 2 invoices changed directly in Xero." (the missed payment is a seeded one on
+  AA-2026-H02, $1,240.00, so Payables due rises by that; if a clock jump has already run the daily
+  poll, it reads no missed payment). The panel lists AA-2026-H05 "Voided in Xero"
+  against "Receivable open, $1,410.00", and AA-2026-H06 "Amended in Xero · total $1,910.00" against
+  "Receivable open, $1,930.00". Resolve offers "Re-issue it in Xero as the engine issued it", "Credit
+  it in the engine" or "No action", needs a note, and says "Recording a resolution moves no money: the
+  ledger keeps the amount the engine issued." and "Provisional: the policy for each mismatch is to be
+  agreed with AA." Admin Day's **Reconciliation** card reads **Out of balance**, the **Ledger against
+  Xero** check off by the flagged amounts, until each is resolved.
+
+**Bulk hospital remittance** (Xero simulation, Invoices and Bank reconciliation)
+
+Run it after the S3 and S4 money beats, or reset afterwards: it pays two of Dr Souter's seeded backdrop
+invoices (AA-2026-H01, $845.00, and AA-2026-H03, $520.50), which lowers the outstanding figures those
+beats quote.
+
+- **Click:**
+  - **Demo: Billing Monitor & Xero → Invoices → Demo actions → Simulate bulk hospital remittance → Run**.
+  - Open the **Bank reconciliation** tab (`/demo/xero/bank`). Under **Unmatched items**, the line
+    quoting AA-2026-H40: **Choose an invoice → AA-2026-H04 · $980.00 open**, then **Match in Xero**.
+  - Optional: before matching, Admin Day's **Reconciliation** card shows the bank line.
+- **Say:** "Hospitals pay many invoices in one deposit. Bulk remittances are matched in Xero, not by
+  the engine: Xero's remittance add-on matches each line by the invoice number it quotes, and the engine
+  learns each payment by the normal webhook. A line Xero cannot match waits for the office in Xero."
+- **Expected:** "St George's remittance landed in Xero: 2 lines matched by invoice number ($1,365.50),
+  and the engine learned each payment by webhook. 1 line could not be matched and waits in Bank
+  reconciliation." The tab reads "Bank reconciliation (1 unmatched)": a $2,345.50 St George's deposit,
+  AA-2026-H01 $845.00 and AA-2026-H03 $520.50 **Matched by the remittance add-on**, and a $980.00 line
+  quoting AA-2026-H40, "which matches no invoice". The Reconciliation card reads **Out of balance**,
+  **Xero bank lines** off by $980.00 ("Bank line quoting AA-2026-H40"). **Match in Xero** reads
+  "Matched in Xero: $980.00 paid AA-2026-H04, and the payment webhook told the Billing Engine, which
+  recorded the receipt."; the line reads **Matched by the office**, "Every line is matched.", and the
+  card **Books square**. Running the action again is refused ("Already received").
 
 **Discovery points:** settled: billing failure is per Booking, and a List never fails as a whole
 (OQ-05); still to confirm with AA: exactly which fields are frozen at authorise (US-15.0.3: AR-58 2.8
@@ -1127,8 +1241,8 @@ intake); and how a List holding one reads (counted apart, no prompt or block on 
 For the prepayment beats: still to confirm whether the prepayment
 invoice names the anaesthetist (OQ-120); still to confirm when the AA Holding account releases the
 money (OQ-125: the prototype transfers it when the office authorises the List; Greg said "confirmed and
-submitted"); payments, the transferred prepayment's included, are made in Xero, and Run payables
-stands in for that here (OQ-111); and whether a prepayment's payable counts as a BCTI (the prototype
+submitted"); payments, the transferred prepayment's included, are made in Xero, and the badged
+**Run payables in Xero** stands in for Xero's payables run here (OQ-111); and whether a prepayment's payable counts as a BCTI (the prototype
 leaves it out, provisional, beside the BCTI granularity point in S3, OQ-29). Stated as facts: the prepaid price is never editable by the
 anaesthetist and is kept (OQ-96, OQ-104), the prepaid Procedure is left off the final invoice (OQ-116),
 and a Contract changed after sending is handled as a cancellation, built in Phase 41 (OQ-119). One

@@ -225,6 +225,9 @@ export const ACTION_LABELS: Record<string, string> = {
   'xero.amendedInXero': 'Invoice total edited in Xero',
   'xero.divergenceFlagged': 'Change made in Xero flagged',
   'xero.divergenceResolved': 'Change made in Xero resolved',
+  'xero.remittanceReceived': 'Bulk remittance received in Xero',
+  'xero.bankLineUnmatched': 'Remittance line left for bank reconciliation',
+  'xero.bankLineMatched': 'Remittance line matched in Xero',
 
   // --- The internal ledger (catch-up Phase 36) ----------------------------
   'ledger.pairCreated': 'Ledger pair created',

@@ -355,9 +355,13 @@ organisational assumption.
 - Monitor invoices generated and sent by the Billing Engine (the Billing monitor's **Sent or to post**
   stage), resend one, and fix a missing invoice address.
 - Reconcile payments into AA.
-- Handle partial payments and unmatched remittances.
+- Handle partial payments, and match any bulk remittance line Xero could not match (in Xero's bank
+  reconciliation, not in the Billing Engine).
 - Confirm the related anaesthetist payable becomes available for a payables run.
-- Run disbursements and distinguish paid-in from paid-out.
+- Run the payables in Xero (the Billing Engine records each disbursement when Xero reports the bill
+  paid) and distinguish paid-in from paid-out.
+- Watch the **Reconciliation** card on Admin Day, and on the Billing monitor the Xero sync queue and
+  any invoice changed directly in Xero.
 - Manage individual Xero contact archiving at scale.
 - Maintain AA fee settings and run the monthly fee invoices (AA's own fee to each anaesthetist, never
   deducted from a payment to them).
@@ -373,7 +377,10 @@ the monthly fee invoice run and the anaesthetist's AA fees tab followed in catch
 catch-up Phase 22 the run sends each invoice itself (emailed, or marked To post), in the
 anaesthetist's name with AA as agent, and a fee can be split on the Booking. Since catch-up Phase 36
 the Billing Engine's own ledger is AA's system of record (every invoice a receivable and payable pair,
-Xero mirroring it), with the Admin Ledger screen's in-balance view and out-of-balance list.
+Xero mirroring it), with the Admin Ledger screen's in-balance view and out-of-balance list. Since
+catch-up Phase 37 the payables run is made in Xero and the engine records each disbursement by webhook
+or poll; every call to Xero waits in a sync queue that retries through an outage; voids and edits made
+in Xero are flagged at the poll; and Admin Day's Reconciliation card says whether everything squares.
 
 ## External actors, not prototype login personas
 

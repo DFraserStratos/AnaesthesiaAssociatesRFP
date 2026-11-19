@@ -6,6 +6,7 @@ import type { Actor, OpenWarningRow } from '../../../store'
 import { WarningsToDo } from './WarningsToDo'
 import { NeedsInvoiceDestinationCard } from './NeedsInvoiceDestinationCard'
 import { PrepaymentsRailCard } from './PrepaymentsRailCard'
+import { ReconciliationCard } from './ReconciliationCard'
 import { DraftListsCard } from './draftLists/DraftListsCard'
 import { NotificationsCard } from './NotificationsCard'
 import type { NotificationTarget } from '../../../store'
@@ -58,6 +59,8 @@ export function RightRail(props: RightRailProps) {
           Lists (31), the shared notification pool (32), notes, Awaiting review;
           "Needs an invoice destination" (20) under the To-do. */}
       <WarningsToDo rows={props.todoRows} actor={props.actor} onOpenBooking={props.onOpenBooking} {...(props.onOpenConflicts !== undefined ? { onOpenConflicts: props.onOpenConflicts } : {})} />
+      {/* Whether the books are square, beside the To-do (catch-up Phase 37; US-13.2.4). */}
+      <ReconciliationCard />
       {/* Upcoming pre-payments, under the To-do (catch-up Phase 27, US-06.3.2). */}
       <PrepaymentsRailCard onOpenBooking={props.onOpenBooking} {...(props.onOpenInvoices !== undefined ? { onOpenInvoices: props.onOpenInvoices } : {})} />
       <NeedsInvoiceDestinationCard onOpenBooking={props.onOpenBooking} />

@@ -2,19 +2,31 @@ import { useMemo, useState } from 'react'
 import { AlertTriangle, ArrowRight, ChevronLeft, ExternalLink, Info } from 'lucide-react'
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { DemoSurface } from './DemoSurface'
-import { OFFICE_ACTOR, deliverPaymentWebhook, disbursePayable, useAppStore } from '../../store'
-import { dateTimeMicroCap, dayMicroCap, formatCurrency } from '../../shared/format'
+import {
+  OFFICE_ACTOR,
+  XERO_STAFF_ACTOR,
+  bankLineMatchRefusal,
+  deliverPaymentWebhook,
+  xeroBalanceOf,
+  disbursePayable,
+  matchBankLineInXero,
+  unmatchedBankLines,
+  useAppStore,
+} from '../../store'
+import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm } from '../../shared/format'
 import { HELD_UNTIL_AUTHORISED, LEAVES_ONLY_BY_SYSTEM, RELEASE_TRIGGER_CAPTION } from '../../domain/billing/prepayHolding'
 import { transferOfPair } from '../../domain/billing/ledger'
+import { toCents } from '../../domain/billing/money'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
-import type { XeroContact } from '../../domain/types'
 import { APP_CONFIG } from '../../shell/appConfig'
-import { xeroInvoicePairViews, type XeroInvoicePairView } from './xeroPairView'
+import { xeroInvoicePairViews, type XeroBillPaymentView, type XeroInvoicePairView } from './xeroPairView'
 import { recordFeePaymentFor } from '../../shared/demoTriggers'
 import { aaFeeMonthLabel } from '../../domain/billing/aaFee'
 import { AA_HOLDING_ACCOUNT } from '../../domain/billing/prepayment'
 import { BCTI_DOCUMENT_NAME, GST_NUMBER_NOT_HELD, OQ29_CAPTION, OQ29_PILL, formatGstNumber } from '../../domain/billing/invoicePresentation'
-import { Pill } from '../../shared/ui'
+import { Button, Card, EmptyState, FormError, Notice, Pill, ResultLine, SelectField } from '../../shared/ui'
+import { TableShell as KitTableShell, Td as KitTd, Th as KitTh } from '../../shared/table'
+import type { XeroAccRec, XeroBankLine, XeroContact, XeroRemittance } from '../../domain/types'
 
 /**
  * The simulated Xero organisation. Contacts are a read-only reference table;
@@ -28,6 +40,7 @@ export function DemoXero() {
   const schedule = useAppStore((s) => s.schedule)
   const masters = useAppStore((s) => s.masters)
   const settings = useAppStore((s) => s.settings)
+  const audit = useAppStore((s) => s.audit)
   const location = useLocation()
   const { accRecId } = useParams<{ accRecId: string }>()
 
@@ -36,8 +49,8 @@ export function DemoXero() {
     [xero.contacts],
   )
   const pairs = useMemo(
-    () => xeroInvoicePairViews({ xero, billing, schedule, masters }),
-    [xero, billing, schedule, masters],
+    () => xeroInvoicePairViews({ xero, billing, schedule, masters, audit }),
+    [xero, billing, schedule, masters, audit],
   )
   const selectedPair = useMemo(
     () => (accRecId !== undefined ? pairs.find((pair) => pair.accRec.id === accRecId) : undefined),
@@ -49,6 +62,8 @@ export function DemoXero() {
   }
 
   const invoicesTab = location.pathname.startsWith('/demo/xero/invoices')
+  const bankTab = location.pathname.startsWith('/demo/xero/bank')
+  const unmatchedCount = unmatchedBankLines({ xero }).length
   const vs = settings.volumeStory
   const activePatientContacts = contacts.filter((c) => c.type !== 'organisation' && !c.archived).length
   const archivedContacts = contacts.filter((c) => c.archived).length
@@ -60,6 +75,16 @@ export function DemoXero() {
       maxWidth={1440}
       subtitleMaxWidth={820}
     >
+      {settings.xeroOutage !== undefined && (
+        <Notice tone="warning" title="Xero API unavailable to the Billing Engine (simulated)." shot="xero-outage-banner">
+          <div>
+            Payments and bill payments still land here; the engine's calls wait in its queue.
+            <span style={{ display: 'block', marginTop: 2 }}>
+              Unavailable since <span className="mono">{dateTimeMicroCap(settings.xeroOutage.sinceISO)}</span>
+            </span>
+          </div>
+        </Notice>
+      )}
       <Callout tone="info" title="No personal information in Xero" shot="xero-nhi-policy">
         Xero holds no NHI and no other personal information about a patient or a person paying for one.
         Each such contact is known to Xero only by a hidden internal ID in ContactNumber, shown as its
@@ -69,15 +94,20 @@ export function DemoXero() {
       <Callout tone="warn" title="Duplicate-invoice-number-prevention (mandated Xero org setting)" shot="xero-duplicate-number-policy">
         The RFP requires the Xero organisation setting that prevents duplicate invoice numbers, so the
         Billing Engine's unique InvoiceNumber can be the reliable matching key for remittance
-        reconciliation. Configuring this in the AA Xero org is an open item to confirm in discovery.
+        reconciliation, which Xero's bank reconciliation and remittance add-on do, not the Billing Engine
+        (see{' '}<Link to="/demo/xero/bank" style={inlineLinkStyle}>Bank reconciliation</Link>). Configuring this
+        in the AA Xero org is an open item to confirm in discovery.
       </Callout>
 
       <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${neutral.line}` }}>
-        <TabLink active={!invoicesTab} to="/demo/xero">Contacts ({contacts.length})</TabLink>
+        <TabLink active={!invoicesTab && !bankTab} to="/demo/xero">Contacts ({contacts.length})</TabLink>
         <TabLink active={invoicesTab} to="/demo/xero/invoices">Invoices ({pairs.length})</TabLink>
+        <TabLink active={bankTab} to="/demo/xero/bank">Bank reconciliation ({unmatchedCount} unmatched)</TabLink>
       </div>
 
-      {!invoicesTab ? (
+      {bankTab ? (
+        <BankReconciliation />
+      ) : !invoicesTab ? (
         <ContactsTable contacts={contacts} />
       ) : selectedPair !== undefined ? (
         selectedPair.kind === 'aaFee' ? <FeePairDetail key={selectedPair.accRec.id} pair={selectedPair} /> : <PairDetail key={selectedPair.accRec.id} pair={selectedPair} />
@@ -85,7 +115,7 @@ export function DemoXero() {
         <InvoicesTable pairs={pairs} />
       )}
 
-      {selectedPair === undefined && (
+      {selectedPair === undefined && !bankTab && (
         <Callout tone="info" title="Contact archiving & volume">
           Xero has a soft limit of about {vs.softLimit.toLocaleString('en-NZ')} contacts. AA raises roughly
           {' '}{vs.invoicesPerYear.toLocaleString('en-NZ')} invoices a year, and about {vs.oneTimePct}% of patients are one-time,
@@ -232,6 +262,7 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
   const accPayId = pair.accPay?.id ?? pair.ledger.accPayId
   const [settlementMessage, setSettlementMessage] = useState<string | null>(null)
   const fullySettled = pair.accRec.status === 'paid' && pair.accPay?.status === 'paid'
+  const voided = pair.accRec.status === 'voided'
   const canOpenWebAccount =
     pair.accRec.amountReceived > 0 &&
     pair.ledger.anaesthetistId === APP_CONFIG.web.persona.anaesthetistId
@@ -248,10 +279,13 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
     // Three events in one click (catch-up Phase 37): the payer pays into AA's Xero and the webhook tells the
     // engine; Xero's payables run pays the bill; the bill-paid webhook tells the engine, which records it.
     let queuedPayment = false
-    if (pair.accRec.balance > 0) {
+    // What Xero shows owing less any payment it holds that the engine has not recorded yet (an outage's), so a second click never overpays.
+    const owing = xeroBalanceOf(useAppStore.getState(), pair.accRec.id)
+    const paidIn = owing > 0
+    if (paidIn) {
       const payment = deliverPaymentWebhook(useAppStore, {
         accRecId: pair.accRec.id,
-        amount: pair.accRec.balance,
+        amount: owing,
         idempotencyKey: `DEMO-INVOICE-SETTLEMENT-${pair.accRec.id}`,
       })
       if (!payment.ok) {
@@ -279,12 +313,21 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
     }
 
     const who = pair.accPay.contact?.name ?? 'the anaesthetist'
+    const payer = pair.accRec.contact?.type === 'organisation' ? `${pair.accRec.contact.name}'s` : "The payer's"
+    // The two Xero events and the bill-paid webhook, named (the payment half only when this click paid it in).
+    const paymentPart = paidIn ? `${payer} payment of ${formatCurrency(owing)} landed in Xero and the webhook told the engine; ` : ''
+    const payoutPart =
+      payout.value.disbursedCount > 0
+        ? `Xero's payables run paid ${who} ${formatCurrency(payout.value.totalPaid)} and the bill-paid webhook recorded the disbursement.`
+        : `Xero's payables run paid ${who} ${formatCurrency(payout.value.totalPaid)}; the bill-paid webhook's sync waits in the Billing Engine's Xero sync queue.`
     setSettlementMessage(
       payout.value.billsPaid === 0
-        ? 'Done. This customer payment and the bill to the anaesthetist were already complete.'
-        : payout.value.disbursedCount > 0
-          ? `Done. The customer payment is recorded, ${formatCurrency(payout.value.totalPaid)} has been paid to ${who} in Xero's payables run, and the bill-paid webhook told the Billing Engine, which recorded the disbursement.`
-          : `Done. ${formatCurrency(payout.value.totalPaid)} has been paid to ${who} in Xero; recording the disbursement waits in the Billing Engine's Xero sync queue.`,
+        ? paidIn
+          ? `${paymentPart}nothing is authorised to pay ${who} yet.`
+          : 'Done. This customer payment and the bill to the anaesthetist were already complete.'
+        : paidIn
+          ? `${paymentPart}${payoutPart}`
+          : payoutPart,
     )
   }
 
@@ -306,7 +349,8 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 9 }}>
           <StatusChip recStatus={pair.accRec.status} payStatus={pair.accPay?.status} />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <button
+            {/* Hidden on a voided pair: Xero takes no payment on a voided invoice (catch-up Phase 37). */}
+            {!voided && <button
               type="button"
               onClick={settleInvoice}
               disabled={pair.accPay === undefined || fullySettled || transferred}
@@ -333,7 +377,7 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
                 : pair.accRec.status === 'paid'
                   ? `Pay ${pair.accPay?.contact?.name ?? 'anaesthetist'} now`
                   : 'Simulate payment and payout'}
-            </button>
+            </button>}
             {canOpenWebAccount && (
               <Link
                 to={`/web/accounts/payments?invoice=${encodeURIComponent(pair.accRec.invoiceNumber)}`}
@@ -656,6 +700,16 @@ function AccRecCard({ pair }: { pair: XeroInvoicePairView }) {
       title={rec.invoiceNumber}
       status={<RecordStatus status={rec.status} />}
     >
+      {rec.status === 'voided' && (
+        <div data-shot="xero-accrec-voided" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12.5, color: neutral.slate }}>
+          <Pill tone="error" size="sm">Voided in Xero</Pill>
+          <span>
+            AA staff voided it directly in Xero
+            {rec.voidedAtISO !== undefined && <> at <span className="mono">{dateTimeMicroCap(rec.voidedAtISO)}</span></>}.
+            The Billing Engine learns of it at the next reconciliation poll.
+          </span>
+        </div>
+      )}
       <IdentifierPair invoiceNumber={rec.invoiceNumber} reference={rec.reference} shot="xero-invoice-identifiers">
         {pair.kind === 'procedure'
           ? 'InvoiceNumber is the unique key hospitals and insurers quote on remittances, so automated remittance matching keys on it. Reference is for internal tracing only; Xero does not enforce its uniqueness.'
@@ -699,7 +753,17 @@ function AccRecCard({ pair }: { pair: XeroInvoicePairView }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'flex-end', borderTop: `1px solid ${neutral.line}`, paddingTop: 10 }}>
         <TotalLine label="Subtotal" value={rec.subtotal} />
         <TotalLine label="GST" value={rec.gst} />
-        <TotalLine label="Total" value={rec.total ?? rec.amountDue} strong />
+        {rec.amendedAtISO !== undefined ? (
+          <>
+            <TotalLine label="Issued total" value={rec.total} />
+            <div data-shot="xero-accrec-amended" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <Pill tone="error" size="sm">Amended in Xero <span className="mono">{hhmm(rec.amendedAtISO)}</span></Pill>
+              <TotalLine label="Total in Xero" value={rec.amountDue} strong />
+            </div>
+          </>
+        ) : (
+          <TotalLine label="Total" value={rec.total ?? rec.amountDue} strong />
+        )}
       </div>
 
       <MoneyGrid>
@@ -707,6 +771,15 @@ function AccRecCard({ pair }: { pair: XeroInvoicePairView }) {
         <MoneyStat label="Received" value={rec.amountReceived} />
         <MoneyStat label="Balance" value={rec.balance} />
       </MoneyGrid>
+      {rec.landedAwaitingSync !== undefined && (
+        <Notice tone="warning" shot="xero-accrec-landed-awaiting-sync">
+          <span>
+            {'Payment landed in Xero: '}
+            <span className="mono">{formatCurrency(rec.landedAwaitingSync)}</span>
+            {". Xero is unavailable to the Billing Engine, so the payment's sync waits in its queue; Received updates when it lands."}
+          </span>
+        </Notice>
+      )}
     </RecordCard>
   )
 }
@@ -749,6 +822,8 @@ function AccPayCard({ pair }: { pair: XeroInvoicePairView }) {
         <MoneyStat label="Ready to disburse" value={pay.remainingAuthorised} />
       </MoneyGrid>
 
+      {!pay.held && <BillPayments payments={pay.billPayments} />}
+
       {/* A payable to the AA Holding account (catch-up Phase 27a): held, and not counted as a BCTI (OQ-29 provisional). */}
       {pay.held && (
         <div data-shot="xero-accpay-held" style={{ fontSize: 12.5, color: neutral.slate, borderTop: `1px solid ${neutral.line}`, paddingTop: 14 }}>
@@ -775,6 +850,259 @@ function AccPayCard({ pair }: { pair: XeroInvoicePairView }) {
         </div>
       )}
     </RecordCard>
+  )
+}
+
+/**
+ * The ACCPAY's two sides (catch-up Phase 37; US-09.2.4): what Xero paid (its
+ * bill payments) kept apart from what the Billing Engine has recorded of each,
+ * so a missed bill-paid webhook shows as a gap the next poll closes.
+ */
+function BillPayments({ payments }: { payments: XeroBillPaymentView[] }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, borderTop: `1px solid ${neutral.line}`, paddingTop: 14 }}>
+      <div data-shot="xero-accpay-paid-in-xero" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <SectionLabel>Paid in Xero</SectionLabel>
+        {payments.length === 0 ? (
+          <span style={{ fontSize: 12.5, color: neutral.mist }}>No bill payment yet. Xero&apos;s payables run pays the bill once it is authorised.</span>
+        ) : (
+          payments.map((p) => (
+            <div key={p.id} style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr) auto', gap: 12, alignItems: 'baseline', fontSize: 13 }}>
+              <span className="mono" title="Xero bill payment" style={{ fontWeight: 700 }}>{p.id}</span>
+              <span className="mono" style={{ color: neutral.slate }}>{dateTimeMicroCap(p.atISO)}</span>
+              <span className="mono" style={{ fontWeight: 700 }}>{formatCurrency(p.amount)}</span>
+            </div>
+          ))
+        )}
+      </div>
+      {payments.length > 0 && (
+        <div data-shot="xero-accpay-engine-detection" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {payments.map((p) => (
+            <Notice key={p.id} tone={p.engine.state === 'recorded' ? 'success' : 'warning'} data-engine-state={p.engine.state}>
+              <span>
+                {payments.length > 1 && <span className="mono" style={{ fontWeight: 700 }}>{p.id} </span>}
+                {engineDetectionText(p.engine)}
+              </span>
+            </Notice>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function engineDetectionText(engine: XeroBillPaymentView['engine']): React.ReactNode {
+  if (engine.state === 'queued') return "Billing Engine: the bill-paid webhook's sync waits in its Xero sync queue."
+  if (engine.state === 'notDetected') return 'Billing Engine: not yet detected; the next poll picks it up.'
+  const by = engine.detectedBy === 'webhook' ? 'by webhook' : 'by the poll'
+  return engine.recordedAtISO !== undefined
+    ? <>Billing Engine: disbursement recorded <span className="mono">{hhmm(engine.recordedAtISO)}</span> {by}.</>
+    : <>Billing Engine: disbursement recorded {by}.</>
+}
+
+/**
+ * Xero's bank reconciliation (catch-up Phase 37; US-10.2.4): each bulk
+ * remittance with its lines as Xero's remittance add-on matched them, and the
+ * lines it could not match, which office staff match here, in Xero. A match
+ * pays the invoice in Xero and reaches the Billing Engine by the ordinary
+ * payment webhook; the engine itself never matches a remittance.
+ */
+function BankReconciliation() {
+  const xero = useAppStore((s) => s.xero)
+  const remittances = useMemo(
+    () => Object.values(xero.remittances).sort((a, b) => a.receivedAtISO.localeCompare(b.receivedAtISO) || a.id.localeCompare(b.id)),
+    [xero.remittances],
+  )
+  const unmatched = useMemo(() => unmatchedBankLines({ xero }), [xero])
+  const [result, setResult] = useState<string | null>(null)
+
+  return (
+    <div data-shot="xero-bank-reconciliation" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ fontSize: 12.5, color: neutral.slate, maxWidth: 820 }}>
+        Bulk deposits as they land in AA&apos;s Xero bank account, each with the remittance advice the payer sent.
+        Xero&apos;s remittance add-on matches each line to an invoice by the InvoiceNumber it quotes.
+      </div>
+      <Callout tone="info" title="Matched in Xero, not by the Billing Engine" shot="xero-bank-scope">
+        The Billing Engine does not match bulk remittances. Xero&apos;s bank reconciliation and remittance add-on do,
+        keyed on the unique InvoiceNumber; the engine learns each matched payment through the normal payment
+        webhook (US-10.2.4).
+      </Callout>
+
+      {remittances.length === 0 ? (
+        <EmptyState variant="card" title="No remittance yet" shot="xero-bank-empty">
+          &quot;Simulate bulk hospital remittance&quot; in Demo actions brings one in.
+        </EmptyState>
+      ) : (
+        <>
+          {remittances.map((r) => (
+            <RemittanceCard key={r.id} remittance={r} xero={xero} />
+          ))}
+
+          <section data-shot="xero-bank-unmatched" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: neutral.ink }}>
+              Unmatched items · for office staff, handled in Xero
+            </h2>
+            <div style={{ fontSize: 12.5, color: neutral.slate, maxWidth: 820 }}>
+              An unmatched line is money in Xero&apos;s bank reconciliation, not an unmatched receipt in the Billing
+              Engine (that is money the engine received and holds).
+            </div>
+            {unmatched.length === 0 ? (
+              <EmptyState variant="inline">Every line is matched.</EmptyState>
+            ) : (
+              unmatched.map((line) => (
+                <UnmatchedLineRow
+                  key={line.id}
+                  line={line}
+                  remittance={xero.remittances[line.remittanceId]}
+                  accRecs={xero.accRecs}
+                  onMatched={setResult}
+                />
+              ))
+            )}
+            <ResultLine line={result} shot="xero-bank-match-result" onDismiss={() => setResult(null)} />
+          </section>
+        </>
+      )}
+    </div>
+  )
+}
+
+function RemittanceCard({
+  remittance,
+  xero,
+}: {
+  remittance: XeroRemittance
+  xero: { bankLines: Record<string, XeroBankLine>; accRecs: Record<string, XeroAccRec>; contacts: Record<string, XeroContact> }
+}) {
+  const lines = remittance.lineIds.map((id) => xero.bankLines[id]).filter((l): l is XeroBankLine => l !== undefined)
+  const total = lines.reduce((n, l) => n + l.amount, 0)
+  const payer = xero.contacts[remittance.payerContactId]?.name ?? remittance.payerContactId
+  return (
+    <Card
+      padding="panel"
+      shot={`xero-remittance-${remittance.id.toLowerCase()}`}
+      title={<span className="mono">{remittance.reference}</span>}
+      action={
+        <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 8 }}>
+          <SectionLabel>Deposit</SectionLabel>
+          <span className="mono" style={{ fontSize: 16, fontWeight: 700 }}>{formatCurrency(total)}</span>
+        </span>
+      }
+    >
+      <span style={{ fontSize: 12.5, color: neutral.slate }}>
+        From {payer} · received <span className="mono">{dateTimeMicroCap(remittance.receivedAtISO)}</span>
+      </span>
+      <KitTableShell label={`Lines of ${remittance.reference}`} density="compact" nested>
+        <thead>
+          <tr>
+            <KitTh>Quoted reference</KitTh>
+            <KitTh align="right">Amount</KitTh>
+            <KitTh>In Xero</KitTh>
+          </tr>
+        </thead>
+        <tbody>
+          {lines.map((line) => {
+            const rec = line.accRecId !== undefined ? xero.accRecs[line.accRecId] : undefined
+            return (
+              <tr key={line.id} data-shot={`xero-bank-line-${line.id.toLowerCase()}`} data-line-status={line.status}>
+                <KitTd mono>{line.quotedReference}</KitTd>
+                <KitTd mono align="right">{formatCurrency(line.amount)}</KitTd>
+                <KitTd>
+                  {line.status === 'unmatched' ? (
+                    <Pill tone="warning" size="sm">Unmatched</Pill>
+                  ) : (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <Pill tone="success" size="sm">
+                        {line.status === 'matchedByAddOn' ? 'Matched by the remittance add-on' : 'Matched by the office'}
+                      </Pill>
+                      {rec !== undefined && <span className="mono" style={{ fontSize: 12.5 }}>{rec.invoiceNumber}</span>}
+                    </span>
+                  )}
+                </KitTd>
+              </tr>
+            )
+          })}
+        </tbody>
+      </KitTableShell>
+    </Card>
+  )
+}
+
+function UnmatchedLineRow({
+  line,
+  remittance,
+  accRecs,
+  onMatched,
+}: {
+  line: XeroBankLine & { receivedAtISO: string; reference: string }
+  remittance: XeroRemittance | undefined
+  accRecs: Record<string, XeroAccRec>
+  onMatched: (message: string) => void
+}) {
+  const [choice, setChoice] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  // The payer's open invoices: not voided, with a balance (what Xero lets the office match the line to).
+  const open = Object.values(accRecs)
+    .filter((r) => remittance !== undefined && r.contactId === remittance.payerContactId && r.status !== 'voided' && toCents(xeroBalanceOf(useAppStore.getState(), r.id)) > 0)
+    .sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber))
+
+  function match() {
+    const refusal = bankLineMatchRefusal(useAppStore.getState(), line.id, choice)
+    if (refusal !== null) {
+      setError(refusal)
+      return
+    }
+    const out = matchBankLineInXero(useAppStore, XERO_STAFF_ACTOR, line.id, choice)
+    if (!out.ok) {
+      setError(out.message)
+      return
+    }
+    setError(null)
+    const { invoiceNumber, amount, queued } = out.value
+    onMatched(
+      queued
+        ? `Matched in Xero: ${formatCurrency(amount)} paid ${invoiceNumber}. Xero is unavailable to the Billing Engine, so the payment's sync waits in its Xero sync queue.`
+        : `Matched in Xero: ${formatCurrency(amount)} paid ${invoiceNumber}, and the payment webhook told the Billing Engine, which recorded the receipt.`,
+    )
+  }
+
+  return (
+    <Card as="div" shot={`xero-bank-unmatched-${line.id.toLowerCase()}`} style={{ gap: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 200, flex: '1 1 200px' }}>
+          <span style={{ fontSize: 13, color: neutral.ink }}>
+            Quotes <span className="mono" style={{ fontWeight: 700 }}>{line.quotedReference}</span>, which matches no invoice
+          </span>
+          <span style={{ fontSize: 12, color: neutral.slate }}>
+            {line.reference} · <span className="mono">{dateTimeMicroCap(line.receivedAtISO)}</span>
+          </span>
+        </div>
+        <span className="mono" style={{ fontSize: 15, fontWeight: 700 }}>{formatCurrency(line.amount)}</span>
+        <SelectField
+          label={`Invoice to match ${line.quotedReference} to`}
+          hideLabel
+          size="compact"
+          fill="well"
+          value={choice}
+          onChange={(v) => {
+            setChoice(v)
+            setError(null)
+          }}
+          shot={`xero-bank-pick-${line.id}`}
+        >
+          <option value="">Choose an invoice</option>
+          {open.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.invoiceNumber} · {formatCurrency((toCents(r.amountDue) - toCents(r.amountReceived)) / 100)} open
+            </option>
+          ))}
+        </SelectField>
+        <Button variant="primary" size="compact" onClick={match} shot={`xero-bank-match-${line.id}`}>
+          Match in Xero
+        </Button>
+      </div>
+      <FormError message={error} variant="inline" />
+    </Card>
   )
 }
 
@@ -937,8 +1265,12 @@ function RecordStatus({ status }: { status: string }) {
           status === 'voided' ? 'Voided' :
             status === 'draft' ? 'Draft' : status
   const on = status === 'paid' || status === 'authorised'
+  // Voided in Xero is the danger state (catch-up Phase 37).
+  const colours = status === 'voided'
+    ? { background: semantic.error.tint, color: semantic.error.onTint }
+    : on ? { background: semantic.success.tint, color: semantic.success.onTint } : { background: neutral.sunken, color: neutral.slate }
   return (
-    <span style={{ fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '4px 9px', whiteSpace: 'nowrap', background: on ? semantic.success.tint : neutral.sunken, color: on ? semantic.success.onTint : neutral.slate }}>
+    <span style={{ fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '4px 9px', whiteSpace: 'nowrap', ...colours }}>
       {label}
     </span>
   )
@@ -984,12 +1316,18 @@ function ContactTypeChip({ type }: { type: XeroContact['type'] }) {
 function StatusChip({ recStatus, payStatus, fee = false }: { recStatus: string; payStatus?: string; fee?: boolean }) {
   const paid = recStatus === 'paid'
   const disbursed = payStatus === 'paid'
-  const label = fee
+  const label = recStatus === 'voided'
+    ? 'Voided'
+    : fee
     ? paid ? 'Paid' : 'Awaiting payment'
     : disbursed ? 'Disbursed' : paid ? 'Paid · not disbursed' : payStatus === 'authorised' ? 'Part paid' : 'Awaiting payment'
   const on = paid || disbursed
+  // Voided in Xero is the danger state (catch-up Phase 37).
+  const colours = recStatus === 'voided'
+    ? { background: semantic.error.tint, color: semantic.error.onTint }
+    : on ? { background: semantic.success.tint, color: semantic.success.onTint } : { background: neutral.sunken, color: neutral.slate }
   return (
-    <span title={label} style={{ fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '3px 9px', whiteSpace: 'nowrap', background: on ? semantic.success.tint : neutral.sunken, color: on ? semantic.success.onTint : neutral.slate }}>
+    <span title={label} style={{ fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '3px 9px', whiteSpace: 'nowrap', ...colours }}>
       {label}
     </span>
   )
@@ -1037,6 +1375,14 @@ function Td({ children, mono, right, compact, clip }: { children: React.ReactNod
 function EmptyNote({ children }: { children: React.ReactNode }) {
   return <div style={{ fontSize: 13, color: neutral.mist, padding: '8px 0' }}>{children}</div>
 }
+
+/** A link inside a sentence (a callout's pointer to another tab). */
+const inlineLinkStyle = {
+  color: 'inherit',
+  fontWeight: 700,
+  textDecoration: 'underline',
+  textUnderlineOffset: 3,
+} as const
 
 const recordLinkStyle = {
   border: 'none',
