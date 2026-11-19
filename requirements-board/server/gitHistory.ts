@@ -1,26 +1,33 @@
 /**
- * A card file's history in git, read-only: every commit that touched it, the record at each, and
- * whether the working file differs from HEAD. No git, or a folder outside a repository, reads as
- * no history. Asynchronous, so a slow repository never stalls the dev server's other requests.
- * Card IDs never change, but folders move: history reads a file's earlier paths too (`gitRenames.ts`),
- * which is faster than `--follow` and also covers a screenshot folder.
+ * A record's history in git, read-only: a card's or sidecar's versions, an artifact file's commits
+ * and a card's screenshot rewrites, and how each file on disk stands against HEAD. No git, or a
+ * folder outside a repository, reads as no history. Asynchronous, so a slow repository never stalls
+ * the dev server's other requests. git itself is reached through `gitCore.ts` (no locks, any file
+ * name, either hash width, bounded caches).
+ *
+ * One walk serves every reader (`walk`), so they all follow the same rules:
+ * - **HEAD's first parents only**, each commit against its first parent: a lane merged with
+ *   `--no-ff` shows as the merge, never as its lane commits interleaved with master's (which would
+ *   make neighbours false before-and-after pairs).
+ * - **Earlier paths, each bounded** (`gitRenames.ts`): a file is followed back through its renames,
+ *   and a path counts for it only up to the commit that moved it there. A commit that only moved
+ *   the file is no change to it; a move that also edited it is one change.
+ * - **A rename-away ends a history.** A file later added at a path another file was renamed away
+ *   from starts there: the other file's past is not its own.
+ * - **A deletion is a bound, not an end.** The deletion stays listed (`deleted: true`) and the walk
+ *   carries on into the path's earlier life, so a consumer can cut there (a reused ID) or carry on
+ *   (a restored record). Only committed deletions on the first-parent chain count.
  */
-import { execFile, spawn } from 'node:child_process'
-import { createHash } from 'node:crypto'
-import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
-import { basename, dirname, join, relative } from 'node:path'
-import { promisify } from 'node:util'
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs'
+import { basename, dirname, join, posix, relative, sep } from 'node:path'
 import { parseItem } from '../shared/files.ts'
 import type { Item } from '../shared/types.ts'
-import type { AssetCommit, AssetHistory, CommitInfo, GitFileHistory, GitVersion, ScreenshotCommit } from '../shared/history.ts'
+import type { AssetCommit, AssetHistory, GitFileHistory, GitVersion, ScreenshotCommit } from '../shared/history.ts'
+import { LOG_FORMAT, Lru, coreCacheSizes, git, gitBytes, headOf, isNullSha, memo, nulSplit, parseRawLog, readBlobs, repoTop, type LogCommit, workingNames } from './gitCore.ts'
+import { committedPath, folderMoves, moveContext, pathsOf, renameCacheSizes, type MoveContext } from './gitRenames.ts'
 import { gitBlobSha } from './historyJournal.ts'
-import { priorDirs, priorPaths } from './gitRenames.ts'
 
-const run = promisify(execFile)
-export const git = async (cwd: string, args: string[]) => (await run('git', args, { cwd, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 })).stdout
-
-/** A git object name: SHA-1 (40 hex) or SHA-256 (64 hex). */
-export const OBJECT_SHA = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/
+export { OBJECT_SHA, git, readBlobs, repoTop } from './gitCore.ts'
 
 /** `parse`, reading a file that does not parse as null. */
 export const tryParse =
@@ -33,84 +40,17 @@ export const tryParse =
     }
   }
 
-/** Every `sha:path` blob in one `git cat-file --batch` process; null where the file was absent. */
-export function readBlobs(top: string, specs: string[]): Promise<(string | null)[]> {
-  return new Promise((resolve, reject) => {
-    const p = spawn('git', ['cat-file', '--batch'], { cwd: top })
-    const chunks: Buffer[] = []
-    p.stdout.on('data', (c: Buffer) => chunks.push(c))
-    p.on('error', reject)
-    p.on('close', (code) => {
-      if (code !== 0) return reject(new Error(`git cat-file exited ${code}`))
-      const buf = Buffer.concat(chunks)
-      const out: (string | null)[] = []
-      let at = 0
-      for (let i = 0; i < specs.length; i++) {
-        const nl = buf.indexOf(0x0a, at)
-        const head = buf.subarray(at, nl).toString('utf8')
-        at = nl + 1
-        const size = /^\S+ blob (\d+)$/.exec(head)?.[1]
-        if (size === undefined) {
-          out.push(null) // "<spec> missing": deleted in that commit
-          continue
-        }
-        out.push(buf.subarray(at, at + Number(size)).toString('utf8'))
-        at += Number(size) + 1
-      }
-      resolve(out)
-    })
-    p.stdin.end(specs.map((s) => `${s}\n`).join(''))
-  })
-}
+/** A file's git blob name from its raw bytes, as a SHA-1 repository names it, or (`sha256`) a SHA-256 one. */
+export const blobShaOf = (buf: Buffer, sha256 = false) => gitBlobSha(buf, sha256 ? 'sha256' : 'sha1')
 
-const tops = new Map<string, string>()
-
-/**
- * The top of the git repository `dir` is in (symlinks resolved, as git reports it), or null outside
- * one or with no git. Remembered per folder once found: a folder never moves to another repository.
- */
-export async function repoTop(dir: string): Promise<string | null> {
-  const hit = tops.get(dir)
-  if (hit) return hit
-  if (!existsSync(dir)) return null
-  try {
-    const top = (await git(dir, ['rev-parse', '--show-toplevel'])).trim()
-    if (tops.size > 64) tops.clear()
-    tops.set(dir, top)
-    return top
-  } catch {
-    return null
-  }
-}
-
-/** A file's git blob name, as a SHA-1 repository names it, or (`sha256`) a SHA-256 one. */
-export const blobShaOf = (buf: Buffer, sha256 = false) =>
-  sha256 ? createHash('sha256').update(`blob ${buf.length}\0`).update(buf).digest('hex') : gitBlobSha(buf)
-
-const emptyTrees = new Map<string, Promise<string>>()
+const emptyTrees = new Lru<Promise<string>>(64)
 
 /** The repository's empty tree (SHA-1 or SHA-256, whichever it uses): the state before the first commit. */
 export function emptyTree(top: string): Promise<string> {
-  let p = emptyTrees.get(top)
-  if (!p) {
-    p = new Promise<string>((resolve, reject) => {
-      const child = spawn('git', ['hash-object', '-t', 'tree', '--stdin'], { cwd: top })
-      let out = ''
-      child.stdout.on('data', (c: Buffer) => (out += c.toString('utf8')))
-      child.on('error', reject)
-      child.on('close', (code) => (code === 0 ? resolve(out.trim()) : reject(new Error(`git hash-object exited ${code}`))))
-      child.stdin.end()
-    })
-    p.catch(() => emptyTrees.delete(top))
-    emptyTrees.set(top, p)
-  }
-  return p
+  return memo(emptyTrees, top, async () => (await gitBytes(top, ['hash-object', '-t', 'tree', '--stdin'])).toString('utf8').trim())
 }
 
-/** Commit history per file, keyed by path and HEAD, so a new commit (or a checkout) reads afresh. */
-const cache = new Map<string, GitVersion<unknown>[]>()
-
-/** Does `file` differ from HEAD? False outside a repository. */
+/** Does `file` differ from HEAD? False outside a repository. Never takes the index lock. */
 export async function gitDirty(file: string): Promise<boolean> {
   try {
     return (await git(dirname(file), ['status', '--porcelain', '--', basename(file)])).trim() !== ''
@@ -119,142 +59,294 @@ export async function gitDirty(file: string): Promise<boolean> {
   }
 }
 
+/** A path relative to the repository's top (git reports its top with symlinks resolved: macOS's /var is /private/var). */
+const relTo = (top: string, file: string) => relative(top, join(realDir(dirname(file)), basename(file))).split(sep).join('/')
+
+function realDir(dir: string): string {
+  try {
+    return realpathSync(dir)
+  } catch {
+    return dir
+  }
+}
+
+/* ------------------------------------------------------------------ the walk */
+
+/** One change to a file at one commit: its blob before and after (null: absent). */
+interface Step {
+  commit: LogCommit
+  from: string | null
+  to: string | null
+  /** The path the file had after this commit. */
+  path: string
+  deleted?: true
+}
+
+/**
+ * The commits on HEAD's first parents that touched any of `paths`, each against its first parent,
+ * newest first. Every path given literally; output NUL-separated.
+ */
+async function firstParentLog(top: string, head: string, paths: string[]): Promise<LogCommit[]> {
+  if (!paths.length) return []
+  return parseRawLog(await git(top, ['log', '-z', '--first-parent', '--diff-merges=first-parent', '--no-renames', '--raw', '--no-abbrev', LOG_FORMAT, head, '--', ...paths]))
+}
+
+/**
+ * One file's changes, walking `commits` (newest first) from `start` (its path in HEAD's terms).
+ * At a commit that renamed the file here, the walk moves to the old path; a deletion at the current
+ * path is listed as one and the walk goes on; a rename-away of the current path ends it.
+ */
+function walk(commits: LogCommit[], start: string, ctx: MoveContext, from = 0): Step[] {
+  const out: Step[] = []
+  let cur = start
+  for (let i = from; i < commits.length; i++) {
+    const c = commits[i]!
+    const renames = ctx.renames.get(c.info.sha) ?? []
+    const moved = renames.find((r) => r.to === cur)
+    if (moved) {
+      const before = c.changes.find((x) => x.path === moved.from)
+      const after = c.changes.find((x) => x.path === cur)
+      const a = before && !isNullSha(before.oldSha) ? before.oldSha : null
+      const b = after && !isNullSha(after.newSha) ? after.newSha : null
+      // A move alone is no change; a move that also edited the file is one.
+      if (a && b && a !== b) out.push({ commit: c, from: a, to: b, path: cur })
+      cur = moved.from
+      continue
+    }
+    const e = c.changes.find((x) => x.path === cur)
+    if (!e) continue
+    if (e.status === 'D') {
+      // Renamed away from here: what came before at this path is another file's past.
+      if (renames.some((r) => r.from === cur)) break
+      out.push({ commit: c, from: e.oldSha, to: null, path: cur, deleted: true })
+      continue
+    }
+    const a = isNullSha(e.oldSha) ? null : e.oldSha
+    if (a === e.newSha) continue
+    out.push({ commit: c, from: a, to: e.newSha, path: cur })
+  }
+  return out
+}
+
+/* ------------------------------------------------------------------ caches */
+
+const fileCache = new Lru<Promise<GitVersion<unknown>[]>>(256)
+const assetCache = new Lru<Promise<AssetCommit[]>>(128)
+const shotCache = new Lru<Promise<{ commits: ScreenshotCommit[]; ended: { src: string; commit: string }[] }>>(128)
+/** Each parser gets its own key space in `fileCache` (a card and a sidecar are parsed differently). */
+const parserIds = new WeakMap<object, number>()
+let parsers = 0
+const parserId = (fn: object) => {
+  let id = parserIds.get(fn)
+  if (id === undefined) parserIds.set(fn, (id = ++parsers))
+  return id
+}
+
+/** For tests and diagnostics: every history cache's size and bound. */
+export function historyCacheSizes(): Record<string, { size: number; max: number }> {
+  return {
+    files: { size: fileCache.size, max: fileCache.max },
+    assets: { size: assetCache.size, max: assetCache.max },
+    screenshots: { size: shotCache.size, max: shotCache.max },
+    emptyTrees: { size: emptyTrees.size, max: emptyTrees.max },
+    ...renameCacheSizes(),
+    ...coreCacheSizes(),
+    blobChecks: blobCheckSize(),
+  }
+}
+
+let blobCheckSize: () => { size: number; max: number } = () => ({ size: 0, max: 0 })
+/** The history-blob route reports its own cache here. */
+export const reportBlobChecks = (fn: () => { size: number; max: number }) => {
+  blobCheckSize = fn
+}
+
+/** Where a reader stands: the repository, HEAD and the moves, or null for no history. */
+async function standing(dir: string): Promise<{ top: string; head: string; ctx: MoveContext } | null> {
+  if (!existsSync(dir)) return null
+  const top = await repoTop(dir)
+  if (!top) return null
+  const head = await headOf(top)
+  if (!head) return null
+  return { top, head, ctx: await moveContext(top, head) }
+}
+
+/* ------------------------------------------------------------------ cards and sidecars */
+
 export async function gitFileHistory<T = Item>(file: string, parseRecord: (text: string) => T = parseItem as unknown as (text: string) => T): Promise<GitFileHistory<T>> {
   const parse = tryParse(parseRecord)
   const working = existsSync(file) ? parse(readFileSync(file, 'utf8')) : null
   const mtime = existsSync(file) ? statSync(file).mtime.toISOString() : undefined
   const none: GitFileHistory<T> = { versions: [], dirty: false, working, mtime }
-  const cwd = dirname(file)
-  if (!existsSync(cwd)) return none
   try {
-    const [top = '', head = ''] = (await git(cwd, ['rev-parse', '--show-toplevel', 'HEAD'])).trim().split('\n')
-    // git reports its top level with symlinks resolved (macOS: /var is /private/var).
-    const rel = relative(top, join(realpathSync(cwd), basename(file))).split('\\').join('/')
-    const key = `${top}:${rel}@${head}`
+    const at = await standing(dirname(file))
+    if (!at) return none
+    const { top, head, ctx } = at
+    const rel = relTo(top, file)
     const status = git(top, ['status', '--porcelain', '--', rel]).catch(() => '')
-    let versions = cache.get(key) as GitVersion<T>[] | undefined
-    if (!versions) {
-      const paths = [rel, ...(await priorPaths(top, head, rel))]
-      const log = await git(top, ['log', '--no-renames', '--name-status', '--format=%x1e%H%x1f%an%x1f%aI%x1f%s', '--', ...paths])
-      const commits = log
-        .split('\x1e')
-        .slice(1)
-        .map((block) => {
-          const [meta = '', ...lines] = block.split('\n')
-          const [sha = '', author = '', at = '', subject = ''] = meta.split('\x1f')
-          const touched = lines.flatMap((line) => {
-            const m = /^([AMDT])\t(.+)$/.exec(line)
-            return m && paths.includes(m[2]!) ? [{ status: m[1]!, path: m[2]! }] : []
-          })
-          // The path the file had once this commit was made; a commit that only deleted it reads as missing.
-          const live = touched.find((f) => f.status !== 'D')
-          return { commit: { sha, author, at, subject } as CommitInfo, path: (live ?? touched[0])?.path ?? rel, moved: !!live && touched.some((f) => f.status === 'D') }
-        })
-      const blobs = commits.length ? await readBlobs(top, commits.map((c) => `${c.commit.sha}:${c.path}`)) : []
-      // A commit that only moved the file (same content, new path) is not a change to it.
-      const kept = commits.flatMap((c, i) => (c.moved && blobs[i] != null && blobs[i] === blobs[i + 1] ? [] : [{ c, blob: blobs[i] }]))
-      versions = kept.map(({ c, blob }) => ({ commit: c.commit, item: blob == null ? null : parse(blob) }))
-      cache.set(key, versions)
-    }
+    const start = committedPath(ctx, rel)
+    const paths = pathsOf(ctx, start)
+    const key = `${top}|${head}|${parserId(parseRecord)}|${JSON.stringify(paths)}`
+    const versions = (await memo(fileCache, key, async () => {
+      const steps = walk(await firstParentLog(top, head, paths), start, ctx)
+      const blobs = await readBlobs(top, steps.flatMap((s) => (s.to ? [s.to] : [])))
+      let i = 0
+      return steps.map((s): GitVersion<T> => {
+        const text = s.to ? blobs[i++] : null
+        return { commit: s.commit.info, item: text == null ? null : parse(text), ...(s.deleted ? { deleted: true as const } : {}) }
+      })
+    })) as GitVersion<T>[]
     return { versions, dirty: (await status).trim() !== '', working, mtime }
   } catch {
     return none
   }
 }
 
-const shotCache = new Map<string, ScreenshotCommit[]>()
+/* ------------------------------------------------------------------ screenshots */
 
 /**
- * Commits that rewrote a screenshot under `<root>/assets/<id>/` in place (added and removed images
- * show through the card's `images` field), and whether any file there is not committed yet.
+ * Commits that rewrote one of a card's screenshots under `<root>/assets/<id>/` in place (added and
+ * removed images show through the card's `images` field), whether any file there is not committed
+ * yet, and where a committed deletion ended a screenshot's history (`ended`). Each file is followed
+ * through its own renames: a file that only shared a folder with one of the card's never counts.
+ * Entries name each file by its path under the card's folder today (`assets/<id>/<name>`).
  */
-export async function gitScreenshots(root: string, id: string): Promise<{ commits: ScreenshotCommit[]; dirty: boolean }> {
-  const none = { commits: [], dirty: false }
-  if (!existsSync(root)) return none
+export async function gitScreenshots(root: string, id: string): Promise<{ commits: ScreenshotCommit[]; dirty: boolean; ended: { src: string; commit: string }[] }> {
+  const none = { commits: [], dirty: false, ended: [] }
   try {
-    const [top = '', head = ''] = (await git(root, ['rev-parse', '--show-toplevel', 'HEAD'])).trim().split('\n')
-    const rel = relative(top, join(realpathSync(root), 'assets', id)).split('\\').join('/')
-    const status = git(top, ['status', '--porcelain', '--', `${rel}/`]).catch(() => '')
-    const key = `${top}:${rel}@${head}`
-    let commits = shotCache.get(key)
-    if (!commits) {
-      commits = []
-      const dirs = [rel, ...(await priorDirs(top, head, rel))]
-      const out = await git(top, ['log', '--no-abbrev', '--raw', '--format=%x1e%H%x1f%an%x1f%aI%x1f%s', '--', ...dirs.map((d) => `${d}/`)])
-      for (const block of out.split('\x1e').slice(1)) {
-        const [meta = '', ...lines] = block.split('\n')
-        const [sha = '', author = '', at = '', subject = ''] = meta.split('\x1f')
-        const files = lines.flatMap((line) => {
-          // ":100644 100644 <old> <new> M\t<path>": only a file rewritten in place.
-          const m = /^:\d+ \d+ ([0-9a-f]{40}) ([0-9a-f]{40}) M\t(.+)$/.exec(line)
-          if (!m) return []
-          const src = `assets/${id}/${basename(m[3]!)}`
-          return [{ from: { src, sha: m[1]! }, to: { src, sha: m[2]! } }]
-        })
-        if (sha && files.length) commits.push({ commit: { sha, author, at, subject }, files })
-      }
-      shotCache.set(key, commits)
+    const at = await standing(root)
+    if (!at) return none
+    const { top, head, ctx } = at
+    const folder = join(root, 'assets', id)
+    const dir = relative(top, join(realDir(root), 'assets', id)).split(sep).join('/')
+    const status = git(top, ['status', '--porcelain', '--', `${dir}/`]).catch(() => '')
+    // The card's files: on disk, in the index, at HEAD.
+    const [indexed, inHead] = await Promise.all([git(top, ['ls-files', '-z', '--', `${dir}/`]).catch(() => ''), git(top, ['ls-tree', '-z', '--name-only', head, '--', `${dir}/`]).catch(() => '')])
+    let onDisk: string[] = []
+    try {
+      onDisk = readdirSync(folder).filter((n) => statSync(join(folder, n)).isFile()).map((n) => `${dir}/${n}`)
+    } catch {
+      // no folder on disk
     }
-    return { commits, dirty: (await status).trim() !== '' }
+    const files = [...new Set([...onDisk, ...nulSplit(indexed), ...nulSplit(inHead)])].filter((p) => posix.dirname(p) === dir).sort()
+    const folders = await folderMoves(top, ctx, dir)
+    const starts = files.map((f) => committedPath(ctx, f))
+    const paths = [...new Set([...starts.flatMap((s) => pathsOf(ctx, s)), `${committedFolder(folders, dir)}/`, ...folders.map((f) => `${f.from}/`)])]
+    const key = `${top}|${head}|${id}|${JSON.stringify([files, starts, paths])}`
+    const res = await memo(shotCache, key, async () => {
+      const commits = await firstParentLog(top, head, paths)
+      const src = (p: string) => `assets/${id}/${posix.basename(p)}`
+      const tracks = files.map((f, i) => ({ src: src(f), steps: walk(commits, starts[i]!, ctx) }))
+      // Files that were the card's once and were deleted from its folder (the folder as it was then).
+      const held = new Set(tracks.flatMap((t) => t.steps.map((s) => `${s.commit.info.sha}|${s.path}`)))
+      let active = committedFolder(folders, dir)
+      commits.forEach((c, i) => {
+        for (const e of c.changes) {
+          if (e.status !== 'D' || posix.dirname(e.path) !== active || held.has(`${c.info.sha}|${e.path}`)) continue
+          if ((ctx.renames.get(c.info.sha) ?? []).some((r) => r.from === e.path)) continue
+          const steps = walk(commits, e.path, ctx, i)
+          for (const s of steps) held.add(`${s.commit.info.sha}|${s.path}`)
+          tracks.push({ src: src(e.path), steps })
+        }
+        const moved = folders.find((m) => m.commit === c.info.sha)
+        if (moved) active = moved.from
+      })
+      const byCommit = new Map<string, ScreenshotCommit>()
+      const ended: { src: string; commit: string }[] = []
+      for (const t of tracks)
+        for (const s of t.steps) {
+          if (s.deleted) ended.push({ src: t.src, commit: s.commit.info.sha })
+          if (!s.from || !s.to || s.from === s.to) continue
+          const sc = byCommit.get(s.commit.info.sha) ?? { commit: s.commit.info, files: [] }
+          sc.files.push({ from: { src: t.src, sha: s.from }, to: { src: t.src, sha: s.to } })
+          byCommit.set(s.commit.info.sha, sc)
+        }
+      const order = new Map(commits.map((c, i) => [c.info.sha, i]))
+      return { commits: [...byCommit.values()].sort((a, b) => order.get(a.commit.sha)! - order.get(b.commit.sha)!), ended: ended.sort((a, b) => order.get(a.commit)! - order.get(b.commit)!) }
+    })
+    return { ...res, dirty: (await status).trim() !== '' }
   } catch {
     return none
   }
 }
 
-/** A blob's bytes from the repository `cwd` sits in, or null (not in git, or no git). */
-export async function gitBlob(cwd: string, sha: string): Promise<Buffer | null> {
-  if (!OBJECT_SHA.test(sha)) return null
+/** The card folder's path in HEAD's terms (before any move not committed yet). */
+const committedFolder = (folders: { commit: string | null; from: string }[], dir: string) => folders.filter((f) => f.commit == null).at(-1)?.from ?? dir
+
+/* ------------------------------------------------------------------ blobs */
+
+/**
+ * A blob's bytes from the repository `cwd` sits in, or null (not in git, or no git). Given the
+ * repository-relative path it is served for, the bytes are as a checkout would write them (the
+ * path's smudge filters and line endings), else the stored blob.
+ */
+export async function gitBlob(cwd: string, sha: string, path?: string): Promise<Buffer | null> {
+  if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(sha)) return null
   try {
-    return (await run('git', ['cat-file', 'blob', sha], { cwd, encoding: 'buffer', maxBuffer: 64 * 1024 * 1024 })).stdout
+    if (path && !path.includes('\n')) {
+      const out = await gitBytes(cwd, ['cat-file', '--filters', `--path=${path}`, sha]).catch(() => null)
+      if (out) return out
+    }
+    return await gitBytes(cwd, ['cat-file', 'blob', sha])
   } catch {
     return null
   }
 }
 
-const assetCache = new Map<string, AssetCommit[]>()
+/**
+ * Is the file at `abs` blob `sha` now: its raw bytes hashed in the repository's width (as the
+ * journal names screenshots), or its name as `git add` would store it? False when it is not, or
+ * there is no such file.
+ */
+export async function onDiskIs(abs: string, sha: string): Promise<boolean> {
+  let buf: Buffer
+  try {
+    if (!statSync(abs).isFile()) return false
+    buf = readFileSync(abs)
+  } catch {
+    return false
+  }
+  if (gitBlobSha(buf, sha.length === 64 ? 'sha256' : 'sha1') === sha) return true
+  const top = await repoTop(dirname(abs))
+  if (!top) return false
+  const rel = relTo(top, abs)
+  if (rel.startsWith('..')) return false
+  return (await workingNames(top, [rel])).get(rel) === sha
+}
+
+/* ------------------------------------------------------------------ artifact files */
 
 /**
- * Every commit that added, rewrote or removed one file (an artifact's), from `git log --raw`, and
- * how the file on disk stands against HEAD. Outside a repository: no commits, nothing dirty.
+ * Every commit that added, rewrote or removed one file (an artifact's), and how the file on disk
+ * stands against HEAD: `working` is the name git would give it now (line endings and filters
+ * applied), so an unchanged file reads as `head`. Outside a repository: no commits, nothing dirty.
  */
 export async function gitAssetHistory(file: string): Promise<AssetHistory> {
-  const working = existsSync(file) ? gitBlobSha(readFileSync(file)) : null
+  const raw = existsSync(file) ? gitBlobSha(readFileSync(file)) : null
   const mtime = existsSync(file) ? statSync(file).mtime.toISOString() : undefined
-  const none: AssetHistory = { commits: [], dirty: false, head: null, working, mtime }
-  const cwd = dirname(file)
-  if (!existsSync(cwd)) return none
+  const none: AssetHistory = { commits: [], dirty: false, head: null, working: raw, mtime }
   try {
-    const [top = '', head = ''] = (await git(cwd, ['rev-parse', '--show-toplevel', 'HEAD'])).trim().split('\n')
-    const rel = relative(top, join(realpathSync(cwd), basename(file))).split('\\').join('/')
-    const status = git(top, ['status', '--porcelain', '--', rel]).catch(() => '')
-    const atHead = git(top, ['rev-parse', `HEAD:${rel}`]).then((s) => s.trim(), () => null)
-    const key = `${top}:${rel}@${head}`
-    let commits = assetCache.get(key)
-    if (!commits) {
-      commits = []
-      const paths = [rel, ...(await priorPaths(top, head, rel))]
-      const out = await git(top, ['log', '--no-abbrev', '--raw', '--no-renames', '--format=%x1e%H%x1f%an%x1f%aI%x1f%s', '--', ...paths])
-      const zero = /^0+$/
-      for (const block of out.split('\x1e').slice(1)) {
-        const [meta = '', ...lines] = block.split('\n')
-        const [sha = '', author = '', at = '', subject = ''] = meta.split('\x1f')
-        // A move shows as the old path deleted and the new one added: one change from the old blob to the new.
-        let from: string | null = null
-        let to: string | null = null
-        let seen = false
-        for (const line of lines) {
-          const m = /^:\d+ \d+ ([0-9a-f]{40}) ([0-9a-f]{40}) [AMDT]\t(.+)$/.exec(line)
-          if (!m || !paths.includes(m[3]!)) continue
-          seen = true
-          if (!zero.test(m[1]!)) from ??= m[1]!
-          if (!zero.test(m[2]!)) to ??= m[2]!
-        }
-        if (seen && from !== to) commits.push({ commit: { sha, author, at, subject }, from, to })
-      }
-      assetCache.set(key, commits)
+    const at = await standing(dirname(file))
+    if (!at) {
+      // A repository with no commits yet still names files its own way.
+      const top = existsSync(dirname(file)) ? await repoTop(dirname(file)) : null
+      if (!top) return none
+      const rel = relTo(top, file)
+      return { ...none, working: (await workingNames(top, [rel])).get(rel) ?? null }
     }
-    return { commits, dirty: (await status).trim() !== '', head: await atHead, working, mtime }
+    const { top, head, ctx } = at
+    const rel = relTo(top, file)
+    const status = git(top, ['status', '--porcelain', '--', rel]).catch(() => '')
+    const atHead = git(top, ['rev-parse', '--verify', '--quiet', `${head}:${rel}`]).then((s) => s.trim() || null, () => null)
+    const working = workingNames(top, [rel]).then((m) => m.get(rel) ?? null)
+    const start = committedPath(ctx, rel)
+    const paths = pathsOf(ctx, start)
+    const commits = await memo(assetCache, `${top}|${head}|${JSON.stringify(paths)}`, async () =>
+      walk(await firstParentLog(top, head, paths), start, ctx).map((s): AssetCommit => ({ commit: s.commit.info, from: s.from, to: s.to, ...(s.deleted ? { deleted: true as const } : {}) })),
+    )
+    return { commits, dirty: (await status).trim() !== '', head: await atHead, working: await working, mtime }
   } catch {
     return none
   }
 }
+

@@ -13,7 +13,8 @@ import type { ArtifactRec, CatalogueEvent } from '../shared/types.ts'
 import { ARTIFACT_MIME, artifactBase, artifactPath } from './artifactFiles.ts'
 import { HttpError, createCatalogueApi, idFromPath } from './catalogueApi.ts'
 import { REQUIREMENTS_DIR } from './catalogueFs.ts'
-import { OBJECT_SHA, blobShaOf, git, gitBlob, repoTop } from './gitHistory.ts'
+import { Lru } from './gitCore.ts'
+import { OBJECT_SHA, git, gitBlob, onDiskIs, repoTop, reportBlobChecks } from './gitHistory.ts'
 import { priorDirs, priorPaths } from './gitRenames.ts'
 import { holdBoardLock, historyDirFor } from './historyDir.ts'
 import { createJournal } from './historyJournal.ts'
@@ -356,13 +357,14 @@ export async function serveHistoryBlob(root: string, url: URL, res: ServerRespon
   const base = artifactFile ? artifactBase(artifactFile, root) : resolve(root, 'assets')
   const type = artifactFile ? ARTIFACT_MIME[extname(abs).toLowerCase()] : MIME[extname(abs).toLowerCase()]
   if (!type || (!artifactFile && !under(abs, base))) return false
-  let buf = await gitBlob(root, sha)
-  if (!buf && isFile(abs)) {
-    const onDisk = readFileSync(abs)
-    if (blobShaOf(onDisk, sha.length === 64) === sha) {
-      buf = onDisk
-      warnLinkOut(abs, base, warn)
-    }
+  // A screenshot's blob only if it was ever that file (as an artifact's named file is checked above).
+  if (!artifactFile && !(await blobWasAt(root, sha, abs))) return false
+  // As a checkout would write it (the path's filters and line endings), from git; else the file on
+  // disk while it still has that content, named raw (the journal's way) or as `git add` would.
+  let buf = await gitBlob(root, sha, await repoPathOf(root, abs))
+  if (!buf && isFile(abs) && (await onDiskIs(abs, sha))) {
+    buf = readFileSync(abs)
+    warnLinkOut(abs, base, warn)
   }
   if (!buf) return false
   res.setHeader('Content-Type', type)
@@ -390,18 +392,25 @@ async function earlierPaths(top: string, rel: string): Promise<string[]> {
 }
 
 /** Blob and path pairs already found together: true answers never change. */
-const seenAt = new Set<string>()
+const seenAt = new Lru<true>(2000)
+reportBlobChecks(() => ({ size: seenAt.size, max: seenAt.max }))
 
-/** Is blob `sha` the file at `abs`: on disk now, or at that path in some commit? */
+/** The file at `abs` relative to its repository's top, or undefined outside one. */
+async function repoPathOf(root: string, abs: string): Promise<string | undefined> {
+  const top = await repoTop(root)
+  if (!top) return undefined
+  const rel = relative(top, realPath(abs)).split(sep).join('/')
+  return rel && !rel.startsWith('..') && !isAbsolute(rel) ? rel : undefined
+}
+
+/**
+ * Is blob `sha` the file at `abs`: on disk now, or at that path (or any path the file had before) in
+ * some commit? Deliberately not bounded by commit (B08-Q5): it never refuses a blob the history lists.
+ */
 async function blobWasAt(root: string, sha: string, abs: string): Promise<boolean> {
   const key = `${sha}|${abs}`
-  if (seenAt.has(key)) return true
-  let ok = false
-  try {
-    if (statSync(abs).isFile() && blobShaOf(readFileSync(abs), sha.length === 64) === sha) ok = true
-  } catch {
-    // not on disk
-  }
+  if (seenAt.get(key)) return true
+  let ok = await onDiskIs(abs, sha)
   const top = ok ? null : await repoTop(root)
   if (top) {
     const rel = relative(top, realPath(abs)).split(sep).join('/')
@@ -409,14 +418,11 @@ async function blobWasAt(root: string, sha: string, abs: string): Promise<boolea
       // The commits that added or removed this blob at that path, or at any path the file had
       // before (a folder moved since): any at all means it was there.
       const paths = [rel, ...(await earlierPaths(top, rel))]
-      const out = await git(top, ['--literal-pathspecs', 'log', '--all', '-n1', '--format=%H', `--find-object=${sha}`, '--', ...paths]).catch(() => '')
+      const out = await git(top, ['log', '--all', '-n1', '--format=%H', `--find-object=${sha}`, '--', ...paths]).catch(() => '')
       ok = out.trim() !== ''
     }
   }
-  if (ok) {
-    if (seenAt.size > 2000) seenAt.clear()
-    seenAt.add(key)
-  }
+  if (ok) seenAt.set(key, true)
   return ok
 }
 

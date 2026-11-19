@@ -93,8 +93,8 @@ Agent tools in parallel: B12 (after B02), B13 (REQ-07b after B04); both before B
 | B02 | Status identity | COMPLETE | D-02 and B02-Q3 to Q6 recorded (accepted decision 16); no migration needed | 2026-11-19, board 1.14.0; R-01 and R-07 board halves delivered (B06, B12 close); A-2 confirmed and fixed |
 | B03 | Load resilience | COMPLETE | D-06 and B03-Q2, Q3 recorded (accepted decision 17) | 2026-11-19, board 1.15.0; all 14 findings fixed; issue-surface contract in the entry |
 | B04 | One rule, one helper | COMPLETE | D-03 and B04-Q1 to Q3 recorded (accepted decision 18) | 2026-11-19, board 1.16.0; all 18 findings fixed; D-03 contract for B13 in the entry |
-| B08 | Git history reader | PLANNED | after B03; D-07 before build; D-05 with B05-Q2/Q3 recorded (planning-only gate) | |
-| B05 | Server write model | PLANNED | after B02, B03, B04, B08; D-04 and D-05 before build | D-05 is the user's call |
+| B08 | Git history reader | COMPLETE | D-07, D-05 with B05-Q2/Q3, B08-Q1 to Q3, Q5, Q6 recorded (accepted decision 19) | 2026-11-19, board 1.17.0; all 10 findings fixed; deletion bound and contracts for B05 and B09 in the entry |
+| B05 | Server write model | PLANNED | after B02, B03, B04, B08; D-04 before build (D-05 recorded, decision 19) | D-05, B05-Q2, B05-Q3 answered in the B08 session |
 | B07 | Store sync and layout | PLANNED | after B05 (D-04 recorded); D-10 before build | |
 | B06 | Edit sheets and Settings | PLANNED | after B05, B07, B02, B03 | |
 | B09 | Diff and history UI | PLANNED | after B08, B07 (D-10) | |
@@ -119,9 +119,9 @@ decisions" section and resolved in that phase's planning.
 | D-02 | Status registry format, recode versioning, migration; plan-tool readability | B02 | B06, B12, B14 | B02 build | Settings UI, plan-tool status rule, SCHEMA and starter docs; whether B02 touches `catalogueDiff.ts` | **Accepted 2026-11-19** (accepted decision 16): no-overlap recodes; removed statuses under `removedStatuses` in `board.config.json`; no migration; `catalogueDiff.ts` untouched |
 | D-03 | How agent `.mjs` tools share `shared/*.ts` rules, including the note-cite resolution rule | B04 | B12, B13 | B04 build (and before B12 builds if needed) | B13-REQ-07b (R-141) shape; parity tests | **Accepted 2026-11-19** (accepted decision 18): direct import of `shared/*.ts` from the catalogue path; not in the workflow runtime or generated pages |
 | D-04 | Write protocol (patch + base rev vs three-way merge; conflict reply; in-place YAML scope; config writes) | B05 | B06, B07 | B05 build | All client save flows; one-line-diff convention if items are edited in place | Open |
-| D-05 | ID reuse rule: SCHEMA "never reused" vs deliberate documented reuse (A-1, R-54); with B05-Q2/Q3 | B05 (user) | B08, B14 | B08 build (planning-only gate in a B05 planning conversation) | SCHEMA text; journal and history handling; possible deleted-ID list (data migration) | Open |
+| D-05 | ID reuse rule: SCHEMA "never reused" vs deliberate documented reuse (A-1, R-54); with B05-Q2/Q3 | B05 (user) | B08, B14 | B08 build (planning-only gate in a B05 planning conversation) | SCHEMA text; journal and history handling; possible deleted-ID list (data migration) | **Accepted 2026-11-19** (accepted decision 19): reuse stays; a restore continues its history; journal cut only at a committed deletion |
 | D-06 | Bad-data issue surface and error-boundary recovery | B03 | B06, B10, B11 | B03 build | How later phases report bad data | **Accepted 2026-11-19** (accepted decision 17): panel in place and a "This page" group in the pill; auto-retry on catalogue change; copyable details; page-wide error capture; repaired storage mentioned |
-| D-07 | Git reader contract (cache key/bounds, SHA-256, unstaged moves, deletion and rename bounds) | B08 | B05, B09 | B08 build | Timeline and diff inputs; R-54 history cut | Open |
+| D-07 | Git reader contract (cache key/bounds, SHA-256, unstaged moves, deletion and rename bounds) | B08 | B05, B09 | B08 build | Timeline and diff inputs; R-54 history cut | **Accepted 2026-11-19** (accepted decision 19): HEAD + index identity keys, bounded LRUs, hybrid clean-form names, unchanged unstaged moves followed, full lists with `deleted` markers |
 | D-08 | Lane-aware plan state on master | B12 | catch-up lanes | B12 build | update-build-plan behaviour while lanes run | Open |
 | D-09 | Kit export source and target refusal rules | B14 | none | B14 build | Export behaviour and docs | Open |
 | D-10 | Asset version and change signal (event and URL token) | B07 | B09, B10 | B07 build | R-96 and R-104 consumers | Open |
@@ -292,6 +292,41 @@ decisions" section and resolved in that phase's planning.
         rules keep their severity; if the truer code rule reveals a new error on the real catalogue, the
         session stops and shows the user first.
 
+- 2026-11-19, user and B08 session (B08's planning questions; D-05 asked ahead of B05 as the
+  planning-only gate of accepted decision 8):
+  19. **D-05, B05-Q2, B05-Q3, D-07 and B08-Q1 to Q3, Q5, Q6:**
+      - **D-05, reuse stays** (user). The top freed ID is reissued, as today; SCHEMA is corrected by
+        B14. A reused ID's history starts at the deletion: B08 marks it, B05 cuts there.
+      - **B05-Q3, a restore continues** (user). When the re-added record is the same record (same type,
+        reads as the deleted version, as a revert or undo makes it), its history carries on across the
+        gap; otherwise it starts fresh. B08 keeps both the deleted and the re-added versions readable;
+        B05 applies the rule.
+      - **B05-Q2, journal cut only at a committed deletion** (user). A file merely missing (hand delete
+        not yet committed, branch switch, stash) keeps its journal; B05 cuts when reading, at B08's bound.
+      - **D-07(d), unchanged unstaged moves are followed** (user). A tracked file missing from the working
+        tree is paired with an untracked file of identical clean-form content and read as a rename. An
+        edited move shows once staged.
+      - **D-07(a), cache keys** (session, from evidence): committed data by repository top and HEAD;
+        staged renames by HEAD plus the index identity (path from `git rev-parse --git-path index`, its
+        mtime, size and inode), so linked worktrees cache too; unstaged pairing recomputed every read
+        from `ls-files`, hashes of candidates cached by path, size and mtime; per-file results by HEAD
+        plus the resolved chain of earlier paths. No dependence on the watcher.
+      - **D-07(b), bounds:** every cache a size-bounded LRU with HEAD in its key (values in the B08 entry).
+      - **D-07(c), working names, hybrid:** a file git reports clean takes its index blob name; any other
+        is named by `git hash-object --stdin-paths` (filters, eol and the repository's object format).
+        The journal hashes in process with the object format it finds once per repository.
+      - **D-07(e), full lists plus optional markers:** a deletion version carries `deleted: true`
+        (`GitVersion`), an asset commit removing the file `deleted: true`, and `GitFileHistory` gains
+        `screenshotsEnded`. A rename-away ends the history (no bound). One walker applies both rules.
+        A reuse with no committed deletion gets no bound (B05-REQ-20).
+      - **B08-Q1:** a merge is listed alone (default). **B08-Q2:** a historical blob is served as checked
+        out (`git cat-file --filters`), the stored blob if the filter cannot run. **B08-Q3:** a stored
+        screenshot hash of the wrong width is re-hashed on the next scan with no change logged; old
+        entries stay unfetchable (404). **B08-Q5:** the blob check stays unbounded over the file's
+        earlier paths; the `?src=` case is gated by `blobWasAt` too. **B08-Q6:** `git status` takes
+        `index.lock` unless optional locks are off; every reader's git runs with `GIT_OPTIONAL_LOCKS=0`
+        (proof in the B08 entry).
+
 ## Planning handoff
 
 - 2026-11-18: orchestrator created FINDINGS.md (copy of the verified review report), PLAN.md, this
@@ -319,12 +354,12 @@ decisions" section and resolved in that phase's planning.
 | Item | Found by | Owner | Note |
 |---|---|---|---|
 | `deleteLane` has the same two-write flaw as R-56 | B05 author | B05 (B05-REQ-13) | taken into scope |
-| `git status` may take the index lock in lane worktrees and break an agent's commit | B08 author (B08-Q6) | B08 | unverified; investigate in planning |
+| `git status` may take the index lock in lane worktrees and break an agent's commit | B08 author (B08-Q6) | B08 | **Confirmed and fixed in B08** (`GIT_OPTIONAL_LOCKS=0` on every reader call) |
 | HistoryView's screenshot `Shot` labels every load failure "never committed" (same flaw as R-103) | B09 author | B10 | taken into B10 scope |
 | Two layout saves that both succeed can land out of order; StrictMode double start-up load | B07 author | B07 | taken into scope |
 | `artifact:new` uses `git mv`, which stages mid-phase | B05 author (B05-Q6) | B05, then B14 | conflicts with convention 9 |
 | Fixture e2e port 5182 is fixed, so two lanes collide | B14 author (B14-Q3) | B14 | |
-| `/history-blob/<sha>?src=assets/x.png` serves any blob in the repository by full sha, typed by `src`'s extension (same-origin only; needs the hash) | B01 security review | B08 | gate the `src` case with `blobWasAt` as the `file` case is |
+| `/history-blob/<sha>?src=assets/x.png` serves any blob in the repository by full sha, typed by `src`'s extension (same-origin only; needs the hash) | B01 security review | B08 | **Done in B08**: the `src` case is gated by `blobWasAt` |
 | `catalogueDiff.ts:135` compares git's real top with `REPO_ROOT` as given (the E7a mixed-path defect) | B01 completeness review | B09 | use `realPaths.ts` (`realPath` both sides) |
 | A base folder that is itself an escaping link (`assets/` linked out of the requirements folder) is not warned: `linkOut` compares against the base's real path | B01 completeness review | B14 (moved by B03) | not built in B03 (outside its 14 findings; R-47's isolation does not depend on it); a check warning would suffice |
 | A top-level visit from another site can still open Vite's `/__open-in-editor` (navigations are allowed so links to the board work); Vite still serves the board's own source, `node_modules` and any `.html` outside the catalogue as same-origin pages (SPEC residual) | B01 | B15 | Vite's dev model; consider refusing cross-site navigations to `/__open-in-editor` |
@@ -345,8 +380,192 @@ decisions" section and resolved in that phase's planning.
 | A mermaid edge label written without spaces (`A--text-->B`) is read as a node `text`; unverified whether mermaid accepts that form | B04 review | none | |
 | A retired artifact's `page_offset` is applied to its replacement's pages (from before B04) | B04 review | B14 (docs) | replacement with a different offset cites the wrong page |
 | The 5 s Vitest timeouts in git and live-server tests recurred in B04 (load 20 to 34); the same files time out on the pre-B04 board too | B04 | B12 or B14 | same item as B01's and B02's |
+| git's own rename detection (`-M`) can pair a deleted card with a similar new card added in the same commit, so the new card inherits the old one's history with no deletion bound | B08 review | B05 | the same case as REQ-11.4 (reuse with no committed deletion); B05-REQ-20's own cut covers it |
+| An LFS version is served as its pointer (`GIT_LFS_SKIP_SMUDGE`, so a request never fetches); viewers show the pointer text | B08 review | B10 | a viewer could say "stored in LFS" instead |
+| The history readers' per-read costs: one `ls-files --deleted` per read, the whole-history rename log re-run per HEAD (as before B08), negative history-blob checks not cached | B08 review | none | measured acceptable here (card history 2.6 s cold, was 5.5 s); revisit on a much larger repository |
+| The B08-territory git test files now set a 60 s test timeout (the readers run one more git process per read); other live-server and Diff tests keep 5 s | B08 | B12 or B14 | same item as the 5 s timeout rows above |
 
 ## Phase entries
+
+### B08 · Git history reader · COMPLETE · 2026-11-19
+
+Board 1.16.0 to **1.17.0**. Plan and evidence: `phases/B08-git-history-reader/IMPLEMENTATION.md`.
+Decisions: accepted decision 19. The user answered D-05, B05-Q2, B05-Q3 and D-07(d) in this session:
+D-05 was asked here as the planning-only gate of accepted decision 8, so B05 does not ask it again.
+The other parts of D-07 and B08-Q1, Q2, Q3, Q5 and Q6 were settled from evidence and shown in the
+approved plan. Both SPECs mark them answered. No master merge was needed. All ten findings were checked
+at HEAD `f3c7d9f8` before the build: the territory files were unchanged since `d4341735`, and B01 had
+moved the history-blob route.
+
+**Dispositions**
+
+Each proof is in `tests/gitReader.test.ts` and runs in SHA-1 and SHA-256 fixture repositories. Each
+failed on the pre-B08 board and passes after.
+
+| Finding | Disposition | Proof |
+|---|---|---|
+| R-23 | **Fixed**: every reader walks HEAD's first parents, each commit against its first parent; a `--no-ff` merge is one entry (the merge) | (a) to (d) as the SPEC table; (e) each reader against a `rev-list --first-parent` + `diff-tree` truth. Fast-forward lists the lane commits (preservation) |
+| R-24 | **Fixed**: `-z` output, `core.quotePath=false`, literal pathspecs, token-wise parsing, any byte but NUL in a name. The FINDINGS claim "empties every card history" holds only for a moved non-ASCII folder; a never-moved card already worked (SPEC correction) | `Transcript – 12 Nov.md`, `café.png`, quote, backslash and tab names under quotePath default and false; a moved non-ASCII folder; a newline and a `\x1e` in a name |
+| R-69 | **Fixed** (D-07(d), user): an unchanged plain `mv` is followed; staged renames cached by the index identity, so no stale read after staging, unstaging or committing | main checkout and linked worktree: before staging, after `add -A`, after `reset` |
+| R-70 | **Fixed**: an earlier path counts only up to the commit that moved the file; a rename-away ends the history at that path | `pricing.svg` archive scenario both ways; an A to B to C chain plus a new card at A |
+| R-71 | **Fixed**: screenshots followed per file through their own renames; an earlier folder counts only when the move emptied it | `b.png` from US-1 to US-2 (US-2 lists only b's rewrites, US-1 only a's); a whole catalogue moved |
+| R-72 | **Fixed**: working files named as `git add` would (index name when unchanged, else `hash-object --stdin-paths`); route serves with filters and accepts either name on disk | autocrlf, `* text eol=crlf`, a clean-filter driver: `working == head`, sidecar-only edit no file change, uncommitted working name served; working name follows an autocrlf change. Real LFS not installed: manual check left open |
+| R-73 | **Fixed**: object names of either width everywhere; journal hashes in the repository's width (B08-Q3: re-hash, no change logged) | SHA-256 matrix; journal change fetched through the route; a SHA-1 hash kept in a SHA-256 journal re-hashed silently |
+| R-74 | **Fixed**: `withToday` applies today's artifacts on every response; the git work stays cached | watched reader, AR-01 retitled, `touched()`: context equals a fresh reader's, no `diff`/`log`/`ls-tree`/`cat-file` run (shim count) |
+| R-161 | **Fixed**: whole move context shared in flight, rename log memoised per HEAD, staged renames keyed by the index found through git | Diff count runs the rename log once (was 3); linked worktree second read runs no staged diff, after `add` runs one; failed read retried (preservation) |
+| R-162 | **Fixed**: every territory cache is an `Lru` with HEAD in its key (bounds below) | `historyCacheSizes()` sizes within bounds over many HEADs; `Lru` eviction order and bound over 200 keys |
+| R-54 support | **Delivered; B05 closes** | delete then re-add (card, asset, screenshot): `deleted` marker at the delete, both sides readable; revert keeps both readable; branch switch and stash make no bound; rename-away and deletion at one path each bounded |
+
+**B08-Q6 result:** confirmed. A plain `git status` rewrote `.git/index` (it takes `index.lock` to
+refresh stat data); with `GIT_OPTIONAL_LOCKS=0` the index stays untouched. Proof: the index's inode and
+mtime are unchanged after `gitDirty`, `gitFileHistory` and `gitAssetHistory` on a stat-dirty fixture.
+Real lane A: three Diff counts and two card histories left its index untouched.
+
+**Contract for B05** (deletion bound, D-07(e) option 1):
+- **Shape.** `GitFileHistory.versions` is the full list, newest first. A version with
+  `deleted: true` (and `item: null`) is the commit that deleted the file, a committed deletion on HEAD's
+  first parents. Every version after it in the list is the path's earlier life.
+- **Other readers.** `AssetCommit.deleted` marks the same for an artifact file. For screenshots,
+  `GitFileHistory.screenshotsEnded: { src, commit }[]` (from `gitScreenshots().ended`, newest first) is
+  passed into the item history route's timeline input; rewrites in `screenshots` older than a file's
+  `commit` belong to that file's earlier life.
+- **Restore against reuse (B05-Q3, decision 19).** Compare the version just before the `deleted` one
+  (the deleted record's last state) with the version just after it (the re-added record's first): a
+  restore continues, anything else starts fresh.
+- **When there is no bound.**
+  - A rename-away is not a bound: the history simply stops there.
+  - A reuse with no committed deletion (deleted and re-created in one commit, which git sees as an
+    edit) gets no bound; B05-REQ-20 cuts that case itself.
+  - Nor does a deleted card that git's `-M` pairs with a similar new card in one commit (Discovered).
+- **Journal (B05-Q2).** Cut it when reading, at the newest `deleted` version's commit; never on a file
+  merely missing. `buildTimeline` is unchanged, so B05 applies the cut there.
+
+**Contract for B09:**
+- **Order and merges.** Lists are newest first in graph order along HEAD's first parents, and adjacent
+  entries are true first-parent before-and-after pairs. Dates may be out of order after a rebase or
+  cherry-pick. A merge carries its own subject, author and date, and lane commits are not listed
+  (B08-Q1).
+- **Deletions and moves.** A deletion version has `deleted: true`. Pure moves are absent; a move that
+  also edited the file is one entry.
+- **Screenshots and blobs.** Screenshot entries name files `assets/<ID>/<today's name>`. Blob names are
+  in the repository's width and fetchable at `/history-blob/<sha>?src=` or `?artifact=`, served as
+  checked out (an LFS version as its pointer). `AssetHistory.working` is the clean-form name, equal to
+  `head` when unchanged.
+- **Freshness.** A read after any change to the index or working tree reflects it, so the client never
+  needs to bust a cache. No new marker for unstaged moves: they are followed (D-07(d)).
+
+**Cache keys and bounds (D-07 a, b):**
+
+| Cache | Key | Bound |
+|---|---|---|
+| file versions | top, HEAD, parser, the chain of paths | 256 |
+| asset commits | top, HEAD, the chain of paths | 128 |
+| screenshot commits | top, HEAD, card, files, starts, paths | 128 |
+| rename log | top, HEAD | 4 |
+| staged renames | top, HEAD, index identity (`--git-path index`: size, mtime, inode) | 8 |
+| working-name hashes | path, size, mtime, inode, repository config, `info/attributes`, the top and the file's own `.gitattributes` | 512 |
+| history-blob checks | sha, path (true answers only) | 2000 |
+| tops, formats, index and config paths, empty trees | folder or top | 64 each |
+
+Unstaged moves are read afresh on every read (`ls-files --deleted`; `--others` and hashing only when a
+tracked file is missing). The move context is shared while in flight.
+
+**What shipped:**
+- **New:** `server/gitCore.ts`; `server/gitRenames.ts` and `server/gitHistory.ts` rewritten (one
+  first-parent `walk`).
+- **Changed:** `server/catalogueDiff.ts` (shared `Lru`/`memo`, `workingNames`, `withToday`, `kept`);
+  `server/historyJournal.ts` (`gitBlobSha(buf, format)`, width-aware scan); `shared/history.ts` (optional
+  `deleted`, `screenshotsEnded`).
+- **Tests:** `tests/gitReader.test.ts` (60), `tests/gitFixture.ts`.
+
+**Touch-rights edits (convention 11):**
+- `server/cataloguePlugin.ts` (B01/B07's; history-blob route only): the `?src=` gate, filtered serving,
+  the `onDiskIs` disk fallback, and `seenAt` as an `Lru`.
+- `server/catalogueApi.ts` (item history route): passes `screenshotsEnded`.
+- `docs/board-fixes/phases/B05-server-write-model/SPEC.md`: D-05, B05-Q2 and B05-Q3 marked answered.
+- `docs/board-fixes/index.html`: B08 status.
+
+**Deviations:**
+1. D-05 was asked in this session, not a separate B05 planning session, with the user's answers;
+   recorded as decision 19.
+2. IMPLEMENTATION.md was saved after the first build rather than before; the approved plan file held
+   the plan.
+3. **B08-Q2 as built.** The decision says the stored blob when the filter cannot run. The review
+   showed LFS smudging could fetch from the network inside a request, so `GIT_LFS_SKIP_SMUDGE=1`
+   serves LFS versions as their pointer. Other filters still smudge.
+4. The three existing git test files (B08 territory) gained a 60 s test timeout (see Verification).
+5. Beyond the SPEC, from the review:
+   - inherited `GIT_DIR`-style variables are dropped, and `status.showUntrackedFiles` and other output
+     settings are pinned;
+   - long path lists are sent to git in slices.
+
+**Verification:**
+- **`npm run verify:board` green:** 803 tests, check OK. An earlier run under load averages of 20 to 27
+  timed out at 5 s in `gitHistory`, `historyJournal` and `catalogueDiff` tests, which all pass alone.
+  The readers run one more git process per read than before, so those files now set 60 s.
+- **Before-proofs:** `tests/gitReader.test.ts` was run against an archive of `f3c7d9f8` in the
+  scratchpad: 49 of 59 fail. The 10 that pass are preservation checks (fast-forward, branch switch and
+  stash, retry, no repository) or old-code-compatible configurations (non-ASCII folder with quotePath
+  false, SHA-1 whole-catalogue screenshot move, SHA-1 R-73). The 60th test (`Lru`) fails there on
+  import.
+- **Real repository (read-only):**
+  - card `US-01.4.6`: history 5.5 s cold before, 2.6 s now; warm 0.12 s, 0.11 s. Diff count 0.29 s,
+    0.33 s.
+  - the wave merge now appears as the merge carrying the same `images` change, where the lane commit
+    stood. No other entry moved.
+  - lane A worktree: three concurrent Diff counts ran one rename log; the second card read ran no
+    staged diff; the index was untouched.
+- **Not run:**
+  - Playwright: no spec touched.
+  - Real LFS: git-lfs is not installed, so this stays an open manual check; a filter-driver fixture
+    stands in.
+- **Migration:** none.
+
+**Review outcomes (convention 15):** two Sonnet reviewers (about 1,200 changed lines outside tests).
+- **Confirmed and fixed, each with a regression test that fails on the pre-B08 board:**
+  - untracked files read as clean under `status.showUntrackedFiles=no`;
+  - an inherited `GIT_DIR` redirected every read;
+  - a `\x1e` in a path split the log parse;
+  - the working-name cache ignored conversion config.
+- **Also fixed:**
+  - `"`-leading paths in `hash-object --stdin-paths`;
+  - command-line overflow on a mass move;
+  - LFS network smudge;
+  - a duplicated object-format helper, an unused helper, a dead alias, a doubled flag;
+  - the R-162 test could not fail (now an eviction proof).
+- **Recorded, not changed** (IMPLEMENTATION.md):
+  - clean filters run when naming a changed file (git-lfs writes under `.git/lfs/objects`, never the
+    index or refs);
+  - per-read costs (Discovered);
+  - global config and other folders' `.gitattributes` not in the hash key;
+  - an unstaged move that also changes the basename under line-ending conversion is not paired;
+  - `-M` pairing a deleted card with a new one (Discovered, B05).
+- **Not reproducible:** none.
+
+**Doc facts (convention 12):**
+- **`requirements-board/README.md`:**
+  - the server map (`historyJournal.ts`, new `gitCore.ts`, `gitHistory.ts`, `gitRenames.ts`);
+  - the History bullet: first parents, bounded renames, plain `mv`, `deleted`, any name, both widths,
+    no lock;
+  - the screenshots paragraph: width, re-hash, per-file;
+  - the `/history-blob/` line: `?src=` gate, served as checked out, LFS pointer, clean-form names.
+- **`CHANGELOG.md`** 1.17.0, naming the visible merge-history change and the journal width behaviour.
+- **Headers** of `gitCore.ts`, `gitHistory.ts`, `gitRenames.ts` and `historyJournal.ts`.
+- **Checked, nothing changed:** the About page ("Git keeps the history"), SCHEMA, ADOPTING and SKILL.md
+  state none of this.
+
+**What later phases need:**
+- **B05:** the contract above. Apply the bound in the journal step and `buildTimeline`. A restore is
+  recognised by comparing the versions either side of `deleted`. Reuse with no committed deletion, and
+  `-M`-paired cards, get no bound (B05-REQ-20). D-05, B05-Q2 and B05-Q3 are recorded; do not ask again.
+- **B07:** keep the `cataloguePlugin.ts` history-blob changes when reworking the watcher. The readers
+  need no watcher signal.
+- **B09:** the contract above; `catalogueDiff.ts` now imports `Lru`, `memo` and `workingNames` from
+  `gitCore.ts`. Its `:135` mixed-path item (Discovered) is untouched.
+- **B10:** an LFS version is served as its pointer (Discovered).
+- **B14:** README and CHANGELOG lines above in the whole-file pass; SCHEMA's ID-reuse text now follows
+  D-05 "reuse stays".
+- **B15:** rerun `tests/gitReader.test.ts` (both widths) and the three git test files.
 
 ### B04 · One rule, one helper · COMPLETE · 2026-11-19
 

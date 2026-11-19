@@ -5,14 +5,16 @@
  * git, so it is per machine and never shows up in the catalogue's diffs. Writing it never fails a
  * save: a journal that cannot be written just logs and moves on.
  *
- * Screenshots: `<ID>.shots.json` holds each image under `assets/<ID>/` by git blob hash (with its
- * size and mtime, so an unchanged file is never re-read). A file rewritten in place, as
+ * Screenshots: `<ID>.shots.json` holds each image under `assets/<ID>/` by git blob hash, in the
+ * repository's own width, SHA-1 or SHA-256 (with its size and mtime, so an unchanged file is never
+ * re-read; a hash kept in the other width is taken afresh without logging a change). A file rewritten in place, as
  * `npm run capture` does, logs a `screenshot` change; added and removed images show through the
  * card's own `images` field instead.
  */
 import { createHash } from 'node:crypto'
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs'
 import { extname, join } from 'node:path'
+import { objectFormatSync } from './gitCore.ts'
 import { diffItems, type FieldChange, type HistorySource, type JournalEntry } from '../shared/history.ts'
 import type { Item, Rev } from '../shared/types.ts'
 
@@ -37,8 +39,11 @@ export const NO_JOURNAL: Journal = { item() {}, position() {}, baseline() {}, sc
 
 const IMAGE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'])
 
-/** The hash git gives a file's content, so a version that was committed can be read back with `git cat-file`. */
-export const gitBlobSha = (buf: Buffer) => createHash('sha1').update(`blob ${buf.length}\0`).update(buf).digest('hex')
+/**
+ * The hash git gives a file's raw bytes, in a SHA-1 repository or (`sha256`) a SHA-256 one, so a
+ * version that was committed can be read back with `git cat-file`.
+ */
+export const gitBlobSha = (buf: Buffer, format: 'sha1' | 'sha256' = 'sha1') => createHash(format).update(`blob ${buf.length}\0`).update(buf).digest('hex')
 
 type ShotState = Record<string, { sha: string; size: number; mtimeMs: number }>
 
@@ -121,6 +126,10 @@ export function createJournal(dir: string, now: () => Date = () => new Date()): 
     } catch {
       return // no assets folder, or it can't be listed
     }
+    // Hashes in the repository's own width, so git can serve each version (B08-Q3: a hash kept in the
+    // other width is taken afresh, logging no change).
+    const format = ids.length ? objectFormatSync(assetsDir) : 'sha1'
+    const width = format === 'sha256' ? 64 : 40
     for (const id of ids) {
       quietly(`record screenshots of ${id}`, () => {
         const folder = join(assetsDir, id)
@@ -130,13 +139,14 @@ export function createJournal(dir: string, now: () => Date = () => new Date()): 
         const changes: FieldChange[] = []
         for (const name of readdirSync(folder).sort()) {
           if (!IMAGE_EXT.has(extname(name).toLowerCase())) continue
-          const was = known?.[name]
+          const kept = known?.[name]
+          const was = kept && kept.sha.length === width ? kept : undefined
           let st, sha: string
           try {
             st = statSync(join(folder, name))
             if (!st.isFile()) continue
             const same = was && was.size === st.size && was.mtimeMs === st.mtimeMs
-            sha = same ? was.sha : gitBlobSha(readFileSync(join(folder, name)))
+            sha = same ? was.sha : gitBlobSha(readFileSync(join(folder, name)), format)
           } catch (e) {
             console.warn(`[history] could not read screenshot ${id}/${name}: ${(e as Error).message}`)
             if (was) next[name] = was // try again next time; the rest of the folder is still recorded

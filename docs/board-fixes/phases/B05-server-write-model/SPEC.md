@@ -479,7 +479,7 @@ REQ-09, REQ-13. Sub-questions and options:
 - *Lane change request.* A dedicated lane route, or a lane change inside the batch request; either must
   leave room for B11's merge extension.
 
-**D-05 · ID reuse.** Owner B05; the user decides. Waits on it: B08 (deletion bound), B14 (SCHEMA text).
+**D-05 · ID reuse.** **Answered (accepted decision 19, 2026-11-19): reuse stays.** Owner B05; the user decides. Waits on it: B08 (deletion bound), B14 (SCHEMA text).
 Gate: **planning-only, settled in a B05 planning conversation before B08 builds**, together with B05-Q2 and
 B05-Q3 (accepted decision 8). Affects REQ-19, REQ-20 and the reuse test. Source gap: SCHEMA says IDs are
 "never reused" and "no deletes" for items and artifacts, while the board deletes items and reissues the
@@ -502,12 +502,12 @@ Phase questions:
 - **B05-Q1 · Where the R-54 history fix lives.** Answered (accepted decisions 4 and 10, 2026-11-18): B08
   builds the deletion bound in its reader before B05; B05 applies it (journal step and `buildTimeline`
   cut) and closes R-54.
-- **B05-Q2 · Files that disappear outside the board.** Open. Owner B05 (with the user). Gate: with D-05,
+- **B05-Q2 · Files that disappear outside the board.** **Answered (decision 19): the journal is cut only at a committed deletion** (B08's bound), never on a file merely missing. Owner B05 (with the user). Gate: with D-05,
   before B08 builds. Setting the journal aside whenever the watcher sees a card vanish would also discard
   the journal when a branch switch or `git stash` removes and then restores files. Options: set aside only
   after a delay or a commit that deletes the file; keep the journal and cut at the deletion when reading;
   leave hand deletes to the D-05 rule. Affects REQ-20 and what B08's bound must mark.
-- **B05-Q3 · Restore versus reuse in git history.** Open. Owner B05 (with the user). Gate: with D-05,
+- **B05-Q3 · Restore versus reuse in git history.** **Answered (decision 19): a restore continues** its history when the re-added record is the same record (same type, reads as the deleted version); otherwise it starts fresh. Owner B05 (with the user). Gate: with D-05,
   before B08 builds. Cutting git versions at a deletion would hide the true past of a record deleted and
   then restored (a revert). Options: cut only when the re-added record differs in type or creation; cut
   always; moot under "never reuse". Affects REQ-20 and B08's bound.

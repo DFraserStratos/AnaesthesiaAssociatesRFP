@@ -366,13 +366,13 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       return Promise.all([
         gitHistory(itemPath(id, root)).catch(() => ({ versions: [], dirty: false, working: null })),
         gitDirty(layoutPath(root)),
-        gitShots(root, id).catch(() => ({ commits: [], dirty: false })),
+        gitShots(root, id).catch(() => ({ commits: [], dirty: false, ended: [] })),
       ]).then(([git, layoutDirty, shots]) => {
         // Versions from before a status recode store the old value: compare as today's codes, so a relabel is no change.
         const recodes = readRecodes(root)
         const now = (it: Item): Item => ({ ...it, status: normaliseStatus(recodes, 'item', it.status) })
         const diff = (a: Item, b: Item) => diffItems(now(a), now(b))
-        return { entries: buildTimeline(journal.read(id), { ...git, layoutDirty, screenshots: shots.commits, screenshotsDirty: shots.dirty }, diff) }
+        return { entries: buildTimeline(journal.read(id), { ...git, layoutDirty, screenshots: shots.commits, screenshotsDirty: shots.dirty, screenshotsEnded: shots.ended }, diff) }
       })
     }
 

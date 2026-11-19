@@ -85,9 +85,10 @@ shared/        code shared by server, scripts and browser
 server/
   catalogueFs.ts     load the folder, atomic / exclusive writes, layout file; REQUIREMENTS_DIR (env override for fixtures)
   catalogueApi.ts    the /api routes as a plain function (no Vite), so tests drive it directly
-  historyJournal.ts  the per-card change journal (.history/, gitignored)
-  gitHistory.ts      a card file's commits and dirty state, read-only and asynchronous
-  gitRenames.ts      a file's earlier paths from git's renames, so history reaches back past folder moves
+  historyJournal.ts  the per-card change journal (.history/, gitignored); screenshot hashes in the repository's width
+  gitCore.ts         how every reader calls git: no locks (GIT_OPTIONAL_LOCKS=0), literal paths, NUL output, either hash width, bounded caches
+  gitHistory.ts      a card's, sidecar's, artifact file's and screenshot's history (one first-parent walk), read-only and asynchronous
+  gitRenames.ts      a file's earlier paths, each bounded by the commit that moved it (committed, staged, and plain `mv` moves)
   catalogueDiff.ts   the Diff review's git reading: commits that changed records, two states compared, cached
   cataloguePlugin.ts Vite dev-server plugin: wires the API, serves assets and artifact files (and guards the origin), folder watcher → HMR events
   realPaths.ts       real-path rules: containment across linked folders, symbolic links that lead out
@@ -189,15 +190,22 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   disk, to `.history/<ID>.jsonl` in this folder (gitignored, per machine; `HISTORY_DIR`
   overrides; a catalogue other than the real one journals to a temp folder). At start it logs what
   changed while it was off. Commits older than a card's first journal entry fill in its past from
-  git (`git log` + `cat-file`, over the file's current path and every earlier one git recorded a
-  rename for, so a moved folder keeps its history; a commit that only moved the file is left out);
-  newer ones show as dividers. Changes newer than the last commit
-  are marked not committed yet. View only.
+  git along HEAD's **first parents**, each commit against its first parent: a lane merged with
+  `--no-ff` shows as the merge, never as its lane commits interleaved with master's. The file is
+  followed through its renames (committed, staged, or a plain `mv` of an unchanged file not yet
+  staged), each earlier path counting only up to the commit that moved it, so a moved folder keeps
+  its history and a file later added at an old path never inherits it; a commit that only moved the
+  file is left out. A committed deletion stays listed (`deleted: true`), so a consumer can cut a
+  reused ID's history there. Any file name works, whatever `core.quotePath`, in SHA-1 and SHA-256
+  repositories, and reading never takes git's index lock. Newer commits show as dividers. Changes
+  newer than the last commit are marked not committed yet. View only.
   Screenshots count too: a file under `assets/<ID>/` rewritten in place (a `npm run capture` run)
   logs a "Screenshot updated" entry with a before and after. The journal keeps each image's git
-  blob hash (`<ID>.shots.json`, rehashed only when size or mtime changes), so the before image is
-  read back out of git (`/history-blob/<sha>`); a version that was never committed is not kept.
-  Git backfill reads the same from `git log --raw -- assets/<ID>/`.
+  blob hash in the repository's width (`<ID>.shots.json`, rehashed only when size or mtime changes,
+  or when a kept hash is in the other width), so the before image is read back out of git
+  (`/history-blob/<sha>`); a version that was never committed is not kept. Git backfill follows each
+  of the card's screenshot files through its own renames, never another card's file that shared a
+  folder with one.
 - Card moves undo and redo (⌘Z / ⇧⌘Z, Ctrl+Y, or the toolbar arrows): Freeform drags and Tidy,
   and Mapped drops. History is per tab, in memory, and never covers lane edits or sheet edits. A
   Mapped undo sends back the old `parent` / `order` / `swimlane` of every record the move rewrote,
@@ -266,7 +274,11 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   - Results are cached (keyed by HEAD, the refs, and a generation the folder watcher and every API
     write bump), and identical requests in flight share one read.
   - `/history-blob/<sha>?artifact=<ID>&file=<path>` serves an artifact file's earlier version as the
-    type of `file` (honoured only when the blob was at that path in some commit, or on disk).
+    type of `file`, and `?src=assets/<ID>/<name>` a screenshot's (each honoured only when the blob
+    was at that path, or an earlier path of the file, in some commit, or is the file on disk now),
+    as a checkout would write it (the path's filters and line endings; an LFS version as its pointer). A file on disk is named as
+    `git add` would store it (line endings, clean filters, the repository's width), so an unchanged
+    file never reads as changed.
 
   The page pairs Markdown fields paragraph by paragraph and marks changed words
   (`shared/proseDiff.ts`); entries, minor changes, filters and order are `shared/diffModel.ts`, so the

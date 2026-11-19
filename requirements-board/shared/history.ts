@@ -50,10 +50,20 @@ export interface CommitInfo {
   subject: string
 }
 
-/** One version of a record's file in git (newest first). `item` is null where the file did not parse. */
+/**
+ * One version of a record's file in git (newest first), along HEAD's first parents: each version is
+ * the file as that commit left it, against its first parent (a merge is listed once, as the merge).
+ * `item` is null where the file did not parse, or where the commit deleted it (`deleted`).
+ */
 export interface GitVersion<T = Item> {
   commit: CommitInfo
   item: T | null
+  /**
+   * The deletion bound: this commit deleted the file (a committed deletion on HEAD's first parents).
+   * Versions after it in the list (older) are the path's earlier life: a record deleted and later
+   * added again at the same path, either restored (the same record) or a new one reusing the ID.
+   */
+  deleted?: true
 }
 
 export interface GitFileHistory<T = Item> {
@@ -70,6 +80,8 @@ export interface GitFileHistory<T = Item> {
   screenshots?: ScreenshotCommit[]
   /** A file under the card's `assets/<ID>/` differs from HEAD. */
   screenshotsDirty?: boolean
+  /** Deletion bounds of the card's screenshot files: the commit that deleted each (newest first). */
+  screenshotsEnded?: { src: string; commit: string }[]
 }
 
 export interface ScreenshotCommit {
@@ -311,6 +323,8 @@ export interface AssetCommit {
   from: string | null
   /** Null where the commit removed it. */
   to: string | null
+  /** The deletion bound: this commit deleted the file (older entries are the path's earlier life). */
+  deleted?: true
 }
 
 /** An artifact file's history in git (newest first), and how the file on disk stands against HEAD. */

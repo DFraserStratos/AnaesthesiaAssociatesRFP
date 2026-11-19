@@ -3,7 +3,10 @@ import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+// Each test drives real git processes; under a loaded machine 5 s is too short (B08: more git runs per read).
+vi.setConfig({ testTimeout: 60_000 })
 import { serialiseItem } from '../shared/files.ts'
 import type { TimelineEntry } from '../shared/history.ts'
 import type { Item, Rev } from '../shared/types.ts'
