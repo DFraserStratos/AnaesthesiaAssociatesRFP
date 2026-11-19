@@ -51,31 +51,43 @@ export function countDescendants(index: Index): Map<string, number> {
   return counts
 }
 
-export function buildNodes(g: GraphInput, descendantCounts: Map<string, number>): CardNodeType[] {
+/**
+ * The card nodes. With `prev` (the last build's nodes, by ID), a card nothing it draws has changed keeps
+ * its `data` object, and a card that is also where it was keeps its whole node, so after a delivery that
+ * changed one card only that card re-renders (FINDINGS R-159; `CardNode` is memoised on its props).
+ */
+export function buildNodes(g: GraphInput, descendantCounts: Map<string, number>, prev?: ReadonlyMap<string, CardNodeType>): CardNodeType[] {
   return g.index.items
     .filter((it) => g.auto[it.id])
     .map((it) => {
       const a = g.auto[it.id]!
-      return {
+      const data: CardData = {
+        item: it,
+        w: a.w,
+        h: a.h,
+        openQuestions: openQuestionsFor(g.index, it.id).length,
+        childCount: descendantCounts.get(it.id) ?? 0,
+        tone: toneFor(it.id, g),
+      }
+      const was = prev?.get(it.id)
+      const node: CardNodeType = {
         id: it.id,
         type: 'card' as const,
         position: g.positions[it.id] ?? { x: a.x, y: a.y },
         // Handles come from the layout, not only from React Flow's DOM measurement, so a
         // rebuild can never leave a card without them (and the board without edges): cardHandles.
-        handles: cardHandles(a.w, a.h),
+        handles: was && was.data.w === a.w && was.data.h === a.h ? was.handles : cardHandles(a.w, a.h),
         hidden: !isShown(it, g) || !!g.collapsed?.has(it.id),
         zIndex: it.type === 'epic' ? 0 : it.type === 'feature' ? 1 : 2,
-        data: {
-          item: it,
-          w: a.w,
-          h: a.h,
-          openQuestions: openQuestionsFor(g.index, it.id).length,
-          childCount: descendantCounts.get(it.id) ?? 0,
-          tone: toneFor(it.id, g),
-        },
+        data: was && sameData(was.data, data) ? was.data : data,
       }
+      return was && sameNode(was, node) ? was : node
     })
 }
+
+const sameData = (a: CardData, b: CardData) => a.item === b.item && a.w === b.w && a.h === b.h && a.openQuestions === b.openQuestions && a.childCount === b.childCount && a.tone === b.tone
+const sameNode = (a: CardNodeType, b: CardNodeType) =>
+  a.data === b.data && a.handles === b.handles && a.hidden === b.hidden && a.zIndex === b.zIndex && a.position.x === b.position.x && a.position.y === b.position.y
 
 /**
  * `mapped`: only the open card's lineage is joined (position shows the rest of the hierarchy),

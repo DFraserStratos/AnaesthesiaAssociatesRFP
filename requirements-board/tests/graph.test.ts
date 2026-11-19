@@ -81,4 +81,26 @@ describe('board graph', () => {
     expect(node({ ...g, showRetired: true }).hidden).toBe(false)
     expect(node({ ...g, selected: 'US-01.1.1' }).hidden).toBe(false)
   })
+
+  it('after a one-card change, every other card keeps its node and data, so only that card re-renders (B07: R-159)', () => {
+    const first = buildNodes(input(), countDescendants(index))
+    const prev = new Map(first.map((n) => [n.id, n]))
+    // One card retitled: a new record for it, the same records for the rest (as a delivery leaves them).
+    const changed = { ...recs, 'US-01.1.1': { data: { ...recs['US-01.1.1']!.data, title: 'Renamed' }, rev: 'r2' } }
+    const idx = buildIndex(changed, {})
+    const next = buildNodes(input({ index: idx }), countDescendants(idx), prev)
+    const byId = new Map(next.map((n) => [n.id, n]))
+    for (const n of first) {
+      if (n.id === 'US-01.1.1') continue
+      expect(byId.get(n.id), n.id).toBe(n)
+    }
+    expect(byId.get('US-01.1.1')).not.toBe(prev.get('US-01.1.1'))
+    expect(byId.get('US-01.1.1')!.data.item.title).toBe('Renamed')
+    // A card whose tone or count changed gets new data; one only moved keeps its data but not its node.
+    const toned = buildNodes(input({ index: idx, selected: 'US-01.0.1', lineage: new Set(['EP-01', 'US-01.0.1']) }), countDescendants(idx), byId)
+    expect(toned.find((n) => n.id === 'US-01.0.1')!.data).not.toBe(byId.get('US-01.0.1')!.data)
+    const moved = buildNodes(input({ index: idx, positions: { 'US-01.0.1': { x: 1, y: 1 } } }), countDescendants(idx), byId).find((n) => n.id === 'US-01.0.1')!
+    expect(moved).not.toBe(byId.get('US-01.0.1'))
+    expect(moved.data).toBe(byId.get('US-01.0.1')!.data)
+  })
 })

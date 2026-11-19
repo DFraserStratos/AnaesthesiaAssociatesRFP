@@ -3,11 +3,12 @@
  * REQ-14). `checkCatalogue` is wrapped in a counter; a request runs it once before writing (the guard)
  * and once after.
  */
+import { changesOf } from './deliveries.ts'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CatalogueEvent } from '../shared/types.ts'
+import type { CatalogueChange } from '../shared/types.ts'
 import { item } from './fixtures.ts'
 
 const checks = vi.hoisted(() => ({ n: 0 }))
@@ -26,7 +27,7 @@ const { writeItem, writeLayout } = await import('../server/catalogueFs.ts')
 
 const JSON_HEADERS = { 'content-type': 'application/json', host: 'localhost:5180' }
 let root: string
-let events: CatalogueEvent[]
+let events: CatalogueChange[]
 const STORIES = (k: number) => Array.from({ length: k }, (_, i) => `US-01.1.${i + 1}`)
 
 function seed(k: number) {
@@ -44,7 +45,7 @@ afterEach(() => rmSync(root, { recursive: true, force: true }))
 /** Checks run and issues events sent by one request. */
 function cost(k: number, request: (a: ReturnType<typeof createCatalogueApi>) => unknown) {
   seed(k)
-  const a = createCatalogueApi(root, (e) => events.push(e))
+  const a = createCatalogueApi(root, (d) => events.push(...changesOf(d)))
   checks.n = 0
   events.length = 0
   request(a)

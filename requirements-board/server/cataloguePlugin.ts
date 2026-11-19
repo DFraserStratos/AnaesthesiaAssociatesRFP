@@ -2,14 +2,14 @@
  * The board's "backend": a Vite dev-server plugin that serves the catalogue
  * file API (`catalogueApi.ts`) and screenshot assets, and watches the folder
  * so edits made elsewhere (an agent, a terminal, git) reach the open board as
- * `catalogue:changed` HMR events. No separate server process.
+ * `catalogue:changed` HMR deliveries, one per burst of changes (`watchBatch.ts`). No separate server process.
  */
 import { createReadStream, readFileSync, statSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { dirname, extname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
-import type { ArtifactRec, CatalogueEvent } from '../shared/types.ts'
+import type { ArtifactRec, CatalogueDelivery } from '../shared/types.ts'
 import { ARTIFACT_MIME, artifactBase, artifactPath } from './artifactFiles.ts'
 import { HttpError, createCatalogueApi, idFromPath } from './catalogueApi.ts'
 import { REQUIREMENTS_DIR } from './catalogueFs.ts'
@@ -19,6 +19,7 @@ import { priorDirs, priorPaths } from './gitRenames.ts'
 import { holdBoardLock, historyDirFor } from './historyDir.ts'
 import { createJournal } from './historyJournal.ts'
 import { inside, linkOut, realPath, under } from './realPaths.ts'
+import { createWatchBatch } from './watchBatch.ts'
 
 const MIME: Record<string, string> = {
   '.png': 'image/png',
@@ -29,9 +30,6 @@ const MIME: Record<string, string> = {
   '.svg': 'image/svg+xml',
 }
 
-/** Coalesce bursts of file events, but never hold a sync back longer than this. */
-const DEBOUNCE_MS = 120
-const MAX_WAIT_MS = 600
 const MAX_BODY_BYTES = 2_000_000
 
 async function readJson(req: IncomingMessage): Promise<unknown> {
@@ -167,7 +165,7 @@ export function cataloguePlugin(root = REQUIREMENTS_DIR): Plugin {
         dev.config.logger.warn(`[catalogue] ${message}`)
       }
       const historyDir = historyDirFor(root)
-      const api = createCatalogueApi(root, (e: CatalogueEvent) => dev.ws.send('catalogue:changed', e), { journal: createJournal(historyDir), watched: true })
+      const api = createCatalogueApi(root, (d: CatalogueDelivery) => dev.ws.send('catalogue:changed', d), { journal: createJournal(historyDir), watched: true })
       // While the board watches, `statuses:recode` refuses to run beside it (see historyDir.ts).
       // The lock is named by process: a Vite restart closes the old server (dropping it) before this
       // one takes it again, and each server removes its own exit hook when it closes.
@@ -178,16 +176,20 @@ export function cataloguePlugin(root = REQUIREMENTS_DIR): Plugin {
         release()
       })
 
-      const sync = () => {
+      // One re-sync per burst of file events, re-reading only the files that changed (watchBatch.ts).
+      const sync = (paths: string[] | null) => {
         try {
-          api.syncFromDisk()
+          api.syncFromDisk(paths ?? undefined)
         } catch (e) {
           dev.config.logger.error(`[catalogue] could not re-read the catalogue: ${(e as Error).message}`)
+          throw e // the batch reads the whole folder next
+        } finally {
+          watchArtifactFiles()
         }
       }
+      const batch = createWatchBatch({ sync })
+      dev.httpServer?.once('close', () => batch.close())
       const rootAbs = resolve(root)
-      let timer: ReturnType<typeof setTimeout> | undefined
-      let firstPending: number | undefined
       dev.watcher.add(rootAbs)
       // Artifacts can show documents that live elsewhere in the repository: watch those files too.
       const outside = new Set<string>()
@@ -214,16 +216,9 @@ export function cataloguePlugin(root = REQUIREMENTS_DIR): Plugin {
         if ((!inside(resolve(file), rootAbs) && !outside.has(resolve(file))) || file.endsWith('.tmp')) return
         // At once, not after the debounce: the Diff review never serves a comparison older than the files.
         api.worktreeChanged()
-        const now = performance.now()
-        firstPending ??= now
-        clearTimeout(timer)
-        const wait = Math.max(0, Math.min(DEBOUNCE_MS, firstPending + MAX_WAIT_MS - now))
-        timer = setTimeout(() => {
-          firstPending = undefined
-          sync()
-          watchArtifactFiles()
-        }, wait)
+        batch.event(resolve(file))
       })
+      dev.watcher.on('error', () => batch.error())
 
       dev.middlewares.use((req, res, next) => {
         const url = req.url ?? '/'

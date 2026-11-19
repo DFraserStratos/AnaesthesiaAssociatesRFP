@@ -118,7 +118,8 @@ export interface Issue {
   message: string
 }
 
-export interface CatalogueSnapshot {
+/** The catalogue as the server holds it: every record with its rev, the layout, the config and the issues. */
+export interface CatalogueData {
   items: Record<string, Rev<Item>>
   questions: Record<string, Rev<Question>>
   artifacts: Record<string, ArtifactRec>
@@ -128,14 +129,50 @@ export interface CatalogueSnapshot {
   issues: Issue[]
 }
 
-/** Pushed over Vite's HMR socket when a catalogue file changes on disk. */
-export type CatalogueEvent =
+/**
+ * Every asset file's version (D-10): `assets/<ID>/<name>`, as `item.images` writes it, to its git blob
+ * hash. A touch without a content change keeps the hash; it survives server restarts. Put it in an
+ * asset URL as `?v=` (`assetUrl` in `src/api.ts`).
+ */
+export type AssetVersions = Record<string, string>
+
+/**
+ * `GET /api/catalogue`. `epoch` names the server process and `seq` the last delivery it sent before
+ * this snapshot was taken, so a tab can apply exactly the deliveries that came after it.
+ */
+export interface CatalogueSnapshot extends CatalogueData {
+  epoch: string
+  seq: number
+  assets: AssetVersions
+}
+
+/** One change the server knows of. Changes travel to the tabs merged into a `CatalogueDelivery`. */
+export type CatalogueChange =
   | { kind: 'item'; id: string; record: Rev<Item> | null }
   | { kind: 'question'; id: string; record: Rev<Question> | null }
   | { kind: 'artifact'; id: string; record: ArtifactRec | null }
   | { kind: 'layout'; layout: Layout }
   | { kind: 'config'; config: BoardConfig }
   | { kind: 'issues'; issues: Issue[] }
+  /** Asset files whose content changed: the new version, or null for a file removed. */
+  | { kind: 'assets'; assets: Record<string, string | null> }
+
+/**
+ * Pushed over Vite's HMR socket (`catalogue:changed`): everything one re-sync or one write request
+ * changed, in one message (FINDINGS R-159). Record maps hold null for a record removed. `seq` goes up
+ * by one per delivery within one server process (`epoch`).
+ */
+export interface CatalogueDelivery {
+  epoch: string
+  seq: number
+  items?: Record<string, Rev<Item> | null>
+  questions?: Record<string, Rev<Question> | null>
+  artifacts?: Record<string, ArtifactRec | null>
+  layout?: Layout
+  config?: BoardConfig
+  issues?: Issue[]
+  assets?: Record<string, string | null>
+}
 
 /* -------------------------------------------------------------- artifacts */
 

@@ -1,9 +1,10 @@
+import { changesOf } from './deliveries.ts'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { parseItem, serialiseItem } from '../shared/files.ts'
-import type { CatalogueEvent, Item, Rev } from '../shared/types.ts'
+import type { CatalogueChange, Item, Rev } from '../shared/types.ts'
 import { HttpError, createCatalogueApi } from '../server/catalogueApi.ts'
 import { configPath, itemPath, layoutPath, loadCatalogue, questionPath, writeItem, writeLayout, writeQuestion } from '../server/catalogueFs.ts'
 import { DEFAULT_ITEM_STATUSES, DEFAULT_QUESTION_STATUSES, type StatusDef } from '../shared/statuses.ts'
@@ -26,7 +27,7 @@ const hasGit = (() => {
 })()
 
 let root: string
-let events: CatalogueEvent[]
+let events: CatalogueChange[]
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), 'catalogue-api-'))
   events = []
@@ -39,7 +40,7 @@ beforeEach(() => {
 })
 afterEach(() => rmSync(root, { recursive: true, force: true }))
 
-const api = () => createCatalogueApi(root, (e) => events.push(e))
+const api = () => createCatalogueApi(root, (d) => events.push(...changesOf(d)))
 const call = (a: ReturnType<typeof api>, method: string, path: string, body?: unknown, headers: Record<string, string> = JSON_HEADERS) =>
   a.handle({ method, path, body, headers })
 function status(fn: () => unknown): number {
@@ -644,7 +645,7 @@ describe('diff review routes', () => {
     })
 
     it('a write through the API is seen at once, even where comparisons with the disk are kept', async () => {
-      const a = createCatalogueApi(root, (e) => events.push(e), { watched: true })
+      const a = createCatalogueApi(root, (d) => events.push(...changesOf(d)), { watched: true })
       const get = () => a.handle({ method: 'GET', path: '/api/diff', query: { from: 'HEAD', to: 'worktree' } }) as Promise<DiffResponse>
       expect((await get()).records).toEqual([])
       const r = recOf(a, 'US-01.1.2')

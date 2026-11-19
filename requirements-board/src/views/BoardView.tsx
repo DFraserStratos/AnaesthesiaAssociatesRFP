@@ -206,25 +206,35 @@ function Board({ mode }: { mode: BoardMode }) {
   )
 
   const descendantCounts = useMemo(() => countDescendants(shownIndex(index, view.showRetired)), [index, view.showRetired])
+  // The last build's card nodes: a card nothing it draws has changed keeps its node (FINDINGS R-159).
+  const lastCards = useRef<ReadonlyMap<string, CardNodeType>>(new Map())
   const computed = useMemo<BoardNode[]>(() => {
-    const cards: BoardNode[] = buildNodes(graph, descendantCounts).map((n) => (n.id === peek ? { ...n, className: 'peek' } : n))
+    const built = buildNodes(graph, descendantCounts, lastCards.current)
+    lastCards.current = new Map(built.map((n) => [n.id, n]))
+    const cards: BoardNode[] = built.map((n) => (n.id === peek ? { ...n, className: 'peek' } : n))
     return map ? [...cards, ...mappedExtras(map, index, lanes.length > 0, target)] : cards
   }, [graph, descendantCounts, map, index, lanes.length, target, resetTick, peek])
 
   // React Flow owns in-flight drag positions; the store owns everything else.
   const [nodes, setNodes] = useState<BoardNode[]>(computed)
+  const lastComputed = useRef<ReadonlySet<BoardNode>>(new Set())
   useEffect(() => {
+    const unchanged = lastComputed.current
+    lastComputed.current = new Set(computed)
     // Carry React Flow's own per-node state across rebuilds: without `measured` every card
     // hides and re-measures on each click or keystroke; a card mid-drag keeps its live position.
     // This copy of `measured` can lag React Flow's (a rebuild landing mid-measure), which once
     // stripped every card's handles for good; nodes now carry `handles`, so a lag only delays.
     // In Mapped, a dragged card carries everything under it, so that whole subtree holds its live position.
+    // A card whose built node is the one built last time, sitting where it was built, keeps the node
+    // React Flow already holds, so it does not render again.
     setNodes((prev) => {
       const byId = new Map(prev.map((n) => [n.id, n]))
       const drag = dragRef.current
       return computed.map((n) => {
         const p = byId.get(n.id)
         if (!p) return n
+        if (!drag && !p.dragging && unchanged.has(n) && p.position.x === n.position.x && p.position.y === n.position.y && p.className === n.className) return p
         const held = drag ? drag.subtree.has(n.id) : !mapped && !!p.dragging
         return { ...n, measured: p.measured, selected: p.selected, dragging: p.dragging, position: held ? p.position : n.position, className: drag?.subtree.has(n.id) ? 'in-drag' : n.className } as BoardNode
       })

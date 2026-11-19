@@ -340,6 +340,7 @@ const PHASE_STATE = {
   B04: { status:'COMPLETE', date:'2026-11-19', note:'Board 1.16.0. All 18 findings fixed; D-03 direct import of shared rules (decision 18), note-cite resolver ready for B13.' },
   B08: { status:'COMPLETE', date:'2026-11-19', note:'Board 1.17.0. All 10 findings fixed; D-07 and D-05 (reuse stays) recorded (decision 19); deletion bound ready for B05, which now needs only D-04.' },
   B05: { status:'COMPLETE', date:'2026-11-19', note:'Board 1.18.0. All 7 findings fixed; D-04 accepted (patches merged when nothing overlaps, in-place saves, config and lane bases; decision 20); write protocol ready for B07 and B06.' },
+  B07: { status:'COMPLETE', date:'2026-11-19', note:'Board 1.19.0. All 6 findings fixed; D-10 accepted (asset versions on one batched delivery, git blob hash as ?v=; decision 21); one-file re-sync 13 to 19 times cheaper, one render per delivery.' },
 };
 // ===== end PHASE STATUS =====
 const STATUS = Object.fromEntries(PHASES.map(p=>[p.id,(PHASE_STATE[p.id]||{}).status||'PLANNED']));

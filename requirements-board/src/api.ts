@@ -69,6 +69,8 @@ export interface RecordPatch<T> {
 
 export const api = {
   catalogue: () => call<CatalogueSnapshot>('GET', '/api/catalogue'),
+  /** Whether the board's server answers (asked while offline): its process (`epoch`) and last delivery. */
+  ping: () => call<{ epoch: string; seq: number }>('GET', '/api/ping'),
   voice: () => call<Voice>('GET', '/api/voice'),
   /** Writes VOICE.md; refused with a 409 (and the file as it is now) if it changed on disk since baseRev. */
   putVoice: (text: string, baseRev: string | null) => call<Voice>('PUT', '/api/voice', { text, baseRev }),
@@ -137,5 +139,9 @@ export const artifactFileUrl = (id: string, fileRev: string | null) => `/artifac
 export const artifactBlobUrl = (id: string, sha: string, file?: string | null) =>
   `/history-blob/${sha}?artifact=${encodeURIComponent(id)}${file ? `&file=${encodeURIComponent(file)}` : ''}`
 
-/** URL the dev server serves a catalogue-relative asset path from. */
-export const assetUrl = (src: string) => `/requirements/${src.split('/').map(encodeURIComponent).join('/')}`
+/**
+ * A screenshot's URL. With its version (`assets` in the store, D-10) the URL changes when the file's
+ * content does, so a re-captured screenshot is fetched afresh and an unchanged one stays cached. Any
+ * version is served the current file.
+ */
+export const assetUrl = (src: string, version?: string) => `/requirements/${src.split('/').map(encodeURIComponent).join('/')}${version ? `?v=${encodeURIComponent(version)}` : ''}`

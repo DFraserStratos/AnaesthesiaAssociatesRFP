@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { writeFixture } from '../e2e/fixtureCatalogue.ts'
 import { gitBlobSha } from '../server/historyJournal.ts'
+import { assetUrl } from '../src/api.ts'
 import { boardsRunning, historyDirFor } from '../server/historyDir.ts'
 
 const BOARD = fileURLToPath(new URL('..', import.meta.url))
@@ -187,6 +188,18 @@ describe('raw catalogue files are reached only through the board routes (R-04)',
       expect(r.status, `${path} answered ${r.status}`).toBeGreaterThanOrEqual(400)
       expect(r.status).toBeLessThan(500)
       expect(r.body).not.toMatch(/<script|alert\(1\)|Fixture note|^---/)
+    }
+  })
+
+  it("serves a screenshot at its version URL (D-10) and at an old version's, the current file both times (B07)", async () => {
+    const snap = JSON.parse((await call('/api/catalogue', { headers: SAME })).body) as { assets: Record<string, string> }
+    const v = snap.assets['assets/US-01.1.1/shot.png']!
+    expect(v).toBe(gitBlobSha(PNG, v.length === 64 ? 'sha256' : 'sha1')) // the file's git blob hash
+    for (const path of [assetUrl('assets/US-01.1.1/shot.png', v), assetUrl('assets/US-01.1.1/shot.png', 'f'.repeat(40))]) {
+      const r = await call(path, { headers: SAME })
+      expect(r.status, path).toBe(200)
+      expect(r.headers['content-type']).toBe('image/png')
+      expect(r.body).toBe(PNG.toString('utf8')) // the file as it is now
     }
   })
 

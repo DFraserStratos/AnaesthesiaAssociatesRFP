@@ -3,7 +3,9 @@
  * `cataloguePlugin.ts` wires it to the dev server's middleware and watcher.
  *
  *   GET  /api/catalogue          everything, parsed, with a rev per record (config.revs: one per Settings section;
- *                                layout.lanesRev: the lane list's)
+ *                                layout.lanesRev: the lane list's), every screenshot's version (`assets`), and the
+ *                                server's run (`epoch`) and last delivery (`seq`) it is current to
+ *   GET  /api/ping               { epoch, seq }: the server answers (the board asks while offline)
  *   PUT  /api/items/:id          { patch, baseRev, base? }  the fields changed, laid over the file as it is now
  *                                (or, until B06, { record, baseRev }: a whole record, refused on any disk change)
  *   POST /api/items/batch        { changes: [{ id, baseRev, patch, base? }] }  all or nothing (a Mapped board move)
@@ -47,14 +49,21 @@
  * - A write that changes nothing writes nothing (no journal entry, no event) and returns the record as is.
  * - Saves edit the file in place: only the changed fields' lines change; a change that would lose data is 422.
  * - A write of several files lands whole: on a failure part way the files already written are put back.
- * - One write request runs the integrity check once after writing and sends one `issues` event.
+ * - One write request runs the integrity check once after writing and sends one delivery (B07).
+ *
+ * Deliveries (`catalogue:changed`, B07): every change one re-sync or one write request makes, merged into one
+ * message (`shared/delivery.ts`), numbered by `seq` within this process (`epoch`). A re-sync given the paths
+ * the watcher saw re-reads only those files (`planSync`, `partialLoad`); anything it cannot judge alone reads
+ * the whole folder.
  *
  * Every write re-reads the target file first (so an edit made on disk a moment
  * ago is never overwritten), checks the record would survive a round trip,
  * and runs the integrity rules on exactly what will be written.
  */
-import { readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
-import { join, relative } from 'node:path'
+import { randomUUID } from 'node:crypto'
+import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { join, relative, resolve, sep } from 'node:path'
+import { addChange, isEmptyBody, type DeliveryBody } from '../shared/delivery.ts'
 import { stripBom } from '../shared/bom.ts'
 import { checkCatalogue, issueKey } from '../shared/check.ts'
 import { artifactRoundTripProblems, itemRoundTripProblems, normaliseItem, normaliseQuestion, parseItem, parseQuestion, questionRoundTripProblems, serialiseItem, serialiseQuestion, withArtifactDetails } from '../shared/files.ts'
@@ -62,48 +71,57 @@ import { LossyEditError, editItemText, editQuestionText } from '../shared/inPlac
 import { applyPatch, collisions, patchProblem, sameValue as same, type RecordKind } from '../shared/patch.ts'
 import { compareSiblings, nextItemId, nextQuestionId } from '../shared/ids.ts'
 import { buildArtifactTimeline, buildTimeline, diffItems } from '../shared/history.ts'
-import { STATUS_FIELDS, defaultStatus, highestCode, nextStatusCode, normaliseStatus, readStatusList, statusCodes, type StatusDef, type StatusField, type StatusKind } from '../shared/statuses.ts'
+import { RECODES_FILE, STATUS_FIELDS, defaultStatus, highestCode, nextStatusCode, normaliseStatus, readStatusList, statusCodes, type StatusDef, type StatusField, type StatusKind } from '../shared/statuses.ts'
 import { parseArtifact, revOf } from '../shared/files.ts'
 import { ACCENT_PATTERN, CONFIG_FILE, CONFIG_SECTIONS, configRevs, parseConfig } from '../shared/config.ts'
 import { addedProblems, laneListProblems, lanesRevOf } from '../shared/move.ts'
 import { planDelete } from '../shared/remove.ts'
-import { ITEM_TYPES, UNASSIGNED_LANE, firstLaneName, type Artifact, type ArtifactRec, type Layout, type CatalogueEvent, type Issue, type Item, type ItemType, type Question, type Rev } from '../shared/types.ts'
+import { ITEM_TYPES, UNASSIGNED_LANE, firstLaneName, type Artifact, type ArtifactRec, type Layout, type AssetVersions, type CatalogueChange, type CatalogueDelivery, type Issue, type Item, type ItemType, type Question, type Rev } from '../shared/types.ts'
 import {
   artifactCheck,
   artifactSidecarPath,
   claimNext,
+  configIssues,
   configPath,
-  formatJson,
   deleteItemAssets,
   deleteItemFile,
   deleteQuestionFile,
   fileExistsIn,
+  formatJson,
+  imageLinkOut,
+  inFileOrder,
   issuesFor,
   itemPath,
-  storiesDir,
+  judgeRecordFile,
+  layoutIssues,
   layoutPath,
   loadCatalogue,
+  parseIssuesOf,
   questionPath,
   questionsDir,
   readArtifactFile,
+  readConfig,
   readItemFile,
   readLayout,
   readQuestionFile,
-  readConfig,
   readRecodes,
+  RECORD_DIRS,
+  storiesDir,
   takenIds,
+  withMeta,
   writeArtifact,
   writeAtomic,
   writeItem,
   writeLayout,
   writeQuestion,
-  type LoadResult,
   type LoadedFile,
+  type LoadResult,
+  type RecordFileKind,
 } from './catalogueFs.ts'
 import { artifactInfo, artifactPath } from './artifactFiles.ts'
 import { gitAssetHistory, gitDirty, gitFileHistory, gitScreenshots } from './gitHistory.ts'
 import { DiffRefError, createDiffReader } from './catalogueDiff.ts'
-import { NO_JOURNAL, type Journal } from './historyJournal.ts'
+import { memoryJournal, type Journal } from './historyJournal.ts'
 
 export class HttpError extends Error {
   status: number
@@ -183,15 +201,16 @@ function blockedBy(message: string, blocked: Blocker[]): HttpError {
   return new HttpError(409, message, { current: blocked[0]!.current, blocked })
 }
 
-export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => void = () => {}, opts: ApiOptions = {}) {
+export function createCatalogueApi(root: string, emit: (d: CatalogueDelivery) => void = () => {}, opts: ApiOptions = {}) {
   let state: LoadResult = loadCatalogue(root)
-  const journal = opts.journal ?? NO_JOURNAL
+  const journal = opts.journal ?? memoryJournal()
   const gitHistory = opts.gitHistory ?? gitFileHistory
   const gitShots = opts.gitScreenshots ?? gitScreenshots
   const gitAsset = opts.gitAssetHistory ?? gitAssetHistory
   const diffs = createDiffReader(root, { watched: opts.watched })
   journal.baseline(state.items)
-  journal.screenshots(join(root, 'assets'), { offline: true })
+  /** Every screenshot's version (D-10), as the snapshot gives it; a re-sync updates the folders that changed. */
+  let assets: AssetVersions = byPath(Object.entries(journal.screenshots(join(root, 'assets'), { offline: true })))
 
   const itemList = () => Object.values(state.items).map((r) => r.data)
   const readVoice = (): { text: string | null; rev: string | null } => {
@@ -205,22 +224,48 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
   const questionList = () => Object.values(state.questions).map((r) => r.data)
   /** After writing a well-formed layout: drop its read problems. True when there were any. */
   const layoutRewritten = () => {
-    const had = state.parseIssues.some((i) => i.id === 'layout')
-    if (had) state.parseIssues = state.parseIssues.filter((i) => i.id !== 'layout')
+    const had = state.sources.layout.length > 0
+    if (had) {
+      state.sources.layout = []
+      state.parseIssues = parseIssuesOf(state.sources)
+    }
     return had
   }
+  /*
+   * The check resolves every image's real path (B01's symbolic-link warning), the larger part of its cost
+   * on a big catalogue. The answers are kept until that image's folder changes (or a full re-read).
+   */
+  const links = new Map<string, string | null>()
+  const linkOutOf = imageLinkOut(root)
+  const cachedLinkOut = (rel: string) => {
+    if (!links.has(rel)) links.set(rel, linkOutOf(rel))
+    return links.get(rel)!
+  }
   const refreshIssues = () => {
-    state.issues = issuesFor(state.items, state.questions, state.parseIssues, root, state.layout.lanes, state.artifacts, state.config, state.layout.firstLane)
+    state.issues = issuesFor(state.items, state.questions, state.parseIssues, root, state.layout.lanes, state.artifacts, state.config, state.layout.firstLane, cachedLinkOut)
   }
 
   /*
-   * One write request, one check, one issues event (FINDINGS R-26). While a write request runs, record
-   * events wait in `pending` and a change to the records only marks the issues stale; at the end the
-   * issues are checked once and sent once, after the record events. Outside a request (the watcher's
-   * sync) events go out at once.
+   * One write request, one check, one delivery (FINDINGS R-26, R-159). While a write request runs, its
+   * changes are merged into `pending` and a change to the records only marks the issues stale; at the end
+   * the issues are checked once and everything goes to the tabs as one delivery. A re-sync builds its own
+   * delivery the same way. Each delivery is numbered (`seq`) within this server process (`epoch`), and the
+   * snapshot says which number it is current to, so a tab never lets an older snapshot win.
    */
-  let pending: { events: CatalogueEvent[]; stale: boolean; issues: boolean } | null = null
-  const notify = (e: CatalogueEvent) => (pending ? pending.events.push(e) : emit(e))
+  const epoch = randomUUID()
+  let seq = 0
+  const send = (body: DeliveryBody) => {
+    if (!isEmptyBody(body)) emit({ epoch, seq: ++seq, ...body })
+  }
+  let pending: { body: DeliveryBody; stale: boolean; issues: boolean } | null = null
+  const notify = (c: CatalogueChange) => {
+    if (pending) addChange(pending.body, c)
+    else {
+      const body: DeliveryBody = {}
+      addChange(body, c)
+      send(body)
+    }
+  }
   /** Records changed: the issues need checking again, and the tabs need the result. */
   const issuesChanged = () => {
     if (pending) {
@@ -229,7 +274,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       return
     }
     refreshIssues()
-    emit({ kind: 'issues', issues: state.issues })
+    send({ issues: state.issues })
   }
   /** Bring the issues up to date with records adopted earlier in this request (before judging a change against them). */
   const freshIssues = () => {
@@ -242,8 +287,8 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
     pending = null
     if (!p) return
     if (p.stale) refreshIssues()
-    for (const e of p.events) emit(e)
-    if (p.issues) emit({ kind: 'issues', issues: state.issues })
+    if (p.issues) p.body.issues = state.issues
+    send(p.body)
   }
 
   /** Refuse a change that would introduce an integrity error not already present. */
@@ -468,7 +513,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
     if (req.method === 'GET') return route(req)
     // A write changes files on disk: comparisons with them are stale, now and once it is done.
     diffs.touched()
-    pending = { events: [], stale: false, issues: false }
+    pending = { body: {}, stale: false, issues: false }
     try {
       const out = route(req)
       return out instanceof Promise ? out.finally(() => diffs.touched()) : out
@@ -487,8 +532,10 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
     refuseCrossSite(req)
 
     if (path === '/api/catalogue' && method === 'GET') {
-      return { items: state.items, questions: state.questions, artifacts: state.artifacts, layout: state.layout, config: state.config, issues: state.issues }
+      return { epoch, seq, items: state.items, questions: state.questions, artifacts: state.artifacts, layout: state.layout, config: state.config, issues: state.issues, assets }
     }
+    // The tab asks this while it is offline, to learn when the server is back (and whether it restarted).
+    if (path === '/api/ping' && method === 'GET') return { epoch, seq }
 
     // Diff review: read-only git, in child processes like the history routes.
     if (path === '/api/diff/commits' && method === 'GET') return diffs.commits()
@@ -877,7 +924,8 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       writeAtomic(configPath(root), formatJson(next))
       const read = readConfig(root)
       state.config = read.config
-      state.parseIssues = [...state.parseIssues.filter((i) => i.id !== 'config'), ...read.problems.map((message) => ({ severity: 'error' as const, id: 'config', message }))]
+      state.sources.config = configIssues(read.problems)
+      state.parseIssues = parseIssuesOf(state.sources)
       notify({ kind: 'config', config: state.config })
       issuesChanged()
       return state.config
@@ -891,7 +939,9 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       const positions = { ...onDisk.layout.positions }
       for (const [id, p] of Object.entries(patch)) {
         if (p === null) delete positions[id]
-        else if (Number.isFinite(p?.x) && Number.isFinite(p?.y)) positions[id] = { x: Math.round(p.x), y: Math.round(p.y) }
+        // Never a position for a card with no file (FINDINGS R-57): judged on disk, not on what was last
+        // synced, so a card an agent created a moment ago keeps the place it was dragged to.
+        else if (Number.isFinite(p?.x) && Number.isFinite(p?.y) && existsSync(itemPath(id, root))) positions[id] = { x: Math.round(p.x), y: Math.round(p.y) }
       }
       const moved = Object.keys(patch).filter((id) => state.items[id])
       let lanes = onDisk.layout.lanes
@@ -970,14 +1020,125 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
     throw new HttpError(404, `no route for ${method} ${path}`)
   }
 
-  /** Re-read the folder and emit an event for every record whose file changed. */
-  function syncFromDisk() {
+  /**
+   * Which of the server's inputs the changed paths touch: the record files to re-read, the layout, the
+   * config, the screenshot folders, the artifacts whose file changed. Mirrors what `loadCatalogue` reads,
+   * so any other path (notes, change logs, reference files no artifact shows) feeds nothing. Null when a
+   * path cannot be judged one file at a time (the folder itself, a record folder): read everything.
+   */
+  function planSync(paths: readonly string[]): SyncPlan | null {
+    const rootAbs = resolve(root)
+    const plan: SyncPlan = { files: [], layout: false, config: false, assets: new Set(), artifactFiles: new Set() }
+    const fileOf = new Map<string, string[]>()
+    for (const [id, rec] of Object.entries(state.artifacts)) {
+      const abs = rec.data.file ? artifactPath(rec.data.file, root) : null
+      if (abs) fileOf.set(abs, [...(fileOf.get(abs) ?? []), id])
+    }
+    for (const p of paths) {
+      const abs = resolve(p)
+      // The path is an artifact's file, or a folder holding one (moved or removed as a whole).
+      for (const [file, ids] of fileOf) if (file === abs || file.startsWith(abs + sep)) for (const id of ids) plan.artifactFiles.add(id)
+      if (abs === rootAbs) return null
+      if (!abs.startsWith(rootAbs + sep)) continue // an artifact's file outside the folder (handled above)
+      const parts = abs.slice(rootAbs.length + 1).split(sep)
+      const kind = RECORD_FOLDERS.get(parts[0]!)
+      if (parts.length === 1) {
+        if (parts[0] === 'board-layout.json') plan.layout = true
+        else if (parts[0] === CONFIG_FILE || parts[0] === RECODES_FILE) plan.config = true
+        else if (kind || parts[0] === 'assets') return null // a whole folder came or went
+      } else if (kind) {
+        const name = parts[1]!
+        if (parts.length === 2 && name.endsWith('.md') && !name.startsWith('.')) plan.files.push({ kind, name: name.slice(0, -3), file: abs })
+      } else if (parts[0] === 'assets') plan.assets.add(parts[1]!)
+    }
+    return plan
+  }
+
+  /**
+   * The state after re-reading only what `plan` names, the rest kept as it is (FINDINGS R-158). Records
+   * come from the state (so the board's own writes since the last sync stay), parse issues per source.
+   * The result equals a fresh `loadCatalogue` of the folder as it is now (tests/resync.test.ts proves it).
+   */
+  function partialLoad(plan: SyncPlan, shots: AssetVersions): LoadResult {
+    const sources = { ...state.sources, item: new Map(state.sources.item), question: new Map(state.sources.question), artifact: new Map(state.sources.artifact) }
+    const records = { item: { ...state.items }, question: { ...state.questions }, artifact: { ...state.artifacts } } as Record<RecordFileKind, Record<string, Rev<Item | Question | Artifact> | ArtifactRec>>
+    const sidecars: Record<string, Rev<Artifact>> = {}
+    const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+    // A changed screenshot folder always re-runs the check: what it judges (an image's existence, a nested
+    // file, a symbolic link) can change with no screenshot's version changing (B07 review).
+    let changed = plan.assets.size > 0 || plan.artifactFiles.size > 0 || shots !== assets
+    for (const { kind, name, file } of plan.files) {
+      const j = judgeRecordFile(kind, file)
+      const was = records[kind][name]
+      if (j?.issues.length) sources[kind].set(name, j.issues)
+      else sources[kind].delete(name)
+      if (j?.record) {
+        if (kind === 'artifact') sidecars[name] = j.record as Rev<Artifact>
+        else records[kind][name] = j.record
+      } else delete records[kind][name]
+      if (was?.rev !== j?.record?.rev || !same(j?.issues ?? [], state.sources[kind].get(name) ?? [])) changed = true
+    }
+    // The layout and config are read here, so the echo of the board's own drag or Settings save costs no check.
+    let { layout, layoutReadable, config } = state
+    if (plan.layout) {
+      const read = readLayout(root)
+      sources.layout = layoutIssues(read)
+      if (!same(read.layout, layout) || layoutReadable !== !read.error || !same(sources.layout, state.sources.layout)) changed = true
+      layout = read.layout
+      layoutReadable = !read.error
+    }
+    if (plan.config) {
+      const read = readConfig(root)
+      sources.config = configIssues(read.problems)
+      if (!same(read.config, config) || !same(sources.config, state.sources.config)) changed = true
+      config = read.config
+    }
+    if (!changed) return state // only echoes of what the server already holds
+    // Artifacts whose sidecar or file changed take their file facts afresh; the rest keep theirs.
+    for (const id of plan.artifactFiles) if (records.artifact[id] && !sidecars[id]) sidecars[id] = records.artifact[id] as Rev<Artifact>
+    Object.assign(records.artifact, withMeta(sidecars, root))
+    const items = inFileOrder(records.item) as Record<string, Rev<Item>>
+    const questions = inFileOrder(records.question) as Record<string, Rev<Question>>
+    const artifacts = inFileOrder(records.artifact) as Record<string, ArtifactRec>
+    const parseIssues = parseIssuesOf(sources)
+    return { items, questions, artifacts, layout, layoutReadable, config, sources, parseIssues, issues: issuesFor(items, questions, parseIssues, root, layout.lanes, artifacts, config, layout.firstLane, cachedLinkOut) }
+  }
+
+  /** The state and screenshot versions as on disk now: re-reading only `paths` when it can, else everything. */
+  function readChanges(paths?: readonly string[]): { next: LoadResult; shots: AssetVersions } {
+    const plan = paths ? planSync(paths) : null
+    if (plan) {
+      try {
+        // Screenshot files carry no rev in the catalogue: the journal fingerprints them itself.
+        let shots = assets
+        for (const rel of links.keys()) if (plan.assets.has(rel.split('/')[1]!)) links.delete(rel)
+        if (plan.assets.size) {
+          const kept = Object.entries(assets).filter(([src]) => !plan.assets.has(src.split('/')[1]!))
+          const merged = byPath([...kept, ...Object.entries(journal.screenshots(join(root, 'assets'), { ids: plan.assets }))])
+          if (JSON.stringify(merged) !== JSON.stringify(assets)) shots = merged
+        }
+        return { next: partialLoad(plan, shots), shots }
+      } catch (e) {
+        console.warn(`[catalogue] re-reading the changed files failed (${(e as Error).message}); reading the whole folder`)
+      }
+    }
+    links.clear()
+    const shots = byPath(Object.entries(journal.screenshots(join(root, 'assets'))))
+    return { next: loadCatalogue(root), shots: JSON.stringify(shots) === JSON.stringify(assets) ? assets : shots }
+  }
+
+  /**
+   * Bring the state up to the folder as it is on disk and send the tabs one delivery of what changed.
+   * `paths`: the files the watcher saw change, re-read alone (FINDINGS R-158); without them, or when they
+   * cannot be judged one at a time, the whole folder is read again (the fallback, and what start-up and the
+   * delete and lane routes use).
+   */
+  function syncFromDisk(paths?: readonly string[]) {
     diffs.touched()
-    // Screenshot files carry no rev in the catalogue: the journal fingerprints them itself.
-    journal.screenshots(join(root, 'assets'))
     const prev = state
-    const next = loadCatalogue(root)
-    const events: CatalogueEvent[] = []
+    const { next, shots } = readChanges(paths)
+    if (next === prev && shots === assets) return
+    const events: CatalogueChange[] = []
     // A card left out of the last load because its file could not be read was there all along: fixed, it is no reappearance.
     const unreadable = new Set(prev.parseIssues.filter((i) => i.severity === 'error').map((i) => i.id))
     for (const id of new Set([...Object.keys(prev.items), ...Object.keys(next.items)])) {
@@ -1002,13 +1163,24 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       }
     }
     if (JSON.stringify(prev.config) !== JSON.stringify(next.config)) events.push({ kind: 'config', config: next.config })
+    // Screenshots rewritten, added or removed: their new versions, null for one gone (D-10).
+    const moved: Record<string, string | null> = {}
+    for (const src of new Set([...Object.keys(assets), ...Object.keys(shots)])) if (assets[src] !== shots[src]) moved[src] = shots[src] ?? null
+    if (Object.keys(moved).length) events.push({ kind: 'assets', assets: moved })
     const issuesDiffer = JSON.stringify(prev.issues) !== JSON.stringify(next.issues)
     state = next
+    assets = shots
     if (pending) pending.stale = false // the load just checked everything
     if (!events.length && !issuesDiffer) return
-    for (const e of events) notify(e)
-    if (pending) pending.issues = true
-    else emit({ kind: 'issues', issues: next.issues })
+    if (pending) {
+      for (const e of events) addChange(pending.body, e)
+      pending.issues = true
+      return
+    }
+    const body: DeliveryBody = {}
+    for (const e of events) addChange(body, e)
+    if (issuesDiffer) body.issues = next.issues
+    send(body)
   }
 
   return {
@@ -1023,6 +1195,23 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
 }
 
 export type CatalogueApi = ReturnType<typeof createCatalogueApi>
+
+/** Screenshot versions in path order, so two scans of the same files compare equal whatever order the folders were listed in. */
+const byPath = (entries: [string, string][]): AssetVersions => Object.fromEntries(entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+
+/** What a re-sync re-reads (`planSync`). */
+interface SyncPlan {
+  files: { kind: RecordFileKind; name: string; file: string }[]
+  layout: boolean
+  config: boolean
+  /** Card IDs whose `assets/<ID>/` folder changed. */
+  assets: Set<string>
+  /** Artifacts whose file changed. */
+  artifactFiles: Set<string>
+}
+
+/** The record folders by name (`stories` holds items, and so on). */
+const RECORD_FOLDERS = new Map<string, RecordFileKind>(Object.entries(RECORD_DIRS).map(([kind, dir]): [string, RecordFileKind] => [dir, kind as RecordFileKind]))
 
 /** The lane list a lane write is judged against: the first lane's name and the named lanes. */
 const lanesOf = (layout: Layout) => ({ firstLane: layout.firstLane ?? null, lanes: layout.lanes })

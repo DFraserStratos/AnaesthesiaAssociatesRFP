@@ -1,6 +1,6 @@
 /** The catalogue store's card-move bookkeeping: debounced, patch-based, never lost, never undone by its own echo. */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Item, Layout, Rev } from '../shared/types.ts'
+import type { CatalogueChange, CatalogueDelivery, Item, Layout, Rev } from '../shared/types.ts'
 import { item } from './fixtures.ts'
 
 const putLayout = vi.fn<(patch: { positions: Record<string, { x: number; y: number } | null> }) => Promise<Layout>>()
@@ -25,6 +25,14 @@ vi.stubGlobal('localStorage', {
   removeItem: (k: string) => void stored.delete(k),
 })
 const { useCatalogue, useView } = await import('../src/store.ts')
+const { addChange } = await import('../shared/delivery.ts')
+/** One change, as the server sends it: a numbered delivery. */
+let seq = 0
+const deliver = (c: CatalogueChange) => {
+  const d: CatalogueDelivery = { epoch: 'test', seq: ++seq }
+  addChange(d, c)
+  useCatalogue.getState().applyDelivery(d)
+}
 const { parseConfig } = await import('../shared/config.ts')
 const s = () => useCatalogue.getState()
 
@@ -80,7 +88,7 @@ describe('card moves', () => {
     s().setPositions({ a: { x: 1, y: 1 } })
     await vi.advanceTimersByTimeAsync(400)
     putLayout.mockResolvedValue({ positions: {}, lanes: [] })
-    s().applyEvent({ kind: 'layout', layout: { positions: {}, lanes: [] } }) // someone fixed the file
+    deliver({ kind: 'layout', layout: { positions: {}, lanes: [] } }) // someone fixed the file
     await vi.advanceTimersByTimeAsync(0)
     expect(putLayout).toHaveBeenCalledTimes(2)
     expect(s().layoutError).toBeUndefined()
@@ -88,7 +96,7 @@ describe('card moves', () => {
 
   it('ignores a layout event while moves are still waiting to be sent', () => {
     s().setPositions({ a: { x: 1, y: 1 } })
-    s().applyEvent({ kind: 'layout', layout: { positions: {}, lanes: [] } })
+    deliver({ kind: 'layout', layout: { positions: {}, lanes: [] } })
     expect(s().layout.positions.a).toEqual({ x: 1, y: 1 })
   })
 
@@ -199,7 +207,7 @@ describe('undo and redo', () => {
     await s().moveItems([{ id: 'US-01.1.1', order: 3 }])
     await s().moveItems(move)
     const cur = s().items['US-01.1.2']!
-    s().applyEvent({ kind: 'item', id: 'US-01.1.2', record: { data: { ...cur.data, parent: 'FT-01.1' }, rev: 'agent' } })
+    deliver({ kind: 'item', id: 'US-01.1.2', record: { data: { ...cur.data, parent: 'FT-01.1' }, rev: 'agent' } })
     expect(await s().undo()).toBe(false)
     expect(batchItems).toHaveBeenCalledTimes(2)
     expect(s().moveError).toMatch(/Can't undo/)
@@ -210,7 +218,7 @@ describe('undo and redo', () => {
     echo()
     await s().moveItems(move)
     const cur = s().items['US-01.1.2']!
-    s().applyEvent({ kind: 'item', id: 'US-01.1.2', record: { data: { ...cur.data, title: 'Renamed' }, rev: 'agent' } })
+    deliver({ kind: 'item', id: 'US-01.1.2', record: { data: { ...cur.data, title: 'Renamed' }, rev: 'agent' } })
     expect(await s().undo()).toBe(true)
     expect(s().items['US-01.1.2']!.data).toMatchObject({ parent: 'FT-01.1', title: 'Renamed' })
   })
@@ -301,7 +309,7 @@ describe('renaming or removing a lane is one write (R-56)', () => {
   })
 
   it('the lane list rev follows layout events and lane saves', async () => {
-    s().applyEvent({ kind: 'layout', layout: { positions: {}, lanes: ['MVP', 'Later', 'New'], lanesRev: 'L9' } })
+    deliver({ kind: 'layout', layout: { positions: {}, lanes: ['MVP', 'Later', 'New'], lanesRev: 'L9' } })
     expect(s().layout.lanesRev).toBe('L9')
     putLayout.mockResolvedValue({ positions: {}, lanes: ['MVP', 'Later'], lanesRev: 'L10' })
     await s().setLanes(['MVP', 'Later'])
@@ -326,14 +334,14 @@ describe('the saved status filter (R-46)', () => {
     const before = saved()
     expect(before).toEqual(['6'])
     for (const broken of ['{ "statuses": [ ,', JSON.stringify({ statuses: SIX.map((d) => (d.code === 5 ? { ...d, role: 'retired' } : d)) }), JSON.stringify({ statuses: { Retired: 6 } })]) {
-      s().applyEvent({ kind: 'config', config: config(broken) })
+      deliver({ kind: 'config', config: config(broken) })
       expect(useView.getState().statuses, broken).toEqual(['6'])
       expect(saved(), broken).toEqual(['6'])
     }
-    s().applyEvent({ kind: 'config', config: config(JSON.stringify({ statuses: SIX })) })
+    deliver({ kind: 'config', config: config(JSON.stringify({ statuses: SIX })) })
     expect(useView.getState().statuses).toEqual(['6'])
     // Removed for real: a filter naming it would hide every card.
-    s().applyEvent({ kind: 'config', config: config(JSON.stringify({ statuses: SIX.filter((d) => d.code !== 6).map((d) => (d.code === 5 ? { ...d, settle: undefined, role: 'retired' } : d)) })) })
+    deliver({ kind: 'config', config: config(JSON.stringify({ statuses: SIX.filter((d) => d.code !== 6).map((d) => (d.code === 5 ? { ...d, settle: undefined, role: 'retired' } : d)) })) })
     expect(useView.getState().statuses).toEqual([])
     expect(saved()).toEqual([])
   })

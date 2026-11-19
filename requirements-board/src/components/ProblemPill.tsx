@@ -10,14 +10,15 @@ import { useCloseOpen } from './RegionBoundary.tsx'
 const CLEARED_MS = 3400
 
 /**
- * The masthead's one status mark, shown only while something is wrong: offline first (nothing is
- * being saved), then card moves not saved, a refused move, a part of the page that failed or an
- * uncaught error, a saved preference that was reset, and catalogue errors. One problem names
+ * The masthead's one status mark, shown only while something is wrong: offline first (card moves are
+ * kept and sent when the server is back, which it then says, offering a Reload), then card moves not
+ * saved, a refused move, a part of the page that failed or an uncaught error, a saved preference that
+ * was reset, and catalogue errors. One problem names
  * itself; more say how many. It opens one list of them all. Notes are not problems: they never show
  * the pill, and are listed under the errors here and in full on Settings. Problems found in the
  * browser come from `clientProblems.ts` (accepted decision 17).
  */
-export function ProblemPill({ connected }: { connected: boolean }) {
+export function ProblemPill({ connected, serverBack = false, onReload }: { connected: boolean; serverBack?: boolean; onReload?: () => void }) {
   const issues = useCatalogue((s) => s.issues)
   const layoutError = useCatalogue((s) => s.layoutError)
   const moveError = useCatalogue((s) => s.moveError)
@@ -27,7 +28,7 @@ export function ProblemPill({ connected }: { connected: boolean }) {
   const errors = issues.filter((i) => i.severity === 'error').length
 
   const problems: string[] = []
-  if (!connected) problems.push('Offline')
+  if (!connected) problems.push(serverBack ? 'Server is back' : 'Offline')
   if (layoutError) problems.push('Card moves not saved')
   if (moveError) problems.push(moveError.split(':')[0] ?? moveError)
   if (crashes) problems.push(crashes === 1 ? 'Part of the page failed' : `${crashes} parts of the page failed`)
@@ -73,12 +74,12 @@ export function ProblemPill({ connected }: { connected: boolean }) {
         {offline ? <Unplug size={14} /> : <AlertTriangle size={14} />}
         {count === 1 ? problems[0] : `${count} problems`}
       </button>
-      {open && <ProblemPanel anchor={ref} connected={connected} onClose={() => setOpen(false)} />}
+      {open && <ProblemPanel anchor={ref} connected={connected} serverBack={serverBack} onReload={onReload} onClose={() => setOpen(false)} />}
     </>
   )
 }
 
-function ProblemPanel({ anchor, connected, onClose }: { anchor: RefObject<HTMLButtonElement | null>; connected: boolean; onClose: () => void }) {
+function ProblemPanel({ anchor, connected, serverBack, onReload, onClose }: { anchor: RefObject<HTMLButtonElement | null>; connected: boolean; serverBack: boolean; onReload?: () => void; onClose: () => void }) {
   const issues = useCatalogue((s) => s.issues)
   const layoutError = useCatalogue((s) => s.layoutError)
   const moveError = useCatalogue((s) => s.moveError)
@@ -92,15 +93,26 @@ function ProblemPanel({ anchor, connected, onClose }: { anchor: RefObject<HTMLBu
       {!connected && (
         <section>
           <h3>Connection</h3>
-          <p>
-            Offline. Changes aren't being saved. Run <code>npm run dev</code> to start the board's server again.
-          </p>
+          {serverBack ? (
+            <p className="problem-row">
+              <span>{layoutError ? "The board's server is back, but card moves still could not be saved (below)." : "The board's server is back and your card moves are saved."} Reload to see changes made on disk again.</span>
+              {onReload && (
+                <button className="btn ghost sm" onClick={onReload}>
+                  Reload
+                </button>
+              )}
+            </p>
+          ) : (
+            <p>
+              Offline: the board's server isn't answering. Card moves are kept and sent when it's back; sheet edits stay as drafts until you save them. Run <code>npm run dev</code> to start it again.
+            </p>
+          )}
         </section>
       )}
       {(layoutError || moveError) && (
         <section>
           <h3>Card moves</h3>
-          {layoutError && <p className="sev-error">Card moves not saved: {layoutError}</p>}
+          {layoutError && <p className="sev-error">{layoutError}</p>}
           {moveError && (
             <p className="sev-error problem-row">
               <span>{moveError}</span>

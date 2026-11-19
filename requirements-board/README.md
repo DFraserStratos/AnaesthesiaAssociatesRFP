@@ -84,15 +84,18 @@ shared/        code shared by server, scripts and browser
   sources.ts     sources to artifact spots: the one spot rule (`spotExists`), `resolveSource`, `resolveNoteCite`
   highlight.ts   the red box, shared by the capture runner and the artifact viewers
   csv.ts         CSV export in the old generator's shape
+  delivery.ts    the `catalogue:changed` delivery: one re-sync's or one write's changes in one message
 server/
   catalogueFs.ts     load the folder, atomic / exclusive / in-place writes, ID claiming, layout file; REQUIREMENTS_DIR (env override for fixtures)
   catalogueApi.ts    the /api routes as a plain function (no Vite), so tests drive it directly; its header holds the write protocol
-  historyJournal.ts  the per-card change journal (.history/, gitignored); screenshot hashes in the repository's width
+  historyJournal.ts  the per-card change journal (.history/, gitignored); screenshot hashes in the repository's width,
+                     which are also the screenshots' versions (D-10)
   gitCore.ts         how every reader calls git: no locks (GIT_OPTIONAL_LOCKS=0), literal paths, NUL output, either hash width, bounded caches
   gitHistory.ts      a card's, sidecar's, artifact file's and screenshot's history (one first-parent walk), read-only and asynchronous
   gitRenames.ts      a file's earlier paths, each bounded by the commit that moved it (committed, staged, and plain `mv` moves)
   catalogueDiff.ts   the Diff review's git reading: commits that changed records, two states compared, cached
-  cataloguePlugin.ts Vite dev-server plugin: wires the API, serves assets and artifact files (and guards the origin), folder watcher → HMR events
+  cataloguePlugin.ts Vite dev-server plugin: wires the API, serves assets and artifact files (and guards the origin), folder watcher → HMR deliveries
+  watchBatch.ts      the watcher's batching: one re-sync per burst, with the paths that changed
   realPaths.ts       real-path rules: containment across linked folders, symbolic links that lead out
   artifactFiles.ts   an artifact's file: where it is, what it holds (cached per version), for the check and the board
   pdfFacts.ts        PDFs' page sizes and text, in a child process (pdf.js is async; the catalogue loads sync); many per run
@@ -102,11 +105,11 @@ server/
 scripts/       check, export-csv, capture (+ captureFiles: generated-file naming, testable),
                link-index, apply-links (+ linkProposals: the applier, testable), new-artifact, shoot-steps
 src/
-  store.ts       catalogue mirror + derived index + view prefs
+  store.ts       catalogue mirror (deliveries in order, never under a snapshot), card-move queue, derived index, view prefs
   artifactIndex.ts  which cards point at each artifact, its spots, the Artifacts view's prefs
   nav.ts         URL-driven sheets (?item, ?question, one-shot ?edit=<id>), the docked panel's leave guard
   useDismiss.ts  Esc / outside-press close for popovers
-  useCatalogueRefresh.ts  re-run on record changes on disk or window focus; usePersistentState.ts a per-browser pick
+  useCatalogueRefresh.ts  re-run on a delivery that changes records, or window focus; usePersistentState.ts a per-browser pick
   dates.ts       dates and times, in New Zealand English
   storage.ts     the one rule for JSON kept in browser storage: wrong shapes read as defaults, never a crash
   clientProblems.ts  problems found in the browser (a part of the page that failed, an uncaught error, a reset preference) for the problem pill
@@ -172,8 +175,27 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   fails, and runs the check and sends the issues once, whatever its size.
 - Writes must be `application/json` from the board's own origin, so another web page cannot write
   to the catalogue while the board is running.
-- The server watches the requirements folder (debounced, at most 600ms behind) and pushes
-  `catalogue:changed` events over Vite's HMR socket, so agent edits appear live.
+- The server watches the requirements folder (debounced, at most 600ms behind) and pushes what
+  changed over Vite's HMR socket, so agent edits appear live. A burst of file changes costs one
+  re-sync that re-reads only the files that changed (a note, a change log or another file the board
+  does not hold costs nothing; a folder added or removed, a watcher error or more than 500 paths at
+  once reads the whole folder), and reaches each tab as one `catalogue:changed` delivery
+  (`shared/delivery.ts`): its records, layout, config, issues and screenshot versions together,
+  numbered, so a tab applies them in order and a snapshot taken earlier never takes it back. A write
+  of several records is one delivery too. One delivery is one store update and one board rebuild, and
+  only the cards it changed re-render.
+- Every screenshot has a version, its git blob hash (`assets` in the snapshot and the store, and in
+  a delivery when one is rewritten, added or removed; null for one gone). An image URL carries it as
+  `?v=` (`assetUrl(src, version)`), so a re-captured screenshot is fetched afresh; any version is
+  served the current file.
+- Card moves not saved yet (waiting, failed or being sent) are kept in the tab's session storage, so a
+  reload, including Vite's after the server restarts, shows them and sends them; leaving or reloading
+  while any are unsaved asks first. While the server is away the board asks it every 2 s; when it
+  answers, kept moves are saved and the problem pill offers a Reload. A Mapped move still saving at a
+  reload is checked against the cards afterwards (never sent again) and reported only if it did not
+  land. Freeform saves go one at a time, so they reach the file in order; a removed card leaves no
+  position in a save, in undo or in the layout file (the server keeps no position for a card with no
+  file).
 - On the board, `?item=ID` docks the item sheet as a left-hand panel beside the map (one click on
   a card opens it); elsewhere it is a modal. The board switches cards through the panel's
   unsaved-edit guard (`guarded` in `src/nav.ts`).
@@ -182,8 +204,9 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
 - The board has two modes, switched top right (per browser, each with its own viewport):
   - **Freeform** (the original view): the arrangement is computed (`autoLayout`): epics as column
     heads wrapping into bands, features beneath, stories stacked. Only cards you drag are stored,
-    in `board-layout.json`, sent as patches; "Tidy" removes those overrides. Moves that fail to
-    save are retried on reconnect. It ignores `swimlane`.
+    in `board-layout.json`, sent as patches, one save at a time; "Tidy" removes those overrides. Moves
+    that fail to save are kept in the tab and sent again with the next move, when the layout file
+    changes on disk, after a reload, and when the server answers again. It ignores `swimlane`.
   - **Mapped**: a user story map in one strip (`mappedLayout`): epics, features, then swim lanes
     across the whole map. Dragging an epic or feature carries everything under it and the others
     bump aside live; a story can be dragged within a column, into another feature and into another

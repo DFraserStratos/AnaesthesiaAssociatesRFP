@@ -63,7 +63,9 @@ UI copy (use a middot, a comma or "to").
 **The masthead shows status only when something is wrong.** No "Live", no "Checks pass": one
 problem pill appears at the right while there is a problem, naming it ("Offline", "3 errors", "Card
 moves not saved") or, with more than one, counting them ("2 problems"). Amber while offline, since
-nothing is being saved, and offline leads its list; red otherwise. It opens one list grouped as
+nothing reaches the files (card moves are kept and sent when the server answers), and offline leads
+its list; when the server answers again it reads "Server is back", its Connection line offering
+Reload; red otherwise. It opens one list grouped as
 Connection, Card moves, This page (a part of the page that failed to show, with Try again and Close
 card, and uncaught errors, dismissable), Saved preferences (a browser preference that was reset,
 dismissable) and Checks. A part of the page that fails shows its own quiet recovery panel in its

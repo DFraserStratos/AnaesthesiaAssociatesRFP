@@ -3,12 +3,13 @@
  * disk, conflicts the client can recover from, in-place saves, no-op saves, Settings sections with their
  * own bases, the lane-list rules, the one-write lane change with put-back, and creates without hard links.
  */
+import { changesOf } from './deliveries.ts'
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { parseArtifact, parseItem } from '../shared/files.ts'
-import type { Artifact, ArtifactRec, CatalogueEvent, Item, Layout, Rev } from '../shared/types.ts'
+import type { Artifact, ArtifactRec, CatalogueChange, Item, Layout, Rev } from '../shared/types.ts'
 import { HttpError, createCatalogueApi } from '../server/catalogueApi.ts'
 import { FileExistsError, REQUIREMENTS_DIR, artifactSidecarPath, claimNext, configPath, createAtomic, itemPath, layoutPath, loadCatalogue, questionPath, writeItem, writeLayout, writeQuestion } from '../server/catalogueFs.ts'
 import { createJournal } from '../server/historyJournal.ts'
@@ -17,7 +18,7 @@ import { item, question } from './fixtures.ts'
 const JSON_HEADERS = { 'content-type': 'application/json', host: 'localhost:5180' }
 
 let root: string
-let events: CatalogueEvent[]
+let events: CatalogueChange[]
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), 'write-model-'))
   events = []
@@ -32,7 +33,7 @@ beforeEach(() => {
 afterEach(() => rmSync(root, { recursive: true, force: true }))
 
 type Api = ReturnType<typeof createCatalogueApi>
-const api = (opts: Parameters<typeof createCatalogueApi>[2] = {}) => createCatalogueApi(root, (e) => events.push(e), opts)
+const api = (opts: Parameters<typeof createCatalogueApi>[2] = {}) => createCatalogueApi(root, (d) => events.push(...changesOf(d)), opts)
 const call = (a: Api, method: string, path: string, body?: unknown) => a.handle({ method, path, body, headers: JSON_HEADERS })
 function refusal(fn: () => unknown): HttpError {
   try {
@@ -604,6 +605,17 @@ describe('a card created at a reused ID starts its journal afresh (R-54)', () =>
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }
+  })
+})
+
+describe('the layout file never gains a position for a card with no file (B07: R-57 server half)', () => {
+  it('drops a position for a deleted card, judged on disk, and keeps one for a card just created there', () => {
+    const a = api()
+    rmSync(itemPath('US-01.1.2', root)) // gone on disk; the board has not synced yet
+    writeItem(item({ id: 'US-01.1.3', parent: 'FT-01.1', order: 3 }), root) // created by an agent, not synced yet
+    call(a, 'PUT', '/api/layout', { positions: { 'US-01.1.2': { x: 5, y: 5 }, 'US-01.1.3': { x: 7, y: 8 }, 'US-01.1.1': { x: 1, y: 2 } } })
+    const saved = JSON.parse(readFileSync(join(root, 'board-layout.json'), 'utf8')).positions
+    expect(saved).toEqual({ 'US-01.1.1': { x: 1, y: 2 }, 'US-01.1.3': { x: 7, y: 8 } })
   })
 })
 

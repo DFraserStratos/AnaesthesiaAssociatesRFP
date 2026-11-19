@@ -25,11 +25,18 @@ function repaired(key: string, label: string, why: string) {
   queueMicrotask(() => useClientProblems.getState().repaired(key, label))
 }
 
+/**
+ * Where a value is kept: `local` for preferences (every tab, every visit), `session` for what belongs to
+ * one tab and survives only its reloads (unsaved card moves).
+ */
+export type StorageArea = 'local' | 'session'
+const areaOf = (area: StorageArea): Storage => (area === 'session' ? sessionStorage : localStorage)
+
 /** Read a stored JSON value through its shape check. `label` names it for people ("board view settings"). */
-export function readJson<T>(key: string, label: string, fallback: T, coerce: Coerce<T>): T {
+export function readJson<T>(key: string, label: string, fallback: T, coerce: Coerce<T>, area: StorageArea = 'local'): T {
   let text: string | null
   try {
-    text = localStorage.getItem(key)
+    text = areaOf(area).getItem(key)
   } catch {
     return fallback // blocked: nothing saved, nothing to repair
   }
@@ -48,11 +55,20 @@ export function readJson<T>(key: string, label: string, fallback: T, coerce: Coe
 }
 
 /** Save a JSON value; a blocked store keeps it for this page only (the caller's state). */
-export function writeJson(key: string, value: unknown) {
+export function writeJson(key: string, value: unknown, area: StorageArea = 'local') {
   try {
-    localStorage.setItem(key, JSON.stringify(value))
+    areaOf(area).setItem(key, JSON.stringify(value))
   } catch {
     // Private window or storage blocked: not persisted.
+  }
+}
+
+/** Forget a stored value (a blocked store has none). */
+export function removeJson(key: string, area: StorageArea = 'local') {
+  try {
+    areaOf(area).removeItem(key)
+  } catch {
+    // blocked: nothing kept
   }
 }
 

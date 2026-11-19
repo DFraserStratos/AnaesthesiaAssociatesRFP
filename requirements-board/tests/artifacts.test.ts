@@ -1,4 +1,5 @@
 /** Artifacts: the sidecar format, reading files without a DOM, the check's rules, links, history and the API. */
+import { changesOf } from './deliveries.ts'
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import type { ServerResponse } from 'node:http'
 import { tmpdir } from 'node:os'
@@ -700,7 +701,7 @@ describe('the API', () => {
 
   it("saves an artifact's details and nothing else: its file, regions and source stay as on disk", () => {
     const events: { kind: string }[] = []
-    const a = createCatalogueApi(root, (e) => events.push(e))
+    const a = createCatalogueApi(root, (d) => events.push(...changesOf(d)))
     const rec = a.getState().artifacts['AR-01']!
     const record = { ...rec.data, title: '  Renamed  ', date: '2021', author: 'Acme Ltd', status: 'Draft', supersededBy: 'AR-01', file: 'artifacts/AR-09.svg', regions: [], source: 'flowchart LR\n A', extra: { hack: 1 } }
     const saved = a.handle({ method: 'PUT', path: '/api/artifacts/AR-01', body: { record, baseRev: rec.rev }, headers: HEADERS }) as ArtifactRec
@@ -727,7 +728,7 @@ describe('the API', () => {
 
   it("tells clients when an artifact's file changes on disk", () => {
     const events: unknown[] = []
-    const a = createCatalogueApi(root, (e) => events.push(e))
+    const a = createCatalogueApi(root, (d) => events.push(...changesOf(d)))
     writeFileSync(join(root, 'artifacts', 'AR-01.svg'), SVG.replace('Two', 'Three'))
     a.syncFromDisk()
     expect(events).toContainEqual(expect.objectContaining({ kind: 'artifact', id: 'AR-01' }))

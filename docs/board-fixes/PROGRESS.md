@@ -95,7 +95,7 @@ Agent tools in parallel: B12 (after B02), B13 (REQ-07b after B04); both before B
 | B04 | One rule, one helper | COMPLETE | D-03 and B04-Q1 to Q3 recorded (accepted decision 18) | 2026-11-19, board 1.16.0; all 18 findings fixed; D-03 contract for B13 in the entry |
 | B08 | Git history reader | COMPLETE | D-07, D-05 with B05-Q2/Q3, B08-Q1 to Q3, Q5, Q6 recorded (accepted decision 19) | 2026-11-19, board 1.17.0; all 10 findings fixed; deletion bound and contracts for B05 and B09 in the entry |
 | B05 | Server write model | COMPLETE | D-04, B05-Q5, Q6 recorded (accepted decision 20); D-05 recorded (decision 19) | 2026-11-19, board 1.18.0; all 7 findings fixed; R-45 and R-111 server halves delivered (B06 closes); write protocol for B07 and B06 in the entry |
-| B07 | Store sync and layout | PLANNED | after B05 (D-04 recorded, decision 20); D-10 before build | B05's protocol contract in its entry |
+| B07 | Store sync and layout | COMPLETE | D-10, B07-Q5, Q6 recorded (accepted decision 21) | 2026-11-19, board 1.19.0; all 6 findings fixed; delivery shape, D-10 signal and unsaved-moves signal for B06, B09, B10, B11 in the entry |
 | B06 | Edit sheets and Settings | PLANNED | after B05, B07, B02, B03 | |
 | B09 | Diff and history UI | PLANNED | after B08, B07 (D-10) | |
 | B10 | Artifact viewers | PLANNED | after B01, B03, B04, B07; D-01c, B01-Q2 and D-10 recorded | |
@@ -124,7 +124,7 @@ decisions" section and resolved in that phase's planning.
 | D-07 | Git reader contract (cache key/bounds, SHA-256, unstaged moves, deletion and rename bounds) | B08 | B05, B09 | B08 build | Timeline and diff inputs; R-54 history cut | **Accepted 2026-11-19** (accepted decision 19): HEAD + index identity keys, bounded LRUs, hybrid clean-form names, unchanged unstaged moves followed, full lists with `deleted` markers |
 | D-08 | Lane-aware plan state on master | B12 | catch-up lanes | B12 build | update-build-plan behaviour while lanes run | Open |
 | D-09 | Kit export source and target refusal rules | B14 | none | B14 build | Export behaviour and docs | Open |
-| D-10 | Asset version and change signal (event and URL token) | B07 | B09, B10 | B07 build | R-96 and R-104 consumers | Open |
+| D-10 | Asset version and change signal (event and URL token) | B07 | B09, B10 | B07 build | R-96 and R-104 consumers | **Accepted 2026-11-19** (accepted decision 21): an `assets` entry on the batched delivery and every token in the snapshot; token = git blob hash; `?v=<token>` |
 
 ## Accepted decisions
 
@@ -370,6 +370,29 @@ decisions" section and resolved in that phase's planning.
         differ (a restore continues), or a `created` journal entry whose record differs from the newest
         git version before it. The artifact timeline cuts at its deletion bound the same way.
 
+- 2026-11-19, user (B07's planning questions, asked in the B07 session):
+  21. **D-10, B07-Q5 and B07-Q6:**
+      - **D-10, a delivery entry and the git blob hash.** Every batched `catalogue:changed` delivery may
+        carry `assets: { [src]: token | null }`, `src` as `item.images` writes it (`assets/<ID>/<name>`),
+        `null` for a file removed; the cards are the `<ID>` segment. The snapshot carries `assets` for every
+        file, so a tab loading later has the same tokens. The token is the file's git blob hash in the
+        repository's width (the journal's fingerprint, cached by size and mtime), so a touch without a
+        content change keeps it and it survives restarts. URL form `/requirements/assets/...?v=<token>`
+        (`assetUrl(src, token)`); B01's route already admits the query and serves the current file for any
+        token. An assets-only delivery causes no record update, no board rebuild and no
+        `useCatalogueRefresh` run. B09 (R-96) and B10 (R-104) consume it; they build no signal of their own.
+      - **B07-Q5, check then report.** A Mapped move still in flight when the page unloads keeps its target
+        fields in the tab's session storage. After the reload they are compared with the cards as loaded:
+        landed, nothing is said; not landed, the Card moves group says it was not saved. Never replayed.
+      - **B07-Q6, save the moves and offer Reload; kept moves are same-tab.** While Offline the board asks
+        its own server every 2 s; when it answers, kept Freeform moves are saved over HTTP at once and the
+        problem pill says the server is back with a Reload button. Unsaved moves are kept in session storage
+        (a reload of the same tab, including Vite's automatic one, keeps them; a closed tab does not, and
+        closing with unsaved moves asks first).
+      - **Downstream:** B06 reads `hasUnsavedMoves()` (store) in its leave guard; B09 and B10 read the
+        store's `assets` slice; B11 keeps node and `data` identity reuse. `setLanes`' missing `lanesRev`
+        stays with B11 (B07 does no lane work).
+
 ## Planning handoff
 
 - 2026-11-18: orchestrator created FINDINGS.md (copy of the verified review report), PLAN.md, this
@@ -433,8 +456,150 @@ decisions" section and resolved in that phase's planning.
 | `setLanes` (adding and reordering lanes) sends no `lanesRev`, so two tabs can still undo each other's lane additions | B05 (D-04e) | B07 or B11 | send `layout.lanesRev`; the server already checks it when sent |
 | The history readers' per-read costs: one `ls-files --deleted` per read, the whole-history rename log re-run per HEAD (as before B08), negative history-blob checks not cached | B08 review | none | measured acceptable here (card history 2.6 s cold, was 5.5 s); revisit on a much larger repository |
 | The B08-territory git test files now set a 60 s test timeout (the readers run one more git process per read); other live-server and Diff tests keep 5 s | B08 | B12 or B14 | same item as the 5 s timeout rows above |
+| The watcher never stops watching an outside artifact file whose artifact was removed (`watchArtifactFiles`, `cataloguePlugin.ts`) | B07 SPEC | none | harmless: an event for it feeds nothing (`planSync` finds no artifact using it) |
+| A stale echo of an earlier layout save, arriving after a later save's answer, can show the older position of that card for a moment, until the later echo arrives (no move then waits or is in flight) | B07 review | none | self-correcting; REQ-05.4 covers waiting and in-flight moves |
+| A save's own delivery and its HTTP answer travel on two sockets; a delivery older than an answer the tab already applied could in principle arrive after it (deliveries are sent before the answer, so only on a severe stall) | B07 | B06 | if sheet conflict handling needs it, put `seq` on write answers |
+| `tests/resync.test.ts` and `tests/storeSync.test.ts` twins share `artifactInfo`'s process-wide cache, so artifact facts are compared partly through it | B07 review | none | facts are cached per file version, which is what a full read uses too |
+| The `logged` deliveries in `store.ts` are bounded only by how long a load takes (a load that never settles would let it grow) | B07 review | none | dev-only; `fetch` has no timeout today |
+| `e2e/board-mapped.spec.ts` "clicking a lane name renames it" failed once in a full fixture run at load 17 and passed 6 of 6 on repeat (B05's flaky row) | B07 | B15 | same item as B05's |
 
 ## Phase entries
+
+### B07 · Store sync and layout · COMPLETE · 2026-11-19
+
+Board 1.18.0 to **1.19.0**. Plan and evidence: `phases/B07-store-sync-and-layout/IMPLEMENTATION.md` (approved plan,
+then "Baseline and measurements", "As built", "Recovery"). Decisions: accepted decision 21 (D-10, B07-Q5, B07-Q6),
+asked in this session; the SPEC marks them answered. No master merge was needed. All six findings reproduced at
+HEAD `418bd3bd` before the build (line drift only; B05's notifier and lane wiring in place).
+
+**Dispositions**
+
+Each proof failed on the pre-B07 board (a `git archive` of `418bd3bd` in the scratchpad) and passes after; 57 of the
+61 new tests fail there, and the 4 that pass are preservation checks (the whole-folder fallback, the hand-delete
+journal step, config revs on the delivery, "newer moves win").
+
+| Finding | Disposition | Proof |
+|---|---|---|
+| R-40 | **Fixed** (decision 21): `hasUnsavedMoves()` (store) feeds the leave prompt with `hasUnsavedDrafts()`; unsaved Freeform moves (waiting, failed, in flight) are mirrored to session storage and put back and sent after the next load; a Mapped move queued or in flight is kept and checked after a reload, reported only if it did not land, never replayed; while Offline the board pings `/api/ping` every 2 s, saves kept moves when it answers and the pill offers Reload; the dead reconnect handler is gone; Offline and card-move text tell the truth (prefix once) | `tests/storeSync.test.ts` "unsaved card moves are guarded and kept" (4); manual Leave and Stay runs on 5482 (IMPLEMENTATION.md) |
+| R-57 | **Fixed**: `forgetCards` (from `deleteItem` and from a delivery that removes a card) strips waiting, in-flight and kept saves and undo and redo entries, dropping an emptied entry; a kept move whose card is gone after a reload is dropped; the layout PUT keeps no position for an ID with no item file on disk (touch rights, B05's route) | `storeSync` "removed cards leave no position behind" (3); `tests/writeModel.test.ts` R-57 server half (deleted on disk dropped, created on disk not yet synced kept) |
+| R-58 | **Fixed**: deliveries carry `epoch` and `seq`, the snapshot the `seq` it is current to; a load logs deliveries that arrive meanwhile and applies the newer ones over the snapshot; a load started before one already applied is dropped; a delivery from another `epoch` reloads | `storeSync` "a snapshot never takes the store back" (4: held snapshot with delete, update and layout; two loads in reverse order; batched delivery mid-load; another epoch) |
+| R-59 | **Fixed**: Freeform saves run one at a time on `layoutQueue`; a failure merges `{ ...sending, ...pending }`; a layout delivery merges per card (cards waiting or in flight keep their place, the rest follow the file) | `storeSync` "layout saves are ordered" (3) |
+| R-158 | **Fixed**: `watchBatch.ts` hands the re-sync the changed paths (any event is "look again"; a watcher error, a failed re-sync or over 500 paths reads everything); `syncFromDisk(paths)` re-reads only those files (`planSync`, `partialLoad`), keeps parse issues per source (`LoadResult.sources`), scans only changed screenshot folders, ignores paths that feed nothing, and falls back to a full read for a folder it cannot judge alone or on any error | `tests/resync.test.ts`: equivalence over 30 seeded random bursts (400 run once) against a fresh `loadCatalogue` and a twin server doing full reads (state, issues, assets, deliveries, journal files); fallback; hand-delete journal step; counts (one file read, notes read nothing and send nothing, echo sends nothing, a card change walks no screenshot folder, a screenshot change walks only its card's); `tests/watchBatch.test.ts` (6) |
+| R-159 | **Fixed**: one `catalogue:changed` delivery per re-sync and per write request (`shared/delivery.ts`; B05's notifier merges into it, still one check per request); `applyDelivery` makes one store update, keeps unchanged record identities, skips an artifact at the same rev and facts and applies a meta-only change; `buildNodes(..., prev)` and `BoardView` reuse unchanged nodes and `data` | `resync` delivery counts and config revs on the delivery; `storeSync` "one delivery, one store update" (3); `tests/graph.test.ts` identity test; browser measurement below |
+| D-10 (REQ-08) | **Delivered** (decision 21) | `resync` "screenshot versions" (4: rewrite, unchanged across deliveries, touch and restart, burst names each card once, removal null); `tests/originLive.test.ts` the version URL and an old one served the current file |
+
+**The delivery shape (for B06, B09, B10, B11):** `CatalogueDelivery` (`shared/types.ts`):
+`{ epoch, seq, items?, questions?, artifacts?, layout?, config?, issues?, assets? }`, record maps `id → record | null`,
+`assets` `src → version | null`. One per re-sync and per write request (records in the order they changed; `issues` when
+they changed, and on any write that changed records). `config` carries `revs` and `statusState` as before, `layout` its
+`lanesRev`. The snapshot is `CatalogueSnapshot` with `epoch`, `seq` and `assets`. The store applies deliveries with
+`applyDelivery` (`applyEvent` is gone); `useCatalogueRefresh` runs on deliveries that change records (`changesRecords`).
+`GET /api/ping` answers `{ epoch, seq }`.
+
+**D-10 for B09 and B10:** read `useCatalogue((s) => s.assets)` (`src → git blob hash`, the journal's own hash, so it
+matches a "Screenshot updated" entry's `to.sha`); a card's assets are the keys under `assets/<ID>/`. Build image URLs
+with `assetUrl(src, version)` (`?v=`). An assets-only delivery changes no record, rebuilds nothing and does not run
+`useCatalogueRefresh`; B09 decides how a timeline reacts.
+
+**Unsaved-moves signal for B06:** `hasUnsavedMoves()` from `src/store.ts`; App's beforeunload reads it beside
+`hasUnsavedDrafts()` (B06 moves both into `src/nav.ts`). The pill's Reload (`reloadKeepingMoves` in `App.tsx`)
+skips the prompt for moves only, since they are kept.
+
+**Node reuse for B11:** `buildNodes(g, counts, prev)` keeps `data` when `item` (same object), `w`, `h`,
+`openQuestions`, `childCount` and `tone` match, and the whole node when position, `hidden`, `zIndex` and handles also
+match; `BoardView` keeps React Flow's own node for a card whose built node is unchanged and where it was built.
+
+**Measured** (details in IMPLEMENTATION.md; load averages 9 to 25, noisy; the counts are the binding proof):
+- One-file re-sync on a copy of the real catalogue: 34 to 91 ms after, 544 to 1,487 ms before in interleaved pairs
+  (13 to 19 times cheaper). 50 files over 2 s: 4 or 5 deliveries and 0.5 to 1.4 s of server time, against 54 deliveries
+  and 3.0 to 8.9 s.
+- Browser (development build): 300 records changed settled in 1.0 s with 504 card renders and 2 builds, against 8.4 s,
+  4,690 renders and 600 builds; one record changed, 2 renders against 670 (StrictMode doubles each).
+
+**What shipped:**
+- **New:** `server/watchBatch.ts`, `shared/delivery.ts`; tests `tests/resync.test.ts` (47), `tests/storeSync.test.ts` (17),
+  `tests/watchBatch.test.ts` (6), `tests/deliveries.ts` (test helper).
+- **Changed:** `server/catalogueApi.ts` (notifier into deliveries, snapshot fields, `/api/ping`, `planSync`, `partialLoad`,
+  `readChanges`, `syncFromDisk(paths?)`, image link cache, header); `server/catalogueFs.ts` (`judgeFile`,
+  `judgeRecordFile`, `ParseSources`, `parseIssuesOf`, `inFileOrder`, `layoutIssues`, `configIssues`, `imageLinkOut`,
+  `loadCatalogue` on them); `server/cataloguePlugin.ts` (watcher through `watchBatch`, one send per delivery);
+  `shared/types.ts`; `src/store.ts`; `src/App.tsx`; `src/useCatalogueRefresh.ts`; `src/api.ts` (`ping`, `assetUrl`
+  version); `src/storage.ts` (session area, `removeJson`); `src/board/graph.ts`; `src/views/BoardView.tsx`.
+- **Tests changed for the shape only (intent kept):** `tests/store.test.ts` (`deliver` helper),
+  `tests/{api,artifacts,writeCost,writeModel}.test.ts` (collect `changesOf(d)`); `tests/graph.test.ts` and
+  `tests/originLive.test.ts` gained a test each.
+
+**Touch-rights edits (convention 11):**
+- `server/historyJournal.ts` (B08's hashing): the scan extracted as `shotScanner`, by folder (`ids`), returning each
+  file's hash; `memoryJournal()` replaces `NO_JOURNAL` (per server, in memory).
+- `server/catalogueApi.ts` layout PUT (B05's): no position for an ID with no item file.
+- `src/components/ProblemPill.tsx` (B03's): Offline, "Server is back" and card-move text; the Reload line.
+- `src/views/AboutView.tsx`, `requirements-board/DESIGN.md`: the pill sentences.
+- `docs/board-fixes/index.html`: B07 status.
+
+**Deviations:**
+1. Folder events go to the re-sync as paths; `planSync` judges them (a whole read for the catalogue, a record folder or
+   `assets/` itself), not `watchBatch`.
+2. The image symbolic-link test is cached between re-syncs (dropped for a changed screenshot folder, cleared on a whole
+   read): it was half of a re-sync's cost after the first measurement.
+3. A delivery carries `issues` only when they changed (a re-sync) or for a write that changed records.
+4. The kept-moves "card is gone" rule applies to cards the store saw leave and to kept moves after a reload; a move for
+   a card the store never held is still sent (the server drops it).
+5. The delete and lane routes still re-read the whole folder (`syncFromDisk()`), as B05 left them.
+6. `setLanes` still sends no `lanesRev` (B05's D-04e row): left for B11, as decision 21 says.
+
+**Verification:**
+- **`npm run verify:board` green:** 964 tests, check OK. An earlier full run lost `tests/originLive.test.ts` at file
+  level (its Vite boot timed out at load 20, the known item); it passes alone (52) and in the final run.
+- **Fixture e2e (5182):** 109 of 110 pass; the failure is `one-rule.spec.ts` R-101, the known viewer pixel-box flake
+  (B05). An earlier run had `board-mapped` "clicking a lane name" fail once; it passed 6 of 6 on repeat and in the
+  final run.
+- **Real catalogue:** `npm run check` output byte-identical before and after; no file under `requirements/` changed.
+- **Manual (5482, scratch copy):** the Leave and Stay outage runs (IMPLEMENTATION.md), Reload asking nothing, the
+  panel wording.
+- **Migration:** none. Session storage key `requirements-board:unsaved-moves` is new.
+
+**Review outcomes (convention 15):** two Sonnet reviewers (about 1,300 changed lines outside tests). No blocking
+findings.
+- **Confirmed and fixed, each with a regression test shown failing without the fix:**
+  - a changed screenshot folder with no version change (a nested image, a file swapped for an outside link) kept the
+    old issues (now the check always reruns for a changed folder; random bursts gained nested images, symlink swaps
+    and an outside artifact file);
+  - a re-sync that threw lost its paths (now the next one reads everything, at once after a failed incremental one,
+    never in a loop);
+  - a Mapped move queued behind another was not kept for a reload;
+  - a layout or config echo ran the whole check (now read before deciding anything changed).
+- **Also fixed:** the README's "retried on reconnect"; "card moves are saved" shown while they still failed; the
+  resend wording; screenshot versions compared in listing order; `NO_JOURNAL`'s process-wide memory (now per
+  server); `changesOf` moved to a test helper and `isEmpty` renamed; a doubled doc comment; import order; comments on
+  `connected` and the Reload timer; added tests for the outside artifact file, folder walking and failure recovery.
+- **Recorded, not changed** (Discovered): a stale echo after a later save's answer (brief, self-correcting); the
+  cross-socket save echo (B06); the shared artifact cache in the twins; `logged` bounded by the load; the outside
+  artifact watch never removed.
+
+**Doc facts (convention 12):**
+- **`requirements-board/README.md`:** shared map (`delivery.ts`), server map (`historyJournal.ts`,
+  `cataloguePlugin.ts`, new `watchBatch.ts`), src map (`store.ts`, `useCatalogueRefresh.ts`); "How it works": the
+  watcher and delivery bullet, new screenshot-version and kept-moves bullets; the Freeform line (one save at a time,
+  when failed moves are resent).
+- **`requirements-board/DESIGN.md`:** the masthead paragraph (what offline keeps, "Server is back", Reload).
+- **About page:** the pill sentence in "Outline and checks".
+- **Headers:** `server/catalogueApi.ts` (snapshot, ping, deliveries), `server/cataloguePlugin.ts`,
+  `server/historyJournal.ts`, `server/watchBatch.ts`, `shared/delivery.ts`, `src/useCatalogueRefresh.ts`,
+  `src/components/ProblemPill.tsx`, the store's `layoutError` comment.
+- **`CHANGELOG.md`** 1.19.0.
+- **Checked, nothing changed:** SCHEMA, ADOPTING and the SKILL.md files say nothing about live updates or card moves.
+
+**What later phases need:**
+- **B06:** the delivery shape and ordering above (sheets apply records from deliveries; write answers carry no `seq`,
+  see Discovered); `hasUnsavedMoves()` into `src/nav.ts`'s guard; keep the pill's Reload exception for moves only.
+- **B09:** D-10 above for R-96 (the `assets` slice; hashes equal the journal's); `currentLife` untouched.
+- **B10:** D-10 above for R-104 (`assetUrl(src, assets[src])` in the gallery and lightbox).
+- **B11:** keep `buildNodes`' `prev` reuse and `BoardView`'s `lastCards` / `lastComputed`; `setLanes` should send
+  `layout.lanesRev`.
+- **B14:** README lines above in the whole-file pass.
+- **B15:** rerun `tests/{resync,storeSync,watchBatch,graph}.test.ts`, the D-10 test in `tests/originLive.test.ts`, the
+  R-57 test in `tests/writeModel.test.ts`, and the outage check (IMPLEMENTATION.md) if a browser is at hand.
 
 ### B05 · Server write model · COMPLETE · 2026-11-19
 

@@ -13,7 +13,7 @@ import { compareIds } from '../shared/ids.ts'
 import { lanesRevOf } from '../shared/move.ts'
 import { CONFIG_FILE, DEFAULT_CONFIG, parseConfig, type BoardConfig } from '../shared/config.ts'
 import { RECODES_FILE, parseRecodes, type Recode } from '../shared/statuses.ts'
-import type { Artifact, ArtifactRec, CatalogueSnapshot, Issue, Item, Layout, Question, Rev } from '../shared/types.ts'
+import type { Artifact, ArtifactRec, CatalogueData, Issue, Item, Layout, Question, Rev } from '../shared/types.ts'
 import { artifactInfo, primePdfs } from './artifactFiles.ts'
 import { linkOut as linkOutOf } from './realPaths.ts'
 
@@ -228,6 +228,8 @@ export function issuesFor(
   artifacts: Record<string, Rev<Artifact>> = {},
   config: BoardConfig = DEFAULT_CONFIG,
   firstLane?: string,
+  /** Where an image under `assets/` really leads, when outside it (a symbolic link): replaceable by a cached copy. */
+  linkOut: (rel: string) => string | null = imageLinkOut(root),
 ): Issue[] {
   let checked: Issue[]
   try {
@@ -235,7 +237,7 @@ export function issuesFor(
       items: Object.values(items).map((r) => r.data),
       questions: Object.values(questions).map((r) => r.data),
       fileExists: fileExistsIn(root),
-      linkOut: (rel) => linkOutOf(resolve(root, rel), resolve(root, 'assets')),
+      linkOut,
       lanes,
       firstLane,
       config,
@@ -249,55 +251,127 @@ export function issuesFor(
   return [...parseIssues, ...checked]
 }
 
+/** The check's symbolic-link test for an image (`assets/...` relative to the folder): its real target when that is outside `assets/`. */
+export const imageLinkOut = (root: string) => (rel: string) => linkOutOf(resolve(root, rel), resolve(root, 'assets'))
+
 /** The artifact part of a check's input: the sidecars, and what their files hold. */
 export const artifactCheck = (artifacts: Record<string, Rev<Artifact>>, root = REQUIREMENTS_DIR) => ({
   artifacts: Object.values(artifacts).map((r) => r.data),
   artifactFacts: (a: Artifact) => artifactInfo(a, root).facts,
 })
 
-export interface LoadResult extends CatalogueSnapshot {
+/** The record kinds kept one file each under their own folder (`RECORD_DIRS`). */
+export type RecordFileKind = keyof typeof RECORD_DIRS
+export const RECORD_KINDS: RecordFileKind[] = ['item', 'question', 'artifact']
+
+/**
+ * Parse issues by where they come from: each record file (by kind, then file name without `.md`),
+ * the layout file and the config. A re-read of one file replaces only its own entry (FINDINGS R-158).
+ */
+export interface ParseSources {
+  item: Map<string, Issue[]>
+  question: Map<string, Issue[]>
+  artifact: Map<string, Issue[]>
+  layout: Issue[]
+  config: Issue[]
+}
+
+export interface LoadResult extends CatalogueData {
   parseIssues: Issue[]
   /** False when board-layout.json exists but cannot be read; layout writes are refused until it is fixed. */
   layoutReadable: boolean
+  /** `parseIssues` by source, for a re-sync that re-reads only some files. */
+  sources: ParseSources
+}
+
+/** One record file as the load judges it: its record when it loads, and its own parse issues. */
+export interface FileJudgement<T> {
+  record?: Rev<T>
+  issues: Issue[]
 }
 
 /**
  * Records are keyed by file name. A file whose `id:` disagrees with its name,
  * or that fails to parse, is left out (so the board cannot save over the wrong
- * file) and reported; its name still reserves the ID.
+ * file) and reported; its name still reserves the ID. A missing file is null.
  */
-function collect<T extends { id: string }>(files: string[], read: (f: string) => LoadedFile<T>, parseIssues: Issue[]) {
+export function judgeFile<T extends { id: string }>(f: string, read: (f: string) => LoadedFile<T>): FileJudgement<T> | null {
+  const name = baseId(f)
+  const r = read(f)
+  if (r.missing) return null
+  const issues: Issue[] = []
+  if (!ID_FILE.test(name)) issues.push({ severity: 'warning', id: name, message: `file ${name}.md is not named after an ID` })
+  if (r.error || !r.record) {
+    issues.push({ severity: 'error', id: name, message: `${name}.md could not be read: ${r.error}` })
+    return { issues }
+  }
+  for (const msg of r.lint ?? []) issues.push({ severity: 'warning', id: name, message: msg })
+  if (r.record.data.id !== name) {
+    issues.push({ severity: 'error', id: name, message: `${name}.md holds id ${r.record.data.id || '(none)'}; the file name must match the id, so it is not loaded` })
+    return { issues }
+  }
+  return { record: r.record, issues }
+}
+
+/** Read one record file of a kind (`stories/X.md` and so on). */
+export function judgeRecordFile(kind: RecordFileKind, file: string): FileJudgement<Item | Question | Artifact> | null {
+  if (kind === 'item') return judgeFile(file, readItemFile)
+  if (kind === 'question') return judgeFile(file, readQuestionFile)
+  return judgeFile(file, readArtifactFile)
+}
+
+/** The layout file's parse issues, as the load reports them. */
+export function layoutIssues(r: LayoutRead): Issue[] {
+  const out: Issue[] = []
+  if (r.error) out.push({ severity: 'error', id: 'layout', message: r.error })
+  if (r.damaged) out.push(layoutDamageIssue(r.damaged))
+  if (r.droppedLanes) out.push(droppedLanesIssue(r.droppedLanes))
+  return out
+}
+
+export const configIssues = (problems: string[]): Issue[] => problems.map((message) => ({ severity: 'error' as const, id: 'config', message }))
+
+/** File names (no `.md`) in the order the folder listing gives them (`listMd` sorts them with their `.md`). */
+export const byFileName = (names: Iterable<string>) => [...names].sort((a, b) => (`${a}.md` < `${b}.md` ? -1 : `${a}.md` > `${b}.md` ? 1 : 0))
+
+/** Every parse issue, in the load's order: items, questions and artifacts file by file, then layout, then config. */
+export function parseIssuesOf(s: ParseSources): Issue[] {
+  const out: Issue[] = []
+  for (const kind of RECORD_KINDS) for (const name of byFileName(s[kind].keys())) out.push(...s[kind].get(name)!)
+  return [...out, ...s.layout, ...s.config]
+}
+
+/** A record map in the load's order (by file name), so a check over it reports as a fresh load does. */
+export function inFileOrder<T>(records: Record<string, T>): Record<string, T> {
+  const out: Record<string, T> = {}
+  for (const name of byFileName(Object.keys(records))) out[name] = records[name]!
+  return out
+}
+
+function collect<T extends { id: string }>(dir: string, read: (f: string) => LoadedFile<T>, issues: Map<string, Issue[]>) {
   const out: Record<string, Rev<T>> = {}
-  for (const f of files) {
+  for (const f of listMd(dir)) {
+    const j = judgeFile(f, read)
+    if (!j) continue // removed mid-read
     const name = baseId(f)
-    const r = read(f)
-    if (!ID_FILE.test(name)) parseIssues.push({ severity: 'warning', id: name, message: `file ${name}.md is not named after an ID` })
-    if (r.error || !r.record) {
-      parseIssues.push({ severity: 'error', id: name, message: `${name}.md could not be read: ${r.error}` })
-      continue
-    }
-    for (const msg of r.lint ?? []) parseIssues.push({ severity: 'warning', id: name, message: msg })
-    if (r.record.data.id !== name) {
-      parseIssues.push({ severity: 'error', id: name, message: `${name}.md holds id ${r.record.data.id || '(none)'}; the file name must match the id, so it is not loaded` })
-      continue
-    }
-    out[name] = r.record
+    if (j.issues.length) issues.set(name, j.issues)
+    if (j.record) out[name] = j.record
   }
   return out
 }
 
 export function loadCatalogue(root = REQUIREMENTS_DIR): LoadResult {
-  const parseIssues: Issue[] = []
-  const items = collect(listMd(storiesDir(root)), readItemFile, parseIssues)
-  const questions = collect(listMd(questionsDir(root)), readQuestionFile, parseIssues)
-  const artifacts = withMeta(collect(listMd(artifactsDir(root)), readArtifactFile, parseIssues), root)
-  const { layout, error, damaged, droppedLanes } = readLayout(root)
-  if (error) parseIssues.push({ severity: 'error', id: 'layout', message: error })
-  if (damaged) parseIssues.push(layoutDamageIssue(damaged))
-  if (droppedLanes) parseIssues.push(droppedLanesIssue(droppedLanes))
+  const sources: ParseSources = { item: new Map(), question: new Map(), artifact: new Map(), layout: [], config: [] }
+  const items = collect(storiesDir(root), readItemFile, sources.item)
+  const questions = collect(questionsDir(root), readQuestionFile, sources.question)
+  const artifacts = withMeta(collect(artifactsDir(root), readArtifactFile, sources.artifact), root)
+  const read = readLayout(root)
+  sources.layout = layoutIssues(read)
   const { config, problems } = readConfig(root)
-  for (const message of problems) parseIssues.push({ severity: 'error', id: 'config', message })
-  return { items, questions, artifacts, layout, config, layoutReadable: !error, parseIssues, issues: issuesFor(items, questions, parseIssues, root, layout.lanes, artifacts, config, layout.firstLane) }
+  sources.config = configIssues(problems)
+  const parseIssues = parseIssuesOf(sources)
+  const { layout } = read
+  return { items, questions, artifacts, layout, config, layoutReadable: !read.error, parseIssues, sources, issues: issuesFor(items, questions, parseIssues, root, layout.lanes, artifacts, config, layout.firstLane) }
 }
 
 /**

@@ -7,11 +7,11 @@ import { create } from 'zustand'
 import { compareIds, compareSiblings } from '../shared/ids.ts'
 import { applyChanges, canParent, driftFrom, invertChanges, laneListProblem, type Change } from '../shared/move.ts'
 import { isArtifactId, itemLinkTargets } from '../shared/links.ts'
-import { UNASSIGNED_LANE, firstLaneName, type Artifact, type ArtifactRec, type CatalogueEvent, type Issue, type Item, type ItemStatus, type ItemType, type Layout, type Question, type Rev } from '../shared/types.ts'
+import { UNASSIGNED_LANE, firstLaneName, type Artifact, type ArtifactRec, type AssetVersions, type CatalogueDelivery, type Issue, type Item, type ItemStatus, type ItemType, type Layout, type Question, type Rev } from '../shared/types.ts'
 import { DEFAULT_CONFIG, componentNames, type BoardConfig, type ConfigPatch } from '../shared/config.ts'
 import { isOpenQuestion, isRetired, statusCodes } from '../shared/statuses.ts'
 import { ApiError, api } from './api.ts'
-import { fields, isBoolean, isStringArray, oneOf, readJson, writeJson } from './storage.ts'
+import { fields, isBoolean, isRecord, isStringArray, oneOf, readJson, removeJson, writeJson } from './storage.ts'
 import { idMatch } from './itemSearch.ts'
 
 type PosPatch = Record<string, { x: number; y: number } | null>
@@ -38,10 +38,18 @@ interface CatalogueState {
   /** The project's vocabulary (`board.config.json`): read it through `useConfig`. */
   config: BoardConfig
   issues: Issue[]
-  /** Set when card moves could not be saved; they are retried on the next move, layout change on disk, or reconnect. */
+  /** Every screenshot's version (D-10): `assets/<ID>/<name>` to its git blob hash. Read it for an image URL (`assetUrl`). */
+  assets: AssetVersions
+  /**
+   * Set when card moves could not be saved. They are kept (in this tab, across a reload) and sent again
+   * with the next move, when the layout file changes on disk, after the next load, and when the server
+   * answers again after being offline.
+   */
   layoutError?: string
+  /** Read the whole catalogue; deliveries that arrive meanwhile are applied over it, never under it. */
   load: () => Promise<void>
-  applyEvent: (e: CatalogueEvent) => void
+  /** Apply one `catalogue:changed` delivery: one store update, however much it carries. */
+  applyDelivery: (d: CatalogueDelivery) => void
   saveItem: (item: Item, baseRev?: string) => Promise<Rev<Item>>
   /** Replace the item and/or question status lists in board.config.json (the Settings page). */
   saveConfig: (patch: ConfigPatch) => Promise<void>
@@ -86,12 +94,78 @@ interface CatalogueState {
 }
 
 let layoutTimer: ReturnType<typeof setTimeout> | undefined
-/** Moves not yet acknowledged by the server, sent as a patch so other cards are never touched. */
-let pendingLayout: Record<string, { x: number; y: number } | null> = {}
+/** Freeform moves not sent yet (or sent and failed), as a patch so other cards are never touched. */
+let pendingLayout: PosPatch = {}
+/** The Freeform moves being sent right now. One save at a time, so they reach the file in order (FINDINGS R-59). */
+let inflightLayout: PosPatch = {}
+let layoutQueue: Promise<unknown> = Promise.resolve()
 /** Moves are sent one after another, each with the revs the one before it returned. */
 let moveQueue: Promise<unknown> = Promise.resolve()
 /** Mapped moves sent but not yet answered: undo waits for them, so it never steps over a move still in flight. */
 let movesInFlight = 0
+/** The changes of each Mapped move in flight, kept for a reload (B07-Q5: checked after it, never replayed). */
+const mappedInFlight = new Map<number, Change[]>()
+let mappedKey = 0
+
+/*
+ * Ordering (FINDINGS R-58). Every delivery is numbered within its server process; the snapshot says which
+ * number it is current to. `seen` is the newest the store holds. While a load is in flight, deliveries are
+ * applied as they come and also logged; when the snapshot lands, the log's newer deliveries are applied
+ * again over it, so a snapshot never takes the store back. A load that started earlier than one already
+ * applied is dropped.
+ */
+let seen: { epoch: string; seq: number } | null = null
+let loadsStarted = 0
+let loadApplied = 0
+let loadsInFlight = 0
+let logged: CatalogueDelivery[] = []
+
+/*
+ * Unsaved moves outlive a reload of this tab (FINDINGS R-40; B07-Q6: this tab only). They are mirrored
+ * into session storage whenever they change, put back on top of the first load after a reload, and sent.
+ */
+const KEPT_KEY = 'requirements-board:unsaved-moves'
+interface Kept {
+  positions: PosPatch
+  mapped: Change[][]
+}
+const isPos = (v: unknown) => v === null || (isRecord(v) && Number.isFinite(v.x) && Number.isFinite(v.y))
+const kept0 = readJson<Kept>(
+  KEPT_KEY,
+  'unsaved card moves',
+  { positions: {}, mapped: [] },
+  (raw, bad) => {
+    const positions: PosPatch = {}
+    if (!isRecord(raw)) {
+      bad()
+      return { positions, mapped: [] }
+    }
+    if (isRecord(raw.positions)) {
+      for (const [id, p] of Object.entries(raw.positions)) {
+        if (isPos(p)) positions[id] = p as PosPatch[string]
+        else bad()
+      }
+    }
+    const mapped = Array.isArray(raw.mapped) ? (raw.mapped.filter((m) => Array.isArray(m) && m.every((c) => isRecord(c) && typeof c.id === 'string')) as Change[][]) : []
+    return { positions, mapped }
+  },
+  'session',
+)
+pendingLayout = { ...kept0.positions }
+/** Mapped moves that were in flight when this tab last unloaded: checked against the first load. */
+let mappedAtReload = kept0.mapped
+let firstLoad = true
+
+/** Mirror the unsaved moves into session storage (or forget them when there are none). */
+function keep() {
+  const positions = { ...inflightLayout, ...pendingLayout }
+  const mapped = [...mappedInFlight.values()]
+  if (!Object.keys(positions).length && !mapped.length) removeJson(KEPT_KEY, 'session')
+  else writeJson(KEPT_KEY, { positions, mapped }, 'session')
+}
+
+/** Card moves this tab has not saved yet: waiting, failed, or being sent (the leave-page guard asks while any are). */
+export const hasUnsavedMoves = () => Object.keys(pendingLayout).length > 0 || Object.keys(inflightLayout).length > 0 || movesInFlight > 0
 
 export const useCatalogue = create<CatalogueState>((set, get) => ({
   status: 'loading',
@@ -101,59 +175,95 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
   layout: { positions: {}, lanes: [] },
   config: DEFAULT_CONFIG,
   issues: [],
+  assets: {},
   past: [],
   future: [],
   stepping: false,
 
   async load() {
+    const token = ++loadsStarted
+    loadsInFlight++
     try {
       const snap = await api.catalogue()
-      // Keep unsaved moves on top of the server copy until they are flushed.
-      const positions = { ...snap.layout.positions }
-      for (const [id, p] of Object.entries(pendingLayout)) {
-        if (p) positions[id] = p
-        else delete positions[id]
-      }
-      set({ status: 'ready', error: undefined, ...snap, artifacts: snap.artifacts ?? {}, config: snap.config ?? DEFAULT_CONFIG, layout: withFirst({ positions, lanes: snap.layout.lanes ?? [], lanesRev: snap.layout.lanesRev }, snap.layout.firstLane) })
+      if (token < loadApplied) return // a load started after this one has already landed
+      loadApplied = token
+      const restoring = firstLoad
+      firstLoad = false
+      // Moves kept from before a reload, for cards that are gone now, are dropped (FINDINGS R-57).
+      if (restoring) for (const id of Object.keys(kept0.positions)) if (!snap.items[id]) delete pendingLayout[id]
+      set({
+        status: 'ready',
+        error: undefined,
+        items: snap.items,
+        questions: snap.questions,
+        artifacts: snap.artifacts ?? {},
+        config: snap.config ?? DEFAULT_CONFIG,
+        issues: snap.issues,
+        assets: snap.assets ?? {},
+        layout: layoutOver(snap.layout),
+      })
+      seen = snap.epoch ? { epoch: snap.epoch, seq: snap.seq } : null
+      // Everything that arrived while the snapshot was on its way and is newer than it goes on top.
+      for (const d of logged.filter((x) => x.epoch === snap.epoch && x.seq > snap.seq)) get().applyDelivery(d)
       dropUnknownStatuses(get().config)
+      if (restoring) {
+        keep()
+        if (Object.keys(pendingLayout).length) void get().flushLayout() // kept from before the reload: send them now
+        checkMappedAtReload()
+      }
     } catch (e) {
-      set({ status: 'error', error: (e as Error).message })
+      if (token >= loadApplied) set({ status: get().status === 'ready' ? 'ready' : 'error', error: (e as Error).message })
+    } finally {
+      if (--loadsInFlight === 0) logged = []
     }
   },
 
-  applyEvent(e) {
-    const s = get()
-    if (e.kind === 'item') {
-      if (s.items[e.id]?.rev === e.record?.rev) return
-      const items = { ...s.items }
-      if (e.record) items[e.id] = e.record
-      else delete items[e.id]
-      set({ items })
-    } else if (e.kind === 'question') {
-      if (s.questions[e.id]?.rev === e.record?.rev) return
-      const questions = { ...s.questions }
-      if (e.record) questions[e.id] = e.record
-      else delete questions[e.id]
-      set({ questions })
-    } else if (e.kind === 'artifact') {
-      const artifacts = { ...s.artifacts }
-      if (e.record) artifacts[e.id] = e.record
-      else delete artifacts[e.id]
-      set({ artifacts })
-    } else if (e.kind === 'layout') {
-      const pending = Object.keys(pendingLayout).length > 0
-      // Moves left over from a failed save: the file just changed (perhaps fixed), so try them again now.
-      if (pending && !layoutTimer) void get().flushLayout()
-      // Our own debounced write echoes back; don't let it undo moves still in flight. Lanes have no such race.
-      const positions = !layoutTimer && !pending ? e.layout.positions : s.layout.positions
-      const next = withFirst({ positions, lanes: e.layout.lanes ?? [], lanesRev: e.layout.lanesRev }, e.layout.firstLane)
-      if (JSON.stringify(next) !== JSON.stringify(s.layout)) set({ layout: next })
-    } else if (e.kind === 'config') {
-      set({ config: e.config })
-      dropUnknownStatuses(e.config)
-    } else {
-      set({ issues: e.issues })
+  applyDelivery(d) {
+    if (loadsInFlight) logged.push(d)
+    if (seen) {
+      // Another server process (a restart the socket outlived): read everything again.
+      if (d.epoch !== seen.epoch) {
+        if (!loadsInFlight) void get().load()
+        return
+      }
+      if (d.seq <= seen.seq) return // already in what the store holds
+      seen = { epoch: d.epoch, seq: d.seq }
     }
+    const s = get()
+    const next: Partial<CatalogueState> = {}
+    const removed: string[] = []
+    // Records the tab already holds at that rev are skipped: its own echoes cost nothing.
+    const items = merged(s.items, d.items, (a, b) => a?.rev === b?.rev)
+    if (items !== s.items) {
+      next.items = items
+      for (const [id, rec] of Object.entries(d.items!)) if (!rec && s.items[id]) removed.push(id)
+    }
+    const questions = merged(s.questions, d.questions, (a, b) => a?.rev === b?.rev)
+    if (questions !== s.questions) next.questions = questions
+    // An artifact's file facts can change with its sidecar's rev unchanged: compare both.
+    const artifacts = merged(s.artifacts, d.artifacts, (a, b) => a?.rev === b?.rev && JSON.stringify(a?.meta) === JSON.stringify(b?.meta))
+    if (artifacts !== s.artifacts) next.artifacts = artifacts
+    if (d.layout) {
+      // Moves the server may not have yet (its own echo, an earlier save's, another writer's file) stay
+      // where the user put them; every other card follows the file. Lanes have no such race.
+      const layout = layoutOver(d.layout)
+      if (JSON.stringify(layout) !== JSON.stringify(s.layout)) next.layout = layout
+    }
+    if (d.config) next.config = d.config
+    if (d.issues) next.issues = d.issues
+    if (d.assets) {
+      const assets = { ...s.assets }
+      for (const [src, v] of Object.entries(d.assets)) {
+        if (v) assets[src] = v
+        else delete assets[src]
+      }
+      next.assets = assets
+    }
+    if (removed.length) Object.assign(next, forgetCards(removed))
+    if (Object.keys(next).length) set(next)
+    if (d.config) dropUnknownStatuses(d.config)
+    // Moves left over from a failed save: the file just changed (perhaps fixed), so try them again now.
+    if (d.layout && Object.keys(pendingLayout).length && !layoutTimer && !Object.keys(inflightLayout).length) void get().flushLayout()
   },
 
   async saveItem(item, baseRev) {
@@ -206,7 +316,7 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
     }
     for (const r of res.records) items[r.data.id] = r
     for (const q of res.questions) questions[q.data.id] = q
-    set({ items, questions, layout: { ...s.layout, positions } })
+    set({ items, questions, layout: { ...s.layout, positions }, ...forgetCards(res.deleted) })
   },
 
   adoptItem(rec) {
@@ -241,6 +351,7 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
     const optimistic = new Map(moved.map((it) => [it.id, { data: it, rev: before[it.id]!.rev }]))
     set({ items: { ...before, ...Object.fromEntries(optimistic) } })
 
+    const key = ++mappedKey
     const send = async () => {
       const now = get().items
       try {
@@ -263,9 +374,14 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
         return false
       } finally {
         movesInFlight--
+        mappedInFlight.delete(key)
+        keep()
       }
     }
     movesInFlight++
+    // Kept for a reload from the moment it is queued, not only once it is sent (B07-Q5).
+    mappedInFlight.set(key, changes)
+    keep()
     const run = moveQueue.then(send)
     moveQueue = run
     return run
@@ -358,6 +474,7 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
       else delete positions[id]
       pendingLayout[id] = rounded
     }
+    keep()
     set({ layout: { ...get().layout, positions } })
     if (opts?.record !== false && Object.keys(after).length) record({ kind: 'positions', label: opts?.label ?? 'Move', before, after })
     clearTimeout(layoutTimer)
@@ -370,19 +487,32 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
   undo: () => step('undo'),
   redo: () => step('redo'),
 
-  async flushLayout() {
-    const sending = pendingLayout
-    if (!Object.keys(sending).length) return true
-    pendingLayout = {}
-    try {
-      await api.putLayout({ positions: sending as Layout['positions'] })
-      set({ layoutError: undefined })
-      return true
-    } catch (e) {
-      pendingLayout = { ...sending, ...pendingLayout } // newer moves win
-      set({ layoutError: `Card moves not saved yet: ${(e as Error).message}` })
-      return false
-    }
+  /**
+   * One save at a time (FINDINGS R-59): a flush waits for the one before it, so saves reach the server in
+   * the order they were made, and a failure can only put back moves older than any made since.
+   */
+  flushLayout() {
+    const run = layoutQueue.then(async () => {
+      const sending = pendingLayout
+      if (!Object.keys(sending).length) return true
+      pendingLayout = {}
+      inflightLayout = sending
+      try {
+        await api.putLayout({ positions: sending as Layout['positions'] })
+        inflightLayout = {}
+        keep()
+        set({ layoutError: undefined })
+        return Object.keys(pendingLayout).length === 0
+      } catch (e) {
+        inflightLayout = {}
+        pendingLayout = { ...sending, ...pendingLayout } // newer moves win (a card removed meanwhile left `sending` too)
+        keep()
+        set({ layoutError: `Card moves not saved yet (${(e as Error).message}). They are kept in this tab and sent again with your next move, or when the page reloads.` })
+        return false
+      }
+    })
+    layoutQueue = run
+    return run
   },
 }))
 
@@ -404,7 +534,8 @@ async function step(dir: 'undo' | 'redo'): Promise<boolean> {
   const land = () => useCatalogue.setState((cur) => ({ [to]: [...cur[to], entry].slice(-HISTORY_CAP) }))
 
   if (entry.kind === 'positions') {
-    // Positions are cosmetic: apply even if a card was dragged since.
+    // Positions are cosmetic: apply even if a card was dragged since. A removed card is already out of
+    // every entry (`forgetCards`), so this never writes a position for it (R-57).
     useCatalogue.setState({ [from]: rest })
     s.setPositions(dir === 'undo' ? entry.before : entry.after, { record: false })
     land()
@@ -432,6 +563,74 @@ async function step(dir: 'undo' | 'redo'): Promise<boolean> {
     return ok
   } finally {
     useCatalogue.setState({ stepping: false })
+  }
+}
+
+/** A record map with a delivery's entries applied, or the same map when none changes it (`same`). */
+function merged<T>(cur: Record<string, T>, changes: Record<string, T | null> | undefined, same: (a: T | undefined, b: T | null) => boolean): Record<string, T> {
+  if (!changes) return cur
+  let out = cur
+  for (const [id, rec] of Object.entries(changes)) {
+    if (same(cur[id], rec) && (rec !== null || !(id in cur))) continue
+    if (out === cur) out = { ...cur }
+    if (rec) out[id] = rec
+    else delete out[id]
+  }
+  return out
+}
+
+/** The layout as the file holds it, with the moves this tab has not had saved yet on top (waiting or being sent). */
+function layoutOver(file: Layout): Layout {
+  const positions = { ...file.positions }
+  for (const [id, p] of Object.entries({ ...inflightLayout, ...pendingLayout })) {
+    if (p) positions[id] = p
+    else delete positions[id]
+  }
+  return withFirst({ positions, lanes: file.lanes ?? [], lanesRev: file.lanesRev }, file.firstLane)
+}
+
+/**
+ * Cards that left the catalogue (deleted here or on disk) leave no position behind (FINDINGS R-57): not in
+ * a waiting, failed, in-flight or kept save, and not in undo or redo. A history entry left with nothing to
+ * move is dropped. Returns the history to set (with the caller's own update), or nothing when it is unchanged.
+ */
+function forgetCards(ids: string[]): Pick<CatalogueState, 'past' | 'future'> | undefined {
+  const gone = new Set(ids)
+  for (const id of gone) {
+    delete pendingLayout[id]
+    delete inflightLayout[id] // the same object as the save being sent: a failure puts back the rest only
+  }
+  keep()
+  const strip = (list: MoveEntry[]): MoveEntry[] =>
+    list.flatMap((e): MoveEntry[] => {
+      if (e.kind !== 'positions') return [e]
+      const before = Object.fromEntries(Object.entries(e.before).filter(([id]) => !gone.has(id)))
+      const after = Object.fromEntries(Object.entries(e.after).filter(([id]) => !gone.has(id)))
+      if (Object.keys(after).length === Object.keys(e.after).length && Object.keys(before).length === Object.keys(e.before).length) return [e]
+      return Object.keys(after).length || Object.keys(before).length ? [{ ...e, before, after }] : []
+    })
+  const { past, future } = useCatalogue.getState()
+  const next = { past: strip(past), future: strip(future) }
+  const same = (a: MoveEntry[], b: MoveEntry[]) => a.length === b.length && a.every((e, i) => e === b[i])
+  return same(next.past, past) && same(next.future, future) ? undefined : next
+}
+
+/**
+ * Mapped moves that were still saving when this tab reloaded (B07-Q5): if a move's fields are what the
+ * cards now hold, it landed and nothing is said; if not, say so. Never sent again.
+ */
+function checkMappedAtReload() {
+  const lost = mappedAtReload.filter((changes) => {
+    const items = useCatalogue.getState().items
+    return !changes.every(({ id, ...fields }) => {
+      const it = items[id]?.data as Record<string, unknown> | undefined
+      return !!it && Object.entries(fields).every(([k, v]) => JSON.stringify(it[k] ?? null) === JSON.stringify(v ?? null))
+    })
+  })
+  mappedAtReload = []
+  if (lost.length) {
+    const ids = [...new Set(lost.flat().map((c) => c.id))]
+    useCatalogue.setState({ moveError: `Move not saved: the page reloaded while ${ids.join(', ')} ${ids.length === 1 ? 'was' : 'were'} being moved, and the move did not land. Move ${ids.length === 1 ? 'it' : 'them'} again if you still want to.` })
   }
 }
 
