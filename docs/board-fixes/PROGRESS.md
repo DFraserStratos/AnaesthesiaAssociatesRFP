@@ -92,7 +92,7 @@ Agent tools in parallel: B12 (after B02), B13 (REQ-07b after B04); both before B
 | B01 | Origin security | COMPLETE | D-01 and B01-Q1 to Q3 recorded (accepted decision 13) | 2026-11-19, board 1.13.0; R-35 Won't fix (warned instead), user's choice |
 | B02 | Status identity | COMPLETE | D-02 and B02-Q3 to Q6 recorded (accepted decision 16); no migration needed | 2026-11-19, board 1.14.0; R-01 and R-07 board halves delivered (B06, B12 close); A-2 confirmed and fixed |
 | B03 | Load resilience | COMPLETE | D-06 and B03-Q2, Q3 recorded (accepted decision 17) | 2026-11-19, board 1.15.0; all 14 findings fixed; issue-surface contract in the entry |
-| B04 | One rule, one helper | PLANNED | after B03; D-03 before build | D-03 also settled before B12 builds if B12 needs it |
+| B04 | One rule, one helper | COMPLETE | D-03 and B04-Q1 to Q3 recorded (accepted decision 18) | 2026-11-19, board 1.16.0; all 18 findings fixed; D-03 contract for B13 in the entry |
 | B08 | Git history reader | PLANNED | after B03; D-07 before build; D-05 with B05-Q2/Q3 recorded (planning-only gate) | |
 | B05 | Server write model | PLANNED | after B02, B03, B04, B08; D-04 and D-05 before build | D-05 is the user's call |
 | B07 | Store sync and layout | PLANNED | after B05 (D-04 recorded); D-10 before build | |
@@ -117,7 +117,7 @@ decisions" section and resolved in that phase's planning.
 |---|---|---|---|---|---|---|
 | D-01 | Origin security model (fs.deny vs normalisation, CORS, SVG CSP, write token) | B01 | B10 | B01 build | B10's link handling; whether B01-REQ-10 applies | **Accepted 2026-11-19** (accepted decision 13): deny rule and normalisation; CORS off plus cross-site refusal; no page CSP; no write token |
 | D-02 | Status registry format, recode versioning, migration; plan-tool readability | B02 | B06, B12, B14 | B02 build | Settings UI, plan-tool status rule, SCHEMA and starter docs; whether B02 touches `catalogueDiff.ts` | **Accepted 2026-11-19** (accepted decision 16): no-overlap recodes; removed statuses under `removedStatuses` in `board.config.json`; no migration; `catalogueDiff.ts` untouched |
-| D-03 | How agent `.mjs` tools share `shared/*.ts` rules, including the note-cite resolution rule | B04 | B12, B13 | B04 build (and before B12 builds if needed) | B13-REQ-07b (R-141) shape; parity tests | Open |
+| D-03 | How agent `.mjs` tools share `shared/*.ts` rules, including the note-cite resolution rule | B04 | B12, B13 | B04 build (and before B12 builds if needed) | B13-REQ-07b (R-141) shape; parity tests | **Accepted 2026-11-19** (accepted decision 18): direct import of `shared/*.ts` from the catalogue path; not in the workflow runtime or generated pages |
 | D-04 | Write protocol (patch + base rev vs three-way merge; conflict reply; in-place YAML scope; config writes) | B05 | B06, B07 | B05 build | All client save flows; one-line-diff convention if items are edited in place | Open |
 | D-05 | ID reuse rule: SCHEMA "never reused" vs deliberate documented reuse (A-1, R-54); with B05-Q2/Q3 | B05 (user) | B08, B14 | B08 build (planning-only gate in a B05 planning conversation) | SCHEMA text; journal and history handling; possible deleted-ID list (data migration) | Open |
 | D-06 | Bad-data issue surface and error-boundary recovery | B03 | B06, B10, B11 | B03 build | How later phases report bad data | **Accepted 2026-11-19** (accepted decision 17): panel in place and a "This page" group in the pill; auto-retry on catalogue change; copyable details; page-wide error capture; repaired storage mentioned |
@@ -272,6 +272,26 @@ decisions" section and resolved in that phase's planning.
         when the board or its scripts rewrite such a file, the mark is kept, so nothing changes that
         the user did not change. (The user, owner of B02's config format, agreed.)
 
+- 2026-11-19, user (B04's planning questions, asked in the B04 session):
+  18. **D-03 and B04-Q1 to Q3:**
+      - **D-03 = A, direct import.** Agent `.mjs` tools import `shared/*.ts` directly under Node type
+        stripping, locating the board from the catalogue path they already take (as `build-packs.mjs`
+        already loads `yaml` with `createRequire(<req>/../package.json)`):
+        `await import(pathToFileURL(join(req, '..', 'shared', 'sources.ts')).href)`. One implementation,
+        no mirrored copy. Works from `requirements-board/agent/...`, in the linked and copied install
+        modes and in a kit export (the board, with `shared/`, ships beside the catalogue); proven on Node
+        22.18. Not usable inside the workflow runtime or a generated browser page (ref-kit's inline
+        matcher): there B13 resolves in Node and embeds the results. Stated rule: `shared/` stays
+        erasable TypeScript (no enums, namespaces or parameter properties), with `.ts` import extensions
+        and `import type` for types. B12 may use the same mechanism if it needs shared code.
+      - **B04-Q1, an image whose target is a record ID is not a link.** `![x](US-01.1.2)` renders as an
+        image, so `mentions` never counts it and `unlink` never rewrites it.
+      - **B04-Q2, point lists:** `#2 #3`, `#2#3` and `#2, #3` each mean points 2 and 3, every number checked.
+      - **B04-Q3, every new report is a warning** (two artifacts sharing a `file` or note, an artifact
+        listing a prefix twice, a selector the browser rejects), so none can block a save. Existing link
+        rules keep their severity; if the truer code rule reveals a new error on the real catalogue, the
+        session stops and shows the user first.
+
 ## Planning handoff
 
 - 2026-11-18: orchestrator created FINDINGS.md (copy of the verified review report), PLAN.md, this
@@ -318,8 +338,149 @@ decisions" section and resolved in that phase's planning.
 | `scripts/resolve-source.ts` runs `pdfFacts.ts` with no timeout and no try; `scripts/new-artifact.ts` derives SVG and Markdown facts unguarded | B03 | B14 | the board's load is safe; the scripts are not |
 | `.pdf-facts/` is never pruned (an old version's entry stays) and a killed write leaves a `.tmp` | B03 review | none | documented in README; delete the folder any time |
 | `tsconfig.node.json` now carries `jsx` and `vite/client` types so tests can import `.tsx`; a tests-only tsconfig would keep them out of server code | B03 review | B14 | |
+| `shared/proseDiff.ts` keeps its own fence and backtick heuristics (`FENCE`, `closed`) for the Diff review's block splitting | B04 | B09 | not a "what is code for links" rule; could adopt `markdownCode.ts` |
+| `scripts/linkProposals.ts` has its own code-masking copy | B04 review | B13 | B13 adopts B04's helpers there |
+| `decodeEntities` knows six named entities, so `# &copy; 2026` reads "&copy; 2026" where the page shows "©" (slug differs); a footnote `[^1]` in a heading reads "^1" | B04 review | none | no catalogue heading uses either |
+| `lintFrontmatter` keeps a `#` warning quiet when any other frontmatter string holds the same text after the `#` | B04 review | none | contrived false negative |
+| A mermaid edge label written without spaces (`A--text-->B`) is read as a node `text`; unverified whether mermaid accepts that form | B04 review | none | |
+| A retired artifact's `page_offset` is applied to its replacement's pages (from before B04) | B04 review | B14 (docs) | replacement with a different offset cites the wrong page |
+| The 5 s Vitest timeouts in git and live-server tests recurred in B04 (load 20 to 34); the same files time out on the pre-B04 board too | B04 | B12 or B14 | same item as B01's and B02's |
 
 ## Phase entries
+
+### B04 · One rule, one helper · COMPLETE · 2026-11-19
+
+Board 1.15.0 to **1.16.0**. Plan and evidence: `phases/B04-one-rule-one-helper/IMPLEMENTATION.md`
+(its "As built" section lists what changed from the plan). Decisions: accepted decision 18 (D-03,
+B04-Q1 to Q3), asked in this session; the SPEC marks them answered. Master merged first (`b45ab027`:
+wave-2 catalogue and plan files, no board code). All 18 findings reproduced at HEAD `85af0de0` before
+the build (line drift only).
+
+**Dispositions**
+
+| Finding | Disposition | Proof (each failed on the pre-B04 code, passes after) |
+|---|---|---|
+| R-27 | **Fixed**: `mermaidNodeIds` reads statements as mermaid does (node, link, node; `&`; shapes skipped by bracket matching; labels, `@{}`, `:::` removed first); no `o`/`x` head becomes a node | `tests/oneRule.test.ts` mermaid block (R-27's cases, every shape and link form, `node=B` on `A --> B[Label]` passes the check); `tests/oneRuleBrowser.test.ts` equals mermaid's own `getVertices` over the corpus |
+| R-28 | **Fixed**: MarkdownReader gives each heading the slug of the source heading on its line (`data-ls` = `heading.line`); `heading=` found by source text then line | jsdom reader test (ID heading drawn as its title, slug kept); `e2e/one-rule.spec.ts` (every heading's slug, each opens, Sections click); real catalogue `e2e/artifacts-real.spec.ts` on port 5481: every Markdown artifact's DOM slugs equal the server's (pre-B04: AR-31, 33, 40, 41, 43, 58 wrong), AR-58 `9.1 Catalogue, EP-04 Contracts` opens from its link and the Sections list |
+| R-38 | **Fixed**: `lintArtifact` lints `cited_as` (not a list, odd entry, unknown key with did-you-mean), each "dropped on the next board save" | lint tests |
+| R-60 | **Fixed**: one code rule (`shared/markdownCode.ts`); `unlink` finds links in the code-masked text, as `mentions` does, and keeps the words as written; images are links for neither (B04-Q1) | corpus agreement; property test over every delete plan (every surviving record); API delete of the FINDINGS body succeeds with no link left; link whose words hold code (review) |
+| R-61 | **Fixed**: spans pair equal runs, never across a blank line; a lone backtick is text | corpus; renderer parity (links drawn as `<a>` outside code equal `mentions`) |
+| R-62 | **Fixed**: `mentionsOf` reads fields one at a time (joined order kept: explicit, then bare); used by `check.ts linksIn` and `artifactIndex.ts` | check finds the hidden broken link; index finds `AR-03#step-2` past a backtick and an unclosed fence |
+| R-75 | **Fixed**: `spotExists` (`shared/sources.ts`), the one spot rule; `cited_as` `spot` may be a page or line range | `spot: p27`, `spot: L1-10` pass; `p99` still errors |
+| R-76 | **Fixed**: page on a non-PDF, lines on a non-Markdown file, `L0`, `L33-27`, points on a file with none each warn naming artifact and spot | source tests |
+| R-77 | **Fixed**: `ARTIFACT_REF` (`AR-nn#<spot>`, any slug) in the check and `pastedTarget`; existence by the spot rule | `AR-05#te-reo-māori` passes and pastes |
+| R-78 | **Fixed**: `OQ-01 · answered by Sam` is OQ-01; a mistyped `OQ-01.5` still warns | grammar tests |
+| R-79 | **Fixed**: hand-on first, then spots and problems on the replacement; a spot it lacks opens the whole replacement | `Old spec p.40` opens AR-02 p40 with no problem |
+| R-80 | **Fixed** (B04-Q2): `#2 #3`, `#2#3`, `#2, #3` all check every point; never NaN | grammar tests |
+| R-81 | **Fixed**: one words/spot split (`noteWords`); "no note ..." or "names the note ..., but "<tail>" ... is not a spot" | grammar tests |
+| R-82 | **Fixed** (B04-Q3, warnings): two sidecars on one `file` warn naming each other; a prefix listed twice by one artifact is a repeat warning, not a clash with itself | check test |
+| R-83 | **Fixed**: one inline reader (`inlinePlain` / `readable`) for heading and quote text: intraword `_` kept, entities, `# C#`, `~~`, reference links by the document's definitions, autolinks, escapes, code content; a stray `<` no longer swallows text | heading corpus (node, and equal to react-markdown's rendered words); check accepts `heading=fee_schedule rules`, `Q&amp;A` slug `qa` |
+| R-84 | **Fixed** (B04-Q3, warning): `matchSimpleSelector` returns `'invalid'` for an empty part; the check warns the board draws nothing | selector tests |
+| R-85 | **Fixed**: block scalars skipped, list-item key stripped, each hit confirmed against what YAML kept; a whole-line comment not flagged (review) | lint tests; `- as: Board pack #2` still warns |
+| R-101 | **Fixed**: `looseChars` (NFC per character with source offsets) used by `looseText` and `quoteRange`; a bare ID drawn as a title is matched by its source text (`data-source-text`) | jsdom `quoteRange` (range is exactly the NFD passage); e2e box over the NFD passage within a pixel |
+
+**D-03 contract for B13 (and B12):** an agent tool imports, from the catalogue path `req` it already
+takes, `shared/sources.ts` (`resolveNoteCite`) and `server/sourceIndex.ts` (`loadSourceIndex`):
+`resolveNoteCite(loadSourceIndex(req), cite)` returns `{ id, file }` for the note (under `notes/`) the
+board's `resolveSource` opens for that cite, or null (a cite whose words match no note is null, never
+"the first note of that date"). Proven by `agent/shared-rules.test.mjs` (plain `node --test`) over every
+note, every `Notes ...` source in the catalogue and the R-141 shapes (apostrophe titles, no points), on
+Node 24.22 and on the official Node 22.18.0 (checksum verified; no warnings), and from a copy outside
+the board located through `REQUIREMENTS_DIR` (the copied install mode). A kit export ships the board
+beside the catalogue, so the same import works. Not supported: the workflow runtime and generated
+browser pages (ref-kit's inline matcher) cannot import; B13 resolves in Node and embeds results.
+`shared/` stays erasable TypeScript with `.ts` extensions and `import type` (checked by review).
+
+**Real catalogue, before and after:** `npm run check` output byte-identical (no errors, no warnings).
+Heading slugs: 602 headings in 45 Markdown artifacts, identical (texts, slugs, depths, lines); the 15
+headings holding a record ID (the SPEC counted 14; the master merge added one) keep their server slugs,
+and no `within`, `spot`, `artifacts:`, text link or `heading=` anchor references any of them. Point
+titles: 12 in AR-33 and AR-41 now keep intraword underscores (`RVG_GROUP`, `is_billable_party`), as the
+page shows them; 73 source rows differ only in that label, and every source opens the same artifact and
+spot. Quote text: AR-34 and AR-58 gained text the old tag stripper deleted between a stray `<` and a
+later `>` (66 lines of AR-34's tables). No hidden link surfaced. Timing: whole check runs are dominated
+by machine load today (0.8 to 3 s either side); measured in process, Markdown facts over every note cost
+about 1.5 times the old reader (all of it the new inline reader; facts are cached per file version).
+
+**What shipped:** new `shared/markdownCode.ts`, `server/sourceIndex.ts`; changed `shared/links.ts`
+(`mentions` on the shared code rule, images not links, `mentionsOf`, `LINK_SOURCE`, `ARTIFACT_REF`,
+`pastedTarget`), `shared/remove.ts` (`unlink`), `shared/artifacts.ts` (`normText` NFC, `looseChars`,
+`inlinePlain`/`readable`, `linkDefinitions`, `atxHeading`, `markdownReadable`, fences via `fenceMask`,
+`mermaidNodeIds`, `matchSimpleSelector`), `shared/sources.ts` (`spotExists`, `noteWords`, `parseRest`,
+hand-on, `resolveNoteCite`, `repeats`, citation spots), `shared/check.ts` (per-field links, spot rule,
+selector warning, repeats and shared-file warnings, entry shape), `shared/files.ts` (lint),
+`src/artifactIndex.ts` (per field; `spotName` through `spotExists`), `src/artifacts/MarkdownReader.tsx`,
+`src/artifacts/regionsDom.ts`. Tests: `tests/oneRule.test.ts`, `tests/oneRuleBrowser.test.ts`,
+`tests/oneRuleCorpus.ts`, `agent/shared-rules.test.mjs`, `e2e/one-rule.spec.ts`, a test in
+`e2e/artifacts-real.spec.ts`; `tests/sources.test.ts` one message's wording.
+
+**Touch-rights edits (convention 11):** `src/components/Prose.tsx` (B06/B07's: `data-source-text` on the
+bare-ID link and a wrapper span in `recordLinkComponents` only; no rendering change);
+`playwright.config.ts` (`one-rule.spec.ts` in the fixture project; `BOARD_E2E_REAL_PORT`);
+`e2e/artifacts-real.spec.ts` (one test); `requirements/SCHEMA.md` (catalogue doc; rules lines only, no
+requirement); `agent/skills/add-artifact/SKILL.md` (spot lines); `docs/board-fixes/index.html` (B04 status).
+
+**Deviations:** (1) A loader, `server/sourceIndex.ts`, was added so B13 need not rebuild the index itself
+(review). (2) `resolveNoteCite` answers for notes only. (3) `BOARD_E2E_REAL_PORT` added so the R-28 proof
+could run on the real catalogue off 5181. (4) `spotName` in `src/artifactIndex.ts` moved onto the spot
+rule (a second copy the acceptance search found). (5) The mermaid corpus is checked against mermaid's
+own parser, beyond the SPEC's "ideally". (6) Mid-phase I marked the new files intent-to-add (`git add -N`) to
+count the diff, against convention 9, and undid it at once (index clean; no commit affected).
+
+**Verification:** `npm run verify:board`: typecheck clean and the catalogue check OK; in the full Vitest run (load
+averages 20 to 34 all afternoon, not from this session) 737 of 743 passed and 6 timed out at 5 s, all in
+git-history, Diff, live-origin and skill-install tests B04 does not touch. Each of those files passes
+alone (36 and 68 tests), and the same git files time out on the pre-B04 board under the same load (the
+Discovered item from B01 and B02). Fixture e2e on 5182: 107 passed (105 plus 2 that failed while my edits
+reloaded Vite mid-run under load, rerun green; 37 of 37 in their specs). `e2e/one-rule.spec.ts` 3 of 3,
+and 3 of 3 fail on the pre-B04 board; real-catalogue slug test passes on 5481 and fails on the pre-B04
+board. Before-proofs: the final `tests/oneRule.test.ts` and `tests/oneRuleBrowser.test.ts` (41 tests)
+against `git archive` of `b45ab027` in the scratchpad: 39 fail, the 2 that pass are preservation checks
+(the check-side NFD quote, a non-flowchart not read); the agent proof fails there (no resolver). Agent
+tool suites: 29 plus 2 pass. Node 22.18.0: agent proof and `scripts/check.ts` pass. **Migration:** none;
+no file under `requirements/` changed but SCHEMA.md.
+
+**Review outcomes (convention 15):** two Sonnet reviewers (about 900 changed lines outside tests).
+Confirmed and fixed: a link whose own words hold code was counted by `mentions` but not rewritten by
+`unlink` (the R-60 422 again; now one masked-offset rule); `heading=`, `text=` and slugs compared without
+NFC (REQ-03.4); `resolveNoteCite` could return a non-note, and agents had no shared way to build the
+index; malformed `OQ-` sources went silent; whole-line YAML comments warned; emphasis across a code span
+kept its marks; raw private-use and BOM characters in two regexes; Prose restructured more than needed
+(cut to a wrapper); README snippet not runnable; `BOARD_E2E_REAL_PORT` under the wrong CHANGELOG bullet;
+`:is()` selector; one `byFile` key; `ARTIFACT_REF` comment; R-62 unclosed-fence and Prose wiring tests
+missing; the agent proof's project-specific cases (now derived from the notes). Also found by my timing
+check: `looseChars` made Markdown facts ten times slower (fast path added). Not reproducible / not taken:
+mermaid statements starting `end-1`, `style-x` (mermaid itself refuses them); exporting the global
+`LINK` regex (each module keeps its own instance on purpose; global regexes carry state); dropping the
+`export` of `noteWords`, `linkLabel`, `linkDefinitions` (kept for B13 and tests); the parity proof being
+"tautological" (it proves the agent import path and index building, which is the D-03 question; the
+rule itself is shared by construction). Recorded below: named entities beyond six, the lint's
+string-pool false negative, unspaced edge labels, the agent proof outside `verify:board` (B12).
+
+**Doc facts (convention 12):** `requirements-board/README.md` shared and server maps (`markdownCode.ts`,
+`links.ts`, `sources.ts`, `sourceIndex.ts`, the `artifacts.ts` line) and a new section "One rule, one
+implementation (agent tools too)" with the import recipe and the erasable-TypeScript rule;
+`requirements/SCHEMA.md` Links (what counts as code, images), Sources "Which spot" (point lists, hand-on)
+and "Check" (which spots warn, `OQ-nn` with words), the `cited_as` row (`spot` kinds, new warnings);
+`agent/skills/add-artifact/SKILL.md` `--cited-as` lines (pages PDFs only, lines Markdown only, point-list
+forms, `spot:` kinds); `playwright.config.ts` header (`BOARD_E2E_REAL_PORT`); `CHANGELOG.md` 1.16.0;
+headers of the new modules. About page checked: it states none of these rules.
+
+**What later phases need:**
+- **B05:** the `cited_as` lint says keys are "dropped on the next board save"; when R-37 stops that, change
+  the wording in `lintArtifact`. `files.ts` lint and `check.ts` are in their B04 shape.
+- **B06:** `check.ts` in its B04 shape; Prose's `recordLinkComponents` wraps a bare ID in
+  `<span data-source-text>` (keep it, or carry the attribute another way, for `quoteRange`).
+- **B10:** MarkdownReader assigns `data-slug` by source line and finds `heading=` by source text then line
+  (keep both through R-100's effect keys); `quoteRange` reads `SOURCE_TEXT_ATTR`; viewers use
+  `normText` and `looseChars` from `shared/artifacts.ts`.
+- **B12:** add `agent/shared-rules.test.mjs` to `verify:board` with the other agent tests (accepted
+  decision 6); the same import mechanism is open to the plan tools.
+- **B13:** the D-03 contract above for R-141; `scripts/linkProposals.ts` and `scripts/link-index.ts`
+  should drop any private code rule for `mentions`/`maskCode`.
+- **B14:** README section above in the whole-file pass; `BOARD_E2E_REAL_PORT` in the env-path sweep.
+- **B15:** rerun `tests/oneRule*.test.ts`, `agent/shared-rules.test.mjs`, `e2e/one-rule.spec.ts` and,
+  with `BOARD_E2E_REAL=1`, the real slug test.
 
 ### B03 · Load resilience · COMPLETE · 2026-11-19
 

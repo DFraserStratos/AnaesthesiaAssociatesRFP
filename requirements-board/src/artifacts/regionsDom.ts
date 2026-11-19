@@ -3,7 +3,7 @@
  * together (the capture recipes' rule). Canvas boxes are in the drawing's own units; document
  * boxes are in pixels from the top left of the element holding the text.
  */
-import { boxRect, looseText, normText, padRect, parseAnchor, unionRects } from '../../shared/artifacts.ts'
+import { boxRect, looseChars, looseText, normText, padRect, parseAnchor, unionRects } from '../../shared/artifacts.ts'
 import { HIGHLIGHT } from '../../shared/highlight.ts'
 import type { Rect, Region } from '../../shared/types.ts'
 
@@ -84,33 +84,49 @@ export function canvasRegionRect(svg: SVGSVGElement, region: Region): Rect | nul
 
 /* -------------------------------------------------------------- documents */
 
-const LOOSE_SKIP = /[\s*_`|\\]/
+/**
+ * An element that shows something other than its source text: a bare record ID drawn as the record's
+ * title (`Prose.tsx`) carries the ID it was written as, and quotes match on that, as the check does.
+ */
+export const SOURCE_TEXT_ATTR = 'data-source-text'
 
 /**
- * A DOM range over a passage, matched as `looseText` (whitespace and emphasis marks ignored),
- * across element boundaries. Null when the passage is not there.
+ * A DOM range over a passage, matched as `looseText` (whitespace and emphasis marks ignored, NFC on
+ * both sides, `looseChars`), across element boundaries. Null when the passage is not there.
  */
 export function quoteRange(container: Element, quote: string): Range | null {
   const want = looseText(quote)
   if (!want) return null
-  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT)
-  const at: [Text, number][] = []
+  // Each loose character, with where it starts and ends in the page.
+  const at: { start: [Node, number]; end: [Node, number] }[] = []
   let loose = ''
-  for (let n = walker.nextNode() as Text | null; n; n = walker.nextNode() as Text | null) {
-    const t = n.data
-    for (let i = 0; i < t.length; i++) {
-      if (LOOSE_SKIP.test(t[i]!)) continue
-      loose += t[i]
-      at.push([n, i])
+  const walk = (node: Node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const t = (node as Text).data
+      for (const c of looseChars(t)) {
+        loose += c.ch
+        at.push({ start: [node, c.from], end: [node, c.to] })
+      }
+      return
     }
+    if (node.nodeType !== Node.ELEMENT_NODE) return
+    const source = (node as Element).getAttribute(SOURCE_TEXT_ATTR)
+    if (source !== null) {
+      // The whole element stands for its source text: any part of it boxes all of it.
+      for (const c of looseChars(source)) {
+        loose += c.ch
+        at.push({ start: [node, 0], end: [node, node.childNodes.length] })
+      }
+      return
+    }
+    for (const child of node.childNodes) walk(child)
   }
+  walk(container)
   const i = loose.indexOf(want)
   if (i < 0) return null
   const range = document.createRange()
-  const [sn, so] = at[i]!
-  const [en, eo] = at[i + want.length - 1]!
-  range.setStart(sn, so)
-  range.setEnd(en, eo + 1)
+  range.setStart(...at[i]!.start)
+  range.setEnd(...at[i + want.length - 1]!.end)
   return range
 }
 

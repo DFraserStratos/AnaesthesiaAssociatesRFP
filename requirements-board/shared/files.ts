@@ -199,10 +199,34 @@ export function lintFrontmatter(text: string): string[] {
     return []
   }
   const out: string[] = []
+  // Every string the YAML parser kept: a "#" whose text survives in one of them lost nothing.
+  const kept: string[] = []
+  const collect = (v: unknown) => {
+    if (typeof v === 'string') kept.push(v)
+    else if (Array.isArray(v)) v.forEach(collect)
+    else if (v && typeof v === 'object') Object.values(v).forEach(collect)
+  }
+  collect(parts.meta)
+  // The column a block scalar's key starts at (`caption: |-`): lines indented past it are its text, never YAML (FINDINGS R-85).
+  let block: number | null = null
   for (const line of parts.yamlText.split('\n')) {
-    const value = line.replace(/^\s*(?:-\s+|[\w-]+:\s*)/, '')
-    if (/^["']/.test(value)) continue
-    if (/(^|\s)#/.test(value)) out.push(`unquoted "#" in \`${line.trim()}\` starts a YAML comment, so the rest is dropped; quote the value`)
+    const indent = /^ */.exec(line)![0].length
+    if (block !== null) {
+      if (!line.trim() || indent > block) continue
+      block = null
+    }
+    const lead = /^(\s*(?:-\s+)*)((?:[\w-]+:)?\s*)/.exec(line)!
+    const value = line.slice(lead[0].length)
+    if (/^[|>][+-]?\d*[+-]?\s*(?:#.*)?$/.test(value)) {
+      block = lead[1]!.length
+      continue
+    }
+    if (/^["']/.test(value) || /^\s*#/.test(line)) continue // quoted, or a whole-line comment (nothing lost)
+    const hash = /(^|\s)#/.exec(value)
+    if (!hash) continue
+    const lost = value.slice(hash.index + hash[1]!.length).trim()
+    if (kept.some((s) => s.includes(lost))) continue
+    out.push(`unquoted "#" in \`${line.trim()}\` starts a YAML comment, so the rest is dropped; quote the value`)
   }
   for (const key of ['title', 'owner', 'swimlane']) {
     const v = parts.meta[key]
@@ -545,6 +569,22 @@ export function lintArtifact(text: string, a: Artifact): string[] {
     return []
   }
   const out: string[] = []
+  // cited_as: what the board cannot read it ignores, and drops on the next board save (FINDINGS R-38, R-37).
+  const cited = parts.meta.cited_as
+  const dropped = 'so it is ignored, and dropped on the next board save'
+  if (cited !== undefined && cited !== null && !Array.isArray(cited)) out.push(`cited_as is not a list (write each prefix as a "- " line), ${dropped}`)
+  for (const raw of Array.isArray(cited) ? cited : []) {
+    if (typeof raw === 'string') continue
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      out.push(`a cited_as entry is neither a prefix nor a mapping (as, page_offset, within, spot), ${dropped}`)
+      continue
+    }
+    const loose = (k: string) => k.toLowerCase().replace(/[_-]/g, '')
+    for (const k of Object.keys(raw).filter((x) => !CITATION_KEYS.includes(x))) {
+      const meant = CITATION_KEYS.find((c) => loose(c) === loose(k))
+      out.push(`cited_as "${str((raw as Record<string, unknown>).as)}" has a key the board ignores, "${k}"${meant ? ` (did you mean "${meant}"?)` : ''}; it is dropped on the next board save`)
+    }
+  }
   const regions = parts.meta.regions
   if (regions !== undefined && !Array.isArray(regions)) out.push('regions is not a list, so it is ignored')
   for (const raw of Array.isArray(regions) ? regions : []) {

@@ -5,7 +5,8 @@
  */
 import { useMemo } from 'react'
 import { create } from 'zustand'
-import { isArtifactId, itemTexts, mentions } from '../shared/links.ts'
+import { isArtifactId, itemTexts, mentionsOf } from '../shared/links.ts'
+import { spotExists, spotFactsOfMeta } from '../shared/sources.ts'
 import { stepOf } from '../shared/steps.ts'
 import { ARTIFACT_KINDS, ARTIFACT_STATUSES, linesOfRegionId, pageOfRegionId, pageRegionId, parseArtifactRef, type ArtifactKind, type ArtifactRec, type ArtifactStatus, type Item, type Question, type Region, type Step } from '../shared/types.ts'
 import { useCatalogue, useIndex, type Index } from './store.ts'
@@ -46,11 +47,11 @@ export function buildArtifactIndex(artifacts: Record<string, ArtifactRec>, index
   }
   for (const it of index.items) {
     for (const ref of it.artifacts ?? []) add(ref, it, 'field')
-    for (const m of mentions(itemTexts(it).join('\n\n'))) if (isArtifactId(m.id)) add(m.id, it, 'text')
+    for (const m of mentionsOf(itemTexts(it))) if (isArtifactId(m.id)) add(m.id, it, 'text')
   }
   const questions = new Map<string, { question: Question; region: string | null }[]>()
   for (const q of index.questions) {
-    for (const m of mentions(`${q.question}\n\n${q.answer}`)) {
+    for (const m of mentionsOf([q.question, q.answer])) {
       if (!isArtifactId(m.id)) continue
       const { id, region } = parseArtifactRef(m.id)
       questions.set(id, [...(questions.get(id) ?? []), { question: q, region }])
@@ -97,14 +98,16 @@ export function autoSpots(rec: ArtifactRec): Spot[] {
 
 /** What a link's region is called, or null when the artifact has no such spot. */
 export function spotName(rec: ArtifactRec, region: string): string | null {
+  // Whether it exists is the one spot rule's to say (`sources.ts`), as the check says it.
+  if (!spotExists(rec.data, region, spotFactsOfMeta(rec.meta))) return null
   const named = rec.data.regions.find((r) => r.id === region)
   if (named) return named.name || named.id
   const step = stepOf(rec.data, region)
   if (step) return step.name || step.id
   const page = pageOfRegionId(region)
-  if (page !== null && rec.meta.pages) return page >= 1 && page <= rec.meta.pages.length ? `Page ${page}` : null
+  if (page !== null) return `Page ${page}`
   const lines = linesOfRegionId(region)
-  if (lines && rec.meta.lines) return lines.to <= rec.meta.lines ? (lines.from === lines.to ? `Line ${lines.from}` : `Lines ${lines.from} to ${lines.to}`) : null
+  if (lines) return lines.from === lines.to ? `Line ${lines.from}` : `Lines ${lines.from} to ${lines.to}`
   return rec.meta.headings?.find((h) => h.slug === region)?.text ?? null
 }
 

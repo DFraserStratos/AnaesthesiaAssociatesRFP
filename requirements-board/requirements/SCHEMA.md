@@ -116,7 +116,9 @@ An artifact links the same ways: `[the pricing steps](AR-01#price-rules)` opens 
 that spot in its red box (or, for a step of a stepped diagram, at that step), and a bare `AR-01`
 reads as the artifact's name. A link to a missing artifact or spot is an error, as for a card.
 
-Neither counts inside code (backticks or a fenced block). The board lists, under **Related** on each
+Neither counts inside code: a backtick span (closed by a run of the same length, never across a
+blank line; a lone backtick is plain text) or a fenced block (three or more backticks or tildes,
+closed by the same, at least as long). An image `![x](US-01.1.1)` is an image, not a link. The board lists, under **Related** on each
 card, the `related` entries from both sides and then the cards whose text mentions it ("Mentioned
 in"), leaving out its own lineage and children, which the card already shows.
 
@@ -159,14 +161,19 @@ reader** after ` · ` or in brackets:
   its `cited_as` (Artifact file below); the longest prefix that fits wins. A retired artifact with a
   `superseded_by` hands on to it; one without hands on to nothing, and a source citing it opens it as it is. A source on an artifact that names that same artifact (a transcript's own
   `Recording ...`) shows plain.
-- **Which spot.** `p.<n>`: a page (plus the entry's `page_offset`). `#<n>`, or `#2 #16`: numbered
-  points. `L27-33`: lines. Nothing: the entry's `spot`, else its `within` section, else the whole artifact.
+- **Which spot.** `p.<n>`: a page (plus the entry's `page_offset`). `#<n>`, or a list `#2 #16`,
+  `#2#16` or `#2, #16`: numbered points, each one checked. `L27-33`: lines. Nothing: the entry's `spot`,
+  else its `within` section, else the whole artifact. A retired artifact hands on first, and the spot
+  is found in its replacement (one the replacement lacks opens the whole replacement).
 - **A note's points** are its numbered list items at the very start of a line (`16. **Title.** ...`,
   continuation lines indented), numbered once across the note; each runs to the next point, heading or
   paragraph at the margin. A point written as a heading or a bold `**16.**` is not one.
 - **Check.** A source whose first word is one citations use (`Notes`, or the first word of any
-  `cited_as`) but that matches no artifact, or names a point, page or line the file lacks, is a
-  warning; so is a bare `OQ-nn` that names no question. They never block a save.
+  `cited_as`) but that matches no artifact, or names a point, page or line the file lacks (a page on
+  anything but a PDF, lines on anything but a Markdown document, points on a file with none, a
+  reversed or zero line range), is a warning naming the artifact and spot; so is an `OQ-nn` (perhaps
+  with words after it, `OQ-01 · answered by Sam`) that names no question. A note cite whose words
+  name a note but whose tail is no spot says so. They never block a save.
 - `npm --prefix requirements-board run source -- "<source>"` (or `-- --item <ID> --text`) prints what
   a source resolves to and the cited passage; `-- --report` lists every source in the catalogue.
 
@@ -273,7 +280,7 @@ The four steps from an Order line's inputs to a priced, invoiced line ...
 | `author` | Optional: who made it. |
 | `components` | Optional: the same vocabulary as an item's. |
 | `sources` | Where it came from, as for an item (`check` warns when empty). |
-| `cited_as` | Optional: how sources cite this artifact, when not by the notes convention. A list of entries, each `as` (the prefix a source starts with) and optionally `page_offset` (a PDF: added to a cited page), `within` (a heading slug: cited points are looked for in that section only) and `spot` (the region a source with no spot of its own opens). Agents write it (`artifact:new --cited-as`); the board keeps it. `check` errors on an entry with no `as`, a prefix two artifacts claim, a `within` or `spot` the file lacks, a `page_offset` off a PDF, and an entry for a note in `notes/` (cited by its file name already). See Sources above. |
+| `cited_as` | Optional: how sources cite this artifact, when not by the notes convention. A list of entries, each `as` (the prefix a source starts with) and optionally `page_offset` (a PDF: added to a cited page), `within` (a heading slug: cited points are looked for in that section only) and `spot` (the spot a source with no spot of its own opens: a region, a step, a page `p27`, a line range `L1-10` or a heading slug). Agents write it (`artifact:new --cited-as`); the board keeps it. `check` errors on an entry with no `as`, a prefix two artifacts claim, a `within` or `spot` the file lacks, a `page_offset` off a PDF, and an entry for a note in `notes/` (cited by its file name already); it warns on a prefix one artifact lists twice, on two sidecars with the same `file`, and on a `cited_as` that is not a list or has keys the board ignores (`pageOffset` for `page_offset`), which are dropped on the next board save. See Sources above. |
 | `file` | The file it shows. A plain path is relative to this folder (`artifacts/files/AR-01.svg`, `notes/2026-10-01-client-meeting.md`), and is the norm: every artifact file lives here. A path starting `/` is relative to the repository root (`/docs/some-file.pdf`), for a file that has to stay outside. It must stay inside its base. `.svg`, `.png`, `.jpg`, `.jpeg`, `.webp`, `.md` or `.pdf`; a Markdown document never lives directly in `artifacts/`, where every `.md` is a sidecar: it goes in `artifacts/files/`. Omit it for a mermaid diagram. |
 | `regions` | Optional: the named spots items can link to, each drawn as a red box. See below. |
 | `steps` | Optional, an SVG drawing only: makes it a stepped diagram the board plays one step at a time. Each step is a spot too. See Steps below. |

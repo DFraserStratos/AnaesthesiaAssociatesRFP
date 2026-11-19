@@ -75,7 +75,11 @@ shared/        code shared by server, scripts and browser
   diff.ts        the Diff review's API types (commits, a comparison, the count)
   diffModel.ts   the Diff review's model (pure, server and page): entries, minor changes, the count, filters, page order
   proseDiff.ts   the Diff review's text comparison (pure): Markdown blocks, paired rows, changed words, sentence folds
-  artifacts.ts   reading artifacts without a DOM: anchors, SVG text, mermaid node IDs, image sizes, Markdown headings
+  artifacts.ts   reading artifacts without a DOM: anchors, SVG text, mermaid node IDs, image sizes, Markdown headings,
+                 heading and quote text as the page reads it (`inlinePlain`, `looseChars`)
+  markdownCode.ts what counts as code in Markdown (fences, backtick spans): the one rule for links, delete and headings
+  links.ts       links in Markdown bodies: explicit links and bare IDs (`mentions`, per field `mentionsOf`)
+  sources.ts     sources to artifact spots: the one spot rule (`spotExists`), `resolveSource`, `resolveNoteCite`
   highlight.ts   the red box, shared by the capture runner and the artifact viewers
   csv.ts         CSV export in the old generator's shape
 server/
@@ -89,6 +93,7 @@ server/
   realPaths.ts       real-path rules: containment across linked folders, symbolic links that lead out
   artifactFiles.ts   an artifact's file: where it is, what it holds (cached per version), for the check and the board
   pdfFacts.ts        PDFs' page sizes and text, in a child process (pdf.js is async; the catalogue loads sync); many per run
+  sourceIndex.ts     the source index from a catalogue's sidecars alone (`loadSourceIndex`), for scripts and agent tools
   pdfFactsStore.ts   PDF facts kept between runs in .pdf-facts/ (gitignored; PDF_FACTS_DIR overrides), keyed by content and extractor;
                      never pruned (an old version's entry stays): delete the folder any time, it only costs speed
 scripts/       check, export-csv, capture (+ captureFiles: generated-file naming, testable),
@@ -355,6 +360,30 @@ files never change for it. `npm run check` warns on a source that looks like a c
 nothing. `npm run source -- --item US-04.2.3 --text` prints each source's file, page or lines and the
 cited passage, for an agent that needs the reasoning behind a requirement without reading a whole
 transcript; `-- --report` covers the whole catalogue.
+
+### One rule, one implementation (agent tools too)
+
+Each catalogue text rule has one home in `shared/`, used by the check, the server, the viewer and the
+scripts alike: what is code (`markdownCode.ts`), links (`links.ts`), heading text, slugs and quote
+text (`artifacts.ts`; the document reader gives each heading the slug of the source heading on its
+line), spots and sources (`sources.ts`). An agent tool (`agent/**/*.mjs`) uses the same rules by
+importing them directly, found from the catalogue path it already takes (the board sits one folder
+above it); Node 22.18 or later runs `.ts` with no build step:
+
+```js
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
+// req: the catalogue folder the tool takes (requirements-board/requirements here)
+const load = (path) => import(pathToFileURL(join(req, '..', path)).href)
+const { resolveNoteCite } = await load('shared/sources.ts')
+const { loadSourceIndex } = await load('server/sourceIndex.ts')
+resolveNoteCite(loadSourceIndex(req), 'Notes 2026-10-01 · Client meeting with Sam #16') // { id, file } or null
+```
+
+So `shared/` stays erasable TypeScript (no enums, namespaces or parameter properties), with `.ts`
+import extensions and `import type` for types. Code that runs in the workflow runtime or in a
+generated browser page cannot import: it resolves in Node first and carries the results.
+`agent/shared-rules.test.mjs` proves the import and that agents resolve note cites as the board does.
 
 ### Linking requirements
 

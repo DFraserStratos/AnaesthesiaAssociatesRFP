@@ -73,7 +73,8 @@ export function remarkRecordIds(indexOf: Index | (() => Index), artifactsOf: Art
       const paren = title ? /^\s*\(([^)]*)\)/.exec(value.slice(end)) : null
       if (paren && paren[1]!.trim().toLowerCase() === title!.toLowerCase()) end += paren[0].length
       if (m.index > at) out.push({ type: 'text', value: value.slice(at, m.index) })
-      out.push({ type: 'link', url: id, data: { hProperties: { 'data-bare': 'true' } }, children: [{ type: 'text', value: id }] })
+      // The source text it replaces (the ID, and a folded title) rides along for quote matching (`regionsDom.ts`).
+      out.push({ type: 'link', url: id, data: { hProperties: { 'data-bare': 'true', 'data-source-text': value.slice(m.index, end) } }, children: [{ type: 'text', value: id }] })
       at = re.lastIndex = end
     }
     if (at < value.length) out.push({ type: 'text', value: value.slice(at) })
@@ -126,19 +127,25 @@ function LiveArtifactLink(props: { refText: string; bare: boolean; text: ReactNo
 
 /** Links in Markdown: a record ID opens that record's sheet; anything else is an ordinary link, in a new tab. */
 export function recordLinkComponents(index: Index, artifacts: Artifacts = {}): Components {
+  const a: Components['a'] = ({ href = '', children, node }) => {
+    if (isArtifactHref(href)) return <ArtifactLink refText={href.trim()} artifacts={artifacts} bare={node?.properties?.['data-bare'] === 'true'} text={children} />
+    if (!isIdHref(href)) {
+      return (
+        <a href={href} target="_blank" rel="noreferrer">
+          {children}
+        </a>
+      )
+    }
+    // hProperties reach the hast node as written, so the key stays `data-bare`.
+    const bare = node?.properties?.['data-bare'] === 'true'
+    return <RecordLink id={href.trim()} index={index} bare={bare} text={children} />
+  }
   return {
-    a: ({ href = '', children, node }) => {
-      if (isArtifactHref(href)) return <ArtifactLink refText={href.trim()} artifacts={artifacts} bare={node?.properties?.['data-bare'] === 'true'} text={children} />
-      if (!isIdHref(href)) {
-        return (
-          <a href={href} target="_blank" rel="noreferrer">
-            {children}
-          </a>
-        )
-      }
-      // hProperties reach the hast node as written, so the key stays `data-bare`.
-      const bare = node?.properties?.['data-bare'] === 'true'
-      return <RecordLink id={href.trim()} index={index} bare={bare} text={children} />
+    // A bare ID drawn as a title keeps the text it was written as, so a document quote across it
+    // matches as the check reads it (FINDINGS R-83, R-101; `regionsDom.ts quoteRange`).
+    a: (props) => {
+      const source = props.node?.properties?.['data-source-text']
+      return typeof source === 'string' ? <span data-source-text={source}>{a(props)}</span> : a(props)
     },
   }
 }

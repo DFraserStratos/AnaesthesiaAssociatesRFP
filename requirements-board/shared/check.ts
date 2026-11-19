@@ -26,11 +26,11 @@ import {
   type Question,
   type Rect,
 } from './types.ts'
-import { isArtifactId, isQuestionId, itemTexts, mentions } from './links.ts'
-import { buildSourceIndex, citationProblems, resolveSource, type SpotFacts } from './sources.ts'
+import { ARTIFACT_REF, isArtifactId, isQuestionId, itemTexts, mentionsOf } from './links.ts'
+import { buildSourceIndex, citationProblems, resolveSource, spotExists, type SpotFacts } from './sources.ts'
 import { appKeys, componentNames, DEFAULT_CONFIG, voiceRegex, type BoardConfig } from './config.ts'
 import { STATUS_FIELDS, isAnswered, isRetired, removedStatus, statusCodes, type StatusKind } from './statuses.ts'
-import { stepOf, stepState } from './steps.ts'
+import { stepState } from './steps.ts'
 import { ANCHOR_FORMATS, boxRect, isRegionId, looseText, matchSimpleSelector, normText, parseAnchor, rectWithin, type SvgElement } from './artifacts.ts'
 
 export const ID_PATTERNS = {
@@ -199,16 +199,8 @@ export function checkCatalogue({ items, questions, fileExists, linkOut, lanes, a
   }
   const factsOf = new Map<string, ArtifactFacts | null>()
   for (const a of artifacts) factsOf.set(a.id, artifactFacts ? artifactFacts(a) : null)
-  /** Region IDs that resolve: the named ones and the steps, plus each PDF page and Markdown heading. */
-  const regionExists = (a: Artifact, region: string) => {
-    if (a.regions.some((r) => r.id === region) || stepOf(a, region)) return true
-    const f = factsOf.get(a.id)
-    const page = pageOfRegionId(region)
-    if (page !== null) return !f || !f.pdf ? (f ? false : true) : page >= 1 && page <= f.pdf.pages.length
-    const lines = linesOfRegionId(region)
-    if (lines) return f?.markdown ? lines.to <= f.markdown.lines : !f
-    return f?.markdown ? f.markdown.headings.some((h) => h.slug === region) : !f
-  }
+  /** Spots that resolve, by the one spot rule (`sources.ts spotExists`). */
+  const regionExists = (a: Artifact, region: string) => spotExists(a, region, spotFactsOf(factsOf.get(a.id) ?? null))
   const artifactRefProblem = (ref: string): string | null => {
     const { id, region } = parseArtifactRef(ref)
     const a = artById.get(id)
@@ -241,7 +233,8 @@ export function checkCatalogue({ items, questions, fileExists, linkOut, lanes, a
       else if (n > 1 && opts.many) warn(a.id, spans(n, 'texts'))
     } else if (kind === 'css' && f.svg) {
       const n = matchSimpleSelector(value, f.svg.elements)
-      if (n === 0) err(a.id, `${label} matches nothing in the drawing`)
+      if (n === 'invalid') warn(a.id, `${label} is not a valid selector (an empty part, as after a stray comma), so the board draws nothing for it`)
+      else if (n === 0) err(a.id, `${label} matches nothing in the drawing`)
       else if (n === null) warn(a.id, `${label} is not checked here; the board resolves it`)
       else if (n > 1 && opts.many) warn(a.id, spans(n, 'elements'))
     } else if (kind === 'node') {
@@ -354,7 +347,8 @@ export function checkCatalogue({ items, questions, fileExists, linkOut, lanes, a
     for (const ref of it.artifacts ?? []) {
       if (seen.has(ref)) warn(it.id, `artifacts lists ${ref} twice`)
       seen.add(ref)
-      if (!/^AR-\d{2,}(#[A-Za-z0-9-]+)?$/.test(ref)) {
+      // Any spot the slug rule can make (underscores, letters with accents); whether it exists is the spot rule's to say (FINDINGS R-77).
+      if (!ARTIFACT_REF.test(ref)) {
         err(it.id, `artifacts entry "${ref}" is not AR-nn or AR-nn#region`)
         continue
       }
@@ -372,7 +366,7 @@ export function checkCatalogue({ items, questions, fileExists, linkOut, lanes, a
   // Links in an artifact's description only warn: the board cannot rewrite an artifact, so they must never block a save or a delete.
   const linksIn = (id: string, texts: string[], live: boolean, soft = false) => {
     const fail = soft ? warn : err
-    for (const m of mentions(texts.join('\n\n'))) {
+    for (const m of mentionsOf(texts)) {
       const how = m.bare ? 'mentions' : 'links to'
       if (isArtifactId(m.id)) {
         const problem = artifactRefProblem(m.id)
@@ -427,6 +421,14 @@ export function checkCatalogue({ items, questions, fileExists, linkOut, lanes, a
     const sources = buildSourceIndex(artifacts, (id) => spotFactsOf(factsOf.get(id) ?? null))
     for (const a of artifacts) for (const p of citationProblems(a, spotFactsOf(factsOf.get(a.id) ?? null), artifactFormat(a) === 'pdf')) err(a.id, p)
     for (const c of sources.clashes) for (const id of c.ids) err(id, `cited_as "${c.prefix}" is also claimed by ${c.ids.filter((x) => x !== id).join(', ')}`)
+    for (const r of sources.repeats) warn(r.id, `cited_as lists "${r.prefix}" more than once; once is enough`)
+    // One file, one sidecar: two would leave its sources resolving to only one of them (FINDINGS R-82).
+    const byFile = new Map<string, string[]>()
+    for (const a of artifacts) {
+      const file = a.file?.replace(/^\.\//, '')
+      if (file) byFile.set(file, [...(byFile.get(file) ?? []), a.id])
+    }
+    for (const [file, ids] of byFile) if (ids.length > 1) for (const id of ids) warn(id, `file ${file} is also registered by ${ids.filter((x) => x !== id).join(', ')}; sources open only one of them, so keep one sidecar`)
     const sourcesOf = (id: string, list: string[], self?: string) => {
       for (const s of list) {
         const r = resolveSource(sources, s, self)
@@ -451,7 +453,7 @@ function snippet(text: string, max = 40): string {
 
 /** What the check knows of a file, as the source resolver reads it. */
 function spotFactsOf(f: ArtifactFacts | null): SpotFacts | null {
-  if (!f) return null
+  if (!f || !f.ok) return null // a file that cannot be read says so itself; its spots are not judged
   return { pages: f.pdf?.pages.length ?? null, headings: f.markdown?.headings ?? null, points: f.markdown?.points ?? null, lines: f.markdown?.lines ?? null }
 }
 

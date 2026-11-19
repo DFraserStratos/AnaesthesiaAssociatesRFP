@@ -40,7 +40,8 @@ npm --prefix BOARD run artifact:new -- --mermaid <file.mmd> --title "<name>" --d
   (`"Notes 2026-10-02 · Client meeting #11"`, `"Q&A 2026-09-24 #2"`, `"Recording 2026-10-01 · ..."`).
 - `--cited-as`, repeatable: how requirements' `sources:` cite it, so each source opens it at the spot
   it names (SCHEMA's `cited_as`). A source that starts with these words resolves here; after them it
-  may give `p.27` (a page), `#2 #3` (numbered points) or `L27-33` (lines). Which artifacts need it:
+  may give `p.27` (a page, PDFs only), `#2 #3` (numbered points, also `#2#3` or `#2, #3`) or `L27-33`
+  (lines, Markdown only). Which artifacts need it:
   - a **note** in `REQ/notes/` needs none: `Notes <date> · <title words>` resolves by its file name;
   - a **transcript**: `--cited-as "Transcript <date> · <name>" --cited-as "Recording <date> · <name>"`,
     the names its note and the requirements use;
@@ -51,8 +52,8 @@ npm --prefix BOARD run artifact:new -- --mermaid <file.mmd> --title "<name>" --d
     (`"Diagram: Billing route"`): that name. When a diagram is replaced (retired with
     `superseded_by`), sources citing the old one follow it to the new one by themselves.
   `--within <heading-slug>` makes points count only under that heading (for a note that numbers each
-  section from 1). For a cited name that should open one spot, add `spot: <region-id>` to the entry in
-  the sidecar by hand. Then check a few with `npm --prefix BOARD run source -- "<source>"`.
+  section from 1). For a cited name that should open one spot, add `spot: <spot>` to the entry in
+  the sidecar by hand: a region or step ID, a page `p27`, a line range `L1-10` or a heading slug. Then check a few with `npm --prefix BOARD run source -- "<source>"`.
 - The file comes into `REQ/artifacts/files/`: an SVG or image is copied in as `AR-nn.<ext>`; a
   transcript, document or PDF from elsewhere in the repo keeps its name and is moved in (`git mv` when
   tracked; fix any links to its old place). A file already in the requirements folder stays put.

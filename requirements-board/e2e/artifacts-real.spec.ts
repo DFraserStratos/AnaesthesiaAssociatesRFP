@@ -24,6 +24,32 @@ test('every named highlight on a real artifact shows its red box', async ({ page
   expect(missing).toEqual([])
 })
 
+test('every heading of every real Markdown artifact carries the server slug, record IDs included (B04, R-28)', async ({ page, request }) => {
+  test.setTimeout(240_000)
+  const snap = (await (await request.get('/api/catalogue')).json()) as CatalogueSnapshot
+  const docs = Object.values(snap.artifacts ?? {}).filter((r) => r.meta?.headings?.length)
+  const wrong: string[] = []
+  for (const r of docs) {
+    await page.goto(`/#/artifacts/${r.data.id}`)
+    const server = r.meta.headings!.map((h) => h.slug)
+    await expect(page.locator('.doc-sheet')).toBeVisible({ timeout: 20_000 })
+    const dom = await page.locator('.doc-sheet').evaluate((s) => [...s.querySelectorAll('[data-slug]')].map((h) => h.getAttribute('data-slug')))
+    if (JSON.stringify(dom) !== JSON.stringify(server)) wrong.push(r.data.id)
+  }
+  expect(wrong).toEqual([])
+  // FINDINGS R-28's own case: AR-58's "9.1 Catalogue, EP-04 Contracts", from the Sections list and from its link.
+  await page.goto('/#/artifacts/AR-58?region=91-catalogue-ep-04-contracts')
+  await expect(page.locator('.doc-sheet .region-box')).toBeVisible()
+  await expect(page.locator('.viewer-flag')).toHaveCount(0)
+  await page.goto('/#/artifacts/AR-58')
+  const sections = page.locator('.spot-list.auto')
+  if (await page.getByRole('button', { name: /^Show all/ }).isVisible()) await page.getByRole('button', { name: /^Show all/ }).click()
+  await sections.getByText('9.1 Catalogue, EP-04 Contracts').click()
+  await expect(page).toHaveURL(/region=91-catalogue-ep-04-contracts/)
+  await expect(page.locator('.doc-sheet .region-box')).toBeVisible()
+  await expect(page.locator('.viewer-flag')).toHaveCount(0)
+})
+
 test('real sources open their spot: an RFP printed page, and a note point', async ({ page }) => {
   test.setTimeout(90_000)
   // US-01.1.1 cites the RFP's printed p.18 (PDF p.19) first, and points 17 and 36 of the 29 September notes.

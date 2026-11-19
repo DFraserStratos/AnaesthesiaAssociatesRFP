@@ -8,6 +8,8 @@
  * as history; the check warns about it rather than blocking.
  */
 import { compareIds } from './ids.ts'
+import { LINK_SOURCE } from './links.ts'
+import { maskCode } from './markdownCode.ts'
 import type { Item, Question } from './types.ts'
 
 export interface DeletePlan {
@@ -38,21 +40,25 @@ export function descendantsOf(items: Item[], id: string): Item[] {
   return out
 }
 
-const LINK = /(!?)\[([^\]]*)\]\(\s*([^)\s]*)[^)]*\)/g
-const CODE = /^(```|~~~)[^\n]*\n[\s\S]*?(?:^\1[^\n]*$|(?![\s\S]))|(`+)[\s\S]*?\2/gm
+const LINK = new RegExp(LINK_SOURCE, 'gd')
 
-/** `[text](ID)` becomes `text` for every ID in `gone`, outside code. */
+/**
+ * `[text](ID)` becomes `text` for every ID in `gone`, outside code: links are found in the text with
+ * its code masked (`maskCode`, the same rule and the same link pattern as `mentions`), then the
+ * link's own words are kept as written, code and all. So whatever the check would count as a link to
+ * a gone item is rewritten (FINDINGS R-60). An image is not a link and stays.
+ */
 export function unlink(md: string, gone: Set<string>): string {
   if (!md) return md
-  const out: string[] = []
+  let out = ''
   let at = 0
-  const prose = (s: string) => s.replace(LINK, (whole, bang: string, text: string, href: string) => (!bang && gone.has(href.trim()) ? text : whole))
-  for (const m of md.matchAll(CODE)) {
-    out.push(prose(md.slice(at, m.index)), m[0])
+  for (const m of maskCode(md).matchAll(LINK)) {
+    if (m[1] || !gone.has(m[3]!.trim())) continue
+    const [from, to] = m.indices![2]!
+    out += md.slice(at, m.index) + md.slice(from, to)
     at = m.index + m[0].length
   }
-  out.push(prose(md.slice(at)))
-  return out.join('')
+  return out + md.slice(at)
 }
 
 export function planDelete(items: Item[], questions: Question[], id: string): DeletePlan {
