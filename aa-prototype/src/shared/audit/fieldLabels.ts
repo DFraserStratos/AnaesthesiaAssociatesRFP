@@ -3,7 +3,7 @@
  * `before` / `after` objects (A7 presentation).
  *
  * Covers the editable fields of `Booking`, `Procedure`, `List`, `Contract`
- * (and a fixed price's ranges), `Patient`, `Anaesthetist` and `BillingLine`, plus the
+ * (and a fixed price's ranges), `Patient` and `Anaesthetist`, plus the
  * audit-only keys the store synthesises for events that are not field edits
  * (`{ cancelled, reason }`, `{ invoiceCount, exceptionCount }`, and so on).
  *
@@ -243,9 +243,8 @@ export const FIELD_LABELS: Record<string, string> = {
   tier: 'Priority tier',
   pairingPreferenceIds: 'Pairing preferences',
 
-  // --- Billing line --------------------------------------------------------
+  // --- Amounts -------------------------------------------------------------
   procedureId: 'Procedure',
-  chargeBasis: 'Charge basis',
   units: 'Units',
   rate: 'Rate',
   hours: 'Hours',

@@ -3,8 +3,8 @@
  *
  * Seed state still represents the current truth, but every Booking now carries a
  * useful journey that can be opened without first staging live edits:
- * booking, scheduling context, Procedure setup, capture where present, fee
- * lines where present, and the final completion or cancellation fact.
+ * booking, scheduling context, Procedure setup, capture where present, and
+ * the final completion or cancellation fact.
  *
  * Existing lifecycle entries from `bookings.ts` remain authoritative. This
  * builder fills the earlier story around them, adds missing completion facts
@@ -16,7 +16,6 @@ import { addDays, addMinutes, format, parseISO } from 'date-fns'
 import type {
   Anaesthetist,
   AuditEntry,
-  BillingLine,
   Booking,
   List,
   Procedure,
@@ -33,7 +32,6 @@ interface SeedAuditInput {
   lists: Record<string, List>
   bookings: Record<string, Booking>
   procedures: Record<string, Procedure>
-  billingLines: Record<string, BillingLine>
 }
 
 type AuditDraft = Omit<AuditEntry, 'id'>
@@ -119,18 +117,6 @@ function bookingContext(booking: Booking): Record<string, unknown> {
   return Object.fromEntries(Object.entries(after).filter(([, value]) => value !== undefined))
 }
 
-function billingLineSnapshot(line: BillingLine): Record<string, unknown> {
-  const after: Record<string, unknown> = {
-    procedureId: line.procedureId,
-    chargeBasis: line.chargeBasis,
-    units: line.units,
-    rate: line.rate,
-    amount: line.amount,
-    description: line.description,
-  }
-  return Object.fromEntries(Object.entries(after).filter(([, value]) => value !== undefined))
-}
-
 export function buildSeedAudit(input: SeedAuditInput): AuditEntry[] {
   const staged: StagedAudit[] = []
   let insertion = 0
@@ -151,14 +137,6 @@ export function buildSeedAudit(input: SeedAuditInput): AuditEntry[] {
     proceduresByBooking.set(procedure.bookingId, rows)
   }
   for (const rows of proceduresByBooking.values()) rows.sort((a, b) => a.id.localeCompare(b.id))
-
-  const linesByProcedure = new Map<string, BillingLine[]>()
-  for (const line of Object.values(input.billingLines)) {
-    const rows = linesByProcedure.get(line.procedureId) ?? []
-    rows.push(line)
-    linesByProcedure.set(line.procedureId, rows)
-  }
-  for (const rows of linesByProcedure.values()) rows.sort((a, b) => a.id.localeCompare(b.id))
 
   const bookings = Object.values(input.bookings).sort((a, b) => a.id.localeCompare(b.id))
   bookings.forEach((booking, bookingIndex) => {
@@ -229,20 +207,6 @@ export function buildSeedAudit(input: SeedAuditInput): AuditEntry[] {
           atISO: shiftISO(procedureBaseISO, 1),
         })
       }
-
-      const lines = linesByProcedure.get(procedure.id) ?? []
-      lines.forEach((line, lineIndex) => {
-        push({
-          entityType: 'billingLine',
-          entityId: line.id,
-          who: OFFICE_NAME,
-          role: 'office',
-          source: 'office',
-          action: 'billingLine.add',
-          after: billingLineSnapshot(line),
-          atISO: shiftISO(procedureBaseISO, 2 + lineIndex),
-        })
-      })
 
       // The fee split the office typed on the Booking (catch-up Phase 22; US-08.2.3).
       if (procedure.split !== undefined) {

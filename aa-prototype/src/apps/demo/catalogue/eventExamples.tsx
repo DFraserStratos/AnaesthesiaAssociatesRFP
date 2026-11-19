@@ -17,6 +17,8 @@ import { CreditFormSheet } from '../../../shared/booking/CreditSheetSlot'
 import { SplitAllocation, type CreditFormMode } from '../../../shared/booking/CreditForm'
 import { CREDIT_LABELS } from '../../../shared/procedureEventCopy'
 import { EventReviewSheet } from '../../admin/flows/EventReviewSheet'
+import { AddBillingEventSheet, AddPrePostOpEventSheet } from '../../../shared/booking/EventSheets'
+import { ContractEventFees } from '../../admin/flows/ContractEventFees'
 import { CreditSheet } from '../../admin/flows/CreditSheet'
 import { CorrectInvoiceCard, CreditedBanner, CreditNoteDocument } from '../../admin/screens/InvoiceDocument'
 import { CreditTrails } from '../../admin/screens/LedgerScreen'
@@ -34,6 +36,33 @@ export function AdditionalInvoiceSheetExample({ as = 'office' }: { as?: 'office'
       <Button variant="secondary" onClick={() => setOpen(true)}>Open the form</Button>
       <AdditionalInvoiceSheet open={open} procedureId={SEED_EVENT_PROCEDURE_ID} actor={as === 'office' ? OFFICE_ACTOR : SOUTER_ACTOR} onClose={() => setOpen(false)} />
     </>
+  )
+}
+
+/** The pre-op or post-op event sheet and the billing event sheet (catch-up Phase 39b), on David Chen's HP03. */
+export function EventSheetsExample({ as = 'office' }: { as?: 'office' | 'anaesthetist' }) {
+  const [open, setOpen] = useState<'prePostOp' | 'billing' | null>(null)
+  const actor = as === 'office' ? OFFICE_ACTOR : SOUTER_ACTOR
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <Button variant="secondary" onClick={() => setOpen('prePostOp')}>Open the pre-op or post-op sheet</Button>
+      <Button variant="secondary" onClick={() => setOpen('billing')}>Open the billing event sheet</Button>
+      <AddPrePostOpEventSheet open={open === 'prePostOp'} procedureId={SEED_EVENT_PROCEDURE_ID} actor={actor} onClose={() => setOpen(null)} />
+      <AddBillingEventSheet open={open === 'billing'} procedureId={SEED_EVENT_PROCEDURE_ID} actor={actor} onClose={() => setOpen(null)} />
+    </div>
+  )
+}
+
+/** The Contract editor's Event fees on St George's ACC (catch-up Phase 39b). */
+export function ContractEventFeesExample() {
+  const contract = useAppStore((s) => s.masters.contracts['CT-STG-ACC'])
+  const [error, setError] = useState<string | null>(null)
+  if (contract === undefined) return null
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 600 }}>
+      <ContractEventFees contract={contract} actor={OFFICE_ACTOR} onError={setError} />
+      {error !== null && <span style={{ fontSize: 13 }}>{error}</span>}
+    </div>
   )
 }
 

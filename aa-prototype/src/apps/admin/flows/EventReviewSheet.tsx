@@ -19,11 +19,13 @@ import { creditDetailOf, eventLines, eventStatus } from '../../../domain/billing
 import type { ProcedureEvent } from '../../../domain/types'
 import { priceFreeFormInvoice } from '../../../domain/billing/additionalInvoice'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
-import { approveProcedureEvent, currentReversalPlan, declineProcedureEvent, eventPartyName, invoiceAddresseeName, originalForEvent, procedureOwnerSurname, replacementEventsOf, useAppStore, type Actor } from '../../../store'
-import { Button, DefList, DefRow, Eyebrow, FormError, Notice, Pill, ResultLine, TextArea } from '../../../shared/ui'
+import { approveProcedureEvent, currentReversalPlan, declineProcedureEvent, eventPartyName, eventPriceNow, invoiceAddresseeName, isPricedKind, originalForEvent, procedureOwnerSurname, replacementEventsOf, useAppStore, type Actor } from '../../../store'
+import { Button, DefList, DefRow, Eyebrow, FormError, Notice, Pill, ResultLine, TextArea, TextField } from '../../../shared/ui'
 import { formatCurrency, shortDay, stampText } from '../../../shared/format'
-import { ADDITIONAL_INVOICE_COPY as COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, EVENT_STATUS_LABEL, eventStatusLabel, raisedByText } from '../../../shared/procedureEventCopy'
-import { EVENT_STATUS_TONE } from '../../../shared/booking/ProcedureEventsList'
+import { ADDITIONAL_INVOICE_COPY as COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, EVENT_STATUS_LABEL, PRE_POST_OP_COPY, eventStatusLabel, raisedByText } from '../../../shared/procedureEventCopy'
+import { EVENT_STATUS_TONE, kindRowText } from '../../../shared/booking/ProcedureEventsList'
+import { parseAmount } from '../../../domain/billing/money'
+import type { EventPricing } from '../../../domain/billing/prePostOpEvent'
 import { FreeFormTotals } from '../../../shared/booking/AdditionalInvoiceForm'
 import { CreditMoneyState } from '../../../shared/booking/CreditForm'
 import { SidePanel } from '../components/SidePanel'
@@ -41,9 +43,15 @@ export function EventReviewSheet({ eventId, actor, onClose }: EventReviewSheetPr
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<string | null>(null)
+  const [setting, setSetting] = useState(false)
+  const [priceText, setPriceText] = useState('')
+  const [priceReason, setPriceReason] = useState('')
 
   function close() {
     setDeclining(false)
+    setSetting(false)
+    setPriceText('')
+    setPriceReason('')
     setReason('')
     setError(null)
     setResult(null)
@@ -64,7 +72,9 @@ export function EventReviewSheet({ eventId, actor, onClose }: EventReviewSheetPr
   const awaiting = status === 'awaitingReview'
 
   function approve() {
-    const out = approveProcedureEvent(useAppStore, actor, event!.id)
+    // Catch-up Phase 39b: the office's own price, with its reason, when set.
+    const officePrice = setting ? { amount: parseAmount(priceText) ?? Number.NaN, reason: priceReason } : undefined
+    const out = approveProcedureEvent(useAppStore, actor, event!.id, officePrice !== undefined ? { officePrice } : {})
     if (!out.ok) return setError(out.message)
     setError(null)
     setResult(EVENT_LABELS.approvedResult)
@@ -144,7 +154,20 @@ export function EventReviewSheet({ eventId, actor, onClose }: EventReviewSheetPr
 
       {credit !== undefined && <CreditReviewBody event={event} />}
 
-      {credit === undefined && (
+      {isPricedKind(event.kind) && (
+        <KindReviewBody
+          event={event}
+          awaiting={awaiting}
+          setting={setting}
+          onSetting={setSetting}
+          priceText={priceText}
+          onPriceText={setPriceText}
+          priceReason={priceReason}
+          onPriceReason={setPriceReason}
+        />
+      )}
+
+      {credit === undefined && !isPricedKind(event.kind) && (
       <div style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, overflow: 'hidden' }}>
         {(priced.kind === 'priced' ? priced.lines : eventLines(event).map((l) => ({ ...l, amount: 0 }))).map((l, i) => (
           <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 12px', borderTop: i === 0 ? 'none' : `1px solid ${neutral.line}`, fontSize: 13.5 }}>
@@ -171,6 +194,97 @@ export function EventReviewSheet({ eventId, actor, onClose }: EventReviewSheetPr
       <ResultLine line={result} />
       <FormError message={error} />
     </SidePanel>
+  )
+}
+
+/** How an event's price reads to the office (catch-up Phase 39b): the calculation, the Contract fee, the typed fee or the office's price. */
+export function pricingText(p: EventPricing): string {
+  switch (p.basis) {
+    case 'time':
+      return PRE_POST_OP_COPY.timeCalculation(p.minutes ?? 0, p.timeUnits ?? 0, formatCurrency(p.rate ?? 0), p.rateOrigin ?? 'unitValue', formatCurrency(p.amount), p.discountPercent)
+    case 'contractEventFee':
+      return p.replacedMinutes !== undefined
+        ? PRE_POST_OP_COPY.feeReplaces(p.holderCode ?? 'Contract fee', formatCurrency(p.amount), p.replacedMinutes)
+        : `Contract fee ${p.holderCode ?? ''} · ${formatCurrency(p.amount)}`
+    case 'typedFixedFee':
+      return `${PRE_POST_OP_COPY.fixedFee} · ${formatCurrency(p.amount)}`
+    case 'billingEvent':
+      return PRE_POST_OP_COPY.amount(p.amount)
+    case 'officePrice':
+      return `${PRE_POST_OP_COPY.setPrice} · ${formatCurrency(p.amount)}${p.officeReason !== undefined ? ` · ${p.officeReason}` : ''}`
+  }
+}
+
+/**
+ * A pre-op, post-op or billing event under review (catch-up Phase 39b): what
+ * was recorded, its price as the office would approve it now (or as frozen),
+ * "Needs a price" on a fixed or open price, and Set a price with a reason.
+ */
+function KindReviewBody({
+  event,
+  awaiting,
+  setting,
+  onSetting,
+  priceText,
+  onPriceText,
+  priceReason,
+  onPriceReason,
+}: {
+  event: ProcedureEvent
+  awaiting: boolean
+  setting: boolean
+  onSetting: (b: boolean) => void
+  priceText: string
+  onPriceText: (s: string) => void
+  priceReason: string
+  onPriceReason: (s: string) => void
+}) {
+  const state = useAppStore((s) => s)
+  const row = kindRowText(state, event)
+  const now = event.pricing === undefined ? eventPriceNow(state, event) : undefined
+  const pricing = event.pricing ?? (now?.kind === 'priced' ? now.pricing : undefined)
+  const needsPrice = now?.kind === 'refused'
+  const settable = awaiting && event.detail.kind !== 'billing'
+  return (
+    <div data-shot="event-review-kind" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <DefList gap={10}>
+        <DefRow labelTone="slate" label={PRE_POST_OP_COPY.typeLabel}>
+          {row?.first}
+          {row !== undefined && <span className="mono" style={{ color: neutral.slate }}> · {row.recorded}</span>}
+        </DefRow>
+        {event.startTime !== undefined && (
+          <DefRow labelTone="slate" label={PRE_POST_OP_COPY.startLabel}>
+            <span className="mono">{event.startTime}</span>
+          </DefRow>
+        )}
+        {pricing !== undefined && (
+          <DefRow labelTone="slate" label="Price">
+            <span className="mono" data-shot="event-review-price">{pricingText(pricing)}</span>
+          </DefRow>
+        )}
+      </DefList>
+      {awaiting && event.review.reason !== undefined && <Notice tone="warning">{event.review.reason}</Notice>}
+      {needsPrice && now?.kind === 'refused' && (
+        <Notice tone="warning" shot="event-review-needs-price">
+          {now.message}
+        </Notice>
+      )}
+      {settable && !setting && (
+        <div>
+          <Button variant="secondary" size="compact" onClick={() => onSetting(true)} shot="event-review-set-price">
+            {PRE_POST_OP_COPY.setPrice}
+          </Button>
+        </div>
+      )}
+      {settable && setting && (
+        <div data-shot="event-review-office-price" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ width: 180 }}>
+            <TextField label={PRE_POST_OP_COPY.officePriceLabel} value={priceText} onChange={onPriceText} mono inputMode="decimal" shot="event-review-price-amount" />
+          </div>
+          <TextArea label={PRE_POST_OP_COPY.officeReasonLabel} value={priceReason} onChange={onPriceReason} rows={2} shot="event-review-price-reason" />
+        </div>
+      )}
+    </div>
   )
 }
 

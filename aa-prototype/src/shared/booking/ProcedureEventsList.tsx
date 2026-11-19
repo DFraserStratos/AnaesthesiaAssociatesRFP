@@ -24,11 +24,13 @@ import { useMemo, useState } from 'react'
 import { neutral, radius } from '../../theme/tokens'
 import { creditDetailOf, eventLines, eventStatus, mayEditEvent, type ProcedureEventStatus } from '../../domain/billing/procedureEvent'
 import { freeFormSubtotal } from '../../domain/billing/additionalInvoice'
-import { eventPartyName, eventsForProcedure, procedureOwner, removeProcedureEvent, useAppStore, type Actor } from '../../store'
-import { Eyebrow, FormError, InlineConfirm, Pill, TextAction, type PillTone } from '../ui'
-import { formatCurrency, shortDay } from '../format'
-import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, eventStatusLabel, raisedByText } from '../procedureEventCopy'
+import type { ProcedureEvent } from '../../domain/types'
+import { eventPartyName, eventsForProcedure, procedureOwner, raiseRefusal, removeProcedureEvent, useAppStore, type Actor } from '../../store'
+import { Button, Eyebrow, FormError, InlineConfirm, Pill, TextAction, type PillTone } from '../ui'
+import { shortDay } from '../format'
+import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, EVENT_TYPE_LABEL, PRE_POST_OP_COPY, eventStatusLabel, raisedByText } from '../procedureEventCopy'
 import { AdditionalInvoiceSheet } from './AdditionalInvoiceForm'
+import { AddBillingEventSheet, AddPrePostOpEventSheet } from './EventSheets'
 import { useCreditSheet } from './CreditSheetSlot'
 import { useSurface } from '../surface'
 import { useBookingStore, useCommandBlock } from './draft'
@@ -40,6 +42,33 @@ export const EVENT_STATUS_TONE: Record<ProcedureEventStatus, PillTone> = {
   approved: 'neutral',
   invoiced: 'success',
   declined: 'neutral',
+}
+
+/**
+ * A pre-op, post-op or billing event's row text (catch-up Phase 39b): its type
+ * (and ACC code) or description, what was recorded, and the amount the viewer
+ * may see once one exists: the frozen price, a typed fee or charge as typed,
+ * a Contract event fee's fixed price. A time before review shows none (never a
+ * calculation, `EVENT_RULES.anaesthetistSees`). Undefined for 38b's and 39's kinds.
+ */
+export function kindRowText(
+  state: { masters: { contractEventFees: Record<string, { fixedPrice: number }> } },
+  e: ProcedureEvent,
+): { first: string; recorded: string; amount: number | undefined } | undefined {
+  const d = e.detail
+  if (d.kind === 'billing') {
+    const signed = d.direction === 'credit' ? -d.amount : d.amount
+    return { first: d.description, recorded: d.direction === 'credit' ? PRE_POST_OP_COPY.credit : PRE_POST_OP_COPY.charge, amount: e.pricing?.amount ?? signed }
+  }
+  if (d.kind !== 'preOp' && d.kind !== 'postOp') return undefined
+  const r = d.recording
+  const recorded = r.kind === 'time' ? PRE_POST_OP_COPY.minutes(r.minutes) : PRE_POST_OP_COPY.fixedFeeShort
+  const asRecorded = r.kind === 'fixedFee' ? (r.source === 'typed' ? r.amount : state.masters.contractEventFees[r.eventFeeId]?.fixedPrice) : undefined
+  return {
+    first: `${EVENT_TYPE_LABEL[d.type]}${d.code !== undefined ? ` · ${d.code}` : ''}`,
+    recorded,
+    amount: e.pricing?.amount ?? asRecorded,
+  }
 }
 
 export interface ProcedureEventsListProps {
@@ -66,11 +95,19 @@ export function ProcedureEventsList({ procedureId, actor, onReview, onOpenInvoic
   const [confirming, setConfirming] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  const [adding, setAdding] = useState<'prePostOp' | 'billing' | null>(null)
+  const [editingKind, setEditingKind] = useState<{ eventId: string; sheet: 'prePostOp' | 'billing' } | null>(null)
+
   const isOffice = actor.role === 'office'
   const owner = procedureOwner(state, procedureId)
   const ownProcedure = actor.role === 'anaesthetist' && actor.anaesthetistId !== undefined && actor.anaesthetistId === owner
-  // The anaesthetist apps leave a Procedure with no events as it always was.
-  if (!isOffice && events.length === 0) return null
+  // Catch-up Phase 39b: the owner and the office add pre-op, post-op and billing events on any List state the guard allows.
+  const procedure = state.schedule.procedures[procedureId]
+  const booking = procedure !== undefined ? state.schedule.bookings[procedure.bookingId] : undefined
+  const assigned = booking !== undefined && state.schedule.lists[booking.listId]?.anaesthetistId !== undefined
+  const canAdd = assigned && raiseRefusal(state, { role: actor.role, ...(actor.anaesthetistId !== undefined ? { anaesthetistId: actor.anaesthetistId } : {}) }, procedureId, 'postOp') === null
+  // The anaesthetist apps leave a Procedure that is not theirs, with no events, as it always was.
+  if (!isOffice && events.length === 0 && !canAdd) return null
   const showMoney = isOffice || ownProcedure
 
 
@@ -98,8 +135,15 @@ export function ProcedureEventsList({ procedureId, actor, onReview, onOpenInvoic
         const creditNote = credit?.creditNoteId !== undefined ? state.billing.creditNotes[credit.creditNoteId] : undefined
         // A replacement reads as part of its correction: "Rebill of AA-2026-0007".
         const rebillOf = e.replaces !== undefined ? state.billing.invoices[e.replaces.originalInvoiceId] : undefined
-        const first = credit !== undefined ? `${credited !== undefined ? CREDIT_LABELS.creditsInFull(credited.invoiceNumber) : ''}${credit.reason !== '' ? ` · ${credit.reason}` : ''}` : (lines[0]?.description ?? '')
-        const amount = credit !== undefined ? (credited?.subtotal ?? 0) : freeFormSubtotal(lines)
+        // Catch-up Phase 39b: a pre-op, post-op or billing event reads its type or description and what was recorded.
+        const kindRow = kindRowText(state, e)
+        const first =
+          kindRow !== undefined
+            ? kindRow.first
+            : credit !== undefined
+              ? `${credited !== undefined ? CREDIT_LABELS.creditsInFull(credited.invoiceNumber) : ''}${credit.reason !== '' ? ` · ${credit.reason}` : ''}`
+              : (lines[0]?.description ?? '')
+        const amount = kindRow !== undefined ? kindRow.amount : credit !== undefined ? (credited?.subtotal ?? 0) : freeFormSubtotal(lines)
         const editable = mayEditEvent(e, { role: actor.role, ...(actor.anaesthetistId !== undefined ? { anaesthetistId: actor.anaesthetistId } : {}) }, owner)
         // A replacement is removed only with its credit.
         const removable = editable && e.replaces === undefined
@@ -116,16 +160,25 @@ export function ProcedureEventsList({ procedureId, actor, onReview, onOpenInvoic
           >
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 14, fontWeight: 600, color: neutral.ink }}>{EVENT_KIND_LABEL[e.kind]}</span>
-              <span className="mono" style={{ fontSize: 12.5, color: neutral.slate }}>{shortDay(e.occurredOnISO)}</span>
-              {showMoney && (
+              <span className="mono" style={{ fontSize: 12.5, color: neutral.slate }}>
+                {shortDay(e.occurredOnISO)}
+                {e.startTime !== undefined ? ` ${e.startTime}` : ''}
+              </span>
+              {showMoney && amount !== undefined && (
                 <span className="mono" data-shot="procedure-event-total" style={{ marginLeft: 'auto', fontSize: 14, color: neutral.ink, fontVariantNumeric: 'tabular-nums' }}>
-                  {formatCurrency(amount)} <span style={{ fontSize: 12, color: neutral.slate }}>{EVENT_LABELS.exGst}</span>
+                  {PRE_POST_OP_COPY.amount(amount)} <span style={{ fontSize: 12, color: neutral.slate }}>{EVENT_LABELS.exGst}</span>
                 </span>
               )}
             </div>
             <div style={{ fontSize: 13.5, color: neutral.ink }}>
               {rebillOf !== undefined && <span data-shot="procedure-event-rebill-of" style={{ color: neutral.slate }}>{CREDIT_LABELS.rebillOf(rebillOf.invoiceNumber)} · </span>}
               {first}
+              {kindRow !== undefined && (
+                <span className="mono" data-shot="procedure-event-recorded" style={{ color: neutral.slate }}>
+                  {' · '}
+                  {kindRow.recorded}
+                </span>
+              )}
               {credit === undefined && lines.length > 1 && <span style={{ color: neutral.slate }}> {EVENT_LABELS.moreLines(lines.length - 1)}</span>}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -159,7 +212,13 @@ export function ProcedureEventsList({ procedureId, actor, onReview, onOpenInvoic
                   <>
                     <TextAction
                       size={actionSize}
-                      onClick={() => (credit !== undefined ? setEditingCredit({ eventId: e.id, invoiceId: credit.originalInvoiceId }) : setEditing(e.id))}
+                      onClick={() =>
+                        credit !== undefined
+                          ? setEditingCredit({ eventId: e.id, invoiceId: credit.originalInvoiceId })
+                          : kindRow !== undefined
+                            ? setEditingKind({ eventId: e.id, sheet: e.kind === 'billing' ? 'billing' : 'prePostOp' })
+                            : setEditing(e.id)
+                      }
                       shot="procedure-event-edit"
                       disabled={blocked !== null}
                     >
@@ -189,6 +248,36 @@ export function ProcedureEventsList({ procedureId, actor, onReview, onOpenInvoic
         )
       })}
       <FormError message={error} />
+      {canAdd && (
+        <div data-shot="procedure-event-add" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingTop: events.length > 0 ? 4 : 0 }}>
+          <Button variant="secondary" size={actionSize === 'lg' ? 'touch' : 'compact'} onClick={() => setAdding('prePostOp')} disabled={blocked !== null} shot="add-pre-post-op-event">
+            {PRE_POST_OP_COPY.addPrePostOp}
+          </Button>
+          <Button variant="secondary" size={actionSize === 'lg' ? 'touch' : 'compact'} onClick={() => setAdding('billing')} disabled={blocked !== null} shot="add-billing-event">
+            {PRE_POST_OP_COPY.addBilling}
+          </Button>
+        </div>
+      )}
+      <AddPrePostOpEventSheet
+        open={adding === 'prePostOp' || editingKind?.sheet === 'prePostOp'}
+        procedureId={procedureId}
+        actor={actor}
+        {...(editingKind?.sheet === 'prePostOp' ? { eventId: editingKind.eventId } : {})}
+        onClose={() => {
+          setAdding(null)
+          setEditingKind(null)
+        }}
+      />
+      <AddBillingEventSheet
+        open={adding === 'billing' || editingKind?.sheet === 'billing'}
+        procedureId={procedureId}
+        actor={actor}
+        {...(editingKind?.sheet === 'billing' ? { eventId: editingKind.eventId } : {})}
+        onClose={() => {
+          setAdding(null)
+          setEditingKind(null)
+        }}
+      />
       <AdditionalInvoiceSheet
         open={editing !== null}
         procedureId={procedureId}

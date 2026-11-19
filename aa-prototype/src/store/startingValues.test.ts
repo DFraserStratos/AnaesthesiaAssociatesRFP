@@ -39,12 +39,11 @@ describe('starting values from the Contract', () => {
     // One audited change records the Contract and the code it filled.
     expect(s.audit.at(-1)).toMatchObject({ action: 'procedure.contract', after: { governingContractId: PRICED_ITEM.merFaceLift, rvgGroupId: after.rvgGroupId } })
     const list = s.schedule.lists[s.schedule.bookings[RILEY]!.listId] as AssignedList
-    const { fee } = procedureFee({ procedure: after, list, masters: s.masters, billingLines: s.schedule.billingLines, patientId: s.schedule.bookings[RILEY]!.patientId })
+    const { fee } = procedureFee({ procedure: after, list, masters: s.masters, patientId: s.schedule.bookings[RILEY]!.patientId })
     expect(fee.btm.base.units).toBe(s.masters.rvgGroups[after.rvgGroupId!]!.baseUnits)
     expect(fee.btm.baseSource).toBe('rvgGroup')
     // A fixed price: the units are for reference only.
-    expect(fee.lines[0]).toEqual({ chargeBasis: 'fixed', description: 'Contract price', amount: 3100 })
-    expect(fee.lines.some((l) => l.chargeBasis === 'rvg')).toBe(false)
+    expect(fee.lines).toEqual([{ description: 'Contract price', amount: 3100 }])
   })
 
   it('a Procedure that already has an RVG code keeps it, with its times', () => {
@@ -94,7 +93,7 @@ describe('starting values from the Contract', () => {
     expect(p.rvgGroupId).toBeUndefined()
     const s = api.getState()
     const list = s.schedule.lists[s.schedule.bookings[MERIVALE_FACE_LIFT_BOOKING_ID]!.listId] as AssignedList
-    expect(bookingFee({ procedures: proceduresForBooking(s, MERIVALE_FACE_LIFT_BOOKING_ID), list, masters: s.masters, billingLines: s.schedule.billingLines, patientId: s.schedule.bookings[MERIVALE_FACE_LIFT_BOOKING_ID]!.patientId }).total).toBe(3100)
+    expect(bookingFee({ procedures: proceduresForBooking(s, MERIVALE_FACE_LIFT_BOOKING_ID), list, masters: s.masters, patientId: s.schedule.bookings[MERIVALE_FACE_LIFT_BOOKING_ID]!.patientId }).total).toBe(3100)
   })
 
   it('a typed base value from before the fill is cleared, so B comes from the RVG group alone', () => {

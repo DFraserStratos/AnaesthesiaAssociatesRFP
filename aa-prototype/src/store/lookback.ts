@@ -97,7 +97,7 @@ function field(value: unknown, key: string): string | undefined {
  * read from the audit log: entries after the List's last `list.submit`, by
  * position (so two writes in the same demo minute still order), whose role is
  * the anaesthetist's and whose entity is the List, one of its Bookings, or a
- * Procedure, billing line or patient of one of them. A patient edit counts only
+ * Procedure or patient of one of them. A patient edit counts only
  * when the List's own anaesthetist made it (a patient's details are shared by
  * all their Bookings, so her edit changes what the office sees here; a
  * colleague's never counts). The conflict entries `mutate()` writes on the
@@ -122,7 +122,7 @@ export function changedSinceSubmitted(
   }
   if (start < 0) return null
 
-  const { bookings, procedures, billingLines } = state.schedule
+  const { bookings, procedures } = state.schedule
   const onList = (bookingId: string | undefined): bookingId is string =>
     bookingId !== undefined && bookings[bookingId]?.listId === listId
   const bookingOfProcedure = (procedureId: string | undefined): string | undefined =>
@@ -153,12 +153,6 @@ export function changedSinceSubmitted(
       case 'procedure':
         mark(bookingOfProcedure(e.entityId) ?? field(e.before, 'bookingId') ?? field(e.after, 'bookingId'))
         break
-      case 'billingLine': {
-        const procedureId =
-          billingLines[e.entityId]?.procedureId ?? field(e.before, 'procedureId') ?? field(e.after, 'procedureId')
-        mark(bookingOfProcedure(procedureId))
-        break
-      }
       case 'patient':
         if (e.who !== ownerName) break
         for (const b of Object.values(bookings)) if (b.patientId === e.entityId) mark(b.id)

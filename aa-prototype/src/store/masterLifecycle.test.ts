@@ -208,7 +208,6 @@ describe('the RVG time rule editor (catch-up Phase 42; US-05.2.2)', () => {
           procedures: proceduresForBooking(s, booking.id),
           list: list as AssignedList,
           masters: s.masters,
-          billingLines: s.schedule.billingLines,
           patientId: booking.patientId,
           held: heldPricesForBooking(s, booking.id),
           ...(held !== undefined ? { lock: held } : {}),

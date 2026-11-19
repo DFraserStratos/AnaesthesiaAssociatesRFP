@@ -29,7 +29,7 @@ import {
   mkProcedure,
   RVG_MODIFIER_MASTER,
 } from './fixtures'
-import type { BillingLine, Contract, FeeSplit, Party, Procedure } from '../types'
+import type { Contract, FeeSplit, Party, Procedure } from '../types'
 
 /** The holder Parties these tests use (catch-up Phase 18): each bills today's counterparty. */
 const PARTIES: Record<string, Party> = Object.fromEntries(
@@ -59,7 +59,6 @@ function mkCtx(overrides: Partial<InvoiceBuildContext> = {}): InvoiceBuildContex
     rvgGroups: { [BASE_SINGLE_10.id]: BASE_SINGLE_10 },
     contracts: { [HOSPITAL_DEFAULT.id]: HOSPITAL_DEFAULT, [NO_CONTRACT.id]: NO_CONTRACT },
     parties: PARTIES,
-    billingLines: [],
     listDateISO: LIST_DATE,
     timeRule: DEFAULT_RVG_TIME_RULE,
     listHospitalId: 'hosp-1',
@@ -409,9 +408,8 @@ describe('buildInvoicesForBooking', () => {
   })
 
   it('a negative counterparty total is an exception, never a negative invoice (8th review)', () => {
-    // Catch-up Phase 27: no prepayment is deducted any more, so a negative billing line is what drives a total negative.
-    const lines: BillingLine[] = [{ id: 'bl-neg', procedureId: primary.id, chargeBasis: 'fixed', amount: -5000, description: 'Adjustment' }]
-    const result = buildInvoicesForBooking(mkBooking(), [primary], mkCtx({ billingLines: lines }))
+    // Catch-up Phase 27: no prepayment is deducted any more, so a negative typed price is what drives a total negative.
+    const result = buildInvoicesForBooking(mkBooking(), [{ ...primary, enteredPrice: -5000 }], mkCtx())
     expect(result.kind).toBe('exception')
     if (result.kind === 'exception') expect(result.code).toBe('negativeTotal')
   })
@@ -427,11 +425,8 @@ describe('buildInvoicesForBooking', () => {
 
   it('GST maths: 15% on the GST-exclusive subtotal, rounded to cents', () => {
     expect(GST_RATE).toBe(0.15)
-    const feeOnly = mkProcedure({ id: 'proc-1', governingContractId: NO_CONTRACT.id })
-    const lines: BillingLine[] = [
-      { id: 'bl-1', procedureId: 'proc-1', chargeBasis: 'fixed', amount: 100.33, description: 'Consumables' },
-    ]
-    const result = buildInvoicesForBooking(mkBooking(), [feeOnly], mkCtx({ billingLines: lines }))
+    const feeOnly = mkProcedure({ id: 'proc-1', governingContractId: NO_CONTRACT.id, enteredPrice: 100.33 })
+    const result = buildInvoicesForBooking(mkBooking(), [feeOnly], mkCtx())
     if (result.kind !== 'invoices') throw new Error('expected invoices')
     const invoice = result.invoices[0]!
     expect(invoice.subtotal).toBe(100.33)

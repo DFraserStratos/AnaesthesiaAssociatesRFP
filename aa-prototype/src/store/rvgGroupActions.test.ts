@@ -36,7 +36,7 @@ function feeOf(api: BoundAppStore, procedureId: string) {
   const p = s.schedule.procedures[procedureId]!
   const booking = s.schedule.bookings[p.bookingId]!
   const list = assigned(s.schedule.lists[booking.listId])
-  return procedureFee({ procedure: p, list, masters: s.masters, billingLines: s.schedule.billingLines, patientId: booking.patientId }).fee
+  return procedureFee({ procedure: p, list, masters: s.masters, patientId: booking.patientId }).fee
 }
 
 describe('the office maintains the RVG groups', () => {

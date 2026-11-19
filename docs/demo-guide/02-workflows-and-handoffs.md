@@ -385,7 +385,8 @@ The procedure has occurred and the anaesthetist needs to record the clinical bil
    = $106.00") and the Booking total above Mark complete (the phone's dock strip, the web rail panel),
    rising as she claims a modifier or adds time, with no prompt. The office sees the full billing total
    on the Admin Booking.
-10. She may add a fixed billing line, and type a price where the Contract allows it, no reason needed
+10. She may add a billing event (a charge or credit with free text, under the Procedure), and type a
+    price where the Contract allows it, no reason needed
     (an RVG Contract that allows it, or the amount on No contract · Fixed price). Elsewhere the figures
     are read-only: "Set by {Contract}. To use a different price, change the Contract or alert the
     office." The office can change any price until AUTHORISED, shown at review beside the computed
@@ -799,7 +800,30 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
   pair and Xero pair, linked both ways to the original.
 - After a prepaid or fixed-price procedure nothing is billed automatically; the anaesthetist or office
   raises an additional invoice by hand.
-- The anaesthetist's own pre-op and post-op events come with catch-up Phase 39b.
+- The anaesthetist records her own pre-op and post-op events from the Booking (reached by the main
+  view, the archive or search): **Add pre-op or post-op event** under the Procedure, a type (Post-op
+  ward review, HDU review, Pain consult, ACC pre-op assessment, Other pre-op, Other post-op), its own
+  date and start time, and a time recorded or a fixed fee. **Invoice this event** keeps it billable
+  (cleared, it stays on the record, never invoiced); **Billed to the same party as the procedure** is
+  ticked unless she names another party. She sees no calculation: the office prices the time at review.
+- An event is on no List: its date is its own, not that day's schedule.
+- One review step (**Review → Events**) approves it, then it is billed in the next run: a dated line on
+  the same party's invoice where the run has one (the List's authorise run, if the List is not yet
+  authorised), otherwise an invoice of its own, traceable to the Procedure's ("Post-op event · relates
+  to AA-2026-..."). A Contract event fee (such as St George's ACC STGACC-PAIN, $120.00 for a pain
+  consult) replaces the time; on a fixed-price Procedure the office sets a price with a reason.
+- An admin can add one too, on request. A billing event (**Add billing event**: a charge or credit
+  with free text and an amount ex GST) takes the same path; a credit is a negative line, offered only
+  before the Procedure is invoiced (after that it is a credit note).
+- Event billing (OQ-121) is Donald's answer for the build, not yet seen by Vanessa.
+
+#### ACC pre-op assessment
+
+- An ACC pre-op assessment is a pre-op event, dated on or before the procedure, under the generic event
+  and pricing rules: no fixed-fee Contract, ACC being a funding tag on the Contract.
+- The sheet offers three preconfigured codes, CS250, CS260 and CS70, each "ACC pre-op assessment"; the
+  code rides on its own invoice line ("Pre-op event · ACC pre-op assessment · CS250 · 13 Jul 2026").
+- The codes are provisional, to confirm with AA's accountant (OQ-12).
 
 #### Correction after invoicing
 
@@ -875,6 +899,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), escalating warning, left off the final invoice | Yes | Catch-up Phase 27 |
 | Prepayment held in the AA Holding account, transferred to the anaesthetist when the List is authorised, then paid by the payables run | Yes | Catch-up Phase 27a |
 | Prepayment warning, events and additional invoices, credit and rebill, split, the anaesthetist's credit note, billing monitor/retry | Yes | Phase 09; events and additional invoices from catch-up Phase 38b; credit notes, credit and rebill and the split from catch-up Phase 39 |
+| Pre-op and post-op events, the ACC pre-op event, Contract event fees and billing events (a free-text charge or credit), billed in the next run | Yes | Catch-up Phase 39b |
 | Contract locked at authorise, invoices from the lock, Contract history | Yes | Catch-up Phase 25 |
 | Xero pairs, payment, balances and disbursement | Yes | Phase 10 |
 | Xero resilience: payables run in Xero, sync queue and outage, voids and edits flagged, bulk remittance matched in Xero, Reconciliation card; Billing monitor grouped by anaesthetist with filters | Yes | Catch-up Phase 37 |

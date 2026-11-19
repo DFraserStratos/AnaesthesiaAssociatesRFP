@@ -88,7 +88,6 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
-  const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
   const invoicesRecord = useAppStore((s) => s.billing.invoices)
   const locksRecord = useAppStore((s) => s.billing.locks)
   const masters = useAppStore((s) => s.masters)
@@ -125,7 +124,7 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
       )
       // The flags come from the one pure list (`domain/billing/reviewFlags.ts`) over the store's one input selector (catch-up Phase 21a).
       const state = useAppStore.getState()
-      const totals = bookingFee({ procedures: procs, list, masters, billingLines: billingLinesRecord, patientId: booking.patientId, held: heldPricesForBooking(state, booking.id), ...(state.billing.locks[booking.id] !== undefined ? { lock: state.billing.locks[booking.id]! } : {}) })
+      const totals = bookingFee({ procedures: procs, list, masters, patientId: booking.patientId, held: heldPricesForBooking(state, booking.id), ...(state.billing.locks[booking.id] !== undefined ? { lock: state.billing.locks[booking.id]! } : {}) })
       const input = reviewInputFor(state, booking, disabledDays)
       const flags = input !== undefined ? reviewFlagsForBooking(input) : []
       const changes: (ContractChangeRecord | undefined)[] = procs.map((p) => contractChangeFor(state, p.id))
@@ -134,7 +133,7 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
       const primaryAllocation = primary !== undefined ? totals.views[primary.id]?.allocation : undefined
       // Every Procedure's stack view (catch-up Phase 20a): the one pure module, read for the
       // Procedures column and for who is billed ("Mixed" when Procedures differ; `billablePartyForProcedure`, catch-up Phase 21).
-      const stackViews = procs.map((p) => procedureStackViewFor({ masters, schedule: { procedures: proceduresRecord, bookings: bookingsRecord, lists: listsRecord, billingLines: billingLinesRecord }, billing: state.billing }, p.id, 'office')!)
+      const stackViews = procs.map((p) => procedureStackViewFor({ masters, schedule: { procedures: proceduresRecord, bookings: bookingsRecord, lists: listsRecord }, billing: state.billing }, p.id, 'office')!)
       const billed = new Set(stackViews.map((v) => v.contract?.invoiced?.name).filter((n): n is string => n !== undefined))
       const anyMissing = stackViews.some((v) => v.contract === null)
       // A split fee bills several parties (catch-up Phase 22): "Split" (its parties show in the Procedures cell), or "Mixed".
@@ -144,9 +143,7 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
         : anySplit
           ? stackViews.length === 1 ? 'Split' : 'Mixed'
           : billed.size > 1 ? 'Mixed' : ([...billed][0] ?? 'Needs an invoice destination')
-      const procIds = new Set(procs.map((p) => p.id))
-      const lineIds = Object.values(billingLinesRecord).filter((l) => procIds.has(l.procedureId)).map((l) => l.id)
-      const entityIds = [booking.id, ...procs.map((p) => p.id), ...lineIds]
+      const entityIds = [booking.id, ...procs.map((p) => p.id)]
       // Which procedure a history row belongs to — only where the merged trail
       // is ambiguous, i.e. a Booking carrying more than one procedure.
       let entityLabels: Record<string, string> | undefined
@@ -156,9 +153,6 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
           const scope = procedure.isPrimary ? 'Primary' : 'Additional'
           const label = procedureLabel(procedure, masters.rvgGroups, index + 1)
           labels[procedure.id] = `${scope} · ${label}`
-          for (const line of Object.values(billingLinesRecord)) {
-            if (line.procedureId === procedure.id) labels[line.id] = `${scope} · fee line`
-          }
         })
         entityLabels = labels
       }
@@ -169,7 +163,7 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
       return { booking, primary, primaryView, primaryAllocation, totals, flags, changes, procs, procIds: procs.map((p) => p.id), billedText, procCount: procs.length, entityIds, entityLabels, stackViews, alert, lockView }
     })
     // The audit feeds the change records; the notifications feed the alerts.
-  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, audit, notifications, invoicesRecord, locksRecord])
+  }, [list, listId, bookingsRecord, proceduresRecord, masters, audit, notifications, invoicesRecord, locksRecord])
   const warningsByBooking = useListWarnings(listId)
   // Stubs for rows waiting at intake (catch-up Phase 33a): shown in the table, never in the stats or totals.
   const stubs = useListStubs(listId)

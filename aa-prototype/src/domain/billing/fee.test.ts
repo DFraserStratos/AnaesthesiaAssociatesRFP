@@ -15,7 +15,6 @@ import {
   RVG_MODIFIER_MASTER,
   START_0800,
 } from './fixtures'
-import type { BillingLine } from '../types'
 import { DEFAULT_RVG_TIME_RULE as R } from './timeUnits'
 
 /** The fee context every case shares: the List's date, the seeded time rule, no patient DOB and the RVG modifier master. */
@@ -139,7 +138,6 @@ describe('feeFor — contract types', () => {
     expect(fee.unitRate).toBe(30)
     expect(fee.subtotal).toBe(690)
     expect(fee.total).toBe(690)
-    expect(fee.chargeBasis).toBe('rvg')
   })
 
   it("RVG at the anaesthetist's rate: units x the anaesthetist unit value", () => {
@@ -175,9 +173,8 @@ describe('feeFor · a fixed price from its range in force (catch-up Phase 19a)',
 
   it("the List's date picks the range in force; the price is the whole price", () => {
     const june = feeFor(spotCheckProcedure, { ...ON, dateISO: '2026-06-15', anaesthetist, contract: fixedPrice, rvgGroup: BASE_SINGLE_10 })
-    expect(june.chargeBasis).toBe('fixed')
     expect(june.unitRate).toBeNull()
-    expect(june.lines).toEqual([{ chargeBasis: 'fixed', description: 'Contract price', amount: 650 }])
+    expect(june.lines).toEqual([{ description: 'Contract price', amount: 650 }])
     expect(june.total).toBe(650)
     expect(june.needsPrice).toBe(false)
     expect(feeFor(spotCheckProcedure, { ...ON, dateISO: '2026-07-01', anaesthetist, contract: fixedPrice, rvgGroup: BASE_SINGLE_10 }).total).toBe(700)
@@ -191,14 +188,13 @@ describe('feeFor · a fixed price from its range in force (catch-up Phase 19a)',
     const result = bookingFeeFor([primary, p], (x) => ({ ...ON, anaesthetist, ...(x.id === 'P-B' ? { contract: fixedPrice } : {}), rvgGroup: BASE_SINGLE_10 }))
     const fee = result.kind === 'ok' ? result.fees['P-B']! : undefined
     expect(fee?.total).toBe(700)
-    expect(fee?.lines).toEqual([{ chargeBasis: 'fixed', description: 'Contract price, additional procedure', amount: 700 }])
+    expect(fee?.lines).toEqual([{ description: 'Contract price, additional procedure', amount: 700 }])
   })
 
   it('needs a price before the first range: no line, no amount, never a fall back to RVG', () => {
     const fee = feeFor(spotCheckProcedure, { ...ON, dateISO: '2026-03-31', anaesthetist, contract: fixedPrice, rvgGroup: BASE_SINGLE_10 })
     expect(fee.needsPrice).toBe(true)
     expect(fee.lines).toEqual([])
-    expect(fee.chargeBasis).toBe('fixed')
     expect(fee.unitRate).toBeNull()
   })
 
@@ -235,29 +231,8 @@ describe('feeFor · a fixed price from its range in force (catch-up Phase 19a)',
   it("Merivale's Facelift plus 1 add on is priced as one, $3,400 ex GST", () => {
     const combo = mkContract({ name: 'Facelift plus 1 add on (eg bleph)', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-06-01', price: 3400 }] } })
     const fee = feeFor(mkProcedure({ rvgGroupId: undefined }), { ...ON, dateISO: '2026-07-29', anaesthetist, contract: combo })
-    expect(fee.lines).toEqual([{ chargeBasis: 'fixed', description: 'Contract price', amount: 3400 }])
+    expect(fee.lines).toEqual([{ description: 'Contract price', amount: 3400 }])
     expect(fee.total).toBe(3400)
-  })
-})
-
-describe('feeFor — non-RVG billing lines', () => {
-  it('a fixed ancillary line adds to the RVG subtotal (mixed basis)', () => {
-    const line: BillingLine = {
-      id: 'bl-2',
-      procedureId: 'proc-1',
-      chargeBasis: 'fixed',
-      amount: 80,
-      description: 'Consumables',
-    }
-    const fee = feeFor(spotCheckProcedure, {
-      ...ON,
-      anaesthetist,
-      rvgGroup: BASE_SINGLE_10,
-      nonRvgLines: [line],
-    })
-    expect(fee.chargeBasis).toBe('mixed')
-    expect(fee.subtotal).toBe(690 + 80)
-    expect(fee.total).toBe(770)
   })
 })
 
@@ -267,7 +242,7 @@ describe('feeFor: a typed price (catch-up Phase 24; the reasoned override is gon
     const fee = feeFor(p, { ...ON, anaesthetist, rvgGroup: BASE_SINGLE_10 })
     expect(fee.total).toBe(650)
     // Still the RVG line with its units, for reference (US-03.5.2), but no rate: the price is typed.
-    expect(fee.lines).toEqual([{ chargeBasis: 'rvg', description: 'Anaesthesia (B + T + M units)', amount: 650, units: 23 }])
+    expect(fee.lines).toEqual([{ description: 'Anaesthesia (B + T + M units)', amount: 650, units: 23 }])
     expect(fee.unitRate).toBeNull()
     expect(fee.price).toMatchObject({ status: 'priced', price: 650, heldBy: 'typed', computed: { total: 690 } })
     // BTM stays recorded in full (US-03.5.2).

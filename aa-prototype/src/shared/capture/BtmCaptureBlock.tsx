@@ -8,7 +8,6 @@ import { useSurface } from '../surface'
 import type { ProcedureFeeView } from './feeContext'
 import { TimesCard } from './TimesCard'
 import { UnitsCard } from './UnitsCard'
-import { BillingLinesCard } from './BillingLinesCard'
 import { PriceCard } from './PriceCard'
 import { NotesCard } from './NotesCard'
 import { Caption, FailureNotes } from './ui'
@@ -52,7 +51,7 @@ interface BtmCaptureBlockProps {
 /**
  * One procedure's Outcome/BTM capture block (mockup screen 3 = the skin; the
  * Phase 01 calculator = the maths). Composition: procedure stack → Billing
- * card (Contract and price, the RVG code inside it) → times → B/T/M and the itemised modifiers → the price line (catch-up Phase 24, session 2) → billing lines →
+ * card (Contract and price, the RVG code inside it) → times → B/T/M and the itemised modifiers → the price line (catch-up Phase 24, session 2) →
  * notes. The ASA grade is one optional modifier, claimed in the modifiers
  * ledger with its explanation.
  *
@@ -68,7 +67,7 @@ interface BtmCaptureBlockProps {
  * commit-on-blur/Save for all free text. Never debounced.
  *
  * The order above is the capture order and never varies. What varies is the
- * grouping: the short money cards (the price line, billing lines) go through
+ * grouping: the short money cards (the price line) go through
  * `useSurface().Pair`,
  * so a desktop sets each pair side by side while the phone keeps them stacked.
  * Times and units stay full width on both — the stamps, the B/T/M rows and the
@@ -90,10 +89,9 @@ export function BtmCaptureBlock({
 }: BtmCaptureBlockProps) {
   const { Pair } = useSurface()
   const masters = useBookingStore((s) => s.masters)
-  const billingLines = useBookingStore((s) => s.schedule.billingLines)
   const completed = useBookingStore((s) => s.schedule.bookings[procedure.bookingId]?.completed === true)
 
-  const { fee, allocation, rvgGroup, contract, nonRvgLines } = view
+  const { fee, allocation, rvgGroup, contract } = view
 
   // What this Procedure asks for follows its Contract's pricing kind (catch-up Phase 21a, US-03.3.9):
   // the one predicate (`rvgDetail.ts`). On a fixed or open price the times, units and modifiers are
@@ -111,7 +109,6 @@ export function BtmCaptureBlock({
     'baseUnitsSelected',
     'anaestheticStartISO',
     'handoverISO',
-    'billingLines',
     'enteredPrice',
     'modifierClaims',
   ])
@@ -138,8 +135,8 @@ export function BtmCaptureBlock({
   const ledger = useBookingStore((s) => s.billing.ledger)
   const stackSurface = actor.role === 'office' ? 'office' : 'anaesthetist'
   const stackView = useMemo(
-    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines }, billing: { invoices, invoiceLines, locks, ledger } }, procedure.id, stackSurface),
-    [masters, procedures, bookings, lists, billingLines, invoices, invoiceLines, locks, ledger, procedure.id, stackSurface],
+    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists }, billing: { invoices, invoiceLines, locks, ledger } }, procedure.id, stackSurface),
+    [masters, procedures, bookings, lists, invoices, invoiceLines, locks, ledger, procedure.id, stackSurface],
   )
 
   return (
@@ -269,14 +266,6 @@ export function BtmCaptureBlock({
           // The "Needs a price" sentence shows once, in the price status notice (the card shows its pill).
           failures={forFields(['enteredPrice']).filter((f) => f.code !== 'needsPrice')}
           onError={onError}
-        />
-
-        <BillingLinesCard
-          procedure={procedure}
-          nonRvgLines={nonRvgLines}
-          actor={actor}
-          canCapture={canCapture}
-          failures={forFields(['billingLines'])}
         />
       </Pair>
 

@@ -63,5 +63,8 @@ export function invoiceLineRecord(line: DraftInvoiceLine, lineId: string, invoic
   if (line.contractId !== undefined) stored.contractId = line.contractId
   if (line.quantity !== undefined) stored.quantity = line.quantity
   if (line.unitAmount !== undefined) stored.unitAmount = line.unitAmount
+  // Catch-up Phase 39b: an event line's date of service and event.
+  if (line.serviceDateISO !== undefined) stored.serviceDateISO = line.serviceDateISO
+  if (line.eventId !== undefined) stored.eventId = line.eventId
   return stored
 }

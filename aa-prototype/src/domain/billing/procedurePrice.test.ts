@@ -97,11 +97,10 @@ describe('priceFor: the ladder', () => {
     expect(r).toMatchObject({ price: 291.64, computed: { gross: 333.3, discountAmount: 41.66, total: 291.64 } })
   })
 
-  it('captured fixed billing lines (until 39b) are part of the computed price; a typed or held amount is the whole price', () => {
-    expect(priceFor(base({ addOns: 80 }))).toMatchObject({ price: 440, computedTotal: 440 })
-    // The office types the computed figure it sees: the price is that figure, never more.
-    expect(priceFor(base({ addOns: 80, enteredPrice: 440 }))).toMatchObject({ price: 440, heldBy: 'typed', computedTotal: 440, computed: { total: 360 } })
-    expect(priceFor(base({ addOns: 80, held: { authorised: 440 } }))).toMatchObject({ price: 440, computedTotal: 440 })
+  it('the computed total is the kind\'s own figure; a typed or held amount is the whole price', () => {
+    expect(priceFor(base())).toMatchObject({ price: 360, computedTotal: 360 })
+    expect(priceFor(base({ enteredPrice: 440 }))).toMatchObject({ price: 440, heldBy: 'typed', computedTotal: 360, computed: { total: 360 } })
+    expect(priceFor(base({ held: { authorised: 440 } }))).toMatchObject({ price: 440, computedTotal: 360 })
   })
 
   it('procedureNeedsPrice: no typed price and nothing the kind works out', () => {
@@ -126,7 +125,6 @@ describe('W12 under the multi-procedure rule a discount changes only its own Pro
     timeRule: DEFAULT_RVG_TIME_RULE,
     patientDobISO: undefined,
     modifiers: RVG_MODIFIER_MASTER,
-    nonRvgLines: [],
     rvgGroup: BASE_SINGLE_10,
     ...(contracts[p.id] !== undefined ? { contract: contracts[p.id] } : {}),
   })

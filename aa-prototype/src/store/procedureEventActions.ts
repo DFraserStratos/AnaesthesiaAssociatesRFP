@@ -61,6 +61,17 @@ import {
   updateCreditPart,
   type CreditRunDraft,
 } from './creditActions'
+import {
+  addKindEvent,
+  approveKindEvent,
+  isPricedKind,
+  issueKindInvoiceInto,
+  planKindInvoice,
+  updateKindEvent,
+  type KindDetail,
+  type OfficePriceInput,
+  type PlannedKindInvoice,
+} from './eventKindActions'
 
 type EventState = Pick<AppState, 'schedule' | 'billing' | 'masters'>
 
@@ -299,6 +310,10 @@ export interface ProcedureEventInput {
   lines: FreeFormLine[]
   /** The invoice tick, for a kind that shows it (39b); ignored when the kind fixes it on. */
   billable?: boolean
+  /** A pre-op or post-op event's start time (catch-up Phase 39b). */
+  startTime?: string
+  /** A pre-op, post-op or billing event's detail (catch-up Phase 39b); `lines` is then empty. */
+  detail?: KindDetail
 }
 
 /** The stored party for an input, allocating a new person's id (refusal when the person is not valid). */
@@ -361,7 +376,19 @@ export function partyForAudit(party: EventParty): unknown {
  */
 export function addProcedureEvent(api: AppStoreApi, actor: Actor, procedureId: string, input: ProcedureEventInput): Outcome<{ eventId: string }> {
   // A credit is raised with its replacements in one step (`submitCredit`), never as a bare event.
-  if (input.kind !== 'additionalInvoice') return refuse('kindNotAllowed', 'Raise a credit with the credit note option.')
+  if (input.kind === 'credit') return refuse('kindNotAllowed', 'Raise a credit with the credit note option.')
+  // Pre-op, post-op and billing events (catch-up Phase 39b): their kind's checks and detail, the same slice.
+  if (isPricedKind(input.kind)) {
+    if (input.detail === undefined) return refuse('detailMissing', 'Say what was done.')
+    return addKindEvent(api, actor, procedureId, {
+      kind: input.kind,
+      occurredOnISO: input.occurredOnISO,
+      ...(input.startTime !== undefined ? { startTime: input.startTime } : {}),
+      ...(input.billable !== undefined ? { billable: input.billable } : {}),
+      party: input.party,
+      detail: input.detail,
+    })
+  }
   const state = api.getState()
   const raiser = eventActor(actor)
   const madeParty = partyFromInput(input.party, state.counters)
@@ -433,7 +460,7 @@ export function updateProcedureEvent(
   api: AppStoreApi,
   actor: Actor,
   eventId: string,
-  patch: Partial<Pick<ProcedureEventInput, 'occurredOnISO' | 'party' | 'lines'>>,
+  patch: Partial<Pick<ProcedureEventInput, 'occurredOnISO' | 'party' | 'lines' | 'billable' | 'startTime' | 'detail'>>,
 ): Outcome<{ eventId: string }> {
   const state = api.getState()
   const guard = editGuard(state, actor, eventId)
@@ -441,6 +468,8 @@ export function updateProcedureEvent(
   const before = guard.value
   // A credit and its replacements are edited as one correction (catch-up Phase 39): back to review together.
   if (before.kind === 'credit' || before.replaces !== undefined) return updateCreditPart(api, actor, eventId, patch)
+  // Pre-op, post-op and billing events (catch-up Phase 39b).
+  if (isPricedKind(before.kind)) return updateKindEvent(api, actor, before, patch)
   const madeParty = partyFromInput(patch.party ?? before.party, state.counters)
   if (!madeParty.ok) return madeParty
   const next = {
@@ -513,7 +542,7 @@ export function reviewGuard(state: Pick<AppState, 'schedule'>, actor: Actor, eve
  * raised it. Re-validates against its raiser and re-prices, so a stale event
  * refuses with the same sentences. Approval raises nothing: the run does.
  */
-export function approveProcedureEvent(api: AppStoreApi, actor: Actor, eventId: string): Outcome<{ eventId: string }> {
+export function approveProcedureEvent(api: AppStoreApi, actor: Actor, eventId: string, opts: { officePrice?: OfficePriceInput } = {}): Outcome<{ eventId: string }> {
   const state = api.getState()
   const guard = reviewGuard(state, actor, eventId)
   if (!guard.ok) return guard
@@ -521,6 +550,8 @@ export function approveProcedureEvent(api: AppStoreApi, actor: Actor, eventId: s
   // A credit is approved with its replacements; a replacement never alone (catch-up Phase 39).
   if (event.replaces !== undefined) return refuse('partOfCorrection', CREDIT_MESSAGES.partOfCorrection)
   if (event.kind === 'credit') return approveCreditUnit(api, actor, eventId)
+  // Pre-op, post-op and billing events (catch-up Phase 39b): priced now and frozen; the office may set a price.
+  if (isPricedKind(event.kind)) return approveKindEvent(api, actor, event, opts)
   const raiser: EventActor = { role: event.addedBy.role, ...(event.addedBy.anaesthetistId !== undefined ? { anaesthetistId: event.addedBy.anaesthetistId } : {}) }
   const valid = validateInput(state, raiser, event.procedureId, { kind: event.kind, occurredOnISO: event.occurredOnISO, party: event.party, lines: eventLines(event) })
   if (!valid.ok) return valid
@@ -751,10 +782,18 @@ export function runEventInvoicing(api: AppStoreApi, actor: Actor, opts: { eventI
   const due = approvedEventsAwaitingRun(state).filter((e) => (narrowed === undefined || narrowed.has(e.id)) && e.replaces === undefined)
   if (due.length === 0) return refuse('nothingToInvoice', EVENT_MESSAGES.nothingToRun)
 
-  type Planned = { kind: 'additional'; plan: PlannedAdditional } | { kind: 'credit'; eventId: string }
+  type Planned = { kind: 'additional'; plan: PlannedAdditional } | { kind: 'credit'; eventId: string } | { kind: 'own'; plan: PlannedKindInvoice }
   const planned: Planned[] = []
   const skipped: EventRunResult['skipped'] = []
   for (const event of due) {
+    // Pre-op, post-op and billing events (catch-up Phase 39b): this run raises no invoice for their party, so each is its own.
+    if (isPricedKind(event.kind)) {
+      if (eventInvoicing(event, { runInvoiceForParty: false }) !== 'ownInvoice') continue
+      const plan = planKindInvoice(state, event)
+      if ('message' in plan) skipped.push({ eventId: event.id, message: plan.message })
+      else planned.push({ kind: 'own', plan })
+      continue
+    }
     if (event.kind === 'credit') {
       const plan = planCreditIssue(state, event.id)
       if (!plan.ok) skipped.push({ eventId: event.id, message: plan.message })
@@ -789,6 +828,13 @@ export function runEventInvoicing(api: AppStoreApi, actor: Actor, opts: { eventI
       metas,
     }
     for (const p of planned) {
+      if (p.kind === 'own') {
+        const made = issueKindInvoiceInto(s, work, p.plan, atISO)
+        invoiceIds.push(made.invoiceId)
+        pairIds.push(...made.pairIds)
+        plainPairIds.push(...made.pairIds)
+        continue
+      }
       if (p.kind === 'additional') {
         const made = issueAdditionalInto(s, work, p.plan, atISO)
         invoiceIds.push(made.invoiceId)

@@ -90,7 +90,7 @@ Fee = (Base + Time + Modifier units) x anaesthetist's own dollar value per unit
   Bookings retain the full billing view.
 - Aria Skin and Laser Clinic is RVG at the Contract's rate, $26.50 a unit, which the anaesthetist
   cannot change: Dr Fitzgerald's Wed 15 Jul Aria Booking is 22 units x $26.50 = $583.00 (A5 base 8 +
-  time 14, 08:30 to 11:30). An added billing line is a fixed amount only.
+  time 14, 08:30 to 11:30). A free-text charge is a billing event, a fixed amount only.
 - A price typed at $0.00 keeps the RVG detail recorded ("This gives a no-charge invoice."). Review
   shows a **No charge** pill, and authorising raises a $0.00 "No charge" invoice: no payable, no BCTI.
 - Each Contract has one of five pricing kinds (RVG at the anaesthetist's rate, RVG at the Contract's
@@ -543,6 +543,7 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - "Everything after setup is an event on the Procedure, reviewed once and invoiced in the next run."
 - "Extra work after a fixed price is billed by hand, by the anaesthetist or the office."
 - "We never edit an issued invoice; we credit it in full and rebill."
+- "One review step for everything recorded against a procedure."
 - "A split must add up to what was credited."
 - "Nothing comes across because it exists in Solutions Plus."
 - "The NHI never leaves the core platform, no personal information goes to Xero, and we check it."
@@ -569,6 +570,12 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - "A credit note is a refund." (It is not; money paid on a credited invoice is held for the payer.)
 - "The system credits the difference automatically." (Nothing is credited automatically: a person
   decides, and the invoice is credited in full, never by the difference.)
+- "Events need a separate approval." (One review step, Review → Events, for every event, D13.)
+- "These are the ACC codes." (CS250, CS260 and CS70 are provisional; OQ-12 is open.)
+- "ACC pre-op has its own fixed-fee Contract." (Answered no: it follows the generic event rules.)
+- "Vanessa has confirmed how events are billed." (OQ-121 is Donald's answer for the build.)
+- "A unit x rate line or an add-on fee." (Both are removed from the requirements.)
+- "Billing lines." (They are billing events: a free-text charge or credit on the Procedure.)
 
 ## Prototype readiness
 
@@ -587,6 +594,11 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 - The anaesthetist's edit window to `AUTHORISED`, the main view from today, and search by patient
   name, NHI or date over months of history (catch-up Phase 38a)
 - Pre-payment from a prepaid Contract (catch-up Phase 27), held in the AA Holding account and transferred to the anaesthetist when the List is authorised (catch-up Phase 27a), events and additional invoices (office and anaesthetist, catch-up Phase 38b) and billing monitor with per-booking isolation and retry (Phase 09); since catch-up Phase 37 the monitor is grouped by anaesthetist, sorts and filters (one anaesthetist, hospital, dates, **Problems only**, all in the URL), and lists each anaesthetist's Lists awaiting approval with **Open in Review** (approval itself stays on Review)
+- Pre-op and post-op events (catch-up Phase 39b): the anaesthetist's **Add pre-op or post-op event**
+  (its own date, a time or fixed fee, the invoice tick, the "same as" party) and **Add billing event**
+  (a free-text charge or credit) on mobile and web, the ACC pre-op event (CS250, CS260, CS70), Contract
+  event fees (St George's ACC, STGACC-PAIN), one review on Review, Events, and the next run: dated lines
+  on the party's invoice ("+3 event lines") or an invoice of its own ("+1 event invoice")
 - Credit notes (catch-up Phase 39): the office's **Credit note**, **Credit in full and rebill** (from a
   copy of the original's lines) and **Split into additional invoices** (Left to allocate to $0.00) on
   the invoice's **Correct this invoice** card, and the anaesthetist's **Credit note** on her own
@@ -886,8 +898,11 @@ Say:
 ### 12. ACC pre-op flat-fee codes (CS250, CS260, CS70)
 
 - ACC is not a billing route or a kind of Contract: ACC work bills through a holder's Contract carrying the ACC funding tag, such as ACC orthopaedic services, priced like any other.
-- ACC pre-operative assessment has its own flat-fee code set (CS250, CS260, CS70); the prototype
-  captures these as ancillary fixed-amount billing lines with the code named in the description.
+- ACC pre-operative assessment has its own code set (CS250, CS260, CS70); the prototype offers these
+  as preconfigured pre-op events under the generic event and pricing rules (a time recorded or a fixed
+  fee, no fixed-fee Contract, ACC being a funding tag on the Contract, not a Contract kind). Each is
+  its own invoice line ("Pre-op event · ACC pre-op assessment · CS250 · 13 Jul 2026"). The codes are
+  provisional, to confirm with AA's accountant (OQ-12).
 - The RFP flags the code set as a special pre-assessment case to confirm with AA billing.
 
 ### 13. Specialties and funding tags (for AA to confirm)

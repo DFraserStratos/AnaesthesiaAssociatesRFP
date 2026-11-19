@@ -56,7 +56,7 @@ view respectively.
 |---|---|
 | Lists, main view (from today) | `/mobile/lists` |
 | Lists, one day | `/mobile/lists?day=2026-03-13` (Fri 13 Mar 2026, the pinned history List) |
-| Lists, search | `/mobile/lists?q=Mitchell` |
+| Lists, search | `/mobile/lists?q=Mitchell` (S4 Beat 2's staged ACL reconstruction: `?q=Bennett`) |
 | List detail | `/mobile/lists/<listId>` |
 | Booking detail | `/mobile/lists/<listId>/bookings/<bookingId>` |
 | Availability (Find cover) | `/mobile/availability` |
@@ -1152,11 +1152,56 @@ actions** on the screen named in its beat.
 
 ### Beat 2: an additional invoice, recorded as an event
 
+**Lead-in: the anaesthetist's own pre-op and post-op care.**
+
+- **Click:**
+  - On the phone (Dr Souter), **Lists → Demo actions → Stage post-op scenario → Run** ("Staged. Search
+    Bennett, open Wednesday's Booking and use Add pre-op or post-op event. Sarah Mitchell's Tue 14 Jul
+    List is authorised and billed for Create additional invoice."). It also runs from Web · Lists and
+    Booking, the PWA's Demo sheet, and Admin Review or Booking on Dr Sharma's Tue 14 Jul AM List.
+  - Search **Bennett** (`/mobile/lists?q=Bennett`) and open Coral Bennett's **Wed 15 Jul PM** Booking:
+    ACL reconstruction, St George's, Mr Hale, Contract St George's ACC ($25.00 a unit), submitted.
+    Under the Procedure: **Add pre-op or post-op event** and **Add billing event**.
+  - **Add pre-op or post-op event → Pre-op → ACC pre-op assessment**, Mon 13 Jul, pick **CS250 · ACC
+    pre-op assessment** (caption "Codes to confirm with AA's accountant (OQ-12)."), **Fixed fee**
+    $60.00. Point at **Invoice this event**, **Billed to the same party as the procedure** ("Our
+    reading: the same party as the procedure unless you change it.") and "Reviewed by the office, then
+    billed in the next run."
+  - **Post-op → Post-op ward review**, Thu 16 Jul 08:00, **Record a time** 45 min ("The office prices
+    the time at review."). No calculation is shown on the phone.
+  - **Add billing event → Charge**, "What is this for?" Nerve catheter, Thu 16 Jul, $180.00 ex GST.
+  - Admin **Review → Events** (`/admin/review?tab=events`): the ward review reads "45 min · 3 time
+    units x $25.00 Contract rate = $75.00"; **Approve for billing** all three.
+  - Admin **Review**, Dr Souter's Wed 15 Jul PM List, **Authorise for billing**: its run puts the
+    three events on Coral Bennett's invoice (AA-2026-0004, St George's) as their own dated lines,
+    "Pre-op event · ACC pre-op assessment · CS250 · 13 Jul 2026 · Fixed fee" $60.00, "Post-op event ·
+    Post-op ward review · 16 Jul 2026 · 45 min" $75.00 and "Billing event · Nerve catheter · 16 Jul
+    2026" $180.00 beside the procedure's $300.00 (subtotal $615.00, total $707.25). **Invoices** shows
+    "+3 event lines" under the number.
+  - Back on the phone, search Bennett again (the List has left the main view) and add **Pain
+    consult**, Sat 18 Jul 10:30, 40 min. In Admin **Review → Events** it reads "Contract fee
+    STGACC-PAIN · $120.00 replaces 40 min" (the fee is on Master data, Contracts, St George's ACC,
+    **Event fees**); **Approve for billing**, then **Billing monitor → Demo actions → Run the next
+    billing run**: its own invoice, AA-2026-0005, $120.00 ($138.00 with GST), "Post-op event · relates
+    to AA-2026-0004 · ACL reconstruction, ACC"; the monitor row shows "+1 event invoice".
+  - A credit billing event is offered only before the Procedure is invoiced (a negative line); after,
+    the sheet says "Credits after invoicing need a credit note. Use Credit note on this procedure."
+- **Say:** "The anaesthetist records care themselves, before or days after, instead of ringing the
+  office. It is an event on the Procedure with its own date and time. Whenever it is recorded it goes
+  through the same review and is billed in the next run: on the same invoice as the party's other
+  lines if it can be, otherwise on its own, traceable to the original. No waiting. The Contract can
+  swap the time for a fixed fee."
+- **Expected:** one invoice with the events as lines, one event invoice, the original Booking
+  untouched and locked. Run here, the lead-in takes AA-2026-0004 and AA-2026-0005, so every invoice
+  number from here on moves on two (Sarah Mitchell's additional invoice is AA-2026-0006); skip it and
+  the numbers below stand.
+
+**Then 38b's additional invoice, also an event.**
+
 - **Click:**
   - Go to **Admin Day view → Tue 14 Jul → Dr Priya Sharma's AM List**
-    (`/admin/review/L-41267-2026-07-14-AM`), then **Demo actions → Stage post-op scenario → Run**
-    ("Authorised and billed. Open Sarah Mitchell's Booking and use Create additional invoice on the
-    Procedure's Contract row.").
+    (`/admin/review/L-41267-2026-07-14-AM`), then, if the lead-in did not run it, **Demo actions →
+    Stage post-op scenario → Run** (the result above).
   - Open **Sarah Mitchell** (`/admin/day/2026-07-14/bookings/BK0032`). Her original invoice is
     AA-2026-0003 (Christchurch Public; Riley's prepayment took AA-2026-0002 in Beat 1).
   - On the Paid by row (the Procedure's Contract row), select **Create additional invoice**. The dialog
@@ -1190,8 +1235,10 @@ actions** on the screen named in its beat.
   "Chen" and opens David Chen's Mon 22 Jun Booking. Events shows "Additional invoice", Tue 23 Jun,
   "Post-op ward review, Tue 23 Jun, 20 min", $85.00 ex GST, "Raised by you · St George's", Awaiting
   review, with **Edit** and **Remove**; **Raise additional invoice** on the Contract row opens a bottom
-  sheet with the same form. On the PWA, **Demo → Office reviews this additional invoice** approves and
-  invoices it ("Approved by the office and invoiced in the next billing run (AA-2026-00nn).", the next number). Say:
+  sheet with the same form. On the PWA, **Demo → Office reviews this event** approves the oldest event
+  awaiting review on the Booking (or takes the oldest approved one) and invoices it ("Reviewed by the
+  office (simulated). Invoice AA-2026-00nn raised in the next run.", the next number); it works for any
+  event kind, the Bennett lead-in's included. Say:
   "After a prepaid or fixed-price procedure nothing is billed automatically; if the work ran long, the
   anaesthetist raises an additional invoice by hand, right here."
 
@@ -1551,6 +1598,11 @@ bundled with the same party's invoice where the run has one, else its own; an ad
 always its own) is Donald's answer for the build (OQ-121, 4 November), not yet seen by AA; and the
 prototype's next billing run is a button where the real one is scheduled. Ben's answer (OQ-96): a rare
 difference on a prepaid procedure is a second invoice raised by hand, which this beat shows.
+For the pre-op and post-op lead-in (Beat 2): the ACC codes CS250, CS260 and CS70 are provisional, to
+confirm with AA's accountant (OQ-12; ACC pre-op has no fixed-fee Contract, ACC being a funding tag).
+An event billed to the same party as the procedure unless the anaesthetist changes it is our reading,
+to confirm with AA. How events are billed (on the same party's invoice in the next run, else an
+invoice of their own) is Donald's answer for the build (OQ-121), not yet seen by Vanessa.
 
 ---
 

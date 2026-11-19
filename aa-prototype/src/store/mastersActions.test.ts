@@ -72,7 +72,7 @@ describe('editAnaesthetist', () => {
 
     const feeArgs = () => {
       const s = api.getState()
-      return { procedure: s.schedule.procedures[proc.id]!, list: assigned(s.schedule.lists[MORRISON_LIST]), masters: s.masters, billingLines: s.schedule.billingLines, patientId: booking.patientId }
+      return { procedure: s.schedule.procedures[proc.id]!, list: assigned(s.schedule.lists[MORRISON_LIST]), masters: s.masters, patientId: booking.patientId }
     }
     const before = procedureFee(feeArgs()).fee.total
     expect(before).toBeGreaterThan(0)
@@ -193,7 +193,7 @@ describe('editAnaesthetist: who edits what (catch-up Phase 26; US-12.1.1, US-12.
     expect(setProcedurePrice(api, OFFICE, proc.id, null).ok).toBe(true)
     const fee = () => {
       const s = api.getState()
-      return procedureFee({ procedure: s.schedule.procedures[proc.id]!, list: assigned(s.schedule.lists[activeList.id]), masters: s.masters, billingLines: s.schedule.billingLines, patientId: booking.patientId }).fee.total
+      return procedureFee({ procedure: s.schedule.procedures[proc.id]!, list: assigned(s.schedule.lists[activeList.id]), masters: s.masters, patientId: booking.patientId }).fee.total
     }
     const before = fee()
 

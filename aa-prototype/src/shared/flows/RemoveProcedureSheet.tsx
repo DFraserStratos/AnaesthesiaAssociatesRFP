@@ -26,15 +26,12 @@ interface RemoveProcedureSheetProps {
  * snapshotted into it.
  *
  * What it does owe the user is the consequences, since capture is destroyed:
- * the sheet names the procedure and counts the billing lines going with it.
+ * the sheet names the procedure.
  */
 export function RemoveProcedureSheet({ open, procedureId, displayNumber, actor, onClose, onRemoved }: RemoveProcedureSheetProps) {
   const bookingApi = useBookingApi()
   const procedure = useBookingStore((s) => s.schedule.procedures[procedureId])
   const rvgGroups = useBookingStore((s) => s.masters.rvgGroups)
-  const lineCount = useBookingStore(
-    (s) => Object.values(s.schedule.billingLines).filter((l) => l.procedureId === procedureId).length,
-  )
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -72,11 +69,6 @@ export function RemoveProcedureSheet({ open, procedureId, displayNumber, actor, 
       onConfirm={submit}
       cancelLabel="Keep it"
     >
-        {lineCount > 0 && (
-          <div style={{ fontSize: 13, color: neutral.slate }}>
-            {lineCount === 1 ? 'Its 1 billing line goes with it.' : `Its ${lineCount} billing lines go with it.`}
-          </div>
-        )}
         <FormError message={error} />
     </ConfirmSheet>
   )

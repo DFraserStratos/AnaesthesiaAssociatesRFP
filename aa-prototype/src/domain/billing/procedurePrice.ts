@@ -24,6 +24,7 @@ import { isRvgKind, type Contract, type PricingKind } from './contracts'
 import type { Procedure } from '../types'
 import { roundToCents } from './money'
 import { rangeInForce } from './priceRanges'
+import { timedRateFor } from './timedRate'
 
 // ---------------------------------------------------------------------------
 // The price function
@@ -55,15 +56,15 @@ export type NeedsPriceReason = 'noRangeInForce' | 'openPrice'
 export type PriceResult =
   | {
       status: 'priced'
-      /** The Procedure's whole price, ex GST: a held or typed amount, or the computed price with any captured fixed billing lines. */
+      /** The Procedure's whole price, ex GST: a held or typed amount, or the computed price. */
       price: number
       /** What holds the price; null when it is computed (and so follows its Contract). */
       heldBy: PriceHeldBy | null
       /** The kind's own figure, beside a held price too; absent on an open price. */
       computed?: ComputedPrice
       /**
-       * What the price would be with nothing typed or held: the kind's figure
-       * plus the captured fixed billing lines. The one "computed" figure every
+       * What the price would be with nothing typed or held: the kind's own
+       * figure. The one "computed" figure every
        * screen shows beside a typed or held price. Absent when the kind has none.
        */
       computedTotal?: number
@@ -88,39 +89,28 @@ export interface PriceInput {
   /** The anaesthetist's unit value in force. */
   unitValue: number
   held?: HeldPrices
-  /**
-   * The captured fixed billing lines' total (until 39b removes them): part of
-   * the computed price. A typed or held amount is the whole price, so it
-   * replaces them, as the office's fixed fee always did.
-   */
-  addOns?: number
 }
 
 /** The kind's own figure, or undefined when the kind has none (an open price, a fixed price with no range in force). */
 export function computedPriceOf(input: Pick<PriceInput, 'contract' | 'dateISO' | 'units' | 'unitValue'>): ComputedPrice | undefined {
   const pricing = input.contract?.pricing ?? { kind: 'rvgAnaesthetistRate' as const }
+  // The rate and discount come from the one helper a timed event also calls (catch-up Phase 39b), so the two cannot drift.
+  const rate = timedRateFor(pricing, input.unitValue)
+  if (rate.kind === 'rate') {
+    const gross = roundToCents(input.units * rate.rate)
+    if (pricing.kind !== 'rvgDiscount') return { kind: pricing.kind, units: input.units, rate: rate.rate, gross, discountAmount: 0, total: gross }
+    const discountAmount = roundToCents((gross * rate.discountPercent) / 100)
+    return {
+      kind: pricing.kind,
+      units: input.units,
+      rate: rate.rate,
+      gross,
+      discountPercent: rate.discountPercent,
+      discountAmount,
+      total: roundToCents(gross - discountAmount),
+    }
+  }
   switch (pricing.kind) {
-    case 'rvgAnaesthetistRate': {
-      const gross = roundToCents(input.units * input.unitValue)
-      return { kind: pricing.kind, units: input.units, rate: input.unitValue, gross, discountAmount: 0, total: gross }
-    }
-    case 'rvgContractRate': {
-      const gross = roundToCents(input.units * pricing.unitRate)
-      return { kind: pricing.kind, units: input.units, rate: pricing.unitRate, gross, discountAmount: 0, total: gross }
-    }
-    case 'rvgDiscount': {
-      const gross = roundToCents(input.units * input.unitValue)
-      const discountAmount = roundToCents((gross * pricing.discountPct) / 100)
-      return {
-        kind: pricing.kind,
-        units: input.units,
-        rate: input.unitValue,
-        gross,
-        discountPercent: pricing.discountPct,
-        discountAmount,
-        total: roundToCents(gross - discountAmount),
-      }
-    }
     case 'fixed': {
       // `rangeInForce` reads only `pricing`; the Contract's other fields are never consulted.
       const range = rangeInForce(input.contract as Contract, input.dateISO)
@@ -128,7 +118,7 @@ export function computedPriceOf(input: Pick<PriceInput, 'contract' | 'dateISO' |
       const gross = roundToCents(range.price)
       return { kind: 'fixed', gross, discountAmount: 0, total: gross, rangeStartISO: range.startISO }
     }
-    case 'open':
+    default:
       return undefined
   }
 }
@@ -137,7 +127,7 @@ export function computedPriceOf(input: Pick<PriceInput, 'contract' | 'dateISO' |
 export function priceFor(input: PriceInput): PriceResult {
   const computed = computedPriceOf(input)
   const withComputed = computed !== undefined ? { computed } : {}
-  const computedTotal = computed !== undefined ? roundToCents(computed.total + (input.addOns ?? 0)) : undefined
+  const computedTotal = computed !== undefined ? computed.total : undefined
   const beside = { ...withComputed, ...(computedTotal !== undefined ? { computedTotal } : {}) }
   if (input.held?.authorised !== undefined) return { status: 'priced', price: roundToCents(input.held.authorised), heldBy: 'authorised', ...beside }
   if (input.held?.prepaid !== undefined) return { status: 'priced', price: roundToCents(input.held.prepaid), heldBy: 'prepaid', ...beside }

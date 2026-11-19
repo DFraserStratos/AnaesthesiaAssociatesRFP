@@ -41,7 +41,7 @@ const ZERO_BTM: BtmBreakdown = {
   modifierItems: [],
   totalUnits: 0,
 }
-const fee = (btm: BtmBreakdown = ZERO_BTM): FeeResult => ({ btm, billableUnits: btm.totalUnits, allocation: soleAllocation(true, btm.modifiers.units), chargeBasis: 'rvg', unitRate: 30, lines: [], subtotal: 0, price: { status: 'priced', price: 0, heldBy: null }, total: 0, needsPrice: false })
+const fee = (btm: BtmBreakdown = ZERO_BTM): FeeResult => ({ btm, billableUnits: btm.totalUnits, allocation: soleAllocation(true, btm.modifiers.units), unitRate: 30, lines: [], subtotal: 0, price: { status: 'priced', price: 0, heldBy: null }, total: 0, needsPrice: false })
 const proc = (over: Partial<Procedure> = {}): Procedure => mkProcedure({ id: 'P1', bookingId: 'BK1', governingContractId: RVG.id, ...over })
 const booking = (over: Partial<Booking> = {}): Booking => ({ id: 'BK1', completed: true, ...over }) as unknown as Booking
 

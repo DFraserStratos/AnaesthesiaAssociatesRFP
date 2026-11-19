@@ -48,6 +48,19 @@ import { bookingsForList } from './selectors'
 import { onAppEvent } from './events'
 import { handoffListPairs } from './xeroHandoff'
 import { settlePrepaymentsForList } from './prepaymentSettlement'
+import { planEventBundle, stampBundledEvents, type EventBundlePlan } from './eventKindActions'
+
+/**
+ * A Booking's built invoices with its approved events added as lines on the
+ * draft for their party (catch-up Phase 39b; OQ-121, D69: the List's run is a
+ * billing run). Priced from each event's frozen `pricing`, never the lock.
+ */
+function withEventBundle(state: AppState, bookingId: BookingId, result: BookingBuildResult): { bookingId: BookingId; result: BookingBuildResult; bundle?: EventBundlePlan } {
+  if (result.kind !== 'invoices') return { bookingId, result }
+  const bundle = planEventBundle(state, bookingId, result.invoices)
+  if (bundle.bundled.length === 0 && bundle.backToReview.length === 0) return { bookingId, result }
+  return { bookingId, result: { kind: 'invoices', invoices: bundle.drafts }, bundle }
+}
 
 const BILLING_RUN_ACTOR: Actor = { who: 'Billing run', role: 'system', source: 'system' }
 
@@ -84,10 +97,8 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
   // retained but excluded from billing entirely.
   const bookings = bookingsForList(state, listId).filter((c) => c.cancellation === undefined)
   // From the lock alone: the engine never reads a master (US-08.1.1).
-  const built: { bookingId: BookingId; result: BookingBuildResult }[] = bookings.map((booking) => ({
-    bookingId: booking.id,
-    result: buildFromLock(state, booking.id),
-  }))
+  // Catch-up Phase 39b: each Booking's approved events join the run's invoice for their party (`planEventBundle`, D69).
+  const built: { bookingId: BookingId; result: BookingBuildResult; bundle?: EventBundlePlan }[] = bookings.map((booking) => withEventBundle(state, booking.id, buildFromLock(state, booking.id)))
 
   const invoiceIds: InvoiceId[] = []
   const exceptions: BillingRunException[] = []
@@ -95,6 +106,7 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
 
   mutate(api, BILLING_RUN_ACTOR, metas, (s) => {
     let counters = s.counters
+    let procedureEvents = s.schedule.procedureEvents
     const invoices = { ...s.billing.invoices }
     const invoiceLines = { ...s.billing.invoiceLines }
     const ledger = { ...s.billing.ledger }
@@ -104,7 +116,7 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
     let toPostCount = 0
     let notSentCount = 0
 
-    for (const { bookingId, result } of built) {
+    for (const { bookingId, result, bundle } of built) {
       if (result.kind === 'exception') {
         const bx = allocateId(counters, 'billingException')
         counters = bx.counters
@@ -145,6 +157,11 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
       counters = made.counters
       const bookingInvoiceIds = made.invoiceIds
       metas.push(...made.metas)
+      if (bundle !== undefined) {
+        const stamped = stampBundledEvents(procedureEvents, made, bundle, atISO)
+        procedureEvents = stamped.procedureEvents
+        metas.push(...stamped.metas)
+      }
       sentCount += made.sentCount
       toPostCount += made.toPostCount
       notSentCount += made.notSentCount
@@ -188,6 +205,7 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
         // listener ever writes the List before this one runs, its write must
         // not be clobbered (guards make `?? list` unreachable in practice).
         lists: { ...s.schedule.lists, [listId]: { ...(s.schedule.lists[listId] ?? list), billedAtISO: atISO } },
+        procedureEvents,
       },
       counters,
     }
@@ -221,7 +239,7 @@ export function retryBillingException(api: AppStoreApi, actor: Actor, exceptionI
   const bookingId = exception.bookingId
   if (state.schedule.bookings[bookingId] === undefined) return refuse('notFound', 'The billing exception has no Booking.')
 
-  const result = buildFromLock(state, bookingId)
+  const { result, bundle } = withEventBundle(state, bookingId, buildFromLock(state, bookingId))
   // Still failing: leave the exception as it is.
   if (result.kind === 'exception') return refuse(result.code, result.message)
   const payee = state.billing.locks[bookingId]!.payee
@@ -242,6 +260,8 @@ export function retryBillingException(api: AppStoreApi, actor: Actor, exceptionI
     invoiceIds = made.invoiceIds
     pairIds = made.pairIds
     metas.push(...made.metas)
+    const stamped = bundle !== undefined ? stampBundledEvents(s.schedule.procedureEvents, made, bundle, atISO) : undefined
+    if (stamped !== undefined) metas.push(...stamped.metas)
     metas.push({
       entityType: 'booking',
       entityId: bookingId,
@@ -259,6 +279,7 @@ export function retryBillingException(api: AppStoreApi, actor: Actor, exceptionI
     const resolved = { ...exception, resolvedAtISO: atISO, resolvedPairIds: [...made.pairIds] }
     return {
       billing: { ...s.billing, invoices: made.invoices, invoiceLines: made.invoiceLines, ledger: made.ledger, exceptions: { ...s.billing.exceptions, [exceptionId]: resolved } },
+      ...(stamped !== undefined ? { schedule: { ...s.schedule, procedureEvents: stamped.procedureEvents } } : {}),
       counters: made.counters,
     }
   })

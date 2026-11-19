@@ -34,12 +34,11 @@ export function PricingSheet({ open, procedureId, actor, onClose }: PricingSheet
   const lists = useBookingStore((s) => s.schedule.lists)
   const bookings = useBookingStore((s) => s.schedule.bookings)
   const procedures = useBookingStore((s) => s.schedule.procedures)
-  const billingLines = useBookingStore((s) => s.schedule.billingLines)
   const invoices = useBookingStore((s) => s.billing.invoices)
   const invoiceLines = useBookingStore((s) => s.billing.invoiceLines)
   const view = useMemo(
-    () => procedurePriceViewFor({ masters, schedule: { lists, bookings, procedures, billingLines }, billing: { invoices, invoiceLines } }, procedureId),
-    [masters, lists, bookings, procedures, billingLines, invoices, invoiceLines, procedureId],
+    () => procedurePriceViewFor({ masters, schedule: { lists, bookings, procedures }, billing: { invoices, invoiceLines } }, procedureId),
+    [masters, lists, bookings, procedures, invoices, invoiceLines, procedureId],
   )
   // Re-read whenever what the gates read changes (the List's state, the Contract, the invoices).
   const refusal = useMemo(

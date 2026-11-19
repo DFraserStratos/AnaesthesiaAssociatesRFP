@@ -3,8 +3,8 @@
  * US-02.3.2, DM-35): the snapshot now, with the audit undone newest first
  * back to a cut (an entry, or a time).
  *
- * Every action code that touches a Booking, its Procedures, their billing
- * lines or the patient is named in `REVERSE` below, with how it is undone.
+ * Every action code that touches a Booking, its Procedures or the patient
+ * is named in `REVERSE` below, with how it is undone.
  * The audit was written for people to read, so some entries carry a display
  * view rather than the field (a payer's name, a modifier's printed code, an
  * invoice description's text). Those are mapped back explicitly where the
@@ -15,7 +15,7 @@
  */
 
 import type { BookingSnapshot } from './changeSets'
-import type { AuditEntry, BillingLine, Booking, Patient, Procedure } from './types'
+import type { AuditEntry, Booking, Patient, Procedure } from './types'
 
 /** Where to stop: just after one entry, or after the last entry at or before a time. */
 export type AsAtCut = { afterEntryId: string } | { atISO: string }
@@ -36,7 +36,6 @@ type Obj = Record<string, unknown>
 interface Work {
   booking: Obj
   procedures: Record<string, Obj>
-  billingLines: Record<string, Obj>
   patient: Obj | undefined
 }
 
@@ -130,7 +129,7 @@ function hasModifierView(side: Obj): boolean {
  * how a Booking was filled in) means every key in `after` was not yet set.
  */
 function restoreFields(
-  entityType: 'booking' | 'procedure' | 'billingLine' | 'patient',
+  entityType: 'booking' | 'procedure' | 'patient',
   target: Obj,
   e: AuditEntry,
   ctx: Ctx,
@@ -381,25 +380,6 @@ const REVERSE: Readonly<Record<string, Reverser>> = {
     return step
   }),
 
-  // --- their billing lines ---
-  /** addBillingLine, the seed, a save: the line goes. */
-  'billingLine.add': (w, e) => {
-    delete w.billingLines[e.entityId]
-    return 'ok'
-  },
-  /** removeBillingLine, removeProcedure, a save: the whole line is in `before`. */
-  'billingLine.remove': (w, e) => {
-    const before = e.before
-    if (!isObj(before) || before.id !== e.entityId || typeof before.procedureId !== 'string') return 'incomplete'
-    w.billingLines[e.entityId] = { ...before }
-    return 'ok'
-  },
-  /** A save's change to a line's field. */
-  'billingLine.update': (w, e, ctx) => {
-    const line = w.billingLines[e.entityId]
-    return line === undefined ? 'incomplete' : restoreFields('billingLine', line, e, ctx)
-  },
-
   // --- the patient ---
   /** The intake's new patient row: there was no patient record before. */
   'patient.create': (w) => {
@@ -453,11 +433,6 @@ function belongs(w: Work, bookingId: string, patientIds: ReadonlySet<string>, e:
       return e.entityId === bookingId
     case 'procedure':
       return w.procedures[e.entityId] !== undefined || before.bookingId === bookingId || after.bookingId === bookingId
-    case 'billingLine': {
-      if (w.billingLines[e.entityId] !== undefined) return true
-      const procedureId = before.procedureId ?? after.procedureId
-      return typeof procedureId === 'string' && w.procedures[procedureId] !== undefined
-    }
     case 'patient':
       return patientIds.has(e.entityId)
     default:
@@ -473,7 +448,6 @@ function toSnapshot(w: Work): BookingSnapshot {
   return {
     booking: w.booking as unknown as Booking,
     procedures: w.procedures as unknown as Record<string, Procedure>,
-    billingLines: w.billingLines as unknown as Record<string, BillingLine>,
     ...(w.patient !== undefined ? { patient: w.patient as unknown as Patient } : {}),
   }
 }
@@ -494,7 +468,6 @@ export function bookingAsAt(
   const w: Work = {
     booking: { ...(now.booking as unknown as Obj) },
     procedures: Object.fromEntries(Object.entries(now.procedures).map(([id, p]) => [id, { ...(p as unknown as Obj) }])),
-    billingLines: Object.fromEntries(Object.entries(now.billingLines).map(([id, l]) => [id, { ...(l as unknown as Obj) }])),
     patient: now.patient !== undefined ? { ...(now.patient as unknown as Obj) } : undefined,
   }
   const bookingId = now.booking.id

@@ -28,7 +28,7 @@ describe('Load 3-procedure Booking (catch-up Phase 23)', () => {
     expect(procs.map((p) => p.isPrimary)).toEqual([true, false, false])
     expect(procs.every((p) => p.governingContractId === 'CT-NO-CONTRACT')).toBe(true)
     const shares = procs.map(
-      (p) => procedureFeeAlone({ procedure: p, siblings: procs, list, masters: s.masters, billingLines: s.schedule.billingLines, patientId: booking.patientId }).fee.allocation.modifierShare,
+      (p) => procedureFeeAlone({ procedure: p, siblings: procs, list, masters: s.masters, patientId: booking.patientId }).fee.allocation.modifierShare,
     )
     expect(shares).toEqual([3, 2, 2])
     // Audited as the demo's office stand-in.

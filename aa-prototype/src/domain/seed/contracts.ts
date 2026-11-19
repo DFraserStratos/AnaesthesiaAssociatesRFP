@@ -32,7 +32,7 @@
  * ids derived from the destination key.
  */
 
-import type { Contract, ContractPricing } from '../types'
+import type { Contract, ContractEventFee, ContractPricing } from '../types'
 import { nextAaCode } from '../billing/contracts'
 import { ensureFallbacks, seedFallbackId } from '../billing/fallbacks'
 import { HOSP, SURG } from './cast'
@@ -184,3 +184,17 @@ function withFallbacks(contracts: readonly Contract[]): Contract[] {
 }
 
 export const CONTRACTS: readonly Contract[] = withFallbacks(buildContracts())
+
+/**
+ * The Contract event fees (catch-up Phase 39b; US-03.7.2, OQ-12): one, on St
+ * George's ACC, a labelled demo price. A Contract event fee replaces a recorded
+ * time for its type of event; it never moves a Procedure's price, so every
+ * seeded Procedure on `CT-STG-ACC` prices as before. No ACC pre-op Contract
+ * (US-05.5.2): the CS250, CS260 and CS70 presets are constants.
+ */
+export const CONTRACT_EVENT_FEES: readonly ContractEventFee[] = [
+  { id: 'CEF001', contractId: CONTRACT.stgAcc, eventType: 'painConsult', holderCode: 'STGACC-PAIN', holderDescription: 'Acute pain review, fixed fee', fixedPrice: 120 },
+]
+
+/** The next `CEF` number after the seeded fees. */
+export const SEED_NEXT_CONTRACT_EVENT_FEE = CONTRACT_EVENT_FEES.length + 1

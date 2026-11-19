@@ -4,7 +4,7 @@
  *
  * - `snapshotBooking` takes the Booking and everything a save can change on
  *   it: its Procedures (each with its payer, procedure text, modifiers, split
- *   and invoice description), their billing lines and the patient. Nothing
+ *   and invoice description) and the patient. Nothing
  *   from `officePrivate` (17's pairing preferences and tiers).
  * - `diffSnapshots` lists what changed between two snapshots, field by field.
  *   Arrays and objects compare as whole values (a modifier list is one
@@ -16,7 +16,6 @@
 
 import type {
   AuditEntry,
-  BillingLine,
   Booking,
   BookingId,
   ChangeSetId,
@@ -29,7 +28,6 @@ import type {
 export interface BookingSnapshot {
   booking: Booking
   procedures: Record<string, Procedure>
-  billingLines: Record<string, BillingLine>
   patient?: Patient
 }
 
@@ -38,12 +36,11 @@ export interface SnapshotSource {
   schedule: {
     bookings: Record<string, Booking>
     procedures: Record<string, Procedure>
-    billingLines: Record<string, BillingLine>
   }
   masters: { patients: Record<string, Patient> }
 }
 
-export type SnapshotEntityType = 'booking' | 'procedure' | 'billingLine' | 'patient'
+export type SnapshotEntityType = 'booking' | 'procedure' | 'patient'
 
 /**
  * One change between two snapshots. `create` and `remove` carry the whole
@@ -71,10 +68,8 @@ export function snapshotBooking(source: SnapshotSource, bookingId: BookingId): B
   if (booking === undefined) return undefined
   const procedures: Record<string, Procedure> = {}
   for (const p of Object.values(source.schedule.procedures)) if (p.bookingId === bookingId) procedures[p.id] = p
-  const billingLines: Record<string, BillingLine> = {}
-  for (const l of Object.values(source.schedule.billingLines)) if (procedures[l.procedureId] !== undefined) billingLines[l.id] = l
   const patient = source.masters.patients[booking.patientId]
-  return { booking, procedures, billingLines, ...(patient !== undefined ? { patient } : {}) }
+  return { booking, procedures, ...(patient !== undefined ? { patient } : {}) }
 }
 
 /** Structural equality with stable key order; `undefined` keys count as absent. */
@@ -118,13 +113,12 @@ function diffRecords<T extends object>(entityType: SnapshotEntityType, base: Rec
 
 /**
  * What changed from `base` to `next`, in a stable order: the Booking, then its
- * Procedures, their billing lines, then the patient.
+ * Procedures, then the patient.
  */
 export function diffSnapshots(base: BookingSnapshot, next: BookingSnapshot): FieldChange[] {
   const out: FieldChange[] = []
   diffEntity('booking', base.booking.id, base.booking, next.booking, out)
   diffRecords('procedure', base.procedures, next.procedures, out)
-  diffRecords('billingLine', base.billingLines, next.billingLines, out)
   if (base.patient !== undefined && next.patient !== undefined) diffEntity('patient', base.patient.hiddenInternalId, base.patient, next.patient, out)
   return out
 }

@@ -160,7 +160,7 @@ export type AuditSource = 'anaesthetist' | 'office' | 'integration' | 'system' |
 
 /**
  * A billing counterparty reference: who money is owed by, billed to. Used by
- * BillingLine funder overrides (5th review #4) and Invoices; worked out by
+ * Invoices; worked out by
  * `billablePartyForProcedure` (`domain/billing/whoIsBilled.ts`) alone.
  *
  * - `patient`: the patient is the Procedure's payer (`id` the patient).
@@ -1120,25 +1120,6 @@ export interface FeeSplit {
   shares: SplitShare[]
 }
 
-/** How a billing line's amount arises: units at a rate, or a fixed amount (the rate x time basis is gone, catch-up Phase 24, RV-03). */
-export type ChargeBasis = 'rvg' | 'fixed'
-
-/**
- * A captured billing line (a fixed amount; an RVG line is never
- * an input). Who pays is the Procedure's Contract, or its split (catch-up
- * Phase 22), never the line.
- */
-export interface BillingLine {
-  id: string
-  procedureId: ProcedureId
-  chargeBasis: ChargeBasis
-  units?: number
-  /** $ per unit ('rvg'). */
-  rate?: number
-  amount: number
-  description: string
-}
-
 // ---------------------------------------------------------------------------
 // Events on a Procedure (catch-up Phase 38b; DM-17, DM-18, D13, FT-03.7).
 // "Event" is the one element for everything recorded against a Procedure after
@@ -1147,8 +1128,33 @@ export interface BillingLine {
 // (`eventStatus`), never stored. It is never a List, Slot or schedule entry.
 // ---------------------------------------------------------------------------
 
-/** An event's kind. `'credit'` (catch-up Phase 39; OQ-63, D13): a credit note in full, with its replacements. Phase 39b adds `'preOp'` and `'postOp'` (and the billing event). */
-export type ProcedureEventKind = 'additionalInvoice' | 'credit'
+/**
+ * An event's kind. `'credit'` (catch-up Phase 39; OQ-63, D13): a credit note in
+ * full, with its replacements. `'preOp'`, `'postOp'` and `'billing'` (catch-up
+ * Phase 39b; US-03.7.1, US-03.7.2): a pre-op or post-op time or fixed fee, and
+ * the billing event (a free-form charge or credit) that replaced the billing line.
+ */
+export type ProcedureEventKind = 'additionalInvoice' | 'credit' | 'preOp' | 'postOp' | 'billing'
+
+export type { ContractEventFee } from './billing/contractEventFees'
+export type { EventPricing, EventRecording, PrePostOpEventType } from './billing/prePostOpEvent'
+
+/** A pre-op or post-op event's detail (catch-up Phase 39b): its type, what was recorded, and an ACC preset's code. No modifier or unit. */
+export interface PrePostOpEventDetail {
+  kind: 'preOp' | 'postOp'
+  type: import('./billing/prePostOpEvent').PrePostOpEventType
+  recording: import('./billing/prePostOpEvent').EventRecording
+  /** An ACC pre-op preset's code (`ACC_PREOP_PRESETS`, OQ-12 provisional). */
+  code?: string
+}
+
+/** A billing event's detail (catch-up Phase 39b; US-03.7.2): `amount` ex GST, above zero; a credit's sign is its `direction`. */
+export interface BillingEventDetail {
+  kind: 'billing'
+  direction: 'charge' | 'credit'
+  description: string
+  amount: number
+}
 
 /**
  * Who an event bills (US-03.7.1; Greg's courier-style "same as" tick, 2026-10-02
@@ -1199,7 +1205,11 @@ export interface ReplacementLink {
 }
 
 /** The kind's own detail. Phase 39b adds its members. No modifier, ASA, unit, RVG or Contract field. */
-export type ProcedureEventDetail = { kind: 'additionalInvoice'; lines: FreeFormLine[] } | { kind: 'credit'; credit: CreditEventDetail }
+export type ProcedureEventDetail =
+  | { kind: 'additionalInvoice'; lines: FreeFormLine[] }
+  | { kind: 'credit'; credit: CreditEventDetail }
+  | PrePostOpEventDetail
+  | BillingEventDetail
 
 /** The one standard review step (D13): the office approves or declines, whoever raised it. */
 export interface EventReview {
@@ -1223,8 +1233,16 @@ export interface ProcedureEvent {
   party: EventParty
   detail: ProcedureEventDetail
   review: EventReview
-  /** Stamped once, by the next billing run (`runEventInvoicing`), with `Invoice.eventId`. */
+  /**
+   * Stamped once by the run that bills it: its own invoice (`runEventInvoicing`,
+   * with `Invoice.eventId`), or the run invoice it was bundled onto (catch-up
+   * Phase 39b, with `invoiceLineId`).
+   */
   invoiceId?: InvoiceId
+  /** The event's line when a run bundled it onto its party's invoice (catch-up Phase 39b). */
+  invoiceLineId?: string
+  /** The price, written by the office's review and frozen with the invoice (catch-up Phase 39b; pre-op, post-op and billing events). */
+  pricing?: import('./billing/prePostOpEvent').EventPricing
   /** On an additional invoice that replaces a credited one (catch-up Phase 39): reviewed and issued only with its credit. */
   replaces?: ReplacementLink
   /** `anaesthetistId` is set when an anaesthetist raised it ("Raised by you" and the edit rule need no name match). */
@@ -1617,6 +1635,10 @@ export interface InvoiceLine {
   /** A free-form line's quantity and unit amount (catch-up Phase 38b; an additional invoice): `amount` is quantity x unit amount. */
   quantity?: number
   unitAmount?: number
+  /** An event line's date of service (catch-up Phase 39b): the invoice document prints it. */
+  serviceDateISO?: IsoDate
+  /** A bundled event's line (catch-up Phase 39b): the event it bills; the event carries `invoiceLineId` back. */
+  eventId?: string
   /**
    * A prepayment line's Contract when it was raised (catch-up Phase 27): the
    * re-check reads it to tell a Procedure that changed Contract after sending.

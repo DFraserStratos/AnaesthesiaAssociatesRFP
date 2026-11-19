@@ -1214,7 +1214,7 @@ describe('the Wave 4 join (v69: Lane A 39 at v68 joined with Lane B 43 at v67)',
   afterEach(() => localStorage.clear())
 
   it('discards a v68 store from either lane, and reseeds both the raw rows and the credit slices', () => {
-    expect(PERSIST_VERSION).toBe(69)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(69)
     const fresh = freshAppState()
     const rows = Object.fromEntries(Object.entries(fresh.intake.rows).map(([id, r]) => { const { raw: _raw, ...rest } = r; return [id, rest] }))
     const { creditNotes: _c, negativeInvoices: _n, ...billing } = fresh.billing
@@ -1223,6 +1223,30 @@ describe('the Wave 4 join (v69: Lane A 39 at v68 joined with Lane B 43 at v67)',
     for (const row of Object.values(s.intake.rows)) expect(row.raw?.columns.length).toBeGreaterThan(0)
     expect([s.billing.creditNotes, s.billing.negativeInvoices]).toEqual([{}, {}])
     expect(s.masters.patients['PT0173']).toBeDefined()
+  })
+})
+
+describe('Phase 39b (v70: pre-op, post-op and billing events; BillingLine removed)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v69 store holding billing lines and no event fees, and reseeds', () => {
+    expect(PERSIST_VERSION).toBe(70)
+    const fresh = freshAppState()
+    const { contractEventFees: _f, ...masters } = fresh.masters
+    const staleLine = { id: 'BL0001', procedureId: 'P0001', chargeBasis: 'fixed', amount: 50, description: 'Ancillary fixed amount' }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters, schedule: { ...fresh.schedule, billingLines: { BL0001: staleLine } } }, version: 69 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.masters.contractEventFees['CEF001']).toMatchObject({ contractId: 'CT-STG-ACC', holderCode: 'STGACC-PAIN', fixedPrice: 120 })
+    expect('billingLines' in s.schedule).toBe(false)
+    expect(s.counters['contractEventFee']).toBe(2)
+  })
+
+  it('two fresh seeds deep-equal', () => {
+    expect(freshAppState()).toEqual(freshAppState())
   })
 })
 

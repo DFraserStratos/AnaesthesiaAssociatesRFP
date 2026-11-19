@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest'
 import { changeSetsFor, diffSnapshots, sameValue, snapshotBooking, type BookingSnapshot } from './changeSets'
 import { buildSeed } from './seed'
-import type { AuditEntry, BillingLine, Procedure } from './types'
+import type { AuditEntry, Procedure } from './types'
 
 const seed = buildSeed()
 
@@ -63,22 +63,19 @@ describe('diffSnapshots', () => {
     expect(changes[0]).toMatchObject({ entityType: 'procedure', entityId: p.id, field: 'modifierClaims', kind: 'update' })
   })
 
-  it('reports created and removed Procedures and billing lines whole, field *', () => {
+  it('reports created and removed Procedures whole, field *', () => {
     const s = seeded()
     const p = firstProcedure(s)
     const added: Procedure = { ...p, id: 'PR-NEW', isPrimary: false, modifierClaims: [], removedModifierIds: [] }
-    const line: BillingLine = { id: 'BL-NEW', procedureId: p.id, chargeBasis: 'fixed', amount: 50, description: 'Extra' }
-    const grown: BookingSnapshot = { ...withProcedure(s, added), billingLines: { ...s.billingLines, [line.id]: line } }
+    const grown: BookingSnapshot = withProcedure(s, added)
 
     const created = diffSnapshots(s, grown)
     expect(created).toEqual([
       { entityType: 'procedure', entityId: 'PR-NEW', field: '*', before: undefined, after: added, kind: 'create' },
-      { entityType: 'billingLine', entityId: 'BL-NEW', field: '*', before: undefined, after: line, kind: 'create' },
     ])
     const removed = diffSnapshots(grown, s)
     expect(removed).toEqual([
       { entityType: 'procedure', entityId: 'PR-NEW', field: '*', before: added, after: undefined, kind: 'remove' },
-      { entityType: 'billingLine', entityId: 'BL-NEW', field: '*', before: line, after: undefined, kind: 'remove' },
     ])
   })
 

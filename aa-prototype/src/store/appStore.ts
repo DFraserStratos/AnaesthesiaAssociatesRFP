@@ -437,8 +437,11 @@ export const PERSIST_KEY = 'aa-demo'
  *  v68: catch-up Phase 39 session 2, the "Stage combined procedure" trigger's dedicated patient (`PAT_39.combined`,
  *  PT0173 Lorraine Petrie, appended after 25a's; counter `patient` 174). Reseeds on load.
  *  v69: Wave 4 join, Lane A's 39 (v68, holding 38b and the 42 sync) joined with Lane B's 43 (v67): one past the higher.
- *  Reseeds on load. */
-export const PERSIST_VERSION = 69
+ *  Reseeds on load.
+ *  v70: Phase 39b: pre-op, post-op and billing events; BillingLine removed (`schedule.billingLines` and the `BL`
+ *  counter gone; `masters.contractEventFees` new, CEF001 STGACC-PAIN on St George's ACC, counter `contractEventFee`;
+ *  the event's `pricing` and `invoiceLineId`, the line's `serviceDateISO` and `eventId`). Reseeds on load. */
+export const PERSIST_VERSION = 70
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {}, creditNotes: {}, negativeInvoices: {} }

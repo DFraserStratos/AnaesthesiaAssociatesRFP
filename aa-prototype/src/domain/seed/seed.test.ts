@@ -53,7 +53,6 @@ function billingContextFor(state: SeedState, booking: Booking): BookingBillingCo
     rvgGroups: state.masters.rvgGroups,
     contracts: state.masters.contracts,
     parties: state.masters.parties,
-    billingLines: Object.values(state.schedule.billingLines),
     listDateISO: list.dateISO,
     timeRule: state.masters.rvgTimeRule,
     patientDobISO: state.masters.patients[booking.patientId]?.dobISO,
@@ -98,18 +97,6 @@ describe('rich seeded Booking history', () => {
           `${procedure.id} procedure.update`,
         ).toBe(true)
         mergedRows.push(...procedureRows)
-
-        const lines = Object.values(seed.schedule.billingLines).filter(
-          (line) => line.procedureId === procedure.id,
-        )
-        for (const line of lines) {
-          const lineRows = auditByEntity.get(line.id) ?? []
-          expect(
-            lineRows.filter((entry) => entry.action === 'billingLine.add'),
-            `${line.id} billingLine.add`,
-          ).toHaveLength(1)
-          mergedRows.push(...lineRows)
-        }
       }
 
       expect(mergedRows.length, `${booking.id} merged History rows`).toBeGreaterThanOrEqual(3)
@@ -461,16 +448,12 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
           : undefined
       const rvgGroup =
         procedure.rvgGroupId !== undefined ? seed.masters.rvgGroups[procedure.rvgGroupId] : undefined
-      const nonRvgLines = Object.values(seed.schedule.billingLines).filter(
-        (l) => l.procedureId === procedure.id && l.chargeBasis !== 'rvg',
-      )
       const ctx: ProcedureFeeContext = {
         anaesthetist,
         dateISO: list.dateISO,
         timeRule: seed.masters.rvgTimeRule,
         patientDobISO: seed.masters.patients[booking.patientId]?.dobISO,
         modifiers: seed.masters.modifiers,
-        nonRvgLines,
       }
       if (contract !== undefined) ctx.contract = contract
       if (rvgGroup !== undefined) ctx.rvgGroup = rvgGroup
@@ -568,7 +551,6 @@ describe('scenario states', () => {
     expect(procedures).toHaveLength(1)
     const procedure = procedures[0]!
     expect(procedure.governingContractId).toBe(noContractRvg(seed.masters.contracts).id)
-    expect(Object.values(seed.schedule.billingLines).filter((l) => l.procedureId === procedure.id)).toEqual([])
     expect(procedure.split).toEqual({
       shares: [
         { party: { kind: 'insurer', id: INS.nib }, basis: { kind: 'amount', amountExGst: 132.5 } },
@@ -579,11 +561,7 @@ describe('scenario states', () => {
     expect(resolved.ok && resolved.amounts.map((a) => a.amountExGst)).toEqual([132.5, 79.5])
   })
 
-  it('no seeded billing line carries a funder, and no Contract holds a split or payment setting (catch-up Phase 22)', () => {
-    // Who pays is the Contract or the Procedure's split, never a line: no line carries a funder key.
-    for (const line of Object.values(seed.schedule.billingLines)) {
-      expect(Object.keys(line).filter((k) => /funder/i.test(k)), line.id).toEqual([])
-    }
+  it('no Contract holds a split or payment setting (catch-up Phase 22)', () => {
     const keysOf = (value: unknown): string[] =>
       value !== null && typeof value === 'object'
         ? Object.entries(value as Record<string, unknown>).flatMap(([k, v]) => [k, ...keysOf(v)])
@@ -1157,7 +1135,6 @@ describe('the primary Procedure and the multi-procedure rule (catch-up Phase 23)
       timeRule: seed.masters.rvgTimeRule,
       patientDobISO: seed.masters.patients[booking.patientId]?.dobISO,
       modifiers: seed.masters.modifiers,
-      nonRvgLines: [],
       contract: seed.masters.contracts[p.governingContractId!]!,
       rvgGroup: seed.masters.rvgGroups[p.rvgGroupId!]!,
     }))

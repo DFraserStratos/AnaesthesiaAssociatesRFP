@@ -46,8 +46,8 @@ Bookings and capture the data AA needs for billing.
 4. Record only what the Procedure's Contract price needs: on an RVG price, the RVG code (picked by
    typing), start and finish times and the modifiers step (claimed modifiers each with a short reason,
    or **None apply**); on a fixed or open price, no times or modifiers, the RVG code optional "for
-   reference", and a typed amount where the price asks for one. Then notes and any allowed additional
-   billing line. What only the office can fix goes to the office with **Alert the office**.
+   reference", and a typed amount where the price asks for one. Then notes, and any billing event (a
+   free-text charge or credit). What only the office can fix goes to the office with **Alert the office**.
 5. Review the calculated units and fee at her own rate per unit.
 6. Mark each active Booking complete.
 7. Submit the whole List to the office.
@@ -85,6 +85,12 @@ Bookings and capture the data AA needs for billing.
     note** beside **Raise additional invoice** credits the invoice in full (less work than expected, a
     wrong billable party, or paid twice), with a lower new invoice if one is due. The office reviews it,
     and her payment for that invoice is reversed.
+16. Record her own pre-op and post-op care on any of her Procedures, before or days after, from the
+    Booking (main view, archive or search): **Add pre-op or post-op event** (a ward review, HDU review,
+    pain consult, the ACC pre-op assessment with its CS250, CS260 or CS70 code, or other pre-op or
+    post-op work, with its own date and a time or fixed fee) and **Add billing event** (a free-text
+    charge, or a credit before the Procedure is invoiced). She sees no calculation; the office reviews
+    each and it is billed in the next run.
 
 ### Permissions
 
@@ -320,6 +326,9 @@ allowing billing to proceed.
 11. Record an additional invoice for a late charge (**Create additional invoice** on the Procedure's
     Contract row), and review every event, the anaesthetists' included, on **Review → Events**; an
     approved event is invoiced in the next billing run.
+11a. Add pre-op, post-op and billing events on an anaesthetist's request, price their time at review
+    (a Contract event fee such as STGACC-PAIN replaces it; on a fixed-price Procedure she sets a price
+    with a reason), and keep each Contract's **Event fees** (Master data, Contracts).
 12. Correct an issued invoice without editing it, from its **Correct this invoice** card: a **Credit
     note**, **Credit in full and rebill** (the new invoice starts from a copy of the original's lines),
     or, when the billable party asks for a combined procedure in pieces, **Split into additional

@@ -19,7 +19,7 @@ type Source = SnapshotSource & { audit: readonly AuditEntry[] }
 
 const obj = (v: unknown): Record<string, unknown> => (v !== null && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {})
 
-/** The audit filtered to one Booking's entities: it, its Procedures (removed ones too), their billing lines, its patient. */
+/** The audit filtered to one Booking's entities: it, its Procedures (removed ones too), its patient. */
 function entriesFor(source: Source, bookingId: string): AuditEntry[] {
   const booking = source.schedule.bookings[bookingId]!
   const procedureIds = new Set(Object.values(source.schedule.procedures).filter((p) => p.bookingId === bookingId).map((p) => p.id))
@@ -27,17 +27,10 @@ function entriesFor(source: Source, bookingId: string): AuditEntry[] {
     if (e.entityType !== 'procedure') continue
     if (obj(e.before).bookingId === bookingId || obj(e.after).bookingId === bookingId) procedureIds.add(e.entityId)
   }
-  const lineIds = new Set(Object.values(source.schedule.billingLines).filter((l) => procedureIds.has(l.procedureId)).map((l) => l.id))
-  for (const e of source.audit) {
-    if (e.entityType !== 'billingLine') continue
-    const pid = obj(e.before).procedureId ?? obj(e.after).procedureId
-    if (typeof pid === 'string' && procedureIds.has(pid)) lineIds.add(e.entityId)
-  }
   return source.audit.filter(
     (e) =>
       (e.entityType === 'booking' && e.entityId === bookingId) ||
       (e.entityType === 'procedure' && procedureIds.has(e.entityId)) ||
-      (e.entityType === 'billingLine' && lineIds.has(e.entityId)) ||
       (e.entityType === 'patient' && e.entityId === booking.patientId),
   )
 }
@@ -151,7 +144,6 @@ describe('bookingAsAt: the seed', () => {
     const at = bookingAsAt(now, entries, { afterEntryId: entries[0]!.id }, { modifiers: seed.masters.modifiers })
     expect(at.incompleteAt).toBeUndefined()
     expect(at.snapshot.procedures).toEqual({})
-    expect(at.snapshot.billingLines).toEqual({})
     expect(at.snapshot.booking.completed).toBe(false)
     // Just before the first claim, the Procedure has no claims.
     const firstClaim = entries.findIndex((e) => e.action === 'procedure.modifierClaim' && e.entityId === claimed.id)

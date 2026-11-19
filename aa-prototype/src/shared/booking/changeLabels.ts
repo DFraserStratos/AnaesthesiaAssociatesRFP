@@ -55,8 +55,6 @@ export function changedFieldLabels(changes: readonly ChangeRef[], procedures: re
       const name = n !== undefined ? `Procedure ${n}` : 'Procedure'
       const kind = c.kind ?? (c.field === '*' ? (n !== undefined ? 'create' : 'remove') : 'update')
       text = kind === 'create' ? `${name} added` : kind === 'remove' ? 'Procedure removed' : `${name} ${label(c.field)}`
-    } else if (c.entityType === 'billingLine') {
-      text = 'Billing line'
     } else {
       text = label(c.field)
     }

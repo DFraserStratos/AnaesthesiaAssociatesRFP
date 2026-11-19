@@ -14,15 +14,16 @@ const entry = (id: string, partial: Partial<AuditEntry> & Pick<AuditEntry, 'enti
 })
 
 describe('asAtEntriesFor', () => {
-  it("includes a billing line's entries when it was on one of the Booking's Procedures, current or removed", () => {
+  it("includes the Booking's, its patient's and its Procedures' entries, current or removed", () => {
     const audit = [
       entry('A1', { entityType: 'procedure', entityId: 'P-gone', action: 'procedure.remove', before: { id: 'P-gone', bookingId: 'BK1' } }),
-      entry('A2', { entityType: 'billingLine', entityId: 'BL-gone', action: 'billingLine.remove', before: { id: 'BL-gone', procedureId: 'P-gone' } }),
-      entry('A3', { entityType: 'billingLine', entityId: 'BL-now', action: 'billingLine.add', after: { id: 'BL-now', procedureId: 'P1' } }),
-      entry('A4', { entityType: 'billingLine', entityId: 'BL-other', action: 'billingLine.add', after: { id: 'BL-other', procedureId: 'P-elsewhere' } }),
+      entry('A2', { entityType: 'procedure', entityId: 'P1', action: 'procedure.update', after: { asaGrade: 2 } }),
+      entry('A3', { entityType: 'booking', entityId: 'BK1', action: 'booking.update', after: { notes: 'x' } }),
+      entry('A4', { entityType: 'procedure', entityId: 'P-elsewhere', action: 'procedure.update', after: { asaGrade: 3 } }),
+      entry('A5', { entityType: 'patient', entityId: 'PT1', action: 'patient.update', after: { phone: '1' } }),
     ]
-    const ids = asAtEntriesFor(audit, 'BK1', 'PT1', ['P1'], []).map((e) => e.id)
-    expect(ids).toEqual(['A1', 'A2', 'A3'])
+    const ids = asAtEntriesFor(audit, 'BK1', 'PT1', ['P1']).map((e) => e.id)
+    expect(ids).toEqual(['A1', 'A2', 'A3', 'A5'])
   })
 })
 

@@ -330,21 +330,18 @@ export function addProcedure(
 /**
  * Remove an ADDITIONAL procedure from a Booking — the undo for `addProcedure` (and
  * for a second procedure captured in error). A HARD delete with the removed row
- * snapshotted into `before`, mirroring `removeBillingLine`: a procedure is a
+ * snapshotted into `before`: a procedure is a
  * sub-entity of the Booking, not a billable record in its own right, so there is
  * nothing for a soft-cancel state to remain visible on. The Booking itself keeps
  * its soft-cancel; that is the audited "this happened and then did not" case.
  *
- * Two things make it safe:
+ * One thing makes it safe:
  *  - **The primary procedure is not removable** (user ruling, 2026-07-27,
  *    re-based on the flag in catch-up Phase 23). It carries the base units and
  *    the Booking's modifiers. Removal never promotes another: silently
  *    promoting one would rewrite the billing basis of a procedure nobody
  *    touched. Make primary is the explicit route, and a Booking booked wholly
  *    in error is a booking CANCELLATION; the refusal names both.
- *  - **Its billing lines go with it**, each separately audited in the same
- *    commit, so no line is orphaned onto a procedure that no longer exists
- *    (an orphan would break the invoice build).
  */
 export function removeProcedure(api: AppStoreApi, actor: Actor, procedureId: string): Outcome {
   const state = api.getState()
@@ -366,8 +363,6 @@ export function removeProcedure(api: AppStoreApi, actor: Actor, procedureId: str
   // The flag, not the position (catch-up Phase 23): the primary is refused, and nothing is promoted.
   if (procedure.isPrimary) return refuse('primaryProcedure', PRIMARY_NOT_REMOVABLE_MESSAGE)
 
-  const lines = Object.values(state.schedule.billingLines).filter((l) => l.procedureId === procedureId)
-
   const metas: MutationMeta[] = [
     {
       entityType: 'procedure',
@@ -376,23 +371,12 @@ export function removeProcedure(api: AppStoreApi, actor: Actor, procedureId: str
       before: procedure,
       stampBookingId: booking.id,
     },
-    ...lines.map(
-      (line): MutationMeta => ({
-        entityType: 'billingLine',
-        entityId: line.id,
-        action: 'billingLine.remove',
-        before: line,
-        stampBookingId: booking.id,
-      }),
-    ),
   ]
 
   mutate(api, actor, metas, (s) => {
     const procedures = { ...s.schedule.procedures }
     delete procedures[procedureId]
-    const billingLines = { ...s.schedule.billingLines }
-    for (const line of lines) delete billingLines[line.id]
-    return { schedule: { ...s.schedule, procedures, billingLines } }
+    return { schedule: { ...s.schedule, procedures } }
   })
 
   // With approval off, a group this left ready is sent now (catch-up Phase 27).

@@ -197,7 +197,6 @@ describe('office privacy: no anaesthetist-app history shows a pairing or tier en
     const historyIds = new Set([
       ...Object.keys(s.schedule.bookings),
       ...Object.keys(s.schedule.procedures),
-      ...Object.keys(s.schedule.billingLines),
     ])
     expect(privateEntries.filter((a) => historyIds.has(a.entityId))).toEqual([])
   })

@@ -21,7 +21,7 @@ import {
   useAppStore,
 } from '../../../store'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
-import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, CREDIT_MESSAGES, EVENT_LABELS, XERO_FLAG_COPY, XERO_FLAG_LABEL, XERO_FLAG_PAYOUT_LABEL, raisedByText, xeroFlagText } from '../../../shared/procedureEventCopy'
+import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, CREDIT_MESSAGES, EVENT_KIND_LABEL, EVENT_LABELS, PRE_POST_OP_COPY, XERO_FLAG_COPY, XERO_FLAG_LABEL, XERO_FLAG_PAYOUT_LABEL, raisedByText, xeroFlagText } from '../../../shared/procedureEventCopy'
 import { AdditionalInvoiceSheet } from '../../../shared/booking/AdditionalInvoiceForm'
 import type { CreditFormMode } from '../../../shared/booking/CreditForm'
 import { CreditSheet } from '../flows/CreditSheet'
@@ -121,6 +121,16 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   const firstProcedure = proceduresRecord[invoice.procedureIds?.[0] ?? '']
   const additionalProcedure = firstProcedure !== undefined ? procedureLabel(firstProcedure, masters.rvgGroups, 1) : 'the Procedure'
   const freeForm = invoice.kind === 'additional'
+  // Catch-up Phase 39b: an event invoice's kind ("Post-op event"), from the event it was raised from.
+  const ownEvent = invoice.eventId !== undefined ? procedureEvents[invoice.eventId] : undefined
+  const eventLead =
+    ownEvent === undefined
+      ? undefined
+      : ownEvent.detail.kind === 'preOp' || ownEvent.detail.kind === 'postOp'
+        ? PRE_POST_OP_COPY.lineLead[ownEvent.detail.kind]
+        : ownEvent.detail.kind === 'billing'
+          ? PRE_POST_OP_COPY.lineLead.billing
+          : undefined
   const procedureDateISO = invoice.crossMatch?.procedureDateISO ?? list?.dateISO
   // Catch-up Phase 39: the invoice's standing, its credit note and what replaced it; a replacement's origin.
   const creditState = { schedule: { procedureEvents }, billing }
@@ -191,10 +201,18 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
               </div>
             )}
             {/* An additional invoice names the original it relates to (catch-up Phase 38b; US-08.6.3 "Linked"). */}
+            {/* An event invoice raised before its Procedure had one (catch-up Phase 39b): its kind and Procedure. */}
+            {original === undefined && eventLead !== undefined && (
+              <div data-shot="invoice-additional-of" style={{ marginTop: 6, fontSize: 12.5, color: neutral.slate }}>
+                {PRE_POST_OP_COPY.eventFor(eventLead, additionalProcedure)}
+              </div>
+            )}
             {original !== undefined && (
               <div data-shot="invoice-additional-of" style={{ marginTop: 6, fontSize: 12.5, color: neutral.slate }}>
                 <Link to={`/admin/invoices/${original.id}`} style={{ color: neutral.slate }}>
-                  {ADDITIONAL_INVOICE_COPY.relatesTo(original.invoiceNumber, additionalProcedure)}
+                  {eventLead !== undefined
+                    ? PRE_POST_OP_COPY.relatesTo(eventLead, original.invoiceNumber, additionalProcedure)
+                    : ADDITIONAL_INVOICE_COPY.relatesTo(original.invoiceNumber, additionalProcedure)}
                 </Link>
                 {list !== undefined && (
                   <>
@@ -271,6 +289,8 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
           rows={lines.map((line) => ({
             key: line.id,
             kind: line.kind ?? 'fee',
+            // Catch-up Phase 39b: an event's own dated line (its date and kind are in its description).
+            ...(line.eventId !== undefined ? { shot: 'invoice-event-lines', eventId: line.eventId } : {}),
             description: (
               <>
                 <div>{line.description}</div>
@@ -902,6 +922,10 @@ interface DocLineRow {
   amount: number
   /** `data-line-kind` on the row (fee, discount, adjustment). */
   kind?: string
+  /** `data-shot` on the row (catch-up Phase 39b: `invoice-event-lines`). */
+  shot?: string
+  /** `data-event-id` on an event's line. */
+  eventId?: string
 }
 
 /**
@@ -924,7 +948,7 @@ function DocLinesTable({ rows, quantityHead, unitAmount = false }: { rows: reado
       </thead>
       <tbody>
         {rows.map((r) => (
-          <tr key={r.key} {...(r.kind !== undefined ? { 'data-line-kind': r.kind } : {})}>
+          <tr key={r.key} {...(r.kind !== undefined ? { 'data-line-kind': r.kind } : {})} {...(r.shot !== undefined ? { 'data-shot': r.shot } : {})} {...(r.eventId !== undefined ? { 'data-event-id': r.eventId } : {})}>
             <td style={docCell}>{r.description}</td>
             {showQuantity && <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{r.quantity ?? ''}</td>}
             {unitAmount && <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{r.unitAmount !== undefined ? formatCurrency(r.unitAmount) : ''}</td>}
@@ -1236,6 +1260,7 @@ function AdditionalInvoicesCard({ invoice, actor, credited = false }: { invoice:
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', color: neutral.slate }}>
                 <Pill size="sm" tone={paid ? 'success' : 'neutral'}>{paid ? 'Paid' : 'Unpaid'}</Pill>
+                {ev !== undefined && ev.kind !== 'additionalInvoice' ? `${EVENT_KIND_LABEL[ev.kind]} · ` : ''}
                 {ev !== undefined ? raisedByText(ev.addedBy) : ''}
               </span>
             </Link>

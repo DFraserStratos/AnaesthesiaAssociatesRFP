@@ -24,7 +24,7 @@ const SOUTER_MOBILE_HBK03 = '/mobile/lists/L-HIST-03/bookings/HBK03'
 async function stagePostOp(page: Page): Promise<string> {
   await page.goto(`/admin/review/${SHARMA_TUE14}`)
   await page.waitForLoadState('networkidle')
-  expect(await runDemoAction(page, 'stage-post-op', { close: true })).toContain('Authorised and billed')
+  expect(await runDemoAction(page, 'stage-post-op', { close: true })).toContain('Staged')
   await page.goto(MITCHELL_ADMIN)
   const entry = page.locator('[data-shot="procedure-credit-note-button"]').first()
   await expect(entry).toBeEnabled()

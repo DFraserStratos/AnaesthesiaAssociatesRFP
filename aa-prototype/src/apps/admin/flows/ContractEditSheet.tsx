@@ -41,6 +41,7 @@ import { ChipMultiSelect } from '../components/ChipMultiSelect'
 import { CodePickerSheet } from '../../../shared/capture/CodePickerSheet'
 import { rvgGroupLabel } from '../../../domain/billing/rvgGroups'
 import { ContractPriceRanges } from './ContractPriceRanges'
+import { ContractEventFees } from './ContractEventFees'
 import { parsePriceText } from '../../../domain/billing/priceRanges'
 import {
   activeSurgeons,
@@ -497,6 +498,8 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
           </PanelGrid>
         )}
         {editing && live !== undefined && live.pricing.kind === 'fixed' && <ContractPriceRanges contract={live} actor={actor} onError={setError} />}
+        {/* Catch-up Phase 39b: the Contract's fixed fees for pre-op and post-op events, beside its pricing. */}
+        {editing && live !== undefined && !system && <ContractEventFees contract={live} actor={actor} onError={setError} />}
 
       </PanelSection>
 

@@ -66,14 +66,20 @@ describe('ProcedureEventsList', () => {
     expect(screen.getByText('Declined: Split the time')).toBeTruthy()
   })
 
-  it('a colleague sees no money and no actions; with no events the anaesthetist apps show nothing and Admin shows the empty line', () => {
+  it("a colleague sees no money and no actions; with no events the owner's apps show only the add buttons, a colleague's nothing, and Admin the empty line", () => {
     const { container } = renderList(SHARMA)
     const row = container.querySelector('[data-shot="procedure-event-row"]')!
     expect(row.textContent).not.toContain('$85.00')
     expect(row.querySelector('[data-shot="procedure-event-edit"]')).toBeNull()
     cleanup()
     const empty = Object.values(useAppStore.getState().schedule.procedures).find((p) => p.bookingId === 'BK0001')!.id
-    expect(renderList(SOUTER, empty, 'mobile').container.querySelector('[data-shot="procedure-events"]')).toBeNull()
+    // Catch-up Phase 39b: the owner's Procedure always shows the section, so the add buttons have a home.
+    const owner = renderList(SOUTER, empty, 'mobile').container
+    expect(owner.querySelector('[data-shot="procedure-event-row"]')).toBeNull()
+    expect(owner.querySelector('[data-shot="add-pre-post-op-event"]')).not.toBeNull()
+    expect(owner.querySelector('[data-shot="add-billing-event"]')).not.toBeNull()
+    cleanup()
+    expect(renderList(SHARMA, empty, 'mobile').container.querySelector('[data-shot="procedure-events"]')).toBeNull()
     cleanup()
     expect(renderList(OFFICE, empty).container.textContent).toContain('No events on this Procedure yet.')
   })

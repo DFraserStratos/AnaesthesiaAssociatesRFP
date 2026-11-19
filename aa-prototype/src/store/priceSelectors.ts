@@ -16,7 +16,7 @@ import { billingContextForBooking, proceduresForBooking } from './selectors'
 
 export type PriceViewState = {
   masters: AppState['masters']
-  schedule: Pick<AppState['schedule'], 'lists' | 'bookings' | 'procedures' | 'billingLines'>
+  schedule: Pick<AppState['schedule'], 'lists' | 'bookings' | 'procedures'>
   billing: Pick<AppState['billing'], 'invoices' | 'invoiceLines'>
 }
 

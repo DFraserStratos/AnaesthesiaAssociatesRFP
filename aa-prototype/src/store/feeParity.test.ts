@@ -79,14 +79,13 @@ for (const list of assignedLists) {
         siblings: procedures,
         list,
         masters: state.masters,
-        billingLines: state.schedule.billingLines,
         patientId: booking.patientId,
       })
       const row: FeeRow = {
         procedureId: procedure.id,
         total: fee.total,
         billableUnits: fee.billableUnits,
-        lines: fee.lines.map((l) => ({ basis: l.chargeBasis, amount: l.amount })),
+        lines: fee.lines.map((l) => ({ basis: l.units !== undefined || l.role === 'discount' ? 'rvg' : 'fixed', amount: l.amount })),
       }
       fees.push(row)
       unitRows.push({ ...row, b: fee.btm.base.units, t: fee.btm.time.units, m: fee.btm.modifiers.units })
@@ -700,10 +699,9 @@ describe('Phase 22 fee split (catch-up Phase 22, US-08.2.3)', () => {
     }
   })
 
-  it("Prentice's Procedure is on No contract · RVG with no billing lines, its fee unmoved at $212 / 8 units", () => {
+  it("Prentice's Procedure is on No contract · RVG, its fee unmoved at $212 / 8 units", () => {
     const [proc] = proceduresForBooking(state, PRENTICE_BOOKING_22)
     expect(proc?.governingContractId).toBe('CT-NO-CONTRACT')
-    expect(Object.values(state.schedule.billingLines).filter((l) => l.procedureId === proc!.id)).toEqual([])
     expect(feeOf(proc!.id)).toMatchObject({ total: 212, billableUnits: 8 })
     expect(feeOf(proc!.id)).toEqual((phase18Fixture as { fees: FeeRow[] }).fees.find((f) => f.procedureId === proc!.id))
   })

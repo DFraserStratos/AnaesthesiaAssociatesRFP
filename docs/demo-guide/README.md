@@ -41,7 +41,7 @@ Schedule
       -> AM List and PM List
         -> Booking (one patient appointment)
           -> Procedure(s)
-            -> Billing line(s)
+            -> Event(s): pre-op, post-op, billing, additional invoice
 ```
 
 - The system creates a rolling four-month canvas containing exactly two Lists, AM and PM, for every
@@ -93,6 +93,7 @@ Snapshot date: **24 July 2026**
 | Admin day view, changes, cover, review, authorisation, masters and audit | Ready | Strong primary workflow |
 | Billing run and invoice documents | Ready | Phase 08 |
 | Events and additional invoices, credit notes (credit and rebill, the split, the anaesthetist's credit note), and billing monitor (grouped by anaesthetist, with filters for one anaesthetist, hospital, dates and Problems only; Lists awaiting approval open in Review) | Ready | Phase 09; grouping and filters from catch-up Phase 37; credit notes from catch-up Phase 39 |
+| Pre-op and post-op events (the anaesthetist's own, from the Booking or search), the ACC pre-op event (CS250, CS260, CS70, codes provisional), Contract event fees and billing events (a free-text charge or credit), one review, billed in the next run on the party's invoice or their own | Ready | Catch-up Phase 39b |
 | Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), escalating warning, left off the final invoice | Ready | Catch-up Phase 27 |
 | Prepayment held in the AA Holding account (its card on the Billing monitor), transferred to the anaesthetist automatically when the List is authorised, then paid by the payables run | Ready | Catch-up Phase 27a |
 | Xero pairs, payments, payables, payment history, live balances and GST report | Ready | Phase 10 |

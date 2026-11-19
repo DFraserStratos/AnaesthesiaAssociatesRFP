@@ -139,7 +139,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
   const booking = useBookingStore((s) => s.schedule.bookings[bookingId])
   const listsRecord = useBookingStore((s) => s.schedule.lists)
   const proceduresRecord = useBookingStore((s) => s.schedule.procedures)
-  const billingLinesRecord = useBookingStore((s) => s.schedule.billingLines)
   // The price ladder's held amounts (catch-up Phase 24) read the invoices.
   const invoices = useBookingStore((s) => s.billing.invoices)
   const invoiceLines = useBookingStore((s) => s.billing.invoiceLines)
@@ -212,11 +211,11 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
     // A Booking on a Draft List has no anaesthetist yet, so nothing to validate against (catch-up Phase 31).
     if (booking === undefined || cancelled) return []
     const ctx = completionContextFor(
-      { masters, schedule: { bookings: { [booking.id]: booking }, lists: listsRecord, billingLines: billingLinesRecord } },
+      { masters, schedule: { bookings: { [booking.id]: booking }, lists: listsRecord } },
       booking.id,
     )
     return ctx === undefined ? [] : completionFailuresFor(booking, procedures, ctx)
-  }, [booking, cancelled, masters, listsRecord, billingLinesRecord, procedures])
+  }, [booking, cancelled, masters, listsRecord, procedures])
 
   // The whole Booking priced once, under the multi-procedure rule (catch-up Phase 23): the
   // total, the breakdown and every capture block read this one result.
@@ -226,8 +225,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
     }
     const held = booking !== undefined ? heldPricesForBooking({ billing: { invoices, invoiceLines, locks }, schedule: { lists: listsRecord, bookings: { [booking.id]: booking }, procedures: proceduresRecord } }, booking.id) : {}
     const lock = booking !== undefined ? locks[booking.id] : undefined
-    return bookingFee({ procedures, list, masters, billingLines: billingLinesRecord, patientId: booking?.patientId, held, ...(lock !== undefined ? { lock } : {}) })
-  }, [list, procedures, masters, billingLinesRecord, booking, invoices, invoiceLines, locks, listsRecord, proceduresRecord])
+    return bookingFee({ procedures, list, masters, patientId: booking?.patientId, held, ...(lock !== undefined ? { lock } : {}) })
+  }, [list, procedures, masters, booking, invoices, invoiceLines, locks, listsRecord, proceduresRecord])
   // The primary first, then the rest in Booking order (US-03.2.2): every list on this screen.
   const ordered: Procedure[] = useMemo(() => inDisplayOrder(procedures), [procedures])
 
@@ -330,15 +329,14 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
     return { lines, rateLabel, overrideNote, notes }
   }, [list, procedures, ordered, bookingTotals, masters.rvgGroups])
 
-  // The booking's full history: its own id plus its procedures' and billing lines'
+  // The booking's full history: its own id plus its procedures'
   // ids, so BTM overrides / billing-setup edits (audited on those entities) show.
   //
   // Live records alone would lose the trail of anything REMOVED — the procedure
   // that was added, captured and then deleted would leave audit entries no
   // screen could reach, which is exactly what A6/A7 forbid. So the removals are
   // read back out of the log: a `procedure.remove` entry snapshots the whole
-  // procedure into `before`, which names the Booking it belonged to, and the lines
-  // that went with it are matched on that procedure id.
+  // procedure into `before`, which names the Booking it belonged to.
   const removedEntityIds = useMemo(() => {
     const procedureIds = new Set<string>()
     for (const entry of audit) {
@@ -346,15 +344,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
       const before = entry.before as { bookingId?: string } | undefined
       if (before?.bookingId === bookingId) procedureIds.add(entry.entityId)
     }
-    if (procedureIds.size === 0) return []
-    const lineIds = audit
-      .filter((entry) => {
-        if (entry.entityType !== 'billingLine') return false
-        const before = entry.before as { procedureId?: string } | undefined
-        return before?.procedureId !== undefined && procedureIds.has(before.procedureId)
-      })
-      .map((entry) => entry.entityId)
-    return [...procedureIds, ...new Set(lineIds)]
+    return [...procedureIds]
   }, [audit, bookingId])
 
   // The Booking's whole story (catch-up Phase 39 review): its Procedures and fee lines, and its billing too: invoices,
@@ -378,12 +368,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
       const scope = procedure.isPrimary ? 'Primary' : 'Additional'
       const label = procedureLabel(procedure, masters.rvgGroups, index + 1)
       labels[procedure.id] = `${scope} · ${label}`
-      for (const line of Object.values(billingLinesRecord)) {
-        if (line.procedureId === procedure.id) labels[line.id] = `${scope} · fee line`
-      }
     })
     return labels
-  }, [ordered, procedures.length, billingLinesRecord, masters.rvgGroups])
+  }, [ordered, procedures.length, masters.rvgGroups])
 
   // "Add another procedure" (US-03.2.3, catch-up Phase 20): the new Procedure
   // picks its own Contract on the step rail, opened on the primary's answers

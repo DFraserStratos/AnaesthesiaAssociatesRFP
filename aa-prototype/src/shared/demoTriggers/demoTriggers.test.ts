@@ -17,7 +17,8 @@ import { OFFICE_ACTOR, SOUTER_ACTOR } from '../../store/demoActors'
 import { correctPdfListRow, sendPdfListToMatching } from '../../store/pdfListActions'
 import { setAvailabilityRange } from '../../store/availabilityActions'
 import { alertOffice } from '../../store/officeAlertActions'
-import { SEED_LIST_IDS, SEED_MARKERS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
+import { ANAE, SEED_LIST_IDS, SEED_MARKERS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
+import { stagedSouterBooking } from '../../store/eventDemo'
 import { BILLING_MONITOR_SCREEN, DEMO_TRIGGERS, POST_OP_ORIGINAL_LIST_ID } from './registry'
 import { projectedListId } from '../../domain/slots'
 import { demoTriggersFor, groupTriggersByScreen, initialChoice } from './match'
@@ -333,7 +334,7 @@ describe('re-homed bodies match the Control Panel', () => {
     expect(t.disabledReason(api.getState(), ctxFor('/admin/billing'))).toBe('Armed')
   })
 
-  it('stage post-op authorises and bills the Sharma List, creates no List and no event, then reads Already staged (catch-up Phase 38b)', () => {
+  it("stage post-op authorises and bills the Sharma List (38b) and stages Dr Souter's submitted ACL reconstruction (39b), no event, then reads Already staged", () => {
     const api = createAppStore()
     const unwire = wireBillingRun(api)
     const t = byId('stage-post-op')
@@ -341,12 +342,26 @@ describe('re-homed bodies match the Control Panel', () => {
     const lists = Object.keys(api.getState().schedule.lists).length
     const events = Object.keys(api.getState().schedule.procedureEvents)
     const out = t.run(api, ctx)
-    unwire()
-    expect(out).toEqual({ ok: true, message: "Authorised and billed. Open Sarah Mitchell's Booking and use Create additional invoice on the Procedure's Contract row." })
+    expect(out).toEqual({
+      ok: true,
+      message: "Staged. Search Bennett, open Wednesday's Booking and use Add pre-op or post-op event. Sarah Mitchell's Tue 14 Jul List is authorised and billed for Create additional invoice.",
+    })
     expect(api.getState().schedule.lists[POST_OP_ORIGINAL_LIST_ID]?.state).toBe('AUTHORISED')
-    expect(Object.keys(api.getState().schedule.lists)).toHaveLength(lists)
+    // Dr Souter's half: one List in her free Wed 15 Jul PM session, SUBMITTED, Coral Bennett on St George's ACC.
+    expect(Object.keys(api.getState().schedule.lists)).toHaveLength(lists + 1)
+    const staged = stagedSouterBooking(api.getState())!
+    expect(api.getState().schedule.lists[staged.listId]).toMatchObject({ state: 'SUBMITTED', dateISO: '2026-07-15', session: 'PM', anaesthetistId: ANAE.souter })
+    const procedure = Object.values(api.getState().schedule.procedures).find((p) => p.bookingId === staged.id)!
+    expect(procedure).toMatchObject({ governingContractId: 'CT-STG-ACC', isPrimary: true })
     expect(Object.keys(api.getState().schedule.procedureEvents)).toEqual(events)
-    expect(t.disabledReason(api.getState(), ctx)).toBe('Already staged: use Create additional invoice on the Procedure')
+    expect(t.disabledReason(api.getState(), ctx)).toBe("Already staged: search Bennett and open Wednesday's Booking")
+    // Each half is idempotent: a second run stages nothing more.
+    expect(t.run(api, ctx).ok).toBe(true)
+    unwire()
+    expect(Object.keys(api.getState().schedule.lists)).toHaveLength(lists + 1)
+    // On the anaesthetist's screens too, in the bar and the PWA sheet.
+    expect(ids(api, '/mobile/lists', 'pwa')).toContain('stage-post-op')
+    expect(ids(api, '/web/lists', 'bar')).toContain('stage-post-op')
   })
 
   it('Run the next billing run is on the Billing monitor and Review only, disabled until an event is approved, then raises its invoice once (catch-up Phase 38b)', () => {
@@ -378,10 +393,10 @@ describe('re-homed bodies match the Control Panel', () => {
     expect(t.disabledReason(api.getState(), ctx)).toBeNull()
     const out = t.run(api, ctx)
     expect(out.ok).toBe(true)
-    expect(out.message).toMatch(/^Approved by the office and invoiced in the next billing run \(AA-2026-\d{4}\)\.$/)
+    expect(out.message).toMatch(/^Reviewed by the office \(simulated\)\. Invoice AA-2026-\d{4} raised in the next run\.$/)
     expect(api.getState().schedule.procedureEvents['EV0001']?.invoiceId).toBeDefined()
-    expect(t.disabledReason(api.getState(), ctx)).toBe('No additional invoice on this Booking is awaiting review')
-    expect(t.disabledReason(api.getState(), ctxFor('/mobile/lists/x/bookings/BK0001', { bookingId: 'BK0001' }))).toBe('No additional invoice on this Booking is awaiting review')
+    expect(t.disabledReason(api.getState(), ctx)).toBe('No event awaiting review or the next run on this Booking')
+    expect(t.disabledReason(api.getState(), ctxFor('/mobile/lists/x/bookings/BK0001', { bookingId: 'BK0001' }))).toBe('No event awaiting review or the next run on this Booking')
   })
 
   it('Receive updated PDF from rooms waits for a sent list, then lands the re-sent one once (catch-up Phase 34)', () => {
@@ -1225,7 +1240,7 @@ describe('credit entries (catch-up Phase 39 session 2)', () => {
     // The seeded additional invoice first, so only the credit and its replacement wait.
     expect(additional.run(api, hbk03()).ok).toBe(true)
     credit(api, SOUTER_ACTOR, 'HINV03', [{ occurredOnISO: '2026-07-21', party: { sameAs: true }, lines: [{ description: 'Shorter case', quantity: 1, unitAmount: 400 }] }])
-    expect(additional.disabledReason(api.getState(), hbk03())).toBe('No additional invoice on this Booking is awaiting review')
+    expect(additional.disabledReason(api.getState(), hbk03())).toBe('No event awaiting review or the next run on this Booking')
     expect(t.disabledReason(api.getState(), hbk03())).toBeNull()
     const out = t.run(api, hbk03())
     unwire()

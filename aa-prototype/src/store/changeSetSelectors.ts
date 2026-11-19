@@ -14,7 +14,7 @@ export interface ChangeSetSummary {
   /** The fields the save changed (a save's header lists them); the entry count otherwise. */
   count: number
   /** The header's field list (`booking.save`'s `after.fields`): the screens count it by label (`changeCount`). */
-  fields: { entityType: 'booking' | 'procedure' | 'billingLine' | 'patient'; entityId: string; field: string }[]
+  fields: { entityType: 'booking' | 'procedure' | 'patient'; entityId: string; field: string }[]
   /** The audit index of the change set's first entry (for "newer than" checks). */
   index: number
 }

@@ -148,14 +148,13 @@ function usePaidBy({ procedure, actor, canEdit }: BillingCardProps): Omit<PaidBy
   const procedures = useBookingStore((s) => s.schedule.procedures)
   const bookings = useBookingStore((s) => s.schedule.bookings)
   const lists = useBookingStore((s) => s.schedule.lists)
-  const billingLines = useBookingStore((s) => s.schedule.billingLines)
   const invoices = useBookingStore((s) => s.billing.invoices)
   const invoiceLines = useBookingStore((s) => s.billing.invoiceLines)
   const locks = useBookingStore((s) => s.billing.locks)
   const surface = actor.role === 'office' ? 'office' : 'anaesthetist'
   const view = useMemo(
-    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines }, billing: { invoices, invoiceLines, locks } }, procedure.id, surface),
-    [masters, procedures, bookings, lists, billingLines, invoices, invoiceLines, locks, procedure.id, surface],
+    () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists }, billing: { invoices, invoiceLines, locks } }, procedure.id, surface),
+    [masters, procedures, bookings, lists, invoices, invoiceLines, locks, procedure.id, surface],
   )
   if (view === undefined) return null
   const booking = bookings[procedure.bookingId]
