@@ -60,11 +60,50 @@ Read in full before execution; update the verified result last. One writer at a 
       current board and catalogue. Resolve conflicts (on the board version, keep the higher version
       and put the phase's CHANGELOG entry on top), keep `verify:board` green, and note the merge in
       the phase entry.
-    - **B12 and B13** each work in their own worktree on a branch made from `board-fixes`
-      (`board-fixes-b12`, `board-fixes-b13`; ports 5573/5574/5580 and 5673/5674/5680 in their own
-      `.lane.env`), and merge back into `board-fixes`, from the programme worktree, when no serial
-      phase has uncommitted work there. In convention 14 and PLAN.md, "master's version" means
-      `board-fixes`' version.
+    - **B12 and B13** each work in their own worktree on a branch made from `board-fixes`, set up
+      ahead of time by the owner's planning session (installed, clean tree, ports checked), after the
+      `worktree-lanes` skill:
+
+      | | B12 | B13 |
+      |---|---|---|
+      | Worktree | `AnaesthesiaAssociatesRFP-board-B12` | `AnaesthesiaAssociatesRFP-board-B13` |
+      | Branch | `board-fixes-b12` | `board-fixes-b13` |
+      | Ports (prototype, PWA, board) in its `.lane.env` | 5573, 5574, 5580 | 5673, 5674, 5680 |
+
+      A B12 or B13 session runs like this. The same kick-off prompt starts, resumes and finishes it.
+      1. **Get in.** Switch into its own worktree with `EnterWorktree` (`path`, never `name`); check
+         `git branch --show-current` and `cat .lane.env`. If the worktree is missing, stop and tell
+         the owner. Never edit, build or run anything in the main checkout, the programme worktree
+         or the other one's worktree, except the single fast-forward in step 5.
+      2. **Catch up, at start and on every resume.** With a clean tree (no uncommitted changes to
+         tracked files), run `git merge board-fixes` (merge, never rebase), resolve as in step 4, and
+         make `verify:board` green before building. If master has commits your branch lacks, `git merge
+         master` too, as the serial phases do (B12 needs the live plan's current files). Skip this with
+         a dirty tree: a session stopped
+         mid-way and you are resuming it.
+      3. **Commit names.** At a checkpoint in a multi-session run, with `verify:board` green, commit
+         `<id> checkpoint: ...`; when the phase is finished, with its PROGRESS entry and PHASE STATUS
+         line written, commit `<id> complete: ...` (`B12 complete: ...`). These are how a later
+         session tells start, resume and finish apart. If the branch already holds `<id> complete:`,
+         only step 5 is left.
+      4. **Merge on your own branch.** Before finishing, merge `board-fixes` into your branch once
+         more and resolve every conflict there, never in the programme worktree: the board version
+         is one minor bump past `board-fixes`' current version, the CHANGELOG entry goes above the
+         newest one, the lock file is regenerated with `npm install` in `requirements-board/`, the
+         `verify` script is merged by hand, and PROGRESS and the PHASE STATUS block keep both sides'
+         lines. Make `verify:board` green, then commit `<id> complete: ...`.
+      5. **Fast-forward `board-fixes`, one git command.** If `git -C <programme worktree> status
+         --porcelain --untracked-files=no` is empty, run `git -C <programme worktree> merge --ff-only
+         board-fixes-<id>`. If it refuses because `board-fixes` moved, go back to step 4 and try once
+         more. If the programme worktree has uncommitted work (a serial phase is mid-way), or this
+         session is not allowed to write there (a session that entered its worktree with
+         `EnterWorktree` usually is not), do not keep trying: stop and give the owner this sentence to
+         paste into a session in the programme worktree: "Fast-forward board-fixes to
+         board-fixes-<id> as PROGRESS convention 16 step 5 says." Never delete the branch or the
+         worktree; the owner tears them down.
+
+      In convention 14, PLAN.md and the B12 and B13 specs, "master's version" means `board-fixes`'
+      version, and "merged into master" means fast-forwarded into `board-fixes` as above.
     - **Into master:** `board-fixes` merges into master once, after B15 closes, or earlier only when
       the owner asks (for example to give the live lanes B12's fixes). The board version is settled
       at that merge as in convention 14. Master's `docs/board-fixes/index.html` is a pointer page to
@@ -475,6 +514,19 @@ decisions" section and resolved in that phase's planning.
         force and "All owners" clears it.
       - **Downstream:** none outside B11. DESIGN.md's board lines change (Doc facts). The lane merge is a form
         of B05's `POST /api/lanes` rename (decision 20's D-04f, touch rights, decision 7).
+
+- 2026-11-20, user and planning session:
+  26. **B12 and B13 run as lanes, after the `worktree-lanes` skill** (user). Convention 16's B12 and
+      B13 bullet now carries the skill's process: both worktrees are set up ahead of time and checked;
+      the session catches up by merging `board-fixes` (and master) at start and on every resume;
+      `<id> checkpoint:` and `<id> complete:` commit subjects tell start, resume and finish apart; all
+      conflicts are resolved on the phase's own branch; and `board-fixes` moves by one `merge
+      --ff-only`, handed to the owner when the session cannot write to the programme worktree. Not
+      adopted: the skill's waves and join (two side branches feed a moving programme branch), its
+      `LANES.md` (convention 16 holds the rules) and its status files (`.git/lanes/` belongs to the
+      catch-up lanes, which B12 must not write).
+      - **Downstream:** the B12 and B13 specs and kick-off prompts; PLAN "Version numbers in worktree
+        phases".
 
 ## Planning handoff
 

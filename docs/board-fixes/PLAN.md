@@ -252,7 +252,8 @@ are settled in a short planning conversation of the owning phase ahead of time:
 **Version numbers in worktree phases.** B12 and B13 pick their board version at merge time:
 `board-fixes`' current version plus their bump, with their CHANGELOG entry placed above the newest one.
 They resolve the lock file by re-running `npm install` in the board folder, and B12's `verify`
-script edit is merged by hand.
+script edit is merged by hand. They do all of this on their own branch after merging `board-fixes` in, then
+move `board-fixes` on with a fast-forward (PROGRESS convention 16, steps 4 and 5).
 
 ## Deferred decisions
 
