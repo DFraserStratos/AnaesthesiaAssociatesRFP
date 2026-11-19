@@ -6,7 +6,7 @@
     {
       "name": "hl7-siu-message",
       "app": "simulator",
-      "caption": "Inbound HL7 SIU message, translated to FHIR · staged on the matching screen, nothing applied",
+      "caption": "Future scope: an inbound HL7 SIU message, translated to FHIR · staged on the matching screen, nothing applied",
       "start": "/demo/integrations",
       "states": [
         {
@@ -39,9 +39,9 @@
     },
     {
       "name": "message-log",
-      "app": "admin",
-      "caption": "Message log after an SIU S12 is received",
-      "start": "/admin/integrations",
+      "app": "simulator",
+      "caption": "Future scope: the message log after an SIU S12 is received",
+      "start": "/demo/integrations/log",
       "setup": [
         {
           "goto": "/demo/integrations"
@@ -57,7 +57,7 @@
         {
           "steps": [],
           "highlight": [
-            "table"
+            "[data-shot=future-scope-log] table"
           ]
         }
       ]

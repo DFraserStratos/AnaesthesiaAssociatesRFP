@@ -37,6 +37,7 @@ import { reassignBookingCore } from './lifecycle'
 import { replacedStatusRefusal, statusRefusal } from './availabilityActions'
 import { bookingMoveInputOf, listInSlot, moveInputOf } from './selectors'
 import { postNotification } from './notifications'
+import { originForNewList } from '../domain/lists/listOrigin'
 
 export interface OwnMoveResult {
   listId: string
@@ -406,7 +407,7 @@ function bookingMoveCore(
   const slot = state.schedule.slots[placement.slotId]!
   const atISO = clockISO(state.clock)
 
-  const placed = placeListOnSlot(state.counters, slot, { kind: source.kind, hospitalId: source.hospitalId, surgeonId: source.surgeonId })
+  const placed = placeListOnSlot(state.counters, slot, { kind: source.kind, hospitalId: source.hospitalId, surgeonId: source.surgeonId, origin: originForNewList({ kind: 'derived', from: source }) })
   const listsWithNew = { ...state.schedule.lists, [placed.list.id]: placed.list }
   const schedule = reassignBookingCore({ ...state.schedule, lists: listsWithNew }, bookingId, placed.list.id)
 

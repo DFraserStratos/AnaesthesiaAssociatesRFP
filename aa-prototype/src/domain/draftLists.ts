@@ -15,6 +15,7 @@ import { addDays, differenceInMinutes, format, parseISO } from 'date-fns'
 import { activeOn, answeredKey } from './recurringBookingProjection'
 import { isClosed, isOpenForBooking, statusFor, type SlotStatusRecords } from './slotStatus'
 import { slotIdFor } from './slots'
+import { originForNewList } from './lists/listOrigin'
 import type {
   AnaesthetistId,
   AssignedList,
@@ -197,6 +198,7 @@ export function recurringClashDraft(
     hospitalId: recurringBooking.hospitalId,
     surgeonId: recurringBooking.surgeonId,
     conflicts: [],
+    origin: originForNewList({ kind: 'recurring' }),
     recurringBookingId: clash.recurringBookingId,
     draft: {
       origin: 'recurringClash',

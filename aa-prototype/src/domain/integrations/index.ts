@@ -31,6 +31,9 @@ export {
   FEED_META,
   INTEGRATION_FEEDS,
   CPH_NHI_FIX,
+  LIVE_FEED_IDS,
+  isIntegratedFeed,
+  FUTURE_SCOPE_CPH_BATCH_LABEL,
   type FeedMeta,
 } from './feeds'
 export {
@@ -40,9 +43,3 @@ export {
   cannedMessage,
   type CannedMessage,
 } from './messages'
-export {
-  SURGEON_PDFS,
-  PDF_BY_ID,
-  type SurgeonPdf,
-  type PdfRow,
-} from './pdfSamples'

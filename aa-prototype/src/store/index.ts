@@ -432,7 +432,6 @@ export {
   reprocessMessage,
   setFeedMapping,
   correctEthnicityCode,
-  ingestPdfRow,
   wireIntegrationRetry,
   MAX_ATTEMPTS,
 } from './integrationActions'
@@ -497,6 +496,17 @@ export {
   WORDING_OR_CODE_MESSAGE,
   type DecisionInput,
 } from './matchingActions'
+// The rooms' PDF lists (catch-up Phase 34; DM-61): upload, correct, send to matching; the re-send trigger's body.
+export {
+  correctPdfListRow,
+  INVALID_NHI_SEND_MESSAGE,
+  receiveResentPdfList,
+  resendRefusal,
+  sendPdfListToMatching,
+  SENDER_REQUIRED_MESSAGE,
+  uploadPdfList,
+  type PdfRowPatch,
+} from './pdfListActions'
 export {
   assessImportRow,
   importRowViews,
@@ -515,6 +525,7 @@ export { fixtureNhiForRow, officeAddsNhiRefusal, officeAddsNhiToStub } from './s
 // Catch-up Phase 33: the matching screen's demo trigger bodies (bar entries and the PWA office stand-in).
 export {
   officeMatchesHospitalRow,
+  officeImportsS1File,
   receiveTheatreList,
   sendUpdateRefusal,
   stageUpdateForBooking,

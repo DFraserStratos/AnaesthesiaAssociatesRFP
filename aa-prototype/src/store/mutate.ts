@@ -126,6 +126,8 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   importRow: { prefix: 'IR', pad: 4 },
   // Stubs on Lists for rows waiting at intake (catch-up Phase 33a; DM-58), never the NHI.
   stub: { prefix: 'STB', pad: 4 },
+  // The rooms' PDF lists as received (catch-up Phase 34; DM-61).
+  pdfList: { prefix: 'PDL', pad: 4 },
   // Prepayment transfers from the AA Holding account and their Xero manual journals (catch-up Phase 27a).
   prepayTransfer: { prefix: 'PXT', pad: 4 },
   xeroJournal: { prefix: 'XJ', pad: 4 },

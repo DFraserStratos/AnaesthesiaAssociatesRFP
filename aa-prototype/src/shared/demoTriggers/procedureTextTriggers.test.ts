@@ -1,6 +1,6 @@
 /**
- * Catch-up Phase 20a's Booking-route triggers: "Fire hospital message" with a
- * per-Booking default, and "Hospital description arrives" (default pairing,
+ * Catch-up Phase 20a's Booking-route triggers: "Fire hospital message" (on the
+ * Future-scope surface only since Phase 34), and "Hospital description arrives" (default pairing,
  * the three outcomes, the disabled reason, absent from the PWA).
  */
 
@@ -9,11 +9,11 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from '../../store/appStore'
 import { setInvoiceDescription } from '../../store/procedureTextActions'
 import { OFFICE_ACTOR } from '../../store/demoActors'
-import { RTK_BOOKING_ID, SEED_MARKERS } from '../../domain/seed'
+import { SEED_MARKERS } from '../../domain/seed'
 import { DEMO_TRIGGERS } from './registry'
 import { demoTriggersFor, initialChoice } from './match'
 import { useDemoTriggerMemory } from './memory'
-import { cannedMessageForBooking, primaryProcedureOf } from './procedureTextTriggers'
+import { primaryProcedureOf } from './procedureTextTriggers'
 import type { DemoTrigger, DemoTriggerCtx } from './types'
 
 const byId = (id: string): DemoTrigger => DEMO_TRIGGERS.find((t) => t.id === id)!
@@ -32,31 +32,29 @@ beforeEach(() => {
   useDemoTriggerMemory.setState({ lastMessageId: null, lastWebhook: null, webhookCounter: 0 })
 })
 
-describe('Fire hospital message on a Booking', () => {
-  it('shows on the mobile, web and Admin Booking routes in the bar only (catch-up Phase 33: the PWA has the office stand-in)', () => {
+describe('Fire hospital message, Future scope only (catch-up Phase 34)', () => {
+  it('shows only on the Future-scope surface, in the bar, badged: never on a Booking or in the PWA', () => {
     const api = createAppStore()
-    expect(ids(api, `/mobile/lists/L-34821-2026-08-04-AM/bookings/${FOSTER}`, 'pwa')).not.toContain('fire-hospital-message')
-    expect(ids(api, `/mobile/lists/L-34821-2026-08-04-AM/bookings/${FOSTER}`, 'bar')).toContain('fire-hospital-message')
-    expect(ids(api, `/web/lists/L-34821-2026-08-04-AM/bookings/${FOSTER}`, 'bar')).toContain('fire-hospital-message')
-    expect(ids(api, `/admin/day/2026-08-04/bookings/${FOSTER}`, 'bar')).toContain('fire-hospital-message')
+    for (const path of [`/mobile/lists/L-34821-2026-08-04-AM/bookings/${FOSTER}`, `/web/lists/L-34821-2026-08-04-AM/bookings/${FOSTER}`, `/admin/day/2026-08-04/bookings/${FOSTER}`]) {
+      expect(ids(api, path, 'bar')).not.toContain('fire-hospital-message')
+      expect(ids(api, path, 'pwa')).not.toContain('fire-hospital-message')
+    }
+    for (const path of ['/demo/integrations', '/demo/integrations/log', '/demo/integrations/mapping']) {
+      expect(ids(api, path, 'bar')).toEqual(expect.arrayContaining(['fire-hospital-message', 'replay-hospital-message']))
+      expect(ids(api, path, 'pwa')).not.toContain('fire-hospital-message')
+    }
     expect(byId('fire-hospital-message').badge).toBe('future-scope')
-  })
-
-  it("defaults to the message addressed to the Booking on screen: MSG-STG-1012 on Diane Foster's", () => {
-    const api = createAppStore()
-    expect(cannedMessageForBooking(api.getState(), FOSTER)).toBe('MSG-STG-1012')
-    expect(initialChoice(byId('fire-hospital-message'), api.getState(), adminCtx(api, FOSTER))).toBe('MSG-STG-1012')
-    expect(cannedMessageForBooking(api.getState(), RTK_BOOKING_ID)).toBeUndefined()
   })
 
   it("sends the message to matching and changes nothing until the office applies the row (catch-up Phase 33; RV-13)", () => {
     const api = createAppStore()
+    const ctx: DemoTriggerCtx = { pathname: '/demo/integrations', params: {}, published: {} }
     const text = primaryProcedureOf(api.getState(), FOSTER)!.procedureText
-    const first = byId('fire-hospital-message').run(api, adminCtx(api, FOSTER), 'MSG-STG-1012')
-    expect(first.message).toBe("Sent MSG-STG-1012 to matching: the hospital's text replaces the rooms' once the office applies the row.")
+    const first = byId('fire-hospital-message').run(api, ctx, 'MSG-STG-1012')
+    expect(first.message).toBe('Sent MSG-STG-1012: its row waits on Admin, Intake, for the office to decide.')
     expect(primaryProcedureOf(api.getState(), FOSTER)!.procedureText).toEqual(text)
     expect(Object.values(api.getState().intake.rows).filter((r) => r.id !== SEED_STUB.rowId)).toHaveLength(1)
-    byId('fire-hospital-message').run(api, adminCtx(api, FOSTER), 'MSG-STG-1012')
+    byId('fire-hospital-message').run(api, ctx, 'MSG-STG-1012')
     expect(Object.values(api.getState().intake.rows).filter((r) => r.id !== SEED_STUB.rowId)).toHaveLength(1)
   })
 })

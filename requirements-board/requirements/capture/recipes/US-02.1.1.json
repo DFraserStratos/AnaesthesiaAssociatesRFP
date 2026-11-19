@@ -7,7 +7,7 @@
       "name": "matching-import",
       "app": "admin",
       "caption": "A hospital file imported through an integration (sample file)",
-      "start": "/admin/matching",
+      "start": "/admin/intake/matching",
       "states": [
         {
           "steps": [
@@ -31,7 +31,7 @@
       "name": "matching-table",
       "app": "admin",
       "caption": "Each imported row lands on the matching screen with its procedure text as received",
-      "start": "/admin/matching",
+      "start": "/admin/intake/matching",
       "states": [
         {
           "steps": [

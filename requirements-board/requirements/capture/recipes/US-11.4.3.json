@@ -137,7 +137,7 @@
       "name": "matching-insurer",
       "app": "admin",
       "caption": "A hospital row's insurer and approval number show on the row and are recorded by the office's decision",
-      "start": "/admin/matching",
+      "start": "/admin/intake/matching",
       "states": [
         {
           "steps": [

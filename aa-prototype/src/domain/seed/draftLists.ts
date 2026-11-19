@@ -27,6 +27,7 @@ import { PAT } from './patients'
 import { rvgGroupIdForLegacyCode } from './rvgGroups'
 import { CONTRACT } from './contracts'
 import { seedText } from './procedureText'
+import { originForNewList } from '../lists/listOrigin'
 
 /** Who logged the seeded requests. */
 const OFFICE = 'Kirsty W.'
@@ -53,6 +54,7 @@ export const SEED_DRAFT_LISTS: readonly DraftList[] = [
     hospitalId: HOSP.stg,
     surgeonId: SURG.tan,
     conflicts: [],
+    origin: originForNewList({ kind: 'office' }),
     notes: "St George's booking office needs an anaesthetist",
     draft: { origin: 'request', source: 'phone', sinceISO: '2026-07-20T15:40:00', by: OFFICE },
   },
@@ -65,6 +67,7 @@ export const SEED_DRAFT_LISTS: readonly DraftList[] = [
     hospitalId: HOSP.forte,
     surgeonId: SURG.nand,
     conflicts: [],
+    origin: originForNewList({ kind: 'office' }),
     notes: "Emailed by Mr Nand's secretary",
     draft: { origin: 'request', source: 'email', sinceISO: '2026-07-20T17:10:00', by: OFFICE },
   },
@@ -77,6 +80,7 @@ export const SEED_DRAFT_LISTS: readonly DraftList[] = [
     hospitalId: HOSP.ces,
     surgeonId: SURG.reid,
     conflicts: [],
+    origin: originForNewList({ kind: 'office' }),
     notes: 'PDF from the rooms, cataract list',
     draft: { origin: 'request', source: 'pdf', sinceISO: '2026-07-17T09:50:00', by: OFFICE },
   },

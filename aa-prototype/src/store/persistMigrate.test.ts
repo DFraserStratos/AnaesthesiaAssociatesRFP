@@ -969,3 +969,45 @@ describe('Xero mirror resilience (catch-up Phase 37)', () => {
     expect(s.xero.bankLines).toEqual({})
   })
 })
+
+describe('catch-up Phase 34 (v61: the rooms\' PDF lists and where a List came from)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v60 store with no PDF lists and no List origins, and reseeds both', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(61)
+    const fresh = freshAppState()
+    const { pdfLists: _p, ...intake } = fresh.intake
+    const lists = Object.fromEntries(Object.entries(fresh.schedule.lists).map(([id, l]) => {
+      const { origin: _o, ...rest } = l
+      return [id, rest]
+    }))
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, intake, schedule: { ...fresh.schedule, lists } }, version: 60 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.intake.pdfLists).toEqual(freshAppState().intake.pdfLists)
+    expect(Object.values(s.schedule.lists).every((l) => l.origin !== undefined)).toBe(true)
+  })
+})
+
+describe('the Wave 3 sync of 34 into lane/a (v62: Phase 37 and Phase 34 both v61)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it("discards either lane's v61 store and reseeds the joined seed: the Xero sync queue and the PDF lists both present", () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(62)
+    const fresh = freshAppState()
+    // Lane B's v61 shape: no Xero sync queue; Lane A's: no PDF lists.
+    const { xeroQueue: _q, xeroDivergences: _d, ...billing } = fresh.billing
+    const { pdfLists: _p, ...intake } = fresh.intake
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing, intake }, version: 61 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.billing.xeroQueue).toEqual({})
+    expect(s.intake.pdfLists).toEqual(freshAppState().intake.pdfLists)
+  })
+})

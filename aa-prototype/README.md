@@ -134,6 +134,28 @@ Contract holder) and one surgeon. Draft Lists never reach the mobile, web or PWA
   drawer (the store's `procedureStackViewFor` builds it).
 - The seed carries AR-35's illustrative, AI-made wording (`domain/seed/sourceWording.ts`), not AA's data.
 
+## Intake, the rooms' PDF lists and where a List came from (catch-up Phase 34)
+
+- **Admin Intake** (`/admin/intake`, one side-nav item, its badge the open rows on matching) holds four
+  URL-routed tabs: `/admin/intake/matching` (Phase 33's matching screen), `/admin/intake/pdfs` (the rooms'
+  PDF lists), `/admin/intake/quality` and `/admin/intake/validators`. `/admin/matching` and
+  `/admin/integrations` redirect to `/admin/intake/matching`. Hospital rows arrive only through Import
+  hospital file; there is no sync.
+- **The rooms' PDF lists** are stored `SurgeonPdfList` records (`intake.pdfLists`, PDL ids) with the address
+  each arrived from. Upload (`uploadPdfList`, a sample and "Sent from"), correct (`correctPdfListRow`, each
+  correction kept with who and when, the wording as read) and send (`sendPdfListToMatching`, through
+  `stageImportRows` with source `rooms`). Nothing reaches a Booking, List or Patient until the office
+  decides on matching. A re-sent list (`resentPdfListOf`, matched by surgeon, hospital, date and session)
+  brings only its differences. Pure rules in `domain/intake/pdfLists.ts`.
+- **Every List records its origin** (`List.origin`: `pdf` with its sender, `hospital`, `manual` or
+  `recurring`), stamped on every creation path through `originForNewList` in `domain/lists/listOrigin.ts`,
+  the one place for its build choices (the later-address rule). `officeAddressFor(masters, surgeonId,
+  list?)` (`domain/surgeonContacts.ts`) puts the List's sender first, then the surgeon's first office contact.
+- **Future scope: HL7 and FHIR** (`/demo/integrations`, `/log`, `/mapping`; `apps/demo/futureScope/`) holds
+  the simulator, the message log with retry and dead-letter, and the feed mapping, shown for discussion.
+  Christchurch Public is not integrated today: the Live drip streams St George's and Southern Cross only
+  (`LIVE_FEED_IDS`).
+
 ## Folder map (`src/`)
 
 - **`domain/`** — pure, no React: `types.ts`, the deterministic `seed/` (Bookings in
@@ -168,7 +190,8 @@ Contract holder) and one surgeon. Draft Lists never reach the mobile, web or PWA
   screens' `onBack` / `onOpen…` callbacks to `navigate()`. Screens themselves know nothing about
   routing. Mobile adds `navigation.ts` (the Lists slide-stack depth derived from the URL).
 - **`apps/demo/`** — demo-only surfaces: the control panel (the demo-action index), the Xero +
-  billing-monitor simulator, the integration simulator, and the seed-data inspector.
+  billing-monitor simulator, Future scope: HL7 and FHIR (the integration simulator, its message log and
+  feed mapping, `futureScope/`), and the seed-data inspector.
 - **`shared/`** — cross-app components (the capture suite, `booking/BookingDetailBody`, the
   procedure stack `booking/ProcedureStack`, schedule rows, flows, status chips, the legacy
   `/cards/` link redirect in `legacy/`, `format.ts` for NZ number/currency/date output,

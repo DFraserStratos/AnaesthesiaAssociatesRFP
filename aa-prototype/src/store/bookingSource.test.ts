@@ -9,12 +9,10 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { addPostOpAddendum, createBooking } from './bookingActions'
 import { authoriseList, submitList } from './lifecycle'
-import { ingestPdfRow } from './integrationActions'
 import { decideImportRow, importHospitalDownload } from './matchingActions'
 import { bookingsForList } from './selectors'
 import type { Actor } from './mutate'
 import { ANAE, HOSP, SEED_LIST_IDS, SEED_MARKERS, buildSeed } from '../domain/seed'
-import { SURGEON_PDFS } from '../domain/integrations/pdfSamples'
 import type { BookingSource } from '../domain/types'
 import { projectedListId } from '../domain/slots'
 
@@ -64,16 +62,6 @@ describe('creation paths stamp their source', () => {
     if (!res.ok) throw new Error(res.message)
     // A keyed sheet is the hospital pathway too: its channel lives on the row and the text's source.
     expect(api.getState().schedule.bookings[res.value.bookingId ?? '']?.source).toBe('hospitalDownload')
-  })
-
-  it('a surgeon PDF row create stamps surgeonPdf', () => {
-    const api = store()
-    const pdf = SURGEON_PDFS[0]!
-    const row = pdf.rows.find((r) => r.id === 'R2')!
-    const listId = projectedListId(pdf.targetList.anaesthetistId, pdf.targetList.dateISO, pdf.targetList.session)
-    const created = ingestPdfRow(api, OFFICE, listId, row)
-    if (!created.ok) throw new Error(created.message)
-    expect(api.getState().schedule.bookings[created.value.bookingId]?.source).toBe('surgeonPdf')
   })
 
   it('the post-op addendum follows the actor: admin for the office (interim until Phase 39)', () => {

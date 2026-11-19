@@ -35,6 +35,7 @@ import { pairingAcknowledgement } from '../domain/pairingPreferences'
 import { partyRefusal, suggestCodePrefix } from '../domain/billing/parties'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
+import { originForNewList } from '../domain/lists/listOrigin'
 
 export function createHospital(
   api: AppStoreApi,
@@ -721,7 +722,7 @@ function applyPlan(
   }
   for (const c of plan.create) {
     const slot = slots[c.slotId]!
-    const placed = placeListOnSlot(counters, slot, c.fields)
+    const placed = placeListOnSlot(counters, slot, { ...c.fields, origin: originForNewList({ kind: 'recurring' }) })
     counters = placed.counters
     lists[placed.list.id] = { ...placed.list, recurringBookingId: c.recurringBookingId }
     slots[slot.id] = withTimes(slot, c.fields)

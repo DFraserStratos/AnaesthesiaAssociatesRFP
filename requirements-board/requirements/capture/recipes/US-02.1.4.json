@@ -7,7 +7,7 @@
       "name": "unmatched-queue",
       "app": "admin",
       "caption": "A row with no NHI, or that matches nothing, waits in the unmatched queue until the office decides",
-      "start": "/admin/matching",
+      "start": "/admin/intake/matching",
       "states": [
         {
           "state": "waiting",
@@ -191,7 +191,7 @@
       "start": "/admin/day/2026-07-28",
       "setup": [
         {
-          "goto": "/admin/matching"
+          "goto": "/admin/intake/matching"
         },
         {
           "click": "[data-shot=matching-import-open]"

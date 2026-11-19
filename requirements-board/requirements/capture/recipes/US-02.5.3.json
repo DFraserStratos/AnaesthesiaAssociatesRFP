@@ -7,7 +7,7 @@
       "name": "hospital-row",
       "app": "admin",
       "caption": "A hospital cancellation waits on the matching screen",
-      "start": "/admin/matching",
+      "start": "/admin/intake/matching",
       "states": [
         {
           "state": "received",
@@ -61,7 +61,7 @@
       "start": "/web/lists/L-34821-2026-08-03-PM",
       "setup": [
         {
-          "goto": "/admin/matching"
+          "goto": "/admin/intake/matching"
         },
         {
           "click": "[data-shot=matching-import-open]"

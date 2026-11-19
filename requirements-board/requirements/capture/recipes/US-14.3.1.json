@@ -6,7 +6,7 @@
     {
       "name": "live-feed",
       "app": "simulator",
-      "caption": "Live feed processing each message as it arrives",
+      "caption": "Future scope: a live feed processing each message as it arrives",
       "start": "/demo/integrations",
       "states": [
         {

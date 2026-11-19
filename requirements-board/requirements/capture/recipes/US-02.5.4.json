@@ -7,10 +7,10 @@
       "name": "change-cutoff",
       "app": "admin",
       "caption": "A hospital change can be applied until its List is authorised",
-      "start": "/admin/matching",
+      "start": "/admin/intake/matching",
       "setup": [
         {
-          "goto": "/admin/integrations"
+          "goto": "/demo/integrations"
         },
         {
           "trigger": "fire-hospital-message",

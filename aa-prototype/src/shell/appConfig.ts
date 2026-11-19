@@ -70,7 +70,7 @@ export const APP_CONFIG: Record<AppId, AppConfig> = {
   },
   'demo-integrations': {
     id: 'demo-integrations',
-    label: 'Demo: Integrations',
+    label: 'Demo: Future scope, HL7 and FHIR',
     path: '/demo/integrations',
     persona: PERSONAS.kirsty,
     group: 'demo',

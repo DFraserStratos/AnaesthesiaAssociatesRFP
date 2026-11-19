@@ -36,6 +36,8 @@ interface Draft {
   session: Session
   kind: ListKind
   source: RequestSource
+  /** The address a PDF request arrived from (catch-up Phase 34; US-02.2.4): asked only when it came in by PDF. */
+  senderEmail: string
   note: string
 }
 
@@ -60,7 +62,7 @@ export function DraftListSheet({
   const today = useAppStore((s) => s.clock.todayISO)
   const horizonEnd = useAppStore((s) => scheduleHorizon(s).endISO)
   const aaRoomsId = Object.values(hospitals).find((h) => h.locationType === 'aaRooms')?.id
-  const blank = (): Draft => ({ hospitalId: '', surgeonId: '', dateISO: initialDateISO, session: 'AM', kind: 'private', source: 'phone', note: '' })
+  const blank = (): Draft => ({ hospitalId: '', surgeonId: '', dateISO: initialDateISO, session: 'AM', kind: 'private', source: 'phone', senderEmail: '', note: '' })
   const [draft, setDraft] = useState<Draft>(blank)
   const [error, setError] = useState<string | null>(null)
   // Closures are marked for the day chosen, not the day the sheet opened on.
@@ -88,6 +90,8 @@ export function DraftListSheet({
       session: draft.session,
       kind: draft.kind,
       source: draft.source,
+      // The List records a PDF origin with this address (listOrigin.ts); other sources send none.
+      ...(draft.source === 'pdf' && draft.senderEmail.trim() !== '' ? { senderEmail: draft.senderEmail } : {}),
       ...(draft.note.trim() !== '' ? { note: draft.note } : {}),
     })
     if (!out.ok) {
@@ -132,6 +136,17 @@ export function DraftListSheet({
 
         <Segmented label="Kind of List" value={draft.kind} options={KIND_OPTIONS} onChange={(kind) => setDraft((d) => withKind(d, kind, aaRoomsId))} />
         <Segmented label="Came in by" value={draft.source} options={SOURCE_OPTIONS} onChange={(source) => update({ source })} />
+        {draft.source === 'pdf' && (
+          <TextField
+            label="Sent from"
+            type="email"
+            value={draft.senderEmail}
+            onChange={(senderEmail) => update({ senderEmail })}
+            placeholder="name@practice.example"
+            hint="The address the PDF arrived from. Replies about this List go back to it."
+            shot="draft-list-sender"
+          />
+        )}
         <TextField label="Note (optional)" value={draft.note} onChange={(note) => update({ note })} placeholder="What the rooms asked for" />
 
         <div style={{ fontSize: 13, color: neutral.slate }}>Saving does not change anyone's schedule. You can add Bookings before an anaesthetist is assigned.</div>

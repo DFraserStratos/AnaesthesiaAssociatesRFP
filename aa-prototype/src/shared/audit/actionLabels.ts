@@ -197,6 +197,12 @@ export const ACTION_LABELS: Record<string, string> = {
   'stub.place': 'Stub placed on List',
   'stub.resolve': 'Stub replaced by Booking',
   'stub.remove': 'Stub removed',
+  // The rooms' PDF lists and where a List came from (catch-up Phase 34).
+  'pdfList.upload': 'PDF list uploaded',
+  'pdfList.resend': 'Updated PDF list received',
+  'pdfList.correct': 'PDF list row corrected',
+  'pdfList.send': 'PDF list sent to matching',
+  'list.senderChanged': 'List sender changed',
 
   // --- Xero simulation & money movement -----------------------------------
   'xero.pairCreated': 'Xero invoice pair created',

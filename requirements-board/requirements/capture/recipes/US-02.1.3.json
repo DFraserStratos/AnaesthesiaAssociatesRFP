@@ -7,7 +7,7 @@
       "name": "differences",
       "app": "admin",
       "caption": "The differences between a row and its matched Booking, each ticked to apply",
-      "start": "/admin/matching",
+      "start": "/admin/intake/matching",
       "states": [
         {
           "state": "diff",

@@ -6,27 +6,121 @@
     {
       "name": "surgeon-pdf",
       "app": "admin",
-      "caption": "Emailed surgeon PDF lists",
-      "start": "/admin/integrations",
+      "caption": "Read, correct and send a surgeon's emailed PDF list to matching",
+      "start": "/admin/intake/pdfs",
       "states": [
         {
           "state": "inbox",
-          "caption": "Inbox of emailed surgeon PDF lists",
-          "steps": [{ "click": "role=button[name=\"Surgeon PDFs\"]" }],
+          "caption": "The emailed PDF lists, each with the address it was sent from, when it arrived and the List it suggests",
+          "steps": [
+            { "wait": "[data-shot=pdf-inbox]" }
+          ],
           "highlight": [
-            "text=Operating list · Monday 27 July (AM) >> xpath=ancestor::div[.//button[normalize-space()='Open']][1]",
-            "text=Cataract list · Wednesday 29 July (AM) >> xpath=ancestor::div[.//button[normalize-space()='Open']][1]"
+            "[data-shot=pdf-inbox]"
           ]
         },
         {
           "state": "extracted",
-          "caption": "Bookings extracted from the PDF, shown beside the document for review",
+          "caption": "The bookings read from the PDF, shown beside the document for review, with who sent it",
           "steps": [
-            { "click": "role=button[name=\"Surgeon PDFs\"]" },
-            { "click": "role=button[name=\"Open\"] >> nth=0" },
-            { "wait": 500 }
+            { "click": "[data-shot=pdf-inbox] tr[data-pdf-list-id=PDL0001]" },
+            { "wait": "[data-shot=pdf-list-header]" },
+            { "wait": 400 }
           ],
           "highlight": []
+        },
+        {
+          "state": "upload",
+          "caption": "Upload an emailed PDF list with the address it was sent from (sample files)",
+          "steps": [
+            { "click": "[data-shot=pdf-upload-open]" },
+            { "wait": "[data-shot=pdf-upload]" },
+            { "wait": 400 }
+          ],
+          "highlight": [
+            "[data-shot=pdf-upload]"
+          ]
+        },
+        {
+          "state": "correction",
+          "caption": "An invalid NHI flagged and corrected before the row is sent, the correction kept with who and when",
+          "steps": [
+            { "click": "[data-shot=pdf-inbox] tr[data-pdf-list-id=PDL0001]" },
+            { "wait": "[data-shot=pdf-list-header]" },
+            { "fill": "[data-shot=pdf-row-2] input >> nth=0", "value": "ZAA0067" },
+            { "click": "[data-shot=pdf-row-2-apply]" },
+            { "wait": "[data-shot=pdf-correction]" },
+            { "wait": 400 }
+          ],
+          "highlight": [
+            "[data-shot=pdf-correction]"
+          ]
+        },
+        {
+          "state": "on-matching",
+          "caption": "The PDF's rows on the matching screen, marked Rooms PDF, each waiting for the office's decision",
+          "steps": [
+            { "click": "[data-shot=pdf-inbox] tr[data-pdf-list-id=PDL0001]" },
+            { "wait": "[data-shot=pdf-list-header]" },
+            { "fill": "[data-shot=pdf-row-2] input >> nth=0", "value": "ZAA0067" },
+            { "click": "[data-shot=pdf-row-2-apply]" },
+            { "wait": "[data-shot=pdf-correction]" },
+            { "click": "[data-shot=pdf-send]" },
+            { "wait": "[data-shot=pdf-open-matching]" },
+            { "click": "[data-shot=pdf-open-matching]" },
+            { "wait": "[data-shot=matching-table]" },
+            { "wait": 400 },
+            { "press": "Escape" },
+            { "wait": 400 }
+          ],
+          "highlight": [
+            "[data-shot^='matching-row-']:has-text('Brian Holt')",
+            "[data-shot^='matching-row-']:has-text('Margaret Ellison')",
+            "[data-shot^='matching-row-']:has-text('Hemi Parata')"
+          ]
+        },
+        {
+          "state": "resent",
+          "caption": "The rooms re-send the List: the changed time waits on the matching screen as a difference for the office to accept",
+          "steps": [
+            { "click": "[data-shot=pdf-inbox] tr[data-pdf-list-id=PDL0001]" },
+            { "wait": "[data-shot=pdf-list-header]" },
+            { "fill": "[data-shot=pdf-row-2] input >> nth=0", "value": "ZAA0067" },
+            { "click": "[data-shot=pdf-row-2-apply]" },
+            { "wait": "[data-shot=pdf-correction]" },
+            { "click": "[data-shot=pdf-send]" },
+            { "wait": "[data-shot=pdf-open-matching]" },
+            { "click": "[data-shot=pdf-open-matching]" },
+            { "wait": "[data-shot=matching-table]" },
+            { "wait": 400 },
+            { "press": "Escape" },
+            { "wait": 400 },
+            { "click": "[data-shot^='matching-row-']:has-text('Margaret Ellison')" },
+            { "wait": "[data-shot=matching-panel]" },
+            { "click": "[data-shot=matching-panel] >> role=radio[name=/Create a List in a session/]" },
+            { "click": "[data-shot=matching-panel] >> role=button[name=/Rutherford/] >> nth=0" },
+            { "click": "[data-shot=matching-apply]" },
+            { "wait": "[data-shot=matching-banner]" },
+            { "wait": 300 },
+            { "goto": "/admin/intake/pdfs" },
+            { "trigger": "pdf-list-resend", "choice": "PDF-OKAFOR-0805" },
+            { "wait": 400 },
+            { "click": "[data-shot=pdf-inbox] tr[data-status=received]" },
+            { "wait": "[data-shot=pdf-list-header]" },
+            { "click": "[data-shot=pdf-send]" },
+            { "wait": "[data-shot=pdf-open-matching]" },
+            { "click": "[data-shot=pdf-open-matching]" },
+            { "wait": "[data-shot=matching-table]" },
+            { "wait": 400 },
+            { "press": "Escape" },
+            { "wait": 400 },
+            { "click": "[data-shot^='matching-row-']:has-text('Margaret Ellison')" },
+            { "wait": "[data-shot=matching-panel]" },
+            { "wait": 400 }
+          ],
+          "highlight": [
+            "[data-shot=matching-diff]"
+          ]
         }
       ]
     }

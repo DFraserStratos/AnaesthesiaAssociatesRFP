@@ -15,15 +15,15 @@ import { FOSTER_HOSPITAL_WORDING } from '../../domain/intake'
 
 const byId = (id: string): DemoTrigger => DEMO_TRIGGERS.find((t) => t.id === id)!
 const ids = (api: BoundAppStore, pathname: string, surface: 'bar' | 'pwa') => demoTriggersFor(api.getState(), pathname, surface).map((m) => m.trigger.id)
-const matchingCtx = (selected?: string): DemoTriggerCtx => ({ pathname: '/admin/matching', params: {}, published: selected !== undefined ? { 'matching.selectedRowId': selected } : {} })
+const matchingCtx = (selected?: string): DemoTriggerCtx => ({ pathname: '/admin/intake/matching', params: {}, published: selected !== undefined ? { 'matching.selectedRowId': selected } : {} })
 const snapshot = (api: BoundAppStore) => JSON.stringify({ s: api.getState().schedule, p: api.getState().masters.patients })
 const FOSTER = 'BK0043'
 
 describe('Matching bar entries', () => {
-  it('show on /admin/matching in the bar only', () => {
+  it('show on /admin/intake/matching in the bar only', () => {
     const api = createAppStore()
-    expect(ids(api, '/admin/matching', 'bar')).toEqual(expect.arrayContaining(['matching-receive-theatre-list', 'matching-send-update']))
-    expect(ids(api, '/admin/matching', 'pwa')).toEqual([])
+    expect(ids(api, '/admin/intake/matching', 'bar')).toEqual(expect.arrayContaining(['matching-receive-theatre-list', 'matching-send-update']))
+    expect(ids(api, '/admin/intake/matching', 'pwa')).toEqual([])
     expect(ids(api, '/admin/day/2026-07-21', 'bar')).not.toContain('matching-receive-theatre-list')
   })
 
@@ -61,20 +61,43 @@ describe('the PWA office stand-in', () => {
     expect(byId('matching-office-matches-row').badge).toBe('office-stand-in')
   })
 
-  it("S1: Sarah Mitchell lands on Dr Souter's Tue 28 Jul AM List with her wording and no Contract, then the choice is disabled", () => {
+  it("S1 (catch-up Phase 34): St George's file imported, Sarah Mitchell on Dr Souter's Tue 28 Jul AM List with her wording and No contract · RVG, the other rows left for the office, then disabled", () => {
     const api = createAppStore()
     const t = byId('matching-office-matches-row')
     const ctx: DemoTriggerCtx = { pathname: '/mobile/lists', params: {}, published: {} }
+    expect(t.label).toBe('Hospital file imported and my booking matched')
+    expect(t.choices!(api.getState(), ctx)[0]).toEqual({ id: 's1', label: "St George's file, Tue 28 Jul AM (S1)" })
     const res = t.run(api, ctx, 's1')
     expect(res.ok).toBe(true)
-    const row = Object.values(api.getState().intake.rows).filter((r) => r.id !== SEED_STUB.rowId)[0]!
-    expect(row).toMatchObject({ status: 'applied', decidedBy: 'AA office (simulated)' })
-    const bookingId = row.decision!.kind === 'createBooking' ? row.decision!.bookingId : ''
+    const rows = Object.values(api.getState().intake.rows).filter((r) => r.id !== SEED_STUB.rowId)
+    // The whole file is imported (33's import); only the two rows for the persona's List are decided.
+    expect(rows).toHaveLength(5)
+    expect(rows.filter((r) => r.status === 'applied').map((r) => r.incoming.patient.name).sort()).toEqual(['Dylan Kereama', 'Sarah Mitchell'])
+    expect(rows.filter((r) => r.status === 'open')).toHaveLength(3)
+    const sarahRow = rows.find((r) => r.incoming.patient.name === 'Sarah Mitchell')!
+    expect(sarahRow).toMatchObject({ status: 'applied', decidedBy: 'AA office (simulated)' })
+    const bookingId = sarahRow.decision!.kind === 'createBooking' ? sarahRow.decision!.bookingId : ''
     const [p] = proceduresForBooking(api.getState(), bookingId)
     expect(api.getState().schedule.bookings[bookingId]!.listId).toBe('L-34821-2026-07-28-AM')
     expect(p!.procedureText?.text).toBe('lap appy ?conv to open')
-    expect(p!.governingContractId).toBeUndefined()
-    expect(t.disabledReason?.(api.getState(), ctx, 's1')).toBe('Already on your Tue 28 Jul AM List')
+    // The office's rail answer (D33): No contract · RVG; the RVG code stays the anaesthetist's.
+    expect(p!.governingContractId).toBe('CT-NO-CONTRACT')
+    expect(p!.rvgGroupId).toBeUndefined()
+    // Dylan's matched Booking is never given a Contract by the stand-in.
+    const dylan = rows.find((r) => r.incoming.patient.name === 'Dylan Kereama')!
+    const dylanBooking = dylan.decision!.kind === 'match' ? dylan.decision!.bookingId : ''
+    const before = createAppStore().getState().schedule.procedures
+    for (const q of proceduresForBooking(api.getState(), dylanBooking)) expect(q.governingContractId).toBe(before[q.id]!.governingContractId)
+    expect(t.disabledReason?.(api.getState(), ctx, 's1')).toBe('Nothing new from the hospital for your Lists')
+  })
+
+  it('S1 is idempotent: a second run is refused', () => {
+    const api = createAppStore()
+    const t = byId('matching-office-matches-row')
+    const ctx: DemoTriggerCtx = { pathname: '/mobile/lists', params: {}, published: {} }
+    expect(t.disabledReason?.(api.getState(), ctx, 's1')).toBeNull()
+    expect(t.run(api, ctx, 's1').ok).toBe(true)
+    expect(t.run(api, ctx, 's1').ok).toBe(false)
   })
 
   it("on Diane Foster's Booking the office approves the update: the hospital's text replaces WLE MM", () => {

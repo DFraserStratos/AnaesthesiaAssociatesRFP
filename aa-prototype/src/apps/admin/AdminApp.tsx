@@ -6,7 +6,6 @@ import {
   addDayNote,
   billingAttentionCount,
   ledgerAttentionCount,
-  integrationAttentionCount,
   isOpenSlotView,
   matchingAttentionCount,
   openConflictCount,
@@ -45,14 +44,13 @@ function sectionForPath(pathname: string): NavSection {
   const head = pathname.replace(/^\/admin\/?/, '').split('/')[0]
   if (head === 'draft-lists') return 'draftLists'
   if (head === 'notifications') return 'notifications'
-  if (head === 'matching') return 'matching'
+  if (head === 'intake') return 'intake'
   switch (head) {
     case 'conflicts':
     case 'review':
     case 'invoices':
     case 'billing':
     case 'ledger':
-    case 'integrations':
     case 'masters':
     case 'audit':
       return head
@@ -87,7 +85,6 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const appSettings = useAppStore((s) => s.appSettings)
   const clock = useAppStore((s) => s.clock)
   const masters = useAppStore((s) => s.masters)
-  const integrations = useAppStore((s) => s.integrations)
   const dayNotesRecord = useAppStore((s) => s.dayNotes)
 
   const navigate = useNavigate()
@@ -186,9 +183,9 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   // Active notices (catch-up Phase 32b; US-13.8.1 "Count"): the same count as the rail card and the page.
   const notificationsRecord = useAppStore((s) => s.notifications)
   const notificationBadge = useMemo(() => activeNotificationCount({ notifications: notificationsRecord }), [notificationsRecord])
-  // Open rows on Matching (catch-up Phase 33): the amber badge.
+  // Open rows on Intake's matching screen (catch-up Phases 33 and 34): the amber Intake badge.
   const intake = useAppStore((s) => s.intake)
-  const matchingBadge = useMemo(() => matchingAttentionCount({ intake }), [intake])
+  const intakeBadge = useMemo(() => matchingAttentionCount({ intake }), [intake])
 
   // The header line counts Lists as sessions and open sessions as free, read
   // from the same views the grid paints (no second derivation), and the day's
@@ -231,7 +228,6 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const exceptionCount = useMemo(() => billingAttentionCount({ billing }), [billing])
   // The ledger's checks, a held unmatched receipt among them (catch-up Phase 36): the amber Ledger badge.
   const ledgerCount = useMemo(() => ledgerAttentionCount({ billing }), [billing])
-  const integrationCount = useMemo(() => integrationAttentionCount({ integrations }), [integrations])
   // Live conflicts from today to the horizon (catch-up Phase 30): the amber Conflicts badge.
   const conflictCount = useMemo(() => openConflictCount({ schedule, masters, clock, appSettings }), [schedule, masters, clock, appSettings])
 
@@ -289,7 +285,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
 
   const SECTION_PATH: Record<NavSection, string> = {
     day: `/admin/day/${selectedDate}${sortMode === 'az' ? '?sort=az' : ''}`,
-    matching: '/admin/matching',
+    intake: '/admin/intake/matching',
     draftLists: '/admin/draft-lists',
     conflicts: '/admin/conflicts',
     notifications: '/admin/notifications',
@@ -297,7 +293,6 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     invoices: '/admin/invoices',
     billing: '/admin/billing',
     ledger: '/admin/ledger',
-    integrations: '/admin/integrations',
     masters: '/admin/masters',
     audit: '/admin/audit',
   }
@@ -309,11 +304,10 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         reviewBadge={reviewLists.length}
         billingBadge={exceptionCount}
         ledgerBadge={ledgerCount}
-        integrationBadge={integrationCount}
         conflictBadge={conflictCount}
         draftListBadge={draftListBadge}
         notificationBadge={notificationBadge}
-        matchingBadge={matchingBadge}
+        intakeBadge={intakeBadge}
         onNavigate={(next) => navigate(SECTION_PATH[next])}
       />
 

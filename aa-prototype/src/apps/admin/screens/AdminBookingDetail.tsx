@@ -11,6 +11,7 @@ import { BookingDetailBody, type PrepaymentOfficeLinks } from '../../../shared/b
 import { ageYears, formatDob, nhiBadge, locationName } from '../../../shared/format'
 import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
+import { listOriginText } from '../../../domain/lists/listOrigin'
 
 interface AdminBookingDetailProps {
   bookingId: string
@@ -95,9 +96,13 @@ export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLab
             <div style={{ fontSize: 14, color: neutral.slate, marginTop: 2 }}>
               {primary !== undefined ? procedureLabel(primary, masters.rvgGroups, 1) : 'Procedure to capture'} · {hospitalName}
             </div>
+            {/* Where its List came from (catch-up Phase 34; US-02.2.4), beside the Booking's own source in the body. */}
+            <div data-shot="booking-list-origin" data-origin={list.origin.kind} style={{ fontSize: 12.5, color: neutral.slate, marginTop: 2 }}>
+              List origin · {listOriginText(list.origin, (id) => locationName(id, masters.hospitals))}
+            </div>
             {fromRowId !== undefined && (
               <div style={{ marginTop: 4 }}>
-                <TextAction size="sm" flush shot="booking-from-hospital-row" onClick={() => navigate('/admin/matching', { state: { selectRowId: fromRowId } })} style={{ color: neutral.slate }}>
+                <TextAction size="sm" flush shot="booking-from-hospital-row" onClick={() => navigate('/admin/intake/matching', { state: { selectRowId: fromRowId } })} style={{ color: neutral.slate }}>
                   From hospital row {fromRowId}
                 </TextAction>
               </div>

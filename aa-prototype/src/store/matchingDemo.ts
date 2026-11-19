@@ -7,7 +7,11 @@
  *   already matched (bar).
  * - `officeMatchesHospitalRow`: the PWA office stand-in, which stages a row and
  *   decides it through `decideImportRow` with the derived suggestion, every
- *   difference ticked and no Contract or RVG code pick (FT-02.1, OQ-78).
+ *   difference ticked and no Contract or RVG code pick (FT-02.1, OQ-78). Its S1
+ *   choice (catch-up Phase 34) imports the St George's file as Admin Intake
+ *   does, decides the confident rows for the persona's Tue 28 Jul AM List, and
+ *   gives each Booking it created the office's rail answer, No contract · RVG
+ *   (D33: the RVG code stays the anaesthetist's). Exceptions stay with the office.
  *
  * Every row enters through `stageImportRows` (channel `download`); nothing here
  * writes a Booking any other way.
@@ -22,14 +26,18 @@ import {
   effectiveIncoming,
   sessionLabel,
   type HospitalDownloadSample,
+  type SuggestedDecision,
 } from '../domain/intake'
 import { APPT } from '../domain/integrations/messages'
 import { ANAE } from '../domain/seed/cast'
 import { FEED } from '../domain/integrations/feeds'
-import { ok, refuse, type Actor, type Outcome } from './mutate'
+import { ok, refuse, transaction, type Actor, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { OFFICE_SIMULATION_ACTOR } from './demoActors'
-import { decideImportRow, incomingKey, stageImportRows, type DecisionInput } from './matchingActions'
+import { decideImportRow, importHospitalDownload, incomingKey, stageImportRows, type DecisionInput } from './matchingActions'
+import { setProcedureContract } from './contractSelectionActions'
+import { CONTRACT } from '../domain/seed/contracts'
+import { projectedListId } from '../domain/slots'
 import { assessImportRow } from './matchingSelectors'
 import { findBookingByCorrelation, proceduresForBooking } from './selectors'
 
@@ -199,17 +207,36 @@ function newRowForList(state: AppState, listId: string): IncomingBookingFields |
 
 export type StandInChoice = { kind: 's1' } | { kind: 'list'; listId: string } | { kind: 'booking'; bookingId: string }
 
-/** Whether Sarah Mitchell (SAMPLE_STG R1) is already on Dr Souter's Tue 28 Jul AM List. */
-function sarahPlaced(state: AppState): boolean {
-  const r1 = SAMPLE_STG.rows[0]!
-  return Object.values(state.schedule.bookings).some((b) => {
-    const list = state.schedule.lists[b.listId]
-    return b.cancellation === undefined && list?.hospitalId === r1.hospitalId && list.dateISO === r1.dateISO && list.session === r1.session && state.masters.patients[b.patientId]?.nhi === r1.patient.nhi
+/** S1's List: Dr Souter's Tue 28 Jul AM at St George's (SAMPLE_STG R1 and R2). */
+export const S1_LIST_ID = projectedListId(ANAE.souter, '2026-07-28', 'AM')
+
+/** The St George's file's rows for S1's List: Sarah Mitchell (new) and Dylan Kereama (no change). */
+const S1_ROWS = SAMPLE_STG.rows.filter((r) => r.dateISO === '2026-07-28' && r.session === 'AM')
+
+/**
+ * The S1 rows the stand-in may still decide: each not yet staged, or open and
+ * confident (ready, with a create or match suggestion onto S1's List).
+ */
+function s1Pending(state: AppState): IncomingBookingFields[] {
+  return S1_ROWS.filter((fields) => {
+    const rows = Object.values(state.intake.rows).filter((r) => sameIncoming(r.incoming, fields))
+    if (rows.length === 0) return true
+    const open = rows.find((r) => r.status === 'open')
+    if (open === undefined) return false
+    const a = assessImportRow(state, open.id)
+    return a !== undefined && a.queue === 'ready' && confidentOnS1(state, a.suggestion)
   })
 }
 
+function confidentOnS1(state: AppState, suggestion: SuggestedDecision | undefined): boolean {
+  if (suggestion === undefined) return false
+  if (suggestion.kind === 'createBooking') return suggestion.listId === S1_LIST_ID
+  if (suggestion.kind === 'match') return state.schedule.bookings[suggestion.bookingId]?.listId === S1_LIST_ID
+  return false
+}
+
 export function standInRefusal(state: AppState, choice: StandInChoice): string | null {
-  if (choice.kind === 's1') return sarahPlaced(state) ? 'Already on your Tue 28 Jul AM List' : null
+  if (choice.kind === 's1') return s1Pending(state).length === 0 ? 'Nothing new from the hospital for your Lists' : null
   if (choice.kind === 'list') {
     const list = state.schedule.lists[choice.listId]
     if (list === undefined || list.state !== 'ACTIVE') return 'This List is not open for new Bookings'
@@ -229,16 +256,59 @@ export function standInRefusal(state: AppState, choice: StandInChoice): string |
 }
 
 /**
+ * S1 on the handset (catch-up Phase 34): the St George's file imported as Admin
+ * Intake does (33's dedupe), then, as `OFFICE_SIMULATION_ACTOR`, each confident
+ * row for S1's List decided with its suggestion, and each Booking it created
+ * given the rail's answer for a patient paying at the standard rate: No contract
+ * · RVG on every Procedure (never on a matched Booking). The file's other rows
+ * stay open for the office. One transaction: a refusal part way leaves nothing
+ * half-applied.
+ */
+export function officeImportsS1File(api: AppStoreApi): Outcome<{ created: string[]; patients: string[] }> {
+  const reason = standInRefusal(api.getState(), { kind: 's1' })
+  if (reason !== null) return refuse('standInRefused', reason)
+  return transaction(api, () => {
+    const imported = importHospitalDownload(api, OFFICE_SIMULATION_ACTOR, SAMPLE_STG.id)
+    if (!imported.ok) return imported
+    const created: string[] = []
+    const patients: string[] = []
+    for (const fields of S1_ROWS) {
+      const state = api.getState()
+      const row = Object.values(state.intake.rows).find((r) => r.status === 'open' && sameIncoming(r.incoming, fields))
+      if (row === undefined) continue
+      const a = assessImportRow(state, row.id)
+      const suggestion = a?.suggestion
+      if (a === undefined || a.queue !== 'ready' || suggestion === undefined || !confidentOnS1(state, suggestion)) continue
+      const input: DecisionInput =
+        suggestion.kind === 'match'
+          ? { kind: 'match', bookingId: suggestion.bookingId, fieldsApplied: suggestion.fieldsApplied }
+          : { kind: 'createBooking', listId: S1_LIST_ID }
+      const decided = decideImportRow(api, OFFICE_SIMULATION_ACTOR, row.id, input)
+      if (!decided.ok) return decided
+      if (input.kind !== 'createBooking' || decided.value.bookingId === undefined) continue
+      created.push(decided.value.bookingId)
+      patients.push(fields.patient.name)
+      for (const p of proceduresForBooking(api.getState(), decided.value.bookingId)) {
+        if (p.governingContractId !== undefined) continue
+        const set = setProcedureContract(api, OFFICE_SIMULATION_ACTOR, p.id, CONTRACT.noContractRvg)
+        if (!set.ok) return set
+      }
+    }
+    return ok({ created, patients })
+  })
+}
+
+/**
  * The hospital row arrives and the office matches it (PWA only): stage the row,
  * then `decideImportRow` as `OFFICE_SIMULATION_ACTOR` with the derived
- * suggestion, every difference ticked, no Contract or RVG code pick.
+ * suggestion, every difference ticked, no Contract or RVG code pick. (The S1
+ * choice is `officeImportsS1File`.)
  */
-export function officeMatchesHospitalRow(api: AppStoreApi, choice: StandInChoice): Outcome<{ bookingId: string; patient: string; where: string; hospital: string }> {
+export function officeMatchesHospitalRow(api: AppStoreApi, choice: Exclude<StandInChoice, { kind: 's1' }>): Outcome<{ bookingId: string; patient: string; where: string; hospital: string }> {
   const state = api.getState()
   const reason = standInRefusal(state, choice)
   if (reason !== null) return refuse('standInRefused', reason)
-  const fields =
-    choice.kind === 's1' ? SAMPLE_STG.rows[0]! : choice.kind === 'list' ? newRowForList(state, choice.listId) : updateRowFor(state, choice.bookingId)
+  const fields = choice.kind === 'list' ? newRowForList(state, choice.listId) : updateRowFor(state, choice.bookingId)
   if (fields === undefined) return refuse('notFound', 'Nothing to send')
   // A row already staged with these fields (the S1 row imported on Admin, say) is decided as it stands.
   const existing = Object.values(state.intake.rows).find((r) => r.status === 'open' && sameIncoming(r.incoming, fields))

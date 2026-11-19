@@ -10,7 +10,7 @@ import { TextAction } from '../../../shared/ui'
 export function StubResolveLink({ stub }: { stub: Stub }) {
   const navigate = useNavigate()
   return (
-    <TextAction size="sm" shot="stub-resolve-link" onClick={() => navigate('/admin/matching', { state: { selectRowId: stub.importRowId } })} style={{ flex: 'none' }}>
+    <TextAction size="sm" shot="stub-resolve-link" onClick={() => navigate('/admin/intake/matching', { state: { selectRowId: stub.importRowId } })} style={{ flex: 'none' }}>
       Resolve on Matching
     </TextAction>
   )

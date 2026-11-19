@@ -18,6 +18,7 @@ import type {
   DraftOrigin,
   List,
   ListKind,
+  ListOrigin,
   RecurringBooking,
   Session,
   Slot,
@@ -25,6 +26,7 @@ import type {
   WallTime,
 } from '../domain/types'
 import { LIST_KINDS } from '../domain/types'
+import { originForNewList } from '../domain/lists/listOrigin'
 import { enumerateDatesISO, horizonDatesBetween, horizonFor } from '../domain/clock'
 import { effectiveSlotTimes, isWallTime, slotDatesFor, slotIdFor } from '../domain/slots'
 import { statusFor } from '../domain/slotStatus'
@@ -163,6 +165,8 @@ export interface NewListFields {
   hospitalId: string
   surgeonId: string
   notes?: string
+  /** Where the List came from, from `originForNewList` (catch-up Phase 34; US-02.2.4). */
+  origin: ListOrigin
 }
 
 /**
@@ -194,6 +198,7 @@ export function placeListOnSlot(
     hospitalId: fields.hospitalId,
     surgeonId: fields.surgeonId,
     conflicts: [],
+    origin: fields.origin,
   }
   if (fields.notes !== undefined && fields.notes.trim() !== '') list.notes = fields.notes.trim()
   return {
@@ -203,7 +208,7 @@ export function placeListOnSlot(
       entityType: 'list',
       entityId: alloc.id,
       action: 'list.create',
-      after: { state: 'ACTIVE', slotId: slot.id, kind: list.kind, hospitalId: list.hospitalId, surgeonId: list.surgeonId },
+      after: { state: 'ACTIVE', slotId: slot.id, kind: list.kind, hospitalId: list.hospitalId, surgeonId: list.surgeonId, origin: list.origin },
       stampBookingId: null,
     },
   }
@@ -370,6 +375,8 @@ export interface AssignListFields {
   surgeonId: string
   kind: ListKind
   notes?: string
+  /** Phase 33's row path only: the origin its row gives. The office's own List is entered by hand. */
+  origin?: ListOrigin
 }
 
 /**
@@ -405,7 +412,7 @@ export function assignListToSlot(
   const metas: MutationMeta[] = []
   let listId = ''
   mutate(api, actor, metas, (s) => {
-    const placed = placeListOnSlot(s.counters, slot, fields)
+    const placed = placeListOnSlot(s.counters, slot, { ...fields, origin: fields.origin ?? originForNewList({ kind: 'office' }) })
     listId = placed.list.id
     metas.push(placed.meta)
     const ack = pairingAcknowledgement(s.officePrivate.pairingPreferences, slot.anaesthetistId, fields.surgeonId)

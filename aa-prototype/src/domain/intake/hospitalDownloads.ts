@@ -1,6 +1,7 @@
 /**
  * The sample hospital files the matching screen imports (catch-up Phase 33;
- * US-02.1.1, US-02.1.2). Pure fixtures in the `pdfSamples.ts` style.
+ * US-02.1.1, US-02.1.2). Pure fixtures, in the style of the rooms' PDF list
+ * samples (`pdfLists.ts`).
  *
  * OQ-13 is open: how each hospital provides its bookings, and which fields,
  * is not yet known, so these are labelled sample files (a "Sample file" badge

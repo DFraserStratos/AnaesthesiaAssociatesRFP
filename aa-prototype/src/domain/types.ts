@@ -56,6 +56,8 @@ export type ImportBatchId = string
 export type ImportRowId = string
 /** A stub on a List (catch-up Phase 33a; DM-58): `STB0001`, never the NHI or the hospital's ref. */
 export type StubId = string
+/** A rooms' PDF list as received (catch-up Phase 34; DM-61): `PDL0001`. */
+export type PdfListId = string
 
 /**
  * A day's sessions: AM and PM, generated for every active anaesthetist, and
@@ -708,6 +710,19 @@ export interface DraftTrail {
 }
 
 /**
+ * Where a List came from (catch-up Phase 34; US-02.2.4, DM-70): a surgeon's
+ * rooms' PDF with the address it arrived from, the hospital's list, entry by
+ * hand, or a recurring booking. Set when the List is created
+ * (`originForNewList`, `domain/lists/listOrigin.ts`) and kept after
+ * assignment, a return to the office or a re-date. Separate from `DraftTrail`.
+ */
+export type ListOrigin =
+  | { kind: 'pdf'; senderEmail: string; pdfListId?: PdfListId }
+  | { kind: 'hospital'; hospitalId: HospitalId }
+  | { kind: 'manual' }
+  | { kind: 'recurring' }
+
+/**
  * The fields every List has, Draft Lists included. Every List has exactly one
  * hospital (or AA rooms) and one surgeon (US-01.3.1, EP-01; catch-up Phase 31
  * made both required).
@@ -721,6 +736,8 @@ export interface ListBase {
   hospitalId: HospitalId
   surgeonId: SurgeonId
   conflicts: ListConflict[]
+  /** Where the List came from (catch-up Phase 34; US-02.2.4). */
+  origin: ListOrigin
   /** Office clears of a live conflict (catch-up Phase 30); absent reads as none. */
   conflictClears?: ConflictClear[]
   /**
@@ -2019,9 +2036,10 @@ export interface IntegrationMessage {
  * How a row arrived (DM-34): `download` is a hospital's file imported through
  * an integration (app copy says "import", US-02.1.1; no sync, D52),
  * `manualSheet` a daily sheet the office keys, `feedMessage` the Future-scope
- * HL7/FHIR simulator's message.
+ * HL7/FHIR simulator's message, `pdfList` a surgeon's rooms' PDF list sent to
+ * matching (catch-up Phase 34; source `rooms`).
  */
-export type ImportChannel = 'download' | 'manualSheet' | 'feedMessage'
+export type ImportChannel = 'download' | 'manualSheet' | 'feedMessage' | 'pdfList'
 
 /**
  * Whose text and booking the row is (OQ-108 answered, D51): the hospital's,
@@ -2120,6 +2138,72 @@ export interface ImportBatch {
   rowIds: ImportRowId[]
   /** Rows already imported with identical fields, skipped. */
   skippedCount: number
+  /** Channel `pdfList` only (catch-up Phase 34): the PDF list it came from and the address it arrived from. */
+  pdfListId?: PdfListId
+  senderEmail?: string
+}
+
+// ---------------------------------------------------------------------------
+// The rooms' PDF lists (catch-up Phase 34; FT-02.2, US-02.2.1, DM-61)
+// ---------------------------------------------------------------------------
+
+/** The fields of a PDF list row the office may correct before sending (never the wording, US-02.5.7). */
+export type PdfRowField = 'nhi' | 'name' | 'dobISO' | 'scheduledTime' | 'ethnicityCode'
+
+/** One row as read from the PDF (the reading is simulated: no OCR). */
+export interface PdfRowAsRead {
+  nhi?: string
+  name: string
+  dobISO?: IsoDate
+  scheduledTime?: WallTime
+  ethnicityCode?: string
+  /** The rooms' wording, exactly as printed; never corrected. */
+  procedureText: string
+}
+
+export interface PdfRowCorrection {
+  field: PdfRowField
+  from: string
+  to: string
+  atISO: IsoDateTime
+  by: string
+}
+
+export interface PdfListRow {
+  id: string
+  asRead: PdfRowAsRead
+  /** In the order made; the latest per field wins (`effectivePdfRow`). */
+  corrections: PdfRowCorrection[]
+}
+
+/**
+ * A surgeon's rooms' PDF list as the office received it (DM-61): the file, the
+ * sending surgeon, the address it arrived from, when, the List it suggests,
+ * its status and the rows as read with each correction. Sent to matching, its
+ * rows become import rows with the rooms as their source. No room record (17b).
+ */
+export interface SurgeonPdfList {
+  id: PdfListId
+  /** The sample it was uploaded from (the reading is simulated). */
+  sampleId: string
+  file: { name: string; facsimile: string }
+  surgeonId: SurgeonId
+  /** The email address the PDF arrived from, entered with the upload (US-02.2.4). */
+  senderEmail: string
+  hospitalId: HospitalId
+  subject: string
+  receivedAtISO: IsoDateTime
+  receivedBy: string
+  /** The List it suggests: whose session, which day, which session. */
+  target: { anaesthetistId: AnaesthetistId; dateISO: IsoDate; session: Session }
+  status: 'received' | 'sent'
+  /** An earlier sent list for the same surgeon, hospital, date and session (our reading, DM-61). */
+  replacesId?: PdfListId
+  /** Set on send: the import batch its rows went to (absent when every row was unchanged). */
+  batchId?: ImportBatchId
+  sentAtISO?: IsoDateTime
+  sentBy?: string
+  rows: PdfListRow[]
 }
 
 /** Why an incoming booking could not become a Booking. A union so another cause is one member more. */

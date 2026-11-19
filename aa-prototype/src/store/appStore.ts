@@ -34,6 +34,8 @@ import type {
   ImportRowId,
   Stub,
   StubId,
+  PdfListId,
+  SurgeonPdfList,
   Invoice,
   InvoiceLine,
   LedgerDisbursement,
@@ -138,6 +140,8 @@ export interface IntakeSlice {
   rows: Record<ImportRowId, ImportRow>
   /** Stubs on Lists for rows waiting at intake (catch-up Phase 33a; DM-58): never Bookings. */
   stubs: Record<StubId, Stub>
+  /** The rooms' PDF lists as received (catch-up Phase 34; DM-61). */
+  pdfLists: Record<PdfListId, SurgeonPdfList>
 }
 
 export interface ShellSlice {
@@ -385,8 +389,12 @@ export const PERSIST_KEY = 'aa-demo'
  *  v60: Wave 2 join, Lane A's 36 (v59) joined with Lane B's 17b (v59): one past the higher.
  *  v61: catch-up Phase 37, Xero mirror resilience: `billing.xeroQueue` and `billing.xeroDivergences`, `xero.remittances`
  *  and `xero.bankLines` (empty in the seed); ledger disbursements carry `idempotencyKey` and `detectedBy`, Xero bill
- *  payments `idempotencyKey`; the pair's and the transfer's fault fields are gone (a failed call is a queue item). Reseeds on load. */
-export const PERSIST_VERSION = 61
+ *  payments `idempotencyKey`; the pair's and the transfer's fault fields are gone (a failed call is a queue item). Reseeds on load.
+ *  v61: catch-up Phase 34, the rooms' PDF lists and where a List came from: `intake.pdfLists` (seeded PDL0001, Mr
+ *  Okafor's list as received; counter `pdfList`), every List's `origin` (two pinned: a rooms' PDF with its sender, the
+ *  hospital's list). Reseeds on load.
+ *  v62: the Wave 3 sync of 34 into lane/a (Phase 37 and Phase 34 both took v61). Reseeds on load. */
+export const PERSIST_VERSION = 62
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {} }
@@ -400,7 +408,7 @@ export function emptyIntegrationsSlice(): IntegrationsSlice {
 
 /** The intake slice: seeded empty, the presenter imports or a trigger delivers (catch-up Phase 33). */
 export function emptyIntakeSlice(): IntakeSlice {
-  return { batches: {}, rows: {}, stubs: {} }
+  return { batches: {}, rows: {}, stubs: {}, pdfLists: {} }
 }
 
 /** The seeded intake slice: one waiting no-NHI row and its stub on a List (catch-up Phase 33a). */

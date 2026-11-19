@@ -442,7 +442,7 @@ test('the 3-procedure Booking loads from the Demo sheet, and the hospital feed c
   await page.screenshot({ path: 'visual/shots/pwa-23-feed-changes-primary.png' })
 })
 
-test('the hospital row arrives and the office matches it, from the Lists Demo sheet (catch-up Phase 33)', async ({ page }) => {
+test('the hospital file is imported and my booking matched, from the Lists Demo sheet (catch-up Phases 33 and 34)', async ({ page }) => {
   await page.goto('/mobile/lists')
   await page.evaluate(() => window.localStorage.clear())
   await page.goto('/mobile/lists')
@@ -450,10 +450,11 @@ test('the hospital row arrives and the office matches it, from the Lists Demo sh
   await page.locator('[data-shot="pwa-demo-actions"]').click()
   const row = page.locator('[data-shot="pwa-demo-action-matching-office-matches-row"]')
   await expect(row).toBeVisible()
-  // "Fire hospital message" is bar only now: a row on a handset has no office to decide it.
+  await expect(row).toContainText('Hospital file imported and my booking matched')
+  // "Fire hospital message" is on the Future-scope surface only: never on a handset.
   await expect(page.locator('[data-shot="pwa-demo-action-fire-hospital-message"]')).toHaveCount(0)
   await row.getByRole('button', { name: 'Run' }).click()
-  await expect(row.getByRole('status')).toContainText("St George's sent Sarah Mitchell's booking and the office matched it.")
+  await expect(row.getByRole('status')).toContainText("The office imported St George's file and matched it. Sarah Mitchell is now on your Tue 28 Jul AM List")
   await page.screenshot({ path: 'visual/shots/pwa-24-office-matches-row.png' })
   await page.keyboard.press('Escape')
 
@@ -462,4 +463,11 @@ test('the hospital row arrives and the office matches it, from the Lists Demo sh
   await settleSlide(page)
   await expect(page.getByText('Sarah Mitchell').first()).toBeVisible()
   await expect(page.getByText('lap appy ?conv to open').first()).toBeVisible()
+  // Her Booking: the wording as received, No contract · RVG from the office, the RVG code hers to add.
+  await page.getByText('Sarah Mitchell').first().click()
+  await settleSlide(page)
+  await expect(page.getByText('lap appy ?conv to open').first()).toBeVisible()
+  await expect(page.getByText(/No contract/).first()).toBeVisible()
+  await page.locator('[data-shot="pwa-demo-actions"]').click()
+  await expect(page.locator('[data-shot="pwa-demo-action-matching-office-matches-row"]').getByText('Nothing new from the hospital for your Lists')).toBeVisible()
 })

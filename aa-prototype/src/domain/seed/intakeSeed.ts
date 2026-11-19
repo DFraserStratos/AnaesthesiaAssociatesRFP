@@ -10,7 +10,8 @@
  * starts at 2.
  */
 
-import type { ImportBatch, ImportRow, Stub } from '../types'
+import type { ImportBatch, ImportRow, Stub, SurgeonPdfList } from '../types'
+import { buildFacsimile, PDF_LIST_SAMPLES } from '../intake/pdfLists'
 import { DEMO_TODAY } from '../clock'
 import { ANAE, HOSP } from './cast'
 import { projectedListId } from '../slots'
@@ -28,7 +29,37 @@ export const SEED_STUB = {
 const RECEIVED_AT = `${DEMO_TODAY}T07:30:00`
 const SOURCE_LABEL = 'Southern Cross theatre list, Tue 4 Aug'
 
-export function seededIntake(): { batches: Record<string, ImportBatch>; rows: Record<string, ImportRow>; stubs: Record<string, Stub> } {
+/**
+ * The seeded PDF list (catch-up Phase 34; DM-61): Mr Okafor's Wed 5 Aug AM
+ * list, as received from the practice PA's address, not yet corrected or sent.
+ * PDL0001; the `pdfList` counter starts at 2. Its target holds no List, so no
+ * scripted List is touched.
+ */
+export const SEED_PDF_LIST = {
+  id: 'PDL0001',
+  sampleId: 'PDF-OKAFOR-0805',
+} as const
+
+export function seededPdfLists(): Record<string, SurgeonPdfList> {
+  const sample = PDF_LIST_SAMPLES.find((s) => s.id === SEED_PDF_LIST.sampleId)!
+  const list: SurgeonPdfList = {
+    id: SEED_PDF_LIST.id,
+    sampleId: sample.id,
+    file: { name: sample.fileName, facsimile: buildFacsimile(sample) },
+    surgeonId: sample.surgeonId,
+    senderEmail: sample.defaultSender,
+    hospitalId: sample.hospitalId,
+    subject: sample.subject,
+    receivedAtISO: `${DEMO_TODAY}T07:10:00`,
+    receivedBy: 'Kirsty W.',
+    target: { ...sample.target },
+    status: 'received',
+    rows: sample.rows.map(({ id, ...asRead }) => ({ id, asRead, corrections: [] })),
+  }
+  return { [list.id]: list }
+}
+
+export function seededIntake(): { batches: Record<string, ImportBatch>; rows: Record<string, ImportRow>; stubs: Record<string, Stub>; pdfLists: Record<string, SurgeonPdfList> } {
   const row: ImportRow = {
     id: SEED_STUB.rowId,
     batchId: SEED_STUB.batchId,
@@ -67,5 +98,5 @@ export function seededIntake(): { batches: Record<string, ImportBatch>; rows: Re
     createdAtISO: RECEIVED_AT,
     status: 'standing',
   }
-  return { batches: { [batch.id]: batch }, rows: { [row.id]: row }, stubs: { [stub.id]: stub } }
+  return { batches: { [batch.id]: batch }, rows: { [row.id]: row }, stubs: { [stub.id]: stub }, pdfLists: seededPdfLists() }
 }

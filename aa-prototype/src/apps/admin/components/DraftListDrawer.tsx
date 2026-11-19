@@ -42,6 +42,7 @@ import { withStubsInTimeOrder } from '../../../domain/intake/stubs'
 import { useListStubs } from '../../../store/stubSelectors'
 import { StubRow } from '../../../shared/stubs'
 import { StubResolveLink } from './StubResolveLink'
+import { ListOriginRow } from './ListOriginRow'
 
 type Sheet = 'none' | 'assign' | 'edit' | 'redate' | 'remove' | 'history' | 'addBooking' | { move: string } | { assignTo: string }
 
@@ -156,6 +157,7 @@ function DraftBody({
               <DefRow label="Surgeon">{masters.surgeons[list.surgeonId]?.name ?? list.surgeonId}</DefRow>
               <DefRow label="Kind">{LIST_KIND_LABELS[list.kind].label}</DefRow>
               {list.notes !== undefined && list.notes.trim() !== '' && <DefRow label="Note">{list.notes}</DefRow>}
+              <ListOriginRow list={list} />
               {trail !== undefined && (
                 <DefRow label="Came from">
                   {trail.origin === 'request' && trail.source !== undefined ? `${ORIGIN_LABELS.request} · ${SOURCE_LABELS[trail.source]}` : ORIGIN_LABELS[trail.origin]}

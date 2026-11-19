@@ -43,6 +43,7 @@ import { contractPickRefusal } from './contractSelectionActions'
 import { PREPAID_OFFICE_ONLY_MESSAGE, contractAllowedOn } from '../domain/billing/contractRail'
 import { railContextForList, railMastersOf } from './selectors'
 import { autoSendPrepayments } from './prepaymentActions'
+import { originForNewList } from '../domain/lists/listOrigin'
 
 // ---------------------------------------------------------------------------
 // createBooking
@@ -301,6 +302,8 @@ export function addPostOpAddendum(
       kind: originalList.kind,
       hospitalId: originalList.hospitalId,
       surgeonId: originalList.surgeonId,
+      // A List made from another keeps the origin of the List it came from (US-02.2.4 build choice).
+      origin: originForNewList({ kind: 'derived', from: originalList }),
     })
     listId = placed.list.id
     metas.push(placed.meta)

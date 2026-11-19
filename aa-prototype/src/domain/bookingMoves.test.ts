@@ -27,7 +27,7 @@ function list(id: string, anaesthetistId: string, extra: Partial<AssignedList> =
   const session = extra.session ?? 'AM'
   return {
     id, slotId: slotIdFor(anaesthetistId, DAY, session), anaesthetistId, dateISO: DAY, session,
-    state: 'ACTIVE', kind: 'private', hospitalId: 'H-STG', surgeonId: 'S-REID', conflicts: [], ...extra,
+    state: 'ACTIVE', kind: 'private', hospitalId: 'H-STG', surgeonId: 'S-REID', conflicts: [], origin: { kind: 'manual' as const }, ...extra,
   }
 }
 
