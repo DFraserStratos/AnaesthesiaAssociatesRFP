@@ -535,6 +535,8 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - "Bulk remittances are matched in Xero, not by the engine."
 - "Approval stays on Review, one path with all its checks; the monitor shows what is waiting and takes
   you there."
+- "Everything after setup is an event on the Procedure, reviewed once and invoiced in the next run."
+- "Extra work after a fixed price is billed by hand, by the anaesthetist or the office."
 - "Nothing comes across because it exists in Solutions Plus."
 - "This is a candidate design we would validate during discovery."
 
@@ -552,6 +554,9 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - "The system emails the hospital (or the surgeon's office) automatically." (The office drafts it on
   demand and sends it from its own mail client, OQ-82.)
 - "The app replaces the emailed lists." (The rooms' emailed Lists stay; OQ-124 is open.)
+- "The anaesthetist raises a post-op Booking." (A post-op charge is an event on the Procedure, never a
+  new Booking.)
+- "The system invoices the balance." (Nothing is billed automatically after a prepaid or fixed price.)
 
 ## Prototype readiness
 
@@ -569,7 +574,7 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   (catch-up Phase 22)
 - The anaesthetist's edit window to `AUTHORISED`, the main view from today, and search by patient
   name, NHI or date over months of history (catch-up Phase 38a)
-- Pre-payment from a prepaid Contract (catch-up Phase 27), held in the AA Holding account and transferred to the anaesthetist when the List is authorised (catch-up Phase 27a), post-op addendum and billing monitor with per-booking isolation and retry (Phase 09); since catch-up Phase 37 the monitor is grouped by anaesthetist, sorts and filters (one anaesthetist, hospital, dates, **Problems only**, all in the URL), and lists each anaesthetist's Lists awaiting approval with **Open in Review** (approval itself stays on Review)
+- Pre-payment from a prepaid Contract (catch-up Phase 27), held in the AA Holding account and transferred to the anaesthetist when the List is authorised (catch-up Phase 27a), events and additional invoices (office and anaesthetist, catch-up Phase 38b) and billing monitor with per-booking isolation and retry (Phase 09); since catch-up Phase 37 the monitor is grouped by anaesthetist, sorts and filters (one anaesthetist, hospital, dates, **Problems only**, all in the URL), and lists each anaesthetist's Lists awaiting approval with **Open in Review** (approval itself stays on Review)
 - Contract locked at authorise, the run and the invoice document reading only the lock, Regenerate
   from locked data, and each Contract's History tab (catch-up Phase 25)
 - Xero collection/payable pairs, payments, reconciliation poll, payables, live balances and GST (Phase 10)

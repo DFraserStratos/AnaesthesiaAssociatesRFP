@@ -15,8 +15,8 @@
  *   by-hand List adds no sender.
  * - **A recurring booking's List** (`originForNewList({ kind: 'recurring' })`):
  *   records `recurring`, with no sender.
- * - **A List made from another List** (a Booking moved to a free session, the
- *   post-op addendum): keeps the origin of the List it came from.
+ * - **A List made from another List** (a Booking moved to a free session):
+ *   keeps the origin of the List it came from.
  * - **An office-logged request** whose source is a PDF records `pdf` with the
  *   "Sent from" address typed on the request form; any other request, or a PDF
  *   request with no address, is entered by hand.
@@ -34,7 +34,7 @@ export type NewListCause =
   | { kind: 'importRow'; source: ImportSource; hospitalId: HospitalId; senderEmail?: string; pdfListId?: PdfListId }
   /** A recurring booking projects the List, or stands for its closed session as a Draft List. */
   | { kind: 'recurring' }
-  /** A new List made from another (a moved Booking's new List, the post-op addendum). */
+  /** A new List made from another (a moved Booking's new List). */
   | { kind: 'derived'; from: { origin: ListOrigin } }
 
 /** The one helper every List creation path calls. */

@@ -26,8 +26,6 @@ export const FIELD_LABELS: Record<string, string> = {
   scheduledTime: 'Scheduled time',
   completed: 'Completed',
   completedAtISO: 'Completed at',
-  bookingType: 'Booking type',
-  addendumOfBookingId: 'Addendum of booking',
   correlationRef: 'Appointment reference',
   cancellation: 'Cancellation',
   cancelled: 'Cancelled',
@@ -40,6 +38,13 @@ export const FIELD_LABELS: Record<string, string> = {
   lastModifiedAtISO: 'Last modified at',
 
   // --- Procedure -----------------------------------------------------------
+  // Catch-up Phase 38b: events on a Procedure and the additional invoice.
+  occurredOnISO: 'Date of the charge',
+  lines: 'Lines',
+  party: 'Billed to',
+  eventRaisedBy: 'Raised by',
+  originalInvoiceNumber: 'Original invoice',
+  eventId: 'Event',
   bookingId: 'Booking',
   description: 'Description',
   // Catch-up Phase 20a (US-02.5.7): the one procedure text, as received.

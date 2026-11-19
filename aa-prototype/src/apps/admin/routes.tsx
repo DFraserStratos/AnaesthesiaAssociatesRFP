@@ -198,8 +198,10 @@ export function AdminBookingDetailRoute() {
 
 export function AdminReviewQueueRoute() {
   const navigate = useNavigate()
+  const { actor } = useAdminOutlet()
   return (
     <ReviewQueue
+      actor={actor}
       onOpen={(listId) => navigate(`/admin/review/${listId}`)}
       onViewInvoices={() => navigate('/admin/invoices')}
     />

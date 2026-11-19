@@ -7,11 +7,19 @@ import { invoiceDeliveryLabel, layoutShortLabel } from '../../../domain/billing'
 import { Card, Eyebrow, PageHeader, Pill, TextAction } from '../../../shared/ui'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 import type { Actor } from '../../../store'
-import { billedLists, invoiceAddresseeName, invoiceCountsByList, isBackdropInvoice, useAppStore, openBillingExceptions } from '../../../store'
+import { billedLists, invoiceAddresseeName, invoiceCountsByList, isBackdropInvoice, originalInvoiceFor, useAppStore, openBillingExceptions } from '../../../store'
+import { ADDITIONAL_INVOICE_COPY } from '../../../shared/procedureEventCopy'
 import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm, plural } from '../../../shared/format'
 import { listShortLabel, listSourceLabels } from '../util'
 import { InvoiceDocument } from './InvoiceDocument'
 import { PrepaymentApprovalStrip } from '../components/PrepaymentApprovalStrip'
+
+/** The Kind column's words (catch-up Phase 38b; Phase 39 adds the credit note). */
+const INVOICE_KIND_LABEL: Record<Invoice['kind'], string> = {
+  standard: 'Invoice',
+  prePayment: 'Prepayment',
+  additional: 'Additional',
+}
 
 interface InvoicesScreenProps {
   actor: Actor
@@ -29,6 +37,7 @@ interface InvoicesScreenProps {
  */
 export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesScreenProps) {
   const billing = useAppStore((s) => s.billing)
+  const originalOf = (invoice: Invoice) => originalInvoiceFor({ billing }, invoice.id)
   const schedule = useAppStore((s) => s.schedule)
   const masters = useAppStore((s) => s.masters)
 
@@ -128,11 +137,11 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
           No invoices yet. Authorise a submitted list and the billing run raises its invoices immediately.
         </div>
       ) : (
-        <TableShell testId="invoice-list-table-shell" label="Invoices" density="compact" minWidth={1380}>
+        <TableShell testId="invoice-list-table-shell" label="Invoices" density="compact" minWidth={1460}>
             <thead>
               <tr>
-                {['Number', 'Patient / booking', 'Anaesthetist', 'List', 'List date', 'Raised', 'Counterparty', 'Layout', 'Total', 'Delivery', ''].map((h, i) => (
-                  <Th key={h === '' ? 'view' : h} align={i === 8 ? 'right' : 'left'} {...(i === 0 || i >= 4 ? { nowrap: true } : {})}>
+                {['Number', 'Kind', 'Patient / booking', 'Anaesthetist', 'List', 'List date', 'Raised', 'Counterparty', 'Layout', 'Total', 'Delivery', ''].map((h, i) => (
+                  <Th key={h === '' ? 'view' : h} align={h === 'Total' ? 'right' : 'left'} {...(i <= 1 || i >= 5 ? { nowrap: true } : {})}>
                     {h}
                   </Th>
                 ))}
@@ -149,7 +158,14 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                       : 'Booking time not set'
                 return (
                   <ClickableRow key={invoice.id} onOpen={() => onSelect(invoice.id)}>
-                  <Td mono bold nowrap>{invoice.invoiceNumber}</Td>
+                  <Td mono bold nowrap>
+                    {invoice.invoiceNumber}
+                    {/* An additional invoice names its original (catch-up Phase 38b). */}
+                    {invoice.kind === 'additional' && originalOf(invoice) !== undefined && (
+                      <div data-shot="invoice-list-additional-to" style={{ marginTop: 2, fontSize: 11.5, fontWeight: 400, color: neutral.mist }}>{ADDITIONAL_INVOICE_COPY.additionalTo(originalOf(invoice)!.invoiceNumber)}</div>
+                    )}
+                  </Td>
+                  <Td nowrap><span data-shot="invoice-list-kind" data-kind={invoice.kind}>{INVOICE_KIND_LABEL[invoice.kind]}</span></Td>
                   <Td>
                     {booking !== undefined && list !== undefined ? (
                       <Link

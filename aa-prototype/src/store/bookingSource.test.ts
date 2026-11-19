@@ -7,14 +7,11 @@
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
-import { addPostOpAddendum, createBooking } from './bookingActions'
-import { authoriseList, submitList } from './lifecycle'
+import { createBooking } from './bookingActions'
 import { decideImportRow, importHospitalDownload } from './matchingActions'
-import { bookingsForList } from './selectors'
 import type { Actor } from './mutate'
 import { ANAE, HOSP, SEED_LIST_IDS, SEED_MARKERS, buildSeed } from '../domain/seed'
 import type { BookingSource } from '../domain/types'
-import { projectedListId } from '../domain/slots'
 
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -23,10 +20,6 @@ const SOURCES: readonly BookingSource[] = ['hospitalDownload', 'surgeonPdf', 'ad
 
 function store(): BoundAppStore {
   return createAppStore()
-}
-
-function newest(api: BoundAppStore, listId: string) {
-  return bookingsForList(api.getState(), listId).sort((a, b) => a.id.localeCompare(b.id)).at(-1)
 }
 
 describe('creation paths stamp their source', () => {
@@ -64,31 +57,6 @@ describe('creation paths stamp their source', () => {
     expect(api.getState().schedule.bookings[res.value.bookingId ?? '']?.source).toBe('hospitalDownload')
   })
 
-  it('the post-op addendum follows the actor: admin for the office (interim until Phase 39)', () => {
-    const api = store()
-    const tue14 = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
-    const original = bookingsForList(api.getState(), tue14)[0]!.id
-    expect(submitList(api, OFFICE, tue14).ok).toBe(true)
-    expect(authoriseList(api, OFFICE, tue14).ok).toBe(true)
-    const added = addPostOpAddendum(api, OFFICE, original)
-    if (!added.ok) throw new Error(added.message)
-    expect(api.getState().schedule.bookings[added.value.bookingId]?.source).toBe('admin')
-    expect(newest(api, added.value.listId)?.id).toBe(added.value.bookingId)
-  })
-})
-
-describe('the post-op addendum, anaesthetist actor', () => {
-  it('stamps anaesthetistAdHoc when the anaesthetist adds it', () => {
-    const api = store()
-    const tue14 = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
-    const original = bookingsForList(api.getState(), tue14)[0]!.id
-    expect(submitList(api, OFFICE, tue14).ok).toBe(true)
-    expect(authoriseList(api, OFFICE, tue14).ok).toBe(true)
-    const sharma: Actor = { who: 'Dr Priya Sharma', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.sharma }
-    const added = addPostOpAddendum(api, sharma, original)
-    if (!added.ok) throw new Error(added.message)
-    expect(api.getState().schedule.bookings[added.value.bookingId]?.source).toBe('anaesthetistAdHoc')
-  })
 })
 
 describe('the seed source rule', () => {

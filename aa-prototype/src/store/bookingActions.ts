@@ -26,25 +26,20 @@ import {
   type Outcome,
   withChangeSet,
 } from './mutate'
-import type { AppState, AppStoreApi } from './appStore'
+import type { AppStoreApi } from './appStore'
 import { editRefusal, getBooking } from './lifecycle'
 import { payerFromInput, payerInputRefusal, type PayerInput } from './payerActions'
 import { isBlankText, procedureTextOf, refreshedInvoiceDescriptionFor } from '../domain/billing/procedureStack'
 import { payerForNewProcedure } from '../domain/billing/procedurePayer'
 import { upsertPatient, type PatientIntakeDetails } from './intake'
-import { listInSlot, proceduresForBooking, slotFor } from './selectors'
-import { isOpenSlot } from '../domain/slotStatus'
+import { proceduresForBooking } from './selectors'
 import { rvgGroupPickRefusal } from '../domain/billing/rvgGroups'
 import { claimsAuditView, reconcileClaims } from '../domain/billing/modifiers'
 import { modifierFactsFor } from './modifierFacts'
-import { placeListOnSlot } from './slotActions'
 import { fillFromContract } from '../domain/billing/startingValues'
-import { isRvgKind } from '../domain/billing/contracts'
 import { contractPickRefusal } from './contractSelectionActions'
-import { PREPAID_OFFICE_ONLY_MESSAGE, contractAllowedOn } from '../domain/billing/contractRail'
-import { railContextForList, railMastersOf } from './selectors'
+import { PREPAID_OFFICE_ONLY_MESSAGE } from '../domain/billing/contractRail'
 import { autoSendPrepayments } from './prepaymentActions'
-import { originForNewList } from '../domain/lists/listOrigin'
 
 // ---------------------------------------------------------------------------
 // createBooking
@@ -235,175 +230,6 @@ function createBookingUnscoped(
   // With approval off, a prepaid Booking created ready is sent at once (catch-up Phase 27).
   autoSendPrepayments(api, bookingId)
   return ok({ bookingId, patientId })
-}
-
-// ---------------------------------------------------------------------------
-// addPostOpAddendum
-// ---------------------------------------------------------------------------
-
-/**
- * Post-op addendum (B8; Phase 09) — a post-procedure charge against a
- * billed/locked episode (e.g. an HDU review, pain consult, nerve catheter).
- * The RFP's immutability answer: the original Booking stays LOCKED; the addendum
- * is a NEW linked Booking (`bookingType: 'postOpAddendum'`, `addendumOfBookingId`) that
- * runs its own capture -> submit -> authorise -> bill cycle.
- *
- * It goes on a NEW List in the original anaesthetist's open session today (AM
- * before PM): a List of its own, because submission is completion-gated for
- * the whole List, so a shared List would block on incomplete siblings or bill
- * them together. The List copies the original List's hospital, surgeon and
- * kind and is created with the Booking in one commit (catch-up Phase 28:
- * empty sessions are no longer Lists). INTERIM until Phase 38b replaces the
- * addendum Booking with an additional invoice. Refused `noOpenSession` when
- * neither of today's sessions is open.
- * The patient is reused; the billing setup is inherited from the original's
- * primary procedure, and the addendum's Procedure is its own Booking's primary. Audited `booking.create` + `procedure.create`; original untouched.
- */
-export function addPostOpAddendum(
-  api: AppStoreApi,
-  actor: Actor,
-  originalBookingId: string,
-): Outcome<{ bookingId: string; listId: string }> {
-  const state = api.getState()
-  const found = getBooking(state, originalBookingId)
-  if (found === undefined) return refuse('notFound', 'Booking not found.')
-  const { booking: original, list: originalList } = found
-
-  if (originalList.state !== 'AUTHORISED') {
-    return refuse(
-      'notAuthorised',
-      'A post-op addendum is only added to a locked (authorised) episode. The original Booking is not authorised yet.',
-    )
-  }
-
-  const anaesthetistId = originalList.anaesthetistId
-  const todayISO = state.clock.todayISO
-  const target = (['AM', 'PM'] as const)
-    .map((session) => slotFor(state, anaesthetistId, todayISO, session))
-    .find((slot) => slot !== undefined && isOpenSlot(slot, listInSlot(state, slot.id), state.masters.slotStatuses))
-  if (target === undefined) {
-    return refuse(
-      'noOpenSession',
-      "No free session today for this anaesthetist to hold the post-op addendum. Free one of today's sessions first.",
-    )
-  }
-  // The new List is ACTIVE and the original anaesthetist's: the usual edit rights apply to it.
-  const rights = editRefusal(actor, { ...originalList, state: 'ACTIVE' })
-  if (rights !== null) return rights
-
-  const originals = proceduresForBooking(state, originalBookingId)
-  const first = originals.find((p) => p.isPrimary) ?? originals[0]
-
-  let bookingId = ''
-  let listId = ''
-  const metas: MutationMeta[] = []
-  mutate(api, actor, metas, (s) => {
-    const placed = placeListOnSlot(s.counters, target, {
-      // The addendum copies the original List's hospital and surgeon, so the pairing rule holds (US-01.3.1).
-      kind: originalList.kind,
-      hospitalId: originalList.hospitalId,
-      surgeonId: originalList.surgeonId,
-      // A List made from another keeps the origin of the List it came from (US-02.2.4 build choice).
-      origin: originForNewList({ kind: 'derived', from: originalList }),
-    })
-    listId = placed.list.id
-    metas.push(placed.meta)
-    let counters = placed.counters
-    const bookingAlloc = allocateId(counters, 'booking')
-    counters = bookingAlloc.counters
-    bookingId = bookingAlloc.id
-    const procAlloc = allocateId(counters, 'procedure')
-    counters = procAlloc.counters
-    const procedureId = procAlloc.id
-    const atISO = clockISO(s.clock)
-
-    const booking: Booking = {
-      id: bookingId,
-      listId,
-      patientId: original.patientId,
-      completed: false,
-      bookingType: 'postOpAddendum',
-      addendumOfBookingId: originalBookingId,
-      // Interim until Phase 39 replaces the addendum: the source follows the actor.
-      source: actor.role === 'office' ? 'admin' : 'anaesthetistAdHoc',
-      lastModifiedBy: actor.who,
-      lastModifiedAtISO: atISO,
-    }
-
-    // The same episode's payer, by the one copy rule over the source Booking's Procedures (catch-up Phase 22a; until 38b makes the addendum an event).
-    const procedure: Procedure = {
-      id: procedureId,
-      bookingId,
-      payer: payerForNewProcedure(proceduresForBooking(s, originalBookingId), s.masters.contracts, original.patientId),
-      procedureText: null,
-      invoiceDescription: null,
-      isPrimary: true,
-      modifierClaims: [],
-      removedModifierIds: [],
-    }
-    // The same episode's Contract (INTERIM until Phase 38b's additional
-    // invoice): an RVG-kind Contract is copied (the payer by the copy rule); a
-    // fixed, open or prepaid one is not (it is the whole price of the item it
-    // was chosen for, and a post-op event is never prepaid), so the addendum
-    // then needs an invoice destination. The post-op event bills its own
-    // B/T/M: it is its own Booking, so its one Procedure is that Booking's primary.
-    // Only a Contract the step rail allows on the addendum's List (US-04.3.2).
-    if (first?.governingContractId !== undefined && contractAllowedOn(railMastersOf(s), railContextForList(s, placed.list), first.governingContractId)) {
-      inheritContract(procedure, first.governingContractId, s.masters)
-    }
-    // No text arrives with an addendum; a copied Contract's invoice description applies (D37).
-    procedure.invoiceDescription = refreshedInvoiceDescriptionFor(procedure, s.masters.contracts)
-
-    metas.push(
-      {
-        entityType: 'booking',
-        entityId: bookingId,
-        action: 'booking.create',
-        after: {
-          listId,
-          patientId: original.patientId,
-          bookingType: 'postOpAddendum',
-          addendumOfBookingId: originalBookingId,
-          source: actor.role === 'office' ? 'admin' : 'anaesthetistAdHoc',
-        },
-      },
-      {
-        entityType: 'procedure',
-        entityId: procedureId,
-        action: 'procedure.create',
-        after: {
-          bookingId,
-          ...(procedure.governingContractId !== undefined ? { governingContractId: procedure.governingContractId } : {}),
-          ...(procedure.rvgGroupId !== undefined ? { rvgGroupId: procedure.rvgGroupId } : {}),
-        },
-      },
-    )
-    return {
-      schedule: {
-        ...s.schedule,
-        lists: { ...s.schedule.lists, [listId]: placed.list },
-        bookings: { ...s.schedule.bookings, [bookingId]: booking },
-        procedures: { ...s.schedule.procedures, [procedureId]: procedure },
-      },
-      counters,
-    }
-  })
-
-  return ok({ bookingId, listId })
-}
-
-/**
- * A post-op addendum copies the original's Contract when it is priced from
- * RVG units (and never a prepaid one), filling an empty RVG code from its
- * default (catch-up Phase 19a, DM-43). A fixed or open price is never copied:
- * it is the whole price of the item it was chosen for (OQ-53).
- */
-function inheritContract(procedure: Procedure, contractId: string, masters: AppState['masters']): void {
-  const contract = masters.contracts[contractId]
-  if (contract === undefined || !isRvgKind(contract.pricing.kind) || contract.prepaid) return
-  procedure.governingContractId = contractId
-  const fill = fillFromContract(procedure, masters.contracts[contractId], masters.rvgGroups)
-  if (fill !== null) procedure.rvgGroupId = fill.rvgGroupId
 }
 
 // ---------------------------------------------------------------------------

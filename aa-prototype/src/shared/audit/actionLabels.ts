@@ -1,4 +1,5 @@
 import { PAIRING_LABELS } from '../../domain/pairingPreferences'
+import { EVENT_ACTION_LABELS } from '../procedureEventCopy'
 import { DRAFT_LIST } from '../scheduleTerms'
 
 /**
@@ -207,6 +208,11 @@ export const ACTION_LABELS: Record<string, string> = {
   'invoice.toPost': 'Invoice marked to post',
   'invoice.notSent': 'Invoice not sent',
   'invoice.resend': 'Invoice resent',
+  // Catch-up Phase 38b: events on a Procedure and the additional invoice.
+  'invoice.additionalCreated': 'Additional invoice raised',
+  'invoice.partyChanged': 'Billed to another party',
+  // The event actions' words live in the one copy map (the name "event" is provisional).
+  ...EVENT_ACTION_LABELS,
 
   // --- Integrations --------------------------------------------------------
   'integration.receive': 'Message received',

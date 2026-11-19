@@ -206,7 +206,11 @@ export function incomeReceiptsFor(state: BillingState, anaesthetistId: Anaesthet
   return Object.values(state.billing.receipts).filter((r) => r.pairKind !== 'aaFee' && r.anaesthetistId === anaesthetistId)
 }
 
-/** 16's BCTI record list, from the ledger's payable legs: the only list `bctisFor` reads. */
+/**
+ * 16's BCTI record list, from the ledger's payable legs: the only list `bctisFor` reads.
+ * OQ-60, provisional: an additional invoice is one BCTI (catch-up Phase 38b): its pair is an issued
+ * Booking pair, so it yields one record here, with no new rule; an event not yet invoiced yields none.
+ */
 export function bctiRecords(state: BillingState): BctiRecord[] {
   return bctiRecordsOf(allPairs(state), state.billing.transfers, BCTI_COUNT_RULE)
 }

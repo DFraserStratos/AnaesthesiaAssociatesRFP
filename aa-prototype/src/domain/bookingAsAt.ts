@@ -214,7 +214,7 @@ function removedOf(p: Obj): string[] {
 
 const REVERSE: Readonly<Record<string, Reverser>> = {
   // --- the Booking ---
-  /** createBooking, createAddendum, the seed: the earliest state; the walk ends here. */
+  /** createBooking, the seed: the earliest state; the walk ends here. */
   'booking.create': () => 'stop',
   /** editBooking (before/after), the seed's narrative (after only: first set), a save. */
   'booking.update': (w, e, ctx) => restoreFields('booking', w.booking, e, ctx, true),
@@ -275,7 +275,7 @@ const REVERSE: Readonly<Record<string, Reverser>> = {
   'updateEmail.drafted': skip,
 
   // --- its Procedures ---
-  /** createBooking, addProcedure, createAddendum, the seed, a save: the Procedure goes. */
+  /** createBooking, addProcedure, the seed, a save: the Procedure goes. */
   'procedure.create': (w, e) => {
     delete w.procedures[e.entityId]
     return 'ok'

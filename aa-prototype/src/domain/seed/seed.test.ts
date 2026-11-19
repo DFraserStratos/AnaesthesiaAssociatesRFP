@@ -1166,3 +1166,19 @@ describe('the primary Procedure and the multi-procedure rule (catch-up Phase 23)
     expect(result.allocations[procs[0]!.id]!.bookingModifierUnits).toBe(7)
   })
 })
+
+describe('the seeded event (catch-up Phase 38b)', () => {
+  it('holds one additional invoice Dr Souter raised on HP03, awaiting review, RNG-free', () => {
+    const seed = buildSeed()
+    const events = Object.values(seed.schedule.procedureEvents)
+    expect(events).toHaveLength(1)
+    const ev = events[0]!
+    expect(ev).toMatchObject({ id: 'EV0001', procedureId: 'HP03', bookingId: 'HBK03', kind: 'additionalInvoice', occurredOnISO: '2026-06-23', billable: true, party: { sameAs: true }, review: { state: 'awaitingReview' } })
+    expect(ev.addedBy).toEqual({ who: 'Dr Melanie Souter', role: 'anaesthetist', anaesthetistId: ANAE.souter })
+    expect(ev.invoiceId).toBeUndefined()
+    expect(seed.schedule.procedures['HP03']?.bookingId).toBe('HBK03')
+    expect(seed.schedule.bookings['HBK03']?.listId).toBe('L-HIST-03')
+    expect(seed.counters['procedureEvent']).toBe(2)
+    expect(buildSeed().schedule.procedureEvents).toEqual(seed.schedule.procedureEvents)
+  })
+})

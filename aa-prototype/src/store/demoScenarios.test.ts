@@ -32,6 +32,10 @@ import { SEED_ORIGIN_LISTS } from '../domain/seed/listOrigins'
 import { assessImportRow } from './matchingSelectors'
 import type { Invoice } from '../domain/types'
 import { projectedListId } from '../domain/slots'
+import { addProcedureEvent, additionalInvoicesFor, approveProcedureEvent, liveInvoiceForProcedure, runEventInvoicing } from './procedureEventActions'
+import { bctiRecords } from './ledgerSelectors'
+import { approveAllPrepayments } from '../test/approvePrepayments'
+import { DEMO_TRIGGERS, POST_OP_ORIGINAL_LIST_ID } from '../shared/demoTriggers/registry'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
@@ -228,6 +232,60 @@ describe('S4 · exceptions', () => {
     expect(s.schedule.bookings[prepaymentBookingId]).toBeDefined()
     // Billing-failure exemplar list (the failure + retry beat).
     expect(s.schedule.lists[SEED_LIST_IDS.billingFailure]?.state).toBe('SUBMITTED')
+  })
+
+  it('Beat 2: an additional invoice recorded as an event on Sarah Mitchell, reviewed, then its own invoice in the next run (catch-up Phase 38b)', () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    const stage = DEMO_TRIGGERS.find((t) => t.id === 'stage-post-op')!
+    expect(stage.run(api, { pathname: `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`, params: { listId: POST_OP_ORIGINAL_LIST_ID }, published: {} }).ok).toBe(true)
+    unwire()
+    const mitchell = bookingsForList(api.getState(), POST_OP_ORIGINAL_LIST_ID)[0]!
+    expect(api.getState().masters.patients[mitchell.patientId]?.name).toBe('Sarah Mitchell')
+    const procedureId = proceduresForBooking(api.getState(), mitchell.id)[0]!.id
+    const original = liveInvoiceForProcedure(api.getState(), procedureId)!
+    const bctisBefore = bctiRecords(api.getState()).length
+    const out = addProcedureEvent(api, OFFICE, procedureId, { kind: 'additionalInvoice', occurredOnISO: '2026-07-15', party: { sameAs: true }, lines: [{ description: 'Post-op ward review, Wed 15 Jul, 15 min', quantity: 1, unitAmount: 30 }] })
+    if (!out.ok) throw new Error(out.message)
+    expect(approveProcedureEvent(api, OFFICE, out.value.eventId).ok).toBe(true)
+    const run = runEventInvoicing(api, OFFICE, { eventIds: [out.value.eventId] })
+    if (!run.ok) throw new Error(run.message)
+    const inv = api.getState().billing.invoices[run.value.invoiceIds[0]!]!
+    expect(inv).toMatchObject({ kind: 'additional', subtotal: 30, total: 34.5, counterparty: original.counterparty, lineage: [{ role: 'additionalTo', invoiceId: original.id }] })
+    expect(additionalInvoicesFor(api.getState(), original.id).map((i) => i.id)).toEqual([inv.id])
+    expect(bctiRecords(api.getState()).length).toBe(bctisBefore + 1)
+    // The aside: Dr Sharma raises one on her own Procedure; the office approves and runs it.
+    const sharma: Actor = { who: 'Dr Priya Sharma', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.sharma }
+    const hers = addProcedureEvent(api, sharma, procedureId, { kind: 'additionalInvoice', occurredOnISO: '2026-07-15', party: { sameAs: true }, lines: [{ description: 'Nerve catheter review, Wed 15 Jul', quantity: 1, unitAmount: 45 }] })
+    if (!hers.ok) throw new Error(hers.message)
+    expect(approveProcedureEvent(api, OFFICE, hers.value.eventId).ok).toBe(true)
+    expect(runEventInvoicing(api, OFFICE).ok).toBe(true)
+    expect(additionalInvoicesFor(api.getState(), original.id)).toHaveLength(2)
+  })
+
+  it('Beats 1 to 3 in order give the run sheet its invoice numbers: Riley 0002, Sarah Mitchell 0003 and her additional 0004, Losa Tuilagi 0005, Hemi Walker 0006', () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    const ctx = (pathname: string, params: Record<string, string> = {}) => ({ pathname, params, published: {} })
+    expect(approveAllPrepayments(api, SEED_MARKERS['prepaymentBooking']!.entityId, OFFICE)).toHaveLength(1)
+    expect(DEMO_TRIGGERS.find((t) => t.id === 'stage-post-op')!.run(api, ctx('/admin/review', { listId: POST_OP_ORIGINAL_LIST_ID })).ok).toBe(true)
+    const mitchell = bookingsForList(api.getState(), POST_OP_ORIGINAL_LIST_ID)[0]!
+    const out = addProcedureEvent(api, OFFICE, proceduresForBooking(api.getState(), mitchell.id)[0]!.id, { kind: 'additionalInvoice', occurredOnISO: '2026-07-15', party: { sameAs: true }, lines: [{ description: 'Post-op ward review, Wed 15 Jul, 15 min', quantity: 1, unitAmount: 30 }] })
+    if (!out.ok) throw new Error(out.message)
+    expect(approveProcedureEvent(api, OFFICE, out.value.eventId).ok).toBe(true)
+    expect(runEventInvoicing(api, OFFICE, { eventIds: [out.value.eventId] }).ok).toBe(true)
+    expect(DEMO_TRIGGERS.find((t) => t.id === 'billing-failure')!.run(api, ctx('/admin/billing')).ok).toBe(true)
+    unwire()
+    const s = api.getState()
+    const byNumber = (n: string) => Object.values(s.billing.invoices).find((i) => i.invoiceNumber === n)
+    const nameOf = (n: string) => s.masters.patients[s.schedule.bookings[byNumber(n)!.bookingId]!.patientId]?.name
+    expect(['AA-2026-0002', 'AA-2026-0003', 'AA-2026-0004', 'AA-2026-0005', 'AA-2026-0006'].map((n) => [n, nameOf(n), byNumber(n)!.kind])).toEqual([
+      ['AA-2026-0002', 'Annette Riley', 'prePayment'],
+      ['AA-2026-0003', 'Sarah Mitchell', 'standard'],
+      ['AA-2026-0004', 'Sarah Mitchell', 'additional'],
+      ['AA-2026-0005', 'Losa Tuilagi', 'standard'],
+      ['AA-2026-0006', 'Hemi Walker', 'standard'],
+    ])
   })
 })
 

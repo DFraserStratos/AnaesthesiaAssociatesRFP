@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from '../../store/appStore'
 import { wireBillingRun } from '../../store/billingRun'
 import { authoriseList } from '../../store/lifecycle'
+import { approveProcedureEvent } from '../../store/procedureEventActions'
 import { resetDemo } from '../../store/clockActions'
 import { bookingsForList, openAccRecs, proceduresForBooking } from '../../store/selectors'
 import { handoffQueuedFor } from '../../store/ledgerSelectors'
@@ -118,10 +119,10 @@ const PINNED_XERO_INVOICES = ['xero-outage-start', 'xero-outage-restore', 'run-r
 const PINNED_XERO_BANK = PINNED_XERO_INVOICES
 
 describe('route scoping', () => {
-  it('the Billing monitor shows exactly its six entries (catch-up Phase 37 adds the outage pair); routes match the path, so search params never change them', () => {
+  it('the Billing monitor shows exactly its seven entries (catch-up Phase 37 adds the outage pair, 38b the next billing run); routes match the path, so search params never change them', () => {
     const api = createAppStore()
-    const six = ['billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job']
-    expect(ids(api, '/admin/billing')).toEqual(six)
+    const seven = ['billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job', 'run-next-billing-run']
+    expect([...ids(api, '/admin/billing')].sort()).toEqual([...seven].sort())
   })
 
   it('the Xero outage pair, and the pair-only Xero actions, are bar-only with working disabled states (catch-up Phase 37)', () => {
@@ -331,13 +332,55 @@ describe('re-homed bodies match the Control Panel', () => {
     expect(t.disabledReason(api.getState(), ctxFor('/admin/billing'))).toBe('Armed')
   })
 
-  it('stage post-op authorises the Sharma List, then reads Already staged', () => {
+  it('stage post-op authorises and bills the Sharma List, creates no List and no event, then reads Already staged (catch-up Phase 38b)', () => {
     const api = createAppStore()
+    const unwire = wireBillingRun(api)
     const t = byId('stage-post-op')
     const ctx = ctxFor(`/admin/review/${POST_OP_ORIGINAL_LIST_ID}`, { listId: POST_OP_ORIGINAL_LIST_ID })
-    expect(t.run(api, ctx).ok).toBe(true)
+    const lists = Object.keys(api.getState().schedule.lists).length
+    const events = Object.keys(api.getState().schedule.procedureEvents)
+    const out = t.run(api, ctx)
+    unwire()
+    expect(out).toEqual({ ok: true, message: "Authorised and billed. Open Sarah Mitchell's Booking and use Create additional invoice on the Procedure's Contract row." })
     expect(api.getState().schedule.lists[POST_OP_ORIGINAL_LIST_ID]?.state).toBe('AUTHORISED')
-    expect(t.disabledReason(api.getState(), ctx)).toMatch(/^Already staged/)
+    expect(Object.keys(api.getState().schedule.lists)).toHaveLength(lists)
+    expect(Object.keys(api.getState().schedule.procedureEvents)).toEqual(events)
+    expect(t.disabledReason(api.getState(), ctx)).toBe('Already staged: use Create additional invoice on the Procedure')
+  })
+
+  it('Run the next billing run is on the Billing monitor and Review only, disabled until an event is approved, then raises its invoice once (catch-up Phase 38b)', () => {
+    const api = createAppStore()
+    const t = byId('run-next-billing-run')
+    expect(t.surfaces).toEqual(['bar'])
+    expect(ids(api, '/admin/review')).toContain('run-next-billing-run')
+    expect(ids(api, '/admin/billing')).toContain('run-next-billing-run')
+    expect(ids(api, '/admin/invoices')).not.toContain('run-next-billing-run')
+    const ctx = ctxFor('/admin/billing')
+    expect(t.disabledReason(api.getState(), ctx)).toBe('No approved events are waiting for the billing run.')
+    expect(approveProcedureEvent(api, OFFICE_ACTOR, 'EV0001').ok).toBe(true)
+    expect(t.disabledReason(api.getState(), ctx)).toBeNull()
+    const out = t.run(api, ctx)
+    expect(out.ok).toBe(true)
+    expect(out.message).toMatch(/^Billing run done: 1 additional invoice raised \(AA-2026-\d{4}\)\.$/)
+    expect(t.disabledReason(api.getState(), ctx)).not.toBeNull()
+  })
+
+  it('"Office reviews this additional invoice" is PWA only on the mobile Booking, approves and invoices it, then is disabled (catch-up Phase 38b)', () => {
+    const api = createAppStore()
+    const t = byId('office-reviews-additional-invoice')
+    expect(t.surfaces).toEqual(['pwa'])
+    expect(t.badge).toBe('office-stand-in')
+    const path = '/mobile/lists/L-HIST-03/bookings/HBK03'
+    expect(ids(api, path, 'pwa')).toContain('office-reviews-additional-invoice')
+    expect(ids(api, path, 'bar')).not.toContain('office-reviews-additional-invoice')
+    const ctx = ctxFor(path, { listId: 'L-HIST-03', bookingId: 'HBK03' })
+    expect(t.disabledReason(api.getState(), ctx)).toBeNull()
+    const out = t.run(api, ctx)
+    expect(out.ok).toBe(true)
+    expect(out.message).toMatch(/^Approved by the office and invoiced in the next billing run \(AA-2026-\d{4}\)\.$/)
+    expect(api.getState().schedule.procedureEvents['EV0001']?.invoiceId).toBeDefined()
+    expect(t.disabledReason(api.getState(), ctx)).toBe('No additional invoice on this Booking is awaiting review')
+    expect(t.disabledReason(api.getState(), ctxFor('/mobile/lists/x/bookings/BK0001', { bookingId: 'BK0001' }))).toBe('No additional invoice on this Booking is awaiting review')
   })
 
   it('Receive updated PDF from rooms waits for a sent list, then lands the re-sent one once (catch-up Phase 34)', () => {

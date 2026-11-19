@@ -1,0 +1,116 @@
+{
+  "id": "US-03.7.3",
+  "status": "partial",
+  "absentReason": "Additional invoices show as events today; pre-op and post-op events join in Phase 39b and credits in Phase 39.",
+  "shots": [
+    {
+      "name": "procedure-events",
+      "app": "admin",
+      "caption": "A Procedure lists all its events in both apps; here an additional invoice the anaesthetist raised, awaiting review",
+      "start": "/admin/day/2026-06-22/bookings/HBK03",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=procedure-events]"
+            },
+            {
+              "scroll": "[data-shot=procedure-events] >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-events]"
+          ],
+          "state": "awaiting"
+        },
+        {
+          "state": "invoiced",
+          "caption": "Once invoiced, the event shows its own invoice",
+          "steps": [
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr[data-event-id=EV0001]"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            },
+            {
+              "click": "[data-shot=event-review-approve]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "trigger": "run-next-billing-run"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/day/2026-06-22/bookings/HBK03"
+            },
+            {
+              "wait": "[data-shot=procedure-event-invoice]"
+            },
+            {
+              "scroll": "[data-shot=procedure-events] >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-events]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "procedure-events",
+      "app": "web",
+      "caption": "A Procedure lists all its events in both apps; here an additional invoice the anaesthetist raised, awaiting review",
+      "start": "/web/lists/L-HIST-03/bookings/HBK03",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=procedure-events]"
+            },
+            {
+              "scroll": "[data-shot=procedure-events] >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-events]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "procedure-events",
+      "app": "mobile",
+      "caption": "A Procedure lists all its events in both apps; here an additional invoice the anaesthetist raised, awaiting review",
+      "start": "/mobile/lists/L-HIST-03/bookings/HBK03",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=procedure-events]"
+            },
+            {
+              "scroll": "[data-shot=procedure-events] >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [data-shot=procedure-events]"
+          ]
+        }
+      ]
+    }
+  ]
+}

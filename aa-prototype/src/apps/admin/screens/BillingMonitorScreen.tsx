@@ -27,10 +27,13 @@ import {
   type PrepaidLeftOff,
 } from '../../../store'
 import { dayMicroCap, formatCurrency, hhmm, plural, shortDay } from '../../../shared/format'
-import { Button, Card, EmptyState, FilterDateInput, FilterPills, FormError, PageHeader, Pill, SelectField, StatTile, TextAction, visuallyHidden, type PillTone } from '../../../shared/ui'
+import { Button, Card, CountBadge, EmptyState, FilterDateInput, FilterPills, FormError, Notice, PageHeader, Pill, SelectField, StatTile, TextAction, visuallyHidden, type PillTone } from '../../../shared/ui'
 import { ClickableRow, Td, Th, TableShell } from '../../../shared/table'
 import { sessionText } from '../../../domain/outOfHours'
 import { HoldingAccountPanel } from '../components/HoldingAccountPanel'
+import { approvedEventsAwaitingRun } from '../../../store/procedureEventActions'
+import { freeFormSubtotal } from '../../../domain/billing/additionalInvoice'
+import { ADDITIONAL_INVOICE_COPY, EVENT_KIND_LABEL, EVENT_LABELS } from '../../../shared/procedureEventCopy'
 import { PayablesPanel, XeroConnectionLine, XeroDivergencePanel, XeroQueuePanel } from '../components/XeroPanels'
 
 interface BillingMonitorScreenProps {
@@ -233,6 +236,8 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
       <XeroQueuePanel actor={actor} {...(panelAnaesthetist !== undefined ? { anaesthetistId: panelAnaesthetist } : {})} />
       <XeroDivergencePanel actor={actor} {...(panelAnaesthetist !== undefined ? { anaesthetistId: panelAnaesthetist } : {})} />
       <PayablesPanel actor={actor} {...(panelAnaesthetist !== undefined ? { anaesthetistId: panelAnaesthetist } : {})} />
+
+      <EventsAwaitingRunPanel />
 
       <AaFeePanel />
 
@@ -560,6 +565,8 @@ function PipelineDetail({ row, onRetry }: { row: MonitorAuthorisedRow; onRetry: 
 }
 
 function BookingDetail({ row }: { row: MonitorBookingRow }) {
+  // A Booking's additional invoices (catch-up Phase 38b): each its own invoice, linked to the original.
+  const additionalCount = useAppStore((s) => Object.values(s.billing.invoices).filter((i) => i.kind === 'additional' && i.bookingId === row.bookingId).length)
   if (row.status === 'failed') {
     return (
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -590,6 +597,7 @@ function BookingDetail({ row }: { row: MonitorBookingRow }) {
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <MoneyDetail row={row} />
         {row.prepaidLeftOff !== undefined && <PrepaidLeftOffLine leftOff={row.prepaidLeftOff} />}
+        {additionalCount > 0 && <span data-shot="monitor-additional-invoices" style={{ fontSize: 12, color: neutral.slate }}>{ADDITIONAL_INVOICE_COPY.plusAdditional(additionalCount)}</span>}
       </span>
     )
   }
@@ -682,6 +690,40 @@ function BookingStatusPill({ row }: { row: MonitorBookingRow }) {
     <Pill tone={it.tone} size="sm">
       {it.label}
     </Pill>
+  )
+}
+
+/**
+ * Approved events waiting for the next billing run (catch-up Phase 38b), so an
+ * approved event is never invisible between its review and its run. Shown only
+ * while one waits; each links to its Booking. The run itself is the demo
+ * action "Run the next billing run" (the real system's run is scheduled).
+ */
+function EventsAwaitingRunPanel() {
+  const state = useAppStore((s) => s)
+  const waiting = approvedEventsAwaitingRun(state)
+  if (waiting.length === 0) return null
+  return (
+    <Notice tone="neutral" icon={false} shot="events-awaiting-run" title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>{EVENT_LABELS.awaitingRunTitle} <CountBadge count={waiting.length} mono srNoun="waiting" /></span>}>
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {waiting.map((e) => {
+        const booking = state.schedule.bookings[e.bookingId]
+        const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
+        const patient = booking !== undefined ? state.masters.patients[booking.patientId] : undefined
+        return (
+          <div key={e.id} data-event-id={e.id} style={{ display: 'flex', alignItems: 'baseline', gap: 12, fontSize: 13 }}>
+            {list !== undefined ? (
+              <Link to={`/admin/day/${list.dateISO}/bookings/${e.bookingId}`} style={{ color: neutral.ink, fontWeight: 600 }}>{patient?.name ?? e.bookingId}</Link>
+            ) : (
+              <span style={{ fontWeight: 600 }}>{patient?.name ?? e.bookingId}</span>
+            )}
+            <span style={{ color: neutral.slate }}>{EVENT_KIND_LABEL[e.kind]}</span>
+            <span className="mono" style={{ marginLeft: 'auto', color: neutral.ink }}>{formatCurrency(freeFormSubtotal(e.detail.lines))} <span style={{ color: neutral.slate }}>{EVENT_LABELS.exGst}</span></span>
+          </div>
+        )
+      })}
+      </span>
+    </Notice>
   )
 }
 

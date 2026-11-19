@@ -94,7 +94,8 @@ import { seedDisabledContractBooking } from './disabledContractBooking'
 import { RANGE_AUTHORISED_BILLED_ISO, RANGE_AUTHORISED_LIST_ID, seedPricingBookings, type PricingBookingKey } from './pricingBookings'
 import { applySeedListOrigins } from './listOrigins'
 import { SEED_EMAIL_TEMPLATES, SEED_EMAIL_TEMPLATE_NEXT } from './emailTemplates'
-import type { EmailTemplate } from '../types'
+import type { EmailTemplate, ProcedureEvent } from '../types'
+import { SEED_NEXT_PROCEDURE_EVENT, SEED_PROCEDURE_EVENTS } from './procedureEvents'
 
 export {
   canvasAnaesthetists,
@@ -184,6 +185,8 @@ export interface SeedSchedule {
   bookings: Record<string, Booking>
   procedures: Record<string, Procedure>
   billingLines: Record<string, BillingLine>
+  /** Events on Procedures (catch-up Phase 38b; DM-17), keyed `EV####`. Never a List or schedule entry. */
+  procedureEvents: Record<string, ProcedureEvent>
   /**
    * Office clearances of derived warnings (catch-up Phase 15a), keyed by
    * warning key. Kept outside the Booking so clearing never touches a Booking
@@ -660,6 +663,8 @@ function buildSeedInternal(): SeedBuild {
       bookings: bookingsRec,
       procedures: proceduresRec,
       billingLines: billingLinesRec,
+      // Catch-up Phase 38b: the one seeded event (EV0001, Dr Souter's additional invoice on HP03), appended, RNG-free.
+      procedureEvents: byId(SEED_PROCEDURE_EVENTS.map((e) => structuredClone(e)), (e) => e.id),
       warningClearances: {},
       // Catch-up Phase 32d: each anaesthetist's weekly Public series (AS0001 to AS0007).
       availabilitySeries: byId(rehomed.series, (x) => x.id),
@@ -680,6 +685,8 @@ function buildSeedInternal(): SeedBuild {
       booking: disabledContractBooking.next.booking,
       procedure: disabledContractBooking.next.procedure,
       billingLine: bookingsBuild.next.billingLine,
+      // Catch-up Phase 38b: EV0001 is seeded.
+      procedureEvent: SEED_NEXT_PROCEDURE_EVENT,
       patient: patients.length + 1,
       // Payer ids (`BP####`): BP0001 is Hana Park as a payer, BP0002 Aria's folded record (catch-up Phase 21); BP0003 to BP0005 seeded payers.
       billableParty: SEED_PAYER_COUNTER,
@@ -777,7 +784,7 @@ export const SCRIPTED_BEAT_SCHEDULE = {
     SEED_LIST_IDS.souterMon20Am,
     SEED_LIST_IDS.souterMon20Pm,
     // S4: Beat 1's Fri 24 AM (prepayment warning) and Fri 24 PM (paid), Beat 2's
-    // Sharma Tue 14 AM (post-op addendum), Beat 3's billing failure.
+    // Sharma Tue 14 AM (S4 Beat 2's additional invoice), Beat 3's billing failure.
     SEED_LIST_IDS.prepaymentUnpaidList,
     SEED_LIST_IDS.prepaymentPaidList,
     projectedListId(ANAE.sharma, '2026-07-14', 'AM'),
@@ -792,8 +799,7 @@ export const SCRIPTED_BEAT_SCHEDULE = {
   ],
   slotIds: [
     // S2: Beat 1b assigns the St George's Draft List into Fitzgerald's Tue 21
-    // PM; Beat 2 books Sharma's Tue 21 PM (and S4 Beat 2's addendum lands
-    // there); Beat 3 reassigns into Sharma's Wed 22 AM.
+    // PM; Beat 2 books Sharma's Tue 21 PM; Beat 3 reassigns into Sharma's Wed 22 AM.
     slotIdFor(ANAE.fitzgerald, DEMO_TODAY, 'PM'),
     slotIdFor(ANAE.sharma, DEMO_TODAY, 'PM'),
     slotIdFor(ANAE.sharma, '2026-07-22', 'AM'),

@@ -396,13 +396,15 @@ test('exemplar staging via the guard console: patient layout and the fee split',
   await expect(page.getByText('Upload portal')).toHaveCount(0)
   const alanRows = page.getByTestId('invoice-list-table-shell').locator('tbody tr').filter({ hasText: 'Alan Prentice' })
   await expect(alanRows).toHaveCount(2)
-  await expect(alanRows.locator('td:nth-child(3)')).toHaveText(['Dr Melanie Souter', 'Dr Melanie Souter'])
-  await expect(alanRows.locator('td:nth-child(4)')).toHaveText([
+  // Catch-up Phase 38b put a Kind column after Number, so every column after it moved one on.
+  await expect(alanRows.locator('[data-shot="invoice-list-kind"]')).toHaveText(['Invoice', 'Invoice'])
+  await expect(alanRows.locator('td:nth-child(4)')).toHaveText(['Dr Melanie Souter', 'Dr Melanie Souter'])
+  await expect(alanRows.locator('td:nth-child(5)')).toHaveText([
     /St George's · PM.*Ms G\. Lim/,
     /St George's · PM.*Ms G\. Lim/,
   ])
-  await expect(alanRows.locator('td:nth-child(5)')).toHaveText(['MON 20 JUL', 'MON 20 JUL'])
-  expect((await alanRows.locator('td:nth-child(7)').allTextContents()).map((t) => t.replace(/Split$/, '').trim()).sort()).toEqual(['Alan Prentice', 'nib'])
+  await expect(alanRows.locator('td:nth-child(6)')).toHaveText(['MON 20 JUL', 'MON 20 JUL'])
+  expect((await alanRows.locator('td:nth-child(8)').allTextContents()).map((t) => t.replace(/Split$/, '').trim()).sort()).toEqual(['Alan Prentice', 'nib'])
   await expect(alanRows.locator('[data-shot="invoice-list-split"]')).toHaveCount(2)
   await expect(alanRows.locator('[data-shot="invoice-list-delivery"]')).toHaveText([/^Emailed \d{2}:\d{2}$/, /^Emailed \d{2}:\d{2}$/])
   await page.screenshot({ path: 'visual/shots/a8-06-invoices-mixed.png', fullPage: true })

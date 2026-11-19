@@ -35,7 +35,6 @@ import {
 import { advanceClockDays, advanceClockMinutes } from './clockActions'
 import { createAvailabilitySeries } from './availabilityActions'
 import { detachListToDraft, withGenerated } from './slotActions'
-import { addPostOpAddendum } from './bookingActions'
 import { OFFICE_ACTOR, OFFICE_SIMULATION_ACTOR, SOUTER_ACTOR } from './demoActors'
 import { clockISO, type Actor } from './mutate'
 import {
@@ -546,17 +545,6 @@ describe('the pairing rule on the other paths (US-01.3.1)', () => {
     expect(souter[0]!.surgeonId).not.toBe(souter[1]!.surgeonId)
   })
 
-  it('the post-op addendum copies the original List\'s hospital and surgeon', () => {
-    const api = store()
-    const authorised = Object.values(api.getState().schedule.lists).find((l) => l.state === 'AUTHORISED' && l.anaesthetistId === ANAE.souter && !l.id.startsWith('L-HIST') && !l.id.startsWith('L-RB-'))
-    if (authorised === undefined) return
-    const booking = Object.values(api.getState().schedule.bookings).find((b) => b.listId === authorised.id)
-    if (booking === undefined) return
-    const out = addPostOpAddendum(api, OFFICE, booking.id)
-    if (!out.ok) return
-    const created = Object.values(api.getState().schedule.lists).find((l) => l.id.startsWith('LG') && l.state === 'ACTIVE' && l.dateISO === TUE21)
-    expect(created).toMatchObject({ hospitalId: authorised.hospitalId, surgeonId: authorised.surgeonId })
-  })
 })
 
 describe('Draft Lists never reach an anaesthetist (OQ-86 answered no, D46)', () => {

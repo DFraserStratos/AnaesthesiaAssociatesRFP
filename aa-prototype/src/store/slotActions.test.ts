@@ -18,8 +18,8 @@ import {
   setSlotDefaultTimes,
   setSlotTimes,
 } from './slotActions'
-import { authoriseList, cancelBooking, completeBooking, reassignBooking, submitList } from './lifecycle'
-import { addPostOpAddendum, createBooking } from './bookingActions'
+import { authoriseList, cancelBooking, completeBooking, reassignBooking } from './lifecycle'
+import { createBooking } from './bookingActions'
 import { pushListToSlot } from './listMoveActions'
 import { advanceClockDays } from './clockActions'
 import { endPairingPreference, selectPairingPreferences } from './officePrivate'
@@ -511,19 +511,5 @@ describe('rosterForDate', () => {
     expect(rosterForDate(api.getState(), '2027-01-01')).toHaveLength(0)
     expect(slotFor(api.getState(), ANAE.souter, '2027-01-01', 'AM')).toBeUndefined()
     expect(displayStatusKey({ status: 'free' }, undefined)).toBe('free')
-  })
-})
-
-describe('the post-op addendum fills an open session (interim until 38b)', () => {
-  it('creates its List there', () => {
-    const api = store()
-    const original = `L-${ANAE.sharma}-2026-07-14-AM`
-    const booking = bookingsForList(api.getState(), original)[0]!
-    expect(submitList(api, OFFICE, original).ok).toBe(true)
-    expect(authoriseList(api, OFFICE, original).ok).toBe(true)
-    const out = addPostOpAddendum(api, OFFICE, booking.id)
-    expect(out.ok).toBe(true)
-    if (!out.ok) return
-    expect(api.getState().schedule.lists[out.value.listId]?.slotId).toBe(SHARMA_PM)
   })
 })

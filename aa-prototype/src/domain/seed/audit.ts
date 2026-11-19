@@ -114,8 +114,6 @@ function procedureCapture(procedure: Procedure): Record<string, unknown> {
 function bookingContext(booking: Booking): Record<string, unknown> {
   const after: Record<string, unknown> = {
     scheduledTime: booking.scheduledTime,
-    bookingType: booking.bookingType,
-    addendumOfBookingId: booking.addendumOfBookingId,
     notes: booking.notes,
   }
   return Object.fromEntries(Object.entries(after).filter(([, value]) => value !== undefined))

@@ -23,6 +23,7 @@ import {
 } from '../domain/billing/lock'
 import { supplierFor } from '../domain/billing/invoicePresentation'
 import { formatMoney, roundToCents } from '../domain/billing/money'
+import { priceFreeFormInvoice } from '../domain/billing/additionalInvoice'
 import type { HeldPrices } from '../domain/billing/procedurePrice'
 export { authorisedPricesFromLock } from '../domain/billing/lock'
 import { listHospitalFor } from '../domain/listPairing'
@@ -129,6 +130,8 @@ export function regenerateRefusal(state: Pick<AppState, 'billing'>, invoiceId: I
   const invoice = state.billing.invoices[invoiceId]
   if (invoice === undefined) return 'Invoice not found'
   if (invoice.kind === 'prePayment') return REGENERATE_PREPAYMENT_REASON
+  // An additional invoice regenerates from its event's lines (catch-up Phase 38b), not the lock.
+  if (invoice.kind === 'additional') return invoice.eventId !== undefined ? null : 'This additional invoice has no event to regenerate from'
   const lock = state.billing.locks[invoice.bookingId]
   if (lock === undefined || lock.state !== 'locked') return REGENERATE_NO_LOCK_REASON
   return null
@@ -140,10 +143,11 @@ export function regenerateRefusal(state: Pick<AppState, 'billing'>, invoiceId: I
  * Read-only: never writes, never reads a master, never rebuilds data as at a
  * date. A pre-payment or AA fee invoice has no lock: a reason instead.
  */
-export function regenerateInvoiceFromLock(state: Pick<AppState, 'billing'>, invoiceId: InvoiceId): RegenerateResult {
+export function regenerateInvoiceFromLock(state: Pick<AppState, 'billing'> & Partial<Pick<AppState, 'schedule'>>, invoiceId: InvoiceId): RegenerateResult {
   const refusal = regenerateRefusal(state, invoiceId)
   if (refusal !== null) return { ok: false, reason: refusal }
   const invoice = state.billing.invoices[invoiceId]!
+  if (invoice.kind === 'additional') return regenerateAdditionalInvoice(state, invoice, state.billing.locks[invoice.bookingId])
   const lock = state.billing.locks[invoice.bookingId]!
   const drafts = invoiceDraftsFromLock(lock)
   if (drafts.kind === 'exception') return { ok: false, reason: drafts.message }
@@ -155,6 +159,42 @@ export function regenerateInvoiceFromLock(state: Pick<AppState, 'billing'>, invo
     .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
   const comparison = compareInvoice(invoice, lines, draft, lock.payee)
   return { ok: true, comparison, lineCount: draft.lines.length, total: draft.total, view: lockViewFor(lock) }
+}
+
+/**
+ * Regenerate an additional invoice (catch-up Phase 38b): its recipe is its
+ * event's free-form lines, re-priced through `priceFreeFormInvoice`, never the
+ * Booking's lock (which the event never touches). Compares the lines and
+ * totals with what is stored. Read-only.
+ */
+function regenerateAdditionalInvoice(state: Pick<AppState, 'billing'> & Partial<Pick<AppState, 'schedule'>>, invoice: Invoice, lock: BookingLock | undefined): RegenerateResult {
+  const event = invoice.eventId !== undefined ? state.schedule?.procedureEvents[invoice.eventId] : undefined
+  if (event === undefined) return { ok: false, reason: 'This additional invoice has no event to regenerate from' }
+  const priced = priceFreeFormInvoice(event.detail.lines)
+  if (priced.kind === 'refused') return { ok: false, reason: priced.message }
+  const stored = Object.values(state.billing.invoiceLines)
+    .filter((l) => l.invoiceId === invoice.id)
+    .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
+  const differences: InvoiceComparison['differences'] = []
+  const money = (n: number) => formatMoney(n)
+  for (const [field, a, b] of [
+    ['subtotal', invoice.subtotal, priced.subtotal],
+    ['gst', invoice.gst, priced.gst],
+    ['total', invoice.total, priced.total],
+  ] as const) {
+    if (Math.round(a * 100) !== Math.round(b * 100)) differences.push({ field, stored: money(a), regenerated: money(b) })
+  }
+  const lineText = (d: string, q: number | undefined, amount: number) => `${d}, ${q ?? 1} x, ${money(amount)}`
+  const max = Math.max(stored.length, priced.lines.length)
+  for (let i = 0; i < max; i++) {
+    const s1 = stored[i]
+    const r1 = priced.lines[i]
+    const sText = s1 !== undefined ? lineText(s1.description, s1.quantity, s1.amount) : 'none'
+    const rText = r1 !== undefined ? lineText(r1.description, r1.quantity, r1.amount) : 'none'
+    if (sText !== rText) differences.push({ field: `line ${i + 1}`, stored: sText, regenerated: rText })
+  }
+  if (lock === undefined) return { ok: false, reason: REGENERATE_NO_LOCK_REASON }
+  return { ok: true, comparison: { identical: differences.length === 0, differences }, lineCount: priced.lines.length, total: priced.total, view: lockViewFor(lock) }
 }
 
 // ---------------------------------------------------------------------------

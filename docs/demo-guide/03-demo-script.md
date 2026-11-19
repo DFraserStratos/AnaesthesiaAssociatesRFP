@@ -85,6 +85,7 @@ view respectively.
 | Booking detail | `/admin/day/2026-07-21/bookings/<bookingId>` |
 | Conflicts | `/admin/conflicts` (hospital closures only; filters in the URL, e.g. `?hospital=`, `?cleared=1`) |
 | Review queue | `/admin/review` |
+| Events awaiting review | `/admin/review?tab=events` |
 | One List under review | `/admin/review/<listId>` |
 | Invoices | `/admin/invoices` |
 | One invoice document | `/admin/invoices/<invoiceId>` |
@@ -1106,17 +1107,50 @@ actions** on the screen named in its beat.
   stays in balance. Authorising the List (Beat 7) adds the transfer, two payable legs and no
   receivable, to whoever did it.
 
-### Beat 2: post-op addendum
+### Beat 2: an additional invoice, recorded as an event
 
 - **Click:**
-  - Go to **Admin Day view → Tue 14 Jul → Dr Priya Sharma's AM List → Sarah Mitchell**.
-  - Open **Demo actions → Stage post-op scenario → Run** (it shows only for this List).
-  - Select **Add post-op event**.
-  - Pause on the new addendum Booking.
-- **Say:** "A later pain consult or ward review can create another charge. The original authorised Booking
-  stays immutable; the addendum is a new linked Booking with its own submit, authorise and bill cycle."
-- **Expected:** a new addendum Booking; the original stays locked. The addendum sits on a List created
-  in Dr Sharma's free Tue 21 PM session (interim until additional invoices replace the addendum).
+  - Go to **Admin Day view → Tue 14 Jul → Dr Priya Sharma's AM List**
+    (`/admin/review/L-41267-2026-07-14-AM`), then **Demo actions → Stage post-op scenario → Run**
+    ("Authorised and billed. Open Sarah Mitchell's Booking and use Create additional invoice on the
+    Procedure's Contract row.").
+  - Open **Sarah Mitchell** (`/admin/day/2026-07-14/bookings/BK0032`). Her original invoice is
+    AA-2026-0003 (Christchurch Public; Riley's prepayment took AA-2026-0002 in Beat 1).
+  - On the Paid by row (the Procedure's Contract row), select **Create additional invoice**. The dialog
+    reads "Additional invoice · Sarah Mitchell · Appendicectomy, laparoscopic" and "Additional to
+    AA-2026-0003". Add the line "Post-op ward review, Wed 15 Jul, 15 min", 1 x $30.00 (subtotal $30.00,
+    GST $4.50, total $34.50). Keep **Same as the original invoice (Christchurch Public)** ticked and
+    select **Save for review**. The row appears under the Procedure in Events: Awaiting review,
+    Raised by the office.
+  - Go to **Admin Review → Events** (`/admin/review?tab=events`; the side nav's Review count includes
+    events), open the row and its review sheet, and select **Approve for billing** ("Approved. Invoiced
+    in the next billing run.").
+  - Go to **Billing monitor**: the panel **Waiting for the next billing run** lists it. Open **Demo
+    actions → Run the next billing run** ("Billing run done: 1 additional invoice raised
+    (AA-2026-0004)."). The monitor row says "+1 additional invoice".
+  - Open the new invoice: it reads "Additional invoice · relates to AA-2026-0003 · Appendicectomy,
+    laparoscopic", with its own pair and Xero pair. Open the original: its rail now has an **Additional
+    invoices** card. On **Invoices**, the Kind column reads Additional, with "Additional to
+    AA-2026-0003" under the number.
+- **Say:** "A ward review the day after surgery does not reopen the Booking. The office, or the
+  anaesthetist on their own Procedure, records it as an event: a free-form invoice to whoever should
+  pay. It goes through the same review step as everything else and is invoiced in the next run, with
+  its own number, its own receivable and payable and its own Xero pair, linked both ways. Everything
+  that happens to a Procedure after setup shows in one place, its events."
+- **Expected:** the event under the Procedure moves from Awaiting review to Approved to Invoiced; the
+  additional invoice (AA-2026-0004 when Sarah's is the only approved event) with its link back; the
+  original, AA-2026-0003, unchanged and still locked. The seeded David Chen event (EV0001) also sits in
+  the Events tab: if both are approved and run, David Chen's takes AA-2026-0004 and Sarah's
+  AA-2026-0005 (event id order), and Beat 3's numbers move on one. The Admin Booking total panel shows an **Events** row and "ex GST ·
+  GST $x" (every invoice-ticked event counts, ex GST with GST beside).
+- **Aside (handset, the anaesthetist's own route):** Dr Souter (the anaesthetist apps are hers) searches
+  "Chen" and opens David Chen's Mon 22 Jun Booking. Events shows "Additional invoice", Tue 23 Jun,
+  "Post-op ward review, Tue 23 Jun, 20 min", $85.00 ex GST, "Raised by you · St George's", Awaiting
+  review, with **Edit** and **Remove**; **Raise additional invoice** on the Contract row opens a bottom
+  sheet with the same form. On the PWA, **Demo → Office reviews this additional invoice** approves and
+  invoices it ("Approved by the office and invoiced in the next billing run (AA-2026-00nn).", the next number). Say:
+  "After a prepaid or fixed-price procedure nothing is billed automatically; if the work ran long, the
+  anaesthetist raises an additional invoice by hand, right here."
 
 ### Beat 3: billing failure and retry
 
@@ -1128,7 +1162,7 @@ actions** on the screen named in its beat.
     blocks only its own invoice, never the rest of the list."), the four tiles (Awaiting approval,
     Authorised, With problems, Payables due) and the filter bar (Anaesthetist, Hospital, From, To).
   - Turn on **Problems only** (in the filter bar, or select the **With problems** tile).
-  - In the **Xero sync queue** panel, on the row **Hand off AA-2026-0003**, select **Retry now**.
+  - In the **Xero sync queue** panel, on the row **Hand off AA-2026-0005**, select **Retry now**.
   - Optional: on any group, a List still awaiting approval has **Open in Review**; Review opens with
     **Back to Billing monitor**, which returns with the filters kept. There is no Authorise button on
     the monitor.
@@ -1147,13 +1181,14 @@ actions** on the screen named in its beat.
   **Handed off**, and the List is not failed. The queue row reads 1 attempt, next try 08:02, "Xero
   rejected the call (simulated fault)", Waiting; the Xero line above the tiles reads "Connected · 1
   waiting for their next try", and the Ledger's **Not yet in Xero** tile counts her pair until the
-  retry. **Retry now** hands hers off once ("Hand off AA-2026-0003: sent to Xero.", and **Sent after
+  retry. **Retry now** hands hers off once ("Hand off AA-2026-0005: sent to Xero.", and **Sent after
   waiting (1)**): her row reads **Handed off** and her Xero pair appears, with no duplicate invoice.
   The filter then reads "0 lists" and "No problems. Every authorised list has billed, been sent and
-  reached Xero." Her invoice (AA-2026-0003, Canterbury Orthopaedic Surgeons, $303.60) and Hemi
-  Walker's (AA-2026-0004, St George's, $221.38) are unchanged. No Contract changes. Left alone, the
+  reached Xero." Her invoice (AA-2026-0005, Canterbury Orthopaedic Surgeons, $303.60) and Hemi
+  Walker's (AA-2026-0006, St George's, $221.38) are unchanged. No Contract changes. Left alone, the
   queue retries it itself when the clock moves on. (The numbers follow Riley's prepayment invoice,
-  AA-2026-0002, raised in Beat 1; skip that approve and they are AA-2026-0002 and AA-2026-0003.)
+  AA-2026-0002, raised in Beat 1, and Beat 2's Sarah Mitchell, AA-2026-0003, and her additional invoice,
+  AA-2026-0004; each beat skipped moves them back one.)
 
 ### Beat 4: the unmatched queue
 
@@ -1210,13 +1245,13 @@ actions** on the screen named in its beat.
   rest stays outstanding on the invoice. The payment to the anaesthetist is made in Xero; we record and
   track it. Two payables runs across a part-then-balance payment prove there is no double payment."
 - **Expected:** the payable authorises exactly the amount received; the panel lists it ("1 payable due
-  · $110.69", Dr Ropata, AA-2026-0004, bill AA-2026-0004-P). **Run payables in Xero** empties the list
+  · $110.69", Dr Ropata, AA-2026-0006, bill AA-2026-0006-P). **Run payables in Xero** empties the list
   ("No payables are awaiting the payables run.") with "Xero paid 1 bill ($110.69); the Billing Engine
   recorded 1 disbursement from the bill-paid webhooks.": each disbursement is recorded as Xero reports
   the bill paid. Each run pays exactly what arrived, and the total paid out equals the invoice total,
   never more. The Ledger's Payables due rises with
   each part payment and returns to $0.00 after each run: $110.69 after the half (Hemi Walker's
-  AA-2026-0004, $221.38), $0.00 after the first run, $110.69 after the rest, $0.00 after the second.
+  AA-2026-0006, $221.38), $0.00 after the first run, $110.69 after the rest, $0.00 after the second.
 
 ### Beat 6: The date approaches
 
@@ -1367,6 +1402,12 @@ and a Contract changed after sending is handled as a cancellation, built in Phas
 prepayment invoice per payer, each payer locked once theirs is raised, is built from Donald's answer and
 not yet discussed with AA (OQ-140); a prepaid Contract always billing the Procedure's payer is a working
 reading awaiting AA's confirmation (OQ-73).
+For the additional invoice beat (Beat 2): the name "event" is provisional (Greg was unconvinced); the
+billing rule (an event is billed in the next run after review, never held for the Procedure's invoice,
+bundled with the same party's invoice where the run has one, else its own; an additional invoice is
+always its own) is Donald's answer for the build (OQ-121, 4 November), not yet seen by AA; and the
+prototype's next billing run is a button where the real one is scheduled. Ben's answer (OQ-96): a rare
+difference on a prepaid procedure is a second invoice raised by hand, which this beat shows.
 
 ---
 

@@ -10,7 +10,7 @@ import { createAppStore } from './appStore'
 import { OFFICE_ACTOR } from './demoActors'
 import { authoriseList } from './lifecycle'
 import { PAYER_LOCKED_BY_PREPAYMENT, setProcedurePayer, type PayerInput } from './payerActions'
-import { addPostOpAddendum, addProcedure, createBooking } from './bookingActions'
+import { addProcedure, createBooking } from './bookingActions'
 import { runBillingForList } from './billingRun'
 import { billablePartyForProcedureId, proceduresForBooking } from './selectors'
 import type { AppState } from './appStore'
@@ -243,7 +243,7 @@ describe('a payer on each Procedure (catch-up Phase 22a; US-11.2.2, US-08.2.1; D
     expect(payerOfferFor([a!, b!], a!.id, api.getState().masters.contracts, 'x')).toEqual([])
   })
 
-  it('a Procedure added later copies a shared payer, else takes the patient; the addendum copies the source Booking’s', () => {
+  it('a Procedure added later copies a shared payer, else takes the patient', () => {
     const api = createAppStore()
     const added = addProcedure(api, OFFICE_ACTOR, GRACE)
     expect(added.ok && api.getState().schedule.procedures[added.value.procedureId]!.payer).toMatchObject({ kind: 'other', id: 'BP0001' })
@@ -255,15 +255,6 @@ describe('a payer on each Procedure (catch-up Phase 22a; US-11.2.2, US-08.2.1; D
     expect(setProcedurePayer(api, OFFICE_ACTOR, p1!.id, guardian, []).ok).toBe(true)
     const third = addProcedure(api, OFFICE_ACTOR, GRACE)
     expect(third.ok && api.getState().schedule.procedures[third.value.procedureId]!.payer).toEqual({ kind: 'patient' })
-  })
-
-  it('the post-op addendum takes the source Booking’s shared payer by the copy rule', () => {
-    const api = createAppStore()
-    const trustProc = firstProc(api, TRUST)
-    expect(authoriseList(api, OFFICE_ACTOR, SEED_LIST_IDS.payerReview).ok).toBe(true)
-    const made = addPostOpAddendum(api, OFFICE_ACTOR, TRUST)
-    if (!made.ok) return // no free session for the addendum today: the copy rule is pinned in procedurePayer.test.ts
-    expect(firstProc(api, made.value.bookingId).payer).toEqual(trustProc.payer)
   })
 
   it('a holder-billed Procedure is never offered and never invoices its payer', () => {

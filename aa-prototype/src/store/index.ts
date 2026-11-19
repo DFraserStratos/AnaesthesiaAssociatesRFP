@@ -174,7 +174,6 @@ export {
   createBooking,
   addProcedure,
   removeProcedure,
-  addPostOpAddendum,
   setPrimaryProcedure,
   PRIMARY_NOT_REMOVABLE_MESSAGE,
   PRIMARY_COMPLETED_MESSAGE,
@@ -582,3 +581,31 @@ export { LOADER_SPECS, specFor, surgeonNameNotes, OPEN_PRICE_LOAD_REFUSAL, type 
 export { stageGoLiveLoad, setGoLiveApproval, commitGoLiveLoad, discardGoLiveLoad, goLiveOutcomes, type GoLiveCommitResult } from './goLiveActions'
 export { applyPlan, type Plan, type PlanSource, type Planner } from './masterPlanners'
 export { activeHospitals, activeSurgeons, activeGroups, activeAaModifiers } from './selectors'
+
+// Catch-up Phase 38b: events on a Procedure, their review step and the next billing run.
+export {
+  procedureOwner,
+  liveInvoiceForProcedure,
+  eventsForProcedure,
+  eventsForBooking,
+  eventsAwaitingReview,
+  approvedEventsAwaitingRun,
+  additionalInvoicesFor,
+  additionalInvoicesForProcedure,
+  originalInvoiceFor,
+  eventForInvoice,
+  resolvedPartyOf,
+  eventPartyName,
+  originalForEvent,
+  pricingOf,
+  raiseRefusal,
+  addProcedureEvent,
+  updateProcedureEvent,
+  removeProcedureEvent,
+  approveProcedureEvent,
+  declineProcedureEvent,
+  runEventInvoicing,
+  type ProcedureEventInput,
+  type EventRunResult,
+  type EventPartyInput,
+} from './procedureEventActions'

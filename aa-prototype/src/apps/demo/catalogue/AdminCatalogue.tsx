@@ -120,6 +120,7 @@ import { BackstopAmountFieldExample, NoContractGroupExample, RailOptionGroupExam
 import { ProcedureStackExample } from './procedureStackExample'
 import { FunderDetailsExample, PayerFieldsExample } from './payerExamples'
 import { PaidByRowExample, PaidBySheetExample, PartyPickerExample } from './splitExamples'
+import { AdditionalInvoiceButtonExample, AdditionalInvoiceSheetExample, EventReviewSheetExample, ProcedureEventsListExample } from './eventExamples'
 import { LockBadge } from '../../../shared/booking/LockBadge'
 import { SEED_MARKERS } from '../../../domain/seed'
 import { ContractHistory } from '../../admin/flows/ContractHistory'
@@ -381,7 +382,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="DefList / DefRow" source="shared/ui/DefRow.tsx" usedIn={AWM} what="Label and value pairs as a dl (U6): inline (the drawers and Booking detail, labels at 80), stacked (the profile facts) and settings (the base of Phase 26's ProfileRow, with a trailing lock and the bank number masked)." replaceWith="Custom (dl)">
           <DefRowExample />
         </CatalogueRow>
-        <CatalogueRow name="ReviewQueue (clickable rows)" source="apps/admin/screens/ReviewQueue.tsx" usedIn={A} what="Submitted Lists to authorise, on the shared table kit (UI unification U6): TableShell (compact), Th, Td and ClickableRow, whose row click opens the List while the Review button stays the keyboard handle." replaceWith="TanStack Table + shadcn Table (row links)" note="Rows never take focus; the Review button is the one handle per row. Open is stubbed." height={380}>
+        <CatalogueRow name="ReviewQueue (clickable rows)" source="apps/admin/screens/ReviewQueue.tsx" usedIn={A} what="Submitted Lists to authorise, and since catch-up Phase 38b an Events tab (LineTabLink with its count) of events awaiting review, on the shared table kit (UI unification U6): TableShell (compact), Th, Td and ClickableRow, whose row click opens the List while the Review button stays the keyboard handle." replaceWith="TanStack Table + shadcn Table (row links)" note="Rows never take focus; the Review button is the one handle per row. Open is stubbed." height={380}>
           <Wide minWidth={980}>
             <ReviewQueue onOpen={noop} onViewInvoices={noop} />
           </Wide>
@@ -529,6 +530,18 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="PaidBySheet (with SplitFeeSection)" source="shared/flows/PaidBySheet.tsx, shared/flows/SplitFeeSection.tsx" usedIn={AWM} what="The one Paid by sheet (catch-up Phase 22a; US-11.2.2, US-08.2.3): a bottom sheet on the phone, a dialog on web and Admin. Opened by Change, it holds who pays (the Different payer tick, the patient's details or the other payer's fields, the Under 18 hint and the contact ask) and, when the payer changes, the offer (the Booking's other Procedures with the same payer, each ticked, never forced). Opened by Split, it holds the split alone (a party or Another person, a $ or % share and Takes the rest per row, each amount live). Save writes it or refuses it whole." replaceWith="Custom (shadcn Sheet, Checkbox and Input inside)" note="Opens on Grace Park's first seeded Procedure; Save writes to the demo store.">
           <PaidBySheetExample />
+        </CatalogueRow>
+        <CatalogueRow name="ProcedureEventsList" source="shared/booking/ProcedureEventsList.tsx" usedIn={AWM} what="A Procedure's events (catch-up Phase 38b; US-03.7.3): under each Procedure on the Booking detail in all three apps. Each row: the kind, the date, the first line's description, who raised it and the status pill (Awaiting review warning, Approved neutral, Invoiced success, Declined neutral with its reason). The office sees the total ex GST, the party, Review, Edit and Remove and the invoice number; the anaesthetist, on their own Procedure, the total and party and Edit and Remove on what they raised; the anaesthetist apps hide the section when the Procedure has none." replaceWith="Custom (the shared Eyebrow, Pill, TextAction and InlineConfirm)" note="The seeded event EV0001 as the office sees it; every word from shared/procedureEventCopy.ts.">
+          <ProcedureEventsListExample as="office" />
+        </CatalogueRow>
+        <CatalogueRow name="AdditionalInvoiceSheet (AdditionalInvoiceForm, FreeFormLinesEditor, EventPartyField)" source="shared/booking/AdditionalInvoiceForm.tsx" usedIn={AWM} what="The free-form additional invoice (catch-up Phase 38b; US-08.6.3, D10, D22): raised from the Contract row's Create (Admin) or Raise (anaesthetist) additional invoice, and the events list's Edit. The date of the charge, the Same as the original invoice tick (ticked by default) that unticks to 22a's PartyPicker with Another person, the lines (description, quantity, amount, the line total) and the live subtotal, GST and total; Save for review. A bottom sheet on the phone, a dialog on web and Admin, as the Paid by sheet beside it." replaceWith="Custom (shadcn Sheet, Checkbox and Input inside)" note="Opens on David Chen's HP03; Save for review writes to the demo store. The lines editor and party field are their own components for Phase 39's credit note and rebill.">
+          <AdditionalInvoiceSheetExample />
+        </CatalogueRow>
+        <CatalogueRow name="EventReviewSheet" source="apps/admin/flows/EventReviewSheet.tsx" usedIn={A} what="The one standard review step (catch-up Phase 38b; D13): the event, its Procedure and original invoice, the lines with subtotal, GST and total, the party and who raised it; Approve for billing (invoiced in the next billing run) or Decline with a reason shown to whoever raised it. Opened from Review's Events tab and the events list's Review." replaceWith="shadcn Sheet (side)" note="On the shared SidePanel (record width). Approve and Decline write to the demo store.">
+          <EventReviewSheetExample />
+        </CatalogueRow>
+        <CatalogueRow name="AdditionalInvoiceButton" source="shared/booking/AdditionalInvoiceButton.tsx" usedIn={AWM} what="The button on the Procedure's Paid by row, beside Split (catch-up Phase 38b; US-08.6.3 Button): Create additional invoice for the office on any invoiced Procedure, Raise additional invoice for the anaesthetist on their own; absent on a colleague's or before the List is authorised; disabled with the refusal sentence otherwise." replaceWith="Custom (the shared TextAction)" note="Shown as the office on David Chen's HP03 (an invoiced history Procedure).">
+          <AdditionalInvoiceButtonExample />
         </CatalogueRow>
         <CatalogueRow name="DayGrid" source="apps/admin/components/DayGrid.tsx" usedIn={A} what={`The daily scheduling canvas: one row per anaesthetist, blocks on a 07:00 to 18:00 ruler, conflict and attention overlays, the ${DRAFT_LIST} band and the filter footer. Cut down to 10 rows.`} replaceWith="Custom on primitives (grid roles, Tooltip, TanStack Virtual)" note="Blocks open the real SlotDrawer. Each block takes its fill and dashed outline from blockFill (UI unification U6, U23); the conflict and attention outlines stay its own." height={620}>
           <DayGridExample />
