@@ -5,13 +5,16 @@
  * "Surgeons" group (preferred ones read "Mr J. Whitford · preferred") and,
  * when there are any, a separate "Not preferred with Dr Sharma" group whose
  * options carry "· not preferred", so even the closed select says so. Never
- * disabled, never hidden. Admin only.
+ * disabled, never hidden. Admin only. A retired surgeon is not offered unless
+ * it is the current value, shown "(retired)" (catch-up Phase 42).
  */
 
 import { PAIRING_LABELS, groupSurgeonsForAnaesthetist } from '../../../../domain/pairingPreferences'
 import type { Surgeon } from '../../../../domain/types'
 import { titledSurname } from '../../../../shared/format'
-import { useAppStore } from '../../../../store'
+import { useMemo } from 'react'
+import { retiredLabel } from '../../../../domain/masterLifecycle'
+import { activeSurgeons, useAppStore } from '../../../../store'
 import { SelectField, type FieldFill, type FieldSize } from '../../../../shared/ui'
 import { usePairingEntries } from './useOfficePairings'
 
@@ -34,14 +37,23 @@ interface SurgeonPickerProps {
   size?: FieldSize
   fill?: FieldFill
   width?: number | string
+  /**
+   * The stored surgeon to keep offered (labelled "(retired)") when it is
+   * retired; defaults to `value`. An edit form passes the saved value so
+   * choosing another surgeon does not drop the original (catch-up Phase 42).
+   */
+  keepId?: string
 }
 
-export function SurgeonPicker({ anaesthetistId, value, onChange, emptyLabel, optionLabel, label, hideLabel, size, fill, width }: SurgeonPickerProps) {
-  const surgeons = useAppStore((s) => s.masters.surgeons)
+export function SurgeonPicker({ anaesthetistId, value, onChange, emptyLabel, optionLabel, label, hideLabel, size, fill, width, keepId }: SurgeonPickerProps) {
+  const allSurgeons = useAppStore((s) => s.masters.surgeons)
+  // Retired surgeons are not offered, except the current value, labelled (Phase 42).
+  const surgeons = useMemo(() => activeSurgeons({ masters: { surgeons: allSurgeons } }, keepId ?? value), [allSurgeons, keepId, value])
   const anaesthetistName = useAppStore((s) => (anaesthetistId !== undefined ? s.masters.anaesthetists[anaesthetistId]?.name : undefined))
   const entries = usePairingEntries()
   const { clear, notPreferred } = groupSurgeonsForAnaesthetist({ surgeons, entries, anaesthetistId })
-  const text = optionLabel ?? ((s: Surgeon) => s.name)
+  const base = optionLabel ?? ((s: Surgeon) => s.name)
+  const text = (s: Surgeon) => retiredLabel(base(s), s)
   const clearOptions = clear.map(({ surgeon, preferred }) => (
     <option key={surgeon.id} value={surgeon.id}>
       {text(surgeon)}

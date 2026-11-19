@@ -15,6 +15,7 @@
  * whenever the seed shape or content changes.
  */
 
+import { emptyMasterLoadsSlice, type MasterLoadsSlice } from '../domain/masterLoad/types'
 import { create, type StateCreator, type StoreApi, type UseBoundStore } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { resilientLocalStorage } from './persistStorage'
@@ -169,6 +170,8 @@ export interface AppState extends SeedState {
   xero: XeroSlice
   integrations: IntegrationsSlice
   intake: IntakeSlice
+  /** The seed load's checked sheets and the go-live batch (catch-up Phase 42; US-13.4.3): work items, not master data. */
+  masterLoads: MasterLoadsSlice
   shell: ShellSlice
 }
 
@@ -410,8 +413,12 @@ export const PERSIST_KEY = 'aa-demo'
  *  v64: Wave 3 join, Lane A's 38 (v63, holding 37 and the 34 sync) joined with Lane B's 35 (v62): one past the higher.
  *  v65: catch-up Phase 38b, events on a Procedure: `schedule.procedureEvents` (seeded EV0001, Dr Souter's
  *  additional invoice on HP03 awaiting review; counter `procedureEvent`), the `additional` invoice kind and the
- *  `additionalTo` lineage; the post-op addendum Booking (`bookingType`, `addendumOfBookingId`) is gone. Reseeds on load. */
-export const PERSIST_VERSION = 65
+ *  `additionalTo` lineage; the post-op addendum Booking (`bookingType`, `addendumOfBookingId`) is gone. Reseeds on load.
+ *  v65: catch-up Phase 42: master public-holiday calendar replaces per-hospital statutory rows (`masters.publicHolidays`
+ *  PH001 to PH007; Labour Day and Canterbury Anniversary Day leave `masters.holidays`); retire fields on masters
+ *  (hospitals, surgeons, groups, AA modifiers); `masterLoads` slice. Reseeds on load.
+ *  v66: the Wave 4 sync of Lane B's 42 into lane/a (Phase 38b and Phase 42 both took v65). Reseeds on load. */
+export const PERSIST_VERSION = 66
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {} }
@@ -469,6 +476,7 @@ export function freshAppState(): AppState {
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
     intake: seededIntakeSlice(),
+    masterLoads: emptyMasterLoadsSlice(),
     shell: { currentApp: 'mobile', suggestionSeq: 0 },
   }
   // Every seeded AUTHORISED List is locked (catch-up Phase 25); its pairs carry the same payee from the seed.

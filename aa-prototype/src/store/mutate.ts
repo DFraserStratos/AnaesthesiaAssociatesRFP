@@ -14,6 +14,7 @@
  * the matching screen can show a refused decision's reason and change nothing.
  */
 
+import { emptyMasterLoadsSlice } from '../domain/masterLoad/types'
 import type { ActorRole, AuditEntry, AuditSource, BookingId, ChangeSetId, ChangeSetKind } from '../domain/types'
 import { buildSeed, buildSeedBillingSlice, SEED_AUTHORISED_INVOICED_BOOKING_IDS, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
@@ -147,6 +148,10 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   xeroDivergence: { prefix: 'XD', pad: 4 },
   remittance: { prefix: 'RMT', pad: 4 },
   bankLine: { prefix: 'BKL', pad: 4 },
+  // Catch-up Phase 42: the master public-holiday calendar (seeded PH001 to PH007), seed loads and go-live batches.
+  publicHoliday: { prefix: 'PHN', pad: 3 },
+  masterLoad: { prefix: 'ML', pad: 3 },
+  goLiveBatch: { prefix: 'GL', pad: 2 },
 }
 
 /** Allocate the next deterministic id of a kind from the counters record. */
@@ -193,6 +198,7 @@ export type DomainPatch = Partial<
     | 'xero'
     | 'integrations'
     | 'intake'
+    | 'masterLoads'
     | 'dayNotes'
     | 'officePrivate'
     | 'notifications'
@@ -374,6 +380,7 @@ export function transaction<T>(api: AppStoreApi, run: () => Outcome<T>): Outcome
     xero: before.xero,
     integrations: before.integrations,
     intake: before.intake,
+    masterLoads: before.masterLoads,
     dayNotes: before.dayNotes,
     officePrivate: before.officePrivate,
     notifications: before.notifications,
@@ -454,6 +461,7 @@ function resetDomainStateOnly(api: AppStoreApi): void {
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
     intake: seededIntakeSlice(),
+    masterLoads: emptyMasterLoadsSlice(),
     // The shell slice survives a Reset, except the office picker counter
     // (catch-up Phase 17): zeroing it makes a fresh Reset replay the same
     // within-tier orders.

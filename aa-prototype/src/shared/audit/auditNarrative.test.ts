@@ -319,3 +319,11 @@ describe('an RVG code in the audit (catch-up Phase 19)', () => {
     expect(auditFieldChanges(entry, names)).toEqual([{ key: 'rvgGroupId', label: 'RVG code', before: 'not set', after: 'H4 · Complex procedures' }])
   })
 })
+
+describe('a record the seed load made (catch-up Phase 42)', () => {
+  it('reads "Loaded from spreadsheet, row 3" in place of the load id and row number', () => {
+    const changes = auditFieldChanges(entry({ id: 'A9', action: 'hospital.create', after: { name: 'Rangiora Day Surgery', loadId: 'ML001', rowNumber: 3 } }))
+    expect(changes[0]).toEqual({ key: 'loadedFrom', label: 'Source', after: 'Loaded from spreadsheet, row 3' })
+    expect(changes.map((c) => c.key)).toEqual(['loadedFrom', 'name'])
+  })
+})

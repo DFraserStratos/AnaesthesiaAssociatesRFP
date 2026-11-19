@@ -5,7 +5,8 @@ import { createSpecialty, removeSpecialty, renameSpecialty, useAppStore, type Ac
 import { Button, FormError, TextField, useSurface } from '../../../../shared'
 import { OverlayHeader, SheetActions } from '../../../../shared/surface'
 import { HistorySheet } from '../../../../shared/booking'
-import { Header, Table, TextAction } from './chrome'
+import { MasterHeader, MasterTable } from './chrome'
+import { TextAction } from '../../../../shared/ui'
 import { cellStyle } from './tableStyles'
 
 /**
@@ -31,13 +32,13 @@ export function SpecialtiesView({ actor }: { actor: Actor }) {
 
   return (
     <>
-      <Header
+      <MasterHeader
         title="Specialties"
         sub="AA's broad surgical specialties, with no subspecialties: General surgery, not Upper GI. Every surgeon holds one or more. A Contract with none is offered for every specialty."
-        action={<Button variant="secondary" onClick={() => { setError(null); setSheet({}) }}>Add specialty</Button>}
+        add={{ label: 'Add specialty', onClick: () => { setError(null); setSheet({}) } }}
       />
       <FormError message={error} />
-      <Table heads={['Specialty', 'Held by', '']} rightAlign={[2]} shot="masters-specialties">
+      <MasterTable columns={['Specialty', 'Held by', '']} rightAlign={[2]} shot="masters-specialties">
         {rows.map((s) => {
           const usage = specialtyUsage({ surgeons, contracts }, s.id)
           return (
@@ -48,15 +49,15 @@ export function SpecialtiesView({ actor }: { actor: Actor }) {
               </td>
               <td style={{ ...cellStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
                 <span style={{ display: 'inline-flex', gap: 12 }}>
-                  <TextAction onClick={() => setHistory(s)} label={`History of ${s.name}`}>History</TextAction>
-                  <TextAction onClick={() => { setError(null); setSheet({ specialty: s }) }} label={`Rename ${s.name}`}>Rename</TextAction>
-                  <TextAction onClick={() => remove(s)} label={`Remove ${s.name}`}>Remove</TextAction>
+                  <TextAction size="sm" flush onClick={() => setHistory(s)} label={`History of ${s.name}`}>History</TextAction>
+                  <TextAction size="sm" flush onClick={() => { setError(null); setSheet({ specialty: s }) }} label={`Rename ${s.name}`}>Rename</TextAction>
+                  <TextAction size="sm" flush onClick={() => remove(s)} label={`Remove ${s.name}`}>Remove</TextAction>
                 </span>
               </td>
             </tr>
           )
         })}
-      </Table>
+      </MasterTable>
       {sheet !== null && <SpecialtySheet key={sheet.specialty?.id ?? 'new'} specialty={sheet.specialty} actor={actor} onClose={() => setSheet(null)} />}
       <HistorySheet
         open={history !== null}

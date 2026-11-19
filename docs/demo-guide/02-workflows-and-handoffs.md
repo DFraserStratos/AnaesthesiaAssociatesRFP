@@ -70,7 +70,7 @@ There is no `RETURNED` state.
 
 - The schedule horizon (a setting, four months today) advances or is changed.
 - A new anaesthetist is added with a start date, or an anaesthetist is switched active or inactive.
-- A recurring booking or hospital holiday changes.
+- A recurring booking, hospital holiday or public holiday changes.
 
 ### Steps
 
@@ -120,6 +120,13 @@ session.
 - RFP: `Schedule Management - Candidate Architecture`
 - RFP: `Supporting / Master Data`
 - Prototype: `D1`, `D2`, `D5`
+
+**Master data and go-live.** A clean cut: nothing comes across because it exists in Solutions Plus
+(it gives operation names only, never its unit values). A developer seeds the empty system once from
+AA's controlled spreadsheets, every row checked by the same rules as adding it by hand and every
+failure listed and left out; the same load runs again into a test system. After that the office keeps
+every master by hand, each change audited, and never loads master data itself. There is no Contract
+upload or export in the first release (Future Work).
 
 ## Workflow 1: reserve a List and populate patient Bookings
 

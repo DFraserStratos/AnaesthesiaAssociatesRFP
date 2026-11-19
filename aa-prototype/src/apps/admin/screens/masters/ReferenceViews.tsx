@@ -14,8 +14,9 @@ import { shortDay, locationName } from '../../../../shared/format'
 import { applyAllLine } from '../../recurringBookingCopy'
 import { useNavigate } from 'react-router-dom'
 import { RecurringBookingSheet } from '../../flows/RecurringBookingSheet'
-import { EditCell, Header, Table } from './chrome'
-import { cellStyle, textActionStyle } from './tableStyles'
+import { EditCell, MasterHeader, MasterTable } from './chrome'
+import { cellStyle } from './tableStyles'
+import { ResultLine, TextAction } from '../../../../shared/ui'
 import { sessionText } from '../../../../domain/outOfHours'
 
 /**
@@ -81,27 +82,22 @@ function RecurringBookingsView({ actor, onEdit, onAdd }: { actor: Actor; onEdit:
 
   return (
     <>
-      <Header
+      <MasterHeader
         title="Recurring bookings"
-        sub="Recurring bookings are standing arrangements of hospital, anaesthetist and surgeon on a day and session. Each one creates its Lists across the schedule ahead, before any Bookings (they are not Bookings for a patient). Applying changes the canvas from tomorrow: empty Lists are added or updated, and Lists with Bookings or office edits are left as they are."
-        action={
-          <div style={{ display: 'flex', gap: 8, flex: 'none' }}>
-            <Button variant="secondary" onClick={onAdd}>Add recurring booking</Button>
-            <Button variant="primary" onClick={applyAll}>Apply to canvas now</Button>
-          </div>
+        sub="Standing arrangements of hospital, anaesthetist and surgeon on a day and session. Each one creates its Lists across the schedule ahead, before any Bookings. Applying changes the canvas from tomorrow: empty Lists are added or updated, and Lists with Bookings or office edits are left as they are."
+        actions={<Button variant="secondary" size="desktop" onClick={applyAll}>Apply to canvas now</Button>}
+        add={{ label: 'Add recurring booking', onClick: onAdd }}
+      />
+      <ResultLine
+        line={result?.line}
+        shot="recurring-bookings-apply-result"
+        actions={
+          result?.firstDate !== undefined ? (
+            <TextAction size="sm" flush onClick={() => navigate(`/admin/day/${result.firstDate}`)}>Show on day grid</TextAction>
+          ) : undefined
         }
       />
-      {result !== null && (
-        <div role="status" data-shot="recurring-bookings-apply-result" style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-          <span>{result.line}</span>
-          {result.firstDate !== undefined && (
-            <button type="button" style={{ ...textActionStyle, fontSize: 13, flex: 'none' }} onClick={() => navigate(`/admin/day/${result.firstDate}`)}>
-              Show on day grid
-            </button>
-          )}
-        </div>
-      )}
-      <Table shot="recurring-bookings-table" heads={['Anaesthetist', 'Day', 'Session', 'Kind', 'Hospital', 'Surgeon', 'Runs', '']} rightAlign={[7]}>
+      <MasterTable shot="recurring-bookings-table" label="Recurring bookings" columns={['Anaesthetist', 'Day', 'Session', 'Kind', 'Hospital', 'Surgeon', 'Runs', '']} rightAlign={[7]}>
         {rows.map((p) => {
           const retired = p.retiredAtISO !== undefined
           const style = retired ? { ...cellStyle, color: neutral.mist } : cellStyle
@@ -118,7 +114,7 @@ function RecurringBookingsView({ actor, onEdit, onAdd }: { actor: Actor; onEdit:
             </tr>
           )
         })}
-      </Table>
+      </MasterTable>
     </>
   )
 }
@@ -167,7 +163,7 @@ export function XeroArchivingView({ actor }: { actor: Actor }) {
 
   return (
     <>
-      <Header title="Xero & archiving" sub="Contact-archive policy for the Xero contact store. Patient and Billable Party contacts archive once fully paid and inactive; organisational contacts never archive." />
+      <MasterHeader title="Xero & archiving" sub="Contact-archive policy for the Xero contact store. Patient and Billable Party contacts archive once fully paid and inactive; organisational contacts never archive." />
 
       {/* Configurable window */}
       <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 560 }}>

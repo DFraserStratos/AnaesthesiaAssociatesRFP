@@ -43,6 +43,7 @@ import { rvgGroupLabel } from '../../../domain/billing/rvgGroups'
 import { ContractPriceRanges } from './ContractPriceRanges'
 import { parsePriceText } from '../../../domain/billing/priceRanges'
 import {
+  activeSurgeons,
   createContract,
   disableContract,
   editContract,
@@ -53,7 +54,7 @@ import {
   type Actor,
 } from '../../../store'
 import { Button, FieldLabel, FormError, Segmented, TextField } from '../../../shared'
-import { FieldHint, LineTab, LineTabs, Notice, ResultLine, SelectField } from '../../../shared/ui'
+import { FieldHint, LineTab, LineTabs, Notice, ResultLine, SelectField, TextAction } from '../../../shared/ui'
 import { ContractHistory } from './ContractHistory'
 import { ContractChangeNotice, type ChangeNoticeRow } from './ContractChangeNotice'
 import { contractDisabledOn } from '../../../domain/billing/contractHistory'
@@ -67,10 +68,10 @@ import {
   STATUS_LABEL,
 } from '../../../shared/contracts'
 import { compareBySurname } from '../../../domain/surgeons'
+import { isRetired, retiredLabel } from '../../../domain/masterLifecycle'
 import { useDemoTriggerContextWhile } from '../../../shared/demoTriggers'
 import { neutral, radius } from '../../../theme/tokens'
 import { MasterPanel, PanelGrid, PanelSection } from '../components/MasterPanel'
-import { TextAction } from '../screens/masters/chrome'
 import { Pill } from '../components/MasterPills'
 
 interface Props {
@@ -171,7 +172,17 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
     }
     return [...groups.entries()]
   }, [masters.parties])
-  const surgeons = useMemo(() => Object.values(masters.surgeons).sort(compareBySurname), [masters.surgeons])
+  // Active surgeons only, plus any retired surgeon the Contract already links, labelled (catch-up Phase 42).
+  const linkedIds = contract?.linkedSurgeonIds
+  const surgeons = useMemo(() => {
+    const keptRetired = (linkedIds ?? []).flatMap((id) => {
+      const s = masters.surgeons[id]
+      return s !== undefined && isRetired(s) ? [s] : []
+    })
+    return [...activeSurgeons({ masters: { surgeons: masters.surgeons } }), ...keptRetired]
+      .sort(compareBySurname)
+      .map((s) => ({ ...s, name: retiredLabel(s.name, s) }))
+  }, [masters.surgeons, linkedIds])
   const anaesthetists = useMemo(
     () => Object.values(masters.anaesthetists).sort((a, b) => a.name.localeCompare(b.name)),
     [masters.anaesthetists],
@@ -360,8 +371,8 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
                     'None'
                   )}
                 </span>
-                <TextAction onClick={() => setPickerOpen(true)} label="Choose the default RVG code">{defaultGroup !== undefined ? 'Change' : 'Choose'}</TextAction>
-                {defaultGroup !== undefined && <TextAction onClick={() => setDefaultRvgGroupId(null)} label="Clear the default RVG code">Clear</TextAction>}
+                <TextAction size="sm" flush onClick={() => setPickerOpen(true)} label="Choose the default RVG code">{defaultGroup !== undefined ? 'Change' : 'Choose'}</TextAction>
+                {defaultGroup !== undefined && <TextAction size="sm" flush onClick={() => setDefaultRvgGroupId(null)} label="Clear the default RVG code">Clear</TextAction>}
               </div>
               <FieldHint>Fills a Procedure's RVG code when it has none.</FieldHint>
             </div>

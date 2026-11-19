@@ -73,13 +73,13 @@
               "click": "role=button[name=\"Next month\"]"
             },
             {
-              "wait": 400
+              "wait": "button[data-calendar-day=\"2026-10-26\"] [data-public-holiday]"
             }
           ],
           "highlight": [
-            "[data-shot=\"hospital-calendar\"]"
+            "button[data-calendar-day=\"2026-10-26\"] [data-public-holiday]"
           ],
-          "caption": "Each hospital keeps its own closure calendar"
+          "caption": "Each hospital keeps its own closure calendar; Labour Day shows on it read-only, from the master public holidays"
         },
         {
           "state": "edit",

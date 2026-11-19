@@ -7,7 +7,8 @@ import { futureSessionsWithStatus, reorderSlotStatus, restoreSlotStatus, retireS
 import { Button, FormError, StatusChip, useSurface } from '../../../../shared'
 import { OverlayHeader, SheetActions } from '../../../../shared/surface'
 import { SlotStatusSheet } from '../../flows/SlotStatusSheet'
-import { Header, Table, TextAction } from './chrome'
+import { MasterHeader, MasterTable } from './chrome'
+import { TextAction } from '../../../../shared/ui'
 import { cellStyle } from './tableStyles'
 
 const yesNo = (v: boolean) => (v ? 'Yes' : 'No')
@@ -35,15 +36,15 @@ export function AvailabilityStatusesView({ actor }: { actor: Actor }) {
 
   return (
     <>
-      <Header
+      <MasterHeader
         title="Availability statuses"
         sub="The availability anaesthetists set on their AM and PM sessions. Every session is Free until changed, and a List placed in it shows instead. Rules use each status's ID, so you can rename or recolour a status, or add one, without changing how it behaves. This is a session's availability, not a List's state (Draft, Active, Submitted, Authorised), which shows on the List."
-        action={<Button variant="secondary" onClick={() => setSheet({})} style={{ whiteSpace: 'nowrap', flex: 'none', padding: '0 18px' }}>Add status</Button>}
+        add={{ label: 'Add status', onClick: () => setSheet({}) }}
       />
       <FormError message={error} />
-      <Table
+      <MasterTable
         shot="admin-availability-statuses"
-        heads={['Status', 'ID', 'Long label', 'Open for bookings', 'Anaesthetists can set', 'Default', 'Description', 'Use', '']}
+        columns={['Status', 'ID', 'Long label', 'Open for bookings', 'Anaesthetists can set', 'Default', 'Description', 'Use', '']}
       >
         {rows.map((s) => {
           const retired = s.retiredAtISO !== undefined
@@ -63,23 +64,23 @@ export function AvailabilityStatusesView({ actor }: { actor: Actor }) {
               <td style={{ ...cellStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
                 <span style={{ display: 'inline-flex', gap: 12 }}>
                   {!retired && inUse[0]?.key !== s.key && (
-                    <TextAction onClick={() => reorderSlotStatus(useAppStore, actor, s.key, 'up')} label={`Move ${s.label} up`}>Up</TextAction>
+                    <TextAction size="sm" flush onClick={() => reorderSlotStatus(useAppStore, actor, s.key, 'up')} label={`Move ${s.label} up`}>Up</TextAction>
                   )}
                   {!retired && inUse.at(-1)?.key !== s.key && (
-                    <TextAction onClick={() => reorderSlotStatus(useAppStore, actor, s.key, 'down')} label={`Move ${s.label} down`}>Down</TextAction>
+                    <TextAction size="sm" flush onClick={() => reorderSlotStatus(useAppStore, actor, s.key, 'down')} label={`Move ${s.label} down`}>Down</TextAction>
                   )}
-                  <TextAction onClick={() => setSheet({ status: s })} label={`Edit ${s.label}`}>Edit</TextAction>
+                  <TextAction size="sm" flush onClick={() => setSheet({ status: s })} label={`Edit ${s.label}`}>Edit</TextAction>
                   {retired ? (
-                    <TextAction onClick={() => restore(s)} label={`Restore ${s.label}`}>Restore</TextAction>
+                    <TextAction size="sm" flush onClick={() => restore(s)} label={`Restore ${s.label}`}>Restore</TextAction>
                   ) : (
-                    <TextAction onClick={() => { setError(null); setRetiring(s) }} label={`Retire ${s.label}`}>Retire</TextAction>
+                    <TextAction size="sm" flush onClick={() => { setError(null); setRetiring(s) }} label={`Retire ${s.label}`}>Retire</TextAction>
                   )}
                 </span>
               </td>
             </tr>
           )
         })}
-      </Table>
+      </MasterTable>
       <div data-shot="availability-statuses-list-types" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12.5, color: neutral.slate }}>
         {/* Catch-up Phase 32d: Public is a status above, so only Private and Pre-op are kinds of List. */}
         {LIST_KINDS.map((k) => <StatusChip key={k} status={k} />)}

@@ -5,6 +5,7 @@
  * staged scenario states.
  */
 
+import { closureSourcesOf } from '../holidays'
 import { assigned, assignedLists } from '../../test/lists'
 import { describe, expect, it } from 'vitest'
 import { buildSeed, MULTI_PROCEDURE_IDS, ANAE, HOSP, INS, SURG, SEED_LIST_IDS, SEED_MARKERS, SEED_LEAVE, SEED_SICKNESS, RECORDED_WINDOW, seedRecurringClashes } from './index'
@@ -335,7 +336,7 @@ const SOUTHERN_CROSS_WED22_DRAFT_LISTS = ['LD-RCB020-2026-07-22-AM', 'LD-RCB021-
 
 describe('seed conflicts are facts (catch-up Phase 30)', () => {
   const lists = Object.values(seed.schedule.lists)
-  const holidays = holidayIndex(seed.masters.holidays)
+  const holidays = holidayIndex(closureSourcesOf(seed.masters))
 
   it('every seeded conflict equals the one rule for its List: no fabricated flag, none missing', () => {
     for (const list of lists) {

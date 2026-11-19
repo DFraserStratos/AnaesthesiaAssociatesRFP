@@ -15,7 +15,7 @@
 
 import { isOfficeContract } from '../../../../domain/billing/fallbacks'
 import { contractInvoicingSummary } from '../../../../domain/billing/invoicePresentation'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { contractSearch, type ContractStatusFilter } from '../../../../domain/billing/contracts'
 import { formatRangeDate, formatRangePrice, rangeSummary, rangeSummaryText } from '../../../../domain/billing/priceRanges'
@@ -24,15 +24,16 @@ import type { Contract } from '../../../../domain/types'
 import { useAppStore, useToday, type Actor } from '../../../../store'
 import { fundingTagsInOrder } from '../../../../domain/billing/fundingTags'
 import { specialtyNames } from '../../../../domain/specialties'
-import { Button, FieldLabel, Segmented } from '../../../../shared'
+import { FieldLabel, Segmented } from '../../../../shared'
 import { NameSearchBox, SelectField } from '../../../../shared/ui'
 import { BILLS_LABEL, PARTY_KIND_LABEL, STATUS_LABEL, pricingLabel } from '../../../../shared/contracts'
-import { neutral, radius } from '../../../../theme/tokens'
+import { neutral } from '../../../../theme/tokens'
 import { ContractPanel } from '../../flows/ContractEditSheet'
 import { Pill } from '../../components/MasterPills'
 import { isRvgKind } from '../../../../domain/billing/contracts'
-import { isInteractiveRowTarget } from '../../tableChrome'
-import { EditCell, Header, Table, TextAction } from './chrome'
+import { ClickableRow, GroupRow } from '../../../../shared/table'
+import { EditCell, MasterHeader, MasterTable } from './chrome'
+import { EmptyState, TextAction } from '../../../../shared/ui'
 import { rowCellStyle } from './tableStyles'
 
 /** Layout and Delivery are derived and read-only (catch-up Phase 22; US-04.2.8): nothing about invoicing is stored on a Contract. */
@@ -54,7 +55,19 @@ export function ContractsView({ actor }: { actor: Actor }) {
     const h = params.get('holder')
     return h !== null && !Object.values(contracts).some((c) => c.holderId === h && c.status === 'active' && isOfficeContract(c)) ? 'all' : 'active'
   })
-  const [panel, setPanel] = useState<{ id?: string } | null>(null)
+  // `?contract=<id>` opens that Contract's panel (a loaded row's link from Seed load); the param is then dropped.
+  const [panel, setPanel] = useState<{ id?: string } | null>(() => {
+    const id = params.get('contract')
+    return id !== null && contracts[id] !== undefined ? { id } : null
+  })
+  useEffect(() => {
+    if (params.get('contract') === null) return
+    setParams((prev) => {
+      const copy = new URLSearchParams(prev)
+      copy.delete('contract')
+      return copy
+    }, { replace: true })
+  }, [params, setParams])
   const holderParam = params.get('holder') ?? ''
   const holderId = parties[holderParam] !== undefined ? holderParam : ''
 
@@ -91,10 +104,10 @@ export function ContractsView({ actor }: { actor: Actor }) {
 
   return (
     <>
-      <Header
+      <MasterHeader
         title="Contracts"
         sub="Every arrangement is a Contract held by a Party, with its own AA code, who it bills and how it is priced. Contracts are edited in place and disabled, never deleted. A fixed price changes from a date by adding a price range; any other change that must start on a date is a new Contract."
-        action={<Button variant="secondary" onClick={() => setPanel({})}>New contract</Button>}
+        add={{ label: 'New contract', onClick: () => setPanel({}) }}
       />
 
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
@@ -136,42 +149,44 @@ export function ContractsView({ actor }: { actor: Actor }) {
       </div>
 
       {results.length === 0 ? (
-        <div data-shot="contract-catalogue" style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '28px 20px', display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start' }}>
-          <div style={{ fontSize: 14, fontWeight: 600 }}>No Contracts match.</div>
-          <div style={{ fontSize: 13, color: neutral.slate }}>Check the spelling, or search all Contracts, Disabled ones included.</div>
-          {filtered && (
-            <TextAction
-              onClick={() => {
-                setQuery('')
-                setStatus('all')
-                setHolder('')
-                setTagFilter('')
-              }}
-            >
-              Search all Contracts
-            </TextAction>
-          )}
-        </div>
+        <EmptyState
+          variant="card"
+          shot="contract-catalogue"
+          title="No Contracts match."
+          action={
+            filtered ? (
+              <TextAction
+                size="sm"
+                flush
+                onClick={() => {
+                  setQuery('')
+                  setStatus('all')
+                  setHolder('')
+                  setTagFilter('')
+                }}
+              >
+                Search all Contracts
+              </TextAction>
+            ) : undefined
+          }
+        >
+          Check the spelling, or search all Contracts, Disabled ones included.
+        </EmptyState>
       ) : (
-        <Table heads={COLUMNS} rightAlign={[8]} shot="contract-catalogue">
+        <MasterTable columns={COLUMNS} rightAlign={[8]} shot="contract-catalogue" label="Contracts">
           {groups.map(([holder, list]) => {
             const party = parties[holder]
             return [
-              <tr key={`h-${holder}`} data-contract-holder={holder}>
-                <td colSpan={COLUMNS.length} style={{ ...rowCellStyle, background: neutral.bg, paddingTop: 10, paddingBottom: 8 }}>
-                  <span style={{ fontWeight: 700, fontSize: 13, color: neutral.ink, marginRight: 8 }}>{party?.name ?? holder}</span>
-                  {party !== undefined && party.kind !== 'aa' && <Pill>{PARTY_KIND_LABEL[party.kind]}</Pill>}
-                </td>
-              </tr>,
+              <GroupRow key={`h-${holder}`} span={COLUMNS.length} data-contract-holder={holder} style={{ paddingTop: 10, paddingBottom: 8, color: neutral.ink, borderBottom: `1px solid ${neutral.sunken}` }}>
+                <span style={{ fontWeight: 700, fontSize: 13, color: neutral.ink, marginRight: 8 }}>{party?.name ?? holder}</span>
+                {party !== undefined && party.kind !== 'aa' && <Pill>{PARTY_KIND_LABEL[party.kind]}</Pill>}
+              </GroupRow>,
               ...list.map((c) => (
-                <tr
+                <ClickableRow
                   key={c.id}
                   data-contract={c.id}
                   data-system={c.systemRole !== undefined ? c.systemRole : undefined}
-                  className="aa-clickable-table-row"
-                  onClick={(event) => {
-                    if (!isInteractiveRowTarget(event.target)) setPanel({ id: c.id })
-                  }}
+                  onOpen={() => setPanel({ id: c.id })}
                 >
                   <td className="mono" style={{ ...rowCellStyle, fontWeight: 600, whiteSpace: 'nowrap' }}>{c.aaCode}</td>
                   <td style={{ ...rowCellStyle, fontWeight: 500 }}>
@@ -200,11 +215,11 @@ export function ContractsView({ actor }: { actor: Actor }) {
                     <Pill tone={c.status === 'active' ? 'success' : 'neutral'}>{STATUS_LABEL[c.status]}</Pill>
                   </td>
                   <EditCell onClick={() => setPanel({ id: c.id })} label={`Edit ${c.name}`} style={rowCellStyle} />
-                </tr>
+                </ClickableRow>
               )),
             ]
           })}
-        </Table>
+        </MasterTable>
       )}
 
       {panel !== null && (

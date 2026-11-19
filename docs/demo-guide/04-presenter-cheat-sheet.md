@@ -117,7 +117,8 @@ Fee = (Base + Time + Modifier units) x anaesthetist's own dollar value per unit
   Spine code, so it cannot be added twice; the age modifier is pre-applied from the date of birth,
   removable. Every other modifier, ASA included, is claimed with a short reason.
 - A part interval always rounds up (confirmed with AA); the tiers are held as data (Admin → Master
-  data → RVG groups shows the RVG time rule, read only). The anaesthetist enters start and finish only.
+  data → RVG groups holds the RVG time rule; the office edits its tiers, and a part interval always
+  rounds up). The anaesthetist enters start and finish only.
 
 ### One Contract per Procedure, on the step rail
 
@@ -481,7 +482,9 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - Draft Lists: Lists with no anaesthetist yet, soonest first; assign one from a grouped, tier-ordered picker
 - Correct billing setup
 - Review and authorise
-- Master data and audit
+- Master data (every master in one place, kept by hand after a one-off load from AA's controlled
+  spreadsheets, every change audited, go-live load) and audit
+- Master data's sub-nav is grouped: People and places, Schedule, Billing, Settings, Go-live
 - Anaesthetist profiles: rate per unit, contact details, registration number, HPI CPN, bank account
   (masked) and GST number on each record (**Edit details** on the Profile card) and in the
   Anaesthetists table; the HPI CPN and bank details are mandatory, every change audited
@@ -534,6 +537,7 @@ Receipts held = payables due + the AA Holding account  ->  In balance
   you there."
 - "Everything after setup is an event on the Procedure, reviewed once and invoiced in the next run."
 - "Extra work after a fixed price is billed by hand, by the anaesthetist or the office."
+- "Nothing comes across because it exists in Solutions Plus."
 - "This is a candidate design we would validate during discovery."
 
 ## Statements to avoid
@@ -612,6 +616,9 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   or is missed and the poll catches it); **Simulate bulk hospital remittance** (Xero Invoices and Bank
   reconciliation). The Billing monitor's **Run payables in Xero** is not a demo action but carries the
   **Simulated Xero** badge: Xero pays the bills and the Billing Engine records each payment it reports.
+- Master data's **Seed load** and **Go-live load** views are badged demo: they stand in for the
+  developer's one-off load from AA's controlled spreadsheets (every row checked by the manual add's
+  rules, rejected rows listed with reasons), not office screens. The office never loads master data.
 - **Demo actions** (the pill in the top bar, beside the app switcher) holds the simulated events for
   the screen you are on, each badged "Demo trigger". It appears only on screens that have one. The
   control panel is now the index of them, with an **Open screen** link per entry (catch-up Phase 14).
@@ -757,6 +764,11 @@ Say:
   screen across every date.
 - It clears when the clash goes (the closure moved or deleted, or the List's hospital changed) or when
   the office clears it, with an optional note and "Flag again".
+- Public holidays come from one master calendar (Master data → Public holidays: Labour Day Mon 26 Oct
+  and Canterbury Anniversary Day Fri 13 Nov 2026, then Christmas to Waitangi Day 2027): each closes every
+  hospital not listed open that day, shows on each hospital card and read-only on its calendar, and flags
+  a List there like any closure. AA rooms is listed open only on Labour Day and Canterbury Anniversary Day
+  (PH001, PH002); the later holidays close it too.
 - The office never assigns or moves a List onto an unavailable session: it is made available first,
   with the anaesthetist's agreement (US-01.6.3).
 - Not conflicts: a recurring booking landing on an unavailable session becomes a Draft List (Phase 31),
@@ -831,7 +843,8 @@ Say:
 - Only the age modifier and a modifier the base units include are pre-applied, and both can be
   removed; nothing else is pre-filled. The age bands are settled (OQ-95 answered, D29).
 - Modifiers stack with no limit (a policy matter for AA, not a system rule); the same modifier is
-  never added twice. AA's own modifiers (Vanessa's list) are not loaded yet; the office can add one.
+  never added twice. AA's own modifiers are master data the office adds, edits, retires and
+  reinstates.
 
 ### 11. Open versus genuinely overdue prior balances
 

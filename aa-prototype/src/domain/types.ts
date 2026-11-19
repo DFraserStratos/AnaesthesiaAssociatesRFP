@@ -358,6 +358,10 @@ export interface Hospital {
   locationType: LocationType
   /** Contact email for booking updates (US-13.4.1). Optional: a newly added hospital may not have one yet. */
   contactEmail?: string
+  /** Retired, never deleted (catch-up Phase 42; US-13.4.1): pickers stop offering it, every reference keeps resolving. */
+  retiredAtISO?: IsoDate
+  /** Why it was retired, as the office typed it (required on retire). */
+  retiredReason?: string
 }
 
 /**
@@ -404,6 +408,9 @@ export interface Surgeon {
   hpiId?: string
   /** NZ medical registration number, held for information only. */
   medicalRegistrationNumber?: string
+  /** Retired, never deleted (catch-up Phase 42; US-13.4.1). */
+  retiredAtISO?: IsoDate
+  retiredReason?: string
 }
 
 /**
@@ -422,6 +429,9 @@ export interface SurgeonGroup {
   name: string
   description?: string
   memberSurgeonIds: SurgeonId[]
+  /** Retired, never deleted (catch-up Phase 42; US-13.4.1). */
+  retiredAtISO?: IsoDate
+  retiredReason?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -537,6 +547,8 @@ export interface ListConflict {
   cause: string
   raisedAtISO: IsoDateTime
   holidayId?: string
+  /** A master public holiday closing the hospital (catch-up Phase 42; cause `publicHoliday:<id>`). */
+  publicHolidayId?: PublicHolidayId
 }
 
 /**
@@ -1282,6 +1294,26 @@ export interface HospitalHoliday {
   hospitalId: HospitalId
   dateISO: IsoDate
   name: string
+}
+
+export type PublicHolidayId = string
+
+/**
+ * One row of the master public-holiday calendar (catch-up Phase 42; DM-38,
+ * US-13.4.1, US-01.5.1): a statutory or regional holiday that closes every
+ * hospital, AA rooms included, except those listed open that day. `region` is
+ * a label ("Canterbury"), never a filter: every AA hospital is in
+ * Christchurch. Read only through `closuresFor` / `closuresIndex`
+ * (`domain/holidays.ts`), beside each hospital's own closures.
+ */
+export interface PublicHoliday {
+  id: PublicHolidayId
+  dateISO: IsoDate
+  name: string
+  kind: 'national' | 'regional'
+  region?: string
+  /** Hospitals that run as normal that day; every other hospital is closed. */
+  openHospitalIds: HospitalId[]
 }
 
 /**

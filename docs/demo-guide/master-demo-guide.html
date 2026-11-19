@@ -678,9 +678,11 @@
       <p style="font-size:13px">The one-day dashboard is the control tower: move one Booking for a routine
       reschedule, reassign a whole List for illness cover, preserving Bookings and audit through every change.
       Sees the team's notifications of Lists anaesthetists have moved and their alerts to the office, ticks each one resolved once dealt with (it leaves for the whole office; Show resolved brings it back), and assigns the Draft Lists they return. Records a sickness phoned in with Change status on the Day view: the List goes back to the office or on to a colleague there and then. Opens an out-of-hours session for an emergency or late case (Open out-of-hours session on an anaesthetist's Day row, any day from today, one a day, 18:00 to 21:00 by default) and puts a List in it, a new one or a Draft List for that evening; closes an empty one from its drawer. Sets the primary Procedure from the rooms' sheet (Make primary on the Admin Booking), and corrects it at review. Imports hospital files, matches each row on the matching screen (Admin, Intake, Matching), and sets each new Booking's invoice destination and Contract; opens the rooms' PDF lists (Admin, Intake, PDF lists) with the address each came from, corrects a row beside the facsimile and sends it to matching, and the List made from it keeps its sender. Saves each Booking's changes explicitly (Save changes, one change set named for her) and drafts the update email on demand when a change matters, from the Booking, the List drawer after a cover change, or the notification of an anaesthetist's move, picking the changes and starting from the email templates the office maintains: Vanessa's main need, the hospital hearing about a cover change without her typing it; nothing is sent automatically (OQ-82). As intake operator, Admin Intake (Matching, PDF lists, Data quality, Validators) is her in-scope surface; automatic hospital sync and HL7/FHIR monitoring are Future scope.
-      Maintains schedule-related master data such as anaesthetists, recurring bookings and hospital holidays (adding, editing and deleting closures),
-      and surgeons, their contacts and groups, the office's private pairing preferences and the anaesthetists'
-      priority tiers. Holds each anaesthetist's profile on their record (the Profile card's Edit details): rate
+      Maintains all master data (hospitals, surgeons with their practice names and contacts, recurring
+      bookings, public holidays and hospital calendars, RVG groups and modifiers, specialties and funding
+      tags, Parties (insurers and funders among them), Contracts and their price ranges), by hand after the
+      one-off go-live load; and the anaesthetists, surgeon groups, the office's private pairing preferences
+      and the anaesthetists' priority tiers. Holds each anaesthetist's profile on their record (the Profile card's Edit details): rate
       per unit, phone, email, registration number, HPI CPN, bank account and GST number. The HPI CPN and bank
       details are mandatory on every anaesthetist record; every change is audited, the bank number masked.</p>
     </div>
@@ -785,7 +787,7 @@
     the anaesthetist's calendar (days off, repeating days off and Public sessions) sets each session's status directly,
     nothing reconciled; the seeded public sessions are Public with the note CPH, each anaesthetist with a weekly one having a weekly Public series; recurring bookings then project their Lists, empty, after the calendar (a closed
     session is not painted; Phase 31 makes it a Draft List), and a change reapplies at once through "Apply
-    to canvas now"; hospital holidays flag Lists; conflicts surface without deleting the List and clear
+    to canvas now" (a recurring booking, hospital holiday or public holiday change); hospital holidays and public holidays flag Lists; conflicts surface without deleting the List and clear
     when the clash goes or the office clears them. <span class="chip ready">Ready</span></p>
     <p>In Admin, the office also maintains surgeons (each holding one or more specialties, a practice name and
     their contacts; the HPI CPN is filled in by admin staff, unique when held), surgeon groups, hospital contact emails, AA's list of specialties, its
@@ -797,6 +799,12 @@
     offered; never every contact and never the personal contact.
     Anaesthetists never see preferences or tiers, and an anaesthetist handing on their own List gets no
     warning.</p>
+    <p><strong>Master data and go-live.</strong> A clean cut: nothing comes across because it exists in Solutions Plus
+    (it gives operation names only, never its unit values). A developer seeds the empty system once from
+    AA's controlled spreadsheets, every row checked by the same rules as adding it by hand and every
+    failure listed and left out; the same load runs again into a test system. After that the office keeps
+    every master by hand, each change audited, and never loads master data itself. There is no Contract
+    upload or export in the first release (Future Work).</p>
   </div></details>
 
   <details><summary>1 · Reserve a List and populate patient Bookings</summary><div class="details-body">
@@ -1061,6 +1069,9 @@
       <tr><td>Funding tags</td><td><code>/admin/masters?view=fundingTags</code></td></tr>
       <tr><td>Recurring bookings</td><td><code>/admin/masters?view=recurringBookings</code></td></tr>
       <tr><td>Hospitals &amp; holidays</td><td><code>/admin/masters?view=hospitals</code> (List or Calendar)</td></tr>
+      <tr><td>Public holidays (the master calendar)</td><td><code>/admin/masters?view=publicHolidays</code></td></tr>
+      <tr><td>Seed load (demo, the developer's one-off load)</td><td><code>/admin/masters?view=seedLoad</code></td></tr>
+      <tr><td>Go-live load (demo)</td><td><code>/admin/masters?view=goLive</code></td></tr>
       <tr><td>Surgeon profile</td><td><code>/admin/masters/surgeons/&lt;surgeonId&gt;</code> (Ms A. Reid: <code>S-REID</code>)</td></tr>
       <tr><td>Surgeon with a PA</td><td><code>/admin/masters/surgeons/S-DALGETY</code> (Dr H. Dalgety, Avonhead ENT: Bev, PA)</td></tr>
       <tr><td>Anaesthetist record</td><td><code>/admin/masters/anaesthetists/&lt;anaesthetistId&gt;</code> (Dr Priya Sharma: <code>41267</code>)</td></tr>
@@ -1406,8 +1417,13 @@
       <div class="row"><span class="k">Say</span><span class="say">"The rate per unit is read when the List is authorised and kept in the lock. Changing it later re-prices only work not yet authorised."</span></div>
       <div class="row"><span class="k">Expect</span><span>Review still reads @ $26.50/unit (locked) and $901.00; Regenerate reads identical (2 lines, total $365.70); Hemi Walker's ACTIVE Booking reads 13 units x $28.00 = $364.00 (it was $344.50). Reset &#8594; Confirm reset afterwards (or jump S5 again).</span></div>
     </div>
+    <div class="beat"><h4>Optional Beat 5 · Controlled master data and a clean-cut go-live (about 2 minutes)</h4>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Master data &#8594; Seed load (<code>/admin/masters?view=seedLoad</code>) &#8594; Demo actions &#8594; <strong>Load sample spreadsheet</strong> &#8594; contracts.csv &#8594; Run ("contracts.csv checked: 4 rows valid, 5 rejected. Open Master data, Seed load, and press Load."). Point at the rejected rows, each with its reason (the prepaid Septoplasty priced from RVG units, the Open price cataract row), and the blank cells (not set, never zero), then <strong>Load 4 valid rows</strong>.</li><li>Demo actions &#8594; <strong>Go-live data load (demo)</strong> &#8594; Run, then Master data &#8594; Go-live load (<code>/admin/masters?view=goLive</code>). Point at <strong>10% discount</strong> excluded as junk, the struck-through Solutions Plus units (Not used) and the matching Contract beside each approved name.</li><li><strong>Unapprove</strong> one approved name (Laparoscopic cholecystectomy), then <strong>Load approved data</strong>. Then open Contracts and the loaded Contract: any later edit saves in place and is audited, and a new price is a new price range.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"AA starts clean. A developer seeds the empty system once from AA's own controlled spreadsheets: hospitals, surgeons with their specialties and practice names, anaesthetists, RVG groups with their base units, modifiers, Parties, Contracts one per priced item with their price ranges, and the calendars. Every row is checked with the same rules as adding it by hand, and anything that fails is listed and left out. After that, the office keeps it all by hand on these screens, and every change is audited. Solutions Plus gives us names, not numbers. And because it is a spreadsheet, the same load runs again into a test system."</span></div>
+      <div class="row"><span class="k">Expect</span><span>The Go-live data load message reads "Go-live load prepared: 14 Solutions Plus names (5 excluded as junk, 2 not approved) and 6 controlled spreadsheets. Open Master data, Go-live load." Junk cannot be approved. With the one name unapproved, the load makes 3 surgeons, 1 RVG group, 1 Party, 4 Contracts (5 had every approved name stayed) and 4 public holidays, and 11 Solutions Plus entries are not loaded (10 otherwise). Nothing comes across because it exists in Solutions Plus. The office never loads master data: there is no "Load from spreadsheet" on its views, and no Contract upload or export in the first release (Future Work). Reset &#8594; Confirm reset (or jump S5 again) to run it a second time.</span></div>
+    </div>
     <div class="callout">Worth pointing at (optional): Admin &#8594; Master data &#8594; Contracts. Merivale's three combination Contracts (search H3: Face lift, Facelift plus 1 add on, Facelift plus 2 add ons, each its own Contract; fee extras are events, not Contracts) and Dr Souter's own prepaid price list (holder Dr Melanie Souter: one Contract per item, every price above zero; a zero price is refused). Search CAT to find the cataract items by name and the holder's code HNZCATall. Admin &#8594; Master data &#8594; RVG groups. The NZSA RVG 2021 groups as published under their anatomy headings, AA's own beside them and unmarked; both T2s and both P6s are separate rows; H4 reads 10 · range 10 to 12. Add, edit, retire and restore a group: each change is in Admin &#8594; Audit (entity type rvgGroup).</div>
-    <div class="callout warn">Discovery: the RVG groups as published with AA's own beside them (demo-sized; the full set loads at go-live), the same code on several rows told apart by description and base units; an optional RVG code picked by type-ahead; a ranged group holding its published range, shown to the anaesthetist, starting at its lower figure (OQ-101); the RVG modifier table as printed (values that are not plain numbers entered at capture); only the age and included modifiers pre-applied, nothing else pre-filled (settled, Ben, 27 October); the age bands settled (OQ-95 answered, D29); no stacking limit; AA's own modifiers (Vanessa's list) not yet loaded; which Procedure is primary (Vanessa: the most expensive; Greg: the first in the list; the build keeps the first until someone changes it); base units when the primary is on a fixed price (OQ-132: the build bills none); concurrency: the office saves explicitly and every save is one change set; handling two sources editing at once is Future Work with the automated integrations (US-02.5.6), and the prototype applies each save in order, audited. Settled: the update email is drafted on demand and sent by hand from the office's own mail client in the first release, automatic sending later (OQ-82, US-02.3.5).</div>
+    <div class="callout warn">Discovery: the RVG groups as published with AA's own beside them (demo-sized; at go-live, the RVG groups load once from AA's controlled spreadsheet), the same code on several rows told apart by description and base units; an optional RVG code picked by type-ahead; a ranged group holding its published range, shown to the anaesthetist, starting at its lower figure (OQ-101); the RVG modifier table as printed (values that are not plain numbers entered at capture); only the age and included modifiers pre-applied, nothing else pre-filled (settled, Ben, 27 October); the age bands settled (OQ-95 answered, D29); no stacking limit; AA's own modifiers as master data the office edits, retires and reinstates; which Procedure is primary (Vanessa: the most expensive; Greg: the first in the list; the build keeps the first until someone changes it); base units when the primary is on a fixed price (OQ-132: the build bills none); concurrency: the office saves explicitly and every save is one change set; handling two sources editing at once is Future Work with the automated integrations (US-02.5.6), and the prototype applies each save in order, audited. Settled: the update email is drafted on demand and sent by hand from the office's own mail client in the first release, automatic sending later (OQ-82, US-02.3.5). Master data: whether surgeon rows with no title or surname should load (OQ-143) (a surgeon with no HPI CPN loads, OQ-129 answered); and whether recurring bookings join the seed spreadsheets (US-13.4.3's calendar schedules). Settled if asked: a Contract schedule upload is Future Work (OQ-100, answered 5 November), and master data loads once at go-live, then is kept by hand (US-13.4.3).</div>
   </div></details>
 
   <h2>Recommended run orders</h2>
@@ -1482,7 +1498,7 @@
     <li>Base units sit on the RVG group alone; a Contract states none and may only name a default RVG code. Choosing a Contract fills an empty RVG code from its default; a Procedure that has one keeps it.</li>
     <li>P1 (non-supine positioning) is included, pre-applied at 0 (removable), on every Neurosurgery and Spine code, so it cannot be added twice; the age modifier is pre-applied from the date of birth, removable.</li>
     <li>Every other modifier, ASA included, is claimed with a short reason; modifiers stack with no limit, and the same modifier is never added twice.</li>
-    <li>A part interval always rounds up (confirmed with AA); the tiers are held as data (the RVG time rule under Master data, RVG groups, read only). The anaesthetist enters start and finish only.</li>
+    <li>A part interval always rounds up (confirmed with AA); the tiers are held as data (the RVG time rule under Master data, RVG groups; the office edits its tiers, and a part interval always rounds up). The anaesthetist enters start and finish only.</li>
     <li>The form follows the Contract's pricing kind: RVG code, start and finish and the modifiers step (None apply is an answer) on an RVG price; none of it on a fixed or open price, the code only for reference. Mark complete checks a Contract, the RVG detail on an RVG price, and a price (not Needs a price); never the payer's contact, the approval number or out-of-range base units.</li>
     <li>Review flags never block: Changed by Dr X: was the old Contract (Approve or Correct), Price typed: $X (computed $Y), Contract not offered on this List, Needs an invoice destination, Not marked completed, Email or postal address needed, manual B/T/M notes. A Disabled Contract raises Contract disabled on &lt;day&gt; for a Procedure not yet authorised and dated on or after that day (never a block; Make active clears it). The one blocker is a Procedure that still Needs a price: Authorise for billing stays disabled and names it, with an Open link, until a price is typed. Approve all N Contract changes; authorising approves any still waiting. No move resets a Contract or typed price.</li>
   </ul>
@@ -1644,6 +1660,7 @@
       own.</li>
     <li>Find available (Day header): office only; the free anaesthetists for a session in tier order,
       shuffled within a tier, with not-preferred pairings apart once a surgeon is chosen.</li>
+    <li>Master data (every master in one place, kept by hand after a one-off load from AA's controlled spreadsheets, every change audited, go-live load) and audit. The sub-nav is grouped: People and places, Schedule, Billing, Settings, Go-live. Seed load and Go-live load are badged demo: they stand in for the developer's one-off load, not office screens.</li>
     <li>Availability statuses (Master data): four to start (Free, On holiday, Unavailable, Public); rename, recolour or add a status and every app follows; rules
       read the status's ID; it is availability only, never a List's state (Active, Submitted or
       Authorised, or Draft for a Draft List).</li>
@@ -1669,6 +1686,7 @@
         <li>"Approval stays on Review, one path with all its checks; the monitor shows what is waiting and takes you there."</li>
         <li>"Everything after setup is an event on the Procedure, reviewed once and invoiced in the next run."</li>
         <li>"Extra work after a fixed price is billed by hand, by the anaesthetist or the office."</li>
+        <li>"Nothing comes across because it exists in Solutions Plus."</li>
         <li>"This is a candidate design we would validate during discovery."</li>
       </ul>
     </div>
@@ -1744,7 +1762,12 @@
       a List onto an unavailable session: it is made available first, with the anaesthetist's agreement
       (US-01.6.3). Not conflicts: a recurring booking landing on an unavailable session becomes a Draft
       List (Phase 31), and anyone who marks a booked session unavailable is asked first whether the List
-      returns to the office or goes to a colleague (US-01.5.5).</p></div>
+      returns to the office or goes to a colleague (US-01.5.5). Public holidays come from one master
+      calendar (Master data &#8594; Public holidays: Labour Day Mon 26 Oct and Canterbury Anniversary Day Fri 13
+      Nov 2026, then Christmas to Waitangi Day 2027): each closes every hospital not listed open that day,
+      shows on each hospital card and read-only on its calendar, and flags a List there like any closure.
+      AA rooms is listed open only on Labour Day and Canterbury Anniversary Day (PH001, PH002); the later
+      holidays close it too.</p></div>
     <div class="card"><h3>7 · Multi-procedure invoice count</h3><p style="font-size:14px">Grouping text says
       same-counterparty Procedures share an invoice; the RFP's "Split Billing" section says two invoices,
       for multiple procedures in one episode and for a partly covered procedure. Invoices group by
@@ -1785,8 +1808,8 @@
       table is the NZSA RVG 2021 table as printed (30 codes, Admin &#8594; Master data &#8594; Modifiers); values
       that are not plain numbers ("2 + Time", "4-6") are entered at capture. Only the age modifier and a
       modifier the base units include are pre-applied, both removable; nothing else is pre-filled. The age
-      bands are settled (OQ-95 answered, D29). Modifiers stack with no limit; AA's own (Vanessa's list)
-      are not loaded yet, and the office can add one.</p></div>
+      bands are settled (OQ-95 answered, D29). Modifiers stack with no limit; AA's own are master data the
+      office adds, edits, retires and reinstates.</p></div>
     <div class="card"><h3>11 · Open vs genuinely overdue balances</h3><p style="font-size:14px">The billing
       monitor's "Prior balance" intake flag reads any open (unpaid) prior episode. The RFP asks whether to
       distinguish open from genuinely overdue; the

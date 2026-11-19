@@ -7,7 +7,8 @@ import { SelectField } from '../../../../shared/ui'
 import { OverlayHeader, SheetActions } from '../../../../shared/surface'
 import { HistorySheet } from '../../../../shared/booking'
 import { PARTY_KIND_LABEL } from '../../../../shared/contracts'
-import { Header, Table, TextAction } from './chrome'
+import { MasterHeader, MasterTable } from './chrome'
+import { TextAction } from '../../../../shared/ui'
 import { cellStyle } from './tableStyles'
 
 /**
@@ -32,13 +33,13 @@ export function FundingTagsView({ actor }: { actor: Actor }) {
 
   return (
     <>
-      <Header
+      <MasterHeader
         title="Funding tags"
         sub="Who funds a hospital's work. A Contract carries at most one, and with who it bills, the tag decides where it is offered. When choosing a Contract, a hospital's tags show in this order."
-        action={<Button variant="secondary" onClick={() => { setError(null); setSheet({}) }}>Add funding tag</Button>}
+        add={{ label: 'Add funding tag', onClick: () => { setError(null); setSheet({}) } }}
       />
       <FormError message={error} />
-      <Table heads={['Tag', 'Funder', 'Contracts', '']} rightAlign={[2, 3]} shot="masters-funding-tags">
+      <MasterTable columns={['Tag', 'Funder', 'Contracts', '']} rightAlign={[2, 3]} shot="masters-funding-tags">
         {rows.map((t, i) => {
           const used = fundingTagUsage(contracts, t.id)
           const funder = t.funderPartyId !== undefined ? parties[t.funderPartyId] : undefined
@@ -49,17 +50,17 @@ export function FundingTagsView({ actor }: { actor: Actor }) {
               <td className="mono" style={{ ...cellStyle, textAlign: 'right' }}>{used}</td>
               <td style={{ ...cellStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
                 <span style={{ display: 'inline-flex', gap: 12 }}>
-                  <TextAction disabled={i === 0} onClick={() => act(moveFundingTagInList(useAppStore, actor, t.id, 'up'))} label={`Move ${t.code} up`}>Up</TextAction>
-                  <TextAction disabled={i === rows.length - 1} onClick={() => act(moveFundingTagInList(useAppStore, actor, t.id, 'down'))} label={`Move ${t.code} down`}>Down</TextAction>
-                  <TextAction onClick={() => setHistory(t)} label={`History of ${t.code}`}>History</TextAction>
-                  <TextAction onClick={() => { setError(null); setSheet({ tag: t }) }} label={`Edit ${t.code}`}>Edit</TextAction>
-                  <TextAction onClick={() => act(removeFundingTag(useAppStore, actor, t.id))} label={`Remove ${t.code}`}>Remove</TextAction>
+                  <TextAction size="sm" flush disabled={i === 0} onClick={() => act(moveFundingTagInList(useAppStore, actor, t.id, 'up'))} label={`Move ${t.code} up`}>Up</TextAction>
+                  <TextAction size="sm" flush disabled={i === rows.length - 1} onClick={() => act(moveFundingTagInList(useAppStore, actor, t.id, 'down'))} label={`Move ${t.code} down`}>Down</TextAction>
+                  <TextAction size="sm" flush onClick={() => setHistory(t)} label={`History of ${t.code}`}>History</TextAction>
+                  <TextAction size="sm" flush onClick={() => { setError(null); setSheet({ tag: t }) }} label={`Edit ${t.code}`}>Edit</TextAction>
+                  <TextAction size="sm" flush onClick={() => act(removeFundingTag(useAppStore, actor, t.id))} label={`Remove ${t.code}`}>Remove</TextAction>
                 </span>
               </td>
             </tr>
           )
         })}
-      </Table>
+      </MasterTable>
       {sheet !== null && <FundingTagSheet key={sheet.tag?.id ?? 'new'} tag={sheet.tag} actor={actor} onClose={() => setSheet(null)} />}
       <HistorySheet open={history !== null} entityIds={history !== null ? [history.id] : []} title="Funding tag history" onClose={() => setHistory(null)} />
     </>

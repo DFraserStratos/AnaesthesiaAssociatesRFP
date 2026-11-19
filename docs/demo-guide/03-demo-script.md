@@ -99,6 +99,9 @@ view respectively.
 | Funding tags | `/admin/masters?view=fundingTags` |
 | Recurring bookings | `/admin/masters?view=recurringBookings` |
 | Hospitals & holidays | `/admin/masters?view=hospitals` (List or Calendar) |
+| Public holidays (the master calendar) | `/admin/masters?view=publicHolidays` |
+| Seed load (demo, the developer's one-off load) | `/admin/masters?view=seedLoad` |
+| Go-live load (demo) | `/admin/masters?view=goLive` |
 | Surgeon profile | `/admin/masters/surgeons/<surgeonId>` (Ms A. Reid: `S-REID`) |
 | Surgeon with a PA | `/admin/masters/surgeons/S-DALGETY` (Dr H. Dalgety, Avonhead ENT: Bev, PA) |
 | Anaesthetist record | `/admin/masters/anaesthetists/<anaesthetistId>` (Dr Priya Sharma: `41267`) |
@@ -1539,6 +1542,38 @@ Xero sim**.
   **identical (2 lines, total $365.70)**; Hemi Walker's ACTIVE Booking reads **13 units x $28.00 =
   $364.00** (it was $344.50). **Reset → Confirm reset** afterwards (or jump S5 again).
 
+### Optional Beat 5: Controlled master data and a clean-cut go-live
+
+About 2 minutes.
+
+- **Click:**
+  - Go to **Admin → Master data → Seed load** (`/admin/masters?view=seedLoad`), then **Demo actions →
+    Load sample spreadsheet → contracts.csv → Run** ("contracts.csv checked: 4 rows valid, 5 rejected.
+    Open Master data, Seed load, and press Load."). Point at the rejected rows, each with its reason
+    (the prepaid Septoplasty priced from RVG units, the Open price cataract row), and the blank cells
+    (not set, never zero), then **Load 4 valid rows**.
+  - **Demo actions → Go-live data load (demo) → Run**, then **Master data → Go-live load**
+    (`/admin/masters?view=goLive`). Point at **10% discount** excluded as junk, the struck-through
+    Solutions Plus units (**Not used**) and the matching Contract beside each approved name.
+  - **Unapprove** one approved name (Laparoscopic cholecystectomy), then **Load approved data**. Then
+    open **Contracts** and the loaded Contract: any later edit saves in place and is audited, and a new
+    price is a new price range.
+- **Say:** "AA starts clean. A developer seeds the empty system once from AA's own controlled
+  spreadsheets: hospitals, surgeons with their specialties and practice names, anaesthetists, RVG
+  groups with their base units, modifiers, Parties, Contracts one per priced item with their price
+  ranges, and the calendars. Every row is checked with the same rules as adding it by hand, and
+  anything that fails is listed and left out. After that, the office keeps it all by hand on these
+  screens, and every change is audited. Solutions Plus gives us names, not numbers. And because it is
+  a spreadsheet, the same load runs again into a test system."
+- **Expected:** the Go-live data load message reads "Go-live load prepared: 14 Solutions Plus names
+  (5 excluded as junk, 2 not approved) and 6 controlled spreadsheets. Open Master data, Go-live
+  load." Junk cannot be approved. With the one name unapproved, the load makes 3 surgeons, 1 RVG
+  group, 1 Party, 4 Contracts (5 had every approved name stayed) and 4 public holidays, and 11
+  Solutions Plus entries are not loaded (10 otherwise). Nothing comes across because it exists in
+  Solutions Plus. The office never loads master data: there is no "Load from spreadsheet" on its
+  views, and no Contract upload or export in the first release (Future Work). **Reset → Confirm reset**
+  (or jump S5 again) to run it a second time.
+
 **Worth pointing at (optional):** **Admin → Master data → Contracts**: Merivale's three combination
 Contracts (search **H3**: Face lift, Facelift plus 1 add on, Facelift plus 2 add ons, each its own
 Contract; fee extras are events, not Contracts), and Dr Souter's own prepaid price list (holder **Dr
@@ -1550,19 +1585,23 @@ are separate rows; H4 reads **10 · range 10 to 12**. Add a group, then edit, re
 each change is in **Admin → Audit** (entity type **rvgGroup**).
 
 **Discovery points:** the RVG groups are seeded as published with AA's own rows beside them (demo-sized;
-the full set loads at go-live), and the same code can sit on several rows, told apart by description and
+at go-live, the RVG groups load once from AA's controlled spreadsheet), and the same code can sit on several rows, told apart by description and
 base units; the RVG code on a Procedure is optional, picked by type-ahead; a ranged group holds its
 published range, shown to the anaesthetist, and starts at its lower figure (OQ-101); the RVG modifier
 table as printed (values that are not plain numbers are entered at capture); only the age and included
 modifiers are pre-applied and nothing else is pre-filled (settled, Ben, 27 October); the age bands are
-settled (OQ-95 answered, D29); modifiers stack with no limit; AA's own modifiers (Vanessa's list) are not yet
-loaded; which Procedure is primary (Vanessa: the most expensive; Greg: the first in the list; the
+settled (OQ-95 answered, D29); modifiers stack with no limit; AA's own modifiers are master data the office edits, retires and
+reinstates; which Procedure is primary (Vanessa: the most expensive; Greg: the first in the list; the
 build keeps the first until someone changes it); base units when the primary is on a fixed price (OQ-132:
 the build bills none); and concurrency: the office saves explicitly and every save is one change set;
 handling two sources editing at once is Future Work with the automated integrations (US-02.5.6), and
 the prototype applies each save in order, audited. Settled: the update email is drafted on demand and
 sent by hand from the office's own mail client in the first release, automatic sending later (OQ-82,
-US-02.3.5).
+US-02.3.5). Master data: whether surgeon rows with no title or surname should load (OQ-143) (a
+surgeon with no HPI CPN loads, OQ-129 answered); and whether recurring bookings join the seed
+spreadsheets (US-13.4.3's calendar schedules). Settled if asked: a Contract schedule upload is Future
+Work (OQ-100, answered 5 November), and master data loads once at go-live, then is kept by hand
+(US-13.4.3).
 
 ---
 

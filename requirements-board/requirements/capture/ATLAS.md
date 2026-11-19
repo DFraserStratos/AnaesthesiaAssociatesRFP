@@ -376,7 +376,7 @@ unsaved-changes guard can block a navigation). No URL changed; the Admin Booking
 | `/admin/billing` (catch-up Phase 36) | The intro added "Money in and out is recorded in the ledger first; Xero mirrors it." (catch-up Phase 37 rewrites the intro: "Every list awaiting approval or authorised, grouped by anaesthetist: ..."). The payables panel `billing-payables-run` reads "N payable(s) due · $X to pay out to anaesthetists. A payable is released for exactly what its invoice has received." (or "No payables due. ...") with the link "Open the ledger" `billing-open-ledger`. Catch-up Phase 37 replaces it: the panel is titled "Authorised, awaiting Xero's payables run" (read-only list, `billing-payables-due` "N payable(s) due · $X", rows `tr[data-payable-id]`; empty "No payables are awaiting the payables run."), and its button is "Run payables in Xero" `billing-run-payables-in-xero` with a Simulated Xero badge: Xero pays the bills and the engine records each disbursement from the bill-paid webhook; the result line is `billing-payables-result` ("Xero paid 1 bill ($x); the Billing Engine recorded 1 disbursement from the bill-paid webhooks."). The engine-side "Run payables" and its "Run PR0001" line are gone. |
 | `/admin/integrations` | Redirects to `/admin/intake/matching` (catch-up Phase 34). Its tabs are gone: Surgeon PDFs, Data quality and Validators are Intake routes; the Messages log and Feed config moved to the Future-scope pages `/demo/integrations/log` and `/demo/integrations/mapping`. |
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (`surgeon-profile`, catch-up Phase 17b): cards `surgeon-specialties`, `surgeon-identifiers`, `surgeon-groups`, then the full-width `surgeon-contacts` ("Practice and contacts": Practice `[data-practice]`, `surgeon-personal-contact-card`, `surgeon-office-contacts-card`). "Edit details" opens `surgeon-edit-sheet`. |
-| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons` (the old `surgeonRooms` value opens it, catch-up Phase 17b), `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifiers` (catch-up Phase 19b, "Modifiers"; the old `modifierCodes` value opens it), `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `emailTemplates` (catch-up Phase 35, "Email templates": the table `email-templates`, rows `tr[data-email-template=ET001..ET004]` (Change of anaesthetist, Cancellation, Correction of an error, Booking change), each with History, Edit and Retire named "Edit <name>" etc.; "Add template" in the header), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). A Contract's panel has Details and History tabs (catch-up Phase 25). |
+| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons` (the old `surgeonRooms` value opens it, catch-up Phase 17b), `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifiers` (catch-up Phase 19b, "Modifiers"; the old `modifierCodes` value opens it), `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `emailTemplates` (catch-up Phase 35, "Email templates": the table `email-templates`, rows `tr[data-email-template=ET001..ET004]` (Change of anaesthetist, Cancellation, Correction of an error, Booking change), each with History, Edit and Retire named "Edit <name>" etc.; "Add template" in the header), `xeroArchiving`, `scheduleSettings`, and since catch-up Phase 42 `publicHolidays` ("Public holidays", the master public-holiday calendar), `seedLoad` ("Seed load") and `goLive` ("Go-live load"), the last two demo-badged. Catch-up Phase 42 groups the sub-nav (`nav[aria-label="Master data"]`) into five `role=group` blocks `[data-masters-group="People and places"|"Schedule"|"Billing"|"Settings"|"Go-live"]`: People and places (Anaesthetists, Hospitals & holidays, Surgeons, Specialties, Surgeon groups), Schedule (Recurring bookings, Availability statuses, Public holidays, Schedule settings), Billing (Parties, Funding tags, Contracts, RVG groups, Modifiers), Settings (Email templates, Xero & archiving), Go-live (Seed load, Go-live load). Labels are unchanged; the current button has `aria-current=page`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). A Contract's panel has Details and History tabs (catch-up Phase 25). |
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip ("No HPI CPN yet" when blank), "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. Catch-up Phase 17b: Specialties, Identifiers and Groups in the first row, then one full-width "Practice and contacts" card (`surgeon-contacts`), then Pairing preferences. No room cards. |
 | `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Profile, Pairing preferences. Office only. The Profile card (catch-up Phase 26; was "Details", hook `anaesthetist-details` kept) shows Unit value, Status, Phone, Email, HPI CPN and Bank account (masked, row `anaesthetist-bank-account`); it has no action of its own. The page header's secondary button "Edit details" (beside "History") opens the Edit sheet: click `button:text-is("Edit details")` at page level, not inside `anaesthetist-details`. |
 | `/admin/audit` | Audit viewer. Catch-up Phase 35 adds a Change set column: each grouped entry's id is a link `audit-change-set` that filters the viewer to that change set (the filter line `audit-change-set-filter`). |
@@ -635,7 +635,10 @@ invoice only); the Booking's Procedure card shows the text. The wording below is
     (`L-25490-2026-07-22-PM`), Ngata PM (1 Booking), Sharma PM (`L-41267-2026-07-22-PM`, 2 Bookings)
     and Hughes AM.
 - Other seeded conflicts: Labour Day Mon 26 Oct (8 Lists) and Canterbury Anniversary Fri 13 Nov
-  (5 Lists), every hospital closed. open conflicts count 16 since catch-up Phase 32d (the nav badge reads 16, was 19); Tue 21 has none.
+  (5 Lists), every hospital closed. Since catch-up Phase 42 both are **master public holidays** (`PH001`,
+  `PH002`; AA's rooms listed open), not per-hospital holiday rows: on the hospital calendar they show as a
+  read-only block `[data-public-holiday=PH001]` inside `button[data-calendar-day="2026-10-26"]`, and they are
+  kept on `/admin/masters?view=publicHolidays`. `HH900` is the only seeded hospital holiday. open conflicts count 16 since catch-up Phase 32d (the nav badge reads 16, was 19); Tue 21 has none.
 
 **Fri 24:** the prepayment warning (a warning, never a block, since catch-up Phase 15a; no gate, no
 override). AM awaits approval (catch-up Phase 27, see [Prepayment lifecycle](#prepayment-lifecycle-catch-up-phase-27)): Annette Riley's Booking (`BK0034`) carries a small warning triangle on its
@@ -1241,6 +1244,40 @@ were already imported. Nothing new.").
 - **Booking total** (Admin Booking detail, David Chen's Booking): `booking-total` with an "Events" row and
   `booking-total-gst` ("ex GST · GST $x").
 
+### Public holidays, retire and the controlled loads (catch-up Phase 42)
+
+- **Public holidays** (`/admin/masters?view=publicHolidays`, `masters-public-holidays`, rows
+  `tr[data-public-holiday=<id>]`): `PH001` Labour Day 2026-10-26 and `PH002` Canterbury Anniversary Day
+  2026-11-13 (regional), both with AA's rooms (`H-AAROOMS`) open; `PH003` Christmas Day 2026-12-25, `PH004` Boxing
+  Day (observed) 2026-12-28, `PH005` New Year's Day 2027-01-01, `PH006` Day after New Year's Day (observed)
+  2027-01-04, `PH007` Waitangi Day (observed) 2027-02-08. Labour Day is a public holiday now, not a hospital row.
+  Each hospital card's line `[data-public-holiday-line]` reads "Closed on all public holidays" or "Open on ..."
+  (AA's rooms: "Open on Labour Day and Canterbury Anniversary Day"). `HH900` (Southern Cross, 22 Jul) is the only
+  seeded hospital holiday.
+- **Retire** (hospitals, surgeons, surgeon groups, AA's own modifiers): nothing is retired at reset, so "Show retired"
+  reads "None retired". St George's (`H-STG`, `role=button[name="Edit St George's"]`) cannot be retired: fill
+  `[data-shot=retire-section] textarea`, click "Retire hospital", and `retire-blockers` lists its upcoming Lists.
+  AA's rooms has no retire section.
+- **No AA modifier is seeded**: add one first ("Add AA modifier", code `input[placeholder="e.g. AAX1"]`, units
+  `input[placeholder="e.g. 1"]`, factor `input[placeholder="What the modifier is for"]`, "Add modifier"), then
+  `role=button[name="Edit <code>"]` opens `edit-aa-modifier` with its retire section.
+- **Sample sheets** (`SAMPLE_SHEETS`, `domain/masterLoad/samples.ts`; the `load-sample-spreadsheet` choice is the id,
+  labelled by file name): `sample-specialties` specialties.csv, `sample-surgeons` surgeons.csv (10 rows · 5 valid ·
+  5 rejected: Mr Peter Lawry, no specialty, rejected; Dr Matthew Corrigan, no HPI CPN, and "Dr Aroha", no surname,
+  valid with notes; Jane Mercer "No title"), `sample-anaesthetists` anaesthetists.csv, `sample-hospitals`
+  hospitals.csv (6 rows · 2 valid · 4 rejected; loads Rangiora Day Surgery and Ashburton Hospital),
+  `sample-hospital-holidays` hospital-holidays.csv, `sample-public-holidays-2027` public-holidays-2027.csv,
+  `sample-rvg-groups` rvg-groups.csv (7 rows · 3 valid · 4 rejected; a repeated code is valid), `sample-modifiers`
+  modifiers.csv, `sample-parties` parties.csv, `sample-funding-tags` funding-tags.csv, `sample-contracts`
+  contracts.csv (9 rows · 4 valid · 5 rejected; the prepaid RVG "Septoplasty" row rejected, "Hip arthroscopy fixed
+  fee" with "1 range"), `sample-price-ranges` price-ranges.csv. Seed load shows 12 sheet cards
+  `[data-seed-sheet=<entity>]` in load order.
+- **The go-live pack** (`GO_LIVE_PACK`, `domain/masterLoad/goLive.ts`, staged by `go-live-data-load`):
+  go-live-surgeons.csv, go-live-rvg-groups.csv, go-live-parties.csv, go-live-contracts.csv (the Halswell Surgical
+  Group Contracts `HSG-GL01` to `HSG-GL07`), go-live-price-ranges.csv and go-live-public-holidays-2027.csv, beside 14
+  Solutions Plus operation names (5 excluded as junk, 2 not approved). Rows `tr[data-scan-row=<n>]` carry
+  `data-decision=approved|notApproved|junk`; each staged row's one button is "Approve" or "Unapprove <name>".
+
 ## Overlays that need clicks
 
 - **Additional invoice (catch-up Phase 38b).** Admin: `[data-shot=additional-invoice-button]` ("Create additional
@@ -1424,6 +1461,17 @@ were already imported. Nothing new.").
   `[role=group][aria-label="Fill"]`; "Save changes" or "Add status", disabled while the draft has an
   issue, the issues listed inline). "Retire <label>" opens `[data-shot=admin-availability-status-retire]`
   ("Retire status", "Cancel"); a retired row offers "Restore <label>".
+- **Master data, catch-up Phase 42:** every view's header is `MasterHeader` (an `h2` title, the subtitle, the teal
+  "Add ..." button on the right; a seeded view's subtitle ends `[data-seeded-line]` "Loaded once at go-live from AA's
+  controlled spreadsheet, then kept here by hand."). "Add public holiday" or a row's "Edit <name>" opens
+  `public-holiday-add-sheet` / `public-holiday-edit-sheet` (Date, Name `placeholder="e.g. Labour Day"`, Kind, Region,
+  the open hospitals `public-holiday-open-hospitals`); "Delete <name>" asks `public-holiday-delete-confirm`. On the
+  hospital calendar a public-holiday block opens the Public holidays view (`hospital-calendar-public-link` is "Open
+  Public holidays"). On RVG groups, `[data-shot=rvg-time-rule-edit]` opens `rvg-time-rule-sheet` ("Edit the RVG time
+  rule": tiers `[data-rvg-tier=1..]`, "Add tier", `rvg-time-rule-part-interval`, `rvg-time-rule-preview` with
+  `[data-rvg-example=<minutes>]`, "Save rule"). The edit sheets of hospitals (`edit-hospital-sheet`), surgeons,
+  surgeon groups and AA's own modifiers end with `retire-section` (a reason textarea, "Retire <noun>"; refused with
+  `retire-blockers`; a retired record shows "Reinstate <noun>").
 - **Edit times** on an empty session: `[data-shot=admin-edit-session-times]`; times in either sheet
   sit in `[data-shot=session-times]` with "Use default".
 - **Reassign:** "Reassign list", pick a target like "Sharma, Priya · Free AM", then (the vacated
@@ -2001,8 +2049,9 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   `rvg-group-search`, `rvg-type-ahead`, `rvg-section`, `rvg-section-heading`, `rvg-code-chosen`, `rvg-base-units`, `rvg-range-units`,
   `rvg-outside-guide`, `rvg-code-clear`, `manual-rvg-code`; the RVG code field keeps
   `capture-procedure-code` (inside the Billing card's price; there is no `procedure-code-card`).
-  There is no `masters-rvg` hook. The read-only RVG time rule panel above the table is
-  `masters-rvg-time-rule` (catch-up Phase 19a). The T row's caption reads "From start and finish
+  There is no `masters-rvg` hook. The RVG time rule panel above the table is
+  `masters-rvg-time-rule` (catch-up Phase 19a); since catch-up Phase 42 its "Edit"
+  (`rvg-time-rule-edit`) opens `rvg-time-rule-sheet`. The T row's caption reads "From start and finish
   stamps · RVG time tiers"; money surfaces show "Needs a price" (`booking-needs-price` on the Booking
   total) where a fixed price has no range in force.
 - Specialties, funding tags and fallbacks (catch-up Phase 18a): `masters-specialties`,
@@ -2013,7 +2062,24 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   `tr[data-system=openPriceFallback|noContractRvg]`.
 - Master data tables: `masters-anaesthetists` (rows `tr[data-anaesthetist=<id>]`, tier pills
   `[data-tier=1..4]`), `masters-surgeons` (rows `tr[data-surgeon=<id>]`), `masters-surgeon-groups` (`tr[data-group=<id>]`), `masters-hospitals`
-  (cards `[data-hospital=<id>]`).
+  (cards `[data-hospital=<id>]`). Since catch-up Phase 42 the masters tables are the shared table kit
+  (`MasterTable` over `TableShell`, the hook on the scroller `div`), retired rows carry `data-retired=true` and hide
+  until `show-retired` (the "Show retired" switch) is on, with a neutral `[data-retired-pill]`.
+- Master data, catch-up Phase 42: the sub-nav groups `[data-masters-group=<group>]` (buttons
+  `[data-masters-view=<view>]`); `masters-public-holidays` (rows `tr[data-public-holiday=<id>]`),
+  `public-holiday-result`, `public-holiday-add-sheet`, `public-holiday-edit-sheet`, `public-holiday-open-hospitals`,
+  `public-holiday-delete-confirm`; on Hospitals & holidays each card's `[data-public-holiday-line]`, the calendar's
+  read-only public-holiday block `[data-public-holiday=<id>]` inside `button[data-calendar-day=<date>]`,
+  `hospital-calendar-public-link`, `holiday-result`; `edit-hospital-sheet`, `retire-section` (`data-retired`),
+  `retire-blockers`, `show-retired`; `edit-aa-modifier`; `rvg-time-rule-edit`, `rvg-time-rule-sheet`,
+  `rvg-time-rule-part-interval`, `rvg-time-rule-preview`; `load-banner` (`[data-load-banner=seed|goLive]`, the
+  waiting-load notice under a view's header). Seed load: `seed-load`, cards `[data-seed-sheet=<entity>]`, file inputs
+  `input[data-seed-file=<entity>]`, `master-load-result` (`data-load-id`, `data-load-status=staged|loaded|discarded`;
+  rows `tr[data-load-row=<n>][data-row-status=valid|rejected]`; "All rows" and "Only rejected" pills),
+  `master-load-commit` ("Load N valid rows"), `master-load-loaded` (the loaded line). Go-live load:
+  `masters-go-live` (`data-go-live-status=staged|loaded`), `go-live-tile-load`, `go-live-candidates` (rows
+  `tr[data-scan-row]`, `data-decision`; the Solutions Plus units struck through), `[data-go-live-sheet=<entity>]`,
+  `go-live-commit` ("Load approved data"), `go-live-result`.
 - Pages: `surgeon-profile`, `surgeon-hpi-chip`, `surgeon-identifiers`,
   `surgeon-contacts`, `surgeon-groups`; `anaesthetist-record`, `anaesthetist-hpi-chip`, `anaesthetist-details`,
   `tier-card`.
@@ -2111,6 +2177,21 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 - `[data-validation-focus=true]`
 
 ## Demo control panel (`/demo/control`) and Demo actions
+
+- Catch-up Phase 42 (Master data loads), both bar only on `/admin/masters`, run as the developer's seed-load actor:
+  `load-sample-spreadsheet` ("Load sample spreadsheet") shows on Seed load (every sample sheet) and on a seeded view
+  (that view's sheets: Hospitals & holidays offers hospitals.csv and hospital-holidays.csv, Contracts contracts.csv
+  and price-ranges.csv, and so on). Its `choice` is the sample id (`sample-hospitals`, `sample-surgeons`,
+  `sample-rvg-groups`, `sample-contracts`, ...; see [the Phase 42 seed notes](#public-holidays-retire-and-the-controlled-loads-catch-up-phase-42)),
+  labelled by file name; with no choice it takes the first on offer. It stages and does not load: the sheet's
+  `master-load-result` waits on Seed load with `data-load-status=staged`; press `master-load-commit` to load.
+  Message "hospitals.csv checked: 2 rows valid, 4 rejected. Open Master data, Seed load, and press Load."; disabled
+  "A load is already waiting for this sheet; load or discard it first". `go-live-data-load` ("Go-live data load
+  (demo)", any Master data view) stages the go-live batch: message "Go-live load prepared: 14 Solutions Plus names
+  (5 excluded as junk, 2 not approved) and 6 controlled spreadsheets. Open Master data, Go-live load."; the Go-live
+  load sub-nav item gains a warn dot and every view the `load-banner`; disabled "A go-live load is already waiting;
+  load or discard it first". Index paths `/admin/masters?view=seedLoad` and `/admin/masters?view=goLive`. No PWA
+  entry.
 
 - Catch-up Phase 37 (the Xero sync queue and the Xero-side payables run). Every call to Xero goes through the Xero
   sync queue (`billing-xero-queue` on the Billing monitor): a failed or outage-blocked call waits there, with its
@@ -2220,6 +2301,8 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/web/lists/<listId>`, `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/mobile/lists/<listId>[/bookings/<id>]` (bar and PWA) | `load-multi-procedure-booking` | Catch-up Phase 23, "Load 3-procedure Booking (7 modifier units)". Adds the three-procedure worked example (the same spec as the seeded BK0184) to Dr Souter's next open List, Wed 22 Jul AM (`L-34821-2026-07-22-AM`) on a fresh seed, as `BK0191` (BK0190 is the Phase 25a seeded `disabledContractBooking`; catch-up Phase 24's five seeded Bookings took BK0185 to BK0189; BK0185 is now the seeded `discountBooking`), not marked complete; result "Loaded on Dr Souter's ... List: 3 procedures, 7 modifier units, split 3 · 2 · 2." Disabled "Already loaded" on a second run. Open it at `/web/lists/L-34821-2026-07-22-AM/bookings/BK0191` or `/admin/day/2026-07-22/bookings/BK0191` |
 | `/web/lists/<listId>/bookings/<id>`, `/admin/day/<date>/bookings/<id>`, `/mobile/lists/<listId>/bookings/<id>` (bar and PWA) | `feed-changes-primary` | Catch-up Phase 23, "Hospital feed changes the primary". Shown only on a Booking with two or more Procedures: the List's hospital feed makes the next Procedure the primary, audited as an integration; it moves to the top with the Primary pill and base units come from it ("... made ... the primary. Base units now come from it."). Disabled on a SUBMITTED List ("A hospital feed cannot change a submitted List"), so not on BK0184 or Holt: run it on Ellison after "Add another procedure", or on BK0191 after `load-multi-procedure-booking` |
 | `/admin/masters?view=contracts` (or with Merivale's Face lift open in its detail) | `demo-backdated-range` | Catch-up Phase 24, "Demo: add a backdated price range" (`[data-shot=demo-action-demo-backdated-range]`). Shown on the Contracts view, disabled "Already added" once run; run it from the list (the Contract detail panel is modal, so the bar cannot be clicked while it is open). Adds a range from 1 Jul 2026 at $3,300.00 as the office: the unedited Face lift BK0163 then prices at $3,300.00; BK0187 (typed $2,950.00), BK0188 (AUTHORISED, $3,100.00) stays; the prepaid BK0038 is on another Contract and so never moves. Disabled "Already added" on a second run. Stage it with the `trigger` step, then `goto` the Booking (US-05.2.8 shows the pattern) |
+| `/admin/masters?view=seedLoad` (or a seeded Master data view) | `load-sample-spreadsheet` (choice: a sample id such as `sample-hospitals`) | Catch-up Phase 42, bar only. Stages the sample sheet; its result waits on Seed load for `master-load-commit`. US-13.4.3 shows the pattern |
+| `/admin/masters` (any view) | `go-live-data-load` | Catch-up Phase 42, bar only. Stages the go-live batch on `?view=goLive`; "Load approved data" (`go-live-commit`) loads it. US-13.4.2 shows the pattern |
 | `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`: the prepayment and base-units samples); on a Booking, on that Booking (seeded Bookings only). Four rules since catch-up Phase 21: the child payer sample stages on the Booking on screen when its patient is under 18, otherwise on Grace Park's (BK0033: Hana Park out, the patient in); the approval number sample on the Booking on screen when it names an insurer, otherwise BK0074 (its number cleared). Catch-up Phase 22 adds a fifth, `splitDoesNotFit`: on the Booking on screen when its seed carries a split, otherwise the fee-split Booking BK0025, nib's share raised to $250.00 so the rest has nothing left. A Booking whose fee is split cannot take the prepayment sample. Clear restores them. Also in the PWA Demo sheet on a mobile Booking |
 | `/admin/ledger`, `/admin/ledger/anaesthetists/<id>` | `inject-unmatched-receipt` (choice `souter` or `none`), `payment-full`, `payment-half`, `payment-replay` (choice: an open receivable's ACCREC id), `arm-handoff-fault`, `run-archive-job` | Catch-up Phase 36, bar only. The $120.00 unmatched receipt puts the ledger out of balance (see "Internal ledger" under Seed data); US-13.2.1 and US-08.3.4 show the pattern (`goto` `/admin/ledger`, then the trigger in `setup`). The payment entries land the receipt in the ledger first, then Xero, and the ledger stays in balance |
 | `/admin/day/<date>` (and `/admin`, which redirects there) | `inject-unmatched-receipt` (choice `souter` or `none`) | Catch-up Phase 37, bar only: the same entry as on the Ledger; it puts the right rail's Reconciliation card (`dashboard-reconciliation`) out of balance with one unresolved item. US-13.2.4 shows the pattern (`start` `/admin`, then the trigger as a step) |

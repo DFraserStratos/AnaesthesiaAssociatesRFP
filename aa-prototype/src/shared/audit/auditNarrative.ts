@@ -340,7 +340,11 @@ export function auditFieldChanges(entry: AuditEntry, names?: AuditNames): AuditF
   }
 
   const changes: AuditFieldChange[] = []
+  // A record the seed load made (catch-up Phase 42) carries where it came from: one line, not two raw fields.
+  const loaded = after !== null && typeof after['loadId'] === 'string' && typeof after['rowNumber'] === 'number'
+  if (loaded) changes.push({ key: 'loadedFrom', label: 'Source', after: `Loaded from spreadsheet, row ${after['rowNumber'] as number}` })
   for (const key of unionKeys(before, after)) {
+    if (loaded && (key === 'loadId' || key === 'rowNumber')) continue
     const beforeValue = before?.[key]
     const afterValue = after?.[key]
     if (before !== null && after !== null && sameValue(beforeValue, afterValue)) continue

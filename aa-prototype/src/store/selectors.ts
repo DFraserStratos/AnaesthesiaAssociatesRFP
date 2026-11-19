@@ -7,6 +7,7 @@ import type { CompletionContext } from '../domain/billing/completion'
  * every snapshot.
  */
 
+import { closuresAt, closuresIndex, closureSourcesOf } from '../domain/holidays'
 import { rvgCodeToFill } from '../domain/billing/rvgDetail'
 import { procedureStackView, type ProcedureStackView, type StackSurface } from '../domain/billing/procedureStack'
 import { isOpenPriceFallback } from '../domain/billing/fallbacks'
@@ -31,6 +32,7 @@ import type {
   RecurringBooking,
   ConflictClear,
   HospitalHoliday,
+  PublicHoliday,
   ListConflict,
   CounterpartyRef,
   DayNote,
@@ -63,6 +65,7 @@ import { ANAESTHETISTS } from '../domain/seed'
 import { displayStatusKey, effectiveSlotTimes, slotIdFor, type EffectiveSlotTimes } from '../domain/slots'
 import { isOpenSlot, type SlotStatusRecords } from '../domain/slotStatus'
 import { compareBySurname } from '../domain/surgeons'
+import { activeOnly, isRetired } from '../domain/masterLifecycle'
 import type { ListMoveInput } from '../domain/listMoves'
 import type { BookingMoveInput } from '../domain/bookingMoves'
 import { conflictFromCause, describeConflict, isBackdropList, type ConflictLookups, type ConflictReason } from '../domain/conflicts'
@@ -1896,6 +1899,11 @@ export function openConflictCount(state: Pick<AppState, 'schedule' | 'masters' |
 export interface HospitalDay {
   dateISO: string
   closures: HospitalHoliday[]
+  /**
+   * The master public holidays closing the hospital that day (catch-up Phase
+   * 42), read through `closuresFor`: read-only on the hospital's calendar.
+   */
+  publicClosures: PublicHoliday[]
   /** Lists at the hospital that day (backdrop history excluded). */
   listCount: number
   /** How many of them carry a live closure conflict (hospital closed). */
@@ -1916,12 +1924,17 @@ export function hospitalMonth(state: Pick<AppState, 'schedule' | 'masters'>, hos
     byDate.set(l.dateISO, e)
   }
   const holidays = Object.values(state.masters.holidays).filter((h) => h.hospitalId === hospitalId)
+  const index = closuresIndex(closureSourcesOf(state.masters))
   for (let d = 1; d <= days; d++) {
     const dateISO = `${monthISO}-${String(d).padStart(2, '0')}`
     const e = byDate.get(dateISO)
+    const publicClosures = closuresAt(index, dateISO, hospitalId).flatMap((c) =>
+      c.source === 'public' && state.masters.publicHolidays[c.publicHolidayId] !== undefined ? [state.masters.publicHolidays[c.publicHolidayId]!] : [],
+    )
     out.push({
       dateISO,
       closures: holidays.filter((h) => h.dateISO === dateISO).sort((a, b) => a.id.localeCompare(b.id)),
+      publicClosures,
       listCount: e?.lists ?? 0,
       conflictedCount: e?.conflicted ?? 0,
     })
@@ -2329,4 +2342,39 @@ export function updateEmailRecipients(
 /** The picker's rows for a Booking or a List, read from the whole audit (`pickableChanges`). */
 export function pickableChangesFor(state: Pick<AppState, 'audit' | 'schedule' | 'masters'>, subject: UpdateEmailSubject): PickableChange[] {
   return pickableChanges(state.audit, subject, { ...state.schedule, ...state.masters })
+}
+
+// ── Pickers offer active masters only (catch-up Phase 42, US-13.4.1) ────────
+// A picker offers the active records, plus the current value when it is
+// retired (shown "(retired)" via `retiredLabel`), so an edit never silently
+// drops a stored reference. Display paths keep reading `state.masters`.
+// Plain functions: components select the stable record objects and derive
+// inside a useMemo.
+
+type MastersOf<K extends keyof AppState['masters']> = { masters: Pick<AppState['masters'], K> }
+type MasterRow<K extends 'hospitals' | 'surgeons' | 'surgeonGroups' | 'modifiers'> = AppState['masters'][K][string]
+
+/** Hospitals a picker offers (retirement only; AA rooms filters stay on top). */
+export function activeHospitals(state: MastersOf<'hospitals'>, keepId?: string | null): MasterRow<'hospitals'>[] {
+  return activeOnly(state.masters.hospitals, keepId)
+}
+
+/** Surgeons a picker offers. */
+export function activeSurgeons(state: MastersOf<'surgeons'>, keepId?: string | null): MasterRow<'surgeons'>[] {
+  return activeOnly(state.masters.surgeons, keepId)
+}
+
+/** Surgeon groups a picker offers. */
+export function activeGroups(state: MastersOf<'surgeonGroups'>, keepId?: string | null): MasterRow<'surgeonGroups'>[] {
+  return activeOnly(state.masters.surgeonGroups, keepId)
+}
+
+/**
+ * The modifiers a picker offers: every RVG modifier, and AA's own modifiers
+ * unless retired. `keepId` (one id or several) keeps a retired AA modifier a
+ * Procedure already claims, so its claim still shows and resolves.
+ */
+export function activeAaModifiers(state: MastersOf<'modifiers'>, keepId?: string | null | readonly string[]): MasterRow<'modifiers'>[] {
+  const keep = new Set<string>(keepId === undefined || keepId === null ? [] : typeof keepId === 'string' ? [keepId] : keepId)
+  return Object.values(state.masters.modifiers).filter((m) => m.source !== 'aa' || !isRetired(m) || keep.has(m.id))
 }

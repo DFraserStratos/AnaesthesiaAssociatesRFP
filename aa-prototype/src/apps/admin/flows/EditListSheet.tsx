@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { List } from '../../../domain/types'
-import { editList, setSlotTimes, useAppStore, useListTimes, type Actor, type ListPatch } from '../../../store'
+import { activeHospitals, editList, setSlotTimes, useAppStore, useListTimes, type Actor, type ListPatch } from '../../../store'
 import { Button, SelectField, TextArea, FormError } from '../../../shared/ui'
 import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { NotPreferredWarning, SurgeonPicker, useNotPreferredWarning } from '../components/pairing'
 import { ConflictCallout, useConflictPreview, useHospitalOptionLabel } from '../components/conflicts/ConflictCallout'
 import { SessionTimesFields, timesDraftError, timesPatch, type TimesDraft } from './SessionTimesFields'
 import { surgeonSpecialtyLabel, withSpecialties } from '../../../domain/specialties'
+import { retiredLabel } from '../../../domain/masterLifecycle'
 
 interface EditListSheetProps {
   open: boolean
@@ -25,6 +26,8 @@ interface EditListSheetProps {
 export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps) {
   const { Overlay } = useSurface()
   const hospitals = useAppStore((s) => s.masters.hospitals)
+  // Retired hospitals are not offered, except the List's own, labelled (catch-up Phase 42).
+  const hospitalOptions = useMemo(() => activeHospitals({ masters: { hospitals } }, list.hospitalId), [hospitals, list.hospitalId])
   const specialties = useAppStore((s) => s.masters.specialties)
   const times = useListTimes(list)
   const defaultTimes = useAppStore((s) => s.appSettings.schedule.defaultTimes[list.session])
@@ -88,8 +91,8 @@ export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps
         <OverlayHeader title="Edit list" />
 
         <SelectField label="Hospital" value={hospitalId} onChange={setHospitalId}>
-          {Object.values(hospitals).map((h) => (
-            <option key={h.id} value={h.id}>{optionLabel(h.id, h.name)}</option>
+          {hospitalOptions.map((h) => (
+            <option key={h.id} value={h.id}>{optionLabel(h.id, retiredLabel(h.name, h))}</option>
           ))}
         </SelectField>
 
@@ -97,6 +100,7 @@ export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps
           label="Surgeon"
           anaesthetistId={list.anaesthetistId}
           value={surgeonId}
+          keepId={list.surgeonId}
           onChange={setSurgeonId}
           emptyLabel="Choose a surgeon"
           optionLabel={(s) => withSpecialties(s.name, surgeonSpecialtyLabel({ specialties }, s))}

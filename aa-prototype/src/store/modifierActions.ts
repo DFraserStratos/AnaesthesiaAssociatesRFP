@@ -24,7 +24,8 @@ import {
 import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal, getBooking, MODIFIERS_ON_PRIMARY_MESSAGE } from './lifecycle'
 import { modifierFactsFor } from './modifierFacts'
-import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
+import { slicesOf, withSource, type Plan, type PlanSource } from './masterPlanners'
+import { allocateId, mutate, ok, refuse, type Actor, type Outcome } from './mutate'
 
 export interface ClaimInput {
   modifierId: ModifierId
@@ -70,6 +71,11 @@ export function claimModifier(api: AppStoreApi, actor: Actor, procedureId: strin
   const facts = modifierFactsFor(state, procedure)
   const preApplied = preAppliedModifiersFor({ ...facts, removedModifierIds: procedure.removedModifierIds })
   const claim = claimOf(input)
+  // A retired AA modifier is never newly claimed; a claim it already holds may still be edited (catch-up Phase 42).
+  const target = state.masters.modifiers[claim.modifierId]
+  if (target?.retiredAtISO !== undefined && !procedure.modifierClaims.some((c) => c.modifierId === claim.modifierId)) {
+    return refuse('modifierRetired', `${target.code} is retired.`)
+  }
   const refused = claimRefusal(claim, { claims: procedure.modifierClaims, preApplied, modifiers: state.masters.modifiers })
   if (refused !== null) return refuse('modifierClaimRefused', refused)
   const modifierClaims = applyClaim(procedure.modifierClaims, claim)
@@ -278,6 +284,14 @@ export interface AaModifierInput {
  * here (Phase 42 loads and edits masters).
  */
 export function addAaModifier(api: AppStoreApi, actor: Actor, input: AaModifierInput): Outcome<{ id: ModifierId }> {
+  const plan = planAaModifierCreate(api.getState(), actor, input)
+  if (!plan.ok) return plan
+  mutate(api, actor, plan.value.metas, () => plan.value.next)
+  return ok({ id: plan.value.id })
+}
+
+/** Plan one of AA's own modifiers (the seed load folds the same planner). */
+export function planAaModifierCreate(state: AppState, actor: Actor, input: AaModifierInput, source?: PlanSource): Outcome<Plan> {
   if (actor.role !== 'office') return refuse('officeOnly', "Only the office can add AA's own modifiers.")
   const code = input.code.trim().replace(/\s+/g, ' ')
   const factor = input.factor.trim().replace(/\s+/g, ' ')
@@ -285,33 +299,27 @@ export function addAaModifier(api: AppStoreApi, actor: Actor, input: AaModifierI
   if (code.length > 12) return refuse('codeTooLong', 'Keep the code to 12 characters or fewer.')
   if (factor === '') return refuse('factorRequired', 'Describe the modifying factor.')
   if (!Number.isInteger(input.units) || input.units < 0) return refuse('unitsInvalid', 'Units must be a whole number of 0 or more.')
-  const state = api.getState()
   const clash = Object.values(state.masters.modifiers).some(
     (m) => m.source === 'aa' && m.code.toLowerCase() === code.toLowerCase(),
   )
   if (clash) return refuse('codeTaken', `AA already has a modifier ${code}.`)
-  let id = ''
-  const metas: MutationMeta[] = []
-  mutate(api, actor, metas, (s) => {
-    const alloc = allocateId(s.counters, 'modifier')
-    id = alloc.id
-    const row: Modifier = {
-      id,
-      code,
-      block: AA_OWN_BLOCK,
-      factor,
-      unitsAsPrinted: String(input.units),
-      units: input.units,
-      source: 'aa',
-    }
-    metas.push({
-      entityType: 'modifier',
-      entityId: id,
-      action: 'modifier.create',
-      after: { code, factor, units: input.units },
-      stampBookingId: null,
-    })
-    return { masters: { ...s.masters, modifiers: { ...s.masters.modifiers, [id]: row } }, counters: alloc.counters }
+  const alloc = allocateId(state.counters, 'modifier')
+  const id = alloc.id
+  const row: Modifier = {
+    id,
+    code,
+    block: AA_OWN_BLOCK,
+    factor,
+    unitsAsPrinted: String(input.units),
+    units: input.units,
+    source: 'aa',
+  }
+  return ok({
+    id,
+    next: { ...slicesOf(state), masters: { ...state.masters, modifiers: { ...state.masters.modifiers, [id]: row } }, counters: alloc.counters },
+    metas: withSource(
+      [{ entityType: 'modifier', entityId: id, action: 'modifier.create', after: { code, factor, units: input.units }, stampBookingId: null }],
+      source,
+    ),
   })
-  return ok({ id })
 }

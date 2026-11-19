@@ -57,6 +57,8 @@ import { sicknessCandidates } from './demoSimulations'
 import { ANAE, HOSP, SEED_DRAFT_LIST_IDS, SEED_LIST_IDS, SURG } from '../domain/seed'
 import { slotIdFor } from '../domain/slots'
 import { isActivePairing } from '../domain/listPairing'
+import { draftClosureWarning } from '../domain/draftLists'
+import { closureSourcesOf, closuresFor } from '../domain/holidays'
 import { assigned, draft } from '../test/lists'
 import { prepaymentStatusFor } from './prepaymentSelectors'
 import { addDays, format, parseISO } from 'date-fns'
@@ -243,6 +245,19 @@ describe('assignDraftList (US-01.6.3)', () => {
     const out = assignDraftList(api, OFFICE, id, { anaesthetistId: free.slot.anaesthetistId })
     expect(out.ok && out.value.warnings).toEqual(['Southern Cross is closed that day (hospital holiday). The List keeps its conflict.'])
     expect(api.getState().schedule.lists[id]!.conflicts).toMatchObject([{ kind: 'holiday' }])
+  })
+
+  it('a public holiday names itself in the warning: Labour Day (PH001, Mon 26 Oct) at St George’s', () => {
+    const api = store()
+    const LABOUR_DAY = '2026-10-26'
+    const id = create(api, { hospitalId: HOSP.stg, dateISO: LABOUR_DAY, session: 'AM' })
+    expect(api.getState().schedule.lists[id]!.conflicts).toMatchObject([{ kind: 'holiday', publicHolidayId: 'PH001' }])
+    const closures = closuresFor(LABOUR_DAY, HOSP.stg, closureSourcesOf(api.getState().masters))
+    expect(draftClosureWarning("St George's", closures)).toBe("St George's is closed that day (Labour Day, public holiday). The List keeps its conflict.")
+    const free = slotViewsForDate(api.getState(), LABOUR_DAY).find((v) => v.slot.session === 'AM' && v.open)!
+    expect(free).toBeDefined()
+    const out = assignDraftList(api, OFFICE, id, { anaesthetistId: free.slot.anaesthetistId })
+    expect(out.ok && out.value.warnings).toContain("St George's is closed that day (Labour Day, public holiday). The List keeps its conflict.")
   })
 
   it('draftListFitsAnaesthetist: a boolean, true only on a free session with no not-preferred pairing', () => {
