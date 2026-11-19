@@ -192,11 +192,11 @@ footer { margin:56px 0 40px; font-size:13px; color:var(--mist); }
   <div class="card scrollx"><table class="matrix" id="matrix"></table></div>
 
   <h2 id="decisions">Decision gates</h2>
-  <p>Programme-level decisions. Each is settled in its owner phase's planning session, with you where it is a product choice, and recorded in PROGRESS.md before any phase that waits on it builds. Each specification also lists its own smaller questions.</p>
+  <p>Programme-level decisions. Each is settled in its owner phase's planning session, with you where it is a product choice, and recorded in PROGRESS.md before any phase that waits on it builds. Each specification also lists its own smaller questions. <span id="deccount"></span></p>
   <div class="card scrollx"><table class="tbl" id="dtable"></table></div>
 
   <h2 id="ledger">Status</h2>
-  <p>Mirrors the phase status table in <a href="PROGRESS.md">PROGRESS.md</a>, which is authoritative. All phases are planned and specified; none has started.</p>
+  <p>Mirrors the phase status table in <a href="PROGRESS.md">PROGRESS.md</a>, which is authoritative. All phases are planned and specified; <span id="donecount"></span></p>
   <div class="card scrollx"><table class="tbl" id="stable"></table></div>
 
   <h2 id="how">How to run a phase</h2>
@@ -211,7 +211,7 @@ footer { margin:56px 0 40px; font-size:13px; color:var(--mist); }
   </div>
 
   <div class="card" style="padding:14px 18px;margin-top:12px;font-size:14px">
-    <b>Plan mode or auto mode.</b> Open a phase in <b>plan mode</b> when it has an open decision for you: the session reads, rechecks its findings, asks you the questions and shows its plan, and nothing changes until you approve. The other phases can open in <b>auto mode</b>; their prompt still brings any product question to you. Each phase's detail, the order strip and the status table say which. <b>D-05 is the exception:</b> after B04, open B05 in plan mode to settle D-05 only, then run B08, then come back to B05.
+    <b>Plan mode or auto mode.</b> Open a phase in <b>plan mode</b> when it has an open decision for you: the session reads, rechecks its findings, asks you the questions and shows its plan, and nothing changes until you approve. The other phases can open in <b>auto mode</b>; their prompt still brings any product question to you. Each phase's detail, the order strip and the status table say which. <b>D-05 was the exception</b> (settled, decision 19): B05 opened in plan mode after B04 to settle D-05 only, then B08 ran, then B05 was built.
   </div>
 
   <h2 id="sources">Sources and reviews</h2>
@@ -227,7 +227,7 @@ footer { margin:56px 0 40px; font-size:13px; color:var(--mist); }
     </ul>
     <p class="note" id="reviewnote" style="margin:12px 0 0"></p>
   </div>
-  <footer>Board fixes Buildbook · created 18 November 2026 against master d4341735 (board 1.12.3).</footer>
+  <footer>Board fixes Buildbook · created 18 November 2026 against master d4341735 (board 1.12.3); last updated after B06 (board 1.20.0).</footer>
 </main>
 
 <script>
@@ -343,6 +343,8 @@ const PHASE_STATE = {
   B07: { status:'COMPLETE', date:'2026-11-19', note:'Board 1.19.0. All 6 findings fixed; D-10 accepted (asset versions on one batched delivery, git blob hash as ?v=; decision 21); one-file re-sync 13 to 19 times cheaper, one render per delivery.' },
   B06: { status:'COMPLETE', date:'2026-11-19', note:'Board 1.20.0. All 16 findings fixed; sheets and Settings save only what changed, merge quietly, never lose or resurrect a draft (decision 22); project and components lock-out added; whole-record writes retired.' },
 };
+// Programme decisions accepted so far, with their PROGRESS accepted-decision number. A phase that settles one adds it here.
+const DECISION_STATE = { 'D-01':13, 'D-02':16, 'D-06':17, 'D-03':18, 'D-05':19, 'D-07':19, 'D-04':20, 'D-10':21 };
 // ===== end PHASE STATUS =====
 const STATUS = Object.fromEntries(PHASES.map(p=>[p.id,(PHASE_STATE[p.id]||{}).status||'PLANNED']));
 const isDone = id => STATUS[id]==='COMPLETE';
@@ -448,7 +450,7 @@ PHASES.forEach(p=>{
   if (m) g.append(sv('text',{x:16,y:56,class:'med'},`${m} medium`));
   if (isDone(p.id)) { g.classList.add('done'); g.append(sv('circle',{cx:NW-18,cy:18,r:11,class:'check'})); g.append(sv('path',{d:`M${NW-23},18 l3.5,3.5 l6.5,-7`,class:'checkmark'})); g.append(sv('text',{x:NW-12,y:56,'text-anchor':'end',class:'donetag'},'DONE '+PHASE_STATE[p.id].date.slice(5).split('-').reverse().join('/'))); }
   else if (p.order) { g.append(sv('circle',{cx:NW-18,cy:18,r:11,fill:css('--sunken')})); g.append(sv('text',{x:NW-18,y:22,'text-anchor':'middle',class:'num'},String(p.order))); }
-  else { g.append(sv('text',{x:NW-12,y:22,'text-anchor':'end',class:'num'},'∥')); g.append(sv('text',{x:0,y:NH+17,class:'after'},p.id==='B13'?'Can start any time · REQ-07b waits for B04':`Starts after ${p.deps.join(', ')}`)); }
+  else { g.append(sv('text',{x:NW-12,y:22,'text-anchor':'end',class:'num'},'∥')); g.append(sv('text',{x:0,y:NH+17,class:'after'},p.id==='B13'?(isDone('B04')?'Can start any time':'Can start any time · REQ-07b waits for B04'):`Starts after ${p.deps.join(', ')}`)); }
   g.append(sv('text',{x:NW-12,y:56,'text-anchor':'end',class:'tag need'},'needed first'));
   g.append(sv('text',{x:NW-12,y:56,'text-anchor':'end',class:'tag waits'},'waits on it'));
   g.addEventListener('click',()=>select(p.id,true));
@@ -526,7 +528,7 @@ function select(id, scroll){
       el('span',{class:'b b-teal',text:p.order?`Serial step ${p.order} of 13`:'Parallel worktree'}),
       statusBadge(id),
       el('span',{class:'b b-ok',text:'Ready to plan'}),
-      (p.id==='B01'?el('span',{class:'b b-ok',text:'D-01 accepted'}):el('span',{class:'b b-warn',text:p.decisions.length?`Build gate: ${p.decisions.join(', ')}`:'Build gate: prerequisites'})),
+      (p.decisions.length&&p.decisions.every(x=>DECISION_STATE[x])?el('span',{class:'b b-ok',text:`${p.decisions.join(', ')} accepted`}):(!p.decisions.length&&p.deps.length&&p.deps.every(isDone)?el('span',{class:'b b-ok',text:'Prerequisites complete'}):el('span',{class:'b b-warn',text:p.decisions.length?`Build gate: ${p.decisions.join(', ')}`:'Build gate: prerequisites'}))),
       ids.length?el('span',{class:'b',text:`${ids.length} findings`}):null,
       medCount(p)?el('span',{class:'b b-err',text:`${medCount(p)} medium`}):null
     ])])]);
@@ -577,7 +579,9 @@ mx.append(tb);
 // Decisions
 const dt = document.getElementById('dtable');
 dt.append(el('thead',{},el('tr',{},['ID','Question','Owner','Waits on it','Resolve before','Status'].map(h=>el('th',{text:h})))));
-const dtb = el('tbody'); DECISIONS.forEach(r=>dtb.append(el('tr',{},[el('td',{class:'mono',text:r[0]}),el('td',{text:r[1]}),el('td',{class:'mono',text:r[2]}),el('td',{text:r[3]}),el('td',{text:r[4]}),el('td',{},r[0]==='D-01'?el('span',{class:'b b-ok',text:'Accepted'}):el('span',{class:'b b-warn',text:'Open'}))]))); dt.append(dtb);
+const dtb = el('tbody'); DECISIONS.forEach(r=>dtb.append(el('tr',{},[el('td',{class:'mono',text:r[0]}),el('td',{text:r[1]}),el('td',{class:'mono',text:r[2]}),el('td',{text:r[3]}),el('td',{text:r[4]}),el('td',{},DECISION_STATE[r[0]]?el('span',{class:'b b-ok',text:'Accepted · decision '+DECISION_STATE[r[0]]}):el('span',{class:'b b-warn',text:'Open'}))]))); dt.append(dtb);
+{ const open = DECISIONS.filter(r=>!DECISION_STATE[r[0]]).map(r=>r[0]);
+  document.getElementById('deccount').textContent = `${DECISIONS.length-open.length} of ${DECISIONS.length} are accepted; ` + (open.length ? `${open.join(' and ')} ${open.length===1?'is':'are'} still open.` : 'none is open.'); }
 
 // Status
 const st = document.getElementById('stable');
@@ -585,6 +589,7 @@ st.append(el('thead',{},el('tr',{},['Phase','Outcome','Status','Open in','Ready 
 const stb = el('tbody');
 SERIAL.concat(['B12','B13']).forEach(id=>{ const p=byId[id]; stb.append(el('tr',{},[el('td',{class:'mono',text:id}),el('td',{text:p.title}),el('td',{},statusBadge(id)),el('td',{},isDone(id)?el('span',{class:'note',text:PHASE_STATE[id].date}):modeBadge(id)),el('td',{},el('span',{class:'b b-ok',text:'Yes'})),el('td',{text:id==='B01'?'now; D-01 and B01-Q1 to Q3 recorded':[p.deps.length?'after '+(p.depNote||p.deps.join(', ')):'', p.decisions.length?p.decisions.join(', ')+' recorded':'', p.gateExtra||''].filter(Boolean).join('; ')||'now'})])); });
 st.append(stb);
+document.getElementById('donecount').textContent = DONE_N===15 ? 'all are complete.' : `${DONE_N} of 15 are complete.`;
 
 document.getElementById('reviewnote').textContent = "Both planning reviews ran on all 15 specifications. Integration: 32 of 32 findings resolved. Fidelity: 19 of 19 resolved, coverage 164 of 164. All programme work is on branch board-fixes (convention 16).";
 // Next up
@@ -599,7 +604,7 @@ document.getElementById('reviewnote').textContent = "Both planning reviews ran o
     const go = el('button',{type:'button',text:'Show its prompt'}); go.addEventListener('click',()=>select(next,true));
     kids.push(el('span',{class:'lbl',text:'Next up'}), el('span',{class:'what',text:`${next} · ${byId[next].title}`}), modeBadge(next), go);
     const bits = [];
-    if (ready.length) bits.push('Can run alongside in its own worktree: '+ready.map(([id,,n])=>`${id} ${byId[id].title}${id==='B13'?' ('+n+')':''}`).join('; ')+'.');
+    if (ready.length) bits.push('Can run alongside in its own worktree: '+ready.map(([id,,n])=>`${id} ${byId[id].title}${id==='B13'&&!isDone('B04')?' ('+n+')':''}`).join('; ')+'.');
     if (waiting.length) bits.push(waiting.map(([id,,n])=>`${id} starts ${n}.`).join(' '));
     if (next==='B04' || next==='B08') bits.push('Before B08 builds, settle D-05 in a short B05 planning session (plan mode).');
     kids.push(el('p',{class:'also',text:`${DONE_N} of 15 phases complete. `+bits.join(' ')}));
