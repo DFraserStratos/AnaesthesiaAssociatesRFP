@@ -8,34 +8,8 @@
 import type { ReactNode } from 'react'
 import { Check, Lock } from 'lucide-react'
 import { accent, neutral, semantic } from '../../../../theme/tokens'
-import { STATUS_PALETTE } from '../../../../theme/statusColours'
 import { useDisplayStatus } from '../../../../shared'
 import { isOpenSlotView, type SlotView } from '../../../../store'
-import type { AgingBucketKey } from '../../../../domain/seed'
-import { formatCurrency } from '../../../../shared/format'
-
-/** Recreated: local `SubTabButton` in apps/web/screens/AccountsScreen.tsx. */
-export function SubTabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        border: 'none',
-        background: 'none',
-        padding: '10px 14px',
-        fontFamily: 'inherit',
-        fontSize: 14,
-        fontWeight: active ? 600 : 500,
-        color: active ? neutral.ink : neutral.slate,
-        boxShadow: active ? `inset 0 -2px 0 ${neutral.ink}` : 'none',
-        cursor: 'pointer',
-      }}
-    >
-      {children}
-    </button>
-  )
-}
 
 /** Recreated: the day stepper's date pill and Today button in apps/web/screens/AvailabilityGrid.tsx. */
 export function DayPill({ children }: { children: ReactNode }) {
@@ -101,34 +75,6 @@ export function SubmitAction({
     <button type="button" onClick={onConfirm} style={{ ...shared, background: accent.base, color: neutral.surface, cursor: 'pointer' }}>
       Mark list completed
     </button>
-  )
-}
-
-/** Recreated: the receivables aging bars in apps/web/screens/DashboardScreen.tsx. */
-export const AGING_ROWS: { key: AgingBucketKey; label: string; color: string; opacity: number }[] = [
-  { key: 'current', label: 'Current', color: accent.base, opacity: 1 },
-  { key: 'd31_60', label: '31 to 60 d', color: accent.base, opacity: 0.55 },
-  { key: 'd61_90', label: '61 to 90 d', color: STATUS_PALETTE.preop.solid, opacity: 1 },
-  { key: 'd90plus', label: '90 d +', color: semantic.error.solid, opacity: 1 },
-]
-
-export function AgingBars({ aging }: { aging: Record<AgingBucketKey, number> & { total: number } }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {AGING_ROWS.map((r) => {
-        const amount = aging[r.key]
-        const pct = aging.total > 0 ? Math.round((amount / aging.total) * 100) : 0
-        return (
-          <div key={r.key} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ width: 72, fontSize: 12, fontWeight: 600, color: neutral.slate }}>{r.label}</span>
-            <span style={{ flex: 1, height: 14, borderRadius: 99, background: neutral.sunken, overflow: 'hidden', display: 'block' }}>
-              <span style={{ display: 'block', height: '100%', borderRadius: 99, background: r.color, opacity: r.opacity, width: `${pct}%` }} />
-            </span>
-            <span className="mono" style={{ width: 72, textAlign: 'right', fontSize: 12 }}>{formatCurrency(amount)}</span>
-          </div>
-        )
-      })}
-    </div>
   )
 }
 

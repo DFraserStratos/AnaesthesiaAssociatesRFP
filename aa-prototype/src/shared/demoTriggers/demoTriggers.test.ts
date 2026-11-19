@@ -809,7 +809,7 @@ describe('AA fee entries (catch-up Phase 16)', () => {
     expect(seed.disabledReason(api.getState(), ctx)).toBe('Already invoiced for July 2026')
   })
 
-  it('the seeded BCTIs add nothing to Overdue or the payables run, and no List from 7 July on', () => {
+  it('the seeded BCTIs add nothing to Outstanding or the payables run, and no List from 7 July on', () => {
     const api = createAppStore()
     const openBefore = openAccRecs(api.getState()).length
     byId('seed-month-of-bctis').run(api, ctxFor(FEE))
@@ -993,6 +993,40 @@ describe('the Ledger triggers (catch-up Phase 36)', () => {
     const out = t.run(api, ctx)
     expect(out.ok).toBe(true)
     expect(out.message).toContain('to Dr Souter')
+    expect(out.message).toContain('it leaves Outstanding and shows under GST this month')
     expect(t.disabledReason(api.getState(), ctx)).toBe('Nothing due to pay out')
+  })
+})
+
+describe('the web money screens\' payment entries (catch-up Phase 38)', () => {
+  it('show on the bar on Web Dashboard and Accounts only, never on Lists or Availability or the PWA', () => {
+    const api = createAppStore()
+    for (const path of ['/web', '/web/accounts/outstanding', '/web/accounts/gst']) {
+      expect(ids(api, path, 'bar'), path).toEqual(expect.arrayContaining(['web-payment-full', 'web-payment-half']))
+      expect(ids(api, path, 'pwa'), path).not.toContain('web-payment-full')
+    }
+    for (const path of ['/web/lists', '/web/availability']) expect(ids(api, path, 'bar'), path).not.toContain('web-payment-full')
+    expect(byId('web-payment-full').surfaces).toEqual(['bar'])
+  })
+
+  it("offer only the persona's invoices that reach her position, and say where the money goes next", () => {
+    const api = createAppStore()
+    wireBillingRun(api)
+    const t = byId('web-payment-full')
+    const ctx = ctxFor('/web/accounts/outstanding', { subTab: 'outstanding' })
+    expect(t.disabledReason(api.getState(), ctx, initialChoice(t, api.getState(), ctx))).toBe('No open invoices yet')
+    authoriseList(api, OFFICE_ACTOR, SEED_LIST_IDS.souterMon20Am)
+    authoriseList(api, OFFICE_ACTOR, SEED_LIST_IDS.souterMon20Pm)
+    const choices = t.choices?.(api.getState(), ctx) ?? []
+    const offered = new Set(choices.map((c) => c.id))
+    const souters = openAccRecs(api.getState()).filter((c) => {
+      const pair = Object.values(api.getState().billing.ledger).find((p) => p.receivable.xeroAccRecId === c.accRecId)
+      return pair !== undefined && 'anaesthetistId' in pair && pair.anaesthetistId === SOUTER_ACTOR.anaesthetistId
+    })
+    expect(offered.size).toBeGreaterThan(0)
+    expect([...offered].sort()).toEqual(souters.map((c) => c.accRecId).sort())
+    const out = t.run(api, ctx, choices[0]!.id)
+    expect(out.ok).toBe(true)
+    expect(out.message).toMatch(/^Payment received\. It reaches the GST report when AA pays the anaesthetist\./)
   })
 })

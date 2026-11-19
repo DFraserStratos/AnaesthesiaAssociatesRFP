@@ -1,8 +1,8 @@
 /**
- * Shared pure date-in-days helpers (Phase 10) — lifted out of
- * `seed/anaesthetistDashboard.ts` so the receivables aging (Phase 05/10), the
- * ledger money selectors and the contact-archive job all age dates the same
- * way. Deterministic, UTC-midnight based; no `Date.now()` (domain purity).
+ * Shared pure date-in-days helpers (Phase 10), so the contact-archive job and
+ * the other day counts age dates the same way. (The anaesthetist ageing
+ * buckets are gone: catch-up Phase 38, D8.) Deterministic, UTC-midnight based;
+ * no `Date.now()` (domain purity).
  */
 
 /** Whole days from the Unix epoch to an ISO date's calendar day (UTC-midnight). */
@@ -14,13 +14,4 @@ export function epochDayOf(iso: string): number {
 /** Whole days between two ISO dates (`to − from`), by calendar day. */
 export function daysBetween(fromISO: string, toISO: string): number {
   return epochDayOf(toISO) - epochDayOf(fromISO)
-}
-
-export type AgingBucketKey = 'current' | 'd31_60' | 'd61_90' | 'd90plus'
-
-export function bucketForAgingDays(days: number): AgingBucketKey {
-  if (days <= 30) return 'current'
-  if (days <= 60) return 'd31_60'
-  if (days <= 90) return 'd61_90'
-  return 'd90plus'
 }

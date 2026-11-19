@@ -58,18 +58,33 @@ test('web: the persona block opens /web/profile, which survives a refresh (catch
   await expect(page.getByRole('button', { name: 'Your profile, Dr Melanie Souter' })).toHaveAttribute('aria-current', 'page')
 })
 
-test('web: the accounts sub-tab is a URL, and the bare section redirects to Overdue', async ({ page }) => {
+test('web: the accounts sub-tab is a URL, and the bare section and the old Overdue URL land on Outstanding', async ({ page }) => {
   await page.goto('/web/accounts')
   await page.waitForLoadState('networkidle')
-  await expect(page).toHaveURL(/\/web\/accounts\/overdue$/)
+  await expect(page).toHaveURL(/\/web\/accounts\/outstanding$/)
 
-  await page.getByRole('button', { name: 'GST activity' }).click()
+  // Catch-up Phase 38: the Overdue tab became Outstanding; an old link redirects, keeping its query.
+  await page.goto('/web/accounts/overdue?invoice=AA-2026-H08')
+  await page.waitForLoadState('networkidle')
+  await expect(page).toHaveURL(/\/web\/accounts\/outstanding\?invoice=AA-2026-H08$/)
+  await expect(page.locator('[data-shot=web-accounts-outstanding]')).toBeVisible()
+
+  await page.getByRole('link', { name: 'GST report' }).click()
   await expect(page).toHaveURL(/\/web\/accounts\/gst$/)
 
   await page.reload()
   await page.waitForLoadState('networkidle')
   await expect(page).toHaveURL(/\/web\/accounts\/gst$/)
-  await expect(page.getByText(/received, each with its GST component/)).toBeVisible()
+  await expect(page.getByText(/GST on a cash basis: each payment AA passed to you in the month/)).toBeVisible()
+})
+
+test('web: an Outstanding row opens its Booking (US-12.2.1)', async ({ page }) => {
+  await page.goto('/web/accounts/outstanding')
+  await page.waitForLoadState('networkidle')
+  const row = page.locator('[data-testid^=outstanding-row-]').first()
+  const bookingId = await row.getAttribute('data-booking-id')
+  await row.locator('td').nth(2).click()
+  await expect(page).toHaveURL(new RegExp(`/web/lists/[^/]+/bookings/${bookingId}$`))
 })
 
 test('web: the dashboard week strip carries an explicit anchor date', async ({ page }) => {
@@ -94,8 +109,8 @@ test('web: the dashboard jump links land on their own routes', async ({ page }) 
   await page.goto('/web')
   await page.waitForLoadState('networkidle')
 
-  await page.getByRole('button', { name: 'view overdue accounts' }).click()
-  await expect(page).toHaveURL(/\/web\/accounts\/overdue$/)
+  await page.getByRole('button', { name: 'View outstanding invoices' }).click()
+  await expect(page).toHaveURL(/\/web\/accounts\/outstanding$/)
 
   await page.getByRole('button', { name: 'Dashboard', exact: true }).click()
   await page.getByRole('button', { name: /Full availability grid/ }).click()

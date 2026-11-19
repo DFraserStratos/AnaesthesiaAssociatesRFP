@@ -583,8 +583,10 @@ An invoice has been generated.
    A prepayment is the exception: its payable credits the AA Holding account and is never paid itself;
    the anaesthetist is paid only after the transfer at authorisation (Workflow 8, Pre-payment).
 7. The system tracks **paid into AA** and **disbursed to anaesthetist** separately.
-8. The anaesthetist's flat balance view, persistent payment history and GST activity update from the
-   Billing Engine's own ledger, AA's system of record, not from direct Xero queries. Every invoice is a
+8. The anaesthetist's financial position (owed to you, collected, paid out to you), the flat list of
+   unpaid payables (one row per payable, oldest first, kept as "Paid in, due to you" until AA pays
+   her), the persistent payment history and the monthly GST report of the payments AA passed on to her
+   (cash basis, with each payment's GST) update from the Billing Engine's own ledger, AA's system of record, not from direct Xero queries. Every invoice is a
    ledger pair (a receivable from the payer and a payable to the anaesthetist) created with the invoice;
    payments are recorded in the ledger first, the payables run pays from the payable legs, and Xero
    mirrors both. The office checks on **Admin → Ledger** that receipts held equal payables due plus the
@@ -658,7 +660,7 @@ Admin → Billing → AA fee invoices, or the "Run scheduled month-end fee run" 
    times the count, with GST worked out at the foot. Each is its own case with a Xero ACCREC against the
    anaesthetist's existing contact and no ACCPAY.
 4. The anaesthetist pays it by bank transfer into AA's own account. It is never deducted from a payment
-   to them (trust law), and it is not their income, so it never reaches their GST activity.
+   to them (trust law), and it is not their income, so it never reaches their GST report.
 5. Admin and the web **Accounts → AA fees** tab show each fee invoice paid or unpaid.
 
 ### Demo point

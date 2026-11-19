@@ -36,7 +36,9 @@ import {
   pairsForList,
 } from './ledgerSelectors'
 import { holdingAccountView } from './prepaymentSelectors'
-import { bookingsForList, gstActivityFor, paymentHistoryFor } from './selectors'
+import { bookingsForList, paymentHistoryFor } from './selectors'
+import { gstReportFor } from './ledgerSelectors'
+import { DEMO_TODAY } from '../domain/clock'
 import { isBookingPair } from '../domain/billing/ledger'
 import { ANAE, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
 import { projectedListId } from '../domain/slots'
@@ -333,10 +335,10 @@ describe('money in is recorded in the ledger first (work item 6)', () => {
     inBalance(api.getState())
   })
 
-  it('AA fee payments never reach GST activity, payment history or the BCTI count', () => {
+  it('AA fee payments never reach the GST report, payment history or the BCTI count', () => {
     const api = createAppStore()
     seedMonthOfBctis(api, DEMO_TRIGGER_ACTOR, ANAE.rutherford)
-    const gstBefore = gstActivityFor(api.getState(), ANAE.rutherford, '2026-07-01', '2026-07-31')
+    const gstBefore = gstReportFor(api.getState(), ANAE.rutherford, '2026-07', DEMO_TODAY)
     const historyBefore = paymentHistoryFor(api.getState(), ANAE.rutherford)
     const bctisBefore = bctiRecords(api.getState())
     runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
@@ -345,7 +347,7 @@ describe('money in is recorded in the ledger first (work item 6)', () => {
     expect(api.getState().billing.ledger[fee.ledgerPairId]?.receivable.xeroAccRecId).toBeDefined()
     expect(recordAaFeePayment(api, { aaFeeInvoiceId: fee.id, idempotencyKey: 'FEE' }).ok).toBe(true)
     expect(api.getState().billing.ledger[fee.ledgerPairId]?.receivable.receivedAmount).toBe(fee.total)
-    expect(gstActivityFor(api.getState(), ANAE.rutherford, '2026-07-01', '2026-07-31')).toEqual(gstBefore)
+    expect(gstReportFor(api.getState(), ANAE.rutherford, '2026-07', DEMO_TODAY)).toEqual(gstBefore)
     expect(paymentHistoryFor(api.getState(), ANAE.rutherford)).toEqual(historyBefore)
     expect(bctiRecords(api.getState())).toEqual(bctisBefore)
     inBalance(api.getState())

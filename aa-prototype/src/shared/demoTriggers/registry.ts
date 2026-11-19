@@ -76,6 +76,8 @@ import {
   XERO_PAYABLES_ACTOR,
   XERO_STAFF_ACTOR,
   pairByAccRec,
+  releasedAndPaidFor,
+  viewerOfPair,
   transferForPair,
   type PollResult,
   type XeroBill,
@@ -162,6 +164,8 @@ import { regenerateInvoiceFromLock, regenerateRefusal, regenerateSummary } from 
 import type { DemoTrigger, DemoTriggerChoice, DemoTriggerCtx, DemoTriggerResult } from './types'
 import { injectUnmatchedReceipt, injectUnmatchedRefusal, officeRunsPayables, officeRunsPayablesRefusal, UNMATCHED_RECEIPT_DEMO } from '../../store/ledgerDemo'
 import { sessionText } from '../../domain/outOfHours'
+import { isBookingPair } from '../../domain/billing/ledger'
+import { APP_CONFIG } from '../../shell/appConfig'
 import { newerInvoiceDescription } from '../../domain/billing/procedureStack'
 import {
   defaultHospitalDescription,
@@ -340,10 +344,15 @@ function nextWebhookN(state: AppState, accRecId: string): number {
 
 /** Simulate a Xero payment webhook, full or half, exactly as the Control Panel's "Record payment" did. */
 export function sendPaymentWebhook(api: AppStoreApi, accRecId: string | undefined, mode: 'full' | 'partial'): DemoTriggerResult {
+  return paymentWebhook(api, accRecId, mode).result
+}
+
+/** The webhook body, and whether the engine received the money into the ledger (not queued by an outage, not a no-op). */
+function paymentWebhook(api: AppStoreApi, accRecId: string | undefined, mode: 'full' | 'partial'): { result: DemoTriggerResult; received: boolean } {
   const state = api.getState()
   const reason = paymentDisabledReason(state, accRecId)
   const active = openAccRecs(state).find((c) => c.accRecId === accRecId)
-  if (reason !== null || active === undefined) return { ok: false, message: reason ?? 'Not handed off to Xero' }
+  if (reason !== null || active === undefined) return { result: { ok: false, message: reason ?? 'Not handed off to Xero' }, received: false }
   const partial = roundToCents(active.remaining / 2)
   const amount = mode === 'partial' && partial > 0 ? partial : active.remaining
   const n = nextWebhookN(state, active.accRecId)
@@ -351,7 +360,10 @@ export function sendPaymentWebhook(api: AppStoreApi, accRecId: string | undefine
   // Through the outage-aware webhook (catch-up Phase 37): during an outage the money lands in Xero and the engine's sync queues.
   const res = deliverPaymentWebhook(api, { accRecId: active.accRecId, amount, idempotencyKey: key })
   useDemoTriggerMemory.getState().rememberWebhook({ accRecId: active.accRecId, key, amount }, n)
+  const received = res.ok && res.value.queued !== true && res.value.applied
   return {
+    received,
+    result: {
     ok: res.ok,
     message: res.ok
       ? res.value.queued === true
@@ -360,6 +372,7 @@ export function sendPaymentWebhook(api: AppStoreApi, accRecId: string | undefine
           ? `Webhook for ${active.invoiceNumber}: ${formatCurrency(amount)} received, the paired ACCPAY is authorised for exactly ${formatCurrency(amount)}.`
           : 'No change (already fully paid).'
       : `Refused: ${res.message}`,
+    },
   }
 }
 
@@ -414,27 +427,59 @@ function replayDisabledReason(state: AppState): string | null {
   return null
 }
 
-/** The PWA's Balances choices: Dr Souter's open invoices (the demo-surface exemption `openAccRecs` documents). */
-function souterOpenAccRecs(state: AppState) {
+/**
+ * An anaesthetist's open invoices, for the money screens' payment choosers (the PWA's Balances, and since
+ * catch-up Phase 38 the web dashboard and Accounts): every open ACCREC whose pair shows in that
+ * anaesthetist's views (`viewerOfPair`: the payee stamped on the pair, a prepayment's transfer payee, or
+ * while held the anaesthetist who has the List), never a List join (the demo-surface exemption
+ * `openAccRecs` documents).
+ */
+function personaOpenAccRecs(state: AppState, anaesthetistId: string, opts: { positionOnly?: boolean } = {}) {
   return openAccRecs(state).filter((c) => {
-    const invoice = state.billing.invoices[c.invoiceId]
-    const booking = invoice !== undefined ? state.schedule.bookings[invoice.bookingId] : undefined
-    const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
-    return list?.anaesthetistId === ANAE.souter
+    const pair = pairByAccRec(state, c.accRecId)
+    if (pair === undefined || !isBookingPair(pair) || viewerOfPair(state, pair) !== anaesthetistId) return false
+    // The web money screens show only what reaches the anaesthetist's position: never a prepayment the AA Holding account holds.
+    return opts.positionOnly !== true || !releasedAndPaidFor(state, pair).held
   })
 }
 
-function souterPaymentChoices(state: AppState) {
-  return souterOpenAccRecs(state).map((c) => ({
+function personaPaymentChoices(state: AppState, anaesthetistId: string, opts: { positionOnly?: boolean } = {}) {
+  return personaOpenAccRecs(state, anaesthetistId, opts).map((c) => ({
     id: c.accRecId,
     label: `${c.invoiceNumber} · ${c.patientName} · ${formatCurrency(c.remaining)} due`,
   }))
 }
 
-function souterPaymentDisabled(state: AppState, choiceId: string | undefined): string | null {
-  if (souterOpenAccRecs(state).length === 0) return 'No open invoices yet'
+function personaPaymentDisabled(state: AppState, anaesthetistId: string, choiceId: string | undefined, opts: { positionOnly?: boolean } = {}): string | null {
+  if (personaOpenAccRecs(state, anaesthetistId, opts).length === 0) return 'No open invoices yet'
   if (choiceId === undefined) return 'Choose an invoice'
   return paymentDisabledReason(state, choiceId)
+}
+
+/** The web app's persona (`WebApp.tsx` reads the same): the web payment entries choose among her invoices. */
+const WEB_PERSONA_ID: string = APP_CONFIG.web.persona.anaesthetistId ?? ANAE.souter
+
+/** The web money screens' payment (catch-up Phase 38): the shared webhook body, and where the money goes next. */
+function webPaymentEntry(id: 'web-payment-full' | 'web-payment-half', mode: 'full' | 'partial'): DemoTrigger {
+  return {
+    id,
+    label: mode === 'full' ? 'Payment received · full' : 'Payment received · half',
+    description:
+      mode === 'full'
+        ? "A Xero payment webhook for the full balance of one of the persona's open invoices, chosen below. Collected rises at once; the Outstanding row stays as paid in, due to you; the GST report gains no row until AA pays the anaesthetist."
+        : "A Xero payment webhook for half the balance of one of the persona's open invoices, chosen below (a part payment). The Outstanding row stays; the GST report gains no row until AA pays the anaesthetist.",
+    screen: 'Web · Dashboard and Accounts',
+    routes: ['/web', '/web/accounts/:subTab'],
+    surfaces: ['bar'],
+    choices: (state) => personaPaymentChoices(state, WEB_PERSONA_ID, { positionOnly: true }),
+    disabledReason: (state, _ctx, choiceId) => personaPaymentDisabled(state, WEB_PERSONA_ID, choiceId, { positionOnly: true }),
+    run: (api, _ctx, choiceId) => {
+      const out = paymentWebhook(api, choiceId, mode)
+      // Only money the ledger received is collected; a queued or no-op webhook says so in its own words.
+      return out.received ? { ok: true, message: `Payment received. It reaches the GST report when AA pays the anaesthetist. ${out.result.message}` } : out.result
+    },
+    indexPath: () => '/web/accounts/outstanding',
+  }
 }
 
 /**
@@ -1925,13 +1970,13 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     routes: ['/mobile/balances', MOBILE_BOOKING],
     surfaces: ['pwa'],
     // On a Booking (catch-up Phase 27): its sent prepayment invoices only.
-    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : souterPaymentChoices(state)),
+    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : personaPaymentChoices(state, ANAE.souter)),
     disabledReason: (state, ctx, choiceId) =>
       ctx.params['bookingId'] !== undefined
         ? prepaymentAccRecChoices(state, ctx.params['bookingId']).length === 0
           ? 'No sent pre-payment invoice yet'
           : paymentDisabledReason(state, paymentTargetOnScreen(state, ctx, choiceId))
-        : souterPaymentDisabled(state, choiceId),
+        : personaPaymentDisabled(state, ANAE.souter, choiceId),
     run: (api, ctx, choiceId) => sendPaymentWebhook(api, ctx.params['bookingId'] !== undefined ? paymentTargetOnScreen(api.getState(), ctx, choiceId) : choiceId, 'full'),
     indexPath: () => null,
   },
@@ -1943,16 +1988,19 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     routes: ['/mobile/balances', MOBILE_BOOKING],
     surfaces: ['pwa'],
     // On a Booking (catch-up Phase 27): its sent prepayment invoices only.
-    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : souterPaymentChoices(state)),
+    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : personaPaymentChoices(state, ANAE.souter)),
     disabledReason: (state, ctx, choiceId) =>
       ctx.params['bookingId'] !== undefined
         ? prepaymentAccRecChoices(state, ctx.params['bookingId']).length === 0
           ? 'No sent pre-payment invoice yet'
           : paymentDisabledReason(state, paymentTargetOnScreen(state, ctx, choiceId))
-        : souterPaymentDisabled(state, choiceId),
+        : personaPaymentDisabled(state, ANAE.souter, choiceId),
     run: (api, ctx, choiceId) => sendPaymentWebhook(api, ctx.params['bookingId'] !== undefined ? paymentTargetOnScreen(api.getState(), ctx, choiceId) : choiceId, 'partial'),
     indexPath: () => null,
   },
+  // ── Web · Dashboard and Accounts: the persona's payments (catch-up Phase 38) ──
+  webPaymentEntry('web-payment-full', 'full'),
+  webPaymentEntry('web-payment-half', 'partial'),
   // ── List and Booking detail, all three apps: the multi-procedure rule (catch-up Phase 23) ──
   {
     id: 'load-multi-procedure-booking',

@@ -95,7 +95,7 @@ Snapshot date: **24 July 2026**
 | Post-op addendum and billing monitor (grouped by anaesthetist, with filters for one anaesthetist, hospital, dates and Problems only; Lists awaiting approval open in Review) | Ready | Phase 09; grouping and filters from catch-up Phase 37 |
 | Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), escalating warning, left off the final invoice | Ready | Catch-up Phase 27 |
 | Prepayment held in the AA Holding account (its card on the Billing monitor), transferred to the anaesthetist automatically when the List is authorised, then paid by the payables run | Ready | Catch-up Phase 27a |
-| Xero pairs, payments, payables, payment history, live balances and GST activity | Ready | Phase 10 |
+| Xero pairs, payments, payables, payment history, live balances and GST report | Ready | Phase 10 |
 | Xero resilience: the payables run made in Xero (each disbursement recorded by webhook or poll), the Xero sync queue through an outage, voids and edits made in Xero flagged at the poll, bulk remittances matched in Xero, and the Reconciliation card on Admin Day | Ready | Catch-up Phase 37 |
 | Internal ledger with in-balance view: Admin Ledger (the whole ledger and one anaesthetist), the out-of-balance list, unmatched receipts allocated or refunded; Xero mirrors the ledger | Ready | Catch-up Phase 36 |
 | Anaesthetist profile and bank details (own rate per unit on mobile and web; office-held contact, HPI CPN and masked bank details, payments made in Xero) | Ready | Catch-up Phase 26 |

@@ -55,7 +55,7 @@ export function runReconciliationPoll(api: AppStoreApi): PollResult {
       idempotencyKey: payment.idempotencyKey,
       source: 'poll',
       // Backdate the receipt to when Xero actually received the money (not the
-      // poll-detection day) so it lands in the correct GST period.
+      // poll-detection day) so every dated view reads the day the money moved.
       atISO: payment.atISO,
     })
     if (outcome.ok && outcome.value.applied) payments += 1

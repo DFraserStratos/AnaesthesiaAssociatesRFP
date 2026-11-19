@@ -69,5 +69,5 @@ export function officeRunsPayables(api: AppStoreApi, anaesthetistId: string = AN
   const out = runPayables(api, OFFICE_SIMULATION_ACTOR, { anaesthetistId })
   if (!out.ok) return out
   const name = drSurname(api.getState().masters.anaesthetists[anaesthetistId]?.name ?? anaesthetistId)
-  return ok({ message: `The office paid ${formatCurrency(out.value.totalPaid)} to ${name} in Xero, and the Billing Engine recorded it from Xero's bill-paid webhook. Paid out rises by it.` })
+  return ok({ message: `The office paid ${formatCurrency(out.value.totalPaid)} to ${name} in Xero, and the Billing Engine recorded it from Xero's bill-paid webhook. Paid out rises by it; it leaves Outstanding and shows under GST this month.` })
 }

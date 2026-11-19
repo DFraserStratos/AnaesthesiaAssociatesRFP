@@ -1,8 +1,8 @@
 /**
  * Seeded historical ledger + Xero rows (Phase 10; Decision 1 seed-money).
  *
- * The anaesthetist money views (outstanding balances, receivables aging, GST
- * activity) go LIVE over the Billing Engine's ledger in Phase 10. To have them
+ * The anaesthetist money views (the Outstanding list, payments and, since
+ * catch-up Phase 38, the monthly GST report of payouts) go LIVE over the Billing Engine's ledger in Phase 10. To have them
  * populated on load for Dr Souter, we seed a set of PAST accounts as a full,
  * coherent graph: a billed List + completed Booking + Procedure, an Invoice + line,
  * a ledger pair carrying the money (received / authorised / disbursed + dates),
@@ -10,9 +10,9 @@
  * disbursements) + the contact-id cache.
  *
  * Live runtime rows are strictly ADDITIVE and kept disjoint by fresh ids, so
- * aging / GST never double-count. The 8 unpaid
+ * Outstanding / GST never double-count. The 8 unpaid
  * accounts (converted from the Phase-05 seeded outstanding rows) spread across
- * the aging buckets; a few PAID accounts feed the GST report; one account is a
+ * several months of invoice dates; a few PAID and paid-out accounts feed the GST report; one account is a
  * MISSED WEBHOOK (an unmirrored PaymentIn the reconciliation poll catches on the
  * next day advance); one repeat patient (Mitchell) carries an unpaid prior
  * balance (the WI2a intake check); and one patient contact (Riley) is seeded
@@ -90,7 +90,7 @@ export interface HistoryAccount {
   legacyCode?: string
   /** Service date (the past List date). */
   serviceISO: string
-  /** When the ACCREC was raised (aging basis). */
+  /** When the ACCREC was raised (the invoice date). */
   raisedISO: string
   /** Invoice total, GST-inclusive. */
   total: number
@@ -229,10 +229,10 @@ export const LOOKBACK_DATE_ISO = '2026-03-13'
 /**
  * Souter's historical accounts. Dates all fall BEFORE the canvas horizon start
  * (today − 14d = 2026-07-07), so the seeded Lists never collide with generated
- * canvas Lists. Aging is relative to DEMO_TODAY 2026-07-21.
+ * canvas Lists. Dates are relative to DEMO_TODAY 2026-07-21.
  */
 const ACCOUNTS: readonly HistoryAccount[] = [
-  // --- 8 outstanding (unpaid) across the aging buckets ---
+  // --- 8 outstanding (unpaid), oldest to newest invoice dates ---
   { key: 'oa01', patientId: PAT.tane, counterparty: HOSP_STG, surgeonId: SURG.hale, hospitalId: HOSP.stg, description: 'Knee arthroscopy', legacyCode: '49558', serviceISO: '2026-06-26', raisedISO: '2026-06-26T09:00:00', total: 845.0, accRelated: false, paidState: 'unpaid' },
   { key: 'oa02', patientId: PAT.marsh, counterparty: HOSP_SX, surgeonId: SURG.patel, hospitalId: HOSP.sx, description: 'Laparoscopic cholecystectomy', legacyCode: '20941', serviceISO: '2026-06-24', raisedISO: '2026-06-24T09:00:00', total: 1240.0, accRelated: false, paidState: 'missedWebhook', paidAtISO: '2026-07-20T10:00:00' },
   { key: 'oa03', patientId: PAT.chen, counterparty: HOSP_STG, surgeonId: SURG.hale, hospitalId: HOSP.stg, description: 'Hip hemiarthroplasty', legacyCode: '47519', serviceISO: '2026-06-22', raisedISO: '2026-06-22T09:00:00', total: 520.5, accRelated: false, paidState: 'unpaid' },

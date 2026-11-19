@@ -1576,8 +1576,8 @@ export type LedgerPair = BookingLedgerPair | AaFeeLedgerPair
 
 /**
  * Money in (Phase 10's billing receipt, a ledger entry since catch-up Phase 36). Append-only: the
- * GST-report source (each carries its GST component) and the payment
- * idempotency key-set. An AA fee payment is money in to AA, never the
+ * payment idempotency key-set, Collected and the Payments tab. It carries its GST component, but
+ * the GST report reads the disbursements, never receipts (catch-up Phase 38: cash basis, RV-33). An AA fee payment is money in to AA, never the
  * anaesthetist's income: `pairKind` says so, and it carries no anaesthetist.
  */
 export interface LedgerReceipt {

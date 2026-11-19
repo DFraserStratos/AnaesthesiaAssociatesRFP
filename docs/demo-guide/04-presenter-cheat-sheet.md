@@ -253,8 +253,10 @@ price list) and claims back themselves; nib is billed only through nib's own Con
   **Provisional (OQ-29)**.
 - The GST number is a field on the Admin anaesthetist record (Master data, Anaesthetists), not on the
   anaesthetist's own profile.
-- The anaesthetist's GST activity (web Accounts, GST activity) is monthly: the calendar month to date
-  ("Month (1 Jul to 21 Jul 2026)"), with no period switch. There is no GST period anywhere.
+- The anaesthetist's GST report (web Accounts, GST report) is monthly and on a cash basis: one row per
+  payment AA passed to her in the month, with its GST from the invoice's own GST. A month picker
+  (July 2026 back to January 2026), Download (CSV), Print and Email to me; a receipt alone adds no
+  row. There is no GST period anywhere.
 - Layout follows the Contract: the holder's layout when it bills its holder (each line's invoice
   description, the BTM breakdown, a cross-match strip of procedure date and surgeon (no hospital reference),
   and the Contract's holder reference code as **Your reference**, for example SGANAES01 or NIBAN2026),
@@ -360,8 +362,9 @@ Payer -> ACCREC -> AA account -> ACCPAY (full amount) -> Anaesthetist
 - Both Xero records carry the InvoiceNumber (the ACCPAY's ends `-P`) and the case Reference.
 - The mobile/web app reads the Billing Engine's own ledger, AA's system of record, never Xero
   directly. Xero mirrors the ledger for receivables and banking.
-- Outstanding balances are flat individual payable rows, not a Booking-level rollup and not amounts the
-  anaesthetist personally owes.
+- Outstanding balances are flat individual payable rows, oldest first with no ageing buckets, not a
+  Booking-level rollup and not amounts the anaesthetist personally owes. A row stays ("Paid in, due to
+  you") after the billable party pays, until AA pays the anaesthetist, and each row opens its Booking.
 - Bank details are master data: the office holds them on each anaesthetist's record (mandatory, with the
   HPI CPN), the anaesthetist sees them masked and read-only, and the payment itself is made in Xero. The
   app never pays from them.
@@ -408,7 +411,8 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - **Where it lives:** **Admin → Ledger** (`/admin/ledger`, an amber badge counting what puts it out of balance; one
   anaesthetist at `/admin/ledger/anaesthetists/34821`), linked from the Billing monitor (**Open the
   ledger**) and each invoice's **Ledger** card. The anaesthetist sees her position on web **Accounts**
-  (Your position) and mobile **Balances** ("Collected $X · Paid out $Y"); on a handset the Demo sheet's
+  (Your position), the web dashboard (Financial position) and mobile **Balances** ("Collected $X",
+  "Paid out to you $Y"); on a handset the Demo sheet's
   **Office runs payables in Xero** (office stand-in) pays what is due. The Xero sim's pair detail shows
   **Ledger pair (the system of record)** with **Matches the ledger**.
 - Note: Dr Souter's outstanding total is $11,350.50 on a fresh seed (it was $7,785.50 before Phase 36),
@@ -434,13 +438,13 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 
 ### Anaesthetist Web
 
-- Wider dashboard and date ranges
+- Dashboard with your financial position (owed to you, collected, paid out to you) beside Who's free
 - A main view from today with earlier un-authorised Lists, and past work by patient name, NHI or date
 - Same List/Booking detail and capture functions
 - Availability and cover: mark Free, On holiday, Unavailable or Public (with an optional note) ahead,
   repeating days off, change or delete one occurrence (My availability, the same form as the phone)
 - Move a List to a colleague or the office; hand one Booking to a free colleague (Move to a colleague)
-- Accounts and GST activity (the calendar month to date)
+- Accounts (Outstanding, Payments, AA fees) and GST report (by month)
 - Profile (her name and avatar in the top nav): rate per unit editable, the rest read-only
 
 ### Admin Web
@@ -787,7 +791,6 @@ Say:
 - The billing monitor's "Prior balance" intake flag reads any open (unpaid) prior episode.
 - The RFP asks whether to separately distinguish "open" from "genuinely overdue" in this check; the
   prototype flags any open balance and holds the distinction as a discovery question.
-- Invoices carry a raised date but no due date, so aging is derived, not contractual.
 
 ### 12. ACC pre-op flat-fee codes (CS250, CS260, CS70)
 

@@ -71,8 +71,9 @@ view respectively.
 | Booking detail | `/web/lists/<listId>/bookings/<bookingId>` |
 | Availability grid (Find cover) | `/web/availability` |
 | My availability | `/web/availability/mine` (one day: `?date=2026-08-14`) |
-| Accounts, outstanding | `/web/accounts/overdue` |
-| Accounts, GST activity | `/web/accounts/gst` |
+| Accounts, outstanding | `/web/accounts/outstanding` (the old `/web/accounts/overdue` opens it) |
+| Accounts, payments | `/web/accounts/payments` |
+| Accounts, GST report | `/web/accounts/gst` |
 
 | Admin Web App | URL |
 |---|---|
@@ -856,10 +857,23 @@ a submitted List: "A hospital feed cannot change a submitted List").
   **Paid** (received $152.38, balance $0.00). The ACCPAY reads **Paid**, and its **Paid in Xero**
   block shows the Xero bill payment (DSB0001, Tue 21 Jul · 08:00, $152.38) and "Billing Engine:
   disbursement recorded 08:00 by webhook." The Web Payments row remains visible
-  with $152.38 received by AA, $152.38 released to you, $152.38 paid to you and **Paid to you**. It does not
-  remain under Overdue because it is no longer outstanding. The Ledger pair panel reads "Ledger:
-  received $152.38 · released $152.38 · paid out $152.38" beside Xero's same three figures, still
-  **Matches the ledger**.
+  with $152.38 received by AA, $152.38 released to you, $152.38 paid to you and **Paid to you**. It leaves
+  Outstanding because AA has now paid Dr Souter. The web dashboard's **Financial position** shows
+  Collected and Paid out to you each $152.38 higher, and the GST report for July (**Accounts → GST
+  report**) gains **AA-2026-0005** on today's date (Tue 21 Jul 2026): paid to you $152.38, GST $19.88.
+  The Ledger pair panel reads "Ledger: received $152.38 · released $152.38 · paid out $152.38" beside
+  Xero's same three figures, still **Matches the ledger**.
+- **Optional (the two steps apart, instead of Simulate payment and payout):** on web **Accounts →
+  Outstanding** (`/web/accounts/outstanding`), **Demo actions → Payment received · full**, choose
+  **AA-2026-0005 · Alan Prentice · $152.38 due**, then **Run**: "Payment received. It reaches your GST
+  report when AA pays you." Collected rises by $152.38, but the row stays, its stage now **Paid in, due
+  to you**, and the GST report gains no row. Then **Admin → Billing monitor → Run payables in Xero**
+  (badged **Simulated Xero**): the payment to Dr Souter is made in Xero and recorded, the row leaves
+  Outstanding, Paid out to you rises by $152.38, and the July GST report gains AA-2026-0005 dated Tue 21
+  Jul 2026, $152.38 with its GST $19.88. Say: "GST here is on a cash basis: what AA has paid you, in the
+  month AA paid it, with the GST from the invoice itself." Optionally show the report's **Download**
+  (a CSV), **Print** (the report alone) and **Email to me** (a demo confirmation, "Sent to" her email;
+  no mail is sent).
 
 ### Beat 4: AA's monthly fee
 
@@ -886,7 +900,7 @@ a submitted List: "A hospital feed cannot change a submitted List").
   charged twice. The real fixed schedule, and confirmation of the paid-only count and of one BCTI per
   invoice, are with AA's accountant."
 - **Expected:** Web **Accounts → AA fees** highlights **AA-FEE-2026-H02** as Paid, with May Paid and July
-  Unpaid. Payables, GST activity and Overdue do not change when a fee invoice is raised or paid. Read
+  Unpaid. Payments, the GST report and Outstanding do not change when a fee invoice is raised or paid. Read
   Dr Souter's July figures from the app if Beat 3 was skipped (then two BCTIs, $510.00 before GST,
   $586.50 with GST). The fee invoice is an AA fee pair on the Ledger, with no payable ("None"), outside
   the balance.
@@ -932,12 +946,13 @@ a submitted List: "A hospital feed cannot change a submitted List").
   row reads Refunded with the note. The Billing monitor's payables panel has an **Open the ledger**
   link, and each invoice's rail has a **Ledger** card (receivable and payable numbers, their Xero ids,
   **Open in the ledger**).
-- **Optional (the anaesthetist's side):** web **Accounts** opens on a **Your position** strip (AA owes
-  you, with due now and awaiting collection; Collected for you; Paid out to you; You owe AA), and
-  mobile **Balances** adds one line under Outstanding to you, "Collected $27,220.00 · Paid out
+- **Optional (the anaesthetist's side):** web **Accounts** opens on a **Your position** strip (Owed to
+  you, with awaiting collection and due to you now; Collected; Paid out to you; You owe AA), and
+  mobile **Balances** adds lines under Outstanding to you, "Collected $27,220.00", "Paid out to you
   $27,220.00" and "You owe AA $580.75" on a fresh reset. On a handset (the PWA), **Demo → Payment
   received · half**, then **Office runs payables in Xero** (office stand-in): Collected moves, then
-  Paid out, as Xero reports the bill paid. The stand-in is disabled with "Nothing due to pay out" when
+  Paid out, as Xero reports the bill paid; a fully paid invoice leaves Outstanding and shows under
+  **GST this month**. The stand-in is disabled with "Nothing due to pay out" when
   nothing is due.
 
 ### Close: one status for the books
@@ -979,6 +994,9 @@ For the ledger (Beat 5): how AA wants unmatched receipts handled (allocate, refu
 investigation); whether the two scopes and the out-of-balance list are what the office needs
 (US-13.2.1's acceptance criterion is to come from this prototype); and whether a buyer-created tax
 invoice is one per invoice, as built, or one per procedure (OQ-29, with AA's accountant).
+For the anaesthetist's money (Beat 3): whether the monthly GST report (payments passed, with the GST
+component) is what AA's accountant expects (agency treatment, OQ-29), and whether a BCTI is one per
+invoice or one per procedure.
 
 ---
 

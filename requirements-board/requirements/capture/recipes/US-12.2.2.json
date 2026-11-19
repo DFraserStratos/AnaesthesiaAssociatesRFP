@@ -6,16 +6,77 @@
     {
       "name": "gst-activity",
       "app": "web",
-      "caption": "Amounts received and their GST component for the GST period",
+      "caption": "GST report: the payments AA passed to you in the month, with the GST component of each; download, print or email",
       "start": "/web/accounts/gst",
-      "states": [ { "steps": [], "highlight": [] } ]
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=web-gst-actions]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "gst-report",
+      "app": "web",
+      "caption": "GST report by calendar month",
+      "start": "/web/accounts/gst",
+      "states": [
+        {
+          "state": "previous-month",
+          "caption": "June 2026 chosen in the month picker: the payments AA passed to you in June, their GST and the month total",
+          "steps": [
+            {
+              "select": "select[data-shot=web-gst-month-picker]",
+              "value": "2026-06"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "select[data-shot=web-gst-month-picker]",
+            "[data-shot=web-gst-report]"
+          ]
+        },
+        {
+          "state": "emailed",
+          "caption": "Email to me sends the month's GST report to your email address",
+          "steps": [
+            {
+              "click": "[data-shot=web-gst-actions] >> role=button[name=\"Email to me\"]"
+            },
+            {
+              "wait": "[data-shot=web-gst-email-sent]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=web-gst-email-sent]"
+          ]
+        }
+      ]
     },
     {
       "name": "gst-activity",
       "app": "mobile",
-      "caption": "Amounts received this month with their GST component",
+      "caption": "GST this month: what AA passed to you, with its GST",
       "start": "/mobile/balances",
-      "states": [ { "steps": [ { "click": "text=\"GST this month\"" }, { "wait": 500 } ], "highlight": [] } ]
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "text=\"GST this month\""
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=balances-gst-month-header]"
+          ]
+        }
+      ]
     }
   ]
 }

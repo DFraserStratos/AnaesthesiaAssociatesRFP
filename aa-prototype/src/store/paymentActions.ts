@@ -49,7 +49,7 @@ export interface ReceivePaymentInput {
   /**
    * The instant Xero received the money. Omit for a live webhook (uses the
    * clock); the reconciliation poll passes the missed payment's OWN date so a
-   * reconciled receipt lands in the correct GST period, not the detection day.
+   * reconciled receipt is dated the day the money moved, not the detection day.
    */
   atISO?: string
 }

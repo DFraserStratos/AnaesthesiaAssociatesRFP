@@ -21,7 +21,8 @@ import { armHandoffFault } from './demoSettingsActions'
 import { postTransferJournal } from './xeroHandoff'
 import { settlePrepaymentsForList } from './prepaymentSettlement'
 import { addPrepaidBooking } from './prepaymentDemo'
-import { gstActivityFor, paymentHistoryFor, proceduresForBooking } from './selectors'
+import { paymentHistoryFor, proceduresForBooking } from './selectors'
+import { gstReportFor } from './ledgerSelectors'
 import { completeAnswered } from '../test/completeAnswered'
 import { approveAllPrepayments } from '../test/approvePrepayments'
 import { SEED_LIST_IDS, SEED_MARKERS, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
@@ -109,7 +110,7 @@ describe('the transfer at authorisation (OQ-125 provisional)', () => {
     const invoicesBefore = Object.keys(api.getState().billing.invoices).filter((id) => api.getState().billing.invoices[id]!.kind === 'prePayment')
     const receiptsBefore = Object.keys(api.getState().billing.receipts).length
     const paymentsBefore = Object.keys(api.getState().xero.payments).length
-    const gstBefore = gstActivityFor(api.getState(), '34821', '2026-07-01', '2026-07-31')
+    const gstBefore = gstReportFor(api.getState(), '34821', '2026-07', '2026-07-21').rows
     authorise(NAIR_LIST)
     expect(transfers()).toHaveLength(1)
     const t = transfers()[0]!
@@ -131,11 +132,11 @@ describe('the transfer at authorisation (OQ-125 provisional)', () => {
       ['Dr Melanie Souter', 0, 1380],
     ])
     expect(JSON.stringify(journal)).not.toContain('Nair')
-    // Not an invoice, an ACCREC, a payment or a receipt: GST does not move.
+    // Not an invoice, an ACCREC, a payment or a receipt: the GST report gains no row (catch-up Phase 38: only a payout adds one).
     expect(Object.keys(api.getState().billing.invoices).filter((id) => api.getState().billing.invoices[id]!.kind === 'prePayment')).toEqual(invoicesBefore)
     expect(Object.keys(api.getState().billing.receipts)).toHaveLength(receiptsBefore)
     expect(Object.keys(api.getState().xero.payments)).toHaveLength(paymentsBefore)
-    expect(gstActivityFor(api.getState(), '34821', '2026-07-01', '2026-07-31')).toEqual(gstBefore)
+    expect(gstReportFor(api.getState(), '34821', '2026-07', '2026-07-21').rows).toEqual(gstBefore)
     // The account falls; exactly the transferred payable is due.
     expect(balance()).toBe(0)
     expect(payablesDue(api.getState())).toEqual({ count: 1, total: 1380, byAnaesthetist: [{ anaesthetistId: '34821', count: 1, total: 1380 }] })

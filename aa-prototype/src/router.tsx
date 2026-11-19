@@ -6,6 +6,7 @@ import { WebApp } from './apps/web/WebApp'
 import { AdminApp } from './apps/admin/AdminApp'
 import {
   WebAccountsRoute,
+  WebAccountsOverdueRedirect,
   WebAvailabilityRoute,
   WebMyAvailabilityRoute,
   WebBookingDetailRoute,
@@ -102,7 +103,9 @@ export function AppRouter() {
             <Route path="availability" element={<WebAvailabilityRoute />} />
             <Route path="availability/mine" element={<WebMyAvailabilityRoute />} />
             <Route path="accounts">
-              <Route index element={<Navigate to="overdue" replace />} />
+              <Route index element={<Navigate to="outstanding" replace />} />
+              {/* The Overdue tab became Outstanding (catch-up Phase 38, D8): old links and guide URLs land there. */}
+              <Route path="overdue" element={<WebAccountsOverdueRedirect />} />
               <Route path=":subTab" element={<WebAccountsRoute />} />
             </Route>
             <Route path="profile" element={<WebProfileRoute />} />

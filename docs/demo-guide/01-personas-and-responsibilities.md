@@ -34,7 +34,7 @@ Bookings and capture the data AA needs for billing.
 - Complete work and hand the whole List to the AA office.
 - See availability, and move one of her Lists to a free colleague or back to the office.
 - Hand one Booking to a colleague who is free that session (it becomes a new List of theirs).
-- Later, see outstanding amounts and her GST activity for the month to date.
+- Later, see outstanding amounts and her monthly GST report.
 - See her own profile and set her rate per unit (the dollar value of one RVG unit).
 
 ### Core actions
@@ -140,7 +140,8 @@ underlying List, Booking and BTM actions.
   is more convenient.
 - Find Free colleagues and move one of her Lists to a free colleague or back to the office.
 - Hand one Booking to a colleague who is free that session, from the Booking's screen.
-- Review accounts outstanding and GST activity for the calendar month to date (Accounts, GST activity).
+- See her financial position on the dashboard, review accounts outstanding and payments, and read
+  her monthly GST report (Accounts, GST report).
 - Open her Profile from her name and avatar in the top nav (`/web/profile`) and change her rate per
   unit; contact details, HPI CPN and bank details are read-only there, as on the phone.
 
@@ -152,14 +153,15 @@ functionality.
 
 ### Current prototype caveats
 
-- Balances, payment history and GST activity are now live: the anaesthetist money views read the
-  Billing Engine's own ledger, AA's system of record (her position on web Accounts, "Collected ·
-  Paid out" on mobile Balances, outstanding payables, received and paid-out invoices, receivables aging,
-  GST transaction list), over seeded historical rows plus anything a demo payment adds. They never
+- Balances, payment history and the GST report are live: the anaesthetist money views read the
+  Billing Engine's own ledger, AA's system of record (her financial position of owed to you, collected
+  and paid out to you on the web dashboard and web Accounts, "Collected" and "Paid out to you" on
+  mobile Balances; the outstanding list, one row per unpaid payable, oldest first; received and
+  paid-out invoices; and the monthly GST report of the payments AA passed to her, on a cash basis,
+  with each one's GST), over seeded historical rows plus anything a demo payment adds. They never
   query Xero directly.
 - Days off are kept in the availability calendar (My calendar on mobile, My availability on the web),
-  which sets each session's status directly. The web dashboard's seeded Leave panel is read-only
-  planning context and stays until Phase 38.
+  which sets each session's status directly.
 
 ## Primary persona 3: Kirsty W., AA scheduling coordinator
 

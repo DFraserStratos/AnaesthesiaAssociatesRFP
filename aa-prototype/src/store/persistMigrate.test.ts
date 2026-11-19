@@ -1011,3 +1011,21 @@ describe('the Wave 3 sync of 34 into lane/a (v62: Phase 37 and Phase 34 both v61
     expect(s.intake.pdfLists).toEqual(freshAppState().intake.pdfLists)
   })
 })
+
+describe('catch-up Phase 38 (v63: seeded dashboard figures removed)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v62 store still holding the seeded `dashboards` slice, and reseeds without it', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(63)
+    const fresh = freshAppState()
+    const stale = { ...fresh, dashboards: { '34821': { productivity: { units: 1 }, leave: [] } } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 62 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect('dashboards' in s).toBe(false)
+    expect(s.billing.ledger).toEqual(fresh.billing.ledger)
+  })
+})

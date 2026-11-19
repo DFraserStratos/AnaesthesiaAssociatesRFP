@@ -29,7 +29,8 @@ import {
 import { roundToCents, toCents } from '../domain/billing/money'
 import { drSurname } from '../shared/format'
 import type { AppState } from './appStore'
-import { anaesthetistsInRosterOrder, bookingsForList, counterpartyName, patientNameFor } from './selectors'
+import { anaesthetistsInRosterOrder, bookingsForList, counterpartyName, invoiceAddresseeName, patientNameFor } from './selectors'
+import { gstReportFrom, gstReportMonths, type GstReportRow, type GstReportTotals } from '../domain/billing/gstReport'
 
 type BillingState = Pick<AppState, 'billing'>
 
@@ -200,7 +201,7 @@ export function receivableOutstanding(pair: Pick<LedgerPair, 'receivable'>): num
   return toCents(remaining) > 0 ? remaining : 0
 }
 
-/** Money in that is the anaesthetist's income: never an AA fee payment (it is AA's), never a held prepayment with no anaesthetist. */
+/** Money in that is the anaesthetist's income: never an AA fee payment (it is AA's), never a held prepayment with no anaesthetist. The Payments tab and Collected read it; GST does not (catch-up Phase 38: the GST report is on payments made). */
 export function incomeReceiptsFor(state: BillingState, anaesthetistId: AnaesthetistId): LedgerReceipt[] {
   return Object.values(state.billing.receipts).filter((r) => r.pairKind !== 'aaFee' && r.anaesthetistId === anaesthetistId)
 }
@@ -224,6 +225,56 @@ export function anaesthetistLedgerPosition(state: BillingState, anaesthetistId: 
 
 export function patientLedgerPosition(state: BillingState, patientId: string): PatientPosition {
   return patientPosition(allPairs(state), patientId)
+}
+
+// ---------------------------------------------------------------------------
+// The monthly GST report (catch-up Phase 38; US-12.2.2, DM-29, RV-33)
+// ---------------------------------------------------------------------------
+
+export interface GstReportViewRow extends GstReportRow {
+  /** The invoice's stored billable party (a Procedure's payer or a Party), never re-derived. */
+  partyLabel: string
+  patientName: string
+}
+
+export interface GstReportView {
+  monthISO: string
+  rows: GstReportViewRow[]
+  totals: GstReportTotals
+  /** The current month only: collected by AA, not yet paid out (`dueNow`), so it falls into a later month. */
+  notYetPaid?: number
+}
+
+/**
+ * One calendar month's payments AA passed to the anaesthetist, each with its
+ * GST component (`gstReportFrom`, pure), with the billable party and patient
+ * for the screen; on the demo clock's month, what AA holds for them not yet
+ * paid (`dueNow` from the one position). Reads the ledger only.
+ */
+export function gstReportFor(
+  state: Pick<AppState, 'billing' | 'masters'>,
+  anaesthetistId: AnaesthetistId,
+  monthISO: string,
+  todayISO: string,
+): GstReportView {
+  const b = state.billing
+  const report = gstReportFrom({ pairs: b.ledger, transfers: b.transfers, invoices: b.invoices, disbursements: b.disbursements, anaesthetistId, monthISO })
+  const rows = report.rows.map((r) => {
+    const invoice = b.invoices[r.invoiceId]
+    const pair = b.ledger[r.pairId]
+    return {
+      ...r,
+      partyLabel: invoice !== undefined ? invoiceAddresseeName(state, invoice) : '',
+      patientName: pair !== undefined && isBookingPair(pair) ? patientNameFor(state, pair.patientId) : '',
+    }
+  })
+  const current = monthISO === todayISO.slice(0, 7)
+  return { monthISO, rows, totals: report.totals, ...(current ? { notYetPaid: anaesthetistLedgerPosition(state, anaesthetistId).dueNow } : {}) }
+}
+
+/** The months the GST report's picker offers, newest first, to the demo clock's month. */
+export function gstReportMonthsFor(state: BillingState, anaesthetistId: AnaesthetistId, todayISO: string): string[] {
+  return gstReportMonths(state.billing.disbursements, anaesthetistId, todayISO)
 }
 
 export interface OutOfBalanceView {

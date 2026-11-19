@@ -23,7 +23,8 @@ import {
   runMonthlyFeeInvoices,
   saveAaFeeSettings,
 } from './aaFeeActions'
-import { aaFeeInvoicesFor, aaFeeRunPreview, allAaFeeInvoices, billingMonitor, gstActivityFor, openAccRecs } from './selectors'
+import { aaFeeInvoicesFor, aaFeeRunPreview, allAaFeeInvoices, billingMonitor, openAccRecs } from './selectors'
+import { gstReportFor, gstReportMonthsFor } from './ledgerSelectors'
 import { advanceClockDays } from './clockActions'
 import { seedMonthOfBctis } from './demoBctiSeed'
 import { DEMO_TRIGGER_ACTOR } from './demoActors'
@@ -59,7 +60,7 @@ function moneySnapshot(api: BoundAppStore) {
     receipts: Object.values(s.billing.receipts).filter((r) => r.pairKind !== 'aaFee'),
     ledger: Object.values(s.billing.ledger).filter((p) => p.kind !== 'aaFee'),
     due: payablesDue(s),
-    gst: gstActivityFor(s, ANAE.souter, '2026-01-01', '2026-12-31'),
+    gst: gstReportMonthsFor(s, ANAE.souter, '2026-07-21').map((m) => gstReportFor(s, ANAE.souter, m, '2026-07-21')),
     open: openAccRecs(s),
   }
 }
@@ -280,7 +281,7 @@ describe('guards on the procedure money paths', () => {
     expect(Object.values(api.getState().billing.receipts).some((r) => r.pairKind === 'aaFee' && r.source === 'poll')).toBe(false)
   })
 
-  it('the fee is never netted: raising and paying fee invoices leaves every payable, the payables run, GST and Overdue unchanged', () => {
+  it('the fee is never netted: raising and paying fee invoices leaves every payable, the payables run, the GST report and Outstanding unchanged', () => {
     const api = store()
     // A live procedure payment so there is a payable waiting in the run.
     authoriseList(api, OFFICE, SEED_LIST_IDS.souterMon20Am)

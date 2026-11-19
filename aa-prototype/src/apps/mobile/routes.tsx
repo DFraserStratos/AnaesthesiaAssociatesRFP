@@ -307,7 +307,8 @@ export function MobileAvailabilityRoute() {
 
 export function MobileBalancesRoute() {
   const { anaesthetistId, initials } = useMobileOutlet()
-  return <BalancesScreen initials={initials} anaesthetistId={anaesthetistId} />
+  const navigate = useNavigate()
+  return <BalancesScreen initials={initials} anaesthetistId={anaesthetistId} onOpenBooking={(listId, bookingId) => navigate(`/mobile/lists/${listId}/bookings/${bookingId}`)} />
 }
 
 export function MobileMoreRoute() {

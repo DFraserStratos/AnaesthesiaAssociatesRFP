@@ -45,7 +45,6 @@ import { DayChip } from '../../../../shared/ui/DayChip'
 import { listRowModel } from '../../../mobile/screens/listRowModel'
 import { dayWithYear, formatCurrency } from '../../../../shared/format'
 import {
-  AgeChipCopy,
   BookingCardCopy,
   BottomTabBarCopy,
   ColleagueCellsCopy,
@@ -738,7 +737,6 @@ export function MovedToYouPanelExample() {
   )
 }
 
-
 export function SeriesListExample() {
   const { actor, anaesthetistId } = useMobilePersona()
   return <SeriesList actor={actor} anaesthetistId={anaesthetistId} shot="catalogue-series" emptyText="No repeating days off. Choose Repeat in Add days off to set one." />
@@ -793,24 +791,6 @@ export function HalfBlockExample() {
 export function HeroFigureCardExample() {
   const { anaesthetistId } = useMobilePersona()
   return <HeroFigureCardCopy anaesthetistId={anaesthetistId} />
-}
-
-export function AgeChipExample() {
-  const [days, setDays] = useState(45)
-  const [acc, setAcc] = useState(true)
-  return (
-    <div style={col}>
-      <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 14, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 12.5, color: neutral.slate }}><span className="mono">INV-0001</span> · Southern Cross</span>
-        <AgeChipCopy days={days} accFunded={acc} />
-      </div>
-      <div style={row}>
-        <Button variant="pill" onClick={() => setDays((d) => Math.max(0, d - 15))}>−15 days</Button>
-        <Button variant="pill" onClick={() => setDays((d) => d + 15)}>+15 days</Button>
-        <Button variant="pill" onClick={() => setAcc((a) => !a)}>{acc ? 'Not ACC' : 'ACC'}</Button>
-      </div>
-    </div>
-  )
 }
 
 export function EmptyStateExample() {
@@ -1047,7 +1027,6 @@ export function InstallCoachExample() {
     </div>
   )
 }
-
 
 /** Phase 26: the profile rows, live from the persona's own record (the rate, a locked contact and the masked bank number). */
 export function ProfileRowExample({ anaesthetistId }: { anaesthetistId: string }) {

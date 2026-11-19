@@ -393,8 +393,10 @@ export const PERSIST_KEY = 'aa-demo'
  *  v61: catch-up Phase 34, the rooms' PDF lists and where a List came from: `intake.pdfLists` (seeded PDL0001, Mr
  *  Okafor's list as received; counter `pdfList`), every List's `origin` (two pinned: a rooms' PDF with its sender, the
  *  hospital's list). Reseeds on load.
- *  v62: the Wave 3 sync of 34 into lane/a (Phase 37 and Phase 34 both took v61). Reseeds on load. */
-export const PERSIST_VERSION = 62
+ *  v62: the Wave 3 sync of 34 into lane/a (Phase 37 and Phase 34 both took v61). Reseeds on load.
+ *  v63: catch-up Phase 38: seeded dashboard figures removed (`dashboards`, the Productivity and Leave panels); ageing
+ *  buckets gone. Reseeds on load. */
+export const PERSIST_VERSION = 63
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {} }

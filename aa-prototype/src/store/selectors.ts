@@ -26,6 +26,7 @@ import type {
   DraftList,
   AaFeeInvoice,
   BookingLedgerPair,
+  PayableLeg,
   Booking,
   RecurringBooking,
   ConflictClear,
@@ -58,7 +59,7 @@ import type { HeldPrices } from '../domain/billing/procedurePrice'
 import { authorisedPricesFromLock, lockViewFor } from '../domain/billing/lock'
 import { deliveryCountsText } from '../domain/billing/invoicePresentation'
 import { listHospitalFor } from '../domain/listPairing'
-import { ANAESTHETISTS, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
+import { ANAESTHETISTS } from '../domain/seed'
 import { displayStatusKey, effectiveSlotTimes, slotIdFor, type EffectiveSlotTimes } from '../domain/slots'
 import { isOpenSlot, type SlotStatusRecords } from '../domain/slotStatus'
 import { compareBySurname } from '../domain/surgeons'
@@ -78,7 +79,6 @@ import { BCTI_COUNT_RULE, bctiFeeHistory, bctisFor, type BctiFeeHistory, type Bc
 import { isBookingPair, patientPosition, transferOfPair, type PairStatus } from '../domain/billing/ledger'
 import { bctiRecords, handoffQueuedFor, incomeReceiptsFor, journalQueuedFor, openBillingExceptions, openDivergenceFor, pairsForList, pairStatusOf } from './ledgerSelectors'
 import { aaFeeFixedTotal, aaFeeFor } from '../domain/billing/aaFee'
-import { bucketForAgingDays, epochDayOf, type AgingBucketKey } from '../domain/dateDays'
 import { useMemo } from 'react'
 import { addDays, format, getDaysInMonth, parseISO } from 'date-fns'
 import { useAppStore, type AppState } from './appStore'
@@ -445,18 +445,6 @@ export function submittedListCount(state: AppState): number {
  */
 export function isListBilled(list: List): boolean {
   return list.billedAtISO !== undefined
-}
-
-/**
- * The seeded dashboard figures for an anaesthetist, aged against the demo
- * clock's today (Phase 05; W1/W4). Returns undefined when no figures are seeded
- * for that anaesthetist (honest-empty). Phase 10 replaces the receivables /
- * overdue portion with ledger derivation.
- */
-export function dashboardFiguresFor(state: AppState, anaesthetistId: string): DashboardFigures | undefined {
-  const seed = state.dashboards[anaesthetistId]
-  if (seed === undefined) return undefined
-  return deriveDashboardFigures(seed)
 }
 
 /**
@@ -962,45 +950,65 @@ export function patientNameFor(state: Pick<AppState, 'masters'>, patientId: stri
 // ---------------------------------------------------------------------------
 // Anaesthetist money views (Phase 10; WI6, M11, W1/W4), read from the LEDGER
 // (catch-up Phase 36; US-08.3.2), the system of record: `billing` + `masters`
-// + the clock ONLY, NEVER `state.xero` (the source scan in
-// `apps/moneyViewPurity.test.ts` enforces it). Each row is a pair's receivable
-// and payable, attributed by the payee stamped on the pair, never a List join.
-// Outstanding balance is a FLAT list, one row per invoice, no rollup (RFP). An
-// invoice shows as soon as it is raised, mirrored in Xero or not: the ledger
-// says the money is owed (catch-up Phase 36).
+// ONLY, NEVER `state.xero` (the source scan in `apps/moneyViewPurity.test.ts`
+// enforces it). Each row is a pair's receivable and payable, attributed by the
+// payee stamped on the pair, never a List join. Outstanding is a FLAT list of
+// unpaid payables, one row per invoice, oldest first, with no ageing, rollup or
+// grouping (catch-up Phase 38; US-12.2.1, D8). An invoice shows as soon as it
+// is raised, mirrored in Xero or not (catch-up Phases 36 and 38a: no next-day
+// rule), so Owed to you always equals the Outstanding total.
 // ---------------------------------------------------------------------------
 
 export type { LedgerState } from './ledgerSelectors'
 type ViewState = Pick<AppState, 'billing' | 'schedule' | 'masters'>
 
-export interface AgingBuckets {
-  current: number
-  d31_60: number
-  d61_90: number
-  d90plus: number
-  total: number
+/** Where an unpaid payable stands (catch-up Phase 38): a word per row, never a subtotal. */
+export type OutstandingStage = 'awaitingPayment' | 'partPaidIn' | 'dueToYou'
+
+export const OUTSTANDING_STAGE_LABEL: Record<OutstandingStage, string> = {
+  awaitingPayment: 'Awaiting payment',
+  partPaidIn: 'Part paid in',
+  dueToYou: 'Paid in, due to you',
 }
+
+/**
+ * The anaesthetist's financial position labels (catch-up Phase 38; US-12.2.3 with US-08.3.5): one set for the web
+ * dashboard's Financial position, web Accounts' "Your position" strip and mobile Balances, over
+ * `anaesthetistLedgerPosition`'s figures, so no two screens name or define "Owed" differently.
+ */
+export const POSITION_LABEL = {
+  owedToThem: 'Owed to you',
+  awaitingCollection: 'Awaiting collection',
+  dueNow: 'Due to you now',
+  collected: 'Collected',
+  paidOut: 'Paid out to you',
+  theyOweAa: 'You owe AA',
+} as const
 
 export interface PayableRow {
   pairId: string
   invoiceId: string
   invoiceNumber: string
+  /** The Booking the invoice bills, from the pair's stored link (US-12.2.1: each line opens it). */
+  bookingId: string
+  listId: string
   patientId: string
   patientName: string
   counterparty: CounterpartyRef
+  /** The invoice's stored billable party (a Procedure's payer or a Party), never re-derived. */
   counterpartyLabel: string
   /** ACC-funded: a Procedure's Contract carries the ACC funding tag (`procedureAccFunded`, catch-up Phase 18a), or an archived account's own marker. */
   accFunded: boolean
   amountTotal: number
   receivedAmount: number
   disbursedAmount: number
-  /** A prepayment the AA Holding account holds until the List is authorised (catch-up Phase 27a): nothing released yet. */
+  /** A prepayment the AA Holding account holds until the List is authorised (catch-up Phase 27a): nothing released, in no one's position, never Outstanding. */
   held: boolean
-  /** Remaining balance due (total − received), >= 0. */
-  outstanding: number
+  /** The unpaid payable: what AA has still to pay the anaesthetist (payable less paid out), >= 0 (catch-up Phase 38). */
+  outstandingToYou: number
+  stage: OutstandingStage
+  /** The invoice date (Greg, note point 33: "invoice date", not "first notice"). */
   raisedAtISO: string
-  agingDays: number
-  bucket: AgingBucketKey
 }
 
 /**
@@ -1024,137 +1032,89 @@ function bookingPairs(state: Pick<AppState, 'billing'>): BookingLedgerPair[] {
 }
 
 /**
- * What a pair has released to the anaesthetist and paid out (catch-up Phase
- * 27a, read from the ledger since 36): a procedure pair's own payable; a
- * prepayment nothing while the AA Holding account holds it, then its
- * transfer's `in` leg.
+ * The payable a pair pays its anaesthetist through (catch-up Phase 27a, read
+ * from the ledger since 36): a procedure pair's own payable; a prepayment none
+ * while the AA Holding account holds it, then its transfer's `in` leg.
  */
-export function releasedAndPaidFor(state: { billing: Pick<AppState['billing'], 'transfers'> }, pair: BookingLedgerPair): { held: boolean; released: number; disbursed: number } {
-  if (pair.kind !== 'prePayment') return { held: false, released: pair.payable?.releasedAmount ?? 0, disbursed: pair.payable?.disbursedAmount ?? 0 }
-  const transfer = transferOfPair(state.billing.transfers, pair.id)
-  return transfer === undefined ? { held: true, released: 0, disbursed: 0 } : { held: false, released: transfer.in.releasedAmount, disbursed: transfer.in.disbursedAmount }
+function anaesthetistLegOf(state: { billing: Pick<AppState['billing'], 'transfers'> }, pair: BookingLedgerPair): PayableLeg | undefined {
+  if (pair.kind !== 'prePayment') return pair.payable
+  return transferOfPair(state.billing.transfers, pair.id)?.in
 }
 
-function payableRowFor(state: ViewState, pair: BookingLedgerPair, todayISO: string): PayableRow | undefined {
+/** What a pair has released to the anaesthetist and paid out (catch-up Phase 27a): nothing while the AA Holding account holds a prepayment. */
+export function releasedAndPaidFor(state: { billing: Pick<AppState['billing'], 'transfers'> }, pair: BookingLedgerPair): { held: boolean; released: number; disbursed: number } {
+  const leg = anaesthetistLegOf(state, pair)
+  if (pair.kind === 'prePayment' && leg === undefined) return { held: true, released: 0, disbursed: 0 }
+  return { held: false, released: leg?.releasedAmount ?? 0, disbursed: leg?.disbursedAmount ?? 0 }
+}
+
+function stageOf(leg: PayableLeg): OutstandingStage {
+  if (toCents(leg.releasedAmount) <= 0) return 'awaitingPayment'
+  return toCents(leg.releasedAmount) < toCents(leg.amount) ? 'partPaidIn' : 'dueToYou'
+}
+
+function payableRowFor(state: ViewState, pair: BookingLedgerPair): PayableRow | undefined {
   const invoice = state.billing.invoices[pair.invoiceId]
-  if (invoice === undefined || invoice.raisedAtISO === undefined) return undefined
-  const booking = state.schedule.bookings[pair.bookingId]
-  if (booking === undefined) return undefined
-  const agingDays = epochDayOf(todayISO) - epochDayOf(invoice.raisedAtISO)
-  const r = pair.receivable
-  const outstanding = Math.max(0, roundToCents(r.amount - r.receivedAmount))
-  const money = releasedAndPaidFor(state, pair)
+  if (invoice === undefined) return undefined
+  const leg = anaesthetistLegOf(state, pair)
+  const held = pair.kind === 'prePayment' && leg === undefined
+  const outstandingToYou = leg === undefined ? 0 : Math.max(0, roundToCents(leg.amount - leg.disbursedAmount))
   return {
     pairId: pair.id,
     invoiceId: pair.invoiceId,
-    invoiceNumber: r.number,
-    patientId: booking.patientId,
-    patientName: patientNameFor(state, booking.patientId),
+    invoiceNumber: pair.receivable.number,
+    bookingId: pair.bookingId,
+    listId: pair.listId,
+    patientId: pair.patientId,
+    patientName: patientNameFor(state, pair.patientId),
     counterparty: invoice.counterparty,
     counterpartyLabel: invoiceAddresseeName(state, invoice),
     // An archived account keeps the old system's marker; every other reads its Contract's tag.
     accFunded: pair.archivedAccRelated === true || proceduresForBooking(state, pair.bookingId).some((p) => procedureAccFunded(state.masters, p)),
     amountTotal: invoice.total,
-    receivedAmount: r.receivedAmount,
-    disbursedAmount: money.disbursed,
-    held: money.held,
-    outstanding,
-    raisedAtISO: invoice.raisedAtISO,
-    agingDays,
-    bucket: bucketForAgingDays(agingDays),
+    receivedAmount: pair.receivable.receivedAmount,
+    disbursedAmount: leg?.disbursedAmount ?? 0,
+    held,
+    outstandingToYou,
+    stage: leg === undefined ? 'awaitingPayment' : stageOf(leg),
+    raisedAtISO: invoice.raisedAtISO ?? pair.createdAtISO,
   }
 }
 
+function oldestFirst(a: PayableRow, b: PayableRow): number {
+  return a.raisedAtISO.slice(0, 10).localeCompare(b.raisedAtISO.slice(0, 10)) || a.invoiceNumber.localeCompare(b.invoiceNumber)
+}
+
 /**
- * Every invoice for an anaesthetist, oldest first, shown the moment it is
- * raised, mirrored in Xero or not (catch-up Phase 36: a hand-off fault no
- * longer hides money the ledger says is owed). The flat, no-rollup list.
+ * Every invoice an anaesthetist sees, oldest first, shown the moment it is
+ * raised, mirrored in Xero or not (catch-up Phase 36), held prepayments
+ * included (read-only, 27a).
  */
-export function payableRowsFor(state: ViewState, anaesthetistId: string, todayISO: string): PayableRow[] {
+export function payableRowsFor(state: ViewState, anaesthetistId: string): PayableRow[] {
   const rows: PayableRow[] = []
   for (const pair of bookingPairs(state)) {
     if (viewerOfPair(state, pair) !== anaesthetistId) continue
-    const row = payableRowFor(state, pair, todayISO)
+    const row = payableRowFor(state, pair)
     if (row !== undefined) rows.push(row)
   }
-  return rows.sort((a, b) => a.raisedAtISO.localeCompare(b.raisedAtISO) || a.invoiceNumber.localeCompare(b.invoiceNumber))
-}
-
-/** Outstanding (unpaid) invoices: the flat balances list (M11 / W4 overdue). */
-export function outstandingPayableRowsFor(state: ViewState, anaesthetistId: string, todayISO: string): PayableRow[] {
-  return payableRowsFor(state, anaesthetistId, todayISO).filter((r) => toCents(r.outstanding) > 0)
-}
-
-/** The W4 Overdue accounts view: the flat outstanding list (alias for clarity at the call sites). */
-export function overdueAccountsFor(state: ViewState, anaesthetistId: string, todayISO: string): PayableRow[] {
-  return outstandingPayableRowsFor(state, anaesthetistId, todayISO)
-}
-
-export interface ReceivablesAging {
-  aging: AgingBuckets
-  accountsOver60: number
-  rows: PayableRow[]
-}
-
-/** Receivables aging over the outstanding rows (the dashboard aging panel; W1). Phase 38 replaces it with the flat list (D8). */
-export function receivablesAgingFor(state: ViewState, anaesthetistId: string, todayISO: string): ReceivablesAging {
-  const rows = outstandingPayableRowsFor(state, anaesthetistId, todayISO)
-  const aging: AgingBuckets = { current: 0, d31_60: 0, d61_90: 0, d90plus: 0, total: 0 }
-  for (const r of rows) {
-    aging[r.bucket] = roundToCents(aging[r.bucket] + r.outstanding)
-    aging.total = roundToCents(aging.total + r.outstanding)
-  }
-  return { aging, accountsOver60: rows.filter((r) => r.agingDays > 60).length, rows }
-}
-
-export interface GstActivityRow {
-  receiptId: string
-  atISO: string
-  invoiceNumber: string
-  payerLabel: string
-  grossAmount: number
-  gstAmount: number
-}
-export interface GstActivity {
-  rows: GstActivityRow[]
-  totalGross: number
-  totalGst: number
+  return rows.sort(oldestFirst)
 }
 
 /**
- * The GST activity report (M11 / W's periodic summary): a date-ranged list of
- * amounts RECEIVED, each with its GST component, for one anaesthetist. Reads
- * the ledger's income receipts (never an AA fee payment, AA's own money); the
- * window (`fromISO`..`toISO`, inclusive date bounds) is the calendar month to
- * date (catch-up Phase 26: no GST period; Phase 38 rebuilds it).
+ * Outstanding (catch-up Phase 38; US-12.2.1, RV-35, D8): one row per UNPAID
+ * PAYABLE, oldest first by invoice date, then invoice number. A row stays
+ * after the billable party pays ("Paid in, due to you") until AA pays the
+ * anaesthetist. Exactly the set `anaesthetistPosition` sums: a held or
+ * withdrawn prepayment is never a row, and no AA fee invoice is one, so the
+ * total equals Owed to you to the cent.
  */
-export function gstActivityFor(
-  state: Pick<AppState, 'billing' | 'masters'>,
-  anaesthetistId: string,
-  fromISO: string,
-  toISO: string,
-): GstActivity {
-  const rows: GstActivityRow[] = incomeReceiptsFor(state, anaesthetistId)
-    .filter((r) => {
-      const d = r.atISO.slice(0, 10)
-      return d >= fromISO && d <= toISO
-    })
-    .map((r) => {
-      const pair = state.billing.ledger[r.pairId]
-      const invoice = pair !== undefined && isBookingPair(pair) ? state.billing.invoices[pair.invoiceId] : undefined
-      return {
-        receiptId: r.id,
-        atISO: r.atISO,
-        invoiceNumber: invoice?.invoiceNumber ?? '·',
-        payerLabel: invoice !== undefined ? invoiceAddresseeName(state, invoice) : '·',
-        grossAmount: r.grossAmount,
-        gstAmount: r.gstAmount,
-      }
-    })
-    .sort((a, b) => a.atISO.localeCompare(b.atISO) || a.receiptId.localeCompare(b.receiptId))
-  const totalGross = roundToCents(rows.reduce((s, r) => s + r.grossAmount, 0))
-  const totalGst = roundToCents(rows.reduce((s, r) => s + r.gstAmount, 0))
-  return { rows, totalGross, totalGst }
+export function outstandingPayableRowsFor(state: ViewState, anaesthetistId: string): PayableRow[] {
+  return payableRowsFor(state, anaesthetistId).filter((r) => !r.held && toCents(r.outstandingToYou) > 0)
+}
+
+/** The Outstanding total, summed in cents. */
+export function outstandingTotalFor(rows: readonly Pick<PayableRow, 'outstandingToYou'>[]): number {
+  return rows.reduce((cents, r) => cents + toCents(r.outstandingToYou), 0) / 100
 }
 
 export type PaymentHistoryStatus =
@@ -1179,8 +1139,9 @@ export interface PaymentHistoryRow {
 
 /**
  * Payment history for the anaesthetist account: an immediate transaction
- * history read from the ledger (a received payment stays visible after it
- * leaves Overdue and shows what was released and paid out). Never Xero.
+ * history read from the ledger (a received payment stays visible here, and
+ * shows what was released and paid out, beside its Outstanding row until AA
+ * pays it). Never Xero.
  */
 export function paymentHistoryFor(
   state: ViewState,
