@@ -173,9 +173,9 @@ describe('office privacy: no anaesthetist-app history shows a pairing or tier en
     expect(direct).toEqual([])
   })
 
-  it("the Booking detail's history reads only Booking, Procedure and billing-line ids", () => {
+  it("the Booking detail's history reads only its Booking, Procedures, billing lines and billing records (bookingHistoryEntityIds), never a List", () => {
     const body = stripComments(MODULES.get('aa-prototype/src/shared/booking/BookingDetailBody.tsx') ?? '')
-    expect(body).toMatch(/return \[bookingId, \.\.\.procedureIds, \.\.\.lineIds, \.\.\.removedEntityIds\]/)
+    expect(body).toMatch(/bookingHistoryEntityIds\(\{ schedule: historySchedule, billing: historyBilling, audit \}, bookingId\), \.\.\.removedEntityIds/)
   })
 
   it('every office-private audit entry sits on a List, recurring booking, pairing or anaesthetist, never a Booking', () => {

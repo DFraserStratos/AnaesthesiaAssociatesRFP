@@ -1171,3 +1171,20 @@ describe('catch-up Phase 39 (v67): credit notes, negative invoices and Xero cred
     expect([a.billing.creditNotes, a.billing.negativeInvoices, a.xero.creditNotes]).toEqual([{}, {}, {}])
   })
 })
+
+describe('catch-up Phase 39 session 2 (v68): the combined procedure trigger\'s pinned patient', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v67 store without PT0173, and reseeds it', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(68)
+    const fresh = freshAppState()
+    const { PT0173: _p, ...patients } = fresh.masters.patients
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters: { ...fresh.masters, patients } }, version: 67 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.masters.patients['PT0173']).toBeDefined()
+  })
+})

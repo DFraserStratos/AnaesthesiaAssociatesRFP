@@ -798,6 +798,31 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
   raises an additional invoice by hand.
 - The anaesthetist's own pre-op and post-op events come with catch-up Phase 39b.
 
+#### Correction after invoicing
+
+- An issued invoice is never edited. An AA-side error (a wrong amount or billable party, or an invoice
+  paid twice), or less work than a fixed price assumed, is corrected by crediting the invoice in full
+  to whichever party needs it, then rebilling.
+- The office does it from the invoice's **Correct this invoice** card (**Credit note**, or **Credit in
+  full and rebill**, whose draft starts from a copy of the original's lines); the anaesthetist does it
+  on her own invoiced Procedure (**Credit note**, beside **Raise additional invoice**).
+- The credit is an event on the Procedure, through the same review step (**Review → Events**), and is
+  issued in the next billing run with its credit note number (CN-2026-nnnn); any new invoice raised with
+  it gets its own number and is linked to the original.
+- The anaesthetist's payable is always reversed, by a negative invoice: offset against the payable
+  while it is unpaid, netted in her next weekly payment run once she has been paid. Both sides move
+  together in the ledger and in Xero.
+- A credit note is not a refund, and nothing is ever credited automatically: a person decides. A
+  disputed invoice with no AA error stays outstanding.
+
+#### Splitting a combined procedure
+
+- When the billable party asks for a combined procedure's invoice in pieces, the office uses **Split
+  into additional invoices**: the invoice is credited in full and one invoice is raised per component.
+- The office splits the amount however it needs, but the new invoices must add up to what was credited:
+  **Left to allocate** must reach $0.00 before it can be submitted.
+- It goes through the same review step and run as any credit. An invoice not yet sent is simply edited.
+
 #### Billing failure
 
 - The run prices only from the lock, so a Contract edit cannot fail it; what can still fail is outside
@@ -807,7 +832,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 - A failed hand-off waits in the Xero sync queue, which retries it by itself; the office can use
   **Retry now** on its queue row. A failed billing run keeps the booking row's **Retry**, which rebuilds
   from the lock. On the Billing monitor, **Problems only** narrows the list to just these. The fix never edits a Contract or any other master; a wrong price after
-  invoicing is corrected by a credit note and rebill (a later build).
+  invoicing is corrected by a credit note and rebill (see Correction after invoicing).
 
 #### Row the office cannot match
 
@@ -846,7 +871,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Invoice calculation and documents | Yes | Phase 08 |
 | Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), escalating warning, left off the final invoice | Yes | Catch-up Phase 27 |
 | Prepayment held in the AA Holding account, transferred to the anaesthetist when the List is authorised, then paid by the payables run | Yes | Catch-up Phase 27a |
-| Prepayment warning, events and additional invoices, billing monitor/retry | Yes | Phase 09; events and additional invoices from catch-up Phase 38b |
+| Prepayment warning, events and additional invoices, credit and rebill, split, the anaesthetist's credit note, billing monitor/retry | Yes | Phase 09; events and additional invoices from catch-up Phase 38b; credit notes, credit and rebill and the split from catch-up Phase 39 |
 | Contract locked at authorise, invoices from the lock, Contract history | Yes | Catch-up Phase 25 |
 | Xero pairs, payment, balances and disbursement | Yes | Phase 10 |
 | Xero resilience: payables run in Xero, sync queue and outage, voids and edits flagged, bulk remittance matched in Xero, Reconciliation card; Billing monitor grouped by anaesthetist with filters | Yes | Catch-up Phase 37 |

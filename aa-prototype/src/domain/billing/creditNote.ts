@@ -206,3 +206,59 @@ export function xeroCorrectionPlan(
   }
   return { ...(rec !== undefined ? { accRec: rec } : {}), accPay: pay }
 }
+
+// ---------------------------------------------------------------------------
+// The rebill from a copy of the original's lines (US-08.6.6, the office's)
+// ---------------------------------------------------------------------------
+
+/**
+ * A replacement card's starting value: the original's lines as 38b free-form
+ * lines and the original's party ("same as", so its invoice email and
+ * delivery come with it). Nothing else is copied (no holder references exist,
+ * D82). The store's `rebillReplacementFor` adds the card's date.
+ */
+export interface RebillDraft {
+  lines: FreeFormLine[]
+  party: { sameAs: true }
+}
+
+/**
+ * A draft rebill holding a copy of the original's lines (US-08.6.6). Each
+ * positive line copies as quantity 1 at `unitAmount` = its stored ex-GST
+ * amount, its description unchanged (any units stay in the description), so
+ * no per-unit division can lose a cent. A zero line is dropped. A negative
+ * line is folded into the positive line it follows ("{desc}, less {its
+ * desc}"), so every copied line is positive and 38b's `priceFreeFormInvoice`
+ * takes it; a fold that leaves the line at zero or below drops the line with
+ * its deduction. When nothing positive remains, or the copied lines no longer
+ * add up to the original's subtotal (a deduction larger than the line it
+ * follows, or one with no line before it), the draft is one line
+ * "Rebill of {original number}" at the original's subtotal, so the draft
+ * always prices to the original's total exactly. Pure and deterministic.
+ */
+export function rebillDraftFrom(
+  invoice: Pick<Invoice, 'invoiceNumber' | 'subtotal'>,
+  lines: readonly Pick<InvoiceLine, 'description' | 'amount'>[],
+): RebillDraft {
+  const kept: { description: string; cents: number }[] = []
+  for (const line of lines) {
+    const cents = toCents(line.amount)
+    const description = line.description.trim()
+    if (cents === 0) continue
+    if (cents > 0) {
+      kept.push({ description, cents })
+      continue
+    }
+    const last = kept.at(-1)
+    if (last === undefined) continue
+    const folded = last.cents + cents
+    if (folded <= 0) kept.pop()
+    else kept[kept.length - 1] = { description: `${last.description}, less ${description}`, cents: folded }
+  }
+  const subtotalCents = toCents(invoice.subtotal)
+  const sum = kept.reduce((n, l) => n + l.cents, 0)
+  if (kept.length === 0 || sum !== subtotalCents || kept.some((l) => l.description === '')) {
+    return { lines: subtotalCents > 0 ? [{ description: `Rebill of ${invoice.invoiceNumber}`, quantity: 1, unitAmount: subtotalCents / 100 }] : [], party: { sameAs: true } }
+  }
+  return { lines: kept.map((l) => ({ description: l.description, quantity: 1, unitAmount: l.cents / 100 })), party: { sameAs: true } }
+}

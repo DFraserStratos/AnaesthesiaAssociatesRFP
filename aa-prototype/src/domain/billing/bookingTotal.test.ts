@@ -53,4 +53,36 @@ describe('bookingTotalWithEvents (US-03.1.10)', () => {
     expect(r.total).toBe(1600)
     expect(r.procedures[0]!.events).toEqual([])
   })
+
+  describe('a credit (catch-up Phase 39 review): the credited invoice counts once', () => {
+    const credit = (id: string, review: ProcedureEvent['review'], over: Partial<ProcedureEvent> = {}): ProcedureEvent =>
+      ev(id, 'P1', 0, {
+        kind: 'credit',
+        detail: { kind: 'credit', credit: { originalInvoiceId: 'I1', reason: 'Wrong amount', cause: 'correction', replacementEventIds: ['EV2'] } },
+        review,
+        ...over,
+      })
+    const rebill = (review: ProcedureEvent['review']) => ev('EV2', 'P1', 200, { review, replaces: { creditEventId: 'EVC', originalInvoiceId: 'I1' } })
+    const invoices = { I1: { subtotal: 207 } }
+    const one = [{ procedureId: 'P1', price: 207 }]
+
+    it('a $207 invoice credited and rebilled at $200 totals $200, awaiting review, approved and issued', () => {
+      for (const review of [{ state: 'awaitingReview' }, { state: 'approved' }] as ProcedureEvent['review'][]) {
+        const r = bookingTotalWithEvents(one, [credit('EVC', review), rebill(review)], { invoices })
+        expect(r.procedures[0]!.events).toEqual([{ eventId: 'EVC', total: -207 }, { eventId: 'EV2', total: 200 }])
+        expect(r.total).toBe(200)
+      }
+      const issued = bookingTotalWithEvents(
+        one,
+        [credit('EVC', { state: 'approved' }, { detail: { kind: 'credit', credit: { originalInvoiceId: 'I1', reason: 'x', cause: 'correction', replacementEventIds: ['EV2'], creditNoteId: 'CN1' } } }), { ...rebill({ state: 'approved' }), invoiceId: 'I2' }],
+        { invoices },
+      )
+      expect(issued.total).toBe(200)
+    })
+
+    it('a declined credit takes nothing off', () => {
+      const r = bookingTotalWithEvents(one, [credit('EVC', { state: 'declined', reason: 'No' }), rebill({ state: 'declined', reason: 'No' })], { invoices })
+      expect(r.total).toBe(207)
+    })
+  })
 })

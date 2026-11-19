@@ -33,7 +33,8 @@ import { assessImportRow } from './matchingSelectors'
 import type { Invoice } from '../domain/types'
 import { projectedListId } from '../domain/slots'
 import { addProcedureEvent, additionalInvoicesFor, approveProcedureEvent, liveInvoiceForProcedure, runEventInvoicing } from './procedureEventActions'
-import { bctiRecords } from './ledgerSelectors'
+import { bctiRecords, ledgerPositionOf } from './ledgerSelectors'
+import { invoiceStanding, rebillReplacementFor, replacementsOf, splitCombinedProcedure, submitCredit } from './creditActions'
 import { approveAllPrepayments } from '../test/approvePrepayments'
 import { DEMO_TRIGGERS, POST_OP_ORIGINAL_LIST_ID } from '../shared/demoTriggers/registry'
 
@@ -286,6 +287,78 @@ describe('S4 · exceptions', () => {
       ['AA-2026-0005', 'Losa Tuilagi', 'standard'],
       ['AA-2026-0006', 'Hemi Walker', 'standard'],
     ])
+  })
+
+  it('Beat 2b: credit in full and rebill from a copy, the paid-out variant with its negative invoice to net, the split that equals the credit, and an anaesthetist credit with the PWA stand-in (catch-up Phase 39)', () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    const ctx = (pathname: string, params: Record<string, string> = {}) => ({ pathname, params, published: {} })
+    const trigger = (id: string) => DEMO_TRIGGERS.find((t) => t.id === id)!
+    const inBalance = () => {
+      const pos = ledgerPositionOf(api.getState())
+      expect(pos.imbalance).toBe(0)
+      expect(pos.checks).toEqual([])
+    }
+    const approve = (eventId: string) => expect(approveProcedureEvent(api, OFFICE, eventId).ok).toBe(true)
+    const nextRun = () => trigger('run-next-billing-run').run(api, ctx('/admin/billing'))
+
+    // Stage post-op, and 38b's additional invoice on Sarah Mitchell.
+    expect(trigger('stage-post-op').run(api, ctx(`/admin/review/${POST_OP_ORIGINAL_LIST_ID}`, { listId: POST_OP_ORIGINAL_LIST_ID })).ok).toBe(true)
+    const mitchell = bookingsForList(api.getState(), POST_OP_ORIGINAL_LIST_ID)[0]!
+    const procedureId = proceduresForBooking(api.getState(), mitchell.id)[0]!.id
+    const original = liveInvoiceForProcedure(api.getState(), procedureId)!
+    const extra = addProcedureEvent(api, OFFICE, procedureId, { kind: 'additionalInvoice', occurredOnISO: '2026-07-15', party: { sameAs: true }, lines: [{ description: 'Post-op ward review, Wed 15 Jul, 15 min', quantity: 1, unitAmount: 30 }] })
+    if (!extra.ok) throw new Error(extra.message)
+    approve(extra.value.eventId)
+    expect(nextRun().ok).toBe(true)
+
+    // Credit in full and rebill from a copy of the original's lines, one line corrected.
+    const copy = rebillReplacementFor(api.getState(), original.id)!
+    const corrected = { ...copy, lines: copy.lines.map((l) => ({ ...l, unitAmount: l.unitAmount - 25 })) }
+    const rebill = submitCredit(api, OFFICE, { invoiceId: original.id, reason: 'Wrong amount', cause: 'correction', replacements: [corrected] })
+    if (!rebill.ok) throw new Error(rebill.message)
+    approve(rebill.value.creditEventId)
+    expect(nextRun().message).toMatch(/^Billing run done: 1 credit note and 1 additional invoice raised \(CN-2026-0001, AA-2026-\d{4}\)\.$/)
+    const rebilled = replacementsOf(api.getState(), original.id)[0]!
+    expect(rebilled.subtotal).toBe(Math.round((original.subtotal - 25) * 100) / 100)
+    expect(invoiceStanding(api.getState(), original.id)).toBe('credited')
+    expect(liveInvoiceForProcedure(api.getState(), procedureId)?.id).toBe(rebilled.id)
+    inBalance()
+
+    // The paid-out variant: the rebill paid in full and paid out, then credited: its negative invoice nets.
+    const payout = trigger('stage-refund-after-payout').run(api, ctx('/admin/billing'))
+    expect(payout).toMatchObject({ ok: true, message: 'Paid in full and paid out to Dr Sharma in Xero. Credit it to see the negative invoice.' })
+    const paidOutCredit = submitCredit(api, OFFICE, { invoiceId: rebilled.id, reason: 'Paid twice', cause: 'correction', replacements: [] })
+    if (!paidOutCredit.ok) throw new Error(paidOutCredit.message)
+    approve(paidOutCredit.value.creditEventId)
+    expect(nextRun().ok).toBe(true)
+    const negative = Object.values(api.getState().billing.negativeInvoices).find((n) => n.originalInvoiceId === rebilled.id)!
+    expect(negative).toMatchObject({ number: 'CN-2026-0002-P', status: 'toNet', recoveryDue: rebilled.total, anaesthetistId: ANAE.sharma })
+    inBalance()
+
+    // The split: the staged Merivale combination in three parts that add up to the credit.
+    const staged = trigger('stage-combined-procedure').run(api, ctx('/admin/invoices'))
+    expect(staged.ok).toBe(true)
+    const combined = api.getState().billing.invoices[staged.link!.to.split('/').pop()!]!
+    const combinedProcedure = combined.procedureIds![0]!
+    const bctis = bctiRecords(api.getState()).length
+    const parts = [2000, 1000, 700].map((unitAmount, i) => ({ occurredOnISO: '2026-07-21', party: { sameAs: true as const }, lines: [{ description: `Component ${i + 1}`, quantity: 1, unitAmount }] }))
+    const split = splitCombinedProcedure(api, OFFICE, { procedureId: combinedProcedure, reason: 'Split requested', replacements: parts })
+    if (!split.ok) throw new Error(split.message)
+    approve(split.value.creditEventId)
+    expect(nextRun().ok).toBe(true)
+    expect(replacementsOf(api.getState(), combined.id).map((i) => i.subtotal)).toEqual([2000, 1000, 700])
+    expect(bctiRecords(api.getState()).length).toBe(bctis + 3)
+    inBalance()
+
+    // Dr Souter credits David Chen's invoice on her own Procedure (HP03); the PWA stand-in reviews and issues it.
+    const hers = submitCredit(api, SOUTER, { invoiceId: 'HINV03', reason: 'Less work than expected', cause: 'correction', replacements: [{ occurredOnISO: '2026-07-21', party: { sameAs: true }, lines: [{ description: 'Hip hemiarthroplasty, shorter case', quantity: 1, unitAmount: 400 }] }] })
+    if (!hers.ok) throw new Error(hers.message)
+    const standIn = trigger('office-reviews-credit').run(api, ctx('/mobile/lists/L-HIST-03/bookings/HBK03', { listId: 'L-HIST-03', bookingId: 'HBK03' }))
+    unwire()
+    expect(standIn).toEqual({ ok: true, message: 'Approved by the office and issued in the next billing run (CN-2026-0004).' })
+    expect(invoiceStanding(api.getState(), 'HINV03')).toBe('credited')
+    inBalance()
   })
 })
 

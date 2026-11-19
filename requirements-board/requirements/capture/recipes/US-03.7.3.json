@@ -1,7 +1,7 @@
 {
   "id": "US-03.7.3",
   "status": "partial",
-  "absentReason": "Additional invoices show as events today; pre-op and post-op events join in Phase 39b and credits in Phase 39.",
+  "absentReason": "Additional invoices and credits show as events today; pre-op and post-op events join in Phase 39b.",
   "shots": [
     {
       "name": "procedure-events",
@@ -59,6 +59,39 @@
             },
             {
               "wait": "[data-shot=procedure-event-invoice]"
+            },
+            {
+              "scroll": "[data-shot=procedure-events] >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-events]"
+          ]
+        },
+        {
+          "state": "credit",
+          "caption": "A credit note against its invoice shows as an event too",
+          "steps": [
+            {
+              "wait": "[data-shot=procedure-credit-note-button]"
+            },
+            {
+              "click": "[data-shot=procedure-credit-note-button] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=credit-sheet]"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-reason-chip]:has-text(\"Wrong amount\")"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-submit]"
+            },
+            {
+              "wait": "[data-shot=procedure-credit-event]"
+            },
+            {
+              "wait": 500
             },
             {
               "scroll": "[data-shot=procedure-events] >> nth=0"

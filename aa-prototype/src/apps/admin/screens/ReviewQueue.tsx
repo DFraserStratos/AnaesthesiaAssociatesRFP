@@ -84,7 +84,7 @@ export function ReviewQueue({ onOpen, onViewInvoices, actor = OFFICE_ACTOR }: Re
 
   return (
     <div data-testid="review-queue-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
-      <PageHeader size="admin" title="Review queue" sub={<>Submitted lists awaiting a sanity check and authorisation for billing. {submitted.length} in the queue.</>} />
+      <PageHeader size="admin" title="Review queue" sub={tab === 'events' ? EVENT_LABELS.eventsTabSub(awaitingEvents.length) : <>Submitted lists awaiting a sanity check and authorisation for billing. {submitted.length} in the queue.</>} />
 
       {/* Lists (the queue as it was) and Events (catch-up Phase 38b: every event's one review step). */}
       <LineTabs label="Review queue">

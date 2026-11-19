@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Fragment } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { neutral, radius, semantic } from '../../../theme/tokens'
+import { fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
 import type { CreditNote, Invoice } from '../../../domain/types'
 import { invoiceDeliveryLabel, layoutShortLabel } from '../../../domain/billing'
 import { Card, Eyebrow, PageHeader, Pill, TextAction } from '../../../shared/ui'
@@ -70,6 +70,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
         bookingLabel={booking?.scheduledTime !== undefined ? `Booking ${booking.scheduledTime}` : 'Booking time not set'}
         anaesthetistName={anaesthetist?.name}
         listDateISO={list?.dateISO}
+        listSource={list !== undefined ? listSourceLabels(list, masters) : undefined}
         addressee={invoiceAddresseeName({ masters, schedule, billing }, cn)}
         onOpen={() => navigate(`/admin/credit-notes/${cn.id}`)}
       />
@@ -211,7 +212,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                     {/* Its standing (catch-up Phase 39): derived, neutral. */}
                     {standing !== 'live' && (
                       <div style={{ marginTop: 4 }}>
-                        <Pill size="sm" shot="invoice-list-standing" data-standing={standing}>{standing === 'credited' ? CREDIT_LABELS.creditedPill : CREDIT_LABELS.pendingPill}</Pill>
+                        <Pill size="sm" shot="invoice-list-standing" data-standing={standing} style={{ fontFamily: fontFamily.ui }}>{standing === 'credited' ? CREDIT_LABELS.credited : CREDIT_LABELS.pendingPill}</Pill>
                       </div>
                     )}
                   </Td>
@@ -303,6 +304,7 @@ function CreditNoteRow({
   bookingLabel,
   anaesthetistName,
   listDateISO,
+  listSource,
   addressee,
   onOpen,
 }: {
@@ -312,6 +314,8 @@ function CreditNoteRow({
   bookingLabel: string
   anaesthetistName: string | undefined
   listDateISO: string | undefined
+  /** The List it was billed from, as the invoice rows name it. */
+  listSource: { primary: string; secondary?: string } | undefined
   addressee: string
   onOpen: () => void
 }) {
@@ -327,7 +331,16 @@ function CreditNoteRow({
         <div className="mono" style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist, whiteSpace: 'nowrap' }}>{bookingLabel}</div>
       </Td>
       <Td bold>{anaesthetistName ?? 'Anaesthetist unavailable'}</Td>
-      <Td>·</Td>
+      <Td>
+        {listSource !== undefined ? (
+          <>
+            <div style={{ fontWeight: 600 }}>{listSource.primary}</div>
+            {listSource.secondary !== undefined && <div style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist }}>{listSource.secondary}</div>}
+          </>
+        ) : (
+          <div style={{ fontWeight: 600 }}>List unavailable</div>
+        )}
+      </Td>
       <Td mono nowrap>{listDateISO !== undefined ? dayMicroCap(listDateISO) : '·'}</Td>
       <Td mono nowrap>{dateTimeMicroCap(creditNote.issuedAtISO)}</Td>
       <Td>{addressee}</Td>

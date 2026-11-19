@@ -82,6 +82,33 @@ export interface XeroInvoicePairView {
     aaFeeMonthISO?: string
   }
   incomplete: boolean
+  /**
+   * The engine's correction as Xero shows it (catch-up Phase 39; US-08.6.2
+   * "Both sides move"): the ACCRECCREDIT against this ACCREC and the
+   * ACCPAYCREDIT against its ACCPAY (or the draft ACCPAY voided), each with
+   * what is allocated and what is left unallocated (held for the payer, or to
+   * net), and the new pairs issued with the credit. Absent when not credited.
+   */
+  credit?: XeroCreditView
+}
+
+export interface XeroCreditNoteView {
+  id: string
+  type: 'ACCRECCREDIT' | 'ACCPAYCREDIT'
+  creditNoteNumber: string
+  total: number
+  allocated: number
+  unallocated: number
+}
+
+export interface XeroCreditView {
+  /** The engine's credit note number. */
+  creditNoteNumber: string
+  notes: XeroCreditNoteView[]
+  /** The draft ACCPAY was voided (nothing had been authorised), so there is no ACCPAYCREDIT. */
+  accPayVoided: boolean
+  /** The replacements' Xero pairs, by number; `accRecId` once mirrored. */
+  newPairs: { invoiceNumber: string; accRecId?: string }[]
 }
 
 /**
@@ -155,8 +182,11 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
       const payee =
         accPay !== undefined ? contactView(state.xero.contacts[accPay.contactId]) : undefined
 
+      const credit = creditViewFor(state, rec.id, accPay?.id)
+
       return {
         kind: 'procedure',
+        ...(credit !== undefined ? { credit } : {}),
         accRec: {
           id: rec.id,
           invoiceId: rec.invoiceId,
@@ -329,5 +359,31 @@ function ledgerMoney(pair: LedgerPair, rec: XeroAccRec, accPay: XeroAccPay | und
     ...(p !== undefined ? { payableNumber: p.number, released: p.releasedAmount, paidOut: p.disbursedAmount } : {}),
     received: r.receivedAmount,
     matches: recMatches && payMatches,
+  }
+}
+
+/** The correction Xero holds for a credited pair (catch-up Phase 39), from its Xero credit notes and the engine's credit note. */
+function creditViewFor(state: XeroPairState, accRecId: string, accPayId: string | undefined): XeroCreditView | undefined {
+  const notes = Object.values(state.xero.creditNotes)
+    .filter((n) => n.againstId === accRecId || (accPayId !== undefined && n.againstId === accPayId))
+    .sort((a, b) => (a.type === b.type ? a.id.localeCompare(b.id) : a.type === 'ACCRECCREDIT' ? -1 : 1))
+  const accPay = accPayId !== undefined ? state.xero.accPays[accPayId] : undefined
+  if (notes.length === 0 && accPay?.status !== 'voided') return undefined
+  const engineId = notes[0]?.creditNoteId
+  const invoiceId = state.xero.accRecs[accRecId]?.invoiceId
+  const engine = engineId !== undefined ? state.billing.creditNotes[engineId] : Object.values(state.billing.creditNotes).find((c) => c.originalInvoiceId === invoiceId)
+  if (engine === undefined && notes.length === 0) return undefined
+  const newPairs = (engine?.replacementInvoiceIds ?? []).flatMap((id) => {
+    const invoice = state.billing.invoices[id]
+    if (invoice === undefined) return []
+    const pair = Object.values(state.billing.ledger).find((p): p is BookingLedgerPair => p.kind !== 'aaFee' && p.invoiceId === id)
+    const xeroId = pair?.receivable.xeroAccRecId
+    return [{ invoiceNumber: invoice.invoiceNumber, ...(xeroId !== undefined ? { accRecId: xeroId } : {}) }]
+  })
+  return {
+    creditNoteNumber: engine?.creditNoteNumber ?? notes[0]!.creditNoteNumber,
+    notes: notes.map((n) => ({ id: n.id, type: n.type, creditNoteNumber: n.creditNoteNumber, total: n.total, allocated: n.allocated, unallocated: roundToCents(n.total - n.allocated) })),
+    accPayVoided: accPay?.status === 'voided',
+    newPairs,
   }
 }

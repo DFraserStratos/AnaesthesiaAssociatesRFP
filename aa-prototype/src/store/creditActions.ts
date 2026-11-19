@@ -30,6 +30,7 @@
  */
 
 import type {
+  AuditEntry,
   BookingLedgerPair,
   CounterpartyRef,
   CreditCause,
@@ -44,11 +45,15 @@ import type {
   ReversalPlan,
 } from '../domain/types'
 import { creditDetailOf, eventLines, eventStatus, mayRaise, resolveEventParty, type EventActor, type ResolvedEventParty } from '../domain/billing/procedureEvent'
-import { creditInFull, reversalPlan, splitTotalCheck, type CreditInFull } from '../domain/billing/creditNote'
-import { applyCredit, isBookingPair, payeeAnaesthetistOf } from '../domain/billing/ledger'
+import { creditInFull, rebillDraftFrom, reversalPlan, splitTotalCheck, type CreditInFull } from '../domain/billing/creditNote'
+import { defaultEventDate } from '../domain/billing/procedureEvent'
+import { applyCredit, payeeAnaesthetistOf } from '../domain/billing/ledger'
+import { toCents } from '../domain/billing/money'
 import { deliveryStampFor } from '../domain/billing/invoicePresentation'
 import type { DeliveryPlan } from '../domain/billing/whoIsBilled'
-import { CREDIT_MESSAGES, EVENT_MESSAGES } from '../shared/procedureEventCopy'
+import { CREDIT_MESSAGES, CREDIT_SYNC_MESSAGES, EVENT_MESSAGES, SPLIT_MESSAGES } from '../shared/procedureEventCopy'
+import { drSurname } from '../shared/format'
+import { auditViewerEntries, sortAuditNewestFirst } from '../shared/audit'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { BILLING_RUN_SENDER } from './invoiceMaterialise'
@@ -59,6 +64,8 @@ import {
   editGuard,
   eventActor,
   issueAdditionalInto,
+  liveInvoiceForProcedure,
+  liveInvoicesForProcedure,
   namedPartyDelivery,
   partyForAudit,
   partyFromInput,
@@ -72,7 +79,7 @@ import {
   type ProcedureEventInput,
 } from './procedureEventActions'
 
-type CreditState = Pick<AppState, 'schedule' | 'billing' | 'masters' | 'clock'>
+type CreditState = Pick<AppState, 'schedule' | 'billing' | 'masters' | 'clock' | 'xero'>
 
 // ---------------------------------------------------------------------------
 // Selectors (derived, never stored)
@@ -98,6 +105,23 @@ export function replacementsOf(state: Pick<AppState, 'billing'>, invoiceId: stri
 export function rebillOriginFor(state: Pick<AppState, 'billing'>, invoiceId: string): Invoice | undefined {
   const link = state.billing.invoices[invoiceId]?.lineage?.find((l) => l.role === 'rebillOf')
   return link !== undefined ? state.billing.invoices[link.invoiceId] : undefined
+}
+
+/**
+ * Whether an invoice stands for this Procedure: its own `procedureIds`, or,
+ * for a replacement, those of the invoice it rebills (followed up the
+ * `rebillOf` lineage), so every Procedure of a credited invoice that covered
+ * several reaches its replacement.
+ */
+export function invoiceCoversProcedure(state: Pick<AppState, 'billing'>, invoiceId: string, procedureId: string): boolean {
+  const seen = new Set<string>()
+  let invoice = state.billing.invoices[invoiceId]
+  while (invoice !== undefined && !seen.has(invoice.id)) {
+    if ((invoice.procedureIds ?? []).includes(procedureId)) return true
+    seen.add(invoice.id)
+    invoice = rebillOriginFor(state, invoice.id)
+  }
+  return false
 }
 
 /** Every credit event raised against an invoice, id order. */
@@ -220,7 +244,7 @@ export function creditRefusalFor(state: Pick<AppState, 'schedule' | 'billing'>, 
   if (original.kind === 'prePayment') return { code: 'kindNotCreditable', message: CREDIT_MESSAGES.prepaymentNotCreditable }
   if (original.noCharge === true) return { code: 'kindNotCreditable', message: CREDIT_MESSAGES.noChargeNotCreditable }
   const procedureId = opts.procedureId ?? original.procedureIds?.[0]
-  if (procedureId === undefined || !(original.procedureIds ?? []).includes(procedureId)) return { code: 'procedureNotOnInvoice', message: CREDIT_MESSAGES.procedureNotOnInvoice }
+  if (procedureId === undefined || !invoiceCoversProcedure(state, invoiceId, procedureId)) return { code: 'procedureNotOnInvoice', message: CREDIT_MESSAGES.procedureNotOnInvoice }
   if (!mayRaise('credit', actor, procedureOwner(state, procedureId))) return { code: 'notOwnProcedure', message: CREDIT_MESSAGES.notOwnProcedure }
   if (cause === 'split' && actor.role !== 'office') return { code: 'splitOfficeOnly', message: CREDIT_MESSAGES.splitOfficeOnly }
   const pair = pairForInvoice(state, invoiceId)
@@ -656,10 +680,51 @@ export interface CreditIssuePlan {
 }
 
 /**
+ * Whether Xero holds money on this pair that the ledger has not recorded yet
+ * (catch-up Phase 39 review): a payment or a payout made in Xero that a missed
+ * webhook or an outage held back (the ACCREC's received or the ACCPAY's
+ * disbursed above the leg's; a Xero payment or bill payment no ledger entry
+ * carries the key of), or a `paymentSync` or `disbursementSync` still open in
+ * the Xero sync queue for it. A credit issued now would reverse from the
+ * ledger alone and lose that money.
+ */
+export function xeroMoneyNotInLedger(state: Pick<AppState, 'billing' | 'xero'>, pair: BookingLedgerPair): boolean {
+  const accRecId = pair.receivable.xeroAccRecId
+  const accPayId = pair.payable?.xeroAccPayId
+  const accRec = accRecId !== undefined ? state.xero.accRecs[accRecId] : undefined
+  const accPay = accPayId !== undefined ? state.xero.accPays[accPayId] : undefined
+  if (accRec !== undefined && toCents(accRec.amountReceived) > toCents(pair.receivable.receivedAmount)) return true
+  if (accPay !== undefined && pair.payable !== undefined && toCents(accPay.amountDisbursed) > toCents(pair.payable.disbursedAmount)) return true
+  if (accRecId !== undefined) {
+    const receipts = new Set(Object.values(state.billing.receipts).map((r) => r.idempotencyKey))
+    if (Object.values(state.xero.payments).some((p) => p.accRecId === accRecId && !receipts.has(p.idempotencyKey))) return true
+  }
+  if (accPayId !== undefined) {
+    const disbursed = new Set(Object.values(state.billing.disbursements).map((d) => d.idempotencyKey))
+    if (Object.values(state.xero.disbursements).some((d) => d.accPayId === accPayId && !disbursed.has(d.idempotencyKey))) return true
+  }
+  return Object.values(state.billing.xeroQueue).some((q) => {
+    if (q.status === 'sent') return false
+    if (q.kind === 'paymentSync') {
+      const on = q.target.xeroPaymentId !== undefined ? state.xero.payments[q.target.xeroPaymentId]?.accRecId : q.target.accRecId
+      return q.target.pairId === pair.id || (on !== undefined && on === accRecId)
+    }
+    if (q.kind === 'disbursementSync') {
+      const on = q.target.xeroDisbursementId !== undefined ? state.xero.disbursements[q.target.xeroDisbursementId]?.accPayId : undefined
+      return q.target.pairId === pair.id || (on !== undefined && on === accPayId)
+    }
+    return false
+  })
+}
+
+/**
  * Plan the issue of an approved credit (the run's pre-check and
  * `issueCreditInto`'s read): the original and its pair still uncredited, every
  * replacement approved and priceable, the reversal from the legs at issue
- * time (a payment recorded while the credit waited is included).
+ * time (a payment recorded while the credit waited is included). While Xero
+ * holds money on the original that the ledger has not recorded
+ * (`xeroMoneyNotInLedger`) it is refused `waitingForXero`: the run skips it
+ * and it stays approved until the poll or the queue records that money.
  */
 export function planCreditIssue(state: CreditState, creditEventId: string): Outcome<CreditIssuePlan> {
   const unit = creditUnit(state, creditEventId)
@@ -672,6 +737,8 @@ export function planCreditIssue(state: CreditState, creditEventId: string): Outc
   const anaesthetistId = pair?.payable !== undefined ? payeeAnaesthetistOf(pair.payable) : undefined
   if (pair === undefined || pair.payable === undefined || anaesthetistId === undefined) return refuse('noPair', CREDIT_MESSAGES.noPair)
   if (creditNoteForInvoice(state, original.id) !== undefined || pair.credit !== undefined) return refuse('alreadyCredited', CREDIT_MESSAGES.alreadyCredited)
+  // The reversal is read from the ledger, so it waits until Xero and the ledger agree (catch-up Phase 39 review).
+  if (xeroMoneyNotInLedger(state, pair)) return refuse('waitingForXero', CREDIT_SYNC_MESSAGES.waitingForXeroSync)
   const planned: PlannedAdditional[] = []
   for (const r of replacements) {
     if (eventStatus(r) !== 'approved') return refuse('notApproved', EVENT_MESSAGES.nothingToRun)
@@ -712,17 +779,18 @@ export function issueCreditInto(draft: CreditRunDraft, creditEventId: string, at
   const planned = planCreditIssue(draft.s, creditEventId)
   if (!planned.ok) return planned
   const p = planned.value
+  // The ids the ledger's credit names are held locally: the draft's counters (and the credit note number) move only once every refusal has passed.
   const cn = allocateId(draft.counters, 'creditNote')
-  const num = allocateId(cn.counters, 'creditNoteNumber')
-  const neg = allocateId(num.counters, 'negativeInvoice')
-  draft.counters = neg.counters
+  const neg = allocateId(cn.counters, 'negativeInvoice')
   const creditNoteId = cn.id
-  const creditNoteNumber = num.id
   const negativeInvoiceId = neg.id
 
   const pairNow = draft.maps.ledger[p.pair.id]!
   const credited = applyCredit(pairNow, p.reversal, { creditNoteId, negativeInvoiceId, atISO })
   if (!credited.ok) return refuse(credited.code, CREDIT_MESSAGES.alreadyCredited)
+  const num = allocateId(neg.counters, 'creditNoteNumber')
+  draft.counters = num.counters
+  const creditNoteNumber = num.id
   draft.maps = { ...draft.maps, ledger: { ...draft.maps.ledger, [p.pair.id]: credited.pair } }
 
   // The replacements, through 38b's issue path, each its own invoice with the `rebillOf` lineage.
@@ -838,12 +906,250 @@ export function issueCreditInto(draft: CreditRunDraft, creditEventId: string, at
   })
   metas.push({ entityType: 'creditNote', entityId: creditEventId, action: 'credit.issued', after: { creditNoteId, creditNoteNumber, invoiceIds }, stampBookingId: null })
   metas.push(...rebillMetas)
+  // A split (US-08.6.4): the components side by side with the credited invoice they add up to (OQ-77 part 1).
+  if (p.credit.cause === 'split') {
+    metas.push({
+      entityType: 'invoice',
+      entityId: p.original.id,
+      action: 'invoice.split',
+      after: {
+        invoiceNumber: p.original.invoiceNumber,
+        creditNoteNumber,
+        componentCount: p.replacements.length,
+        creditedSubtotal: p.original.subtotal,
+        creditedTotal: p.original.total,
+        componentNumbers: invoiceIds.map((id) => draft.maps.invoices[id]?.invoiceNumber ?? id),
+        componentSubtotals: p.replacements.map((r) => r.pricing.subtotal),
+        componentTotals: p.replacements.map((r) => r.pricing.total),
+      },
+      stampBookingId: null,
+    })
+  }
   return ok({ creditNoteId, negativeInvoiceId, invoiceIds, pairIds })
 }
 
-/** Whether a pair is a credited one (the original of an issued credit note). */
-export function pairCreditedBy(state: Pick<AppState, 'billing'>, pairId: string): CreditNote | undefined {
-  const pair = state.billing.ledger[pairId]
-  if (pair === undefined || !isBookingPair(pair) || pair.credit === undefined) return undefined
-  return state.billing.creditNotes[pair.credit.creditNoteId]
+/**
+ * A split component's place among its credit's replacements (US-08.6.4): its
+ * event's `replaces.componentIndex` when stamped, else its order among the
+ * credited invoice's replacements. Derived, never stored on the invoice.
+ */
+export function splitPartOf(
+  state: Pick<AppState, 'billing'> & { schedule: Pick<AppState['schedule'], 'procedureEvents'> },
+  invoiceId: string,
+  originalId: string,
+): { part: number; of: number } | undefined {
+  const siblings = replacementsOf(state, originalId)
+  if (siblings.length < 2) return undefined
+  const event = Object.values(state.schedule.procedureEvents).find((e) => e.invoiceId === invoiceId && e.replaces !== undefined)
+  const index = event?.replaces?.componentIndex ?? siblings.findIndex((s) => s.id === invoiceId)
+  return index >= 0 ? { part: index + 1, of: siblings.length } : undefined
+}
+
+/** Whose Procedure this is, titled ("Dr Sharma"): `procedureOwner`'s anaesthetist, or undefined. */
+export function procedureOwnerSurname(state: Pick<AppState, 'schedule' | 'billing' | 'masters'>, procedureId: string): string | undefined {
+  const ownerId = procedureOwner(state, procedureId)
+  const anaesthetist = ownerId !== undefined ? state.masters.anaesthetists[ownerId] : undefined
+  return anaesthetist !== undefined ? drSurname(anaesthetist.name) : undefined
+}
+
+// ---------------------------------------------------------------------------
+// The Booking's History (catch-up Phase 39 review)
+// ---------------------------------------------------------------------------
+
+/**
+ * Every entity id whose audit trail a Booking's History merges: the Booking,
+ * its Procedures and their billing lines (live, and those a `procedure.remove`
+ * took with it), and its billing: its invoices, its Procedures' events (a
+ * credit's own entries are audited on its event id) and its credit notes and
+ * negative invoices.
+ */
+export function bookingHistoryEntityIds(state: Pick<AppState, 'schedule' | 'billing' | 'audit'>, bookingId: string): string[] {
+  const procedureIds = Object.values(state.schedule.procedures)
+    .filter((p) => p.bookingId === bookingId)
+    .map((p) => p.id)
+    .sort()
+  for (const a of state.audit) {
+    if (a.entityType !== 'procedure' || a.action !== 'procedure.remove' || procedureIds.includes(a.entityId)) continue
+    if ((a.before as { bookingId?: string } | undefined)?.bookingId === bookingId) procedureIds.push(a.entityId)
+  }
+  const procedureSet = new Set(procedureIds)
+  const lineIds = new Set(
+    Object.values(state.schedule.billingLines)
+      .filter((l) => procedureSet.has(l.procedureId))
+      .map((l) => l.id),
+  )
+  for (const a of state.audit) {
+    const before = a.before as { procedureId?: string } | undefined
+    if (a.entityType === 'billingLine' && before?.procedureId !== undefined && procedureSet.has(before.procedureId)) lineIds.add(a.entityId)
+  }
+  const invoiceIds = Object.values(state.billing.invoices)
+    .filter((i) => i.bookingId === bookingId)
+    .map((i) => i.id)
+    .sort()
+  const eventIds = Object.values(state.schedule.procedureEvents)
+    .filter((e) => e.bookingId === bookingId || procedureSet.has(e.procedureId))
+    .map((e) => e.id)
+    .sort()
+  const invoiceSet = new Set(invoiceIds)
+  const notes = Object.values(state.billing.creditNotes)
+    .filter((c) => c.bookingId === bookingId || invoiceSet.has(c.originalInvoiceId))
+    .sort((a, b) => a.id.localeCompare(b.id))
+  const negativeIds = notes.flatMap((c) => (c.negativeInvoiceId !== undefined ? [c.negativeInvoiceId] : []))
+  return [bookingId, ...procedureIds, ...[...lineIds].sort(), ...invoiceIds, ...eventIds, ...notes.map((c) => c.id), ...negativeIds]
+}
+
+/**
+ * A Booking's History entries (catch-up Phase 39 review: a credit shows on the
+ * Booking it credits): the audit entries of every id `bookingHistoryEntityIds`
+ * names, less `AUDIT_VIEWER_EXCLUDED` (money moving is recorded in Xero, not
+ * History), newest first. The History sheet adds the List's change sets.
+ */
+export function bookingHistoryEntries(state: Pick<AppState, 'schedule' | 'billing' | 'audit'>, bookingId: string): AuditEntry[] {
+  const ids = new Set(bookingHistoryEntityIds(state, bookingId))
+  return sortAuditNewestFirst(auditViewerEntries(state.audit.filter((a) => ids.has(a.entityId))))
+}
+
+// ---------------------------------------------------------------------------
+// Session 2: the rebill from a copy (US-08.6.6)
+// ---------------------------------------------------------------------------
+
+/** An invoice's stored lines in the order the document prints them. */
+function linesOf(state: Pick<AppState, 'billing'>, invoiceId: string) {
+  return Object.values(state.billing.invoiceLines)
+    .filter((l) => l.invoiceId === invoiceId)
+    .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
+}
+
+/**
+ * The office's "Start from a copy of the original's lines" (US-08.6.6): a
+ * replacement card's initial value, ready for `submitCredit`'s
+ * `replacements`: `rebillDraftFrom`'s lines and "same as" party, dated the
+ * later of today and the List date (38b's default). Undefined for an unknown
+ * invoice. The copy is the office's only; the anaesthetist types new invoices.
+ */
+export function rebillReplacementFor(state: Pick<AppState, 'schedule' | 'billing' | 'clock'>, invoiceId: string): CreditReplacementInput | undefined {
+  const original = state.billing.invoices[invoiceId]
+  if (original === undefined) return undefined
+  const booking = state.schedule.bookings[original.bookingId]
+  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
+  const draft = rebillDraftFrom(original, linesOf(state, invoiceId))
+  return { occurredOnISO: defaultEventDate(list?.dateISO ?? state.clock.todayISO, state.clock.todayISO), party: draft.party, lines: draft.lines }
+}
+
+// ---------------------------------------------------------------------------
+// Session 2: split a combined Procedure (US-08.6.4, OQ-53, OQ-77)
+// ---------------------------------------------------------------------------
+
+/**
+ * The invoice a split of this Procedure credits: its first live standard
+ * invoice by number (a split Procedure's per-party invoices each split on
+ * their own: the sheet passes the one it opened from), else its first with a
+ * credit waiting, else its first credited one (so the guard says which). A
+ * credited invoice's live replacements stand in for it (`liveInvoicesForProcedure`).
+ * Labelled reading (no combination marker exists, OQ-53): any live, post-paid
+ * standard invoice of an invoiced Procedure can be split.
+ */
+export function splitTargetFor(state: Pick<AppState, 'schedule' | 'billing'>, procedureId: string): Invoice | undefined {
+  const standard = Object.values(state.billing.invoices)
+    .filter((i) => i.kind === 'standard' && (i.procedureIds ?? []).includes(procedureId))
+    .sort(byNumber)
+  // A credited invoice's live replacements stand in for it (the `rebillOf` lineage), on every Procedure it covered.
+  const live = liveInvoicesForProcedure(state, procedureId)
+  return live.find((i) => invoiceStanding(state, i.id) === 'live') ?? live.find((i) => invoiceStanding(state, i.id) === 'creditPending') ?? standard[0]
+}
+
+/**
+ * Why this actor may not split this Procedure now (the **Split into
+ * additional invoices** button's disabled sentence), or null. Office only
+ * (`splitOfficeOnly`); before the invoice exists a split is a normal admin
+ * edit (`notYetInvoiced`, OQ-77 part 3, D41: no credit, no path here); a
+ * prepaid Procedure's only invoice is its prepayment invoice
+ * (`prepaidNotSplittable`, Phase 41); then every `creditRefusalFor` refusal
+ * on the target invoice (`alreadyCredited`, `correctionPending`, no pair).
+ * The two-component and equal-total rules are the form's, re-checked by
+ * `submitCredit`.
+ */
+export function canSplitCombined(state: Pick<AppState, 'schedule' | 'billing'>, procedureId: string, actor: EventActor): { code: string; message: string } | null {
+  if (actor.role !== 'office') return { code: 'splitOfficeOnly', message: CREDIT_MESSAGES.splitOfficeOnly }
+  const procedure = state.schedule.procedures[procedureId]
+  const booking = procedure !== undefined ? state.schedule.bookings[procedure.bookingId] : undefined
+  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
+  if (procedure === undefined || booking === undefined || list === undefined) return { code: 'notFound', message: SPLIT_MESSAGES.procedureNotFound }
+  const target = list.state === 'AUTHORISED' ? splitTargetFor(state, procedureId) : undefined
+  if (target === undefined) {
+    const prepaid = Object.values(state.billing.invoices).some((i) => i.kind === 'prePayment' && (i.procedureIds ?? []).includes(procedureId))
+    return prepaid ? { code: 'prepaidNotSplittable', message: SPLIT_MESSAGES.prepaidNotSplittable } : { code: 'notYetInvoiced', message: SPLIT_MESSAGES.notYetInvoiced }
+  }
+  return creditRefusalFor(state, actor, target.id, 'split', { procedureId })
+}
+
+/**
+ * Split a combined Procedure after its invoice is sent (US-08.6.4): a thin
+ * wrapper of `submitCredit` with `cause: 'split'`, behind `canSplitCombined`.
+ * At least two components, each its own free-form additional invoice with its
+ * own party, adding up to the credited invoice before GST (`splitTotalCheck`).
+ * The invoice defaults to `splitTargetFor`. Raises nothing: the review step
+ * and the next run issue the credit and its components together; the run
+ * audits `invoice.split`.
+ */
+export function splitCombinedProcedure(
+  api: AppStoreApi,
+  actor: Actor,
+  input: Omit<CreditInput, 'cause' | 'invoiceId' | 'procedureId'> & { procedureId: string; invoiceId?: InvoiceId },
+): Outcome<{ creditEventId: string; replacementEventIds: string[] }> {
+  const state = api.getState()
+  const refused = canSplitCombined(state, input.procedureId, eventActor(actor))
+  if (refused !== null) return refuse(refused.code, refused.message)
+  const invoiceId = input.invoiceId ?? splitTargetFor(state, input.procedureId)!.id
+  return submitCredit(api, actor, { ...input, invoiceId, cause: 'split' })
+}
+
+// ---------------------------------------------------------------------------
+// Session 2: the Credit note option on a Procedure (US-08.6.5)
+// ---------------------------------------------------------------------------
+
+/**
+ * Whether the **Credit note** entry shows on a Procedure for this actor, and
+ * how: `hidden` on a colleague's Procedure (the store refuses it anyway) and
+ * on one not invoiced yet; `hidden` with the caption "Crediting a prepayment
+ * invoice is not in this prototype yet." when the Procedure's only invoice is
+ * its prepayment invoice (Phase 41); `disabled` with its sentence while a
+ * credit waits or once the invoice is credited (and for a no-charge invoice
+ * or one with no ledger pair); else `enabled` on the invoice it credits (the
+ * Procedure's live invoice, a rebill once the original is credited), with
+ * `invoiceIds`: every live invoice of the Procedure this actor may credit now,
+ * by number (22's fee split bills two parties, so the UI lets the user pick).
+ * Where the first live invoice waits for a credit but another can still be
+ * credited, `enabled` on that other one.
+ */
+export type CreditOption =
+  | { kind: 'hidden'; caption?: string }
+  | { kind: 'disabled'; invoiceId: InvoiceId; reason: string }
+  | { kind: 'enabled'; invoiceId: InvoiceId; invoiceIds: InvoiceId[] }
+
+export function creditOptionFor(state: Pick<AppState, 'schedule' | 'billing'>, actor: EventActor, procedureId: string): CreditOption {
+  const procedure = state.schedule.procedures[procedureId]
+  const booking = procedure !== undefined ? state.schedule.bookings[procedure.bookingId] : undefined
+  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
+  if (procedure === undefined || booking === undefined || list === undefined) return { kind: 'hidden' }
+  if (!mayRaise('credit', actor, procedureOwner(state, procedureId))) return { kind: 'hidden' }
+  const onProcedure = Object.values(state.billing.invoices).filter((i) => (i.procedureIds ?? []).includes(procedureId))
+  if (onProcedure.length === 0) return { kind: 'hidden' }
+  if (onProcedure.every((i) => i.kind === 'prePayment')) return { kind: 'hidden', caption: CREDIT_MESSAGES.prepaymentNotCreditable }
+  if (list.state !== 'AUTHORISED') return { kind: 'hidden' }
+  const live = liveInvoiceForProcedure(state, procedureId)
+  // Credited with no live replacement: the original, disabled as credited.
+  const target = live ?? splitTargetFor(state, procedureId)
+  if (target === undefined) return { kind: 'hidden' }
+  if (target.kind === 'prePayment') return { kind: 'hidden', caption: CREDIT_MESSAGES.prepaymentNotCreditable }
+  const refused = creditRefusalFor(state, actor, target.id, 'correction', { procedureId })
+  if (refused?.code === 'notOwnProcedure') return { kind: 'hidden' }
+  // Every live invoice this actor may credit now, by number (more than one where 22's fee split billed two parties).
+  const creditable = liveInvoicesForProcedure(state, procedureId)
+    .filter((i) => creditRefusalFor(state, actor, i.id, 'correction', { procedureId }) === null)
+    .map((i) => i.id)
+  if (refused === null) return { kind: 'enabled', invoiceId: target.id, invoiceIds: creditable }
+  // The first live invoice waits for its credit and another can still be credited: offer that one.
+  if (creditable.length > 0) return { kind: 'enabled', invoiceId: creditable[0]!, invoiceIds: creditable }
+  return { kind: 'disabled', invoiceId: target.id, reason: refused.message }
 }

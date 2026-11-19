@@ -20,7 +20,7 @@ import {
 import { SEED_LIST_IDS, SEED_MARKERS } from '../../domain/seed'
 import { rvgModifierByCode } from '../../domain/billing/modifiers'
 import { demoClockShortcuts } from '../../shared/demoClockShortcuts'
-import { BILLING_MONITOR_SCREEN, DEMO_TRIGGERS, DemoTriggerBadge, type DemoTrigger } from '../../shared/demoTriggers'
+import { BILLING_MONITOR_SCREEN, DEMO_TRIGGERS, DemoTriggerBadge, groupTriggersByScreen } from '../../shared/demoTriggers'
 import { DemoBadge } from '../../shared'
 import { DRAFT_LIST, DRAFT_LISTS } from '../../shared/scheduleTerms'
 import { APP_CONFIG } from '../../shell/appConfig'
@@ -289,7 +289,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset. Walk the exceptions: (1) Pre-payment from a prepaid Contract: in Admin Day, Tue 21 Jul, Annette Riley is on the Pre-payments card and her warning on the To-do card; open her Booking (Rhinoplasty on Dr Souter\'s prepaid Contract, $1,200.00), go to Invoices, Approve and send (the payable credits the AA Holding account), then Payment received · half; on the Billing monitor the AA Holding account card holds it beside Priya Nair\'s $1,380.00, and nothing is paid to the anaesthetist yet; on Mobile, Souter Fri 24 AM, Annette Riley, see the triangle and the prepaid panel, Mark complete and submit (no block, no confirm step), then clear her mild warning from the Admin to-do list; (2) in Admin open Sarah Mitchell\'s Booking on Dr Sharma\'s Tue 14 AM List, Demo actions, Stage post-op scenario, then Create additional invoice on Sarah Mitchell\'s Procedure, approve it in Review and run the next billing run; (3) Admin Billing monitor, Demo actions, Trigger billing failure: each Booking bills from what was locked at authorise, so the failure is outside the lock, Losa Tuilagi\'s Xero hand-off; she is held back while Hemi Walker\'s Booking bills and the List is not failed; her invoice waits for Xero in the sync queue, so use Retry now on its queue row (no Contract changes); (4) Admin, Intake, Matching, Demo actions, Import hospital file, Southern Cross: under Unmatched, Tama Henare\'s row has no NHI, so a stub stands on Dr Souter\'s Tue 28 Jul PM List; type NHI ZQA1008 and Add NHI, and the Booking takes the stub\'s place, then Create a List in a session for Grace Whitu\'s row; (5) open Hemi Walker\'s St George\'s clean-sibling invoice, Demo actions, Payment received · half, then the Billing monitor\'s Run payables in Xero (badged Simulated Xero): Xero pays exactly the amount received and the engine records it from the bill-paid webhook; pay the balance and run again. (6) late, on Admin Day, Demo actions, Move to 2 days before procedure, choose Annette Riley: the clock jumps to Wed 22 Jul and her warning turns strong and re-opens; (7) held, then transferred: on Mobile, Mark complete and submit Souter\'s Fri 24 PM List, then Authorise for billing on Admin Review: the AA Holding account card shows Nair\'s $1,380.00 transferred to Dr Melanie Souter, the Xero sim shows journal MJ-0001 on XRB0, and Run payables in Xero pays her $1,380.00.',
+          'Reset. Walk the exceptions: (1) Pre-payment from a prepaid Contract: in Admin Day, Tue 21 Jul, Annette Riley is on the Pre-payments card and her warning on the To-do card; open her Booking (Rhinoplasty on Dr Souter\'s prepaid Contract, $1,200.00), go to Invoices, Approve and send (the payable credits the AA Holding account), then Payment received · half; on the Billing monitor the AA Holding account card holds it beside Priya Nair\'s $1,380.00, and nothing is paid to the anaesthetist yet; on Mobile, Souter Fri 24 AM, Annette Riley, see the triangle and the prepaid panel, Mark complete and submit (no block, no confirm step), then clear her mild warning from the Admin to-do list; (2) in Admin open Sarah Mitchell\'s Booking on Dr Sharma\'s Tue 14 AM List, Demo actions, Stage post-op scenario, then Create additional invoice on Sarah Mitchell\'s Procedure, approve it in Review and run the next billing run, then Credit in full and rebill on Sarah Mitchell\'s original, approve the credit in Review and run the next billing run again; (3) Admin Billing monitor, Demo actions, Trigger billing failure: each Booking bills from what was locked at authorise, so the failure is outside the lock, Losa Tuilagi\'s Xero hand-off; she is held back while Hemi Walker\'s Booking bills and the List is not failed; her invoice waits for Xero in the sync queue, so use Retry now on its queue row (no Contract changes); (4) Admin, Intake, Matching, Demo actions, Import hospital file, Southern Cross: under Unmatched, Tama Henare\'s row has no NHI, so a stub stands on Dr Souter\'s Tue 28 Jul PM List; type NHI ZQA1008 and Add NHI, and the Booking takes the stub\'s place, then Create a List in a session for Grace Whitu\'s row; (5) open Hemi Walker\'s St George\'s clean-sibling invoice, Demo actions, Payment received · half, then the Billing monitor\'s Run payables in Xero (badged Simulated Xero): Xero pays exactly the amount received and the engine records it from the bill-paid webhook; pay the balance and run again. (6) late, on Admin Day, Demo actions, Move to 2 days before procedure, choose Annette Riley: the clock jumps to Wed 22 Jul and her warning turns strong and re-opens; (7) held, then transferred: on Mobile, Mark complete and submit Souter\'s Fri 24 PM List, then Authorise for billing on Admin Review: the AA Holding account card shows Nair\'s $1,380.00 transferred to Dr Melanie Souter, the Xero sim shows journal MJ-0001 on XRB0, and Run payables in Xero pays her $1,380.00.',
         nav: [
           { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
           { label: 'Go to Billing monitor', path: '/admin/billing' },
@@ -428,17 +428,6 @@ function ScenarioJumps() {
 
 const SURFACE_LABEL = { bar: 'Harness bar', pwa: 'Installed PWA' } as const
 
-/** Group the registry by `screen`, keeping registry order within and across groups. */
-function groupByScreen(triggers: readonly DemoTrigger[]): { screen: string; entries: DemoTrigger[] }[] {
-  const groups: { screen: string; entries: DemoTrigger[] }[] = []
-  for (const t of triggers) {
-    const g = groups.find((x) => x.screen === t.screen)
-    if (g === undefined) groups.push({ screen: t.screen, entries: [t] })
-    else g.entries.push(t)
-  }
-  return groups
-}
-
 /**
  * The index of every registered demo action, under its screen, with where it
  * shows and an "Open screen" link to a place it is visible. Nothing is fired
@@ -447,7 +436,7 @@ function groupByScreen(triggers: readonly DemoTrigger[]): { screen: string; entr
 function DemoActionsIndex() {
   const navigate = useNavigate()
   const state = useAppStore()
-  const groups = useMemo(() => groupByScreen(DEMO_TRIGGERS), [])
+  const groups = useMemo(() => groupTriggersByScreen(DEMO_TRIGGERS), [])
 
   return (
     <ControlCard icon={ListChecks} eyebrow="Index" title="Where each demo action lives" shot="control-demo-index">

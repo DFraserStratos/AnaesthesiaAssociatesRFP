@@ -1,6 +1,551 @@
 {
   "id": "US-08.6.2",
-  "status": "absent",
-  "absentReason": "No credit note, payable reversal or re-issue flow. Searched the prototype source for credit note, reverse and re-issue; none exist. Not built yet: catch-up Phase 39 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "credit-rebill",
+      "app": "admin",
+      "caption": "Credit in full, then rebill",
+      "start": "/admin/invoices",
+      "setup": [
+        {
+          "goto": "/admin/review/L-41267-2026-07-14-AM"
+        },
+        {
+          "trigger": "stage-post-op"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "state": "rail",
+          "caption": "Correct this invoice: the invoice is never edited, it is credited in full and rebilled",
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Sarah Mitchell\") >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-correct]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-correct]"
+          ]
+        },
+        {
+          "state": "sheet",
+          "caption": "Credit in full and rebill: the credit note reverses the whole invoice, and the new invoice starts from the original's lines",
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Sarah Mitchell\") >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-correct]"
+            },
+            {
+              "click": "[data-shot=invoice-correct] [data-shot=credit-rebill-button]"
+            },
+            {
+              "wait": "[data-shot=credit-sheet]"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-reason-chip]:has-text(\"Wrong amount\")"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=credit-sheet]"
+          ]
+        },
+        {
+          "state": "trail",
+          "caption": "The payable is reversed by a negative invoice to the anaesthetist: the trail reads debit, credit, contra, new debit",
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Sarah Mitchell\") >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-correct]"
+            },
+            {
+              "click": "[data-shot=invoice-correct] [data-shot=credit-rebill-button]"
+            },
+            {
+              "wait": "[data-shot=credit-sheet]"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-reason-chip]:has-text(\"Wrong amount\")"
+            },
+            {
+              "scroll": "[data-shot=credit-trail]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=credit-trail]"
+          ]
+        },
+        {
+          "state": "credit-note",
+          "caption": "Reviewed and issued in the next billing run: the credit note, with the negative invoice to the anaesthetist that reverses the payable",
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Sarah Mitchell\") >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-correct]"
+            },
+            {
+              "click": "[data-shot=invoice-correct] [data-shot=credit-rebill-button]"
+            },
+            {
+              "wait": "[data-shot=credit-sheet]"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-reason-chip]:has-text(\"Wrong amount\")"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-submit]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr:has([data-shot=review-credit-row]) >> nth=0"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            },
+            {
+              "click": "[data-shot=event-review-approve]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "trigger": "run-next-billing-run"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": "[data-shot=invoice-list-standing]"
+            },
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has([data-shot=invoice-list-standing][data-standing=credited]) >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-credited-banner]"
+            },
+            {
+              "click": "[data-shot=invoice-credited-banner] a:has-text(\"CN-2026-\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=credit-note-document]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=negative-invoice-card]"
+          ]
+        },
+        {
+          "state": "credited",
+          "caption": "The original is never edited: it reads Credited, linked to its credit note and the new invoice",
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Sarah Mitchell\") >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-correct]"
+            },
+            {
+              "click": "[data-shot=invoice-correct] [data-shot=credit-rebill-button]"
+            },
+            {
+              "wait": "[data-shot=credit-sheet]"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-reason-chip]:has-text(\"Wrong amount\")"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-submit]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr:has([data-shot=review-credit-row]) >> nth=0"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            },
+            {
+              "click": "[data-shot=event-review-approve]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "trigger": "run-next-billing-run"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": "[data-shot=invoice-list-standing]"
+            },
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has([data-shot=invoice-list-standing][data-standing=credited]) >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-credited-banner]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-credited-banner]"
+          ]
+        },
+        {
+          "state": "new-invoice",
+          "caption": "The new corrected invoice has its own number and links back to the original",
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Sarah Mitchell\") >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-correct]"
+            },
+            {
+              "click": "[data-shot=invoice-correct] [data-shot=credit-rebill-button]"
+            },
+            {
+              "wait": "[data-shot=credit-sheet]"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-reason-chip]:has-text(\"Wrong amount\")"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-submit]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr:has([data-shot=review-credit-row]) >> nth=0"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            },
+            {
+              "click": "[data-shot=event-review-approve]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "trigger": "run-next-billing-run"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": "[data-shot=invoice-list-standing]"
+            },
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has([data-shot=invoice-list-standing][data-standing=credited]) >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-credited-banner]"
+            },
+            {
+              "click": "[data-shot=invoice-credited-banner] a:has-text(\"AA-2026-\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-rebill-of]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-rebill-of]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "refund-after-payout",
+      "app": "admin",
+      "caption": "Credit after the anaesthetist was paid: the negative invoice nets in their next payment run",
+      "start": "/admin/invoices",
+      "setup": [
+        {
+          "goto": "/admin/review/L-41267-2026-07-14-AM"
+        },
+        {
+          "trigger": "stage-post-op"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "state": "sheet",
+          "caption": "Paid in full and paid out: the negative invoice to the anaesthetist nets in their next payment run",
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Sarah Mitchell\") >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-correct]"
+            },
+            {
+              "trigger": "stage-refund-after-payout"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=invoice-correct] [data-shot=credit-rebill-button]"
+            },
+            {
+              "wait": "[data-shot=credit-sheet]"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-reason-chip]:has-text(\"Paid twice\")"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=credit-sheet] [data-shot=credit-money-state]"
+          ]
+        },
+        {
+          "state": "credit-note",
+          "caption": "The credit note's negative invoice, to net in the anaesthetist's next payment run",
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Sarah Mitchell\") >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-correct]"
+            },
+            {
+              "trigger": "stage-refund-after-payout"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=invoice-correct] [data-shot=credit-rebill-button]"
+            },
+            {
+              "wait": "[data-shot=credit-sheet]"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-reason-chip]:has-text(\"Wrong amount\")"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-submit]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr:has([data-shot=review-credit-row]) >> nth=0"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            },
+            {
+              "click": "[data-shot=event-review-approve]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "trigger": "run-next-billing-run"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": "[data-shot=invoice-list-standing]"
+            },
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has([data-shot=invoice-list-standing][data-standing=credited]) >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-credited-banner]"
+            },
+            {
+              "click": "[data-shot=invoice-credited-banner] a:has-text(\"CN-2026-\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=credit-note-document]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=negative-invoice-card]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "xero-credit-note",
+      "app": "simulator",
+      "caption": "Both sides move in Xero: a credit note against the receivable and one against the payable, with the new pair",
+      "start": "/admin/invoices",
+      "setup": [
+        {
+          "goto": "/admin/review/L-41267-2026-07-14-AM"
+        },
+        {
+          "trigger": "stage-post-op"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Sarah Mitchell\") >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-correct]"
+            },
+            {
+              "click": "[data-shot=invoice-correct] [data-shot=credit-rebill-button]"
+            },
+            {
+              "wait": "[data-shot=credit-sheet]"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-reason-chip]:has-text(\"Wrong amount\")"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-submit]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr:has([data-shot=review-credit-row]) >> nth=0"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            },
+            {
+              "click": "[data-shot=event-review-approve]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "trigger": "run-next-billing-run"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": "[data-shot=invoice-list-standing]"
+            },
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has([data-shot=invoice-list-standing][data-standing=credited]) >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-credited-banner]"
+            },
+            {
+              "goto": "/demo/xero/invoices"
+            },
+            {
+              "wait": "[data-testid^=xero-invoice-row-]"
+            },
+            {
+              "click": "tr[data-testid^=xero-invoice-row-]:has-text(\"Credited\") >> nth=0 >> a >> nth=0"
+            },
+            {
+              "wait": "[data-shot=xero-credit-note]"
+            },
+            {
+              "scroll": "[data-shot=xero-credit-note]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=xero-credit-note]"
+          ]
+        }
+      ]
+    }
+  ]
 }

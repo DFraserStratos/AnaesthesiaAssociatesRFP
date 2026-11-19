@@ -430,8 +430,10 @@ export const PERSIST_KEY = 'aa-demo'
  *  v67: catch-up Phase 39, credit notes: `billing.creditNotes`, `billing.negativeInvoices` and `xero.creditNotes`
  *  (empty in the seed; counters `creditNote`, `creditNoteNumber`, `negativeInvoice`, `xeroCreditNote`), the `credit`
  *  event kind, the `rebillOf` lineage, the legs' `creditedAmount` / `reversedAmount` and the pair's `credit`, the
- *  `credited` / `voided` Xero statuses and the `correction` queue kind. Reseeds on load. */
-export const PERSIST_VERSION = 67
+ *  `credited` / `voided` Xero statuses and the `correction` queue kind. Reseeds on load.
+ *  v68: catch-up Phase 39 session 2, the "Stage combined procedure" trigger's dedicated patient (`PAT_39.combined`,
+ *  PT0173 Lorraine Petrie, appended after 25a's; counter `patient` 174). Reseeds on load. */
+export const PERSIST_VERSION = 68
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {}, creditNotes: {}, negativeInvoices: {} }

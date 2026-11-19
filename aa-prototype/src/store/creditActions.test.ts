@@ -40,6 +40,7 @@ import {
   type CreditInput,
 } from './creditActions'
 import type { Actor } from './mutate'
+import { outstandingPayableRowsFor, outstandingTotalFor } from './selectors'
 import { ANAE, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
 import { projectedListId } from '../domain/slots'
 import { bctisFor } from '../domain/billing/bcti'
@@ -289,6 +290,17 @@ describe('the rules', () => {
     expect(note.delivery).toMatchObject({ method: 'email', status: 'sent', sends: [{ to: 'mei.chen@example.com' }] })
     expect(actions()).toContain('credit.partyChanged')
     expectInBalance()
+  })
+
+  it("a credited invoice leaves the anaesthetist's Outstanding and its rebill joins it (web Accounts reads the ledger)", () => {
+    const { original } = stageMitchell()
+    const has = (invoiceId: string) => outstandingPayableRowsFor(api.getState(), ANAE.sharma).some((r) => r.invoiceId === invoiceId)
+    expect(has(original.id)).toBe(true)
+    const { run } = issue(OFFICE, creditInput(original.id, { replacements: [rebill(150)] }))
+    const rows = outstandingPayableRowsFor(api.getState(), ANAE.sharma)
+    expect(has(original.id)).toBe(false)
+    expect(has(run.invoiceIds[0]!)).toBe(true)
+    expect(outstandingTotalFor(rows)).toBe(anaesthetistLedgerPosition(api.getState(), ANAE.sharma).owedToThem)
   })
 
   it('a credit with zero replacements issues the credit only, and the Procedure then has no live invoice', () => {

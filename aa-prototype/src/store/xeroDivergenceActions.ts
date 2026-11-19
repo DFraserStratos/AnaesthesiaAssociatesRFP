@@ -33,6 +33,7 @@ export const DIVERGENCE_OUTCOMES: readonly { id: NonNullable<XeroDivergence['res
  */
 function engineReceivables(state: Pick<AppState, 'billing' | 'xero'>): EngineReceivable[] {
   const recorded = new Set(Object.values(state.billing.receipts).map((r) => r.idempotencyKey))
+  const disbursed = new Set(Object.values(state.billing.disbursements).map((d) => d.idempotencyKey))
   const out: EngineReceivable[] = []
   for (const pair of Object.values(state.billing.ledger)) {
     if (!isBookingPair(pair) || pair.receivable.xeroAccRecId === undefined) continue
@@ -43,7 +44,16 @@ function engineReceivables(state: Pick<AppState, 'billing' | 'xero'>): EngineRec
       continue
     }
     const unrecorded = Object.values(state.xero.payments).filter((p) => p.accRecId === accRecId && !recorded.has(p.idempotencyKey)).reduce((n, p) => n + toCents(p.amount), 0)
-    out.push({ ...base, creditedByEngine: true, ...(unrecorded > 0 ? { paidInXeroAfterCredit: unrecorded / 100 } : {}) })
+    // A bill Xero paid on its ACCPAY that the engine never recorded (the reversed payable takes no disbursement; catch-up Phase 39 review).
+    const accPayId = pair.payable?.xeroAccPayId
+    const unrecordedOut =
+      accPayId === undefined ? 0 : Object.values(state.xero.disbursements).filter((d) => d.accPayId === accPayId && !disbursed.has(d.idempotencyKey)).reduce((n, d) => n + toCents(d.amount), 0)
+    out.push({
+      ...base,
+      creditedByEngine: true,
+      ...(unrecorded > 0 ? { paidInXeroAfterCredit: unrecorded / 100 } : {}),
+      ...(unrecordedOut > 0 ? { paidOutInXeroAfterCredit: unrecordedOut / 100 } : {}),
+    })
   }
   return out
 }
@@ -62,7 +72,7 @@ export function flagXeroDivergences(api: AppStoreApi): number {
       const allocated = allocateId(counters, 'xeroDivergence')
       counters = allocated.counters
       flags[allocated.id] = { id: allocated.id, ...f, detectedAtISO, status: 'open' }
-      metas.push({ entityType: 'ledgerPair', entityId: f.pairId, action: 'xero.divergenceFlagged', after: { divergenceId: allocated.id, kind: f.kind, accRecId: f.accRecId, xeroTotal: f.xeroShows.total, engineAmount: f.engineHolds.amount } })
+      metas.push({ entityType: 'ledgerPair', entityId: f.pairId, action: 'xero.divergenceFlagged', after: { divergenceId: allocated.id, kind: f.kind, ...(f.leg !== undefined ? { leg: f.leg } : {}), accRecId: f.accRecId, xeroTotal: f.xeroShows.total, engineAmount: f.engineHolds.amount } })
     }
     return { billing: { ...s.billing, xeroDivergences: flags }, counters }
   })

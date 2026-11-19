@@ -13,6 +13,7 @@ import {
   payablesDue,
   prepaidLeftOffText,
   retryBillingException,
+  retryXeroItemNow,
   startsExpanded,
   useAppStore,
   DEFAULT_MONITOR_SORT,
@@ -34,7 +35,9 @@ import { HoldingAccountPanel } from '../components/HoldingAccountPanel'
 import { approvedEventsAwaitingRun } from '../../../store/procedureEventActions'
 import { freeFormSubtotal } from '../../../domain/billing/additionalInvoice'
 import { creditDetailOf, eventLines } from '../../../domain/billing/procedureEvent'
-import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, XERO_FLAG_LABEL } from '../../../shared/procedureEventCopy'
+import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, XERO_FLAG_COPY, XERO_FLAG_LABEL, XERO_FLAG_PAYOUT_LABEL, xeroFlagText } from '../../../shared/procedureEventCopy'
+import { correctionQueuedFor } from '../../../store/ledgerSelectors'
+import type { XeroQueueItem } from '../../../domain/types'
 import { PayablesPanel, XeroConnectionLine, XeroDivergencePanel, XeroQueuePanel } from '../components/XeroPanels'
 
 interface BillingMonitorScreenProps {
@@ -274,10 +277,49 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
             focusListId={focusListId}
             onOpenInReview={openInReview}
             onRetry={retry}
+            actor={actor}
           />
         ))
       )}
     </div>
+  )
+}
+
+/** A Booking's credit whose Xero correction waits in the sync queue after a failed attempt (catch-up Phase 39), if any. */
+function useFailedCorrection(bookingId: string): { item: XeroQueueItem; creditNoteNumber: string } | undefined {
+  const billing = useAppStore((s) => s.billing)
+  return useMemo(() => {
+    for (const cn of Object.values(billing.creditNotes).sort((a, b) => a.id.localeCompare(b.id))) {
+      if (cn.bookingId !== bookingId) continue
+      const item = correctionQueuedFor({ billing }, cn.id)
+      if (item !== undefined) return { item, creditNoteNumber: cn.creditNoteNumber }
+    }
+    return undefined
+  }, [billing, bookingId])
+}
+
+/**
+ * "Resolve and retry" on a Booking whose Xero correction failed (catch-up
+ * Phase 39; US-08.6.2 "Both sides move"): retries the correction's queue item
+ * now (`retryXeroItemNow`), which reverses the original's Xero records and
+ * creates the new pairs together, or sets the next try.
+ */
+export function CorrectionRetry({ bookingId, actor }: { bookingId: string; actor: Actor }) {
+  const failed = useFailedCorrection(bookingId)
+  const [error, setError] = useState<string | null>(null)
+  if (failed === undefined) return null
+  function retryNow() {
+    if (failed === undefined) return
+    const out = retryXeroItemNow(useAppStore, actor, failed.item.id)
+    setError(out.ok ? null : out.message)
+  }
+  return (
+    <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+      <Button variant="primary" size="compact" onClick={retryNow} shot={`billing-correction-retry-${bookingId}`}>
+        {CREDIT_LABELS.resolveAndRetry}
+      </Button>
+      <FormError message={error} />
+    </span>
   )
 }
 
@@ -309,6 +351,7 @@ function AnaesthetistGroup({
   focusListId,
   onOpenInReview,
   onRetry,
+  actor,
 }: {
   group: MonitorGroup
   folded: boolean
@@ -321,6 +364,8 @@ function AnaesthetistGroup({
   focusListId: string | null
   onOpenInReview: (listId: string) => void
   onRetry: (row: MonitorBookingRow) => void
+  /** The office, for a failed Xero correction's Resolve and retry (catch-up Phase 39). */
+  actor: Actor
 }) {
   const headingId = `billing-group-${group.anaesthetistId}-name`
   const allOpen = group.authorised.length > 0 && group.authorised.every(isOpen)
@@ -387,7 +432,7 @@ function AnaesthetistGroup({
             </tbody>
           )}
           {group.authorised.map((row) => (
-            <AuthorisedRows key={row.listId} row={row} open={isOpen(row)} focused={focusListId === row.listId} onToggle={() => onToggle(row)} onRetry={onRetry} />
+            <AuthorisedRows key={row.listId} row={row} open={isOpen(row)} focused={focusListId === row.listId} onToggle={() => onToggle(row)} onRetry={onRetry} actor={actor} />
           ))}
         </TableShell>
       )}
@@ -452,7 +497,7 @@ function moneyCounts(row: MonitorAuthorisedRow): { paid: number; disbursed: numb
   return { billed: billed.length, paid: billed.filter((b) => b.paidInAtISO !== undefined).length, disbursed: billed.filter((b) => b.disbursedAtISO !== undefined).length }
 }
 
-function AuthorisedRows({ row, open, focused, onToggle, onRetry }: { row: MonitorAuthorisedRow; open: boolean; focused: boolean; onToggle: () => void; onRetry: (r: MonitorBookingRow) => void }) {
+function AuthorisedRows({ row, open, focused, onToggle, onRetry, actor }: { row: MonitorAuthorisedRow; open: boolean; focused: boolean; onToggle: () => void; onRetry: (r: MonitorBookingRow) => void; actor: Actor }) {
   const money = moneyCounts(row)
   const detailId = `billing-detail-${row.listId}`
   return (
@@ -484,7 +529,7 @@ function AuthorisedRows({ row, open, focused, onToggle, onRetry }: { row: Monito
       {open && (
         <tr id={detailId}>
           <Td colSpan={COLUMNS} style={{ background: neutral.bg, padding: '4px 12px 14px 40px' }}>
-            <PipelineDetail row={row} onRetry={onRetry} />
+            <PipelineDetail row={row} onRetry={onRetry} actor={actor} />
           </Td>
         </tr>
       )}
@@ -493,7 +538,7 @@ function AuthorisedRows({ row, open, focused, onToggle, onRetry }: { row: Monito
 }
 
 /** Today's detail, inside an expanded List: the stage strip, the no-address line and the per-Booking table. */
-function PipelineDetail({ row, onRetry }: { row: MonitorAuthorisedRow; onRetry: (r: MonitorBookingRow) => void }) {
+function PipelineDetail({ row, onRetry, actor }: { row: MonitorAuthorisedRow; onRetry: (r: MonitorBookingRow) => void; actor: Actor }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <ol aria-label="Billing pipeline" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', listStyle: 'none', margin: 0, padding: 0 }}>
@@ -556,6 +601,8 @@ function PipelineDetail({ row, onRetry }: { row: MonitorAuthorisedRow; onRetry: 
                     Retry
                   </Button>
                 )}
+                {/* A failed Xero correction retries on any row, a failed billing row too. */}
+                <CorrectionRetry bookingId={bookingRow.bookingId} actor={actor} />
               </Td>
             </tr>
           ))}
@@ -568,22 +615,32 @@ function PipelineDetail({ row, onRetry }: { row: MonitorAuthorisedRow; onRetry: 
 function BookingDetail({ row }: { row: MonitorBookingRow }) {
   // A Booking's additional invoices (catch-up Phase 38b): each its own invoice, linked to the original.
   const additionalCount = useAppStore((s) => Object.values(s.billing.invoices).filter((i) => i.kind === 'additional' && i.bookingId === row.bookingId).length)
+  // A credit's Xero correction that failed and waits in the sync queue (catch-up Phase 39).
+  const correction = useFailedCorrection(row.bookingId)
+  // A paidAfterCredit flag on the payable reads as a payout (its divergence says which leg).
+  const flagLeg = useAppStore((s) => (row.xeroFlag !== undefined ? s.billing.xeroDivergences[row.xeroFlag.divergenceId]?.leg : undefined))
+  const correctionLine = correction !== undefined && (
+    <span data-shot="monitor-correction-failed" data-credit-note={correction.creditNoteNumber} style={{ color: semantic.warning.onTint }}>
+      {`${CREDIT_LABELS.correctionFailed} · ${correction.creditNoteNumber} · ${CREDIT_LABELS.correctionAttempt(correction.item.attempts)} · ${CREDIT_LABELS.nextTry} `}
+      <span className="mono">{hhmm(correction.item.nextAttemptAtISO)}</span>
+      {correction.item.lastError !== undefined ? `. ${correction.item.lastError}` : ''}
+    </span>
+  )
   if (row.status === 'failed') {
     return (
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <span style={{ color: semantic.error.onTint }}>{row.failure?.message ?? 'Needs manual review.'}</span>
         <span data-shot="monitor-retry-note" style={{ fontSize: 12, color: neutral.slate }}>{RETRY_FROM_LOCK_NOTE}</span>
+        {/* A failed Xero correction on the same Booking is said too: its Resolve and retry sits beside Retry. */}
+        {correctionLine}
       </span>
     )
   }
+  if (correctionLine !== false) return correctionLine
   if (row.xeroFlag !== undefined) {
     return (
       <span data-shot="monitor-xero-flag" style={{ color: semantic.error.onTint }}>
-        {row.xeroFlag.kind === 'voidedInXero'
-          ? 'Voided in Xero · flagged for the office.'
-          : row.xeroFlag.kind === 'paidAfterCredit'
-            ? `${XERO_FLAG_LABEL.paidAfterCredit} · ${formatCurrency(row.xeroFlag.xeroTotal)} · flagged for the office.`
-            : `Amended in Xero · total ${formatCurrency(row.xeroFlag.xeroTotal)} · flagged for the office.`}
+        {`${xeroFlagText(row.xeroFlag.kind, row.xeroFlag.xeroTotal, undefined, flagLeg)} · ${XERO_FLAG_COPY.flaggedForOffice}`}
       </span>
     )
   }
@@ -675,19 +732,20 @@ const BOOKING_STATUS: Record<string, { label: string; tone: PillTone }> = {
   paid: { label: 'Paid', tone: 'success' },
   disbursed: { label: 'Disbursed', tone: 'success' },
   // Catch-up Phase 39: the Booking's invoice was credited in full.
-  credited: { label: 'Credited', tone: 'neutral' },
+  credited: { label: CREDIT_LABELS.credited, tone: 'neutral' },
   failed: { label: 'Failed', tone: 'error' },
   cancelled: { label: 'Cancelled', tone: 'neutral' },
   pending: { label: 'Pending', tone: 'neutral' },
 }
 
 function BookingStatusPill({ row }: { row: MonitorBookingRow }) {
+  const flagLeg = useAppStore((s) => (row.xeroFlag !== undefined ? s.billing.xeroDivergences[row.xeroFlag.divergenceId]?.leg : undefined))
   // A pair waiting for Xero keeps `invoiced`; surface it, and a change flagged in Xero, as its own pill (catch-up Phase 37).
   const it =
     row.prepaidLeftOff?.all === true && row.invoiceIds.length === 0 && row.status !== 'failed'
       ? { label: 'Prepaid', tone: 'success' as const }
       : row.xeroFlag !== undefined && row.status !== 'failed'
-        ? { label: XERO_FLAG_LABEL[row.xeroFlag.kind], tone: 'error' as const }
+        ? { label: row.xeroFlag.kind === 'paidAfterCredit' && flagLeg === 'payable' ? XERO_FLAG_PAYOUT_LABEL : XERO_FLAG_LABEL[row.xeroFlag.kind], tone: 'error' as const }
         : row.waitingForXero !== undefined && row.status !== 'failed'
           ? row.waitingForXero.alerted
             ? { label: 'Alert raised', tone: 'error' as const }

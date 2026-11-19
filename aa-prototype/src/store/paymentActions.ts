@@ -26,7 +26,7 @@
 import type { LedgerPair, LedgerReceipt, LedgerTransfer, PaymentIn, UnmatchedReceipt, XeroAccPay, XeroAccRec } from '../domain/types'
 import { roundToCents, toCents } from '../domain/billing/money'
 import { payableReleasedFor } from '../domain/billing/payableRelease'
-import { applyReceipt, gstComponentOf, isBookingPair, payeeAnaesthetistOf, transferOfPair } from '../domain/billing/ledger'
+import { applyReceipt, gstComponentOf, isBookingPair, isCreditedPair, payeeAnaesthetistOf, transferOfPair } from '../domain/billing/ledger'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { pairByAccRec } from './ledgerSelectors'
@@ -204,7 +204,7 @@ export function receivePayment(api: AppStoreApi, input: ReceivePaymentInput): Ou
   const pair = pairByAccRec(state, input.accRecId)
   // A credited invoice (catch-up Phase 39): Xero refuses payment on a fully credited invoice, and the engine never applies
   // one to the ledger or holds it as an unmatched receipt. A payment Xero took before its credit landed is flagged by the poll.
-  if (accRec.status === 'credited' || (pair !== undefined && isBookingPair(pair) && pair.credit !== undefined)) return refuse('invoiceCredited', CREDIT_MESSAGES.invoiceCredited)
+  if (accRec.status === 'credited' || (pair !== undefined && isCreditedPair(pair))) return refuse('invoiceCredited', CREDIT_MESSAGES.invoiceCredited)
   if (pair === undefined) {
     // No pair links it: hold the money in the ledger, out of balance until the office clears it.
     const out = recordUnmatchedReceipt(api, { amount: input.amount, reference: `${accRec.invoiceNumber} (no matching invoice)`, idempotencyKey: input.idempotencyKey, source: input.source, ...(input.atISO !== undefined ? { atISO: input.atISO } : {}) })

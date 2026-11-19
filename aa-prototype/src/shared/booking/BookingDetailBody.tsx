@@ -22,6 +22,7 @@ import {
   useAppStore,
   useToday,
   eventsForBooking,
+  bookingHistoryEntityIds,
   type Actor,
   type AppState,
 } from '../../store'
@@ -235,9 +236,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
   const totalWithEvents = useMemo(() => {
     if (actor.role !== 'office' || bookingTotals.structural !== undefined) return undefined
     const prices = bookingTotals.order.map((id) => ({ procedureId: id, price: bookingTotals.views[id]?.fee.total ?? 0 }))
-    const r = bookingTotalWithEvents(prices, eventsForBooking({ schedule: { procedureEvents } as AppState['schedule'] }, bookingId), { bookingPrice: bookingTotals.total })
+    const r = bookingTotalWithEvents(prices, eventsForBooking({ schedule: { procedureEvents } as AppState['schedule'] }, bookingId), { bookingPrice: bookingTotals.total, invoices })
     return { eventsTotal: r.eventsTotal, total: r.total, gst: r.gst }
-  }, [actor.role, bookingTotals, procedureEvents, bookingId])
+  }, [actor.role, bookingTotals, procedureEvents, bookingId, invoices])
 
   // After Make primary the new primary's block slides into the top place (the theme's
   // selection-slide, never blocking; reduced motion is the 80 ms fade).
@@ -356,14 +357,14 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
     return [...procedureIds, ...new Set(lineIds)]
   }, [audit, bookingId])
 
-  const historyEntityIds = useMemo(() => {
-    const procedureIds = procedures.map((p) => p.id)
-    const procedureIdSet = new Set(procedureIds)
-    const lineIds = Object.values(billingLinesRecord)
-      .filter((l) => procedureIdSet.has(l.procedureId))
-      .map((l) => l.id)
-    return [bookingId, ...procedureIds, ...lineIds, ...removedEntityIds]
-  }, [bookingId, procedures, billingLinesRecord, removedEntityIds])
+  // The Booking's whole story (catch-up Phase 39 review): its Procedures and fee lines, and its billing too: invoices,
+  // events (a credit's steps), credit notes and negative invoices (`bookingHistoryEntityIds`), with this draft's removed rows.
+  const historySchedule = useBookingStore((s) => s.schedule)
+  const historyBilling = useBookingStore((s) => s.billing)
+  const historyEntityIds = useMemo(
+    () => [...new Set([...bookingHistoryEntityIds({ schedule: historySchedule, billing: historyBilling, audit }, bookingId), ...removedEntityIds])],
+    [historySchedule, historyBilling, audit, bookingId, removedEntityIds],
+  )
 
   /**
    * Which procedure each history row belongs to — only on a Booking that HAS more

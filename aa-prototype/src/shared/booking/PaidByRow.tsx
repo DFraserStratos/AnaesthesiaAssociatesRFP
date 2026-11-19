@@ -28,6 +28,7 @@ import { TextAction } from '../ui/TextAction'
 import { PaidBySheet } from '../flows/PaidBySheet'
 import { AdditionalInvoiceButton } from './AdditionalInvoiceButton'
 import { CreditNoteButton } from './CreditNoteButton'
+import { SplitCombinedButton } from './SplitCombinedButton'
 
 export interface PaidByRowProps {
   /** The stack view's Contract part; null while the Procedure has no Contract. */
@@ -123,6 +124,15 @@ export function PaidByRow({ contract, procedureId, actor, canEdit, variant, paye
       )}
       {variant === 'summary' && sub === undefined && split !== undefined && change}
       {pills}
+      {/* The invoice's actions on their own wrapping row under the payer (phone, web and Admin alike), so a long payer name never meets them. */}
+      <span data-shot="paid-by-invoice-actions" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 16 }}>
+        {/* On an invoiced Procedure (catch-up Phase 38b): Create (Admin) or Raise (anaesthetist, own Procedure) additional invoice. */}
+        <AdditionalInvoiceButton procedureId={procedureId} actor={actor} />
+        {/* Its credit note option (catch-up Phase 39; US-08.6.5): the office's on any Procedure, the anaesthetist's on their own. */}
+        <CreditNoteButton procedureId={procedureId} actor={actor} />
+        {/* Split into additional invoices (catch-up Phase 39; US-08.6.4), the office's only. */}
+        <SplitCombinedButton procedureId={procedureId} actor={actor} />
+      </span>
       {recheck !== null && (
         <span data-shot="prepayment-recheck" role="status" style={{ fontSize: 12.5, fontWeight: 400, color: neutral.slate }}>
           {recheck}
@@ -148,10 +158,6 @@ export function PaidByRow({ contract, procedureId, actor, canEdit, variant, paye
                 Split
               </TextAction>
             )}
-            {/* On an invoiced Procedure (catch-up Phase 38b): Create (Admin) or Raise (anaesthetist, own Procedure) additional invoice. */}
-            <AdditionalInvoiceButton procedureId={procedureId} actor={actor} />
-            {/* Its credit note option (catch-up Phase 39; US-08.6.5), the office's in Admin. */}
-            <CreditNoteButton procedureId={procedureId} actor={actor} />
             {sheet}
           </>
         }

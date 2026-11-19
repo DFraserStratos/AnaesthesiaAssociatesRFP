@@ -108,16 +108,7 @@ export function liveInvoiceForProcedure(state: Pick<AppState, 'billing'>, proced
   const all = Object.values(state.billing.invoices).filter((i) => (i.procedureIds ?? []).includes(procedureId))
   const standard = all.filter((i) => i.kind === 'standard').sort(byNumber)
   if (standard.length > 0) {
-    const seen = new Set<string>()
-    const liveOf = (inv: Invoice): Invoice[] => {
-      if (seen.has(inv.id)) return []
-      seen.add(inv.id)
-      if (creditNoteForInvoice(state, inv.id) === undefined) return [inv]
-      return replacementsOf(state, inv.id)
-        .filter((r) => (r.procedureIds ?? []).includes(procedureId))
-        .flatMap(liveOf)
-    }
-    const live = standard.flatMap(liveOf)
+    const live = liveChainOf(state, standard)
     if (party !== undefined) {
       const forParty = live.find((i) => sameRef(i.counterparty, party))
       if (forParty !== undefined) return forParty
@@ -126,6 +117,38 @@ export function liveInvoiceForProcedure(state: Pick<AppState, 'billing'>, proced
   }
   const prepaid = all.filter((i) => i.kind === 'prePayment').sort(byNumber)
   return prepaid[0]
+}
+
+/**
+ * The live invoices of these standard invoices, in chain order: each one not
+ * credited, else its replacements (the `rebillOf` lineage, followed to its
+ * end). A replacement stands for every Procedure of the invoice it replaces,
+ * so a credit of an invoice covering several Procedures (the Holt Booking's
+ * shared invoice) leaves each of them its live replacement, whichever
+ * Procedure the credit was raised from.
+ */
+function liveChainOf(state: Pick<AppState, 'billing'>, standard: readonly Invoice[]): Invoice[] {
+  const seen = new Set<string>()
+  const liveOf = (inv: Invoice): Invoice[] => {
+    if (seen.has(inv.id)) return []
+    seen.add(inv.id)
+    if (creditNoteForInvoice(state, inv.id) === undefined) return [inv]
+    return replacementsOf(state, inv.id).flatMap(liveOf)
+  }
+  return standard.flatMap(liveOf)
+}
+
+/**
+ * Every live invoice of a Procedure (catch-up Phase 39 review): its standard
+ * invoices not credited and the live replacements of those credited, by
+ * number. More than one where 22's fee split billed two parties, so the UI can
+ * let the user pick which one to credit. Never a prepayment invoice.
+ */
+export function liveInvoicesForProcedure(state: Pick<AppState, 'billing'>, procedureId: string): Invoice[] {
+  const standard = Object.values(state.billing.invoices)
+    .filter((i) => i.kind === 'standard' && (i.procedureIds ?? []).includes(procedureId))
+    .sort(byNumber)
+  return liveChainOf(state, standard).sort(byNumber)
 }
 
 function eventOrder(a: ProcedureEvent, b: ProcedureEvent): number {
@@ -624,7 +647,8 @@ export function planAdditionalInvoice(state: EventState & Pick<AppState, 'clock'
     subtotal: pricing.subtotal,
     gst: pricing.gst,
     total: pricing.total,
-    procedureIds: [procedure.id],
+    // A replacement stands for every Procedure of the invoice it replaces (catch-up Phase 39 review); a plain one for its own.
+    procedureIds: event.replaces !== undefined && (original.procedureIds ?? []).length > 0 ? [...original.procedureIds!] : [procedure.id],
     ...(original.crossMatch !== undefined ? { crossMatch: { ...original.crossMatch } } : {}),
     ...(party.sameAs && original.holderReference !== undefined ? { holderReference: original.holderReference } : {}),
     delivery,

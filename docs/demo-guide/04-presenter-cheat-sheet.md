@@ -326,7 +326,7 @@ price list) and claims back themselves; nib is billed only through nib's own Con
   **Locked record** card), and **Demo actions → Regenerate from locked data** rebuilds it from the lock
   and says "identical". It is the recipe, not a replay of the data as at a date.
 - Which fields are frozen is Donald's proposal (AR-58 2.8), still to confirm with AA (US-15.0.3).
-- An invoiced Booking's price, split or payee changes only by a credit note and rebill (later build).
+- An invoiced Booking's price, split or payee changes only by a credit note and rebill (S4 Beat 2b).
 
 ### Contract history
 
@@ -360,6 +360,11 @@ Payer -> ACCREC -> AA account -> ACCPAY (full amount) -> Anaesthetist
 - A prepayment's ACCPAY credits the AA Holding account instead, and is never paid itself; the money is
   transferred to the anaesthetist when the List is authorised (section 8 below).
 - A partial payment releases the payable for exactly the amount received; the rest stays outstanding.
+- A correction is a trail, never an edit: the original's debit, the credit note's credit, the contra (a
+  negative invoice to the anaesthetist) and the new invoice's debit (catch-up Phase 39).
+- The negative invoice (`CN-2026-nnnn-P`) always reverses the anaesthetist's payable: offset against it
+  while unpaid, netted in her next weekly payment run once paid. The Ledger shows **Credits held for
+  payers** and **Negative invoices to net**; Xero gets an ACCRECCREDIT.
 - Both Xero records carry the InvoiceNumber (the ACCPAY's ends `-P`) and the case Reference.
 - The mobile/web app reads the Billing Engine's own ledger, AA's system of record, never Xero
   directly. Xero mirrors the ledger for receivables and banking.
@@ -537,6 +542,8 @@ Receipts held = payables due + the AA Holding account  ->  In balance
   you there."
 - "Everything after setup is an event on the Procedure, reviewed once and invoiced in the next run."
 - "Extra work after a fixed price is billed by hand, by the anaesthetist or the office."
+- "We never edit an issued invoice; we credit it in full and rebill."
+- "A split must add up to what was credited."
 - "Nothing comes across because it exists in Solutions Plus."
 - "This is a candidate design we would validate during discovery."
 
@@ -557,6 +564,10 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - "The anaesthetist raises a post-op Booking." (A post-op charge is an event on the Procedure, never a
   new Booking.)
 - "The system invoices the balance." (Nothing is billed automatically after a prepaid or fixed price.)
+- "A BCTI credit." (The anaesthetist's payable is reversed by a negative invoice.)
+- "A credit note is a refund." (It is not; money paid on a credited invoice is held for the payer.)
+- "The system credits the difference automatically." (Nothing is credited automatically: a person
+  decides, and the invoice is credited in full, never by the difference.)
 
 ## Prototype readiness
 
@@ -575,6 +586,11 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 - The anaesthetist's edit window to `AUTHORISED`, the main view from today, and search by patient
   name, NHI or date over months of history (catch-up Phase 38a)
 - Pre-payment from a prepaid Contract (catch-up Phase 27), held in the AA Holding account and transferred to the anaesthetist when the List is authorised (catch-up Phase 27a), events and additional invoices (office and anaesthetist, catch-up Phase 38b) and billing monitor with per-booking isolation and retry (Phase 09); since catch-up Phase 37 the monitor is grouped by anaesthetist, sorts and filters (one anaesthetist, hospital, dates, **Problems only**, all in the URL), and lists each anaesthetist's Lists awaiting approval with **Open in Review** (approval itself stays on Review)
+- Credit notes (catch-up Phase 39): the office's **Credit note**, **Credit in full and rebill** (from a
+  copy of the original's lines) and **Split into additional invoices** (Left to allocate to $0.00) on
+  the invoice's **Correct this invoice** card, and the anaesthetist's **Credit note** on her own
+  Procedure; each reviewed on Review, Events and issued in the next run, with its negative invoice,
+  the credit note document, the Credited original and the Xero credit note
 - Contract locked at authorise, the run and the invoice document reading only the lock, Regenerate
   from locked data, and each Contract's History tab (catch-up Phase 25)
 - Xero collection/payable pairs, payments, reconciliation poll, payables, live balances and GST (Phase 10)

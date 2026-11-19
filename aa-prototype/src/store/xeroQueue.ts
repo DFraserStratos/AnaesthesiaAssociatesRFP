@@ -102,6 +102,12 @@ function runHandler(api: AppStoreApi, item: XeroQueueItem): string | undefined {
         detectedBy: 'webhook',
         payablesRunId: bill.payablesRunId,
       })
+      // A bill Xero paid on a payable the engine has since reversed by a credit (catch-up Phase 39 review): never recorded in
+      // the ledger; flagged for the office as a divergence, and the sync is done (it would otherwise fail for ever).
+      if (!out.ok && out.code === 'pairCredited') {
+        flagXeroDivergences(api)
+        return undefined
+      }
       return out.ok ? undefined : out.message
     }
     case 'poll':

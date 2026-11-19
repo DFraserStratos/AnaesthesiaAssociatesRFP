@@ -76,7 +76,7 @@ function ledgerAgainstXeroCheck(state: ReconState): Omit<ReconciliationCheck, 'i
     const number = state.billing.invoices[d.invoiceId]?.invoiceNumber ?? d.invoiceId
     // A payment after the engine's credit (catch-up Phase 39): what Xero took and the ledger never applied.
     const amount = d.kind === 'voidedInXero' ? d.engineHolds.outstanding : d.kind === 'paidAfterCredit' ? d.xeroShows.total : roundToCents(d.engineHolds.amount - d.xeroShows.total)
-    const what = d.kind === 'voidedInXero' ? 'voided in Xero' : d.kind === 'paidAfterCredit' ? 'paid in Xero after its credit' : 'amended in Xero'
+    const what = d.kind === 'voidedInXero' ? 'voided in Xero' : d.kind === 'paidAfterCredit' ? (d.leg === 'payable' ? 'paid out in Xero after its credit' : 'paid in Xero after its credit') : 'amended in Xero'
     return { id: d.id, label: `${number} ${what}`, amount, sinceISO: d.detectedAtISO, source: 'xeroDivergence' }
   })
   const items = [...queued, ...flagged]

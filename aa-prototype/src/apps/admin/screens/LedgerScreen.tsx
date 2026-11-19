@@ -10,7 +10,7 @@
  * Review tile row and table and the Admin Day nav. URL-driven, so Back works.
  */
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CircleCheck } from 'lucide-react'
 import { neutral } from '../../../theme/tokens'
@@ -26,18 +26,21 @@ import {
   ledgerRows,
   ledgerRowTotals,
   markUnmatchedRefunded,
+  negativeInvoicesFor,
   receivableOutstanding,
+  replacementsOf,
   unmatchedReceiptRows,
   useAppStore,
   type LedgerRow,
 } from '../../../store'
-import { isBookingPair, type LedgerCheck } from '../../../domain/billing/ledger'
+import { isBookingPair, isCreditedPair, type LedgerCheck } from '../../../domain/billing/ledger'
 import { Avatar } from '../../../shared/Avatar'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { Button, Card, EmptyState, FilterPills, FormError, Notice, OptionRow, PageHeader, Pill, Segmented, SelectField, StatTile, TextAction, TextArea } from '../../../shared/ui'
 import { dateTimeMicroCap, drSurname, formatCurrency, plural } from '../../../shared/format'
-import type { LedgerPair, UnmatchedReceipt } from '../../../domain/types'
+import { CREDIT_LABELS } from '../../../shared/procedureEventCopy'
+import type { LedgerPair, NegativeInvoice, UnmatchedReceipt } from '../../../domain/types'
 
 type Scope = 'whole' | 'one'
 type RowFilter = 'open' | 'all'
@@ -78,7 +81,10 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
   const outOfBalance = useMemo(() => anaesthetistsOutOfBalanceOf({ billing, masters }), [billing, masters])
   const unmatched = useMemo(() => unmatchedReceiptRows({ billing }), [billing])
   const rows = useMemo(
-    () => ledgerRows({ billing, masters, schedule, xero }, { ...(anaesthetistId !== undefined ? { anaesthetistId } : {}), openOnly: filter === 'open' }),
+    () => ledgerRows({ billing, masters, schedule, xero }, { ...(anaesthetistId !== undefined ? { anaesthetistId } : {}), openOnly: filter === 'open' }).filter(
+        // A credited pair is closed: nothing is outstanding on it (catch-up Phase 39), so Open leaves it out.
+        (row) => filter !== 'open' || billing.ledger[row.id] === undefined || !isCreditedPair(billing.ledger[row.id]!),
+      ),
     [billing, masters, schedule, xero, anaesthetistId, filter],
   )
   const surname = anaesthetistId !== undefined ? drSurname(masters.anaesthetists[anaesthetistId]?.name ?? anaesthetistId) : ''
@@ -132,7 +138,8 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
         <BalanceIndicator
           inBalance={whole.inBalance}
           headline={whole.inBalance ? 'In balance · receipts held equal payables due' : `Out of balance by ${formatCurrency(whole.imbalance)}`}
-          equation={`Receipts held ${formatCurrency(whole.receiptsHeld)} less payables due ${formatCurrency(whole.payablesDue)} and the AA Holding account ${formatCurrency(whole.holdingBalance)} = ${formatCurrency(whole.imbalance)}`}
+          // The equation as the ledger states it (catch-up Phase 39 adds the two credit terms; neither is an imbalance).
+          equation={`Receipts held ${formatCurrency(whole.receiptsHeld)} less payables due ${formatCurrency(whole.payablesDue)}, the AA Holding account ${formatCurrency(whole.holdingBalance)} and credits held for payers ${formatCurrency(whole.creditsHeldForPayers)}, plus negative invoices to net ${formatCurrency(whole.recoveryDueFromAnaesthetists)} = ${formatCurrency(whole.imbalance)}`}
           checks={whole.checks}
           unmatched={unmatched}
           rows={billing.ledger}
@@ -178,6 +185,11 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
               sub={<TextAction size="sm" flush onClick={() => navigate('/admin/billing/aa-fees')}>Unpaid monthly fee invoices</TextAction>}
             />
             <StatTile variant="outlined" label="Not yet in Xero" value={String(whole.notInXero)} sub={whole.notInXero === 1 ? 'pair waiting for its mirror' : 'pairs waiting for their mirror'} />
+          </div>
+          {/* The credit terms (catch-up Phase 39; US-08.6.5, OQ-42): what payers paid on credited invoices, and what was paid out on them to net. */}
+          <div data-shot="ledger-credit-tiles" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+            <StatTile variant="outlined" label={CREDIT_LABELS.creditsHeldForPayers} value={formatCurrency(whole.creditsHeldForPayers)} sub={CREDIT_LABELS.creditsHeldSub} />
+            <StatTile variant="outlined" label={CREDIT_LABELS.negativeToNet} value={formatCurrency(whole.recoveryDueFromAnaesthetists)} sub={CREDIT_LABELS.negativeToNetSub} />
           </div>
         </div>
       ) : (
@@ -288,6 +300,8 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
         </section>
       )}
 
+      {scope === 'one' && anaesthetistId !== undefined && <CreditTrails anaesthetistId={anaesthetistId} surname={surname} />}
+
       <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
           <PageHeader size="section" level={2} title={scope === 'whole' ? 'Pairs' : `${surname}'s pairs`} />
@@ -335,6 +349,12 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
                   <Td nowrap>
                     {KIND_TEXT[row.kind]}
                     {row.kind === 'transfer' && row.fromNumber !== undefined && <div style={{ fontSize: 11, color: neutral.mist }}>From {row.fromNumber}</div>}
+                    {/* A credited pair (catch-up Phase 39): derived from the pair's credit, neutral, never red. */}
+                    {billing.ledger[row.id] !== undefined && isCreditedPair(billing.ledger[row.id]!) && (
+                      <div style={{ marginTop: 2 }}>
+                        <Pill tone="neutral" size="sm" shot="ledger-pair-credited">{CREDIT_LABELS.credited}</Pill>
+                      </div>
+                    )}
                   </Td>
                   <Td clip style={{ maxWidth: 130 }}>{row.patientName ?? ''}</Td>
                   <Td clip style={{ maxWidth: 150 }}>{row.payerName ?? ''}</Td>
@@ -519,5 +539,81 @@ function RefundDialog({ receipt, actor, onClose }: { receipt: UnmatchedReceipt |
         />
       </div>
     </Overlay>
+  )
+}
+
+/**
+ * One anaesthetist's credits (catch-up Phase 39, work item 12; US-08.6.2 "Both
+ * sides move"): each credit in the trail's order, debit, credit, contra, new
+ * debit. The contra is the negative invoice: offset against the unpaid payable,
+ * or an amount that nets in their next payment run (39a nets it). Every number
+ * opens its document.
+ */
+export function CreditTrails({ anaesthetistId, surname }: { anaesthetistId: string; surname: string }) {
+  const navigate = useNavigate()
+  const billing = useAppStore((s) => s.billing)
+  const negatives = useMemo(() => negativeInvoicesFor({ billing }, anaesthetistId), [billing, anaesthetistId])
+  if (negatives.length === 0) return null
+  const number = (text: string, to: string | undefined) =>
+    to !== undefined ? (
+      <TextAction size="sm" flush onClick={() => navigate(to)}>
+        <span className="mono">{text}</span>
+      </TextAction>
+    ) : (
+      <span className="mono">{text}</span>
+    )
+  const rowsOf = (n: NegativeInvoice) => {
+    const original = billing.invoices[n.originalInvoiceId]
+    const cn = billing.creditNotes[n.creditNoteId]
+    const out: { step: string; record: ReactNode; amount: string; note?: string; kind: string }[] = []
+    if (original !== undefined) out.push({ kind: 'debit', step: CREDIT_LABELS.trailDebit, record: number(original.invoiceNumber, `/admin/invoices/${original.id}`), amount: formatCurrency(original.total) })
+    if (cn !== undefined) out.push({ kind: 'credit', step: CREDIT_LABELS.trailCredit, record: number(cn.creditNoteNumber, `/admin/credit-notes/${cn.id}`), amount: formatCurrency(-cn.total, { sign: 'always' }) })
+    out.push({
+      kind: 'contra',
+      step: CREDIT_LABELS.trailContra,
+      record: number(n.number, cn !== undefined ? `/admin/credit-notes/${cn.id}` : undefined),
+      amount: formatCurrency(-n.amount, { sign: 'always' }),
+      note: n.status === 'toNet' && n.recoveryDue > 0 ? `${CREDIT_LABELS.netsNextRun} · ${formatCurrency(n.recoveryDue)}` : CREDIT_LABELS.offsetDone,
+    })
+    for (const r of replacementsOf({ billing }, n.originalInvoiceId)) out.push({ kind: 'newDebit', step: CREDIT_LABELS.trailNewDebit, record: number(r.invoiceNumber, `/admin/invoices/${r.id}`), amount: formatCurrency(r.total) })
+    return out
+  }
+  return (
+    <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <PageHeader size="section" level={2} title={CREDIT_LABELS.creditsOf(surname)} />
+      <TableShell label={CREDIT_LABELS.creditsOf(surname)} shot="ledger-credit-trail" density="dense">
+        <thead>
+          <tr>
+            <Th>{CREDIT_LABELS.trailStep}</Th>
+            <Th>{CREDIT_LABELS.trailRecord}</Th>
+            <Th align="right">{CREDIT_LABELS.trailAmount}</Th>
+            <Th> </Th>
+          </tr>
+        </thead>
+        <tbody>
+          {negatives.map((n, g) =>
+            rowsOf(n).map((r, i) => (
+              <tr
+                key={`${n.id}-${i}`}
+                data-negative-invoice-id={n.id}
+                data-trail-kind={r.kind}
+                style={{ borderTop: `1px solid ${i === 0 && g > 0 ? neutral.lineStrong : neutral.line}` }}
+              >
+                <Td nowrap style={{ color: neutral.slate, fontWeight: 600 }}>{r.step}</Td>
+                <Td nowrap>{r.record}</Td>
+                <Td align="right" mono nowrap>{r.amount}</Td>
+                <Td>
+                  {r.note !== undefined && (
+                    <span data-shot={n.status === 'toNet' && r.kind === 'contra' ? 'ledger-nets-next-run' : undefined} style={{ fontSize: 12.5, color: neutral.slate }}>
+                      {r.note}
+                    </span>
+                  )}
+                </Td>
+              </tr>
+            )),
+          )}
+        </tbody>
+      </TableShell>
+    </section>
   )
 }

@@ -2160,6 +2160,12 @@ export interface XeroDivergence {
   id: string
   /** `paidAfterCredit` (catch-up Phase 39): a payment landed in Xero on an invoice the engine had credited; never applied to the ledger. */
   kind: 'voidedInXero' | 'amendedInXero' | 'paidAfterCredit'
+  /**
+   * On a `paidAfterCredit` flag (catch-up Phase 39 review): `payable` when it
+   * was the ACCPAY Xero paid out after the credit (a bill payment the engine
+   * never records on a reversed payable); absent for a payment on the ACCREC.
+   */
+  leg?: 'payable'
   accRecId: string
   pairId: string
   invoiceId: InvoiceId

@@ -197,7 +197,7 @@ export function ProcedureEventsList({ procedureId, actor, onReview, onOpenInvoic
         onClose={() => setEditing(null)}
       />
       {editingCredit !== null && (
-        <CreditSheet open invoiceId={editingCredit.invoiceId} actor={actor} editing={editingCredit.eventId} onClose={() => setEditingCredit(null)} />
+        <CreditSheet open invoiceId={editingCredit.invoiceId} procedureId={procedureId} actor={actor} editing={editingCredit.eventId} onClose={() => setEditingCredit(null)} />
       )}
     </section>
   )

@@ -183,6 +183,7 @@ export function EventPartyField({
 }) {
   const state = useBookingStore((s) => s)
   const options = useMemo(() => partyOptionsForProcedure(state, procedureId), [state, procedureId])
+  const phone = useSurface().variant === 'mobile'
   return (
     <div data-shot={shot} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <FieldLabel>{label}</FieldLabel>
@@ -191,6 +192,8 @@ export function EventPartyField({
         onChange={(checked) => onChange(checked ? { sameAs: true } : { sameAs: false, party: null, person: null })}
         shot="event-same-as"
         labelShot="event-same-as-row"
+        // The sheet's body size (14 on web and Admin, 15 on the phone), not the inherited page size.
+        style={{ fontSize: phone ? 15 : 14, lineHeight: '20px', color: neutral.ink }}
       >
         {COPY.sameAsWithName(sameAsName)}
       </Checkbox>

@@ -19,13 +19,13 @@ import { creditDetailOf, eventLines, eventStatus } from '../../../domain/billing
 import type { ProcedureEvent } from '../../../domain/types'
 import { priceFreeFormInvoice } from '../../../domain/billing/additionalInvoice'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
-import { approveProcedureEvent, currentReversalPlan, declineProcedureEvent, eventPartyName, invoiceAddresseeName, originalForEvent, procedureOwner, replacementEventsOf, useAppStore, type Actor } from '../../../store'
+import { approveProcedureEvent, currentReversalPlan, declineProcedureEvent, eventPartyName, invoiceAddresseeName, originalForEvent, procedureOwnerSurname, replacementEventsOf, useAppStore, type Actor } from '../../../store'
 import { Button, DefList, DefRow, Eyebrow, FormError, Notice, Pill, ResultLine, TextArea } from '../../../shared/ui'
-import { drSurname, formatCurrency, shortDay, stampText } from '../../../shared/format'
+import { formatCurrency, shortDay, stampText } from '../../../shared/format'
 import { ADDITIONAL_INVOICE_COPY as COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, EVENT_STATUS_LABEL, eventStatusLabel, raisedByText } from '../../../shared/procedureEventCopy'
 import { EVENT_STATUS_TONE } from '../../../shared/booking/ProcedureEventsList'
 import { FreeFormTotals } from '../../../shared/booking/AdditionalInvoiceForm'
-import { creditMoneySentences } from '../../../shared/booking/CreditForm'
+import { CreditMoneyState } from '../../../shared/booking/CreditForm'
 import { SidePanel } from '../components/SidePanel'
 
 interface EventReviewSheetProps {
@@ -180,21 +180,15 @@ function CreditReviewBody({ event }: { event: ProcedureEvent }) {
   const credit = creditDetailOf(event)!
   const original = state.billing.invoices[credit.originalInvoiceId]
   const plan = currentReversalPlan(state, credit.originalInvoiceId)
-  const ownerId = procedureOwner(state, event.procedureId)
-  const doctor = ownerId !== undefined && state.masters.anaesthetists[ownerId] !== undefined ? drSurname(state.masters.anaesthetists[ownerId]!.name) : 'The anaesthetist'
+  const doctor = procedureOwnerSurname(state, event.procedureId) ?? 'The anaesthetist'
   const replacements = replacementEventsOf(state, event.id)
   return (
     <div data-shot="event-review-credit" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {plan !== undefined && original !== undefined && eventStatus(event) === 'awaitingReview' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <Eyebrow as="span" tone="slate">{CREDIT_LABELS.moneyState}</Eyebrow>
-          {creditMoneySentences(plan, invoiceAddresseeName(state, original), doctor).map((line) => (
-            <span key={line} style={{ fontSize: 13.5, lineHeight: '20px', color: neutral.ink }}>{line}</span>
-          ))}
-        </div>
+        <CreditMoneyState plan={plan} payer={invoiceAddresseeName(state, original)} doctor={doctor} />
       )}
       <Notice tone="neutral">{CREDIT_LABELS.notARefund}</Notice>
-      <Eyebrow as="h3" tone="slate">{CREDIT_LABELS.stepNewInvoices}</Eyebrow>
+      <Eyebrow as="h3" tone="slate">{CREDIT_LABELS.newInvoices}</Eyebrow>
       {replacements.length === 0 && <span style={{ fontSize: 13, color: neutral.slate }}>{CREDIT_LABELS.newInvoicesNone}</span>}
       {replacements.map((r, i) => {
         const priced = priceFreeFormInvoice(eventLines(r))
@@ -209,7 +203,7 @@ function CreditReviewBody({ event }: { event: ProcedureEvent }) {
               <div key={j} style={{ display: 'flex', gap: 12, padding: '10px 12px', borderTop: `1px solid ${neutral.line}`, fontSize: 13.5 }}>
                 <span style={{ flex: 1, color: neutral.ink }}>{l.description}</span>
                 <span className="mono" style={{ color: neutral.slate }}>{l.quantity} x {formatCurrency(l.unitAmount)}</span>
-                <span className="mono" style={{ minWidth: 80, textAlign: 'right', color: neutral.ink }}>{formatCurrency(Math.round(l.quantity * l.unitAmount * 100) / 100)}</span>
+                <span className="mono" style={{ minWidth: 80, textAlign: 'right', color: neutral.ink }}>{priced.kind === 'priced' ? formatCurrency(priced.lines[j]!.amount) : ''}</span>
               </div>
             ))}
             {priced.kind === 'priced' && (

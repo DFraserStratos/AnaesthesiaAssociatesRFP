@@ -34,9 +34,13 @@ export function runNextBillingRun(api: AppStoreApi): Outcome<{ numbers: string[]
   })
 }
 
-/** The oldest event awaiting review on a Booking. */
+/**
+ * The oldest additional invoice awaiting review on a Booking. A credit and a
+ * replacement are skipped (catch-up Phase 39): a replacement is issued only
+ * through its credit, which has its own stand-in, "Office reviews this credit".
+ */
 function oldestAwaitingOn(state: Pick<AppState, 'schedule'>, bookingId: string): string | undefined {
-  return eventsAwaitingReview(state).find((e) => e.bookingId === bookingId)?.id
+  return eventsAwaitingReview(state).find((e) => e.bookingId === bookingId && e.kind !== 'credit' && e.replaces === undefined)?.id
 }
 
 export function officeReviewRefusal(state: Pick<AppState, 'schedule'>, bookingId: string): string | null {

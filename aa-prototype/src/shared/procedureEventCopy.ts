@@ -10,7 +10,7 @@
 
 import type { ProcedureEventKind } from '../domain/types'
 import type { ProcedureEventStatus } from '../domain/billing/procedureEvent'
-import { drSurname } from './format'
+import { drSurname, formatCurrency } from './format'
 
 export const EVENT_LABELS = {
   /** The section heading under each Procedure. */
@@ -34,6 +34,8 @@ export const EVENT_LABELS = {
   /** Admin Review's tabs. */
   listsTab: 'Lists',
   eventsTab: 'Events',
+  /** The Events tab's page subtitle (the Lists tab keeps the queue's own). */
+  eventsTabSub: (n: number) => `Additional invoices and credits awaiting review before the next billing run. ${n} in the queue.`,
   /** The Billing monitor panel. */
   awaitingRunTitle: 'Waiting for the next billing run',
   /** The review sheet. */
@@ -149,13 +151,16 @@ export const CREDIT_LABELS = {
   correctCard: 'Correct this invoice',
   correctCaption:
     'For an AA-side error, less work than expected or a split requested by the billable party. The invoice is never edited: it is credited in full and new invoices are issued. A disputed invoice with no AA error stays outstanding.',
-  /** The sheet's title per mode. */
-  sheetTitle: (mode: 'credit' | 'rebill' | 'edit', number: string): string =>
-    mode === 'rebill' ? `Credit in full and rebill ${number}` : mode === 'edit' ? `Edit the credit of ${number}` : `Credit note for ${number}`,
-  sheetDescription: 'The invoice is credited in full. Nothing on it is edited.',
-  /** Step 1 and step 2. */
+  /** The sheet's title per mode, in 38b's pattern: "Credit note · David Chen · Hip hemiarthroplasty". */
+  sheetTitle: (mode: 'credit' | 'rebill' | 'edit', patient: string, procedure: string): string =>
+    `${mode === 'rebill' ? 'Credit in full and rebill' : mode === 'edit' ? 'Edit the credit' : 'Credit note'} · ${patient} · ${procedure}`,
+  /** Under the title: "Credits AA-2026-H03 in full. Nothing on it is edited." */
+  sheetDescription: (number: string) => `Credits ${number} in full. Nothing on it is edited.`,
+  /** Which of the Procedure's live invoices to credit (a fee split has one per party). */
+  whichInvoice: 'Invoice to credit',
+  /** Step 1 and step 2 (step 2's name is `newInvoices`). */
   stepCredit: 'Credit',
-  stepNewInvoices: 'New invoices',
+  newInvoices: 'New invoices',
   /** The original's summary. */
   originalInvoice: 'Original invoice',
   billed: 'Billed to',
@@ -197,14 +202,14 @@ export const CREDIT_LABELS = {
   newInvoiceTitle: (n: number) => `New invoice ${n}`,
   addInvoice: 'Add an invoice',
   removeInvoice: 'Remove this invoice',
-  /** Submit. */
-  submit: 'Submit for review',
-  saveChanges: 'Save for review',
+  /** Submit, new or edited: 38b's verb. */
+  submit: EVENT_LABELS.saveForReview,
   officeSubmitNote: 'Goes through the standard review step and is issued in the next run.',
   anaesthetistSubmitNote: 'The office reviews it, then it is issued in the next billing run.',
   /** The invoice's standing (neutral pills, never red). */
   pendingPill: 'Credit waiting for review',
-  creditedPill: 'Credited',
+  /** The standing pill, the credited original's total, the ledger pair's and the Xero sim's word. */
+  credited: 'Credited',
   /** The credited original's line, around its links: "Credited in full by CN-2026-0001 on Tue 21 Jul 2026 · rebilled as AA-2026-0013". */
   creditedInFullBy: 'Credited in full by',
   on: 'on',
@@ -224,13 +229,13 @@ export const CREDIT_LABELS = {
   documentHeading: 'CREDIT NOTE',
   dateIssued: 'Date issued',
   creditToDoc: 'Credit to',
-  raisedBy: 'Raised by',
   totalCredited: 'Total credited',
-  deliveryCaption: 'Xero does not send credit notes; the engine sends it',
+  deliveryCaption: 'Xero does not send credit notes; the engine sends it.',
+  /** The holder layout's line under the addressee, as the invoice prints it. */
+  attnAccounts: 'Attn: Accounts',
   negativeInvoiceCard: 'Negative invoice',
   negativeOffset: 'offset against the unpaid payable',
   negativeNets: (amount: string) => `${amount} nets in the next payment run`,
-  newInvoicesCard: 'New invoices',
   newInvoicesNoneDoc: 'None. The credit stands alone.',
   xeroCard: 'Xero',
   xeroWaiting: 'Waiting for Xero',
@@ -242,6 +247,49 @@ export const CREDIT_LABELS = {
   credits: (number: string) => `Credits ${number}`,
   /** A demo payment trigger on a credited invoice. */
   paymentDisabled: 'Invoice credited',
+
+  // Session 2's screen words (work items 9 to 13), folded in from the old CREDIT_UI_LABELS.
+  /** The office's copy of the original's lines on a new invoice card (US-08.6.6). */
+  copyLines: "Start from a copy of the original's lines",
+  /** The split (US-08.6.4). */
+  splitButton: 'Split into additional invoices',
+  /** "Split AA-2026-0002 into additional invoices", with the Contract under it. */
+  splitTitle: (number: string) => `Split ${number} into additional invoices`,
+  splitDescription: 'The original invoice is credited in full.',
+  splitMustAddUp: 'The new invoices must add up to the credited invoice.',
+  leftToAllocate: 'Left to allocate',
+  splitBeforeGst: 'All before GST.',
+  gstRounding: (amount: string) => `GST is rounded on each invoice, so the totals with GST differ by ${amount}. That is accepted.`,
+  putTheRest: 'Put the rest on this invoice',
+  restLine: 'Rest of the credited invoice',
+  splitReason: 'Split requested',
+  submitSplit: (n: number) => `Save ${n} invoices for review`,
+  /** A split component's line under its number: "Additional invoice · part 2 of 3 · replaces AA-2026-0007 · Facelift". */
+  splitPart: (part: number, of: number, number: string, procedure: string) => `Additional invoice · part ${part} of ${of} · replaces ${number} · ${procedure}`,
+  /** The ledger (work item 12). */
+  creditsHeldForPayers: 'Credits held for payers',
+  creditsHeldSub: 'Paid on credited invoices, refunded outside the system',
+  negativeToNet: 'Negative invoices to net',
+  negativeToNetSub: 'Paid out on credited invoices',
+  /** "Dr Sharma's credits": the ledger's trail heading. */
+  creditsOf: (who: string) => `${who}'s credits`,
+  trailStep: 'Step',
+  trailRecord: 'Record',
+  trailAmount: 'Amount',
+  trailNewDebit: 'New debit',
+  netsNextRun: 'Nets in the next payment run',
+  offsetDone: 'Offset against the unpaid payable',
+  /** The Billing monitor (work item 13). */
+  correctionFailed: 'Xero correction failed',
+  correctionAttempt: (n: number) => `attempt ${n}`,
+  nextTry: 'next try',
+  resolveAndRetry: 'Resolve and retry',
+  /** The Xero sim pair detail. */
+  xeroCreditNotes: 'Credit notes',
+  xeroAllocated: 'Allocated',
+  xeroUnallocated: 'Unallocated',
+  xeroAccPayVoidedNote: 'The draft bill was voided: nothing had been authorised to pay.',
+  xeroNewPairs: 'New pairs',
 } as const
 
 /** A credit event's status words where they differ from an additional invoice's (catch-up Phase 39): it is issued, not invoiced. */
@@ -261,6 +309,33 @@ export const XERO_FLAG_LABEL: Record<'voidedInXero' | 'amendedInXero' | 'paidAft
   amendedInXero: 'Amended in Xero',
   paidAfterCredit: 'Paid in Xero after its credit',
 }
+
+/**
+ * A flag in words, one way everywhere (the invoice's Ledger card, the Billing
+ * monitor, the Xero panels): "Voided in Xero", "Paid in Xero after its credit
+ * · $120.00", "Amended in Xero · total $1,910.00", with the time Xero changed
+ * it after the label when given ("Amended in Xero 08:02 · total $1,910.00").
+ * A `paidAfterCredit` flag on the payable (`leg: 'payable'`) is a payout, not
+ * a payment: "Paid out in Xero after its credit · $120.00".
+ */
+export function xeroFlagText(kind: keyof typeof XERO_FLAG_LABEL, amount: number, at?: string, leg?: 'payable'): string {
+  const label = kind === 'paidAfterCredit' && leg === 'payable' ? XERO_FLAG_PAYOUT_LABEL : XERO_FLAG_LABEL[kind]
+  const head = at !== undefined ? `${label} ${at}` : label
+  if (kind === 'voidedInXero') return head
+  if (kind === 'paidAfterCredit') return `${head} · ${formatCurrency(amount)}`
+  return `${head} · total ${formatCurrency(amount)}`
+}
+
+/** A `paidAfterCredit` flag on the payable: Xero paid the bill out after the credit. */
+export const XERO_FLAG_PAYOUT_LABEL = 'Paid out in Xero after its credit'
+
+/** What a flag leaves in the ledger, and where the office resolves it, after `xeroFlagText`. */
+export const XERO_FLAG_COPY = {
+  flagged: 'flagged',
+  flaggedForOffice: 'flagged for the office.',
+  ledgerKeepsIssued: 'The ledger keeps the amount issued.',
+  ledgerIgnoresPayment: 'The ledger does not apply it.',
+} as const
 
 /** Result copy for a credit (catch-up Phase 39). */
 export const CREDIT_COPY = {
@@ -309,4 +384,39 @@ export const ADDITIONAL_INVOICE_COPY = {
   relatesTo: (number: string, procedure: string) => `Additional invoice · relates to ${number} · ${procedure}`,
   additionalInvoicesCard: 'Additional invoices',
   plusAdditional: (n: number) => `+${n} additional ${n === 1 ? 'invoice' : 'invoices'}`,
+} as const
+
+/** Store sentences for the split and the anaesthetist's credit entry (catch-up Phase 39 session 2, work items 10 and 11). No en or em dash. */
+export const SPLIT_MESSAGES = {
+  procedureNotFound: 'Procedure not found.',
+  /** OQ-77 part 3 (D41): before sending, a split is a normal admin edit. */
+  notYetInvoiced: "Not invoiced yet. Edit the Booking's Procedures, Contracts and prices instead.",
+  /** Phase 41 credits a prepayment invoice. */
+  prepaidNotSplittable: 'Splitting a prepaid combination is not in this prototype yet.',
+} as const
+
+/** The demo triggers' words for a credit (catch-up Phase 39 session 2, work item 14). No en or em dash. */
+export const CREDIT_DEMO_COPY = {
+  combinedStaged: 'Staged: a billed Merivale combination. Open its invoice and use Split into additional invoices.',
+  alreadyStaged: 'Already staged',
+  /** The result's link: "Open AA-2026-0002". */
+  openInvoice: (number: string) => `Open ${number}`,
+  stagePostOpFirst: 'Stage post-op scenario first',
+  invoiceCredited: 'Invoice credited',
+  creditWaiting: 'Credit waiting for review',
+  alreadyPaidOut: 'Already paid out',
+  kindNotHere: 'AA fee and prepayment invoices are not credited here',
+  /** "Paid in full and paid out to Dr Sharma in Xero. Credit it to see the negative invoice." (Phase 37: payouts are made in Xero.) */
+  paidOut: (dr: string) => `Paid in full and paid out to ${dr} in Xero. Credit it to see the negative invoice.`,
+  noCreditAwaiting: 'No credit on this Booking is awaiting review',
+  /** "Approved by the office and issued in the next billing run (CN-2026-0001)." */
+  creditIssued: (number: string) => `Approved by the office and issued in the next billing run (${number}).`,
+} as const
+
+/** Store sentences from the Phase 39 review: a credit that waits for Xero, a correction queued behind its original. No en or em dash. */
+export const CREDIT_SYNC_MESSAGES = {
+  /** The run's skip message while Xero holds money on the invoice that the ledger has not recorded yet. */
+  waitingForXeroSync: 'Waiting for Xero to sync a payment on this invoice.',
+  /** A correction queued behind the hand-off of the invoice it credits. */
+  waitingForOriginal: 'Waiting for the invoice it credits to reach Xero.',
 } as const

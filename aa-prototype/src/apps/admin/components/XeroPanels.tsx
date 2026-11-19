@@ -36,7 +36,7 @@ import { XERO_ALERT_AFTER_ATTEMPTS } from '../../../domain/xero/queue'
 import type { XeroDivergence } from '../../../domain/types'
 import { dueOn } from '../../../domain/billing/ledger'
 import { SidePanel } from './SidePanel'
-import { XERO_FLAG_LABEL } from '../../../shared/procedureEventCopy'
+import { xeroFlagText } from '../../../shared/procedureEventCopy'
 
 /** "Connected", or "Xero unavailable since HH:mm · N waiting", read from the queue and the engine's view. */
 export function XeroConnectionLine() {
@@ -182,12 +182,9 @@ export function XeroQueuePanel({ actor, anaesthetistId }: { actor: Actor; anaest
 }
 
 /** What Xero shows for a flag, in words, with when AA staff changed it there. */
-export function xeroShowsText(d: Pick<XeroDivergence, 'kind' | 'detectedAtISO' | 'xeroShows'>): string {
-  const at = hhmm(d.xeroShows.changedAtISO ?? d.detectedAtISO)
-  if (d.kind === 'voidedInXero') return `Voided in Xero ${at}`
-  // Catch-up Phase 39: a payment Xero took on an invoice the engine had credited.
-  if (d.kind === 'paidAfterCredit') return `${XERO_FLAG_LABEL.paidAfterCredit} ${at} · ${formatCurrency(d.xeroShows.total)}`
-  return `Amended in Xero ${at} · total ${formatCurrency(d.xeroShows.total)}`
+export function xeroShowsText(d: Pick<XeroDivergence, 'kind' | 'detectedAtISO' | 'xeroShows' | 'leg'>): string {
+  // The one flag wording (catch-up Phase 39 adds paidAfterCredit: a payment Xero took on an invoice the engine had credited).
+  return xeroFlagText(d.kind, d.xeroShows.total, hhmm(d.xeroShows.changedAtISO ?? d.detectedAtISO), d.leg)
 }
 
 /** Invoices voided or amended directly in Xero, flagged by the poll; Resolve records the office's outcome. Shown only when a flag is open. */

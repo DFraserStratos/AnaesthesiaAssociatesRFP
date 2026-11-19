@@ -47,7 +47,7 @@ import { buyerCreatedTaxInvoiceFor, supplierFor } from '../domain/billing/invoic
 import type { AaFeeLedgerPair, Anaesthetist, Booking, BookingLedgerPair, CounterpartyRef, LedgerPair, XeroAccPay, XeroAccRec, XeroContact, XeroCreditNote } from '../domain/types'
 import { isAaFeePair, isBookingPair, isHoldingLeg, payeeAnaesthetistOf } from '../domain/billing/ledger'
 import { xeroCorrectionPlan } from '../domain/billing/creditNote'
-import { CREDIT_MESSAGES } from '../shared/procedureEventCopy'
+import { CREDIT_MESSAGES, CREDIT_SYNC_MESSAGES } from '../shared/procedureEventCopy'
 import { aaFeeAccRecFor } from '../domain/billing/aaFee'
 import type { LockedPayee } from '../domain/billing/lock'
 import { AA_HOLDING_ACCOUNT } from '../domain/billing/prepayment'
@@ -335,6 +335,8 @@ export function mirrorPairInto(s: AppState, work: MirrorWork, pairId: string, me
   const existing = work.ledger[pairId]
   if (existing === undefined || !isBookingPair(existing)) return {}
   if (existing.receivable.xeroAccRecId !== undefined) return mirroredIds(existing) ?? {}
+  // A credited pair is never mirrored (catch-up Phase 39 review: a retried correction whose replacement was credited meanwhile), as `createXeroPair`.
+  if (existing.credit !== undefined) return {}
   const invoice = s.billing.invoices[existing.invoiceId]
   // The payee stamped on the pair (catch-up Phase 25's lock); a prepayment's ACCPAY names the List's anaesthetist at the time, as 27 left it.
   const payeeRecord = payeeRecordFor(s, existing)
@@ -455,8 +457,12 @@ export interface CorrectionHandoffResult {
  * (kind `correction`, its pairs reading "waiting for Xero") and the failure is
  * recorded on the credit note (`xeroFailure`) until it lands; the queue's
  * retry (and the monitor's Retry now) runs `createXeroCorrection` again, so
- * the retry reverses and re-creates together. Idempotent: a correction in
- * Xero is a no-op, and one already queued is not queued twice.
+ * the retry reverses and re-creates together. A correction whose original is
+ * itself still waiting for Xero (its hand-off, or the correction that creates
+ * it) is queued behind it, so the two run in order; one Xero refuses while
+ * available is queued with its reason. Either way `xeroFailure` says why.
+ * Idempotent: a correction in Xero is a no-op, and one already queued is not
+ * queued twice.
  */
 export function handoffCorrection(api: AppStoreApi, creditNoteId: string): Outcome<CorrectionHandoffResult> {
   const state = api.getState()
@@ -465,27 +471,37 @@ export function handoffCorrection(api: AppStoreApi, creditNoteId: string): Outco
   if (note.xero !== undefined) return ok(correctionResultOf(state, creditNoteId))
   if (correctionQueuedFor(state, creditNoteId) !== undefined) return ok({ queued: true })
   const verdict = gateFor(state, { bookingId: note.bookingId })
-  if (!verdict.go) {
-    const queued = enqueueXeroWork(api, {
-      kind: 'correction',
-      idempotencyKey: `CORRECTION-${creditNoteId}`,
-      target: { creditNoteId, pairId: note.pairId, pairIds: [note.pairId, ...replacementPairIds(state, creditNoteId)] },
-      lastError: verdict.error,
-      consumesFault: verdict.consumesFault,
-    })
-    if (!queued.ok) return queued
-    mutate(
-      api,
-      HANDOFF_ACTOR,
-      { entityType: 'creditNote', entityId: creditNoteId, action: 'creditNote.xeroWaiting', after: { creditNoteNumber: note.creditNoteNumber, queueItemId: queued.value.itemId, error: verdict.error }, stampBookingId: null },
-      (s) => {
-        const now = s.billing.creditNotes[creditNoteId]!
-        return { billing: { ...s.billing, creditNotes: { ...s.billing.creditNotes, [creditNoteId]: { ...now, xeroFailure: { code: verdict.consumesFault ? 'fault' : 'outage', message: verdict.error } } } } }
-      },
-    )
-    return ok({ queued: true, queueItemId: queued.value.itemId })
-  }
-  return createXeroCorrection(api, creditNoteId)
+  if (!verdict.go) return queueCorrection(api, creditNoteId, { code: verdict.consumesFault ? 'fault' : 'outage', message: verdict.error }, verdict.consumesFault)
+  // The invoice it credits still waits for Xero (its own hand-off, or the correction that creates it): queue behind it, so the two run in order.
+  if (handoffQueuedFor(state, note.pairId) !== undefined) return queueCorrection(api, creditNoteId, { code: 'waitingForOriginal', message: CREDIT_SYNC_MESSAGES.waitingForOriginal }, false)
+  const out = createXeroCorrection(api, creditNoteId)
+  // Xero answered but the correction could not be made (a replacement not ready): queued with its reason, never left silently stuck.
+  if (!out.ok) return queueCorrection(api, creditNoteId, { code: out.code, message: out.message }, false)
+  return out
+}
+
+/** Write a correction to the Xero sync queue and record why on the credit note (`xeroFailure`), cleared when it lands. */
+function queueCorrection(api: AppStoreApi, creditNoteId: string, failure: { code: string; message: string }, consumesFault: boolean): Outcome<CorrectionHandoffResult> {
+  const state = api.getState()
+  const note = state.billing.creditNotes[creditNoteId]!
+  const queued = enqueueXeroWork(api, {
+    kind: 'correction',
+    idempotencyKey: `CORRECTION-${creditNoteId}`,
+    target: { creditNoteId, pairId: note.pairId, pairIds: [note.pairId, ...replacementPairIds(state, creditNoteId)] },
+    lastError: failure.message,
+    consumesFault,
+  })
+  if (!queued.ok) return queued
+  mutate(
+    api,
+    HANDOFF_ACTOR,
+    { entityType: 'creditNote', entityId: creditNoteId, action: 'creditNote.xeroWaiting', after: { creditNoteNumber: note.creditNoteNumber, queueItemId: queued.value.itemId, error: failure.message }, stampBookingId: null },
+    (s) => {
+      const now = s.billing.creditNotes[creditNoteId]!
+      return { billing: { ...s.billing, creditNotes: { ...s.billing.creditNotes, [creditNoteId]: { ...now, xeroFailure: failure } } } }
+    },
+  )
+  return ok({ queued: true, queueItemId: queued.value.itemId })
 }
 
 function correctionResultOf(state: Pick<AppState, 'billing'>, creditNoteId: string): CorrectionHandoffResult {

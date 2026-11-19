@@ -6,7 +6,7 @@
     {
       "name": "audit-viewer",
       "app": "admin",
-      "caption": "Audit viewer, every action with who, role, source and what changed",
+      "caption": "Audit viewer, every action with who, role, source and what changed. Payments, receipts and disbursements are not audited here: they are recorded in Xero",
       "start": "/admin/audit",
       "states": [
         {
@@ -38,6 +38,93 @@
             "tr:has-text(\"Signed in\")",
             "tr:has-text(\"Sign-in failed\")",
             "tr:has-text(\"Password reset by user\")"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "credit-note-audit",
+      "app": "admin",
+      "caption": "Credit notes are audited, every step with who, role, source and what changed",
+      "start": "/admin/audit",
+      "setup": [
+        {
+          "goto": "/admin/review/L-41267-2026-07-14-AM"
+        },
+        {
+          "trigger": "stage-post-op"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "goto": "/admin/invoices"
+        },
+        {
+          "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Sarah Mitchell\") >> nth=0 >> td >> nth=0"
+        },
+        {
+          "wait": "[data-shot=invoice-correct]"
+        },
+        {
+          "click": "[data-shot=invoice-correct] [data-shot=credit-rebill-button]"
+        },
+        {
+          "wait": "[data-shot=credit-sheet]"
+        },
+        {
+          "click": "[data-shot=credit-sheet] [data-shot=credit-reason-chip]:has-text(\"Wrong amount\")"
+        },
+        {
+          "click": "[data-shot=credit-sheet] [data-shot=credit-submit]"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "goto": "/admin/review?tab=events"
+        },
+        {
+          "wait": "[data-shot=admin-events-queue]"
+        },
+        {
+          "click": "[data-shot=admin-events-queue] tr:has([data-shot=review-credit-row]) >> nth=0"
+        },
+        {
+          "wait": "[data-shot=event-review-sheet]"
+        },
+        {
+          "click": "[data-shot=event-review-approve]"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "goto": "/admin/billing"
+        },
+        {
+          "trigger": "run-next-billing-run"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            },
+            {
+              "select": "select >> nth=0",
+              "value": "creditNote"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "tbody tr:has-text(\"Credit\")"
           ]
         }
       ]

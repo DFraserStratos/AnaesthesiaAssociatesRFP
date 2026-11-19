@@ -116,7 +116,7 @@ describe('the credit note document', () => {
     expect(doc.textContent).not.toMatch(/NHI/)
     expect(container.querySelector('[data-shot="negative-invoice-card"]')?.textContent).toMatch(new RegExp(`^${cn.creditNoteNumber}-P to Dr Souter · \\$520\\.50 · offset against the unpaid payable$`))
     expect(container.querySelector('[data-shot="credit-note-new-invoices"]')?.querySelectorAll('a')).toHaveLength(1)
-    expect(container.querySelector('[data-shot="delivery-caption"]')?.textContent).toBe('Xero does not send credit notes; the engine sends it')
+    expect(container.querySelector('[data-shot="delivery-caption"]')?.textContent).toBe('Xero does not send credit notes; the engine sends it.')
   })
 })
 

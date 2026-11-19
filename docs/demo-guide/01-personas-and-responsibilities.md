@@ -81,6 +81,10 @@ Bookings and capture the data AA needs for billing.
     authorised Lists keep their locked rate. The other rows show a lock: the office holds them.
 14. On her own invoiced Procedure (found through search), **Raise additional invoice** for a late
     charge such as a ward review; she can edit or remove it until the office reviews it.
+15. When the work differed, raise an additional invoice or a credit note on her own procedure: **Credit
+    note** beside **Raise additional invoice** credits the invoice in full (less work than expected, a
+    wrong billable party, or paid twice), with a lower new invoice if one is due. The office reviews it,
+    and her payment for that invoice is reversed.
 
 ### Permissions
 
@@ -316,6 +320,11 @@ allowing billing to proceed.
 11. Record an additional invoice for a late charge (**Create additional invoice** on the Procedure's
     Contract row), and review every event, the anaesthetists' included, on **Review → Events**; an
     approved event is invoiced in the next billing run.
+12. Correct an issued invoice without editing it, from its **Correct this invoice** card: a **Credit
+    note**, **Credit in full and rebill** (the new invoice starts from a copy of the original's lines),
+    or, when the billable party asks for a combined procedure in pieces, **Split into additional
+    invoices** that add up to what was credited. Each credit is reviewed on **Review → Events** and
+    issued in the next billing run.
 
 ### Critical rule
 

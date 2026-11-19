@@ -27,6 +27,8 @@ export interface DemoTriggerChoice {
 export interface DemoTriggerResult {
   ok: boolean
   message: string
+  /** An in-app link shown after the message (catch-up Phase 39: "Open the invoice"). The harness bar renders it. */
+  link?: { to: string; label: string }
 }
 
 export interface DemoTrigger {
@@ -38,6 +40,8 @@ export interface DemoTrigger {
   description: string
   /** The Control Panel index heading, e.g. 'Admin · Billing monitor'. */
   screen: string
+  /** Further Control Panel index headings the entry is listed under too (it shows on more than one screen); `groupTriggersByScreen` reads it. */
+  alsoScreens?: readonly string[]
   /** react-router `matchPath` patterns, matched against the full pathname. */
   routes: readonly string[]
   surfaces: readonly DemoTriggerSurface[]

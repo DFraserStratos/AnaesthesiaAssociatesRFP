@@ -22,11 +22,15 @@ export interface EngineReceivable {
   creditedByEngine?: boolean
   /** On a credited receivable: what Xero holds paid on it that the engine never recorded (a payment after the credit, catch-up Phase 39). */
   paidInXeroAfterCredit?: number
+  /** On a credited receivable: what Xero paid out on its ACCPAY that the engine never recorded (a bill paid after the credit, catch-up Phase 39 review). */
+  paidOutInXeroAfterCredit?: number
 }
 
 /** One new finding, before the store gives it an id and a time. */
 export interface DivergenceFinding {
   kind: XeroDivergence['kind']
+  /** `payable` on a `paidAfterCredit` finding for the ACCPAY's payout. */
+  leg?: 'payable'
   accRecId: string
   pairId: string
   invoiceId: string
@@ -45,27 +49,36 @@ const KIND_ORDER: Record<XeroDivergence['kind'], number> = { voidedInXero: 0, am
  * unless Xero changes again), an AA fee ACCREC, or one the engine credited.
  * An engine-credited receivable is flagged only as `paidAfterCredit`, when
  * Xero holds a payment on it the engine never recorded (catch-up Phase 39:
- * flagged on the pair, never applied to the ledger).
- * In ACCREC id order, then kind.
+ * flagged on the pair, never applied to the ledger), and as `paidAfterCredit`
+ * with `leg: 'payable'` when Xero paid out its ACCPAY and the engine never
+ * recorded it (the reversed payable takes no disbursement).
+ * In ACCREC id order, then kind (a receivable's flag before its payable's).
  */
 export function detectXeroDivergences(
   engineReceivables: readonly EngineReceivable[],
   xeroAccRecs: Readonly<Record<string, XeroAccRec>>,
-  existingFlags: readonly (Pick<XeroDivergence, 'accRecId' | 'kind' | 'status'> & { xeroShows?: Pick<XeroDivergence['xeroShows'], 'total' | 'changedAtISO'> })[],
+  existingFlags: readonly (Pick<XeroDivergence, 'accRecId' | 'kind' | 'status' | 'leg'> & { xeroShows?: Pick<XeroDivergence['xeroShows'], 'total' | 'changedAtISO'> })[],
 ): DivergenceFinding[] {
-  // A flag covers its change in Xero: the same kind, total and change time. Open or resolved, it is never raised twice.
+  // A flag covers its change in Xero: the same kind (and leg), total and change time. Open or resolved, it is never raised twice.
+  const kindKey = (kind: string, leg: 'payable' | undefined) => (leg === 'payable' ? `${kind}/payable` : kind)
   const flagKey = (accRecId: string, kind: string, shows: { total?: number; changedAtISO?: string } | undefined) => `${accRecId}:${kind}:${shows?.total !== undefined ? toCents(shows.total) : ''}:${shows?.changedAtISO ?? ''}`
-  const flagged = new Set(existingFlags.map((f) => flagKey(f.accRecId, f.kind, f.xeroShows)))
-  const legacy = new Set(existingFlags.filter((f) => f.xeroShows === undefined).map((f) => `${f.accRecId}:${f.kind}`))
+  const flagged = new Set(existingFlags.map((f) => flagKey(f.accRecId, kindKey(f.kind, f.leg), f.xeroShows)))
+  const legacy = new Set(existingFlags.filter((f) => f.xeroShows === undefined).map((f) => `${f.accRecId}:${kindKey(f.kind, f.leg)}`))
   const seen = (accRecId: string, kind: string, shows: { total: number; changedAtISO?: string }) => legacy.has(`${accRecId}:${kind}`) || flagged.has(flagKey(accRecId, kind, shows))
   const out: DivergenceFinding[] = []
   for (const r of engineReceivables) {
     if (r.creditedByEngine === true) {
       const rec = xeroAccRecs[r.accRecId]
+      if (rec === undefined || rec.kind !== 'procedure') continue
+      const engineHolds = { amount: r.amount, outstanding: 0 }
       const paid = toCents(r.paidInXeroAfterCredit ?? 0)
-      if (rec === undefined || rec.kind !== 'procedure' || paid <= 0) continue
-      const shows = { status: rec.status, total: paid / 100 }
-      if (!seen(r.accRecId, 'paidAfterCredit', shows)) out.push({ kind: 'paidAfterCredit', accRecId: r.accRecId, pairId: r.pairId, invoiceId: r.invoiceId, xeroShows: shows, engineHolds: { amount: r.amount, outstanding: 0 } })
+      const paidShows = { status: rec.status, total: paid / 100 }
+      if (paid > 0 && !seen(r.accRecId, 'paidAfterCredit', paidShows)) out.push({ kind: 'paidAfterCredit', accRecId: r.accRecId, pairId: r.pairId, invoiceId: r.invoiceId, xeroShows: paidShows, engineHolds })
+      const paidOut = toCents(r.paidOutInXeroAfterCredit ?? 0)
+      const outShows = { status: rec.status, total: paidOut / 100 }
+      if (paidOut > 0 && !seen(r.accRecId, kindKey('paidAfterCredit', 'payable'), outShows)) {
+        out.push({ kind: 'paidAfterCredit', leg: 'payable', accRecId: r.accRecId, pairId: r.pairId, invoiceId: r.invoiceId, xeroShows: outShows, engineHolds })
+      }
       continue
     }
     const rec = xeroAccRecs[r.accRecId]

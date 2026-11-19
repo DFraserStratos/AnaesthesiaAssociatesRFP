@@ -215,6 +215,8 @@ export const ACTION_LABELS: Record<string, string> = {
   ...EVENT_ACTION_LABELS,
   // Catch-up Phase 39: credit notes, negative invoices and the Xero correction.
   ...CREDIT_ACTION_LABELS,
+  // Catch-up Phase 39 session 2: a combined Procedure's invoice split into additional invoices.
+  'invoice.split': 'Invoice split into additional invoices',
 
   // --- Integrations --------------------------------------------------------
   'integration.receive': 'Message received',

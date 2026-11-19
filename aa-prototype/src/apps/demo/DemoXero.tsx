@@ -19,7 +19,8 @@ import { transferOfPair } from '../../domain/billing/ledger'
 import { toCents } from '../../domain/billing/money'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import { APP_CONFIG } from '../../shell/appConfig'
-import { xeroInvoicePairViews, type XeroBillPaymentView, type XeroInvoicePairView } from './xeroPairView'
+import { xeroInvoicePairViews, type XeroBillPaymentView, type XeroCreditView, type XeroInvoicePairView } from './xeroPairView'
+import { CREDIT_LABELS } from '../../shared/procedureEventCopy'
 import { recordFeePaymentFor } from '../../shared/demoTriggers'
 import { aaFeeMonthLabel } from '../../domain/billing/aaFee'
 import { AA_HOLDING_ACCOUNT } from '../../domain/billing/prepayment'
@@ -263,6 +264,8 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
   const [settlementMessage, setSettlementMessage] = useState<string | null>(null)
   const fullySettled = pair.accRec.status === 'paid' && pair.accPay?.status === 'paid'
   const voided = pair.accRec.status === 'voided'
+  // A credited ACCREC (catch-up Phase 39) takes no simulated payment from here either.
+  const credited = pair.accRec.status === 'credited'
   const canOpenWebAccount =
     pair.accRec.amountReceived > 0 &&
     pair.ledger.anaesthetistId === APP_CONFIG.web.persona.anaesthetistId
@@ -350,7 +353,7 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
           <StatusChip recStatus={pair.accRec.status} payStatus={pair.accPay?.status} />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {/* Hidden on a voided pair: Xero takes no payment on a voided invoice (catch-up Phase 37). */}
-            {!voided && <button
+            {!voided && !credited && <button
               type="button"
               onClick={settleInvoice}
               disabled={pair.accPay === undefined || fullySettled || transferred}
@@ -459,6 +462,8 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
           </div>
         </div>
       </Callout>
+
+      {pair.credit !== undefined && <CreditNotesCard credit={pair.credit} />}
 
       <div
         data-testid="xero-money-flow-grid"
@@ -1263,6 +1268,7 @@ function RecordStatus({ status }: { status: string }) {
       status === 'authorised' ? 'Authorised' :
         status === 'paid' ? 'Paid' :
           status === 'voided' ? 'Voided' :
+            status === 'credited' ? CREDIT_LABELS.credited :
             status === 'draft' ? 'Draft' : status
   const on = status === 'paid' || status === 'authorised'
   // Voided in Xero is the danger state (catch-up Phase 37).
@@ -1318,6 +1324,8 @@ function StatusChip({ recStatus, payStatus, fee = false }: { recStatus: string; 
   const disbursed = payStatus === 'paid'
   const label = recStatus === 'voided'
     ? 'Voided'
+    : recStatus === 'credited'
+    ? CREDIT_LABELS.credited
     : fee
     ? paid ? 'Paid' : 'Awaiting payment'
     : disbursed ? 'Disbursed' : paid ? 'Paid · not disbursed' : payStatus === 'authorised' ? 'Part paid' : 'Awaiting payment'
@@ -1397,3 +1405,56 @@ const recordLinkStyle = {
   textDecorationColor: neutral.lineStrong,
   textUnderlineOffset: 3,
 } as const
+
+/**
+ * The engine's correction as Xero holds it (catch-up Phase 39; US-08.6.2
+ * "Both sides move"): the ACCRECCREDIT allocated against the ACCREC and the
+ * ACCPAYCREDIT against the ACCPAY (or the draft ACCPAY voided), each with its
+ * allocated and unallocated amounts, and the new pairs issued with the credit.
+ * Neutral throughout: a credit is a correction, not an error.
+ */
+function CreditNotesCard({ credit }: { credit: XeroCreditView }) {
+  return (
+    <section data-shot="xero-credit-note" data-credit-note={credit.creditNoteNumber} style={{ display: 'flex', flexDirection: 'column', gap: 14, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 18 }}>
+      <div>
+        <SectionLabel>{CREDIT_LABELS.xeroCreditNotes}</SectionLabel>
+        <h3 className="mono" style={{ margin: '4px 0 0', fontSize: 18 }}>{credit.creditNoteNumber}</h3>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 12 }}>
+        {credit.notes.map((n) => (
+          <div key={n.id} data-shot="xero-credit-note-record" data-type={n.type} style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '12px 14px', border: `1px solid ${neutral.line}`, borderRadius: radius.ctl }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: neutral.slate }}>{n.type}</span>
+              <span className="mono" style={{ fontSize: 13, fontWeight: 600 }}>{n.creditNoteNumber}</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
+              <MoneyStat label="Total" value={n.total} />
+              <MoneyStat label={CREDIT_LABELS.xeroAllocated} value={n.allocated} />
+              <MoneyStat label={CREDIT_LABELS.xeroUnallocated} value={n.unallocated} />
+            </div>
+          </div>
+        ))}
+        {credit.accPayVoided && (
+          <div data-shot="xero-credit-accpay-voided" style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '12px 14px', border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, fontSize: 12.5, color: neutral.slate }}>
+            <span style={{ fontWeight: 700 }}>{CREDIT_LABELS.xeroAccPayVoided}</span>
+            <span>{CREDIT_LABELS.xeroAccPayVoidedNote}</span>
+          </div>
+        )}
+      </div>
+      {credit.newPairs.length > 0 && (
+        <div data-shot="xero-credit-new-pairs" style={{ display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap', fontSize: 13 }}>
+          <SectionLabel>{CREDIT_LABELS.xeroNewPairs}</SectionLabel>
+          {credit.newPairs.map((p) =>
+            p.accRecId !== undefined ? (
+              <Link key={p.invoiceNumber} to={`/demo/xero/invoices/${p.accRecId}`} className="mono" style={recordLinkStyle}>
+                {p.invoiceNumber}
+              </Link>
+            ) : (
+              <span key={p.invoiceNumber} className="mono" style={{ color: neutral.slate }}>{p.invoiceNumber}</span>
+            ),
+          )}
+        </div>
+      )}
+    </section>
+  )
+}
