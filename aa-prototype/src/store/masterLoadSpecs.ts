@@ -127,7 +127,8 @@ const surgeons: StoreLoaderSpec<SurgeonFields> = {
       hpiId: c['HPI CPN'] ?? '',
       medicalRegistrationNumber: c['NZ registration number'] ?? '',
     }
-    return { fields, notes: name.trim() === '' ? [] : surgeonNameNotes(name) }
+    const hpiNote = normaliseHpiCpn(c['HPI CPN'] ?? '') === '' ? ['No HPI CPN yet: admin staff fill it in.'] : []
+    return { fields, notes: [...(name.trim() === '' ? [] : surgeonNameNotes(name)), ...hpiNote] }
   },
   keyOf: (f) => {
     const hpi = normaliseHpiCpn(f.hpiId ?? '')
@@ -160,7 +161,7 @@ const anaesthetists: StoreLoaderSpec<NewAnaesthetistFields> = {
     col('bankNumber', 'Bank account number', true),
     col('start', 'Start date', true),
   ],
-  hint: 'Each anaesthetist gets their Slots from the start date.',
+  hint: "Each anaesthetist's sessions are created from their start date.",
   keyColumns: ['Registration number', 'Name'],
   parseRow: (c) => {
     const reasons: string[] = []
@@ -479,7 +480,9 @@ const contracts: StoreLoaderSpec<ContractInput> = {
     const anaesthetist = anaesthetistCell === '' ? undefined : Object.values(masters.anaesthetists).find((a) => a.hpiId === normaliseHpiCpn(anaesthetistCell))
     if (anaesthetistCell !== '' && anaesthetist === undefined) reasons.push(`No anaesthetist with HPI CPN ${anaesthetistCell}.`)
     if (reasons.length > 0) return { reasons }
-    // A cell on the wrong kind is passed through, so 18's guard refuses it in its own words.
+    // Two shape rules are checked here, below, because the pricing type cannot carry them: a cell set on a
+    // pricing kind that has none (a unit rate on a fixed price, say), and a fixed price with only one of its two
+    // cells (the price or its start date). 18's guard sees only the built pricing, which has dropped both.
     let pricing: Contract['pricing']
     switch (kind!) {
       case 'rvgContractRate':

@@ -33,6 +33,7 @@ import {
   SidePanelExample,
   MasterPillsExample,
   MastersSubNavExample,
+  MasterHeaderExample,
   MasterTableExample,
   NameSearchBoxExample,
   OverlayExample,
@@ -98,6 +99,14 @@ import {
   XeroPanelsExample,
 } from './admin/storeExamples'
 import { BookingAsAtPanelExample, BookingSaveBarExample, LeaveWithoutSavingDialogExample, OfficeSavedNoticeExample } from './admin/draftExamples'
+import {
+  LoadResultBannerExample,
+  LoadResultPanelExample,
+  PublicHolidaySheetExample,
+  RetireSectionExample,
+  RvgTimeRuleSheetExample,
+  ShowRetiredToggleExample,
+} from './admin/mastersExamples'
 import {
   CheckboxExample,
   DateJumpInputExample,
@@ -195,7 +204,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="SideNav (with RolesInfo)" source="apps/admin/components/SideNav.tsx" usedIn={A} what="The dark Admin side nav: sections with crimson and amber count badges (the mockup badge, kept local), the wordmark, the Roles in this prototype dialog and the persona through the shared PersonaChip." replaceWith="shadcn Sidebar" note="A labelled navigation whose active item carries aria-current since UI unification U5; the items stay buttons (question 3). Crimson only on --sidebar-primary." height={600}>
           <SideNavExample />
         </CatalogueRow>
-        <CatalogueRow name="Master data sub-nav" source="apps/admin/screens/masters/MasterData.tsx" usedIn={A} what="The vertical list of the 15 master views, with aria-current on the open one." replaceWith="shadcn Sidebar group / NavigationMenu" note="Rebuilt from MasterData's markup and the real MASTERS_NAV: the real nav writes ?view= and renders every master view." height={420}>
+        <CatalogueRow name="Master data sub-nav" source="apps/admin/screens/masters/MasterData.tsx" usedIn={A} what="The vertical list of the master views in five groups (People and places, Schedule, Billing, Settings, Go-live), rendered from masterViews.ts, with aria-current on the open one." replaceWith="shadcn Sidebar group / NavigationMenu" note="Rebuilt from MasterData's markup and the real MASTER_VIEWS registry (catch-up Phase 42): the real nav writes ?view= and renders every master view." height={620}>
           <MastersSubNavExample />
         </CatalogueRow>
         <CatalogueRow name="PdfListsTab and PdfListReview (PDF lists)" source="apps/admin/intake/PdfListsTab.tsx" usedIn={A} what="The rooms' PDF lists (catch-up Phase 34): an inbox on the shared table kit (sender, surgeon, hospital, received, suggested List, a Re-sent Pill and a status Pill), Upload PDF list (PdfUploadDialog: the surface's Overlay with OverlayHeader, RadioCards badged Sample files, a Sent from TextField and SheetActions), and the review beside the facsimile: compact TextFields per row, each correction listed under its row, Send to matching (Button) and a ResultLine." replaceWith="TanStack Table + shadcn Dialog + Field" note="Uploading, correcting and sending write to the demo store." height={460}>
@@ -262,6 +271,9 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="Notice" source="shared/ui/Notice.tsx" usedIn={AWM} what="The one notice (UI unification U3): the ConflictCallout shell in warning, error and success, and the neutral note. A role only where the note announces; the icon is aria-hidden." replaceWith="shadcn Alert">
           <NoticeExample />
+        </CatalogueRow>
+        <CatalogueRow name="LoadResultBanner" source="apps/admin/screens/masters/chrome.tsx" usedIn={A} what="The one-line neutral Notice under a master view's header while a load waits for review: on a seeded view while a seed load for one of its sheets is staged (Open Seed load), and on every view while the go-live load is staged (Open). The Go-live views show none." replaceWith="shadcn Alert" note="Shown for the Hospitals view: Check the sample stages hospitals.csv in the demo store; load or discard it on the LoadResultPanel row or on Seed load.">
+          <LoadResultBannerExample />
         </CatalogueRow>
         <CatalogueRow name="ConflictCallout" source="apps/admin/components/conflicts/ConflictCallout.tsx" usedIn={A} what="Warns, before saving, that the hospital is closed that day and the List will be flagged (the shared Notice, warning tone)." replaceWith="shadcn Alert">
           <ConflictCalloutExample />
@@ -340,8 +352,19 @@ export function AdminCatalogue() {
 
       {/* ------------------------------------------------------------------ */}
       <LibraryGroup id="tanstack">
-        <CatalogueRow name="Table / Header / TextAction / EditCell" source="apps/admin/screens/masters/chrome.tsx" usedIn={A} what="The master views' table chrome: a page header, a table on the shared TableShell (dense) and Th since UI unification U6 (the Admin Review header, sunken dividers, e1), text actions and an Edit cell." replaceWith="TanStack Table + shadcn Table" note="Phase 42 renames heads to columns, adds GroupRow and ClickableRow and wraps Header as MasterHeader over PageHeader. The signature is unchanged until then.">
+        <CatalogueRow name="MasterTable / EditCell" source="apps/admin/screens/masters/chrome.tsx" usedIn={A} what="Every master view's table (catch-up Phase 42): the shared TableShell at the dense density with a Th per named column (a string, or a label with its alignment and width; ACTIONS_COLUMN for the right-aligned actions), and EditCell, the row's Edit as the shared TextAction in its own right-aligned Td." replaceWith="TanStack Table + shadcn Table" note="Replaced the masters Table (heads[]). Contracts and RVG groups add GroupRow; Anaesthetists, Surgeons, Parties and Contracts use ClickableRow.">
           <MasterTableExample />
+        </CatalogueRow>
+        <CatalogueRow name="MasterHeader" source="apps/admin/screens/masters/chrome.tsx" usedIn={A} what="A master view's title row over the shared PageHeader (section size): the title, one subtitle line, an optional count and the teal Add action. A seeded view's subtitle ends with the seeded line (Loaded once at go-live from AA's controlled spreadsheet, then kept here by hand.) and the waiting-load banner follows; section is a second header inside a view, with neither." replaceWith="Custom (layout)" note="Replaced the masters Header. The Add action is stubbed here.">
+          <MasterHeaderExample />
+        </CatalogueRow>
+        <CatalogueRow name="ShowRetiredToggle / RetiredPill" source="apps/admin/screens/masters/chrome.tsx" usedIn={A} what="Show retired on the shared Switch with the retired count as its description, off by default; a retired row in mist on the bg band (retiredRowStyle) with the neutral Retired pill, its reason in the title." replaceWith="shadcn Switch + Badge" note="Local state only: three made-up hospitals, one retired.">
+          <ShowRetiredToggleExample />
+        </CatalogueRow>
+        <CatalogueRow name="LoadResultPanel" source="apps/admin/screens/masters/LoadResultPanel.tsx" usedIn={A} what="One checked sheet's result, shared by Seed load and the go-live view: the summary line (hospitals.csv: 6 rows · 2 valid · 4 rejected), a dense table of Row, the sheet's key columns, a Valid or Rejected pill and the reasons one per line, the Only rejected filter, and Load N valid rows and Discard. After a load the summary says what loaded and each row opens its record." replaceWith="TanStack Table + shadcn Table + Badge" note="Check the sample stages hospitals.csv as the developer's seed load; Load and Discard write to the demo store." height={520}>
+          <Wide minWidth={900}>
+            <LoadResultPanelExample />
+          </Wide>
         </CatalogueRow>
         <CatalogueRow name="Table kit (TableShell · Th · Td · GroupRow · ClickableRow)" source="shared/table/" usedIn={AWM} what="The one table kit (UI unification U6, question 19): TableShell (white, line, radius 14, e1; a named focusable region only when it overflows), Th (scope col) on the Admin Review header, sortable with `sort` (aria-sort and a button, teal underline on the active column; the Billing monitor), Td with sunken dividers, GroupRow (th scope colgroup), and ClickableRow with one RowOpenButton as the keyboard handle. Density comfortable (web), compact (admin) or dense (audit and masters) keeps each table's row height." replaceWith="TanStack Table + shadcn Table" note={`The ${DRAFT_LISTS} table is built this way: Tab to a session, Enter opens the ${DRAFT_LIST} drawer (bug 3). An inner button does only its own action.`}>
           <TableKitExample />
@@ -414,6 +437,15 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="SlotStatusSheet" source="apps/admin/flows/SlotStatusSheet.tsx" usedIn={A} what="Adds or edits an availability status in an Overlay: an OverlayHeader title, name, colour swatches, flags (the shared Checkbox with a hint, UI unification U4) and a live preview validated as you type, and a SheetActions footer." replaceWith="shadcn Dialog + Field + ToggleGroup (swatches) + RHF/Zod" note="Save adds the status to the demo store. Its preview block is the shared StatusBlock with the draft visual (UI unification U6).">
           <SlotStatusSheetExample />
+        </CatalogueRow>
+        <CatalogueRow name="PublicHolidaySheet" source="apps/admin/flows/PublicHolidaySheet.tsx" usedIn={A} what="Adds or changes a master public holiday in an Overlay (catch-up Phase 42): date, name, National or Regional with its region, and the hospitals open that day; Save says what the conflict rule did (flags raised or cleared)." replaceWith="shadcn Dialog + Field + RHF/Zod" note="Save writes the public holiday to the demo store and re-runs the conflict rule.">
+          <PublicHolidaySheetExample />
+        </CatalogueRow>
+        <CatalogueRow name="RvgTimeRuleSheet" source="apps/admin/flows/RvgTimeRuleSheet.tsx" usedIn={A} what="Edits the RVG time rule in an Overlay (catch-up Phase 42): one row per tier (from minute, minutes per unit; add and remove a tier), A part interval always rounds up. as a fixed line, a live preview of the rule in words and the units for 95 and 125 minutes, and Save with its refusal sentence inline." replaceWith="shadcn Dialog + Field + Base UI NumberField" note="Save writes the rule to the demo store; Procedures not yet authorised re-price.">
+          <RvgTimeRuleSheetExample />
+        </CatalogueRow>
+        <CatalogueRow name="RetireSection" source="apps/admin/screens/masters/chrome.tsx" usedIn={A} what="Retire (with a required reason) or Reinstate at the foot of a hospital, surgeon, surgeon group or AA modifier edit sheet: a refused retire lists the store's blockers in a warning Notice; a retired record shows its day and reason." replaceWith="shadcn Field + Textarea + Alert" note="Shown for the first seeded surgeon group; Retire and Reinstate write to the demo store.">
+          <RetireSectionExample />
         </CatalogueRow>
         <CatalogueRow name="ContractPriceRanges" source="apps/admin/flows/ContractPriceRanges.tsx" usedIn={A} what="A fixed-price Contract's dated prices as an inline-edit table: Enter saves, Escape cancels, the last row cannot be deleted. Its in-table inputs are the shared TextField at the compact size (UI unification U4): hidden labels, mono, the price right-aligned on a decimal keypad. Under it (catch-up Phase 25a) the ContractChangeNotice lists each authorised Procedure that kept its old range price." replaceWith="Base UI NumberField + TanStack Table (cell edit)" note="On the shared TableShell (dense) and Th since UI unification U6.">
           <ContractPriceRangesExample />

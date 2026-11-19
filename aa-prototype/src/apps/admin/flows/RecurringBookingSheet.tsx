@@ -5,7 +5,9 @@ import { neutral, radius } from '../../../theme/tokens'
 import type { ListKind, RecurringBooking, Session } from '../../../domain/types'
 import { coversDate, type PlanKept, type PlanSkipped } from '../../../domain/recurringBookingProjection'
 import { recurringClashListId } from '../../../domain/draftLists'
+import { retiredLabel } from '../../../domain/masterLifecycle'
 import {
+  activeHospitals,
   addRecurringBooking,
   editRecurringBooking,
   previewRecurringBookingChange,
@@ -66,6 +68,11 @@ export function RecurringBookingSheet({ open, actor, recurringBooking, onClose }
   const navigate = useNavigate()
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const hospitals = useAppStore((s) => s.masters.hospitals)
+  // Retired hospitals are not offered, except the saved one, labelled (catch-up Phase 42).
+  const hospitalOptions = useMemo(
+    () => activeHospitals({ masters: { hospitals } }, recurringBooking?.hospitalId ?? null),
+    [hospitals, recurringBooking?.hospitalId],
+  )
   const schedule = useAppStore((s) => s.schedule)
   const masters = useAppStore((s) => s.masters)
   const clock = useAppStore((s) => s.clock)
@@ -244,11 +251,11 @@ export function RecurringBookingSheet({ open, actor, recurringBooking, onClose }
             />
             <SelectField label="Hospital (usual)" value={hospitalId} onChange={setHospitalId}>
               <option value="" disabled>Choose a hospital</option>
-              {Object.values(hospitals).map((h) => (
-                <option key={h.id} value={h.id}>{h.name}</option>
+              {hospitalOptions.map((h) => (
+                <option key={h.id} value={h.id}>{retiredLabel(h.name, h)}</option>
               ))}
             </SelectField>
-            <SurgeonPicker label="Usual surgeon" anaesthetistId={anaesthetistId !== '' ? anaesthetistId : undefined} value={surgeonId} onChange={setSurgeonId} emptyLabel="Choose a surgeon" />
+            <SurgeonPicker label="Usual surgeon" anaesthetistId={anaesthetistId !== '' ? anaesthetistId : undefined} value={surgeonId} keepId={recurringBooking?.surgeonId} onChange={setSurgeonId} emptyLabel="Choose a surgeon" />
             <TextField label="Display note (optional)" value={notes} onChange={setNotes} placeholder="e.g. Elective ortho" />
             <div style={{ display: 'flex', gap: 12 }}>
               <div style={{ flex: 1 }}>

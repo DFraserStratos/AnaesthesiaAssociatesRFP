@@ -8,6 +8,7 @@ import { ChipMultiSelect } from '../components/ChipMultiSelect'
 import { ContactFields, EMPTY_CONTACT, type ContactDraft } from '../components/ContactFields'
 import { specialtiesInOrder } from '../../../domain/specialties'
 import { neutral } from '../../../theme/tokens'
+import { RetireSection } from '../screens/masters/chrome'
 
 interface Props {
   /** Absent: add a surgeon. */
@@ -169,6 +170,7 @@ export function SurgeonEditSheet({ surgeon, actor, onClose }: Props) {
 
         <FormError message={sheetError} />
         <SheetActions primary={<Button variant="primary" block onClick={save}>{surgeon === undefined ? 'Add surgeon' : 'Save changes'}</Button>} />
+        {surgeon !== undefined && <RetireSection kind="surgeon" id={surgeon.id} actor={actor} onDone={onClose} />}
       </div>
     </Overlay>
   )

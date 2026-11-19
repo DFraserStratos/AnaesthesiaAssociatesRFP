@@ -38,7 +38,7 @@ import type { AppState, AppStoreApi } from './appStore'
 import { originForNewList } from '../domain/lists/listOrigin'
 import { partyRenameFollowing } from './masterLifecycleActions'
 import { slicesOf, withSource, type Plan, type PlanSource } from './masterPlanners'
-import { hospitalFieldsRefusal, hospitalHolidayRefusal } from '../domain/masterValidation'
+import { hospitalFieldsRefusal, hospitalHolidayRefusal, isRealIsoDate } from '../domain/masterValidation'
 
 /** Plan a hospital's create with its hospital Party (the seed load folds the same planner). */
 export function planHospitalCreate(
@@ -603,7 +603,7 @@ export function editHospitalHoliday(
   const name = patch.name === undefined ? existing.name : patch.name.trim()
   if (name === '') return refuse('nameRequired', 'A holiday name is required.')
   const dateISO = patch.dateISO ?? existing.dateISO
-  if (!ISO_DATE.test(dateISO)) return refuse('dateRequired', 'A valid date is required.')
+  if (!isRealIsoDate(dateISO)) return refuse('dateRequired', 'A valid date is required.')
   if (Object.values(state.masters.holidays).some((h) => h.id !== id && h.hospitalId === existing.hospitalId && h.dateISO === dateISO)) {
     return refuse('duplicateHoliday', 'That hospital already has a holiday recorded on that date.')
   }

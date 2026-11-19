@@ -12,7 +12,7 @@
         {
           "steps": [
             {
-              "click": "role=button[name=\"Contracts\"]"
+              "click": "[data-masters-view=contracts]"
             },
             {
               "wait": 300

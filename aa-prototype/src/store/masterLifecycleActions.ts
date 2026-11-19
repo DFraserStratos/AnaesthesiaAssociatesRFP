@@ -90,7 +90,7 @@ export function retireFactsFor(state: Pick<AppState, 'masters' | 'schedule' | 'c
     else upcomingLists += 1
   }
   const activeRecurringBookings = Object.values(state.masters.recurringBookings).filter(
-    (r) => r[field] === id && r.retiredAtISO === undefined,
+    (r) => r[field] === id && r.retiredAtISO === undefined && (r.effectiveToISO === undefined || r.effectiveToISO >= today),
   ).length
   const facts: RetireFacts = { name, upcomingLists, upcomingDraftLists, activeRecurringBookings }
   if (kind === 'hospital') {
@@ -101,8 +101,14 @@ export function retireFactsFor(state: Pick<AppState, 'masters' | 'schedule' | 'c
       if (count > 0) facts.partyActiveContracts = { partyName: party.name, count }
     }
   } else {
+    // An Active Contract this surgeon is the last unretired link of (no anaesthetist linked): retiring them would
+    // leave it linked only to retired surgeons, which the step rail stops offering (`linkedOnlyToRetiredSurgeons`).
     facts.soleLinkContracts = Object.values(state.masters.contracts).filter(
-      (c) => c.status === 'active' && c.linkedSurgeonIds.length === 1 && c.linkedSurgeonIds[0] === id,
+      (c) =>
+        c.status === 'active' &&
+        c.linkedAnaesthetistId === undefined &&
+        c.linkedSurgeonIds.includes(id) &&
+        c.linkedSurgeonIds.every((s) => s === id || isRetired(state.masters.surgeons[s])),
     ).length
   }
   return facts

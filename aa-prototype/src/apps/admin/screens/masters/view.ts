@@ -1,8 +1,11 @@
 /**
- * The Master data sub-nav (catch-up Phase 17). The selected view lives in the
- * `?view=` search param, so a profile page can link back to its view
- * (`/admin/masters?view=surgeons`). A plain module so fast refresh stays clean.
+ * The Master data sub-nav (catch-up Phase 17; regrouped by catch-up Phase 42).
+ * The selected view lives in the `?view=` search param, so a profile page can
+ * link back to its view (`/admin/masters?view=surgeons`). A plain module so
+ * fast refresh stays clean. The registry itself is `masterViews.ts`.
  */
+
+import { MASTER_VIEWS } from './masterViews'
 
 export type MastersView =
   | 'anaesthetists'
@@ -18,34 +21,14 @@ export type MastersView =
   | 'modifiers'
   | 'scheduleSettings'
   | 'availability-statuses'
+  | 'publicHolidays'
   | 'emailTemplates'
   | 'xeroArchiving'
+  | 'seedLoad'
+  | 'goLive'
 
-/** Sub-nav order (the phase doc's). */
-export const MASTERS_NAV: readonly { view: MastersView; label: string }[] = [
-  { view: 'anaesthetists', label: 'Anaesthetists' },
-  { view: 'contracts', label: 'Contracts' },
-  // Catch-up Phase 18a (US-13.4.5): AA's funding tags in step-rail order, beside the Contracts that carry them.
-  { view: 'fundingTags', label: 'Funding tags' },
-  // Catch-up Phase 18 (US-04.1.5): everyone who holds Contracts; replaces Insurers and Organisations (RV-39).
-  { view: 'parties', label: 'Parties' },
-  { view: 'recurringBookings', label: 'Recurring bookings' },
-  { view: 'hospitals', label: 'Hospitals & holidays' },
-  { view: 'surgeons', label: 'Surgeons' },
-  // Catch-up Phase 18a (US-13.4.4): AA's broad specialties, beside the surgeons who hold them.
-  { view: 'specialties', label: 'Specialties' },
-  { view: 'surgeonGroups', label: 'Surgeon groups' },
-  // Catch-up Phase 19 (US-05.1.1): the RVG groups as published plus AA's own; replaces the view-only RVG codes.
-  { view: 'rvgGroups', label: 'RVG groups' },
-  // Catch-up Phase 19b (US-05.1.5): the RVG modifier table as printed plus AA's own; replaces the demo Modifier codes.
-  { view: 'modifiers', label: 'Modifiers' },
-  { view: 'scheduleSettings', label: 'Schedule settings' },
-  // Catch-up Phase 29 (US-01.2.2): the user-maintained availability statuses; never "slot" in the UI (OQ-64).
-  { view: 'availability-statuses', label: 'Availability statuses' },
-  // Catch-up Phase 35 (US-02.3.4): the update email's wording per kind of change.
-  { view: 'emailTemplates', label: 'Email templates' },
-  { view: 'xeroArchiving', label: 'Xero & archiving' },
-]
+/** Sub-nav order: the registry's, group by group. */
+export const MASTERS_NAV: readonly { view: MastersView; label: string }[] = MASTER_VIEWS.map((v) => ({ view: v.view, label: v.label }))
 
 export const DEFAULT_MASTERS_VIEW: MastersView = 'anaesthetists'
 

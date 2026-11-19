@@ -179,6 +179,11 @@ import {
   hospitalDescriptionRefusal,
   hospitalDescriptionText,
 } from './procedureTextTriggers'
+import { SAMPLE_SHEETS, type SampleSheet } from '../../domain/masterLoad/samples'
+import type { LoadEntity } from '../../domain/masterLoad/types'
+import { stageMasterLoad, stagedLoadFor } from '../../store/masterLoadActions'
+import { stageGoLiveLoad } from '../../store/goLiveActions'
+import { SEED_LOAD_ACTOR } from '../../store/demoActors'
 
 // ---------------------------------------------------------------------------
 // Route patterns (checked against `src/router.tsx` and `pwa/main.tsx`)
@@ -217,6 +222,51 @@ const MOBILE_AVAILABILITY = '/mobile/availability'
 /** A date route param, or undefined. */
 const isoParam = (v: string | undefined) => (v !== undefined && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined)
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
+
+// ---------------------------------------------------------------------------
+// Master data loads (catch-up Phase 42)
+// ---------------------------------------------------------------------------
+
+/**
+ * The seed sheets each Master data view is loaded from at go-live: the
+ * `seeded` field of `apps/admin/screens/masters/masterViews.ts`, restated here
+ * because this file stays out of `src/apps` (the PWA closure contains it). A
+ * test holds the two equal.
+ */
+export const SEEDED_SHEETS_BY_VIEW: Readonly<Record<string, readonly LoadEntity[]>> = {
+  anaesthetists: ['anaesthetists'],
+  hospitals: ['hospitals', 'hospitalHolidays'],
+  surgeons: ['surgeons'],
+  specialties: ['specialties'],
+  publicHolidays: ['publicHolidays'],
+  parties: ['parties'],
+  fundingTags: ['fundingTags'],
+  contracts: ['contracts', 'priceRanges'],
+  rvgGroups: ['rvgGroups'],
+  modifiers: ['modifiers'],
+}
+
+/** The Seed load view's id (`?view=seedLoad`). */
+const SEED_LOAD_VIEW = 'seedLoad'
+
+/** The sample sheets on offer for the published Master data view: all of them on Seed load, else that view's own. */
+function sampleSheetsFor(ctx: DemoTriggerCtx): readonly SampleSheet[] {
+  const view = ctx.published['adminMasters.view']
+  if (view === SEED_LOAD_VIEW) return SAMPLE_SHEETS
+  const entities = view !== undefined ? SEEDED_SHEETS_BY_VIEW[view] : undefined
+  if (entities === undefined) return []
+  return SAMPLE_SHEETS.filter((s) => entities.includes(s.entity))
+}
+
+/** The sample the presenter picked, or the first on offer. */
+function chosenSample(ctx: DemoTriggerCtx, choiceId: string | undefined): SampleSheet | undefined {
+  const offered = sampleSheetsFor(ctx)
+  return (choiceId !== undefined ? offered.find((s) => s.id === choiceId) : undefined) ?? offered[0]
+}
+
+const NO_SAMPLE_HERE = 'Open Seed load, or a Master data view loaded from a spreadsheet'
+const SAMPLE_WAITING = 'A load is already waiting for this sheet; load or discard it first'
+const GO_LIVE_WAITING = 'A go-live load is already waiting; load or discard it first'
 
 /** "St George's · Mr S. Tan" from the masters. */
 function pairingOf(state: AppState, hospitalId: string, surgeonId: string): string {
@@ -1601,6 +1651,55 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       }
     },
     indexPath: () => '/admin/masters?view=recurringBookings',
+  },
+  // ── Admin · Master data: the developer's seed load and the go-live load (catch-up Phase 42) ──
+  {
+    id: 'load-sample-spreadsheet',
+    label: 'Load sample spreadsheet',
+    description:
+      "Checks a sample spreadsheet as the developer's seed load: its valid rows wait on Seed load and its rejected rows show why. It stages and does not load: press Load on Seed load to load the valid rows.",
+    screen: 'Admin · Master data',
+    routes: [ADMIN_MASTERS],
+    surfaces: ['bar'],
+    when: (_state, ctx) => sampleSheetsFor(ctx).length > 0,
+    choices: (_state, ctx) => sampleSheetsFor(ctx).map((s) => ({ id: s.id, label: s.fileName })),
+    disabledReason: (state, ctx, choiceId) => {
+      const sample = chosenSample(ctx, choiceId)
+      if (sample === undefined) return NO_SAMPLE_HERE
+      return stagedLoadFor(state, sample.entity) !== undefined ? SAMPLE_WAITING : null
+    },
+    run: (api, ctx, choiceId) => {
+      const sample = chosenSample(ctx, choiceId)
+      if (sample === undefined) return { ok: false, message: NO_SAMPLE_HERE }
+      if (stagedLoadFor(api.getState(), sample.entity) !== undefined) return { ok: false, message: SAMPLE_WAITING }
+      const res = stageMasterLoad(api, SEED_LOAD_ACTOR, { entity: sample.entity, csvText: sample.csv, source: { kind: 'sample', sampleId: sample.id } })
+      if (!res.ok) return { ok: false, message: res.message }
+      return {
+        ok: true,
+        message: `${sample.fileName} checked: ${plural(res.value.valid, 'row')} valid, ${res.value.rejected} rejected. Open Master data, Seed load, and press Load.`,
+      }
+    },
+    indexPath: () => `${ADMIN_MASTERS}?view=${SEED_LOAD_VIEW}`,
+  },
+  {
+    id: 'go-live-data-load',
+    label: 'Go-live data load (demo)',
+    description:
+      "Prepares the go-live load as the developer: the Solutions Plus operation names with AA's decisions, beside AA's controlled spreadsheets, checked and waiting. Approve or unapprove names on Go-live load, then press Load approved data.",
+    screen: 'Admin · Master data',
+    routes: [ADMIN_MASTERS],
+    surfaces: ['bar'],
+    disabledReason: (state) => (state.masterLoads.goLive?.status === 'staged' ? GO_LIVE_WAITING : null),
+    run: (api) => {
+      const res = stageGoLiveLoad(api, SEED_LOAD_ACTOR)
+      if (!res.ok) return { ok: false, message: res.message }
+      const v = res.value
+      return {
+        ok: true,
+        message: `Go-live load prepared: ${plural(v.candidates, 'Solutions Plus name')} (${v.junk} excluded as junk, ${v.notApproved} not approved) and ${plural(v.sheets, 'controlled spreadsheet')}. Open Master data, Go-live load.`,
+      }
+    },
+    indexPath: () => `${ADMIN_MASTERS}?view=goLive`,
   },
   // ── Admin · Day and Booking detail, Mobile · Booking: prepayment (catch-up Phase 27) ──
   {

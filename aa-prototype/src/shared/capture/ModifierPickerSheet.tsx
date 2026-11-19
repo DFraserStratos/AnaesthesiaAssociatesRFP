@@ -11,7 +11,8 @@ import {
   type ProcedureModifier,
 } from '../../domain/billing/modifiers'
 import type { Modifier, ModifierId, Procedure } from '../../domain/types'
-import { claimModifier, editModifierExplanation, restoreModifier, type Actor } from '../../store'
+import { activeAaModifiers, claimModifier, editModifierExplanation, restoreModifier, type Actor } from '../../store'
+import { retiredLabel } from '../../domain/masterLifecycle'
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { Button } from '../ui/Button'
@@ -78,9 +79,16 @@ export function ModifierPickerSheet({ open, procedure, items, removed, actor, ed
     }
   }, [open, editing])
 
+  // A retired AA modifier is not offered, but one this Procedure already
+  // claims (or carries) stays listed, labelled, so its claim still shows and
+  // can be edited (catch-up Phase 42).
+  const keepIds = useMemo(
+    () => [...procedure.modifierClaims.map((c) => c.modifierId), ...items.map((i) => i.modifierId), ...removed.map((r) => r.modifierId)],
+    [procedure.modifierClaims, items, removed],
+  )
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase()
-    const all = Object.values(modifiers)
+    const all = activeAaModifiers({ masters: { modifiers } }, keepIds)
     const matches = (m: Modifier) =>
       q === '' || m.code.toLowerCase().includes(q) || m.code.replace(/\s+/g, '').toLowerCase().includes(q) || m.factor.toLowerCase().includes(q)
     return modifierBlocks(modifiers)
@@ -89,7 +97,7 @@ export function ModifierPickerSheet({ open, procedure, items, removed, actor, ed
         rows: all.filter((m) => (block === AA_OWN_BLOCK ? m.source === 'aa' : m.source === 'rvg' && m.block === block)).filter(matches),
       }))
       .filter((g) => g.rows.length > 0)
-  }, [modifiers, query])
+  }, [modifiers, query, keepIds])
   const count = groups.reduce((n, g) => n + g.rows.length, 0)
 
   function stateOf(m: Modifier): { kind: 'applied'; reason: string } | { kind: 'removed' } | { kind: 'claimed' } | { kind: 'open' } {
@@ -176,7 +184,7 @@ export function ModifierPickerSheet({ open, procedure, items, removed, actor, ed
                         }}
                       >
                         <span className="mono" style={{ fontSize: 13.5, fontWeight: 600, color: tappable ? accent.base : neutral.slate, paddingTop: 1 }}>
-                          {m.code}
+                          {retiredLabel(m.code, m)}
                         </span>
                         <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, minWidth: 0 }}>
                           <span style={{ fontSize: 14, fontWeight: 500, color: neutral.ink, lineHeight: '19px' }}>{m.factor}</span>

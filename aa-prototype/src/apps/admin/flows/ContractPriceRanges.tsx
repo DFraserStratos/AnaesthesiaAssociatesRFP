@@ -22,10 +22,9 @@ import { shortDay } from '../../../domain/dateText'
 import { addPriceRange, deletePriceRange, editPriceRange, useAppStore, useToday, type Actor } from '../../../store'
 import { ContractChangeNotice } from './ContractChangeNotice'
 import { Button, FieldLabel } from '../../../shared'
-import { TextField, visuallyHidden } from '../../../shared/ui'
+import { TextAction, TextField, visuallyHidden } from '../../../shared/ui'
 import { TableShell, Td, Th } from '../../../shared/table'
 import { Pill } from '../components/MasterPills'
-import { TextAction } from '../screens/masters/chrome'
 import { neutral } from '../../../theme/tokens'
 
 /** The native date control is kept narrow so the table fits the 600px panel. */
@@ -157,8 +156,8 @@ export function ContractPriceRanges({ contract, actor, onError }: { contract: Co
                     <Td style={rowStyle} />
                     <Td align="right" nowrap style={rowStyle}>
                       <span style={{ display: 'inline-flex', gap: 10 }}>
-                        <TextAction onClick={() => saveEdit(r.startISO)}>Save</TextAction>
-                        <TextAction onClick={() => cancelEdit(r.startISO)}>Cancel</TextAction>
+                        <TextAction size="sm" flush onClick={() => saveEdit(r.startISO)}>Save</TextAction>
+                        <TextAction size="sm" flush onClick={() => cancelEdit(r.startISO)}>Cancel</TextAction>
                       </span>
                     </Td>
                   </tr>
@@ -179,10 +178,12 @@ export function ContractPriceRanges({ contract, actor, onError }: { contract: Co
                   <Td align="right" nowrap style={rowStyle}>
                     <span style={{ display: 'inline-flex', gap: 10 }}>
                       <span data-action="edit" style={{ display: 'contents' }}>
-                        <TextAction onClick={() => startEdit(r)} label={`Edit the range from ${formatRangeDate(r.startISO)}`}>Edit</TextAction>
+                        <TextAction size="sm" flush onClick={() => startEdit(r)} label={`Edit the range from ${formatRangeDate(r.startISO)}`}>Edit</TextAction>
                       </span>
                       <span title={last ? 'A Contract keeps at least one price range.' : undefined}>
                         <TextAction
+                          size="sm"
+                          flush
                           onClick={() => remove(r.startISO)}
                           label={last ? 'Delete (a Contract keeps at least one price range)' : `Delete the range from ${formatRangeDate(r.startISO)}`}
                           disabled={last}

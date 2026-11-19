@@ -7,7 +7,13 @@ import { createAppStore, type BoundAppStore } from './appStore'
 import { OFFICE_ACTOR, SOUTER_ACTOR } from './demoActors'
 import { createHospital, editHospital } from './mastersActions'
 import { editParty } from './partyActions'
-import { addAaModifier } from './modifierActions'
+import { addAaModifier, claimModifier } from './modifierActions'
+import { clearListConflict } from './conflictActions'
+import { authoriseList } from './lifecycle'
+import { heldPricesForBooking, proceduresForBooking } from './selectors'
+import { bookingFee } from '../shared/capture/feeContext'
+import { SEED_LIST_IDS } from '../domain/seed'
+import type { AssignedList, Contract } from '../domain/types'
 import { createSurgeonGroup } from './surgeonActions'
 import { editAaModifier, reinstateMaster, retireFactsFor, retireMaster } from './masterLifecycleActions'
 import { addPublicHoliday, deletePublicHoliday, editPublicHoliday, editRvgTimeRule, listsFlaggedByPublicHoliday, PART_INTERVAL_FIXED } from './publicHolidayActions'
@@ -184,5 +190,107 @@ describe('the RVG time rule editor (catch-up Phase 42; US-05.2.2)', () => {
     expect(api.getState().billing.locks).toBe(locks)
     expect(editRvgTimeRule(api, OFFICE_ACTOR, { ...rule, partInterval: 'roundDown' as unknown as 'roundUp' })).toMatchObject({ ok: false, message: PART_INTERVAL_FIXED })
     expect(code(editRvgTimeRule(api, OFFICE_ACTOR, { tiers: [], partInterval: 'roundUp' }))).toBe('invalidRule')
+  })
+
+  it('a tier change re-prices T on unlocked Procedures with recorded times; an AUTHORISED Booking keeps its locked T', () => {
+    const api = store()
+    expect(authoriseList(api, OFFICE_ACTOR, SEED_LIST_IDS.souterMon20Am).ok).toBe(true)
+    /** T units per Procedure with recorded times, as the Booking card's assembler (`bookingFee`) reads them. */
+    const timeUnitsOf = () => {
+      const s = api.getState()
+      const out = new Map<string, number>()
+      for (const booking of Object.values(s.schedule.bookings)) {
+        const list = s.schedule.lists[booking.listId]
+        if (list === undefined || list.anaesthetistId === undefined || booking.cancellation !== undefined) continue
+        if (list.state !== 'ACTIVE' && list.state !== 'SUBMITTED' && list.state !== 'AUTHORISED') continue
+        const held = s.billing.locks[booking.id]
+        const totals = bookingFee({
+          procedures: proceduresForBooking(s, booking.id),
+          list: list as AssignedList,
+          masters: s.masters,
+          billingLines: s.schedule.billingLines,
+          patientId: booking.patientId,
+          held: heldPricesForBooking(s, booking.id),
+          ...(held !== undefined ? { lock: held } : {}),
+        })
+        for (const [pid, view] of Object.entries(totals.views)) {
+          if (view.fee.btm.time.source === 'seeded' && view.fee.btm.time.units > 0) out.set(`${list.state}|${pid}`, view.fee.btm.time.units)
+        }
+      }
+      return out
+    }
+    const before = timeUnitsOf()
+    const unlocked = [...before.keys()].filter((k) => !k.startsWith('AUTHORISED|'))
+    const authorised = [...before.keys()].filter((k) => k.startsWith('AUTHORISED|'))
+    expect(unlocked.length).toBeGreaterThan(0)
+    expect(authorised.length).toBeGreaterThan(0)
+    // One unit per 5 minutes in the first tier: every recorded time gains units under the new rule.
+    const rule = { tiers: DEFAULT_RVG_TIME_RULE.tiers.map((t, i) => (i === 0 ? { ...t, intervalMinutes: 5 } : t)), partInterval: 'roundUp' as const }
+    expect(code(editRvgTimeRule(api, OFFICE_ACTOR, rule))).toBe('ok')
+    const after = timeUnitsOf()
+    for (const k of unlocked) expect(after.get(k), k).toBeGreaterThan(before.get(k)!)
+    for (const k of authorised) expect(after.get(k), k).toBe(before.get(k))
+  })
+})
+
+describe('retire facts and the guards around them (catch-up Phase 42)', () => {
+  it('a surgeon is blocked by an Active Contract whose other linked surgeons are all retired, not by one that also links an anaesthetist', () => {
+    const api = store()
+    const s0 = api.getState()
+    const [a, b] = Object.keys(s0.masters.surgeons).sort()
+    const template = Object.values(s0.masters.contracts).find((c) => c.status === 'active')!
+    const { linkedAnaesthetistId: _drop, ...base } = template
+    const surgeonOnly: Contract = { ...base, id: 'CT-TEST-SOLE', aaCode: 'TEST-SOLE', linkedSurgeonIds: [a!, b!] }
+    const withAnaesthetist: Contract = { ...base, id: 'CT-TEST-ANAE', aaCode: 'TEST-ANAE', linkedSurgeonIds: [a!, b!], linkedAnaesthetistId: Object.keys(s0.masters.anaesthetists)[0]! }
+    const retiredB = { ...s0.masters.surgeons, [b!]: { ...s0.masters.surgeons[b!]!, retiredAtISO: '2026-07-01', retiredReason: 'Left' } }
+    api.setState({ masters: { ...s0.masters, surgeons: retiredB } })
+    const before = retireFactsFor(api.getState(), 'surgeon', a!)!.soleLinkContracts ?? 0
+    api.setState({ masters: { ...api.getState().masters, contracts: { ...s0.masters.contracts, [surgeonOnly.id]: surgeonOnly, [withAnaesthetist.id]: withAnaesthetist } } })
+    // Only the surgeon-only Contract counts.
+    expect(retireFactsFor(api.getState(), 'surgeon', a!)!.soleLinkContracts).toBe(before + 1)
+    // With the other surgeon back, it no longer counts either.
+    api.setState({ masters: { ...api.getState().masters, surgeons: s0.masters.surgeons } })
+    expect(retireFactsFor(api.getState(), 'surgeon', a!)!.soleLinkContracts ?? 0).toBe(retireFactsFor(s0, 'surgeon', a!)!.soleLinkContracts ?? 0)
+  })
+
+  it('a recurring booking whose last day has passed no longer blocks retire', () => {
+    const api = store()
+    const s0 = api.getState()
+    const rb = Object.values(s0.masters.recurringBookings).find((r) => r.retiredAtISO === undefined)!
+    expect(retireFactsFor(s0, 'surgeon', rb.surgeonId)!.activeRecurringBookings).toBeGreaterThan(0)
+    const ended = Object.fromEntries(
+      Object.entries(s0.masters.recurringBookings).map(([id, r]) => [id, r.surgeonId === rb.surgeonId ? { ...r, effectiveToISO: '2026-07-20' } : r]),
+    )
+    api.setState({ masters: { ...s0.masters, recurringBookings: ended } })
+    const after = retireFactsFor(api.getState(), 'surgeon', rb.surgeonId)!
+    expect(after.activeRecurringBookings).toBe(0)
+    expect(retireBlockers('surgeon', after).some((b) => /recurring booking/.test(b))).toBe(false)
+  })
+
+  it('claimModifier refuses a retired AA modifier the Procedure has not already claimed', () => {
+    const api = store()
+    const added = addAaModifier(api, OFFICE_ACTOR, { code: 'WKND', factor: 'Weekend loading', units: 2 })
+    const id = added.ok ? added.value.id : ''
+    expect(code(retireMaster(api, OFFICE_ACTOR, 'aaModifier', id, 'Not used'))).toBe('ok')
+    const out = claimModifier(api, SOUTER_ACTOR, 'P0009', { modifierId: id, explanation: 'Saturday list' })
+    expect(out).toMatchObject({ ok: false, code: 'modifierRetired', message: 'WKND is retired.' })
+    expect(api.getState().schedule.procedures['P0009']!.modifierClaims.some((c) => c.modifierId === id)).toBe(false)
+  })
+
+  it('an office clear of a Labour Day conflict holds while the holiday stands, and drops once the hospital is listed open', () => {
+    const api = store()
+    const CAUSE = 'publicHoliday:PH001'
+    const list = Object.values(api.getState().schedule.lists).find((l) => l.hospitalId === HOSP.stg && l.conflicts.some((c) => c.cause === CAUSE))!
+    expect(list).toBeDefined()
+    expect(code(clearListConflict(api, OFFICE_ACTOR, list.id, CAUSE, 'Theatre running regardless'))).toBe('ok')
+    expect(api.getState().schedule.lists[list.id]!.conflictClears?.map((c) => c.cause)).toEqual([CAUSE])
+    // An unrelated master change re-runs the reconcile: the clear holds.
+    expect(editPublicHoliday(api, OFFICE_ACTOR, 'PH002', { name: 'Canterbury Anniversary' }).ok).toBe(true)
+    expect(api.getState().schedule.lists[list.id]!.conflictClears?.map((c) => c.cause)).toEqual([CAUSE])
+    // St George's listed open on Labour Day: the cause goes, and the clear with it.
+    expect(editPublicHoliday(api, OFFICE_ACTOR, 'PH001', { openHospitalIds: [HOSP.aaRooms, HOSP.stg] }).ok).toBe(true)
+    const after = api.getState().schedule.lists[list.id]!
+    expect(after.conflicts.some((c) => c.cause === CAUSE)).toBe(false)
+    expect(after.conflictClears).toBeUndefined()
   })
 })

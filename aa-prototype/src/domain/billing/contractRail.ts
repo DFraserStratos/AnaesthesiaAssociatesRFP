@@ -44,6 +44,7 @@ import type { Party, PartyId } from './parties'
 import { rangeInForce } from './priceRanges'
 import { fillFromContract } from './startingValues'
 import { anaesthetistMayTypePrice } from './procedurePrice'
+import { isRetired } from '../masterLifecycle'
 import type { RvgGroup, RvgGroupId } from './rvgGroups'
 
 export { destinationOf, destinationKey, type InvoiceDestination }
@@ -58,7 +59,7 @@ export interface RailMasters {
   parties: Readonly<Record<PartyId, Party>>
   fundingTags: Readonly<Record<FundingTagId, FundingTag>>
   rvgGroups: Readonly<Record<RvgGroupId, RvgGroup>>
-  surgeons: Readonly<Record<SurgeonId, { specialtyIds: readonly Specialty['id'][] }>>
+  surgeons: Readonly<Record<SurgeonId, { specialtyIds: readonly Specialty['id'][]; retiredAtISO?: string }>>
 }
 
 /** The List a Procedure sits on: its date, billing hospital, surgeon and anaesthetist. */
@@ -90,13 +91,26 @@ export function listHospitalParty(parties: RailMasters['parties'], hospitalId: H
 }
 
 /**
+ * A Contract held only for surgeons who are all retired (no anaesthetist
+ * link): the rail stops offering it, as it stops offering a Disabled one
+ * (catch-up Phase 42, US-13.4.1). The Procedure that already holds it keeps
+ * it (the store's "kept" path, D81).
+ */
+export function linkedOnlyToRetiredSurgeons(masters: Pick<RailMasters, 'surgeons'>, contract: Contract): boolean {
+  if (contract.linkedSurgeonIds.length === 0 || contract.linkedAnaesthetistId !== undefined) return false
+  return contract.linkedSurgeonIds.every((id) => isRetired(masters.surgeons[id]))
+}
+
+/**
  * Every rule but the search: the one predicate the store's guard and every step share.
- * `anyStatus` switches the status test off (catch-up Phase 21a's review flag
+ * `anyStatus` switches the lifecycle tests off (catch-up Phase 21a's review flag
  * "Contract not offered on this List": a Disabled Contract already on a
- * Procedure fits by its other rules and raises no flag, D81, OQ-135).
+ * Procedure fits by its other rules and raises no flag, D81, OQ-135; Phase 42
+ * treats a Contract linked only to retired surgeons the same way).
  */
 export function isContractCandidate(masters: RailMasters, ctx: RailContext, contract: Contract, opts: { anyStatus?: boolean } = {}): boolean {
   if (opts.anyStatus !== true && contract.status !== 'active') return false
+  if (opts.anyStatus !== true && linkedOnlyToRetiredSurgeons(masters, contract)) return false
   // No contract · RVG is pinned, and the fallbacks are reached only through
   // "Other price": neither is ever a row (US-04.3.3, US-04.3.9).
   if (contract.systemRole !== undefined) return false

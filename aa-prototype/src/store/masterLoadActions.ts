@@ -155,8 +155,12 @@ export function commitMasterLoad(api: AppStoreApi, actor: Actor, loadId: string)
   const load = state.masterLoads.loads[loadId]
   if (load === undefined) return refuse('notFound', 'That load was not found.')
   if (load.status !== 'staged') return refuse('notStaged', load.status === 'loaded' ? 'That sheet is already loaded.' : 'That load was discarded.')
-  const fresh = checkSheet(load.entity, parsedOfLoad(load), state, actor, loadId)
-  const rows = fresh.rows
+  if (load.goLiveBatchId !== undefined) return refuse('goLiveSheet', 'This sheet is part of the go-live load: load or discard the go-live load.')
+  // A row rejected when it was checked stays rejected: only the rows shown valid are re-checked and loaded.
+  const parsed = parsedOfLoad(load)
+  const wasValid = new Set(load.rows.filter((r) => r.status === 'valid').map((r) => r.rowNumber))
+  const fresh = checkSheet(load.entity, { header: parsed.header, rows: parsed.rows.filter((r) => wasValid.has(r.rowNumber)) }, state, actor, loadId)
+  const rows = [...fresh.rows, ...load.rows.filter((r) => !wasValid.has(r.rowNumber))].sort((a, b) => a.rowNumber - b.rowNumber)
   const c = counts(rows)
   if (c.valid === 0) {
     // Keep the re-checked reasons on the staged load, so the panel says why nothing loads.
@@ -188,12 +192,12 @@ export function commitFolded(
   const recordIds = sheets.flatMap((s) => s.result.recordIds)
   const createMetas = sheets.flatMap((s) => s.result.metas)
   const fallbacks = createMetas.filter((m) => m.action === 'contract.fallbackCreate').length
-  const loadedAtISO = state.clock.todayISO
-  const summary: MutationMeta[] = sheets.map(({ load, rows }) => ({
+  const loadedAtISO = clockISO(state.clock)
+  const summary: MutationMeta[] = sheets.map(({ load, rows, result }) => ({
     entityType: 'masterLoad',
     entityId: load.id,
     action: 'masterLoad.commit',
-    after: { entity: load.entity, ...counts(rows), loadedRecords: recordIds.length },
+    after: { entity: load.entity, ...counts(rows), loadedRecords: result.recordIds.length },
     stampBookingId: null,
   }))
   const next: PlanSlices = { masters: last.masters, counters: last.counters, schedule: last.schedule }
@@ -221,6 +225,7 @@ export function discardMasterLoad(api: AppStoreApi, actor: Actor, loadId: string
   const load = api.getState().masterLoads.loads[loadId]
   if (load === undefined) return refuse('notFound', 'That load was not found.')
   if (load.status !== 'staged') return refuse('notStaged', 'Only a staged sheet can be discarded.')
+  if (load.goLiveBatchId !== undefined) return refuse('goLiveSheet', 'This sheet is part of the go-live load: load or discard the go-live load.')
   mutate(
     api,
     actor,

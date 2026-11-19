@@ -71,6 +71,11 @@ export function claimModifier(api: AppStoreApi, actor: Actor, procedureId: strin
   const facts = modifierFactsFor(state, procedure)
   const preApplied = preAppliedModifiersFor({ ...facts, removedModifierIds: procedure.removedModifierIds })
   const claim = claimOf(input)
+  // A retired AA modifier is never newly claimed; a claim it already holds may still be edited (catch-up Phase 42).
+  const target = state.masters.modifiers[claim.modifierId]
+  if (target?.retiredAtISO !== undefined && !procedure.modifierClaims.some((c) => c.modifierId === claim.modifierId)) {
+    return refuse('modifierRetired', `${target.code} is retired.`)
+  }
   const refused = claimRefusal(claim, { claims: procedure.modifierClaims, preApplied, modifiers: state.masters.modifiers })
   if (refused !== null) return refuse('modifierClaimRefused', refused)
   const modifierClaims = applyClaim(procedure.modifierClaims, claim)

@@ -9,7 +9,11 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type AppStoreApi } from './appStore'
 import { OFFICE_ACTOR, SEED_LOAD_ACTOR, SOUTER_ACTOR } from './demoActors'
-import { commitMasterLoad, stageMasterLoad } from './masterLoadActions'
+import { commitMasterLoad, discardMasterLoad, stageMasterLoad } from './masterLoadActions'
+import { stageGoLiveLoad } from './goLiveActions'
+import { createParty } from './partyActions'
+import { createSpecialty } from './specialtyActions'
+import { createFundingTag } from './fundingTagActions'
 import { createHospital } from './mastersActions'
 import { createRvgGroup } from './rvgGroupActions'
 import { addPriceRange, createContract, type ContractInput } from './contractActions'
@@ -141,6 +145,37 @@ describe('a rejected row reads as the manual refusal', () => {
     expect(rejectedRow(api, id, 'Dr Nina Sorensen').reasons).toEqual(['No specialty named Cardiac.'])
   })
 
+  it('specialty: a name already held', () => {
+    const api = createAppStore()
+    const id = stage(api, 'specialties')
+    const manual = createSpecialty(createAppStore(), OFFICE_ACTOR, 'Vascular surgery')
+    expect(message(manual)).not.toBe('')
+    expect(rejectedRow(api, id, 'Vascular surgery').reasons).toEqual([message(manual)])
+  })
+
+  it('funding tag: a code already held', () => {
+    const api = createAppStore()
+    const id = stage(api, 'fundingTags')
+    const manual = createFundingTag(createAppStore(), OFFICE_ACTOR, { code: 'SXAP' })
+    expect(message(manual)).not.toBe('')
+    expect(rejectedRow(api, id, 'SXAP').reasons).toEqual([message(manual)])
+  })
+
+  it('Party: a hospital Party naming no hospital, and a blank name', () => {
+    const api = createAppStore()
+    const id = stage(api, 'parties')
+    const billing = { billingName: 'Rolleston Surgical Centre Limited', deliveryMethod: 'email' as const, email: 'accounts@rollestonsurgical.example' }
+    const noHospital = createParty(createAppStore(), OFFICE_ACTOR, { kind: 'hospital', name: 'Rolleston Surgical Centre', codePrefix: 'RSC', ...billing })
+    expect(message(noHospital)).not.toBe('')
+    expect(rejectedRow(api, id, 'Rolleston Surgical Centre').reasons).toEqual([message(noHospital)])
+    const header = sampleFor('parties').csv.split('\n')[0]!
+    const blank = createAppStore()
+    const blankId = stage(blank, 'parties', [header, ['', 'Insurer', '', 'Nameless Limited', 'Email', 'a@nameless.example', ''].join(',')].join('\n'))
+    const manual = createParty(createAppStore(), OFFICE_ACTOR, { kind: 'insurer', name: '', codePrefix: 'NML', billingName: 'Nameless Limited', deliveryMethod: 'email', email: 'a@nameless.example' })
+    expect(message(manual)).not.toBe('')
+    expect(loadOf(blank, blankId).rows[0]!.reasons).toEqual([message(manual)])
+  })
+
   it('Contract rules beyond the sample: each row refused as the manual create is', () => {
     const header = sampleFor('contracts').csv.split('\n')[0]!
     const rows = [
@@ -247,6 +282,33 @@ describe('stage and commit', () => {
     const r = commitMasterLoad(api, SEED_LOAD_ACTOR, id)
     expect(r.ok && r.value.loaded).toBe(1)
     expect(Object.values(api.getState().masters.hospitals).filter((h) => h.name === 'Rangiora Day Surgery')).toHaveLength(1)
+  })
+
+  it('a row rejected at staging stays rejected at commit, even once its cause is fixed by hand', () => {
+    const extra = ['ACME-101', 'Acme RVG', 'Acme Health', '', '', '', 'Holder', 'Standard', "RVG at the anaesthetist's rate", '', '', '', '', 'No', '', '', '', ''].join(',')
+    const api = createAppStore()
+    const id = stage(api, 'contracts', `${sampleFor('contracts').csv.trimEnd()}\n${extra}`)
+    const row = rejectedRow(api, id, 'ACME-101')
+    expect(row.reasons).toEqual(['No Party named Acme Health.'])
+    // The office adds the missing Party by hand before the load.
+    expect(createParty(api, OFFICE_ACTOR, { kind: 'insurer', name: 'Acme Health', codePrefix: 'ACME', billingName: 'Acme Health Limited', deliveryMethod: 'email', email: 'claims@acme.example' }).ok).toBe(true)
+    const r = commitMasterLoad(api, SEED_LOAD_ACTOR, id)
+    expect(r.ok && r.value.loaded).toBe(PINNED.contracts.valid)
+    const after = loadOf(api, id).rows.find((x) => x.rowNumber === row.rowNumber)!
+    expect(after.status).toBe('rejected')
+    expect(after.reasons).toEqual(row.reasons)
+    expect(Object.values(api.getState().masters.contracts).some((c) => c.aaCode === 'ACME-101')).toBe(false)
+  })
+
+  it("a go-live batch's sheet is refused by the single-sheet commit and discard", () => {
+    const api = createAppStore()
+    expect(stageGoLiveLoad(api, SEED_LOAD_ACTOR).ok).toBe(true)
+    const sheetId = api.getState().masterLoads.goLive!.loadIds[0]!
+    const commit = commitMasterLoad(api, SEED_LOAD_ACTOR, sheetId)
+    expect(commit.ok ? '' : commit.code).toBe('goLiveSheet')
+    const discard = discardMasterLoad(api, SEED_LOAD_ACTOR, sheetId)
+    expect(discard.ok ? '' : discard.code).toBe('goLiveSheet')
+    expect(loadOf(api, sheetId).status).toBe('staged')
   })
 
   it('the same sample on two fresh stores loads the same records', () => {
