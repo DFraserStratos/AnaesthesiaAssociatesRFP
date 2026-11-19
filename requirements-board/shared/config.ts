@@ -115,13 +115,28 @@ export interface BoardConfig {
   revs: Record<ConfigSection, string>
   /** How each status list read (healthy, degraded, damaged), with its problems and high-water mark. Derived, never written. */
   statusState: Record<StatusField, StatusListState>
+  /**
+   * How the `project` and `components` sections read. Any problem reading one is `damaged` (an entry was
+   * dropped or a value ignored), so Settings shows it and saves nothing over it until the file is fixed
+   * (accepted decision 22). Derived, never written.
+   */
+  sectionState: Record<CheckedSection, SectionState>
   questionKinds: Partial<Record<QuestionKind, Wording>>
   capture: CaptureConfig | null
   /** Patterns the check warns on in descriptions. Edited by hand in the file. */
   voice: VoiceConfig
 }
 
-/** What the Settings page may change: each field sent replaces that field, the rest of the file stays as written. */
+/** The Settings sections besides the status lists whose reading is judged (`sectionState`). */
+export type CheckedSection = 'project' | 'components'
+export interface SectionState {
+  state: 'healthy' | 'damaged'
+  /** What could not be read, naming the section and entry. */
+  problems: string[]
+}
+const HEALTHY: SectionState = { state: 'healthy', problems: [] }
+const sectionStateOf = (problems: string[]): SectionState => (problems.length ? { state: 'damaged', problems } : HEALTHY)
+
 /** The sections of `board.config.json` that Settings writes, each with its own revision. */
 export const CONFIG_SECTIONS = ['project', 'components', 'statuses', 'questionStatuses'] as const
 export type ConfigSection = (typeof CONFIG_SECTIONS)[number]
@@ -155,6 +170,7 @@ export const DEFAULT_CONFIG: BoardConfig = {
     statuses: { state: 'healthy', problems: [], highWater: highestCode(DEFAULT_ITEM_STATUSES.map((d) => d.code)) },
     questionStatuses: { state: 'healthy', problems: [], highWater: highestCode(DEFAULT_QUESTION_STATUSES.map((d) => d.code)) },
   },
+  sectionState: { project: HEALTHY, components: HEALTHY },
   questionKinds: {},
   capture: null,
   voice: { descriptionWarnings: [] },
@@ -163,7 +179,8 @@ export const DEFAULT_CONFIG: BoardConfig = {
 /** A config file that can't be read: neutral defaults, except that the status lists are damaged and empty, never the built-in ones. */
 function unreadable(problem: string): BoardConfig {
   const damaged = { state: 'damaged' as const, problems: [problem], highWater: 0 }
-  return { ...DEFAULT_CONFIG, statuses: [], questionStatuses: [], statusState: { statuses: damaged, questionStatuses: damaged }, revs: configRevs(null) }
+  const section = sectionStateOf([problem])
+  return { ...DEFAULT_CONFIG, statuses: [], questionStatuses: [], statusState: { statuses: damaged, questionStatuses: damaged }, sectionState: { project: section, components: section }, revs: configRevs(null) }
 }
 
 export const DEFAULT_KIND_HELP: Record<QuestionKind, string> = {
@@ -200,12 +217,14 @@ export function parseConfig(text: string, recodes: readonly Recode[] = []): { co
   }
   const config: BoardConfig = { ...DEFAULT_CONFIG, project: { name: '' }, components: [], screenshotApps: [], questionKinds: {}, revs: configRevs(raw) }
 
+  const projectFrom = problems.length
   if (isObj(raw.project)) {
     config.project.name = str(raw.project.name) ?? ''
     const accent = str(raw.project.accent)
     if (accent && ACCENT_PATTERN.test(accent)) config.project.accent = accent.toLowerCase()
     else if (accent) problems.push(`project.accent must be a colour like #2f5dbe, not ${accent}`)
   } else if (raw.project !== undefined) problems.push('project must be an object')
+  const componentsFrom = problems.length
 
   if (Array.isArray(raw.components)) {
     const seen = new Set<string>()
@@ -220,6 +239,7 @@ export function parseConfig(text: string, recodes: readonly Recode[] = []): { co
       }
     }
   } else if (raw.components !== undefined) problems.push('components must be a list')
+  config.sectionState = { project: sectionStateOf(problems.slice(projectFrom, componentsFrom)), components: sectionStateOf(problems.slice(componentsFrom)) }
 
   if (Array.isArray(raw.screenshotApps)) {
     const seen = new Set<string>()

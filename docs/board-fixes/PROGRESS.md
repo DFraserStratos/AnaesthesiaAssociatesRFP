@@ -96,7 +96,7 @@ Agent tools in parallel: B12 (after B02), B13 (REQ-07b after B04); both before B
 | B08 | Git history reader | COMPLETE | D-07, D-05 with B05-Q2/Q3, B08-Q1 to Q3, Q5, Q6 recorded (accepted decision 19) | 2026-11-19, board 1.17.0; all 10 findings fixed; deletion bound and contracts for B05 and B09 in the entry |
 | B05 | Server write model | COMPLETE | D-04, B05-Q5, Q6 recorded (accepted decision 20); D-05 recorded (decision 19) | 2026-11-19, board 1.18.0; all 7 findings fixed; R-45 and R-111 server halves delivered (B06 closes); write protocol for B07 and B06 in the entry |
 | B07 | Store sync and layout | COMPLETE | D-10, B07-Q5, Q6 recorded (accepted decision 21) | 2026-11-19, board 1.19.0; all 6 findings fixed; delivery shape, D-10 signal and unsaved-moves signal for B06, B09, B10, B11 in the entry |
-| B06 | Edit sheets and Settings | PLANNED | after B05, B07, B02, B03 | |
+| B06 | Edit sheets and Settings | COMPLETE | B06-Q2 to Q5 and D-04e retirement recorded (accepted decision 22) | 2026-11-19, board 1.20.0; all 16 findings fixed; Q4 lock-out added scope; whole-record and base-less config writes retired |
 | B09 | Diff and history UI | PLANNED | after B08, B07 (D-10) | |
 | B10 | Artifact viewers | PLANNED | after B01, B03, B04, B07; D-01c, B01-Q2 and D-10 recorded | |
 | B11 | Board canvas and views | PLANNED | after B03, B05, B07; D-06 recorded | |
@@ -393,6 +393,36 @@ decisions" section and resolved in that phase's planning.
         store's `assets` slice; B11 keeps node and `data` identity reuse. `setLanes`' missing `lanesRev`
         stays with B11 (B07 does no lane work).
 
+- 2026-11-19, user and B06 session (B06's planning questions, asked in the B06 session):
+  22. **B06-Q2 to Q5:**
+      - **B06-Q2, merge silently** (user). While a sheet (item, question, artifact details) has unsaved
+        edits and the record changes on disk only in fields the user has not changed, the sheet takes
+        the change into its draft quietly (new base, the user's changed fields laid over the disk copy).
+        Keep mine / Load theirs appears only when a field the user changed also changed on disk. Applies
+        to the user's own Mapped drags of the card being edited.
+      - **B06-Q3, block and offer to add, server too** (user). A component list that would leave a
+        component in use (by a card or an artifact) unlisted shows those names with their counts and an
+        "Add them" button, and Save stays off until they are listed. The server refuses the same save
+        (422), but only when the save adds unlisted in-use components compared with the list on disk,
+        so a save that leaves things no worse still goes through. This replaces the old server rule
+        (a dropped name refused only if `state.config` knew it), judged against the disk list.
+        Minimal edit to B05's config route under touch rights.
+      - **B06-Q4, lock components and project too** (user; added scope, no finding owns it, FID-14).
+        `parseConfig` derives a per-section read state for `project` and `components` (any problem
+        reading that section is `damaged`; derived, never written) beside B02's `statusState`; it travels
+        in the snapshot and config deliveries as part of the config. Settings shows a damaged section's
+        problems and offers no editing or Save; it returns to normal live when repaired. The server
+        refuses a save of a section damaged on disk (422, file unchanged), as B02 does for status lists.
+      - **B06-Q5, no record identity beyond the content** (session, from evidence; owner B06). The board's
+        own create and delete clear any stored draft for the IDs they create or remove. A draft whose
+        record reappears from outside the board is treated as any disk change under Q2: it resumes, and
+        a clash on a field the user changed raises Keep mine / Load theirs. With field patches, Keep mine
+        writes only the user's changed fields. D-05 (reuse stays) makes outside re-creation the only
+        remaining case; no identity marker is added.
+      - **D-04e retirement** (session, from decision 20): B06 removes the last callers of the whole-record
+        write (`putItem`, `putQuestion`, `putArtifact`) and of the base-less config write, so the server
+        stops accepting both (`{ record }` is a 400; a Settings section sent without its base is a 400).
+
 ## Planning handoff
 
 - 2026-11-18: orchestrator created FINDINGS.md (copy of the verified review report), PLAN.md, this
@@ -462,8 +492,164 @@ decisions" section and resolved in that phase's planning.
 | `tests/resync.test.ts` and `tests/storeSync.test.ts` twins share `artifactInfo`'s process-wide cache, so artifact facts are compared partly through it | B07 review | none | facts are cached per file version, which is what a full read uses too |
 | The `logged` deliveries in `store.ts` are bounded only by how long a load takes (a load that never settles would let it grow) | B07 review | none | dev-only; `fetch` has no timeout today |
 | `e2e/board-mapped.spec.ts` "clicking a lane name renames it" failed once in a full fixture run at load 17 and passed 6 of 6 on repeat (B05's flaky row) | B07 | B15 | same item as B05's |
+| `e2e/one-rule.spec.ts` R-101 failed in every full fixture run in B06 and in 4 to 12 of 12 single runs; the pre-B06 board fails it 4 of 6 and 1 of 3, and B06's board with its artifact page changes taken out 3 of 8 against 4 of 8 with them | B06 | B10, then B15 | the viewer pixel-box flake (B05's row), not the edit sheets |
+| Settings rows are keyed by index, so focus falls to `body` after Remove or Move; every row's buttons are named just "Remove", "Move up", "Move down"; the accent and tone swatch radio groups have no arrow keys | B06 review | none (B15 to judge) | pre-existing accessibility in Settings, outside B06's findings |
+| Unsaved Settings edits are not counted by the leave prompt (`hasUnsavedWork`), and Discard changes in Settings does not ask | B06 review | none (a product choice) | pre-existing; DESIGN's "every way out asks" is about sheets |
+| The veil markup and its Escape handling exist in `Sheet.tsx` and in the artifact panel's `PanelVeil` / `usePanelKeys` (now exported from `ArtifactPanel.tsx` for the artifact page's orphan state) | B06 review | B10 | B10 owns `src/artifacts/*`; one shared veil component would do |
+| The Writing voice section hand-rolls the conflict banner and save bar the other sections now share (`ConflictBanner`, `SaveBar`) | B06 review | none | cosmetic duplication |
 
 ## Phase entries
+
+### B06 · Edit sheets and Settings · COMPLETE · 2026-11-19
+
+Board 1.19.0 to **1.20.0**. Plan and evidence: `phases/B06-edit-sheets-and-settings/IMPLEMENTATION.md` (plan, "As
+built", the manual keyboard and focus check, "Recovery"). Decisions: accepted decision 22 (B06-Q2 merge silently,
+B06-Q3 block and offer "Add them" with a server rule, B06-Q4 lock project and components, all asked in this
+session; B06-Q5 and the D-04e retirement settled from evidence); the SPEC marks them answered. Master merged first
+(`adbb3687`: catalogue, plan and capture files only, no board code). All 16 findings reproduced at that HEAD
+(line drift only, plus B02, B03, B05 and B07's deliveries).
+
+**Dispositions**
+
+Proof files: `tests/sheetWrites.test.ts` (node: helpers, merge, section state, server), `tests/editSheets.test.ts`
+and `tests/settingsView.test.ts` (jsdom), `e2e/edit-sheets.spec.ts` (fixture board). Before-proofs ran against a
+`git archive adbb3687` in the scratchpad (one test per run, so no draft leaks between tests there).
+
+| Finding | Disposition | Proof |
+|---|---|---|
+| R-01 (closes, with B02) | **Fixed**: a damaged status list shows a banner with its problems and no rows, Add or Save; other sections work; it returns live when repaired. A degraded list shows its problems and can be saved (the repair, B02-Q4) | settingsView "a damaged status list ..."; e2e "a damaged status list is locked, and comes back when repaired, without a reload" |
+| R-02 | **Fixed**: sheets send `{ patch, baseRev, base }` of the fields the user changed (`patchBetween`); a disk change to untouched fields is taken in quietly (B06-Q2); a clash raises Keep mine / Load theirs naming the fields; Keep mine lays the user's fields over the current copy (`overlay`). Status menu, Retire and the answer flip send `{ status }` | editSheets: item Keep mine, silent merge of the user's own drag, status alone, question Keep mine, artifact details Keep mine; e2e R-02 through files (description kept, parent and `artifacts:` kept) |
+| R-12 | **Fixed**: a gone artifact with a stored details draft shows the orphan panel (every changed detail, the veil on Esc and the crumb, Discard edits); with none, the gone message; full screen is left either way; a returning artifact picks its draft up | e2e R-12 (full screen left, masthead back, Esc and crumb ask, Discard) |
+| R-41 | **Fixed** (typing kept, form not locked): what is typed during a save stays an unsaved change on the saved copy; failure and 409 keep the draft | editSheets "a save that succeeds leaves the later typing" (fails before); the failure/409 case is a preservation check |
+| R-42 | **Fixed**: the orphan sheet asks before every exit (Esc, scrim, close, guarded ways out); a confirmed discard resets the hook (final); the store's create and delete clear drafts for those IDs | editSheets "Esc and the scrim ask first ..." and "a card the board creates at a reused ID never opens with an old draft" |
+| R-43 | **Fixed**: the orphan list is every changed field (`changedRows`), readable (cards with titles, status labels, kind names, a cleared field "Cleared"), unchanged fields left out | editSheets "shows every unsaved change in readable form" |
+| R-45 | **Fixed**: each Settings section sends `bases` from `config.revs`; a disk change while dirty (or a 409) shows Load theirs / Keep mine; Keep mine merges row by row (`shared/settingsMerge.ts`), renumbering a new status whose code the file took (B02's rule), and notes what it decided; Save waits for the answer | settingsView R-45 block (3); sheetWrites merge block (3); e2e R-45 (status 7 on disk kept with the reworded help) |
+| R-107 | **Fixed**: the docked orphan registers the guard and now has the veil, so a board click, arrow walk or search asks | editSheets "in the docked panel, a board click asks" |
+| R-108 | **Fixed**: `guarded` runs at once while a modal scrim is open (the docked draft is kept); the docked panel drops a waiting question when a question sheet opens over it; New card's waiting create reads the form as it is then, and not at all once it has gone | editSheets R-108 block (3) |
+| R-109 | **Fixed**: the opener is read at first render; the sheet takes focus only if nothing inside has it; a swap keeps the first opener; close falls back to the docked card or `main`, never `body` | editSheets focus block; e2e "a new card opened in Edit takes the typing" and "New card on Outline ..." |
+| R-110 | **Fixed**: the safe answer is focused only when the question appears (keyed on its title); inert is reapplied every render | editSheets "the veil takes focus once"; manual check (board search keeps focus while a file changes) |
+| R-111 (closes, with B05) | **Fixed**: Cmd/Ctrl S with no change sends nothing (still prevents the browser dialog); a dirty draft that only differs by tidying leaves Edit without a write; a blank new card is still dropped | editSheets R-111 block (2) |
+| R-112 | **Fixed**: a sheet adopts its record when it appears (and a stored draft then resumes under Q2); the not-found sheet allows "renamed, removed, or does not read" and shows the check's error for that ID; the question stepper anchors when the record first appears | editSheets R-112 block (3) |
+| R-123 | **Fixed** (B06-Q3): a non-empty component list that leaves in-use components unlisted names them with counts and "Add them", and Save waits; the server refuses a save that newly leaves one unlisted, judged against the disk list; a new row is never locked by its name | settingsView R-123 block (2); sheetWrites server "refuses a first component ..." |
+| R-124 | **Fixed**: "Used by" counts cards and artifacts; a lower-case code on disk leaves the section clean (codes upper-cased only as typed) | settingsView "counts artifacts" and "a lower-case code on disk leaves the section clean"; the server already counted artifacts (preservation test in sheetWrites) |
+| R-125 | **Fixed**: a section is dirty only when saving would change the file (`norm` both sides); after a save the form shows the saved (trimmed) value | settingsView "a project name saved with outer spaces ..." |
+| B06-Q4 (added scope, user) | **Delivered**: `config.sectionState` for `project` and `components`; locked in Settings while damaged, live recovery; the server refuses a save of a damaged section | sheetWrites "how the project and components sections read" and "never saves over ..."; settingsView "a components or project section read with problems is locked" |
+
+Before-proofs: `settingsView` 10 of 10 fail before; `editSheets` 18 of 20 original tests fail before (the two that pass
+are preservation checks: a failing save keeps typing, a sibling swap keeps its opener), plus the 5 review tests that
+reach old code (question and artifact Keep mine, veil focus return, body fallback, panel focus); `sheetWrites` server
+and section-state block 5 of 6 fail (the one passing is the server's artifact count, already there); the pure helper
+blocks fail on import (new modules); `e2e/edit-sheets.spec.ts` 6 of 6 fail before. The review regressions that the old
+code does not reach (New card under StrictMode, leaving Edit keeps focus, Settings typing during a save, the panel's
+StrictMode focus ref) were each shown failing with the fix taken out.
+
+**What shipped:**
+- **New:** `src/drafts.ts` (the draft store, `forgetDrafts`), `shared/settingsMerge.ts` (`mergeFields`, `mergeRows`,
+  `mergeStatusLists`); tests `tests/sheetWrites.test.ts` (12), `tests/editSheets.test.ts` (27),
+  `tests/settingsView.test.ts` (11), `e2e/edit-sheets.spec.ts` (6).
+- **Changed:** `src/components/useEditableRecord.ts` (rewritten: kind, patch saves, silent merge, collisions, typing
+  during a save, R-112 adoption, final discard, `cancelPending`); `EditChrome.tsx` (field labels, conflict fields,
+  `changedRows`, `OrphanedDraft` asking, `OrphanBody`, `NotFoundSheet`); `Sheet.tsx` (focus and veil); `ItemModal.tsx`,
+  `QuestionModal.tsx` (patch saves, orphan rows, not-found, docked drop, stepper anchor); `NewCardButton.tsx`;
+  `src/nav.ts` (`guarded`, `hasUnsavedWork`); `src/views/ArtifactPage.tsx` (`ArtifactGone`, full screen);
+  `src/views/SettingsView.tsx` (sections rewritten round `useSection`); `src/store.ts` (save actions).
+
+**Store save actions after B06 (for B11 and later phases that edit `src/store.ts`):**
+`saveItem(id, { patch, baseRev, base })`, `saveQuestion(id, change)`, `saveArtifact(id, change)` (each over
+`api.patchItem` / `patchQuestion` / `patchArtifact`; set the returned record); `saveConfig(patch)` returns the saved
+config and needs `bases` for every section sent; `createItem`, `createQuestion`, `deleteItem`, `deleteQuestion` clear
+stored drafts for the IDs they create or remove. `api.putItem`, `putQuestion`, `putArtifact` are gone.
+
+**Touch-rights edits (convention 11):**
+- `server/catalogueApi.ts` (B05's): the record PUTs require `patch` (`requirePatch`; `{ record }` is a 400); the
+  config PUT requires a base per section sent (400), refuses a damaged `project` or `components` section (422), and
+  judges the components rule against the disk list; header lines.
+- `shared/config.ts` (B02's): `sectionState`, `CheckedSection`, `SectionState`; a stray doubled doc line removed.
+- `shared/patch.ts` (B05's): `changedFields`, `patchBetween`, `overlay`, `fieldValue`.
+- `src/api.ts` (B05's): `putItem`, `putQuestion`, `putArtifact` removed; doc lines.
+- `src/App.tsx` (B07's): the leave prompt reads `hasUnsavedWork(reloading)`.
+- `src/artifacts/ArtifactPanel.tsx` (B10's later): `usePanelKeys` and `PanelVeil` exported, the veil's focus return
+  and inert, patch saves.
+- `src/styles.css`: `.main:focus` without an outline.
+- `tsconfig.node.json`: `src/globals.d.ts` included (tests render the Settings page).
+- `playwright.config.ts`: the new spec in the fixture project.
+- Tests moved to the retired shapes' replacements, intent kept: `tests/api.test.ts` (records as patches, config
+  writes with bases via `withBases`, the malformed-record test as a malformed patch), `tests/artifacts.test.ts` (an
+  artifact patch naming a file, regions, source or `extra` is refused; details saved), `tests/writeModel.test.ts`
+  (the whole-record test now proves the 400 and a one-field patch), `tests/historyJournal.test.ts`,
+  `tests/loadResilienceApi.test.ts`, `tests/originRules.test.ts`, `tests/resync.test.ts` (bases),
+  `tests/config.test.ts` (`sectionState` in the shape and asserted).
+- `requirements/SCHEMA.md`: one doc sentence (components rule, damaged sections), no requirement.
+- `docs/board-fixes/index.html`: B06 status.
+
+**Deviations:**
+1. **D-04e retirement done here** (decision 22): the server no longer accepts `{ record }` or a base-less config
+   section, as decision 20 assigned to the phase removing the last callers. A tab still running a pre-B06 board gets
+   a 400 on save until reloaded.
+2. **B06-Q3's server rule is in the config route**; `shared/check.ts` was not touched (it already reports a component
+   missing from a non-empty list).
+3. **Focus work beyond the SPEC**, from the review and the manual check: focus returns after the veil is answered,
+   a modal sheet keeps focus when the focused field goes, errors are announced.
+4. **A degraded status list can be saved unchanged** (the repair) and Keep mine in Settings leaves a note naming what
+   it decided.
+
+**Verification:**
+- **`npm run verify:board` green:** 1,014 tests (60 files), check OK.
+- **Fixture e2e (5182):** 115 of 116 pass; the failure is `one-rule.spec.ts` R-101, the known viewer pixel-box flake
+  (rates in Discovered: the same with B06's artifact page changes taken out). `edit-sheets`, `settings`,
+  `artifacts`, `item-links`, `item-delete`, the question specs and `bad-data` all pass.
+- **Real catalogue:** `npm run check` OK, no errors; no file under `requirements/` changed but SCHEMA.md.
+- **Manual keyboard and focus check** (IMPLEMENTATION.md table): item modal and docked, question, artifact details;
+  open, Edit, Esc, Cmd S, navigate away, conflict, Keep mine, Load theirs, close; before on the pre-B06 board too. The
+  docked panel takes no focus on open, before and after.
+- **Migration:** none (drafts are tab memory; `sectionState` is derived).
+
+**Review outcomes (convention 15):** two Sonnet reviewers (about 1,000 changed lines outside tests).
+- **Confirmed and fixed, each with a regression test shown failing first:**
+  - New card created nothing in development: its "form still there" flag was set at creation and cleared by
+    StrictMode's double mount (high; reviewer 1);
+  - a sheet opened with nothing focused gave focus back to `body` on close (reviewer 1);
+  - Settings dropped what was typed while a section saved, and could keep a stale form if the file moved during the
+    save (reviewer 1);
+  - answering the veil left focus on `body` (reviewer 2); the artifact panel's veil needed its place kept in a ref
+    under StrictMode;
+  - artifact "Replaced by" in the orphan list was a bare ID (reviewer 1);
+  - question and artifact Keep mine had no proof (reviewer 1): tests added.
+- **Also fixed:** save errors and Settings errors `role="alert"`; the locked banner `role="status"`; the "In use"
+  note a labelled group instead of a live region; the veil's `aria-describedby`; an `h2` on the orphan sheet; the
+  `restoreFocus` comment and its duplicate blur listener; `plain()` simplified; the orphan reader's `as never`.
+- **Found in the manual check and fixed:** leaving Edit with Esc dropped focus to `body` (test added, failing first).
+- **Not changed** (Discovered): Settings rows keyed by index and their button names, swatch arrow keys, Settings edits
+  outside the leave prompt, the duplicated veil, the Voice section's own banner. The `hasUnsavedDrafts` re-export the
+  reviewer called dead is kept: the tests import it from the hook.
+- **Not reproducible:** none.
+
+**Doc facts (convention 12):**
+- **`requirements-board/README.md`:** shared map (`patch.ts` client half, new `settingsMerge.ts`), src map (`nav.ts`
+  `hasUnsavedWork`, new `drafts.ts`); "How it works": the save bullet (whole record refused, bases required), a new
+  sheets bullet (patches, silent merge, Keep mine, typing during a save, records that appear, Settings per section),
+  the docked-guard line (modal over the panel), the unsaved-edits bullet (drafts store, orphans, artifact page,
+  create and delete clear drafts); the config paragraph (`sectionState`, locked sections, the components rule).
+- **`requirements-board/DESIGN.md`:** Interaction (the modal-over-panel way out; disk changes, orphaned and missing
+  records; focus; the veil's focus once and inert); the artifact page's Edit details (orphan, full screen);
+  Settings (per-section saves, conflict, Keep mine note, locked sections, degraded repair, components rule).
+- **`requirements/SCHEMA.md`:** the components and damaged-section sentence after the vocabulary lists.
+- **`CHANGELOG.md`** 1.20.0. **Headers:** `server/catalogueApi.ts` routes, `useEditableRecord.ts`, `EditChrome.tsx`,
+  `drafts.ts`, `settingsMerge.ts`, `ArtifactPage.tsx`, `nav.ts`.
+- **Checked, nothing changed:** the About page (says Settings edits `board.config.json`; nothing on conflicts or
+  drafts), ADOPTING, the SKILL.md files.
+
+**What later phases need:**
+- **B09:** nothing from B06's sheets; the History view is untouched.
+- **B10:** `src/artifacts/ArtifactPanel.tsx` now exports `usePanelKeys` and `PanelVeil` (used by `ArtifactPage`'s
+  orphan state); keep the veil's focus return and inert, or move both into one shared veil with `Sheet.tsx`'s
+  (Discovered). The artifact page leaves full screen when its artifact is gone (`ArtifactPage.tsx`).
+- **B11:** the store save actions above; `guarded` (`src/nav.ts`) now runs at once while a modal scrim is open;
+  `BoardView` and `LaneNode` callers need no change.
+- **B14:** README, DESIGN and SCHEMA lines above in the whole-file pass; the D-04e retirement means the protocol has
+  one record shape.
+- **B15:** rerun `tests/{sheetWrites,editSheets,settingsView}.test.ts` and `e2e/edit-sheets.spec.ts`; repeat the
+  manual keyboard check (IMPLEMENTATION.md) if a browser is at hand.
 
 ### B07 · Store sync and layout · COMPLETE · 2026-11-19
 

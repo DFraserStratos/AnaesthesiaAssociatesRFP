@@ -9,8 +9,10 @@ import { applyChanges, canParent, driftFrom, invertChanges, laneListProblem, typ
 import { isArtifactId, itemLinkTargets } from '../shared/links.ts'
 import { UNASSIGNED_LANE, firstLaneName, type Artifact, type ArtifactRec, type AssetVersions, type CatalogueDelivery, type Issue, type Item, type ItemStatus, type ItemType, type Layout, type Question, type Rev } from '../shared/types.ts'
 import { DEFAULT_CONFIG, componentNames, type BoardConfig, type ConfigPatch } from '../shared/config.ts'
+import type { ArtifactDetails } from '../shared/files.ts'
 import { isOpenQuestion, isRetired, statusCodes } from '../shared/statuses.ts'
-import { ApiError, api } from './api.ts'
+import { ApiError, api, type RecordPatch } from './api.ts'
+import { forgetDrafts } from './drafts.ts'
 import { fields, isBoolean, isRecord, isStringArray, oneOf, readJson, removeJson, writeJson } from './storage.ts'
 import { idMatch } from './itemSearch.ts'
 
@@ -50,11 +52,15 @@ interface CatalogueState {
   load: () => Promise<void>
   /** Apply one `catalogue:changed` delivery: one store update, however much it carries. */
   applyDelivery: (d: CatalogueDelivery) => void
-  saveItem: (item: Item, baseRev?: string) => Promise<Rev<Item>>
-  /** Replace the item and/or question status lists in board.config.json (the Settings page). */
-  saveConfig: (patch: ConfigPatch) => Promise<void>
+  /**
+   * Save the fields a sheet (or a one-click action) changed: `patch`, the rev they were edited on and each
+   * one's starting value (`base`), laid over the card as it is on disk (write protocol, accepted decision 20).
+   */
+  saveItem: (id: string, change: RecordPatch<Item>) => Promise<Rev<Item>>
+  /** Replace sections of board.config.json (the Settings page); `bases` from `config.revs` are required. */
+  saveConfig: (patch: ConfigPatch) => Promise<BoardConfig>
   createItem: (partial: Partial<Item> & Pick<Item, 'type'>) => Promise<Rev<Item>>
-  saveQuestion: (q: Question, baseRev?: string) => Promise<Rev<Question>>
+  saveQuestion: (id: string, change: RecordPatch<Question>) => Promise<Rev<Question>>
   createQuestion: (partial: Partial<Question>) => Promise<Rev<Question>>
   deleteQuestion: (id: string, baseRev: string) => Promise<void>
   /** Delete an item and everything under it (`ids`: that set, as shown), with every reference to them. */
@@ -63,7 +69,7 @@ interface CatalogueState {
   adoptItem: (rec: Rev<Item>) => void
   adoptQuestion: (rec: Rev<Question>) => void
   /** Save an artifact's details; its file, regions and source are kept as they are on disk. */
-  saveArtifact: (a: Artifact, baseRev?: string) => Promise<ArtifactRec>
+  saveArtifact: (id: string, change: RecordPatch<Artifact>) => Promise<ArtifactRec>
   adoptArtifact: (rec: ArtifactRec) => void
   /** Set when a Mapped board move or lane edit was refused or failed; the move is rolled back. */
   moveError?: string
@@ -266,8 +272,8 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
     if (d.layout && Object.keys(pendingLayout).length && !layoutTimer && !Object.keys(inflightLayout).length) void get().flushLayout()
   },
 
-  async saveItem(item, baseRev) {
-    const rec = await api.putItem(item, baseRev)
+  async saveItem(id, change) {
+    const rec = await api.patchItem(id, change)
     set({ items: { ...get().items, [rec.data.id]: rec } })
     return rec
   },
@@ -275,30 +281,35 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
     const config = await api.putConfig(patch)
     set({ config })
     dropUnknownStatuses(config)
+    return config
   },
   async createItem(partial) {
     const rec = await api.createItem(partial)
+    // A reused ID never opens with an earlier card's unsaved edits.
+    forgetDrafts('item', [rec.data.id])
     set({ items: { ...get().items, [rec.data.id]: rec } })
     return rec
   },
-  async saveQuestion(q, baseRev) {
-    const rec = await api.putQuestion(q, baseRev)
+  async saveQuestion(id, change) {
+    const rec = await api.patchQuestion(id, change)
     set({ questions: { ...get().questions, [rec.data.id]: rec } })
     return rec
   },
-  async saveArtifact(a, baseRev) {
-    const rec = await api.putArtifact(a, baseRev)
+  async saveArtifact(id, change) {
+    const rec = await api.patchArtifact(id, change as RecordPatch<ArtifactDetails>)
     set({ artifacts: { ...get().artifacts, [rec.data.id]: rec } })
     return rec
   },
   async createQuestion(partial) {
     const rec = await api.createQuestion(partial)
+    forgetDrafts('question', [rec.data.id])
     set({ questions: { ...get().questions, [rec.data.id]: rec } })
     return rec
   },
 
   async deleteQuestion(id, baseRev) {
     await api.deleteQuestion(id, baseRev)
+    forgetDrafts('question', [id])
     const questions = { ...get().questions }
     delete questions[id]
     set({ questions })
@@ -306,6 +317,7 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
 
   async deleteItem(id, baseRev, ids) {
     const res = await api.deleteItem(id, baseRev, ids)
+    forgetDrafts('item', res.deleted)
     const s = get()
     const items = { ...s.items }
     const questions = { ...s.questions }

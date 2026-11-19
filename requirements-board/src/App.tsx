@@ -7,10 +7,9 @@ import { isPastArtifact, type CatalogueDelivery } from '../shared/types.ts'
 import { ItemModal } from './components/ItemModal.tsx'
 import { NewCardButton } from './components/NewCardButton.tsx'
 import { QuestionModal } from './components/QuestionModal.tsx'
-import { hasUnsavedDrafts } from './components/useEditableRecord.ts'
-import { useOpen } from './nav.ts'
+import { hasUnsavedWork, useOpen } from './nav.ts'
 import { api } from './api.ts'
-import { hasUnsavedMoves, useCatalogue, useConfig, useIndex, useShownIndex } from './store.ts'
+import { useCatalogue, useConfig, useIndex, useShownIndex } from './store.ts'
 import { useArtifactIndex } from './artifactIndex.ts'
 import { BrandMark } from './components/BrandMark.tsx'
 import { ProblemPill } from './components/ProblemPill.tsx'
@@ -97,7 +96,7 @@ export function App() {
   // asks only for sheet edits.
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedDrafts() || (!reloading && hasUnsavedMoves())) e.preventDefault()
+      if (hasUnsavedWork(reloading)) e.preventDefault()
     }
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)

@@ -372,7 +372,7 @@ describe('a re-sync costs what changed (R-158)', () => {
     deliveries.inc.length = 0
     inc.syncFromDisk([at('board-layout.json')])
     expect(inc.getState()).toBe(held)
-    inc.handle({ method: 'PUT', path: '/api/config', body: { project: { name: 'Echoed' } }, headers: HEADERS })
+    inc.handle({ method: 'PUT', path: '/api/config', body: { project: { name: 'Echoed' }, bases: { project: inc.getState().config.revs.project } }, headers: HEADERS })
     const after = inc.getState()
     deliveries.inc.length = 0
     inc.syncFromDisk([at('board.config.json')])

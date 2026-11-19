@@ -47,7 +47,8 @@ describe('board.config.json', () => {
   it('falls back to neutral defaults, field by field, and says what was wrong', () => {
     expect(parseConfig('{').problems[0]).toMatch(/not valid JSON/)
     // Every other field at its neutral default; the status lists damaged, never the built-in ones (B02, R-01).
-    expect({ ...parseConfig('{').config, statuses: DEFAULT_CONFIG.statuses, questionStatuses: DEFAULT_CONFIG.questionStatuses, statusState: DEFAULT_CONFIG.statusState }).toEqual(DEFAULT_CONFIG)
+    expect({ ...parseConfig('{').config, statuses: DEFAULT_CONFIG.statuses, questionStatuses: DEFAULT_CONFIG.questionStatuses, statusState: DEFAULT_CONFIG.statusState, sectionState: DEFAULT_CONFIG.sectionState }).toEqual(DEFAULT_CONFIG)
+    expect(parseConfig('{').config.sectionState.components.state).toBe('damaged')
     expect(parseConfig('{').config.statuses).toEqual([])
     const { config, problems } = parseConfig(
       JSON.stringify({
@@ -59,6 +60,8 @@ describe('board.config.json', () => {
       }),
     )
     expect(config.components).toEqual([{ name: 'Core' }])
+    // A components section read with problems is damaged, so Settings saves nothing over it (accepted decision 22).
+    expect(config.sectionState).toEqual({ project: { state: 'healthy', problems: [] }, components: { state: 'damaged', problems: ['components: {"code":"X"} has no name', 'components: "Core" is listed twice'] } })
     expect(config.screenshotApps).toEqual([{ key: 'web', label: 'web', viewport: 'desktop' }])
     // The project's own lists as far as they read (B02, R-01), never the built-in ones.
     expect(config.statuses).toEqual([])

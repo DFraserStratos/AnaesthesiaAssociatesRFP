@@ -110,10 +110,25 @@ function NewCardPop({ draft, setDraft, onClose, index }: { draft: Draft; setDraf
   const needsParent = draft.kind === 'feature' || draft.kind === 'story'
   const ready = !!draft.title.trim() && (!needsParent || !!draft.parent) && !busy
 
+  // A creation waiting on the docked card's "Discard changes" runs with the form as it is then, and not at
+  // all once the form has gone (closed, or the page left meanwhile).
+  const latest = useRef({ draft, open, config })
+  latest.current = { draft, open, config }
+  const alive = useRef(false)
+  // Set on mount, not at creation: StrictMode mounts twice in development, running the cleanup between.
+  useEffect(() => {
+    alive.current = true
+    return () => void (alive.current = false)
+  }, [])
+
   const create = async () => {
+    if (!alive.current) return
+    const { draft, open, config } = latest.current
+    const needsParent = draft.kind === 'feature' || draft.kind === 'story'
+    const title = draft.title.trim()
+    if (!title || (needsParent && !draft.parent)) return
     setBusy(true)
     try {
-      const title = draft.title.trim()
       if (draft.kind === 'question') {
         const rec = await createQuestion({ kind: draft.questionKind, title, status: defaultStatus(config, 'question'), affects: draft.affects })
         onClose()
@@ -121,7 +136,7 @@ function NewCardPop({ draft, setDraft, onClose, index }: { draft: Draft; setDraf
       } else {
         const rec = await createItem({ type: draft.kind, parent: needsParent ? draft.parent : null, title, status: defaultStatus(config, 'item') })
         onClose()
-        open.item(rec.data.id, { edit: true })
+        latest.current.open.item(rec.data.id, { edit: true })
       }
     } catch (e) {
       setError((e as Error).message)

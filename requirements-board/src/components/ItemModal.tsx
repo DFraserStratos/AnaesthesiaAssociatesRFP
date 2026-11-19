@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { tidyText } from '../../shared/files.ts'
 import { plainText } from '../../shared/links.ts'
 import { planDelete, type DeletePlan } from '../../shared/remove.ts'
-import { defaultStatus, isRetired, isRetiredStatus, roleCode, statusClasses } from '../../shared/statuses.ts'
+import { defaultStatus, isRetired, isRetiredStatus, roleCode, statusClasses, statusLabel } from '../../shared/statuses.ts'
 import { typeLabel, firstLaneName, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
 import { setLeaveGuard, useEditOnOpen, useOpen } from '../nav.ts'
@@ -12,7 +12,7 @@ import { sheetArtifacts, useSourceIndex } from '../sourceRows.ts'
 import { ArtifactRowsSection } from './ArtifactRows.tsx'
 import { CardFind } from './CardFind.tsx'
 import { CopyLink, Glyph, ItemName, Lineage, StatusLabel, TypeIcon } from './bits.tsx'
-import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
+import { EditActions, EditBanners, NotFoundSheet, OrphanedDraft, changedRows, discardConfirm } from './EditChrome.tsx'
 import { HistoryView } from './HistoryView.tsx'
 import { ItemsPicker, ParentPicker } from './ItemPicker.tsx'
 import { MarkdownTextarea } from './MarkdownTextarea.tsx'
@@ -39,8 +39,9 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
   const [dropped, setDropped] = useState(false)
   const ed = useEditableRecord<Item>({
     key: `item:${id}`,
+    kind: 'item',
     rec,
-    save: saveItem,
+    save: (change) => saveItem(id, change),
     adopt: adoptItem,
     normalise,
     startEditing: fresh,
@@ -65,6 +66,12 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
     setLeaveGuard(guard)
     return () => setLeaveGuard(null)
   }, [docked])
+  // A question opened over the panel covers it: a way out it was asking about is dropped, never run later.
+  const covered = docked && open.params.has('question')
+  const cancelPending = ed.cancelPending
+  useEffect(() => {
+    if (covered) cancelPending()
+  }, [covered])
 
   const [askRetire, setAskRetire] = useState(false)
   /** What deleting would take with it, worked out when the question is asked and sent back so the server can hold us to it. */
@@ -87,11 +94,13 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
   /** The body shows the card, or its history timeline (read mode only; a new card opens on the card). */
   const [view, setView] = useState<'card' | 'history'>('card')
   const bodyRef = useRef<HTMLDivElement>(null)
+  /** A one-click status write: only the status, so a change on disk to anything else merges. */
+  const writeStatus = (r: Rev<Item>, status: ItemStatus) => saveItem(id, { patch: { status }, baseRev: r.rev, base: { status: r.data.status } })
   const retire = async () => {
     if (!rec) return
     setAskRetire(false)
     try {
-      await saveItem({ ...rec.data, status: roleCode(config, 'item', 'retired')! }, rec.rev)
+      await writeStatus(rec, roleCode(config, 'item', 'retired')!)
     } catch (e) {
       if (e instanceof ApiError && e.current) adoptItem(e.current as Rev<Item>)
       ed.setError((e as Error).message)
@@ -105,7 +114,7 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
     setStatusBusy(true)
     ed.setError(null)
     try {
-      await saveItem({ ...rec.data, status }, rec.rev)
+      await writeStatus(rec, status)
     } catch (e) {
       if (e instanceof ApiError && e.current) adoptItem(e.current as Rev<Item>)
       ed.setError((e as Error).message)
@@ -114,38 +123,21 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
     }
   }
 
-  if (ed.orphaned && ed.draft) {
-    const d = ed.draft
-    return (
-      <OrphanedDraft
-        ed={ed}
-        id={id}
-        noun="Item"
-        docked={docked}
-        onClose={open.close}
-        fields={[
-          { label: 'Title', text: d.title },
-          { label: 'Description', text: d.description },
-          { label: 'Acceptance criteria', text: d.acceptance },
-          { label: 'Technical discussion', text: d.technical },
-          { label: 'Notes', text: d.notes },
-          { label: 'Sources', text: d.sources.join('\n') },
-        ]}
-      />
-    )
+  if (ed.orphaned && ed.draft && ed.base) {
+    // Every unsaved change, readable: cards by ID and title, statuses by name.
+    const named = (ref: string) => `${ref}${index.byId.get(ref) ? ` ${index.byId.get(ref)!.title}` : ''}`
+    const show = (field: string, value: unknown) =>
+      field === 'parent' ? (value ? named(value as string) : '') :
+      field === 'status' ? statusLabel(config, 'item', value as string) :
+      field === 'related' ? (value as string[]).map(named).join('\n') :
+      field === 'images' ? (value as Item['images']).map((i) => `${i.src}${i.caption ? ` · ${i.caption}` : ''}`).join('\n') :
+      undefined
+    return <OrphanedDraft ed={ed} id={id} noun="Item" docked={docked} onClose={open.close} rows={changedRows('item', ed.base.data, ed.draft, show)} />
   }
 
   if (dropped && !rec) return null
-  if (!rec || !ed.draft) {
-    return (
-      <Sheet onClose={open.close} label="Item not found" docked={docked}>
-        <div className="sheet-body">
-          <h2>{id} is not in the catalogue</h2>
-          <p>It may have been renamed or removed on disk.</p>
-        </div>
-      </Sheet>
-    )
-  }
+  if (!rec || !ed.draft) return <NotFoundSheet id={id} noun="Item" docked={docked} onClose={open.close} />
+
 
   const item = ed.editing ? ed.draft : rec.data
   const set = (patch: Partial<Item>) => ed.setDraft((d) => (d ? { ...d, ...patch } : d))
@@ -168,7 +160,7 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
   return (
     <Sheet onClose={() => ed.leave(open.close)} onKey={ed.onKey} label={`${item.id} ${item.title}`} statusClass={`${statusClasses(config, 'item', item.status)} sheet-${item.type}`} confirm={confirm} docked={docked}>
       <SheetHead item={rec.data} index={shown} leave={ed.leave} />
-      <EditBanners ed={ed} noun="item" />
+      <EditBanners ed={ed} noun="item" kind="item" />
       {/* Ctrl F finds in the card while it is open; editing leaves it to the browser, which reads the fields. */}
       <CardFind root={bodyRef} resetKey={`${id}:${view}`} disabled={ed.editing || !!confirm} />
       <div ref={bodyRef} className="sheet-body">

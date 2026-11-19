@@ -3,7 +3,7 @@ import type { BoardConfig, ConfigPatch } from '../shared/config.ts'
 import type { ArtifactDetails } from '../shared/files.ts'
 import type { CommitsResponse, DiffCountResponse, DiffResponse } from '../shared/diff.ts'
 import type { TimelineEntry } from '../shared/history.ts'
-import type { Artifact, ArtifactRec, CatalogueSnapshot, Item, Layout, Question, Rev } from '../shared/types.ts'
+import type { ArtifactRec, CatalogueSnapshot, Item, Layout, Question, Rev } from '../shared/types.ts'
 
 export interface BatchChange {
   id: string
@@ -74,8 +74,6 @@ export const api = {
   voice: () => call<Voice>('GET', '/api/voice'),
   /** Writes VOICE.md; refused with a 409 (and the file as it is now) if it changed on disk since baseRev. */
   putVoice: (text: string, baseRev: string | null) => call<Voice>('PUT', '/api/voice', { text, baseRev }),
-  /** Today's whole-record save (until B06 switches to `patchItem`): refused on any change on disk since baseRev. */
-  putItem: (record: Item, baseRev?: string) => call<Rev<Item>>('PUT', `/api/items/${encodeURIComponent(record.id)}`, { record, baseRev }),
   /**
    * Saves only the fields in `patch`, laid over the card as it is on disk now. With `base`, a change on disk
    * to other fields merges; a change to a patched field is a 409 naming it (`collisions`). Unchanged: nothing written.
@@ -94,9 +92,10 @@ export const api = {
     call<DiffCountResponse>('GET', `/api/diff/count${from || to ? `?${new URLSearchParams({ ...(from && { from }), ...(to && { to }) })}` : ''}`),
   /** The Diff review's default: HEAD against the files on disk, or with nothing there what the last catalogue commit changed (`jumped`). */
   diffAuto: () => call<DiffResponse>('GET', '/api/diff/auto'),
-  /** An artifact's details (name, kind, status, date, author, area, sources, description); the server keeps the rest as on disk. */
-  putArtifact: (record: Artifact, baseRev?: string) => call<ArtifactRec>('PUT', `/api/artifacts/${encodeURIComponent(record.id)}`, { record, baseRev }),
-  /** An artifact's details as a patch (see `patchItem`); the sidecar is edited in place. */
+  /**
+   * An artifact's details as a patch (see `patchItem`): name, kind, status, date, author, area, sources,
+   * description. The sidecar is edited in place; its file, regions and source stay as on disk.
+   */
   patchArtifact: (id: string, change: RecordPatch<ArtifactDetails>) => call<ArtifactRec>('PUT', `/api/artifacts/${encodeURIComponent(id)}`, change),
   createItem: (partial: Partial<Item> & Pick<Item, 'type'>) => call<Rev<Item>>('POST', '/api/items', partial),
   /**
@@ -105,8 +104,6 @@ export const api = {
    */
   deleteItem: (id: string, baseRev: string, ids: string[]) =>
     call<{ deleted: string[]; records: Rev<Item>[]; questions: Rev<Question>[] }>('DELETE', `/api/items/${encodeURIComponent(id)}`, { baseRev, ids }),
-  putQuestion: (record: Question, baseRev?: string) =>
-    call<Rev<Question>>('PUT', `/api/questions/${encodeURIComponent(record.id)}`, { record, baseRev }),
   /** A question's fields as a patch (see `patchItem`). */
   patchQuestion: (id: string, change: RecordPatch<Question>) => call<Rev<Question>>('PUT', `/api/questions/${encodeURIComponent(id)}`, change),
   /** Removes the question's file; refused with a 409 if it changed on disk since baseRev. */
@@ -114,7 +111,7 @@ export const api = {
   createQuestion: (partial: Partial<Question>) => call<Rev<Question>>('POST', '/api/questions', partial),
   /** All or nothing: every record must still be at its baseRev (a Mapped board move). */
   batchItems: (changes: BatchChange[]) => call<{ records: Rev<Item>[] }>('POST', '/api/items/batch', { changes }),
-  /** The sections sent replace those in board.config.json; with `bases` (from `config.revs`), a section changed on disk since is a 409. */
+  /** The sections sent replace those in board.config.json. Each needs its base in `bases` (from `config.revs`): a section changed on disk since is a 409. */
   putConfig: (patch: ConfigPatch) => call<BoardConfig>('PUT', '/api/config', patch),
   /**
    * Positions are a patch (null puts a card back in its story-map place) and never refused for the lane list;

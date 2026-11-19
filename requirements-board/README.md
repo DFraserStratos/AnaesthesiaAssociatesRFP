@@ -67,7 +67,9 @@ shared/        code shared by server, scripts and browser
   config.ts      the project's vocabulary (board.config.json): parse, defaults, lookups
   files.ts       parse / serialise one catalogue file (deterministic, round-trips byte for byte)
   inPlace.ts     a save edits the file in place: only the changed fields' lines change (`editItemText` ...)
-  patch.ts       field patches: what a record write may change, how it lays over the file, which fields clash
+  patch.ts       field patches: what a record write may change, how it lays over the file, which fields clash;
+                 the client's half too (`changedFields`, `patchBetween`, `overlay`)
+  settingsMerge.ts  Settings' Keep mine: a section merged row by row (a status by code, a component by name)
   check.ts       integrity rules
   ids.ts         next-ID assignment, sibling order
   move.ts        Mapped board moves (pure): planMove / applyMove / invertChanges, lane-name rules
@@ -107,7 +109,9 @@ scripts/       check, export-csv, capture (+ captureFiles: generated-file naming
 src/
   store.ts       catalogue mirror (deliveries in order, never under a snapshot), card-move queue, derived index, view prefs
   artifactIndex.ts  which cards point at each artifact, its spots, the Artifacts view's prefs
-  nav.ts         URL-driven sheets (?item, ?question, one-shot ?edit=<id>), the docked panel's leave guard
+  nav.ts         URL-driven sheets (?item, ?question, one-shot ?edit=<id>), the docked panel's leave guard,
+                 `hasUnsavedWork` (the reload prompt)
+  drafts.ts      unsaved sheet edits, kept in the tab so leaving a sheet never loses them
   useDismiss.ts  Esc / outside-press close for popovers
   useCatalogueRefresh.ts  re-run on a delivery that changes records, or window focus; usePersistentState.ts a per-browser pick
   dates.ts       dates and times, in New Zealand English
@@ -140,10 +144,20 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   a save with `base` still goes through when none of its own fields changed on disk; otherwise it is a
   409 with the current copy and the fields that clash (`collisions`), and the sheet offers keep mine /
   load theirs. A write of several records names every record that blocked it (`blocked`). A save
-  that changes nothing writes nothing. The protocol is at the top of `server/catalogueApi.ts`;
-  today's whole-record saves stay accepted (refused on any change on disk) until the sheets move to
-  patches. Settings sections each carry a revision (`config.revs`) and a write may send the ones it
-  edited from (`bases`), so a section an agent changed meanwhile is a 409, never an overwrite.
+  that changes nothing writes nothing. The protocol is at the top of `server/catalogueApi.ts`; a
+  whole record (`{ record }`) is refused (400). Settings sections each carry a revision
+  (`config.revs`) and a write sends the ones it edited from (`bases`, required), so a section an
+  agent changed meanwhile is a 409, never an overwrite.
+- The sheets (item, question, artifact details) send only the fields the user changed, with their
+  starting values (`useEditableRecord`; nothing at all when nothing changed, Cmd S included). A change
+  on disk while a sheet has unsaved edits is taken into the draft quietly when it touches only fields
+  the user has not changed (an agent's `artifacts:`, the user's own drag of the card); a field changed
+  on both sides raises Keep mine (the user's fields over the file as it is now) or Load theirs. What is
+  typed while a save is in flight stays an unsaved change. A sheet opened before its record exists (a
+  file that does not parse yet) picks it up when it appears. Settings works the same way per section:
+  a section changed on disk while edited shows Load theirs / Keep mine (merged row by row: a status by
+  its code, a component by its name; a new status the file has meanwhile given its code takes the next
+  free one).
 - **One file never stops the load.** A record that can't be read or parsed, an artifact file that
   can't be read (or whose contents can't be made sense of), a junk entry in `board-layout.json`, a
   screenshot folder that can't be fully read: each becomes an issue naming the file, and the rest
@@ -198,9 +212,14 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   file).
 - On the board, `?item=ID` docks the item sheet as a left-hand panel beside the map (one click on
   a card opens it); elsewhere it is a modal. The board switches cards through the panel's
-  unsaved-edit guard (`guarded` in `src/nav.ts`).
-- Unsaved edits in a sheet survive leaving it (browser Back, a link) and are restored on return;
-  closing it from the app asks first, and reloading the tab warns.
+  unsaved-edit guard (`guarded` in `src/nav.ts`); while a modal sheet covers the panel, a way out goes
+  ahead at once and the panel's draft is kept.
+- Unsaved edits in a sheet survive leaving it (browser Back, a link) and are restored on return
+  (`src/drafts.ts`); closing it from the app asks first, and reloading the tab warns (`hasUnsavedWork`
+  in `src/nav.ts`, with unsaved card moves). A record that vanishes with unsaved edits shows every
+  changed field, asks before any way out, and gets its edits back if it returns; the artifact page
+  does the same for its details and leaves full screen. Creating or deleting a card from the board
+  clears any draft left under its ID.
 - The board has two modes, switched top right (per browser, each with its own viewport):
   - **Freeform** (the original view): the arrangement is computed (`autoLayout`): epics as column
     heads wrapping into bands, features beneath, stories stacked. Only cards you drag are stored,
@@ -368,9 +387,14 @@ check and left at its default, except in the status lists, which are never swapp
 ones: a bad tone falls back for that status alone, and a structural problem (a bad or doubled code,
 a role or settle rule broken, a file that does not parse) marks the list damaged, the board reads
 only its readable part, and status saves are refused until the file is fixed. Each list's state
-(`healthy`, `degraded`, `damaged`) reaches the client in the config as `statusState`. The Settings
-page edits `board`, `project`, `components` and the two status lists, and leaves every other field
-as written.
+(`healthy`, `degraded`, `damaged`) reaches the client in the config as `statusState`, and
+`project` and `components` each read as `healthy` or `damaged` (any problem) in `sectionState`. The
+Settings page edits `project`, `components` and the two status lists, and leaves every other field as
+written. A damaged section is shown locked (its problems, no editing, no Save) until the file is fixed,
+and the server refuses a save of it; a degraded status list can be saved, which repairs it. Once the
+component list names one component it must name every component a card or artifact uses: Settings
+lists the missing ones with an "Add them" button, and the server refuses a save that would leave a new
+one unlisted.
 
 ### Capturing screenshots
 

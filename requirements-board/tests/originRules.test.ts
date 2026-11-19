@@ -58,13 +58,13 @@ describe('one decode rule for IDs in URLs (R-63)', () => {
     ['DELETE', `/api/questions/${BAD}`],
   ])('%s %s with a malformed escape is 400', (method, path) => {
     const api = createCatalogueApi(root, () => {})
-    expect(status(() => api.handle({ method, path, headers: JSON_HEADERS, body: { baseRev: 'x', record: {} } }))).toBe(400)
+    expect(status(() => api.handle({ method, path, headers: JSON_HEADERS, body: { baseRev: 'x', patch: {} } }))).toBe(400)
   })
 
   it.each(['..%2F..%2Fx', '..%5Cx', '..', '%2E%2E', '.', '%2E', 'a%00b', 'a%0Ab', 'US-01.1.1%2F..'])('an ID that could name another file, %s, is refused before any read', (seg) => {
     const api = createCatalogueApi(root, () => {})
     for (const path of [`/api/items/${seg}`, `/api/questions/${seg}`]) {
-      expect(status(() => api.handle({ method: 'PUT', path, headers: JSON_HEADERS, body: { baseRev: 'x', record: {} } }))).toBe(400)
+      expect(status(() => api.handle({ method: 'PUT', path, headers: JSON_HEADERS, body: { baseRev: 'x', patch: {} } }))).toBe(400)
     }
   })
 

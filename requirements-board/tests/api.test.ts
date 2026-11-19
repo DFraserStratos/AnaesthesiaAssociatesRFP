@@ -8,6 +8,7 @@ import type { CatalogueChange, Item, Rev } from '../shared/types.ts'
 import { HttpError, createCatalogueApi } from '../server/catalogueApi.ts'
 import { configPath, itemPath, layoutPath, loadCatalogue, questionPath, writeItem, writeLayout, writeQuestion } from '../server/catalogueFs.ts'
 import { DEFAULT_ITEM_STATUSES, DEFAULT_QUESTION_STATUSES, type StatusDef } from '../shared/statuses.ts'
+import { CONFIG_SECTIONS, configRevs } from '../shared/config.ts'
 import type { ServerResponse } from 'node:http'
 import { execFileSync } from 'node:child_process'
 import { serveAsset, serveHistoryBlob } from '../server/cataloguePlugin.ts'
@@ -53,6 +54,17 @@ function status(fn: () => unknown): number {
   }
 }
 const recOf = (a: ReturnType<typeof api>, id: string) => a.getState().items[id]!
+/** A Settings write as the board sends it: every section with its base, read from the file as it is now. */
+const withBases = (body: Record<string, unknown>) => {
+  let raw: Record<string, unknown> | null = {}
+  try {
+    raw = existsSync(configPath(root)) ? (JSON.parse(readFileSync(configPath(root), 'utf8')) as Record<string, unknown> | null) : {}
+  } catch {
+    raw = null // an unreadable file: any base will do, the save is refused anyway
+  }
+  const revs = configRevs(raw)
+  return { ...body, bases: Object.fromEntries(CONFIG_SECTIONS.filter((k) => body[k] !== undefined).map((k) => [k, revs[k]])) }
+}
 
 describe('creating', () => {
   it('never reuses the ID of a file that fails to parse', () => {
@@ -125,7 +137,7 @@ describe('saving', () => {
     writeItem({ ...mine.data, title: 'Agent retitled' }, root) // no syncFromDisk
     let err: HttpError | undefined
     try {
-      call(a, 'PUT', '/api/items/US-01.1.2', { record: { ...mine.data, title: 'User title' }, baseRev: mine.rev })
+      call(a, 'PUT', '/api/items/US-01.1.2', { patch: { ...mine.data, title: 'User title' }, baseRev: mine.rev })
     } catch (e) {
       err = e as HttpError
     }
@@ -137,14 +149,14 @@ describe('saving', () => {
 
   it('requires baseRev', () => {
     const a = api()
-    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { record: recOf(a, 'US-01.1.2').data }))).toBe(400)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { patch: recOf(a, 'US-01.1.2').data }))).toBe(400)
   })
 
   it('writes a clean save as a one-field change', () => {
     const a = api()
     const r = recOf(a, 'US-01.1.2')
     const before = readFileSync(itemPath('US-01.1.2', root), 'utf8')
-    call(a, 'PUT', '/api/items/US-01.1.2', { record: { ...r.data, title: 'Renamed' }, baseRev: r.rev })
+    call(a, 'PUT', '/api/items/US-01.1.2', { patch: { ...r.data, title: 'Renamed' }, baseRev: r.rev })
     const after = readFileSync(itemPath('US-01.1.2', root), 'utf8')
     expect(after).toBe(before.replace('title: Title of US-01.1.2', 'title: Renamed'))
   })
@@ -152,29 +164,29 @@ describe('saving', () => {
   it('never lets `extra` override a validated key', () => {
     const a = api()
     const r = recOf(a, 'US-01.1.2')
-    call(a, 'PUT', '/api/items/US-01.1.2', { record: { ...r.data, extra: { type: 'epic', status: 'Bogus', owner: 'kept' } }, baseRev: r.rev })
+    call(a, 'PUT', '/api/items/US-01.1.2', { patch: { ...r.data, extra: { type: 'epic', status: 'Bogus', owner: 'kept' } }, baseRev: r.rev })
     const onDisk = parseItem(readFileSync(itemPath('US-01.1.2', root), 'utf8'))
     expect(onDisk.type).toBe('story')
     expect(onDisk.status).toBe('1')
     expect(onDisk.extra).toEqual({ owner: 'kept' })
   })
 
-  it('answers a malformed record with 422, not a crash', () => {
+  it('answers a malformed patch with 422, not a crash', () => {
     const a = api()
-    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { record: { id: 'US-01.1.2', type: 'story' }, baseRev: recOf(a, 'US-01.1.2').rev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { patch: { id: 'US-01.1.2', status: { not: 'a code' }, parent: 42 }, baseRev: recOf(a, 'US-01.1.2').rev }))).toBe(422)
   })
 
   it('refuses a description that would split into Notes on the next read', () => {
     const a = api()
     const r = recOf(a, 'US-01.1.1')
-    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...r.data, description: 'Intro\n\n## Notes\n\nnot notes' }, baseRev: r.rev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { patch: { ...r.data, description: 'Intro\n\n## Notes\n\nnot notes' }, baseRev: r.rev }))).toBe(422)
   })
 
   it('refuses any section that holds another section\'s heading', () => {
     const a = api()
     const r = recOf(a, 'US-01.1.1')
-    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...r.data, acceptance: '- ok\n## Technical discussion' }, baseRev: r.rev }))).toBe(422)
-    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...r.data, notes: '## Acceptance criteria' }, baseRev: r.rev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { patch: { ...r.data, acceptance: '- ok\n## Technical discussion' }, baseRev: r.rev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { patch: { ...r.data, notes: '## Acceptance criteria' }, baseRev: r.rev }))).toBe(422)
   })
 
   it('refuses to save a file whose id does not match its name', () => {
@@ -258,7 +270,7 @@ describe('batch moves', () => {
 describe('lanes', () => {
   it('saves the lane list beside positions, and re-checks swimlanes against it', () => {
     const a = api()
-    call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...recOf(a, 'US-01.1.1').data, swimlane: 'MVP' }, baseRev: recOf(a, 'US-01.1.1').rev })
+    call(a, 'PUT', '/api/items/US-01.1.1', { patch: { ...recOf(a, 'US-01.1.1').data, swimlane: 'MVP' }, baseRev: recOf(a, 'US-01.1.1').rev })
     expect(a.getState().issues.some((i) => i.message.startsWith('swimlane "MVP" is not a lane'))).toBe(true)
     call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'Phase 2'] })
     expect(JSON.parse(readFileSync(layoutPath(root), 'utf8'))).toEqual({ positions: {}, lanes: ['MVP', 'Phase 2'] })
@@ -332,7 +344,7 @@ describe('refusals the board cannot answer with "Keep mine"', () => {
     const a = api()
     const r = recOf(a, 'US-01.1.2')
     writeFileSync(itemPath('US-01.1.2', root), '---\nid: US-01.1.2\n<<<<<<< HEAD\n')
-    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { record: r.data, baseRev: r.rev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { patch: r.data, baseRev: r.rev }))).toBe(422)
   })
 
   it('answers a save to a file holding another id with 422', () => {
@@ -340,7 +352,7 @@ describe('refusals the board cannot answer with "Keep mine"', () => {
     const r = recOf(a, 'US-01.1.2')
     writeItem({ ...r.data, id: 'US-01.1.9' }, root)
     writeFileSync(itemPath('US-01.1.2', root), readFileSync(itemPath('US-01.1.9', root), 'utf8'))
-    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { record: r.data, baseRev: r.rev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { patch: r.data, baseRev: r.rev }))).toBe(422)
   })
 })
 
@@ -455,7 +467,7 @@ describe('deleting an item', () => {
 })
 
 describe('the status settings', () => {
-  const put = (a: ReturnType<typeof api>, body: unknown) => call(a, 'PUT', '/api/config', body)
+  const put = (a: ReturnType<typeof api>, body: Record<string, unknown>) => call(a, 'PUT', '/api/config', withBases(body))
   const renamed: StatusDef[] = DEFAULT_ITEM_STATUSES.map((d) => (d.code === '1' ? { ...d, label: 'Draft', help: 'Not agreed yet' } : d))
 
   it('rewrites only the status lists, keeping the rest of the file, and tells the clients', () => {
@@ -517,7 +529,7 @@ describe('status identity on the server (R-01, R-68)', () => {
     { code: 6, label: 'Retired', help: 'Gone', tone: 'hatched', role: 'retired' },
   ]
   const writeConfig = (statuses: unknown, extra: Record<string, unknown> = {}) => writeFileSync(configPath(root), JSON.stringify({ project: { name: 'Acme' }, statuses, ...extra }, null, 2))
-  const put = (a: ReturnType<typeof api>, body: unknown) => call(a, 'PUT', '/api/config', body)
+  const put = (a: ReturnType<typeof api>, body: Record<string, unknown>) => call(a, 'PUT', '/api/config', withBases(body))
   const codesOnDisk = () => (JSON.parse(readFileSync(configPath(root), 'utf8')).statuses as { code: number; label: string }[]).map((d) => `${d.code} ${d.label}`)
   beforeEach(() => {
     writeItem(item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, status: '5' }), root)
@@ -608,8 +620,8 @@ describe('status identity on the server (R-01, R-68)', () => {
     const a = api()
     expect(status(() => call(a, 'POST', '/api/items', { type: 'story', parent: 'FT-01.1', title: 'New' }))).toBe(422)
     const r = recOf(a, 'US-01.1.1')
-    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...r.data, status: '9' }, baseRev: r.rev }))).toBe(422)
-    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...r.data, status: '4' }, baseRev: r.rev }))).toBe(200)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { patch: { ...r.data, status: '9' }, baseRev: r.rev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { patch: { ...r.data, status: '4' }, baseRev: r.rev }))).toBe(200)
   })
 })
 
@@ -649,7 +661,7 @@ describe('diff review routes', () => {
       const get = () => a.handle({ method: 'GET', path: '/api/diff', query: { from: 'HEAD', to: 'worktree' } }) as Promise<DiffResponse>
       expect((await get()).records).toEqual([])
       const r = recOf(a, 'US-01.1.2')
-      call(a, 'PUT', '/api/items/US-01.1.2', { record: { ...r.data, title: 'Renamed' }, baseRev: r.rev })
+      call(a, 'PUT', '/api/items/US-01.1.2', { patch: { ...r.data, title: 'Renamed' }, baseRev: r.rev })
       expect((await get()).records.map((x) => x.id)).toEqual(['US-01.1.2'])
       // A change on disk is kept until the watcher says so.
       writeItem(item({ id: 'EP-01', type: 'epic', title: 'Edited elsewhere' }), root)

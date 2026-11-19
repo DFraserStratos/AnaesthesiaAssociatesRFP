@@ -7,12 +7,12 @@
  *                                server's run (`epoch`) and last delivery (`seq`) it is current to
  *   GET  /api/ping               { epoch, seq }: the server answers (the board asks while offline)
  *   PUT  /api/items/:id          { patch, baseRev, base? }  the fields changed, laid over the file as it is now
- *                                (or, until B06, { record, baseRev }: a whole record, refused on any disk change)
+ *                                (a whole record, `{ record }`, is a 400)
  *   POST /api/items/batch        { changes: [{ id, baseRev, patch, base? }] }  all or nothing (a Mapped board move)
  *   POST /api/items              { type, parent, title, ... }  server assigns the ID
  *   DELETE /api/items/:id       { baseRev, ids }  removes it and everything under it (`ids`: the set the user
  *                                was shown, 409 if that is no longer it) and every reference to them
- *   PUT  /api/questions/:id      { patch, baseRev, base? }  (or { record, baseRev })
+ *   PUT  /api/questions/:id      { patch, baseRev, base? }
  *   DELETE /api/questions/:id   { baseRev }  removes the file; 409 if it changed on disk since baseRev
  *   POST /api/questions          { title, ... }
  *   GET  /api/items/:id/history  the card's timeline: the change journal, backfilled from git
@@ -26,11 +26,12 @@
  *   GET  /api/diff/auto          the Diff review's default: HEAD against the files on disk, or with nothing
  *                                there what the last catalogue commit changed (`jumped: true`)
  *   PUT  /api/artifacts/:id      { patch, baseRev, base? }  its details only (title, kind, status, supersededBy,
- *                                date, author, components, sources, description); or { record, baseRev }
- *   PUT  /api/config             { project?, components?, statuses?, questionStatuses?, bases? }  replaces those
- *                                sections of board.config.json (the rest of the file is kept); `bases` are the
- *                                `config.revs` each was edited from (409 if one changed on disk); 422 if a list
- *                                breaks the rules or drops a status in use
+ *                                date, author, components, sources, description)
+ *   PUT  /api/config             { project?, components?, statuses?, questionStatuses?, bases }  replaces those
+ *                                sections of board.config.json (the rest of the file is kept); `bases` holds the
+ *                                `config.revs` each was edited from (required; 409 if one changed on disk); 422 if
+ *                                a list breaks the rules, drops a status in use, leaves a component in use unlisted,
+ *                                or the section on disk does not read cleanly
  *   PUT  /api/layout             { positions?: { id: {x,y} | null }, lanes?: string[], firstLane?: string | null, lanesRev? }
  *                                positions are a patch (null restores the story-map place) and never refused for
  *                                the lane list; lanes replace the list; firstLane renames the implicit first lane
@@ -396,6 +397,11 @@ export function createCatalogueApi(root: string, emit: (d: CatalogueDelivery) =>
     return cols.length ? cols : null
   }
 
+  /** A record write sends a patch: the whole-record shape was retired with its last caller (B06, D-04e). */
+  function requirePatch(body: Record<string, unknown>) {
+    if (body.patch === undefined) throw new HttpError(400, 'send { patch, baseRev, base }: the fields you changed, the rev you edited and their values then (a whole record is not accepted)')
+  }
+
   /** A patch from the request, checked for shape (400) and, for an item, an unchanged type (422). */
   function patchOf(kind: RecordKind, id: string, raw: unknown, current: Item | Question | Artifact): Record<string, unknown> {
     const problem = patchProblem(kind, raw, id)
@@ -563,19 +569,12 @@ export function createCatalogueApi(root: string, emit: (d: CatalogueDelivery) =>
     if (ap && method === 'PUT') {
       // Only an artifact's details: whatever else the record carries, its file, regions and source stay as on disk.
       const id = idFromPath(ap[1]!)
+      requirePatch(body)
       const current = artifactOnDisk(id)
-      let next: Artifact
-      if (body.patch !== undefined) {
-        const patch = patchOf('artifact', id, body.patch, current.data)
-        const cols = staleness('artifact', current, { baseRev: body.baseRev, base: body.base, patch })
-        if (cols) throw conflict(id, current, cols)
-        next = withArtifactDetails(current.data, patch)
-      } else {
-        checkBase(current, id, body.baseRev)
-        const sent = (body.record ?? {}) as Record<string, unknown>
-        if (sent.id !== undefined && sent.id !== id) throw new HttpError(400, 'the record id does not match the URL')
-        next = withArtifactDetails(current.data, sent)
-      }
+      const patch = patchOf('artifact', id, body.patch, current.data)
+      const cols = staleness('artifact', current, { baseRev: body.baseRev, base: body.base, patch })
+      if (cols) throw conflict(id, current, cols)
+      const next: Artifact = withArtifactDetails(current.data, patch)
       const problems = artifactRoundTripProblems(next)
       if (problems.length) throw new HttpError(422, `${id}: ${problems.join('; ')}`)
       if (same(next, current.data)) return current // nothing changed: nothing written (B05-REQ-05)
@@ -608,22 +607,12 @@ export function createCatalogueApi(root: string, emit: (d: CatalogueDelivery) =>
     m = /^\/api\/items\/([^/]+)$/.exec(path)
     if (m && method === 'PUT') {
       const id = idFromPath(m[1]!)
-      let item: Item
-      let current: Rev<Item>
-      if (body.patch !== undefined) {
-        current = itemOnDisk(id)
-        const patch = patchOf('item', id, body.patch, current.data)
-        const cols = staleness('item', current, { baseRev: body.baseRev, base: body.base, patch })
-        if (cols) throw conflict(id, current, cols)
-        item = prepareItem(applyPatch('item', current.data, patch))
-      } else {
-        // Until B06: a whole record, refused on any change on disk; written as the fields that differ from the file.
-        item = prepareItem(body.record)
-        if (item.id !== id) throw new HttpError(400, 'the record id does not match the URL')
-        current = itemOnDisk(id)
-        checkBase(current, id, body.baseRev)
-        if (current.data.type !== item.type) throw new HttpError(422, `${id}: the type of an item cannot change`)
-      }
+      requirePatch(body)
+      const current = itemOnDisk(id)
+      const patch = patchOf('item', id, body.patch, current.data)
+      const cols = staleness('item', current, { baseRev: body.baseRev, base: body.base, patch })
+      if (cols) throw conflict(id, current, cols)
+      const item = prepareItem(applyPatch('item', current.data, patch))
       guardStatus('item', id, item.status, current.data.status)
       if (same(item, current.data)) return current // nothing changed: nothing written (B05-REQ-05)
       guard([...itemList().filter((i) => i.id !== id), item], questionList())
@@ -763,20 +752,12 @@ export function createCatalogueApi(root: string, emit: (d: CatalogueDelivery) =>
     m = /^\/api\/questions\/([^/]+)$/.exec(path)
     if (m && method === 'PUT') {
       const id = idFromPath(m[1]!)
-      let q: Question
-      let current: Rev<Question>
-      if (body.patch !== undefined) {
-        current = questionOnDisk(id)
-        const patch = patchOf('question', id, body.patch, current.data)
-        const cols = staleness('question', current, { baseRev: body.baseRev, base: body.base, patch })
-        if (cols) throw conflict(id, current, cols)
-        q = prepareQuestion(applyPatch('question', current.data, patch))
-      } else {
-        q = prepareQuestion(body.record)
-        if (q.id !== id) throw new HttpError(400, 'the record id does not match the URL')
-        current = questionOnDisk(id)
-        checkBase(current, id, body.baseRev)
-      }
+      requirePatch(body)
+      const current = questionOnDisk(id)
+      const patch = patchOf('question', id, body.patch, current.data)
+      const cols = staleness('question', current, { baseRev: body.baseRev, base: body.base, patch })
+      if (cols) throw conflict(id, current, cols)
+      const q = prepareQuestion(applyPatch('question', current.data, patch))
       guardStatus('question', id, q.status, current.data.status)
       if (same(q, current.data)) return current // nothing changed: nothing written (B05-REQ-05)
       guard(itemList(), [...questionList().filter((x) => x.id !== id), q])
@@ -840,12 +821,15 @@ export function createCatalogueApi(root: string, emit: (d: CatalogueDelivery) =>
       }
       if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new HttpError(422, 'board.config.json must hold an object; fix it on disk first')
       // A section edited from a version the file no longer holds is a conflict, not an overwrite (R-45, accepted decision 20).
-      if (body.bases !== undefined && !isObject(body.bases)) throw new HttpError(400, 'bases must map each section you send to the config.revs value you edited')
-      const bases = (body.bases ?? {}) as Record<string, unknown>
+      // Every section sent needs its base: the base-less write was retired with its last caller (B06, D-04e).
+      if (!isObject(body.bases)) throw new HttpError(400, 'bases must map each section you send to the config.revs value you edited')
+      const bases = body.bases as Record<string, unknown>
+      const unbased = CONFIG_SECTIONS.filter((k) => body[k] !== undefined && typeof bases[k] !== 'string')
+      if (unbased.length) throw new HttpError(400, `bases.${unbased[0]} is required: send the config.revs value you edited`)
       const revs = configRevs(raw)
-      const stale = CONFIG_SECTIONS.filter((k) => body[k] !== undefined && bases[k] !== undefined && bases[k] !== revs[k])
+      const disk = parseConfig(JSON.stringify(raw), readRecodes(root)).config
+      const stale = CONFIG_SECTIONS.filter((k) => body[k] !== undefined && bases[k] !== revs[k])
       if (stale.length) {
-        const disk = parseConfig(JSON.stringify(raw), readRecodes(root)).config
         const blocked = stale.map((k) => ({ id: k, current: { data: disk[k], rev: revs[k] } }))
         throw new HttpError(409, `${stale.join(', ')} changed in ${CONFIG_FILE} since you opened Settings`, { section: stale[0], current: blocked[0]!.current, blocked })
       }
@@ -897,6 +881,10 @@ export function createCatalogueApi(root: string, emit: (d: CatalogueDelivery) =>
         }
         next[field] = list.map(clean)
       }
+      // A section that does not read cleanly on disk is never saved over: the save would drop what it could not read.
+      for (const k of ['project', 'components'] as const)
+        if (body[k] !== undefined && disk.sectionState[k].state === 'damaged')
+          problems.push(`${CONFIG_FILE}: ${k} does not read cleanly, so it is not saved until it is fixed in the file:\n${disk.sectionState[k].problems.join('\n')}`)
       if (body.project !== undefined) {
         const v = body.project as Record<string, unknown> | null
         const name = typeof v?.name === 'string' ? v.name.trim() : ''
@@ -912,12 +900,18 @@ export function createCatalogueApi(root: string, emit: (d: CatalogueDelivery) =>
       if (body.components !== undefined) {
         const { config: parsed, problems: bad } = parseConfig(JSON.stringify({ components: body.components }))
         problems.push(...bad)
-        // A component still on a card can't go: its files would name an area the board no longer knows.
-        const kept = new Set(parsed.components.map((c) => c.name))
-        const dropped = new Map<string, number>()
-        for (const it of [...itemList(), ...Object.values(state.artifacts).map((r) => r.data)]) for (const c of it.components) if (!kept.has(c)) dropped.set(c, (dropped.get(c) ?? 0) + 1)
-        for (const [name, n] of dropped)
-          if (state.config.components.some((c) => c.name === name)) problems.push(`components: ${name} is still used by ${n} card${n === 1 ? '' : 's'} or artifact${n === 1 ? '' : 's'}`)
+        // A component on a card or artifact must stay listed: its files would name an area the board no longer
+        // knows. Judged against the list on disk, and only for what this save adds: an empty list accepts any
+        // component, so a first entry must bring every component in use with it (R-123, accepted decision 22).
+        const used = new Map<string, number>()
+        for (const it of [...itemList(), ...Object.values(state.artifacts).map((r) => r.data)]) for (const c of it.components) used.set(c, (used.get(c) ?? 0) + 1)
+        const unlisted = (names: string[]) => (names.length ? [...used.keys()].filter((c) => !names.includes(c)) : [])
+        const already = new Set(unlisted(disk.components.map((c) => c.name)))
+        for (const name of unlisted(parsed.components.map((c) => c.name)))
+          if (!already.has(name)) {
+            const n = used.get(name)!
+            problems.push(`components: ${name} is still used by ${n} card${n === 1 ? '' : 's'} or artifact${n === 1 ? '' : 's'}, so the list must name it`)
+          }
         next.components = parsed.components
       }
       if (problems.length) throw new HttpError(422, problems.join('\n'))

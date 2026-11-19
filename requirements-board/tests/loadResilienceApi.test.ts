@@ -105,10 +105,10 @@ describe('a record saved with a byte-order mark (R-66; accepted decision 17: the
     const a = api()
     const rec = a.getState().items['US-01.1.1']!
     expect(a.getState().issues.filter((i) => i.severity === 'error')).toEqual([])
-    const saved = call(a, 'PUT', '/api/items/US-01.1.1', { baseRev: rec.rev, record: { ...rec.data, title: 'Renamed' } }) as Rev<Item>
+    const saved = call(a, 'PUT', '/api/items/US-01.1.1', { baseRev: rec.rev, patch: { ...rec.data, title: 'Renamed' } }) as Rev<Item>
     expect(readFileSync(itemPath('US-01.1.1', root), 'utf8').startsWith(BOM + '---')).toBe(true)
     // The board's copy of the revision matches the file's, so the next save is no conflict.
-    const again = call(a, 'PUT', '/api/items/US-01.1.1', { baseRev: saved.rev, record: { ...saved.data, title: 'Renamed twice' } }) as Rev<Item>
+    const again = call(a, 'PUT', '/api/items/US-01.1.1', { baseRev: saved.rev, patch: { ...saved.data, title: 'Renamed twice' } }) as Rev<Item>
     expect(again.data.title).toBe('Renamed twice')
   })
 })

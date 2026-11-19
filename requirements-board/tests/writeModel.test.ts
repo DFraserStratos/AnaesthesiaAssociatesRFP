@@ -178,15 +178,17 @@ A note.
 `
 
 describe('saves edit the file in place (REQ-09, REQ-11; R-111 server half)', () => {
-  it('a whole-record save from today\'s client writes only the field that differs', () => {
+  it('a one-field patch writes only that line; a whole record, the retired shape, is refused (D-04e)', () => {
     writeFileSync(itemPath('US-01.1.1', root), HAND)
     const a = api()
     const rec = a.getState().items['US-01.1.1']!
-    call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...rec.data, title: 'First story' }, baseRev: rec.rev })
+    expect(refusal(() => call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...rec.data, title: 'First story' }, baseRev: rec.rev })).status).toBe(400)
+    expect(fileOf('US-01.1.1')).toBe(HAND)
+    call(a, 'PUT', '/api/items/US-01.1.1', { patch: { title: 'First story' }, baseRev: rec.rev, base: { title: rec.data.title } })
     expect(fileOf('US-01.1.1')).toBe(HAND.replace('title: "First: story"', 'title: First story'))
   })
 
-  it('an unchanged save, an empty patch and an identical whole record write nothing, journal nothing and send nothing', () => {
+  it('an unchanged save, an empty patch and the whole record sent unchanged write nothing, journal nothing and send nothing', () => {
     writeFileSync(itemPath('US-01.1.1', root), HAND)
     const dir = mkdtempSync(join(tmpdir(), 'journal-'))
     try {
@@ -197,7 +199,7 @@ describe('saves edit the file in place (REQ-09, REQ-11; R-111 server half)', () 
       const answers = [
         call(a, 'PUT', '/api/items/US-01.1.1', { patch: {}, baseRev: rec.rev }),
         call(a, 'PUT', '/api/items/US-01.1.1', { patch: { title: 'First: story', order: 1 }, baseRev: rec.rev }),
-        call(a, 'PUT', '/api/items/US-01.1.1', { record: rec.data, baseRev: rec.rev }),
+        call(a, 'PUT', '/api/items/US-01.1.1', { patch: rec.data, baseRev: rec.rev }),
         call(a, 'POST', '/api/items/batch', { changes: [{ id: 'US-01.1.1', baseRev: rec.rev, patch: { order: 1 } }] }),
       ]
       expect(fileOf('US-01.1.1')).toBe(HAND)
@@ -267,7 +269,7 @@ describe('the artifact details save (R-37, REQ-10)', () => {
   it('a title save changes only the title line: cited_as, unknown keys, pad: wide, comments and the Source section survive', () => {
     const a = api()
     const rec = a.getState().artifacts['AR-01']!
-    call(a, 'PUT', '/api/artifacts/AR-01', { record: { ...rec.data, title: 'Pricing flow v2' }, baseRev: rec.rev })
+    call(a, 'PUT', '/api/artifacts/AR-01', { patch: { title: 'Pricing flow v2' }, baseRev: rec.rev })
     expect(sidecar()).toBe(SIDECAR.replace('title: Pricing flow   #', 'title: Pricing flow v2   #'))
   })
 

@@ -70,3 +70,70 @@ export function collisions<T extends AnyRecord>(kind: RecordKind, disk: T, base:
   }
   return out
 }
+
+/** A field a patch may set, or `extra.<key>` for one of a record's unknown frontmatter keys. */
+type Field = string
+
+const plainFields = (kind: RecordKind) => PATCH_FIELDS[kind].filter((k) => k !== 'extra')
+const extraOf = (r: unknown): Record<string, unknown> => (r as { extra?: Record<string, unknown> }).extra ?? {}
+
+/**
+ * The fields `to` changes from `from`, among those a patch may set, in `PATCH_FIELDS` order; an `extra` key
+ * as `extra.<key>`. The client's half of the write protocol: what the user changed, and what changed on disk.
+ */
+export function changedFields(kind: RecordKind, from: object, to: object): Field[] {
+  const a = from as Record<string, unknown>
+  const b = to as Record<string, unknown>
+  const out: Field[] = plainFields(kind).filter((k) => !same(a[k], b[k]))
+  if (kind !== 'artifact') {
+    const ea = extraOf(a)
+    const eb = extraOf(b)
+    for (const k of new Set([...Object.keys(ea), ...Object.keys(eb)])) if (!same(ea[k], eb[k])) out.push(`extra.${k}`)
+  }
+  return out
+}
+
+/**
+ * The write that takes `from` to `to`: `patch` holds the changed fields (`extra` key by key) and `base` each
+ * one's value in `from`, as the server's stale-write merge wants them (accepted decision 20). An `extra` key
+ * removed in `to` is not sent (a patch merges `extra` key by key); the board's forms never remove one.
+ */
+export function patchBetween<T extends object>(kind: RecordKind, from: T, to: T): { patch: Partial<T>; base: Partial<T> } {
+  const a = from as Record<string, unknown>
+  const b = to as Record<string, unknown>
+  const patch: Record<string, unknown> = {}
+  const base: Record<string, unknown> = {}
+  for (const f of changedFields(kind, from, to)) {
+    if (f.startsWith('extra.')) {
+      const k = f.slice('extra.'.length)
+      if (!Object.hasOwn(extraOf(b), k)) continue
+      patch.extra = { ...(patch.extra as object), [k]: extraOf(b)[k] }
+      base.extra = { ...(base.extra as object), [k]: extraOf(a)[k] }
+      continue
+    }
+    patch[f] = b[f]
+    base[f] = a[f]
+  }
+  return { patch: patch as Partial<T>, base: base as Partial<T> }
+}
+
+/** A field's value as `changedFields` names it (`extra.<key>` reads that key). */
+export function fieldValue(record: object, field: Field): unknown {
+  return field.startsWith('extra.') ? extraOf(record)[field.slice('extra.'.length)] : (record as Record<string, unknown>)[field]
+}
+
+/** `onto` with `fields` (as `changedFields` names them) taken from `from`: a draft rebased on a newer copy. */
+export function overlay<T extends object>(onto: T, from: T, fields: readonly Field[]): T {
+  const out = { ...onto } as Record<string, unknown>
+  const src = from as Record<string, unknown>
+  for (const f of fields) {
+    if (f.startsWith('extra.')) {
+      const k = f.slice('extra.'.length)
+      const extra = { ...extraOf(out) }
+      if (Object.hasOwn(extraOf(src), k)) extra[k] = extraOf(src)[k]
+      else delete extra[k]
+      out.extra = extra
+    } else out[f] = src[f]
+  }
+  return out as T
+}

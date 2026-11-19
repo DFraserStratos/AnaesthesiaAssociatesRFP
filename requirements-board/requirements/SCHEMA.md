@@ -409,7 +409,9 @@ Every field is optional; with no file the board runs on neutral defaults.
 
 `project.name` shows beside the board's name (always "Requirements board") in the masthead and the
 browser tab; `project.accent` (optional, `#rrggbb`) fills the board's mark and the tab icon, so boards for different projects tell apart. Dates and times are always New Zealand English. `components` and `screenshotApps` are the lists the check
-holds items to (empty: anything goes).
+holds items to (empty: anything goes). Once `components` names one, the Settings page saves it only
+while it names every component a card or artifact uses; it never saves over a `project` or
+`components` section that does not read cleanly.
 `statuses` (items) and `questionStatuses` (questions) are ordered lists; each entry is
 `{ code, label, help, tone, role?, settle?, heading? }`. `code` is a whole number from 1, unique within its list. A file stores the `code`; the label, help,
 colour (`tone`: neutral, amber, olive, green, forest, sand or hatched) and order are config, so

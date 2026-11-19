@@ -163,12 +163,25 @@ carries no `ty-*` class, which would recolour the artifact marks inside it.
   group order. One answered in the sheet keeps its old place while open, so Next goes to the next
   question still open.
 - Unsaved edits are never lost silently: every way out of a sheet asks, and drafts survive
-  navigation.
+  navigation. While a question sheet covers the docked panel, a way out from it goes ahead and the
+  panel keeps its draft (a question it could not show is never left waiting).
+- A file changed on disk while a sheet is being edited is taken in quietly when it touches only what
+  the user has not changed; a field changed on both sides puts **Keep mine** and **Load theirs** in a
+  banner, naming the fields. A record that vanishes with unsaved edits shows every changed field,
+  readable (cards by title, statuses by name, a cleared field as "Cleared"), asks before any way out,
+  and its edits come back with it. A sheet opened on a record not there yet says so without guessing
+  why (and names the check's error for it) and shows the record when it appears.
+- Focus: a modal sheet opened in Edit starts in its first field (the title; the answer when
+  answering), otherwise on the sheet itself, which takes it back whenever what had it goes (leaving
+  Edit); answering its question returns focus to where it was; closing gives focus back to what had it before (the
+  first sheet's opener, after stepping through siblings), or to the page. The docked panel takes no
+  focus on open.
 - The board never raises a browser dialog. A sheet asks in its own frame: it veils its content
   (`SheetConfirm`) and puts the question there, with the safe answer as the filled teal button
-  that holds focus and the consequence named on the other ("Discard changes", "Retire item"). On
-  the canvas the question is a popover under the button that raised it ("Tidy all"). Escape
-  withdraws the question either way.
+  that holds focus and the consequence named on the other ("Discard changes", "Retire item"). The
+  safe answer takes focus once, when the question appears; a file changing meanwhile moves nothing,
+  and the veiled content stays unreachable. On the canvas the question is a popover under the button
+  that raised it ("Tidy all"). Escape withdraws the question either way.
 - Navigating the canvas: two fingers on a trackpad pan it, a pinch zooms; a mouse wheel zooms (the
   board tells them apart itself: `src/board/trackpad.ts`); dragging empty canvas pans. A pinch
   never zooms the page itself, wherever it lands (masthead, panel, list views): only the board and
@@ -265,7 +278,9 @@ edits only their details (below), never the file, its highlights or the links to
   kind, status (and Replaced by, when Retired), date (as written, `2026-10-01`, `2026-10` or
   `2026`, read back beside the label), author, area, sources, description. Save, Cancel, Cmd S and
   Esc, the restored draft, the on-disk conflict and the discard veil all work as they do on a
-  card. The file, its highlights and its ID are not in the form.
+  card. The file, its highlights and its ID are not in the form. If the artifact goes from disk
+  while its details have unsaved edits, the panel shows them (as a card's orphaned sheet does) and
+  asks before letting them go; either way full screen is left and the masthead comes back.
 - **The red box** is the same mark the screenshots carry (`shared/highlight.ts`): 3px `#E0243A`
   outside the padded spot, 12px radius, soft red glow. It is the only red on an artifact; hovering
   a highlight in the panel previews it as a dashed outline. Asked for (from a card, a link, a
@@ -451,6 +466,18 @@ read alike. A legend under each table says what each role does. A new status tak
 number, fixed once saved, and its row is tinted teal until then. A status in use or holding a
 required role can't be removed. Teal for the actions (Save, Add); no crimson, no status colour
 except in the pills and swatches. Below 1000px the table stacks, one block per status.
+
+Each section saves on its own and only what changed (Save is off at rest, whatever spacing or case
+the file holds). A section changed in the file while it is being edited says so in a banner with
+**Load theirs** and **Keep mine** (as Writing voice does), and Save waits for the answer; Keep mine
+keeps every row and field the user changed and everything the file gained, and a quiet note names
+anything it had to decide. A section the board cannot read cleanly (a damaged status list, a
+components or project section with a problem) shows only a banner naming the problems and saying to
+fix `board.config.json`: no rows, no Add, no Save. It comes back as soon as the file reads cleanly. A
+status list that reads with lesser problems shows them, and Save writes it as shown. Components
+show "Used by" across cards and artifacts; once the list names one component, any in use but
+unlisted are named with their counts and an **Add them** button, and Save waits until they are
+listed.
 
 ## Before shipping a visual change
 

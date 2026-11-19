@@ -1570,7 +1570,8 @@ mark {
 .scrim.swapped .sheet {
   animation: none;
 }
-.sheet:focus {
+.sheet:focus,
+.main:focus {
   outline: none;
 }
 .sheet {
