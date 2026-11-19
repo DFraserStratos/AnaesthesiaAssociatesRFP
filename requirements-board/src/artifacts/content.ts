@@ -3,9 +3,10 @@
  * image (wrapped in an SVG of its size), or a mermaid diagram (drawn from its source). The same
  * loader reads an old version for a history comparison.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ArtifactFormat, Rect } from '../../shared/types.ts'
 import { renderMermaid } from './mermaid.ts'
+import { dropUrl, ownUrl } from './objectUrls.ts'
 import { rasterSvg, sanitiseSvg, type CleanSvg } from './sanitise.ts'
 
 export interface CanvasSource {
@@ -25,6 +26,9 @@ export interface CanvasContent extends CleanSvg {
   imageUrl: string
 }
 
+/** Give back what a loaded drawing holds: a mermaid drawing's object URL (a file's URL is left alone). */
+export const releaseCanvas = (c: CanvasContent) => dropUrl(c.imageUrl)
+
 const imageSize = (url: string) =>
   new Promise<{ w: number; h: number }>((resolve, reject) => {
     const img = new Image()
@@ -41,7 +45,7 @@ export async function loadCanvas(src: CanvasSource): Promise<CanvasContent> {
   if (src.format === 'mermaid') {
     const text = await renderMermaid(src.seed, src.source ?? '')
     const clean = sanitiseSvg(text)
-    return { ...clean, imageUrl: URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(clean.svg)], { type: 'image/svg+xml' })) }
+    return { ...clean, imageUrl: ownUrl(new Blob([new XMLSerializer().serializeToString(clean.svg)], { type: 'image/svg+xml' })) }
   }
   const res = await fetch(src.url!)
   if (!res.ok) throw new Error(res.status === 404 ? 'the file is missing' : `the file could not be read (${res.status})`)
@@ -50,19 +54,33 @@ export async function loadCanvas(src: CanvasSource): Promise<CanvasContent> {
 
 export type Loaded<T> = { status: 'loading' } | { status: 'error'; error: string } | { status: 'ready'; value: T }
 
-/** Load once per key; a new key (a changed file) loads afresh. */
-export function useLoaded<T>(key: string | null, load: () => Promise<T>): Loaded<T> {
+/**
+ * Load once per key; a new key (a changed file) loads afresh. `dispose`, when given, is called once for
+ * every value this hook was handed and no longer shows: when the key changes, when the view goes (an
+ * error boundary taking it down included), and for a load that finishes after either (StrictMode's
+ * discarded first run too). So a value that holds something (a PDF document, an object URL) is given
+ * back exactly once, and never while it is shown.
+ */
+export function useLoaded<T>(key: string | null, load: () => Promise<T>, dispose?: (value: T) => void): Loaded<T> {
   const [state, setState] = useState<{ key: string | null; loaded: Loaded<T> }>({ key: null, loaded: { status: 'loading' } })
+  const disposeRef = useRef(dispose)
+  disposeRef.current = dispose
   useEffect(() => {
     if (key === null) return
     let live = true
+    let held: { value: T } | null = null
     setState({ key, loaded: { status: 'loading' } })
     load().then(
-      (value) => live && setState({ key, loaded: { status: 'ready', value } }),
+      (value) => {
+        if (!live) return disposeRef.current?.(value)
+        held = { value }
+        setState({ key, loaded: { status: 'ready', value } })
+      },
       (e: Error) => live && setState({ key, loaded: { status: 'error', error: e.message } }),
     )
     return () => {
       live = false
+      if (held) disposeRef.current?.(held.value)
     }
   }, [key])
   return state.key === key ? state.loaded : { status: 'loading' }

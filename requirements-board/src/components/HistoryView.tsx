@@ -9,6 +9,7 @@ import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { TEXT_FIELDS, lineCounts, lineDiff, setDiff, type DiffLine, type FieldChange, type ScreenshotVersion, type TimelineEntry } from '../../shared/history.ts'
 import { firstLaneName, parseArtifactRef, type ImageRef, type Item } from '../../shared/types.ts'
 import { api, historyBlobUrl } from '../api.ts'
+import { failureLabel, whyNotShown, type PictureFailure } from '../artifacts/pictureFailure.ts'
 import { dayLabel, timeLabel } from '../dates.ts'
 import { useCatalogue, type Index } from '../store.ts'
 import { typeClass } from '../vocab.ts'
@@ -318,17 +319,23 @@ function ScreenshotsRow({ changes, images }: { changes: FieldChange[]; images: I
   )
 }
 
-/** One version of a screenshot, from git or the file on disk; a version never committed and since overwritten is gone. */
-function Shot({ v, label }: { v: ScreenshotVersion; label: string }) {
-  const [gone, setGone] = useState(false)
+/**
+ * One version of a screenshot, from git or the file on disk. One that will not show says why, asking
+ * the server: not kept (a version never committed and since overwritten), not an image the browser
+ * can draw, or not read.
+ */
+function Shot({ v, label }: { v: ScreenshotVersion; label: 'Before' | 'After' }) {
   const url = historyBlobUrl(v)
+  const [failed, setFailed] = useState<{ url: string; why: PictureFailure } | null>(null)
+  const onError = () => void whyNotShown(url).then((why) => setFailed({ url, why }))
+  const why = failed?.url === url ? failed.why : null
   return (
     <figure className="hist-shot">
-      {gone ? (
-        <div className="hist-shot-gone">Not kept: this version was never committed</div>
+      {why ? (
+        <div className="hist-shot-gone">{failureLabel(why, label)}</div>
       ) : (
         <a href={url} target="_blank" rel="noreferrer" title={`Open the ${label.toLowerCase()} image full size`}>
-          <img src={url} alt={`${label}: ${v.src.split('/').pop()}`} loading="lazy" onError={() => setGone(true)} />
+          <img src={url} alt={`${label}: ${v.src.split('/').pop()}`} loading="lazy" onError={onError} />
         </a>
       )}
       <figcaption>{label}</figcaption>

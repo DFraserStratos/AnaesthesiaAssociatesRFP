@@ -51,6 +51,16 @@ a.record-id.retired { text-decoration-style: dotted; }
 ${STEP_CSS}`
 
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
+
+/** What the view was last placed for: the focus key, the region, the picture and the followed step. */
+interface Placement {
+  focus: string
+  region: string
+  image: string
+  follow: string
+}
+const samePlacement = (a: Placement, b: Placement) => a.focus === b.focus && a.region === b.region && a.image === b.image && a.follow === b.follow
+
 const EASE_MS = 420
 /** Framing a followed step travels further than a nudge, so it takes a little longer; its moves fly once it settles. */
 const STEP_EASE_MS = 560
@@ -328,15 +338,18 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
   // is framed before it is first seen, and so it runs before the flight below, which waits for it.
   const fitWhole = useCallback(() => (bounds && paneRef.current ? bounded(fitRect(bounds, paneRef.current, { minZoom: minZoom(bounds, paneRef.current) })) : null), [bounds, bounded])
   const fitBox = useCallback((r: Rect) => (paneRef.current ? bounded(fitRect(r, paneRef.current, { margin: 0.14, maxZoom: REGION_MAX_ZOOM })) : null), [bounded])
-  const placed = useRef<string | null>(null)
+  // The last placement's parts, each kept apart: a focus key, region ID or URL may hold any character,
+  // so none can shift another (R-99: a `|` in the focus key made every request look like a first open).
+  const placed = useRef<Placement | null>(null)
   // '' when the view does not follow; 'f' the whole drawing and 'f<step>' a step when it does.
   const followKey = follow ? `f${follow.key}` : ''
   const followRef = useRef(follow)
   followRef.current = follow
   useLayoutEffect(() => {
     if (!pane || !mounted) return
-    const key = `${focusKey ?? ''}|${region?.id ?? ''}|${content.imageUrl}|${followKey}`
-    if (placed.current === key) return
+    const now: Placement = { focus: focusKey ?? '', region: region?.id ?? '', image: content.imageUrl, follow: followKey }
+    const prev = placed.current
+    if (prev && samePlacement(prev, now)) return
     if (region && !box) {
       // The anchors are not measured yet (or were not found): show the whole drawing meanwhile.
       if (!camRef.current) {
@@ -345,9 +358,9 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
       }
       return
     }
-    const prev = placed.current?.split('|')
-    const first = !camRef.current || prev?.[2] !== content.imageUrl
-    placed.current = key
+    // Placed at once only when there is no view yet or the picture itself changed; any other request eases.
+    const first = !camRef.current || prev?.image !== content.imageUrl
+    placed.current = now
     const whole = fitWhole()
     let target = box ? fitBox(box) : whole
     let ms = EASE_MS
@@ -357,7 +370,7 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
       const svg = svgRef.current
       const focus = svg && f.anchors.length ? anchorsRect(svg, f.anchors) : null
       const from = first ? whole : camRef.current
-      const framed = focus && from ? frameStep(focus, from, pane, { enter: first || !(prev?.[3] ?? '').slice(1), minZoom: lowest() }) : null
+      const framed = focus && from ? frameStep(focus, from, pane, { enter: first || !(prev?.follow ?? '').slice(1), minZoom: lowest() }) : null
       target = framed ? bounded(framed) : first ? whole : null
       ms = STEP_EASE_MS
     }

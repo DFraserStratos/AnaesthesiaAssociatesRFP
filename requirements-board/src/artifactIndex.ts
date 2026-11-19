@@ -10,7 +10,7 @@ import { spotExists, spotFactsOfMeta } from '../shared/sources.ts'
 import { stepOf } from '../shared/steps.ts'
 import { ARTIFACT_KINDS, ARTIFACT_STATUSES, linesOfRegionId, pageOfRegionId, pageRegionId, parseArtifactRef, type ArtifactKind, type ArtifactRec, type ArtifactStatus, type Item, type Question, type Region, type Step } from '../shared/types.ts'
 import { useCatalogue, useIndex, type Index } from './store.ts'
-import { fields, isBoolean, isFiniteNumber, isStringArray, oneOf, readJson, writeJson } from './storage.ts'
+import { fields, isBoolean, isFiniteNumber, isStringArray, oneOf, readJson, writeJson, type Coerce } from './storage.ts'
 
 export interface ArtifactLink {
   item: Item
@@ -132,7 +132,7 @@ const PREFS_KEY = 'requirements-board:artifacts'
 const DEFAULTS: ArtifactPrefs = { layout: 'grid', kinds: [], statuses: [], components: [], showRetired: false, panelW: null, pdfPages: true }
 
 /** Saved preferences, field by field through the shared storage rule (`storage.ts`). */
-const prefsShape = fields<ArtifactPrefs>(DEFAULTS, {
+const prefsFields = fields<ArtifactPrefs>(DEFAULTS, {
   layout: oneOf<ArtifactLayout>('grid', 'list'),
   kinds: isStringArray,
   statuses: isStringArray,
@@ -141,12 +141,24 @@ const prefsShape = fields<ArtifactPrefs>(DEFAULTS, {
   panelW: (v) => v === null || isFiniteNumber(v),
   pdfPages: isBoolean,
 })
+const known = <T extends string>(list: readonly T[]) => (v: string): v is T => (list as readonly string[]).includes(v)
 
-function readPrefs(): ArtifactPrefs {
-  const prefs = readJson(PREFS_KEY, 'Artifacts view settings', DEFAULTS, prefsShape)
-  // A status filter saved before a status went away (Superseded, now Retired) would match nothing.
-  return { ...prefs, statuses: prefs.statuses.filter((s) => (ARTIFACT_STATUSES as readonly string[]).includes(s)) }
+/**
+ * The store's shape check: the fields as above, then a kind or status the board does not know dropped
+ * (one saved before it went away, such as Superseded, now Retired), since no control could show it and
+ * it would hide everything unseen (R-106). The tab picks one status and one area at a time, so only the
+ * first of each is kept: every pick then has its control. A saved Area the config no longer lists is
+ * kept: the tab lists it, so it can be cleared.
+ */
+const prefsShape: Coerce<ArtifactPrefs> = (raw, bad) => {
+  const p = prefsFields(raw, bad)
+  return { ...p, kinds: p.kinds.filter(known(ARTIFACT_KINDS)), statuses: p.statuses.filter(known(ARTIFACT_STATUSES)).slice(0, 1), components: p.components.slice(0, 1) }
 }
+
+export const readPrefs = (): ArtifactPrefs => readJson(PREFS_KEY, 'Artifacts view settings', DEFAULTS, prefsShape)
+
+/** Kind, Status and Area filters cleared (the Artifacts tab's way back when they hide everything). */
+export const NO_FILTERS: Pick<ArtifactPrefs, 'kinds' | 'statuses' | 'components'> = { kinds: [], statuses: [], components: [] }
 
 interface ArtifactViewState extends ArtifactPrefs {
   set: (patch: Partial<ArtifactPrefs>) => void

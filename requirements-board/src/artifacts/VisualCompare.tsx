@@ -10,7 +10,9 @@ import { artifactBlobUrl } from '../api.ts'
 import { Diff } from '../components/HistoryView.tsx'
 import { useLoaded } from './content.ts'
 import { renderMermaid } from './mermaid.ts'
-import { loadPdf } from './PdfReader.tsx'
+import { dropUrl, ownUrl } from './objectUrls.ts'
+import { withPdf } from './pdfDocs.ts'
+import { askServer, decodes, failureLabel, NOT_AN_IMAGE, pdfFailure, type PictureFailure } from './pictureFailure.ts'
 import { fetchText } from './ArtifactViewer.tsx'
 
 export type Version = { sha: string } | { source: string } | null
@@ -18,28 +20,49 @@ type Mode = 'side' | 'swipe' | 'source'
 
 const MAX_SOURCE_LINES = 3000
 
-/** A picture of one version: an image URL (a blob for a drawn mermaid diagram or a PDF page). */
-async function pictureOf(rec: ArtifactRec, v: Exclude<Version, null>, page: number): Promise<string> {
+/** A picture of one version, or why there is none (`pictureFailure.ts`). */
+type Picture = { url: string } | { failed: PictureFailure }
+
+/**
+ * A picture of one version: an image URL (an object URL for a drawn mermaid diagram, a data URL for a
+ * PDF page, the blob's own URL otherwise), or the truthful reason it cannot be shown. Never throws.
+ */
+async function pictureOf(rec: ArtifactRec, v: Version, page: number): Promise<Picture> {
+  if (!v || ('source' in v && !v.source.trim())) return { failed: { kind: 'none' } }
   if ('source' in v) {
-    const svg = await renderMermaid(`${rec.data.id}-history`, v.source)
-    return URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
+    try {
+      const svg = await renderMermaid(`${rec.data.id}-history`, v.source)
+      return { url: ownUrl(new Blob([svg], { type: 'image/svg+xml' })) }
+    } catch (e) {
+      return { failed: { kind: 'drawn', why: (e as Error).message } }
+    }
   }
   const url = artifactBlobUrl(rec.data.id, v.sha)
   if (rec.meta.format !== 'pdf') {
-    const res = await fetch(url, { method: 'HEAD' })
-    if (!res.ok) throw new Error('not kept')
-    return url
+    const failed = await askServer(url)
+    if (failed) return { failed }
+    return (await decodes(url)) ? { url } : { failed: { kind: 'drawn', why: NOT_AN_IMAGE } }
   }
-  const { doc } = await loadPdf(url)
-  const n = Math.min(page, doc.numPages)
-  const p = await doc.getPage(n)
-  const viewport = p.getViewport({ scale: 1.5 })
-  const canvas = document.createElement('canvas')
-  canvas.width = Math.floor(viewport.width)
-  canvas.height = Math.floor(viewport.height)
-  await p.render({ canvas, viewport }).promise
-  return canvas.toDataURL('image/png')
+  try {
+    // The document is held only while the page draws; the next page finds it still open (`pdfDocs.ts`).
+    return {
+      url: await withPdf(url, async ({ doc }) => {
+        const p = await doc.getPage(Math.min(page, doc.numPages))
+        const viewport = p.getViewport({ scale: 1.5 })
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.floor(viewport.width)
+        canvas.height = Math.floor(viewport.height)
+        await p.render({ canvas, viewport }).promise
+        return canvas.toDataURL('image/png')
+      }),
+    }
+  } catch (e) {
+    return { failed: pdfFailure(e) }
+  }
 }
+
+/** A picture no longer shown gives back its object URL (a mermaid drawing's; others are left alone). */
+const dropPicture = (p: Picture) => 'url' in p && dropUrl(p.url)
 
 export function VisualCompare({ rec, from, to }: { rec: ArtifactRec; from: Version; to: Version }) {
   const format = rec.meta.format
@@ -75,24 +98,29 @@ export function VisualCompare({ rec, from, to }: { rec: ArtifactRec; from: Versi
   )
 }
 
-const versionKey = (v: Version) => (!v ? 'none' : 'sha' in v ? v.sha : `src:${v.source.length}:${v.source.slice(0, 64)}`)
+// The whole source, so two sources that differ only past their start never share a picture.
+const versionKey = (v: Version) => (!v ? 'none' : 'sha' in v ? v.sha : `src:${v.source}`)
 
 function Pictures({ rec, from, to, page, swipe }: { rec: ArtifactRec; from: Version; to: Version; page: number; swipe: boolean }) {
-  const before = useLoaded(`${versionKey(from)}|${page}`, () => (from ? pictureOf(rec, from, page) : Promise.reject(new Error('none'))))
-  const after = useLoaded(`${versionKey(to)}|${page}`, () => (to ? pictureOf(rec, to, page) : Promise.reject(new Error('none'))))
+  // The page matters only to a PDF; a drawing is not drawn again when it changes.
+  const pageKey = rec.meta.format === 'pdf' ? `|${page}` : ''
+  const before = useLoaded(`${versionKey(from)}${pageKey}`, () => pictureOf(rec, from, page), dropPicture)
+  const after = useLoaded(`${versionKey(to)}${pageKey}`, () => pictureOf(rec, to, page), dropPicture)
   const [at, setAt] = useState(50)
-  const pic = (l: typeof before, v: Version, label: string) =>
-    l.status === 'ready' ? (
-      <img src={l.value} alt={`${label}: ${rec.data.title}`} draggable={false} />
-    ) : (
-      <div className="hist-shot-gone">{l.status === 'loading' ? 'Loading' : !v ? (label === 'Before' ? 'Not there yet' : 'Removed') : 'Not kept: this version was never committed'}</div>
-    )
-  if (swipe && before.status === 'ready' && after.status === 'ready') {
+  const urlOf = (l: typeof before) => (l.status === 'ready' && 'url' in l.value ? l.value.url : null)
+  const pic = (l: typeof before, label: 'Before' | 'After') => {
+    const url = urlOf(l)
+    if (url) return <img src={url} alt={`${label}: ${rec.data.title}`} draggable={false} />
+    const text = l.status === 'ready' && 'failed' in l.value ? failureLabel(l.value.failed, label) : l.status === 'error' ? `Could not be read: ${l.error}` : 'Loading'
+    return <div className="hist-shot-gone">{text}</div>
+  }
+  const [beforeUrl, afterUrl] = [urlOf(before), urlOf(after)]
+  if (swipe && beforeUrl && afterUrl) {
     return (
       <div className="swipe">
         <div className="swipe-stage">
-          <img src={before.value} alt={`Before: ${rec.data.title}`} draggable={false} />
-          <img className="swipe-after" src={after.value} alt={`After: ${rec.data.title}`} draggable={false} style={{ clipPath: `inset(0 0 0 ${at}%)` }} />
+          <img src={beforeUrl} alt={`Before: ${rec.data.title}`} draggable={false} />
+          <img className="swipe-after" src={afterUrl} alt={`After: ${rec.data.title}`} draggable={false} style={{ clipPath: `inset(0 0 0 ${at}%)` }} />
           <span className="swipe-handle" style={{ left: `${at}%` }} aria-hidden />
           <input className="swipe-range" type="range" min={0} max={100} value={at} onChange={(e) => setAt(Number(e.target.value))} aria-label="Swipe between before and after" />
         </div>
@@ -106,11 +134,11 @@ function Pictures({ rec, from, to, page, swipe }: { rec: ArtifactRec; from: Vers
   return (
     <div className="hist-shot-pair compare-pair">
       <figure className="hist-shot">
-        {pic(before, from, 'Before')}
+        {pic(before, 'Before')}
         <figcaption>Before</figcaption>
       </figure>
       <figure className="hist-shot">
-        {pic(after, to, 'After')}
+        {pic(after, 'After')}
         <figcaption>After</figcaption>
       </figure>
     </div>

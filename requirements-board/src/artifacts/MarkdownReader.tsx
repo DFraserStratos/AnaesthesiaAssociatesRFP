@@ -86,7 +86,12 @@ export function MarkdownReader({ text, spot, focusKey, label, onRegionFound, fin
     }
   }, [headings])
 
-  const key = `${spot.region?.id ?? ''}|${spot.auto ?? ''}|${focusKey ?? ''}`
+  // The request (which spot, asked when) decides placing; the region's content decides what is boxed, so
+  // a region changed on disk is found again from what it now says (R-100), and the observers below,
+  // made afresh with it, never measure an older version.
+  const request = `${spot.region?.id ?? ''}|${spot.auto ?? ''}|${focusKey ?? ''}`
+  const regionNow = spot.region ? JSON.stringify(spot.region) : ''
+  const placed = useRef<string | null>(null)
   useLayoutEffect(() => {
     const sheet = sheetRef.current
     const frame = frameRef.current
@@ -119,7 +124,10 @@ export function MarkdownReader({ text, spot, focusKey, label, onRegionFound, fin
     const r = find()
     setBox(r)
     if (spot.region || spot.auto) onRegionFound?.(!!r)
-    if (r) {
+    // Brought into view once per request: a region corrected while it is shown is boxed where it now is
+    // without moving the reader, and one found for the first time is placed as a new request is.
+    if (r && placed.current !== request) {
+      placed.current = request
       // Bring it to the middle of the view (or its top in view, if it is taller than the view).
       const top = r.y + sheet.offsetTop
       const y = r.h > frame.clientHeight - 80 ? top - 40 : top - (frame.clientHeight - r.h) / 2
@@ -134,7 +142,7 @@ export function MarkdownReader({ text, spot, focusKey, label, onRegionFound, fin
       live = false
       ro.disconnect()
     }
-  }, [key, text])
+  }, [request, regionNow, text])
 
   // Find: each match's line boxes, measured on the page (again whenever it reflows).
   const query = find?.query ?? ''

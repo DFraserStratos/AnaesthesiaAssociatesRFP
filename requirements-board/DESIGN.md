@@ -128,7 +128,8 @@ carries no `ty-*` class, which would recolour the artifact marks inside it.
   committed yet turn the trace amber under one "Not committed yet" label. Rows are sentences
   ("Moved from <feature> to <feature>" with type-coloured item chips, status pill to pill), and
   Markdown fields are a "+2 −1 lines" disclosure over a line diff; a re-captured screenshot is a
-  "Screenshot updated" disclosure over its before and after, side by side, each opening full size.
+  "Screenshot updated" disclosure over its before and after, side by side, each opening full size
+  (one that cannot show says why, in the artifact history's words).
   The footer then holds only Back to card.
 - The question sheet lists its sources the same way, under **Sources**, in the order written (no
   Diagrams split).
@@ -257,6 +258,11 @@ edits only their details (below), never the file, its highlights or the links to
   counts and the status pill in a fixed column on the right. Within each kind, newest first. The
   date is when the artifact was made (the meeting, the publication, the drawing), not when it was
   filed. No row expands and nothing opens beside the list.
+- **Filters** (kinds as quiet toggles with counts, then Status and Area selects; kept per browser)
+  offer what is on show, and always whatever is picked, so a saved pick can be turned off even when
+  nothing on show has it (a kind with a 0 count, an area the config no longer lists). When the
+  filters are why nothing shows, the empty state says "Nothing matches the filters." with a **Clear
+  filters** button.
 - **The artifact page** docks a panel on the left like the item sheet (resizable, width kept per
   browser): Artifacts crumb, the name, kind and status, then tabs: a stepped diagram's **Steps**
   first (below), **Highlights** (the named spots, each marked with a tiny red box; a document's own
@@ -370,7 +376,12 @@ edits only their details (below), never the file, its highlights or the links to
   line breaks don't matter.
 - **History** is the card's time column; a new version of the file is a "File updated" disclosure
   over a before and after, side by side or swiped (a teal handle over the two), or as a source diff
-  for a text file.
+  for a text file. A side that cannot show a picture says why, in the quiet grey note: "Not there
+  yet" (before) or "Removed" (after) when there is no version, an empty mermaid source included;
+  "Not kept: this version was never committed" only when the server has no such version; "Could not
+  be drawn: <why>" for a version read but not drawable (a mermaid source that does not parse, a
+  damaged PDF or image); "Could not be read: <why>" for any other failure. A card's screenshot
+  versions use the same words.
 
 ## Diff review
 

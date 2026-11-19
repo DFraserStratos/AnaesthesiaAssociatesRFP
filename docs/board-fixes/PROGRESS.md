@@ -98,7 +98,7 @@ Agent tools in parallel: B12 (after B02), B13 (REQ-07b after B04); both before B
 | B07 | Store sync and layout | COMPLETE | D-10, B07-Q5, Q6 recorded (accepted decision 21) | 2026-11-19, board 1.19.0; all 6 findings fixed; delivery shape, D-10 signal and unsaved-moves signal for B06, B09, B10, B11 in the entry |
 | B06 | Edit sheets and Settings | COMPLETE | B06-Q2 to Q5 and D-04e retirement recorded (accepted decision 22) | 2026-11-19, board 1.20.0; all 16 findings fixed; Q4 lock-out added scope; whole-record and base-less config writes retired |
 | B09 | Diff and history UI | COMPLETE | B09-Q2 to Q4 and the Open rule recorded (accepted decision 23) | 2026-11-20, board 1.21.0; all 13 findings fixed; Diff count can rise (stricter minor rule); journal gains `seen` lines (additive) |
-| B10 | Artifact viewers | PLANNED | after B01, B03, B04, B07; D-01c, B01-Q2 and D-10 recorded | |
+| B10 | Artifact viewers | COMPLETE | after B01, B03, B04, B07; D-01c, B01-Q2 and D-10 recorded; B10-Q2, Q3 (accepted decision 24) | 2026-11-20, board 1.22.0; all 10 findings and the timeline label fixed; workers and object URLs bounded (1 and 0 after 10 rounds, were 40 and 40) |
 | B11 | Board canvas and views | PLANNED | after B03, B05, B07; D-06 recorded | |
 | B12 | Build-plan tools | PLANNED | after B02; D-08 before build; D-03 if needed; live-plan compatibility | parallel worktree |
 | B13 | Consistency and linking tools | PLANNED | REQ-07b after B04 (D-03) | parallel worktree |
@@ -440,6 +440,18 @@ decisions" section and resolved in that phase's planning.
         Removed card or one unreadable on its After side.
       - **Downstream:** none outside B09. B15 reruns the B09 proofs.
 
+- 2026-11-20, user (B10's planning questions, asked in the B10 session):
+  24. **B10-Q2 and B10-Q3:**
+      - **B10-Q3, both** (user). On the Artifacts tab a picked Kind stays a toggle (count 0) and a picked
+        Area or Status stays an option, with its select shown whenever a value is picked, even when no
+        artifact on show has it or (Area) the config no longer lists it. When filters are why nothing
+        shows, the empty state says so and offers **Clear filters**. A saved kind or status the board does
+        not know is dropped by the store's shape check (`readJson`'s coerce), never by a second reader.
+      - **B10-Q2, yes** (user). A compare version that is read but does not decode as an image reads
+        "Could not be drawn", as the card timeline's screenshots do (B10-REQ-11); REQ-05's proof gains
+        that row.
+      - **Downstream:** none outside B10. DESIGN.md's Artifacts tab and history lines change (Doc facts).
+
 ## Planning handoff
 
 - 2026-11-18: orchestrator created FINDINGS.md (copy of the verified review report), PLAN.md, this
@@ -522,8 +534,109 @@ decisions" section and resolved in that phase's planning.
 | `shared/proseDiff.ts` keeps its own fence heuristics (B04's row) | B04 | none | not needed by any B09 finding; left |
 | `e2e/artifacts.spec.ts` "stepping back, a jump from the panel ... reduced motion fly nothing" failed once in B09's full fixture run (load about 12) and passed 3 of 3 alone | B09 | B15 | viewer animation timing, no diff code |
 | `tests/catalogue.test.ts` "round-trips every item file" failed once in a `verify:board` run at load 22 and passed alone and in the next full run | B09 | B12 or B14 | the timeout rows above |
+| `tests/api.test.ts` "serves a version of a removed artifact ..." and once `diffUi` (R-92) and `originLive` failed in `verify:board` runs at load 18 to 24; each passes alone (`diffUi` 3 of 3) and in the next full run | B10 | B12 or B14 | the timeout rows above |
+| `e2e/board-mapped.spec.ts` "clicking a lane name renames it" failed in one of two full fixture runs and 1 of 3 alone (no B10 code on that path) | B10 | B15 | B05's and B07's row |
+| `e2e/one-rule.spec.ts` R-101 (the viewer pixel-box flake routed to B10) passed 3 of 3 alone and in both full fixture runs after B10; not traced to one cause (B10's Markdown reader now places a request once, not on every effect run) | B10 | B15 | confirm over more runs |
+| A PDF thumbnail opens its document through `pdfDocs.ts`, which reads every page's size first (as `loadPdf` did), so a thumbnail of a long PDF waits on all its pages | B10 review | none | the reader needs the sizes; a first-page-only open would be a second path |
+| History compare checks an old non-PDF version with a HEAD and `Image.decode()` before its `<img>` loads it (three requests, cached); an SVG with no size might fail `decode()` in a browser other than Chromium (unverified) | B10 review | none | the board is used in Chromium-based browsers |
+| An LFS version is still served as its pointer; the compare and timeline now read "Could not be drawn" for it rather than "never committed" | B10 | none | B08's row; "stored in LFS" wording not added |
 
 ## Phase entries
+
+### B10 · Artifact viewers · COMPLETE · 2026-11-20
+
+Board 1.21.0 to **1.22.0**. Plan and evidence: `phases/B10-artifact-viewers/IMPLEMENTATION.md`. Decisions: accepted decision 24
+(B10-Q2 yes, B10-Q3 both, asked in this session); the SPEC marks them answered. Inherited D-01c (no page CSP, so no CSP
+re-runs), B01-Q2 (reveal kept), D-06, D-10. No master merge was needed. All ten findings and the addition reproduced at
+HEAD `40d59025` by reading (line drift only).
+
+**Dispositions**
+
+Proof files: `tests/artifactRelease.test.ts` (fake pdf.js keeping pdf.js's worker rule, StrictMode), `tests/artifactLabels.test.ts`,
+`tests/artifactsTab.test.ts`, `tests/cardFind.test.ts` (all jsdom), and the "B10 · artifact viewers" block at the end of
+`e2e/artifacts.spec.ts` (Chromium, fixture board 5182, development build so StrictMode).
+
+| Finding | Disposition | Proof |
+|---|---|---|
+| R-13 | **Fixed**: `src/artifacts/pdfDocs.ts` shares one `PDFWorker` and counts documents by URL; `openPdf`/`closePdf`/`withPdf`; an unheld document waits in an idle list of 3, then is destroyed; any failed load (before the document opens, at it, or at a page) is destroyed and forgotten; the reader holds its document through `useLoaded`'s new `dispose`, thumbnails and compare pages only while drawing | release tests (thumbnails in turn, late reader, partway failure, held document survives, compare pages one open, failure before open retried, boundary unmount); e2e leak counts |
+| R-163 | **Fixed**: `src/artifacts/objectUrls.ts` (`ownUrl`, `dropUrl` revokes only its own); `CanvasBody`, `MermaidPicture` and compare pictures dispose through `useLoaded` | release tests (six edits leave one URL, none after unmount; a late drawing revoked); e2e (six source edits on screen leave at most 1, the minimap's URL still fetches, 0 on the board) |
+| R-98 | **Fixed**: the found answer is kept with the request it answers (spot, file version, region content) and reads null for any other; no reset effect | e2e: a panel click on an unfindable spot in an open drawing, Markdown and PDF shows the flag; found spots show none |
+| R-100 | **Fixed**: Markdown and PDF effects key on the region's content; placing is once per request (`placed` ref), so a correction re-boxes without moving the view, and a spot found only now is placed | e2e: a quote moved on disk moves the box (one box), broken shows the flag and no box, fixed boxes again, in Markdown and PDF |
+| R-99 | **Fixed**: `CanvasViewer`'s last placement is an object (`Placement`: focus, region, image, follow), compared field by field | e2e: viewBox sampled through a request takes more than 4 values (2 before), the same region asked again eases, a fresh open and reduced motion at most 2 |
+| R-103 | **Fixed**: `src/artifacts/pictureFailure.ts`; `pictureOf` never throws and returns a picture or a failure: none (null or empty source), gone (404), drawn (mermaid error, pdf.js parse error, `decode()` failure, B10-Q2), read (other status, no answer) | labels tests (each row) |
+| R-104 | **Fixed** (D-10): gallery and lightbox use `assetUrl(src, assets[src])` | artifactsTab (only the changed file's URL changes; lightbox follows); e2e (file rewritten on disk: gallery and open lightbox show 320 px wide without a reload, the other URL unchanged, `?v=` served 200, a non-asset with `?v=` 404) |
+| R-105 | **Fixed**: the lightbox is portalled to `document.body` | artifactsTab (parent is body, keys kept); e2e (`elementFromPoint` at the New card button and the divider beside a docked card is the lightbox; a click there closes it and starts no card; over a modal sheet, Esc closes only the lightbox) |
+| R-106 | **Fixed** (B10-Q3): picked kinds and areas stay listed (count 0, an area not in config), selects show when one is picked, "Nothing matches the filters." with Clear filters; unknown kinds and statuses dropped inside the store's coerce (one status, one area kept, as the selects pick one); `readPrefs` is `readJson` alone | artifactsTab (4); e2e (saved prefs through a reload, Clear filters, damaged prefs load defaults) |
+| R-33 | **Fixed**: scrolling only when asked (a new query, another card, find opening, a step); a re-find keeps the current match by its live range (`keptMatch`), else the next after it; find back after Edit keeps its match unscrolled | cardFind (5) |
+| B10-REQ-11 (Shot) | **Fixed**: `Shot` asks the server (HEAD) on an image error: 404 Not kept, 200 Could not be drawn, other Could not be read | labels tests (3, one a preservation check) |
+
+**Leak numbers** (e2e, 10 rounds of Artifacts tab with PDF and mermaid thumbnails, the PDF reader, the mermaid page, the board):
+before **20 workers and 20 object URLs after 5 rounds, 40 and 40 after 10**; after **1 worker and 0 URLs at both**, PDF documents
+open 1 (idle). After a PDF history compare stepped through 5 page changes: 1 worker, 3 documents open (all idle), 0 URLs.
+
+**Before-proofs:** every new unit test was run on a `git archive 40d59025` copy in the scratchpad (a throwing `pdfDocs.ts` stub
+there for the two tests using the new module): release 8 of 8 fail (20 workers where 1 is allowed, 7 URLs where 1), labels 6 of 7
+(the passing one is the full-size link preservation check), artifactsTab 6 of 6, cardFind 3 of 4 (typing and stepping scroll was
+already true). The review regressions fail there too (late reader `held`, boundary unmount, find after Edit), and the
+retry-after-early-failure test fails against this phase's first `pdfDocs.ts`. The e2e block ran on the same copy (its Vite allowed
+to serve the linked `node_modules`, a harness change only): all 7 fail.
+
+**What shipped:**
+- **New:** `src/artifacts/pdfDocs.ts`, `objectUrls.ts`, `pictureFailure.ts`; tests above.
+- **Changed:** `src/artifacts/content.ts` (`useLoaded(key, load, dispose?)`, `releaseCanvas`), `PdfReader.tsx` (loader moved to
+  `pdfDocs.ts`; `pageTexts` forgets a cut-short read; region key and placing), `Thumb.tsx`, `VisualCompare.tsx` (failures, page in
+  the key only for a PDF, the whole source in the key), `ArtifactViewer.tsx`, `MarkdownReader.tsx`, `CanvasViewer.tsx`;
+  `src/components/CardFind.tsx`, `Screenshots.tsx`, `HistoryView.tsx` (`Shot` only); `src/views/ArtifactsView.tsx`;
+  `src/artifactIndex.ts` (prefs coerce, `readPrefs`, `NO_FILTERS`).
+- **Shared module:** `useLoaded`'s new argument is optional; `src/diff/DiffFile.tsx` is unchanged.
+- **Development hooks:** `window.__BOARD_PDF__` and `window.__BOARD_URLS__` (development builds only) for the leak counts.
+
+**Deviations:**
+1. Two small truthfulness fixes in the territory beyond the findings: the compare's version key now uses the whole mermaid source
+   (two sources sharing their first 64 characters and length shared a picture), and a failed pdf.js load is retried by the next PDF.
+2. The R-98 e2e uses the panel click (FINDINGS' scenario): a URL change re-asks the spot a second time, so the old board showed
+   the flag that way.
+3. Statuses and areas keep only their first saved value (the selects pick one), so every pick has its control.
+
+**Verification:**
+- `npm run verify:board`: tsc and check OK; Vitest 1,090 of 1,091 in the final run (the failure is `api.test.ts`'s known 5 s git
+  timeout at load 19, passing alone); an earlier run also lost `diffUi` and `originLive` the same way, both passing alone
+  (Discovered). `npm run check` on the real catalogue: OK, no errors; no file under `requirements/` changed.
+- `e2e/artifacts.spec.ts` 42 of 42 (twice). Full fixture project: 126 of 126 in the second run; the first lost the known Mapped
+  lane-rename flake (Discovered). `e2e/one-rule.spec.ts` 3 of 3 alone.
+- **Migration:** none (saved prefs keep their key and shape; an older board reads them).
+
+**Review outcomes (convention 15):** two Sonnet reviewers (about 600 changed lines outside tests).
+- **Confirmed and fixed, each with a test shown failing first:** a pdf.js or worker failure before `getDocument` left a rejected
+  entry cached for good (both reviewers); test 2's document count could be masked by earlier tests' idle documents (now asserts
+  nothing held); find toggled off by Edit reset to the first match and scrolled; release on an error-boundary unmount had no proof.
+- **Also fixed:** a rejected pdf.js import is no longer cached; a text read cut short by release no longer rejects unhandled;
+  mermaid compare pictures no longer redrawn on a page change; the found key built with `JSON.stringify` (no `|` joiner); the
+  test-only reset export removed; `prefsShape` unexported; a formatting slip.
+- **Recorded, not changed** (Discovered): thumbnails read every page size; the HEAD plus `decode()` triple fetch and a possible
+  non-Chromium `decode()` difference.
+- **Not reproducible:** none. A reviewer's portal bubbling concern: the scrim ignores events whose target is not itself, and the
+  e2e shows a backdrop click closes only the lightbox.
+
+**Touch-rights edits (convention 11):** `e2e/fixtureCatalogue.ts` (`png` exported, B14's helper area); `docs/board-fixes/index.html`
+(B10 status). `HistoryView.tsx` (B09's) only in `Shot`, as assigned.
+
+**Doc facts (convention 12):**
+- **`requirements-board/DESIGN.md`:** Artifacts tab, a new Filters bullet; artifact History (the failure labels); the card History's
+  screenshot sentence (same words).
+- **`requirements-board/README.md`:** src map (`content`, `pdfDocs`, `objectUrls`, `pictureFailure`); the screenshot version bullet
+  (gallery and lightbox follow, unchanged stays cached); the artifacts paragraph (failure labels; viewers release PDF documents and
+  object URLs, one worker, three idle).
+- **`CHANGELOG.md`** 1.22.0. **Headers:** `pdfDocs.ts`, `objectUrls.ts`, `pictureFailure.ts`, `useLoaded`, `CardFind`'s `keptMatch`,
+  `Lightbox`, `prefsShape`.
+- **Checked, nothing changed:** the About page (its Artifacts lines still true), SCHEMA, ADOPTING, the SKILL.md files; card find has
+  no DESIGN line (B14's whole-file pass may add one).
+
+**What later phases need:**
+- **B11:** nothing from B10's viewers; `RegionBoundary` unmounts release viewers' resources through `useLoaded`.
+- **B14:** the README and DESIGN lines above in the whole-file pass; the shared veil (B06's Discovered row) was not taken up here.
+- **B15:** rerun `tests/{artifactRelease,artifactLabels,artifactsTab,cardFind}.test.ts` and the B10 block of `e2e/artifacts.spec.ts`;
+  confirm the `one-rule` R-101 observation over more runs.
 
 ### B09 · Diff and history UI · COMPLETE · 2026-11-20
 

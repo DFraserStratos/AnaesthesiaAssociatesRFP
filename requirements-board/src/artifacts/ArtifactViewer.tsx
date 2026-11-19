@@ -17,7 +17,7 @@ import { guarded, useOpen } from '../nav.ts'
 import { useCatalogue, useIndex } from '../store.ts'
 import { ARTIFACT_KIND_LABEL } from '../vocab.ts'
 import { CanvasViewer, type FindProps } from './CanvasViewer.tsx'
-import { loadCanvas, useLoaded } from './content.ts'
+import { loadCanvas, releaseCanvas, useLoaded } from './content.ts'
 import type { FullScreen } from './fullScreen.ts'
 import { MarkdownReader } from './MarkdownReader.tsx'
 import { PdfReader } from './PdfReader.tsx'
@@ -51,8 +51,13 @@ export function ArtifactViewer({ rec, spot, focusKey, preview = null, onSpot, fu
   const url = artifactFileUrl(a.id, rec.meta.fileRev)
   const region: Region | null = spot ? (a.regions.find((r) => r.id === spot) ?? null) : null
   const auto = spot && !region ? spot : null
-  const [found, setFound] = useState<boolean | null>(null)
-  useEffect(() => setFound(null), [spot, rec.rev, rec.meta.fileRev])
+  // Whether the viewer found the spot, kept with the request it answers (the spot, the file version and
+  // the region as it reads now), so an answer about another request is never shown and nothing has to
+  // wipe it: a viewer reports in its layout effect, before any reset of the parent's could run (R-98).
+  const asked = JSON.stringify([spot, rec.meta.fileRev, region])
+  const [answer, setAnswer] = useState<{ asked: string; found: boolean } | null>(null)
+  const found = answer?.asked === asked ? answer.found : null
+  const setFound = useCallback((f: boolean) => setAnswer({ asked, found: f }), [asked])
   const unknownSpot = !!spot && !spotName(rec, spot)
   // A stepped diagram: the step chosen (-1 for none: the whole drawing). Steps are only for a drawing file.
   const steps = format && isCanvasFormat(format) && format !== 'raster' ? (a.steps ?? []) : []
@@ -211,7 +216,7 @@ function CanvasBody({ rec, url, region, focusKey, preview, onRegionFound, find, 
   const a = rec.data
   const format = rec.meta.format!
   const key = `${a.id}|${rec.meta.fileRev ?? ''}|${format === 'mermaid' ? a.source : ''}`
-  const loaded = useLoaded(key, () => loadCanvas({ format, url, source: a.source, seed: a.id, bounds: rec.meta.bounds }))
+  const loaded = useLoaded(key, () => loadCanvas({ format, url, source: a.source, seed: a.id, bounds: rec.meta.bounds }), releaseCanvas)
   // Record IDs drawn in the text open their record, as a bare ID in Markdown does.
   const index = useIndex()
   const artifacts = useCatalogue((s) => s.artifacts)

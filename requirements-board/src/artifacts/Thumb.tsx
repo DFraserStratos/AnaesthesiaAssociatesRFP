@@ -6,8 +6,8 @@ import { useEffect, useRef, useState } from 'react'
 import { markdownReadable } from '../../shared/artifacts.ts'
 import type { ArtifactRec } from '../../shared/types.ts'
 import { artifactFileUrl } from '../api.ts'
-import { loadCanvas, useLoaded } from './content.ts'
-import { loadPdf } from './PdfReader.tsx'
+import { loadCanvas, releaseCanvas, useLoaded } from './content.ts'
+import { withPdf } from './pdfDocs.ts'
 import { fetchText } from './ArtifactViewer.tsx'
 
 function useNear<T extends Element>() {
@@ -48,23 +48,25 @@ function MermaidThumb({ rec }: { rec: ArtifactRec }) {
 
 /** A mermaid diagram drawn as an image, from its source. */
 export function MermaidPicture({ id, source }: { id: string; source: string }) {
-  const loaded = useLoaded(`${id}|${source}`, () => loadCanvas({ format: 'mermaid', source, seed: id }))
+  // Its object URL is revoked once this picture goes or its source changes.
+  const loaded = useLoaded(`${id}|${source}`, () => loadCanvas({ format: 'mermaid', source, seed: id }), releaseCanvas)
   return loaded.status === 'ready' ? <img src={loaded.value.imageUrl} alt="" draggable={false} /> : null
 }
 
-/** A PDF's first page, drawn small. */
+/** A PDF's first page, drawn small: the document is held only while it draws. */
 export function PdfThumb({ url }: { url: string }) {
-  const loaded = useLoaded(url, async () => {
-    const { doc } = await loadPdf(url)
-    const page = await doc.getPage(1)
-    const base = page.getViewport({ scale: 1 })
-    const viewport = page.getViewport({ scale: 440 / base.width })
-    const canvas = document.createElement('canvas')
-    canvas.width = Math.floor(viewport.width)
-    canvas.height = Math.floor(viewport.height)
-    await page.render({ canvas, viewport }).promise
-    return canvas.toDataURL('image/png')
-  })
+  const loaded = useLoaded(url, () =>
+    withPdf(url, async ({ doc }) => {
+      const page = await doc.getPage(1)
+      const base = page.getViewport({ scale: 1 })
+      const viewport = page.getViewport({ scale: 440 / base.width })
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.floor(viewport.width)
+      canvas.height = Math.floor(viewport.height)
+      await page.render({ canvas, viewport }).promise
+      return canvas.toDataURL('image/png')
+    }),
+  )
   return loaded.status === 'ready' ? <img className="thumb-page" src={loaded.value} alt="" draggable={false} /> : null
 }
 

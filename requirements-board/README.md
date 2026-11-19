@@ -123,7 +123,10 @@ src/
   views/         BoardView, ArtifactsView (grid or list; a click opens ArtifactPage), ArtifactPage, QuestionsView, OutlineView
   artifacts/     the viewers: CanvasViewer (SVG, image, mermaid: viewBox pan and zoom, minimap, red box),
                  MarkdownReader, PdfReader, sanitise, camera (pure), regionsDom, stepsDom, stepMoves, StepBar, ArtifactPanel,
-                 ArtifactHistory, VisualCompare, Thumb
+                 ArtifactHistory, VisualCompare, Thumb; content (loading, and `useLoaded`, which gives back
+                 what a view no longer shows), pdfDocs (PDF documents shared on one pdf.js worker and
+                 destroyed once unused), objectUrls (drawn mermaid images' URLs, revoked once unused),
+                 pictureFailure (why a version is not shown)
   board/         autoLayout (Freeform, pure), mappedLayout (Mapped + drop hit-test, pure), graph (nodes + edges
                  from the catalogue, pure), cardData, CardNode, LaneNode (lane rule, add slot, drop bar), LaneHeaders
   components/    ItemModal, QuestionModal, Screenshots (gallery, lightbox, image editor), Sheet, ProblemPill,
@@ -200,7 +203,8 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   only the cards it changed re-render.
 - Every screenshot has a version, its git blob hash (`assets` in the snapshot and the store, and in
   a delivery when one is rewritten, added or removed; null for one gone). An image URL carries it as
-  `?v=` (`assetUrl(src, version)`), so a re-captured screenshot is fetched afresh; any version is
+  `?v=` (`assetUrl(src, version)`), so a re-captured screenshot is fetched afresh (an open card's
+  gallery and lightbox show it at once, an unchanged one keeps its cached picture); any version is
   served the current file.
 - Card moves not saved yet (waiting, failed or being sent) are kept in the tab's session storage, so a
   reload, including Vite's after the server restarts, shows them and sends them; leaving or reloading
@@ -314,7 +318,10 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   view), and only the board's own record links open anything. The check reads
   every file (PDFs in a child process) to hold every region's anchors to account. History comes
   from git: the sidecar's commits as field changes, the file's as before and after (side by side,
-  swipe, or a source diff). Every artifact with text has a find box (`src/artifacts/find.ts`):
+  swipe, or a source diff); a side that cannot be shown says why (no version, not kept by git, could
+  not be drawn, could not be read). The viewers release what they open: every PDF document runs on
+  one shared pdf.js worker and is destroyed once no view needs it (the last three stay open for a
+  quick return), and a drawn mermaid image's object URL is revoked when it leaves the screen. Every artifact with text has a find box (`src/artifacts/find.ts`):
   matches across element and line breaks, counted over a whole PDF from pdf.js's page text.
   An SVG drawing's sidecar can also list `steps`, which makes it a stepped diagram: a slim step bar
   on the canvas and a Steps tab play them in order, each step revealing more of the drawing (reveal

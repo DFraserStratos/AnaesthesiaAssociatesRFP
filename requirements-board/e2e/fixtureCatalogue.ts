@@ -123,7 +123,7 @@ The quick brown fox jumps over the lazy dog.
 `
 
 /** A solid-colour PNG, w x h. */
-function png(w: number, h: number): Buffer {
+export function png(w: number, h: number): Buffer {
   const chunk = (type: string, data: Buffer) => {
     const len = Buffer.alloc(4)
     len.writeUInt32BE(data.length)

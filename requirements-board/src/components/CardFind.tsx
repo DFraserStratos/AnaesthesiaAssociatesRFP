@@ -9,6 +9,24 @@ const HighlightCtor = (globalThis as { Highlight?: new (...r: Range[]) => unknow
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 
 /**
+ * Which of the matches found after a change inside the card is the current one: the same text at the
+ * same place (`was` is a live range, so the DOM change has already moved it with its text), else the
+ * first match at or after where it was, else the first.
+ */
+export function keptMatch(was: Range | undefined, now: Range[]): number {
+  if (!was || !now.length) return 0
+  try {
+    const text = was.toString()
+    const same = now.findIndex((r) => r.compareBoundaryPoints(Range.START_TO_START, was) === 0 && r.toString() === text)
+    if (same >= 0) return same
+    const after = now.findIndex((r) => r.compareBoundaryPoints(Range.START_TO_START, was) >= 0)
+    return after >= 0 ? after : 0
+  } catch {
+    return 0 // the old match is no longer comparable (another document): start again
+  }
+}
+
+/**
  * Find in the open card: Ctrl F (Cmd F on a Mac) opens a bar under the card's head while the card
  * is open, so the board's search only takes Ctrl F once the card is closed. Matches are tinted as
  * an artifact's find tints them; the arrows (or Enter and Shift Enter) step through them, Esc closes.
@@ -38,22 +56,52 @@ export function CardFind({ root, resetKey, disabled = false }: { root: RefObject
     return () => window.removeEventListener('keydown', onKey)
   }, [disabled])
 
+  // The card is scrolled to the current match only when the reader asks: a new query (find opening
+  // with one, another card taking this one's place) or a step. A change inside the card never does (R-33).
+  const scrollAsked = useRef(false)
+  const [asks, setAsks] = useState(0)
+  /** The current match as last shown (a live range), kept while find is put away under Edit. */
+  const seen = useRef<Range | undefined>(undefined)
+  /** What the matches were last found for. */
+  const asked = useRef({ query: '', resetKey: '', shown: false })
+
   // Each match as a range, found again whenever the card's text changes (an edit saved, a section opened).
   useLayoutEffect(() => {
     const el = root.current
+    const was = asked.current
     if (!el || disabled || !shown || !query.trim()) {
+      if (!shown) asked.current = { ...was, shown: false }
       setRanges([])
       return
     }
-    const measure = () => setRanges(findRanges(el, query, 'doc'))
-    measure()
-    const mo = new MutationObserver(measure)
+    // A new query, another card, or find opening asks for the first match and brings it into view.
+    // Anything else (find back after Edit or a question over the card) finds the matches again and
+    // keeps the match that was current, without scrolling.
+    const fresh = !was.shown || was.query !== query || was.resetKey !== resetKey
+    asked.current = { query, resetKey, shown: true }
+    const next = findRanges(el, query, 'doc')
+    if (fresh) {
+      seen.current = undefined
+      scrollAsked.current = true
+      setActive(0)
+    } else setActive(keptMatch(seen.current, next))
+    setRanges(next)
+    // A change inside the card: the same match stays current while its text is there (matches added
+    // or removed above it included), else the next one after where it was; nothing scrolls.
+    const remeasure = () => {
+      const found = findRanges(el, query, 'doc')
+      setActive(keptMatch(seen.current, found))
+      setRanges(found)
+    }
+    const mo = new MutationObserver(remeasure)
     mo.observe(el, { childList: true, subtree: true, characterData: true })
     return () => mo.disconnect()
   }, [query, shown, disabled, resetKey])
-  useEffect(() => setActive(0), [query, resetKey])
 
   const current = ranges.length ? Math.min(active, ranges.length - 1) : -1
+  useLayoutEffect(() => {
+    if (current >= 0) seen.current = ranges[current]
+  })
   useEffect(() => {
     if (!highlights || !HighlightCtor) return
     highlights.set('card-find', new HighlightCtor(...ranges.filter((_, i) => i !== current)))
@@ -63,8 +111,10 @@ export function CardFind({ root, resetKey, disabled = false }: { root: RefObject
       highlights.delete('card-find-current')
     }
   }, [ranges, current])
-  // Bring the current match into view within the card's own scroll.
+  // Bring the current match into view within the card's own scroll, when the reader asked (once).
   useEffect(() => {
+    if (!scrollAsked.current) return
+    scrollAsked.current = false
     const el = root.current
     const r = ranges[current]
     if (!el || !r) return
@@ -77,14 +127,19 @@ export function CardFind({ root, resetKey, disabled = false }: { root: RefObject
     const frame = el.getBoundingClientRect()
     if (box.top >= frame.top + 8 && box.bottom <= frame.bottom - 8) return
     el.scrollTo({ top: Math.max(0, el.scrollTop + box.top - frame.top - el.clientHeight / 3), behavior: reducedMotion() ? 'auto' : 'smooth' })
-  }, [current, ranges])
+  }, [current, ranges, asks])
 
   const close = () => {
     setQuery('')
     setShown(false)
     root.current?.closest<HTMLElement>('.sheet')?.focus({ preventScroll: true })
   }
-  const step = (d: 1 | -1) => ranges.length && setActive((i) => (Math.min(i, ranges.length - 1) + d + ranges.length) % ranges.length)
+  const step = (d: 1 | -1) => {
+    if (!ranges.length) return
+    scrollAsked.current = true
+    setAsks((n) => n + 1) // a step to the same match (there is one) still brings it back
+    setActive((i) => (Math.min(i, ranges.length - 1) + d + ranges.length) % ranges.length)
+  }
   const onKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault()
