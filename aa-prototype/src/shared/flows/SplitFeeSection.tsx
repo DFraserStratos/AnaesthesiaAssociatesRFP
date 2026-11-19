@@ -10,6 +10,7 @@
  * hands the sheet its shares. The sheet's one Save writes it. PWA-safe.
  */
 
+import { useBookingApi, useBookingStore } from '../booking/draft'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { accent, neutral, radius } from '../../theme/tokens'
 import type { CounterpartyRef, SplitShare } from '../../domain/types'
@@ -23,7 +24,6 @@ import {
   contractPartyFor,
   partyOptionsForProcedure,
   procedureFeeNow,
-  useAppStore,
   type FeeSplitInput,
   type SplitPersonInput,
   type SplitShareInput,
@@ -110,10 +110,11 @@ export interface SplitDraft {
 
 /** The split's draft state, read once per opening (the sheet is modal; the fee and options do not move under it). */
 export function useSplitDraft(procedureId: string, open: boolean, startActive: boolean, onEdit?: () => void): SplitDraft {
-  const procedure = useAppStore((s) => s.schedule.procedures[procedureId])
+  const bookingApi = useBookingApi()
+  const procedure = useBookingStore((s) => s.schedule.procedures[procedureId])
   const snapshot = useMemo(() => {
     if (!open) return undefined
-    const state = useAppStore.getState()
+    const state = bookingApi.getState()
     return {
       fee: procedureFeeNow(state, procedureId),
       options: partyOptionsForProcedure(state, procedureId),

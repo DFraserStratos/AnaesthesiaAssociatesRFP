@@ -1,8 +1,9 @@
+import { useBookingStore } from '../booking/draft'
 import { useMemo } from 'react'
 import { radius, semantic } from '../../theme/tokens'
 import type { AssignedList, Procedure } from '../../domain/types'
 import type { CompletionFailure } from '../../domain/billing/completion'
-import { editRefusal, procedureStackViewFor, useAppStore, useProcedurePrepayment, isStillPrepaid, type Actor } from '../../store'
+import { editRefusal, procedureStackViewFor, useProcedurePrepayment, isStillPrepaid, type Actor } from '../../store'
 import { useSurface } from '../surface'
 import type { ProcedureFeeView } from './feeContext'
 import { TimesCard } from './TimesCard'
@@ -88,9 +89,9 @@ export function BtmCaptureBlock({
   onError,
 }: BtmCaptureBlockProps) {
   const { Pair } = useSurface()
-  const masters = useAppStore((s) => s.masters)
-  const billingLines = useAppStore((s) => s.schedule.billingLines)
-  const completed = useAppStore((s) => s.schedule.bookings[procedure.bookingId]?.completed === true)
+  const masters = useBookingStore((s) => s.masters)
+  const billingLines = useBookingStore((s) => s.schedule.billingLines)
+  const completed = useBookingStore((s) => s.schedule.bookings[procedure.bookingId]?.completed === true)
 
   const { fee, allocation, rvgGroup, contract, nonRvgLines } = view
 
@@ -126,15 +127,15 @@ export function BtmCaptureBlock({
 
   // The procedure stack's view (catch-up Phase 20a): the one pure module, through the store's selector.
   // Only the three records the view reads, so a write elsewhere does not rebuild it.
-  const procedures = useAppStore((s) => s.schedule.procedures)
-  const bookings = useAppStore((s) => s.schedule.bookings)
-  const lists = useAppStore((s) => s.schedule.lists)
+  const procedures = useBookingStore((s) => s.schedule.procedures)
+  const bookings = useBookingStore((s) => s.schedule.bookings)
+  const lists = useBookingStore((s) => s.schedule.lists)
   // The invoices too: a held price is what a split divides (catch-up Phase 24).
-  const invoices = useAppStore((s) => s.billing.invoices)
-  const invoiceLines = useAppStore((s) => s.billing.invoiceLines)
-  const locks = useAppStore((s) => s.billing.locks)
+  const invoices = useBookingStore((s) => s.billing.invoices)
+  const invoiceLines = useBookingStore((s) => s.billing.invoiceLines)
+  const locks = useBookingStore((s) => s.billing.locks)
   // The ledger too: a prepaid Procedure's basis reads its prepayment status (catch-up Phase 27; the ledger since 36).
-  const ledger = useAppStore((s) => s.billing.ledger)
+  const ledger = useBookingStore((s) => s.billing.ledger)
   const stackSurface = actor.role === 'office' ? 'office' : 'anaesthetist'
   const stackView = useMemo(
     () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists, billingLines }, billing: { invoices, invoiceLines, locks, ledger } }, procedure.id, stackSurface),
@@ -294,7 +295,7 @@ export function BtmCaptureBlock({
 /** "Prepaid $1,200.00 · paid": a prepaid Procedure's amount and status, read-only (catch-up Phase 27; US-03.1.8, D30). */
 function PrepaidRow({ procedureId, office }: { procedureId: string; office: boolean }) {
   const prepayment = useProcedurePrepayment(procedureId)
-  const payeeName = useAppStore((s) => {
+  const payeeName = useBookingStore((s) => {
     const id = prepayment?.holding?.toAnaesthetistId
     return id !== undefined ? s.masters.anaesthetists[id]?.name : undefined
   })

@@ -7,6 +7,11 @@ interface CompleteBarProps {
   canAmend: boolean
   onComplete: () => void
   onAmend: () => void
+  /**
+   * Why completing or amending must wait (catch-up Phase 35): the Admin draft
+   * holds unsaved changes. Both are commands on the saved Booking.
+   */
+  blocked?: string | null
 }
 
 /**
@@ -18,7 +23,8 @@ interface CompleteBarProps {
  * absolute bar vs web sticky bar), so this renders only the inner control and
  * is identical on both platforms; the caller wraps it in `useSurface().Footer`.
  */
-export function CompleteBar({ completed, canAmend, onComplete, onAmend }: CompleteBarProps) {
+export function CompleteBar({ completed, canAmend, onComplete, onAmend, blocked = null }: CompleteBarProps) {
+  const isBlocked = blocked !== null
   return completed ? (
     <div
       style={{
@@ -46,7 +52,7 @@ export function CompleteBar({ completed, canAmend, onComplete, onAmend }: Comple
       </svg>
       Booking complete
       {canAmend && (
-        <TextAction inline onClick={onAmend} style={{ marginLeft: 6, fontSize: 14, padding: '4px 0' }}>
+        <TextAction inline onClick={onAmend} disabled={isBlocked} {...(isBlocked ? { title: blocked } : {})} style={{ marginLeft: 6, fontSize: 14, padding: '4px 0' }}>
           Amend
         </TextAction>
       )}
@@ -54,13 +60,16 @@ export function CompleteBar({ completed, canAmend, onComplete, onAmend }: Comple
   ) : (
     <button
       type="button"
-      onClick={onComplete}
+      onClick={isBlocked ? undefined : onComplete}
+      disabled={isBlocked}
+      title={blocked ?? undefined}
       style={{
         height: 56,
         borderRadius: radius.card,
         border: 'none',
-        background: accent.base,
-        color: neutral.surface,
+        // The one disabled treatment (Button's, README U08) while a command must wait.
+        background: isBlocked ? neutral.line : accent.base,
+        color: isBlocked ? neutral.mist : neutral.surface,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -68,8 +77,8 @@ export function CompleteBar({ completed, canAmend, onComplete, onAmend }: Comple
         fontSize: 17,
         fontWeight: 700,
         width: '100%',
-        cursor: 'pointer',
-        boxShadow: elevation.e2,
+        cursor: isBlocked ? 'default' : 'pointer',
+        boxShadow: isBlocked ? 'none' : elevation.e2,
       }}
     >
       Mark complete

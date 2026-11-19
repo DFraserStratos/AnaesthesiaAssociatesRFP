@@ -13,6 +13,28 @@ import type { AppState } from './appStore'
 /** The office persona, Kirsty W., exactly as the Admin Web App acts. */
 export const OFFICE_ACTOR: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
+/**
+ * The second named office user (catch-up Phase 35; US-02.5.8): a seeded
+ * name, so one Booking's history can name two office users. A demo stand-in
+ * for each user signing in as themselves (US-13.5.1, not built).
+ */
+export const SECOND_OFFICE_ACTOR: Actor = { who: 'Sam T.', role: 'office', source: 'office' }
+
+export type OfficeUserId = 'kirsty' | 'sam'
+
+/** The office users the harness bar's Switch office user toggles between. */
+export const OFFICE_USERS: Readonly<Record<OfficeUserId, Actor>> = { kirsty: OFFICE_ACTOR, sam: SECOND_OFFICE_ACTOR }
+
+/** The office actor the Admin app acts as now (Kirsty W. unless switched). */
+export function officeActorOf(shell: Pick<AppState['shell'], 'officeUser'>): Actor {
+  return OFFICE_USERS[shell.officeUser ?? 'kirsty']
+}
+
+/** The other office user, for the switch. */
+export function otherOfficeUser(shell: Pick<AppState['shell'], 'officeUser'>): OfficeUserId {
+  return (shell.officeUser ?? 'kirsty') === 'kirsty' ? 'sam' : 'kirsty'
+}
+
 /** The anaesthetist persona, Dr Melanie Souter, as the mobile and web apps act. */
 export const SOUTER_ACTOR: Actor = {
   who: 'Dr Melanie Souter',

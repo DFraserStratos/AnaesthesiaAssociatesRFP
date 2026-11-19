@@ -1,7 +1,8 @@
+import { useBookingStore } from '../booking/draft'
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 import { format, parseISO } from 'date-fns'
 import { neutral, radius } from '../../theme/tokens'
-import { useAppStore, type Actor } from '../../store'
+import { type Actor } from '../../store'
 import type { SlotStatusKey } from '../../domain/types'
 import { locationName } from '../format'
 import { resolveDisplayStatus, useSlotStatusRecords } from '../status/useSlotStatuses'
@@ -119,8 +120,8 @@ export function MoveListPromptProvider({ actor, children }: { actor: Actor; chil
 /** Before a range or series that covers several of her Lists: which ones, then one prompt each. */
 function ListsToMoveIntro({ listIds, statusKey, onStart, onCancel }: { listIds: readonly string[]; statusKey: SlotStatusKey; onStart: () => void; onCancel: () => void }) {
   const { Overlay, variant } = useSurface()
-  const lists = useAppStore((s) => s.schedule.lists)
-  const hospitals = useAppStore((s) => s.masters.hospitals)
+  const lists = useBookingStore((s) => s.schedule.lists)
+  const hospitals = useBookingStore((s) => s.masters.hospitals)
   const statuses = useSlotStatusRecords()
   const label = resolveDisplayStatus(statusKey, statuses).label
   return (

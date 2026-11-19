@@ -10,7 +10,7 @@ import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { displayStatusLabel, isClosedKey, statusLine } from '../../../domain/slotStatus'
 import { strongestOpen, useListWarnings, WarningTriangle, warningTone } from '../../../shared/warnings'
 import { HistorySheet, ProcedureStack } from '../../../shared/booking'
-import { OfficeAlertLine, useBookingMoveEntries } from '../../../shared/flows'
+import { AddBookingFlow, OfficeAlertLine, useBookingMoveEntries } from '../../../shared/flows'
 import { drSurname, LIST_STATE_LABELS, locationName, pairingLine, slotTimeRange, shortDay } from '../../../shared/format'
 import { surnameFirst } from '../util'
 import { ConflictPanel } from './conflicts/ConflictPanel'
@@ -36,6 +36,7 @@ import { Button, DefList, DefRow, FormError, TextAction } from '../../../shared/
 import { Notice } from '../../../shared/ui/Notice'
 import { EmptyState } from '../../../shared/ui/EmptyState'
 import { ListOriginRow } from './ListOriginRow'
+import { useListUpdateEmail } from '../flows/UpdateEmailActions'
 
 interface SlotDrawerProps {
   /** The session open in the drawer (a Slot id). */
@@ -47,7 +48,7 @@ interface SlotDrawerProps {
   initialAssign?: { surgeonId?: string }
 }
 
-type Sheet = 'none' | 'edit' | 'reassign' | 'phone' | 'history' | 'assign' | 'times' | { move: string } | { status: string }
+type Sheet = 'none' | 'edit' | 'addBooking' | 'reassign' | 'phone' | 'history' | 'assign' | 'times' | { move: string } | { status: string }
 
 /**
  * The Admin Day drawer for one session (catch-up Phase 28; was the List
@@ -131,6 +132,8 @@ function ListBody({
   const warningsByBooking = useListWarnings(listId)
   // Stubs for rows waiting at intake (catch-up Phase 33a): drawn among the Bookings, never counted.
   const stubs = useListStubs(listId)
+  // The cover-change email, once the List has an emailable change of anaesthetist (catch-up Phase 35; OQ-46).
+  const updateEmail = useListUpdateEmail(listId, actor, DRAWER_ACTION)
 
   const bookings = Object.values(bookingsRecord)
     .filter((c) => c.listId === listId)
@@ -165,6 +168,7 @@ function ListBody({
             {list.state !== 'AUTHORISED' && <Button variant="secondary" size="compact" style={DRAWER_ACTION} onClick={() => setSheet('reassign')}>Reassign list</Button>}
             {list.state !== 'AUTHORISED' && <Button variant="secondary" size="compact" style={DRAWER_ACTION} shot="drawer-change-status" onClick={() => setSheet({ status: slot.id })}>Change status</Button>}
             <Button variant="secondary" size="compact" style={DRAWER_ACTION} onClick={() => setSheet('history')}>History</Button>
+            {updateEmail.button}
           </>
         }
       >
@@ -261,12 +265,20 @@ function ListBody({
                 </div>
               )
             })}
+            {/* The office adds a Booking to any List it may edit, booked or not (catch-up Phase 35; US-02.3.1, FT-02.3): the Draft List drawer's control. */}
+            {list.state !== 'AUTHORISED' && (
+              <TextAction size="sm" shot="list-add-booking" onClick={() => setSheet('addBooking')} style={{ alignSelf: 'flex-start' }}>
+                Add Booking
+              </TextAction>
+            )}
           </Section>
       </SidePanel>
 
       <HistorySheet open={sheet === 'history'} entityIds={[listId, slot.id]} title="List history" onClose={() => setSheet('none')} />
+      {updateEmail.composer}
 
       <EditListSheet open={sheet === 'edit'} list={list} actor={actor} onClose={() => setSheet('none')} />
+      <AddBookingFlow open={sheet === 'addBooking'} listId={list.id} actor={actor} onClose={() => setSheet('none')} onCreated={() => setSheet('none')} />
       <ReassignListFlow open={sheet === 'reassign'} list={list} actor={actor} onClose={() => setSheet('none')} onReassigned={() => { setSheet('none'); onClose() }} />
       {typeof sheet === 'object' && 'move' in sheet && (
         <MoveBookingFlow open bookingId={sheet.move} actor={actor} onClose={() => setSheet('none')} onMoved={() => setSheet('none')} />

@@ -24,6 +24,7 @@ import { mutate, resetDomainState, type Actor, type MutationMeta } from './mutat
 import type { AppStoreApi } from './appStore'
 import { emitAppEvent } from './events'
 import { applyGenerated, canvasMastersFrom } from './slotActions'
+import { isDraftStore } from './draftMode'
 
 const DEMO_ACTOR: Actor = { who: 'Demo control', role: 'system', source: 'demo' }
 
@@ -70,7 +71,7 @@ function applyClock(api: AppStoreApi, next: DemoClockState): void {
   api.setState({ clock: next })
   if (next.todayISO !== previous.todayISO) {
     rollCanvasForward(api, previous.todayISO, next.todayISO)
-    emitAppEvent({ type: 'dayAdvanced', todayISO: next.todayISO })
+    if (!isDraftStore(api)) emitAppEvent({ type: 'dayAdvanced', todayISO: next.todayISO })
   }
 }
 

@@ -1,3 +1,4 @@
+import { useBookingApi, useBookingStore, usePrimaryEditLabel } from '../booking/draft'
 import { useEffect, useMemo, useState } from 'react'
 import { accent, neutral, radius } from '../../theme/tokens'
 import {
@@ -10,7 +11,7 @@ import {
   type ProcedureModifier,
 } from '../../domain/billing/modifiers'
 import type { Modifier, ModifierId, Procedure } from '../../domain/types'
-import { claimModifier, editModifierExplanation, restoreModifier, useAppStore, type Actor } from '../../store'
+import { claimModifier, editModifierExplanation, restoreModifier, type Actor } from '../../store'
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { Button } from '../ui/Button'
@@ -52,9 +53,10 @@ const SEARCH_LABEL = 'Search code or modifier'
  * a removed one offers "Put back". A claimed one reads "Claimed".
  */
 export function ModifierPickerSheet({ open, procedure, items, removed, actor, editing, onClose, onError }: ModifierPickerSheetProps) {
+  const bookingApi = useBookingApi()
   const { Overlay, variant } = useSurface()
   const web = variant === 'web'
-  const modifiers = useAppStore((s) => s.masters.modifiers)
+  const modifiers = useBookingStore((s) => s.masters.modifiers)
   const [query, setQuery] = useState('')
   const [pending, setPending] = useState<{ id: ModifierId; explanation: string; units: number } | null>(null)
   const [status, setStatus] = useState<string | null>(null)
@@ -103,8 +105,8 @@ export function ModifierPickerSheet({ open, procedure, items, removed, actor, ed
     const units = needsEnteredUnits(m) ? pending.units : undefined
     const editingClaim = claimFor(m.id) !== undefined
     const outcome = editingClaim
-      ? editModifierExplanation(useAppStore, actor, procedure.id, m.id, pending.explanation, units)
-      : claimModifier(useAppStore, actor, procedure.id, { modifierId: m.id, explanation: pending.explanation, ...(units !== undefined ? { units } : {}) })
+      ? editModifierExplanation(bookingApi, actor, procedure.id, m.id, pending.explanation, units)
+      : claimModifier(bookingApi, actor, procedure.id, { modifierId: m.id, explanation: pending.explanation, ...(units !== undefined ? { units } : {}) })
     if (!outcome.ok) {
       setRefusal(outcome.message)
       return
@@ -117,7 +119,7 @@ export function ModifierPickerSheet({ open, procedure, items, removed, actor, ed
   }
 
   function putBack(m: Modifier) {
-    const outcome = restoreModifier(useAppStore, actor, procedure.id, m.id)
+    const outcome = restoreModifier(bookingApi, actor, procedure.id, m.id)
     if (!outcome.ok) onError(outcome.message)
     else setStatus(`${m.code} put back.`)
   }
@@ -252,6 +254,8 @@ function ClaimForm({
   const entered = needsEnteredUnits(modifier)
   const bounds = enteredUnitsBounds(modifier)
   const ready = explanation.trim() !== ''
+  // "Apply" in the Admin draft (catch-up Phase 35); a new claim keeps "Claim".
+  const saveLabel = usePrimaryEditLabel('Save')
   return (
     <div data-shot="modifier-explanation" style={{ padding: '4px 10px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -291,7 +295,7 @@ function ClaimForm({
         <TextAction onClick={onCancel}>Cancel</TextAction>
         {/* The primary action at the sheet's compact size (a row-level confirm, not the page's CTA). */}
         <Button variant="primary" disabled={!ready} onClick={onClaim} style={{ minHeight: 44, padding: '0 24px', fontSize: 15 }}>
-          {editing ? 'Save' : 'Claim'}
+          {editing ? saveLabel : 'Claim'}
         </Button>
       </div>
     </div>

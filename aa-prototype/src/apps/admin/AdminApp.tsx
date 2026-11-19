@@ -21,7 +21,7 @@ import {
   useAppStore,
   warningSummaryByList,
   useToday,
-  OFFICE_ACTOR,
+  officeActorOf,
 } from '../../store'
 import { isISODate } from '../../shell/routeParams'
 import { SideNav, type NavSection } from './components/SideNav'
@@ -226,6 +226,9 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   // Billing exceptions across the pipeline (the billing-monitor nav badge):
   // billing-run failures + Xero handoff faults (Phase 10).
   const exceptionCount = useMemo(() => billingAttentionCount({ billing }), [billing])
+  // The named office user the app acts as (catch-up Phase 35; Switch office user, a demo stand-in for sign-in).
+  const officeUser = useAppStore((s) => s.shell.officeUser)
+  const officeActor = useMemo(() => officeActorOf({ officeUser }), [officeUser])
   // The ledger's checks, a held unmatched receipt among them (catch-up Phase 36): the amber Ledger badge.
   const ledgerCount = useMemo(() => ledgerAttentionCount({ billing }), [billing])
   // Live conflicts from today to the horizon (catch-up Phase 30): the amber Conflicts badge.
@@ -241,7 +244,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const notes = dayNotesRecord[selectedDate] ?? []
 
   const context: AdminOutletContext = {
-    actor: OFFICE_ACTOR,
+    actor: officeActor,
     todayISO,
     selectedDate,
     sortMode,
@@ -264,7 +267,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
       setDrawerAssign(surgeonId !== undefined ? { surgeonId } : {})
       setDrawerSlotId(slotId)
     },
-    onAddNote: (text, flagged) => addDayNote(useAppStore, OFFICE_ACTOR, selectedDate, text, flagged),
+    onAddNote: (text, flagged) => addDayNote(useAppStore, officeActor, selectedDate, text, flagged),
     dayDraftLists,
     bookingCounts,
     onOpenDraftList: (listId) => {
@@ -319,7 +322,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         <DraftListDrawer
           key={drawerDraftListId}
           listId={drawerDraftListId}
-          actor={OFFICE_ACTOR}
+          actor={officeActor}
           onClose={() => setDrawerDraftListId(null)}
           onOpenBooking={(dateISO, bookingId) => navigate(`/admin/day/${dateISO}/bookings/${bookingId}`)}
           onAssigned={(listId, slotId) => {
@@ -344,7 +347,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
           open
           anaesthetistId={openOutOfHoursFor}
           dateISO={selectedDate}
-          actor={OFFICE_ACTOR}
+          actor={officeActor}
           onClose={() => setOpenOutOfHoursFor(null)}
           onOpened={(slotId) => {
             // Straight on to the new session's drawer, to put a List in it.
@@ -358,7 +361,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         <SlotDrawer
           key={`${drawerSlotId}:${drawerAssign !== undefined ? 'assign' : 'view'}`}
           slotId={drawerSlotId}
-          actor={OFFICE_ACTOR}
+          actor={officeActor}
           {...(drawerAssign !== undefined ? { initialAssign: drawerAssign } : {})}
           onClose={() => {
             setDrawerSlotId(null)

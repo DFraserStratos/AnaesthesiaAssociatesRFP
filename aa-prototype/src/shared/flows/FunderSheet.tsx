@@ -7,10 +7,11 @@
  * no holder setting: the funder never decides who is billed.
  */
 
+import { useBookingApi, useBookingStore, usePrimaryEditLabel } from '../booking/draft'
 import { useEffect, useMemo, useState } from 'react'
 import { accent, neutral, radius } from '../../theme/tokens'
 import { insurerAndFunderParties } from '../../domain/billing/insurance'
-import { setBookingInsurance, useAppStore, type Actor } from '../../store'
+import { setBookingInsurance, type Actor } from '../../store'
 import { Button, FieldLabel, FormError, TextField } from '../ui'
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
@@ -52,9 +53,12 @@ function Chip({ label, on, onClick, shot }: { label: string; on: boolean; onClic
 }
 
 export function FunderSheet({ open, bookingId, actor, onClose }: FunderSheetProps) {
+  const bookingApi = useBookingApi()
+  // "Apply" in the Admin draft (catch-up Phase 35): the draft's Save changes saves.
+  const primaryLabel = usePrimaryEditLabel('Save')
   const { Overlay, variant } = useSurface()
-  const booking = useAppStore((s) => s.schedule.bookings[bookingId])
-  const partiesRecord = useAppStore((s) => s.masters.parties)
+  const booking = useBookingStore((s) => s.schedule.bookings[bookingId])
+  const partiesRecord = useBookingStore((s) => s.masters.parties)
   const parties = useMemo(() => insurerAndFunderParties(partiesRecord), [partiesRecord])
   const [funder, setFunder] = useState(NONE)
   const [number, setNumber] = useState('')
@@ -76,7 +80,7 @@ export function FunderSheet({ open, bookingId, actor, onClose }: FunderSheetProp
 
   function save() {
     setError(null)
-    const outcome = setBookingInsurance(useAppStore, actor, bookingId, {
+    const outcome = setBookingInsurance(bookingApi, actor, bookingId, {
       ...(funder !== NONE ? { funderPartyId: funder } : {}),
       ...(funder !== NONE ? { insuranceApprovalNumber: number } : {}),
     })
@@ -137,7 +141,7 @@ export function FunderSheet({ open, bookingId, actor, onClose }: FunderSheetProp
         <SheetActions
           primary={
             <Button variant="primary" block onClick={save}>
-              Save
+              {primaryLabel}
             </Button>
           }
         />

@@ -1,3 +1,4 @@
+import { useBookingApi, useBookingStore, usePrimaryEditLabel } from '../booking/draft'
 import { useEffect, useMemo, useState } from 'react'
 import { neutral } from '../../theme/tokens'
 import type { Contract, Procedure } from '../../domain/types'
@@ -6,7 +7,7 @@ import { isRvgKind } from '../../domain/billing/contracts'
 import { parseAmount } from '../../domain/billing/money'
 import { anaesthetistPriceCaption } from '../../domain/billing/procedurePrice'
 import { NEEDS_PRICE_LABEL } from '../../domain/billing/priceRanges'
-import { anaesthetistPriceRightFor, priceChangeRefusal, setProcedurePrice, useAppStore, useProcedurePrepayment, isStillPrepaid, type Actor } from '../../store'
+import { anaesthetistPriceRightFor, priceChangeRefusal, setProcedurePrice, useProcedurePrepayment, isStillPrepaid, type Actor } from '../../store'
 import { Button, Pill, TextField } from '../ui'
 import { TextAction } from '../ui/TextAction'
 import { formatMoney } from '../format'
@@ -43,14 +44,17 @@ export type PriceCardState = 'override' | 'amount' | 'read-only' | 'needs-price'
  * is ever asked. The office changes the price with Change price (Admin).
  */
 export function PriceCard({ procedure, actor, fee, contract, canCapture, failures, onError }: PriceCardProps) {
-  const procedures = useAppStore((s) => s.schedule.procedures)
-  const bookings = useAppStore((s) => s.schedule.bookings)
-  const lists = useAppStore((s) => s.schedule.lists)
-  const invoiceLines = useAppStore((s) => s.billing.invoiceLines)
-  const masters = useAppStore((s) => s.masters)
+  const bookingApi = useBookingApi()
+  // "Apply" in the Admin draft (catch-up Phase 35): the draft's Save changes saves.
+  const primaryLabel = usePrimaryEditLabel('Save price')
+  const procedures = useBookingStore((s) => s.schedule.procedures)
+  const bookings = useBookingStore((s) => s.schedule.bookings)
+  const lists = useBookingStore((s) => s.schedule.lists)
+  const invoiceLines = useBookingStore((s) => s.billing.invoiceLines)
+  const masters = useBookingStore((s) => s.masters)
   // The store's gate, re-read when anything it reads changes, so the card never offers what the store refuses.
   const refusal = useMemo(
-    () => (actor.role === 'anaesthetist' && canCapture ? priceChangeRefusal(useAppStore.getState(), actor, procedure.id) : null),
+    () => (actor.role === 'anaesthetist' && canCapture ? priceChangeRefusal(bookingApi.getState(), actor, procedure.id) : null),
     [actor, canCapture, procedure.id, procedures, bookings, lists, invoiceLines, masters],
   )
   const right = anaesthetistPriceRightFor({ masters }, procedure)
@@ -88,7 +92,7 @@ export function PriceCard({ procedure, actor, fee, contract, canCapture, failure
             : 'read-only'
 
   function save(next: number | null) {
-    const outcome = setProcedurePrice(useAppStore, actor, procedure.id, next)
+    const outcome = setProcedurePrice(bookingApi, actor, procedure.id, next)
     if (!outcome.ok) onError(outcome.message)
   }
 
@@ -113,7 +117,7 @@ export function PriceCard({ procedure, actor, fee, contract, canCapture, failure
           {editable && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <Button variant="primary" onClick={() => save(parsed ?? null)} disabled={!dirty} shot="price-card-save">
-                Save price
+                {primaryLabel}
               </Button>
               {mode === 'override' && typed !== undefined && (
                 <TextAction onClick={() => save(null)} shot="price-card-clear">

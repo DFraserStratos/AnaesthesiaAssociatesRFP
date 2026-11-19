@@ -36,6 +36,8 @@ import { ReviewScreen } from '../../../admin/screens/ReviewScreen'
 import { InvoiceDocument } from '../../../admin/screens/InvoiceDocument'
 import { STAGE_TONE, useAdminDay, useSeedIds } from './adminData'
 import { Echo, Wide } from './basicExamples'
+import { UpdateEmailComposer, usePickableChanges } from '../../../admin/flows/UpdateEmailComposer'
+import { BookingUpdateEmailButton } from '../../../admin/flows/UpdateEmailActions'
 
 const noop = () => {}
 
@@ -551,4 +553,35 @@ export function InvoiceDocumentExample() {
       </div>
     </div>
   )
+}
+
+// ---------------------------------------------------------------------------
+// Update email (catch-up Phase 35)
+// ---------------------------------------------------------------------------
+
+/** The composer on a seeded Booking, opened with its newest emailable change ticked. Open in mail client records the draft in the demo store. */
+export function UpdateEmailComposerExample() {
+  const bookingId = SEED_MARKERS.pendingCaptureBooking?.entityId
+  const [open, setOpen] = useState(false)
+  const subject = useMemo(() => (bookingId !== undefined ? { kind: 'booking' as const, bookingId } : undefined), [bookingId])
+  if (subject === undefined) return <Missing what="Booking to email about" />
+  return (
+    <div>
+      <Button variant="secondary" onClick={() => setOpen(true)}>Open the composer</Button>
+      {open && <UpdateEmailComposerOpen subject={subject} onClose={() => setOpen(false)} />}
+    </div>
+  )
+}
+
+function UpdateEmailComposerOpen({ subject, onClose }: { subject: { kind: 'booking'; bookingId: string }; onClose: () => void }) {
+  const rows = usePickableChanges(subject)
+  const newest = rows.find((r) => r.emailable)
+  return <UpdateEmailComposer open onClose={onClose} actor={OFFICE_ACTOR} subject={subject} initialPickedKeys={newest !== undefined ? [newest.key] : []} />
+}
+
+/** The Admin Booking detail's on-demand button, outside a draft (so never dirty here). */
+export function BookingUpdateEmailButtonExample() {
+  const bookingId = SEED_MARKERS.pendingCaptureBooking?.entityId
+  if (bookingId === undefined) return <Missing what="Booking to email about" />
+  return <BookingUpdateEmailButton bookingId={bookingId} actor={OFFICE_ACTOR} />
 }

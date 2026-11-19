@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { createBrowserRouter, createRoutesFromElements, Navigate, Route, RouterProvider } from 'react-router-dom'
 import { AppShell } from './shell/AppShell'
 import { PhoneFrame } from './shell/PhoneFrame'
 import { MobileApp } from './apps/mobile/MobileApp'
@@ -81,10 +81,7 @@ function RootRedirect() {
  * `anaesthetists/:anaesthetistId`) are each ONE child route of `masters`, so
  * an unknown id falls back to `/admin/masters`.
  */
-export function AppRouter() {
-  return (
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <Routes>
+const routeTree = (
         <Route element={<AppShell />}>
           <Route index element={<RootRedirect />} />
 
@@ -190,7 +187,29 @@ export function AppRouter() {
           <Route path="demo/catalogue/:app" element={<ComponentCatalogue />} />
           <Route path="*" element={<RootRedirect />} />
         </Route>
-      </Routes>
-    </BrowserRouter>
-  )
+)
+
+/**
+ * A data router (catch-up Phase 35), so the Admin Booking detail's unsaved
+ * changes guard can block navigation (`useBlocker`). Same route tree and
+ * URLs as the `BrowserRouter` it replaced. Created once, on first render,
+ * never inside a component's render path twice. The PWA keeps its own
+ * `BrowserRouter` (pwa/main.tsx): it has no Admin.
+ */
+let router: ReturnType<typeof createBrowserRouter> | null = null
+function appRouter(): ReturnType<typeof createBrowserRouter> {
+  router ??= createBrowserRouter(createRoutesFromElements(routeTree), {
+    future: {
+      v7_relativeSplatPath: true,
+      v7_fetcherPersist: true,
+      v7_normalizeFormMethod: true,
+      v7_partialHydration: true,
+      v7_skipActionErrorRevalidation: true,
+    },
+  })
+  return router
+}
+
+export function AppRouter() {
+  return <RouterProvider router={appRouter()} future={{ v7_startTransition: true }} />
 }

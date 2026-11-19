@@ -49,7 +49,7 @@ import {
   type FieldDiff,
 } from '../domain/intake/matching'
 import { hospitalDownloadSample, hospitalSourceKey } from '../domain/intake/hospitalDownloads'
-import { allocateId, clockISO, mutate, ok, refuse, transaction, type Actor, type MutationMeta, type Outcome } from './mutate'
+import { allocateId, clockISO, mutate, ok, refuse, transaction, type Actor, type MutationMeta, type Outcome, withChangeSet } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { createBooking } from './bookingActions'
 import { cancelBooking, editBooking, editRefusal } from './lifecycle'
@@ -407,7 +407,7 @@ function stale(): Outcome<never> {
  * once AUTHORISED (US-02.5.4). A Booking never moves through a row (D62); a row
  * never sets a Contract, an RVG code, a payer or a billable party itself.
  */
-export function decideImportRow(
+function decideImportRowUnscoped(
   api: AppStoreApi,
   actor: Actor,
   rowId: string,
@@ -677,4 +677,9 @@ function record(
     if (settled !== undefined) metas.push(settled.meta)
     return { intake: { ...s.intake, rows: { ...s.intake.rows, [row.id]: next }, ...(settled !== undefined ? { stubs: settled.stubs } : {}) } }
   })
+}
+
+/** `decideImportRowUnscoped` as one change set (`match`), whichever app calls it (catch-up Phase 35; DM-35). */
+export function decideImportRow(...args: Parameters<typeof decideImportRowUnscoped>): ReturnType<typeof decideImportRowUnscoped> {
+  return withChangeSet(args[0], 'match', () => decideImportRowUnscoped(...args))
 }

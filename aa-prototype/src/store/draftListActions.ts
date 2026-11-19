@@ -29,7 +29,7 @@ import { LIST_KINDS, type DraftList, type ListKind, type ListOrigin, type Reques
 import { originForNewList } from '../domain/lists/listOrigin'
 import { isEmailShaped } from '../domain/billing/payer'
 import { drName } from './conflictReconcile'
-import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
+import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome, withChangeSet } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { listInSlot, moveInputOf, scheduleHorizon, slotFor } from './selectors'
 import { attachListToSlot, insertDraftList, pairingRefusal } from './slotActions'
@@ -191,7 +191,7 @@ export interface AssignDraftListResult {
  * available first, with the anaesthetist's agreement. A not-preferred pairing
  * is never refused (US-01.3.5): it writes 17's `list.pairingAcknowledged`.
  */
-export function assignDraftList(
+function assignDraftListUnscoped(
   api: AppStoreApi,
   actor: Actor,
   listId: string,
@@ -386,4 +386,9 @@ export function draftListFitsAnaesthetist(state: Pick<AppState, 'schedule' | 'ma
  */
 export function surgeonFitsAnaesthetist(state: Pick<AppState, 'officePrivate'>, anaesthetistId: string, surgeonId: string): boolean {
   return notPreferredEntryIds(state.officePrivate.pairingPreferences, anaesthetistId, surgeonId).length === 0
+}
+
+/** `assignDraftListUnscoped` as one change set (`listReassign`), whichever app calls it (catch-up Phase 35; DM-35). */
+export function assignDraftList(...args: Parameters<typeof assignDraftListUnscoped>): ReturnType<typeof assignDraftListUnscoped> {
+  return withChangeSet(args[0], 'listReassign', () => assignDraftListUnscoped(...args))
 }

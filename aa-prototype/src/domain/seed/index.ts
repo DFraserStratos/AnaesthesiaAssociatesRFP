@@ -93,6 +93,8 @@ import { REVIEW_FLAGS_LIST_ID, seedReviewFlagBookings, type ReviewFlagBookingKey
 import { seedDisabledContractBooking } from './disabledContractBooking'
 import { RANGE_AUTHORISED_BILLED_ISO, RANGE_AUTHORISED_LIST_ID, seedPricingBookings, type PricingBookingKey } from './pricingBookings'
 import { applySeedListOrigins } from './listOrigins'
+import { SEED_EMAIL_TEMPLATES, SEED_EMAIL_TEMPLATE_NEXT } from './emailTemplates'
+import type { EmailTemplate } from '../types'
 
 export {
   canvasAnaesthetists,
@@ -173,6 +175,8 @@ export interface SeedMasters {
   recurringBookings: Record<string, RecurringBooking>
   holidays: Record<string, HospitalHoliday>
   patients: Record<string, Patient>
+  /** The update email templates, one per kind of change at seed (catch-up Phase 35; US-02.3.4). */
+  emailTemplates: Record<string, EmailTemplate>
 }
 
 export interface SeedSchedule {
@@ -658,6 +662,8 @@ function buildSeedInternal(): SeedBuild {
       recurringBookings: byId(RECURRING_BOOKINGS, (p) => p.id),
       holidays: byId(HOSPITAL_HOLIDAYS, (h) => h.id),
       patients: patientsRec,
+      // Catch-up Phase 35: added after everything else, no RNG draws.
+      emailTemplates: byId(SEED_EMAIL_TEMPLATES.map((t) => ({ ...t })), (t) => t.id),
     },
     schedule: {
       slots,
@@ -699,6 +705,8 @@ function buildSeedInternal(): SeedBuild {
       stub: 2,
       // Catch-up Phase 34: the seeded PDF list is PDL0001 (`intakeSeed.ts`).
       pdfList: 2,
+      // Catch-up Phase 35: the seeded update email templates are ET001 to ET004 (`emailTemplates.ts`).
+      emailTemplate: SEED_EMAIL_TEMPLATE_NEXT,
     },
   }
 

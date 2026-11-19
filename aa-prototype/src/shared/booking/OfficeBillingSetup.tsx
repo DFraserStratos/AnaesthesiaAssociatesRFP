@@ -1,8 +1,9 @@
+import { useBookingStore } from './draft'
 import { useState } from 'react'
 import { neutral, radius } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
 import { isPrepaidContract } from '../../domain/billing'
-import { useAppStore, type Actor } from '../../store'
+import { type Actor } from '../../store'
 import { Button, DefList, DefRow, Eyebrow } from '../ui'
 import { formatCurrency } from '../format'
 import { PricingSheet } from '../flows'
@@ -32,8 +33,8 @@ type Sheet = 'none' | 'price'
  * sheet that only edited it; the Contract is chosen on the step rail.
  */
 export function OfficeBillingSetup({ procedure, displayNumber, actor, canEdit }: OfficeBillingSetupProps) {
-  const masters = useAppStore((s) => s.masters)
-  const lock = useAppStore((s) => s.billing.locks[procedure.bookingId])
+  const masters = useBookingStore((s) => s.masters)
+  const lock = useBookingStore((s) => s.billing.locks[procedure.bookingId])
   const [sheet, setSheet] = useState<Sheet>('none')
   // Once authorised, the office reads what was locked (catch-up Phase 25): no picker, no share editor.
   if (lock !== undefined && lock.state === 'locked') return <LockedBillingSetup lock={lock} procedure={procedure} displayNumber={displayNumber} />

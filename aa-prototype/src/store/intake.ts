@@ -134,7 +134,11 @@ export function upsertPatient(
 // ---------------------------------------------------------------------------
 
 /** Editable patient demographics (Phase 03 Booking-screen patient block). */
-export type PatientEditPatch = Partial<Pick<Patient, 'name' | 'dobISO' | 'phone' | 'email' | 'postalAddress'>>
+export type PatientEditPatch = Partial<Pick<Patient, 'name' | 'dobISO' | 'phone' | 'email' | 'postalAddress' | 'nhi'>>
+
+/** The NHI is mandatory and never cleared (catch-up Phase 35; D11, OQ-49). */
+export const PATIENT_NHI_REQUIRED_MESSAGE = 'The NHI is required.'
+export const PATIENT_NHI_OFFICE_ONLY_MESSAGE = 'Only the AA office changes the NHI.'
 
 /**
  * Edit a Patient's demographics, audited `patient.update` (phase doc item 3).
@@ -159,6 +163,14 @@ export function editPatient(
     if (found === undefined) return refuse('notFound', 'Booking not found.')
     const rights = editRefusal(actor, found.list)
     if (rights !== null) return rights
+  }
+  // The office corrects the NHI (catch-up Phase 35; US-02.3.1): mandatory, never cleared (D11), either format.
+  if (patch.nhi !== undefined) {
+    if (actor.role !== 'office') return refuse('officeOnly', PATIENT_NHI_OFFICE_ONLY_MESSAGE)
+    if (patch.nhi.trim() === '') return refuse('nhiRequired', PATIENT_NHI_REQUIRED_MESSAGE)
+    const verdict = validateNhi(patch.nhi)
+    if (!verdict.valid) return refuse('nhiInvalid', verdict.reason ?? 'That NHI is not valid.')
+    patch = { ...patch, nhi: verdict.normalised }
   }
   // The payer rules (catch-up Phase 21): an email's shape and an NZ Post address.
   const badEmail = emailProblem(patch.email)

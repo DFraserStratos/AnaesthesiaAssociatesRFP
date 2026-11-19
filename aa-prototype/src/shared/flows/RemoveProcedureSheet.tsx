@@ -1,6 +1,7 @@
+import { useBookingApi, useBookingStore } from '../booking/draft'
 import { useEffect, useState } from 'react'
 import { neutral } from '../../theme/tokens'
-import { prepaymentRecheckLine, prepaymentStatusFor, removeProcedure, useAppStore, type Actor } from '../../store'
+import { prepaymentRecheckLine, prepaymentStatusFor, removeProcedure, type Actor } from '../../store'
 import { FormError } from '../ui'
 import { ConfirmSheet } from '../surface/ConfirmSheet'
 import { procedureLabel } from '../../domain/billing/procedureStack'
@@ -28,9 +29,10 @@ interface RemoveProcedureSheetProps {
  * the sheet names the procedure and counts the billing lines going with it.
  */
 export function RemoveProcedureSheet({ open, procedureId, displayNumber, actor, onClose, onRemoved }: RemoveProcedureSheetProps) {
-  const procedure = useAppStore((s) => s.schedule.procedures[procedureId])
-  const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
-  const lineCount = useAppStore(
+  const bookingApi = useBookingApi()
+  const procedure = useBookingStore((s) => s.schedule.procedures[procedureId])
+  const rvgGroups = useBookingStore((s) => s.masters.rvgGroups)
+  const lineCount = useBookingStore(
     (s) => Object.values(s.schedule.billingLines).filter((l) => l.procedureId === procedureId).length,
   )
   const [error, setError] = useState<string | null>(null)
@@ -44,14 +46,14 @@ export function RemoveProcedureSheet({ open, procedureId, displayNumber, actor, 
 
   function submit() {
     setError(null)
-    const bookingId = useAppStore.getState().schedule.procedures[procedureId]?.bookingId ?? ''
-    const before = prepaymentStatusFor(useAppStore.getState(), bookingId)
-    const outcome = removeProcedure(useAppStore, actor, procedureId)
+    const bookingId = bookingApi.getState().schedule.procedures[procedureId]?.bookingId ?? ''
+    const before = prepaymentStatusFor(bookingApi.getState(), bookingId)
+    const outcome = removeProcedure(bookingApi, actor, procedureId)
     if (!outcome.ok) {
       setError(outcome.message)
       return
     }
-    onRemoved(prepaymentRecheckLine(before, prepaymentStatusFor(useAppStore.getState(), bookingId)))
+    onRemoved(prepaymentRecheckLine(before, prepaymentStatusFor(bookingApi.getState(), bookingId)))
     onClose()
   }
 

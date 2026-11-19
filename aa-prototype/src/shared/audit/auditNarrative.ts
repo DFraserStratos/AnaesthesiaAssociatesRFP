@@ -378,6 +378,8 @@ export function sortAuditNewestFirst<T extends AuditEntry>(entries: readonly T[]
 
 /** Two entries are the same gesture when everything but the value matches. */
 function sameGesture(a: AuditEntry, b: AuditEntry): boolean {
+  // A change set is its own row (catch-up Phase 35): coalescing never merges into or across one.
+  if (a.changeSetId !== undefined || b.changeSetId !== undefined) return false
   return (
     a.action === b.action &&
     a.entityId === b.entityId &&

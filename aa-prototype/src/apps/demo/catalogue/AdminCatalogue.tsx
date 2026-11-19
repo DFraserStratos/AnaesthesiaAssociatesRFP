@@ -17,6 +17,7 @@ import { DefList, OptionRow, Pill, RadioCard, useRovingRadio } from '../../../sh
 import { useMemo, useState } from 'react'
 import { HospitalsView } from '../../admin/screens/masters/HospitalsView'
 import { RvgGroupsView } from '../../admin/screens/masters/RvgGroupsView'
+import { EmailTemplatesView } from '../../admin/screens/masters/EmailTemplatesView'
 import {
   AnatomyDatalistExample,
   ButtonExample,
@@ -79,6 +80,8 @@ import {
   PricingSheetExample,
   InvoiceDocumentExample,
   NotificationsCardExample,
+  UpdateEmailComposerExample,
+  BookingUpdateEmailButtonExample,
   NotPreferredWarningExample,
   PipelineStepperExample,
   ReviewScreenExample,
@@ -275,6 +278,12 @@ export function AdminCatalogue() {
         <CatalogueRow name="NotificationsCard" source="apps/admin/components/NotificationsCard.tsx" usedIn={A} what="The rail's shared notification pool: active notices with Resolve, See all and Show resolved. Its count is the shared CountBadge (read as 2 active), still showing 0." replaceWith="shadcn Card + Button" note="On the shared Card (U6) with headingRef: after a tick focus returns to its heading. Resolve writes to the demo store. The fresh seed has no notices, so it shows the empty state until one is raised.">
           <NotificationsCardExample />
         </CatalogueRow>
+        <CatalogueRow name="UpdateEmailComposer (with UpdateEmailPreview)" source="apps/admin/flows/UpdateEmailComposer.tsx" usedIn={A} what="The update email composer (catch-up Phase 35): a wide two-column Overlay. Left, Pick changes: the saved history newest first on the shared Checkbox, rows that cannot be emailed disabled with their reason, an earlier-draft hint Pill and the cancelled-out note. Right: Template (SelectField), Send to (Segmented), the resolved To with the other office contacts to switch to, and the preview badged Demo preview with its character count and a Shortened to fit Pill. Open in mail client is the shared Button rendered as a real mailto: link." replaceWith="shadcn Dialog + Checkbox + Select + ToggleGroup" note="Open in mail client records one updateEmail.drafted entry in the demo store; nothing is sent. The Button's href prop (added here) renders an anchor while enabled.">
+          <UpdateEmailComposerExample />
+        </CatalogueRow>
+        <CatalogueRow name="BookingUpdateEmailButton / NotificationEmailAction / useListUpdateEmail" source="apps/admin/flows/UpdateEmailActions.tsx" usedIn={A} what="Where the update email opens from: the Admin Booking header's Draft update email (outline Button with the Mail icon, disabled with its reason while the page has unsaved changes or nothing saved to email), the List drawers' Draft update email once a List has an emailable change of anaesthetist, and the notification page's Draft cover-change email on a List moved to a colleague (a return to the office points to the unassigned List instead)." replaceWith="shadcn Button" note="Shown here: the Booking button on a seeded Booking, outside any draft.">
+          <BookingUpdateEmailButtonExample />
+        </CatalogueRow>
         <CatalogueRow name="VacatedSessionChoice / StatusRadioGroup" source="shared/flows/VacatedSessionChoice.tsx" usedIn={AWM} what="A radio group of status chips: what the vacated session becomes after a move. Its keyboard is the shared useRovingRadio (UI unification U4): one Tab stop, arrows move and select, Home and End jump to the ends." replaceWith="shadcn RadioGroup" note="The same hook drives the Contract rail's answers (RailOptionGroup), where a move only focuses.">
           <VacatedChoiceExample />
         </CatalogueRow>
@@ -336,6 +345,11 @@ export function AdminCatalogue() {
         <CatalogueRow name="RvgGroupsView (grouped rows)" source="apps/admin/screens/masters/RvgGroupsView.tsx" usedIn={A} what="RVG groups under anatomy headings (colSpan group rows), with search, an anatomy filter and add, edit and retire." replaceWith="TanStack Table (grouping) + shadcn Table" note="Add, edit and retire write to the demo store. Its table is the shared TableShell (dense) and Th since UI unification U6; Phase 42 moves its group rows onto GroupRow." height={460}>
           <Wide minWidth={980}>
             <RvgGroupsView actor={OFFICE_ACTOR} />
+          </Wide>
+        </CatalogueRow>
+        <CatalogueRow name="EmailTemplatesView (template editor with live preview)" source="apps/admin/screens/masters/EmailTemplatesView.tsx" usedIn={A} what="The update email templates (catch-up Phase 35): a table of name, kind, sends to and active, with Edit, Retire and Restore. Edit opens a wide sheet with the fields, placeholder buttons that insert into the subject or body, validateTemplate's messages inline and a preview against a sample Booking badged Sample." replaceWith="TanStack Table + shadcn Table, shadcn Sheet + Form" note="Edits write to the demo store. The placeholder buttons are plain buttons until a token-insert input exists." height={420}>
+          <Wide minWidth={980}>
+            <EmailTemplatesView actor={OFFICE_ACTOR} />
           </Wide>
         </CatalogueRow>
         <CatalogueRow name="AuditViewer" source="apps/admin/screens/AuditViewer.tsx" usedIn={A} what="The global audit feed with a filter bar, capped at 500 rows. Since UI unification U4 the bar is shared parts: two SelectFields (compact, surface fill) and a FilterDateInput From and To." replaceWith="TanStack Table + TanStack Virtual" note="On the shared table kit (U6, dense). Virtualisation or pagination replaces the 500-row cap later." height={460}>

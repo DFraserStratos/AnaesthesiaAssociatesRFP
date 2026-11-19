@@ -1,7 +1,7 @@
+import { useBookingStore } from './draft'
 import type { CSSProperties } from 'react'
 import { Lock } from 'lucide-react'
 import { neutral } from '../../theme/tokens'
-import { useAppStore } from '../../store'
 import { LOCK_BADGE_TEXT, lockStampText, lockViewFor } from '../../domain/billing/lock'
 import { Pill } from '../ui'
 
@@ -14,7 +14,7 @@ import { Pill } from '../ui'
  * detail views). Nothing before authorise.
  */
 export function LockBadge({ bookingId, detail = false, style }: { bookingId: string; detail?: boolean; style?: CSSProperties }) {
-  const lock = useAppStore((s) => s.billing.locks[bookingId])
+  const lock = useBookingStore((s) => s.billing.locks[bookingId])
   if (lock === undefined || lock.state !== 'locked') return null
   const stamp = lockStampText(lockViewFor(lock))
   return (

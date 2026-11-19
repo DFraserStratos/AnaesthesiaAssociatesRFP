@@ -22,6 +22,8 @@ export const ACTION_LABELS: Record<string, string> = {
   // --- Bookings ---------------------------------------------------------------
   'booking.create': 'Booking created',
   'booking.update': 'Booking updated',
+  // The office's explicit save's header (catch-up Phase 35): one per change set.
+  'booking.save': 'Booking saved',
   'booking.complete': 'Booking completed',
   'booking.uncomplete': 'Booking reopened for amendment',
   'booking.cancel': 'Booking cancelled',
@@ -248,6 +250,13 @@ export const ACTION_LABELS: Record<string, string> = {
   'auth.signIn': 'Signed in',
   'auth.signInFailed': 'Sign-in failed',
   'auth.passwordReset': 'Password reset by user',
+
+  // --- Update emails (catch-up Phase 35; US-02.3.3, US-02.3.4) -------------
+  'emailTemplate.create': 'Email template added',
+  'emailTemplate.update': 'Email template updated',
+  'emailTemplate.retire': 'Email template retired',
+  'emailTemplate.restore': 'Email template restored',
+  'updateEmail.drafted': 'Update email drafted (not sent)',
 }
 
 /** "someWord" -> "some word" (the shared camelCase splitter). */

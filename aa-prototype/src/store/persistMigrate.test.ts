@@ -970,3 +970,25 @@ describe('catch-up Phase 34 (v61: the rooms\' PDF lists and where a List came fr
     expect(Object.values(s.schedule.lists).every((l) => l.origin !== undefined)).toBe(true)
   })
 })
+
+describe('catch-up Phase 35 (v62: the update email templates)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v61 store with no email templates and no counter, and reseeds the four', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(62)
+    const fresh = freshAppState()
+    const { emailTemplates: _t, ...masters } = fresh.masters
+    const { emailTemplate: _c, ...counters } = fresh.counters
+    // A stray half-shape a v61 store could not hold: one template, edited.
+    const stale = { ...fresh, counters, masters: { ...masters, emailTemplates: { ET001: { ...fresh.masters.emailTemplates.ET001!, subject: 'Old' } } } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 61 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.masters.emailTemplates).toEqual(freshAppState().masters.emailTemplates)
+    expect(Object.keys(s.masters.emailTemplates)).toEqual(['ET001', 'ET002', 'ET003', 'ET004'])
+    expect(s.counters.emailTemplate).toBe(5)
+  })
+})

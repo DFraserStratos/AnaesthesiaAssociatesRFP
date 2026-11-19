@@ -7,6 +7,7 @@ import { TableShell, Td, Th } from '../../../shared/table'
 import { ActiveCount, NotificationText, usePoolState, useResolveWithTick } from '../components/NotificationsCard'
 import { Button, Checkbox, FormError, PageHeader, TextAction, TickBadge, TickButton } from '../../../shared/ui'
 import { DRAFT_LIST } from '../../../shared/scheduleTerms'
+import { NotificationEmailAction } from '../flows/UpdateEmailActions'
 
 
 /**
@@ -19,7 +20,7 @@ import { DRAFT_LIST } from '../../../shared/scheduleTerms'
  * Clear), and "Show resolved" (Claude's proposal, US-13.8.3) brings resolved
  * rows back, muted, with who resolved them and when. One admin's tick hides a
  * notice for every admin; nothing expires; there is no un-tick. Phase 35 adds
- * "Draft update email" to each row.
+ * the update email a move offers (`NotificationEmailAction`).
  */
 export function NotificationsScreen({ actor, onOpen }: { actor: Actor; onOpen: (target: NotificationTarget) => void }) {
   const state = usePoolState()
@@ -86,7 +87,11 @@ export function NotificationsScreen({ actor, onOpen }: { actor: Actor; onOpen: (
               <tr key={r.notification.id} data-notification-row={r.notification.id} data-notification-resolved={r.resolved ? 'true' : undefined} style={{ background: r.resolved ? neutral.bg : undefined, opacity: resolving.has(r.notification.id) ? 0.55 : 1, transition: 'opacity 200ms' }}>
                 <Td mono nowrap style={{ color: r.resolved ? neutral.mist : neutral.slate }}>{format(parseISO(r.atISO), 'EEE d MMM HH:mm')}</Td>
                 <Td>
-                  <NotificationText row={r} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
+                    <NotificationText row={r} />
+                    {/* The update email a move offers (catch-up Phase 35; OQ-65). Drafting changes nothing here. */}
+                    {office && <NotificationEmailAction notification={r.notification} target={r.target} actor={actor} onOpen={onOpen} />}
+                  </div>
                 </Td>
                 <Td style={r.resolved ? { color: neutral.slate } : undefined}>{r.by}</Td>
                 <Td align="right">

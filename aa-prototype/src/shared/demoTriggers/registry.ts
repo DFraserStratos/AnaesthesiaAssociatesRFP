@@ -123,6 +123,10 @@ import {
   theatreListRefusal,
   updateTarget,
   type StandInChoice,
+  officeEditsBooking,
+  officeEditsBookingRefusal,
+  OFFICE_USERS,
+  otherOfficeUser,
 } from '../../store'
 import { CANNED_MESSAGES } from '../../domain/integrations'
 import { PDF_LIST_SAMPLES, resendSampleFor } from '../../domain/intake'
@@ -1819,5 +1823,41 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return list !== undefined && staged !== undefined ? `/admin/day/${list.dateISO}/bookings/${staged.id}` : null
     },
     indexEmptyReason: 'Load the 3-procedure Booking first, or open any ACTIVE Booking with two procedures.',
+  },
+  // ── Explicit save and named office users (catch-up Phase 35) ─────────
+  {
+    id: 'switch-office-user',
+    label: 'Switch office user',
+    description:
+      'Stands in for each office user signing in as themselves (US-13.5.1, not built): the Admin app now acts as the other named office user (Kirsty W. or Sam T.), so two users\' saves show named in one Booking\'s History. No audit entry is changed.',
+    screen: 'Admin · Day view and Booking detail',
+    routes: ['/admin/day/:dateISO', '/admin/day/:dateISO/bookings/:bookingId'],
+    surfaces: ['bar'],
+    disabledReason: (_state, ctx) => (ctx.published['adminBooking.dirtyBookingId'] !== undefined ? 'Save or discard this Booking\'s changes first' : null),
+    run: (api) => {
+      const next = otherOfficeUser(api.getState().shell)
+      api.getState().setOfficeUser(next)
+      return { ok: true, message: `The office is now ${OFFICE_USERS[next].who}` }
+    },
+    indexPath: (state) => `/admin/day/${state.clock.todayISO}`,
+  },
+  {
+    id: 'office-edits-booking',
+    label: 'Office edits this Booking',
+    description:
+      'Stands in for the office (catch-up Phase 35): Kirsty W. saves one change on this Booking, its time 30 minutes later, as one change set. The handset shows that the office saved changes, and History shows the grouped office save.',
+    screen: 'Mobile · Booking detail',
+    routes: ['/mobile/lists/:listId/bookings/:bookingId'],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    disabledReason: (state, ctx) => officeEditsBookingRefusal(state, ctx.params['bookingId']),
+    run: (api, ctx) => {
+      const bookingId = ctx.params['bookingId']
+      if (bookingId === undefined) return { ok: false, message: 'Open a Booking first' }
+      const res = officeEditsBooking(api, bookingId)
+      return res.ok ? { ok: true, message: `The office moved this Booking to ${res.value.time}.` } : { ok: false, message: res.message }
+    },
+    indexPath: () => null,
+    indexEmptyReason: 'PWA only: the framed build makes the change in Admin and saves it.',
   },
 ]

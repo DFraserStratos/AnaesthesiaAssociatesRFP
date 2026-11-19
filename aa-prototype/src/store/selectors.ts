@@ -86,6 +86,9 @@ import { isStillPrepaid, prepaymentForProcedure } from './prepaymentSelectors'
 import { clockISO } from './mutate'
 import { compareSessions } from '../domain/outOfHours'
 import { SESSIONS_IN_ORDER } from '../domain/outOfHours'
+import { officeAddressFor } from '../domain/surgeonContacts'
+import { pickableChanges, type PickableChange, type UpdateEmailRecipient, type UpdateEmailSubject } from '../domain/updateEmail'
+import { titledSurname } from '../domain/names'
 
 // ---------------------------------------------------------------------------
 // Plain selectors
@@ -2246,4 +2249,73 @@ export function profileFor(state: { masters: Pick<AppState['masters'], 'anaesthe
     bankAccountName: a.bankAccount.accountName,
     bankAccountMasked: maskBankAccount(a.bankAccount.accountNumber),
   }
+}
+
+// ---------------------------------------------------------------------------
+// The update email (catch-up Phase 35; US-02.3.3, OQ-127, D74)
+// ---------------------------------------------------------------------------
+
+/** Who the composer sends to, and the office address the admin switched to (one of the alternatives). */
+export interface UpdateEmailRecipientChoice {
+  sendTo: UpdateEmailRecipient
+  officeEmail?: string
+}
+
+/**
+ * The update email's To: one surgeon-side address (the List's sender, else
+ * the surgeon's first office contact), the hospital's contact email, or both.
+ * `alternatives` are the surgeon's other office addresses the composer offers
+ * to switch to (never filled in together). `reason` says why an address is
+ * missing; an empty To is valid (the admin types it in the mail client).
+ * Built on `officeAddressFor` only: no lookup of its own.
+ */
+export function updateEmailRecipients(
+  state: { schedule: Pick<AppState['schedule'], 'bookings' | 'lists'>; masters: Pick<AppState['masters'], 'surgeons' | 'hospitals'> },
+  subject: UpdateEmailSubject,
+  choice: UpdateEmailRecipientChoice,
+): { to: string; alternatives: { email: string; label: string }[]; reason?: string } {
+  const listId = subject.kind === 'list' ? subject.listId : state.schedule.bookings[subject.bookingId]?.listId
+  const list = listId !== undefined ? state.schedule.lists[listId] : undefined
+  const reasons: string[] = []
+  const wantsOffice = choice.sendTo === 'office' || choice.sendTo === 'both'
+  const wantsHospital = choice.sendTo === 'hospital' || choice.sendTo === 'both'
+
+  let office = ''
+  let alternatives: { email: string; label: string }[] = []
+  if (wantsOffice) {
+    const surgeonId = list?.surgeonId
+    const surgeon = surgeonId !== undefined && surgeonId !== '' ? state.masters.surgeons[surgeonId] : undefined
+    if (list === undefined || surgeon === undefined) {
+      reasons.push('No surgeon on this List.')
+    } else {
+      const found = officeAddressFor(state.masters, surgeon.id, list)
+      const all = found.to !== null ? [found.to, ...found.others] : []
+      const picked = all.find((a) => choice.officeEmail !== undefined && a.email.toLowerCase() === choice.officeEmail.trim().toLowerCase()) ?? all[0]
+      if (picked === undefined) {
+        reasons.push(`No contact email held for ${titledSurname(surgeon.name)}'s office.`)
+      } else {
+        office = picked.email
+        alternatives = all
+          .filter((a) => a !== picked)
+          .map((a) => ({ email: a.email, label: a.source === 'listSender' ? 'Sent the List' : (a.name ?? 'Office contact') }))
+      }
+    }
+  }
+
+  let hospital = ''
+  if (wantsHospital) {
+    const h = list !== undefined ? state.masters.hospitals[list.hospitalId] : undefined
+    const email = h?.contactEmail?.trim() ?? ''
+    if (email === '') reasons.push(`No contact email held for ${h?.name ?? 'the hospital'}.`)
+    else hospital = email
+  }
+
+  const to = [office, hospital].filter((a) => a !== '').join(', ')
+  const reason = reasons.length > 0 ? `${reasons.join(' ')}${to === '' ? ' To will be left empty.' : ''}` : undefined
+  return { to, alternatives, ...(reason !== undefined ? { reason } : {}) }
+}
+
+/** The picker's rows for a Booking or a List, read from the whole audit (`pickableChanges`). */
+export function pickableChangesFor(state: Pick<AppState, 'audit' | 'schedule' | 'masters'>, subject: UpdateEmailSubject): PickableChange[] {
+  return pickableChanges(state.audit, subject, { ...state.schedule, ...state.masters })
 }

@@ -1,13 +1,14 @@
+import { useBookingStore } from './draft'
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import type { AuditEntry } from '../../domain/types'
+import type { AuditEntry, ChangeSetKind } from '../../domain/types'
 import { accent, neutral, radius } from '../../theme/tokens'
 import { easing, motion } from '../../theme/motion'
 import { Pill } from '../ui/Pill'
 import { Eyebrow } from '../ui/Eyebrow'
 import { TextAction } from '../ui/TextAction'
-import { useAppStore, useToday } from '../../store'
+import { useToday } from '../../store'
 import { dayHeading, hhmm } from '../format'
-import { actionLabel, auditFieldChanges, auditNamesFor, coalesceAudit, type AuditFieldChange, type AuditGroup, type AuditNames } from '../audit'
+import { actionLabel, auditFieldChanges, auditNamesFor, coalesceAudit, sortAuditNewestFirst, type AuditFieldChange, type AuditGroup, type AuditNames } from '../audit'
 
 /** Names for ids in audit values (an RVG group by its code and description, catch-up Phase 19). */
 const NamesContext = createContext<AuditNames>({})
@@ -49,6 +50,7 @@ export function HistoryTimeline({
   entries,
   entityLabels,
   subject = 'record',
+  onViewAsAt,
 }: {
   entries: readonly AuditEntry[]
   /**
@@ -59,9 +61,14 @@ export function HistoryTimeline({
   entityLabels?: Record<string, string>
   /** What the empty state calls the thing being read ("booking", "list"). */
   subject?: string
+  /**
+   * Admin only (catch-up Phase 35; US-02.5.5): each row offers "View as at",
+   * which calls this with the row's newest audit entry id.
+   */
+  onViewAsAt?: (entryId: string) => void
 }) {
   const todayISO = useToday()
-  const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
+  const rvgGroups = useBookingStore((s) => s.masters.rvgGroups)
   const names = useMemo(() => auditNamesFor({ rvgGroups }), [rvgGroups])
   const rootRef = useRef<HTMLDivElement>(null)
   const [stacked, setStacked] = useState(false)
@@ -92,7 +99,7 @@ export function HistoryTimeline({
     )
   }
 
-  const groups = coalesceAudit(entries, names)
+  const groups = historyRows(entries, names)
 
   return (
     <NamesContext.Provider value={names}>
@@ -107,13 +114,25 @@ export function HistoryTimeline({
         return (
           <div key={group.entry.id}>
             {newDay && <DayHeading label={dayHeading(day, todayISO)} first={index === 0} />}
-            <GroupRow
-              group={group}
-              time={repeatedTime ? '' : time}
-              stacked={stacked}
-              last={index === groups.length - 1}
-              {...(entityLabels !== undefined ? { entityLabels } : {})}
-            />
+            {group.changeSet !== undefined ? (
+              <ChangeSetRow
+                group={group.changeSet}
+                time={repeatedTime ? '' : time}
+                stacked={stacked}
+                last={index === groups.length - 1}
+                {...(entityLabels !== undefined ? { entityLabels } : {})}
+                {...(onViewAsAt !== undefined ? { onViewAsAt } : {})}
+              />
+            ) : (
+              <GroupRow
+                group={group}
+                time={repeatedTime ? '' : time}
+                stacked={stacked}
+                last={index === groups.length - 1}
+                {...(entityLabels !== undefined ? { entityLabels } : {})}
+                {...(onViewAsAt !== undefined ? { onViewAsAt } : {})}
+              />
+            )}
           </div>
         )
       })}
@@ -143,6 +162,7 @@ function GroupRow({
   stacked,
   last,
   entityLabels,
+  onViewAsAt,
 }: {
   group: AuditGroup
   time: string
@@ -150,6 +170,7 @@ function GroupRow({
   /** The final row carries no rule, so the list does not end on a stray line. */
   last: boolean
   entityLabels?: Record<string, string>
+  onViewAsAt?: (entryId: string) => void
 }) {
   const [expanded, setExpanded] = useState(false)
   const { entry, steps, changes } = group
@@ -183,6 +204,7 @@ function GroupRow({
         <span style={{ fontSize: 12, color: neutral.slate }}>{provenance(entry)}</span>
         {scope !== undefined && <span style={{ fontSize: 11.5, color: neutral.mist }}>{scope}</span>}
         {changes.length > 0 && <Ledger changes={changes} stacked={stacked} />}
+        {onViewAsAt !== undefined && <ViewAsAt onClick={() => onViewAsAt(entry.id)} />}
         {coalesced && (
           <>
             <TextAction size="sm" flush onClick={() => setExpanded((v) => !v)} style={{ alignSelf: 'flex-start', marginTop: 2, fontSize: 12 }}>
@@ -284,5 +306,135 @@ function StepLedger({ step, stacked }: { step: AuditEntry; stacked: boolean }) {
     <div style={{ borderLeft: `2px solid ${neutral.line}`, paddingLeft: 8 }}>
       <Ledger changes={auditFieldChanges(step, names)} stacked={stacked} />
     </div>
+  )
+}
+
+/** One history row: a change set (catch-up Phase 35), or a coalesced group of ungrouped entries. */
+type HistoryRow = AuditGroup & { changeSet?: ChangeSetRowGroup }
+
+interface ChangeSetRowGroup {
+  id: string
+  kind: ChangeSetKind | null
+  /** The newest entry (the row's place in the feed). */
+  newest: AuditEntry
+  /** Every entry of the change set, oldest first. */
+  entries: AuditEntry[]
+}
+
+/**
+ * The rows of a history, newest first: each change set is ONE row (a save, a
+ * create, a cancel, a move, a List's reassignment, an applied hospital row),
+ * and the entries saved without one coalesce as before, never across a
+ * change set (`coalesceAudit`).
+ */
+function historyRows(entries: readonly AuditEntry[], names: AuditNames): HistoryRow[] {
+  const sorted = sortAuditNewestFirst(entries)
+  const sets = new Map<string, ChangeSetRowGroup>()
+  for (const e of sorted) {
+    if (e.changeSetId === undefined) continue
+    const group = sets.get(e.changeSetId)
+    if (group === undefined) sets.set(e.changeSetId, { id: e.changeSetId, kind: e.changeSetKind ?? null, newest: e, entries: [e] })
+    else {
+      group.entries.unshift(e)
+      if (e.changeSetKind !== undefined) group.kind = e.changeSetKind
+    }
+  }
+  const rows: HistoryRow[] = []
+  let run: AuditEntry[] = []
+  const flush = () => {
+    if (run.length > 0) rows.push(...coalesceAudit(run, names))
+    run = []
+  }
+  const seen = new Set<string>()
+  for (const e of sorted) {
+    if (e.changeSetId === undefined) {
+      run.push(e)
+      continue
+    }
+    flush()
+    if (seen.has(e.changeSetId)) continue
+    seen.add(e.changeSetId)
+    const group = sets.get(e.changeSetId)!
+    rows.push({ entry: group.newest, steps: [group.newest], changes: [], changeSet: group })
+  }
+  flush()
+  return rows
+}
+
+const CHANGE_SET_TITLES: Record<ChangeSetKind, string> = {
+  save: 'Saved',
+  create: 'Booking created',
+  cancel: 'Booking cancelled',
+  move: 'Booking moved',
+  listReassign: 'New anaesthetist on the List',
+  match: "Updated from the hospital's list",
+}
+
+/** A change set as one row: who saved it, how many fields, and each field's before and after beneath. */
+function ChangeSetRow({
+  group,
+  time,
+  stacked,
+  last,
+  entityLabels,
+  onViewAsAt,
+}: {
+  group: ChangeSetRowGroup
+  time: string
+  stacked: boolean
+  last: boolean
+  entityLabels?: Record<string, string>
+  onViewAsAt?: (entryId: string) => void
+}) {
+  const names = useContext(NamesContext)
+  const header = group.entries.find((e) => e.action === 'booking.save')
+  const parts = group.entries
+    .filter((e) => e.action !== 'booking.save')
+    .map((e) => ({ entry: e, changes: auditFieldChanges(e, names).filter((c) => c.key !== 'bookingId') }))
+  const count = header !== undefined ? ((header.after as { fields?: unknown[] } | undefined)?.fields?.length ?? parts.length) : parts.length
+  const first = group.entries[0]!
+  const title = group.kind === 'save' ? `Saved by ${first.who}` : group.kind !== null ? CHANGE_SET_TITLES[group.kind] : actionLabel(first.action)
+  return (
+    <div
+      data-shot="history-change-set"
+      data-change-set-id={group.id}
+      style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: last ? 'none' : `1px solid ${neutral.line}`, alignItems: 'flex-start' }}
+    >
+      <span className="mono" style={{ fontSize: 11.5, color: neutral.mist, flex: 'none', width: 40, paddingTop: 2 }}>
+        {time}
+      </span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <span style={{ fontSize: 13.5, fontWeight: 600, color: accent.pressed, flex: 1, minWidth: 0 }}>{title}</span>
+          <Pill size="sm" style={{ flex: 'none' }}>
+            {count} {count === 1 ? 'change' : 'changes'}
+          </Pill>
+        </div>
+        <span style={{ fontSize: 12, color: neutral.slate }}>
+          {provenance(first)} · <span className="mono">{group.id}</span>
+        </span>
+        {parts.map(({ entry, changes }) => {
+          const scope = entityLabels?.[entry.entityId]
+          return (
+            <div key={entry.id} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: 11.5, color: neutral.mist }}>
+                {actionLabel(entry.action)}
+                {scope !== undefined ? ` · ${scope}` : ''}
+              </span>
+              {changes.length > 0 && <Ledger changes={changes} stacked={stacked} />}
+            </div>
+          )
+        })}
+        {onViewAsAt !== undefined && <ViewAsAt onClick={() => onViewAsAt(group.newest.id)} />}
+      </div>
+    </div>
+  )
+}
+
+function ViewAsAt({ onClick }: { onClick: () => void }) {
+  return (
+    <TextAction size="sm" flush shot="history-view-as-at" onClick={onClick} style={{ alignSelf: 'flex-start', marginTop: 2, fontSize: 12 }}>
+      View as at
+    </TextAction>
   )
 }

@@ -1,10 +1,11 @@
+import { useBookingApi } from '../booking/draft'
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { ChevronRight, X } from 'lucide-react'
 import { accent, neutral, radius, semantic, elevation, zIndex } from '../../theme/tokens'
 import type { Procedure, RvgGroup, RvgGroupId } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
 import { baseUnitsFor, baseUnitsShort, baseUnitsText, isRecordableBaseUnits } from '../../domain/billing/rvgGroups'
-import { editProcedure, pickRvgGroup, useAppStore, type Actor } from '../../store'
+import { editProcedure, pickRvgGroup, type Actor } from '../../store'
 import { CodePickerSheet } from './CodePickerSheet'
 import { RvgCodeList, rvgSections } from './RvgCodeList'
 import { Caption, FailureNotes, NumberStepper } from './ui'
@@ -70,20 +71,21 @@ export function RvgCodeField({
   look = 'inline',
   listInFlow = false,
 }: RvgCodeFieldProps) {
+  const bookingApi = useBookingApi()
   const [pickerOpen, setPickerOpen] = useState(false)
   const [changing, setChanging] = useState(false)
 
   function pick(id: RvgGroupId | null) {
     setPickerOpen(false)
     setChanging(false)
-    const outcome = pickRvgGroup(useAppStore, actor, procedure.id, id)
+    const outcome = pickRvgGroup(bookingApi, actor, procedure.id, id)
     if (!outcome.ok) onError(outcome.message)
   }
 
   /** The range control sets the chosen value; it also lifts a typed override, so B follows it. */
   function selectRangeUnits(next: number) {
     const patch = procedure.baseUnitsCaptured !== undefined ? { baseUnitsSelected: next, baseUnitsCaptured: undefined } : { baseUnitsSelected: next }
-    const outcome = editProcedure(useAppStore, actor, procedure.id, patch)
+    const outcome = editProcedure(bookingApi, actor, procedure.id, patch)
     if (!outcome.ok) onError(outcome.message)
   }
 

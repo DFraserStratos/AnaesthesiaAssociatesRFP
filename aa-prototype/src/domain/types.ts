@@ -1320,6 +1320,18 @@ export interface DayNote {
  * source 'system'; 6th review #7) writes one. `entityType` stays a plain
  * string so later phases can audit new entities without reshaping.
  */
+/** A change set's id, `CS####` (catch-up Phase 35; DM-35). */
+export type ChangeSetId = string
+
+/**
+ * What a change set records (catch-up Phase 35; DM-35): an office save, a
+ * Booking created or cancelled, a Booking moved to another List (32a's
+ * single-Booking move included), any change of a List's anaesthetist (the
+ * office's reassignment, a Draft List's assignment, an anaesthetist's own
+ * move), or a hospital row the office applied on the matching screen.
+ */
+export type ChangeSetKind = 'save' | 'create' | 'cancel' | 'move' | 'listReassign' | 'match'
+
 export interface AuditEntry {
   id: string
   entityType: string
@@ -1331,6 +1343,15 @@ export interface AuditEntry {
   before?: unknown
   after?: unknown
   atISO: IsoDateTime
+  /**
+   * The change set this entry belongs to (catch-up Phase 35; DM-35): every
+   * entry of one save (or one create, cancel, move, reassignment or applied
+   * hospital row) shares the id, so the history shows it as one row. A
+   * change set is a group of audit entries, not a collection of its own.
+   */
+  changeSetId?: ChangeSetId
+  /** On the first entry of a change set only: what kind it is. */
+  changeSetKind?: ChangeSetKind
 }
 
 // ---------------------------------------------------------------------------
@@ -2210,4 +2231,33 @@ export interface DemoSettings {
   failHandoffBookingId?: string
   /** Seeded aggregate contact-volume counters for the Xero-sim callout. */
   volumeStory: XeroVolumeStory
+}
+
+// ---------------------------------------------------------------------------
+// Update email templates (catch-up Phase 35; US-02.3.4, DM-35)
+// ---------------------------------------------------------------------------
+
+/**
+ * The kind of change an update email is about: fixed ids, the catalogue's
+ * three examples plus a general change. The history picks the default kind
+ * (`defaultKindFor`); `correction` is only ever the admin's choice.
+ */
+export type UpdateEmailKind = 'anaesthetistChange' | 'cancellation' | 'correction' | 'bookingChange'
+
+/** Who an update email goes to by default: the surgeon's office, the hospital, or both. */
+export type UpdateEmailRecipient = 'office' | 'hospital' | 'both'
+
+/**
+ * One update email template (`masters.emailTemplates`, id `ET###`): plain
+ * text with placeholders (`{patient}`, `{changes}`, ...; `domain/updateEmail.ts`
+ * lists them). Each kind always keeps at least one active template.
+ */
+export interface EmailTemplate {
+  id: string
+  name: string
+  kind: UpdateEmailKind
+  recipient: UpdateEmailRecipient
+  subject: string
+  body: string
+  active: boolean
 }

@@ -139,6 +139,13 @@ export interface ShellSlice {
    * clock). UI state, not a domain mutation, so not audited.
    */
   suggestionSeq: number
+  /**
+   * Which named office user the Admin app acts as (catch-up Phase 35;
+   * US-02.5.8): a demo stand-in for each office user signing in as
+   * themselves (US-13.5.1, not built), switched from the harness bar. Absent
+   * means Kirsty W. The names live in `demoActors.ts`.
+   */
+  officeUser?: 'kirsty' | 'sam'
 }
 
 export interface AppState extends SeedState {
@@ -154,6 +161,8 @@ export interface AppActions {
   setCurrentApp: (app: AppId) => void
   /** Bump `shell.suggestionSeq` and return the new value (one office picker opening). */
   nextSuggestionSeq: () => number
+  /** Switch the named office user the Admin app acts as (catch-up Phase 35; a demo stand-in for sign-in). */
+  setOfficeUser: (user: 'kirsty' | 'sam') => void
 }
 
 export type AppStore = AppState & AppActions
@@ -374,8 +383,10 @@ export const PERSIST_KEY = 'aa-demo'
  *  v60: Wave 2 join, Lane A's 36 (v59) joined with Lane B's 17b (v59): one past the higher.
  *  v61: catch-up Phase 34, the rooms' PDF lists and where a List came from: `intake.pdfLists` (seeded PDL0001, Mr
  *  Okafor's list as received; counter `pdfList`), every List's `origin` (two pinned: a rooms' PDF with its sender, the
- *  hospital's list). Reseeds on load. */
-export const PERSIST_VERSION = 61
+ *  hospital's list). Reseeds on load.
+ *  v62: catch-up Phase 35, the update email templates: `masters.emailTemplates` (seeded ET001 to ET004, one per kind
+ *  of change; counter `emailTemplate`). Reseeds on load. */
+export const PERSIST_VERSION = 62
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {} }
@@ -485,6 +496,7 @@ export function createAppStore(options: CreateAppStoreOptions = {}): BoundAppSto
     ...freshAppState(),
     setCurrentApp: (app: AppId) =>
       set((state) => ({ shell: { ...state.shell, currentApp: app } })),
+    setOfficeUser: (user: 'kirsty' | 'sam') => set((state) => ({ shell: { ...state.shell, officeUser: user } })),
     nextSuggestionSeq: () => {
       const next = (get().shell.suggestionSeq ?? 0) + 1
       set((state) => ({ shell: { ...state.shell, suggestionSeq: next } }))

@@ -51,7 +51,9 @@ test('admin phase 06 walkthrough', async ({ page }) => {
   await expect(page.locator('[data-shot=pricing-sheet] input')).toHaveCount(1)
   await expect(page.locator('[data-shot=pricing-sheet]')).toContainText('No reason needed')
   await page.screenshot({ path: 'visual/shots/a-05-override.png', fullPage: true })
-  await page.getByRole('button', { name: 'Save price', exact: true }).click()
+  await page.getByRole('button', { name: 'Apply', exact: true }).click()
+  // Draft-then-save on the Admin Booking (catch-up Phase 35): the bar's Save changes saves.
+  await page.locator('[data-shot=booking-save]').click()
   await page.waitForTimeout(300)
   // The billing-setup summary reflects the typed price.
   await expect(page.locator('[data-shot=office-billing-price]').first()).toHaveText('Typed $450.00')

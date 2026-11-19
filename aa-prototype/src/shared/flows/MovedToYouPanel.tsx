@@ -1,6 +1,6 @@
+import { useBookingStore } from '../booking/draft'
 import { ArrowRightLeft, ChevronRight } from 'lucide-react'
 import { neutral, radius } from '../../theme/tokens'
-import { useAppStore } from '../../store'
 import type { Notification } from '../../domain/types'
 import { drSurname, locationName, shortDay, stampText } from '../format'
 import { useBookingsMovedToMe, useMovedToMe } from './useListMoves'
@@ -46,10 +46,10 @@ export function MovedToYouPanel({
 }) {
   const notices = useMovedToMe(anaesthetistId)
   const bookingNotices = useBookingsMovedToMe(anaesthetistId)
-  const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
-  const hospitals = useAppStore((s) => s.masters.hospitals)
-  const lists = useAppStore((s) => s.schedule.lists)
-  const bookings = useAppStore((s) => s.schedule.bookings)
+  const anaesthetists = useBookingStore((s) => s.masters.anaesthetists)
+  const hospitals = useBookingStore((s) => s.masters.hospitals)
+  const lists = useBookingStore((s) => s.schedule.lists)
+  const bookings = useBookingStore((s) => s.schedule.bookings)
   if (notices.length === 0 && bookingNotices.length === 0) return null
   // One list, newest first, whichever kind: a List a colleague moved to her, or a single Booking (Phase 32a).
   const rows: Row[] = [

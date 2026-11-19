@@ -22,6 +22,7 @@
  * No money outside the split.
  */
 
+import { useBookingApi, useBookingStore, usePrimaryEditLabel } from '../booking/draft'
 import { useEffect, useMemo, useState } from 'react'
 import { neutral, radius } from '../../theme/tokens'
 import type { PostalAddress, Procedure } from '../../domain/types'
@@ -29,7 +30,7 @@ import { cleanPostalAddress, isMinorOn, isPayerBilled, payerCounterparty, payerD
 import { formatPostalAddress } from '../../domain/billing/payer'
 import { payerOfferFor } from '../../domain/billing/procedurePayer'
 import { procedureLabel } from '../../domain/billing/procedureStack'
-import { PAYER_LOCKED_BY_PREPAYMENT, payerLockedByPrepayment, prepaymentRecheckLine, prepaymentStatusFor, sameName, savePaidBy, useAppStore, type Actor, type PaidByChange, type PayerInput } from '../../store'
+import { PAYER_LOCKED_BY_PREPAYMENT, payerLockedByPrepayment, prepaymentRecheckLine, prepaymentStatusFor, sameName, savePaidBy, type Actor, type PaidByChange, type PayerInput } from '../../store'
 import { Button, Checkbox, FormError, Notice, TextField } from '../ui'
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
@@ -56,17 +57,20 @@ interface PaidBySheetProps {
 const sectionStyle = { display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 16, borderTop: `1px solid ${neutral.line}` } as const
 
 export function PaidBySheet({ open, procedureId, actor, onClose, focus = 'payer', onSaved }: PaidBySheetProps) {
+  const bookingApi = useBookingApi()
+  // "Apply" in the Admin draft (catch-up Phase 35): the draft's Save changes saves.
+  const primaryLabel = usePrimaryEditLabel('Save')
   const { Overlay } = useSurface()
-  const procedure = useAppStore((s) => s.schedule.procedures[procedureId])
-  const booking = useAppStore((s) => (procedure !== undefined ? s.schedule.bookings[procedure.bookingId] : undefined))
-  const patient = useAppStore((s) => (booking !== undefined ? s.masters.patients[booking.patientId] : undefined))
-  const listDate = useAppStore((s) => (booking !== undefined ? s.schedule.lists[booking.listId]?.dateISO : undefined))
-  const contracts = useAppStore((s) => s.masters.contracts)
-  const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
-  const proceduresRecord = useAppStore((s) => s.schedule.procedures)
-  const locked = useAppStore((s) => payerLockedByPrepayment(s, procedureId))
+  const procedure = useBookingStore((s) => s.schedule.procedures[procedureId])
+  const booking = useBookingStore((s) => (procedure !== undefined ? s.schedule.bookings[procedure.bookingId] : undefined))
+  const patient = useBookingStore((s) => (booking !== undefined ? s.masters.patients[booking.patientId] : undefined))
+  const listDate = useBookingStore((s) => (booking !== undefined ? s.schedule.lists[booking.listId]?.dateISO : undefined))
+  const contracts = useBookingStore((s) => s.masters.contracts)
+  const rvgGroups = useBookingStore((s) => s.masters.rvgGroups)
+  const proceduresRecord = useBookingStore((s) => s.schedule.procedures)
+  const locked = useBookingStore((s) => payerLockedByPrepayment(s, procedureId))
   // Re-read the per-payer locks when an invoice is raised (the lock reads invoices).
-  useAppStore((s) => s.billing.invoices)
+  useBookingStore((s) => s.billing.invoices)
   const procedures = useMemo(
     () => (procedure !== undefined ? Object.values(proceduresRecord).filter((p) => p.bookingId === procedure.bookingId).sort((a, b) => a.id.localeCompare(b.id)) : []),
     [proceduresRecord, procedure],
@@ -120,7 +124,7 @@ export function PaidBySheet({ open, procedureId, actor, onClose, focus = 'payer'
   const changesPayer = current.kind === 'other' ? !different || !sameName(current.name, other.name) : different
   const offer = showWhoPays && changesPayer ? payerOfferFor(procedures, procedureId, contracts, booking.patientId) : []
   // An offered Procedure covered by its payer's raised prepayment keeps its payer (US-06.3.1 "Payer locked"): shown, never ticked.
-  const lockedInOffer = new Set(offer.filter((p) => payerLockedByPrepayment(useAppStore.getState(), p.id)).map((p) => p.id))
+  const lockedInOffer = new Set(offer.filter((p) => payerLockedByPrepayment(bookingApi.getState(), p.id)).map((p) => p.id))
 
   const isChild = !different && patient !== undefined && listDate !== undefined && isMinorOn(patient.dobISO, listDate)
   const recordEmail = patient?.email !== undefined && patient.email.trim() !== '' ? patient.email : undefined
@@ -146,13 +150,13 @@ export function PaidBySheet({ open, procedureId, actor, onClose, focus = 'payer'
       return
     }
     const bookingId = procedure?.bookingId ?? ''
-    const before = prepaymentStatusFor(useAppStore.getState(), bookingId)
-    const outcome = savePaidBy(useAppStore, actor, procedureId, change)
+    const before = prepaymentStatusFor(bookingApi.getState(), bookingId)
+    const outcome = savePaidBy(bookingApi, actor, procedureId, change)
     if (!outcome.ok) {
       setError(outcome.message)
       return
     }
-    onSaved?.(prepaymentRecheckLine(before, prepaymentStatusFor(useAppStore.getState(), bookingId)))
+    onSaved?.(prepaymentRecheckLine(before, prepaymentStatusFor(bookingApi.getState(), bookingId)))
     onClose()
   }
 
@@ -247,7 +251,7 @@ export function PaidBySheet({ open, procedureId, actor, onClose, focus = 'payer'
         <SheetActions
           primary={
             <Button variant="primary" block onClick={save} disabled={showWhoPays && different && other.name.trim() === ''} shot="paid-by-save">
-              Save
+              {primaryLabel}
             </Button>
           }
         />

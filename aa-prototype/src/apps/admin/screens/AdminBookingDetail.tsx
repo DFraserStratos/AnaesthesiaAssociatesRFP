@@ -4,14 +4,27 @@ import { UnassignedPill } from '../components/draftLists/DraftListParts'
 import { neutral } from '../../../theme/tokens'
 import { BackLink, FormError, PageHeader, TextAction } from '../../../shared/ui'
 import type { Procedure } from '../../../domain/types'
-import { applyDefaultInvoiceDescription, useAppStore, type Actor } from '../../../store'
+import { applyDefaultInvoiceDescription, lastChangeSetFor, useAppStore, type Actor } from '../../../store'
 import { newerInvoiceDescription } from '../../../domain/billing/procedureStack'
 import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
-import { BookingDetailBody, type PrepaymentOfficeLinks } from '../../../shared/booking'
+import {
+  BookingDetailBody,
+  BookingDraftProvider,
+  LeaveWithoutSavingDialog,
+  useBookingApi,
+  useBookingDraft,
+  useBookingStore,
+  useUnsavedChangesGuard,
+  type PrepaymentOfficeLinks,
+} from '../../../shared/booking'
+import { Notice } from '../../../shared/ui'
+import { useDemoTriggerContextWhile } from '../../../shared/demoTriggers'
+import { BookingSaveBar, BookingSavedStrip } from '../components/BookingSaveBar'
 import { ageYears, formatDob, nhiBadge, locationName } from '../../../shared/format'
 import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { listOriginText } from '../../../domain/lists/listOrigin'
+import { BookingUpdateEmailButton } from '../flows/UpdateEmailActions'
 
 interface AdminBookingDetailProps {
   bookingId: string
@@ -31,11 +44,33 @@ interface AdminBookingDetailProps {
  * and the same desktop record layout the anaesthetist web app gets — both run
  * on `variant="web"`, so the capture column and sticky commit rail come free.
  */
-export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLabel = 'Day view', officeLinks }: AdminBookingDetailProps) {
-  const booking = useAppStore((s) => s.schedule.bookings[bookingId])
-  const listsRecord = useAppStore((s) => s.schedule.lists)
-  const proceduresRecord = useAppStore((s) => s.schedule.procedures)
-  const masters = useAppStore((s) => s.masters)
+export function AdminBookingDetail(props: AdminBookingDetailProps) {
+  // Draft-then-save (catch-up Phase 35; US-02.3.2, RV-28): the office edits a draft until Save changes.
+  return (
+    <BookingDraftProvider key={props.bookingId} bookingId={props.bookingId}>
+      <AdminBookingDetailDraft {...props} />
+    </BookingDraftProvider>
+  )
+}
+
+/** Save bars dismissed this session, by change-set id (a per-viewer UI flag, never stored). */
+const dismissedSaves = new Set<string>()
+
+function AdminBookingDetailDraft({ bookingId, actor, todayISO, onBack, backLabel = 'Day view', officeLinks }: AdminBookingDetailProps) {
+  const booking = useBookingStore((s) => s.schedule.bookings[bookingId])
+  const listsRecord = useBookingStore((s) => s.schedule.lists)
+  const proceduresRecord = useBookingStore((s) => s.schedule.procedures)
+  const masters = useBookingStore((s) => s.masters)
+  const bookingApi = useBookingApi()
+  const draft = useBookingDraft()
+  const dirty = draft?.dirty === true
+  const blocker = useUnsavedChangesGuard(dirty)
+  // Switch office user waits while this draft is unsaved (the draft's actor would change mid-edit).
+  useDemoTriggerContextWhile('adminBooking.dirtyBookingId', bookingId, dirty)
+  // The saved strip reads the real audit: still there after leaving and coming back.
+  const realAudit = useAppStore((s) => s.audit)
+  const lastSave = useMemo(() => lastChangeSetFor({ audit: realAudit }, bookingId), [realAudit, bookingId])
+  const [, setDismissTick] = useState(0)
 
   const list = booking !== undefined ? listsRecord[booking.listId] : undefined
   const primary: Procedure | undefined = useMemo(() => {
@@ -45,7 +80,7 @@ export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLab
   }, [booking, bookingId, proceduresRecord])
 
   // The hospital row this Booking came from or was last updated by (catch-up Phase 33): the newest applied one.
-  const intakeRows = useAppStore((s) => s.intake.rows)
+  const intakeRows = useBookingStore((s) => s.intake.rows)
   const fromRowId = useMemo(
     () =>
       Object.values(intakeRows)
@@ -115,9 +150,40 @@ export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLab
             {list.state === 'DRAFT' && <UnassignedPill />}
             {changed !== null && changed.bookingIds.includes(bookingId) && <ChangedSinceSubmittedPill cue={changed} />}
             <StatusChip status={list.kind} />
+            {/* The update email, on demand on every Booking (catch-up Phase 35; US-02.3.3, OQ-69). */}
+            <span style={{ marginLeft: 6 }}>
+              <BookingUpdateEmailButton bookingId={bookingId} actor={actor} />
+            </span>
           </div>
         }
       />
+
+      {draft?.notice != null && (
+        <Notice tone="neutral" shot="booking-draft-reset" action={<TextAction size="sm" flush onClick={draft.dismissNotice}>Dismiss</TextAction>}>
+          {draft.notice}
+        </Notice>
+      )}
+      {dirty && draft !== null && (
+        <BookingSaveBar
+          changes={draft.changes}
+          procedures={Object.values(proceduresRecord).filter((p) => p.bookingId === bookingId)}
+          onDiscard={draft.discard}
+          onSave={() => {
+            const out = draft.save(actor)
+            return out.ok ? null : out.message
+          }}
+        />
+      )}
+      {!dirty && lastSave !== undefined && !dismissedSaves.has(lastSave.changeSetId) && (
+        <BookingSavedStrip
+          summary={lastSave}
+          onDismiss={() => {
+            dismissedSaves.add(lastSave.changeSetId)
+            setDismissTick((n) => n + 1)
+          }}
+        />
+      )}
+      {draft !== null && <LeaveWithoutSavingDialog blocker={blocker} count={draft.changes.length} onDiscard={draft.discard} />}
 
       {newerHospital.map((n) => (
         <div key={n.procedureId} data-shot="booking-newer-hospital-text" style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', fontSize: 12.5, color: neutral.slate }}>
@@ -128,7 +194,7 @@ export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLab
             size="sm"
             flush
             onClick={() => {
-              const out = applyDefaultInvoiceDescription(useAppStore, actor, n.procedureId)
+              const out = applyDefaultInvoiceDescription(bookingApi, actor, n.procedureId)
               setUseError(out.ok ? null : out.message)
             }}
           >

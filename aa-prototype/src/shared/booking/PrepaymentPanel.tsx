@@ -1,7 +1,8 @@
+import { useBookingStore } from './draft'
 import { neutral, semantic } from '../../theme/tokens'
 import { procedureLabel } from '../../domain/billing/procedureStack'
 import type { PrepaymentStatus } from '../../domain/billing/prepayment'
-import { prepaidLeftOffFor, prepaidLeftOffText, useAppStore, useBookingPrepayment, type Actor, type PrepaymentGroupView } from '../../store'
+import { prepaidLeftOffFor, prepaidLeftOffText, useBookingPrepayment, type Actor, type PrepaymentGroupView } from '../../store'
 import { Card } from '../ui/Card'
 import { DefList, DefRow } from '../ui/DefRow'
 import { TYPE_AN_AMOUNT_FIRST } from '../../domain/billing/prepayment'
@@ -48,8 +49,8 @@ interface PrepaymentPanelProps {
 export function PrepaymentPanel({ bookingId, actor, links, onShowProcedure }: PrepaymentPanelProps) {
   const prepayment = useBookingPrepayment(bookingId)
   // After the run: what it left off the final invoice (US-08.2.2, D57). Re-read when the lock or invoices change.
-  const lock = useAppStore((s) => s.billing.locks[bookingId])
-  const leftOff = useAppStore((s) => (lock !== undefined ? leftOffLine(s, bookingId) : null))
+  const lock = useBookingStore((s) => s.billing.locks[bookingId])
+  const leftOff = useBookingStore((s) => (lock !== undefined ? leftOffLine(s, bookingId) : null))
   if (prepayment.status === 'none') return null
   const least = prepayment.groups.find((g) => g.status === prepayment.status) ?? prepayment.groups[0]!
   const title = prepaymentTitle(prepayment.status, { received: least.receivedTotal, total: least.invoicedTotal })
@@ -93,8 +94,8 @@ function GroupBlock({
   links?: PrepaymentOfficeLinks
   onShowProcedure?: (procedureId: string) => void
 }) {
-  const procedures = useAppStore((s) => s.schedule.procedures)
-  const masters = useAppStore((s) => s.masters)
+  const procedures = useBookingStore((s) => s.schedule.procedures)
+  const masters = useBookingStore((s) => s.masters)
   const noPriceId = group.lines.find((l) => l.amount.kind === 'noPrice')?.procedureId
   return (
     <div

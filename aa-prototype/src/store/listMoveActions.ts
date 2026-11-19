@@ -30,7 +30,7 @@ import { defaultVacated, ownMoveRefusal, vacatedChoices } from '../domain/listMo
 import { bookingMoveRefusal, bookingPlacement } from '../domain/bookingMoves'
 import { surnameCommaInitial } from '../domain/names'
 import type { AssignedList, OwnMoveCause, OwnMoveRoute, SlotStatusKey } from '../domain/types'
-import { clockISO, mutate, ok, refuse, type Actor, type DomainPatch, type MutationMeta, type Outcome } from './mutate'
+import { clockISO, mutate, ok, refuse, type Actor, type DomainPatch, type MutationMeta, type Outcome, withChangeSet } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { detachListToDraft, moveListToSlotCore, officePairingAckMeta, placeListOnSlot, vacatedStatusRefusal, vacateSlot } from './slotActions'
 import { reassignBookingCore } from './lifecycle'
@@ -233,7 +233,7 @@ function plainMovePreflight(api: AppStoreApi, actor: Actor, listId: string, inpu
  * history (Phase 31's conversion, origin `movedToOffice`), for the office to
  * assign. Her session takes `vacatedStatus`.
  */
-export function moveListToOffice(api: AppStoreApi, actor: Actor, listId: string, input: OwnMoveInput = {}): Outcome<OwnMoveResult> {
+function moveListToOfficeUnscoped(api: AppStoreApi, actor: Actor, listId: string, input: OwnMoveInput = {}): Outcome<OwnMoveResult> {
   const pre = plainMovePreflight(api, actor, listId, input)
   if (!pre.ok) return pre
   const { vacatedStatus } = pre.value
@@ -247,7 +247,7 @@ export function moveListToOffice(api: AppStoreApi, actor: Actor, listId: string,
  * `pushTargets`; `targetNotOpen` otherwise). The List moves intact and stays
  * ACTIVE, exactly as the office's reassignment moves it.
  */
-export function pushListToSlot(api: AppStoreApi, actor: Actor, listId: string, toSlotId: string, input: OwnMoveInput = {}): Outcome<OwnMoveResult> {
+function pushListToSlotUnscoped(api: AppStoreApi, actor: Actor, listId: string, toSlotId: string, input: OwnMoveInput = {}): Outcome<OwnMoveResult> {
   const pre = plainMovePreflight(api, actor, listId, input)
   if (!pre.ok) return pre
   const { vacatedStatus } = pre.value
@@ -284,7 +284,7 @@ export interface MarkUnavailableOptions {
  *
  * One List per call: a range or series resolves List by List.
  */
-export function markUnavailableAndMoveList(
+function markUnavailableAndMoveListUnscoped(
   api: AppStoreApi,
   actor: Actor,
   slotId: string,
@@ -376,7 +376,7 @@ export interface BookingMoveResult {
  *   Booking's payable is the AA Holding account: nothing moves, and the new
  *   anaesthetist claims the prepaid amount. No hook.
  */
-export function moveBookingToAnaesthetist(
+function moveBookingToAnaesthetistUnscoped(
   api: AppStoreApi,
   actor: Actor,
   bookingId: string,
@@ -462,4 +462,24 @@ function bookingMoveCore(
     metas: [placed.meta, moved],
     result: { listId: source.id, createdListId: placed.list.id, toAnaesthetistId, ...(notificationId !== undefined ? { notificationId } : {}) },
   })
+}
+
+/** `moveListToOfficeUnscoped` as one change set (`listReassign`), whichever app calls it (catch-up Phase 35; DM-35). */
+export function moveListToOffice(...args: Parameters<typeof moveListToOfficeUnscoped>): ReturnType<typeof moveListToOfficeUnscoped> {
+  return withChangeSet(args[0], 'listReassign', () => moveListToOfficeUnscoped(...args))
+}
+
+/** `pushListToSlotUnscoped` as one change set (`listReassign`), whichever app calls it (catch-up Phase 35; DM-35). */
+export function pushListToSlot(...args: Parameters<typeof pushListToSlotUnscoped>): ReturnType<typeof pushListToSlotUnscoped> {
+  return withChangeSet(args[0], 'listReassign', () => pushListToSlotUnscoped(...args))
+}
+
+/** `markUnavailableAndMoveListUnscoped` as one change set (`listReassign`), whichever app calls it (catch-up Phase 35; DM-35). */
+export function markUnavailableAndMoveList(...args: Parameters<typeof markUnavailableAndMoveListUnscoped>): ReturnType<typeof markUnavailableAndMoveListUnscoped> {
+  return withChangeSet(args[0], 'listReassign', () => markUnavailableAndMoveListUnscoped(...args))
+}
+
+/** `moveBookingToAnaesthetistUnscoped` as one change set (`move`), whichever app calls it (catch-up Phase 35; DM-35). */
+export function moveBookingToAnaesthetist(...args: Parameters<typeof moveBookingToAnaesthetistUnscoped>): ReturnType<typeof moveBookingToAnaesthetistUnscoped> {
+  return withChangeSet(args[0], 'move', () => moveBookingToAnaesthetistUnscoped(...args))
 }

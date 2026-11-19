@@ -29,6 +29,8 @@ export interface DemoContextValues {
   'adminContracts.openContractId': string
   /** Mobile · My calendar: the last day opened in the session panel, `<anaesthetistId>|<dateISO>`, while the calendar shows (catch-up Phase 32d's office stand-in). */
   'mobileCalendar.day': string
+  /** Admin · Booking detail: the Booking whose draft holds unsaved changes (catch-up Phase 35's Switch office user waits on it). */
+  'adminBooking.dirtyBookingId': string
 }
 
 export type DemoContextKey = keyof DemoContextValues

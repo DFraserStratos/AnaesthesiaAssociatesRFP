@@ -1,7 +1,8 @@
+import { useBookingApi, useBookingStore, usePrimaryEditLabel } from '../booking/draft'
 import { useEffect, useMemo, useState } from 'react'
 import { neutral } from '../../theme/tokens'
 import { parseAmount } from '../../domain/billing/money'
-import { priceChangeRefusal, setProcedurePrice, useAppStore, type Actor } from '../../store'
+import { priceChangeRefusal, setProcedurePrice, type Actor } from '../../store'
 import { procedurePriceViewFor } from '../../store/priceSelectors'
 import { Button, FormError, Notice, TextField } from '../ui'
 import { useSurface } from '../surface'
@@ -25,21 +26,24 @@ interface PricingSheetProps {
  * read-only with the gate's sentence (A16). A dialog on Admin and web.
  */
 export function PricingSheet({ open, procedureId, actor, onClose }: PricingSheetProps) {
+  const bookingApi = useBookingApi()
+  // "Apply" in the Admin draft (catch-up Phase 35): the draft's Save changes saves.
+  const primaryLabel = usePrimaryEditLabel('Save price')
   const { Overlay } = useSurface()
-  const masters = useAppStore((s) => s.masters)
-  const lists = useAppStore((s) => s.schedule.lists)
-  const bookings = useAppStore((s) => s.schedule.bookings)
-  const procedures = useAppStore((s) => s.schedule.procedures)
-  const billingLines = useAppStore((s) => s.schedule.billingLines)
-  const invoices = useAppStore((s) => s.billing.invoices)
-  const invoiceLines = useAppStore((s) => s.billing.invoiceLines)
+  const masters = useBookingStore((s) => s.masters)
+  const lists = useBookingStore((s) => s.schedule.lists)
+  const bookings = useBookingStore((s) => s.schedule.bookings)
+  const procedures = useBookingStore((s) => s.schedule.procedures)
+  const billingLines = useBookingStore((s) => s.schedule.billingLines)
+  const invoices = useBookingStore((s) => s.billing.invoices)
+  const invoiceLines = useBookingStore((s) => s.billing.invoiceLines)
   const view = useMemo(
     () => procedurePriceViewFor({ masters, schedule: { lists, bookings, procedures, billingLines }, billing: { invoices, invoiceLines } }, procedureId),
     [masters, lists, bookings, procedures, billingLines, invoices, invoiceLines, procedureId],
   )
   // Re-read whenever what the gates read changes (the List's state, the Contract, the invoices).
   const refusal = useMemo(
-    () => (open ? priceChangeRefusal(useAppStore.getState(), actor, procedureId) : null),
+    () => (open ? priceChangeRefusal(bookingApi.getState(), actor, procedureId) : null),
     [open, actor, procedureId, procedures, lists, masters, invoices, invoiceLines],
   )
   const typed = view?.procedure.enteredPrice
@@ -61,7 +65,7 @@ export function PricingSheet({ open, procedureId, actor, onClose }: PricingSheet
   const readOnly = refusalMessage !== null
 
   function save(price: number | null) {
-    const outcome = setProcedurePrice(useAppStore, actor, procedureId, price)
+    const outcome = setProcedurePrice(bookingApi, actor, procedureId, price)
     if (!outcome.ok) {
       setError(outcome.message)
       return
@@ -108,7 +112,7 @@ export function PricingSheet({ open, procedureId, actor, onClose }: PricingSheet
           <SheetActions
             primary={
               <Button variant="primary" block onClick={() => save(parsed ?? null)} disabled={parsed === undefined} shot="pricing-sheet-save">
-                Save price
+                {primaryLabel}
               </Button>
             }
             secondary={

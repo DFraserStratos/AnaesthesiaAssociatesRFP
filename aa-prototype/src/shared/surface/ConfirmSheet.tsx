@@ -26,6 +26,12 @@ export interface ConfirmSheetProps {
   onConfirm: () => void
   /** The safe button's label; it closes through `onClose`. */
   cancelLabel: ReactNode
+  /**
+   * The safe button's own action, when it is not just closing (catch-up
+   * Phase 35's "Leave without saving?": Discard and leave). Escape and the
+   * backdrop still call `onClose`. Defaults to `onClose`.
+   */
+  onCancel?: () => void
   confirmDisabled?: boolean
   /** On the sheet's body wrapper. */
   shot?: string
@@ -34,7 +40,7 @@ export interface ConfirmSheetProps {
   children?: ReactNode
 }
 
-export function ConfirmSheet({ open, onClose, title, description, confirmLabel, onConfirm, cancelLabel, confirmDisabled, shot, confirmShot, children }: ConfirmSheetProps) {
+export function ConfirmSheet({ open, onClose, title, description, confirmLabel, onConfirm, cancelLabel, onCancel, confirmDisabled, shot, confirmShot, children }: ConfirmSheetProps) {
   const { Overlay } = useSurface()
   const safeRef = useRef<HTMLButtonElement>(null)
   // A double click cannot run the confirm twice: after a run the primary
@@ -65,7 +71,7 @@ export function ConfirmSheet({ open, onClose, title, description, confirmLabel, 
             </Button>
           }
           secondary={
-            <Button buttonRef={safeRef} variant="secondary" block onClick={onClose}>
+            <Button buttonRef={safeRef} variant="secondary" block onClick={onCancel ?? onClose}>
               {cancelLabel}
             </Button>
           }

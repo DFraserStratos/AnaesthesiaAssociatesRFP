@@ -31,10 +31,15 @@ export {
   clockISO,
   ok,
   refuse,
+  copyStateIntoDraft,
+  onDomainReset,
+  withChangeSet,
   type Actor,
   type Outcome,
   type MutationMeta,
   type DomainPatch,
+  type MutateOptions,
+  type MutateResult,
 } from './mutate'
 export {
   completeBooking,
@@ -159,6 +164,8 @@ export {
 export {
   upsertPatient,
   editPatient,
+  PATIENT_NHI_REQUIRED_MESSAGE,
+  PATIENT_NHI_OFFICE_ONLY_MESSAGE,
   type PatientIntakeDetails,
   type IntakeResult,
   type PatientEditPatch,
@@ -302,7 +309,7 @@ export { recordUnmatchedReceipt, type UnmatchedReceiptInput } from './paymentAct
 export { postTransferJournal } from './xeroHandoff'
 export { settlePrepaymentsForList, transfersDueForList } from './prepaymentSettlement'
 export { setArchiveWindowDays, armHandoffFault } from './demoSettingsActions'
-export { anaesthetistActor, OFFICE_ACTOR, SOUTER_ACTOR, OFFICE_SIMULATION_ACTOR, DEMO_TRIGGER_ACTOR, DEMO_OFFICE_ACTOR, OFFICE_ACCOUNT_ID } from './demoActors'
+export { anaesthetistActor, OFFICE_ACTOR, SECOND_OFFICE_ACTOR, OFFICE_USERS, officeActorOf, otherOfficeUser, SOUTER_ACTOR, OFFICE_SIMULATION_ACTOR, DEMO_TRIGGER_ACTOR, DEMO_OFFICE_ACTOR, OFFICE_ACCOUNT_ID, type OfficeUserId } from './demoActors'
 export {
   WARNING_SAMPLES,
   WARNING_RULE_COUNT,
@@ -503,3 +510,27 @@ export {
   updateTarget,
   type StandInChoice,
 } from './matchingDemo'
+// Catch-up Phase 35: the office's explicit save, one change set per save (US-02.3.2, DM-35).
+export {
+  SAVE_NHI_REQUIRED_MESSAGE,
+  RECEIVED_TEXT_MESSAGE,
+  SAVE_NO_CHANGES_MESSAGE,
+  SAVE_OFFICE_ONLY_MESSAGE,
+  saveBookingChanges,
+  saveBookingPatch,
+  type BookingDraftChanges,
+  type FieldRef,
+} from './bookingSaveActions'
+export { isDraftStore, markDraftStore } from './draftMode'
+// Catch-up Phase 35: the update email templates and the drafted-email record (US-02.3.3, US-02.3.4).
+export {
+  addEmailTemplate,
+  recordUpdateEmailDrafted,
+  saveEmailTemplate,
+  setEmailTemplateActive,
+  type EmailTemplateFields,
+  type UpdateEmailDraftRecord,
+} from './emailTemplateActions'
+export { changeSetEntries, lastChangeSetFor, type ChangeSetSummary } from './changeSetSelectors'
+// Catch-up Phase 35: the PWA's office stand-in for an office save.
+export { officeEditsBooking, officeEditsBookingRefusal } from './officeSaveDemo'

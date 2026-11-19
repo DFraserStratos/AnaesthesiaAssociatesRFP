@@ -1,7 +1,8 @@
+import { useBookingApi } from '../booking/draft'
 import { useEffect, useState } from 'react'
 import { neutral } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
-import { editProcedure, useAppStore, type Actor } from '../../store'
+import { editProcedure, type Actor } from '../../store'
 import { TextArea } from '../ui'
 import { useSurface } from '../surface'
 import { CaptureSection, Caption } from './ui'
@@ -20,6 +21,7 @@ interface NotesCardProps {
  * side on a desktop, where two 72px boxes in one row read as one notes step.
  */
 export function NotesCard({ procedure, actor, canCapture, onError }: NotesCardProps) {
+  const bookingApi = useBookingApi()
   const { Pair } = useSurface()
   const [intNotes, setIntNotes] = useState(procedure.intNotes ?? '')
   const [opNotes, setOpNotes] = useState(procedure.opNotes ?? '')
@@ -31,7 +33,7 @@ export function NotesCard({ procedure, actor, canCapture, onError }: NotesCardPr
 
   function commit(field: 'intNotes' | 'opNotes', value: string, stored: string | undefined) {
     if (value === (stored ?? '')) return
-    const outcome = editProcedure(useAppStore, actor, procedure.id, {
+    const outcome = editProcedure(bookingApi, actor, procedure.id, {
       [field]: value.trim() === '' ? undefined : value,
     })
     if (!outcome.ok) onError(outcome.message)

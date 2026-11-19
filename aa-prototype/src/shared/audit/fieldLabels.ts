@@ -314,6 +314,12 @@ export const FIELD_LABELS: Record<string, string> = {
   rows: 'Rows',
   skipped: 'Already imported',
   batchId: 'Import',
+  // --- Update email templates and drafts (catch-up Phase 35) -------------------
+  recipient: 'Sends to',
+  subject: 'Subject',
+  body: 'Body',
+  templateId: 'Template',
+  pickedKeys: 'Changes picked',
 }
 
 /**

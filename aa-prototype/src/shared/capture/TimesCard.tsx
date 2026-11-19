@@ -1,8 +1,9 @@
+import { useBookingApi } from '../booking/draft'
 import { accent, neutral, radius } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 import type { Procedure } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
-import { clockISO, editProcedure, useAppStore, type Actor } from '../../store'
+import { clockISO, editProcedure, type Actor } from '../../store'
 import { useSurface } from '../surface'
 import { minutesBetweenIso, shiftIsoMinutes } from './timeIso'
 import { hhmm } from '../format'
@@ -36,20 +37,21 @@ interface TimesCardProps {
  * full-width track avoids nesting the cells inside another pair of columns.
  */
 export function TimesCard({ procedure, actor, canCapture, failures, onError }: TimesCardProps) {
+  const bookingApi = useBookingApi()
   const { variant } = useSurface()
   const start = procedure.anaestheticStartISO
   const finish = procedure.handoverISO
 
   function write(patch: Parameters<typeof editProcedure>[3]) {
-    const outcome = editProcedure(useAppStore, actor, procedure.id, patch)
+    const outcome = editProcedure(bookingApi, actor, procedure.id, patch)
     if (!outcome.ok) onError(outcome.message)
   }
 
   function stampStart() {
-    write({ anaestheticStartISO: clockISO(useAppStore.getState().clock) })
+    write({ anaestheticStartISO: clockISO(bookingApi.getState().clock) })
   }
   function stampFinish() {
-    const stamped = clockISO(useAppStore.getState().clock)
+    const stamped = clockISO(bookingApi.getState().clock)
     const earliest = start === undefined ? stamped : shiftIsoMinutes(start, 5)
     write({
       handoverISO:

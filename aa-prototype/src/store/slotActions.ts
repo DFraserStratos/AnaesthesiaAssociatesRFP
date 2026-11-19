@@ -44,7 +44,7 @@ import { defaultVacated, receiveRefusal, sessionNotOpenRefusal, vacatedChoices }
 import { pairingIssues } from '../domain/listPairing'
 import { answeringLists, draftFromActive, recurringClashDraft, type NormalisedClash } from '../domain/draftLists'
 import { answeredKey } from '../domain/recurringBookingProjection'
-import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
+import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome, withChangeSet } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { listInSlot, moveInputOf, scheduleHorizon, slotFor } from './selectors'
 import { seriesCalendarFor, setOneSessionAvailability } from './availabilityActions'
@@ -635,7 +635,7 @@ export function moveListToSlot(
  * not-preferred pairing (the List's surgeon against the colleague) is written
  * here, the office entry point, never in `moveListToSlot`.
  */
-export function reassignList(
+function reassignListUnscoped(
   api: AppStoreApi,
   actor: Actor,
   listId: string,
@@ -1005,3 +1005,8 @@ export function anaesthetistCanvasDelta(
   return { add, removeSlotIds, listsInRemoved, toISO }
 }
 
+
+/** `reassignListUnscoped` as one change set (`listReassign`), whichever app calls it (catch-up Phase 35; DM-35). */
+export function reassignList(...args: Parameters<typeof reassignListUnscoped>): ReturnType<typeof reassignListUnscoped> {
+  return withChangeSet(args[0], 'listReassign', () => reassignListUnscoped(...args))
+}

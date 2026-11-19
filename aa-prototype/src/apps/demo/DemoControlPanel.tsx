@@ -8,7 +8,7 @@ import {
   OFFICE_ACTOR,
   SOUTER_ACTOR,
   authoriseList,
-  editBooking,
+  saveBookingPatch,
   claimModifier,
   removeModifier,
   proceduresForBooking,
@@ -313,7 +313,13 @@ const SCENARIOS: readonly Scenario[] = [
       if (as3 === undefined) return { ok: false, message: 'Reset done, but the RVG modifier AS3 was not found to stage the audit trail.' }
       const staged = [
         claimModifier(useAppStore, SOUTER_ACTOR, chenProcedure.id, { modifierId: as3.id, explanation: 'Pre-op review: ASA III' }),
-        editBooking(useAppStore, OFFICE_ACTOR, chenBookingId, { notes: 'Rooms called: confirmed self-funded account details ahead of invoicing.' }),
+        // The office's grouped save (catch-up Phase 35): the note and a time change in one change set.
+        saveBookingPatch(useAppStore, OFFICE_ACTOR, chenBookingId, {
+          booking: {
+            notes: 'Rooms called: confirmed self-funded account details ahead of invoicing.',
+            scheduledTime: shiftedTime(useAppStore.getState().schedule.bookings[chenBookingId]?.scheduledTime, 15),
+          },
+        }),
         removeModifier(useAppStore, SOUTER_ACTOR, chenProcedure.id, as3.id),
       ]
       const refused = staged.find((r) => !r.ok)
@@ -323,7 +329,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset to rich seeded Booking histories, added three live edits to David Chen\'s trail, and authorised Dr Whitaker\'s Fri 17 Jul List, which locks the Health NZ agreed rate and the price in force on 17 Jul onto each Procedure and raises its invoices from that record. Compliance tour: (1) open David Chen\'s History; (2) on Admin, Intake, Validators try an old-format and a new-format NHI, then an invalid one (optionally, as a labelled Future-scope aside, fire MSG-STG-1002 from Future scope: HL7 and FHIR and open its row on Admin, Intake, Matching); (3) in the Xero simulation\'s Contacts tab, show that no NHI or patient name crosses to Xero, only hidden IDs; (4) Contract history and the invoice recipe: in Admin, Master data, Contracts, open Health NZ agreed rate, change its rate and save, then open its History tab: the change with who, when and the values before and after, and Dr Whitaker\'s Procedures locked against it; open Hemi Walker\'s invoice, Demo actions, Regenerate from locked data: identical.',
+          'Reset to rich seeded Booking histories, added live edits to David Chen\'s trail, among them the office\'s grouped save (the note and the time, one change set), and authorised Dr Whitaker\'s Fri 17 Jul List, which locks the Health NZ agreed rate and the price in force on 17 Jul onto each Procedure and raises its invoices from that record. Compliance tour: (1) open David Chen\'s History: the office\'s save is one row, with View as at; (2) on Admin, Intake, Validators try an old-format and a new-format NHI, then an invalid one (optionally, as a labelled Future-scope aside, fire MSG-STG-1002 from Future scope: HL7 and FHIR and open its row on Admin, Intake, Matching); (3) in the Xero simulation\'s Contacts tab, show that no NHI or patient name crosses to Xero, only hidden IDs; (4) Contract history and the invoice recipe: in Admin, Master data, Contracts, open Health NZ agreed rate, change its rate and save, then open its History tab: the change with who, when and the values before and after, and Dr Whitaker\'s Procedures locked against it; open Hemi Walker\'s invoice, Demo actions, Regenerate from locked data: identical.',
         nav: [
           { label: 'Go to Admin app', path: APP_CONFIG.admin.path },
           { label: 'Go to Xero sim', path: APP_CONFIG['demo-xero'].path },
@@ -332,6 +338,13 @@ const SCENARIOS: readonly Scenario[] = [
     },
   },
 ]
+
+/** A wall time moved by `minutes` (the S5 jump's grouped save). */
+function shiftedTime(time: string | undefined, minutes: number): string {
+  const [h, m] = (time ?? '08:00').split(':').map(Number)
+  const total = Math.min(23 * 60 + 55, (h ?? 8) * 60 + (m ?? 0) + minutes)
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
+}
 
 /** The guided-script scenario jumps (S1 to S5): confirm, reset, stage, then point onward. */
 function ScenarioJumps() {
