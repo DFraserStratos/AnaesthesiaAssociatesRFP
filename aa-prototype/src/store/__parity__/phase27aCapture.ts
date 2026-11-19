@@ -24,7 +24,7 @@ import { authoriseList, submitList } from '../lifecycle'
 import { completeAnswered } from '../../test/completeAnswered'
 import { approveAllPrepayments } from '../../test/approvePrepayments'
 import { receivePayment } from '../paymentActions'
-import { runPayables } from '../payablesActions'
+import { runThisWeeksCycle } from '../payablesActions'
 import { stageBillingFailure } from '../demoStaging'
 import { aaFeeInvoicesFor, aaFeeRunPreview, bookingsForList } from '../selectors'
 import { ANAE, SEED_LIST_IDS, SEED_MARKERS } from '../../domain/seed'
@@ -161,7 +161,9 @@ function withWiredRun<T>(api: BoundAppStore, run: () => T): T {
 }
 
 function runRow(api: BoundAppStore): RunRow27a {
-  const out = runPayables(api, OFFICE)
+  // (catch-up Phase 39a: the office's weekly cycle; nothing due is a refusal now, which paid nothing before too.)
+  const out = runThisWeeksCycle(api, OFFICE)
+  if (!out.ok && out.code === 'nothingDue') return { disbursedCount: 0, totalDisbursed: 0 }
   return out.ok ? { disbursedCount: out.value.disbursedCount, totalDisbursed: out.value.totalDisbursed } : { disbursedCount: -1, totalDisbursed: -1 }
 }
 

@@ -7,7 +7,7 @@ import { runDemoAction } from './demoActions'
  * in the URL (a part payment on the invoice page moves that invoice's money).
  */
 
-test('demo actions: one on the Review queue, eleven on the Day view, eight on the Billing monitor', async ({ page }) => {
+test('demo actions: one on the Review queue, eleven on the Day view, ten on the Billing monitor', async ({ page }) => {
   // The Review queue holds "Run the next billing run" (catch-up Phase 38b).
   await page.goto('/admin/review')
   await page.waitForLoadState('networkidle')
@@ -22,19 +22,19 @@ test('demo actions: one on the Review queue, eleven on the Day view, eight on th
   await expect(page.locator('[data-shot="demo-action-inject-unmatched-receipt"]')).toBeVisible()
   await page.keyboard.press('Escape')
 
-  // The Billing monitor keeps its entries with its filters in the URL (catch-up Phase 37), plus Stage refund after payout (catch-up Phase 39).
+  // The Billing monitor keeps its entries with its filters in the URL (catch-up Phase 37), plus Stage refund after payout (catch-up Phase 39) and Stage a payment week and Stage a bank mismatch (catch-up Phase 39a).
   await page.goto('/admin/billing?anaesthetist=34821&problems=1&sort=date-asc')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 8')
+  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 10')
 
   await page.goto('/admin/billing')
   await page.waitForLoadState('networkidle')
   const pill = page.locator('[data-shot="demo-actions"]')
-  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 8')
+  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 10')
   await pill.focus()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('dialog')).toBeVisible()
-  for (const id of ['billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job', 'run-next-billing-run']) {
+  for (const id of ['billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job', 'run-next-billing-run', 'stage-payment-week', 'stage-bank-mismatch']) {
     await expect(page.locator(`[data-shot="demo-action-${id}"]`)).toBeVisible()
   }
   // The screen's own "Run payables in Xero" panel (badged Simulated Xero, not a registry entry) is untouched.

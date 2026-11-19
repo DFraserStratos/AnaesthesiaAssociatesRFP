@@ -23,8 +23,10 @@ import { HOSP, SURG } from '../domain/seed/cast'
 import { DEMO_TODAY } from '../domain/clock'
 import { mutate, ok, refuse, type Actor, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
-import { bctisToChargeFor } from './selectors'
+import { bctisToChargeFor, invoiceAddresseeName } from './selectors'
 import { anaesthetistContactSpec, resolveContactInto, type ContactSpec } from './xeroHandoff'
+import { backdropBankLines, backdropRunsFor } from '../domain/seed/backdropRuns'
+import { paymentCycleSettingsOf } from './paymentCycleActions'
 
 /** The seed's demo month, July 2026. */
 export const BCTI_SEED_MONTH = DEMO_TODAY.slice(0, 7)
@@ -138,7 +140,20 @@ export function seedMonthOfBctis(api: AppStoreApi, actor: Actor, anaesthetistId:
         payeeContactId: resolve(anaesthetistContactSpec(anaesthetist)),
         resolveContact: (kind, id, name, type) =>
           resolve({ key: `${kind}:${id}`, contactNumber: id, name, type }),
-        payablesRunId: `PR-${NS}-01`,
+        payablesRunId: `PR${NS}01`,
+      })
+      // Every payout belongs to a backdrop weekly run with its batch payment, and every payment has its bank line (catch-up Phase 39a).
+      const backdrop = backdropRunsFor({
+        ns: NS,
+        settings: paymentCycleSettingsOf(s),
+        ledger: build.ledger,
+        invoices: build.invoices,
+        payerNameOf: (pair) => (build.invoices[pair.invoiceId] !== undefined ? invoiceAddresseeName(s, build.invoices[pair.invoiceId]!) : ''),
+        serviceDateOf: (pair) => build.lists[pair.listId]?.dateISO ?? pair.createdAtISO.slice(0, 10),
+        ledgerDisbursements: build.ledgerDisbursements,
+        xeroDisbursements: build.disbursements,
+        accPays: build.accPays,
+        seeded: false,
       })
       return {
         schedule: {
@@ -152,8 +167,10 @@ export function seedMonthOfBctis(api: AppStoreApi, actor: Actor, anaesthetistId:
           invoices: { ...s.billing.invoices, ...build.invoices },
           invoiceLines: { ...s.billing.invoiceLines, ...build.invoiceLines },
           ledger: { ...s.billing.ledger, ...build.ledger },
-          disbursements: { ...s.billing.disbursements, ...build.ledgerDisbursements },
+          disbursements: { ...s.billing.disbursements, ...backdrop.ledgerDisbursements },
           receipts: { ...s.billing.receipts, ...build.receipts },
+          payablesRuns: { ...s.billing.payablesRuns, ...backdrop.runs },
+          bankLines: { ...s.billing.bankLines, ...backdropBankLines(NS, build.payments, build.accRecs) },
           contactIdCache: cache,
         },
         xero: {
@@ -162,7 +179,8 @@ export function seedMonthOfBctis(api: AppStoreApi, actor: Actor, anaesthetistId:
           accRecs: { ...s.xero.accRecs, ...build.accRecs },
           accPays: { ...s.xero.accPays, ...build.accPays },
           payments: { ...s.xero.payments, ...build.payments },
-          disbursements: { ...s.xero.disbursements, ...build.disbursements },
+          disbursements: { ...s.xero.disbursements, ...backdrop.xeroDisbursements },
+          batchPayments: { ...s.xero.batchPayments, ...backdrop.batchPayments },
         },
         counters,
       }

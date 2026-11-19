@@ -102,6 +102,7 @@ import {
   HoldingAccountPanelExample,
   ReconciliationCardExample,
   XeroPanelsExample,
+  PaymentCyclePanelExample,
 } from './admin/storeExamples'
 import { BookingAsAtPanelExample, BookingSaveBarExample, LeaveWithoutSavingDialogExample, OfficeSavedNoticeExample } from './admin/draftExamples'
 import {
@@ -319,8 +320,11 @@ export function AdminCatalogue() {
         <CatalogueRow name="ReconciliationCard" source="apps/admin/components/ReconciliationCard.tsx" usedIn={A} what="The rail's Reconciliation card (catch-up Phase 37; US-13.2.4): Books square or Out of balance, derived and never stored, each failing check with its difference, then up to five unresolved items oldest first with amount and age, each linking to where it is handled." replaceWith="shadcn Card + Badge" note="On the shared Card, under the To-do. Reads reconciliationStatusOf; Inject unmatched receipt on the Ledger puts it out of balance.">
           <ReconciliationCardExample />
         </CatalogueRow>
-        <CatalogueRow name="Xero panels (XeroConnectionLine · XeroQueuePanel · XeroDivergencePanel · PayablesPanel)" source="apps/admin/components/XeroPanels.tsx" usedIn={A} what="The Billing monitor's Xero panels (catch-up Phase 37): the connection line, the Xero sync queue with Retry now, the invoices changed directly in Xero with the Resolve side panel, and the payables awaiting Xero's payables run with the badged Run payables in Xero." replaceWith="shadcn Card + Table + Badge + Sheet" note="On the shared Card, TableShell (nested, compact), Pill, Notice, Button, EmptyState and SidePanel. Simulate Xero outage on the Billing monitor fills the queue.">
+        <CatalogueRow name="Xero panels (XeroConnectionLine · XeroQueuePanel · XeroDivergencePanel)" source="apps/admin/components/XeroPanels.tsx" usedIn={A} what="The Billing monitor's Xero panels (catch-up Phase 37): the connection line, the Xero sync queue with Retry now, and the invoices changed directly in Xero with the Resolve side panel." replaceWith="shadcn Card + Table + Badge + Sheet" note="On the shared Card, TableShell (nested, compact), Pill, Notice, Button, EmptyState and SidePanel. Simulate Xero outage on the Billing monitor fills the queue.">
           <XeroPanelsExample />
+        </CatalogueRow>
+        <CatalogueRow name="PaymentCyclePanel" source="apps/admin/components/PaymentCyclePanel.tsx" usedIn={A} what="The Billing monitor's weekly payment cycle (catch-up Phase 39a; replaces 37's payables panel): the week's four steps on the step rail, what is waiting for this week's run per anaesthetist (netting and still to net), the checks before payment with Hold out of this run and Mark fixed, Approve, Send payment schedule, the badged Run payables in Xero, and the payment runs." replaceWith="shadcn Card + Table + Badge" note="On the shared Card, StepRail (compact, with pendingValue and shotPrefix), TableShell (nested, compact), Pill, Notice, Button, TextField and EmptyState. Stage a payment week on the Billing monitor fills it.">
+          <PaymentCyclePanelExample />
         </CatalogueRow>
         <CatalogueRow name="PrepaymentsRailCard" source="apps/admin/components/PrepaymentsRailCard.tsx" usedIn={A} what="The rail's Pre-payments card (catch-up Phase 27): every upcoming prepaid Booking, one row per payer, with its amount, a status pill and the days to go. An awaiting row opens the Invoices strip; the others open the Booking. Its count is the shared CountBadge; empty, the shared EmptyState." replaceWith="shadcn Card + Badge" note="On the shared Card (padding card, flat), under the To-do card. Reads useUpcomingPrepayments.">
           <PrepaymentsRailCardExample />

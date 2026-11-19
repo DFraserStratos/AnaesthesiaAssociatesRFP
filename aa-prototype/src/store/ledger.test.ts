@@ -16,7 +16,7 @@ import { processXeroQueue } from './xeroQueue'
 import { handoffQueuedFor, openXeroQueueItems } from './ledgerSelectors'
 import { receivePayment, recordUnmatchedReceipt } from './paymentActions'
 import { allocateUnmatchedReceipt, markUnmatchedRefunded } from './ledgerActions'
-import { payablesDue, runPayables } from './payablesActions'
+import { payablesDue, runPayables, runThisWeeksCycle } from './payablesActions'
 import { approveAllPrepayments, TEST_OFFICE } from '../test/approvePrepayments'
 import { settlePrepaymentsForList } from './prepaymentSettlement'
 import { armHandoffFault } from './demoSettingsActions'
@@ -360,12 +360,14 @@ describe('payables are computed from the ledger (work item 7)', () => {
     authoriseMon20(api)
     const p = pairsForList(api.getState(), AM20)[0]!
     receivePayment(api, { accRecId: p.receivable.xeroAccRecId!, amount: 40, idempotencyKey: 'A', source: 'webhook' })
-    const run1 = runPayables(api, OFFICE)
+    // (catch-up Phase 39a: each payout is the office's weekly cycle, paid in Xero as an approved, scheduled run.)
+    const run1 = runThisWeeksCycle(api, OFFICE)
     expect(run1.ok && [run1.value.disbursedCount, run1.value.totalDisbursed]).toEqual([1, 40])
-    const again = runPayables(api, OFFICE)
-    expect(again.ok && again.value.disbursedCount).toBe(0)
+    // Nothing more released: a second cycle is refused, nothing paid twice.
+    expect(runThisWeeksCycle(api, OFFICE)).toMatchObject({ ok: false, code: 'nothingDue' })
+    expect(runPayables(api, OFFICE)).toMatchObject({ ok: false, code: 'nothingScheduled' })
     receivePayment(api, { accRecId: p.receivable.xeroAccRecId!, amount: 10, idempotencyKey: 'B', source: 'webhook' })
-    const run2 = runPayables(api, OFFICE)
+    const run2 = runThisWeeksCycle(api, OFFICE)
     expect(run2.ok && run2.value.totalDisbursed).toBe(10)
     const leg = (api.getState().billing.ledger[p.id] as BookingLedgerPair).payable!
     expect(api.getState().xero.accPays[leg.xeroAccPayId!]!.amountDisbursed).toBe(leg.disbursedAmount)
@@ -389,7 +391,10 @@ describe('payables are computed from the ledger (work item 7)', () => {
   it('the run never pays the AA Holding account; the seeded prepayment, once transferred, is paid to the anaesthetist who did the List', () => {
     const api = createAppStore()
     expect(payablesDue(api.getState()).count).toBe(0)
-    expect((runPayables(api, OFFICE) as { ok: true; value: { disbursedCount: number } }).value.disbursedCount).toBe(0)
+    // (catch-up Phase 39a: nothing is due, so the weekly cycle is refused and nothing is disbursed.)
+    const before = Object.keys(api.getState().billing.disbursements).length
+    expect(runThisWeeksCycle(api, OFFICE)).toMatchObject({ ok: false, code: 'nothingDue' })
+    expect(Object.keys(api.getState().billing.disbursements)).toHaveLength(before)
   })
 })
 

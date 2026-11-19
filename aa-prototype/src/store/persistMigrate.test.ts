@@ -1214,7 +1214,7 @@ describe('the Wave 4 join (v69: Lane A 39 at v68 joined with Lane B 43 at v67)',
   afterEach(() => localStorage.clear())
 
   it('discards a v68 store from either lane, and reseeds both the raw rows and the credit slices', () => {
-    expect(PERSIST_VERSION).toBe(69)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(69)
     const fresh = freshAppState()
     const rows = Object.fromEntries(Object.entries(fresh.intake.rows).map(([id, r]) => { const { raw: _raw, ...rest } = r; return [id, rest] }))
     const { creditNotes: _c, negativeInvoices: _n, ...billing } = fresh.billing
@@ -1226,3 +1226,28 @@ describe('the Wave 4 join (v69: Lane A 39 at v68 joined with Lane B 43 at v67)',
   })
 })
 
+
+describe('catch-up Phase 39a (v70): the weekly payment cycle', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v69 store without the payment runs and bank download, and reseeds them', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(70)
+    const fresh = freshAppState()
+    const { payablesRuns: _r, bankLines: _b, ...billing } = fresh.billing
+    const { creditAllocations: _a, batchPayments: _p, ...xero } = fresh.xero
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing, xero }, version: 69 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.keys(s.billing.payablesRuns).length).toBeGreaterThan(0)
+    expect(Object.keys(s.billing.bankLines).length).toBeGreaterThan(0)
+    expect(s.appSettings.paymentCycle).toEqual({ weekIdentity: 'isoWeek', closeWeekday: 5, checkWeekday: 1, scheduleWeekday: 2 })
+    expect(Object.values(s.billing.disbursements).every((d) => s.billing.payablesRuns[d.payablesRunId] !== undefined)).toBe(true)
+  })
+
+  it('two fresh seeds deep-equal, backdrop runs included', () => {
+    expect(freshAppState()).toEqual(freshAppState())
+  })
+})

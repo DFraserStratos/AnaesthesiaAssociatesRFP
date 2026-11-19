@@ -1,6 +1,7 @@
 /**
  * The Ledger's demo bodies (catch-up Phase 36): the "Inject unmatched receipt"
- * trigger and the PWA's "Office runs payables" stand-in. Badged demo-only on
+ * trigger and the PWA's "Office runs this week's payment cycle" stand-in
+ * (39a). Badged demo-only on
  * their surfaces; each acts through the product's own store actions.
  */
 
@@ -9,7 +10,8 @@ import { drSurname, formatCurrency } from '../shared/format'
 import type { AppState, AppStoreApi } from './appStore'
 import { OFFICE_SIMULATION_ACTOR } from './demoActors'
 import { anaesthetistLedgerPosition, heldUnmatchedReceipts } from './ledgerSelectors'
-import { runPayables } from './payablesActions'
+import { OFFICE_CYCLE_COPY, officeRunsCycleRefusal, runThisWeeksCycle } from './payablesActions'
+import { paymentWeekFor } from './paymentCycleActions'
 import { recordUnmatchedReceipt } from './paymentActions'
 import { ok, refuse, type Outcome } from './mutate'
 
@@ -52,22 +54,32 @@ export function injectUnmatchedReceipt(api: AppStoreApi, choiceId: string | unde
   })
 }
 
-/** The PWA stand-in's refusal: nothing due to the persona's anaesthetist. */
-export function officeRunsPayablesRefusal(state: Pick<AppState, 'billing'>, anaesthetistId: string = ANAE.souter): string | null {
-  return anaesthetistLedgerPosition(state, anaesthetistId).dueNow > 0 ? null : 'Nothing due to pay out'
+/**
+ * The PWA stand-in's refusal (catch-up Phase 39a): nothing due to the
+ * persona's anaesthetist, or the week's close raised an anomaly only the
+ * office can sort out.
+ */
+export function officeRunsWeeksCycleRefusal(state: Pick<AppState, 'billing' | 'xero' | 'masters' | 'schedule' | 'clock' | 'appSettings'>, anaesthetistId: string = ANAE.souter): string | null {
+  const cycle = officeRunsCycleRefusal(state)
+  if (cycle === OFFICE_CYCLE_COPY.anomaly) return cycle
+  return anaesthetistLedgerPosition(state, anaesthetistId).dueNow > 0 && cycle === null ? null : OFFICE_CYCLE_COPY.nothingDue
 }
 
 /**
- * Stands in for the office running the payables in Xero, for the phone's
- * anaesthetist only (catch-up Phase 37: the same simulated Xero payables run as
- * the Billing monitor's button; the payment is made in Xero and recorded here
- * when Xero reports it).
+ * Stands in for the office running this week's payment cycle (catch-up Phase
+ * 39a): close the week, approve its BCTIs, send the schedule, and the
+ * accountant pays it in Xero; the engine records each payment when Xero
+ * reports it. The message names the week and what Dr Souter was paid.
  */
-export function officeRunsPayables(api: AppStoreApi, anaesthetistId: string = ANAE.souter): Outcome<{ message: string }> {
-  const refusal = officeRunsPayablesRefusal(api.getState(), anaesthetistId)
-  if (refusal !== null) return refuse('nothingDue', refusal)
-  const out = runPayables(api, OFFICE_SIMULATION_ACTOR, { anaesthetistId })
+export function officeRunsWeeksCycle(api: AppStoreApi, anaesthetistId: string = ANAE.souter): Outcome<{ message: string }> {
+  const refusal = officeRunsWeeksCycleRefusal(api.getState(), anaesthetistId)
+  if (refusal !== null) return refuse(refusal === OFFICE_CYCLE_COPY.anomaly ? 'anomaliesOpen' : 'nothingDue', refusal)
+  const before = anaesthetistLedgerPosition(api.getState(), anaesthetistId).paidOut
+  const out = runThisWeeksCycle(api, OFFICE_SIMULATION_ACTOR)
   if (!out.ok) return out
-  const name = drSurname(api.getState().masters.anaesthetists[anaesthetistId]?.name ?? anaesthetistId)
-  return ok({ message: `The office paid ${formatCurrency(out.value.totalPaid)} to ${name} in Xero, and the Billing Engine recorded it from Xero's bill-paid webhook. Paid out rises by it; it leaves Outstanding and shows under GST this month.` })
+  const state = api.getState()
+  const paid = Math.round((anaesthetistLedgerPosition(state, anaesthetistId).paidOut - before) * 100) / 100
+  const name = drSurname(state.masters.anaesthetists[anaesthetistId]?.name ?? anaesthetistId)
+  const week = paymentWeekFor(state, out.value.payablesRunId) ?? 'this week'
+  return ok({ message: `The office ran ${week}'s payment cycle and the accountant paid it in Xero: ${formatCurrency(paid)} to ${name}, recorded from Xero's bill-paid webhook. Paid out rises by it; it leaves Outstanding and shows under GST this month.` })
 }

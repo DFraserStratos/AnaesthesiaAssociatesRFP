@@ -11,7 +11,7 @@ import { createAppStore, type AppState, type BoundAppStore } from './appStore'
 import { authoriseList, submitList } from './lifecycle'
 import { wireBillingRun } from './billingRun'
 import { deliverPaymentWebhook, receivePayment } from './paymentActions'
-import { disbursePayable, payablesDue, runPayables } from './payablesActions'
+import { approveAndPayPairForDemo, disbursePayable, payablesDue, runPayables, runThisWeeksCycle } from './payablesActions'
 import { correctionQueuedFor, handoffQueuedFor, ledgerPositionOf, openXeroDivergences, pairForInvoice } from './ledgerSelectors'
 import { approveProcedureEvent, liveInvoiceForProcedure, runEventInvoicing } from './procedureEventActions'
 import { submitCredit, type CreditInput } from './creditActions'
@@ -188,20 +188,26 @@ describe('the guards on a credited invoice', () => {
     const pair = pairForInvoice(api.getState(), original.id)!
     receivePayment(api, { accRecId: pair.receivable.xeroAccRecId!, amount: original.total, idempotencyKey: 'full', source: 'webhook' })
     // Paid in full and paid out by the payables run: the credit leaves the whole payable to net.
-    expect(runPayables(api, OFFICE, { anaesthetistId: ANAE.sharma }).ok).toBe(true)
+    // (catch-up Phase 39a: paid out as an approved one-line run for this pair, paid in Xero.)
+    const paidOut = approveAndPayPairForDemo(api, OFFICE, pair.id)
+    expect(paidOut.ok).toBe(true)
+    const paidRunId = paidOut.ok ? paidOut.value.payablesRunId! : ''
     submitAndApprove({ invoiceId: original.id, reason: 'Wrong amount', cause: 'correction', replacements: [] })
     const out = run()
     const negativeId = api.getState().billing.creditNotes[out.creditNoteIds[0]!]!.negativeInvoiceId!
     const negative = structuredClone(api.getState().billing.negativeInvoices[negativeId]!)
     expect(negative.status).toBe('toNet')
-    // runPayables does not net it (Phase 39a does): no negative leg reaches what is due.
+    // No negative leg reaches what is due on the pair.
     const due = payablesDue(api.getState(), { only: [pair.id] })
     expect([due.count, due.total]).toEqual([0, 0])
     const ledgerBefore = structuredClone(api.getState().billing.ledger[pair.id])
-    expect(runPayables(api, OFFICE).ok).toBe(true)
-    expect(disbursePayable(api, OFFICE, pair.id)).toMatchObject({ ok: true, value: { billsPaid: 0 } })
+    // (catch-up Phase 39a: each payout path is refused rather than paying nothing; the reversed payable is never paid.)
+    expect(runPayables(api, OFFICE)).toMatchObject({ ok: false, code: 'nothingScheduled' })
+    expect(runThisWeeksCycle(api, OFFICE)).toMatchObject({ ok: false, code: 'nothingDue' })
+    expect(disbursePayable(api, OFFICE, pair.id)).toMatchObject({ ok: false, code: 'notApproved' })
+    expect(approveAndPayPairForDemo(api, OFFICE, pair.id)).toMatchObject({ ok: false, code: 'nothingToApprove' })
     const accPayId = pair.payable!.xeroAccPayId!
-    expect(payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId }], { webhook: 'deliver' })).toMatchObject({ ok: true, value: { paid: [] } })
+    expect(payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId }], { webhook: 'deliver', runId: paidRunId })).toMatchObject({ ok: false, code: 'notApproved' })
     expect(api.getState().billing.ledger[pair.id]).toEqual(ledgerBefore)
     expect(api.getState().billing.negativeInvoices[negativeId]).toEqual(negative)
     expect(ledgerPositionOf(api.getState()).imbalance).toBe(0)

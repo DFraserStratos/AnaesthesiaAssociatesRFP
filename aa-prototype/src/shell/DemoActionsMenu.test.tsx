@@ -25,11 +25,11 @@ describe('DemoActionsMenu', () => {
 
   it('lists the Billing monitor entries, runs one, and closes on Escape', () => {
     renderAt('/admin/billing')
-    const pill = screen.getByRole('button', { name: /Demo actions for this screen, 8/ })
+    const pill = screen.getByRole('button', { name: /Demo actions for this screen, 10/ })
     fireEvent.click(pill)
     const dialog = screen.getByRole('dialog')
     expect(dialog).toBeInTheDocument()
-    for (const label of ['Trigger billing failure', 'Arm handoff failure', 'Simulate Xero outage', 'Restore Xero', 'Run reconciliation poll', 'Run archive job', 'Run the next billing run', 'Stage refund after payout']) {
+    for (const label of ['Trigger billing failure', 'Arm handoff failure', 'Simulate Xero outage', 'Restore Xero', 'Run reconciliation poll', 'Run archive job', 'Run the next billing run', 'Stage refund after payout', 'Stage a payment week', 'Stage a bank mismatch']) {
       expect(screen.getByText(label)).toBeInTheDocument()
     }
     const row = document.querySelector('[data-shot="demo-action-arm-handoff-fault"]')

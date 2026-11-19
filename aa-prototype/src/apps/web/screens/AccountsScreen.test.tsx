@@ -5,8 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ANAE, SEED_LIST_IDS } from '../../../domain/seed'
 import {
   anaesthetistLedgerPosition,
+  approveAndPayPairForDemo,
   authoriseList,
-  disbursePayable,
   freshAppState,
   receivePayment,
   useAppStore,
@@ -96,8 +96,8 @@ describe('Accounts payment history', () => {
   it('keeps the paid S3 invoice visible with what was received, released and paid to you', () => {
     const pair = s3()
     payInFull(pair)
-    // Paid out by its ledger pair (catch-up Phase 36: the payable is the pair's leg).
-    expect(disbursePayable(useAppStore, OFFICE, pair.ledger.pairId ?? '').ok).toBe(true)
+    // Paid out by its ledger pair (catch-up Phase 36: the payable is the pair's leg), as an approved one-line run (39a).
+    expect(approveAndPayPairForDemo(useAppStore, OFFICE, pair.ledger.pairId ?? '').ok).toBe(true)
 
     renderIn(<AccountsScreen anaesthetistId={ANAE.souter} subTab="payments" onSubTab={() => undefined} focusInvoiceNumber="AA-2026-0005" />)
 
@@ -153,7 +153,7 @@ describe('the monthly GST report (US-12.2.2, cash basis)', () => {
     act(() => payInFull(pair))
     expect(screen.queryAllByTestId(/^gst-report-row-/).length).toBe(before)
     expect(document.querySelector('[data-shot="web-gst-not-yet-paid"]')).toHaveTextContent(/collected by AA is not yet paid to you\. It falls into the month AA pays it in\./)
-    act(() => { expect(disbursePayable(useAppStore, OFFICE, pair.ledger.pairId ?? '').ok).toBe(true) })
+    act(() => { expect(approveAndPayPairForDemo(useAppStore, OFFICE, pair.ledger.pairId ?? '').ok).toBe(true) })
     expect(screen.getByTestId('gst-report-row-AA-2026-0005')).toHaveTextContent('$152.38')
   })
 

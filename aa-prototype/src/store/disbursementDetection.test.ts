@@ -9,14 +9,14 @@ import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList } from './lifecycle'
 import { wireBillingRun } from './billingRun'
 import { receivePayment } from './paymentActions'
-import { runPayables } from './payablesActions'
+import { approveAndPayPairForDemo, disbursePayable, runThisWeeksCycle } from './payablesActions'
 import { runReconciliationPoll } from './reconciliationPoll'
 import { recordDisbursement } from './disbursementDetection'
 import { payBillsInXero, XERO_PAYABLES_ACTOR } from './xeroSimActions'
 import { setXeroOutage, wireXeroQueue } from './xeroQueue'
 import { advanceClockMinutes } from './clockActions'
 import { anaesthetistsOutOfBalanceOf, ledgerPositionOf, pairsForList } from './ledgerSelectors'
-import { DEMO_TRIGGER_ACTOR, OFFICE_ACTOR } from './demoActors'
+import { DEMO_TRIGGER_ACTOR, OFFICE_ACTOR, OFFICE_SIMULATION_ACTOR } from './demoActors'
 import { ANAE } from '../domain/seed'
 import { projectedListId } from '../domain/slots'
 import { roundToCents, toCents } from '../domain/billing/money'
@@ -59,8 +59,9 @@ function conserved(api: BoundAppStore): void {
 describe('detecting a bill paid in Xero (work item 8)', () => {
   it('the webhook delivered: Xero pays, the engine records it once', () => {
     const { api, pair, accPayId } = paidIn()
-    const out = payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId }], { webhook: 'deliver' })
-    expect(out.ok && out.value.recordedCount).toBe(1)
+    // (catch-up Phase 39a: one bill is paid as a one-line approved run, paid in Xero.)
+    const out = approveAndPayPairForDemo(api, OFFICE_SIMULATION_ACTOR, pair.id, { webhook: 'deliver' })
+    expect(out.ok && out.value.disbursedCount).toBe(1)
     expect(legOf(api, pair.id)!.disbursedAmount).toBe(pair.receivable.amount)
     expect(legOf(api, pair.id)!.paidOutAtISO).toBeDefined()
     const lds = Object.values(api.getState().billing.disbursements).filter((d) => d.pairId === pair.id)
@@ -72,7 +73,7 @@ describe('detecting a bill paid in Xero (work item 8)', () => {
 
   it('the webhook missed: Xero shows paid, the engine shows released until the poll, which records it once at the payment date', () => {
     const { api, pair, accPayId } = paidIn()
-    payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId }], { webhook: 'missed' })
+    expect(approveAndPayPairForDemo(api, OFFICE_SIMULATION_ACTOR, pair.id, { webhook: 'missed' }).ok).toBe(true)
     expect(api.getState().xero.accPays[accPayId]!.status).toBe('paid')
     expect(legOf(api, pair.id)!.disbursedAmount).toBe(0)
     expect(legOf(api, pair.id)!.releasedAmount).toBe(pair.receivable.amount)
@@ -91,12 +92,15 @@ describe('detecting a bill paid in Xero (work item 8)', () => {
   it('part then balance: each payment disburses exactly its increment and never more than released', () => {
     const { api, pair, accPayId } = paidIn(0.5)
     const half = roundToCents(pair.receivable.amount * 0.5)
-    payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId }], { webhook: 'deliver' })
+    expect(approveAndPayPairForDemo(api, OFFICE_SIMULATION_ACTOR, pair.id, { webhook: 'deliver' })).toMatchObject({ ok: true, value: { totalDisbursed: half } })
     expect(legOf(api, pair.id)!.disbursedAmount).toBe(half)
-    // Nothing more authorised: a second run pays nothing.
-    expect(payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId }], { webhook: 'deliver' })).toMatchObject({ ok: true, value: { paid: [] } })
-    receivePayment(api, { accRecId: pair.receivable.xeroAccRecId!, amount: roundToCents(pair.receivable.amount - half), idempotencyKey: 'PAY-REST', source: 'webhook' })
-    payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId }], { webhook: 'deliver' })
+    // Nothing more authorised: a second run is refused, nothing paid twice.
+    expect(approveAndPayPairForDemo(api, OFFICE_SIMULATION_ACTOR, pair.id, { webhook: 'deliver' })).toMatchObject({ ok: false, code: 'nothingToApprove' })
+    expect(legOf(api, pair.id)!.disbursedAmount).toBe(half)
+    const rest = roundToCents(pair.receivable.amount - half)
+    receivePayment(api, { accRecId: pair.receivable.xeroAccRecId!, amount: rest, idempotencyKey: 'PAY-REST', source: 'webhook' })
+    // A new staged run pays exactly the rest.
+    expect(approveAndPayPairForDemo(api, OFFICE_SIMULATION_ACTOR, pair.id, { webhook: 'deliver' })).toMatchObject({ ok: true, value: { totalDisbursed: rest } })
     expect(legOf(api, pair.id)!.disbursedAmount).toBe(pair.receivable.amount)
     // An amount above what is released is refused.
     expect(recordDisbursement(api, { accPayId, xeroDisbursementId: 'DSBX', amount: 1, atISO: '2026-07-21T09:00:00', idempotencyKey: 'BILLPAY-X', detectedBy: 'webhook', payablesRunId: 'PRX' })).toMatchObject({ ok: false, code: 'aboveReleased' })
@@ -104,10 +108,10 @@ describe('detecting a bill paid in Xero (work item 8)', () => {
   })
 
   it('an outage queues the disbursement sync; the restore records it once', () => {
-    const { api, pair, accPayId } = paidIn()
+    const { api, pair } = paidIn()
     setXeroOutage(api, DEMO_TRIGGER_ACTOR, true)
-    const out = payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId }], { webhook: 'deliver' })
-    expect(out.ok && out.value.paid[0]!.queued).toBe(true)
+    const out = approveAndPayPairForDemo(api, OFFICE_SIMULATION_ACTOR, pair.id, { webhook: 'deliver' })
+    expect(out.ok && out.value.queued).toBe(1)
     expect(legOf(api, pair.id)!.disbursedAmount).toBe(0)
     setXeroOutage(api, DEMO_TRIGGER_ACTOR, false)
     expect(Object.values(api.getState().billing.disbursements).filter((d) => d.pairId === pair.id)).toHaveLength(1)
@@ -118,11 +122,17 @@ describe('detecting a bill paid in Xero (work item 8)', () => {
   it('"Run payables in Xero" pays every released leg in Xero and records each; the AA Holding account is never paid', () => {
     const { api } = paidIn()
     const holdingAccPay = Object.values(api.getState().xero.accPays).find((p) => p.payeeAccount === 'aaHoldingAccount')!
-    const out = runPayables(api, OFFICE_ACTOR)
+    // (catch-up Phase 39a: the office's weekly cycle; Xero pays its approved, scheduled run.)
+    const out = runThisWeeksCycle(api, OFFICE_ACTOR)
     expect(out.ok && out.value.billsPaid).toBeGreaterThan(0)
     expect(out.ok && out.value.disbursedCount).toBe(out.ok ? out.value.billsPaid : -1)
     expect(Object.values(api.getState().xero.disbursements).some((d) => d.accPayId === holdingAccPay.id)).toBe(false)
-    expect(payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId: holdingAccPay.id }], { webhook: 'deliver' })).toMatchObject({ ok: true, value: { paid: [] } })
+    // The holding bill is never a line of the run, so Xero is refused it; a single payout of it is refused too.
+    expect(payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId: holdingAccPay.id }], { webhook: 'deliver', runId: out.ok ? out.value.payablesRunId! : '' })).toMatchObject({ ok: false, code: 'notApproved' })
+    const holdingPair = Object.values(api.getState().billing.ledger).find((p) => isBookingPair(p) && p.payable?.xeroAccPayId === holdingAccPay.id)!
+    expect(disbursePayable(api, OFFICE_SIMULATION_ACTOR, holdingPair.id)).toMatchObject({ ok: false, code: 'holdingSystemOnly' })
+    expect(approveAndPayPairForDemo(api, OFFICE_SIMULATION_ACTOR, holdingPair.id)).toMatchObject({ ok: false, code: 'holdingSystemOnly' })
+    expect(Object.values(api.getState().xero.disbursements).some((d) => d.accPayId === holdingAccPay.id)).toBe(false)
     conserved(api)
   })
 })

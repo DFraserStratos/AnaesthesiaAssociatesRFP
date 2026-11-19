@@ -14,11 +14,12 @@
  */
 
 import { idempotencyKeysOf } from './indexes'
-import type { LedgerDisbursement, PayableLeg } from '../domain/types'
-import { toCents } from '../domain/billing/money'
-import { applyDisbursement, isBookingPair, payeeAnaesthetistOf } from '../domain/billing/ledger'
+import type { BookingLedgerPair, LedgerDisbursement, NegativeInvoice, PayableLeg } from '../domain/types'
+import { roundToCents, toCents } from '../domain/billing/money'
+import { applyDisbursement, applyOffset, isBookingPair, payeeAnaesthetistOf, settledOn } from '../domain/billing/ledger'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
+import { completeRunsIn } from './paymentCycleActions'
 
 /** Who tells the engine a bill was paid (both audit source system). */
 export const DETECTION_ACTOR: Record<'webhook' | 'poll', Actor> = {
@@ -107,7 +108,7 @@ export function recordDisbursement(api: AppStoreApi, input: RecordDisbursementIn
       idempotencyKey: input.idempotencyKey,
       detectedBy: input.detectedBy,
     }
-    const fullyPaidOut = toCents(leg.disbursedAmount) >= toCents(leg.amount)
+    const fullyPaidOut = toCents(settledOn(leg)) >= toCents(leg.amount)
     metas.push({
       entityType: 'ledgerPair',
       entityId: ref.collectPairId ?? ref.id,
@@ -118,7 +119,91 @@ export function recordDisbursement(api: AppStoreApi, input: RecordDisbursementIn
       ref.kind === 'pair'
         ? { ...s.billing, ledger: { ...s.billing.ledger, [ref.id]: { ...s.billing.ledger[ref.id]!, payable: leg } as AppState['billing']['ledger'][string] } }
         : { ...s.billing, transfers: { ...s.billing.transfers, [ref.id]: { ...s.billing.transfers[ref.id]!, in: leg } } }
-    return { billing: { ...billing, disbursements: { ...billing.disbursements, [entry.id]: entry } }, counters: allocated.counters }
+    const withEntry = { ...billing, disbursements: { ...billing.disbursements, [entry.id]: entry } }
+    // The run completes in the detection that settles its last unheld line (catch-up Phase 39a).
+    const done = completeRunsIn(withEntry, input.atISO)
+    metas.push(...done.metas)
+    return { billing: { ...withEntry, payablesRuns: done.payablesRuns }, counters: allocated.counters }
   })
   return ok({ applied: ledgerDisbursementId !== undefined, ...(ledgerDisbursementId !== undefined ? { ledgerDisbursementId } : {}) })
+}
+
+// ---------------------------------------------------------------------------
+// Netting detected from Xero (catch-up Phase 39a; US-10.2.5)
+// ---------------------------------------------------------------------------
+
+export interface RecordOffsetInput {
+  /** The bill (ACCPAY) the credit was allocated against. */
+  accPayId: string
+  /** The ACCPAYCREDIT allocated (the negative invoice's `accPayCreditNoteId`). */
+  accPayCreditId: string
+  xeroAllocationId: string
+  amount: number
+  atISO: string
+  /** `CNALLOC-<id>`. */
+  idempotencyKey: string
+  detectedBy: 'webhook' | 'poll'
+  payablesRunId: string
+}
+
+/** Whether the ledger already holds a netting with this allocation's key. */
+export function offsetKeySeen(state: Pick<AppState, 'billing'>, key: string): boolean {
+  for (const n of Object.values(state.billing.negativeInvoices)) if ((n.nettings ?? []).some((x) => x.idempotencyKey === key)) return true
+  return false
+}
+
+/**
+ * Record one credit allocation Xero made in a payment run: the bill's
+ * `offsetAmount` rises (never cash, so receipts held stay true), the negative
+ * invoice gains the netting (and `netted` once its open amount reaches zero)
+ * and the credited pair's `credit.nettedAmount` moves in step, in one mutate
+ * audited `ledger.offsetRecorded`. Idempotent by the `CNALLOC-` key, so the
+ * webhook, the poll and the queue each record it once.
+ */
+export function recordOffset(api: AppStoreApi, input: RecordOffsetInput): Outcome<{ applied: boolean }> {
+  const state = api.getState()
+  if (offsetKeySeen(state, input.idempotencyKey)) return ok({ applied: false })
+  const bill = Object.values(state.billing.ledger).find((p): p is BookingLedgerPair => isBookingPair(p) && p.payable?.xeroAccPayId === input.accPayId)
+  if (bill === undefined || bill.payable === undefined) return refuse('unknownPayable', 'No payable in the ledger matches this credit allocation.')
+  const negative = Object.values(state.billing.negativeInvoices).find((n) => n.accPayCreditNoteId === input.accPayCreditId)
+  if (negative === undefined) return refuse('unknownNegative', 'No negative invoice matches this credit allocation.')
+  const credited = state.billing.ledger[negative.pairId]
+  if (credited === undefined || !isBookingPair(credited) || credited.credit === undefined) return refuse('unknownNegative', 'The credited invoice is not in the ledger.')
+  const open = roundToCents(negative.recoveryDue - (negative.nettings ?? []).reduce((n, x) => n + x.amount, 0))
+  if (toCents(input.amount) > toCents(open)) return refuse('aboveOpen', 'The allocation is more than the negative invoice has left to net.')
+  const moved = applyOffset(bill.payable, input.amount, input.atISO)
+  if (!moved.ok) return refuse(moved.code, moved.code === 'aboveReleased' ? 'The allocation is more than the payable has released.' : 'The allocation cannot be recorded.')
+
+  let applied = false
+  const metas: MutationMeta[] = []
+  mutate(api, DETECTION_ACTOR[input.detectedBy], metas, (s) => {
+    if (offsetKeySeen(s, input.idempotencyKey)) {
+      metas.push({ entityType: 'ledgerPair', entityId: bill.id, action: 'ledger.offsetNoop', after: { idempotencyKey: input.idempotencyKey } })
+      return {}
+    }
+    applied = true
+    const neg = s.billing.negativeInvoices[negative.id]!
+    const nettings = [...(neg.nettings ?? []), { runId: input.payablesRunId, pairId: bill.id, amount: input.amount, atISO: input.atISO, idempotencyKey: input.idempotencyKey, xeroAllocationId: input.xeroAllocationId }]
+    const nettedTotal = roundToCents(nettings.reduce((n, x) => n + x.amount, 0))
+    const status: NegativeInvoice['status'] = toCents(nettedTotal) >= toCents(neg.recoveryDue) ? 'netted' : 'toNet'
+    const creditedNow = s.billing.ledger[negative.pairId] as BookingLedgerPair
+    const billNow = s.billing.ledger[bill.id] as BookingLedgerPair
+    // When the bill IS the credited pair (never: a credited payable takes no offset) the two writes would collide; applyOffset refuses a reversed leg.
+    const ledger = {
+      ...s.billing.ledger,
+      [bill.id]: { ...billNow, payable: moved.leg },
+      [negative.pairId]: { ...creditedNow, credit: { ...creditedNow.credit!, nettedAmount: nettedTotal } },
+    }
+    metas.push({
+      entityType: 'ledgerPair',
+      entityId: bill.id,
+      action: 'ledger.offsetRecorded',
+      after: { negativeInvoice: neg.number, amount: input.amount, offsetCumulative: moved.leg.offsetAmount, payablesRunId: input.payablesRunId, nettedCumulative: nettedTotal, negativeStatus: status, detectedBy: input.detectedBy },
+    })
+    const billing = { ...s.billing, ledger, negativeInvoices: { ...s.billing.negativeInvoices, [neg.id]: { ...neg, nettings, status } } }
+    const done = completeRunsIn(billing, input.atISO)
+    metas.push(...done.metas)
+    return { billing: { ...billing, payablesRuns: done.payablesRuns } }
+  })
+  return ok({ applied })
 }

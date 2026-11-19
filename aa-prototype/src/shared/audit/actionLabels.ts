@@ -280,6 +280,20 @@ export const ACTION_LABELS: Record<string, string> = {
   'ledger.receiptNoop': 'Receipt already recorded',
   'ledger.disbursed': 'Paid out to the anaesthetist',
   'ledger.disburseNoop': 'Nothing to pay out',
+  // Catch-up Phase 39a: the weekly payment cycle, netting and Xero's batch payments.
+  'payments.weekClosed': 'Week closed for payment',
+  'payments.lineHeldOut': 'Held out of this payment run',
+  'payments.holdReleased': 'Returned to the payment run',
+  'payments.anomalyFixed': 'Payment anomaly marked fixed',
+  'payables.runApproved': "Week's BCTIs approved for payment",
+  'payments.scheduleSent': 'Payment schedule sent to the accountant',
+  'payments.runSuperseded': 'Payment run superseded',
+  'payables.runSentToXero': 'Payment run paid in Xero',
+  'payables.runPaid': 'Payment run paid',
+  'ledger.offsetRecorded': 'Negative invoice netted',
+  'ledger.offsetNoop': 'Netting already recorded',
+  'xero.creditAllocated': 'Credit allocated against a bill in Xero',
+  'xero.batchPaid': 'Batch payment made in Xero',
   'ledger.unmatchedReceipt': 'Receipt with no matching invoice',
   'ledger.unmatchedAllocated': 'Unmatched receipt allocated',
   'ledger.unmatchedRefunded': 'Unmatched receipt refunded',
@@ -295,6 +309,9 @@ export const ACTION_LABELS: Record<string, string> = {
   'settings.archiveWindow': 'Archive window changed',
   'settings.armHandoffFault': 'Handoff fault armed',
   'demo.bctisSeeded': 'A month of BCTIs seeded',
+  // Catch-up Phase 39a: the payment cycle's staging.
+  'demo.paymentWeekStaged': 'Payment week staged',
+  'demo.bankLineRemoved': 'Bank download line removed',
   // Catch-up Phase 43: the full-scale data's load entry.
   'demo.fullScaleLoaded': 'Full-scale data loaded',
 

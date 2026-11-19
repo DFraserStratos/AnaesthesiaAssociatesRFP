@@ -35,6 +35,12 @@ export const AUDIT_VIEWER_EXCLUDED: readonly string[] = [
   'xero.bankLineUnmatched',
   // AA's monthly fee paid by the anaesthetist (catch-up Phase 16).
   'aaFee.paymentRecorded',
+  // A payment run's money (catch-up Phase 39a): the credit netted in Xero, the batch payment, and the engine's record of
+  // the netting. The run's office steps (close, holds, approval, the schedule) are decisions and stay audited.
+  'xero.creditAllocated',
+  'xero.batchPaid',
+  'ledger.offsetRecorded',
+  'ledger.offsetNoop',
 ]
 
 const EXCLUDED = new Set(AUDIT_VIEWER_EXCLUDED)

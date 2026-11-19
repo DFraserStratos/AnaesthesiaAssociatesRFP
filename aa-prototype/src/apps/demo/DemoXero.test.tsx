@@ -13,6 +13,7 @@ import {
   receiveBulkRemittance,
   runReconciliationPoll,
   setXeroOutage,
+  stagePairRun,
   useAppStore,
   voidAccRecInXero,
   wireBillingRun,
@@ -174,7 +175,11 @@ describe('DemoXero mirror resilience (catch-up Phase 37)', () => {
   it('separates Paid in Xero from the engine: a missed webhook is not yet detected until the poll records it', () => {
     const nib = stageNibPair()
     expect(deliverPaymentWebhook(useAppStore, { accRecId: nib.accRecId, amount: nib.balance, idempotencyKey: 'TEST-NIB-PAY' }).ok).toBe(true)
-    const paid = payBillsInXero(useAppStore, XERO_PAYABLES_ACTOR, [{ accPayId: nib.accPayId }], { webhook: 'missed' })
+    // (catch-up Phase 39a: Xero pays only a run's lines; stage a one-line approved run for this pair first.)
+    const pair = Object.values(useAppStore.getState().billing.ledger).find((p) => p.kind !== 'aaFee' && p.payable?.xeroAccPayId === nib.accPayId)!
+    const staged = stagePairRun(useAppStore, OFFICE, pair.id)
+    if (!staged.ok) throw new Error(staged.message)
+    const paid = payBillsInXero(useAppStore, XERO_PAYABLES_ACTOR, [{ accPayId: nib.accPayId }], { webhook: 'missed', runId: staged.value.runId })
     if (!paid.ok) throw new Error(paid.message)
     expect(paid.value.paid).toHaveLength(1)
     const billPaymentId = paid.value.paid[0]!.xeroDisbursementId

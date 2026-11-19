@@ -51,6 +51,10 @@ import type {
   XeroCreditNote,
   CreditNote,
   NegativeInvoice,
+  PayablesRun,
+  BankLine,
+  XeroCreditAllocation,
+  XeroBatchPayment,
   XeroContact,
   XeroDivergence,
   XeroJournal,
@@ -118,6 +122,10 @@ export interface BillingSlice {
   creditNotes: Record<string, CreditNote>
   /** Negative invoices to anaesthetists reversing a credited payable (catch-up Phase 39; DM-25). */
   negativeInvoices: Record<string, NegativeInvoice>
+  /** Weekly payment runs and the demo's one-line staged runs (catch-up Phase 39a; US-10.2.7, DM-25). */
+  payablesRuns: Record<string, PayablesRun>
+  /** The simulated bank download the week's close reconciles against (catch-up Phase 39a). */
+  bankLines: Record<string, BankLine>
 }
 
 export interface XeroSlice {
@@ -133,6 +141,10 @@ export interface XeroSlice {
   bankLines: Record<string, XeroBankLine>
   /** ACCRECCREDIT and ACCPAYCREDIT records made by the engine's corrections (catch-up Phase 39). */
   creditNotes: Record<string, XeroCreditNote>
+  /** ACCPAYCREDIT allocations against bills, made by a payment run's netting (catch-up Phase 39a). */
+  creditAllocations: Record<string, XeroCreditAllocation>
+  /** One payment per anaesthetist per run, for the net (catch-up Phase 39a). */
+  batchPayments: Record<string, XeroBatchPayment>
 }
 
 export interface IntegrationsSlice {
@@ -437,14 +449,19 @@ export const PERSIST_KEY = 'aa-demo'
  *  v68: catch-up Phase 39 session 2, the "Stage combined procedure" trigger's dedicated patient (`PAT_39.combined`,
  *  PT0173 Lorraine Petrie, appended after 25a's; counter `patient` 174). Reseeds on load.
  *  v69: Wave 4 join, Lane A's 39 (v68, holding 38b and the 42 sync) joined with Lane B's 43 (v67): one past the higher.
+ *  Reseeds on load.
+ *  v70 (lane/a): catch-up Phase 39a, the weekly payment cycle: `billing.payablesRuns` (the seed's backdrop weekly runs
+ *  PRH01 to PRH13, Week 29 the newest), `billing.bankLines` (the bank download, one per seeded payment), `xero.creditAllocations`
+ *  and `xero.batchPayments` (the backdrop runs' batch payments), `appSettings.paymentCycle`, the payable leg's `offsetAmount`,
+ *  the negative invoice's `nettings` and `netted` status, the credit's `nettedAmount`; every seeded payout names its run.
  *  Reseeds on load. */
-export const PERSIST_VERSION = 69
+export const PERSIST_VERSION = 70
 
 export function emptyBillingSlice(): BillingSlice {
-  return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {}, creditNotes: {}, negativeInvoices: {} }
+  return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {}, creditNotes: {}, negativeInvoices: {}, payablesRuns: {}, bankLines: {} }
 }
 export function emptyXeroSlice(): XeroSlice {
-  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {}, creditNotes: {} }
+  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {}, creditNotes: {}, creditAllocations: {}, batchPayments: {} }
 }
 export function emptyIntegrationsSlice(): IntegrationsSlice {
   return { feeds: {}, messages: {} }
@@ -494,6 +511,8 @@ export function freshAppState(): AppState {
       xeroDivergences: {},
       creditNotes: {},
       negativeInvoices: {},
+      payablesRuns: seedBilling.payablesRuns,
+      bankLines: seedBilling.bankLines,
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),

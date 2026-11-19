@@ -22,7 +22,8 @@ import { PrepaymentsRailCard } from '../../../admin/components/PrepaymentsRailCa
 import { PrepaymentApprovalStrip } from '../../../admin/components/PrepaymentApprovalStrip'
 import { HoldingAccountPanel } from '../../../admin/components/HoldingAccountPanel'
 import { ReconciliationCard } from '../../../admin/components/ReconciliationCard'
-import { PayablesPanel, XeroConnectionLine, XeroDivergencePanel, XeroQueuePanel } from '../../../admin/components/XeroPanels'
+import { XeroConnectionLine, XeroDivergencePanel, XeroQueuePanel } from '../../../admin/components/XeroPanels'
+import { PaymentCyclePanel } from '../../../admin/components/PaymentCyclePanel'
 import { NotificationsCard } from '../../../admin/components/NotificationsCard'
 import { ChipMultiSelect } from '../../../admin/components/ChipMultiSelect'
 import { ContactFields, EMPTY_CONTACT, type ContactDraft } from '../../../admin/components/ContactFields'
@@ -452,16 +453,20 @@ export function ReconciliationCardExample() {
   )
 }
 
-/** The Billing monitor's Xero panels on the live seed (catch-up Phase 37): connection, sync queue, changes made in Xero (only when flagged), payables awaiting Xero's run. */
+/** The Billing monitor's Xero panels on the live seed (catch-up Phase 37): connection, sync queue, changes made in Xero (only when flagged). */
 export function XeroPanelsExample() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <XeroConnectionLine />
       <XeroQueuePanel actor={OFFICE_ACTOR} />
       <XeroDivergencePanel actor={OFFICE_ACTOR} />
-      <PayablesPanel actor={OFFICE_ACTOR} />
     </div>
   )
+}
+
+/** The Billing monitor's payment cycle panel on the live seed (catch-up Phase 39a): Week 30 open, nothing waiting, the seeded runs below. */
+export function PaymentCyclePanelExample() {
+  return <PaymentCyclePanel actor={OFFICE_ACTOR} />
 }
 
 /** The Billing monitor's AA Holding account card on the live seed (catch-up Phase 27a): Nair's prepayment held. Read-only. */

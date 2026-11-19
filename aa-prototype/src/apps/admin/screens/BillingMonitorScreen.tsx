@@ -42,7 +42,8 @@ import { creditDetailOf, eventLines } from '../../../domain/billing/procedureEve
 import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, XERO_FLAG_COPY, XERO_FLAG_LABEL, XERO_FLAG_PAYOUT_LABEL, xeroFlagText } from '../../../shared/procedureEventCopy'
 import { correctionQueuedFor } from '../../../store/ledgerSelectors'
 import type { XeroQueueItem } from '../../../domain/types'
-import { PayablesPanel, XeroConnectionLine, XeroDivergencePanel, XeroQueuePanel } from '../components/XeroPanels'
+import { XeroConnectionLine, XeroDivergencePanel, XeroQueuePanel } from '../components/XeroPanels'
+import { PaymentCyclePanel } from '../components/PaymentCyclePanel'
 
 interface BillingMonitorScreenProps {
   actor: Actor
@@ -253,10 +254,10 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
       <div style={{ fontSize: 12.5, color: neutral.slate }}>Lists awaiting approval open in Review, where they are authorised.</div>
       </div>
 
-      {/* The Xero panels (catch-up Phase 37): the sync queue, changes made in Xero, and the payables awaiting Xero's run; the anaesthetist filter narrows them. */}
+      {/* The Xero panels (catch-up Phase 37): the sync queue and changes made in Xero, which the anaesthetist filter narrows; then the weekly payment cycle (catch-up Phase 39a). */}
       <XeroQueuePanel actor={actor} {...(panelAnaesthetist !== undefined ? { anaesthetistId: panelAnaesthetist } : {})} />
       <XeroDivergencePanel actor={actor} {...(panelAnaesthetist !== undefined ? { anaesthetistId: panelAnaesthetist } : {})} />
-      <PayablesPanel actor={actor} {...(panelAnaesthetist !== undefined ? { anaesthetistId: panelAnaesthetist } : {})} />
+      <PaymentCyclePanel actor={actor} />
 
       <EventsAwaitingRunPanel />
 

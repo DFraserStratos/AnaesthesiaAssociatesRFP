@@ -64,7 +64,10 @@ import {
   deliverPaymentWebhook,
   setXeroOutage,
   xeroAvailable,
-  payBillsInXero,
+  disbursePayable,
+  disbursePayableRefusal,
+  PAYMENT_CYCLE_COPY,
+  paymentWeekFor,
   xeroBillPayable,
   voidAccRecInXero,
   bulkRemittanceRefusal,
@@ -180,7 +183,8 @@ import {
   stagedCombined,
 } from '../../store/creditDemo'
 import type { DemoTrigger, DemoTriggerChoice, DemoTriggerCtx, DemoTriggerResult } from './types'
-import { injectUnmatchedReceipt, injectUnmatchedRefusal, officeRunsPayables, officeRunsPayablesRefusal, UNMATCHED_RECEIPT_DEMO } from '../../store/ledgerDemo'
+import { injectUnmatchedReceipt, injectUnmatchedRefusal, officeRunsWeeksCycle, officeRunsWeeksCycleRefusal, UNMATCHED_RECEIPT_DEMO } from '../../store/ledgerDemo'
+import { PAYMENT_WEEK_CHOICES, stageBankMismatch, stageBankMismatchRefusal, stagePaymentWeek, stagePaymentWeekRefusal } from '../../store/paymentWeekDemo'
 import { sessionText } from '../../domain/outOfHours'
 import { isBookingPair } from '../../domain/billing/ledger'
 import { APP_CONFIG } from '../../shell/appConfig'
@@ -482,8 +486,15 @@ function payBillRefusal(state: AppState, accRecId: string | undefined): string |
   if (pair === undefined || pair.kind === 'aaFee' || pair.payable?.xeroAccPayId === undefined) return 'No bill to pay'
   const bill = billOnPair(state, rec.id)
   if (bill === undefined) return 'Held in the AA Holding account until the List is authorised'
-  return xeroBillPayable(state, bill) > 0 ? null : 'Nothing authorised to pay yet'
+  if (xeroBillPayable(state, bill) <= 0) return 'Nothing authorised to pay yet'
+  // The gate (catch-up Phase 39a; US-10.2.6): only an unheld line of a scheduled run, with no negative netted on it.
+  const refusal = disbursePayableRefusal(state, 'transferId' in bill ? bill.transferId : pair.id)
+  if (refusal === PAYMENT_CYCLE_COPY.useRun) return XERO_PAY_BILL_COPY.useRun
+  return refusal !== null ? XERO_PAY_BILL_COPY.notApproved : null
 }
+
+/** The Xero pair's bill-payment trigger's disabled states (catch-up Phase 39a). */
+export const XERO_PAY_BILL_COPY = { notApproved: 'Not in an approved payment run yet', useRun: 'Pay this bill with its run' } as const
 
 /**
  * A replay re-sends a webhook Xero already delivered, so its key must still be
@@ -972,6 +983,38 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return invoice !== undefined ? `/admin/invoices/${invoice.id}` : '/admin/invoices'
     },
   },
+  // ── Admin · Billing monitor: the weekly payment cycle's staging (catch-up Phase 39a) ──
+  {
+    id: 'stage-payment-week',
+    label: 'Stage a payment week',
+    description:
+      "Nineteen of Dr Sharma's invoices, each paid through the ordinary payment webhook, so 19 BCTIs are released into this week's run. The second choice also credits an earlier invoice already paid out to her, leaving a negative invoice to net in the run.",
+    screen: BILLING_MONITOR_SCREEN,
+    routes: [...BILLING_MONITOR],
+    surfaces: ['bar'],
+    choices: () => PAYMENT_WEEK_CHOICES.map((c) => ({ id: c.id, label: c.label })),
+    defaultChoice: () => 'bctis',
+    disabledReason: (state) => stagePaymentWeekRefusal(state),
+    run: (api, _ctx, choiceId) => {
+      const out = stagePaymentWeek(api, DEMO_TRIGGER_ACTOR, choiceId)
+      return out.ok ? { ok: true, message: out.value.message } : { ok: false, message: out.message }
+    },
+    indexPath: () => '/admin/billing',
+  },
+  {
+    id: 'stage-bank-mismatch',
+    label: 'Stage a bank mismatch',
+    description: "Removes one receipt from the simulated bank download (the newest that released a payable in this week's run), so closing the week raises a \"Receipt not on the bank download\" anomaly.",
+    screen: BILLING_MONITOR_SCREEN,
+    routes: [...BILLING_MONITOR],
+    surfaces: ['bar'],
+    disabledReason: (state) => stageBankMismatchRefusal(state),
+    run: (api) => {
+      const out = stageBankMismatch(api, DEMO_TRIGGER_ACTOR)
+      return out.ok ? { ok: true, message: out.value.message } : { ok: false, message: out.message }
+    },
+    indexPath: () => '/admin/billing',
+  },
   // ── Admin · Billing monitor and Invoice: paid in full and paid out, before a credit (catch-up Phase 39) ──
   {
     id: 'stage-refund-after-payout',
@@ -1237,17 +1280,19 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const bill = billOnPair(api.getState(), accRecId)
       if (reason !== null || bill === undefined) return { ok: false, message: reason ?? 'No bill to pay' }
       const missed = choiceId === 'missed'
-      const out = payBillsInXero(api, XERO_PAYABLES_ACTOR, [bill], { webhook: missed ? 'missed' : 'deliver' })
+      const payoutId = 'transferId' in bill ? bill.transferId : pairByAccRec(api.getState(), accRecId!)!.id
+      const out = disbursePayable(api, XERO_PAYABLES_ACTOR, payoutId, { webhook: missed ? 'missed' : 'deliver' })
       if (!out.ok) return { ok: false, message: out.message }
-      const paid = out.value.paid[0]
-      if (paid === undefined) return { ok: false, message: 'Nothing authorised to pay yet' }
+      if (out.value.billsPaid === 0) return { ok: false, message: 'Nothing authorised to pay yet' }
+      const amount = formatCurrency(out.value.totalPaid)
+      const week = paymentWeekFor(api.getState(), out.value.payablesRunId) ?? 'its'
       return {
         ok: true,
         message: missed
-          ? `Paid ${formatCurrency(paid.amount)} in Xero. The webhook was missed, so the engine still shows it released and not disbursed until the next poll.`
-          : paid.queued
-            ? `Paid ${formatCurrency(paid.amount)} in Xero. Xero is unavailable to the engine, so recording the disbursement waits in the sync queue.`
-            : `Paid ${formatCurrency(paid.amount)} in Xero. The bill-paid webhook told the engine, which recorded the disbursement.`,
+          ? `Paid ${amount} in Xero in ${week}'s payment run. The webhook was missed, so the engine still shows it released and not disbursed until the next poll.`
+          : out.value.queued > 0
+            ? `Paid ${amount} in Xero in ${week}'s payment run. Xero is unavailable to the engine, so recording the disbursement waits in the sync queue.`
+            : `Paid ${amount} in Xero in ${week}'s payment run. The bill-paid webhook told the engine, which recorded the disbursement.`,
       }
     },
     indexPath: firstOpenInvoicePath,
@@ -2176,16 +2221,16 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
   // ── Mobile · Balances, installed PWA only ─────────────────────────────
   {
     id: 'pwa-office-runs-payables',
-    label: 'Office runs payables in Xero',
+    label: "Office runs this week's payment cycle",
     description:
-      "Stands in for the office, which has no app on the phone: runs Dr Souter's payables in Xero, paying what is due to her there. The Billing Engine records each payment when Xero reports it, and Balances' Paid out rises by it.",
+      "Stands in for the office, which has no app on the phone: closes this week, approves its BCTIs and sends the payment schedule, and the accountant pays it in Xero. The Billing Engine records each payment when Xero reports it, and Balances' Paid out rises by Dr Souter's share.",
     screen: 'Mobile · Balances',
     routes: ['/mobile/balances'],
     surfaces: ['pwa'],
     badge: 'office-stand-in',
-    disabledReason: (state) => officeRunsPayablesRefusal(state),
+    disabledReason: (state) => officeRunsWeeksCycleRefusal(state),
     run: (api) => {
-      const out = officeRunsPayables(api)
+      const out = officeRunsWeeksCycle(api)
       return out.ok ? { ok: true, message: out.value.message } : { ok: false, message: out.message }
     },
     indexPath: () => null,

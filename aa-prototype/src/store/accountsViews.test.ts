@@ -17,7 +17,7 @@ import { runBillingForList, wireBillingRun } from './billingRun'
 import { handoffListPairs } from './xeroHandoff'
 import { authoriseAsSimulatedOffice } from './officeStandIn'
 import { receivePayment } from './paymentActions'
-import { runPayables } from './payablesActions'
+import { approveAndPayPairForDemo } from './payablesActions'
 import { recordAaFeePayment, runMonthlyFeeInvoices } from './aaFeeActions'
 import { seedMonthOfBctis } from './demoBctiSeed'
 import { DEMO_TRIGGER_ACTOR } from './demoActors'
@@ -141,7 +141,7 @@ describe('S3: a payment keeps the row, the payout removes it; the GST report mov
       expectOwedEqualsOutstanding(api)
 
       // AA pays her in Xero: the row leaves Outstanding, Paid out rises, and one GST row is dated today.
-      expect(runPayables(api, OFFICE, { only: [nibPairId(api)] }).ok).toBe(true)
+      expect(approveAndPayPairForDemo(api, OFFICE, nibPairId(api)).ok).toBe(true)
       const p2 = owed(api)
       expect(toCents(p2.paidOut) - toCents(p1.paidOut)).toBe(15238)
       expect(row()).toBeUndefined()
@@ -166,11 +166,11 @@ describe('S3: a payment keeps the row, the payout removes it; the GST report mov
       receivePayment(api, { accRecId: accRec.accRecId, amount: 76.19, idempotencyKey: 'T-HALF', source: 'webhook' })
       const row = () => outstandingPayableRowsFor(views(api), SOUTER).find((r) => r.invoiceNumber === 'AA-2026-0005')
       expect(row()).toMatchObject({ stage: 'partPaidIn', outstandingToYou: 152.38 })
-      runPayables(api, OFFICE, { only: [nibPairId(api)] })
+      expect(approveAndPayPairForDemo(api, OFFICE, nibPairId(api)).ok).toBe(true)
       expect(row()).toMatchObject({ outstandingToYou: 76.19 })
       expectOwedEqualsOutstanding(api)
       receivePayment(api, { accRecId: accRec.accRecId, amount: 76.19, idempotencyKey: 'T-REST', source: 'webhook' })
-      runPayables(api, OFFICE, { only: [nibPairId(api)] })
+      expect(approveAndPayPairForDemo(api, OFFICE, nibPairId(api)).ok).toBe(true)
       expect(row()).toBeUndefined()
       const parts = gstReportFor(api.getState(), SOUTER, '2026-07', TODAY).rows.filter((r) => r.invoiceNumber === 'AA-2026-0005')
       expect(parts).toHaveLength(2)
@@ -190,7 +190,7 @@ describe('S3: a payment keeps the row, the payout removes it; the GST report mov
       s3(api)
       const accRec = nibAccRec(api)
       receivePayment(api, { accRecId: accRec.accRecId, amount: accRec.remaining, idempotencyKey: 'T-NIB', source: 'webhook' })
-      runPayables(api, OFFICE, { only: [nibPairId(api)] })
+      expect(approveAndPayPairForDemo(api, OFFICE, nibPairId(api)).ok).toBe(true)
       expect(owed(api, ANAE.morrison)).toEqual(before)
     } finally {
       unwire()

@@ -1375,26 +1375,27 @@ actions** on the screen named in its beat.
   is reprocessed. A fired message only lands on Admin Intake as a row for the office to decide. Say:
   "That is later work; today the office imports each hospital's file."
 
-### Beat 5: partial payment
+### Beat 5: partial payment and the weekly payment run
 
 - **Click:**
   - Go to **Admin Invoices → Hemi Walker · St George's** (the clean-sibling invoice from Beat 3).
   - Open **Demo actions → Payment received · half → Run**.
-  - Go to **Billing monitor**: the payables panel, **Authorised, awaiting Xero's payables run**, is read
-    only and lists the payable. Select its **Run payables in Xero** (badged **Simulated Xero**).
-  - Back on the invoice, **Demo actions → Payment received · full → Run**, then **Run payables in Xero**
-    again.
-- **Say:** "A partial payment authorises a payable for exactly the amount received, to the cent; the
-  rest stays outstanding on the invoice. The payment to the anaesthetist is made in Xero; we record and
-  track it. Two payables runs across a part-then-balance payment prove there is no double payment."
-- **Expected:** the payable authorises exactly the amount received; the panel lists it ("1 payable due
-  · $110.69", Dr Ropata, AA-2026-0007, bill AA-2026-0007-P). **Run payables in Xero** empties the list
-  ("No payables are awaiting the payables run.") with "Xero paid 1 bill ($110.69); the Billing Engine
-  recorded 1 disbursement from the bill-paid webhooks.": each disbursement is recorded as Xero reports
-  the bill paid. Each run pays exactly what arrived, and the total paid out equals the invoice total,
-  never more. The Ledger's Payables due rises with
-  each part payment and returns to $0.00 after each run: $110.69 after the half (Hemi Walker's
-  AA-2026-0007, $221.38), $0.00 after the first run, $110.69 after the rest, $0.00 after the second.
+  - Go to **Billing monitor**: the **Payment cycle · Week 30** panel shows the payable under **Waiting
+    for this week's run** (Dr Ropata, one BCTI at exactly half). Select **Close the week**, then
+    **Approve week 30's BCTIs**, then **Send payment schedule**, then **Run payables in Xero** (badged
+    **Simulated Xero**: the accountant paying the schedule).
+  - Back on the invoice, **Demo actions → Payment received · full → Run**: the balance now waits for
+    **Week 31**. Optionally run Week 31 the same way.
+- **Say:** "A payable is released when its receivable is paid, exactly the amount received. Payments to
+  anaesthetists run weekly, each run named by its ISO week: the week closes on Friday and is reconciled
+  to the bank, Monday is for sorting out anything odd, the office approves the week's BCTIs, and on
+  Tuesday the schedule goes to the accountant, who pays it in Xero. A problem that can't be fixed in
+  time is held out and rolls into next week. Every payment shows the week it was paid in."
+- **Expected:** Week 30 closes with Dr Ropata's BCTI at exactly half ($110.69 on Hemi Walker's
+  AA-2026-0007, $221.38), no anomaly; after approval, the schedule and the run, Week 30 reads **Paid**
+  under Payment runs and the half is paid out in Week 30. The balance received afterwards waits in
+  Week 31, never in Week 30's run, and is never paid twice. (Figures re-checked against the running app
+  at the end of Phase 39a.)
 
 ### Beat 6: The date approaches
 

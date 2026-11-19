@@ -33,7 +33,7 @@ import { handoffCorrection } from './xeroHandoff'
 import { processXeroQueue, setXeroOutage } from './xeroQueue'
 import { armHandoffFault } from './demoSettingsActions'
 import { runReconciliationPoll } from './reconciliationPoll'
-import { payBillsInXero, XERO_PAYABLES_ACTOR } from './xeroSimActions'
+import { approveAndPayPairForDemo } from './payablesActions'
 import { proceduresForBooking } from './selectors'
 import { clockISO, type Actor } from './mutate'
 import { ANAE, SEED_MARKERS } from '../domain/seed'
@@ -101,7 +101,8 @@ describe('a credit waits while Xero holds money the ledger has not recorded (fin
     const original = stage()
     const pair = pairForInvoice(api.getState(), original.id)!
     expect(receivePayment(api, { accRecId: pair.receivable.xeroAccRecId!, amount: original.total, idempotencyKey: 'paid', source: 'webhook' }).ok).toBe(true)
-    expect(payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId: pair.payable!.xeroAccPayId! }], { webhook: 'missed' }).ok).toBe(true)
+    // (catch-up Phase 39a: paid as an approved one-line run, in Xero, its webhook missed.)
+    expect(approveAndPayPairForDemo(api, OFFICE, pair.id, { webhook: 'missed' }).ok).toBe(true)
     const creditEventId = submitAndApprove({ invoiceId: original.id, reason: 'Wrong amount', cause: 'correction', replacements: [] })
 
     const waiting = runEventInvoicing(api, OFFICE)
@@ -144,7 +145,7 @@ describe('a credit waits while Xero holds money the ledger has not recorded (fin
     receivePayment(api, { accRecId: pair.receivable.xeroAccRecId!, amount: original.total, idempotencyKey: 'paid', source: 'webhook' })
     expect(setXeroOutage(api, OFFICE, true).ok).toBe(true)
     // Xero pays the bill during the outage: its webhook waits in the queue as a disbursementSync.
-    const paid = payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId }], { webhook: 'deliver' })
+    const paid = approveAndPayPairForDemo(api, OFFICE, pair.id, { webhook: 'deliver' })
     const amount = paid.ok ? paid.value.totalPaid : 0
     expect(amount).toBeGreaterThan(0)
     const before = api.getState()

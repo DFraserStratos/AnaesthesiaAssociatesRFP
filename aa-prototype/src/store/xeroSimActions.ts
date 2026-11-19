@@ -17,13 +17,15 @@
  * the Xero simulator are the only importers of `domain/xeroSim`.
  */
 
-import type { Disbursement, XeroAccPay, XeroBankLine, XeroRemittance } from '../domain/types'
+import type { Disbursement, PayablesRunLine, XeroAccPay, XeroBankLine, XeroBatchPayment, XeroCreditAllocation, XeroRemittance } from '../domain/types'
 import { roundToCents, toCents } from '../domain/billing/money'
 import { matchRemittanceLines } from '../domain/xeroSim/remittance'
 import { resolveRemittance, ST_GEORGES_REMITTANCE, type RemittanceFixture } from '../domain/xeroSim/remittanceFixtures'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
-import { recordDisbursement } from './disbursementDetection'
+import { recordDisbursement, recordOffset } from './disbursementDetection'
+import { accPayOfLine, PAYMENT_CYCLE_COPY, runStaleness } from './paymentCycleActions'
+import { cycleLabel } from '../domain/billing/paymentCycle'
 import { deliverPaymentWebhook, xeroBalanceOf } from './paymentActions'
 import { enqueueXeroWork, XERO_OUTAGE_ERROR, xeroAvailable } from './xeroGate'
 import { pairsByAccPayIndex } from './indexes'
@@ -47,6 +49,17 @@ export interface BillPaid {
   queued: boolean
 }
 
+/** One ACCPAYCREDIT allocation a run made against a bill (catch-up Phase 39a). */
+export interface CreditAllocated {
+  xeroAllocationId: string
+  accPayId: string
+  negativeInvoiceId: string
+  amount: number
+  idempotencyKey: string
+  recorded: boolean
+  queued: boolean
+}
+
 export interface PayBillsResult {
   payablesRunId?: string
   paid: BillPaid[]
@@ -54,9 +67,16 @@ export interface PayBillsResult {
   /** How many of the paid bills the engine recorded now. */
   recordedCount: number
   totalRecorded: number
+  /** Credit allocations Xero made (netting) and their total (catch-up Phase 39a). */
+  allocations: CreditAllocated[]
+  totalAllocated: number
+  /** One per anaesthetist paid cash in this call. */
+  batchPaymentIds: string[]
+  /** Lines Xero could not pay (not in Xero yet, a transfer's journal waiting, a voided or credited bill). */
+  skipped: number
 }
 
-/** What Xero would pay on a bill now: an ACCPAY's authorised less paid; a transfer's released less what Xero has paid on it (once its journal is posted). Never the AA Holding account. */
+/** What Xero would pay on a bill now: an ACCPAY's authorised less paid less credit allocated; a transfer's released less what Xero has paid on it (once its journal is posted). Never the AA Holding account. */
 export function xeroBillPayable(state: Pick<AppState, 'xero' | 'billing'>, bill: XeroBill): number {
   if ('accPayId' in bill) {
     const pay = state.xero.accPays[bill.accPayId]
@@ -64,7 +84,7 @@ export function xeroBillPayable(state: Pick<AppState, 'xero' | 'billing'>, bill:
     // A voided or credited bill (catch-up Phase 39) is never paid, nor one whose ledger payable a credit reversed.
     if (pay.status === 'voided' || pay.status === 'credited') return 0
     if ((pairsByAccPayIndex(state.billing.ledger).get(bill.accPayId) ?? []).some((p) => p.kind !== 'aaFee' && p.payable?.reversedAmount !== undefined)) return 0
-    return Math.max(0, roundToCents(pay.amountAuthorised - pay.amountDisbursed))
+    return Math.max(0, roundToCents(pay.amountAuthorised - pay.amountDisbursed - (pay.amountCreditAllocated ?? 0)))
   }
   const t = state.billing.transfers[bill.transferId]
   if (t === undefined || t.xeroJournalId === undefined) return 0
@@ -72,56 +92,166 @@ export function xeroBillPayable(state: Pick<AppState, 'xero' | 'billing'>, bill:
   return Math.max(0, toCents(t.in.releasedAmount) - paid) / 100
 }
 
+function billOfLine(state: Pick<AppState, 'billing'>, line: PayablesRunLine): XeroBill | undefined {
+  if (line.kind === 'transfer') return { transferId: line.pairId }
+  const accPayId = accPayOfLine(state, line)
+  return accPayId !== undefined ? { accPayId } : undefined
+}
+
+interface PlannedLine {
+  line: PayablesRunLine
+  bill: XeroBill
+  allocations: { negativeInvoiceId: string; accPayCreditId: string; amount: number }[]
+  cash: number
+}
+
 /**
- * Xero's payables run pays these bills (US-09.2.4, FT-10.2): each pays what
- * Xero shows authorised and unpaid, as a Xero bill payment keyed `BILLPAY-`.
- * Then, per bill payment, the webhook: `deliver` with Xero answering records
- * the disbursement now; `deliver` during an outage queues a
- * `disbursementSync`; `missed` leaves the engine behind until the poll. A bill
- * with nothing payable (the AA Holding account included) is skipped.
+ * The accountant pays a scheduled run in Xero (US-10.2.7's Tuesday schedule;
+ * US-10.2.5; OQ-111 answered, D53: Xero's payables run, never the app). Xero
+ * side only, in one mutate: per anaesthetist, each netting allocation as an
+ * ACCPAYCREDIT allocated against its bill, each bill's cash remainder as a
+ * bill payment (`BILLPAY-`), and one batch payment for the net. Held lines
+ * are untouched; a line already sent is never sent twice. Then the webhook:
+ * `deliver` with Xero answering records each allocation (`recordOffset`) and
+ * each bill payment (`recordDisbursement`); during an outage they queue;
+ * `missed` leaves them for the poll.
+ *
+ * THE GATE (US-10.2.6): only a run that is scheduled (or already paying) is
+ * paid, and only its unheld lines. `onlyPairIds` pays a subset (the Xero
+ * pair's single payout), refused `useRun` when one of them carries a netting.
  */
-export function payBillsInXero(api: AppStoreApi, actor: Actor, bills: readonly XeroBill[], opts: { webhook: 'deliver' | 'missed' }): Outcome<PayBillsResult> {
+export function payRunInXero(api: AppStoreApi, actor: Actor, runId: string, opts: { webhook: 'deliver' | 'missed'; onlyPairIds?: readonly string[] }): Outcome<PayBillsResult> {
   const state = api.getState()
-  const seen = new Set<string>()
-  const unique = bills.filter((b) => {
-    const key = 'accPayId' in b ? `P:${b.accPayId}` : `T:${b.transferId}`
-    if (seen.has(key)) return false
-    seen.add(key)
-    return true
-  })
-  const payable = unique.map((bill) => ({ bill, amount: xeroBillPayable(state, bill) })).filter((b) => toCents(b.amount) > 0)
-  const result: PayBillsResult = { paid: [], totalPaid: 0, recordedCount: 0, totalRecorded: 0 }
-  if (payable.length === 0) return ok(result)
+  const run = state.billing.payablesRuns[runId]
+  if (run === undefined) return refuse('notFound', PAYMENT_CYCLE_COPY.notFound)
+  if (run.status !== 'scheduled' && run.status !== 'paying') return refuse('notApproved', PAYMENT_CYCLE_COPY.notApproved)
+  if (run.status === 'scheduled') {
+    const stale = runStaleness(state, run)
+    if (stale !== null) return refuse('runStale', stale)
+  }
+  const only = opts.onlyPairIds !== undefined ? new Set(opts.onlyPairIds) : undefined
+  const lines = run.lines.filter((l) => l.heldOut === undefined && (only === undefined || only.has(l.pairId)))
+  if (only !== undefined && lines.some((l) => run.nettings.some((n) => n.allocations.some((a) => a.pairId === l.pairId)))) return refuse('useRun', PAYMENT_CYCLE_COPY.useRun)
+
+  // Plan, per line: the credit to allocate and the cash to pay, net of what this run already sent to Xero.
+  const planned: PlannedLine[] = []
+  const result: PayBillsResult = { payablesRunId: runId, paid: [], totalPaid: 0, recordedCount: 0, totalRecorded: 0, allocations: [], totalAllocated: 0, batchPaymentIds: [], skipped: 0 }
+  const creditLeft = new Map<string, number>()
+  for (const line of lines) {
+    const bill = billOfLine(state, line)
+    if (bill === undefined) {
+      result.skipped += 1
+      continue
+    }
+    const accPayId = 'accPayId' in bill ? bill.accPayId : undefined
+    const allocations: PlannedLine['allocations'] = []
+    let nettedCents = 0
+    for (const n of run.nettings) {
+      for (const a of n.allocations) {
+        if (a.pairId !== line.pairId) continue
+        nettedCents += toCents(a.amount)
+        const neg = state.billing.negativeInvoices[n.negativeInvoiceId]
+        const credit = neg?.accPayCreditNoteId !== undefined ? state.xero.creditNotes[neg.accPayCreditNoteId] : undefined
+        if (credit === undefined || accPayId === undefined) continue
+        const already = Object.values(state.xero.creditAllocations)
+          .filter((x) => x.payablesRunId === runId && x.accPayId === accPayId && x.accPayCreditId === credit.id)
+          .reduce((s, x) => s + toCents(x.amount), 0)
+        const want = toCents(a.amount) - already
+        const left = creditLeft.get(credit.id) ?? toCents(credit.total) - toCents(credit.allocated)
+        const take = Math.max(0, Math.min(want, left))
+        creditLeft.set(credit.id, left - take)
+        if (take > 0) allocations.push({ negativeInvoiceId: n.negativeInvoiceId, accPayCreditId: credit.id, amount: take / 100 })
+      }
+    }
+    const sentCash = Object.values(state.xero.disbursements)
+      .filter((d) => d.payablesRunId === runId && (('accPayId' in bill && d.accPayId === bill.accPayId) || ('transferId' in bill && d.transferId === bill.transferId)))
+      .reduce((s, d) => s + toCents(d.amount), 0)
+    const cash = Math.max(0, toCents(line.amount) - nettedCents - sentCash)
+    const need = cash + allocations.reduce((s, a) => s + toCents(a.amount), 0)
+    if (need === 0) continue
+    if (need > toCents(xeroBillPayable(state, bill))) {
+      result.skipped += 1
+      continue
+    }
+    planned.push({ line, bill, allocations, cash: cash / 100 })
+  }
+  if (planned.length === 0) return ok(result)
 
   const metas: MutationMeta[] = []
   mutate(api, actor, metas, (s) => {
     let counters = s.counters
-    const pr = allocateId(counters, 'payablesRun')
-    counters = pr.counters
-    result.payablesRunId = pr.id
     const atISO = clockISO(s.clock)
     const accPays = { ...s.xero.accPays }
     const disbursements = { ...s.xero.disbursements }
-    for (const { bill, amount } of payable) {
+    const creditAllocations = { ...s.xero.creditAllocations }
+    const creditNotes = { ...s.xero.creditNotes }
+    const batchPayments = { ...s.xero.batchPayments }
+    const byAnaesthetist = new Map<string, { contactId: string; ids: string[]; cents: number }>()
+    for (const p of planned) {
+      const accPayId = 'accPayId' in p.bill ? p.bill.accPayId : undefined
+      for (const a of p.allocations) {
+        if (accPayId === undefined) continue
+        const xca = allocateId(counters, 'creditAllocation')
+        counters = xca.counters
+        creditAllocations[xca.id] = { id: xca.id, accPayCreditId: a.accPayCreditId, accPayId, amount: a.amount, atISO, idempotencyKey: `CNALLOC-${xca.id}`, payablesRunId: runId } satisfies XeroCreditAllocation
+        const credit = creditNotes[a.accPayCreditId]!
+        creditNotes[a.accPayCreditId] = { ...credit, allocated: roundToCents(credit.allocated + a.amount) }
+        const pay = accPays[accPayId]!
+        const allocatedTotal = roundToCents((pay.amountCreditAllocated ?? 0) + a.amount)
+        accPays[accPayId] = { ...pay, amountCreditAllocated: allocatedTotal, status: toCents(pay.amountDisbursed) + toCents(allocatedTotal) >= toCents(pay.amountPayable) ? 'paid' : pay.status }
+        metas.push({ entityType: 'xeroAccPay', entityId: accPayId, action: 'xero.creditAllocated', after: { creditNote: credit.creditNoteNumber, amount: a.amount, payablesRunId: runId, allocationId: xca.id } })
+        result.allocations.push({ xeroAllocationId: xca.id, accPayId, negativeInvoiceId: a.negativeInvoiceId, amount: a.amount, idempotencyKey: `CNALLOC-${xca.id}`, recorded: false, queued: false })
+        result.totalAllocated = roundToCents(result.totalAllocated + a.amount)
+      }
+      if (toCents(p.cash) === 0) continue
       const dsb = allocateId(counters, 'disbursement')
       counters = dsb.counters
       const idempotencyKey = `BILLPAY-${dsb.id}`
-      disbursements[dsb.id] = { id: dsb.id, ...bill, amount, atISO, payablesRunId: pr.id, idempotencyKey } satisfies Disbursement
-      if ('accPayId' in bill) {
-        const pay = accPays[bill.accPayId]!
-        const paidTotal = roundToCents(pay.amountDisbursed + amount)
-        accPays[bill.accPayId] = { ...pay, amountDisbursed: paidTotal, status: toCents(paidTotal) >= toCents(pay.amountPayable) ? 'paid' : 'authorised' } satisfies XeroAccPay
-        metas.push({ entityType: 'xeroAccPay', entityId: bill.accPayId, action: 'xero.disbursed', after: { increment: amount, cumulative: paidTotal, payablesRunId: pr.id, billPaymentId: dsb.id } })
-      } else {
-        metas.push({ entityType: 'ledgerPair', entityId: s.billing.transfers[bill.transferId]?.collectPairId ?? bill.transferId, action: 'xero.disbursed', after: { transferId: bill.transferId, increment: amount, payablesRunId: pr.id, billPaymentId: dsb.id } })
+      disbursements[dsb.id] = { id: dsb.id, ...p.bill, amount: p.cash, atISO, payablesRunId: runId, idempotencyKey } satisfies Disbursement
+      if (accPayId !== undefined) {
+        const pay = accPays[accPayId]!
+        const paidTotal = roundToCents(pay.amountDisbursed + p.cash)
+        accPays[accPayId] = { ...pay, amountDisbursed: paidTotal, status: toCents(paidTotal) + toCents(pay.amountCreditAllocated ?? 0) >= toCents(pay.amountPayable) ? 'paid' : 'authorised' } satisfies XeroAccPay
+        metas.push({ entityType: 'xeroAccPay', entityId: accPayId, action: 'xero.disbursed', after: { increment: p.cash, cumulative: paidTotal, payablesRunId: runId, billPaymentId: dsb.id } })
+      } else if ('transferId' in p.bill) {
+        metas.push({ entityType: 'ledgerPair', entityId: s.billing.transfers[p.bill.transferId]?.collectPairId ?? p.bill.transferId, action: 'xero.disbursed', after: { transferId: p.bill.transferId, increment: p.cash, payablesRunId: runId, billPaymentId: dsb.id } })
       }
-      result.paid.push({ bill, xeroDisbursementId: dsb.id, amount, idempotencyKey, recorded: false, queued: false })
-      result.totalPaid = roundToCents(result.totalPaid + amount)
+      result.paid.push({ bill: p.bill, xeroDisbursementId: dsb.id, amount: p.cash, idempotencyKey, recorded: false, queued: false })
+      result.totalPaid = roundToCents(result.totalPaid + p.cash)
+      const contactId = accPayId !== undefined ? accPays[accPayId]!.contactId : `anaesthetist:${p.line.anaesthetistId}`
+      const batch = byAnaesthetist.get(p.line.anaesthetistId) ?? { contactId, ids: [], cents: 0 }
+      batch.ids.push(dsb.id)
+      batch.cents += toCents(p.cash)
+      byAnaesthetist.set(p.line.anaesthetistId, batch)
     }
-    return { xero: { ...s.xero, accPays, disbursements }, counters }
+    for (const [anaesthetistId, b] of [...byAnaesthetist.entries()].sort((x, y) => x[0].localeCompare(y[0]))) {
+      const xbp = allocateId(counters, 'batchPayment')
+      counters = xbp.counters
+      batchPayments[xbp.id] = { id: xbp.id, contactId: b.contactId, anaesthetistId, payablesRunId: runId, cycleId: run.cycleId, total: b.cents / 100, atISO, billPaymentIds: b.ids } satisfies XeroBatchPayment
+      for (const id of b.ids) disbursements[id] = { ...disbursements[id]!, batchPaymentId: xbp.id }
+      result.batchPaymentIds.push(xbp.id)
+      metas.push({ entityType: 'payablesRun', entityId: runId, action: 'xero.batchPaid', after: { batchPaymentId: xbp.id, week: cycleLabel(run), anaesthetistId, total: b.cents / 100, bills: b.ids.length } })
+    }
+    const runNow = s.billing.payablesRuns[runId]!
+    let payablesRuns = s.billing.payablesRuns
+    if (runNow.status === 'scheduled') {
+      payablesRuns = { ...payablesRuns, [runId]: { ...runNow, status: 'paying', sentToXeroAtISO: atISO } }
+      metas.push({ entityType: 'payablesRun', entityId: runId, action: 'payables.runSentToXero', before: { status: 'scheduled' }, after: { status: 'paying', week: cycleLabel(run) } })
+    }
+    return { xero: { ...s.xero, accPays, disbursements, creditAllocations, creditNotes, batchPayments }, billing: { ...s.billing, payablesRuns }, counters }
   })
 
   if (opts.webhook === 'missed') return ok(result)
+  // The engine learns of each allocation, then each bill payment (either order settles the same).
+  for (const a of result.allocations) {
+    const x = api.getState().xero.creditAllocations[a.xeroAllocationId]!
+    if (!xeroAvailable(api.getState())) {
+      a.queued = enqueueXeroWork(api, { kind: 'offsetSync', idempotencyKey: a.idempotencyKey, target: { accPayId: x.accPayId, xeroAllocationId: x.id }, lastError: XERO_OUTAGE_ERROR }).ok
+      continue
+    }
+    const recorded = recordOffset(api, { accPayId: x.accPayId, accPayCreditId: x.accPayCreditId, xeroAllocationId: x.id, amount: x.amount, atISO: x.atISO, idempotencyKey: x.idempotencyKey, detectedBy: 'webhook', payablesRunId: runId })
+    a.recorded = recorded.ok && recorded.value.applied
+  }
   for (const p of result.paid) {
     const target = { ...p.bill, xeroDisbursementId: p.xeroDisbursementId }
     if (!xeroAvailable(api.getState())) {
@@ -129,7 +259,7 @@ export function payBillsInXero(api: AppStoreApi, actor: Actor, bills: readonly X
       p.queued = queued.ok
       continue
     }
-    const recorded = recordDisbursement(api, { ...p.bill, xeroDisbursementId: p.xeroDisbursementId, amount: p.amount, atISO: api.getState().xero.disbursements[p.xeroDisbursementId]!.atISO, idempotencyKey: p.idempotencyKey, detectedBy: 'webhook', payablesRunId: result.payablesRunId! })
+    const recorded = recordDisbursement(api, { ...p.bill, xeroDisbursementId: p.xeroDisbursementId, amount: p.amount, atISO: api.getState().xero.disbursements[p.xeroDisbursementId]!.atISO, idempotencyKey: p.idempotencyKey, detectedBy: 'webhook', payablesRunId: runId })
     if (recorded.ok && recorded.value.applied) {
       p.recorded = true
       result.recordedCount += 1
@@ -137,6 +267,24 @@ export function payBillsInXero(api: AppStoreApi, actor: Actor, bills: readonly X
     }
   }
   return ok(result)
+}
+
+/**
+ * Xero pays these bills, each only as an unheld line of the scheduled run
+ * named (37's helper, kept for the Xero pair's single payout): the gate
+ * refuses `notApproved` for a bill that is not such a line.
+ */
+export function payBillsInXero(api: AppStoreApi, actor: Actor, bills: readonly XeroBill[], opts: { webhook: 'deliver' | 'missed'; runId: string }): Outcome<PayBillsResult> {
+  const state = api.getState()
+  const run = state.billing.payablesRuns[opts.runId]
+  if (run === undefined) return refuse('notApproved', PAYMENT_CYCLE_COPY.notApproved)
+  const pairIds: string[] = []
+  for (const bill of bills) {
+    const line = run.lines.find((l) => l.heldOut === undefined && (('transferId' in bill && l.pairId === bill.transferId) || ('accPayId' in bill && accPayOfLine(state, l) === bill.accPayId)))
+    if (line === undefined) return refuse('notApproved', PAYMENT_CYCLE_COPY.notApproved)
+    pairIds.push(line.pairId)
+  }
+  return payRunInXero(api, actor, opts.runId, { webhook: opts.webhook, onlyPairIds: pairIds })
 }
 
 /** Why an ACCREC cannot be voided in Xero, or null. Xero's own rule: no void with payments applied. */

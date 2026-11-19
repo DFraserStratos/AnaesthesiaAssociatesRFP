@@ -1,40 +1,34 @@
 /**
  * The Billing monitor's Xero panels (catch-up Phase 37; EP-09, US-09.2.4,
  * FT-10.2, RV-40): the connection line, the Xero sync queue, the changes made
- * directly in Xero (with the Resolve side panel) and the payables awaiting
- * Xero's payables run. Proposed product UI, so unbadged, except "Run payables
- * in Xero", which stands in for work done in Xero and carries the Simulated
- * Xero badge. Each panel reads the store itself so the processing monitor's
- * restyle can place it without rewriting it; `anaesthetistId` narrows a panel
- * to one anaesthetist's pairs (the monitor's filter).
+ * directly in Xero (with the Resolve side panel). The payables run moved to
+ * the payment cycle panel (`PaymentCyclePanel`, catch-up Phase 39a). Proposed
+ * product UI, so unbadged. Each panel reads the store itself so the
+ * processing monitor's restyle can place it without rewriting it;
+ * `anaesthetistId` narrows a panel to one anaesthetist's pairs (the monitor's
+ * filter).
  */
 
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Button, Card, EmptyState, FormError, Notice, Pill, RadioCard, ResultLine, TextAction, TextArea, useRovingRadio, visuallyHidden } from '../../../shared/ui'
 import { Td, Th, TableShell } from '../../../shared/table'
-import { DemoBadge } from '../../../shared/DemoBadge'
-import { drSurname, formatCurrency, hhmm, plural, shortDay } from '../../../shared/format'
+import { formatCurrency, hhmm, shortDay } from '../../../shared/format'
 import { today } from '../../../domain/clock'
 import { neutral, radius, semantic } from '../../../theme/tokens'
 import {
   DIVERGENCE_OUTCOMES,
   openXeroDivergences,
-  payableLegsDue,
-  payablesDue,
   counterpartyName,
   resolveXeroDivergence,
   retryXeroItemNow,
-  runPayables,
   useAppStore,
   xeroQueueView,
   type Actor,
-  type DueLeg,
   type XeroQueueRow,
 } from '../../../store'
 import { XERO_ALERT_AFTER_ATTEMPTS } from '../../../domain/xero/queue'
 import type { XeroDivergence } from '../../../domain/types'
-import { dueOn } from '../../../domain/billing/ledger'
 import { SidePanel } from './SidePanel'
 import { xeroFlagText } from '../../../shared/procedureEventCopy'
 
@@ -304,105 +298,5 @@ function ResolveDivergencePanel({ flag, actor, onClose }: { flag: XeroDivergence
         Provisional: the policy for each mismatch is to be agreed with AA.
       </div>
     </SidePanel>
-  )
-}
-
-/** The invoice and payable numbers a due leg shows: its pair's, or a transfer's prepayment invoice. */
-function dueLegNumbers(billing: ReturnType<typeof useAppStore.getState>['billing'], l: DueLeg): { invoiceNumber: string; invoiceId?: string } {
-  if (l.kind === 'transfer') {
-    const t = billing.transfers[l.id]
-    const collect = t !== undefined ? billing.ledger[t.collectPairId] : undefined
-    return { invoiceNumber: collect?.receivable.number ?? l.leg.number, ...(t !== undefined ? { invoiceId: t.invoiceId } : {}) }
-  }
-  const pair = billing.ledger[l.id]
-  return { invoiceNumber: pair?.receivable.number ?? l.leg.number, ...(pair !== undefined && 'invoiceId' in pair ? { invoiceId: pair.invoiceId } : {}) }
-}
-
-/**
- * Payables authorised and awaiting Xero's payables run (FT-10.2, US-09.2.4):
- * read-only, from the ledger (`payablesDue`'s legs). "Run payables in Xero" is
- * the simulated Xero run; the engine records each disbursement when Xero
- * reports the bill paid.
- */
-export function PayablesPanel({ actor, anaesthetistId }: { actor: Actor; anaesthetistId?: string }) {
-  const navigate = useNavigate()
-  const billing = useAppStore((s) => s.billing)
-  const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
-  const [message, setMessage] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const legs = useMemo(() => payableLegsDue({ billing }, anaesthetistId !== undefined ? { anaesthetistId } : {}), [billing, anaesthetistId])
-  const total = useMemo(() => payablesDue({ billing }, anaesthetistId !== undefined ? { anaesthetistId } : {}).total, [billing, anaesthetistId])
-
-  function run() {
-    const out = runPayables(useAppStore, actor, anaesthetistId !== undefined ? { anaesthetistId } : {})
-    if (!out.ok) {
-      setError(out.message)
-      return
-    }
-    setError(null)
-    const r = out.value
-    setMessage(
-      r.billsPaid === 0
-        ? 'Nothing was authorised to pay.'
-        : r.disbursedCount === r.billsPaid
-          ? `Xero paid ${plural(r.billsPaid, 'bill')} (${formatCurrency(r.totalPaid)}); the Billing Engine recorded ${plural(r.disbursedCount, 'disbursement')} from the bill-paid webhooks.`
-          : `Xero paid ${plural(r.billsPaid, 'bill')} (${formatCurrency(r.totalPaid)}); ${plural(r.disbursedCount, 'disbursement')} recorded now, the rest wait in the Xero sync queue.`,
-    )
-  }
-
-  return (
-    <Card
-      title="Authorised, awaiting Xero's payables run"
-      shot="billing-payables-run"
-      action={
-        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '4px 8px', maxWidth: 360, textAlign: 'right' }}>
-          <DemoBadge label="Simulated Xero" />
-          <Button variant="outline" size="compact" onClick={run} disabled={legs.length === 0} disabledReason={legs.length === 0 ? 'Nothing authorised to pay' : undefined} shot="billing-run-payables-in-xero" style={{ whiteSpace: 'nowrap' }}>
-            Run payables in Xero
-          </Button>
-        </span>
-      }
-    >
-      <div style={{ fontSize: 12.5, color: neutral.slate }}>
-        Authorised payables join the next payables run, which is paid in Xero. The Billing Engine records each disbursement when Xero reports the bill paid, by webhook or at the daily poll.
-      </div>
-      {legs.length === 0 ? (
-        <EmptyState variant="inline">No payables are awaiting the payables run.</EmptyState>
-      ) : (
-        <>
-          <div className="mono" style={{ fontSize: 13, color: neutral.ink }} data-shot="billing-payables-due">
-            {`${plural(legs.length, 'payable')} due · ${formatCurrency(total)}`}
-          </div>
-          <TableShell label="Payables awaiting Xero's payables run" density="compact" nested>
-            <thead>
-              <tr>
-                <Th>Anaesthetist</Th>
-                <Th>Invoice</Th>
-                <Th>Bill</Th>
-                <Th align="right">Due</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {legs.map((l) => {
-                const n = dueLegNumbers(billing, l)
-                return (
-                  <tr key={l.id} data-payable-id={l.id}>
-                    <Td>{drSurname(anaesthetists[l.anaesthetistId]?.name ?? l.anaesthetistId)}</Td>
-                    <Td mono>{n.invoiceId !== undefined ? <Link to={`/admin/invoices/${n.invoiceId}`} style={{ color: neutral.ink }}>{n.invoiceNumber}</Link> : n.invoiceNumber}</Td>
-                    <Td mono>{l.leg.number}</Td>
-                    <Td mono align="right">{formatCurrency(dueOn(l.leg))}</Td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </TableShell>
-        </>
-      )}
-      <div>
-        <TextAction size="sm" flush shot="billing-open-ledger" onClick={() => navigate('/admin/ledger')}>Open the ledger</TextAction>
-      </div>
-      <ResultLine line={message} onDismiss={() => setMessage(null)} shot="billing-payables-result" />
-      <FormError message={error} />
-    </Card>
   )
 }

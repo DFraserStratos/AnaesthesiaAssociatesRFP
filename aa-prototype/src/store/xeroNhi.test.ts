@@ -17,7 +17,7 @@ import { runBillingForList } from './billingRun'
 import { handoffListPairs } from './xeroHandoff'
 import { approveAllPrepayments } from '../test/approvePrepayments'
 import { receivePayment } from './paymentActions'
-import { runPayables } from './payablesActions'
+import { runThisWeeksCycle } from './payablesActions'
 import { openAccRecs } from './selectors'
 import { validateNhi } from '../domain/nhi'
 import type { Actor } from './mutate'
@@ -50,7 +50,7 @@ describe('no NHI in the Xero slice (convention 8 / Appendix 2)', () => {
     for (const cand of openAccRecs(api.getState())) {
       receivePayment(api, { accRecId: cand.accRecId, amount: cand.remaining, idempotencyKey: `K${i++}`, source: 'webhook' })
     }
-    expect(runPayables(api, OFFICE).ok).toBe(true)
+    expect(runThisWeeksCycle(api, OFFICE).ok).toBe(true)
 
     const serialised = JSON.stringify(api.getState().xero)
     const nhis = Object.values(api.getState().masters.patients)
@@ -114,7 +114,7 @@ describe('Xero privacy scan (US-09.3.1: no personal information in Xero)', () =>
     for (const cand of openAccRecs(api.getState())) {
       receivePayment(api, { accRecId: cand.accRecId, amount: cand.remaining, idempotencyKey: `P${i++}`, source: 'webhook' })
     }
-    expect(runPayables(api, OFFICE).ok).toBe(true)
+    expect(runThisWeeksCycle(api, OFFICE).ok).toBe(true)
     expectNoPersonalInformation(api.getState())
   })
 })

@@ -407,7 +407,7 @@ export const CREDIT_DEMO_COPY = {
   alreadyPaidOut: 'Already paid out',
   kindNotHere: 'AA fee and prepayment invoices are not credited here',
   /** "Paid in full and paid out to Dr Sharma in Xero. Credit it to see the negative invoice." (Phase 37: payouts are made in Xero.) */
-  paidOut: (dr: string) => `Paid in full and paid out to ${dr} in Xero. Credit it to see the negative invoice.`,
+  paidOut: (dr: string) => `Paid in full, approved for payment and paid out to ${dr} in Xero. Credit it to see the negative invoice. Once credited, the negative invoice is netted in ${dr}'s next payment run.`,
   noCreditAwaiting: 'No credit on this Booking is awaiting review',
   /** "Approved by the office and issued in the next billing run (CN-2026-0001)." */
   creditIssued: (number: string) => `Approved by the office and issued in the next billing run (${number}).`,

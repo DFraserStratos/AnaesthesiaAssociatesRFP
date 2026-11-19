@@ -1670,6 +1670,13 @@ export interface PayableLeg {
   releasedAmount: number
   /** CUMULATIVE paid out (the ledger's record of a payment made in Xero, D53). */
   disbursedAmount: number
+  /**
+   * CUMULATIVE settled by netting a negative invoice against it in a weekly
+   * payment run (catch-up Phase 39a; US-10.2.5): never cash, so receipts held
+   * stay true. Absent reads as 0. The leg is settled when `disbursedAmount +
+   * offsetAmount` reaches `amount`.
+   */
+  offsetAmount?: number
   /** Reversed by a negative invoice to the anaesthetist (catch-up Phase 39): the whole payable. Absent on an unreversed leg. */
   reversedAmount?: number
   /** When it was issued: the date the BCTI counts in under `paidOnly: false`. */
@@ -1725,6 +1732,8 @@ export interface PairCredit {
   heldForPayer: number
   /** What was already paid out to the anaesthetist: left on the negative invoice to net (Phase 39a). */
   recoveryDue: number
+  /** What weekly payment runs have netted of `recoveryDue` so far (catch-up Phase 39a), kept in step with the negative invoice's `nettings` in the same mutate. Absent reads as 0. */
+  nettedAmount?: number
 }
 
 /** AA's monthly fee invoice to an anaesthetist (catch-up Phase 16; FT-10.3, DM-26): a receivable from the anaesthetist and NO payable. AA's own money, never part of what is held for anaesthetists. */
@@ -1913,10 +1922,176 @@ export interface NegativeInvoice {
   amount: number
   offsetAmount: number
   recoveryDue: number
-  status: 'offset' | 'toNet'
+  /** `netted` (catch-up Phase 39a): its `recoveryDue` fully netted by payment runs; a part-netted negative stays `toNet`. */
+  status: 'offset' | 'toNet' | 'netted'
   issuedAtISO: IsoDateTime
   /** Its Xero mirror, the ACCPAYCREDIT (absent when the draft ACCPAY was voided, or not yet in Xero). */
   accPayCreditNoteId?: string
+  /** What each payment run netted of it, against which bill (catch-up Phase 39a), recorded when Xero reports the allocation. Open amount: `recoveryDue` less these. */
+  nettings?: NegativeInvoiceNetting[]
+}
+
+export interface NegativeInvoiceNetting {
+  runId: string
+  /** The bill (pair) it was netted against. */
+  pairId: string
+  amount: number
+  atISO: IsoDateTime
+  /** The Xero credit allocation's key (`CNALLOC-`): the engine records it once. */
+  idempotencyKey: string
+  xeroAllocationId: string
+}
+
+// ---------------------------------------------------------------------------
+// The weekly payment cycle (catch-up Phase 39a; US-10.2.7, US-10.2.6,
+// US-10.2.5, DM-25). Payments to anaesthetists run weekly, each accounting
+// week named by its ISO week. The office closes the week (snapshot and bank
+// reconciliation), sorts out anomalies on the check day (fixed, or held out
+// and rolled into the next week), approves the week's BCTIs and sends the
+// payment schedule to the accountant, who pays it in Xero (D53). The maths is
+// pure, in `domain/billing/paymentCycle.ts` and `payablesRun.ts`.
+// ---------------------------------------------------------------------------
+
+/**
+ * The payment cycle's days (ISO weekdays, Monday 1). Greg's proposed cycle
+ * (US-10.2.7, Proposed), built to; AA's accountant may change it (OQ-47):
+ * change it in `appSettings.paymentCycle`, never in code.
+ */
+export interface PaymentCycleSettings {
+  weekIdentity: 'isoWeek'
+  closeWeekday: Weekday
+  checkWeekday: Weekday
+  scheduleWeekday: Weekday
+}
+
+/** Why a payable leg is kept out of every run (`runExclusionFor`, the one standing exclusion point). */
+export type RunExclusionReason = 'heldInHoldingAccount'
+
+export type PayablesRunStatus = 'closed' | 'approved' | 'scheduled' | 'paying' | 'paid' | 'superseded'
+
+/** One BCTI (payable leg) in a run: what the close took for it. */
+export interface PayablesRunLine {
+  /** The pair, or a transfer (27a) whose `in` leg pays the anaesthetist. */
+  pairId: string
+  kind: 'pair' | 'transfer'
+  anaesthetistId: AnaesthetistId
+  /** The `-P` number (a transfer's own id on its `in` leg). */
+  billNumber: string
+  receivableInvoiceNumber: string
+  serviceDateISO: IsoDate
+  payerName: string
+  /** The latest receipt on it when the week closed. */
+  releasedAtISO?: IsoDateTime
+  /** Released less paid out less netted less anything in an unsettled run, at the close. */
+  amount: number
+  /** Whether a negative can be netted against it (a pair's ACCPAY in Xero; never a transfer). */
+  nettable: boolean
+  heldOut?: { anomalyId?: string; reason: string; atISO: IsoDateTime; by: string }
+  /** The earlier run that held it out. */
+  rolledFromRunId?: string
+}
+
+/** The ledger at close (36's `ledgerPosition`, never typed-in figures). */
+export interface CycleSnapshot {
+  atISO: IsoDateTime
+  receiptsHeld: number
+  payablesDue: number
+  recoveryDue: number
+  imbalance: number
+  byAnaesthetist: { anaesthetistId: AnaesthetistId; payablesDue: number; recoveryDue: number }[]
+}
+
+export type CycleAnomalyKind = 'receiptNotOnBank' | 'bankAmountDiffers' | 'noBankAccount' | 'flaggedByOffice'
+
+export interface CycleAnomaly {
+  /** `<runId>-A<n>`. */
+  id: string
+  kind: CycleAnomalyKind
+  pairIds: string[]
+  anaesthetistId: AnaesthetistId
+  detail: string
+  status: 'open' | 'fixed' | 'heldOut'
+  resolvedAtISO?: IsoDateTime
+  resolvedBy?: string
+}
+
+/** How much of one negative invoice a run nets, and against which bills (oldest first). */
+export interface PayablesRunNetting {
+  negativeInvoiceId: string
+  anaesthetistId: AnaesthetistId
+  amount: number
+  allocations: { pairId: string; amount: number }[]
+}
+
+/** One anaesthetist's totals over the run's unheld lines, in exact cents. `net >= 0` always. */
+export interface RunAnaesthetistTotal {
+  anaesthetistId: AnaesthetistId
+  bctiCount: number
+  positives: number
+  netted: number
+  net: number
+  /** What the run could not net because the negatives exceed the positives: stays open for a later cycle. */
+  remainingToNet: number
+}
+
+export interface PayablesRunExclusion {
+  pairId: string
+  anaesthetistId?: AnaesthetistId
+  reason: RunExclusionReason
+  amount: number
+}
+
+/**
+ * A payment run (`PR####`; the seed's backdrop weeks `PRH##`): one per payment
+ * cycle (`week`), or a one-line `staged` run from the demo stand-ins. At most
+ * one unsuperseded `week` run per `cycleId`. Lines, nettings and totals are
+ * recomputed on each check-day hold or fix and frozen at approval; a stale run
+ * is superseded, never edited.
+ */
+export interface PayablesRun {
+  id: string
+  kind: 'week' | 'staged'
+  /** `2026-W30`. */
+  cycleId: string
+  isoYear: number
+  isoWeek: number
+  weekStartISO: IsoDate
+  weekEndISO: IsoDate
+  status: PayablesRunStatus
+  closedAtISO: IsoDateTime
+  closedBy: { who: string; role: ActorRole }
+  snapshot: CycleSnapshot
+  anomalies: CycleAnomaly[]
+  lines: PayablesRunLine[]
+  nettings: PayablesRunNetting[]
+  byAnaesthetist: RunAnaesthetistTotal[]
+  excluded: PayablesRunExclusion[]
+  approvedAtISO?: IsoDateTime
+  approvedBy?: { who: string; role: ActorRole }
+  scheduledAtISO?: IsoDateTime
+  scheduledBy?: { who: string; role: ActorRole }
+  sentToXeroAtISO?: IsoDateTime
+  paidAtISO?: IsoDateTime
+  supersededBy?: string
+  seeded?: true
+}
+
+/**
+ * One line of the simulated bank download (catch-up Phase 39a; US-10.2.7's
+ * Friday reconciliation): stands in for AA's daily bank download, written
+ * beside every payment Xero records and by the seed for every seeded receipt.
+ * The engine only reads it at the close. Not Xero's own bank reconciliation
+ * lines (`xero.bankLines`, 37's bulk remittance). `BNK####`.
+ */
+export interface BankLine {
+  id: string
+  dateISO: IsoDate
+  amount: number
+  /** The receivable invoice number the deposit quotes. */
+  reference: string
+  xeroPaymentId: string
+  /** Removed by the "Stage a bank mismatch" demo trigger: the close reads it as missing. */
+  removedByDemo?: true
 }
 
 // ---------------------------------------------------------------------------
@@ -1988,6 +2163,8 @@ export interface XeroAccPay {
   /** CUMULATIVE (7th review A16): payables runs pay authorised minus disbursed. */
   amountAuthorised: number
   amountDisbursed: number
+  /** CUMULATIVE ACCPAYCREDIT allocated against it by a payment run's netting (catch-up Phase 39a). Absent reads as 0. */
+  amountCreditAllocated?: number
   /** `voided` (a draft with nothing authorised) or `credited` (an ACCPAYCREDIT against it): an engine correction (catch-up Phase 39). */
   status: 'draft' | 'authorised' | 'paid' | 'voided' | 'credited'
   /**
@@ -2118,9 +2295,42 @@ export interface Disbursement {
   transferId?: string
   amount: number
   atISO: IsoDateTime
+  /** The payment run it paid (catch-up Phase 39a: always a real run, `PR####` or the seed's `PRH##`). */
   payablesRunId: string
   /** The bill payment's key (`BILLPAY-<id>`, catch-up Phase 37): the engine records it once, by webhook or poll. */
   idempotencyKey: string
+  /** The batch payment it went out in (catch-up Phase 39a): one per anaesthetist per run. */
+  batchPaymentId?: string
+}
+
+/**
+ * An ACCPAYCREDIT allocated against a bill by a payment run's netting
+ * (catch-up Phase 39a; US-10.2.5): Xero side, as Xero would record it. The
+ * engine records the offset when Xero reports it (`recordOffset`), once, by
+ * its `CNALLOC-` key. `XCA####`.
+ */
+export interface XeroCreditAllocation {
+  id: string
+  /** The ACCPAYCREDIT (39's `XeroCreditNote`), the negative invoice's `accPayCreditNoteId`. */
+  accPayCreditId: string
+  accPayId: string
+  amount: number
+  atISO: IsoDateTime
+  /** `CNALLOC-<id>`. */
+  idempotencyKey: string
+  payablesRunId: string
+}
+
+/** One payment to one anaesthetist for a run's net (catch-up Phase 39a): its bill payments. `XBP####` (the seed's `XBPH##`). */
+export interface XeroBatchPayment {
+  id: string
+  contactId: string
+  anaesthetistId: AnaesthetistId
+  payablesRunId: string
+  cycleId: string
+  total: number
+  atISO: IsoDateTime
+  billPaymentIds: string[]
 }
 
 /**
@@ -2134,11 +2344,12 @@ export interface XeroQueueItem {
   /** `XQ####`. */
   id: string
   /** `correction` (catch-up Phase 39): a credit note's reversal and its replacements' pairs, together (`handoffCorrection`). */
-  kind: 'handoff' | 'journal' | 'paymentSync' | 'disbursementSync' | 'poll' | 'correction'
+  /** `offsetSync` (catch-up Phase 39a): a credit allocation Xero made that the engine has yet to record. */
+  kind: 'handoff' | 'journal' | 'paymentSync' | 'disbursementSync' | 'poll' | 'correction' | 'offsetSync'
   /** `HANDOFF-<pairId>`, `JOURNAL-<transferId>`, the payment's own key, the bill payment's key, `POLL-<dateISO>`, `CORRECTION-<creditNoteId>`. */
   idempotencyKey: string
   /** A correction's: the credit note, the original's pair (`pairId`) and every pair it creates (`pairIds`). */
-  target: { pairId?: string; transferId?: string; accRecId?: string; accPayId?: string; xeroPaymentId?: string; xeroDisbursementId?: string; creditNoteId?: string; pairIds?: string[] }
+  target: { pairId?: string; transferId?: string; accRecId?: string; accPayId?: string; xeroPaymentId?: string; xeroDisbursementId?: string; creditNoteId?: string; pairIds?: string[]; xeroAllocationId?: string }
   enqueuedAtISO: IsoDateTime
   /** Attempts made, the first (failed) call included. */
   attempts: number

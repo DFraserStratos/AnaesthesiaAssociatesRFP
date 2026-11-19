@@ -24,7 +24,7 @@ import { openXeroQueueItems } from './ledgerSelectors'
 import { createTransferJournal, createXeroCorrection, createXeroPair } from './xeroHandoff'
 import { flagXeroDivergences } from './xeroDivergenceActions'
 import { receivePayment } from './paymentActions'
-import { recordDisbursement } from './disbursementDetection'
+import { recordDisbursement, recordOffset } from './disbursementDetection'
 import { runReconciliationPoll } from './reconciliationPoll'
 import { XERO_OUTAGE_ERROR, XERO_QUEUE_ACTOR, xeroAvailable } from './xeroGate'
 
@@ -108,6 +108,12 @@ function runHandler(api: AppStoreApi, item: XeroQueueItem): string | undefined {
         flagXeroDivergences(api)
         return undefined
       }
+      return out.ok ? undefined : out.message
+    }
+    case 'offsetSync': {
+      const a = t.xeroAllocationId !== undefined ? api.getState().xero.creditAllocations[t.xeroAllocationId] : undefined
+      if (a === undefined) return 'The credit allocation is no longer in Xero'
+      const out = recordOffset(api, { accPayId: a.accPayId, accPayCreditId: a.accPayCreditId, xeroAllocationId: a.id, amount: a.amount, atISO: a.atISO, idempotencyKey: a.idempotencyKey, detectedBy: 'webhook', payablesRunId: a.payablesRunId })
       return out.ok ? undefined : out.message
     }
     case 'poll':

@@ -14,7 +14,9 @@ import {
   anaesthetistsOutOfBalance,
   applyCredit,
   applyDisbursement,
+  applyOffset,
   applyReceipt,
+  dueOn,
   bctiRecordsOf,
   HOLDING_PAYEE,
   ledgerChecks,
@@ -372,3 +374,66 @@ describe('the credit path (catch-up Phase 39)', () => {
     expect(bctiRecordsOf([credit(receive(pair('A', 100), 100))]).map((r) => r.accPayId)).toEqual(['A'])
   })
 })
+
+describe('netting in a payment run (catch-up Phase 39a; US-10.2.5)', () => {
+  const REF = { creditNoteId: 'CRN0001', negativeInvoiceId: 'NEG0001', atISO: AT }
+  function creditAfterPayout(p: BookingLedgerPair): BookingLedgerPair {
+    const plan = reversalPlan({ total: p.receivable.amount, received: p.receivable.receivedAmount, released: p.payable!.releasedAmount, disbursed: p.payable!.disbursedAmount })
+    const out = applyCredit(p, plan, REF)
+    if (!out.ok) throw new Error(out.code)
+    return out.pair
+  }
+  function offset(p: BookingLedgerPair, amount: number): BookingLedgerPair {
+    const out = applyOffset(p.payable!, amount, AT)
+    if (!out.ok) throw new Error(out.code)
+    return { ...p, payable: out.leg }
+  }
+  /** The credited pair's netting, kept in step with the offset (the store does both in one mutate). */
+  function netted(p: BookingLedgerPair, amount: number): BookingLedgerPair {
+    return { ...p, credit: { ...p.credit!, nettedAmount: (p.credit!.nettedAmount ?? 0) + amount } }
+  }
+
+  it('applyOffset settles part of a payable without cash, refused above what is due, stamping paid out at full', () => {
+    const p = receive(pair('B', 100), 100)
+    const half = offset(p, 30)
+    expect(half.payable).toMatchObject({ offsetAmount: 30, disbursedAmount: 0 })
+    expect(dueOn(half.payable!)).toBe(70)
+    expect(applyOffset(half.payable!, 70.01, AT)).toEqual({ ok: false, code: 'aboveReleased' })
+    expect(applyDisbursement(half.payable!, 70.01, AT)).toEqual({ ok: false, code: 'aboveReleased' })
+    const done = disburse(half, 70)
+    expect(done.payable!.paidOutAtISO).toBe(AT)
+    expect(pairStatusLabel(done)).toBe('disbursed')
+    expect(applyOffset(pair('H', 100, { holding: true }).payable!, 1, AT)).toEqual({ ok: false, code: 'holdingSystemOnly' })
+  })
+
+  it('worked check, N < P: cash out is P - N, payables due 0, open negatives 0, receipts held down by P - N, in balance', () => {
+    const credited = creditAfterPayout(disburse(receive(pair('A', 40), 40), 40))
+    const positive = receive(pair('B', 100), 100)
+    const before = ledgerPosition([credited, positive], {}, [])
+    expect([before.payablesDue, before.recoveryDueFromAnaesthetists, before.imbalance]).toEqual([100, 40, 0])
+    const after = [netted(credited, 40), disburse(offset(positive, 40), 60)]
+    const pos = ledgerPosition(after, {}, [])
+    expect([pos.payablesDue, pos.recoveryDueFromAnaesthetists, round(before.receiptsHeld - pos.receiptsHeld), pos.imbalance, pos.inBalance]).toEqual([0, 0, 60, 0, true])
+    const mine = anaesthetistPosition(after, {}, [], SOUTER)
+    expect([mine.recoveryDue, mine.dueNow, mine.imbalance, mine.inBalance]).toEqual([0, 0, 0, true])
+  })
+
+  it('worked check, N > P: no cash, open negatives N - P, in balance', () => {
+    const credited = creditAfterPayout(disburse(receive(pair('A', 130), 130), 130))
+    const positive = receive(pair('B', 100), 100)
+    const after = [netted(credited, 100), offset(positive, 100)]
+    const pos = ledgerPosition(after, {}, [])
+    expect([pos.payablesDue, pos.recoveryDueFromAnaesthetists, pos.disbursed, pos.imbalance, pos.inBalance]).toEqual([0, 30, 130, 0, true])
+    expect(anaesthetistPosition(after, {}, [], SOUTER).recoveryDue).toBe(30)
+  })
+
+  it('crediting a bill already settled partly by netting cuts its release to cash plus netted', () => {
+    const p = creditAfterPayout(offset(receive(pair('B', 100), 100), 25))
+    expect(p.payable).toMatchObject({ releasedAmount: 25, offsetAmount: 25 })
+    expect(ledgerChecks([p], {}, [])).toEqual([])
+  })
+})
+
+function round(n: number): number {
+  return Math.round(n * 100) / 100
+}

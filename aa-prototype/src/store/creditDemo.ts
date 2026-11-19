@@ -28,7 +28,7 @@ import { approveProcedureEvent, liveInvoiceForProcedure, runEventInvoicing } fro
 import { invoiceStanding, reviewRowsAwaiting } from './creditActions'
 import { pairForInvoice } from './ledgerSelectors'
 import { deliverPaymentWebhook } from './paymentActions'
-import { payBillsInXero, XERO_PAYABLES_ACTOR } from './xeroSimActions'
+import { approveAndPayPairForDemo } from './payablesActions'
 import { xeroAvailable } from './xeroGate'
 import { OFFICE_ACTOR, OFFICE_SIMULATION_ACTOR } from './demoActors'
 import { ok, refuse, type Outcome } from './mutate'
@@ -154,9 +154,10 @@ export function refundAfterPayoutRefusal(state: AppState, invoiceId: string | un
 /**
  * Pay the invoice in full and pay its anaesthetist out (US-08.6.5's paid-out
  * case): the rest of the balance through 14's payment webhook (keyed
- * `STAGE-REFUND-<accRecId>`, so a replay is a no-op), then Xero's payables run
- * pays the bill with the bill-paid webhook delivered (37's `payBillsInXero`),
- * so the engine records the disbursement. A following credit's negative
+ * `STAGE-REFUND-<accRecId>`, so a replay is a no-op), then the office
+ * approves a one-line staged run in this week and Xero pays it with the
+ * bill-paid webhook delivered (catch-up Phase 39a's
+ * `approveAndPayPairForDemo`), so the engine records the disbursement. A following credit's negative
  * invoice then has the whole amount to net.
  */
 export function stageRefundAfterPayout(api: AppStoreApi, invoiceId: string | undefined): Outcome<{ invoiceId: string; invoiceNumber: string; payee: string; paidOut: number }> {
@@ -171,12 +172,13 @@ export function stageRefundAfterPayout(api: AppStoreApi, invoiceId: string | und
     const paid = deliverPaymentWebhook(api, { accRecId, amount: remaining, idempotencyKey: `STAGE-REFUND-${accRecId}` })
     if (!paid.ok) return paid
   }
-  const out = payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId: before.payable!.xeroAccPayId! }], { webhook: 'deliver' })
+  // The office approves a one-line staged run first (catch-up Phase 39a: no payout skips approval), then Xero pays it.
+  const out = approveAndPayPairForDemo(api, OFFICE_SIMULATION_ACTOR, before.id)
   if (!out.ok) return out
   const state = api.getState()
   const lock = state.billing.locks[state.billing.invoices[targetId]!.bookingId]
   const payee = drSurname(lock?.payee.name ?? 'the anaesthetist')
-  return ok({ invoiceId: targetId, invoiceNumber: state.billing.invoices[targetId]!.invoiceNumber, payee, paidOut: out.value.totalRecorded })
+  return ok({ invoiceId: targetId, invoiceNumber: state.billing.invoices[targetId]!.invoiceNumber, payee, paidOut: out.value.totalDisbursed })
 }
 
 // ---------------------------------------------------------------------------

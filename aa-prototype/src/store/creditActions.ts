@@ -47,7 +47,7 @@ import type {
 import { creditDetailOf, eventLines, eventStatus, mayRaise, resolveEventParty, type EventActor, type ResolvedEventParty } from '../domain/billing/procedureEvent'
 import { creditInFull, rebillDraftFrom, reversalPlan, splitTotalCheck, type CreditInFull } from '../domain/billing/creditNote'
 import { defaultEventDate } from '../domain/billing/procedureEvent'
-import { applyCredit, payeeAnaesthetistOf } from '../domain/billing/ledger'
+import { applyCredit, payeeAnaesthetistOf, settledOn } from '../domain/billing/ledger'
 import { toCents } from '../domain/billing/money'
 import { deliveryStampFor } from '../domain/billing/invoicePresentation'
 import type { DeliveryPlan } from '../domain/billing/whoIsBilled'
@@ -188,7 +188,7 @@ export function reviewRowsAwaiting(state: { schedule: Pick<AppState['schedule'],
 export function currentReversalPlan(state: Pick<AppState, 'billing'>, invoiceId: string): ReversalPlan | undefined {
   const pair = pairForInvoice(state, invoiceId)
   if (pair === undefined) return undefined
-  return reversalPlan({ total: pair.receivable.amount, received: pair.receivable.receivedAmount, released: pair.payable?.releasedAmount ?? 0, disbursed: pair.payable?.disbursedAmount ?? 0 })
+  return reversalPlan({ total: pair.receivable.amount, received: pair.receivable.receivedAmount, released: pair.payable?.releasedAmount ?? 0, disbursed: pair.payable !== undefined ? settledOn(pair.payable) : 0 })
 }
 
 // ---------------------------------------------------------------------------
@@ -752,7 +752,7 @@ export function planCreditIssue(state: CreditState, creditEventId: string): Outc
   const lines = Object.values(state.billing.invoiceLines)
     .filter((l) => l.invoiceId === original.id)
     .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
-  const reversal = reversalPlan({ total: original.total, received: pair.receivable.receivedAmount, released: pair.payable.releasedAmount, disbursed: pair.payable.disbursedAmount })
+  const reversal = reversalPlan({ total: original.total, received: pair.receivable.receivedAmount, released: pair.payable.releasedAmount, disbursed: settledOn(pair.payable) })
   return ok({ event, credit, original, pair, anaesthetistId, reversal, note: creditInFull(original, lines), party, delivery, replacements: planned })
 }
 

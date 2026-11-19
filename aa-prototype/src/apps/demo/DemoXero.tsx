@@ -3,12 +3,13 @@ import { AlertTriangle, ArrowRight, ChevronLeft, ExternalLink, Info } from 'luci
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { DemoSurface } from './DemoSurface'
 import {
-  OFFICE_ACTOR,
+  OFFICE_SIMULATION_ACTOR,
   XERO_STAFF_ACTOR,
   bankLineMatchRefusal,
   deliverPaymentWebhook,
   xeroBalanceOf,
-  disbursePayable,
+  approveAndPayPairForDemo,
+  paymentWeekFor,
   matchBankLineInXero,
   unmatchedBankLines,
   useAppStore,
@@ -343,14 +344,16 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
       setSettlementMessage('The payment landed in Xero. Xero is unavailable to the Billing Engine, so it waits in the sync queue, and nothing is authorised to pay yet.')
       return
     }
-    const payout = disbursePayable(useAppStore, OFFICE_ACTOR, pair.ledger.pairId)
+    // No payout skips approval (catch-up Phase 39a): the office approves a one-bill staged run in this week, then Xero pays it.
+    const payout = approveAndPayPairForDemo(useAppStore, OFFICE_SIMULATION_ACTOR, pair.ledger.pairId)
     // A prepayment's payable credits the AA Holding account (catch-up Phases 27, 27a): the payment lands, the
     // payout is refused, because money leaves the account only by a transfer or refund the system raises.
     if (!payout.ok && payout.code === 'holdingSystemOnly') {
       setSettlementMessage(`The customer payment is recorded. ${payout.message}`)
       return
     }
-    if (!payout.ok) {
+    const nothingReleased = !payout.ok && payout.code === 'nothingToApprove'
+    if (!payout.ok && !nothingReleased) {
       setSettlementMessage(`The anaesthetist payout could not be completed: ${payout.message}`)
       return
     }
@@ -359,18 +362,20 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
     const payer = pair.accRec.contact?.type === 'organisation' ? `${pair.accRec.contact.name}'s` : "The payer's"
     // The two Xero events and the bill-paid webhook, named (the payment half only when this click paid it in).
     const paymentPart = paidIn ? `${payer} payment of ${formatCurrency(owing)} landed in Xero and the webhook told the engine; ` : ''
+    const paid = payout.ok ? payout.value : undefined
+    const week = paid !== undefined ? (paymentWeekFor(useAppStore.getState(), paid.payablesRunId) ?? 'this week') : 'this week'
     const payoutPart =
-      payout.value.disbursedCount > 0
-        ? `Xero's payables run paid ${who} ${formatCurrency(payout.value.totalPaid)} and the bill-paid webhook recorded the disbursement.`
-        : `Xero's payables run paid ${who} ${formatCurrency(payout.value.totalPaid)}; the bill-paid webhook's sync waits in the Billing Engine's Xero sync queue.`
+      paid !== undefined && paid.disbursedCount > 0
+        ? `the office approved it for payment in ${week}, Xero's payables run paid ${who} ${formatCurrency(paid.totalPaid)} and the bill-paid webhook recorded the disbursement.`
+        : `the office approved it for payment in ${week} and Xero's payables run paid ${who} ${formatCurrency(paid?.totalPaid ?? 0)}; the bill-paid webhook's sync waits in the Billing Engine's Xero sync queue.`
     setSettlementMessage(
-      payout.value.billsPaid === 0
+      paid === undefined || paid.billsPaid === 0
         ? paidIn
           ? `${paymentPart}nothing is authorised to pay ${who} yet.`
           : 'Done. This customer payment and the bill to the anaesthetist were already complete.'
         : paidIn
           ? `${paymentPart}${payoutPart}`
-          : payoutPart,
+          : `${payoutPart.charAt(0).toUpperCase()}${payoutPart.slice(1)}`,
     )
   }
 

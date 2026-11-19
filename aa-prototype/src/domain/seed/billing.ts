@@ -32,6 +32,10 @@ import type {
   XeroContact,
   XeroBankLine,
   XeroCreditNote,
+  XeroCreditAllocation,
+  XeroBatchPayment,
+  PayablesRun,
+  BankLine,
   XeroJournal,
   XeroRemittance,
 } from '../types'
@@ -42,6 +46,7 @@ import { xeroIndividualContactName } from '../xeroContact'
 import { billingHospitalId } from '../listPairing'
 import { buildHistory } from './history'
 import { buildSeedAaFeeHistory } from './aaFee'
+import { backdropBankLines, backdropRunsFor } from './backdropRuns'
 import { anaesthetistPayee, applyReceipt, HOLDING_PAYEE, newBookingPair } from '../billing/ledger'
 import type { SeedState } from './index'
 
@@ -58,10 +63,13 @@ export interface SeedXeroSlice {
   bankLines: Record<string, XeroBankLine>
   /** The engine's Xero credit notes (catch-up Phase 39): the seed ships none. */
   creditNotes: Record<string, XeroCreditNote>
+  /** Payment runs' credit allocations and batch payments (catch-up Phase 39a): the backdrop runs' batch payments. */
+  creditAllocations: Record<string, XeroCreditAllocation>
+  batchPayments: Record<string, XeroBatchPayment>
 }
 
 export function emptySeedXeroSlice(): SeedXeroSlice {
-  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {}, creditNotes: {} }
+  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {}, creditNotes: {}, creditAllocations: {}, batchPayments: {} }
 }
 
 export interface SeedBillingSlice {
@@ -79,6 +87,10 @@ export interface SeedBillingSlice {
   contactIdCache: Record<string, string>
   /** Dr Souter's seeded AA fee invoices (catch-up Phase 16). */
   aaFeeInvoices: Record<string, AaFeeInvoice>
+  /** The backdrop weekly payment runs the seeded disbursements were paid in (catch-up Phase 39a). */
+  payablesRuns: Record<string, PayablesRun>
+  /** The simulated bank download: one line per seeded receipt (catch-up Phase 39a). */
+  bankLines: Record<string, BankLine>
   /** seed.counters bumped past the ids this slice consumed. */
   counters: Record<string, number>
 }
@@ -96,6 +108,16 @@ const FORMATS: Record<string, { prefix: string; pad: number }> = {
   invoiceLine: { prefix: 'IL', pad: 4 },
   ledgerPair: { prefix: 'BC', pad: 4 },
   invoiceNumber: { prefix: 'AA-2026-', pad: 4 },
+}
+
+/** The name a seeded invoice is addressed to (a backdrop run line's payer): `billedTo`, else the counterparty's master name. */
+function payerNameIn(seed: SeedState, invoice: Pick<Invoice, 'billedTo' | 'counterparty'> | undefined): string {
+  if (invoice === undefined) return ''
+  if (invoice.billedTo?.name !== undefined) return invoice.billedTo.name
+  const ref = invoice.counterparty
+  const m = seed.masters as unknown as Record<string, Record<string, { name?: string }> | undefined>
+  const table = ref.kind === 'hospital' ? m['hospitals'] : ref.kind === 'organisation' ? m['organisations'] : ref.kind === 'patient' ? m['patients'] : ref.kind === 'surgeon' ? m['surgeons'] : ref.kind === 'insurer' ? m['insurers'] : m['parties']
+  return table?.[ref.id]?.name ?? ref.id
 }
 
 function proceduresOf(seed: SeedState, bookingId: string) {
@@ -252,23 +274,42 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
     const bumps: Record<string, number> = n.invoice > 0 ? { ledgerPair: n.ledgerPair + 1, invoice: n.invoice + 1, invoiceLine: n.invoiceLine + 1, invoiceNumber: n.invoiceNumber + 1 } : {}
     // AA's fee history last: it counts every seeded BCTI over the ledger's payable legs (a prepayment's payable is not one since catch-up Phase 27a; it is paid in July, outside May and June anyway).
     const fees = buildSeedAaFeeHistory(ledger, contactIdCache, seed.appSettings.aaFee)
+    // Every seeded payout belongs to a backdrop weekly run, and every seeded receipt has its bank line (catch-up Phase 39a).
+    const backdrop = backdropRunsFor({
+      ns: 'H',
+      settings: seed.appSettings.paymentCycle,
+      ledger: history.ledger,
+      invoices,
+      payerNameOf: (pair) => payerNameIn(seed, invoices[pair.invoiceId]),
+      serviceDateOf: (pair) => history.lists[pair.listId]?.dateISO ?? pair.createdAtISO.slice(0, 10),
+      ledgerDisbursements: history.ledgerDisbursements,
+      xeroDisbursements: disbursements,
+      accPays,
+      seeded: true,
+    })
+    const allPayments = { ...payments, ...fees.payments }
+    const allAccRecs = { ...accRecs, ...fees.accRecs }
     return {
       invoices,
       invoiceLines,
       ledger: { ...ledger, ...fees.ledger },
       receipts: { ...receipts, ...fees.receipts },
-      disbursements: { ...history.ledgerDisbursements },
+      disbursements: backdrop.ledgerDisbursements,
       xero: {
         contacts,
-        accRecs: { ...accRecs, ...fees.accRecs },
+        accRecs: allAccRecs,
         accPays,
-        payments: { ...payments, ...fees.payments },
-        disbursements,
+        payments: allPayments,
+        disbursements: backdrop.xeroDisbursements,
         journals: {},
         remittances: {},
         bankLines: {},
         creditNotes: {},
+        creditAllocations: {},
+        batchPayments: backdrop.batchPayments,
       },
+      payablesRuns: backdrop.runs,
+      bankLines: backdropBankLines('H', allPayments, allAccRecs),
       contactIdCache,
       aaFeeInvoices: fees.aaFeeInvoices,
       counters: { ...seed.counters, ...bumps },
