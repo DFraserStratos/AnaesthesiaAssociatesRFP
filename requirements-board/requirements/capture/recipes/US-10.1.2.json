@@ -126,7 +126,7 @@
         {
           "steps": [
             {
-              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Brian Holt\")"
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Brian Holt\") >> td >> nth=0"
             },
             {
               "wait": 500
