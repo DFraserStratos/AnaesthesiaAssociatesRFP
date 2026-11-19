@@ -7,6 +7,7 @@ import { DemoActionsMenu } from './DemoActionsMenu'
 import { DemoClockMenu } from './DemoClockMenu'
 import { DemoResetButton } from './DemoResetButton'
 import { PersonaChip } from '../shared/PersonaChip'
+import { ScaleBanner } from '../shared/scale/ScaleBanner'
 import { neutral, radius } from '../theme/tokens'
 
 /**
@@ -109,6 +110,9 @@ export function AppShell() {
           <DemoResetButton />
         </div>
       </header>
+
+      {/* The full-scale data's banner (catch-up Phase 43): harness chrome, only while generating or loaded. */}
+      <ScaleBanner />
 
       {/* ── Routed app ──────────────────────────────────────── */}
       {/* The modal scope (U2): an open dialog makes the app inert, never the harness bar. */}

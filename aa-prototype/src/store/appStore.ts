@@ -18,7 +18,7 @@
 import { emptyMasterLoadsSlice, type MasterLoadsSlice } from '../domain/masterLoad/types'
 import { create, type StateCreator, type StoreApi, type UseBoundStore } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import { resilientLocalStorage } from './persistStorage'
+import { pausableStorage, resilientLocalStorage } from './persistStorage'
 import { bindCrossTabSync } from './crossTabSync'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
 import { buildSeed, buildSeedBillingSlice, SEED_AUTHORISED_INVOICED_BOOKING_IDS, SEED_PREPAID_BOOKING_ID, type SeedState } from '../domain/seed'
@@ -550,7 +550,8 @@ export function createAppStore(options: CreateAppStoreOptions = {}): BoundAppSto
         // error boundary can catch it. This is storage MECHANICS only — same
         // key, same JSON shape, same version — so there is deliberately NO
         // PERSIST_VERSION bump: an existing persisted store rehydrates as-is.
-        storage: createJSONStorage(() => resilientLocalStorage),
+        // Catch-up Phase 43: paused (full-scale data in memory) means not even serialised.
+        storage: pausableStorage(createJSONStorage(() => resilientLocalStorage)),
         // A PERSIST_VERSION bump means the seed shape/content CHANGED, so a
         // different-version persisted store must be DISCARDED and reseeded. zustand
         // does NOT auto-discard on a version mismatch, so migrate returns the

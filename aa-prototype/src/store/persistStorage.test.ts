@@ -228,3 +228,63 @@ describe('bytes', () => {
     expect(bytes(key)).toBe(29)
   })
 })
+
+describe('paused persistence (catch-up Phase 43)', () => {
+  it('a paused store neither writes nor serialises; bytes keeps the last payload; resume then one mutation writes once', async () => {
+    const storage = await loadStorage()
+    const { createAppStore, PERSIST_KEY } = await import('./appStore')
+    const store = createAppStore({ persisted: true })
+    vi.useFakeTimers()
+    // A first mutation so a payload exists, written through.
+    store.getState().nextSuggestionSeq()
+    storage.flushPersist()
+    const before = storage.bytes(PERSIST_KEY)
+    expect(before).toBeGreaterThan(0)
+
+    storage.pausePersist('Full-scale data is held in memory only')
+    const write = vi.spyOn(Storage.prototype, 'setItem')
+    const stringify = vi.spyOn(JSON, 'stringify')
+    store.getState().nextSuggestionSeq()
+    store.getState().nextSuggestionSeq()
+    vi.advanceTimersByTime(1_000)
+    storage.flushPersist()
+    expect(write).not.toHaveBeenCalled()
+    expect(stringify).not.toHaveBeenCalled()
+    expect(storage.bytes(PERSIST_KEY)).toBe(before)
+    expect(storage.persistStatus()).toMatchObject({ paused: true, pausedReason: 'Full-scale data is held in memory only', disabled: false })
+
+    stringify.mockRestore()
+    storage.resumePersist()
+    store.getState().nextSuggestionSeq()
+    vi.advanceTimersByTime(250)
+    expect(write).toHaveBeenCalledTimes(1)
+    expect(storage.persistStatus().paused).toBe(false)
+  })
+
+  it('pausing drops a queued write', async () => {
+    const { resilientLocalStorage, pausePersist, flushPersist } = await loadStorage()
+    const key = nextKey()
+    vi.useFakeTimers()
+    const write = vi.spyOn(Storage.prototype, 'setItem')
+    resilientLocalStorage.setItem(key, 'queued')
+    pausePersist('test')
+    vi.advanceTimersByTime(1_000)
+    flushPersist()
+    expect(write).not.toHaveBeenCalled()
+  })
+
+  it('the pause and the error latch are independent: a paused store that then fails reports both', async () => {
+    const { resilientLocalStorage, flushPersist, persistStatus, pausePersist, resumePersist } = await loadStorage()
+    const key = nextKey()
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('The quota has been exceeded.', 'QuotaExceededError')
+    })
+    pausePersist('in memory')
+    resilientLocalStorage.setItem(key, 'over budget')
+    flushPersist()
+    expect(persistStatus()).toMatchObject({ disabled: true, paused: true })
+    resumePersist()
+    expect(persistStatus()).toMatchObject({ disabled: true, paused: false })
+  })
+})

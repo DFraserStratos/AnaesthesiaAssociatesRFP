@@ -83,7 +83,7 @@ export function DemoActionsMenu() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {rows.map(({ trigger, options, chosen, reason, result, choose, run }) => {
+            {rows.map(({ trigger, options, chosen, reason, result, choose, run, confirming, cancelConfirm }) => {
               return (
                 <div
                   key={trigger.id}
@@ -99,9 +99,10 @@ export function DemoActionsMenu() {
                       type="button"
                       disabled={reason !== null}
                       onClick={run}
+                      data-shot={confirming ? 'demo-action-confirm' : undefined}
                       style={{ ...runStyle, ...(reason !== null ? { opacity: 0.45, cursor: 'not-allowed' } : {}) }}
                     >
-                      Run
+                      {confirming ? 'Confirm' : 'Run'}
                     </button>
                   </div>
                   <span style={{ fontSize: 12.5, lineHeight: 1.45, color: neutral.slate }}>{trigger.description}</span>
@@ -118,6 +119,14 @@ export function DemoActionsMenu() {
                     </select>
                   )}
                   {reason !== null && <span style={{ fontSize: 12, color: neutral.mist }}>{reason}</span>}
+                  {confirming && trigger.confirm !== undefined && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: 12.5, lineHeight: 1.45, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: radius.ctl, padding: '8px 10px' }}>
+                      <span>{trigger.confirm}</span>
+                      <button type="button" onClick={cancelConfirm} style={{ font: 'inherit', fontSize: 12.5, fontWeight: 600, background: 'none', border: 'none', color: accent.base, cursor: 'pointer', padding: 0, flex: 'none' }}>
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                   <div role="status" aria-live="polite">
                     {result !== undefined && (
                       <div

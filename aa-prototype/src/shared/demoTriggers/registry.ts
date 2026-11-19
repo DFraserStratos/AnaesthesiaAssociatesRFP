@@ -159,7 +159,9 @@ import { SEED_STATUS, statusFor, statusLine } from '../../domain/slotStatus'
 import { formatMoney, roundToCents } from '../../domain/billing/money'
 import { keptPriceTitle } from '../../domain/billing/contractChanges'
 import { aaFeeFor, aaFeeMonthLabel } from '../../domain/billing/aaFee'
-import { drSurname, formatCurrency, plural, shortDay } from '../format'
+import { drSurname, formatCount, formatCurrency, plural, shortDay } from '../format'
+import { FULL_SCALE as FULL_SCALE_FIGURES } from '../../domain/seed/fullScale/constants'
+import { loadFullScaleData, loadFullScaleRefusal } from '../../store/fullScaleActions'
 import { isAssignedList } from '../../domain/draftLists'
 import { useDemoTriggerMemory } from './memory'
 import { simulateSickness, sicknessCandidates, sicknessColleagueSlot, sicknessRefusal, type SicknessRoute } from '../../store/demoSimulations'
@@ -2230,5 +2232,22 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => null,
     indexEmptyReason: 'PWA only: the framed build makes the change in Admin and saves it.',
+  },
+  // ── Scale and privacy (catch-up Phase 43) ─────────────────────────────
+  {
+    id: 'load-full-scale',
+    label: 'Load full-scale data',
+    description:
+      `Replaces the demo data with the whole practice, built in this browser from the same seed: ${FULL_SCALE_FIGURES.anaesthetists} anaesthetists, their sessions across the scheduling horizon and about ${formatCount(FULL_SCALE_FIGURES.targetInvoicesPerYear)} invoices from the last ${FULL_SCALE_FIGURES.historyMonths} months. Held in memory only: saving pauses, and Reset or a reload returns to the demo data.`,
+    screen: 'Admin · Day view and Invoices',
+    routes: ['/admin/day/:dateISO', '/admin/invoices', '/admin/invoices/:invoiceId'],
+    surfaces: ['bar'],
+    confirm: 'Replaces the current demo data. Reset returns to it.',
+    disabledReason: () => loadFullScaleRefusal(),
+    run: (api) => {
+      const res = loadFullScaleData(api)
+      return res.ok ? { ok: true, message: 'Generating full-scale data. Timings appear in the banner.' } : { ok: false, message: res.message }
+    },
+    indexPath: (state) => `/admin/day/${state.clock.todayISO}`,
   },
 ]

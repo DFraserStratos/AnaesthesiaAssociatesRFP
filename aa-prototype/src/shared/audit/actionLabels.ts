@@ -288,6 +288,8 @@ export const ACTION_LABELS: Record<string, string> = {
   'settings.archiveWindow': 'Archive window changed',
   'settings.armHandoffFault': 'Handoff fault armed',
   'demo.bctisSeeded': 'A month of BCTIs seeded',
+  // Catch-up Phase 43: the full-scale data's load entry.
+  'demo.fullScaleLoaded': 'Full-scale data loaded',
 
   // --- Accounts and sign-in (FT-13.5, simulated: catch-up Phase 14) -------
   'account.provisioned': 'Account provisioned',

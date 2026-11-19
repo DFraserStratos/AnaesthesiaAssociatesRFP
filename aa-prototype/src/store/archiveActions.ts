@@ -10,8 +10,7 @@
  * (not a demo simulation). Audited `source:'system'` (`xero.contactArchived`).
  */
 
-import { toCents } from '../domain/billing/money'
-import { epochDayOf } from '../domain/dateDays'
+import { eligibleArchiveContactIdsOf } from '../domain/billing/contactArchive'
 import { mutate, ok, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { onAppEvent } from './events'
@@ -36,32 +35,15 @@ export const ARCHIVE_SKIPPED_OUTAGE = 'Xero unavailable; the next nightly run ca
  * Pure — the UI preview and the job share it.
  */
 export function eligibleArchiveContactIds(state: Pick<AppState, 'xero' | 'billing' | 'settings' | 'clock'>): string[] {
-  const window = state.settings.contactArchiveInactivityDays
-  const todayDay = epochDayOf(state.clock.todayISO)
-  const eligible: string[] = []
-
-  for (const contact of Object.values(state.xero.contacts)) {
-    if (contact.archived) continue
-    if (contact.type === 'organisation') continue // organisational contacts never archive
-
-    const accRecs = Object.values(state.xero.accRecs).filter((r) => r.contactId === contact.contactId)
-    if (accRecs.length === 0) continue // no billing history — leave it be
-    const fullyPaid = accRecs.every((r) => toCents(r.amountReceived) >= toCents(r.amountDue))
-    if (!fullyPaid) continue
-
-    // Last activity = latest invoice raise / payment across this contact's ACCRECs.
-    let lastActivityDay = -Infinity
-    for (const r of accRecs) {
-      const invoice = state.billing.invoices[r.invoiceId]
-      if (invoice?.raisedAtISO !== undefined) lastActivityDay = Math.max(lastActivityDay, epochDayOf(invoice.raisedAtISO))
-      for (const p of Object.values(state.xero.payments)) {
-        if (p.accRecId === r.id) lastActivityDay = Math.max(lastActivityDay, epochDayOf(p.atISO))
-      }
-    }
-    if (lastActivityDay === -Infinity) continue
-    if (todayDay - lastActivityDay >= window) eligible.push(contact.contactId)
-  }
-  return eligible.sort((a, b) => a.localeCompare(b))
+  // The one rule, linear (catch-up Phase 43: `domain/billing/contactArchive.ts`).
+  return eligibleArchiveContactIdsOf({
+    contacts: state.xero.contacts,
+    accRecs: state.xero.accRecs,
+    payments: state.xero.payments,
+    invoices: state.billing.invoices,
+    todayISO: state.clock.todayISO,
+    windowDays: state.settings.contactArchiveInactivityDays,
+  })
 }
 
 /**

@@ -105,7 +105,7 @@ const PINNED: readonly Patient[] = [
 // Generic pool
 // ---------------------------------------------------------------------------
 
-const FIRST_NAMES = [
+export const FIRST_NAMES = [
   'Alice', 'Andrew', 'Anika', 'Aroha', 'Ben', 'Bridget', 'Callum', 'Charlotte', 'Chris', 'Claire',
   'Daniel', 'Dawn', 'Dylan', 'Eleanor', 'Eru', 'Esther', 'Finn', 'Fleur', 'Gavin', 'Gemma',
   'George', 'Hamish', 'Harriet', 'Hine', 'Ian', 'Isla', 'Jack', 'Jenny', 'Joanne', 'Jordan',
@@ -114,7 +114,7 @@ const FIRST_NAMES = [
   'Rangi', 'Ruth', 'Sam', 'Sina', 'Sione', 'Sophie', 'Stephen', 'Tama', 'Tessa', 'Wei',
 ] as const
 
-const SURNAMES = [
+export const SURNAMES = [
   'Adams', 'Ahmed', 'Anderson', 'Baker', 'Barrett', 'Bishop', 'Brown', 'Campbell', 'Carter', 'Clark',
   'Collins', 'Davies', 'Dixon', 'Edwards', 'Faʻaoso', 'Fletcher', 'Fraser', 'Gibson', 'Graham', 'Harris',
   'Henare', 'Hopa', 'Huang', 'Hunter', 'Ioane', 'Jackson', 'Kaur', 'Kelly', 'Kereama', 'Kim',
@@ -309,7 +309,7 @@ function emailLocalPart(name: string): string {
  * address, both derived from the id, so no RNG draw moves. Grace Park, a
  * child, shares her mother's postal address and has no email.
  */
-function withSeedContact(patient: Patient): Patient {
+export function withSeedContact(patient: Patient): Patient {
   if (NO_CONTACT.has(patient.hiddenInternalId)) return patient
   const n = Number(patient.hiddenInternalId.replace(/\D/g, '')) || 0
   if (patient.hiddenInternalId === PAT.park) return { ...patient, postalAddress: HANA_PARK_ADDRESS }

@@ -52,6 +52,12 @@ export interface DemoTrigger {
   /** Null when it can run; otherwise the reason shown under the disabled Run. */
   disabledReason: (state: AppState, ctx: DemoTriggerCtx, choiceId?: string) => string | null
   run: (api: AppStoreApi, ctx: DemoTriggerCtx, choiceId?: string) => DemoTriggerResult
+  /**
+   * A confirm step (catch-up Phase 43): when set, the first Run shows this line
+   * and a Confirm button, and only the second click runs (like the Control
+   * Panel's jump). For an entry that replaces the demo data.
+   */
+  confirm?: string
   /** Where the Control Panel's "Open screen" goes; null when there is nowhere yet. */
   indexPath: (state: AppState) => string | null
   /** Shown instead of "Open screen" when `indexPath` is null. */

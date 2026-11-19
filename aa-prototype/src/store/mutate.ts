@@ -21,6 +21,8 @@ import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
 import { seededIntakeSlice, seededIntegrationsSlice, type AppState, type AppStoreApi } from './appStore'
 import { reconcileConflictsInPatch, type MutationResult } from './conflictReconcile'
 import { seedLocks } from './locks'
+import { clearScaleMode } from './scaleMode'
+import { resumePersist } from './persistStorage'
 
 export type { MutationResult } from './conflictReconcile'
 
@@ -422,8 +424,42 @@ export function onDomainReset(listener: (api: AppStoreApi) => void): () => void 
 }
 
 export function resetDomainState(api: AppStoreApi): void {
+  // Leaving full scale (catch-up Phase 43): back to demo mode, and saving resumes BEFORE the
+  // pristine state is installed, so the pristine state is what gets written.
+  clearScaleMode()
+  resumePersist()
   resetDomainStateOnly(api)
   for (const listener of resetListeners) listener(api)
+}
+
+/** Every domain slice of the store (the shell and the store's functions excluded). */
+export type DomainState = Pick<
+  AppState,
+  | 'clock'
+  | 'masters'
+  | 'schedule'
+  | 'audit'
+  | 'settings'
+  | 'appSettings'
+  | 'dayNotes'
+  | 'officePrivate'
+  | 'notifications'
+  | 'counters'
+  | 'billing'
+  | 'xero'
+  | 'integrations'
+  | 'intake'
+  | 'masterLoads'
+>
+
+/**
+ * The wholesale replace of every domain slice (catch-up Phase 43): Reset's
+ * pristine seed and the full-scale install share this one code path. Not an
+ * audited mutation; the shell survives, except the office picker counter
+ * (catch-up Phase 17), so a fresh install replays the same within-tier orders.
+ */
+export function installDomainState(api: AppStoreApi, domain: DomainState): void {
+  api.setState({ ...domain, shell: { ...api.getState().shell, suggestionSeq: 0 } })
 }
 
 function resetDomainStateOnly(api: AppStoreApi): void {
@@ -431,7 +467,7 @@ function resetDomainStateOnly(api: AppStoreApi): void {
   // Restore the seeded PAID pre-payment slice through the same seam as
   // freshAppState (Phase 09), with the counters it bumped.
   const seedBilling = buildSeedBillingSlice(seed, SEED_PREPAID_BOOKING_ID, SEED_AUTHORISED_INVOICED_BOOKING_IDS)
-  api.setState({
+  const pristine: DomainState = {
     clock: INITIAL_CLOCK,
     masters: seed.masters,
     schedule: seed.schedule,
@@ -462,12 +498,8 @@ function resetDomainStateOnly(api: AppStoreApi): void {
     integrations: seededIntegrationsSlice(),
     intake: seededIntakeSlice(),
     masterLoads: emptyMasterLoadsSlice(),
-    // The shell slice survives a Reset, except the office picker counter
-    // (catch-up Phase 17): zeroing it makes a fresh Reset replay the same
-    // within-tier orders.
-    shell: { ...api.getState().shell, suggestionSeq: 0 },
-  })
+  }
   // Every seeded AUTHORISED List locked, as `freshAppState` does (catch-up Phase 25).
-  const locked = seedLocks(api.getState())
-  api.setState({ billing: { ...api.getState().billing, locks: locked.locks } })
+  const locked = seedLocks({ ...api.getState(), ...pristine })
+  installDomainState(api, { ...pristine, billing: { ...pristine.billing, locks: locked.locks } })
 }

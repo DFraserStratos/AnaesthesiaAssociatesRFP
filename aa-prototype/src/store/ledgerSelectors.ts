@@ -6,6 +6,7 @@
  * `domain/billing/ledger.ts`; these feed it from the store.
  */
 
+import { openDivergenceByPair, openQueueIndex, pairsByBooking } from './indexes'
 import type { AnaesthetistId, BillingException, BookingLedgerPair, LedgerPair, LedgerReceipt, LedgerTransfer, UnmatchedReceipt, XeroDivergence, XeroQueueItem } from '../domain/types'
 import { BCTI_COUNT_RULE, type BctiRecord } from '../domain/billing/bcti'
 import {
@@ -47,16 +48,15 @@ function unmatchedList(state: BillingState): UnmatchedReceipt[] {
 
 /** Every Booking pair of a Booking (procedure and prepayment), in id order. */
 export function pairsForBooking(state: BillingState, bookingId: string): BookingLedgerPair[] {
-  return allPairs(state)
-    .filter((p): p is BookingLedgerPair => isBookingPair(p) && p.bookingId === bookingId)
-    .sort((a, b) => a.id.localeCompare(b.id))
+  // Indexed on the ledger map (catch-up Phase 43).
+  return [...(pairsByBooking(state.billing.ledger).get(bookingId) ?? [])]
 }
 
 /** Every Booking pair for the Bookings on a List, in id order. */
 export function pairsForList(state: Pick<AppState, 'schedule' | 'billing'>, listId: string): BookingLedgerPair[] {
-  const bookingIds = new Set(bookingsForList(state, listId).map((b) => b.id))
-  return allPairs(state)
-    .filter((p): p is BookingLedgerPair => isBookingPair(p) && bookingIds.has(p.bookingId))
+  const byBooking = pairsByBooking(state.billing.ledger)
+  return bookingsForList(state, listId)
+    .flatMap((b) => byBooking.get(b.id) ?? [])
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
@@ -107,12 +107,12 @@ export function openXeroQueueItems(state: BillingState): XeroQueueItem[] {
 
 /** The open hand-off queue item for a pair, if its mirror is waiting for Xero. */
 export function handoffQueuedFor(state: BillingState, pairId: string): XeroQueueItem | undefined {
-  return Object.values(state.billing.xeroQueue).find((q) => q.kind === 'handoff' && q.status !== 'sent' && q.target.pairId === pairId)
+  return openQueueIndex(state.billing.xeroQueue).handoffByPair.get(pairId)
 }
 
 /** The open journal queue item for a transfer (27a's journal waiting for Xero). */
 export function journalQueuedFor(state: BillingState, transferId: string): XeroQueueItem | undefined {
-  return Object.values(state.billing.xeroQueue).find((q) => q.kind === 'journal' && q.status !== 'sent' && q.target.transferId === transferId)
+  return openQueueIndex(state.billing.xeroQueue).journalByTransfer.get(transferId)
 }
 
 /** Divergences the poll flagged and the office has not resolved, in id order. */
@@ -124,7 +124,7 @@ export function openXeroDivergences(state: BillingState): XeroDivergence[] {
 
 /** The open divergence on a pair, if the poll flagged one. */
 export function openDivergenceFor(state: BillingState, pairId: string): XeroDivergence | undefined {
-  return openXeroDivergences(state).find((d) => d.pairId === pairId)
+  return openDivergenceByPair(state.billing.xeroDivergences).get(pairId)
 }
 
 export type XeroQueueStatusLabel = 'Waiting' | 'Retrying' | 'Alert raised' | 'Sent'

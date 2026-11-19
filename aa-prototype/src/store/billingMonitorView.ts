@@ -13,6 +13,7 @@
  * stays on Review.
  */
 
+import { pairByInvoice } from './indexes'
 import type { AppState } from './appStore'
 import type { AssignedList } from '../domain/types'
 import { billingMonitor, bookingsForList, submittedLists, type MonitorListRow } from './selectors'
@@ -122,7 +123,7 @@ function inXeroCount(state: ViewState, row: MonitorListRow): number {
   const ids = new Set(row.bookingRows.flatMap((b) => b.invoiceIds))
   let n = 0
   for (const id of ids) {
-    const pair = Object.values(state.billing.ledger).find((p) => 'invoiceId' in p && p.invoiceId === id)
+    const pair = pairByInvoice(state.billing.ledger).get(id)
     if (pair?.receivable.xeroAccRecId !== undefined) n += 1
   }
   return n

@@ -7,6 +7,7 @@ import type { CompletionContext } from '../domain/billing/completion'
  * every snapshot.
  */
 
+import { bookingsByList, invoicesByBooking, openExceptionByBooking, pairsByPatient, proceduresByBooking, transfersByBooking } from './indexes'
 import { closuresAt, closuresIndex, closureSourcesOf } from '../domain/holidays'
 import { rvgCodeToFill } from '../domain/billing/rvgDetail'
 import { procedureStackView, type ProcedureStackView, type StackSurface } from '../domain/billing/procedureStack'
@@ -80,7 +81,7 @@ import { maskBankAccount } from '../domain/bankAccount'
 import { procedureAccFunded } from '../domain/billing/fundingTags'
 import { BCTI_COUNT_RULE, bctiFeeHistory, bctisFor, type BctiFeeHistory, type BctiRecord } from '../domain/billing/bcti'
 import { isBookingPair, patientPosition, transferOfPair, type PairStatus } from '../domain/billing/ledger'
-import { bctiRecords, handoffQueuedFor, incomeReceiptsFor, journalQueuedFor, openBillingExceptions, openDivergenceFor, pairsForList, pairStatusOf } from './ledgerSelectors'
+import { bctiRecords, handoffQueuedFor, incomeReceiptsFor, journalQueuedFor, openDivergenceFor, pairsForList, pairStatusOf } from './ledgerSelectors'
 import { aaFeeFixedTotal, aaFeeFor } from '../domain/billing/aaFee'
 import { useMemo } from 'react'
 import { addDays, format, getDaysInMonth, parseISO } from 'date-fns'
@@ -402,16 +403,13 @@ export function listsForDate(state: AppState, dateISO: string): AssignedList[] {
 }
 
 export function bookingsForList(state: Pick<AppState, 'schedule'>, listId: string): Booking[] {
-  return Object.values(state.schedule.bookings)
-    .filter((c) => c.listId === listId)
-    .sort((a, b) => a.id.localeCompare(b.id))
+  // Indexed on the Bookings map (catch-up Phase 43): linear at full scale.
+  return [...(bookingsByList(state.schedule.bookings).get(listId) ?? [])]
 }
 
 /** Procedures in Booking order (creation order). The primary is the `isPrimary` one; lists show `inDisplayOrder` (catch-up Phase 23). */
 export function proceduresForBooking(state: { schedule: Pick<AppState['schedule'], 'procedures'> }, bookingId: string): Procedure[] {
-  return Object.values(state.schedule.procedures)
-    .filter((p) => p.bookingId === bookingId)
-    .sort((a, b) => a.id.localeCompare(b.id))
+  return [...(proceduresByBooking(state.schedule.procedures).get(bookingId) ?? [])]
 }
 
 export function auditForEntity(state: AppState, entityId: string) {
@@ -474,9 +472,9 @@ export function billedLists(state: Pick<AppState, 'schedule'>): List[] {
 
 /** A List's invoices (via its Bookings), in raise order (Phase 08). */
 export function invoicesForList(state: Pick<AppState, 'schedule' | 'billing'>, listId: string): Invoice[] {
-  const bookingIds = new Set(bookingsForList(state, listId).map((c) => c.id))
-  return Object.values(state.billing.invoices)
-    .filter((i) => bookingIds.has(i.bookingId))
+  const byBooking = invoicesByBooking(state.billing.invoices)
+  return bookingsForList(state, listId)
+    .flatMap((b) => byBooking.get(b.id) ?? [])
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
@@ -572,7 +570,7 @@ export function patientHasOutstandingPriorEpisode(
   patientId: string,
   excludeBookingId: string,
 ): boolean {
-  for (const row of patientPosition(Object.values(state.billing.ledger), patientId).rows) {
+  for (const row of patientPosition(pairsByPatient(state.billing.ledger).get(patientId) ?? [], patientId).rows) {
     if (row.bookingId === excludeBookingId || toCents(row.outstanding) <= 0) continue
     const booking = state.schedule.bookings[row.bookingId]
     if (booking === undefined || booking.cancellation !== undefined) continue
@@ -589,9 +587,7 @@ export function patientHasOutstandingPriorEpisode(
 
 /** The `prePayment`-kind invoices raised for a Booking, in id order. */
 export function prePaymentInvoicesForBooking(state: { billing: Pick<AppState['billing'], 'invoices'> }, bookingId: string): Invoice[] {
-  return Object.values(state.billing.invoices)
-    .filter((i) => i.bookingId === bookingId && i.kind === 'prePayment')
-    .sort((a, b) => a.id.localeCompare(b.id))
+  return (invoicesByBooking(state.billing.invoices).get(bookingId) ?? []).filter((i) => i.kind === 'prePayment')
 }
 
 /**
@@ -679,7 +675,7 @@ export function prepaidLeftOffFor(state: Pick<AppState, 'billing' | 'schedule'>,
   const ids = Object.keys(settled)
   if (ids.length === 0) return undefined
   const numbers = [...new Set(ids.map((id) => state.billing.invoices[settled[id]!.prepaymentInvoiceId]?.invoiceNumber ?? settled[id]!.prepaymentInvoiceId))].sort()
-  const live = Object.values(state.schedule.procedures).filter((p) => p.bookingId === bookingId)
+  const live = proceduresByBooking(state.schedule.procedures).get(bookingId) ?? []
   return { invoiceNumbers: numbers, all: live.length > 0 && live.every((p) => settled[p.id] !== undefined) }
 }
 
@@ -788,7 +784,8 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
       return a.id.localeCompare(b.id)
     })
 
-  const exceptions = openBillingExceptions(state)
+  const exceptionByBooking = openExceptionByBooking(state.billing.exceptions)
+  const transfersOf = transfersByBooking(state.billing.transfers)
 
   return lists.map((list) => {
     const bookings = bookingsForList(state, list.id)
@@ -815,7 +812,7 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
         }
       }
       const pairs = pairsByBooking.get(booking.id) ?? []
-      const exception = exceptions.find((x) => x.bookingId === booking.id)
+      const exception = exceptionByBooking.get(booking.id)
       // A hand-off waiting in the Xero sync queue (catch-up Phase 37), then the first pair.
       const queuedPair = pairs.find((p) => p.receivable.xeroAccRecId === undefined && handoffQueuedFor(state, p.id) !== undefined)
       const primary = queuedPair ?? pairs[0]
@@ -835,7 +832,7 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
         row.failure = { code: exception.code, message: exception.message, ...(exception.procedureId !== undefined ? { procedureId: exception.procedureId } : {}) }
       }
       const queued = queuedPair !== undefined ? handoffQueuedFor(state, queuedPair.id) : undefined
-      const journal = queued === undefined ? Object.values(state.billing.transfers).filter((t) => t.bookingId === booking.id).map((t) => journalQueuedFor(state, t.id)).find((q) => q !== undefined) : undefined
+      const journal = queued === undefined ? (transfersOf.get(booking.id) ?? []).map((t) => journalQueuedFor(state, t.id)).find((q) => q !== undefined) : undefined
       const wait = queued ?? journal
       if (wait !== undefined) {
         row.waitingForXero = { itemId: wait.id, kind: wait.kind === 'journal' ? 'journal' : 'handoff', attempts: wait.attempts, nextAttemptAtISO: wait.nextAttemptAtISO, ...(wait.lastError !== undefined ? { lastError: wait.lastError } : {}), alerted: wait.status === 'alerted' }
