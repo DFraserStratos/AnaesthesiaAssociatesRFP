@@ -78,6 +78,12 @@ export interface MappedOptions {
   visible?: (it: Item) => boolean
   /** Which cards are retired (drawn at the end of their stack). Defaults to the default config's. */
   retired?: RetiredTest
+  /** The open card: drawn even when its lane is collapsed, alone in the lane's strip (B11-Q1). */
+  open?: string | null
+  /** Epics whose headless column stays while no story is in it: a drag of its only direct story holds it (`dragHold`). */
+  keepDirect?: ReadonlySet<string>
+  /** Each lane's least body height, by `laneKey`: a drag holds the lanes at their height when it began (`dragHold`). */
+  laneFloors?: ReadonlyMap<string, number>
 }
 
 export const laneKey = (lane: string | null) => lane ?? ''
@@ -102,6 +108,26 @@ export function mappedLayout(items: Item[], opts: MappedOptions): MappedLayout {
   for (const list of kids.values()) list.sort(order)
   orphans.sort(order)
 
+  // The cards no epic reaches go in one column of their own (FINDINGS R-29): each orphan (parent missing
+  // or of the wrong type) followed by everything under it, then anything still unreached (a parent cycle),
+  // each card once. What hangs under an epic, hidden or not, is that epic's: it shows or hides with it.
+  const reached = new Set<string>()
+  const reach = (it: Item) => {
+    if (reached.has(it.id)) return
+    reached.add(it.id)
+    for (const c of kids.get(it.id) ?? []) reach(c)
+  }
+  for (const e of epics) reach(e)
+  const loose: Item[] = []
+  const take = (it: Item) => {
+    if (reached.has(it.id)) return
+    reached.add(it.id)
+    loose.push(it)
+    for (const c of kids.get(it.id) ?? []) take(c)
+  }
+  for (const it of orphans) take(it)
+  if (reached.size < items.length) for (const it of [...items].sort(order)) take(it)
+
   const out: MappedLayout = { placements: {}, collapsed: new Set(), lanes: [], columns: [], epics: [], adds: [], stacks: new Map(), width: 0, height: 0 }
 
   // Backbone: epics across the top, each over its feature columns.
@@ -112,7 +138,7 @@ export function mappedLayout(items: Item[], opts: MappedOptions): MappedLayout {
     const children = kids.get(epic.id) ?? []
     const features = children.filter((c) => c.type === 'feature' && visible(c))
     const direct = children.filter((c) => c.type === 'story' && visible(c))
-    const hasDirect = direct.length > 0 || features.length === 0
+    const hasDirect = direct.length > 0 || features.length === 0 || !!opts.keepDirect?.has(epic.id)
     const cols = features.length + (hasDirect ? 1 : 0)
     const w = cols * COL_PITCH - COL_GAP
     out.placements[epic.id] = { x, y: 0, w, h: CARD.epic.h }
@@ -126,8 +152,8 @@ export function mappedLayout(items: Item[], opts: MappedOptions): MappedLayout {
     if (hasDirect) out.columns.push({ parent: epic.id, epic: epic.id, x: cx, direct: true })
     x += w + EPIC_GAP
   }
-  const storiesOf = (col: Column): Item[] => (col.parent ? (kids.get(col.parent) ?? []).filter((c) => c.type === 'story') : orphans)
-  if (orphans.some(visible)) out.columns.push({ parent: null, epic: null, x, direct: false })
+  const storiesOf = (col: Column): Item[] => (col.parent ? (kids.get(col.parent) ?? []).filter((c) => c.type === 'story') : loose)
+  if (loose.some(visible)) out.columns.push({ parent: null, epic: null, x, direct: false })
   const last = out.columns.at(-1)
   out.width = Math.max(last ? last.x + CARD.story.w : 0, ...out.epics.map((e) => e.x + e.w))
 
@@ -144,6 +170,8 @@ export function mappedLayout(items: Item[], opts: MappedOptions): MappedLayout {
     const top = y + head
     let tallest = 0
     let count = 0
+    // A collapsed lane draws nothing but the open card, alone at the top of its strip.
+    let holdsOpen = false
     for (const col of out.columns) {
       const inLane = storiesOf(col).filter((s) => laneOf(s) === key)
       const shown: string[] = []
@@ -154,8 +182,13 @@ export function mappedLayout(items: Item[], opts: MappedOptions): MappedLayout {
           hidden.push(s)
           continue
         }
-        out.placements[s.id] = { x: col.x, y: sy, w: CARD.story.w, h: CARD.story.h }
-        if (collapsed) out.collapsed.add(s.id)
+        if (collapsed && s.id === opts.open) {
+          out.placements[s.id] = { x: col.x, y: top, w: CARD.story.w, h: CARD.story.h }
+          holdsOpen = true
+        } else {
+          out.placements[s.id] = { x: col.x, y: sy, w: CARD.story.w, h: CARD.story.h }
+          if (collapsed) out.collapsed.add(s.id)
+        }
         shown.push(s.id)
         sy += CARD.story.h + STACK_GAP
       }
@@ -171,7 +204,7 @@ export function mappedLayout(items: Item[], opts: MappedOptions): MappedLayout {
       tallest = Math.max(tallest, stackH)
       if (!collapsed && col.parent) out.adds.push({ parent: col.parent, swimlane: key, x: col.x, y: top + stackH + (stackH ? ADD_GAP : 0) })
     }
-    const body = collapsed ? 0 : Math.max(tallest + ADD_GAP + ADD_H, CARD.story.h) + LANE_PAD
+    const body = Math.max(collapsed ? (holdsOpen ? CARD.story.h + LANE_PAD : 0) : Math.max(tallest + ADD_GAP + ADD_H, CARD.story.h) + LANE_PAD, opts.laneFloors?.get(laneKey(key)) ?? 0)
     out.lanes.push({ key, name: key ?? (opts.firstLane || UNASSIGNED_LANE), y, h: head + body, head, collapsed, unknown: unknown.includes(key as string), count })
     y += head + body
   }
@@ -179,8 +212,36 @@ export function mappedLayout(items: Item[], opts: MappedOptions): MappedLayout {
   return out
 }
 
-/** Where a dragged card would land if dropped with the pointer at `point`, or null if nowhere valid. Hit-test against a layout without the dragged card (and what hangs under it). */
-export function dropTarget(L: MappedLayout, point: { x: number; y: number }, dragged: Item): Move | null {
+/**
+ * What a Mapped drag holds still while it lasts, in the map it is hit-tested against (`dragLayout`) and in
+ * the preview the board draws alike, so the two agree (FINDINGS R-113's merged sub-finding): every lane at
+ * least as tall as when the drag began, so lifting the bottom card of a lane's tallest stack never moves
+ * the next lane up under the pointer; and, for a story dragged out of its epic's own column, that column.
+ */
+export function dragHold(items: Item[], dragged: Item, opts: MappedOptions): Pick<MappedOptions, 'keepDirect' | 'laneFloors'> {
+  const start = mappedLayout(items, opts)
+  const laneFloors = new Map(start.lanes.map((l) => [laneKey(l.key), l.h - l.head]))
+  const parent = dragged.type === 'story' && dragged.parent ? items.find((i) => i.id === dragged.parent) : undefined
+  return parent?.type === 'epic' ? { laneFloors, keepDirect: new Set([...(opts.keepDirect ?? []), parent.id]) } : { laneFloors }
+}
+
+/** The map a Mapped drag is hit-tested against: without the dragged card and what hangs under it (`subtree`), held by `dragHold`. */
+export function dragLayout(items: Item[], dragged: Item, subtree: ReadonlySet<string>, opts: MappedOptions, hold = dragHold(items, dragged, opts)): MappedLayout {
+  return mappedLayout(
+    items.filter((i) => !subtree.has(i.id)),
+    { ...opts, ...hold },
+  )
+}
+
+/**
+ * Where a dragged card would land if dropped with the pointer at `point`, or null if nowhere valid.
+ * Hit-test against `dragLayout`, whose slot indexes count the cards the drop lands among. For a story,
+ * `drawn` (the map as the board draws it now: the preview, the card in its slot) says which lane the
+ * pointer is over, so a lane the preview grew to take the card is the lane hit all the way down, as the
+ * eye sees it; the slot within it is then read from `L`, its lane shifted to where it is drawn. Only the
+ * lane under the pointer grows, so this never flips between two lanes.
+ */
+export function dropTarget(L: MappedLayout, point: { x: number; y: number }, dragged: Item, drawn?: MappedLayout): Move | null {
   const lanesTop = L.lanes[0]?.y ?? Infinity
   if (dragged.type === 'epic') {
     if (point.y >= lanesTop) return null
@@ -194,13 +255,15 @@ export function dropTarget(L: MappedLayout, point: { x: number; y: number }, dra
     const features = L.columns.filter((c) => c.epic === epic.id && !c.direct)
     return { id: dragged.id, parent: epic.id, index: features.filter((c) => c.x + CARD.feature.w / 2 < point.x).length }
   }
-  const lane = L.lanes.find((l) => point.y >= l.y && point.y < l.y + l.h)
-  if (!lane) return null
+  const seen = (drawn ?? L).lanes.find((l) => point.y >= l.y && point.y < l.y + l.h)
+  const lane = seen && L.lanes.find((l) => l.key === seen.key)
+  if (!seen || !lane) return null
+  const y = point.y - (seen.y - lane.y)
   const cols = L.columns.filter((c) => c.parent !== null)
   if (!cols.length) return null
   const col = cols.reduce((best, c) => (Math.abs(c.x + CARD.story.w / 2 - point.x) < Math.abs(best.x + CARD.story.w / 2 - point.x) ? c : best))
   if (Math.abs(col.x + CARD.story.w / 2 - point.x) > COL_PITCH) return null // well past either end of the map
   const stack = L.stacks.get(stackKey(col.parent, lane.key)) ?? []
-  const index = lane.collapsed ? stack.length : stack.filter((id) => L.placements[id]!.y + CARD.story.h / 2 < point.y).length
+  const index = lane.collapsed ? stack.length : stack.filter((id) => L.placements[id]!.y + CARD.story.h / 2 < y).length
   return { id: dragged.id, parent: col.parent, index, swimlane: lane.key }
 }

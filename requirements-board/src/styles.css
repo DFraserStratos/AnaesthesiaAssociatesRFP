@@ -404,7 +404,8 @@ button {
   background: var(--card-soft);
   border-color: var(--ink-4);
 }
-.btn:disabled {
+.btn:disabled,
+.btn[aria-disabled='true'] {
   opacity: 0.5;
   cursor: default;
 }
@@ -1501,6 +1502,13 @@ button.seg:focus-visible {
 }
 .tree-row .twisty:hover {
   background: var(--paper);
+}
+/* While the Outline is searched every row is shown open, so the twisty folds nothing: faint and inert (FINDINGS R-126). */
+.tree-row .twisty.inert {
+  opacity: 0.35;
+}
+.tree-row .twisty.inert:hover {
+  background: none;
 }
 .tree-row .mono {
   font-size: 12px;

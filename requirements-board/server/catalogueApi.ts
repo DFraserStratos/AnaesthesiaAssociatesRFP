@@ -35,9 +35,11 @@
  *   PUT  /api/layout             { positions?: { id: {x,y} | null }, lanes?: string[], firstLane?: string | null, lanesRev? }
  *                                positions are a patch (null restores the story-map place) and never refused for
  *                                the lane list; lanes replace the list; firstLane renames the implicit first lane
- *                                (null: back to Unassigned); with lanesRev, 409 if the lane list changed on disk
+ *                                (null: back to Unassigned); either needs lanesRev (400 without; 409 if the lane list
+ *                                changed on disk)
  *   POST /api/lanes              { op: 'rename' | 'remove', from, to?, lanesRev, stories: { id: rev } }  renames or
- *                                removes a named lane and rewrites the swimlane of every story in it, all or nothing
+ *                                removes a named lane and rewrites the swimlane of every story in it, all or nothing;
+ *                                a rename onto another lane's name in any case (the first lane's too) merges into it
  *
  * The write protocol (B05, accepted decision 20; PROGRESS.md has the contract):
  * - A record write sends the fields it changed (`patch`), the rev it edited (`baseRev`) and optionally the
@@ -75,7 +77,7 @@ import { buildArtifactTimeline, buildTimeline, diffItems } from '../shared/histo
 import { RECODES_FILE, STATUS_FIELDS, defaultStatus, highestCode, nextStatusCode, normaliseStatus, readStatusList, statusCodes, type StatusDef, type StatusField, type StatusKind } from '../shared/statuses.ts'
 import { parseArtifact, revOf } from '../shared/files.ts'
 import { ACCENT_PATTERN, CONFIG_FILE, CONFIG_SECTIONS, configRevs, parseConfig } from '../shared/config.ts'
-import { addedProblems, laneListProblems, lanesRevOf } from '../shared/move.ts'
+import { addedProblems, laneListProblems, laneMergeTarget, lanesRevOf } from '../shared/move.ts'
 import { planDelete } from '../shared/remove.ts'
 import { ITEM_TYPES, UNASSIGNED_LANE, firstLaneName, type Artifact, type ArtifactRec, type Layout, type AssetVersions, type CatalogueChange, type CatalogueDelivery, type Issue, type Item, type ItemType, type Question, type Rev } from '../shared/types.ts'
 import {
@@ -943,7 +945,9 @@ export function createCatalogueApi(root: string, emit: (d: CatalogueDelivery) =>
       // The lane rules judge only a write that changes the lane list, and refuse only a problem it adds:
       // a drag is never refused for a lane problem it did not cause (FINDINGS R-55).
       if (body.lanes !== undefined || body.firstLane !== undefined) {
-        if (body.lanesRev !== undefined && body.lanesRev !== onDisk.layout.lanesRev) throw lanesChangedOnDisk(onDisk.layout)
+        // Every lane-list write names the list it started from (B11 removed the last caller without one: D-04e).
+        if (typeof body.lanesRev !== 'string' || !body.lanesRev) throw new HttpError(400, 'lanesRev is required with lanes or firstLane: send layout.lanesRev as you last saw it')
+        if (body.lanesRev !== onDisk.layout.lanesRev) throw lanesChangedOnDisk(onDisk.layout)
         if (body.lanes !== undefined && !Array.isArray(body.lanes)) throw new HttpError(422, 'lanes must be a list of names')
         if (body.lanes !== undefined) lanes = body.lanes as string[]
         if (body.firstLane !== undefined) {
@@ -986,14 +990,19 @@ export function createCatalogueApi(root: string, emit: (d: CatalogueDelivery) =>
       for (const it of inLane) if (sent[it.id] !== state.items[it.id]!.rev) blocked.push({ id: it.id, current: state.items[it.id]! })
       for (const id of Object.keys(sent)) if (!inLane.some((i) => i.id === id)) blocked.push({ id, current: Object.hasOwn(state.items, id) ? state.items[id]! : null })
       if (blocked.length) throw blockedBy(`the stories in "${from}" changed on disk since you looked; look again`, blocked)
-      if (op === 'rename' && from === to) return { records: [], layout: state.layout }
-      const lanes = op === 'remove' ? onDisk.layout.lanes.filter((l) => l !== from) : listed ? onDisk.layout.lanes.map((l) => (l === from ? to : l)) : [...onDisk.layout.lanes, to]
-      if (op === 'rename') {
-        // Renaming onto an existing lane is a lane-rule refusal (a merge is B11's).
+      // A rename onto another lane's name, in any case (the first lane's included), merges into that lane:
+      // its stories take the lane's exact name (none, for the first lane) and `from` leaves the list, in this
+      // same all-or-nothing write (FINDINGS R-119; B11 under touch rights, accepted decision 7).
+      const into = op === 'rename' ? laneMergeTarget(onDisk.layout, from, to) : undefined
+      if (op === 'rename' && into === undefined && from === to) return { records: [], layout: state.layout }
+      const lanes =
+        op === 'remove' || into !== undefined ? onDisk.layout.lanes.filter((l) => l !== from) : listed ? onDisk.layout.lanes.map((l) => (l === from ? to : l)) : [...onDisk.layout.lanes, to]
+      if (op === 'rename' && into === undefined) {
         const added = addedProblems(laneListProblems([firstLaneName(onDisk.layout), ...onDisk.layout.lanes]), laneListProblems([firstLaneName(onDisk.layout), ...lanes]))
         if (added.length) throw new HttpError(422, `lane not renamed: ${added.join('\n')}`)
       }
-      const stories = inLane.map((it) => prepareItem({ ...it, swimlane: op === 'rename' ? to : null }))
+      const swimlane = op === 'remove' ? null : into !== undefined ? into : to
+      const stories = inLane.map((it) => prepareItem({ ...it, swimlane }))
       const layout: Layout = { ...onDisk.layout, lanes, lanesRev: lanesRevOf({ firstLane: onDisk.layout.firstLane, lanes }) }
       const ids = new Set(stories.map((s) => s.id))
       guard([...itemList().filter((i) => !ids.has(i.id)), ...stories], questionList(), state.artifacts, layout)

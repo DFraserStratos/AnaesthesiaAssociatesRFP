@@ -268,11 +268,12 @@ describe('batch moves', () => {
 })
 
 describe('lanes', () => {
+  // Every lane-list write carries the list's rev it started from (base-less lane writes retired in B11).
   it('saves the lane list beside positions, and re-checks swimlanes against it', () => {
     const a = api()
     call(a, 'PUT', '/api/items/US-01.1.1', { patch: { ...recOf(a, 'US-01.1.1').data, swimlane: 'MVP' }, baseRev: recOf(a, 'US-01.1.1').rev })
     expect(a.getState().issues.some((i) => i.message.startsWith('swimlane "MVP" is not a lane'))).toBe(true)
-    call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'Phase 2'] })
+    call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'Phase 2'], lanesRev: a.getState().layout.lanesRev })
     expect(JSON.parse(readFileSync(layoutPath(root), 'utf8'))).toEqual({ positions: {}, lanes: ['MVP', 'Phase 2'] })
     expect(a.getState().issues.some((i) => i.message.includes('swimlane'))).toBe(false)
     expect(events.some((e) => e.kind === 'layout' && e.layout.lanes.length === 2)).toBe(true)
@@ -283,23 +284,23 @@ describe('lanes', () => {
 
   it('refuses a bad lane list', () => {
     const a = api()
-    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'mvp'] }))).toBe(422)
-    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: ['Unassigned'] }))).toBe(422)
-    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: [''] }))).toBe(422)
-    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: 'MVP' }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'mvp'], lanesRev: a.getState().layout.lanesRev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: ['Unassigned'], lanesRev: a.getState().layout.lanesRev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: [''], lanesRev: a.getState().layout.lanesRev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: 'MVP', lanesRev: a.getState().layout.lanesRev }))).toBe(422)
   })
 
   it('renames the first lane, keeps the name clear of the others, and resets it with null', () => {
     const a = api()
-    call(a, 'PUT', '/api/layout', { lanes: ['MVP'] })
-    call(a, 'PUT', '/api/layout', { firstLane: 'Backlog' })
+    call(a, 'PUT', '/api/layout', { lanes: ['MVP'], lanesRev: a.getState().layout.lanesRev })
+    call(a, 'PUT', '/api/layout', { firstLane: 'Backlog', lanesRev: a.getState().layout.lanesRev })
     expect(loadCatalogue(root).layout).toMatchObject({ firstLane: 'Backlog', lanes: ['MVP'] })
-    expect(status(() => call(a, 'PUT', '/api/layout', { firstLane: 'mvp' }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/layout', { firstLane: 'mvp', lanesRev: a.getState().layout.lanesRev }))).toBe(422)
     // Unassigned is free once the first lane has another name.
-    call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'Unassigned'] })
-    expect(status(() => call(a, 'PUT', '/api/layout', { firstLane: null }))).toBe(422)
-    call(a, 'PUT', '/api/layout', { lanes: ['MVP'] })
-    call(a, 'PUT', '/api/layout', { firstLane: null })
+    call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'Unassigned'], lanesRev: a.getState().layout.lanesRev })
+    expect(status(() => call(a, 'PUT', '/api/layout', { firstLane: null, lanesRev: a.getState().layout.lanesRev }))).toBe(422)
+    call(a, 'PUT', '/api/layout', { lanes: ['MVP'], lanesRev: a.getState().layout.lanesRev })
+    call(a, 'PUT', '/api/layout', { firstLane: null, lanesRev: a.getState().layout.lanesRev })
     expect(loadCatalogue(root).layout.firstLane).toBeUndefined()
   })
 })

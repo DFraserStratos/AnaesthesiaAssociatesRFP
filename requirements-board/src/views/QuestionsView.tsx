@@ -17,7 +17,9 @@ export function QuestionsView() {
   const filters = useQuestionFilters()
   const { owner, kind, query, showAnswered, set: setFilters } = filters
 
-  const owners = useMemo(() => [...new Set(index.questions.map((q) => q.owner).filter(Boolean))].sort(), [index])
+  // A picked owner stays listed when no question names them any more, so the control shows the filter in
+  // force and "All owners" clears it (FINDINGS R-128; accepted decision 25).
+  const owners = useMemo(() => [...new Set([...index.questions.map((q) => q.owner), owner].filter(Boolean))].sort(), [index, owner])
   const shown = index.questions.filter((q) => questionFilter(q, filters))
   const groups = questionGroups(config, index.questions, filters)
     .map(({ status, configured }) => ({ status, configured, list: shown.filter((q) => q.status === status) }))

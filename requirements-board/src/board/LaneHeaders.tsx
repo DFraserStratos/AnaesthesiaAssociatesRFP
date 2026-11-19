@@ -12,8 +12,9 @@
 import { useStore, useViewport, ViewportPortal } from '@xyflow/react'
 import { ChevronDown, ChevronRight, MoreHorizontal, Plus } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { laneMergeTarget } from '../../shared/move.ts'
 import { firstLaneName } from '../../shared/types.ts'
-import { useCatalogue } from '../store.ts'
+import { followCollapsedLane, useCatalogue } from '../store.ts'
 import { useDismiss } from '../useDismiss.ts'
 import { LANE_MARGIN, laneKey, type LaneBand } from './mappedLayout.ts'
 
@@ -52,13 +53,18 @@ export function LaneHeaders({ bands, collapsed, onToggle, inset = 0 }: { bands: 
 
 function LaneHeader({ band, left, up, open, onToggle }: { band: LaneBand; left: number; up: boolean; open: boolean; onToggle: () => void }) {
   const lanes = useCatalogue((s) => s.layout.lanes)
+  const firstLane = useCatalogue((s) => firstLaneName(s.layout))
   const setLanes = useCatalogue((s) => s.setLanes)
   const renameLane = useCatalogue((s) => s.renameLane)
   const [menu, setMenu] = useState(false)
   const [renaming, setRenaming] = useState(false)
   const [askDelete, setAskDelete] = useState(false)
+  const [askMerge, setAskMerge] = useState<{ to: string; into: string } | null>(null)
   const menuBtn = useRef<HTMLButtonElement>(null)
   const named = band.key !== null && !band.unknown
+  // A "not a lane" band that differs from a lane only in case, or names the first lane, joins that lane
+  // rather than being added as a duplicate (FINDINGS R-119; it stays its own flagged band until then, B11-Q2).
+  const into = band.unknown && band.key !== null ? laneMergeTarget({ firstLane, lanes }, band.key, band.key) : undefined
   const at = band.key === null ? -1 : lanes.indexOf(band.key)
   const move = (d: -1 | 1) => {
     const next = [...lanes]
@@ -80,7 +86,11 @@ function LaneHeader({ band, left, up, open, onToggle }: { band: LaneBand; left: 
           label={`Rename ${band.name}`}
           onDone={(name) => {
             setRenaming(false)
-            if (name && name !== band.name) void renameLane(band.key, name)
+            if (!name || name === band.name) return
+            // Onto another lane's name the lane merges, which no undo takes back: ask first, as Delete does.
+            const target = band.key === null ? undefined : laneMergeTarget({ firstLane, lanes }, band.key, name)
+            if (target !== undefined) setAskMerge({ to: name, into: target ?? firstLane })
+            else void renameLane(band.key, name)
           }}
         />
       ) : (
@@ -88,7 +98,13 @@ function LaneHeader({ band, left, up, open, onToggle }: { band: LaneBand; left: 
           className="lane-name"
           onClick={() => setRenaming(true)}
           aria-label={`Rename ${band.name}`}
-          title={band.unknown ? 'A story names this lane, but the board has no lane called that. Click to rename it, which makes it a lane' : 'Click to rename'}
+          title={
+            into !== undefined
+              ? `A story names this lane, but the board's lane is called ${into ?? firstLane}. Click to rename it; a lane's name moves its stories into that lane`
+              : band.unknown
+                ? 'A story names this lane, but the board has no lane called that. Click to rename it, which makes it a lane'
+                : "Click to rename; another lane's name merges this lane into it"
+          }
         >
           {band.name}
         </button>
@@ -119,6 +135,10 @@ function LaneHeader({ band, left, up, open, onToggle }: { band: LaneBand; left: 
                 Delete lane
               </button>
             </>
+          ) : into !== undefined ? (
+            <button role="menuitem" onClick={() => (setMenu(false), void renameLane(band.key, into ?? firstLane))}>
+              Move into {into ?? firstLane}
+            </button>
           ) : (
             <button role="menuitem" onClick={() => (setMenu(false), void setLanes([...lanes, band.key!]))}>
               Add as a lane
@@ -127,6 +147,7 @@ function LaneHeader({ band, left, up, open, onToggle }: { band: LaneBand; left: 
         </LaneMenu>
       )}
       {askDelete && <DeleteAsk band={band} onClose={() => setAskDelete(false)} />}
+      {askMerge && <MergeAsk band={band} into={askMerge.into} onMerge={() => void renameLane(band.key, askMerge.to)} onClose={() => setAskMerge(null)} />}
     </div>
     </div>
   )
@@ -172,6 +193,35 @@ function DeleteAsk({ band, onClose }: { band: LaneBand; onClose: () => void }) {
   )
 }
 
+/** A rename onto another lane's name merges the two: asked in the board's own frame, Keep lane the safe, focused answer. */
+function MergeAsk({ band, into, onMerge, onClose }: { band: LaneBand; into: string; onMerge: () => void; onClose: () => void }) {
+  const ref = useDismiss<HTMLDivElement>(onClose)
+  const keep = useRef<HTMLButtonElement>(null)
+  useEffect(() => keep.current?.focus(), [])
+  return (
+    <div ref={ref} className="popover ask lane-ask" role="dialog" aria-label={`Merge ${band.name} into ${into}`}>
+      <p>
+        {into} is already a lane. Merge {band.name} into it?{' '}
+        {band.count ? `Its ${band.count === 1 ? 'story moves' : `${band.count} stories move`} to ${into}, and ${band.name} goes.` : `${band.name} goes; it has no stories.`}
+      </p>
+      <div className="ask-actions">
+        <button ref={keep} className="btn primary" onClick={onClose}>
+          Keep lane
+        </button>
+        <button
+          className="btn ghost"
+          onClick={() => {
+            onClose()
+            onMerge()
+          }}
+        >
+          Merge
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function AddLane({ top, left }: { top: number; left: number }) {
   const lanes = useCatalogue((s) => s.layout.lanes)
   const setLanes = useCatalogue((s) => s.setLanes)
@@ -184,7 +234,8 @@ function AddLane({ top, left }: { top: number; left: number }) {
           label="New lane name"
           onDone={(name) => {
             setAdding(false)
-            if (name) void setLanes([...lanes, name])
+            // A new lane starts open, whatever a lane of that name was before (FINDINGS R-120).
+            if (name) void setLanes([...lanes, name]).then((ok) => ok && followCollapsedLane(name))
           }}
         />
       ) : (

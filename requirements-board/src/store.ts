@@ -5,7 +5,7 @@
 import { useMemo } from 'react'
 import { create } from 'zustand'
 import { compareIds, compareSiblings } from '../shared/ids.ts'
-import { applyChanges, canParent, driftFrom, invertChanges, laneListProblem, type Change } from '../shared/move.ts'
+import { applyChanges, canParent, driftFrom, invertChanges, laneListProblem, laneMergeTarget, type Change } from '../shared/move.ts'
 import { isArtifactId, itemLinkTargets } from '../shared/links.ts'
 import { UNASSIGNED_LANE, firstLaneName, type Artifact, type ArtifactRec, type AssetVersions, type CatalogueDelivery, type Issue, type Item, type ItemStatus, type ItemType, type Layout, type Question, type Rev } from '../shared/types.ts'
 import { DEFAULT_CONFIG, componentNames, type BoardConfig, type ConfigPatch } from '../shared/config.ts'
@@ -89,7 +89,11 @@ interface CatalogueState {
   redo: () => Promise<boolean>
   /** Replace the lane list (adding or reordering lanes; rename and delete go through `changeLane`). */
   setLanes: (lanes: string[]) => Promise<boolean>
-  /** Rename a lane: a named one (its stories follow), one only a story names (it becomes a lane), or the first lane (null). */
+  /**
+   * Rename a lane: a named one (its stories follow), one only a story names (it becomes a lane), or the first
+   * lane (null). Onto another lane's name in any case (the first lane's too), a named lane or a story-named one
+   * merges into that lane (`laneMergeTarget`).
+   */
   renameLane: (from: string | null, to: string) => Promise<boolean>
   deleteLane: (name: string) => Promise<boolean>
   /** Rename or remove a named lane and repoint its stories in one server write; `refused` starts the error shown. */
@@ -403,7 +407,8 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
     const prev = get().layout
     set({ layout: { ...prev, lanes } })
     try {
-      const saved = await api.putLayout({ lanes })
+      // With the list it started from, so two tabs cannot undo each other's lane additions.
+      const saved = await api.putLayout({ lanes, lanesRev: prev.lanesRev })
       set({ layout: { ...get().layout, lanes: saved.lanes, lanesRev: saved.lanesRev }, moveError: undefined })
       return true
     } catch (e) {
@@ -432,20 +437,29 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
         return false
       }
     }
-    if (from === to) return true
-    // A name only a story uses (not a lane yet) becomes a lane under its new name.
-    const next = layout.lanes.includes(from) ? layout.lanes.map((l) => (l === from ? to : l)) : [...layout.lanes, to]
-    // Check the name before sending, so an obviously refused name never makes a request.
-    const problem = laneListProblem([first, ...next])
-    if (problem) {
-      set({ moveError: `Lane not renamed: ${problem}` })
-      return false
+    // Onto another lane's name (in any case, the first lane's included): its stories join that lane (FINDINGS R-119).
+    const into = laneMergeTarget(layout, from, to)
+    if (into === undefined) {
+      if (from === to) return true
+      // A name only a story uses (not a lane yet) becomes a lane under its new name.
+      const next = layout.lanes.includes(from) ? layout.lanes.map((l) => (l === from ? to : l)) : [...layout.lanes, to]
+      // Check the name before sending, so an obviously refused name never makes a request.
+      const problem = laneListProblem([first, ...next])
+      if (problem) {
+        set({ moveError: `Lane not renamed: ${problem}` })
+        return false
+      }
     }
-    return get().changeLane({ op: 'rename', from, to }, 'Lane not renamed')
+    const ok = await get().changeLane({ op: 'rename', from, to }, 'Lane not renamed')
+    // A renamed lane keeps its collapsed state under its new name; a merged one leaves the target's as it was.
+    if (ok) followCollapsedLane(from, into === undefined ? to : undefined)
+    return ok
   },
 
-  deleteLane(name) {
-    return get().changeLane({ op: 'remove', from: name }, 'Lane not removed')
+  async deleteLane(name) {
+    const ok = await get().changeLane({ op: 'remove', from: name }, 'Lane not removed')
+    if (ok) followCollapsedLane(name)
+    return ok
   },
 
   /**
@@ -930,6 +944,21 @@ function dropUnknownStatuses(config: BoardConfig) {
   const v = useView.getState()
   const known = new Set(statusCodes(config, 'item'))
   if (v.statuses.some((s) => !known.has(s))) v.set({ statuses: v.statuses.filter((s) => known.has(s)) })
+}
+
+/**
+ * Collapsed lanes follow the board's own lane changes (FINDINGS R-120): with `to`, the lane renamed to it
+ * takes `from`'s collapsed state (and `to` loses any state a stale key gave it); without, `from`'s state is
+ * dropped (a lane removed or merged away, or a name just added as a new lane, which starts open). Keys
+ * left by renames made outside the board are kept (accepted decision 25, B11-Q4).
+ */
+export function followCollapsedLane(from: string, to?: string) {
+  const v = useView.getState()
+  // A named lane's key is its name (`laneKey`); the first lane's ('') never moves.
+  const was = v.collapsedLanes.includes(from)
+  const next = v.collapsedLanes.filter((k) => k !== from && k !== to)
+  if (to !== undefined && was) next.push(to)
+  if (next.length !== v.collapsedLanes.length || next.some((k, i) => k !== v.collapsedLanes[i])) v.set({ collapsedLanes: next })
 }
 
 export const filtersActive = (v: ViewPrefs) =>

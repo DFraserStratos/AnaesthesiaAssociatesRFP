@@ -149,6 +149,19 @@ carries no `ty-*` class, which would recolour the artifact marks inside it.
   lineage lit. The panel floats over the board rather than narrowing it, so opening or closing a
   card never moves the map; the board's search and lane names step right to clear it. Clicking another card, or walking with the arrow keys, swaps the panel; Esc or a
   click on empty canvas closes it. No double-click anywhere.
+- **The arrow keys walk the cards as the board draws them** while a card is open: Left and Right
+  step among cards of the same kind under the same parent (epics, an epic's features, a column's
+  stories); Up and Down run through a story's column top to bottom (in Mapped lane by lane, live
+  cards first in each, skipping a collapsed lane), Up from the top story goes to its parent, Down
+  from a feature or epic to the first card drawn under it. An epic's own stories never mix with
+  its features. Enter moves into the panel. On a control inside the board (a lane toggle or name,
+  a lane menu, Add lane, an add slot, the view bar) Enter and the arrows do that control's job, and
+  an arrow held with Alt, Shift, Ctrl or Cmd keeps the browser's own meaning.
+- **Where a card lands.** A step, an opened search hit and Show on board bring the card into view
+  right of the panel, at 90% (or the board's zoom if closer in; Show on board at 100%), in one
+  ease: nothing re-targets it. A card wider than the board (a long epic) lands with its left edge
+  and title just right of the panel. A click never zooms; it pans only when the panel covers the
+  card. The open card and its ancestors are always drawn, a retired ancestor in its retired look.
 - **Search** (Ctrl F, Cmd F or `/`) fades the board to the matches and lists them under the box,
   title matches first, each row the name with the words found, then where it sits (or, when only its
   text matched, the line it was found in). The arrow keys walk the list and the board finds each card
@@ -231,12 +244,22 @@ A two-segment switch at the head of the board's right-hand controls: **Freeform 
   keeps, Esc drops). The first lane holds stories with no lane: while it is the only lane it has no
   header, so the board reads as a plain map; once a lane is named it shows first, as
   **Unassigned** until renamed like any other. A story naming a lane the board doesn't have gets its own lane, flagged
-  "not a lane". Lane actions (rename, move, delete) sit in a quiet menu on the header; deleting asks
-  in a popover, with Keep lane as the safe, focused answer. Tidy doesn't apply and is hidden.
+  "not a lane"; one that differs from a lane only in case, or names the first lane, offers **Move
+  into** that lane in its menu. Renaming a lane or band to another lane's name (case aside) merges it
+  into that lane, after asking in a popover (no undo takes a merge back; Keep lane is focused). Lane actions (rename, move, delete) sit in a quiet menu on the header; deleting asks
+  in a popover, with Keep lane as the safe, focused answer. A collapsed lane is its header alone,
+  except that the open card is drawn by itself in the strip; collapsing is kept per browser and
+  follows a rename or delete made on the board (a lane added later starts open). Cards no epic
+  reaches (a missing or wrong-type parent, a parent cycle) stand in a column of their own past the
+  map, each followed by what hangs under it (its stories in their own lanes). Tidy doesn't apply and
+  is hidden.
 - **Drag feedback**: the dragged card lifts and carries everything under it; the other cards ease
-  aside into their new slots as you move, and a thin teal bar marks where it will land. A drop
-  nowhere valid (a feature over a lane, a story on the backbone) springs back. Click still opens;
-  motion respects reduced motion.
+  aside into their new slots as you move, and a thin teal bar marks where it will land; the lanes,
+  and the column a story is lifted from, hold their size until the drop, so dropping a card back
+  where it was changes nothing, and the lane under the pointer is the lane as drawn. A card lands
+  among cards of its own kind: a live card above the retired ones. A drop nowhere valid (a feature
+  over a lane, a story on the backbone) springs back. Click still opens; motion respects reduced
+  motion.
 - A faint plus sits at the foot of every column in every lane, stronger on hover: it makes an
   untitled story right there and opens it in Edit. The round teal plus still makes a story in
   Unassigned.

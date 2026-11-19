@@ -99,7 +99,7 @@ Agent tools in parallel: B12 (after B02), B13 (REQ-07b after B04); both before B
 | B06 | Edit sheets and Settings | COMPLETE | B06-Q2 to Q5 and D-04e retirement recorded (accepted decision 22) | 2026-11-19, board 1.20.0; all 16 findings fixed; Q4 lock-out added scope; whole-record and base-less config writes retired |
 | B09 | Diff and history UI | COMPLETE | B09-Q2 to Q4 and the Open rule recorded (accepted decision 23) | 2026-11-20, board 1.21.0; all 13 findings fixed; Diff count can rise (stricter minor rule); journal gains `seen` lines (additive) |
 | B10 | Artifact viewers | COMPLETE | after B01, B03, B04, B07; D-01c, B01-Q2 and D-10 recorded; B10-Q2, Q3 (accepted decision 24) | 2026-11-20, board 1.22.0; all 10 findings and the timeline label fixed; workers and object URLs bounded (1 and 0 after 10 rounds, were 40 and 40) |
-| B11 | Board canvas and views | PLANNED | after B03, B05, B07; D-06 recorded | |
+| B11 | Board canvas and views | COMPLETE | after B03, B05, B07; D-06 recorded; B11-Q1 to Q5 recorded (accepted decision 25) | 2026-11-20, board 1.23.0; all 13 findings fixed; lane merge on B05's route; D-04e's last legacy shape (base-less lane lists) retired |
 | B12 | Build-plan tools | PLANNED | after B02; D-08 before build; D-03 if needed; live-plan compatibility | parallel worktree |
 | B13 | Consistency and linking tools | PLANNED | REQ-07b after B04 (D-03) | parallel worktree |
 | B14 | Scripts, kit and docs | PLANNED | after B02, B05, B11, B12, B13; D-09 before build | |
@@ -452,6 +452,30 @@ decisions" section and resolved in that phase's planning.
         that row.
       - **Downstream:** none outside B10. DESIGN.md's Artifacts tab and history lines change (Doc facts).
 
+- 2026-11-20, user and B11 session (B11's planning questions, asked in the B11 session):
+  25. **B11-Q1 to Q5, and R-128's form:**
+      - **B11-Q1, the open card alone in the collapsed strip** (user). A collapsed lane stays collapsed; while
+        the open card sits in it, its strip grows to draw that one card (placed, hit-testable, centred, no
+        overlap with the next lane) and shrinks back when the card closes. Opening a card never changes the
+        collapsed-lanes preference; the lane toggle works as usual.
+      - **B11-Q2, the case-variant band stays its own flagged band** (session, from evidence: the check warns
+        on a `swimlane` that is not exactly a lane name, `shared/check.ts`, and systemic issue 5 says bad data
+        is shown, never folded away). Its menu offers a fix that works (move its stories into the lane it
+        matches, the first lane included) in place of "Add as a lane"; `shared/check.ts` is not touched.
+      - **B11-Q3, the walk skips collapsed lanes; Left and Right stay in the column** (user). Up and Down skip
+        stories in a collapsed lane (as board search already does), except the open card drawn there (Q1).
+        Left and Right on a story step among the stories of the same parent, as drawn (REQ-06 as written).
+      - **B11-Q4, stale collapsed keys are kept** (user). No pruning. Board renames, merges and deletes move
+        or drop the key (R-120), and a lane added on the board starts open; a key left by an outside rename
+        stays until a lane of that name is added or removed on the board.
+      - **B11-Q5, the Outline's bulk buttons are disabled while searching** (user), with a title saying
+        search shows every match expanded; the twisty is inert and looks it.
+      - **R-128 form** (session, from decision 24's rule for the Artifacts filters): a picked owner who no
+        longer owns a question stays listed as an option and selected, so the control shows the filter in
+        force and "All owners" clears it.
+      - **Downstream:** none outside B11. DESIGN.md's board lines change (Doc facts). The lane merge is a form
+        of B05's `POST /api/lanes` rename (decision 20's D-04f, touch rights, decision 7).
+
 ## Planning handoff
 
 - 2026-11-18: orchestrator created FINDINGS.md (copy of the verified review report), PLAN.md, this
@@ -512,7 +536,7 @@ decisions" section and resolved in that phase's planning.
 | A card deleted by hand and re-created as another card inside one watcher debounce (600 ms) reads as an edit, so no new life starts | B05 review | none | same class as B08's `-M` pairing row |
 | `writeAll` (`server/catalogueApi.ts`) reads a file's bytes for put-back a moment before the writer's own read; an agent write in that window would be put back over if a later file then failed | B05 review | none | microseconds, on a failure path only |
 | `src/components/useEditableRecord.ts` and `shared/steps.ts` keep their own JSON equality; B05's three copies became `sameValue` (`shared/patch.ts`) | B05 review | B06, B09 | adopt `sameValue` when touching those files |
-| `setLanes` (adding and reordering lanes) sends no `lanesRev`, so two tabs can still undo each other's lane additions | B05 (D-04e) | B07 or B11 | send `layout.lanesRev`; the server already checks it when sent |
+| `setLanes` (adding and reordering lanes) sends no `lanesRev`, so two tabs can still undo each other's lane additions | B05 (D-04e) | B07 or B11 | **Done in B11**: `setLanes` sends it and the layout PUT requires it with `lanes` or `firstLane` |
 | The history readers' per-read costs: one `ls-files --deleted` per read, the whole-history rename log re-run per HEAD (as before B08), negative history-blob checks not cached | B08 review | none | measured acceptable here (card history 2.6 s cold, was 5.5 s); revisit on a much larger repository |
 | The B08-territory git test files now set a 60 s test timeout (the readers run one more git process per read); other live-server and Diff tests keep 5 s | B08 | B12 or B14 | same item as the 5 s timeout rows above |
 | The watcher never stops watching an outside artifact file whose artifact was removed (`watchArtifactFiles`, `cataloguePlugin.ts`) | B07 SPEC | none | harmless: an event for it feeds nothing (`planSync` finds no artifact using it) |
@@ -540,8 +564,115 @@ decisions" section and resolved in that phase's planning.
 | A PDF thumbnail opens its document through `pdfDocs.ts`, which reads every page's size first (as `loadPdf` did), so a thumbnail of a long PDF waits on all its pages | B10 review | none | the reader needs the sizes; a first-page-only open would be a second path |
 | History compare checks an old non-PDF version with a HEAD and `Image.decode()` before its `<img>` loads it (three requests, cached); an SVG with no size might fail `decode()` in a browser other than Chromium (unverified) | B10 review | none | the board is used in Chromium-based browsers |
 | An LFS version is still served as its pointer; the compare and timeline now read "Could not be drawn" for it rather than "never committed" | B10 | none | B08's row; "stored in LFS" wording not added |
+| A second lane-list write sent before the first has answered (Add lane twice quickly, or Add lane while a delete is in flight) carries the old `lanesRev` and is refused ("Lanes not saved"), nothing written | B11 review | none | safe; a queue for lane writes (as Freeform moves have) would send the second on the first's rev |
+| A renamed collapsed lane shows open for one render until the server answers (the key moves on success) | B11 review | none | cosmetic |
+| In a collapsed lane the open card is placed at the strip's top while the hidden cards of its stack keep their stacked places (one may share its spot) | B11 review | none | hidden cards are never hit-tested; a collapsed lane's drop index is the stack's foot |
+| The full fixture e2e run at load 29 lost `board-mapped` "dragging a feature to an earlier slot", `artifacts` R-104 and `diff` "uncommitted edits arrive live"; each passed 3 of 3 alone, and `board-mapped` 13 of 13 twice, `artifacts` with `diff` 59 of 59 | B11 | B15 | load timing, the same class as the rows above |
 
 ## Phase entries
+
+### B11 · Board canvas and views · COMPLETE · 2026-11-20
+
+Board 1.22.0 to **1.23.0**. Plan and evidence: `phases/B11-board-canvas-and-views/IMPLEMENTATION.md` (plan, "As built", the
+manual keyboard walk, "Recovery"). Decisions: accepted decision 25 (B11-Q1, Q3, Q4, Q5 asked in this session; Q2 and R-128's form
+settled from evidence); the SPEC marks them answered. Inherited D-06 and decision 20 (B05's lane route). No master merge was needed.
+All 13 findings reproduced at HEAD `30e2155f` by reading (line drift only), then as failing tests.
+
+**Dispositions**
+
+Proof files: `tests/boardCanvas.test.ts` (layout, graph, moves through `dragLayout`), `tests/boardWalk.test.ts` (walk, camera),
+`tests/laneMerge.test.ts` (API), a B11 block at the end of `tests/store.test.ts`, `tests/listViews.test.ts` (jsdom), and
+`e2e/board-canvas.spec.ts` (fixture board 5182, 11 tests).
+
+| Finding | Disposition | Proof |
+|---|---|---|
+| R-29 | **Fixed**: `mappedLayout` puts every card no epic reaches (missing or wrong-type parent, parent cycles) in the orphan column, each followed by what hangs under it (cycle-safe, each once), lane by lane; no add slot, never a drop column | boardCanvas R-29 block (every card placed as in Freeform, no overlap, lane counts and heights); e2e "R-29": a story under a feature whose epic is missing is drawn and search finds it (1 match, opens) |
+| R-113 | **Fixed**: `isShown` (graph.ts) shows the open card's ancestors too (cycle-safe), so Mapped gives a retired feature its column while a story under it is open; the merged sub-finding by `dragHold`'s `keepDirect` (the direct column held in the hit-test map and the drawn preview) | boardCanvas "draws a live story under a retired feature ..." (both modes) and "an epic's only direct story dropped back ... writes nothing"; e2e "R-113" |
+| R-114 | **Fixed** (B11-Q1): `mappedLayout`'s `open` draws the open card alone at the top of its collapsed lane's strip, which grows by one card; the lane stays collapsed | boardCanvas "draws the open card alone in its collapsed lane ..."; e2e "R-114" (Show on board into collapsed MVP: drawn, in view right of the panel, clear of the next lane's header) |
+| R-86 | **Fixed**: `planMove` counts the slot within the moving card's own run of the drawn stack (live peers for a live card, retired for a retired one), so its neighbours are in file order and a drop between them keeps it | boardCanvas: foot drop with Show retired on and off (one file written, below every live card, preview equals commit); drop back in place with a retired card between neighbours, for every card; `move.test.ts` unchanged and green |
+| R-115 | **Fixed**: the walk and Enter run only from the page, the pane or a card; any button, link, field, menu, menu item, toolbar or dialog inside the canvas keeps its keys | e2e "R-115" (Enter on Add lane opens its box with focus; Enter on a lane toggle collapses it; arrows on it leave the card; Enter from the page still moves into the panel); manual walk |
+| R-116 | **Fixed**: walk, search open and Show on board are an **aim**, made once after the render that draws the selection, at max(zoom, 0.9) (Show on board 1), with geometry from the board's own layout; the plain selection pan (click, link, Back) runs only when no aim is pending, at the current zoom | e2e "R-116" with and without reduced motion (search Enter and a step from 0.3 end at 0.9; a click keeps the zoom); manual walk (zoom 0.90 every step; before it drifted 0.90 to 0.76) |
+| R-117 | **Fixed**: `src/board/camera.ts` `centreViewport` puts a card wider than the board with its left edge 24 px right of the panel, else centres it; `cardInView` is the old test, so no second pan | boardWalk camera block; e2e "R-117" (ArrowUp to an epic at zoom 1.4: title right of the panel, no second pan) |
+| R-118 | **Fixed** (B11-Q3): `src/board/walk.ts` `walkStep`, pure: Left/Right among the same type under the same parent as drawn; Up/Down down a story's column as drawn (Mapped lane by lane, live first, collapsed lanes skipped but the open card; Freeform the stack order), Up from the top to the parent, Down from a feature or epic to the first card drawn under it; the orphan column included | boardWalk (6 walk cases in both modes, and the orphan column); e2e "R-118"; manual walk across epics, features, stories and a collapsed lane |
+| R-119 | **Fixed** (B11-Q2): `POST /api/lanes` rename onto another lane's name in any case (the first lane's too) merges in the same all-or-nothing write (`laneMergeTarget`, `shared/move.ts`); the store sends it as a rename; a case-variant or first-lane band offers **Move into ‹lane›**; a typed merge asks first (review) | laneMerge (case band, first-lane band, named onto named and onto the first lane, plain renames unchanged, failure part way and damaged layout leave every file); store "sent as a merge"; e2e "R-119" (Move into, then a typed rename asks and merges) |
+| R-120 | **Fixed** (B11-Q4): `followCollapsedLane` (store) moves a renamed lane's key, drops it on merge and delete, and Add lane drops any key of the new name; read and written only through `useView` (B03's `fields` and `writeJson`); no pruning | store B11 block (rename keeps, delete drops, stale key cleared, merge leaves the target, refusal leaves all); e2e "R-120" (collapsed through rename and reload; deleted then re-added starts open) |
+| R-126 | **Fixed** (B11-Q5): while searching the twisty is faint and inert, and the three bulk buttons are `aria-disabled` with a described note | listViews (folds in the page and in `localStorage` unchanged by twisty clicks while searching; bulk buttons inert, then working) |
+| R-127 | **Fixed**: About's scroll effect keys on `location.key` as well as `s` | listViews (a contents link to the section in the URL scrolls again; another section scrolls) |
+| R-128 | **Fixed** (decision 25): a picked owner stays an option while applied | listViews (the control reads the owner, All owners clears it, the stepper agrees with the list) |
+
+**Before-proofs:** new unit tests on an archive of `30e2155f` in the scratchpad, with stubs reproducing the old board's own code for
+the new seams (`dragLayout` as BoardView's old rest layout, `walkStep` as its old sibling walk, `centreViewport` as the old
+midpoint): boardCanvas 9 of 12 fail (the 3 passing are preservation checks: no orphan add slot, a hidden feature with nothing open
+takes no column, the foot drop with Retired off), boardWalk 6 of 8 (Freeform file order and narrow centring pass), laneMerge 5 of 6
+(a plain rename), the store block 4 of 5 (a refusal), listViews 4 of 4. The e2e spec ran with the pre-B11 sources swapped in: 9 of
+11 fail; the reduced-motion R-116 case passes (no ease, nothing to re-target) and is a preservation check. Each review regression
+(the drawn lane, the orphan walk, the stale aim) was shown failing against this phase's first cut.
+
+**What shipped:**
+- **New:** `src/board/walk.ts`, `src/board/camera.ts`; the tests above; `e2e/board-canvas.spec.ts`.
+- **Changed:** `src/board/mappedLayout.ts` (orphan column, `open`, `keepDirect`, `laneFloors`, `dragHold`, `dragLayout`,
+  `dropTarget(…, drawn)`), `src/board/graph.ts` (`isShown`), `shared/move.ts` (`planMove`, `laneMergeTarget`),
+  `src/views/BoardView.tsx` (hold, aims, camera, keys, walk), `src/board/LaneHeaders.tsx` (Move into, `MergeAsk`, Add lane key),
+  `src/store.ts` (`renameLane`, `deleteLane`, `setLanes` rev, `followCollapsedLane`), `server/catalogueApi.ts` (merge, `lanesRev`
+  required), `src/views/OutlineView.tsx`, `AboutView.tsx`, `QuestionsView.tsx`, `src/styles.css` (`.twisty.inert`,
+  `.btn[aria-disabled]`).
+
+**Deviations:**
+1. **Lane floors.** Beyond the SPEC's direct-column case, lifting the bottom card of a lane's tallest stack let a drop back in place
+   land in the next lane; `dragHold` holds every lane at its drag-start height in the hit-test map and the preview.
+2. **The lane under the pointer is read from the preview as drawn** (review), the slot from the hit-test map.
+3. **A typed merge asks first** (review); "Move into" from the menu does not.
+4. **D-04e's last legacy shape retired** (decision 20 assigned it to the phase removing its last caller): a layout PUT with `lanes`
+   or `firstLane` and no `lanesRev` is a 400. A tab still running a pre-B11 board gets a 400 adding a lane until reloaded.
+5. **Modified arrows never walk** (review; the old board hijacked Alt Left).
+
+**Verification:**
+- **`npm run verify:board` green:** 1,128 tests (72 files), check OK. One earlier run lost `originLive.test.ts` to its known Vite-boot
+  timeout under load (passes alone, 52).
+- **E2e (fixture, 5182):** `board-canvas` 11 of 11; `board-mapped` 13 of 13 (twice); `board-search`, `question-step`, `bad-data` and
+  `edit-sheets` green; the full fixture project at load 29: 106 passed, 3 failed, each passing 3 of 3 alone (Discovered); `artifacts`
+  with `diff` 59 of 59 after.
+- **Manual keyboard walk** on 5480 over a scratch copy of the real catalogue, before and after (IMPLEMENTATION.md table).
+- **Real catalogue:** `npm run check` OK, no errors; no file under `requirements/` changed. **Migration:** none (preferences keep
+  their shape).
+
+**Review outcomes (convention 15):** two Sonnet reviewers (about 450 changed lines outside tests).
+- **Confirmed and fixed, each with a regression test shown failing first:** a finished aim blocked the click pan when the same card
+  was reopened after Esc (both reviewers; e2e); the preview could grow the pointer's lane while the hit-test used the shorter one,
+  flipping the target (reviewer 1; unit); Down from an orphan feature did not follow the drawn column (reviewer 2; unit).
+- **Also fixed:** an aim with an unmeasured pane no longer moves the camera; modified arrows keep their jobs; a typed merge asks; the
+  Outline bulk buttons stay focusable with a described reason; the drag hold is worked out without an earlier hold; `dragLayout`
+  takes the hold (two layouts per drag start, not three); the leftover sort runs only when cards are unreached; the R-29 search
+  proof (reviewer 1); doc wording (the orphan grouping is lane by lane, a split README sentence, DESIGN wrapping).
+- **Recorded, not changed** (Discovered): a second lane write before the first answers is refused; a renamed collapsed lane shows
+  open for a render; hidden cards sharing the open card's spot in a collapsed strip.
+- **Not changed:** the render-time `placeRef` assignment (commented; the same pattern as `onKeyRef`); the orphan-drop test asserts
+  the SPEC's rule as written (a drop never gets a null parent).
+
+**Touch-rights edits (convention 11):**
+- `server/catalogueApi.ts` (B05's): the lane route's merge form; the layout PUT's `lanesRev` requirement; the route comment.
+- `src/store.ts` (B05, B07 and B06's): lane actions and `followCollapsedLane` only.
+- Tests moved to the retired shape, intent kept: `tests/writeModel.test.ts` (the lane-list writes send `lanesRev`; "refused name"
+  is now a padded name, since a rename onto `later` merges), `tests/api.test.ts` (the lanes block sends `lanesRev`).
+- `playwright.config.ts` (B14's): the new spec in the fixture project.
+- `docs/board-fixes/index.html`: B11 status.
+
+**Doc facts (convention 12):**
+- **`requirements-board/DESIGN.md`:** Interaction, two new bullets (the arrow walk and its controls; where a card lands); Board
+  modes, the lanes bullet (Move into, a merge after asking, a collapsed lane with the open card, collapse follows board renames, the
+  orphan column) and Drag feedback (lanes held, the lane as drawn, a card lands among its own kind).
+- **`requirements-board/README.md`:** src map (`walk`, `camera`, `dragLayout`); the Mapped bullet (merge, Move into, `lanesRev` on
+  every lane write, collapsed lanes follow, `dragLayout`/`dragHold`, the orphan column, `walk.ts`, `camera.ts`).
+- **`CHANGELOG.md`** 1.23.0. **Headers:** `walk.ts`, `camera.ts`, `dragHold`, `dragLayout`, `dropTarget`, `isShown`,
+  `laneMergeTarget`, `followCollapsedLane`, the lane route comment.
+- **Checked, nothing changed:** the About page (its lane line "Rename and add them from the board's lane headers" stays true),
+  SCHEMA (the `lanes` paragraph names no merge rule; B14 may add one), ADOPTING, the SKILL.md files.
+
+**What later phases need:**
+- **B14:** the DESIGN and README lines above in the whole-file pass; SCHEMA's `lanes` paragraph could say a board rename onto
+  another lane merges; the Playwright config now lists `board-canvas.spec.ts`.
+- **B15:** rerun `tests/{boardCanvas,boardWalk,laneMerge,listViews}.test.ts`, the B11 block of `tests/store.test.ts` and
+  `e2e/board-canvas.spec.ts`; repeat the keyboard walk (IMPLEMENTATION.md) if a browser is at hand.
 
 ### B10 · Artifact viewers · COMPLETE · 2026-11-20
 

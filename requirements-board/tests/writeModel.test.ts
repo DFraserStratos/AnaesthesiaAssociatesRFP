@@ -387,14 +387,15 @@ describe('the lane-list rule (R-55, REQ-15, REQ-16)', () => {
       // A drag: positions only.
       const saved = call(a, 'PUT', '/api/layout', { positions: { 'US-01.1.1': { x: 5, y: 6 } } }) as Layout
       expect(saved.positions['US-01.1.1']).toEqual({ x: 5, y: 6 })
-      // A lane write that leaves the problem as it was.
-      call(a, 'PUT', '/api/layout', { lanes: [...lanes, 'Extra'] })
+      // A lane write that leaves the problem as it was (each with the lane list it started from: B11 retired base-less lane writes).
+      const lanesRev = () => a.getState().layout.lanesRev
+      call(a, 'PUT', '/api/layout', { lanes: [...lanes, 'Extra'], lanesRev: lanesRev() })
       // One that adds a problem.
-      const e = refusal(() => call(a, 'PUT', '/api/layout', { lanes: [...lanes, 'Extra', 'extra'] }))
+      const e = refusal(() => call(a, 'PUT', '/api/layout', { lanes: [...lanes, 'Extra', 'extra'], lanesRev: lanesRev() }))
       expect(e.status).toBe(422)
       expect(e.message).toMatch(/already a lane called "extra"/)
       // One that fixes it.
-      call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'Later'] })
+      call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'Later'], lanesRev: lanesRev() })
       expect(a.getState().issues.filter((i) => i.id === 'layout')).toEqual([])
     })
   }
@@ -460,7 +461,8 @@ describe('renaming or removing a lane is one write (R-56, REQ-12, REQ-13)', () =
   it('changes no file when the layout is unreadable, the name is refused, a story is stale, or the lane list moved on', () => {
     const cases: [string, (a: Api) => unknown, number][] = [
       ['unreadable layout', (a) => (writeFileSync(layoutPath(root), '<<<<<<< HEAD\n{'), rename(a)), 422],
-      ['refused name', (a) => rename(a, { to: 'later' }), 422],
+      // A name the lane rules refuse (a rename onto another lane's name merges since B11: FINDINGS R-119).
+      ['refused name', (a) => rename(a, { to: 'Now ' }), 422],
       ['stale story', (a) => (agentEdits('US-01.1.2', (t) => t.replace('order: 2', 'order: 8')), rename(a, { stories: storyRevs(a, 'MVP') }), rename(a)), 409],
       ['lane list moved on', (a) => rename(a, { lanesRev: 'old' }), 409],
     ]

@@ -27,8 +27,23 @@ export interface GraphInput {
   matches: Set<string>
 }
 
-/** Retired cards, and everything under one, are hidden unless the Retired toggle is on; the open card always shows. */
-export const isShown = (it: Item, g: Pick<GraphInput, 'index' | 'showRetired' | 'selected'>) => g.showRetired || it.id === g.selected || !isRetiredOrUnder(g.index, it)
+/**
+ * Retired cards, and everything under one, are hidden unless the Retired toggle is on. The open card
+ * and its ancestors always show, so a live story under a retired feature is drawn in its column (FINDINGS
+ * R-113); the ancestors keep their retired look.
+ */
+export const isShown = (it: Item, g: Pick<GraphInput, 'index' | 'showRetired' | 'selected'>) =>
+  g.showRetired || it.id === g.selected || !isRetiredOrUnder(g.index, it) || isAncestorOf(g.index, it.id, g.selected)
+
+/** Is `id` above `of` in its parent chain? Safe on parent cycles. */
+function isAncestorOf(index: Pick<Index, 'byId'>, id: string, of: string | null): boolean {
+  const seen = new Set<string>()
+  for (let cur = of ? index.byId.get(of)?.parent : undefined; cur && !seen.has(cur); cur = index.byId.get(cur)?.parent) {
+    if (cur === id) return true
+    seen.add(cur)
+  }
+  return false
+}
 
 export function toneFor(id: string, g: GraphInput): CardData['tone'] {
   if (g.filtering && !g.matches.has(id)) return 'is-faded'

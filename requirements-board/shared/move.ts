@@ -14,7 +14,7 @@ import { DEFAULT_CONFIG } from './config.ts'
 import { revOf } from './files.ts'
 import { compareSiblings } from './ids.ts'
 import { retiredTest } from './statuses.ts'
-import { parentTypesOf, type Item } from './types.ts'
+import { firstLaneName, parentTypesOf, type Item } from './types.ts'
 
 /** Is a card retired? The board passes its config's (`retiredTest(config)`); unset, the default config's. */
 export type RetiredTest = (it: Item) => boolean
@@ -71,15 +71,19 @@ export function planMove(items: Item[], move: Move, retired: RetiredTest = DEFAU
 
   // Everything else under the destination parent, in file order; the moved card goes in beside its peer.
   const siblings = items.filter((o) => o.id !== it.id && o.parent === move.parent && (move.parent !== null || o.type === 'epic')).sort(compareSiblings)
+  // The board draws live cards first, then retired ones, so a card can only land among its own kind:
+  // the slot is counted within that run of the drawn stack (FINDINGS R-86). Its neighbours are then in
+  // file order too, so any position between them, whatever other cards sit there, looks the same.
   const peers = peersAt(items, it, move.parent, lane, retired)
-  const index = Math.max(0, Math.min(Math.floor(move.index), peers.length))
-  // Any position between the peer above and the peer below looks the same on the board.
-  const lo = index > 0 ? siblings.indexOf(peers[index - 1]!) + 1 : 0
-  const hi = index < peers.length ? siblings.indexOf(peers[index]!) : siblings.length
+  const live = peers.filter((p) => !retired(p))
+  const own = retired(it) ? peers.filter((p) => retired(p)) : live
+  const index = Math.max(0, Math.min(Math.floor(move.index) - (retired(it) ? live.length : 0), own.length))
+  const lo = index > 0 ? siblings.indexOf(own[index - 1]!) + 1 : 0
+  const hi = index < own.length ? siblings.indexOf(own[index]!) : siblings.length
   // Where the card sits now, if it stays under the same parent; kept when it is already in the slot, so nothing else is rewritten.
   const cur = it.parent === move.parent ? siblings.filter((o) => compareSiblings(o, it) < 0).length : -1
   const stays = cur >= lo && cur <= hi
-  const at = stays ? cur : !peers.length ? siblings.length : index > 0 ? lo : hi
+  const at = stays ? cur : index > 0 ? lo : hi
   const moved: Change = { id: it.id }
   if (it.parent !== move.parent) moved.parent = move.parent
   if (lane !== it.swimlane) moved.swimlane = lane
@@ -161,6 +165,17 @@ export function laneListProblems(lanes: unknown): string[] {
     seen.add(name.toLowerCase())
   }
   return out
+}
+
+/**
+ * The lane a rename of `from` to `to` merges into (FINDINGS R-119): a named lane other than `from` whose
+ * name matches `to` in any case, or `null` for the first lane when `to` is its name in any case. Undefined
+ * when the rename is no merge (a new name, or `from` itself in another case).
+ */
+export function laneMergeTarget(layout: { firstLane?: string; lanes: string[] }, from: string, to: string): string | null | undefined {
+  const name = to.trim().toLowerCase()
+  if (firstLaneName(layout).toLowerCase() === name) return null
+  return layout.lanes.find((l) => l !== from && l.toLowerCase() === name)
 }
 
 /** The first reason a set of lane names cannot be saved, or null when it can (see `laneListProblems`). */

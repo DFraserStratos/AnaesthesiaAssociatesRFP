@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react'
 import { useEffect, type MouseEvent } from 'react'
 import Markdown from 'react-markdown'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import changelog from '../../CHANGELOG.md?raw'
 import { ARTIFACT_STATUSES, firstLaneName } from '../../shared/types.ts'
 import { StatusLabel, TypeIcon } from '../components/bits.tsx'
@@ -16,10 +16,13 @@ import { ARTIFACT_STATUS_HELP, typeClass } from '../vocab.ts'
  */
 export function AboutView() {
   const [params] = useSearchParams()
+  const { key } = useLocation()
   const section = params.get('s')
+  // Keyed on the location too: a contents link to the section already in the URL is a new location, so it
+  // scrolls there again after the reader has scrolled away (FINDINGS R-127); Back and Forward land as well.
   useEffect(() => {
     if (section) document.getElementById(`about-${section}`)?.scrollIntoView({ block: 'start' })
-  }, [section])
+  }, [section, key])
 
   return (
     <div className="page">

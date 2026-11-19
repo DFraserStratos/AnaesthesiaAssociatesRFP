@@ -10,6 +10,7 @@ import { descendantsOf, matchesFilters, openQuestionsFor, useShownIndex, useView
 import { typeClass } from '../vocab.ts'
 
 const COLLAPSE_KEY = 'requirements-board:outline-collapsed'
+const FOLD_WHILE_SEARCHING = 'Search shows every match open; clear the search to fold rows'
 /** Folded rows by card ID; a saved value that is not a list of IDs keeps only its IDs (`storage.ts`). */
 export function readCollapsed(): Set<string> {
   return readJson(COLLAPSE_KEY, "Outline's folded rows", new Set<string>(), (raw, bad) => {
@@ -49,6 +50,7 @@ export function OutlineView() {
     return keep
   }, [query, index, view])
 
+  const searching = !!visible
   const unplaced = useMemo(() => unplacedRoots(index), [index])
   const rows: { item: Item; depth: number; reason?: string }[] = []
   // Each card once, whatever parent cycles the data holds.
@@ -125,15 +127,31 @@ export function OutlineView() {
             <span className="sr-only">Search the catalogue</span>
             <input className="input" placeholder="Search IDs, titles and text" value={view.search} onChange={(e) => view.set({ search: e.target.value })} />
           </label>
-          <button className="btn" onClick={() => setCollapsed(new Set())}>
-            Expand all
-          </button>
-          <button className="btn" onClick={() => setCollapsed(new Set(index.items.filter((i) => i.type !== 'story').map((i) => i.id)))}>
-            Collapse to epics
-          </button>
-          <button className="btn" onClick={() => setCollapsed(new Set(index.items.filter((i) => i.type === 'feature').map((i) => i.id)))}>
-            Features only
-          </button>
+          {/* While searching every match shows open, so folding would change only what is hidden (B11-Q5). The
+              buttons stay focusable (aria-disabled), and say why. */}
+          {(
+            [
+              ['Expand all', () => new Set<string>()],
+              ['Collapse to epics', () => new Set(index.items.filter((i) => i.type !== 'story').map((i) => i.id))],
+              ['Features only', () => new Set(index.items.filter((i) => i.type === 'feature').map((i) => i.id))],
+            ] as const
+          ).map(([label, folds]) => (
+            <button
+              key={label}
+              className="btn"
+              aria-disabled={searching}
+              aria-describedby={searching ? 'outline-fold-note' : undefined}
+              title={searching ? FOLD_WHILE_SEARCHING : undefined}
+              onClick={() => !searching && setCollapsed(folds())}
+            >
+              {label}
+            </button>
+          ))}
+          {searching && (
+            <span id="outline-fold-note" className="sr-only">
+              {FOLD_WHILE_SEARCHING}
+            </span>
+          )}
           <button className="btn" aria-pressed={view.showRetired} onClick={() => view.set({ showRetired: !view.showRetired })}>
             Show retired
           </button>
@@ -153,6 +171,7 @@ export function OutlineView() {
                 index={index}
                 query={query}
                 collapsed={!visible && collapsed.has(item.id)}
+                searching={searching}
                 tabbable={item.id === tabStop}
                 onFocus={() => setFocusId(item.id)}
                 onToggle={() => toggle(item.id)}
@@ -219,6 +238,7 @@ function OutlineRow({
   index,
   query,
   collapsed,
+  searching,
   tabbable,
   onFocus,
   onToggle,
@@ -232,6 +252,8 @@ function OutlineRow({
   index: Index
   query: string
   collapsed: boolean
+  /** While searching every row shows open and the twisty folds nothing (FINDINGS R-126). */
+  searching: boolean
   tabbable: boolean
   onFocus: () => void
   onToggle: () => void
@@ -251,11 +273,12 @@ function OutlineRow({
       onFocus={onFocus}
       className={`tree-row ${item.type} ${statusClasses(index.config, 'item', item.status)}`} style={{ ['--depth' as string]: depth }} onClick={onOpen} onKeyDown={onKey}>
       <span
-        className="twisty"
+        className={`twisty${searching ? ' inert' : ''}`}
         onClick={(e) => {
           e.stopPropagation()
-          if (hasKids) onToggle()
+          if (hasKids && !searching) onToggle()
         }}
+        title={searching && hasKids ? FOLD_WHILE_SEARCHING : undefined}
         aria-hidden
       >
         {hasKids ? collapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} /> : null}

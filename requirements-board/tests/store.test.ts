@@ -346,3 +346,60 @@ describe('the saved status filter (R-46)', () => {
     expect(saved()).toEqual([])
   })
 })
+
+describe('collapsed lanes follow the lane changes made on the board (R-120, B11)', () => {
+  const lanesAfter = (lanes: string[], rev: string) => ({ records: [], layout: { positions: {}, lanes, lanesRev: rev } })
+  const collapsed = () => useView.getState().collapsedLanes
+  const savedCollapsed = () => (JSON.parse(stored.get('requirements-board:view') ?? '{}') as { collapsedLanes?: string[] }).collapsedLanes
+  beforeEach(() => {
+    changeLane.mockReset()
+    useCatalogue.setState({ items: {}, layout: { positions: {}, lanes: ['MVP', 'Later'], lanesRev: 'L1' }, moveError: undefined })
+    useView.getState().set({ collapsedLanes: [] })
+  })
+
+  it('a collapsed lane renamed stays collapsed under its new name; deleted, its state goes, so a lane of that name starts open', async () => {
+    useView.getState().set({ collapsedLanes: ['MVP'] })
+    changeLane.mockResolvedValue(lanesAfter(['Now', 'Later'], 'L2'))
+    expect(await s().renameLane('MVP', 'Now')).toBe(true)
+    expect(collapsed()).toEqual(['Now'])
+    expect(savedCollapsed()).toEqual(['Now'])
+    changeLane.mockResolvedValue(lanesAfter(['Later'], 'L3'))
+    expect(await s().deleteLane('Now')).toBe(true)
+    expect(collapsed()).toEqual([])
+    expect(savedCollapsed()).toEqual([])
+  })
+
+  it("an open lane renamed onto a name a stale key left collapsed comes out open; a merge leaves the target's state", async () => {
+    useView.getState().set({ collapsedLanes: ['Now', 'Later'] })
+    changeLane.mockResolvedValue(lanesAfter(['Now', 'Later'], 'L2'))
+    await s().renameLane('MVP', 'Now')
+    expect(collapsed()).toEqual(['Later'])
+    useCatalogue.setState({ layout: { positions: {}, lanes: ['Now', 'Later'], lanesRev: 'L2' } })
+    changeLane.mockResolvedValue(lanesAfter(['Later'], 'L3'))
+    await s().renameLane('Now', 'later')
+    expect(changeLane).toHaveBeenLastCalledWith(expect.objectContaining({ op: 'rename', from: 'Now', to: 'later' }))
+    expect(collapsed()).toEqual(['Later'])
+  })
+
+  it('a refused rename or removal leaves the collapsed lanes as they were', async () => {
+    useView.getState().set({ collapsedLanes: ['MVP'] })
+    changeLane.mockRejectedValue(new Error('the lanes changed on disk since you looked; look again'))
+    expect(await s().renameLane('MVP', 'Now')).toBe(false)
+    expect(await s().deleteLane('MVP')).toBe(false)
+    expect(collapsed()).toEqual(['MVP'])
+  })
+
+  it('a rename onto another lane in another case is sent as a merge, not refused as a duplicate', async () => {
+    changeLane.mockResolvedValue(lanesAfter(['Later'], 'L2'))
+    expect(await s().renameLane('MVP', 'LATER')).toBe(true)
+    expect(changeLane).toHaveBeenCalledTimes(1)
+    expect(s().moveError).toBeUndefined()
+  })
+
+  it('adding or reordering lanes sends the lane list it started from', async () => {
+    putLayout.mockResolvedValue({ positions: {}, lanes: ['MVP', 'Later', 'Soon'], lanesRev: 'L2' } as Layout)
+    expect(await s().setLanes(['MVP', 'Later', 'Soon'])).toBe(true)
+    expect(putLayout).toHaveBeenCalledWith({ lanes: ['MVP', 'Later', 'Soon'], lanesRev: 'L1' })
+    expect(s().layout.lanesRev).toBe('L2')
+  })
+})

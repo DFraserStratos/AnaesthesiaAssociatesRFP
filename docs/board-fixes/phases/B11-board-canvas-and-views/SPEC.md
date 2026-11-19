@@ -1,6 +1,6 @@
 # Phase B11: The board canvas, Outline, Questions and About always show the open card and every live card, and keyboard paths behave
 
-**Status:** PLANNED
+**Status:** COMPLETE (2026-11-20, board 1.23.0; see PROGRESS.md)
 **Requirements:** R-29, R-86, R-113, R-114, R-115, R-116, R-117, R-118, R-119, R-120, R-126, R-127,
 R-128 in [FINDINGS.md](../../FINDINGS.md) ("Findings in detail", `#### R-nn`); systemic issue 5
 (bad data becomes an issue, never a silent omission) for R-29 and R-113; programme outcome 3 in
@@ -349,6 +349,12 @@ cycle members (B03, accepted decision 10), who wires the store's lane rename (B0
 | B11-Q3 | Should the arrow walk skip stories in a collapsed lane, or step into them (revealing them per Q1)? Should Left/Right on a story keep stepping within its column, as today, or move to the next column? | B11-REQ-06, R-118 | Before building REQ-06 | Walk test expectations; DESIGN.md wording |
 | B11-Q4 | Prune collapsed-lane keys that name no current lane (left by renames outside the board), or keep them? | B11-REQ-08, R-120 | Before building REQ-08 | Pruning loses the state of a lane that is briefly absent during an external edit; any pruning uses B03's storage rule (B03-REQ-06.2) and B02's R-46 guard |
 | B11-Q5 | While searching Outline, should "Expand all", "Collapse to epics" and "Features only" still change the hidden collapse state, be disabled, or be hidden? Same class as R-126 but explicit user intent. | B11-REQ-09 | Before building REQ-09 | Scope of R-126's fix; not required to close R-126 |
+
+**Answered 2026-11-20 (PROGRESS.md accepted decision 25):** Q1 the open card is drawn alone in the
+collapsed strip (the preference never changes); Q2 the case-variant band stays its own flagged band, with
+a "Move into" fix (from evidence; `shared/check.ts` untouched); Q3 the walk skips collapsed lanes (but the
+open card drawn there), Left and Right stay in the column; Q4 stale collapsed keys are kept (no pruning);
+Q5 the bulk buttons are disabled while searching. R-128's form: a picked owner stays listed.
 
 ## Risks and recovery requirements
 

@@ -127,8 +127,9 @@ src/
                  what a view no longer shows), pdfDocs (PDF documents shared on one pdf.js worker and
                  destroyed once unused), objectUrls (drawn mermaid images' URLs, revoked once unused),
                  pictureFailure (why a version is not shown)
-  board/         autoLayout (Freeform, pure), mappedLayout (Mapped + drop hit-test, pure), graph (nodes + edges
-                 from the catalogue, pure), cardData, CardNode, LaneNode (lane rule, add slot, drop bar), LaneHeaders
+  board/         autoLayout (Freeform, pure), mappedLayout (Mapped + drop hit-test, `dragLayout`, pure), graph (nodes + edges
+                 from the catalogue, pure), walk (arrow keys, pure), camera (centring, pure), cardData, CardNode,
+                 LaneNode (lane rule, add slot, drop bar), LaneHeaders
   components/    ItemModal, QuestionModal, Screenshots (gallery, lightbox, image editor), Sheet, ProblemPill,
                  RegionBoundary (the error boundary round each view and sheet, with its recovery panel),
                  useEditableRecord (edit/conflict/draft logic) + EditChrome (its banners, footer, orphaned draft), bits
@@ -243,8 +244,17 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
     (stories with no `swimlane`) is renamed through `firstLane` instead, so no story changes. A lane
     name is at most 40 characters, has no spaces around it and repeats no other (case aside, the first
     lane's included); the check reports a list on disk that breaks a rule, and a lane change is
-    refused only if it adds a problem, so a card move never is. Collapsed lanes are a per-browser
-    preference.
+    refused only if it adds a problem, so a card move never is. A rename onto another lane's name
+    (case aside, the first lane's included) merges into that lane in the same one write, after the
+    board asks: the stories take its exact name (or none) and the old name leaves the list; a "not a
+    lane" band that differs from a lane only in case offers this as **Move into**. Every lane-list
+    write sends `lanesRev` (adding and reordering lanes too). Collapsed lanes are a per-browser
+    preference (`collapsedLanes` in the view settings); a rename, merge or delete made on the board
+    carries them along. A drop is hit-tested against `dragLayout` (the map without the dragged card,
+    lanes held at their size: `dragHold`), with the lane under the pointer read from the preview as
+    drawn; the slot counts the card's own kind, live or retired. Cards no epic reaches get a column of
+    their own, each followed by what hangs under it (stories in their own lanes). The arrow-key walk is `src/board/walk.ts`, the centring rules
+    `src/board/camera.ts`.
 - **Delete** (item sheet footer) removes a card for good, after asking: everything under it goes
   too, and `shared/remove.ts` (`planDelete`) works out the rest, shown in the question and applied
   by `DELETE /api/items/:id`: other cards drop it from `related`, outstanding items from `affects`,
