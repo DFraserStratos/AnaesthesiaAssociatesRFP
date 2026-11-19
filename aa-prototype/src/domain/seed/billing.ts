@@ -30,7 +30,9 @@ import type {
   XeroAccPay,
   XeroAccRec,
   XeroContact,
+  XeroBankLine,
   XeroJournal,
+  XeroRemittance,
 } from '../types'
 import { buildInvoicesForBooking, type InvoiceBuildContext } from '../billing/invoiceBuild'
 import { AA_HOLDING_ACCOUNT, prepaymentGroupsFor, prepaymentInvoiceDraftFor } from '../billing/prepayment'
@@ -50,10 +52,13 @@ export interface SeedXeroSlice {
   payments: Record<string, PaymentIn>
   disbursements: Record<string, Disbursement>
   journals: Record<string, XeroJournal>
+  /** Bulk remittances and bank lines (catch-up Phase 37): the seed ships none. */
+  remittances: Record<string, XeroRemittance>
+  bankLines: Record<string, XeroBankLine>
 }
 
 export function emptySeedXeroSlice(): SeedXeroSlice {
-  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {} }
+  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {} }
 }
 
 export interface SeedBillingSlice {
@@ -257,6 +262,8 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
         payments: { ...payments, ...fees.payments },
         disbursements,
         journals: {},
+        remittances: {},
+        bankLines: {},
       },
       contactIdCache,
       aaFeeInvoices: fees.aaFeeInvoices,

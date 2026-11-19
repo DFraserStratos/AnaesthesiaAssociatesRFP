@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { AlertTriangle, ArrowRight, ChevronLeft, ExternalLink, Info } from 'lucide-react'
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { DemoSurface } from './DemoSurface'
-import { OFFICE_ACTOR, disbursePayable, receivePayment, useAppStore } from '../../store'
+import { OFFICE_ACTOR, deliverPaymentWebhook, disbursePayable, useAppStore } from '../../store'
 import { dateTimeMicroCap, dayMicroCap, formatCurrency } from '../../shared/format'
 import { HELD_UNTIL_AUTHORISED, LEAVES_ONLY_BY_SYSTEM, RELEASE_TRIGGER_CAPTION } from '../../domain/billing/prepayHolding'
 import { transferOfPair } from '../../domain/billing/ledger'
@@ -245,20 +245,27 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
       return
     }
 
+    // Three events in one click (catch-up Phase 37): the payer pays into AA's Xero and the webhook tells the
+    // engine; Xero's payables run pays the bill; the bill-paid webhook tells the engine, which records it.
+    let queuedPayment = false
     if (pair.accRec.balance > 0) {
-      const payment = receivePayment(useAppStore, {
+      const payment = deliverPaymentWebhook(useAppStore, {
         accRecId: pair.accRec.id,
         amount: pair.accRec.balance,
         idempotencyKey: `DEMO-INVOICE-SETTLEMENT-${pair.accRec.id}`,
-        source: 'webhook',
       })
       if (!payment.ok) {
         setSettlementMessage(`Payment could not be applied: ${payment.message}`)
         return
       }
+      queuedPayment = payment.value.queued === true
     }
 
     if (pair.ledger.pairId === undefined) return
+    if (queuedPayment) {
+      setSettlementMessage('The payment landed in Xero. Xero is unavailable to the Billing Engine, so it waits in the sync queue, and nothing is authorised to pay yet.')
+      return
+    }
     const payout = disbursePayable(useAppStore, OFFICE_ACTOR, pair.ledger.pairId)
     // A prepayment's payable credits the AA Holding account (catch-up Phases 27, 27a): the payment lands, the
     // payout is refused, because money leaves the account only by a transfer or refund the system raises.
@@ -271,10 +278,13 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
       return
     }
 
+    const who = pair.accPay.contact?.name ?? 'the anaesthetist'
     setSettlementMessage(
-      payout.value.disbursedCount > 0
-        ? `Done. The customer payment is recorded and ${formatCurrency(payout.value.totalDisbursed)} has been paid to ${pair.accPay.contact?.name ?? 'the anaesthetist'}.`
-        : 'Done. This customer payment and anaesthetist payout were already complete.',
+      payout.value.billsPaid === 0
+        ? 'Done. This customer payment and the bill to the anaesthetist were already complete.'
+        : payout.value.disbursedCount > 0
+          ? `Done. The customer payment is recorded, ${formatCurrency(payout.value.totalPaid)} has been paid to ${who} in Xero's payables run, and the bill-paid webhook told the Billing Engine, which recorded the disbursement.`
+          : `Done. ${formatCurrency(payout.value.totalPaid)} has been paid to ${who} in Xero; recording the disbursement waits in the Billing Engine's Xero sync queue.`,
     )
   }
 
@@ -461,7 +471,7 @@ function TransferJournal({ caseId }: { caseId: string }) {
   if (journal === undefined) {
     return (
       <Callout tone="warn" title="Transfer journal not posted">
-        {transfer.journalFailure?.message ?? 'The transfer stands; its journal is waiting to post.'}
+        The transfer stands; its journal waits in the Billing Engine's Xero sync queue and posts when Xero answers.
       </Callout>
     )
   }

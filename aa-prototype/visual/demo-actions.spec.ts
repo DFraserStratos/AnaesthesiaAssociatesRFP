@@ -20,14 +20,14 @@ test('demo actions: absent on the Review queue, eight on the Day view, four on t
   await page.goto('/admin/billing')
   await page.waitForLoadState('networkidle')
   const pill = page.locator('[data-shot="demo-actions"]')
-  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 4')
+  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 6')
   await pill.focus()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('dialog')).toBeVisible()
-  for (const id of ['billing-failure', 'arm-handoff-fault', 'run-reconciliation-poll', 'run-archive-job']) {
+  for (const id of ['billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job']) {
     await expect(page.locator(`[data-shot="demo-action-${id}"]`)).toBeVisible()
   }
-  // The screen's own product "Run payables" button is untouched.
+  // The screen's own "Run payables in Xero" panel (badged Simulated Xero, not a registry entry) is untouched.
   await expect(page.locator('[data-shot="billing-payables-run"]')).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).toHaveCount(0)

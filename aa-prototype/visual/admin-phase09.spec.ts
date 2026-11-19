@@ -14,20 +14,25 @@ test('admin phase 09: billing monitor failure, resolve and retry (re-based on th
   await page.waitForLoadState('networkidle')
   await expect(page.getByRole('heading', { name: 'Billing monitor' })).toBeVisible()
   const message = await runDemoAction(page, 'billing-failure')
-  expect(message).toMatch(/held back at the Xero hand-off/)
+  expect(message).toMatch(/waits for Xero in the sync queue/)
   await page.screenshot({ path: 'visual/shots/p9-01-trigger.png', fullPage: true })
   // Pressed once, it reads Already triggered.
   await expect(page.locator('[data-shot="demo-action-billing-failure"]').getByText('Already triggered')).toBeVisible()
   await page.keyboard.press('Escape')
 
-  // Losa Tuilagi is held back at the hand-off with its reason; Hemi Walker billed; the List is not failed.
-  await expect(page.getByRole('button', { name: 'Resolve & retry' })).toHaveCount(1)
+  // Losa Tuilagi's hand-off waits for Xero in the sync queue (catch-up Phase 37); Hemi Walker billed; the List is not failed.
+  const queue = page.locator('[data-shot="billing-xero-queue"]')
+  await expect(queue.getByRole('button', { name: 'Retry now' })).toHaveCount(1)
+  await expect(page.locator('[data-shot="monitor-waiting-for-xero"]')).toHaveCount(1)
+  await expect(page.getByRole('button', { name: 'Resolve & retry' })).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p9-02-monitor.png', fullPage: true })
 
-  // Resolve & retry hands it off once; no Contract is edited.
-  await page.getByRole('button', { name: 'Resolve & retry' }).click()
+  // Retry now hands it off once; no Contract is edited.
+  await queue.getByRole('button', { name: 'Retry now' }).click()
   await page.waitForTimeout(400)
-  await expect(page.getByRole('button', { name: /Resolve|Retry/ })).toHaveCount(0)
+  await expect(queue.getByRole('button', { name: 'Retry now' })).toHaveCount(0)
+  await expect(queue.getByText('Nothing is waiting for Xero.')).toBeVisible()
+  await expect(page.locator('[data-shot="monitor-waiting-for-xero"]')).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p9-03-retried.png', fullPage: true })
 })
 

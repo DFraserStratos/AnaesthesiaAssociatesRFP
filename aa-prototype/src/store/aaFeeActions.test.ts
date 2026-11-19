@@ -268,11 +268,11 @@ describe('guards on the procedure money paths', () => {
     const api = store()
     const h01 = aaFeeInvoicesFor(api.getState(), ANAE.souter).find((f) => f.invoiceNumber === 'AA-FEE-2026-H01')!
     runReconciliationPoll(api) // catches the seeded missed procedure webhook only
-    expect(runReconciliationPoll(api)).toBe(0)
+    expect(runReconciliationPoll(api).payments).toBe(0)
     const h02 = aaFeeInvoicesFor(api.getState(), ANAE.souter).find((f) => f.invoiceNumber === 'AA-FEE-2026-H02')!
     recordAaFeePayment(api, { aaFeeInvoiceId: h02.id, idempotencyKey: 'FEE-POLL' })
     const receiptsBefore = api.getState().billing.receipts
-    expect(runReconciliationPoll(api)).toBe(0)
+    expect(runReconciliationPoll(api).payments).toBe(0)
     expect(api.getState().billing.receipts).toEqual(receiptsBefore)
     // (catch-up Phase 36: the fee payment itself now writes an `aaFee` ledger receipt; the poll never writes one.)
     const feeAccRecs = new Set([feeAccRecId(api, h01), feeAccRecId(api, h02)])

@@ -30,6 +30,7 @@ import { applyReceipt, gstComponentOf, isBookingPair, payeeAnaesthetistOf, trans
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { pairByAccRec } from './ledgerSelectors'
+import { enqueueXeroWork, XERO_OUTAGE_ERROR, xeroAvailable } from './xeroGate'
 
 export { gstComponentOf }
 
@@ -196,6 +197,8 @@ export function receivePayment(api: AppStoreApi, input: ReceivePaymentInput): Ou
     return refuse('invalidAmount', 'The payment amount must be positive.')
   }
   if (receiptKeySeen(state, input.idempotencyKey)) return ok({ applied: false })
+  // A void made in Xero (catch-up Phase 37): Xero takes no payment on it, so neither does the engine.
+  if (accRec.status === 'voided') return refuse('voidedInXero', 'Voided in Xero')
 
   const pair = pairByAccRec(state, input.accRecId)
   if (pair === undefined) {
@@ -267,4 +270,73 @@ export function recordUnmatchedReceipt(api: AppStoreApi, input: UnmatchedReceipt
     return { billing: { ...s.billing, unmatchedReceipts: { ...s.billing.unmatchedReceipts, [id]: receipt } }, counters: allocated.counters }
   })
   return ok({ id, applied: true })
+}
+
+/** Xero itself, recording a payment that landed in AA's account (the simulation's Xero side). */
+export const XERO_SIDE_ACTOR: Actor = { who: 'Xero (simulated)', role: 'system', source: 'demo' }
+
+export interface PaymentWebhookInput {
+  accRecId: string
+  amount: number
+  idempotencyKey: string
+  /** When the money landed in Xero; omit for now. */
+  atISO?: string
+}
+
+/**
+ * A payment lands in Xero and Xero's webhook tells the engine (catch-up Phase
+ * 37; EP-09, US-09.2.1): every webhook-style caller comes here (the payment
+ * triggers, the Xero pair's settle button, the bulk remittance and "Match in
+ * Xero"). With Xero's API answering it is `receivePayment` as the webhook.
+ * During an outage the money still lands in Xero: only the Xero `PaymentIn`
+ * is recorded (the seeded missed-webhook shape, so the ACCREC reads as before
+ * until the engine records it) and a `paymentSync` waits in the Xero sync
+ * queue; the poll or the queue then records it once, dated when it landed.
+ */
+export function deliverPaymentWebhook(api: AppStoreApi, input: PaymentWebhookInput): Outcome<{ applied: boolean; queued?: boolean; unmatchedReceiptId?: string }> {
+  const state = api.getState()
+  const accRec = state.xero.accRecs[input.accRecId]
+  if (accRec === undefined) return refuse('notFound', 'ACCREC not found.')
+  if (accRec.kind === 'aaFee') return refuse('aaFeeInvoice', 'This is an AA fee invoice; record its payment as a fee payment.')
+  if (accRec.status === 'voided') return refuse('voidedInXero', 'Voided in Xero')
+  if (!Number.isFinite(input.amount) || toCents(input.amount) <= 0) return refuse('invalidAmount', 'The payment amount must be positive.')
+  if (xeroAvailable(state)) {
+    return receivePayment(api, { accRecId: input.accRecId, amount: input.amount, idempotencyKey: input.idempotencyKey, source: 'webhook', ...(input.atISO !== undefined ? { atISO: input.atISO } : {}) })
+  }
+  if (receiptKeySeen(state, input.idempotencyKey)) return ok({ applied: false })
+  let paymentId = Object.values(state.xero.payments).find((p) => p.idempotencyKey === input.idempotencyKey)?.id
+  if (paymentId === undefined) {
+    const metas: MutationMeta[] = []
+    mutate(api, XERO_SIDE_ACTOR, metas, (s) => {
+      const allocated = allocateId(s.counters, 'paymentIn')
+      paymentId = allocated.id
+      const payment: PaymentIn = { id: allocated.id, accRecId: input.accRecId, amount: roundToCents(input.amount), atISO: input.atISO ?? clockISO(s.clock), idempotencyKey: input.idempotencyKey, source: 'webhook' }
+      metas.push({ entityType: 'xeroAccRec', entityId: input.accRecId, action: 'xero.paymentLanded', after: { amount: payment.amount, idempotencyKey: input.idempotencyKey, engineNotified: false } })
+      return { xero: { ...s.xero, payments: { ...s.xero.payments, [allocated.id]: payment } }, counters: allocated.counters }
+    })
+  }
+  const pair = pairByAccRec(state, input.accRecId)
+  const queued = enqueueXeroWork(api, {
+    kind: 'paymentSync',
+    idempotencyKey: input.idempotencyKey,
+    target: { accRecId: input.accRecId, ...(paymentId !== undefined ? { xeroPaymentId: paymentId } : {}), ...(pair !== undefined ? { pairId: pair.id } : {}) },
+    lastError: XERO_OUTAGE_ERROR,
+  })
+  if (!queued.ok) return queued
+  return ok({ applied: false, queued: true })
+}
+
+/**
+ * What Xero shows still owing on an ACCREC: its balance less any payment it
+ * holds that the engine has not recorded yet (an outage's landed payment, a
+ * missed webhook). The payment triggers pay against this, so a second payment
+ * during an outage never overpays.
+ */
+export function xeroBalanceOf(state: Pick<AppState, 'xero' | 'billing'>, accRecId: string): number {
+  const rec = state.xero.accRecs[accRecId]
+  if (rec === undefined) return 0
+  const pending = Object.values(state.xero.payments)
+    .filter((p) => p.accRecId === accRecId && !receiptKeySeen(state, p.idempotencyKey))
+    .reduce((n, p) => n + toCents(p.amount), 0)
+  return Math.max(0, toCents(rec.amountDue) - toCents(rec.amountReceived) - pending) / 100
 }

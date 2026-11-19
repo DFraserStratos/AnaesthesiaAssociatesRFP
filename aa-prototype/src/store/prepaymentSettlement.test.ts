@@ -26,7 +26,9 @@ import { completeAnswered } from '../test/completeAnswered'
 import { approveAllPrepayments } from '../test/approvePrepayments'
 import { SEED_LIST_IDS, SEED_MARKERS, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
 import { HOLDING_SYSTEM_ONLY, holdingBalance, holdingEntries } from '../domain/billing/prepayHolding'
-import { pairForInvoice } from './ledgerSelectors'
+import { journalQueuedFor, pairForInvoice } from './ledgerSelectors'
+import { processXeroQueue } from './xeroQueue'
+import { XERO_FAULT_ERROR } from './xeroGate'
 import type { LedgerTransfer } from '../domain/types'
 import type { Actor } from './mutate'
 
@@ -333,19 +335,22 @@ describe('a journal fault is recorded, not thrown; the retry posts it once', () 
     expect(transfers()[0]!.xeroJournalId).toBeDefined()
   })
 
-  it('a fault on the journal: the transfer stands with its fault; the retry posts one journal; a second call is a no-op', () => {
+  it('a fault on the journal: the transfer stands, its journal waits in the Xero sync queue; the retry posts one journal; a second call is a no-op', () => {
     unwire() // settle by hand, so the fault meets the journal
     completeAndSubmit(NAIR_LIST)
     expect(authoriseList(api, OFFICE, NAIR_LIST).ok).toBe(true)
     expect(armHandoffFault(api, OFFICE, { bookingId: NAIR }).ok).toBe(true)
     expect(settlePrepaymentsForList(api, NAIR_LIST).ok).toBe(true)
     const t = transfers()[0]!
-    expect(t.journalFailure?.code).toBe('journalFault')
+    const queued = journalQueuedFor(api.getState(), t.id)
+    expect(queued?.lastError).toBe(XERO_FAULT_ERROR)
     expect(t.xeroJournalId).toBeUndefined()
     expect(api.getState().settings.failNextHandoff).toBe(false)
-    expect(postTransferJournal(api, t.id).ok).toBe(true)
+    // A fresh call while queued does not post past the queue; the queue's retry posts it once.
+    expect(postTransferJournal(api, t.id)).toMatchObject({ ok: true, value: { queued: true } })
+    expect(processXeroQueue(api, { force: true }).sent).toBe(1)
     expect(postTransferJournal(api, t.id).ok).toBe(true)
     expect(Object.keys(api.getState().xero.journals)).toHaveLength(1)
-    expect(api.getState().billing.transfers[t.id]!.journalFailure).toBeUndefined()
+    expect(journalQueuedFor(api.getState(), t.id)).toBeUndefined()
   })
 })

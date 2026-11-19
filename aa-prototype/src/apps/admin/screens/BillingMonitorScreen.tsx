@@ -1,20 +1,15 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { TextAction } from '../../../shared/ui'
+import { Link } from 'react-router-dom'
 import { aaFeeMonthLabel } from '../../../domain/billing/aaFee'
 import { needAddressText } from '../../../domain/billing/invoicePresentation'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
 import {
   billingMonitor,
-  handoffPair,
   handoffPairsForBooking,
   allAaFeeInvoices,
-  payablesDue,
-  postTransferJournal,
   prepaidLeftOffText,
   retryBillingException,
-  runPayables,
   useAppStore,
   type MonitorBookingRow,
   type MonitorListRow,
@@ -26,6 +21,7 @@ import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChro
 import { FormError } from '../../../shared'
 import { sessionText } from '../../../domain/outOfHours'
 import { HoldingAccountPanel } from '../components/HoldingAccountPanel'
+import { PayablesPanel, XeroConnectionLine, XeroDivergencePanel, XeroQueuePanel } from '../components/XeroPanels'
 
 interface BillingMonitorScreenProps {
   actor: Actor
@@ -40,11 +36,11 @@ const headCellStyle = adminHead()
 /**
  * The billing-flow monitor (Phase 09; A5). One pipeline per authorised List:
  * List authorised -> Billing run -> Invoices generated -> Emailed -> Xero
- * (Phase 10 stub), with a per-Booking row underneath. Each Booking prices from
- * its locked record (catch-up Phase 25). A hand-off fault keeps "Resolve &
- * retry" (the hand-off again); any other failure shows its reason and a
- * "Retry" that rebuilds from the lock. Nothing here edits a Contract or a
- * Procedure.
+ * hand-off, with a per-Booking row underneath. Each Booking prices from its
+ * locked record (catch-up Phase 25). A billing-run failure shows its reason
+ * and a "Retry" that rebuilds from the lock; a hand-off waiting for Xero is
+ * retried by the Xero sync queue (catch-up Phase 37), with "Retry now" on its
+ * queue row. Nothing here edits a Contract or a Procedure.
  *
  * Two RFP-open readings are stated in the copy here: this surface lives in the
  * Admin Web App (vs a separate Billing Engine screen), and a failed Booking blocks
@@ -53,47 +49,16 @@ const headCellStyle = adminHead()
  * harness bar's Demo actions menu on this screen) are badged (convention 13).
  */
 export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
-  const navigate = useNavigate()
   const schedule = useAppStore((s) => s.schedule)
   const billing = useAppStore((s) => s.billing)
   const masters = useAppStore((s) => s.masters)
   const [error, setError] = useState<string | null>(null)
-  const [payRunMsg, setPayRunMsg] = useState<string | null>(null)
 
   const rows = useMemo(() => billingMonitor({ schedule, billing, masters }), [schedule, billing, masters])
-  const failedTotal = rows.reduce((n, r) => n + r.failedCount + r.handoffFailedCount, 0)
-  // From the ledger alone (catch-up Phase 36): the one source of what is due.
-  const due = useMemo(() => payablesDue({ billing }), [billing])
+  const attentionTotal = rows.reduce((n, r) => n + r.failedCount + r.waitingForXeroCount + r.xeroFlaggedCount, 0)
 
-  function doRunPayables() {
-    const res = runPayables(useAppStore, actor)
-    if (!res.ok) {
-      setPayRunMsg(res.message)
-      return
-    }
-    const r = res.value
-    setPayRunMsg(
-      r.disbursedCount === 0
-        ? 'No authorised payables to disburse right now.'
-        : `Run ${r.payablesRunId}: disbursed ${formatCurrency(r.totalDisbursed)} across ${plural(r.disbursedCount, 'payable')}.`,
-    )
-  }
-
+  // A billing-run exception only (a hand-off waiting for Xero is retried by the Xero sync queue, catch-up Phase 37).
   function resolveAndRetry(row: MonitorBookingRow) {
-    // A prepayment transfer's journal fault (catch-up Phase 27a): post the journal again, once.
-    if (row.journalFailure !== undefined) {
-      const outcome = postTransferJournal(useAppStore, row.journalFailure.transferId)
-      setError(outcome.ok ? null : outcome.message)
-      return
-    }
-    // A Xero hand-off fault: the pair stands in the ledger, not yet in Xero; the fault flag was cleared when
-    // it faulted, so a plain re-invoke of the idempotent hand-off now mirrors it. (Distinct from a
-    // billing-run exception, which raises the invoices it never got, below.)
-    if (row.handoffFailure !== undefined && row.status !== 'failed' && row.pairId !== undefined) {
-      const outcome = handoffPair(useAppStore, row.pairId)
-      setError(outcome.ok ? null : outcome.message)
-      return
-    }
     retry(row)
   }
 
@@ -127,38 +92,18 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
         </div>
       </div>
 
-      {failedTotal > 0 && (
+      <XeroConnectionLine />
+
+      {attentionTotal > 0 && (
         <div style={{ background: semantic.warning.tint, border: `1px solid ${semantic.warning.solid}44`, borderRadius: radius.card, padding: '10px 14px', fontSize: 13, color: semantic.warning.onTint }}>
-          {plural(failedTotal, 'booking')} across the pipeline need attention. Resolve and retry each below.
+          {plural(attentionTotal, 'booking')} across the pipeline need attention. A failed booking retries from its row; a call waiting for Xero retries from the Xero sync queue.
         </div>
       )}
 
-      {/* Payables run (unbadged office action; the disbursement side of the
-          two-state money model). Pays every payable leg in the ledger what it has
-          released since the last run (catch-up Phase 36). */}
-      <div data-shot="billing-payables-run" style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 240 }}>
-          <div style={{ fontSize: 14, fontWeight: 700 }}>Payables run</div>
-          <div style={{ fontSize: 12.5, color: neutral.slate, marginTop: 2 }}>
-            {due.count > 0
-              ? `${plural(due.count, 'payable')} due · ${formatCurrency(due.total)} to pay out to anaesthetists. A payable is released for exactly what its invoice has received.`
-              : 'No payables due. A payable is released for exactly what its invoice has received.'}
-          </div>
-          <div style={{ marginTop: 6 }}>
-            <TextAction size="sm" flush shot="billing-open-ledger" onClick={() => navigate('/admin/ledger')}>Open the ledger</TextAction>
-          </div>
-          {payRunMsg !== null && (
-            <div style={{ fontSize: 12.5, color: semantic.success.onTint, marginTop: 6 }}>{payRunMsg}</div>
-          )}
-        </div>
-        <button
-          onClick={doRunPayables}
-          disabled={due.count === 0}
-          style={{ minHeight: 38, padding: '0 16px', borderRadius: radius.ctl, border: 'none', background: due.count === 0 ? neutral.line : accent.base, color: due.count === 0 ? neutral.mist : neutral.surface, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, cursor: due.count === 0 ? 'default' : 'pointer' }}
-        >
-          Run payables
-        </button>
-      </div>
+      {/* The Xero panels (catch-up Phase 37): the sync queue, changes made in Xero, and the payables awaiting Xero's run. */}
+      <XeroQueuePanel actor={actor} />
+      <XeroDivergencePanel actor={actor} />
+      <PayablesPanel actor={actor} />
 
       <AaFeePanel />
 
@@ -243,10 +188,16 @@ function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveR
                       <span style={{ color: semantic.error.onTint }}>{bookingRow.failure?.message ?? 'Needs manual review.'}</span>
                       <span data-shot="monitor-retry-note" style={{ fontSize: 12, color: neutral.slate }}>{RETRY_FROM_LOCK_NOTE}</span>
                     </span>
-                  ) : bookingRow.handoffFailure !== undefined ? (
-                    <span style={{ color: semantic.warning.onTint }}>{bookingRow.handoffFailure.message}</span>
-                  ) : bookingRow.journalFailure !== undefined ? (
-                    <span data-shot="monitor-journal-fault" style={{ color: semantic.warning.onTint }}>{bookingRow.journalFailure.message}</span>
+                  ) : bookingRow.xeroFlag !== undefined ? (
+                    <span data-shot="monitor-xero-flag" style={{ color: semantic.error.onTint }}>
+                      {bookingRow.xeroFlag.kind === 'voidedInXero' ? 'Voided in Xero · flagged for the office.' : `Amended in Xero · total ${formatCurrency(bookingRow.xeroFlag.xeroTotal)} · flagged for the office.`}
+                    </span>
+                  ) : bookingRow.waitingForXero !== undefined ? (
+                    <span data-shot={bookingRow.waitingForXero.kind === 'journal' ? 'monitor-journal-fault' : 'monitor-waiting-for-xero'} style={{ color: semantic.warning.onTint }}>
+                      {`${bookingRow.waitingForXero.kind === 'journal' ? 'Transfer journal waiting for Xero' : 'Waiting for Xero'} · attempt ${bookingRow.waitingForXero.attempts} · next try `}
+                      <span className="mono">{hhmm(bookingRow.waitingForXero.nextAttemptAtISO)}</span>
+                      {'. The invoice and its ledger pair stand; the Xero sync queue retries it.'}
+                    </span>
                   ) : bookingRow.status === 'cancelled' ? (
                     <span style={{ color: neutral.mist }}>Cancelled · excluded from billing.</span>
                   ) : bookingRow.invoiceIds.length > 0 ? (
@@ -261,12 +212,12 @@ function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveR
                   )}
                 </td>
                 <td style={cellStyle}>
-                  {(bookingRow.status === 'failed' || bookingRow.handoffFailure !== undefined || bookingRow.journalFailure !== undefined) && (
+                  {bookingRow.status === 'failed' && (
                     <button
                       onClick={() => onResolveRetry(bookingRow)}
                       style={{ minHeight: 34, padding: '0 12px', borderRadius: radius.ctl, border: 'none', background: accent.base, color: neutral.surface, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                     >
-                      {bookingRow.status === 'failed' ? 'Retry' : 'Resolve & retry'}
+                      Retry
                     </button>
                   )}
                 </td>
@@ -341,12 +292,16 @@ function BookingStatusPill({ row }: { row: MonitorBookingRow }) {
     cancelled: { label: 'Cancelled', background: neutral.sunken, color: neutral.mist },
     pending: { label: 'Pending', background: neutral.sunken, color: neutral.slate },
   }
-  // A handoff fault keeps the case `invoiced`; surface it as its own pill.
+  // A pair waiting for Xero keeps `invoiced`; surface it, and a change flagged in Xero, as its own pill (catch-up Phase 37).
   const it =
     row.prepaidLeftOff?.all === true && row.invoiceIds.length === 0 && row.status !== 'failed'
       ? { label: 'Prepaid', background: semantic.success.tint, color: semantic.success.onTint }
-      : row.handoffFailure !== undefined && row.status !== 'failed'
-      ? { label: 'Handoff failed', background: semantic.warning.tint, color: semantic.warning.onTint }
+      : row.xeroFlag !== undefined && row.status !== 'failed'
+      ? { label: row.xeroFlag.kind === 'voidedInXero' ? 'Voided in Xero' : 'Amended in Xero', background: semantic.error.tint, color: semantic.error.onTint }
+      : row.waitingForXero !== undefined && row.status !== 'failed'
+      ? row.waitingForXero.alerted
+        ? { label: 'Alert raised', background: semantic.error.tint, color: semantic.error.onTint }
+        : { label: 'Waiting for Xero', background: semantic.warning.tint, color: semantic.warning.onTint }
       : map[row.status] ?? { label: row.status, background: neutral.sunken, color: neutral.slate }
   return (
     <span style={{ fontSize: 11.5, fontWeight: 600, borderRadius: radius.pill, padding: '3px 9px', whiteSpace: 'nowrap', background: it.background, color: it.color }}>

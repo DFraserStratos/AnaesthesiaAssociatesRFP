@@ -6,7 +6,7 @@
  * `domain/billing/ledger.ts`; these feed it from the store.
  */
 
-import type { AnaesthetistId, BillingException, BookingLedgerPair, LedgerPair, LedgerReceipt, LedgerTransfer, UnmatchedReceipt } from '../domain/types'
+import type { AnaesthetistId, BillingException, BookingLedgerPair, LedgerPair, LedgerReceipt, LedgerTransfer, UnmatchedReceipt, XeroDivergence, XeroQueueItem } from '../domain/types'
 import { BCTI_COUNT_RULE, type BctiRecord } from '../domain/billing/bcti'
 import {
   anaesthetistPosition,
@@ -74,9 +74,9 @@ export function transferForPair(state: BillingState, pairId: string): LedgerTran
   return transferOfPair(state.billing.transfers, pairId)
 }
 
-/** A pair's derived status label (the monitor and the Ledger). */
+/** A pair's derived status label (the monitor and the Ledger): "waiting for Xero" while its hand-off is queued (catch-up Phase 37). */
 export function pairStatusOf(state: BillingState, pair: LedgerPair): PairStatus {
-  return pairStatusLabel(pair, isBookingPair(pair) && pair.kind === 'prePayment' ? transferForPair(state, pair.id) : undefined)
+  return pairStatusLabel(pair, isBookingPair(pair) && pair.kind === 'prePayment' ? transferForPair(state, pair.id) : undefined, handoffQueuedFor(state, pair.id) !== undefined)
 }
 
 /** Billing-run failures not yet resolved, in id order (the monitor's exceptions). */
@@ -93,14 +93,105 @@ export function pairsNotInXero(state: BillingState): LedgerPair[] {
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
-/** The pairs whose hand-off faulted (Resolve and retry mirrors them), in id order. */
-export function pairsWithHandoffFault(state: BillingState): LedgerPair[] {
-  return pairsNotInXero(state).filter((p) => p.handoffFailure !== undefined)
+// ---------------------------------------------------------------------------
+// The Xero sync queue and divergence flags (catch-up Phase 37; EP-09)
+// ---------------------------------------------------------------------------
+
+/** Queue items not yet sent (waiting or alerted), in id order (the order the queue drains). */
+export function openXeroQueueItems(state: BillingState): XeroQueueItem[] {
+  return Object.values(state.billing.xeroQueue)
+    .filter((q) => q.status !== 'sent')
+    .sort((a, b) => a.id.localeCompare(b.id))
 }
 
-/** The Billing monitor's nav badge: exceptions plus hand-off faults. */
+/** The open hand-off queue item for a pair, if its mirror is waiting for Xero. */
+export function handoffQueuedFor(state: BillingState, pairId: string): XeroQueueItem | undefined {
+  return Object.values(state.billing.xeroQueue).find((q) => q.kind === 'handoff' && q.status !== 'sent' && q.target.pairId === pairId)
+}
+
+/** The open journal queue item for a transfer (27a's journal waiting for Xero). */
+export function journalQueuedFor(state: BillingState, transferId: string): XeroQueueItem | undefined {
+  return Object.values(state.billing.xeroQueue).find((q) => q.kind === 'journal' && q.status !== 'sent' && q.target.transferId === transferId)
+}
+
+/** Divergences the poll flagged and the office has not resolved, in id order. */
+export function openXeroDivergences(state: BillingState): XeroDivergence[] {
+  return Object.values(state.billing.xeroDivergences)
+    .filter((d) => d.status === 'open')
+    .sort((a, b) => a.id.localeCompare(b.id))
+}
+
+/** The open divergence on a pair, if the poll flagged one. */
+export function openDivergenceFor(state: BillingState, pairId: string): XeroDivergence | undefined {
+  return openXeroDivergences(state).find((d) => d.pairId === pairId)
+}
+
+export type XeroQueueStatusLabel = 'Waiting' | 'Retrying' | 'Alert raised' | 'Sent'
+
+/** One queue item as the monitor shows it, labelled from the ledger alone. */
+export interface XeroQueueRow {
+  item: XeroQueueItem
+  /** "Hand off AA-2026-0012", "Sync payment on AA-2026-0006", "Record disbursement on AA-2026-0005-P", "Reconciliation poll". */
+  what: string
+  status: XeroQueueStatusLabel
+  /** The pair (or the transfer's prepayment pair) it concerns, for the monitor's List mapping. */
+  pairId?: string
+  /** The anaesthetist the pair pays, for the monitor's anaesthetist filter. */
+  anaesthetistId?: AnaesthetistId
+}
+
+export interface XeroQueueView {
+  /** Waiting and alerted items, in the order they drain. */
+  open: XeroQueueRow[]
+  /** Items already sent, the most recent first. */
+  sent: XeroQueueRow[]
+}
+
+function queueWhat(state: BillingState, q: XeroQueueItem): { what: string; pairId?: string; anaesthetistId?: AnaesthetistId } {
+  const transfer = q.target.transferId !== undefined ? state.billing.transfers[q.target.transferId] : undefined
+  const pairId = q.target.pairId ?? transfer?.collectPairId
+  const pair = pairId !== undefined ? state.billing.ledger[pairId] : undefined
+  const anaesthetistId = transfer !== undefined ? payeeAnaesthetistOf(transfer.in) : pair !== undefined ? (isBookingPair(pair) ? (pair.anaesthetistId ?? (pair.payable !== undefined ? payeeAnaesthetistOf(pair.payable) : undefined)) : pair.anaesthetistId) : undefined
+  const number = pair?.receivable.number ?? q.target.accRecId ?? ''
+  const who = { ...(pairId !== undefined ? { pairId } : {}), ...(anaesthetistId !== undefined ? { anaesthetistId } : {}) }
+  switch (q.kind) {
+    case 'handoff':
+      return { what: `Hand off ${number}`, ...who }
+    case 'journal':
+      return { what: `Post the transfer journal for ${number}`, ...who }
+    case 'paymentSync':
+      return { what: `Sync payment on ${number}`, ...who }
+    case 'disbursementSync': {
+      const payNumber = transfer !== undefined ? transfer.in.number : pair !== undefined && isBookingPair(pair) && pair.payable !== undefined ? pair.payable.number : number
+      return { what: `Record disbursement on ${payNumber}`, ...who }
+    }
+    case 'poll':
+      return { what: 'Reconciliation poll' }
+  }
+}
+
+function queueStatus(q: XeroQueueItem): XeroQueueStatusLabel {
+  if (q.status === 'sent') return 'Sent'
+  if (q.status === 'alerted') return 'Alert raised'
+  return q.attempts > 1 ? 'Retrying' : 'Waiting'
+}
+
+/** The Billing monitor's Xero sync queue: open items first (drain order), then what was sent, newest first. */
+export function xeroQueueView(state: BillingState): XeroQueueView {
+  const rows = Object.values(state.billing.xeroQueue).map((item) => ({ item, status: queueStatus(item), ...queueWhat(state, item) }))
+  return {
+    open: rows.filter((r) => r.item.status !== 'sent').sort((a, b) => a.item.id.localeCompare(b.item.id)),
+    sent: rows.filter((r) => r.item.status === 'sent').sort((a, b) => (b.item.sentAtISO ?? '').localeCompare(a.item.sentAtISO ?? '') || b.item.id.localeCompare(a.item.id)),
+  }
+}
+
+/**
+ * The Billing monitor's nav badge: open billing exceptions, alerted queue
+ * items and open divergences (catch-up Phase 37). A pair merely waiting in the
+ * queue does not raise it until the item alerts.
+ */
 export function billingAttentionCount(state: BillingState): number {
-  return openBillingExceptions(state).length + pairsWithHandoffFault(state).length
+  return openBillingExceptions(state).length + openXeroQueueItems(state).filter((q) => q.status === 'alerted').length + openXeroDivergences(state).length
 }
 
 /** What is still owed on a pair's receivable (>= 0). */

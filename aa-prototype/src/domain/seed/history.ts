@@ -599,10 +599,12 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
         idempotencyKey: key,
         source: 'webhook',
       }
+      // The bill payment's key (catch-up Phase 37): the ledger already holds it, so replaying it is a no-op.
+      const billPayKey = `BILLPAY-${ids.disbursement(n)}`
       if (acc.disbursedAtISO !== undefined) {
-        build.disbursements[ids.disbursement(n)] = { id: ids.disbursement(n), accPayId, amount: amountPayable, atISO: acc.disbursedAtISO, payablesRunId: dsbRunId }
+        build.disbursements[ids.disbursement(n)] = { id: ids.disbursement(n), accPayId, amount: amountPayable, atISO: acc.disbursedAtISO, payablesRunId: dsbRunId, idempotencyKey: billPayKey }
       }
-      // The ledger's record of the payment out (every paid account was paid out in full).
+      // The ledger's record of the payment out (every paid account was paid out in full), learned at a poll before the demo day.
       build.ledgerDisbursements[ids.ledgerDisbursement(n)] = {
         id: ids.ledgerDisbursement(n),
         pairId: caseId,
@@ -611,6 +613,8 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
         atISO: acc.disbursedAtISO ?? acc.paidAtISO,
         payablesRunId: dsbRunId,
         ...(acc.disbursedAtISO !== undefined ? { xeroDisbursementId: ids.disbursement(n) } : {}),
+        idempotencyKey: billPayKey,
+        detectedBy: 'poll',
       }
     } else if (acc.paidState === 'missedWebhook') {
       // An unmirrored PaymentIn: Xero recorded it but no receipt exists, so the

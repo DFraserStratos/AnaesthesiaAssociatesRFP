@@ -15,13 +15,19 @@ import { epochDayOf } from '../domain/dateDays'
 import { mutate, ok, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { onAppEvent } from './events'
+import { xeroAvailable } from './xeroGate'
 
 const ARCHIVE_ACTOR: Actor = { who: 'Contact archive job', role: 'system', source: 'system' }
 
 export interface ArchiveJobResult {
   archivedContactIds: string[]
   count: number
+  /** Set when the job skipped because Xero was unavailable (catch-up Phase 37). */
+  skippedReason?: string
 }
+
+/** The archive job's skip during an outage: it archives in Xero, so it waits for the next night (catch-up Phase 37). */
+export const ARCHIVE_SKIPPED_OUTAGE = 'Xero unavailable; the next nightly run catches up'
 
 /**
  * The individual (patient / billableParty) contacts eligible to archive right
@@ -64,6 +70,7 @@ export function eligibleArchiveContactIds(state: Pick<AppState, 'xero' | 'billin
  * (no mutation) when nothing is eligible.
  */
 export function runArchiveJob(api: AppStoreApi): Outcome<ArchiveJobResult> {
+  if (!xeroAvailable(api.getState())) return ok({ archivedContactIds: [], count: 0, skippedReason: ARCHIVE_SKIPPED_OUTAGE })
   const eligible = eligibleArchiveContactIds(api.getState())
   if (eligible.length === 0) return ok({ archivedContactIds: [], count: 0 })
 

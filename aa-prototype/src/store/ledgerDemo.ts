@@ -57,12 +57,17 @@ export function officeRunsPayablesRefusal(state: Pick<AppState, 'billing'>, anae
   return anaesthetistLedgerPosition(state, anaesthetistId).dueNow > 0 ? null : 'Nothing due to pay out'
 }
 
-/** Stands in for the office's payables run, for the phone's anaesthetist only: pays out what is due to them. */
+/**
+ * Stands in for the office running the payables in Xero, for the phone's
+ * anaesthetist only (catch-up Phase 37: the same simulated Xero payables run as
+ * the Billing monitor's button; the payment is made in Xero and recorded here
+ * when Xero reports it).
+ */
 export function officeRunsPayables(api: AppStoreApi, anaesthetistId: string = ANAE.souter): Outcome<{ message: string }> {
   const refusal = officeRunsPayablesRefusal(api.getState(), anaesthetistId)
   if (refusal !== null) return refuse('nothingDue', refusal)
   const out = runPayables(api, OFFICE_SIMULATION_ACTOR, { anaesthetistId })
   if (!out.ok) return out
   const name = drSurname(api.getState().masters.anaesthetists[anaesthetistId]?.name ?? anaesthetistId)
-  return ok({ message: `The office paid out ${formatCurrency(out.value.totalDisbursed)} to ${name}. Paid out rises by it.` })
+  return ok({ message: `The office paid ${formatCurrency(out.value.totalPaid)} to ${name} in Xero, and the Billing Engine recorded it from Xero's bill-paid webhook. Paid out rises by it.` })
 }

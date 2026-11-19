@@ -60,9 +60,9 @@ function pairOf(api: BoundAppStore, pairId: string) {
 }
 
 describe('payables run', () => {
-  it('is office-only', () => {
+  it('is the simulated Xero payables run: audited as Xero whoever presses it, and nothing is paid by the engine (catch-up Phase 37)', () => {
     const api = store()
-    expect(runPayables(api, ANAE_ACTOR)).toMatchObject({ ok: false, code: 'officeOnly' })
+    expect(runPayables(api, ANAE_ACTOR)).toMatchObject({ ok: true, value: { billsPaid: 0 } })
   })
 
   it('a run with nothing authorised disburses nothing', () => {
@@ -166,20 +166,24 @@ describe('payables run', () => {
     expect(payablesDue(api.getState()).count).toBeGreaterThan(0)
   })
 
-  it('reconstructs one invoice automated trail end-to-end, all source=system (WI5a)', () => {
+  it('reconstructs one invoice automated trail end-to-end: the engine source=system, the payment made in Xero source=demo (WI5a, catch-up Phase 37)', () => {
     const api = store()
     const { accRecId, amountDue } = billCos(api)
     expect(receivePayment(api, { accRecId, amount: amountDue, idempotencyKey: 'TRAIL', source: 'webhook' }).ok).toBe(true)
     expect(pay(api).disbursedCount).toBe(1)
 
     // The end-to-end automated chain: billing run -> Xero handoff -> webhook ->
-    // ACCPAY authorise -> payables disbursement. Every step is source=system.
-    const chain = ['invoice.create', 'xero.pairCreated', 'xero.paymentReceived', 'xero.accpayAuthorised', 'xero.disbursed']
+    // ACCPAY authorise -> the engine records the disbursement Xero reports. Every engine step is source=system.
+    const chain = ['invoice.create', 'xero.pairCreated', 'xero.paymentReceived', 'xero.accpayAuthorised', 'ledger.disbursed']
     const audit = api.getState().audit
     for (const action of chain) {
       const entries = audit.filter((e) => e.action === action)
       expect(entries.length, `${action} audited`).toBeGreaterThan(0)
       for (const e of entries) expect(e.source, `${action} is system-sourced`).toBe('system')
     }
+    // The payment itself is made in Xero's payables run (simulated, source demo), never by the engine.
+    const billPaid = audit.filter((e) => e.action === 'xero.disbursed')
+    expect(billPaid.length).toBeGreaterThan(0)
+    for (const e of billPaid) expect(e).toMatchObject({ source: 'demo', who: 'Xero payables run (simulated)' })
   })
 })

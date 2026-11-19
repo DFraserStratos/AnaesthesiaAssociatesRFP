@@ -948,3 +948,24 @@ describe('the Wave 2 join (v60: Lane A 25a, 36 and Lane B 33a, 17b)', () => {
     expect('surgeonRooms' in s.masters).toBe(false)
   })
 })
+
+describe('Xero mirror resilience (catch-up Phase 37)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v60 store with no sync queue and unkeyed disbursements, and reseeds with the empty queue and keyed backdrop disbursements', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(61)
+    const fresh = freshAppState()
+    const { xeroQueue: _q, xeroDivergences: _d, ...billing } = fresh.billing
+    const unkeyed = Object.fromEntries(Object.entries(fresh.billing.disbursements).map(([id, d]) => [id, { ...d, idempotencyKey: undefined, detectedBy: undefined }]))
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing: { ...billing, disbursements: unkeyed } }, version: 60 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.billing.xeroQueue).toEqual({})
+    expect(s.billing.xeroDivergences).toEqual({})
+    expect(Object.values(s.billing.disbursements).every((d) => d.idempotencyKey.startsWith('BILLPAY-') && d.detectedBy === 'poll')).toBe(true)
+    expect(s.xero.bankLines).toEqual({})
+  })
+})

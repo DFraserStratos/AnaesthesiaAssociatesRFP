@@ -1517,12 +1517,6 @@ export interface ProcedureShare {
   amountExGst: number
 }
 
-/** A Xero hand-off fault on a pair (data, not a throw): the pair stands, "Not yet in Xero", and Resolve and retry mirrors it. */
-export interface HandoffFailure {
-  code: string
-  message: string
-}
-
 /**
  * A Booking's ledger pair: a procedure invoice (`procedure`) or a prepayment
  * invoice (`prePayment`, its payable to the AA Holding account until 27a's
@@ -1546,7 +1540,6 @@ export interface BookingLedgerPair {
   receivable: ReceivableLeg
   /** Absent only on a no-charge invoice (catch-up Phase 24: a $0.00 receivable, nothing owed, no BCTI). */
   payable?: PayableLeg
-  handoffFailure?: HandoffFailure
   /** The archived account's ACC marker (seeded history only; catch-up Phase 18a). */
   archivedAccRelated?: true
 }
@@ -1559,7 +1552,6 @@ export interface AaFeeLedgerPair {
   anaesthetistId: AnaesthetistId
   createdAtISO: IsoDateTime
   receivable: ReceivableLeg
-  handoffFailure?: HandoffFailure
 }
 
 /** A ledger pair: every consumer says which kinds it reads. */
@@ -1593,9 +1585,14 @@ export interface LedgerDisbursement {
   anaesthetistId: AnaesthetistId
   amount: number
   atISO: IsoDateTime
+  /** The Xero payables run that paid it. */
   payablesRunId: string
-  /** The Xero disbursement mirroring it. */
+  /** The Xero bill payment it records (catch-up Phase 37: set on every detected entry). */
   xeroDisbursementId?: string
+  /** The Xero bill payment's key (`BILLPAY-`): the key-set that makes detection idempotent, as receipts are for payments. */
+  idempotencyKey: string
+  /** How the engine learned of the bill payment: Xero's bill-paid webhook or the reconciliation poll. */
+  detectedBy: 'webhook' | 'poll'
 }
 
 /**
@@ -1671,6 +1668,10 @@ export interface XeroAccRec {
   /** Set once, by the payment that completes it (the BCTI count reads it). */
   paidAtISO?: IsoDateTime
   status: 'awaitingPayment' | 'paid' | 'voided'
+  /** When AA staff voided it directly in Xero (catch-up Phase 37): invisible to the engine until the poll. */
+  voidedAtISO?: IsoDateTime
+  /** When AA staff edited its total directly in Xero (catch-up Phase 37); the engine keeps the issued total on its receivable leg. */
+  amendedAtISO?: IsoDateTime
 }
 
 export interface XeroAccPay {
@@ -1827,6 +1828,75 @@ export interface Disbursement {
   amount: number
   atISO: IsoDateTime
   payablesRunId: string
+  /** The bill payment's key (`BILLPAY-<id>`, catch-up Phase 37): the engine records it once, by webhook or poll. */
+  idempotencyKey: string
+}
+
+/**
+ * The Billing Engine's durable Xero sync queue (catch-up Phase 37; EP-09's
+ * resilience brief): every engine-to-Xero call that could not complete waits
+ * here with its attempt count and an exponential-backoff next attempt on the
+ * demo clock, and is retried until Xero answers. Keyed, so a retry never
+ * duplicates. Engine-side (`billing.xeroQueue`); sent items stay as history.
+ */
+export interface XeroQueueItem {
+  /** `XQ####`. */
+  id: string
+  kind: 'handoff' | 'journal' | 'paymentSync' | 'disbursementSync' | 'poll'
+  /** `HANDOFF-<pairId>`, `JOURNAL-<transferId>`, the payment's own key, the bill payment's key, `POLL-<dateISO>`. */
+  idempotencyKey: string
+  target: { pairId?: string; transferId?: string; accRecId?: string; accPayId?: string; xeroPaymentId?: string; xeroDisbursementId?: string }
+  enqueuedAtISO: IsoDateTime
+  /** Attempts made, the first (failed) call included. */
+  attempts: number
+  nextAttemptAtISO: IsoDateTime
+  lastError?: string
+  status: 'waiting' | 'alerted' | 'sent'
+  sentAtISO?: IsoDateTime
+}
+
+/**
+ * A mismatch the reconciliation poll found between what the engine issued and
+ * what Xero now shows (catch-up Phase 37; EP-09, US-09.2.2): an invoice voided
+ * or amended directly in Xero. The ledger keeps the issued amount; the
+ * office's resolution is recorded (provisional: the policy is AA's to agree)
+ * and moves no money.
+ */
+export interface XeroDivergence {
+  /** `XD####`. */
+  id: string
+  kind: 'voidedInXero' | 'amendedInXero'
+  accRecId: string
+  pairId: string
+  invoiceId: InvoiceId
+  /** What Xero shows, with when AA staff changed it there. */
+  xeroShows: { status: XeroAccRec['status']; total: number; changedAtISO?: IsoDateTime }
+  engineHolds: { amount: number; outstanding: number }
+  detectedAtISO: IsoDateTime
+  status: 'open' | 'resolved'
+  resolution?: { outcome: 'reissueInXero' | 'creditInEngine' | 'noAction'; note: string; who: string; atISO: IsoDateTime }
+}
+
+/** A remittance advice a payer sent with one bulk deposit (catch-up Phase 37; US-10.2.4). Xero side only. */
+export interface XeroRemittance {
+  /** `RMT####`. */
+  id: string
+  payerContactId: string
+  receivedAtISO: IsoDateTime
+  reference: string
+  lineIds: string[]
+}
+
+/** One line of a bulk deposit in Xero's bank reconciliation (catch-up Phase 37). Xero side only: an unmatched line never reaches the engine. */
+export interface XeroBankLine {
+  /** `BKL####`. */
+  id: string
+  remittanceId: string
+  quotedReference: string
+  amount: number
+  status: 'matchedByAddOn' | 'unmatched' | 'matchedByOffice'
+  accRecId?: string
+  paymentInId?: string
 }
 
 /**
@@ -1861,10 +1931,8 @@ export interface LedgerTransfer {
    * equals the payable it replaces, released exactly as the payer pays.
    */
   in: PayableLeg
-  /** The simulated Xero manual journal mirroring it (`postTransferJournal`); absent until posted. */
+  /** The simulated Xero manual journal mirroring it (`postTransferJournal`); absent until posted. A failed post waits in the Xero sync queue (catch-up Phase 37). */
   xeroJournalId?: string
-  /** A Xero posting fault (data, not a throw); the Billing monitor's Resolve and retry posts it once. */
-  journalFailure?: HandoffFailure
 }
 
 /** One line of a simulated Xero manual journal. */
@@ -2113,11 +2181,13 @@ export interface XeroVolumeStory {
 export interface DemoSettings {
   contactArchiveInactivityDays: number
   /**
-   * When set, the NEXT Xero handoff records a `handoffFailure` and creates no
-   * pair, then clears this flag (Phase 10 demo control; D-handoff). Badged
-   * demo-only trigger.
+   * When set, the NEXT engine-to-Xero call fails once and waits in the Xero
+   * sync queue, which retries it after its backoff (Phase 10's demo control,
+   * re-based in catch-up Phase 37), then this flag clears. Badged demo-only.
    */
   failNextHandoff?: boolean
+  /** Xero's API is unavailable to the engine (catch-up Phase 37's simulated outage): every call queues. */
+  xeroOutage?: { sinceISO: IsoDateTime }
   /**
    * The Booking the armed hand-off fault waits for (catch-up Phase 25's staged
    * billing failure, a built default): absent, the next hand-off faults.

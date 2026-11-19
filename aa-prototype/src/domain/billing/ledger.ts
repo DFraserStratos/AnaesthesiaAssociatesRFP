@@ -290,11 +290,15 @@ export function applyDisbursement(leg: PayableLeg, amount: number, atISO: IsoDat
 // Status
 // ---------------------------------------------------------------------------
 
-export type PairStatus = 'invoiced' | 'handedOff' | 'handoffFailed' | 'partPaid' | 'paid' | 'partPaidOut' | 'disbursed'
+export type PairStatus = 'invoiced' | 'handedOff' | 'waitingForXero' | 'partPaid' | 'paid' | 'partPaidOut' | 'disbursed'
 
-/** The derived label the monitor and the Ledger show (never stored). */
-export function pairStatusLabel(pair: LedgerPair, transfer?: LedgerTransfer): PairStatus {
-  if (!isInXero(pair)) return pair.handoffFailure !== undefined ? 'handoffFailed' : 'invoiced'
+/**
+ * The derived label the monitor and the Ledger show (never stored). A pair not
+ * yet in Xero whose hand-off waits in the Xero sync queue reads
+ * `waitingForXero` (catch-up Phase 37); the caller says so, from the queue.
+ */
+export function pairStatusLabel(pair: LedgerPair, transfer?: LedgerTransfer, waitingForXero = false): PairStatus {
+  if (!isInXero(pair)) return waitingForXero ? 'waitingForXero' : 'invoiced'
   const out = isBookingPair(pair) ? (transfer?.in ?? pair.payable) : undefined
   if (out !== undefined && toCents(out.disbursedAmount) > 0) return toCents(out.disbursedAmount) >= toCents(out.amount) ? 'disbursed' : 'partPaidOut'
   if (toCents(pair.receivable.receivedAmount) >= toCents(pair.receivable.amount)) return 'paid'

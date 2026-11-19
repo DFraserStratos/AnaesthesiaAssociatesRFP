@@ -200,11 +200,11 @@ export const ACTION_LABELS: Record<string, string> = {
 
   // --- Xero simulation & money movement -----------------------------------
   'xero.pairCreated': 'Xero invoice pair created',
-  'xero.handoffFailed': 'Xero handoff failed',
   'xero.handoffNoop': 'Xero handoff already done',
   'xero.paymentReceived': 'Payment received',
   'xero.accpayAuthorised': 'Xero bill authorised',
-  'xero.disbursed': 'Disbursement recorded',
+  // The bill payment made in Xero's payables run (Xero side only since catch-up Phase 37); `ledger.disbursed` is the engine's record of it.
+  'xero.disbursed': 'Bill paid in Xero',
   'xero.contactResolved': 'Xero contact resolved',
   'xero.contactArchived': 'Xero contact archived',
   // The AA Holding account's transfer and its Xero mirror (catch-up Phase 27a).
@@ -212,8 +212,19 @@ export const ACTION_LABELS: Record<string, string> = {
   'prepayment.transferNoop': 'Prepayment transfer already done',
   'prepayment.transferReleased': 'Transferred prepayment released',
   'xero.journalPosted': 'Xero transfer journal posted',
-  'xero.journalFailed': 'Xero transfer journal failed',
   'xero.journalNoop': 'Xero transfer journal already posted',
+  // Xero mirror resilience (catch-up Phase 37): the outage, the sync queue, detection, divergence and the Xero side.
+  'xero.outageStarted': 'Xero outage started (simulated)',
+  'xero.outageEnded': 'Xero restored (simulated)',
+  'xero.queued': 'Waiting for Xero',
+  'xero.retryFailed': 'Xero retry failed',
+  'xero.retryAlert': 'Xero alert raised',
+  'xero.queueSent': 'Sent to Xero',
+  'xero.paymentLanded': 'Payment landed in Xero',
+  'xero.voidedInXero': 'Invoice voided in Xero',
+  'xero.amendedInXero': 'Invoice total edited in Xero',
+  'xero.divergenceFlagged': 'Change made in Xero flagged',
+  'xero.divergenceResolved': 'Change made in Xero resolved',
 
   // --- The internal ledger (catch-up Phase 36) ----------------------------
   'ledger.pairCreated': 'Ledger pair created',

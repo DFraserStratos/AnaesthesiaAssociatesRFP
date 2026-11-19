@@ -20,3 +20,5 @@ export * from './warnings'
 export * from './listProgress'
 export * from './outOfHours'
 export * from './bookingSearch'
+// The Xero sync queue's rules and the divergence check (catch-up Phase 37). Never `./xeroSim` (US-10.2.4's fence).
+export * from './xero'

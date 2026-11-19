@@ -76,7 +76,7 @@ import { maskBankAccount } from '../domain/bankAccount'
 import { procedureAccFunded } from '../domain/billing/fundingTags'
 import { BCTI_COUNT_RULE, bctiFeeHistory, bctisFor, type BctiFeeHistory, type BctiRecord } from '../domain/billing/bcti'
 import { isBookingPair, patientPosition, transferOfPair, type PairStatus } from '../domain/billing/ledger'
-import { bctiRecords, incomeReceiptsFor, openBillingExceptions, pairsForList, pairStatusOf } from './ledgerSelectors'
+import { bctiRecords, handoffQueuedFor, incomeReceiptsFor, journalQueuedFor, openBillingExceptions, openDivergenceFor, pairsForList, pairStatusOf } from './ledgerSelectors'
 import { aaFeeFixedTotal, aaFeeFor } from '../domain/billing/aaFee'
 import { bucketForAgingDays, epochDayOf, type AgingBucketKey } from '../domain/dateDays'
 import { useMemo } from 'react'
@@ -526,13 +526,22 @@ export interface PaymentCandidate {
  * demo surfaces).
  */
 export function openAccRecs(state: Pick<AppState, 'xero' | 'billing' | 'masters' | 'schedule'>): PaymentCandidate[] {
+  // A payment Xero holds that the engine has not recorded yet (an outage's landed payment, catch-up Phase 37) already lowers what Xero shows owing.
+  const recordedKeys = new Set(Object.values(state.billing.receipts).map((r) => r.idempotencyKey))
+  const pendingCents = new Map<string, number>()
+  for (const p of Object.values(state.xero.payments)) {
+    if (!recordedKeys.has(p.idempotencyKey)) pendingCents.set(p.accRecId, (pendingCents.get(p.accRecId) ?? 0) + toCents(p.amount))
+  }
+  const owing = (r: { id: string; amountDue: number; amountReceived: number }) => toCents(r.amountDue) - toCents(r.amountReceived) - (pendingCents.get(r.id) ?? 0)
   return Object.values(state.xero.accRecs)
     // Procedure receivables only: an AA fee invoice is paid by "Record fee
     // payment", never a procedure payment webhook (catch-up Phase 16).
     .filter((r) => r.kind === 'procedure')
+    // A void made in Xero takes no payment (catch-up Phase 37).
+    .filter((r) => r.status !== 'voided')
     // Only ACCRECs a ledger pair links (catch-up Phase 36): a payment always lands on its pair.
     .filter((r) => Object.values(state.billing.ledger).some((p) => p.receivable.xeroAccRecId === r.id))
-    .filter((r) => toCents(r.amountReceived) < toCents(r.amountDue))
+    .filter((r) => owing(r) > 0)
     // Exclude the seeded historical backdrop (its aged receivables are the
     // anaesthetist money-view story; the missed webhook is caught by the poll).
     .filter((r) => {
@@ -552,7 +561,7 @@ export function openAccRecs(state: Pick<AppState, 'xero' | 'billing' | 'masters'
         counterpartyLabel: invoice !== undefined ? invoiceAddresseeName(state, invoice) : r.contactId,
         amountDue: r.amountDue,
         amountReceived: r.amountReceived,
-        remaining: roundToCents(r.amountDue - r.amountReceived),
+        remaining: roundToCents(owing(r) / 100),
       }
     })
     .sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber))
@@ -689,27 +698,45 @@ export function prepaidLeftOffText(leftOff: PrepaidLeftOff): string {
 /** The pipeline status a Booking reads on the monitor (Phase 09's labels, derived from its pairs since catch-up Phase 36). */
 export type MonitorStatus = 'pending' | 'invoiced' | 'handedOff' | 'partPaid' | 'paid' | 'disbursed' | 'failed'
 
-/** A pair's label on the monitor: a hand-off fault reads invoiced (its own flag says why); part paid out reads by what was received. */
+/** A pair's label on the monitor: one waiting for Xero reads invoiced (its own line says why); part paid out reads by what was received. */
 function monitorStatusOf(label: PairStatus, fullyReceived: boolean): MonitorStatus {
-  if (label === 'handoffFailed') return 'invoiced'
+  if (label === 'waitingForXero') return 'invoiced'
   if (label === 'partPaidOut') return fullyReceived ? 'paid' : 'partPaid'
   return label
+}
+
+/** A Booking's Xero call waiting in the sync queue (catch-up Phase 37): its hand-off, or its transfer's journal. */
+export interface MonitorXeroWait {
+  itemId: string
+  kind: 'handoff' | 'journal'
+  attempts: number
+  nextAttemptAtISO: string
+  lastError?: string
+  alerted: boolean
+}
+
+/** A void or amendment made in Xero, flagged by the poll on this Booking's pair (catch-up Phase 37). */
+export interface MonitorXeroFlag {
+  divergenceId: string
+  kind: 'voidedInXero' | 'amendedInXero'
+  detectedAtISO: string
+  xeroTotal: number
 }
 
 export interface MonitorBookingRow {
   bookingId: string
   patientName: string
   status: MonitorStatus | 'cancelled'
-  /** The Booking's first run pair (or the one whose hand-off faulted). */
+  /** The Booking's first run pair (or the one waiting for Xero). */
   pairId?: string
   /** The open billing exception (OQ-05), when the Booking failed. */
   exceptionId?: string
   invoiceIds: string[]
   failure?: { code: string; message: string; procedureId?: ProcedureId }
-  /** A Xero hand-off fault on this booking's pair (Phase 10): retry re-invokes the hand-off. */
-  handoffFailure?: { code: string; message: string }
-  /** A prepayment transfer whose Xero journal faulted (catch-up Phase 27a) — retry posts it once. */
-  journalFailure?: { transferId: string; code: string; message: string }
+  /** Its hand-off or transfer journal waiting in the Xero sync queue (catch-up Phase 37): the queue retries it. */
+  waitingForXero?: MonitorXeroWait
+  /** A void or amendment made in Xero on its pair, flagged by the poll (catch-up Phase 37). */
+  xeroFlag?: MonitorXeroFlag
   /** WI2a: this booking's patient has an unpaid prior episode (repeat patient). */
   outstandingPriorBalance?: boolean
   /** The ledger's money for the two-state display (paid in / paid out). */
@@ -735,8 +762,12 @@ export interface MonitorListRow {
   /** The first such invoice, for the monitor's link. */
   firstNoAddressInvoiceId?: string
   failedCount: number
-  /** Pairs whose Xero hand-off faulted (Phase 10). */
-  handoffFailedCount: number
+  /** Bookings whose hand-off or journal waits in the Xero sync queue (catch-up Phase 37). */
+  waitingForXeroCount: number
+  /** Of those, the ones whose queue item has alerted. */
+  xeroAlertCount: number
+  /** Pairs with an open void or amendment flag (catch-up Phase 37). */
+  xeroFlaggedCount: number
   stages: MonitorStage[]
   bookingRows: MonitorBookingRow[]
 }
@@ -745,7 +776,8 @@ export interface MonitorListRow {
  * Derive the billing-flow monitor: one row per AUTHORISED List (billed first),
  * each with its pipeline stage statuses and per-Booking rows. Reuses the Phase 08
  * selectors so the monitor and the Invoices screen never diverge. The Xero
- * stage is a Phase-10 stub. Pure over AppState (tested + inspector-shareable).
+ * stage reads the ledger's mirror ids, the Xero sync queue and the poll's
+ * divergence flags (catch-up Phase 37). Pure over AppState (tested + inspector-shareable).
  */
 export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'masters'>): MonitorListRow[] {
   // Billed lists first (most recently billed first), then any authorised-unbilled
@@ -789,9 +821,9 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
       }
       const pairs = pairsByBooking.get(booking.id) ?? []
       const exception = exceptions.find((x) => x.bookingId === booking.id)
-      const faulted = pairs.find((p) => p.handoffFailure !== undefined && p.receivable.xeroAccRecId === undefined)
-      // Prefer a hand-off fault for the retry action, then the first pair.
-      const primary = faulted ?? pairs[0]
+      // A hand-off waiting in the Xero sync queue (catch-up Phase 37), then the first pair.
+      const queuedPair = pairs.find((p) => p.receivable.xeroAccRecId === undefined && handoffQueuedFor(state, p.id) !== undefined)
+      const primary = queuedPair ?? pairs[0]
       const fullyReceived = (p: BookingLedgerPair) => toCents(p.receivable.receivedAmount) >= toCents(p.receivable.amount)
       const row: MonitorBookingRow = {
         bookingId: booking.id,
@@ -807,9 +839,14 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
         row.exceptionId = exception.id
         row.failure = { code: exception.code, message: exception.message, ...(exception.procedureId !== undefined ? { procedureId: exception.procedureId } : {}) }
       }
-      if (faulted?.handoffFailure !== undefined) row.handoffFailure = faulted.handoffFailure
-      const faultedJournal = Object.values(state.billing.transfers).find((t) => t.bookingId === booking.id && t.journalFailure !== undefined && t.xeroJournalId === undefined)
-      if (faultedJournal?.journalFailure !== undefined) row.journalFailure = { transferId: faultedJournal.id, ...faultedJournal.journalFailure }
+      const queued = queuedPair !== undefined ? handoffQueuedFor(state, queuedPair.id) : undefined
+      const journal = queued === undefined ? Object.values(state.billing.transfers).filter((t) => t.bookingId === booking.id).map((t) => journalQueuedFor(state, t.id)).find((q) => q !== undefined) : undefined
+      const wait = queued ?? journal
+      if (wait !== undefined) {
+        row.waitingForXero = { itemId: wait.id, kind: wait.kind === 'journal' ? 'journal' : 'handoff', attempts: wait.attempts, nextAttemptAtISO: wait.nextAttemptAtISO, ...(wait.lastError !== undefined ? { lastError: wait.lastError } : {}), alerted: wait.status === 'alerted' }
+      }
+      const flag = pairs.map((p) => openDivergenceFor(state, p.id)).find((d) => d !== undefined)
+      if (flag !== undefined) row.xeroFlag = { divergenceId: flag.id, kind: flag.kind, detectedAtISO: flag.detectedAtISO, xeroTotal: flag.xeroShows.total }
       const paidInAtISO = pairs.find((p) => p.receivable.paidInAtISO !== undefined)?.receivable.paidInAtISO
       if (paidInAtISO !== undefined) row.paidInAtISO = paidInAtISO
       const disbursedAtISO = pairs.find((p) => p.payable?.paidOutAtISO !== undefined)?.payable?.paidOutAtISO
@@ -822,8 +859,13 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
 
     // The run's pairs across the list, for the Xero-stage aggregate.
     const handedOff = runPairs.filter((p) => p.receivable.xeroAccRecId !== undefined).length
-    // A faulted transfer journal (catch-up Phase 27a) needs attention like a hand-off fault.
-    const handoffFailedCount = runPairs.filter((p) => p.handoffFailure !== undefined && p.receivable.xeroAccRecId === undefined).length + bookingRows.filter((r) => r.journalFailure !== undefined).length
+    // Hand-offs and transfer journals waiting in the Xero sync queue, and the poll's flags (catch-up Phase 37).
+    const waiting = bookingRows.flatMap((r) => (r.waitingForXero !== undefined ? [r.waitingForXero] : []))
+    const waitingForXeroCount = waiting.length
+    const xeroAlertCount = waiting.filter((w) => w.alerted).length
+    const nextTry = waiting.map((w) => w.nextAttemptAtISO).sort()[0]
+    const flags = bookingRows.flatMap((r) => (r.xeroFlag !== undefined ? [r.xeroFlag] : []))
+    const xeroFlaggedCount = flags.length
     const handoffEligible = runPairs.length
 
     const failedCount = bookingRows.filter((r) => r.status === 'failed').length
@@ -871,20 +913,24 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
         label: 'Xero handoff',
         state: !billed
           ? 'pending'
-          : handoffFailedCount > 0
+          : xeroAlertCount > 0 || xeroFlaggedCount > 0
             ? 'failed'
-            : handoffEligible > 0 && handedOff >= handoffEligible
-              ? 'done'
-              : handedOff > 0
-                ? 'partial'
-                : 'pending',
+            : waitingForXeroCount > 0
+              ? 'partial'
+              : handoffEligible > 0 && handedOff >= handoffEligible
+                ? 'done'
+                : handedOff > 0
+                  ? 'partial'
+                  : 'pending',
         detail: !billed
           ? 'Runs after the billing run.'
-          : handoffFailedCount > 0
-            ? `${handoffFailedCount} handoff${handoffFailedCount === 1 ? '' : 's'} failed; resolve and retry.`
-            : handedOff > 0
-              ? `${handedOff} ACCREC/ACCPAY pair${handedOff === 1 ? '' : 's'} created.`
-              : 'No pair created yet.',
+          : xeroFlaggedCount > 0
+            ? `${xeroFlaggedCount} invoice${xeroFlaggedCount === 1 ? '' : 's'} changed directly in Xero, flagged for the office.`
+            : waitingForXeroCount > 0
+              ? `${waitingForXeroCount} waiting for Xero · next try ${nextTry !== undefined ? nextTry.slice(11, 16) : ''}${xeroAlertCount > 0 ? ' · alert raised' : ''}.`
+              : handedOff > 0
+                ? `${handedOff} ACCREC/ACCPAY pair${handedOff === 1 ? '' : 's'} created.`
+                : 'No pair created yet.',
       },
     ]
 
@@ -897,7 +943,9 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
       noAddressCount: noAddressInvoices.length,
       ...(noAddressInvoices[0] !== undefined ? { firstNoAddressInvoiceId: noAddressInvoices[0].id } : {}),
       failedCount,
-      handoffFailedCount,
+      waitingForXeroCount,
+      xeroAlertCount,
+      xeroFlaggedCount,
       stages,
       bookingRows,
     }

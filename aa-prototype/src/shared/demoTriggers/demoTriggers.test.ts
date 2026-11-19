@@ -9,6 +9,7 @@ import { wireBillingRun } from '../../store/billingRun'
 import { authoriseList } from '../../store/lifecycle'
 import { resetDemo } from '../../store/clockActions'
 import { bookingsForList, openAccRecs, proceduresForBooking } from '../../store/selectors'
+import { handoffQueuedFor } from '../../store/ledgerSelectors'
 import { clearWarning, warningsForBooking } from '../../store/warnings'
 import { OFFICE_ACTOR, SOUTER_ACTOR } from '../../store/demoActors'
 import { setAvailabilityRange } from '../../store/availabilityActions'
@@ -55,13 +56,16 @@ describe('registry shape', () => {
     }
   })
 
-  it('registers no Run payables on the bar (the Billing monitor has its own product button)', () => {
-    expect(DEMO_TRIGGERS.some((t) => t.surfaces.includes('bar') && /payables/i.test(t.label))).toBe(false)
+  it('registers no Run payables on the bar (the Billing monitor has its own badged "Run payables in Xero" button)', () => {
+    expect(DEMO_TRIGGERS.some((t) => t.surfaces.includes('bar') && /run payables/i.test(t.label))).toBe(false)
   })
 
-  it('the only label with "payables" is the PWA-only office stand-in (catch-up Phase 36; Phases 38 and 39a rename it)', () => {
+  it('the labels with "payables": the Xero pair\'s bill payment and the PWA-only office stand-in, renamed for Xero (catch-up Phase 37)', () => {
     const payables = DEMO_TRIGGERS.filter((t) => /payables/i.test(t.label))
-    expect(payables.map((t) => [t.id, t.label, t.surfaces, t.badge])).toEqual([['pwa-office-runs-payables', 'Office runs payables', ['pwa'], 'office-stand-in']])
+    expect(payables.map((t) => [t.id, t.label, t.surfaces, t.badge])).toEqual([
+      ['xero-pay-bill', 'Pay anaesthetist in Xero (payables run)', ['bar'], undefined],
+      ['pwa-office-runs-payables', 'Office runs payables in Xero', ['pwa'], 'office-stand-in'],
+    ])
   })
 
   it('every bar entry\'s Open screen link lands where the entry is visible', () => {
@@ -110,9 +114,28 @@ describe("the backdated range trigger (catch-up Phase 24)", () => {
 })
 
 describe('route scoping', () => {
-  it('the Billing monitor shows exactly its four entries', () => {
+  it('the Billing monitor shows exactly its six entries (catch-up Phase 37 adds the outage pair), with search params on the URL too', () => {
     const api = createAppStore()
-    expect(ids(api, '/admin/billing')).toEqual(['billing-failure', 'arm-handoff-fault', 'run-reconciliation-poll', 'run-archive-job'])
+    const six = ['billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job']
+    expect(ids(api, '/admin/billing')).toEqual(six)
+  })
+
+  it('the Xero outage pair, and the pair-only Xero actions, are bar-only with working disabled states (catch-up Phase 37)', () => {
+    const api = createAppStore()
+    const start = DEMO_TRIGGERS.find((t) => t.id === 'xero-outage-start')!
+    const restore = DEMO_TRIGGERS.find((t) => t.id === 'xero-outage-restore')!
+    const ctx = ctxFor('/admin/billing')
+    expect(start.disabledReason(api.getState(), ctx)).toBeNull()
+    expect(restore.disabledReason(api.getState(), ctx)).toBe('Xero is connected')
+    expect(start.run(api, ctx).ok).toBe(true)
+    expect(start.disabledReason(api.getState(), ctx)).toBe('Xero is already unavailable')
+    expect(restore.run(api, ctx).ok).toBe(true)
+    for (const id of ['xero-outage-start', 'xero-outage-restore', 'xero-void-invoice', 'xero-amend-invoice', 'xero-pay-bill']) {
+      const t = DEMO_TRIGGERS.find((e) => e.id === id)!
+      expect(t.surfaces, id).toEqual(['bar'])
+      expect(`${t.label} ${t.description}`, id).not.toMatch(/[–—]/)
+    }
+    expect(ids(api, '/demo/xero/invoices')).toEqual(expect.arrayContaining(['xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll']))
   })
 
   it('the Admin day view shows the sample-warning entries (15a) and Simulate sickness (catch-up Phase 30)', () => {
@@ -260,7 +283,8 @@ describe('re-homed bodies match the Control Panel', () => {
       p.kind !== 'aaFee' && bookingsForList(state, SEED_LIST_IDS.billingFailure).some((booking) => booking.id === p.bookingId) ? [p] : [],
     )
     const losa = pairs.find((p) => p.bookingId === SEED_MARKERS['billingFailureBooking']!.entityId)!
-    expect(losa.handoffFailure).toBeDefined()
+    // Catch-up Phase 37: her hand-off waits in the Xero sync queue.
+    expect(handoffQueuedFor(state, losa.id)).toBeDefined()
     expect(losa.receivable.xeroAccRecId).toBeUndefined()
     expect(pairs.filter((p) => p.bookingId !== losa.bookingId).every((p) => p.receivable.xeroAccRecId !== undefined)).toBe(true)
     // (catch-up Phase 36: a billing-run failure is a BillingException, not a failed case.)

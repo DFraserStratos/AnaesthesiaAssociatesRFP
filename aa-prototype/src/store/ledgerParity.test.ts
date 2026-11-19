@@ -66,7 +66,11 @@ describe('Phase 36 parity: the scripted flows, step by step', () => {
     expect(captured.s3).toEqual(BASELINE.s3)
   })
   it('S4 Beat 3: the billing failure and its retry', () => {
-    expect(captured.s4Beat3).toEqual(BASELINE.s4Beat3)
+    // Catch-up Phase 37's declared move: a hand-off waiting in the Xero sync queue reads "partial" (warning, retried by
+    // the queue), where Phase 36's fault read "failed". Everything else in the beat, the retry included, is unchanged.
+    const baselineStaged = JSON.parse(JSON.stringify(BASELINE.s4Beat3).replaceAll('"xero:failed"', '"xero:partial"')) as typeof BASELINE.s4Beat3
+    expect(JSON.stringify(BASELINE.s4Beat3)).toContain('"xero:failed"')
+    expect(captured.s4Beat3).toEqual(baselineStaged)
   })
   it('S4 Beat 5: Hemi Walker half, run, rest, run', () => {
     expect(captured.s4Beat5).toEqual(BASELINE.s4Beat5)

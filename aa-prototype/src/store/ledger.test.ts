@@ -12,6 +12,8 @@ import { resetDomainState, type Actor } from './mutate'
 import { authoriseList, reassignBooking, submitList } from './lifecycle'
 import { retryBillingException, runBillingForList, wireBillingRun } from './billingRun'
 import { handoffPair, handoffListPairs } from './xeroHandoff'
+import { processXeroQueue } from './xeroQueue'
+import { handoffQueuedFor, openXeroQueueItems } from './ledgerSelectors'
 import { receivePayment, recordUnmatchedReceipt } from './paymentActions'
 import { allocateUnmatchedReceipt, markUnmatchedRefunded } from './ledgerActions'
 import { payablesDue, runPayables } from './payablesActions'
@@ -247,14 +249,15 @@ describe('the hand-off reads the ledger (work item 5)', () => {
     const api = createAppStore()
     armHandoffFault(api, OFFICE_ACTOR, {})
     authoriseMon20(api)
-    const faulted = Object.values(api.getState().billing.ledger).find((p) => p.handoffFailure !== undefined)!
+    // Catch-up Phase 37: the fault is one failed attempt in the Xero sync queue.
+    const faulted = api.getState().billing.ledger[openXeroQueueItems(api.getState())[0]!.target.pairId!]!
     expect(faulted.receivable.xeroAccRecId).toBeUndefined()
     expect(faulted.receivable.amount).toBeGreaterThan(0)
     expect(ledgerPositionOf(api.getState()).notInXero).toBeGreaterThan(0)
-    const out = handoffPair(api, faulted.id)
-    expect(out.ok && out.value.accRecId !== undefined).toBe(true)
+    expect(processXeroQueue(api, { force: true }).sent).toBe(1)
     const mirrored = api.getState().billing.ledger[faulted.id]!
-    expect(mirrored.handoffFailure).toBeUndefined()
+    expect(mirrored.receivable.xeroAccRecId).toBeDefined()
+    expect(handoffQueuedFor(api.getState(), faulted.id)).toBeUndefined()
     expect(api.getState().xero.accRecs[mirrored.receivable.xeroAccRecId!]).toMatchObject({ invoiceNumber: mirrored.receivable.number, reference: mirrored.id, amountDue: mirrored.receivable.amount })
     const xeroBefore = JSON.stringify(api.getState().xero)
     handoffPair(api, faulted.id)
@@ -411,9 +414,9 @@ describe('review fixes (catch-up Phase 36)', () => {
     const api = createAppStore()
     armHandoffFault(api, OFFICE_ACTOR, {})
     authoriseMon20(api)
-    const faulted = Object.values(api.getState().billing.ledger).find((p) => p.handoffFailure !== undefined)!
+    const faulted = api.getState().billing.ledger[openXeroQueueItems(api.getState())[0]!.target.pairId!]!
     const before = bctiRecords(api.getState()).find((r) => r.billNumber === (faulted as BookingLedgerPair).payable!.number)!
-    handoffPair(api, faulted.id)
+    processXeroQueue(api, { force: true })
     const after = bctiRecords(api.getState()).find((r) => r.billNumber === (faulted as BookingLedgerPair).payable!.number)!
     expect(after.accPayId).toBe(before.accPayId)
   })

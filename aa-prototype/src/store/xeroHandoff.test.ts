@@ -15,7 +15,9 @@ import { runBillingForList } from './billingRun'
 import { handoffListPairs, handoffPair, payerContactSpec } from './xeroHandoff'
 import { approveAllPrepayments } from '../test/approvePrepayments'
 import { armHandoffFault } from './demoSettingsActions'
-import { pairsForList, pairsForBooking } from './ledgerSelectors'
+import { handoffQueuedFor, pairsForList, pairsForBooking } from './ledgerSelectors'
+import { pairStatusOf } from './ledgerSelectors'
+import { processXeroQueue } from './xeroQueue'
 import { pairStatusLabel } from '../domain/billing/ledger'
 import { clockISO, type Actor } from './mutate'
 import { SEED_LIST_IDS, SEED_MARKERS, PAT, BP } from '../domain/seed'
@@ -185,7 +187,7 @@ describe('Xero handoff — fault, retry, idempotency (D-handoff)', () => {
     return cases[0]!.id
   }
 
-  it('a fault records handoffFailure, creates no Xero pair, keeps the ledger pair "Not yet in Xero", clears the flag', () => {
+  it('a fault queues one failed attempt, creates no Xero pair, keeps the ledger pair "Not yet in Xero", clears the flag', () => {
     const api = store()
     const listId = listOf(api, marker('cosAccContractBooking'))
     expect(submitList(api, OFFICE, listId).ok).toBe(true)
@@ -196,15 +198,16 @@ describe('Xero handoff — fault, retry, idempotency (D-handoff)', () => {
     handoffListPairs(api, listId)
 
     const c = api.getState().billing.ledger[cosCaseId(api)]!
-    expect(c.handoffFailure).toBeDefined()
+    // Catch-up Phase 37: the fault is one failed attempt in the Xero sync queue.
+    expect(handoffQueuedFor(api.getState(), c.id)).toMatchObject({ kind: 'handoff', attempts: 1, status: 'waiting' })
     expect(c.receivable.xeroAccRecId).toBeUndefined() // no Xero pair created for this ledger pair
-    // (catch-up Phase 36: the ledger pair stands, its derived label is 'handoffFailed'; the old case stayed 'invoiced'.)
-    expect(pairStatusLabel(c)).toBe('handoffFailed')
+    expect(pairStatusOf(api.getState(), c)).toBe('waitingForXero')
+    expect(pairStatusLabel(c)).toBe('invoiced')
     // Flag cleared so the next handoff succeeds.
     expect(api.getState().settings.failNextHandoff).toBe(false)
   })
 
-  it('retrying a faulted handoff creates exactly one pair and clears the fault', () => {
+  it('the queue retrying a faulted handoff creates exactly one pair and clears the item', () => {
     const api = store()
     const listId = listOf(api, marker('cosAccContractBooking'))
     expect(submitList(api, OFFICE, listId).ok).toBe(true)
@@ -214,9 +217,11 @@ describe('Xero handoff — fault, retry, idempotency (D-handoff)', () => {
     handoffListPairs(api, listId)
 
     const caseId = cosCaseId(api)
-    expect(handoffPair(api, caseId).ok).toBe(true)
+    // A fresh hand-off while queued does not skip the queue.
+    expect(handoffPair(api, caseId)).toMatchObject({ ok: true, value: { queued: true } })
+    expect(processXeroQueue(api, { force: true }).sent).toBe(1)
     const c = api.getState().billing.ledger[caseId]!
-    expect(c.handoffFailure).toBeUndefined()
+    expect(handoffQueuedFor(api.getState(), caseId)).toBeUndefined()
     expect(c.receivable.xeroAccRecId).toBeDefined() // exactly one pair now
     expect(c.kind !== 'aaFee' ? c.payable?.xeroAccPayId : undefined).toBeDefined()
     expect(pairStatusLabel(c)).toBe('handedOff')

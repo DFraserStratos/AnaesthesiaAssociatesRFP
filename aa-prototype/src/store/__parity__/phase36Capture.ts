@@ -35,6 +35,7 @@ import { receivePayment } from '../paymentActions'
 import { payablesDue, runPayables } from '../payablesActions'
 import { stageBillingFailure } from '../demoStaging'
 import { handoffPair } from '../xeroHandoff'
+import { processXeroQueue } from '../xeroQueue'
 import { seedMonthOfBctis } from '../demoBctiSeed'
 import { recordAaFeePayment, runMonthlyFeeInvoices } from '../aaFeeActions'
 import { addPrepaidBooking } from '../prepaymentDemo'
@@ -184,7 +185,8 @@ function monitor(state: AppState) {
     listId: l.listId,
     invoiceCount: l.invoiceCount,
     failedCount: l.failedCount,
-    handoffFailedCount: l.handoffFailedCount,
+    // Phase 37: a hand-off fault is a queued call; the count keeps its baseline name.
+    handoffFailedCount: l.waitingForXeroCount,
     stages: l.stages.map((st) => `${st.key}:${st.state}`),
     bookings: l.bookingRows.map((b) => ({ bookingId: b.bookingId, status: b.status, received: b.receivedAmount, released: b.authorisedAmount, disbursed: b.disbursedAmount, prior: b.outstandingPriorBalance === true })),
   }))
@@ -310,10 +312,11 @@ function s4Beat3Flow() {
   const api = createAppStore()
   withWiredRun(api, () => stageBillingFailure(api))
   const staged = { ...step(api.getState()), monitor: monitor(api.getState()) }
-  // Resolve and retry: Losa Tuilagi's invoice stands; the retry hands it off once (the pair id is its case reference).
+  // The retry: Losa Tuilagi's invoice stands; the retry hands it off once (the pair id is its case reference).
+  // Since catch-up Phase 37 the hand-off waits in the Xero sync queue, and the office's retry is the queue's.
   const losa = SEED_MARKERS['billingFailureBooking']!.entityId
   const invoice = Object.values(api.getState().billing.invoices).find((i) => i.bookingId === losa && i.kind === 'standard')
-  const handed = invoice !== undefined ? handoffPair(api, invoice.caseReference).ok : false
+  const handed = invoice !== undefined ? processXeroQueue(api, { force: true }).sent === 1 && handoffPair(api, invoice.caseReference).ok : false
   return { staged, losaInvoice: invoice?.invoiceNumber ?? null, handed, retried: { ...step(api.getState()), monitor: monitor(api.getState()) } }
 }
 

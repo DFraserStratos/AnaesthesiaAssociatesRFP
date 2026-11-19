@@ -161,7 +161,7 @@ describe('reconciliation poll (safety net)', () => {
     const accRecId = missed!.accRecId
     expect(api.getState().xero.accRecs[accRecId]!.amountReceived).toBe(0) // not yet mirrored
 
-    const applied = runReconciliationPoll(api)
+    const applied = runReconciliationPoll(api).payments
     expect(applied).toBeGreaterThanOrEqual(1)
 
     const accRec = api.getState().xero.accRecs[accRecId]!
@@ -178,7 +178,7 @@ describe('reconciliation poll (safety net)', () => {
     expect(receipt.source).toBe('poll')
 
     // A second poll is a no-op (now mirrored).
-    expect(runReconciliationPoll(api)).toBe(0)
+    expect(runReconciliationPoll(api).payments).toBe(0)
   })
 
   it('webhook then poll causes no double effect on the paid ACCREC (idempotent by key)', () => {
