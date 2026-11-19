@@ -217,6 +217,12 @@ short-notice cover.
 18. Open the rooms' PDF lists (Admin, Intake, PDF lists) with the address each came from, correct a row
     beside the facsimile and **Send to matching**; the List made from it keeps its sender, so replies go
     back there.
+19. Save each Booking's changes explicitly (**Save changes**, one change set named for her), and draft
+    the update email on demand when a change matters: from the Booking, the List drawer after a cover
+    change, or the notification of an anaesthetist's move, picking the changes and starting from the
+    email templates the office maintains (Master data · Email templates). This is Vanessa's main need,
+    the hospital hearing about a cover change without her typing it; the email opens in her own mail
+    client and nothing is sent automatically (OQ-82).
 
 ### Permissions
 
@@ -232,7 +238,8 @@ short-notice cover.
 
 - Phone, email and PDF remain major booking channels.
 - Existing integrations are unreliable.
-- Several sources may change the same Booking.
+- Several sources may change the same Booking (each office save is one named change set; handling
+  simultaneous edits from automated sources is Future Work, US-02.5.6).
 - Manual checking creates bottlenecks and data-quality risk.
 - Illness and late schedule changes must be resolved quickly.
 

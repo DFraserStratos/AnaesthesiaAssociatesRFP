@@ -6,16 +6,28 @@
     {
       "name": "card-history",
       "app": "admin",
-      "caption": "Booking history, every change with who, when and the field movements, including the Contract",
+      "caption": "Booking history, every change with who, when and the field movements, including the Contract; a save shows as one grouped row",
       "start": "/admin/day/2026-07-21/bookings/BK0008",
       "states": [
         {
           "steps": [
             {
-              "click": "role=button[name=\"History\"]"
+              "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]"
             },
             {
-              "wait": 800
+              "click": "[data-shot=booking-save]"
+            },
+            {
+              "wait": "[data-shot=booking-saved-strip]"
+            },
+            {
+              "click": "[data-shot=booking-history-button]"
+            },
+            {
+              "wait": "[data-shot=booking-history]"
+            },
+            {
+              "wait": 500
             }
           ],
           "highlight": [

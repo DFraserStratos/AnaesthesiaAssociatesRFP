@@ -45,7 +45,7 @@ export function AuditViewer() {
   const specialties = useAppStore((s) => s.masters.specialties)
   const fundingTags = useAppStore((s) => s.masters.fundingTags)
   const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
-  const names = useMemo(() => auditNamesFor({ rvgGroups }), [rvgGroups])
+  const names = useMemo(() => auditNamesFor({ rvgGroups, contracts }), [rvgGroups, contracts])
   const [entityType, setEntityType] = useState('all')
 
   // A Contract reads by its AA code and name, a Party by its name (catch-up Phase 18).

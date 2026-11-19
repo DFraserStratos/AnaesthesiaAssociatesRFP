@@ -1,4 +1,4 @@
-import { useBookingApi, useBookingStore } from './draft'
+import { useBookingApi, useBookingStore, useBookingStoreMode } from './draft'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Check, ChevronDown, RotateCcw, Search } from 'lucide-react'
 import { accent, neutral, radius } from '../../theme/tokens'
@@ -752,13 +752,24 @@ function AmountEntry({
   onAmount: (amount: number | undefined) => void
 }) {
   const saved = onFallback ? procedure.enteredPrice : undefined
+  // In the Admin draft (catch-up Phase 35) the amount writes to the draft as typed, so the save bar and
+  // the leave guard see it at once; elsewhere it saves on blur or Enter.
+  const draftMode = useBookingStoreMode() === 'draft'
   const [text, setText] = useState(saved !== undefined ? saved.toFixed(2) : '')
   useEffect(() => {
-    setText(saved !== undefined ? saved.toFixed(2) : '')
-  }, [saved])
+    const formatted = saved !== undefined ? saved.toFixed(2) : ''
+    // A draft write of what is being typed keeps the text as typed (no "1" to "1.00" mid-entry).
+    setText((prev) => (draftMode && prev.trim() !== '' && parseAmount(prev) === saved ? prev : formatted))
+  }, [saved, draftMode])
   const typed = parseAmount(text)
   const commit = () => {
     if (typed !== undefined && typed !== saved) onAmount(typed)
+  }
+  const change = (value: string) => {
+    setText(value)
+    if (!draftMode) return
+    const next = parseAmount(value)
+    if (next !== undefined && next !== saved) onAmount(next)
   }
   const todo = saved === undefined && editable
   const label = (
@@ -773,7 +784,7 @@ function AmountEntry({
         label={label}
         ariaLabel="Fixed price, ex GST"
         value={text}
-        onChange={setText}
+        onChange={change}
         onCommit={commit}
         invalid={text.trim() !== '' && typed === undefined}
         block={mobile}

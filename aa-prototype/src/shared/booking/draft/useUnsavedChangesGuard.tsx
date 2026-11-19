@@ -55,6 +55,8 @@ export function LeaveWithoutSavingDialog({ blocker, count, onDiscard }: { blocke
       open={open}
       onClose={() => blocker.reset?.()}
       shot="leave-without-saving"
+      // Keep editing is the safe choice here, so focus opens on it, never on Discard and leave.
+      initialFocus="confirm"
       title="Leave without saving?"
       description={
         <>

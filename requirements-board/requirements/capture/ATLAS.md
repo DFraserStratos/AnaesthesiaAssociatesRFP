@@ -236,12 +236,29 @@ Hooks already added:
   Lists' "Open Draft List ..."; a bare `role=button[name="Open"]` is a substring match and can now hit it, so scope
   it or use `name=/^Open$/`.
 
+- **Admin Booking detail is a draft (catch-up Phase 35).** Every sheet opened from the Admin Booking detail
+  (Edit patient, insurer or funder, Change price, Paid by, the Contract rail and the rest) applies to the page's
+  draft: its primary reads **Apply** there (`role=button[name="Apply"]`, scoped to the sheet), not "Save details"
+  or "Save". Hooks such as `pricing-sheet-save` and `paid-by-save` keep their names but now apply. Nothing is saved
+  until **Save changes** in the bar, `[data-shot=booking-save]`; wait for `[data-shot=booking-saved-strip]` after it.
+  A recipe that needs the saved state (History, the Audit viewer, Invoices, another app, a `goto`) presses it
+  first: a `goto` with unsaved changes meets the browser's leave prompt, and an in-app link the
+  `leave-without-saving` dialog. The web and mobile Booking screens, and the Admin List drawers, still save at once.
+- **History rows are grouped (catch-up Phase 35).** A save, a create, a cancel, a move, a List's change of
+  anaesthetist and a hospital row applied each show as one row `[data-shot=history-change-set]`
+  (`data-change-set-id=CS0001`; titles "Saved by Kirsty W.", "Updated from the hospital's list", "New anaesthetist on
+  the List"), the field changes beneath it. Pick one by its title, for example
+  `[data-shot=history-change-set]:has-text("Updated from the hospital")`. Open the Booking's History with
+  `[data-shot=booking-history-button]` rather than `role=button[name="History"]` (a substring match).
+
 ## Personas and IDs
 
 **Personas**
 
 - **Anaesthetist, web and mobile:** Dr Melanie Souter, initials MS, anaesthetist ID `34821`.
-- **Admin, and every `/demo/*` page:** Kirsty W., office staff.
+- **Admin, and every `/demo/*` page:** Kirsty W., office staff. Catch-up Phase 35 adds a second named office user,
+  Sam T.: the `switch-office-user` trigger (Day view and Booking detail) swaps the Admin app between them, so two
+  users' saves show named in one Booking's History.
 - **Other registration numbers:** Rutherford 29104, Ropata 39560, Delaney 27731, Morrison 25490,
   Whitaker 36208, Sharma 41267, Chen 45178, Hughes 46822, Strand 47733, Ngata 38455.
 - **Surgeons** (catch-up Phase 17): `S-HALE` Mr T. Hale, `S-REID` Ms A. Reid, `S-WHITFORD` Mr J. Whitford
@@ -309,6 +326,10 @@ Everything on :5173 sits under the harness bar, which the runner hides in every 
 Booking routes use `/bookings/:bookingId` (catch-up Phase 15). An old `…/cards/C0009` URL still
 redirects, with replace, to `…/bookings/BK0009`, but recipes should use the new form.
 
+Catch-up Phase 35 moved the framed app to a data router (`createBrowserRouter` in `src/router.tsx`, so the
+unsaved-changes guard can block a navigation). No URL changed; the Admin Booking route is still
+`/admin/day/:dateISO/bookings/:bookingId`. The PWA keeps its own router.
+
 **Web app** (`src/apps/web/`)
 
 | Route | Shows |
@@ -330,13 +351,13 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 |---|---|
 | `/admin` | Redirects to `/admin/day/2026-07-21`. |
 | `/admin/day/:date` | Day grid of anaesthetists by time. The right rail has the mini calendar, "Internal notes" and "Awaiting review". Add `?sort=az` for A to Z order. The toolbar is `[data-testid=admin-day-nav]` (see "Date navigation" under "Overlays that need clicks"); its row order is a segmented control, `role=group[name="Row order"]` with buttons "Roster order" and "A to Z" (`aria-pressed`). The header's date input is named "Go to date" (`[aria-label="Go to date"]`). |
-| `/admin/day/:date/bookings/:bookingId` | Admin booking detail with "Office billing setup". A Booking created or changed from a hospital row links back to it (`booking-from-hospital-row`, opens Matching on that row); a newer hospital text waiting on Matching shows the cue `booking-newer-hospital-text` (catch-up Phase 33). |
+| `/admin/day/:date/bookings/:bookingId` | Admin booking detail with "Office billing setup". A Booking created or changed from a hospital row links back to it (`booking-from-hospital-row`, opens Matching on that row); a newer hospital text waiting on Matching shows the cue `booking-newer-hospital-text` (catch-up Phase 33). Catch-up Phase 35: the page edits a **draft**. Every edit (sheets, the time steppers and the draft-only time input `booking-time-input`, notes, the Contract rail) waits as an unsaved change in the sticky bar `booking-save-bar` ("3 unsaved changes", the changed fields, Discard and Save changes) until `[data-shot=booking-save]` saves them as one change set; then the strip `booking-saved-strip` ("Saved · 3 changes · 08:00 · Kirsty W. CS0001"). The header's "Draft update email" `booking-update-email` is disabled with its reason `booking-update-email-reason` while there are unsaved changes or nothing saved yet. Leaving with unsaved changes opens `leave-without-saving` (see Overlays). Warnings and the prepayment panel read the saved Booking, so they change on Save, not while drafting. |
 | `/admin/intake` | Admin Intake (catch-up Phase 34; `admin-intake`): redirects to `/admin/intake/matching`. The page header "Intake" sits over the tab strip `intake-tabs` (links, URL-routed: Matching, PDF lists, Data quality, Validators; the current one has `aria-current=page`), so never click a tab: open its route. The old `/admin/matching` and `/admin/integrations` redirect (replace, router state kept) to `/admin/intake/matching`. |
 | `/admin/intake/pdfs` | PDF lists (catch-up Phase 34; product, unbadged): the rooms' PDF lists. "Upload PDF list" `pdf-upload-open` opens the dialog `pdf-upload`; the inbox table `pdf-inbox` (rows `tr[data-pdf-list-id=PDL0001][data-status=received|sent]`; columns Sent from, Surgeon, Hospital, Received, Suggested List, Rows, Status with a "Re-sent" pill on a re-sent list). A row click opens its review in place (`pdf-list-header`, rows `pdf-row-<n>`; "Back to PDF lists" returns). See "Rooms' PDF lists" under Seed data and the hooks under Existing hooks. Demo action `pdf-list-resend`. |
 | `/admin/intake/quality` | Data quality (catch-up Phase 34): the data-quality items; at reset the empty card `data-quality-empty`. |
 | `/admin/intake/validators` | Validators (catch-up Phase 34; was the Integrations Validators tab): the NHI validator `integrations-nhi-validator` (fill its `input`). No tab click. |
 | `/admin/intake/matching` (was `/admin/matching`) | Matching (catch-up Phase 33; Kirsty W.): hospital rows waiting for the office. At reset it holds one seeded waiting row (Mere Tipene, no NHI, catch-up Phase 33a; see Stubs on a List below), so `matching-empty` no longer shows; stage rows with "Import hospital file" (`matching-import-open`, see Overlays) or the Demo actions below. Stat tiles `matching-stats` (`[data-stat=open|new|modification|cancellation|unmatched]`), the filter `[aria-label="Show rows"]` (options whose text starts "Open", "Unmatched", "Decided"), the table `matching-table` with rows `matching-row-<n>` (1-based, ready rows first, then import order). A row click opens its panel `matching-panel` (a right-docked SidePanel with a scrim: press Escape before clicking a row or the header). After an import the batch's first row's panel opens by itself. A row decided stays in place, dimmed, until the panel closes. |
-| `/admin/notifications` | The shared notification pool (catch-up Phase 32; US-13.8.1): newest first, six a page, `?page=N`; the table `admin-notifications-table`, rows `[data-notification-row=NT0001]` with "Open List", "Open Draft List" or "Open Booking", the pager `admin-notifications-pager` (Newer / Older). Catch-up Phase 32b: notices are active or resolved; the page shows active ones by default, the count `admin-notifications-page-count`, each active row's tick `notification-tick` ("Resolve"), and the "Show resolved" checkbox `admin-notifications-show-resolved` (`?resolved=1`, kept with `?page=`); resolved rows carry `data-notification-resolved=true` and the line `notification-resolved-line` ("Resolved by Kirsty W., Tue 21 Jul 08:00"). An alert's note is `notification-alert-note`. The provisional caption is gone. Seeds empty: stage it with the `colleague-moves-list-to-office` trigger, or send an alert from a web Booking (same origin) and `goto` here. |
+| `/admin/notifications` | The shared notification pool (catch-up Phase 32; US-13.8.1): newest first, six a page, `?page=N`; the table `admin-notifications-table`, rows `[data-notification-row=NT0001]` with "Open List", "Open Draft List" or "Open Booking", the pager `admin-notifications-pager` (Newer / Older). Catch-up Phase 32b: notices are active or resolved; the page shows active ones by default, the count `admin-notifications-page-count`, each active row's tick `notification-tick` ("Resolve"), and the "Show resolved" checkbox `admin-notifications-show-resolved` (`?resolved=1`, kept with `?page=`); resolved rows carry `data-notification-resolved=true` and the line `notification-resolved-line` ("Resolved by Kirsty W., Tue 21 Jul 08:00"). An alert's note is `notification-alert-note`. The provisional caption is gone. Seeds empty: stage it with the `colleague-moves-list-to-office` trigger, or send an alert from a web Booking (same origin) and `goto` here. Catch-up Phase 35: a List handed on to a colleague carries "Draft cover-change email" `pool-cover-email` (the composer, To the hospital, the move ticked); a single Booking moved carries "Draft update email" `pool-booking-email`; a List returned to the office carries the hint `pool-returned-hint` ("Assign this Draft List first ..."). The `busy` choice of `colleague-moves-list-to-office` stages hand-ons, so `[data-shot=pool-cover-email] >> nth=0` finds one. Not on the Day rail card. |
 | `/admin/draft-lists` | Draft Lists (catch-up Phase 31): Unassigned tab (default) and History (`?tab=history`). Since UI unification U5 the two tabs are links inside `role=navigation[name="Draft Lists"]`, not `role=tab`: `a[data-draft-tab=unassigned]` and `a[data-draft-tab=history]`, each with its count inside the link text (so match by the hook, not the name); the current one has `aria-current=page`. `?open=<listId>` opens the Draft List drawer (`admin-draft-list-drawer`); `?assigned=<listId>` shows the assigned confirmation with "Open List". The drawer's "Available that session" Assign opens step 2; the row's Assign opens step 1 (Everyone / Free only, tier filter, groups). "New Draft List" opens `admin-new-draft-list`. |
 | `/admin/conflicts` | Conflicts (catch-up Phase 30): every live conflict, grouped by date (`section[data-conflict-date=<date>]`), one table each (`[data-shot=conflicts-table]` wraps them). Rows are `tr[data-conflict-row=<listId>]` (cleared ones add `data-conflict-cleared=true`). Row actions have accessible names with context (`Reassign, Dr Rutherford Wed 22 Jul AM`, `Clear conflict, ...`, `Open the List, ...`, `Open the day, ...`): match them by regex (`role=button[name=/^Clear conflict/]`). Hospital closures only since catch-up Phase 32b (no reason filter, no Availability column). Filters in the URL: `?when=twoWeeks|canvas|past`, `?hospital=<id>`, `?anaesthetist=<reg>`, `?cleared=1`. After a reassign or clear, `[data-shot=conflicts-confirmation]`. |
 | `/admin/review` | Review queue, plus "Recently billed". |
@@ -352,10 +373,10 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/billing` (catch-up Phase 36) | The intro adds "Money in and out is recorded in the ledger first; Xero mirrors it." The payables panel `billing-payables-run` reads "N payable(s) due · $X to pay out to anaesthetists. A payable is released for exactly what its invoice has received." (or "No payables due. ...") with the link "Open the ledger" `billing-open-ledger`; the "Run payables" button is unchanged. |
 | `/admin/integrations` | Redirects to `/admin/intake/matching` (catch-up Phase 34). Its tabs are gone: Surgeon PDFs, Data quality and Validators are Intake routes; the Messages log and Feed config moved to the Future-scope pages `/demo/integrations/log` and `/demo/integrations/mapping`. |
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (`surgeon-profile`, catch-up Phase 17b): cards `surgeon-specialties`, `surgeon-identifiers`, `surgeon-groups`, then the full-width `surgeon-contacts` ("Practice and contacts": Practice `[data-practice]`, `surgeon-personal-contact-card`, `surgeon-office-contacts-card`). "Edit details" opens `surgeon-edit-sheet`. |
-| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons` (the old `surgeonRooms` value opens it, catch-up Phase 17b), `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifiers` (catch-up Phase 19b, "Modifiers"; the old `modifierCodes` value opens it), `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). A Contract's panel has Details and History tabs (catch-up Phase 25). |
+| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons` (the old `surgeonRooms` value opens it, catch-up Phase 17b), `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifiers` (catch-up Phase 19b, "Modifiers"; the old `modifierCodes` value opens it), `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `emailTemplates` (catch-up Phase 35, "Email templates": the table `email-templates`, rows `tr[data-email-template=ET001..ET004]` (Change of anaesthetist, Cancellation, Correction of an error, Booking change), each with History, Edit and Retire named "Edit <name>" etc.; "Add template" in the header), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). A Contract's panel has Details and History tabs (catch-up Phase 25). |
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip ("No HPI CPN yet" when blank), "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. Catch-up Phase 17b: Specialties, Identifiers and Groups in the first row, then one full-width "Practice and contacts" card (`surgeon-contacts`), then Pairing preferences. No room cards. |
 | `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Profile, Pairing preferences. Office only. The Profile card (catch-up Phase 26; was "Details", hook `anaesthetist-details` kept) shows Unit value, Status, Phone, Email, HPI CPN and Bank account (masked, row `anaesthetist-bank-account`); it has no action of its own. The page header's secondary button "Edit details" (beside "History") opens the Edit sheet: click `button:text-is("Edit details")` at page level, not inside `anaesthetist-details`. |
-| `/admin/audit` | Audit viewer. |
+| `/admin/audit` | Audit viewer. Catch-up Phase 35 adds a Change set column: each grouped entry's id is a link `audit-change-set` that filters the viewer to that change set (the filter line `audit-change-set-filter`). |
 
 The side nav has: Day view, Intake (amber badge `[data-shot=nav-badge-intake]`, the open Matching rows;
 catch-up Phase 34, was Matching with `nav-badge-matching`), Conflicts (amber badge `[data-shot=nav-badge-conflicts]`, catch-up
@@ -1500,6 +1521,38 @@ were already imported. Nothing new.").
   "Open record" link. A table row (anaesthetist or surgeon) opens its page; the "Edit" link in it
   does not.
 
+- **Leave without saving** (Admin Booking detail, catch-up Phase 35): with unsaved changes, any in-app
+  navigation that changes the path (the side nav `nav[aria-label="Admin"] >> text="Day view"`, the back link, the
+  Demo actions menu, Control Panel links) opens the dialog `[data-shot=leave-without-saving]` ("Leave without
+  saving?", "You have 3 unsaved changes to this Booking.") with "Keep editing" (stays) and "Discard and leave". A
+  `goto` or reload gets the browser's own prompt instead, so save or discard before a `goto`.
+- **Update email composer** (catch-up Phase 35): opened by `booking-update-email` on the Admin Booking detail,
+  `drawer-update-email` in the List and Draft List drawers (only after an emailable change of anaesthetist), and
+  `pool-cover-email` or `pool-booking-email` on `/admin/notifications`. A wide dialog,
+  `[data-shot=update-email-composer]`, titled "Draft update email" (a Booking) or "Draft cover-change email" (a List).
+  Left: "Pick changes", `update-email-picker`, one `li[data-pick-row=<key>]` per saved change, newest first, its
+  tick `input[data-pick-key=<key>]` (keys `cs:CS0001` or `a:<auditId>`; tick by position,
+  `[data-shot=update-email-picker] li >> nth=1 >> input[type=checkbox]`); the newest emailable change is ticked
+  on open; a change with nothing emailable is disabled with its reason; `update-email-earlier-draft` marks one
+  already drafted, `update-email-cancelled-out` a change that nets out. A typed colleague message shows as
+  `update-email-context-message`. Right: Template `update-email-template` (`[data-shot=update-email-template]
+  select`), "Send to" (Surgeon's office, Hospital, Both), `update-email-to` (To, other office contacts with "Use
+  this instead", or the line "... To will be left empty."), then the preview `update-email-preview` (badged Demo
+  preview: To, Subject, body `update-email-body`, length `update-email-length`, `update-email-shortened`, and
+  "Opens in your mail client. The system does not send it."). Footer "Open in mail client" `update-email-open`
+  (a `mailto:` link: never click it in a recipe) and Close. To stage two saved changes on BK0009: "5 minutes
+  later" then Save changes, then Edit patient, change the name, Apply, Save changes.
+- **Email template editor** (Master data, Email templates, catch-up Phase 35): a row's "Edit <name>"
+  (`tr[data-email-template=ET004] >> role=button[name=/^Edit /]`) or "Add template" opens a wide dialog
+  `[data-shot=email-template-editor]`: Name, Kind of change (Add only), Sends to, Subject, Body, the placeholder
+  buttons `email-template-placeholders` (named "Insert {patient}: ..."), and the live preview
+  `email-template-preview` (badged Sample). Primary "Save changes" or "Add template", disabled while a rule fails.
+- **Booking as at** (Admin Booking History, catch-up Phase 35): each History row has "View as at"
+  `[data-shot=history-view-as-at]` (Admin only); it opens the panel `[data-shot=booking-as-at]` above the timeline,
+  inside the History dialog ("As at ..., after Kirsty W.'s save", the Booking's fields then, no prices),
+  with its own "Close". `[data-shot=booking-history] [data-shot=history-view-as-at] >> nth=1` picks the row before
+  the newest.
+
 **Shell** (these controls sit in the harness bar, which is hidden in shots, so they can't be
 clicked; use the matching `/demo/control` buttons in `setup` instead. The "Demo actions" menu is
 the exception: use the `trigger` step)
@@ -1509,6 +1562,26 @@ the exception: use the `trigger` step)
 
 ## Existing hooks
 
+- Explicit save and the update email (catch-up Phase 35). Admin Booking detail: `booking-save-bar` (the sticky
+  unsaved bar; the count `[data-testid=unsaved-count]`), `booking-discard`, `booking-save` ("Save changes"),
+  `booking-save-refused` (a refused save's reason, in the bar), `booking-saved-strip`, `booking-draft-reset` (a demo
+  Reset discarded a dirty draft), `booking-time-input` (draft only), `leave-without-saving` (the dialog),
+  `booking-update-email` ("Draft update email") and `booking-update-email-reason`, `booking-history-button` (the
+  History button), `booking-history` (the Booking's History sheet body), `history-change-set` (a grouped row,
+  `data-change-set-id`), `history-view-as-at`, `booking-as-at` (the as-at panel), `booking-office-saved` (another
+  office user's save landed while the page was open; on web and mobile too), `patient-nhi-field` (Edit patient's NHI,
+  office draft only). Section hooks are `booking-<label>` from the section title, for example `booking-patient` and
+  `booking-notes-for-the-office` (its `textarea`). Composer: `update-email-composer`, `update-email-picker` (rows
+  `li[data-pick-row]`, ticks `input[data-pick-key]`), `update-email-template`, `update-email-to`,
+  `update-email-preview`, `update-email-body`, `update-email-length`, `update-email-shortened`,
+  `update-email-earlier-draft`, `update-email-cancelled-out`, `update-email-context-message`,
+  `update-email-nothing-picked`, `update-email-open`. List drawers: `drawer-update-email`, `list-add-booking` (Add
+  Booking on any List not AUTHORISED, booked or not; it opens the shared add form, whose `procedure-description`
+  (20a's field) holds the description as told, with the "Told by" Phone or Email choice, office only; the Draft List
+  drawer's twin is `draft-list-add-booking`). Notifications: `pool-cover-email`, `pool-booking-email`,
+  `pool-returned-hint`. Audit viewer: `audit-change-set` (the column's link), `audit-change-set-filter`. Master data:
+  `email-templates` (rows `tr[data-email-template]`), `email-template-editor`, `email-template-placeholders`,
+  `email-template-preview`.
 - Intake (catch-up Phase 34): `admin-intake` (the Intake page), `intake-tabs` (its link strip); side nav
   `nav-badge-intake` (replaces `nav-badge-matching`). Matching: `row-new` (the first "New" chip in the table). PDF lists
   (`/admin/intake/pdfs`): `pdf-upload-open`, `pdf-inbox` (rows `data-pdf-list-id`, `data-status`), `pdf-upload` (the
@@ -2009,6 +2082,8 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/admin/audit` | `simulate-sign-in` | Five simulated sign-in audit rows |
 | `/admin/day/<date>`, `/admin/notifications` | `colleague-moves-list-to-office` (choice `one` or `busy`) | Catch-up Phase 32. A colleague returns one of their Lists to the office as themselves (the date in the URL, or the next with a candidate; vacated Unavailable): a Draft List and `NT0001`. `busy` stages eight moves from today, alternating returns and hand-ons, so the Notifications page has two pages (`NT0008` is a hand-on naming both). Bar only |
 | `/admin/day/<date>` | `colleague-hands-booking-to-souter` | Catch-up Phase 32a. A colleague hands one of their Bookings into Dr Souter's free, empty session as a new List, with the office notice ticked (from a reset: Dr Hughes's `BK0140` into her Wed 22 PM; the date in the URL or the next with a candidate). Nothing sets anyone available. Bar only |
+| `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>` | `switch-office-user` | Catch-up Phase 35, bar only, no choice. Swaps the Admin app's office user between Kirsty W. and Sam T. ("The office is now Sam T."), so two users' saves show named in one Booking's History (US-02.5.8 stages it after a first save). Disabled "Save or discard this Booking's changes first" while the Booking draft has unsaved changes. Not on other Admin screens |
+| `/mobile/lists/<listId>/bookings/<bookingId>` (PWA Demo sheet only) | `office-edits-booking` | Catch-up Phase 35, badged Office stand-in, PWA only. Kirsty W. saves one change set on this Booking, its time 30 minutes later; the phone shows the office's save and History the grouped row. In the framed build make the change in Admin and save it |
 | `/mobile/lists`, `/mobile/lists/<listId>`, `/mobile/lists/<listId>/bookings/<bookingId>` (PWA Demo sheet) | `colleague-moves-booking-to-me` (choice by its label, e.g. "Dr Hughes · Wed 22 Jul PM · Christchurch Eye Surgery") | Catch-up Phase 32a, badged "Colleague stand-in". A colleague hands her one Booking as a new List in a session she is free in; a session she is not available in (Fri 31 Jul AM, `BK0162`) is offered once she sets it available. PWA only |
 | `/mobile/availability/calendar` (PWA Demo sheet, after a day has been opened and closed in My calendar: it acts on the last day opened) | `availability-office-sets-public` ("Office sets this session to Public", `[data-shot=pwa-demo-action-availability-office-sets-public]`) | Catch-up Phase 32d, PWA only (port 5374). Acts on the AM or PM of the open day: the office sets that session to Public. |
 | `/mobile/availability` (PWA Demo sheet) | `colleague-moves-list-to-me` | Catch-up Phase 32, badged "Colleague stand-in". A colleague hands a List into Dr Souter's free session (from the pristine seed, Morrison's Wed 22 PM Southern Cross into her Wed 22 PM); the Moved to you panel and Forward Lists' "New" follow. PWA only |

@@ -95,6 +95,7 @@ import {
   PrepaymentApprovalStripExample,
   HoldingAccountPanelExample,
 } from './admin/storeExamples'
+import { BookingAsAtPanelExample, BookingSaveBarExample, LeaveWithoutSavingDialogExample, OfficeSavedNoticeExample } from './admin/draftExamples'
 import {
   CheckboxExample,
   DateJumpInputExample,
@@ -134,7 +135,7 @@ export function AdminCatalogue() {
     >
       {/* ------------------------------------------------------------------ */}
       <LibraryGroup id="shadcn">
-        <CatalogueRow name="Button" source="shared/ui/Button.tsx" usedIn={AWM} what="The one button (UI unification U5): primary, secondary, the teal outline the mockups draw, the tinted pill and the one red danger outline (Cancel booking only, question 8); the touch size (54, 48, 44: sheet footers keep the 54px primary, question 7), desktop (44, radius 12) and compact (36); one disabled treatment and a printed disabled reason; the teal focus ring and a desktop hover." replaceWith="shadcn Button (cva variants)" note="Replaced ActionBtn, PanelAction and the hand-rolled teal outlines. Press feedback stays in global.css.">
+        <CatalogueRow name="Button" source="shared/ui/Button.tsx" usedIn={AWM} what="The one button (UI unification U5): primary, secondary, the teal outline the mockups draw, the tinted pill and the one red danger outline (Cancel booking only, question 8); the touch size (54, 48, 44: sheet footers keep the 54px primary, question 7), desktop (44, radius 12) and compact (36); one disabled treatment and a printed disabled reason; the teal focus ring and a desktop hover. Catch-up Phase 35 adds href: a link styled as the button (the update email's mailto:), the same disabled button while disabled." replaceWith="shadcn Button (cva variants)" note="Replaced ActionBtn, PanelAction and the hand-rolled teal outlines. Press feedback stays in global.css.">
           <ButtonExample />
         </CatalogueRow>
         <CatalogueRow name="TickButton" source="shared/ui/TickButton.tsx" usedIn={AW} what="The office's 'dealt with' control: a teal outline button with a check, used by To-do Clear and notice Resolve." replaceWith="shadcn Button (outline variant + icon)">
@@ -161,7 +162,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="SheetActions" source="shared/surface/SheetActions.tsx" usedIn={AWM} what="The one sheet footer, laid out by the surface: stacked primary over secondary on the phone, one row on web with the secondary hugging its label first and the primary last, filling the rest. Footer buttons stay 54px." replaceWith="shadcn DialogFooter" note="Pass the buttons as they are, so labels, disabled state and handlers stay on them.">
           <SheetActionsExample />
         </CatalogueRow>
-        <CatalogueRow name="ConfirmSheet" source="shared/surface/ConfirmSheet.tsx" usedIn={AWM} what="The one sheet confirm: the surface's Overlay with an OverlayHeader and SheetActions. Focus opens on the safe button, and a double click runs the primary once. The body between header and footer is the caller's." replaceWith="shadcn AlertDialog" note="Used by ClearConflictSheet, SubmitListSheet, RemoveProcedureSheet and MakePrimarySheet (catch-up Phase 23). Labels are the caller's.">
+        <CatalogueRow name="ConfirmSheet" source="shared/surface/ConfirmSheet.tsx" usedIn={AWM} what="The one sheet confirm: the surface's Overlay with an OverlayHeader and SheetActions. Focus opens on the safe button, and a double click runs the primary once. The body between header and footer is the caller's. Catch-up Phase 35 adds onCancel (the secondary's own action) and initialFocus: confirm opens on the primary where the primary is the safe choice (Leave without saving: Keep editing)." replaceWith="shadcn AlertDialog" note="Used by ClearConflictSheet, SubmitListSheet, RemoveProcedureSheet, MakePrimarySheet (catch-up Phase 23) and LeaveWithoutSavingDialog. Labels are the caller's.">
           <ConfirmSheetExample />
         </CatalogueRow>
         <CatalogueRow name="MasterPanel / PanelGrid / PanelSection" source="apps/admin/components/MasterPanel.tsx" usedIn={A} what="The 600px record preset of SidePanel the Contract and Party editors open in: the h2 at 18/700 names the dialog, the footer is right-aligned with the primary last." replaceWith="shadcn Sheet (side)" note="Since U2 one shell with the drawers (SidePanel); a sheet opened over it (the RVG code picker) closes first on Escape.">
@@ -283,6 +284,18 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="BookingUpdateEmailButton / NotificationEmailAction / useListUpdateEmail" source="apps/admin/flows/UpdateEmailActions.tsx" usedIn={A} what="Where the update email opens from: the Admin Booking header's Draft update email (outline Button with the Mail icon, disabled with its reason while the page has unsaved changes or nothing saved to email), the List drawers' Draft update email once a List has an emailable change of anaesthetist, and the notification page's Draft cover-change email on a List moved to a colleague (a return to the office points to the unassigned List instead)." replaceWith="shadcn Button" note="Shown here: the Booking button on a seeded Booking, outside any draft.">
           <BookingUpdateEmailButtonExample />
+        </CatalogueRow>
+        <CatalogueRow name="BookingSaveBar / BookingSavedStrip" source="apps/admin/components/BookingSaveBar.tsx" usedIn={A} what="The Admin Booking detail's explicit save (catch-up Phase 35): a sticky warning Notice with the unsaved count, the changed fields and compact Discard and Save changes Buttons (a refused save prints its reason), then a success Notice: Saved, the count, the time, who and the change-set id, with Dismiss. Both count by label (shared/booking/changeLabels.ts), as the leave dialog does." replaceWith="shadcn Alert + Button" note="Sample changes here: Save and Discard write nothing.">
+          <BookingSaveBarExample />
+        </CatalogueRow>
+        <CatalogueRow name="OfficeSavedNotice" source="shared/booking/OfficeSavedNotice.tsx" usedIn={AWM} what="One dismissible neutral Notice when another actor's save lands on an open Booking: who saved and the fields, with View history. A notice, not concurrency handling." replaceWith="shadcn Alert" note="The button saves a note as Sam T. in the demo store, which raises the notice here.">
+          <OfficeSavedNoticeExample />
+        </CatalogueRow>
+        <CatalogueRow name="BookingAsAtPanel" source="shared/booking/BookingAsAtPanel.tsx" usedIn={A} what="View as at, from a History row (catch-up Phase 35): the Booking rebuilt from the audit at that point on the sunken panel, its rows the shared DefRow, each Procedure under an Eyebrow; Paid by as the live line decides it (the payer only where the Contract bills the payer). No money. A gap in the record reads as incomplete, in words." replaceWith="Custom (shadcn Card)" note="Read-only; shown at the Booking's newest entry.">
+          <BookingAsAtPanelExample />
+        </CatalogueRow>
+        <CatalogueRow name="LeaveWithoutSavingDialog" source="shared/booking/draft/useUnsavedChangesGuard.tsx" usedIn={A} what="Leave without saving? (catch-up Phase 35): a ConfirmSheet over a blocked navigation with the unsaved count; Keep editing (the primary, which takes the initial focus) stays, Discard and leave throws the draft away and goes on." replaceWith="shadcn AlertDialog" note="On a stand-in blocker here; on the Booking detail useBlocker (the data router) blocks the navigation.">
+          <LeaveWithoutSavingDialogExample />
         </CatalogueRow>
         <CatalogueRow name="VacatedSessionChoice / StatusRadioGroup" source="shared/flows/VacatedSessionChoice.tsx" usedIn={AWM} what="A radio group of status chips: what the vacated session becomes after a move. Its keyboard is the shared useRovingRadio (UI unification U4): one Tab stop, arrows move and select, Home and End jump to the ends." replaceWith="shadcn RadioGroup" note="The same hook drives the Contract rail's answers (RailOptionGroup), where a move only focuses.">
           <VacatedChoiceExample />

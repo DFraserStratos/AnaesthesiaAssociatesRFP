@@ -12,7 +12,7 @@ import {
   type BoundAppStore,
 } from '../../../store'
 import { resetDomainState } from '../../../store/mutate'
-import { BookingDraftProvider, DRAFT_RESET_NOTICE } from './BookingDraftProvider'
+import { auditReplaced, BookingDraftProvider, DRAFT_RESET_NOTICE } from './BookingDraftProvider'
 import { useBookingApi, useBookingDraft, useBookingStoreMode, type BookingDraftValue } from './BookingStoreContext'
 
 const BOOKING_ID = SEED_MARKERS.pendingCaptureBooking!.entityId
@@ -175,5 +175,40 @@ describe('BookingDraftProvider', () => {
     expect(real.getState().billing).toBe(billingBefore)
     expect(real.getState().schedule.procedures[procedure.id]).toBe(procedure)
     expect(get().draft?.dirty).toBe(true)
+  })
+
+  it('is clean again when Save finds nothing left to save (the real Booking already holds the drafted values)', () => {
+    const real = createAppStore()
+    const get = mount(real)
+    act(() => {
+      editBooking(get().api, OFFICE_ACTOR, BOOKING_ID, { notes: 'Same words' })
+    })
+    act(() => {
+      editBooking(real, OFFICE_ACTOR, BOOKING_ID, { notes: 'Same words' })
+    })
+    expect(get().draft?.dirty).toBe(true)
+    let out: ReturnType<BookingDraftValue['save']> | undefined
+    act(() => {
+      out = get().draft!.save(OFFICE_ACTOR)
+    })
+    expect(out?.ok ? '' : out?.code).toBe('noChanges')
+    expect(get().draft?.dirty).toBe(false)
+    expect(get().draft?.changes).toEqual([])
+  })
+})
+
+describe('auditReplaced', () => {
+  it('keeps a draft when another tab rehydrates the same audit as new objects, and sees a shorter or different one', () => {
+    const audit = createAppStore().getState().audit
+    const follow = { auditLength: audit.length, auditTail: audit[audit.length - 1] }
+    const rehydrated = JSON.parse(JSON.stringify(audit)) as typeof audit
+    expect(rehydrated[rehydrated.length - 1]).not.toBe(follow.auditTail)
+    expect(auditReplaced(rehydrated, follow)).toBe(false)
+    expect(auditReplaced([...rehydrated, { ...rehydrated[0]!, id: 'AU-later' }], follow)).toBe(false)
+    expect(auditReplaced(rehydrated.slice(0, -1), follow)).toBe(true)
+    const otherWho = rehydrated.map((e, i) => (i === rehydrated.length - 1 ? { ...e, who: 'Someone else' } : e))
+    expect(auditReplaced(otherWho, follow)).toBe(true)
+    const otherTime = rehydrated.map((e, i) => (i === rehydrated.length - 1 ? { ...e, atISO: '2026-01-01T00:00:00' } : e))
+    expect(auditReplaced(otherTime, follow)).toBe(true)
   })
 })

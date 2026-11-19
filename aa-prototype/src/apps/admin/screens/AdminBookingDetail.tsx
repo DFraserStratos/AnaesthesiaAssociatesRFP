@@ -4,7 +4,8 @@ import { UnassignedPill } from '../components/draftLists/DraftListParts'
 import { neutral } from '../../../theme/tokens'
 import { BackLink, FormError, PageHeader, TextAction } from '../../../shared/ui'
 import type { Procedure } from '../../../domain/types'
-import { applyDefaultInvoiceDescription, lastChangeSetFor, useAppStore, type Actor } from '../../../store'
+import { applyDefaultInvoiceDescription, lastChangeSetFor, onDomainReset, useAppStore, type Actor } from '../../../store'
+import { changeCount } from '../../../shared/booking/changeLabels'
 import { newerInvoiceDescription } from '../../../domain/billing/procedureStack'
 import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
 import {
@@ -53,8 +54,15 @@ export function AdminBookingDetail(props: AdminBookingDetailProps) {
   )
 }
 
-/** Save bars dismissed this session, by change-set id (a per-viewer UI flag, never stored). */
+/**
+ * Save bars dismissed this session, by change-set id (a per-viewer UI flag,
+ * never stored). A demo Reset clears it: the seed's change-set ids come round
+ * again, and a strip dismissed before the Reset must show for the new save.
+ */
 const dismissedSaves = new Set<string>()
+onDomainReset((api) => {
+  if (api === useAppStore) dismissedSaves.clear()
+})
 
 function AdminBookingDetailDraft({ bookingId, actor, todayISO, onBack, backLabel = 'Day view', officeLinks }: AdminBookingDetailProps) {
   const booking = useBookingStore((s) => s.schedule.bookings[bookingId])
@@ -69,6 +77,7 @@ function AdminBookingDetailDraft({ bookingId, actor, todayISO, onBack, backLabel
   useDemoTriggerContextWhile('adminBooking.dirtyBookingId', bookingId, dirty)
   // The saved strip reads the real audit: still there after leaving and coming back.
   const realAudit = useAppStore((s) => s.audit)
+  const realProceduresRecord = useAppStore((s) => s.schedule.procedures)
   const lastSave = useMemo(() => lastChangeSetFor({ audit: realAudit }, bookingId), [realAudit, bookingId])
   const [, setDismissTick] = useState(0)
 
@@ -122,6 +131,8 @@ function AdminBookingDetailDraft({ bookingId, actor, todayISO, onBack, backLabel
         title={patient?.name ?? 'Unknown patient'}
         aside={<WarningTriangle warnings={warnings} />}
         subStyle={{ marginTop: 0 }}
+        // Top-right, level with the title (Admin Day's header), not sunk to the foot of the sub-lines.
+        actionsStyle={{ alignSelf: 'flex-start', marginLeft: 'auto' }}
         sub={
           <>
             <div className="mono" style={{ fontSize: 12, color: neutral.mist, marginTop: 6 }}>
@@ -177,13 +188,20 @@ function AdminBookingDetailDraft({ bookingId, actor, todayISO, onBack, backLabel
       {!dirty && lastSave !== undefined && !dismissedSaves.has(lastSave.changeSetId) && (
         <BookingSavedStrip
           summary={lastSave}
+          procedures={Object.values(realProceduresRecord).filter((p) => p.bookingId === bookingId)}
           onDismiss={() => {
             dismissedSaves.add(lastSave.changeSetId)
             setDismissTick((n) => n + 1)
           }}
         />
       )}
-      {draft !== null && <LeaveWithoutSavingDialog blocker={blocker} count={draft.changes.length} onDiscard={draft.discard} />}
+      {draft !== null && (
+        <LeaveWithoutSavingDialog
+          blocker={blocker}
+          count={changeCount(draft.changes, Object.values(proceduresRecord).filter((p) => p.bookingId === bookingId))}
+          onDiscard={draft.discard}
+        />
+      )}
 
       {newerHospital.map((n) => (
         <div key={n.procedureId} data-shot="booking-newer-hospital-text" style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', fontSize: 12.5, color: neutral.slate }}>

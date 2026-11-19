@@ -12,34 +12,66 @@ import { useMemo } from 'react'
 import { useAppStore } from '../../store'
 import { bookingAsAt } from '../../domain/bookingAsAt'
 import { snapshotBooking } from '../../domain/changeSets'
+import type { AuditEntry, Contract, Party, Patient, ProcedurePayer } from '../../domain/types'
+import { holderBilledFor, isPayerBilled, partyForCounterparty, payerDetails, PAYER_NOT_BILLED_YET } from '../../domain/billing/whoIsBilled'
+import { actionLabel } from '../audit'
 import { inDisplayOrder } from '../../domain/billing/multiProcedure'
-import { procedureLabel } from '../../domain/billing/procedureStack'
+import { shortDateLabel } from '../../domain/slotStatus'
+import { sessionText } from '../../domain/outOfHours'
 import { neutral, radius } from '../../theme/tokens'
 import { DefList, DefRow } from '../ui'
 import { Eyebrow } from '../ui/Eyebrow'
 import { TextAction } from '../ui/TextAction'
-import { dayHeading, hhmm } from '../format'
-import { useToday } from '../../store'
+import { hhmm } from '../format'
 
-function payerText(payer: unknown): string {
-  if (payer === null || typeof payer !== 'object') return 'Payer: not billed yet'
-  const p = payer as { kind?: string; name?: string }
-  if (p.kind === 'patient') return 'The patient'
-  return p.name ?? 'Another person'
+/**
+ * Who the Procedure was invoiced to, the way the live Paid by line decides it
+ * (`whoIsBilled`): no Contract yet, "Payer: not billed yet"; a Contract that
+ * bills the payer, the payer ("Grace Park (Patient)", "Hana Park (Mother)");
+ * one that bills its holder, the holder.
+ */
+export function asAtPaidByText(
+  contract: Pick<Contract, 'billsTo' | 'holderId'> | undefined,
+  payer: ProcedurePayer,
+  patient: Pick<Patient, 'name' | 'email' | 'postalAddress' | 'phone'> | undefined,
+  parties: Readonly<Record<string, Party>>,
+): string {
+  if (contract === undefined) return PAYER_NOT_BILLED_YET
+  if (isPayerBilled(contract)) {
+    const d = payerDetails(payer, patient)
+    return d.relationship !== undefined ? `${d.name} (${d.relationship})` : d.name
+  }
+  const holder = holderBilledFor(contract, parties)
+  return (holder !== undefined ? partyForCounterparty(holder, parties)?.name : undefined) ?? 'Not billed to the payer'
+}
+
+/**
+ * The audit entries the as-at walk reads for a Booking: its own, its patient's,
+ * its Procedures' (current and removed) and every billing line ever on one of
+ * those Procedures (by the line's `procedureId` before or after).
+ */
+export function asAtEntriesFor(audit: readonly AuditEntry[], bookingId: string, patientId: string, procedureIds: Iterable<string>, billingLineIds: Iterable<string>): AuditEntry[] {
+  const procedures = new Set(procedureIds)
+  for (const e of audit) if (e.entityType === 'procedure' && (e.before as { bookingId?: string } | undefined)?.bookingId === bookingId) procedures.add(e.entityId)
+  const lineOwner = (v: unknown) => (v !== null && typeof v === 'object' ? (v as { procedureId?: unknown }).procedureId : undefined)
+  const lines = new Set(billingLineIds)
+  for (const e of audit) {
+    if (e.entityType !== 'billingLine') continue
+    const owner = lineOwner(e.before) ?? lineOwner(e.after)
+    if (typeof owner === 'string' && procedures.has(owner)) lines.add(e.entityId)
+  }
+  const ids = new Set([bookingId, patientId, ...procedures, ...lines])
+  return audit.filter((e) => ids.has(e.entityId))
 }
 
 export function BookingAsAtPanel({ bookingId, entryId, onClose }: { bookingId: string; entryId: string; onClose: () => void }) {
-  const todayISO = useToday()
   const audit = useAppStore((s) => s.audit)
   const schedule = useAppStore((s) => s.schedule)
   const masters = useAppStore((s) => s.masters)
   const result = useMemo(() => {
     const now = snapshotBooking({ schedule, masters }, bookingId)
     if (now === undefined) return undefined
-    const procedureIds = new Set(Object.keys(now.procedures))
-    for (const e of audit) if (e.entityType === 'procedure' && (e.before as { bookingId?: string } | undefined)?.bookingId === bookingId) procedureIds.add(e.entityId)
-    const ids = new Set([bookingId, now.booking.patientId, ...procedureIds, ...Object.keys(now.billingLines)])
-    const entries = audit.filter((e) => ids.has(e.entityId))
+    const entries = asAtEntriesFor(audit, bookingId, now.booking.patientId, Object.keys(now.procedures), Object.keys(now.billingLines))
     return bookingAsAt(now, entries, { afterEntryId: entryId }, { modifiers: masters.modifiers })
   }, [audit, schedule, masters, bookingId, entryId])
   const cut = audit.find((e) => e.id === entryId)
@@ -52,18 +84,18 @@ export function BookingAsAtPanel({ bookingId, entryId, onClose }: { bookingId: s
     <div data-shot="booking-as-at" style={{ display: 'flex', flexDirection: 'column', gap: 10, background: neutral.sunken, borderRadius: radius.card, padding: 14 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
         <strong style={{ fontSize: 14, flex: 1 }}>
-          As at {dayHeading(cut.atISO.slice(0, 10), todayISO)} <span className="mono">{hhmm(cut.atISO)}</span>, {label}
+          As at {shortDateLabel(cut.atISO.slice(0, 10))} <span className="mono">{hhmm(cut.atISO)}</span>, {label}
         </strong>
         <TextAction size="sm" flush onClick={onClose}>
           Close
         </TextAction>
       </div>
-      {incompleteAt !== undefined && <div style={{ fontSize: 12.5, color: neutral.mist }}>History before this point is incomplete ({incompleteAt.action}).</div>}
+      {incompleteAt !== undefined && <div style={{ fontSize: 12.5, color: neutral.mist }}>History before this point is incomplete ({actionLabel(incompleteAt.action)}).</div>}
       <DefList>
         <DefRow label="Patient">{snapshot.patient?.name ?? 'Unknown'}</DefRow>
         {list !== undefined && (
           <DefRow label="List">
-            {list.dateISO} · {list.session} · {masters.hospitals[list.hospitalId]?.name ?? list.hospitalId} · {masters.surgeons[list.surgeonId]?.name ?? list.surgeonId}
+            {shortDateLabel(list.dateISO)} {sessionText(list.session)} · {masters.hospitals[list.hospitalId]?.name ?? list.hospitalId} · {masters.surgeons[list.surgeonId]?.name ?? list.surgeonId}
           </DefRow>
         )}
         <DefRow label="Time" mono>
@@ -81,9 +113,9 @@ export function BookingAsAtPanel({ bookingId, entryId, onClose }: { bookingId: s
             <DefList>
               <DefRow label="As received">{p.procedureText?.text ?? 'None received'}</DefRow>
               <DefRow label="Invoice description">{p.invoiceDescription?.text ?? 'Not set'}</DefRow>
-              <DefRow label="RVG code">{p.rvgGroupId !== undefined ? procedureLabel(p, masters.rvgGroups, i + 1) : 'None'}</DefRow>
+              <DefRow label="RVG code">{p.rvgGroupId !== undefined && masters.rvgGroups[p.rvgGroupId] !== undefined ? `${masters.rvgGroups[p.rvgGroupId]!.code} · ${masters.rvgGroups[p.rvgGroupId]!.description}` : 'None'}</DefRow>
               <DefRow label="Contract">{contract !== undefined ? `${contract.name}${holder !== undefined ? ` · ${holder}` : ''}` : 'Needs a Contract'}</DefRow>
-              <DefRow label="Paid by">{contract === undefined ? 'Payer: not billed yet' : payerText(p.payer)}</DefRow>
+              <DefRow label="Paid by">{asAtPaidByText(contract, p.payer, snapshot.patient, masters.parties)}</DefRow>
             </DefList>
           </div>
         )

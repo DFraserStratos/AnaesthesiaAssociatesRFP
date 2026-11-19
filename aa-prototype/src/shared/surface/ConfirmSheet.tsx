@@ -37,12 +37,19 @@ export interface ConfirmSheetProps {
   shot?: string
   /** On the primary button. */
   confirmShot?: string
+  /**
+   * Where focus opens: `cancel` (default) the secondary button, the safe one
+   * for a destructive confirm; `confirm` the primary, where the primary IS the
+   * safe choice (catch-up Phase 35's "Leave without saving?": Keep editing).
+   */
+  initialFocus?: 'cancel' | 'confirm'
   children?: ReactNode
 }
 
-export function ConfirmSheet({ open, onClose, title, description, confirmLabel, onConfirm, cancelLabel, onCancel, confirmDisabled, shot, confirmShot, children }: ConfirmSheetProps) {
+export function ConfirmSheet({ open, onClose, title, description, confirmLabel, onConfirm, cancelLabel, onCancel, confirmDisabled, shot, confirmShot, initialFocus = 'cancel', children }: ConfirmSheetProps) {
   const { Overlay } = useSurface()
   const safeRef = useRef<HTMLButtonElement>(null)
+  const primaryRef = useRef<HTMLButtonElement>(null)
   // A double click cannot run the confirm twice: after a run the primary
   // ignores clicks for a moment (a refusal shown in the sheet, even the same
   // one again, can then be retried).
@@ -60,13 +67,13 @@ export function ConfirmSheet({ open, onClose, title, description, confirmLabel, 
   }
 
   return (
-    <Overlay open={open} onClose={onClose} initialFocusRef={safeRef}>
+    <Overlay open={open} onClose={onClose} initialFocusRef={initialFocus === 'confirm' ? primaryRef : safeRef}>
       <div data-shot={shot} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <OverlayHeader title={title} description={description} />
         {children}
         <SheetActions
           primary={
-            <Button variant="primary" block onClick={confirm} disabled={confirmDisabled} shot={confirmShot}>
+            <Button buttonRef={primaryRef} variant="primary" block onClick={confirm} disabled={confirmDisabled} shot={confirmShot}>
               {confirmLabel}
             </Button>
           }

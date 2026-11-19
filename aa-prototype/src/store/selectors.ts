@@ -2285,14 +2285,15 @@ export function updateEmailRecipients(
   if (wantsOffice) {
     const surgeonId = list?.surgeonId
     const surgeon = surgeonId !== undefined && surgeonId !== '' ? state.masters.surgeons[surgeonId] : undefined
-    if (list === undefined || surgeon === undefined) {
+    if (list === undefined) {
       reasons.push('No surgeon on this List.')
     } else {
-      const found = officeAddressFor(state.masters, surgeon.id, list)
+      // The List's PDF sender counts even with no surgeon on the List (it is the office that sent it).
+      const found = officeAddressFor(state.masters, surgeon?.id ?? '', list)
       const all = found.to !== null ? [found.to, ...found.others] : []
       const picked = all.find((a) => choice.officeEmail !== undefined && a.email.toLowerCase() === choice.officeEmail.trim().toLowerCase()) ?? all[0]
       if (picked === undefined) {
-        reasons.push(`No contact email held for ${titledSurname(surgeon.name)}'s office.`)
+        reasons.push(surgeon === undefined ? 'No surgeon on this List.' : `No contact email held for ${titledSurname(surgeon.name)}'s office.`)
       } else {
         office = picked.email
         alternatives = all

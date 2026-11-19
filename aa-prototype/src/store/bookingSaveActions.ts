@@ -26,7 +26,11 @@
  */
 
 import { diffSnapshots, sameValue, snapshotBooking, type BookingSnapshot, type FieldChange } from '../domain/changeSets'
-import type { AuditEntry, BillingLine, Booking, ChangeSetId, Procedure } from '../domain/types'
+import type { AuditEntry, BillingLine, Booking, ChangeSetId, List, Procedure, ProcedurePayer } from '../domain/types'
+import { payerKey } from '../domain/billing/procedurePayer'
+import { contractChangeAsksRvgDetail } from '../domain/billing/completion'
+import { payerLockedByPrepayment } from './selectors'
+import { PAYER_LOCKED_BY_PREPAYMENT } from './payerActions'
 import { validateNhi } from '../domain/nhi'
 import { resolveSplit } from '../domain/billing/splitShare'
 import { isBlankText } from '../domain/billing/procedureStack'
@@ -43,6 +47,10 @@ export const SAVE_OFFICE_ONLY_MESSAGE = 'Only the AA office saves Booking change
 export const SAVE_NO_CHANGES_MESSAGE = 'There are no changes to save.'
 export const RECEIVED_TEXT_MESSAGE = 'The text as received cannot be changed.'
 export const SAVE_NHI_REQUIRED_MESSAGE = 'The NHI is required.'
+export const SAVE_ADD_COMPLETED_MESSAGE = 'This Booking is already marked complete. Amend it before adding a procedure.'
+export const SAVE_REMOVE_COMPLETED_MESSAGE = 'This Booking is already marked complete. Amend it before removing a procedure.'
+export const SAVE_RVG_DETAIL_COMPLETED_MESSAGE =
+  'This Booking was marked complete while you were editing, and the new Contract needs RVG detail. Amend the Booking, then change the Contract. Nothing was saved.'
 
 /** One field a save changed, as the `booking.save` header lists it. */
 export interface FieldRef {
@@ -123,7 +131,7 @@ export function saveBookingChanges(
   const rights = editRefusal(actor, found.list)
   if (rights !== null) return rights
 
-  const changes = diffSnapshots(draft.base, draft.next)
+  let changes = diffSnapshots(draft.base, draft.next)
   if (changes.length === 0) return refuse('noChanges', SAVE_NO_CHANGES_MESSAGE)
   if (changes.some((c) => c.kind === 'rewrite')) return refuse('receivedText', `${RECEIVED_TEXT_MESSAGE} Nothing was saved.`)
 
@@ -137,6 +145,15 @@ export function saveBookingChanges(
     idMap.set(c.entityId, allocated.id)
   }
   const realId = (id: string) => idMap.get(id) ?? id
+  // New other payers (and split "another person" shares) the draft named took
+  // `BP####` ids from the draft's counter: re-allocate them from the real one.
+  const payerIdMap = new Map<string, string>()
+  for (const id of draftPayerIds(draft.base, draft.next, state)) {
+    const allocated = allocateId(counters, 'billableParty')
+    counters = allocated.counters
+    payerIdMap.set(id, allocated.id)
+  }
+  if (payerIdMap.size > 0) changes = changes.map((c) => rewritePayerIdsIn(c, payerIdMap))
 
   // --- The candidate: the admin's changes applied onto the real state. ---
   let procedures = state.schedule.procedures
@@ -233,9 +250,108 @@ export function saveBookingChanges(
   return ok({ changeSetId: result.changeSetId!, changes: applied })
 }
 
+/**
+ * The `BP####` ids the draft allocated: other payers and split people named
+ * on the draft's Procedures that the Booking did not hold when the draft
+ * started and that are not parties in the master.
+ */
+function draftPayerIds(base: BookingSnapshot, next: BookingSnapshot, state: AppState): string[] {
+  const held = new Set<string>()
+  for (const p of Object.values(base.procedures)) for (const id of payerIdsOf(p)) held.add(id)
+  const out: string[] = []
+  for (const p of Object.values(next.procedures)) {
+    for (const id of payerIdsOf(p)) {
+      if (held.has(id) || state.masters.parties[id] !== undefined || out.includes(id)) continue
+      out.push(id)
+    }
+  }
+  return out
+}
+
+function payerIdsOf(p: Pick<Procedure, 'payer' | 'split'>): string[] {
+  const ids: string[] = []
+  if (p.payer?.kind === 'other') ids.push(p.payer.id)
+  for (const share of p.split?.shares ?? []) {
+    if (share.person !== undefined) ids.push(share.person.id)
+    if (share.party.kind === 'payer') ids.push(share.party.id)
+  }
+  return ids
+}
+
+function rewritePayer(payer: ProcedurePayer, map: Map<string, string>): ProcedurePayer {
+  return payer.kind === 'other' && map.has(payer.id) ? { ...payer, id: map.get(payer.id)! } : payer
+}
+
+function rewriteSplit(split: NonNullable<Procedure['split']>, map: Map<string, string>): NonNullable<Procedure['split']> {
+  return {
+    ...split,
+    shares: split.shares.map((share) => ({
+      ...share,
+      party: share.party.kind === 'payer' && map.has(share.party.id) ? { ...share.party, id: map.get(share.party.id)! } : share.party,
+      ...(share.person !== undefined ? { person: map.has(share.person.id) ? { ...share.person, id: map.get(share.person.id)! } : share.person } : {}),
+    })),
+  }
+}
+
+/** A change with every draft-allocated payer id swapped for its real one. */
+function rewritePayerIdsIn(c: FieldChange, map: Map<string, string>): FieldChange {
+  if (c.entityType !== 'procedure') return c
+  if (c.kind === 'create') {
+    const p = c.after as Procedure
+    return { ...c, after: { ...p, payer: rewritePayer(p.payer, map), ...(p.split !== undefined ? { split: rewriteSplit(p.split, map) } : {}) } }
+  }
+  if (c.field === 'payer' && c.after != null) return { ...c, after: rewritePayer(c.after as ProcedurePayer, map) }
+  if (c.field === 'split' && c.after != null) return { ...c, after: rewriteSplit(c.after as NonNullable<Procedure['split']>, map) }
+  return c
+}
+
+/** The guards one Procedure field must pass: an update's changed field, or each billing field a new Procedure holds. */
+function procedureFieldRefusal(
+  real: AppState,
+  candidate: AppState,
+  actor: Actor,
+  list: List,
+  procedureId: string,
+  field: string,
+  after: unknown,
+): Outcome<never> | null {
+  const procedure = candidate.schedule.procedures[procedureId]
+  const before = real.schedule.procedures[procedureId]
+  if (field === 'governingContractId' && typeof after === 'string') {
+    const refused = contractPickRefusal(candidate, actor, list, before, after)
+    if (refused !== null) return refused
+    // Completed meanwhile (the draft started on an open Booking): the action would re-open it for the
+    // new Contract's RVG detail; a save refuses instead, so nobody's completion is undone unseen.
+    const booking = procedure !== undefined ? candidate.schedule.bookings[procedure.bookingId] : undefined
+    const from = before?.governingContractId !== undefined ? candidate.masters.contracts[before.governingContractId] : undefined
+    if (booking?.completed === true && contractChangeAsksRvgDetail(from, candidate.masters.contracts[after])) {
+      return refuse('bookingCompleted', SAVE_RVG_DETAIL_COMPLETED_MESSAGE)
+    }
+  }
+  if (field === 'enteredPrice' && after !== undefined) {
+    const refused = priceChangeRefusal(candidate, actor, procedureId)
+    if (refused !== null) return refused
+  }
+  if (field === 'split' && procedure?.split !== undefined) {
+    const fee = procedureFeeNow(candidate, procedureId)
+    if (fee === undefined || fee.total <= 0) return refuse('noFee', 'This procedure has no fee to split yet.')
+    const resolved = resolveSplit(fee.total, procedure.split.shares)
+    if (!resolved.ok) return refuse('splitInvalid', resolved.reason)
+  }
+  if (field === 'invoiceDescription' && after !== undefined) {
+    const text = (after as { text?: string } | null)?.text
+    if (after !== null && (text === undefined || isBlankText(text))) return refuse('invoiceDescriptionBlank', INVOICE_DESCRIPTION_BLANK_MESSAGE)
+  }
+  return null
+}
+
+/** The billing fields a Procedure created in the draft is checked on, as an edit to each would be. */
+const CREATED_PROCEDURE_CHECKS = ['governingContractId', 'enteredPrice', 'split', 'invoiceDescription'] as const
+
 /** The first guard the candidate fails, or null. */
 function candidateRefusal(real: AppState, candidate: AppState, actor: Actor, bookingId: string, applied: FieldChange[]): Outcome<never> | null {
-  const list = candidate.schedule.lists[candidate.schedule.bookings[bookingId]!.listId]!
+  const candidateBooking = candidate.schedule.bookings[bookingId]!
+  const list = candidate.schedule.lists[candidateBooking.listId]!
   for (const c of applied) {
     if (c.entityType === 'patient' && c.field === 'nhi') {
       const nhi = typeof c.after === 'string' ? c.after : ''
@@ -244,25 +360,31 @@ function candidateRefusal(real: AppState, candidate: AppState, actor: Actor, boo
       if (!v.valid) return refuse('nhiInvalid', v.reason ?? 'That NHI is not valid.')
     }
     if (c.entityType !== 'procedure') continue
-    const procedure = candidate.schedule.procedures[c.entityId]
-    if (c.field === 'governingContractId' && typeof c.after === 'string') {
-      const refused = contractPickRefusal(candidate, actor, list, real.schedule.procedures[c.entityId], c.after)
-      if (refused !== null) return refused
+    if (c.kind === 'create') {
+      // The actions refuse adding to a completed Booking (one completed while the draft was open, say).
+      if (candidateBooking.completed) return refuse('bookingCompleted', SAVE_ADD_COMPLETED_MESSAGE)
+      const created = candidate.schedule.procedures[c.entityId]
+      if (created === undefined) continue
+      for (const field of CREATED_PROCEDURE_CHECKS) {
+        const refused = procedureFieldRefusal(real, candidate, actor, list, c.entityId, field, created[field])
+        if (refused !== null) return refused
+      }
+      continue
     }
-    if (c.field === 'enteredPrice') {
-      const refused = priceChangeRefusal(candidate, actor, c.entityId)
-      if (refused !== null) return refused
+    if (c.kind === 'remove') {
+      if (candidateBooking.completed) return refuse('bookingCompleted', SAVE_REMOVE_COMPLETED_MESSAGE)
+      if (payerLockedByPrepayment(real, c.entityId)) return refuse('prepaymentRaised', PAYER_LOCKED_BY_PREPAYMENT)
+      continue
     }
-    if (c.field === 'split' && procedure?.split !== undefined) {
-      const fee = procedureFeeNow(candidate, c.entityId)
-      if (fee === undefined || fee.total <= 0) return refuse('noFee', 'This procedure has no fee to split yet.')
-      const resolved = resolveSplit(fee.total, procedure.split.shares)
-      if (!resolved.ok) return refuse('splitInvalid', resolved.reason)
+    if (c.field === 'payer') {
+      // `setProcedurePayer`'s lock: a different payer (not new contact details) on a Procedure already invoiced for prepayment.
+      const before = real.schedule.procedures[c.entityId]?.payer
+      const after = c.after as ProcedurePayer | undefined
+      const changesPayer = before !== undefined && after !== undefined && payerKey(before, candidateBooking.patientId) !== payerKey(after, candidateBooking.patientId)
+      if (changesPayer && payerLockedByPrepayment(real, c.entityId)) return refuse('prepaymentRaised', PAYER_LOCKED_BY_PREPAYMENT)
     }
-    if (c.field === 'invoiceDescription') {
-      const text = (c.after as { text?: string } | null | undefined)?.text
-      if (c.after !== null && (text === undefined || isBlankText(text))) return refuse('invoiceDescriptionBlank', INVOICE_DESCRIPTION_BLANK_MESSAGE)
-    }
+    const refused = procedureFieldRefusal(real, candidate, actor, list, c.entityId, c.field, c.after)
+    if (refused !== null) return refused
   }
   const own = Object.values(candidate.schedule.procedures).filter((p) => p.bookingId === bookingId)
   if (own.length > 0 && own.filter((p) => p.isPrimary).length !== 1) return refuse('primary', 'A Booking needs exactly one primary procedure.')

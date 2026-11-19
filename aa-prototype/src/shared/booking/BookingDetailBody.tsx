@@ -25,7 +25,7 @@ import {
   useToday,
   type Actor,
 } from '../../store'
-import { Button, DefList, DefRow } from '../ui'
+import { Button, DefList, DefRow, TextArea, TextField } from '../ui'
 import { Notice } from '../ui/Notice'
 import { ResultLine } from '../ui/ResultLine'
 import { useSurface, type BookingTotalLine } from '../surface'
@@ -79,6 +79,9 @@ type SheetState =
   | 'funder'
   | { kind: 'removeProcedure'; procedureId: string; displayNumber: number }
   | { kind: 'makePrimary'; procedureId: string }
+
+/** A whole 24-hour time, as the draft's time field takes it. */
+const TIME_24H = /^([01]\d|2[0-3]):[0-5]\d$/
 
 function shiftTime(time: string, deltaMin: number): string {
   const base = time === '' ? 8 * 60 : Number(time.slice(0, 2)) * 60 + Number(time.slice(3))
@@ -158,6 +161,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
   }, [booking, bookingId, proceduresRecord])
 
   const [notes, setNotes] = useState(booking?.notes ?? '')
+  /** The draft's time as typed (24-hour HH:MM); written once it is a whole time. */
+  const [timeText, setTimeText] = useState(booking?.scheduledTime ?? '')
   const [error, setError] = useState<string | null>(null)
   const [sheet, setSheet] = useState<SheetState>('none')
   /** Validation renders only after a refused Mark-complete (the latch) —
@@ -179,6 +184,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
   useEffect(() => {
     setNotes(booking?.notes ?? '')
   }, [booking?.notes])
+  useEffect(() => {
+    setTimeText(booking?.scheduledTime ?? '')
+  }, [booking?.scheduledTime])
 
   useEffect(
     () => () => {
@@ -407,19 +415,22 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
 
   // In the Admin draft (catch-up Phase 35) the notes and time write to the draft as typed; Save changes saves them.
   const draftMode = useBookingStoreMode() === 'draft'
+  // Empty text is no notes (undefined), so typing then deleting leaves the draft clean.
+  const notesValue = (text: string): string | undefined => (text === '' ? undefined : text)
   function changeNotes(text: string) {
     setNotes(text)
-    if (draftMode) run(editBooking(bookingApi, actor, bookingId, { notes: text }))
+    if (draftMode && notesValue(text) !== booking!.notes) run(editBooking(bookingApi, actor, bookingId, { notes: notesValue(text) }))
   }
 
-  function setTime(time: string) {
-    if (/^\d{2}:\d{2}$/.test(time)) run(editBooking(bookingApi, actor, bookingId, { scheduledTime: time }))
+  function changeTime(text: string) {
+    setTimeText(text)
+    if (TIME_24H.test(text) && text !== booking!.scheduledTime) run(editBooking(bookingApi, actor, bookingId, { scheduledTime: text }))
   }
 
   function saveNotes() {
     if (draftMode) return
     if (notes === (booking!.notes ?? '')) return
-    run(editBooking(bookingApi, actor, bookingId, { notes }))
+    run(editBooking(bookingApi, actor, bookingId, { notes: notesValue(notes) }))
   }
 
   // "Add another procedure" (US-03.2.3): the new Procedure picks its own
@@ -655,15 +666,21 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
               canEdit && (
                 <>
                   {draftMode && (
-                    <input
-                      type="time"
-                      step={300}
-                      aria-label="Scheduled time"
-                      data-shot="booking-time-input"
-                      value={booking.scheduledTime ?? ''}
-                      onChange={(e) => setTime(e.target.value)}
-                      className="mono"
-                      style={{ height: 36, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, padding: '0 10px', fontSize: 14, background: neutral.bg, color: neutral.ink }}
+                    // 24-hour HH:MM as typed (the browser's time input showed 12-hour); the shared field's compact chrome.
+                    <TextField
+                      label="Scheduled time"
+                      hideLabel
+                      mono
+                      size="compact"
+                      width={84}
+                      inputMode="numeric"
+                      maxLength={5}
+                      placeholder="HH:MM"
+                      shot="booking-time-input"
+                      value={timeText}
+                      invalid={timeText !== '' && !TIME_24H.test(timeText)}
+                      onChange={changeTime}
+                      onBlur={() => setTimeText(booking.scheduledTime ?? '')}
                     />
                   )}
                   <Stepper label="5 minutes earlier" icon={<Minus size={16} aria-hidden />} onClick={() => stepTime(-5)} />
@@ -672,7 +689,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
               )
             }
           >
-            {booking.scheduledTime ?? 'Not set'}
+            {/* In the Admin draft the time input shows the value; the text beside it was clipped to "16:". */}
+            {canEdit && draftMode ? null : (booking.scheduledTime ?? 'Not set')}
           </DefRow>
         </DefList>
       </Section>
@@ -713,12 +731,12 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
       {/* Notes for the office */}
       <Section label="Notes for the office">
         {canEdit ? (
-          <textarea
+          <TextArea
+            ariaLabel="Notes for the office"
             value={notes}
-            onChange={(e) => changeNotes(e.target.value)}
+            onChange={changeNotes}
             onBlur={saveNotes}
             placeholder="Anything the office should know…"
-            style={{ width: '100%', boxSizing: 'border-box', minHeight: 72, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, padding: 12, fontFamily: 'inherit', fontSize: 15, resize: 'none', background: neutral.bg }}
           />
         ) : (
           <div style={{ fontSize: 14, color: booking.notes !== undefined ? neutral.ink : neutral.mist }}>{booking.notes ?? 'No notes.'}</div>

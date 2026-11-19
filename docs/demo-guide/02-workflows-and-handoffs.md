@@ -104,7 +104,7 @@ funding tags (SXAP, HNZ, ACC, in the order they are offered), and its private pa
 anaesthetist priority tiers.
 The system keeps no surgeons' rooms: a surgeon holds a practice name, one personal contact and one or
 more office contacts (practice manager, PA or shared inbox: name, email, phone, blanks allowed).
-The surgeon update email (Phase 35) will go to the first office contact with an email, with the others
+The update email to a surgeon goes to the List's sender when the List came from a rooms' PDF, otherwise to the first office contact with an email, with the others
 offered; never every contact and never the personal contact.
 Anaesthetists never see preferences or tiers, and an anaesthetist handing on their own List gets no
 warning.
@@ -225,11 +225,21 @@ A hospital, surgeon, patient or anaesthetist reports a change.
 8. She can add an internal day note for colleagues.
 9. She plans the day from the Draft Lists rail card and band, soonest first. The assign picker is
    grouped and tier-ordered, and every List block shows its booking count.
+10. Her changes on an Admin Booking are a draft until she selects **Save changes**: each save is one
+   change set, one grouped row in the Booking's History naming who saved it, and History can show the
+   Booking as it was at any point. With two office users, each save names its own.
+11. When a change matters to someone outside, she drafts an update email on demand from any Booking
+   (**Draft update email**), picking the changes to report from its saved history and starting from one
+   of AA's templates (Master data · Email templates). It goes to the List's sender, else the surgeon's
+   first office contact, the others offered. She sends it from her own mail client: every email is
+   drafted and sent by hand in the first release (OQ-82).
+12. She can add a Booking to any List she may edit, booked or not, with the description she was told
+   kept exactly as typed, and edit any field until the List is `AUTHORISED`.
 
 ### Handoff
 
-The updated List and Bookings are immediately visible in Dr Souter's mobile and web views while the List
-is `ACTIVE`.
+Once saved, the updated List and Bookings are immediately visible in Dr Souter's mobile and web views
+while the List is `ACTIVE`; a Booking she has open shows one line saying the office saved changes.
 
 ### Demo point
 
@@ -303,6 +313,12 @@ Notifications page), the same for the whole office; a single Booking posts there
 The office then assigns any Draft List returned to it. A notice, or an alert, stays active until an
 admin ticks it resolved, which hides it for the whole office; "Show resolved" brings it back with who
 resolved it and when. Nothing expires.
+
+Cover changes email the hospital contact: after an office reassignment or a Draft List assignment, the
+List drawer offers **Draft update email**; after an anaesthetist's own move to a colleague, the
+notification's **Draft cover-change email** on the Notifications page. Each opens a draft with the
+change ticked and the Change of anaesthetist template; the office sends it by hand (OQ-82). A List
+returned to the office gets its email once the Draft List is assigned.
 
 ### Requirement
 

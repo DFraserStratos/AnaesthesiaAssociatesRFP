@@ -101,6 +101,7 @@ Snapshot date: **24 July 2026**
 | Admin Intake (one home: Matching, PDF lists, Data quality, Validators; `/admin/intake`) | Ready | Catch-up Phase 34 |
 | Hospital file import and matching screen (Import hospital file, match, create or reject each row; nothing applied automatically, nothing synced) | Ready | Catch-up Phase 33; under Intake from Phase 34 |
 | The rooms' PDF lists through matching (upload with its sender, correct a row, Send to matching; a re-sent list's differences wait for approval) and where each List came from (its sender, "Replies go to") | Ready | Catch-up Phase 34 |
+| Explicit save on the Admin Booking (one change set a save, History grouped, View as at), Switch office user, the on-demand update email (drafted, opened in the office's own mail client, never sent by the system) and Master data · Email templates | Ready | Catch-up Phase 35 |
 | Demo control panel (the index) with S1 to S5 scenario jumps; demo actions on each screen under **Demo actions** in the top bar, and a **Demo** sheet on a handset | Ready | Phase 12; per-screen actions from catch-up Phase 14 |
 | HL7/FHIR simulator, message log and feed mapping (**Demo: Future scope, HL7 and FHIR**, `/demo/integrations`) | Ready, badged Future scope (a fired message lands on Admin Intake as a row; Christchurch Public not integrated today) | Phase 11; re-routed in catch-up Phase 33; its own demo surface from Phase 34 |
 | Mobile atmospheric gradient (visual only) | Upcoming | Phase 13, does not change any workflow |

@@ -1,7 +1,8 @@
 import { PersonaChip, Wordmark } from '../../../shared'
 import { brand, neutral, semantic, radius } from '../../../theme/tokens'
 import { RolesInfo } from '../RolesInfo'
-import { PERSONAS } from '../../../shell/appConfig'
+import { officePersona } from '../../../shell/appConfig'
+import { useAppStore } from '../../../store'
 import { DRAFT_LISTS } from '../../../shared/scheduleTerms'
 
 export type NavSection = 'day' | 'intake' | 'draftLists' | 'conflicts' | 'notifications' | 'review' | 'invoices' | 'billing' | 'ledger' | 'masters' | 'audit'
@@ -38,6 +39,7 @@ interface SideNavProps {
  * list count (2026-07-23 decision) rather than a hardcoded figure.
  */
 export function SideNav({ active, reviewBadge, billingBadge = 0, conflictBadge = 0, draftListBadge = 0, notificationBadge = 0, intakeBadge = 0, ledgerBadge = 0, onNavigate }: SideNavProps) {
+  const officeUser = useAppStore((s) => s.shell.officeUser)
   const items: NavItem[] = [
     { section: 'day', label: 'Day view' },
     // Intake (catch-up Phase 34): matching, PDF lists, data quality and validators. Its badge counts
@@ -101,7 +103,7 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, conflictBadge =
       <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <RolesInfo />
         <div style={{ padding: 8 }}>
-          <PersonaChip persona={PERSONAS.kirsty} />
+          <PersonaChip persona={officePersona(officeUser)} />
         </div>
       </div>
     </div>

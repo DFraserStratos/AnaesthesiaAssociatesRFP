@@ -3,8 +3,11 @@ import type { AuditEntry, EmailTemplate } from './types'
 import {
   EMAIL_PLACEHOLDERS,
   MAILTO_MAX_LENGTH,
+  NOTHING_LEFT_TO_EMAIL_REASON,
   NOTHING_TO_EMAIL_REASON,
+  NO_COVER_TO_REPORT_REASON,
   RETURNED_TO_OFFICE_REASON,
+  nothingToReportReason,
   buildUpdateEmail,
   cancelledOutNote,
   defaultKindFor,
@@ -150,6 +153,23 @@ describe('pickableChanges', () => {
     expect(defaultKindFor(fromList)).toBe('anaesthetistChange')
   })
 
+  it('two covers back to the first anaesthetist cancel out: nothing to report, never an empty name', () => {
+    n = 0
+    const audit = [
+      entry({ entityType: 'list', entityId: 'L1', action: 'list.reassign', before: { anaesthetistId: 'A1' }, after: { anaesthetistId: 'A2' } }),
+      entry({ entityType: 'list', entityId: 'L1', action: 'list.reassign', before: { anaesthetistId: 'A2' }, after: { anaesthetistId: 'A1' } }),
+    ]
+    const rows = pickableChanges(audit, { kind: 'list', listId: 'L1' }, LOOKUPS)
+    const net = netPicked(rows)
+    expect(net.lines).toEqual([])
+    const cover = SEED_EMAIL_TEMPLATES.find((t) => t.kind === 'anaesthetistChange')!
+    expect(nothingToReportReason(cover, net.lines)).toBe(NOTHING_LEFT_TO_EMAIL_REASON)
+    // A time change picked as well: the cover template would print an empty "previous" name, so it is refused.
+    const time: EmailLine = { key: 'time', label: 'Time', before: '09:00', after: '09:30' }
+    expect(nothingToReportReason(cover, [time])).toBe(NO_COVER_TO_REPORT_REASON)
+    expect(nothingToReportReason(SEED_EMAIL_TEMPLATES.find((t) => t.kind === 'bookingChange')!, [time])).toBeNull()
+  })
+
   it('a double reassignment picked together gives one line, first to last', () => {
     n = 0
     const audit = [
@@ -194,6 +214,31 @@ describe('pickableChanges', () => {
       '- Anaesthetist: was Dr Melanie Souter, now Dr Priya Sharma',
       "- Hospital: was St George's, now Forte Health",
     ])
+  })
+
+  it("a single Booking moved to a colleague is a move, not a cover: a Booking change to the surgeon's office naming the new anaesthetist", () => {
+    n = 0
+    const moved = entry({ entityType: 'booking', entityId: 'BK1', action: 'booking.movedToAnaesthetist', before: { listId: 'L1', anaesthetistId: 'A3' }, after: { listId: 'L2', anaesthetistId: 'A2' } })
+    const templates: Record<string, EmailTemplate> = Object.fromEntries(SEED_EMAIL_TEMPLATES.map((t) => [t.id, t]))
+    for (const audit of [[moved], [{ ...moved, changeSetId: 'CS0009', changeSetKind: 'move' as const }]]) {
+      const rows = pickableChanges(audit, { kind: 'booking', bookingId: 'BK1' }, LOOKUPS)
+      expect(rows[0]!.kind).toBe('move')
+      expect(rows[0]!.lines.map(emailLineText)).toContain('- Anaesthetist: was Dr Melanie Souter, now Dr Priya Sharma')
+      const kind = defaultKindFor(rows)
+      expect(kind).toBe('bookingChange')
+      expect(defaultTemplateFor(templates, kind)?.recipient).toBe('office')
+    }
+  })
+
+  it('never offers a drafted update email as a row', () => {
+    n = 0
+    const audit = [
+      entry({ entityType: 'booking', entityId: 'BK1', action: 'booking.update', before: { scheduledTime: '09:00' }, after: { scheduledTime: '09:30' } }),
+      entry({ entityType: 'booking', entityId: 'BK1', action: 'updateEmail.drafted', after: { pickedKeys: ['a:A0001'] } }),
+    ]
+    const rows = pickableChanges(audit, { kind: 'booking', bookingId: 'BK1' }, LOOKUPS)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.lines.map(emailLineText)).toEqual(['- Time: was 09:00, now 09:30'])
   })
 })
 
@@ -319,6 +364,19 @@ describe('buildUpdateEmail', () => {
     expect(one).toBeDefined()
     expect(one.body).toContain('This list was shortened to fit an email link. 1 more change is in the booking record.')
     expect(one.href.length).toBeLessThanOrEqual(MAILTO_MAX_LENGTH)
+  })
+
+  it('drops every change line if need be; a template too long on its own does not fit (and validateTemplate says so)', () => {
+    const huge: EmailLine = { key: 'patient:PT1:name', label: 'Patient name', before: 'A'.repeat(1500), after: 'B'.repeat(1500) }
+    const none = buildUpdateEmail({ template: TEMPLATE, context: CONTEXT, lines: [huge], to: 'office@x.example', signature: 'Kirsty W.' })
+    expect(none.omittedCount).toBe(1)
+    expect(none.fits).toBe(true)
+    expect(none.href.length).toBeLessThanOrEqual(MAILTO_MAX_LENGTH)
+    const longBody = `${'Kia ora, this is a very long template. '.repeat(80)}\n{changes}`
+    const tooLong = buildUpdateEmail({ template: { subject: 'S', body: longBody }, context: CONTEXT, lines: [huge], to: 'office@x.example', signature: '' })
+    expect(tooLong.fits).toBe(false)
+    expect(tooLong.href.length > MAILTO_MAX_LENGTH || tooLong.fits).toBe(true)
+    expect(validateTemplate({ name: 'Long', kind: 'bookingChange', subject: 'S', body: longBody })).toEqual([{ field: 'body', message: 'The body is too long to fit an email link. Shorten it.' }])
   })
 
   it("encodes &, ?, #, +, apostrophes, line breaks and macrons so they round-trip", () => {

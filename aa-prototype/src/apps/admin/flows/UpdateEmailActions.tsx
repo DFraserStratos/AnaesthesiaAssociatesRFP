@@ -41,7 +41,8 @@ export function BookingUpdateEmailButton({ bookingId, actor }: { bookingId: stri
   const reason = dirty ? SAVE_FIRST_REASON : newest === undefined ? NOTHING_SAVED_REASON : null
 
   return (
-    <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+    // The reason sits beside the button, not under it, so the header's actions row keeps its height.
+    <span style={{ display: 'inline-flex', flexDirection: 'row-reverse', alignItems: 'center', gap: 10 }}>
       <Button
         variant="outline"
         size="compact"
@@ -54,7 +55,7 @@ export function BookingUpdateEmailButton({ bookingId, actor }: { bookingId: stri
         Draft update email
       </Button>
       {reason !== null && (
-        <span data-shot="booking-update-email-reason" style={{ fontSize: 12, lineHeight: '16px', color: neutral.slate, textAlign: 'right', maxWidth: 240 }}>
+        <span data-shot="booking-update-email-reason" style={{ fontSize: 12, lineHeight: '16px', color: neutral.slate, textAlign: 'right', maxWidth: 200 }}>
           {reason}
         </span>
       )}
@@ -86,9 +87,12 @@ export function useListUpdateEmail(listId: string, actor: Actor, buttonStyle?: C
   const rows = usePickableChanges(subject)
   const cover = newestCover(rows)
   const [open, setOpen] = useState(false)
+  // The Booking's control (outline, the Mail icon). In a wrapping drawer footer it fills the row it lands
+  // on, so it never sits as a stray half-width button on a line of its own.
   const button =
     cover === undefined ? null : (
-      <Button variant="secondary" size="compact" style={buttonStyle} shot="drawer-update-email" onClick={() => setOpen(true)}>
+      <Button variant="outline" size="compact" style={{ ...buttonStyle, flex: '1 1 auto' }} shot="drawer-update-email" onClick={() => setOpen(true)}>
+        {MAIL_ICON}
         Draft update email
       </Button>
     )

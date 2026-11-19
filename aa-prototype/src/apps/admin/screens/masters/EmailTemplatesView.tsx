@@ -161,17 +161,18 @@ export function EmailTemplateSheet({ template, actor, onClose }: { template?: Em
               <div style={{ fontSize: 12.5, color: neutral.slate }}>Insert into the {target === 'subject' ? 'subject' : 'body'}:</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {EMAIL_PLACEHOLDERS.map((p) => (
-                  <button
+                  // The shared compact pill action (U5), the placeholder in mono.
+                  <Button
                     key={p}
-                    type="button"
+                    variant="pill"
+                    size="compact"
                     title={EMAIL_PLACEHOLDER_HINTS[p]}
-                    aria-label={`Insert {${p}}: ${EMAIL_PLACEHOLDER_HINTS[p]}`}
+                    ariaLabel={`Insert {${p}}: ${EMAIL_PLACEHOLDER_HINTS[p]}`}
                     onClick={() => insert(p)}
-                    className="mono"
-                    style={{ border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.ink, borderRadius: radius.xs, padding: '3px 8px', fontSize: 12, cursor: 'pointer' }}
+                    style={{ minHeight: 28, padding: '0 10px', fontSize: 12 }}
                   >
-                    {`{${p}}`}
-                  </button>
+                    <span className="mono">{`{${p}}`}</span>
+                  </Button>
                 ))}
               </div>
             </div>

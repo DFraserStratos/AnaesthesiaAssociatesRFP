@@ -33,7 +33,7 @@
         },
         {
           "state": "applied",
-          "caption": "Saved straight onto the Booking; its history names the office",
+          "caption": "Applied, then saved with Save changes; its history names the office",
           "steps": [
             {
               "click": "[data-shot=office-billing-setup-1] >> role=button[name=\"Change price\"]"
@@ -49,10 +49,16 @@
               "click": "[data-shot=pricing-sheet-save]"
             },
             {
+              "click": "[data-shot=booking-save]"
+            },
+            {
+              "wait": "[data-shot=booking-saved-strip]"
+            },
+            {
               "wait": 700
             },
             {
-              "click": "role=button[name=\"History\"]"
+              "click": "[data-shot=booking-history-button]"
             },
             {
               "wait": 800

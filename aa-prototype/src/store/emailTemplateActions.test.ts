@@ -113,6 +113,15 @@ describe('updateEmailRecipients (one surgeon-side address, D74)', () => {
     expect(r.reason).toBeUndefined()
   })
 
+  it("a rooms' PDF List with no surgeon on it still goes to the address the PDF came from", () => {
+    const api = store()
+    const listId = SEED_ORIGIN_LISTS.pdf
+    api.setState((s) => ({ schedule: { ...s.schedule, lists: { ...s.schedule.lists, [listId]: { ...s.schedule.lists[listId]!, surgeonId: '' } } } }))
+    const r = updateEmailRecipients(api.getState(), { kind: 'list', listId }, { sendTo: 'office' })
+    expect(r.to).toBe(SEED_PDF_LIST_SENDER)
+    expect(r.reason).toBeUndefined()
+  })
+
   it('no sender: the first office contact, the second offered, never both; choosing the second changes only To', () => {
     const api = store()
     const listId = SEED_ORIGIN_LISTS.hospital

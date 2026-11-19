@@ -33,6 +33,7 @@ import {
   defaultTemplateFor,
   emailLineText,
   netPicked,
+  nothingToReportReason,
   updateEmailContext,
   type BuiltUpdateEmail,
   type PickableChange,
@@ -187,7 +188,10 @@ function ComposerBody({ onClose, actor, subject, initialPickedKeys, defaultKind,
         })
       : null
 
-  const canOpen = pickedRows.length > 0 && built !== null && template !== undefined
+  const tooLong = built !== null && !built.fits
+  // Picked changes that cancel out (a List back with its first anaesthetist) leave nothing to report.
+  const nothingToReport = pickedRows.length > 0 && template !== undefined ? nothingToReportReason(template, netted.lines) : null
+  const canOpen = pickedRows.length > 0 && built !== null && template !== undefined && !tooLong && nothingToReport === null
 
   function toggle(key: string, on: boolean) {
     setPicked((s) => {
@@ -332,13 +336,23 @@ function ComposerBody({ onClose, actor, subject, initialPickedKeys, defaultKind,
       </div>
 
       <FormError message={error} />
-      {!canOpen && <div data-shot="update-email-nothing-picked" style={{ fontSize: 12.5, color: neutral.slate }}>Tick at least one change to email.</div>}
+      {pickedRows.length === 0 && <div data-shot="update-email-nothing-picked" style={{ fontSize: 12.5, color: neutral.slate }}>Tick at least one change to email.</div>}
+      {nothingToReport !== null && (
+        <div data-shot="update-email-nothing-to-report" style={{ fontSize: 12.5, color: neutral.slate }}>
+          {nothingToReport}
+        </div>
+      )}
+      {pickedRows.length > 0 && nothingToReport === null && tooLong && (
+        <div data-shot="update-email-too-long" style={{ fontSize: 12.5, color: neutral.slate }}>
+          This template is too long to fit an email link. Choose another template, or shorten this one in Master data.
+        </div>
+      )}
       <SheetActions
         primary={
           <Button
             variant="primary"
             block
-            href={built?.href}
+            href={canOpen ? built?.href : undefined}
             disabled={!canOpen}
             onClick={opened}
             shot="update-email-open"

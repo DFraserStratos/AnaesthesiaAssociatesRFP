@@ -69,7 +69,8 @@ export function HistoryTimeline({
 }) {
   const todayISO = useToday()
   const rvgGroups = useBookingStore((s) => s.masters.rvgGroups)
-  const names = useMemo(() => auditNamesFor({ rvgGroups }), [rvgGroups])
+  const contracts = useBookingStore((s) => s.masters.contracts)
+  const names = useMemo(() => auditNamesFor({ rvgGroups, contracts }), [rvgGroups, contracts])
   const rootRef = useRef<HTMLDivElement>(null)
   const [stacked, setStacked] = useState(false)
 
@@ -361,13 +362,21 @@ function historyRows(entries: readonly AuditEntry[], names: AuditNames): History
   return rows
 }
 
-const CHANGE_SET_TITLES: Record<ChangeSetKind, string> = {
+/** Change-set titles; a `listReassign` is titled by its List entry's action (a return to the office is no new anaesthetist). */
+const CHANGE_SET_TITLES: Record<Exclude<ChangeSetKind, 'listReassign'>, string> = {
   save: 'Saved',
   create: 'Booking created',
   cancel: 'Booking cancelled',
   move: 'Booking moved',
-  listReassign: 'New anaesthetist on the List',
   match: "Updated from the hospital's list",
+}
+
+function changeSetTitle(kind: ChangeSetKind | null, entries: readonly AuditEntry[]): string {
+  const first = entries[0]!
+  if (kind === 'save') return `Saved by ${first.who}`
+  if (kind === 'listReassign') return actionLabel((entries.find((e) => e.entityType === 'list') ?? first).action)
+  if (kind !== null) return CHANGE_SET_TITLES[kind]
+  return actionLabel(first.action)
 }
 
 /** A change set as one row: who saved it, how many fields, and each field's before and after beneath. */
@@ -393,7 +402,7 @@ function ChangeSetRow({
     .map((e) => ({ entry: e, changes: auditFieldChanges(e, names).filter((c) => c.key !== 'bookingId') }))
   const count = header !== undefined ? ((header.after as { fields?: unknown[] } | undefined)?.fields?.length ?? parts.length) : parts.length
   const first = group.entries[0]!
-  const title = group.kind === 'save' ? `Saved by ${first.who}` : group.kind !== null ? CHANGE_SET_TITLES[group.kind] : actionLabel(first.action)
+  const title = changeSetTitle(group.kind, group.entries)
   return (
     <div
       data-shot="history-change-set"

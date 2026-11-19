@@ -69,12 +69,17 @@ export function HistorySheet({ open, entityIds, entityLabels, title, onClose, co
       const listed = (a.after as { draftListIds?: unknown } | undefined)?.draftListIds
       return Array.isArray(listed) && listed.some((id) => ids.has(id as string))
     }
-    // The List's changes of anaesthetist while this Booking was on it (catch-up Phase 35): its listReassign change sets.
+    // The List's changes of anaesthetist while this Booking was on it (catch-up Phase 35): its listReassign
+    // change sets made after the Booking's own first entry (its creation, or its first seeded entry).
     const coverSets = new Set<string>()
     if (coverListId !== undefined) {
+      const born = audit.findIndex((a) => ids.has(a.entityId))
       const kinds = new Map<string, string>()
       for (const a of audit) if (a.changeSetId !== undefined && a.changeSetKind !== undefined) kinds.set(a.changeSetId, a.changeSetKind)
-      for (const a of audit) if (a.entityId === coverListId && a.changeSetId !== undefined && kinds.get(a.changeSetId) === 'listReassign') coverSets.add(a.changeSetId)
+      audit.forEach((a, i) => {
+        if (born !== -1 && i <= born) return
+        if (a.entityId === coverListId && a.changeSetId !== undefined && kinds.get(a.changeSetId) === 'listReassign') coverSets.add(a.changeSetId)
+      })
     }
     const cover = (a: (typeof audit)[number]) => a.changeSetId !== undefined && coverSets.has(a.changeSetId) && a.entityType === 'list'
     return sortAuditNewestFirst(audit.filter((a) => ids.has(a.entityId) || named(a) || cover(a)))

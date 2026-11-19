@@ -35,6 +35,22 @@ describe('the Booking change history', () => {
     expect(within(rows[1] as HTMLElement).getByText('2 changes')).toBeTruthy()
   })
 
+  it("shows only the List's cover change sets after the Booking was made, titled by what they did", () => {
+    const s = useAppStore.getState()
+    const listId = s.schedule.bookings[BOOKING]!.listId
+    const cover = (id: string, cs: string, action: string, atISO: string) =>
+      ({ id, who: 'Kirsty W.', role: 'office', source: 'office', atISO, entityType: 'list', entityId: listId, action, before: { anaesthetistId: 'A1' }, after: { anaesthetistId: null }, changeSetId: cs, changeSetKind: 'listReassign' }) as const
+    useAppStore.setState({
+      audit: [cover('AU-before', 'CS9001', 'list.reassign', '2026-07-01T08:00:00'), ...s.audit, cover('AU-after', 'CS9002', 'draftList.detach', '2026-07-21T09:00:00')],
+    })
+    const { container } = renderHistory()
+    const ids = [...container.querySelectorAll('[data-shot="history-change-set"]')].map((r) => r.getAttribute('data-change-set-id'))
+    expect(ids).toContain('CS9002')
+    expect(ids).not.toContain('CS9001')
+    expect(screen.queryByText('New anaesthetist on the List')).toBeNull()
+    expect(screen.getAllByText('List returned to the office as a Draft List').length).toBeGreaterThan(0)
+  })
+
   it("names the hospital's list and shows the procedure text it replaced", () => {
     const procedure = Object.values(useAppStore.getState().schedule.procedures).find((p) => p.bookingId === BOOKING && p.procedureText !== null)!
     const held = procedure.procedureText!.text

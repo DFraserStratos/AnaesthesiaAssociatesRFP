@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import { cancelBooking, editBooking, editProcedure } from './lifecycle'
 import { auditForEntity, proceduresForBooking } from './selectors'
-import { mutate, type Actor } from './mutate'
+import { mutate, withChangeSet, type Actor } from './mutate'
 import { SEED_MARKERS } from '../domain/seed'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -27,6 +27,61 @@ function marker(key: string): string {
 }
 
 const ELLISON_BOOKING = marker('pendingCaptureBooking')
+
+describe('change sets (catch-up Phase 35; DM-35)', () => {
+  const touch = (api: ReturnType<typeof createAppStore>, notes: string, options?: { changeSet: 'save' }) =>
+    mutate(
+      api,
+      OFFICE,
+      [
+        { entityType: 'booking', entityId: ELLISON_BOOKING, action: 'booking.update', after: { notes } },
+        { entityType: 'booking', entityId: ELLISON_BOOKING, action: 'booking.update', after: { scheduledTime: '09:00' } },
+      ],
+      (s) => ({ schedule: { ...s.schedule, bookings: { ...s.schedule.bookings, [ELLISON_BOOKING]: { ...s.schedule.bookings[ELLISON_BOOKING]!, notes } } } }),
+      options,
+    )
+
+  it('one changeSet call stamps one id on every entry and allocates exactly one', () => {
+    const api = createAppStore()
+    const counter = api.getState().counters['changeSet'] ?? 1
+    const before = api.getState().audit.length
+    const out = touch(api, 'grouped', { changeSet: 'save' })
+    const added = api.getState().audit.slice(before)
+    expect(added).toHaveLength(2)
+    expect(out.changeSetId).not.toBeNull()
+    expect(added.every((e) => e.changeSetId === out.changeSetId)).toBe(true)
+    expect(added[0]!.changeSetKind).toBe('save')
+    expect(added[1]!.changeSetKind).toBeUndefined()
+    expect(api.getState().counters['changeSet']).toBe(counter + 1)
+  })
+
+  it('a call without changeSet allocates none', () => {
+    const api = createAppStore()
+    const counter = api.getState().counters['changeSet']
+    const before = api.getState().audit.length
+    const out = touch(api, 'plain')
+    expect(out.changeSetId).toBeNull()
+    expect(api.getState().audit.slice(before).every((e) => e.changeSetId === undefined)).toBe(true)
+    expect(api.getState().counters['changeSet']).toBe(counter)
+  })
+
+  it('withChangeSet joins several mutates into one change set (and allocates none when nothing is written)', () => {
+    const api = createAppStore()
+    const counter = api.getState().counters['changeSet'] ?? 1
+    const before = api.getState().audit.length
+    withChangeSet(api, 'move', () => {
+      touch(api, 'one')
+      touch(api, 'two')
+    })
+    const added = api.getState().audit.slice(before)
+    expect(added).toHaveLength(4)
+    expect(new Set(added.map((e) => e.changeSetId)).size).toBe(1)
+    expect(added[0]!.changeSetKind).toBe('move')
+    expect(api.getState().counters['changeSet']).toBe(counter + 1)
+    withChangeSet(api, 'move', () => undefined)
+    expect(api.getState().counters['changeSet']).toBe(counter + 1)
+  })
+})
 
 describe('the wrapper stamps lastModifiedBy/At in lockstep with the audit entry', () => {
   it('on booking edits', () => {

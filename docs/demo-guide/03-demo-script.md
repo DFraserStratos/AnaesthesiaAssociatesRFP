@@ -100,7 +100,9 @@ view respectively.
 | Surgeon profile | `/admin/masters/surgeons/<surgeonId>` (Ms A. Reid: `S-REID`) |
 | Surgeon with a PA | `/admin/masters/surgeons/S-DALGETY` (Dr H. Dalgety, Avonhead ENT: Bev, PA) |
 | Anaesthetist record | `/admin/masters/anaesthetists/<anaesthetistId>` (Dr Priya Sharma: `41267`) |
-| Audit | `/admin/audit` |
+| Notifications (the shared pool) | `/admin/notifications` |
+| Email templates | `/admin/masters?view=emailTemplates` |
+| Audit | `/admin/audit` (a change set's id filters it to that save) |
 
 The demo surfaces are `/demo/control`, `/demo/xero`, `/demo/integrations` and `/demo/data`.
 `/demo/integrations` is **Demo: Future scope, HL7 and FHIR** in the app switcher: the simulator, with
@@ -180,11 +182,12 @@ not-yet-captured cases, so the hospital's booking arrives into a working List ra
     open it.
   - The step rail asks **Where does the invoice go?** Choose Payment type **Patient**, then
     **Standard: No contract · RVG** (pinned first).
-  - Leave the RVG code empty.
+  - Leave the RVG code empty, then **Save changes** in the save bar.
 - **Say:** "The hospital does not choose the Contract; the office does. The payment type is always
   asked, and for a patient paying on the RVG the code is the anaesthetist's to pick when she captures."
-- **Expected:** her Procedure reads **No contract · RVG** with the RVG code still to choose, and she
-  leaves the Needs an invoice destination card. Her invoice description starts as the hospital's text
+- **Expected:** her Procedure reads **No contract · RVG** with the RVG code still to choose; once saved
+  (the green strip reads "Saved · ... · Kirsty W." with its change-set id) she leaves the Needs an
+  invoice destination card. Her invoice description starts as the hospital's text
   (the Contract's invoice description replaces it where filled in).
 
 ### Beat 1b (optional): a booking with no NHI
@@ -422,11 +425,18 @@ already seeded.
   **Procedure description** (what the caller said, kept exactly as typed, **Told by: Phone**). The saved
   Booking's Procedure card shows that wording with "Phone". The session now
   holds a Private List with the new Booking, and the anaesthetist's web and mobile views and the
-  availability finders show it as booked.
+  availability finders show it as booked. A List that already has Bookings offers the same **Add
+  Booking** in its drawer (below).
 - **Worth pointing at:** "Where does the invoice go, then the Contract. Each step only offers Contracts
   that fit this List, and typing finds one among hundreds. No contract · RVG and No contract · Fixed price,
   first in every list, cover anything no price list has yet. The anaesthetist sees the same steps and can finish or change it until the list is authorised."
 - **Optional one-liner:** "Assign List does the same without a patient, for a session booked ahead."
+- **Optional, the office adds to a booked List:** open any List that already has Bookings (Dr Souter's
+  **Wed 22 Jul AM**, Christchurch Eye Surgery) and select **Add Booking** in its drawer. The same form
+  opens, with the **Procedure description** ("The procedure as it was told or written to you, kept
+  exactly as typed.") and **Told by** Phone or Email. Say: "The office can add a Booking to any List it
+  may edit, and keeps the description exactly as it was told." The drawer offers it on every List
+  until the List is authorised.
 - **Optional office aside, "the hospital's wording arrives":** **Admin Day → Tue 21** → Dr Souter's PM
   List → **Wiremu Tane** (the rooms' "lap chole +/- IOC", illustrative) → **Demo actions → Hospital
   description arrives** (defaults to "lap chole") → **Run**. The Procedure card now shows the hospital's
@@ -450,8 +460,15 @@ already seeded.
     closed show under **Not available**, read only: the office never assigns onto an unavailable
     session.
   - Select **Assign Draft List**.
+  - Close the drawer and open the List on **Dr Sharma's AM** row. Select **Draft update email** in its
+    drawer: the **Draft cover-change email** opens with the change ticked ("Anaesthetist: was Dr James
+    Rutherford, now Dr Priya Sharma"), template **Change of anaesthetist**, **Send to Hospital**
+    (bookings@chcheyesurgery.example) and the preview. **Open in mail client** opens it in your own
+    mail; or **Close**.
 - **Say:** "Sickness is never left as a flag. The List comes straight back to the office and is
   handed on from one screen."
+- **Say:** "Vanessa's main need: the hospital hears about a cover change without her typing it. It is
+  on demand, so nobody is nagged after every change."
 - **Say:** "The List moves with its Bookings and history to Dr Sharma; nothing is re-keyed, and nothing
   about billing is recalculated. It is different from moving one patient Booking, which Beat 3d
   shows."
@@ -461,7 +478,12 @@ already seeded.
 - **Expected:** a brief **Draft List assigned** moment; the List on Sharma's AM row, ACTIVE; Rutherford's
   AM still Unavailable; no conflict. **Conflicts** shows only the Southern Cross closure rows (Wed 22,
   Mon 26 Oct and Fri 13 Nov). (Rutherford's List carries no Bookings in the seed; Beat 3a shows a
-  sickness on a List with Bookings.)
+  sickness on a List with Bookings.) The cover-change email's preview reads "Dr James Rutherford is no
+  longer the anaesthetist for the Wed 22 Jul AM List at Christchurch Eye Surgery. Dr Priya Sharma will
+  be the anaesthetist.", signed by the office user, with "Opens in your mail client. The system does not
+  send it." The picker also lists the earlier **Returned to the office** row, not emailable ("No new
+  anaesthetist yet. Assign the Draft List first."). Nothing is sent, and skipping it loses nothing: the
+  button stays on the List drawer.
 - **Optional pointer:** to show the office recording a sickness itself, open any booked session on the
   Day view, **Change status → Unavailable → Continue**: the sheet asks **Where does this List go?**
   (Return to the office, or a colleague in tier order), then what the session becomes. Or open **Dr
@@ -510,6 +532,10 @@ already seeded.
   - Switch to the **Admin Web App → Day view → Mon 27 Jul**: the List sits on Dr Ropata's row, and
     the rail's **Notifications** card (under Draft Lists) reads "Dr Souter moved Mon 27 Jul PM (St
     George's, Ms G. Lim) to Dr Ropata". Open it: the drawer says "Moved here by Dr Souter".
+  - The office side: open **Notifications** in the side nav (`/admin/notifications`). Her move's row
+    carries **Draft cover-change email**: it opens with the move ticked ("Anaesthetist: was Dr Melanie
+    Souter, now Dr Hannah Ropata"), template **Change of anaesthetist**, to St George's
+    (bookings@stgeorges.example). Close it: drafting never resolves or moves the notice.
   - Optional: on **mobile Availability**, pick **Thu 23**, select **Change Thu 23 Jul**, then the
     PM session's **Change → Unavailable → Save**. The app asks where its List goes: **Return to the
     office** or **Hand on to a colleague**, then what her session becomes (**Unavailable**, already
@@ -529,9 +555,16 @@ already seeded.
   If she marks a booked session off, the app asks where its List goes, so no List is left with
   someone who will not be there. Every move lands in the office's shared notifications, which are
   not to-dos: nothing needs approving. A notice stays until someone in the office ticks it."
+- **Say:** "The office sees every move in the shared pool and sends the hospital the cover email from
+  there."
+- **If asked why it is not sent automatically:** AA chose manual for the first release, so the office
+  keeps a check while trust builds; automatic sending is a later phase (OQ-82, US-02.3.5).
 - **Expected:** the done state ("Moved to Dr Ropata. Dr Ropata and the office can see it now."), the
-  List on Dr Ropata's row, the notification on the rail and on **Notifications**, nothing new on the
-  To-do card, and no preference, tier or warning anywhere on the anaesthetist's side. (Dr Ropata has
+  List on Dr Ropata's row, the notification on the rail and on **Notifications** (the email button is
+  on the Notifications page, not the rail card), nothing new on the To-do card, and no preference,
+  tier or warning anywhere on the anaesthetist's side. A List returned to the office instead offers no
+  email on its row ("Assign this Draft List first. Its cover email is drafted from the List drawer
+  after."). (Dr Ropata has
   a not-preferred pairing with Ms Lim in the office's private data: that is the point. The office's
   own Reassign of the same List would still warn.)
 
@@ -649,7 +682,7 @@ already seeded.
   $265.50)**. Hemi Walker (10:15, No contract · Fixed price, no amount) reads **Needs a price** and **Not
   marked completed**, and **Authorise for billing** stays disabled, naming her ("Hemi Walker: Needs a
   price: No contract · Fixed price has no price of its own.", with an **Open** link): the office types
-  a price and completes her Booking before authorising. Rosalind Kerr (11:00)
+  a price and completes her Booking (then **Save changes**) before authorising. Rosalind Kerr (11:00)
   carries a Merivale fixed price linked to Ms Lim, so it reads **Contract not offered on this List**.
   While any change waits, the action bar offers **Approve all N Contract changes**; authorising
   approves any still waiting, and the confirm says how many. A Disabled Contract raises a flag, never a block: a Procedure not yet authorised and dated on or after the day its Contract was disabled reads **Contract disabled on <day>**; earlier-dated ones are not flagged, and **Make active** clears it. In this List Margaret Ellery's cataract, on Christchurch Eye Surgery 2025 rate (disabled Fri 10 Jul by Kirsty W.), reads **Contract disabled on Fri 10 Jul**. On the
@@ -674,7 +707,7 @@ already seeded.
   two Procedures with Erik Halvorsen (Son) typed in separately on each, so authorising raises two
   invoices, one per payer: "payers are never matched on name or email". The child warning ("Under 18")
   shows on each of her Procedures, with one to-do row per Booking. Kevin Doherty's **Email or postal
-  address needed** clears once a postal address is typed on his Paid by. On Admin Day,
+  address needed** clears once a postal address is typed on his Paid by and saved (**Save changes**). On Admin Day,
   **Demo actions → Raise sample warnings** brings a child payer warning back on Grace Park's Booking
   (Fri 24: two Procedures, both paid by Hana Park, Mother), and **Clear sample warnings** puts Hana
   Park back as the payer.
@@ -786,7 +819,8 @@ them.
   Jul → Alan Prentice**). The Billing card's Paid by line reads "nib $132.50, Alan Prentice $79.50 (the rest)"; press **Split** on its right (the phone has the same Split): the Paid by sheet opens with the split alone
   (**Change**, beside the payer's name, opens it with who pays). The split section shows the fee, $212.00, and each party
   with a $ or % share or **Takes the rest**, every amount live, and "$212.00 of $212.00". Type nib's
-  share as **62.5%** instead of $132.50: the same split. Any user can split, including the anaesthetist
+  share as **62.5%** instead of $132.50: the same split. On the Admin Booking, the sheet's change waits
+  in the save bar until **Save changes**. Any user can split, including the anaesthetist
   on her own Booking (phone and web) until the List is authorised, and there is no split setting on
   the Contract. A share can also go to **Another person** (a name and an email or postal address).
   (Saving nib at 60% instead gives $127.20 and $84.80, $146.28 and $97.52 after GST, so
@@ -805,7 +839,8 @@ pre-applied from his age (74): 7 modifier units, recorded once on the primary an
 remainder to the primary. The Booking total is **$636.00** (15, 4 and 5 units at $26.50). Select **Make
 primary** on the umbilical hernia and confirm ("Make this the primary procedure?"): it moves to the
 top, takes base 4 from its own RVG group and the 3 modifier units, and the total reads **$583.00**.
-Make the cholecystectomy primary again and **$636.00** returns. Authorising the List gives one invoice,
+On the Admin Booking the swap waits in the save bar ("4 unsaved changes") until **Save changes**, or
+**Discard** puts it back. Make the cholecystectomy primary again and **$636.00** returns. Authorising the List gives one invoice,
 to the patient. For the mixed Booking, open Mr Doyle's bariatric Booking
 (`/admin/day/2026-07-14/bookings/BK0028`): a **$2,800** fixed-price primary ("Primary · fixed
 price"), its hernia repair billed on its own time units ($61), and the note "No base units billed
@@ -1009,7 +1044,7 @@ actions** on the screen named in its beat.
     with nothing deducted. Beat 7 authorises her List and follows the money.
   - Optional asides: on a Booking with no prepaid Contract, **Patient › Prepaid**, the **No contract**
     heading at the top of the list, **No contract · Fixed price**, type $2,000 ("just make it two
-    grand"): it awaits approval at $2,000.00 plus GST ($2,300.00). **Demo actions → Add prepaid
+    grand"), then **Save changes**: it awaits approval at $2,000.00 plus GST ($2,300.00). **Demo actions → Add prepaid
     Booking → Two payers** (Admin Day or Booking detail) adds Fiona Gray with Rhinoplasty $1,200.00 to
     the patient and Blepharoplasty, upper lids $900.00 to Ian Gray: two rows on the strip, one invoice
     per payer, and approving one locks only that payer. Switching **Prepayment approval** off asks to
@@ -1207,7 +1242,7 @@ governance the evaluators will probe. **Time:** 5 to 6 minutes.
 
 **Stage it:** control panel, Scenario jumps, **S5 · Compliance tour → Jump → Confirm jump**. This
 resets to rich booking-to-clinical histories on every Booking, adds three live edits to David Chen's
-trail, and authorises Dr Whitaker's Fri 17 Jul List, which locks the Health NZ agreed rate and the
+trail (among them the office's grouped save: the note and the time, one change set), and authorises Dr Whitaker's Fri 17 Jul List, which locks the Health NZ agreed rate and the
 price in force on 17 Jul onto each Procedure and raises its five invoices from that record
 (AA-2026-0002 to AA-2026-0006, Hemi Walker's first at $264.50). Use **Go to Admin app** and **Go to
 Xero sim**.
@@ -1217,15 +1252,38 @@ Xero sim**.
 - **Click:**
   - Go to **Admin Day view → Tue 21 Jul → Dr Souter PM**.
   - Open **David Chen → History**.
-  - Pause on the audit trail.
+  - Pause on the audit trail, then on the office's grouped save, **Saved by Kirsty W. · 2 changes**.
+  - Close History. **Demo actions → Switch office user → Run** ("The office is now Sam T."). On the
+    Booking, select **5 minutes later** beside the time and type a new note under **Notes for the
+    office**: the save bar reads "2 unsaved changes · Notes · Time" (**Draft update email** waits:
+    "Save your changes first. The email uses saved changes."). Select **Save changes**.
+  - Open **History** again: **Saved by Sam T.** sits above **Saved by Kirsty W.** Select **View as
+    at** on Kirsty's save.
+  - Close it, then select **Draft update email**. Sam's save is ticked; tick Kirsty's save too.
+    Point at the template (**Booking change**), the recipient (the surgeon's office) and the preview.
+    Close (or **Open in mail client**). Afterwards **Switch office user** back to Kirsty W.
 - **Say:** "Every Booking and Procedure change, including automated ones, writes an append-only audit entry
   with who, role, source and before/after. The captured inputs stay reproducible, not just the final
   total."
+- **Say:** "The office saves explicitly, and each save is one change set. With several people in the
+  office, every change names who made it. We can show the Booking as it was at any point."
+- **Say:** "AA asked for a button they use when it matters, picking the changes to report, starting
+  from their own templates."
 - **Expected:** a multi-entry trail from booking and Procedure setup through capture and completion,
   followed by the staged anaesthetist and office edits: an ASA III modifier claimed with its explanation,
-  the office note, then the claim removed, so Chen's fee ends where it started. Every row shows who, role,
-  source and before/after, and the manual time-unit adjustment retains overridden provenance. Any other Booking
-  can also be opened to demonstrate its seeded history without staging first.
+  the office's save as one row (**Saved by Kirsty W.**, 2 changes, CS0001: Scheduled time 15:10 → 15:25
+  and the note), then the claim removed, so Chen's fee ends where it started, beside the per-field
+  entries. Every row shows who, role, source and before/after, and the manual time-unit adjustment
+  retains overridden provenance. Sam's save shows the strip "Saved · 2 changes · 08:00 · Sam T. CS0002"
+  and a second grouped row; View as at on Kirsty's save shows the Booking at 15:25 with her note. The
+  email nets both saves into one line, "Time: was 15:10, now 15:30" (the note never goes in an email),
+  to admin@avonsidesurgical.example, signed Sam T., subject "Booking update: David Chen, Tue 21 Jul
+  PM", with "Opens in your mail client. The system does not send it." Any other Booking can also be
+  opened to demonstrate its seeded history without staging first.
+- **Presenter note:** use **View as at** on an office save, not the top rows: the seeded capture rows
+  are stamped 16:00 and 16:02, after the demo clock's 08:00 edits, so their as-at view leaves the
+  morning's saves out. The top bar keeps showing Kirsty W. after **Switch office user**; the save
+  strip, History and the email name the user who saved.
 - **Worth pointing at:** a price change reads **Price changed**, with the price before and after and no
   reason, because none is ever asked. Paula Westerman's Face lift on Dr Souter's Mon 10 Aug PM List
   (`/admin/day/2026-08-10/bookings/BK0187`) shows **Price changed · Kirsty W. · office · Price not set
@@ -1327,8 +1385,11 @@ modifiers are pre-applied and nothing else is pre-filled (settled, Ben, 27 Octob
 settled (OQ-95 answered, D29); modifiers stack with no limit; AA's own modifiers (Vanessa's list) are not yet
 loaded; which Procedure is primary (Vanessa: the most expensive; Greg: the first in the list; the
 build keeps the first until someone changes it); base units when the primary is on a fixed price (OQ-132:
-the build bills none); and the concurrency model (single-user by design, audited
-last-write-wins, with the multi-source reality shown via the audit trail and live integration updates).
+the build bills none); and concurrency: the office saves explicitly and every save is one change set;
+handling two sources editing at once is Future Work with the automated integrations (US-02.5.6), and
+the prototype applies each save in order, audited. Settled: the update email is drafted on demand and
+sent by hand from the office's own mail client in the first release, automatic sending later (OQ-82,
+US-02.3.5).
 
 ---
 
@@ -1380,6 +1441,14 @@ payment and payout; the Web Payments history keeps the settled invoice visible.
 - Imported the same sample twice: nothing new is added. Applied the wrong row: fix the Booking by
   hand; the row's decision and any wording it added stay in the history.
 - If **Finish now** was stamped too early, reset and advance the clock before reopening the Booking.
+- An Admin Booking edit gets stuck or goes wrong before saving: **Discard** in the save bar. Leaving
+  with unsaved changes asks first (**Keep editing** or **Discard and leave**); a demo **Reset** discards
+  the draft ("This Booking was reset. Your unsaved changes were discarded.").
+- Skipped an update email? Nothing is lost: **Draft update email** is always on the Booking, and on the
+  List drawer after a cover change. Nothing is sent automatically: AA chose manual for the first
+  release (OQ-82).
+- **Switch office user** is disabled while the Booking has unsaved changes ("Save or discard this
+  Booking's changes first"); run it again to switch back to Kirsty W.
 - A stray refresh is no longer a problem: it returns you to the same screen. If you have clicked
   somewhere unexpected, the browser back button retraces your steps, or paste the beat's address from
   **Direct URLs** above.

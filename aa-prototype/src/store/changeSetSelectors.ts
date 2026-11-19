@@ -13,6 +13,8 @@ export interface ChangeSetSummary {
   atISO: string
   /** The fields the save changed (a save's header lists them); the entry count otherwise. */
   count: number
+  /** The header's field list (`booking.save`'s `after.fields`): the screens count it by label (`changeCount`). */
+  fields: { entityType: 'booking' | 'procedure' | 'billingLine' | 'patient'; entityId: string; field: string }[]
   /** The audit index of the change set's first entry (for "newer than" checks). */
   index: number
 }
@@ -30,6 +32,7 @@ export function lastChangeSetFor(state: Pick<AppState, 'audit'>, bookingId: stri
       who: e.who,
       atISO: e.atISO,
       count: Array.isArray(fields) ? fields.length : 0,
+      fields: Array.isArray(fields) ? (fields as ChangeSetSummary['fields']) : [],
       index: i,
     }
   }

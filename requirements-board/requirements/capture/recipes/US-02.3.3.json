@@ -1,6 +1,181 @@
 {
   "id": "US-02.3.3",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 35 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "pick-changes",
+      "app": "admin",
+      "caption": "Draft update email: the office picks saved changes from the Booking's history and drafts the email to send by hand",
+      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]"
+            },
+            {
+              "click": "[data-shot=booking-save]"
+            },
+            {
+              "wait": "[data-shot=booking-saved-strip]"
+            },
+            {
+              "click": "[data-shot=booking-patient] >> role=button[name=\"Edit\"]"
+            },
+            {
+              "wait": "[data-shot=patient-nhi-field]"
+            },
+            {
+              "fill": "[role=dialog] input >> nth=0",
+              "value": "Margaret J. Ellison"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Apply\"]"
+            },
+            {
+              "wait": "[data-shot=booking-save-bar]"
+            },
+            {
+              "click": "[data-shot=booking-save]"
+            },
+            {
+              "wait": "[data-shot=booking-saved-strip]"
+            },
+            {
+              "click": "[data-shot=booking-update-email]"
+            },
+            {
+              "wait": "[data-shot=update-email-composer]"
+            },
+            {
+              "click": "[data-shot=update-email-picker] li >> nth=1 >> input[type=checkbox]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=update-email-composer]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "email-preview",
+      "app": "admin",
+      "caption": "The preview: To the surgeon's office, the subject, the template's wording and the picked changes; it opens in the office's own mail client, and the system does not send it",
+      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]"
+            },
+            {
+              "click": "[data-shot=booking-save]"
+            },
+            {
+              "wait": "[data-shot=booking-saved-strip]"
+            },
+            {
+              "click": "[data-shot=booking-patient] >> role=button[name=\"Edit\"]"
+            },
+            {
+              "wait": "[data-shot=patient-nhi-field]"
+            },
+            {
+              "fill": "[role=dialog] input >> nth=0",
+              "value": "Margaret J. Ellison"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Apply\"]"
+            },
+            {
+              "wait": "[data-shot=booking-save-bar]"
+            },
+            {
+              "click": "[data-shot=booking-save]"
+            },
+            {
+              "wait": "[data-shot=booking-saved-strip]"
+            },
+            {
+              "click": "[data-shot=booking-update-email]"
+            },
+            {
+              "wait": "[data-shot=update-email-composer]"
+            },
+            {
+              "click": "[data-shot=update-email-picker] li >> nth=1 >> input[type=checkbox]"
+            },
+            {
+              "wait": "[data-shot=update-email-preview]"
+            },
+            {
+              "scroll": "[data-shot=update-email-preview]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=update-email-preview]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cover-change-email",
+      "app": "admin",
+      "caption": "A colleague hands a List on: the office drafts the cover-change email to the hospital from the notice",
+      "start": "/admin/notifications",
+      "states": [
+        {
+          "state": "notice",
+          "caption": "The pool's notice of a List handed on to a colleague carries Draft cover-change email",
+          "steps": [
+            {
+              "trigger": "colleague-moves-list-to-office",
+              "choice": "busy"
+            },
+            {
+              "wait": "[data-shot=pool-cover-email]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-notification-row]:has([data-shot=pool-cover-email]) >> nth=0"
+          ]
+        },
+        {
+          "state": "composer",
+          "caption": "The composer opens with the change of anaesthetist ticked and To the hospital's contact",
+          "steps": [
+            {
+              "trigger": "colleague-moves-list-to-office",
+              "choice": "busy"
+            },
+            {
+              "wait": "[data-shot=pool-cover-email]"
+            },
+            {
+              "click": "[data-shot=pool-cover-email] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=update-email-composer]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=update-email-composer]"
+          ]
+        }
+      ]
+    }
+  ]
 }

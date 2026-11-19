@@ -1,7 +1,9 @@
 /**
  * The Booking detail's draft discipline (catch-up Phase 35; DM-35), proved
- * from the source: in `shared/booking`, `shared/capture` and `shared/flows`
- * every read goes through `useBookingStore` and every drafted write through
+ * from the source: in `shared/booking`, `shared/capture`, `shared/flows` and
+ * the other shared folders the Booking detail mounts (`warnings`,
+ * `contracts`, `status`, `audit`, `surface`), every read goes through
+ * `useBookingStore` and every drafted write through
  * `useBookingApi()`, so the Admin Booking detail's edits land in its draft.
  * `useAppStore` (the real store) appears only in the files below, each for a
  * reason: a command that acts on the saved Booking at once (and waits while
@@ -12,7 +14,18 @@
 import { describe, expect, it } from 'vitest'
 
 const SOURCES = import.meta.glob(
-  ['../**/*.{ts,tsx}', '../../capture/**/*.{ts,tsx}', '../../flows/**/*.{ts,tsx}', '!../**/*.test.{ts,tsx}', '!../../capture/**/*.test.{ts,tsx}', '!../../flows/**/*.test.{ts,tsx}'],
+  [
+    '../**/*.{ts,tsx}',
+    '../../capture/**/*.{ts,tsx}',
+    '../../flows/**/*.{ts,tsx}',
+    '../../warnings/**/*.{ts,tsx}',
+    '../../contracts/**/*.{ts,tsx}',
+    '../../status/**/*.{ts,tsx}',
+    '../../audit/**/*.{ts,tsx}',
+    '../../surface/**/*.{ts,tsx}',
+    '!../**/*.test.{ts,tsx}',
+    '!../../*/**/*.test.{ts,tsx}',
+  ],
   { query: '?raw', import: 'default', eager: true },
 ) as Record<string, string>
 
@@ -38,6 +51,10 @@ const REAL_STORE_ALLOWED: Record<string, string> = {
   'flows/SubmitListSheet.tsx': 'List-level command submitList',
   'flows/MoveListSheet.tsx': 'List-level moves (moveListToOffice, pushListToSlot, markUnavailableAndMoveList)',
   'flows/ManualBookingForm.tsx': "List-level flow: createBooking adds a new Booking to a List (AddBookingFlow), never mounted in a Booking's draft",
+  'warnings/useBookingWarnings.ts': 'warnings read the saved Booking, so they update on Save, not while drafting (a recorded Phase 35 deviation)',
+  'warnings/WarningsPanel.tsx': "command clearWarning: clearing a warning writes the real store at once and stays enabled while the draft is dirty (the phase doc's rule)",
+  'contracts/ContractSelect.tsx': "reads the Contract and party masters only (never a Booking), and is not mounted on the Booking detail (the catalogue's store example)",
+  'status/useSlotStatuses.ts': "the schedule grid's slot statuses (StatusChip, StatusLegend), read from the saved schedule; writes nothing",
 }
 
 /** Writes that belong in the draft: never handed the real store. */
@@ -77,6 +94,9 @@ describe('draftDiscipline', () => {
     expect(paths).toContain('capture/TimesCard.tsx')
     expect(paths).toContain('flows/PaidBySheet.tsx')
     expect(paths).toContain('booking/draft/BookingDraftProvider.tsx')
+    expect(paths).toContain('warnings/WarningsPanel.tsx')
+    expect(paths).toContain('contracts/railParts.tsx')
+    expect(paths).toContain('status/useSlotStatuses.ts')
     expect(paths.some((p) => p.includes('.test.'))).toBe(false)
   })
 

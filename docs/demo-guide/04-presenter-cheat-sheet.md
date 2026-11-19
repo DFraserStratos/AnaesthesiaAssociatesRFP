@@ -438,6 +438,31 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 
 - Whole-day operational control
 - Phone/manual changes
+- **Explicit save on the Admin Booking** (catch-up Phase 35): every edit (Contract, step rail, price,
+  payer, Split, Make primary, time, notes, NHI on Edit patient) is a draft until **Save changes**. A
+  sticky amber bar counts and names them ("2 unsaved changes · Notes · Time", **Discard** beside it);
+  sheets read **Apply** inside the draft. Leaving asks "Leave without saving?" (**Keep editing** or
+  **Discard and leave**). A save is one change set: the green strip "Saved · 2 changes · 08:00 ·
+  Kirsty W." with its id (CS0001), one grouped **Saved by** row in History, and **View as at** on any
+  History row shows the Booking as it was then. The text as received is never edited. Warnings and the
+  prepayment panel follow on Save, not while drafting. When another user's save lands on a Booking
+  that is open (the office's save on the anaesthetist's phone, or the other office user's), one line
+  says so ("Kirsty W. saved changes to this Booking: Time. View history")
+- **The update email, on demand** (catch-up Phase 35): **Draft update email** on every Admin Booking
+  (it waits while there are unsaved changes: "Save your changes first. The email uses saved
+  changes."), on the List drawer once the List has a change of anaesthetist, and **Draft cover-change
+  email** on a Notifications row for an anaesthetist's own move to a colleague (a single-Booking move
+  she told the office about offers Draft update email). The composer lists the saved changes to pick
+  (several picked net to one line, "Time: was 15:10, now 15:30"; notes never go in), a template, Send
+  to (Surgeon's office, Hospital or Both) and a preview with its length (of 2,000 characters). It goes
+  to the List's sender when the List came from a rooms' PDF, else the surgeon's first office contact
+  with an email, the others offered; a cover change goes to the hospital. **Open in mail client**: the
+  system never sends it, and no prompt follows a save (OQ-82)
+- **Master data · Email templates** (`/admin/masters?view=emailTemplates`): Change of anaesthetist
+  (Hospital), Cancellation, Correction of an error and Booking change (Surgeon's office); Add
+  template, Edit, Retire and History; a placeholder the system does not know is refused on Save
+- **Add Booking** on any List the office may edit, booked or not, until it is authorised: the same
+  form with the **Procedure description** (kept exactly as typed, Told by Phone or Email)
 - Move one Booking
 - Reassign a whole List
 - Draft Lists: Lists with no anaesthetist yet, soonest first; assign one from a grouped, tier-ordered picker
@@ -504,6 +529,9 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - "Xero is the source for the mobile balance view."
 - "The prototype is connected to live hospital, Xero, NHI, email or OCR services."
 - "This workflow is final" when the RFP explicitly leaves it open.
+- "The system emails the hospital (or the surgeon's office) automatically." (The office drafts it on
+  demand and sends it from its own mail client, OQ-82.)
+- "The app replaces the emailed lists." (The rooms' emailed Lists stay; OQ-124 is open.)
 
 ## Prototype readiness
 
@@ -540,6 +568,9 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   RVG, a no-NHI row waiting as a stub, Mr Okafor's PDF list keeping its sender, then capture A3 live
 - The HL7/FHIR simulator, message log (retry and dead-letter) and feed mapping are built but Future
   scope, on their own demo surface
+- Explicit save on the Admin Booking (one change set a save, History grouped, View as at), Switch
+  office user, the on-demand update email and its composer, and Master data · Email templates
+  (catch-up Phase 35)
 - The demo control panel with S1 to S5 scenario jumps (Phase 12), now the index of the per-screen
   Demo actions (catch-up Phase 14)
 
@@ -594,6 +625,15 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   last message (dedupe)** run only there, never from a Booking or Mobile Lists. Christchurch Public is
   not integrated today. Say so plainly: in scope today is the office importing hospital files and the
   rooms' PDF lists into Intake; a fired message only lands on Admin Intake as a row.
+- **Switch office user** (catch-up Phase 35; **Demo actions** on the Admin Day view and Booking
+  detail): stands in for each office user signing in as themselves. The Admin app then acts as the
+  other named user, Kirsty W. or Sam T. ("The office is now Sam T."), so two users' saves show named in
+  one Booking's History. Disabled while the Booking has unsaved changes. The top bar keeps reading
+  Kirsty W.; the save strip, History and the email's sign-off name who saved.
+- On a handset Booking, **Office edits this Booking** (badged "Office stand-in", PWA only): Kirsty W.
+  saves the time 30 minutes later as one change set ("The office moved this Booking to 15:40."), and
+  the phone shows "Kirsty W. saved changes to this Booking: Time. View history". In the framed build
+  make the change on the Admin Booking and save it.
 - **Play the office** (PWA More tab) is off by default and badged "Simulated office" while on. It
   auto-authorises every submitted List and is a scaffold, not the proposed flow: use **Office
   authorises this List** instead.
@@ -743,10 +783,12 @@ Say:
 
 ### 9. Concurrency
 
-- Several sources can change a Booking.
-- The RFP asks how concurrent updates should be handled.
-- The prototype is single-user and uses audited last-write-wins behaviour; production concurrency is
-  a discovery topic.
+- Several sources can change a Booking: the office, the anaesthetist and, later, the hospital feeds.
+- The office saves explicitly, and every save is one change set, named for who made it (two named
+  office users show in one History with **Switch office user**).
+- Handling two sources editing at once is Future Work in the catalogue, with the automated
+  integrations (US-02.5.6). The prototype applies each save in order, each audited, and tells an open
+  screen when someone else has saved.
 
 ### 10. Modifier values
 
@@ -797,6 +839,13 @@ Say:
 - Superseded (OQ-128): a surgeon belonging to more than one room, as there are no rooms.
 - Answered for the build (OQ-129): the HPI CPN is filled in by admin staff; a surgeon can be saved and
   booked without one ("No HPI CPN yet"). Open (OQ-143): the default is that it never becomes required.
+
+## Recoveries: the save and the email
+
+- If a draft gets stuck, **Discard** in the save bar (a demo **Reset** also discards it).
+- The email is always on the Booking and the List drawer: nothing is lost by skipping it.
+- Nothing is sent automatically: AA chose manual for the first release, so the office keeps a check
+  while trust builds; automatic sending is a later phase (OQ-82, US-02.3.5).
 
 ## Likely evaluator questions
 
@@ -880,7 +929,9 @@ readings, to confirm with AA.
 
 The List's sender when the List came from a rooms' PDF (the address it arrived from, shown as "Replies
 go to" on the List and its Bookings); otherwise the surgeon's first office contact with an email, the
-others offered. A re-sent PDF from a newer address, once applied, makes that address the sender, the
+others offered. A cover change goes to the hospital. The office drafts the email when it matters, from
+the Booking, the List drawer or the pool notification, picks the changes and a template, and sends it
+from its own mail client: nothing is sent automatically in the first release (OQ-82). A re-sent PDF from a newer address, once applied, makes that address the sender, the
 earlier one kept in History.
 
 ### "Is the demo using real patient or integration data?"

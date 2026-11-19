@@ -32,14 +32,22 @@ interface Follow {
   draftAuditLength: number
 }
 
-/** True when the real audit no longer continues the one the draft was copied from (a demo Reset). */
-function auditReplaced(audit: readonly AuditEntry[], follow: Follow): boolean {
+/**
+ * True when the real audit no longer continues the one the draft was copied
+ * from (a Reset in another tab): it is shorter, or the entry the draft last
+ * saw differs by id, time or who. Never by object identity: another tab's
+ * write arrives through cross-tab sync, which rehydrates the whole store from
+ * JSON, so the same entries come back as new objects, and any write in a
+ * second tab (opening it is enough) would otherwise discard this draft. A
+ * Reset in this tab is `onDomainReset`'s.
+ */
+export function auditReplaced(audit: readonly AuditEntry[], follow: Pick<Follow, 'auditLength' | 'auditTail'>): boolean {
   if (audit.length < follow.auditLength) return true
   const tail = follow.auditTail
   if (tail === undefined) return false
-  // By reference: `mutate` appends (`[...audit, entry]`), so the entries the draft saw keep their
-  // identity; a Reset rebuilds the seed's audit as new objects with the same ids and stamps.
-  return audit[follow.auditLength - 1] !== tail
+  const now = audit[follow.auditLength - 1]
+  if (now === tail) return false
+  return now === undefined || now.id !== tail.id || now.atISO !== tail.atISO || now.who !== tail.who
 }
 
 export function BookingDraftProvider({ bookingId, children, real = useAppStore }: { bookingId: string; children: ReactNode; real?: BoundAppStore }) {
@@ -132,7 +140,9 @@ export function BookingDraftProvider({ bookingId, children, real = useAppStore }
       if (copied === undefined || next === undefined) return { ok: false as const, code: 'notFound', message: 'Booking not found.' }
       const draftAudit = draftApi.getState().audit.slice(follow.current.draftAuditLength)
       const out = saveBookingChanges(real, actor, bookingId, { base: copied, next, draftAudit })
-      if (out.ok) copyFromReal()
+      // Saved, or nothing left to save (the real Booking already holds every drafted value): start clean
+      // from the real store again, so the bar never sticks on changes that are not there.
+      if (out.ok || out.code === 'noChanges') copyFromReal()
       return out
     },
     [draftApi, real, bookingId, copyFromReal],

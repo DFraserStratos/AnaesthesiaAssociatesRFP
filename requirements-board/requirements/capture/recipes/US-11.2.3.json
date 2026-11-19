@@ -53,6 +53,12 @@
               "click": "[data-shot=paid-by-save]"
             },
             {
+              "click": "[data-shot=booking-save]"
+            },
+            {
+              "wait": "[data-shot=booking-saved-strip]"
+            },
+            {
               "wait": 400
             },
             {

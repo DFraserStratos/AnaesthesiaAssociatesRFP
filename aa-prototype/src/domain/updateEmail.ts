@@ -335,15 +335,23 @@ const CHANGE_SET_KIND_TO_PICKABLE: Record<string, PickableKind> = {
   match: 'match',
 }
 
+/**
+ * The row's kind. Only a change of the List's anaesthetist is a cover; a
+ * single Booking moved to a colleague (`booking.movedToAnaesthetist`, a `move`
+ * change set) is a move, which defaults to a Booking change to the surgeon's
+ * office, its line naming the new anaesthetist.
+ */
 function kindOfEntries(entries: readonly AuditEntry[], changeSetKind: string | null): PickableKind {
   if (entries.some((e) => e.entityType === 'list' && LIST_OWNER_ACTIONS.has(e.action))) return 'cover'
-  if (entries.some((e) => e.action === 'booking.movedToAnaesthetist')) return 'cover'
   if (changeSetKind !== null) return CHANGE_SET_KIND_TO_PICKABLE[changeSetKind] ?? 'save'
   if (entries.some((e) => e.action === 'booking.cancel')) return 'cancel'
   if (entries.some((e) => e.action === 'booking.create')) return 'create'
-  if (entries.some((e) => e.action === 'booking.reassign')) return 'move'
+  if (entries.some((e) => BOOKING_MOVE_ACTIONS.has(e.action))) return 'move'
   return 'edit'
 }
+
+/** Entries that are never a row of their own: a drafted update email is a record of the picker, not a change to pick. */
+const NOT_PICKABLE_ACTIONS: ReadonlySet<string> = new Set(['updateEmail.drafted'])
 
 /** Ungrouped entries that are one gesture: same actor, same minute (`coalesceAudit`'s rule, across fields). */
 function sameGesture(a: AuditEntry, b: AuditEntry): boolean {
@@ -403,7 +411,7 @@ function subjectEntries(audit: readonly AuditEntry[], subject: UpdateEmailSubjec
       if (e.changeSetId !== undefined) sets.add(e.changeSetId)
     }
   })
-  return audit.filter((e) => picked.has(e) || (e.changeSetId !== undefined && sets.has(e.changeSetId)))
+  return audit.filter((e) => !NOT_PICKABLE_ACTIONS.has(e.action) && (picked.has(e) || (e.changeSetId !== undefined && sets.has(e.changeSetId))))
 }
 
 /**
@@ -551,6 +559,8 @@ export function validateTemplate(template: Pick<EmailTemplate, 'name' | 'kind' |
   }
   if (template.body.trim() === '') {
     issues.push({ field: 'body', message: 'The body cannot be empty.' })
+  } else if (templateLinkLength(template) > MAILTO_MAX_LENGTH - TEMPLATE_LINK_RESERVE) {
+    issues.push({ field: 'body', message: 'The body is too long to fit an email link. Shorten it.' })
   } else {
     const used = new Set(placeholdersIn(template.body))
     const coverWords = template.kind === 'anaesthetistChange' && used.has('previousAnaesthetist') && used.has('anaesthetist')
@@ -564,6 +574,34 @@ export function validateTemplate(template: Pick<EmailTemplate, 'name' | 'kind' |
     }
   }
   return issues
+}
+
+/**
+ * Room a template leaves in the link for the To address, the filled-in
+ * placeholders and at least one change line.
+ */
+export const TEMPLATE_LINK_RESERVE = 400
+
+/** The encoded link a template gives with every placeholder empty and no To. */
+function templateLinkLength(template: Pick<EmailTemplate, 'subject' | 'body'>): number {
+  return mailtoHref('', renderTemplate(template.subject, {}), crlf(renderTemplate(template.body, {}))).length
+}
+
+export const NOTHING_LEFT_TO_EMAIL_REASON = 'The picked changes cancel out. There is nothing to email.'
+export const NO_COVER_TO_REPORT_REASON = 'The picked changes of anaesthetist cancel out, so there is no change of anaesthetist to report. Choose another template.'
+
+/**
+ * Why the netted pick cannot be emailed with this template, or null: every
+ * picked change cancelled out, or the template names the anaesthetist before
+ * the change (`{previousAnaesthetist}`) when the picked changes of
+ * anaesthetist cancel out (back to the first one), which would print an empty
+ * name.
+ */
+export function nothingToReportReason(template: Pick<EmailTemplate, 'subject' | 'body'>, lines: readonly EmailLine[]): string | null {
+  if (lines.length === 0) return NOTHING_LEFT_TO_EMAIL_REASON
+  const namesPrevious = [...placeholdersIn(template.subject), ...placeholdersIn(template.body)].includes('previousAnaesthetist')
+  if (namesPrevious && !lines.some((l) => l.key === 'anaesthetist')) return NO_COVER_TO_REPORT_REASON
+  return null
 }
 
 /** Fill a template's placeholders. An unknown or missing one fills in empty, never as braces. */
@@ -624,6 +662,11 @@ export interface BuiltUpdateEmail {
   omittedCount: number
   /** The whole encoded link's length (`href.length`). */
   length: number
+  /**
+   * False when the link is still over `MAILTO_MAX_LENGTH` with every change
+   * line left out (a very long template): the composer cannot open it.
+   */
+  fits: boolean
 }
 
 /** "This list was shortened to fit an email link. 3 more changes are in the booking record." */
@@ -655,8 +698,9 @@ export function mailtoHref(to: string, subject: string, body: string): string {
 /**
  * Render the update email and its link. The change lines go where the
  * template says `{changes}`; past `MAILTO_MAX_LENGTH` they are dropped from
- * the end (the first is always kept) and the shortened note is added. The
- * template's greeting, context and sign-off are always kept.
+ * the end, down to none if need be, and the shortened note is added. The
+ * template's greeting, context and sign-off are always kept, so a template
+ * too long on its own gives `fits: false`.
  */
 export function buildUpdateEmail(input: {
   template: Pick<EmailTemplate, 'subject' | 'body'>
@@ -689,10 +733,11 @@ export function buildUpdateEmail(input: {
   }
   let kept = lines.length
   let built = render(kept)
-  while (built.href.length > MAILTO_MAX_LENGTH && kept > 1) {
+  while (built.href.length > MAILTO_MAX_LENGTH && kept > 0) {
     kept -= 1
     built = render(kept)
   }
   const omittedCount = lines.length - kept
-  return { to, subject, body: built.body, href: built.href, shortened: omittedCount > 0, omittedCount, length: built.href.length }
+  const fits = built.href.length <= MAILTO_MAX_LENGTH
+  return { to, subject, body: built.body, href: built.href, shortened: omittedCount > 0, omittedCount, length: built.href.length, fits }
 }
