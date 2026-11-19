@@ -6,6 +6,7 @@ import { WebApp } from './apps/web/WebApp'
 import { AdminApp } from './apps/admin/AdminApp'
 import {
   WebAccountsRoute,
+  WebAccountsOverdueRedirect,
   WebAvailabilityRoute,
   WebMyAvailabilityRoute,
   WebBookingDetailRoute,
@@ -99,7 +100,9 @@ const routeTree = (
             <Route path="availability" element={<WebAvailabilityRoute />} />
             <Route path="availability/mine" element={<WebMyAvailabilityRoute />} />
             <Route path="accounts">
-              <Route index element={<Navigate to="overdue" replace />} />
+              <Route index element={<Navigate to="outstanding" replace />} />
+              {/* The Overdue tab became Outstanding (catch-up Phase 38, D8): old links and guide URLs land there. */}
+              <Route path="overdue" element={<WebAccountsOverdueRedirect />} />
               <Route path=":subTab" element={<WebAccountsRoute />} />
             </Route>
             <Route path="profile" element={<WebProfileRoute />} />
@@ -174,6 +177,7 @@ const routeTree = (
               <Route index element={<DemoXero />} />
               <Route path=":accRecId" element={<DemoXero />} />
             </Route>
+            <Route path="bank" element={<DemoXero />} />
           </Route>
           {/* Future scope: HL7 and FHIR (catch-up Phase 34): the simulator, its message log and feed mapping. */}
           <Route path="demo/integrations">

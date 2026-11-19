@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { neutral, semantic } from '../../../../theme/tokens'
+import type { PillTone } from '../../../../shared/ui'
 import {
   bookingCountsByList,
   draftListsForDate,
@@ -66,10 +66,10 @@ export function useSeedIds() {
   return { todayISO, submittedListId, draftListId, conflictedListId, activeSlotId, emptySlotId, invoiceId, fixedContractId, holidayId }
 }
 
-/** One stage chip of the billing monitor's pipeline (`StageChip` in BillingMonitorScreen.tsx, not exported). */
-export const STAGE_TONE: Record<'done' | 'partial' | 'failed' | 'pending', { background: string; color: string }> = {
-  done: { background: semantic.success.tint, color: semantic.success.onTint },
-  partial: { background: semantic.warning.tint, color: semantic.warning.onTint },
-  failed: { background: semantic.error.tint, color: semantic.error.onTint },
-  pending: { background: neutral.sunken, color: neutral.slate },
+/** One stage of the billing monitor's pipeline as a shared Pill tone (`StageChip` in BillingMonitorScreen.tsx, not exported; catch-up Phase 37). */
+export const STAGE_TONE: Record<'done' | 'partial' | 'failed' | 'pending', PillTone> = {
+  done: 'success',
+  partial: 'warning',
+  failed: 'error',
+  pending: 'neutral',
 }

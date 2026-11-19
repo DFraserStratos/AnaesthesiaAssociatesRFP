@@ -6,16 +6,88 @@
     {
       "name": "outstanding",
       "app": "web",
-      "caption": "Flat list of outstanding invoices, no rollup",
-      "start": "/web/accounts/overdue",
-      "states": [ { "steps": [], "highlight": [] } ]
+      "caption": "Flat list of unpaid payables, oldest first, no ageing",
+      "start": "/web/accounts/outstanding",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=web-accounts-outstanding]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "outstanding-row",
+      "app": "web",
+      "caption": "One row per unpaid payable, kept until AA pays you",
+      "start": "/web/accounts/outstanding",
+      "states": [
+        {
+          "state": "paid-in",
+          "caption": "The payment is in: the row stays as \"Paid in, due to you\" until AA pays you",
+          "steps": [
+            {
+              "goto": "/admin/review/L-34821-2026-07-20-AM"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/web/accounts/outstanding"
+            },
+            {
+              "wait": "tr[data-testid=outstanding-row-AA-2026-0002]"
+            },
+            {
+              "trigger": "web-payment-full"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "tr[data-testid=outstanding-row-AA-2026-0002]"
+          ]
+        },
+        {
+          "state": "opens-booking",
+          "caption": "Each line opens its Booking",
+          "steps": [
+            {
+              "click": "[data-shot=web-accounts-outstanding] tbody tr[data-testid^=outstanding-row-] >> nth=0 >> td:nth-child(3)"
+            },
+            {
+              "wait": 900
+            }
+          ],
+          "highlight": []
+        }
+      ]
     },
     {
       "name": "outstanding",
       "app": "mobile",
-      "caption": "Outstanding to you, one row per invoice",
+      "caption": "Outstanding to you, one row per unpaid invoice",
       "start": "/mobile/balances",
-      "states": [ { "steps": [], "highlight": [] } ]
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=balances-total]",
+            "[data-shot=balances-outstanding]"
+          ]
+        }
+      ]
     }
   ]
 }

@@ -59,9 +59,28 @@ import {
   resendRefusal,
   openAccRecs,
   processMessage,
-  receivePayment,
   runArchiveJob,
   runReconciliationPoll,
+  deliverPaymentWebhook,
+  setXeroOutage,
+  xeroAvailable,
+  payBillsInXero,
+  xeroBillPayable,
+  voidAccRecInXero,
+  bulkRemittanceRefusal,
+  receiveBulkRemittance,
+  voidInXeroRefusal,
+  amendAccRecInXero,
+  amendInXeroRefusal,
+  XERO_DEMO_AMENDMENT,
+  XERO_PAYABLES_ACTOR,
+  XERO_STAFF_ACTOR,
+  pairByAccRec,
+  releasedAndPaidFor,
+  viewerOfPair,
+  transferForPair,
+  type PollResult,
+  type XeroBill,
   simulateSignInAttempts,
   submitList,
   listInSlot,
@@ -149,6 +168,8 @@ import { regenerateInvoiceFromLock, regenerateRefusal, regenerateSummary } from 
 import type { DemoTrigger, DemoTriggerChoice, DemoTriggerCtx, DemoTriggerResult } from './types'
 import { injectUnmatchedReceipt, injectUnmatchedRefusal, officeRunsPayables, officeRunsPayablesRefusal, UNMATCHED_RECEIPT_DEMO } from '../../store/ledgerDemo'
 import { sessionText } from '../../domain/outOfHours'
+import { isBookingPair } from '../../domain/billing/ledger'
+import { APP_CONFIG } from '../../shell/appConfig'
 import { newerInvoiceDescription } from '../../domain/billing/procedureStack'
 import {
   defaultHospitalDescription,
@@ -166,7 +187,9 @@ import {
 const BILLING_MONITOR = ['/admin/billing'] as const
 /** The Billing monitor's index heading (the Control Panel adds its Run payables note under it). */
 export const BILLING_MONITOR_SCREEN = 'Admin · Billing monitor'
-const XERO_SIM = ['/demo/xero', '/demo/xero/invoices', '/demo/xero/invoices/:accRecId'] as const
+const XERO_SIM = ['/demo/xero', '/demo/xero/invoices', '/demo/xero/invoices/:accRecId', '/demo/xero/bank'] as const
+/** The Xero simulator's Bank reconciliation tab (catch-up Phase 37; US-10.2.4). */
+const XERO_BANK = '/demo/xero/bank'
 /** The Admin Ledger, whole and one anaesthetist (catch-up Phase 36). */
 const LEDGER = ['/admin/ledger', '/admin/ledger/anaesthetists/:anaesthetistId'] as const
 
@@ -300,6 +323,7 @@ export function paymentDisabledReason(state: AppState, accRecId: string | undefi
   if (accRecId === undefined) return 'Not handed off to Xero'
   const accRec = state.xero.accRecs[accRecId]
   if (accRec === undefined) return 'Not handed off to Xero'
+  if (accRec.status === 'voided') return 'Voided in Xero'
   if (roundToCents(accRec.amountDue - accRec.amountReceived) <= 0) return 'Fully paid'
   if (!openAccRecs(state).some((c) => c.accRecId === accRecId)) return 'Seeded history invoice'
   return null
@@ -313,9 +337,10 @@ export function paymentDisabledReason(state: AppState, accRecId: string | undefi
 function nextWebhookN(state: AppState, accRecId: string): number {
   const prefix = `WEBHOOK-${accRecId}-`
   let used = 0
-  for (const r of Object.values(state.billing.receipts)) {
-    if (!r.idempotencyKey.startsWith(prefix)) continue
-    const n = Number(r.idempotencyKey.slice(prefix.length))
+  // Xero's own payments too (catch-up Phase 37): an outage's landed payment has no receipt yet.
+  for (const key of [...Object.values(state.billing.receipts), ...Object.values(state.xero.payments)].map((r) => r.idempotencyKey)) {
+    if (!key.startsWith(prefix)) continue
+    const n = Number(key.slice(prefix.length))
     if (Number.isInteger(n) && n > used) used = n
   }
   return Math.max(used, useDemoTriggerMemory.getState().webhookCounter) + 1
@@ -323,24 +348,72 @@ function nextWebhookN(state: AppState, accRecId: string): number {
 
 /** Simulate a Xero payment webhook, full or half, exactly as the Control Panel's "Record payment" did. */
 export function sendPaymentWebhook(api: AppStoreApi, accRecId: string | undefined, mode: 'full' | 'partial'): DemoTriggerResult {
+  return paymentWebhook(api, accRecId, mode).result
+}
+
+/** The webhook body, and whether the engine received the money into the ledger (not queued by an outage, not a no-op). */
+function paymentWebhook(api: AppStoreApi, accRecId: string | undefined, mode: 'full' | 'partial'): { result: DemoTriggerResult; received: boolean } {
   const state = api.getState()
   const reason = paymentDisabledReason(state, accRecId)
   const active = openAccRecs(state).find((c) => c.accRecId === accRecId)
-  if (reason !== null || active === undefined) return { ok: false, message: reason ?? 'Not handed off to Xero' }
+  if (reason !== null || active === undefined) return { result: { ok: false, message: reason ?? 'Not handed off to Xero' }, received: false }
   const partial = roundToCents(active.remaining / 2)
   const amount = mode === 'partial' && partial > 0 ? partial : active.remaining
   const n = nextWebhookN(state, active.accRecId)
   const key = `WEBHOOK-${active.accRecId}-${n}`
-  const res = receivePayment(api, { accRecId: active.accRecId, amount, idempotencyKey: key, source: 'webhook' })
+  // Through the outage-aware webhook (catch-up Phase 37): during an outage the money lands in Xero and the engine's sync queues.
+  const res = deliverPaymentWebhook(api, { accRecId: active.accRecId, amount, idempotencyKey: key })
   useDemoTriggerMemory.getState().rememberWebhook({ accRecId: active.accRecId, key, amount }, n)
+  const received = res.ok && res.value.queued !== true && res.value.applied
   return {
+    received,
+    result: {
     ok: res.ok,
     message: res.ok
-      ? res.value.applied
-        ? `Webhook for ${active.invoiceNumber}: ${formatCurrency(amount)} received, the paired ACCPAY is authorised for exactly ${formatCurrency(amount)}.`
-        : 'No change (already fully paid).'
+      ? res.value.queued === true
+        ? `${formatCurrency(amount)} landed in Xero for ${active.invoiceNumber}. Xero is unavailable to the engine, so the payment sync waits in the Xero sync queue: nothing is received in the ledger yet.`
+        : res.value.applied
+          ? `Webhook for ${active.invoiceNumber}: ${formatCurrency(amount)} received, the paired ACCPAY is authorised for exactly ${formatCurrency(amount)}.`
+          : 'No change (already fully paid).'
       : `Refused: ${res.message}`,
+    },
   }
+}
+
+/** The poll trigger's result line: payments, bill payments and changes made in Xero (catch-up Phase 37). */
+export function pollMessage(r: PollResult): string {
+  if (r.queued === true) return 'Xero is unavailable, so the reconciliation poll waits in the Xero sync queue.'
+  const parts = [
+    r.payments > 0 ? `applied ${plural(r.payments, 'missed payment')}` : null,
+    r.disbursements > 0 ? `recorded ${plural(r.disbursements, 'missed bill payment')}` : null,
+    r.divergences > 0 ? `flagged ${plural(r.divergences, 'invoice')} changed directly in Xero` : null,
+  ].filter((p): p is string => p !== null)
+  return parts.length > 0 ? `Reconciliation poll ${parts.join(', ')}.` : 'Reconciliation poll ran: nothing missed and nothing changed in Xero.'
+}
+
+/** The bill on a Xero pair that Xero's payables run would pay: its ACCPAY, or, for a prepayment, its transfer once posted. */
+function billOnPair(state: AppState, accRecId: string | undefined): XeroBill | undefined {
+  if (accRecId === undefined) return undefined
+  const pair = pairByAccRec(state, accRecId)
+  if (pair === undefined || pair.kind === 'aaFee' || pair.payable?.xeroAccPayId === undefined) return undefined
+  if (pair.kind === 'prePayment') {
+    const transfer = transferForPair(state, pair.id)
+    return transfer !== undefined ? { transferId: transfer.id } : undefined
+  }
+  return { accPayId: pair.payable.xeroAccPayId }
+}
+
+/** Why "Pay anaesthetist in Xero" is disabled on this pair, or null. */
+function payBillRefusal(state: AppState, accRecId: string | undefined): string | null {
+  const rec = accRecId !== undefined ? state.xero.accRecs[accRecId] : undefined
+  if (rec === undefined) return 'No invoice in Xero'
+  if (rec.kind === 'aaFee') return 'Fee invoices have no bill'
+  if (rec.status === 'voided') return 'Voided in Xero'
+  const pair = pairByAccRec(state, rec.id)
+  if (pair === undefined || pair.kind === 'aaFee' || pair.payable?.xeroAccPayId === undefined) return 'No bill to pay'
+  const bill = billOnPair(state, rec.id)
+  if (bill === undefined) return 'Held in the AA Holding account until the List is authorised'
+  return xeroBillPayable(state, bill) > 0 ? null : 'Nothing authorised to pay yet'
 }
 
 /**
@@ -352,32 +425,65 @@ export function sendPaymentWebhook(api: AppStoreApi, accRecId: string | undefine
 function replayDisabledReason(state: AppState): string | null {
   const last = useDemoTriggerMemory.getState().lastWebhook
   if (last === null) return 'No payment event to replay yet'
-  const received = Object.values(state.billing.receipts).some((r) => r.idempotencyKey === last.key)
+  // Recorded by the engine, or landed in Xero and waiting for the engine (catch-up Phase 37's outage).
+  const received = Object.values(state.billing.receipts).some((r) => r.idempotencyKey === last.key) || Object.values(state.xero.payments).some((p) => p.idempotencyKey === last.key)
   if (state.xero.accRecs[last.accRecId] === undefined || !received) return 'The last payment event was cleared by a reset'
   return null
 }
 
-/** The PWA's Balances choices: Dr Souter's open invoices (the demo-surface exemption `openAccRecs` documents). */
-function souterOpenAccRecs(state: AppState) {
+/**
+ * An anaesthetist's open invoices, for the money screens' payment choosers (the PWA's Balances, and since
+ * catch-up Phase 38 the web dashboard and Accounts): every open ACCREC whose pair shows in that
+ * anaesthetist's views (`viewerOfPair`: the payee stamped on the pair, a prepayment's transfer payee, or
+ * while held the anaesthetist who has the List), never a List join (the demo-surface exemption
+ * `openAccRecs` documents).
+ */
+function personaOpenAccRecs(state: AppState, anaesthetistId: string, opts: { positionOnly?: boolean } = {}) {
   return openAccRecs(state).filter((c) => {
-    const invoice = state.billing.invoices[c.invoiceId]
-    const booking = invoice !== undefined ? state.schedule.bookings[invoice.bookingId] : undefined
-    const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
-    return list?.anaesthetistId === ANAE.souter
+    const pair = pairByAccRec(state, c.accRecId)
+    if (pair === undefined || !isBookingPair(pair) || viewerOfPair(state, pair) !== anaesthetistId) return false
+    // The web money screens show only what reaches the anaesthetist's position: never a prepayment the AA Holding account holds.
+    return opts.positionOnly !== true || !releasedAndPaidFor(state, pair).held
   })
 }
 
-function souterPaymentChoices(state: AppState) {
-  return souterOpenAccRecs(state).map((c) => ({
+function personaPaymentChoices(state: AppState, anaesthetistId: string, opts: { positionOnly?: boolean } = {}) {
+  return personaOpenAccRecs(state, anaesthetistId, opts).map((c) => ({
     id: c.accRecId,
     label: `${c.invoiceNumber} · ${c.patientName} · ${formatCurrency(c.remaining)} due`,
   }))
 }
 
-function souterPaymentDisabled(state: AppState, choiceId: string | undefined): string | null {
-  if (souterOpenAccRecs(state).length === 0) return 'No open invoices yet'
+function personaPaymentDisabled(state: AppState, anaesthetistId: string, choiceId: string | undefined, opts: { positionOnly?: boolean } = {}): string | null {
+  if (personaOpenAccRecs(state, anaesthetistId, opts).length === 0) return 'No open invoices yet'
   if (choiceId === undefined) return 'Choose an invoice'
   return paymentDisabledReason(state, choiceId)
+}
+
+/** The web app's persona (`WebApp.tsx` reads the same): the web payment entries choose among her invoices. */
+const WEB_PERSONA_ID: string = APP_CONFIG.web.persona.anaesthetistId ?? ANAE.souter
+
+/** The web money screens' payment (catch-up Phase 38): the shared webhook body, and where the money goes next. */
+function webPaymentEntry(id: 'web-payment-full' | 'web-payment-half', mode: 'full' | 'partial'): DemoTrigger {
+  return {
+    id,
+    label: mode === 'full' ? 'Payment received · full' : 'Payment received · half',
+    description:
+      mode === 'full'
+        ? "A Xero payment webhook for the full balance of one of the persona's open invoices, chosen below. Collected rises at once; the Outstanding row stays as paid in, due to you; the GST report gains no row until AA pays the anaesthetist."
+        : "A Xero payment webhook for half the balance of one of the persona's open invoices, chosen below (a part payment). The Outstanding row stays; the GST report gains no row until AA pays the anaesthetist.",
+    screen: 'Web · Dashboard and Accounts',
+    routes: ['/web', '/web/accounts/:subTab'],
+    surfaces: ['bar'],
+    choices: (state) => personaPaymentChoices(state, WEB_PERSONA_ID, { positionOnly: true }),
+    disabledReason: (state, _ctx, choiceId) => personaPaymentDisabled(state, WEB_PERSONA_ID, choiceId, { positionOnly: true }),
+    run: (api, _ctx, choiceId) => {
+      const out = paymentWebhook(api, choiceId, mode)
+      // Only money the ledger received is collected; a queued or no-op webhook says so in its own words.
+      return out.received ? { ok: true, message: `Payment received. It reaches the GST report when AA pays the anaesthetist. ${out.result.message}` } : out.result
+    },
+    indexPath: () => '/web/accounts/outstanding',
+  }
 }
 
 /**
@@ -523,7 +629,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'billing-failure',
     label: 'Trigger billing failure',
     description:
-      "Arms the Xero hand-off to fault for Losa Tuilagi's Booking alone and authorises Dr Ropata's Thu 16 Jul List. Each Booking bills from its locked record: hers is held back at the hand-off, Hemi Walker's bills, and the List is not failed. Resolve & retry hands hers off once. No Contract changes.",
+      "Arms the Xero hand-off to fault for Losa Tuilagi's Booking alone and authorises Dr Ropata's Thu 16 Jul List. Each Booking bills from its locked record: hers waits for Xero in the sync queue, Hemi Walker's bills and hands off, and the List is not failed. Retry now (or the clock) hands hers off once. No Contract changes.",
     screen: BILLING_MONITOR_SCREEN,
     routes: BILLING_MONITOR,
     surfaces: ['bar'],
@@ -539,7 +645,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return {
         ok: staged.ok,
         message: staged.ok
-          ? "Done. In the billing monitor Losa Tuilagi's Booking is held back at the Xero hand-off while Hemi Walker's billed. Use Resolve & retry on her row."
+          ? "Done. In the billing monitor Losa Tuilagi's invoice waits for Xero in the sync queue while Hemi Walker's billed. Use Retry now on its queue row, or move the clock on."
           : staged.message === BILLING_FAILURE_ALREADY
             ? 'Already triggered.'
             : `Refused: ${staged.message}`,
@@ -551,7 +657,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'arm-handoff-fault',
     label: 'Arm handoff failure',
     description:
-      'Arms the next Xero handoff to fault once. Then authorise a List: every invoice still gets its ledger pair, marked Not yet in Xero, and the monitor offers Resolve & retry to mirror it.',
+      'The next Xero call fails once. The queue retries it automatically after a short backoff; advance the clock to see it land.',
     screen: BILLING_MONITOR_SCREEN,
     // Also on the Ledger (catch-up Phase 36): the next authorise still makes every pair, marked "Not yet in Xero".
     routes: [...BILLING_MONITOR, ...LEDGER],
@@ -559,7 +665,41 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     disabledReason: (state) => (state.settings.failNextHandoff === true ? 'Armed' : null),
     run: (api) => {
       armHandoffFault(api, OFFICE_ACTOR)
-      return { ok: true, message: 'Armed. The next Xero handoff will fault once, then clear.' }
+      return { ok: true, message: 'Armed. The next Xero hand-off fails once and waits in the sync queue, which retries it after its backoff.' }
+    },
+    indexPath: () => '/admin/billing',
+  },
+  // ── Xero outage (catch-up Phase 37; EP-09): the Billing monitor and every Xero tab ──
+  {
+    id: 'xero-outage-start',
+    label: 'Simulate Xero outage',
+    description:
+      "Xero's API stops answering the Billing Engine. New hand-offs, payment syncs, disbursement syncs and the poll wait in the Xero sync queue and retry with increasing gaps. Authorising a List still works and bills.",
+    screen: BILLING_MONITOR_SCREEN,
+    routes: [...BILLING_MONITOR, ...XERO_SIM],
+    surfaces: ['bar'],
+    disabledReason: (state) => (xeroAvailable(state) ? null : 'Xero is already unavailable'),
+    run: (api) => {
+      const out = setXeroOutage(api, DEMO_TRIGGER_ACTOR, true)
+      return out.ok
+        ? { ok: true, message: "Xero is unavailable to the Billing Engine. Authorise a List: its hand-offs wait in the Xero sync queue, and every clock change retries what is due." }
+        : { ok: false, message: out.message }
+    },
+    indexPath: () => '/admin/billing',
+  },
+  {
+    id: 'xero-outage-restore',
+    label: 'Restore Xero',
+    description: 'Xero answers again. The queue drains at once, in order, with no duplicate pair, contact, receipt or disbursement.',
+    screen: BILLING_MONITOR_SCREEN,
+    routes: [...BILLING_MONITOR, ...XERO_SIM],
+    surfaces: ['bar'],
+    disabledReason: (state) => (xeroAvailable(state) ? 'Xero is connected' : null),
+    run: (api) => {
+      const out = setXeroOutage(api, DEMO_TRIGGER_ACTOR, false)
+      return out.ok
+        ? { ok: true, message: out.value.sent > 0 ? `Xero is back. The queue sent ${plural(out.value.sent, 'waiting call')} in order.` : 'Xero is back. Nothing was waiting.' }
+        : { ok: false, message: out.message }
     },
     indexPath: () => '/admin/billing',
   },
@@ -570,7 +710,8 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     description:
       'A bank-feed notification arrives for $120.00 that matches no invoice number. The ledger goes out of balance by $120.00; naming Dr Souter puts her on the out-of-balance list. The office clears it with Allocate to invoice or Mark refunded.',
     screen: 'Admin · Ledger',
-    routes: LEDGER,
+    // Also on the Admin Day dashboard, whose Reconciliation card it puts out of balance (catch-up Phase 37; US-13.2.4).
+    routes: [...LEDGER, ADMIN_DAY],
     surfaces: ['bar'],
     choices: () => [
       { id: UNMATCHED_RECEIPT_DEMO.namesSouter.id, label: UNMATCHED_RECEIPT_DEMO.namesSouter.label },
@@ -588,20 +729,14 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'run-reconciliation-poll',
     label: 'Run reconciliation poll',
     description:
-      'Runs the daily missed-webhook safety net now, without advancing the clock. Also in the Xero simulation.',
+      'Runs the daily safety net now, without advancing the clock: payments and bill payments a webhook missed, and invoices voided or edited directly in Xero. During an outage it waits in the queue. Also in the Xero simulation.',
     screen: BILLING_MONITOR_SCREEN,
     routes: [...BILLING_MONITOR, ...XERO_SIM],
     surfaces: ['bar'],
     disabledReason: () => null,
     run: (api) => {
-      const n = runReconciliationPoll(api)
-      return {
-        ok: true,
-        message:
-          n > 0
-            ? `Reconciliation poll applied ${plural(n, 'previously-missed payment')}.`
-            : 'Reconciliation poll ran: no missed payments to catch.',
-      }
+      const r = runReconciliationPoll(api)
+      return { ok: true, message: pollMessage(r) }
     },
     indexPath: () => '/admin/billing',
   },
@@ -830,10 +965,10 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const last = useDemoTriggerMemory.getState().lastWebhook
       const reason = replayDisabledReason(api.getState())
       if (last === null || reason !== null) return { ok: false, message: reason ?? 'No payment event to replay yet' }
-      const res = receivePayment(api, { accRecId: last.accRecId, amount: last.amount, idempotencyKey: last.key, source: 'webhook' })
+      const res = deliverPaymentWebhook(api, { accRecId: last.accRecId, amount: last.amount, idempotencyKey: last.key })
       return {
         ok: res.ok,
-        message: res.ok && !res.value.applied ? 'Duplicate webhook ignored (idempotent by key). No double effect.' : 'Replayed.',
+        message: !res.ok ? `Refused: ${res.message}` : !res.value.applied ? 'Duplicate webhook ignored (idempotent by key). No double effect.' : 'Replayed.',
       }
     },
     indexPath: firstOpenInvoicePath,
@@ -903,6 +1038,102 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return accRecId === undefined ? null : `/demo/xero/invoices/${accRecId}`
     },
     indexEmptyReason: 'Every AA fee invoice is paid',
+  },
+
+  // ── Xero simulation · a pair: what AA staff and Xero do there (catch-up Phase 37) ──
+  {
+    id: 'xero-amend-invoice',
+    label: "Edit this invoice's total in Xero",
+    description: `AA staff edit a line on this invoice directly in Xero and its total drops by ${formatCurrency(XERO_DEMO_AMENDMENT)}. The engine keeps the amount it issued and does not know until the next reconciliation poll.`,
+    screen: 'Xero simulation · pair',
+    routes: [XERO_PAIR],
+    surfaces: ['bar'],
+    when: (state, ctx) => !isFeePairOnScreen(state, ctx),
+    disabledReason: (state, ctx) => amendInXeroRefusal(state, ctx.params['accRecId']),
+    run: (api, ctx) => {
+      const out = amendAccRecInXero(api, XERO_STAFF_ACTOR, ctx.params['accRecId'] ?? '')
+      return out.ok
+        ? { ok: true, message: `${out.value.invoiceNumber} now totals ${formatCurrency(out.value.total)} in Xero. The engine still holds the amount it issued and finds out at the next poll (Run reconciliation poll, or Next day).` }
+        : { ok: false, message: out.message }
+    },
+    indexPath: firstOpenInvoicePath,
+    indexEmptyReason: 'No open invoice yet: authorise a List first',
+  },
+  {
+    id: 'xero-void-invoice',
+    label: 'Void this invoice in Xero',
+    description: 'AA staff void this invoice directly in Xero. The engine does not know until the next reconciliation poll, which flags it for the office.',
+    screen: 'Xero simulation · pair',
+    routes: [XERO_PAIR],
+    surfaces: ['bar'],
+    when: (state, ctx) => !isFeePairOnScreen(state, ctx),
+    disabledReason: (state, ctx) => voidInXeroRefusal(state, ctx.params['accRecId']),
+    run: (api, ctx) => {
+      const out = voidAccRecInXero(api, XERO_STAFF_ACTOR, ctx.params['accRecId'] ?? '')
+      return out.ok
+        ? { ok: true, message: `${out.value.invoiceNumber} is voided in Xero. The engine does not know yet: run the reconciliation poll (or Next day) and it is flagged on the Billing monitor.` }
+        : { ok: false, message: out.message }
+    },
+    indexPath: firstOpenInvoicePath,
+    indexEmptyReason: 'No open invoice yet: authorise a List first',
+  },
+  {
+    id: 'xero-pay-bill',
+    label: 'Pay anaesthetist in Xero (payables run)',
+    description:
+      "Xero's payables run pays this pair's bill to the anaesthetist, as AA does in Xero. The Billing Engine records the disbursement when the bill-paid webhook arrives, or at the next poll if it is missed.",
+    screen: 'Xero simulation · pair',
+    routes: [XERO_PAIR],
+    surfaces: ['bar'],
+    when: (state, ctx) => !isFeePairOnScreen(state, ctx),
+    choices: () => [
+      { id: 'deliver', label: 'Bill-paid webhook delivers' },
+      { id: 'missed', label: 'Webhook missed (the poll catches it)' },
+    ],
+    defaultChoice: () => 'deliver',
+    disabledReason: (state, ctx) => payBillRefusal(state, ctx.params['accRecId']),
+    run: (api, ctx, choiceId) => {
+      const accRecId = ctx.params['accRecId']
+      const reason = payBillRefusal(api.getState(), accRecId)
+      const bill = billOnPair(api.getState(), accRecId)
+      if (reason !== null || bill === undefined) return { ok: false, message: reason ?? 'No bill to pay' }
+      const missed = choiceId === 'missed'
+      const out = payBillsInXero(api, XERO_PAYABLES_ACTOR, [bill], { webhook: missed ? 'missed' : 'deliver' })
+      if (!out.ok) return { ok: false, message: out.message }
+      const paid = out.value.paid[0]
+      if (paid === undefined) return { ok: false, message: 'Nothing authorised to pay yet' }
+      return {
+        ok: true,
+        message: missed
+          ? `Paid ${formatCurrency(paid.amount)} in Xero. The webhook was missed, so the engine still shows it released and not disbursed until the next poll.`
+          : paid.queued
+            ? `Paid ${formatCurrency(paid.amount)} in Xero. Xero is unavailable to the engine, so recording the disbursement waits in the sync queue.`
+            : `Paid ${formatCurrency(paid.amount)} in Xero. The bill-paid webhook told the engine, which recorded the disbursement.`,
+      }
+    },
+    indexPath: firstOpenInvoicePath,
+    indexEmptyReason: 'No open invoice yet: authorise a List first',
+  },
+  {
+    id: 'xero-bulk-remittance',
+    label: 'Simulate bulk hospital remittance',
+    description:
+      "St George's pays several invoices in one deposit. Xero's remittance add-on matches the lines by invoice number and the engine learns each payment by webhook; one line quotes a mistyped number and waits in Bank reconciliation for the office.",
+    screen: 'Xero simulation · invoices',
+    routes: ['/demo/xero/invoices', XERO_BANK],
+    surfaces: ['bar'],
+    disabledReason: (state) => bulkRemittanceRefusal(state),
+    run: (api) => {
+      const out = receiveBulkRemittance(api)
+      if (!out.ok) return { ok: false, message: out.message }
+      const r = out.value
+      const learned = r.queued > 0 ? 'Xero is unavailable to the engine, so the payment syncs wait in the queue' : 'the engine learned each payment by webhook'
+      return {
+        ok: true,
+        message: `St George's remittance landed in Xero: ${plural(r.matchedCount, 'line')} matched by invoice number (${formatCurrency(r.matchedTotal)}), and ${learned}. ${plural(r.unmatchedCount, 'line')} could not be matched and waits in Bank reconciliation.`,
+      }
+    },
+    indexPath: () => '/demo/xero/invoices',
   },
 
   // ── Mobile · List, installed PWA only: the office stand-in ───────────
@@ -1721,9 +1952,9 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
   // ── Mobile · Balances, installed PWA only ─────────────────────────────
   {
     id: 'pwa-office-runs-payables',
-    label: 'Office runs payables',
+    label: 'Office runs payables in Xero',
     description:
-      "Stands in for the office, which has no app on the phone: runs the payables for Dr Souter, paying out what is due to her. Balances' Paid out rises by it.",
+      "Stands in for the office, which has no app on the phone: runs Dr Souter's payables in Xero, paying what is due to her there. The Billing Engine records each payment when Xero reports it, and Balances' Paid out rises by it.",
     screen: 'Mobile · Balances',
     routes: ['/mobile/balances'],
     surfaces: ['pwa'],
@@ -1743,13 +1974,13 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     routes: ['/mobile/balances', MOBILE_BOOKING],
     surfaces: ['pwa'],
     // On a Booking (catch-up Phase 27): its sent prepayment invoices only.
-    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : souterPaymentChoices(state)),
+    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : personaPaymentChoices(state, ANAE.souter)),
     disabledReason: (state, ctx, choiceId) =>
       ctx.params['bookingId'] !== undefined
         ? prepaymentAccRecChoices(state, ctx.params['bookingId']).length === 0
           ? 'No sent pre-payment invoice yet'
           : paymentDisabledReason(state, paymentTargetOnScreen(state, ctx, choiceId))
-        : souterPaymentDisabled(state, choiceId),
+        : personaPaymentDisabled(state, ANAE.souter, choiceId),
     run: (api, ctx, choiceId) => sendPaymentWebhook(api, ctx.params['bookingId'] !== undefined ? paymentTargetOnScreen(api.getState(), ctx, choiceId) : choiceId, 'full'),
     indexPath: () => null,
   },
@@ -1761,16 +1992,19 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     routes: ['/mobile/balances', MOBILE_BOOKING],
     surfaces: ['pwa'],
     // On a Booking (catch-up Phase 27): its sent prepayment invoices only.
-    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : souterPaymentChoices(state)),
+    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : personaPaymentChoices(state, ANAE.souter)),
     disabledReason: (state, ctx, choiceId) =>
       ctx.params['bookingId'] !== undefined
         ? prepaymentAccRecChoices(state, ctx.params['bookingId']).length === 0
           ? 'No sent pre-payment invoice yet'
           : paymentDisabledReason(state, paymentTargetOnScreen(state, ctx, choiceId))
-        : souterPaymentDisabled(state, choiceId),
+        : personaPaymentDisabled(state, ANAE.souter, choiceId),
     run: (api, ctx, choiceId) => sendPaymentWebhook(api, ctx.params['bookingId'] !== undefined ? paymentTargetOnScreen(api.getState(), ctx, choiceId) : choiceId, 'partial'),
     indexPath: () => null,
   },
+  // ── Web · Dashboard and Accounts: the persona's payments (catch-up Phase 38) ──
+  webPaymentEntry('web-payment-full', 'full'),
+  webPaymentEntry('web-payment-half', 'partial'),
   // ── List and Booking detail, all three apps: the multi-procedure rule (catch-up Phase 23) ──
   {
     id: 'load-multi-procedure-booking',

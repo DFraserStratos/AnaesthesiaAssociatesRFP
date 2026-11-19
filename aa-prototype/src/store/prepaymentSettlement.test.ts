@@ -21,12 +21,15 @@ import { armHandoffFault } from './demoSettingsActions'
 import { postTransferJournal } from './xeroHandoff'
 import { settlePrepaymentsForList } from './prepaymentSettlement'
 import { addPrepaidBooking } from './prepaymentDemo'
-import { gstActivityFor, paymentHistoryFor, proceduresForBooking } from './selectors'
+import { paymentHistoryFor, proceduresForBooking } from './selectors'
+import { gstReportFor } from './ledgerSelectors'
 import { completeAnswered } from '../test/completeAnswered'
 import { approveAllPrepayments } from '../test/approvePrepayments'
 import { SEED_LIST_IDS, SEED_MARKERS, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
 import { HOLDING_SYSTEM_ONLY, holdingBalance, holdingEntries } from '../domain/billing/prepayHolding'
-import { pairForInvoice } from './ledgerSelectors'
+import { journalQueuedFor, pairForInvoice } from './ledgerSelectors'
+import { processXeroQueue } from './xeroQueue'
+import { XERO_FAULT_ERROR } from './xeroGate'
 import type { LedgerTransfer } from '../domain/types'
 import type { Actor } from './mutate'
 
@@ -107,7 +110,7 @@ describe('the transfer at authorisation (OQ-125 provisional)', () => {
     const invoicesBefore = Object.keys(api.getState().billing.invoices).filter((id) => api.getState().billing.invoices[id]!.kind === 'prePayment')
     const receiptsBefore = Object.keys(api.getState().billing.receipts).length
     const paymentsBefore = Object.keys(api.getState().xero.payments).length
-    const gstBefore = gstActivityFor(api.getState(), '34821', '2026-07-01', '2026-07-31')
+    const gstBefore = gstReportFor(api.getState(), '34821', '2026-07', '2026-07-21').rows
     authorise(NAIR_LIST)
     expect(transfers()).toHaveLength(1)
     const t = transfers()[0]!
@@ -129,11 +132,11 @@ describe('the transfer at authorisation (OQ-125 provisional)', () => {
       ['Dr Melanie Souter', 0, 1380],
     ])
     expect(JSON.stringify(journal)).not.toContain('Nair')
-    // Not an invoice, an ACCREC, a payment or a receipt: GST does not move.
+    // Not an invoice, an ACCREC, a payment or a receipt: the GST report gains no row (catch-up Phase 38: only a payout adds one).
     expect(Object.keys(api.getState().billing.invoices).filter((id) => api.getState().billing.invoices[id]!.kind === 'prePayment')).toEqual(invoicesBefore)
     expect(Object.keys(api.getState().billing.receipts)).toHaveLength(receiptsBefore)
     expect(Object.keys(api.getState().xero.payments)).toHaveLength(paymentsBefore)
-    expect(gstActivityFor(api.getState(), '34821', '2026-07-01', '2026-07-31')).toEqual(gstBefore)
+    expect(gstReportFor(api.getState(), '34821', '2026-07', '2026-07-21').rows).toEqual(gstBefore)
     // The account falls; exactly the transferred payable is due.
     expect(balance()).toBe(0)
     expect(payablesDue(api.getState())).toEqual({ count: 1, total: 1380, byAnaesthetist: [{ anaesthetistId: '34821', count: 1, total: 1380 }] })
@@ -333,19 +336,22 @@ describe('a journal fault is recorded, not thrown; the retry posts it once', () 
     expect(transfers()[0]!.xeroJournalId).toBeDefined()
   })
 
-  it('a fault on the journal: the transfer stands with its fault; the retry posts one journal; a second call is a no-op', () => {
+  it('a fault on the journal: the transfer stands, its journal waits in the Xero sync queue; the retry posts one journal; a second call is a no-op', () => {
     unwire() // settle by hand, so the fault meets the journal
     completeAndSubmit(NAIR_LIST)
     expect(authoriseList(api, OFFICE, NAIR_LIST).ok).toBe(true)
     expect(armHandoffFault(api, OFFICE, { bookingId: NAIR }).ok).toBe(true)
     expect(settlePrepaymentsForList(api, NAIR_LIST).ok).toBe(true)
     const t = transfers()[0]!
-    expect(t.journalFailure?.code).toBe('journalFault')
+    const queued = journalQueuedFor(api.getState(), t.id)
+    expect(queued?.lastError).toBe(XERO_FAULT_ERROR)
     expect(t.xeroJournalId).toBeUndefined()
     expect(api.getState().settings.failNextHandoff).toBe(false)
-    expect(postTransferJournal(api, t.id).ok).toBe(true)
+    // A fresh call while queued does not post past the queue; the queue's retry posts it once.
+    expect(postTransferJournal(api, t.id)).toMatchObject({ ok: true, value: { queued: true } })
+    expect(processXeroQueue(api, { force: true }).sent).toBe(1)
     expect(postTransferJournal(api, t.id).ok).toBe(true)
     expect(Object.keys(api.getState().xero.journals)).toHaveLength(1)
-    expect(api.getState().billing.transfers[t.id]!.journalFailure).toBeUndefined()
+    expect(journalQueuedFor(api.getState(), t.id)).toBeUndefined()
   })
 })

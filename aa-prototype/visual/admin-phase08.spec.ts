@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { runDemoAction } from './demoActions'
+import { advanceClock, runDemoAction } from './demoActions'
 
 /**
  * Phase 08 walkthrough — authorise → the synchronous billing run raises
@@ -25,7 +25,13 @@ interface PersistedLedgerPair {
   invoiceId?: string
   receivable?: { xeroAccRecId?: string }
   payable?: { xeroAccPayId?: string }
-  handoffFailure?: unknown
+}
+
+/** A persisted Xero sync queue item (catch-up Phase 37): a failed hand-off waits here. */
+interface PersistedQueueItem {
+  kind?: string
+  status?: string
+  target?: { pairId?: string }
 }
 
 /**
@@ -46,11 +52,11 @@ async function persistedInvoiceIdWhere(
           const raw = localStorage.getItem('aa-demo')
           if (raw === null) return null
           const persisted = JSON.parse(raw) as {
-            state?: { billing?: { ledger?: Record<string, PersistedLedgerPair> } }
+            state?: { billing?: { ledger?: Record<string, PersistedLedgerPair>; xeroQueue?: Record<string, PersistedQueueItem> } }
           }
-          const hit = Object.values(persisted.state?.billing?.ledger ?? {}).find(
-            (candidate) => candidate.invoiceId !== undefined && candidate.handoffFailure !== undefined,
-          )
+          const queued = Object.values(persisted.state?.billing?.xeroQueue ?? {}).find((q) => q.kind === 'handoff' && q.status !== 'sent')
+          const pairId = queued?.target?.pairId
+          const hit = pairId !== undefined ? persisted.state?.billing?.ledger?.[pairId] : undefined
           return hit?.invoiceId ?? null
         })
         return found
@@ -226,7 +232,6 @@ test('authorise raises and sends invoices; contract-holder document, Resend and 
             invoiceId?: string
             receivable?: { xeroAccRecId?: string }
             payable?: { xeroAccPayId?: string }
-            handoffFailure?: unknown
           }>
         }
       }
@@ -236,7 +241,6 @@ test('authorise raises and sends invoices; contract-holder document, Resend and 
     if (pair === undefined) throw new Error('Current invoice ledger pair is missing')
     if (pair.receivable !== undefined) delete pair.receivable.xeroAccRecId
     if (pair.payable !== undefined) delete pair.payable.xeroAccPayId
-    delete pair.handoffFailure
     localStorage.setItem('aa-demo', JSON.stringify(persisted))
   })
   await page.reload()
@@ -315,7 +319,7 @@ test('the authorised design-day list leaves the mobile main view (catch-up Phase
   await page.screenshot({ path: 'visual/shots/a8-09-done-after-billing.png', fullPage: true })
 })
 
-test('invoice rail keeps a failed Xero handoff visible and actionable', async ({ page }) => {
+test('invoice rail shows a hand-off waiting for Xero', async ({ page }) => {
   // Arm the real one-shot fault from the Billing monitor's Demo actions, then
   // authorise through the normal office flow.
   await page.goto('/admin/billing')
@@ -339,11 +343,18 @@ test('invoice rail keeps a failed Xero handoff visible and actionable', async ({
   await page.goto(`/admin/invoices/${failedInvoiceId}`)
   await page.waitForLoadState('networkidle')
   const status = page.getByTestId('xero-handoff-status')
-  await expect(status).toHaveText('Xero handoff failed')
-  await expect(page.getByText('The invoice and its ledger pair stand. Resolve and retry in Billing monitor.')).toBeVisible()
+  // Catch-up Phase 37: the fault is one failed attempt waiting in the Xero sync queue, retried by it.
+  await expect(status).toHaveText('Waiting for Xero')
+  await expect(page.locator('[data-shot="invoice-waiting-for-xero"]')).toHaveText('The invoice and its ledger pair stand. Attempt 1 · next try 08:02; the Xero sync queue retries it.')
   await expect(page.getByTestId('xero-accrec-reference')).toHaveCount(0)
   await expect(page.getByTestId('xero-accpay-reference')).toHaveCount(0)
   await expect(status.locator('xpath=ancestor::section')).toHaveCSS('background-color', 'rgb(249, 240, 220)')
+
+  // The queue's next tick (clock +15 min, past the 08:02 next try) lands it in Xero with no manual step.
+  await advanceClock(page)
+  await expect(status).toHaveText('Mirrored in Xero')
+  await expect(page.locator('[data-shot="invoice-waiting-for-xero"]')).toHaveCount(0)
+  await expect(page.getByTestId('xero-accrec-reference')).toHaveCount(1)
 })
 
 test('exemplar staging via the guard console: patient layout and the fee split', async ({ page }) => {

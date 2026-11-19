@@ -167,8 +167,8 @@
     {
       "name": "invoices-in-balances",
       "app": "web",
-      "caption": "The new invoices show in the balance at once",
-      "start": "/web/accounts/overdue",
+      "caption": "The new invoices show in Outstanding at once, one row per unpaid payable",
+      "start": "/web/accounts/outstanding",
       "setup": [
         {
           "goto": "/admin/review/L-34821-2026-07-20-AM"
@@ -208,7 +208,7 @@
         {
           "steps": [],
           "highlight": [
-            "tr:has-text(\"21 Jul 2026\")"
+            "[data-shot=web-accounts-outstanding] tr[data-testid^=outstanding-row-]:has-text(\"21 Jul 2026\")"
           ]
         }
       ]

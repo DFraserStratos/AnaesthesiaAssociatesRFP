@@ -253,8 +253,10 @@ price list) and claims back themselves; nib is billed only through nib's own Con
   **Provisional (OQ-29)**.
 - The GST number is a field on the Admin anaesthetist record (Master data, Anaesthetists), not on the
   anaesthetist's own profile.
-- The anaesthetist's GST activity (web Accounts, GST activity) is monthly: the calendar month to date
-  ("Month (1 Jul to 21 Jul 2026)"), with no period switch. There is no GST period anywhere.
+- The anaesthetist's GST report (web Accounts, GST report) is monthly and on a cash basis: one row per
+  payment AA passed to her in the month, with its GST from the invoice's own GST. A month picker
+  (July 2026 back to January 2026), Download (CSV), Print and Email to me; a receipt alone adds no
+  row. There is no GST period anywhere.
 - Layout follows the Contract: the holder's layout when it bills its holder (each line's invoice
   description, the BTM breakdown, a cross-match strip of procedure date and surgeon (no hospital reference),
   and the Contract's holder reference code as **Your reference**, for example SGANAES01 or NIBAN2026),
@@ -345,14 +347,24 @@ Payer -> ACCREC -> AA account -> ACCPAY (full amount) -> Anaesthetist
 - `ACCPAY`: the full amount AA owes the anaesthetist; it equals the ACCREC. AA's own fee is never
   deducted from it (it is invoiced to the anaesthetist separately).
 - Paid into AA and disbursed to the anaesthetist are separate states.
+- The payables run happens in Xero: Xero pays the authorised bills, and the Billing Engine detects
+  each disbursement by the bill-paid webhook, or at the daily reconciliation poll if the webhook is
+  missed, and records it. On the Billing monitor the payables panel, **Authorised, awaiting Xero's
+  payables run**, is read only; its **Run payables in Xero** is badged **Simulated Xero**.
+- Every call to Xero goes through the **Xero sync queue** first and retries with growing gaps, so an
+  outage never loses a financial event or blocks authorising; **Retry now** on a queue row retries at
+  once. Voids and edits made directly in Xero are flagged at the poll (**Changed directly in Xero**,
+  Resolve moves no money, provisional). Admin Day's **Reconciliation** card reads **Books square** or
+  **Out of balance**, with each item to resolve and its age (catch-up Phase 37).
 - A prepayment's ACCPAY credits the AA Holding account instead, and is never paid itself; the money is
   transferred to the anaesthetist when the List is authorised (section 8 below).
 - A partial payment releases the payable for exactly the amount received; the rest stays outstanding.
 - Both Xero records carry the InvoiceNumber (the ACCPAY's ends `-P`) and the case Reference.
 - The mobile/web app reads the Billing Engine's own ledger, AA's system of record, never Xero
   directly. Xero mirrors the ledger for receivables and banking.
-- Outstanding balances are flat individual payable rows, not a Booking-level rollup and not amounts the
-  anaesthetist personally owes.
+- Outstanding balances are flat individual payable rows, oldest first with no ageing buckets, not a
+  Booking-level rollup and not amounts the anaesthetist personally owes. A row stays ("Paid in, due to
+  you") after the billable party pays, until AA pays the anaesthetist, and each row opens its Booking.
 - Bank details are master data: the office holds them on each anaesthetist's record (mandatory, with the
   HPI CPN), the anaesthetist sees them masked and read-only, and the payment itself is made in Xero. The
   app never pays from them.
@@ -399,8 +411,9 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - **Where it lives:** **Admin → Ledger** (`/admin/ledger`, an amber badge counting what puts it out of balance; one
   anaesthetist at `/admin/ledger/anaesthetists/34821`), linked from the Billing monitor (**Open the
   ledger**) and each invoice's **Ledger** card. The anaesthetist sees her position on web **Accounts**
-  (Your position) and mobile **Balances** ("Collected $X · Paid out $Y"); on a handset the Demo sheet's
-  **Office runs payables** (office stand-in) pays what is due. The Xero sim's pair detail shows
+  (Your position), the web dashboard (Financial position) and mobile **Balances** ("Collected $X",
+  "Paid out to you $Y"); on a handset the Demo sheet's
+  **Office runs payables in Xero** (office stand-in) pays what is due. The Xero sim's pair detail shows
   **Ledger pair (the system of record)** with **Matches the ledger**.
 - Note: Dr Souter's outstanding total is $11,350.50 on a fresh seed (it was $7,785.50 before Phase 36),
   because the seeded AA-2026-S2401 ($3,565.00, Thu 16 Jul Face lift) is now counted though it is not
@@ -425,13 +438,13 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 
 ### Anaesthetist Web
 
-- Wider dashboard and date ranges
+- Dashboard with your financial position (owed to you, collected, paid out to you) beside Who's free
 - A main view from today with earlier un-authorised Lists, and past work by patient name, NHI or date
 - Same List/Booking detail and capture functions
 - Availability and cover: mark Free, On holiday, Unavailable or Public (with an optional note) ahead,
   repeating days off, change or delete one occurrence (My availability, the same form as the phone)
 - Move a List to a colleague or the office; hand one Booking to a free colleague (Move to a colleague)
-- Accounts and GST activity (the calendar month to date)
+- Accounts (Outstanding, Payments, AA fees) and GST report (by month)
 - Profile (her name and avatar in the top nav): rate per unit editable, the rest read-only
 
 ### Admin Web
@@ -516,6 +529,9 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - "The Billing Engine references the Booking; it does not duplicate the scheduling record."
 - "The captured inputs remain reproducible, not just the final total."
 - "AA tracks collection and disbursement as two separate states."
+- "Bulk remittances are matched in Xero, not by the engine."
+- "Approval stays on Review, one path with all its checks; the monitor shows what is waiting and takes
+  you there."
 - "This is a candidate design we would validate during discovery."
 
 ## Statements to avoid
@@ -549,10 +565,14 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   (catch-up Phase 22)
 - The anaesthetist's edit window to `AUTHORISED`, the main view from today, and search by patient
   name, NHI or date over months of history (catch-up Phase 38a)
-- Pre-payment from a prepaid Contract (catch-up Phase 27), held in the AA Holding account and transferred to the anaesthetist when the List is authorised (catch-up Phase 27a), post-op addendum and billing monitor with per-booking isolation and retry (Phase 09)
+- Pre-payment from a prepaid Contract (catch-up Phase 27), held in the AA Holding account and transferred to the anaesthetist when the List is authorised (catch-up Phase 27a), post-op addendum and billing monitor with per-booking isolation and retry (Phase 09); since catch-up Phase 37 the monitor is grouped by anaesthetist, sorts and filters (one anaesthetist, hospital, dates, **Problems only**, all in the URL), and lists each anaesthetist's Lists awaiting approval with **Open in Review** (approval itself stays on Review)
 - Contract locked at authorise, the run and the invoice document reading only the lock, Regenerate
   from locked data, and each Contract's History tab (catch-up Phase 25)
 - Xero collection/payable pairs, payments, reconciliation poll, payables, live balances and GST (Phase 10)
+- Xero resilience (catch-up Phase 37): the payables run made in Xero with each disbursement recorded by
+  webhook or poll, the Xero sync queue with backoff and **Retry now**, voids and edits made in Xero
+  flagged at the poll, bulk remittances matched in Xero's Bank reconciliation, and the Reconciliation
+  card on Admin Day
 - The internal ledger with an in-balance view: Admin Ledger (the whole ledger and one anaesthetist),
   the out-of-balance list, unmatched receipts allocated or refunded, and the anaesthetist's position on
   web Accounts and mobile Balances (catch-up Phase 36)
@@ -578,7 +598,15 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 
 - The Xero simulator, integration simulator and the control panel are labelled "demo simulation":
   they simulate external systems and are not proposed end-user product screens.
-- The billing monitor itself is proposed product UI; only its simulation triggers are badged.
+- The billing monitor itself is proposed product UI; only its simulation triggers are badged. It is
+  grouped by anaesthetist, sorts and filters (one anaesthetist, hospital, dates, **Problems only**),
+  and lists Lists awaiting approval with **Open in Review**; approval itself stays on Review.
+- The Xero triggers (catch-up Phase 37): **Simulate Xero outage** and **Restore Xero** (Billing monitor
+  and the Xero tabs); on a Xero pair, **Void this invoice in Xero**, **Edit this invoice's total in
+  Xero** ($20.00 lower) and **Pay anaesthetist in Xero (payables run)** (the bill-paid webhook delivers,
+  or is missed and the poll catches it); **Simulate bulk hospital remittance** (Xero Invoices and Bank
+  reconciliation). The Billing monitor's **Run payables in Xero** is not a demo action but carries the
+  **Simulated Xero** badge: Xero pays the bills and the Billing Engine records each payment it reports.
 - **Demo actions** (the pill in the top bar, beside the app switcher) holds the simulated events for
   the screen you are on, each badged "Demo trigger". It appears only on screens that have one. The
   control panel is now the index of them, with an **Open screen** link per entry (catch-up Phase 14).
@@ -675,8 +703,9 @@ Say:
   Booking, and a List never fails as a whole. A failed Booking is held back (both invoices of a split
   Booking with it) while the rest of the List bills.
 - The run prices only from the lock, so a Contract edit cannot fail it; what can still fail is outside
-  the lock, such as the Xero hand-off (S4 Beat 3). The office retries once from the Billing monitor
-  (**Resolve & retry** for a hand-off; **Retry** rebuilds from the locked record), and the fix never
+  the lock, such as the Xero hand-off (S4 Beat 3). A hand-off that fails waits in the Xero sync queue,
+  which retries it by itself; the office can use **Retry now** on its queue row (the booking row's
+  **Retry**, which rebuilds from the locked record, stays for a failed billing run), and the fix never
   edits a Contract or any other master.
 
 ### 4. Monitoring location
@@ -755,7 +784,7 @@ Say:
   monitor shows its card: the balance, the prepaid Bookings it holds for, and its Received and
   Transferred entries (fresh reset: $1,380.00, Priya Nair, AA-2026-0001).
 - Two steps: the payer's money is **collected into the AA Holding account** (nothing is paid to the
-  anaesthetist; Run payables pays nothing), then **transferred** automatically when the office
+  anaesthetist; the payables run pays nothing), then **transferred** automatically when the office
   authorises the List, with no office step. The transfer is not a payment: no new invoice, no GST
   movement; the Xero simulator shows it as a manual journal (MJ-0001 for Nair), and how it posts in
   Xero is still to be confirmed. The next payables run pays the anaesthetist; the payment itself is made
@@ -804,7 +833,6 @@ Say:
 - The billing monitor's "Prior balance" intake flag reads any open (unpaid) prior episode.
 - The RFP asks whether to separately distinguish "open" from "genuinely overdue" in this check; the
   prototype flags any open balance and holds the distinction as a discovery question.
-- Invoices carry a raised date but no due date, so aging is derived, not contractual.
 
 ### 12. ACC pre-op flat-fee codes (CS250, CS260, CS70)
 

@@ -8,7 +8,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { freshAppState } from './appStore'
-import { aaFeeInvoicesFor, isBackdropList, outstandingPayableRowsFor, receivablesAgingFor } from './selectors'
+import { aaFeeInvoicesFor, isBackdropList, outstandingPayableRowsFor, outstandingTotalFor } from './selectors'
 import { bctiRecords } from './ledgerSelectors'
 import { bctisFor } from '../domain/billing/bcti'
 import { pairStatusLabel } from '../domain/billing/ledger'
@@ -88,8 +88,8 @@ describe('the browsable history', () => {
 })
 
 describe('no money figure moves', () => {
-  it('outstanding balances and aging are as before', () => {
-    expect(outstandingPayableRowsFor(state, ANAE.souter, TODAY).map((r) => [r.invoiceNumber, r.outstanding])).toEqual([
+  it('outstanding balances are as before', () => {
+    expect(outstandingPayableRowsFor(state, ANAE.souter).map((r) => [r.invoiceNumber, r.outstandingToYou])).toEqual([
       ['AA-2026-H08', 250],
       ['AA-2026-H07', 610],
       ['AA-2026-H06', 1930],
@@ -102,7 +102,8 @@ describe('no money figure moves', () => {
       // is now Dr Souter's: +1 row, +$3,565.00 current. Every other figure is as before.)
       ['AA-2026-S2401', 3565],
     ])
-    expect(receivablesAgingFor(state, ANAE.souter, TODAY).aging).toEqual({ current: 2605.5 + 3565, d31_60: 2390, d61_90: 1930, d90plus: 860, total: 7785.5 + 3565 })
+    // (catch-up Phase 38: no ageing buckets, D8; one total, the unpaid payables.)
+    expect(outstandingTotalFor(outstandingPayableRowsFor(state, ANAE.souter))).toBe(7785.5 + 3565)
   })
 
   it('the seeded AA fee invoices and their totals are as before; the new BCTIs fall in January to March only', () => {

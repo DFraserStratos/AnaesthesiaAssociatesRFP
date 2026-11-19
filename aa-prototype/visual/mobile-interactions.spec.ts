@@ -97,6 +97,8 @@ test('secondary-screen and bottom-sheet highlights stay aligned', async ({ page 
   await balances.getByRole('button', { name: 'GST this month' }).click()
   await page.waitForTimeout(220)
   await expectHighlightAligned(balances)
+  // Catch-up Phase 38: the current month of the GST report (payments AA passed on), not amounts received.
+  await expect(page.locator('[data-shot=balances-gst-month-header]')).toContainText('July 2026 · paid to you')
   await page.screenshot({ path: 'visual/shots/mobile-native-balances.png', fullPage: true })
 
   await page.goto('/mobile')

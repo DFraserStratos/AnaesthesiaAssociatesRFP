@@ -6,8 +6,8 @@
     {
       "name": "prior-balance",
       "app": "admin",
-      "caption": "Prior balance flag on a returning patient with unpaid invoices",
-      "start": "/admin/billing",
+      "caption": "Prior balance flag on a returning patient with unpaid invoices, on the Booking's row in the authorised List",
+      "start": "/admin/billing?list=L-36208-2026-07-17-AM",
       "setup": [
         {
           "scenario": "S5"
@@ -15,7 +15,11 @@
       ],
       "states": [
         {
-          "steps": [],
+          "steps": [
+            {
+              "wait": 2200
+            }
+          ],
           "highlight": [
             "[data-shot=billing-prior-balance]"
           ]

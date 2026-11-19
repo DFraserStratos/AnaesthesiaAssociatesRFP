@@ -261,7 +261,8 @@ test('6 · Review authorises it and the billing run bills it; the audit shows th
   await page.waitForTimeout(800)
   await page.goto('/admin/billing')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('body')).toContainText('Out-of-hours')
+  // The restyled monitor (catch-up Phase 37): the List sits in its anaesthetist's group as an authorised, expanded pipeline.
+  await expect(page.locator('tbody[data-shot^="billing-pipeline-"]').filter({ hasText: 'Out-of-hours' })).toHaveCount(1)
   await page.screenshot({ path: 'visual/shots/p32c-16-billing.png', fullPage: true })
   await page.goto('/admin/audit')
   await page.waitForLoadState('networkidle')

@@ -25,18 +25,18 @@
  *    `-P`, US-08.4.3), Reference (the pair id only, OQ-30) and the issue date
  *    (US-09.1.1).
  *  - IDEMPOTENT: a pair whose receivable has its mirror id is a no-op.
- *  - FAULT PATH (D-handoff): `settings.failNextHandoff` records
- *    `handoffFailure` on the pair, clears the flag and creates NO Xero records,
- *    all in one mutate. The pair and its money stand ("Not yet in Xero"). A
- *    fault is DATA, not a throw. Retry = re-invoke this idempotent hand-off
- *    (distinct from `retryBillingException`, which raises invoices a failed
- *    Booking never got).
+ *  - THE GATE (catch-up Phase 37, EP-09; amends Phase 10's D-handoff): every
+ *    hand-off passes `handoffPair`. During a Xero outage, or with the demo
+ *    fault armed, the call is written to the Xero sync queue with its failed
+ *    attempt and retried with backoff on the demo clock (`xeroQueue.ts`); the
+ *    pair and its money stand ("Not yet in Xero", waiting for Xero). There is
+ *    no fault flag on the pair and no manual "Resolve & retry" for a hand-off.
  *
  * One `mutate`, `source:'system'` audit (`xero.contactResolved`, `xero.pairCreated`).
  */
 
 import { buyerCreatedTaxInvoiceFor, supplierFor } from '../domain/billing/invoicePresentation'
-import type { AaFeeLedgerPair, Anaesthetist, Booking, BookingLedgerPair, CounterpartyRef, XeroContact } from '../domain/types'
+import type { AaFeeLedgerPair, Anaesthetist, Booking, BookingLedgerPair, CounterpartyRef, LedgerPair, XeroContact } from '../domain/types'
 import { isAaFeePair, isBookingPair, isHoldingLeg, payeeAnaesthetistOf } from '../domain/billing/ledger'
 import { aaFeeAccRecFor } from '../domain/billing/aaFee'
 import type { LockedPayee } from '../domain/billing/lock'
@@ -45,15 +45,10 @@ import { xeroIndividualContactName } from '../domain/xeroContact'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { counterpartyName } from './selectors'
-import { pairsForBooking, pairsForList } from './ledgerSelectors'
+import { handoffQueuedFor, journalQueuedFor, pairsForBooking, pairsForList } from './ledgerSelectors'
+import { enqueueXeroWork, gateFor } from './xeroGate'
 
 const HANDOFF_ACTOR: Actor = { who: 'Xero handoff', role: 'system', source: 'system' }
-
-const HANDOFF_FAULT = {
-  code: 'handoffFault',
-  message:
-    'Xero handoff failed (simulated fault). The invoice and its ledger pair stand, not yet in Xero. Resolve and retry from the billing monitor.',
-}
 
 const UNARCHIVE_NOTE =
   'This contact was archived; it is unarchived to invoice against it. The Xero unarchive step is TBC in the sandbox.'
@@ -192,7 +187,42 @@ export function contactResolvedMeta(contactId: string, spec: ContactSpec, r: Res
 export interface HandoffResult {
   accRecId?: string
   accPayId?: string
-  failed?: boolean
+  /** The call went to the Xero sync queue instead (outage or the armed fault); the queue retries it. */
+  queued?: boolean
+  queueItemId?: string
+}
+
+/** A mirrored pair's ids, or undefined while it is not in Xero. */
+function mirroredIds(pair: LedgerPair): HandoffResult | undefined {
+  if (pair.receivable.xeroAccRecId === undefined) return undefined
+  const accPayId = isBookingPair(pair) ? pair.payable?.xeroAccPayId : undefined
+  return { accRecId: pair.receivable.xeroAccRecId, ...(accPayId !== undefined ? { accPayId } : {}) }
+}
+
+/**
+ * Hand one ledger pair off to Xero, through the gate (catch-up Phase 37;
+ * EP-09). Every caller (the billing run's `handoffListPairs`, a retried
+ * Booking, the prepayment raise, the AA fee run) comes here. Xero available:
+ * the pair is mirrored now (`createXeroPair`). Xero unavailable, or the demo
+ * fault armed for this pair: the call is written to the Xero sync queue with
+ * its first failed attempt and retried with backoff on the demo clock, and
+ * the result says `queued`. The ledger pair stands either way, so
+ * authorising a List is never blocked by Xero. Idempotent: a mirrored pair is
+ * a no-op, and a pair already queued is not queued twice.
+ */
+export function handoffPair(api: AppStoreApi, pairId: string): Outcome<HandoffResult> {
+  const state = api.getState()
+  const pair = state.billing.ledger[pairId]
+  if (pair === undefined) return refuse('notFound', 'Ledger pair not found.')
+  const mirrored = mirroredIds(pair)
+  if (mirrored !== undefined) return ok(mirrored)
+  if (handoffQueuedFor(state, pairId) !== undefined) return ok({ queued: true })
+  const verdict = gateFor(state, { ...(isBookingPair(pair) ? { bookingId: pair.bookingId } : {}) })
+  if (!verdict.go) {
+    const queued = enqueueXeroWork(api, { kind: 'handoff', idempotencyKey: `HANDOFF-${pairId}`, target: { pairId }, lastError: verdict.error, consumesFault: verdict.consumesFault })
+    return queued.ok ? ok({ queued: true, queueItemId: queued.value.itemId }) : queued
+  }
+  return createXeroPair(api, pairId)
 }
 
 /**
@@ -201,19 +231,17 @@ export interface HandoffResult {
  * its stamped payee: the anaesthetist, or the AA Holding account's contact),
  * the legs' mirror ids stamped in the same mutate. An `aaFee` pair gets its
  * 16-style ACCREC and no ACCPAY. The hand-off never creates, amends or deletes
- * ledger money: it only stamps mirror ids and clears `handoffFailure`.
- * Idempotent (a mirrored pair is a no-op); a fault is recorded on the pair,
- * which stands, "Not yet in Xero". Audited source=system.
+ * ledger money: it only stamps mirror ids. Idempotent (a mirrored pair is a
+ * no-op). The gate (`handoffPair`) and the Xero sync queue call it; nothing
+ * else does. Audited source=system.
  */
-export function handoffPair(api: AppStoreApi, pairId: string): Outcome<HandoffResult> {
+export function createXeroPair(api: AppStoreApi, pairId: string): Outcome<HandoffResult> {
   const state = api.getState()
   const pair = state.billing.ledger[pairId]
   if (pair === undefined) return refuse('notFound', 'Ledger pair not found.')
   // Idempotent: already mirrored.
-  if (pair.receivable.xeroAccRecId !== undefined) {
-    const accPayId = isBookingPair(pair) ? pair.payable?.xeroAccPayId : undefined
-    return ok({ accRecId: pair.receivable.xeroAccRecId, ...(accPayId !== undefined ? { accPayId } : {}) })
-  }
+  const mirrored = mirroredIds(pair)
+  if (mirrored !== undefined) return ok(mirrored)
   if (isAaFeePair(pair)) return handoffAaFeePair(api, pair)
   const invoice = state.billing.invoices[pair.invoiceId]
   if (invoice === undefined) return refuse('noInvoice', 'The pair invoice was not found.')
@@ -221,27 +249,6 @@ export function handoffPair(api: AppStoreApi, pairId: string): Outcome<HandoffRe
   const payeeRecord = payeeRecordFor(state, pair)
   if (payeeRecord === undefined && pair.payable !== undefined) {
     return refuse('noAnaesthetist', 'Could not resolve the anaesthetist payee for this pair.')
-  }
-
-  // Fault path: record the fault, clear the flag, create no Xero records (all one mutate). A fault
-  // scoped to one Booking (`failHandoffBookingId`, catch-up Phase 25's staged failure) waits for it.
-  const scoped = state.settings.failHandoffBookingId
-  if (state.settings.failNextHandoff === true && (scoped === undefined || scoped === pair.bookingId)) {
-    mutate(
-      api,
-      HANDOFF_ACTOR,
-      { entityType: 'ledgerPair', entityId: pairId, action: 'xero.handoffFailed', after: { ...HANDOFF_FAULT } },
-      (s) => {
-        const existing = s.billing.ledger[pairId]
-        if (existing === undefined) return {}
-        const { failHandoffBookingId: _scoped, ...rest } = s.settings
-        return {
-          billing: { ...s.billing, ledger: { ...s.billing.ledger, [pairId]: { ...existing, handoffFailure: { ...HANDOFF_FAULT } } } },
-          settings: { ...rest, failNextHandoff: false },
-        }
-      },
-    )
-    return ok({ failed: true })
   }
 
   const payerSpec = payerContactSpec(invoice.counterparty, state.masters)
@@ -288,7 +295,6 @@ export function handoffPair(api: AppStoreApi, pairId: string): Outcome<HandoffRe
       status: noCharge ? 'paid' : 'awaitingPayment',
     }
     const next = { ...existing, receivable: { ...r, xeroAccRecId: xr.id } }
-    delete next.handoffFailure
     out = { accRecId: xr.id }
 
     if (existing.payable !== undefined && payeeSpec !== undefined && payeeRecord !== undefined) {
@@ -368,7 +374,6 @@ function handoffAaFeePair(api: AppStoreApi, pair: AaFeeLedgerPair): Outcome<Hand
     accRecId = xr.id
     const accRec = aaFeeAccRecFor(fee, existing, { accRecId: xr.id, contactId: contact.contactId, issuedAtISO: fee.raisedAtISO })
     const next = { ...existing, receivable: { ...existing.receivable, xeroAccRecId: xr.id } }
-    delete next.handoffFailure
     metas.push({ entityType: 'aaFeeInvoice', entityId: fee.id, action: 'xero.pairCreated', after: { accRecId: xr.id, invoiceNumber: fee.invoiceNumber, amountDue: fee.total, kind: 'aaFee' } })
     return {
       xero: { ...s.xero, contacts, accRecs: { ...s.xero.accRecs, [xr.id]: accRec } },
@@ -417,9 +422,24 @@ function payeeRecordFor(state: Pick<AppState, 'schedule' | 'masters' | 'billing'
   return anaesthetist !== undefined ? { anaesthetistId: anaesthetist.registrationNumber, name: anaesthetist.name, supplier: supplierFor(anaesthetist) } : undefined
 }
 
-const JOURNAL_FAULT = {
-  code: 'journalFault',
-  message: 'Xero did not accept the transfer journal (simulated fault). The transfer stands; resolve and retry from the billing monitor.',
+/**
+ * Post a prepayment transfer's journal to Xero, through the gate (catch-up
+ * Phase 37): posted now when Xero answers, else written to the Xero sync queue
+ * (kind `journal`) and retried with backoff, as `handoffPair` does for a pair.
+ * The transfer stands either way. Idempotent.
+ */
+export function postTransferJournal(api: AppStoreApi, transferId: string): Outcome<{ journalId?: string; queued?: boolean }> {
+  const state = api.getState()
+  const transfer = state.billing.transfers[transferId]
+  if (transfer === undefined) return refuse('notFound', 'Transfer not found.')
+  if (transfer.xeroJournalId !== undefined) return ok({ journalId: transfer.xeroJournalId })
+  if (journalQueuedFor(state, transferId) !== undefined) return ok({ queued: true })
+  const verdict = gateFor(state, { bookingId: transfer.bookingId })
+  if (!verdict.go) {
+    const queued = enqueueXeroWork(api, { kind: 'journal', idempotencyKey: `JOURNAL-${transferId}`, target: { transferId }, lastError: verdict.error, consumesFault: verdict.consumesFault })
+    return queued.ok ? ok({ queued: true }) : queued
+  }
+  return createTransferJournal(api, transferId)
 }
 
 /**
@@ -428,12 +448,10 @@ const JOURNAL_FAULT = {
  * AA Holding account's payable, credit the anaesthetist's), referencing the
  * prepayment invoice number and never naming the patient (convention 8). How
  * the real system posts the move is still open (US-06.5.1's Technical
- * discussion): it is kept in this one function. The same shape as
- * `handoffPair`: one mutate, idempotent (a posted transfer is a no-op), a fault
- * recorded on the transfer and never thrown (`failNextHandoff`, scoped to a
- * Booking by `failHandoffBookingId`), retried by the Billing monitor.
+ * discussion): it is kept in this one function. One mutate, idempotent (a
+ * posted transfer is a no-op). The gate and the Xero sync queue call it.
  */
-export function postTransferJournal(api: AppStoreApi, transferId: string): Outcome<{ journalId?: string; failed?: boolean }> {
+export function createTransferJournal(api: AppStoreApi, transferId: string): Outcome<{ journalId?: string }> {
   const state = api.getState()
   const transfer = state.billing.transfers[transferId]
   if (transfer === undefined) return refuse('notFound', 'Transfer not found.')
@@ -442,20 +460,6 @@ export function postTransferJournal(api: AppStoreApi, transferId: string): Outco
   const toId = payeeAnaesthetistOf(transfer.in)
   const anaesthetist = toId !== undefined ? state.masters.anaesthetists[toId] : undefined
   if (invoice === undefined || anaesthetist === undefined) return refuse('notFound', 'The transfer has no invoice or anaesthetist to post against.')
-
-  const scoped = state.settings.failHandoffBookingId
-  if (state.settings.failNextHandoff === true && (scoped === undefined || scoped === transfer.bookingId)) {
-    mutate(api, HANDOFF_ACTOR, { entityType: 'ledgerPair', entityId: transfer.collectPairId, action: 'xero.journalFailed', after: { transferId, ...JOURNAL_FAULT } }, (s) => {
-      const existing = s.billing.transfers[transferId]
-      if (existing === undefined) return {}
-      const { failHandoffBookingId: _scoped, ...rest } = s.settings
-      return {
-        billing: { ...s.billing, transfers: { ...s.billing.transfers, [transferId]: { ...existing, journalFailure: { ...JOURNAL_FAULT } } } },
-        settings: { ...rest, failNextHandoff: false },
-      }
-    })
-    return ok({ failed: true })
-  }
 
   const holdingSpec = holdingAccountContactSpec()
   const anaesthetistSpec = anaesthetistContactSpec(anaesthetist)
@@ -497,7 +501,6 @@ export function postTransferJournal(api: AppStoreApi, transferId: string): Outco
       },
     }
     const posted = { ...existing, xeroJournalId: xj.id }
-    delete posted.journalFailure
     metas.push({
       entityType: 'ledgerPair',
       entityId: existing.collectPairId,

@@ -949,6 +949,27 @@ describe('the Wave 2 join (v60: Lane A 25a, 36 and Lane B 33a, 17b)', () => {
   })
 })
 
+describe('Xero mirror resilience (catch-up Phase 37)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v60 store with no sync queue and unkeyed disbursements, and reseeds with the empty queue and keyed backdrop disbursements', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(61)
+    const fresh = freshAppState()
+    const { xeroQueue: _q, xeroDivergences: _d, ...billing } = fresh.billing
+    const unkeyed = Object.fromEntries(Object.entries(fresh.billing.disbursements).map(([id, d]) => [id, { ...d, idempotencyKey: undefined, detectedBy: undefined }]))
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing: { ...billing, disbursements: unkeyed } }, version: 60 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.billing.xeroQueue).toEqual({})
+    expect(s.billing.xeroDivergences).toEqual({})
+    expect(Object.values(s.billing.disbursements).every((d) => d.idempotencyKey.startsWith('BILLPAY-') && d.detectedBy === 'poll')).toBe(true)
+    expect(s.xero.bankLines).toEqual({})
+  })
+})
+
 describe('catch-up Phase 34 (v61: the rooms\' PDF lists and where a List came from)', () => {
   beforeEach(() => {
     flushPersist()
@@ -990,5 +1011,67 @@ describe('catch-up Phase 35 (v62: the update email templates)', () => {
     expect(s.masters.emailTemplates).toEqual(freshAppState().masters.emailTemplates)
     expect(Object.keys(s.masters.emailTemplates)).toEqual(['ET001', 'ET002', 'ET003', 'ET004'])
     expect(s.counters.emailTemplate).toBe(5)
+  })
+})
+
+describe('the Wave 3 sync of 34 into lane/a (v62: Phase 37 and Phase 34 both v61)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it("discards either lane's v61 store and reseeds the joined seed: the Xero sync queue and the PDF lists both present", () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(62)
+    const fresh = freshAppState()
+    // Lane B's v61 shape: no Xero sync queue; Lane A's: no PDF lists.
+    const { xeroQueue: _q, xeroDivergences: _d, ...billing } = fresh.billing
+    const { pdfLists: _p, ...intake } = fresh.intake
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing, intake }, version: 61 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.billing.xeroQueue).toEqual({})
+    expect(s.intake.pdfLists).toEqual(freshAppState().intake.pdfLists)
+  })
+})
+
+describe('catch-up Phase 38 (v63: seeded dashboard figures removed)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v62 store still holding the seeded `dashboards` slice, and reseeds without it', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(63)
+    const fresh = freshAppState()
+    const stale = { ...fresh, dashboards: { '34821': { productivity: { units: 1 }, leave: [] } } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 62 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect('dashboards' in s).toBe(false)
+    expect(s.billing.ledger).toEqual(fresh.billing.ledger)
+  })
+})
+
+describe('the Wave 3 join (v64: Lane A 38 at v63 joined with Lane B 35 at v62)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it("discards either lane's last store and reseeds the joined seed: email templates, the Xero sync queue and no dashboards", () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(64)
+    const fresh = freshAppState()
+    // Lane B's v62 shape: no Xero sync queue; Lane A's v63: no email templates.
+    const { xeroQueue: _q, xeroDivergences: _d, ...billing } = fresh.billing
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing }, version: 62 }))
+    expect(createAppStore({ persisted: true }).getState().billing.xeroQueue).toEqual({})
+    flushPersist()
+    localStorage.clear()
+    const { emailTemplates: _t, ...masters } = fresh.masters
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters }, version: 63 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.masters.emailTemplates).toEqual(freshAppState().masters.emailTemplates)
+    expect('dashboards' in s).toBe(false)
   })
 })

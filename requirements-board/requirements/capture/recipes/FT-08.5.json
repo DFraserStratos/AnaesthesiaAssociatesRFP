@@ -6,7 +6,7 @@
     {
       "name": "billing-monitor",
       "app": "admin",
-      "caption": "Billing monitor, the office view of every billing run",
+      "caption": "Billing monitor, the office view of every billing run: summary tiles, filters and the Xero sync queue, here holding one hand-off waiting for Xero",
       "start": "/admin/billing",
       "setup": [
         {

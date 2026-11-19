@@ -2,7 +2,7 @@ import { DRAFT_LIST, DRAFT_LISTS } from '../../../../shared/scheduleTerms'
 import { useMemo, useState } from 'react'
 import { neutral } from '../../../../theme/tokens'
 import { Button, FormError } from '../../../../shared'
-import { SelectField } from '../../../../shared/ui'
+import { Pill, SelectField } from '../../../../shared/ui'
 import { HistorySheet } from '../../../../shared/booking'
 import { PricingSheet } from '../../../../shared/flows'
 import { SEED_MARKERS } from '../../../../domain/seed'
@@ -21,6 +21,8 @@ import { WarningsToDo } from '../../../admin/components/WarningsToDo'
 import { PrepaymentsRailCard } from '../../../admin/components/PrepaymentsRailCard'
 import { PrepaymentApprovalStrip } from '../../../admin/components/PrepaymentApprovalStrip'
 import { HoldingAccountPanel } from '../../../admin/components/HoldingAccountPanel'
+import { ReconciliationCard } from '../../../admin/components/ReconciliationCard'
+import { PayablesPanel, XeroConnectionLine, XeroDivergencePanel, XeroQueuePanel } from '../../../admin/components/XeroPanels'
 import { NotificationsCard } from '../../../admin/components/NotificationsCard'
 import { ChipMultiSelect } from '../../../admin/components/ChipMultiSelect'
 import { ContactFields, EMPTY_CONTACT, type ContactDraft } from '../../../admin/components/ContactFields'
@@ -441,6 +443,27 @@ export function PrepaymentsRailCardExample() {
   )
 }
 
+/** The Admin Day rail's Reconciliation card on the live seed (catch-up Phase 37; US-13.2.4): Books square from reset. */
+export function ReconciliationCardExample() {
+  return (
+    <div style={{ maxWidth: 320 }}>
+      <ReconciliationCard />
+    </div>
+  )
+}
+
+/** The Billing monitor's Xero panels on the live seed (catch-up Phase 37): connection, sync queue, changes made in Xero (only when flagged), payables awaiting Xero's run. */
+export function XeroPanelsExample() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <XeroConnectionLine />
+      <XeroQueuePanel actor={OFFICE_ACTOR} />
+      <XeroDivergencePanel actor={OFFICE_ACTOR} />
+      <PayablesPanel actor={OFFICE_ACTOR} />
+    </div>
+  )
+}
+
 /** The Billing monitor's AA Holding account card on the live seed (catch-up Phase 27a): Nair's prepayment held. Read-only. */
 export function HoldingAccountPanelExample() {
   return <HoldingAccountPanel />
@@ -504,7 +527,7 @@ export function ReviewScreenExample() {
   )
 }
 
-/** The billing monitor's per-List pipeline stepper (`PipelineCard` / `StageChip`, not exported), fed by the real `billingMonitor` selector. */
+/** The billing monitor's per-List pipeline (`PipelineDetail` / `StageChip`, not exported): shared Pills in an `ol`, fed by the real `billingMonitor` selector. */
 export function PipelineStepperExample() {
   const schedule = useAppStore((s) => s.schedule)
   const billing = useAppStore((s) => s.billing)
@@ -518,27 +541,21 @@ export function PipelineStepperExample() {
     { key: 'xero', label: 'Xero', state: 'pending', detail: 'Waiting' },
   ]
   const live = rows[0]
-  const [index, setIndex] = useState(0)
   const stages = live !== undefined ? live.stages : sample
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ fontSize: 12.5, color: neutral.slate }}>{live !== undefined ? `${live.anaesthetistName} · live from the billing monitor` : 'No List has been billed yet: sample stages (authorise a List to see live ones).'}</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+      <ol aria-label="Billing pipeline" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', listStyle: 'none', margin: 0, padding: 0 }}>
         {stages.map((stage, i) => (
-          <div key={stage.key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <button
-              type="button"
-              title={stage.detail}
-              onClick={() => setIndex(i)}
-              style={{ border: 'none', fontFamily: 'inherit', cursor: 'pointer', fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '4px 10px', whiteSpace: 'nowrap', ...STAGE_TONE[stage.state] }}
-            >
+          <li key={stage.key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Pill tone={STAGE_TONE[stage.state]} size="sm" title={stage.detail}>
               {stage.label}
-            </button>
+            </Pill>
             {i < stages.length - 1 && <span aria-hidden style={{ color: neutral.lineStrong, fontSize: 13 }}>→</span>}
-          </div>
+          </li>
         ))}
-      </div>
-      <Echo>{stages[index]?.detail}</Echo>
+      </ol>
+      <Echo>{stages.map((st) => `${st.label}: ${st.detail}`).join(' · ')}</Echo>
     </div>
   )
 }

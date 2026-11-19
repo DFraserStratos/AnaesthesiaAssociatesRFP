@@ -77,7 +77,6 @@ import { defaultAppSettings } from '../warnings/settings'
 import { SAMPLE_AA_FEE_SETTINGS } from './aaFee'
 import type { AppSettings, WarningClearance } from '../warnings/types'
 import { buildBookings, type BookingScenarioIds } from './bookings'
-import { ANAESTHETIST_DASHBOARD, type AnaesthetistDashboardSeed } from './anaesthetistDashboard'
 import { buildHistory, LOOKBACK_DATE_ISO, LOOKBACK_LIST_ID } from './history'
 import { SEED_DRAFT_LIST_IDS, SEED_DRAFT_LISTS, seedDraftListAudit, seedDraftListBookings, seedRecurringClashDraftLists } from './draftLists'
 import { buildSeedAudit } from './audit'
@@ -122,15 +121,7 @@ export { SPC, SPECIALTIES, SPECIALTY_FOR_DIRECTORY_TEXT } from './specialties'
 export { TAG, FUNDING_TAGS } from './fundingTags'
 export { RVG_GROUP, RVG_GROUPS, LEGACY_CODE_TO_RVG_GROUP, AA_OWN_ROW_KEYS } from './rvgGroups'
 export { BP, PAT, PAT_REVIEW, HANA_PARK_PAYER } from './patients'
-export {
-  ANAESTHETIST_DASHBOARD,
-  deriveDashboardFigures,
-  type AnaesthetistDashboardSeed,
-  type DashboardFigures,
-  type ProductivitySeed,
-  type LeaveSeed,
-} from './anaesthetistDashboard'
-export { bucketForAgingDays, epochDayOf, daysBetween, type AgingBucketKey } from '../dateDays'
+export { epochDayOf, daysBetween } from '../dateDays'
 
 /** The demo seed constant (the pinned demo date as a number). */
 export const SEED = 20260721
@@ -211,12 +202,6 @@ export interface SeedState {
    * screen edits it (US-13.7.4 is Future).
    */
   appSettings: AppSettings
-  /**
-   * Seeded anaesthetist-dashboard figures (Phase 05; W1/W4), keyed by
-   * registration number. Labelled demo figures; Phase 10 replaces the
-   * receivables/overdue portion with ledger derivation.
-   */
-  dashboards: Record<string, AnaesthetistDashboardSeed>
   /** Per-day internal office notes (Phase 06), keyed by calendar date. */
   dayNotes: Record<IsoDate, DayNote[]>
   /**
@@ -683,7 +668,6 @@ function buildSeedInternal(): SeedBuild {
       volumeStory: { invoicesPerYear: 28000, oneTimePct: 99, activeContacts: 9820, softLimit: 10000 },
     },
     appSettings,
-    dashboards: ANAESTHETIST_DASHBOARD,
     dayNotes: DAY_NOTES,
     officePrivate: buildOfficePrivate(),
     notifications: {},

@@ -257,7 +257,7 @@ describe('ACC is a funding tag (FT-05.5, US-05.5.1)', () => {
   })
 
   it("Dr Souter's accounts still mark the archived ACC accounts (Prentice and Foster among them), and nothing else", () => {
-    const rows = payableRowsFor(state, '34821', '2026-07-21')
+    const rows = payableRowsFor(state, '34821')
     const flagged = rows.filter((r) => r.accFunded)
     expect(flagged.map((r) => r.patientName)).toEqual(expect.arrayContaining(['Alan Prentice', 'Diane Foster']))
     for (const r of rows) expect(r.accFunded, r.invoiceNumber).toBe(bookingPairs.find((c) => c.id === r.pairId)?.archivedAccRelated === true)

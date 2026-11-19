@@ -6,8 +6,8 @@
     {
       "name": "processing-status",
       "app": "admin",
-      "caption": "Billing monitor, processing succeeded for the list and each Booking",
-      "start": "/admin/billing",
+      "caption": "Billing monitor, processing succeeded for the List and each Booking",
+      "start": "/admin/billing?list=L-34821-2026-07-20-AM",
       "setup": [
         {
           "scenario": "S3"
@@ -45,7 +45,11 @@
       ],
       "states": [
         {
-          "steps": [],
+          "steps": [
+            {
+              "wait": 2200
+            }
+          ],
           "highlight": [
             "[data-shot=billing-pipeline-L-34821-2026-07-20-AM]"
           ]
@@ -55,8 +59,8 @@
     {
       "name": "failure-reason",
       "app": "admin",
-      "caption": "A Booking held back at the Xero hand-off, with the reason why, while the rest of the List bills",
-      "start": "/admin/billing",
+      "caption": "A Booking waiting for Xero, with the reason and its next try, while the rest of the List bills",
+      "start": "/admin/billing?list=L-39560-2026-07-16-AM",
       "setup": [
         {
           "goto": "/admin/billing"
@@ -70,9 +74,13 @@
       ],
       "states": [
         {
-          "steps": [],
+          "steps": [
+            {
+              "wait": 2200
+            }
+          ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-39560-2026-07-16-AM] tr:has-text(\"Losa Tuilagi\")"
+            "[data-shot=billing-pipeline-L-39560-2026-07-16-AM] tr[data-booking-id=BK0039]"
           ]
         }
       ]

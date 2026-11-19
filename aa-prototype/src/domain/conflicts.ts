@@ -31,7 +31,7 @@ import type { ConflictClear, HospitalHoliday, List, ListConflict } from './types
 /**
  * Seeded historical backdrop (Phase 10; `seed/history.ts`). These settled
  * L-HIST Lists / HINV invoices exist to populate the ANAESTHETIST money views
- * (receivables aging, GST); they are NOT live office-pipeline items, so the
+ * (Outstanding, payments, the GST report); they are NOT live office-pipeline items, so the
  * office surfaces (billing monitor, Invoices table, recently-billed, the demo
  * payment picker) exclude them, while the ledger money selectors include them.
  * Since catch-up Phase 38a Dr Souter's are also her browsable history (search

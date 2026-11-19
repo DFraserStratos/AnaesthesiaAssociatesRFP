@@ -6,8 +6,8 @@
     {
       "name": "billing-monitor",
       "app": "admin",
-      "caption": "Billing monitor",
-      "start": "/admin/billing",
+      "caption": "Billing monitor, grouped by anaesthetist",
+      "start": "/admin/billing?list=L-25490-2026-07-20-AM",
       "setup": [
         {
           "goto": "/admin/review/L-25490-2026-07-20-AM"
@@ -27,7 +27,11 @@
       ],
       "states": [
         {
-          "steps": [],
+          "steps": [
+            {
+              "wait": 2200
+            }
+          ],
           "highlight": []
         }
       ]

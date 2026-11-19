@@ -140,6 +140,11 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   changeSet: { prefix: 'CS', pad: 4 },
   // The update email templates the office adds (catch-up Phase 35; US-02.3.4): seeded ET001 to ET004.
   emailTemplate: { prefix: 'ET', pad: 3 },
+  // Xero mirror resilience (catch-up Phase 37): the sync queue, divergence flags, and the Xero side's remittances and bank lines.
+  xeroQueueItem: { prefix: 'XQ', pad: 4 },
+  xeroDivergence: { prefix: 'XD', pad: 4 },
+  remittance: { prefix: 'RMT', pad: 4 },
+  bankLine: { prefix: 'BKL', pad: 4 },
 }
 
 /** Allocate the next deterministic id of a kind from the counters record. */
@@ -440,6 +445,9 @@ function resetDomainStateOnly(api: AppStoreApi): void {
       aaFeeInvoices: seedBilling.aaFeeInvoices,
       locks: {},
       transfers: {},
+      // The seed ships no queue and no flags; settings come from the seed, so the outage clears (catch-up Phase 37).
+      xeroQueue: {},
+      xeroDivergences: {},
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),

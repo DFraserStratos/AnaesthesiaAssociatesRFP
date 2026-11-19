@@ -11,7 +11,7 @@
  * own bank account, and NEVER netted: nothing here or anywhere deducts it from
  * a payable, a payables run or a disbursement (Greg, 2026-10-02: "Under trust
  * law it mustn't"). A fee payment is AA's money, not the anaesthetist's income:
- * its ledger receipt is `pairKind: 'aaFee'` and never reaches GST activity,
+ * its ledger receipt is `pairKind: 'aaFee'` and never reaches the GST report,
  * payment history or the BCTI count.
  *
  * Every write goes through `mutate()`; time comes from the demo clock.

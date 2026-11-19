@@ -206,18 +206,33 @@ export function AdminReviewQueueRoute() {
   )
 }
 
+/** Router state "Open in Review" passes from the Billing monitor: where to return, with its search. */
+export interface BillingMonitorReturnState {
+  from: 'billing'
+  search: string
+}
+
+export function billingMonitorReturn(state: unknown): BillingMonitorReturnState | null {
+  if (typeof state !== 'object' || state === null) return null
+  const s = state as Partial<BillingMonitorReturnState>
+  return s.from === 'billing' ? { from: 'billing', search: typeof s.search === 'string' ? s.search : '' } : null
+}
+
 export function AdminReviewRoute() {
   const { listId = '' } = useParams()
   const { actor } = useAdminOutlet()
   const navigate = useNavigate()
   const exists = useAppStore((s) => s.schedule.lists[listId] !== undefined)
+  // Opened from the Billing monitor's "Open in Review" (catch-up Phase 37): back returns there with its filters.
+  const from = billingMonitorReturn(useLocation().state)
 
   return (
     <RequireEntity exists={exists}>
       <ReviewScreen
         listId={listId}
         actor={actor}
-        onBack={() => navigate('/admin/review')}
+        backToBillingMonitor={from !== null}
+        onBack={() => navigate(from !== null ? `/admin/billing${from.search}` : '/admin/review')}
         onOpen={(next) => navigate(`/admin/review/${next}`)}
         onViewInvoices={() => navigate('/admin/invoices')}
         onOpenBooking={(dateISO, bookingId) => navigate(`/admin/day/${dateISO}/bookings/${bookingId}`)}

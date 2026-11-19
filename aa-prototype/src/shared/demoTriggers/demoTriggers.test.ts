@@ -9,6 +9,7 @@ import { wireBillingRun } from '../../store/billingRun'
 import { authoriseList } from '../../store/lifecycle'
 import { resetDemo } from '../../store/clockActions'
 import { bookingsForList, openAccRecs, proceduresForBooking } from '../../store/selectors'
+import { handoffQueuedFor } from '../../store/ledgerSelectors'
 import { clearWarning, warningsForBooking } from '../../store/warnings'
 import { OFFICE_ACTOR, SOUTER_ACTOR } from '../../store/demoActors'
 import { correctPdfListRow, sendPdfListToMatching } from '../../store/pdfListActions'
@@ -55,13 +56,16 @@ describe('registry shape', () => {
     }
   })
 
-  it('registers no Run payables on the bar (the Billing monitor has its own product button)', () => {
-    expect(DEMO_TRIGGERS.some((t) => t.surfaces.includes('bar') && /payables/i.test(t.label))).toBe(false)
+  it('registers no Run payables on the bar (the Billing monitor has its own badged "Run payables in Xero" button)', () => {
+    expect(DEMO_TRIGGERS.some((t) => t.surfaces.includes('bar') && /run payables/i.test(t.label))).toBe(false)
   })
 
-  it('the only label with "payables" is the PWA-only office stand-in (catch-up Phase 36; Phases 38 and 39a rename it)', () => {
+  it('the labels with "payables": the Xero pair\'s bill payment and the PWA-only office stand-in, renamed for Xero (catch-up Phase 37)', () => {
     const payables = DEMO_TRIGGERS.filter((t) => /payables/i.test(t.label))
-    expect(payables.map((t) => [t.id, t.label, t.surfaces, t.badge])).toEqual([['pwa-office-runs-payables', 'Office runs payables', ['pwa'], 'office-stand-in']])
+    expect(payables.map((t) => [t.id, t.label, t.surfaces, t.badge])).toEqual([
+      ['xero-pay-bill', 'Pay anaesthetist in Xero (payables run)', ['bar'], undefined],
+      ['pwa-office-runs-payables', 'Office runs payables in Xero', ['pwa'], 'office-stand-in'],
+    ])
   })
 
   it('every bar entry\'s Open screen link lands where the entry is visible', () => {
@@ -109,10 +113,48 @@ describe("the backdated range trigger (catch-up Phase 24)", () => {
   })
 })
 
+/** What the Xero simulator's Invoices list and Bank reconciliation tab offer (catch-up Phase 37). */
+const PINNED_XERO_INVOICES = ['xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job', 'xero-bulk-remittance']
+const PINNED_XERO_BANK = PINNED_XERO_INVOICES
+
 describe('route scoping', () => {
-  it('the Billing monitor shows exactly its four entries', () => {
+  it('the Billing monitor shows exactly its six entries (catch-up Phase 37 adds the outage pair); routes match the path, so search params never change them', () => {
     const api = createAppStore()
-    expect(ids(api, '/admin/billing')).toEqual(['billing-failure', 'arm-handoff-fault', 'run-reconciliation-poll', 'run-archive-job'])
+    const six = ['billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job']
+    expect(ids(api, '/admin/billing')).toEqual(six)
+  })
+
+  it('the Xero outage pair, and the pair-only Xero actions, are bar-only with working disabled states (catch-up Phase 37)', () => {
+    const api = createAppStore()
+    const start = DEMO_TRIGGERS.find((t) => t.id === 'xero-outage-start')!
+    const restore = DEMO_TRIGGERS.find((t) => t.id === 'xero-outage-restore')!
+    const ctx = ctxFor('/admin/billing')
+    expect(start.disabledReason(api.getState(), ctx)).toBeNull()
+    expect(restore.disabledReason(api.getState(), ctx)).toBe('Xero is connected')
+    expect(start.run(api, ctx).ok).toBe(true)
+    expect(start.disabledReason(api.getState(), ctx)).toBe('Xero is already unavailable')
+    expect(restore.run(api, ctx).ok).toBe(true)
+    for (const id of ['xero-outage-start', 'xero-outage-restore', 'xero-void-invoice', 'xero-amend-invoice', 'xero-pay-bill', 'xero-bulk-remittance']) {
+      const t = DEMO_TRIGGERS.find((e) => e.id === id)!
+      expect(t.surfaces, id).toEqual(['bar'])
+      expect(`${t.label} ${t.description}`, id).not.toMatch(/[–—]/)
+    }
+    expect(ids(api, '/demo/xero/invoices')).toEqual(PINNED_XERO_INVOICES)
+    expect(ids(api, '/demo/xero/bank')).toEqual(PINNED_XERO_BANK)
+  })
+
+  it('the bulk remittance runs once from Xero Invoices or Bank reconciliation, then reads Already received (catch-up Phase 37)', () => {
+    const api = createAppStore()
+    const t = DEMO_TRIGGERS.find((e) => e.id === 'xero-bulk-remittance')!
+    expect(t.routes).toEqual(['/demo/xero/invoices', '/demo/xero/bank'])
+    const ctx = ctxFor('/demo/xero/bank')
+    expect(t.disabledReason(api.getState(), ctx)).toBeNull()
+    expect(t.run(api, ctx).ok).toBe(true)
+    expect(t.disabledReason(api.getState(), ctx)).toBe('Already received')
+  })
+
+  it('Inject unmatched receipt also shows on the Admin Day dashboard, for its Reconciliation card (catch-up Phase 37)', () => {
+    expect(ids(createAppStore(), '/admin/day/2026-07-21')).toContain('inject-unmatched-receipt')
   })
 
   it('the Admin day view shows the sample-warning entries (15a) and Simulate sickness (catch-up Phase 30)', () => {
@@ -270,7 +312,8 @@ describe('re-homed bodies match the Control Panel', () => {
       p.kind !== 'aaFee' && bookingsForList(state, SEED_LIST_IDS.billingFailure).some((booking) => booking.id === p.bookingId) ? [p] : [],
     )
     const losa = pairs.find((p) => p.bookingId === SEED_MARKERS['billingFailureBooking']!.entityId)!
-    expect(losa.handoffFailure).toBeDefined()
+    // Catch-up Phase 37: her hand-off waits in the Xero sync queue.
+    expect(handoffQueuedFor(state, losa.id)).toBeDefined()
     expect(losa.receivable.xeroAccRecId).toBeUndefined()
     expect(pairs.filter((p) => p.bookingId !== losa.bookingId).every((p) => p.receivable.xeroAccRecId !== undefined)).toBe(true)
     // (catch-up Phase 36: a billing-run failure is a BillingException, not a failed case.)
@@ -766,7 +809,7 @@ describe('AA fee entries (catch-up Phase 16)', () => {
     expect(seed.disabledReason(api.getState(), ctx)).toBe('Already invoiced for July 2026')
   })
 
-  it('the seeded BCTIs add nothing to Overdue or the payables run, and no List from 7 July on', () => {
+  it('the seeded BCTIs add nothing to Outstanding or the payables run, and no List from 7 July on', () => {
     const api = createAppStore()
     const openBefore = openAccRecs(api.getState()).length
     byId('seed-month-of-bctis').run(api, ctxFor(FEE))
@@ -950,6 +993,40 @@ describe('the Ledger triggers (catch-up Phase 36)', () => {
     const out = t.run(api, ctx)
     expect(out.ok).toBe(true)
     expect(out.message).toContain('to Dr Souter')
+    expect(out.message).toContain('it leaves Outstanding and shows under GST this month')
     expect(t.disabledReason(api.getState(), ctx)).toBe('Nothing due to pay out')
+  })
+})
+
+describe('the web money screens\' payment entries (catch-up Phase 38)', () => {
+  it('show on the bar on Web Dashboard and Accounts only, never on Lists or Availability or the PWA', () => {
+    const api = createAppStore()
+    for (const path of ['/web', '/web/accounts/outstanding', '/web/accounts/gst']) {
+      expect(ids(api, path, 'bar'), path).toEqual(expect.arrayContaining(['web-payment-full', 'web-payment-half']))
+      expect(ids(api, path, 'pwa'), path).not.toContain('web-payment-full')
+    }
+    for (const path of ['/web/lists', '/web/availability']) expect(ids(api, path, 'bar'), path).not.toContain('web-payment-full')
+    expect(byId('web-payment-full').surfaces).toEqual(['bar'])
+  })
+
+  it("offer only the persona's invoices that reach her position, and say where the money goes next", () => {
+    const api = createAppStore()
+    wireBillingRun(api)
+    const t = byId('web-payment-full')
+    const ctx = ctxFor('/web/accounts/outstanding', { subTab: 'outstanding' })
+    expect(t.disabledReason(api.getState(), ctx, initialChoice(t, api.getState(), ctx))).toBe('No open invoices yet')
+    authoriseList(api, OFFICE_ACTOR, SEED_LIST_IDS.souterMon20Am)
+    authoriseList(api, OFFICE_ACTOR, SEED_LIST_IDS.souterMon20Pm)
+    const choices = t.choices?.(api.getState(), ctx) ?? []
+    const offered = new Set(choices.map((c) => c.id))
+    const souters = openAccRecs(api.getState()).filter((c) => {
+      const pair = Object.values(api.getState().billing.ledger).find((p) => p.receivable.xeroAccRecId === c.accRecId)
+      return pair !== undefined && 'anaesthetistId' in pair && pair.anaesthetistId === SOUTER_ACTOR.anaesthetistId
+    })
+    expect(offered.size).toBeGreaterThan(0)
+    expect([...offered].sort()).toEqual(souters.map((c) => c.accRecId).sort())
+    const out = t.run(api, ctx, choices[0]!.id)
+    expect(out.ok).toBe(true)
+    expect(out.message).toMatch(/^Payment received\. It reaches the GST report when AA pays the anaesthetist\./)
   })
 })

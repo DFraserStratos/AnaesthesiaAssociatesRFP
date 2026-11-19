@@ -1,4 +1,4 @@
-import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { RequireEntity } from '../../shell/RequireEntity'
 import { isISODate } from '../../shell/routeParams'
 import { useAppStore } from '../../store'
@@ -16,6 +16,7 @@ import {
   ProfileScreen,
   type AccountsSubTab,
 } from './screens'
+import { ACCOUNTS_SUB_TABS } from './screens/AccountsScreen'
 import { useWebOutlet } from './outlet'
 
 /**
@@ -28,8 +29,6 @@ import { useWebOutlet } from './outlet'
 // ---------------------------------------------------------------------------
 // Dashboard — `/web` (?week=<ISO>)
 // ---------------------------------------------------------------------------
-
-const ACCOUNTS_SUB_TABS: readonly AccountsSubTab[] = ['overdue', 'payments', 'gst', 'fees']
 
 export function WebDashboardRoute() {
   const { anaesthetistId, personaName, todayISO } = useWebOutlet()
@@ -58,7 +57,8 @@ export function WebDashboardRoute() {
       onPrevWeek={() => stepWeek(-1)}
       onNextWeek={() => stepWeek(1)}
       onOpenList={(listId) => navigate(`/web/lists/${listId}`)}
-      onViewOverdue={() => navigate('/web/accounts/overdue')}
+      onViewOutstanding={() => navigate('/web/accounts/outstanding')}
+      onViewPayments={() => navigate('/web/accounts/payments')}
       onOpenAvailability={() => navigate('/web/availability')}
     />
   )
@@ -203,8 +203,15 @@ export function WebProfileRoute() {
 }
 
 // ---------------------------------------------------------------------------
-// Accounts — `/web/accounts/:subTab` (overdue | payments | gst | fees)
+// Accounts — `/web/accounts/:subTab` (outstanding | payments | gst | fees);
+// the old `/web/accounts/overdue` redirects to Outstanding (catch-up Phase 38)
 // ---------------------------------------------------------------------------
+
+/** `/web/accounts/overdue` (before catch-up Phase 38): Outstanding, keeping any `?invoice=`. */
+export function WebAccountsOverdueRedirect() {
+  const { search } = useLocation()
+  return <Navigate to={{ pathname: '/web/accounts/outstanding', search }} replace />
+}
 
 export function WebAccountsRoute() {
   const { subTab } = useParams()
@@ -220,6 +227,7 @@ export function WebAccountsRoute() {
         anaesthetistId={anaesthetistId}
         subTab={subTab as AccountsSubTab}
         onSubTab={(next) => navigate(`/web/accounts/${next}`)}
+        onOpenBooking={(listId, bookingId) => navigate(`/web/lists/${listId}/bookings/${bookingId}`)}
         {...(focusInvoiceNumber !== undefined ? { focusInvoiceNumber } : {})}
       />
     </RequireEntity>

@@ -301,6 +301,7 @@ export {
   type BillingRunException,
 } from './billingRun'
 export { handoffPair, handoffPairsForBooking, handoffListPairs, type HandoffResult } from './xeroHandoff'
+export { createXeroPair } from './xeroHandoff'
 // The internal ledger (catch-up Phase 36): its reads and the office's actions on unmatched receipts.
 export * from './ledgerSelectors'
 export { allocateUnmatchedReceipt, allocationRefusal, markUnmatchedRefunded, OVER_ALLOCATION } from './ledgerActions'
@@ -373,7 +374,35 @@ export {
 } from './draftListDemo'
 export { simulateSignInAttempts } from './authDemoActions'
 export { receivePayment, gstComponentOf, type ReceivePaymentInput } from './paymentActions'
-export { wireReconciliationPoll, runReconciliationPoll } from './reconciliationPoll'
+export { wireReconciliationPoll, runReconciliationPoll, type PollResult } from './reconciliationPoll'
+// Xero mirror resilience (catch-up Phase 37; EP-09, US-09.2.4): the gate, the sync queue, detection, divergence, and the Xero side.
+export { deliverPaymentWebhook, xeroBalanceOf, XERO_SIDE_ACTOR, type PaymentWebhookInput } from './paymentActions'
+export { xeroAvailable, gateFor, XERO_OUTAGE_ERROR, XERO_FAULT_ERROR, XERO_QUEUE_ACTOR } from './xeroGate'
+export { setXeroOutage, processXeroQueue, retryXeroItemNow, wireXeroQueue, type ProcessResult } from './xeroQueue'
+export { recordDisbursement, disbursementKeySeen, DETECTION_ACTOR, type RecordDisbursementInput } from './disbursementDetection'
+export { flagXeroDivergences, resolveXeroDivergence, DIVERGENCE_OUTCOMES } from './xeroDivergenceActions'
+export {
+  payBillsInXero,
+  xeroBillPayable,
+  voidAccRecInXero,
+  voidInXeroRefusal,
+  amendAccRecInXero,
+  amendInXeroRefusal,
+  XERO_DEMO_AMENDMENT,
+  XERO_PAYABLES_ACTOR,
+  XERO_STAFF_ACTOR,
+  XERO_REMITTANCE_ACTOR,
+  bulkRemittanceRefusal,
+  receiveBulkRemittance,
+  bankLineMatchRefusal,
+  matchBankLineInXero,
+  type BulkRemittanceResult,
+  type XeroBill,
+  type BillPaid,
+  type PayBillsResult,
+} from './xeroSimActions'
+export * from './reconciliationSelectors'
+export * from './billingMonitorView'
 export {
   saveAaFeeSettings,
   runMonthlyFeeInvoices,
@@ -391,10 +420,12 @@ export {
   runPayables,
   disbursePayable,
   payablesDue,
+  payableLegsDue,
+  type DueLeg,
   type PayablesRunResult,
   type PayablesDue,
 } from './payablesActions'
-export { runArchiveJob, eligibleArchiveContactIds, wireArchiveJob, type ArchiveJobResult } from './archiveActions'
+export { runArchiveJob, eligibleArchiveContactIds, wireArchiveJob, ARCHIVE_SKIPPED_OUTAGE, type ArchiveJobResult } from './archiveActions'
 export {
   advanceClockMinutes,
   advanceClockDays,

@@ -6,8 +6,8 @@
     {
       "name": "money-in-out",
       "app": "admin",
-      "caption": "Money in and money out per Booking, after the payables run",
-      "start": "/admin/billing",
+      "caption": "Money in and money out per Booking, after Xero's payables run: paid in and disbursed, each dated",
+      "start": "/admin/billing?list=L-34821-2026-07-20-AM",
       "setup": [
         {
           "scenario": "S3"
@@ -50,14 +50,16 @@
         {
           "steps": [
             {
-              "click": "role=button[name=\"Run payables\"]"
+              "click": "[data-shot=billing-run-payables-in-xero]"
             },
             {
-              "wait": 600
+              "wait": "[data-shot=billing-payables-result]"
+            },
+            {
+              "wait": 2200
             }
           ],
           "highlight": [
-            "[data-shot=billing-payables-run]",
             "[data-shot=billing-pipeline-L-34821-2026-07-20-AM]"
           ]
         }

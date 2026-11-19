@@ -6,7 +6,7 @@
     {
       "name": "reconciliation-poll",
       "app": "simulator",
-      "caption": "Daily reconciliation poll, the safety net for missed webhooks",
+      "caption": "Daily reconciliation poll, the safety net for missed webhooks: run at reset, it finds nothing missed and nothing changed in Xero",
       "start": "/demo/xero",
       "states": [
         {
@@ -21,6 +21,130 @@
           ],
           "highlight": [
             "[data-shot=demo-action-run-reconciliation-poll]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "poll-flags-void",
+      "app": "admin",
+      "caption": "The poll also catches what was changed directly in Xero: AA-2026-0002 voided in Xero while the engine's receivable is open, flagged for the office",
+      "start": "/admin/billing",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/demo/xero/invoices"
+        },
+        {
+          "click": "[data-testid=xero-invoice-table] tr:has-text(\"AA-2026-0002\")"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "trigger": "xero-void-invoice"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "trigger": "run-reconciliation-poll"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=billing-xero-divergence]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-xero-divergence]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "poll-flags-amended",
+      "app": "admin",
+      "caption": "The poll also catches what was changed directly in Xero: AA-2026-0002 edited in Xero to a total $20.00 lower than the engine issued, flagged for the office",
+      "start": "/admin/billing",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/demo/xero/invoices"
+        },
+        {
+          "click": "[data-testid=xero-invoice-table] tr:has-text(\"AA-2026-0002\")"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "trigger": "xero-amend-invoice"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "trigger": "run-reconciliation-poll"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=billing-xero-divergence]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-xero-divergence]"
           ]
         }
       ]

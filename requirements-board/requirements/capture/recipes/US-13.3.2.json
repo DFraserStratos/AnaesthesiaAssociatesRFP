@@ -6,7 +6,7 @@
     {
       "name": "resolve-retry",
       "app": "admin",
-      "caption": "Resolve and retry a Booking whose billing failed",
+      "caption": "Retry an item that failed: a Xero hand-off waiting in the sync queue",
       "start": "/admin/billing",
       "setup": [
         {
@@ -22,18 +22,22 @@
       "states": [
         {
           "state": "failed",
-          "caption": "A Booking held back at the Xero hand-off, with the reason and Resolve & retry",
-          "steps": [],
+          "caption": "The hand-off waiting for Xero in the sync queue, with its attempts, last error, next try and Retry now",
+          "steps": [
+            {
+              "wait": "[data-shot=billing-xero-queue] [data-queue-item]"
+            }
+          ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-39560-2026-07-16-AM] tr:has-text(\"Losa Tuilagi\")"
+            "[data-shot=billing-xero-queue]"
           ]
         },
         {
           "state": "retried",
-          "caption": "After one Resolve & retry the Booking hands off to Xero; the rest of the List had already billed",
+          "caption": "After Retry now the Booking hands off to Xero; the rest of the List had already billed",
           "steps": [
             {
-              "click": "[data-shot=billing-pipeline-L-39560-2026-07-16-AM] tr:has-text(\"Losa Tuilagi\") >> role=button[name=\"Resolve & retry\"]"
+              "click": "[data-shot=billing-xero-queue] [data-queue-item] >> role=button[name=\"Retry now\"]"
             },
             {
               "wait": 1200

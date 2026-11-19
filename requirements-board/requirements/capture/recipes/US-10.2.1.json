@@ -87,7 +87,7 @@
     {
       "name": "payables-run",
       "app": "admin",
-      "caption": "Authorised payables waiting for the payables run",
+      "caption": "Authorised payables awaiting Xero's payables run",
       "start": "/admin/billing",
       "setup": [
         {

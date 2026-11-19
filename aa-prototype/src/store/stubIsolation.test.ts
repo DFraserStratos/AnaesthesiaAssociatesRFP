@@ -9,11 +9,11 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type AppState, type AppStoreApi } from './appStore'
 import { OFFICE_ACTOR } from './demoActors'
-import { bookingsForList, dashboardFiguresFor, needsInvoiceDestinationBookings } from './selectors'
+import { bookingsForList, needsInvoiceDestinationBookings } from './selectors'
 import { authoriseList, completionBlockersFor, submitList } from './lifecycle'
 import { openWarnings } from './warnings'
 import { searchBookingsFor } from './lookback'
-import { bctiRecords } from './ledgerSelectors'
+import { anaesthetistLedgerPosition, bctiRecords } from './ledgerSelectors'
 import { SEED_STUB } from '../domain/seed/intakeSeed'
 import { importHospitalDownload } from './matchingActions'
 import type { Actor } from './mutate'
@@ -36,7 +36,7 @@ function bookingPaths(s: AppState) {
     bookingsForList: lists.map((id) => bookingsForList(s, id).map((b) => b.id)),
     bookingCount: Object.keys(s.schedule.bookings).length,
     completion: lists.flatMap((id) => bookingsForList(s, id).map((b) => completionBlockersFor(s, b))),
-    dashboard: dashboardFiguresFor(s, SOUTER),
+    dashboard: anaesthetistLedgerPosition(s, SOUTER),
     warningsAndTodo: openWarnings(s).map((r) => JSON.stringify(r.warning)),
     needsInvoiceDestination: needsInvoiceDestinationBookings(s).map((r) => r.bookingId),
     bcti: bctiRecords(s).length,

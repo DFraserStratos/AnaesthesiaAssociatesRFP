@@ -7,7 +7,7 @@
       "name": "web-accounts",
       "app": "web",
       "caption": "Balances come from the ledger, not from Xero: the anaesthetist's position on the web",
-      "start": "/web/accounts/overdue",
+      "start": "/web/accounts/outstanding",
       "states": [
         {
           "steps": [],

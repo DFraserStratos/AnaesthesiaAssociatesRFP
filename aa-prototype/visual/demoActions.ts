@@ -20,3 +20,18 @@ export async function runDemoAction(page: Page, id: string, opts: { choice?: str
   if (opts.close === true) await page.keyboard.press('Escape')
   return text
 }
+
+/**
+ * Advance the demo clock from the harness bar (as `shell-clock.spec.ts` does):
+ * open the "Demo clock" popup, press one shortcut (default "+15 min") and close
+ * it. Advancing the clock ticks the Xero sync queue (catch-up Phase 37).
+ */
+export async function advanceClock(page: Page, shortcut = '+15 min'): Promise<void> {
+  const trigger = page.getByRole('button', { name: /Demo clock/ })
+  await trigger.click()
+  const dialog = page.getByRole('dialog').filter({ has: page.getByRole('button', { name: shortcut, exact: true }) })
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: shortcut, exact: true }).click()
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
+}

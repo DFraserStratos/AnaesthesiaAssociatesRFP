@@ -134,7 +134,7 @@
         },
         {
           "state": "released",
-          "caption": "Transferred at authorise and paid in the payables run: Paid to you",
+          "caption": "Transferred at authorise and paid in Xero's payables run: Paid to you",
           "steps": [
             {
               "goto": "/web/lists/L-34821-2026-07-24-PM"
@@ -213,10 +213,10 @@
               "goto": "/admin/billing"
             },
             {
-              "click": "[data-shot=billing-payables-run] >> role=button[name=\"Run payables\"]"
+              "click": "[data-shot=billing-run-payables-in-xero]"
             },
             {
-              "wait": "[data-shot=billing-payables-run] >> text=/Run PR0001/"
+              "wait": "[data-shot=billing-payables-result]"
             },
             {
               "wait": 600

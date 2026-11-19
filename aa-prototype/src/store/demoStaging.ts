@@ -21,7 +21,8 @@ export const BILLING_FAILURE_ALREADY = 'Already triggered'
  * ACTIVE, arms the hand-off fault for Losa Tuilagi's Booking alone, then
  * authorises as the office. Her Booking is held back at the hand-off, Hemi
  * Walker's bills and hands off, and the List is not failed (OQ-05); the
- * monitor's "Resolve & retry" hands hers off once. No Contract changes.
+ * Xero sync queue retries her hand-off (Retry now, or the clock; catch-up
+ * Phase 37). No Contract changes.
  */
 export function stageBillingFailure(api: AppStoreApi): Outcome<{ listId: string; bookingId: string }> {
   const listId = SEED_LIST_IDS.billingFailure

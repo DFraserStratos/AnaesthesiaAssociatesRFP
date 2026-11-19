@@ -129,7 +129,7 @@ export function capturePhase25(afterAuthorise?: (api: BoundAppStore) => void): P
 /** The status the pre-Phase 36 billing case would have stored for this pair (a hand-off fault left it 'invoiced'; a part pay-out kept its paid status). */
 export function oldCaseStatus(p: BookingLedgerPair): string {
   const s = pairStatusLabel(p)
-  if (s === 'handoffFailed') return 'invoiced'
+  if (s === 'waitingForXero') return 'invoiced'
   if (s === 'partPaidOut') return toCents(p.receivable.receivedAmount) >= toCents(p.receivable.amount) ? 'paid' : 'partPaid'
   return s
 }

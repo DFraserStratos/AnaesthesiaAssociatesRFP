@@ -139,12 +139,6 @@ export function MobileCatalogue() {
           replaceWith="shadcn Badge">
           <Ex.ProgressPillExample />
         </CatalogueRow>
-        <CatalogueRow name="AgeChip" source="apps/mobile/screens/BalancesScreen.tsx" usedIn={M} stage="mobile" height={240}
-          what="An outstanding invoice's age in days (amber past 60 days), with an ACC chip when ACC funded."
-          replaceWith="shadcn Badge"
-          note="Recreated: local to BalancesScreen.tsx.">
-          <Ex.AgeChipExample />
-        </CatalogueRow>
         <CatalogueRow name="DayChip" source="shared/ui/DayChip.tsx" usedIn={M} stage="mobile" height={160}
           what="The teal chip naming the picked day; tapping it closes the day view and goes back to the Lists."
           replaceWith="shadcn Badge (as a button, with dismiss icon)"
@@ -159,7 +153,7 @@ export function MobileCatalogue() {
         <CatalogueRow name="Hero figure card" source="apps/mobile/screens/BalancesScreen.tsx" usedIn={M} stage="mobile" height={200}
           what="The Balances headline: outstanding to you, in large mono figures, with the unpaid invoice count. Static, not animated."
           replaceWith="shadcn Card"
-          note="The Balances cards are at radius 14 since UI unification U6 (question 20); Phases 36 and 38 move Balances onto the shared Card.">
+          note="On the shared Card since catch-up Phase 38, as are the Outstanding and GST rows (each Outstanding card opens its Booking). AgeChip is gone with the ageing (D8).">
           <Ex.HeroFigureCardExample />
         </CatalogueRow>
         <CatalogueRow name="EmptyState" source="shared/ui/EmptyState.tsx" usedIn={SW} stage="mobile" height={260}

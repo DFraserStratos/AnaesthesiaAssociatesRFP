@@ -593,12 +593,16 @@ An invoice has been generated.
 4. A Xero webhook notifies the Billing Engine; a daily poll is the safety net.
 5. The matching payable becomes `AUTHORISED` for exactly the amount received, including a partial
    payment; the rest stays outstanding on the invoice.
-6. AA runs payables and disburses the authorised amount to the anaesthetist. A prepayment is the
-   exception: its payable credits the AA Holding account and is never paid itself; the anaesthetist is
-   paid only after the transfer at authorisation (Workflow 8, Pre-payment).
+6. AA runs payables in Xero; a bill-paid webhook, or the daily poll, tells the Billing Engine, which
+   records the disbursement. The payment itself is made in Xero, never by the app; the Billing
+   monitor's payables panel (**Authorised, awaiting Xero's payables run**) only shows what is waiting.
+   A prepayment is the exception: its payable credits the AA Holding account and is never paid itself;
+   the anaesthetist is paid only after the transfer at authorisation (Workflow 8, Pre-payment).
 7. The system tracks **paid into AA** and **disbursed to anaesthetist** separately.
-8. The anaesthetist's flat balance view, persistent payment history and GST activity update from the
-   Billing Engine's own ledger, AA's system of record, not from direct Xero queries. Every invoice is a
+8. The anaesthetist's financial position (owed to you, collected, paid out to you), the flat list of
+   unpaid payables (one row per payable, oldest first, kept as "Paid in, due to you" until AA pays
+   her), the persistent payment history and the monthly GST report of the payments AA passed on to her
+   (cash basis, with each payment's GST) update from the Billing Engine's own ledger, AA's system of record, not from direct Xero queries. Every invoice is a
    ledger pair (a receivable from the payer and a payable to the anaesthetist) created with the invoice;
    payments are recorded in the ledger first, the payables run pays from the payable legs, and Xero
    mirrors both. The office checks on **Admin → Ledger** that receipts held equal payables due plus the
@@ -618,7 +622,31 @@ direct link to the highlighted Web Payments row. Explain that the shortcut combi
 events while the underlying receipt and disbursement states remain separate. For a technical
 audience, use a partial payment followed by two payables runs to prove no double payment.
 S3 Beat 5 closes on the Ledger: in balance, then a $120.00 receipt that matches no invoice puts it
-out of balance (and Dr Souter on the out-of-balance list) until the office allocates it.
+out of balance (and Dr Souter on the out-of-balance list) until the office allocates it. S3 then ends
+on Admin Day's **Reconciliation** card: **Books square**.
+
+### Xero resilience (catch-up Phase 37)
+
+1. Every call to Xero (a hand-off, a payment or disbursement sync, the poll) is written to the **Xero
+   sync queue** first. If Xero does not answer, the call waits and retries with growing gaps; the
+   Billing monitor shows each waiting call, and **Retry now** retries one at once.
+2. Authorising and invoicing carry on during an outage: the invoice and its ledger pair stand, and the
+   List reads **Waiting for Xero** until its hand-off lands.
+3. When Xero is back, the queue drains in order, with no duplicate pair, contact, receipt or
+   disbursement.
+4. An invoice voided or edited directly in Xero is found at the daily reconciliation poll and flagged
+   on the Billing monitor (**Changed directly in Xero**). The ledger keeps what the engine issued; the
+   office records a resolution, which moves no money (provisional: the policy for each mismatch is to be
+   agreed with AA).
+5. Admin Day's **Reconciliation** card says whether the ledger, its Xero mirror and Xero's bank lines
+   agree (**Books square**) or not (**Out of balance**), listing each item to resolve and how long it
+   has waited.
+
+Bulk remittances: a hospital that pays several invoices in one deposit is matched in Xero, not by the
+engine. Xero's remittance add-on matches each line by the InvoiceNumber it quotes, and the engine learns
+each payment through the normal payment webhook. A line Xero cannot match waits in Xero's bank
+reconciliation for the office to match there (the demo: **Simulate bulk hospital remittance**, then
+**Match in Xero** on the Bank reconciliation tab).
 
 ### Source
 
@@ -648,7 +676,7 @@ Admin → Billing → AA fee invoices, or the "Run scheduled month-end fee run" 
    times the count, with GST worked out at the foot. Each is its own case with a Xero ACCREC against the
    anaesthetist's existing contact and no ACCPAY.
 4. The anaesthetist pays it by bank transfer into AA's own account. It is never deducted from a payment
-   to them (trust law), and it is not their income, so it never reaches their GST activity.
+   to them (trust law), and it is not their income, so it never reaches their GST report.
 5. Admin and the web **Accounts → AA fees** tab show each fee invoice paid or unpaid.
 
 ### Demo point
@@ -682,8 +710,8 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 - Two steps, and the anaesthetist is paid only after the second:
   1. **Collected into the AA Holding account.** The payer's money lands; the payable to the AA Holding
      account is authorised for what was received, and nothing is paid to the anaesthetist. The Billing
-     monitor's **AA Holding account** card shows the balance and a Received entry. Run payables pays
-     nothing.
+     monitor's **AA Holding account** card shows the balance and a Received entry. The payables run
+     pays nothing.
   2. **Transferred at authorisation.** When the office authorises the List, the system writes a
      transfer from the AA Holding account to the anaesthetist who did the List, with no office step: a
      Transferred entry on the card, the balance falls, and the Xero simulator shows a manual journal on
@@ -763,8 +791,9 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
   the lock, such as the Xero hand-off.
 - Failure is per Booking and a List never fails as a whole (OQ-05, answered): the failed Booking is held
   back (a split Booking's invoices with it) while the rest of the List bills.
-- The office retries once from the Billing monitor: **Resolve & retry** re-sends a hand-off, **Retry**
-  rebuilds from the lock. The fix never edits a Contract or any other master; a wrong price after
+- A failed hand-off waits in the Xero sync queue, which retries it by itself; the office can use
+  **Retry now** on its queue row. A failed billing run keeps the booking row's **Retry**, which rebuilds
+  from the lock. On the Billing monitor, **Problems only** narrows the list to just these. The fix never edits a Contract or any other master; a wrong price after
   invoicing is corrected by a credit note and rebill (a later build).
 
 #### Row the office cannot match
@@ -807,6 +836,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Addendum, billing monitor/retry | Yes | Phase 09 |
 | Contract locked at authorise, invoices from the lock, Contract history | Yes | Catch-up Phase 25 |
 | Xero pairs, payment, balances and disbursement | Yes | Phase 10 |
+| Xero resilience: payables run in Xero, sync queue and outage, voids and edits flagged, bulk remittance matched in Xero, Reconciliation card; Billing monitor grouped by anaesthetist with filters | Yes | Catch-up Phase 37 |
 | Internal ledger with in-balance view (whole ledger, one anaesthetist, the out-of-balance list) | Yes | Catch-up Phase 36 |
 | Anaesthetist profile, rate per unit and bank details | Yes | Catch-up Phase 26 |
 | AA's monthly fee invoices (settings, run, AA fees tab) | Yes | Catch-up Phase 16 |

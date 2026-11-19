@@ -6,8 +6,8 @@
     {
       "name": "web-overdue",
       "app": "web",
-      "caption": "Your position on the web: what AA owes you, collected for you, paid out to you and what you owe AA, above what is still owed",
-      "start": "/web/accounts/overdue",
+      "caption": "Your position on the web: owed to you, collected, paid out to you and what you owe AA, above Outstanding, one row per unpaid payable, oldest first",
+      "start": "/web/accounts/outstanding",
       "states": [
         {
           "steps": [],
@@ -18,9 +18,23 @@
       ]
     },
     {
+      "name": "web-dashboard-position",
+      "app": "web",
+      "caption": "Financial position on the web dashboard: owed to you, collected and paid out to you",
+      "start": "/web",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=web-financial-position]"
+          ]
+        }
+      ]
+    },
+    {
       "name": "web-payments",
       "app": "web",
-      "caption": "Your position beside the payments: what AA owes you, collected for you, paid out to you and what you owe AA",
+      "caption": "Your position beside the payments: owed to you, collected, paid out to you and what you owe AA",
       "start": "/web/accounts/payments",
       "states": [
         {

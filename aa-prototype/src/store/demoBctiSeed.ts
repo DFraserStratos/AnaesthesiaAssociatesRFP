@@ -10,7 +10,7 @@
  * 6 July, an AM and a PM List each day with five Bookings each, all before the
  * canvas horizon start (7 July) so no added List collides with a generated
  * one. Every receivable is paid in full a week after its service date and
- * disbursed, so nothing reaches Overdue or the payables run. Hospital payers
+ * disbursed, so nothing reaches Outstanding or the payables run. Hospital payers
  * only (organisation contacts, no personal information). One `mutate()`, one
  * audit entry, as the demo-actions actor. Deterministic: no clock or randomness.
  */
