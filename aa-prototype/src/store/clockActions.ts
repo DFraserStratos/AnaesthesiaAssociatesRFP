@@ -73,10 +73,11 @@ function applyClock(api: AppStoreApi, next: DemoClockState): void {
     rollCanvasForward(api, previous.todayISO, next.todayISO)
     if (!isDraftStore(api)) emitAppEvent({ type: 'dayAdvanced', todayISO: next.todayISO })
   }
-  // Every clock change (catch-up Phase 37): the Xero sync queue works what is due, after the day's poll.
+  // Every clock change (catch-up Phase 37): the Xero sync queue works what is due, after the day's poll. Never from a
+  // Booking draft (catch-up Phase 35: a draft's shared app events are no-ops).
   const fromISO = clockISO(previous)
   const toISO = clockISO(next)
-  if (toISO !== fromISO) emitAppEvent({ type: 'clockAdvanced', fromISO, toISO })
+  if (toISO !== fromISO && !isDraftStore(api)) emitAppEvent({ type: 'clockAdvanced', fromISO, toISO })
 }
 
 /** Advance the clock by minutes; rolling past midnight advances the day (and the canvas). */
