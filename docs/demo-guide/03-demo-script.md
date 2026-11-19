@@ -92,6 +92,7 @@ view respectively.
 | One List under review | `/admin/review/<listId>` |
 | Invoices | `/admin/invoices` |
 | One invoice document | `/admin/invoices/<invoiceId>` |
+| One credit note | `/admin/credit-notes/<creditNoteId>` (Sarah Mitchell's, from S4 Beat 2b: `CRN0001`) |
 | Billing monitor | `/admin/billing` (filters in the URL: `?problems=1`, `?anaesthetist=34821`, `?hospital=`, `?from=`, `?to=`) |
 | Ledger (the whole ledger) | `/admin/ledger` |
 | Ledger, one anaesthetist | `/admin/ledger/anaesthetists/<anaesthetistId>` (Dr Souter: `34821`) |
@@ -767,11 +768,11 @@ URLs**: a reload returns to the demo data.
   monitor still finds the few Lists that need attention. Each screen shows its render time at demo size
   and at this size."
 - **Expected:** the banner reads "Full-scale data · 85 anaesthetists · 21,080 sessions over the
-  scheduling horizon (4 months) · 28,290 invoices in the last 12 months · generated in 2.0 s · saving
+  scheduling horizon (4 months) · 28,268 invoices in the last 12 months · generated in 2.0 s · saving
   paused. Reset or reload returns to the demo data." (the generation time varies a little). The Day view
   pages 30 anaesthetists at a time ("Anaesthetists 1 to 30 of 85", 1 of 3), with the same ACTIVE Lists,
   Draft List strip and Public sessions as at demo size. Invoices page 50 at a time ("Showing 1 to 50 of
-  28,248"). Audit pages 100 at a time, the newest entry **Full-scale data loaded**. The Billing monitor
+  28,226"). Audit pages 100 at a time, the newest entry **Full-scale data loaded**. The Billing monitor
   pages anaesthetist groups 20 at a time ("Anaesthetists 1 to 20 of 77": the anaesthetists with a List
   awaiting approval or authorised); its tiles count everything kept (Awaiting approval 125, Authorised
   14,345, With problems 18), and **Problems only** shows the 18 problem Lists across 15 anaesthetists. A
@@ -1194,6 +1195,106 @@ actions** on the screen named in its beat.
   "After a prepaid or fixed-price procedure nothing is billed automatically; if the work ran long, the
   anaesthetist raises an additional invoice by hand, right here."
 
+### Beat 2b: credit in full and rebill
+
+- **Click:**
+  - Open Sarah Mitchell's original invoice, **AA-2026-0003** (`/admin/invoices/INV0003`; Christchurch
+    Public, 9 units at $23.00, $207.00 plus GST $31.05, total $238.05). Its rail has a **Correct this
+    invoice** card: "For an AA-side error, less work than expected or a split requested by the billable
+    party. The invoice is never edited: it is credited in full and new invoices are issued." Select
+    **Credit in full and rebill**.
+  - The sheet reads "Credit in full and rebill AA-2026-0003" and "The invoice is credited in full.
+    Nothing on it is edited." Under **1 Credit**, the credit note goes to "Same as the original invoice
+    (Christchurch Public)"; choose the reason **Wrong amount**. **What happens to the money** reads
+    "Unpaid: nothing held.", "Dr Sharma's payment is reversed: a negative invoice for $238.05, offset
+    against the unpaid payable." and "A credit note is not a refund."
+  - Under **2 New invoices**, New invoice 1 already holds a copy of the original's lines:
+    "Appendicectomy, laparoscopic", 1 x $207.00. Correct the line: the amount to **$184.00** (Time 3
+    units, not 4: 8 units at $23.00); the totals read $184.00, GST $27.60, total $211.60. What can be
+    corrected is a line, the invoice description, or the approval number on the Booking; never quote
+    HNZ-2026-3102 or a purchase order, which do not exist. **On issue** reads Debit AA-2026-0003
+    $238.05, Credit "Credit note, numbered on issue" $238.05, Contra "Negative invoice to Dr Sharma,
+    numbered on issue" $238.05, Debit "New invoice to Christchurch Public" $211.60. Select **Save for
+    review**.
+  - The original now reads **Credit waiting for review** ("A credit for this invoice is waiting for
+    review."). Sarah's Booking Events shows two new rows, Raised by the office, Awaiting review: Credit,
+    $207.00 ex GST, "Credits AA-2026-0003 in full · Wrong amount", and Additional invoice, $184.00 ex
+    GST, "Rebill of AA-2026-0003 · Appendicectomy, laparoscopic".
+  - **Admin Review → Events**: the Credit row ("Credit AA-2026-0003 in full, 1 new invoice", Wrong
+    amount, $207.00) with its New invoice row ($184.00) under it. Open it: the review sheet "Credit ·
+    Sarah Mitchell" shows the money, the new invoice and its totals. Select **Approve for billing**
+    ("Approved · issued in the next billing run").
+  - **Billing monitor**: **Waiting for the next billing run** lists both. **Demo actions → Run the next
+    billing run** ("Billing run done: 1 credit note and 1 additional invoice raised (CN-2026-0001,
+    AA-2026-0005).").
+  - Open the original: it reads **Credited**, with "Credited in full by CN-2026-0001 on Tue 21 Jul 2026 ·
+    rebilled as AA-2026-0005". Open **CN-2026-0001** (`/admin/credit-notes/CRN0001`): "CREDIT NOTE
+    CN-2026-0001 · Credits AA-2026-0003 in full", credit to Christchurch Public, reason Wrong amount,
+    raised by the office, "Credit: Appendicectomy, laparoscopic" $207.00, GST $31.05, **Total credited
+    $238.05**. Its rail: **Negative invoice** "CN-2026-0001-P to Dr Sharma · $238.05 · offset against
+    the unpaid payable", **New invoices** AA-2026-0005 $211.60, and Xero "ACCRECCREDIT CN-2026-0001 ·
+    Draft ACCPAY voided".
+  - Open the rebill, **AA-2026-0005**: "Rebills AA-2026-0003 (credited by CN-2026-0001)", $184.00, GST
+    $27.60, total $211.60. Sarah's Booking Events now reads Credit **Issued** CN-2026-0001 and Additional
+    invoice **Invoiced** AA-2026-0005.
+  - Optionally the **Xero sim** (`/demo/xero/invoices/XR0002`): AA-2026-0003 Credited, the **Credit
+    notes** card (ACCRECCREDIT CN-2026-0001, total $238.05, allocated $238.05, unallocated $0.00, "Draft
+    ACCPAY voided. The draft bill was voided: nothing had been authorised to pay."), **New pairs**
+    AA-2026-0005, and the ACCPAY AA-2026-0003-P reading Voided.
+- **Say:** "We never edit an issued invoice. We credit it in full, to whichever party needs it, and
+  rebill, starting from a copy of the original lines. The credit is an event on the Procedure like any
+  other, through the same review step. The credit always reverses the anaesthetist's payable, by a
+  negative invoice, and both sides move together, in our ledger and in Xero. Nothing is ever credited
+  automatically: a person decides."
+- **Expected:** the credit note CN-2026-0001 ($238.05), the original AA-2026-0003 Credited, and the
+  rebill with a new number, AA-2026-0005 ($211.60). On **Invoices**, CN-2026-0001 reads Kind Credit
+  note with "Credits AA-2026-0003", AA-2026-0003 reads "Credited", and AA-2026-0005 reads "Rebills
+  AA-2026-0003". The Ledger reads "In balance · receipts held equal payables due", with **Credits held
+  for payers** and **Negative invoices to net** both $0.00 (nothing had been paid). The rebill takes
+  AA-2026-0005, so Beat 3's numbers move on one.
+- The three asides take numbers too. The figures below are as run straight after Beat 2b; run there,
+  the split moves Beat 3's and Beat 5's numbers on four (the paid-out aside raises only a credit note).
+  Otherwise run them at the end of S4, where they take the next free numbers.
+- **Aside (paid-out case):** on the **Billing monitor**, **Demo actions → Stage refund after payout →
+  Run** ("Paid in full and paid out to Dr Sharma in Xero. Credit it to see the negative invoice."; after Beat
+  2b it pays the rebill, AA-2026-0005). Open it, **Credit note**, reason Wrong amount: the money reads
+  "Paid $211.60: $211.60 will be held for Christchurch Public." and "Dr Sharma was paid $211.60: a
+  negative invoice for $211.60 nets in their next payment run."; no new invoice ("No new invoice. The
+  credit stands alone unless you add one."). Save, approve and run: CN-2026-0002, its negative
+  invoice "CN-2026-0002-P to Dr Sharma · $211.60 · $211.60 nets in the next payment run", and the
+  Ledger's Credits held for payers and Negative invoices to net both $211.60, still in balance. Say:
+  "Once the anaesthetist has been paid, the negative invoice is netted in their next weekly payment
+  run." (39a adds the netting beat.)
+- **Aside (split):** on **Admin · Invoices**, **Demo actions → Stage combined procedure → Run**
+  ("Staged: a billed Merivale combination. Open its invoice and use Split into additional invoices.",
+  with its link, AA-2026-0006 here, AA-2026-0002 from a reset): Lorraine Petrie on Dr Delaney's Fri 10
+  Jul PM List at Forte, "Facelift plus 2 add ons (eg bleph & fat grafting)", $3,700.00 ex GST
+  ($4,255.00). Select **Split into additional invoices**: the reason is already "Split requested", and
+  two new invoices to start; **Add an invoice** for a third. Type Facelift $2,400 and Blepharoplasty
+  $800, then Fat grafting: **Left to allocate** reads $500.00 and submit stays off; **Put the rest on
+  this invoice** fills $500.00 ($575.00 with GST), Left to allocate reads **$0.00**, and **Save 3
+  invoices for review** turns on. Approve and run: "Billing run done: 1 credit note and 3 additional
+  invoices raised (CN-2026-0003, AA-2026-0007, AA-2026-0008, AA-2026-0009)." (CN-2026-0002 without the
+  paid-out aside). The original reads "Credited in full by CN-2026-0003 on Tue 21 Jul 2026 · replaced
+  by AA-2026-0007, AA-2026-0008, AA-2026-0009"; the first piece reads "Additional invoice · part 1 of 3
+  · replaces AA-2026-0006 · Facelift, upper blepharoplasty and fat… (credited by CN-2026-0003)",
+  $2,760.00. Say: "The patient wants the facelift bundle in three pieces. We credit the bundle and raise
+  three invoices. The office splits the amount however it needs, but the pieces must add up to what was
+  credited. If it hasn't gone out yet, the office just edits it."
+- **Aside (the anaesthetist):** on web or the handset as Dr Souter, search "Chen" and open David Chen's
+  Mon 22 Jun Booking (`/web/lists/L-HIST-03/bookings/HBK03`). On the Contract row, **Credit note** sits
+  beside **Raise additional invoice**. The sheet names AA-2026-H03, St George's, $452.61 ex GST; it
+  offers only Less work than expected, Wrong billable party and Paid twice, and reads "Your payment for
+  this invoice is reversed." and "A credit note is not a refund.", with no money panel or trail. Choose
+  **Less work than expected**, **Add an invoice**, "Hip hemiarthroplasty" at $380.00, then **Save for
+  review** ("The office reviews it, then it is issued in the next billing run."). Events shows Credit,
+  $452.61 ex GST, "Credits AA-2026-H03 in full · Less work than expected", and Additional invoice,
+  $380.00 ex GST, "Rebill of AA-2026-H03 · Hip hemiarthroplasty", both Raised by you · St George's,
+  Awaiting review, with **Edit**. Say: "The anaesthetist can do this on their own procedure too. It goes
+  to the office's review like everything else." On the PWA, **Demo → Office reviews this credit**
+  ("Approved by the office and issued in the next billing run (CN-2026-0001).", from a reset; the next
+  number otherwise): the Credit reads Issued and the new invoice Invoiced.
+
 ### Beat 3: billing failure and retry
 
 - **Click:**
@@ -1204,7 +1305,7 @@ actions** on the screen named in its beat.
     blocks only its own invoice, never the rest of the list."), the four tiles (Awaiting approval,
     Authorised, With problems, Payables due) and the filter bar (Anaesthetist, Hospital, From, To).
   - Turn on **Problems only** (in the filter bar, or select the **With problems** tile).
-  - In the **Xero sync queue** panel, on the row **Hand off AA-2026-0005**, select **Retry now**.
+  - In the **Xero sync queue** panel, on the row **Hand off AA-2026-0006**, select **Retry now**.
   - Optional: on any group, a List still awaiting approval has **Open in Review**; Review opens with
     **Back to Billing monitor**, which returns with the filters kept. There is no Authorise button on
     the monitor.
@@ -1223,14 +1324,14 @@ actions** on the screen named in its beat.
   **Handed off**, and the List is not failed. The queue row reads 1 attempt, next try 08:02, "Xero
   rejected the call (simulated fault)", Waiting; the Xero line above the tiles reads "Connected · 1
   waiting for their next try", and the Ledger's **Not yet in Xero** tile counts her pair until the
-  retry. **Retry now** hands hers off once ("Hand off AA-2026-0005: sent to Xero.", and **Sent after
+  retry. **Retry now** hands hers off once ("Hand off AA-2026-0006: sent to Xero.", and **Sent after
   waiting (1)**): her row reads **Handed off** and her Xero pair appears, with no duplicate invoice.
   The filter then reads "0 lists" and "No problems. Every authorised list has billed, been sent and
-  reached Xero." Her invoice (AA-2026-0005, Canterbury Orthopaedic Surgeons, $303.60) and Hemi
-  Walker's (AA-2026-0006, St George's, $221.38) are unchanged. No Contract changes. Left alone, the
+  reached Xero." Her invoice (AA-2026-0006, Canterbury Orthopaedic Surgeons, $303.60) and Hemi
+  Walker's (AA-2026-0007, St George's, $221.38) are unchanged. No Contract changes. Left alone, the
   queue retries it itself when the clock moves on. (The numbers follow Riley's prepayment invoice,
   AA-2026-0002, raised in Beat 1, and Beat 2's Sarah Mitchell, AA-2026-0003, and her additional invoice,
-  AA-2026-0004; each beat skipped moves them back one.)
+  AA-2026-0004, and Beat 2b's rebill, AA-2026-0005; each beat skipped moves them back one.)
 
 ### Beat 4: the unmatched queue
 
@@ -1287,13 +1388,13 @@ actions** on the screen named in its beat.
   rest stays outstanding on the invoice. The payment to the anaesthetist is made in Xero; we record and
   track it. Two payables runs across a part-then-balance payment prove there is no double payment."
 - **Expected:** the payable authorises exactly the amount received; the panel lists it ("1 payable due
-  · $110.69", Dr Ropata, AA-2026-0006, bill AA-2026-0006-P). **Run payables in Xero** empties the list
+  · $110.69", Dr Ropata, AA-2026-0007, bill AA-2026-0007-P). **Run payables in Xero** empties the list
   ("No payables are awaiting the payables run.") with "Xero paid 1 bill ($110.69); the Billing Engine
   recorded 1 disbursement from the bill-paid webhooks.": each disbursement is recorded as Xero reports
   the bill paid. Each run pays exactly what arrived, and the total paid out equals the invoice total,
   never more. The Ledger's Payables due rises with
   each part payment and returns to $0.00 after each run: $110.69 after the half (Hemi Walker's
-  AA-2026-0006, $221.38), $0.00 after the first run, $110.69 after the rest, $0.00 after the second.
+  AA-2026-0007, $221.38), $0.00 after the first run, $110.69 after the rest, $0.00 after the second.
 
 ### Beat 6: The date approaches
 

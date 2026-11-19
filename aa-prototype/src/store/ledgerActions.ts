@@ -24,6 +24,8 @@ export function allocationRefusal(state: Pick<AppState, 'billing'>, unmatchedId:
   if (pair === undefined) return { code: 'notFound', message: 'Invoice not found in the ledger.' }
   const balance = roundToCents(pair.receivable.amount - pair.receivable.receivedAmount)
   if (!isBookingPair(pair) || toCents(balance) <= 0) return { code: 'notReceivable', message: 'Choose an invoice with a balance still owed.' }
+  // A credited invoice owes nothing (catch-up Phase 39).
+  if (pair.credit !== undefined) return { code: 'invoiceCredited', message: 'This invoice was credited. Choose the new invoice.' }
   // The payment is recorded in Xero too (a PaymentIn on its ACCREC): an invoice not yet there cannot take it.
   if (pair.receivable.xeroAccRecId === undefined) return { code: 'notInXero', message: 'This invoice is not in Xero yet. Choose another invoice, or resolve its handoff first.' }
   if (toCents(u.amount) > toCents(balance)) return { code: 'overAllocation', message: OVER_ALLOCATION }

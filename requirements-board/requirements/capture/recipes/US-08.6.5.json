@@ -1,6 +1,323 @@
 {
   "id": "US-08.6.5",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 39 builds this.",
-  "shots": []
+  "status": "partial",
+  "absentReason": "Crediting a prepayment invoice when only part of the prepaid work was done, and the fresh additional invoice for the work done, come in Phase 41; until then the option is hidden on a prepaid Procedure. Credits on post-paid invoices are shown for the office and the anaesthetist.",
+  "shots": [
+    {
+      "name": "credit-note-option",
+      "app": "admin",
+      "caption": "The credit note option sits beside Create additional invoice on an invoiced Procedure",
+      "start": "/admin/day/2026-07-14/bookings/BK0032",
+      "setup": [
+        {
+          "goto": "/admin/review/L-41267-2026-07-14-AM"
+        },
+        {
+          "trigger": "stage-post-op"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "state": "option",
+          "caption": "Credit note beside Create additional invoice; no credit note exists until someone creates one by hand",
+          "steps": [
+            {
+              "wait": "[data-shot=procedure-credit-note-button]"
+            },
+            {
+              "scroll": "[data-shot=procedure-credit-note-button] >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-credit-note-button]",
+            "[data-shot=additional-invoice-button]"
+          ]
+        },
+        {
+          "state": "in-full",
+          "caption": "Always the whole invoice, never a part: there is no amount to enter, and a credit note is not a refund",
+          "steps": [
+            {
+              "click": "[data-shot=procedure-credit-note-button] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=credit-sheet]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=credit-sheet] [data-shot=credit-original]"
+          ]
+        },
+        {
+          "state": "party",
+          "caption": "Credit to the party picked, the original billable party included; it includes the reversal of the payable to the anaesthetist",
+          "steps": [
+            {
+              "click": "[data-shot=procedure-credit-note-button] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=credit-sheet]"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-party] [data-shot=event-same-as-row]"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-party] [data-testid=party-picker-toggle]"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-party] [data-shot=party-option] >> nth=0"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-reason-chip]:has-text(\"Wrong billable party\")"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=credit-sheet] [data-shot=credit-party]",
+            "[data-shot=credit-sheet] [data-shot=credit-money-state]"
+          ]
+        },
+        {
+          "state": "event",
+          "caption": "The credit is recorded as an event on the Procedure, awaiting review",
+          "steps": [
+            {
+              "click": "[data-shot=procedure-credit-note-button] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=credit-sheet]"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-reason-chip]:has-text(\"Wrong amount\")"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-submit]"
+            },
+            {
+              "wait": "[data-shot=procedure-credit-event]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=procedure-credit-event] >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-credit-event]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "anaesthetist-credit-note",
+      "app": "web",
+      "caption": "The anaesthetist credits their own invoiced Procedure in full",
+      "start": "/web/lists/L-HIST-03/bookings/HBK03",
+      "states": [
+        {
+          "state": "option",
+          "caption": "The anaesthetist's credit note option on their own invoiced Procedure; no credit note exists until someone creates one by hand",
+          "steps": [
+            {
+              "wait": "[data-shot=anaesthetist-credit-note-button]"
+            },
+            {
+              "scroll": "[data-shot=anaesthetist-credit-note-button] >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[data-shot=anaesthetist-credit-note-button]"
+          ]
+        },
+        {
+          "state": "sheet",
+          "caption": "Always the whole invoice: the anaesthetist's payment for it is reversed, and a credit note is not a refund",
+          "steps": [
+            {
+              "click": "[data-shot=anaesthetist-credit-note-button] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=credit-form]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=credit-form] [data-shot=credit-reason-chip]:has-text(\"Less work than expected\")"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=credit-form]"
+          ]
+        },
+        {
+          "state": "event",
+          "caption": "Recorded as an event on the Procedure, awaiting the office's review",
+          "steps": [
+            {
+              "click": "[data-shot=anaesthetist-credit-note-button] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=credit-form]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=credit-form] [data-shot=credit-reason-chip]:has-text(\"Less work than expected\")"
+            },
+            {
+              "click": "[data-shot=credit-submit]"
+            },
+            {
+              "wait": "[data-shot=procedure-credit-event]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=procedure-credit-event] >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-credit-event]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "anaesthetist-credit-note",
+      "app": "mobile",
+      "caption": "The anaesthetist credits their own invoiced Procedure in full, on the phone",
+      "start": "/mobile/lists/L-HIST-03/bookings/HBK03",
+      "states": [
+        {
+          "state": "option",
+          "caption": "The anaesthetist's credit note option on their own invoiced Procedure, on the phone; no credit note exists until someone creates one by hand",
+          "steps": [
+            {
+              "wait": "[data-aa-mobile-product] [data-shot=anaesthetist-credit-note-button]"
+            },
+            {
+              "scroll": "[data-aa-mobile-product] [data-shot=anaesthetist-credit-note-button] >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [data-shot=anaesthetist-credit-note-button]"
+          ]
+        },
+        {
+          "state": "sheet",
+          "caption": "Always the whole invoice: the anaesthetist's payment for it is reversed, and a credit note is not a refund, on the phone",
+          "steps": [
+            {
+              "click": "[data-aa-mobile-product] [data-shot=anaesthetist-credit-note-button] >> nth=0"
+            },
+            {
+              "wait": "[data-aa-mobile-product] [data-shot=credit-form]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-aa-mobile-product] [data-shot=credit-form] [data-shot=credit-reason-chip]:has-text(\"Less work than expected\")"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [data-shot=credit-form]"
+          ]
+        },
+        {
+          "state": "event",
+          "caption": "Recorded as an event on the Procedure, awaiting the office's review, on the phone",
+          "steps": [
+            {
+              "click": "[data-aa-mobile-product] [data-shot=anaesthetist-credit-note-button] >> nth=0"
+            },
+            {
+              "wait": "[data-aa-mobile-product] [data-shot=credit-form]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-aa-mobile-product] [data-shot=credit-form] [data-shot=credit-reason-chip]:has-text(\"Less work than expected\")"
+            },
+            {
+              "click": "[data-aa-mobile-product] [data-shot=credit-submit]"
+            },
+            {
+              "wait": "[data-aa-mobile-product] [data-shot=procedure-credit-event]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-aa-mobile-product] [data-shot=procedure-credit-event] >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [data-shot=procedure-credit-event]"
+          ]
+        },
+        {
+          "state": "issued",
+          "caption": "Once the office approves it, the credit note is issued in the next billing run",
+          "steps": [
+            {
+              "click": "[data-aa-mobile-product] [data-shot=anaesthetist-credit-note-button] >> nth=0"
+            },
+            {
+              "wait": "[data-aa-mobile-product] [data-shot=credit-form]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-aa-mobile-product] [data-shot=credit-form] [data-shot=credit-reason-chip]:has-text(\"Less work than expected\")"
+            },
+            {
+              "click": "[data-aa-mobile-product] [data-shot=credit-submit]"
+            },
+            {
+              "wait": "[data-aa-mobile-product] [data-shot=procedure-credit-event]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-aa-mobile-product] [data-shot=procedure-credit-event] >> nth=0"
+            },
+            {
+              "trigger": "office-reviews-credit"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "scroll": "[data-aa-mobile-product] [data-shot=procedure-credit-event] >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [data-shot=procedure-credit-event]"
+          ]
+        }
+      ]
+    }
+  ]
 }

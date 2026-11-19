@@ -121,8 +121,9 @@ function personalIn(text: string, known: Map<string, string>): string | undefine
 function internalIdsOf(state: ScanState): Set<string> {
   const ids = new Set<string>()
   const maps: Record<string, unknown>[] = [
-    state.xero.contacts, state.xero.accRecs, state.xero.accPays, state.xero.payments, state.xero.disbursements, state.xero.journals, state.xero.remittances, state.xero.bankLines,
+    state.xero.contacts, state.xero.accRecs, state.xero.accPays, state.xero.payments, state.xero.disbursements, state.xero.journals, state.xero.remittances, state.xero.bankLines, state.xero.creditNotes,
     state.billing.invoices, state.billing.invoiceLines, state.billing.ledger, state.billing.receipts, state.billing.disbursements, state.billing.exceptions, state.billing.xeroQueue, state.billing.transfers, state.billing.aaFeeInvoices,
+    state.billing.creditNotes, state.billing.negativeInvoices,
     state.schedule.lists, state.schedule.bookings, state.schedule.procedures, state.intake.rows, state.intake.batches, state.intake.stubs, state.integrations.messages,
   ]
   for (const m of maps) for (const k of Object.keys(m)) if (k.length === 7) ids.add(k.toUpperCase())
@@ -171,6 +172,7 @@ export function scanForNhiLeaks(state: ScanState, options: LeakScanOptions = {})
       ['journals', state.xero.journals],
       ['remittances', state.xero.remittances],
       ['bankLines', state.xero.bankLines],
+      ['creditNotes', state.xero.creditNotes],
       ['syncQueue', state.billing.xeroQueue],
     ]
     for (const [name, map] of xeroMaps) {
@@ -185,7 +187,7 @@ export function scanForNhiLeaks(state: ScanState, options: LeakScanOptions = {})
         })
       }
     }
-    areas.push({ key: 'xero', label: 'Xero', scanned: 'Contacts, invoices and bills, payments, bill payments, journals, remittances, bank lines and the sync queue', items: xeroItems, hits: xeroHits, heldByDesign: false, checksPersonalDetails: true })
+    areas.push({ key: 'xero', label: 'Xero', scanned: 'Contacts, invoices and bills, credit notes, payments, bill payments, journals, remittances, bank lines and the sync queue', items: xeroItems, hits: xeroHits, heldByDesign: false, checksPersonalDetails: true })
 
     // The diagnostic log, refusals included.
     const diag = recentDiagnostics()

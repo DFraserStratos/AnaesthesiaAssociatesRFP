@@ -76,6 +76,7 @@ export function runReconciliationPoll(api: AppStoreApi): PollResult {
       payablesRunId: bill.payablesRunId,
     })
     // A refusal (above what is released, the AA Holding account) is logged by the audit of what did land and skipped, never thrown.
+    // A bill paid on a payable the engine has reversed by a credit is flagged below, by `flagXeroDivergences` (catch-up Phase 39 review).
     if (outcome.ok && outcome.value.applied) disbursements += 1
   }
 

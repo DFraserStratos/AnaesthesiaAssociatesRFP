@@ -84,19 +84,30 @@ export const pairByAccRecIndex = memoOn((ledger: Readonly<Record<string, LedgerP
   return out
 })
 
+/** The pairs whose payable carries each ACCPAY id. */
+export const pairsByAccPayIndex = memoOn((ledger: Readonly<Record<string, LedgerPair>>) => groupBy(Object.values(ledger), (p) => ('payable' in p ? p.payable?.xeroAccPayId : undefined)))
+
 /** Transfers by Booking. */
 export const transfersByBooking = memoOn((transfers: Readonly<Record<string, LedgerTransfer>>) => groupBy(Object.values(transfers), (t) => t.bookingId))
 
-/** The open (not sent) queue items: hand-offs by pair, journals by transfer, first in map order as `find` returned. */
+/**
+ * The open (not sent) queue items, first in map order as `find` returned: hand-offs by pair (a hand-off of the
+ * pair itself, or a credit's correction that creates or reverses it), journals by transfer, corrections by credit note.
+ */
 export const openQueueIndex = memoOn((queue: Readonly<Record<string, XeroQueueItem>>) => {
   const handoffByPair = new Map<string, XeroQueueItem>()
   const journalByTransfer = new Map<string, XeroQueueItem>()
+  const correctionByCreditNote = new Map<string, XeroQueueItem>()
   for (const q of Object.values(queue)) {
     if (q.status === 'sent') continue
     if (q.kind === 'handoff' && q.target.pairId !== undefined && !handoffByPair.has(q.target.pairId)) handoffByPair.set(q.target.pairId, q)
+    if (q.kind === 'correction') {
+      for (const pairId of q.target.pairIds ?? []) if (!handoffByPair.has(pairId)) handoffByPair.set(pairId, q)
+      if (q.target.creditNoteId !== undefined && !correctionByCreditNote.has(q.target.creditNoteId)) correctionByCreditNote.set(q.target.creditNoteId, q)
+    }
     if (q.kind === 'journal' && q.target.transferId !== undefined && !journalByTransfer.has(q.target.transferId)) journalByTransfer.set(q.target.transferId, q)
   }
-  return { handoffByPair, journalByTransfer }
+  return { handoffByPair, journalByTransfer, correctionByCreditNote }
 })
 
 /** The first open billing exception per Booking, in id order. */

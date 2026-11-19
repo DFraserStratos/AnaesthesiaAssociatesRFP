@@ -17,6 +17,7 @@ import { TextAction } from '../ui/TextAction'
 import { EVENT_LABELS } from '../procedureEventCopy'
 import { AdditionalInvoiceSheet } from './AdditionalInvoiceForm'
 import { useBookingStore, useCommandBlock } from './draft'
+import { scrollToEventRow } from './scrollToEventRow'
 
 export function AdditionalInvoiceButton({ procedureId, actor }: { procedureId: string; actor: Actor }) {
   const state = useBookingStore((s) => s)
@@ -32,17 +33,12 @@ export function AdditionalInvoiceButton({ procedureId, actor }: { procedureId: s
   const reason = blocked ?? refusal?.message ?? null
   const label = actor.role === 'office' ? EVENT_LABELS.createAdditional : EVENT_LABELS.raiseAdditional
 
-  function saved(eventId: string) {
-    // Bring the new row into view under the Procedure.
-    requestAnimationFrame(() => document.querySelector(`[data-shot="procedure-event-row"][data-event-id="${eventId}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }))
-  }
-
   return (
     <>
       <TextAction shot="additional-invoice-button" onClick={() => setOpen(true)} disabled={reason !== null} disabledReason={reason}>
         {label}
       </TextAction>
-      <AdditionalInvoiceSheet open={open} procedureId={procedureId} actor={actor} onClose={() => setOpen(false)} onSaved={saved} />
+      <AdditionalInvoiceSheet open={open} procedureId={procedureId} actor={actor} onClose={() => setOpen(false)} onSaved={(id) => scrollToEventRow(id, 'procedure-event-row')} />
     </>
   )
 }

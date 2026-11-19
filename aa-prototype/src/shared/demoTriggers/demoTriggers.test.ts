@@ -8,6 +8,7 @@ import { createAppStore, type BoundAppStore } from '../../store/appStore'
 import { wireBillingRun } from '../../store/billingRun'
 import { authoriseList } from '../../store/lifecycle'
 import { approveProcedureEvent } from '../../store/procedureEventActions'
+import { submitCredit, type CreditReplacementInput } from '../../store/creditActions'
 import { resetDemo } from '../../store/clockActions'
 import { bookingsForList, openAccRecs, proceduresForBooking } from '../../store/selectors'
 import { handoffQueuedFor } from '../../store/ledgerSelectors'
@@ -17,9 +18,9 @@ import { correctPdfListRow, sendPdfListToMatching } from '../../store/pdfListAct
 import { setAvailabilityRange } from '../../store/availabilityActions'
 import { alertOffice } from '../../store/officeAlertActions'
 import { SEED_LIST_IDS, SEED_MARKERS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
-import { DEMO_TRIGGERS, POST_OP_ORIGINAL_LIST_ID } from './registry'
+import { BILLING_MONITOR_SCREEN, DEMO_TRIGGERS, POST_OP_ORIGINAL_LIST_ID } from './registry'
 import { projectedListId } from '../../domain/slots'
-import { demoTriggersFor, initialChoice } from './match'
+import { demoTriggersFor, groupTriggersByScreen, initialChoice } from './match'
 import { useDemoTriggerMemory } from './memory'
 import type { DemoContextValues } from './context'
 import type { DemoTrigger, DemoTriggerCtx } from './types'
@@ -119,10 +120,10 @@ const PINNED_XERO_INVOICES = ['xero-outage-start', 'xero-outage-restore', 'run-r
 const PINNED_XERO_BANK = PINNED_XERO_INVOICES
 
 describe('route scoping', () => {
-  it('the Billing monitor shows exactly its seven entries (catch-up Phase 37 adds the outage pair, 38b the next billing run); routes match the path, so search params never change them', () => {
+  it('the Billing monitor shows exactly its eight entries (catch-up Phase 37 adds the outage pair, 38b the next billing run, 39 the refund after payout); routes match the path, so search params never change them', () => {
     const api = createAppStore()
-    const seven = ['billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job', 'run-next-billing-run']
-    expect([...ids(api, '/admin/billing')].sort()).toEqual([...seven].sort())
+    const eight = ['billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job', 'run-next-billing-run', 'stage-refund-after-payout']
+    expect([...ids(api, '/admin/billing')].sort()).toEqual([...eight].sort())
   })
 
   it('the Xero outage pair, and the pair-only Xero actions, are bar-only with working disabled states (catch-up Phase 37)', () => {
@@ -1112,3 +1113,123 @@ describe('Phase 43 entries (scale and privacy)', () => {
   })
 })
 
+describe('credit entries (catch-up Phase 39 session 2)', () => {
+  const MOBILE_HBK03 = '/mobile/lists/L-HIST-03/bookings/HBK03'
+  const hbk03 = () => ctxFor(MOBILE_HBK03, { listId: 'L-HIST-03', bookingId: 'HBK03' })
+  const credit = (api: BoundAppStore, actor: typeof OFFICE_ACTOR, invoiceId: string, replacements: CreditReplacementInput[] = []) => {
+    const out = submitCredit(api, actor, { invoiceId, reason: 'Less work than expected', cause: 'correction', replacements })
+    if (!out.ok) throw new Error(out.message)
+    return out.value
+  }
+  const runPostOp = (api: BoundAppStore) => expect(byId('stage-post-op').run(api, ctxFor(`/admin/review/${POST_OP_ORIGINAL_LIST_ID}`, { listId: POST_OP_ORIGINAL_LIST_ID })).ok).toBe(true)
+
+  it('register on their screens and surfaces only', () => {
+    const api = createAppStore()
+    expect(byId('stage-combined-procedure').surfaces).toEqual(['bar'])
+    expect(byId('stage-refund-after-payout').surfaces).toEqual(['bar'])
+    expect(byId('office-reviews-credit')).toMatchObject({ surfaces: ['pwa'], badge: 'office-stand-in' })
+    expect(ids(api, '/admin/invoices')).toContain('stage-combined-procedure')
+    expect(ids(api, '/admin/invoices/INV0001')).not.toContain('stage-combined-procedure')
+    expect(ids(api, '/admin/billing')).toEqual(expect.arrayContaining(['stage-refund-after-payout', 'run-next-billing-run']))
+    expect(ids(api, '/admin/invoices/INV0001')).toContain('stage-refund-after-payout')
+    expect(ids(api, '/admin/invoices')).not.toContain('stage-refund-after-payout')
+    expect(ids(api, MOBILE_HBK03, 'pwa')).toEqual(expect.arrayContaining(['office-reviews-credit', 'office-reviews-additional-invoice']))
+    expect(ids(api, MOBILE_HBK03, 'bar')).not.toContain('office-reviews-credit')
+    for (const id of ['stage-combined-procedure', 'stage-refund-after-payout']) {
+      expect(ids(api, MOBILE_HBK03, 'pwa')).not.toContain(id)
+    }
+  })
+
+  it('"Stage refund after payout" is listed in the Control Panel index under the Billing monitor and Admin · Invoice, the groups in registry order (Phase 39 review)', () => {
+    const groups = groupTriggersByScreen(DEMO_TRIGGERS)
+    const under = (screen: string) => groups.find((g) => g.screen === screen)?.entries.map((t) => t.id) ?? []
+    expect(under(BILLING_MONITOR_SCREEN)).toContain('stage-refund-after-payout')
+    expect(under('Admin · Invoice')).toEqual(expect.arrayContaining(['regenerate-invoice', 'stage-refund-after-payout']))
+    // Every entry under its own screen, in registry order: the groups keep the order a plain grouping by `screen` gives.
+    const plain: string[] = []
+    for (const t of DEMO_TRIGGERS) if (!plain.includes(t.screen)) plain.push(t.screen)
+    expect(groups.map((g) => g.screen)).toEqual(plain)
+    expect(groups.reduce((n, g) => n + g.entries.length, 0)).toBe(DEMO_TRIGGERS.length + DEMO_TRIGGERS.reduce((n, t) => n + (t.alsoScreens?.length ?? 0), 0))
+  })
+
+  it('"Stage combined procedure" bills a Merivale combination once, links its invoice, then reads "Already staged"', () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    const t = byId('stage-combined-procedure')
+    const ctx = ctxFor('/admin/invoices')
+    expect(t.disabledReason(api.getState(), ctx)).toBeNull()
+    const out = t.run(api, ctx)
+    unwire()
+    expect(out.ok).toBe(true)
+    expect(out.message).toBe('Staged: a billed Merivale combination. Open its invoice and use Split into additional invoices.')
+    expect(out.link?.label).toMatch(/^Open AA-2026-\d{4}$/)
+    const invoiceId = out.link!.to.split('/').pop()!
+    expect(api.getState().billing.invoices[invoiceId]).toMatchObject({ kind: 'standard', total: 4255 })
+    expect(t.indexPath(api.getState())).toBe(`/admin/invoices/${invoiceId}`)
+    expect(t.disabledReason(api.getState(), ctx)).toBe('Already staged')
+  })
+
+  it('"Stage refund after payout": its disabled reasons, then paid in full and paid out to Dr Sharma', () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    const t = byId('stage-refund-after-payout')
+    const monitor = ctxFor('/admin/billing')
+    expect(t.disabledReason(api.getState(), monitor)).toBe('Stage post-op scenario first')
+    expect(t.disabledReason(api.getState(), ctxFor('/admin/invoices/INV0001', { invoiceId: 'INV0001' }))).toBe('AA fee and prepayment invoices are not credited here')
+    runPostOp(api)
+    expect(t.disabledReason(api.getState(), monitor)).toBeNull()
+    const out = t.run(api, monitor)
+    unwire()
+    expect(out).toMatchObject({ ok: true, message: 'Paid in full and paid out to Dr Sharma in Xero. Credit it to see the negative invoice.' })
+    const invoiceId = out.link!.to.split('/').pop()!
+    expect(t.disabledReason(api.getState(), monitor)).toBe('Already paid out')
+    expect(t.disabledReason(api.getState(), ctxFor(`/admin/invoices/${invoiceId}`, { invoiceId }))).toBe('Already paid out')
+  })
+
+  it('"Stage refund after payout" reads "Credit waiting for review" then "Invoice credited"; the payment entries read "Invoice credited" and the PWA choices drop the credited ACCREC', () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    runPostOp(api)
+    const t = byId('stage-refund-after-payout')
+    const original = Object.values(api.getState().billing.invoices).find((i) => i.kind === 'standard' && i.bookingId === api.getState().schedule.bookings[Object.values(api.getState().schedule.bookings).find((b) => b.listId === POST_OP_ORIGINAL_LIST_ID)!.id]!.id)!
+    const ctx = ctxFor(`/admin/invoices/${original.id}`, { invoiceId: original.id })
+    const { creditEventId } = credit(api, OFFICE_ACTOR, original.id)
+    expect(t.disabledReason(api.getState(), ctx)).toBe('Credit waiting for review')
+    expect(approveProcedureEvent(api, OFFICE_ACTOR, creditEventId).ok).toBe(true)
+    const runOut = byId('run-next-billing-run').run(api, ctxFor('/admin/billing'))
+    expect(runOut.message).toMatch(/^Billing run done: 1 credit note raised \(CN-2026-0001\)\.$/)
+    unwire()
+    expect(t.disabledReason(api.getState(), ctx)).toBe('Invoice credited')
+    expect(byId('payment-full').disabledReason(api.getState(), ctx)).toBe('Invoice credited')
+    const accRecId = Object.values(api.getState().xero.accRecs).find((r) => r.invoiceId === original.id)!.id
+    expect(byId('payment-half').disabledReason(api.getState(), ctxFor(`/demo/xero/invoices/${accRecId}`, { accRecId }))).toBe('Invoice credited')
+    expect(openAccRecs(api.getState()).some((c) => c.accRecId === accRecId)).toBe(false)
+  })
+
+  it('"Run the next billing run" counts a correction: the credit note and its new invoice', () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    const { creditEventId } = credit(api, OFFICE_ACTOR, 'HINV03', [{ occurredOnISO: '2026-07-21', party: { sameAs: true }, lines: [{ description: 'Shorter case', quantity: 1, unitAmount: 400 }] }])
+    expect(approveProcedureEvent(api, OFFICE_ACTOR, creditEventId).ok).toBe(true)
+    const out = byId('run-next-billing-run').run(api, ctxFor('/admin/billing'))
+    unwire()
+    expect(out.message).toMatch(/^Billing run done: 1 credit note and 1 additional invoice raised \(CN-2026-0001, AA-2026-\d{4}\)\.$/)
+  })
+
+  it('"Office reviews this credit" approves and issues the credit on the Booking; "Office reviews this additional invoice" skips it and its replacement', () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    const t = byId('office-reviews-credit')
+    const additional = byId('office-reviews-additional-invoice')
+    expect(t.disabledReason(api.getState(), hbk03())).toBe('No credit on this Booking is awaiting review')
+    // The seeded additional invoice first, so only the credit and its replacement wait.
+    expect(additional.run(api, hbk03()).ok).toBe(true)
+    credit(api, SOUTER_ACTOR, 'HINV03', [{ occurredOnISO: '2026-07-21', party: { sameAs: true }, lines: [{ description: 'Shorter case', quantity: 1, unitAmount: 400 }] }])
+    expect(additional.disabledReason(api.getState(), hbk03())).toBe('No additional invoice on this Booking is awaiting review')
+    expect(t.disabledReason(api.getState(), hbk03())).toBeNull()
+    const out = t.run(api, hbk03())
+    unwire()
+    expect(out).toEqual({ ok: true, message: 'Approved by the office and issued in the next billing run (CN-2026-0001).' })
+    expect(t.disabledReason(api.getState(), hbk03())).toBe('No credit on this Booking is awaiting review')
+  })
+})

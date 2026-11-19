@@ -33,11 +33,21 @@
  *    no fault flag on the pair and no manual "Resolve & retry" for a hand-off.
  *
  * One `mutate`, `source:'system'` audit (`xero.contactResolved`, `xero.pairCreated`).
+ *
+ * THE CORRECTION (catch-up Phase 39; US-08.6.2 "Both sides move"): a credit's
+ * Xero side is `handoffCorrection`, through the same gate and queue: in one
+ * mutate the original's ACCREC is credited (an ACCRECCREDIT) and its ACCPAY
+ * voided or credited (an ACCPAYCREDIT), and every replacement's pair is
+ * created by the same mirror code as `createXeroPair` (`mirrorPairInto`). A
+ * replacement's pair is never handed off on its own: `handoffPair` routes it to
+ * its correction, and refuses a credited pair.
  */
 
 import { buyerCreatedTaxInvoiceFor, supplierFor } from '../domain/billing/invoicePresentation'
-import type { AaFeeLedgerPair, Anaesthetist, Booking, BookingLedgerPair, CounterpartyRef, LedgerPair, XeroContact } from '../domain/types'
+import type { AaFeeLedgerPair, Anaesthetist, Booking, BookingLedgerPair, CounterpartyRef, LedgerPair, XeroAccPay, XeroAccRec, XeroContact, XeroCreditNote } from '../domain/types'
 import { isAaFeePair, isBookingPair, isHoldingLeg, payeeAnaesthetistOf } from '../domain/billing/ledger'
+import { xeroCorrectionPlan } from '../domain/billing/creditNote'
+import { CREDIT_MESSAGES, CREDIT_SYNC_MESSAGES } from '../shared/procedureEventCopy'
 import { aaFeeAccRecFor } from '../domain/billing/aaFee'
 import type { LockedPayee } from '../domain/billing/lock'
 import { AA_HOLDING_ACCOUNT } from '../domain/billing/prepayment'
@@ -45,7 +55,7 @@ import { xeroIndividualContactName } from '../domain/xeroContact'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { counterpartyName } from './selectors'
-import { handoffQueuedFor, journalQueuedFor, pairsForBooking, pairsForList } from './ledgerSelectors'
+import { correctionQueuedFor, handoffQueuedFor, journalQueuedFor, pairForInvoice, pairsForBooking, pairsForList } from './ledgerSelectors'
 import { enqueueXeroWork, gateFor } from './xeroGate'
 
 const HANDOFF_ACTOR: Actor = { who: 'Xero handoff', role: 'system', source: 'system' }
@@ -216,7 +226,17 @@ export function handoffPair(api: AppStoreApi, pairId: string): Outcome<HandoffRe
   if (pair === undefined) return refuse('notFound', 'Ledger pair not found.')
   const mirrored = mirroredIds(pair)
   if (mirrored !== undefined) return ok(mirrored)
+  // A credited pair (catch-up Phase 39) is never mirrored afterwards: its credit cancelled it.
+  if (isBookingPair(pair) && pair.credit !== undefined) return refuse('invoiceCredited', CREDIT_MESSAGES.invoiceCredited)
   if (handoffQueuedFor(state, pairId) !== undefined) return ok({ queued: true })
+  // A replacement issued with a credit goes to Xero with its correction, never on its own.
+  const correction = isBookingPair(pair) ? correctionOfReplacement(state, pair.invoiceId) : undefined
+  if (correction !== undefined) {
+    const out = handoffCorrection(api, correction)
+    if (!out.ok) return out
+    const now = mirroredIds(api.getState().billing.ledger[pairId]!)
+    return ok(now ?? { queued: true })
+  }
   const verdict = gateFor(state, { ...(isBookingPair(pair) ? { bookingId: pair.bookingId } : {}) })
   if (!verdict.go) {
     const queued = enqueueXeroWork(api, { kind: 'handoff', idempotencyKey: `HANDOFF-${pairId}`, target: { pairId }, lastError: verdict.error, consumesFault: verdict.consumesFault })
@@ -243,18 +263,10 @@ export function createXeroPair(api: AppStoreApi, pairId: string): Outcome<Handof
   const mirrored = mirroredIds(pair)
   if (mirrored !== undefined) return ok(mirrored)
   if (isAaFeePair(pair)) return handoffAaFeePair(api, pair)
-  const invoice = state.billing.invoices[pair.invoiceId]
-  if (invoice === undefined) return refuse('noInvoice', 'The pair invoice was not found.')
-  // The payee stamped on the pair (catch-up Phase 25's lock); a prepayment's ACCPAY names the List's anaesthetist at the time, as 27 left it.
-  const payeeRecord = payeeRecordFor(state, pair)
-  if (payeeRecord === undefined && pair.payable !== undefined) {
-    return refuse('noAnaesthetist', 'Could not resolve the anaesthetist payee for this pair.')
-  }
-
-  const payerSpec = payerContactSpec(invoice.counterparty, state.masters)
-  // A prepayment's payable credits the AA Holding account, not the anaesthetist (FT-06.3, D38; catch-up Phases 27, 27a).
-  const toHolding = pair.payable !== undefined && isHoldingLeg(pair.payable)
-  const payeeSpec = payeeRecord === undefined ? undefined : toHolding ? holdingAccountContactSpec() : anaesthetistContactSpec({ registrationNumber: payeeRecord.anaesthetistId, name: payeeRecord.name })
+  // A credited pair not yet in Xero (catch-up Phase 39): nothing to mirror, its credit cancelled it (a queued hand-off completes as a no-op).
+  if (isBookingPair(pair) && pair.credit !== undefined) return ok({})
+  const ready = mirrorReadiness(state, pair)
+  if (!ready.ok) return ready
 
   const metas: MutationMeta[] = []
   let out: HandoffResult = {}
@@ -265,87 +277,372 @@ export function createXeroPair(api: AppStoreApi, pairId: string): Outcome<Handof
       metas.push({ entityType: 'ledgerPair', entityId: pairId, action: 'xero.handoffNoop' })
       return {}
     }
-    let counters = s.counters
-    const contacts = { ...s.xero.contacts }
-    const accRecs = { ...s.xero.accRecs }
-    const accPays = { ...s.xero.accPays }
-    const cache = { ...s.billing.contactIdCache }
-
-    const payer = resolveContactInto(payerSpec, contacts, cache, counters)
-    counters = payer.counters
-    metas.push(contactResolvedMeta(payer.contactId, payerSpec, payer))
-
-    const r = existing.receivable
-    const issuedAtISO = clockISO(s.clock)
-    const xr = allocateId(counters, 'xeroAccRec')
-    counters = xr.counters
-    // A no-charge invoice (catch-up Phase 24): a $0.00 receivable, nothing owed so marked paid, no payable, no BCTI.
-    const noCharge = existing.payable === undefined
-    accRecs[xr.id] = {
-      id: xr.id,
-      kind: 'procedure',
-      invoiceId: invoice.id,
-      contactId: payer.contactId,
-      invoiceNumber: r.number,
-      reference: existing.id,
-      issuedAtISO,
-      amountDue: r.amount,
-      amountReceived: r.receivedAmount,
-      ...(noCharge ? { paidAtISO: r.paidInAtISO ?? issuedAtISO } : {}),
-      status: noCharge ? 'paid' : 'awaitingPayment',
-    }
-    const next = { ...existing, receivable: { ...r, xeroAccRecId: xr.id } }
-    out = { accRecId: xr.id }
-
-    if (existing.payable !== undefined && payeeSpec !== undefined && payeeRecord !== undefined) {
-      const payee = resolveContactInto(payeeSpec, contacts, cache, counters)
-      counters = payee.counters
-      metas.push(contactResolvedMeta(payee.contactId, payeeSpec, payee))
-      const xp = allocateId(counters, 'xeroAccPay')
-      counters = xp.counters
-      const p = existing.payable
-      accPays[xp.id] = {
-        id: xp.id,
-        accRecId: xr.id,
-        contactId: payee.contactId,
-        invoiceNumber: p.number,
-        reference: existing.id,
-        issuedAtISO,
-        anaesthetistId: payeeRecord.anaesthetistId,
-        amountPayable: p.amount,
-        amountAuthorised: p.releasedAmount,
-        amountDisbursed: p.disbursedAmount,
-        status: 'draft',
-        ...(toHolding ? { payeeAccount: AA_HOLDING_ACCOUNT.payeeAccount } : {}),
-        // The ACCPAY stands as the buyer-created tax invoice (US-09.1.4; provisional, OQ-29): one per receivable, the same value.
-        taxInvoice: buyerCreatedTaxInvoiceFor(invoice, payeeRecord.supplier),
-      }
-      next.payable = { ...p, xeroAccPayId: xp.id }
-      out = { accRecId: xr.id, accPayId: xp.id }
-    }
-
-    metas.push({
-      entityType: 'ledgerPair',
-      entityId: pairId,
-      action: 'xero.pairCreated',
-      after: {
-        accRecId: out.accRecId,
-        ...(out.accPayId !== undefined ? { accPayId: out.accPayId } : {}),
-        invoiceNumber: r.number,
-        payerContactId: payer.contactId,
-        amountDue: r.amount,
-        ...(existing.payable !== undefined ? { amountPayable: existing.payable.amount, taxInvoiceProvisional: true } : { noCharge: true }),
-      },
-    })
-
-    return {
-      xero: { ...s.xero, contacts, accRecs, accPays },
-      billing: { ...s.billing, ledger: { ...s.billing.ledger, [pairId]: next }, contactIdCache: cache },
-      counters,
-    }
+    const work = mirrorWorkOf(s)
+    out = mirrorPairInto(s, work, pairId, metas)
+    return mirrorPatch(s, work)
   })
 
   return ok(out)
+}
+
+/** The recipe-local copies a mirror writes (contacts, the ACCREC and ACCPAY maps, the ledger, the contact cache, the counters). */
+export interface MirrorWork {
+  counters: Record<string, number>
+  contacts: Record<string, XeroContact>
+  accRecs: Record<string, XeroAccRec>
+  accPays: Record<string, XeroAccPay>
+  creditNotes: Record<string, XeroCreditNote>
+  cache: Record<string, string>
+  ledger: Record<string, LedgerPair>
+}
+
+function mirrorWorkOf(s: AppState): MirrorWork {
+  return {
+    counters: s.counters,
+    contacts: { ...s.xero.contacts },
+    accRecs: { ...s.xero.accRecs },
+    accPays: { ...s.xero.accPays },
+    creditNotes: { ...s.xero.creditNotes },
+    cache: { ...s.billing.contactIdCache },
+    ledger: { ...s.billing.ledger },
+  }
+}
+
+function mirrorPatch(s: AppState, work: MirrorWork): Pick<AppState, 'xero' | 'billing' | 'counters'> {
+  return {
+    xero: { ...s.xero, contacts: work.contacts, accRecs: work.accRecs, accPays: work.accPays, creditNotes: work.creditNotes },
+    billing: { ...s.billing, ledger: work.ledger, contactIdCache: work.cache },
+    counters: work.counters,
+  }
+}
+
+/** Whether a Booking pair can be mirrored: its invoice exists and its payee resolves. */
+function mirrorReadiness(state: Pick<AppState, 'schedule' | 'masters' | 'billing'>, pair: BookingLedgerPair): Outcome<undefined> {
+  if (state.billing.invoices[pair.invoiceId] === undefined) return refuse('noInvoice', 'The pair invoice was not found.')
+  if (payeeRecordFor(state, pair) === undefined && pair.payable !== undefined) return refuse('noAnaesthetist', 'Could not resolve the anaesthetist payee for this pair.')
+  return ok(undefined)
+}
+
+/**
+ * Mirror one Booking pair into `work` (the body `createXeroPair` and the
+ * correction share; catch-up Phase 39 extracted it): the ACCREC from the
+ * receivable leg, the ACCPAY from the payable leg (to its stamped payee: the
+ * anaesthetist, or the AA Holding account's contact), the legs' mirror ids
+ * stamped. Never creates, amends or deletes ledger money. A pair already
+ * mirrored, or not ready, is left as it is.
+ */
+export function mirrorPairInto(s: AppState, work: MirrorWork, pairId: string, metas: MutationMeta[]): HandoffResult {
+  const existing = work.ledger[pairId]
+  if (existing === undefined || !isBookingPair(existing)) return {}
+  if (existing.receivable.xeroAccRecId !== undefined) return mirroredIds(existing) ?? {}
+  // A credited pair is never mirrored (catch-up Phase 39 review: a retried correction whose replacement was credited meanwhile), as `createXeroPair`.
+  if (existing.credit !== undefined) return {}
+  const invoice = s.billing.invoices[existing.invoiceId]
+  // The payee stamped on the pair (catch-up Phase 25's lock); a prepayment's ACCPAY names the List's anaesthetist at the time, as 27 left it.
+  const payeeRecord = payeeRecordFor(s, existing)
+  if (invoice === undefined || (payeeRecord === undefined && existing.payable !== undefined)) return {}
+
+  const payerSpec = payerContactSpec(invoice.counterparty, s.masters)
+  // A prepayment's payable credits the AA Holding account, not the anaesthetist (FT-06.3, D38; catch-up Phases 27, 27a).
+  const toHolding = existing.payable !== undefined && isHoldingLeg(existing.payable)
+  const payeeSpec = payeeRecord === undefined ? undefined : toHolding ? holdingAccountContactSpec() : anaesthetistContactSpec({ registrationNumber: payeeRecord.anaesthetistId, name: payeeRecord.name })
+
+  const payer = resolveContactInto(payerSpec, work.contacts, work.cache, work.counters)
+  work.counters = payer.counters
+  metas.push(contactResolvedMeta(payer.contactId, payerSpec, payer))
+
+  const r = existing.receivable
+  const issuedAtISO = clockISO(s.clock)
+  const xr = allocateId(work.counters, 'xeroAccRec')
+  work.counters = xr.counters
+  // A no-charge invoice (catch-up Phase 24): a $0.00 receivable, nothing owed so marked paid, no payable, no BCTI.
+  const noCharge = existing.payable === undefined
+  work.accRecs[xr.id] = {
+    id: xr.id,
+    kind: 'procedure',
+    invoiceId: invoice.id,
+    contactId: payer.contactId,
+    invoiceNumber: r.number,
+    reference: existing.id,
+    issuedAtISO,
+    amountDue: r.amount,
+    amountReceived: r.receivedAmount,
+    ...(noCharge ? { paidAtISO: r.paidInAtISO ?? issuedAtISO } : {}),
+    status: noCharge ? 'paid' : 'awaitingPayment',
+  }
+  const next = { ...existing, receivable: { ...r, xeroAccRecId: xr.id } }
+  let out: HandoffResult = { accRecId: xr.id }
+
+  if (existing.payable !== undefined && payeeSpec !== undefined && payeeRecord !== undefined) {
+    const payee = resolveContactInto(payeeSpec, work.contacts, work.cache, work.counters)
+    work.counters = payee.counters
+    metas.push(contactResolvedMeta(payee.contactId, payeeSpec, payee))
+    const xp = allocateId(work.counters, 'xeroAccPay')
+    work.counters = xp.counters
+    const p = existing.payable
+    work.accPays[xp.id] = {
+      id: xp.id,
+      accRecId: xr.id,
+      contactId: payee.contactId,
+      invoiceNumber: p.number,
+      reference: existing.id,
+      issuedAtISO,
+      anaesthetistId: payeeRecord.anaesthetistId,
+      amountPayable: p.amount,
+      amountAuthorised: p.releasedAmount,
+      amountDisbursed: p.disbursedAmount,
+      status: 'draft',
+      ...(toHolding ? { payeeAccount: AA_HOLDING_ACCOUNT.payeeAccount } : {}),
+      // The ACCPAY stands as the buyer-created tax invoice (US-09.1.4; provisional, OQ-29): one per receivable, the same value.
+      taxInvoice: buyerCreatedTaxInvoiceFor(invoice, payeeRecord.supplier),
+    }
+    next.payable = { ...p, xeroAccPayId: xp.id }
+    out = { accRecId: xr.id, accPayId: xp.id }
+  }
+
+  metas.push({
+    entityType: 'ledgerPair',
+    entityId: pairId,
+    action: 'xero.pairCreated',
+    after: {
+      accRecId: out.accRecId,
+      ...(out.accPayId !== undefined ? { accPayId: out.accPayId } : {}),
+      invoiceNumber: r.number,
+      payerContactId: payer.contactId,
+      amountDue: r.amount,
+      ...(existing.payable !== undefined ? { amountPayable: existing.payable.amount, taxInvoiceProvisional: true } : { noCharge: true }),
+    },
+  })
+  work.ledger[pairId] = next
+  return out
+}
+
+// ---------------------------------------------------------------------------
+// The correction (catch-up Phase 39; US-08.6.2 "Both sides move")
+// ---------------------------------------------------------------------------
+
+/** The credit note a replacement invoice was issued with, while its correction has not reached Xero. */
+function correctionOfReplacement(state: Pick<AppState, 'billing'>, invoiceId: string): string | undefined {
+  const note = Object.values(state.billing.creditNotes).find((c) => c.replacementInvoiceIds.includes(invoiceId))
+  return note !== undefined && note.xero === undefined ? note.id : undefined
+}
+
+/** The pairs a correction creates: one per replacement invoice. */
+function replacementPairIds(state: Pick<AppState, 'billing'>, creditNoteId: string): string[] {
+  const note = state.billing.creditNotes[creditNoteId]
+  if (note === undefined) return []
+  return note.replacementInvoiceIds.flatMap((id) => {
+    const pair = pairForInvoice(state, id)
+    return pair !== undefined ? [pair.id] : []
+  })
+}
+
+export interface CorrectionHandoffResult {
+  accRecCreditNoteId?: string
+  accPayCreditNoteId?: string
+  accPayVoided?: boolean
+  /** The replacement pairs mirrored with it. */
+  pairIds?: string[]
+  /** The correction went to the Xero sync queue (outage or the armed fault); the queue retries it. */
+  queued?: boolean
+  queueItemId?: string
+}
+
+/**
+ * Hand a credit's correction to Xero, through the gate (catch-up Phase 37's
+ * queue): Xero available, the reversal and every replacement's pair land in
+ * one commit (`createXeroCorrection`). Xero unavailable, or the demo fault
+ * armed (`failNextHandoff`, which faults the whole correction, so nothing is
+ * reversed or created in Xero): the call is written to the Xero sync queue
+ * (kind `correction`, its pairs reading "waiting for Xero") and the failure is
+ * recorded on the credit note (`xeroFailure`) until it lands; the queue's
+ * retry (and the monitor's Retry now) runs `createXeroCorrection` again, so
+ * the retry reverses and re-creates together. A correction whose original is
+ * itself still waiting for Xero (its hand-off, or the correction that creates
+ * it) is queued behind it, so the two run in order; one Xero refuses while
+ * available is queued with its reason. Either way `xeroFailure` says why.
+ * Idempotent: a correction in Xero is a no-op, and one already queued is not
+ * queued twice.
+ */
+export function handoffCorrection(api: AppStoreApi, creditNoteId: string): Outcome<CorrectionHandoffResult> {
+  const state = api.getState()
+  const note = state.billing.creditNotes[creditNoteId]
+  if (note === undefined) return refuse('notFound', 'Credit note not found.')
+  if (note.xero !== undefined) return ok(correctionResultOf(state, creditNoteId))
+  if (correctionQueuedFor(state, creditNoteId) !== undefined) return ok({ queued: true })
+  const verdict = gateFor(state, { bookingId: note.bookingId })
+  if (!verdict.go) return queueCorrection(api, creditNoteId, { code: verdict.consumesFault ? 'fault' : 'outage', message: verdict.error }, verdict.consumesFault)
+  // The invoice it credits still waits for Xero (its own hand-off, or the correction that creates it): queue behind it, so the two run in order.
+  if (handoffQueuedFor(state, note.pairId) !== undefined) return queueCorrection(api, creditNoteId, { code: 'waitingForOriginal', message: CREDIT_SYNC_MESSAGES.waitingForOriginal }, false)
+  const out = createXeroCorrection(api, creditNoteId)
+  // Xero answered but the correction could not be made (a replacement not ready): queued with its reason, never left silently stuck.
+  if (!out.ok) return queueCorrection(api, creditNoteId, { code: out.code, message: out.message }, false)
+  return out
+}
+
+/** Write a correction to the Xero sync queue and record why on the credit note (`xeroFailure`), cleared when it lands. */
+function queueCorrection(api: AppStoreApi, creditNoteId: string, failure: { code: string; message: string }, consumesFault: boolean): Outcome<CorrectionHandoffResult> {
+  const state = api.getState()
+  const note = state.billing.creditNotes[creditNoteId]!
+  const queued = enqueueXeroWork(api, {
+    kind: 'correction',
+    idempotencyKey: `CORRECTION-${creditNoteId}`,
+    target: { creditNoteId, pairId: note.pairId, pairIds: [note.pairId, ...replacementPairIds(state, creditNoteId)] },
+    lastError: failure.message,
+    consumesFault,
+  })
+  if (!queued.ok) return queued
+  mutate(
+    api,
+    HANDOFF_ACTOR,
+    { entityType: 'creditNote', entityId: creditNoteId, action: 'creditNote.xeroWaiting', after: { creditNoteNumber: note.creditNoteNumber, queueItemId: queued.value.itemId, error: failure.message }, stampBookingId: null },
+    (s) => {
+      const now = s.billing.creditNotes[creditNoteId]!
+      return { billing: { ...s.billing, creditNotes: { ...s.billing.creditNotes, [creditNoteId]: { ...now, xeroFailure: failure } } } }
+    },
+  )
+  return ok({ queued: true, queueItemId: queued.value.itemId })
+}
+
+function correctionResultOf(state: Pick<AppState, 'billing'>, creditNoteId: string): CorrectionHandoffResult {
+  const x = state.billing.creditNotes[creditNoteId]?.xero
+  return {
+    ...(x?.accRecCreditNoteId !== undefined ? { accRecCreditNoteId: x.accRecCreditNoteId } : {}),
+    ...(x?.accPayCreditNoteId !== undefined ? { accPayCreditNoteId: x.accPayCreditNoteId } : {}),
+    ...(x !== undefined ? { accPayVoided: x.accPayVoided } : {}),
+    pairIds: replacementPairIds(state, creditNoteId),
+  }
+}
+
+/**
+ * The correction in Xero, one mutate (actor "Xero handoff", source system):
+ * `xeroCorrectionPlan` applied to the original's mirror (the ACCRECCREDIT
+ * allocated against the ACCREC, which becomes `credited`; a draft ACCPAY
+ * `voided`, or an ACCPAYCREDIT `${number}-P` against an authorised or paid one,
+ * which becomes `credited`) and every replacement's pair mirrored by
+ * `mirrorPairInto`. Each Xero credit note carries the engine's credit note id,
+ * so 37's divergence check never reads it as drift. An original never handed
+ * off has nothing to reverse: only the new pairs are created. Audited
+ * `xero.creditNoteCreated`, `xero.accPayVoided` or `xero.accPayCredited`, and
+ * `xero.pairCreated` per new pair. The gate and the queue call it. Idempotent.
+ */
+export function createXeroCorrection(api: AppStoreApi, creditNoteId: string): Outcome<CorrectionHandoffResult> {
+  const state = api.getState()
+  const note = state.billing.creditNotes[creditNoteId]
+  if (note === undefined) return refuse('notFound', 'Credit note not found.')
+  if (note.xero !== undefined) return ok(correctionResultOf(state, creditNoteId))
+  const original = state.billing.ledger[note.pairId]
+  if (original === undefined || !isBookingPair(original)) return refuse('notFound', 'Ledger pair not found.')
+  const pairIds = replacementPairIds(state, creditNoteId)
+  for (const id of pairIds) {
+    const pair = state.billing.ledger[id]
+    if (pair !== undefined && isBookingPair(pair)) {
+      const ready = mirrorReadiness(state, pair)
+      if (!ready.ok) return ready
+    }
+  }
+
+  const metas: MutationMeta[] = []
+  mutate(api, HANDOFF_ACTOR, metas, (s) => {
+    const nowNote = s.billing.creditNotes[creditNoteId]
+    if (nowNote === undefined || nowNote.xero !== undefined) {
+      metas.push({ entityType: 'creditNote', entityId: creditNoteId, action: 'xero.correctionNoop', stampBookingId: null })
+      return {}
+    }
+    const work = mirrorWorkOf(s)
+    const pair = work.ledger[nowNote.pairId] as BookingLedgerPair
+    const accRecId = pair.receivable.xeroAccRecId
+    const accPayId = pair.payable?.xeroAccPayId
+    const accRec = accRecId !== undefined ? work.accRecs[accRecId] : undefined
+    const accPay = accPayId !== undefined ? work.accPays[accPayId] : undefined
+    const plan = xeroCorrectionPlan(accRec, accPay, { creditNoteNumber: nowNote.creditNoteNumber, total: nowNote.total })
+    const issuedAtISO = clockISO(s.clock)
+    let accRecCreditNoteId: string | undefined
+    let accPayCreditNoteId: string | undefined
+    let accPayVoided = false
+    if (accRec !== undefined && plan.accRec !== undefined) {
+      // The ACCRECCREDIT is addressed to the credit's party and allocated against the original ACCREC either way (the sim does not model a contact mismatch).
+      const spec = payerContactSpec(nowNote.counterparty, s.masters)
+      const contact = resolveContactInto(spec, work.contacts, work.cache, work.counters)
+      work.counters = contact.counters
+      metas.push(contactResolvedMeta(contact.contactId, spec, contact))
+      const xcn = allocateId(work.counters, 'xeroCreditNote')
+      work.counters = xcn.counters
+      accRecCreditNoteId = xcn.id
+      work.creditNotes[xcn.id] = {
+        id: xcn.id,
+        type: 'ACCRECCREDIT',
+        creditNoteNumber: plan.accRec.creditNoteNumber,
+        againstId: accRec.id,
+        contactId: contact.contactId,
+        reference: pair.id,
+        creditNoteId,
+        total: plan.accRec.total,
+        allocated: plan.accRec.allocated,
+        status: 'authorised',
+        issuedAtISO,
+      }
+      work.accRecs[accRec.id] = { ...accRec, status: 'credited' }
+      metas.push({
+        entityType: 'creditNote',
+        entityId: creditNoteId,
+        action: 'xero.creditNoteCreated',
+        after: { type: 'ACCRECCREDIT', creditNoteNumber: plan.accRec.creditNoteNumber, xeroCreditNoteId: xcn.id, againstInvoiceNumber: accRec.invoiceNumber, total: plan.accRec.total, allocated: plan.accRec.allocated, unallocated: plan.accRec.unallocated },
+        stampBookingId: null,
+      })
+    }
+    if (accPay !== undefined && plan.accPay.action === 'void') {
+      accPayVoided = true
+      work.accPays[accPay.id] = { ...accPay, status: 'voided' }
+      metas.push({ entityType: 'xeroAccPay', entityId: accPay.id, action: 'xero.accPayVoided', before: { status: accPay.status }, after: { status: 'voided', invoiceNumber: accPay.invoiceNumber, creditNoteNumber: nowNote.creditNoteNumber }, stampBookingId: null })
+    } else if (accPay !== undefined && plan.accPay.action === 'credit') {
+      const xcn = allocateId(work.counters, 'xeroCreditNote')
+      work.counters = xcn.counters
+      accPayCreditNoteId = xcn.id
+      work.creditNotes[xcn.id] = {
+        id: xcn.id,
+        type: 'ACCPAYCREDIT',
+        creditNoteNumber: plan.accPay.creditNoteNumber,
+        againstId: accPay.id,
+        contactId: accPay.contactId,
+        reference: pair.id,
+        creditNoteId,
+        total: plan.accPay.total,
+        allocated: plan.accPay.allocated,
+        status: 'authorised',
+        issuedAtISO,
+      }
+      work.accPays[accPay.id] = { ...accPay, status: 'credited' }
+      metas.push({
+        entityType: 'xeroAccPay',
+        entityId: accPay.id,
+        action: 'xero.accPayCredited',
+        before: { status: accPay.status },
+        after: { status: 'credited', creditNoteNumber: plan.accPay.creditNoteNumber, xeroCreditNoteId: xcn.id, total: plan.accPay.total, allocated: plan.accPay.allocated, unallocated: plan.accPay.unallocated },
+        stampBookingId: null,
+      })
+    }
+    const mirroredPairs: string[] = []
+    for (const id of pairIds) {
+      const out = mirrorPairInto(s, work, id, metas)
+      if (out.accRecId !== undefined) mirroredPairs.push(id)
+    }
+    if (metas.length === 0) metas.push({ entityType: 'creditNote', entityId: creditNoteId, action: 'xero.correctionNoop', stampBookingId: null })
+    const { xeroFailure: _cleared, ...rest } = nowNote
+    const nextNote = { ...rest, xero: { ...(accRecCreditNoteId !== undefined ? { accRecCreditNoteId } : {}), ...(accPayCreditNoteId !== undefined ? { accPayCreditNoteId } : {}), accPayVoided } }
+    const negativeId = nowNote.negativeInvoiceId
+    const negative = negativeId !== undefined ? s.billing.negativeInvoices[negativeId] : undefined
+    const patch = mirrorPatch(s, work)
+    return {
+      ...patch,
+      billing: {
+        ...patch.billing,
+        creditNotes: { ...s.billing.creditNotes, [creditNoteId]: nextNote },
+        ...(negative !== undefined && accPayCreditNoteId !== undefined ? { negativeInvoices: { ...s.billing.negativeInvoices, [negative.id]: { ...negative, accPayCreditNoteId } } } : {}),
+      },
+    }
+  })
+  return ok(correctionResultOf(api.getState(), creditNoteId))
 }
 
 /** An AA fee pair's mirror: a `kind:'aaFee'` ACCREC against the anaesthetist's existing contact, no ACCPAY (16's shape). */

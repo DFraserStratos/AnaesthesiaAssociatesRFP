@@ -7,7 +7,7 @@ import { runDemoAction } from './demoActions'
  * in the URL (a part payment on the invoice page moves that invoice's money).
  */
 
-test('demo actions: one on the Review queue, eleven on the Day view, seven on the Billing monitor', async ({ page }) => {
+test('demo actions: one on the Review queue, eleven on the Day view, eight on the Billing monitor', async ({ page }) => {
   // The Review queue holds "Run the next billing run" (catch-up Phase 38b).
   await page.goto('/admin/review')
   await page.waitForLoadState('networkidle')
@@ -22,15 +22,15 @@ test('demo actions: one on the Review queue, eleven on the Day view, seven on th
   await expect(page.locator('[data-shot="demo-action-inject-unmatched-receipt"]')).toBeVisible()
   await page.keyboard.press('Escape')
 
-  // The Billing monitor keeps its entries with its filters in the URL (catch-up Phase 37).
+  // The Billing monitor keeps its entries with its filters in the URL (catch-up Phase 37), plus Stage refund after payout (catch-up Phase 39).
   await page.goto('/admin/billing?anaesthetist=34821&problems=1&sort=date-asc')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 7')
+  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 8')
 
   await page.goto('/admin/billing')
   await page.waitForLoadState('networkidle')
   const pill = page.locator('[data-shot="demo-actions"]')
-  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 7')
+  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 8')
   await pill.focus()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('dialog')).toBeVisible()

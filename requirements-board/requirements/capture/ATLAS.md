@@ -282,6 +282,9 @@ Hooks already added:
 | Pinned history List | `L-HIST-2026-03-13-AM` | `SEED_LOOKBACK`: Fri 13 Mar 2026 AM, St George's, Mr P. Doyle, three Bookings (Sarah Mitchell `HBK36`), invoices `AA-2026-H36` to `H38`, paid. |
 | Invoice | `INV0001` / `AA-2026-0001` | `INV0001` is Priya Nair's seeded paid pre-payment: $1,200.00 plus GST = $1,380.00, approved by Kirsty W. Riley's, once approved on the Invoices strip, is the next runtime invoice. Runtime invoices otherwise start at `INV0002` once a list is authorised. |
 | Xero pair | `XRB0` | The seeded pre-payment: its ACCPAY (`XPB0`) credits the "AA Holding account" (contact `XCHOLD`), not the anaesthetist, and is held, never disbursed itself; authorising Nair's List transfers it to Dr Souter (catch-up Phase 27a: transfer `PXT0001`, journal `MJ-0001`). History pairs are `XRH01`… and runtime pairs `XR0001`…. |
+| Credit note (catch-up Phase 39) | `CRN0001` / `CN-2026-0001` | None at reset. The first one issued (Approve, then `run-next-billing-run`) is record `CRN0001`, number `CN-2026-0001`, page `/admin/credit-notes/CRN0001`; its negative invoice to the anaesthetist is `CN-2026-0001-P`. The rebill and split components are ordinary runtime invoices (`AA-2026-....`). |
+| Staged combination (catch-up Phase 39) | `BK0191` / `P0198` / AA-2026-0002 | `stage-combined-procedure` right after a reset: Lorraine Petrie (`PT0173`) on Dr Delaney's Fri 10 Jul PM List `L-27731-2026-07-10-PM` at Forte, $3,700.00 plus GST = $4,255.00, billed to the patient. Another runtime Booking or invoice first shifts these numbers: pick the row by patient. |
+| Anaesthetist credit target (catch-up Phase 39) | `HBK03` on `L-HIST-03` | Dr Souter, David Chen, Mon 22 Jun 2026, invoice AA-2026-H03: web `/web/lists/L-HIST-03/bookings/HBK03`, mobile `/mobile/lists/L-HIST-03/bookings/HBK03`. |
 
 **Named lists** (`SEED_LIST_IDS`)
 
@@ -304,6 +307,8 @@ Hooks already added:
 | Souter Mon 10 Aug PM | `L-34821-2026-08-10-PM` | St George's, Ms G. Lim, ACTIVE. Merivale's Face lift BK0163, and catch-up Phase 21a's BK0176 (fixed price, no times), BK0177 (Needs a price) and BK0182 (the movable Booking). |
 | Souter Mon 10 Aug AM | `L-34821-2026-08-10-AM` | Mr C. Okafor, ACTIVE. The Move target for BK0182 (US-04.3.11). |
 | Chen Tue 14 Jul (`reviewFlags`) | `L-45178-2026-07-14-AM` | Christchurch Eye Surgery, Mr Whitford, SUBMITTED. The review-flags List (catch-up Phase 21a): BK0178 to BK0181. |
+| Delaney Fri 10 Jul PM | `L-27731-2026-07-10-PM` | Forte, ACTIVE at reset. Catch-up Phase 39: `stage-combined-procedure` books, completes, authorises and bills the Merivale combination (Lorraine Petrie) here; the trigger is disabled once the List is no longer open. |
+| Sharma Tue 14 Jul AM | `L-41267-2026-07-14-AM` | Catch-up Phase 38b's `stage-post-op` List (Sarah Mitchell `BK0032`); since catch-up Phase 39 her invoice is the office's credit and rebill target (see [Credit notes](#credit-notes-credit-and-rebill-and-the-combined-split-catch-up-phase-39)). |
 
 **Seed markers** (`SEED_MARKERS.<key>.entityId`, `aa-prototype/src/domain/seed/index.ts`), catch-up Phase 21a:
 `fixedPriceNoTimes` BK0176, `needsPriceBooking` BK0177, `contractChangeBooking` BK0178, `typedPriceBooking`
@@ -380,8 +385,12 @@ unsaved-changes guard can block a navigation). No URL changed; the Admin Booking
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip ("No HPI CPN yet" when blank), "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. Catch-up Phase 17b: Specialties, Identifiers and Groups in the first row, then one full-width "Practice and contacts" card (`surgeon-contacts`), then Pairing preferences. No room cards. |
 | `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Profile, Pairing preferences. Office only. The Profile card (catch-up Phase 26; was "Details", hook `anaesthetist-details` kept) shows Unit value, Status, Phone, Email, HPI CPN and Bank account (masked, row `anaesthetist-bank-account`); it has no action of its own. The page header's secondary button "Edit details" (beside "History") opens the Edit sheet: click `button:text-is("Edit details")` at page level, not inside `anaesthetist-details`. |
 | `/admin/audit` | Audit viewer. Catch-up Phase 35 adds a Change set column: each grouped entry's id is a link `audit-change-set` that filters the viewer to that change set (the filter line `audit-change-set-filter`). |
+| `/admin/credit-notes/:creditNoteId` (catch-up Phase 39) | A credit note (`CRN0001` the first): the document `credit-note-document` ("CREDIT NOTE", "Total credited") with its rail, the negative invoice card `negative-invoice-card` ("Negative invoice CN-2026-0001-P", "offset against the unpaid payable" or "... nets in the next payment run"), `credit-note-credits`, `credit-note-new-invoices`, `credit-note-xero`. Reached from the original's `invoice-credited-banner` link `CN-2026-...`, a credit note row on `/admin/invoices` (`tr[data-credit-note-id]`) or the Procedure's `procedure-event-credit-note`. An unknown id is handled as an unknown invoice is (`RequireEntity`). |
+| `/admin/invoices/:invoiceId` (catch-up Phase 39) | The rail adds the "Correct this invoice" card `invoice-correct` (Credit note, Credit in full and rebill, Split into additional invoices). A credited original shows the standing pill `invoice-standing` ("Credit waiting for review", then "Credited") and `invoice-credited-banner` ("Credited in full by CN-2026-... · rebilled as AA-2026-..." or "replaced by ..."); a rebill shows `invoice-rebill-of`, a split component `invoice-split-part`. The bar adds `stage-refund-after-payout` here. |
+| `/admin/invoices` (catch-up Phase 39) | Credit note rows (`tr[data-credit-note-id]`, kind "Credit note", `invoice-list-credits` "Credits AA-...") sit above the invoice they credit; invoice rows add `invoice-list-standing` and `invoice-list-rebills`. The bar adds `stage-combined-procedure`. |
+| `/admin/audit` (catch-up Phase 39) | The viewer hides payments, receipts and disbursements (`AUDIT_VIEWER_EXCLUDED`: they are recorded in Xero). The Entity type filter (the first `select`) lists only entity types present, so `creditNote` appears once a credit is submitted (rows "Credit submitted for review", "Credit approved for billing", "Credit note raised", "Credit issued", "Credit note emailed" or "... marked to post"); the negative invoice is its own entity type `negativeInvoice`, the credited original `invoice` ("invoice.credited"); `account` still appears after `simulate-sign-in`. |
 | `/admin/day/:date` (catch-up Phase 43) | With more than 30 rows (full-scale data only) the grid pages: the footer `day-grid-footer` holds the pager `day-grid-pager` ("Anaesthetists 1 to 30 of 85", buttons "First page", "Previous page", "Next page", "Last page"; `data-page`, `data-pages`). `?page=2` is a replaceable view param. At demo scale there is no pager and the footer reads as before. |
-| `/admin/invoices` (catch-up Phase 43) | The search field "Find by invoice number or payer" (`invoices-search`, on the `<input>`) filters before paging and returns to page 1; the pager `invoices-pager` ("Showing 1 to 50 of 28,248" style) shows only above 50 matches, so only at full scale. Generated invoice numbers use the series `AA-S-000001`. |
+| `/admin/invoices` (catch-up Phase 43) | The search field "Find by invoice number or payer" (`invoices-search`, on the `<input>`) filters before paging and returns to page 1; the pager `invoices-pager` ("Showing 1 to 50 of 28,226" style) shows only above 50 matches, so only at full scale. Generated invoice numbers use the series `AA-S-000001`. |
 | `/admin/audit` (catch-up Phase 43) | The 500-row cap note is gone: the count `audit-count` ("N entries") sits in the filter row and the viewer pages by 100 with `audit-pager` under the table (shown only above 100 entries). A change-set link or a filter returns to page 1. At full scale the newest entry is "Full-scale data loaded" (`demo.fullScaleLoaded`). |
 | `/admin/billing` (catch-up Phase 43) | New view param `page=<n>` for the groups pager `billing-monitor-pager` ("Anaesthetists 1 to 20 of 77" at full scale: 77 groups, as six cast anaesthetists hold no monitored Lists), shown only above 20 groups; per group, "Show all N" `billing-group-show-all-<anaesthetistId>` and the nested pager `billing-group-pager-<anaesthetistId>` when a group holds more than 25 Lists. At demo scale neither shows, so the screen is unchanged. Problems only: the "Problems only" pill in `billing-monitor-filters` (`role=button[name="Problems only"]`) or the tile `billing-tile-problems`. |
 | `/admin/ledger` (catch-up Phase 43) | The pager `ledger-pager` shows only when there are more rows than a page (full scale). |
@@ -1254,6 +1263,42 @@ were already imported. Nothing new.").
 - **Booking total** (Admin Booking detail, David Chen's Booking): `booking-total` with an "Events" row and
   `booking-total-gst` ("ex GST · GST $x").
 
+### Credit notes, credit and rebill, and the combined split (catch-up Phase 39)
+
+- **Nothing is credited at reset.** A credit is raised by hand (Credit note, Credit in full and rebill, or Split into
+  additional invoices), waits in Review's Events tab as an event (`review-credit-row`), and is issued only by Approve
+  then the `run-next-billing-run` trigger (or the PWA's `office-reviews-credit`). The first credit note issued after a
+  reset is record `CRN0001`, number `CN-2026-0001`, its negative invoice to the anaesthetist `CN-2026-0001-P`; open it at
+  `/admin/credit-notes/CRN0001` or by the `CN-2026-` link in the original's `invoice-credited-banner`.
+- **Sarah Mitchell after `stage-post-op`** (see the 38b notes): her invoice on `BK0032` is the office's credit target.
+  Reach it on `/admin/invoices` by patient, `tr[data-invoice-id]:has-text("Sarah Mitchell") >> nth=0 >> td >> nth=0`
+  (the first cell; the Patient cell is a link to the Booking), never by number: its number depends on what was billed
+  first (AA-2026-0003, $238.05 billed to CPH, when the combination was staged first). After the credit and the run, the
+  credited original is `tr[data-invoice-id]:has([data-shot=invoice-list-standing][data-standing=credited])`; the
+  rebill is the newest row. US-08.6.2 shows the whole flow.
+- **The staged combination** (`stage-combined-procedure`, on `/admin/invoices`): Dr Delaney's Fri 10 Jul PM List
+  `L-27731-2026-07-10-PM` at Forte, patient Lorraine Petrie `PT0173`, Merivale's combination Contract ("Facelift,
+  upper blepharoplasty and fat grafting", 13:30), billed to the patient. Right after a reset it is Booking `BK0191`,
+  Procedure `P0198`, invoice AA-2026-0002 ($3,700.00 plus GST = $4,255.00). Open it from the list by patient
+  (`:has-text("Lorraine Petrie")`) or the result's link "Open AA-2026-0002". The split sheet opens with two blank
+  components (never fewer); typed $2,000 and $1,000, Left to allocate is not $0.00 and Save is disabled; "Put the
+  rest on this invoice" on the second makes it $0.00. US-08.6.4 shows the pattern.
+- **Paid out first** (`stage-refund-after-payout`, Billing monitor or `/admin/invoices/<id>`): pays the invoice in full
+  and pays the anaesthetist out, so the credit sheet's `credit-money-state` reads "Dr Sharma was paid ...: a negative
+  invoice for ... nets in their next payment run." On the Billing monitor it targets Sarah Mitchell's invoice (disabled
+  "Stage post-op scenario first" before `stage-post-op`).
+- **The anaesthetist's credit**: Dr Souter on David Chen's Mon 22 Jun Booking `HBK03` (`L-HIST-03`, invoice
+  AA-2026-H03): web `/web/lists/L-HIST-03/bookings/HBK03`, mobile `/mobile/lists/L-HIST-03/bookings/HBK03` (in the app,
+  reached by searching "Chen"). `anaesthetist-credit-note-button` opens `credit-form` (`data-variant=anaesthetist`: no
+  money state, trail, copy or split; the chips "Less work than expected", "Wrong billable party", "Paid twice"). After
+  Save the row `procedure-credit-event` reads "Credits AA-2026-H03 in full", "Raised by you", Awaiting review. The
+  seeded `EV0001` (an additional invoice awaiting review) sits on the same Procedure and does not block it.
+- **Office chips**: "Wrong billable party", "Wrong amount", "Less work than expected", "Split requested", "Paid twice".
+  A reason is required; pick a chip with `[data-shot=credit-reason-chip]:has-text("Wrong amount")`. There is never an
+  amount field: a credit is always for the whole invoice.
+- **Prepaid Procedures** show `credit-note-unavailable` ("Crediting a prepayment invoice is not in this prototype
+  yet.") in place of the button: crediting a prepayment invoice is Phase 41's.
+
 ### Public holidays, retire and the controlled loads (catch-up Phase 42)
 
 - **Public holidays** (`/admin/masters?view=publicHolidays`, `masters-public-holidays`, rows
@@ -1353,6 +1398,21 @@ were already imported. Nothing new.").
   `event-same-as` ticked or clear it and pick a party in `event-party-picker`, then `additional-invoice-save`. Review: the
   Events tab link `[data-review-tab=events]`, a row `tr[data-event-id]`, then Approve `event-review-approve` in
   `event-review-sheet`. Invoicing happens only at the `run-next-billing-run` trigger.
+- **Credit sheets (catch-up Phase 39).** One form, `[data-shot=credit-form]`, in three wrappers. Admin `CreditSheet`: a
+  right-docked side sheet `[data-shot=credit-sheet]` (`data-mode=credit|rebill|edit`), title in its header and Save
+  (`credit-submit`, "Save for review") in its footer; opened by the invoice rail's `credit-note-button` (no new
+  invoice yet; "Add an invoice" `credit-add-invoice`, then `credit-copy-lines`) or `credit-rebill-button` (one card
+  `credit-replacement` already holding a copy of the original's lines), and by `procedure-credit-note-button` on the
+  Admin Booking detail. Admin `SplitCombinedSheet`: the same side sheet in split mode, `[data-shot=split-combined-sheet]`,
+  from `split-combined-rail-button` or the Procedure's `split-combined-button`; Left to allocate
+  (`split-allocation`, `split-left-to-allocate`) sits in its footer beside Save ("Save 2 invoices for review",
+  disabled until $0.00). Scope inner hooks by the sheet, e.g. `[data-shot=credit-sheet] [data-shot=credit-submit]`.
+  The anaesthetist's `anaesthetist-credit-note-button` opens the same form in a web dialog (`[role=dialog]`) or a
+  mobile bottom sheet (scope `[data-aa-mobile-product] [data-shot=credit-form]`). Who gets the credit: untick
+  `[data-shot=credit-party] [data-shot=event-same-as-row]`, open `[data-shot=credit-party] [data-testid=party-picker-toggle]`
+  and pick a `[data-shot=party-option]` (or "Another person", `split-another-person`); `credit-invoice-email` then
+  shows. A submitted credit closes the sheet and scrolls the new `procedure-credit-event` into view. Review it as
+  any event: Events tab row `tr:has([data-shot=review-credit-row])`, `event-review-approve`, then `run-next-billing-run`.
 - **Drawers and dialogs after Phase U2.** The three Admin drawers (List, empty-session, Draft List) are `SidePanel`:
   `<aside role="dialog" aria-modal="true">` named by its h2 title, with a header "Close" X, and Escape closes it.
   Contract and Party panels are the same component at 600px. A sheet opened from a drawer is a second
@@ -1727,6 +1787,38 @@ the exception: use the `trigger` step)
   additional invoice), `invoice-additional-links` (rail card on the original and the additional invoice),
   `invoice-create-additional`. Admin Booking detail: `booking-total`, `booking-total-gst`. The addendum hooks and the
   "Add post-op event" block and banner are gone.
+- Credit notes, credit and rebill, and the combined split (catch-up Phase 39). Admin invoice rail: the card
+  `invoice-correct` ("Correct this invoice", caption or refusal `invoice-correct-refusal`) holds `credit-note-button`
+  ("Credit note"), `credit-rebill-button` ("Credit in full and rebill") and `split-combined-rail-button` ("Split into
+  additional invoices"; refusal `split-combined-refusal`); all three disabled while a credit waits or once credited.
+  Procedure button slot (beside Create additional invoice and 22's Split): Admin `procedure-credit-note-button` and
+  `split-combined-button`, web and mobile `anaesthetist-credit-note-button` (both "Credit note", `data-invoice-id`;
+  hidden on a colleague's Procedure and before the invoice; on a prepaid Procedure the caption `credit-note-unavailable`
+  instead). Sheets: Admin `credit-sheet` (`data-mode=credit|rebill|edit`) and `split-combined-sheet`, both wrapping
+  the form `credit-form` (`data-variant=office|anaesthetist`, `data-mode`), which every wrapper (web dialog, mobile
+  bottom sheet) carries. Inside the form: `credit-original` (`credit-original-total`), `credit-party` (38b's
+  `event-same-as-row` tick and `event-party-picker`, then `credit-invoice-email`), `credit-reason` with chips
+  `credit-reason-chip` and `credit-reason-text`, office only `credit-money-state` and `credit-trail` (rows
+  `li[data-trail-kind]`: Debit, Credit, Contra), anaesthetist only `credit-payment-reversed`, always `credit-not-refund`;
+  new invoice cards `credit-replacement` (`credit-replacement-party`, `credit-copy-lines` "Start from a copy of the
+  original's lines", `credit-replacement-totals`, `credit-replacement-remove`), `credit-add-invoice`, `credit-error`,
+  `credit-submit`. Split only: cards `split-component` (`data-index`, each with `split-put-rest` "Put the rest on this
+  invoice"), `split-must-add-up`, and in the sheet footer `split-allocation` with `split-left-to-allocate`
+  (`data-done=true|false`). Documents: the original's standing pill `invoice-standing` (`data-standing=creditPending|credited`,
+  "Credit waiting for review" or "Credited"), `invoice-credited-banner` (links `CN-2026-...` and `AA-2026-...`),
+  `invoice-rebill-of` ("Rebills AA-..."), `invoice-split-part` ("Additional invoice · part 1 of 2 · replaces ...");
+  the credit note page `credit-note-document` with `negative-invoice-card` (`data-status`), `credit-note-credits`,
+  `credit-note-addressee`, `credit-note-reason`, `credit-note-new-invoices`, `credit-note-xero`,
+  `credit-note-open-billing-monitor`. Invoices table: credit note rows `tr[data-credit-note-id]` with
+  `invoice-list-kind[data-kind=creditNote]` and `invoice-list-credits`; `invoice-list-standing` (`data-standing`) and
+  `invoice-list-rebills` on invoice rows. Events: `procedure-credit-event` (`data-event-id`; with
+  `procedure-event-status`, `procedure-event-edit`, `procedure-event-remove`, `procedure-event-credit-note`,
+  `procedure-event-rebill-of`). Review: `review-credit-row`, `review-credit-replacement` in `admin-events-queue`;
+  `event-review-credit` and `event-review-replacement` in `event-review-sheet`. Ledger: `ledger-credit-tiles`
+  ("Credits held for payers", "Negative invoices to net"), `ledger-credit-trail`, `ledger-pair-credited`. Billing monitor:
+  `monitor-correction-failed`. Xero sim pair: `xero-credit-note` (`data-credit-note`), records
+  `xero-credit-note-record` (`data-type` ACCRECCREDIT or ACCPAYCREDIT), `xero-credit-accpay-voided`,
+  `xero-credit-new-pairs`.
 - Explicit save and the update email (catch-up Phase 35). Admin Booking detail: `booking-save-bar` (the sticky
   unsaved bar; the count `[data-testid=unsaved-count]`), `booking-discard`, `booking-save` ("Save changes"),
   `booking-save-refused` (a refused save's reason, in the bar), `booking-saved-strip`, `booking-draft-reset` (a demo
@@ -2273,6 +2365,24 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   load or discard it first". Index paths `/admin/masters?view=seedLoad` and `/admin/masters?view=goLive`. No PWA
   entry.
 
+- Catch-up Phase 39 (credit notes and the combined split). Two bar entries and one PWA entry. `stage-combined-procedure`
+  ("Stage combined procedure", screen "Admin · Invoices", only on `/admin/invoices`, no choice) books, completes,
+  authorises and bills the Merivale combination on Dr Delaney's Fri 10 Jul PM List; message "Staged: a billed Merivale
+  combination. Open its invoice and use Split into additional invoices." with a link "Open AA-2026-0002" (right after a
+  reset); disabled "Already staged" once run. `stage-refund-after-payout` ("Stage refund after payout", on
+  `/admin/billing` and `/admin/invoices/<invoiceId>`, no choice) pays the invoice in full and pays the anaesthetist out
+  through Xero's payables run; message "Paid in full and paid out to Dr Sharma in Xero. Credit it to see the negative invoice."
+  (on the Billing monitor with a link "Open AA-..."); on the Billing monitor it targets Sarah Mitchell's invoice and is
+  disabled "Stage post-op scenario first" before `stage-post-op`; elsewhere disabled "Already paid out", "Invoice
+  credited", "Credit waiting for review", "Not handed off to Xero" or "AA fee and prepayment invoices are not credited
+  here". The Billing monitor now has eight entries: `billing-failure`, `arm-handoff-fault`, `xero-outage-start`,
+  `xero-outage-restore`, `run-reconciliation-poll`, `run-archive-job`, `run-next-billing-run` and
+  `stage-refund-after-payout`. `run-next-billing-run` also issues approved credits: its message counts credit notes and
+  invoices, numbers in brackets. The PWA-only `office-reviews-credit` ("Office reviews this credit", badged Office
+  stand-in, a mobile Booking) approves the oldest credit awaiting review on the Booking with its new invoices and issues
+  it in a run narrowed to it: "Approved by the office and issued in the next billing run (CN-2026-0001)."; disabled "No
+  credit on this Booking is awaiting review".
+
 - Catch-up Phase 37 (the Xero sync queue and the Xero-side payables run). Every call to Xero goes through the Xero
   sync queue (`billing-xero-queue` on the Billing monitor): a failed or outage-blocked call waits there, with its
   attempts and next try, and retries with increasing gaps on every clock change, or at once with "Retry now" on its
@@ -2354,6 +2464,10 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/admin/billing/aa-fees` | `run-scheduled-fee-run`, `seed-month-of-bctis` | The scheduled run raises the month in the picker as the system actor; "Run monthly fee invoices" is the screen's own product button |
 | `/admin/review/L-41267-2026-07-14-AM` or that List's Booking detail | `stage-post-op` | Shown only for Dr Sharma's Tue 14 AM List. Catch-up Phase 38b re-points it: it only authorises and bills the List (no addendum Booking), leaving Sarah Mitchell's BK0032 invoiced and offering the additional invoice button |
 | `/admin/billing`, `/admin/review` | `run-next-billing-run` | Catch-up Phase 38b: the explicit next billing run. It invoices every approved event once (each additional invoice on its own), after which `events-awaiting-run` on the Billing monitor disappears. The List run never sweeps events |
+| `/admin/billing`, `/admin/review` | `run-next-billing-run` (catch-up Phase 39) | Also issues every approved credit: the credit note, its negative invoice and the credit's new invoices together ("Billing run done: ... (CN-2026-0001, AA-2026-....)"). US-08.6.2 shows the pattern (Approve on `tr:has([data-shot=review-credit-row])` in the Events tab, then this trigger on `/admin/billing`) |
+| `/admin/invoices` | `stage-combined-procedure` | Catch-up Phase 39, bar only, screen "Admin · Invoices". Stages the billed Merivale combination (Lorraine Petrie, Dr Delaney's Fri 10 Jul PM List); its result links "Open AA-2026-0002" after a reset. Disabled "Already staged". US-08.6.4 shows the pattern (trigger, then the row by patient) |
+| `/admin/billing`, `/admin/invoices/<invoiceId>` | `stage-refund-after-payout` | Catch-up Phase 39, bar only, screen "Admin · Billing monitor". Pays the invoice in the URL (on the Billing monitor, Sarah Mitchell's after `stage-post-op`) in full and pays its anaesthetist out, so a following credit's negative invoice nets in the next payment run. US-08.6.2's `refund-after-payout` shows the pattern |
+| `/mobile/lists/<listId>/bookings/<bookingId>` (PWA Demo sheet only) | `office-reviews-credit` | Catch-up Phase 39, badged Office stand-in, PWA only ("Office reviews this credit"). Approves the Booking's oldest credit awaiting review and issues it; on `HBK03` after Dr Souter's credit. US-08.6.5's mobile `issued` state shows the pattern. In the framed build use Approve in the Events tab and `run-next-billing-run` |
 | `/admin/intake/pdfs` | `pdf-list-resend` ("Receive updated PDF from rooms", choice the sample id, `PDF-OKAFOR-0805`) | Catch-up Phase 34, bar only, no badge (screen "Admin · Intake"). The rooms re-send a PDF list already sent to matching: it lands in the inbox as received, marked Re-sent, from its new address. Disabled until that list has been sent. `ingest-pdf-row` is gone (no direct ingest: PDF rows go through Matching) |
 | `/admin/invoices/<invoiceId>`, `/demo/xero/invoices/<accRecId>`, `/admin/day/<date>/bookings/<bookingId>` | `payment-full`, `payment-half`, `payment-replay` | Acts on the invoice in the URL; the payable authorises for exactly the amount received. On a Booking detail the choices are that Booking's sent prepayment ACCRECs, disabled "Not approved yet" before approval. After the S3 AM authorise, AA-2026-0002 is the first open invoice; Riley's prepayment invoice once approved on the strip is `XR0001` |
 | `/admin/day/<date>` (choice = booking id), `/admin/day/<date>/bookings/<bookingId>` (acts on that Booking), `/mobile/lists/<listId>/bookings/<bookingId>` (PWA) | `prepayment-two-days-before` | Catch-up Phase 27: moves the demo clock to 2 days before the procedure, so the prepayment warning turns strong. On Admin Day use `"choice": "BK0034"`. Forward only; disabled "No outstanding pre-payments" or "Already 2 days or less before" |

@@ -6,7 +6,7 @@ import * as D from './web/demos'
 import { ProcedureStackExample } from './procedureStackExample'
 import { FunderDetailsExample, PayerFieldsExample } from './payerExamples'
 import { PaidByRowExample, PaidBySheetExample, PartyPickerExample } from './splitExamples'
-import { AdditionalInvoiceButtonExample, AdditionalInvoiceSheetExample, ProcedureEventsListExample } from './eventExamples'
+import { AdditionalInvoiceButtonExample, AdditionalInvoiceSheetExample, AnaesthetistCreditSheetExample, CreditNoteButtonExample, ProcedureEventsListExample } from './eventExamples'
 
 const W = 'Web'
 const WA = 'Web · Admin'
@@ -223,6 +223,12 @@ export function WebCatalogue() {
             </CatalogueRow>
             <CatalogueRow name="AdditionalInvoiceButton" source="shared/booking/AdditionalInvoiceButton.tsx" usedIn={ALL} what="The button on the Procedure's Paid by row, beside Split (catch-up Phase 38b; US-08.6.3 Button): Create additional invoice for the office on any invoiced Procedure, Raise additional invoice for the anaesthetist on their own; absent on a colleague's or before the List is authorised; disabled with the refusal sentence otherwise." replaceWith="Custom (the shared Pill, TextAction and overlay)" note="Over the seeded event EV0001 (Dr Souter, David Chen's HP03); writes go to the demo store.">
               <AdditionalInvoiceButtonExample />
+            </CatalogueRow>
+            <CatalogueRow name="CreditFormSheet (Credit note, the anaesthetist's)" source="shared/booking/CreditSheetSlot.tsx, shared/booking/CreditForm.tsx" usedIn={ALL} what="The anaesthetist's credit note (catch-up Phase 39; US-08.6.5): Credit note on their own invoiced Procedure (reached through search) opens the one credit form in the surface's overlay, a bottom sheet on the phone and a dialog on the web. The original's number, who it billed and its total ex GST; the Same as the original invoice tick; the reason (Less work than expected, Wrong billable party, Paid twice, plus free text); Your payment for this invoice is reversed. and A credit note is not a refund.; optional Add an invoice with typed lines (no copy, no equal-total rule); Save for review, which the office reviews and the next billing run issues. No ledger figures, offsets or amounts to net, no split." replaceWith="Custom (the shared overlay, OptionChip, TextArea and Notice)" note="On the seeded AA-2026-H03 as Dr Souter; Save writes to the demo store.">
+              <AnaesthetistCreditSheetExample />
+            </CatalogueRow>
+            <CatalogueRow name="CreditNoteButton (the anaesthetist's)" source="shared/booking/CreditNoteButton.tsx" usedIn={ALL} what="Credit note beside Raise additional invoice on the anaesthetist's own invoiced Procedure (catch-up Phase 39; US-08.6.5, creditOptionFor): hidden on a colleague's, hidden with the caption Crediting a prepayment invoice is not in this prototype yet. on a prepaid Procedure, disabled with its sentence while a credit waits or once credited." replaceWith="Custom (the shared TextAction)" note="As Dr Souter on David Chen's HP03.">
+              <CreditNoteButtonExample as="anaesthetist" />
             </CatalogueRow>
           <CatalogueRow name="Cell (AvailabilityGrid)" source="apps/web/screens/AvailabilityGrid.tsx" usedIn={W} what="One colleague session on Find cover: status bar, two lines and a Move or Move here action when her List can go there." replaceWith="Custom cell on a grid + shadcn Tooltip" note="Recreated: local to AvailabilityGrid.tsx; its fill from blockFill (U6). Non-actionable cells are disabled buttons, unreachable by keyboard.">
             <D.AvailabilityCellDemo f={f} />

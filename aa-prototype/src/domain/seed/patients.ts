@@ -162,7 +162,7 @@ export function buildPatients(seed: number): Patient[] {
     patients.push(patient)
   }
 
-  patients.push(...PAYER_REVIEW_PATIENTS, ...COMPLETION_PATIENTS, ...REVIEW_FLAG_PATIENTS, ...PROCEDURE_PAYER_PATIENTS, ...MULTI_PROCEDURE_PATIENTS, ...PRICING_PATIENTS, ...DISABLED_CONTRACT_PATIENTS)
+  patients.push(...PAYER_REVIEW_PATIENTS, ...COMPLETION_PATIENTS, ...REVIEW_FLAG_PATIENTS, ...PROCEDURE_PAYER_PATIENTS, ...MULTI_PROCEDURE_PATIENTS, ...PRICING_PATIENTS, ...DISABLED_CONTRACT_PATIENTS, ...COMBINED_SPLIT_PATIENTS)
   return patients.map(withSeedContact)
 }
 
@@ -222,6 +222,19 @@ export const PAT_25A = {
 
 const DISABLED_CONTRACT_PATIENTS: readonly Patient[] = [
   { hiddenInternalId: PAT_25A.disabledContract, nhi: 'ZBM1009', name: 'Margaret Ellery', dobISO: '1956-03-17', phone: '03 555 7323', ethnicityCode: '11111' },
+]
+
+/**
+ * Catch-up Phase 39's dedicated patient, after 25a's: the "Stage combined
+ * procedure" demo trigger's Merivale combination (`store/creditDemo.ts`).
+ * No seeded Booking uses her; only the trigger does.
+ */
+export const PAT_39 = {
+  combined: `PT${String(19 + 132 + 22).padStart(4, '0')}`,
+} as const
+
+const COMBINED_SPLIT_PATIENTS: readonly Patient[] = [
+  { hiddenInternalId: PAT_39.combined, nhi: 'ZBN1004', name: 'Lorraine Petrie', dobISO: '1964-08-19', phone: '021 555 7434', ethnicityCode: '11111' },
 ]
 
 const PRICING_PATIENTS: readonly Patient[] = [

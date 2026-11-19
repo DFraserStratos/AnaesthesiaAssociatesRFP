@@ -13,17 +13,21 @@
  * neither money in nor money out. AA's monthly fee invoice is an `aaFee` pair
  * with a receivable and no payable: AA's own income, outside the balance.
  *
- * The balance (US-13.2.1):
+ * The balance (US-13.2.1; catch-up Phase 39 adds the two credit terms):
  *   receiptsHeld   = received + unmatched held - disbursed
  *   holdingBalance = released to the AA Holding account - transferred out
  *   imbalance      = receiptsHeld - payablesDue - holdingBalance
+ *                    - creditsHeldForPayers + recoveryDueFromAnaesthetists
+ * Both credit terms are zero on an uncredited ledger.
  * A healthy ledger is in balance with no checks; a receipt that matches no
  * invoice is the one way the demo goes out of balance.
  *
  * No payee is ever repointed (D38), nothing is raised automatically after a
  * prepaid procedure (OQ-61) and there is no prepaid excess or deduction (D57).
- * Amounts are signed numbers so Phase 39's credits and 39a's negative
- * invoices can enter; this phase writes only positive ones.
+ * Amounts are signed numbers so 39a's negative invoices can enter. A credit
+ * (catch-up Phase 39, `applyCredit`) credits the receivable in full, reverses
+ * the payable and cuts its release to what was already paid out; no receipt or
+ * disbursement applies to a credited pair after it.
  */
 
 import type {
@@ -40,6 +44,7 @@ import type {
   PayableLeg,
   PayeeRef,
   ProcedureShare,
+  ReversalPlan,
   UnmatchedReceipt,
 } from '../types'
 import { roundToCents, toCents } from './money'
@@ -234,6 +239,13 @@ export interface ReceiptApplied<P extends LedgerPair> {
   added: number
   /** The released increment on the leg that moved. */
   releasedIncrement: number
+  /** Set when nothing applied because the pair is credited (catch-up Phase 39): record the payment against the new invoice. */
+  refused?: 'pairCredited'
+}
+
+/** Whether a pair has been credited (catch-up Phase 39). */
+export function isCreditedPair(pair: LedgerPair): boolean {
+  return isBookingPair(pair) && pair.credit !== undefined
 }
 
 /**
@@ -243,6 +255,7 @@ export interface ReceiptApplied<P extends LedgerPair> {
  * payable stays at what it held. Stamps `paidInAtISO` once, at full.
  */
 export function applyReceipt<P extends LedgerPair>(pair: P, amount: number, atISO: IsoDateTime, transfer?: LedgerTransfer): ReceiptApplied<P> {
+  if (isCreditedPair(pair)) return { pair, ...(transfer !== undefined ? { transfer } : {}), added: 0, releasedIncrement: 0, refused: 'pairCredited' }
   const balance = roundToCents(pair.receivable.amount - pair.receivable.receivedAmount)
   const added = roundToCents(Math.max(0, Math.min(amount, balance)))
   if (toCents(added) <= 0) return { pair, ...(transfer !== undefined ? { transfer } : {}), added: 0, releasedIncrement: 0 }
@@ -270,7 +283,7 @@ export function dueOn(leg: Pick<PayableLeg, 'releasedAmount' | 'disbursedAmount'
   return roundToCents(leg.releasedAmount - leg.disbursedAmount)
 }
 
-export type DisbursementRefusal = 'holdingSystemOnly' | 'aboveReleased' | 'invalidAmount'
+export type DisbursementRefusal = 'holdingSystemOnly' | 'aboveReleased' | 'invalidAmount' | 'pairCredited'
 
 /**
  * Money out on a payable leg. Refused on the AA Holding account (money leaves
@@ -279,6 +292,8 @@ export type DisbursementRefusal = 'holdingSystemOnly' | 'aboveReleased' | 'inval
  */
 export function applyDisbursement(leg: PayableLeg, amount: number, atISO: IsoDateTime): { ok: true; leg: PayableLeg } | { ok: false; code: DisbursementRefusal } {
   if (isHoldingLeg(leg)) return { ok: false, code: 'holdingSystemOnly' }
+  // A reversed payable (catch-up Phase 39): its release is cut to what was paid out, and nothing more is paid on it.
+  if (leg.reversedAmount !== undefined) return { ok: false, code: 'pairCredited' }
   if (!Number.isFinite(amount) || toCents(amount) <= 0) return { ok: false, code: 'invalidAmount' }
   if (toCents(amount) > toCents(dueOn(leg))) return { ok: false, code: 'aboveReleased' }
   const disbursed = roundToCents(leg.disbursedAmount + amount)
@@ -287,10 +302,43 @@ export function applyDisbursement(leg: PayableLeg, amount: number, atISO: IsoDat
 }
 
 // ---------------------------------------------------------------------------
+// The credit (catch-up Phase 39; US-08.6.2, US-08.6.5, DM-24, DM-25)
+// ---------------------------------------------------------------------------
+
+export type CreditRefusal = 'alreadyCredited' | 'notCreditable'
+
+/**
+ * Credit a pair in full by `plan` (`reversalPlan` on its legs now): the
+ * receivable gains `creditedAmount` (the total); the payable gains
+ * `reversedAmount` (the negative invoice's total) and its release is cut to
+ * what was already paid out (money paid out cannot be un-released); the pair
+ * records what is held for the payer and what is left to net. Refused on a
+ * pair already credited and on an AA fee pair.
+ */
+export function applyCredit(
+  pair: LedgerPair,
+  plan: ReversalPlan,
+  ref: { creditNoteId: string; negativeInvoiceId: string; atISO: IsoDateTime },
+): { ok: true; pair: BookingLedgerPair } | { ok: false; code: CreditRefusal } {
+  if (!isBookingPair(pair)) return { ok: false, code: 'notCreditable' }
+  if (pair.credit !== undefined) return { ok: false, code: 'alreadyCredited' }
+  const payable = pair.payable
+  return {
+    ok: true,
+    pair: {
+      ...pair,
+      receivable: { ...pair.receivable, creditedAmount: plan.receivableCredited },
+      ...(payable !== undefined ? { payable: { ...payable, reversedAmount: plan.negativeInvoiceTotal, releasedAmount: payable.disbursedAmount } } : {}),
+      credit: { creditNoteId: ref.creditNoteId, negativeInvoiceId: ref.negativeInvoiceId, atISO: ref.atISO, heldForPayer: plan.heldForPayer, recoveryDue: plan.recoveryDue },
+    },
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Status
 // ---------------------------------------------------------------------------
 
-export type PairStatus = 'invoiced' | 'handedOff' | 'waitingForXero' | 'partPaid' | 'paid' | 'partPaidOut' | 'disbursed'
+export type PairStatus = 'invoiced' | 'handedOff' | 'waitingForXero' | 'partPaid' | 'paid' | 'partPaidOut' | 'disbursed' | 'credited'
 
 /**
  * The derived label the monitor and the Ledger show (never stored). A pair not
@@ -298,6 +346,7 @@ export type PairStatus = 'invoiced' | 'handedOff' | 'waitingForXero' | 'partPaid
  * `waitingForXero` (catch-up Phase 37); the caller says so, from the queue.
  */
 export function pairStatusLabel(pair: LedgerPair, transfer?: LedgerTransfer, waitingForXero = false): PairStatus {
+  if (isCreditedPair(pair)) return 'credited'
   if (!isInXero(pair)) return waitingForXero ? 'waitingForXero' : 'invoiced'
   const out = isBookingPair(pair) ? (transfer?.in ?? pair.payable) : undefined
   if (out !== undefined && toCents(out.disbursedAmount) > 0) return toCents(out.disbursedAmount) >= toCents(out.amount) ? 'disbursed' : 'partPaidOut'
@@ -329,7 +378,8 @@ function checksForPair(pair: BookingLedgerPair, transfer: LedgerTransfer | undef
   if (p === undefined) return out
   if (toCents(p.amount) !== toCents(r.amount)) out.push({ code: 'pairAmountMismatch', amount: roundToCents(p.amount - r.amount), targetId: pair.id, ...who })
   if (transfer === undefined) {
-    const expected = payableReleasedFor(r.receivedAmount, p.amount)
+    // A credited pair's release was cut to what was paid out (catch-up Phase 39).
+    const expected = pair.credit !== undefined ? p.disbursedAmount : payableReleasedFor(r.receivedAmount, p.amount)
     if (toCents(p.releasedAmount) !== toCents(expected)) out.push({ code: 'releasedNotReceived', amount: roundToCents(p.releasedAmount - expected), targetId: pair.id, ...who })
   } else {
     const expected = payableReleasedFor(r.receivedAmount, transfer.in.amount)
@@ -379,6 +429,15 @@ export interface LedgerPosition {
   checks: LedgerCheck[]
   /** Pairs not yet mirrored in Xero. */
   notInXero: number
+  /** What payers had paid on credited invoices, held for them (catch-up Phase 39; a refund happens outside the system). */
+  creditsHeldForPayers: number
+  /** What was paid out on credited invoices, left to net from the anaesthetists' next payment runs (catch-up Phase 39; 39a nets it). */
+  recoveryDueFromAnaesthetists: number
+}
+
+/** What a payable still awaits from the payer: none once it is reversed (catch-up Phase 39). */
+function awaitingOn(leg: Pick<PayableLeg, 'amount' | 'releasedAmount' | 'reversedAmount'>): number {
+  return leg.reversedAmount !== undefined ? 0 : roundToCents(leg.amount - leg.releasedAmount)
 }
 
 /** Cents sums, so the equation is exact. */
@@ -407,6 +466,8 @@ export function ledgerPosition(pairs: readonly LedgerPair[], transfers: Readonly
   const feeInvoiced = new Cents()
   const feeReceived = new Cents()
   const feeOutstanding = new Cents()
+  const creditsHeld = new Cents()
+  const recoveryDue = new Cents()
   let notInXero = 0
   for (const pair of pairs) {
     if (!isInXero(pair)) notInXero += 1
@@ -417,15 +478,19 @@ export function ledgerPosition(pairs: readonly LedgerPair[], transfers: Readonly
       feeOutstanding.add(Math.max(0, roundToCents(r.amount - r.receivedAmount)))
       continue
     }
-    outstanding.add(Math.max(0, roundToCents(r.amount - r.receivedAmount)))
+    outstanding.add(Math.max(0, roundToCents(r.amount - r.receivedAmount - (r.creditedAmount ?? 0))))
     received.add(r.receivedAmount)
+    if (pair.credit !== undefined) {
+      creditsHeld.add(pair.credit.heldForPayer)
+      recoveryDue.add(pair.credit.recoveryDue)
+    }
     const p = pair.payable
     if (p === undefined) continue
     disbursed.add(p.disbursedAmount)
     if (isHoldingLeg(p)) holdingReleased.add(p.releasedAmount)
     else {
       due.add(dueOn(p))
-      awaiting.add(roundToCents(p.amount - p.releasedAmount))
+      awaiting.add(awaitingOn(p))
     }
   }
   const out = new Cents()
@@ -439,7 +504,7 @@ export function ledgerPosition(pairs: readonly LedgerPair[], transfers: Readonly
   for (const u of unmatched) if (u.status === 'held') unmatchedHeld.add(u.amount)
   const receiptsHeldCents = received.cents + unmatchedHeld.cents - disbursed.cents
   const holdingCents = holdingReleased.cents - out.cents
-  const imbalanceCents = receiptsHeldCents - due.cents - holdingCents
+  const imbalanceCents = receiptsHeldCents - due.cents - holdingCents - creditsHeld.cents + recoveryDue.cents
   const checks = ledgerChecks(pairs, transfers, unmatched)
   return {
     receivablesOutstanding: outstanding.value,
@@ -455,6 +520,8 @@ export function ledgerPosition(pairs: readonly LedgerPair[], transfers: Readonly
     aaFees: { invoiced: feeInvoiced.value, received: feeReceived.value, outstanding: feeOutstanding.value },
     checks,
     notInXero,
+    creditsHeldForPayers: creditsHeld.value,
+    recoveryDueFromAnaesthetists: recoveryDue.value,
   }
 }
 
@@ -472,7 +539,9 @@ export interface AnaesthetistPosition {
   theyOweAa: number
   /** Held receipts attributed to them. */
   unmatchedHeld: number
-  /** Their receipts held (with `unmatchedHeld`) less their payables due. */
+  /** Paid out to them on invoices since credited: left to net in their next payment run (catch-up Phase 39; 39a nets it). */
+  recoveryDue: number
+  /** Their receipts held (with `unmatchedHeld`) less their payables due, less what is held for payers on their credited invoices, plus their `recoveryDue`. */
   imbalance: number
   inBalance: boolean
   checks: LedgerCheck[]
@@ -495,6 +564,8 @@ export function anaesthetistPosition(
   const collected = new Cents()
   const paidOut = new Cents()
   const owesAa = new Cents()
+  const heldForPayers = new Cents()
+  const recovery = new Cents()
   for (const pair of pairs) {
     if (isAaFeePair(pair)) {
       if (pair.anaesthetistId === anaesthetistId) owesAa.add(Math.max(0, roundToCents(pair.receivable.amount - pair.receivable.receivedAmount)))
@@ -505,7 +576,11 @@ export function anaesthetistPosition(
     collected.add(pair.receivable.receivedAmount)
     paidOut.add(p.disbursedAmount)
     due.add(dueOn(p))
-    awaiting.add(roundToCents(p.amount - p.releasedAmount))
+    awaiting.add(awaitingOn(p))
+    if (pair.credit !== undefined) {
+      heldForPayers.add(pair.credit.heldForPayer)
+      recovery.add(pair.credit.recoveryDue)
+    }
   }
   for (const t of Object.values(transfers)) {
     if (payeeAnaesthetistOf(t.in) !== anaesthetistId) continue
@@ -516,7 +591,7 @@ export function anaesthetistPosition(
   }
   const held = new Cents()
   for (const u of unmatched) if (u.status === 'held' && u.anaesthetistId === anaesthetistId) held.add(u.amount)
-  const imbalanceCents = collected.cents + held.cents - paidOut.cents - due.cents
+  const imbalanceCents = collected.cents + held.cents - paidOut.cents - due.cents - heldForPayers.cents + recovery.cents
   const checks = ledgerChecks(pairs, transfers, unmatched).filter((c) => c.anaesthetistId === anaesthetistId)
   return {
     anaesthetistId,
@@ -527,6 +602,7 @@ export function anaesthetistPosition(
     paidOut: paidOut.value,
     theyOweAa: owesAa.value,
     unmatchedHeld: held.value,
+    recoveryDue: recovery.value,
     imbalance: imbalanceCents / 100,
     inBalance: imbalanceCents === 0 && checks.length === 0,
     checks,
@@ -558,7 +634,7 @@ export function anaesthetistsOutOfBalance(
     .map(({ row }) => row)
 }
 
-export type PatientRowStatus = 'paid' | 'partPaid' | 'unpaid'
+export type PatientRowStatus = 'paid' | 'partPaid' | 'unpaid' | 'credited'
 
 export interface PatientPositionRow {
   pairId: string
@@ -592,10 +668,11 @@ export function patientPosition(pairs: readonly LedgerPair[], patientId: string)
   for (const pair of pairs) {
     if (!isBookingPair(pair) || pair.patientId !== patientId) continue
     const r = pair.receivable
-    const outstanding = roundToCents(r.amount - r.receivedAmount)
-    const status: PatientRowStatus = toCents(outstanding) <= 0 ? 'paid' : toCents(r.receivedAmount) > 0 ? 'partPaid' : 'unpaid'
+    // A credited invoice owes nothing; what the payer paid on it is a credit balance (catch-up Phase 39).
+    const outstanding = roundToCents(r.amount - r.receivedAmount - (r.creditedAmount ?? 0))
+    const status: PatientRowStatus = pair.credit !== undefined ? 'credited' : toCents(outstanding) <= 0 ? 'paid' : toCents(r.receivedAmount) > 0 ? 'partPaid' : 'unpaid'
     total.add(outstanding)
-    if (status !== 'paid' && (oldest === undefined || pair.createdAtISO < oldest)) oldest = pair.createdAtISO
+    if ((status === 'unpaid' || status === 'partPaid') && (oldest === undefined || pair.createdAtISO < oldest)) oldest = pair.createdAtISO
     rows.push({
       pairId: pair.id,
       kind: pair.kind,
@@ -628,6 +705,11 @@ export function patientPosition(pairs: readonly LedgerPair[], patientId: string)
  * count. AA fee pairs have no payable; a prepayment's payable to the AA Holding
  * account and its transfer are left out unless `rule.prepaymentPairs` is on
  * (27a's default, provisional, OQ-29). `bctisFor` reads only this list.
+ *
+ * OQ-60, provisional (catch-up Phase 39): a credited original keeps its record
+ * (it was issued); a credit note and a negative invoice are not BCTIs (they are
+ * not pairs, and "not called a BCTI credit"); each replacement issued with a
+ * credit is a 38b additional invoice with its own pair, so it is one record.
  */
 export function bctiRecordsOf(pairs: readonly LedgerPair[], transfers: Readonly<Record<string, LedgerTransfer>> = {}, rule: BctiCountRule = BCTI_COUNT_RULE): BctiRecord[] {
   const records: BctiRecord[] = []

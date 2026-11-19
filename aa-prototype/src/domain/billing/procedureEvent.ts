@@ -7,7 +7,7 @@
  * sentences here name the charge, never "event", so the name stays in one map.
  */
 
-import type { ActorRole, CounterpartyRef, InvoiceBilledTo, ProcedureEvent, ProcedureEventKind } from '../types'
+import type { ActorRole, CounterpartyRef, CreditEventDetail, FreeFormLine, InvoiceBilledTo, ProcedureEvent, ProcedureEventKind } from '../types'
 import type { DeliveryPlan } from './whoIsBilled'
 
 /** The readings this element is built on, one field each. */
@@ -59,6 +59,31 @@ export const EVENT_KINDS: Readonly<Record<ProcedureEventKind, EventKindRules>> =
     mayBundle: false,
     needsInvoicedProcedure: true,
   },
+  /**
+   * A credit (catch-up Phase 39; US-08.6.5, OQ-61, OQ-76, D13): the office on
+   * any Procedure, the anaesthetist on their own (the rule its additional
+   * invoice uses); through the one review step with its replacements; issued
+   * as its own credit note by the next run. The `split` cause is office only,
+   * enforced in the store. Nothing raises one automatically (US-06.4.1).
+   */
+  credit: {
+    addedBy: ['office', 'anaesthetist'],
+    anaesthetistOwnOnly: true,
+    tick: 'fixedOn',
+    reviewed: true,
+    mayBundle: false,
+    needsInvoicedProcedure: true,
+  },
+}
+
+/** An event's free-form lines (an additional invoice's); none on a credit, which mirrors its original instead. */
+export function eventLines(event: Pick<ProcedureEvent, 'detail'>): FreeFormLine[] {
+  return event.detail.kind === 'additionalInvoice' ? event.detail.lines : []
+}
+
+/** A credit event's detail, or undefined on any other kind. */
+export function creditDetailOf(event: Pick<ProcedureEvent, 'detail'> | undefined): CreditEventDetail | undefined {
+  return event !== undefined && event.detail.kind === 'credit' ? event.detail.credit : undefined
 }
 
 /** The derived status: never stored. */
@@ -70,10 +95,11 @@ export interface EventActor {
   anaesthetistId?: string
 }
 
-/** An event's status, from its record alone. */
-export function eventStatus(event: Pick<ProcedureEvent, 'billable' | 'invoiceId' | 'review'>): ProcedureEventStatus {
+/** An event's status, from its record alone. A credit reads `invoiced` once its credit note is issued (catch-up Phase 39). */
+export function eventStatus(event: Pick<ProcedureEvent, 'billable' | 'invoiceId' | 'review'> & { detail?: ProcedureEvent['detail'] }): ProcedureEventStatus {
   if (!event.billable) return 'notBillable'
   if (event.invoiceId !== undefined) return 'invoiced'
+  if (event.detail?.kind === 'credit' && event.detail.credit.creditNoteId !== undefined) return 'invoiced'
   return event.review.state
 }
 

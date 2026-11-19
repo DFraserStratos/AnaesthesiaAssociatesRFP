@@ -6,6 +6,11 @@
  * free-form pricing in `domain/billing/additionalInvoice.ts`; every word that
  * names an event in `shared/procedureEventCopy.ts`.
  *
+ * A credit (catch-up Phase 39, `creditActions.ts`) is an event too: its
+ * replacements are ordinary additional-invoice events with `replaces`, and the
+ * credit and its replacements are reviewed, edited, removed and issued as one
+ * unit. The review actions here hand a credit to `creditActions.ts`.
+ *
  * Immutability (US-07.3.2): no action here writes the Booking, its
  * Procedures, its lock or the original invoice. An event write stamps no
  * Booking (`stampBookingId: null`), so an invoiced Booking deep-equals before
@@ -24,6 +29,7 @@ import type {
 import {
   EVENT_KINDS,
   eventInvoicing,
+  eventLines,
   eventStatus,
   mayEditEvent,
   resolveEventParty,
@@ -37,13 +43,24 @@ import { billablePartyForProcedure, billedToFor, invoiceDeliveryFor, isPersonPar
 import { supplierFor } from '../domain/billing/invoicePresentation'
 import { postalAddressLines } from '../domain/billing/payer'
 import type { DraftInvoice, LockedPayee } from '../domain/billing/lock'
-import { EVENT_MESSAGES } from '../shared/procedureEventCopy'
+import { CREDIT_MESSAGES, EVENT_MESSAGES } from '../shared/procedureEventCopy'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { materialiseInvoices } from './invoiceMaterialise'
-import { handoffPair } from './xeroHandoff'
+import { handoffCorrection, handoffPair } from './xeroHandoff'
 import { counterpartyName, invoiceAddresseeName } from './selectors'
 import { payerFromInput, payerInputRefusal, type PayerInput } from './payerActions'
+import {
+  approveCreditUnit,
+  creditNoteForInvoice,
+  declineCreditUnit,
+  issueCreditInto,
+  planCreditIssue,
+  removeCreditUnit,
+  replacementsOf,
+  updateCreditPart,
+  type CreditRunDraft,
+} from './creditActions'
 
 type EventState = Pick<AppState, 'schedule' | 'billing' | 'masters'>
 
@@ -79,20 +96,59 @@ function sameRef(a: CounterpartyRef, b: CounterpartyRef): boolean {
  * `procedureIds` include the Procedure (where 22's split put it on two, the
  * one for `party`, else the first by number), else its prepayment invoice
  * when that is its only one (a prepaid Procedure 27 priced at the prepaid
- * amount, nothing left to bill). Never an additional invoice.
+ * amount, nothing left to bill). Never a plain additional invoice.
+ *
+ * A credited invoice (catch-up Phase 39) is skipped for its live replacements
+ * on this Procedure, by number (a chain followed to its end), so a later
+ * additional invoice on a credited Procedure still finds its original; with
+ * no live replacement (a credit with none) there is none, and 38b's own
+ * refusal applies.
  */
 export function liveInvoiceForProcedure(state: Pick<AppState, 'billing'>, procedureId: string, party?: CounterpartyRef): Invoice | undefined {
   const all = Object.values(state.billing.invoices).filter((i) => (i.procedureIds ?? []).includes(procedureId))
   const standard = all.filter((i) => i.kind === 'standard').sort(byNumber)
   if (standard.length > 0) {
+    const live = liveChainOf(state, standard)
     if (party !== undefined) {
-      const forParty = standard.find((i) => sameRef(i.counterparty, party))
+      const forParty = live.find((i) => sameRef(i.counterparty, party))
       if (forParty !== undefined) return forParty
     }
-    return standard[0]
+    return live[0]
   }
   const prepaid = all.filter((i) => i.kind === 'prePayment').sort(byNumber)
   return prepaid[0]
+}
+
+/**
+ * The live invoices of these standard invoices, in chain order: each one not
+ * credited, else its replacements (the `rebillOf` lineage, followed to its
+ * end). A replacement stands for every Procedure of the invoice it replaces,
+ * so a credit of an invoice covering several Procedures (the Holt Booking's
+ * shared invoice) leaves each of them its live replacement, whichever
+ * Procedure the credit was raised from.
+ */
+function liveChainOf(state: Pick<AppState, 'billing'>, standard: readonly Invoice[]): Invoice[] {
+  const seen = new Set<string>()
+  const liveOf = (inv: Invoice): Invoice[] => {
+    if (seen.has(inv.id)) return []
+    seen.add(inv.id)
+    if (creditNoteForInvoice(state, inv.id) === undefined) return [inv]
+    return replacementsOf(state, inv.id).flatMap(liveOf)
+  }
+  return standard.flatMap(liveOf)
+}
+
+/**
+ * Every live invoice of a Procedure (catch-up Phase 39 review): its standard
+ * invoices not credited and the live replacements of those credited, by
+ * number. More than one where 22's fee split billed two parties, so the UI can
+ * let the user pick which one to credit. Never a prepayment invoice.
+ */
+export function liveInvoicesForProcedure(state: Pick<AppState, 'billing'>, procedureId: string): Invoice[] {
+  const standard = Object.values(state.billing.invoices)
+    .filter((i) => i.kind === 'standard' && (i.procedureIds ?? []).includes(procedureId))
+    .sort(byNumber)
+  return liveChainOf(state, standard).sort(byNumber)
 }
 
 function eventOrder(a: ProcedureEvent, b: ProcedureEvent): number {
@@ -184,16 +240,16 @@ export function originalForEvent(state: Pick<AppState, 'billing'>, event: Pick<P
   return liveInvoiceForProcedure(state, event.procedureId, event.party.sameAs ? undefined : event.party.party)
 }
 
-/** The priced lines of an event (an additional invoice's free-form lines). */
+/** The priced lines of an event (an additional invoice's free-form lines; a credit has none and refuses `noLines`). */
 export function pricingOf(event: Pick<ProcedureEvent, 'detail'>): FreeFormPricing {
-  return priceFreeFormInvoice(event.detail.lines)
+  return priceFreeFormInvoice(eventLines(event))
 }
 
 /**
  * Where the invoice to a named party would go: a typed invoice email, a named
  * person's own contact, else 21's one delivery rule for that party.
  */
-function namedPartyDelivery(state: EventState, procedureId: string, party: EventParty): DeliveryPlan | undefined {
+export function namedPartyDelivery(state: EventState, procedureId: string, party: EventParty): DeliveryPlan | undefined {
   if (party.sameAs) return undefined
   const email = party.invoiceEmail?.trim()
   if (email !== undefined && email !== '') return { method: 'email', to: email }
@@ -246,7 +302,7 @@ export interface ProcedureEventInput {
 }
 
 /** The stored party for an input, allocating a new person's id (refusal when the person is not valid). */
-function partyFromInput(input: EventPartyInput, counters: Record<string, number>): Outcome<{ party: EventParty; counters: Record<string, number> }> {
+export function partyFromInput(input: EventPartyInput, counters: Record<string, number>): Outcome<{ party: EventParty; counters: Record<string, number> }> {
   if (!('personInput' in input)) return ok({ party: structuredClone(input), counters })
   const bad = payerInputRefusal(input.personInput)
   if (bad !== null) return bad
@@ -259,12 +315,12 @@ function partyFromInput(input: EventPartyInput, counters: Record<string, number>
   })
 }
 
-function eventActor(actor: Actor): EventActor {
+export function eventActor(actor: Actor): EventActor {
   return { role: actor.role, ...(actor.anaesthetistId !== undefined ? { anaesthetistId: actor.anaesthetistId } : {}) }
 }
 
 /** Validate an event's input for this raiser: items 2 and 3. Refusal or the pricing. */
-function validateInput(
+export function validateInput(
   state: EventState & Pick<AppState, 'clock'>,
   raiser: EventActor,
   procedureId: string,
@@ -290,11 +346,11 @@ function validateInput(
   return ok(priced)
 }
 
-function cleanLines(lines: readonly FreeFormLine[]): FreeFormLine[] {
+export function cleanLines(lines: readonly FreeFormLine[]): FreeFormLine[] {
   return lines.map((l) => ({ description: l.description.trim(), quantity: l.quantity, unitAmount: l.unitAmount }))
 }
 
-function partyForAudit(party: EventParty): unknown {
+export function partyForAudit(party: EventParty): unknown {
   return party.sameAs ? 'sameAs' : { kind: party.party.kind, id: party.party.id, ...(party.person !== undefined ? { person: party.person.name } : {}) }
 }
 
@@ -304,6 +360,8 @@ function partyForAudit(party: EventParty): unknown {
  * event awaits the office's review (D13). Raises nothing: the next billing run does.
  */
 export function addProcedureEvent(api: AppStoreApi, actor: Actor, procedureId: string, input: ProcedureEventInput): Outcome<{ eventId: string }> {
+  // A credit is raised with its replacements in one step (`submitCredit`), never as a bare event.
+  if (input.kind !== 'additionalInvoice') return refuse('kindNotAllowed', 'Raise a credit with the credit note option.')
   const state = api.getState()
   const raiser = eventActor(actor)
   const madeParty = partyFromInput(input.party, state.counters)
@@ -328,7 +386,7 @@ export function addProcedureEvent(api: AppStoreApi, actor: Actor, procedureId: s
       occurredOnISO: input.occurredOnISO,
       billable,
       party: madeParty.value.party,
-      detail: { kind: input.kind, lines: cleanLines(input.lines) },
+      detail: { kind: 'additionalInvoice', lines: cleanLines(input.lines) },
       review: { state: billable && rules.reviewed ? 'awaitingReview' : 'approved' },
       addedBy: { who: actor.who, role: actor.role, ...(actor.role === 'anaesthetist' && actor.anaesthetistId !== undefined ? { anaesthetistId: actor.anaesthetistId } : {}) },
       addedAtISO: atISO,
@@ -343,7 +401,7 @@ export function addProcedureEvent(api: AppStoreApi, actor: Actor, procedureId: s
         bookingId: event.bookingId,
         occurredOnISO: event.occurredOnISO,
         party: partyForAudit(event.party),
-        lines: event.detail.lines,
+        lines: eventLines(event),
         subtotal: valid.value.subtotal,
         gst: valid.value.gst,
         total: valid.value.total,
@@ -357,7 +415,7 @@ export function addProcedureEvent(api: AppStoreApi, actor: Actor, procedureId: s
 }
 
 /** The guard an edit or removal shares: found, editable by this actor. */
-function editGuard(state: Pick<AppState, 'schedule' | 'billing'>, actor: Actor, eventId: string): Outcome<ProcedureEvent> {
+export function editGuard(state: Pick<AppState, 'schedule' | 'billing'>, actor: Actor, eventId: string): Outcome<ProcedureEvent> {
   const event = state.schedule.procedureEvents[eventId]
   if (event === undefined) return refuse('notFound', EVENT_MESSAGES.notFound)
   const status = eventStatus(event)
@@ -381,13 +439,15 @@ export function updateProcedureEvent(
   const guard = editGuard(state, actor, eventId)
   if (!guard.ok) return guard
   const before = guard.value
+  // A credit and its replacements are edited as one correction (catch-up Phase 39): back to review together.
+  if (before.kind === 'credit' || before.replaces !== undefined) return updateCreditPart(api, actor, eventId, patch)
   const madeParty = partyFromInput(patch.party ?? before.party, state.counters)
   if (!madeParty.ok) return madeParty
   const next = {
     kind: before.kind,
     occurredOnISO: patch.occurredOnISO ?? before.occurredOnISO,
     party: madeParty.value.party,
-    lines: patch.lines ?? before.detail.lines,
+    lines: patch.lines ?? eventLines(before),
   }
   const raiser: EventActor = { role: before.addedBy.role, ...(before.addedBy.anaesthetistId !== undefined ? { anaesthetistId: before.addedBy.anaesthetistId } : {}) }
   const valid = validateInput(state, raiser, before.procedureId, next)
@@ -399,7 +459,7 @@ export function updateProcedureEvent(
       entityType: 'procedureEvent',
       entityId: eventId,
       action: 'procedureEvent.update',
-      before: { occurredOnISO: before.occurredOnISO, party: partyForAudit(before.party), lines: before.detail.lines, review: before.review.state },
+      before: { occurredOnISO: before.occurredOnISO, party: partyForAudit(before.party), lines: eventLines(before), review: before.review.state },
       after: { occurredOnISO: next.occurredOnISO, party: partyForAudit(next.party), lines: cleanLines(next.lines), review: 'awaitingReview', total: valid.value.total },
       stampBookingId: null,
     },
@@ -409,7 +469,7 @@ export function updateProcedureEvent(
         ...current,
         occurredOnISO: next.occurredOnISO,
         party: structuredClone(next.party),
-        detail: { kind: current.kind, lines: cleanLines(next.lines) },
+        detail: { kind: 'additionalInvoice', lines: cleanLines(next.lines) },
         review: { state: 'awaitingReview' },
         updatedAtISO: clockISO(s.clock),
       }
@@ -424,6 +484,9 @@ export function removeProcedureEvent(api: AppStoreApi, actor: Actor, eventId: st
   const state = api.getState()
   const guard = editGuard(state, actor, eventId)
   if (!guard.ok) return guard
+  // A credit is removed with its replacements; a replacement alone is not (catch-up Phase 39).
+  if (guard.value.kind === 'credit') return removeCreditUnit(api, actor, eventId)
+  if (guard.value.replaces !== undefined) return refuse('partOfCorrection', CREDIT_MESSAGES.partOfCorrection)
   mutate(
     api,
     actor,
@@ -437,7 +500,7 @@ export function removeProcedureEvent(api: AppStoreApi, actor: Actor, eventId: st
   return ok({ eventId })
 }
 
-function reviewGuard(state: Pick<AppState, 'schedule'>, actor: Actor, eventId: string): Outcome<ProcedureEvent> {
+export function reviewGuard(state: Pick<AppState, 'schedule'>, actor: Actor, eventId: string): Outcome<ProcedureEvent> {
   if (actor.role !== 'office') return refuse('officeOnly', EVENT_MESSAGES.officeOnlyReview)
   const event = state.schedule.procedureEvents[eventId]
   if (event === undefined) return refuse('notFound', EVENT_MESSAGES.notFound)
@@ -455,8 +518,11 @@ export function approveProcedureEvent(api: AppStoreApi, actor: Actor, eventId: s
   const guard = reviewGuard(state, actor, eventId)
   if (!guard.ok) return guard
   const event = guard.value
+  // A credit is approved with its replacements; a replacement never alone (catch-up Phase 39).
+  if (event.replaces !== undefined) return refuse('partOfCorrection', CREDIT_MESSAGES.partOfCorrection)
+  if (event.kind === 'credit') return approveCreditUnit(api, actor, eventId)
   const raiser: EventActor = { role: event.addedBy.role, ...(event.addedBy.anaesthetistId !== undefined ? { anaesthetistId: event.addedBy.anaesthetistId } : {}) }
-  const valid = validateInput(state, raiser, event.procedureId, { kind: event.kind, occurredOnISO: event.occurredOnISO, party: event.party, lines: event.detail.lines })
+  const valid = validateInput(state, raiser, event.procedureId, { kind: event.kind, occurredOnISO: event.occurredOnISO, party: event.party, lines: eventLines(event) })
   if (!valid.ok) return valid
   mutate(
     api,
@@ -480,8 +546,11 @@ export function declineProcedureEvent(api: AppStoreApi, actor: Actor, eventId: s
   const state = api.getState()
   const guard = reviewGuard(state, actor, eventId)
   if (!guard.ok) return guard
+  if (guard.value.replaces !== undefined) return refuse('partOfCorrection', CREDIT_MESSAGES.partOfCorrection)
   const why = reason.trim()
   if (why === '') return refuse('reasonRequired', EVENT_MESSAGES.giveReason)
+  // A credit is declined with its replacements (catch-up Phase 39).
+  if (guard.value.kind === 'credit') return declineCreditUnit(api, actor, eventId, why)
   mutate(
     api,
     actor,
@@ -504,14 +573,17 @@ export function declineProcedureEvent(api: AppStoreApi, actor: Actor, eventId: s
 // ---------------------------------------------------------------------------
 
 export interface EventRunResult {
+  /** Every invoice the run raised: plain additional invoices and the replacements issued with a credit. */
   invoiceIds: InvoiceId[]
   pairIds: string[]
+  /** The credit notes the run issued (catch-up Phase 39), each with its negative invoice and replacements. */
+  creditNoteIds: string[]
   /** Events the run could not invoice (a stale party or price), with why; they stay approved. */
   skipped: { eventId: string; message: string }[]
 }
 
 /** The original's delivery as a plan, for "same as": the invoice goes where the original went. */
-function deliveryOfOriginal(original: Invoice): DeliveryPlan {
+export function deliveryOfOriginal(original: Invoice): DeliveryPlan {
   const d = original.delivery
   if (d === undefined) return { method: 'none' }
   // The address it last went to (a resend to a corrected address wins).
@@ -521,13 +593,140 @@ function deliveryOfOriginal(original: Invoice): DeliveryPlan {
 }
 
 /** The payee the additional invoice pays: 25's locked payee, else the List's anaesthetist. */
-function payeeOf(state: EventState, bookingId: string): LockedPayee | undefined {
+export function payeeOf(state: EventState, bookingId: string): LockedPayee | undefined {
   const lock = state.billing.locks[bookingId]
   if (lock !== undefined) return lock.payee
   const booking = state.schedule.bookings[bookingId]
   const id = booking !== undefined ? state.schedule.lists[booking.listId]?.anaesthetistId : undefined
   const anaesthetist = id !== undefined ? state.masters.anaesthetists[id] : undefined
   return anaesthetist !== undefined ? { anaesthetistId: anaesthetist.registrationNumber, name: anaesthetist.name, supplier: supplierFor(anaesthetist) } : undefined
+}
+
+/** What the run needs to raise one additional invoice from its event. */
+export interface PlannedAdditional {
+  event: ProcedureEvent
+  draft: DraftInvoice
+  original: Invoice
+  party: ResolvedEventParty
+  payee: LockedPayee
+  pricing: FreeFormPricing & { kind: 'priced' }
+}
+
+/**
+ * Plan one additional invoice from its event (38b's issue path): re-validated
+ * against its raiser and re-priced, addressed by its party, laid out and
+ * delivered like its original. A replacement (catch-up Phase 39) resolves
+ * "same as" against the invoice it replaces, never the Procedure's live one.
+ */
+export function planAdditionalInvoice(state: EventState & Pick<AppState, 'clock'>, event: ProcedureEvent): PlannedAdditional | { message: string } {
+  const raiser: EventActor = { role: event.addedBy.role, ...(event.addedBy.anaesthetistId !== undefined ? { anaesthetistId: event.addedBy.anaesthetistId } : {}) }
+  const valid = validateInput(state, raiser, event.procedureId, { kind: 'additionalInvoice', occurredOnISO: event.occurredOnISO, party: event.party, lines: eventLines(event) })
+  const named = event.party.sameAs ? undefined : event.party.party
+  const original = event.replaces !== undefined ? state.billing.invoices[event.replaces.originalInvoiceId] : liveInvoiceForProcedure(state, event.procedureId, named)
+  const procedureParty = procedurePartyOf(state, event.procedureId)
+  const party = resolveEventParty(event, {
+    ...(original !== undefined ? { originalInvoice: original } : {}),
+    ...(procedureParty !== undefined ? { procedureParty } : {}),
+  })
+  const payee = payeeOf(state, event.bookingId)
+  if (!valid.ok) return { message: valid.message }
+  if (original === undefined || party === undefined || payee === undefined) return { message: 'The original invoice or payee is missing.' }
+  const pricing = valid.value
+  const procedure = state.schedule.procedures[event.procedureId]!
+  const delivery: DeliveryPlan = party.sameAs ? deliveryOfOriginal(original) : (namedPartyDelivery(state, event.procedureId, event.party) ?? { method: 'none' })
+  // A person billed by name gets the run's snapshot, as every run invoice does (`billedToFor`).
+  const booking = state.schedule.bookings[event.bookingId]!
+  const billedTo =
+    party.billedTo ??
+    (!party.sameAs && isPersonParty(party.counterparty) ? billedToFor(party.counterparty, [procedure], booking.patientId, state.masters.patients[booking.patientId]) : undefined)
+  const draft: DraftInvoice = {
+    counterparty: party.counterparty,
+    ...(billedTo !== undefined ? { billedTo } : {}),
+    layout: party.sameAs ? original.layout : isPersonParty(party.counterparty) ? 'patient' : 'contractHolder',
+    lines: pricing.lines.map((l) => ({ procedureId: procedure.id, kind: 'fee' as const, description: l.description, amount: l.amount, quantity: l.quantity, unitAmount: l.unitAmount })),
+    subtotal: pricing.subtotal,
+    gst: pricing.gst,
+    total: pricing.total,
+    // A replacement stands for every Procedure of the invoice it replaces (catch-up Phase 39 review); a plain one for its own.
+    procedureIds: event.replaces !== undefined && (original.procedureIds ?? []).length > 0 ? [...original.procedureIds!] : [procedure.id],
+    ...(original.crossMatch !== undefined ? { crossMatch: { ...original.crossMatch } } : {}),
+    ...(party.sameAs && original.holderReference !== undefined ? { holderReference: original.holderReference } : {}),
+    delivery,
+  }
+  return { event, draft, original, party, payee, pricing }
+}
+
+/** The run's working copies, written by each event's issue inside the one commit (`CreditRunDraft` is the same shape). */
+export interface EventRunWork {
+  counters: Record<string, number>
+  maps: { invoices: Record<string, Invoice>; invoiceLines: AppState['billing']['invoiceLines']; ledger: AppState['billing']['ledger'] }
+  procedureEvents: AppState['schedule']['procedureEvents']
+  metas: MutationMeta[]
+}
+
+/**
+ * Issue one planned additional invoice into the run's working copies: its own
+ * number from the ordinary sequence, `kind: 'additional'`, its lineage
+ * (`additionalTo` for a plain one; `rebillOf` for a replacement, passed by the
+ * credit) and `eventId`, its own ledger pair (payable to the locked payee),
+ * the event stamped. Returns the invoice and pair ids.
+ */
+export function issueAdditionalInto(
+  s: AppState,
+  work: EventRunWork,
+  p: PlannedAdditional,
+  atISO: string,
+  opts: { lineage?: Invoice['lineage']; createAfter?: Record<string, unknown> } = {},
+): { invoiceId: InvoiceId; pairIds: string[] } {
+  const procedure = s.schedule.procedures[p.event.procedureId]
+  const made = materialiseInvoices(
+    s,
+    work.counters,
+    [p.draft],
+    {
+      bookingId: p.event.bookingId,
+      atISO,
+      kind: 'additional',
+      send: true,
+      createAction: 'invoice.additionalCreated',
+      payee: p.payee,
+      lineage: opts.lineage ?? [{ role: 'additionalTo', invoiceId: p.original.id }],
+      eventId: p.event.id,
+      createAfter: {
+        originalInvoiceNumber: p.original.invoiceNumber,
+        procedureId: p.event.procedureId,
+        procedure: procedure?.invoiceDescription?.text ?? procedure?.procedureText?.text ?? p.event.procedureId,
+        lines: p.pricing.lines,
+        eventRaisedBy: p.event.addedBy.who,
+        eventId: p.event.id,
+        ...(opts.createAfter ?? {}),
+      },
+    },
+    work.maps,
+  )
+  work.counters = made.counters
+  work.maps = { invoices: made.invoices, invoiceLines: made.invoiceLines, ledger: made.ledger }
+  const invoiceId = made.invoiceIds[0]!
+  work.procedureEvents[p.event.id] = { ...work.procedureEvents[p.event.id]!, invoiceId }
+  work.metas.push({
+    entityType: 'procedureEvent',
+    entityId: p.event.id,
+    action: 'procedureEvent.invoiced',
+    after: { invoiceId, invoiceNumber: made.invoices[invoiceId]!.invoiceNumber },
+    stampBookingId: null,
+  })
+  work.metas.push(...made.metas)
+  if (!sameRef(p.original.counterparty, p.party.counterparty)) {
+    work.metas.push({
+      entityType: 'invoice',
+      entityId: invoiceId,
+      action: 'invoice.partyChanged',
+      before: { counterparty: p.original.counterparty, invoiceNumber: p.original.invoiceNumber },
+      after: { counterparty: p.party.counterparty },
+      stampBookingId: null,
+    })
+  }
+  return { invoiceId, pairIds: made.pairIds }
 }
 
 /**
@@ -537,129 +736,82 @@ function payeeOf(state: EventState, bookingId: string): LockedPayee | undefined 
  * invoice is always its own invoice: its own number from the ordinary
  * sequence, the original's layout and delivery, `kind: 'additional'`, the
  * `additionalTo` lineage and `eventId`, and its own ledger pair (payable to
- * the locked payee). Then each new pair is handed to Xero. `eventIds` narrows
- * the run (the PWA stand-in). `runBillingForList` is never involved, and no
- * run creates an event. Invoices each event exactly once.
+ * the locked payee). An approved credit (catch-up Phase 39) is issued in the
+ * same commit by `issueCreditInto`, with its replacements; the generic loop
+ * skips any event with `replaces` (a replacement is issued only through its
+ * credit). Then each plain additional invoice's pair is handed to Xero, and
+ * each credit's reversal and new pairs together (`handoffCorrection`), so no
+ * replacement pair is handed off twice. `eventIds` narrows the run (the PWA
+ * stand-in). `runBillingForList` is never involved, and no run creates an
+ * event or a credit. Invoices each event exactly once.
  */
 export function runEventInvoicing(api: AppStoreApi, actor: Actor, opts: { eventIds?: readonly string[] } = {}): Outcome<EventRunResult> {
   const state = api.getState()
   const narrowed = opts.eventIds !== undefined ? new Set(opts.eventIds) : undefined
-  const due = approvedEventsAwaitingRun(state).filter((e) => narrowed === undefined || narrowed.has(e.id))
+  const due = approvedEventsAwaitingRun(state).filter((e) => (narrowed === undefined || narrowed.has(e.id)) && e.replaces === undefined)
   if (due.length === 0) return refuse('nothingToInvoice', EVENT_MESSAGES.nothingToRun)
 
-  interface Planned {
-    event: ProcedureEvent
-    draft: DraftInvoice
-    original: Invoice
-    party: ResolvedEventParty
-    payee: LockedPayee
-    pricing: FreeFormPricing & { kind: 'priced' }
-  }
+  type Planned = { kind: 'additional'; plan: PlannedAdditional } | { kind: 'credit'; eventId: string }
   const planned: Planned[] = []
   const skipped: EventRunResult['skipped'] = []
   for (const event of due) {
-    const raiser: EventActor = { role: event.addedBy.role, ...(event.addedBy.anaesthetistId !== undefined ? { anaesthetistId: event.addedBy.anaesthetistId } : {}) }
-    const valid = validateInput(state, raiser, event.procedureId, { kind: event.kind, occurredOnISO: event.occurredOnISO, party: event.party, lines: event.detail.lines })
-    const named = event.party.sameAs ? undefined : event.party.party
-    const original = liveInvoiceForProcedure(state, event.procedureId, named)
-    const party = resolvedPartyOf(state, event)
-    const payee = payeeOf(state, event.bookingId)
-    if (!valid.ok || original === undefined || party === undefined || payee === undefined) {
-      skipped.push({ eventId: event.id, message: valid.ok ? 'The original invoice or payee is missing.' : valid.message })
+    if (event.kind === 'credit') {
+      const plan = planCreditIssue(state, event.id)
+      if (!plan.ok) skipped.push({ eventId: event.id, message: plan.message })
+      else planned.push({ kind: 'credit', eventId: event.id })
+      continue
+    }
+    const plan = planAdditionalInvoice(state, event)
+    if ('message' in plan) {
+      skipped.push({ eventId: event.id, message: plan.message })
       continue
     }
     // OQ-121, D69: the additional invoice never bundles; a bundling kind (39b) would join the run's invoice for its party here.
     if (eventInvoicing(event, { runInvoiceForParty: false }) !== 'ownInvoice') continue
-    const pricing = valid.value
-    const procedure = state.schedule.procedures[event.procedureId]!
-    const delivery: DeliveryPlan = party.sameAs ? deliveryOfOriginal(original) : (namedPartyDelivery(state, event.procedureId, event.party) ?? { method: 'none' })
-    // A person billed by name gets the run's snapshot, as every run invoice does (`billedToFor`).
-    const booking = state.schedule.bookings[event.bookingId]!
-    const billedTo =
-      party.billedTo ??
-      (!party.sameAs && isPersonParty(party.counterparty) ? billedToFor(party.counterparty, [procedure], booking.patientId, state.masters.patients[booking.patientId]) : undefined)
-    const draft: DraftInvoice = {
-      counterparty: party.counterparty,
-      ...(billedTo !== undefined ? { billedTo } : {}),
-      layout: party.sameAs ? original.layout : isPersonParty(party.counterparty) ? 'patient' : 'contractHolder',
-      lines: pricing.lines.map((l) => ({ procedureId: procedure.id, kind: 'fee' as const, description: l.description, amount: l.amount, quantity: l.quantity, unitAmount: l.unitAmount })),
-      subtotal: pricing.subtotal,
-      gst: pricing.gst,
-      total: pricing.total,
-      procedureIds: [procedure.id],
-      ...(original.crossMatch !== undefined ? { crossMatch: { ...original.crossMatch } } : {}),
-      ...(party.sameAs && original.holderReference !== undefined ? { holderReference: original.holderReference } : {}),
-      delivery,
-    }
-    planned.push({ event, draft, original, party, payee, pricing })
+    planned.push({ kind: 'additional', plan })
   }
   if (planned.length === 0) return refuse('nothingToInvoice', skipped[0]?.message ?? EVENT_MESSAGES.nothingToRun)
 
   const invoiceIds: InvoiceId[] = []
   const pairIds: string[] = []
+  const plainPairIds: string[] = []
+  const creditNoteIds: string[] = []
   const metas: MutationMeta[] = []
   mutate(api, actor, metas, (s) => {
-    let counters = s.counters
-    let maps = { invoices: { ...s.billing.invoices }, invoiceLines: { ...s.billing.invoiceLines }, ledger: { ...s.billing.ledger } }
-    const procedureEvents = { ...s.schedule.procedureEvents }
     const atISO = clockISO(s.clock)
+    const work: CreditRunDraft = {
+      s,
+      counters: s.counters,
+      maps: { invoices: { ...s.billing.invoices }, invoiceLines: { ...s.billing.invoiceLines }, ledger: { ...s.billing.ledger } },
+      procedureEvents: { ...s.schedule.procedureEvents },
+      creditNotes: { ...s.billing.creditNotes },
+      negativeInvoices: { ...s.billing.negativeInvoices },
+      metas,
+    }
     for (const p of planned) {
-      const procedure = s.schedule.procedures[p.event.procedureId]
-      const made = materialiseInvoices(
-        s,
-        counters,
-        [p.draft],
-        {
-          bookingId: p.event.bookingId,
-          atISO,
-          kind: 'additional',
-          send: true,
-          createAction: 'invoice.additionalCreated',
-          payee: p.payee,
-          lineage: [{ role: 'additionalTo', invoiceId: p.original.id }],
-          eventId: p.event.id,
-          createAfter: {
-            originalInvoiceNumber: p.original.invoiceNumber,
-            procedureId: p.event.procedureId,
-            procedure: procedure?.invoiceDescription?.text ?? procedure?.procedureText?.text ?? p.event.procedureId,
-            lines: p.pricing.lines,
-            eventRaisedBy: p.event.addedBy.who,
-            eventId: p.event.id,
-          },
-        },
-        maps,
-      )
-      counters = made.counters
-      maps = { invoices: made.invoices, invoiceLines: made.invoiceLines, ledger: made.ledger }
-      const invoiceId = made.invoiceIds[0]!
-      invoiceIds.push(invoiceId)
-      pairIds.push(...made.pairIds)
-      procedureEvents[p.event.id] = { ...p.event, invoiceId }
-      metas.push({
-        entityType: 'procedureEvent',
-        entityId: p.event.id,
-        action: 'procedureEvent.invoiced',
-        after: { invoiceId, invoiceNumber: made.invoices[invoiceId]!.invoiceNumber },
-        stampBookingId: null,
-      })
-      metas.push(...made.metas)
-      if (!sameRef(p.original.counterparty, p.party.counterparty)) {
-        metas.push({
-          entityType: 'invoice',
-          entityId: invoiceId,
-          action: 'invoice.partyChanged',
-          before: { counterparty: p.original.counterparty, invoiceNumber: p.original.invoiceNumber },
-          after: { counterparty: p.party.counterparty },
-          stampBookingId: null,
-        })
+      if (p.kind === 'additional') {
+        const made = issueAdditionalInto(s, work, p.plan, atISO)
+        invoiceIds.push(made.invoiceId)
+        pairIds.push(...made.pairIds)
+        plainPairIds.push(...made.pairIds)
+        continue
       }
+      const issued = issueCreditInto(work, p.eventId, atISO)
+      if (!issued.ok) {
+        skipped.push({ eventId: p.eventId, message: issued.message })
+        continue
+      }
+      creditNoteIds.push(issued.value.creditNoteId)
+      invoiceIds.push(...issued.value.invoiceIds)
+      pairIds.push(...issued.value.pairIds)
     }
     return {
-      billing: { ...s.billing, invoices: maps.invoices, invoiceLines: maps.invoiceLines, ledger: maps.ledger },
-      schedule: { ...s.schedule, procedureEvents },
-      counters,
+      billing: { ...s.billing, invoices: work.maps.invoices, invoiceLines: work.maps.invoiceLines, ledger: work.maps.ledger, creditNotes: work.creditNotes, negativeInvoices: work.negativeInvoices },
+      schedule: { ...s.schedule, procedureEvents: work.procedureEvents },
+      counters: work.counters,
     }
   })
-  for (const pairId of pairIds) handoffPair(api, pairId)
-  return ok({ invoiceIds, pairIds, skipped })
+  for (const pairId of plainPairIds) handoffPair(api, pairId)
+  for (const creditNoteId of creditNoteIds) handoffCorrection(api, creditNoteId)
+  return ok({ invoiceIds, pairIds, creditNoteIds, skipped })
 }

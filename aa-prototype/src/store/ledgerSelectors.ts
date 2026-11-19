@@ -106,9 +106,14 @@ export function openXeroQueueItems(state: BillingState): XeroQueueItem[] {
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
-/** The open hand-off queue item for a pair, if its mirror is waiting for Xero. */
+/** The open hand-off queue item for a pair, if its mirror is waiting for Xero: its own hand-off, or a credit's correction that creates or reverses it (catch-up Phase 39). */
 export function handoffQueuedFor(state: BillingState, pairId: string): XeroQueueItem | undefined {
   return openQueueIndex(state.billing.xeroQueue).handoffByPair.get(pairId)
+}
+
+/** The open correction queue item for a credit note, if its Xero reversal and new pairs wait for Xero (catch-up Phase 39). */
+export function correctionQueuedFor(state: BillingState, creditNoteId: string): XeroQueueItem | undefined {
+  return openQueueIndex(state.billing.xeroQueue).correctionByCreditNote.get(creditNoteId)
 }
 
 /** The open journal queue item for a transfer (27a's journal waiting for Xero). */
@@ -169,6 +174,10 @@ function queueWhat(state: BillingState, q: XeroQueueItem): { what: string; pairI
     }
     case 'poll':
       return { what: 'Reconciliation poll' }
+    case 'correction': {
+      const note = q.target.creditNoteId !== undefined ? state.billing.creditNotes[q.target.creditNoteId] : undefined
+      return { what: `Credit ${number}${note !== undefined ? ` (${note.creditNoteNumber})` : ''} and its new invoices`, ...who }
+    }
   }
 }
 
@@ -211,6 +220,9 @@ export function incomeReceiptsFor(state: BillingState, anaesthetistId: Anaesthet
  * 16's BCTI record list, from the ledger's payable legs: the only list `bctisFor` reads.
  * OQ-60, provisional: an additional invoice is one BCTI (catch-up Phase 38b): its pair is an issued
  * Booking pair, so it yields one record here, with no new rule; an event not yet invoiced yields none.
+ * OQ-60, provisional (catch-up Phase 39): a credited original keeps its record (it was issued); a credit
+ * note and a negative invoice add none (not pairs; "not called a BCTI credit"); each replacement issued
+ * with a credit is one record, through 38b's rule.
  */
 export function bctiRecords(state: BillingState): BctiRecord[] {
   return bctiRecordsOf(allPairs(state), state.billing.transfers, BCTI_COUNT_RULE)

@@ -47,3 +47,5 @@ export { AddRowButton } from './AddRowButton'
 // Catch-up Phase 33's review: option cards and pick-list rows.
 export { RadioCard, type RadioCardProps, type RadioItemProps } from './RadioCard'
 export { OptionRow, type OptionRowProps } from './OptionRow'
+// Catch-up Phase 39: the quick option chip (the credit's reasons).
+export { OptionChip, type OptionChipProps } from './OptionChip'

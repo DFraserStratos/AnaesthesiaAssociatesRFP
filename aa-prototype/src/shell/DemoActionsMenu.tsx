@@ -1,5 +1,5 @@
 import { useEffect, useId } from 'react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { FlaskConical } from 'lucide-react'
 import { DemoBadge } from '../shared/DemoBadge'
 import { DemoTriggerBadge, useDemoTriggerRows } from '../shared/demoTriggers'
@@ -137,6 +137,14 @@ export function DemoActionsMenu() {
                         }}
                       >
                         {result.message}
+                        {result.link !== undefined && (
+                          <>
+                            {' '}
+                            <Link to={result.link.to} style={{ color: accent.base, fontWeight: 600 }}>
+                              {result.link.label}
+                            </Link>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>

@@ -1,12 +1,14 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
 import { useSearchParams } from 'react-router-dom'
 import { accent, fontFamily, neutral } from '../../../theme/tokens'
-import { billedLists, changedSinceSubmitted, eventPartyName, eventsAwaitingReview, invoiceCountsByList, procedureOwner, useAppStore, OFFICE_ACTOR, type Actor } from '../../../store'
+import { billedLists, changedSinceSubmitted, eventPartyName, invoiceCountsByList, procedureOwner, reviewRowsAwaiting, useAppStore, OFFICE_ACTOR, type Actor } from '../../../store'
 import { freeFormSubtotal } from '../../../domain/billing/additionalInvoice'
+import { creditDetailOf, eventLines } from '../../../domain/billing/procedureEvent'
+import type { ProcedureEvent } from '../../../domain/types'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { daysBetween } from '../../../domain/dateDays'
-import { EVENT_KIND_LABEL, EVENT_LABELS } from '../../../shared/procedureEventCopy'
+import { CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS } from '../../../shared/procedureEventCopy'
 import { drSurname, formatCurrency, plural } from '../../../shared/format'
 import { EventReviewSheet } from '../flows/EventReviewSheet'
 import { ChangedSinceSubmittedPill } from '../components/ChangedSinceSubmitted'
@@ -38,7 +40,8 @@ export function ReviewQueue({ onOpen, onViewInvoices, actor = OFFICE_ACTOR }: Re
   const [params] = useSearchParams()
   const tab: ReviewTab = params.get('tab') === 'events' ? 'events' : 'lists'
   const schedule = useAppStore((s) => s.schedule)
-  const awaitingEvents = useMemo(() => eventsAwaitingReview({ schedule }), [schedule])
+  // One per correction: a credit and its new invoices count once (catch-up Phase 39).
+  const awaitingEvents = useMemo(() => reviewRowsAwaiting({ schedule }), [schedule])
   const billing = useAppStore((s) => s.billing)
   const masters = useAppStore((s) => s.masters)
   const audit = useAppStore((s) => s.audit)
@@ -84,7 +87,7 @@ export function ReviewQueue({ onOpen, onViewInvoices, actor = OFFICE_ACTOR }: Re
 
   return (
     <div data-testid="review-queue-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
-      <PageHeader size="admin" title="Review queue" sub={<>Submitted lists awaiting a sanity check and authorisation for billing. {submitted.length} in the queue.</>} />
+      <PageHeader size="admin" title="Review queue" sub={tab === 'events' ? EVENT_LABELS.eventsTabSub(awaitingEvents.length) : <>Submitted lists awaiting a sanity check and authorisation for billing. {submitted.length} in the queue.</>} />
 
       {/* Lists (the queue as it was) and Events (catch-up Phase 38b: every event's one review step). */}
       <LineTabs label="Review queue">
@@ -206,11 +209,14 @@ export function ReviewQueue({ onOpen, onViewInvoices, actor = OFFICE_ACTOR }: Re
 
 /**
  * Admin Review's Events tab (catch-up Phase 38b; D13): every event awaiting the
- * office's review, oldest first. A row opens the review sheet.
+ * office's review, oldest first. A row opens the review sheet. A credit
+ * (catch-up Phase 39) is one row, "Credit AA-2026-0007 in full, 1 new
+ * invoice", with its new invoices nested under it; Approve for billing and
+ * Decline act on the whole correction (`reviewRowsAwaiting`).
  */
 function EventsQueue({ actor }: { actor: Actor }) {
   const state = useAppStore((s) => s)
-  const rows = eventsAwaitingReview(state)
+  const rows = reviewRowsAwaiting(state)
   const [open, setOpen] = useState<string | null>(null)
   return (
     <>
@@ -234,7 +240,7 @@ function EventsQueue({ actor }: { actor: Actor }) {
             </tr>
           </thead>
           <tbody data-shot="admin-events-queue">
-            {rows.map((e) => {
+            {rows.map(({ event: e, replacements }) => {
               const procedure = state.schedule.procedures[e.procedureId]
               const booking = state.schedule.bookings[e.bookingId]
               const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
@@ -244,8 +250,16 @@ function EventsQueue({ actor }: { actor: Actor }) {
               const patient = booking !== undefined ? state.masters.patients[booking.patientId] : undefined
               const partyName = eventPartyName(state, e) ?? ''
               const waiting = Math.max(0, daysBetween(e.addedAtISO.slice(0, 10), state.clock.todayISO))
+              const credit = creditDetailOf(e)
+              const credited = credit !== undefined ? state.billing.invoices[credit.originalInvoiceId] : undefined
+              const description =
+                credit !== undefined
+                  ? CREDIT_LABELS.reviewRow(credited?.invoiceNumber ?? '', replacements.length)
+                  : `${eventLines(e)[0]?.description ?? ''}${eventLines(e).length > 1 ? ` ${EVENT_LABELS.moreLines(eventLines(e).length - 1)}` : ''}`
+              const amount = credit !== undefined ? (credited?.subtotal ?? 0) : freeFormSubtotal(eventLines(e))
               return (
-                <ClickableRow key={e.id} onOpen={() => setOpen(e.id)} data-event-id={e.id}>
+                <Fragment key={e.id}>
+                <ClickableRow onOpen={() => setOpen(e.id)} data-event-id={e.id} data-kind={e.kind}>
                   <Td bold>{EVENT_KIND_LABEL[e.kind]}</Td>
                   <Td>{anaesthetist !== undefined ? drSurname(anaesthetist.name) : ''}</Td>
                   <Td>{patient?.name ?? ''}</Td>
@@ -254,9 +268,13 @@ function EventsQueue({ actor }: { actor: Actor }) {
                     {list !== undefined && <div className="mono" style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist }}>{dayMicroCap(list.dateISO)}</div>}
                   </Td>
                   <Td mono nowrap>{dayMicroCap(e.occurredOnISO)}</Td>
-                  <Td>{e.detail.lines[0]?.description ?? ''}{e.detail.lines.length > 1 ? ` ${EVENT_LABELS.moreLines(e.detail.lines.length - 1)}` : ''}</Td>
+                  <Td>
+                    <span data-shot={credit !== undefined ? 'review-credit-row' : undefined}>{description}</span>
+                    {credit !== undefined && credit.reason !== '' && <div style={{ marginTop: 2, fontSize: 12, color: neutral.slate }}>{credit.reason}</div>}
+                    {credit !== undefined && e.addedBy.role !== 'office' && <div style={{ marginTop: 2, fontSize: 12, color: neutral.slate }}>{EVENT_LABELS.raisedBy(drSurname(e.addedBy.who))}</div>}
+                  </Td>
                   <Td>{partyName}</Td>
-                  <Td mono bold align="right" nowrap>{formatCurrency(freeFormSubtotal(e.detail.lines))}</Td>
+                  <Td mono bold align="right" nowrap>{formatCurrency(amount)}</Td>
                   <Td nowrap>{e.addedBy.role === 'office' ? 'Office' : drSurname(e.addedBy.who)}</Td>
                   <Td mono align="right" nowrap>{plural(waiting, 'day')}</Td>
                   <Td align="right" nowrap>
@@ -265,6 +283,10 @@ function EventsQueue({ actor }: { actor: Actor }) {
                     </TextAction>
                   </Td>
                 </ClickableRow>
+                {replacements.map((r) => (
+                  <NestedReplacementRow key={r.id} event={r} partyName={eventPartyName(state, r) ?? ''} onOpen={() => setOpen(e.id)} />
+                ))}
+                </Fragment>
               )
             })}
           </tbody>
@@ -272,5 +294,33 @@ function EventsQueue({ actor }: { actor: Actor }) {
       )}
       <EventReviewSheet eventId={open} actor={actor} onClose={() => setOpen(null)} />
     </>
+  )
+}
+
+/**
+ * A credit's new invoice, nested under its credit's row (catch-up Phase 39):
+ * reviewed only with it, so the row opens the credit's review sheet and has
+ * no Review of its own.
+ */
+function NestedReplacementRow({ event, partyName, onOpen }: { event: ProcedureEvent; partyName: string; onOpen: () => void }) {
+  const lines = eventLines(event)
+  return (
+    <ClickableRow onOpen={onOpen} quiet data-event-id={event.id} data-replaces={event.replaces?.creditEventId}>
+      <Td>
+        <span data-shot="review-credit-replacement" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, paddingLeft: 12, borderLeft: `2px solid ${neutral.line}` }}>
+          {CREDIT_LABELS.newInvoice}
+        </span>
+      </Td>
+      <Td />
+      <Td />
+      <Td />
+      <Td mono nowrap>{dayMicroCap(event.occurredOnISO)}</Td>
+      <Td>{lines[0]?.description ?? ''}{lines.length > 1 ? ` ${EVENT_LABELS.moreLines(lines.length - 1)}` : ''}</Td>
+      <Td>{partyName}</Td>
+      <Td mono align="right" nowrap>{formatCurrency(freeFormSubtotal(lines))}</Td>
+      <Td />
+      <Td />
+      <Td />
+    </ClickableRow>
   )
 }

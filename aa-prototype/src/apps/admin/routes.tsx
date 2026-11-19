@@ -20,6 +20,7 @@ import { PdfListsTab } from './intake/PdfListsTab'
 import { DataQualityTab } from './intake/DataQualityTab'
 import { ValidatorsTab } from './intake/ValidatorsTab'
 import { InvoicesScreen } from './screens/InvoicesScreen'
+import { CreditNoteDocument } from './screens/InvoiceDocument'
 import { MasterData } from './screens/masters/MasterData'
 import { SurgeonProfile } from './screens/SurgeonProfile'
 import { AnaesthetistRecord } from './screens/AnaesthetistRecord'
@@ -198,6 +199,7 @@ export function AdminBookingDetailRoute() {
         officeLinks={{
           onOpenInvoices: () => navigate('/admin/invoices'),
           onOpenInvoice: (invoiceId) => navigate(`/admin/invoices/${invoiceId}`),
+          onOpenCreditNote: (creditNoteId) => navigate(`/admin/credit-notes/${creditNoteId}`),
         }}
       />
     </RequireEntity>
@@ -272,6 +274,35 @@ export function AdminInvoicesRoute() {
         selectedInvoiceId={invoiceId ?? null}
         onSelect={(next) => navigate(next === null ? '/admin/invoices' : `/admin/invoices/${next}`)}
       />
+    </RequireEntity>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// A credit note: `/admin/credit-notes/:creditNoteId` (catch-up Phase 39). It
+// sits under Invoices: the side nav keeps Invoices active, and its trail leads
+// back there. An unknown id is a 404, as an unknown invoice is.
+// ---------------------------------------------------------------------------
+
+export function AdminCreditNoteRoute() {
+  const { creditNoteId } = useParams()
+  const navigate = useNavigate()
+  const creditNote = useAppStore((s) => (creditNoteId !== undefined ? s.billing.creditNotes[creditNoteId] : undefined))
+
+  return (
+    <RequireEntity exists={creditNote !== undefined}>
+      {creditNote !== undefined && (
+        <div data-testid="credit-note-detail-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', maxWidth: 1048, margin: '0 auto' }}>
+            <div style={{ fontSize: 13, color: neutral.mist }}>
+              <button onClick={() => navigate('/admin/invoices')} style={{ border: 'none', background: 'none', padding: 0, color: neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Invoices</button>
+              <span style={{ color: neutral.lineStrong }}> / </span>
+              <span className="mono">{creditNote.creditNoteNumber}</span>
+            </div>
+          </div>
+          <CreditNoteDocument key={creditNote.id} creditNoteId={creditNote.id} />
+        </div>
+      )}
     </RequireEntity>
   )
 }

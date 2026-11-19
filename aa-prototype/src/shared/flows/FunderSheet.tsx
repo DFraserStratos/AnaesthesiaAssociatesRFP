@@ -9,10 +9,9 @@
 
 import { useBookingApi, useBookingStore, usePrimaryEditLabel } from '../booking/draft'
 import { useEffect, useMemo, useState } from 'react'
-import { accent, neutral, radius } from '../../theme/tokens'
 import { insurerAndFunderParties } from '../../domain/billing/insurance'
 import { setBookingInsurance, type Actor } from '../../store'
-import { Button, FieldLabel, FormError, TextField } from '../ui'
+import { Button, FieldLabel, FormError, OptionChip, TextField } from '../ui'
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { SheetActions } from '../surface/SheetActions'
@@ -26,37 +25,12 @@ interface FunderSheetProps {
 
 const NONE = ''
 
-function Chip({ label, on, onClick, shot }: { label: string; on: boolean; onClick: () => void; shot?: string }) {
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={on}
-      data-shot={shot}
-      onClick={onClick}
-      style={{
-        minHeight: 40,
-        padding: '0 14px',
-        borderRadius: radius.pill,
-        border: `1px solid ${on ? accent.base : neutral.line}`,
-        background: on ? accent.tint : neutral.surface,
-        color: on ? accent.pressed : neutral.ink,
-        fontFamily: 'inherit',
-        fontSize: 13.5,
-        fontWeight: 600,
-        cursor: 'pointer',
-      }}
-    >
-      {label}
-    </button>
-  )
-}
-
 export function FunderSheet({ open, bookingId, actor, onClose }: FunderSheetProps) {
   const bookingApi = useBookingApi()
   // "Apply" in the Admin draft (catch-up Phase 35): the draft's Save changes saves.
   const primaryLabel = usePrimaryEditLabel('Save')
   const { Overlay, variant } = useSurface()
+  const chipSize = variant === 'mobile' ? 'lg' : 'md'
   const booking = useBookingStore((s) => s.schedule.bookings[bookingId])
   const partiesRecord = useBookingStore((s) => s.masters.parties)
   const parties = useMemo(() => insurerAndFunderParties(partiesRecord), [partiesRecord])
@@ -103,14 +77,14 @@ export function FunderSheet({ open, bookingId, actor, onClose }: FunderSheetProp
 
         <div role="radiogroup" aria-label="Insurer or funder" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            <Chip label="None" on={funder === NONE} onClick={() => setFunder(NONE)} shot="funder-none" />
+            <OptionChip role="radio" size={chipSize} pressed={funder === NONE} onClick={() => setFunder(NONE)} shot="funder-none">None</OptionChip>
           </div>
           {insurers.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <FieldLabel>Insurers</FieldLabel>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {insurers.map((p) => (
-                  <Chip key={p.id} label={p.name} on={funder === p.id} onClick={() => setFunder(p.id)} />
+                  <OptionChip key={p.id} role="radio" size={chipSize} pressed={funder === p.id} onClick={() => setFunder(p.id)}>{p.name}</OptionChip>
                 ))}
               </div>
             </div>
@@ -120,7 +94,7 @@ export function FunderSheet({ open, bookingId, actor, onClose }: FunderSheetProp
               <FieldLabel>Funders</FieldLabel>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {funders.map((p) => (
-                  <Chip key={p.id} label={p.name} on={funder === p.id} onClick={() => setFunder(p.id)} />
+                  <OptionChip key={p.id} role="radio" size={chipSize} pressed={funder === p.id} onClick={() => setFunder(p.id)}>{p.name}</OptionChip>
                 ))}
               </div>
             </div>

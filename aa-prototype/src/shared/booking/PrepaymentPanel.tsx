@@ -26,6 +26,8 @@ export interface PrepaymentOfficeLinks {
   onOpenInvoices: () => void
   /** One sent prepayment invoice. */
   onOpenInvoice: (invoiceId: string) => void
+  /** A credit note's document (catch-up Phase 39; the events list's credit row). */
+  onOpenCreditNote?: (creditNoteId: string) => void
 }
 
 interface PrepaymentPanelProps {

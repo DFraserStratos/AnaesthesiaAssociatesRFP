@@ -1076,27 +1076,6 @@ describe('the Wave 3 join (v64: Lane A 38 at v63 joined with Lane B 35 at v62)',
   })
 })
 
-describe('catch-up Phase 42 (v65): the master public-holiday calendar and the masterLoads slice', () => {
-  beforeEach(() => {
-    flushPersist()
-    localStorage.clear()
-  })
-  afterEach(() => localStorage.clear())
-
-  it('discards a v64 store holding per-hospital Labour Day rows and no public holidays, and reseeds the calendar', () => {
-    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(65)
-    const fresh = freshAppState()
-    const { publicHolidays: _p, ...masters } = fresh.masters
-    const holidays = { ...masters.holidays, HH001: { id: 'HH001', hospitalId: 'H-STG', dateISO: '2026-10-26', name: 'Labour Day' } }
-    const { masterLoads: _m, ...rest } = fresh
-    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...rest, masters: { ...masters, holidays } }, version: 64 }))
-    const s = createAppStore({ persisted: true }).getState()
-    expect(Object.keys(s.masters.publicHolidays).sort()).toEqual(['PH001', 'PH002', 'PH003', 'PH004', 'PH005', 'PH006', 'PH007'])
-    expect(s.masters.holidays['HH001']).toBeUndefined()
-    expect(s.masterLoads).toEqual({ loads: {}, goLive: null })
-  })
-})
-
 describe('catch-up Phase 38b (v65: events on a Procedure, the addendum Booking gone)', () => {
   beforeEach(() => {
     flushPersist()
@@ -1126,6 +1105,90 @@ describe('catch-up Phase 38b (v65: events on a Procedure, the addendum Booking g
   })
 })
 
+describe('catch-up Phase 42 (v65): the master public-holiday calendar and the masterLoads slice', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v64 store holding per-hospital Labour Day rows and no public holidays, and reseeds the calendar', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(65)
+    const fresh = freshAppState()
+    const { publicHolidays: _p, ...masters } = fresh.masters
+    const holidays = { ...masters.holidays, HH001: { id: 'HH001', hospitalId: 'H-STG', dateISO: '2026-10-26', name: 'Labour Day' } }
+    const { masterLoads: _m, ...rest } = fresh
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...rest, masters: { ...masters, holidays } }, version: 64 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.keys(s.masters.publicHolidays).sort()).toEqual(['PH001', 'PH002', 'PH003', 'PH004', 'PH005', 'PH006', 'PH007'])
+    expect(s.masters.holidays['HH001']).toBeUndefined()
+    expect(s.masterLoads).toEqual({ loads: {}, goLive: null })
+  })
+})
+
+describe('Wave 4 sync (v66): Lane B\'s 42 joined into lane/a beside 38b', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v65 store from either lane, and reseeds both the events and the public-holiday calendar', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(66)
+    const fresh = freshAppState()
+    const { procedureEvents: _e, ...schedule } = fresh.schedule
+    const { publicHolidays: _p, ...masters } = fresh.masters
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule, masters }, version: 65 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.keys(s.schedule.procedureEvents)).toEqual(['EV0001'])
+    expect(Object.keys(s.masters.publicHolidays)).toHaveLength(7)
+  })
+})
+
+describe('catch-up Phase 39 (v67): credit notes, negative invoices and Xero credit notes', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v66 store without the new slices to the fresh seed, which has them empty', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(67)
+    const fresh = freshAppState()
+    const { creditNotes: _c, negativeInvoices: _n, ...billing } = fresh.billing
+    const { creditNotes: _x, ...xero } = fresh.xero
+    const stale = { ...fresh, billing, xero, schedule: { ...fresh.schedule, bookings: { ...fresh.schedule.bookings, BK9999: { ...Object.values(fresh.schedule.bookings)[0]!, id: 'BK9999' } } } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 66 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.schedule.bookings['BK9999']).toBeUndefined()
+    expect([s.billing.creditNotes, s.billing.negativeInvoices, s.xero.creditNotes]).toEqual([{}, {}, {}])
+  })
+
+  it('two fresh seeds deep-equal, with the new slices empty', () => {
+    const a = freshAppState()
+    const b = freshAppState()
+    expect(a).toEqual(b)
+    expect([a.billing.creditNotes, a.billing.negativeInvoices, a.xero.creditNotes]).toEqual([{}, {}, {}])
+  })
+})
+
+describe('catch-up Phase 39 session 2 (v68): the combined procedure trigger\'s pinned patient', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v67 store without PT0173, and reseeds it', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(68)
+    const fresh = freshAppState()
+    const { PT0173: _p, ...patients } = fresh.masters.patients
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters: { ...fresh.masters, patients } }, version: 67 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.masters.patients['PT0173']).toBeDefined()
+  })
+})
+
 describe('catch-up Phase 43 (v67): the raw hospital row', () => {
   beforeEach(() => {
     flushPersist()
@@ -1140,6 +1203,26 @@ describe('catch-up Phase 43 (v67): the raw hospital row', () => {
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, intake: { ...fresh.intake, rows } }, version: 66 }))
     const s = createAppStore({ persisted: true }).getState()
     for (const row of Object.values(s.intake.rows)) expect(row.raw?.columns.length).toBeGreaterThan(0)
+  })
+})
+
+describe('the Wave 4 join (v69: Lane A 39 at v68 joined with Lane B 43 at v67)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v68 store from either lane, and reseeds both the raw rows and the credit slices', () => {
+    expect(PERSIST_VERSION).toBe(69)
+    const fresh = freshAppState()
+    const rows = Object.fromEntries(Object.entries(fresh.intake.rows).map(([id, r]) => { const { raw: _raw, ...rest } = r; return [id, rest] }))
+    const { creditNotes: _c, negativeInvoices: _n, ...billing } = fresh.billing
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing, intake: { ...fresh.intake, rows } }, version: 68 }))
+    const s = createAppStore({ persisted: true }).getState()
+    for (const row of Object.values(s.intake.rows)) expect(row.raw?.columns.length).toBeGreaterThan(0)
+    expect([s.billing.creditNotes, s.billing.negativeInvoices]).toEqual([{}, {}])
+    expect(s.masters.patients['PT0173']).toBeDefined()
   })
 })
 

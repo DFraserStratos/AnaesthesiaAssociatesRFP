@@ -25,6 +25,7 @@ import { billablePartyForProcedure, otherPayerHeld, partyForCounterparty, payerC
 import { refKey } from '../domain/billing/procedurePayer'
 import type {
   AssignedList,
+  XeroDivergence,
   DraftList,
   AaFeeInvoice,
   BookingLedgerPair,
@@ -80,7 +81,7 @@ import { roundToCents, toCents } from '../domain/billing/money'
 import { maskBankAccount } from '../domain/bankAccount'
 import { procedureAccFunded } from '../domain/billing/fundingTags'
 import { BCTI_COUNT_RULE, bctiFeeHistory, bctisFor, type BctiFeeHistory, type BctiRecord } from '../domain/billing/bcti'
-import { isBookingPair, patientPosition, transferOfPair, type PairStatus } from '../domain/billing/ledger'
+import { isBookingPair, isCreditedPair, patientPosition, transferOfPair, type PairStatus } from '../domain/billing/ledger'
 import { bctiRecords, handoffQueuedFor, incomeReceiptsFor, journalQueuedFor, openDivergenceFor, pairsForList, pairStatusOf } from './ledgerSelectors'
 import { aaFeeFixedTotal, aaFeeFor } from '../domain/billing/aaFee'
 import { useMemo } from 'react'
@@ -525,12 +526,15 @@ export function openAccRecs(state: Pick<AppState, 'xero' | 'billing' | 'masters'
     if (!recordedKeys.has(p.idempotencyKey)) pendingCents.set(p.accRecId, (pendingCents.get(p.accRecId) ?? 0) + toCents(p.amount))
   }
   const owing = (r: { id: string; amountDue: number; amountReceived: number }) => toCents(r.amountDue) - toCents(r.amountReceived) - (pendingCents.get(r.id) ?? 0)
+  // The ACCRECs of credited pairs, read once (catch-up Phase 39).
+  const creditedAccRecIds = new Set(Object.values(state.billing.ledger).flatMap((p) => (isCreditedPair(p) && p.receivable.xeroAccRecId !== undefined ? [p.receivable.xeroAccRecId] : [])))
   return Object.values(state.xero.accRecs)
     // Procedure receivables only: an AA fee invoice is paid by "Record fee
     // payment", never a procedure payment webhook (catch-up Phase 16).
     .filter((r) => r.kind === 'procedure')
-    // A void made in Xero takes no payment (catch-up Phase 37).
-    .filter((r) => r.status !== 'voided')
+    // A void made in Xero takes no payment (catch-up Phase 37), nor does a credited invoice (catch-up Phase 39).
+    .filter((r) => r.status !== 'voided' && r.status !== 'credited')
+    .filter((r) => !creditedAccRecIds.has(r.id))
     // Only ACCRECs a ledger pair links (catch-up Phase 36): a payment always lands on its pair.
     .filter((r) => pairByAccRecIndex(state.billing.ledger).has(r.id))
     .filter((r) => owing(r) > 0)
@@ -686,7 +690,7 @@ export function prepaidLeftOffText(leftOff: PrepaidLeftOff): string {
 }
 
 /** The pipeline status a Booking reads on the monitor (Phase 09's labels, derived from its pairs since catch-up Phase 36). */
-export type MonitorStatus = 'pending' | 'invoiced' | 'handedOff' | 'partPaid' | 'paid' | 'disbursed' | 'failed'
+export type MonitorStatus = 'pending' | 'invoiced' | 'handedOff' | 'partPaid' | 'paid' | 'disbursed' | 'failed' | 'credited'
 
 /** A pair's label on the monitor: one waiting for Xero reads invoiced (its own line says why); part paid out reads by what was received. */
 function monitorStatusOf(label: PairStatus, fullyReceived: boolean): MonitorStatus {
@@ -708,7 +712,7 @@ export interface MonitorXeroWait {
 /** A void or amendment made in Xero, flagged by the poll on this Booking's pair (catch-up Phase 37). */
 export interface MonitorXeroFlag {
   divergenceId: string
-  kind: 'voidedInXero' | 'amendedInXero'
+  kind: XeroDivergence['kind']
   detectedAtISO: string
   xeroTotal: number
 }
@@ -1062,7 +1066,8 @@ function payableRowFor(state: ViewState, pair: BookingLedgerPair): PayableRow | 
   if (invoice === undefined) return undefined
   const leg = anaesthetistLegOf(state, pair)
   const held = pair.kind === 'prePayment' && leg === undefined
-  const outstandingToYou = leg === undefined ? 0 : Math.max(0, roundToCents(leg.amount - leg.disbursedAmount))
+  // A credited invoice's payable is reversed (catch-up Phase 39): nothing is outstanding on it; what was paid out nets in the next payment run (39a).
+  const outstandingToYou = leg === undefined || leg.reversedAmount !== undefined ? 0 : Math.max(0, roundToCents(leg.amount - leg.disbursedAmount))
   return {
     pairId: pair.id,
     invoiceId: pair.invoiceId,

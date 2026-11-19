@@ -168,6 +168,17 @@ import { simulateSickness, sicknessCandidates, sicknessColleagueSlot, sicknessRe
 import { BILLING_FAILURE_ALREADY, stageBillingFailure } from '../../store/demoStaging'
 import { regenerateInvoiceFromLock, regenerateRefusal, regenerateSummary } from '../../store/locks'
 import { nextRunRefusal, officeReviewRefusal, officeReviewsAdditionalInvoice, runNextBillingRun } from '../../store/eventDemo'
+import { CREDIT_COPY, CREDIT_DEMO_COPY, CREDIT_LABELS } from '../procedureEventCopy'
+import {
+  officeReviewsCredit,
+  officeReviewsCreditRefusal,
+  refundAfterPayoutRefusal,
+  refundAfterPayoutTarget,
+  stageCombinedProcedure,
+  stageCombinedRefusal,
+  stageRefundAfterPayout,
+  stagedCombined,
+} from '../../store/creditDemo'
 import type { DemoTrigger, DemoTriggerChoice, DemoTriggerCtx, DemoTriggerResult } from './types'
 import { injectUnmatchedReceipt, injectUnmatchedRefusal, officeRunsPayables, officeRunsPayablesRefusal, UNMATCHED_RECEIPT_DEMO } from '../../store/ledgerDemo'
 import { sessionText } from '../../domain/outOfHours'
@@ -380,6 +391,8 @@ export function paymentDisabledReason(state: AppState, accRecId: string | undefi
   const accRec = state.xero.accRecs[accRecId]
   if (accRec === undefined) return 'Not handed off to Xero'
   if (accRec.status === 'voided') return 'Voided in Xero'
+  // Catch-up Phase 39: a credited invoice takes no payment, in Xero or the ledger (its correction may still be on its way to Xero).
+  if (accRec.status === 'credited' || Object.values(state.billing.ledger).some((p) => 'credit' in p && p.credit !== undefined && p.receivable.xeroAccRecId === accRecId)) return CREDIT_LABELS.paymentDisabled
   if (roundToCents(accRec.amountDue - accRec.amountReceived) <= 0) return 'Fully paid'
   if (!openAccRecs(state).some((c) => c.accRecId === accRecId)) return 'Seeded history invoice'
   return null
@@ -928,11 +941,63 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     run: (api) => {
       const out = runNextBillingRun(api)
       if (!out.ok) return { ok: false, message: out.message }
-      const n = out.value.numbers.length
       const skipped = out.value.skipped.length > 0 ? ` ${out.value.skipped.length} not invoiced: ${out.value.skipped[0]!.message}` : ''
-      return { ok: true, message: `Billing run done: ${n} additional ${n === 1 ? 'invoice' : 'invoices'} raised (${out.value.numbers.join(', ')}).${skipped}` }
+      // Catch-up Phase 39: a credit note and its replacements are raised by the same run.
+      const numbers = [...out.value.creditNoteNumbers, ...out.value.numbers].join(', ')
+      return { ok: true, message: `Billing run done: ${CREDIT_COPY.runResult(out.value.creditNoteNumbers.length, out.value.numbers.length)} (${numbers}).${skipped}` }
     },
     indexPath: () => '/admin/billing',
+  },
+  // ── Admin · Invoices: a billed Merivale combination to split (catch-up Phase 39) ──
+  {
+    id: 'stage-combined-procedure',
+    label: 'Stage combined procedure',
+    description:
+      "Books, completes, authorises and bills a post-paid Merivale combination (Facelift plus 2 add ons) on Dr Delaney's Fri 10 Jul PM List, billed to the patient, so its invoice can be credited and split into additional invoices that add up to it.",
+    screen: 'Admin · Invoices',
+    routes: ['/admin/invoices'],
+    surfaces: ['bar'],
+    disabledReason: (state) => stageCombinedRefusal(state),
+    run: (api) => {
+      const out = stageCombinedProcedure(api)
+      if (!out.ok) return { ok: false, message: out.message }
+      return {
+        ok: true,
+        message: CREDIT_DEMO_COPY.combinedStaged,
+        link: { to: `/admin/invoices/${out.value.invoiceId}`, label: CREDIT_DEMO_COPY.openInvoice(out.value.invoiceNumber) },
+      }
+    },
+    indexPath: (state) => {
+      const invoice = stagedCombined(state)?.invoice
+      return invoice !== undefined ? `/admin/invoices/${invoice.id}` : '/admin/invoices'
+    },
+  },
+  // ── Admin · Billing monitor and Invoice: paid in full and paid out, before a credit (catch-up Phase 39) ──
+  {
+    id: 'stage-refund-after-payout',
+    label: 'Stage refund after payout',
+    description:
+      "Records a payment in full on the invoice (on the Billing monitor, Sarah Mitchell's once Stage post-op scenario has run) and pays the anaesthetist out through Xero's payables run, so a following credit raises a negative invoice with an amount to net in their next payment run.",
+    screen: BILLING_MONITOR_SCREEN,
+    // It shows on the invoice too: the Control Panel lists it under Admin · Invoice as well.
+    alsoScreens: ['Admin · Invoice'],
+    routes: [...BILLING_MONITOR, '/admin/invoices/:invoiceId'],
+    surfaces: ['bar'],
+    disabledReason: (state, ctx) => refundAfterPayoutRefusal(state, ctx.params['invoiceId']),
+    run: (api, ctx) => {
+      const out = stageRefundAfterPayout(api, ctx.params['invoiceId'])
+      if (!out.ok) return { ok: false, message: out.message }
+      return {
+        ok: true,
+        message: CREDIT_DEMO_COPY.paidOut(out.value.payee),
+        // On the Billing monitor, the invoice it paid (on the invoice itself, the page is already there).
+        ...(ctx.params['invoiceId'] === undefined ? { link: { to: `/admin/invoices/${out.value.invoiceId}`, label: CREDIT_DEMO_COPY.openInvoice(out.value.invoiceNumber) } } : {}),
+      }
+    },
+    indexPath: (state) => {
+      const id = refundAfterPayoutTarget(state, undefined)
+      return id !== undefined ? `/admin/invoices/${id}` : '/admin/billing'
+    },
   },
 
   // ── Admin · Intake, PDF lists (catch-up Phase 34) ────────────────────
@@ -1250,6 +1315,23 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return res.ok
         ? { ok: true, message: `Approved by the office and invoiced in the next billing run (${res.value.number}).` }
         : { ok: false, message: res.message }
+    },
+    indexPath: () => null,
+  },
+  // ── Mobile · Booking, installed PWA only: the office reviews a credit (catch-up Phase 39) ──
+  {
+    id: 'office-reviews-credit',
+    label: 'Office reviews this credit',
+    description:
+      'Stands in for the office, which has no app on the phone: approves the credit awaiting review on this Booking, with any new invoice raised with it, and issues it in the next billing run, as Kirsty would from Admin Review.',
+    screen: 'Mobile · Booking',
+    routes: [MOBILE_BOOKING],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    disabledReason: (state, ctx) => officeReviewsCreditRefusal(state, ctx.params['bookingId'] ?? ''),
+    run: (api, ctx) => {
+      const res = officeReviewsCredit(api, ctx.params['bookingId'] ?? '')
+      return res.ok ? { ok: true, message: CREDIT_DEMO_COPY.creditIssued(res.value.creditNoteNumber) } : { ok: false, message: res.message }
     },
     indexPath: () => null,
   },
