@@ -1,4 +1,5 @@
 import { PAIRING_LABELS } from '../../domain/pairingPreferences'
+import { CREDIT_ACTION_LABELS, EVENT_ACTION_LABELS } from '../procedureEventCopy'
 import { DRAFT_LIST } from '../scheduleTerms'
 
 /**
@@ -163,6 +164,30 @@ export const ACTION_LABELS: Record<string, string> = {
   'procedure.modifierRestore': 'Pre-applied modifier put back',
   'modifier.create': "AA's own modifier added",
 
+  // --- Master data: retire, the calendar, the time rule, loads (catch-up Phase 42) ---
+  'hospital.retire': 'Hospital retired',
+  'hospital.reinstate': 'Hospital reinstated',
+  'surgeon.retire': 'Surgeon retired',
+  'surgeon.reinstate': 'Surgeon reinstated',
+  'surgeonGroup.retire': 'Surgeon group retired',
+  'surgeonGroup.reinstate': 'Surgeon group reinstated',
+  'modifier.retire': "AA's own modifier retired",
+  'modifier.reinstate': "AA's own modifier reinstated",
+  'modifier.update': 'Modifier changed',
+  'publicHoliday.create': 'Public holiday added',
+  'publicHoliday.update': 'Public holiday changed',
+  'publicHoliday.delete': 'Public holiday deleted',
+  'rvgTimeRule.update': 'RVG time rule changed',
+  'masterLoad.stage': 'Spreadsheet checked',
+  'masterLoad.recheck': 'Spreadsheet checked again',
+  'masterLoad.commit': 'Spreadsheet loaded',
+  'masterLoad.discard': 'Spreadsheet discarded',
+  'goLive.stage': 'Go-live load prepared',
+  'goLive.approve': 'Go-live name approved',
+  'goLive.unapprove': 'Go-live name not approved',
+  'goLive.commit': 'Go-live data loaded',
+  'goLive.discard': 'Go-live load discarded',
+
   // --- Contracts -----------------------------------------------------------
   'contract.create': 'Contract created',
   'contract.update': 'Contract updated',
@@ -183,6 +208,15 @@ export const ACTION_LABELS: Record<string, string> = {
   'invoice.toPost': 'Invoice marked to post',
   'invoice.notSent': 'Invoice not sent',
   'invoice.resend': 'Invoice resent',
+  // Catch-up Phase 38b: events on a Procedure and the additional invoice.
+  'invoice.additionalCreated': 'Additional invoice raised',
+  'invoice.partyChanged': 'Billed to another party',
+  // The event actions' words live in the one copy map (the name "event" is provisional).
+  ...EVENT_ACTION_LABELS,
+  // Catch-up Phase 39: credit notes, negative invoices and the Xero correction.
+  ...CREDIT_ACTION_LABELS,
+  // Catch-up Phase 39 session 2: a combined Procedure's invoice split into additional invoices.
+  'invoice.split': 'Invoice split into additional invoices',
 
   // --- Integrations --------------------------------------------------------
   'integration.receive': 'Message received',
@@ -193,6 +227,9 @@ export const ACTION_LABELS: Record<string, string> = {
   'importRow.receive': 'Hospital row received',
   'importRow.correct': 'Hospital row corrected',
   'importRow.decide': 'Hospital row decided',
+  // Catch-up Phase 43: the restricted raw row.
+  'importRow.rawViewed': 'Raw row viewed',
+  'importRow.rawViewDenied': 'Raw row view refused',
   'booking.fromHospitalRow': 'Hospital row applied to this Booking',
 
   // --- Stubs on a List (catch-up Phase 33a) ---------------------------------
@@ -258,6 +295,8 @@ export const ACTION_LABELS: Record<string, string> = {
   'settings.archiveWindow': 'Archive window changed',
   'settings.armHandoffFault': 'Handoff fault armed',
   'demo.bctisSeeded': 'A month of BCTIs seeded',
+  // Catch-up Phase 43: the full-scale data's load entry.
+  'demo.fullScaleLoaded': 'Full-scale data loaded',
 
   // --- Accounts and sign-in (FT-13.5, simulated: catch-up Phase 14) -------
   'account.provisioned': 'Account provisioned',

@@ -69,6 +69,11 @@ export interface BookingTotalProps {
   multiProcedure?: boolean
   /** The complete / amend bar. Omitted on a locked Booking. */
   action?: ReactNode
+  /**
+   * The office's total with each Procedure's events (catch-up Phase 38b; US-03.1.10, Admin only):
+   * the events' part as its own row, the figure ex GST and the GST beside. Absent elsewhere.
+   */
+  withEvents?: { eventsTotal: number; total: number; gst: number }
 }
 
 /**
@@ -104,7 +109,7 @@ export interface BookingLayoutSlots {
   context: ReactNode
   /** The per-procedure BTM capture blocks plus Add another procedure. */
   capture: ReactNode
-  /** Cancel booking, post-op addendum. */
+  /** Cancel booking. */
   actions: ReactNode
   /**
    * The Booking's visible calculation, as a function of the action to embed in it.

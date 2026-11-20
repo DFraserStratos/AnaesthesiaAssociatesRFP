@@ -24,11 +24,12 @@ import {
   type RvgGroupInput,
 } from '../domain/billing/rvgGroups'
 import type { Procedure } from '../domain/types'
-import type { AppStoreApi } from './appStore'
+import type { AppState, AppStoreApi } from './appStore'
+import { slicesOf, withSource, type Plan, type PlanSource } from './masterPlanners'
 import { getBooking, editRefusal } from './lifecycle'
 import { reconciledForGroup } from './modifierFacts'
 import { claimsAuditView } from '../domain/billing/modifiers'
-import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
+import { allocateId, mutate, ok, refuse, type Actor, type Outcome } from './mutate'
 
 const OFFICE_ONLY = 'Only the office can change the RVG groups.'
 
@@ -44,24 +45,29 @@ function auditView(g: RvgGroup | RvgGroupInput): Record<string, unknown> {
   }
 }
 
-/** Add an RVG group (AA's own, never marked as such). Audited `rvgGroup.create`. */
-export function createRvgGroup(api: AppStoreApi, actor: Actor, input: RvgGroupInput): Outcome<{ id: RvgGroupId }> {
+/** Plan an RVG group's create (the seed load folds the same planner). */
+export function planRvgGroupCreate(state: AppState, actor: Actor, input: RvgGroupInput, source?: PlanSource): Outcome<Plan> {
   if (actor.role !== 'office') return refuse('officeOnly', OFFICE_ONLY)
-  const state = api.getState()
   const refused = rvgGroupRefusal(input, state.masters.rvgGroups)
   if (refused !== null) return refuse(refused.code, refused.message)
   const clean = cleanRvgGroupInput(input)
-  const metas: MutationMeta[] = []
-  let id = ''
-  mutate(api, actor, metas, (s) => {
-    const alloc = allocateId(s.counters, 'rvgGroup')
-    id = alloc.id
-    // AA's own rows include no modifier (only the published Neurosurgery and Spine rows do, catch-up Phase 19b).
-    const row: RvgGroup = { id, ...clean, retired: false, includedModifierIds: [] }
-    metas.push({ entityType: 'rvgGroup', entityId: id, action: 'rvgGroup.create', after: auditView(row), stampBookingId: null })
-    return { masters: { ...s.masters, rvgGroups: { ...s.masters.rvgGroups, [id]: row } }, counters: alloc.counters }
+  const alloc = allocateId(state.counters, 'rvgGroup')
+  const id = alloc.id
+  // AA's own rows include no modifier (only the published Neurosurgery and Spine rows do, catch-up Phase 19b).
+  const row: RvgGroup = { id, ...clean, retired: false, includedModifierIds: [] }
+  return ok({
+    id,
+    next: { ...slicesOf(state), masters: { ...state.masters, rvgGroups: { ...state.masters.rvgGroups, [id]: row } }, counters: alloc.counters },
+    metas: withSource([{ entityType: 'rvgGroup', entityId: id, action: 'rvgGroup.create', after: auditView(row), stampBookingId: null }], source),
   })
-  return ok({ id })
+}
+
+/** Add an RVG group (AA's own, never marked as such). Audited `rvgGroup.create`. */
+export function createRvgGroup(api: AppStoreApi, actor: Actor, input: RvgGroupInput): Outcome<{ id: RvgGroupId }> {
+  const plan = planRvgGroupCreate(api.getState(), actor, input)
+  if (!plan.ok) return plan
+  mutate(api, actor, plan.value.metas, () => plan.value.next)
+  return ok({ id: plan.value.id })
 }
 
 /** Edit every field of a row but its id. Audited `rvgGroup.update` with before and after. */

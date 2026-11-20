@@ -5,6 +5,7 @@
  * staged scenario states.
  */
 
+import { closureSourcesOf } from '../holidays'
 import { assigned, assignedLists } from '../../test/lists'
 import { describe, expect, it } from 'vitest'
 import { buildSeed, MULTI_PROCEDURE_IDS, ANAE, HOSP, INS, SURG, SEED_LIST_IDS, SEED_MARKERS, SEED_LEAVE, SEED_SICKNESS, RECORDED_WINDOW, seedRecurringClashes } from './index'
@@ -335,7 +336,7 @@ const SOUTHERN_CROSS_WED22_DRAFT_LISTS = ['LD-RCB020-2026-07-22-AM', 'LD-RCB021-
 
 describe('seed conflicts are facts (catch-up Phase 30)', () => {
   const lists = Object.values(seed.schedule.lists)
-  const holidays = holidayIndex(seed.masters.holidays)
+  const holidays = holidayIndex(closureSourcesOf(seed.masters))
 
   it('every seeded conflict equals the one rule for its List: no fabricated flag, none missing', () => {
     for (const list of lists) {
@@ -1163,5 +1164,21 @@ describe('the primary Procedure and the multi-procedure rule (catch-up Phase 23)
     if (result.kind !== 'ok') throw new Error('structural')
     expect(procs.map((p) => result.allocations[p.id]!.modifierShare)).toEqual([3, 2, 2])
     expect(result.allocations[procs[0]!.id]!.bookingModifierUnits).toBe(7)
+  })
+})
+
+describe('the seeded event (catch-up Phase 38b)', () => {
+  it('holds one additional invoice Dr Souter raised on HP03, awaiting review, RNG-free', () => {
+    const seed = buildSeed()
+    const events = Object.values(seed.schedule.procedureEvents)
+    expect(events).toHaveLength(1)
+    const ev = events[0]!
+    expect(ev).toMatchObject({ id: 'EV0001', procedureId: 'HP03', bookingId: 'HBK03', kind: 'additionalInvoice', occurredOnISO: '2026-06-23', billable: true, party: { sameAs: true }, review: { state: 'awaitingReview' } })
+    expect(ev.addedBy).toEqual({ who: 'Dr Melanie Souter', role: 'anaesthetist', anaesthetistId: ANAE.souter })
+    expect(ev.invoiceId).toBeUndefined()
+    expect(seed.schedule.procedures['HP03']?.bookingId).toBe('HBK03')
+    expect(seed.schedule.bookings['HBK03']?.listId).toBe('L-HIST-03')
+    expect(seed.counters['procedureEvent']).toBe(2)
+    expect(buildSeed().schedule.procedureEvents).toEqual(seed.schedule.procedureEvents)
   })
 })

@@ -23,6 +23,9 @@ import { validateNhi } from '../domain/nhi'
 import type { Actor } from './mutate'
 import { SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
 import type { AppState } from './appStore'
+import { addProcedureEvent, approveProcedureEvent, runEventInvoicing } from './procedureEventActions'
+import { scanForNhiLeaks } from './privacyScan'
+import { submitCredit } from './creditActions'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
@@ -112,6 +115,65 @@ describe('Xero privacy scan (US-09.3.1: no personal information in Xero)', () =>
       receivePayment(api, { accRecId: cand.accRecId, amount: cand.remaining, idempotencyKey: `P${i++}`, source: 'webhook' })
     }
     expect(runPayables(api, OFFICE).ok).toBe(true)
+    expectNoPersonalInformation(api.getState())
+  })
+})
+
+describe('an additional invoice in Xero (catch-up Phase 38b)', () => {
+  it('its Xero pair carries no NHI, patient name or "Another person" detail', () => {
+    const api = store()
+    // The seeded event (David Chen, St George's) and one billed to another person by name.
+    expect(approveProcedureEvent(api, OFFICE, 'EV0001').ok).toBe(true)
+    const named = addProcedureEvent(api, OFFICE, 'HP03', {
+      kind: 'additionalInvoice',
+      occurredOnISO: '2026-06-23',
+      party: { sameAs: false, personInput: { kind: 'other', name: 'Mei Chen', email: 'mei.chen@example.com' } },
+      lines: [{ description: 'Ward review', quantity: 1, unitAmount: 40 }],
+    })
+    if (!named.ok) throw new Error(named.message)
+    expect(approveProcedureEvent(api, OFFICE, named.value.eventId).ok).toBe(true)
+    const run = runEventInvoicing(api, OFFICE)
+    expect(run.ok && run.value.invoiceIds).toHaveLength(2)
+    const serialised = JSON.stringify(api.getState().xero)
+    for (const value of ['Mei Chen', 'mei.chen@example.com', 'David Chen', api.getState().masters.patients[api.getState().schedule.bookings['HBK03']!.patientId]!.nhi ?? 'none']) {
+      expect(serialised, `"${value}" must not appear in the Xero slice`).not.toContain(value)
+    }
+    expectNoPersonalInformation(api.getState())
+  })
+})
+
+describe('the leak scan over the Xero slice (catch-up Phase 43)', () => {
+  it('finds no NHI and no personal detail in the seeded Xero slice', () => {
+    const report = scanForNhiLeaks(store().getState())
+    expect(report.areas.find((a) => a.key === 'xero')!.hits).toEqual([])
+  })
+})
+
+describe('a credit note in Xero (catch-up Phase 39)', () => {
+  it('no ACCRECCREDIT or ACCPAYCREDIT carries an NHI, a patient name or any other personal information', () => {
+    const api = store()
+    // HP03's seeded invoice, paid half (so its ACCPAY is authorised), credited to another person by name and rebilled.
+    const original = Object.values(api.getState().billing.invoices).find((i) => i.invoiceNumber === 'AA-2026-H03')!
+    const accRecId = Object.values(api.getState().billing.ledger).find((p) => p.kind === 'procedure' && p.invoiceId === original.id)!.receivable.xeroAccRecId!
+    expect(receivePayment(api, { accRecId, amount: 50, idempotencyKey: 'h03-half', source: 'webhook' }).ok).toBe(true)
+    const sub = submitCredit(api, OFFICE, {
+      invoiceId: original.id,
+      reason: 'Wrong billable party',
+      cause: 'correction',
+      party: { sameAs: false, personInput: { kind: 'other', name: 'Mei Chen', email: 'mei.chen@example.com' } },
+      replacements: [{ occurredOnISO: '2026-06-23', party: { sameAs: false, personInput: { kind: 'other', name: 'Mei Chen', email: 'mei.chen@example.com' } }, lines: [{ description: 'Anaesthesia', quantity: 1, unitAmount: 200 }] }],
+    })
+    if (!sub.ok) throw new Error(sub.message)
+    expect(approveProcedureEvent(api, OFFICE, sub.value.creditEventId).ok).toBe(true)
+    const run = runEventInvoicing(api, OFFICE, { eventIds: [sub.value.creditEventId] })
+    expect(run.ok && run.value.creditNoteIds).toHaveLength(1)
+    const credits = Object.values(api.getState().xero.creditNotes)
+    expect(credits.map((c) => c.type).sort()).toEqual(['ACCPAYCREDIT', 'ACCRECCREDIT'])
+    const serialised = JSON.stringify(credits)
+    const patient = api.getState().masters.patients[api.getState().schedule.bookings['HBK03']!.patientId]!
+    for (const value of ['Mei Chen', 'mei.chen@example.com', patient.name, patient.nhi ?? 'none', patient.email ?? 'none']) {
+      expect(serialised, `"${value}" must not appear in a Xero credit note`).not.toContain(value)
+    }
     expectNoPersonalInformation(api.getState())
   })
 })

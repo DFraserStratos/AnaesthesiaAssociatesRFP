@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import type { RegenerateResult } from '../../store/locks'
+import type { LeakScanReport } from '../../store/privacyScan'
+import { onDomainReset } from '../../store/mutate'
 
 /**
  * Per-trigger memory that "Replay" needs (catch-up Phase 14). Shared across
@@ -28,6 +30,9 @@ export interface DemoTriggerMemory {
    */
   regenerated: Record<string, RegenerateResult>
   rememberRegenerate: (invoiceId: string, result: RegenerateResult) => void
+  /** The last NHI leak scan (catch-up Phase 43): the Data Inspector's Privacy checks panel reads it. */
+  nhiScan: LeakScanReport | null
+  rememberNhiScan: (report: LeakScanReport | null) => void
   rememberMessage: (id: string) => void
   rememberWebhook: (webhook: { accRecId: string; key: string; amount: number }, n: number) => void
   requestPhotoCapture: (listId: string) => void
@@ -42,6 +47,8 @@ export const useDemoTriggerMemory = create<DemoTriggerMemory>((set) => ({
   photoCaptureRequest: null,
   photoCaptureCounter: 0,
   regenerated: {},
+  nhiScan: null,
+  rememberNhiScan: (report) => set({ nhiScan: report }),
   rememberRegenerate: (invoiceId, result) => set((m) => ({ regenerated: { ...m.regenerated, [invoiceId]: result } })),
   rememberMessage: (id) => set({ lastMessageId: id }),
   rememberWebhook: (webhook, n) => set({ lastWebhook: webhook, webhookCounter: n }),
@@ -49,3 +56,7 @@ export const useDemoTriggerMemory = create<DemoTriggerMemory>((set) => ({
     set((m) => ({ photoCaptureRequest: { listId, n: m.photoCaptureCounter + 1 }, photoCaptureCounter: m.photoCaptureCounter + 1 })),
   clearPhotoCaptureRequest: () => set({ photoCaptureRequest: null }),
 }))
+
+// Reset clears the last leak scan (catch-up Phase 43): its figures belong to the data it scanned.
+onDomainReset(() => useDemoTriggerMemory.getState().rememberNhiScan(null))
+

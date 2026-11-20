@@ -31,6 +31,16 @@ import { cleanContact, isBlankContact } from '../domain/surgeonContacts'
 import { cleanSpecialtyIds, specialtyNames } from '../domain/specialties'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
+import { partyRenameFollowing, retiredRefusal } from './masterLifecycleActions'
+import { slicesOf, withSource, type Plan, type PlanSource } from './masterPlanners'
+
+/** The retire fields an edit carries over unchanged (catch-up Phase 42): only retire and reinstate change them. */
+function retireFields(record: { retiredAtISO?: string; retiredReason?: string }): { retiredAtISO?: string; retiredReason?: string } {
+  return {
+    ...(record.retiredAtISO !== undefined ? { retiredAtISO: record.retiredAtISO } : {}),
+    ...(record.retiredReason !== undefined ? { retiredReason: record.retiredReason } : {}),
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Surgeons
@@ -139,22 +149,28 @@ function auditRecord(keys: readonly AuditedKey[], surgeon: Omit<Surgeon, 'id'>, 
   return Object.fromEntries(keys.map((k) => [auditKey(k), auditValue(k, surgeon, state)]))
 }
 
+/** Plan a surgeon's create (the seed load folds the same planner). */
+export function planSurgeonCreate(state: AppState, actor: Actor, fields: SurgeonFields, source?: PlanSource): Outcome<Plan> {
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can add a surgeon.')
+  const cleaned = cleanSurgeonFields(state, fields)
+  if (!cleaned.ok) return cleaned
+  const alloc = allocateId(state.counters, 'surgeon')
+  const id = alloc.id
+  const surgeon: Surgeon = { id, ...cleaned.value }
+  const shown = AUDITED.filter((k) => k === 'hpiId' || k === 'personalContact' || k === 'officeContacts' || cleaned.value[k] !== undefined)
+  return ok({
+    id,
+    next: { ...slicesOf(state), masters: { ...state.masters, surgeons: { ...state.masters.surgeons, [id]: surgeon } }, counters: alloc.counters },
+    metas: withSource([{ entityType: 'surgeon', entityId: id, action: 'surgeon.create', after: auditRecord(shown, cleaned.value, state), stampBookingId: null }], source),
+  })
+}
+
 /** Add a surgeon. Audited `surgeon.create`. */
 export function createSurgeon(api: AppStoreApi, actor: Actor, fields: SurgeonFields): Outcome<{ id: string }> {
-  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can add a surgeon.')
-  const cleaned = cleanSurgeonFields(api.getState(), fields)
-  if (!cleaned.ok) return cleaned
-  const metas: MutationMeta[] = []
-  let id = ''
-  mutate(api, actor, metas, (s) => {
-    const alloc = allocateId(s.counters, 'surgeon')
-    id = alloc.id
-    const surgeon: Surgeon = { id, ...cleaned.value }
-    const shown = AUDITED.filter((k) => k === 'hpiId' || k === 'personalContact' || k === 'officeContacts' || cleaned.value[k] !== undefined)
-    metas.push({ entityType: 'surgeon', entityId: id, action: 'surgeon.create', after: auditRecord(shown, cleaned.value, s), stampBookingId: null })
-    return { masters: { ...s.masters, surgeons: { ...s.masters.surgeons, [id]: surgeon } }, counters: alloc.counters }
-  })
-  return ok({ id })
+  const plan = planSurgeonCreate(api.getState(), actor, fields)
+  if (!plan.ok) return plan
+  mutate(api, actor, plan.value.metas, () => plan.value.next)
+  return ok({ id: plan.value.id })
 }
 
 /** Edit a surgeon (same fields and rules; the id is immutable). Audited `surgeon.update` with the changed fields. */
@@ -165,21 +181,32 @@ export function editSurgeon(api: AppStoreApi, actor: Actor, surgeonId: string, f
   if (existing === undefined) return refuse('notFound', 'Surgeon not found.')
   const cleaned = cleanSurgeonFields(state, fields, surgeonId)
   if (!cleaned.ok) return cleaned
-  const next: Surgeon = { id: surgeonId, ...cleaned.value }
+  const next: Surgeon = { id: surgeonId, ...cleaned.value, ...retireFields(existing) }
   const changed = AUDITED.filter((k) => JSON.stringify(existing[k] ?? '') !== JSON.stringify(next[k] ?? ''))
   if (changed.length === 0) return ok(undefined)
+  // A rename carries a surgeon Party of the same name along (catch-up Phase 42).
+  const follow = partyRenameFollowing(state.masters, { kind: 'surgeon' }, existing.name, next.name)
   mutate(
     api,
     actor,
-    {
-      entityType: 'surgeon',
-      entityId: surgeonId,
-      action: 'surgeon.update',
-      before: auditRecord(changed, existing, state),
-      after: auditRecord(changed, next, state),
-      stampBookingId: null,
-    },
-    (s) => ({ masters: { ...s.masters, surgeons: { ...s.masters.surgeons, [surgeonId]: next } } }),
+    [
+      {
+        entityType: 'surgeon',
+        entityId: surgeonId,
+        action: 'surgeon.update',
+        before: auditRecord(changed, existing, state),
+        after: auditRecord(changed, next, state),
+        stampBookingId: null,
+      },
+      ...(follow !== null ? [follow.meta] : []),
+    ],
+    (s) => ({
+      masters: {
+        ...s.masters,
+        surgeons: { ...s.masters.surgeons, [surgeonId]: next },
+        ...(follow !== null ? { parties: { ...s.masters.parties, [follow.party.id]: follow.party } } : {}),
+      },
+    }),
   )
   return ok(undefined)
 }
@@ -209,6 +236,8 @@ export function createSurgeonGroup(api: AppStoreApi, actor: Actor, fields: Surge
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can add a surgeon group.')
   const cleaned = cleanGroupFields(api.getState(), fields)
   if (!cleaned.ok) return cleaned
+  const retiredMember = retiredRefusal(api.getState().masters, { surgeonIds: cleaned.value.memberSurgeonIds })
+  if (retiredMember !== null) return retiredMember
   const metas: MutationMeta[] = []
   let id = ''
   mutate(api, actor, metas, (s) => {
@@ -231,7 +260,9 @@ export function editSurgeonGroup(api: AppStoreApi, actor: Actor, groupId: string
   if (existing === undefined) return refuse('notFound', 'Group not found.')
   const cleaned = cleanGroupFields(state, fields)
   if (!cleaned.ok) return cleaned
-  const next: SurgeonGroup = { id: groupId, ...cleaned.value }
+  const retiredMember = retiredRefusal(state.masters, { surgeonIds: cleaned.value.memberSurgeonIds }, { surgeonIds: existing.memberSurgeonIds })
+  if (retiredMember !== null) return retiredMember
+  const next: SurgeonGroup = { id: groupId, ...cleaned.value, ...retireFields(existing) }
   // Only the fields that changed are audited (members compared as a set); no change writes nothing.
   const before: Record<string, unknown> = {}
   const after: Record<string, unknown> = {}
@@ -251,18 +282,29 @@ export function editSurgeonGroup(api: AppStoreApi, actor: Actor, groupId: string
     after.memberSurgeonIds = next.memberSurgeonIds
   }
   if (Object.keys(after).length === 0) return ok(undefined)
+  // A rename carries a surgeon-group Party of the same name along (catch-up Phase 42).
+  const follow = partyRenameFollowing(state.masters, { kind: 'surgeonGroup' }, existing.name, next.name)
   mutate(
     api,
     actor,
-    {
-      entityType: 'surgeonGroup',
-      entityId: groupId,
-      action: 'surgeonGroup.update',
-      before,
-      after,
-      stampBookingId: null,
-    },
-    (s) => ({ masters: { ...s.masters, surgeonGroups: { ...s.masters.surgeonGroups, [groupId]: next } } }),
+    [
+      {
+        entityType: 'surgeonGroup',
+        entityId: groupId,
+        action: 'surgeonGroup.update',
+        before,
+        after,
+        stampBookingId: null,
+      },
+      ...(follow !== null ? [follow.meta] : []),
+    ],
+    (s) => ({
+      masters: {
+        ...s.masters,
+        surgeonGroups: { ...s.masters.surgeonGroups, [groupId]: next },
+        ...(follow !== null ? { parties: { ...s.masters.parties, [follow.party.id]: follow.party } } : {}),
+      },
+    }),
   )
   return ok(undefined)
 }

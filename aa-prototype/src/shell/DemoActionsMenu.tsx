@@ -1,9 +1,9 @@
 import { useEffect, useId } from 'react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { FlaskConical } from 'lucide-react'
 import { DemoBadge } from '../shared/DemoBadge'
 import { DemoTriggerBadge, useDemoTriggerRows } from '../shared/demoTriggers'
-import { PopoverPanel, usePopover } from '../shared/ui'
+import { Notice, PopoverPanel, TextAction, usePopover } from '../shared/ui'
 import { accent, neutral, radius, semantic } from '../theme/tokens'
 import { CountBadge } from '../shared/ui/CountBadge'
 
@@ -83,7 +83,7 @@ export function DemoActionsMenu() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {rows.map(({ trigger, options, chosen, reason, result, choose, run }) => {
+            {rows.map(({ trigger, options, chosen, reason, result, choose, run, confirming, cancelConfirm }) => {
               return (
                 <div
                   key={trigger.id}
@@ -99,9 +99,10 @@ export function DemoActionsMenu() {
                       type="button"
                       disabled={reason !== null}
                       onClick={run}
+                      data-shot={confirming ? 'demo-action-confirm' : undefined}
                       style={{ ...runStyle, ...(reason !== null ? { opacity: 0.45, cursor: 'not-allowed' } : {}) }}
                     >
-                      Run
+                      {confirming ? 'Confirm' : 'Run'}
                     </button>
                   </div>
                   <span style={{ fontSize: 12.5, lineHeight: 1.45, color: neutral.slate }}>{trigger.description}</span>
@@ -118,6 +119,11 @@ export function DemoActionsMenu() {
                     </select>
                   )}
                   {reason !== null && <span style={{ fontSize: 12, color: neutral.mist }}>{reason}</span>}
+                  {confirming && trigger.confirm !== undefined && (
+                    <Notice tone="warning" icon={false} shot="demo-action-confirm-line" action={<TextAction size="sm" flush onClick={cancelConfirm}>Cancel</TextAction>}>
+                      {trigger.confirm}
+                    </Notice>
+                  )}
                   <div role="status" aria-live="polite">
                     {result !== undefined && (
                       <div
@@ -131,6 +137,14 @@ export function DemoActionsMenu() {
                         }}
                       >
                         {result.message}
+                        {result.link !== undefined && (
+                          <>
+                            {' '}
+                            <Link to={result.link.to} style={{ color: accent.base, fontWeight: 600 }}>
+                              {result.link.label}
+                            </Link>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>

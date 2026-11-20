@@ -24,7 +24,8 @@ import {
 import { Button, FormError, useSurface } from '../../../../shared'
 import { TextField, TimeRangeFields } from '../../../../shared/ui'
 import { OverlayHeader, SheetActions } from '../../../../shared/surface'
-import { Header, Table, TextAction } from './chrome'
+import { MasterHeader, MasterTable } from './chrome'
+import { TextAction } from '../../../../shared/ui'
 import { cellStyle } from './tableStyles'
 import { sessionText, SESSIONS_IN_ORDER } from '../../../../domain/outOfHours'
 import { Notice } from '../../../../shared/ui/Notice'
@@ -41,39 +42,40 @@ export function ScheduleSettingsView({ actor }: { actor: Actor }) {
   return (
     <div data-shot="admin-schedule-settings" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <Header
+        <MasterHeader
           title="Schedule horizon"
           sub="Every active anaesthetist has an AM and a PM session each day up to the horizon. It rolls forward each day."
-          action={<Button variant="secondary" onClick={() => setSheet('horizon')}>Edit horizon</Button>}
+          actions={<Button variant="secondary" onClick={() => setSheet('horizon')}>Edit horizon</Button>}
         />
-        <Table heads={['Horizon', 'Last day', '']} rightAlign={[2]}>
+        <MasterTable columns={['Horizon', 'Last day', '']} rightAlign={[2]} label="Schedule horizon">
           <tr>
             <td style={cellStyle}>
               <span style={{ fontWeight: 600 }}>{settings.horizonMonths} {settings.horizonMonths === 1 ? 'month' : 'months'}</span>
               <span style={{ marginLeft: 10, fontSize: 12, color: neutral.mist }}>Four months is current practice.</span>
             </td>
             <td className="mono" style={cellStyle}>{longDate(end)}</td>
-            <td style={{ ...cellStyle, textAlign: 'right' }}><TextAction onClick={() => setSheet('horizon')}>Edit</TextAction></td>
+            <td style={{ ...cellStyle, textAlign: 'right' }}><TextAction size="sm" flush onClick={() => setSheet('horizon')}>Edit</TextAction></td>
           </tr>
-        </Table>
+        </MasterTable>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <Header
+        <MasterHeader
           title="Session times"
           sub="Sessions with their own times keep them."
-          action={<Button variant="secondary" onClick={() => setSheet('times')}>Edit session times</Button>}
+          section
+          actions={<Button variant="secondary" onClick={() => setSheet('times')}>Edit session times</Button>}
         />
-        <Table heads={['Session', 'Start', 'End', '']} rightAlign={[3]} shot="admin-session-times">
+        <MasterTable columns={['Session', 'Start', 'End', '']} rightAlign={[3]} shot="admin-session-times">
           {SESSIONS_IN_ORDER.map((session) => (
             <tr key={session}>
               <td style={{ ...cellStyle, fontWeight: 600 }}>{sessionText(session)}</td>
               <td className="mono" style={cellStyle}>{settings.defaultTimes[session].startTime}</td>
               <td className="mono" style={cellStyle}>{settings.defaultTimes[session].endTime}</td>
-              <td style={{ ...cellStyle, textAlign: 'right' }}><TextAction onClick={() => setSheet('times')}>Edit</TextAction></td>
+              <td style={{ ...cellStyle, textAlign: 'right' }}><TextAction size="sm" flush onClick={() => setSheet('times')}>Edit</TextAction></td>
             </tr>
           ))}
-        </Table>
+        </MasterTable>
       </div>
 
       <HorizonSheet open={sheet === 'horizon'} actor={actor} onClose={() => setSheet('none')} />

@@ -1,6 +1,39 @@
 {
   "id": "US-13.4.2",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 42 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "go-live-load",
+      "app": "admin",
+      "caption": "Clean-cut start: only AA-approved data is loaded",
+      "start": "/admin/masters?view=goLive",
+      "states": [
+        {
+          "state": "staged",
+          "caption": "The go-live load waiting for AA: Solutions Plus operation names only, junk excluded, their units struck through and never carried over, each approved name beside its row in AA's controlled spreadsheet",
+          "steps": [
+            { "wait": "[data-shot=masters-go-live]" },
+            { "trigger": "go-live-data-load" },
+            { "wait": "[data-shot=go-live-candidates] tr[data-scan-row]" }
+          ],
+          "highlight": ["[data-shot=go-live-candidates]"]
+        },
+        {
+          "state": "loaded",
+          "caption": "One name unapproved, then Load approved data: only the approved data is loaded, and the Solutions Plus entries not loaded are counted",
+          "steps": [
+            { "wait": "[data-shot=masters-go-live]" },
+            { "trigger": "go-live-data-load" },
+            { "wait": "[data-shot=go-live-candidates] tr[data-scan-row]" },
+            { "click": "[data-shot=go-live-candidates] tr[data-decision=approved] >> nth=0 >> role=button" },
+            { "wait": 300 },
+            { "click": "[data-shot=go-live-commit]" },
+            { "wait": "[data-shot=go-live-result]" }
+          ],
+          "highlight": ["[data-shot=go-live-result]"]
+        }
+      ]
+    }
+  ]
 }

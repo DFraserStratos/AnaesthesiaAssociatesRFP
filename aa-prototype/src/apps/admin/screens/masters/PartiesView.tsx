@@ -6,17 +6,17 @@
  */
 
 import { isOfficeContract } from '../../../../domain/billing/fallbacks'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { Party, PartyKind } from '../../../../domain/types'
 import { useAppStore, type Actor } from '../../../../store'
-import { Button } from '../../../../shared'
 import { DELIVERY_LABEL, PARTY_KIND_LABEL } from '../../../../shared/contracts'
 import { neutral } from '../../../../theme/tokens'
 import { PartyPanel } from '../../flows/PartyPanel'
 import { Pill } from '../../components/MasterPills'
-import { isInteractiveRowTarget } from '../../tableChrome'
-import { Header, Table, TextAction } from './chrome'
+import { ClickableRow } from '../../../../shared/table'
+import { MasterHeader, MasterTable } from './chrome'
+import { TextAction } from '../../../../shared/ui'
 import { HistorySheet } from '../../../../shared/booking'
 import { rowCellStyle } from './tableStyles'
 
@@ -26,8 +26,20 @@ const mist = { color: neutral.mist }
 export function PartiesView({ actor }: { actor: Actor }) {
   const parties = useAppStore((s) => s.masters.parties)
   const contracts = useAppStore((s) => s.masters.contracts)
-  const [, setParams] = useSearchParams()
-  const [panel, setPanel] = useState<{ party?: Party } | null>(null)
+  const [params, setParams] = useSearchParams()
+  // `?party=<id>` opens that Party's panel (a loaded row's link from Seed load); the param is then dropped.
+  const [panel, setPanel] = useState<{ party?: Party } | null>(() => {
+    const p = parties[params.get('party') ?? '']
+    return p !== undefined ? { party: p } : null
+  })
+  useEffect(() => {
+    if (params.get('party') === null) return
+    setParams((prev) => {
+      const copy = new URLSearchParams(prev)
+      copy.delete('party')
+      return copy
+    }, { replace: true })
+  }, [params, setParams])
   const [history, setHistory] = useState<Party | null>(null)
 
   const rows = useMemo(
@@ -60,23 +72,20 @@ export function PartiesView({ actor }: { actor: Actor }) {
 
   return (
     <>
-      <Header
+      <MasterHeader
         title="Parties"
         sub="Everyone who holds Contracts: hospitals, insurers, funders, surgeons and surgeon groups, anaesthetists and AA. A Party's billing name and delivery are needed once a Contract bills it."
-        action={<Button variant="secondary" onClick={() => setPanel({})}>Add Party</Button>}
+        add={{ label: 'Add Party', onClick: () => setPanel({}) }}
       />
-      <Table heads={['Name', 'Kind', 'Billing name', 'Delivery', 'Contracts', '']} rightAlign={[4, 5]} shot="parties">
+      <MasterTable columns={['Name', 'Kind', 'Billing name', 'Delivery', 'Contracts', '']} rightAlign={[4, 5]} shot="parties" label="Parties">
         {rows.map((p) => {
           const count = counts.active.get(p.id) ?? 0
           const held = counts.held.get(p.id) ?? 0
           return (
-            <tr
+            <ClickableRow
               key={p.id}
               data-party={p.id}
-              className="aa-clickable-table-row"
-              onClick={(event) => {
-                if (!isInteractiveRowTarget(event.target)) setPanel({ party: p })
-              }}
+              onOpen={() => setPanel({ party: p })}
             >
               <td style={{ ...rowCellStyle, fontWeight: 500 }}>{p.name}</td>
               <td style={rowCellStyle}><Pill>{PARTY_KIND_LABEL[p.kind]}</Pill></td>
@@ -86,7 +95,7 @@ export function PartiesView({ actor }: { actor: Actor }) {
                 {held === 0 ? (
                   <span style={mist}>None</span>
                 ) : (
-                  <TextAction onClick={() => showContracts(p.id)} label={`Show the Contracts ${p.name} holds`}>
+                  <TextAction size="sm" flush onClick={() => showContracts(p.id)} label={`Show the Contracts ${p.name} holds`}>
                     <span className="mono">{count}</span> active
                   </TextAction>
                 )}
@@ -94,14 +103,14 @@ export function PartiesView({ actor }: { actor: Actor }) {
               {/* A Party's audited edits with before and after (catch-up Phase 25, US-04.1.3): the shared History sheet, as RVG groups have. */}
               <td style={{ ...rowCellStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
                 <span style={{ display: 'inline-flex', gap: 12 }}>
-                  <TextAction onClick={() => setHistory(p)} label={`History of ${p.name}`}>History</TextAction>
-                  <TextAction onClick={() => setPanel({ party: p })} label={p.kind === 'aa' ? `View ${p.name}` : `Edit ${p.name}`}>Edit</TextAction>
+                  <TextAction size="sm" flush onClick={() => setHistory(p)} label={`History of ${p.name}`}>History</TextAction>
+                  <TextAction size="sm" flush onClick={() => setPanel({ party: p })} label={p.kind === 'aa' ? `View ${p.name}` : `Edit ${p.name}`}>Edit</TextAction>
                 </span>
               </td>
-            </tr>
+            </ClickableRow>
           )
         })}
-      </Table>
+      </MasterTable>
       <HistorySheet open={history !== null} entityIds={history !== null ? [history.id] : []} title={history !== null ? `History · ${history.name}` : 'Party history'} onClose={() => setHistory(null)} />
       {panel !== null && <PartyPanel key={panel.party?.id ?? 'new'} open actor={actor} party={panel.party !== undefined ? parties[panel.party.id] : undefined} onClose={() => setPanel(null)} />}
     </>

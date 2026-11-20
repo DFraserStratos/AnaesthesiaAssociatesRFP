@@ -6,7 +6,10 @@ import { StatusChip } from '../../shared'
 import { SEED_MARKERS, type SeedMarker } from '../../domain/seed'
 import type { ListState } from '../../domain/types'
 import { UNASSIGNED } from '../../shared/scheduleTerms'
-import { locationName } from '../../shared/format'
+import { formatCount, locationName } from '../../shared/format'
+import { FULL_SCALE } from '../../domain/seed/fullScale/constants'
+import { useScaleMode } from '../../store/scaleMode'
+import { PrivacyChecks } from './PrivacyChecks'
 import {
   authoriseList,
   cancelBooking,
@@ -138,6 +141,7 @@ export function DemoData() {
   const [guardResult, setGuardResult] = useState<{ action: string; outcome: Outcome<unknown> } | null>(null)
 
   const counts = useMemo(() => entityCounts(state), [state])
+  const scaleModeName = useScaleMode((s) => s.mode)
 
   // Read straight through on each render rather than memoised: this component
   // subscribes to the whole store, so it re-renders on every mutation, and the
@@ -231,15 +235,17 @@ export function DemoData() {
         .map((m) => schedule.bookings[m.entityId]?.listId)
         .filter((id): id is string => id !== undefined),
     )
+    // At full scale (catch-up Phase 43) the seeded marker Lists and today's only, so the selects stay usable.
+    const fullScale = scaleModeName === 'fullScale'
     const interestingLists = Object.values(schedule.lists)
-      .filter((l) => l.state !== 'ACTIVE' || l.dateISO === todayISO || markerListIds.has(l.id))
+      .filter((l) => (fullScale ? l.dateISO === todayISO || markerListIds.has(l.id) : l.state !== 'ACTIVE' || l.dateISO === todayISO || markerListIds.has(l.id)))
       .sort((a, b) => a.dateISO.localeCompare(b.dateISO))
     const listIds = new Set(interestingLists.map((l) => l.id))
     const bookings = Object.values(schedule.bookings)
       .filter((c) => listIds.has(c.listId))
       .sort((a, b) => a.id.localeCompare(b.id))
     return { lists: interestingLists, bookings }
-  }, [schedule, todayISO])
+  }, [schedule, todayISO, scaleModeName])
 
   function describeList(listId: string): string {
     const list = schedule.lists[listId]
@@ -317,6 +323,11 @@ export function DemoData() {
               ? 'not written yet'
               : `${megabytes(persistedSize, 2)} of ~${megabytes(STORAGE_BUDGET_BYTES, 0)}`}
           </span>
+          {persistence.paused && (
+            <span data-shot="data-saving-paused" style={{ color: semantic.warning.onTint }}>
+              · Saving paused: full-scale data is held in memory only
+            </span>
+          )}
           {persistence.disabled && (
             <span style={{ color: semantic.error.onTint }}>
               · persistence paused after a storage error
@@ -324,6 +335,11 @@ export function DemoData() {
             </span>
           )}
         </div>
+      </Panel>
+
+      {/* Privacy checks (catch-up Phase 43; US-15.0.6) */}
+      <Panel title="Privacy checks" subtitle="The NHI stays inside the core platform and no personal information reaches Xero. The scan checks it." shot="nhi-scan-panel">
+        <PrivacyChecks />
       </Panel>
 
       {/* Today's canvas */}
@@ -540,7 +556,7 @@ export function DemoData() {
           ))}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {(stateFilter === 'ACTIVE' ? filteredLists.slice(0, 20) : filteredLists).map((list) => (
+          {(stateFilter === 'ACTIVE' ? filteredLists.slice(0, 20) : filteredLists.slice(0, FULL_SCALE.pageSizes.demoTables)).map((list) => (
             <button
               key={list.id}
               type="button"
@@ -560,6 +576,11 @@ export function DemoData() {
               {describeList(list.id)}
             </button>
           ))}
+          {stateFilter !== 'ACTIVE' && filteredLists.length > FULL_SCALE.pageSizes.demoTables && (
+            <span data-shot="data-lifecycle-cap" className="mono" style={{ fontSize: 12, color: neutral.slate }}>
+              Showing {formatCount(FULL_SCALE.pageSizes.demoTables)} of {formatCount(filteredLists.length)}
+            </span>
+          )}
           {stateFilter === 'ACTIVE' && filteredLists.length > 20 && (
             <span style={{ fontSize: 12, color: neutral.mist }}>
               Showing 20 of {filteredLists.length.toLocaleString()} active Lists.

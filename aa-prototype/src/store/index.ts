@@ -174,7 +174,6 @@ export {
   createBooking,
   addProcedure,
   removeProcedure,
-  addPostOpAddendum,
   setPrimaryProcedure,
   PRIMARY_NOT_REMOVABLE_MESSAGE,
   PRIMARY_COMPLETED_MESSAGE,
@@ -196,6 +195,7 @@ export {
   warningsForList,
   openWarnings,
   warningSummaryByList,
+  warningSummaryFromRows,
   clearWarning,
   type WarningState,
   type OpenWarningRow,
@@ -565,3 +565,99 @@ export {
 export { changeSetEntries, lastChangeSetFor, type ChangeSetSummary } from './changeSetSelectors'
 // Catch-up Phase 35: the PWA's office stand-in for an office save.
 export { officeEditsBooking, officeEditsBookingRefusal } from './officeSaveDemo'
+
+
+// Catch-up Phase 38b: events on a Procedure, their review step and the next billing run.
+export {
+  procedureOwner,
+  liveInvoiceForProcedure,
+  liveInvoicesForProcedure,
+  eventsForProcedure,
+  eventsForBooking,
+  eventsAwaitingReview,
+  approvedEventsAwaitingRun,
+  additionalInvoicesFor,
+  additionalInvoicesForProcedure,
+  originalInvoiceFor,
+  eventForInvoice,
+  resolvedPartyOf,
+  eventPartyName,
+  originalForEvent,
+  pricingOf,
+  raiseRefusal,
+  namedPartyDelivery,
+  addProcedureEvent,
+  updateProcedureEvent,
+  removeProcedureEvent,
+  approveProcedureEvent,
+  declineProcedureEvent,
+  runEventInvoicing,
+  type ProcedureEventInput,
+  type EventRunResult,
+  type EventPartyInput,
+} from './procedureEventActions'
+
+// Catch-up Phase 39: credit notes and credit-and-rebill (the correction), its derived standing and the Xero correction.
+export {
+  submitCredit,
+  updateCredit,
+  approveCreditUnit,
+  declineCreditUnit,
+  removeCreditUnit,
+  updateCreditPart,
+  issueCreditInto,
+  planCreditIssue,
+  creditRefusalFor,
+  creditNoteForInvoice,
+  creditEventForInvoice,
+  pendingCreditEventFor,
+  replacementsOf,
+  rebillOriginFor,
+  invoiceStanding,
+  negativeInvoicesFor,
+  replacementEventsOf,
+  reviewRowsAwaiting,
+  creditEventOf,
+  currentReversalPlan,
+  xeroMoneyNotInLedger,
+  invoiceCoversProcedure,
+  splitPartOf,
+  procedureOwnerSurname,
+  bookingHistoryEntityIds,
+  bookingHistoryEntries,
+  rebillReplacementFor,
+  splitTargetFor,
+  canSplitCombined,
+  splitCombinedProcedure,
+  creditOptionFor,
+  type CreditOption,
+  type CreditInput,
+  type CreditReplacementInput,
+  type CreditIssuePlan,
+  type CreditRunDraft,
+  type InvoiceStanding,
+} from './creditActions'
+export { handoffCorrection, createXeroCorrection, type CorrectionHandoffResult } from './xeroHandoff'
+
+// Catch-up Phase 42: retire and reinstate, the public-holiday calendar, the time rule, the seed load and go-live.
+export { retireMaster, reinstateMaster, retireFactsFor, editAaModifier, retiredRefusal, partyRenameFollowing, type AaModifierPatch } from './masterLifecycleActions'
+export {
+  addPublicHoliday,
+  editPublicHoliday,
+  deletePublicHoliday,
+  listsFlaggedByPublicHoliday,
+  editRvgTimeRule,
+  planPublicHolidayCreate,
+  PART_INTERVAL_FIXED,
+  type PublicHolidayResult,
+} from './publicHolidayActions'
+export { stageMasterLoad, commitMasterLoad, discardMasterLoad, stagedLoadFor, checkSheet, type CommitResult } from './masterLoadActions'
+export { LOADER_SPECS, specFor, surgeonNameNotes, OPEN_PRICE_LOAD_REFUSAL, type StoreLoaderSpec } from './masterLoadSpecs'
+export { stageGoLiveLoad, setGoLiveApproval, commitGoLiveLoad, discardGoLiveLoad, goLiveOutcomes, type GoLiveCommitResult } from './goLiveActions'
+export { applyPlan, type Plan, type PlanSource, type Planner } from './masterPlanners'
+export { activeHospitals, activeSurgeons, activeGroups, activeAaModifiers } from './selectors'
+
+// Catch-up Phase 43: scale and privacy.
+export { viewRawImportRow, rawViewsFor, rawRowRefusal, rawRowEligible, RAW_ROW_REASONS, RAW_ROW_NOT_ELIGIBLE, RAW_ROW_OFFICE_ONLY, type RawViews } from './rawRowActions'
+export { loadFullScaleData, loadFullScaleRefusal, FULL_SCALE_PAUSE_REASON } from './fullScaleActions'
+export { reportDiagnostic, recentDiagnostics, wireDiagnostics } from './diagnostics'

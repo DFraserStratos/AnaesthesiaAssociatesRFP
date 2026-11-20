@@ -7,6 +7,8 @@ import type { CompletionContext } from '../domain/billing/completion'
  * every snapshot.
  */
 
+import { byIdOrder, occupiedSlotIdsOf, pairByAccRecIndex, bookingsByList, invoicesByBooking, openExceptionByBooking, pairsByPatient, proceduresByBooking, transfersByBooking } from './indexes'
+import { closuresAt, closuresIndex, closureSourcesOf } from '../domain/holidays'
 import { rvgCodeToFill } from '../domain/billing/rvgDetail'
 import { procedureStackView, type ProcedureStackView, type StackSurface } from '../domain/billing/procedureStack'
 import { isOpenPriceFallback } from '../domain/billing/fallbacks'
@@ -23,6 +25,7 @@ import { billablePartyForProcedure, otherPayerHeld, partyForCounterparty, payerC
 import { refKey } from '../domain/billing/procedurePayer'
 import type {
   AssignedList,
+  XeroDivergence,
   DraftList,
   AaFeeInvoice,
   BookingLedgerPair,
@@ -31,6 +34,7 @@ import type {
   RecurringBooking,
   ConflictClear,
   HospitalHoliday,
+  PublicHoliday,
   ListConflict,
   CounterpartyRef,
   DayNote,
@@ -63,6 +67,7 @@ import { ANAESTHETISTS } from '../domain/seed'
 import { displayStatusKey, effectiveSlotTimes, slotIdFor, type EffectiveSlotTimes } from '../domain/slots'
 import { isOpenSlot, type SlotStatusRecords } from '../domain/slotStatus'
 import { compareBySurname } from '../domain/surgeons'
+import { activeOnly, isRetired } from '../domain/masterLifecycle'
 import type { ListMoveInput } from '../domain/listMoves'
 import type { BookingMoveInput } from '../domain/bookingMoves'
 import { conflictFromCause, describeConflict, isBackdropList, type ConflictLookups, type ConflictReason } from '../domain/conflicts'
@@ -76,8 +81,8 @@ import { roundToCents, toCents } from '../domain/billing/money'
 import { maskBankAccount } from '../domain/bankAccount'
 import { procedureAccFunded } from '../domain/billing/fundingTags'
 import { BCTI_COUNT_RULE, bctiFeeHistory, bctisFor, type BctiFeeHistory, type BctiRecord } from '../domain/billing/bcti'
-import { isBookingPair, patientPosition, transferOfPair, type PairStatus } from '../domain/billing/ledger'
-import { bctiRecords, handoffQueuedFor, incomeReceiptsFor, journalQueuedFor, openBillingExceptions, openDivergenceFor, pairsForList, pairStatusOf } from './ledgerSelectors'
+import { isBookingPair, isCreditedPair, patientPosition, transferOfPair, type PairStatus } from '../domain/billing/ledger'
+import { bctiRecords, handoffQueuedFor, incomeReceiptsFor, journalQueuedFor, openDivergenceFor, pairsForList, pairStatusOf } from './ledgerSelectors'
 import { aaFeeFixedTotal, aaFeeFor } from '../domain/billing/aaFee'
 import { useMemo } from 'react'
 import { addDays, format, getDaysInMonth, parseISO } from 'date-fns'
@@ -399,16 +404,13 @@ export function listsForDate(state: AppState, dateISO: string): AssignedList[] {
 }
 
 export function bookingsForList(state: Pick<AppState, 'schedule'>, listId: string): Booking[] {
-  return Object.values(state.schedule.bookings)
-    .filter((c) => c.listId === listId)
-    .sort((a, b) => a.id.localeCompare(b.id))
+  // Indexed on the Bookings map (catch-up Phase 43): linear at full scale.
+  return [...(bookingsByList(state.schedule.bookings).get(listId) ?? [])]
 }
 
 /** Procedures in Booking order (creation order). The primary is the `isPrimary` one; lists show `inDisplayOrder` (catch-up Phase 23). */
 export function proceduresForBooking(state: { schedule: Pick<AppState['schedule'], 'procedures'> }, bookingId: string): Procedure[] {
-  return Object.values(state.schedule.procedures)
-    .filter((p) => p.bookingId === bookingId)
-    .sort((a, b) => a.id.localeCompare(b.id))
+  return [...(proceduresByBooking(state.schedule.procedures).get(bookingId) ?? [])]
 }
 
 export function auditForEntity(state: AppState, entityId: string) {
@@ -471,10 +473,10 @@ export function billedLists(state: Pick<AppState, 'schedule'>): List[] {
 
 /** A List's invoices (via its Bookings), in raise order (Phase 08). */
 export function invoicesForList(state: Pick<AppState, 'schedule' | 'billing'>, listId: string): Invoice[] {
-  const bookingIds = new Set(bookingsForList(state, listId).map((c) => c.id))
-  return Object.values(state.billing.invoices)
-    .filter((i) => bookingIds.has(i.bookingId))
-    .sort((a, b) => a.id.localeCompare(b.id))
+  const byBooking = invoicesByBooking(state.billing.invoices)
+  return bookingsForList(state, listId)
+    .flatMap((b) => byBooking.get(b.id) ?? [])
+    .sort(byIdOrder)
 }
 
 /** An invoice's lines, in emit order (Phase 08). */
@@ -524,14 +526,17 @@ export function openAccRecs(state: Pick<AppState, 'xero' | 'billing' | 'masters'
     if (!recordedKeys.has(p.idempotencyKey)) pendingCents.set(p.accRecId, (pendingCents.get(p.accRecId) ?? 0) + toCents(p.amount))
   }
   const owing = (r: { id: string; amountDue: number; amountReceived: number }) => toCents(r.amountDue) - toCents(r.amountReceived) - (pendingCents.get(r.id) ?? 0)
+  // The ACCRECs of credited pairs, read once (catch-up Phase 39).
+  const creditedAccRecIds = new Set(Object.values(state.billing.ledger).flatMap((p) => (isCreditedPair(p) && p.receivable.xeroAccRecId !== undefined ? [p.receivable.xeroAccRecId] : [])))
   return Object.values(state.xero.accRecs)
     // Procedure receivables only: an AA fee invoice is paid by "Record fee
     // payment", never a procedure payment webhook (catch-up Phase 16).
     .filter((r) => r.kind === 'procedure')
-    // A void made in Xero takes no payment (catch-up Phase 37).
-    .filter((r) => r.status !== 'voided')
+    // A void made in Xero takes no payment (catch-up Phase 37), nor does a credited invoice (catch-up Phase 39).
+    .filter((r) => r.status !== 'voided' && r.status !== 'credited')
+    .filter((r) => !creditedAccRecIds.has(r.id))
     // Only ACCRECs a ledger pair links (catch-up Phase 36): a payment always lands on its pair.
-    .filter((r) => Object.values(state.billing.ledger).some((p) => p.receivable.xeroAccRecId === r.id))
+    .filter((r) => pairByAccRecIndex(state.billing.ledger).has(r.id))
     .filter((r) => owing(r) > 0)
     // Exclude the seeded historical backdrop (its aged receivables are the
     // anaesthetist money-view story; the missed webhook is caught by the poll).
@@ -569,7 +574,7 @@ export function patientHasOutstandingPriorEpisode(
   patientId: string,
   excludeBookingId: string,
 ): boolean {
-  for (const row of patientPosition(Object.values(state.billing.ledger), patientId).rows) {
+  for (const row of patientPosition(pairsByPatient(state.billing.ledger).get(patientId) ?? [], patientId).rows) {
     if (row.bookingId === excludeBookingId || toCents(row.outstanding) <= 0) continue
     const booking = state.schedule.bookings[row.bookingId]
     if (booking === undefined || booking.cancellation !== undefined) continue
@@ -586,9 +591,7 @@ export function patientHasOutstandingPriorEpisode(
 
 /** The `prePayment`-kind invoices raised for a Booking, in id order. */
 export function prePaymentInvoicesForBooking(state: { billing: Pick<AppState['billing'], 'invoices'> }, bookingId: string): Invoice[] {
-  return Object.values(state.billing.invoices)
-    .filter((i) => i.bookingId === bookingId && i.kind === 'prePayment')
-    .sort((a, b) => a.id.localeCompare(b.id))
+  return (invoicesByBooking(state.billing.invoices).get(bookingId) ?? []).filter((i) => i.kind === 'prePayment')
 }
 
 /**
@@ -676,7 +679,7 @@ export function prepaidLeftOffFor(state: Pick<AppState, 'billing' | 'schedule'>,
   const ids = Object.keys(settled)
   if (ids.length === 0) return undefined
   const numbers = [...new Set(ids.map((id) => state.billing.invoices[settled[id]!.prepaymentInvoiceId]?.invoiceNumber ?? settled[id]!.prepaymentInvoiceId))].sort()
-  const live = Object.values(state.schedule.procedures).filter((p) => p.bookingId === bookingId)
+  const live = proceduresByBooking(state.schedule.procedures).get(bookingId) ?? []
   return { invoiceNumbers: numbers, all: live.length > 0 && live.every((p) => settled[p.id] !== undefined) }
 }
 
@@ -687,7 +690,7 @@ export function prepaidLeftOffText(leftOff: PrepaidLeftOff): string {
 }
 
 /** The pipeline status a Booking reads on the monitor (Phase 09's labels, derived from its pairs since catch-up Phase 36). */
-export type MonitorStatus = 'pending' | 'invoiced' | 'handedOff' | 'partPaid' | 'paid' | 'disbursed' | 'failed'
+export type MonitorStatus = 'pending' | 'invoiced' | 'handedOff' | 'partPaid' | 'paid' | 'disbursed' | 'failed' | 'credited'
 
 /** A pair's label on the monitor: one waiting for Xero reads invoiced (its own line says why); part paid out reads by what was received. */
 function monitorStatusOf(label: PairStatus, fullyReceived: boolean): MonitorStatus {
@@ -709,7 +712,7 @@ export interface MonitorXeroWait {
 /** A void or amendment made in Xero, flagged by the poll on this Booking's pair (catch-up Phase 37). */
 export interface MonitorXeroFlag {
   divergenceId: string
-  kind: 'voidedInXero' | 'amendedInXero'
+  kind: XeroDivergence['kind']
   detectedAtISO: string
   xeroTotal: number
 }
@@ -785,7 +788,8 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
       return a.id.localeCompare(b.id)
     })
 
-  const exceptions = openBillingExceptions(state)
+  const exceptionByBooking = openExceptionByBooking(state.billing.exceptions)
+  const transfersOf = transfersByBooking(state.billing.transfers)
 
   return lists.map((list) => {
     const bookings = bookingsForList(state, list.id)
@@ -794,7 +798,8 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
     // booking with a paid prepayment would read 'paid' and mask its unpaid run
     // invoice, and its list would overcount).
     const stdInvoices = invoicesForList(state, list.id).filter((i) => i.kind === 'standard')
-    const runPairs = pairsForList(state, list.id).filter((p) => p.kind === 'procedure')
+    // An additional invoice's pair is a procedure pair too, but not the run's (catch-up Phase 38b): the row says "+1 additional invoice".
+    const runPairs = pairsForList(state, list.id).filter((p) => p.kind === 'procedure' && state.billing.invoices[p.invoiceId]?.kind !== 'additional')
     const pairsByBooking = new Map<string, BookingLedgerPair[]>()
     for (const p of runPairs) pairsByBooking.set(p.bookingId, [...(pairsByBooking.get(p.bookingId) ?? []), p])
 
@@ -811,7 +816,7 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
         }
       }
       const pairs = pairsByBooking.get(booking.id) ?? []
-      const exception = exceptions.find((x) => x.bookingId === booking.id)
+      const exception = exceptionByBooking.get(booking.id)
       // A hand-off waiting in the Xero sync queue (catch-up Phase 37), then the first pair.
       const queuedPair = pairs.find((p) => p.receivable.xeroAccRecId === undefined && handoffQueuedFor(state, p.id) !== undefined)
       const primary = queuedPair ?? pairs[0]
@@ -831,7 +836,7 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
         row.failure = { code: exception.code, message: exception.message, ...(exception.procedureId !== undefined ? { procedureId: exception.procedureId } : {}) }
       }
       const queued = queuedPair !== undefined ? handoffQueuedFor(state, queuedPair.id) : undefined
-      const journal = queued === undefined ? Object.values(state.billing.transfers).filter((t) => t.bookingId === booking.id).map((t) => journalQueuedFor(state, t.id)).find((q) => q !== undefined) : undefined
+      const journal = queued === undefined ? (transfersOf.get(booking.id) ?? []).map((t) => journalQueuedFor(state, t.id)).find((q) => q !== undefined) : undefined
       const wait = queued ?? journal
       if (wait !== undefined) {
         row.waitingForXero = { itemId: wait.id, kind: wait.kind === 'journal' ? 'journal' : 'handoff', attempts: wait.attempts, nextAttemptAtISO: wait.nextAttemptAtISO, ...(wait.lastError !== undefined ? { lastError: wait.lastError } : {}), alerted: wait.status === 'alerted' }
@@ -1061,7 +1066,8 @@ function payableRowFor(state: ViewState, pair: BookingLedgerPair): PayableRow | 
   if (invoice === undefined) return undefined
   const leg = anaesthetistLegOf(state, pair)
   const held = pair.kind === 'prePayment' && leg === undefined
-  const outstandingToYou = leg === undefined ? 0 : Math.max(0, roundToCents(leg.amount - leg.disbursedAmount))
+  // A credited invoice's payable is reversed (catch-up Phase 39): nothing is outstanding on it; what was paid out nets in the next payment run (39a).
+  const outstandingToYou = leg === undefined || leg.reversedAmount !== undefined ? 0 : Math.max(0, roundToCents(leg.amount - leg.disbursedAmount))
   return {
     pairId: pair.id,
     invoiceId: pair.invoiceId,
@@ -1363,7 +1369,7 @@ export interface EntityCounts {
   rvgGroups: number
   modifiers: number
   recurringBookings: number
-  slots: number
+  sessions: number
   patients: number
   lists: number
   /** Live Draft Lists (catch-up Phase 31). */
@@ -1377,6 +1383,9 @@ export interface EntityCounts {
   stubs: number
   pdfLists: number
   audit: number
+  invoices: number
+  ledgerPairs: number
+  xeroContacts: number
 }
 
 export function entityCounts(state: AppState): EntityCounts {
@@ -1393,7 +1402,8 @@ export function entityCounts(state: AppState): EntityCounts {
     modifiers: Object.keys(state.masters.modifiers).length,
     recurringBookings: Object.keys(state.masters.recurringBookings).length,
     patients: Object.keys(state.masters.patients).length,
-    slots: Object.keys(state.schedule.slots).length,
+    // The app says sessions (OQ-64; catch-up Phase 43): the Data Inspector shows this key.
+    sessions: Object.keys(state.schedule.slots).length,
     lists: Object.keys(state.schedule.lists).length,
     draftLists: waitingDraftLists(state).length,
     bookings: Object.keys(state.schedule.bookings).length,
@@ -1404,6 +1414,10 @@ export function entityCounts(state: AppState): EntityCounts {
     stubs: Object.keys(state.intake.stubs).length,
     pdfLists: Object.keys(state.intake.pdfLists).length,
     audit: state.audit.length,
+    // Catch-up Phase 43: the money at scale.
+    invoices: Object.keys(state.billing.invoices).length,
+    ledgerPairs: Object.keys(state.billing.ledger).length,
+    xeroContacts: Object.keys(state.xero.contacts).length,
   }
 }
 
@@ -1895,6 +1909,11 @@ export function openConflictCount(state: Pick<AppState, 'schedule' | 'masters' |
 export interface HospitalDay {
   dateISO: string
   closures: HospitalHoliday[]
+  /**
+   * The master public holidays closing the hospital that day (catch-up Phase
+   * 42), read through `closuresFor`: read-only on the hospital's calendar.
+   */
+  publicClosures: PublicHoliday[]
   /** Lists at the hospital that day (backdrop history excluded). */
   listCount: number
   /** How many of them carry a live closure conflict (hospital closed). */
@@ -1915,12 +1934,17 @@ export function hospitalMonth(state: Pick<AppState, 'schedule' | 'masters'>, hos
     byDate.set(l.dateISO, e)
   }
   const holidays = Object.values(state.masters.holidays).filter((h) => h.hospitalId === hospitalId)
+  const index = closuresIndex(closureSourcesOf(state.masters))
   for (let d = 1; d <= days; d++) {
     const dateISO = `${monthISO}-${String(d).padStart(2, '0')}`
     const e = byDate.get(dateISO)
+    const publicClosures = closuresAt(index, dateISO, hospitalId).flatMap((c) =>
+      c.source === 'public' && state.masters.publicHolidays[c.publicHolidayId] !== undefined ? [state.masters.publicHolidays[c.publicHolidayId]!] : [],
+    )
     out.push({
       dateISO,
       closures: holidays.filter((h) => h.dateISO === dateISO).sort((a, b) => a.id.localeCompare(b.id)),
+      publicClosures,
       listCount: e?.lists ?? 0,
       conflictedCount: e?.conflicted ?? 0,
     })
@@ -2004,7 +2028,7 @@ export function bookingCountsByList(bookings: Readonly<Record<string, Booking>>)
 
 /** The slices a List move reads (catch-up Phase 32; `domain/listMoves.ts`): the one builder. */
 export function moveInputOf(state: Pick<AppState, 'schedule' | 'masters'>): ListMoveInput {
-  return { lists: state.schedule.lists, slots: state.schedule.slots, anaesthetists: state.masters.anaesthetists, slotStatuses: state.masters.slotStatuses }
+  return { lists: state.schedule.lists, slots: state.schedule.slots, anaesthetists: state.masters.anaesthetists, slotStatuses: state.masters.slotStatuses, occupied: occupiedSlotIdsOf(state.schedule.lists) }
 }
 
 /** The slices a single-Booking move reads (catch-up Phase 32a): Phase 32's, plus the Bookings. No preference or tier. */
@@ -2328,4 +2352,39 @@ export function updateEmailRecipients(
 /** The picker's rows for a Booking or a List, read from the whole audit (`pickableChanges`). */
 export function pickableChangesFor(state: Pick<AppState, 'audit' | 'schedule' | 'masters'>, subject: UpdateEmailSubject): PickableChange[] {
   return pickableChanges(state.audit, subject, { ...state.schedule, ...state.masters })
+}
+
+// ── Pickers offer active masters only (catch-up Phase 42, US-13.4.1) ────────
+// A picker offers the active records, plus the current value when it is
+// retired (shown "(retired)" via `retiredLabel`), so an edit never silently
+// drops a stored reference. Display paths keep reading `state.masters`.
+// Plain functions: components select the stable record objects and derive
+// inside a useMemo.
+
+type MastersOf<K extends keyof AppState['masters']> = { masters: Pick<AppState['masters'], K> }
+type MasterRow<K extends 'hospitals' | 'surgeons' | 'surgeonGroups' | 'modifiers'> = AppState['masters'][K][string]
+
+/** Hospitals a picker offers (retirement only; AA rooms filters stay on top). */
+export function activeHospitals(state: MastersOf<'hospitals'>, keepId?: string | null): MasterRow<'hospitals'>[] {
+  return activeOnly(state.masters.hospitals, keepId)
+}
+
+/** Surgeons a picker offers. */
+export function activeSurgeons(state: MastersOf<'surgeons'>, keepId?: string | null): MasterRow<'surgeons'>[] {
+  return activeOnly(state.masters.surgeons, keepId)
+}
+
+/** Surgeon groups a picker offers. */
+export function activeGroups(state: MastersOf<'surgeonGroups'>, keepId?: string | null): MasterRow<'surgeonGroups'>[] {
+  return activeOnly(state.masters.surgeonGroups, keepId)
+}
+
+/**
+ * The modifiers a picker offers: every RVG modifier, and AA's own modifiers
+ * unless retired. `keepId` (one id or several) keeps a retired AA modifier a
+ * Procedure already claims, so its claim still shows and resolves.
+ */
+export function activeAaModifiers(state: MastersOf<'modifiers'>, keepId?: string | null | readonly string[]): MasterRow<'modifiers'>[] {
+  const keep = new Set<string>(keepId === undefined || keepId === null ? [] : typeof keepId === 'string' ? [keepId] : keepId)
+  return Object.values(state.masters.modifiers).filter((m) => m.source !== 'aa' || !isRetired(m) || keep.has(m.id))
 }

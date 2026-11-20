@@ -8,29 +8,28 @@
 
 import { useMemo } from 'react'
 import { conflictPreview, describeConflict, type ExpectedConflict } from '../../../../domain/conflicts'
+import { closuresAt, closuresIndex } from '../../../../domain/holidays'
 import { useAppStore, useConflictLookups } from '../../../../store'
 import { Notice } from '../../../../shared/ui/Notice'
 
 /** The conflicts a target would raise (`conflictPreview` over the live records). */
 export function useConflictPreview(target: { dateISO: string; hospitalId?: string } | null): ExpectedConflict[] {
   const holidays = useAppStore((s) => s.masters.holidays)
+  const publicHolidays = useAppStore((s) => s.masters.publicHolidays)
   const dateISO = target?.dateISO
   const hospitalId = target?.hospitalId
   return useMemo(() => {
     if (dateISO === undefined) return []
-    return conflictPreview({ dateISO, hospitalId: hospitalId === '' ? undefined : hospitalId, holidays })
-  }, [dateISO, hospitalId, holidays])
+    return conflictPreview({ dateISO, hospitalId: hospitalId === '' ? undefined : hospitalId, holidays, publicHolidays })
+  }, [dateISO, hospitalId, holidays, publicHolidays])
 }
 
 /** "Southern Cross · closed" in a hospital select when that hospital is closed on the date. */
 export function useHospitalOptionLabel(dateISO: string | undefined): (hospitalId: string, name: string) => string {
   const holidays = useAppStore((s) => s.masters.holidays)
-  const closed = useMemo(() => {
-    const set = new Set<string>()
-    if (dateISO !== undefined) for (const h of Object.values(holidays)) if (h.dateISO === dateISO) set.add(h.hospitalId)
-    return set
-  }, [holidays, dateISO])
-  return (hospitalId, name) => (closed.has(hospitalId) ? `${name} · closed` : name)
+  const publicHolidays = useAppStore((s) => s.masters.publicHolidays)
+  const index = useMemo(() => closuresIndex({ hospitalHolidays: holidays, publicHolidays }), [holidays, publicHolidays])
+  return (hospitalId, name) => (dateISO !== undefined && closuresAt(index, dateISO, hospitalId).length > 0 ? `${name} · closed` : name)
 }
 
 export function ConflictCallout({

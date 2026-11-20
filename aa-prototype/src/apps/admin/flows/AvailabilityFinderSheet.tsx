@@ -18,7 +18,7 @@ import { format, parseISO } from 'date-fns'
 import { accent, neutral } from '../../../theme/tokens'
 import type { Session } from '../../../domain/types'
 import { slotIdFor } from '../../../domain/slots'
-import { openSlotViews, useAppStore } from '../../../store'
+import { activeSurgeons, openSlotViews, useAppStore } from '../../../store'
 import { Button, Segmented, SelectField } from '../../../shared/ui'
 import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { AnaesthetistCandidates, useSuggestionKey } from '../components/pairing'
@@ -61,7 +61,8 @@ export function AvailabilityFinderSheet({ open, dateISO, initialSession, onClose
       openSlotViews({ schedule: { slots, lists }, appSettings, masters: { slotStatuses } }, dateISO, session).map((v) => v.slot.anaesthetistId),
     [slots, lists, appSettings, slotStatuses, dateISO, session],
   )
-  const surgeonOptions = useMemo(() => Object.values(surgeons).sort((a, b) => a.name.localeCompare(b.name)), [surgeons])
+  // Active surgeons only (catch-up Phase 42).
+  const surgeonOptions = useMemo(() => activeSurgeons({ masters: { surgeons } }).sort((a, b) => a.name.localeCompare(b.name)), [surgeons])
   const count = candidates.length
 
   return (

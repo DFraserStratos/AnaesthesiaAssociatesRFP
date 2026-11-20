@@ -28,6 +28,9 @@ capture.
 6. Optional check: **Admin → Intake** opens on Matching with one seeded row waiting (Mere Tipene, no
    NHI), and its **PDF lists** tab holds Mr Okafor's list, not yet sent. Hospital files are imported by
    the office; nothing syncs.
+7. Point at the **Synthetic data only** badge in the top bar (it also sits in the Admin side nav, the
+   web top nav and the mobile More card, which reads "All patients, NHIs, Lists and figures are
+   synthetic."): nothing in the prototype is real patient or integration data.
 
 The control panel is the **index**, grouped: **Clock & reset**, **Scenario jumps (S1 to S5)** and
 **Demo actions by screen**. Each scenario jump confirms first, resets the data, applies any extra
@@ -85,9 +88,11 @@ view respectively.
 | Booking detail | `/admin/day/2026-07-21/bookings/<bookingId>` |
 | Conflicts | `/admin/conflicts` (hospital closures only; filters in the URL, e.g. `?hospital=`, `?cleared=1`) |
 | Review queue | `/admin/review` |
+| Events awaiting review | `/admin/review?tab=events` |
 | One List under review | `/admin/review/<listId>` |
 | Invoices | `/admin/invoices` |
 | One invoice document | `/admin/invoices/<invoiceId>` |
+| One credit note | `/admin/credit-notes/<creditNoteId>` (Sarah Mitchell's, from S4 Beat 2b: `CRN0001`) |
 | Billing monitor | `/admin/billing` (filters in the URL: `?problems=1`, `?anaesthetist=34821`, `?hospital=`, `?from=`, `?to=`) |
 | Ledger (the whole ledger) | `/admin/ledger` |
 | Ledger, one anaesthetist | `/admin/ledger/anaesthetists/<anaesthetistId>` (Dr Souter: `34821`) |
@@ -98,6 +103,9 @@ view respectively.
 | Funding tags | `/admin/masters?view=fundingTags` |
 | Recurring bookings | `/admin/masters?view=recurringBookings` |
 | Hospitals & holidays | `/admin/masters?view=hospitals` (List or Calendar) |
+| Public holidays (the master calendar) | `/admin/masters?view=publicHolidays` |
+| Seed load (demo, the developer's one-off load) | `/admin/masters?view=seedLoad` |
+| Go-live load (demo) | `/admin/masters?view=goLive` |
 | Surgeon profile | `/admin/masters/surgeons/<surgeonId>` (Ms A. Reid: `S-REID`) |
 | Surgeon with a PA | `/admin/masters/surgeons/S-DALGETY` (Dr H. Dalgety, Avonhead ENT: Bev, PA) |
 | Anaesthetist record | `/admin/masters/anaesthetists/<anaesthetistId>` (Dr Priya Sharma: `41267`) |
@@ -740,6 +748,45 @@ anaesthetist on a day, one a day; any List goes in it, new or a Draft List for t
 session for availability. Open: who opens one when the office is closed. Its Bookings are billed as on any
 List (our reading; no after-hours pricing).
 
+### Optional aside: Full scale
+
+About 2 minutes, after S2 or whenever an evaluator asks about volume. The full-scale data lives in
+memory only, so move between screens with the Admin side nav, never the address bar or **Direct
+URLs**: a reload returns to the demo data.
+
+- **Click:**
+  - Go to **Admin → Day view**, then **Demo actions → Load full-scale data → Run → Confirm** ("Replaces
+    the current demo data. Reset returns to it.").
+  - Pause on the banner under the top bar, then page the Day view with its pager.
+  - Side nav **Invoices**: page on, or type a generated number such as AA-S-000123 in **Find by invoice
+    number or payer**. Then side nav **Audit**.
+  - Side nav **Billing monitor**, then **Problems only**.
+  - Open the banner's **Timings**.
+  - Close with **Reset → Confirm reset**.
+- **Say:** "This is the whole practice: 85 anaesthetists, twenty thousand sessions across the
+  scheduling horizon and a year of invoices, built in the browser from the same seed. The billing
+  monitor still finds the few Lists that need attention. Each screen shows its render time at demo size
+  and at this size."
+- **Expected:** the banner reads "Full-scale data · 85 anaesthetists · 21,080 sessions over the
+  scheduling horizon (4 months) · 28,268 invoices in the last 12 months · generated in 2.0 s · saving
+  paused. Reset or reload returns to the demo data." (the generation time varies a little). The Day view
+  pages 30 anaesthetists at a time ("Anaesthetists 1 to 30 of 85", 1 of 3), with the same ACTIVE Lists,
+  Draft List strip and Public sessions as at demo size. Invoices page 50 at a time ("Showing 1 to 50 of
+  28,226"). Audit pages 100 at a time, the newest entry **Full-scale data loaded**. The Billing monitor
+  pages anaesthetist groups 20 at a time ("Anaesthetists 1 to 20 of 77": the anaesthetists with a List
+  awaiting approval or authorised); its tiles count everything kept (Awaiting approval 125, Authorised
+  14,345, With problems 18), and **Problems only** shows the 18 problem Lists across 15 anaesthetists. A
+  long group shows 25 Lists, then **Show all N**. The Ledger pages 50 at a time. **Timings** lists each
+  timed screen at demo size and at full size: on the build laptop Day view about 80 to 100 ms (painted
+  about 350 to 400 ms), Invoices about 90 ms, Audit under 25 ms, Review queue and Ledger about 20 to 35
+  ms, the Billing monitor the heaviest at about 200 to 260 ms (painted about 600 to 670 ms), JS heap
+  about 260 to 290 MB; figures vary run to run and by machine. The 14 demo anaesthetists are untouched,
+  so S1 to S5 still run and Dr Souter's figures do not move. If you open a generated Booking: the same
+  three-part stack and the same Contract rules at full size. After Reset the banner goes and saving
+  resumes.
+- **Presenter note:** the Timings panel says it plainly: "Formal performance testing is a
+  Testing-milestone task." Call them sessions, as the app does.
+
 ---
 
 ## S3 · Money end-to-end
@@ -1103,17 +1150,150 @@ actions** on the screen named in its beat.
   stays in balance. Authorising the List (Beat 7) adds the transfer, two payable legs and no
   receivable, to whoever did it.
 
-### Beat 2: post-op addendum
+### Beat 2: an additional invoice, recorded as an event
 
 - **Click:**
-  - Go to **Admin Day view → Tue 14 Jul → Dr Priya Sharma's AM List → Sarah Mitchell**.
-  - Open **Demo actions → Stage post-op scenario → Run** (it shows only for this List).
-  - Select **Add post-op event**.
-  - Pause on the new addendum Booking.
-- **Say:** "A later pain consult or ward review can create another charge. The original authorised Booking
-  stays immutable; the addendum is a new linked Booking with its own submit, authorise and bill cycle."
-- **Expected:** a new addendum Booking; the original stays locked. The addendum sits on a List created
-  in Dr Sharma's free Tue 21 PM session (interim until additional invoices replace the addendum).
+  - Go to **Admin Day view → Tue 14 Jul → Dr Priya Sharma's AM List**
+    (`/admin/review/L-41267-2026-07-14-AM`), then **Demo actions → Stage post-op scenario → Run**
+    ("Authorised and billed. Open Sarah Mitchell's Booking and use Create additional invoice on the
+    Procedure's Contract row.").
+  - Open **Sarah Mitchell** (`/admin/day/2026-07-14/bookings/BK0032`). Her original invoice is
+    AA-2026-0003 (Christchurch Public; Riley's prepayment took AA-2026-0002 in Beat 1).
+  - On the Paid by row (the Procedure's Contract row), select **Create additional invoice**. The dialog
+    reads "Additional invoice · Sarah Mitchell · Appendicectomy, laparoscopic" and "Additional to
+    AA-2026-0003". Add the line "Post-op ward review, Wed 15 Jul, 15 min", 1 x $30.00 (subtotal $30.00,
+    GST $4.50, total $34.50). Keep **Same as the original invoice (Christchurch Public)** ticked and
+    select **Save for review**. The row appears under the Procedure in Events: Awaiting review,
+    Raised by the office.
+  - Go to **Admin Review → Events** (`/admin/review?tab=events`; the side nav's Review count includes
+    events), open the row and its review sheet, and select **Approve for billing** ("Approved. Invoiced
+    in the next billing run.").
+  - Go to **Billing monitor**: the panel **Waiting for the next billing run** lists it. Open **Demo
+    actions → Run the next billing run** ("Billing run done: 1 additional invoice raised
+    (AA-2026-0004)."). The monitor row says "+1 additional invoice".
+  - Open the new invoice: it reads "Additional invoice · relates to AA-2026-0003 · Appendicectomy,
+    laparoscopic", with its own pair and Xero pair. Open the original: its rail now has an **Additional
+    invoices** card. On **Invoices**, the Kind column reads Additional, with "Additional to
+    AA-2026-0003" under the number.
+- **Say:** "A ward review the day after surgery does not reopen the Booking. The office, or the
+  anaesthetist on their own Procedure, records it as an event: a free-form invoice to whoever should
+  pay. It goes through the same review step as everything else and is invoiced in the next run, with
+  its own number, its own receivable and payable and its own Xero pair, linked both ways. Everything
+  that happens to a Procedure after setup shows in one place, its events."
+- **Expected:** the event under the Procedure moves from Awaiting review to Approved to Invoiced; the
+  additional invoice (AA-2026-0004 when Sarah's is the only approved event) with its link back; the
+  original, AA-2026-0003, unchanged and still locked. The seeded David Chen event (EV0001) also sits in
+  the Events tab: if both are approved and run, David Chen's takes AA-2026-0004 and Sarah's
+  AA-2026-0005 (event id order), and Beat 3's numbers move on one. The Admin Booking total panel shows an **Events** row and "ex GST ·
+  GST $x" (every invoice-ticked event counts, ex GST with GST beside).
+- **Aside (handset, the anaesthetist's own route):** Dr Souter (the anaesthetist apps are hers) searches
+  "Chen" and opens David Chen's Mon 22 Jun Booking. Events shows "Additional invoice", Tue 23 Jun,
+  "Post-op ward review, Tue 23 Jun, 20 min", $85.00 ex GST, "Raised by you · St George's", Awaiting
+  review, with **Edit** and **Remove**; **Raise additional invoice** on the Contract row opens a bottom
+  sheet with the same form. On the PWA, **Demo → Office reviews this additional invoice** approves and
+  invoices it ("Approved by the office and invoiced in the next billing run (AA-2026-00nn).", the next number). Say:
+  "After a prepaid or fixed-price procedure nothing is billed automatically; if the work ran long, the
+  anaesthetist raises an additional invoice by hand, right here."
+
+### Beat 2b: credit in full and rebill
+
+- **Click:**
+  - Open Sarah Mitchell's original invoice, **AA-2026-0003** (`/admin/invoices/INV0003`; Christchurch
+    Public, 9 units at $23.00, $207.00 plus GST $31.05, total $238.05). Its rail has a **Correct this
+    invoice** card: "For an AA-side error, less work than expected or a split requested by the billable
+    party. The invoice is never edited: it is credited in full and new invoices are issued." Select
+    **Credit in full and rebill**.
+  - The sheet reads "Credit in full and rebill AA-2026-0003" and "The invoice is credited in full.
+    Nothing on it is edited." Under **1 Credit**, the credit note goes to "Same as the original invoice
+    (Christchurch Public)"; choose the reason **Wrong amount**. **What happens to the money** reads
+    "Unpaid: nothing held.", "Dr Sharma's payment is reversed: a negative invoice for $238.05, offset
+    against the unpaid payable." and "A credit note is not a refund."
+  - Under **2 New invoices**, New invoice 1 already holds a copy of the original's lines:
+    "Appendicectomy, laparoscopic", 1 x $207.00. Correct the line: the amount to **$184.00** (Time 3
+    units, not 4: 8 units at $23.00); the totals read $184.00, GST $27.60, total $211.60. What can be
+    corrected is a line, the invoice description, or the approval number on the Booking; never quote
+    HNZ-2026-3102 or a purchase order, which do not exist. **On issue** reads Debit AA-2026-0003
+    $238.05, Credit "Credit note, numbered on issue" $238.05, Contra "Negative invoice to Dr Sharma,
+    numbered on issue" $238.05, Debit "New invoice to Christchurch Public" $211.60. Select **Save for
+    review**.
+  - The original now reads **Credit waiting for review** ("A credit for this invoice is waiting for
+    review."). Sarah's Booking Events shows two new rows, Raised by the office, Awaiting review: Credit,
+    $207.00 ex GST, "Credits AA-2026-0003 in full · Wrong amount", and Additional invoice, $184.00 ex
+    GST, "Rebill of AA-2026-0003 · Appendicectomy, laparoscopic".
+  - **Admin Review → Events**: the Credit row ("Credit AA-2026-0003 in full, 1 new invoice", Wrong
+    amount, $207.00) with its New invoice row ($184.00) under it. Open it: the review sheet "Credit ·
+    Sarah Mitchell" shows the money, the new invoice and its totals. Select **Approve for billing**
+    ("Approved · issued in the next billing run").
+  - **Billing monitor**: **Waiting for the next billing run** lists both. **Demo actions → Run the next
+    billing run** ("Billing run done: 1 credit note and 1 additional invoice raised (CN-2026-0001,
+    AA-2026-0005).").
+  - Open the original: it reads **Credited**, with "Credited in full by CN-2026-0001 on Tue 21 Jul 2026 ·
+    rebilled as AA-2026-0005". Open **CN-2026-0001** (`/admin/credit-notes/CRN0001`): "CREDIT NOTE
+    CN-2026-0001 · Credits AA-2026-0003 in full", credit to Christchurch Public, reason Wrong amount,
+    raised by the office, "Credit: Appendicectomy, laparoscopic" $207.00, GST $31.05, **Total credited
+    $238.05**. Its rail: **Negative invoice** "CN-2026-0001-P to Dr Sharma · $238.05 · offset against
+    the unpaid payable", **New invoices** AA-2026-0005 $211.60, and Xero "ACCRECCREDIT CN-2026-0001 ·
+    Draft ACCPAY voided".
+  - Open the rebill, **AA-2026-0005**: "Rebills AA-2026-0003 (credited by CN-2026-0001)", $184.00, GST
+    $27.60, total $211.60. Sarah's Booking Events now reads Credit **Issued** CN-2026-0001 and Additional
+    invoice **Invoiced** AA-2026-0005.
+  - Optionally the **Xero sim** (`/demo/xero/invoices/XR0002`): AA-2026-0003 Credited, the **Credit
+    notes** card (ACCRECCREDIT CN-2026-0001, total $238.05, allocated $238.05, unallocated $0.00, "Draft
+    ACCPAY voided. The draft bill was voided: nothing had been authorised to pay."), **New pairs**
+    AA-2026-0005, and the ACCPAY AA-2026-0003-P reading Voided.
+- **Say:** "We never edit an issued invoice. We credit it in full, to whichever party needs it, and
+  rebill, starting from a copy of the original lines. The credit is an event on the Procedure like any
+  other, through the same review step. The credit always reverses the anaesthetist's payable, by a
+  negative invoice, and both sides move together, in our ledger and in Xero. Nothing is ever credited
+  automatically: a person decides."
+- **Expected:** the credit note CN-2026-0001 ($238.05), the original AA-2026-0003 Credited, and the
+  rebill with a new number, AA-2026-0005 ($211.60). On **Invoices**, CN-2026-0001 reads Kind Credit
+  note with "Credits AA-2026-0003", AA-2026-0003 reads "Credited", and AA-2026-0005 reads "Rebills
+  AA-2026-0003". The Ledger reads "In balance · receipts held equal payables due", with **Credits held
+  for payers** and **Negative invoices to net** both $0.00 (nothing had been paid). The rebill takes
+  AA-2026-0005, so Beat 3's numbers move on one.
+- The three asides take numbers too. The figures below are as run straight after Beat 2b; run there,
+  the split moves Beat 3's and Beat 5's numbers on four (the paid-out aside raises only a credit note).
+  Otherwise run them at the end of S4, where they take the next free numbers.
+- **Aside (paid-out case):** on the **Billing monitor**, **Demo actions → Stage refund after payout →
+  Run** ("Paid in full and paid out to Dr Sharma in Xero. Credit it to see the negative invoice."; after Beat
+  2b it pays the rebill, AA-2026-0005). Open it, **Credit note**, reason Wrong amount: the money reads
+  "Paid $211.60: $211.60 will be held for Christchurch Public." and "Dr Sharma was paid $211.60: a
+  negative invoice for $211.60 nets in their next payment run."; no new invoice ("No new invoice. The
+  credit stands alone unless you add one."). Save, approve and run: CN-2026-0002, its negative
+  invoice "CN-2026-0002-P to Dr Sharma · $211.60 · $211.60 nets in the next payment run", and the
+  Ledger's Credits held for payers and Negative invoices to net both $211.60, still in balance. Say:
+  "Once the anaesthetist has been paid, the negative invoice is netted in their next weekly payment
+  run." (39a adds the netting beat.)
+- **Aside (split):** on **Admin · Invoices**, **Demo actions → Stage combined procedure → Run**
+  ("Staged: a billed Merivale combination. Open its invoice and use Split into additional invoices.",
+  with its link, AA-2026-0006 here, AA-2026-0002 from a reset): Lorraine Petrie on Dr Delaney's Fri 10
+  Jul PM List at Forte, "Facelift plus 2 add ons (eg bleph & fat grafting)", $3,700.00 ex GST
+  ($4,255.00). Select **Split into additional invoices**: the reason is already "Split requested", and
+  two new invoices to start; **Add an invoice** for a third. Type Facelift $2,400 and Blepharoplasty
+  $800, then Fat grafting: **Left to allocate** reads $500.00 and submit stays off; **Put the rest on
+  this invoice** fills $500.00 ($575.00 with GST), Left to allocate reads **$0.00**, and **Save 3
+  invoices for review** turns on. Approve and run: "Billing run done: 1 credit note and 3 additional
+  invoices raised (CN-2026-0003, AA-2026-0007, AA-2026-0008, AA-2026-0009)." (CN-2026-0002 without the
+  paid-out aside). The original reads "Credited in full by CN-2026-0003 on Tue 21 Jul 2026 · replaced
+  by AA-2026-0007, AA-2026-0008, AA-2026-0009"; the first piece reads "Additional invoice · part 1 of 3
+  · replaces AA-2026-0006 · Facelift, upper blepharoplasty and fat… (credited by CN-2026-0003)",
+  $2,760.00. Say: "The patient wants the facelift bundle in three pieces. We credit the bundle and raise
+  three invoices. The office splits the amount however it needs, but the pieces must add up to what was
+  credited. If it hasn't gone out yet, the office just edits it."
+- **Aside (the anaesthetist):** on web or the handset as Dr Souter, search "Chen" and open David Chen's
+  Mon 22 Jun Booking (`/web/lists/L-HIST-03/bookings/HBK03`). On the Contract row, **Credit note** sits
+  beside **Raise additional invoice**. The sheet names AA-2026-H03, St George's, $452.61 ex GST; it
+  offers only Less work than expected, Wrong billable party and Paid twice, and reads "Your payment for
+  this invoice is reversed." and "A credit note is not a refund.", with no money panel or trail. Choose
+  **Less work than expected**, **Add an invoice**, "Hip hemiarthroplasty" at $380.00, then **Save for
+  review** ("The office reviews it, then it is issued in the next billing run."). Events shows Credit,
+  $452.61 ex GST, "Credits AA-2026-H03 in full · Less work than expected", and Additional invoice,
+  $380.00 ex GST, "Rebill of AA-2026-H03 · Hip hemiarthroplasty", both Raised by you · St George's,
+  Awaiting review, with **Edit**. Say: "The anaesthetist can do this on their own procedure too. It goes
+  to the office's review like everything else." On the PWA, **Demo → Office reviews this credit**
+  ("Approved by the office and issued in the next billing run (CN-2026-0001).", from a reset; the next
+  number otherwise): the Credit reads Issued and the new invoice Invoiced.
 
 ### Beat 3: billing failure and retry
 
@@ -1125,7 +1305,7 @@ actions** on the screen named in its beat.
     blocks only its own invoice, never the rest of the list."), the four tiles (Awaiting approval,
     Authorised, With problems, Payables due) and the filter bar (Anaesthetist, Hospital, From, To).
   - Turn on **Problems only** (in the filter bar, or select the **With problems** tile).
-  - In the **Xero sync queue** panel, on the row **Hand off AA-2026-0003**, select **Retry now**.
+  - In the **Xero sync queue** panel, on the row **Hand off AA-2026-0006**, select **Retry now**.
   - Optional: on any group, a List still awaiting approval has **Open in Review**; Review opens with
     **Back to Billing monitor**, which returns with the filters kept. There is no Authorise button on
     the monitor.
@@ -1144,13 +1324,14 @@ actions** on the screen named in its beat.
   **Handed off**, and the List is not failed. The queue row reads 1 attempt, next try 08:02, "Xero
   rejected the call (simulated fault)", Waiting; the Xero line above the tiles reads "Connected · 1
   waiting for their next try", and the Ledger's **Not yet in Xero** tile counts her pair until the
-  retry. **Retry now** hands hers off once ("Hand off AA-2026-0003: sent to Xero.", and **Sent after
+  retry. **Retry now** hands hers off once ("Hand off AA-2026-0006: sent to Xero.", and **Sent after
   waiting (1)**): her row reads **Handed off** and her Xero pair appears, with no duplicate invoice.
   The filter then reads "0 lists" and "No problems. Every authorised list has billed, been sent and
-  reached Xero." Her invoice (AA-2026-0003, Canterbury Orthopaedic Surgeons, $303.60) and Hemi
-  Walker's (AA-2026-0004, St George's, $221.38) are unchanged. No Contract changes. Left alone, the
+  reached Xero." Her invoice (AA-2026-0006, Canterbury Orthopaedic Surgeons, $303.60) and Hemi
+  Walker's (AA-2026-0007, St George's, $221.38) are unchanged. No Contract changes. Left alone, the
   queue retries it itself when the clock moves on. (The numbers follow Riley's prepayment invoice,
-  AA-2026-0002, raised in Beat 1; skip that approve and they are AA-2026-0002 and AA-2026-0003.)
+  AA-2026-0002, raised in Beat 1, and Beat 2's Sarah Mitchell, AA-2026-0003, and her additional invoice,
+  AA-2026-0004, and Beat 2b's rebill, AA-2026-0005; each beat skipped moves them back one.)
 
 ### Beat 4: the unmatched queue
 
@@ -1207,13 +1388,13 @@ actions** on the screen named in its beat.
   rest stays outstanding on the invoice. The payment to the anaesthetist is made in Xero; we record and
   track it. Two payables runs across a part-then-balance payment prove there is no double payment."
 - **Expected:** the payable authorises exactly the amount received; the panel lists it ("1 payable due
-  · $110.69", Dr Ropata, AA-2026-0004, bill AA-2026-0004-P). **Run payables in Xero** empties the list
+  · $110.69", Dr Ropata, AA-2026-0007, bill AA-2026-0007-P). **Run payables in Xero** empties the list
   ("No payables are awaiting the payables run.") with "Xero paid 1 bill ($110.69); the Billing Engine
   recorded 1 disbursement from the bill-paid webhooks.": each disbursement is recorded as Xero reports
   the bill paid. Each run pays exactly what arrived, and the total paid out equals the invoice total,
   never more. The Ledger's Payables due rises with
   each part payment and returns to $0.00 after each run: $110.69 after the half (Hemi Walker's
-  AA-2026-0004, $221.38), $0.00 after the first run, $110.69 after the rest, $0.00 after the second.
+  AA-2026-0007, $221.38), $0.00 after the first run, $110.69 after the rest, $0.00 after the second.
 
 ### Beat 6: The date approaches
 
@@ -1364,6 +1545,12 @@ and a Contract changed after sending is handled as a cancellation, built in Phas
 prepayment invoice per payer, each payer locked once theirs is raised, is built from Donald's answer and
 not yet discussed with AA (OQ-140); a prepaid Contract always billing the Procedure's payer is a working
 reading awaiting AA's confirmation (OQ-73).
+For the additional invoice beat (Beat 2): the name "event" is provisional (Greg was unconvinced); the
+billing rule (an event is billed in the next run after review, never held for the Procedure's invoice,
+bundled with the same party's invoice where the run has one, else its own; an additional invoice is
+always its own) is Donald's answer for the build (OQ-121, 4 November), not yet seen by AA; and the
+prototype's next billing run is a button where the real one is scheduled. Ben's answer (OQ-96): a rare
+difference on a prepaid procedure is a second invoice raised by hand, which this beat shows.
 
 ---
 
@@ -1443,11 +1630,48 @@ Xero sim**.
   - Open **Demo: Billing Monitor & Xero**.
   - Pause on the **No personal information in Xero** callout, then the **Contacts** tab: patient and
     guardian contacts are named only by their hidden ID ("Patient PT0017", "Billable party BP0001").
+  - Open **Demo: Data Inspector** (`/demo/data`) and pause on its **Privacy checks** panel. **Demo
+    actions → Scan for NHI leaks → Scan now → Run**; then run it again with **Scan with a planted test
+    leak (proves the scan finds one)**.
 - **Say:** "No personal information goes into Xero: no NHI and no patient name, only a hidden
   internal ID that links each transaction back to the billing system. AA confirmed this rule."
+- **Say:** "AA's rule is no personal information in Xero. We do not just avoid sending it; we check
+  the Xero records for any NHI or patient detail, and the diagnostic log, error messages and failure
+  reasons for anything that looks like an NHI."
 - **Expected:** the callout states the confirmed rule (no RFP-contradiction callout), and no patient
   or guardian name shows on any Xero contact or record; hospitals, insurers and the anaesthetist
-  payees keep their names.
+  payees keep their names. **Scan now** reads "Scanned 3 areas and 170 items in 5 ms. No NHI outside
+  the core platform, and no personal details in Xero." (the time varies): **0 found** in each area
+  (Xero, checked for NHIs and personal details; Diagnostic log; Failure reasons), and **Held by
+  design** beside Patients, Bookings, Hospital rows and Audit trail. The planted choice reads "One hit
+  found, the planted test line.": one masked hit in **Diagnostic log (planted test line)** (ZBC••••),
+  every other area still 0. After the Full scale aside's load, the same scan covers about 114,500 items
+  in under a second and finds none.
+
+### Beat 3a (optional): restricted raw data
+
+- **Click:**
+  - Go to **Admin → Intake → Matching** and open Mere Tipene's row (the seeded row waiting for its
+    NHI). Point at "Only the fields needed to match are shown. The rest of what the hospital sent is
+    held under restricted access."
+  - Select **View raw row**, pick the reason **Find why this row did not match** (or **Check what the
+    hospital sent**, **Hospital asked us to confirm a value**, or type one), then **View raw row**.
+    Pause on the masked sheet, then **Close**.
+  - Close the row panel (it covers the top bar), then **Demo actions → View raw row as another role**,
+    choose **As Dr Melanie Souter (anaesthetist)** (or **As the hospital feed (integration)**) **→ Run**.
+  - Optional: **Audit**, Entity type **importRow**.
+- **Say:** "The office sees what it needs to fix the row. The rest of what the hospital sent is
+  restricted, masked and every view is recorded with a reason."
+- **Expected:** View raw row stays disabled until a reason is given ("Give a reason first."). The sheet
+  reads "Mere Tipene · Restricted. Viewing is recorded with your reason." and "Masking policy is for AA
+  to agree.", and shows the row as the hospital sent it with identifiers masked: the hospital patient
+  number and phone as their last three digits (•••017), the date of birth as the year only (1981-••-••),
+  the address as its suburb (•••, Ilam), the email as its domain (•••@example.net), the next of kin as
+  initials (J. T.); her NHI is blank (an NHI shows as its first three characters, then dots). The panel
+  then reads "Raw row viewed once · last Kirsty W. 08:00". The other role is refused: "Refused: only
+  office staff can view a raw hospital row (Mere Tipene's row). The attempt is in the audit trail."
+  Audit shows **Raw row view refused** (Dr Melanie Souter, anaesthetist) above **Raw row viewed**
+  (Kirsty W., with the reason), and no values from the row.
 
 ### Beat 4: Contract history and the invoice recipe
 
@@ -1498,6 +1722,38 @@ Xero sim**.
   **identical (2 lines, total $365.70)**; Hemi Walker's ACTIVE Booking reads **13 units x $28.00 =
   $364.00** (it was $344.50). **Reset → Confirm reset** afterwards (or jump S5 again).
 
+### Optional Beat 5: Controlled master data and a clean-cut go-live
+
+About 2 minutes.
+
+- **Click:**
+  - Go to **Admin → Master data → Seed load** (`/admin/masters?view=seedLoad`), then **Demo actions →
+    Load sample spreadsheet → contracts.csv → Run** ("contracts.csv checked: 4 rows valid, 5 rejected.
+    Open Master data, Seed load, and press Load."). Point at the rejected rows, each with its reason
+    (the prepaid Septoplasty priced from RVG units, the Open price cataract row), and the blank cells
+    (not set, never zero), then **Load 4 valid rows**.
+  - **Demo actions → Go-live data load (demo) → Run**, then **Master data → Go-live load**
+    (`/admin/masters?view=goLive`). Point at **10% discount** excluded as junk, the struck-through
+    Solutions Plus units (**Not used**) and the matching Contract beside each approved name.
+  - **Unapprove** one approved name (Laparoscopic cholecystectomy), then **Load approved data**. Then
+    open **Contracts** and the loaded Contract: any later edit saves in place and is audited, and a new
+    price is a new price range.
+- **Say:** "AA starts clean. A developer seeds the empty system once from AA's own controlled
+  spreadsheets: hospitals, surgeons with their specialties and practice names, anaesthetists, RVG
+  groups with their base units, modifiers, Parties, Contracts one per priced item with their price
+  ranges, and the calendars. Every row is checked with the same rules as adding it by hand, and
+  anything that fails is listed and left out. After that, the office keeps it all by hand on these
+  screens, and every change is audited. Solutions Plus gives us names, not numbers. And because it is
+  a spreadsheet, the same load runs again into a test system."
+- **Expected:** the Go-live data load message reads "Go-live load prepared: 14 Solutions Plus names
+  (5 excluded as junk, 2 not approved) and 6 controlled spreadsheets. Open Master data, Go-live
+  load." Junk cannot be approved. With the one name unapproved, the load makes 3 surgeons, 1 RVG
+  group, 1 Party, 4 Contracts (5 had every approved name stayed) and 4 public holidays, and 11
+  Solutions Plus entries are not loaded (10 otherwise). Nothing comes across because it exists in
+  Solutions Plus. The office never loads master data: there is no "Load from spreadsheet" on its
+  views, and no Contract upload or export in the first release (Future Work). **Reset → Confirm reset**
+  (or jump S5 again) to run it a second time.
+
 **Worth pointing at (optional):** **Admin → Master data → Contracts**: Merivale's three combination
 Contracts (search **H3**: Face lift, Facelift plus 1 add on, Facelift plus 2 add ons, each its own
 Contract; fee extras are events, not Contracts), and Dr Souter's own prepaid price list (holder **Dr
@@ -1509,19 +1765,23 @@ are separate rows; H4 reads **10 · range 10 to 12**. Add a group, then edit, re
 each change is in **Admin → Audit** (entity type **rvgGroup**).
 
 **Discovery points:** the RVG groups are seeded as published with AA's own rows beside them (demo-sized;
-the full set loads at go-live), and the same code can sit on several rows, told apart by description and
+at go-live, the RVG groups load once from AA's controlled spreadsheet), and the same code can sit on several rows, told apart by description and
 base units; the RVG code on a Procedure is optional, picked by type-ahead; a ranged group holds its
 published range, shown to the anaesthetist, and starts at its lower figure (OQ-101); the RVG modifier
 table as printed (values that are not plain numbers are entered at capture); only the age and included
 modifiers are pre-applied and nothing else is pre-filled (settled, Ben, 27 October); the age bands are
-settled (OQ-95 answered, D29); modifiers stack with no limit; AA's own modifiers (Vanessa's list) are not yet
-loaded; which Procedure is primary (Vanessa: the most expensive; Greg: the first in the list; the
+settled (OQ-95 answered, D29); modifiers stack with no limit; AA's own modifiers are master data the office edits, retires and
+reinstates; which Procedure is primary (Vanessa: the most expensive; Greg: the first in the list; the
 build keeps the first until someone changes it); base units when the primary is on a fixed price (OQ-132:
 the build bills none); and concurrency: the office saves explicitly and every save is one change set;
 handling two sources editing at once is Future Work with the automated integrations (US-02.5.6), and
 the prototype applies each save in order, audited. Settled: the update email is drafted on demand and
 sent by hand from the office's own mail client in the first release, automatic sending later (OQ-82,
-US-02.3.5).
+US-02.3.5). Master data: whether surgeon rows with no title or surname should load (OQ-143) (a
+surgeon with no HPI CPN loads, OQ-129 answered); and whether recurring bookings join the seed
+spreadsheets (US-13.4.3's calendar schedules). Settled if asked: a Contract schedule upload is Future
+Work (OQ-100, answered 5 November), and master data loads once at go-live, then is kept by hand
+(US-13.4.3).
 
 ---
 
@@ -1536,9 +1796,6 @@ US-02.3.5).
 
 ## What to narrate rather than click
 
-- The full four-month scale and the production population of about 85 anaesthetists.
-- The roughly 28,000 annual invoices and Xero active-contact volume (the archive job reduces a seeded
-  aggregate counter to make the point).
 - Health NZ's FHIR-first policy and real OAuth/Keycloak setup.
 - Real email, Xero and hospital integrations: the prototype simulates them in-browser. A PDF list's
   reading is simulated from sample files (no OCR is built, and nothing reads the mailbox); the office

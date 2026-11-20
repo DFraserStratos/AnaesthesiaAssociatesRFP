@@ -1,6 +1,322 @@
 {
   "id": "US-08.6.4",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 39 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "split-combined",
+      "app": "admin",
+      "caption": "A split after invoicing credits the original, then raises one additional invoice per component",
+      "start": "/admin/invoices",
+      "states": [
+        {
+          "state": "button",
+          "caption": "Split into additional invoices, on the combined Procedure's invoice",
+          "steps": [
+            {
+              "trigger": "stage-combined-procedure"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Lorraine Petrie\") >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=split-combined-rail-button]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=split-combined-rail-button]"
+          ]
+        },
+        {
+          "state": "sheet",
+          "caption": "A split after invoicing credits the original, then raises one additional invoice per component",
+          "steps": [
+            {
+              "trigger": "stage-combined-procedure"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Lorraine Petrie\") >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=split-combined-rail-button]"
+            },
+            {
+              "click": "[data-shot=split-combined-rail-button]"
+            },
+            {
+              "wait": "[data-shot=split-combined-sheet]"
+            },
+            {
+              "fill": "[data-shot=split-component] >> nth=0 >> input[data-shot=line-description]",
+              "value": "Facelift"
+            },
+            {
+              "fill": "[data-shot=split-component] >> nth=0 >> input[data-shot=line-amount]",
+              "value": "2000"
+            },
+            {
+              "fill": "[data-shot=split-component] >> nth=1 >> input[data-shot=line-description]",
+              "value": "Blepharoplasty"
+            },
+            {
+              "fill": "[data-shot=split-component] >> nth=1 >> input[data-shot=line-amount]",
+              "value": "1000"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=split-component] >> nth=1 >> [data-shot=split-put-rest]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=split-combined-sheet]"
+          ]
+        },
+        {
+          "state": "left-to-allocate",
+          "caption": "The components must add up to the credited amount; each amount is entered freely",
+          "steps": [
+            {
+              "trigger": "stage-combined-procedure"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Lorraine Petrie\") >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=split-combined-rail-button]"
+            },
+            {
+              "click": "[data-shot=split-combined-rail-button]"
+            },
+            {
+              "wait": "[data-shot=split-combined-sheet]"
+            },
+            {
+              "fill": "[data-shot=split-component] >> nth=0 >> input[data-shot=line-description]",
+              "value": "Facelift"
+            },
+            {
+              "fill": "[data-shot=split-component] >> nth=0 >> input[data-shot=line-amount]",
+              "value": "2000"
+            },
+            {
+              "fill": "[data-shot=split-component] >> nth=1 >> input[data-shot=line-description]",
+              "value": "Blepharoplasty"
+            },
+            {
+              "fill": "[data-shot=split-component] >> nth=1 >> input[data-shot=line-amount]",
+              "value": "1000"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=split-allocation]"
+          ]
+        },
+        {
+          "state": "allocated",
+          "caption": "Left to allocate at $0.00: the components add up to the credited invoice",
+          "steps": [
+            {
+              "trigger": "stage-combined-procedure"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Lorraine Petrie\") >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=split-combined-rail-button]"
+            },
+            {
+              "click": "[data-shot=split-combined-rail-button]"
+            },
+            {
+              "wait": "[data-shot=split-combined-sheet]"
+            },
+            {
+              "fill": "[data-shot=split-component] >> nth=0 >> input[data-shot=line-description]",
+              "value": "Facelift"
+            },
+            {
+              "fill": "[data-shot=split-component] >> nth=0 >> input[data-shot=line-amount]",
+              "value": "2000"
+            },
+            {
+              "fill": "[data-shot=split-component] >> nth=1 >> input[data-shot=line-description]",
+              "value": "Blepharoplasty"
+            },
+            {
+              "fill": "[data-shot=split-component] >> nth=1 >> input[data-shot=line-amount]",
+              "value": "1000"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=split-component] >> nth=1 >> [data-shot=split-put-rest]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=split-allocation]"
+          ]
+        },
+        {
+          "state": "payable",
+          "caption": "The credit reverses the linked payable to the anaesthetist",
+          "steps": [
+            {
+              "trigger": "stage-combined-procedure"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Lorraine Petrie\") >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=split-combined-rail-button]"
+            },
+            {
+              "click": "[data-shot=split-combined-rail-button]"
+            },
+            {
+              "wait": "[data-shot=split-combined-sheet]"
+            },
+            {
+              "scroll": "[data-shot=split-combined-sheet] [data-shot=credit-money-state]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=split-combined-sheet] [data-shot=credit-money-state]"
+          ]
+        },
+        {
+          "state": "result",
+          "caption": "Each component is its own additional invoice, linked to the credited original and the Procedure",
+          "steps": [
+            {
+              "trigger": "stage-combined-procedure"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Lorraine Petrie\") >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=split-combined-rail-button]"
+            },
+            {
+              "click": "[data-shot=split-combined-rail-button]"
+            },
+            {
+              "wait": "[data-shot=split-combined-sheet]"
+            },
+            {
+              "fill": "[data-shot=split-component] >> nth=0 >> input[data-shot=line-description]",
+              "value": "Facelift"
+            },
+            {
+              "fill": "[data-shot=split-component] >> nth=0 >> input[data-shot=line-amount]",
+              "value": "2000"
+            },
+            {
+              "fill": "[data-shot=split-component] >> nth=1 >> input[data-shot=line-description]",
+              "value": "Blepharoplasty"
+            },
+            {
+              "fill": "[data-shot=split-component] >> nth=1 >> input[data-shot=line-amount]",
+              "value": "1000"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=split-component] >> nth=1 >> [data-shot=split-put-rest]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=split-combined-sheet] [data-shot=credit-submit]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr:has([data-shot=review-credit-row]) >> nth=0"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            },
+            {
+              "click": "[data-shot=event-review-approve]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "trigger": "run-next-billing-run"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": "[data-shot=invoice-list-standing]"
+            },
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has([data-shot=invoice-list-standing][data-standing=credited]) >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-credited-banner]"
+            },
+            {
+              "click": "[data-shot=invoice-credited-banner] a:has-text(\"AA-2026-\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-split-part]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-split-part]"
+          ]
+        }
+      ]
+    }
+  ]
 }

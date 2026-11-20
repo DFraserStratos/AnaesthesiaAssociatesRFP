@@ -9,8 +9,10 @@
 import { FUNDER_PARTY_KINDS } from '../domain/billing/fundingTags'
 import type { DeliveryMethod, Party, PartyKind } from '../domain/types'
 import { partyRefusal } from '../domain/billing/parties'
-import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
+import { allocateId, mutate, ok, refuse, type Actor, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
+import { retiredRefusal } from './masterLifecycleActions'
+import { slicesOf, withSource, type Plan, type PlanSource } from './masterPlanners'
 
 /** What the office types for a Party. Blank optional fields are cleared. */
 export interface PartyFields {
@@ -63,8 +65,15 @@ function cleanParty(id: string, fields: PartyFields): Party {
 
 /** Add a Party. Audited `party.create`. It holds nothing, so it needs no billing details yet (A43). */
 export function createParty(api: AppStoreApi, actor: Actor, fields: PartyFields): Outcome<{ party: Party }> {
+  const plan = planPartyCreate(api.getState(), actor, fields)
+  if (!plan.ok) return plan
+  mutate(api, actor, plan.value.metas, () => plan.value.next)
+  return ok({ party: plan.value.party })
+}
+
+/** Plan a Party's create (the seed load folds the same planner). */
+export function planPartyCreate(state: AppState, actor: Actor, fields: PartyFields, source?: PlanSource): Outcome<Plan & { party: Party }> {
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can add a Party.')
-  const state = api.getState()
   const draft = cleanParty('', fields)
   const refused = partyRefusal(draft, {
     parties: state.masters.parties,
@@ -73,18 +82,16 @@ export function createParty(api: AppStoreApi, actor: Actor, fields: PartyFields)
     billedByAContract: false,
   })
   if (refused !== null) return refuse(refused.code, refused.message)
-
-  let created: Party | undefined
-  const metas: MutationMeta[] = []
-  mutate(api, actor, metas, (s) => {
-    const alloc = allocateId(s.counters, 'party')
-    const party: Party = { ...draft, id: alloc.id }
-    created = party
-    metas.push({ entityType: 'party', entityId: party.id, action: 'party.create', after: { ...party }, stampBookingId: null })
-    return { masters: { ...s.masters, parties: { ...s.masters.parties, [party.id]: party } }, counters: alloc.counters }
+  const retired = retiredRefusal(state.masters, { hospitalId: draft.hospitalId })
+  if (retired !== null) return retired
+  const alloc = allocateId(state.counters, 'party')
+  const party: Party = { ...draft, id: alloc.id }
+  return ok({
+    id: party.id,
+    party,
+    next: { ...slicesOf(state), masters: { ...state.masters, parties: { ...state.masters.parties, [party.id]: party } }, counters: alloc.counters },
+    metas: withSource([{ entityType: 'party', entityId: party.id, action: 'party.create', after: { ...party }, stampBookingId: null }], source),
   })
-  if (created === undefined) return refuse('createFailed', 'The Party could not be created.')
-  return ok({ party: created })
 }
 
 /** Edit a Party in place. Audited `party.update` with the changed fields before and after. */
@@ -101,6 +108,8 @@ export function editParty(api: AppStoreApi, actor: Actor, partyId: string, field
     ...partyContractFacts(state, partyId),
   })
   if (refused !== null) return refuse(refused.code, refused.message)
+  const retired = retiredRefusal(state.masters, { hospitalId: next.hospitalId }, { hospitalId: prev.hospitalId })
+  if (retired !== null) return retired
   // A Party a funding tag names stays an insurer or funder (catch-up Phase 18a).
   const namedBy = Object.values(state.masters.fundingTags).find((t) => t.funderPartyId === partyId)
   if (namedBy !== undefined && next.kind !== prev.kind && !FUNDER_PARTY_KINDS.includes(next.kind)) {

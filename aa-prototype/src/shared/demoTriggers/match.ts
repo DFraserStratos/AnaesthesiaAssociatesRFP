@@ -46,6 +46,24 @@ export function demoTriggersFor(
   return out
 }
 
+/**
+ * The Control Panel index: the registry grouped by `screen`, in registry order
+ * within and across groups, then each entry's `alsoScreens` appended to those
+ * groups (a group only an `alsoScreens` names comes last), so an entry that
+ * shows on more than one screen is listed under each.
+ */
+export function groupTriggersByScreen(triggers: readonly DemoTrigger[] = DEMO_TRIGGERS): { screen: string; entries: DemoTrigger[] }[] {
+  const groups: { screen: string; entries: DemoTrigger[] }[] = []
+  const add = (screen: string, t: DemoTrigger) => {
+    const g = groups.find((x) => x.screen === screen)
+    if (g === undefined) groups.push({ screen, entries: [t] })
+    else if (!g.entries.includes(t)) g.entries.push(t)
+  }
+  for (const t of triggers) add(t.screen, t)
+  for (const t of triggers) for (const screen of t.alsoScreens ?? []) add(screen, t)
+  return groups
+}
+
 /** The choice a row starts on: the entry's default if offered, else the first. */
 export function initialChoice(trigger: DemoTrigger, state: AppState, ctx: DemoTriggerCtx): string | undefined {
   const choices = trigger.choices?.(state, ctx)

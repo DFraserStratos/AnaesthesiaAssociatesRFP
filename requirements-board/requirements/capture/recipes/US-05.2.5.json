@@ -1,7 +1,7 @@
 {
   "id": "US-05.2.5",
   "status": "partial",
-  "absentReason": "An additional invoice or credit note by hand is Phases 38b and 39.",
+  "absentReason": "The additional invoice by hand is built (Phase 38b); the credit note by hand is Phase 39's.",
   "shots": [
     {
       "name": "fixed-price",

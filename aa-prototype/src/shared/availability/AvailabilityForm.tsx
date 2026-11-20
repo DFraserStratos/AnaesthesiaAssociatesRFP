@@ -1,11 +1,11 @@
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { accent, neutral, radius } from '../../theme/tokens'
 import type { SlotStatusKey, Weekday } from '../../domain/types'
 import { anaesthetistChoices, activeStatuses, statusFor, type SessionChoice } from '../../domain/slotStatus'
 import { seriesLine, weekdayOf, WEEKDAY_NAMES, WEEKDAYS } from '../../domain/availabilitySeries'
 import { createAvailabilitySeries, setAvailabilityRange, useAppStore, type Actor } from '../../store'
-import { Button, FieldLabel, FormError, Segmented, TextField } from '../ui'
+import { Button, FieldLabel, FormError, OptionChip, Segmented, TextField } from '../ui'
 import { StatusChip } from '../StatusChip'
 import { describeAvailabilityOutcome } from './describeAvailabilityOutcome'
 import { useAvailabilityBounds } from './useAvailability'
@@ -232,7 +232,7 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
           {repeat === 'more' && (
             <div style={{ display: 'flex', gap: 8 }}>
               {([3, 4] as const).map((n) => (
-                <Chip key={n} selected={moreWeeks === n} onClick={() => { touched(); setMoreWeeks(n) }}>Every {n} weeks</Chip>
+                <OptionChip key={n} pressed={moreWeeks === n} onClick={() => { touched(); setMoreWeeks(n) }}>Every {n} weeks</OptionChip>
               ))}
             </div>
           )}
@@ -273,7 +273,7 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
                   placeholder="No end date"
                 />
               </div>
-              <Chip selected={untilISO === null} onClick={() => { touched(); setUntilISO(null) }}>No end date</Chip>
+              <OptionChip pressed={untilISO === null} onClick={() => { touched(); setUntilISO(null) }}>No end date</OptionChip>
             </div>
           </div>
         </>
@@ -290,9 +290,9 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
             <TextField type="date" mono label="To" value={toISO} min={fromISO} max={horizonEndISO} onChange={(v) => { touched(); setToISO(v) }} />
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Chip selected={quickSpan === 'day'} onClick={() => quick('day')}>Just this day</Chip>
-            <Chip selected={quickSpan === 'week'} onClick={() => quick('week')}>1 week</Chip>
-            <Chip selected={quickSpan === 'fortnight'} onClick={() => quick('fortnight')}>2 weeks</Chip>
+            <OptionChip pressed={quickSpan === 'day'} onClick={() => quick('day')}>Just this day</OptionChip>
+            <OptionChip pressed={quickSpan === 'week'} onClick={() => quick('week')}>1 week</OptionChip>
+            <OptionChip pressed={quickSpan === 'fortnight'} onClick={() => quick('fortnight')}>2 weeks</OptionChip>
           </div>
         </div>
       )}
@@ -333,30 +333,4 @@ function dayChipStyle(selected: boolean): CSSProperties {
     fontWeight: 700,
     cursor: 'pointer',
   }
-}
-
-function Chip({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      onClick={onClick}
-      style={{
-        minHeight: 36,
-        padding: '0 14px',
-        borderRadius: radius.pill,
-        border: `1px solid ${selected ? accent.base : neutral.line}`,
-        background: selected ? accent.tint : neutral.surface,
-        color: selected ? accent.pressed : neutral.slate,
-        fontFamily: 'inherit',
-        fontSize: 13,
-        fontWeight: 600,
-        cursor: 'pointer',
-        whiteSpace: 'nowrap',
-        flex: 'none',
-      }}
-    >
-      {children}
-    </button>
-  )
 }

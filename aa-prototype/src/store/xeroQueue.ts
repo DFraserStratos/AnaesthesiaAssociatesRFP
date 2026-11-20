@@ -21,7 +21,8 @@ import { clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outco
 import type { AppStoreApi } from './appStore'
 import { onAppEvent } from './events'
 import { openXeroQueueItems } from './ledgerSelectors'
-import { createTransferJournal, createXeroPair } from './xeroHandoff'
+import { createTransferJournal, createXeroCorrection, createXeroPair } from './xeroHandoff'
+import { flagXeroDivergences } from './xeroDivergenceActions'
 import { receivePayment } from './paymentActions'
 import { recordDisbursement } from './disbursementDetection'
 import { runReconciliationPoll } from './reconciliationPoll'
@@ -75,6 +76,17 @@ function runHandler(api: AppStoreApi, item: XeroQueueItem): string | undefined {
       const payment = t.xeroPaymentId !== undefined ? api.getState().xero.payments[t.xeroPaymentId] : undefined
       if (payment === undefined) return 'The payment is no longer in Xero'
       const out = receivePayment(api, { accRecId: payment.accRecId, amount: payment.amount, idempotencyKey: payment.idempotencyKey, source: 'webhook', atISO: payment.atISO })
+      // A payment that landed in Xero on an invoice the engine has since credited (catch-up Phase 39): never applied to the
+      // ledger; flagged for the office as a divergence, and the sync is done.
+      if (!out.ok && out.code === 'invoiceCredited') {
+        flagXeroDivergences(api)
+        return undefined
+      }
+      return out.ok ? undefined : out.message
+    }
+    case 'correction': {
+      if (t.creditNoteId === undefined) return 'No credit note to send'
+      const out = createXeroCorrection(api, t.creditNoteId)
       return out.ok ? undefined : out.message
     }
     case 'disbursementSync': {
@@ -90,6 +102,12 @@ function runHandler(api: AppStoreApi, item: XeroQueueItem): string | undefined {
         detectedBy: 'webhook',
         payablesRunId: bill.payablesRunId,
       })
+      // A bill Xero paid on a payable the engine has since reversed by a credit (catch-up Phase 39 review): never recorded in
+      // the ledger; flagged for the office as a divergence, and the sync is done (it would otherwise fail for ever).
+      if (!out.ok && out.code === 'pairCredited') {
+        flagXeroDivergences(api)
+        return undefined
+      }
       return out.ok ? undefined : out.message
     }
     case 'poll':

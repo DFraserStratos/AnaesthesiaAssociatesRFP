@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { neutral } from '../../theme/tokens'
 import { useAppStore } from '../../store'
-import { sortAuditNewestFirst } from '../audit'
+import { auditViewerEntries, sortAuditNewestFirst } from '../audit'
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { HistoryTimeline } from './HistoryTimeline'
@@ -82,7 +82,8 @@ export function HistorySheet({ open, entityIds, entityLabels, title, onClose, co
       })
     }
     const cover = (a: (typeof audit)[number]) => a.changeSetId !== undefined && coverSets.has(a.changeSetId) && a.entityType === 'list'
-    return sortAuditNewestFirst(audit.filter((a) => ids.has(a.entityId) || named(a) || cover(a)))
+    // Payments, receipts and disbursements are recorded in Xero, not in History (catch-up Phase 39; US-13.5.2).
+    return sortAuditNewestFirst(auditViewerEntries(audit.filter((a) => ids.has(a.entityId) || named(a) || cover(a))))
   }, [audit, idSet, coverListId])
 
   return (

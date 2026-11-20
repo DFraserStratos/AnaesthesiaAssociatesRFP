@@ -12,7 +12,7 @@ import { PAIRING_LABELS, activeEntryOnSide, pairingSentence } from '../../../../
 import { compareBySurname } from '../../../../domain/surgeons'
 import type { PairingKind, PairingSide } from '../../../../domain/types'
 import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
-import { useAppStore, type Actor } from '../../../../store'
+import { activeSurgeons, useAppStore, type Actor } from '../../../../store'
 import { addPairingPreference } from '../../../../store/officePrivate'
 import { Button, FieldLabel, TextField, useSurface, FormError } from '../../../../shared'
 import { OverlayHeader, SheetActions } from '../../../../shared/surface'
@@ -47,7 +47,7 @@ export function PairingAddSheet({ perspective, subjectId, actor, onClose }: Prop
   const counterparts = (
     perspective === 'surgeon'
       ? Object.values(anaesthetists).filter((a) => a.active).map((a) => ({ id: a.registrationNumber, name: a.name }))
-      : Object.values(surgeons).map((s) => ({ id: s.id, name: s.name }))
+      : activeSurgeons({ masters: { surgeons } }).map((s) => ({ id: s.id, name: s.name }))
   )
     .sort(compareBySurname)
     .map((c) => {

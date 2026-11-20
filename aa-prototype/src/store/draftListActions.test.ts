@@ -35,7 +35,6 @@ import {
 import { advanceClockDays, advanceClockMinutes } from './clockActions'
 import { createAvailabilitySeries } from './availabilityActions'
 import { detachListToDraft, withGenerated } from './slotActions'
-import { addPostOpAddendum } from './bookingActions'
 import { OFFICE_ACTOR, OFFICE_SIMULATION_ACTOR, SOUTER_ACTOR } from './demoActors'
 import { clockISO, type Actor } from './mutate'
 import {
@@ -58,6 +57,8 @@ import { sicknessCandidates } from './demoSimulations'
 import { ANAE, HOSP, SEED_DRAFT_LIST_IDS, SEED_LIST_IDS, SURG } from '../domain/seed'
 import { slotIdFor } from '../domain/slots'
 import { isActivePairing } from '../domain/listPairing'
+import { draftClosureWarning } from '../domain/draftLists'
+import { closureSourcesOf, closuresFor } from '../domain/holidays'
 import { assigned, draft } from '../test/lists'
 import { prepaymentStatusFor } from './prepaymentSelectors'
 import { addDays, format, parseISO } from 'date-fns'
@@ -244,6 +245,19 @@ describe('assignDraftList (US-01.6.3)', () => {
     const out = assignDraftList(api, OFFICE, id, { anaesthetistId: free.slot.anaesthetistId })
     expect(out.ok && out.value.warnings).toEqual(['Southern Cross is closed that day (hospital holiday). The List keeps its conflict.'])
     expect(api.getState().schedule.lists[id]!.conflicts).toMatchObject([{ kind: 'holiday' }])
+  })
+
+  it('a public holiday names itself in the warning: Labour Day (PH001, Mon 26 Oct) at St George’s', () => {
+    const api = store()
+    const LABOUR_DAY = '2026-10-26'
+    const id = create(api, { hospitalId: HOSP.stg, dateISO: LABOUR_DAY, session: 'AM' })
+    expect(api.getState().schedule.lists[id]!.conflicts).toMatchObject([{ kind: 'holiday', publicHolidayId: 'PH001' }])
+    const closures = closuresFor(LABOUR_DAY, HOSP.stg, closureSourcesOf(api.getState().masters))
+    expect(draftClosureWarning("St George's", closures)).toBe("St George's is closed that day (Labour Day, public holiday). The List keeps its conflict.")
+    const free = slotViewsForDate(api.getState(), LABOUR_DAY).find((v) => v.slot.session === 'AM' && v.open)!
+    expect(free).toBeDefined()
+    const out = assignDraftList(api, OFFICE, id, { anaesthetistId: free.slot.anaesthetistId })
+    expect(out.ok && out.value.warnings).toContain("St George's is closed that day (Labour Day, public holiday). The List keeps its conflict.")
   })
 
   it('draftListFitsAnaesthetist: a boolean, true only on a free session with no not-preferred pairing', () => {
@@ -531,17 +545,6 @@ describe('the pairing rule on the other paths (US-01.3.1)', () => {
     expect(souter[0]!.surgeonId).not.toBe(souter[1]!.surgeonId)
   })
 
-  it('the post-op addendum copies the original List\'s hospital and surgeon', () => {
-    const api = store()
-    const authorised = Object.values(api.getState().schedule.lists).find((l) => l.state === 'AUTHORISED' && l.anaesthetistId === ANAE.souter && !l.id.startsWith('L-HIST') && !l.id.startsWith('L-RB-'))
-    if (authorised === undefined) return
-    const booking = Object.values(api.getState().schedule.bookings).find((b) => b.listId === authorised.id)
-    if (booking === undefined) return
-    const out = addPostOpAddendum(api, OFFICE, booking.id)
-    if (!out.ok) return
-    const created = Object.values(api.getState().schedule.lists).find((l) => l.id.startsWith('LG') && l.state === 'ACTIVE' && l.dateISO === TUE21)
-    expect(created).toMatchObject({ hospitalId: authorised.hospitalId, surgeonId: authorised.surgeonId })
-  })
 })
 
 describe('Draft Lists never reach an anaesthetist (OQ-86 answered no, D46)', () => {

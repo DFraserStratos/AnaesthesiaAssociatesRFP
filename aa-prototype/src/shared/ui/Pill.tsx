@@ -24,7 +24,8 @@ import { fontFamily, neutral, radius, semantic } from '../../theme/tokens'
 
 export type PillTone = 'neutral' | 'success' | 'warning' | 'error'
 export type PillSize = 'sm' | 'md' | 'lg'
-export type PillVariant = 'tint' | 'outline'
+/** `onInk` (catch-up Phase 43): a quiet white-on-ink pill for the dark harness bar and the admin side nav. */
+export type PillVariant = 'tint' | 'outline' | 'onInk'
 
 /** Each tone's tint, on-tint text and solid (the outline's ring). Neutral's ring is mist, as a cleared warning's was. */
 export const PILL_TONES: Record<PillTone, { tint: string; onTint: string; solid: string }> = {
@@ -52,6 +53,7 @@ const BASE: CSSProperties = {
 type DataAttributes = { [key: `data-${string}`]: string | number | boolean | undefined }
 
 export type PillProps = {
+  ariaLabel?: string
   tone?: PillTone
   size?: PillSize
   variant?: PillVariant
@@ -64,16 +66,18 @@ export type PillProps = {
   children: ReactNode
 } & DataAttributes
 
-export function Pill({ tone = 'neutral', size = 'md', variant = 'tint', leading, mono = false, title, shot, style, children, ...data }: PillProps) {
+export function Pill({ tone = 'neutral', size = 'md', variant = 'tint', leading, mono = false, title, ariaLabel, shot, style, children, ...data }: PillProps) {
   const t = PILL_TONES[tone]
   const look: CSSProperties =
     variant === 'outline'
       ? { background: neutral.surface, color: t.onTint, border: `1px solid ${t.solid}` }
-      : { background: t.tint, color: t.onTint }
+      : variant === 'onInk'
+        ? { background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.16)' }
+        : { background: t.tint, color: t.onTint }
   const figures: CSSProperties = mono ? { fontFamily: fontFamily.mono, fontVariantNumeric: 'tabular-nums' } : {}
   const gap: CSSProperties = leading === undefined ? {} : { gap: 5 }
   return (
-    <span {...data} data-shot={shot} title={title} style={{ ...BASE, ...gap, ...PILL_SIZES[size], ...look, ...figures, ...style }}>
+    <span {...data} data-shot={shot} title={title} aria-label={ariaLabel} style={{ ...BASE, ...gap, ...PILL_SIZES[size], ...look, ...figures, ...style }}>
       {leading}
       {children}
     </span>

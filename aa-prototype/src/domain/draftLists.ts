@@ -11,6 +11,7 @@
  * (`recurringClashDraft`). It knows nothing of pairing preferences or tiers.
  */
 
+import type { Closure } from './holidays'
 import { addDays, differenceInMinutes, format, parseISO } from 'date-fns'
 import { activeOn, answeredKey } from './recurringBookingProjection'
 import { isClosed, isOpenForBooking, statusFor, type SlotStatusRecords } from './slotStatus'
@@ -243,8 +244,25 @@ export function answeringLists(lists: Readonly<Record<string, List>>): Map<strin
 // ---------------------------------------------------------------------------
 
 export const DRAFT_ASSIGN_WARNINGS = {
-  /** The hospital is closed that day: the List keeps Phase 30's conflict. */
-  hospitalHoliday: (hospitalName: string) => `${hospitalName} is closed that day (hospital holiday). The List keeps its conflict.`,
+  /**
+   * The hospital is closed that day: the List keeps Phase 30's conflict. A master
+   * public holiday names itself ("St George's is closed that day (Labour Day,
+   * public holiday)."); the hospital's own closure, or none read, keeps the
+   * hospital holiday wording.
+   */
+  hospitalHoliday: (hospitalName: string, closure?: Closure) =>
+    closure?.source === 'public'
+      ? `${hospitalName} is closed that day (${closure.name.trim().replace(/[.!?]$/, '')}, public holiday). The List keeps its conflict.`
+      : `${hospitalName} is closed that day (hospital holiday). The List keeps its conflict.`,
+}
+
+/**
+ * The closed-day warning for a Draft List at `hospitalId` on `dateISO`, from its
+ * closures (`closuresFor` / `closuresAt` in `domain/holidays.ts`): the
+ * hospital's own closure first, else the public holiday.
+ */
+export function draftClosureWarning(hospitalName: string, closures: readonly Closure[]): string {
+  return DRAFT_ASSIGN_WARNINGS.hospitalHoliday(hospitalName, closures.find((c) => c.source === 'hospital') ?? closures[0])
 }
 
 /** Why a Draft List cannot be removed yet (US-01.6.4 reading: its active Bookings go first). */

@@ -12,6 +12,7 @@
  * plain http on a LAN IP there is no service worker at all, and every function
  * here has to degrade to a no-op rather than throw.
  */
+import { reportDiagnostic } from '../store/diagnostics'
 
 let registration: ServiceWorkerRegistration | undefined
 
@@ -36,7 +37,7 @@ export function rememberRegistration(r: ServiceWorkerRegistration | undefined): 
  */
 export function rememberRegistrationError(error: unknown): void {
   registerFailed = true
-  console.warn('service worker registration failed', error)
+  reportDiagnostic('warn', 'service worker registration failed', { error })
 }
 
 /**

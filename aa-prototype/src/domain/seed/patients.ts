@@ -105,7 +105,7 @@ const PINNED: readonly Patient[] = [
 // Generic pool
 // ---------------------------------------------------------------------------
 
-const FIRST_NAMES = [
+export const FIRST_NAMES = [
   'Alice', 'Andrew', 'Anika', 'Aroha', 'Ben', 'Bridget', 'Callum', 'Charlotte', 'Chris', 'Claire',
   'Daniel', 'Dawn', 'Dylan', 'Eleanor', 'Eru', 'Esther', 'Finn', 'Fleur', 'Gavin', 'Gemma',
   'George', 'Hamish', 'Harriet', 'Hine', 'Ian', 'Isla', 'Jack', 'Jenny', 'Joanne', 'Jordan',
@@ -114,7 +114,7 @@ const FIRST_NAMES = [
   'Rangi', 'Ruth', 'Sam', 'Sina', 'Sione', 'Sophie', 'Stephen', 'Tama', 'Tessa', 'Wei',
 ] as const
 
-const SURNAMES = [
+export const SURNAMES = [
   'Adams', 'Ahmed', 'Anderson', 'Baker', 'Barrett', 'Bishop', 'Brown', 'Campbell', 'Carter', 'Clark',
   'Collins', 'Davies', 'Dixon', 'Edwards', 'Faʻaoso', 'Fletcher', 'Fraser', 'Gibson', 'Graham', 'Harris',
   'Henare', 'Hopa', 'Huang', 'Hunter', 'Ioane', 'Jackson', 'Kaur', 'Kelly', 'Kereama', 'Kim',
@@ -162,7 +162,7 @@ export function buildPatients(seed: number): Patient[] {
     patients.push(patient)
   }
 
-  patients.push(...PAYER_REVIEW_PATIENTS, ...COMPLETION_PATIENTS, ...REVIEW_FLAG_PATIENTS, ...PROCEDURE_PAYER_PATIENTS, ...MULTI_PROCEDURE_PATIENTS, ...PRICING_PATIENTS, ...DISABLED_CONTRACT_PATIENTS)
+  patients.push(...PAYER_REVIEW_PATIENTS, ...COMPLETION_PATIENTS, ...REVIEW_FLAG_PATIENTS, ...PROCEDURE_PAYER_PATIENTS, ...MULTI_PROCEDURE_PATIENTS, ...PRICING_PATIENTS, ...DISABLED_CONTRACT_PATIENTS, ...COMBINED_SPLIT_PATIENTS)
   return patients.map(withSeedContact)
 }
 
@@ -222,6 +222,19 @@ export const PAT_25A = {
 
 const DISABLED_CONTRACT_PATIENTS: readonly Patient[] = [
   { hiddenInternalId: PAT_25A.disabledContract, nhi: 'ZBM1009', name: 'Margaret Ellery', dobISO: '1956-03-17', phone: '03 555 7323', ethnicityCode: '11111' },
+]
+
+/**
+ * Catch-up Phase 39's dedicated patient, after 25a's: the "Stage combined
+ * procedure" demo trigger's Merivale combination (`store/creditDemo.ts`).
+ * No seeded Booking uses her; only the trigger does.
+ */
+export const PAT_39 = {
+  combined: `PT${String(19 + 132 + 22).padStart(4, '0')}`,
+} as const
+
+const COMBINED_SPLIT_PATIENTS: readonly Patient[] = [
+  { hiddenInternalId: PAT_39.combined, nhi: 'ZBN1004', name: 'Lorraine Petrie', dobISO: '1964-08-19', phone: '021 555 7434', ethnicityCode: '11111' },
 ]
 
 const PRICING_PATIENTS: readonly Patient[] = [
@@ -309,7 +322,7 @@ function emailLocalPart(name: string): string {
  * address, both derived from the id, so no RNG draw moves. Grace Park, a
  * child, shares her mother's postal address and has no email.
  */
-function withSeedContact(patient: Patient): Patient {
+export function withSeedContact(patient: Patient): Patient {
   if (NO_CONTACT.has(patient.hiddenInternalId)) return patient
   const n = Number(patient.hiddenInternalId.replace(/\D/g, '')) || 0
   if (patient.hiddenInternalId === PAT.park) return { ...patient, postalAddress: HANA_PARK_ADDRESS }

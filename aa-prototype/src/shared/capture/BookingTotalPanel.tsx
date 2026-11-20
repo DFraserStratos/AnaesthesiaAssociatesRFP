@@ -4,6 +4,7 @@ import type { BookingTotalProps } from '../surface'
 import { useTickingValue } from './useTickingValue'
 import { NEEDS_PRICE_LABEL } from '../../domain/billing/priceRanges'
 import { formatCurrency } from '../format'
+import { EVENT_LABELS } from '../procedureEventCopy'
 
 /**
  * The desktop Booking-total panel: everything about what the Booking comes to.
@@ -22,13 +23,16 @@ import { formatCurrency } from '../format'
  * Figures come from the Phase 01 calculator via
  * `bookingFee` (the Booking priced once, under the multi-procedure rule) — this only formats.
  */
-export function BookingTotalPanel({ units, fee, needsPrice = false, lines, rateLabel, overrideNote, notes = [], multiProcedure = false, action }: BookingTotalProps) {
+export function BookingTotalPanel({ units, fee, needsPrice = false, lines, rateLabel, overrideNote, notes = [], multiProcedure = false, action, withEvents }: BookingTotalProps) {
   const u = useTickingValue(units)
-  const f = useTickingValue(fee)
+  const f = useTickingValue(withEvents !== undefined ? withEvents.total : fee)
+  // The office's events row (catch-up Phase 38b; US-03.1.10): only when an event counts.
+  const allLines = withEvents !== undefined && withEvents.eventsTotal > 0 ? [...lines, { label: EVENT_LABELS.section, amount: withEvents.eventsTotal }] : lines
 
   return (
     <div
       data-testid="booking-calculation"
+      data-shot="booking-total"
       style={{
         background: neutral.ink,
         borderRadius: radius.card,
@@ -38,9 +42,9 @@ export function BookingTotalPanel({ units, fee, needsPrice = false, lines, rateL
         gap: 12,
       }}
     >
-      {lines.length > 0 && (
+      {allLines.length > 0 && (
         <div data-shot={multiProcedure ? 'booking-total-split' : 'booking-total-lines'} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {lines.map((line, i) => (
+          {allLines.map((line, i) => (
             <div
               key={i}
               style={{
@@ -137,6 +141,13 @@ export function BookingTotalPanel({ units, fee, needsPrice = false, lines, rateL
       {overrideNote !== null && (
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', textAlign: 'right', marginTop: -4 }}>
           {overrideNote}
+        </div>
+      )}
+
+      {/* Ex GST with the GST beside (our reading of US-03.1.10). */}
+      {withEvents !== undefined && !needsPrice && (
+        <div data-shot="booking-total-gst" style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', textAlign: 'right', marginTop: -4 }}>
+          ex GST · GST <span className="mono">{formatCurrency(withEvents.gst)}</span>
         </div>
       )}
 

@@ -61,7 +61,8 @@
  * reliable on mobile, so it is deliberately not used.
  */
 
-import type { StateStorage } from 'zustand/middleware'
+import { reportDiagnostic } from './diagnostics'
+import type { PersistStorage, StateStorage } from 'zustand/middleware'
 
 /**
  * The trailing-write window. Long enough to swallow a burst of mutations (a
@@ -113,7 +114,7 @@ function backingStore(): Storage | null {
 function disablePersistence(error: unknown): void {
   persistDisabled = true
   persistDisabledReason = error instanceof Error ? `${error.name}: ${error.message}` : String(error)
-  console.warn('persistence paused after a storage error', error)
+  reportDiagnostic('warn', 'persistence paused after a storage error', { error })
 }
 
 /**
@@ -224,9 +225,9 @@ export function flushPersist(): void {
   }
 }
 
-/** Whether writes have latched off, and the error that stopped them. */
-export function persistStatus(): { disabled: boolean; reason: string | null } {
-  return { disabled: persistDisabled, reason: persistDisabledReason }
+/** Whether writes have latched off (and the error that stopped them), and whether they are paused by choice (catch-up Phase 43). */
+export function persistStatus(): { disabled: boolean; reason: string | null; paused: boolean; pausedReason: string | null } {
+  return { disabled: persistDisabled, reason: persistDisabledReason, paused: persistPaused, pausedReason: persistPausedReason }
 }
 
 // A one-entry measurement cache. `bytes()` is read from a React render, and the
@@ -333,5 +334,58 @@ export function withoutWrites(fn: () => void): void {
     fn()
   } finally {
     writesSuppressed -= 1
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Paused persistence (catch-up Phase 43; US-15.0.4)
+// ---------------------------------------------------------------------------
+
+/**
+ * A pause is a choice, not a failure: the full-scale demo data is held in
+ * memory only, so nothing is written (or even serialised) until Reset resumes.
+ * It is separate from the error latch above: a paused store that then meets a
+ * storage failure reports both, and resuming never clears a failure.
+ */
+let persistPaused = false
+let persistPausedReason: string | null = null
+
+/** Stop writing: cancel the pending write, drop what is queued and latch the pause. */
+export function pausePersist(reason: string): void {
+  persistPaused = true
+  persistPausedReason = reason
+  if (timer !== undefined) {
+    clearTimeout(timer)
+    timer = undefined
+  }
+  unwritten.clear()
+}
+
+/** Writes go through again from the next mutation. */
+export function resumePersist(): void {
+  persistPaused = false
+  persistPausedReason = null
+}
+
+/** Whether writes are paused right now. */
+export function isPersistPaused(): boolean {
+  return persistPaused
+}
+
+/**
+ * Wrap zustand's `PersistStorage` so `setItem` returns before the inner storage
+ * is called while paused. It matters because `createJSONStorage` serialises
+ * inside `setItem`: without the wrapper every mutation at full scale would still
+ * stringify tens of megabytes and throw the result away.
+ */
+export function pausableStorage<S>(inner: PersistStorage<S> | undefined): PersistStorage<S> | undefined {
+  if (inner === undefined) return undefined
+  return {
+    getItem: (name) => inner.getItem(name),
+    setItem: (name, value) => {
+      if (persistPaused) return
+      return inner.setItem(name, value)
+    },
+    removeItem: (name) => inner.removeItem(name),
   }
 }

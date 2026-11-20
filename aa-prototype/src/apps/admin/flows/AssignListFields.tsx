@@ -7,8 +7,10 @@
  * not-preferred choice warns in the caller, never blocks.
  */
 
+import { useMemo } from 'react'
 import type { ListKind } from '../../../domain/types'
-import { useAppStore } from '../../../store'
+import { retiredLabel } from '../../../domain/masterLifecycle'
+import { activeHospitals, useAppStore } from '../../../store'
 import { Segmented, SelectField, TextField } from '../../../shared/ui'
 import { SurgeonPicker } from '../components/pairing'
 import { ConflictCallout, useConflictPreview, useHospitalOptionLabel } from '../components/conflicts/ConflictCallout'
@@ -66,6 +68,8 @@ export function AssignListFields({
 }) {
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const aaRoomsId = Object.values(hospitals).find((h) => h.locationType === 'aaRooms')?.id
+  // Retired hospitals are not offered, except a value already in the draft, labelled (catch-up Phase 42).
+  const hospitalOptions = useMemo(() => activeHospitals({ masters: { hospitals } }, draft.hospitalId), [hospitals, draft.hospitalId])
   // Soft warning only (OQ-09): the hospital closure this would land on, before
   // confirm, never disabling it (US-01.5.2). A closed session is refused by the
   // store instead (catch-up Phase 32b, D59).
@@ -76,8 +80,8 @@ export function AssignListFields({
     <>
       <SelectField label="Hospital" value={draft.hospitalId} onChange={(hospitalId) => onChange({ ...draft, hospitalId })} shot="assign-hospital">
         <option value="" disabled>Choose a hospital</option>
-        {Object.values(hospitals).map((h) => (
-          <option key={h.id} value={h.id}>{optionLabel(h.id, h.name)}</option>
+        {hospitalOptions.map((h) => (
+          <option key={h.id} value={h.id}>{optionLabel(h.id, retiredLabel(h.name, h))}</option>
         ))}
       </SelectField>
       <ConflictCallout conflicts={conflicts} hospitalId={draft.hospitalId} subject={subject} shot={subject === 'Booking' ? 'phone-advice-conflict-warning' : 'assign-list-conflict-warning'} />

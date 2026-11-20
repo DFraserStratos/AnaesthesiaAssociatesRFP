@@ -9,7 +9,8 @@ import { isOfficeContract } from '../../../domain/billing/fallbacks'
 import { useMemo, useState } from 'react'
 import type { DeliveryMethod, Party, PartyKind } from '../../../domain/types'
 import { CREATABLE_PARTY_KINDS, PARTY_REFUSAL_MESSAGES, suggestCodePrefix } from '../../../domain/billing/parties'
-import { createParty, editParty, partyContractFacts, useAppStore, type Actor } from '../../../store'
+import { activeHospitals, createParty, editParty, partyContractFacts, useAppStore, type Actor } from '../../../store'
+import { retiredLabel } from '../../../domain/masterLifecycle'
 import { Button, FormError, Segmented, TextField } from '../../../shared'
 import { SelectField } from '../../../shared/ui'
 import { DELIVERY_LABEL, PARTY_KIND_LABEL } from '../../../shared/contracts'
@@ -58,9 +59,13 @@ export function PartyPanel({ open, actor, party, onClose }: Props) {
   // A new Party's prefix follows its name until the office types one.
   const shownPrefix = !editing && !prefixTouched ? (name.trim() === '' ? '' : suggestCodePrefix(name, takenPrefixes)) : codePrefix
 
+  // Active hospitals only, plus the Party's own when retired (catch-up Phase 42); AA rooms stays excluded on top.
   const hospitalOptions = useMemo(
-    () => Object.values(masters.hospitals).filter((h) => h.locationType === 'hospital').sort((a, b) => a.name.localeCompare(b.name)),
-    [masters.hospitals],
+    () =>
+      activeHospitals({ masters: { hospitals: masters.hospitals } }, party?.hospitalId ?? null)
+        .filter((h) => h.locationType === 'hospital')
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [masters.hospitals, party?.hospitalId],
   )
   const heldCount = useMemo(
     () => (party === undefined ? 0 : Object.values(masters.contracts).filter((c) => c.holderId === party.id && isOfficeContract(c)).length),
@@ -145,7 +150,7 @@ export function PartyPanel({ open, actor, party, onClose }: Props) {
               <SelectField label="Hospital" value={hospitalId} onChange={setHospitalId} disabled={editing && facts.holdsContracts}>
                 <option value="">Select its hospital</option>
                 {hospitalOptions.map((h) => (
-                  <option key={h.id} value={h.id}>{h.name}</option>
+                  <option key={h.id} value={h.id}>{retiredLabel(h.name, h)}</option>
                 ))}
               </SelectField>
             )}

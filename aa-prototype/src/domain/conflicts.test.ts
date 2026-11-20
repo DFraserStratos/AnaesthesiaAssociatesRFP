@@ -40,13 +40,13 @@ const list = (over: Partial<AssignedList> = {}): AssignedList => ({
 const hol = (id: string, over: Partial<HospitalHoliday> = {}): HospitalHoliday => ({ id, hospitalId: 'H-SX', dateISO: DATE, name: 'Theatre maintenance closure', ...over })
 
 function expectedFor(l: List, holidays: HospitalHoliday[] = []) {
-  return expectedConflicts(l, conflictFactsFor(l, { holidays: holidayIndex(holidays) }))
+  return expectedConflicts(l, conflictFactsFor(l, { holidays: holidayIndex({ hospitalHolidays: holidays, publicHolidays: [] }) }))
 }
 
 describe('expectedConflicts', () => {
   it('a closed session never derives a conflict: the rule reads hospital closures only (D59)', () => {
     // The facts carry no session status at all, so no status can raise one.
-    expect(Object.keys(conflictFactsFor(list(), { holidays: holidayIndex([]) }))).toEqual(['holidays'])
+    expect(Object.keys(conflictFactsFor(list(), { holidays: holidayIndex({ hospitalHolidays: [], publicHolidays: [] }) }))).toEqual(['closures'])
     expect(expectedFor(list())).toEqual([])
     expect(Object.keys(CONFLICT_REASONS)).toEqual(['holiday'])
   })
@@ -64,7 +64,7 @@ describe('expectedConflicts', () => {
   it('AUTHORISED and backdrop Lists never conflict; ignoreLock sees the facts', () => {
     const l = list({ state: 'AUTHORISED' })
     expect(expectedFor(l, [hol('HH1')])).toEqual([])
-    const facts = conflictFactsFor(l, { holidays: holidayIndex([hol('HH1')]) })
+    const facts = conflictFactsFor(l, { holidays: holidayIndex({ hospitalHolidays: [hol('HH1')], publicHolidays: [] }) })
     expect(expectedConflicts(l, facts, { ignoreLock: true })).toHaveLength(1)
     expect(expectedFor(list({ id: 'L-HIST-1' }), [hol('HH1')])).toEqual([])
     expect(expectedFor(list({ id: 'L-RB-1' }), [hol('HH1')])).toEqual([])
@@ -127,7 +127,7 @@ describe('reconcileListConflicts', () => {
 describe('reconcileAllConflicts', () => {
   it('returns the same record when every List already agrees', () => {
     const lists = { 'L-1': list() }
-    expect(reconcileAllConflicts(lists, { holidays: [] }, 'x')).toBe(lists)
+    expect(reconcileAllConflicts(lists, { holidays: [], publicHolidays: [] }, 'x')).toBe(lists)
   })
 })
 
@@ -160,14 +160,39 @@ describe('describeConflict', () => {
 
 describe('conflictPreview and causes', () => {
   it('previews the closure an assignment would land on', () => {
-    expect(conflictPreview({ dateISO: DATE, hospitalId: 'H-SX', holidays: [hol('HH1')] }).map((c) => c.kind)).toEqual(['holiday'])
-    expect(conflictPreview({ dateISO: DATE, hospitalId: 'H-CES', holidays: [hol('HH1')] })).toEqual([])
-    expect(conflictPreview({ dateISO: DATE, hospitalId: undefined, holidays: [hol('HH1')] })).toEqual([])
+    expect(conflictPreview({ dateISO: DATE, hospitalId: 'H-SX', holidays: [hol('HH1')], publicHolidays: [] }).map((c) => c.kind)).toEqual(['holiday'])
+    expect(conflictPreview({ dateISO: DATE, hospitalId: 'H-CES', holidays: [hol('HH1')], publicHolidays: [] })).toEqual([])
+    expect(conflictPreview({ dateISO: DATE, hospitalId: undefined, holidays: [hol('HH1')], publicHolidays: [] })).toEqual([])
   })
 
   it('round-trips a cause, and an old availability cause no longer parses', () => {
     expect(conflictFromCause(holidayCause('HH900'))).toEqual({ kind: 'holiday', cause: 'holiday:HH900', holidayId: 'HH900' })
     expect(conflictFromCause('availability:S-1:unavailable')).toBeNull()
     expect(conflictFromCause('nonsense')).toBeNull()
+  })
+})
+
+describe('public holidays (catch-up Phase 42)', () => {
+  const pub = { id: 'PH001', dateISO: DATE, name: 'Labour Day', kind: 'national' as const, openHospitalIds: [] as string[] }
+  it('a public closure yields a publicHoliday cause, beside a hospital closure', () => {
+    const facts = conflictFactsFor(list(), { holidays: holidayIndex({ hospitalHolidays: [hol('HH1')], publicHolidays: [pub] }) })
+    expect(expectedConflicts(list(), facts)).toEqual([
+      { kind: 'holiday', cause: 'holiday:HH1', holidayId: 'HH1' },
+      { kind: 'holiday', cause: 'publicHoliday:PH001', publicHolidayId: 'PH001' },
+    ])
+  })
+  it('a hospital listed open raises none', () => {
+    const facts = conflictFactsFor(list(), { holidays: holidayIndex({ hospitalHolidays: [], publicHolidays: [{ ...pub, openHospitalIds: ['H-SX'] }] }) })
+    expect(expectedConflicts(list(), facts)).toEqual([])
+  })
+  it('reads as a public holiday and round-trips its cause', () => {
+    const d = describeConflict({ kind: 'holiday', publicHolidayId: 'PH001' }, { hospitalId: 'H-STG' }, {
+      holidays: {},
+      publicHolidays: { PH001: pub },
+      hospitalName: (id) => (id === 'H-STG' ? "St George's" : id),
+    })
+    expect(d.detail).toBe("St George's is closed: Labour Day (public holiday).")
+    expect(conflictFromCause('publicHoliday:PH001')).toEqual({ kind: 'holiday', cause: 'publicHoliday:PH001', publicHolidayId: 'PH001' })
+    expect(conflictPreview({ dateISO: DATE, hospitalId: 'H-SX', holidays: [], publicHolidays: [pub] })).toHaveLength(1)
   })
 })

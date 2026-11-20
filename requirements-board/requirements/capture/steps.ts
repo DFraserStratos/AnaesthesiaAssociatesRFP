@@ -49,6 +49,9 @@ const trigger: StepHandler = {
         throw new Error(`${what}: demo action ${id} is disabled (${reason})`)
       }
       await run.click()
+      // An entry with a confirm step (catch-up Phase 43: Load full-scale data) asks for a second click.
+      const confirm = row.getByRole('button', { name: 'Confirm' })
+      if (await confirm.count()) await confirm.click()
       await row.getByRole('status').filter({ hasText: /\S/ }).waitFor({ state: 'visible', timeout: ctx.timeout })
       if (!keepOpen) {
         if (pwa) {

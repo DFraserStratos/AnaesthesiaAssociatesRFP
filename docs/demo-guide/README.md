@@ -92,7 +92,7 @@ Snapshot date: **24 July 2026**
 | Anaesthetist web dashboard, Lists, availability and accounts views | Ready | Strong supporting workflow |
 | Admin day view, changes, cover, review, authorisation, masters and audit | Ready | Strong primary workflow |
 | Billing run and invoice documents | Ready | Phase 08 |
-| Post-op addendum and billing monitor (grouped by anaesthetist, with filters for one anaesthetist, hospital, dates and Problems only; Lists awaiting approval open in Review) | Ready | Phase 09; grouping and filters from catch-up Phase 37 |
+| Events and additional invoices, credit notes (credit and rebill, the split, the anaesthetist's credit note), and billing monitor (grouped by anaesthetist, with filters for one anaesthetist, hospital, dates and Problems only; Lists awaiting approval open in Review) | Ready | Phase 09; grouping and filters from catch-up Phase 37; credit notes from catch-up Phase 39 |
 | Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), escalating warning, left off the final invoice | Ready | Catch-up Phase 27 |
 | Prepayment held in the AA Holding account (its card on the Billing monitor), transferred to the anaesthetist automatically when the List is authorised, then paid by the payables run | Ready | Catch-up Phase 27a |
 | Xero pairs, payments, payables, payment history, live balances and GST report | Ready | Phase 10 |

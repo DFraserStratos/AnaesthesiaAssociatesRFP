@@ -15,9 +15,10 @@
  * whenever the seed shape or content changes.
  */
 
+import { emptyMasterLoadsSlice, type MasterLoadsSlice } from '../domain/masterLoad/types'
 import { create, type StateCreator, type StoreApi, type UseBoundStore } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import { resilientLocalStorage } from './persistStorage'
+import { pausableStorage, resilientLocalStorage } from './persistStorage'
 import { bindCrossTabSync } from './crossTabSync'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
 import { buildSeed, buildSeedBillingSlice, SEED_AUTHORISED_INVOICED_BOOKING_IDS, SEED_PREPAID_BOOKING_ID, type SeedState } from '../domain/seed'
@@ -47,6 +48,9 @@ import type {
   XeroAccPay,
   XeroAccRec,
   XeroBankLine,
+  XeroCreditNote,
+  CreditNote,
+  NegativeInvoice,
   XeroContact,
   XeroDivergence,
   XeroJournal,
@@ -110,6 +114,10 @@ export interface BillingSlice {
   xeroQueue: Record<string, XeroQueueItem>
   /** Voids and amendments made directly in Xero, flagged by the reconciliation poll (catch-up Phase 37). */
   xeroDivergences: Record<string, XeroDivergence>
+  /** Credit notes (catch-up Phase 39; DM-24): each its own record, never an `Invoice` kind. */
+  creditNotes: Record<string, CreditNote>
+  /** Negative invoices to anaesthetists reversing a credited payable (catch-up Phase 39; DM-25). */
+  negativeInvoices: Record<string, NegativeInvoice>
 }
 
 export interface XeroSlice {
@@ -123,6 +131,8 @@ export interface XeroSlice {
   /** Bulk remittance advices and their bank lines (catch-up Phase 37; US-10.2.4): Xero side only, never read by the engine. */
   remittances: Record<string, XeroRemittance>
   bankLines: Record<string, XeroBankLine>
+  /** ACCRECCREDIT and ACCPAYCREDIT records made by the engine's corrections (catch-up Phase 39). */
+  creditNotes: Record<string, XeroCreditNote>
 }
 
 export interface IntegrationsSlice {
@@ -169,6 +179,8 @@ export interface AppState extends SeedState {
   xero: XeroSlice
   integrations: IntegrationsSlice
   intake: IntakeSlice
+  /** The seed load's checked sheets and the go-live batch (catch-up Phase 42; US-13.4.3): work items, not master data. */
+  masterLoads: MasterLoadsSlice
   shell: ShellSlice
 }
 
@@ -407,14 +419,32 @@ export const PERSIST_KEY = 'aa-demo'
  *  v62: the Wave 3 sync of 34 into lane/a (Phase 37 and Phase 34 both took v61). Reseeds on load.
  *  v63: catch-up Phase 38: seeded dashboard figures removed (`dashboards`, the Productivity and Leave panels); ageing
  *  buckets gone. Reseeds on load.
- *  v64: Wave 3 join, Lane A's 38 (v63, holding 37 and the 34 sync) joined with Lane B's 35 (v62): one past the higher. */
-export const PERSIST_VERSION = 64
+ *  v64: Wave 3 join, Lane A's 38 (v63, holding 37 and the 34 sync) joined with Lane B's 35 (v62): one past the higher.
+ *  v65: catch-up Phase 42: master public-holiday calendar replaces per-hospital statutory rows (`masters.publicHolidays`
+ *  PH001 to PH007; Labour Day and Canterbury Anniversary Day leave `masters.holidays`); retire fields on masters
+ *  (hospitals, surgeons, groups, AA modifiers); `masterLoads` slice. Reseeds on load.
+ *  v65: catch-up Phase 38b, events on a Procedure: `schedule.procedureEvents` (seeded EV0001, Dr Souter's
+ *  additional invoice on HP03 awaiting review; counter `procedureEvent`), the `additional` invoice kind and the
+ *  `additionalTo` lineage; the post-op addendum Booking (`bookingType`, `addendumOfBookingId`) is gone. Reseeds on load.
+ *  v66 (lane/b): the Wave 4 sync of 38b into lane/b (Phase 42 and Phase 38b both took v65): one past the higher. Reseeds on load.
+ *  v66 (lane/a): the Wave 4 sync of Lane B's 42 into lane/a (Phase 38b and Phase 42 both took v65). Reseeds on load.
+ *  v67 (lane/b): catch-up Phase 43, the raw hospital row: `ImportRow.raw` (the row as sent, held under restricted access;
+ *  the seeded IRS001 carries it). Reseeds on load.
+ *  v67 (lane/a): catch-up Phase 39, credit notes: `billing.creditNotes`, `billing.negativeInvoices` and `xero.creditNotes`
+ *  (empty in the seed; counters `creditNote`, `creditNoteNumber`, `negativeInvoice`, `xeroCreditNote`), the `credit`
+ *  event kind, the `rebillOf` lineage, the legs' `creditedAmount` / `reversedAmount` and the pair's `credit`, the
+ *  `credited` / `voided` Xero statuses and the `correction` queue kind. Reseeds on load.
+ *  v68: catch-up Phase 39 session 2, the "Stage combined procedure" trigger's dedicated patient (`PAT_39.combined`,
+ *  PT0173 Lorraine Petrie, appended after 25a's; counter `patient` 174). Reseeds on load.
+ *  v69: Wave 4 join, Lane A's 39 (v68, holding 38b and the 42 sync) joined with Lane B's 43 (v67): one past the higher.
+ *  Reseeds on load. */
+export const PERSIST_VERSION = 69
 
 export function emptyBillingSlice(): BillingSlice {
-  return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {} }
+  return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {}, creditNotes: {}, negativeInvoices: {} }
 }
 export function emptyXeroSlice(): XeroSlice {
-  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {} }
+  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {}, creditNotes: {} }
 }
 export function emptyIntegrationsSlice(): IntegrationsSlice {
   return { feeds: {}, messages: {} }
@@ -462,10 +492,13 @@ export function freshAppState(): AppState {
       transfers: {},
       xeroQueue: {},
       xeroDivergences: {},
+      creditNotes: {},
+      negativeInvoices: {},
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
     intake: seededIntakeSlice(),
+    masterLoads: emptyMasterLoadsSlice(),
     shell: { currentApp: 'mobile', suggestionSeq: 0 },
   }
   // Every seeded AUTHORISED List is locked (catch-up Phase 25); its pairs carry the same payee from the seed.
@@ -539,7 +572,8 @@ export function createAppStore(options: CreateAppStoreOptions = {}): BoundAppSto
         // error boundary can catch it. This is storage MECHANICS only — same
         // key, same JSON shape, same version — so there is deliberately NO
         // PERSIST_VERSION bump: an existing persisted store rehydrates as-is.
-        storage: createJSONStorage(() => resilientLocalStorage),
+        // Catch-up Phase 43: paused (full-scale data in memory) means not even serialised.
+        storage: pausableStorage(createJSONStorage(() => resilientLocalStorage)),
         // A PERSIST_VERSION bump means the seed shape/content CHANGED, so a
         // different-version persisted store must be DISCARDED and reseeded. zustand
         // does NOT auto-discard on a version mismatch, so migrate returns the

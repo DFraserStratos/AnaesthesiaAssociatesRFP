@@ -1,4 +1,5 @@
 import { isBookingPair, payableReleasedFor, roundToCents, toCents } from '../../domain/billing'
+import { paymentsByAccRec } from '../../store/indexes'
 import { isHeldPayable } from '../../domain/billing/prepayHolding'
 import type { BookingLedgerPair, BuyerCreatedTaxInvoice, InvoiceLine, LedgerDisbursement, LedgerPair, XeroAccPay, XeroAccRec, XeroContact } from '../../domain/types'
 import type { AppState } from '../../store'
@@ -27,7 +28,7 @@ export interface XeroInvoicePairView {
     balance: number
     /** Payments landed in Xero during an outage whose sync to the Billing Engine still waits in its queue (catch-up Phase 37). */
     landedAwaitingSync?: number
-    status: 'awaitingPayment' | 'paid' | 'voided'
+    status: XeroAccRec['status']
     raisedAtISO?: string
     /** When AA staff voided it directly in Xero (catch-up Phase 37). */
     voidedAtISO?: string
@@ -50,7 +51,7 @@ export interface XeroInvoicePairView {
     remainingAuthorised: number
     /** A payable crediting the AA Holding account (catch-up Phase 27a): never disbursed, so nothing is ready to pay. */
     held: boolean
-    status: 'draft' | 'authorised' | 'paid'
+    status: XeroAccPay['status']
     /** The buyer-created tax invoice as stored at handoff (catch-up Phase 22; US-09.1.4), passed through. */
     taxInvoice?: BuyerCreatedTaxInvoice
     /** Xero's bill payments on this ACCPAY, oldest first, each with what the Billing Engine knows of it (catch-up Phase 37). */
@@ -82,6 +83,33 @@ export interface XeroInvoicePairView {
     aaFeeMonthISO?: string
   }
   incomplete: boolean
+  /**
+   * The engine's correction as Xero shows it (catch-up Phase 39; US-08.6.2
+   * "Both sides move"): the ACCRECCREDIT against this ACCREC and the
+   * ACCPAYCREDIT against its ACCPAY (or the draft ACCPAY voided), each with
+   * what is allocated and what is left unallocated (held for the payer, or to
+   * net), and the new pairs issued with the credit. Absent when not credited.
+   */
+  credit?: XeroCreditView
+}
+
+export interface XeroCreditNoteView {
+  id: string
+  type: 'ACCRECCREDIT' | 'ACCPAYCREDIT'
+  creditNoteNumber: string
+  total: number
+  allocated: number
+  unallocated: number
+}
+
+export interface XeroCreditView {
+  /** The engine's credit note number. */
+  creditNoteNumber: string
+  notes: XeroCreditNoteView[]
+  /** The draft ACCPAY was voided (nothing had been authorised), so there is no ACCPAYCREDIT. */
+  accPayVoided: boolean
+  /** The replacements' Xero pairs, by number; `accRecId` once mirrored. */
+  newPairs: { invoiceNumber: string; accRecId?: string }[]
 }
 
 /**
@@ -120,7 +148,7 @@ function contactView(contact: XeroContact | undefined): XeroContactView | undefi
  * is reduced to a display name and kept under `ledger`; no Patient object or
  * NHI can enter the Xero-facing record views.
  */
-export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[] {
+export function xeroInvoicePairViews(state: XeroPairState, opts: { accRecIds?: readonly string[] } = {}): XeroInvoicePairView[] {
   // The ledger pair each ACCREC mirrors (catch-up Phase 36).
   const pairsByAccRecId = new Map(
     Object.values(state.billing.ledger)
@@ -137,7 +165,9 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
     linesByInvoiceId.set(line.invoiceId, lines)
   }
 
-  return Object.values(state.xero.accRecs)
+  // Only the records asked for (catch-up Phase 43: the sim's tables show the first 200 at full scale).
+  const recs = opts.accRecIds !== undefined ? opts.accRecIds.flatMap((id) => (state.xero.accRecs[id] !== undefined ? [state.xero.accRecs[id]] : [])) : Object.values(state.xero.accRecs)
+  return recs
     .map((rec): XeroInvoicePairView => {
       if (rec.kind === 'aaFee') return feePairView(state, rec)
       const linkedPair = pairsByAccRecId.get(rec.id)
@@ -155,8 +185,11 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
       const payee =
         accPay !== undefined ? contactView(state.xero.contacts[accPay.contactId]) : undefined
 
+      const credit = creditViewFor(state, rec.id, accPay?.id)
+
       return {
         kind: 'procedure',
+        ...(credit !== undefined ? { credit } : {}),
         accRec: {
           id: rec.id,
           invoiceId: rec.invoiceId,
@@ -308,8 +341,9 @@ function recordedAt(state: XeroPairState, entry: LedgerDisbursement, pairId: str
 /** Payments Xero holds on an ACCREC whose sync waits in the engine's Xero sync queue (an outage's), totalled; absent when none. */
 function landedAwaitingSync(state: XeroPairState, accRecId: string): { landedAwaitingSync?: number } {
   const waiting = new Set(Object.values(state.billing.xeroQueue).filter((q) => q.kind === 'paymentSync' && q.status !== 'sent').map((q) => q.idempotencyKey))
-  const cents = Object.values(state.xero.payments)
-    .filter((p) => p.accRecId === accRecId && waiting.has(p.idempotencyKey))
+  if (waiting.size === 0) return {}
+  const cents = (paymentsByAccRec(state.xero.payments).get(accRecId) ?? [])
+    .filter((p) => waiting.has(p.idempotencyKey))
     .reduce((n, p) => n + toCents(p.amount), 0)
   return cents > 0 ? { landedAwaitingSync: cents / 100 } : {}
 }
@@ -329,5 +363,31 @@ function ledgerMoney(pair: LedgerPair, rec: XeroAccRec, accPay: XeroAccPay | und
     ...(p !== undefined ? { payableNumber: p.number, released: p.releasedAmount, paidOut: p.disbursedAmount } : {}),
     received: r.receivedAmount,
     matches: recMatches && payMatches,
+  }
+}
+
+/** The correction Xero holds for a credited pair (catch-up Phase 39), from its Xero credit notes and the engine's credit note. */
+function creditViewFor(state: XeroPairState, accRecId: string, accPayId: string | undefined): XeroCreditView | undefined {
+  const notes = Object.values(state.xero.creditNotes)
+    .filter((n) => n.againstId === accRecId || (accPayId !== undefined && n.againstId === accPayId))
+    .sort((a, b) => (a.type === b.type ? a.id.localeCompare(b.id) : a.type === 'ACCRECCREDIT' ? -1 : 1))
+  const accPay = accPayId !== undefined ? state.xero.accPays[accPayId] : undefined
+  if (notes.length === 0 && accPay?.status !== 'voided') return undefined
+  const engineId = notes[0]?.creditNoteId
+  const invoiceId = state.xero.accRecs[accRecId]?.invoiceId
+  const engine = engineId !== undefined ? state.billing.creditNotes[engineId] : Object.values(state.billing.creditNotes).find((c) => c.originalInvoiceId === invoiceId)
+  if (engine === undefined && notes.length === 0) return undefined
+  const newPairs = (engine?.replacementInvoiceIds ?? []).flatMap((id) => {
+    const invoice = state.billing.invoices[id]
+    if (invoice === undefined) return []
+    const pair = Object.values(state.billing.ledger).find((p): p is BookingLedgerPair => p.kind !== 'aaFee' && p.invoiceId === id)
+    const xeroId = pair?.receivable.xeroAccRecId
+    return [{ invoiceNumber: invoice.invoiceNumber, ...(xeroId !== undefined ? { accRecId: xeroId } : {}) }]
+  })
+  return {
+    creditNoteNumber: engine?.creditNoteNumber ?? notes[0]!.creditNoteNumber,
+    notes: notes.map((n) => ({ id: n.id, type: n.type, creditNoteNumber: n.creditNoteNumber, total: n.total, allocated: n.allocated, unallocated: roundToCents(n.total - n.allocated) })),
+    accPayVoided: accPay?.status === 'voided',
+    newPairs,
   }
 }

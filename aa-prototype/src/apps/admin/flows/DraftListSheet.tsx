@@ -6,9 +6,9 @@
  * nobody's schedule. Inline errors are the store's refusals.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { neutral } from '../../../theme/tokens'
-import { createDraftList, scheduleHorizon, useAppStore, type Actor } from '../../../store'
+import { activeHospitals, activeSurgeons, createDraftList, scheduleHorizon, useAppStore, type Actor } from '../../../store'
 import type { ListKind, RequestSource, Session } from '../../../domain/types'
 import { Button, FormError, Segmented, SelectField, TextField } from '../../../shared/ui'
 import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
@@ -16,6 +16,7 @@ import { DRAFT_LIST, SOURCE_LABELS } from '../../../shared/scheduleTerms'
 import { withKind } from './AssignListFields'
 import { useHospitalOptionLabel } from '../components/conflicts/ConflictCallout'
 import { surgeonSpecialtyLabel, withSpecialties } from '../../../domain/specialties'
+import { retiredLabel } from '../../../domain/masterLifecycle'
 
 const KIND_OPTIONS: { value: ListKind; label: string }[] = [
   { value: 'private', label: 'Private' },
@@ -67,6 +68,12 @@ export function DraftListSheet({
   const [error, setError] = useState<string | null>(null)
   // Closures are marked for the day chosen, not the day the sheet opened on.
   const optionLabel = useHospitalOptionLabel(draft.dateISO)
+  // Pickers offer active masters only (catch-up Phase 42): a new request never names a retired record.
+  const hospitalOptions = useMemo(() => activeHospitals({ masters: { hospitals } }, draft.hospitalId), [hospitals, draft.hospitalId])
+  const surgeonOptions = useMemo(
+    () => activeSurgeons({ masters: { surgeons } }, draft.surgeonId).sort((a, b) => a.name.localeCompare(b.name)),
+    [surgeons, draft.surgeonId],
+  )
 
   useEffect(() => {
     if (open) {
@@ -111,19 +118,17 @@ export function DraftListSheet({
 
         <SelectField label="Hospital" value={draft.hospitalId} onChange={(hospitalId) => update({ hospitalId })} shot="draft-list-hospital">
           <option value="" disabled>Choose a hospital</option>
-          {Object.values(hospitals).map((h) => (
-            <option key={h.id} value={h.id}>{optionLabel(h.id, h.name)}</option>
+          {hospitalOptions.map((h) => (
+            <option key={h.id} value={h.id}>{optionLabel(h.id, retiredLabel(h.name, h))}</option>
           ))}
         </SelectField>
 
         {/* No anaesthetist yet, so no preference group: a plain list, by name. */}
         <SelectField label="Surgeon" value={draft.surgeonId} onChange={(surgeonId) => update({ surgeonId })} shot="draft-list-surgeon">
           <option value="" disabled>Choose a surgeon</option>
-          {Object.values(surgeons)
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((s) => (
-              <option key={s.id} value={s.id}>{withSpecialties(s.name, surgeonSpecialtyLabel({ specialties }, s))}</option>
-            ))}
+          {surgeonOptions.map((s) => (
+            <option key={s.id} value={s.id}>{withSpecialties(retiredLabel(s.name, s), surgeonSpecialtyLabel({ specialties }, s))}</option>
+          ))}
         </SelectField>
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>

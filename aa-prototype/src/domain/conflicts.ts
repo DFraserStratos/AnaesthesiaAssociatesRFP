@@ -22,7 +22,8 @@
  * stored. Pure: no React, no store, no `shared/`.
  */
 
-import type { ConflictClear, HospitalHoliday, List, ListConflict } from './types'
+import type { ConflictClear, HospitalHoliday, List, ListConflict, PublicHoliday } from './types'
+import { closuresAt, closuresIndex, type Closure, type ClosureIndex, type ClosureSources } from './holidays'
 
 // ---------------------------------------------------------------------------
 // Backdrop history (moved here from store/selectors.ts so the domain can read it)
@@ -48,6 +49,8 @@ export function isBackdropList(list: Pick<List, 'id'>): boolean {
 // ---------------------------------------------------------------------------
 
 export const holidayCause = (holidayId: string): string => `holiday:${holidayId}`
+/** A master public holiday's cause (catch-up Phase 42), beside a hospital holiday's. */
+export const publicHolidayCause = (publicHolidayId: string): string => `publicHoliday:${publicHolidayId}`
 
 /** A conflict as its facts, before it is stamped with when it was raised. */
 export type ExpectedConflict = Omit<ListConflict, 'raisedAtISO'>
@@ -55,7 +58,9 @@ export type ExpectedConflict = Omit<ListConflict, 'raisedAtISO'>
 /** Rebuild a conflict's facts from its cause (a cleared conflict is held only as its cause). */
 export function conflictFromCause(cause: string): ExpectedConflict | null {
   const [kind, a] = cause.split(':')
-  if (kind === 'holiday' && a !== undefined && a !== '') return { kind: 'holiday', cause, holidayId: a }
+  if (a === undefined || a === '') return null
+  if (kind === 'holiday') return { kind: 'holiday', cause, holidayId: a }
+  if (kind === 'publicHoliday') return { kind: 'holiday', cause, publicHolidayId: a }
   return null
 }
 
@@ -63,31 +68,29 @@ export function conflictFromCause(cause: string): ExpectedConflict | null {
 // Facts
 // ---------------------------------------------------------------------------
 
-/** Holidays keyed `<dateISO>|<hospitalId>`, each list sorted by id. */
-export type HolidayIndex = ReadonlyMap<string, readonly HospitalHoliday[]>
+/** The closures a List's hospital has on its date, read through `domain/holidays.ts` (catch-up Phase 42). */
+export type HolidayIndex = ClosureIndex
 
-export const holidayKey = (dateISO: string, hospitalId: string): string => `${dateISO}|${hospitalId}`
+export { closureKey as holidayKey } from './holidays'
 
-export function holidayIndex(holidays: Readonly<Record<string, HospitalHoliday>> | readonly HospitalHoliday[]): HolidayIndex {
-  const rows = Array.isArray(holidays) ? (holidays as readonly HospitalHoliday[]) : Object.values(holidays as Record<string, HospitalHoliday>)
-  const index = new Map<string, HospitalHoliday[]>()
-  for (const h of rows) {
-    const key = holidayKey(h.dateISO, h.hospitalId)
-    const bucket = index.get(key)
-    if (bucket === undefined) index.set(key, [h])
-    else bucket.push(h)
-  }
-  for (const bucket of index.values()) bucket.sort((x, y) => x.id.localeCompare(y.id))
-  return index
+/** Index both calendars (hospital holidays and the master public holidays) for the rule. */
+export function holidayIndex(sources: ClosureSources): HolidayIndex {
+  return closuresIndex(sources)
 }
 
-/** Everything the rule reads for one List: the holidays at its hospital on its date. */
+/** Everything the rule reads for one List: the closures at its hospital on its date. */
 export interface ConflictFacts {
-  holidays: readonly HospitalHoliday[]
+  closures: readonly Closure[]
 }
 
 export function conflictFactsFor(list: Pick<List, 'dateISO' | 'hospitalId'>, inputs: { holidays: HolidayIndex }): ConflictFacts {
-  return { holidays: inputs.holidays.get(holidayKey(list.dateISO, list.hospitalId)) ?? [] }
+  return { closures: closuresAt(inputs.holidays, list.dateISO, list.hospitalId) }
+}
+
+function conflictOf(closure: Closure): ExpectedConflict {
+  return closure.source === 'hospital'
+    ? { kind: 'holiday', cause: holidayCause(closure.holidayId), holidayId: closure.holidayId }
+    : { kind: 'holiday', cause: publicHolidayCause(closure.publicHolidayId), publicHolidayId: closure.publicHolidayId }
 }
 
 // ---------------------------------------------------------------------------
@@ -108,7 +111,7 @@ export function expectedConflicts(
   // A removed Draft List has left every view but History (US-01.6.4).
   if (list.removedAtISO !== undefined) return []
   if (list.state === 'AUTHORISED' && options.ignoreLock !== true) return []
-  return facts.holidays.map((h) => ({ kind: 'holiday', cause: holidayCause(h.id), holidayId: h.id }))
+  return facts.closures.map(conflictOf)
 }
 
 /** A clear that still applies: its cause is among the expected conflicts. */
@@ -168,10 +171,13 @@ export function reconcileListConflicts(list: List, expected: readonly ExpectedCo
  */
 export function reconcileAllConflicts(
   lists: Readonly<Record<string, List>>,
-  inputs: { holidays: Readonly<Record<string, HospitalHoliday>> | readonly HospitalHoliday[] },
+  inputs: {
+    holidays: Readonly<Record<string, HospitalHoliday>> | readonly HospitalHoliday[]
+    publicHolidays: Readonly<Record<string, PublicHoliday>> | readonly PublicHoliday[]
+  },
   atISO: string,
 ): Record<string, List> {
-  const holidays = holidayIndex(inputs.holidays)
+  const holidays = holidayIndex({ hospitalHolidays: inputs.holidays, publicHolidays: inputs.publicHolidays })
   let out: Record<string, List> | null = null
   for (const list of Object.values(lists)) {
     const expected = expectedConflicts(list, conflictFactsFor(list, { holidays }))
@@ -197,6 +203,8 @@ export const CONFLICT_REASONS: Record<ListConflict['kind'], ConflictReason> = {
 /** What the wording reads. Names arrive formatted (the domain never imports `shared/`). */
 export interface ConflictLookups {
   holidays: Readonly<Record<string, HospitalHoliday>>
+  /** The master public holidays (catch-up Phase 42); absent reads as none. */
+  publicHolidays?: Readonly<Record<string, PublicHoliday>>
   hospitalName: (hospitalId: string) => string
 }
 
@@ -207,11 +215,18 @@ function sentence(text: string): string {
 
 /** The reason and detail line for a conflict, for display and audit. No dashes, and never the word "slot" (OQ-64). */
 export function describeConflict(
-  conflict: Pick<ListConflict, 'kind' | 'holidayId'>,
+  conflict: Pick<ListConflict, 'kind' | 'holidayId' | 'publicHolidayId'>,
   list: Pick<List, 'hospitalId'>,
   lookups: ConflictLookups,
 ): { reason: ConflictReason; detail: string } {
   const reason = CONFLICT_REASONS[conflict.kind]
+  if (conflict.publicHolidayId !== undefined) {
+    // "St George's is closed: Labour Day (public holiday)." (catch-up Phase 42)
+    const hospital = list.hospitalId !== undefined ? lookups.hospitalName(list.hospitalId) : 'The hospital'
+    const row = lookups.publicHolidays?.[conflict.publicHolidayId]
+    if (row === undefined) return { reason, detail: `${hospital} is closed on this date (public holiday).` }
+    return { reason, detail: `${hospital} is closed: ${row.name.trim().replace(/[.!?]$/, '')} (public holiday).` }
+  }
   const holiday = conflict.holidayId !== undefined ? lookups.holidays[conflict.holidayId] : undefined
   const hospitalId = holiday?.hospitalId ?? list.hospitalId
   const hospital = hospitalId !== undefined ? lookups.hospitalName(hospitalId) : 'The hospital'
@@ -231,10 +246,11 @@ export function conflictPreview(input: {
   dateISO: string
   hospitalId: string | undefined
   holidays: Readonly<Record<string, HospitalHoliday>> | readonly HospitalHoliday[]
+  publicHolidays: Readonly<Record<string, PublicHoliday>> | readonly PublicHoliday[]
 }): ExpectedConflict[] {
-  const index = holidayIndex(input.holidays)
+  const index = holidayIndex({ hospitalHolidays: input.holidays, publicHolidays: input.publicHolidays })
   const facts: ConflictFacts = {
-    holidays: input.hospitalId === undefined ? [] : (index.get(holidayKey(input.dateISO, input.hospitalId)) ?? []),
+    closures: input.hospitalId === undefined ? [] : closuresAt(index, input.dateISO, input.hospitalId),
   }
   return expectedConflicts({ id: '', state: 'ACTIVE' }, facts)
 }

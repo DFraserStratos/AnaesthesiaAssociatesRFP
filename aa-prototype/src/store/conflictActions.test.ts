@@ -109,7 +109,9 @@ describe('hospital holidays: edit and delete (US-01.5.1)', () => {
     expect(code(editHospitalHoliday(api, OFFICE, 'HHnope', { name: 'x' }))).toBe('notFound')
     expect(code(editHospitalHoliday(api, OFFICE, 'HH900', { name: '  ' }))).toBe('nameRequired')
     expect(code(editHospitalHoliday(api, OFFICE, 'HH900', { dateISO: '22/07/2026' }))).toBe('dateRequired')
-    expect(code(editHospitalHoliday(api, OFFICE, 'HH900', { dateISO: '2026-10-26' }))).toBe('duplicateHoliday')
+    // Labour Day is a master public holiday since catch-up Phase 42; a second closure of the hospital's own on HH900's date is the duplicate.
+    expect(addHospitalHoliday(api, OFFICE, HOSP.sx, '2026-07-29', 'Lift repairs').ok).toBe(true)
+    expect(code(editHospitalHoliday(api, OFFICE, 'HH900', { dateISO: '2026-07-29' }))).toBe('duplicateHoliday')
     expect(code(deleteHospitalHoliday(api, OFFICE, 'HHnope'))).toBe('notFound')
     expect(code(deleteHospitalHoliday(api, SOUTER_ACTOR, 'HH900'))).toBe('officeOnly')
   })
@@ -173,6 +175,10 @@ describe('conflict selectors', () => {
     expect(wed.listCount).toBe(6)
     expect(wed.conflictedCount).toBe(6)
     const oct = hospitalMonth(api.getState(), HOSP.sx, '2026-10').find((d) => d.dateISO === '2026-10-26')!
-    expect(oct.closures.map((h) => h.name)).toEqual(['Labour Day'])
+    // Catch-up Phase 42: Labour Day is the master calendar's, read-only on the hospital's month.
+    expect(oct.closures).toEqual([])
+    expect(oct.publicClosures.map((h) => h.name)).toEqual(['Labour Day'])
+    const rooms = hospitalMonth(api.getState(), HOSP.aaRooms, '2026-10').find((d) => d.dateISO === '2026-10-26')!
+    expect(rooms.publicClosures).toEqual([])
   })
 })

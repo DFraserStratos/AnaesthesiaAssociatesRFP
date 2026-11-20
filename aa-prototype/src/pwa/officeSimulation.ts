@@ -57,6 +57,7 @@
  * the audit trail names the simulation as the actor.
  */
 
+import { reportDiagnostic } from '../store/diagnostics'
 import { authoriseAsSimulatedOffice, officeStandInRefusal, STAND_IN_INCOMPLETE, type BoundAppStore } from '../store'
 
 // ---------------------------------------------------------------------------
@@ -142,7 +143,7 @@ function playTheOffice(api: BoundAppStore, listId: string): void {
   } catch (error) {
     // A demo convenience must never take the app down. Same reasoning as
     // `emitAppEvent`'s listener guard: log it and swallow it.
-    console.error('office simulation failed', listId, error)
+    reportDiagnostic('error', 'office simulation failed', { listId, error })
   }
 }
 

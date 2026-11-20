@@ -1,4 +1,9 @@
 import { OFFICE_ACTOR } from '../../../store'
+import { SyntheticDataBadge } from '../../../shared/SyntheticDataBadge'
+import { Notice } from '../../../shared/ui'
+import { neutral } from '../../../theme/tokens'
+import { Pager } from '../../admin/components/Pager'
+import { SCALE_GENERATING_LINE } from '../../../shared/scale/ScaleBanner'
 import { StubSetExample } from './stubExamples'
 import { DRAFT_LIST, DRAFT_LISTS, UNASSIGNED } from '../../../shared/scheduleTerms'
 import { CataloguePage, CatalogueRow, LibraryGroup, StageHint } from './CatalogueKit'
@@ -33,6 +38,7 @@ import {
   SidePanelExample,
   MasterPillsExample,
   MastersSubNavExample,
+  MasterHeaderExample,
   MasterTableExample,
   NameSearchBoxExample,
   OverlayExample,
@@ -99,6 +105,14 @@ import {
 } from './admin/storeExamples'
 import { BookingAsAtPanelExample, BookingSaveBarExample, LeaveWithoutSavingDialogExample, OfficeSavedNoticeExample } from './admin/draftExamples'
 import {
+  LoadResultBannerExample,
+  LoadResultPanelExample,
+  PublicHolidaySheetExample,
+  RetireSectionExample,
+  RvgTimeRuleSheetExample,
+  ShowRetiredToggleExample,
+} from './admin/mastersExamples'
+import {
   CheckboxExample,
   DateJumpInputExample,
   FieldHintExample,
@@ -111,6 +125,21 @@ import { BackstopAmountFieldExample, NoContractGroupExample, RailOptionGroupExam
 import { ProcedureStackExample } from './procedureStackExample'
 import { FunderDetailsExample, PayerFieldsExample } from './payerExamples'
 import { PaidByRowExample, PaidBySheetExample, PartyPickerExample } from './splitExamples'
+import {
+  AdditionalInvoiceButtonExample,
+  AdditionalInvoiceSheetExample,
+  CreditNoteButtonExample,
+  SplitAllocationExample,
+  SplitCombinedButtonExample,
+  CreditNoteDocumentExample,
+  CreditSheetExample,
+  EventReviewSheetExample,
+  OptionChipExample,
+  CorrectInvoiceCardExample,
+  CreditTrailsExample,
+  CorrectionRetryExample,
+  ProcedureEventsListExample,
+} from './eventExamples'
 import { LockBadge } from '../../../shared/booking/LockBadge'
 import { SEED_MARKERS } from '../../../domain/seed'
 import { ContractHistory } from '../../admin/flows/ContractHistory'
@@ -170,6 +199,9 @@ export function AdminCatalogue() {
         <CatalogueRow name="MasterPanel / PanelGrid / PanelSection" source="apps/admin/components/MasterPanel.tsx" usedIn={A} what="The 600px record preset of SidePanel the Contract and Party editors open in: the h2 at 18/700 names the dialog, the footer is right-aligned with the primary last." replaceWith="shadcn Sheet (side)" note="Since U2 one shell with the drawers (SidePanel); a sheet opened over it (the RVG code picker) closes first on Escape.">
           <MasterPanelExample />
         </CatalogueRow>
+        <CatalogueRow name="RawRowSheet" source="apps/admin/matching/RawRowSheet.tsx" usedIn={A} what="The restricted raw hospital row (catch-up Phase 43; US-15.0.6): a record SidePanel over Matching's row panel that asks for a reason (FilterPills quick reasons or a TextField), then shows the masked columns on the table kit with the Notice that the masking policy is for AA to agree. Teal only on View raw row." replaceWith="shadcn Sheet (side)" note="Each view writes an audit entry, so it is not mounted here.">
+          <StageHint>Opens from View raw row on an unmatched Matching row.</StageHint>
+        </CatalogueRow>
         <CatalogueRow name="SidePanel" source="apps/admin/components/SidePanel.tsx" usedIn={A} what="The one Admin right-docked panel (U2): scrim, an h2 header at 18/700 that names the dialog, the corner X, e3, a scrolling body and a footer. 440px list (the drawers) or 600px record (MasterPanel). On the one modal stack." replaceWith="shadcn Sheet (side)">
           <SidePanelExample />
         </CatalogueRow>
@@ -195,7 +227,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="SideNav (with RolesInfo)" source="apps/admin/components/SideNav.tsx" usedIn={A} what="The dark Admin side nav: sections with crimson and amber count badges (the mockup badge, kept local), the wordmark, the Roles in this prototype dialog and the persona through the shared PersonaChip." replaceWith="shadcn Sidebar" note="A labelled navigation whose active item carries aria-current since UI unification U5; the items stay buttons (question 3). Crimson only on --sidebar-primary." height={600}>
           <SideNavExample />
         </CatalogueRow>
-        <CatalogueRow name="Master data sub-nav" source="apps/admin/screens/masters/MasterData.tsx" usedIn={A} what="The vertical list of the 15 master views, with aria-current on the open one." replaceWith="shadcn Sidebar group / NavigationMenu" note="Rebuilt from MasterData's markup and the real MASTERS_NAV: the real nav writes ?view= and renders every master view." height={420}>
+        <CatalogueRow name="Master data sub-nav" source="apps/admin/screens/masters/MasterData.tsx" usedIn={A} what="The vertical list of the master views in five groups (People and places, Schedule, Billing, Settings, Go-live), rendered from masterViews.ts, with aria-current on the open one." replaceWith="shadcn Sidebar group / NavigationMenu" note="Rebuilt from MasterData's markup and the real MASTER_VIEWS registry (catch-up Phase 42): the real nav writes ?view= and renders every master view." height={620}>
           <MastersSubNavExample />
         </CatalogueRow>
         <CatalogueRow name="PdfListsTab and PdfListReview (PDF lists)" source="apps/admin/intake/PdfListsTab.tsx" usedIn={A} what="The rooms' PDF lists (catch-up Phase 34): an inbox on the shared table kit (sender, surgeon, hospital, received, suggested List, a Re-sent Pill and a status Pill), Upload PDF list (PdfUploadDialog: the surface's Overlay with OverlayHeader, RadioCards badged Sample files, a Sent from TextField and SheetActions), and the review beside the facsimile: compact TextFields per row, each correction listed under its row, Send to matching (Button) and a ResultLine." replaceWith="TanStack Table + shadcn Dialog + Field" note="Uploading, correcting and sending write to the demo store." height={460}>
@@ -215,8 +247,20 @@ export function AdminCatalogue() {
         <CatalogueRow name="StatusChip" source="shared/StatusChip.tsx" usedIn={AWM} what="A small tinted chip for a List kind or availability status, coloured from the status master." replaceWith="shadcn Badge (6 status variants)">
           <StatusChipExample />
         </CatalogueRow>
-        <CatalogueRow name="Pill" source="shared/ui/Pill.tsx" usedIn={AWM} what="The one label pill (UI unification U3): neutral, success, warning and error tones; sm, md (inline) and lg (table, the Admin Review size); a tint or a full-alpha outline; a leading icon or dot. Never teal or crimson, so no pill reads as a button." replaceWith="shadcn Badge">
+        <CatalogueRow name="Pill" source="shared/ui/Pill.tsx" usedIn={AWM} what="The one label pill (UI unification U3): neutral, success, warning and error tones; sm, md (inline) and lg (table, the Admin Review size); a tint, a full-alpha outline, or onInk (catch-up Phase 43: quiet white on the dark harness bar and admin side nav); a leading icon or dot. Never teal or crimson, so no pill reads as a button." replaceWith="shadcn Badge">
           <PillExample />
+        </CatalogueRow>
+        <CatalogueRow name="SyntheticDataBadge" source="shared/SyntheticDataBadge.tsx" usedIn={AWM} what="Synthetic data only (catch-up Phase 43; US-15.0.6): an environment marker on a Pill with a shield icon and its tooltip, onInk in the harness bar and admin side nav, the neutral outline on the web nav and the mobile More card. Neutral: never crimson, teal or the demo warning tint." replaceWith="shadcn Badge">
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <span style={{ background: neutral.ink, padding: 8, borderRadius: 8 }}><SyntheticDataBadge tone="onInk" /></span>
+            <SyntheticDataBadge tone="onLight" />
+          </div>
+        </CatalogueRow>
+        <CatalogueRow name="Pager" source="apps/admin/components/Pager.tsx" usedIn={A} what="The one admin pager (catch-up Phase 43; US-15.0.4): the range in mono, first, previous, the teal page count, next and last. Shown only past one page: the Day view (30 anaesthetists), Invoices (50), Audit (100), the Ledger (50), the Billing monitor's groups (20) and each group's Lists (25)." replaceWith="TanStack Table pagination">
+          <Pager total={28114} size={50} page={2} onPage={() => {}} />
+        </CatalogueRow>
+        <CatalogueRow name="ScaleBanner" source="shared/scale/ScaleBanner.tsx" usedIn={A} what="The full-scale data's banner (catch-up Phase 43): harness chrome under the bar, on the shared Notice (warning tint) while generating or loaded, every figure counted, a Timings disclosure with each timed screen's demo and full-scale render median. Never in the PWA." replaceWith="shadcn Alert" note="Shows only while Load full-scale data is running or loaded.">
+          <Notice tone="warning">{SCALE_GENERATING_LINE}</Notice>
         </CatalogueRow>
         <CatalogueRow name="MasterPills" source="apps/admin/components/MasterPills.tsx" usedIn={A} what="Admin's import path for Pill, used for Party kinds, Contract tags, Active and RVG anatomy headings." replaceWith="shadcn Badge" note="A re-export only: delete it in the migration.">
           <MasterPillsExample />
@@ -262,6 +306,9 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="Notice" source="shared/ui/Notice.tsx" usedIn={AWM} what="The one notice (UI unification U3): the ConflictCallout shell in warning, error and success, and the neutral note. A role only where the note announces; the icon is aria-hidden." replaceWith="shadcn Alert">
           <NoticeExample />
+        </CatalogueRow>
+        <CatalogueRow name="LoadResultBanner" source="apps/admin/screens/masters/chrome.tsx" usedIn={A} what="The one-line neutral Notice under a master view's header while a load waits for review: on a seeded view while a seed load for one of its sheets is staged (Open Seed load), and on every view while the go-live load is staged (Open). The Go-live views show none." replaceWith="shadcn Alert" note="Shown for the Hospitals view: Check the sample stages hospitals.csv in the demo store; load or discard it on the LoadResultPanel row or on Seed load.">
+          <LoadResultBannerExample />
         </CatalogueRow>
         <CatalogueRow name="ConflictCallout" source="apps/admin/components/conflicts/ConflictCallout.tsx" usedIn={A} what="Warns, before saving, that the hospital is closed that day and the List will be flagged (the shared Notice, warning tone)." replaceWith="shadcn Alert">
           <ConflictCalloutExample />
@@ -317,6 +364,9 @@ export function AdminCatalogue() {
         <CatalogueRow name="DecisionCards (Matching)" source="apps/admin/matching/DecisionCards.tsx" usedIn={A} what={`The Matching row panel's decision: RadioCards for Match and apply, Create a Booking, Create a List, Create a ${DRAFT_LIST} and Reject, the suggested one marked with the Contract rail's Suggested pill, a disabled card showing why, and the chosen card opening its own controls.`} replaceWith="shadcn RadioGroup (card items)" note="Static options here; nothing writes to the demo data.">
           <DecisionCardsExample />
         </CatalogueRow>
+        <CatalogueRow name="OptionChip" source="shared/ui/OptionChip.tsx" usedIn={AWM} what="A quick option chip (catch-up Phase 39): a teal-tint pill that fills or picks one answer in a form, beside the field it serves (the credit's reasons over its reason text); pressed is the teal border and tint with aria-pressed; size md 36 or lg 44 on the phone. Not FilterPills, the solid teal list filter." replaceWith="shadcn Toggle (outline)" note="The availability form's chips are this; the funder sheet's and the credit's choice of invoice use its radio role (aria-checked) inside a radiogroup.">
+          <OptionChipExample />
+        </CatalogueRow>
         <CatalogueRow name="OptionRow" source="shared/ui/OptionRow.tsx" usedIn={A} what="One result in a short pick list under a search box (catch-up Phase 33's review, Matching's Match to another Booking): a full-width bordered button, words left and mono facts right; the current pick in the teal accent edge and tint, with aria-pressed. A table row that opens a record is ClickableRow instead." replaceWith="shadcn Command (items)">
           <OptionRowExample />
         </CatalogueRow>
@@ -340,8 +390,19 @@ export function AdminCatalogue() {
 
       {/* ------------------------------------------------------------------ */}
       <LibraryGroup id="tanstack">
-        <CatalogueRow name="Table / Header / TextAction / EditCell" source="apps/admin/screens/masters/chrome.tsx" usedIn={A} what="The master views' table chrome: a page header, a table on the shared TableShell (dense) and Th since UI unification U6 (the Admin Review header, sunken dividers, e1), text actions and an Edit cell." replaceWith="TanStack Table + shadcn Table" note="Phase 42 renames heads to columns, adds GroupRow and ClickableRow and wraps Header as MasterHeader over PageHeader. The signature is unchanged until then.">
+        <CatalogueRow name="MasterTable / EditCell" source="apps/admin/screens/masters/chrome.tsx" usedIn={A} what="Every master view's table (catch-up Phase 42): the shared TableShell at the dense density with a Th per named column (a string, or a label with its alignment and width; ACTIONS_COLUMN for the right-aligned actions), and EditCell, the row's Edit as the shared TextAction in its own right-aligned Td." replaceWith="TanStack Table + shadcn Table" note="Replaced the masters Table (heads[]). Contracts and RVG groups add GroupRow; Anaesthetists, Surgeons, Parties and Contracts use ClickableRow.">
           <MasterTableExample />
+        </CatalogueRow>
+        <CatalogueRow name="MasterHeader" source="apps/admin/screens/masters/chrome.tsx" usedIn={A} what="A master view's title row over the shared PageHeader (section size): the title, one subtitle line, an optional count and the teal Add action. A seeded view's subtitle ends with the seeded line (Loaded once at go-live from AA's controlled spreadsheet, then kept here by hand.) and the waiting-load banner follows; section is a second header inside a view, with neither." replaceWith="Custom (layout)" note="Replaced the masters Header. The Add action is stubbed here.">
+          <MasterHeaderExample />
+        </CatalogueRow>
+        <CatalogueRow name="ShowRetiredToggle / RetiredPill" source="apps/admin/screens/masters/chrome.tsx" usedIn={A} what="Show retired on the shared Switch with the retired count as its description, off by default; a retired row in mist on the bg band (retiredRowStyle) with the neutral Retired pill, its reason in the title." replaceWith="shadcn Switch + Badge" note="Local state only: three made-up hospitals, one retired.">
+          <ShowRetiredToggleExample />
+        </CatalogueRow>
+        <CatalogueRow name="LoadResultPanel" source="apps/admin/screens/masters/LoadResultPanel.tsx" usedIn={A} what="One checked sheet's result, shared by Seed load and the go-live view: the summary line (hospitals.csv: 6 rows · 2 valid · 4 rejected), a dense table of Row, the sheet's key columns, a Valid or Rejected pill and the reasons one per line, the Only rejected filter, and Load N valid rows and Discard. After a load the summary says what loaded and each row opens its record." replaceWith="TanStack Table + shadcn Table + Badge" note="Check the sample stages hospitals.csv as the developer's seed load; Load and Discard write to the demo store." height={520}>
+          <Wide minWidth={900}>
+            <LoadResultPanelExample />
+          </Wide>
         </CatalogueRow>
         <CatalogueRow name="Table kit (TableShell · Th · Td · GroupRow · ClickableRow)" source="shared/table/" usedIn={AWM} what="The one table kit (UI unification U6, question 19): TableShell (white, line, radius 14, e1; a named focusable region only when it overflows), Th (scope col) on the Admin Review header, sortable with `sort` (aria-sort and a button, teal underline on the active column; the Billing monitor), Td with sunken dividers, GroupRow (th scope colgroup), and ClickableRow with one RowOpenButton as the keyboard handle. Density comfortable (web), compact (admin) or dense (audit and masters) keeps each table's row height." replaceWith="TanStack Table + shadcn Table" note={`The ${DRAFT_LISTS} table is built this way: Tab to a session, Enter opens the ${DRAFT_LIST} drawer (bug 3). An inner button does only its own action.`}>
           <TableKitExample />
@@ -358,7 +419,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="DefList / DefRow" source="shared/ui/DefRow.tsx" usedIn={AWM} what="Label and value pairs as a dl (U6): inline (the drawers and Booking detail, labels at 80), stacked (the profile facts) and settings (the base of Phase 26's ProfileRow, with a trailing lock and the bank number masked)." replaceWith="Custom (dl)">
           <DefRowExample />
         </CatalogueRow>
-        <CatalogueRow name="ReviewQueue (clickable rows)" source="apps/admin/screens/ReviewQueue.tsx" usedIn={A} what="Submitted Lists to authorise, on the shared table kit (UI unification U6): TableShell (compact), Th, Td and ClickableRow, whose row click opens the List while the Review button stays the keyboard handle." replaceWith="TanStack Table + shadcn Table (row links)" note="Rows never take focus; the Review button is the one handle per row. Open is stubbed." height={380}>
+        <CatalogueRow name="ReviewQueue (clickable rows)" source="apps/admin/screens/ReviewQueue.tsx" usedIn={A} what="Submitted Lists to authorise, and since catch-up Phase 38b an Events tab (LineTabLink with its count) of events awaiting review, on the shared table kit (UI unification U6): TableShell (compact), Th, Td and ClickableRow, whose row click opens the List while the Review button stays the keyboard handle." replaceWith="TanStack Table + shadcn Table (row links)" note="Rows never take focus; the Review button is the one handle per row. Open is stubbed." height={380}>
           <Wide minWidth={980}>
             <ReviewQueue onOpen={noop} onViewInvoices={noop} />
           </Wide>
@@ -414,6 +475,15 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="SlotStatusSheet" source="apps/admin/flows/SlotStatusSheet.tsx" usedIn={A} what="Adds or edits an availability status in an Overlay: an OverlayHeader title, name, colour swatches, flags (the shared Checkbox with a hint, UI unification U4) and a live preview validated as you type, and a SheetActions footer." replaceWith="shadcn Dialog + Field + ToggleGroup (swatches) + RHF/Zod" note="Save adds the status to the demo store. Its preview block is the shared StatusBlock with the draft visual (UI unification U6).">
           <SlotStatusSheetExample />
+        </CatalogueRow>
+        <CatalogueRow name="PublicHolidaySheet" source="apps/admin/flows/PublicHolidaySheet.tsx" usedIn={A} what="Adds or changes a master public holiday in an Overlay (catch-up Phase 42): date, name, National or Regional with its region, and the hospitals open that day; Save says what the conflict rule did (flags raised or cleared)." replaceWith="shadcn Dialog + Field + RHF/Zod" note="Save writes the public holiday to the demo store and re-runs the conflict rule.">
+          <PublicHolidaySheetExample />
+        </CatalogueRow>
+        <CatalogueRow name="RvgTimeRuleSheet" source="apps/admin/flows/RvgTimeRuleSheet.tsx" usedIn={A} what="Edits the RVG time rule in an Overlay (catch-up Phase 42): one row per tier (from minute, minutes per unit; add and remove a tier), A part interval always rounds up. as a fixed line, a live preview of the rule in words and the units for 95 and 125 minutes, and Save with its refusal sentence inline." replaceWith="shadcn Dialog + Field + Base UI NumberField" note="Save writes the rule to the demo store; Procedures not yet authorised re-price.">
+          <RvgTimeRuleSheetExample />
+        </CatalogueRow>
+        <CatalogueRow name="RetireSection" source="apps/admin/screens/masters/chrome.tsx" usedIn={A} what="Retire (with a required reason) or Reinstate at the foot of a hospital, surgeon, surgeon group or AA modifier edit sheet: a refused retire lists the store's blockers in a warning Notice; a retired record shows its day and reason." replaceWith="shadcn Field + Textarea + Alert" note="Shown for the first seeded surgeon group; Retire and Reinstate write to the demo store.">
+          <RetireSectionExample />
         </CatalogueRow>
         <CatalogueRow name="ContractPriceRanges" source="apps/admin/flows/ContractPriceRanges.tsx" usedIn={A} what="A fixed-price Contract's dated prices as an inline-edit table: Enter saves, Escape cancels, the last row cannot be deleted. Its in-table inputs are the shared TextField at the compact size (UI unification U4): hidden labels, mono, the price right-aligned on a decimal keypad. Under it (catch-up Phase 25a) the ContractChangeNotice lists each authorised Procedure that kept its old range price." replaceWith="Base UI NumberField + TanStack Table (cell edit)" note="On the shared TableShell (dense) and Th since UI unification U6.">
           <ContractPriceRangesExample />
@@ -497,6 +567,42 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="PaidBySheet (with SplitFeeSection)" source="shared/flows/PaidBySheet.tsx, shared/flows/SplitFeeSection.tsx" usedIn={AWM} what="The one Paid by sheet (catch-up Phase 22a; US-11.2.2, US-08.2.3): a bottom sheet on the phone, a dialog on web and Admin. Opened by Change, it holds who pays (the Different payer tick, the patient's details or the other payer's fields, the Under 18 hint and the contact ask) and, when the payer changes, the offer (the Booking's other Procedures with the same payer, each ticked, never forced). Opened by Split, it holds the split alone (a party or Another person, a $ or % share and Takes the rest per row, each amount live). Save writes it or refuses it whole." replaceWith="Custom (shadcn Sheet, Checkbox and Input inside)" note="Opens on Grace Park's first seeded Procedure; Save writes to the demo store.">
           <PaidBySheetExample />
+        </CatalogueRow>
+        <CatalogueRow name="ProcedureEventsList" source="shared/booking/ProcedureEventsList.tsx" usedIn={AWM} what="A Procedure's events (catch-up Phase 38b; US-03.7.3): under each Procedure on the Booking detail in all three apps. Each row: the kind, the date, the first line's description, who raised it and the status pill (Awaiting review warning, Approved neutral, Invoiced success, Declined neutral with its reason). The office sees the total ex GST, the party, Review, Edit and Remove and the invoice number; the anaesthetist, on their own Procedure, the total and party and Edit and Remove on what they raised; the anaesthetist apps hide the section when the Procedure has none. A credit (catch-up Phase 39) is its own row: Credits AA-2026-0007 in full and the reason, the credited invoice's total, Issued once issued and the credit note's link in Admin; its new invoices read Rebill of AA-2026-0007." replaceWith="Custom (the shared Eyebrow, Pill, TextAction and InlineConfirm)" note="The seeded event EV0001 as the office sees it; every word from shared/procedureEventCopy.ts.">
+          <ProcedureEventsListExample as="office" />
+        </CatalogueRow>
+        <CatalogueRow name="AdditionalInvoiceSheet (AdditionalInvoiceForm, FreeFormLinesEditor, EventPartyField)" source="shared/booking/AdditionalInvoiceForm.tsx" usedIn={AWM} what="The free-form additional invoice (catch-up Phase 38b; US-08.6.3, D10, D22): raised from the Contract row's Create (Admin) or Raise (anaesthetist) additional invoice, and the events list's Edit. The date of the charge, the Same as the original invoice tick (ticked by default) that unticks to 22a's PartyPicker with Another person, the lines (description, quantity, amount, the line total) and the live subtotal, GST and total; Save for review. A bottom sheet on the phone, a dialog on web and Admin, as the Paid by sheet beside it." replaceWith="Custom (shadcn Sheet, Checkbox and Input inside)" note="Opens on David Chen's HP03; Save for review writes to the demo store. The lines editor and party field are their own components for Phase 39's credit note and rebill.">
+          <AdditionalInvoiceSheetExample />
+        </CatalogueRow>
+        <CatalogueRow name="EventReviewSheet" source="apps/admin/flows/EventReviewSheet.tsx" usedIn={A} what="The one standard review step (catch-up Phase 38b; D13): the event, its Procedure and original invoice, the lines with subtotal, GST and total, the party and who raised it; Approve for billing (invoiced in the next billing run) or Decline with a reason shown to whoever raised it. Opened from Review's Events tab and the events list's Review." replaceWith="shadcn Sheet (side)" note="On the shared SidePanel (record width). Approve and Decline write to the demo store.">
+          <EventReviewSheetExample />
+        </CatalogueRow>
+        <CatalogueRow name="AdditionalInvoiceButton" source="shared/booking/AdditionalInvoiceButton.tsx" usedIn={AWM} what="The button on the Procedure's Paid by row, beside Split (catch-up Phase 38b; US-08.6.3 Button): Create additional invoice for the office on any invoiced Procedure, Raise additional invoice for the anaesthetist on their own; absent on a colleague's or before the List is authorised; disabled with the refusal sentence otherwise." replaceWith="Custom (the shared TextAction)" note="Shown as the office on David Chen's HP03 (an invoiced history Procedure).">
+          <AdditionalInvoiceButtonExample />
+        </CatalogueRow>
+        <CatalogueRow name="CreditSheet (CreditForm, SplitCombinedSheet)" source="apps/admin/flows/CreditSheet.tsx, shared/booking/CreditForm.tsx" usedIn={A} what="The one credit form (catch-up Phase 39; US-08.6.5, US-08.6.2, US-08.6.4, US-08.6.6) in Admin's side sheet, opened by Credit note (no new invoices), Credit in full and rebill (one new invoice holding a copy of the original's lines, editable), Split into additional invoices (SplitCombinedSheet: the same form in split mode) and Edit on a pending credit. Step 1: the original's number, party and total; who the credit note goes to (the Same as the original invoice tick unticking to 22a's PartyPicker, another person allowed, with an invoice email); the reason (quick chips plus free text, required); no amount, a credit is always in full; the money state in plain words, the trail preview (debit, credit, contra, new debit) and A credit note is not a refund. Step 2: new invoice cards, each 38b's party field and lines editor, with Start from a copy of the original's lines on any card a credit adds; Add an invoice. The split opens with two blank components (never fewer), Put the rest on this invoice on each, and keeps the credited total, the components' sum and Left to allocate in the footer; Save N invoices for review waits for $0.00." replaceWith="Custom (shadcn Sheet; the shared OptionChip, TextArea, Notice and 38b's form parts inside)" note="Opens on the seeded AA-2026-H03 (unpaid, in Xero). Save writes to the demo store. The anaesthetist's variant is the Web and Mobile catalogues' row.">
+          <CreditSheetExample />
+        </CatalogueRow>
+        <CatalogueRow name="SplitAllocation" source="shared/booking/CreditForm.tsx" usedIn={A} what="The split's running figures (catch-up Phase 39; US-08.6.4, OQ-77 part 1): Credited, New invoices and Left to allocate, before GST, in mono tabular figures, from the pure splitTotalCheck. Left to allocate is neutral while short, the warning tone when over (never red) and the success tint with a tick at $0.00; any GST rounding across the components is said and accepted." replaceWith="Custom (shadcn Card)" note="Shown short, over and settled with a cent of GST rounding.">
+          <SplitAllocationExample />
+        </CatalogueRow>
+        <CatalogueRow name="CreditNoteButton" source="shared/booking/CreditNoteButton.tsx" usedIn={AWM} what="The credit note option on the Procedure's Paid by row, beside Create (or Raise) additional invoice and Split (catch-up Phase 39; US-08.6.5): the office's on any invoiced Procedure, the anaesthetist's on their own (creditOptionFor), crediting the Procedure's live invoice in full through the app's credit sheet; hidden on a colleague's, hidden with its caption when the only invoice is a prepayment invoice, disabled with its sentence while a credit is pending or once credited, and while the Booking has unsaved changes." replaceWith="shadcn Button (link variant)" note="Shown as the office on David Chen's HP03.">
+          <CreditNoteButtonExample />
+        </CatalogueRow>
+        <CatalogueRow name="SplitCombinedButton" source="shared/booking/SplitCombinedButton.tsx" usedIn={A} what="Split into additional invoices on the Procedure's Paid by row, beside Credit note (catch-up Phase 39; US-08.6.4): the office's only, opening the split sheet on the Procedure's live invoice; disabled with canSplitCombined's sentence otherwise (Not invoiced yet. Edit the Booking's Procedures, Contracts and prices instead.), while a credit waits, once credited, on a prepaid Procedure and while the Booking has unsaved changes. The invoice rail's Correct this invoice card has the same button." replaceWith="shadcn Button (link variant)" note="Shown on David Chen's invoiced HP03; it opens the real split sheet.">
+          <SplitCombinedButtonExample />
+        </CatalogueRow>
+        <CatalogueRow name="CreditNoteDocument (CreditedBanner)" source="apps/admin/screens/InvoiceDocument.tsx" usedIn={A} what="A credit note on the invoice's own sheet (catch-up Phase 39; DM-24): CREDIT NOTE, Credits AA-2026-H03 in full, the party it goes to, the reason, who raised it, the mirrored Credit: lines and Total credited, the supplier and agent block (the same DocMasthead, AgentBlock and DocTotals as the tax invoice). The rail: Delivery (sent by the engine, Simulated send), the Negative invoice, the New invoices and the Xero card. Above it, the credited original's banner: Credited in full by CN-2026-0001 on the date, rebilled as the new invoice, all links." replaceWith="Custom (print-styled document)" note="Issue a credit submits, approves and runs a credit of AA-2026-H03 in the demo store, then shows both.">
+          <CreditNoteDocumentExample />
+        </CatalogueRow>
+        <CatalogueRow name="CorrectInvoiceCard" source="apps/admin/screens/InvoiceDocument.tsx" usedIn={A} what="Correct this invoice on the invoice rail (catch-up Phase 39; US-08.6.5, US-08.6.2, US-08.6.4): its caption, then Credit note, Credit in full and rebill and, on a standard invoice, Split into additional invoices, as teal text actions like the Additional invoices card's Create additional invoice above it. Each opens the credit sheet on this invoice. Disabled while a credit waits or once credited, the sentence once under Credit note; the split checks this invoice itself, with its own sentence. On a prepayment invoice the refusal is the caption and there are no actions." replaceWith="Custom (the shared TextAction on a rail card)" note="On the seeded AA-2026-H03 as the office.">
+          <CorrectInvoiceCardExample />
+        </CatalogueRow>
+        <CatalogueRow name="CreditTrails (Ledger)" source="apps/admin/screens/LedgerScreen.tsx" usedIn={A} what="One anaesthetist's credits on the Ledger (catch-up Phase 39, work item 12; US-08.6.2): each credit as its trail, Debit (the original), Credit (the credit note), Contra (the negative invoice, offset against the unpaid payable or netting in the next payment run) and New debit for each new invoice, every number opening its document. Every word from shared/procedureEventCopy.ts." replaceWith="Custom on TanStack Table (the shared TableShell)" note="Empty until a credit of AA-2026-H03 is issued (the CreditNoteDocument row's Issue a credit).">
+          <CreditTrailsExample />
+        </CatalogueRow>
+        <CatalogueRow name="CorrectionRetry (Billing monitor)" source="apps/admin/screens/BillingMonitorScreen.tsx" usedIn={A} what="Resolve and retry on a Billing monitor Booking row whose credit's Xero correction failed (catch-up Phase 39, work item 13): retries the queue item now, which reverses the original's Xero records and creates the new pairs together, or sets the next try. Shown on any row with a failed correction, a failed billing row included (beside its Retry). The office actor is a prop." replaceWith="shadcn Button" note="Renders only while a correction waits after a failed attempt.">
+          <CorrectionRetryExample />
         </CatalogueRow>
         <CatalogueRow name="DayGrid" source="apps/admin/components/DayGrid.tsx" usedIn={A} what={`The daily scheduling canvas: one row per anaesthetist, blocks on a 07:00 to 18:00 ruler, conflict and attention overlays, the ${DRAFT_LIST} band and the filter footer. Cut down to 10 rows.`} replaceWith="Custom on primitives (grid roles, Tooltip, TanStack Virtual)" note="Blocks open the real SlotDrawer. Each block takes its fill and dashed outline from blockFill (UI unification U6, U23); the conflict and attention outlines stay its own." height={620}>
           <DayGridExample />

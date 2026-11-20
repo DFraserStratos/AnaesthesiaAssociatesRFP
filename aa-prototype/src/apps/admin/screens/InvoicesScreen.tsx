@@ -1,17 +1,28 @@
-import { useMemo } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { ChevronRight } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { neutral, radius, semantic } from '../../../theme/tokens'
-import type { Invoice } from '../../../domain/types'
+import { Link, useNavigate } from 'react-router-dom'
+import { fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
+import type { CreditNote, Invoice } from '../../../domain/types'
 import { invoiceDeliveryLabel, layoutShortLabel } from '../../../domain/billing'
-import { Card, Eyebrow, PageHeader, Pill, TextAction } from '../../../shared/ui'
+import { Card, Eyebrow, PageHeader, Pill, TextAction, TextField } from '../../../shared/ui'
+import { FULL_SCALE } from '../../../domain/seed/fullScale/constants'
+import { Pager, pageOf } from '../components/Pager'
+import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 import type { Actor } from '../../../store'
-import { billedLists, invoiceAddresseeName, invoiceCountsByList, isBackdropInvoice, useAppStore, openBillingExceptions } from '../../../store'
-import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm, plural } from '../../../shared/format'
+import { billedLists, invoiceAddresseeName, invoiceCountsByList, invoiceStanding, isBackdropInvoice, originalInvoiceFor, rebillOriginFor, useAppStore, openBillingExceptions } from '../../../store'
+import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS } from '../../../shared/procedureEventCopy'
+import { dateTimeMicroCap, dayMicroCap, formatCount, formatCurrency, hhmm, plural } from '../../../shared/format'
 import { listShortLabel, listSourceLabels } from '../util'
 import { InvoiceDocument } from './InvoiceDocument'
 import { PrepaymentApprovalStrip } from '../components/PrepaymentApprovalStrip'
+
+/** The Kind column's words (catch-up Phase 38b). A credit note's row reads `CREDIT_LABELS.kind` (catch-up Phase 39): it is its own record, never an invoice kind. */
+const INVOICE_KIND_LABEL: Record<Invoice['kind'], string> = {
+  standard: 'Invoice',
+  prePayment: 'Prepayment',
+  additional: 'Additional',
+}
 
 interface InvoicesScreenProps {
   actor: Actor
@@ -29,8 +40,44 @@ interface InvoicesScreenProps {
  */
 export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesScreenProps) {
   const billing = useAppStore((s) => s.billing)
+  const originalOf = (invoice: Invoice) => originalInvoiceFor({ billing }, invoice.id)
   const schedule = useAppStore((s) => s.schedule)
   const masters = useAppStore((s) => s.masters)
+  const navigate = useNavigate()
+  // Credit notes join the table (catch-up Phase 39), each just above the invoice it credits.
+  const creditNotesByOriginal = useMemo(() => {
+    const out = new Map<string, CreditNote[]>()
+    for (const cn of Object.values(billing.creditNotes).sort((a, b) => b.id.localeCompare(a.id))) out.set(cn.originalInvoiceId, [...(out.get(cn.originalInvoiceId) ?? []), cn])
+    return out
+  }, [billing.creditNotes])
+  // A credit note of an invoice this table leaves out (the seeded history) still lists, at the top.
+  const shownIds = useMemo(() => new Set(Object.values(billing.invoices).filter((i) => !isBackdropInvoice(i)).map((i) => i.id)), [billing.invoices])
+  const looseCreditNotes = useMemo(
+    () => Object.values(billing.creditNotes).filter((cn) => !shownIds.has(cn.originalInvoiceId)).sort((a, b) => b.id.localeCompare(a.id)),
+    [billing.creditNotes, shownIds],
+  )
+  const creditRow = (cn: CreditNote) => {
+    const original = billing.invoices[cn.originalInvoiceId]
+    const booking = schedule.bookings[cn.bookingId]
+    const list = booking !== undefined ? schedule.lists[booking.listId] : undefined
+    const patient = booking !== undefined ? masters.patients[booking.patientId] : undefined
+    const anaesthetist = list?.anaesthetistId !== undefined ? masters.anaesthetists[list.anaesthetistId] : undefined
+    if (original === undefined) return null
+    return (
+      <CreditNoteRow
+        key={cn.id}
+        creditNote={cn}
+        original={original}
+        patientName={booking === undefined ? 'Booking unavailable' : (patient?.name ?? 'Unknown patient')}
+        bookingLabel={booking?.scheduledTime !== undefined ? `Booking ${booking.scheduledTime}` : 'Booking time not set'}
+        anaesthetistName={anaesthetist?.name}
+        listDateISO={list?.dateISO}
+        listSource={list !== undefined ? listSourceLabels(list, masters) : undefined}
+        addressee={invoiceAddresseeName({ masters, schedule, billing }, cn)}
+        onOpen={() => navigate(`/admin/credit-notes/${cn.id}`)}
+      />
+    )
+  }
 
   const invoices = useMemo(
     // The seeded historical backdrop (Phase 10) belongs to the anaesthetist money
@@ -39,9 +86,22 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
     [billing.invoices],
   )
 
+  // Search then page (catch-up Phase 43; US-15.0.4): 50 a page over the existing sort; the search
+  // ("Find by invoice number or payer") filters before paging and returns to page 1.
+  const [query, setQuery] = useState('')
+  const [page, setPage] = useState(1)
+  const matching = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (q === '') return invoices
+    return invoices.filter((i) => i.invoiceNumber.toLowerCase().includes(q) || invoiceAddresseeName({ masters, schedule, billing }, i).toLowerCase().includes(q))
+  }, [invoices, query, masters, schedule, billing])
+  const pageSize = FULL_SCALE.pageSizes.invoices
+  const shownInvoices = useMemo(() => pageOf(matching, pageSize, page), [matching, pageSize, page])
+  useScreenTiming('invoices', [invoices, query, page])
+
   const rows = useMemo(
     () =>
-      invoices.map((invoice) => {
+      shownInvoices.map((invoice) => {
         const booking = schedule.bookings[invoice.bookingId]
         const list = booking !== undefined ? schedule.lists[booking.listId] : undefined
         const patient = booking !== undefined ? masters.patients[booking.patientId] : undefined
@@ -50,7 +110,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
         const source = list !== undefined ? listSourceLabels(list, masters) : undefined
         return { invoice, booking, list, patient, anaesthetist, source }
       }),
-    [invoices, schedule.bookings, schedule.lists, masters],
+    [shownInvoices, schedule.bookings, schedule.lists, masters],
   )
 
   const billed = useMemo(() => billedLists({ schedule }), [schedule])
@@ -58,6 +118,8 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
 
   // Billing-run exceptions not yet resolved (catch-up Phase 36; the Phase 09 monitor's seam).
   const failedCases = useMemo(() => openBillingExceptions({ billing }), [billing])
+  // At scale the strip names the first few; the monitor holds the rest.
+  const failedShown = failedCases.slice(0, 5)
 
   if (selectedInvoiceId !== null && billing.invoices[selectedInvoiceId] !== undefined) {
     const invoice = billing.invoices[selectedInvoiceId]
@@ -114,11 +176,12 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
           <span style={{ fontSize: 13, fontWeight: 700, color: semantic.warning.onTint }}>
             {plural(failedCases.length, 'booking')} raised a billing exception
           </span>
-          {failedCases.map((c) => (
+          {failedShown.map((c) => (
             <div key={c.id} style={{ fontSize: 12.5, color: semantic.warning.onTint }}>
               <span className="mono">{c.bookingId}</span> · {c.message}
             </div>
           ))}
+          {failedCases.length > failedShown.length && <span style={{ fontSize: 12.5, color: semantic.warning.onTint }}>{`and ${formatCount(failedCases.length - failedShown.length)} more`}</span>}
           <span style={{ fontSize: 12, color: semantic.warning.onTint }}>Open Billing monitor to resolve and retry.</span>
         </div>
       )}
@@ -128,17 +191,37 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
           No invoices yet. Authorise a submitted list and the billing run raises its invoices immediately.
         </div>
       ) : (
-        <TableShell testId="invoice-list-table-shell" label="Invoices" density="compact" minWidth={1380}>
+        <>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <TextField
+            label="Find by invoice number or payer"
+            size="compact"
+            fill="surface"
+            value={query}
+            onChange={(v) => {
+              setQuery(v)
+              setPage(1)
+            }}
+            shot="invoices-search"
+            width={320}
+          />
+          {matching.length > pageSize && <Pager total={matching.length} size={pageSize} page={page} onPage={setPage} shot="invoices-pager" />}
+        </div>
+        {matching.length === 0 ? (
+          <div style={{ fontSize: 13, color: neutral.mist }}>No invoice matches that number or payer.</div>
+        ) : (
+        <TableShell testId="invoice-list-table-shell" label="Invoices" density="compact" minWidth={1460}>
             <thead>
               <tr>
-                {['Number', 'Patient / booking', 'Anaesthetist', 'List', 'List date', 'Raised', 'Counterparty', 'Layout', 'Total', 'Delivery', ''].map((h, i) => (
-                  <Th key={h === '' ? 'view' : h} align={i === 8 ? 'right' : 'left'} {...(i === 0 || i >= 4 ? { nowrap: true } : {})}>
+                {['Number', 'Kind', 'Patient / booking', 'Anaesthetist', 'List', 'List date', 'Raised', 'Counterparty', 'Layout', 'Total', 'Delivery', ''].map((h, i) => (
+                  <Th key={h === '' ? 'view' : h} align={h === 'Total' ? 'right' : 'left'} {...(i <= 1 || i >= 5 ? { nowrap: true } : {})}>
                     {h}
                   </Th>
                 ))}
               </tr>
             </thead>
             <tbody>
+              {looseCreditNotes.map(creditRow)}
               {rows.map(({ invoice, booking, list, patient, anaesthetist, source }) => {
                 const patientName = booking === undefined ? 'Booking unavailable' : (patient?.name ?? 'Unknown patient')
                 const bookingLabel =
@@ -147,9 +230,30 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                     : booking.scheduledTime !== undefined
                       ? `Booking ${booking.scheduledTime}`
                       : 'Booking time not set'
+                const standing = invoiceStanding({ schedule, billing }, invoice.id)
+                const rebillOrigin = rebillOriginFor({ billing }, invoice.id)
                 return (
-                  <ClickableRow key={invoice.id} onOpen={() => onSelect(invoice.id)}>
-                  <Td mono bold nowrap>{invoice.invoiceNumber}</Td>
+                  <Fragment key={invoice.id}>
+                  {(creditNotesByOriginal.get(invoice.id) ?? []).map(creditRow)}
+                  <ClickableRow onOpen={() => onSelect(invoice.id)} data-invoice-id={invoice.id}>
+                  <Td mono bold nowrap>
+                    {invoice.invoiceNumber}
+                    {/* An additional invoice names its original (catch-up Phase 38b). */}
+                    {invoice.kind === 'additional' && originalOf(invoice) !== undefined && (
+                      <div data-shot="invoice-list-additional-to" style={{ marginTop: 2, fontSize: 11.5, fontWeight: 400, color: neutral.mist }}>{ADDITIONAL_INVOICE_COPY.additionalTo(originalOf(invoice)!.invoiceNumber)}</div>
+                    )}
+                    {/* A replacement names the invoice it rebills (catch-up Phase 39). */}
+                    {rebillOrigin !== undefined && (
+                      <div data-shot="invoice-list-rebills" style={{ marginTop: 2, fontSize: 11.5, fontWeight: 400, color: neutral.mist }}>{CREDIT_LABELS.rebills(rebillOrigin.invoiceNumber)}</div>
+                    )}
+                    {/* Its standing (catch-up Phase 39): derived, neutral. */}
+                    {standing !== 'live' && (
+                      <div style={{ marginTop: 4 }}>
+                        <Pill size="sm" shot="invoice-list-standing" data-standing={standing} style={{ fontFamily: fontFamily.ui }}>{standing === 'credited' ? CREDIT_LABELS.credited : CREDIT_LABELS.pendingPill}</Pill>
+                      </div>
+                    )}
+                  </Td>
+                  <Td nowrap><span data-shot="invoice-list-kind" data-kind={invoice.kind}>{INVOICE_KIND_LABEL[invoice.kind]}</span></Td>
                   <Td>
                     {booking !== undefined && list !== undefined ? (
                       <Link
@@ -214,21 +318,93 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                     </TextAction>
                   </Td>
                   </ClickableRow>
+                  </Fragment>
                 )
               })}
             </tbody>
         </TableShell>
+        )}
+        {matching.length > pageSize && <Pager total={matching.length} size={pageSize} page={page} onPage={setPage} />}
+        </>
       )}
     </div>
   )
 }
 
-/** The invoice's delivery as the run stamped it (catch-up Phase 22; FT-08.4), on U3's `Pill`. */
-function DeliveryPill({ invoice }: { invoice: Invoice }) {
-  const label = invoiceDeliveryLabel(invoice.delivery)
+/**
+ * A credit note's row (catch-up Phase 39): kind "Credit note", "Credits
+ * AA-2026-0007" under its number, the original's patient, anaesthetist and
+ * List date, the party it goes to, its total as issued (never red) and how
+ * the engine sent it. Opens the credit note's document.
+ */
+function CreditNoteRow({
+  creditNote,
+  original,
+  patientName,
+  bookingLabel,
+  anaesthetistName,
+  listDateISO,
+  listSource,
+  addressee,
+  onOpen,
+}: {
+  creditNote: CreditNote
+  original: Invoice
+  patientName: string
+  bookingLabel: string
+  anaesthetistName: string | undefined
+  listDateISO: string | undefined
+  /** The List it was billed from, as the invoice rows name it. */
+  listSource: { primary: string; secondary?: string } | undefined
+  addressee: string
+  onOpen: () => void
+}) {
+  return (
+    <ClickableRow onOpen={onOpen} data-credit-note-id={creditNote.id}>
+      <Td mono bold nowrap>
+        {creditNote.creditNoteNumber}
+        <div data-shot="invoice-list-credits" style={{ marginTop: 2, fontSize: 11.5, fontWeight: 400, color: neutral.mist }}>{CREDIT_LABELS.credits(original.invoiceNumber)}</div>
+      </Td>
+      <Td nowrap><span data-shot="invoice-list-kind" data-kind="creditNote">{CREDIT_LABELS.kind}</span></Td>
+      <Td>
+        <div style={{ fontWeight: 600 }}>{patientName}</div>
+        <div className="mono" style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist, whiteSpace: 'nowrap' }}>{bookingLabel}</div>
+      </Td>
+      <Td bold>{anaesthetistName ?? 'Anaesthetist unavailable'}</Td>
+      <Td>
+        {listSource !== undefined ? (
+          <>
+            <div style={{ fontWeight: 600 }}>{listSource.primary}</div>
+            {listSource.secondary !== undefined && <div style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist }}>{listSource.secondary}</div>}
+          </>
+        ) : (
+          <div style={{ fontWeight: 600 }}>List unavailable</div>
+        )}
+      </Td>
+      <Td mono nowrap>{listDateISO !== undefined ? dayMicroCap(listDateISO) : '·'}</Td>
+      <Td mono nowrap>{dateTimeMicroCap(creditNote.issuedAtISO)}</Td>
+      <Td>{addressee}</Td>
+      <Td>{layoutShortLabel(original.layout)}</Td>
+      <Td mono bold nowrap align="right">{formatCurrency(creditNote.total)}</Td>
+      <Td>
+        <DeliveryPill delivery={creditNote.delivery} />
+      </Td>
+      <Td nowrap>
+        <TextAction size="sm" flush label={`View credit note ${creditNote.creditNoteNumber}`} onClick={onOpen}>
+          View →
+        </TextAction>
+      </Td>
+    </ClickableRow>
+  )
+}
+
+/** The invoice's delivery as the run stamped it (catch-up Phase 22; FT-08.4), on U3's `Pill`; a credit note's as the engine sent it (catch-up Phase 39). */
+function DeliveryPill({ invoice, delivery: given }: { invoice?: Invoice; delivery?: Invoice['delivery'] }) {
+  const delivery = invoice !== undefined ? invoice.delivery : given
+  const label = invoiceDeliveryLabel(delivery)
   const text = label.short
   return (
-    <Pill tone={label.tone} shot="invoice-list-delivery" data-delivery={invoice.delivery?.status ?? 'none'} title={label.text} style={{ whiteSpace: 'nowrap' }}>
+    <Pill tone={label.tone} shot="invoice-list-delivery" data-delivery={delivery?.status ?? 'none'} title={label.text} style={{ whiteSpace: 'nowrap' }}>
       {text}
     </Pill>
   )

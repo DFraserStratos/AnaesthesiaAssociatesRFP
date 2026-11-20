@@ -30,7 +30,7 @@ describe('admin clickable table rows', () => {
 
   it('opens a review when the review queue row is clicked', () => {
     const onOpen = vi.fn()
-    render(<ReviewQueue onOpen={onOpen} onViewInvoices={vi.fn()} />)
+    render(<MemoryRouter><ReviewQueue onOpen={onOpen} onViewInvoices={vi.fn()} /></MemoryRouter>)
 
     const row = screen.getByTestId('review-queue-table-shell').querySelector('tbody tr')
     expect(row).toHaveClass('aa-clickable-table-row')

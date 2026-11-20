@@ -118,8 +118,8 @@ export function bookingMoveReceivers(input: BookingMoveInput, bookingId: string,
   const source = sourceOf(input, bookingId)
   if (source === undefined) return []
   // Which sessions hold a List, worked out once for every colleague (as Phase 32's pushTargets does).
-  const occupied = new Set<string>()
-  for (const list of Object.values(input.lists)) if (list.slotId !== undefined) occupied.add(list.slotId)
+  const occupied = new Set<string>(input.occupied ?? [])
+  if (input.occupied === undefined) for (const list of Object.values(input.lists)) if (list.slotId !== undefined) occupied.add(list.slotId)
   const out: BookingReceiver[] = []
   for (const colleague of Object.values(input.anaesthetists)) {
     if (colleague.registrationNumber === moverId || !colleague.active) continue

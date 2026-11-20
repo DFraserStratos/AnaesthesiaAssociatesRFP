@@ -160,7 +160,8 @@ describe('bookingMoveReceivers', () => {
 
   it('takes no preference or tier: the input type is the schedule, the masters and the statuses only', () => {
     expect(Object.keys(input).sort()).toEqual(['anaesthetists', 'bookings', 'lists', 'slotStatuses', 'slots'])
-    expectTypeOf<keyof BookingMoveInput>().toEqualTypeOf<'lists' | 'slots' | 'anaesthetists' | 'slotStatuses' | 'bookings'>()
+    // `occupied` (catch-up Phase 43) is the schedule's own occupied sessions, precomputed: no preference or tier.
+    expectTypeOf<keyof BookingMoveInput>().toEqualTypeOf<'lists' | 'slots' | 'anaesthetists' | 'slotStatuses' | 'bookings' | 'occupied'>()
   })
 })
 
