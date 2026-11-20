@@ -42,7 +42,9 @@ npm --prefix BOARD run artifact:new -- --mermaid <file.mmd> --title "<name>" --d
   it names (SCHEMA's `cited_as`). A source that starts with these words resolves here; after them it
   may give `p.27` (a page, PDFs only), `#2 #3` (numbered points, also `#2#3` or `#2, #3`) or `L27-33`
   (lines, Markdown only). Which artifacts need it:
-  - a **note** in `REQ/notes/` needs none: `Notes <date> · <title words>` resolves by its file name;
+  - a **note** in `REQ/notes/` needs none: `Notes <date> · <slug words>` resolves by its file name
+    (the words after its date, hyphens as spaces, not its title: `2026-10-16-sam-pricing-call.md`,
+    titled "Sam's pricing call", is `Notes 2026-10-16 · Sam pricing call`);
   - a **transcript**: `--cited-as "Transcript <date> · <name>" --cited-as "Recording <date> · <name>"`,
     the names its note and the requirements use;
   - a **document** sources cite by page: its short name (`--cited-as "RFP"`), plus `--page-offset 1`

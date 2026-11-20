@@ -81,3 +81,32 @@ describe('applyProposals', () => {
     expect(again.changed.size).toBe(0)
   })
 })
+
+describe('applyProposals places links where the agents chose them (R-133)', () => {
+  const price = item({ id: 'US-06.2.2', parent: 'FT-06.2', description: 'Set the price. Show the price. Bill the price.' })
+  const all = [...items, price]
+
+  it('counts each occurrence in the text as the agents read it, before this run changed it', () => {
+    const { changed, outcomes } = applyProposals(all, [q], [
+      { kind: 'inline', item: 'US-06.2.2', field: 'description', anchor: 'price', occurrence: 1, target: 'US-06.1.1' },
+      { kind: 'inline', item: 'US-06.2.2', field: 'description', anchor: 'price', occurrence: 2, target: 'OQ-25' },
+    ])
+    expect(outcomes.map((o) => o.skipped)).toEqual([null, null])
+    expect(changed.get('US-06.2.2')!.description).toBe('Set the [price](US-06.1.1). Show the [price](OQ-25). Bill the price.')
+  })
+
+  it('skips an anchor that overlaps one placed earlier in the run, never moving it to another word', () => {
+    const { changed, outcomes } = run([
+      { kind: 'inline', item: 'US-06.2.1', field: 'description', anchor: "customer's prepaid set", target: 'US-06.1.1' },
+      { kind: 'inline', item: 'US-06.2.1', field: 'description', anchor: 'prepaid set', target: 'OQ-25' },
+    ])
+    expect(outcomes[0]!.skipped).toBeNull()
+    expect(outcomes[1]!.skipped).toMatch(/overlaps "customer's prepaid set"/)
+    expect(changed.get('US-06.2.1')!.description).toBe("Flags a Order whose product code is in the [customer's prepaid set](US-06.1.1). The prepaid set is per customer.")
+  })
+
+  it('reads code as the board does: a backtick never pairs across a blank line', () => {
+    expect(anchorPositions('One ` here.\n\nThe price is set. And ` there.', 'price')).toEqual([17])
+    expect(anchorPositions('A `price` and [price](US-01.1.1) and price.', 'price')).toEqual([37])
+  })
+})

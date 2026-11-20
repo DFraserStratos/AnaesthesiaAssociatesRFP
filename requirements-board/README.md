@@ -34,8 +34,8 @@ npm run typecheck    # tsc -b over the app, server, scripts and tests (plain `ts
 npm run verify       # typecheck + unit tests + catalogue check: run before handing work back
 npm run check        # validate the catalogue, exit 1 on errors
 npm run export:csv   # regenerate the Miro CSVs (-- --out <dir> to write elsewhere)
-npm run links:index  # compact catalogue index and epic batches for the linking agents (.links/)
-npm run links:apply  # apply verified link proposals from .links/ (-- --dry-run first)
+npm run links:index  # compact catalogue index and epic batches for the linking agents (.links/); starts a link run
+npm run links:apply  # apply the latest link run's verified proposals (-- --dry-run first; -- <dir> for another run)
 npm run artifact:new # register a file or a mermaid diagram as an artifact (-- --help)
 npm run artifact:steps # screenshot a stepped diagram in the running board, whole then each step (-- AR-nn [--out <dir>] [--url <base>])
 npm run source       # where a source string points: artifact, file, page or lines (-- --item <ID> --text, -- --report)
@@ -503,16 +503,21 @@ Text links (`[words](US-06.1.1)`), bare IDs and the `related` field are describe
 To link the whole catalogue with agents:
 
 1. `npm run links:index` writes `.links/index.md` (gitignored): one line per live item, which every
-   agent reads to find targets; and `.links/batches.json`, the epics grouped into batches.
+   agent reads to find targets; and `.links/batches.json`, the epics grouped into batches. It also
+   starts a link run in `.links/current/` (the previous run moves to `.links/runs/<its start>/`).
 2. Run the workflow **link-requirements** (`agent/workflows/link-requirements.js`) with `batches`:
-   the contents of `batches.json`, or `[["EP-06"]]` to try one epic first (and `board` when this
-   folder is not `requirements-board`). One Sonnet agent per batch proposes links, and a second
-   rejects weak ones. They write `<batch>.proposed.json` and `<batch>.verified.json` into `.links/`
-   and edit nothing.
-3. `npm run links:apply -- --dry-run` checks every accepted proposal
-   again against the files and writes `.links/links-report.md`; without `--dry-run` it writes the
-   files through the board's serialiser, refusing if that would add a check error. Re-running skips
-   what is already applied.
+   the contents of `batches.json`, a list of epic IDs (`["EP-04", "EP-06"]`, one batch each), or
+   `[["EP-06"]]` to try one epic first (and `board` when this folder is not `requirements-board`). One
+   Sonnet agent per batch proposes links, and a second rejects weak ones. They write
+   `<batch>.proposed.json` and `<batch>.verified.json` into the run folder and edit nothing.
+3. `npm run links:apply -- --dry-run` checks every accepted proposal of that run (and only that run)
+   again against the files and writes `links-report.md` in the run folder, naming the run; without
+   `--dry-run` it writes the files through the board's serialiser, refusing if that would add a check
+   error. Re-running skips what is already applied. `links:apply -- <dir>` applies another run folder.
+   Proposal files left loose in `.links/` by older versions are never applied by default; the output
+   lists them for deleting.
+   Positions count in each field as the agents read it: a run's links never shift one another, and
+   an anchor overlapping an earlier link of the run is skipped.
 4. `npm run check`, then review the diff.
 
 ### Consistency review
@@ -523,7 +528,10 @@ newest-wins rulings list from the notes, change logs and answered questions; the
 conflicts; the `consistency-changes` workflow proposes exact edits. The skill's `scripts/` turn the
 result into a local review page where the user accepts or rejects each change, then apply the
 accepted edits. Its run folder lives outside the repo; nothing changes the catalogue before the
-user decides.
+user decides. Each decision is tied to a fingerprint of the change it was made on, so a rebuilt page
+never applies it to a different change; the apply step writes only inside the catalogue folder (never
+notes, change logs, reference files, question answers, retired records or protected artifacts), and
+each change whole or not at all.
 
 ## Sharing the board (the kit)
 

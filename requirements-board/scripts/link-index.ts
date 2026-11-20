@@ -3,6 +3,8 @@
  * in tree order, with its gist, its `related` entries and the records its text already links to,
  * then the open questions. Beside it, `batches.json`: the live epics in tree order, grouped into
  * batches of roughly BATCH_ITEMS items, for the `link-requirements` workflow's `batches` argument.
+ * Writing to a file also starts a new link run beside it (`current/`, see linkRuns.ts): the workflow writes
+ * its proposals there and `links:apply` applies that run only.
  *   npm run links:index [-- <out.md>]   default .links/index.md in this folder (gitignored); `-` prints it
  */
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -13,6 +15,7 @@ import { itemLinkTargets, linkTargets, plainText } from '../shared/links.ts'
 import { isOpenQuestion, isRetired, statusLabel } from '../shared/statuses.ts'
 import { typeLabel, type Item } from '../shared/types.ts'
 import { REQUIREMENTS_DIR, loadCatalogue } from '../server/catalogueFs.ts'
+import { startLinkRun } from './linkRuns.ts'
 
 const { items, questions, config } = loadCatalogue()
 const all = Object.values(items).map((r) => r.data)
@@ -58,8 +61,15 @@ else {
   mkdirSync(dirname(resolve(out)), { recursive: true })
   writeFileSync(resolve(out), text)
   const batchFile = join(dirname(resolve(out)), 'batches.json')
-  writeFileSync(batchFile, JSON.stringify(batches(), null, 2) + '\n')
+  const batchText = JSON.stringify(batches(), null, 2) + '\n'
+  writeFileSync(batchFile, batchText)
   console.log(`Wrote ${live.length} items to ${resolve(out)}, and the epic batches to ${batchFile}`)
+  // A new link run: the workflow writes its proposals here, and links:apply applies this run only. The
+  // index and batches are copied in as the record of what the run saw (the workflow reads .links/index.md).
+  const run = startLinkRun(dirname(resolve(out)), new Date())
+  writeFileSync(join(run.dir, 'index.md'), text)
+  writeFileSync(join(run.dir, 'batches.json'), batchText)
+  console.log(`Started a link run in ${run.dir}${run.archived ? ` (the previous run moved to ${run.archived})` : ''}`)
 }
 
 /** Live epics in order, gathered into batches of about BATCH_ITEMS live items; a big epic is a batch of its own. */

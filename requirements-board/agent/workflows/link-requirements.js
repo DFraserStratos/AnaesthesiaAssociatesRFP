@@ -2,7 +2,7 @@ export const meta = {
   name: 'link-requirements',
   description: 'Sonnet agents propose and adversarially verify links between requirements (text links + related), batch by batch',
   whenToUse:
-    'After requirements are added or reworded, to link each live item to the items that define what its text names. Run `npm --prefix <board> run links:index` first (writes <board>/.links/index.md and <board>/.links/batches.json) and pass `batches` (the epics touched, or the whole of batches.json); apply the result with `npm --prefix <board> run links:apply -- --dry-run`, then without --dry-run. <board> is the board folder, `requirements-board` unless args.board says otherwise.',
+    'After requirements are added or reworded, to link each live item to the items that define what its text names. Run `npm --prefix <board> run links:index` first (writes <board>/.links/index.md and <board>/.links/batches.json, and starts a new link run in <board>/.links/current/) and pass `batches`: the touched epics as a list of IDs (["EP-04","EP-06"], one batch each), epic groups ([["EP-04","EP-06"]], one batch per group), or the whole of batches.json. Apply the result with `npm --prefix <board> run links:apply -- --dry-run`, then without --dry-run: it applies this run only. <board> is the board folder, `requirements-board` unless args.board says otherwise.',
   phases: [
     { title: 'Propose', detail: 'one Sonnet agent per batch of epics reads its items and proposes links', model: 'sonnet' },
     { title: 'Verify', detail: 'one Sonnet agent per batch re-reads source and target and rejects weak links', model: 'sonnet' },
@@ -11,12 +11,15 @@ export const meta = {
 
 /*
  * args (paths relative to the repo root):
- *   batches    required: epic groups, e.g. [["EP-06"]] to try one epic first, or the whole of
- *              <board>/.links/batches.json (written by `links:index`) for a full run
+ *   batches    required: a list whose elements are each an epic ID (its own batch) or a list of epic
+ *              IDs (one batch): ["EP-04","EP-06"] is two batches, [["EP-04","EP-06"]] is one, and
+ *              [["EP-06"]] tries one epic first; or the whole of <board>/.links/batches.json (written
+ *              by `links:index`) for a full run. Anything else stops the run before any agent.
  *   board      the board's folder (default requirements-board); the catalogue is its requirements/
  *   indexPath  the catalogue index from `links:index` (default <board>/.links/index.md)
- *   outDir     where the proposal files go (default <board>/.links, gitignored; links:apply
- *              reads this folder by default, so pass it the same path if you change it)
+ *   outDir     where the proposal files go (default <board>/.links/current, the run `links:index`
+ *              started, which links:apply applies by default; pass links:apply the same folder if
+ *              you change it)
  *
  * Nothing here edits the catalogue: agents write <outDir>/<batch>.proposed.json and
  * <batch>.verified.json, and `scripts/apply-links.ts` applies the verified ones deterministically.
@@ -24,11 +27,24 @@ export const meta = {
 const A = args || {}
 const BOARD = A.board || 'requirements-board'
 const INDEX = A.indexPath || `${BOARD}/.links/index.md`
-const OUT = A.outDir || `${BOARD}/.links`
-const BATCHES = Array.isArray(A.batches) ? A.batches : []
+const OUT = A.outDir || `${BOARD}/.links/current`
 const REQUIREMENTS = `${BOARD}/requirements`
+// Each element is an epic ID (its own batch) or a list of epic IDs (one batch).
+const EPIC = /^EP-\d+$/
+if (A.batches != null && !Array.isArray(A.batches)) {
+  log(`Not run: batches must be a list (["EP-04","EP-06"] or [["EP-04","EP-06"]]), not ${JSON.stringify(A.batches)}.`)
+  return { error: 'bad batches', bad: [A.batches], batches: [], missing: [] }
+}
+const given = A.batches ?? []
+const bad = given.filter((b) => !(typeof b === 'string' ? EPIC.test(b) : Array.isArray(b) && b.length && b.every((e) => typeof e === 'string' && EPIC.test(e))))
+if (bad.length) {
+  log(`Not run: batches must be epic IDs or lists of them (["EP-04","EP-06"] or [["EP-04","EP-06"]]); not usable: ${bad.map((b) => JSON.stringify(b)).join(', ')}.`)
+  return { error: 'bad batches', bad, batches: [], missing: [] }
+}
+// A batch named twice (["EP-04", ["EP-04"]]) runs once: both would write the same files.
+const BATCHES = given.map((b) => (typeof b === 'string' ? [b] : b)).filter((b, i, all) => all.findIndex((x) => x.join('+') === b.join('+')) === i)
 if (!BATCHES.length) {
-  log(`No batches given. Run \`npm --prefix ${BOARD} run links:index\`, then pass batches: the touched epics, or the contents of ${OUT}/batches.json.`)
+  log(`No batches given. Run \`npm --prefix ${BOARD} run links:index\`, then pass batches: the touched epics, or the contents of ${BOARD}/.links/batches.json.`)
   return { batches: [], missing: [] }
 }
 
@@ -110,7 +126,7 @@ Write ${OUT}/${nameOf(epics)}.verified.json with the Write tool as {"batch":"${n
     { label: `verify:${nameOf(epics)}`, phase: 'Verify', model: 'sonnet', effort: 'high', schema: COUNTS },
   )
 
-log(`${BATCHES.length} batch(es); index ${INDEX}; output ${OUT}`)
+log(`${BATCHES.length} batch(es): ${BATCHES.map((b) => b.join('+')).join(', ')}; index ${INDEX}; output ${OUT}`)
 const results = await pipeline(
   BATCHES,
   (epics) => propose(epics),
@@ -122,5 +138,5 @@ const missing = BATCHES.map(nameOf).filter((b) => !done.some((r) => r.batch === 
 if (missing.length) log(`No verified file for: ${missing.join(', ')}. Re-run with batches for those.`)
 const total = (k) => done.reduce((n, r) => n + ((r.verified && r.verified[k]) || 0), 0)
 log(`Accepted ${total('inline')} text link(s) and ${total('related')} relation(s); rejected ${total('rejected')}.`)
-log(`Next: npm --prefix ${BOARD} run links:apply -- --dry-run, read ${OUT}/links-report.md, then run it without --dry-run.`)
+log(`Next: npm --prefix ${BOARD} run links:apply${A.outDir ? ` -- ${OUT}` : ' --'} --dry-run, read ${OUT}/links-report.md, then run it without --dry-run.`)
 return { batches: done, missing }
