@@ -25,6 +25,8 @@ import { buildSeed } from './index'
 import { hashStringToSeed } from './slotHash'
 import { displayStatusKey } from '../slots'
 import type { AssignedList } from '../types'
+// Catch-up Phase 40's declared move: Dr Sharma's appended HS history is set aside.
+import { seedWithoutPhase40 } from './__fixtures__/phase40Declared'
 
 function canvasFingerprint(state: ReturnType<typeof buildSeed>): { slots: number; lists: number; hash: number } {
   const assignedLists = Object.values(state.schedule.lists).filter((l): l is AssignedList => l.state !== 'DRAFT')
@@ -63,6 +65,6 @@ describe('canvas fingerprint (Phase 17, re-pinned in Phase 28)', () => {
     // Re-pinned in catch-up Phase 32d: the public List kind retired (D86). 234 bookless public Lists
     // are Public sessions ("CPH") and the six recurring-clash Draft Lists the public rows raised are gone
     // (1129 - 240 = 889); the 12 that hold Bookings are private. Slots unchanged in number.
-    expect(canvasFingerprint(buildSeed())).toEqual({ slots: 3864, lists: 889, hash: 1796667773 })
+    expect(canvasFingerprint(seedWithoutPhase40(buildSeed()))).toEqual({ slots: 3864, lists: 889, hash: 1796667773 })
   })
 })

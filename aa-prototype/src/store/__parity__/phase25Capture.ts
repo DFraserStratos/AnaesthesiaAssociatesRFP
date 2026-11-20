@@ -12,7 +12,7 @@
  * Imported only by tests.
  */
 
-import { createAppStore, type BoundAppStore } from '../appStore'
+import { type BoundAppStore } from '../appStore'
 import { authoriseList } from '../lifecycle'
 import { runBillingForList } from '../billingRun'
 import { bookingsForList } from '../selectors'
@@ -21,6 +21,7 @@ import type { Actor } from '../mutate'
 import { isBookingPair, pairStatusLabel } from '../../domain/billing/ledger'
 import { toCents } from '../../domain/billing/money'
 import type { BookingLedgerPair } from '../../domain/types'
+import { storeWithoutPhase40 } from './phase40Declared'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
@@ -70,7 +71,7 @@ export interface Phase25Capture {
  * two (the lock's immunity test edits every master there).
  */
 export function capturePhase25(afterAuthorise?: (api: BoundAppStore) => void): Phase25Capture {
-  const api = createAppStore()
+  const api = storeWithoutPhase40()
   const lists: Phase25Capture['lists'] = []
   const outcomes = PHASE_25_LISTS.map((listId) => ({ listId, outcome: authoriseList(api, OFFICE, listId) }))
   afterAuthorise?.(api)

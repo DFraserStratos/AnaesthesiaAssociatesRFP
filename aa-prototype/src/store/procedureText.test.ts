@@ -136,7 +136,7 @@ describe('editProcedure never touches either text', () => {
 })
 
 describe('createBooking: hand entry kept as typed (US-02.4.1)', () => {
-  const patient = { name: 'Test Patient', dobISO: '1980-01-01' }
+  const patient = { nhi: 'ZZZ9005', name: 'Test Patient', dobISO: '1980-01-01' }
 
   it('stores the text verbatim with its source and sender, and starts the invoice description from it', () => {
     const api = store()

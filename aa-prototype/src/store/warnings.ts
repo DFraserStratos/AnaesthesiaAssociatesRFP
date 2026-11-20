@@ -34,6 +34,8 @@ import { feeIn } from '../domain/billing/bookingFee'
 import { splitPartiesOn } from '../domain/billing/partyOptions'
 import { bookingFeesFor } from '../domain/billing/validateBookingForBilling'
 import { compareSessions } from '../domain/outOfHours'
+import { checksPatientBalance, patientBalanceSummary } from '../domain/patients'
+import { patientBalanceRows } from './patientLedger'
 
 /** The state slices the warning selectors read. */
 export type WarningState = Pick<AppState, 'schedule' | 'billing' | 'appSettings' | 'clock' | 'masters'>
@@ -66,7 +68,26 @@ function factsFor(state: WarningState, booking: Booking, procedures: readonly Pr
     parties: state.masters.parties,
     ...(state.masters.patients[booking.patientId] !== undefined ? { patient: state.masters.patients[booking.patientId] } : {}),
     ...splitFeesFor(state, booking, procedures),
+    ...patientBalanceFor(state, booking, procedures),
   }
+}
+
+/**
+ * The patient balance fact (catch-up Phase 40; US-11.3.2): only for a Booking
+ * stamped when created or matched, and only when a Procedure's payer is the
+ * patient (D85). Read from 36's ledger through `patientBalanceRows`.
+ */
+function patientBalanceFor(state: WarningState, booking: Booking, procedures: readonly Procedure[]): Pick<WarningFacts, 'patientBalance'> {
+  if (booking.balanceCheck === undefined) return {}
+  if (!checksPatientBalance(procedures.map((p) => p.payer))) return {}
+  const patient = state.masters.patients[booking.patientId]
+  if (patient === undefined) return {}
+  const summary = patientBalanceSummary(patientBalanceRows(state, booking.patientId), {
+    patientId: booking.patientId,
+    todayISO: state.clock.todayISO,
+    excludeBookingId: booking.id,
+  })
+  return { patientBalance: { patientName: patient.name, summary } }
 }
 
 /** Each split Procedure's fee ex GST and whether its parties are still billable (catch-up Phase 22), as the run checks them. */

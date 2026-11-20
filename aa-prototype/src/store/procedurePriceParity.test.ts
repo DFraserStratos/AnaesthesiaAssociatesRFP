@@ -43,9 +43,10 @@ import {
   prepaymentBuildBefore27,
 } from './__parity__/phase27Declared'
 import { PHASE_27A_REASON, withPhase27aBctis } from './__parity__/phase27aDeclared'
+import { withoutPhase40 } from './__parity__/phase40Declared'
 
 const baseline = baselineJson as unknown as Phase24Baseline
-const state = freshAppState()
+const state = withoutPhase40(freshAppState())
 const now = capturePhase24(state)
 
 const typedBooking = SEED_MARKERS['typedPriceBooking']!.entityId

@@ -82,7 +82,7 @@ export function stagePostOpForSouter(api: AppStoreApi): Outcome<{ bookingId: str
     listId = assigned.value.listId
   }
   const made = createBooking(api, OFFICE_ACTOR, listId, {
-    patient: { name: patient.name, dobISO: patient.dobISO, ...(patient.nhi !== undefined ? { nhi: patient.nhi } : {}) },
+    patient: { nhi: patient.nhi, name: patient.name, dobISO: patient.dobISO },
     sourceText: { text: SOUTER_POST_OP.procedureText, source: 'email' },
     rvgGroupId: rvgGroupIdForLegacyCode(SOUTER_POST_OP.rvgLegacyCode),
     governingContractId: SOUTER_POST_OP.contractId,

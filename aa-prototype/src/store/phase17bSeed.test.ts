@@ -13,8 +13,10 @@ import { buildSeed } from '../domain/seed'
 import { DIRECTORY_SURGEONS } from '../domain/seed/specialistDirectory'
 import { officeAddressFor } from '../domain/surgeonContacts'
 import baseline from './__parity__/phase-17b-baseline.json'
+// Catch-up Phase 40's declared move: Dr Sharma's appended HS history is set aside.
+import { seedWithoutPhase40 } from './__parity__/phase40Declared'
 
-const seed = buildSeed()
+const seed = seedWithoutPhase40(buildSeed())
 const { surgeons } = seed.masters
 
 interface PinnedRoom { name: string; contactEmail?: string; phone?: string; contacts?: { name: string; email: string; forSurgeonId?: string }[] }

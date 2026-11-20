@@ -16,19 +16,19 @@ import baselineJson from './__parity__/phase-27a-baseline.json'
 import { describe, expect, it } from 'vitest'
 import { capturePhase27a, type FeeRow27a, type Phase27aCapture } from './__parity__/phase27aCapture'
 import { PHASE_27A_BCTI_MOVE, PHASE_27A_REASON } from './__parity__/phase27aDeclared'
-import { createAppStore } from './appStore'
 import { seedMonthOfBctis } from './demoBctiSeed'
 import { DEMO_TRIGGER_ACTOR } from './demoActors'
 import { aaFeeRunPreview } from './selectors'
 import { aaFeeFor } from '../domain/billing/aaFee'
 import { ANAE } from '../domain/seed'
+import { storeWithoutPhase40 } from './__parity__/phase40Declared'
 
 const BASELINE = baselineJson as Phase27aCapture
 const captured = capturePhase27a()
 
 /** A July preview with the one declared move: Dr Souter one BCTI fewer, her fee recomputed from the settings. */
 function withDeclaredJuly(rows: readonly FeeRow27a[]): FeeRow27a[] {
-  const settings = createAppStore().getState().appSettings.aaFee
+  const settings = storeWithoutPhase40().getState().appSettings.aaFee
   return rows.map((r) => {
     if (r.anaesthetistId !== PHASE_27A_BCTI_MOVE.anaesthetistId) return r
     const bctiCount = r.bctiCount + PHASE_27A_BCTI_MOVE.delta
@@ -72,7 +72,7 @@ describe(`Phase 27a parity: declared (${PHASE_27A_REASON})`, () => {
   })
 
   it("Dr Rutherford's seeded month of 40 BCTIs and its $700.00 fee are unchanged", () => {
-    const api = createAppStore()
+    const api = storeWithoutPhase40()
     seedMonthOfBctis(api, DEMO_TRIGGER_ACTOR, ANAE.rutherford)
     const row = aaFeeRunPreview(api.getState(), '2026-07').find((r) => r.anaesthetistId === ANAE.rutherford)!
     expect([row.bctiCount, row.subtotal]).toEqual([40, 700])

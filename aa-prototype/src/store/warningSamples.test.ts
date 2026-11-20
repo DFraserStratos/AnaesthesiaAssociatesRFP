@@ -191,7 +191,7 @@ describe('two rules on the multi-warning Booking (catch-up Phase 19)', () => {
     expect(warnings.map((w) => w.strength)).toEqual(['strong', 'mild'])
     expect(new Set(warnings.map((w) => w.key)).size).toBe(2)
     expect(warnings[1]!.text).toMatch(/^Base units \d+ are outside the RVG guide for /)
-    expect(WARNING_RULES.map((r) => r.id)).toEqual(['prepaymentUnpaid', 'baseUnitsOutsideGuide', 'childPayer', 'approvalNumberMissing', 'splitDoesNotFit'])
+    expect(WARNING_RULES.map((r) => r.id)).toEqual(['prepaymentUnpaid', 'baseUnitsOutsideGuide', 'childPayer', 'approvalNumberMissing', 'splitDoesNotFit', 'patientBalance'])
   })
 
   it('stages a recorded value of the guide top plus 2, through the audited actions, and restores the seed', () => {

@@ -164,6 +164,10 @@ export {
 export {
   upsertPatient,
   editPatient,
+  resolvePatientDetails,
+  nhiRefusal,
+  NHI_REQUIRED_FOR_BOOKING_MESSAGE,
+  NOTHING_TO_REVIEW_MESSAGE,
   PATIENT_NHI_REQUIRED_MESSAGE,
   PATIENT_NHI_OFFICE_ONLY_MESSAGE,
   type PatientIntakeDetails,
@@ -687,3 +691,8 @@ export { activeHospitals, activeSurgeons, activeGroups, activeAaModifiers } from
 export { viewRawImportRow, rawViewsFor, rawRowRefusal, rawRowEligible, RAW_ROW_REASONS, RAW_ROW_NOT_ELIGIBLE, RAW_ROW_OFFICE_ONLY, type RawViews } from './rawRowActions'
 export { loadFullScaleData, loadFullScaleRefusal, FULL_SCALE_PAUSE_REASON } from './fullScaleActions'
 export { reportDiagnostic, recentDiagnostics, wireDiagnostics } from './diagnostics'
+
+// Catch-up Phase 40: patients (mandatory NHI, the balance warning, the patient view, the shared note).
+export { addSharedNote, addNhiToWaitingRow, nhiRowPreview, nhiRequestAddressFor, requestNhiFromOffice, patientBalancePreview, setPatientBalanceThreshold, patientBalanceThresholdDays, stampBalanceCheck, SHARED_NOTE_MAX_LENGTH, NOTE_REQUIRED_MESSAGE, NOTE_TOO_LONG_MESSAGE, NOTE_OWN_ONLY_MESSAGE, OFFICE_ADDS_NHI_MESSAGE, ROW_HAS_NHI_MESSAGE, THRESHOLD_RANGE_MESSAGE, PATIENT_BALANCE_PREVIEW_CAPTION, type SharedNoteTarget, type AddNhiResult, type NhiRowPreview, type NhiRequestAddress, type PatientBalancePreview, type BalanceCheckTrigger } from './patientActions'
+export { patientSearch, patientRecordView, waitingNhiRows, openBalanceWarnings, followUpsDue, patientsWithPendingDetails, patientAttentionCount, PATIENT_SEARCH_LIMIT, PATIENT_SEARCH_UPCOMING_DAYS, type PatientSearchRow, type PatientRecordView, type PatientBookingRow, type PatientInvoiceRow, type WaitingNhiRow, type PatientSelectorState } from './patientSelectors'
+export { patientBalanceRows } from './patientLedger'

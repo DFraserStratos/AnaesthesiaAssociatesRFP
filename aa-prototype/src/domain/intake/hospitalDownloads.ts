@@ -249,8 +249,52 @@ export const SAMPLE_FORTE_SHEET: HospitalDownloadSample = {
   ],
 }
 
-/** The four samples, in the import dialog's order. */
-export const HOSPITAL_DOWNLOAD_SAMPLES: readonly HospitalDownloadSample[] = [SAMPLE_STG, SAMPLE_STG_UPDATE, SAMPLE_SX, SAMPLE_FORTE_SHEET]
+/** The NHI the office adds for NO_NHI_LIST's new patient (Aroha Ngata): valid, held by no seeded patient. */
+export const NO_NHI_NEW_PATIENT_NHI = 'ZQA3019'
+/** The NHI the office adds for NO_NHI_LIST's returning patient: Losa Tuilagi's own (PT0007). */
+export const NO_NHI_RETURNING_NHI = 'JKL1188'
+
+/**
+ * Two rows with no NHI (catch-up Phase 40; US-11.1.5), for the office's
+ * waiting view: one close to its date (Thu 23 Jul PM, Mr Okafor's List, so
+ * urgent) for a new patient, and one later (Mon 27 Jul 10:30 on Dr Souter's
+ * Forte List with Mr Okafor) for Losa Tuilagi as received, so Add NHI
+ * JKL1188 matches her record and her Booking raises the mild balance
+ * warning. Neither dedupes against SAMPLE_FORTE_SHEET (other days, patients
+ * and times).
+ */
+export const NO_NHI_LIST: HospitalDownloadSample = {
+  id: 'NO_NHI_LIST',
+  channel: 'manualSheet',
+  hospitalId: HOSP.forte,
+  label: 'Forte Health sheet with two missing NHIs',
+  description: 'Two bookings sent without an NHI: one in two days for a new patient, one next week for a returning patient.',
+  rows: [
+    {
+      hospitalId: HOSP.forte,
+      dateISO: '2026-07-23',
+      session: 'PM',
+      surgeon: { name: 'Mr Okafor' },
+      scheduledTime: '14:15',
+      patient: { name: 'Aroha Ngata', dobISO: '1979-09-14' },
+      procedure: { text: 'lap chole' },
+      hospitalStatus: 'booked',
+    },
+    {
+      hospitalId: HOSP.forte,
+      dateISO: '2026-07-27',
+      session: 'AM',
+      surgeon: { name: 'Mr Okafor' },
+      scheduledTime: '10:30',
+      patient: { name: 'Losa Tuilagi', dobISO: '1992-01-27' },
+      procedure: { text: 'carpal tunnel decomp L' },
+      hospitalStatus: 'booked',
+    },
+  ],
+}
+
+/** The five samples, in the import dialog's order. */
+export const HOSPITAL_DOWNLOAD_SAMPLES: readonly HospitalDownloadSample[] = [SAMPLE_STG, SAMPLE_STG_UPDATE, SAMPLE_SX, SAMPLE_FORTE_SHEET, NO_NHI_LIST]
 
 export function hospitalDownloadSample(id: string): HospitalDownloadSample | undefined {
   return HOSPITAL_DOWNLOAD_SAMPLES.find((s) => s.id === id)

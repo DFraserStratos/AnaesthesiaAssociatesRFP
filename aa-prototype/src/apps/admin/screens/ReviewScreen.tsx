@@ -388,7 +388,7 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
                         <Pill tone="warning" size="lg">Not complete</Pill>
                       )}
                     </div>
-                    <div className="mono" style={{ fontSize: 11.5, color: neutral.mist }}>{patient?.nhi ?? 'NHI pending'}</div>
+                    <div className="mono" style={{ fontSize: 11.5, color: neutral.mist }}>{patient?.nhi ?? ''}</div>
                     {alert !== undefined && <AlertLine alert={alert} onResolve={() => run(resolveNotification(useAppStore, actor, alert.id))} disabled={authorised} />}
                     <OpenWarnings warnings={warningsByBooking.get(booking.id) ?? []} patientName={patient?.name ?? 'this Booking'} disabled={authorised} onClear={(w) => run(clearWarning(useAppStore, actor, w.bookingId, w.key))} />
                   </Td>

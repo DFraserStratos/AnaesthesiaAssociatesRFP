@@ -7,7 +7,7 @@ import type { CompletionContext } from '../domain/billing/completion'
  * every snapshot.
  */
 
-import { byIdOrder, occupiedSlotIdsOf, pairByAccRecIndex, bookingsByList, invoicesByBooking, openExceptionByBooking, pairsByPatient, proceduresByBooking, transfersByBooking } from './indexes'
+import { byIdOrder, occupiedSlotIdsOf, pairByAccRecIndex, bookingsByList, invoicesByBooking, openExceptionByBooking, proceduresByBooking, transfersByBooking } from './indexes'
 import { closuresAt, closuresIndex, closureSourcesOf } from '../domain/holidays'
 import { rvgCodeToFill } from '../domain/billing/rvgDetail'
 import { procedureStackView, type ProcedureStackView, type StackSurface } from '../domain/billing/procedureStack'
@@ -81,7 +81,7 @@ import { roundToCents, toCents } from '../domain/billing/money'
 import { maskBankAccount } from '../domain/bankAccount'
 import { procedureAccFunded } from '../domain/billing/fundingTags'
 import { BCTI_COUNT_RULE, bctiFeeHistory, bctisFor, type BctiFeeHistory, type BctiRecord } from '../domain/billing/bcti'
-import { isBookingPair, isCreditedPair, patientPosition, transferOfPair, type PairStatus } from '../domain/billing/ledger'
+import { isBookingPair, isCreditedPair, transferOfPair, type PairStatus } from '../domain/billing/ledger'
 import { bctiRecords, handoffQueuedFor, incomeReceiptsFor, journalQueuedFor, openDivergenceFor, pairsForList, pairStatusOf } from './ledgerSelectors'
 import { aaFeeFixedTotal, aaFeeFor } from '../domain/billing/aaFee'
 import { useMemo } from 'react'
@@ -460,8 +460,9 @@ export function isListBilled(list: List): boolean {
  */
 export { isBackdropList }
 export function isBackdropInvoice(invoice: Pick<Invoice, 'id'>): boolean {
-  // HINV: Dr Souter's seeded history. RBINV: the "Seed a month of BCTIs" demo action (catch-up Phase 16).
-  return invoice.id.startsWith('HINV') || invoice.id.startsWith('RBINV')
+  // HINV: Dr Souter's seeded history. HSINV: Dr Sharma's patient-billed history (catch-up Phase 40).
+  // RBINV: the "Seed a month of BCTIs" demo action (catch-up Phase 16).
+  return invoice.id.startsWith('HINV') || invoice.id.startsWith('HSINV') || invoice.id.startsWith('RBINV')
 }
 
 /** Every LIVE billed List, most recently billed first (Phase 08; excludes seed backdrop). */
@@ -561,26 +562,6 @@ export function openAccRecs(state: Pick<AppState, 'xero' | 'billing' | 'masters'
       }
     })
     .sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber))
-}
-
-/**
- * WI2a intake check: does this patient have an unpaid PRIOR episode (a
- * different Booking with money still owed on any invoice, whoever pays)? Reads
- * the ledger's patient position (catch-up Phase 36, DM-23) and the schedule
- * only. Excludes cancelled bookings.
- */
-export function patientHasOutstandingPriorEpisode(
-  state: Pick<AppState, 'billing' | 'schedule'>,
-  patientId: string,
-  excludeBookingId: string,
-): boolean {
-  for (const row of patientPosition(pairsByPatient(state.billing.ledger).get(patientId) ?? [], patientId).rows) {
-    if (row.bookingId === excludeBookingId || toCents(row.outstanding) <= 0) continue
-    const booking = state.schedule.bookings[row.bookingId]
-    if (booking === undefined || booking.cancellation !== undefined) continue
-    return true
-  }
-  return false
 }
 
 // ---------------------------------------------------------------------------
@@ -731,8 +712,6 @@ export interface MonitorBookingRow {
   waitingForXero?: MonitorXeroWait
   /** A void or amendment made in Xero on its pair, flagged by the poll (catch-up Phase 37). */
   xeroFlag?: MonitorXeroFlag
-  /** WI2a: this booking's patient has an unpaid prior episode (repeat patient). */
-  outstandingPriorBalance?: boolean
   /** The ledger's money for the two-state display (paid in / paid out). */
   receivedAmount: number
   /** Released to the anaesthetist (Phase 10's "authorised" on the ACCPAY). */
@@ -847,7 +826,6 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
       if (paidInAtISO !== undefined) row.paidInAtISO = paidInAtISO
       const disbursedAtISO = pairs.find((p) => p.payable?.paidOutAtISO !== undefined)?.payable?.paidOutAtISO
       if (disbursedAtISO !== undefined) row.disbursedAtISO = disbursedAtISO
-      if (patientHasOutstandingPriorEpisode(state, booking.patientId, booking.id)) row.outstandingPriorBalance = true
       const leftOff = prepaidLeftOffFor(state, booking.id)
       if (leftOff !== undefined) row.prepaidLeftOff = leftOff
       return row

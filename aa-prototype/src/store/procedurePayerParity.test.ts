@@ -34,11 +34,11 @@ import {
 import baseline from './__parity__/phase-22a-baseline.json'
 import { captureBaseline22a, type Phase22aBaseline } from './__parity__/phase22aCapture'
 import { payerContactSpec } from './xeroHandoff'
-import { createAppStore } from './appStore'
 import { authoriseList } from './lifecycle'
 import { runBillingForList } from './billingRun'
 import { OFFICE_ACTOR } from './demoActors'
 import { PROCEDURE_PAYER_ADDITIONS, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
+import { storeWithoutPhase40 } from './__parity__/phase40Declared'
 
 const before = baseline as Phase22aBaseline
 const now = captureBaseline22a(PROCEDURE_PAYER_ADDITIONS)
@@ -76,13 +76,13 @@ describe('Phase 22a payer-per-Procedure parity (no declared difference)', () => 
   it("keeps Hana Park as BP0001 on Xero's billableParty:BP0001 contact", () => {
     const grace = now.bookings.find((r) => r.bookingId === SEED_MARKERS.guardianMinorBooking!.entityId)
     expect(grace?.result).toMatchObject({ kind: 'invoices', invoices: [{ ref: 'payer:BP0001', name: 'Hana Park', contactNumber: 'BP0001' }] })
-    expect(payerContactSpec({ kind: 'payer', id: 'BP0001' }, createAppStore().getState().masters).key).toBe('billableParty:BP0001')
+    expect(payerContactSpec({ kind: 'payer', id: 'BP0001' }, storeWithoutPhase40().getState().masters).key).toBe('billableParty:BP0001')
   })
 })
 
 describe("22a's seed additions", () => {
   it("Grace Park's two Procedures share Hana Park (copied, BP0001): one invoice for both", () => {
-    const api = createAppStore()
+    const api = storeWithoutPhase40()
     const grace = SEED_MARKERS.guardianMinorBooking!.entityId
     const full = captureBaseline22a().bookings.find((r) => r.bookingId === grace)!
     expect(full.result.kind === 'invoices' && full.result.invoices.map((i) => [i.ref, i.procedures.length])).toEqual([['payer:BP0001', 2]])
@@ -90,7 +90,7 @@ describe("22a's seed additions", () => {
   })
 
   it('the two-payer Booking raises two invoices on authorise, one to each separately typed payer (US-08.2.1 AC3)', () => {
-    const api = createAppStore()
+    const api = storeWithoutPhase40()
     expect(authoriseList(api, OFFICE_ACTOR, SEED_LIST_IDS.payerReview).ok).toBe(true)
     expect(runBillingForList(api, SEED_LIST_IDS.payerReview).ok).toBe(true)
     const twoPayer = PROCEDURE_PAYER_ADDITIONS.ids.twoPayerBooking

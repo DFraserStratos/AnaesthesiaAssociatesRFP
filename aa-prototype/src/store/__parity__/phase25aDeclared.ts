@@ -9,11 +9,12 @@
 
 import { DISABLED_CONTRACT_BOOKING_IDS } from '../../domain/seed'
 import { freshAppState } from '../appStore'
+import { withoutPhase40 } from './phase40Declared'
 
 export const PHASE_25A_ADDED_BOOKINGS: ReadonlySet<string> = new Set(DISABLED_CONTRACT_BOOKING_IDS)
 
 export const PHASE_25A_ADDED_PROCEDURES: ReadonlySet<string> = new Set(
-  Object.values(freshAppState().schedule.procedures)
+  Object.values(withoutPhase40(freshAppState()).schedule.procedures)
     .filter((p) => PHASE_25A_ADDED_BOOKINGS.has(p.bookingId))
     .map((p) => p.id),
 )

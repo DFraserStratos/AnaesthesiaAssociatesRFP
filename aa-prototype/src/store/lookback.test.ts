@@ -27,6 +27,7 @@ import type { Actor } from './mutate'
 import { listProgress } from '../domain/listProgress'
 import { ANAE, HOSP, SEED_LIST_IDS, SEED_LOOKBACK } from '../domain/seed'
 import { assigned } from '../test/lists'
+import { nextTestNhi } from './testNhi'
 
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -82,7 +83,7 @@ describe('mainViewFor (US-07.4.2)', () => {
     )
     expect(past).toBeDefined()
     const created = createBooking(api, SOUTER, past!.id, {
-      patient: { name: 'Past Patient', dobISO: '1970-01-01' },
+      patient: { nhi: nextTestNhi(), name: 'Past Patient', dobISO: '1970-01-01' },
       sourceText: { text: 'Arthroscopy', source: 'anaesthetist' },
     })
     expect(created.ok).toBe(true)
@@ -133,9 +134,9 @@ describe('searchBookingsFor (US-03.1.7)', () => {
         expect(api.getState().schedule.lists[row.listId]?.anaesthetistId).toBe(ANAE.souter)
       }
     }
-    // Her Booking on Dr Sharma's List exists, and only Dr Sharma finds it.
+    // Her Booking on Dr Sharma's List exists, and only Dr Sharma finds it, with her two Sharma history Bookings (catch-up Phase 40).
     const sharma = searchBookingsFor(api.getState(), ANAE.sharma, 'mitchell', '2026-07-21')
-    expect(sharma.total).toBe(1)
+    expect(sharma.total).toBe(3)
   })
 
   it('marks authorised history Invoiced and upcoming work by its progress', () => {
@@ -144,12 +145,12 @@ describe('searchBookingsFor (US-03.1.7)', () => {
     expect(r.past[1]).toMatchObject({ listId: SEED_LOOKBACK.listId, session: 'AM', hospitalName: "St George's", nhi: 'CQY9304' })
   })
 
-  it('finds Wiremu Tane by "tane" and Noah Prescott (no NHI) by name only', () => {
+  it('finds Wiremu Tane by "tane" and Noah Prescott by name (his NHI since catch-up Phase 40)', () => {
     const api = store()
     expect(search(api, 'tane').total).toBeGreaterThanOrEqual(3)
     const prescott = search(api, 'Prescott')
     expect(prescott.total).toBe(1)
-    expect(prescott.upcoming[0]?.nhi).toBeUndefined()
+    expect(prescott.upcoming[0]?.nhi).toBe('ZAP3016')
   })
 
   it('never returns a cancelled Booking', () => {
@@ -165,7 +166,7 @@ describe('searchBookingsFor (US-03.1.7)', () => {
     const api = store()
     for (let i = 0; i < 60; i++) {
       const out = createBooking(api, OFFICE, SEED_LIST_IDS.souterAm21, {
-        patient: { name: `Capstone Patient ${i}`, dobISO: '1980-01-01' },
+        patient: { nhi: nextTestNhi(), name: `Capstone Patient ${i}`, dobISO: '1980-01-01' },
         sourceText: { text: 'Test', source: 'anaesthetist' },
       })
       expect(out.ok).toBe(true)
@@ -258,7 +259,7 @@ describe('history survives the clock and the canvas', () => {
   it('Next morning, a 30-day jump, a recurring-booking edit and apply, a series save, a holiday, Add anaesthetist and a horizon change leave every backdrop record as seeded', () => {
     const api = store()
     const before = snapshot(api)
-    expect(before.lists.length).toBe(25)
+    expect(before.lists.length).toBe(29) // 25, plus Dr Sharma's four patient-billed history Lists (catch-up Phase 40)
 
     advanceClockToNextMorning(api)
     const monday = Object.values(api.getState().masters.recurringBookings).find((r) => r.dayOfWeek === 1 && r.anaesthetistId === ANAE.souter)!

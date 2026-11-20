@@ -11,13 +11,14 @@
  * Pure (enforced by `domainPurity.test.ts`).
  */
 
+import type { PatientBalanceSummary } from '../patients/patientBalance'
 import type { AaFeeSettings, ActorRole, Booking, BookingId, Contract, IsoDate, Party, IsoDateTime, List, Patient, PaymentCycleSettings, Procedure, ProcedureId, RvgGroup, RvgGroupId, ScheduleSettings } from '../types'
 
 export type WarningKind = 'beforeProcedure' | 'afterProcedure'
 export type WarningStrength = 'mild' | 'strong'
 
 /** Every registered rule. Phases 19, 21, 27 and 40 widen the union. */
-export type WarningRuleId = 'prepaymentUnpaid' | 'baseUnitsOutsideGuide' | 'childPayer' | 'approvalNumberMissing' | 'splitDoesNotFit'
+export type WarningRuleId = 'prepaymentUnpaid' | 'baseUnitsOutsideGuide' | 'childPayer' | 'approvalNumberMissing' | 'splitDoesNotFit' | 'patientBalance'
 
 /** The derived prepayment status a rule may read (the store's `prepaymentStatusFor`, catch-up Phase 27). */
 export type WarningPrepaymentStatus = 'none' | 'awaitingApproval' | 'unpaid' | 'partPaid' | 'paid' | 'notNeeded' | 'changedAfterSending'
@@ -64,6 +65,13 @@ export interface WarningFacts {
    * still be billed on the Booking. Absent: `splitDoesNotFit` finds nothing.
    */
   splits?: Readonly<Record<ProcedureId, { feeExGst: number | null; partiesOn: boolean }>>
+  /**
+   * The patient's balance on invoices billed to them (catch-up Phase 40;
+   * US-11.3.2), built only for a Booking stamped `balanceCheck` with a
+   * Procedure whose payer is the patient (`checksPatientBalance`). Absent:
+   * `patientBalance` finds nothing.
+   */
+  patientBalance?: { patientName: string; summary: PatientBalanceSummary }
 }
 
 export type WarningParams = Readonly<Record<string, number>>
@@ -77,6 +85,12 @@ export interface WarningFinding {
   procedureId?: ProcedureId
   /** Set for a per-payer finding (catch-up Phase 27: the payer's identity); becomes part of the warning key. */
   scope?: string
+  /**
+   * The anaesthetist's wording, with no name or amount (catch-up Phase 40;
+   * US-11.3.2, US-15.0.6). Mobile and web render `shortText ?? text`, so a
+   * rule without one is unchanged.
+   */
+  shortText?: string
 }
 
 export interface WarningRule {

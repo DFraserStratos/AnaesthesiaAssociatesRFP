@@ -86,6 +86,8 @@ import { RECURRING_BOOKINGS } from './recurringBookings'
 import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
 import { displayStatusKey, effectiveSlotTimes, slotIdFor } from '../slots'
 import type { List, ListConflict } from '../types'
+// Catch-up Phase 40's declared move: Dr Sharma's appended HS history is set aside.
+import { seedWithoutPhase40 } from './__fixtures__/phase40Declared'
 
 interface GoldenRow {
   statusKey: string
@@ -132,7 +134,7 @@ const DELIBERATE: Record<string, Partial<GoldenRow>> = {
   '34821|2026-07-16|PM': { state: 'AUTHORISED' },
 }
 
-const seed = buildSeed()
+const seed = seedWithoutPhase40(buildSeed())
 const listBySlot = new Map<string, List>()
 for (const l of Object.values(seed.schedule.lists)) if (l.slotId !== undefined) listBySlot.set(l.slotId, l)
 

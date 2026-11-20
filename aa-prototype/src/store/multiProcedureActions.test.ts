@@ -17,6 +17,7 @@ import { ANAE, MULTI_PROCEDURE_IDS, RVG_GROUP, SEED_MARKERS } from '../domain/se
 import { seedModifierId } from '../domain/seed/modifiers'
 import { startForAddedProcedure } from '../domain/billing/contractRail'
 import type { AssignedList, Procedure } from '../domain/types'
+import { nextTestNhi } from './testNhi'
 
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -30,7 +31,7 @@ const P1 = seedModifierId('P1')
 function twoProcedures(): { api: BoundAppStore; bookingId: string; primary: string; additional: string } {
   const api = createAppStore()
   const created = createBooking(api, SOUTER, SOUTER_PM, {
-    patient: { name: 'Multi Procedure', dobISO: '1954-03-14' },
+    patient: { nhi: nextTestNhi(), name: 'Multi Procedure', dobISO: '1954-03-14' },
     sourceText: { text: 'Laparoscopic cholecystectomy', source: 'anaesthetist' },
     rvgGroupId: RVG_GROUP.a3!,
     scheduledTime: '17:00',

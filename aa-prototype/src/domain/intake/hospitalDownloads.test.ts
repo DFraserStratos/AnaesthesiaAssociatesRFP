@@ -3,6 +3,7 @@ import { validateNhi } from '../nhi'
 import { CANNED_MESSAGES } from '../integrations/messages'
 import {
   FORTE_CORRECTED_NHI,
+  NO_NHI_LIST,
   FORTE_MISTYPED_NHI,
   FOSTER_HOSPITAL_WORDING,
   HOSPITAL_DOWNLOAD_SAMPLES,
@@ -21,18 +22,18 @@ const AR35 = new Set(['lap appy ?conv to open', 'Wrist ORIF, distal radius', 'AC
 const rawOf = (id: string) => CANNED_MESSAGES.find((m) => m.id === id)?.raw ?? ''
 
 describe('the sample hospital files (OQ-13 interim)', () => {
-  it('four samples with unique ids; rows unique within each sample', () => {
-    expect(HOSPITAL_DOWNLOAD_SAMPLES.map((s) => s.id)).toEqual(['SAMPLE_STG', 'SAMPLE_STG_UPDATE', 'SAMPLE_SX', 'SAMPLE_FORTE_SHEET'])
+  it('five samples with unique ids; rows unique within each sample', () => {
+    expect(HOSPITAL_DOWNLOAD_SAMPLES.map((s) => s.id)).toEqual(['SAMPLE_STG', 'SAMPLE_STG_UPDATE', 'SAMPLE_SX', 'SAMPLE_FORTE_SHEET', 'NO_NHI_LIST'])
     for (const sample of HOSPITAL_DOWNLOAD_SAMPLES) {
       const keys = sample.rows.map((r) => JSON.stringify(r))
       expect(new Set(keys).size).toBe(keys.length)
       for (const r of sample.rows) expect(r.hospitalId).toBe(sample.hospitalId)
     }
   })
-  it('every NHI validates except Forte R2 (mistyped) and Southern Cross R4 (none)', () => {
+  it('every NHI validates except Forte R2 (mistyped), Southern Cross R4 and NO_NHI_LIST (none)', () => {
     for (const sample of HOSPITAL_DOWNLOAD_SAMPLES) {
       sample.rows.forEach((r, i) => {
-        const exempt = (sample === SAMPLE_FORTE_SHEET && i === 1) || (sample === SAMPLE_SX && i === 3)
+        const exempt = (sample === SAMPLE_FORTE_SHEET && i === 1) || (sample === SAMPLE_SX && i === 3) || sample === NO_NHI_LIST
         if (!exempt) expect(validateNhi(r.patient.nhi ?? '').valid, `${sample.id} R${i + 1}`).toBe(true)
       })
     }

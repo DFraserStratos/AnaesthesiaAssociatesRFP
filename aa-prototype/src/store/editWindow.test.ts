@@ -23,6 +23,7 @@ import { changedSinceSubmitted } from './lookback'
 import { bookingsForList } from './selectors'
 import type { Actor } from './mutate'
 import { ANAE, SEED_LIST_IDS } from '../domain/seed'
+import { nextTestNhi } from './testNhi'
 
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 const MORRISON: Actor = { who: 'Dr Kate Morrison', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.morrison }
@@ -62,7 +63,7 @@ describe('the edit window (D63)', () => {
     if (!notOwn.ok) expect(notOwn.code).toBe('notOwnList')
 
     const draft = createBooking(api, SOUTER, draftListId(api), {
-      patient: { name: 'X', dobISO: '1990-01-01' },
+      patient: { nhi: nextTestNhi(), name: 'X', dobISO: '1990-01-01' },
       sourceText: { text: 'Test', source: 'anaesthetist' },
     })
     expect(draft.ok).toBe(false)
@@ -125,7 +126,7 @@ describe('authorise is completion-gated (catch-up Phase 38a)', () => {
   it('a Booking added to a SUBMITTED List blocks authorise too', () => {
     const api = store()
     const added = createBooking(api, SOUTER, MON_AM, {
-      patient: { name: 'Late Addition', dobISO: '1980-02-02' },
+      patient: { nhi: nextTestNhi(), name: 'Late Addition', dobISO: '1980-02-02' },
       sourceText: { text: 'Arthroscopy', source: 'anaesthetist' },
     })
     expect(added.ok).toBe(true)

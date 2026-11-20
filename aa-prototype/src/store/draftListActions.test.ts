@@ -62,6 +62,7 @@ import { closureSourcesOf, closuresFor } from '../domain/holidays'
 import { assigned, draft } from '../test/lists'
 import { prepaymentStatusFor } from './prepaymentSelectors'
 import { addDays, format, parseISO } from 'date-fns'
+import { nextTestNhi } from './testNhi'
 
 const OFFICE = OFFICE_ACTOR
 const FEED: Actor = { who: 'HL7 feed', role: 'system', source: 'integration' }
@@ -142,10 +143,10 @@ describe('Bookings on a Draft List (US-01.6.1 "Bookings allowed")', () => {
   it('the office adds a Booking and moves one off it; an anaesthetist cannot; it cannot be submitted or authorised', () => {
     const api = store()
     const id = create(api)
-    const added = createBooking(api, OFFICE, id, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Cystoscopy', source: 'anaesthetist' } })
+    const added = createBooking(api, OFFICE, id, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Cystoscopy', source: 'anaesthetist' } })
     expect(added.ok).toBe(true)
     const bookingId = added.ok ? added.value.bookingId : ''
-    expect(code(createBooking(api, SOUTER_ACTOR, id, { patient: { name: 'X Y', dobISO: '1970-01-01' }, sourceText: { text: 'X', source: 'anaesthetist' } }))).toBe('notOwnList')
+    expect(code(createBooking(api, SOUTER_ACTOR, id, { patient: { nhi: nextTestNhi(), name: 'X Y', dobISO: '1970-01-01' }, sourceText: { text: 'X', source: 'anaesthetist' } }))).toBe('notOwnList')
     expect(code(submitList(api, OFFICE, id))).toBe('listNotActive')
     const sub = submitList(api, OFFICE, id)
     expect(sub.ok ? '' : sub.message).toBe('Assign an anaesthetist first.')
@@ -409,7 +410,7 @@ describe('the recurring clash (OQ-81 part 2; US-01.3.2 AC2, US-01.5.4 AC3)', () 
     const edited = editRecurringBooking(api, OFFICE, result.id, { surgeonId: SURG.reid })
     expect(edited.ok && edited.value.draftListsUpdated).toBe(1)
     expect(api.getState().schedule.lists[clashId]?.surgeonId).toBe(SURG.reid)
-    createBooking(api, OFFICE, clashId, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Cataract', source: 'anaesthetist' } })
+    createBooking(api, OFFICE, clashId, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Cataract', source: 'anaesthetist' } })
     const again = editRecurringBooking(api, OFFICE, result.id, { surgeonId: SURG.whitford })
     expect(again.ok && again.value.kept.some((k) => k.listId === clashId && k.reason === 'hasBookings')).toBe(true)
     expect(api.getState().schedule.lists[clashId]?.surgeonId).toBe(SURG.reid)
@@ -576,7 +577,7 @@ describe('the store-wide lifecycle and pairing invariant (FT-07.1)', () => {
     assignDraftList(api, OFFICE, a, { anaesthetistId: free.slot.anaesthetistId })
     redateDraftList(api, OFFICE, b, { dateISO: '2026-07-27', session: 'PM' })
     removeDraftList(api, OFFICE, b)
-    const booking = createBooking(api, OFFICE, SEED_DRAFT_LIST_IDS.stGeorges, { patient: { name: 'Sweep Patient', dobISO: '1980-01-01' }, sourceText: { text: 'Cystoscopy', source: 'anaesthetist' } })
+    const booking = createBooking(api, OFFICE, SEED_DRAFT_LIST_IDS.stGeorges, { patient: { nhi: nextTestNhi(), name: 'Sweep Patient', dobISO: '1980-01-01' }, sourceText: { text: 'Cystoscopy', source: 'anaesthetist' } })
     if (booking.ok) reassignBooking(api, OFFICE, booking.value.bookingId, a)
     const result = addRecurringBooking(api, OFFICE, { anaesthetistId: ANAE.beaumont, dayOfWeek: 4, session: 'AM', kind: 'private', hospitalId: HOSP.ces, surgeonId: SURG.whitford })
     if (result.ok) editRecurringBooking(api, OFFICE, result.value.id, { surgeonId: SURG.reid })

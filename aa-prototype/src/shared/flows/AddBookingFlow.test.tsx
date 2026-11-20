@@ -37,6 +37,7 @@ function newBookingIds(before: Set<string>): string[] {
 }
 
 function saveManual() {
+  fireEvent.change(screen.getByLabelText('NHI'), { target: { value: 'ZZZ9005' } })
   fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ad Hoc Patient' } })
   fireEvent.change(screen.getByLabelText('Date of birth'), { target: { value: '1990-05-05' } })
   fireEvent.change(screen.getByLabelText('Procedure description'), { target: { value: 'Diagnostic laparoscopy' } })
@@ -121,6 +122,7 @@ describe('AddBookingFlow', () => {
 
 describe('the Procedure description field (catch-up Phase 20a; US-02.4.1)', () => {
   function fillPatient() {
+    fireEvent.change(screen.getByLabelText('NHI'), { target: { value: 'ZZZ9005' } })
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Typed Patient' } })
     fireEvent.change(screen.getByLabelText('Date of birth'), { target: { value: '1990-05-05' } })
   }

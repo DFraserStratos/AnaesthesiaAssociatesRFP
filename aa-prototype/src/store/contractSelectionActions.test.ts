@@ -17,6 +17,7 @@ import { approveAllPrepayments } from '../test/approvePrepayments'
 import type { Actor } from './mutate'
 import { SEED_MARKERS } from '../domain/seed'
 import { NO_CONTRACT_MESSAGE as NEEDS_DESTINATION_FAILURE } from '../domain/billing/completion'
+import { nextTestNhi } from './testNhi'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: '34821' }
@@ -162,7 +163,7 @@ describe('creation, added Procedures and completion (US-04.3.4, US-03.2.3)', () 
   it('a Booking created without a Contract needs an invoice destination; completion refuses it in those words', () => {
     const api = store()
     const listId = listOf(api, pickUp())
-    const made = createBooking(api, OFFICE, listId, { patient: { name: 'Test Person', dobISO: '1980-01-01' }, sourceText: { text: 'Pre-op assessment', source: 'anaesthetist' } })
+    const made = createBooking(api, OFFICE, listId, { patient: { nhi: nextTestNhi(), name: 'Test Person', dobISO: '1980-01-01' }, sourceText: { text: 'Pre-op assessment', source: 'anaesthetist' } })
     expect(made.ok).toBe(true)
     if (!made.ok) return
     const p = firstProcOf(api, made.value.bookingId)
@@ -174,8 +175,8 @@ describe('creation, added Procedures and completion (US-04.3.4, US-03.2.3)', () 
   it('a Booking created with a Contract is checked like the rail', () => {
     const api = store()
     const listId = listOf(api, pickUp())
-    expect(createBooking(api, OFFICE, listId, { patient: { name: 'Test Person', dobISO: '1980-01-01' }, sourceText: { text: 'X', source: 'anaesthetist' }, governingContractId: 'CT-STG-D1' })).toMatchObject({ ok: false, code: 'notACandidate' })
-    const made = createBooking(api, OFFICE, listId, { patient: { name: 'Test Person', dobISO: '1980-01-01' }, sourceText: { text: 'X', source: 'anaesthetist' }, governingContractId: 'CT-NO-CONTRACT' })
+    expect(createBooking(api, OFFICE, listId, { patient: { nhi: nextTestNhi(), name: 'Test Person', dobISO: '1980-01-01' }, sourceText: { text: 'X', source: 'anaesthetist' }, governingContractId: 'CT-STG-D1' })).toMatchObject({ ok: false, code: 'notACandidate' })
+    const made = createBooking(api, OFFICE, listId, { patient: { nhi: nextTestNhi(), name: 'Test Person', dobISO: '1980-01-01' }, sourceText: { text: 'X', source: 'anaesthetist' }, governingContractId: 'CT-NO-CONTRACT' })
     expect(made.ok).toBe(true)
   })
 
@@ -231,7 +232,7 @@ describe('review-pass fixes (catch-up Phase 20)', () => {
   it('refuses Prepaid answers for the anaesthetist at creation too', () => {
     const api = store()
     const made = createBooking(api, SOUTER, listOf(api, pickUp()), {
-      patient: { name: 'Test Person', dobISO: '1980-01-01' },
+      patient: { nhi: nextTestNhi(), name: 'Test Person', dobISO: '1980-01-01' },
       sourceText: { text: 'X', source: 'anaesthetist' },
       railAnswers: { destination: 'patient', narrow: 'prepaid' },
     })

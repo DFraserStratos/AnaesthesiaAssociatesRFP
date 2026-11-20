@@ -10,6 +10,7 @@ import { createHospital } from './mastersActions'
 import { bookingsForList } from './selectors'
 import type { Actor } from './mutate'
 import { ANAE, PAT, SEED_MARKERS } from '../domain/seed'
+import { nextTestNhi } from './testNhi'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = {
@@ -43,7 +44,9 @@ describe('upsertPatient', () => {
       expect(outcome.value.patient.postalAddress?.line1).toBeDefined()
     }
     expect(Object.keys(api.getState().masters.patients).length).toBe(before)
-    expect(api.getState().audit.at(-1)?.action).toBe('patient.reuse')
+    // The differing address is held for review, never written over (catch-up Phase 40; US-11.1.1).
+    expect(api.getState().audit.slice(-2).map((e) => e.action)).toEqual(['patient.reuse', 'patient.detailsPending'])
+    expect(api.getState().masters.patients[PAT.mitchell]!.pendingDetails?.differences.map((d) => d.field)).toEqual(['address'])
   })
 
   it('reuses by new-format NHI too (both formats, one patient row)', () => {
@@ -56,18 +59,13 @@ describe('upsertPatient', () => {
     }
   })
 
-  it('creates a provisional record when no NHI is supplied', () => {
+  it('refuses a blank NHI and writes nothing (catch-up Phase 40; D11: no provisional record)', () => {
     const api = createAppStore()
-    const before = Object.keys(api.getState().masters.patients).length
-    const outcome = upsertPatient(api, OFFICE, { name: 'Tom Aldridge', dobISO: '1971-02-02' })
-    expect(outcome.ok).toBe(true)
-    if (outcome.ok) {
-      expect(outcome.value.outcome).toBe('createdProvisional')
-      expect(outcome.value.patient.nhi).toBeUndefined()
-      expect(outcome.value.patient.hiddenInternalId.startsWith('PT')).toBe(true)
-    }
-    expect(Object.keys(api.getState().masters.patients).length).toBe(before + 1)
-    expect(api.getState().audit.at(-1)?.action).toBe('patient.create')
+    const before = api.getState()
+    const outcome = upsertPatient(api, OFFICE, { nhi: '  ', name: 'Tom Aldridge', dobISO: '1971-02-02' })
+    expect(outcome).toMatchObject({ ok: false, code: 'nhiRequired' })
+    expect(api.getState().masters.patients).toBe(before.masters.patients)
+    expect(api.getState().audit.length).toBe(before.audit.length)
   })
 
   it('creates a new full record for an unseen valid NHI', () => {
@@ -90,6 +88,7 @@ describe('upsertPatient', () => {
   it('stores only validated ethnicity codes; others are quarantined pending correction', () => {
     const api = createAppStore()
     const good = upsertPatient(api, OFFICE, {
+      nhi: nextTestNhi(),
       name: 'A Good Code',
       dobISO: '1980-01-01',
       ethnicityCode: '21111',
@@ -98,6 +97,7 @@ describe('upsertPatient', () => {
     if (good.ok) expect(good.value.patient.ethnicityCode).toBe('21111')
 
     const bad = upsertPatient(api, OFFICE, {
+      nhi: nextTestNhi(),
       name: 'A Bad Code',
       dobISO: '1980-01-01',
       ethnicityCode: '99',

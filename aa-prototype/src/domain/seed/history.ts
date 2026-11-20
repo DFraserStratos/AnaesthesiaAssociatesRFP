@@ -261,6 +261,30 @@ const ACCOUNTS: readonly HistoryAccount[] = [
   ...LOOKBACK_ACCOUNTS,
 ] as const
 
+/** Mere Walsh, the patient of 15a's `multiWarning` Booking (Rutherford, Tue 21 Jul AM; pinned by `seed40.test.ts`). */
+export const MULTI_WARNING_PATIENT_ID = 'PT0111'
+
+/**
+ * Dr Sharma's patient-billed history (catch-up Phase 40; US-11.3.1,
+ * US-11.3.2): a second anaesthetist on the patient record, and the balance
+ * warning's cases. Each Procedure's payer is the patient and the Contract No
+ * contract · RVG, so each invoice is billed to the patient. On backdrop Lists
+ * before the canvas horizon, in their own `HS` id namespace, built after
+ * Souter's so no existing id, number or amount moves. Hand-written: no RNG.
+ * - Sarah Mitchell, raised Tue 14 Apr (98 days), $610.00, unpaid: the strong case S1's match raises. (The
+ *   phase doc re-pointed Souter's `oa07` to her instead; kept here so no Souter figure, Xero contact id or
+ *   parity baseline moves, and `oa07` stays a hospital-billed episode on her patient-centric balance.)
+ * - Sarah Mitchell, paid and paid out: her record shows two anaesthetists;
+ * - Losa Tuilagi, raised Sun 21 Jun (30 days at `DEMO_TODAY`), unpaid: the mild case;
+ * - Mere Walsh, raised Mon 23 Mar (120 days), unpaid: the strong case on the multi-warning Booking's patient.
+ */
+const SHARMA_PATIENT_ACCOUNTS: readonly HistoryAccount[] = [
+  { key: 'hs01', patientId: PAT.mitchell, counterparty: { kind: 'patient', id: PAT.mitchell }, surgeonId: SURG.lim, listHospitalId: HOSP.forte, description: 'Removal of skin lesions', serviceISO: '2026-04-10', raisedISO: '2026-04-14T09:00:00', total: 610.0, accRelated: false, paidState: 'unpaid' },
+  { key: 'hs02', patientId: PAT.mitchell, counterparty: { kind: 'patient', id: PAT.mitchell }, surgeonId: SURG.lim, listHospitalId: HOSP.forte, description: 'Excision of skin lesion, flap repair', serviceISO: '2026-02-10', raisedISO: '2026-02-10T09:00:00', total: 540.0, accRelated: false, paidState: 'paid', paidAtISO: '2026-02-24T10:00:00', disbursedAtISO: '2026-02-26T09:00:00' },
+  { key: 'hs03', patientId: PAT.tuilagi, counterparty: { kind: 'patient', id: PAT.tuilagi }, surgeonId: SURG.lim, listHospitalId: HOSP.forte, description: 'Carpal tunnel release', serviceISO: '2026-06-19', raisedISO: '2026-06-21T09:00:00', total: 380.0, accRelated: false, paidState: 'unpaid' },
+  { key: 'hs04', patientId: MULTI_WARNING_PATIENT_ID, counterparty: { kind: 'patient', id: MULTI_WARNING_PATIENT_ID }, surgeonId: SURG.lim, listHospitalId: HOSP.forte, description: 'Excision of skin lesion', serviceISO: '2026-03-20', raisedISO: '2026-03-23T09:00:00', total: 290.0, accRelated: false, paidState: 'unpaid' },
+] as const
+
 export interface HistoryBuild {
   lists: Record<string, List>
   bookings: Record<string, Booking>
@@ -323,6 +347,18 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
     payablesRunId: 'PR-HIST-01',
   })
 
+  // Dr Sharma's patient-billed history (catch-up Phase 40), after Souter's so nothing above moves.
+  const sharma = masters.anaesthetists[ANAE.sharma]
+  addHistoryAccounts(build, {
+    anaesthetistId: ANAE.sharma,
+    accounts: SHARMA_PATIENT_ACCOUNTS,
+    ids: historyIds('HS'),
+    masters,
+    payeeContactId: resolveContact('anaesthetist', ANAE.sharma, sharma?.name ?? 'Dr Priya Sharma', 'organisation', false),
+    resolveContact,
+    payablesRunId: 'PR-HIST-01',
+  })
+
   return build
 }
 
@@ -347,7 +383,8 @@ export interface HistoryIds {
 /** A namespace's ids: `H` gives Dr Souter's `L-HIST-01`, `HBK01`, `AA-2026-H01` and so on. */
 export function historyIds(ns: string): HistoryIds {
   return {
-    list: (n) => (ns === 'H' ? `L-HIST-${n}` : `L-${ns}-${n}`),
+    // Another backdrop history namespace (catch-up Phase 40's `HS`) keeps the `L-HIST` prefix the backdrop checks read.
+    list: (n) => (ns === 'H' ? `L-HIST-${n}` : ns.startsWith('H') ? `L-HIST-${ns}-${n}` : `L-${ns}-${n}`),
     booking: (n) => `${ns}BK${n}`,
     procedure: (n) => `${ns}P${n}`,
     invoice: (n) => `${ns}INV${n}`,

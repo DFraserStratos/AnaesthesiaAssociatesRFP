@@ -459,8 +459,11 @@ export const PERSIST_KEY = 'aa-demo'
  *  the negative invoice's `nettings` and `netted` status, the credit's `nettedAmount`; every seeded payout names its run.
  *  Reseeds on load.
  *  v71 (lane/b): the Phase 40 sync of Lane A's 39a into lane/b (39b and 39a both took v70): one past the higher.
- *  Reseeds on load. */
-export const PERSIST_VERSION = 71
+ *  Reseeds on load.
+ *  v72: catch-up Phase 40, patients: `Patient.nhi` required (PT0010 Noah Prescott ZAP3016, his wording without
+ *  "(NHI pending)"), `pendingDetails`, `Booking.balanceCheck`, `noteLog` on Booking and List, the `patientCare` slice
+ *  (counters `sharedNote` NTE, `followUp` FUN), the `patientBalance` rule's settings entry, Dr Sharma's patient-billed history (`HS` namespace). Reseeds on load. */
+export const PERSIST_VERSION = 72
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {}, creditNotes: {}, negativeInvoices: {}, payablesRuns: {}, bankLines: {} }

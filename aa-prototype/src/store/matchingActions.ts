@@ -63,6 +63,7 @@ import { assignListToSlot } from './slotActions'
 import { createDraftList } from './draftListActions'
 import { assessImportRow, matchingView } from './matchingSelectors'
 import { placeStubsForRows, settleStubForRow, stubOutcomeForDecision } from './stubSettle'
+import { stampBalanceCheck } from './balanceCheck'
 import { listSenderEmail, originAfterRoomsRow, originForNewList } from '../domain/lists/listOrigin'
 
 function officeOnly(actor: Actor): Outcome<never> | null {
@@ -363,6 +364,8 @@ function createInput(state: AppState, row: ImportRow, fields: IncomingBookingFie
       name: fields.patient.name,
       dobISO: fields.patient.dobISO ?? '',
       ...(fields.patient.ethnicityCode !== undefined ? { ethnicityCode: fields.patient.ethnicityCode } : {}),
+      // Who sent the details, for a "details differ" review (catch-up Phase 40).
+      detailsSource: row.source === 'rooms' ? ('surgeon' as const) : ('hospital' as const),
     },
     ...(text !== undefined && !isBlankText(text) ? { sourceText: { text, source: sourceTextChannelFor(row.channel), from: hospitalFrom(state, row) } } : {}),
     ...(picks?.rvgGroupId !== undefined ? { rvgGroupId: picks.rvgGroupId } : {}),
@@ -678,7 +681,13 @@ function record(
     // The row's stub, if one stands, is settled in the same commit (33a: the one place a stub's status changes).
     const settled = settleStubForRow(s.intake.stubs, row.id, stubOutcomeForDecision(decision), clockISO(s.clock), actor.who)
     if (settled !== undefined) metas.push(settled.meta)
-    return { intake: { ...s.intake, rows: { ...s.intake.rows, [row.id]: next }, ...(settled !== undefined ? { stubs: settled.stubs } : {}) } }
+    // A row matched to an existing Booking stamps its patient balance check in this commit (catch-up Phase 40; US-11.3.2).
+    const matched = decision.kind === 'match' && decision.changeType !== 'cancellation' ? s.schedule.bookings[decision.bookingId] : undefined
+    const stamped = matched !== undefined ? stampBalanceCheck(matched, 'matched', clockISO(s.clock)) : undefined
+    return {
+      intake: { ...s.intake, rows: { ...s.intake.rows, [row.id]: next }, ...(settled !== undefined ? { stubs: settled.stubs } : {}) },
+      ...(stamped !== undefined && stamped !== matched ? { schedule: { ...s.schedule, bookings: { ...s.schedule.bookings, [stamped.id]: stamped } } } : {}),
+    }
   })
 }
 

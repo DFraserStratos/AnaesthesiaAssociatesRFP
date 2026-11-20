@@ -43,7 +43,7 @@ describe('MatchingScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: /Import hospital file/ }))
     const dialog = container.ownerDocument.querySelector('[data-shot="matching-import"]') as HTMLElement
     expect(within(dialog).getByText('Sample file')).toBeInTheDocument()
-    expect(dialog.querySelectorAll('[data-sample-id]')).toHaveLength(4)
+    expect(dialog.querySelectorAll('[data-sample-id]')).toHaveLength(5)
     fireEvent.click(within(dialog).getByRole('button', { name: 'Import' }))
 
     expect(screen.getByText("5 rows imported from St George's")).toBeInTheDocument()

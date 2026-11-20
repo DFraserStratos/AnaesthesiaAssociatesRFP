@@ -203,15 +203,16 @@ export interface CapturedUnits {
 // ---------------------------------------------------------------------------
 
 /**
- * Patient. `hiddenInternalId` is the INVARIANT key (3rd review #5) — it is what
- * crosses to Xero as the ContactNumber (convention 8: the NHI never does).
- * `nhi` is OPTIONAL: the RFP links records to an NHI "where available" (vs the
- * schedule section's "unique identifier: NHI" — tension recorded in
- * REQUIREMENTS §11). Validate the NHI whenever present.
+ * Patient. `hiddenInternalId` is the INVARIANT store key (3rd review #5) and
+ * what crosses to Xero as the ContactNumber (convention 8, OQ-30: the NHI
+ * never does); it is never shown. The NHI is REQUIRED (catch-up Phase 40;
+ * D11, OQ-49, DM-30, US-11.1.1): the patient's identifier throughout and the
+ * one-record-per-NHI dedupe key, stored normalised. Demographics and
+ * ethnicity are held and shown only where supplied, never required.
  */
 export interface Patient {
   hiddenInternalId: PatientId
-  nhi?: string
+  nhi: string
   name: string
   dobISO: IsoDate
   phone?: string
@@ -226,6 +227,67 @@ export interface Patient {
    * the Booking still books; the manual-fix flow supplies a valid code.
    */
   ethnicityPending?: { receivedCode: string; reason: string }
+  /**
+   * Details that arrived with this NHI and differ from the record (catch-up
+   * Phase 40; US-11.1.1 "Details differ"): held for the office's review,
+   * never written over the record (like `ethnicityPending`). Cleared by
+   * `resolvePatientDetails`.
+   */
+  pendingDetails?: PatientPendingDetails
+}
+
+/** A patient field the "details differ" prompt compares (catch-up Phase 40). */
+export type PatientDetailField = 'name' | 'dobISO' | 'phone' | 'email' | 'address'
+
+export interface PatientDetailDifference {
+  field: PatientDetailField
+  existing?: string
+  incoming: string
+}
+
+export interface PatientPendingDetails {
+  receivedAtISO: IsoDateTime
+  source: 'hospital' | 'surgeon' | 'aa'
+  bookingId?: BookingId
+  differences: PatientDetailDifference[]
+  /** The incoming address in full, so "use incoming" can apply it as an address, not a line of text. */
+  incomingAddress?: PostalAddress
+}
+
+/**
+ * A shared free-text note on a List or a Booking (catch-up Phase 40;
+ * US-11.3.3): anyone, office or anaesthetist, writes one and everyone who
+ * opens it sees it, with author and time. Append-only, newest last.
+ */
+export interface SharedNote {
+  id: string
+  text: string
+  atISO: IsoDateTime
+  by: string
+}
+
+/**
+ * A follow-up on a patient's outstanding items (catch-up Phase 40;
+ * US-11.3.3): a call, a note, a reminder or a re-send. A `resend` points at
+ * 22's send-history entry through `invoiceId`, never a second copy.
+ */
+export interface PatientFollowUp {
+  id: string
+  patientId: PatientId
+  kind: 'call' | 'note' | 'reminder' | 'resend'
+  text: string
+  invoiceId?: string
+  warningKey?: string
+  dueDateISO?: IsoDate
+  atISO: IsoDateTime
+  by: string
+  doneAtISO?: IsoDateTime
+  doneBy?: string
+}
+
+/** The patient follow-up log (catch-up Phase 40): a top-level slice, seeded empty. */
+export interface PatientCareSlice {
+  followUps: Record<string, PatientFollowUp>
 }
 
 /**
@@ -775,6 +837,8 @@ export interface ListBase {
    */
   billedAtISO?: IsoDateTime
   notes?: string
+  /** The shared notes (catch-up Phase 40; US-11.3.3), beside the office's `notes`. */
+  noteLog?: SharedNote[]
   /** Present on a Draft List, and kept after it is assigned (catch-up Phase 31). */
   draft?: DraftTrail
   /** A removed Draft List (US-01.6.4): soft, audited; it stays DRAFT and leaves every view but History. */
@@ -894,6 +958,15 @@ export interface Booking {
   insuranceApprovalNumber?: string
   cancellation?: BookingCancellation
   notes?: string
+  /** The shared notes (catch-up Phase 40; US-11.3.3), beside `notes`: anyone writes, everyone sees. */
+  noteLog?: SharedNote[]
+  /**
+   * The patient balance check (catch-up Phase 40; US-11.3.2): stamped in the
+   * commit that creates or matches the Booking, the only stored part of the
+   * balance warning, which is otherwise derived live. Seeded Bookings carry
+   * none, so they raise no balance warning until created or matched.
+   */
+  balanceCheck?: { atISO: IsoDateTime; trigger: 'created' | 'matched' }
   /** Stamped in lockstep with every audit entry (7th review A8). */
   lastModifiedBy: string
   lastModifiedAtISO: IsoDateTime

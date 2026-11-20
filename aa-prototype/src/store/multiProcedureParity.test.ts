@@ -28,15 +28,16 @@ import {
 import { PHASE_27A_REASON, withPhase27aBctis } from './__parity__/phase27aDeclared'
 import baselineJson from './__parity__/phase-23-baseline.json'
 import { capturePhase23, type FeeRow23, type Phase23Baseline } from './__parity__/phase23Capture'
-import { createAppStore, freshAppState } from './appStore'
+import { freshAppState } from './appStore'
 import { authoriseList } from './lifecycle'
 import { runBillingForList } from './billingRun'
 import { handoffListPairs } from './xeroHandoff'
 import { bctiRecords } from './ledgerSelectors'
 import { MULTI_PROCEDURE_IDS, SEED_MARKERS } from '../domain/seed'
+import { storeWithoutPhase40, withoutPhase40 } from './__parity__/phase40Declared'
 
 const baseline = baselineJson as unknown as Phase23Baseline
-const now = capturePhase23(freshAppState())
+const now = capturePhase23(withoutPhase40(freshAppState()))
 // Catch-up Phase 25a's appended Booking on the Disabled Contract is an addition too (`__parity__/phase25aDeclared.ts`).
 const added = new Set([MULTI_PROCEDURE_IDS.booking, ...PHASE_25A_ADDED_BOOKINGS])
 const addedProcedures = new Set([...MULTI_PROCEDURE_IDS.procedures, ...PHASE_25A_ADDED_PROCEDURES])
@@ -116,7 +117,7 @@ describe('Phase 23 multi-procedure parity', () => {
 describe('Phase 23 census of multi-procedure Bookings (FT-03.2 and US-05.3.5 carried across)', () => {
   it('lists exactly the seeded multi-procedure Bookings, each with one primary listed first', () => {
     expect(now.census.map((c) => c.bookingId)).toEqual([...baseline.census.map((c) => c.bookingId), MULTI_PROCEDURE_IDS.booking])
-    const state = freshAppState()
+    const state = withoutPhase40(freshAppState())
     for (const row of now.census) {
       const procs = Object.values(state.schedule.procedures).filter((p) => p.bookingId === row.bookingId)
       expect(procs.filter((p) => p.isPrimary), row.bookingId).toHaveLength(1)
@@ -158,7 +159,7 @@ describe('Phase 23 census of multi-procedure Bookings (FT-03.2 and US-05.3.5 car
     expect(invoice!.subtotal).toBe(636)
   })
   it('authorising its List raises one receivable and one BCTI for it (grouping by payer unchanged)', () => {
-    const api = createAppStore()
+    const api = storeWithoutPhase40()
     const booking = api.getState().schedule.bookings[MULTI_PROCEDURE_IDS.booking]!
     const before = bctiRecords(api.getState()).length
     expect(authoriseList(api, { who: 'Kirsty W.', role: 'office', source: 'office' }, booking.listId).ok).toBe(true)

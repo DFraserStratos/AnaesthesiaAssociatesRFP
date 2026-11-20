@@ -419,10 +419,10 @@ describe('patients & NHIs', () => {
     }
   })
 
-  it('seeds exactly one provisional no-NHI patient', () => {
-    const provisional = patients.filter((p) => p.nhi === undefined)
-    expect(provisional.length).toBe(1)
-    expect(provisional[0]?.name).toBe('Noah Prescott')
+  it('every patient has a valid NHI, held once (catch-up Phase 40; D11): Noah Prescott has ZAP3016', () => {
+    expect(patients.every((p) => validateNhi(p.nhi).valid)).toBe(true)
+    expect(new Set(patients.map((p) => p.nhi)).size).toBe(patients.length)
+    expect(patients.find((p) => p.name === 'Noah Prescott')?.nhi).toBe('ZAP3016')
   })
 })
 
@@ -675,7 +675,7 @@ describe('Booking id numbering (catch-up Phase 15)', () => {
 
   it('no Booking or history Booking keeps a legacy Card id', () => {
     const ids = Object.keys(seed.schedule.bookings)
-    expect(ids.every((id) => /^(BK\d{4}|HBK\d+)$/.test(id))).toBe(true)
+    expect(ids.every((id) => /^(BK\d{4}|HS?BK\d+)$/.test(id))).toBe(true)
     expect(ids.some((id) => id.startsWith('HBK'))).toBe(true)
   })
 })

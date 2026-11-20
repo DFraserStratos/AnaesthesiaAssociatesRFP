@@ -12,6 +12,7 @@
 
 import { PRICING_BOOKING_IDS, SEED_MARKERS } from '../../domain/seed'
 import { freshAppState } from '../appStore'
+import { withoutPhase40 } from './phase40Declared'
 
 /** The two Aria Bookings whose price or text moved. */
 export const PHASE_24_ARIA_ONLY: ReadonlySet<string> = new Set([
@@ -22,6 +23,6 @@ export const PHASE_24_ARIA_ONLY: ReadonlySet<string> = new Set([
 /** Every Booking an earlier parity suite sets aside for Phase 24: the Aria two and the seven additions. */
 export const PHASE_24_ARIA_BOOKINGS: ReadonlySet<string> = new Set([...PHASE_24_ARIA_ONLY, ...PRICING_BOOKING_IDS])
 
-const procedures = Object.values(freshAppState().schedule.procedures)
+const procedures = Object.values(withoutPhase40(freshAppState()).schedule.procedures)
 
 export const PHASE_24_ARIA_PROCEDURES: ReadonlySet<string> = new Set(procedures.filter((p) => PHASE_24_ARIA_BOOKINGS.has(p.bookingId)).map((p) => p.id))

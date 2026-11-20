@@ -25,6 +25,7 @@ import { listInSlot, previewRecurringBookingChange, previewRetireRecurringBookin
 import { ANAE, HOSP, SURG } from '../domain/seed'
 import { slotIdFor } from '../domain/slots'
 import type { AssignedList, RecurringBooking } from '../domain/types'
+import { nextTestNhi } from './testNhi'
 
 const OFFICE = OFFICE_ACTOR
 const store = (): BoundAppStore => createAppStore()
@@ -43,7 +44,7 @@ describe('editRecurringBooking', () => {
     const api = store()
     const rb = rutherfordMonday(api)
     const target = projectedOf(api, rb.id).find((l) => l.dateISO === '2026-08-10')!
-    expect(createBooking(api, OFFICE, target.id, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Test', source: 'anaesthetist' } }).ok).toBe(true)
+    expect(createBooking(api, OFFICE, target.id, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Test', source: 'anaesthetist' } }).ok).toBe(true)
     const bookedBefore = assigned(api.getState().schedule.lists[target.id])
     const auditBefore = api.getState().audit.length
     const out = editRecurringBooking(api, OFFICE, rb.id, { surgeonId: SURG.lim })
@@ -161,7 +162,7 @@ describe('retireRecurringBooking', () => {
     const api = store()
     const rb = rutherfordMonday(api)
     const late = projectedOf(api, rb.id).find((l) => l.dateISO === '2026-09-14')!
-    createBooking(api, OFFICE, late.id, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Test', source: 'anaesthetist' } })
+    createBooking(api, OFFICE, late.id, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Test', source: 'anaesthetist' } })
     const out = retireRecurringBooking(api, OFFICE, rb.id, '2026-08-31')
     expect(out.ok).toBe(true)
     if (!out.ok) return

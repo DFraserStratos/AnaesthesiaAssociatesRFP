@@ -24,6 +24,8 @@ import { auditLine, capturePhase32d, freeSessionsOn, PARITY_DAYS, type Phase32dS
 import { buildSeed, DISABLED_CONTRACT_BOOKING_IDS, SEED_LIST_IDS } from './index'
 import { projectedListId } from '../slots'
 import { ANAE } from './cast'
+// Catch-up Phase 40's declared move: Dr Sharma's appended HS history is set aside.
+import { seedWithoutPhase40 } from './__fixtures__/phase40Declared'
 
 const raw = baselineJson as unknown as Phase32dSeedBaseline
 /**
@@ -40,7 +42,11 @@ const before: Phase32dSeedBaseline = {
     }),
   ),
 }
-const seed = buildSeed()
+const seed = seedWithoutPhase40(buildSeed())
+/** Noah Prescott's Procedure (PT0010), whose seeded wording catch-up Phase 40 changed. */
+const PHASE_40_MOVED: string[] = Object.values(seed.schedule.procedures)
+  .filter((p) => seed.schedule.bookings[p.bookingId]?.patientId === 'PT0010')
+  .map((p) => p.id)
 /**
  * Catch-up Phase 25a appended one Booking (and its Procedure) on a new Disabled
  * Contract after this fixture was written: set aside with its audit entries, so
@@ -133,7 +139,18 @@ describe('Phase 32d parity: what must not move', () => {
 
   it('every Booking and Procedure is identical', () => {
     expect(now.bookings).toEqual(before.bookings)
-    expect(omit(now.procedures, PHASE_27_MOVED)).toEqual(omit(before.procedures, PHASE_27_MOVED))
+    expect(omit(now.procedures, [...PHASE_27_MOVED, ...PHASE_40_MOVED])).toEqual(omit(before.procedures, [...PHASE_27_MOVED, ...PHASE_40_MOVED]))
+  })
+
+  // Catch-up Phase 40 (D11): Noah Prescott's seeded wording lost "(NHI pending)"; only its text and invoice description moved.
+  it("Phase 40 moved only Noah Prescott's wording", () => {
+    expect(PHASE_40_MOVED).toHaveLength(1)
+    for (const id of PHASE_40_MOVED) {
+      const { procedureText: _a, invoiceDescription: _b, ...was } = before.procedures[id]!
+      const { procedureText: _c, invoiceDescription: _d, ...is } = now.procedures[id]!
+      expect(is).toEqual(was)
+      expect(now.procedures[id]!.procedureText?.text).toBe('Inguinal hernia repair')
+    }
   })
 
   // Wave 1 sync: Lane A's Phase 27 (built beside 32d) re-seeded Riley's and Nair's Rhinoplasty Procedures on Dr

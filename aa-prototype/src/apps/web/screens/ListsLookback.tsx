@@ -9,7 +9,7 @@ import { useMemo } from 'react'
 import { neutral, radius } from '../../../theme/tokens'
 import { listsOnDayFor, useAppStore, type BookingSearchRow } from '../../../store'
 import { ProgressPill, resolveDisplayStatus, StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
-import { dayWithYear, locationName, longDay, nhiBadge } from '../../../shared/format'
+import { dayWithYear, locationName, longDay } from '../../../shared/format'
 import { DAY_EMPTY, SEARCH_EMPTY, useLookbackBounds } from '../../../shared/schedule'
 import { sessionText } from '../../../domain/outOfHours'
 import { DateJumpInput } from '../../../shared/ui/DateFields'
@@ -78,7 +78,7 @@ function ResultRow({ row, onOpen }: { row: BookingSearchRow; onOpen: (listId: st
           <WarningTriangle warnings={warnings} size="sm" />
         </span>
       </Td>
-      <Td mono style={{ color: row.nhi === undefined ? neutral.mist : neutral.ink }}>{row.nhi ?? nhiBadge(undefined).text}</Td>
+      <Td mono>{row.nhi ?? ''}</Td>
       <Td>{row.hospitalName}</Td>
       <Td nowrap={false}>{row.procedureNames[0] ?? ''}</Td>
       <Td><ProgressPill progress={row.progress} /></Td>

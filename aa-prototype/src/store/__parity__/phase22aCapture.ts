@@ -24,6 +24,7 @@ import type { AssignedList, Booking, InvoiceBilledTo, Procedure } from '../../do
 import { faceOf, type PartyFace } from './phase21Capture'
 import { withoutPhase22aAdditions, type Phase22aAdditions } from './phase22aAdditions'
 import { withoutPhase23Additions } from './phase23Additions'
+import { withoutPhase40 } from './phase40Declared'
 
 export interface BuiltInvoiceFace extends PartyFace {
   subtotal: number
@@ -150,6 +151,6 @@ export function captureIssued22a(state: AppState): IssuedRow22a[] {
 
 export function captureBaseline22a(additions: Phase22aAdditions = { procedureIds: [], bookingIds: [] }): Phase22aBaseline {
   // Catch-up Phase 23's three-procedure Booking is set aside too: it came after this capture.
-  const state = withoutPhase22aAdditions(withoutPhase23Additions(freshAppState()), additions)
+  const state = withoutPhase22aAdditions(withoutPhase23Additions(withoutPhase40(freshAppState())), additions)
   return { bookings: captureBookings22a(state), issued: captureIssued22a(state) }
 }

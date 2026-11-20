@@ -74,14 +74,18 @@ export function ageYears(dobISO: string, todayISO: string): number {
 }
 
 export interface NhiBadge {
-  /** "NHI ABC1234" or "NHI pending". */
+  /** "NHI ABC1234"; empty only when no patient is found. */
   text: string
 }
 
-/** Render a normalised NHI, or the provisional "NHI pending" state. */
+/**
+ * Render a normalised NHI. The NHI is mandatory (catch-up Phase 40; D11,
+ * US-03.1.5): every patient has one, so there is no "pending" or "missing"
+ * label; a missing patient renders nothing.
+ */
 export function nhiBadge(nhi: string | undefined): NhiBadge {
   if (nhi === undefined || nhi.trim() === '') {
-    return { text: 'NHI pending' }
+    return { text: '' }
   }
   const v = validateNhi(nhi)
   return { text: `NHI ${v.normalised}` }

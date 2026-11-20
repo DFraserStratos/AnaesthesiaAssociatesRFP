@@ -110,7 +110,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
           booking,
           time: booking.scheduledTime ?? '·',
           patientName: masters.patients[booking.patientId]?.name ?? 'Unknown patient',
-          nhi: masters.patients[booking.patientId]?.nhi ?? 'NHI pending',
+          nhi: masters.patients[booking.patientId]?.nhi ?? '',
           procedure: procs[0] !== undefined ? procedureLabel(procs[0], masters.rvgGroups, 1) : 'Procedure to capture',
           extraProcedures: Math.max(0, procs.length - 1),
           cue: booking.cancellation === undefined ? bookingContractCue(cueState, booking.id) : undefined,

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
+import { useBookingWarnings, WarningTriangle } from '../../../shared/warnings'
+import { isOpen } from '../../../domain/warnings'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { aaFeeMonthLabel } from '../../../domain/billing/aaFee'
 import { needAddressText } from '../../../domain/billing/invoicePresentation'
@@ -625,18 +627,9 @@ function PipelineDetail({ row, onRetry, actor }: { row: MonitorAuthorisedRow; on
           {row.bookingRows.map((bookingRow) => (
             <tr key={bookingRow.bookingId} data-booking-id={bookingRow.bookingId}>
               <Td mono>{bookingRow.bookingId}</Td>
-              <Td data-shot={bookingRow.outstandingPriorBalance === true ? 'billing-prior-balance' : undefined}>
+              <Td>
                 {bookingRow.patientName}
-                {bookingRow.outstandingPriorBalance === true && (
-                  <Pill
-                    tone="warning"
-                    size="sm"
-                    title="This patient has an open (unpaid) prior episode at the intake check. Open versus genuinely overdue is not yet distinguished: invoices carry a raised date but no due date. A discovery point for AA."
-                    style={{ marginLeft: 8 }}
-                  >
-                    Prior balance
-                  </Pill>
-                )}
+                <PatientBalanceTriangle bookingId={bookingRow.bookingId} />
               </Td>
               <Td>
                 <BookingStatusPill row={bookingRow} />
@@ -881,3 +874,19 @@ function AaFeePanel() {
   )
 }
 
+/**
+ * The patient balance warning on a monitor row (catch-up Phase 40; RV-36):
+ * 15a's triangle when the Booking carries the open `patientBalance` warning,
+ * read from `useBookingWarnings`, never recomputed. Replaces the old
+ * "Prior balance" tag.
+ */
+function PatientBalanceTriangle({ bookingId }: { bookingId: string }) {
+  const warnings = useBookingWarnings(bookingId)
+  const open = useMemo(() => warnings.filter((w) => w.ruleId === 'patientBalance' && isOpen(w)), [warnings])
+  if (open.length === 0) return null
+  return (
+    <span data-shot="billing-patient-balance" style={{ marginLeft: 8 }}>
+      <WarningTriangle warnings={open} size="sm" />
+    </span>
+  )
+}

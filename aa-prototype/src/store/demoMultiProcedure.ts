@@ -78,7 +78,7 @@ export function stageMultiProcedureBooking(api: AppStoreApi): Outcome<{ bookingI
   try {
     ;({ bookingId } = must(
       createBooking(api, actor, list.id, {
-        patient: { name: patient.name, dobISO: patient.dobISO, ...(patient.nhi !== undefined ? { nhi: patient.nhi } : {}) },
+        patient: { nhi: patient.nhi, name: patient.name, dobISO: patient.dobISO },
         sourceText: { text: first!.text, source: 'email' },
         rvgGroupId: rvgGroupIdForLegacyCode(first!.legacyCode),
         governingContractId: CONTRACT.noContractRvg,

@@ -167,6 +167,9 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   bankDownloadLine: { prefix: 'BNK', pad: 4 },
   creditAllocation: { prefix: 'XCA', pad: 4 },
   batchPayment: { prefix: 'XBP', pad: 4 },
+  // Catch-up Phase 40: the shared note on a List or Booking, and the patient follow-up log.
+  sharedNote: { prefix: 'NTE', pad: 4 },
+  followUp: { prefix: 'FUN', pad: 4 },
 }
 
 /** Allocate the next deterministic id of a kind from the counters record. */
@@ -217,6 +220,7 @@ export type DomainPatch = Partial<
     | 'dayNotes'
     | 'officePrivate'
     | 'notifications'
+    | 'patientCare'
   >
 >
 
@@ -395,6 +399,7 @@ export function transaction<T>(api: AppStoreApi, run: () => Outcome<T>): Outcome
     dayNotes: before.dayNotes,
     officePrivate: before.officePrivate,
     notifications: before.notifications,
+    patientCare: before.patientCare,
     audit: before.audit,
   }
   const result = run()
@@ -453,6 +458,7 @@ export type DomainState = Pick<
   | 'dayNotes'
   | 'officePrivate'
   | 'notifications'
+  | 'patientCare'
   | 'counters'
   | 'billing'
   | 'xero'
@@ -486,6 +492,7 @@ function resetDomainStateOnly(api: AppStoreApi): void {
     dayNotes: seed.dayNotes,
     officePrivate: seed.officePrivate,
     notifications: seed.notifications,
+    patientCare: seed.patientCare,
     counters: seedBilling.counters,
     billing: {
       invoices: seedBilling.invoices,

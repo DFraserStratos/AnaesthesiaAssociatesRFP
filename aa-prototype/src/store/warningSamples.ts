@@ -600,6 +600,7 @@ const SAMPLE_NAMES: Record<WarningRuleId, string> = {
   childPayer: 'child',
   approvalNumberMissing: 'approval number',
   splitDoesNotFit: 'split',
+  patientBalance: 'patient balance',
 }
 
 /** The registered rule count, for the triggers' honest message. */

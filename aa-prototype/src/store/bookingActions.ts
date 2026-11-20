@@ -31,7 +31,8 @@ import { editRefusal, getBooking } from './lifecycle'
 import { payerFromInput, payerInputRefusal, type PayerInput } from './payerActions'
 import { isBlankText, procedureTextOf, refreshedInvoiceDescriptionFor } from '../domain/billing/procedureStack'
 import { payerForNewProcedure } from '../domain/billing/procedurePayer'
-import { upsertPatient, type PatientIntakeDetails } from './intake'
+import { nhiRefusal, upsertPatient, type PatientIntakeDetails } from './intake'
+import { stampBalanceCheck } from './balanceCheck'
 import { proceduresForBooking } from './selectors'
 import { rvgGroupPickRefusal } from '../domain/billing/rvgGroups'
 import { claimsAuditView, reconcileClaims } from '../domain/billing/modifiers'
@@ -111,6 +112,10 @@ function createBookingUnscoped(
   if (list === undefined) return refuse('notFound', 'List not found.')
   const rights = editRefusal(actor, list)
   if (rights !== null) return rights
+  // The NHI is mandatory (catch-up Phase 40; D11, US-11.1.4): the one guard every create path
+  // passes, before any write, so no Booking and no patient record is ever made without one.
+  const nhiRefused = nhiRefusal(input.patient.nhi)
+  if (nhiRefused !== null) return nhiRefused
   // A person's entry needs something to show: the text as told, or an RVG
   // code (D33: the code is optional). An integration's message may carry
   // neither; it creates a Procedure with no text (no invented wording).
@@ -157,14 +162,19 @@ function createBookingUnscoped(
     const payerAlloc = payerFromInput(formPayer.kind === 'other' ? { ...formPayer, id: undefined } : formPayer, counters)
     counters = payerAlloc.counters
 
-    const booking: Booking = {
-      id: bookingId,
-      listId,
-      patientId,
-      completed: false,
-      lastModifiedBy: actor.who,
-      lastModifiedAtISO: atISO,
-    }
+    // The patient balance check is stamped in the create's own commit (catch-up Phase 40; US-11.3.2).
+    const booking: Booking = stampBalanceCheck(
+      {
+        id: bookingId,
+        listId,
+        patientId,
+        completed: false,
+        lastModifiedBy: actor.who,
+        lastModifiedAtISO: atISO,
+      },
+      'created',
+      atISO,
+    )
     if (input.scheduledTime !== undefined) booking.scheduledTime = input.scheduledTime
     if (input.notes !== undefined && input.notes.trim() !== '') booking.notes = input.notes.trim()
     if (input.correlationRef !== undefined) booking.correlationRef = input.correlationRef

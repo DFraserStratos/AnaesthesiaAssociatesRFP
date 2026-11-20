@@ -72,8 +72,8 @@ describe('billablePartyForProcedure', () => {
 })
 
 describe('the payer helpers', () => {
-  const patient: Patient = { hiddenInternalId: 'PT0001', name: 'Wiremu Tane', dobISO: '1979-08-22', email: 'w@example.net', postalAddress: { line1: '1 Clyde Road', city: 'Christchurch', postcode: '8041' } }
-  const noContact: Patient = { hiddenInternalId: 'PT0002', name: 'Kevin Doherty', dobISO: '1972-10-14' }
+  const patient: Patient = { hiddenInternalId: 'PT0001', nhi: 'ZAA0067', name: 'Wiremu Tane', dobISO: '1979-08-22', email: 'w@example.net', postalAddress: { line1: '1 Clyde Road', city: 'Christchurch', postcode: '8041' } }
+  const noContact: Patient = { hiddenInternalId: 'PT0002', nhi: 'ZAA0075', name: 'Kevin Doherty', dobISO: '1972-10-14' }
   const rvg = [{ governingContractId: 'CT-NO-CONTRACT' }]
   const held = [{ governingContractId: 'CT-STG-D1' }]
 

@@ -26,7 +26,7 @@
  * Imported only by tests.
  */
 
-import { createAppStore, type AppState, type BoundAppStore } from '../appStore'
+import { type AppState, type BoundAppStore } from '../appStore'
 import { runBillingForList, wireBillingRun } from '../billingRun'
 import { authoriseList, reassignBooking, submitList } from '../lifecycle'
 import { completeAnswered } from '../../test/completeAnswered'
@@ -52,17 +52,30 @@ import {
   bookingsForList,
   openAccRecs,
   paymentHistoryFor,
-  patientHasOutstandingPriorEpisode,
   proceduresForBooking,
 } from '../selectors'
-import { bctiRecords, openBillingExceptions } from '../ledgerSelectors'
+import { bctiRecords, openBillingExceptions, patientLedgerPosition } from '../ledgerSelectors'
 import { BCTI_COUNT_RULE, bctisFor } from '../../domain/billing/bcti'
 import { roundToCents, toCents } from '../../domain/billing/money'
 import { ANAE, CONTRACT, SEED_LIST_IDS, SEED_MARKERS } from '../../domain/seed'
 import { projectedListId } from '../../domain/slots'
 import type { Actor } from '../mutate'
+import { storeWithoutPhase40 } from './phase40Declared'
 
 const OFFICE: Actor = TEST_OFFICE
+
+/**
+ * The baseline's `prior` flag, kept here only so the 36 baseline still
+ * compares: the Billing monitor's "Prior balance" tag it pinned was replaced
+ * by 40's patient balance warning (catch-up Phase 40; RV-36).
+ */
+function hasUnpaidOtherEpisode(state: AppState, patientId: string, excludeBookingId: string): boolean {
+  return patientLedgerPosition(state, patientId).rows.some((row) => {
+    if (row.bookingId === excludeBookingId || toCents(row.outstanding) <= 0) return false
+    const booking = state.schedule.bookings[row.bookingId]
+    return booking !== undefined && booking.cancellation === undefined
+  })
+}
 const SOUTER: Actor = { who: 'Dr M. Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 const MONTHS = ['2026-03', '2026-04', '2026-05', '2026-06', '2026-07'] as const
 
@@ -175,7 +188,7 @@ function monitor(state: AppState) {
     // Phase 37: a hand-off fault is a queued call; the count keeps its baseline name.
     handoffFailedCount: l.waitingForXeroCount,
     stages: l.stages.map((st) => `${st.key}:${st.state}`),
-    bookings: l.bookingRows.map((b) => ({ bookingId: b.bookingId, status: b.status, received: b.receivedAmount, released: b.authorisedAmount, disbursed: b.disbursedAmount, prior: b.outstandingPriorBalance === true })),
+    bookings: l.bookingRows.map((b) => ({ bookingId: b.bookingId, status: b.status, received: b.receivedAmount, released: b.authorisedAmount, disbursed: b.disbursedAmount, prior: hasUnpaidOtherEpisode(state, state.schedule.bookings[b.bookingId]!.patientId, b.bookingId) })),
   }))
 }
 
@@ -264,7 +277,7 @@ function standardNumbersFor(state: AppState, bookingIds: readonly string[]): str
 // ---------------------------------------------------------------------------
 
 function s3Flow() {
-  const api = createAppStore()
+  const api = storeWithoutPhase40()
   const am = projectedListId(ANAE.souter, '2026-07-20', 'AM')
   const pm = projectedListId(ANAE.souter, '2026-07-20', 'PM')
   withWiredRun(api, () => {
@@ -298,7 +311,7 @@ function s3Flow() {
 }
 
 function s4Beat3Flow() {
-  const api = createAppStore()
+  const api = storeWithoutPhase40()
   withWiredRun(api, () => stageBillingFailure(api))
   const staged = { ...step(api.getState()), monitor: monitor(api.getState()) }
   // The retry: Losa Tuilagi's invoice stands; the retry hands it off once (the pair id is its case reference).
@@ -310,7 +323,7 @@ function s4Beat3Flow() {
 }
 
 function s4Beat5Flow() {
-  const api = createAppStore()
+  const api = storeWithoutPhase40()
   withWiredRun(api, () => stageBillingFailure(api))
   const losa = SEED_MARKERS['billingFailureBooking']!.entityId
   const hemi = bookingsForList(api.getState(), SEED_LIST_IDS.billingFailure).find((b) => b.id !== losa && b.cancellation === undefined)!
@@ -327,7 +340,7 @@ function s4Beat5Flow() {
 }
 
 function prepaymentFlow() {
-  const api = createAppStore()
+  const api = storeWithoutPhase40()
   const added = addPrepaidBooking(api, 'one-payer')
   if (!added.ok) throw new Error(added.message)
   const bookingId = added.value.bookingId
@@ -352,7 +365,7 @@ function prepaymentFlow() {
 }
 
 function approvalOffFlow() {
-  const api = createAppStore()
+  const api = storeWithoutPhase40()
   setPrepaymentApprovalRequired(api, OFFICE, false)
   const added = addPrepaidBooking(api, 'one-payer')
   if (!added.ok) throw new Error(added.message)
@@ -360,7 +373,7 @@ function approvalOffFlow() {
 }
 
 function seededPaidPrepaymentFlow() {
-  const api = createAppStore()
+  const api = storeWithoutPhase40()
   const listId = SEED_LIST_IDS.prepaymentPaidList
   const before = { ...step(api.getState()), account: holding(api.getState()) }
   for (const b of bookingsForList(api.getState(), listId)) completeAnswered(api, SOUTER, b.id)
@@ -372,7 +385,7 @@ function seededPaidPrepaymentFlow() {
 }
 
 function feeRunFlow() {
-  const api = createAppStore()
+  const api = storeWithoutPhase40()
   seedMonthOfBctis(api, DEMO_TRIGGER_ACTOR, ANAE.rutherford)
   const preview = feePreviews(api.getState())['2026-07']
   const ran = runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
@@ -397,14 +410,14 @@ function feeRunFlow() {
 
 function recheckFlow() {
   // Before approval: a Contract no longer prepaid withdraws the pending prepayment (no invoice, no pair).
-  const before = createAppStore()
+  const before = storeWithoutPhase40()
   const riley = SEED_MARKERS.prepaymentBooking!.entityId
   const p0 = proceduresForBooking(before.getState(), riley)[0]!
   setProcedureContract(before, OFFICE, p0.id, CONTRACT.forteRvg)
   const withdrawn = { status: prepaymentStatusFor(before.getState(), riley), ...step(before.getState()) }
 
   // After approval: a Contract changed off prepaid rewrites nothing.
-  const after = createAppStore()
+  const after = storeWithoutPhase40()
   approveAllPrepayments(after, riley)
   const sent = step(after.getState())
   const p1 = proceduresForBooking(after.getState(), riley)[0]!
@@ -412,7 +425,7 @@ function recheckFlow() {
   const changed = { status: prepaymentStatusFor(after.getState(), riley), ...step(after.getState()) }
 
   // A move changes nothing: Riley reassigned to a colleague's ACTIVE List.
-  const moveApi = createAppStore()
+  const moveApi = storeWithoutPhase40()
   approveAllPrepayments(moveApi, riley)
   const beforeMove = step(moveApi.getState())
   const souterId = moveApi.getState().schedule.lists[moveApi.getState().schedule.bookings[riley]!.listId]!.anaesthetistId
@@ -421,13 +434,13 @@ function recheckFlow() {
     .sort((a, b) => Number(b.dateISO === '2026-07-24') - Number(a.dateISO === '2026-07-24') || a.id.localeCompare(b.id))
   const moved = candidates.find((l) => reassignBooking(moveApi, OFFICE, riley, l.id).ok)
   const afterMove = step(moveApi.getState())
-  return { withdrawn, sent, changed, moved: moved !== undefined, beforeMove, afterMove, prior: patientHasOutstandingPriorEpisode(moveApi.getState(), moveApi.getState().schedule.bookings[riley]!.patientId, riley) }
+  return { withdrawn, sent, changed, moved: moved !== undefined, beforeMove, afterMove, prior: hasUnpaidOtherEpisode(moveApi.getState(), moveApi.getState().schedule.bookings[riley]!.patientId, riley) }
 }
 
 // ---------------------------------------------------------------------------
 
 export function capturePhase36() {
-  const fresh = createAppStore().getState()
+  const fresh = storeWithoutPhase40().getState()
   const seed = {
     anaesthetists: allAnaesthetistViews(fresh),
     due: due(fresh),
@@ -454,7 +467,7 @@ export function capturePhase36() {
     recheck: recheckFlow(),
     // An unwired run on the S4 failure List, for the failure's shape (no ids).
     s4RunOnly: (() => {
-      const api = createAppStore()
+      const api = storeWithoutPhase40()
       withWiredRun(api, () => stageBillingFailure(api))
       return runBillingForList(api, SEED_LIST_IDS.billingFailure).ok
     })(),

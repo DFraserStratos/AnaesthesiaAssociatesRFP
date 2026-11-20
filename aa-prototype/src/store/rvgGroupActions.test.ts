@@ -154,7 +154,7 @@ describe('pickRvgGroup (the RVG code on a Procedure)', () => {
 
   it('createBooking carries an optional RVG code, refusing an unknown or retired row', () => {
     const api = createAppStore()
-    const input = { patient: { name: 'Test Patient', dobISO: '1980-01-01' }, sourceText: { text: 'Brow lift', source: 'anaesthetist' as const } }
+    const input = { patient: { nhi: 'ZZZ9005', name: 'Test Patient', dobISO: '1980-01-01' }, sourceText: { text: 'Brow lift', source: 'anaesthetist' as const } }
     const made = createBooking(api, SOUTER, SOUTER_PM, { ...input, rvgGroupId: RVG_GROUP.h3! })
     expect(made.ok).toBe(true)
     if (made.ok) expect(proceduresForBooking(api.getState(), made.value.bookingId)[0]).toMatchObject({ rvgGroupId: RVG_GROUP.h3, procedureText: { text: 'Brow lift' } })

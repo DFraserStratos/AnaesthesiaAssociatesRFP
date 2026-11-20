@@ -139,7 +139,7 @@ export function addPrepaidBooking(api: AppStoreApi, mode: AddPrepaidMode): Outco
   try {
     ;({ bookingId } = must(
       createBooking(api, actor, list.id, {
-        patient: { name: patient.name, dobISO: patient.dobISO, ...(patient.nhi !== undefined ? { nhi: patient.nhi } : {}), email: PREPAID_DEMO.email },
+        patient: { nhi: patient.nhi, name: patient.name, dobISO: patient.dobISO, email: PREPAID_DEMO.email },
         sourceText: { text: 'Rhinoplasty, self funded', source: 'email' },
         scheduledTime: list.session === 'AM' ? '11:30' : '16:30',
       }),

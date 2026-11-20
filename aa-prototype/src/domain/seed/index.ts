@@ -94,7 +94,7 @@ import { seedDisabledContractBooking } from './disabledContractBooking'
 import { RANGE_AUTHORISED_BILLED_ISO, RANGE_AUTHORISED_LIST_ID, seedPricingBookings, type PricingBookingKey } from './pricingBookings'
 import { applySeedListOrigins } from './listOrigins'
 import { SEED_EMAIL_TEMPLATES, SEED_EMAIL_TEMPLATE_NEXT } from './emailTemplates'
-import type { EmailTemplate, ProcedureEvent } from '../types'
+import type { EmailTemplate, PatientCareSlice, ProcedureEvent } from '../types'
 import { SEED_NEXT_PROCEDURE_EVENT, SEED_PROCEDURE_EVENTS } from './procedureEvents'
 
 export {
@@ -223,6 +223,8 @@ export interface SeedState {
    * for every admin. Seeds empty.
    */
   notifications: Record<string, Notification>
+  /** The patient follow-up log (catch-up Phase 40; US-11.3.3). Seeds empty. */
+  patientCare: PatientCareSlice
   /** Next free numeric suffix per runtime-allocated entity kind. */
   counters: Record<string, number>
 }
@@ -679,6 +681,7 @@ function buildSeedInternal(): SeedBuild {
     dayNotes: DAY_NOTES,
     officePrivate: buildOfficePrivate(),
     notifications: {},
+    patientCare: { followUps: {} },
     counters: {
       audit: audit.length + 1,
       booking: disabledContractBooking.next.booking,
@@ -1119,12 +1122,6 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       entityType: 'booking',
       entityId: scenario.aiaClaim,
       detail: 'Patient pays on No contract · RVG and claims from AIA Health; AA does not invoice AIA.',
-    },
-    provisionalNoNhiPatient: {
-      label: 'Provisional patient (NHI pending)',
-      entityType: 'patient',
-      entityId: PAT.provisional,
-      detail: 'Arrived via the PDF pathway; hidden internal ID only.',
     },
     repeatPatientMitchell: {
       label: 'Repeat patient (Sarah Mitchell)',

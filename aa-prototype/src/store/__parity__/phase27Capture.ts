@@ -13,7 +13,7 @@
  * (`phase-25-invoices.json`), which this phase must not move. Imported only by tests.
  */
 
-import { createAppStore, type BoundAppStore } from '../appStore'
+import { type BoundAppStore } from '../appStore'
 import { authoriseList, submitList } from '../lifecycle'
 import { completeAnswered } from '../../test/completeAnswered'
 import { runBillingForList } from '../billingRun'
@@ -25,6 +25,7 @@ import type { AppState } from '../appStore'
 import { isBookingPair } from '../../domain/billing/ledger'
 import type { BookingLedgerPair } from '../../domain/types'
 import { oldCaseStatus } from './phase25Capture'
+import { storeWithoutPhase40 } from './phase40Declared'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
@@ -92,7 +93,7 @@ function pairRows(state: AppState, bookingId: string): PairRow27[] {
 
 /** Capture the figures. `raise` invoices Riley's prepayment live (the office's raise before 27, Approve and send after). */
 export function capturePhase27(raise: (api: BoundAppStore, bookingId: string) => void): Phase27Capture {
-  const api = createAppStore()
+  const api = storeWithoutPhase40()
   const s0 = api.getState()
 
   const statuses = Object.values(s0.schedule.bookings)
@@ -139,7 +140,7 @@ export function capturePhase27(raise: (api: BoundAppStore, bookingId: string) =>
       total: i.total,
     }))
 
-  const live = createAppStore()
+  const live = storeWithoutPhase40()
   const riley = SEED_MARKERS.prepaymentBooking!.entityId
   raise(live, riley)
   const livePair = pairRows(live.getState(), riley)

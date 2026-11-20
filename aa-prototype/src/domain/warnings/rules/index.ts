@@ -12,8 +12,9 @@ import { baseUnitsOutsideGuideRule } from './baseUnitsOutsideGuide'
 import { childPayerRule } from './childPayer'
 import { splitDoesNotFitRule } from './splitDoesNotFit'
 import { approvalNumberMissingRule } from './approvalNumberMissing'
+import { patientBalanceRule } from './patientBalance'
 
-export const WARNING_RULES: readonly WarningRule[] = [prepaymentUnpaidRule, baseUnitsOutsideGuideRule, childPayerRule, approvalNumberMissingRule, splitDoesNotFitRule]
+export const WARNING_RULES: readonly WarningRule[] = [prepaymentUnpaidRule, baseUnitsOutsideGuideRule, childPayerRule, approvalNumberMissingRule, splitDoesNotFitRule, patientBalanceRule]
 
 export {
   prepaymentUnpaidRule,
@@ -27,3 +28,12 @@ export { baseUnitsOutsideGuideRule } from './baseUnitsOutsideGuide'
 export { childPayerRule, childPayerText } from './childPayer'
 export { splitDoesNotFitRule } from './splitDoesNotFit'
 export { approvalNumberMissingRule, approvalNumberMissingText } from './approvalNumberMissing'
+export {
+  patientBalanceRule,
+  patientBalanceStrongText,
+  patientBalanceMildText,
+  patientBalanceCreditText,
+  PATIENT_BALANCE_DEFAULT_THRESHOLD_DAYS,
+  PATIENT_BALANCE_OWES_SHORT,
+  PATIENT_BALANCE_CREDIT_SHORT,
+} from './patientBalance'

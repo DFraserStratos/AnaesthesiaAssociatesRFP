@@ -10,6 +10,7 @@
 import { freshAppState, type AppState } from '../appStore'
 import { PROCEDURE_PAYER_ADDITIONS } from '../../domain/seed'
 import { withoutPhase23Additions } from './phase23Additions'
+import { withoutPhase40 } from './phase40Declared'
 
 export type Phase22aAdditions = { procedureIds: readonly string[]; bookingIds: readonly string[] }
 
@@ -26,5 +27,5 @@ export function withoutPhase22aAdditions(state: AppState, additions: Phase22aAdd
 
 /** The pristine seed without 22a's additions (nor any later phase's: Phase 23's three-procedure Booking). */
 export function freshAppStateBefore22a(): AppState {
-  return withoutPhase22aAdditions(withoutPhase23Additions(freshAppState()))
+  return withoutPhase22aAdditions(withoutPhase23Additions(withoutPhase40(freshAppState())))
 }

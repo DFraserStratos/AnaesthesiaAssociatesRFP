@@ -116,7 +116,7 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
     setError(null)
     const outcome = createBooking(useAppStore, actor, listId, {
       patient: {
-        ...(nhi.trim() !== '' ? { nhi: nhi.trim() } : {}),
+        nhi: nhi.trim(),
         name: name.trim(),
         dobISO: dob,
         ...(phone.trim() !== '' ? { phone: phone.trim() } : {}),

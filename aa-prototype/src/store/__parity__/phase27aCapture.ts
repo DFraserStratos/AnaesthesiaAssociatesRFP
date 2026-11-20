@@ -18,7 +18,7 @@
  * S3 Beats 2 and 3's invoices are pinned by Phase 25's fixture. Imported only by tests.
  */
 
-import { createAppStore, type BoundAppStore } from '../appStore'
+import { type BoundAppStore } from '../appStore'
 import { wireBillingRun } from '../billingRun'
 import { authoriseList, submitList } from '../lifecycle'
 import { completeAnswered } from '../../test/completeAnswered'
@@ -35,6 +35,7 @@ import type { AppState } from '../appStore'
 import { isBookingPair, payeeAnaesthetistOf } from '../../domain/billing/ledger'
 import type { BookingLedgerPair } from '../../domain/types'
 import { oldCaseStatus } from './phase25Capture'
+import { storeWithoutPhase40 } from './phase40Declared'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr M. Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
@@ -168,7 +169,7 @@ function runRow(api: BoundAppStore): RunRow27a {
 }
 
 export function capturePhase27a(): Phase27aCapture {
-  const fresh = createAppStore()
+  const fresh = storeWithoutPhase40()
   const s0 = fresh.getState()
 
   const souterFeeHistory = aaFeeInvoicesFor(s0, ANAE.souter)
@@ -176,7 +177,7 @@ export function capturePhase27a(): Phase27aCapture {
     .sort((a, b) => a.monthISO.localeCompare(b.monthISO))
 
   // S3 Beats 2 and 3: both Mon 20 Lists authorised, then AA-2026-0005 paid in full.
-  const s3 = createAppStore()
+  const s3 = storeWithoutPhase40()
   withWiredRun(s3, () => {
     authoriseList(s3, OFFICE, projectedListId(ANAE.souter, '2026-07-20', 'AM'))
     authoriseList(s3, OFFICE, projectedListId(ANAE.souter, '2026-07-20', 'PM'))
@@ -188,7 +189,7 @@ export function capturePhase27a(): Phase27aCapture {
   }
 
   // S4 Beat 5: the billing failure staged, then Hemi Walker's clean-sibling invoice paid half, run, full, run.
-  const s4 = createAppStore()
+  const s4 = storeWithoutPhase40()
   withWiredRun(s4, () => stageBillingFailure(s4))
   const losa = SEED_MARKERS['billingFailureBooking']!.entityId
   const hemiBooking = bookingsForList(s4.getState(), SEED_LIST_IDS.billingFailure).find((b) => b.id !== losa && b.cancellation === undefined)!
@@ -201,12 +202,12 @@ export function capturePhase27a(): Phase27aCapture {
   const fullRun = runRow(s4)
 
   // Riley's prepayment raised live by Approve and send.
-  const live = createAppStore()
+  const live = storeWithoutPhase40()
   const riley = SEED_MARKERS.prepaymentBooking!.entityId
   approveAllPrepayments(live, riley)
 
   // Nair's Fri 24 PM List completed, submitted and authorised (the wired run).
-  const nair = createAppStore()
+  const nair = storeWithoutPhase40()
   const listId = SEED_LIST_IDS.prepaymentPaidList
   for (const b of bookingsForList(nair.getState(), listId)) completeAnswered(nair, SOUTER, b.id)
   submitList(nair, SOUTER, listId)

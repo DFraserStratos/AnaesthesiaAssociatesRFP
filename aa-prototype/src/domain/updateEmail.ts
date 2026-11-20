@@ -741,3 +741,53 @@ export function buildUpdateEmail(input: {
   const fits = built.href.length <= MAILTO_MAX_LENGTH
   return { to, subject, body: built.body, href: built.href, shortened: omittedCount > 0, omittedCount, length: built.href.length, fits }
 }
+
+// ---------------------------------------------------------------------------
+// The NHI request (catch-up Phase 40; US-11.1.5, D74)
+// ---------------------------------------------------------------------------
+
+/**
+ * What the NHI request may carry: the patient as received, the date,
+ * session, hospital, surgeon, time and the wording as received. Never a DOB,
+ * an NHI, notes, money, a Contract or a payer (an allowlist, not a filter).
+ */
+export interface NhiRequestInput {
+  /** One address only (D74), or '' for the admin to type in the mail client. */
+  to: string
+  patientName: string
+  dateISO: string
+  session: string
+  hospital: string
+  surgeon?: string
+  time?: string
+  wording?: string
+}
+
+/** The NHI request email and its `mailto:` link, the wording shortened if the link would pass `MAILTO_MAX_LENGTH`. */
+export function buildNhiRequestEmail(input: NhiRequestInput): { subject: string; body: string; href: string } {
+  const date = shortDateLabel(input.dateISO)
+  const subject = `NHI needed: ${input.patientName}, ${date}`
+  const lines = (wording: string | undefined): string[] => [
+    'Kia ora,',
+    '',
+    `We have a booking for ${input.patientName} without an NHI. Please reply with the patient's NHI so we can complete the booking.`,
+    '',
+    `Date: ${date}, ${sessionText(input.session)}`,
+    `Hospital: ${input.hospital}`,
+    ...(input.surgeon !== undefined ? [`Surgeon: ${input.surgeon}`] : []),
+    ...(input.time !== undefined ? [`Time: ${input.time}`] : []),
+    ...(wording !== undefined && wording.trim() !== '' ? [`Procedure: ${wording}`] : []),
+    '',
+    'Nga mihi,',
+    'Anaesthesia Associates',
+  ]
+  let wording = input.wording
+  let body = lines(wording).join('\n')
+  let href = mailtoHref(input.to, subject, body)
+  while (href.length > MAILTO_MAX_LENGTH && wording !== undefined) {
+    wording = wording.length > 40 ? `${wording.slice(0, wording.length - 40)}...` : undefined
+    body = lines(wording).join('\n')
+    href = mailtoHref(input.to, subject, body)
+  }
+  return { subject, body, href }
+}

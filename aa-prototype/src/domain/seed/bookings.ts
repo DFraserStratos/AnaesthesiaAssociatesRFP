@@ -836,7 +836,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     scheduledTime: '08:00',
   })
   addProcedure(provisionalBooking, {
-    procedureText: 'Inguinal hernia repair, booked from PDF referral (NHI pending)',
+    procedureText: 'Inguinal hernia repair',
     legacyCode: '49115',
   })
   const mitchellRepeat = addBooking({

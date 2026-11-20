@@ -5,7 +5,7 @@
  * Chen's ZAE0311 corrected to ZAE0310 — the mockup value fails the mod 11
  * check and the RFP rule beats the mockup simplification), the five canned
  * `lookupNhi` patients from Phase 01, the named scenario patients, and one
- * provisional no-NHI patient (the PDF pathway story; renders "NHI pending").
+ * patient first booked from a PDF referral (Noah Prescott, given an NHI in catch-up Phase 40: the NHI is mandatory, D11).
  * The generic pool is generated from the seeded RNG — mostly current-format
  * NHIs with several new-format ones, every patient carrying an NZHIS Level 4
  * ethnicity code from the demo subset. Catch-up Phase 21 appends the payer
@@ -87,7 +87,7 @@ const PINNED: readonly Patient[] = [
   { hiddenInternalId: PAT.nair, nhi: 'MYY54SL', name: 'Priya Nair', dobISO: '1969-11-08', phone: '03 555 3781', ethnicityCode: '43111' },
   { hiddenInternalId: PAT.park, nhi: 'RUE29KR', name: 'Grace Park', dobISO: '2014-06-30', ethnicityCode: '42111' },
   // Provisional record: booked from a PDF referral, NHI to follow.
-  { hiddenInternalId: PAT.provisional, name: 'Noah Prescott', dobISO: '1983-05-17', phone: '021 555 3899', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT.provisional, nhi: 'ZAP3016', name: 'Noah Prescott', dobISO: '1983-05-17', phone: '021 555 3899', ethnicityCode: '11111' },
   // Scenario patients.
   { hiddenInternalId: PAT.prentice, nhi: 'ZAC3326', name: 'Alan Prentice', dobISO: '1966-07-04', phone: '03 555 3902', ethnicityCode: '11111' },
   { hiddenInternalId: PAT.holt, nhi: 'ZAF4434', name: 'Brian Holt', dobISO: '1971-12-18', phone: '021 555 4013', ethnicityCode: '61118' },

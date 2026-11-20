@@ -89,7 +89,7 @@ export function stageCombinedProcedure(api: AppStoreApi): Outcome<{ bookingId: s
   const patient = api.getState().masters.patients[COMBINED_DEMO.patientId]!
   const actor = OFFICE_ACTOR
   const made = createBooking(api, actor, COMBINED_DEMO.listId, {
-    patient: { name: patient.name, dobISO: patient.dobISO, ...(patient.nhi !== undefined ? { nhi: patient.nhi } : {}) },
+    patient: { nhi: patient.nhi, name: patient.name, dobISO: patient.dobISO },
     sourceText: { text: COMBINED_DEMO.procedureText, source: 'email' },
     governingContractId: COMBINED_DEMO.contractId,
     scheduledTime: COMBINED_DEMO.scheduledTime,

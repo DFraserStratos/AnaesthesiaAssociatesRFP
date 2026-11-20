@@ -52,7 +52,7 @@ export function parseBookingQuery(raw: string): BookingQuery {
   return { kind: 'name', tokens }
 }
 
-export function patientMatches(query: BookingQuery, patient: Pick<Patient, 'name' | 'nhi'>): boolean {
+export function patientMatches(query: BookingQuery, patient: Pick<Patient, 'name'> & { nhi?: string }): boolean {
   if (query.kind === 'nhi') {
     return patient.nhi !== undefined && validateNhi(patient.nhi.replace(/\s+/g, '')).normalised === query.nhi
   }

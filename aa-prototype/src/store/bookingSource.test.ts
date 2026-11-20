@@ -12,6 +12,7 @@ import { decideImportRow, importHospitalDownload } from './matchingActions'
 import type { Actor } from './mutate'
 import { ANAE, HOSP, SEED_LIST_IDS, SEED_MARKERS, buildSeed } from '../domain/seed'
 import type { BookingSource } from '../domain/types'
+import { nextTestNhi } from './testNhi'
 
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -26,7 +27,7 @@ describe('creation paths stamp their source', () => {
   it('createBooking stores a given source and records it in the create audit', () => {
     const api = store()
     const outcome = createBooking(api, SOUTER, SEED_LIST_IDS.souterPm21, {
-      patient: { name: 'Ad Hoc Patient', dobISO: '1990-05-05' },
+      patient: { nhi: nextTestNhi(), name: 'Ad Hoc Patient', dobISO: '1990-05-05' },
       sourceText: { text: 'Diagnostic laparoscopy', source: 'anaesthetist' },
       source: 'anaesthetistAdHoc',
     })
@@ -39,7 +40,7 @@ describe('creation paths stamp their source', () => {
   it('createBooking without a source leaves it unset', () => {
     const api = store()
     const outcome = createBooking(api, SOUTER, SEED_LIST_IDS.souterPm21, {
-      patient: { name: 'Ad Hoc Patient', dobISO: '1990-05-05' },
+      patient: { nhi: nextTestNhi(), name: 'Ad Hoc Patient', dobISO: '1990-05-05' },
       sourceText: { text: 'Diagnostic laparoscopy', source: 'anaesthetist' },
     })
     if (!outcome.ok) throw new Error(outcome.message)
@@ -62,8 +63,8 @@ describe('creation paths stamp their source', () => {
 describe('the seed source rule', () => {
   const seed = buildSeed()
   const all = Object.values(seed.schedule.bookings)
-  const scenario = all.filter((b) => !b.id.startsWith('HBK'))
-  const history = all.filter((b) => b.id.startsWith('HBK'))
+  const scenario = all.filter((b) => !/^HS?BK/.test(b.id))
+  const history = all.filter((b) => /^HS?BK/.test(b.id))
 
   it('every scenario Booking has a valid source; the history Bookings have none', () => {
     expect(scenario.length).toBeGreaterThan(100)

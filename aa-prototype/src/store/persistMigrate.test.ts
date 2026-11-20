@@ -1294,3 +1294,37 @@ describe('Phase 40 sync (v71): Lane A 39a (v70) synced into lane/b beside 39b (v
     expect(s.masters.contractEventFees['CEF001']).toBeDefined()
   })
 })
+
+describe('catch-up Phase 40 (v72): patients', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v71 store holding a patient with no NHI, and reseeds with the patientCare slice and the patientBalance rule', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(72)
+    const fresh = freshAppState()
+    const { patientCare: _c, ...rest } = fresh
+    const { patientBalance: _r, ...warningRules } = fresh.appSettings.warningRules
+    const { nhi: _n, ...noah } = fresh.masters.patients['PT0010']!
+    localStorage.setItem(
+      PERSIST_KEY,
+      JSON.stringify({ state: { ...rest, appSettings: { ...fresh.appSettings, warningRules }, masters: { ...fresh.masters, patients: { ...fresh.masters.patients, PT0010: noah } } }, version: 71 }),
+    )
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.masters.patients['PT0010']!.nhi).toBe('ZAP3016')
+    expect(s.patientCare).toEqual({ followUps: {} })
+    expect(s.appSettings.warningRules.patientBalance).toEqual({ active: true, params: { thresholdDays: 90 } })
+  })
+
+  it('a same-version store missing the patientCare slice and the rule entry is backfilled', () => {
+    const fresh = freshAppState()
+    const { patientCare: _c, ...rest } = fresh
+    const { patientBalance: _r, ...warningRules } = fresh.appSettings.warningRules
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...rest, appSettings: { ...fresh.appSettings, warningRules } }, version: PERSIST_VERSION }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.patientCare).toEqual({ followUps: {} })
+    expect(s.appSettings.warningRules.patientBalance?.params['thresholdDays']).toBe(90)
+  })
+})

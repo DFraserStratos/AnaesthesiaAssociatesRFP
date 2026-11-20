@@ -10,7 +10,6 @@
  * Imported only by tests.
  */
 
-import { createAppStore } from '../appStore'
 import { freshAppStateBefore22a } from './phase22aAdditions'
 import { billingContextForBooking } from '../selectors'
 import { procedureNeedsPrice } from '../../domain/billing/procedurePrice'
@@ -22,6 +21,7 @@ import { handoffPairsForBooking } from '../xeroHandoff'
 import { SEED_MARKERS } from '../../domain/seed'
 import type { AppState } from '../appStore'
 import type { Actor } from '../mutate'
+import { storeWithoutPhase40 } from './phase40Declared'
 
 export interface ProcedureParityRow {
   procedureId: string
@@ -125,7 +125,7 @@ function prepaymentRow(state: AppState, bookingId: string): PrepaymentParityRow 
  * prepayment.
  */
 export function capturePrepayments(): PrepaymentParityRow[] {
-  const api = createAppStore()
+  const api = storeWithoutPhase40()
   const riley = marker('prepaymentBooking')
   const raised = approveAllPrepayments(api, riley, OFFICE)
   if (raised.length === 0) throw new Error("Riley's prepayment was refused")
