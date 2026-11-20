@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * Bad data never white-screens the board (B03), over the fixture catalogue (port 5182) with bad
+ * Bad data never white-screens the board (B03), over the fixture catalogue with bad
  * records added: a self-parented card, a two-card cycle, a card of a type the board does not know, a
  * parent typo, and a question whose status is not configured. Then the error boundary itself, by a
  * test-only crash in one region at a time (`window.__BOARD_CRASH_TEST__`, `RegionBoundary.tsx`).

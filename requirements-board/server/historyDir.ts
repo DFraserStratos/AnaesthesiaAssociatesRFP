@@ -1,7 +1,7 @@
 /**
  * Where a catalogue's change journal lives, and the lock a running board keeps there.
  *
- * The journal folder: HISTORY_DIR, else `.history/` beside this app for the real requirements
+ * The journal folder: HISTORY_DIR (a relative value is relative to the board folder), else `.history/` beside this app for the real requirements
  * folder, else a temp folder per catalogue (a fixture never mixes into the real one's history).
  * The dev server and `statuses:recode` both ask here, so a recode rewrites the journal of the board
  * that serves the same catalogue.
@@ -15,10 +15,12 @@ import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { envPath } from './boardPaths.ts'
 import { REQUIREMENTS_DIR } from './catalogueFs.ts'
 
 export function historyDirFor(root: string): string {
-  if (process.env.HISTORY_DIR) return resolve(process.env.HISTORY_DIR)
+  const fromEnv = envPath('HISTORY_DIR')
+  if (fromEnv) return fromEnv
   if (resolve(root) === resolve(REQUIREMENTS_DIR) && !process.env.REQUIREMENTS_DIR) return join(dirname(fileURLToPath(import.meta.url)), '..', '.history')
   return join(tmpdir(), 'requirements-board-history', resolve(root).replace(/[^A-Za-z0-9]+/g, '_').slice(-80))
 }

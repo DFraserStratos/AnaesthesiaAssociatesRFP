@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * The board's origin boundary in a browser, over the fixture catalogue (port 5182): a link in a
+ * The board's origin boundary in a browser, over the fixture catalogue: a link in a
  * drawing never moves the board (a link to one of its own spots brings that spot into view), a
  * record link still opens its record, a sidecar naming a moved file says the file is missing, and
  * a page from another origin can neither read nor embed what the board serves.

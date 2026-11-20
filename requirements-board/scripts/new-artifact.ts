@@ -13,7 +13,8 @@
  * YYYY-MM or YYYY. --cited-as (repeatable) is how sources cite it, when not by the notes convention: a
  * transcript's "Transcript <date> · <name>", a document's "RFP" (sources then add "p.27"); --page-offset
  * adds to a cited page (a printed page that runs behind the PDF's), --within looks for cited points
- * under that heading. Both apply to every --cited-as. --keep leaves the file where it is (a path from the repository root) instead of bringing it in. Then add regions and a description
+ * under that heading. Both apply to every --cited-as. --keep leaves the file where it is (it must be inside the repository) instead of bringing it in.
+ * Paths are read from the folder the command was run from (the repo root for `npm --prefix requirements-board run ...`). Then add regions and a description
  * to the sidecar, link items to it (`artifacts: [AR-nn#spot]`), and run `npm run check`.
  */
 import { execFileSync } from 'node:child_process'
@@ -26,6 +27,7 @@ import { nextArtifactId } from '../shared/ids.ts'
 import { ARTIFACT_KINDS, artifactFormat, type Artifact, type ArtifactKind } from '../shared/types.ts'
 import { artifactInfo, REPO_ROOT } from '../server/artifactFiles.ts'
 import { REQUIREMENTS_DIR, artifactSidecarPath, artifactsDir, claimNext, createAtomic, loadCatalogue, takenIds } from '../server/catalogueFs.ts'
+import { shown, userPath } from './userPath.ts'
 
 const argv = process.argv.slice(2)
 const opt = (name: string) => {
@@ -94,12 +96,13 @@ const inside = (abs: string, base: string) => abs.startsWith(resolve(base) + sep
 let bring: { how: 'none' } | { how: 'as-is'; file: string } | { how: 'copy' | 'move'; from: string; name: (id: string) => string; tracked: boolean } = { how: 'none' }
 let source = ''
 if (mermaid) {
-  if (!existsSync(mermaid)) fail(`${mermaid} does not exist`)
-  source = readFileSync(mermaid, 'utf8').trim()
+  const mermaidPath = userPath(mermaid)
+  if (!existsSync(mermaidPath)) fail(`${mermaid} does not exist (looked for ${mermaidPath})`)
+  source = readFileSync(mermaidPath, 'utf8').trim()
 } else {
   if (!given) fail('give a file, or --mermaid <file.mmd>')
-  const abs = resolve(given!)
-  if (!existsSync(abs)) fail(`${given} does not exist`)
+  const abs = userPath(given!)
+  if (!existsSync(abs)) fail(`${given} does not exist (looked for ${abs})`)
   const format = artifactFormat({ file: abs, source: '' })
   if (!format) fail(`${given} is not a kind the board shows (.svg, .png, .jpg, .jpeg, .webp, .md, .pdf)`)
   const drawing = format === 'svg' || format === 'raster'
@@ -111,7 +114,7 @@ if (mermaid) {
   } else {
     const name = (id: string) => (drawing ? `${id}${extname(abs).toLowerCase()}` : basename(abs))
     // A transcript or document keeps its name: say so now, before anything is claimed.
-    if (!drawing && existsSync(join(filesDir, name('')))) fail(`${relative(process.cwd(), join(filesDir, name('')))} already exists; rename the file or pass --keep`)
+    if (!drawing && existsSync(join(filesDir, name('')))) fail(`${shown(join(filesDir, name('')))} already exists; rename the file or pass --keep`)
     const copy = drawing || !inside(abs, REPO_ROOT)
     let tracked = false
     if (!copy) {
@@ -163,11 +166,11 @@ for (let attempt = 0; attempt < 5 && !claimed; attempt++) {
     mkdirSync(filesDir, { recursive: true })
     if (bring.how === 'copy') {
       copyExclusive(bring.from, to)
-      console.log(`copied ${relative(process.cwd(), bring.from)} to ${relative(process.cwd(), to)} (delete the original when it is no longer needed)`)
+      console.log(`copied ${shown(bring.from)} to ${shown(to)} (delete the original when it is no longer needed)`)
     } else {
       moveExclusive(bring.from, to)
       // Moved without staging (convention: never stage mid-phase); git pairs the two paths when both are added.
-      console.log(`moved ${relative(process.cwd(), bring.from)} to ${relative(process.cwd(), to)}${bring.tracked ? ' (not staged: add both paths when you commit)' : ''}; fix any links to its old place`)
+      console.log(`moved ${shown(bring.from)} to ${shown(to)}${bring.tracked ? ' (not staged: add both paths when you commit)' : ''}; fix any links to its old place`)
     }
     claimed = a
   } catch (e) {
@@ -178,15 +181,15 @@ for (let attempt = 0; attempt < 5 && !claimed; attempt++) {
       taken.add(a.id)
       continue
     }
-    const why = exists ? `${relative(process.cwd(), to)} already exists` : (e as Error).message
-    fail(`could not bring ${relative(process.cwd(), bring.from)} in (${why}); nothing was registered and the file is where it was`)
+    const why = exists ? `${shown(to)} already exists` : (e as Error).message
+    fail(`could not bring ${shown(bring.from)} in (${why}); nothing was registered and the file is where it was`)
   }
 }
 if (!claimed) fail('could not find a free AR-nn: other sessions are adding artifacts at the same moment; run it again')
 const a = claimed!
 const id = a.id
 const file = a.file
-console.log(`wrote ${relative(process.cwd(), artifactSidecarPath(id))}`)
+console.log(`wrote ${shown(artifactSidecarPath(id))}`)
 
 // What the file holds, to pick anchors from.
 const info = artifactInfo(a, REQUIREMENTS_DIR)

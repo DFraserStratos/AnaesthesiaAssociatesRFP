@@ -258,7 +258,7 @@ many findings went to the catch-all group.
    with the redrawn picture; then look at every step (`artifact:steps`, in the `svg-diagram` skill).
    An accepted flag ("flag only") is an acknowledgement: nothing is redrawn or edited for it; any
    follow-up is done by hand or becomes a question, as the user says.
-7. `npm run check` until there are no errors and no new warnings; then `npm run verify:board`.
+7. The catalogue check ("This repo", Checks) until there are no errors and no new warnings; then the full board check named there.
 8. Hand back uncommitted: a short summary (changes applied by size, rewritten by hand, rejected,
    new questions with their OQ ids, diagrams redrawn, anything left undecided) and `git diff --stat
    -- REQ`. Remind the user to commit, then suggest the "This repo" follow-on skill with that commit.

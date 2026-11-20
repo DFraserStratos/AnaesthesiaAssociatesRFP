@@ -162,7 +162,7 @@ decisions" section and resolved in that phase's planning.
 | D-06 | Bad-data issue surface and error-boundary recovery | B03 | B06, B10, B11 | B03 build | How later phases report bad data | **Accepted 2026-11-19** (accepted decision 17): panel in place and a "This page" group in the pill; auto-retry on catalogue change; copyable details; page-wide error capture; repaired storage mentioned |
 | D-07 | Git reader contract (cache key/bounds, SHA-256, unstaged moves, deletion and rename bounds) | B08 | B05, B09 | B08 build | Timeline and diff inputs; R-54 history cut | **Accepted 2026-11-19** (accepted decision 19): HEAD + index identity keys, bounded LRUs, hybrid clean-form names, unchanged unstaged moves followed, full lists with `deleted` markers |
 | D-08 | Lane-aware plan state on master | B12 | catch-up lanes | B12 build | update-build-plan behaviour while lanes run | **Accepted 2026-11-20** (accepted decision 28): read the configured lane branches' commits and progress rows, with a guard when lanes are declared but not configured |
-| D-09 | Kit export source and target refusal rules | B14 | none | B14 build | Export behaviour and docs | Open |
+| D-09 | Kit export source and target refusal rules | B14 | none | B14 build | Export behaviour and docs | **Accepted 2026-11-20** (accepted decision 29): HEAD by default, `--uncommitted` for trials (tracked files only); a marker with file hashes, exact match or refused; no `--force` |
 | D-10 | Asset version and change signal (event and URL token) | B07 | B09, B10 | B07 build | R-96 and R-104 consumers | **Accepted 2026-11-19** (accepted decision 21): an `assets` entry on the batched delivery and every token in the snapshot; token = git blob hash; `?v=<token>` |
 
 ## Accepted decisions
@@ -587,6 +587,48 @@ decisions" section and resolved in that phase's planning.
       - **Downstream:** B14 documents the new keys (`lanes`, `runner.context.countNouns`, `notPhaseBefore`,
         `decisionsSection`, `handoffSection`) in its whole-file pass; the owner applies the migration at the
         master merge; the catch-up lanes need nothing until then (they keep master's tools).
+
+- 2026-11-20, user and B14 session (B14's planning questions, asked in the B14 session):
+  29. **D-09, B14-Q1 to Q5, and the B14 "Discovered for later" rows:**
+      - **D-09 source, HEAD with a trial flag** (user). `kit:export` builds the kit from the board's files
+        as committed at HEAD and records that commit in the kit (`.kit-export.json`, START-HERE). With
+        `--uncommitted` it takes the tracked files as they are on disk instead, never an untracked or
+        ignored file, and names every board file that differs from HEAD. Outside a git repository it
+        refuses. A real export therefore follows the commit of its version bump.
+      - **D-09 refusal, an exact marker, no force** (user). Every export writes
+        `requirements-board/.kit-export.json` (version, commit, a SHA-256 per file). A target that already
+        holds a `requirements-board/` is replaced only when that folder has the marker and every file
+        matches it: none added, removed or changed (`.history/`, `.pdf-facts/` and `package-lock.json`
+        count; only `node_modules/` is exempt, and kept). Fixed rule on top: never the running board, a
+        folder inside it or one containing it, compared by real path. Every refusal happens before the
+        target is touched; the message names the target, the reason and what to do (an empty folder, or
+        the folder an earlier export wrote and nobody changed). There is no `--force`.
+      - **B14-Q1, relative folder values are relative to the board folder** (user). `REQUIREMENTS_DIR`,
+        `HISTORY_DIR`, `REPO_ROOT` and `PDF_FACTS_DIR` given as relative paths resolve against
+        `requirements-board/` whatever the working folder; README says so. Script arguments, by contrast,
+        resolve against the folder the command was run from.
+      - **Discovered rows** (user): B14 takes the export blockers (denied words in
+        `agent/shared-rules.test.mjs` and `tests/inPlace.test.ts`) and the doc-only rows (backslash file
+        names, the stale recode lock, `page_offset` on a replacement, B12's new plan keys and `plan-state
+        --from`). The code rows owned by "B14" or "B12 or B14" (escaping base folder warning,
+        `resolve-source`/`new-artifact` unguarded facts, tests-only tsconfig, `steps.ts ?? []`,
+        `phase-context.mjs` note rule, `plan-state --to`, the git-test timeouts, `.origin-fixture` cleanup)
+        move to B15 to judge.
+      - **B14-Q2, no upgrade mode** (session, from the SPEC's assumption). README and ADOPTING say an
+        adopter upgrades by exporting to a fresh staging folder and copying everything but `requirements/`
+        into their board; an upgrade mode is recorded under "Discovered for later".
+      - **B14-Q3, both e2e ports follow the environment** (session). The fixture board takes
+        `BOARD_E2E_PORT` (default `BOARD_PORT` + 2), the real-catalogue board `BOARD_E2E_REAL_PORT` (default
+        `BOARD_PORT` + 3), with `BOARD_PORT` filled from `.lane.env` and defaulting to 5180: 5182 and 5183 in
+        the main checkout, 5482 and 5483 here, never 5181.
+      - **B14-Q4, `installStatus` is deleted** with its test (session, from evidence: no caller). The
+        install itself keeps the mode in use: a manifest means copy, links into the board mean link,
+        nothing means copy; `--link` and `--copy` choose.
+      - **B14-Q5, starter copies of the two folder guides** (session). `starter/requirements/notes/README.md`
+        and `changes/README.md` ship; `SHARED_REQ` keeps only `SCHEMA.md`, which becomes neutral. The live
+        notes README keeps its legacy citation table (this project's notes rely on it), with a path that
+        exists and a role in place of "4 here".
+      - **Downstream:** B15 tests the export rules and the port mechanism (B15-REQ-20, -21).
 
 ## Planning handoff
 

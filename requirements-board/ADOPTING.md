@@ -7,20 +7,25 @@ one project lives in its `requirements/` folder, and in the "This repo" block of
 Below, `BOARD` is where the board's folder lands in the new repo, `requirements-board/` unless
 there is a reason to choose another name.
 
-**The usual route is the kit.** `npm --prefix requirements-board run kit:export -- --to "<folder>"`
-(from a repo that has the full board, with its `starter/` folder) writes a `requirements-board/`
-folder that has steps 1 to 3 done already: the code without generated folders, a starter catalogue
-and `board.config.json`, starter "This repo" sections (fill-ins marked `<TODO: ...>`), and
+**The usual route is the kit.** Whoever shares the board exports it from the repo that has the full
+board (its export script lives only there), as a `requirements-board/` folder that has steps 1 to 3
+done already: the code as committed, without generated folders, a starter catalogue and
+`board.config.json`, starter "This repo" sections (fill-ins marked `<TODO: ...>`), and
 `START-HERE.html`. With a kit, open `START-HERE.html` and follow it: put the folder at the repo
 root and paste its prompt into Claude Code, which does step 5, adds the CLAUDE.md section and fills
 in step 4 with you. Then run the checks in step 7. The steps below are the
 whole account, for copying the board by hand.
 
+**Upgrading** a board already in use: get a fresh kit, copy everything in its `requirements-board/`
+except `requirements/` over `BOARD/` (keep your `requirements/`, and your skills' filled-in "This repo"
+blocks), run `npm --prefix BOARD install` and `install-skills`, then the checks in step 7. An export
+never writes over a board in use: it refuses any folder that holds one.
+
 ## 1. Copy the kit
 
 Copy the board's folder into the new repo as `BOARD/`, leaving out what is generated or local:
-`node_modules/`, `dist/`, `.history/`, `.links/`, `test-results/`, `playwright-report/` and
-`shots/`. Then `npm --prefix BOARD install`. The scripts need Node 22.18 or newer, for its built-in
+`node_modules/`, `dist/`, `.history/`, `.links/`, `.pdf-facts/`, `test-results/`,
+`playwright-report/` and `shots/`. Then `npm --prefix BOARD install`. The scripts need Node 22.18 or newer, for its built-in
 TypeScript support.
 
 ## 2. Empty `requirements/` down to a skeleton
@@ -28,7 +33,8 @@ TypeScript support.
 `BOARD/requirements/` is the old project's data. Keep only:
 
 - `SCHEMA.md` (the file format). Its examples are the old project's; reword them later if they mislead;
-- `notes/README.md` and `changes/README.md` (folder conventions);
+- `notes/README.md` and `changes/README.md` (folder conventions; drop any table of the old project's
+  notes or artifacts);
 - `README.md`, after rewriting its **This project** section and its conventions to the new
   project. Drop the old project's status meanings, owners and component list.
 
@@ -43,7 +49,7 @@ The project's vocabulary. The format is in `SCHEMA.md` ("Board config file") and
 README ("Project config"). Ask the user for anything you can't infer:
 
 - `project.name`: beside "Requirements board" in the masthead and the browser tab. `project.accent` (optional, `#rrggbb`, or pick one on the Settings page) fills the board's mark and the tab icon.
-  The Settings page edits these, `components` and the status lists.
+  The Settings page edits these, `components`, the status lists and the writing voice.
 - `components`: the system's areas, each with a three-letter `code`. Leave the list empty to accept
   any component until the areas are settled.
 - `statuses` and `questionStatuses`: ordered lists of `{ code, label, help, tone, role?, settle? }`
@@ -78,15 +84,17 @@ each block, and change nothing else unless it is plainly wrong:
 - `update-requirements`: the board folder and `REQ` path, the check command, who signs off, any
   folders that are out of bounds (other apps, build plans), any follow-on skill that reads the change
   logs (or "none"), and the shape precedent for notes (the first note written sets it).
-- `add-artifact`: the board folder, the check command, the dev server's URL.
-- `svg-diagram`: the board folder, the check command and the dev server's URL. Its reference diagrams and `examples/` are
+- `add-artifact`: the board folder, the check command, the dev server's URL
+  (`http://localhost:5180` unless `BOARD_PORT` moves it; a worktree's `.lane.env` sets it).
+- `svg-diagram`: the board folder, the check command and the dev server's URL (the same). Its reference diagrams and `examples/` are
   another project's. Keep them as style references until this project has its own diagrams.
 - `transcript-reconciler`: the default output path.
 - `update-build-plan`: the plan folder (created on the first run when there is none), the app's
   folder, any progress file, whether screenshots are captured, and the Node note. Everything else
   project-specific (the app's description and rules for its agents, out-of-scope lanes, the plan
   page's words) goes in the plan folder's `plan.config.json`, which the first run writes; its keys are
-  in the skill's "The tools and the plan's config". Its tools are in the skill's `tools/` folder.
+  in the skill's "The tools and the plan's config" (with, for a plan built in parallel lanes, the
+  `lanes` key naming the lane branches). Its tools are in the skill's `tools/` folder.
 - `run-build-phase` (optional: it builds one phase of the plan per session, from a short kick-off
   prompt): the plan folder, the file holding the project's coding rules and the standing rules every
   phase follows, the app's folder, its house rules in brief, the design references and viewports
@@ -130,9 +138,12 @@ npm --prefix BOARD run install-skills
 It copies the skills and workflows into `.claude/`, merging with any skills the repo already has
 (it never touches a skill folder that is not the board's; `.claude/requirements-board.json` lists
 what it installed), and is safe to run again: run it after editing a skill in `BOARD/agent/`.
+Afterwards `.claude/` holds exactly the board's current skills: one the board no longer has is
+removed, and junk (`.DS_Store`, `__pycache__`) is never installed.
 Copies work on any OS, zip or cloud drive. In a repo where the skills are edited often on a Mac or
-Linux, `-- --link` makes symlinks instead: a real folder per skill holding a symlink per file (a
-symlinked skill folder still loads, but is left out of the `/` menu).
+Linux, `-- --link` makes symlinks instead: a real folder per skill holding a symlink per top-level
+entry, file or folder (a symlinked skill folder still loads, but is left out of the `/` menu). A
+later run with no flag keeps the mode in use; `-- --copy` switches back.
 
 Add root `package.json` scripts that call the board, for example:
 
@@ -165,10 +176,12 @@ Set this up only if the project has a web app whose screens should illustrate it
 
 - `npm --prefix BOARD run verify` (typecheck, unit tests and the catalogue check) passes. On an
   empty catalogue, the tests that read the live catalogue are skipped.
-- `npm --prefix BOARD run test:e2e` passes. It runs on a fixture catalogue. `BOARD_E2E_REAL=1` adds
-  the specs that read the project's own catalogue; `e2e/artifacts-real.spec.ts` names the old
-  project's artifacts, so rewrite or delete its second test.
-- `npm --prefix BOARD run dev` opens the board on http://localhost:5180 with the project's name in
-  the masthead. Create one epic to prove that saving works.
+- `npm --prefix BOARD run test:e2e` passes. It runs on a fixture catalogue, on `BOARD_PORT` + 2
+  (5182). `BOARD_E2E_REAL=1` adds the specs that read the project's own catalogue, on `BOARD_PORT` + 3
+  (5183): `e2e/artifact-regions.spec.ts` opens every named region and heading of every artifact. A
+  project may add its own content checks beside it (a spec listed in the `real` project of
+  `playwright.config.ts`). `BOARD_E2E_PORT` and `BOARD_E2E_REAL_PORT` move the two boards.
+- `npm --prefix BOARD run dev` opens the board on http://localhost:5180 (or `BOARD_PORT`) with the
+  project's name in the masthead. Create one epic to prove that saving works.
 - Search the copy for the old project's name, outside `requirements/` and the svg-diagram examples.
-  Nothing should turn up (a kit export checks this itself, against its `starter/deny.txt`).
+  Nothing should turn up (a kit export checks this itself, against the exporting repo's deny list).

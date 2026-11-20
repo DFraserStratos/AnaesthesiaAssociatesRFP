@@ -7,8 +7,9 @@
  * Writes `00-whole.png`, `01-<step-id>.png`, `02-<step-id>.png` ... into --out (default: a folder
  * under the OS temp dir, printed at the end), replacing earlier shots of this kind there. The steps
  * are read from the artifact's sidecar in the requirements folder (`REQUIREMENTS_DIR`, as the other
- * scripts read it), so the board at --url (default http://localhost:5180) must be serving the same
- * catalogue. Each shot opens `/#/artifacts/AR-nn?region=<step-id>` and waits for the fonts and the
+ * scripts read it), so the board at --url must be serving the same catalogue. The default is this
+ * worktree's own board: http://localhost:$BOARD_PORT, filled from the worktree's `.lane.env` as the dev
+ * server fills it, else 5180. A relative --out is read from the folder the command was run from. Each shot opens `/#/artifacts/AR-nn?region=<step-id>` and waits for the fonts and the
  * step's transition to settle; motion is reduced, so no shot catches a fade halfway. An artifact
  * with no steps gets the whole-drawing shot only. Each shot is what a reader opening that link
  * sees: `00-whole` the whole drawing fitted, and each step the whole drawing too, unless the
@@ -16,10 +17,12 @@
  */
 import { mkdirSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 import { chromium, type Browser, type Page } from '@playwright/test'
 import { ID_PATTERNS } from '../shared/check.ts'
 import { REQUIREMENTS_DIR, artifactSidecarPath, readArtifactFile } from '../server/catalogueFs.ts'
+import { boardPort, loadLaneEnv } from '../server/laneEnv.ts'
+import { userPath } from './userPath.ts'
 
 const argv = process.argv.slice(2)
 const opt = (name: string) => {
@@ -30,8 +33,9 @@ const id = argv.find((a, i) => !a.startsWith('--') && !['--out', '--url'].includ
 if (!id || argv.includes('--help')) fail('Usage: npm run artifact:steps -- AR-nn [--out <dir>] [--url <base>]', !id ? 1 : 0)
 if (!ID_PATTERNS.artifact.test(id)) fail(`${id} is not an artifact ID (AR-nn).`)
 
-const base = (opt('--url') ?? 'http://localhost:5180').replace(/\/+$/, '')
-const out = resolve(opt('--out') ?? join(tmpdir(), 'artifact-steps', id))
+loadLaneEnv()
+const base = (opt('--url') ?? `http://localhost:${boardPort()}`).replace(/\/+$/, '')
+const out = opt('--out') ? userPath(opt('--out')!) : join(tmpdir(), 'artifact-steps', id)
 
 const read = readArtifactFile(artifactSidecarPath(id))
 if (read.missing) fail(`There is no ${id} in ${REQUIREMENTS_DIR}.`)

@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * Sources open the artifact spot they cite, over the fixture catalogue (port 5182). A card shows its
+ * Sources open the artifact spot they cite, over the fixture catalogue. A card shows its
  * Screenshots, then Diagrams, then Sources (each source a row naming the artifact and spot, a
  * source citing several points with a link per point, a non-citation plain); a question's sources
  * and an artifact's Details do the same.

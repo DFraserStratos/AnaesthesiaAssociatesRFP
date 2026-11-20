@@ -1,45 +1,16 @@
 /// <reference lib="dom" />
 /**
- * Every highlight of every real artifact finds its spot in the board (read-only, port 5181):
- * `npm run check` holds anchors to account without a browser; this covers what it can't (a CSS
- * selector's real match, a mermaid diagram's drawing, a passage in a PDF's text layer).
- * Project-specific: its second test names this project's artifacts. Runs only with BOARD_E2E_REAL=1.
+ * This project's own artifact checks on the real-catalogue board (read-only; runs only with
+ * BOARD_E2E_REAL=1). The generic sweep over every region and heading is `artifact-regions.spec.ts`;
+ * these name this project's artifacts and sources, so they are not part of the kit.
  */
 import { expect, test } from '@playwright/test'
-import type { CatalogueSnapshot } from '../shared/types.ts'
 
-test('every named highlight on a real artifact shows its red box', async ({ page, request }) => {
-  test.setTimeout(180_000)
-  const snap = (await (await request.get('/api/catalogue')).json()) as CatalogueSnapshot
-  const spots = Object.values(snap.artifacts ?? {}).flatMap((r) => r.data.regions.map((g) => `${r.data.id}#${g.id}`))
-  const missing: string[] = []
-  for (const spot of spots) {
-    const [id, region] = spot.split('#')
-    await page.goto(`/#/artifacts/${id}?region=${region}`)
-    const box = page.locator('.region-box')
-    const flag = page.locator('.viewer-flag')
-    await expect(box.or(flag).first()).toBeVisible({ timeout: 20_000 })
-    if (await flag.isVisible()) missing.push(spot)
-  }
-  expect(missing).toEqual([])
-})
-
-test('every heading of every real Markdown artifact carries the server slug, record IDs included (B04, R-28)', async ({ page, request }) => {
-  test.setTimeout(240_000)
-  const snap = (await (await request.get('/api/catalogue')).json()) as CatalogueSnapshot
-  const docs = Object.values(snap.artifacts ?? {}).filter((r) => r.meta?.headings?.length)
-  const wrong: string[] = []
-  for (const r of docs) {
-    await page.goto(`/#/artifacts/${r.data.id}`)
-    const server = r.meta.headings!.map((h) => h.slug)
-    await expect(page.locator('.doc-sheet')).toBeVisible({ timeout: 20_000 })
-    const dom = await page.locator('.doc-sheet').evaluate((s) => [...s.querySelectorAll('[data-slug]')].map((h) => h.getAttribute('data-slug')))
-    if (JSON.stringify(dom) !== JSON.stringify(server)) wrong.push(r.data.id)
-  }
-  expect(wrong).toEqual([])
-  // FINDINGS R-28's own case: AR-58's "9.1 Catalogue, EP-04 Contracts", from the Sections list and from its link.
+test('a heading with a record ID opens from the Sections list and from its link (B04, R-28)', async ({ page }) => {
+  test.setTimeout(90_000)
+  // FINDINGS R-28's own case: AR-58's "9.1 Catalogue, EP-04 Contracts", from its link and from the Sections list.
   await page.goto('/#/artifacts/AR-58?region=91-catalogue-ep-04-contracts')
-  await expect(page.locator('.doc-sheet .region-box')).toBeVisible()
+  await expect(page.locator('.doc-sheet .region-box')).toBeVisible({ timeout: 20_000 })
   await expect(page.locator('.viewer-flag')).toHaveCount(0)
   await page.goto('/#/artifacts/AR-58')
   const sections = page.locator('.spot-list.auto')

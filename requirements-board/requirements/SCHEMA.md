@@ -3,7 +3,7 @@
 The requirements catalogue: one Markdown file per epic, feature, story and outstanding item (an
 open question or a missing source), plus artifacts (the diagrams, transcripts, notes and documents
 behind them). Humans
-edit it in the Requirements Board (`requirements-board/`, `npm run dev:board` from the repo root);
+edit it in the Requirements Board (`requirements-board/`, `npm --prefix requirements-board run dev` from the repo root);
 agents and people edit the files directly. Both are first-class: the board watches this folder and
 picks up file edits live.
 
@@ -70,7 +70,7 @@ About 85 x 120 x 2 = 20,000 Pick List records at current warehouse count.
 
 | Field | Rule |
 | --- | --- |
-| `id` | `EP-nn` epic, `FT-nn.m` feature, `US-nn.m.k` story (`US-nn.0.k` for a story directly under an epic). Must match the file name. Never reused, never renumbered. |
+| `id` | `EP-nn` epic, `FT-nn.m` feature, `US-nn.m.k` story (`US-nn.0.k` for a story directly under an epic). Must match the file name. Never renumbered. Deleting the highest ID under a parent frees it for the next item created there (Conventions). |
 | `type` | `epic`, `feature` or `story`. Cannot change. |
 | `parent` | Omitted for epics. A feature's parent is an epic; a story's parent is a feature or an epic. Reparenting keeps the ID. |
 | `title` | Short name, sentence case (`VOICE.md`). |
@@ -159,7 +159,9 @@ reader** after ` · ` or in brackets:
 - **Which artifact.** A note answers to `Notes <date> · <words>` when the words slug to its file name
   (`notes/<date>-<slug>.md`), with no setup. Any other artifact lists the prefixes it answers to in
   its `cited_as` (Artifact file below); the longest prefix that fits wins. A retired artifact with a
-  `superseded_by` hands on to it; one without hands on to nothing, and a source citing it opens it as it is. A source on an artifact that names that same artifact (a transcript's own
+  `superseded_by` hands on to it; one without hands on to nothing, and a source citing it opens it as it is.
+  A handed-on page is the cited page plus the retired artifact's own `page_offset` (the entry that matched),
+  so a replacement whose printed pages run differently needs its own `cited_as` entry, or re-cited sources. A source on an artifact that names that same artifact (a transcript's own
   `Recording ...`) shows plain.
 - **Which spot.** `p.<n>`: a page (plus the entry's `page_offset`). `#<n>`, or a list `#2 #16`,
   `#2#16` or `#2, #16`: numbered points, each one checked. `L27-33`: lines. Nothing: the entry's `spot`,
@@ -271,7 +273,7 @@ The four steps from an Order line's inputs to a priced, invoiced line ...
 
 | Field | Rule |
 | --- | --- |
-| `id` | `AR-nn`. Must match the file name. Never reused, never renumbered. |
+| `id` | `AR-nn`. Must match the file name. Never renumbered. Deleting the highest `AR-nn` frees it for the next artifact (Conventions). |
 | `title` | The artifact's name, independent of its file's name. Sentence case. |
 | `kind` | `diagram`, `mockup`, `screenshot`, `photo`, `transcript`, `note` or `document`: what it is, for its icon and for filtering. |
 | `status` | `Current` (the baseline, unmarked on the board), `Draft`, or `Retired` (no longer the version to go by, whether a newer artifact replaced it or nothing does; kept for traceability, hidden on the Artifacts tab unless retired artifacts are shown, and still opened by a link or URL). Retired is the only past status: there is no `Superseded` (`check` errors on it), since `superseded_by` already says whether something replaced it. A live item listing or linking a Retired artifact warns; a retired one needs no source, and links in its own description are not held to the live rules. |
@@ -379,7 +381,9 @@ what it is called, `Unassigned` by default. Renaming it changes no story. All la
 lane's included, are unique regardless of case, at most 40 characters, with no spaces round them.
 `check` reports a list on disk that breaks one of these rules, or holds an entry that is not a name;
 the board refuses a lane change that would add such a problem, never a card move. Renaming or
-removing a named lane rewrites the `swimlane` of every story in it in the same change.
+removing a named lane rewrites the `swimlane` of every story in it in the same change. Renaming a
+lane onto another lane's name (case aside, the first lane's included) merges the two: its stories take
+that lane's exact name (or none, for the first lane) and the old name leaves the list, in one change.
 
 ## Board config file (`board.config.json`)
 
@@ -437,7 +441,9 @@ To change a code across the files use
 the run in `status-recodes.json` so diffs across it read a pure relabel as no change). A recode
 renumbers to fresh codes: it refuses a target that it or an earlier recode moves away, or that was
 used before, so it can't swap two numbers in place; to merge statuses, name the one kept as well
-(`3=4,4=4`). Stop the board before a recode: it refuses to run beside one. `questionKinds`
+(`3=4,4=4`). Stop the board before a recode: it refuses to run beside one (a running board keeps
+`board-<pid>.lock` in its journal folder; if a board crashed and another process later took its number,
+the recode names that file: delete it). `questionKinds`
 changes only the wording beside a kind (`help`). `capture` is described in the board's README.
 `voice.descriptionWarnings` is the check's backstop for the voice in `VOICE.md`: each entry is
 `{ pattern, flags?, message }`, where `pattern` is a JavaScript regular expression (backslashes
@@ -471,8 +477,15 @@ over it.
 
 ## Conventions
 
-- **No deletes for items.** Retire an item by setting its status to the one with role `retired` (6 here); the ID stays taken.
-- **No deletes for artifacts.** Set one that is no longer the version to go by to `status: Retired`,
+- **Retire rather than delete.** Retire an item by setting its status to the one with role
+  `retired`; it stays on record and its ID stays taken. The board's Delete removes an item for good,
+  with everything under it, after asking.
+- **IDs after a delete.** Item, question and artifact IDs are reissued: when the highest ID under a
+  parent (or a prefix, for `OQ-` and `AR-`) is deleted, the next record created there takes it, and its
+  History starts with it; a record restored as it was keeps its history. Plain-text mentions of a
+  deleted ID in other records stay as written and name whichever record later takes the ID (`check`
+  warns about them while none does).
+- **Retire artifacts too.** Set one that is no longer the version to go by to `status: Retired`,
   adding `superseded_by` when a newer artifact replaced it. The ID stays taken. The board never creates artifacts and never changes their files or
   regions, only their details: add them and change those as files (the `add-artifact` skill, or
   the board's `npm run artifact:new`).
@@ -482,9 +495,11 @@ over it.
   new question, so prefer answering one that was simply settled.
 - **New IDs**: next free number under the parent (the board assigns them). By hand: look at the
   highest sibling ID and add one.
-- **Answering a question**: set the question to the status with role `answered` (4 here), add `## Answer`, then move the affected items
-  off the `waiting` status: to a `settle` status where the answer settles them (Agreed 4 here), or to Verify (3 here) where the item still needs
-  checking with whoever signs off. Never the final sign-off status (Confirmed 5 here: that is the client's sign-off, set only on explicit say-so) (the board offers this for every item the question affects, whatever its status).
+- **Answering a question**: set the question to the status with role `answered`, add `## Answer`, then move the affected items
+  off the `waiting` status to the `settle` status that fits: one that records the answer as settled, or one that says the item still needs
+  checking with whoever signs off (each status's `help` says which). Never the final sign-off status, if the project has one: that is
+  the sign-off itself, set only on its owner's explicit say-so (the board offers the `settle` statuses for every item the question affects, whatever its status).
+  Status numbers mean only what `board.config.json` says: never name a status by its number.
 - Keep the serialised shape (key order, block lists, blank line after the fence) so diffs stay
   small; the board rewrites files in exactly this shape.
 - CSV for Miro or a spreadsheet: `npm run export:csv` writes `requirements.csv` and

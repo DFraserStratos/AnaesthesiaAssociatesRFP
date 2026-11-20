@@ -21,3 +21,10 @@ master-demo-guide
 \bRFP rule
 demo clock
 control panel
+# People named in the project's voice patterns (board.config.json, voice.descriptionWarnings): case-sensitive, whole words.
+=\bBen\b
+=\bVanessa\b
+=\bMichael\b
+=\bShane\b
+# A status pinned to this project's number ("Agreed 4 here", "(6 here)"): name statuses by role.
+\b\d+ here\b

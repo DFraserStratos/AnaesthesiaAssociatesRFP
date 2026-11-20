@@ -26,14 +26,44 @@ export const isGenerated = (id: string, src: string, apps: readonly string[]) =>
 
 /** Delete generated files in `dir` that are not in `wanted` (file names). Returns the names removed. */
 export function pruneGenerated(dir: string, wanted: Set<string>, apps: readonly string[]): string[] {
-  if (!existsSync(dir)) return []
-  const generated = generatedPattern(apps)
+  return pruneShots(dir, wanted, apps).removed
+}
+
+/**
+ * Delete generated files in `dir` that are not in `wanted`, except one another item still lists:
+ * `usedBy(name)` names the other items whose `images` point at it, and such a file is kept and
+ * returned with them, so no item is left pointing at a missing image.
+ */
+export function pruneShots(dir: string, wanted: Set<string>, apps: readonly string[], usedBy: (name: string) => string[] = () => []) {
   const removed: string[] = []
+  const kept: { file: string; users: string[] }[] = []
+  if (!existsSync(dir)) return { removed, kept }
+  const generated = generatedPattern(apps)
   for (const f of readdirSync(dir)) {
-    if (generated.test(f) && !wanted.has(f)) {
+    if (!generated.test(f) || wanted.has(f)) continue
+    const users = usedBy(f)
+    if (users.length) kept.push({ file: f, users })
+    else {
       unlinkSync(join(dir, f))
       removed.push(f)
     }
   }
-  return removed
+  return { removed, kept }
+}
+
+/**
+ * The item IDs `--only` selects: `--only A,B` or `--only=A,B`. Undefined when `--only` is absent (a full
+ * run). A value that is missing, empty, another flag, or a list with no IDs is an error, so a mistyped
+ * or empty argument never turns into a full capture.
+ */
+export function parseOnly(argv: readonly string[]): { ids?: string[]; error?: string } {
+  const at = argv.findIndex((a) => a === '--only' || a.startsWith('--only='))
+  if (at < 0) return {}
+  if (argv.slice(at + 1).some((a) => a === '--only' || a.startsWith('--only='))) return { error: '--only is given twice; give one comma-separated list' }
+  const arg = argv[at]!
+  const value = arg === '--only' ? argv[at + 1] : arg.slice('--only='.length)
+  if (value === undefined || value.startsWith('--')) return { error: '--only needs a list of IDs (--only US-01.1.1,FT-02.3); leave --only out for a full capture' }
+  const ids = value.split(',').map((s) => s.trim()).filter(Boolean)
+  if (!ids.length) return { error: `--only "${value}" names no IDs; leave --only out for a full capture` }
+  return { ids }
 }

@@ -51,11 +51,11 @@ Several at once: `#2 #16`.
 | `Q&A 2026-09-24 #n` | point n of its "Q&A with the product owner, 2026-09-24" section (its numbering restarts there) |
 | `Meeting notes 2026-09 (client lead administrator)` | its "Meeting notes (client lead administrator)" section |
 | `Diagram: <name>` | the current drawing of that diagram (AR-17 to AR-24), not the description here |
-| `Data files (...)` | the 2021 product code list (AR-16); the price schedules are in `../../../docs/reference/Data files/` |
+| `Data files (...)` | the 2021 product code list (AR-16); the price schedules are in `../../../docs/discovery-reference/Contract Files/` |
 | `Audit 2026-09-24 #n` | nothing (no audit file exists): plain text |
 
 ## No known source
 
 An item with no source gets an outstanding item of kind `missing-source` in `questions/` that
 affects it. To resolve one: find or file the note, add the source to the item, then set the
-outstanding item to its Answered status (4 here; see `board.config.json`) with a line saying where it came from.
+outstanding item to the status with role `answered` (see `board.config.json`) with a line saying where it came from.

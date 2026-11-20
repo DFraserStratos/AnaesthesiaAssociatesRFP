@@ -1,0 +1,1 @@
+../../../requirements-board/agent/skills/consistency-review/consistency-review.test.mjs

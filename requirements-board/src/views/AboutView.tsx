@@ -273,7 +273,7 @@ function Skills() {
     <section id="about-skills" className="about-section">
       <h2>Skills</h2>
       <p className="about-lede">
-        Type the command in Claude Code at the root of your repo. Each skill reads <code>requirements/SCHEMA.md</code> first and never commits: you do.
+        Type the command in Claude Code at the root of your repo. Each skill reads <code>requirements/SCHEMA.md</code> first and leaves committing to you; only <code>/run-build-phase</code> commits, and only when its kick-off prompt allows it.
       </p>
       <div className="skill-cards">
         {SKILLS.map((s) => (
@@ -428,11 +428,11 @@ const FOLDERS: [string, string][] = [
 ]
 
 const COMMANDS: [string, string][] = [
-  ['npm --prefix requirements-board run dev', 'Open the board on localhost:5180'],
+  ['npm --prefix requirements-board run dev', 'Open the board on localhost:5180 (BOARD_PORT moves it)'],
   ['npm --prefix requirements-board run check', 'Check every file, ID, parent and link'],
   ['npm --prefix requirements-board run verify', 'Typecheck, tests and check: run before sharing a change to the board itself'],
   ['npm --prefix requirements-board run export:csv', 'Export the catalogue as CSV'],
-  ['npm --prefix requirements-board run install-skills', 'Copy the skills into .claude/ at the repo root again, after editing one'],
+  ['npm --prefix requirements-board run install-skills', 'Install the skills into .claude/ at the repo root again, after editing one: it keeps the mode in use (copies, or links with -- --link)'],
 ]
 
 function Files() {
@@ -465,7 +465,7 @@ function Files() {
               </div>
             ))}
           </dl>
-          <p>The skills live in <code>requirements-board/agent/</code>; <code>.claude/skills/</code> holds installed copies: edit the source, then run <code>install-skills</code>. Each keeps this repo's own facts in its "This repo" section.</p>
+          <p>The skills live in <code>requirements-board/agent/</code>; <code>.claude/skills/</code> holds what <code>install-skills</code> put there, copies or links: edit the source, then run it again (a copy changes only then; a link at once). Each keeps this repo's own facts in its "This repo" section.</p>
         </div>
       </div>
     </section>

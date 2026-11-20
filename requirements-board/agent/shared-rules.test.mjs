@@ -50,7 +50,7 @@ test('the agent-side note-cite resolver opens the same note as the board, for ev
   const nobody = /^notes\/(\d{4}-\d{2}-\d{2})-/.exec(notes[0])[1]
   const cites = new Set([
     // Every note by its own file name's words: with a point, without one (FINDINGS R-141), and with
-    // its first word given an apostrophe as a title would ("Donald's", "AA's"), which slugs elsewhere.
+    // its first word given an apostrophe as a title would ("Rosa's", "ABC's"), which slugs elsewhere.
     ...notes.flatMap((f) => {
       const [, date, slug] = /^notes\/(\d{4}-\d{2}-\d{2})-(.+)\.md$/.exec(f)
       const [first, ...rest] = slug.split('-')

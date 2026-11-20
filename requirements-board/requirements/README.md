@@ -50,8 +50,8 @@ item you are editing changes on disk, the board asks whether to keep yours or lo
 ## Conventions
 
 **IDs.** `EP-nn` epic, `FT-nn.m` feature under epic nn, `US-nn.m.k` story under feature nn.m
-(`US-nn.0.k` for a story directly under an epic). IDs are stable; retire an item by setting status
-to the Retired status rather than deleting it.
+(`US-nn.0.k` for a story directly under an epic). IDs never change; retire an item by setting its status
+to Retired rather than deleting it (a deleted ID that was the highest under its parent goes to the next item created there).
 
 **Status.**
 

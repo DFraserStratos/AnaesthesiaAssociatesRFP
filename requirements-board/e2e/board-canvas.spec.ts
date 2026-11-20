@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * B11 in the browser, over the fixture catalogue (port 5182): the keys on controls inside the canvas
+ * B11 in the browser, over the fixture catalogue: the keys on controls inside the canvas
  * (FINDINGS R-115), where a walk or an opened search hit lands and at what zoom (R-116, R-117), the walk
  * order (R-118), and the open card drawn in a collapsed lane or under a retired feature (R-113, R-114).
  */

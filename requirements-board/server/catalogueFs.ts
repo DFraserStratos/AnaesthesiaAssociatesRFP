@@ -16,10 +16,11 @@ import { RECODES_FILE, parseRecodes, type Recode } from '../shared/statuses.ts'
 import type { Artifact, ArtifactRec, CatalogueData, Issue, Item, Layout, Question, Rev } from '../shared/types.ts'
 import { artifactInfo, primePdfs } from './artifactFiles.ts'
 import { linkOut as linkOutOf } from './realPaths.ts'
+import { envPath } from './boardPaths.ts'
 
 const here = dirname(fileURLToPath(import.meta.url))
-/** The requirements folder: `REQUIREMENTS_DIR` from the environment, else `requirements/` beside the board's code. */
-export const REQUIREMENTS_DIR = process.env.REQUIREMENTS_DIR ? resolve(process.env.REQUIREMENTS_DIR) : resolve(here, '../requirements')
+/** The requirements folder: `REQUIREMENTS_DIR` from the environment (a relative value is relative to the board folder), else `requirements/` beside the board's code. */
+export const REQUIREMENTS_DIR = envPath('REQUIREMENTS_DIR') ?? resolve(here, '../requirements')
 
 /** The folders under the requirements folder that hold records, by record kind (the Diff review reads them in git too). */
 export const RECORD_DIRS = { item: 'stories', question: 'questions', artifact: 'artifacts' } as const

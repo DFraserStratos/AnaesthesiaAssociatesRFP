@@ -13,22 +13,25 @@ This folder is a **portable kit**, three parts:
   the domain model, `board.config.json`. Its `README.md` is the folder guide and conventions, its
   `SCHEMA.md` the file format. The app and any agent edit those same files;
 - **`agent/`**: the agent skills that maintain the catalogue (`skills/update-requirements`,
-  `skills/update-build-plan`, `skills/add-artifact`, `skills/svg-diagram`, `skills/transcript-reconciler`,
-  `skills/consistency-review`) and the `workflows/link-requirements.js`,
+  `skills/update-build-plan`, `skills/run-build-phase`, `skills/add-artifact`, `skills/svg-diagram`,
+  `skills/transcript-reconciler`, `skills/consistency-review`) and the `workflows/link-requirements.js`,
   `workflows/consistency-rulings.js` and `workflows/consistency-changes.js` workflows. Claude Code finds them in the
   host repo's `.claude/skills/` and `.claude/workflows/`, put there by `npm run install-skills`: copies
-  by default (they work on any OS, zip or cloud drive), or with `-- --link` relative symlinks (a real
-  folder per skill, a symlink per file, so the `/` menu lists them). Edit the files here, never in
-  `.claude/`. This repo uses links; a shared kit uses copies.
+  (they work on any OS, zip or cloud drive), or relative symlinks (a real folder per skill holding a
+  symlink per top-level entry, file or folder, so the `/` menu lists them). An install keeps the mode
+  already in use and a repo with none gets copies; `-- --link` or `-- --copy` chooses. It leaves
+  `.claude/` holding exactly the board's current skills (one the board no longer has is removed; skills
+  of the repo's own are never touched) and never installs junk (dotfiles, `__pycache__`). Edit the
+  files here, never in `.claude/`.
   Each skill keeps its few repo-specific facts in one "This repo" block. `update-build-plan` also
   carries its scripts and workflows in `skills/update-build-plan/tools/`; a plan's own settings live
   in its folder's `plan.config.json`, not in the kit.
 
 ```
 npm install
-npm run dev          # http://localhost:5180
+npm run dev          # http://localhost:5180 (BOARD_PORT moves it; a worktree's .lane.env sets it)
 npm test             # Vitest: file round-trip, check rules, IDs, the file API, store (incl. undo), board graph, both layouts, move planner
-npm run test:e2e     # Playwright on a fixture catalogue (5182); BOARD_E2E_REAL=1 adds this project's live checks (5181, read-only)
+npm run test:e2e     # Playwright on a fixture catalogue (BOARD_PORT + 2: 5182); BOARD_E2E_REAL=1 adds the live catalogue's checks (BOARD_PORT + 3: 5183, read-only)
 npm run build        # typecheck + bundle (sanity only; the app needs the dev server)
 npm run typecheck    # tsc -b over the app, server, scripts and tests (plain `tsc -p .` checks nothing)
 npm run verify       # typecheck + unit tests + catalogue check + the agent tools' node --test suites: run before handing work back
@@ -37,17 +40,32 @@ npm run export:csv   # regenerate the Miro CSVs (-- --out <dir> to write elsewhe
 npm run links:index  # compact catalogue index and epic batches for the linking agents (.links/); starts a link run
 npm run links:apply  # apply the latest link run's verified proposals (-- --dry-run first; -- <dir> for another run)
 npm run artifact:new # register a file or a mermaid diagram as an artifact (-- --help)
-npm run artifact:steps # screenshot a stepped diagram in the running board, whole then each step (-- AR-nn [--out <dir>] [--url <base>])
+npm run artifact:steps # screenshot a stepped diagram in this worktree's running board (BOARD_PORT), whole then each step (-- AR-nn [--out <dir>] [--url <base>])
 npm run source       # where a source string points: artifact, file, page or lines (-- --item <ID> --text, -- --report)
 npm run capture      # screenshots of the project's app from recipes (optional; see Capturing screenshots)
-npm run install-skills # copy the skills and workflows into the repo root's .claude/ (merges with others; -- --link to symlink)
-npm run kit:export   # export the clean, shareable kit (-- --to "<folder>" [--dry-run]); see Sharing the board
+npm run install-skills # install the skills and workflows into the repo root's .claude/ in the mode in use (merges with others; -- --link or -- --copy to choose)
+<!-- kit:omit -->
+npm run kit:export   # export the clean, shareable kit (-- --to "<folder>" [--dry-run] [--uncommitted]); see Sharing the board
+<!-- /kit:omit -->
 ```
 
 The board's About page (`/about`, the ⓘ in the masthead) explains the requirements loop and every
-skill for a new user; Settings (`/settings`) names the board and edits components and statuses.
+skill for a new user; Settings (`/settings`) edits the project's name and accent, the components, the
+status lists and the writing voice (`requirements/VOICE.md`).
 
-A host repo usually adds root scripts that call these (`ADOPTING.md`).
+A host repo usually adds root scripts that call these (`ADOPTING.md`). Run them from the repo root:
+a path you give a script (`artifact:new`'s file, `--out`, `--to`, a link run folder) is read from the
+folder you ran the command from, also under `npm --prefix requirements-board run ...` (npm passes that
+folder as `INIT_CWD`; a root script that calls `npm --prefix` passes the repo root), and the paths a
+script prints read from there too. Run directly (`node scripts/x.ts`), a script reads paths from where
+it was started.
+
+**Environment:** `REQUIREMENTS_DIR` (the catalogue folder; default `requirements/`), `HISTORY_DIR` (the
+change journal), `REPO_ROOT` (where a `/`-rooted artifact path starts) and `PDF_FACTS_DIR` (the PDF facts
+cache) name folders; a relative value is relative to this board folder, wherever the command runs.
+`BOARD_PORT` is the dev server's port (default 5180). A git-ignored `.lane.env` (`KEY=value` lines) at the
+repository's top fills in any of these that are not set, so a second worktree's board, capture,
+`artifact:steps` and Playwright boards use that worktree's ports.
 
 **Design:** `DESIGN.md` is the north star for anything visual (names over IDs, type colours, status
 pills, card and sheet anatomy). Read it before changing the UI.
@@ -89,6 +107,10 @@ shared/        code shared by server, scripts and browser
   delivery.ts    the `catalogue:changed` delivery: one re-sync's or one write's changes in one message
 server/
   catalogueFs.ts     load the folder, atomic / exclusive / in-place writes, ID claiming, layout file; REQUIREMENTS_DIR (env override for fixtures)
+  boardPaths.ts      the board folder, and the folder-naming environment values (relative to the board folder)
+  laneEnv.ts         a worktree's `.lane.env` and `BOARD_PORT`, for the dev server, capture, artifact:steps and Playwright
+  junk.ts            the one junk rule (dotfiles, `__pycache__`) the skill install and the kit export share
+  skillInstall.ts    the skill install: copy or link mode, the mode in use, stale entries removed, others left alone
   catalogueApi.ts    the /api routes as a plain function (no Vite), so tests drive it directly; its header holds the write protocol
   historyJournal.ts  the per-card change journal (.history/, gitignored); screenshot hashes in the repository's width,
                      which are also the screenshots' versions (D-10)
@@ -104,8 +126,10 @@ server/
   sourceIndex.ts     the source index from a catalogue's sidecars alone (`loadSourceIndex`), for scripts and agent tools
   pdfFactsStore.ts   PDF facts kept between runs in .pdf-facts/ (gitignored; PDF_FACTS_DIR overrides), keyed by content and extractor;
                      never pruned (an old version's entry stays): delete the folder any time, it only costs speed
-scripts/       check, export-csv, capture (+ captureFiles: generated-file naming, testable),
-               link-index, apply-links (+ linkProposals: the applier, testable), new-artifact, shoot-steps
+scripts/       check, export-csv, capture (+ captureFiles: generated-file naming, pruning and `--only`, testable;
+               captureReport), link-index, apply-links (+ linkProposals: the applier, linkRuns: run folders, testable),
+               new-artifact, shoot-steps, resolve-source, recode-statuses, install-skills, export-kit;
+               userPath: a typed path read from the folder the command was run from
 src/
   store.ts       catalogue mirror (deliveries in order, never under a snapshot), card-move queue, derived index, view prefs
   artifactIndex.ts  which cards point at each artifact, its spots, the Artifacts view's prefs
@@ -270,7 +294,7 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
 - Every card has a **History** (sheet footer): a newest-first timeline of its changes. The dev
   server journals every change it sees to a card, its own saves and moves and anyone's edit on
   disk, to `.history/<ID>.jsonl` in this folder (gitignored, per machine; `HISTORY_DIR`
-  overrides; a catalogue other than the real one journals to a temp folder). At start it logs what
+  overrides, relative to this folder; a catalogue other than the real one journals to a temp folder). At start it logs what
   changed while it was off, and a `seen` line for a card it has never seen before (never shown: the
   journal's detail starts there, so a change committed while the board was off shows once, and a card
   first seen uncommitted has a "Created" entry; a journal from before `seen` reads as it did). Commits
@@ -382,6 +406,8 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
 Screenshots: put files under `requirements/assets/<ID>/` and list them in the item's `images`, each
 with a `viewport` and optionally an `app`, one of the keys in `screenshotApps`. The item sheet's
 gallery has one tab per app present, in that order; untagged images fall back to Desktop / Mobile.
+A screenshot whose file name holds a backslash cannot be served (the board reads `\` as `/`, as the
+file system on Windows would), so name screenshots without one.
 
 ### Project config
 
@@ -405,6 +431,9 @@ gallery has one tab per app present, in that order; untagged images fall back to
   (JavaScript regular expressions, `flags` default `i`) that make the check warn when one is found
   in a live item's description, e.g. a decision number or "our reading" that belongs in Notes.
   Edited by hand (format in `SCHEMA.md`).
+
+The board's own name ("Requirements board") is fixed: there is no `board` key. An older file's
+`board` key, and `project.locale`, are dropped the next time Settings saves the project section.
 
 The server reads it with the catalogue and reloads it live; a malformed entry is reported by the
 check and left at its default, except in the status lists, which are never swapped for the built-in
@@ -440,10 +469,14 @@ catalogue. It is optional: a project with no `capture` section in `board.config.
   handler, `{ run(page, step, ctx), check?(step) }`; `ctx` gives the app's settings, `setHidden`,
   `mustFind`, `settle` and the timeout (`StepContext` in `scripts/capture.ts`).
 - The runner stops if an app's dev server is down. `node scripts/capture.ts --only US-03.2.4,EP-03`
-  limits the run (an epic or feature ID takes its descendants); `--dry` runs every step and selector
-  without writing anything.
+  (or `--only=US-03.2.4,EP-03`) limits the run (an epic or feature ID takes its descendants); `--only`
+  with no IDs (missing, empty, another flag, only commas) stops before anything is shot or written, so
+  a full run happens only when `--only` is left out. `--dry` runs every step and selector without
+  writing anything.
 - **Output:** `requirements/assets/<ID>/<app>-<name>[-<state>].png`, linked into the item's `images`
-  (hand-added images are kept; stale generated files are deleted), and the report: a full run writes
+  (hand-added images are kept). A generated file the item's recipe no longer makes is deleted, unless
+  another item's `images` still lists it: then it is kept and the run names it with the items that use
+  it, so no item is left pointing at a missing image. And the report: a full run writes
   it whole; a run limited with `--only` updates those IDs' rows and the totals, carrying over failures
   recorded for other IDs (`scripts/captureReport.ts`).
   A file counts as generated when its name starts with a screenshot app's key and a dash
@@ -459,9 +492,11 @@ leaves it where it is). The ID is claimed before the file is touched, so two ses
 IDs; nothing is copied or moved over an existing file (a stray `AR-nn.<ext>` already there makes it take
 the next ID). Then it writes the sidecar for you to fill in: regions, sources, description, and
 for a stepped diagram its steps. Then link items to it (`artifacts: [AR-nn#spot]`) and run
-`npm run check`. With the board running, `npm run artifact:steps -- AR-nn` screenshots a stepped
+`npm run check`. The file and `--mermaid` paths are read from the folder the command was run from.
+With the board running, `npm run artifact:steps -- AR-nn` screenshots a stepped
 diagram, the whole drawing and then each step (`00-whole.png`, `01-<step-id>.png` ...), into a temp
-folder it prints (or `--out <dir>`), to check every step by eye. The `add-artifact` skill walks an
+folder it prints (or `--out <dir>`), to check every step by eye. It shoots this worktree's board
+(`http://localhost:$BOARD_PORT`, after `.lane.env`, else 5180); `--url` names another. The `add-artifact` skill walks an
 agent through it; the `svg-diagram` skill saves new diagrams this way and says how to draw a stepped one.
 
 ### Sources open their spot
@@ -535,25 +570,45 @@ never applies it to a different change; the apply step writes only inside the ca
 notes, change logs, reference files, question answers, retired records or protected artifacts), and
 each change whole or not at all.
 
+<!-- kit:omit -->
 ## Sharing the board (the kit)
 
 `npm run kit:export -- --to "<folder>"` writes a clean copy for other teams, one folder,
 `<folder>/requirements-board/`: the board's code and skills, `START-HERE.html`, and the **starter
-catalogue** from `starter/requirements/`
-(cards that explain the board, a question and the loop diagram) in place of this project's. Each
-skill's "This repo" section is swapped for `starter/this-repo/<skill>.md`; this project's shared
-format files (`SCHEMA.md`, `notes/README.md`, `changes/README.md`) are copied as they are, so keep
-them project-neutral. The kit is built in a scratch folder and refused if any word in
-`starter/deny.txt` appears in it; only `requirements-board/` in the target is replaced (its
-`node_modules` is kept). `START-HERE.html` (from `starter/START-HERE.html`, the version and the
-loop diagram filled in) is a static page the recipient opens before anything runs: where the
-folder goes, one prompt that has Claude Code do the whole setup (install, `install-skills`, the
-CLAUDE.md section, the skills' `<TODO: ...>` placeholders, start the board), the same by hand, and
-troubleshooting. Starter "This repo" sections mark every fill-in as `<TODO: ...>`. `tests/starter.test.ts` keeps the starter valid and
-fails when a skill gains a "This repo" section with no starter version.
+catalogue** from `starter/requirements/` (cards that explain the board, a question, the loop diagram and
+the `notes/` and `changes/` folder guides) in place of this project's. `SCHEMA.md` is this project's,
+shared as it is, so keep it project-neutral: statuses by role, never this project's numbers. Each
+skill's "This repo" section is swapped for `starter/this-repo/<skill>.md`, and passages marked
+`<!-- kit:omit -->` in the Markdown (this section, for one) are left out.
+
+- **Source:** the board's files as committed at HEAD, so a kit is one commit and nothing uncommitted,
+  untracked or ignored can ship; it warns about uncommitted board files it left out. Commit the
+  version bump first. `--uncommitted` builds from the tracked files as they are on disk instead (never
+  an untracked or ignored file), naming every board file that differs from HEAD, to try out work.
+- **Checks**, on the staged kit before the target is touched: no line matches `starter/deny.txt` (this
+  project's words and people, status numbers pinned as "N here"), and every `npm run <script>` and board
+  path the kit's docs name exists in the kit. `--dry-run` stages and checks only.
+- **Target:** `--to` is read from the folder the command was run from. The export refuses, changing
+  nothing, when `<folder>/requirements-board/` is this board, inside it or contains it (by real path),
+  when the folder has other files and no `requirements-board/`, or when its `requirements-board/` is not
+  an untouched earlier kit: each export writes `.kit-export.json` (version, commit, a hash per file), and
+  a re-export replaces the folder only while every file matches it (a catalogue edit, a `.history/`
+  from opening its board, a new `package-lock.json` all refuse). Its `node_modules` is kept; nothing
+  else in the target is touched. There is no override: export into an empty folder.
+- **Upgrading a board already in use:** export to a fresh folder, then copy everything in its
+  `requirements-board/` except `requirements/` over the adopting repo's board, and run `install-skills`.
+
+`START-HERE.html` (from `starter/START-HERE.html`, the version, source commit and loop diagram filled
+in) is a static page the recipient opens before anything runs: where the folder goes, one prompt that
+has Claude Code do the whole setup (install, `install-skills`, the CLAUDE.md section, the skills'
+`<TODO: ...>` placeholders, start the board), the same by hand, and troubleshooting. Starter "This
+repo" sections mark every fill-in as `<TODO: ...>`. `tests/starter.test.ts` keeps the starter valid and
+fails when a skill gains a "This repo" section with no starter version; `tests/exportKit.test.ts` proves
+the refusals and the source rule on scratch repositories.
 
 Anything new for the board is built here first, then exported. Before each export, bump `version`
-in `package.json` (shown on the About and Settings pages) and add a line to `CHANGELOG.md`.
+in `package.json` (shown on the About and Settings pages), add a line to `CHANGELOG.md`, and commit.
+<!-- /kit:omit -->
 
 ## Bring the board to another repo
 

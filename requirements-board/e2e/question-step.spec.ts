@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * Stepping through Outstanding items from a question's sheet, over the fixture catalogue (port 5182):
+ * Stepping through Outstanding items from a question's sheet, over the fixture catalogue:
  * the arrows follow the list's order (Open, then Awaiting confirmation, then Answered), and a question
  * answered in the sheet keeps its place among the Open ones while it is open.
  */

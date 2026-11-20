@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * The Diff review tab over the fixture catalogue (port 5182), in a throwaway git repository: the
+ * The Diff review tab over the fixture catalogue, in a throwaway git repository: the
  * default comparison (last commit against the files on disk), falling back to what the last commit
  * changed when nothing is uncommitted, live refresh, picking commits, filters, Whole card and Viewed.
  */

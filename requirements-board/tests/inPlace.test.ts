@@ -212,10 +212,10 @@ describe('hand-written shapes the review found (B05 review)', () => {
 })
 
 describe('question saves in place', () => {
-  const Q = `---\nid: OQ-07\nkind: question\ntitle: Who signs?   # ask Greg\nstatus: 1\nowner: ""\naffects: [US-01.1.1]\nsources: []\n---\n\nWho signs off?\n`
+  const Q = `---\nid: OQ-07\nkind: question\ntitle: Who signs?   # ask Robin\nstatus: 1\nowner: ""\naffects: [US-01.1.1]\nsources: []\n---\n\nWho signs off?\n`
   it('an answer is added after the question, and the rest is untouched', () => {
-    const out = editQuestionText(Q, { ...parseQuestion(Q), answer: 'Greg does.', status: '3' })
-    expect(out).toBe(Q.replace('status: 1', 'status: 3') + '\n## Answer\n\nGreg does.\n')
-    expect(parseQuestion(out)).toMatchObject({ answer: 'Greg does.', status: '3', title: 'Who signs?' })
+    const out = editQuestionText(Q, { ...parseQuestion(Q), answer: 'Robin does.', status: '3' })
+    expect(out).toBe(Q.replace('status: 1', 'status: 3') + '\n## Answer\n\nRobin does.\n')
+    expect(parseQuestion(out)).toMatchObject({ answer: 'Robin does.', status: '3', title: 'Who signs?' })
   })
 })

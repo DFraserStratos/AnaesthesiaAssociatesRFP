@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * B06 · edit sheets and Settings end to end, over the fixture catalogue (port 5182), files written the way
+ * B06 · edit sheets and Settings end to end, over the fixture catalogue, files written the way
  * an agent writes them: Keep mine keeps everything the user did not change (R-02), the artifact page keeps
  * an orphaned details draft and leaves full screen (R-12), a new card's title takes the typing (R-109),
  * Settings catches a list changed on disk (R-45) and locks a damaged one until it is repaired (R-01).

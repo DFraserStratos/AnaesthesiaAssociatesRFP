@@ -13,6 +13,7 @@ import { artifactFormat, type Artifact, type ArtifactFormat, type ArtifactMeta }
 import { gitBlobSha } from './historyJournal.ts'
 import { pdfFactsFor, primePdfFacts } from './pdfFactsStore.ts'
 import { linkOut, realEntry, realPath, under } from './realPaths.ts'
+import { envPath } from './boardPaths.ts'
 
 const here = dirname(fileURLToPath(import.meta.url))
 /**
@@ -20,13 +21,13 @@ const here = dirname(fileURLToPath(import.meta.url))
  * the git repository the requirements folder is in, else the folder that holds it. Anchored on
  * the data, not on this code, so it holds wherever the board itself is installed.
  */
-export const REPO_ROOT = process.env.REPO_ROOT ? resolve(process.env.REPO_ROOT) : repoOf(process.env.REQUIREMENTS_DIR ? resolve(process.env.REQUIREMENTS_DIR) : resolve(here, '../requirements'))
+export const REPO_ROOT = envPath('REPO_ROOT') ?? repoOf(envPath('REQUIREMENTS_DIR') ?? resolve(here, '../requirements'))
 
 /**
  * Where a `/`-rooted path starts for a requirements folder in the git repository `gitTop`:
  * `REPO_ROOT` when the environment sets it (as `artifactPath` reads it), else that repository.
  */
-export const repoRootFor = (gitTop: string) => (process.env.REPO_ROOT ? resolve(process.env.REPO_ROOT) : gitTop)
+export const repoRootFor = (gitTop: string) => envPath('REPO_ROOT') ?? gitTop
 
 function repoOf(data: string): string {
   try {

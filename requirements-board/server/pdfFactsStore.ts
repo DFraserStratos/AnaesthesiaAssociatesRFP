@@ -18,8 +18,9 @@ import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { envPath } from './boardPaths.ts'
 
 export type PdfFacts = { pages: { w: number; h: number; text: string }[] } | { error: string }
 /** `unread`: the run failed for the moment (never stored, never cached by the caller). */
@@ -43,7 +44,7 @@ export function nodeBinary(): string {
   return existsSync(process.execPath) ? process.execPath : 'node'
 }
 
-export const pdfFactsDir = () => (process.env.PDF_FACTS_DIR ? resolve(process.env.PDF_FACTS_DIR) : join(here, '..', '.pdf-facts'))
+export const pdfFactsDir = () => envPath('PDF_FACTS_DIR') ?? join(here, '..', '.pdf-facts')
 
 let extractorId: string | undefined
 /** The extractor's identity: its source, the pdf.js version and the schema. */

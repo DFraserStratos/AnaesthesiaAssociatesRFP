@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * B04, one rule, one helper, in the running board (fixture catalogue, port 5182): a Markdown
+ * B04, one rule, one helper, in the running board (fixture catalogue): a Markdown
  * document's headings carry the server's slugs whatever the page shows (R-28), every heading=,
  * quote= and section spot the check accepts draws its box, and a decomposed passage is boxed over
  * exactly its words (R-101).

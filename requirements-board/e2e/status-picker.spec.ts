@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * The status menu in an item sheet, over the fixture catalogue (port 5182): picking a status
+ * The status menu in an item sheet, over the fixture catalogue: picking a status
  * saves that card alone, no Edit needed, and Retired still asks first.
  */
 import { readFileSync } from 'node:fs'

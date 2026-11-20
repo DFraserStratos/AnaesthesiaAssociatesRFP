@@ -26,6 +26,7 @@ import { join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { REQUIREMENTS_DIR, configPath, formatJson, writeAtomic } from '../server/catalogueFs.ts'
 import { boardsRunning, historyDirFor } from '../server/historyDir.ts'
+import { shown } from './userPath.ts'
 import { stripBom } from '../shared/bom.ts'
 import { CONFIG_FILE, DEFAULT_CONFIG, parseConfig, type BoardConfig } from '../shared/config.ts'
 import { RECODES_FILE, STATUS_CODE, STATUS_FIELDS, highestCode, parseRecodes, recodedCodes, recodeProblems, statusesOf, type Recode, type StatusKind } from '../shared/statuses.ts'
@@ -280,7 +281,7 @@ function main(): number {
         failures.push(`${file}: could not rewrite (journal): ${(e as Error).message}`)
       }
     }
-  if (journals) console.log(`journal: ${plural(journals, 'file')} in ${relative(process.cwd(), historyDir) || '.'}`)
+  if (journals) console.log(`journal: ${plural(journals, 'file')} in ${shown(historyDir) || '.'}`)
   if (unreadable) console.log(`journal: ${plural(unreadable, 'unreadable journal line')} kept as it was`)
 
   if (configText !== null) {
@@ -306,7 +307,7 @@ function main(): number {
     console.error(`The recode is recorded in ${RECODES_FILE}. Fix the above, then run the same command again to finish it.`)
     return 1
   }
-  console.log(`Recorded in ${relative(process.cwd(), recodesPath)}. Run the check.`)
+  console.log(`Recorded in ${shown(recodesPath)}. Run the check.`)
   return 0
 }
 

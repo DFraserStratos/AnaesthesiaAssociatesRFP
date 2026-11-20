@@ -57,7 +57,7 @@ const mergeOf = async (args) => (await runWorkflow('consistency-rulings', args, 
 
 test('REQ-09 (R-145): the Conflicts heading reads properly with or without an owner', async () => {
   assert.match(await mergeOf(rulingsArgs), /^## Conflicts for the product owner$/m)
-  assert.match(await mergeOf({ ...rulingsArgs, owner: 'Donald' }), /^## Conflicts for Donald$/m)
+  assert.match(await mergeOf({ ...rulingsArgs, owner: 'Rosa' }), /^## Conflicts for Rosa$/m)
   assert.match(await mergeOf({ ...rulingsArgs, owner: 'Sam (product owner)' }), /^## Conflicts for Sam$/m)
   assert.match(await mergeOf({ ...rulingsArgs, owner: 'The product owner (Sam)' }), /^## Conflicts for The product owner \(Sam\)$/m)
   assert.match(await mergeOf({ ...rulingsArgs, owner: 'Sam Jones', ownerShort: 'Sam J' }), /^## Conflicts for Sam J$/m)

@@ -8,7 +8,7 @@
  *   npm run links:index [-- <out.md>]   default .links/index.md in this folder (gitignored); `-` prints it
  */
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { dirname, join, relative, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { depthFirst } from '../shared/csv.ts'
 import { itemLinkTargets, linkTargets, plainText } from '../shared/links.ts'
@@ -16,6 +16,7 @@ import { isOpenQuestion, isRetired, statusLabel } from '../shared/statuses.ts'
 import { typeLabel, type Item } from '../shared/types.ts'
 import { REQUIREMENTS_DIR, loadCatalogue } from '../server/catalogueFs.ts'
 import { startLinkRun } from './linkRuns.ts'
+import { shown, userPath } from './userPath.ts'
 
 const { items, questions, config } = loadCatalogue()
 const all = Object.values(items).map((r) => r.data)
@@ -37,7 +38,7 @@ const lines = [
   '',
   `${live.length} live items (retired ones left out), then the open questions. Each line: ID, type, status, title: first sentence.`,
   '`related:` lists relations stored on that card; `links:` the records its text already links to or mentions.',
-  `Files: ${relative(process.cwd(), join(REQUIREMENTS_DIR, 'stories')) || '.'}/<ID>.md and questions/<ID>.md.`,
+  `Files: ${shown(join(REQUIREMENTS_DIR, 'stories')) || '.'}/<ID>.md and questions/<ID>.md.`,
   '',
 ]
 for (const it of live) {
@@ -55,7 +56,7 @@ for (const q of Object.values(questions)
 }
 
 const text = lines.join('\n') + '\n'
-const out = process.argv[2] ?? resolve(dirname(fileURLToPath(import.meta.url)), '../.links/index.md')
+const out = process.argv[2] === '-' ? '-' : process.argv[2] ? userPath(process.argv[2]) : resolve(dirname(fileURLToPath(import.meta.url)), '../.links/index.md')
 if (out === '-') process.stdout.write(text)
 else {
   mkdirSync(dirname(resolve(out)), { recursive: true })
@@ -63,13 +64,13 @@ else {
   const batchFile = join(dirname(resolve(out)), 'batches.json')
   const batchText = JSON.stringify(batches(), null, 2) + '\n'
   writeFileSync(batchFile, batchText)
-  console.log(`Wrote ${live.length} items to ${resolve(out)}, and the epic batches to ${batchFile}`)
+  console.log(`Wrote ${live.length} items to ${shown(resolve(out))}, and the epic batches to ${shown(batchFile)}`)
   // A new link run: the workflow writes its proposals here, and links:apply applies this run only. The
   // index and batches are copied in as the record of what the run saw (the workflow reads .links/index.md).
   const run = startLinkRun(dirname(resolve(out)), new Date())
   writeFileSync(join(run.dir, 'index.md'), text)
   writeFileSync(join(run.dir, 'batches.json'), batchText)
-  console.log(`Started a link run in ${run.dir}${run.archived ? ` (the previous run moved to ${run.archived})` : ''}`)
+  console.log(`Started a link run in ${shown(run.dir)}${run.archived ? ` (the previous run moved to ${shown(run.archived)})` : ''}`)
 }
 
 /** Live epics in order, gathered into batches of about BATCH_ITEMS live items; a big epic is a batch of its own. */

@@ -19,7 +19,7 @@ The only repo-specific facts this skill uses; rewrite them when the board moves 
 
 - `BOARD` = `requirements-board` (the board's folder); `REQ` = `requirements-board/requirements`.
 - Check: `npm --prefix requirements-board run check` (the root `npm run check` runs the same).
-- The board's dev server: `http://localhost:5180` (`npm --prefix requirements-board run dev`).
+- The board's dev server: `http://localhost:5180`, or `BOARD_PORT` when set (a worktree's git-ignored `.lane.env` sets it) (`npm --prefix requirements-board run dev`).
 
 ## 1. Register it
 
@@ -115,8 +115,9 @@ the block form, so an inline list fails its byte-for-byte round-trip test.
   are warnings. Fix until there are no errors and no new warnings.
 - Optionally open `<dev server>/#/artifacts/AR-nn?region=<spot>` to see the red box land (the
   board's dev server must be running; "This repo"). For many regions, the read-only spec
-  `BOARD/e2e/artifacts-real.spec.ts` opens every one (`BOARD_E2E_REAL=1 npx playwright test` in BOARD).
-- A stepped diagram: with the dev server running, `npm --prefix BOARD run artifact:steps -- AR-nn`
+  `BOARD/e2e/artifact-regions.spec.ts` opens every one (`BOARD_E2E_REAL=1 npx playwright test
+  artifact-regions` in BOARD; it boots its own read-only board on `BOARD_PORT` + 3).
+- A stepped diagram: with this worktree's dev server running, `npm --prefix BOARD run artifact:steps -- AR-nn`
   screenshots the whole drawing and then each step (`00-whole.png`, `01-<step-id>.png` ...) and
   prints where; read every one.
 - Report the new ID, its regions and the items linked, briefly.

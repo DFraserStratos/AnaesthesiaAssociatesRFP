@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * The Mapped board over the fixture catalogue (port 5182): dragging a feature reorders
+ * The Mapped board over the fixture catalogue: dragging a feature reorders
  * its siblings in the files, a story can change feature and lane in one drop, and a lane
  * collapses. Each test starts from a freshly written fixture.
  */

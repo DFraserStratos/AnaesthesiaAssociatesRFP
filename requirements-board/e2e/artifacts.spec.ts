@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * Artifacts, over the fixture catalogue (port 5182): the tab and its two layouts, the canvas
+ * Artifacts, over the fixture catalogue: the tab and its two layouts, the canvas
  * viewer (sanitised SVG, selectable text, pan and zoom without moving the page, the minimap), the
  * red box from a card's link, mermaid, Markdown and PDF spots, the Linked tab, history, and a
  * stepped diagram (its step bar, the arrow keys, its Steps tab, find and refreshes at a step).

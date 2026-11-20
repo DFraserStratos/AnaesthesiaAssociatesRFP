@@ -23,7 +23,7 @@ The only repo-specific facts this skill uses; rewrite them when the board moves 
 - `BOARD` = `requirements-board` (the board's folder); `REQ` = `requirements-board/requirements`.
   Paths below are relative to the repo root.
 - Check: `npm --prefix requirements-board run check` (the root `npm run check` runs the same).
-- The board's dev server: `http://localhost:5180` (`npm run dev:board` from the repo root, or
+- The board's dev server: `http://localhost:5180`, or `BOARD_PORT` when set (a worktree's git-ignored `.lane.env` sets it) (`npm run dev:board` from the repo root, or
   `npm --prefix requirements-board run dev`).
 - Agent shells here may default to a Node older than 22.18, too old for the board's `.ts` scripts:
   put a newer one first on `PATH` (e.g. from `~/.nvm/versions/node/`).
@@ -217,7 +217,8 @@ static diagram is better. Numbered parts alone are no reason to step a picture.
 8. **Check every step by eye.** With the board running ("This repo"),
    `npm --prefix BOARD run artifact:steps -- AR-nn [--out <dir>]` writes `00-whole.png`, then
    `01-<step-id>.png`, `02-<step-id>.png` and so on, at a laptop size (its out folder is printed at
-   the end). Read every one: the right things visible and highlighted at each step, nothing
+   the end). It shoots the board of the worktree it runs in (`BOARD_PORT`, as the dev server takes it;
+   `--url <base>` names another), so start that board first. Read every one: the right things visible and highlighted at each step, nothing
    appearing before its time, no caption that disagrees with the picture. Step forward through the
    moves in the board too: each mark should set off from its origin and land without a jump. Then
    run the check: it errors on a `show`, `highlight` or move anchor that matches nothing, a move

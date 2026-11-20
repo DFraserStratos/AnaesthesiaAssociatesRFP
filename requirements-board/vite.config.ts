@@ -1,17 +1,14 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { cataloguePlugin } from './server/cataloguePlugin.ts'
+import { loadLaneEnv } from './server/laneEnv.ts'
 
-// A second worktree's ports: a git-ignored `.lane.env` (KEY=value lines) beside the board folder
-// fills in BOARD_PORT when it is not already set.
-const laneEnv = new URL('../.lane.env', import.meta.url)
-if (existsSync(laneEnv) && process.env.BOARD_PORT === undefined) {
-  const m = /^\s*BOARD_PORT\s*=\s*(\d+)\s*$/m.exec(readFileSync(laneEnv, 'utf8'))
-  if (m) process.env.BOARD_PORT = m[1]
-}
+// A second worktree's ports: a git-ignored `.lane.env` (KEY=value lines) at the repository's top
+// fills in BOARD_PORT (and any other variable) when it is not already set.
+loadLaneEnv()
 
 const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }
 

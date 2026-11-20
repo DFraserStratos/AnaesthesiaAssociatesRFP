@@ -57,7 +57,7 @@
   <p class="kicker">Start here</p>
   <h1>Set up the Requirements Board</h1>
   <p class="lede">A requirements catalogue kept as Markdown files in git, a local board to read and arrange it, and Claude Code skills that keep it up to date from your meetings and decisions.</p>
-  <p class="version">Kit {{version}}</p>
+  <p class="version">Kit {{version}} · {{commit}}</p>
 
   <div class="grid" style="margin-top:24px">
     <div class="card"><h3>Files in git</h3><p>Every epic, feature, story and question is a Markdown file. A commit is a version of the requirements.</p></div>
@@ -136,7 +136,7 @@ source is `requirements-board/agent/`: edit them there, then run `npm --prefix r
   <p class="sub">Go to <b>http://localhost:5180</b>. It starts with a few cards, a question and a diagram that explain how it works.</p>
   <ul class="facts">
     <li><b>Start here</b> (top right) opens the About page: the requirements loop, every skill, and what is on the board.</li>
-    <li><b>Settings</b> (the cog): name the board and the project, set your components and statuses, and edit the <b>writing voice</b>: how Claude Code writes your requirements (kept in <code>requirements/VOICE.md</code>), to match how your team writes.</li>
+    <li><b>Settings</b> (the cog): name the project and pick its colour, set your components and statuses, and edit the <b>writing voice</b>: how Claude Code writes your requirements (kept in <code>requirements/VOICE.md</code>), to match how your team writes.</li>
     <li>Start a <b>new Claude Code session</b> so it picks up the skills: type <code>/</code> to see them.</li>
     <li>When you're ready, delete the starter cards (the "Delete these examples" card says how).</li>
   </ul>
@@ -148,6 +148,7 @@ source is `requirements-board/agent/`: edit them there, then run `npm --prefix r
   <table style="margin-top:18px">
     <tr><td>/update-requirements</td><td>Turn a meeting, transcript, email or decision into requirement changes, with a note and a change log.</td></tr>
     <tr><td>/update-build-plan</td><td>Bring the build plan up to date after requirements changes are committed; makes the first plan too.</td></tr>
+    <tr><td>/run-build-phase</td><td>Build one phase of the plan in a fresh session, from its kick-off prompt: checks, review and a progress entry.</td></tr>
     <tr><td>/add-artifact</td><td>Register a diagram, mockup, transcript or document that requirements link to.</td></tr>
     <tr><td>/svg-diagram</td><td>Draw an explainer diagram in the board's house style, saved as an artifact.</td></tr>
     <tr><td>/transcript-reconciler</td><td>Merge two or more transcripts of the same meeting into one.</td></tr>
@@ -161,7 +162,7 @@ source is `requirements-board/agent/`: edit them there, then run `npm --prefix r
   <details><summary>I edited a skill and nothing changed</summary>
     <p>The skills' source is <code>requirements-board/agent/skills/</code>; <code>.claude/skills/</code> holds copies. Edit the source, then run <code>install-skills</code> again. Edits made in <code>.claude/</code> are overwritten.</p></details>
   <details><summary>"Port 5180 is in use"</summary>
-    <p>The board is probably already running in another terminal: open http://localhost:5180. Otherwise stop whatever holds the port.</p></details>
+    <p>The board is probably already running in another terminal: open http://localhost:5180. Otherwise stop whatever holds the port, or start the board on another one: <code>BOARD_PORT=5190 npm --prefix requirements-board run dev</code>.</p></details>
   <details><summary>Errors about Node or TypeScript files</summary>
     <p>The board's scripts need Node 22.18 or newer (<code>node -v</code>). Upgrade, then run the install again.</p></details>
   <details><summary>Checks show an error</summary>

@@ -452,7 +452,7 @@ phase must carry it in four places:
    - the recipe guide (`ATLAS.md`) sections to update.
 2. **A Manual test checklist item**: the phase's own recipes captured first and their shots checked
    by eye, then one full `npm run capture` at the end with no failed recipe and no story without a
-   recipe, and `npm run verify:board` green. The runner does exactly this (`phase-check.mjs
+   recipe, and the board's `verify` green (`npm --prefix BOARD run verify`). The runner does exactly this (`phase-check.mjs
    --capture <IDs>`, then `--capture all`).
 3. **A progress-file bullet**: recipes created or changed, and the capture report's counts before and
    after.
@@ -463,7 +463,7 @@ phase must carry it in four places:
    - without one: the recipe guide and the ROADMAP rule in the read-first list; a "When done:" bullet
      that runs the step (in `BOARD/`, `node scripts/capture.ts --only <its IDs> --dry`, then a
      capture of those IDs, then one full `npm run capture`, starting the app's dev servers in the
-     background if one is down); `npm run verify:board` in the green line.
+     background if one is down); the board's `verify` in the green line.
 
 Rules to keep when re-planning:
 - An item that moves to another phase takes its row with it. A new story with no recipe gets a

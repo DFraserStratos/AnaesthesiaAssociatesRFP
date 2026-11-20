@@ -16,9 +16,12 @@ import type { Item } from '../shared/types.ts'
 import { REQUIREMENTS_DIR, fileExistsIn, loadCatalogue, readConfig, readLayout, writeItem } from '../server/catalogueFs.ts'
 import { applyProposals, type Outcome, type Proposal } from './linkProposals.ts'
 import { pickLinkRun, type LinkRun } from './linkRuns.ts'
+import { shown, userPath } from './userPath.ts'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../.links')
-const dirArg = process.argv.slice(2).find((a) => !a.startsWith('--'))
+const named = process.argv.slice(2).find((a) => !a.startsWith('--'))
+// A folder named on the command line is read from the folder the command was run from.
+const dirArg = named === undefined ? undefined : userPath(named)
 const dry = process.argv.includes('--dry-run')
 
 let run: LinkRun
@@ -29,7 +32,7 @@ try {
   process.exit(1)
 }
 const { dir, files } = run
-const runName = `${dir}${run.started ? ` (started ${run.started})` : ''}`
+const runName = `${shown(dir)}${run.started ? ` (started ${run.started})` : ''}`
 const proposals: Proposal[] = files.flatMap((f) => (JSON.parse(readFileSync(join(dir, f), 'utf8')) as { accepted?: Proposal[] }).accepted ?? [])
 
 const { items, questions, config } = loadCatalogue()

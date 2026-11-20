@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * The Settings page over the fixture catalogue (port 5182): statuses are renamed, added and
+ * The Settings page over the fixture catalogue: statuses are renamed, added and
  * guarded there, and only board.config.json changes; no card file does.
  */
 import { readFileSync, rmSync, writeFileSync } from 'node:fs'

@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * Deleting an item from its sheet, over the fixture catalogue (port 5182): it asks first, naming
+ * Deleting an item from its sheet, over the fixture catalogue: it asks first, naming
  * what goes with it, Keep it leaves the files, and Delete removes the item and everything under it.
  */
 import { existsSync } from 'node:fs'
