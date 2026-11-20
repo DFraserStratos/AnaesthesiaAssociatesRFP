@@ -139,7 +139,7 @@ Agent tools in parallel: B12 (after B02), B13 (REQ-07b after B04); both before B
 | B09 | Diff and history UI | COMPLETE | B09-Q2 to Q4 and the Open rule recorded (accepted decision 23) | 2026-11-20, board 1.21.0; all 13 findings fixed; Diff count can rise (stricter minor rule); journal gains `seen` lines (additive) |
 | B10 | Artifact viewers | COMPLETE | after B01, B03, B04, B07; D-01c, B01-Q2 and D-10 recorded; B10-Q2, Q3 (accepted decision 24) | 2026-11-20, board 1.22.0; all 10 findings and the timeline label fixed; workers and object URLs bounded (1 and 0 after 10 rounds, were 40 and 40) |
 | B11 | Board canvas and views | COMPLETE | after B03, B05, B07; D-06 recorded; B11-Q1 to Q5 recorded (accepted decision 25) | 2026-11-20, board 1.23.0; all 13 findings fixed; lane merge on B05's route; D-04e's last legacy shape (base-less lane lists) retired |
-| B12 | Build-plan tools | PLANNED | after B02; D-08 before build; D-03 if needed; live-plan compatibility | parallel worktree |
+| B12 | Build-plan tools | IN PROGRESS | after B02; D-08 and B12-Q3, Q6 recorded (accepted decision 27); D-03 not needed | parallel worktree |
 | B13 | Consistency and linking tools | PLANNED | REQ-07b after B04 (D-03) | parallel worktree |
 | B14 | Scripts, kit and docs | PLANNED | after B02, B05, B11, B12, B13; D-09 before build | |
 | B15 | Closing audit | PLANNED | after all | |
@@ -161,7 +161,7 @@ decisions" section and resolved in that phase's planning.
 | D-05 | ID reuse rule: SCHEMA "never reused" vs deliberate documented reuse (A-1, R-54); with B05-Q2/Q3 | B05 (user) | B08, B14 | B08 build (planning-only gate in a B05 planning conversation) | SCHEMA text; journal and history handling; possible deleted-ID list (data migration) | **Accepted 2026-11-19** (accepted decision 19): reuse stays; a restore continues its history; journal cut only at a committed deletion |
 | D-06 | Bad-data issue surface and error-boundary recovery | B03 | B06, B10, B11 | B03 build | How later phases report bad data | **Accepted 2026-11-19** (accepted decision 17): panel in place and a "This page" group in the pill; auto-retry on catalogue change; copyable details; page-wide error capture; repaired storage mentioned |
 | D-07 | Git reader contract (cache key/bounds, SHA-256, unstaged moves, deletion and rename bounds) | B08 | B05, B09 | B08 build | Timeline and diff inputs; R-54 history cut | **Accepted 2026-11-19** (accepted decision 19): HEAD + index identity keys, bounded LRUs, hybrid clean-form names, unchanged unstaged moves followed, full lists with `deleted` markers |
-| D-08 | Lane-aware plan state on master | B12 | catch-up lanes | B12 build | update-build-plan behaviour while lanes run | Open |
+| D-08 | Lane-aware plan state on master | B12 | catch-up lanes | B12 build | update-build-plan behaviour while lanes run | **Accepted 2026-11-20** (accepted decision 27): read the configured lane branches' commits and progress rows, with a guard when lanes are declared but not configured |
 | D-09 | Kit export source and target refusal rules | B14 | none | B14 build | Export behaviour and docs | Open |
 | D-10 | Asset version and change signal (event and URL token) | B07 | B09, B10 | B07 build | R-96 and R-104 consumers | **Accepted 2026-11-19** (accepted decision 21): an `assets` entry on the batched delivery and every token in the snapshot; token = git blob hash; `?v=<token>` |
 
@@ -527,6 +527,30 @@ decisions" section and resolved in that phase's planning.
       catch-up lanes, which B12 must not write).
       - **Downstream:** the B12 and B13 specs and kick-off prompts; PLAN "Version numbers in worktree
         phases".
+
+- 2026-11-20, user (B12's planning questions, asked in the B12 session):
+  27. **D-08, B12-Q3 and B12-Q6:**
+      - **D-08, read the lanes, with a guard** (user). A new optional top-level `plan.config.json` key
+        `"lanes": { "branches": ["lane/a", "lane/b"], "complete": "{id} complete:", "checkpoint": "{id} checkpoint:" }`
+        (only `branches` is needed; the two subject patterns are the defaults). The update-build-plan view
+        (`phaseStatus(c, root, { lanes: true })`: plan-state, apply-plan-update's kept baselines,
+        recipe-status `--check`) reads each configured branch other than the current one: commits on
+        `HEAD..<branch>` whose subject matches `complete` mean built, `checkpoint` partly built; the branch's
+        own progress file (`git show <branch>:<progress>`) DONE rows built, IN PROGRESS rows partly built; the
+        stronger state wins. When `status.json` declares `guidance.lanes` and `lanes.branches` is unset,
+        plan-state reports the lanes as unaccounted and apply-plan-update refuses (exit 2, naming them) unless
+        given `--ignore-lanes`. The context pack keeps reading its own branch only (LANES.md step 4).
+      - **B12-Q3, the owner applies the config at the master merge** (user). Project words leave
+        `phase-context.mjs` for optional `runner.context` keys with generic defaults; the exact additive JSON
+        (`runner.context.countNouns`, `runner.context.notPhaseBefore` and the D-08 `lanes` key) is recorded in
+        the B12 entry and applied to the live `plan.config.json` when `board-fixes` merges into master. Old tools
+        ignore the keys. The section names (`decisionsSection`, `handoffSection`) default to the skill's own
+        words "Decisions log" and "Discovered for later", so the live plan needs no key for them.
+      - **B12-Q6, warn only** (user). A fresh-plan remake that reuses a phase number with a new slug points
+        `plan.json` at the new doc; apply-plan-update reports both paths and leaves the old file.
+      - **Downstream:** B14 documents the new keys (`lanes`, `runner.context.countNouns`, `notPhaseBefore`,
+        `decisionsSection`, `handoffSection`) in its whole-file pass; the owner applies the migration at the
+        master merge; the catch-up lanes need nothing until then (they keep master's tools).
 
 ## Planning handoff
 

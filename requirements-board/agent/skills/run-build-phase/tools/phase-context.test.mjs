@@ -37,7 +37,7 @@ test('decision rows: a phase is gated by its number, a range that holds it, or "
 
 test('a plain number names a phase only where it reads as one', () => {
   const yes = ['**27:** prepaid acts', "27's seam", '(16 fee run, 21, 27, 31 to 33)', 'Phase 27 is not built', 'runs after 27.']
-  const no = ['Smith Mon 27 with', '26 to 27', '27 Oct', '2026-11-27', 'US-03.27', 'D27', '$27', '27 tests', 'line 27', 'PERSIST_VERSION 26 to 27']
+  const no = ['Smith Mon 27 with', '26 to 27', '27 Oct', '2026-11-27', 'US-03.27', 'D27', '$27', '27 tests', 'line 27', 'APP_VERSION 26 to 27']
   for (const t of yes) assert.equal(mentions(t, '27'), true, t)
   for (const t of no) assert.equal(mentions(t, '27'), false, t)
   assert.equal(mentions('**27 and 27a:** extend', '27a'), true)
@@ -242,4 +242,38 @@ test('the phase doc: its session split and the recipes it breaks', () => {
   assert.equal(recipesBreaks(doc), '**Recipes this phase breaks.**\n- Recipes that shoot the review table.\n- Any that read "handover".')
   assert.deepEqual(sessionSplit('# none'), { estimated: null, heads: [] })
   assert.equal(recipesBreaks('# none'), null)
+})
+
+test('a track range expands over that track only; a day and month is not a phase (R-19)', () => {
+  const plan = [['18', 'A'], ['20', 'A'], ['U1', 'UI'], ['21', 'A'], ['U2', 'UI'], ['25a', 'A'], ['U3', 'UI'], ['26', 'B'], ['27a', 'B']].map(([num, track]) => ({ num, track }))
+  const ro = parseRunOrder('**Run order.** U3 (U1 to U3 built), then 26, then 27a, then 25a.', plan)
+  assert.deepEqual(ro.steps, [['U3', 'U1', 'U2'], ['26'], ['27a'], ['25a']])
+  assert.equal(runOrderPosition(ro, '26').previous, 'U2')
+  assert.deepEqual(runOrderPosition(ro, '26').previousStep, ['U3', 'U1', 'U2'])
+  assert.deepEqual(parseRunOrder('Run order from here (owner, 18 November 2026): 26, then 27a (18 Nov).', plan).steps, [['26'], ['27a']])
+  assert.deepEqual(parseRunOrder('18, then 20 to 21', plan).steps, [['18'], ['20', '21']], 'a numbered range still skips track phases')
+})
+
+test('the "not a phase" words: generic by default, the plan adds its own (R-151)', async () => {
+  const { vocabulary } = await import('./phase-context.mjs')
+  const generic = vocabulary({})
+  // A version constant and counts are in the generic words.
+  assert.equal(mentions('APP_VERSION 26 to 27', '26', generic), false)
+  assert.equal(mentions('22 tests', '22', generic), false)
+  // No project nouns in the generic words.
+  for (const noun of ['Bookings', 'Procedures', 'Contracts', 'patients', 'invoices', 'Lists', 'tickets']) assert.equal(mentions(`22 ${noun} changed`, '22', generic), true, noun)
+  assert.equal(mentions('see ticket 22 there', '22', generic), true)
+  // A plan's own words come from runner.context.
+  const plan = vocabulary({ countNouns: ['tickets?', 'Bookings?'], notPhaseBefore: ['ticket\\s'] })
+  assert.equal(mentions('22 tickets were closed', '22', plan), false)
+  assert.equal(mentions('22 Bookings', '22', plan), false)
+  assert.equal(mentions('see ticket 22 there', '22', plan), false)
+  assert.equal(mentions('Phase 22 builds it', '22', plan), true)
+  // An invalid fragment falls back to the generic words rather than throwing.
+  assert.equal(mentions('22 tests', '22', vocabulary({ countNouns: ['('] })), false)
+})
+
+test('diffIds reads the ids on a --diff line that also carries --from (R-135)', () => {
+  assert.deepEqual(diffIds('Run `node T/plan-state.mjs --diff US-01.1.1,OQ-04 --from 1a2b3c4` first.'), ['US-01.1.1', 'OQ-04'])
+  assert.deepEqual(diffIds('`plan-state.mjs --diff US-02.1.1 US-02.1.2`'), ['US-02.1.1', 'US-02.1.2'])
 })

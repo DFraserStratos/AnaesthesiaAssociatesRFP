@@ -99,7 +99,8 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
   default.
 - Phases already built are frozen. Never rewrite them; follow-up work goes to a later phase.
 - A phase **in progress** (progress file row `IN PROGRESS`, for example a phase after its first of two
-  sessions) is partly built. Its built part is frozen. Its doc keeps its own drift-check baseline, and
+  sessions, even once its session-1 entry is written; or a checkpoint commit on a build lane) is
+  partly built, never built. Its built part is frozen. Its doc keeps its own drift-check baseline, and
   gains a dated "Requirements changed since <the built part> (<date>)" section saying what the unbuilt
   part must now build differently. If a change would undo built work, stop and ask the user.
 - **Agents test themselves; the owner reviews once at the end** (`ROADMAP.md`, "Owner review: agents
@@ -149,8 +150,9 @@ optional; without the file, defaults apply (a new adopter's plan). The keys:
 | `name`, `title` | The plan's name in prompts and pages (`build plan`, `Build plan`) |
 | `subject`, `appNoun`, `app`, `appCode`, `appSummary` | What is built (`the app`), the word for it (`app`), its folder, the code paths whose change makes the code maps stale (`[app]`), and one sentence for agents |
 | `board`, `requirements`, `boardUrl` | The board folder (`requirements-board`), its requirements folder (`<board>/requirements`), its dev server (`http://localhost:5180`) |
-| `progress` | The progress file (none): a status table with rows `\| NN \| <title> \| DONE \| <date> \|` or `IN PROGRESS`, and a `### [<word>] Phase NN` entry per built phase. `NN` is two digits with an optional letter (`15a`), or a capital letter and digits (`U1`) for an owner-added track outside the numbered run. Without one, `PLAN/status.json` `done` and `in_progress` lists say which phases are built |
+| `progress` | The progress file (none): a status table with rows `\| NN \| <title> \| DONE \| <date> \|` or `IN PROGRESS`, and a `### [<word>] Phase NN` entry per built phase (a phase with an `IN PROGRESS` row is partly built, not built, whatever entry it has; an entry with no row at all counts as built). `NN` is two digits with an optional letter (`15a`), or a capital letter and digits (`U1`) for an owner-added track outside the numbered run. Without one, `PLAN/status.json` `done` and `in_progress` lists say which phases are built |
 | `firstPhase` | The first phase number this plan owns (`01`); phases below it are ignored in the progress file |
+| `lanes` | Build lanes, when phases are built in parallel git worktrees (none): `{ "branches": ["lane/a", "lane/b"], "complete": "{id} complete:", "checkpoint": "{id} checkpoint:" }` (the two subject patterns are these defaults). The update view (plan-state, apply-plan-update, `recipe-status.mjs --check`) reads each branch other than the current one: a `complete` commit or a DONE row in the branch's progress file means built, a `checkpoint` commit or an IN PROGRESS row partly built. When `status.json` declares `guidance.lanes` but this key names fewer branches, plan-state says so and apply-plan-update refuses (`--ignore-lanes` overrides). A phase's own context pack reads only its own branch |
 | `outOfScopeLanes` | Board swim lanes left out of the plan, e.g. `["Future Work"]` (none) |
 | `settledStatuses`, `unsettledStatuses` | Status codes to build first and to flag "confirm before building" (from the board config's `settle` flags) |
 | `olderCatalogues` | Earlier locations of the catalogue, `{ root, items, questions, notes }`, so diffs across a move stay rename-aware (none) |
@@ -159,7 +161,7 @@ optional; without the file, defaults apply (a new adopter's plan). The keys:
 | `gapAnalysis` | `codeGuide`, `history`, `sourcesExample`, `outOfScope`, `outOfScopeShort`, `demoTriggerRule`, `surfaces`, `maps` (`[{ key, scope }]`, one code-mapping agent each), `modelCode`, `decisionsLog`, `demoScript`, `themeBullets` |
 | `planning` | Fresh-plan text: `history`, `ownerRules`, `styleRefs`, `guidance`, `research`, `criticChecks` |
 | `phaseDoc` | `extraSections` (`afterWorkItems`, `afterChecklist`, `afterScreenshots`: "## Name: what it holds"), `readFirst` (the reads a phase needs: the prompt's read-first list, or with a runner the reads in the doc's "Before you start"), `reference`, `workItemRules`, `promptRules`, `reviewChecks` |
-| `runner` | The phase runner (none). `skill`: the skill every kick-off prompt loads (e.g. `run-build-phase`); when set, the workflows write slim doc-first prompts and `recipe-status.mjs --check` accepts a prompt that loads it in place of running the capture itself (`config.mjs` resolves it as `runnerSkill`). The rest is read by the runner's tools (`phase-check.mjs --help` has the full shape): `checks` (the green commands as named checks, each `name`, `aliases`, `cwd`, `cmd`, `needs`, `after`, `changed` (its quick `--changed` form), `focus`, `timeout`, `equivalent`), `maxParallel`, `logDir` (git-ignored working files, `.build-phase`), `concurrency` (why the checks may run side by side), `devServers` (`name`, `port`, `url`, `cwd`, `cmd`), `devCommand`, `startTimeout`, `capture` (`cwd`, `cmd`, `onlyFlag`, `dryFlag`, `report`, `timeout`), and `context` for the context pack (`budgetKB`, `fullEntryKB`, `progressSections`, `roadmapSections`, `sequencingSection`, `sequencingAlways`, `designDir`) |
+| `runner` | The phase runner (none). `skill`: the skill every kick-off prompt loads (e.g. `run-build-phase`); when set, the workflows write slim doc-first prompts and `recipe-status.mjs --check` accepts a prompt that loads it in place of running the capture itself (`config.mjs` resolves it as `runnerSkill`). The rest is read by the runner's tools (`phase-check.mjs --help` has the full shape): `checks` (the green commands as named checks, each `name`, `aliases`, `cwd`, `cmd`, `needs`, `after`, `changed` (its quick `--changed` form), `focus`, `timeout`, `equivalent`), `maxParallel`, `logDir` (git-ignored working files, `.build-phase`), `concurrency` (why the checks may run side by side), `devServers` (`name`, `port`, `url`, `cwd`, `cmd`), `devCommand`, `startTimeout`, `capture` (`cwd`, `cmd`, `onlyFlag`, `dryFlag`, `report`, `timeout`), and `context` for the context pack (`budgetKB`, `fullEntryKB`, `progressSections`, `roadmapSections`, `sequencingSection`, `sequencingAlways`, `runOrder`, `designDir`, `countNouns` and `notPhaseBefore` (regex fragments: the plan's own words after or before a number that make it not a phase, added to the generic ones), `decisionsSection` and `handoffSection` (the progress file's decisions log and handoff list headings, default `Decisions log` and `Discovered for later`)) |
 | `index` | The page's words: `title`, `kicker`, `heading`, `intro` (`{phases}`, `{first}`, `{last}`, `{commit}` filled in), `themesHeading`, `howTo`, `callouts`, `footer`, `tracks` (`{ "<track>": "setup" \| "A" … "E" }`) |
 
 `PLAN/units.json` (every gap, DM and RV id to plan) is generated by `assemble-gaps.mjs`; never edit it.
@@ -179,22 +181,31 @@ third cell (`15b, 28 to 32`, or `all`): `phase-briefs.mjs` reads them.
    - the changed items (with current status) and changed questions;
    - the notes and change logs added (`changeLogsAdded`);
    - `domainModelChanged` and `appCodeChanged`;
-   - `builtPhases` and `inProgressPhases`;
+   - `builtPhases` and `inProgressPhases`, counting what the build lanes have built or checkpointed
+     (config `lanes`); and `lanes`, when lanes are declared or configured;
    - the current coverage.
 
    It reads the catalogue in every place it has lived (`olderCatalogues`), with rename detection, so a
    moved file counts only if its content changed. Never diff the catalogue by hand with a plain
    `git diff`. If the baseline equals the target, or nothing in the catalogue changed, stop and say so.
+   If it reports `lanes.unaccounted` (status.json declares build lanes the config names no branch for),
+   stop and tell the user: a lane's built or checkpointed phases would be planned as unbuilt. Add the
+   `lanes` key with the user, or run the update after the lanes join.
 3. **Pick the items to re-grade.** Run `node T/regrade-ids.mjs <sha>`. It keeps:
    - items changed in substance or added (`req-changes.mjs` `substance()`). It ignores changes only
-     to `artifacts:`, `related:`, `sources:`, `order:`, `swimlane:`, `images:` or link markup; a real
+     to `artifacts:`, `related:`, `sources:`, `order:`, `swimlane:`, `images:` or link markup (a lane
+     move between two in-scope lanes, say); a real
      status change counts (for example Proposed to Agreed, looked up in `REQ/board.config.json`:
      status files hold numbers), but a pure recode or relabel does not: statuses are normalised
      through `REQ/status-recodes.json` before diffing;
+   - items whose scope changed: in scope at `<sha>` but not at the baseline (a story moved out of an
+     out-of-scope lane with no other edit, a feature whose stories moved), listed under `scopeChanged`;
    - the `affects` of questions changed in substance.
 
    It drops retired items and the out-of-scope lanes, plus features whose live stories are all in
-   those lanes, and reports the counts and the share of in-scope items. Tell the user the counts.
+   those lanes, and reports the counts and the share of in-scope items; items in scope at the
+   baseline that are out of scope or gone at `<sha>` are listed under `dropped`. Everything is read at
+   `<sha>`, not from the working tree. Tell the user the counts.
 4. **Read the change logs.** Read the files in `changeLogsAdded` and skim the diffs you need
    (`plan-state.mjs --to <sha> --diff <IDs>`). Then write `changeNotes`: **at most about 40 lines**,
    because every outline agent carries them. Include:
@@ -223,7 +234,8 @@ third cell (`15b, 28 to 32`, or `all`): `phase-briefs.mjs` reads them.
    - `epics`: the parsed JSON from step 1;
    - `reuseMaps`: `!appCodeChanged`;
    - `runDelta`: `domainModelChanged`;
-   - `runReverse`: true if any changed item is now retired or has moved to an out-of-scope lane;
+   - `runReverse`: true if any changed item is now retired or has moved to an out-of-scope lane (any
+     id in `regrade-ids.mjs`'s `dropped`);
    - `runThemes`: true only if you re-grade more than about 40% of in-scope items.
 3. Check the DM ids before merging. Compare the delta file's index with the committed one
    (`git diff PLAN/analysis/domain-model-delta.md`). If continuing deltas changed number, map them
@@ -300,7 +312,10 @@ before going on.
 1. **Apply.** Run `node T/apply-plan-update.mjs <outline journal> <detail journal> [<re-run journals> ...] <sha>`.
    - It rebuilds `plan.json` exactly from the runs; later journals win for a phase.
    - It moves the drift-check baseline only on baseline lines, never in ranges, history or README.md.
-   - It keeps the baseline of phases the progress file marks DONE or IN PROGRESS.
+   - It keeps the baseline of phases the progress file marks DONE or IN PROGRESS, and of phases a
+     build lane has completed or checkpointed (config `lanes`). It refuses, writing nothing, while
+     `status.json` declares lanes the config names no branch for (`--ignore-lanes` overrides, only
+     between waves).
    - It regenerates `index.html`. Its output must show no `indexWarnings`.
    - Then review `PLAN/status.json` `guidance` (`safe`, `wait`, `headline`, `parallel`, `as_of`), the
      page's "start now" calls. Drop a call this update overtook (the phase was re-planned, renumbered
@@ -386,7 +401,9 @@ first when a plan exists.
    `ROADMAP.md` (with the owner decisions table and the standing rules) and every phase doc and
    prompt, each reviewed once.
 4. **Publish.** `node T/apply-plan-update.mjs <dev-plan transcript dir>/journal.jsonl <sha>` builds
-   `plan.json` and `index.html`. Then run the Stage 3 checks (coverage, screenshot check, consistency).
+   `plan.json` and `index.html`. A phase number the new plan reuses with a different slug gets the new
+   doc; when the old plan's doc for it is still in `phases/`, the tool names both (`superseded`) and
+   leaves the old file for you to deal with. Then run the Stage 3 checks (coverage, screenshot check, consistency).
 5. **Records.** Write `PLAN/README.md`: what the plan is, how it was made, the catalogue snapshot,
    where to start, and an "Update history" section with this run as its first line. Add any other
    record "This repo" names (for example a pointer in `CLAUDE.md`).

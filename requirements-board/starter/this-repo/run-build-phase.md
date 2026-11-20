@@ -17,10 +17,14 @@ root.
   (Node 22.18 or newer). A phase never edits a requirement's text or status or any artifact: it names
   the change for `/update-requirements` in its progress entry.
 - **Screenshots:** `<TODO: on or off; with capture, recipes in REQ/capture/recipes/ and ATLAS.md>`.
-- **Demo guide:** `<TODO: the demo or user guide a phase patches, or "none">`.
+- **Demo guide:** `<TODO: the demo or user guide files a phase patches (and any large page to grep, never read whole), or "none">`.
+- **State version:** `<TODO: the app's persisted-state version a phase bumps when stored data changes shape (file and constant), or "none">`.
+- **Source rule:** `<TODO: the rule that wins where a design mockup simplified a business rule (for example "the requirements catalogue"), or "none">`.
 - **Progress file:** `<TODO: the progress file, or none (then PLAN/status.json says what is built)>`.
   Status rows `| <id> | <title> | DONE | <YYYY-MM-DD> | <summary> |` (or `IN PROGRESS`); entries
-  `### Phase <id> · <title> (<YYYY-MM-DD>)`.
+  `### Phase <id> · <title> (<YYYY-MM-DD>)`; its decisions section `<TODO: heading, e.g. "## Decisions log">`
+  and handoff list `<TODO: heading, e.g. "## Discovered for later">` (other headings: set
+  `runner.context.decisionsSection` and `handoffSection`).
 - **Plan page:** `PLAN/status.json` (`in_progress`, `next`, `guidance`) rendered into
   `PLAN/index.html` by `node P/build-index.mjs`. Run order: `PLAN/ROADMAP.md` "Sequencing rules".
 - **Tracks:** one, the plan's numbered phases.

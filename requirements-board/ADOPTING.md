@@ -91,8 +91,10 @@ each block, and change nothing else unless it is plainly wrong:
   prompt): the plan folder, the file holding the project's coding rules and the standing rules every
   phase follows, the app's folder, its house rules in brief, the design references and viewports
   (or "none"), whether screenshots are captured, the demo or user guide a phase patches (or "none"),
-  the progress file and the exact shape of its status rows and entries (the tools parse them), the
-  plan page and where the run order lives, and the plan's tracks. Then give the plan's
+  the progress file and the exact shape of its status rows and entries (the tools parse them) and its
+  decisions and handoff headings, the app's persisted-state version (or "none"), the source rule that
+  wins over a simplified mockup (or "none"), the plan page and where the run order lives, and the
+  plan's tracks. Then give the plan's
   `plan.config.json` a `runner` key:
   - `skill`: `"run-build-phase"`. With it set, `update-build-plan` writes slim kick-off prompts that
     load this skill and keeps everything else in the phase docs; leave it out and prompts carry the
@@ -103,7 +105,8 @@ each block, and change nothing else unless it is plainly wrong:
   - `devServers` (each `name`, `port`, `url`, `cwd`, `cmd`) and `devCommand`, with `startTimeout`;
     and, with screenshot capture, `capture` (`cwd`, `cmd`, `onlyFlag`, `dryFlag`, `report`).
   - `context` (optional): the context pack's budget and the progress-file and `ROADMAP.md` sections
-    it quotes. `logDir` (default `.build-phase`) holds the session's working files and git-ignores
+    it quotes, and the project's own words that make a number not a phase (`countNouns`,
+    `notPhaseBefore`) and its progress-file headings (`decisionsSection`, `handoffSection`). `logDir` (default `.build-phase`) holds the session's working files and git-ignores
     itself.
 
   `node BOARD/agent/skills/run-build-phase/tools/phase-check.mjs --help` gives the full shape, and

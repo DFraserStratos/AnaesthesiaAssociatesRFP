@@ -16,3 +16,8 @@ aa-prototype
 \bNHI\b
 hl7
 southern cross
+PERSIST_VERSION
+master-demo-guide
+\bRFP rule
+demo clock
+control panel

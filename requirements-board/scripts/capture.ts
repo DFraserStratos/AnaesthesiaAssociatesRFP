@@ -2,7 +2,9 @@
  * Take screenshots of the project's own app from recipes and link them to the catalogue.
  *
  *   npm run capture                              every recipe, then the report
- *   node scripts/capture.ts --only US-03.2.4,EP-03   those items (an epic or feature takes its descendants)
+ *   node scripts/capture.ts --only US-03.2.4,EP-03   those items (an epic or feature takes its descendants),
+ *                                                   then the report: their rows from this run, every other row
+ *                                                   from the files, failures outside the run carried over
  *   node scripts/capture.ts --only US-03.2.4 --dry   run every step and selector, write nothing
  *
  * Set up in the `capture` section of `board.config.json`: each screenshot app's dev-server URL,
@@ -29,6 +31,7 @@ import { HIGHLIGHT } from '../shared/highlight.ts'
 import { compareIds } from '../shared/ids.ts'
 import type { ImageRef, Item } from '../shared/types.ts'
 import { fileFor, isGenerated, pruneGenerated } from './captureFiles.ts'
+import { INVALID_RECIPE, mergeFailures, priorFailures } from './captureReport.ts'
 
 const { config, problems: configProblems } = readConfig()
 if (configProblems.length) {
@@ -515,7 +518,7 @@ function writeReport(items: Item[], recipes: Map<string, Recipe>, broken: Map<st
   const out = [
     '# Screenshot report',
     '',
-    'Written by `npm run capture` (the board\'s scripts/capture.ts) on a full run. Do not edit by hand.',
+    'Written by `npm run capture` (the board\'s scripts/capture.ts); a run limited to some IDs updates their rows and keeps other failures. Do not edit by hand.',
     '',
     `Scope: every story plus every feature with no stories (${inScope.length} items, ${stories.length} stories). Features with stories are captured only when they have an overview screen.`,
     '',
@@ -535,7 +538,7 @@ function writeReport(items: Item[], recipes: Map<string, Recipe>, broken: Map<st
     out.push(...(lines.length ? lines : ['None.']), '')
   }
   section('Failed recipes', [
-    ...[...broken].sort(([a], [b]) => compareIds(a, b)).map(([id, p]) => line(id, p.join('; '))),
+    ...[...broken].sort(([a], [b]) => compareIds(a, b)).map(([id, p]) => line(id, `${INVALID_RECIPE}${p.join('; ')}`)),
     ...[...failed].sort(([a], [b]) => compareIds(a, b)).map(([id, e]) => line(id, e)),
   ])
   section('Absent from the app', absent.map((r) => line(r.id, r.absentReason)))
@@ -640,9 +643,20 @@ async function main() {
     const mine = errors.filter((i) => scope.has(i.id))
     for (const i of mine) console.error(`catalogue ERROR ${i.id}: ${i.message}`)
     if (errors.length > mine.length) console.error(`(${errors.length - mine.length} other catalogue error(s) outside this run; see npm run check)`)
+    const afterItems = Object.values(after.items).map((r) => r.data)
     if (fullRun) {
-      writeReport(Object.values(after.items).map((r) => r.data), recipes, broken, failed)
+      writeReport(afterItems, recipes, broken, failed)
       console.log(`Report: ${shown(REPORT_PATH)}`)
+    } else {
+      // A run limited to some IDs rewrites the report too: its IDs take this run's result, every other
+      // row follows from the files as on a full run, and failures outside the run are carried over.
+      const titles = new Map(afterItems.map((i) => [i.id, i.title]))
+      const prior = priorFailures(existsSync(REPORT_PATH) ? readFileSync(REPORT_PATH, 'utf8') : null, (id) => titles.get(id) ?? '')
+      if (!prior) console.log(`Report not updated (${shown(REPORT_PATH)} is missing or not written by this runner): run the full capture to write it.`)
+      else {
+        writeReport(afterItems, recipes, broken, mergeFailures(prior, scope, failed, broken, (id) => recipes.has(id)))
+        console.log(`Report: ${shown(REPORT_PATH)} (the rows of ${scope.size} id(s) from this run; failures outside it carried over)`)
+      }
     }
   }
   const brokenInScope = [...broken.keys()].filter((id) => scope.has(id)).length

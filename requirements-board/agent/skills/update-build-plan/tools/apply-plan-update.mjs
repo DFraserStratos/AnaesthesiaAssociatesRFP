@@ -7,7 +7,13 @@
 //   journal after the run it repairs. (A single journal from the old one-step workflow-plan-update.js
 //   still works.)
 //   --built   extra phases whose docs keep their baseline. Phases the progress file (or status.json) marks
-//             DONE or IN PROGRESS are always kept: a partly built phase's drift check stays on its own baseline.
+//             DONE or IN PROGRESS are always kept: a partly built phase's drift check stays on its own baseline;
+//             so are phases a build lane has completed or checkpointed (config `lanes`).
+//   --ignore-lanes  run although status.json declares build lanes the config names no branch for, or a
+//             configured lane branch does not exist (refused otherwise, exit 2: their phases' baselines
+//             would move).
+// A phase number the new plan reuses with a different slug (a fresh-plan remake) gets the new doc path; when
+// the old doc is still in phases/ both paths are reported (stderr and "superseded"); nothing is moved.
 import fs from 'node:fs'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
@@ -25,9 +31,17 @@ if (!journals.length || !commit) {
 }
 const ROOT = process.cwd()
 const CU = path.join(ROOT, config.plan)
+const status = phaseStatus(config, ROOT, { lanes: true })
+if ((status.lanes.unaccounted.length || status.lanes.missing.length) && !argv.includes('--ignore-lanes')) {
+  const why = status.lanes.unaccounted.length
+    ? `status.json declares build lanes (${status.lanes.unaccounted.join(', ')}) but ${config.configFile} names no branch for ${status.lanes.configured.length ? 'all of them' : 'them'} (config "lanes": { "branches": [...] })`
+    : `the configured lane branch${status.lanes.missing.length > 1 ? 'es' : ''} ${status.lanes.missing.join(', ')} ${status.lanes.missing.length > 1 ? 'do' : 'does'} not exist`
+  console.error(`apply-plan-update: ${why}. Phases built or checkpointed on a lane cannot be kept, so nothing was written. Fix the config, run after the join, or pass --ignore-lanes.`)
+  process.exit(2)
+}
 const built = new Set([
   ...(argv.includes('--built') ? argv[argv.indexOf('--built') + 1].split(',') : []),
-  ...phaseStatus(config, ROOT).keepBaseline,
+  ...status.keepBaseline,
 ])
 
 const results = journals.flatMap(j => {
@@ -43,13 +57,21 @@ const detail = num => results.filter(r => [`review:${num}`, `update:${num}`, `wr
 const planPath = path.join(CU, 'plan.json')
 const old = fs.existsSync(planPath) ? JSON.parse(fs.readFileSync(planPath, 'utf8')) : { commit: commit, phases: [] }
 const oldByNum = new Map(old.phases.map(p => [p.num, p]))
+// An update run (its outline labelled architect:update) keeps every existing phase's doc. A fresh-plan
+// remake (workflow-dev-plan.js, labelled architect) keeps the old doc only for the same phase (same slug),
+// and moves to the new path only once the remake has written a doc there.
+const updateRun = results.some(r => r.label === 'architect:update')
+const superseded = []
 const phases = outline.phases.map(p => {
   const o = oldByNum.get(p.num)
   const d = detail(p.num)
-  const file = o?.file || `phases/phase-${p.num}-${p.slug}.md`
+  const fresh = `phases/phase-${p.num}-${p.slug}.md`
+  const file = o?.file && (updateRun || !p.slug || !o.slug || o.slug === p.slug || !fs.existsSync(path.join(CU, fresh))) ? o.file : fresh
+  if (o?.file && file !== o.file && fs.existsSync(path.join(CU, o.file))) superseded.push({ num: p.num, old: o.file, new: file })
   return { ...p, file, prompt_file: file.replace(/\.md$/, '.prompt.md'), goal_short: d?.goal_short || o?.goal_short || p.goal, checks: d?.checks || o?.checks || [] }
 })
 for (const p of phases) if (!fs.existsSync(path.join(CU, p.file))) console.warn(`warning: phase ${p.num} has no doc at ${p.file}`)
+for (const s of superseded) console.warn(`warning: phase ${s.num} now uses ${s.new}; the old doc ${s.old} is still in the plan folder (left as it is)`)
 fs.writeFileSync(planPath, JSON.stringify({ commit, phases, parked: outline.parked, sequencing_rules: outline.sequencing_rules, milestones: outline.milestones }, null, 1) + '\n')
 
 // Move the baseline: every plan doc except the gap-tool outputs, the tools, README.md (its history and
@@ -75,4 +97,4 @@ const run = spawnSync('node', [path.join(TOOLS, 'build-index.mjs'), '--plan', co
 if (run.status !== 0) { process.stderr.write(run.stderr); process.exit(1) }
 const built_ = run.stdout.trim().split('\n')
 const warnings = run.stderr.split('\n').filter(l => /^\s+- /.test(l)).map(l => l.trim().slice(2))
-console.log(JSON.stringify({ phases: phases.length, keptBaseline: [...built].join(', '), updatedDetails: phases.filter(p => detail(p.num)).map(p => p.num).join(', '), baseline: `${from[1]} -> ${commit.slice(0, 7)}`, filesRebased: touched, indexWarnings: warnings, index: built_.slice(-2) }, null, 1))
+console.log(JSON.stringify({ phases: phases.length, keptBaseline: [...built].join(', '), updatedDetails: phases.filter(p => detail(p.num)).map(p => p.num).join(', '), baseline: `${from[1]} -> ${commit.slice(0, 7)}`, filesRebased: touched, indexWarnings: warnings, index: built_.slice(-2), ...(superseded.length ? { superseded } : {}) }, null, 1))

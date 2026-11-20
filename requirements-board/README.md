@@ -31,7 +31,7 @@ npm test             # Vitest: file round-trip, check rules, IDs, the file API, 
 npm run test:e2e     # Playwright on a fixture catalogue (5182); BOARD_E2E_REAL=1 adds this project's live checks (5181, read-only)
 npm run build        # typecheck + bundle (sanity only; the app needs the dev server)
 npm run typecheck    # tsc -b over the app, server, scripts and tests (plain `tsc -p .` checks nothing)
-npm run verify       # typecheck + unit tests + catalogue check: run before handing work back
+npm run verify       # typecheck + unit tests + catalogue check + the agent tools' node --test suites: run before handing work back
 npm run check        # validate the catalogue, exit 1 on errors
 npm run export:csv   # regenerate the Miro CSVs (-- --out <dir> to write elsewhere)
 npm run links:index  # compact catalogue index and epic batches for the linking agents (.links/)
@@ -443,7 +443,9 @@ catalogue. It is optional: a project with no `capture` section in `board.config.
   limits the run (an epic or feature ID takes its descendants); `--dry` runs every step and selector
   without writing anything.
 - **Output:** `requirements/assets/<ID>/<app>-<name>[-<state>].png`, linked into the item's `images`
-  (hand-added images are kept; stale generated files are deleted), and the report on a full run.
+  (hand-added images are kept; stale generated files are deleted), and the report: a full run writes
+  it whole; a run limited with `--only` updates those IDs' rows and the totals, carrying over failures
+  recorded for other IDs (`scripts/captureReport.ts`).
   A file counts as generated when its name starts with a screenshot app's key and a dash
   (`scripts/captureFiles.ts`), so give hand-added screenshots another prefix (`hand-dashboard.png`,
   not `web-dashboard.png`).

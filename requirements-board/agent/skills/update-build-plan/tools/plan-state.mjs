@@ -1,11 +1,13 @@
 // The build plan's state, for updating it after the catalogue changes.
-// Usage (repo root): node <tools>/plan-state.mjs [--plan <dir>] [--to <ref>] [--coverage] [--diff [IDs]]
+// Usage (repo root): node <tools>/plan-state.mjs [--plan <dir>] [--to <ref>] [--coverage] [--diff [IDs] [--from <ref>]]
 //   --plan <dir>   the plan folder (see config.mjs for the default)
 //   --to <ref>     compare the plan's baseline (plan.json "commit") with this ref; default: the working tree
 //   --coverage     print only the coverage check (exit 1 if incomplete); ids only on built phases that are
 //                  no longer units are listed as delivered, not unknown
 //   --diff [IDs]   the drift check: print the diff since the baseline of each changed item or question
 //                  (only the IDs given, comma or space separated, when there are any) and of domain-model.md
+//   --from <ref>   with --diff: diff from this commit instead of plan.json's (a phase doc's own drift
+//                  baseline: the context pack prints the exact command)
 // The catalogue may have moved since the baseline; req-changes.mjs reads every layout with rename
 // detection, so a moved file counts only if its content changed.
 // Prints JSON: baseline, to, changed catalogue items and questions, the notes and change logs added
@@ -26,6 +28,11 @@ const CU = path.join(ROOT, config.plan)
 const LAYOUTS = layoutsOf(config)
 const argv = stripPlanArg()
 const to = argv.includes('--to') ? argv[argv.indexOf('--to') + 1] : null
+const fromArg = argv.includes('--from') ? argv[argv.indexOf('--from') + 1] : null
+if (argv.includes('--from') && (!fromArg || fromArg.startsWith('--') || !argv.includes('--diff'))) {
+  console.error('plan-state: --from <ref> goes with --diff.')
+  process.exit(2)
+}
 
 const plan = JSON.parse(fs.readFileSync(path.join(CU, 'plan.json'), 'utf8'))
 const unitsFile = path.join(CU, 'units.json')
@@ -35,8 +42,14 @@ const seen = new Map()
 for (const p of plan.phases) for (const id of p.covers) seen.set(id, [...(seen.get(id) || []), p.num])
 for (const x of plan.parked || []) seen.set(x.id, [...(seen.get(x.id) || []), 'parked'])
 // Built phases: DONE rows of the progress file's status table, or a "### [<word>] Phase NN" entry (letter
-// suffixes such as 15a included). A phase IN PROGRESS is not built.
-const { built: builtPhases, inProgress: inProgressPhases } = phaseStatus(config, ROOT)
+// suffixes such as 15a included). A phase IN PROGRESS is not built. Outside --diff this is the update view:
+// the plan's build lanes (config `lanes`) count too, and lanes status.json declares that the config
+// does not name are reported, on stderr and under "lanes".
+const phaseState = phaseStatus(config, ROOT, { lanes: !argv.includes('--diff') })
+const { built: builtPhases, inProgress: inProgressPhases } = phaseState
+const lanes = phaseState.lanes
+if (lanes?.unaccounted.length) console.error(`plan-state: status.json declares build lanes (${lanes.unaccounted.join(', ')}) but ${config.configFile} names no branch for ${lanes.configured.length ? 'all of them' : 'them'} (config "lanes": { "branches": [...] }), so phases built or checkpointed on a lane are not counted. Do not update the plan until they are: add the key, or wait for the join.`)
+if (lanes?.missing.length) console.error(`plan-state: configured lane branch(es) not found: ${lanes.missing.join(', ')}.`)
 
 // An id on a built phase that is no longer a unit was delivered by that phase (it now Matches): not stale.
 const builtOnly = k => seen.get(k).every(n => builtPhases.includes(n))
@@ -55,7 +68,8 @@ if (argv.includes('--coverage')) {
 const git = (...a) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8' })
 const range = to ? [plan.commit, to] : [plan.commit]
 const diff = paths => git('diff', '--name-status', ...range, '--', ...paths).trim().split('\n').filter(Boolean)
-const changes = requirementChanges({ cwd: ROOT, from: plan.commit, to, layouts: LAYOUTS })
+// --from (with --diff only) moves the start of the diff; everything else runs from plan.json's baseline.
+const changes = requirementChanges({ cwd: ROOT, from: fromArg ?? plan.commit, to, layouts: LAYOUTS })
 const exists = rel => fs.existsSync(path.join(ROOT, rel))
 const status = id => {
   const f = path.join(ROOT, pathOf(id, exists, LAYOUTS))
@@ -63,14 +77,17 @@ const status = id => {
 }
 
 if (argv.includes('--diff')) {
-  const ids = argv.slice(argv.indexOf('--diff') + 1).filter(a => !a.startsWith('--')).flatMap(a => a.split(',')).map(s => s.trim()).filter(Boolean)
+  const after = argv.slice(argv.indexOf('--diff') + 1)
+  const ids = after.filter((a, i) => !a.startsWith('--') && !['--from', '--to', '--plan'].includes(after[i - 1])).flatMap(a => a.split(',')).map(s => s.trim()).filter(Boolean)
   const wanted = c => !ids.length || ids.includes(c.id)
+  const base = fromArg ?? plan.commit
+  const dRange = to ? [base, to] : [base]
   const picked = [...changes.items, ...changes.questions].filter(wanted)
   const dm = changes.domainModel.length ? changes.domainModel : []
-  console.log(`Drift since ${plan.commit.slice(0, 7)}${to ? ` to ${to}` : ' (working tree)'}: ${picked.length ? picked.map(c => `${c.id} (${c.change})`).join(', ') : 'none of the covered items or questions changed'}; domain-model.md ${dm.length ? 'changed' : 'unchanged'}.`)
+  console.log(`Drift since ${base.slice(0, 7)}${to ? ` to ${to}` : ' (working tree)'}: ${picked.length ? picked.map(c => `${c.id} (${c.change})`).join(', ') : 'none of the covered items or questions changed'}; domain-model.md ${dm.length ? 'changed' : 'unchanged'}.`)
   for (const c of [...picked, ...dm]) {
     const paths = [c.file, c.was].filter(Boolean)
-    process.stdout.write(c.change === 'A' && !to ? `\n(new) ${c.file}\n` : git('diff', '-M', ...range, '--', ...paths))
+    process.stdout.write(c.change === 'A' && !to ? `\n(new) ${c.file}\n` : git('diff', '-M', ...dRange, '--', ...paths))
   }
   process.exit(0)
 }
@@ -86,6 +103,7 @@ console.log(JSON.stringify({
   appCodeChanged: config.appCode.length ? diff(config.appCode).length > 0 : true,
   builtPhases,
   inProgressPhases,
+  ...(lanes && (lanes.declared.length || lanes.configured.length) ? { lanes: { declared: lanes.declared, branches: lanes.branches, missing: lanes.missing, unaccounted: lanes.unaccounted } } : {}),
   units: units.length,
   phases: plan.phases.map(p => ({ num: p.num, title: p.title, file: p.file, covers: p.covers })),
   parked: plan.parked,

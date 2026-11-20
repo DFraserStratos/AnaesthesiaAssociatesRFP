@@ -36,6 +36,7 @@ import { basename, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { linkFrom, loadConfig, phaseStatus, statusListsOf } from './config.mjs';
+import { loadRecodes, normaliseStatus } from './scope.mjs';
 
 const config = loadConfig();
 const CWD = process.cwd();
@@ -143,7 +144,13 @@ const openDeps = (p) => (p.depends_on ?? []).filter((d) => phaseNums.has(d) && !
 let boardConfig = {};
 try { boardConfig = JSON.parse(readFileSync(join(CWD, config.requirements, 'board.config.json'), 'utf8')); } catch {}
 const answeredCodes = new Set(statusListsOf(boardConfig).questionStatuses.filter((s) => s.role === 'answered').map((s) => String(s.code)));
-const qStatus = (text) => text?.match(/^status:\s*"?([^"\s]+)/m)?.[1] ?? null;
+// Both sides read as today's code (status-recodes.json, newest list), so a question answered before a
+// names-to-codes recode (stored "Answered" then, "4" now) is not "answered since".
+const recodes = loadRecodes(CWD, config.requirements);
+const qStatus = (text) => {
+  const raw = text?.match(/^status:\s*"?([^"\s]+)/m)?.[1] ?? null;
+  return raw === null ? null : String(normaliseStatus(recodes, 'question', raw));
+};
 const qPath = (id) => `${config.requirements}/questions/${id}.md`;
 const qNow = (id) => (existsSync(join(CWD, qPath(id))) ? qStatus(readFileSync(join(CWD, qPath(id)), 'utf8')) : null);
 const qThen = (id) => {
@@ -272,13 +279,23 @@ const laneRows = LANES.length
     ).join('')}</ul>`
   : '';
 
+// The lead above "Start now": how many safe phases may run together, and the parallel note (shown with the
+// lanes even when no phase is marked safe).
+const parallelNote = G.parallel ? inlineMd(G.parallel) : '';
+const nowLead =
+  safeNow.length > 1
+    ? `<p class="lead">These ${safeNow.length} can run at the same time.${parallelNote ? ` ${parallelNote}` : ''}</p>`
+    : parallelNote && (safeNow.length || LANES.length)
+      ? `<p class="lead">${parallelNote}</p>`
+      : '';
+
 const nowSection = `
 <section class="now" aria-labelledby="h-now">
   <h2 id="h-now">Start now</h2>
   ${wip.length ? `<p class="lead">In progress: ${wip.map((p) => `<a href="#p-${esc(p.num)}">${esc(p.num)} ${esc(p.title)}</a>`).join(', ')}.</p>` : ''}
-  ${safeNow.length ? `${safeNow.length > 1 ? `<p class="lead">These ${safeNow.length} can run at the same time.${G.parallel ? ` ${inlineMd(G.parallel)}` : ''}</p>` : G.parallel ? `<p class="lead">${inlineMd(G.parallel)}</p>` : ''}
+  ${nowLead}
   ${laneRows}
-  <div class="cards">${safeNow.map(startCard).join('')}</div>` : '<p class="lead">No phase is marked safe to start. Add calls to <code>status.json</code> "guidance".</p>'}
+  ${safeNow.length ? `<div class="cards">${safeNow.map(startCard).join('')}</div>` : '<p class="lead">No phase is marked safe to start. Add calls to <code>status.json</code> "guidance".</p>'}
   ${
     safeLater.length
       ? `<h3 class="sub">Safe next</h3>

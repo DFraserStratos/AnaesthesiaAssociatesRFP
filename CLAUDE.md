@@ -108,7 +108,7 @@ Not the place to edit requirements:
   never makes or edits the artifact itself; agents add them, and write their files and regions, with the `add-artifact` skill
   (`npm --prefix requirements-board run artifact:new`), and the `svg-diagram` skill saves new
   diagrams as artifacts. A new transcript or note filed by `update-requirements` is registered as one. **Finish green on board work:**
-  `npm run verify:board` from the repo root (typecheck, Vitest, catalogue check) passes before handing back.
+  `npm run verify:board` from the repo root (typecheck, Vitest, catalogue check, the agent tools' `node --test` suites) passes before handing back.
 - **Two build targets, one `src/`** — `npm run build` → `dist/` is the framed all-apps prototype;
   `npm run build:pwa` → `dist-pwa/` is the Anaesthetist Mobile App alone as an installable PWA, built
   from `vite.pwa.config.ts` + `pwa/`. Anything under `src/apps/mobile/`, `src/shared/` or `src/theme/`
