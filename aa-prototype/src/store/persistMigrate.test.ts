@@ -1251,3 +1251,47 @@ describe('catch-up Phase 39a (v70): the weekly payment cycle', () => {
     expect(freshAppState()).toEqual(freshAppState())
   })
 })
+
+describe('Phase 39b (v70: pre-op, post-op and billing events; BillingLine removed)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v69 store holding billing lines and no event fees, and reseeds', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(70)
+    const fresh = freshAppState()
+    const { contractEventFees: _f, ...masters } = fresh.masters
+    const staleLine = { id: 'BL0001', procedureId: 'P0001', chargeBasis: 'fixed', amount: 50, description: 'Ancillary fixed amount' }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters, schedule: { ...fresh.schedule, billingLines: { BL0001: staleLine } } }, version: 69 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.masters.contractEventFees['CEF001']).toMatchObject({ contractId: 'CT-STG-ACC', holderCode: 'STGACC-PAIN', fixedPrice: 120 })
+    expect('billingLines' in s.schedule).toBe(false)
+    expect(s.counters['contractEventFee']).toBe(2)
+  })
+
+  it('two fresh seeds deep-equal', () => {
+    expect(freshAppState()).toEqual(freshAppState())
+  })
+})
+
+describe('Wave 5 sync (v71): Lane B\'s 39b into lane/a', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v70 store from either lane and reseeds both lanes\' slices', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(71)
+    const fresh = freshAppState()
+    const { contractEventFees: _f, ...masters } = fresh.masters
+    const { payablesRuns: _r, bankLines: _b, ...billing } = fresh.billing
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters, billing }, version: 70 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.masters.contractEventFees['CEF001']).toBeDefined()
+    expect(Object.keys(s.billing.payablesRuns).length).toBeGreaterThan(0)
+  })
+})
+

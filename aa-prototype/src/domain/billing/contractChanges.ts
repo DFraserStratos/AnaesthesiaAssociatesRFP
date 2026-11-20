@@ -99,8 +99,8 @@ export function authorisedKeptPrice(
     if (dateISO < range.startISO || (end !== null && dateISO > end)) continue
     for (const s of lock.procedures) {
       if (s.contract?.id !== contractId || s.typed) continue
-      // The range price the lock was cut to (`contractAsLocked`), never the whole locked fee: a fixed
-      // billing line or a held amount is part of the Procedure's price, not of the range it kept.
+      // The range price the lock was cut to (`contractAsLocked`), never the whole locked fee: a held
+      // amount is part of the Procedure's price, not of the range it kept.
       const lockedRange = s.contract.pricing.kind === 'fixed' ? s.contract.pricing.ranges[0]?.price : undefined
       if (lockedRange === undefined || lockedRange === range.price) continue
       rows.push({

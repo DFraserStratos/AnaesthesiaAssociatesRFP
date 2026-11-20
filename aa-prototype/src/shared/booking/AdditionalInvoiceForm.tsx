@@ -172,6 +172,8 @@ export function EventPartyField({
   onChange,
   label = COPY.partyLabel,
   shot = 'event-party',
+  sameAsLabel,
+  caption,
 }: {
   procedureId: string
   sameAsName: string
@@ -180,6 +182,10 @@ export function EventPartyField({
   /** The field's label: "Billed to" by default; the credit note's own party reads "Credit note to" (catch-up Phase 39). */
   label?: string
   shot?: string
+  /** The tick's words (catch-up Phase 39b: "Billed to the same party as the procedure (name)"); the original invoice's by default. */
+  sameAsLabel?: string
+  /** A caption under the tick (catch-up Phase 39b: the "same as" reading). */
+  caption?: string
 }) {
   const state = useBookingStore((s) => s)
   const options = useMemo(() => partyOptionsForProcedure(state, procedureId), [state, procedureId])
@@ -195,8 +201,9 @@ export function EventPartyField({
         // The sheet's body size (14 on web and Admin, 15 on the phone), not the inherited page size.
         style={{ fontSize: phone ? 15 : 14, lineHeight: '20px', color: neutral.ink }}
       >
-        {COPY.sameAsWithName(sameAsName)}
+        {sameAsLabel ?? COPY.sameAsWithName(sameAsName)}
       </Checkbox>
+      {caption !== undefined && value.sameAs && <span style={{ fontSize: 12.5, lineHeight: '17px', color: neutral.slate }}>{caption}</span>}
       {!value.sameAs && value.person === null && (
         <PartyPicker
           options={options}

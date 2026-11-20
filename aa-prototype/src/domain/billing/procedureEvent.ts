@@ -9,6 +9,7 @@
 
 import type { ActorRole, CounterpartyRef, CreditEventDetail, FreeFormLine, InvoiceBilledTo, ProcedureEvent, ProcedureEventKind } from '../types'
 import type { DeliveryPlan } from './whoIsBilled'
+import { eventDateRefusal, type EventDateRule } from './prePostOpEvent'
 
 /** The readings this element is built on, one field each. */
 export const EVENT_RULES = {
@@ -74,6 +75,24 @@ export const EVENT_KINDS: Readonly<Record<ProcedureEventKind, EventKindRules>> =
     mayBundle: false,
     needsInvoicedProcedure: true,
   },
+  /**
+   * Pre-op and post-op events and the billing event (catch-up Phase 39b;
+   * US-03.7.1, US-03.7.2, D13, OQ-121 (D69)): the anaesthetist on their own
+   * Procedure or the office, at any time from an ACTIVE List on; the invoice
+   * tick shown; reviewed; bundled with the same party's invoice in a run
+   * where there is one, otherwise their own. Reading (commented here as the
+   * doc asks): on a Procedure split by 22's Split button, "same as" is the
+   * Procedure's who-is-invoiced, and the line goes on that party's invoice,
+   * never split.
+   */
+  preOp: { addedBy: ['anaesthetist', 'office'], anaesthetistOwnOnly: true, tick: 'shown', reviewed: true, mayBundle: true, needsInvoicedProcedure: false },
+  postOp: { addedBy: ['anaesthetist', 'office'], anaesthetistOwnOnly: true, tick: 'shown', reviewed: true, mayBundle: true, needsInvoicedProcedure: false },
+  billing: { addedBy: ['anaesthetist', 'office'], anaesthetistOwnOnly: true, tick: 'shown', reviewed: true, mayBundle: true, needsInvoicedProcedure: false },
+}
+
+/** Each kind's date rule (catch-up Phase 39b): a pre-op event on or before the List date; every other kind on or after it. */
+export function dateRuleOf(kind: ProcedureEventKind): EventDateRule {
+  return kind === 'preOp' ? 'onOrBeforeList' : 'onOrAfterList'
 }
 
 /** An event's free-form lines (an additional invoice's); none on a credit, which mirrors its original instead. */
@@ -133,7 +152,8 @@ export function mayEditEvent(
   ownerAnaesthetistId: string | undefined,
 ): boolean {
   const status = eventStatus(event)
-  if (status !== 'awaitingReview' && status !== 'declined') return false
+  // An un-ticked event (catch-up Phase 39b) is never reviewed, so it stays editable, as one awaiting review does.
+  if (status !== 'awaitingReview' && status !== 'declined' && status !== 'notBillable') return false
   if (actor.role === 'office') return true
   if (actor.role !== 'anaesthetist' || actor.anaesthetistId === undefined) return false
   return event.addedBy.anaesthetistId === actor.anaesthetistId && ownerAnaesthetistId === actor.anaesthetistId
@@ -253,20 +273,32 @@ export function validateEventBase(
     return { code: 'kindNotAllowed', message: 'You cannot raise this kind of charge.' }
   }
   if (!mayRaise(kind, actor, ctx.ownerAnaesthetistId, kinds)) {
-    return { code: 'notOwnProcedure', message: 'You can raise an additional invoice only on your own Procedure.' }
+    return {
+      code: 'notOwnProcedure',
+      message: kind === 'additionalInvoice' ? 'You can raise an additional invoice only on your own Procedure.' : 'You can add this only on your own Procedure.',
+    }
   }
   if (rules.needsInvoicedProcedure && !ctx.procedureInvoiced) {
     return { code: 'notInvoiced', message: 'This Procedure has no invoice yet. An additional invoice is for charges after invoicing.' }
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.occurredOnISO)) {
-    return { code: 'dateInvalid', message: 'Give the date of the charge.', field: 'occurredOnISO' }
-  }
-  if (input.occurredOnISO < ctx.listDateISO) {
-    return { code: 'dateBeforeProcedure', message: 'The charge cannot be dated before the procedure.', field: 'occurredOnISO' }
-  }
-  const latest = ctx.todayISO > ctx.listDateISO ? ctx.todayISO : ctx.listDateISO
-  if (input.occurredOnISO > latest) {
-    return { code: 'dateInFuture', message: 'The charge cannot be dated in the future.', field: 'occurredOnISO' }
+  if (kind === 'additionalInvoice' || kind === 'credit') {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.occurredOnISO)) {
+      return { code: 'dateInvalid', message: 'Give the date of the charge.', field: 'occurredOnISO' }
+    }
+    if (input.occurredOnISO < ctx.listDateISO) {
+      return { code: 'dateBeforeProcedure', message: 'The charge cannot be dated before the procedure.', field: 'occurredOnISO' }
+    }
+    const latest = ctx.todayISO > ctx.listDateISO ? ctx.todayISO : ctx.listDateISO
+    if (input.occurredOnISO > latest) {
+      return { code: 'dateInFuture', message: 'The charge cannot be dated in the future.', field: 'occurredOnISO' }
+    }
+  } else {
+    // Catch-up Phase 39b: the per-kind date rule (a pre-op event on or before the List date).
+    const date = eventDateRefusal(dateRuleOf(kind), input.occurredOnISO, ctx)
+    if (date !== null) {
+      const message = date.code === 'dateBeforeProcedure' && kind === 'postOp' ? 'A post-op event cannot be dated before the procedure.' : date.message
+      return { code: date.code, message, field: 'occurredOnISO' }
+    }
   }
   if (!input.party.sameAs) {
     if (input.party.party.id.trim() === '') {

@@ -9,13 +9,11 @@
  *     prices a Procedure already on it),
  *   - the List's date picks a fixed price's range in force, and the RVG time
  *     rule is the masters' (catch-up Phase 19a),
- *   - nonRvgLines are this procedure's stored non-rvg lines (rvg-basis stored
- *     lines are never fee inputs),
  *   - the patient's date of birth and the modifier master feed the age and
  *     included modifiers (catch-up Phase 19b), as in every other assembler.
  */
 
-import type { AssignedList, BillingLine, Contract, Procedure, ProcedureId, RvgGroup } from '../../domain/types'
+import type { AssignedList, Contract, Procedure, ProcedureId, RvgGroup } from '../../domain/types'
 import type { FeeResult } from '../../domain/billing/fee'
 import type { HeldPrices } from '../../domain/billing/procedurePrice'
 import { bookingFeeFor, type ProcedureFeeContext } from '../../domain/billing/bookingFee'
@@ -30,7 +28,6 @@ export interface BookingFeeArgs {
   /** The List's anaesthetist prices the fee, so only an assigned List (a Draft List has none yet). */
   list: AssignedList
   masters: AppState['masters']
-  billingLines: Record<string, BillingLine>
   /** The Booking's patient: the age modifier reads their date of birth (catch-up Phase 19b). */
   patientId: string | undefined
   /**
@@ -55,7 +52,6 @@ export interface ProcedureFeeView {
   /** The Procedure's RVG group row (catch-up Phase 19), for display. */
   rvgGroup?: RvgGroup
   contract?: Contract
-  nonRvgLines: BillingLine[]
 }
 
 export interface BookingFeeTotals {
@@ -79,27 +75,25 @@ export interface BookingFeeTotals {
  * Booking total, Review and the list rows read its views; none prices a
  * Procedure alone.
  */
-export function bookingFee({ procedures, list, masters, billingLines, patientId, held, lock }: BookingFeeArgs): BookingFeeTotals {
-  const locked = lock !== undefined ? lockedFeeTotals(lock, billingLines) : undefined
+export function bookingFee({ procedures, list, masters, patientId, held, lock }: BookingFeeArgs): BookingFeeTotals {
+  const locked = lock !== undefined ? lockedFeeTotals(lock) : undefined
   if (locked !== undefined) return locked
   const anaesthetist = masters.anaesthetists[list.anaesthetistId]
   if (anaesthetist === undefined) {
     throw new Error(`list ${list.id} has no anaesthetist ${list.anaesthetistId}`)
   }
   const patientDobISO = patientId !== undefined ? masters.patients[patientId]?.dobISO : undefined
-  const extras = new Map<ProcedureId, { rvgGroup?: RvgGroup; contract?: Contract; nonRvgLines: BillingLine[] }>()
+  const extras = new Map<ProcedureId, { rvgGroup?: RvgGroup; contract?: Contract }>()
   const result = bookingFeeFor(procedures, (procedure) => {
     const contract = procedure.governingContractId !== undefined ? masters.contracts[procedure.governingContractId] : undefined
     const rvgGroup = groupOf(masters.rvgGroups, procedure.rvgGroupId)
-    const nonRvgLines = Object.values(billingLines).filter((l) => l.procedureId === procedure.id && l.chargeBasis !== 'rvg')
-    extras.set(procedure.id, { ...(rvgGroup !== undefined ? { rvgGroup } : {}), ...(contract !== undefined ? { contract } : {}), nonRvgLines })
+    extras.set(procedure.id, { ...(rvgGroup !== undefined ? { rvgGroup } : {}), ...(contract !== undefined ? { contract } : {}) })
     const ctx: ProcedureFeeContext = {
       anaesthetist,
       dateISO: list.dateISO,
       timeRule: masters.rvgTimeRule,
       patientDobISO,
       modifiers: masters.modifiers,
-      nonRvgLines,
     }
     if (contract !== undefined) ctx.contract = contract
     if (rvgGroup !== undefined) ctx.rvgGroup = rvgGroup
@@ -124,13 +118,11 @@ export function bookingFee({ procedures, list, masters, billingLines, patientId,
  * holds no fee for some Procedure (a migrated history Booking that could not
  * be priced at seed time): the caller then prices live with the held amounts.
  */
-function lockedFeeTotals(lock: BookingLock, billingLines: Record<string, BillingLine>): BookingFeeTotals | undefined {
+function lockedFeeTotals(lock: BookingLock): BookingFeeTotals | undefined {
   if (lock.state !== 'locked' || lock.procedures.length === 0 || lock.procedures.some((s) => s.fee === undefined)) return undefined
   const views: Record<ProcedureId, ProcedureFeeView> = {}
   for (const s of lock.procedures) {
-    // The extra billing lines are part of the locked fee's lines; the stored rows are listed beside them (frozen after AUTHORISED).
-    const nonRvgLines = Object.values(billingLines).filter((l) => l.procedureId === s.procedureId && l.chargeBasis !== 'rvg')
-    views[s.procedureId] = { fee: s.fee!, allocation: s.fee!.allocation, ...(s.rvgGroup !== undefined ? { rvgGroup: s.rvgGroup } : {}), ...(s.contract !== undefined ? { contract: s.contract } : {}), nonRvgLines }
+    views[s.procedureId] = { fee: s.fee!, allocation: s.fee!.allocation, ...(s.rvgGroup !== undefined ? { rvgGroup: s.rvgGroup } : {}), ...(s.contract !== undefined ? { contract: s.contract } : {}) }
   }
   const price = priceBookingFromLock(lock)
   return {

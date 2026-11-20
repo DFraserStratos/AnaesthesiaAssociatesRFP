@@ -21,7 +21,8 @@ import {
   type InvoiceComparison,
   type LockView,
 } from '../domain/billing/lock'
-import { supplierFor } from '../domain/billing/invoicePresentation'
+import { gstOn, supplierFor } from '../domain/billing/invoicePresentation'
+import { bundledEventsOf, eventLineView, isPricedKind, withEventLine } from './eventKindActions'
 import { formatMoney, roundToCents } from '../domain/billing/money'
 import { priceFreeFormInvoice } from '../domain/billing/additionalInvoice'
 import { eventLines } from '../domain/billing/procedureEvent'
@@ -153,8 +154,17 @@ export function regenerateInvoiceFromLock(state: Pick<AppState, 'billing'> & Par
   const drafts = invoiceDraftsFromLock(lock)
   if (drafts.kind === 'exception') return { ok: false, reason: drafts.message }
   const key = partyKeyOf(invoice.counterparty)
-  const draft = drafts.invoices.find((d) => partyKeyOf(d.counterparty) === key)
-  if (draft === undefined) return { ok: false, reason: 'The locked record bills no invoice to this party' }
+  const locked = drafts.invoices.find((d) => partyKeyOf(d.counterparty) === key)
+  if (locked === undefined) return { ok: false, reason: 'The locked record bills no invoice to this party' }
+  // Catch-up Phase 39b: the run's event lines, each from its event's frozen pricing (never the lock), in the run's order.
+  const schedule = state.schedule
+  const draft =
+    schedule !== undefined
+      ? bundledEventsOf({ schedule }, invoiceId).reduce((d, e) => {
+          const line = eventLineView(e)
+          return line !== undefined ? withEventLine(d, line) : d
+        }, locked)
+      : locked
   const lines = Object.values(state.billing.invoiceLines)
     .filter((l) => l.invoiceId === invoiceId)
     .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
@@ -171,7 +181,17 @@ export function regenerateInvoiceFromLock(state: Pick<AppState, 'billing'> & Par
 function regenerateAdditionalInvoice(state: Pick<AppState, 'billing'> & Partial<Pick<AppState, 'schedule'>>, invoice: Invoice, lock: BookingLock | undefined): RegenerateResult {
   const event = invoice.eventId !== undefined ? state.schedule?.procedureEvents[invoice.eventId] : undefined
   if (event === undefined) return { ok: false, reason: 'This additional invoice has no event to regenerate from' }
-  const priced = priceFreeFormInvoice(eventLines(event))
+  // Catch-up Phase 39b: an event invoice's one line, from the event's frozen pricing.
+  const eventLine = isPricedKind(event.kind) ? eventLineView(event) : undefined
+  if (isPricedKind(event.kind) && eventLine === undefined) return { ok: false, reason: 'This event has no frozen price to regenerate from' }
+  const priced =
+    eventLine !== undefined
+      ? (() => {
+          const subtotal = roundToCents(eventLine.amount)
+          const gst = gstOn(subtotal)
+          return { kind: 'priced' as const, lines: [{ description: eventLine.description, quantity: 1, unitAmount: eventLine.amount, amount: eventLine.amount }], subtotal, gst, total: roundToCents(subtotal + gst) }
+        })()
+      : priceFreeFormInvoice(eventLines(event))
   if (priced.kind === 'refused') return { ok: false, reason: priced.message }
   const stored = Object.values(state.billing.invoiceLines)
     .filter((l) => l.invoiceId === invoice.id)

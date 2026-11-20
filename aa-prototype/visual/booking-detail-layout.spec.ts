@@ -1,8 +1,8 @@
 import { test, expect, type Page } from '@playwright/test'
 
 /**
- * Desktop booking-detail regressions that only a browser can catch: the paired
- * capture cards matching heights and the header layout (moved here from the
+ * Desktop booking-detail regressions that only a browser can catch: the header
+ * layout (moved here from the
  * attachments spec when catch-up Phase 20a removed attachments, RV-01).
  */
 
@@ -23,22 +23,6 @@ async function openAdminBooking(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Open', exact: true }).first().click()
   await expect(page.getByText(/Office billing setup/).first()).toBeVisible()
 }
-
-/** The CaptureSection wrapping a micro-caps label is that label's parent. */
-function cardByLabel(page: Page, label: string) {
-  return page.getByText(label, { exact: true }).locator('..')
-}
-
-test('paired capture cards match heights on the desktop', async ({ page }) => {
-  await openEllison(page)
-  // The price line pairs with Billing lines (catch-up Phase 24; the reasoned Adjustment and charge card is gone).
-  const price = await page.locator('[data-shot=price-card]').first().boundingBox()
-  const lines = await cardByLabel(page, 'Billing lines').first().boundingBox()
-  expect(price).not.toBeNull()
-  expect(lines).not.toBeNull()
-  expect(Math.abs(price!.height - lines!.height)).toBeLessThan(1)
-  await expect(page.getByText('Adjustment and charge', { exact: true })).toHaveCount(0)
-})
 
 test('desktop Booking total starts level with the first capture card', async ({ page }) => {
   await openAdminBooking(page)

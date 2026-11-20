@@ -24,7 +24,6 @@ import { addProcedure } from './bookingActions'
 import { authoriseList, reassignBooking, submitList } from './lifecycle'
 import { runBillingForList } from './billingRun'
 import { setProcedureSplit } from './splitActions'
-import { addBillingLine } from './billingLineActions'
 import { completeAnswered } from '../test/completeAnswered'
 import { CONTRACT, SEED_LIST_IDS, SEED_MARKERS, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
 import { PRICED_ITEM } from '../domain/seed/pricedItems'
@@ -339,11 +338,4 @@ describe('the adversarial review fixes (catch-up Phase 27)', () => {
     expect(w[0]!.text).toContain('no longer needs prepayment')
   })
 
-  it('a prepaid Procedure takes no billing lines; its amount stays the range price', () => {
-    const api = createAppStore()
-    const p = rileyProc(api)
-    expect(addBillingLine(api, SOUTER, p.id, { chargeBasis: 'fixed', description: 'Extra', amount: 150 })).toMatchObject({ ok: false, code: 'prepaidProcedure' })
-    expect(addBillingLine(api, OFFICE, p.id, { chargeBasis: 'fixed', description: 'Extra', amount: 150 })).toMatchObject({ ok: false, code: 'prepaidProcedure' })
-    expect(prepaymentStatusFor(api.getState(), RILEY).groups[0]!.amount).toBe(1200)
-  })
 })

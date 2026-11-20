@@ -6,7 +6,7 @@
     {
       "name": "post-op-event",
       "app": "web",
-      "caption": "The anaesthetist raises an additional invoice on their own invoiced Booking; the Booking stays locked",
+      "caption": "On their own invoiced Booking the anaesthetist adds a pre-op or post-op event or a billing event, or raises an additional invoice; the Booking stays locked",
       "start": "/web/lists/L-HIST-03/bookings/HBK03",
       "states": [
         {
@@ -15,11 +15,15 @@
               "wait": "[data-shot=additional-invoice-button]"
             },
             {
+              "wait": "[data-shot=procedure-event-add]"
+            },
+            {
               "scroll": "[data-shot=additional-invoice-button] >> nth=0"
             }
           ],
           "highlight": [
-            "[data-shot=additional-invoice-button]"
+            "[data-shot=additional-invoice-button]",
+            "[data-shot=procedure-event-add]"
           ]
         }
       ]
@@ -27,7 +31,7 @@
     {
       "name": "post-op-event",
       "app": "mobile",
-      "caption": "The anaesthetist raises an additional invoice on their own invoiced Booking, on the phone; the Booking stays locked",
+      "caption": "On their own invoiced Booking the anaesthetist adds a pre-op or post-op event or a billing event, or raises an additional invoice, on the phone; the Booking stays locked",
       "start": "/mobile/lists/L-HIST-03/bookings/HBK03",
       "states": [
         {
@@ -36,11 +40,15 @@
               "wait": "[data-shot=additional-invoice-button]"
             },
             {
+              "wait": "[data-shot=procedure-event-add]"
+            },
+            {
               "scroll": "[data-shot=additional-invoice-button] >> nth=0"
             }
           ],
           "highlight": [
-            "[data-aa-mobile-product] [data-shot=additional-invoice-button]"
+            "[data-aa-mobile-product] [data-shot=additional-invoice-button]",
+            "[data-aa-mobile-product] [data-shot=procedure-event-add]"
           ]
         }
       ]

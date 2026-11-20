@@ -192,7 +192,6 @@ describe('left off the final invoice (US-08.2.2, D57, US-05.3.1)', () => {
     rvgGroups: { [BASE_SINGLE_10.id]: BASE_SINGLE_10 },
     contracts: CONTRACTS,
     parties: { [HOSPITAL.id]: HOSPITAL, [SOUTER_PARTY.id]: SOUTER_PARTY, [SURGEON_PARTY.id]: SURGEON_PARTY },
-    billingLines: [],
     listDateISO: '2026-07-24',
     timeRule: DEFAULT_RVG_TIME_RULE,
     listHospitalId: 'hosp-1',

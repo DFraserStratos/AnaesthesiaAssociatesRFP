@@ -42,7 +42,6 @@ function ctxFor(contracts: Record<string, Contract> = {}, dob: string | null = S
       timeRule: DEFAULT_RVG_TIME_RULE,
       patientDobISO: dob ?? undefined,
       modifiers: RVG_MODIFIER_MASTER,
-      nonRvgLines: [],
     }
     const group = p.rvgGroupId !== undefined ? GROUPS[p.rvgGroupId] : undefined
     if (group !== undefined) ctx.rvgGroup = group

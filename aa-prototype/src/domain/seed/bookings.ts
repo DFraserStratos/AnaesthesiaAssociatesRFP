@@ -1,5 +1,5 @@
 /**
- * Seed Bookings, Procedures and BillingLines — the design-day tableau, the
+ * Seed Bookings and Procedures — the design-day tableau, the
  * ready-made scenario states later phases rely on, and generic filler (past
  * two weeks rich, thinning about ten days out).
  *
@@ -12,7 +12,6 @@
 import type {
   FeeSplit,
   AuditEntry,
-  BillingLine,
   Booking,
   BookingCancellation,
   ProcedurePayer,
@@ -80,11 +79,10 @@ export interface BookingScenarioIds {
 export interface BookingsBuild {
   bookings: Booking[]
   procedures: Procedure[]
-  billingLines: BillingLine[]
   audit: AuditEntry[]
   scenario: BookingScenarioIds
   /** Next free numeric suffix per entity (store counters continue from here). */
-  next: { booking: number; procedure: number; billingLine: number; audit: number }
+  next: { booking: number; procedure: number; audit: number }
 }
 
 // ---------------------------------------------------------------------------
@@ -161,13 +159,10 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
 
   const bookings: Booking[] = []
   const procedures: Procedure[] = []
-  // No seeded billing line since catch-up Phase 24 (Fitzgerald's rate x time line was the only one).
-  const billingLines: BillingLine[] = []
   const audit: AuditEntry[] = []
 
   let bookingN = 0
   let procN = 0
-  const lineN = 0
   let auditN = 0
 
   const pool = genericPatientIds()
@@ -1229,7 +1224,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   return {
     bookings,
     procedures,
-    billingLines,
     audit,
     scenario: {
       tane: taneBooking.id,
@@ -1262,6 +1256,6 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
       integrationLockedTarget: lockedTargetBooking.id,
       includedModifier: spineTarget.procedure.bookingId,
     },
-    next: { booking: bookingN + 1, procedure: procN + 1, billingLine: lineN + 1, audit: auditN + 1 },
+    next: { booking: bookingN + 1, procedure: procN + 1, audit: auditN + 1 },
   }
 }

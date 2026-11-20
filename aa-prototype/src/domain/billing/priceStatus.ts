@@ -37,7 +37,7 @@ export function priceStatusFor(
  * The price the Contract works out with nothing typed or held, for "beside
  * the computed price" (Review, the office's sheet, the anaesthetist's price
  * line): the range price on a fixed price, units x the rate (less the
- * discount) on an RVG kind, plus any captured fixed billing line; none on an
+ * discount) on an RVG kind; none on an
  * open price or with no price in force. The Procedure's allocation in its
  * Booking (`ctx.allocation`, catch-up Phase 23) is kept: a typed price never
  * changes who took part in the split.

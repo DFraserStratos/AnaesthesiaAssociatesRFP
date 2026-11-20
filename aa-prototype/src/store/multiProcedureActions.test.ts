@@ -56,7 +56,6 @@ function feeOf(api: BoundAppStore, bookingId: string, procedureId: string) {
     siblings: procs(api, bookingId),
     list: s.schedule.lists[booking.listId] as AssignedList,
     masters: s.masters,
-    billingLines: s.schedule.billingLines,
     patientId: booking.patientId,
   }).fee
 }

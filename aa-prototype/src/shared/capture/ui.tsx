@@ -132,11 +132,14 @@ export function NumberStepper({
   max,
   label,
   typeable,
+  step = 1,
 }: {
   value: number
   onChange: (next: number) => void
   min?: number
   max?: number
+  /** How far each press moves (catch-up Phase 39b: the event sheet's minutes step by 5). 1 by default. */
+  step?: number
   /** The plural noun the buttons name ("units", "base units"). */
   label: string
   /** The typed edit: the value's name ("Base units") and which typed numbers are taken. */
@@ -146,7 +149,7 @@ export function NumberStepper({
   const atMax = max !== undefined && value >= max
   return (
     <div role="group" aria-label={label} style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 'none' }}>
-      <StepperButton glyph="−" label={`Fewer ${label}`} onClick={() => onChange(Math.max(min, value - 1))} disabled={atMin} />
+      <StepperButton glyph="−" label={`Fewer ${label}`} onClick={() => onChange(Math.max(min, value - step))} disabled={atMin} />
       {typeable !== undefined ? (
         <TypedValue value={value} min={min} max={max} name={typeable.name} accept={typeable.accept} onChange={onChange} />
       ) : (
@@ -154,7 +157,7 @@ export function NumberStepper({
           {value}
         </span>
       )}
-      <StepperButton glyph="+" label={`More ${label}`} onClick={() => onChange(max !== undefined ? Math.min(max, value + 1) : value + 1)} disabled={atMax} />
+      <StepperButton glyph="+" label={`More ${label}`} onClick={() => onChange(max !== undefined ? Math.min(max, value + step) : value + step)} disabled={atMax} />
     </div>
   )
 }

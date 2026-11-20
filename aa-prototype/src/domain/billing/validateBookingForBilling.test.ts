@@ -16,7 +16,7 @@ import {
   mkProcedure,
   START_0800,
 } from './fixtures'
-import type { BillingLine, FeeSplit, Procedure, SplitShareBasis } from '../types'
+import type { FeeSplit, Procedure, SplitShareBasis } from '../types'
 import { splitDoesNotFitMessage } from './splitShare'
 import { HOLDER_MISSING_MESSAGE } from './whoIsBilled'
 
@@ -43,7 +43,6 @@ function mkCtx(overrides: Partial<BookingBillingContext> = {}): BookingBillingCo
       'party-aa': mkParty({ id: 'party-aa', kind: 'aa', name: 'AA', codePrefix: 'AA', hospitalId: undefined }),
       'party-anaes': mkParty({ id: 'party-anaes', kind: 'anaesthetist', name: 'Dr Test', codePrefix: 'DRT', hospitalId: undefined }),
     },
-    billingLines: [],
     listDateISO: '2026-07-21',
     timeRule: DEFAULT_RVG_TIME_RULE,
     patientDobISO: undefined,
@@ -148,12 +147,6 @@ describe('validateBookingForBilling: a split that no longer fits the fee (catch-
     const failures = validateBookingForBilling(booking, [p], mkCtx())
     expect(fieldsOf(failures)).toEqual(['split'])
     expect(failures[0]?.message).toContain('leaves nothing for the rest of the fee of $690.00')
-  })
-
-  it('billing lines alone never fail: who pays is the Contract or the split, never a line', () => {
-    const lines: BillingLine[] = [{ id: 'bl-a', procedureId: 'proc-1', chargeBasis: 'fixed', amount: 40, description: 'Ancillary flat fee' }]
-    const p = validProcedure({ id: 'proc-1' })
-    expect(validateBookingForBilling(booking, [p], mkCtx({ billingLines: lines }))).toEqual([])
   })
 })
 

@@ -209,11 +209,6 @@ export {
   setInvoiceDescription,
 } from './procedureTextActions'
 export {
-  addBillingLine,
-  removeBillingLine,
-  type AddBillingLineInput,
-} from './billingLineActions'
-export {
   NO_FEE_TO_SPLIT_MESSAGE,
   PREPAID_PROCEDURE_MESSAGE,
   contractPartyFor,
@@ -650,6 +645,25 @@ export {
   type InvoiceStanding,
 } from './creditActions'
 export { handoffCorrection, createXeroCorrection, type CorrectionHandoffResult } from './xeroHandoff'
+// Catch-up Phase 39b: pre-op, post-op and billing events, and the Contract event fees.
+export {
+  addPrePostOpEvent,
+  addBillingEvent,
+  kindEventRefusal,
+  eventPriceNow,
+  eventLineView,
+  eventLinesFor,
+  bundledEventsOf,
+  planEventBundle,
+  isPricedKind,
+  EVENT_KIND_MESSAGES,
+  type PrePostOpEventInput,
+  type BillingEventInput,
+  type OfficePriceInput,
+  type KindDetail,
+  type PricedEventKind,
+} from './eventKindActions'
+export { addContractEventFee, editContractEventFee, removeContractEventFee } from './contractEventFeeActions'
 
 // Catch-up Phase 42: retire and reinstate, the public-holiday calendar, the time rule, the seed load and go-live.
 export { retireMaster, reinstateMaster, retireFactsFor, editAaModifier, retiredRefusal, partyRenameFollowing, type AaModifierPatch } from './masterLifecycleActions'

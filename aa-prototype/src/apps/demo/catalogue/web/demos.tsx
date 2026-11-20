@@ -965,12 +965,11 @@ export function CodePickerDemo() {
 function UnitsCardBody({ f, procedure, canCapture, onError }: F & { procedure: Procedure; canCapture: boolean; onError: (m: string) => void }) {
   const list = useAppStore((s) => (f.capture !== undefined ? s.schedule.lists[f.capture.listId] : undefined))
   const masters = useAppStore((s) => s.masters)
-  const billingLines = useAppStore((s) => s.schedule.billingLines)
   const patientId = useAppStore((s) => s.schedule.bookings[procedure.bookingId]?.patientId)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   if (list === undefined || !isAssignedList(list)) return null
   const procedures = Object.values(proceduresRecord).filter((p) => p.bookingId === procedure.bookingId).sort((a, b) => a.id.localeCompare(b.id))
-  const view = bookingFee({ procedures, list, masters, billingLines, patientId }).views[procedure.id]
+  const view = bookingFee({ procedures, list, masters, patientId }).views[procedure.id]
   if (view === undefined) return null
   return <UnitsCard procedure={procedure} btm={view.fee.btm} rvgGroup={view.rvgGroup} actor={f.actor} canCapture={canCapture} allocation={view.allocation} onError={onError} />
 }
@@ -982,12 +981,11 @@ export function UnitsCardDemo({ f }: F) {
 function PriceCardBody({ f, procedure, canCapture, onError }: F & { procedure: Procedure; canCapture: boolean; onError: (m: string) => void }) {
   const list = useAppStore((s) => (f.capture !== undefined ? s.schedule.lists[f.capture.listId] : undefined))
   const masters = useAppStore((s) => s.masters)
-  const billingLines = useAppStore((s) => s.schedule.billingLines)
   const patientId = useAppStore((s) => s.schedule.bookings[procedure.bookingId]?.patientId)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   if (list === undefined || !isAssignedList(list)) return null
   const procedures = Object.values(proceduresRecord).filter((p) => p.bookingId === procedure.bookingId).sort((a, b) => a.id.localeCompare(b.id))
-  const view = bookingFee({ procedures, list, masters, billingLines, patientId }).views[procedure.id]
+  const view = bookingFee({ procedures, list, masters, patientId }).views[procedure.id]
   if (view === undefined) return null
   return <PriceCard procedure={procedure} actor={f.actor} fee={view.fee} contract={view.contract} canCapture={canCapture} failures={[]} onError={onError} />
 }

@@ -1,7 +1,7 @@
 /**
  * The fee calculator: the BTM path, the price from the one price function
- * (`procedurePrice.ts`, catch-up Phase 24) and the non-RVG billing lines
- * (fixed amounts), composed into a structured `FeeResult` the UI only
+ * (`procedurePrice.ts`, catch-up Phase 24), composed into a structured
+ * `FeeResult` the UI only
  * formats (PROGRESS convention 9).
  *
  * Since catch-up Phase 23 every Procedure is priced from its place in its
@@ -12,8 +12,6 @@
 
 import type {
   Anaesthetist,
-  BillingLine,
-  ChargeBasis,
   Contract,
   Procedure,
   UnitProvenance,
@@ -206,12 +204,6 @@ export interface FeeContext {
   /** How many Procedures the Booking has: the line descriptions name the role only with two or more. */
   bookingProcedureCount?: number
   /**
-   * The procedure's captured NON-RVG billing lines (fixed amounts, until 39b).
-   * RVG-basis lines are never inputs — the calculator produces the RVG amount
-   * itself from the captured BTM data.
-   */
-  nonRvgLines?: readonly BillingLine[]
-  /**
    * The held amounts the price ladder reads ahead of a typed price (catch-up
    * Phase 24, `procedurePrice.ts`): the AUTHORISED and prepaid rungs, from the
    * store's `heldPricesFor`. Absent: nothing holds the price.
@@ -220,11 +212,10 @@ export interface FeeContext {
 }
 
 export interface FeeLine {
-  chargeBasis: ChargeBasis
   description: string
   amount: number
   units?: number
-  /** $ per unit ('rvg'). */
+  /** $ per unit, on the RVG line. */
   rate?: number
   /**
    * `discount`: the Contract's discount on RVG less the Contract's discount,
@@ -244,8 +235,6 @@ export interface FeeResult {
   billableUnits: number
   /** The allocation this fee was priced from (catch-up Phase 23), echoed. */
   allocation: ProcedureAllocation
-  /** Basis of the primary component; 'mixed' when lines span bases. */
-  chargeBasis: ChargeBasis | 'mixed'
   /** $ per unit the computed price charges on an RVG kind (the gross rate on a discount Contract); null otherwise. */
   unitRate: number | null
   lines: FeeLine[]
@@ -286,8 +275,6 @@ export function modifierInputsOf(ctx: Pick<FeeContext, 'patientDobISO' | 'dateIS
  * fixed price is the range in force on the procedure date (BTM computed for
  * reference); an open price has none of its own. A held or typed price prints
  * as one line at the price. With no price, `needsPrice` and no price line.
- * Captured fixed billing lines (until 39b) are part of the computed price; a
- * typed or held price is the whole price.
  */
 export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
   const { allocation } = ctx
@@ -301,14 +288,6 @@ export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
   const kind = contract?.pricing.kind ?? 'rvgAnaesthetistRate'
   const rvgKind = isRvgKind(kind)
 
-  // --- captured fixed billing lines, until 39b ---
-  const addOnLines: FeeLine[] = []
-  for (const line of ctx.nonRvgLines ?? []) {
-    if (line.chargeBasis === 'rvg') continue
-    addOnLines.push({ chargeBasis: line.chargeBasis, description: line.description, amount: roundToCents(line.amount) })
-  }
-  const addOns = roundToCents(addOnLines.reduce((sum, l) => sum + l.amount, 0))
-
   // An RVG kind charges units only once an RVG code is recorded (no code: no RVG line, as before).
   const units = rvgKind && procedure.rvgGroupId !== undefined ? billableUnits : 0
   const price = priceFor({
@@ -318,7 +297,6 @@ export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
     units,
     unitValue: ctx.anaesthetist.unitValue,
     ...(ctx.held !== undefined ? { held: ctx.held } : {}),
-    addOns,
   })
 
   const fixedDescription = several ? `Contract price, ${allocation.role} procedure` : 'Contract price'
@@ -326,32 +304,27 @@ export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
   const lines: FeeLine[] = []
   let unitRate: number | null = null
   if (price.status === 'priced' && price.heldBy !== null) {
-    // A held or typed amount is the whole price (billing lines included): one line at the price. On an
+    // A held or typed amount is the whole price: one line at the price. On an
     // RVG kind it stays the RVG line with its units, for reference (US-03.5.2), with no rate to multiply.
     const description = kind === 'open' ? 'Typed price' : rvgKind ? rvgDescription : fixedDescription
-    lines.push({ chargeBasis: rvgKind ? 'rvg' : 'fixed', description, amount: price.price, ...(rvgKind ? { units: billableUnits } : {}) })
+    lines.push({ description, amount: price.price, ...(rvgKind ? { units: billableUnits } : {}) })
   } else if (price.status === 'priced') {
     const computed = price.computed!
     if (computed.kind === 'fixed') {
-      lines.push({ chargeBasis: 'fixed', description: fixedDescription, amount: computed.gross })
+      lines.push({ description: fixedDescription, amount: computed.gross })
     } else if (procedure.rvgGroupId !== undefined) {
-      lines.push({ chargeBasis: 'rvg', description: rvgDescription, amount: computed.gross, units: billableUnits, ...(computed.rate !== undefined ? { rate: computed.rate } : {}) })
+      lines.push({ description: rvgDescription, amount: computed.gross, units: billableUnits, ...(computed.rate !== undefined ? { rate: computed.rate } : {}) })
       if (computed.discountAmount !== 0) {
-        lines.push({ chargeBasis: 'rvg', role: 'discount', description: `Discount ${computed.discountPercent}%`, amount: -computed.discountAmount })
+        lines.push({ role: 'discount', description: `Discount ${computed.discountPercent}%`, amount: -computed.discountAmount })
       }
     }
     if (rvgKind) unitRate = computed.rate ?? null
-    lines.push(...addOnLines)
-  } else {
-    lines.push(...addOnLines)
   }
 
   const subtotal = roundToCents(lines.reduce((sum, l) => sum + l.amount, 0))
   const total = price.status === 'priced' ? price.price : subtotal
-  const bases = new Set(lines.filter((l) => l.role === undefined).map((l) => l.chargeBasis))
-  const chargeBasis: ChargeBasis | 'mixed' = bases.size > 1 ? 'mixed' : (lines[0]?.chargeBasis ?? (rvgKind ? 'rvg' : 'fixed'))
 
-  return { btm, billableUnits, allocation, chargeBasis, unitRate, lines, subtotal, price, total, needsPrice: price.status === 'needsPrice' }
+  return { btm, billableUnits, allocation, unitRate, lines, subtotal, price, total, needsPrice: price.status === 'needsPrice' }
 }
 
 /**

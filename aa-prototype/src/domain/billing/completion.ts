@@ -17,7 +17,7 @@
  * billing run's pre-flight only.
  */
 
-import type { BillingLine, Booking, Modifier, ModifierId, Party, Procedure, RvgGroup, RvgGroupId } from '../types'
+import type { Booking, Modifier, ModifierId, Party, Procedure, RvgGroup, RvgGroupId } from '../types'
 import type { Contract } from './contracts'
 import { claimCompletionProblems, preAppliedModifiersFor } from './modifiers'
 import { groupOf } from './rvgGroups'
@@ -53,8 +53,6 @@ export interface CompletionContext {
   parties: Readonly<Record<string, Party>>
   rvgGroups: Readonly<Record<RvgGroupId, RvgGroup>>
   modifiers: Readonly<Record<ModifierId, Modifier>>
-  /** ALL stored billing lines (fixed amounts until 39b). */
-  billingLines: readonly Pick<BillingLine, 'procedureId' | 'chargeBasis'>[]
   /** The List's date: the procedure date for the range in force and the age modifier. */
   listDateISO: string
   patientDobISO: string | undefined

@@ -169,7 +169,7 @@ import { useDemoTriggerMemory } from './memory'
 import { simulateSickness, sicknessCandidates, sicknessColleagueSlot, sicknessRefusal, type SicknessRoute } from '../../store/demoSimulations'
 import { BILLING_FAILURE_ALREADY, stageBillingFailure } from '../../store/demoStaging'
 import { regenerateInvoiceFromLock, regenerateRefusal, regenerateSummary } from '../../store/locks'
-import { nextRunRefusal, officeReviewRefusal, officeReviewsAdditionalInvoice, runNextBillingRun } from '../../store/eventDemo'
+import { nextRunRefusal, officeReviewRefusal, officeReviewsAdditionalInvoice, runNextBillingRun, stagePostOpForSouter, stagedSouterBooking } from '../../store/eventDemo'
 import { CREDIT_COPY, CREDIT_DEMO_COPY, CREDIT_LABELS } from '../procedureEventCopy'
 import {
   officeReviewsCredit,
@@ -905,20 +905,23 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'stage-post-op',
     label: 'Stage post-op scenario',
     description:
-      "Authorises Dr Sharma's Tue 14 Jul AM List so its invoiced Bookings can take an additional invoice.",
-    screen: 'Admin · Review and Booking detail',
-    routes: ['/admin/review/:listId', '/admin/day/:dateISO/bookings/:bookingId'],
-    surfaces: ['bar'],
+      "Gives Dr Souter a submitted ACL reconstruction (Coral Bennett, Wed 15 Jul) awaiting review, to add pre-op and post-op events to, and keeps Dr Sharma's Tue 14 Jul List ready for the additional invoice.",
+    screen: 'Admin · Review and Booking detail; Mobile and Web · Lists and Booking',
+    // Catch-up Phase 39b: also on the anaesthetist's Lists and Booking (bar and the PWA sheet).
+    routes: ['/admin/review/:listId', '/admin/day/:dateISO/bookings/:bookingId', ...MOBILE_LISTS, '/web/lists', '/web/lists/:listId', WEB_BOOKING],
+    surfaces: ['bar', 'pwa'],
     when: (state, ctx) => {
+      if (!ctx.pathname.startsWith('/admin')) return true
       const listId = ctx.params['listId'] ?? state.schedule.bookings[ctx.params['bookingId'] ?? '']?.listId
       return listId === POST_OP_ORIGINAL_LIST_ID && state.schedule.lists[listId] !== undefined
     },
+    // Each half is idempotent on its own; the trigger stays enabled until both are staged.
     disabledReason: (state) =>
-      state.schedule.lists[POST_OP_ORIGINAL_LIST_ID]?.state === 'AUTHORISED'
-        ? 'Already staged: use Create additional invoice on the Procedure'
+      state.schedule.lists[POST_OP_ORIGINAL_LIST_ID]?.state === 'AUTHORISED' && stagedSouterBooking(state) !== undefined
+        ? 'Already staged: search Bennett and open Wednesday\'s Booking'
         : null,
-    // Authorise (lock and bill) the original episode, so Sarah Mitchell's Procedure can take an
-    // additional invoice (catch-up Phase 38b; the Phase 09 addendum Booking is gone).
+    // 38b's half: authorise (lock and bill) Sarah Mitchell's episode for the additional invoice.
+    // 39b's half: Dr Souter's submitted ACL reconstruction for pre-op and post-op events.
     run: (api) => {
       const listId = POST_OP_ORIGINAL_LIST_ID
       const list = api.getState().schedule.lists[listId]
@@ -930,10 +933,12 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         const authorised = authoriseList(api, OFFICE_ACTOR, listId)
         if (!authorised.ok) return { ok: false, message: `Refused: ${authorised.message}` }
       }
+      const souter = stagePostOpForSouter(api)
+      if (!souter.ok) return { ok: false, message: souter.message }
       return {
         ok: true,
         message:
-          "Authorised and billed. Open Sarah Mitchell's Booking and use Create additional invoice on the Procedure's Contract row.",
+          "Staged. Search Bennett, open Wednesday's Booking and use Add pre-op or post-op event. Sarah Mitchell's Tue 14 Jul List is authorised and billed for Create additional invoice.",
       }
     },
     indexPath: () => `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`,
@@ -1346,9 +1351,10 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
   // ── Mobile · Booking, installed PWA only: the office reviews an additional invoice (catch-up Phase 38b) ──
   {
     id: 'office-reviews-additional-invoice',
-    label: 'Office reviews this additional invoice',
+    // Catch-up Phase 39b: widened to every reviewed kind; 38b's id kept (tests and recipes name it).
+    label: 'Office reviews this event',
     description:
-      'Stands in for the office, which has no app on the phone: approves the additional invoice awaiting review on this Booking and invoices it in the next billing run, as Kirsty would from Admin Review.',
+      'Stands in for the office, which has no app on the phone: approves the oldest event awaiting review on this Booking (else takes the oldest approved one) and invoices it in the next billing run, as Kirsty would from Admin Review.',
     screen: 'Mobile · Booking',
     routes: [MOBILE_BOOKING],
     surfaces: ['pwa'],
@@ -1357,7 +1363,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     run: (api, ctx) => {
       const res = officeReviewsAdditionalInvoice(api, ctx.params['bookingId'] ?? '')
       return res.ok
-        ? { ok: true, message: `Approved by the office and invoiced in the next billing run (${res.value.number}).` }
+        ? { ok: true, message: `Reviewed by the office (simulated). Invoice ${res.value.number} raised in the next run.` }
         : { ok: false, message: res.message }
     },
     indexPath: () => null,

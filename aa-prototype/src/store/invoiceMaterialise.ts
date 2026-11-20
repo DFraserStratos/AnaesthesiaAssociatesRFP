@@ -39,7 +39,7 @@ export interface MaterialiseArgs {
   /** Stamp delivery now (the run, the retry, today's prepayment raise). */
   send: boolean
   /** The audit action each invoice is created under (a prepayment's: approved, or sent with approval off). */
-  createAction: 'invoice.create' | 'invoice.prePaymentApproved' | 'invoice.prePaymentAutoSent' | 'invoice.additionalCreated'
+  createAction: 'invoice.create' | 'invoice.prePaymentApproved' | 'invoice.prePaymentAutoSent' | 'invoice.additionalCreated' | 'invoice.eventInvoiceCreated'
   /** More fields for the create entry's `after` (an additional invoice's original, Procedure, lines and raiser; catch-up Phase 38b). */
   createAfter?: Record<string, unknown>
   /** Links beyond a split's siblings (an additional invoice's `additionalTo`, catch-up Phase 38b). */

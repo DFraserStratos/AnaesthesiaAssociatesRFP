@@ -11,10 +11,10 @@ interface HistorySheetProps {
   open: boolean
   /**
    * The entity ids whose audit trails to merge. A single id (a List or master
-   * row) shows just that entity; a Booking passes its own id PLUS its Procedure and
-   * BillingLine ids so the booking's full story — the BTM overrides and
+   * row) shows just that entity; a Booking passes its own id PLUS its Procedure
+   * ids so the booking's full story — the BTM overrides and
    * billing-setup edits that the review FLAGS point at, audited as
-   * `procedure`/`billingLine` entities — appears, not only booking-level actions.
+   * `procedure` entities — appears, not only booking-level actions.
    */
   entityIds: readonly string[]
   /**

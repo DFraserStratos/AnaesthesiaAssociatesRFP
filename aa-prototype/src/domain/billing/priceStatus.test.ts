@@ -17,7 +17,6 @@ const feeCtx: FeeContext = {
   timeRule: DEFAULT_RVG_TIME_RULE,
   patientDobISO: undefined,
   modifiers: RVG_MODIFIER_MASTER,
-  nonRvgLines: [],
   rvgGroup: BASE_SINGLE_10,
   allocation: soleAllocation(true, 0),
 }

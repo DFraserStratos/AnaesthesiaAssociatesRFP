@@ -16,7 +16,6 @@
 
 import type {
   Anaesthetist,
-  BillingLine,
   Booking,
   Contract,
   Modifier,
@@ -55,8 +54,6 @@ export interface BookingBillingContext {
   contracts: Readonly<Record<string, Contract>>
   /** The Party master (catch-up Phase 18): the Contracts' holders. */
   parties: Readonly<Record<string, Party>>
-  /** ALL stored billing lines; filtered per procedure by `procedureId`. */
-  billingLines: readonly BillingLine[]
   /** The List's billing hospital (absent at AA's rooms). */
   listHospitalId?: string
   /** The List's date: the procedure date that picks a fixed price's range in force (catch-up Phase 19a). */
@@ -93,8 +90,6 @@ export function feeContextFor(
   procedure: Procedure,
   ctx: BookingBillingContext,
 ): ProcedureFeeContext {
-  const storedLines = ctx.billingLines.filter((l) => l.procedureId === procedure.id)
-  const nonRvgLines = storedLines.filter((l) => l.chargeBasis !== 'rvg')
   const rvgGroup = groupOf(ctx.rvgGroups, procedure.rvgGroupId)
   const contract =
     procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
@@ -104,7 +99,6 @@ export function feeContextFor(
     timeRule: ctx.timeRule,
     patientDobISO: ctx.patientDobISO,
     modifiers: ctx.modifiers,
-    nonRvgLines,
   }
   if (contract !== undefined) feeCtx.contract = contract
   if (rvgGroup !== undefined) feeCtx.rvgGroup = rvgGroup

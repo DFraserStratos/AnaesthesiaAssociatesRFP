@@ -91,16 +91,12 @@ const seedAuditBefore25a = seed.audit.filter((a) => !ADDED_25A_ENTITIES.has(a.en
  * The seed audit dates each Booking's synthetic "booked" entries by its place in
  * id order (`bookingISO`), so 25a's Booking moves every Booking whose id sorts
  * after it (the history Bookings, `HBK…`) by one slot: those entries, and their
- * Procedures' and billing lines', are compared without their time.
+ * Procedures', are compared without their time.
  */
 const FIRST_25A = [...ADDED_25A_BOOKINGS].sort()[0]!
 function bookingOfEntity(type: string, id: string): string | undefined {
   if (type === 'booking') return id
   if (type === 'procedure') return seed.schedule.procedures[id]?.bookingId
-  if (type === 'billingLine') {
-    const line = seed.schedule.billingLines[id]
-    return line !== undefined ? seed.schedule.procedures[line.procedureId]?.bookingId : undefined
-  }
   return undefined
 }
 const isShifted25a = (line: string): boolean => {
@@ -135,10 +131,9 @@ describe('Phase 32d parity: what must not move', () => {
     expect(before.listsWithBookings[SEED_LIST_IDS.billingFailure]).toBeDefined()
   })
 
-  it('every Booking, Procedure and billing line is identical', () => {
+  it('every Booking and Procedure is identical', () => {
     expect(now.bookings).toEqual(before.bookings)
     expect(omit(now.procedures, PHASE_27_MOVED)).toEqual(omit(before.procedures, PHASE_27_MOVED))
-    expect(now.billingLines).toEqual(before.billingLines)
   })
 
   // Wave 1 sync: Lane A's Phase 27 (built beside 32d) re-seeded Riley's and Nair's Rhinoplasty Procedures on Dr

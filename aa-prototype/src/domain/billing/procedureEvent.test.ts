@@ -98,13 +98,14 @@ describe('mayEditEvent', () => {
   const office = { role: 'office' as const }
   const owner = { role: 'anaesthetist' as const, anaesthetistId: OWNER }
   const colleague = { role: 'anaesthetist' as const, anaesthetistId: COLLEAGUE }
-  it('allows edits only while awaiting review or declined', () => {
-    for (const ev of [event(), event({ review: { state: 'declined', reason: 'x' } })]) {
+  it('allows edits only while awaiting review, declined or not invoiced', () => {
+    // Catch-up Phase 39b: an un-ticked event is never reviewed, so it stays editable (38b's handoff).
+    for (const ev of [event(), event({ review: { state: 'declined', reason: 'x' } }), event({ billable: false })]) {
       expect(mayEditEvent(ev, office, OWNER)).toBe(true)
       expect(mayEditEvent(ev, owner, OWNER)).toBe(true)
       expect(mayEditEvent(ev, colleague, OWNER)).toBe(false)
     }
-    for (const ev of [event({ review: { state: 'approved' } }), event({ review: { state: 'approved' }, invoiceId: 'I' }), event({ billable: false })]) {
+    for (const ev of [event({ review: { state: 'approved' } }), event({ review: { state: 'approved' }, invoiceId: 'I' })]) {
       expect(mayEditEvent(ev, office, OWNER)).toBe(false)
       expect(mayEditEvent(ev, owner, OWNER)).toBe(false)
     }

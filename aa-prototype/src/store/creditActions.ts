@@ -969,8 +969,7 @@ export function procedureOwnerSurname(state: Pick<AppState, 'schedule' | 'billin
 
 /**
  * Every entity id whose audit trail a Booking's History merges: the Booking,
- * its Procedures and their billing lines (live, and those a `procedure.remove`
- * took with it), and its billing: its invoices, its Procedures' events (a
+ * its Procedures (live, and those a `procedure.remove` took), and its billing: its invoices, its Procedures' events (a
  * credit's own entries are audited on its event id) and its credit notes and
  * negative invoices.
  */
@@ -984,15 +983,6 @@ export function bookingHistoryEntityIds(state: Pick<AppState, 'schedule' | 'bill
     if ((a.before as { bookingId?: string } | undefined)?.bookingId === bookingId) procedureIds.push(a.entityId)
   }
   const procedureSet = new Set(procedureIds)
-  const lineIds = new Set(
-    Object.values(state.schedule.billingLines)
-      .filter((l) => procedureSet.has(l.procedureId))
-      .map((l) => l.id),
-  )
-  for (const a of state.audit) {
-    const before = a.before as { procedureId?: string } | undefined
-    if (a.entityType === 'billingLine' && before?.procedureId !== undefined && procedureSet.has(before.procedureId)) lineIds.add(a.entityId)
-  }
   const invoiceIds = Object.values(state.billing.invoices)
     .filter((i) => i.bookingId === bookingId)
     .map((i) => i.id)
@@ -1006,7 +996,7 @@ export function bookingHistoryEntityIds(state: Pick<AppState, 'schedule' | 'bill
     .filter((c) => c.bookingId === bookingId || invoiceSet.has(c.originalInvoiceId))
     .sort((a, b) => a.id.localeCompare(b.id))
   const negativeIds = notes.flatMap((c) => (c.negativeInvoiceId !== undefined ? [c.negativeInvoiceId] : []))
-  return [bookingId, ...procedureIds, ...[...lineIds].sort(), ...invoiceIds, ...eventIds, ...notes.map((c) => c.id), ...negativeIds]
+  return [bookingId, ...procedureIds, ...invoiceIds, ...eventIds, ...notes.map((c) => c.id), ...negativeIds]
 }
 
 /**

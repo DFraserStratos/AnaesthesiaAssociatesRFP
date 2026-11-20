@@ -138,7 +138,6 @@ function contextFor(seed: SeedState, bookingId: string): InvoiceBuildContext | u
     rvgGroups: seed.masters.rvgGroups,
     contracts: seed.masters.contracts,
     parties: seed.masters.parties,
-    billingLines: Object.values(seed.schedule.billingLines),
     listDateISO: list.dateISO,
     timeRule: seed.masters.rvgTimeRule,
     patientDobISO: seed.masters.patients[booking.patientId]?.dobISO,

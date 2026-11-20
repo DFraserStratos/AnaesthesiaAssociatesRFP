@@ -73,7 +73,7 @@ describe('parity: the lock prices exactly as the live engine', () => {
         if (booking.cancellation !== undefined) continue
         const lock = takeLockFor(state, booking, 'test', '2026-07-21T09:00:00')
         if (lock === undefined || lock.state !== 'locked') continue
-        const live = bookingFee({ procedures: proceduresForBooking(state, booking.id), list: list as AssignedList, masters: state.masters, billingLines: state.schedule.billingLines, patientId: booking.patientId, held: heldPricesForBooking(state, booking.id) })
+        const live = bookingFee({ procedures: proceduresForBooking(state, booking.id), list: list as AssignedList, masters: state.masters, patientId: booking.patientId, held: heldPricesForBooking(state, booking.id) })
         expect(priceBookingFromLock(lock).total, booking.id).toBe(live.total)
         expect(priceBookingFromLock(lock).units, booking.id).toBe(live.units)
         checked++
@@ -255,19 +255,6 @@ describe('review-pass fixes (catch-up Phase 25)', () => {
     const resent = { ...invoice, delivery: { method: 'email' as const, status: 'sent' as const, sends: [{ atISO: '2026-07-21T09:00:00', to: 'typed@example.net', by: 'Kirsty W.' }] } }
     expect(compareInvoice(resent, lines, draft!, lock.payee).identical).toBe(true)
     expect(compareInvoice({ ...invoice, crossMatch: { procedureDateISO: '2026-01-01' } }, lines, draft!, lock.payee).differences.map((d) => d.field)).toEqual(['Cross-match'])
-  })
-
-  it("a locked Booking's extra billing lines still list beside its locked fee", () => {
-    const api = createAppStore()
-    const booking = bookingsForList(api.getState(), S3_AM)[0]!
-    const p = proceduresForBooking(api.getState(), booking.id)[0]!
-    api.setState({ schedule: { ...api.getState().schedule, billingLines: { ...api.getState().schedule.billingLines, BLX1: { id: 'BLX1', procedureId: p.id, chargeBasis: 'fixed', description: 'Nerve block', amount: 80 } as never } } })
-    expect(authoriseList(api, OFFICE, S3_AM).ok).toBe(true)
-    const s = api.getState()
-    const lock = s.billing.locks[booking.id]!
-    const totals = bookingFee({ procedures: proceduresForBooking(s, booking.id), list: s.schedule.lists[S3_AM] as AssignedList, masters: s.masters, billingLines: s.schedule.billingLines, patientId: booking.patientId, lock })
-    expect(totals.views[p.id]!.nonRvgLines.map((l) => l.id)).toEqual(['BLX1'])
-    expect(totals.total).toBe(lock.bookingPrice)
   })
 
   it('the staged billing failure refuses without arming the hand-off fault when authorise would be refused', () => {

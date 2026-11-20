@@ -1,33 +1,63 @@
 {
   "id": "US-05.5.2",
-  "status": "partial",
-  "absentReason": "An ACC pre-operative assessment is added as an ancillary fixed amount line, with the code typed into the description. CS250, CS260 and CS70 are not a code set to pick from, and their rates are not held.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "acc-preop",
       "app": "web",
-      "caption": "ACC pre-op assessment added as a flat fee billing line",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "caption": "An ACC pre-op assessment is a pre-op event on the real Procedure, with CS250, CS260 and CS70 preconfigured; the codes are not yet confirmed (OQ-12)",
+      "setup": [
+        {
+          "goto": "/web/lists"
+        },
+        {
+          "trigger": "stage-post-op"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "start": "/web/lists?q=Bennett",
       "states": [
         {
           "steps": [
             {
-              "click": "role=button[name=\"Add billing line\"] >> nth=0"
+              "wait": "[data-shot=web-lookback-search] tr[data-booking-id]"
             },
             {
-              "wait": 500
+              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
             },
             {
-              "fill": "[role=dialog] input[placeholder=\"What this line charges\"]",
-              "value": "CS250 ACC pre-operative assessment"
+              "wait": "[data-shot=procedure-events]"
             },
             {
-              "fill": "[role=dialog] input[placeholder=\"85.50\"]",
-              "value": "85.50"
+              "click": "[data-shot=add-pre-post-op-event] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=add-event-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=add-event-sheet] button:text-is(\"Pre-op\")"
+            },
+            {
+              "click": "[data-shot=add-event-sheet] [data-shot=event-type-row][data-type=accPreOpAssessment]"
+            },
+            {
+              "click": "[data-shot=add-event-sheet] [data-shot=acc-preop-preset][data-code=CS250]"
+            },
+            {
+              "wait": "[data-shot=add-event-sheet] [data-shot=acc-codes-caption]"
+            },
+            {
+              "scroll": "[data-shot=add-event-sheet] [data-shot=acc-preop-presets]"
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[data-shot=add-event-sheet] [data-shot=acc-preop-presets]"
           ]
         }
       ]
@@ -35,28 +65,181 @@
     {
       "name": "acc-preop",
       "app": "mobile",
-      "caption": "ACC pre-op assessment added as a flat fee billing line",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "caption": "An ACC pre-op assessment is a pre-op event on the real Procedure, with CS250, CS260 and CS70 preconfigured; the codes are not yet confirmed (OQ-12), on the phone",
+      "setup": [
+        {
+          "goto": "/mobile/lists"
+        },
+        {
+          "trigger": "stage-post-op"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "start": "/mobile/lists?q=Bennett",
       "states": [
         {
           "steps": [
             {
-              "click": "role=button[name=\"Add billing line\"] >> nth=0"
+              "wait": "[data-shot=mobile-lookback-search] button[data-booking-id]"
+            },
+            {
+              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=procedure-events]"
+            },
+            {
+              "click": "[data-aa-mobile-product] [data-shot=add-pre-post-op-event] >> nth=0"
+            },
+            {
+              "wait": "[data-aa-mobile-product] [data-shot=add-event-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-aa-mobile-product] [data-shot=add-event-sheet] button:text-is(\"Pre-op\")"
+            },
+            {
+              "click": "[data-aa-mobile-product] [data-shot=add-event-sheet] [data-shot=event-type-row][data-type=accPreOpAssessment]"
+            },
+            {
+              "click": "[data-aa-mobile-product] [data-shot=add-event-sheet] [data-shot=acc-preop-preset][data-code=CS250]"
+            },
+            {
+              "wait": "[data-aa-mobile-product] [data-shot=add-event-sheet] [data-shot=acc-codes-caption]"
+            },
+            {
+              "scroll": "[data-aa-mobile-product] [data-shot=add-event-sheet] [data-shot=acc-preop-presets]"
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [data-shot=add-event-sheet] [data-shot=acc-preop-presets]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "acc-preop",
+      "app": "admin",
+      "caption": "Like every event, the ACC pre-op assessment is billed in the next run: here CS250 is its own line on the Procedure's invoice",
+      "setup": [
+        {
+          "goto": "/web/lists"
+        },
+        {
+          "trigger": "stage-post-op"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "start": "/admin/review",
+      "states": [
+        {
+          "state": "on-invoice",
+          "steps": [
+            {
+              "goto": "/web/lists?q=Bennett"
+            },
+            {
+              "wait": "[data-shot=web-lookback-search] tr[data-booking-id]"
+            },
+            {
+              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=procedure-events]"
+            },
+            {
+              "click": "[data-shot=add-pre-post-op-event] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=add-event-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=add-event-sheet] button:text-is(\"Pre-op\")"
+            },
+            {
+              "click": "[data-shot=add-event-sheet] [data-shot=event-type-row][data-type=accPreOpAssessment]"
+            },
+            {
+              "click": "[data-shot=add-event-sheet] [data-shot=acc-preop-preset][data-code=CS250]"
+            },
+            {
+              "click": "[data-shot=add-event-sheet] [data-shot=add-event-save]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr[data-kind=preOp]:has-text(\"Coral Bennett\")"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            },
+            {
+              "click": "[data-shot=event-review-sheet] [data-shot=event-review-approve]"
             },
             {
               "wait": 500
             },
             {
-              "fill": "[data-aa-mobile-product] [role=dialog] input[placeholder=\"What this line charges\"]",
-              "value": "CS250 ACC pre-operative assessment"
+              "press": "Escape"
             },
             {
-              "fill": "[data-aa-mobile-product] [role=dialog] input[placeholder=\"85.50\"]",
-              "value": "85.50"
+              "wait": 300
+            },
+            {
+              "goto": "/admin/review"
+            },
+            {
+              "click": "role=button[name=/^Review .*Souter.*Wed 15 Jul$/]"
+            },
+            {
+              "wait": "role=button[name=\"Authorise for billing\"]"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": "text=\"List authorised · locked for billing\""
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": "[data-shot=invoice-list-event-lines]"
+            },
+            {
+              "click": "[data-shot=invoice-list-event-lines] >> nth=0"
+            },
+            {
+              "wait": "tr[data-shot=invoice-event-lines]"
+            },
+            {
+              "scroll": "tr[data-shot=invoice-event-lines] >> nth=0"
             }
           ],
           "highlight": [
-            "[data-aa-mobile-product] [role=dialog]"
+            "tr[data-shot=invoice-event-lines]"
           ]
         }
       ]

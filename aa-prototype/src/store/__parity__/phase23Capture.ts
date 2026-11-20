@@ -17,7 +17,7 @@ import { bctiRecords } from '../ledgerSelectors'
 import { bctisToChargeFor, billingContextForBooking, bookingsForList, prepaidHeldFor, proceduresForBooking } from '../selectors'
 import { buildInvoicesForBooking, type InvoiceBuildContext } from '../../domain/billing/invoiceBuild'
 import { prepaymentDraftsAsRaised } from './phase22aCapture'
-import type { FeeResult } from '../../domain/billing/fee'
+import type { FeeLine, FeeResult } from '../../domain/billing/fee'
 import { listHospitalFor } from '../../domain/listPairing'
 import { bookingFee } from '../../shared/capture/feeContext'
 import type { AssignedList, Booking } from '../../domain/types'
@@ -80,10 +80,19 @@ export interface Phase23Baseline {
   bctis: BctiRow23[]
 }
 
+/**
+ * A fee line's basis as the baseline recorded it (catch-up Phase 39b dropped the
+ * line's own basis field): an RVG line carries its units, the discount is RVG's,
+ * anything else is a fixed amount.
+ */
+function lineBasis(l: FeeLine): 'rvg' | 'fixed' {
+  return l.units !== undefined || l.role === 'discount' ? 'rvg' : 'fixed'
+}
+
 /** The fee of each Procedure of one Booking, as the capture UI assembles it. The only part that may change after the baseline. */
 export function feesForBooking(state: AppState, list: AssignedList, booking: Booking): Record<string, FeeResult> {
   const procedures = proceduresForBooking(state, booking.id)
-  const { views } = bookingFee({ procedures, list, masters: state.masters, billingLines: state.schedule.billingLines, patientId: booking.patientId })
+  const { views } = bookingFee({ procedures, list, masters: state.masters, patientId: booking.patientId })
   const out: Record<string, FeeResult> = {}
   for (const p of procedures) {
     const view = views[p.id]
@@ -135,7 +144,7 @@ export function capturePhase23(state: AppState, opts: { held?: boolean } = {}): 
           t: fee.btm.time.units,
           m: fee.btm.modifiers.units,
           needsPrice: fee.needsPrice,
-          lines: fee.lines.map((l) => ({ basis: l.chargeBasis, amount: l.amount, ...(l.units !== undefined ? { units: l.units } : {}) })),
+          lines: fee.lines.map((l) => ({ basis: lineBasis(l), amount: l.amount, ...(l.units !== undefined ? { units: l.units } : {}) })),
         })
       }
       if (procedures.length > 1) {

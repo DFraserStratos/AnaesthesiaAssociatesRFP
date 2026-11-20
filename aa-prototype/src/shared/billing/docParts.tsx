@@ -12,7 +12,7 @@ import { fontFamily, neutral, radius } from '../../theme/tokens'
 import type { InvoiceAgent, InvoiceSupplier } from '../../domain/types'
 import { GST_RATE, OQ29_CAPTION, OQ29_PILL, agentStatement, supplierGstText } from '../../domain/billing/invoicePresentation'
 import { dayWithYear } from '../../domain/dateText'
-import { dateTimeMicroCap, formatCurrency } from '../format'
+import { dateTimeMicroCap, formatCurrency, plainDate } from '../format'
 import { Pill } from '../ui'
 import { Logo } from '../Logo'
 
@@ -127,8 +127,24 @@ export interface DocLineRow {
   amountText?: string
   /** `data-line-kind` on the row (fee, discount, adjustment). */
   kind?: string
-  /** A hook on the row (`data-shot`). */
+  /** A hook on the row (`data-shot`; catch-up Phase 39b: `invoice-event-lines`). */
   shot?: string
+  /** `data-event-id` on an event's line (catch-up Phase 39b). */
+  eventId?: string
+}
+
+/** An event line's description with its date of service in mono (catch-up Phase 39b; work item 11). */
+export function EventLineText({ text, dateISO }: { text: string; dateISO: string }) {
+  const date = plainDate(dateISO)
+  const at = text.indexOf(date)
+  if (at < 0) return <>{text}</>
+  return (
+    <>
+      {text.slice(0, at)}
+      <span className="mono">{date}</span>
+      {text.slice(at + date.length)}
+    </>
+  )
 }
 
 /**
@@ -151,7 +167,7 @@ export function DocLinesTable({ rows, quantityHead, unitAmount = false, descript
       </thead>
       <tbody>
         {rows.map((r) => (
-          <tr key={r.key} {...(r.kind !== undefined ? { 'data-line-kind': r.kind } : {})} {...(r.shot !== undefined ? { 'data-shot': r.shot } : {})}>
+          <tr key={r.key} {...(r.kind !== undefined ? { 'data-line-kind': r.kind } : {})} {...(r.shot !== undefined ? { 'data-shot': r.shot } : {})} {...(r.eventId !== undefined ? { 'data-event-id': r.eventId } : {})}>
             <td style={docCell}>{r.description}</td>
             {showQuantity && <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{r.quantity ?? ''}</td>}
             {unitAmount && <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{r.unitAmount !== undefined ? formatCurrency(r.unitAmount) : ''}</td>}

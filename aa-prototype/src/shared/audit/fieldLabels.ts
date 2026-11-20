@@ -3,7 +3,7 @@
  * `before` / `after` objects (A7 presentation).
  *
  * Covers the editable fields of `Booking`, `Procedure`, `List`, `Contract`
- * (and a fixed price's ranges), `Patient`, `Anaesthetist` and `BillingLine`, plus the
+ * (and a fixed price's ranges), `Patient` and `Anaesthetist`, plus the
  * audit-only keys the store synthesises for events that are not field edits
  * (`{ cancelled, reason }`, `{ invoiceCount, exceptionCount }`, and so on).
  *
@@ -45,6 +45,20 @@ export const FIELD_LABELS: Record<string, string> = {
   eventRaisedBy: 'Raised by',
   originalInvoiceNumber: 'Original invoice',
   eventId: 'Event',
+  // Catch-up Phase 39b: pre-op, post-op and billing events, and the Contract event fees.
+  billable: 'Invoice this event',
+  notInvoiced: 'Not invoiced',
+  type: 'Type',
+  recording: 'Recorded as',
+  direction: 'Charge or credit',
+  basis: 'Priced by',
+  officeReason: 'Reason for the price',
+  eventKind: 'Event kind',
+  bundled: 'A line on the invoice',
+  eventType: 'Event type',
+  holderCode: 'Holder code',
+  holderDescription: 'Holder description',
+  fixedPrice: 'Fixed price',
   // Catch-up Phase 39: credit notes, negative invoices and the Xero correction.
   creditNoteNumber: 'Credit note',
   creditNoteId: 'Credit note id',
@@ -243,9 +257,8 @@ export const FIELD_LABELS: Record<string, string> = {
   tier: 'Priority tier',
   pairingPreferenceIds: 'Pairing preferences',
 
-  // --- Billing line --------------------------------------------------------
+  // --- Amounts -------------------------------------------------------------
   procedureId: 'Procedure',
-  chargeBasis: 'Charge basis',
   units: 'Units',
   rate: 'Rate',
   hours: 'Hours',

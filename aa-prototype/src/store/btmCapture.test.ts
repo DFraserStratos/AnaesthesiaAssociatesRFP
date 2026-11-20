@@ -51,7 +51,7 @@ function feeForBooking(api: BoundAppStore, bookingId: string): { totals: number[
   const units: number[] = []
   // The Booking priced once, through the one UI assembler (catch-up Phase 23).
   const procedures = proceduresForBooking(state, bookingId)
-  const { views } = bookingFee({ procedures, list, masters: state.masters, billingLines: state.schedule.billingLines, patientId: booking.patientId })
+  const { views } = bookingFee({ procedures, list, masters: state.masters, patientId: booking.patientId })
   for (const procedure of procedures) {
     const fee = views[procedure.id]!.fee
     totals.push(fee.total)

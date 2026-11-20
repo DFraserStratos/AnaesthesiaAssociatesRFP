@@ -72,9 +72,10 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   audit: { prefix: 'A', pad: 4 },
   booking: { prefix: 'BK', pad: 4 },
   procedure: { prefix: 'P', pad: 4 },
-  billingLine: { prefix: 'BL', pad: 4 },
   // Events on a Procedure (catch-up Phase 38b; DM-17): seeded EV0001.
   procedureEvent: { prefix: 'EV', pad: 4 },
+  // Contract event fees (catch-up Phase 39b): seeded CEF001.
+  contractEventFee: { prefix: 'CEF', pad: 3 },
   patient: { prefix: 'PT', pad: 4 },
   billableParty: { prefix: 'BP', pad: 4 },
   dayNote: { prefix: 'DN', pad: 4 },
@@ -193,7 +194,7 @@ export interface MutationMeta {
   after?: unknown
   /**
    * Booking whose `lastModifiedBy/AtISO` this mutation stamps. Omit to derive
-   * from the entity (booking → itself; procedure/billingLine → parent booking);
+   * from the entity (booking → itself; procedure → parent booking);
    * pass null to stamp nothing (List/master mutations).
    */
   stampBookingId?: BookingId | null
@@ -223,10 +224,6 @@ function deriveStampBookingId(meta: MutationMeta, schedule: AppState['schedule']
   if (meta.stampBookingId !== undefined) return meta.stampBookingId
   if (meta.entityType === 'booking') return schedule.bookings[meta.entityId] !== undefined ? meta.entityId : null
   if (meta.entityType === 'procedure') return schedule.procedures[meta.entityId]?.bookingId ?? null
-  if (meta.entityType === 'billingLine') {
-    const procedureId = schedule.billingLines[meta.entityId]?.procedureId
-    return procedureId !== undefined ? (schedule.procedures[procedureId]?.bookingId ?? null) : null
-  }
   return null
 }
 

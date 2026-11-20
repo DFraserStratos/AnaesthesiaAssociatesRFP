@@ -200,6 +200,9 @@ export interface InvoiceLineView {
   /** A free-form line's quantity and unit amount (catch-up Phase 38b). */
   quantity?: number
   unitAmount?: number
+  /** A bundled event's line (catch-up Phase 39b): its date of service and its event. */
+  serviceDateISO?: string
+  eventId?: string
 }
 
 export interface LineViewOptions {
@@ -261,7 +264,7 @@ export function invoiceLineViews(layout: InvoiceLayout, fee: FeeResult, options:
     const description = index === 0 && options.wording !== null && options.wording.trim() !== '' ? options.wording : line.description
     const view: InvoiceLineView = { procedureId: options.procedureId, kind: 'fee', description, amount: line.amount }
     if (line.units !== undefined) view.units = line.units
-    if (layout === 'contractHolder' && line.chargeBasis === 'rvg' && line.rate !== undefined) view.btm = btmOf(fee, line.rate)
+    if (layout === 'contractHolder' && line.rate !== undefined) view.btm = btmOf(fee, line.rate)
     views.push(view)
   })
   return views

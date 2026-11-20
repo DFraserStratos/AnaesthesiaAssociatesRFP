@@ -11,7 +11,7 @@ import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 import type { Actor } from '../../../store'
 import { billedLists, invoiceAddresseeName, invoiceCountsByList, invoiceStanding, isBackdropInvoice, originalInvoiceFor, rebillOriginFor, useAppStore, openBillingExceptions } from '../../../store'
-import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS } from '../../../shared/procedureEventCopy'
+import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, PRE_POST_OP_COPY } from '../../../shared/procedureEventCopy'
 import { dateTimeMicroCap, dayMicroCap, formatCount, formatCurrency, hhmm, plural } from '../../../shared/format'
 import { listShortLabel, listSourceLabels } from '../util'
 import { InvoiceDocument } from './InvoiceDocument'
@@ -45,6 +45,12 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
   const masters = useAppStore((s) => s.masters)
   const navigate = useNavigate()
   // Credit notes join the table (catch-up Phase 39), each just above the invoice it credits.
+  // Catch-up Phase 39b: each invoice's event lines, counted once (never a scan per row).
+  const eventLineCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const l of Object.values(billing.invoiceLines)) if (l.eventId !== undefined) counts.set(l.invoiceId, (counts.get(l.invoiceId) ?? 0) + 1)
+    return counts
+  }, [billing.invoiceLines])
   const creditNotesByOriginal = useMemo(() => {
     const out = new Map<string, CreditNote[]>()
     for (const cn of Object.values(billing.creditNotes).sort((a, b) => b.id.localeCompare(a.id))) out.set(cn.originalInvoiceId, [...(out.get(cn.originalInvoiceId) ?? []), cn])
@@ -241,6 +247,10 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                     {/* An additional invoice names its original (catch-up Phase 38b). */}
                     {invoice.kind === 'additional' && originalOf(invoice) !== undefined && (
                       <div data-shot="invoice-list-additional-to" style={{ marginTop: 2, fontSize: 11.5, fontWeight: 400, color: neutral.mist }}>{ADDITIONAL_INVOICE_COPY.additionalTo(originalOf(invoice)!.invoiceNumber)}</div>
+                    )}
+                    {/* Its event lines (catch-up Phase 39b): "+2 event lines". */}
+                    {(eventLineCounts.get(invoice.id) ?? 0) > 0 && (
+                      <div data-shot="invoice-list-event-lines" style={{ marginTop: 2, fontSize: 11.5, fontWeight: 400, color: neutral.mist }}>{PRE_POST_OP_COPY.eventLines(eventLineCounts.get(invoice.id)!)}</div>
                     )}
                     {/* A replacement names the invoice it rebills (catch-up Phase 39). */}
                     {rebillOrigin !== undefined && (

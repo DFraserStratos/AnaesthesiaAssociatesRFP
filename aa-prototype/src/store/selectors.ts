@@ -1301,7 +1301,7 @@ export function payerLockedByPrepayment(state: Pick<AppState, 'schedule' | 'bill
  * on a Draft List (no anaesthetist yet) or one whose List is gone.
  */
 export function completionContextFor(
-  state: { masters: AppState['masters']; schedule: Pick<AppState['schedule'], 'bookings' | 'lists' | 'billingLines'> },
+  state: { masters: AppState['masters']; schedule: Pick<AppState['schedule'], 'bookings' | 'lists'> },
   bookingId: string,
 ): CompletionContext | undefined {
   const booking = state.schedule.bookings[bookingId]
@@ -1313,7 +1313,6 @@ export function completionContextFor(
     parties: state.masters.parties,
     rvgGroups: state.masters.rvgGroups,
     modifiers: state.masters.modifiers,
-    billingLines: Object.values(state.schedule.billingLines),
     listDateISO: list.dateISO,
     patientDobISO: state.masters.patients[booking.patientId]?.dobISO,
   }
@@ -1322,7 +1321,7 @@ export function completionContextFor(
 export function billingContextForBooking(
   state: {
     masters: AppState['masters']
-    schedule: Pick<AppState['schedule'], 'lists' | 'billingLines'> & Partial<Pick<AppState['schedule'], 'bookings' | 'procedures'>>
+    schedule: Pick<AppState['schedule'], 'lists'> & Partial<Pick<AppState['schedule'], 'bookings' | 'procedures'>>
     billing?: Pick<AppState['billing'], 'invoices' | 'invoiceLines'>
   },
   booking: Booking,
@@ -1337,7 +1336,6 @@ export function billingContextForBooking(
     rvgGroups: state.masters.rvgGroups,
     contracts: state.masters.contracts,
     parties: state.masters.parties,
-    billingLines: Object.values(state.schedule.billingLines),
     listDateISO: list.dateISO,
     timeRule: state.masters.rvgTimeRule,
     patientDobISO: state.masters.patients[booking.patientId]?.dobISO,
@@ -1376,7 +1374,6 @@ export interface EntityCounts {
   draftLists: number
   bookings: number
   procedures: number
-  billingLines: number
   importBatches: number
   importRows: number
   /** Stubs on Lists, every status (catch-up Phase 33a). */
@@ -1408,7 +1405,6 @@ export function entityCounts(state: AppState): EntityCounts {
     draftLists: waitingDraftLists(state).length,
     bookings: Object.keys(state.schedule.bookings).length,
     procedures: Object.keys(state.schedule.procedures).length,
-    billingLines: Object.keys(state.schedule.billingLines).length,
     importBatches: Object.keys(state.intake.batches).length,
     importRows: Object.keys(state.intake.rows).length,
     stubs: Object.keys(state.intake.stubs).length,
@@ -2180,7 +2176,7 @@ export function bookingContractCue(state: Pick<AppState, 'masters' | 'schedule'>
  */
 export function procedureStackViewFor(
   state: Pick<AppState, 'masters'> & {
-    schedule: Pick<AppState['schedule'], 'procedures' | 'bookings' | 'lists'> & Partial<Pick<AppState['schedule'], 'billingLines'>>
+    schedule: Pick<AppState['schedule'], 'procedures' | 'bookings' | 'lists'>
     billing?: Pick<AppState['billing'], 'invoices' | 'invoiceLines'> & Partial<Pick<AppState['billing'], 'locks' | 'ledger' | 'transfers'>>
   },
   procedureId: string,
@@ -2221,14 +2217,14 @@ export function procedureStackViewFor(
   let splitFeeExGst: number | null | undefined
   if (procedure.split !== undefined) {
     // The held amounts too, where the caller has the billing slice (catch-up Phase 24), as the run reads them.
-    const schedule = { lists: state.schedule.lists, billingLines: state.schedule.billingLines ?? {}, bookings: state.schedule.bookings, procedures: state.schedule.procedures }
+    const schedule = { lists: state.schedule.lists, bookings: state.schedule.bookings, procedures: state.schedule.procedures }
     const ctx = billingContextForBooking({ masters: state.masters, schedule, ...(state.billing !== undefined ? { billing: state.billing } : {}) }, booking)
     const fee = ctx !== undefined && procedure.governingContractId !== undefined ? feeIn(bookingFeesFor(proceduresForBooking(state, booking.id), ctx), procedure.id) : undefined
     splitFeeExGst = fee === undefined || fee.needsPrice ? null : fee.total
   }
   // A prepaid Procedure's basis reads its prepaid amount (catch-up Phase 27, US-03.1.8): needs the billing slice.
   const prepay =
-    state.billing?.ledger !== undefined && state.schedule.billingLines !== undefined
+    state.billing?.ledger !== undefined
       ? prepaymentForProcedure(
           // The transfers only say where the money is (catch-up Phase 27a), which the stack never reads.
           { ...state, billing: { ...state.billing, transfers: state.billing.transfers ?? {} } } as Parameters<typeof prepaymentForProcedure>[0],

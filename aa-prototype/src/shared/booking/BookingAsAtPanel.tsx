@@ -46,21 +46,13 @@ export function asAtPaidByText(
 }
 
 /**
- * The audit entries the as-at walk reads for a Booking: its own, its patient's,
- * its Procedures' (current and removed) and every billing line ever on one of
- * those Procedures (by the line's `procedureId` before or after).
+ * The audit entries the as-at walk reads for a Booking: its own, its patient's
+ * and its Procedures' (current and removed).
  */
-export function asAtEntriesFor(audit: readonly AuditEntry[], bookingId: string, patientId: string, procedureIds: Iterable<string>, billingLineIds: Iterable<string>): AuditEntry[] {
+export function asAtEntriesFor(audit: readonly AuditEntry[], bookingId: string, patientId: string, procedureIds: Iterable<string>): AuditEntry[] {
   const procedures = new Set(procedureIds)
   for (const e of audit) if (e.entityType === 'procedure' && (e.before as { bookingId?: string } | undefined)?.bookingId === bookingId) procedures.add(e.entityId)
-  const lineOwner = (v: unknown) => (v !== null && typeof v === 'object' ? (v as { procedureId?: unknown }).procedureId : undefined)
-  const lines = new Set(billingLineIds)
-  for (const e of audit) {
-    if (e.entityType !== 'billingLine') continue
-    const owner = lineOwner(e.before) ?? lineOwner(e.after)
-    if (typeof owner === 'string' && procedures.has(owner)) lines.add(e.entityId)
-  }
-  const ids = new Set([bookingId, patientId, ...procedures, ...lines])
+  const ids = new Set([bookingId, patientId, ...procedures])
   return audit.filter((e) => ids.has(e.entityId))
 }
 
@@ -71,7 +63,7 @@ export function BookingAsAtPanel({ bookingId, entryId, onClose }: { bookingId: s
   const result = useMemo(() => {
     const now = snapshotBooking({ schedule, masters }, bookingId)
     if (now === undefined) return undefined
-    const entries = asAtEntriesFor(audit, bookingId, now.booking.patientId, Object.keys(now.procedures), Object.keys(now.billingLines))
+    const entries = asAtEntriesFor(audit, bookingId, now.booking.patientId, Object.keys(now.procedures))
     return bookingAsAt(now, entries, { afterEntryId: entryId }, { modifiers: masters.modifiers })
   }, [audit, schedule, masters, bookingId, entryId])
   const cut = audit.find((e) => e.id === entryId)

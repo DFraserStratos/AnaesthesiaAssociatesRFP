@@ -26,7 +26,6 @@ function ctxFor(bookingId: string): CompletionContext {
     parties: masters.parties,
     rvgGroups: masters.rvgGroups,
     modifiers: masters.modifiers,
-    billingLines: Object.values(schedule.billingLines),
     listDateISO: list.dateISO,
     patientDobISO: masters.patients[booking.patientId]?.dobISO,
   }

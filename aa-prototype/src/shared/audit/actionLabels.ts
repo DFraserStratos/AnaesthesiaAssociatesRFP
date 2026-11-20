@@ -38,7 +38,7 @@ export const ACTION_LABELS: Record<string, string> = {
   'booking.billingException': 'Billing exception raised',
   'booking.lock': 'Contract locked at authorise',
 
-  // --- Procedures & billing lines -----------------------------------------
+  // --- Procedures ----------------------------------------------------------
   'procedure.create': 'Procedure added',
   'procedure.update': 'Procedure updated',
   'procedure.contract': 'Contract changed',
@@ -52,8 +52,6 @@ export const ACTION_LABELS: Record<string, string> = {
   'procedure.procedureText.replace': 'Procedure text replaced',
   'procedure.invoiceDescription.set': 'Invoice description changed',
   'procedure.invoiceDescription.applyDefault': 'Newer description used on the invoice',
-  'billingLine.add': 'Billing line added',
-  'billingLine.remove': 'Billing line removed',
 
   // --- Lists ---------------------------------------------------------------
   'list.update': 'List updated',

@@ -8,8 +8,9 @@
  * dash in any string.
  */
 
-import type { ProcedureEventKind } from '../domain/types'
+import type { ProcedureEvent, ProcedureEventKind } from '../domain/types'
 import type { ProcedureEventStatus } from '../domain/billing/procedureEvent'
+import type { EventPricing, PrePostOpEventType } from '../domain/billing/prePostOpEvent'
 import { drSurname, formatCurrency } from './format'
 
 export const EVENT_LABELS = {
@@ -35,7 +36,7 @@ export const EVENT_LABELS = {
   listsTab: 'Lists',
   eventsTab: 'Events',
   /** The Events tab's page subtitle (the Lists tab keeps the queue's own). */
-  eventsTabSub: (n: number) => `Additional invoices and credits awaiting review before the next billing run. ${n} in the queue.`,
+  eventsTabSub: (n: number) => `Pre-op, post-op and billing events, additional invoices and credits awaiting review before the next billing run. ${n} in the queue.`,
   /** The Billing monitor panel. */
   awaitingRunTitle: 'Waiting for the next billing run',
   /** The review sheet. */
@@ -56,6 +57,10 @@ export const EVENT_KIND_LABEL: Record<ProcedureEventKind, string> = {
   additionalInvoice: 'Additional invoice',
   // Catch-up Phase 39: a credit note in full, with its replacements.
   credit: 'Credit',
+  // Catch-up Phase 39b: pre-op, post-op and billing events.
+  preOp: 'Pre-op',
+  postOp: 'Post-op',
+  billing: 'Billing event',
 }
 
 export const EVENT_STATUS_LABEL: Record<ProcedureEventStatus, string> = {
@@ -74,6 +79,13 @@ export const EVENT_ACTION_LABELS: Record<string, string> = {
   'procedureEvent.approve': 'Event approved for billing',
   'procedureEvent.decline': 'Event declined',
   'procedureEvent.invoiced': 'Event invoiced',
+  // Catch-up Phase 39b.
+  'procedureEvent.backToReview': 'Event sent back to review',
+  'invoice.eventLine': 'Event added to an invoice as a line',
+  'invoice.eventInvoiceCreated': 'Event invoice raised',
+  'contractEventFee.add': 'Contract event fee added',
+  'contractEventFee.edit': 'Contract event fee edited',
+  'contractEventFee.remove': 'Contract event fee removed',
 }
 
 /**
@@ -422,3 +434,174 @@ export const CREDIT_SYNC_MESSAGES = {
   /** A correction queued behind the hand-off of the invoice it credits. */
   waitingForOriginal: 'Waiting for the invoice it credits to reach Xero.',
 } as const
+
+/** Store sentences for pre-op, post-op and billing events (catch-up Phase 39b). No en or em dash. */
+export const EVENT_KIND_MESSAGES = {
+  listUnassigned: 'Assign the List first.',
+  feeNotOnContract: "This procedure's Contract has no fee for that type of event.",
+  creditAfterInvoice: 'Credits after invoicing need a credit note. Use Credit note on this procedure.',
+  officePriceInvalid: 'Type the price in dollars and cents, 0 or more and under $100,000.00.',
+  officeReasonRequired: 'Give a reason for the price.',
+  noOfficePriceOnBilling: 'A billing event is priced as typed. Edit its amount instead.',
+  needsPrice: 'Needs a price: invoiced in the next run once priced.',
+  creditTooBig: 'Needs a change: the credit is more than the invoice.',
+  creditNoInvoice: "Needs a change: a credit rides on its party's invoice, and there is none to take it. Decline it or use Credit note.",
+  creditWaits: "Waiting for its party's invoice: a credit is billed with the procedure's List.",
+  pickType: { preOp: 'Pick a pre-op type.', postOp: 'Pick a post-op type.' },
+  pickParty: 'Pick who to bill.',
+} as const
+
+// ---------------------------------------------------------------------------
+// Pre-op, post-op and billing events (catch-up Phase 39b; US-03.7.1, US-03.7.2,
+// US-05.5.2). The kind labels join EVENT_KIND_LABEL above. No en or em dash: a
+// credit reads "-$40.00" with a plain hyphen.
+// ---------------------------------------------------------------------------
+
+/** The type names of a pre-op or post-op event (`EVENT_TYPES`). */
+export const EVENT_TYPE_LABEL: Record<PrePostOpEventType, string> = {
+  postOpWardReview: 'Post-op ward review',
+  hduReview: 'HDU review',
+  painConsult: 'Pain consult',
+  accPreOpAssessment: 'ACC pre-op assessment',
+  otherPreOp: 'Other pre-op',
+  otherPostOp: 'Other post-op',
+}
+
+export const PRE_POST_OP_COPY = {
+  /** The two buttons at the foot of a Procedure's events. */
+  addPrePostOp: 'Add pre-op or post-op event',
+  addBilling: 'Add billing event',
+  /** The sheets' titles and primary action. */
+  prePostOpTitle: 'Pre-op or post-op event',
+  billingTitle: 'Billing event',
+  addEvent: 'Add event',
+  saveChanges: 'Save changes',
+  preOp: 'Pre-op',
+  postOp: 'Post-op',
+  typeLabel: 'Type',
+  dateLabel: 'Date',
+  startLabel: 'Start time',
+  recordTime: 'Record a time',
+  fixedFee: 'Fixed fee',
+  minutesLabel: 'Minutes',
+  feeAmountLabel: 'Fee, ex GST',
+  /** "40 min". */
+  minutes: (n: number) => `${n} min`,
+  /** An event's amount with a plain hyphen for a credit: "-$40.00", "$180.00". */
+  amount: (n: number) => (n < 0 ? `-${formatCurrency(-n)}` : formatCurrency(n)),
+  /** A timed event before the office prices it (US-03.7.1; the anaesthetist sees no calculation). */
+  timePricingCaption: 'The office prices the time at review.',
+  /** A Contract event fee shown read-only in the sheet. */
+  contractFeeCaption: "Fixed fee under this procedure's Contract",
+  /** The ACC presets' caption (OQ-12 part 1, provisional). */
+  accCodesCaption: "Codes to confirm with AA's accountant (OQ-12).",
+  /** The invoice tick. */
+  invoiceTick: 'Invoice this event',
+  invoiceTickCaption: 'Cleared: kept on the record, never invoiced.',
+  /** The "same as" tick and its reading caption (US-03.7.1; our reading of Greg's courier comparison). */
+  sameAsTick: 'Billed to the same party as the procedure',
+  sameAsCaption: 'Our reading: the same party as the procedure unless you change it.',
+  billTo: 'Bill to',
+  /** The routing caption under the primary action (OQ-121, D69). */
+  routingCaption: 'Reviewed by the office, then billed in the next run.',
+  /** The billing event sheet. */
+  charge: 'Charge',
+  credit: 'Credit',
+  descriptionLabel: 'What is this for?',
+  amountLabel: 'Amount, ex GST',
+  creditCaption: 'Reduces what is owed.',
+  /** A credit once the Procedure is invoiced: 39's credit note is the route (a one-line credit note is not built). */
+  creditAfterInvoice: 'Credits after invoicing need a credit note. Use Credit note on this procedure.',
+  /** The review sheet. */
+  setPrice: 'Set a price',
+  officePriceLabel: 'Price, ex GST',
+  officeReasonLabel: 'Reason for the price',
+  officeReasonRequired: 'Give a reason for the price.',
+  needsPrice: 'Needs a price: invoiced in the next run once priced.',
+  creditTooBig: 'Needs a change: the credit is more than the invoice.',
+  /** "Contract fee STGACC-PAIN · $120.00 replaces 40 min". */
+  feeReplaces: (code: string | undefined, amount: string, minutes: number) => `Contract fee${code !== undefined && code !== "" ? ` ${code}` : ""} · ${amount} replaces ${minutes} min`,
+  /** "45 min · 3 time units x $25.00 Contract rate = $75.00" (office only). */
+  timeCalculation: (minutes: number, units: number, rate: string, origin: 'contractRate' | 'unitValue', amount: string, discountPercent?: number) =>
+    `${minutes} min · ${units} time units x ${rate} ${origin === 'contractRate' ? 'Contract rate' : 'unit value'}${discountPercent !== undefined ? ` less ${discountPercent}%` : ''} = ${amount}`,
+  /** The invoice line's lead, per kind. */
+  lineLead: { preOp: 'Pre-op event', postOp: 'Post-op event', billing: 'Billing event', credit: 'Credit' },
+  /** An event invoice's relates-to line: "Post-op event · relates to AA-2026-0012 · {Procedure}". */
+  relatesTo: (lead: string, number: string, procedure: string) => `${lead} · relates to ${number} · ${procedure}`,
+  /** An event invoice raised before its Procedure had one: "Post-op event · {Procedure}". */
+  eventFor: (lead: string, procedure: string) => `${lead} · ${procedure}`,
+  /** "+2 event lines" under an invoice number. */
+  eventLines: (n: number) => `+${n} event ${n === 1 ? 'line' : 'lines'}`,
+  /** "+1 event invoice" on a Billing monitor row. */
+  eventInvoices: (n: number) => `+${n} event ${n === 1 ? 'invoice' : 'invoices'}`,
+  /** The Contract editor's section. */
+  eventFeesTitle: 'Event fees',
+  eventFeesCaption: 'Fixed fees this Contract charges for a pre-op or post-op event, in place of the time recorded.',
+  eventFeesEmpty: 'No event fees on this Contract.',
+  addEventFee: 'Add event fee',
+  holderCodeLabel: 'Holder code',
+  holderDescriptionLabel: 'Description',
+  fixedPriceLabel: 'Fixed price, ex GST',
+  eventTypeHead: 'Event type',
+  actionsHead: 'Actions',
+  save: 'Save',
+  cancel: 'Cancel',
+  newFee: (field: string) => `New fee ${field.toLowerCase()}`,
+  /** The minutes stepper's noun ("Fewer minutes", "More minutes"). */
+  minutesNoun: 'minutes',
+  priceLabel: 'Price',
+  needsPriceShort: 'Needs a price',
+  kindLabel: 'Pre-op or post-op',
+  recordsLabel: 'Recorded as',
+  directionLabel: 'Charge or credit',
+} as const
+
+/** An event's invoice-line lead (catch-up Phase 39b): "Pre-op event", "Post-op event", "Billing event", or "Credit" for a negative billing event. */
+export function eventLineLead(detail: ProcedureEvent['detail'], amount?: number): string | undefined {
+  if (detail.kind === 'preOp' || detail.kind === 'postOp') return PRE_POST_OP_COPY.lineLead[detail.kind]
+  if (detail.kind === 'billing') return (amount ?? (detail.direction === 'credit' ? -1 : 1)) < 0 ? PRE_POST_OP_COPY.lineLead.credit : PRE_POST_OP_COPY.lineLead.billing
+  return undefined
+}
+
+/** How an event's price reads to the office: the calculation, the Contract fee, the typed fee or the office's price (never shown to the anaesthetist). */
+export function pricingText(p: EventPricing): string {
+  switch (p.basis) {
+    case 'time':
+      return PRE_POST_OP_COPY.timeCalculation(p.minutes ?? 0, p.timeUnits ?? 0, formatCurrency(p.rate ?? 0), p.rateOrigin ?? 'unitValue', formatCurrency(p.amount), p.discountPercent)
+    case 'contractEventFee':
+      return p.replacedMinutes !== undefined
+        ? PRE_POST_OP_COPY.feeReplaces(p.holderCode, formatCurrency(p.amount), p.replacedMinutes)
+        : `Contract fee${p.holderCode !== undefined ? ` ${p.holderCode}` : ''} · ${formatCurrency(p.amount)}`
+    case 'typedFixedFee':
+      return `${PRE_POST_OP_COPY.fixedFee} · ${formatCurrency(p.amount)}`
+    case 'billingEvent':
+      return PRE_POST_OP_COPY.amount(p.amount)
+    case 'officePrice':
+      return `${PRE_POST_OP_COPY.setPrice} · ${formatCurrency(p.amount)}${p.officeReason !== undefined ? ` · ${p.officeReason}` : ''}`
+  }
+}
+
+/**
+ * A pre-op, post-op or billing event's row text: its type (and ACC code) or
+ * description, what was recorded, and the amount the viewer may see once one
+ * exists (the frozen price; a typed fee or charge as typed, a credit negative;
+ * a Contract fee's fixed price). A time before review shows none: never a
+ * calculation (`EVENT_RULES.anaesthetistSees`). Undefined for 38b's and 39's kinds.
+ */
+export function kindRowText(
+  state: { masters: { contractEventFees: Record<string, { fixedPrice: number }> } },
+  e: Pick<ProcedureEvent, 'detail' | 'pricing'>,
+): { first: string; recorded: string; amount: number | undefined } | undefined {
+  const d = e.detail
+  if (d.kind === 'billing') {
+    return { first: d.description, recorded: d.direction === 'credit' ? PRE_POST_OP_COPY.credit : PRE_POST_OP_COPY.charge, amount: e.pricing?.amount ?? (d.direction === 'credit' ? -d.amount : d.amount) }
+  }
+  if (d.kind !== 'preOp' && d.kind !== 'postOp') return undefined
+  const r = d.recording
+  const asRecorded = r.kind === 'fixedFee' ? (r.source === 'typed' ? r.amount : state.masters.contractEventFees[r.eventFeeId]?.fixedPrice) : undefined
+  return {
+    first: `${EVENT_TYPE_LABEL[d.type]}${d.code !== undefined ? ` · ${d.code}` : ''}`,
+    recorded: r.kind === 'time' ? PRE_POST_OP_COPY.minutes(r.minutes) : PRE_POST_OP_COPY.fixedFee,
+    amount: e.pricing?.amount ?? asRecorded,
+  }
+}

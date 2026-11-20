@@ -12,9 +12,9 @@
 import type {
   Anaesthetist,
   AuditEntry,
-  BillingLine,
   Booking,
   Contract,
+  ContractEventFee,
   ContractHolderOrganisation,
   RvgTimeRule,
   DayNote,
@@ -64,7 +64,7 @@ import {
 } from './cast'
 import { DIRECTORY_SURGEONS } from './specialistDirectory'
 import { buildOfficePrivate } from './officePrivate'
-import { CONTRACT, CONTRACTS } from './contracts'
+import { CONTRACT, CONTRACTS, CONTRACT_EVENT_FEES, SEED_NEXT_CONTRACT_EVENT_FEE } from './contracts'
 import { PARTIES, PARTY } from './parties'
 import { SPECIALTIES } from './specialties'
 import { FUNDING_TAGS } from './fundingTags'
@@ -149,6 +149,8 @@ export interface SeedMasters {
   /** The billing identity behind the COS surgeon-group Party (kept by catch-up Phase 21). */
   organisations: Record<string, ContractHolderOrganisation>
   contracts: Record<string, Contract>
+  /** The Contract event fees (catch-up Phase 39b; `domain/billing/contractEventFees.ts`): read only by an event's pricing. */
+  contractEventFees: Record<string, ContractEventFee>
   /**
    * The RVG time rule held as data (catch-up Phase 19a; US-05.2.2, D25):
    * seeded from `DEFAULT_RVG_TIME_RULE`; every fee reads it from here. Read
@@ -184,7 +186,6 @@ export interface SeedSchedule {
   lists: Record<string, List>
   bookings: Record<string, Booking>
   procedures: Record<string, Procedure>
-  billingLines: Record<string, BillingLine>
   /** Events on Procedures (catch-up Phase 38b; DM-17), keyed `EV####`. Never a List or schedule entry. */
   procedureEvents: Record<string, ProcedureEvent>
   /**
@@ -495,7 +496,6 @@ function buildSeedInternal(): SeedBuild {
   })
   const bookingsRec = byId(bookingsBuild.bookings, (c) => c.id)
   const proceduresRec = byId(bookingsBuild.procedures, (p) => p.id)
-  const billingLinesRec = byId(bookingsBuild.billingLines, (l) => l.id)
   for (const [id, l] of Object.entries(history.lists)) lists[id] = l
   for (const [id, c] of Object.entries(history.bookings)) bookingsRec[id] = c
   for (const [id, p] of Object.entries(history.procedures)) proceduresRec[id] = p
@@ -631,7 +631,6 @@ function buildSeedInternal(): SeedBuild {
     bookings: bookingsRec,
     // The "RTK" Procedure was created with the rooms' text; the replace row (in `existing`) records the hospital's.
     procedures: { ...proceduresRec, [wordingBookings.rtkProcedureId]: { ...proceduresRec[wordingBookings.rtkProcedureId]!, procedureText: wordingBookings.rtkRoomsText } },
-    billingLines: billingLinesRec,
   })
 
   const state: SeedState = {
@@ -646,6 +645,7 @@ function buildSeedInternal(): SeedBuild {
       insurers: byId(INSURERS, (i) => i.id),
       organisations: organisationsRec,
       contracts: byId(CONTRACTS, (c) => c.id),
+      contractEventFees: byId(CONTRACT_EVENT_FEES.map((f) => ({ ...f })), (f) => f.id),
       rvgTimeRule: { ...DEFAULT_RVG_TIME_RULE, tiers: DEFAULT_RVG_TIME_RULE.tiers.map((t) => ({ ...t })) },
       rvgGroups: byId(RVG_GROUPS, (g) => g.id),
       modifiers: byId(SEED_MODIFIERS, (m) => m.id),
@@ -662,7 +662,6 @@ function buildSeedInternal(): SeedBuild {
       lists,
       bookings: bookingsRec,
       procedures: proceduresRec,
-      billingLines: billingLinesRec,
       // Catch-up Phase 38b: the one seeded event (EV0001, Dr Souter's additional invoice on HP03), appended, RNG-free.
       procedureEvents: byId(SEED_PROCEDURE_EVENTS.map((e) => structuredClone(e)), (e) => e.id),
       warningClearances: {},
@@ -684,9 +683,10 @@ function buildSeedInternal(): SeedBuild {
       audit: audit.length + 1,
       booking: disabledContractBooking.next.booking,
       procedure: disabledContractBooking.next.procedure,
-      billingLine: bookingsBuild.next.billingLine,
       // Catch-up Phase 38b: EV0001 is seeded.
       procedureEvent: SEED_NEXT_PROCEDURE_EVENT,
+      // Catch-up Phase 39b: CEF001 is seeded (STGACC-PAIN on St George's ACC).
+      contractEventFee: SEED_NEXT_CONTRACT_EVENT_FEE,
       patient: patients.length + 1,
       // Payer ids (`BP####`): BP0001 is Hana Park as a payer, BP0002 Aria's folded record (catch-up Phase 21); BP0003 to BP0005 seeded payers.
       billableParty: SEED_PAYER_COUNTER,

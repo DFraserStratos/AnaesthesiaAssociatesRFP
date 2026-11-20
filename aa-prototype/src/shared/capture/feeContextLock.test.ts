@@ -26,7 +26,7 @@ describe('a locked Booking displays from its snapshot', () => {
       const booking = s.schedule.bookings[bookingId]!
       const list = s.schedule.lists[booking.listId] as AssignedList
       const lock = s.billing.locks[bookingId]
-      return bookingFee({ procedures: proceduresForBooking(s, bookingId), list, masters: s.masters, billingLines: s.schedule.billingLines, patientId: booking.patientId, held: heldPricesForBooking(s, bookingId), ...(lock !== undefined ? { lock } : {}) })
+      return bookingFee({ procedures: proceduresForBooking(s, bookingId), list, masters: s.masters, patientId: booking.patientId, held: heldPricesForBooking(s, bookingId), ...(lock !== undefined ? { lock } : {}) })
     }
     const locked = bookingsForList(api.getState(), listId)[0]!
     const active = Object.values(api.getState().schedule.bookings).find((b) => {

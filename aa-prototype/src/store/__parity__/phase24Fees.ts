@@ -12,5 +12,5 @@ import type { AssignedList, Booking } from '../../domain/types'
 export function bookingFeeView(state: AppState, list: AssignedList, booking: Booking): BookingFeeTotals {
   const procedures = proceduresForBooking(state, booking.id)
   // Phase 24: the assembler newly reads the held amounts (the AUTHORISED and prepaid rungs).
-  return bookingFee({ procedures, list, masters: state.masters, billingLines: state.schedule.billingLines, patientId: booking.patientId, held: heldPricesForBooking(state, booking.id) })
+  return bookingFee({ procedures, list, masters: state.masters, patientId: booking.patientId, held: heldPricesForBooking(state, booking.id) })
 }

@@ -16,10 +16,9 @@ import type { SeedState } from '../index'
 export type ListFace = Omit<List, 'kind' | 'recurringBookingId' | 'recurringOrigin'>
 
 export interface Phase32dSeedBaseline {
-  /** Every Booking, Procedure and billing line, whole. */
+  /** Every Booking and Procedure, whole. */
   bookings: SeedState['schedule']['bookings']
   procedures: SeedState['schedule']['procedures']
-  billingLines: SeedState['schedule']['billingLines']
   /** Every List that holds a Booking, without kind and recurring link. */
   listsWithBookings: Record<string, ListFace>
   /** Every other List (none holds a Booking), whole, the public ones included. */
@@ -79,7 +78,6 @@ export function capturePhase32d(state: SeedState): Phase32dSeedBaseline {
   return {
     bookings: state.schedule.bookings,
     procedures: state.schedule.procedures,
-    billingLines: state.schedule.billingLines,
     listsWithBookings,
     otherLists,
     publicWithBookings,

@@ -34,7 +34,6 @@ function ctx(overrides: Partial<CompletionContext> = {}): CompletionContext {
     },
     rvgGroups: { [BASE_SINGLE_10.id]: BASE_SINGLE_10, [BASE_RANGE_5_9.id]: BASE_RANGE_5_9 },
     modifiers: RVG_MODIFIER_MASTER,
-    billingLines: [],
     listDateISO: '2026-07-21',
     patientDobISO: undefined,
     ...overrides,

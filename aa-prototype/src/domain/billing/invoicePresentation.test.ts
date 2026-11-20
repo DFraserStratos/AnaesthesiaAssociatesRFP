@@ -42,9 +42,8 @@ function fee(overrides: Partial<FeeResult> = {}): FeeResult {
       modifierRows: [],
     } as unknown as FeeResult['btm'],
     billableUnits: 8,
-    chargeBasis: 'rvg',
     unitRate: 26.5,
-    lines: [{ chargeBasis: 'rvg', description: 'Anaesthesia (B + T + M units)', amount: 212, units: 8, rate: 26.5 }],
+    lines: [{ description: 'Anaesthesia (B + T + M units)', amount: 212, units: 8, rate: 26.5 }],
     subtotal: 212,
     price: { status: 'priced', price: 212, heldBy: null },
     total: 212,
@@ -134,8 +133,8 @@ describe('lines (US-08.4.1)', () => {
     // 8 units at $30 = $240.00 less 10% = $216.00.
     const discounted = fee({
       lines: [
-        { chargeBasis: 'rvg', description: 'Anaesthesia', amount: 240, units: 8, rate: 30 },
-        { chargeBasis: 'rvg', role: 'discount', description: 'Discount 10%', amount: -24 },
+        { description: 'Anaesthesia', amount: 240, units: 8, rate: 30 },
+        { role: 'discount', description: 'Discount 10%', amount: -24 },
       ],
       subtotal: 216,
       total: 216,
@@ -146,7 +145,7 @@ describe('lines (US-08.4.1)', () => {
     expect(views.reduce((s, v) => s + v.amount, 0)).toBe(216)
   })
   it('prints a typed price as one fee line at the price: no adjustment, no reason', () => {
-    const typed = fee({ lines: [{ chargeBasis: 'fixed', description: 'Anaesthesia (B + T + M units)', amount: 200 }], subtotal: 200, total: 200 })
+    const typed = fee({ lines: [{ description: 'Anaesthesia (B + T + M units)', amount: 200 }], subtotal: 200, total: 200 })
     const views = invoiceLineViews('patient', typed, { procedureId: 'P1', wording: 'Knee' })
     expect(views.map((v) => [v.kind, v.description, v.amount])).toEqual([['fee', 'Knee', 200]])
   })

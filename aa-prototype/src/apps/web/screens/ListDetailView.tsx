@@ -68,7 +68,6 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
   const times = useListTimes(list)
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
-  const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
   // The cue's reads (catch-up Phase 20): the whole schedule and masters, so it never goes stale.
   const cueState = useAppStore((s) => s)
   const masters = useAppStore((s) => s.masters)
@@ -104,7 +103,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
       .map((booking) => {
         // The primary first (catch-up Phase 23): the row's operation text is the primary's.
         const procs = inDisplayOrder(procsByBooking.get(booking.id) ?? [])
-        const totals = booking.cancellation === undefined ? bookingFee({ procedures: procs, list, masters, billingLines: billingLinesRecord, patientId: booking.patientId, held: heldPricesForBooking(cueState, booking.id), ...(cueState.billing.locks[booking.id] !== undefined ? { lock: cueState.billing.locks[booking.id]! } : {}) }) : { units: 0, total: 0, needsPrice: false }
+        const totals = booking.cancellation === undefined ? bookingFee({ procedures: procs, list, masters, patientId: booking.patientId, held: heldPricesForBooking(cueState, booking.id), ...(cueState.billing.locks[booking.id] !== undefined ? { lock: cueState.billing.locks[booking.id]! } : {}) }) : { units: 0, total: 0, needsPrice: false }
         // What it was invoiced at: the same invoices the Invoices panel lists.
         const invoiced = invoicedByBooking.get(booking.id) ?? 0
         return {
@@ -132,7 +131,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
       needsPrice: active.some((r) => r.needsPrice),
       invoiced: active.reduce((n, r) => n + r.invoiced, 0),
     }
-  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, invoicedByBooking, cueState])
+  }, [list, listId, bookingsRecord, proceduresRecord, masters, invoicedByBooking, cueState])
 
   const warningsByBooking = useListWarnings(listId)
   // Stubs for rows waiting at intake (catch-up Phase 33a): in time order, never counted or totalled.

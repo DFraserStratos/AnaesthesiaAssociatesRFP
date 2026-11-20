@@ -2,20 +2,20 @@ import { Fragment, useMemo, useState } from 'react'
 import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
 import { useSearchParams } from 'react-router-dom'
 import { accent, fontFamily, neutral } from '../../../theme/tokens'
-import { billedLists, changedSinceSubmitted, eventPartyName, invoiceCountsByList, procedureOwner, reviewRowsAwaiting, useAppStore, OFFICE_ACTOR, type Actor } from '../../../store'
+import { billedLists, changedSinceSubmitted, eventPartyName, eventPriceNow, invoiceCountsByList, procedureOwner, reviewRowsAwaiting, useAppStore, OFFICE_ACTOR, type Actor } from '../../../store'
 import { freeFormSubtotal } from '../../../domain/billing/additionalInvoice'
 import { creditDetailOf, eventLines } from '../../../domain/billing/procedureEvent'
 import type { ProcedureEvent } from '../../../domain/types'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { daysBetween } from '../../../domain/dateDays'
-import { CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS } from '../../../shared/procedureEventCopy'
+import { CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, PRE_POST_OP_COPY, kindRowText, pricingText } from '../../../shared/procedureEventCopy'
 import { drSurname, formatCurrency, plural } from '../../../shared/format'
 import { EventReviewSheet } from '../flows/EventReviewSheet'
 import { ChangedSinceSubmittedPill } from '../components/ChangedSinceSubmitted'
 import { dayMicroCap, hhmm, shortDay } from '../../../shared/format'
 import type { AssignedList } from '../../../domain/types'
 import { listShortLabel, listSourceLabels } from '../util'
-import { Card, LineTabLink, LineTabs, PageHeader, TextAction } from '../../../shared/ui'
+import { Card, LineTabLink, LineTabs, PageHeader, Pill, TextAction } from '../../../shared/ui'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 
 interface ReviewQueueProps {
@@ -252,11 +252,17 @@ function EventsQueue({ actor }: { actor: Actor }) {
               const waiting = Math.max(0, daysBetween(e.addedAtISO.slice(0, 10), state.clock.todayISO))
               const credit = creditDetailOf(e)
               const credited = credit !== undefined ? state.billing.invoices[credit.originalInvoiceId] : undefined
+              // Catch-up Phase 39b: a pre-op, post-op or billing event reads its type and the price the office would approve now.
+              const kindRow = kindRowText(state, e)
+              const now = kindRow !== undefined ? eventPriceNow(state, e) : undefined
               const description =
-                credit !== undefined
-                  ? CREDIT_LABELS.reviewRow(credited?.invoiceNumber ?? '', replacements.length)
-                  : `${eventLines(e)[0]?.description ?? ''}${eventLines(e).length > 1 ? ` ${EVENT_LABELS.moreLines(eventLines(e).length - 1)}` : ''}`
-              const amount = credit !== undefined ? (credited?.subtotal ?? 0) : freeFormSubtotal(eventLines(e))
+                kindRow !== undefined
+                  ? `${kindRow.first} · ${now?.kind === 'priced' && now.pricing.basis !== 'billingEvent' && now.pricing.basis !== 'typedFixedFee' ? pricingText(now.pricing) : kindRow.recorded}`
+                  : credit !== undefined
+                    ? CREDIT_LABELS.reviewRow(credited?.invoiceNumber ?? '', replacements.length)
+                    : `${eventLines(e)[0]?.description ?? ''}${eventLines(e).length > 1 ? ` ${EVENT_LABELS.moreLines(eventLines(e).length - 1)}` : ''}`
+              const amount: number | undefined =
+                kindRow !== undefined ? (now?.kind === 'priced' ? now.pricing.amount : undefined) : credit !== undefined ? (credited?.subtotal ?? 0) : freeFormSubtotal(eventLines(e))
               return (
                 <Fragment key={e.id}>
                 <ClickableRow onOpen={() => setOpen(e.id)} data-event-id={e.id} data-kind={e.kind}>
@@ -274,7 +280,9 @@ function EventsQueue({ actor }: { actor: Actor }) {
                     {credit !== undefined && e.addedBy.role !== 'office' && <div style={{ marginTop: 2, fontSize: 12, color: neutral.slate }}>{EVENT_LABELS.raisedBy(drSurname(e.addedBy.who))}</div>}
                   </Td>
                   <Td>{partyName}</Td>
-                  <Td mono bold align="right" nowrap>{formatCurrency(amount)}</Td>
+                  <Td mono bold align="right" nowrap>
+                    {amount !== undefined ? PRE_POST_OP_COPY.amount(amount) : <Pill size="sm" tone="warning" shot="review-needs-price">{PRE_POST_OP_COPY.needsPriceShort}</Pill>}
+                  </Td>
                   <Td nowrap>{e.addedBy.role === 'office' ? 'Office' : drSurname(e.addedBy.who)}</Td>
                   <Td mono align="right" nowrap>{plural(waiting, 'day')}</Td>
                   <Td align="right" nowrap>

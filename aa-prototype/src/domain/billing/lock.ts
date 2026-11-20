@@ -353,7 +353,7 @@ export function buildBookingLock(input: LockInput): BookingLock {
       }
       const resolved = resolveSplit(fee.total, procedure.split.shares)
       if (!resolved.ok) return rejected(base, { procedureId: procedure.id, code: 'splitDoesNotFit', message: splitDoesNotFitMessage(fee.total, resolved.reason) })
-      const rvgLine = fee.lines.find((l) => l.chargeBasis === 'rvg' && l.rate !== undefined)
+      const rvgLine = fee.lines.find((l) => l.rate !== undefined)
       const btm = rvgLine?.rate !== undefined ? btmOf(fee, rvgLine.rate) : undefined
       const lineWording = wording !== null && wording.trim() !== '' ? wording : (fee.lines[0]?.description ?? 'Anaesthesia')
       split = []

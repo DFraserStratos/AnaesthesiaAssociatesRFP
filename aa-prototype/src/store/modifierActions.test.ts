@@ -29,7 +29,7 @@ function m(api: BoundAppStore, procedureId: string): number {
   const p = s.schedule.procedures[procedureId]!
   const booking = s.schedule.bookings[p.bookingId]!
   const list = assigned(s.schedule.lists[booking.listId])
-  return procedureFee({ procedure: p, list, masters: s.masters, billingLines: s.schedule.billingLines, patientId: booking.patientId }).fee.btm
+  return procedureFee({ procedure: p, list, masters: s.masters, patientId: booking.patientId }).fee.btm
     .modifiers.units
 }
 
@@ -127,7 +127,7 @@ describe('removeModifier and restoreModifier (nothing is locked)', () => {
       const s = api.getState()
       const proc = s.schedule.procedures[p!.id]!
       const booking = s.schedule.bookings[proc.bookingId]!
-      return procedureFee({ procedure: proc, list: assigned(s.schedule.lists[booking.listId]), masters: s.masters, billingLines: s.schedule.billingLines, patientId: booking.patientId })
+      return procedureFee({ procedure: proc, list: assigned(s.schedule.lists[booking.listId]), masters: s.masters, patientId: booking.patientId })
         .fee.btm.modifierItems.map((i) => [i.code, i.units, i.origin])
     }
     expect(codes()).toEqual([['P1', 0, 'included']])

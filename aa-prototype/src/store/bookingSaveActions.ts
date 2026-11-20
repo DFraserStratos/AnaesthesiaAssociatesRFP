@@ -13,7 +13,7 @@
  *   office's value is skipped, and fields the office did not touch are left
  *   alone. There is no row version, merge or clash check: concurrent edits
  *   are Future Work (US-02.5.6, OQ-07), so saves simply apply in order.
- * - ids the draft allocated for new Procedures and billing lines are
+ * - ids the draft allocated for new Procedures are
  *   re-allocated from the real counters, and references rewritten.
  * - the existing guards are re-run on the candidate state (the NHI, the
  *   Contract still a candidate, the typed price's rights, a split that
@@ -26,7 +26,7 @@
  */
 
 import { diffSnapshots, sameValue, snapshotBooking, type BookingSnapshot, type FieldChange } from '../domain/changeSets'
-import type { AuditEntry, BillingLine, Booking, ChangeSetId, List, Procedure, ProcedurePayer } from '../domain/types'
+import type { AuditEntry, Booking, ChangeSetId, List, Procedure, ProcedurePayer } from '../domain/types'
 import { payerKey } from '../domain/billing/procedurePayer'
 import { contractChangeAsksRvgDetail } from '../domain/billing/completion'
 import { payerLockedByPrepayment } from './selectors'
@@ -73,7 +73,6 @@ export interface BookingDraftChanges {
 const DEFAULT_UPDATE_ACTION: Record<FieldChange['entityType'], string> = {
   booking: 'booking.update',
   procedure: 'procedure.update',
-  billingLine: 'billingLine.update',
   patient: 'patient.update',
 }
 
@@ -139,7 +138,7 @@ export function saveBookingChanges(
   let counters = state.counters
   const idMap = new Map<string, string>()
   for (const c of changes) {
-    if (c.kind !== 'create' || (c.entityType !== 'procedure' && c.entityType !== 'billingLine')) continue
+    if (c.kind !== 'create' || c.entityType !== 'procedure') continue
     const allocated = allocateId(counters, c.entityType)
     counters = allocated.counters
     idMap.set(c.entityId, allocated.id)
@@ -157,7 +156,6 @@ export function saveBookingChanges(
 
   // --- The candidate: the admin's changes applied onto the real state. ---
   let procedures = state.schedule.procedures
-  let billingLines = state.schedule.billingLines
   let booking = found.booking
   let patients = state.masters.patients
   const applied: FieldChange[] = []
@@ -194,26 +192,6 @@ export function saveBookingChanges(
         applied.push({ ...c, before: value })
         procedures = { ...procedures, [id]: setField(current, c.field, c.after) }
       }
-    } else {
-      if (c.kind === 'create') {
-        const line = c.after as BillingLine
-        const created = { ...line, id, procedureId: realId(line.procedureId) }
-        billingLines = { ...billingLines, [id]: created }
-        applied.push({ ...c, entityId: id, after: created })
-      } else if (c.kind === 'remove') {
-        const current = billingLines[id]
-        if (current === undefined) continue
-        const { [id]: _gone, ...rest } = billingLines
-        billingLines = rest
-        applied.push({ ...c, before: current })
-      } else {
-        const current = billingLines[id]
-        if (current === undefined) continue
-        const value = (current as unknown as Record<string, unknown>)[c.field]
-        if (sameValue(value, c.after)) continue
-        applied.push({ ...c, before: value })
-        billingLines = { ...billingLines, [id]: setField(current, c.field, c.after) }
-      }
     }
   }
   if (applied.length === 0) return refuse('noChanges', SAVE_NO_CHANGES_MESSAGE)
@@ -222,7 +200,7 @@ export function saveBookingChanges(
     ...state,
     counters,
     masters: { ...state.masters, patients },
-    schedule: { ...state.schedule, bookings: { ...state.schedule.bookings, [bookingId]: booking }, procedures, billingLines },
+    schedule: { ...state.schedule, bookings: { ...state.schedule.bookings, [bookingId]: booking }, procedures },
   }
 
   // --- Re-check the invariants on the candidate, through the existing guards. ---
@@ -245,7 +223,7 @@ export function saveBookingChanges(
   )
 
   // --- The derived follow-on, once, on the real store (27; never on a move, D20). ---
-  if (applied.some((c) => c.entityType === 'procedure' || c.entityType === 'billingLine')) autoSendPrepayments(api, bookingId)
+  if (applied.some((c) => c.entityType === 'procedure')) autoSendPrepayments(api, bookingId)
 
   return ok({ changeSetId: result.changeSetId!, changes: applied })
 }
@@ -403,7 +381,7 @@ function metasFor(applied: FieldChange[], attribution: Map<string, string>, book
     const routing = c.entityType === 'procedure' ? { bookingId: bookingOf(c.entityId) } : {}
     const stamp = c.entityType === 'patient' ? { stampBookingId: bookingId } : {}
     if (c.kind === 'create') {
-      metas.push({ entityType: c.entityType, entityId: c.entityId, action: c.entityType === 'billingLine' ? 'billingLine.add' : `${c.entityType}.create`, after: c.after, ...stamp })
+      metas.push({ entityType: c.entityType, entityId: c.entityId, action: `${c.entityType}.create`, after: c.after, ...stamp })
       continue
     }
     if (c.kind === 'remove') {

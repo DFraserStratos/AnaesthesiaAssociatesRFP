@@ -1,19 +1,14 @@
 /**
- * Phase 04 store guard tests — addBillingLine / removeBillingLine (a fixed
- * amount only since catch-up Phase 24; who pays is the Contract or the
- * Procedure's split, never a line, so no line is office-only),
- * addProcedure / removeProcedure, uncompleteBooking and completionBlockersFor.
+ * Phase 04 store guard tests — addProcedure / removeProcedure, uncompleteBooking and completionBlockersFor.
  * Every test uses an isolated, non-persisted store seeded from buildSeed().
  */
 
 import { assigned } from '../test/lists'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
-import { addBillingLine, removeBillingLine } from './billingLineActions'
 import { setProcedureSplit } from './splitActions'
 import { addProcedure, removeProcedure } from './bookingActions'
 import {
-  authoriseList,
   completionBlockersFor,
   editProcedure,
   uncompleteBooking,
@@ -28,12 +23,6 @@ const SOUTER: Actor = {
   role: 'anaesthetist',
   source: 'anaesthetist',
   anaesthetistId: ANAE.souter,
-}
-const FITZGERALD: Actor = {
-  who: 'Dr Emma Fitzgerald',
-  role: 'anaesthetist',
-  source: 'anaesthetist',
-  anaesthetistId: ANAE.fitzgerald,
 }
 const MORRISON: Actor = {
   who: 'Dr Kate Morrison',
@@ -53,8 +42,6 @@ const SOUTER_PM = marker('designDayPmList')
 const MORRISON_LIST = marker('submittedListMorrison')
 const WHITAKER_LIST = marker('submittedListWhitaker')
 const ELLISON_BOOKING = marker('pendingCaptureBooking')
-const CONTRACT_RATE_BOOKING = marker('contractRateBooking')
-const FEE_SPLIT_BOOKING = marker('feeSplitBooking')
 const SPLIT_BOOKING = marker('splitBillingBooking')
 const CANCELLED_BOOKING = marker('cancelledBooking')
 
@@ -74,149 +61,6 @@ function taneBookingId(api: BoundAppStore): string {
   if (booking === undefined) throw new Error('no PM bookings')
   return booking.id
 }
-
-describe('addBillingLine', () => {
-  it('adds a fixed ancillary line, audited, stamping the parent booking', () => {
-    const api = store()
-    const procedureId = firstProcedureId(api, ELLISON_BOOKING)
-    const outcome = addBillingLine(api, SOUTER, procedureId, {
-      chargeBasis: 'fixed',
-      description: 'ACC pre-op flat fee',
-      amount: 85.5,
-    })
-    expect(outcome.ok).toBe(true)
-    if (!outcome.ok) return
-
-    const state = api.getState()
-    const line = state.schedule.billingLines[outcome.value.billingLineId]
-    expect(line?.chargeBasis).toBe('fixed')
-    expect(line?.amount).toBe(85.5)
-    expect(line?.procedureId).toBe(procedureId)
-
-    const entry = auditForEntity(state, outcome.value.billingLineId).at(-1)
-    expect(entry?.action).toBe('billingLine.add')
-    // The wrapper stamped the PARENT booking in lockstep with the audit entry.
-    const booking = state.schedule.bookings[ELLISON_BOOKING]
-    expect(booking?.lastModifiedBy).toBe('Dr Melanie Souter')
-    expect(booking?.lastModifiedAtISO).toBe(entry?.atISO)
-  })
-
-  it('the rate x time basis is gone (catch-up Phase 24, RV-03): only a fixed amount is a billing line', () => {
-    const api = store()
-    const auditBefore = api.getState().audit.length
-    const procedureId = firstProcedureId(api, CONTRACT_RATE_BOOKING)
-    const input = { chargeBasis: 'rateTime', description: 'Hourly attempt', amount: 100 } as unknown as Parameters<typeof addBillingLine>[3]
-    expect(addBillingLine(api, FITZGERALD, procedureId, input)).toMatchObject({ ok: false, code: 'fixedOnly' })
-    expect(api.getState().audit.length).toBe(auditBefore)
-  })
-
-  it('refuses bad input: empty description, non-positive amount', () => {
-    const api = store()
-    const auditBefore = api.getState().audit.length
-    const ellisonProc = firstProcedureId(api, ELLISON_BOOKING)
-
-    const noDescription = addBillingLine(api, SOUTER, ellisonProc, {
-      chargeBasis: 'fixed',
-      description: '   ',
-      amount: 50,
-    })
-    expect(noDescription.ok).toBe(false)
-    if (!noDescription.ok) expect(noDescription.code).toBe('descriptionRequired')
-
-    const zeroAmount = addBillingLine(api, SOUTER, ellisonProc, {
-      chargeBasis: 'fixed',
-      description: 'Zero',
-      amount: 0,
-    })
-    expect(zeroAmount.ok).toBe(false)
-    if (!zeroAmount.ok) expect(zeroAmount.code).toBe('amountRequired')
-
-    expect(api.getState().audit.length).toBe(auditBefore)
-  })
-
-  it('role/state matrix: anaesthetist and office allowed on SUBMITTED (catch-up Phase 38a); not-own refused; AUTHORISED locked', () => {
-    const api = store()
-    const morrisonProc = firstProcedureId(api, bookingsForList(api.getState(), MORRISON_LIST)[0]!.id)
-
-    const anaesthetist = addBillingLine(api, MORRISON, morrisonProc, {
-      chargeBasis: 'fixed',
-      description: 'Late ancillary',
-      amount: 40,
-    })
-    expect(anaesthetist.ok).toBe(true)
-
-    const office = addBillingLine(api, OFFICE, morrisonProc, {
-      chargeBasis: 'fixed',
-      description: 'Office-added ancillary',
-      amount: 40,
-    })
-    expect(office.ok).toBe(true)
-
-    const notOwn = addBillingLine(api, SOUTER, firstProcedureId(api, CONTRACT_RATE_BOOKING), {
-      chargeBasis: 'fixed',
-      description: 'Not my list',
-      amount: 40,
-    })
-    expect(notOwn.ok).toBe(false)
-    if (!notOwn.ok) expect(notOwn.code).toBe('notOwnList')
-
-    expect(authoriseList(api, OFFICE, MORRISON_LIST).ok).toBe(true)
-    const locked = addBillingLine(api, OFFICE, morrisonProc, {
-      chargeBasis: 'fixed',
-      description: 'Too late',
-      amount: 40,
-    })
-    expect(locked.ok).toBe(false)
-    if (!locked.ok) expect(locked.code).toBe('listAuthorised')
-  })
-})
-
-describe('removeBillingLine', () => {
-  it('removes a line, audited with the full line as before, stamping the booking explicitly', () => {
-    const api = store()
-    const procedureId = firstProcedureId(api, ELLISON_BOOKING)
-    const added = addBillingLine(api, SOUTER, procedureId, {
-      chargeBasis: 'fixed',
-      description: 'Removable',
-      amount: 30,
-    })
-    expect(added.ok).toBe(true)
-    if (!added.ok) return
-    const lineId = added.value.billingLineId
-
-    const outcome = removeBillingLine(api, SOUTER, lineId)
-    expect(outcome.ok).toBe(true)
-    const state = api.getState()
-    expect(state.schedule.billingLines[lineId]).toBeUndefined()
-
-    const entry = auditForEntity(state, lineId).at(-1)
-    expect(entry?.action).toBe('billingLine.remove')
-    expect((entry?.before as { amount?: number } | undefined)?.amount).toBe(30)
-    // The deleted line cannot be derived post-recipe: the explicit stampBookingId
-    // still stamps the parent booking in lockstep.
-    expect(state.schedule.bookings[ELLISON_BOOKING]?.lastModifiedAtISO).toBe(entry?.atISO)
-  })
-
-  it('the anaesthetist removes a billing line on her own submitted S3 List like any other; another anaesthetist may not', () => {
-    const api = store()
-    const procedureId = firstProcedureId(api, FEE_SPLIT_BOOKING)
-    // The fee-split Booking holds no stored lines: its split is on the Procedure (catch-up Phase 22).
-    expect(Object.values(api.getState().schedule.billingLines).filter((l) => l.procedureId === procedureId)).toEqual([])
-    const added = addBillingLine(api, SOUTER, procedureId, { chargeBasis: 'fixed', description: 'Ancillary flat fee', amount: 40 })
-    if (!added.ok) throw new Error('addBillingLine failed')
-    const lineId = added.value.billingLineId
-
-    const other = removeBillingLine(api, FITZGERALD, lineId)
-    expect(other.ok).toBe(false)
-    if (!other.ok) expect(other.code).toBe('notOwnList')
-    expect(api.getState().schedule.billingLines[lineId]).toBeDefined()
-
-    // The List is open to her until AUTHORISED (catch-up Phase 38a).
-    expect(removeBillingLine(api, SOUTER, lineId).ok).toBe(true)
-    expect(api.getState().schedule.billingLines[lineId]).toBeUndefined()
-    expect(auditForEntity(api.getState(), lineId).at(-1)?.action).toBe('billingLine.remove')
-  })
-})
 
 describe('addProcedure', () => {
   it('adds an additional (not primary) skeleton inheriting the funding context from the first procedure', () => {
@@ -289,22 +133,6 @@ describe('removeProcedure', () => {
     expect((entry?.before as { bookingId?: string } | undefined)?.bookingId).toBe(ELLISON_BOOKING)
   })
 
-  it('takes the procedure\'s billing lines with it, each audited', () => {
-    const api = store()
-    const added = addProcedure(api, SOUTER, ELLISON_BOOKING)
-    if (!added.ok) throw new Error('addProcedure failed')
-    const line = addBillingLine(api, SOUTER, added.value.procedureId, {
-      description: 'Ancillary flat fee',
-      chargeBasis: 'fixed',
-      amount: 85.5,
-    })
-    if (!line.ok) throw new Error('addBillingLine failed')
-
-    expect(removeProcedure(api, SOUTER, added.value.procedureId).ok).toBe(true)
-    expect(api.getState().schedule.billingLines[line.value.billingLineId]).toBeUndefined()
-    expect(auditForEntity(api.getState(), line.value.billingLineId).at(-1)?.action).toBe('billingLine.remove')
-  })
-
   it('refuses the Booking\'s primary procedure, whether or not it is the only one', () => {
     const api = store()
     const primary = firstProcedureId(api, ELLISON_BOOKING)
@@ -352,17 +180,11 @@ describe('removeProcedure', () => {
     expect(removeProcedure(api, MORRISON, added.value.procedureId).ok).toBe(true)
   })
 
-  it('the anaesthetist removes a split procedure and a lined procedure on her own List; nothing on them is office-only', () => {
+  it('the anaesthetist removes a procedure beside a split one on her own List; nothing on them is office-only', () => {
     const api = store()
     const first = firstProcedureId(api, ELLISON_BOOKING)
     const added = addProcedure(api, SOUTER, ELLISON_BOOKING)
     if (!added.ok) throw new Error('addProcedure failed')
-    const line = addBillingLine(api, SOUTER, added.value.procedureId, {
-      description: 'Ancillary flat fee',
-      chargeBasis: 'fixed',
-      amount: 85.5,
-    })
-    if (!line.ok) throw new Error('addBillingLine failed')
     // She splits the first procedure's fee: nib $50, the payer the rest.
     const payer = api.getState().schedule.bookings[ELLISON_BOOKING]!
     const split = setProcedureSplit(api, SOUTER, ELLISON_BOOKING, first, {
@@ -374,10 +196,8 @@ describe('removeProcedure', () => {
     expect(split).toEqual({ ok: true, value: undefined })
     expect(api.getState().schedule.procedures[first]?.split?.shares).toHaveLength(2)
 
-    // Who pays is the Contract or the split, never a line, so the lined procedure is hers to remove.
     expect(removeProcedure(api, SOUTER, added.value.procedureId).ok).toBe(true)
     expect(api.getState().schedule.procedures[added.value.procedureId]).toBeUndefined()
-    expect(api.getState().schedule.billingLines[line.value.billingLineId]).toBeUndefined()
     // The split stays on the procedure it was typed on.
     expect(api.getState().schedule.procedures[first]?.split?.shares).toHaveLength(2)
   })

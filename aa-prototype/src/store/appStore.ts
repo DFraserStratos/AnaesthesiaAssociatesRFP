@@ -454,8 +454,13 @@ export const PERSIST_KEY = 'aa-demo'
  *  PRH01 to PRH13, Week 29 the newest), `billing.bankLines` (the bank download, one per seeded payment), `xero.creditAllocations`
  *  and `xero.batchPayments` (the backdrop runs' batch payments), `appSettings.paymentCycle`, the payable leg's `offsetAmount`,
  *  the negative invoice's `nettings` and `netted` status, the credit's `nettedAmount`; every seeded payout names its run.
+ *  Reseeds on load.
+ *  v70 (lane/b): catch-up Phase 39b: pre-op, post-op and billing events; BillingLine removed (`schedule.billingLines` and the `BL`
+ *  counter gone; `masters.contractEventFees` new, CEF001 STGACC-PAIN on St George's ACC, counter `contractEventFee`;
+ *  the event's `pricing` and `invoiceLineId`, the line's `serviceDateISO` and `eventId`). Reseeds on load.
+ *  v71: the Wave 5 sync of Lane B's 39b into lane/a (Phase 39a and Phase 39b both took v70): one past the higher.
  *  Reseeds on load. */
-export const PERSIST_VERSION = 70
+export const PERSIST_VERSION = 71
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {}, creditNotes: {}, negativeInvoices: {}, payablesRuns: {}, bankLines: {} }

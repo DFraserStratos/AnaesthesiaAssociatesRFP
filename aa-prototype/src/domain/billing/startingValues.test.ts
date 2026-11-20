@@ -35,6 +35,6 @@ describe('fillFromContract (DM-43; US-04.2.18 "Default RVG code"; A15)', () => {
     const fee = feeFor(filled, { anaesthetist: mkAnaesthetist(), contract: faceLift, rvgGroup: H3, dateISO: '2026-07-21', timeRule: DEFAULT_RVG_TIME_RULE, patientDobISO: undefined, modifiers: {} })
     expect(fee.btm.base.units).toBe(6) // base units from the RVG group alone
     expect(fee.total).toBe(3100)
-    expect(fee.lines.map((l) => l.chargeBasis)).toEqual(['fixed'])
+    expect(fee.lines).toEqual([{ description: 'Contract price', amount: 3100 }])
   })
 })

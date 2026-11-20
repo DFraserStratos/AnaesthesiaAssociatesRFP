@@ -42,18 +42,20 @@ test('the seeded event: Admin, web and mobile, with the office and the anaesthet
   await expect(page.locator('[data-shot="procedure-event-row"]')).toContainText('Raised by you')
 })
 
-test('a Booking with no events: none on the anaesthetist apps, the empty line on Admin', async ({ page }) => {
+test('a Booking with no events: the add controls on the owner\'s apps, the empty line on Admin', async ({ page }) => {
   await page.goto('/admin/day/2026-07-21/bookings/BK0001')
   await expect(page.locator('[data-shot="procedure-events"]').first()).toContainText('No events on this Procedure yet.')
   await page.goto('/web/lists/L-34821-2026-07-21-AM/bookings/BK0001')
   await expect(page.locator('[data-shot="procedure-block"]').first()).toBeVisible()
-  await expect(page.locator('[data-shot="procedure-events"]')).toHaveCount(0)
+  // Catch-up Phase 39b: the section now always shows on the owner's Procedure, so the add buttons have a home; no event rows.
+  await expect(page.locator('[data-shot="procedure-event-row"]')).toHaveCount(0)
+  await expect(page.locator('[data-shot="add-pre-post-op-event"]').first()).toBeVisible()
 })
 
 test('the office creates, reviews and runs an additional invoice; it links both ways', async ({ page }) => {
   await page.goto(`/admin/review/${SHARMA_TUE14}`)
   await page.waitForLoadState('networkidle')
-  expect(await runDemoAction(page, 'stage-post-op', { close: true })).toContain('Authorised and billed')
+  expect(await runDemoAction(page, 'stage-post-op', { close: true })).toContain('Staged')
 
   await page.goto(MITCHELL_ADMIN)
   const button = page.locator('[data-shot="additional-invoice-button"]').first()
