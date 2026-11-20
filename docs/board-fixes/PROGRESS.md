@@ -142,7 +142,7 @@ Agent tools in parallel: B12 (after B02), B13 (REQ-07b after B04); both before B
 | B12 | Build-plan tools | COMPLETE | after B02; D-08 and B12-Q3, Q6 recorded (accepted decision 28); D-03 not needed | 2026-11-20, board 1.25.0; all 15 findings fixed, R-07 closed; A-4 and A-10 confirmed and fixed; lanes read on master (migration at the master merge) |
 | B13 | Consistency and linking tools | COMPLETE | REQ-07b after B04 (D-03, landed); B13-Q1 to Q5 recorded (accepted decision 27) | 2026-11-20, board 1.24.0; all 14 findings fixed; stage 1 parse error found and fixed; new agent suites for B12 to add to verify:board |
 | B14 | Scripts, kit and docs | COMPLETE | D-09 and B14-Q1 to Q5 recorded (accepted decision 29) | 2026-11-20, board 1.26.0; all 16 findings fixed; the exported kit passes its own check, typecheck, Vitest and region sweep |
-| B15 | Closing audit | PLANNED | after all | |
+| B15 | Closing audit | IN PROGRESS | B15-Q2 to Q5, Q7 recorded (accepted decision 30) | 2026-11-20, audit commit `d5499c70` |
 
 All phases are ready for implementation planning. None is ready to build until its gate's
 decisions are recorded under "Accepted decisions".
@@ -629,6 +629,29 @@ decisions" section and resolved in that phase's planning.
         notes README keeps its legacy citation table (this project's notes rely on it), with a path that
         exists and a role in place of "4 here".
       - **Downstream:** B15 tests the export rules and the port mechanism (B15-REQ-20, -21).
+
+- 2026-11-20, user and B15 session (B15's planning questions, asked in the B15 session):
+  30. **B15-Q2 to Q5 and Q7:**
+      - **B15-Q2, items moved to B15 are judged, not built** (user, kick-off prompt: "Build nothing new
+        beyond small confirmed regressions; record anything larger with an owner"). Each row moved to B15
+        (decision 29's code rows, the e2e flake rows, the `/__open-in-editor` residual, the SCHEMA example
+        row, `board-edges`) is verified and either fixed as a small confirmed regression (B15-REQ-17) or
+        listed as deferred follow-up with a named owner.
+      - **B15-Q3, the Low sample** (session, B15 owns it): B15 independently re-runs fail-first on every
+        Medium finding, every security-theme finding, every systemic-issue-1 write-loss finding, and one
+        Low finding per phase that owns Lows; for every other Low it checks that the ledger records a
+        failing run and that the proof runs and passes in a suite B15 runs.
+      - **B15-Q4, full verify in a freshly installed kit** (user). In the scratch kit: `npm ci` from the
+        network, the kit's catalogue check, its full `verify` (typecheck, Vitest, agent tests) and the
+        fixture e2e on a free port. If the network fails, `node_modules` is linked instead and a fresh
+        install is listed as manual acceptance owed.
+      - **B15-Q5, COMPLETE with an owed list** (user). The programme is recorded COMPLETE when every
+        finding has a verified disposition and every open item is a listed deferral or exclusion with an
+        owner; manual acceptance the user still owes is listed in CLOSING-REVIEW.md and does not hold the
+        close.
+      - **B15-Q7, report, fix on the user's OK** (user). Drift in root `CLAUDE.md` is listed with proposed
+        wording; B15 edits it only if the user approves those edits in this session.
+      - **Downstream:** none outside B15.
 
 ## Planning handoff
 

@@ -29,5 +29,8 @@ export default defineConfig({
     // Tests keep their own stored PDF facts, apart from the real board's `.pdf-facts/`.
     env: { PDF_FACTS_DIR: join(tmpdir(), 'requirements-board-test-pdf-facts') },
     include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],
+    // Setup and cleanup hooks spawn boards and git and delete scratch trees: on a loaded machine they
+    // overran the 10 s default with every test passing.
+    hookTimeout: 60_000,
   },
 })

@@ -98,21 +98,26 @@ beforeAll(async () => {
 }, 60_000)
 
 afterAll(async () => {
-  if (server && server.exitCode === null) {
-    const gone = new Promise((r) => server!.once('exit', r))
-    server.kill()
-    await gone
-    // A board that stops takes its lock away (A-2).
-    expect(readdirSync(history).filter((n) => n.endsWith('.lock'))).toEqual([])
-  }
   try {
-    chmodSync(join(fixture, 'assets', 'US-01.1.1', 'locked.png'), 0o644)
-  } catch {
-    // never made
+    if (server && server.exitCode === null) {
+      const gone = new Promise((r) => server!.once('exit', r))
+      server.kill()
+      await gone
+      // A board that stops takes its lock away (A-2).
+      expect(readdirSync(history).filter((n) => n.endsWith('.lock'))).toEqual([])
+    }
+  } finally {
+    // Always, so a slow or failed stop never leaves `.origin-fixture/` behind.
+    try {
+      chmodSync(join(fixture, 'assets', 'US-01.1.1', 'locked.png'), 0o644)
+    } catch {
+      // never made
+    }
+    rmSync(fixture, { recursive: true, force: true })
+    rmSync(history, { recursive: true, force: true })
   }
-  rmSync(fixture, { recursive: true, force: true })
-  rmSync(history, { recursive: true, force: true })
-})
+  // Vite can take over 10 s to stop on a loaded machine (the default hook limit).
+}, 60_000)
 
 const SAME = { 'sec-fetch-site': 'same-origin' }
 // A cold Vite transforms on first request: give each test room.

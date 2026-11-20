@@ -2,6 +2,21 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.26.1 · 2026-11-20
+
+Closes the board-fixes programme (164 review findings; `docs/board-fixes/review/CLOSING-REVIEW.md` in the
+source repo). This release changes tests and docs only:
+
+- **The live-catalogue edge check runs in Freeform.** `e2e/board-edges.spec.ts` set no board mode, so since
+  Mapped became the default (1.12) it found every edge "missing" (Mapped joins only the open card's lineage);
+  it now pins Freeform, where every card is joined.
+- **The origin test always cleans up.** `tests/originLive.test.ts` gives its scratch board up to 60 s to stop
+  and removes its `.origin-fixture/` folder even when the stop fails. Vitest hooks get 60 s (`hookTimeout`),
+  so a loaded machine no longer fails the run in a scratch board's setup or cleanup.
+- **Docs:** README's folder map lists `shared/statuses.ts`, `shared/bom.ts` and `server/historyDir.ts`;
+  START-HERE says `.claude/skills/` may hold links; the 1.13.0 entry says a top-level visit from another
+  site can still open `/__open-in-editor`.
+
 ## 1.26.0 · 2026-11-20
 
 - **An export can no longer wipe a board.** `kit:export` builds the kit from the board's files as committed at HEAD (so nothing uncommitted, untracked or ignored ships; `--uncommitted` tries tracked work on disk and names every changed file) and records version, commit and a hash per file in `requirements-board/.kit-export.json`. It refuses, changing nothing, a target that is the board, inside it or contains it (by real path), a folder with other files and no `requirements-board/`, and any `requirements-board/` that is not an untouched earlier kit: no marker, or any file added, removed or changed since (a catalogue edit, `.history/`, a new lock file). There is no override. A re-export swaps the folder whole, keeping its `node_modules`. The kit now also fails its checks on the project's people, on statuses pinned to the project's numbers (a number followed by "here"), and on any `npm run` script or board path its docs name that it lacks; passages marked `<!-- kit:omit -->` are left out, and the `notes/` and `changes/` folder guides ship from the starter.
@@ -150,7 +165,7 @@ Bump `version` in `package.json` and add an entry here before each kit export.
 - **A link in a drawing never moves the board.** Only the board's own record links open anything (a click opens the record, a modified click a new tab). A drawing's own link to one of its spots (`#id`) brings that spot into view; any other link does nothing, plain, modified, middle-clicked or by keyboard.
 - **Raw catalogue files are served only by the board's routes.** The plugin adds a Vite `server.fs.deny` rule for the catalogue folder being served and the one beside the board (as written and as real paths), and answers 404 itself for any path into them, decided by what the file system opens (folders compared by identity), so no spelling gets through: `%72equirements`, upper case, `requirementſ` (Unicode case folding), decomposed accents, `//`, dot segments, `/@fs/`, `/@id/`. Its own `/requirements/` route reads every spelling the same way and serves only image files under `assets/`.
 - **Misses are 404s.** `/artifact-file/` and `/history-blob/` answer 404 (GET and HEAD) when they cannot serve, never the app's page; a failing history lookup no longer leaves an unhandled rejection, which could stop the dev server. The viewer's "the file is missing" now shows.
-- **Other origins cannot read the board.** CORS is off, and a read another site's page asks for (fetch metadata `cross-site` or `same-site`, other than a top-level visit) is refused 403 on every route, Vite's own included (so another page can no longer trigger `/__open-in-editor`); the API and file routes also send `Cross-Origin-Resource-Policy: same-origin`. Every file sent carries `X-Content-Type-Options: nosniff`; every SVG the no-script CSP.
+- **Other origins cannot read the board.** CORS is off, and a read another site's page asks for (fetch metadata `cross-site` or `same-site`, other than a top-level visit) is refused 403 on every route, Vite's own included (so another page's script can no longer trigger `/__open-in-editor`; a top-level visit from another site still can, as links to the board must work); the API and file routes also send `Cross-Origin-Resource-Policy: same-origin`. Every file sent carries `X-Content-Type-Options: nosniff`; every SVG the no-script CSP.
 - **Malformed URLs are client errors.** One decode rule (`idFromPath`) for every ID taken from a URL: a bad `%` escape is 400, and so is an ID with a path separator, `.` or `..`, or a control character, refused before any file is read. A bad escape on any other path is 400. A name every object inherits (`__proto__`, `constructor`) is a 404 on the history routes, not a 500.
 - **Symbolic links that lead out of their folder** (a screenshot, an artifact file) are still served, with a warning in the server log and a check warning naming where they lead. Paths are compared as real folders, so a requirements folder or repository reached through a link (a macOS temp folder under `/var`) gets the right repository-relative path for its artifacts.
 

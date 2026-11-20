@@ -83,6 +83,8 @@ via `@fontsource` (offline). Scripts run on Node's built-in TypeScript support (
 shared/        code shared by server, scripts and browser
   types.ts       record shapes and vocabularies
   config.ts      the project's vocabulary (board.config.json): parse, defaults, lookups
+  statuses.ts    status lists and identity: damaged and degraded lists, removed statuses, the next code, recodes
+  bom.ts         a byte-order mark read past and kept on rewrite
   files.ts       parse / serialise one catalogue file (deterministic, round-trips byte for byte)
   inPlace.ts     a save edits the file in place: only the changed fields' lines change (`editItemText` ...)
   patch.ts       field patches: what a record write may change, how it lays over the file, which fields clash;
@@ -114,6 +116,7 @@ server/
   catalogueApi.ts    the /api routes as a plain function (no Vite), so tests drive it directly; its header holds the write protocol
   historyJournal.ts  the per-card change journal (.history/, gitignored); screenshot hashes in the repository's width,
                      which are also the screenshots' versions (D-10)
+  historyDir.ts      where the journal lives, and the lock a running board keeps there (statuses:recode refuses beside it)
   gitCore.ts         how every reader calls git: no locks (GIT_OPTIONAL_LOCKS=0), literal paths, NUL output, either hash width, bounded caches
   gitHistory.ts      a card's, sidecar's, artifact file's and screenshot's history (one first-parent walk), read-only and asynchronous
   gitRenames.ts      a file's earlier paths, each bounded by the commit that moved it (committed, staged, and plain `mv` moves)

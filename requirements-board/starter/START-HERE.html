@@ -160,7 +160,7 @@ source is `requirements-board/agent/`: edit them there, then run `npm --prefix r
   <details><summary>The skills don't show when I type <code>/</code></summary>
     <p>Start a new Claude Code session at the repo root. Still missing? Run <code>npm --prefix requirements-board run install-skills</code> from the repo root: it copies them into <code>.claude/skills/</code>, and says if it skipped any because your repo already has a skill of the same name.</p></details>
   <details><summary>I edited a skill and nothing changed</summary>
-    <p>The skills' source is <code>requirements-board/agent/skills/</code>; <code>.claude/skills/</code> holds copies. Edit the source, then run <code>install-skills</code> again. Edits made in <code>.claude/</code> are overwritten.</p></details>
+    <p>The skills' source is <code>requirements-board/agent/skills/</code>; <code>.claude/skills/</code> holds copies (or links, if you installed with <code>-- --link</code>). Edit the source, then run <code>install-skills</code> again. Edits made in <code>.claude/</code> are overwritten.</p></details>
   <details><summary>"Port 5180 is in use"</summary>
     <p>The board is probably already running in another terminal: open http://localhost:5180. Otherwise stop whatever holds the port, or start the board on another one: <code>BOARD_PORT=5190 npm --prefix requirements-board run dev</code>.</p></details>
   <details><summary>Errors about Node or TypeScript files</summary>
