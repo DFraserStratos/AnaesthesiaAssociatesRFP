@@ -23,6 +23,8 @@ import { useMemo, useState } from 'react'
 import { HospitalsView } from '../../admin/screens/masters/HospitalsView'
 import { RvgGroupsView } from '../../admin/screens/masters/RvgGroupsView'
 import { EmailTemplatesView } from '../../admin/screens/masters/EmailTemplatesView'
+import { PrepaymentLettersView } from '../../admin/screens/masters/PrepaymentLettersView'
+import { LetterPreviewExample, PrepaidSettlementExample } from './prepaymentFollowupExamples'
 import {
   AnatomyDatalistExample,
   ButtonExample,
@@ -447,6 +449,14 @@ export function AdminCatalogue() {
             <EmailTemplatesView actor={OFFICE_ACTOR} />
           </Wide>
         </CatalogueRow>
+        <CatalogueRow name="PrepaymentLettersView (letter templates with merge fields and live preview)" source="apps/admin/screens/masters/PrepaymentLettersView.tsx" usedIn={A} what="Master data, Prepayment letters (catch-up Phase 41; US-06.3.6): the request, reminder and anaesthetist changed templates in a table (name with the Default pill, kind, active, updated), New template and Edit in a Dialog with name, kind (new only), the letter, merge-field chips that insert at the cursor and a preview against a fictional sample; Make default, Deactivate and Activate, refusals verbatim (unknown field, missing prepaid amount, estimate wording, the default switched off)." replaceWith="TanStack Table + shadcn Table, shadcn Dialog + Form" note="Edits write to the demo store." height={420}>
+          <Wide minWidth={980}>
+            <PrepaymentLettersView actor={OFFICE_ACTOR} />
+          </Wide>
+        </CatalogueRow>
+        <CatalogueRow name="LetterPreview (ApprovePrepaymentDialog, PrepaymentReminderDialog)" source="shared/booking/PrepaymentLetterDialogs.tsx" usedIn={A} what="The prepayment letter as sent (catch-up Phase 41; US-06.3.6): plain text on a neutral paper box. It is the preview inside the two dialogs in the same file: Approve and send (the letter named, a select when several are active, Preview letter, the recipient, Approve and send), opened by PrepaymentApprovalStrip, and Send prepayment reminder (the invoice and amount still to pay, the letter, the recipient or the no-email refusal, Send reminder), opened from the PrepaymentPanel on Admin." replaceWith="Custom (shadcn Dialog + Card)" note="Shown with the Standard prepayment letter rendered against the fictional sample; the dialogs open from the strip row above and the Booking's panel.">
+          <LetterPreviewExample />
+        </CatalogueRow>
         <CatalogueRow name="AuditViewer" source="apps/admin/screens/AuditViewer.tsx" usedIn={A} what="The global audit feed with a filter bar, capped at 500 rows. Since UI unification U4 the bar is shared parts: two SelectFields (compact, surface fill) and a FilterDateInput From and To." replaceWith="TanStack Table + TanStack Virtual" note="On the shared table kit (U6, dense). Virtualisation or pagination replaces the 500-row cap later." height={460}>
           <Wide minWidth={980}>
             <AuditViewer />
@@ -605,7 +615,10 @@ export function AdminCatalogue() {
         <CatalogueRow name="SplitAllocation" source="shared/booking/CreditForm.tsx" usedIn={A} what="The split's running figures (catch-up Phase 39; US-08.6.4, OQ-77 part 1): Credited, New invoices and Left to allocate, before GST, in mono tabular figures, from the pure splitTotalCheck. Left to allocate is neutral while short, the warning tone when over (never red) and the success tint with a tick at $0.00; any GST rounding across the components is said and accepted." replaceWith="Custom (shadcn Card)" note="Shown short, over and settled with a cent of GST rounding.">
           <SplitAllocationExample />
         </CatalogueRow>
-        <CatalogueRow name="CreditNoteButton" source="shared/booking/CreditNoteButton.tsx" usedIn={AWM} what="The credit note option on the Procedure's Paid by row, beside Create (or Raise) additional invoice and Split (catch-up Phase 39; US-08.6.5): the office's on any invoiced Procedure, the anaesthetist's on their own (creditOptionFor), crediting the Procedure's live invoice in full through the app's credit sheet; hidden on a colleague's, hidden with its caption when the only invoice is a prepayment invoice, disabled with its sentence while a credit is pending or once credited, and while the Booking has unsaved changes." replaceWith="shadcn Button (link variant)" note="Shown as the office on David Chen's HP03.">
+        <CatalogueRow name="PrepaidSettlementBlock" source="shared/booking/PrepaidSettlementBlock.tsx" usedIn={AWM} what="A prepaid Procedure once its List is authorised (catch-up Phase 41; US-06.4.1): the prepaid amount as the price with its invoice, the recorded BTM for reference only, the transfer from the AA Holding account, Nothing is invoiced or credited automatically, the credits and additional invoices raised by hand, and the Credit note (the whole prepayment invoice) and Create additional invoice options. Before authorise the office sees it only when the prepayment is no longer needed or was sent before a change." replaceWith="shadcn Card + Badge" note="Authorise writes to the demo store; then shown on Nair's rhinoplasty as the office.">
+          <PrepaidSettlementExample />
+        </CatalogueRow>
+        <CatalogueRow name="CreditNoteButton" source="shared/booking/CreditNoteButton.tsx" usedIn={AWM} what="The credit note option on the Procedure's Paid by row, beside Create (or Raise) additional invoice and Split (catch-up Phase 39; US-08.6.5): the office's on any invoiced Procedure, the anaesthetist's on their own (creditOptionFor), crediting the Procedure's live invoice in full through the app's credit sheet (a prepayment invoice whole, from the PrepaidSettlementBlock, catch-up Phase 41); hidden on a colleague's, disabled with its sentence while a credit is pending or once credited, and while the Booking has unsaved changes." replaceWith="shadcn Button (link variant)" note="Shown as the office on David Chen's HP03.">
           <CreditNoteButtonExample />
         </CatalogueRow>
         <CatalogueRow name="SplitCombinedButton" source="shared/booking/SplitCombinedButton.tsx" usedIn={A} what="Split into additional invoices on the Procedure's Paid by row, beside Credit note (catch-up Phase 39; US-08.6.4): the office's only, opening the split sheet on the Procedure's live invoice; disabled with canSplitCombined's sentence otherwise (Not invoiced yet. Edit the Booking's Procedures, Contracts and prices instead.), while a credit waits, once credited, on a prepaid Procedure and while the Booking has unsaved changes. The invoice rail's Correct this invoice card has the same button." replaceWith="shadcn Button (link variant)" note="Shown on David Chen's invoiced HP03; it opens the real split sheet.">

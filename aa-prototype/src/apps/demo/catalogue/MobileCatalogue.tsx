@@ -9,6 +9,7 @@ import { AdditionalInvoiceButtonExample, AdditionalInvoiceSheetExample, Anaesthe
 import { LockBadge } from '../../../shared/booking/LockBadge'
 import { SEED_MARKERS } from '../../../domain/seed'
 import { ContractApprovalExample } from './contractApprovalExample'
+import { PrepaidSettlementExample } from './prepaymentFollowupExamples'
 
 const M = 'Mobile'
 const SW = 'Admin · Web · Mobile'
@@ -231,6 +232,12 @@ export function MobileCatalogue() {
           replaceWith="shadcn Card + Badge"
           note={`On the shared Card, Pill and TextAction; amounts in mono. All three apps through BookingDetailBody. ${STORE_NOTE}`}>
           <Ex.PrepaymentPanelExample />
+        </CatalogueRow>
+        <CatalogueRow name="PrepaidSettlementBlock (the anaesthetist's)" source="shared/booking/PrepaidSettlementBlock.tsx" usedIn={SW} stage="mobile" height={420}
+          what="A prepaid Procedure once its List is authorised (catch-up Phase 41; US-06.4.1): the prepaid amount as the price, the recorded BTM for reference only, the transfer from the AA Holding account to you, Nothing is invoiced or credited automatically, and Credit note (the whole prepayment invoice) and Raise additional invoice on your own Procedure."
+          replaceWith="shadcn Card + Badge"
+          note={`Authorise writes to the demo store; then shown on Nair's rhinoplasty as Dr Souter. ${STORE_NOTE}`}>
+          <PrepaidSettlementExample as="anaesthetist" />
         </CatalogueRow>
         <CatalogueRow name="BookingDetailBody" source="shared/booking/BookingDetailBody.tsx" usedIn={SW} stage="mobile" height={640}
           what="The whole Booking capture: patient, ASA, RVG code, times, units, override, notes and Mark complete, laid out by the mobile surface."

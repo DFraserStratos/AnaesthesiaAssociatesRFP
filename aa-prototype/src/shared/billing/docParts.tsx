@@ -203,3 +203,35 @@ export function DocTotalLines({ rows, totalLabel, totalValue, after = [], shot =
     </div>
   )
 }
+
+/**
+ * A rendered letter's plain text as paragraphs (catch-up Phase 41; US-06.3.6):
+ * a blank line starts a paragraph, a single line break stays a break. The
+ * prepayment letter on its invoice and the preview before sending read it.
+ */
+export function LetterText({ body, fontSize = 13, lineHeight = 20 }: { body: string; fontSize?: number; lineHeight?: number }) {
+  const paragraphs = body.split(/\n\s*\n/).filter((p) => p.trim() !== '')
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize, lineHeight: `${lineHeight}px`, color: neutral.ink }}>
+      {paragraphs.map((p, i) => (
+        <p key={i} style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+          {p}
+        </p>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * The prepayment letter as the invoice's cover section (catch-up Phase 41;
+ * US-06.3.6): on the same paper, above the masthead, a small eyebrow, the
+ * letter as sent (a snapshot, never re-rendered), then a thin rule.
+ */
+export function DocLetter({ body }: { body: string }) {
+  return (
+    <section data-shot="prepayment-letter" aria-label="Prepayment letter" style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 22, borderBottom: `1px solid ${neutral.line}` }}>
+      <div style={metaLabel}>Prepayment letter</div>
+      <LetterText body={body} />
+    </section>
+  )
+}

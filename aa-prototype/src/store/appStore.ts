@@ -459,8 +459,10 @@ export const PERSIST_KEY = 'aa-demo'
  *  counter gone; `masters.contractEventFees` new, CEF001 STGACC-PAIN on St George's ACC, counter `contractEventFee`;
  *  the event's `pricing` and `invoiceLineId`, the line's `serviceDateISO` and `eventId`). Reseeds on load.
  *  v71: the Wave 5 sync of Lane B's 39b into lane/a (Phase 39a and Phase 39b both took v70): one past the higher.
- *  Reseeds on load. */
-export const PERSIST_VERSION = 71
+ *  Reseeds on load.
+ *  v72: catch-up Phase 41 session 1, the prepayment letter: `masters.prepaymentLetterTemplates` (LT001 to LT003, one
+ *  default per kind; counter `letterTemplate` 4) and INV0001's `letter` (LT001 rendered at its approval). Reseeds on load. */
+export const PERSIST_VERSION = 72
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {}, creditNotes: {}, negativeInvoices: {}, payablesRuns: {}, bankLines: {} }

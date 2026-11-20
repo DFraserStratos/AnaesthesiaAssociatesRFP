@@ -19,6 +19,7 @@
 import { AA_AGENT, buyerCreatedTaxInvoiceFor, deliveryStampFor, supplierFor } from '../billing/invoicePresentation'
 import { invoiceDeliveryFor } from '../billing/whoIsBilled'
 import type {
+  RenderedLetter,
   AaFeeInvoice,
   LedgerDisbursement,
   LedgerPair,
@@ -41,6 +42,7 @@ import type {
 } from '../types'
 import { buildInvoicesForBooking, type InvoiceBuildContext } from '../billing/invoiceBuild'
 import { AA_HOLDING_ACCOUNT, prepaymentGroupsFor, prepaymentInvoiceDraftFor } from '../billing/prepayment'
+import { defaultTemplateOf, letterMergeDataOf, renderPrepaymentLetter } from '../billing/prepaymentLetter'
 import { bookingFeesFor } from '../billing/validateBookingForBilling'
 import { xeroIndividualContactName } from '../xeroContact'
 import { billingHospitalId } from '../listPairing'
@@ -118,6 +120,25 @@ function payerNameIn(seed: SeedState, invoice: Pick<Invoice, 'billedTo' | 'count
   const m = seed.masters as unknown as Record<string, Record<string, { name?: string }> | undefined>
   const table = ref.kind === 'hospital' ? m['hospitals'] : ref.kind === 'organisation' ? m['organisations'] : ref.kind === 'patient' ? m['patients'] : ref.kind === 'surgeon' ? m['surgeons'] : ref.kind === 'insurer' ? m['insurers'] : m['parties']
   return table?.[ref.id]?.name ?? ref.id
+}
+
+/**
+ * A seeded prepayment invoice's letter (catch-up Phase 41; US-06.3.6): the
+ * default request template rendered at the seeded approval time, through the
+ * same renderer and formatter as a live send. Undefined facts render "[not set]".
+ */
+function seedLetterFor(seed: SeedState, facts: { patientName: string | undefined; procedureNames: string[]; procedureDateISO: string | undefined; prepaidAmount: number; anaesthetistName: string | undefined; invoiceNumber: string }): { letter?: RenderedLetter } {
+  const template = defaultTemplateOf(seed.masters.prepaymentLetterTemplates, 'request')
+  if (template === undefined) return {}
+  const data = letterMergeDataOf({
+    procedureNames: facts.procedureNames,
+    prepaidAmount: facts.prepaidAmount,
+    invoiceNumber: facts.invoiceNumber,
+    ...(facts.patientName !== undefined ? { patientName: facts.patientName } : {}),
+    ...(facts.procedureDateISO !== undefined ? { procedureDateISO: facts.procedureDateISO } : {}),
+    ...(facts.anaesthetistName !== undefined ? { anaesthetistName: facts.anaesthetistName } : {}),
+  })
+  return { letter: { templateId: template.id, templateName: template.name, kind: 'request', body: renderPrepaymentLetter(template, data), renderedAtISO: SEED_PREPAYMENT_RAISED_ISO } }
 }
 
 function proceduresOf(seed: SeedState, bookingId: string) {
@@ -370,6 +391,15 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
       agent: AA_AGENT,
       delivery: deliveryStampFor(invoiceDeliveryFor(draft.counterparty, proceduresOf(seed, booking.id).filter((p) => draft.procedureIds.includes(p.id)), booking.patientId, patient, seed.masters.parties), SEED_PREPAYMENT_RAISED_ISO, BILLING_RUN_SENDER_NAME),
       approval: { mode: 'approved', by: SEED_PREPAYMENT_APPROVER, role: 'office', atISO: SEED_PREPAYMENT_RAISED_ISO },
+      // Catch-up Phase 41: sent with the Standard prepayment letter (LT001), rendered through the one renderer.
+      ...seedLetterFor(seed, {
+        patientName: patient?.name,
+        procedureNames: draft.lines.map((l) => l.description),
+        procedureDateISO: seed.schedule.lists[booking.listId]?.dateISO,
+        prepaidAmount: draft.total,
+        anaesthetistName: supplier?.name,
+        invoiceNumber,
+      }),
     }
     for (const line of draft.lines) {
       const lineId = next('invoiceLine')

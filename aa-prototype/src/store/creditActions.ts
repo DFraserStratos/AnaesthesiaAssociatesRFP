@@ -47,7 +47,8 @@ import type {
 import { creditDetailOf, eventLines, eventStatus, mayRaise, resolveEventParty, type EventActor, type ResolvedEventParty } from '../domain/billing/procedureEvent'
 import { creditInFull, rebillDraftFrom, reversalPlan, splitTotalCheck, type CreditInFull } from '../domain/billing/creditNote'
 import { defaultEventDate } from '../domain/billing/procedureEvent'
-import { applyCredit, payeeAnaesthetistOf, settledOn } from '../domain/billing/ledger'
+import { applyCredit, applyCreditToTransfer, settledOn, transferOfPair } from '../domain/billing/ledger'
+import { creditTargetFor, type CreditTarget } from '../domain/billing/prepayHolding'
 import { toCents } from '../domain/billing/money'
 import { deliveryStampFor } from '../domain/billing/invoicePresentation'
 import type { DeliveryPlan } from '../domain/billing/whoIsBilled'
@@ -243,14 +244,21 @@ export function creditRefusalFor(state: Pick<AppState, 'schedule' | 'billing'>, 
   if (state.billing.aaFeeInvoices[invoiceId] !== undefined) return { code: 'kindNotCreditable', message: CREDIT_MESSAGES.aaFeeNotCreditable }
   const original = state.billing.invoices[invoiceId]
   if (original === undefined) return { code: 'notFound', message: CREDIT_MESSAGES.invoiceNotFound }
-  if (original.kind === 'prePayment') return { code: 'kindNotCreditable', message: CREDIT_MESSAGES.prepaymentNotCreditable }
   if (original.noCharge === true) return { code: 'kindNotCreditable', message: CREDIT_MESSAGES.noChargeNotCreditable }
+  // A prepayment invoice (catch-up Phase 41; US-06.4.1, D31): credited whole by hand, never split; a cancelled Booking's was settled by the cancellation.
+  if (original.kind === 'prePayment') {
+    if (cause === 'split') return { code: 'kindNotCreditable', message: CREDIT_MESSAGES.prepaymentNoSplit }
+    const booking = state.schedule.bookings[original.bookingId]
+    if (booking?.cancellation !== undefined) return { code: 'bookingCancelled', message: CREDIT_MESSAGES.prepaymentBookingCancelled }
+    const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
+    if (actor.role !== 'office' && list?.state !== 'AUTHORISED') return { code: 'prepaymentBeforeAuthorise', message: CREDIT_MESSAGES.prepaymentBeforeAuthorise }
+  }
   const procedureId = opts.procedureId ?? original.procedureIds?.[0]
   if (procedureId === undefined || !invoiceCoversProcedure(state, invoiceId, procedureId)) return { code: 'procedureNotOnInvoice', message: CREDIT_MESSAGES.procedureNotOnInvoice }
   if (!mayRaise('credit', actor, procedureOwner(state, procedureId))) return { code: 'notOwnProcedure', message: CREDIT_MESSAGES.notOwnProcedure }
   if (cause === 'split' && actor.role !== 'office') return { code: 'splitOfficeOnly', message: CREDIT_MESSAGES.splitOfficeOnly }
   const pair = pairForInvoice(state, invoiceId)
-  if (pair === undefined || pair.payable === undefined || payeeAnaesthetistOf(pair.payable) === undefined) return { code: 'noPair', message: CREDIT_MESSAGES.noPair }
+  if (pair === undefined || creditTargetFor(pair, transferOfPair(state.billing.transfers, pair.id)).leg === 'none') return { code: 'noPair', message: CREDIT_MESSAGES.noPair }
   if (creditNoteForInvoice(state, invoiceId) !== undefined || pair.credit !== undefined) return { code: 'alreadyCredited', message: CREDIT_MESSAGES.alreadyCredited }
   if (pendingCreditEventFor(state, invoiceId, opts.editing) !== undefined) return { code: 'correctionPending', message: CREDIT_MESSAGES.correctionPending }
   // A payable Xero is paying in a payment run right now (catch-up Phase 39a): the run must finish first, or its payment strands.
@@ -676,7 +684,10 @@ export interface CreditIssuePlan {
   credit: CreditEventDetail
   original: Invoice
   pair: BookingLedgerPair
-  anaesthetistId: string
+  /** Which payable the credit reverses (catch-up Phase 41, `creditTargetFor`). */
+  target: Exclude<CreditTarget, { leg: 'none' }>
+  /** Whoever the negative invoice is to; none for a prepayment credited before its transfer (the AA Holding account's payable). */
+  anaesthetistId: string | undefined
   reversal: ReversalPlan
   note: CreditInFull
   party: ResolvedEventParty
@@ -742,8 +753,10 @@ export function planCreditIssue(state: CreditState, creditEventId: string): Outc
   const original = state.billing.invoices[credit.originalInvoiceId]
   if (original === undefined) return refuse('notFound', CREDIT_MESSAGES.invoiceNotFound)
   const pair = pairForInvoice(state, original.id)
-  const anaesthetistId = pair?.payable !== undefined ? payeeAnaesthetistOf(pair.payable) : undefined
-  if (pair === undefined || pair.payable === undefined || anaesthetistId === undefined) return refuse('noPair', CREDIT_MESSAGES.noPair)
+  const transfer = pair !== undefined ? transferOfPair(state.billing.transfers, pair.id) : undefined
+  const target: CreditTarget = pair !== undefined ? creditTargetFor(pair, transfer) : { leg: 'none' }
+  if (pair === undefined || pair.payable === undefined || target.leg === 'none') return refuse('noPair', CREDIT_MESSAGES.noPair)
+  const anaesthetistId = target.leg === 'holding' ? undefined : target.anaesthetistId
   if (creditNoteForInvoice(state, original.id) !== undefined || pair.credit !== undefined) return refuse('alreadyCredited', CREDIT_MESSAGES.alreadyCredited)
   // The reversal is read from the ledger, so it waits until Xero and the ledger agree (catch-up Phase 39 review).
   if (xeroMoneyNotInLedger(state, pair)) return refuse('waitingForXero', CREDIT_SYNC_MESSAGES.waitingForXeroSync)
@@ -763,8 +776,10 @@ export function planCreditIssue(state: CreditState, creditEventId: string): Outc
   const lines = Object.values(state.billing.invoiceLines)
     .filter((l) => l.invoiceId === original.id)
     .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
-  const reversal = reversalPlan({ total: original.total, received: pair.receivable.receivedAmount, released: pair.payable.releasedAmount, disbursed: settledOn(pair.payable) })
-  return ok({ event, credit, original, pair, anaesthetistId, reversal, note: creditInFull(original, lines), party, delivery, replacements: planned })
+  // The payable `creditTargetFor` names (catch-up Phase 41): the pair's own, or a transferred prepayment's payable to the anaesthetist.
+  const leg = target.leg === 'transfer' && transfer !== undefined ? transfer.in : pair.payable
+  const reversal = reversalPlan({ total: original.total, received: pair.receivable.receivedAmount, released: leg.releasedAmount, disbursed: settledOn(leg) })
+  return ok({ event, credit, original, pair, target, anaesthetistId, reversal, note: creditInFull(original, lines), party, delivery, replacements: planned })
 }
 
 /** The run's working copies (`runEventInvoicing`'s one commit), with the credit's records. */
@@ -773,6 +788,8 @@ export interface CreditRunDraft extends EventRunWork {
   s: AppState
   creditNotes: AppState['billing']['creditNotes']
   negativeInvoices: AppState['billing']['negativeInvoices']
+  /** The ledger transfers (catch-up Phase 41): a transferred prepayment's credit reverses its transfer's payable. */
+  transfers: AppState['billing']['transfers']
 }
 
 /**
@@ -786,23 +803,28 @@ export interface CreditRunDraft extends EventRunWork {
  * Each step is its own audit entry (US-13.5.2). The original invoice, its
  * lines, the Booking, its Procedures and its lock are not written.
  */
-export function issueCreditInto(draft: CreditRunDraft, creditEventId: string, atISO: string): Outcome<{ creditNoteId: string; negativeInvoiceId: string; invoiceIds: InvoiceId[]; pairIds: string[] }> {
+export function issueCreditInto(draft: CreditRunDraft, creditEventId: string, atISO: string): Outcome<{ creditNoteId: string; negativeInvoiceId: string | undefined; invoiceIds: InvoiceId[]; pairIds: string[] }> {
   const planned = planCreditIssue(draft.s, creditEventId)
   if (!planned.ok) return planned
   const p = planned.value
   // The ids the ledger's credit names are held locally: the draft's counters (and the credit note number) move only once every refusal has passed.
   const cn = allocateId(draft.counters, 'creditNote')
-  const neg = allocateId(cn.counters, 'negativeInvoice')
+  // No negative invoice for a prepayment credited before its transfer (catch-up Phase 41): the payable reversed is the AA Holding account's, never an anaesthetist's.
+  const neg = p.anaesthetistId !== undefined ? allocateId(cn.counters, 'negativeInvoice') : undefined
   const creditNoteId = cn.id
-  const negativeInvoiceId = neg.id
+  const negativeInvoiceId = neg?.id
 
   const pairNow = draft.maps.ledger[p.pair.id]!
-  const credited = applyCredit(pairNow, p.reversal, { creditNoteId, negativeInvoiceId, atISO })
+  const credited = applyCredit(pairNow, p.reversal, { creditNoteId, ...(negativeInvoiceId !== undefined ? { negativeInvoiceId } : {}), atISO, ...(p.target.leg === 'transfer' ? { reversedOn: 'transfer' as const } : {}) })
   if (!credited.ok) return refuse(credited.code, CREDIT_MESSAGES.alreadyCredited)
-  const num = allocateId(neg.counters, 'creditNoteNumber')
+  const num = allocateId(neg?.counters ?? cn.counters, 'creditNoteNumber')
   draft.counters = num.counters
   const creditNoteNumber = num.id
   draft.maps = { ...draft.maps, ledger: { ...draft.maps.ledger, [p.pair.id]: credited.pair } }
+  if (p.target.leg === 'transfer') {
+    const transfer = draft.transfers[p.target.transferId]
+    if (transfer !== undefined) draft.transfers[p.target.transferId] = applyCreditToTransfer(transfer, p.reversal)
+  }
 
   // The replacements, through 38b's issue path, each its own invoice with the `rebillOf` lineage.
   const invoiceIds: InvoiceId[] = []
@@ -825,7 +847,7 @@ export function issueCreditInto(draft: CreditRunDraft, creditEventId: string, at
   }
 
   const status: NegativeInvoice['status'] = p.reversal.recoveryDue > 0 ? 'toNet' : 'offset'
-  const negative: NegativeInvoice = {
+  const negative: NegativeInvoice | undefined = negativeInvoiceId === undefined || p.anaesthetistId === undefined ? undefined : {
     id: negativeInvoiceId,
     number: `${creditNoteNumber}-P`,
     anaesthetistId: p.anaesthetistId,
@@ -860,16 +882,16 @@ export function issueCreditInto(draft: CreditRunDraft, creditEventId: string, at
     reason: p.credit.reason,
     cause: p.credit.cause,
     replacementInvoiceIds: [...invoiceIds],
-    negativeInvoiceId,
+    ...(negativeInvoiceId !== undefined ? { negativeInvoiceId } : {}),
     issuedAtISO: atISO,
     issuedBy: { who: p.event.addedBy.who, role: p.event.addedBy.role },
     delivery,
     reversal: p.reversal,
   }
   draft.creditNotes[creditNoteId] = note
-  draft.negativeInvoices[negativeInvoiceId] = negative
+  if (negative !== undefined) draft.negativeInvoices[negative.id] = negative
   const event = draft.procedureEvents[creditEventId]!
-  draft.procedureEvents[creditEventId] = { ...event, detail: { kind: 'credit', credit: { ...p.credit, creditNoteId, negativeInvoiceId } } }
+  draft.procedureEvents[creditEventId] = { ...event, detail: { kind: 'credit', credit: { ...p.credit, creditNoteId, ...(negativeInvoiceId !== undefined ? { negativeInvoiceId } : {}) } } }
 
   const metas = draft.metas
   metas.push({ entityType: 'invoice', entityId: p.original.id, action: 'invoice.credited', after: { invoiceNumber: p.original.invoiceNumber, creditNoteNumber, reason: p.credit.reason }, stampBookingId: null })
@@ -901,18 +923,26 @@ export function issueCreditInto(draft: CreditRunDraft, creditEventId: string, at
     metas.push({ entityType: 'creditNote', entityId: creditNoteId, action: 'creditNote.notSent', after: { reason: 'noAddress' }, stampBookingId: null })
   }
   metas.push({ entityType: 'ledgerPair', entityId: p.pair.id, action: 'ledger.receivableCredited', after: { creditNoteNumber, credited: p.reversal.receivableCredited, heldForPayer: p.reversal.heldForPayer }, stampBookingId: null })
-  metas.push({
-    entityType: 'negativeInvoice',
-    entityId: negativeInvoiceId,
-    action: 'negativeInvoice.create',
-    after: { number: negative.number, anaesthetistId: negative.anaesthetistId, amount: negative.amount, offset: negative.offsetAmount, toNet: negative.recoveryDue, status, creditNoteNumber },
-    stampBookingId: null,
-  })
+  if (negative !== undefined) {
+    metas.push({
+      entityType: 'negativeInvoice',
+      entityId: negative.id,
+      action: 'negativeInvoice.create',
+      after: { number: negative.number, anaesthetistId: negative.anaesthetistId, amount: negative.amount, offset: negative.offsetAmount, toNet: negative.recoveryDue, status, creditNoteNumber },
+      stampBookingId: null,
+    })
+  }
   metas.push({
     entityType: 'ledgerPair',
     entityId: p.pair.id,
     action: 'ledger.payableReversed',
-    after: { negativeInvoiceNumber: negative.number, reversed: p.reversal.negativeInvoiceTotal, releaseCancelled: p.reversal.releaseCancelled, recoveryDue: p.reversal.recoveryDue },
+    after: {
+      // A prepayment before its transfer (catch-up Phase 41): the AA Holding account's payable, no negative invoice.
+      ...(negative !== undefined ? { negativeInvoiceNumber: negative.number } : { payee: 'AA Holding account' }),
+      reversed: p.reversal.negativeInvoiceTotal,
+      releaseCancelled: p.reversal.releaseCancelled,
+      recoveryDue: p.reversal.recoveryDue,
+    },
     stampBookingId: null,
   })
   metas.push({ entityType: 'creditNote', entityId: creditEventId, action: 'credit.issued', after: { creditNoteId, creditNoteNumber, invoiceIds }, stampBookingId: null })
@@ -1136,13 +1166,20 @@ export function creditOptionFor(state: Pick<AppState, 'schedule' | 'billing'>, a
   if (!mayRaise('credit', actor, procedureOwner(state, procedureId))) return { kind: 'hidden' }
   const onProcedure = Object.values(state.billing.invoices).filter((i) => (i.procedureIds ?? []).includes(procedureId))
   if (onProcedure.length === 0) return { kind: 'hidden' }
-  if (onProcedure.every((i) => i.kind === 'prePayment')) return { kind: 'hidden', caption: CREDIT_MESSAGES.prepaymentNotCreditable }
+  // A prepaid Procedure (catch-up Phase 41; US-06.4.1, D31): its prepayment invoice, credited whole by hand. Before authorise, the office only.
+  if (onProcedure.every((i) => i.kind === 'prePayment')) {
+    if (list.state !== 'AUTHORISED' && actor.role !== 'office') return { kind: 'hidden' }
+    const sorted = [...onProcedure].sort(byNumber)
+    const target = [...sorted].reverse().find((i) => creditNoteForInvoice(state, i.id) === undefined) ?? sorted[sorted.length - 1]!
+    const refused = creditRefusalFor(state, actor, target.id, 'correction', { procedureId })
+    if (refused?.code === 'notOwnProcedure' || refused?.code === 'bookingCancelled') return { kind: 'hidden' }
+    return refused === null ? { kind: 'enabled', invoiceId: target.id, invoiceIds: [target.id] } : { kind: 'disabled', invoiceId: target.id, reason: refused.message }
+  }
   if (list.state !== 'AUTHORISED') return { kind: 'hidden' }
   const live = liveInvoiceForProcedure(state, procedureId)
   // Credited with no live replacement: the original, disabled as credited.
   const target = live ?? splitTargetFor(state, procedureId)
   if (target === undefined) return { kind: 'hidden' }
-  if (target.kind === 'prePayment') return { kind: 'hidden', caption: CREDIT_MESSAGES.prepaymentNotCreditable }
   const refused = creditRefusalFor(state, actor, target.id, 'correction', { procedureId })
   if (refused?.code === 'notOwnProcedure') return { kind: 'hidden' }
   // Every live invoice this actor may credit now, by number (more than one where 22's fee split billed two parties).

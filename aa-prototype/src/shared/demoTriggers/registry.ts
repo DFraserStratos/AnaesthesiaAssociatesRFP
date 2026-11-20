@@ -204,6 +204,7 @@ import { HOSPITAL_FEED_ACTOR, SEED_LOAD_ACTOR, SOUTER_ACTOR } from '../../store/
 import { leakScanSummary, scanForNhiLeaks } from '../../store/privacyScan'
 import { rawRowRefusal, rawRowTarget, viewRawImportRow } from '../../store/rawRowActions'
 import { reportDiagnostic } from '../../store/diagnostics'
+import { LONGER_PREPAID_COPY, longerPrepaidChoices, stageLongerPrepaidProcedure, stageLongerRefusal } from '../../store/prepaymentFollowupDemo'
 
 // ---------------------------------------------------------------------------
 // Route patterns (checked against `src/router.tsx` and `pwa/main.tsx`)
@@ -1875,6 +1876,24 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       }
     },
     indexPath: () => `${ADMIN_MASTERS}?view=goLive`,
+  },
+  // ── Admin · Review: a prepaid procedure that ran longer (catch-up Phase 41; US-06.4.1) ──
+  {
+    id: 'stage-longer-prepaid-procedure',
+    label: 'Stage longer prepaid procedure',
+    description:
+      "On a submitted List, lengthens a Booking's prepaid procedure to four hours of anaesthetic time as the office, so Authorise can show that nothing further is billed for the difference: the prepaid amount is the price, and an additional invoice is raised by hand if one is needed.",
+    screen: 'Admin · Review',
+    routes: ['/admin/review/:listId'],
+    surfaces: ['bar'],
+    choices: (state, ctx) => longerPrepaidChoices(state, ctx.params['listId'] ?? ''),
+    disabledReason: (state, ctx) => stageLongerRefusal(state, ctx.params['listId']),
+    run: (api, ctx, choiceId) => {
+      const out = stageLongerPrepaidProcedure(api, OFFICE_ACTOR, ctx.params['listId'] ?? '', choiceId)
+      return out.ok ? { ok: true, message: LONGER_PREPAID_COPY.staged(out.value.units) } : { ok: false, message: out.message }
+    },
+    indexPath: () => `/admin/review/${SEED_LIST_IDS.prepaymentPaidList}`,
+    indexHint: "Submit Dr Souter's Fri 24 Jul PM List first.",
   },
   // ── Admin · Day and Booking detail, Mobile · Booking: prepayment (catch-up Phase 27) ──
   {

@@ -325,6 +325,15 @@ export const ACTION_LABELS: Record<string, string> = {
   'emailTemplate.retire': 'Email template retired',
   'emailTemplate.restore': 'Email template restored',
   'updateEmail.drafted': 'Update email drafted (not sent)',
+
+  // --- Prepayment letters, reminders and settlement (catch-up Phase 41; US-06.3.6, US-06.5.2) ---
+  'letterTemplate.create': 'Prepayment letter template created',
+  'letterTemplate.update': 'Prepayment letter template updated',
+  'letterTemplate.activate': 'Prepayment letter template activated',
+  'letterTemplate.deactivate': 'Prepayment letter template deactivated',
+  'letterTemplate.setDefault': 'Prepayment letter template made default',
+  'invoice.letterSent': 'Prepayment letter sent with the invoice',
+  'invoice.prepaymentReminder': 'Prepayment reminder sent',
 }
 
 /** "someWord" -> "some word" (the shared camelCase splitter). */

@@ -42,6 +42,8 @@ const NOT_MONEY = new Set([
   'payments.runSuperseded',
   'demo.paymentWeekStaged',
   'demo.bankLineRemoved',
+  // Catch-up Phase 41: a prepayment reminder sends a letter; no money moves.
+  'invoice.prepaymentReminder',
 ])
 
 describe('AUDIT_VIEWER_EXCLUDED (US-13.5.2: payments are not audited, credit notes are)', () => {

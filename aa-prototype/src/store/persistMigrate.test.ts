@@ -1295,3 +1295,21 @@ describe('Wave 5 sync (v71): Lane B\'s 39b into lane/a', () => {
   })
 })
 
+describe('catch-up Phase 41 session 1 (v72): the prepayment letter', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v71 store without letter templates and reseeds them, with INV0001 sent with its letter', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(72)
+    const fresh = freshAppState()
+    const { prepaymentLetterTemplates: _t, ...masters } = fresh.masters
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters }, version: 71 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.keys(s.masters.prepaymentLetterTemplates).sort()).toEqual(['LT001', 'LT002', 'LT003'])
+    expect(s.billing.invoices['INV0001']?.letter?.templateId).toBe('LT001')
+    expect(s.counters['letterTemplate']).toBe(4)
+  })
+})

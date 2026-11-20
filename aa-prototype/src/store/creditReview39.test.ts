@@ -283,7 +283,7 @@ describe('the run never leaves a credit note number gap (finding 7)', () => {
       procedureEvents: { ...s.schedule.procedureEvents },
       metas: [],
     }
-    const draft: CreditRunDraft = { ...work, s, creditNotes: {}, negativeInvoices: {} }
+    const draft: CreditRunDraft = { ...work, s, creditNotes: {}, negativeInvoices: {}, transfers: { ...s.billing.transfers } }
     expect(issueCreditInto(draft, creditEventId, clockISO(s.clock))).toMatchObject({ ok: false })
     expect(draft.counters).toBe(s.counters)
   })

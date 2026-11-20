@@ -8,6 +8,7 @@ import { FunderDetailsExample, PayerFieldsExample } from './payerExamples'
 import { PaidByRowExample, PaidBySheetExample, PartyPickerExample } from './splitExamples'
 import { AdditionalInvoiceButtonExample, AdditionalInvoiceSheetExample, AnaesthetistCreditSheetExample, CreditNoteButtonExample, EventSheetsExample, ProcedureEventsListExample } from './eventExamples'
 import { RemittancesTabExample } from './admin/paymentRunExamples'
+import { PrepaidSettlementExample } from './prepaymentFollowupExamples'
 
 const W = 'Web'
 const WA = 'Web · Admin'
@@ -233,6 +234,9 @@ export function WebCatalogue() {
             </CatalogueRow>
             <CatalogueRow name="CreditFormSheet (Credit note, the anaesthetist's)" source="shared/booking/CreditSheetSlot.tsx, shared/booking/CreditForm.tsx" usedIn={ALL} what="The anaesthetist's credit note (catch-up Phase 39; US-08.6.5): Credit note on their own invoiced Procedure (reached through search) opens the one credit form in the surface's overlay, a bottom sheet on the phone and a dialog on the web. The original's number, who it billed and its total ex GST; the Same as the original invoice tick; the reason (Less work than expected, Wrong billable party, Paid twice, plus free text); Your payment for this invoice is reversed. and A credit note is not a refund.; optional Add an invoice with typed lines (no copy, no equal-total rule); Save for review, which the office reviews and the next billing run issues. No ledger figures, offsets or amounts to net, no split." replaceWith="Custom (the shared overlay, OptionChip, TextArea and Notice)" note="On the seeded AA-2026-H03 as Dr Souter; Save writes to the demo store.">
               <AnaesthetistCreditSheetExample />
+            </CatalogueRow>
+            <CatalogueRow name="PrepaidSettlementBlock (the anaesthetist's)" source="shared/booking/PrepaidSettlementBlock.tsx" usedIn={ALL} what="A prepaid Procedure once its List is authorised (catch-up Phase 41; US-06.4.1): the prepaid price, the recorded BTM for reference only, the transfer from the AA Holding account, Nothing is invoiced or credited automatically, and the whole-invoice Credit note and an additional invoice raised by hand." replaceWith="shadcn Card + Badge" note="Authorise writes to the demo store; then shown on Nair's rhinoplasty as Dr Souter.">
+              <PrepaidSettlementExample as="anaesthetist" />
             </CatalogueRow>
             <CatalogueRow name="CreditNoteButton (the anaesthetist's)" source="shared/booking/CreditNoteButton.tsx" usedIn={ALL} what="Credit note beside Raise additional invoice on the anaesthetist's own invoiced Procedure (catch-up Phase 39; US-08.6.5, creditOptionFor): hidden on a colleague's, hidden with the caption Crediting a prepayment invoice is not in this prototype yet. on a prepaid Procedure, disabled with its sentence while a credit waits or once credited." replaceWith="Custom (the shared TextAction)" note="As Dr Souter on David Chen's HP03.">
               <CreditNoteButtonExample as="anaesthetist" />

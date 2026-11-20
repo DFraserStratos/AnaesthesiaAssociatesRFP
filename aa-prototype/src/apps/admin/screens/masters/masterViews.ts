@@ -47,6 +47,7 @@ export const MASTER_VIEWS: readonly MasterViewEntry[] = [
   { view: 'rvgGroups', label: 'RVG groups', group: 'Billing', catalogueRows: ['RVG codes and groups'], add: true, edit: true, retire: true, remove: false, seeded: ['rvgGroups'] },
   { view: 'modifiers', label: 'Modifiers', group: 'Billing', catalogueRows: ['modifier codes'], add: true, edit: true, retire: true, remove: false, seeded: ['modifiers'] },
   { view: 'emailTemplates', label: 'Email templates', group: 'Settings', catalogueRows: [], add: true, edit: true, retire: false, remove: false },
+  { view: 'prepaymentLetters', label: 'Prepayment letters', group: 'Settings', catalogueRows: [], add: true, edit: true, retire: false, remove: false },
   { view: 'xeroArchiving', label: 'Xero & archiving', group: 'Settings', catalogueRows: [], add: false, edit: true, retire: false, remove: false },
   { view: 'seedLoad', label: 'Seed load', group: 'Go-live', catalogueRows: [], add: false, edit: false, retire: false, remove: false, demo: true },
   { view: 'goLive', label: 'Go-live load', group: 'Go-live', catalogueRows: [], add: false, edit: false, retire: false, remove: false, demo: true },

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useBookingStore } from './draft'
 import { neutral, semantic } from '../../theme/tokens'
 import { procedureLabel } from '../../domain/billing/procedureStack'
@@ -9,8 +10,12 @@ import { TYPE_AN_AMOUNT_FIRST } from '../../domain/billing/prepayment'
 import { Pill } from '../ui/Pill'
 import { TextAction } from '../ui/TextAction'
 import { formatMoney } from '../format'
+import { lastPrepaymentReminder } from '../../store/prepaymentLetter'
+import { PrepaymentReminderDialog } from './PrepaymentLetterDialogs'
 import {
   NO_PRICE_YET,
+  OFFICE_SENDS_LETTER,
+  SEND_REMINDER_LABEL,
   displayNumberOf,
   PREPAYMENT_STATUS_LABEL,
   prepaidAmountText,
@@ -18,6 +23,7 @@ import {
   prepaymentHoldingText,
   prepaymentTitle,
   prepaymentTone,
+  reminderStampText,
 } from './prepaymentText'
 
 /** Where the office goes from the panel (Admin passes these; the anaesthetist's apps pass none). */
@@ -47,6 +53,12 @@ interface PrepaymentPanelProps {
  * amount field: the office types an amount on the Procedure's rail before the
  * invoice is raised, and it is read-only for everyone after. The warning stays
  * in the WarningsPanel above. Renders nothing when no Procedure is prepaid.
+ *
+ * The prepayment letter (catch-up Phase 41; US-06.3.6): on the office's
+ * surface (Admin, which passes `links`) a sent, unpaid or part-paid group on a
+ * List not yet authorised offers Send prepayment reminder; everyone sees the
+ * last reminder's line, and the anaesthetist reads that the office sends the
+ * letter.
  */
 export function PrepaymentPanel({ bookingId, actor, links, onShowProcedure }: PrepaymentPanelProps) {
   const prepayment = useBookingPrepayment(bookingId)
@@ -62,6 +74,8 @@ export function PrepaymentPanel({ bookingId, actor, links, onShowProcedure }: Pr
       {prepayment.groups.map((group, i) => (
         <GroupBlock
           key={group.key}
+          bookingId={bookingId}
+          actor={actor}
           group={group}
           divided={i > 0}
           office={office}
@@ -84,12 +98,16 @@ function leftOffLine(state: Parameters<typeof prepaidLeftOffFor>[0], bookingId: 
 }
 
 function GroupBlock({
+  bookingId,
+  actor,
   group,
   divided,
   office,
   links,
   onShowProcedure,
 }: {
+  bookingId: string
+  actor: Actor
   group: PrepaymentGroupView
   divided: boolean
   office: boolean
@@ -99,6 +117,17 @@ function GroupBlock({
   const procedures = useBookingStore((s) => s.schedule.procedures)
   const masters = useBookingStore((s) => s.masters)
   const noPriceId = group.lines.find((l) => l.amount.kind === 'noPrice')?.procedureId
+  // The reminder (catch-up Phase 41): while sent and not fully paid, and the List is not authorised.
+  const listOpen = useBookingStore((s) => {
+    const booking = s.schedule.bookings[bookingId]
+    const list = booking !== undefined ? s.schedule.lists[booking.listId] : undefined
+    return list !== undefined && list.state !== 'AUTHORISED' && list.billedAtISO === undefined && booking?.cancellation === undefined
+  })
+  const reminder = useBookingStore((s) => (group.invoiceId !== undefined ? lastPrepaymentReminder(s, group.invoiceId) : undefined))
+  const [reminding, setReminding] = useState(false)
+  const owed = group.status === 'unpaid' || group.status === 'partPaid'
+  const canRemind = office && links !== undefined && owed && listOpen && group.invoiceId !== undefined
+  const letterByOffice = !office && (group.status === 'awaitingApproval' || owed)
   return (
     <div
       data-shot="prepayment-group"
@@ -162,6 +191,33 @@ function GroupBlock({
               ? { anaesthetistName: masters.anaesthetists[group.holding.toAnaesthetistId]!.name }
               : {}),
           })}
+        </div>
+      )}
+      {reminder !== undefined && (
+        <div data-shot="prepayment-reminder-sent" style={{ fontSize: 13, color: neutral.slate }}>
+          Reminder sent <span className="mono">{reminderStampText(reminder.atISO)}</span> to {reminder.to}
+        </div>
+      )}
+      {canRemind && (
+        <div>
+          <TextAction flush shot="prepayment-reminder" onClick={() => setReminding(true)}>
+            {SEND_REMINDER_LABEL}
+          </TextAction>
+        </div>
+      )}
+      {reminding && group.invoiceId !== undefined && (
+        <PrepaymentReminderDialog
+          onClose={() => setReminding(false)}
+          actor={actor}
+          bookingId={bookingId}
+          invoiceId={group.invoiceId}
+          payerName={group.payerName}
+          onSent={() => setReminding(false)}
+        />
+      )}
+      {letterByOffice && (
+        <div data-shot="prepayment-letter-by-office" style={{ fontSize: 13, color: neutral.slate }}>
+          {OFFICE_SENDS_LETTER}
         </div>
       )}
       {office && group.status === 'awaitingApproval' && (

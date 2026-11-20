@@ -10,9 +10,36 @@ import type { Contract, Procedure } from '../../domain/types'
 import { inDisplayOrder } from '../../domain/billing/multiProcedure'
 import type { PrepaidAmount, PrepaymentStatus } from '../../domain/billing/prepayment'
 import type { PillTone } from '../ui/Pill'
-import { formatMoney } from '../format'
+import { formatMoney, stampText } from '../format'
 import { NEEDS_PRICE_LABEL } from '../../domain/billing/priceRanges'
 import type { PrepaymentHolding } from '../../store/prepaymentSelectors'
+
+// ---------------------------------------------------------------------------
+// The prepayment letter and its reminder (catch-up Phase 41; US-06.3.6)
+// ---------------------------------------------------------------------------
+
+/** The action on a sent, unpaid prepayment (office only). */
+export const SEND_REMINDER_LABEL = 'Send prepayment reminder'
+
+/** The anaesthetist's panel: who sends the letter. */
+export const OFFICE_SENDS_LETTER = 'The AA office sends the prepayment letter.'
+
+/** "21 Jul 10:04": when a reminder went (the panel's line, the invoice rail). */
+export function reminderStampText(iso: string): string {
+  return stampText(iso, { weekday: false }).replace(',', '')
+}
+
+/** "21 Jul": the day a reminder went (the Admin Day rail card). */
+export function reminderDayText(iso: string): string {
+  return stampText(iso.slice(0, 10), { weekday: false })
+}
+
+/** "Sent with the Standard prepayment letter": the letter names used by a set of sends, once each. */
+export function sentWithLetterText(templateNames: readonly string[]): string | null {
+  const names = [...new Set(templateNames)]
+  if (names.length === 0) return null
+  return `Sent with the ${names.join(' and the ')}.`
+}
 
 /** The panel's title for the Booking's least settled group. */
 export function prepaymentTitle(status: PrepaymentStatus, money?: { received: number; total: number }): string {

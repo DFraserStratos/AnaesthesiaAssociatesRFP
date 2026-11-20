@@ -3,18 +3,19 @@ import { neutral } from '../../../theme/tokens'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { AA_HOLDING_ACCOUNT, TYPE_AN_AMOUNT_FIRST } from '../../../domain/billing/prepayment'
 import {
-  approvePrepayment,
   readyPendingPrepaymentCount,
   setPrepaymentApprovalRequired,
   useAppStore,
   usePendingPrepayments,
   type Actor,
+  type PendingPrepaymentRow,
 } from '../../../store'
 import { Button, Card, CountBadge, FormError, ResultLine, Switch } from '../../../shared/ui'
 import { visuallyHidden } from '../../../shared/ui/visuallyHidden'
 import { ConfirmSheet } from '../../../shared/surface/ConfirmSheet'
 import { TableShell, Td, Th } from '../../../shared/table'
-import { displayNumberOf, NO_PRICE_YET, prepaidContractText } from '../../../shared/booking/prepaymentText'
+import { displayNumberOf, NO_PRICE_YET, prepaidContractText, sentWithLetterText } from '../../../shared/booking/prepaymentText'
+import { ApprovePrepaymentDialog } from '../../../shared/booking/PrepaymentLetterDialogs'
 import { dayMicroCap, drSurname, formatMoney, plural } from '../../../shared/format'
 import { UNASSIGNED } from '../../../shared/scheduleTerms'
 
@@ -25,7 +26,9 @@ import { UNASSIGNED } from '../../../shared/scheduleTerms'
  * approval switch in its header. Approve and send generates that payer's
  * invoice, its pair (a receivable from the payer and a payable crediting the
  * AA Holding account) and sends it. Off, each ready group is sent at once and
- * the strip stays empty.
+ * the strip stays empty. Every send carries the prepayment letter (catch-up
+ * Phase 41; US-06.3.6): Approve and send opens a short dialog naming it, with
+ * its preview and the payer it goes to.
  */
 export function PrepaymentApprovalStrip({ actor }: { actor: Actor }) {
   const rows = usePendingPrepayments()
@@ -35,18 +38,15 @@ export function PrepaymentApprovalStrip({ actor }: { actor: Actor }) {
   const [confirmOff, setConfirmOff] = useState(false)
   const [done, setDone] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [picking, setPicking] = useState<PendingPrepaymentRow | null>(null)
   const office = actor.role === 'office'
   const goingNow = useAppStore((s) => (confirmOff ? readyPendingPrepaymentCount(s) : 0))
 
-  function approve(bookingId: string, payerKey: string, payerName: string) {
+  /** After the dialog's Approve and send: the strip's result line, as before the letter. */
+  function approved(invoiceId: string, payerName: string) {
+    setPicking(null)
     setError(null)
-    const outcome = approvePrepayment(useAppStore, actor, bookingId, payerKey)
-    if (!outcome.ok) {
-      setDone(null)
-      setError(outcome.message)
-      return
-    }
-    const invoice = useAppStore.getState().billing.invoices[outcome.value.invoiceId]
+    const invoice = useAppStore.getState().billing.invoices[invoiceId]
     const where = invoice?.delivery?.method === 'email' ? 'emailed' : invoice?.delivery?.method === 'post' ? 'marked to post' : 'sent'
     setDone(`Invoice ${invoice?.invoiceNumber ?? ''} ${where} to ${payerName}, with its payable to the ${AA_HOLDING_ACCOUNT.name}.`)
   }
@@ -59,7 +59,10 @@ export function PrepaymentApprovalStrip({ actor }: { actor: Actor }) {
       return
     }
     const sent = outcome.value.sentInvoiceIds.length
-    setDone(on ? 'Prepayment approval is on: each prepayment invoice waits here.' : `Prepayment approval is off. ${plural(sent, 'pending invoice')} sent now.`)
+    // Each went with its letter (catch-up Phase 41): name it from the invoices just sent.
+    const invoices = useAppStore.getState().billing.invoices
+    const letters = sentWithLetterText(outcome.value.sentInvoiceIds.flatMap((id) => (invoices[id]?.letter !== undefined ? [invoices[id]!.letter!.templateName] : [])))
+    setDone(on ? 'Prepayment approval is on: each prepayment invoice waits here.' : `Prepayment approval is off. ${plural(sent, 'pending invoice')} sent now.${letters !== null ? ` ${letters}` : ''}`)
   }
 
   const switchControl = (
@@ -141,7 +144,10 @@ export function PrepaymentApprovalStrip({ actor }: { actor: Actor }) {
                         data-booking-id={row.bookingId}
                         disabled={!row.ready}
                         {...(!row.ready ? { disabledReason: row.notReadyReason ?? TYPE_AN_AMOUNT_FIRST } : {})}
-                        onClick={() => approve(row.bookingId, row.payerKey, row.payerName)}
+                        onClick={() => {
+                          setError(null)
+                          setPicking(row)
+                        }}
                       >
                         Approve and send
                       </Button>
@@ -156,6 +162,18 @@ export function PrepaymentApprovalStrip({ actor }: { actor: Actor }) {
       <span style={{ fontSize: 12, color: neutral.mist }}>Amounts are before GST. Each invoice goes to the procedure&apos;s payer; its payable credits the {AA_HOLDING_ACCOUNT.name}.</span>
       <FormError message={error} />
       <ResultLine shot="approve-and-send-result" line={done} onDismiss={() => setDone(null)} />
+      {picking !== null && (
+        <ApprovePrepaymentDialog
+          key={`${picking.bookingId}:${picking.payerKey}`}
+          onClose={() => setPicking(null)}
+          actor={actor}
+          bookingId={picking.bookingId}
+          payerKey={picking.payerKey}
+          payerName={picking.payerName}
+          patientName={picking.patientName}
+          onApproved={(invoiceId) => approved(invoiceId, picking.payerName)}
+        />
+      )}
       {confirmOff && (
       <ConfirmSheet
         open={confirmOff}

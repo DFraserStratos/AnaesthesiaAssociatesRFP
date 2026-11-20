@@ -50,6 +50,7 @@ import { useBookingWarnings, WarningsPanel } from '../warnings'
 import { OfficeBillingSetup } from './OfficeBillingSetup'
 import { ProcedureEventsList } from './ProcedureEventsList'
 import { PrepaymentPanel, type PrepaymentOfficeLinks } from './PrepaymentPanel'
+import { PrepaidSettlementBlock } from './PrepaidSettlementBlock'
 import { FunderDetailsView } from './FunderDetailsView'
 import { startForAddedProcedure } from '../../domain/billing/contractRail'
 import { HistorySheet } from './HistorySheet'
@@ -782,6 +783,13 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
                 canEdit={canEdit}
               />
             )}
+            {/* A prepaid Procedure's settlement (catch-up Phase 41; US-06.4.1, D31): the prepaid price, the BTM for reference, and what was raised by hand. */}
+            <PrepaidSettlementBlock
+              procedureId={procedure.id}
+              actor={actor}
+              {...(officeLinks !== undefined ? { onOpenInvoice: officeLinks.onOpenInvoice } : {})}
+              {...(officeLinks?.onOpenCreditNote !== undefined ? { onOpenCreditNote: officeLinks.onOpenCreditNote } : {})}
+            />
             {/* The Procedure's events (catch-up Phase 38b; US-03.7.3): on no List or schedule, only here. */}
             <ProcedureEventsList
               procedureId={procedure.id}

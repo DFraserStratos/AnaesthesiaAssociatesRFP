@@ -50,6 +50,8 @@ test('admin: rail card, Riley awaiting approval, Approve and send, then part pai
   await expect(row).toContainText('$1,200.00')
   await strip.screenshot({ path: 'visual/shots/p27-03-invoices-strip.png' })
   await row.locator('[data-shot="approve-and-send"]').click()
+  // Catch-up Phase 41: Approve and send opens the letter dialog; its own button sends.
+  await page.locator('[data-shot="prepayment-letter-send"]').click()
   await expect(strip.locator('[data-shot="approve-and-send-result"]')).toContainText('AA Holding account')
   await expect(row).toHaveCount(0)
 
@@ -74,6 +76,7 @@ test('admin: two payers give two strip rows; approving one leaves the other', as
   await expect(strip).toContainText('$900.00')
   await strip.screenshot({ path: 'visual/shots/p27-05-invoices-two-payers.png' })
   await rows.filter({ hasText: 'Ian Gray' }).locator('[data-shot="approve-and-send"]').click()
+  await page.locator('[data-shot="prepayment-letter-send"]').click()
   await expect(rows).toHaveCount(2)
   await expect(rows.filter({ hasText: 'Fiona Gray' })).toHaveCount(1)
 })

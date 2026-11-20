@@ -7,7 +7,7 @@ import type { CompletionContext } from '../domain/billing/completion'
  * every snapshot.
  */
 
-import { byIdOrder, occupiedSlotIdsOf, pairByAccRecIndex, bookingsByList, invoicesByBooking, openExceptionByBooking, pairsByPatient, proceduresByBooking, transfersByBooking } from './indexes'
+import { byIdOrder, creditNoteByOriginal, occupiedSlotIdsOf, pairByAccRecIndex, bookingsByList, invoicesByBooking, openExceptionByBooking, pairsByPatient, proceduresByBooking, transfersByBooking } from './indexes'
 import { closuresAt, closuresIndex, closureSourcesOf } from '../domain/holidays'
 import { rvgCodeToFill } from '../domain/billing/rvgDetail'
 import { procedureStackView, type ProcedureStackView, type StackSurface } from '../domain/billing/procedureStack'
@@ -595,6 +595,17 @@ export function prePaymentInvoicesForBooking(state: { billing: Pick<AppState['bi
 }
 
 /**
+ * The Booking's prepayment invoices still standing (catch-up Phase 41;
+ * US-06.4.1, D31): a prepayment invoice credited in full stops counting as
+ * issued, so its Procedure is billed normally at authorise, 27a skips it and
+ * 27 derives a fresh prepayment while it is still on a prepaid Contract.
+ */
+export function livePrePaymentInvoicesForBooking(state: { billing: Pick<AppState['billing'], 'invoices'> & Partial<Pick<AppState['billing'], 'creditNotes'>> }, bookingId: string): Invoice[] {
+  const credited = state.billing.creditNotes !== undefined ? creditNoteByOriginal(state.billing.creditNotes) : undefined
+  return prePaymentInvoicesForBooking(state, bookingId).filter((i) => credited === undefined || !credited.has(i.id))
+}
+
+/**
  * The Procedures of a Booking covered by a raised prepayment invoice (catch-up
  * Phase 27): each one's amount ex GST and the invoice holding it. The price
  * ladder holds them at that amount (D47, A16) and the run leaves them off the
@@ -605,11 +616,12 @@ export function prePaymentInvoicesForBooking(state: { billing: Pick<AppState['bi
  * until Phase 41's cancellation (US-06.3.7, D67).
  */
 export function prepaidHeldFor(
-  state: { billing: Pick<AppState['billing'], 'invoices' | 'invoiceLines'>; schedule: Pick<AppState['schedule'], 'procedures'> },
+  state: { billing: Pick<AppState['billing'], 'invoices' | 'invoiceLines'> & Partial<Pick<AppState['billing'], 'creditNotes'>>; schedule: Pick<AppState['schedule'], 'procedures'> },
   bookingId: string,
 ): Record<ProcedureId, { amount: number; prepaymentInvoiceId: InvoiceId }> {
   const out: Record<ProcedureId, { amount: number; prepaymentInvoiceId: InvoiceId }> = {}
-  const ids = new Set(prePaymentInvoicesForBooking(state, bookingId).map((i) => i.id))
+  // A prepayment invoice credited in full no longer holds its Procedures (catch-up Phase 41).
+  const ids = new Set(livePrePaymentInvoicesForBooking(state, bookingId).map((i) => i.id))
   if (ids.size === 0) return out
   for (const line of Object.values(state.billing.invoiceLines)) {
     if (!ids.has(line.invoiceId) || line.procedureId === undefined) continue
@@ -628,7 +640,7 @@ export function prepaidHeldFor(
  * Phase 27, `prepaidHeldFor`). A caller without `locks` sees no AUTHORISED rung.
  */
 export function heldPricesForBooking(
-  state: { billing: Pick<AppState['billing'], 'invoices' | 'invoiceLines'> & Partial<Pick<AppState['billing'], 'locks'>>; schedule: Pick<AppState['schedule'], 'lists' | 'bookings' | 'procedures'> },
+  state: { billing: Pick<AppState['billing'], 'invoices' | 'invoiceLines'> & Partial<Pick<AppState['billing'], 'locks' | 'creditNotes'>>; schedule: Pick<AppState['schedule'], 'lists' | 'bookings' | 'procedures'> },
   bookingId: string,
 ): Record<ProcedureId, HeldPrices> {
   const booking = state.schedule.bookings[bookingId]

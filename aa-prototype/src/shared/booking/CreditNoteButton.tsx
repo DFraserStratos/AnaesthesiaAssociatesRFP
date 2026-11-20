@@ -9,16 +9,14 @@
  * fee split left it several live invoices, offers the choice of which.
  *
  * `creditOptionFor` decides it for either actor: hidden on a colleague's
- * Procedure and before the invoice exists; hidden with the caption "Crediting
- * a prepayment invoice is not in this prototype yet." on a prepaid
- * Procedure whose only invoice is its prepayment invoice (Phase 41); disabled
+ * Procedure and before the invoice exists; on a prepaid Procedure it credits
+ * the whole prepayment invoice (Phase 41, D31; the form says so); disabled
  * with its sentence while a credit waits or once credited, and while an Admin
  * Booking has unsaved changes (Phase 35). The anaesthetist's variant has no
  * copy, no split and no ledger figures. PWA-safe.
  */
 
 import { useState } from 'react'
-import { neutral } from '../../theme/tokens'
 import { creditOptionFor, type Actor } from '../../store'
 import { TextAction } from '../ui/TextAction'
 import { CREDIT_LABELS } from '../procedureEventCopy'
@@ -36,13 +34,7 @@ export function CreditNoteButton({ procedureId, actor }: { procedureId: string; 
   const office = actor.role === 'office'
   const shot = office ? 'procedure-credit-note-button' : 'anaesthetist-credit-note-button'
 
-  if (option.kind === 'hidden') {
-    return option.caption !== undefined ? (
-      <span data-shot="credit-note-unavailable" style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.slate }}>
-        {option.caption}
-      </span>
-    ) : null
-  }
+  if (option.kind === 'hidden') return null
   const reason = blocked ?? (option.kind === 'disabled' ? option.reason : null)
 
   return (

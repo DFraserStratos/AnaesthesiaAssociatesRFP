@@ -23,6 +23,7 @@ export type MastersView =
   | 'availability-statuses'
   | 'publicHolidays'
   | 'emailTemplates'
+  | 'prepaymentLetters'
   | 'xeroArchiving'
   | 'seedLoad'
   | 'goLive'

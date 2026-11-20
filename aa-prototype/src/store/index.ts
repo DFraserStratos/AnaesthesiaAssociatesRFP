@@ -187,8 +187,24 @@ export {
   PREPAYMENT_ALREADY_SENT,
   PREPAYMENT_NOT_NEEDED,
   PREPAYMENT_PAYER_CONTACT,
+  // Catch-up Phase 41: the prepayment reminder (US-06.3.6).
+  REMINDER_MESSAGES,
+  remindablePrepaymentInvoices,
+  reminderAddressFor,
+  sendPrepaymentReminder,
 } from './prepaymentActions'
 export * from './prepaymentSelectors'
+// Catch-up Phase 41: the prepayment letter and its templates (US-06.3.6), the longer-procedure staging (US-06.4.1).
+export * from './prepaymentLetter'
+export {
+  createLetterTemplate,
+  editLetterTemplate,
+  setDefaultLetterTemplate,
+  setLetterTemplateActive,
+  LETTER_TEMPLATE_MESSAGES,
+  type LetterTemplateFields,
+} from './letterTemplateActions'
+export { LONGER_PREPAID_COPY, STAGE_LONGER_DURATION_MIN, longerPrepaidChoices, stageLongerPrepaidProcedure, stageLongerRefusal } from './prepaymentFollowupDemo'
 export {
   warningFactsFor,
   warningsForBooking,

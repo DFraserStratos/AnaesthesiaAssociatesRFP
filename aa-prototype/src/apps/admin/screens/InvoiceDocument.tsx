@@ -37,7 +37,8 @@ import {
   splitNoteText,
 } from '../../../domain/billing'
 import { Button, DemoBadge } from '../../../shared'
-import { AgentBlock, DocLinesTable, DocMasthead, DocMeta, DocTotals, EventLineText, metaLabel } from '../../../shared/billing/docParts'
+import { AgentBlock, DocLetter, DocLinesTable, DocMasthead, DocMeta, DocTotals, EventLineText, metaLabel } from '../../../shared/billing/docParts'
+import { reminderStampText } from '../../../shared/booking/prepaymentText'
 import { dateTimeMicroCap, drSurname, formatCurrency } from '../../../shared/format'
 import { dayWithYear, hhmm } from '../../../domain/dateText'
 import { DefList, DefRow, FormError, Notice, Pill, TextAction, TextField } from '../../../shared/ui'
@@ -156,6 +157,9 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
         className="aa-invoice-doc"
         style={{ minWidth: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.panel, padding: '36px 40px', display: 'flex', flexDirection: 'column', gap: 22 }}
       >
+        {/* The prepayment letter sent with it (catch-up Phase 41; US-06.3.6): its cover, on the same paper, above the masthead. */}
+        {invoice.kind === 'prePayment' && invoice.letter !== undefined && <DocLetter body={invoice.letter.body} />}
+
         {/* Masthead: the supplier, the anaesthetist (US-08.4.5) */}
         <DocMasthead
           supplier={supplier}
@@ -418,6 +422,7 @@ function InvoiceInfoRail({
       <RailCard title="Delivery">
         <DeliveryState delivery={invoice.delivery} onSend={onSend} {...(credited ? { sendDisabledReason: CREDIT_MESSAGES.alreadyCredited } : {})} />
         <FormError message={error} />
+        <LetterLines invoice={invoice} />
       </RailCard>
 
       <LockedRecordCard invoice={invoice} />
@@ -727,6 +732,33 @@ function RegenerateNotice({ result }: { result: RegenerateResult }) {
         <span key={d.field} style={{ display: 'block' }}>{d.field}: stored {d.stored}, regenerated {d.regenerated}</span>
       ))}
     </Notice>
+  )
+}
+
+/**
+ * The prepayment letter in the Delivery card (catch-up Phase 41; US-06.3.6):
+ * which letter went with the invoice, then each reminder sent for it, with
+ * what was still to pay.
+ */
+function LetterLines({ invoice }: { invoice: Invoice }) {
+  if (invoice.letter === undefined && (invoice.prepaymentReminders ?? []).length === 0) return null
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, borderTop: `1px solid ${neutral.line}`, paddingTop: 10, fontSize: 12.5, lineHeight: '18px', color: neutral.ink }}>
+      {invoice.letter !== undefined && (
+        <span data-shot="invoice-letter-line" data-template-id={invoice.letter.templateId}>
+          Letter: {invoice.letter.templateName} · sent with this invoice
+        </span>
+      )}
+      {(invoice.prepaymentReminders ?? []).map((r, i) => (
+        <span key={`${r.atISO}:${i}`} data-shot="invoice-reminder-line" style={{ color: neutral.slate }}>
+          {'Reminder · '}
+          <span className="mono">{reminderStampText(r.atISO)}</span>
+          {' · '}
+          <span className="mono">{formatMoney(r.amountOutstanding)}</span>
+          {' outstanding'}
+        </span>
+      ))}
+    </div>
   )
 }
 

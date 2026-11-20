@@ -333,7 +333,8 @@ describe('the rules', () => {
     const { original } = stageMitchell()
     expect(submitCredit(api, OFFICE, creditInput(original.id, { reason: '  ' }))).toMatchObject({ ok: false, code: 'reasonRequired' })
     const prepay = Object.values(api.getState().billing.invoices).find((i) => i.bookingId === SEED_PREPAID_BOOKING_ID && i.kind === 'prePayment')!
-    expect(submitCredit(api, OFFICE, creditInput(prepay.id))).toMatchObject({ ok: false, code: 'kindNotCreditable', message: CREDIT_MESSAGES.prepaymentNotCreditable })
+    // Catch-up Phase 41 (D31): a prepayment invoice is creditable in full, never split.
+    expect(submitCredit(api, OFFICE, { ...creditInput(prepay.id), cause: 'split' })).toMatchObject({ ok: false, code: 'kindNotCreditable', message: CREDIT_MESSAGES.prepaymentNoSplit })
     const fee = Object.values(api.getState().billing.aaFeeInvoices)[0]!
     expect(submitCredit(api, OFFICE, creditInput(fee.id))).toMatchObject({ ok: false, code: 'kindNotCreditable', message: CREDIT_MESSAGES.aaFeeNotCreditable })
     expect(creditRefusalFor(api.getState(), { role: 'office' }, original.id)).toBeNull()

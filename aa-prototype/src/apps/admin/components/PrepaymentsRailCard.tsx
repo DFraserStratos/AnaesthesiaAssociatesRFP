@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useAppStore, useUpcomingPrepayments } from '../../../store'
 import { neutral, radius } from '../../../theme/tokens'
 import { Card, CountBadge, EmptyState, Pill, TextAction } from '../../../shared/ui'
-import { daysToGoText, NO_PRICE_YET, PREPAYMENT_STATUS_LABEL, prepaymentTone } from '../../../shared/booking/prepaymentText'
+import { daysToGoText, NO_PRICE_YET, PREPAYMENT_STATUS_LABEL, prepaymentTone, reminderDayText } from '../../../shared/booking/prepaymentText'
+import { lastPrepaymentReminder } from '../../../store/prepaymentLetter'
 import { UNASSIGNED } from '../../../shared/scheduleTerms'
 import { drSurname, formatMoney, shortDay } from '../../../shared/format'
 
@@ -13,7 +14,8 @@ const VISIBLE_ROWS = 5
  * Booking on a List not yet authorised, one row per payer group, soonest
  * first, with its amount, status and days to go from the demo clock. An
  * awaiting row opens the Invoices strip to approve it; the others open the
- * Booking. A two-payer Booking names each payer under the patient.
+ * Booking. A two-payer Booking names each payer under the patient. A row
+ * whose invoice was reminded says when (catch-up Phase 41; US-06.3.6).
  */
 export function PrepaymentsRailCard({
   onOpenBooking,
@@ -25,6 +27,7 @@ export function PrepaymentsRailCard({
 }) {
   const rows = useUpcomingPrepayments()
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
+  const billing = useAppStore((s) => s.billing)
   const [expanded, setExpanded] = useState(false)
   const shown = expanded ? rows : rows.slice(0, VISIBLE_ROWS)
   const groupsPerBooking = new Map<string, number>()
@@ -48,6 +51,7 @@ export function PrepaymentsRailCard({
           {shown.map((row) => {
             const anaesthetist = row.anaesthetistId !== undefined ? anaesthetists[row.anaesthetistId] : undefined
             const awaiting = row.status === 'awaitingApproval'
+            const reminded = row.invoiceId !== undefined ? lastPrepaymentReminder({ billing }, row.invoiceId) : undefined
             return (
               <li key={`${row.bookingId}:${row.payerKey}`}>
               <button
@@ -68,6 +72,11 @@ export function PrepaymentsRailCard({
                 {row.status === 'partPaid' && (
                   <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>
                     {formatMoney(row.receivedTotal)} of {formatMoney(row.invoicedTotal)} received
+                  </span>
+                )}
+                {reminded !== undefined && (
+                  <span data-shot="rail-prepayment-reminded" style={{ fontSize: 12, color: neutral.slate }}>
+                    Reminded <span className="mono">{reminderDayText(reminded.atISO)}</span>
                   </span>
                 )}
                 <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>

@@ -24,6 +24,7 @@ import { FundingTagsView } from './FundingTagsView'
 import { RvgGroupsView } from './RvgGroupsView'
 import { ModifiersView } from './ModifiersView'
 import { EmailTemplatesView } from './EmailTemplatesView'
+import { PrepaymentLettersView } from './PrepaymentLettersView'
 
 interface MasterDataProps {
   actor: Actor
@@ -93,6 +94,7 @@ export function MasterData({ actor }: MasterDataProps) {
         {view === 'scheduleSettings' && <ScheduleSettingsView actor={actor} />}
         {view === 'availability-statuses' && <AvailabilityStatusesView actor={actor} />}
         {view === 'emailTemplates' && <EmailTemplatesView actor={actor} />}
+        {view === 'prepaymentLetters' && <PrepaymentLettersView actor={actor} />}
         {view === 'xeroArchiving' && <XeroArchivingView actor={actor} />}
         {view === 'publicHolidays' && <PublicHolidaysView actor={actor} />}
         {view === 'seedLoad' && <SeedLoadView actor={actor} />}

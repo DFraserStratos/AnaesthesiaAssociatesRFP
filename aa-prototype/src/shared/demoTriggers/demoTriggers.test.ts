@@ -6,7 +6,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from '../../store/appStore'
 import { wireBillingRun } from '../../store/billingRun'
-import { authoriseList } from '../../store/lifecycle'
+import { authoriseList, submitList } from '../../store/lifecycle'
+import { completeAnswered } from '../../test/completeAnswered'
+import { LONGER_PREPAID_COPY, STAGE_LONGER_DURATION_MIN } from '../../store/prepaymentFollowupDemo'
 import { approveProcedureEvent } from '../../store/procedureEventActions'
 import { submitCredit, type CreditReplacementInput } from '../../store/creditActions'
 import { resetDemo } from '../../store/clockActions'
@@ -1294,5 +1296,41 @@ describe('credit entries (catch-up Phase 39 session 2)', () => {
     unwire()
     expect(out).toEqual({ ok: true, message: 'Approved by the office and issued in the next billing run (CN-2026-0001).' })
     expect(t.disabledReason(api.getState(), hbk03())).toBe('No credit on this Booking is awaiting review')
+  })
+})
+
+describe('Stage longer prepaid procedure (catch-up Phase 41; US-06.4.1)', () => {
+  const LIST = SEED_LIST_IDS.prepaymentPaidList
+  const at = () => ctxFor(`/admin/review/${LIST}`, { listId: LIST })
+  function submitNairList(api: BoundAppStore) {
+    for (const b of bookingsForList(api.getState(), LIST)) completeAnswered(api, SOUTER_ACTOR, b.id)
+    const out = submitList(api, SOUTER_ACTOR, LIST)
+    if (!out.ok) throw new Error(out.message)
+  }
+
+  it('shows on Admin Review only, on the bar; disabled until the List is submitted, then runs once', () => {
+    const api = createAppStore()
+    const t = byId('stage-longer-prepaid-procedure')
+    expect(t.surfaces).toEqual(['bar'])
+    expect(ids(api, `/admin/review/${LIST}`)).toContain('stage-longer-prepaid-procedure')
+    expect(ids(api, '/admin/invoices')).not.toContain('stage-longer-prepaid-procedure')
+    expect(t.disabledReason(api.getState(), at())).toBe(LONGER_PREPAID_COPY.submitFirst)
+    submitNairList(api)
+    expect(t.disabledReason(api.getState(), at())).toBeNull()
+    expect(t.choices!(api.getState(), at()).map((c) => c.id)).toEqual(['BK0038'])
+    const out = t.run(api, at(), 'BK0038')
+    expect(out.ok).toBe(true)
+    expect(out.message).toMatch(/^Recorded BTM now \d+ units, for reference only\./)
+    const p = api.getState().schedule.procedures[api.getState().billing.invoices['INV0001']!.procedureIds![0]!]!
+    expect(Date.parse(p.handoverISO!) - Date.parse(p.anaestheticStartISO!)).toBe(STAGE_LONGER_DURATION_MIN * 60_000)
+    expect(t.disabledReason(api.getState(), at())).toBe(LONGER_PREPAID_COPY.alreadyStaged)
+  })
+
+  it('a List with no sent prepayment says so', () => {
+    const api = createAppStore()
+    const other = SEED_LIST_IDS.souterPm21
+    const list = api.getState().schedule.lists[other]
+    if (list === undefined) return
+    expect(byId('stage-longer-prepaid-procedure').disabledReason(api.getState(), ctxFor(`/admin/review/${other}`, { listId: other }))).not.toBeNull()
   })
 })
