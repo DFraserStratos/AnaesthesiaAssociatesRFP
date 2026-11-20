@@ -5,6 +5,7 @@
  * hooks `clockAdvanced` (every clock change, after `dayAdvanced` when both
  * fire, so a day advance polls first and then works the queue).
  */
+import { reportDiagnostic } from './diagnostics'
 
 export type AppEvent =
   | { type: 'listAuthorised'; listId: string }
@@ -29,7 +30,7 @@ export function emitAppEvent(event: AppEvent): void {
     try {
       listener(event)
     } catch (error) {
-      console.error('app-event listener failed', event.type, error)
+      reportDiagnostic('error', 'app-event listener failed', { type: event.type, error })
     }
   }
 }

@@ -1,4 +1,5 @@
 import { StrictMode } from 'react'
+import { wireDiagnostics } from './store/diagnostics'
 import { createRoot } from 'react-dom/client'
 import './theme/global.css'
 import App from './App.tsx'
@@ -8,6 +9,8 @@ import { useAppStore, wireArchiveJob, wireBillingRun, wireIntegrationRetry, wire
 // `listAuthorised`; the run consumes it (then hands its ledger pairs off to Xero).
 // Wired once, here, for the singleton store — never in appStore.ts (mutate.ts
 // runtime-imports it) and never per-store (tests drive the actions themselves).
+// Uncaught errors and rejections into the redacted diagnostic log (catch-up Phase 43).
+wireDiagnostics()
 wireBillingRun(useAppStore)
 // Phase 10 `dayAdvanced` hooks, in order: the reconciliation poll (catches a
 // missed Xero payment) runs BEFORE the nightly contact-archive job, so a

@@ -31,7 +31,8 @@ import {
   type ExpectedConflict,
   type HolidayIndex,
 } from '../domain/conflicts'
-import type { HospitalHoliday, List } from '../domain/types'
+import type { HospitalHoliday, List, PublicHoliday } from '../domain/types'
+import { closureSourcesOf } from '../domain/holidays'
 import type { AppState } from './appStore'
 import type { DomainPatch, MutationMeta } from './mutate'
 
@@ -54,9 +55,10 @@ export function drName(masters: Pick<AppState['masters'], 'anaesthetists'>, anae
   return name.startsWith('Dr ') ? `Dr ${surname}` : name
 }
 
-export function conflictLookups(state: { masters: Pick<AppState['masters'], 'holidays' | 'hospitals'> }): ConflictLookups {
+export function conflictLookups(state: { masters: Pick<AppState['masters'], 'holidays' | 'publicHolidays' | 'hospitals'> }): ConflictLookups {
   return {
     holidays: state.masters.holidays,
+    publicHolidays: state.masters.publicHolidays,
     hospitalName: (id) => state.masters.hospitals[id]?.name ?? 'The hospital',
   }
 }
@@ -83,6 +85,22 @@ function changedHolidayKeys(
   return keys
 }
 
+/** The dates of every public holiday added, removed or changed (catch-up Phase 42): it closes every hospital. */
+function changedPublicHolidayDates(
+  before: Readonly<Record<string, PublicHoliday>>,
+  after: Readonly<Record<string, PublicHoliday>>,
+): Set<string> {
+  const dates = new Set<string>()
+  for (const id of new Set([...Object.keys(before), ...Object.keys(after)])) {
+    const b = before[id]
+    const a = after[id]
+    if (a === b) continue
+    if (b !== undefined) dates.add(b.dateISO)
+    if (a !== undefined) dates.add(a.dateISO)
+  }
+  return dates
+}
+
 function touchedListIds(state: AppState, schedule: AppState['schedule'], masters: AppState['masters']): Set<string> {
   const touched = new Set<string>()
   const before = state.schedule
@@ -94,11 +112,24 @@ function touchedListIds(state: AppState, schedule: AppState['schedule'], masters
   if (masters.holidays !== state.masters.holidays) {
     listsAtHoliday(schedule.lists, changedHolidayKeys(state.masters.holidays, masters.holidays), touched)
   }
+  if (masters.publicHolidays !== state.masters.publicHolidays) {
+    const dates = changedPublicHolidayDates(state.masters.publicHolidays, masters.publicHolidays)
+    if (dates.size > 0) for (const list of Object.values(schedule.lists)) if (dates.has(list.dateISO)) touched.add(list.id)
+  }
   return touched
 }
 
 /** Which fact went, for the resolved meta. */
 function whatChanged(cause: ExpectedConflict, before: List, after: List, beforeState: AppState, masters: AppState['masters']): string {
+  if (cause.publicHolidayId !== undefined) {
+    const was = beforeState.masters.publicHolidays[cause.publicHolidayId]
+    const now = masters.publicHolidays[cause.publicHolidayId]
+    if (now === undefined) return 'holidayDeleted'
+    if (was !== undefined && was.dateISO !== now.dateISO) return 'holidayMoved'
+    if (after.hospitalId !== undefined && now.openHospitalIds.includes(after.hospitalId)) return 'hospitalOpen'
+    if (before.hospitalId !== after.hospitalId) return 'hospitalChanged'
+    return 'listMoved'
+  }
   const id = cause.holidayId ?? ''
   const was = beforeState.masters.holidays[id]
   const now = masters.holidays[id]
@@ -124,8 +155,8 @@ export function reconcileConflictsInPatch(
   const touched = touchedListIds(state, schedule, masters)
   if (touched.size === 0) return { patch, metas: [], result: EMPTY_MUTATION_RESULT }
 
-  const afterFacts: Facts = { holidays: holidayIndex(masters.holidays) }
-  const beforeFacts: Facts = { holidays: holidayIndex(state.masters.holidays) }
+  const afterFacts: Facts = { holidays: holidayIndex(closureSourcesOf(masters)) }
+  const beforeFacts: Facts = { holidays: holidayIndex(closureSourcesOf(state.masters)) }
   const afterLookups = conflictLookups({ masters })
   const beforeLookups = conflictLookups(state)
 

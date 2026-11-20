@@ -22,7 +22,8 @@
 
 import { autoSendPrepayments } from './prepaymentActions'
 import { notPreferredEntryIds, notPreferredWarning, pairingAcknowledgement } from '../domain/pairingPreferences'
-import { DRAFT_ASSIGN_WARNINGS, isDraftList, isRemoved, removeBlockedReason } from '../domain/draftLists'
+import { draftClosureWarning, isDraftList, isRemoved, removeBlockedReason } from '../domain/draftLists'
+import { closureSourcesOf, closuresFor } from '../domain/holidays'
 import { isOpenSlot } from '../domain/slotStatus'
 import { sessionNotOpenRefusal } from '../domain/listMoves'
 import { LIST_KINDS, type DraftList, type ListKind, type ListOrigin, type RequestSource, type Session } from '../domain/types'
@@ -207,7 +208,7 @@ function assignDraftListUnscoped(
   if (anaesthetist === undefined) return refuse('anaesthetistNotFound', 'Anaesthetist not found.')
   if (!anaesthetist.active) return refuse('anaesthetistInactive', `${drName(state.masters, anaesthetist.registrationNumber)} is not active.`)
   if (list.dateISO < state.clock.todayISO) return refuse('datePassed', "This Draft List's day has passed. Change its date or remove it.")
-  const pairing = pairingRefusal(list, state.masters)
+  const pairing = pairingRefusal(list, state.masters, undefined, list)
   if (pairing !== null) return pairing
   const slot = slotFor(state, input.anaesthetistId, list.dateISO, list.session)
   if (slot === undefined) {
@@ -223,7 +224,8 @@ function assignDraftListUnscoped(
   const notPreferred = notPreferredWarning(state.masters, state.officePrivate.pairingPreferences, input.anaesthetistId, list.surgeonId)
   if (notPreferred !== null) warnings.push(notPreferred.message)
   if (list.conflicts.some((c) => c.kind === 'holiday')) {
-    warnings.push(DRAFT_ASSIGN_WARNINGS.hospitalHoliday(state.masters.hospitals[list.hospitalId]?.name ?? list.hospitalId))
+    const closures = closuresFor(list.dateISO, list.hospitalId, closureSourcesOf(state.masters))
+    warnings.push(draftClosureWarning(state.masters.hospitals[list.hospitalId]?.name ?? list.hospitalId, closures))
   }
 
   // Only a List the office got back from an anaesthetist (Phase 32) ever had one.

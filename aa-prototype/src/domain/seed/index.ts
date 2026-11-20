@@ -21,6 +21,7 @@ import type {
   DemoSettings,
   Hospital,
   HospitalHoliday,
+  PublicHoliday,
   Insurer,
   IsoDate,
   List,
@@ -69,7 +70,7 @@ import { SPECIALTIES } from './specialties'
 import { FUNDING_TAGS } from './fundingTags'
 import { PUBLIC_SESSION_PATTERNS, RECURRING_BOOKINGS } from './recurringBookings'
 import { publicPatternsForFirstPass, rehomePublicLists } from './publicSessions'
-import { HOSPITAL_HOLIDAYS, SEED_LEAVE } from './availabilityAndHolidays'
+import { HOSPITAL_HOLIDAYS, PUBLIC_HOLIDAYS, SEED_LEAVE } from './availabilityAndHolidays'
 import { PAT, SEED_PAYER_COUNTER, buildPatients } from './patients'
 import { DAY_NOTES, DAY_NOTE_NEXT } from './dayNotes'
 import { RVG_GROUPS } from './rvgGroups'
@@ -93,7 +94,8 @@ import { seedDisabledContractBooking } from './disabledContractBooking'
 import { RANGE_AUTHORISED_BILLED_ISO, RANGE_AUTHORISED_LIST_ID, seedPricingBookings, type PricingBookingKey } from './pricingBookings'
 import { applySeedListOrigins } from './listOrigins'
 import { SEED_EMAIL_TEMPLATES, SEED_EMAIL_TEMPLATE_NEXT } from './emailTemplates'
-import type { EmailTemplate } from '../types'
+import type { EmailTemplate, ProcedureEvent } from '../types'
+import { SEED_NEXT_PROCEDURE_EVENT, SEED_PROCEDURE_EVENTS } from './procedureEvents'
 
 export {
   canvasAnaesthetists,
@@ -107,7 +109,7 @@ export {
 } from './canvas'
 export { RECORDED_WINDOW } from './recordedWindow'
 export { SEED_DRAFT_LIST_IDS, SEED_DRAFT_LISTS, SEED_CLASH_RUN_ISO, SEED_CLASH_BY, CANNED_DRAFT_LIST_REQUESTS, CANNED_DAY_DRAFT_LISTS } from './draftLists'
-export { SEED_LEAVE } from './availabilityAndHolidays'
+export { PUBLIC_HOLIDAYS, SEED_LEAVE } from './availabilityAndHolidays'
 export { slotRng, hashStringToSeed } from './slotHash'
 export { ANAE, HOSP, INS, SURG, ORG, ANAESTHETISTS, SEED_SLOT_STATUSES } from './cast'
 
@@ -165,6 +167,8 @@ export interface SeedMasters {
   slotStatuses: Record<string, SlotStatus>
   recurringBookings: Record<string, RecurringBooking>
   holidays: Record<string, HospitalHoliday>
+  /** The master public-holiday calendar (catch-up Phase 42; DM-38): closes every hospital not listed open. */
+  publicHolidays: Record<string, PublicHoliday>
   patients: Record<string, Patient>
   /** The update email templates, one per kind of change at seed (catch-up Phase 35; US-02.3.4). */
   emailTemplates: Record<string, EmailTemplate>
@@ -181,6 +185,8 @@ export interface SeedSchedule {
   bookings: Record<string, Booking>
   procedures: Record<string, Procedure>
   billingLines: Record<string, BillingLine>
+  /** Events on Procedures (catch-up Phase 38b; DM-17), keyed `EV####`. Never a List or schedule entry. */
+  procedureEvents: Record<string, ProcedureEvent>
   /**
    * Office clearances of derived warnings (catch-up Phase 15a), keyed by
    * warning key. Kept outside the Booking so clearing never touches a Booking
@@ -578,7 +584,7 @@ function buildSeedInternal(): SeedBuild {
   })
   // Conflicts come from facts, by the same rule `mutate()` runs (catch-up Phase 30).
   // Stamped at the seed clock (08:00), as a live mutation at that moment would be.
-  const reconciled = reconcileAllConflicts(lists, { holidays: HOSPITAL_HOLIDAYS }, `${DEMO_TODAY}T08:00:00`)
+  const reconciled = reconcileAllConflicts(lists, { holidays: HOSPITAL_HOLIDAYS, publicHolidays: PUBLIC_HOLIDAYS }, `${DEMO_TODAY}T08:00:00`)
   for (const [id, l] of Object.entries(reconciled)) lists[id] = l
   const sicknessSlot = slots[slotIdFor(SEED_SICKNESS.anaesthetistId, SEED_SICKNESS.dateISO, SEED_SICKNESS.session)]!
   const audit = buildSeedAudit({
@@ -646,6 +652,7 @@ function buildSeedInternal(): SeedBuild {
       slotStatuses,
       recurringBookings: byId(RECURRING_BOOKINGS, (p) => p.id),
       holidays: byId(HOSPITAL_HOLIDAYS, (h) => h.id),
+      publicHolidays: byId(PUBLIC_HOLIDAYS.map((p) => ({ ...p, openHospitalIds: [...p.openHospitalIds] })), (p) => p.id),
       patients: patientsRec,
       // Catch-up Phase 35: added after everything else, no RNG draws.
       emailTemplates: byId(SEED_EMAIL_TEMPLATES.map((t) => ({ ...t })), (t) => t.id),
@@ -656,6 +663,8 @@ function buildSeedInternal(): SeedBuild {
       bookings: bookingsRec,
       procedures: proceduresRec,
       billingLines: billingLinesRec,
+      // Catch-up Phase 38b: the one seeded event (EV0001, Dr Souter's additional invoice on HP03), appended, RNG-free.
+      procedureEvents: byId(SEED_PROCEDURE_EVENTS.map((e) => structuredClone(e)), (e) => e.id),
       warningClearances: {},
       // Catch-up Phase 32d: each anaesthetist's weekly Public series (AS0001 to AS0007).
       availabilitySeries: byId(rehomed.series, (x) => x.id),
@@ -676,6 +685,8 @@ function buildSeedInternal(): SeedBuild {
       booking: disabledContractBooking.next.booking,
       procedure: disabledContractBooking.next.procedure,
       billingLine: bookingsBuild.next.billingLine,
+      // Catch-up Phase 38b: EV0001 is seeded.
+      procedureEvent: SEED_NEXT_PROCEDURE_EVENT,
       patient: patients.length + 1,
       // Payer ids (`BP####`): BP0001 is Hana Park as a payer, BP0002 Aria's folded record (catch-up Phase 21); BP0003 to BP0005 seeded payers.
       billableParty: SEED_PAYER_COUNTER,
@@ -773,7 +784,7 @@ export const SCRIPTED_BEAT_SCHEDULE = {
     SEED_LIST_IDS.souterMon20Am,
     SEED_LIST_IDS.souterMon20Pm,
     // S4: Beat 1's Fri 24 AM (prepayment warning) and Fri 24 PM (paid), Beat 2's
-    // Sharma Tue 14 AM (post-op addendum), Beat 3's billing failure.
+    // Sharma Tue 14 AM (S4 Beat 2's additional invoice), Beat 3's billing failure.
     SEED_LIST_IDS.prepaymentUnpaidList,
     SEED_LIST_IDS.prepaymentPaidList,
     projectedListId(ANAE.sharma, '2026-07-14', 'AM'),
@@ -788,8 +799,7 @@ export const SCRIPTED_BEAT_SCHEDULE = {
   ],
   slotIds: [
     // S2: Beat 1b assigns the St George's Draft List into Fitzgerald's Tue 21
-    // PM; Beat 2 books Sharma's Tue 21 PM (and S4 Beat 2's addendum lands
-    // there); Beat 3 reassigns into Sharma's Wed 22 AM.
+    // PM; Beat 2 books Sharma's Tue 21 PM; Beat 3 reassigns into Sharma's Wed 22 AM.
     slotIdFor(ANAE.fitzgerald, DEMO_TODAY, 'PM'),
     slotIdFor(ANAE.sharma, DEMO_TODAY, 'PM'),
     slotIdFor(ANAE.sharma, '2026-07-22', 'AM'),

@@ -13,13 +13,14 @@ import {
   unmatchedBankLines,
   useAppStore,
 } from '../../store'
-import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm } from '../../shared/format'
+import { dateTimeMicroCap, dayMicroCap, formatCount, formatCurrency, hhmm } from '../../shared/format'
 import { HELD_UNTIL_AUTHORISED, LEAVES_ONLY_BY_SYSTEM, RELEASE_TRIGGER_CAPTION } from '../../domain/billing/prepayHolding'
 import { transferOfPair } from '../../domain/billing/ledger'
 import { toCents } from '../../domain/billing/money'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import { APP_CONFIG } from '../../shell/appConfig'
-import { xeroInvoicePairViews, type XeroBillPaymentView, type XeroInvoicePairView } from './xeroPairView'
+import { xeroInvoicePairViews, type XeroBillPaymentView, type XeroCreditView, type XeroInvoicePairView } from './xeroPairView'
+import { CREDIT_LABELS } from '../../shared/procedureEventCopy'
 import { recordFeePaymentFor } from '../../shared/demoTriggers'
 import { aaFeeMonthLabel } from '../../domain/billing/aaFee'
 import { AA_HOLDING_ACCOUNT } from '../../domain/billing/prepayment'
@@ -27,6 +28,9 @@ import { BCTI_DOCUMENT_NAME, GST_NUMBER_NOT_HELD, OQ29_CAPTION, OQ29_PILL, forma
 import { Button, Card, EmptyState, FormError, Notice, Pill, ResultLine, SelectField } from '../../shared/ui'
 import { TableShell as KitTableShell, Td as KitTd, Th as KitTh } from '../../shared/table'
 import type { XeroAccRec, XeroBankLine, XeroContact, XeroRemittance } from '../../domain/types'
+import { FULL_SCALE } from '../../domain/seed/fullScale/constants'
+import { useScaleMode } from '../../store/scaleMode'
+import { useShallow } from 'zustand/react/shallow'
 
 /**
  * The simulated Xero organisation. Contacts are a read-only reference table;
@@ -48,15 +52,33 @@ export function DemoXero() {
     () => Object.values(xero.contacts).sort((a, b) => a.contactNumber.localeCompare(b.contactNumber)),
     [xero.contacts],
   )
+  // A safety cap (catch-up Phase 43): at full scale the tables show the first 200 rows of each,
+  // and only those (and the pair opened) are built.
+  const cap = FULL_SCALE.pageSizes.demoTables
+  const accRecCount = Object.keys(xero.accRecs).length
+  const shownAccRecIds = useMemo(() => {
+    if (accRecCount <= cap) return undefined
+    // The first 200 by invoice number, the order the table shows.
+    const ids = Object.values(xero.accRecs)
+      .sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber))
+      .slice(0, cap)
+      .map((r) => r.id)
+    return accRecId !== undefined && !ids.includes(accRecId) ? [...ids, accRecId] : ids
+  }, [xero.accRecs, accRecCount, cap, accRecId])
   const pairs = useMemo(
-    () => xeroInvoicePairViews({ xero, billing, schedule, masters, audit }),
-    [xero, billing, schedule, masters, audit],
+    () => xeroInvoicePairViews({ xero, billing, schedule, masters, audit }, shownAccRecIds !== undefined ? { accRecIds: shownAccRecIds } : {}),
+    [xero, billing, schedule, masters, audit, shownAccRecIds],
   )
+  const scale = useScaleMode(useShallow((s) => ({ mode: s.mode, counts: s.counts })))
   const selectedPair = useMemo(
     () => (accRecId !== undefined ? pairs.find((pair) => pair.accRec.id === accRecId) : undefined),
     [accRecId, pairs],
   )
 
+  // Counted before the redirect below, so the hook order never changes.
+  const activePatientContacts = useMemo(() => contacts.filter((c) => c.type !== 'organisation' && !c.archived).length, [contacts])
+  const archivedContacts = useMemo(() => contacts.filter((c) => c.archived).length, [contacts])
+  const activeContacts = useMemo(() => contacts.filter((c) => !c.archived).length, [contacts])
   if (accRecId !== undefined && selectedPair === undefined) {
     return <Navigate to="/demo/xero/invoices" replace />
   }
@@ -65,8 +87,6 @@ export function DemoXero() {
   const bankTab = location.pathname.startsWith('/demo/xero/bank')
   const unmatchedCount = unmatchedBankLines({ xero }).length
   const vs = settings.volumeStory
-  const activePatientContacts = contacts.filter((c) => c.type !== 'organisation' && !c.archived).length
-  const archivedContacts = contacts.filter((c) => c.archived).length
 
   return (
     <DemoSurface
@@ -100,36 +120,46 @@ export function DemoXero() {
       </Callout>
 
       <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${neutral.line}` }}>
-        <TabLink active={!invoicesTab && !bankTab} to="/demo/xero">Contacts ({contacts.length})</TabLink>
-        <TabLink active={invoicesTab} to="/demo/xero/invoices">Invoices ({pairs.length})</TabLink>
+        <TabLink active={!invoicesTab && !bankTab} to="/demo/xero">Contacts ({formatCount(contacts.length)})</TabLink>
+        <TabLink active={invoicesTab} to="/demo/xero/invoices">Invoices ({formatCount(accRecCount)})</TabLink>
         <TabLink active={bankTab} to="/demo/xero/bank">Bank reconciliation ({unmatchedCount} unmatched)</TabLink>
       </div>
 
       {bankTab ? (
         <BankReconciliation />
       ) : !invoicesTab ? (
-        <ContactsTable contacts={contacts} />
+        <ContactsTable contacts={contacts.slice(0, cap)} total={contacts.length} />
       ) : selectedPair !== undefined ? (
         selectedPair.kind === 'aaFee' ? <FeePairDetail key={selectedPair.accRec.id} pair={selectedPair} /> : <PairDetail key={selectedPair.accRec.id} pair={selectedPair} />
       ) : (
-        <InvoicesTable pairs={pairs} />
+        <InvoicesTable pairs={pairs.slice(0, cap)} total={accRecCount} />
       )}
 
       {selectedPair === undefined && !bankTab && (
-        <Callout tone="info" title="Contact archiving & volume">
+        <Callout tone="info" title="Contact archiving & volume" shot="xero-volume-callout">
+          {scale.mode === 'fullScale' && scale.counts !== null ? (
+            <>
+              Counted from the loaded data: <strong className="mono">{formatCount(scale.counts.invoicesLast12Months)}</strong> invoices in the last 12 months,{' '}
+              <strong className="mono">{formatCount(contacts.length)}</strong> contacts, of which <strong className="mono">{formatCount(activeContacts)}</strong> are
+              active against Xero&apos;s soft limit of about {formatCount(vs.softLimit)}. The nightly job archives individual contacts once fully paid and inactive (the window is a setting in Master data).
+            </>
+          ) : (
+          <>
           Xero has a soft limit of about {vs.softLimit.toLocaleString('en-NZ')} contacts. AA raises roughly
           {' '}{vs.invoicesPerYear.toLocaleString('en-NZ')} invoices a year, and about {vs.oneTimePct}% of patients are one-time,
           so a nightly job archives individual contacts once fully paid and inactive (the window is a setting
           in Master data). Active contacts: <strong className="mono">{vs.activeContacts.toLocaleString('en-NZ')}</strong>
           {' '}(narrated scale) · in this demo {activePatientContacts} active and {archivedContacts} archived individual
-          contact{archivedContacts === 1 ? '' : 's'}. Scale is narrated with counters, not simulated as records.
+          contact{archivedContacts === 1 ? '' : 's'}. Scale is narrated with counters here; Load full-scale data counts it from records.
+          </>
+          )}
         </Callout>
       )}
     </DemoSurface>
   )
 }
 
-function ContactsTable({ contacts }: { contacts: XeroContact[] }) {
+function ContactsTable({ contacts, total }: { contacts: XeroContact[]; total: number }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ fontSize: 12.5, color: neutral.slate }}>
@@ -160,11 +190,21 @@ function ContactsTable({ contacts }: { contacts: XeroContact[] }) {
           </table>
         </TableShell>
       )}
+      {total > contacts.length && <CapLine shown={contacts.length} total={total} />}
     </div>
   )
 }
 
-function InvoicesTable({ pairs }: { pairs: XeroInvoicePairView[] }) {
+/** The safety cap's line (catch-up Phase 43): "Showing 200 of 5,464". */
+function CapLine({ shown, total }: { shown: number; total: number }) {
+  return (
+    <div data-shot="xero-table-cap" className="mono" style={{ fontSize: 12.5, color: neutral.slate }}>
+      Showing {formatCount(shown)} of {formatCount(total)}
+    </div>
+  )
+}
+
+function InvoicesTable({ pairs, total }: { pairs: XeroInvoicePairView[]; total: number }) {
   const navigate = useNavigate()
 
   return (
@@ -254,6 +294,7 @@ function InvoicesTable({ pairs }: { pairs: XeroInvoicePairView[] }) {
           </table>
         </TableShell>
       )}
+      {total > pairs.length && <CapLine shown={pairs.length} total={total} />}
     </div>
   )
 }
@@ -263,6 +304,8 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
   const [settlementMessage, setSettlementMessage] = useState<string | null>(null)
   const fullySettled = pair.accRec.status === 'paid' && pair.accPay?.status === 'paid'
   const voided = pair.accRec.status === 'voided'
+  // A credited ACCREC (catch-up Phase 39) takes no simulated payment from here either.
+  const credited = pair.accRec.status === 'credited'
   const canOpenWebAccount =
     pair.accRec.amountReceived > 0 &&
     pair.ledger.anaesthetistId === APP_CONFIG.web.persona.anaesthetistId
@@ -350,7 +393,7 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
           <StatusChip recStatus={pair.accRec.status} payStatus={pair.accPay?.status} />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {/* Hidden on a voided pair: Xero takes no payment on a voided invoice (catch-up Phase 37). */}
-            {!voided && <button
+            {!voided && !credited && <button
               type="button"
               onClick={settleInvoice}
               disabled={pair.accPay === undefined || fullySettled || transferred}
@@ -459,6 +502,8 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
           </div>
         </div>
       </Callout>
+
+      {pair.credit !== undefined && <CreditNotesCard credit={pair.credit} />}
 
       <div
         data-testid="xero-money-flow-grid"
@@ -1263,6 +1308,7 @@ function RecordStatus({ status }: { status: string }) {
       status === 'authorised' ? 'Authorised' :
         status === 'paid' ? 'Paid' :
           status === 'voided' ? 'Voided' :
+            status === 'credited' ? CREDIT_LABELS.credited :
             status === 'draft' ? 'Draft' : status
   const on = status === 'paid' || status === 'authorised'
   // Voided in Xero is the danger state (catch-up Phase 37).
@@ -1318,6 +1364,8 @@ function StatusChip({ recStatus, payStatus, fee = false }: { recStatus: string; 
   const disbursed = payStatus === 'paid'
   const label = recStatus === 'voided'
     ? 'Voided'
+    : recStatus === 'credited'
+    ? CREDIT_LABELS.credited
     : fee
     ? paid ? 'Paid' : 'Awaiting payment'
     : disbursed ? 'Disbursed' : paid ? 'Paid · not disbursed' : payStatus === 'authorised' ? 'Part paid' : 'Awaiting payment'
@@ -1397,3 +1445,56 @@ const recordLinkStyle = {
   textDecorationColor: neutral.lineStrong,
   textUnderlineOffset: 3,
 } as const
+
+/**
+ * The engine's correction as Xero holds it (catch-up Phase 39; US-08.6.2
+ * "Both sides move"): the ACCRECCREDIT allocated against the ACCREC and the
+ * ACCPAYCREDIT against the ACCPAY (or the draft ACCPAY voided), each with its
+ * allocated and unallocated amounts, and the new pairs issued with the credit.
+ * Neutral throughout: a credit is a correction, not an error.
+ */
+function CreditNotesCard({ credit }: { credit: XeroCreditView }) {
+  return (
+    <section data-shot="xero-credit-note" data-credit-note={credit.creditNoteNumber} style={{ display: 'flex', flexDirection: 'column', gap: 14, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 18 }}>
+      <div>
+        <SectionLabel>{CREDIT_LABELS.xeroCreditNotes}</SectionLabel>
+        <h3 className="mono" style={{ margin: '4px 0 0', fontSize: 18 }}>{credit.creditNoteNumber}</h3>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 12 }}>
+        {credit.notes.map((n) => (
+          <div key={n.id} data-shot="xero-credit-note-record" data-type={n.type} style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '12px 14px', border: `1px solid ${neutral.line}`, borderRadius: radius.ctl }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: neutral.slate }}>{n.type}</span>
+              <span className="mono" style={{ fontSize: 13, fontWeight: 600 }}>{n.creditNoteNumber}</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
+              <MoneyStat label="Total" value={n.total} />
+              <MoneyStat label={CREDIT_LABELS.xeroAllocated} value={n.allocated} />
+              <MoneyStat label={CREDIT_LABELS.xeroUnallocated} value={n.unallocated} />
+            </div>
+          </div>
+        ))}
+        {credit.accPayVoided && (
+          <div data-shot="xero-credit-accpay-voided" style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '12px 14px', border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, fontSize: 12.5, color: neutral.slate }}>
+            <span style={{ fontWeight: 700 }}>{CREDIT_LABELS.xeroAccPayVoided}</span>
+            <span>{CREDIT_LABELS.xeroAccPayVoidedNote}</span>
+          </div>
+        )}
+      </div>
+      {credit.newPairs.length > 0 && (
+        <div data-shot="xero-credit-new-pairs" style={{ display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap', fontSize: 13 }}>
+          <SectionLabel>{CREDIT_LABELS.xeroNewPairs}</SectionLabel>
+          {credit.newPairs.map((p) =>
+            p.accRecId !== undefined ? (
+              <Link key={p.invoiceNumber} to={`/demo/xero/invoices/${p.accRecId}`} className="mono" style={recordLinkStyle}>
+                {p.invoiceNumber}
+              </Link>
+            ) : (
+              <span key={p.invoiceNumber} className="mono" style={{ color: neutral.slate }}>{p.invoiceNumber}</span>
+            ),
+          )}
+        </div>
+      )}
+    </section>
+  )
+}

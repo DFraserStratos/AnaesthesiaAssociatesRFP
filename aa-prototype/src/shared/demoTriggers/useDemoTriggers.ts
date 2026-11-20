@@ -29,7 +29,11 @@ export interface DemoTriggerRow extends MatchedDemoTrigger {
   reason: string | null
   result: DemoTriggerResult | undefined
   choose: (choiceId: string) => void
+  /** Runs, or, on an entry with a `confirm` line, arms it first (the second click runs). */
   run: () => void
+  /** True while an entry with a `confirm` line waits for its second click. */
+  confirming: boolean
+  cancelConfirm: () => void
 }
 
 /**
@@ -44,11 +48,13 @@ export function useDemoTriggerRows(surface: DemoTriggerSurface): DemoTriggerRow[
   // Results are keyed by pathname as well as id, so a result line from one
   // invoice never shows, even for a frame, on the next invoice's same entry.
   const [results, setResults] = useState<Record<string, DemoTriggerResult>>({})
+  const [armed, setArmed] = useState<Record<string, boolean>>({})
 
   // A new screen starts with fresh choices and no stale result lines.
   useEffect(() => {
     setChoices({})
     setResults({})
+    setArmed({})
   }, [pathname])
 
   return entries.map(({ trigger, ctx }) => {
@@ -64,9 +70,16 @@ export function useDemoTriggerRows(surface: DemoTriggerSurface): DemoTriggerRow[
       result: results[`${pathname}|${trigger.id}`],
       choose: (choiceId) => setChoices((c) => ({ ...c, [trigger.id]: choiceId })),
       run: () => {
+        if (trigger.confirm !== undefined && armed[trigger.id] !== true) {
+          setArmed((a) => ({ ...a, [trigger.id]: true }))
+          return
+        }
+        setArmed((a) => ({ ...a, [trigger.id]: false }))
         const res = trigger.run(useAppStore, ctx, chosen)
         setResults((r) => ({ ...r, [`${pathname}|${trigger.id}`]: res }))
       },
+      confirming: trigger.confirm !== undefined && armed[trigger.id] === true,
+      cancelConfirm: () => setArmed((a) => ({ ...a, [trigger.id]: false })),
     }
   })
 }

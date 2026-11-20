@@ -1,6 +1,75 @@
 {
   "id": "US-13.4.3",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 42 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "seed-load",
+      "app": "admin",
+      "caption": "A one-off data load from AA's controlled spreadsheets, rejected rows listed with reasons",
+      "start": "/admin/masters?view=seedLoad",
+      "states": [
+        {
+          "state": "sheets",
+          "caption": "Seed load, a demo stand-in for the developer's step: every controlled spreadsheet in load order with its columns and a template, and no Contract upload or export",
+          "steps": [
+            { "wait": "[data-shot=seed-load]" }
+          ],
+          "highlight": []
+        },
+        {
+          "state": "result",
+          "caption": "hospitals.csv checked: 6 rows, 2 valid and 4 rejected, each rejected row with its reasons",
+          "steps": [
+            { "wait": "[data-shot=seed-load]" },
+            { "trigger": "load-sample-spreadsheet", "choice": "sample-hospitals" },
+            { "wait": "[data-seed-sheet=hospitals] [data-shot=master-load-result][data-load-status=staged]" }
+          ],
+          "highlight": ["[data-seed-sheet=hospitals] [data-shot=master-load-result]"]
+        },
+        {
+          "state": "loaded",
+          "caption": "Load 2 valid rows: the valid rows are loaded, each opens its record, and the rejected rows are not loaded",
+          "steps": [
+            { "wait": "[data-shot=seed-load]" },
+            { "trigger": "load-sample-spreadsheet", "choice": "sample-hospitals" },
+            { "wait": "[data-seed-sheet=hospitals] [data-shot=master-load-commit]" },
+            { "click": "[data-seed-sheet=hospitals] [data-shot=master-load-commit]" },
+            { "wait": "[data-seed-sheet=hospitals] [data-shot=master-load-loaded]" }
+          ],
+          "highlight": ["[data-seed-sheet=hospitals] [data-shot=master-load-result]"]
+        },
+        {
+          "state": "rvg-groups",
+          "caption": "RVG groups load with their base units; there is no procedure list",
+          "steps": [
+            { "wait": "[data-shot=seed-load]" },
+            { "trigger": "load-sample-spreadsheet", "choice": "sample-rvg-groups" },
+            { "wait": "[data-seed-sheet=rvgGroups] [data-shot=master-load-result][data-load-status=staged]" }
+          ],
+          "highlight": ["[data-seed-sheet=rvgGroups] [data-shot=master-load-result]"]
+        },
+        {
+          "state": "contracts",
+          "caption": "Contracts load one per priced item with their price ranges; a prepaid Contract with an RVG pricing kind is rejected, a blank is not set and 0 is a value",
+          "steps": [
+            { "wait": "[data-shot=seed-load]" },
+            { "trigger": "load-sample-spreadsheet", "choice": "sample-contracts" },
+            { "wait": "[data-seed-sheet=contracts] [data-shot=master-load-result][data-load-status=staged]" }
+          ],
+          "highlight": ["[data-seed-sheet=contracts] [data-shot=master-load-result]"]
+        },
+        {
+          "state": "surgeons",
+          "caption": "Surgeons load from the specialist list with their practice names; rows without an HPI CPN or a surname are loaded with a note for admin staff to complete, rows without a specialty are rejected",
+          "steps": [
+            { "wait": "[data-shot=seed-load]" },
+            { "trigger": "load-sample-spreadsheet", "choice": "sample-surgeons" },
+            { "wait": "[data-seed-sheet=surgeons] [data-shot=master-load-result][data-load-status=staged]" }
+          ],
+          "highlight": ["[data-seed-sheet=surgeons] [data-shot=master-load-result]"]
+        }
+      ]
+    }
+  ]
 }

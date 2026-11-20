@@ -1,6 +1,86 @@
 {
   "id": "US-08.6.6",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 39 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "rebill-from-copy",
+      "app": "admin",
+      "caption": "After a credit note, the rebill starts from a copy of the original's lines",
+      "start": "/admin/invoices",
+      "setup": [
+        {
+          "goto": "/admin/review/L-41267-2026-07-14-AM"
+        },
+        {
+          "trigger": "stage-post-op"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "state": "rebill",
+          "caption": "After a credit note, the rebill starts from a copy of the original's lines",
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Sarah Mitchell\") >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-correct]"
+            },
+            {
+              "click": "[data-shot=invoice-correct] [data-shot=credit-rebill-button]"
+            },
+            {
+              "wait": "[data-shot=credit-sheet] [data-shot=credit-replacement]"
+            },
+            {
+              "scroll": "[data-shot=credit-sheet] [data-shot=credit-replacement] >> nth=0"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=credit-sheet] [data-shot=credit-replacement]"
+          ]
+        },
+        {
+          "state": "copy",
+          "caption": "A new invoice added to a credit note can start from a copy of the original's lines",
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Sarah Mitchell\") >> nth=0 >> td >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-correct]"
+            },
+            {
+              "click": "[data-shot=invoice-correct] [data-shot=credit-note-button]"
+            },
+            {
+              "wait": "[data-shot=credit-sheet]"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-add-invoice]"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-copy-lines] >> nth=0"
+            },
+            {
+              "scroll": "[data-shot=credit-sheet] [data-shot=credit-replacement] >> nth=0"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=credit-sheet] [data-shot=credit-replacement]"
+          ]
+        }
+      ]
+    }
+  ]
 }

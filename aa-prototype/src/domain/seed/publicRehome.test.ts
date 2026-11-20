@@ -56,6 +56,24 @@ const ADDED_25A_ENTITIES = new Set([
  * Catch-up Phase 34 gave every List its origin (US-02.2.4) after this fixture
  * was written: set aside on the seed's side, so every other field compares.
  */
+/**
+ * Catch-up Phase 42: the per-hospital Labour Day and Canterbury Anniversary
+ * rows (HH001 to HH0xx) became the master public holidays PH001 and PH002, so
+ * a frozen conflict's cause is read through the move; the flagged set is the
+ * same (`publicHolidayMigration.test.ts`).
+ */
+function phase42Cause<T>(list: T): T {
+  const l = list as T & { conflicts?: { cause: string; holidayId?: string; publicHolidayId?: string }[] }
+  if (l === undefined || l === null || l.conflicts === undefined) return list
+  const conflicts = l.conflicts.map((c) => {
+    const n = c.holidayId !== undefined && /^HH0\d\d$/.test(c.holidayId) ? Number(c.holidayId.slice(2)) : 0
+    if (n === 0) return c
+    const id = n % 2 === 1 ? 'PH001' : 'PH002'
+    const { holidayId: _h, ...rest } = c
+    return { ...rest, cause: `publicHoliday:${id}`, publicHolidayId: id }
+  })
+  return { ...l, conflicts } as T
+}
 function withoutOrigin<T>(list: T): T {
   if (list === undefined || list === null) return list
   const { origin: _o, ...rest } = list as T & { origin?: unknown }
@@ -144,7 +162,7 @@ describe('Phase 32d parity: what must not move', () => {
   it('every other List is unchanged, apart from the bookless public Lists and the public rows\' clash Draft Lists', () => {
     for (const [id, list] of Object.entries(before.otherLists)) {
       if (removedListIds.has(id) || removedDraftIds.has(id)) continue
-      expect(withoutOrigin(seed.schedule.lists[id]), id).toEqual(list)
+      expect(withoutOrigin(seed.schedule.lists[id]), id).toEqual(phase42Cause(list))
     }
     const known = new Set([...Object.keys(before.otherLists), ...Object.keys(before.listsWithBookings)])
     expect(Object.keys(seed.schedule.lists).filter((id) => !known.has(id))).toEqual([])

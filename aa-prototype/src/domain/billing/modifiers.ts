@@ -50,6 +50,13 @@ export interface Modifier {
   source: 'rvg' | 'aa'
   /** The RVG page it is printed on. */
   page?: number
+  /**
+   * AA's own rows only (catch-up Phase 42): retired, never deleted. A retired
+   * modifier leaves the picker and stays on every Procedure that claimed it.
+   * The RVG table's rows are as printed and never retire.
+   */
+  retiredAtISO?: string
+  retiredReason?: string
 }
 
 /** An optional modifier claimed on a Procedure (stored). */

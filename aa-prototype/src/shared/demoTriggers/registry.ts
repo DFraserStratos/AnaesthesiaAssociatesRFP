@@ -159,12 +159,26 @@ import { SEED_STATUS, statusFor, statusLine } from '../../domain/slotStatus'
 import { formatMoney, roundToCents } from '../../domain/billing/money'
 import { keptPriceTitle } from '../../domain/billing/contractChanges'
 import { aaFeeFor, aaFeeMonthLabel } from '../../domain/billing/aaFee'
-import { drSurname, formatCurrency, plural, shortDay } from '../format'
+import { drSurname, formatCount, formatCurrency, plural, shortDay } from '../format'
+import { FULL_SCALE as FULL_SCALE_FIGURES } from '../../domain/seed/fullScale/constants'
+import { loadFullScaleData, loadFullScaleRefusal } from '../../store/fullScaleActions'
 import { isAssignedList } from '../../domain/draftLists'
 import { useDemoTriggerMemory } from './memory'
 import { simulateSickness, sicknessCandidates, sicknessColleagueSlot, sicknessRefusal, type SicknessRoute } from '../../store/demoSimulations'
 import { BILLING_FAILURE_ALREADY, stageBillingFailure } from '../../store/demoStaging'
 import { regenerateInvoiceFromLock, regenerateRefusal, regenerateSummary } from '../../store/locks'
+import { nextRunRefusal, officeReviewRefusal, officeReviewsAdditionalInvoice, runNextBillingRun } from '../../store/eventDemo'
+import { CREDIT_COPY, CREDIT_DEMO_COPY, CREDIT_LABELS } from '../procedureEventCopy'
+import {
+  officeReviewsCredit,
+  officeReviewsCreditRefusal,
+  refundAfterPayoutRefusal,
+  refundAfterPayoutTarget,
+  stageCombinedProcedure,
+  stageCombinedRefusal,
+  stageRefundAfterPayout,
+  stagedCombined,
+} from '../../store/creditDemo'
 import type { DemoTrigger, DemoTriggerChoice, DemoTriggerCtx, DemoTriggerResult } from './types'
 import { injectUnmatchedReceipt, injectUnmatchedRefusal, officeRunsPayables, officeRunsPayablesRefusal, UNMATCHED_RECEIPT_DEMO } from '../../store/ledgerDemo'
 import { sessionText } from '../../domain/outOfHours'
@@ -179,6 +193,14 @@ import {
   hospitalDescriptionRefusal,
   hospitalDescriptionText,
 } from './procedureTextTriggers'
+import { SAMPLE_SHEETS, type SampleSheet } from '../../domain/masterLoad/samples'
+import type { LoadEntity } from '../../domain/masterLoad/types'
+import { stageMasterLoad, stagedLoadFor } from '../../store/masterLoadActions'
+import { stageGoLiveLoad } from '../../store/goLiveActions'
+import { HOSPITAL_FEED_ACTOR, SEED_LOAD_ACTOR, SOUTER_ACTOR } from '../../store/demoActors'
+import { leakScanSummary, scanForNhiLeaks } from '../../store/privacyScan'
+import { rawRowRefusal, rawRowTarget, viewRawImportRow } from '../../store/rawRowActions'
+import { reportDiagnostic } from '../../store/diagnostics'
 
 // ---------------------------------------------------------------------------
 // Route patterns (checked against `src/router.tsx` and `pwa/main.tsx`)
@@ -217,6 +239,51 @@ const MOBILE_AVAILABILITY = '/mobile/availability'
 /** A date route param, or undefined. */
 const isoParam = (v: string | undefined) => (v !== undefined && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined)
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
+
+// ---------------------------------------------------------------------------
+// Master data loads (catch-up Phase 42)
+// ---------------------------------------------------------------------------
+
+/**
+ * The seed sheets each Master data view is loaded from at go-live: the
+ * `seeded` field of `apps/admin/screens/masters/masterViews.ts`, restated here
+ * because this file stays out of `src/apps` (the PWA closure contains it). A
+ * test holds the two equal.
+ */
+export const SEEDED_SHEETS_BY_VIEW: Readonly<Record<string, readonly LoadEntity[]>> = {
+  anaesthetists: ['anaesthetists'],
+  hospitals: ['hospitals', 'hospitalHolidays'],
+  surgeons: ['surgeons'],
+  specialties: ['specialties'],
+  publicHolidays: ['publicHolidays'],
+  parties: ['parties'],
+  fundingTags: ['fundingTags'],
+  contracts: ['contracts', 'priceRanges'],
+  rvgGroups: ['rvgGroups'],
+  modifiers: ['modifiers'],
+}
+
+/** The Seed load view's id (`?view=seedLoad`). */
+const SEED_LOAD_VIEW = 'seedLoad'
+
+/** The sample sheets on offer for the published Master data view: all of them on Seed load, else that view's own. */
+function sampleSheetsFor(ctx: DemoTriggerCtx): readonly SampleSheet[] {
+  const view = ctx.published['adminMasters.view']
+  if (view === SEED_LOAD_VIEW) return SAMPLE_SHEETS
+  const entities = view !== undefined ? SEEDED_SHEETS_BY_VIEW[view] : undefined
+  if (entities === undefined) return []
+  return SAMPLE_SHEETS.filter((s) => entities.includes(s.entity))
+}
+
+/** The sample the presenter picked, or the first on offer. */
+function chosenSample(ctx: DemoTriggerCtx, choiceId: string | undefined): SampleSheet | undefined {
+  const offered = sampleSheetsFor(ctx)
+  return (choiceId !== undefined ? offered.find((s) => s.id === choiceId) : undefined) ?? offered[0]
+}
+
+const NO_SAMPLE_HERE = 'Open Seed load, or a Master data view loaded from a spreadsheet'
+const SAMPLE_WAITING = 'A load is already waiting for this sheet; load or discard it first'
+const GO_LIVE_WAITING = 'A go-live load is already waiting; load or discard it first'
 
 /** "St George's · Mr S. Tan" from the masters. */
 function pairingOf(state: AppState, hospitalId: string, surgeonId: string): string {
@@ -324,6 +391,8 @@ export function paymentDisabledReason(state: AppState, accRecId: string | undefi
   const accRec = state.xero.accRecs[accRecId]
   if (accRec === undefined) return 'Not handed off to Xero'
   if (accRec.status === 'voided') return 'Voided in Xero'
+  // Catch-up Phase 39: a credited invoice takes no payment, in Xero or the ledger (its correction may still be on its way to Xero).
+  if (accRec.status === 'credited' || Object.values(state.billing.ledger).some((p) => 'credit' in p && p.credit !== undefined && p.receivable.xeroAccRecId === accRecId)) return CREDIT_LABELS.paymentDisabled
   if (roundToCents(accRec.amountDue - accRec.amountReceived) <= 0) return 'Fully paid'
   if (!openAccRecs(state).some((c) => c.accRecId === accRecId)) return 'Seeded history invoice'
   return null
@@ -826,7 +895,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'stage-post-op',
     label: 'Stage post-op scenario',
     description:
-      'Submits and authorises Dr Sharma\'s Tue 14 Jul AM List, so "Add post-op event" can run on its locked Booking. It lands on a new List in her free Tue 21 PM session.',
+      "Authorises Dr Sharma's Tue 14 Jul AM List so its invoiced Bookings can take an additional invoice.",
     screen: 'Admin · Review and Booking detail',
     routes: ['/admin/review/:listId', '/admin/day/:dateISO/bookings/:bookingId'],
     surfaces: ['bar'],
@@ -836,11 +905,10 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     disabledReason: (state) =>
       state.schedule.lists[POST_OP_ORIGINAL_LIST_ID]?.state === 'AUTHORISED'
-        ? 'Already staged: use Add post-op event on the Booking'
+        ? 'Already staged: use Create additional invoice on the Procedure'
         : null,
-    // Phase 09 demo trigger: authorise (lock + bill) an original episode and keep
-    // a free empty session today for its anaesthetist, so "Add post-op event" on
-    // the locked booking has somewhere to land.
+    // Authorise (lock and bill) the original episode, so Sarah Mitchell's Procedure can take an
+    // additional invoice (catch-up Phase 38b; the Phase 09 addendum Booking is gone).
     run: (api) => {
       const listId = POST_OP_ORIGINAL_LIST_ID
       const list = api.getState().schedule.lists[listId]
@@ -855,10 +923,81 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return {
         ok: true,
         message:
-          'Done. Dr Sharma\'s Tue 14 Jul list is authorised and locked. In the Admin day view jump to Tue 14, open its booking and use "Add post-op event"; it lands on a new List in her free Tue 21 PM session.',
+          "Authorised and billed. Open Sarah Mitchell's Booking and use Create additional invoice on the Procedure's Contract row.",
       }
     },
     indexPath: () => `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`,
+  },
+  // ── Admin · Billing monitor and Review: the next billing run for events (catch-up Phase 38b) ──
+  {
+    id: 'run-next-billing-run',
+    label: 'Run the next billing run',
+    description:
+      'Invoices every approved additional invoice: each becomes its own invoice with its own number, ledger pair and Xero pair, linked to the original. Stands in for the scheduled run of the real system.',
+    screen: BILLING_MONITOR_SCREEN,
+    routes: [...BILLING_MONITOR, '/admin/review'],
+    surfaces: ['bar'],
+    disabledReason: (state) => nextRunRefusal(state),
+    run: (api) => {
+      const out = runNextBillingRun(api)
+      if (!out.ok) return { ok: false, message: out.message }
+      const skipped = out.value.skipped.length > 0 ? ` ${out.value.skipped.length} not invoiced: ${out.value.skipped[0]!.message}` : ''
+      // Catch-up Phase 39: a credit note and its replacements are raised by the same run.
+      const numbers = [...out.value.creditNoteNumbers, ...out.value.numbers].join(', ')
+      return { ok: true, message: `Billing run done: ${CREDIT_COPY.runResult(out.value.creditNoteNumbers.length, out.value.numbers.length)} (${numbers}).${skipped}` }
+    },
+    indexPath: () => '/admin/billing',
+  },
+  // ── Admin · Invoices: a billed Merivale combination to split (catch-up Phase 39) ──
+  {
+    id: 'stage-combined-procedure',
+    label: 'Stage combined procedure',
+    description:
+      "Books, completes, authorises and bills a post-paid Merivale combination (Facelift plus 2 add ons) on Dr Delaney's Fri 10 Jul PM List, billed to the patient, so its invoice can be credited and split into additional invoices that add up to it.",
+    screen: 'Admin · Invoices',
+    routes: ['/admin/invoices'],
+    surfaces: ['bar'],
+    disabledReason: (state) => stageCombinedRefusal(state),
+    run: (api) => {
+      const out = stageCombinedProcedure(api)
+      if (!out.ok) return { ok: false, message: out.message }
+      return {
+        ok: true,
+        message: CREDIT_DEMO_COPY.combinedStaged,
+        link: { to: `/admin/invoices/${out.value.invoiceId}`, label: CREDIT_DEMO_COPY.openInvoice(out.value.invoiceNumber) },
+      }
+    },
+    indexPath: (state) => {
+      const invoice = stagedCombined(state)?.invoice
+      return invoice !== undefined ? `/admin/invoices/${invoice.id}` : '/admin/invoices'
+    },
+  },
+  // ── Admin · Billing monitor and Invoice: paid in full and paid out, before a credit (catch-up Phase 39) ──
+  {
+    id: 'stage-refund-after-payout',
+    label: 'Stage refund after payout',
+    description:
+      "Records a payment in full on the invoice (on the Billing monitor, Sarah Mitchell's once Stage post-op scenario has run) and pays the anaesthetist out through Xero's payables run, so a following credit raises a negative invoice with an amount to net in their next payment run.",
+    screen: BILLING_MONITOR_SCREEN,
+    // It shows on the invoice too: the Control Panel lists it under Admin · Invoice as well.
+    alsoScreens: ['Admin · Invoice'],
+    routes: [...BILLING_MONITOR, '/admin/invoices/:invoiceId'],
+    surfaces: ['bar'],
+    disabledReason: (state, ctx) => refundAfterPayoutRefusal(state, ctx.params['invoiceId']),
+    run: (api, ctx) => {
+      const out = stageRefundAfterPayout(api, ctx.params['invoiceId'])
+      if (!out.ok) return { ok: false, message: out.message }
+      return {
+        ok: true,
+        message: CREDIT_DEMO_COPY.paidOut(out.value.payee),
+        // On the Billing monitor, the invoice it paid (on the invoice itself, the page is already there).
+        ...(ctx.params['invoiceId'] === undefined ? { link: { to: `/admin/invoices/${out.value.invoiceId}`, label: CREDIT_DEMO_COPY.openInvoice(out.value.invoiceNumber) } } : {}),
+      }
+    },
+    indexPath: (state) => {
+      const id = refundAfterPayoutTarget(state, undefined)
+      return id !== undefined ? `/admin/invoices/${id}` : '/admin/billing'
+    },
   },
 
   // ── Admin · Intake, PDF lists (catch-up Phase 34) ────────────────────
@@ -898,7 +1037,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'regenerate-invoice',
     label: 'Regenerate from locked data',
     description:
-      "Rebuilds the invoice on screen from its Booking's locked record (the pricing snapshot taken at authorise) and compares it with the invoice as stored: identical, with its line count and total, or the differences. Read-only. Try it after a Contract edit, a Disable, a backdated price range, an RVG group edit, a unit-value edit, or a patient address or payer email change.",
+      "Rebuilds the invoice on screen from its Booking's locked record (the pricing snapshot taken at authorise) and compares it with the invoice as stored: identical, with its line count and total, or the differences. Read-only. Try it after a Contract edit, a Disable, a backdated price range, an RVG group edit, a unit-value edit, or a patient address or payer email change. An additional invoice regenerates from its event's lines.",
     screen: 'Admin · Invoice',
     routes: ['/admin/invoices/:invoiceId'],
     surfaces: ['bar'],
@@ -1157,6 +1296,42 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
           ? 'Done. The office authorised this List and the billing run raised its invoices. They are in Balances now, and search finds the List.'
           : 'The office authorised this List, but the billing run raised no invoices for it.',
       }
+    },
+    indexPath: () => null,
+  },
+  // ── Mobile · Booking, installed PWA only: the office reviews an additional invoice (catch-up Phase 38b) ──
+  {
+    id: 'office-reviews-additional-invoice',
+    label: 'Office reviews this additional invoice',
+    description:
+      'Stands in for the office, which has no app on the phone: approves the additional invoice awaiting review on this Booking and invoices it in the next billing run, as Kirsty would from Admin Review.',
+    screen: 'Mobile · Booking',
+    routes: [MOBILE_BOOKING],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    disabledReason: (state, ctx) => officeReviewRefusal(state, ctx.params['bookingId'] ?? ''),
+    run: (api, ctx) => {
+      const res = officeReviewsAdditionalInvoice(api, ctx.params['bookingId'] ?? '')
+      return res.ok
+        ? { ok: true, message: `Approved by the office and invoiced in the next billing run (${res.value.number}).` }
+        : { ok: false, message: res.message }
+    },
+    indexPath: () => null,
+  },
+  // ── Mobile · Booking, installed PWA only: the office reviews a credit (catch-up Phase 39) ──
+  {
+    id: 'office-reviews-credit',
+    label: 'Office reviews this credit',
+    description:
+      'Stands in for the office, which has no app on the phone: approves the credit awaiting review on this Booking, with any new invoice raised with it, and issues it in the next billing run, as Kirsty would from Admin Review.',
+    screen: 'Mobile · Booking',
+    routes: [MOBILE_BOOKING],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    disabledReason: (state, ctx) => officeReviewsCreditRefusal(state, ctx.params['bookingId'] ?? ''),
+    run: (api, ctx) => {
+      const res = officeReviewsCredit(api, ctx.params['bookingId'] ?? '')
+      return res.ok ? { ok: true, message: CREDIT_DEMO_COPY.creditIssued(res.value.creditNoteNumber) } : { ok: false, message: res.message }
     },
     indexPath: () => null,
   },
@@ -1601,6 +1776,55 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       }
     },
     indexPath: () => '/admin/masters?view=recurringBookings',
+  },
+  // ── Admin · Master data: the developer's seed load and the go-live load (catch-up Phase 42) ──
+  {
+    id: 'load-sample-spreadsheet',
+    label: 'Load sample spreadsheet',
+    description:
+      "Checks a sample spreadsheet as the developer's seed load: its valid rows wait on Seed load and its rejected rows show why. It stages and does not load: press Load on Seed load to load the valid rows.",
+    screen: 'Admin · Master data',
+    routes: [ADMIN_MASTERS],
+    surfaces: ['bar'],
+    when: (_state, ctx) => sampleSheetsFor(ctx).length > 0,
+    choices: (_state, ctx) => sampleSheetsFor(ctx).map((s) => ({ id: s.id, label: s.fileName })),
+    disabledReason: (state, ctx, choiceId) => {
+      const sample = chosenSample(ctx, choiceId)
+      if (sample === undefined) return NO_SAMPLE_HERE
+      return stagedLoadFor(state, sample.entity) !== undefined ? SAMPLE_WAITING : null
+    },
+    run: (api, ctx, choiceId) => {
+      const sample = chosenSample(ctx, choiceId)
+      if (sample === undefined) return { ok: false, message: NO_SAMPLE_HERE }
+      if (stagedLoadFor(api.getState(), sample.entity) !== undefined) return { ok: false, message: SAMPLE_WAITING }
+      const res = stageMasterLoad(api, SEED_LOAD_ACTOR, { entity: sample.entity, csvText: sample.csv, source: { kind: 'sample', sampleId: sample.id } })
+      if (!res.ok) return { ok: false, message: res.message }
+      return {
+        ok: true,
+        message: `${sample.fileName} checked: ${plural(res.value.valid, 'row')} valid, ${res.value.rejected} rejected. Open Master data, Seed load, and press Load.`,
+      }
+    },
+    indexPath: () => `${ADMIN_MASTERS}?view=${SEED_LOAD_VIEW}`,
+  },
+  {
+    id: 'go-live-data-load',
+    label: 'Go-live data load (demo)',
+    description:
+      "Prepares the go-live load as the developer: the Solutions Plus operation names with AA's decisions, beside AA's controlled spreadsheets, checked and waiting. Approve or unapprove names on Go-live load, then press Load approved data.",
+    screen: 'Admin · Master data',
+    routes: [ADMIN_MASTERS],
+    surfaces: ['bar'],
+    disabledReason: (state) => (state.masterLoads.goLive?.status === 'staged' ? GO_LIVE_WAITING : null),
+    run: (api) => {
+      const res = stageGoLiveLoad(api, SEED_LOAD_ACTOR)
+      if (!res.ok) return { ok: false, message: res.message }
+      const v = res.value
+      return {
+        ok: true,
+        message: `Go-live load prepared: ${plural(v.candidates, 'Solutions Plus name')} (${v.junk} excluded as junk, ${v.notApproved} not approved) and ${plural(v.sheets, 'controlled spreadsheet')}. Open Master data, Go-live load.`,
+      }
+    },
+    indexPath: () => `${ADMIN_MASTERS}?view=goLive`,
   },
   // ── Admin · Day and Booking detail, Mobile · Booking: prepayment (catch-up Phase 27) ──
   {
@@ -2093,5 +2317,66 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => null,
     indexEmptyReason: 'PWA only: the framed build makes the change in Admin and saves it.',
+  },
+  // ── Scale and privacy (catch-up Phase 43) ─────────────────────────────
+  {
+    id: 'load-full-scale',
+    label: 'Load full-scale data',
+    description:
+      `Replaces the demo data with the whole practice, built in this browser from the same seed: ${FULL_SCALE_FIGURES.anaesthetists} anaesthetists, their sessions across the scheduling horizon and about ${formatCount(FULL_SCALE_FIGURES.targetInvoicesPerYear)} invoices from the last ${FULL_SCALE_FIGURES.historyMonths} months. Held in memory only: saving pauses, and Reset or a reload returns to the demo data.`,
+    screen: 'Admin · Day view and Invoices',
+    routes: ['/admin/day/:dateISO', '/admin/invoices', '/admin/invoices/:invoiceId'],
+    surfaces: ['bar'],
+    confirm: 'Replaces the current demo data. Reset returns to it.',
+    disabledReason: () => loadFullScaleRefusal(),
+    run: (api) => {
+      const res = loadFullScaleData(api, { report: (message) => reportDiagnostic('error', message) })
+      return res.ok ? { ok: true, message: 'Generating full-scale data. Timings appear in the banner.' } : { ok: false, message: res.message }
+    },
+    indexPath: (state) => `/admin/day/${state.clock.todayISO}`,
+  },
+  {
+    id: 'scan-nhi-leaks',
+    label: 'Scan for NHI leaks',
+    description:
+      'Searches the Xero records and their sync queue for any NHI or personal detail (no personal information in Xero), and the diagnostic log, the messages people see and every failure reason for anything that looks like an NHI. The planted choice adds one test line to the scan to prove it finds one.',
+    screen: 'Demo · Data inspector',
+    routes: ['/demo/data'],
+    surfaces: ['bar'],
+    choices: () => [
+      { id: 'now', label: 'Scan now' },
+      { id: 'planted', label: 'Scan with a planted test leak (proves the scan finds one)' },
+    ],
+    disabledReason: () => null,
+    run: (api, _ctx, choiceId) => {
+      const report = scanForNhiLeaks(api.getState(), { plantTestLeak: choiceId === 'planted' })
+      useDemoTriggerMemory.getState().rememberNhiScan(report)
+      return { ok: true, message: leakScanSummary(report, formatCount) }
+    },
+    indexPath: () => '/demo/data',
+  },
+  {
+    id: 'matching-raw-row-other-role',
+    label: 'View raw row as another role',
+    description:
+      'Shows the restriction working: the same View raw row request, with the reason "Demo: access check", made as an anaesthetist or as the hospital feed, on the selected row (or the oldest row needing resolving). Only office staff can view a raw hospital row, and the refused attempt is recorded in the audit trail. No payload is shown.',
+    screen: 'Admin · Intake, Matching',
+    routes: [ADMIN_MATCHING],
+    surfaces: ['bar'],
+    choices: () => [
+      { id: 'souter', label: 'As Dr Melanie Souter (anaesthetist)' },
+      { id: 'feed', label: 'As the hospital feed (integration)' },
+    ],
+    disabledReason: (state, ctx) => rawRowRefusal(state, rawRowTarget(state, ctx.published['matching.selectedRowId'])),
+    run: (api, ctx, choiceId) => {
+      const state = api.getState()
+      const rowId = rawRowTarget(state, ctx.published['matching.selectedRowId'])
+      if (rowId === undefined) return { ok: false, message: 'No hospital row needs resolving' }
+      const res = viewRawImportRow(api, choiceId === 'feed' ? HOSPITAL_FEED_ACTOR : SOUTER_ACTOR, rowId, 'Demo: access check')
+      return res.ok
+        ? { ok: false, message: 'The view was not refused.' }
+        : { ok: true, message: res.code === 'officeOnly' ? 'Refused: only office staff can view a raw hospital row. The attempt is in the audit trail.' : res.message }
+    },
+    indexPath: () => ADMIN_MATCHING,
   },
 ]

@@ -21,6 +21,9 @@ import { plural } from '../../../shared/format'
 import { StubMarker } from '../../../shared/stubs'
 import { useStubCountsByList } from '../../../store/stubSelectors'
 import { listStubNote } from '../../../domain/intake/stubs'
+import { FULL_SCALE } from '../../../domain/seed/fullScale/constants'
+import { Pager, pageOf, pageWindow } from './Pager'
+import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
 
 interface DayGridProps {
   anaesthetists: Anaesthetist[]
@@ -45,6 +48,14 @@ interface DayGridProps {
    * an anaesthetist with none open that day; absent on a past day.
    */
   onOpenOutOfHours?: (anaesthetistId: string) => void
+  /**
+   * The page of anaesthetists (catch-up Phase 43; US-15.0.4): 30 rows a page, a
+   * pager in the footer only when there are more rows than that, so the demo
+   * day (14) is unchanged. Filters and the sort apply before paging; a filter
+   * change returns to page 1 through `onPage`.
+   */
+  page?: number
+  onPage?: (page: number) => void
 }
 
 /** The needs-attention amber (the warning token, not the pre-op status hue). */
@@ -107,7 +118,7 @@ function hasNoteSignal(view: SlotView): boolean {
 const NO_DRAFTS: readonly DraftList[] = []
 const NO_COUNTS: ReadonlyMap<string, number> = new Map()
 
-export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFlags, onSelectSlot, draftLists = NO_DRAFTS, bookingCounts = NO_COUNTS, onOpenDraftList, onOpenOutOfHours }: DayGridProps) {
+export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFlags, onSelectSlot, draftLists = NO_DRAFTS, bookingCounts = NO_COUNTS, onOpenDraftList, onOpenOutOfHours, page = 1, onPage }: DayGridProps) {
   // The ruler: 07:00 to 18:00, longer only on a day with an out-of-hours session or an evening Draft List.
   const eveningDefaults = useAppStore((s) => s.appSettings.schedule.defaultTimes.OOH)
   // Stubs standing on each List (catch-up Phase 33a): a marker beside the count, never in it.
@@ -123,6 +134,8 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
   const slotStatuses = useSlotStatusRecords()
   const legendKeys = useLegendKeys()
   const [focusFilters, setFocusFilters] = useState<Set<FocusFilter>>(() => new Set())
+  // Render timing at demo and full scale (catch-up Phase 43).
+  useScreenTiming('day', [anaesthetists, viewsByAnaesthetist, page, hiddenStatuses, focusFilters])
 
   const rows = useMemo(
     () =>
@@ -185,6 +198,10 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
     }
     return [...matching, ...inactive]
   }, [filtered, filteredRows])
+  const pageSize = FULL_SCALE.pageSizes.day
+  const paged = displayedRows.length > pageSize
+  const pageRows = paged ? pageOf(displayedRows, pageSize, page) : displayedRows
+  const pageStart = paged ? pageWindow(displayedRows.length, pageSize, page).start : 0
 
   function toggleStatus(status: DisplayKey) {
     setHiddenStatuses((current) => {
@@ -193,6 +210,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
       else next.add(status)
       return next
     })
+    onPage?.(1)
   }
 
   function toggleFocus(filter: FocusFilter) {
@@ -202,11 +220,13 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
       else next.add(filter)
       return next
     })
+    onPage?.(1)
   }
 
   function resetFilters() {
     setHiddenStatuses(new Set())
     setFocusFilters(new Set())
+    onPage?.(1)
   }
 
   return (
@@ -226,7 +246,8 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
       {/* The day's Draft Lists, above the anaesthetists on the same ruler; never filtered. */}
       <DraftListBand draftLists={draftLists} bookingCounts={bookingCounts} onOpen={(id) => onOpenDraftList?.(id)} ruler={ruler} />
 
-      {displayedRows.map(({ anaesthetist, segments }, index) => {
+      {pageRows.map(({ anaesthetist, segments }, pageIndex) => {
+        const index = pageStart + pageIndex
         const inactive = filtered && segments.length === 0
         const startsInactiveGroup = inactive && index === matchingAnaesthetists && matchingAnaesthetists > 0
         return (
@@ -328,8 +349,9 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
           </button>
         )}
       </div>
-      <div style={{ padding: '0 16px 12px', background: neutral.bg, fontSize: 11, color: neutral.mist }}>
-        {matchingAnaesthetists} of {rows.length} anaesthetists {matchingAnaesthetists === 1 ? 'has' : 'have'} matching blocks. Showing {visibleBlocks} of {totalBlocks} blocks{draftLists.length > 0 ? ` · ${draftListCount(draftLists.length)} unassigned` : ''}. At production scale (~85) this view pages and virtualises (the legacy dashboard's "1 of 3" pager); scale is narrated here, not simulated.
+      <div data-shot="day-grid-footer" style={{ padding: '0 16px 12px', background: neutral.bg, fontSize: 11, color: neutral.mist }}>
+        {`${matchingAnaesthetists} of ${rows.length} anaesthetists ${matchingAnaesthetists === 1 ? 'has' : 'have'} matching blocks. Showing ${visibleBlocks} of ${totalBlocks} blocks${draftLists.length > 0 ? ` · ${draftListCount(draftLists.length)} unassigned` : ''}.`}
+        {paged && onPage !== undefined && <Pager total={displayedRows.length} size={pageSize} page={page} onPage={onPage} lead="Anaesthetists" shot="day-grid-pager" nested />}
       </div>
     </div>
   )

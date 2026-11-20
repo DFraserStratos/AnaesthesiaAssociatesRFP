@@ -6,6 +6,7 @@
  * `domain/billing/ledger.ts`; these feed it from the store.
  */
 
+import { byIdOrder, openDivergenceByPair, pairByAccRecIndex, pairByInvoice, openQueueIndex, pairsByBooking } from './indexes'
 import type { AnaesthetistId, BillingException, BookingLedgerPair, LedgerPair, LedgerReceipt, LedgerTransfer, UnmatchedReceipt, XeroDivergence, XeroQueueItem } from '../domain/types'
 import { BCTI_COUNT_RULE, type BctiRecord } from '../domain/billing/bcti'
 import {
@@ -47,27 +48,27 @@ function unmatchedList(state: BillingState): UnmatchedReceipt[] {
 
 /** Every Booking pair of a Booking (procedure and prepayment), in id order. */
 export function pairsForBooking(state: BillingState, bookingId: string): BookingLedgerPair[] {
-  return allPairs(state)
-    .filter((p): p is BookingLedgerPair => isBookingPair(p) && p.bookingId === bookingId)
-    .sort((a, b) => a.id.localeCompare(b.id))
+  // Indexed on the ledger map (catch-up Phase 43).
+  return [...(pairsByBooking(state.billing.ledger).get(bookingId) ?? [])]
 }
 
 /** Every Booking pair for the Bookings on a List, in id order. */
 export function pairsForList(state: Pick<AppState, 'schedule' | 'billing'>, listId: string): BookingLedgerPair[] {
-  const bookingIds = new Set(bookingsForList(state, listId).map((b) => b.id))
-  return allPairs(state)
-    .filter((p): p is BookingLedgerPair => isBookingPair(p) && bookingIds.has(p.bookingId))
-    .sort((a, b) => a.id.localeCompare(b.id))
+  const byBooking = pairsByBooking(state.billing.ledger)
+  return bookingsForList(state, listId)
+    .flatMap((b) => byBooking.get(b.id) ?? [])
+    .sort(byIdOrder)
 }
 
 /** The pair an invoice made. */
 export function pairForInvoice(state: BillingState, invoiceId: string): BookingLedgerPair | undefined {
-  return allPairs(state).find((p): p is BookingLedgerPair => isBookingPair(p) && p.invoiceId === invoiceId)
+  const pair = pairByInvoice(state.billing.ledger).get(invoiceId)
+  return pair !== undefined && isBookingPair(pair) ? pair : undefined
 }
 
 /** The pair a Xero ACCREC mirrors (the webhook's lookup). */
 export function pairByAccRec(state: BillingState, accRecId: string): LedgerPair | undefined {
-  return allPairs(state).find((p) => p.receivable.xeroAccRecId === accRecId)
+  return pairByAccRecIndex(state.billing.ledger).get(accRecId)
 }
 
 /** The transfer of a `prePayment` pair, once its List is authorised. */
@@ -105,14 +106,19 @@ export function openXeroQueueItems(state: BillingState): XeroQueueItem[] {
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
-/** The open hand-off queue item for a pair, if its mirror is waiting for Xero. */
+/** The open hand-off queue item for a pair, if its mirror is waiting for Xero: its own hand-off, or a credit's correction that creates or reverses it (catch-up Phase 39). */
 export function handoffQueuedFor(state: BillingState, pairId: string): XeroQueueItem | undefined {
-  return Object.values(state.billing.xeroQueue).find((q) => q.kind === 'handoff' && q.status !== 'sent' && q.target.pairId === pairId)
+  return openQueueIndex(state.billing.xeroQueue).handoffByPair.get(pairId)
+}
+
+/** The open correction queue item for a credit note, if its Xero reversal and new pairs wait for Xero (catch-up Phase 39). */
+export function correctionQueuedFor(state: BillingState, creditNoteId: string): XeroQueueItem | undefined {
+  return openQueueIndex(state.billing.xeroQueue).correctionByCreditNote.get(creditNoteId)
 }
 
 /** The open journal queue item for a transfer (27a's journal waiting for Xero). */
 export function journalQueuedFor(state: BillingState, transferId: string): XeroQueueItem | undefined {
-  return Object.values(state.billing.xeroQueue).find((q) => q.kind === 'journal' && q.status !== 'sent' && q.target.transferId === transferId)
+  return openQueueIndex(state.billing.xeroQueue).journalByTransfer.get(transferId)
 }
 
 /** Divergences the poll flagged and the office has not resolved, in id order. */
@@ -124,7 +130,7 @@ export function openXeroDivergences(state: BillingState): XeroDivergence[] {
 
 /** The open divergence on a pair, if the poll flagged one. */
 export function openDivergenceFor(state: BillingState, pairId: string): XeroDivergence | undefined {
-  return openXeroDivergences(state).find((d) => d.pairId === pairId)
+  return openDivergenceByPair(state.billing.xeroDivergences).get(pairId)
 }
 
 export type XeroQueueStatusLabel = 'Waiting' | 'Retrying' | 'Alert raised' | 'Sent'
@@ -168,6 +174,10 @@ function queueWhat(state: BillingState, q: XeroQueueItem): { what: string; pairI
     }
     case 'poll':
       return { what: 'Reconciliation poll' }
+    case 'correction': {
+      const note = q.target.creditNoteId !== undefined ? state.billing.creditNotes[q.target.creditNoteId] : undefined
+      return { what: `Credit ${number}${note !== undefined ? ` (${note.creditNoteNumber})` : ''} and its new invoices`, ...who }
+    }
   }
 }
 
@@ -206,7 +216,14 @@ export function incomeReceiptsFor(state: BillingState, anaesthetistId: Anaesthet
   return Object.values(state.billing.receipts).filter((r) => r.pairKind !== 'aaFee' && r.anaesthetistId === anaesthetistId)
 }
 
-/** 16's BCTI record list, from the ledger's payable legs: the only list `bctisFor` reads. */
+/**
+ * 16's BCTI record list, from the ledger's payable legs: the only list `bctisFor` reads.
+ * OQ-60, provisional: an additional invoice is one BCTI (catch-up Phase 38b): its pair is an issued
+ * Booking pair, so it yields one record here, with no new rule; an event not yet invoiced yields none.
+ * OQ-60, provisional (catch-up Phase 39): a credited original keeps its record (it was issued); a credit
+ * note and a negative invoice add none (not pairs; "not called a BCTI credit"); each replacement issued
+ * with a credit is one record, through 38b's rule.
+ */
 export function bctiRecords(state: BillingState): BctiRecord[] {
   return bctiRecordsOf(allPairs(state), state.billing.transfers, BCTI_COUNT_RULE)
 }

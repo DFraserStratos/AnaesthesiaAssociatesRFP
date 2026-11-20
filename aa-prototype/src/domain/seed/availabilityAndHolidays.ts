@@ -1,17 +1,17 @@
 /**
  * The seed's leave calendar (catch-up Phase 28: was the availability master,
  * reconciled into the canvas; now generator input only, painted onto the
- * Slots' status after they are written free) and hospital holidays (upcoming, feeding Phase 06's
- * conflict flags).
+ * Slots' status after they are written free), hospital holidays and the master
+ * public holidays (upcoming, feeding the conflict flags).
  *
  * The design pins: Souter on leave Fri 24 to Sun 26 Jul; Beaumont on leave
  * through Sun 26 ("back Mon 27"); Ngatai through Tue 28 ("back Wed 29");
  * Ngata unavailable Tue 21 (ICU on call); Delaney unavailable Thu 23.
  */
 
-import type { HospitalHoliday, SeedLeaveWindow, Session } from '../types'
+import type { HospitalHoliday, PublicHoliday, SeedLeaveWindow, Session } from '../types'
 import { enumerateDatesISO } from '../clock'
-import { ANAE, HOSP, HOSPITALS } from './cast'
+import { ANAE, HOSP } from './cast'
 
 const SESSIONS: readonly Session[] = ['AM', 'PM'] as const
 
@@ -46,17 +46,30 @@ export const SEED_LEAVE: readonly SeedLeaveWindow[] = [
 ] as const
 
 /**
- * Regional public holidays within the horizon, one row per hospital (Labour
- * Day Mon 26 Oct; Canterbury Anniversary Fri 13 Nov 2026). Booked Lists at a
- * hospital on its holiday get a conflict flag from the generator.
+ * The master public-holiday calendar (catch-up Phase 42; DM-38, US-13.4.1):
+ * one row per statutory or regional holiday, closing every hospital unless it
+ * is listed open that day. Labour Day and Canterbury Anniversary Day were one
+ * row per hospital before; AA rooms had none, so it is listed open on those
+ * two and no List's flag moves (`publicHolidayMigration.test.ts`). Only the
+ * first two fall inside the seed's horizon; the rest make the calendar look
+ * real and flag Lists if the clock is rolled forward.
+ */
+export const PUBLIC_HOLIDAYS: readonly PublicHoliday[] = [
+  { id: 'PH001', dateISO: '2026-10-26', name: 'Labour Day', kind: 'national', openHospitalIds: [HOSP.aaRooms] },
+  { id: 'PH002', dateISO: '2026-11-13', name: 'Canterbury Anniversary Day', kind: 'regional', region: 'Canterbury', openHospitalIds: [HOSP.aaRooms] },
+  { id: 'PH003', dateISO: '2026-12-25', name: 'Christmas Day', kind: 'national', openHospitalIds: [] },
+  { id: 'PH004', dateISO: '2026-12-28', name: 'Boxing Day (observed)', kind: 'national', openHospitalIds: [] },
+  { id: 'PH005', dateISO: '2027-01-01', name: "New Year's Day", kind: 'national', openHospitalIds: [] },
+  { id: 'PH006', dateISO: '2027-01-04', name: "Day after New Year's Day (observed)", kind: 'national', openHospitalIds: [] },
+  { id: 'PH007', dateISO: '2027-02-08', name: 'Waitangi Day (observed)', kind: 'national', openHospitalIds: [] },
+]
+
+/**
+ * Each hospital's own closures (US-01.5.1): only hospital-specific ones since
+ * catch-up Phase 42 moved the statutory days to `PUBLIC_HOLIDAYS`. The `HH`
+ * id range stays for these.
  */
 export const HOSPITAL_HOLIDAYS: readonly HospitalHoliday[] = [
-  // Hospitals only: AA rooms (catch-up Phase 31) may take a holiday through the
-  // sheet like any location, but the seed gives it none, so no id moves.
-  ...HOSPITALS.filter((h) => h.locationType === 'hospital').flatMap((hospital, i) => [
-    { id: `HH${String(i * 2 + 1).padStart(3, '0')}`, hospitalId: hospital.id, dateISO: '2026-10-26', name: 'Labour Day' },
-    { id: `HH${String(i * 2 + 2).padStart(3, '0')}`, hospitalId: hospital.id, dateISO: '2026-11-13', name: 'Canterbury Anniversary Day' },
-  ]),
   // Catch-up Phase 30: the seeded holiday conflict on the S2 day, a real
   // closure behind it (it replaces Phase 06's fabricated message). `HH9xx`
   // sits outside the runtime `HHN` prefix.

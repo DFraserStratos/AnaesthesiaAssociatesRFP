@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { SyntheticDataBadge } from '../shared/SyntheticDataBadge'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
 import { APP_CONFIG, appIdForPath, officePersona, PERSONAS, type AppId } from './appConfig'
@@ -7,6 +8,7 @@ import { DemoActionsMenu } from './DemoActionsMenu'
 import { DemoClockMenu } from './DemoClockMenu'
 import { DemoResetButton } from './DemoResetButton'
 import { PersonaChip } from '../shared/PersonaChip'
+import { ScaleBanner } from '../shared/scale/ScaleBanner'
 import { neutral, radius } from '../theme/tokens'
 
 /**
@@ -78,6 +80,8 @@ export function AppShell() {
           >
             Prototype
           </span>
+          {/* Catch-up Phase 43 (US-15.0.6): the environment holds synthetic data only. */}
+          <SyntheticDataBadge tone="onInk" />
           {/* The local Requirements Board (requirements-board/). Shown only when the repo-root
               `npm run dev` launched both apps and set VITE_REQUIREMENTS_URL, so a presenter running
               the prototype on its own for a vendor workshop never sees it. Never in a build. */}
@@ -109,6 +113,9 @@ export function AppShell() {
           <DemoResetButton />
         </div>
       </header>
+
+      {/* The full-scale data's banner (catch-up Phase 43): harness chrome, only while generating or loaded. */}
+      <ScaleBanner />
 
       {/* ── Routed app ──────────────────────────────────────── */}
       {/* The modal scope (U2): an open dialog makes the app inert, never the harness bar. */}

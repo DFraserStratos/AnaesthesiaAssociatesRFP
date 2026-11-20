@@ -16,7 +16,8 @@ import { format, parseISO } from 'date-fns'
 import { neutral, radius } from '../../../theme/tokens'
 import { assignDraftList, bookingCountsByList, useAppStore, type Actor } from '../../../store'
 import { useDemoTriggerContextWhile } from '../../../shared/demoTriggers'
-import { DRAFT_ASSIGN_WARNINGS, isDraftList } from '../../../domain/draftLists'
+import { draftClosureWarning, isDraftList } from '../../../domain/draftLists'
+import { closureSourcesOf, closuresFor } from '../../../domain/holidays'
 import { Button, DefList, DefRow, FormError, SuccessOverlay } from '../../../shared/ui'
 import { Notice } from '../../../shared/ui/Notice'
 import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
@@ -141,7 +142,7 @@ export function AssignDraftListSheet({ open, listId, actor, initialAnaesthetistI
             </div>
             <div data-shot={pairingWarning !== null ? 'admin-assign-draft-list-not-preferred' : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <NotPreferredWarning warning={pairingWarning} shot="assign-draft-list-pairing-warning" />
-              {holiday && <Notice tone="warning" live="status" shot="assign-draft-list-holiday-warning">{DRAFT_ASSIGN_WARNINGS.hospitalHoliday(hospitalName)}</Notice>}
+              {holiday && <Notice tone="warning" live="status" shot="assign-draft-list-holiday-warning">{draftClosureWarning(hospitalName, closuresFor(list.dateISO, list.hospitalId, closureSourcesOf(masters)))}</Notice>}
             </div>
             <FormError message={error} />
             <SheetActions

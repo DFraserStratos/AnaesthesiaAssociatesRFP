@@ -12,6 +12,7 @@ import {
   anaesthetistPayee,
   anaesthetistPosition,
   anaesthetistsOutOfBalance,
+  applyCredit,
   applyDisbursement,
   applyReceipt,
   bctiRecordsOf,
@@ -25,6 +26,7 @@ import {
   patientPosition,
   procedureSharesFrom,
 } from './ledger'
+import { reversalPlan } from './creditNote'
 
 const AT = '2026-07-21T10:00:00'
 const SOUTER = '34821'
@@ -280,5 +282,93 @@ describe('the BCTI records (16 count, read from the payable legs)', () => {
   it('same input gives deep-equal output', () => {
     const build = () => ledgerPosition([receive(pair('A', 230), 115), pair('PP', 1380, { holding: true })], {}, [held(120, SOUTER)])
     expect(build()).toEqual(build())
+  })
+})
+
+// ---------------------------------------------------------------------------
+// The credit path (catch-up Phase 39; work item 3)
+// ---------------------------------------------------------------------------
+
+describe('the credit path (catch-up Phase 39)', () => {
+  const REF = { creditNoteId: 'CRN0001', negativeInvoiceId: 'NEG0001', atISO: AT }
+  /** Credit a pair in full by its legs now, as the store does at issue time. */
+  function credit(p: BookingLedgerPair): BookingLedgerPair {
+    const plan = reversalPlan({ total: p.receivable.amount, received: p.receivable.receivedAmount, released: p.payable!.releasedAmount, disbursed: p.payable!.disbursedAmount })
+    const out = applyCredit(p, plan, REF)
+    if (!out.ok) throw new Error(out.code)
+    return out.pair
+  }
+
+  it('credits the receivable in full, reverses the payable and cuts its release to what was paid out', () => {
+    const p = credit(disburse(receive(pair('A', 100), 100), 40))
+    expect(p.receivable.creditedAmount).toBe(100)
+    expect(p.payable).toMatchObject({ reversedAmount: 100, releasedAmount: 40, disbursedAmount: 40 })
+    expect(p.credit).toEqual({ creditNoteId: 'CRN0001', negativeInvoiceId: 'NEG0001', atISO: AT, heldForPayer: 100, recoveryDue: 40 })
+    expect(pairStatusLabel(p)).toBe('credited')
+  })
+
+  it('refuses a pair already credited and an AA fee pair', () => {
+    const plan = reversalPlan({ total: 100, received: 0, released: 0, disbursed: 0 })
+    expect(applyCredit(credit(pair('A', 100)), plan, REF)).toEqual({ ok: false, code: 'alreadyCredited' })
+    const fee = newAaFeePair({ id: 'F', aaFeeInvoice: { id: 'AF', invoiceNumber: 'AA-FEE-1', anaesthetistId: SOUTER, total: 805 }, atISO: AT })
+    expect(applyCredit(fee, plan, REF)).toEqual({ ok: false, code: 'notCreditable' })
+  })
+
+  it('refuses a receipt and a disbursement on a credited pair (pairCredited)', () => {
+    const p = credit(receive(pair('A', 100), 50))
+    const r = applyReceipt(p, 50, AT)
+    expect(r).toMatchObject({ added: 0, refused: 'pairCredited' })
+    expect(r.pair).toBe(p)
+    expect(applyDisbursement(p.payable!, 10, AT)).toEqual({ ok: false, code: 'pairCredited' })
+  })
+
+  it('half paid: received 50, released 50, paid out 0: held 50, payables due 0, imbalance 0', () => {
+    const pos = ledgerPosition([credit(receive(pair('A', 100), 50))], {}, [])
+    expect([pos.receiptsHeld, pos.payablesDue, pos.creditsHeldForPayers, pos.recoveryDueFromAnaesthetists, pos.receivablesOutstanding, pos.awaitingCollection]).toEqual([50, 0, 50, 0, 0, 0])
+    expect(pos.imbalance).toBe(0)
+    expect(pos.inBalance).toBe(true)
+  })
+
+  it('fully paid, part paid out (received 100, released 100, paid out 40): receipts held 60, held 100, to net 40, imbalance 0', () => {
+    const pos = ledgerPosition([credit(disburse(receive(pair('A', 100), 100), 40))], {}, [])
+    expect([pos.receiptsHeld, pos.payablesDue, pos.creditsHeldForPayers, pos.recoveryDueFromAnaesthetists]).toEqual([60, 0, 100, 40])
+    expect(pos.imbalance).toBe(0)
+    expect(pos.checks).toEqual([])
+  })
+
+  it('fully paid out: receipts held 0, held 100, to net 100, imbalance 0', () => {
+    const pos = ledgerPosition([credit(disburse(receive(pair('A', 100), 100), 100))], {}, [])
+    expect([pos.receiptsHeld, pos.payablesDue, pos.creditsHeldForPayers, pos.recoveryDueFromAnaesthetists]).toEqual([0, 0, 100, 100])
+    expect(pos.imbalance).toBe(0)
+    expect(pos.inBalance).toBe(true)
+  })
+
+  it("the anaesthetist's position nets the credit: in balance, with their recovery due", () => {
+    const pairs = [credit(disburse(receive(pair('A', 100), 100), 40)), receive(pair('B', 230), 115)]
+    const pos = anaesthetistPosition(pairs, {}, [], SOUTER)
+    expect(pos.recoveryDue).toBe(40)
+    expect(pos.dueNow).toBe(115)
+    expect(pos.awaitingCollection).toBe(115)
+    expect(pos.imbalance).toBe(0)
+    expect(pos.inBalance).toBe(true)
+  })
+
+  it('a healthy credited pair raises no check, and both credit terms are zero on an uncredited ledger', () => {
+    expect(ledgerChecks([credit(receive(pair('A', 100), 50))], {}, [])).toEqual([])
+    const plain = ledgerPosition([receive(pair('A', 230), 115), pair('PP', 1380, { holding: true })], {}, [held(120, SOUTER)])
+    expect([plain.creditsHeldForPayers, plain.recoveryDueFromAnaesthetists]).toEqual([0, 0])
+  })
+
+  it("the patient's position: a credited invoice owes nothing, and what was paid on it is a credit balance", () => {
+    const pos = patientPosition([credit(receive(pair('A', 100), 40)), pair('B', 230)], 'PT1')
+    expect(pos.rows.map((r) => [r.invoiceNumber, r.status, r.outstanding])).toEqual([
+      ['AA-A', 'credited', 0],
+      ['AA-B', 'unpaid', 230],
+    ])
+    expect(pos.outstandingTotal).toBe(190)
+  })
+
+  it('a credited original keeps its BCTI record (OQ-60, provisional)', () => {
+    expect(bctiRecordsOf([credit(receive(pair('A', 100), 100))]).map((r) => r.accPayId)).toEqual(['A'])
   })
 })

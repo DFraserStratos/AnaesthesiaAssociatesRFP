@@ -5,6 +5,7 @@ import { aaFeeMonthLabel } from '../../../domain/billing/aaFee'
 import { needAddressText } from '../../../domain/billing/invoicePresentation'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
+import { invoicesByBooking } from '../../../store/indexes'
 import {
   billingMonitorView,
   handoffPairsForBooking,
@@ -13,6 +14,7 @@ import {
   payablesDue,
   prepaidLeftOffText,
   retryBillingException,
+  retryXeroItemNow,
   startsExpanded,
   useAppStore,
   DEFAULT_MONITOR_SORT,
@@ -26,11 +28,20 @@ import {
   type MonitorStage,
   type PrepaidLeftOff,
 } from '../../../store'
-import { dayMicroCap, formatCurrency, hhmm, plural, shortDay } from '../../../shared/format'
-import { Button, Card, EmptyState, FilterDateInput, FilterPills, FormError, PageHeader, Pill, SelectField, StatTile, TextAction, visuallyHidden, type PillTone } from '../../../shared/ui'
+import { dayMicroCap, formatCount, formatCurrency, hhmm, plural, shortDay } from '../../../shared/format'
+import { FULL_SCALE } from '../../../domain/seed/fullScale/constants'
+import { Pager, pageOf, pageParam } from '../components/Pager'
+import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
+import { Button, Card, CountBadge, EmptyState, FilterDateInput, FilterPills, FormError, Notice, PageHeader, Pill, SelectField, StatTile, TextAction, visuallyHidden, type PillTone } from '../../../shared/ui'
 import { ClickableRow, Td, Th, TableShell } from '../../../shared/table'
 import { sessionText } from '../../../domain/outOfHours'
 import { HoldingAccountPanel } from '../components/HoldingAccountPanel'
+import { approvedEventsAwaitingRun } from '../../../store/procedureEventActions'
+import { freeFormSubtotal } from '../../../domain/billing/additionalInvoice'
+import { creditDetailOf, eventLines } from '../../../domain/billing/procedureEvent'
+import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, XERO_FLAG_COPY, XERO_FLAG_LABEL, XERO_FLAG_PAYOUT_LABEL, xeroFlagText } from '../../../shared/procedureEventCopy'
+import { correctionQueuedFor } from '../../../store/ledgerSelectors'
+import type { XeroQueueItem } from '../../../domain/types'
 import { PayablesPanel, XeroConnectionLine, XeroDivergencePanel, XeroQueuePanel } from '../components/XeroPanels'
 
 interface BillingMonitorScreenProps {
@@ -45,7 +56,7 @@ export const BILLING_MONITOR_INTRO =
   'Every list awaiting approval or authorised, grouped by anaesthetist: whether it has been invoiced, sent and mirrored to Xero, and why anything failed. A failed booking blocks only its own invoice, never the rest of the list.'
 
 /** The URL search params this screen owns (filters, sort, expansion); nothing here is stored. */
-const PARAM = { anaesthetist: 'anaesthetist', hospital: 'hospital', from: 'from', to: 'to', problems: 'problems', sort: 'sort', list: 'list', open: 'open', shut: 'shut', fold: 'fold' } as const
+const PARAM = { anaesthetist: 'anaesthetist', hospital: 'hospital', from: 'from', to: 'to', problems: 'problems', sort: 'sort', list: 'list', open: 'open', shut: 'shut', fold: 'fold', page: 'page' } as const
 const FILTER_PARAMS = [PARAM.anaesthetist, PARAM.hospital, PARAM.from, PARAM.to, PARAM.problems] as const
 
 const idsOf = (params: URLSearchParams, key: string): Set<string> => new Set((params.get(key) ?? '').split(',').filter((s) => s !== ''))
@@ -95,6 +106,8 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
       if (v === null || v === '') next.delete(k)
       else next.set(k, v)
     }
+    // A filter or the sort changing returns the groups to page 1 (catch-up Phase 43).
+    if (Object.keys(changes).some((k) => (FILTER_PARAMS as readonly string[]).includes(k) || k === PARAM.sort)) next.delete(PARAM.page)
     setParams(next, { replace })
   }
 
@@ -157,6 +170,17 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
     handoffPairsForBooking(useAppStore, row.bookingId)
   }
 
+  // The anaesthetist groups page at 20 (catch-up Phase 43; US-13.3.1, US-15.0.4), after every filter,
+  // the sort and Problems only; the tiles above count everything kept, never the page. `?list=`
+  // lands on the page that holds its List.
+  const groupPageSize = FULL_SCALE.pageSizes.monitorGroups
+  const listGroupIndex = options.listId !== undefined ? view.groups.findIndex((g) => g.authorised.some((r) => r.listId === options.listId) || g.awaiting.some((a) => a.list.id === options.listId)) : -1
+  const groupPage = listGroupIndex >= 0 ? Math.floor(listGroupIndex / groupPageSize) + 1 : pageParam(params.get(PARAM.page))
+  const shownGroups = pageOf(view.groups, groupPageSize, groupPage)
+  const groupsPaged = view.groups.length > groupPageSize
+  const setGroupPage = (p: number) => update({ [PARAM.page]: p <= 1 ? null : String(p), [PARAM.list]: null }, true)
+  useScreenTiming('monitor', [view, groupPage])
+
   const nothingAtAll = view.anaesthetistOptions.length === 0
   const panelAnaesthetist = view.applied.anaesthetistId
 
@@ -168,12 +192,12 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
 
       {/* Summary tiles: Admin Review's tile anatomy. "With problems" turns its filter on; "Payables due" goes to the payables panel. */}
       <div data-shot="billing-monitor-tiles" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }}>
-        <StatTile variant="outlined" label="Awaiting approval" value={view.totals.awaiting} shot="billing-tile-awaiting" />
-        <StatTile variant="outlined" label="Authorised" value={view.totals.authorised} shot="billing-tile-authorised" />
+        <StatTile variant="outlined" label="Awaiting approval" value={formatCount(view.totals.awaiting)} shot="billing-tile-awaiting" />
+        <StatTile variant="outlined" label="Authorised" value={formatCount(view.totals.authorised)} shot="billing-tile-authorised" />
         <StatTile
           variant="outlined"
           label="With problems"
-          value={view.totals.withProblems}
+          value={formatCount(view.totals.withProblems)}
           {...(view.totals.withProblems > 0 ? { tone: 'warning' as const } : {})}
           sub="Show problems only"
           pressed={view.applied.problemsOnly}
@@ -234,6 +258,8 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
       <XeroDivergencePanel actor={actor} {...(panelAnaesthetist !== undefined ? { anaesthetistId: panelAnaesthetist } : {})} />
       <PayablesPanel actor={actor} {...(panelAnaesthetist !== undefined ? { anaesthetistId: panelAnaesthetist } : {})} />
 
+      <EventsAwaitingRunPanel />
+
       <AaFeePanel />
 
       <HoldingAccountPanel />
@@ -254,10 +280,13 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
           )}
         </EmptyState>
       ) : (
-        view.groups.map((group) => (
+        <>
+        {groupsPaged && <Pager total={view.groups.length} size={groupPageSize} page={groupPage} onPage={setGroupPage} lead="Anaesthetists" shot="billing-monitor-pager" />}
+        {shownGroups.map((group) => (
           <AnaesthetistGroup
             key={group.anaesthetistId}
             group={group}
+            focusRowListId={options.listId}
             folded={folded.has(group.anaesthetistId) && !group.authorised.some((r) => r.listId === options.listId)}
             onFold={(fold) => setFolded(group.anaesthetistId, fold)}
             sort={view.applied.sort}
@@ -268,10 +297,51 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
             focusListId={focusListId}
             onOpenInReview={openInReview}
             onRetry={retry}
+            actor={actor}
           />
-        ))
+        ))}
+        {groupsPaged && <Pager total={view.groups.length} size={groupPageSize} page={groupPage} onPage={setGroupPage} lead="Anaesthetists" />}
+        </>
       )}
     </div>
+  )
+}
+
+/** A Booking's credit whose Xero correction waits in the sync queue after a failed attempt (catch-up Phase 39), if any. */
+function useFailedCorrection(bookingId: string): { item: XeroQueueItem; creditNoteNumber: string } | undefined {
+  const billing = useAppStore((s) => s.billing)
+  return useMemo(() => {
+    for (const cn of Object.values(billing.creditNotes).sort((a, b) => a.id.localeCompare(b.id))) {
+      if (cn.bookingId !== bookingId) continue
+      const item = correctionQueuedFor({ billing }, cn.id)
+      if (item !== undefined) return { item, creditNoteNumber: cn.creditNoteNumber }
+    }
+    return undefined
+  }, [billing, bookingId])
+}
+
+/**
+ * "Resolve and retry" on a Booking whose Xero correction failed (catch-up
+ * Phase 39; US-08.6.2 "Both sides move"): retries the correction's queue item
+ * now (`retryXeroItemNow`), which reverses the original's Xero records and
+ * creates the new pairs together, or sets the next try.
+ */
+export function CorrectionRetry({ bookingId, actor }: { bookingId: string; actor: Actor }) {
+  const failed = useFailedCorrection(bookingId)
+  const [error, setError] = useState<string | null>(null)
+  if (failed === undefined) return null
+  function retryNow() {
+    if (failed === undefined) return
+    const out = retryXeroItemNow(useAppStore, actor, failed.item.id)
+    setError(out.ok ? null : out.message)
+  }
+  return (
+    <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+      <Button variant="primary" size="compact" onClick={retryNow} shot={`billing-correction-retry-${bookingId}`}>
+        {CREDIT_LABELS.resolveAndRetry}
+      </Button>
+      <FormError message={error} />
+    </span>
   )
 }
 
@@ -293,6 +363,7 @@ const SORT_HEADS: { key: MonitorSortKey | null; label: string; align?: 'right' }
 
 function AnaesthetistGroup({
   group,
+  focusRowListId,
   folded,
   onFold,
   sort,
@@ -303,8 +374,11 @@ function AnaesthetistGroup({
   focusListId,
   onOpenInReview,
   onRetry,
+  actor,
 }: {
   group: MonitorGroup
+  /** `?list=`: its group shows all its rows, on the page that holds it. */
+  focusRowListId?: string | undefined
   folded: boolean
   onFold: (fold: boolean) => void
   sort: { key: MonitorSortKey; dir: 'asc' | 'desc' }
@@ -315,8 +389,19 @@ function AnaesthetistGroup({
   focusListId: string | null
   onOpenInReview: (listId: string) => void
   onRetry: (row: MonitorBookingRow) => void
+  /** The office, for a failed Xero correction's Resolve and retry (catch-up Phase 39). */
+  actor: Actor
 }) {
   const headingId = `billing-group-${group.anaesthetistId}-name`
+  // The first 25 authorised Lists in the sort, then "Show all N" pages them (catch-up Phase 43).
+  const rowLimit = FULL_SCALE.pageSizes.monitorListsPerGroup
+  const focusIndex = focusRowListId !== undefined ? group.authorised.findIndex((r) => r.listId === focusRowListId) : -1
+  const [showAll, setShowAll] = useState(false)
+  const [rowPage, setRowPage] = useState(1)
+  const expanded = showAll || focusIndex >= rowLimit
+  const effectiveRowPage = focusIndex >= rowLimit && !showAll ? Math.floor(focusIndex / rowLimit) + 1 : rowPage
+  const capped = group.authorised.length > rowLimit
+  const rows = !capped ? group.authorised : expanded ? pageOf(group.authorised, rowLimit, effectiveRowPage) : group.authorised.slice(0, rowLimit)
   const allOpen = group.authorised.length > 0 && group.authorised.every(isOpen)
   return (
     <Card
@@ -380,10 +465,23 @@ function AnaesthetistGroup({
               ))}
             </tbody>
           )}
-          {group.authorised.map((row) => (
-            <AuthorisedRows key={row.listId} row={row} open={isOpen(row)} focused={focusListId === row.listId} onToggle={() => onToggle(row)} onRetry={onRetry} />
+          {rows.map((row) => (
+            <AuthorisedRows key={row.listId} row={row} open={isOpen(row)} focused={focusListId === row.listId} onToggle={() => onToggle(row)} onRetry={onRetry} actor={actor} />
           ))}
         </TableShell>
+      )}
+      {!folded && capped && (
+        <div style={{ margin: '0 12px 12px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          {expanded ? (
+            <div style={{ flex: 1 }}>
+              <Pager total={group.authorised.length} size={rowLimit} page={effectiveRowPage} onPage={(p) => { setShowAll(true); setRowPage(p) }} lead="Lists" shot={`billing-group-pager-${group.anaesthetistId}`} nested />
+            </div>
+          ) : (
+            <TextAction size="sm" flush onClick={() => { setShowAll(true); setRowPage(1) }} shot={`billing-group-show-all-${group.anaesthetistId}`}>
+              {`Show all ${formatCount(group.authorised.length)}`}
+            </TextAction>
+          )}
+        </div>
       )}
     </Card>
   )
@@ -435,7 +533,7 @@ const LIST_STATUS_TONE: Record<MonitorListStatus, PillTone> = {
 }
 
 function xeroCell(row: MonitorAuthorisedRow): ReactNode {
-  if (row.problems.includes('voidedInXero') || row.problems.includes('amendedInXero')) return <span style={{ color: semantic.error.onTint, fontWeight: 600 }}>Flagged</span>
+  if (row.problems.includes('voidedInXero') || row.problems.includes('amendedInXero') || row.problems.includes('paidAfterCredit')) return <span style={{ color: semantic.error.onTint, fontWeight: 600 }}>Flagged</span>
   if (row.problems.includes('xeroAlert')) return <span style={{ color: semantic.error.onTint, fontWeight: 600 }}>Alert raised</span>
   if (row.problems.includes('waitingForXero')) return <span style={{ color: semantic.warning.onTint, fontWeight: 600 }}>Waiting for Xero</span>
   return <span className="mono">{`${row.inXeroCount} of ${row.invoiceCount} in Xero`}</span>
@@ -446,7 +544,7 @@ function moneyCounts(row: MonitorAuthorisedRow): { paid: number; disbursed: numb
   return { billed: billed.length, paid: billed.filter((b) => b.paidInAtISO !== undefined).length, disbursed: billed.filter((b) => b.disbursedAtISO !== undefined).length }
 }
 
-function AuthorisedRows({ row, open, focused, onToggle, onRetry }: { row: MonitorAuthorisedRow; open: boolean; focused: boolean; onToggle: () => void; onRetry: (r: MonitorBookingRow) => void }) {
+function AuthorisedRows({ row, open, focused, onToggle, onRetry, actor }: { row: MonitorAuthorisedRow; open: boolean; focused: boolean; onToggle: () => void; onRetry: (r: MonitorBookingRow) => void; actor: Actor }) {
   const money = moneyCounts(row)
   const detailId = `billing-detail-${row.listId}`
   return (
@@ -478,7 +576,7 @@ function AuthorisedRows({ row, open, focused, onToggle, onRetry }: { row: Monito
       {open && (
         <tr id={detailId}>
           <Td colSpan={COLUMNS} style={{ background: neutral.bg, padding: '4px 12px 14px 40px' }}>
-            <PipelineDetail row={row} onRetry={onRetry} />
+            <PipelineDetail row={row} onRetry={onRetry} actor={actor} />
           </Td>
         </tr>
       )}
@@ -487,7 +585,7 @@ function AuthorisedRows({ row, open, focused, onToggle, onRetry }: { row: Monito
 }
 
 /** Today's detail, inside an expanded List: the stage strip, the no-address line and the per-Booking table. */
-function PipelineDetail({ row, onRetry }: { row: MonitorAuthorisedRow; onRetry: (r: MonitorBookingRow) => void }) {
+function PipelineDetail({ row, onRetry, actor }: { row: MonitorAuthorisedRow; onRetry: (r: MonitorBookingRow) => void; actor: Actor }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <ol aria-label="Billing pipeline" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', listStyle: 'none', margin: 0, padding: 0 }}>
@@ -550,6 +648,8 @@ function PipelineDetail({ row, onRetry }: { row: MonitorAuthorisedRow; onRetry: 
                     Retry
                   </Button>
                 )}
+                {/* A failed Xero correction retries on any row, a failed billing row too. */}
+                <CorrectionRetry bookingId={bookingRow.bookingId} actor={actor} />
               </Td>
             </tr>
           ))}
@@ -560,18 +660,34 @@ function PipelineDetail({ row, onRetry }: { row: MonitorAuthorisedRow; onRetry: 
 }
 
 function BookingDetail({ row }: { row: MonitorBookingRow }) {
+  // A Booking's additional invoices (catch-up Phase 38b): each its own invoice, linked to the original.
+  const additionalCount = useAppStore((s) => (invoicesByBooking(s.billing.invoices).get(row.bookingId) ?? []).filter((i) => i.kind === 'additional').length)
+  // A credit's Xero correction that failed and waits in the sync queue (catch-up Phase 39).
+  const correction = useFailedCorrection(row.bookingId)
+  // A paidAfterCredit flag on the payable reads as a payout (its divergence says which leg).
+  const flagLeg = useAppStore((s) => (row.xeroFlag !== undefined ? s.billing.xeroDivergences[row.xeroFlag.divergenceId]?.leg : undefined))
+  const correctionLine = correction !== undefined && (
+    <span data-shot="monitor-correction-failed" data-credit-note={correction.creditNoteNumber} style={{ color: semantic.warning.onTint }}>
+      {`${CREDIT_LABELS.correctionFailed} · ${correction.creditNoteNumber} · ${CREDIT_LABELS.correctionAttempt(correction.item.attempts)} · ${CREDIT_LABELS.nextTry} `}
+      <span className="mono">{hhmm(correction.item.nextAttemptAtISO)}</span>
+      {correction.item.lastError !== undefined ? `. ${correction.item.lastError}` : ''}
+    </span>
+  )
   if (row.status === 'failed') {
     return (
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <span style={{ color: semantic.error.onTint }}>{row.failure?.message ?? 'Needs manual review.'}</span>
         <span data-shot="monitor-retry-note" style={{ fontSize: 12, color: neutral.slate }}>{RETRY_FROM_LOCK_NOTE}</span>
+        {/* A failed Xero correction on the same Booking is said too: its Resolve and retry sits beside Retry. */}
+        {correctionLine}
       </span>
     )
   }
+  if (correctionLine !== false) return correctionLine
   if (row.xeroFlag !== undefined) {
     return (
       <span data-shot="monitor-xero-flag" style={{ color: semantic.error.onTint }}>
-        {row.xeroFlag.kind === 'voidedInXero' ? 'Voided in Xero · flagged for the office.' : `Amended in Xero · total ${formatCurrency(row.xeroFlag.xeroTotal)} · flagged for the office.`}
+        {`${xeroFlagText(row.xeroFlag.kind, row.xeroFlag.xeroTotal, undefined, flagLeg)} · ${XERO_FLAG_COPY.flaggedForOffice}`}
       </span>
     )
   }
@@ -590,6 +706,7 @@ function BookingDetail({ row }: { row: MonitorBookingRow }) {
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <MoneyDetail row={row} />
         {row.prepaidLeftOff !== undefined && <PrepaidLeftOffLine leftOff={row.prepaidLeftOff} />}
+        {additionalCount > 0 && <span data-shot="monitor-additional-invoices" style={{ fontSize: 12, color: neutral.slate }}>{ADDITIONAL_INVOICE_COPY.plusAdditional(additionalCount)}</span>}
       </span>
     )
   }
@@ -661,18 +778,21 @@ const BOOKING_STATUS: Record<string, { label: string; tone: PillTone }> = {
   partPaid: { label: 'Part paid', tone: 'warning' },
   paid: { label: 'Paid', tone: 'success' },
   disbursed: { label: 'Disbursed', tone: 'success' },
+  // Catch-up Phase 39: the Booking's invoice was credited in full.
+  credited: { label: CREDIT_LABELS.credited, tone: 'neutral' },
   failed: { label: 'Failed', tone: 'error' },
   cancelled: { label: 'Cancelled', tone: 'neutral' },
   pending: { label: 'Pending', tone: 'neutral' },
 }
 
 function BookingStatusPill({ row }: { row: MonitorBookingRow }) {
+  const flagLeg = useAppStore((s) => (row.xeroFlag !== undefined ? s.billing.xeroDivergences[row.xeroFlag.divergenceId]?.leg : undefined))
   // A pair waiting for Xero keeps `invoiced`; surface it, and a change flagged in Xero, as its own pill (catch-up Phase 37).
   const it =
     row.prepaidLeftOff?.all === true && row.invoiceIds.length === 0 && row.status !== 'failed'
       ? { label: 'Prepaid', tone: 'success' as const }
       : row.xeroFlag !== undefined && row.status !== 'failed'
-        ? { label: row.xeroFlag.kind === 'voidedInXero' ? 'Voided in Xero' : 'Amended in Xero', tone: 'error' as const }
+        ? { label: row.xeroFlag.kind === 'paidAfterCredit' && flagLeg === 'payable' ? XERO_FLAG_PAYOUT_LABEL : XERO_FLAG_LABEL[row.xeroFlag.kind], tone: 'error' as const }
         : row.waitingForXero !== undefined && row.status !== 'failed'
           ? row.waitingForXero.alerted
             ? { label: 'Alert raised', tone: 'error' as const }
@@ -682,6 +802,43 @@ function BookingStatusPill({ row }: { row: MonitorBookingRow }) {
     <Pill tone={it.tone} size="sm">
       {it.label}
     </Pill>
+  )
+}
+
+/**
+ * Approved events waiting for the next billing run (catch-up Phase 38b), so an
+ * approved event is never invisible between its review and its run. Shown only
+ * while one waits; each links to its Booking. The run itself is the demo
+ * action "Run the next billing run" (the real system's run is scheduled).
+ */
+function EventsAwaitingRunPanel() {
+  const state = useAppStore((s) => s)
+  const waiting = approvedEventsAwaitingRun(state)
+  if (waiting.length === 0) return null
+  return (
+    <Notice tone="neutral" icon={false} shot="events-awaiting-run" title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>{EVENT_LABELS.awaitingRunTitle} <CountBadge count={waiting.length} mono srNoun="waiting" /></span>}>
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {waiting.map((e) => {
+        const booking = state.schedule.bookings[e.bookingId]
+        const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
+        const patient = booking !== undefined ? state.masters.patients[booking.patientId] : undefined
+        // A credit (catch-up Phase 39) names the invoice it credits and its total, never $0.
+        const creditDetail = creditDetailOf(e)
+        const credited = creditDetail !== undefined ? state.billing.invoices[creditDetail.originalInvoiceId] : undefined
+        return (
+          <div key={e.id} data-event-id={e.id} data-kind={e.kind} style={{ display: 'flex', alignItems: 'baseline', gap: 12, fontSize: 13 }}>
+            {list !== undefined ? (
+              <Link to={`/admin/day/${list.dateISO}/bookings/${e.bookingId}`} style={{ color: neutral.ink, fontWeight: 600 }}>{patient?.name ?? e.bookingId}</Link>
+            ) : (
+              <span style={{ fontWeight: 600 }}>{patient?.name ?? e.bookingId}</span>
+            )}
+            <span style={{ color: neutral.slate }}>{credited !== undefined ? CREDIT_LABELS.creditsInFull(credited.invoiceNumber) : EVENT_KIND_LABEL[e.kind]}</span>
+            <span className="mono" style={{ marginLeft: 'auto', color: neutral.ink }}>{formatCurrency(credited !== undefined ? credited.subtotal : freeFormSubtotal(eventLines(e)))} <span style={{ color: neutral.slate }}>{EVENT_LABELS.exGst}</span></span>
+          </div>
+        )
+      })}
+      </span>
+    </Notice>
   )
 }
 

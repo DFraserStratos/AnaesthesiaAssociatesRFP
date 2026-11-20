@@ -197,6 +197,9 @@ export interface InvoiceLineView {
   btm?: InvoiceLineBtm
   /** A prepayment line's Contract when raised (catch-up Phase 27). */
   contractId?: ContractId
+  /** A free-form line's quantity and unit amount (catch-up Phase 38b). */
+  quantity?: number
+  unitAmount?: number
 }
 
 export interface LineViewOptions {

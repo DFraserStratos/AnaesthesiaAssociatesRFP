@@ -23,14 +23,16 @@
  * invoice, never deducted from a payable (catch-up Phase 16).
  */
 
+import { idempotencyKeysOf } from './indexes'
 import type { LedgerPair, LedgerReceipt, LedgerTransfer, PaymentIn, UnmatchedReceipt, XeroAccPay, XeroAccRec } from '../domain/types'
 import { roundToCents, toCents } from '../domain/billing/money'
 import { payableReleasedFor } from '../domain/billing/payableRelease'
-import { applyReceipt, gstComponentOf, isBookingPair, payeeAnaesthetistOf, transferOfPair } from '../domain/billing/ledger'
+import { applyReceipt, gstComponentOf, isBookingPair, isCreditedPair, payeeAnaesthetistOf, transferOfPair } from '../domain/billing/ledger'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { pairByAccRec } from './ledgerSelectors'
 import { enqueueXeroWork, XERO_OUTAGE_ERROR, xeroAvailable } from './xeroGate'
+import { CREDIT_MESSAGES } from '../shared/procedureEventCopy'
 
 export { gstComponentOf }
 
@@ -56,7 +58,7 @@ export interface ReceivePaymentInput {
 
 /** Whether a key is already processed: a ledger receipt or an unmatched receipt carries it. */
 export function receiptKeySeen(state: Pick<AppState, 'billing'>, key: string): boolean {
-  return Object.values(state.billing.receipts).some((r) => r.idempotencyKey === key) || Object.values(state.billing.unmatchedReceipts).some((u) => u.idempotencyKey === key)
+  return idempotencyKeysOf(state.billing.receipts).has(key) || idempotencyKeysOf(state.billing.unmatchedReceipts).has(key)
 }
 
 /**
@@ -139,7 +141,7 @@ export function applyReceiptInto(
   const accPays = { ...s.xero.accPays }
   const recNow = accRecId !== undefined ? s.xero.accRecs[accRecId] : undefined
   if (accRecId !== undefined && recNow !== undefined) {
-    if (!Object.values(s.xero.payments).some((p) => p.idempotencyKey === w.idempotencyKey)) {
+    if (!idempotencyKeysOf(s.xero.payments).has(w.idempotencyKey)) {
       const pmt = allocateId(c, 'paymentIn')
       c = pmt.counters
       payments[pmt.id] = { id: pmt.id, accRecId, amount: added, atISO: w.atISO, idempotencyKey: w.idempotencyKey, source: w.source } satisfies PaymentIn
@@ -201,6 +203,9 @@ export function receivePayment(api: AppStoreApi, input: ReceivePaymentInput): Ou
   if (accRec.status === 'voided') return refuse('voidedInXero', 'Voided in Xero')
 
   const pair = pairByAccRec(state, input.accRecId)
+  // A credited invoice (catch-up Phase 39): Xero refuses payment on a fully credited invoice, and the engine never applies
+  // one to the ledger or holds it as an unmatched receipt. A payment Xero took before its credit landed is flagged by the poll.
+  if (accRec.status === 'credited' || (pair !== undefined && isCreditedPair(pair))) return refuse('invoiceCredited', CREDIT_MESSAGES.invoiceCredited)
   if (pair === undefined) {
     // No pair links it: hold the money in the ledger, out of balance until the office clears it.
     const out = recordUnmatchedReceipt(api, { amount: input.amount, reference: `${accRec.invoiceNumber} (no matching invoice)`, idempotencyKey: input.idempotencyKey, source: input.source, ...(input.atISO !== undefined ? { atISO: input.atISO } : {}) })
@@ -299,6 +304,8 @@ export function deliverPaymentWebhook(api: AppStoreApi, input: PaymentWebhookInp
   if (accRec === undefined) return refuse('notFound', 'ACCREC not found.')
   if (accRec.kind === 'aaFee') return refuse('aaFeeInvoice', 'This is an AA fee invoice; record its payment as a fee payment.')
   if (accRec.status === 'voided') return refuse('voidedInXero', 'Voided in Xero')
+  // Xero refuses a payment on a credited invoice (catch-up Phase 39).
+  if (accRec.status === 'credited') return refuse('invoiceCredited', CREDIT_MESSAGES.invoiceCredited)
   if (!Number.isFinite(input.amount) || toCents(input.amount) <= 0) return refuse('invalidAmount', 'The payment amount must be positive.')
   if (xeroAvailable(state)) {
     return receivePayment(api, { accRecId: input.accRecId, amount: input.amount, idempotencyKey: input.idempotencyKey, source: 'webhook', ...(input.atISO !== undefined ? { atISO: input.atISO } : {}) })

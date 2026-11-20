@@ -49,6 +49,8 @@ import { ensureFallbacks } from '../domain/billing/fallbacks'
 import { contractSpecialtyLabel } from '../domain/specialties'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
+import { retiredRefusal } from './masterLifecycleActions'
+import { slicesOf, withSource, type Plan, type PlanSource } from './masterPlanners'
 
 function refusalContext(state: AppState, prev?: Contract): ContractRefusalContext {
   return {
@@ -144,18 +146,35 @@ export interface ContractInput {
   specialtyIds?: string[]
   /** At most one funding tag from AA's list. */
   fundingTagId?: string
+  /**
+   * The AA code, when a controlled spreadsheet carries it (catch-up Phase 42's
+   * seed load); blank or absent takes the holder's next code. The guard
+   * refuses one already held.
+   */
+  aaCode?: string
 }
 
 /** Create a Contract, Active, with the next AA code for its holder. Audited `contract.create`. */
 export function createContract(api: AppStoreApi, actor: Actor, input: ContractInput): Outcome<{ contract: Contract }> {
+  const plan = planContractCreate(api.getState(), actor, input)
+  if (!plan.ok) return plan
+  mutate(api, actor, plan.value.metas, () => plan.value.next)
+  return ok({ contract: plan.value.contract })
+}
+
+/**
+ * Plan a Contract's create with any open-price fallback it implies (the seed
+ * load folds the same planner). Every Contract it makes is Active.
+ */
+export function planContractCreate(state: AppState, actor: Actor, input: ContractInput, source?: PlanSource): Outcome<Plan & { contract: Contract }> {
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can create a Contract.')
-  const state = api.getState()
   const holder = state.masters.parties[input.holderId]
   if (holder === undefined) return refuse('holderMissing', 'Choose the Party that holds this Contract.')
   const reference = input.holderReference?.trim() ?? ''
+  const givenCode = input.aaCode?.trim() ?? ''
   const draft: Contract = {
     id: '',
-    aaCode: nextAaCode(holder.codePrefix, Object.values(state.masters.contracts).map((c) => c.aaCode)),
+    aaCode: givenCode !== '' ? normaliseAaCode(givenCode) : nextAaCode(holder.codePrefix, Object.values(state.masters.contracts).map((c) => c.aaCode)),
     name: input.name.trim(),
     holderId: input.holderId,
     billsTo: input.billsTo,
@@ -173,20 +192,20 @@ export function createContract(api: AppStoreApi, actor: Actor, input: ContractIn
   }
   const refused = contractRefusal(draft, refusalContext(state))
   if (refused !== null) return refuse(refused.code, refused.message)
+  const retired = retiredRefusal(state.masters, { surgeonIds: draft.linkedSurgeonIds })
+  if (retired !== null) return retired
 
-  let created: Contract | undefined
-  const metas: MutationMeta[] = []
-  mutate(api, actor, metas, (s) => {
-    const alloc = allocateId(s.counters, 'contract')
-    const contract: Contract = { ...draft, id: alloc.id }
-    created = contract
-    const { id: _id, ...after } = contract
-    metas.push({ entityType: 'contract', entityId: contract.id, action: 'contract.create', after: named(after, s), stampBookingId: null })
-    const kept = withFallbacks(s, { ...s.masters.contracts, [contract.id]: contract }, alloc.counters, metas)
-    return { masters: { ...s.masters, contracts: kept.contracts }, counters: kept.counters }
+  const alloc = allocateId(state.counters, 'contract')
+  const contract: Contract = { ...draft, id: alloc.id }
+  const { id: _id, ...after } = contract
+  const metas: MutationMeta[] = [{ entityType: 'contract', entityId: contract.id, action: 'contract.create', after: named(after, state), stampBookingId: null }]
+  const kept = withFallbacks(state, { ...state.masters.contracts, [contract.id]: contract }, alloc.counters, metas)
+  return ok({
+    id: contract.id,
+    contract,
+    next: { ...slicesOf(state), masters: { ...state.masters, contracts: kept.contracts }, counters: kept.counters },
+    metas: withSource(metas, source),
   })
-  if (created === undefined) return refuse('createFailed', 'The Contract could not be created.')
-  return ok({ contract: created })
 }
 
 /**
@@ -211,6 +230,9 @@ function save(api: AppStoreApi, actor: Actor, contractId: string, apply: (prev: 
   if (prev.pricing.kind === 'fixed' && next.pricing.kind === 'fixed' && !sameRanges(prev.pricing.ranges, next.pricing.ranges)) {
     return refuse('useRangeActions', 'Change a price range with Add price range, Edit or Delete.')
   }
+  // A retired surgeon is never newly linked; one already linked stays (catch-up Phase 42).
+  const retired = retiredRefusal(state.masters, { surgeonIds: next.linkedSurgeonIds }, { surgeonIds: prev.linkedSurgeonIds })
+  if (retired !== null) return retired
   const refused = contractRefusal(next, refusalContext(state, prev))
   if (refused !== null) return refuse(refused.code, refused.message)
   const { before, after } = diff(prev, next)
@@ -329,8 +351,24 @@ function saveRanges(
   apply: (ranges: readonly PriceRange[]) => { ranges: PriceRange[] } | { refused: { code: string; message: string } },
   audit: { action: RangeAction; before?: PriceRange; after?: PriceRange },
 ): Outcome {
+  const plan = planRanges(api.getState(), actor, contractId, apply, audit)
+  if (!plan.ok) return plan
+  if (plan.value === null) return ok(undefined)
+  const { next, metas } = plan.value
+  mutate(api, actor, metas, () => next)
+  return ok(undefined)
+}
+
+/** Plan a change to a fixed price's ranges; null when it changes nothing. */
+function planRanges(
+  state: AppState,
+  actor: Actor,
+  contractId: string,
+  apply: (ranges: readonly PriceRange[]) => { ranges: PriceRange[] } | { refused: { code: string; message: string } },
+  audit: { action: RangeAction; before?: PriceRange; after?: PriceRange },
+  source?: PlanSource,
+): Outcome<Plan | null> {
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can change a Contract.')
-  const state = api.getState()
   const prev = state.masters.contracts[contractId]
   if (prev === undefined) return refuse('notFound', 'Contract not found.')
   if (prev.pricing.kind !== 'fixed') {
@@ -342,25 +380,46 @@ function saveRanges(
   // One rounding for every save path (`normaliseRanges`, as create and edit use).
   const ranges = normaliseRanges(result.ranges)
   // A save that changes nothing writes nothing, so the trail carries no empty entry.
-  if (sameRanges(ranges, prev.pricing.ranges)) return ok(undefined)
+  if (sameRanges(ranges, prev.pricing.ranges)) return ok(null)
   const next: Contract = { ...prev, pricing: { kind: 'fixed', ranges } }
   const refused = contractRefusal(next, refusalContext(state, prev))
   if (refused !== null) return refuse(refused.code, refused.message)
   const contractName = prev.name
-  mutate(
-    api,
-    actor,
-    {
-      entityType: 'contract',
-      entityId: contractId,
-      action: audit.action,
-      ...(audit.before !== undefined ? { before: { contract: contractName, priceRange: describeRange(audit.before) } } : {}),
-      ...(audit.after !== undefined ? { after: { contract: contractName, priceRange: describeRange(audit.after) } } : {}),
-      stampBookingId: null,
-    },
-    (s) => ({ masters: { ...s.masters, contracts: { ...s.masters.contracts, [contractId]: next } } }),
-  )
-  return ok(undefined)
+  return ok({
+    id: `${contractId}@${audit.after?.startISO ?? audit.before?.startISO ?? ''}`,
+    next: { ...slicesOf(state), masters: { ...state.masters, contracts: { ...state.masters.contracts, [contractId]: next } } },
+    metas: withSource(
+      [
+        {
+          entityType: 'contract',
+          entityId: contractId,
+          action: audit.action,
+          ...(audit.before !== undefined ? { before: { contract: contractName, priceRange: describeRange(audit.before) } } : {}),
+          ...(audit.after !== undefined ? { after: { contract: contractName, priceRange: describeRange(audit.after) } } : {}),
+          stampBookingId: null,
+        },
+      ],
+      source,
+    ),
+  })
+}
+
+/**
+ * Plan adding a price range (the seed load folds the same planner). A range
+ * that changes nothing (the same start and price already held) is refused as
+ * already there, so a load never writes an empty entry.
+ */
+export function planPriceRangeAdd(
+  state: AppState,
+  actor: Actor,
+  fields: { contractId: string; range: PriceRange },
+  source?: PlanSource,
+): Outcome<Plan> {
+  const clean: PriceRange = { startISO: fields.range.startISO, price: roundToCents(fields.range.price) }
+  const plan = planRanges(state, actor, fields.contractId, (ranges) => ({ ranges: addRange(ranges, clean) }), { action: 'contract.priceRange.add', after: clean }, source)
+  if (!plan.ok) return plan
+  if (plan.value === null) return refuse('rangeHeld', 'That price range is already on the Contract.')
+  return ok(plan.value)
 }
 
 /**

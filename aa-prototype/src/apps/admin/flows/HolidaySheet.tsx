@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { plural, shortDay } from '../../../shared/format'
 import { OverlayHeader, SheetActions } from '../../../shared/surface'
-import { accent, neutral, radius } from '../../../theme/tokens'
+import { neutral, radius } from '../../../theme/tokens'
 import { addHospitalHoliday, deleteHospitalHoliday, editHospitalHoliday, listsFlaggedByHoliday, useAppStore, type Actor } from '../../../store'
 import { Button, FieldLabel, FormError, TextField, useSurface } from '../../../shared'
-import { SelectField } from '../../../shared/ui'
+import { ResultLine, SelectField } from '../../../shared/ui'
+import { activeOnly } from '../../../domain/masterLifecycle'
 
 interface Props {
   open: boolean
@@ -100,7 +101,7 @@ export function HolidaySheet({ open, actor, hospitalId, dateISO: presetDate, hol
         ) : (
           <SelectField label="Hospital" value={selected} onChange={setSelected}>
             <option value="">Choose a hospital</option>
-            {Object.values(hospitals).map((h) => (
+            {activeOnly(hospitals, selected).map((h) => (
               <option key={h.id} value={h.id}>{h.name}</option>
             ))}
           </SelectField>
@@ -115,7 +116,7 @@ export function HolidaySheet({ open, actor, hospitalId, dateISO: presetDate, hol
         <FormError message={error} />
         {result !== null ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div role="status" style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{result}</div>
+            <ResultLine line={result} shot="holiday-result" />
             <SheetActions primary={<Button variant="primary" block onClick={onClose}>Done</Button>} />
           </div>
         ) : confirmDelete && existing !== undefined ? (

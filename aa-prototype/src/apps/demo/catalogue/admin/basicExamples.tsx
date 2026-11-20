@@ -17,14 +17,14 @@ import {
   WarningTriangle,
 } from '../../../../shared'
 import { DRAFT_LISTS, UNASSIGNED } from '../../../../shared/scheduleTerms'
-import { LineTab, LineTabs, NameSearchBox, Pill, PopoverPanel, SelectField, SlidingSegmentedControl, TickButton, usePopover } from '../../../../shared/ui'
+import { LineTab, LineTabs, NameSearchBox, Pill, PopoverPanel, SelectField, SlidingSegmentedControl, TextAction, TickButton, usePopover } from '../../../../shared/ui'
 import { VacatedSessionChoice } from '../../../../shared/flows'
 import { matchesNameQuery } from '../../../../domain/names'
 import { openWarnings, useAppStore, useToday } from '../../../../store'
 import { displayStatusLabel } from '../../../../domain/slotStatus'
 import { ANATOMY_HEADINGS } from '../../../../domain/billing/rvgGroups'
 import { textActionStyle } from '../../../admin/tableChrome'
-import { MASTERS_NAV, type MastersView } from '../../../admin/screens/masters/view'
+import type { MastersView } from '../../../admin/screens/masters/view'
 import { Pill as MasterPill } from '../../../admin/components/MasterPills'
 import { AttentionDot } from '../../../../shared/warnings/AttentionDot'
 import { ChangedSinceSubmittedPill } from '../../../admin/components/ChangedSinceSubmitted'
@@ -33,8 +33,9 @@ import { DrawerLink, Section as DrawerSection } from '../../../admin/components/
 import { HeaderActions, IdChip, ProfileHeader } from '../../../admin/components/ProfileChrome'
 import { MasterPanel, PanelGrid, PanelSection } from '../../../admin/components/MasterPanel'
 import { SidePanel } from '../../../admin/components/SidePanel'
-import { Header, Table, TextAction, EditCell } from '../../../admin/screens/masters/chrome'
-import { rowCellStyle } from '../../../admin/screens/masters/tableStyles'
+import { ACTIONS_COLUMN, EditCell, MasterHeader, MasterTable } from '../../../admin/screens/masters/chrome'
+import { MASTER_VIEW_GROUPS, MASTER_VIEWS } from '../../../admin/screens/masters/masterViews'
+import { Td } from '../../../../shared/table'
 import { SessionTimesFields, timesDraftError, type TimesDraft } from '../../../admin/flows/SessionTimesFields'
 import { BankAccountFields, HpiCpnField } from '../../../admin/flows/anaesthetistFields'
 import { OverlayHeader } from '../../../../shared/surface/OverlayHeader'
@@ -329,27 +330,32 @@ export function MasterPanelExample() {
 
 /** The Master data sub-nav, rebuilt from MasterData.tsx's markup and the real `MASTERS_NAV` (the nav is inline there). */
 export function MastersSubNavExample() {
-  const [view, setView] = useState<MastersView>(MASTERS_NAV[0]!.view)
+  const [view, setView] = useState<MastersView>(MASTER_VIEWS[0]!.view)
   return (
     <div style={{ display: 'flex', gap: 16 }}>
       <nav aria-label="Master data" style={{ width: 190, flex: 'none', display: 'flex', flexDirection: 'column', gap: 2 }}>
         <h1 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 700 }}>Master data</h1>
-        {MASTERS_NAV.map((n) => {
-          const active = n.view === view
-          return (
-            <button
-              key={n.view}
-              type="button"
-              aria-current={active ? 'page' : undefined}
-              onClick={() => setView(n.view)}
-              style={{ textAlign: 'left', padding: '8px 10px', borderRadius: 8, border: 'none', background: active ? accent.tint : 'transparent', color: active ? accent.pressed : neutral.slate, fontFamily: 'inherit', fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer' }}
-            >
-              {n.label}
-            </button>
-          )
-        })}
+        {MASTER_VIEW_GROUPS.map((group) => (
+          <div key={group} role="group" aria-label={group} style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist, padding: '4px 10px' }}>{group}</div>
+            {MASTER_VIEWS.filter((n) => n.group === group).map((n) => {
+              const active = n.view === view
+              return (
+                <button
+                  key={n.view}
+                  type="button"
+                  aria-current={active ? 'page' : undefined}
+                  onClick={() => setView(n.view)}
+                  style={{ textAlign: 'left', padding: '8px 10px', borderRadius: 8, border: 'none', background: active ? accent.tint : 'transparent', color: active ? accent.pressed : neutral.slate, fontFamily: 'inherit', fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer' }}
+                >
+                  {n.label}
+                </button>
+              )
+            })}
+          </div>
+        ))}
       </nav>
-      <div style={{ fontSize: 13, color: neutral.slate, paddingTop: 36 }}>View: {MASTERS_NAV.find((n) => n.view === view)?.label}</div>
+      <div style={{ fontSize: 13, color: neutral.slate, paddingTop: 36 }}>View: {MASTER_VIEWS.find((n) => n.view === view)?.label}</div>
     </div>
   )
 }
@@ -677,16 +683,32 @@ export function MasterTableExample() {
   const [last, setLast] = useState('Nothing clicked yet.')
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <Header title="Specialties" sub="Header, Table, TextAction and EditCell from masters/chrome.tsx." action={<TextAction onClick={() => setLast('Add (stubbed).')}>Add</TextAction>} />
-      <Table heads={['Name', 'Id', '']}>
+      <MasterTable columns={['Name', 'Id', ACTIONS_COLUMN]} label="Specialties">
         {rows.map((r) => (
           <tr key={r.id}>
-            <td style={rowCellStyle}>{r.name}</td>
-            <td className="mono" style={rowCellStyle}>{r.id}</td>
-            <EditCell onClick={() => setLast(`Edit ${r.name} (stubbed).`)} label={`Edit ${r.name}`} style={rowCellStyle} />
+            <Td bold>{r.name}</Td>
+            <Td mono>{r.id}</Td>
+            <EditCell onClick={() => setLast(`Edit ${r.name} (stubbed).`)} label={`Edit ${r.name}`} />
           </tr>
         ))}
-      </Table>
+      </MasterTable>
+      <Echo>{last}</Echo>
+    </div>
+  )
+}
+
+/** MasterHeader: a seeded view's header (its subtitle ends with the seeded line) and a section header inside a view. */
+export function MasterHeaderExample() {
+  const [last, setLast] = useState('Nothing clicked yet.')
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <MasterHeader title="Specialties" sub="The specialties a surgeon and a Contract name." view="specialties" add={{ label: 'Add specialty', onClick: () => setLast('Add specialty (stubbed).') }} />
+      <MasterHeader
+        title="Price ranges"
+        sub="A section header: no seeded line and no waiting-load banner."
+        section
+        actions={<TextAction size="sm" flush onClick={() => setLast('Add price range (stubbed).')}>Add price range</TextAction>}
+      />
       <Echo>{last}</Echo>
     </div>
   )

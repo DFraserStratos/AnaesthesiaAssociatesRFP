@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { bookingsByList } from '../../store/indexes'
 import { Outlet, useLocation, useMatch, useNavigate, useSearchParams } from 'react-router-dom'
 import { neutral } from '../../theme/tokens'
 import { SurfaceProvider } from '../../shared'
@@ -19,9 +20,10 @@ import {
   slotViewsForDate,
   type SlotView,
   useAppStore,
-  warningSummaryByList,
+  warningSummaryFromRows,
   useToday,
   officeActorOf,
+  reviewRowsAwaiting,
 } from '../../store'
 import { isISODate } from '../../shell/routeParams'
 import { SideNav, type NavSection } from './components/SideNav'
@@ -36,6 +38,8 @@ import type { AssignedList } from '../../domain/types'
 import { ADMIN_PAGE_HORIZONTAL_PADDING } from './layout'
 import { sessionText } from '../../domain/outOfHours'
 import { OpenOutOfHoursSheet } from './flows/OpenOutOfHoursSheet'
+import { CreditSheet } from './flows/CreditSheet'
+import { CreditSheetSlot } from '../../shared/booking/CreditSheetSlot'
 
 /** The office persona actor, built once (Decisions log 2026-07-21). */
 
@@ -45,6 +49,8 @@ function sectionForPath(pathname: string): NavSection {
   if (head === 'draft-lists') return 'draftLists'
   if (head === 'notifications') return 'notifications'
   if (head === 'intake') return 'intake'
+  // A credit note's document sits under Invoices (catch-up Phase 39).
+  if (head === 'credit-notes') return 'invoices'
   switch (head) {
     case 'conflicts':
     case 'review':
@@ -63,7 +69,10 @@ export function AdminApp() {
   const todayISO = useToday()
   return (
     <SurfaceProvider variant="web">
-      <AdminShell todayISO={todayISO} />
+      {/* The credit form opens in Admin's side sheet wherever a shared control asks for it (catch-up Phase 39). */}
+      <CreditSheetSlot.Provider value={CreditSheet}>
+        <AdminShell todayISO={todayISO} />
+      </CreditSheetSlot.Provider>
     </SurfaceProvider>
   )
 }
@@ -78,6 +87,9 @@ export function AdminApp() {
  */
 function AdminShell({ todayISO }: { todayISO: string }) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
+  // Events awaiting the office's review join the Review item's count (catch-up Phase 38b).
+  const procedureEvents = useAppStore((s) => s.schedule.procedureEvents)
+  const eventsAwaiting = useMemo(() => reviewRowsAwaiting({ schedule: { procedureEvents } }).length, [procedureEvents])
   const slotsRecord = useAppStore((s) => s.schedule.slots)
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const schedule = useAppStore((s) => s.schedule)
@@ -213,7 +225,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
       reviewLists.map((l) => {
         const anae = masters.anaesthetists[l.anaesthetistId]
         const hospital = locationName(l.hospitalId, masters.hospitals)
-        const count = Object.values(bookingsRecord).filter((c) => c.listId === l.id && c.cancellation === undefined).length
+        const count = (bookingsByList(bookingsRecord).get(l.id) ?? []).filter((c) => c.cancellation === undefined).length
         return {
           listId: l.id,
           title: `${anae !== undefined ? surnameOf(anae.name) : l.anaesthetistId} · ${hospital} ${sessionText(l.session)}`,
@@ -238,8 +250,9 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   // per-List outline on the selected date and every open warning for the
   // To-do card (all dates).
   const warningState = useMemo(() => ({ schedule, billing, appSettings, clock, masters }), [schedule, billing, appSettings, clock, masters])
-  const warningFlags = useMemo(() => warningSummaryByList(warningState, selectedDate), [warningState, selectedDate])
   const todoRows = useMemo(() => openWarnings(warningState), [warningState])
+  // From the rows above, so the routine runs once per change, not once more per date (catch-up Phase 43).
+  const warningFlags = useMemo(() => warningSummaryFromRows(todoRows, selectedDate), [todoRows, selectedDate])
 
   const notes = dayNotesRecord[selectedDate] ?? []
 
@@ -304,7 +317,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     <div ref={shellRef} style={{ display: 'flex', minHeight: '100%', minWidth: 1320, background: neutral.bg, color: neutral.ink }}>
       <SideNav
         active={sectionForPath(pathname)}
-        reviewBadge={reviewLists.length}
+        reviewBadge={reviewLists.length + eventsAwaiting}
         billingBadge={exceptionCount}
         ledgerBadge={ledgerCount}
         conflictBadge={conflictCount}

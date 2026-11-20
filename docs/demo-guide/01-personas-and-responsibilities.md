@@ -79,6 +79,12 @@ Bookings and capture the data AA needs for billing.
     number, HPI CPN and bank account (masked, such as 99-0101-•••••21-00). **Change** beside Rate per
     unit opens a bottom sheet; the new rate applies to Bookings on Lists not yet authorised, while
     authorised Lists keep their locked rate. The other rows show a lock: the office holds them.
+14. On her own invoiced Procedure (found through search), **Raise additional invoice** for a late
+    charge such as a ward review; she can edit or remove it until the office reviews it.
+15. When the work differed, raise an additional invoice or a credit note on her own procedure: **Credit
+    note** beside **Raise additional invoice** credits the invoice in full (less work than expected, a
+    wrong billable party, or paid twice), with a lower new invoice if one is due. The office reviews it,
+    and her payment for that invoice is reversed.
 
 ### Permissions
 
@@ -191,9 +197,11 @@ short-notice cover.
 6. Move a single Booking to a different List for a routine reschedule.
 7. Find a Free replacement anaesthetist and reassign the entire List for illness cover.
 8. Add internal day notes.
-9. Maintain schedule-related master data such as anaesthetists, recurring bookings and hospital
-   holidays (adding, editing and deleting closures), and surgeons, their contacts and groups, the office's private pairing preferences and the
-   anaesthetists' priority tiers.
+9. Maintain all master data (hospitals, surgeons with their practice names and contacts, recurring
+   bookings, public holidays and hospital calendars, RVG groups and modifiers, specialties and funding
+   tags, Parties (insurers and funders among them), Contracts and their price ranges), by hand after
+   the one-off go-live load; and the anaesthetists, surgeon groups, the office's private pairing
+   preferences and the anaesthetists' priority tiers.
 9a. Keep each anaesthetist's profile on their record (Master data, Anaesthetists, open a row: the
    Profile card's **Edit details**): rate per unit, phone, email, registration number, HPI CPN, bank
    account and GST number. The HPI CPN and bank details are mandatory on every anaesthetist record: an
@@ -309,6 +317,14 @@ allowing billing to proceed.
 10. After the run: the Billing Engine emails each invoice or marks it **To post**; the office does not
     email invoices itself. It uses **Resend** on the invoice rail, and on **No invoice address** types
     an address and selects **Send**.
+11. Record an additional invoice for a late charge (**Create additional invoice** on the Procedure's
+    Contract row), and review every event, the anaesthetists' included, on **Review → Events**; an
+    approved event is invoiced in the next billing run.
+12. Correct an issued invoice without editing it, from its **Correct this invoice** card: a **Credit
+    note**, **Credit in full and rebill** (the new invoice starts from a copy of the original's lines),
+    or, when the billable party asks for a combined procedure in pieces, **Split into additional
+    invoices** that add up to what was credited. Each credit is reviewed on **Review → Events** and
+    issued in the next billing run.
 
 ### Critical rule
 

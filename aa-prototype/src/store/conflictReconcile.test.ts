@@ -5,6 +5,7 @@
  * every step of a scripted run.
  */
 
+import { closureSourcesOf } from '../domain/holidays'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import {
@@ -46,7 +47,7 @@ const audit = (api: BoundAppStore, action: string, entityId?: string) =>
 /** Every List's stored conflicts equal the rule minus its live clears; every stored clear is live. */
 function assertNoStaleFlag(api: BoundAppStore, step: string): void {
   const s = api.getState()
-  const holidays = holidayIndex(s.masters.holidays)
+  const holidays = holidayIndex(closureSourcesOf(s.masters))
   for (const list of Object.values(s.schedule.lists)) {
     const expected = expectedConflicts(list, conflictFactsFor(list, { holidays }))
     // D59: a List never sits on a closed session.

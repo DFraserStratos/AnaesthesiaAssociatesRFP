@@ -12,8 +12,9 @@
 
 import type { FundingTag } from '../domain/types'
 import { fundingTagRefusal, fundingTagsInOrder, fundingTagUsage, moveFundingTag, normaliseTagCode } from '../domain/billing/fundingTags'
-import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
+import { allocateId, mutate, ok, refuse, type Actor, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
+import { slicesOf, withSource, type Plan, type PlanSource } from './masterPlanners'
 
 export interface FundingTagFields {
   code: string
@@ -35,23 +36,31 @@ function funderOf(fields: FundingTagFields): string | undefined {
 
 /** Add a tag at the end of the list. Audited `fundingTag.create`. */
 export function createFundingTag(api: AppStoreApi, actor: Actor, fields: FundingTagFields): Outcome<{ id: string }> {
+  const plan = planFundingTagCreate(api.getState(), actor, fields)
+  if (!plan.ok) return plan
+  mutate(api, actor, plan.value.metas, () => plan.value.next)
+  return ok({ id: plan.value.id })
+}
+
+/** Plan a funding tag's create at the end of the list (the seed load folds the same planner). */
+export function planFundingTagCreate(state: AppState, actor: Actor, fields: FundingTagFields, source?: PlanSource): Outcome<Plan> {
   if (actor.role !== 'office') return refuse('officeOnly', OFFICE_ONLY)
-  const state = api.getState()
   const funderPartyId = funderOf(fields)
   const draft = { id: '', code: normaliseTagCode(fields.code), ...(funderPartyId !== undefined ? { funderPartyId } : {}) }
   const refused = fundingTagRefusal(draft, { tags: state.masters.fundingTags, parties: state.masters.parties })
   if (refused !== null) return refuse(refused.code, refused.message)
-  const metas: MutationMeta[] = []
-  let id = ''
-  mutate(api, actor, metas, (s) => {
-    const alloc = allocateId(s.counters, 'fundingTag')
-    id = alloc.id
-    const order = fundingTagsInOrder(s.masters.fundingTags).length + 1
-    const tag: FundingTag = { ...draft, id, order }
-    metas.push({ entityType: 'fundingTag', entityId: id, action: 'fundingTag.create', after: { ...auditValues(tag, s), order }, stampBookingId: null })
-    return { masters: { ...s.masters, fundingTags: { ...s.masters.fundingTags, [id]: tag } }, counters: alloc.counters }
+  const alloc = allocateId(state.counters, 'fundingTag')
+  const id = alloc.id
+  const order = fundingTagsInOrder(state.masters.fundingTags).length + 1
+  const tag: FundingTag = { ...draft, id, order }
+  return ok({
+    id,
+    next: { ...slicesOf(state), masters: { ...state.masters, fundingTags: { ...state.masters.fundingTags, [id]: tag } }, counters: alloc.counters },
+    metas: withSource(
+      [{ entityType: 'fundingTag', entityId: id, action: 'fundingTag.create', after: { ...auditValues(tag, state), order }, stampBookingId: null }],
+      source,
+    ),
   })
-  return ok({ id })
 }
 
 /** Edit a tag's code and funder. Audited `fundingTag.update`, before and after. */

@@ -14,12 +14,16 @@
  * the matching screen can show a refused decision's reason and change nothing.
  */
 
+import { emptyMasterLoadsSlice } from '../domain/masterLoad/types'
 import type { ActorRole, AuditEntry, AuditSource, BookingId, ChangeSetId, ChangeSetKind } from '../domain/types'
 import { buildSeed, buildSeedBillingSlice, SEED_AUTHORISED_INVOICED_BOOKING_IDS, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
 import { seededIntakeSlice, seededIntegrationsSlice, type AppState, type AppStoreApi } from './appStore'
 import { reconcileConflictsInPatch, type MutationResult } from './conflictReconcile'
 import { seedLocks } from './locks'
+import { clearScaleMode } from './scaleMode'
+import { reportDiagnostic } from './diagnostics'
+import { resumePersist } from './persistStorage'
 
 export type { MutationResult } from './conflictReconcile'
 
@@ -45,6 +49,8 @@ export function ok<T>(value: T): Outcome<T> {
 }
 
 export function refuse<T = undefined>(code: string, message: string, details?: unknown): Outcome<T> {
+  // The messages people see are part of what the NHI leak scan reads (catch-up Phase 43).
+  reportDiagnostic('refusal', message, { code })
   const outcome: Outcome<T> = { ok: false, code, message }
   if (details !== undefined) outcome.details = details
   return outcome
@@ -67,12 +73,14 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   booking: { prefix: 'BK', pad: 4 },
   procedure: { prefix: 'P', pad: 4 },
   billingLine: { prefix: 'BL', pad: 4 },
+  // Events on a Procedure (catch-up Phase 38b; DM-17): seeded EV0001.
+  procedureEvent: { prefix: 'EV', pad: 4 },
   patient: { prefix: 'PT', pad: 4 },
   billableParty: { prefix: 'BP', pad: 4 },
   dayNote: { prefix: 'DN', pad: 4 },
   // The shared notification pool (catch-up Phase 32; DM-41).
   notification: { prefix: 'NT', pad: 4 },
-  // Lists created at runtime (assignment, phone advice, the post-op addendum);
+  // Lists created at runtime (assignment, phone advice);
   // projected and seeded Lists keep their `L-<reg>-<date>-<session>` ids.
   list: { prefix: 'LG', pad: 4 },
   // Availability statuses an admin adds and repeating days off (catch-up Phase 29).
@@ -145,6 +153,15 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   xeroDivergence: { prefix: 'XD', pad: 4 },
   remittance: { prefix: 'RMT', pad: 4 },
   bankLine: { prefix: 'BKL', pad: 4 },
+  // Catch-up Phase 42: the master public-holiday calendar (seeded PH001 to PH007), seed loads and go-live batches.
+  publicHoliday: { prefix: 'PHN', pad: 3 },
+  masterLoad: { prefix: 'ML', pad: 3 },
+  goLiveBatch: { prefix: 'GL', pad: 2 },
+  // Catch-up Phase 39: credit notes (record id and human-facing number), negative invoices and their Xero credit notes.
+  creditNote: { prefix: 'CRN', pad: 4 },
+  creditNoteNumber: { prefix: 'CN-2026-', pad: 4 },
+  negativeInvoice: { prefix: 'NEG', pad: 4 },
+  xeroCreditNote: { prefix: 'XCN', pad: 4 },
 }
 
 /** Allocate the next deterministic id of a kind from the counters record. */
@@ -191,6 +208,7 @@ export type DomainPatch = Partial<
     | 'xero'
     | 'integrations'
     | 'intake'
+    | 'masterLoads'
     | 'dayNotes'
     | 'officePrivate'
     | 'notifications'
@@ -372,6 +390,7 @@ export function transaction<T>(api: AppStoreApi, run: () => Outcome<T>): Outcome
     xero: before.xero,
     integrations: before.integrations,
     intake: before.intake,
+    masterLoads: before.masterLoads,
     dayNotes: before.dayNotes,
     officePrivate: before.officePrivate,
     notifications: before.notifications,
@@ -413,8 +432,42 @@ export function onDomainReset(listener: (api: AppStoreApi) => void): () => void 
 }
 
 export function resetDomainState(api: AppStoreApi): void {
+  // Leaving full scale (catch-up Phase 43): back to demo mode, and saving resumes BEFORE the
+  // pristine state is installed, so the pristine state is what gets written.
+  clearScaleMode()
+  resumePersist()
   resetDomainStateOnly(api)
   for (const listener of resetListeners) listener(api)
+}
+
+/** Every domain slice of the store (the shell and the store's functions excluded). */
+export type DomainState = Pick<
+  AppState,
+  | 'clock'
+  | 'masters'
+  | 'schedule'
+  | 'audit'
+  | 'settings'
+  | 'appSettings'
+  | 'dayNotes'
+  | 'officePrivate'
+  | 'notifications'
+  | 'counters'
+  | 'billing'
+  | 'xero'
+  | 'integrations'
+  | 'intake'
+  | 'masterLoads'
+>
+
+/**
+ * The wholesale replace of every domain slice (catch-up Phase 43): Reset's
+ * pristine seed and the full-scale install share this one code path. Not an
+ * audited mutation; the shell survives, except the office picker counter
+ * (catch-up Phase 17), so a fresh install replays the same within-tier orders.
+ */
+export function installDomainState(api: AppStoreApi, domain: DomainState): void {
+  api.setState({ ...domain, shell: { ...api.getState().shell, suggestionSeq: 0 } })
 }
 
 function resetDomainStateOnly(api: AppStoreApi): void {
@@ -422,7 +475,7 @@ function resetDomainStateOnly(api: AppStoreApi): void {
   // Restore the seeded PAID pre-payment slice through the same seam as
   // freshAppState (Phase 09), with the counters it bumped.
   const seedBilling = buildSeedBillingSlice(seed, SEED_PREPAID_BOOKING_ID, SEED_AUTHORISED_INVOICED_BOOKING_IDS)
-  api.setState({
+  const pristine: DomainState = {
     clock: INITIAL_CLOCK,
     masters: seed.masters,
     schedule: seed.schedule,
@@ -448,16 +501,16 @@ function resetDomainStateOnly(api: AppStoreApi): void {
       // The seed ships no queue and no flags; settings come from the seed, so the outage clears (catch-up Phase 37).
       xeroQueue: {},
       xeroDivergences: {},
+      // No credit notes or negative invoices in the seed (catch-up Phase 39).
+      creditNotes: {},
+      negativeInvoices: {},
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
     intake: seededIntakeSlice(),
-    // The shell slice survives a Reset, except the office picker counter
-    // (catch-up Phase 17): zeroing it makes a fresh Reset replay the same
-    // within-tier orders.
-    shell: { ...api.getState().shell, suggestionSeq: 0 },
-  })
+    masterLoads: emptyMasterLoadsSlice(),
+  }
   // Every seeded AUTHORISED List locked, as `freshAppState` does (catch-up Phase 25).
-  const locked = seedLocks(api.getState())
-  api.setState({ billing: { ...api.getState().billing, locks: locked.locks } })
+  const locked = seedLocks({ ...api.getState(), ...pristine })
+  installDomainState(api, { ...pristine, billing: { ...pristine.billing, locks: locked.locks } })
 }

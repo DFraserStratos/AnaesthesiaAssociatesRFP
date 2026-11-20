@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { pageParam } from './components/Pager'
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { neutral, radius, elevation } from '../../theme/tokens'
 import { TextAction } from '../../shared/ui'
@@ -19,6 +20,7 @@ import { PdfListsTab } from './intake/PdfListsTab'
 import { DataQualityTab } from './intake/DataQualityTab'
 import { ValidatorsTab } from './intake/ValidatorsTab'
 import { InvoicesScreen } from './screens/InvoicesScreen'
+import { CreditNoteDocument } from './screens/InvoiceDocument'
 import { MasterData } from './screens/masters/MasterData'
 import { SurgeonProfile } from './screens/SurgeonProfile'
 import { AnaesthetistRecord } from './screens/AnaesthetistRecord'
@@ -77,7 +79,10 @@ export function AdminDayRoute() {
 
   /** Moving day is a navigation step, but it keeps the chosen row order. */
   function goToDay(next: string) {
-    const query = params.toString()
+    // A new day starts on the first page of anaesthetists (catch-up Phase 43).
+    const kept = new URLSearchParams(params)
+    kept.delete('page')
+    const query = kept.toString()
     navigate(`/admin/day/${next}${query === '' ? '' : `?${query}`}`)
   }
 
@@ -117,6 +122,14 @@ export function AdminDayRoute() {
             bookingCounts={ctx.bookingCounts}
             onOpenDraftList={ctx.onOpenDraftList}
             {...(ctx.onOpenOutOfHours !== undefined ? { onOpenOutOfHours: ctx.onOpenOutOfHours } : {})}
+            page={pageParam(params.get('page'))}
+            onPage={(p) => {
+              // The page is a view preference, like the sort: replace, so Back is not a pager.
+              const next = new URLSearchParams(params)
+              if (p <= 1) next.delete('page')
+              else next.set('page', String(p))
+              setParams(next, { replace: true })
+            }}
           />
         )}
         <RightRail
@@ -186,6 +199,7 @@ export function AdminBookingDetailRoute() {
         officeLinks={{
           onOpenInvoices: () => navigate('/admin/invoices'),
           onOpenInvoice: (invoiceId) => navigate(`/admin/invoices/${invoiceId}`),
+          onOpenCreditNote: (creditNoteId) => navigate(`/admin/credit-notes/${creditNoteId}`),
         }}
       />
     </RequireEntity>
@@ -198,8 +212,10 @@ export function AdminBookingDetailRoute() {
 
 export function AdminReviewQueueRoute() {
   const navigate = useNavigate()
+  const { actor } = useAdminOutlet()
   return (
     <ReviewQueue
+      actor={actor}
       onOpen={(listId) => navigate(`/admin/review/${listId}`)}
       onViewInvoices={() => navigate('/admin/invoices')}
     />
@@ -258,6 +274,35 @@ export function AdminInvoicesRoute() {
         selectedInvoiceId={invoiceId ?? null}
         onSelect={(next) => navigate(next === null ? '/admin/invoices' : `/admin/invoices/${next}`)}
       />
+    </RequireEntity>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// A credit note: `/admin/credit-notes/:creditNoteId` (catch-up Phase 39). It
+// sits under Invoices: the side nav keeps Invoices active, and its trail leads
+// back there. An unknown id is a 404, as an unknown invoice is.
+// ---------------------------------------------------------------------------
+
+export function AdminCreditNoteRoute() {
+  const { creditNoteId } = useParams()
+  const navigate = useNavigate()
+  const creditNote = useAppStore((s) => (creditNoteId !== undefined ? s.billing.creditNotes[creditNoteId] : undefined))
+
+  return (
+    <RequireEntity exists={creditNote !== undefined}>
+      {creditNote !== undefined && (
+        <div data-testid="credit-note-detail-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', maxWidth: 1048, margin: '0 auto' }}>
+            <div style={{ fontSize: 13, color: neutral.mist }}>
+              <button onClick={() => navigate('/admin/invoices')} style={{ border: 'none', background: 'none', padding: 0, color: neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Invoices</button>
+              <span style={{ color: neutral.lineStrong }}> / </span>
+              <span className="mono">{creditNote.creditNoteNumber}</span>
+            </div>
+          </div>
+          <CreditNoteDocument key={creditNote.id} creditNoteId={creditNote.id} />
+        </div>
+      )}
     </RequireEntity>
   )
 }

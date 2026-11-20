@@ -734,7 +734,7 @@ export function editList(api: AppStoreApi, actor: Actor, listId: string, patch: 
   if (('hospitalId' in patch && (patch.hospitalId ?? '').trim() === '') || ('surgeonId' in patch && (patch.surgeonId ?? '').trim() === '')) {
     return refuse('pairingRequired', 'A List needs a hospital and a surgeon.')
   }
-  const issues = pairingIssues({ hospitalId: patch.hospitalId ?? list.hospitalId, surgeonId: patch.surgeonId ?? list.surgeonId }, state.masters)
+  const issues = pairingIssues({ hospitalId: patch.hospitalId ?? list.hospitalId, surgeonId: patch.surgeonId ?? list.surgeonId }, state.masters, list)
   if (issues.length > 0) return refuse('pairingRequired', issues.map((i) => i.message).join(' '), { issues })
 
   const metas: MutationMeta[] = [

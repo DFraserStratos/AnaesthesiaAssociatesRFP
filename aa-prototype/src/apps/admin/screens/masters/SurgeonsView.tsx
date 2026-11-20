@@ -4,22 +4,23 @@ import { neutral } from '../../../../theme/tokens'
 import { pairingCounts } from '../../../../domain/pairingPreferences'
 import { compareBySurname, NO_HPI_CPN } from '../../../../domain/surgeons'
 import { officeAddressFor } from '../../../../domain/surgeonContacts'
+import { isRetired } from '../../../../domain/masterLifecycle'
 import type { Surgeon, SurgeonGroup } from '../../../../domain/types'
 import { useAppStore, type Actor } from '../../../../store'
 import { surgeonSpecialtyLabel } from '../../../../domain/specialties'
-import { Button } from '../../../../shared'
+import { ClickableRow } from '../../../../shared/table'
 import { SurgeonEditSheet } from '../../flows/SurgeonEditSheet'
 import { SurgeonGroupSheet } from '../../flows/SurgeonGroupSheet'
 import { NotPreferredPill, PreferredPill, usePairingEntries } from '../../components/pairing'
-import { isInteractiveRowTarget } from '../../tableChrome'
-import { EditCell, Header, Table } from './chrome'
+import { ACTIONS_COLUMN, EditCell, MasterHeader, MasterTable, RetiredPill, ShowRetiredToggle, retiredRowStyle } from './chrome'
 import { rowCellStyle } from './tableStyles'
 import { surgeonProfilePath } from '../../mastersPaths'
 
 /**
  * Surgeons and Surgeon groups (catch-up Phase 17; US-13.4.1, US-13.6.2).
- * Editable by the office; a surgeon row opens the profile. No delete or
- * deactivate here (Phase 42). Catch-up Phase 17b (D74, OQ-126): no surgeons'
+ * Editable by the office; a surgeon row opens the profile. Retire and
+ * Reinstate sit in each edit sheet (catch-up Phase 42); retired rows hide
+ * behind "Show retired". Catch-up Phase 17b (D74, OQ-126): no surgeons'
  * rooms; the surgeon list is AA's address book of surgeons, showing each
  * surgeon's practice, the office contact the office's emails go to first
  * (`officeAddressFor`) and the HPI CPN or "No HPI CPN yet".
@@ -41,31 +42,40 @@ export function SurgeonsView({ actor }: { actor: Actor }) {
   const entries = usePairingEntries()
   const navigate = useNavigate()
   const [sheet, setSheet] = useState<{ surgeon?: Surgeon } | null>(null)
-  const rows = Object.values(surgeons).sort(compareBySurname)
+  const [showRetired, setShowRetired] = useState(false)
+  const all = Object.values(surgeons).sort(compareBySurname)
+  const retiredCount = all.filter((s) => isRetired(s)).length
+  const rows = showRetired ? all : all.filter((s) => !isRetired(s))
 
   return (
     <>
-      <Header
+      <MasterHeader
         title="Surgeons"
         sub="AA's address book of surgeons. Open a surgeon for their contacts, groups and pairing preferences."
-        action={<Button variant="secondary" onClick={() => setSheet({})}>Add surgeon</Button>}
+        add={{ label: 'Add surgeon', onClick: () => setSheet({}) }}
       />
-      <Table heads={['Name', 'Specialties', 'Practice', 'Office contact', 'HPI CPN', 'Pairings', '']} rightAlign={[6]} shot="masters-surgeons">
+      <ShowRetiredToggle checked={showRetired} onChange={setShowRetired} count={retiredCount} />
+      <MasterTable columns={['Name', 'Specialties', 'Practice', 'Office contact', 'HPI CPN', 'Pairings', ACTIONS_COLUMN]} shot="masters-surgeons" label="Surgeons">
         {rows.map((s) => {
           const counts = pairingCounts(entries, { surgeonId: s.id })
           const to = officeAddressFor({ surgeons }, s.id).to
+          const retired = isRetired(s)
           return (
-            <tr
+            <ClickableRow
               key={s.id}
               data-surgeon={s.id}
               data-practice={s.practiceName ?? ''}
               data-hpi={s.hpiId ?? ''}
-              className="aa-clickable-table-row"
-              onClick={(event) => {
-                if (!isInteractiveRowTarget(event.target)) navigate(surgeonProfilePath(s.id))
-              }}
+              data-retired={retired ? 'true' : undefined}
+              onOpen={() => navigate(surgeonProfilePath(s.id))}
+              style={retired ? retiredRowStyle : undefined}
             >
-              <td style={rowCellStyle}><SurgeonLink id={s.id} name={s.name} /></td>
+              <td style={rowCellStyle}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <SurgeonLink id={s.id} name={s.name} />
+                  {retired && <RetiredPill reason={s.retiredReason} />}
+                </span>
+              </td>
               <td style={rowCellStyle}>{surgeonSpecialtyLabel({ specialties }, s)}</td>
               <td style={rowCellStyle}>{s.practiceName ?? <span style={mist}>Not recorded</span>}</td>
               <td style={rowCellStyle} data-office-to={to?.email ?? ''}>
@@ -74,7 +84,7 @@ export function SurgeonsView({ actor }: { actor: Actor }) {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
                     {to.name !== undefined && <span>{to.name}</span>}
-                    <span className="mono" style={{ fontSize: 12.5, color: neutral.slate, overflowWrap: 'anywhere' }}>{to.email}</span>
+                    <span className="mono" style={{ fontSize: 12.5, color: retired ? neutral.mist : neutral.slate, overflowWrap: 'anywhere' }}>{to.email}</span>
                   </div>
                 )}
               </td>
@@ -87,10 +97,10 @@ export function SurgeonsView({ actor }: { actor: Actor }) {
                 </div>
               </td>
               <EditCell onClick={() => setSheet({ surgeon: s })} label={`Edit ${s.name}`} style={rowCellStyle} />
-            </tr>
+            </ClickableRow>
           )
         })}
-      </Table>
+      </MasterTable>
       {sheet !== null && <SurgeonEditSheet key={sheet.surgeon?.id ?? 'new'} surgeon={sheet.surgeon} actor={actor} onClose={() => setSheet(null)} />}
     </>
   )
@@ -100,21 +110,31 @@ export function SurgeonGroupsView({ actor }: { actor: Actor }) {
   const groups = useAppStore((s) => s.masters.surgeonGroups)
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const [sheet, setSheet] = useState<{ group?: SurgeonGroup } | null>(null)
-  const rows = Object.values(groups).sort((a, b) => a.name.localeCompare(b.name))
+  const [showRetired, setShowRetired] = useState(false)
+  const all = Object.values(groups).sort((a, b) => a.name.localeCompare(b.name))
+  const retiredCount = all.filter((g) => isRetired(g)).length
+  const rows = showRetired ? all : all.filter((g) => !isRetired(g))
 
   return (
     <>
-      <Header
+      <MasterHeader
         title="Surgeon groups"
         sub="Surgeons who work as a group. A group that holds Contracts is a Party; its Contracts link the surgeons they are offered for."
-        action={<Button variant="secondary" onClick={() => setSheet({})}>Add group</Button>}
+        add={{ label: 'Add group', onClick: () => setSheet({}) }}
       />
-      <Table heads={['Name', 'Members', 'Description', '']} rightAlign={[3]} shot="masters-surgeon-groups">
+      <ShowRetiredToggle checked={showRetired} onChange={setShowRetired} count={retiredCount} />
+      <MasterTable columns={['Name', 'Members', 'Description', ACTIONS_COLUMN]} shot="masters-surgeon-groups" label="Surgeon groups">
         {rows.map((g) => {
           const members = g.memberSurgeonIds.map((id) => surgeons[id]).filter((s) => s !== undefined).sort(compareBySurname)
+          const retired = isRetired(g)
           return (
-            <tr key={g.id} data-group={g.id}>
-              <td style={{ ...rowCellStyle, fontWeight: 600 }}>{g.name}</td>
+            <tr key={g.id} data-group={g.id} data-retired={retired ? 'true' : undefined} style={retired ? retiredRowStyle : undefined}>
+              <td style={{ ...rowCellStyle, fontWeight: 600 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  {g.name}
+                  {retired && <RetiredPill reason={g.retiredReason} />}
+                </span>
+              </td>
               <td style={rowCellStyle}>
                 {members.length === 0 ? (
                   <span style={mist}>No members</span>
@@ -129,7 +149,7 @@ export function SurgeonGroupsView({ actor }: { actor: Actor }) {
             </tr>
           )
         })}
-      </Table>
+      </MasterTable>
       {sheet !== null && <SurgeonGroupSheet key={sheet.group?.id ?? 'new'} group={sheet.group} actor={actor} onClose={() => setSheet(null)} />}
     </>
   )

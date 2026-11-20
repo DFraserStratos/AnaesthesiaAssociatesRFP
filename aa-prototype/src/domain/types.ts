@@ -358,6 +358,10 @@ export interface Hospital {
   locationType: LocationType
   /** Contact email for booking updates (US-13.4.1). Optional: a newly added hospital may not have one yet. */
   contactEmail?: string
+  /** Retired, never deleted (catch-up Phase 42; US-13.4.1): pickers stop offering it, every reference keeps resolving. */
+  retiredAtISO?: IsoDate
+  /** Why it was retired, as the office typed it (required on retire). */
+  retiredReason?: string
 }
 
 /**
@@ -404,6 +408,9 @@ export interface Surgeon {
   hpiId?: string
   /** NZ medical registration number, held for information only. */
   medicalRegistrationNumber?: string
+  /** Retired, never deleted (catch-up Phase 42; US-13.4.1). */
+  retiredAtISO?: IsoDate
+  retiredReason?: string
 }
 
 /**
@@ -422,6 +429,9 @@ export interface SurgeonGroup {
   name: string
   description?: string
   memberSurgeonIds: SurgeonId[]
+  /** Retired, never deleted (catch-up Phase 42; US-13.4.1). */
+  retiredAtISO?: IsoDate
+  retiredReason?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -537,6 +547,8 @@ export interface ListConflict {
   cause: string
   raisedAtISO: IsoDateTime
   holidayId?: string
+  /** A master public holiday closing the hospital (catch-up Phase 42; cause `publicHoliday:<id>`). */
+  publicHolidayId?: PublicHolidayId
 }
 
 /**
@@ -854,15 +866,6 @@ export interface Booking {
   /** Completion is validation-gated; submission is completion-gated (1st review #1). */
   completed: boolean
   completedAtISO?: IsoDateTime
-  /**
-   * Post-op addendum Bookings (B8; Phase 09) carry `bookingType: 'postOpAddendum'`
-   * and link back to the original episode via `addendumOfBookingId`. The addendum
-   * is a NEW Booking that runs its own capture->submit->authorise->bill cycle; the
-   * original stays locked and immutable (the RFP's immutability answer). Both
-   * fields absent on ordinary Bookings.
-   */
-  bookingType?: 'postOpAddendum'
-  addendumOfBookingId?: BookingId
   correlationRef?: IntegrationCorrelationRef
   /**
    * How the Booking entered the system, where the creating path knows it
@@ -1137,6 +1140,100 @@ export interface BillingLine {
 }
 
 // ---------------------------------------------------------------------------
+// Events on a Procedure (catch-up Phase 38b; DM-17, DM-18, D13, FT-03.7).
+// "Event" is the one element for everything recorded against a Procedure after
+// setup. One thin record in `schedule.procedureEvents`; its rules live only in
+// `domain/billing/procedureEvent.ts` (`EVENT_KINDS`), its status is derived
+// (`eventStatus`), never stored. It is never a List, Slot or schedule entry.
+// ---------------------------------------------------------------------------
+
+/** An event's kind. `'credit'` (catch-up Phase 39; OQ-63, D13): a credit note in full, with its replacements. Phase 39b adds `'preOp'` and `'postOp'` (and the billing event). */
+export type ProcedureEventKind = 'additionalInvoice' | 'credit'
+
+/**
+ * Who an event bills (US-03.7.1; Greg's courier-style "same as" tick, 2026-10-02
+ * #24): the same party as the original invoice (else the Procedure's own), or a
+ * named one. "Another person" (22a's PartyPicker) carries their own contact in
+ * `person`, as a split share does; `party` is then `{ kind: 'payer', id: person.id }`.
+ */
+export type EventParty =
+  | { sameAs: true }
+  | { sameAs: false; party: CounterpartyRef; person?: OtherPayer; invoiceEmail?: string }
+
+/** One free-form line (D10, OQ-45: "Desc, Qnt, $"): ex GST, in dollars to the cent. The line amount is computed (`priceFreeFormInvoice`), never stored. */
+export interface FreeFormLine {
+  description: string
+  quantity: number
+  unitAmount: number
+}
+
+/**
+ * Why an invoice is credited (catch-up Phase 39): `correction` (a credit note,
+ * or a credit in full and rebill; US-08.6.5, US-08.6.2) or `split` (a combined
+ * invoice split into additional invoices that add up to it; US-08.6.4, office
+ * only). Phase 41 adds its cancellation refund here.
+ */
+export type CreditCause = 'correction' | 'split'
+
+/**
+ * A credit event's detail (catch-up Phase 39; DM-24, OQ-63): the original it
+ * credits in full, the reason, and its replacements (ordinary additional-invoice
+ * events, linked both ways). The credit note and negative invoice ids are
+ * stamped once, by the next billing run that issues it.
+ */
+export interface CreditEventDetail {
+  originalInvoiceId: InvoiceId
+  reason: string
+  cause: CreditCause
+  replacementEventIds: string[]
+  creditNoteId?: string
+  negativeInvoiceId?: string
+}
+
+/** A replacement additional invoice's link to its credit (catch-up Phase 39): issued only through the credit, never on its own. */
+export interface ReplacementLink {
+  creditEventId: string
+  originalInvoiceId: InvoiceId
+  /** A split's component, from 0 (US-08.6.4). */
+  componentIndex?: number
+}
+
+/** The kind's own detail. Phase 39b adds its members. No modifier, ASA, unit, RVG or Contract field. */
+export type ProcedureEventDetail = { kind: 'additionalInvoice'; lines: FreeFormLine[] } | { kind: 'credit'; credit: CreditEventDetail }
+
+/** The one standard review step (D13): the office approves or declines, whoever raised it. */
+export interface EventReview {
+  state: 'awaitingReview' | 'approved' | 'declined'
+  by?: { who: string; role: ActorRole }
+  atISO?: IsoDateTime
+  reason?: string
+}
+
+export interface ProcedureEvent {
+  id: string
+  procedureId: ProcedureId
+  bookingId: BookingId
+  kind: ProcedureEventKind
+  /** The date of the charge or the event. */
+  occurredOnISO: IsoDate
+  /** For the kinds that need one (39b). */
+  startTime?: WallTime
+  /** The invoice tick. Fixed on for an additional invoice (`EVENT_KINDS.additionalInvoice.tick`). */
+  billable: boolean
+  party: EventParty
+  detail: ProcedureEventDetail
+  review: EventReview
+  /** Stamped once, by the next billing run (`runEventInvoicing`), with `Invoice.eventId`. */
+  invoiceId?: InvoiceId
+  /** On an additional invoice that replaces a credited one (catch-up Phase 39): reviewed and issued only with its credit. */
+  replaces?: ReplacementLink
+  /** `anaesthetistId` is set when an anaesthetist raised it ("Raised by you" and the edit rule need no name match). */
+  addedBy: { who: string; role: ActorRole; anaesthetistId?: AnaesthetistId }
+  addedAtISO: IsoDateTime
+  updatedAtISO?: IsoDateTime
+}
+
+// ---------------------------------------------------------------------------
 // RVG & modifier masters
 // ---------------------------------------------------------------------------
 
@@ -1230,6 +1327,26 @@ export interface HospitalHoliday {
   hospitalId: HospitalId
   dateISO: IsoDate
   name: string
+}
+
+export type PublicHolidayId = string
+
+/**
+ * One row of the master public-holiday calendar (catch-up Phase 42; DM-38,
+ * US-13.4.1, US-01.5.1): a statutory or regional holiday that closes every
+ * hospital, AA rooms included, except those listed open that day. `region` is
+ * a label ("Canterbury"), never a filter: every AA hospital is in
+ * Christchurch. Read only through `closuresFor` / `closuresIndex`
+ * (`domain/holidays.ts`), beside each hospital's own closures.
+ */
+export interface PublicHoliday {
+  id: PublicHolidayId
+  dateISO: IsoDate
+  name: string
+  kind: 'national' | 'regional'
+  region?: string
+  /** Hospitals that run as normal that day; every other hospital is closed. */
+  openHospitalIds: HospitalId[]
 }
 
 /**
@@ -1398,9 +1515,14 @@ export interface InvoiceSplitInfo {
   isRest: boolean
 }
 
-/** Links between invoices (Phase 38b adds `additionalTo`, Phase 39 `rebillOf`). */
+/**
+ * Links between invoices. `additionalTo` (catch-up Phase 38b): an additional
+ * invoice points at the original it relates to. `rebillOf` (catch-up Phase 39):
+ * a replacement issued with a credit note points at the invoice it replaces.
+ * The original's back-links are derived, never stored.
+ */
 export interface InvoiceLineage {
-  role: 'otherShareOfSplit'
+  role: 'otherShareOfSplit' | 'additionalTo' | 'rebillOf'
   invoiceId: InvoiceId
 }
 
@@ -1420,7 +1542,10 @@ export interface Invoice {
   billedTo?: InvoiceBilledTo
   /** The holder's layout or the patient's, from the Contract (`invoiceLayoutFor`, catch-up Phase 22), snapshotted at the run. */
   layout: 'contractHolder' | 'patient'
-  kind: 'standard' | 'prePayment'
+  /** `additional` (catch-up Phase 38b; US-08.6.3): a free-form additional invoice, raised by the next billing run from an event. */
+  kind: 'standard' | 'prePayment' | 'additional'
+  /** The event an additional invoice was raised from (catch-up Phase 38b); written once, by the run, with the event's `invoiceId`. */
+  eventId?: string
   subtotal: number
   gst: number
   total: number
@@ -1489,6 +1614,9 @@ export interface InvoiceLine {
   amount: number
   /** Holder layout fee lines only. */
   btm?: InvoiceLineBtm
+  /** A free-form line's quantity and unit amount (catch-up Phase 38b; an additional invoice): `amount` is quantity x unit amount. */
+  quantity?: number
+  unitAmount?: number
   /**
    * A prepayment line's Contract when it was raised (catch-up Phase 27): the
    * re-check reads it to tell a Procedure that changed Contract after sending.
@@ -1518,6 +1646,8 @@ export interface ReceivableLeg {
   amount: number
   /** CUMULATIVE received (money in to AA). */
   receivedAmount: number
+  /** Credited in full by a credit note (catch-up Phase 39; `applyCredit`): the invoice total. Absent on an uncredited leg. */
+  creditedAmount?: number
   /** Set once, by the receipt that completes it (the BCTI count's paid month); a replay never moves it. */
   paidInAtISO?: IsoDateTime
   /** The Xero ACCREC mirroring it; absent until the hand-off. */
@@ -1540,6 +1670,8 @@ export interface PayableLeg {
   releasedAmount: number
   /** CUMULATIVE paid out (the ledger's record of a payment made in Xero, D53). */
   disbursedAmount: number
+  /** Reversed by a negative invoice to the anaesthetist (catch-up Phase 39): the whole payable. Absent on an unreversed leg. */
+  reversedAmount?: number
   /** When it was issued: the date the BCTI counts in under `paidOnly: false`. */
   issuedAtISO: IsoDateTime
   /** Stamped when paid out in full. */
@@ -1580,6 +1712,19 @@ export interface BookingLedgerPair {
   payable?: PayableLeg
   /** The archived account's ACC marker (seeded history only; catch-up Phase 18a). */
   archivedAccRelated?: true
+  /** Credited in full (catch-up Phase 39; `applyCredit`): no receipt or disbursement applies after it. */
+  credit?: PairCredit
+}
+
+/** A pair's credit (catch-up Phase 39): what is held for the payer and what is left to net from the anaesthetist. */
+export interface PairCredit {
+  creditNoteId: string
+  negativeInvoiceId: string
+  atISO: IsoDateTime
+  /** What the payer had paid: held for them (a refund happens outside the system, US-08.6.5). */
+  heldForPayer: number
+  /** What was already paid out to the anaesthetist: left on the negative invoice to net (Phase 39a). */
+  recoveryDue: number
 }
 
 /** AA's monthly fee invoice to an anaesthetist (catch-up Phase 16; FT-10.3, DM-26): a receivable from the anaesthetist and NO payable. AA's own money, never part of what is held for anaesthetists. */
@@ -1669,6 +1814,112 @@ export interface BillingException {
 }
 
 // ---------------------------------------------------------------------------
+// Credit notes and negative invoices (catch-up Phase 39; FT-08.6, US-08.6.2,
+// US-08.6.5, DM-24, DM-25). A wrong or unwanted invoice is never edited: it is
+// credited in full and new invoices are issued. Each is its own record, never
+// an `Invoice` kind, so no invoice sum, count or selector can pick it up by
+// accident. The maths is pure, in `domain/billing/creditNote.ts`.
+// ---------------------------------------------------------------------------
+
+/** How an invoice's GST is held: every invoice holds its prices ex GST and adds GST at the foot (US-05.2.7). */
+export type GstTreatment = 'exclusiveAtFoot'
+
+/**
+ * What a credit reverses, from the original's legs at issue time
+ * (`reversalPlan`). All amounts in dollars, exact to the cent:
+ * `offsetAgainstPayable + recoveryDue === negativeInvoiceTotal`.
+ */
+export interface ReversalPlan {
+  /** The invoice total: always the whole invoice (OQ-97, D31). */
+  receivableCredited: number
+  /** The whole payable (it equals the receivable, Phase 16). */
+  negativeInvoiceTotal: number
+  /** The part not yet paid out, set against the payable it reverses. */
+  offsetAgainstPayable: number
+  /** The release cancelled (released less paid out), so the payables run skips it. */
+  releaseCancelled: number
+  /** What the payer had paid: held for them. */
+  heldForPayer: number
+  /** What was already paid out: left for the anaesthetist's next payment run (Phase 39a nets it). */
+  recoveryDue: number
+}
+
+/** One mirrored line of a credit note: the original's description prefixed "Credit:", the same amount (stored positive). */
+export interface CreditNoteLine {
+  description: string
+  quantity?: number
+  amount: number
+}
+
+/**
+ * A credit note (DM-24): the original invoice credited in full to the chosen
+ * party. Amounts are stored positive and equal the original's; the document
+ * says "Credit". Sent by the engine (Xero raises credit notes but does not
+ * send them). `CRN####`, numbered `CN-2026-####`.
+ */
+export interface CreditNote {
+  id: string
+  creditNoteNumber: string
+  originalInvoiceId: InvoiceId
+  /** The original's ledger pair. */
+  pairId: string
+  creditEventId: string
+  bookingId: BookingId
+  procedureIds: ProcedureId[]
+  /** The addressee: the original's billable party, or another the user picked. */
+  counterparty: CounterpartyRef
+  billedTo?: InvoiceBilledTo
+  supplier?: InvoiceSupplier
+  agent?: InvoiceAgent
+  gstTreatment: GstTreatment
+  lines: CreditNoteLine[]
+  subtotal: number
+  gst: number
+  total: number
+  reason: string
+  cause: CreditCause
+  /** The new invoices issued with it, by number. */
+  replacementInvoiceIds: InvoiceId[]
+  negativeInvoiceId?: string
+  issuedAtISO: IsoDateTime
+  /** Who raised the credit (the office, or the anaesthetist on their own Procedure). */
+  issuedBy: { who: string; role: ActorRole }
+  delivery: InvoiceDelivery
+  reversal: ReversalPlan
+  /** Its Xero mirror, once the correction reached Xero (`handoffCorrection`). No ACCRECCREDIT when the original was never in Xero. */
+  xero?: { accRecCreditNoteId?: string; accPayCreditNoteId?: string; accPayVoided: boolean }
+  /** The last Xero failure while the correction waits in the Xero sync queue; cleared when it lands. */
+  xeroFailure?: { code: string; message: string }
+}
+
+/**
+ * The payable reversed (DM-25; US-08.6.2: "a negative invoice to the
+ * anaesthetist, not called a BCTI credit"), raised on every credit.
+ * `amount` is the whole payable (stored positive, shown negative);
+ * `offsetAmount + recoveryDue === amount`. `offset`: nothing was paid out, so it
+ * is settled at once; `toNet`: `recoveryDue` nets in the anaesthetist's next
+ * payment run (Phase 39a; its open amount is `recoveryDue` less its nettings,
+ * never `amount`). No carry-forward (D21). `NEG####`.
+ */
+export interface NegativeInvoice {
+  id: string
+  /** The credit note number with the `-P` suffix (US-08.4.3). */
+  number: string
+  anaesthetistId: AnaesthetistId
+  creditNoteId: string
+  originalInvoiceId: InvoiceId
+  pairId: string
+  cause: 'credit'
+  amount: number
+  offsetAmount: number
+  recoveryDue: number
+  status: 'offset' | 'toNet'
+  issuedAtISO: IsoDateTime
+  /** Its Xero mirror, the ACCPAYCREDIT (absent when the draft ACCPAY was voided, or not yet in Xero). */
+  accPayCreditNoteId?: string
+}
+
+// ---------------------------------------------------------------------------
 // Xero simulation shapes (typed now — behaviour lands in Phase 10)
 // ---------------------------------------------------------------------------
 
@@ -1705,7 +1956,8 @@ export interface XeroAccRec {
   amountReceived: number
   /** Set once, by the payment that completes it (the BCTI count reads it). */
   paidAtISO?: IsoDateTime
-  status: 'awaitingPayment' | 'paid' | 'voided'
+  /** `credited` (catch-up Phase 39): an engine credit note's ACCRECCREDIT was allocated against it. `voided` is AA staff's void in Xero (37). */
+  status: 'awaitingPayment' | 'paid' | 'voided' | 'credited'
   /** When AA staff voided it directly in Xero (catch-up Phase 37): invisible to the engine until the poll. */
   voidedAtISO?: IsoDateTime
   /** When AA staff edited its total directly in Xero (catch-up Phase 37); the engine keeps the issued total on its receivable leg. */
@@ -1736,7 +1988,8 @@ export interface XeroAccPay {
   /** CUMULATIVE (7th review A16): payables runs pay authorised minus disbursed. */
   amountAuthorised: number
   amountDisbursed: number
-  status: 'draft' | 'authorised' | 'paid'
+  /** `voided` (a draft with nothing authorised) or `credited` (an ACCPAYCREDIT against it): an engine correction (catch-up Phase 39). */
+  status: 'draft' | 'authorised' | 'paid' | 'voided' | 'credited'
   /**
    * Who the payable credits when it is not the anaesthetist (catch-up Phase
    * 27; FT-06.3): a prepayment's payable credits the AA Holding account
@@ -1880,10 +2133,12 @@ export interface Disbursement {
 export interface XeroQueueItem {
   /** `XQ####`. */
   id: string
-  kind: 'handoff' | 'journal' | 'paymentSync' | 'disbursementSync' | 'poll'
-  /** `HANDOFF-<pairId>`, `JOURNAL-<transferId>`, the payment's own key, the bill payment's key, `POLL-<dateISO>`. */
+  /** `correction` (catch-up Phase 39): a credit note's reversal and its replacements' pairs, together (`handoffCorrection`). */
+  kind: 'handoff' | 'journal' | 'paymentSync' | 'disbursementSync' | 'poll' | 'correction'
+  /** `HANDOFF-<pairId>`, `JOURNAL-<transferId>`, the payment's own key, the bill payment's key, `POLL-<dateISO>`, `CORRECTION-<creditNoteId>`. */
   idempotencyKey: string
-  target: { pairId?: string; transferId?: string; accRecId?: string; accPayId?: string; xeroPaymentId?: string; xeroDisbursementId?: string }
+  /** A correction's: the credit note, the original's pair (`pairId`) and every pair it creates (`pairIds`). */
+  target: { pairId?: string; transferId?: string; accRecId?: string; accPayId?: string; xeroPaymentId?: string; xeroDisbursementId?: string; creditNoteId?: string; pairIds?: string[] }
   enqueuedAtISO: IsoDateTime
   /** Attempts made, the first (failed) call included. */
   attempts: number
@@ -1903,7 +2158,14 @@ export interface XeroQueueItem {
 export interface XeroDivergence {
   /** `XD####`. */
   id: string
-  kind: 'voidedInXero' | 'amendedInXero'
+  /** `paidAfterCredit` (catch-up Phase 39): a payment landed in Xero on an invoice the engine had credited; never applied to the ledger. */
+  kind: 'voidedInXero' | 'amendedInXero' | 'paidAfterCredit'
+  /**
+   * On a `paidAfterCredit` flag (catch-up Phase 39 review): `payable` when it
+   * was the ACCPAY Xero paid out after the credit (a bill payment the engine
+   * never records on a reversed payable); absent for a payment on the ACCREC.
+   */
+  leg?: 'payable'
   accRecId: string
   pairId: string
   invoiceId: InvoiceId
@@ -1913,6 +2175,31 @@ export interface XeroDivergence {
   detectedAtISO: IsoDateTime
   status: 'open' | 'resolved'
   resolution?: { outcome: 'reissueInXero' | 'creditInEngine' | 'noAction'; note: string; who: string; atISO: IsoDateTime }
+}
+
+/**
+ * A Xero credit note (catch-up Phase 39): an ACCRECCREDIT against the
+ * original's ACCREC, or an ACCPAYCREDIT (`${creditNoteNumber}-P`) against an
+ * authorised or paid ACCPAY. `allocated` is set against what is still open;
+ * the rest is unallocated (held for the payer, or to net). Made only by the
+ * engine's correction (`handoffCorrection`), so it carries the engine's credit
+ * note id. No NHI or personal information (OQ-30). `XCN####`.
+ */
+export interface XeroCreditNote {
+  id: string
+  type: 'ACCRECCREDIT' | 'ACCPAYCREDIT'
+  creditNoteNumber: string
+  /** The ACCREC or ACCPAY it is allocated against. */
+  againstId: string
+  contactId: string
+  /** The pair id only (OQ-30), as on the records it credits. */
+  reference: string
+  /** The engine credit note it mirrors. */
+  creditNoteId: string
+  total: number
+  allocated: number
+  status: 'authorised'
+  issuedAtISO: IsoDateTime
 }
 
 /** A remittance advice a payer sent with one bulk deposit (catch-up Phase 37; US-10.2.4). Xero side only. */
@@ -2129,6 +2416,15 @@ export type ImportDecision =
  * One incoming row (DM-34). "Unmatched" and "waiting for an NHI" are derived
  * by the matcher, never stored, so a row cannot be unmatched and forgotten.
  */
+/**
+ * The row exactly as the sender sent it (catch-up Phase 43; US-15.0.6): every
+ * column, mapped or not. Held under restricted access: office only, a reason
+ * asked, each view audited without its values, masked by `RAW_ROW_MASKING`.
+ */
+export interface RawImportRow {
+  columns: readonly { name: string; value: string }[]
+}
+
 export interface ImportRow {
   id: ImportRowId
   batchId: ImportBatchId
@@ -2143,6 +2439,8 @@ export interface ImportRow {
   decidedAtISO?: IsoDateTime
   /** The feed message that staged it (channel `feedMessage`). */
   messageId?: string
+  /** As sent (catch-up Phase 43): written once at staging, never edited, never shown unmasked. */
+  raw?: RawImportRow
 }
 
 /** One import: a hospital's file, a keyed sheet or a feed message. */

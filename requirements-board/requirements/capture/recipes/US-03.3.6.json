@@ -1,7 +1,7 @@
 {
   "id": "US-03.3.6",
   "status": "partial",
-  "absentReason": "Non-BTM lines are added as a fixed amount with a description; there is no typed list of line kinds (HDU review, nerve catheter and so on) and no service date on a line. Charges dated after the procedure are handled as a post-op event on a locked booking, not shot here.",
+  "absentReason": "Non-BTM lines are added as a fixed amount with a description; there is no typed list of line kinds (HDU review, nerve catheter and so on) and no service date on a line. Charges dated after the procedure are recorded as events on the Procedure (Phase 38b for the additional invoice; the anaesthetist's dated lines are Phase 39b).",
   "shots": [
     {
       "name": "billing-line",

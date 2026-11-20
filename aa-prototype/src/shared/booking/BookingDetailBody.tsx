@@ -1,20 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { History, Minus, Plus, Stethoscope, Users, XCircle } from 'lucide-react'
+import { History, Minus, Plus, Users, XCircle } from 'lucide-react'
 import { accent, neutral, radius } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 import type { Procedure } from '../../domain/types'
 import { bookingMoveRefusal } from '../../domain/bookingMoves'
-import { approvalNumberMissing } from '../../domain/billing'
+import { approvalNumberMissing, bookingTotalWithEvents } from '../../domain/billing'
 import { completionFailuresFor, type CompletionFailure } from '../../domain/billing/completion'
 import {
-  addPostOpAddendum,
   addProcedure,
   completeBooking,
   completionContextFor,
   editBooking,
   editRefusal,
   heldPricesForBooking,
-  isBackdropList,
   useBookingPrepayment,
   railActorOf,
   railContextForList,
@@ -23,11 +21,13 @@ import {
   uncompleteBooking,
   useAppStore,
   useToday,
+  eventsForBooking,
+  bookingHistoryEntityIds,
   type Actor,
+  type AppState,
 } from '../../store'
 import { Button, DefList, DefRow, TextArea, TextField } from '../ui'
 import { Notice } from '../ui/Notice'
-import { ResultLine } from '../ui/ResultLine'
 import { useSurface, type BookingTotalLine } from '../surface'
 import { BtmCaptureBlock, CompleteBar, CompletionOverlay, bookingFee, type BookingFeeTotals } from '../capture'
 import { ageYears, BOOKING_SOURCE_LABELS, formatCurrency, formatDob, hhmm, nhiBadge } from '../format'
@@ -48,6 +48,7 @@ import {
 } from '../flows'
 import { useBookingWarnings, WarningsPanel } from '../warnings'
 import { OfficeBillingSetup } from './OfficeBillingSetup'
+import { ProcedureEventsList } from './ProcedureEventsList'
 import { PrepaymentPanel, type PrepaymentOfficeLinks } from './PrepaymentPanel'
 import { FunderDetailsView } from './FunderDetailsView'
 import { startForAddedProcedure } from '../../domain/billing/contractRail'
@@ -70,6 +71,8 @@ interface BookingDetailBodyProps {
   header?: (collapsed: boolean, history: React.ReactNode) => React.ReactNode
   /** Admin's links from the prepayment panel to the Invoices screen (catch-up Phase 27). */
   officeLinks?: PrepaymentOfficeLinks
+  /** Admin: open the review sheet for an event awaiting review (catch-up Phase 38b). */
+  onReviewEvent?: (eventId: string) => void
 }
 
 type SheetState =
@@ -131,7 +134,7 @@ function EditLink({ onClick, label = 'Edit', ariaLabel }: { onClick: () => void;
  * `useSurface().BookingLayout`, which owns the arrangement: one phone column, or
  * the desktop's capture-plus-sticky-rail grid. No `variant` branching here.
  */
-export function BookingDetailBody({ bookingId, actor, onBack, header, officeLinks }: BookingDetailBodyProps) {
+export function BookingDetailBody({ bookingId, actor, onBack, header, officeLinks, onReviewEvent }: BookingDetailBodyProps) {
   const { BookingLayout, BookingTotal } = useSurface()
   const booking = useBookingStore((s) => s.schedule.bookings[bookingId])
   const listsRecord = useBookingStore((s) => s.schedule.lists)
@@ -175,7 +178,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
   // A Booking a colleague handed her (Phase 32a): "Moved to you by Dr Souter on Tue 21 Jul", for the notice window.
   const movedToMe = useBookingMovedToMeNotice(bookingId, actor.role === 'anaesthetist' ? actor.anaesthetistId : undefined)
   const [overlay, setOverlay] = useState(false)
-  const [postOpMsg, setPostOpMsg] = useState<string | null>(null)
   /** The prepayment re-check after removing a Procedure (catch-up Phase 27, US-06.3.5). */
   const [recheck, setRecheck] = useState<string | null>(null)
   const overlayTimer = useRef<number | null>(null)
@@ -228,6 +230,15 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
   }, [list, procedures, masters, billingLinesRecord, booking, invoices, invoiceLines, locks, listsRecord, proceduresRecord])
   // The primary first, then the rest in Booking order (US-03.2.2): every list on this screen.
   const ordered: Procedure[] = useMemo(() => inDisplayOrder(procedures), [procedures])
+
+  // The office's total with each Procedure's events (catch-up Phase 38b; US-03.1.10): Admin only.
+  const procedureEvents = useBookingStore((s) => s.schedule.procedureEvents)
+  const totalWithEvents = useMemo(() => {
+    if (actor.role !== 'office' || bookingTotals.structural !== undefined) return undefined
+    const prices = bookingTotals.order.map((id) => ({ procedureId: id, price: bookingTotals.views[id]?.fee.total ?? 0 }))
+    const r = bookingTotalWithEvents(prices, eventsForBooking({ schedule: { procedureEvents } as AppState['schedule'] }, bookingId), { bookingPrice: bookingTotals.total, invoices })
+    return { eventsTotal: r.eventsTotal, total: r.total, gst: r.gst }
+  }, [actor.role, bookingTotals, procedureEvents, bookingId, invoices])
 
   // After Make primary the new primary's block slides into the top place (the theme's
   // selection-slide, never blocking; reduced motion is the 80 ms fade).
@@ -346,14 +357,14 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
     return [...procedureIds, ...new Set(lineIds)]
   }, [audit, bookingId])
 
-  const historyEntityIds = useMemo(() => {
-    const procedureIds = procedures.map((p) => p.id)
-    const procedureIdSet = new Set(procedureIds)
-    const lineIds = Object.values(billingLinesRecord)
-      .filter((l) => procedureIdSet.has(l.procedureId))
-      .map((l) => l.id)
-    return [bookingId, ...procedureIds, ...lineIds, ...removedEntityIds]
-  }, [bookingId, procedures, billingLinesRecord, removedEntityIds])
+  // The Booking's whole story (catch-up Phase 39 review): its Procedures and fee lines, and its billing too: invoices,
+  // events (a credit's steps), credit notes and negative invoices (`bookingHistoryEntityIds`), with this draft's removed rows.
+  const historySchedule = useBookingStore((s) => s.schedule)
+  const historyBilling = useBookingStore((s) => s.billing)
+  const historyEntityIds = useMemo(
+    () => [...new Set([...bookingHistoryEntityIds({ schedule: historySchedule, billing: historyBilling, audit }, bookingId), ...removedEntityIds])],
+    [historySchedule, historyBilling, audit, bookingId, removedEntityIds],
+  )
 
   /**
    * Which procedure each history row belongs to — only on a Booking that HAS more
@@ -526,17 +537,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
     }
   }
 
-  function doAddPostOp() {
-    const outcome = addPostOpAddendum(useAppStore, actor, bookingId)
-    if (!outcome.ok) {
-      setPostOpMsg(null)
-      setError(outcome.message)
-      return
-    }
-    setError(null)
-    setPostOpMsg("Post-op addendum created on today's free session for this anaesthetist. Open it from the day view or list to capture and bill it.")
-  }
-
   /* History affordance (Phase 07) — the booking's reconstructable audit trail,
      available on every platform (A6/A7). Own-data view is fine per A8. */
   const history = (
@@ -560,7 +560,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
     warnings.length > 0 ||
     movedToMe !== undefined ||
     cancelled ||
-    booking.bookingType === 'postOpAddendum' ||
     prepaymentStatus !== 'none' ||
     recheck !== null ||
     error !== null ||
@@ -584,13 +583,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
         <Notice tone="error" icon={false}>
           <span>
             <strong>Booking cancelled.</strong> {booking.cancellation?.reason} It stays visible but is excluded from the list's completion count and billing.
-          </span>
-        </Notice>
-      )}
-      {booking.bookingType === 'postOpAddendum' && (
-        <Notice tone="neutral">
-          <span>
-            <strong>Post-op addendum</strong> · linked to the original episode. It bills as a new booking through its own cycle; the original booking stays locked and immutable (the RFP immutability answer).
           </span>
         </Notice>
       )}
@@ -803,6 +795,14 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
                 canEdit={canEdit}
               />
             )}
+            {/* The Procedure's events (catch-up Phase 38b; US-03.7.3): on no List or schedule, only here. */}
+            <ProcedureEventsList
+              procedureId={procedure.id}
+              actor={actor}
+              {...(onReviewEvent !== undefined ? { onReview: onReviewEvent } : {})}
+              {...(officeLinks !== undefined ? { onOpenInvoice: officeLinks.onOpenInvoice } : {})}
+              {...(officeLinks?.onOpenCreditNote !== undefined ? { onOpenCreditNote: officeLinks.onOpenCreditNote } : {})}
+            />
           </div>
         ))}
 
@@ -848,22 +848,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
         </div>
       )}
 
-      {/* Post-op addendum (B8) — on a locked (authorised/billed) booking. The
-          original stays immutable; the addendum is a new linked booking. Not on
-          the seeded history reached by search or date (catch-up Phase 38a): it is
-          read only, and 38b's events replace this action. */}
-      {!cancelled && list.state === 'AUTHORISED' && !isBackdropList(list) && booking.bookingType !== 'postOpAddendum' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-          <ResultLine line={postOpMsg} />
-          <Button variant="secondary" block disabled={blocked !== null} disabledReason={blocked} onClick={doAddPostOp}>
-            <Stethoscope size={16} aria-hidden /> Add post-op event
-          </Button>
-          <span style={{ fontSize: 11.5, color: neutral.mist }}>
-            A post-op charge (an HDU review, pain consult or nerve catheter) bills as a new linked booking on today's
-            free session; this locked booking stays immutable (the RFP immutability answer).
-          </span>
-        </div>
-      )}
     </>
   )
 
@@ -893,6 +877,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
                   notes={bookingBreakdown.notes}
                   multiProcedure={procedures.length > 1}
                   action={action}
+                  {...(totalWithEvents !== undefined ? { withEvents: totalWithEvents } : {})}
                 />
               )
         }

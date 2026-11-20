@@ -23,7 +23,7 @@ export interface PairingMasters {
   surgeons: Readonly<Record<string, unknown>>
 }
 
-export type PairingIssueCode = 'hospitalRequired' | 'surgeonRequired' | 'hospitalUnknown' | 'surgeonUnknown'
+export type PairingIssueCode = 'hospitalRequired' | 'surgeonRequired' | 'hospitalUnknown' | 'surgeonUnknown' | 'retired'
 
 export interface PairingIssue {
   code: PairingIssueCode
@@ -37,17 +37,31 @@ const blank = (v: string | null | undefined): boolean => v === undefined || v ==
  * Empty when the pairing is complete. The hospital comes first, as the hospital
  * booking always comes first (OQ-44).
  */
-export function pairingIssues(input: PairingInput, masters: PairingMasters): PairingIssue[] {
+export function pairingIssues(input: PairingInput, masters: PairingMasters, prev?: PairingInput): PairingIssue[] {
   const issues: PairingIssue[] = []
   if (blank(input.hospitalId)) issues.push({ code: 'hospitalRequired', message: 'Choose the hospital.' })
   else if (masters.hospitals[input.hospitalId!] === undefined) {
     issues.push({ code: 'hospitalUnknown', message: 'That hospital is not in the master data.' })
+  } else if (retiredName(masters.hospitals[input.hospitalId!]) !== null && prev?.hospitalId !== input.hospitalId) {
+    issues.push({ code: 'retired', message: `${retiredName(masters.hospitals[input.hospitalId!])} is retired.` })
   }
   if (blank(input.surgeonId)) issues.push({ code: 'surgeonRequired', message: 'Choose the surgeon.' })
   else if (masters.surgeons[input.surgeonId!] === undefined) {
     issues.push({ code: 'surgeonUnknown', message: 'That surgeon is not in the master data.' })
+  } else if (retiredName(masters.surgeons[input.surgeonId!]) !== null && prev?.surgeonId !== input.surgeonId) {
+    issues.push({ code: 'retired', message: `${retiredName(masters.surgeons[input.surgeonId!])} is retired.` })
   }
   return issues
+}
+
+/**
+ * A retired hospital's or surgeon's name, else null (catch-up Phase 42): a
+ * write path refuses a newly chosen retired record, and lets an unchanged one
+ * through (`prev`), so an old List at a retired hospital still saves.
+ */
+function retiredName(record: unknown): string | null {
+  const r = record as { name?: string; retiredAtISO?: string } | undefined
+  return r?.retiredAtISO !== undefined ? (r.name ?? 'That record') : null
 }
 
 /**

@@ -44,41 +44,46 @@ and lock.
 Each lane runs its queue in order, one phase at a time. A phase is **complete on a lane** when the
 lane branch holds a commit whose subject starts `<id> complete:`.
 
-### Current wave: Wave 4
+### Current wave: Wave 5
 
 Wave 1 (Lane A 26, 27, 27a; Lane B 32d, 33) was joined on 18 November 2026, Wave 2 (Lane A 25a, 36;
-Lane B 33a, 17b) and Wave 3 (Lane A 37, 38; Lane B 34, 35) on 19 November 2026; `master` holds all
-three.
+Lane B 33a, 17b) and Wave 3 (Lane A 37, 38; Lane B 34, 35) on 19 November 2026, and Wave 4 (Lane A
+38b, 39; Lane B 42, 43) on 20 November 2026; `master` holds all four (`PERSIST_VERSION` 69).
 
 | Lane | Queue | Sessions |
 |---|---|---|
-| A | 38b, then 39 | 2 + 2 |
-| B | 42, then 43 | 2 + 2 |
+| A | 39a, then 41 | 2 + 2 |
+| B | 39b, then 40 | 2 + 2 |
 
-Why this split: only 38b and 42 had every dependency built after Wave 3. 39 needs 38b (credits are
-events on 38b's element), so it follows 38b in Lane A, the Money lane. 43 needs 42 and phases already
-joined (22a, 25a, 32d, 34, 36, 37), so it follows 42 in Lane B. 39b cannot run in Wave 4: it needs
-38b, which is in the other lane's queue for this wave.
+Why this split: after Wave 4 every remaining phase whose dependencies are all built is one of these
+four. 39a (payment runs, BCTI approval, netting, remittance) needs 37 and 39, and 41 (the prepayment
+letter, cancellation and differences by hand) needs 39: both are money, so they stay in Lane A, the
+Money lane, one after the other. 39b (pre-op, post-op and billing events) needs 38b and 25a, all
+joined; 40 (patients: mandatory NHI, the balance warning, the patient view) needs 39 and phases
+already joined. Neither depends on the other lane's queue for this wave. 40a and 43a then 43b follow
+in Wave 6 (40a needs 40; 43a needs 39b).
 
-**Who owns what in Wave 4.** Keep to your side and the merges stay mechanical.
+**Who owns what in Wave 5.** Keep to your side and the merges stay mechanical.
 
 | | Owns |
 |---|---|
-| Lane A | Events on a Procedure and the additional invoice (38b: the event element in `types.ts`, `procedureEventActions.ts`, `additionalInvoice.ts`, `procedureEventCopy.ts`, the events section of `BookingDetailBody.tsx` in all three apps, the invoice document's additional invoice). Credits and the combined split (39: `domain/billing/ledger.ts`'s credit legs, `whoIsBilled.ts`, `xeroHandoff.ts`'s credit notes and re-issues, `xeroPairView.ts`, the credit and rebill flows) |
-| Lane B | Reference data and controlled loads (42: `mastersActions.ts`, `masterViews.ts`, `masters/chrome.tsx`, `rvgMasterActions.ts`, the Admin Master data screens, the holiday calendar `seed/availabilityAndHolidays.ts`, the loaders). Scale and privacy (43: `store/scaleMode.ts`, `persistStorage.ts`, `diagnostics.ts`, the full-scale generator, the NHI leak scans) |
+| Lane A | Payment runs (39a: the weekly cycle and its clock job, BCTI approval, netting a negative invoice against the next run, remittance; `payablesActions.ts`, `xeroSimActions.ts`'s payables run, `disbursementDetection.ts`, `domain/billing/ledger.ts`'s netting, `bcti.ts`). Prepayment follow-up (41: `prepaymentActions.ts`, `prepaymentCancellation.ts`, `prepayHolding.ts`, the prepayment letter, `xeroHandoff.ts`'s and `xeroPairView.ts`'s prepayment refunds, the move and reassign flows' prepayment steps) |
+| Lane B | Events (39b: the pre-op, post-op and billing event kinds in `domain/billing/procedureEvent.ts`'s `EVENT_RULES`, `procedureEventActions.ts`, `procedureEventCopy.ts`, `fee.ts` and `invoiceBuild.ts` for event pricing, the events section of `BookingDetailBody.tsx`, Admin Review's Events tab). Patients (40: `patientActions.ts`, mandatory NHI in `bookingActions.ts` and intake, the balance warning, the Admin patient view and its routes) |
 
-- **Where they meet.** 43's full-scale generator builds invoices and Procedures through the app's own
-  builders: at 43's start, sync Lane A's 38b if it is complete (step 5), so the generator meets 38b's
-  events; 39's credits reach it at the join. 39 and 43 both extend `xeroNhi.test.ts` (39 the credit
-  note's Xero pair, 43 the leak scan): add your own cases. 43 touches `mutate.ts`, `clockActions.ts`
-  and `matchingActions.ts` for scale mode; 42 owns the masters and 38b and 39 do not edit them. Each
-  phase patches the demo guide beats its own doc names; where two touch one file, add your lines by
-  section.
+- **Where they meet.** 39b adds event kinds to 38b's element; 39a and 41 read events and credits but
+  add no kind: if 41's cancellation needs one, note it "For the merge" and use 39's credit as built.
+  41 touches `mastersActions.ts` only for its letter's settings: add your lines, never reshape 42's
+  editors. 40's balance warning reads the ledger 39a nets: read through the selectors, never edit
+  `ledger.ts`. 43's indexes (`store/indexes.ts`) are shared: a new selector that scans a whole slice
+  per row on a list screen should use or add an index there (add your own; never change another's).
+  Each phase patches the demo guide beats its own doc names; where two touch one file, add your lines
+  by section.
 - **Files both lanes add to:** `src/domain/types.ts`, the audit label files
   (`shared/audit/actionLabels.ts`, `fieldLabels.ts`, `auditNarrative.ts`), `src/domain/seed/index.ts`
   and the seed files, `store/mutate.ts`'s `ID_FORMATS`, the store barrel, `src/store/appStore.ts`
   (`PERSIST_VERSION` and its migrate test), `shared/demoTriggers/registry.ts`, the component
   catalogue (`src/apps/demo/catalogue/`) and its tests, the seed pin and golden tests,
+  `store/indexes.ts`, `store/privacyScan.ts` (a new slice that can reach Xero joins its scan),
   `docs/prototype-build/PROGRESS.md`, `requirements-board/requirements/capture/ATLAS.md` and the demo
   guide. Add your own lines, rows, exports and entries. Never rewrite, sort or re-wrap what is already
   there.
@@ -92,7 +97,6 @@ rewrites "Current wave" above.
 
 | Wave | Lane A | Lane B |
 |---|---|---|
-| 5, likely | 39a, then 41 | 39b, then 40 |
 | 6, likely | 40a | 43a, then 43b |
 | Later | U7 (alone), then 44 (alone) | |
 
@@ -197,11 +201,14 @@ When your last phase in the wave is complete:
      seed, never added up. The S1 to S5 golden tests pass.
    - No hook was lost: `git diff master...wave/<n> -- aa-prototype | grep '^-.*data-'`, and account
      for every line.
-   - Where the lanes meet, check in the running app on your ports. For Wave 4: 43's full-scale load
-     with 38b's events and 39's credits in the data (Load full-scale data, then a credited invoice and
-     an additional invoice show on their Procedure); 42's master editors beside 39's credit flows (a
-     Party edited in Master data still bills its credit and rebill). (Wave 3's checks, done at its
-     join: 37's monitor and Xero sim beside 34's matching screen; 38's web Accounts and dashboard after
+   - Where the lanes meet, check in the running app on your ports. For Wave 5: 39a's payment run nets a
+     39 negative invoice beside 39b's new events (a post-op event invoiced, then credited, nets in the
+     next run); 41's prepayment cancellation and refund on a Booking whose patient 40 now requires an
+     NHI for; 40's patient view and balance warning after a 39a run and a 41 refund; Load full-scale
+     data (43) still loads, and its Ledger and Billing monitor timings hold, with 39a's runs and 40's
+     patient view in the app. (Wave 4's checks, done at its join: 43's full-scale load with 38b's
+     events and 39's credits, a credit and rebill on a generated invoice; a Party edited in 42's Master
+     data still bills its credit and rebill. Wave 3's: 37's monitor and Xero sim beside 34's matching screen; 38's web Accounts and dashboard after
      35's explicit save. Wave 2's: the seed's masters after 25a's and 17b's removals, 36's balance
      views beside 17b's changes, 33a's stubs on a List that 25a's warnings read. Wave 1's: a Booking
      from a hospital row given a prepaid Contract raises its prepayment for its payer; a Public Slot is

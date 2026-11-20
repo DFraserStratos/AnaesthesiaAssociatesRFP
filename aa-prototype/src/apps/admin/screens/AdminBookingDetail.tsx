@@ -26,6 +26,7 @@ import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../componen
 import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { listOriginText } from '../../../domain/lists/listOrigin'
 import { BookingUpdateEmailButton } from '../flows/UpdateEmailActions'
+import { EventReviewSheet } from '../flows/EventReviewSheet'
 
 interface AdminBookingDetailProps {
   bookingId: string
@@ -110,6 +111,7 @@ function AdminBookingDetailDraft({ bookingId, actor, todayISO, onBack, backLabel
   )
   const navigate = useNavigate()
   const [useError, setUseError] = useState<string | null>(null)
+  const [reviewing, setReviewing] = useState<string | null>(null)
 
   const warnings = useBookingWarnings(bookingId)
   // The anaesthetist changed this Booking after submitting (catch-up Phase 38a).
@@ -222,7 +224,9 @@ function AdminBookingDetailDraft({ bookingId, actor, todayISO, onBack, backLabel
       ))}
       <FormError message={useError} />
 
-      <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} {...(officeLinks !== undefined ? { officeLinks } : {})} />
+      <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} onReviewEvent={setReviewing} {...(officeLinks !== undefined ? { officeLinks } : {})} />
+      {/* The one standard review step for an event on this Booking's Procedures (catch-up Phase 38b). */}
+      <EventReviewSheet eventId={reviewing} actor={actor} onClose={() => setReviewing(null)} />
     </div>
   )
 }

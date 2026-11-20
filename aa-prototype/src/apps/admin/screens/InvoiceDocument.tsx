@@ -4,8 +4,28 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Printer, Mail, Clock, Send } from 'lucide-react'
 import { accent, fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
-import { invoiceAddresseeName, invoiceLinesFor, resendInvoice, useAppStore } from '../../../store'
-import type { BookingLedgerPair, Invoice, InvoiceLineBtm } from '../../../domain/types'
+import {
+  additionalInvoicesFor,
+  creditNoteForInvoice,
+  creditRefusalFor,
+  eventForInvoice,
+  invoiceAddresseeName,
+  invoiceLinesFor,
+  invoiceStanding,
+  originalInvoiceFor,
+  raiseRefusal,
+  rebillOriginFor,
+  replacementsOf,
+  resendInvoice,
+  splitPartOf,
+  useAppStore,
+} from '../../../store'
+import { procedureLabel } from '../../../domain/billing/procedureStack'
+import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, CREDIT_MESSAGES, EVENT_LABELS, XERO_FLAG_COPY, XERO_FLAG_LABEL, XERO_FLAG_PAYOUT_LABEL, raisedByText, xeroFlagText } from '../../../shared/procedureEventCopy'
+import { AdditionalInvoiceSheet } from '../../../shared/booking/AdditionalInvoiceForm'
+import type { CreditFormMode } from '../../../shared/booking/CreditForm'
+import { CreditSheet } from '../flows/CreditSheet'
+import type { BookingLedgerPair, CreditNote, Invoice, InvoiceAgent, InvoiceDelivery, InvoiceLineBtm, InvoiceSupplier } from '../../../domain/types'
 import {
   GST_RATE,
   GST_TREATMENT_CAPTION,
@@ -21,7 +41,7 @@ import {
   supplierGstText,
 } from '../../../domain/billing'
 import { Button, DemoBadge, Logo } from '../../../shared'
-import { dateTimeMicroCap, formatCurrency } from '../../../shared/format'
+import { dateTimeMicroCap, drSurname, formatCurrency } from '../../../shared/format'
 import { dayWithYear, hhmm } from '../../../domain/dateText'
 import { DefList, DefRow, FormError, Notice, Pill, TextAction, TextField } from '../../../shared/ui'
 import { lockStampText, lockViewFor, MIGRATED_LOCK_TEXT, partyKeyOf } from '../../../domain/billing/lock'
@@ -59,6 +79,8 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const masters = useAppStore((s) => s.masters)
+  const procedureEvents = useAppStore((s) => s.schedule.procedureEvents)
+  const standing = useAppStore((s) => invoiceStanding(s, invoiceId))
 
   const [error, setError] = useState<string | null>(null)
 
@@ -89,19 +111,32 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   const careOf = lock !== undefined ? lock.patientName : patient?.name
   // The split's other shares, by number and addressee (US-08.2.3).
   const siblings = (invoice.lineage ?? [])
+    .filter((l) => l.role === 'otherShareOfSplit')
     .map((l) => billing.invoices[l.invoiceId])
     .filter((i): i is Invoice => i !== undefined)
     .map((i) => ({ invoice: i, name: lock?.addressees[partyKeyOf(i.counterparty)] ?? invoiceAddresseeName({ masters, schedule: { procedures: proceduresRecord } }, i) }))
+  // An additional invoice's original and its Procedure (catch-up Phase 38b), derived from its lineage.
+  const originalLink = invoice.kind === 'additional' ? invoice.lineage?.find((l) => l.role === 'additionalTo') : undefined
+  const original = originalLink !== undefined ? billing.invoices[originalLink.invoiceId] : undefined
+  const firstProcedure = proceduresRecord[invoice.procedureIds?.[0] ?? '']
+  const additionalProcedure = firstProcedure !== undefined ? procedureLabel(firstProcedure, masters.rvgGroups, 1) : 'the Procedure'
+  const freeForm = invoice.kind === 'additional'
   const procedureDateISO = invoice.crossMatch?.procedureDateISO ?? list?.dateISO
-  const gstLabel = `GST (${GST_RATE * 100}%)`
+  // Catch-up Phase 39: the invoice's standing, its credit note and what replaced it; a replacement's origin.
+  const creditState = { schedule: { procedureEvents }, billing }
+
+  const credited = standing === 'credited'
+  const creditNote = creditNoteForInvoice(creditState, invoice.id)
+  const replacements = creditNote !== undefined ? replacementsOf(creditState, invoice.id) : []
+  const rebillOrigin = rebillOriginFor(creditState, invoice.id)
+  const rebillCreditNote = rebillOrigin !== undefined ? creditNoteForInvoice(creditState, rebillOrigin.id) : undefined
+  const splitPart = rebillOrigin !== undefined && rebillCreditNote?.cause === 'split' ? splitPartOf(creditState, invoice.id, rebillOrigin.id) : undefined
 
   function doSend(to?: string): boolean {
     const outcome = resendInvoice(useAppStore, actor, invoiceId, to !== undefined ? { to } : {})
     setError(outcome.ok ? null : outcome.message)
     return outcome.ok
   }
-
-  const metaLabel = { fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: neutral.mist }
 
   return (
     <div
@@ -122,44 +157,67 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
         style={{ minWidth: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.panel, padding: '36px 40px', display: 'flex', flexDirection: 'column', gap: 22 }}
       >
         {/* Masthead: the supplier, the anaesthetist (US-08.4.5) */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
-          <div data-shot="invoice-supplier" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div style={{ fontFamily: fontFamily.serif, fontSize: 21, color: neutral.ink }}>{supplier?.name ?? 'The anaesthetist'}</div>
-            {supplier !== undefined && (
-              <div className={supplier.gstNumber !== undefined ? 'mono' : undefined} style={{ fontSize: 12, color: neutral.slate }}>
-                {supplierGstText(supplier)}
+        <DocMasthead
+          supplier={supplier}
+          heading="TAX INVOICE"
+          number={invoice.invoiceNumber}
+          // The invoice's standing (catch-up Phase 39): derived, never stored; neutral, never red.
+          badge={standing !== 'live' ? <Pill tone="neutral" size="sm" shot="invoice-standing" data-standing={standing} style={{ fontFamily: fontFamily.ui }}>{standing === 'credited' ? CREDIT_LABELS.credited : CREDIT_LABELS.pendingPill}</Pill> : undefined}
+        >
+            {/* A replacement names the invoice it rebills and the credit note (catch-up Phase 39). */}
+            {/* A split's component (US-08.6.4): "Additional invoice · part 2 of 3 · replaces AA-2026-0007 · {Procedure}". */}
+            {rebillOrigin !== undefined && splitPart !== undefined && (
+              <div data-shot="invoice-split-part" data-part={splitPart.part} data-of={splitPart.of} style={{ marginTop: 6, fontSize: 12.5, color: neutral.slate }}>
+                <Link to={`/admin/invoices/${rebillOrigin.id}`} style={{ color: neutral.slate }}>
+                  {CREDIT_LABELS.splitPart(splitPart.part, splitPart.of, rebillOrigin.invoiceNumber, additionalProcedure)}
+                </Link>
+                {rebillCreditNote !== undefined && (
+                  <>
+                    {' '}
+                    <Link to={`/admin/credit-notes/${rebillCreditNote.id}`} style={{ color: neutral.slate }}>{CREDIT_LABELS.creditedByParen(rebillCreditNote.creditNoteNumber)}</Link>
+                  </>
+                )}
               </div>
             )}
-            <div style={{ fontSize: 11.5, color: neutral.slate }}>Christchurch · New Zealand</div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: fontFamily.serif, fontSize: 21, letterSpacing: '0.12em', color: neutral.ink }}>TAX INVOICE</div>
-            <div className="mono" style={{ fontSize: 13.5, fontWeight: 700, marginTop: 4 }}>{invoice.invoiceNumber}</div>
+            {rebillOrigin !== undefined && splitPart === undefined && (
+              <div data-shot="invoice-rebill-of" style={{ marginTop: 6, fontSize: 12.5, color: neutral.slate }}>
+                <Link to={`/admin/invoices/${rebillOrigin.id}`} style={{ color: neutral.slate }}>{CREDIT_LABELS.rebills(rebillOrigin.invoiceNumber)}</Link>
+                {rebillCreditNote !== undefined && (
+                  <>
+                    {' '}
+                    <Link to={`/admin/credit-notes/${rebillCreditNote.id}`} style={{ color: neutral.slate }}>{CREDIT_LABELS.creditedByParen(rebillCreditNote.creditNoteNumber)}</Link>
+                  </>
+                )}
+              </div>
+            )}
+            {/* An additional invoice names the original it relates to (catch-up Phase 38b; US-08.6.3 "Linked"). */}
+            {original !== undefined && (
+              <div data-shot="invoice-additional-of" style={{ marginTop: 6, fontSize: 12.5, color: neutral.slate }}>
+                <Link to={`/admin/invoices/${original.id}`} style={{ color: neutral.slate }}>
+                  {ADDITIONAL_INVOICE_COPY.relatesTo(original.invoiceNumber, additionalProcedure)}
+                </Link>
+                {list !== undefined && (
+                  <>
+                    {' · '}
+                    <Link to={`/admin/day/${list.dateISO}/bookings/${invoice.bookingId}`} data-shot="invoice-additional-booking" style={{ color: neutral.slate }}>
+                      {ADDITIONAL_INVOICE_COPY.openBooking}
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
             {/* A Procedure priced at $0 (catch-up Phase 24): raised and delivered like any other, headed so. */}
             {invoice.noCharge === true && (
               <div data-shot="invoice-no-charge" style={{ marginTop: 6, display: 'flex', justifyContent: 'flex-end' }}>
                 <Pill tone="neutral">No charge</Pill>
               </div>
             )}
-          </div>
-        </div>
+        </DocMasthead>
 
-        {/* Meta grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, borderTop: `1px solid ${neutral.line}`, borderBottom: `1px solid ${neutral.line}`, padding: '12px 0' }}>
-          <div>
-            <div style={metaLabel}>Date raised</div>
-            <div className="mono" style={{ fontSize: 12.5, marginTop: 3 }}>{dateTimeMicroCap(invoice.raisedAtISO)}</div>
-          </div>
-          <div>
-            <div style={metaLabel}>Procedure date</div>
-            <div className="mono" style={{ fontSize: 12.5, marginTop: 3 }}>{procedureDateISO !== undefined ? dayWithYear(procedureDateISO) : '·'}</div>
-          </div>
-          <div>
-            <div style={metaLabel}>Case reference</div>
-            <div className="mono" style={{ fontSize: 12.5, marginTop: 3 }}>{invoice.caseReference}</div>
-            <div style={{ fontSize: 10.5, color: neutral.mist }}>internal reference only</div>
-          </div>
-        </div>
+        {/* A credited invoice (catch-up Phase 39; US-07.3.2): never edited, so the credit and what replaced it are named here, all links. */}
+        {creditNote !== undefined && <CreditedBanner creditNote={creditNote} replacements={replacements} />}
+
+        <DocMeta dateLabel="Date raised" dateISO={invoice.raisedAtISO} procedureDateISO={procedureDateISO} caseReference={invoice.caseReference} />
 
         {/* Addressee + agency line */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -167,7 +225,7 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
           <div style={{ fontSize: 15.5, fontWeight: 700 }}>{addressee}</div>
           {!isPatientLayout && (
             <div style={{ display: 'flex', gap: 16, fontSize: 12.5, color: neutral.slate }}>
-              <span>Attn: Accounts</span>
+              <span>{CREDIT_LABELS.attnAccounts}</span>
               {invoice.holderReference !== undefined && (
                 <span data-shot="invoice-holder-reference">
                   Your reference <span className="mono" style={{ color: neutral.ink }}>{invoice.holderReference}</span>
@@ -189,21 +247,7 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
         </div>
 
         {/* AA as agent (US-08.4.5; provisional, OQ-29) */}
-        <div
-          data-shot="invoice-agent-block"
-          style={{ display: 'flex', gap: 14, alignItems: 'flex-start', background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, padding: '12px 14px' }}
-        >
-          <Logo height={20} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
-            <div data-shot="invoice-agency-line" style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.ink }}>
-              {agentStatement(supplier?.name ?? 'the anaesthetist', invoice.agent)}
-            </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-              <Pill size="sm" style={{ flex: 'none' }}>{OQ29_PILL}</Pill>
-              <span style={{ fontSize: 11, lineHeight: '16px', color: neutral.mist }}>{OQ29_CAPTION}</span>
-            </div>
-          </div>
-        </div>
+        <AgentBlock supplierName={supplier?.name} agent={invoice.agent} />
 
         {/* A split share's note (US-08.2.3): the other shares, each linked. */}
         {invoice.split !== undefined && siblings.length > 0 && (
@@ -220,29 +264,24 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
           />
         )}
 
-        {/* Lines */}
-        <table data-shot="invoice-lines" style={{ borderCollapse: 'collapse', width: '100%' }}>
-          <thead>
-            <tr>
-              <th style={{ ...docHead, textAlign: 'left' }}>Description</th>
-              <th style={{ ...docHead, textAlign: 'right', width: 70 }}>Units</th>
-              <th style={{ ...docHead, textAlign: 'right', width: 110 }}>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* Each line prints the Procedure's invoice description (US-08.4.1, US-08.4.6), as the run snapshotted it. */}
-            {lines.map((line) => (
-              <tr key={line.id} data-line-kind={line.kind ?? 'fee'}>
-                <td style={docCell}>
-                  <div>{line.description}</div>
-                  {line.btm !== undefined && <BtmBreakdown btm={line.btm} />}
-                </td>
-                <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{line.units ?? ''}</td>
-                <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{formatCurrency(line.amount)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {/* Lines: each prints the Procedure's invoice description (US-08.4.1, US-08.4.6), as the run snapshotted it. */}
+        <DocLinesTable
+          quantityHead={freeForm ? 'Qty' : 'Units'}
+          unitAmount={freeForm}
+          rows={lines.map((line) => ({
+            key: line.id,
+            kind: line.kind ?? 'fee',
+            description: (
+              <>
+                <div>{line.description}</div>
+                {line.btm !== undefined && <BtmBreakdown btm={line.btm} />}
+              </>
+            ),
+            quantity: freeForm ? line.quantity : line.units,
+            ...(line.unitAmount !== undefined ? { unitAmount: line.unitAmount } : {}),
+            amount: line.amount,
+          }))}
+        />
 
         {/* The holder layout's cross-match strip (US-08.4.1). */}
         {!isPatientLayout && invoice.crossMatch !== undefined && (
@@ -253,14 +292,8 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
         )}
 
         {/* Totals */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
-          <TotalRow label="Subtotal" value={formatCurrency(invoice.subtotal)} />
-          <TotalRow label={gstLabel} value={formatCurrency(invoice.gst)} />
-          <div style={{ display: 'flex', gap: 24, borderTop: `2px solid ${neutral.ink}`, paddingTop: 6, marginTop: 2 }}>
-            <span style={{ fontSize: 13.5, fontWeight: 700 }}>Total due</span>
-            <span className="mono" style={{ fontSize: 15, fontWeight: 700, minWidth: 110, textAlign: 'right' }}>{formatCurrency(invoice.total)}</span>
-          </div>
-        </div>
+        {/* A credited invoice is not due: its total reads Credited (catch-up Phase 39). */}
+        <DocTotals subtotal={invoice.subtotal} gst={invoice.gst} totalLabel={credited ? CREDIT_LABELS.credited : 'Total due'} total={invoice.total} />
 
         {/* Two-state money (RFP): paid into the AA account, then disbursed to the
             anaesthetist. Two independent, separately-tracked states. */}
@@ -269,7 +302,13 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
             <MoneyStatePill on label="No charge: nothing to pay or disburse" />
           </div>
         )}
-        {theCase !== undefined && invoice.noCharge !== true && (
+        {/* Credited and never paid: nothing is awaited, nothing is disbursed. What was paid or disbursed before the credit still shows. */}
+        {theCase !== undefined && invoice.noCharge !== true && credited && theCase.receivable.receivedAmount <= 0 && (theCase.payable?.disbursedAmount ?? 0) <= 0 && (
+          <div data-shot="invoice-money-states" data-credited="true" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', borderTop: `1px solid ${neutral.line}`, paddingTop: 12 }}>
+            <Pill tone="neutral">{CREDIT_LABELS.credited}</Pill>
+          </div>
+        )}
+        {theCase !== undefined && invoice.noCharge !== true && !(credited && theCase.receivable.receivedAmount <= 0 && (theCase.payable?.disbursedAmount ?? 0) <= 0) && (
           <div data-shot="invoice-money-states" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', borderTop: `1px solid ${neutral.line}`, paddingTop: 12 }}>
             <MoneyStatePill
               on={theCase.receivable.paidInAtISO !== undefined}
@@ -314,23 +353,28 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
         </div>
       </div>
 
-      <InvoiceInfoRail invoice={invoice} billingCase={theCase} siblings={siblings} error={error} onSend={doSend} />
+      <InvoiceInfoRail invoice={invoice} actor={actor} billingCase={theCase} siblings={siblings} error={error} onSend={doSend} credited={credited} />
     </div>
   )
 }
 
 function InvoiceInfoRail({
   invoice,
+  actor,
   billingCase,
   siblings,
   error,
   onSend,
+  credited,
 }: {
   invoice: Invoice
+  actor: Actor
   billingCase: BookingLedgerPair | undefined
   siblings: readonly { invoice: Invoice; name: string }[]
   error: string | null
   onSend: (to?: string) => boolean
+  /** Credited in full (catch-up Phase 39): nothing is resent or added to it; its credit note and new invoices carry on. */
+  credited: boolean
 }) {
   const navigate = useNavigate()
   // Catch-up Phase 37: a hand-off waiting in the Xero sync queue, or a change made directly in Xero flagged by the poll.
@@ -355,11 +399,15 @@ function InvoiceInfoRail({
       style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 12, width: 264 }}
     >
       <RailCard title="Delivery">
-        <DeliveryState invoice={invoice} onSend={onSend} />
+        <DeliveryState delivery={invoice.delivery} onSend={onSend} {...(credited ? { sendDisabledReason: CREDIT_MESSAGES.alreadyCredited } : {})} />
         <FormError message={error} />
       </RailCard>
 
       <LockedRecordCard invoice={invoice} />
+
+      <AdditionalInvoicesCard invoice={invoice} actor={actor} credited={credited} />
+
+      <CorrectInvoiceCard invoice={invoice} actor={actor} />
 
       {siblings.length > 0 && (
         <RailCard title="Related invoices">
@@ -393,7 +441,7 @@ function InvoiceInfoRail({
             <Clock size={15} aria-hidden style={{ marginTop: 1, flex: 'none' }} />
             <span style={{ fontSize: 12.5, lineHeight: '18px', fontWeight: 600 }}>
               {flag !== undefined
-                ? `${flag.kind === 'voidedInXero' ? 'Voided in Xero' : 'Amended in Xero'} · flagged`
+                ? `${flag.kind === 'paidAfterCredit' && flag.leg === 'payable' ? XERO_FLAG_PAYOUT_LABEL : XERO_FLAG_LABEL[flag.kind]} · ${XERO_FLAG_COPY.flagged}`
                 : queued !== undefined
                   ? 'Waiting for Xero'
                   : handoffComplete
@@ -410,11 +458,7 @@ function InvoiceInfoRail({
           )}
           {flag !== undefined && billingCase !== undefined && (
             <div data-shot="invoice-xero-flag" style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12.5, lineHeight: '18px', color: semantic.error.onTint }}>
-              <span>
-                {flag.kind === 'voidedInXero'
-                  ? 'AA staff voided this invoice directly in Xero. The ledger keeps the amount issued.'
-                  : `Xero now shows a total of ${formatMoney(flag.xeroShows.total)}. The ledger keeps the amount issued.`}
-              </span>
+              <span>{`${xeroFlagText(flag.kind, flag.xeroShows.total, undefined, flag.leg)}. ${flag.kind === 'paidAfterCredit' ? XERO_FLAG_COPY.ledgerIgnoresPayment : XERO_FLAG_COPY.ledgerKeepsIssued}`}</span>
               <TextAction size="sm" flush shot="invoice-open-billing-monitor" onClick={() => navigate(`/admin/billing?list=${billingCase.listId}`)}>
                 Resolve in the Billing monitor
               </TextAction>
@@ -448,13 +492,28 @@ function InvoiceInfoRail({
  * once an email is typed); no invoice address (warning, an email field and a
  * teal Send). Print is always there. No posting or email integration.
  */
-function DeliveryState({ invoice, onSend }: { invoice: Invoice; onSend: (to?: string) => boolean }) {
+function DeliveryState({
+  delivery,
+  onSend,
+  caption,
+  sendDisabledReason,
+}: {
+  delivery: InvoiceDelivery | undefined
+  /** Resend and send to a typed email; omitted, the card only reports (a credit note, catch-up Phase 39). */
+  onSend?: (to?: string) => boolean
+  /** A quiet line under the badge ("Xero does not send credit notes; the engine sends it."). */
+  caption?: string
+  /** Why Resend and Send are off (a credited invoice, catch-up Phase 39), printed under them. */
+  sendDisabledReason?: string
+}) {
   const [to, setTo] = useState('')
-  const delivery = invoice.delivery
   const label = invoiceDeliveryLabel(delivery)
+  const sendOff = sendDisabledReason !== undefined
   const sendTyped = () => {
-    if (onSend(to.trim())) setTo('')
+    if (onSend?.(to.trim()) === true) setTo('')
   }
+  const captionLine = caption !== undefined ? <span data-shot="delivery-caption" style={{ fontSize: 12, lineHeight: '17px', color: neutral.slate }}>{caption}</span> : null
+  const offLine = sendOff ? <span data-shot="invoice-send-disabled" role="note" style={{ fontSize: 12, lineHeight: '17px', color: neutral.slate }}>{sendDisabledReason}</span> : null
   const print = (
     <Button variant="secondary" onClick={() => window.print()} style={compactPrintButtonStyle}>
       <Printer size={15} aria-hidden /> Print
@@ -464,21 +523,27 @@ function DeliveryState({ invoice, onSend }: { invoice: Invoice; onSend: (to?: st
     <div data-testid="invoice-send-email" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <TextField label={fieldLabel} value={to} onChange={setTo} type="email" placeholder="accounts@example.com" />
       <div style={{ display: 'flex', gap: 8 }}>
-        <Button variant="pill" onClick={sendTyped} disabled={to.trim() === ''} style={compactEmailButtonStyle}>
+        <Button variant="pill" onClick={sendTyped} disabled={sendOff || to.trim() === ''} style={compactEmailButtonStyle}>
           <Send size={15} aria-hidden /> Send
         </Button>
         {print}
       </div>
+      {offLine}
     </div>
+  )
+
+  const fullPrint = (
+    <Button variant="secondary" onClick={() => window.print()} style={compactFullButtonStyle}>
+      <Printer size={15} aria-hidden /> Print
+    </Button>
   )
 
   if (delivery === undefined) {
     return (
       <div data-shot="invoice-delivery" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <Notice tone="neutral" icon={<Mail size={16} aria-hidden />}>{label.text}</Notice>
-        <Button variant="secondary" onClick={() => window.print()} style={compactFullButtonStyle}>
-          <Printer size={15} aria-hidden /> Print
-        </Button>
+        {captionLine}
+        {fullPrint}
       </div>
     )
   }
@@ -489,6 +554,7 @@ function DeliveryState({ invoice, onSend }: { invoice: Invoice; onSend: (to?: st
           <span style={{ overflowWrap: 'anywhere', fontWeight: 600 }}>{label.text}</span>
         </Notice>
         <DemoBadge label="Simulated send" style={{ alignSelf: 'flex-start' }} />
+        {captionLine}
         {delivery.sends.length > 1 && (
           <ol data-testid="invoice-send-history" style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: neutral.slate }}>
             {delivery.sends.map((send, i) => (
@@ -498,12 +564,17 @@ function DeliveryState({ invoice, onSend }: { invoice: Invoice; onSend: (to?: st
             ))}
           </ol>
         )}
-        <div data-testid="invoice-action-row" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-          <Button variant="pill" onClick={() => onSend()} style={compactEmailButtonStyle}>
-            <Send size={15} aria-hidden /> Resend
-          </Button>
-          {print}
-        </div>
+        {onSend !== undefined ? (
+          <div data-testid="invoice-action-row" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+            <Button variant="pill" onClick={() => onSend()} disabled={sendOff} style={compactEmailButtonStyle}>
+              <Send size={15} aria-hidden /> Resend
+            </Button>
+            {print}
+          </div>
+        ) : (
+          fullPrint
+        )}
+        {onSend !== undefined && offLine}
       </div>
     )
   }
@@ -519,14 +590,16 @@ function DeliveryState({ invoice, onSend }: { invoice: Invoice; onSend: (to?: st
           <DemoBadge label="Simulated posting" />
           <Pill size="sm">{OQ122_PILL}</Pill>
         </div>
-        {emailField('Or email it to')}
+        {captionLine}
+        {onSend !== undefined ? emailField('Or email it to') : fullPrint}
       </div>
     )
   }
   return (
     <div data-shot="invoice-delivery" data-delivery="noAddress" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <Notice tone="warning">{label.text}</Notice>
-      {emailField('Email address')}
+      {captionLine}
+      {onSend !== undefined ? emailField('Email address') : fullPrint}
     </div>
   )
 }
@@ -706,6 +779,8 @@ const compactFullButtonStyle: CSSProperties = {
   width: '100%',
 }
 
+const metaLabel = { fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: neutral.mist }
+
 const railMetaLabel: CSSProperties = {
   fontSize: 10,
   lineHeight: '14px',
@@ -741,17 +816,449 @@ function TotalRow({ label, value }: { label: string; value: string }) {
   )
 }
 
+// ---------------------------------------------------------------------------
+// The sheet's parts: one masthead, agent block and totals for the tax invoice
+// and the credit note (catch-up Phase 39), so the two documents never drift.
+// ---------------------------------------------------------------------------
+
+/** The supplier on the left; the heading ("TAX INVOICE", "CREDIT NOTE"), the number and its badge on the right, then the lines under it. */
+function DocMasthead({ supplier, heading, number, badge, children }: { supplier: InvoiceSupplier | undefined; heading: string; number: string; badge?: ReactNode; children?: ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+      <div data-shot="invoice-supplier" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ fontFamily: fontFamily.serif, fontSize: 21, color: neutral.ink }}>{supplier?.name ?? 'The anaesthetist'}</div>
+        {supplier !== undefined && (
+          <div className={supplier.gstNumber !== undefined ? 'mono' : undefined} style={{ fontSize: 12, color: neutral.slate }}>
+            {supplierGstText(supplier)}
+          </div>
+        )}
+        <div style={{ fontSize: 11.5, color: neutral.slate }}>Christchurch · New Zealand</div>
+      </div>
+      <div style={{ textAlign: 'right' }}>
+        <div style={{ fontFamily: fontFamily.serif, fontSize: 21, letterSpacing: '0.12em', color: neutral.ink }}>{heading}</div>
+        <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+          {badge}
+          <span className="mono" style={{ fontSize: 13.5, fontWeight: 700 }}>{number}</span>
+        </div>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * AA as agent (US-08.4.5). On a tax invoice (a BCTI) the wording is
+ * provisional (OQ-29) and says so; a credit note is not a BCTI, so it carries
+ * the agency line without the marker (`bcti={false}`).
+ */
+function AgentBlock({ supplierName, agent, bcti = true }: { supplierName: string | undefined; agent: InvoiceAgent | undefined; bcti?: boolean }) {
+  return (
+    <div
+      data-shot="invoice-agent-block"
+      style={{ display: 'flex', gap: 14, alignItems: 'flex-start', background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, padding: '12px 14px' }}
+    >
+      <Logo height={20} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
+        <div data-shot="invoice-agency-line" style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.ink }}>
+          {agentStatement(supplierName ?? 'the anaesthetist', agent)}
+        </div>
+        {bcti && (
+          <div data-shot="invoice-agent-provisional" style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <Pill size="sm" style={{ flex: 'none' }}>{OQ29_PILL}</Pill>
+            <span style={{ fontSize: 11, lineHeight: '16px', color: neutral.mist }}>{OQ29_CAPTION}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** The meta strip under the masthead, one for both documents: the date (raised or issued), the Procedure date and the internal case reference. */
+function DocMeta({ dateLabel, dateISO, procedureDateISO, caseReference }: { dateLabel: string; dateISO: string | undefined; procedureDateISO: string | undefined; caseReference: string | undefined }) {
+  return (
+    <div data-shot="invoice-meta" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, borderTop: `1px solid ${neutral.line}`, borderBottom: `1px solid ${neutral.line}`, padding: '12px 0' }}>
+      <div>
+        <div style={metaLabel}>{dateLabel}</div>
+        <div className="mono" style={{ fontSize: 12.5, marginTop: 3 }}>{dateTimeMicroCap(dateISO)}</div>
+      </div>
+      <div>
+        <div style={metaLabel}>Procedure date</div>
+        <div className="mono" style={{ fontSize: 12.5, marginTop: 3 }}>{procedureDateISO !== undefined ? dayWithYear(procedureDateISO) : '·'}</div>
+      </div>
+      <div>
+        <div style={metaLabel}>Case reference</div>
+        <div className="mono" style={{ fontSize: 12.5, marginTop: 3 }}>{caseReference ?? '·'}</div>
+        <div style={{ fontSize: 10.5, color: neutral.mist }}>internal reference only</div>
+      </div>
+    </div>
+  )
+}
+
+interface DocLineRow {
+  key: string
+  description: ReactNode
+  quantity?: number
+  unitAmount?: number
+  amount: number
+  /** `data-line-kind` on the row (fee, discount, adjustment). */
+  kind?: string
+}
+
+/**
+ * The lines table, one for both documents: Description, then the quantity
+ * column (`quantityHead`, "Units" on a priced invoice, "Qty" on a free-form
+ * one; left out when no line has a quantity, as a credit note's mirrored fee
+ * lines), Unit amount on a free-form invoice, and Amount.
+ */
+function DocLinesTable({ rows, quantityHead, unitAmount = false }: { rows: readonly DocLineRow[]; quantityHead: string; unitAmount?: boolean }) {
+  const showQuantity = rows.some((r) => r.quantity !== undefined)
+  return (
+    <table data-shot="invoice-lines" style={{ borderCollapse: 'collapse', width: '100%' }}>
+      <thead>
+        <tr>
+          <th style={{ ...docHead, textAlign: 'left' }}>Description</th>
+          {showQuantity && <th style={{ ...docHead, textAlign: 'right', width: 70 }}>{quantityHead}</th>}
+          {unitAmount && <th style={{ ...docHead, textAlign: 'right', width: 110 }}>Unit amount</th>}
+          <th style={{ ...docHead, textAlign: 'right', width: 110 }}>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.key} {...(r.kind !== undefined ? { 'data-line-kind': r.kind } : {})}>
+            <td style={docCell}>{r.description}</td>
+            {showQuantity && <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{r.quantity ?? ''}</td>}
+            {unitAmount && <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{r.unitAmount !== undefined ? formatCurrency(r.unitAmount) : ''}</td>}
+            <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{formatCurrency(r.amount)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
+/** Subtotal, GST and the total ("Total due", "Total credited"). */
+function DocTotals({ subtotal, gst, totalLabel, total }: { subtotal: number; gst: number; totalLabel: string; total: number }) {
+  return (
+    <div data-shot="invoice-totals" style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+      <TotalRow label="Subtotal" value={formatCurrency(subtotal)} />
+      <TotalRow label={`GST (${GST_RATE * 100}%)`} value={formatCurrency(gst)} />
+      <div style={{ display: 'flex', gap: 24, borderTop: `2px solid ${neutral.ink}`, paddingTop: 6, marginTop: 2 }}>
+        <span style={{ fontSize: 13.5, fontWeight: 700 }}>{totalLabel}</span>
+        <span className="mono" style={{ fontSize: 15, fontWeight: 700, minWidth: 110, textAlign: 'right' }}>{formatCurrency(total)}</span>
+      </div>
+    </div>
+  )
+}
+
+/** A linked document number, in the teal of every other invoice link (the rail's, the New invoices card's). */
+function DocLink({ to, children }: { to: string; children: ReactNode }) {
+  return (
+    <Link to={to} className="mono" style={{ color: accent.base, fontWeight: 600, textDecoration: 'none' }}>
+      {children}
+    </Link>
+  )
+}
+
+/**
+ * "Credited in full by CN-2026-0001 on Tue 21 Jul 2026 · rebilled as
+ * AA-2026-0013" (or "· replaced by" several), all links (catch-up Phase 39).
+ * The invoice itself is never written: this is derived.
+ */
+export function CreditedBanner({ creditNote, replacements }: { creditNote: CreditNote; replacements: readonly Invoice[] }) {
+  return (
+    <div data-shot="invoice-credited-banner" data-credit-note-id={creditNote.id} style={{ fontSize: 13, lineHeight: '19px', color: neutral.ink, borderLeft: `3px solid ${neutral.lineStrong}`, padding: '2px 0 2px 12px' }}>
+      {`${CREDIT_LABELS.creditedInFullBy} `}
+      <DocLink to={`/admin/credit-notes/${creditNote.id}`}>{creditNote.creditNoteNumber}</DocLink>
+      {` ${CREDIT_LABELS.on} ${dayWithYear(creditNote.issuedAtISO.slice(0, 10))}`}
+      {replacements.length > 0 && (
+        <>
+          {` · ${replacements.length === 1 ? CREDIT_LABELS.rebilledAs : CREDIT_LABELS.replacedBy} `}
+          {replacements.map((r, i) => (
+            <span key={r.id}>
+              {i > 0 ? ', ' : ''}
+              <DocLink to={`/admin/invoices/${r.id}`}>{r.invoiceNumber}</DocLink>
+            </span>
+          ))}
+        </>
+      )}
+    </div>
+  )
+}
+
+/**
+ * "Correct this invoice" (catch-up Phase 39; US-08.6.5, US-08.6.2): Credit
+ * note and Credit in full and rebill on a live standard or additional invoice
+ * (each of a split's per-party invoices on its own), both opening the side
+ * sheet. Disabled with the sentence while a credit is pending or once it is
+ * credited; on a prepayment invoice the refusal sentence is the caption and
+ * there are no buttons. Teal text actions, as the Additional invoices card
+ * above draws Create additional invoice; the sentence once, under the first
+ * (`disabledReason`). Split into additional invoices checks this invoice
+ * itself (a fee split's per-party invoices each split on their own).
+ */
+export function CorrectInvoiceCard({ invoice, actor }: { invoice: Invoice; actor: Actor }) {
+  const refusal = useAppStore((s) => creditRefusalFor(s, { role: 'office' }, invoice.id)?.message ?? null)
+  // Split into additional invoices (US-08.6.4): on a live standard invoice, the office's; this invoice's own refusal otherwise.
+  const procedureId = invoice.procedureIds?.[0]
+  const splitRefusal = useAppStore((s) => (procedureId !== undefined ? (creditRefusalFor(s, { role: 'office' }, invoice.id, 'split', { procedureId })?.message ?? null) : null))
+  const [open, setOpen] = useState<CreditFormMode | null>(null)
+  if (invoice.kind === 'prePayment') {
+    return (
+      <RailCard title={CREDIT_LABELS.correctCard}>
+        <span data-shot="invoice-correct-refusal" style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.slate }}>{refusal ?? CREDIT_LABELS.correctCaption}</span>
+      </RailCard>
+    )
+  }
+  const disabled = refusal !== null
+  const splits = invoice.kind === 'standard' && procedureId !== undefined
+  return (
+    <RailCard title={CREDIT_LABELS.correctCard}>
+      <div data-shot="invoice-correct" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <span style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.slate }}>{CREDIT_LABELS.correctCaption}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+          <TextAction
+            size="sm"
+            disabled={disabled}
+            disabledReason={refusal !== null ? <span data-shot="invoice-correct-refusal">{refusal}</span> : null}
+            onClick={() => setOpen('credit')}
+            shot="credit-note-button"
+          >
+            {CREDIT_LABELS.creditNote}
+          </TextAction>
+          <TextAction size="sm" disabled={disabled} onClick={() => setOpen('rebill')} shot="credit-rebill-button">
+            {CREDIT_LABELS.creditRebill}
+          </TextAction>
+          {splits && (
+            <TextAction
+              size="sm"
+              disabled={disabled || splitRefusal !== null}
+              disabledReason={!disabled && splitRefusal !== null ? <span data-shot="split-combined-refusal">{splitRefusal}</span> : null}
+              onClick={() => setOpen('split')}
+              shot="split-combined-rail-button"
+            >
+              {CREDIT_LABELS.splitButton}
+            </TextAction>
+          )}
+        </div>
+      </div>
+      <CreditSheet open={open !== null} invoiceId={invoice.id} {...(procedureId !== undefined ? { procedureId } : {})} actor={actor} mode={open ?? 'credit'} onClose={() => setOpen(null)} />
+    </RailCard>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// The credit note document (catch-up Phase 39; DM-24, US-08.6.2, US-08.6.5)
+// ---------------------------------------------------------------------------
+
+/**
+ * A credit note on the invoice's own sheet: CREDIT NOTE, "Credits AA-2026-0007
+ * in full", the party it goes to, the reason, who raised it, the mirrored
+ * lines, "Total credited", the supplier and agent block. The rail: Delivery
+ * (sent by the engine, "Simulated send"), the Negative invoice, the New
+ * invoices, and the Xero card. No NHI. Amounts are as issued, never red.
+ */
+export function CreditNoteDocument({ creditNoteId }: { creditNoteId: string }) {
+  const billing = useAppStore((s) => s.billing)
+  const schedule = useAppStore((s) => s.schedule)
+  const masters = useAppStore((s) => s.masters)
+  const xeroCreditNotes = useAppStore((s) => s.xero.creditNotes)
+  const navigate = useNavigate()
+  const cn = billing.creditNotes[creditNoteId]
+  if (cn === undefined) return null
+  const original = billing.invoices[cn.originalInvoiceId]
+  const booking = schedule.bookings[cn.bookingId]
+  const list = booking !== undefined ? schedule.lists[booking.listId] : undefined
+  const supplier = cn.supplier ?? original?.supplier
+  const addressee = invoiceAddresseeName({ masters, schedule }, cn)
+  const procedureDateISO = original?.crossMatch?.procedureDateISO ?? list?.dateISO
+  const replacements = cn.replacementInvoiceIds.map((id) => billing.invoices[id]).filter((i): i is Invoice => i !== undefined)
+  const negative = cn.negativeInvoiceId !== undefined ? billing.negativeInvoices[cn.negativeInvoiceId] : undefined
+  const negativeTo = negative !== undefined && masters.anaesthetists[negative.anaesthetistId] !== undefined ? drSurname(masters.anaesthetists[negative.anaesthetistId]!.name) : 'the anaesthetist'
+  const accRecCredit = cn.xero?.accRecCreditNoteId !== undefined ? xeroCreditNotes[cn.xero.accRecCreditNoteId] : undefined
+  const accPayCredit = cn.xero?.accPayCreditNoteId !== undefined ? xeroCreditNotes[cn.xero.accPayCreditNoteId] : undefined
+
+  return (
+    <div data-testid="credit-note-workspace" style={{ display: 'grid', gridTemplateColumns: '760px 264px', alignItems: 'start', gap: 24, width: '100%', maxWidth: 1048, margin: '0 auto' }}>
+      <div
+        className="aa-invoice-doc"
+        data-shot="credit-note-document"
+        data-credit-note-id={cn.id}
+        style={{ minWidth: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.panel, padding: '36px 40px', display: 'flex', flexDirection: 'column', gap: 22 }}
+      >
+        <DocMasthead supplier={supplier} heading={CREDIT_LABELS.documentHeading} number={cn.creditNoteNumber}>
+          {original !== undefined && (
+            <div data-shot="credit-note-credits" style={{ marginTop: 6, fontSize: 12.5, color: neutral.slate }}>
+              <DocLink to={`/admin/invoices/${original.id}`}>{CREDIT_LABELS.creditsInFull(original.invoiceNumber)}</DocLink>
+            </div>
+          )}
+        </DocMasthead>
+
+        <DocMeta dateLabel={CREDIT_LABELS.dateIssued} dateISO={cn.issuedAtISO} procedureDateISO={procedureDateISO} caseReference={original?.caseReference} />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={metaLabel}>{CREDIT_LABELS.creditToDoc}</div>
+          <div data-shot="credit-note-addressee" style={{ fontSize: 15.5, fontWeight: 700 }}>{addressee}</div>
+          {/* The holder layout's line, as the original printed it. */}
+          {original !== undefined && original.layout !== 'patient' && <span style={{ fontSize: 12.5, color: neutral.slate }}>{CREDIT_LABELS.attnAccounts}</span>}
+          {cn.billedTo?.email !== undefined && <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>{cn.billedTo.email}</span>}
+        </div>
+
+        {/* A credit note is not a BCTI: the agency line without the OQ-29 marker. */}
+        <AgentBlock supplierName={supplier?.name} agent={cn.agent} bcti={false} />
+
+        <div data-shot="credit-note-reason" style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13 }}>
+          <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: '96px 1fr', columnGap: 12 }}>
+            <dt style={{ color: neutral.slate }}>{CREDIT_LABELS.reason}</dt>
+            <dd style={{ margin: 0, color: neutral.ink }}>{cn.reason}</dd>
+          </dl>
+          <span style={{ color: neutral.slate }}>{raisedByText(cn.issuedBy)}</span>
+        </div>
+
+        <DocLinesTable quantityHead="Qty" rows={cn.lines.map((line, i) => ({ key: String(i), description: line.description, ...(line.quantity !== undefined ? { quantity: line.quantity } : {}), amount: line.amount }))} />
+
+        <DocTotals subtotal={cn.subtotal} gst={cn.gst} totalLabel={CREDIT_LABELS.totalCredited} total={cn.total} />
+
+        <div data-shot="invoice-gst-caption" style={{ fontSize: 10.5, color: neutral.mist, borderTop: `1px solid ${neutral.line}`, paddingTop: 10 }}>
+          {GST_TREATMENT_CAPTION}
+        </div>
+      </div>
+
+      <aside data-testid="credit-note-info-rail" aria-label="Credit note information" style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 12, width: 264 }}>
+        <RailCard title="Delivery">
+          <DeliveryState delivery={cn.delivery} caption={CREDIT_LABELS.deliveryCaption} />
+        </RailCard>
+
+        {negative !== undefined && (
+          <RailCard title={CREDIT_LABELS.negativeInvoiceCard}>
+            <div data-shot="negative-invoice-card" data-status={negative.status} style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.ink }}>
+              <span className="mono" style={{ fontWeight: 600 }}>{negative.number}</span>
+              {` to ${negativeTo} · `}
+              <span className="mono">{formatMoney(negative.amount)}</span>
+              {' · '}
+              {negative.status === 'toNet' ? CREDIT_LABELS.negativeNets(formatMoney(negative.recoveryDue)) : CREDIT_LABELS.negativeOffset}
+            </div>
+          </RailCard>
+        )}
+
+        <RailCard title={CREDIT_LABELS.newInvoices}>
+          <div data-shot="credit-note-new-invoices" style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5 }}>
+            {replacements.length === 0 && <span style={{ color: neutral.slate }}>{CREDIT_LABELS.newInvoicesNoneDoc}</span>}
+            {replacements.map((r) => (
+              <Link key={r.id} to={`/admin/invoices/${r.id}`} data-invoice-id={r.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, color: neutral.ink, textDecoration: 'none' }}>
+                <span className="mono" style={{ fontWeight: 600, color: accent.base }}>{r.invoiceNumber}</span>
+                <span className="mono">{formatMoney(r.total)}</span>
+              </Link>
+            ))}
+          </div>
+        </RailCard>
+
+        <RailCard title={CREDIT_LABELS.xeroCard} warning={cn.xeroFailure !== undefined}>
+          <div data-shot="credit-note-xero" style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5, lineHeight: '18px' }}>
+            {cn.xeroFailure !== undefined ? (
+              <>
+                <span style={{ color: semantic.warning.onTint, fontWeight: 600 }}>{CREDIT_LABELS.xeroFailed}</span>
+                <TextAction size="sm" flush shot="credit-note-open-billing-monitor" onClick={() => navigate(list !== undefined ? `/admin/billing?list=${list.id}` : '/admin/billing')}>
+                  {CREDIT_LABELS.openBillingMonitor}
+                </TextAction>
+              </>
+            ) : cn.xero === undefined ? (
+              <span style={{ color: neutral.slate }}>{CREDIT_LABELS.xeroWaiting}</span>
+            ) : (
+              <>
+                {accRecCredit !== undefined && <span className="mono" data-testid="xero-accreccredit">{`ACCRECCREDIT ${accRecCredit.creditNoteNumber}`}</span>}
+                {accPayCredit !== undefined && <span className="mono" data-testid="xero-accpaycredit">{`ACCPAYCREDIT ${accPayCredit.creditNoteNumber}`}</span>}
+                {cn.xero.accPayVoided && <span data-testid="xero-accpay-voided">{CREDIT_LABELS.xeroAccPayVoided}</span>}
+              </>
+            )}
+          </div>
+        </RailCard>
+      </aside>
+    </div>
+  )
+}
+
 /**
  * The patient note on a patient-layout invoice (catch-up Phase 27): a
  * prepayment invoice is the prepaid amount, the price for the anaesthetic in
  * full; every other invoice is due on receipt (a prepaid Procedure is left off
  * it, so there is no balance to explain). The letters are Phase 41's.
  */
-export function patientInvoiceNote(invoiceKind: 'standard' | 'prePayment'): { badge: string; text: string } {
+export function patientInvoiceNote(invoiceKind: Invoice['kind']): { badge: string; text: string } {
   if (invoiceKind === 'prePayment') {
     return { badge: 'Prepayment (before the procedure)', text: 'This invoice is the prepaid amount for the procedure. It is the price for the anaesthetic.' }
   }
   return { badge: 'Payment', text: 'Payment is due on receipt of this invoice.' }
+}
+
+/**
+ * The Additional invoices rail card (catch-up Phase 38b; US-08.6.3 "Linked"):
+ * on an original, its additional invoices (derived from their lineage, never
+ * stored on it), each with number, total, status and who raised it, and
+ * Create additional invoice for its Procedure; on an additional invoice, the
+ * original it relates to and the event it was raised from.
+ */
+function AdditionalInvoicesCard({ invoice, actor, credited = false }: { invoice: Invoice; actor: Actor; credited?: boolean }) {
+  const state = useAppStore((s) => s)
+  const [open, setOpen] = useState<string | null>(null)
+  if (invoice.kind === 'additional') {
+    const original = originalInvoiceFor(state, invoice.id)
+    const event = eventForInvoice(state, invoice.id)
+    if (original === undefined) return null
+    return (
+      <RailCard title={ADDITIONAL_INVOICE_COPY.additionalInvoicesCard}>
+        <div data-shot="invoice-additional-links" style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5 }}>
+          <span style={{ color: neutral.slate }}>{ADDITIONAL_INVOICE_COPY.additionalTo(original.invoiceNumber)}</span>
+          <Link to={`/admin/invoices/${original.id}`} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, color: neutral.ink, textDecoration: 'none' }}>
+            <span className="mono" style={{ fontWeight: 600, color: accent.base }}>{original.invoiceNumber}</span>
+            <span className="mono">{formatMoney(original.total)}</span>
+          </Link>
+          {event !== undefined && <span style={{ color: neutral.slate }}>{raisedByText(event.addedBy)}</span>}
+        </div>
+      </RailCard>
+    )
+  }
+  const additional = additionalInvoicesFor(state, invoice.id)
+  const procedureIds = (invoice.procedureIds ?? []).filter((id) => state.schedule.procedures[id] !== undefined)
+  const raisable = procedureIds.filter((id) => raiseRefusal(state, { role: 'office' }, id) === null)
+  if (additional.length === 0 && raisable.length === 0) return null
+  return (
+    <RailCard title={ADDITIONAL_INVOICE_COPY.additionalInvoicesCard}>
+      <div data-shot="invoice-additional-links" style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5 }}>
+        {additional.map((a) => {
+          const ev = eventForInvoice(state, a.id)
+          const pair = pairForInvoice(state, a.id)
+          const paid = pair?.receivable.paidInAtISO !== undefined
+          return (
+            <Link key={a.id} to={`/admin/invoices/${a.id}`} data-invoice-id={a.id} style={{ display: 'flex', flexDirection: 'column', gap: 2, color: neutral.ink, textDecoration: 'none' }}>
+              <span style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                <span className="mono" style={{ fontWeight: 600, color: accent.base }}>{a.invoiceNumber}</span>
+                <span className="mono">{formatMoney(a.total)}</span>
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', color: neutral.slate }}>
+                <Pill size="sm" tone={paid ? 'success' : 'neutral'}>{paid ? 'Paid' : 'Unpaid'}</Pill>
+                {ev !== undefined ? raisedByText(ev.addedBy) : ''}
+              </span>
+            </Link>
+          )
+        })}
+        {/* A credited invoice takes nothing more: its additional invoices go on the invoice that replaced it. */}
+        {raisable.map((id, i) => (
+          <TextAction
+            key={id}
+            size="sm"
+            onClick={() => setOpen(id)}
+            disabled={credited}
+            disabledReason={credited && i === 0 ? CREDIT_MESSAGES.alreadyCredited : null}
+            shot="invoice-create-additional"
+            style={{ alignSelf: 'flex-start' }}
+          >
+            {procedureIds.length > 1 ? `${EVENT_LABELS.createAdditional} · ${procedureLabel(state.schedule.procedures[id]!, state.masters.rvgGroups, procedureIds.indexOf(id) + 1)}` : EVENT_LABELS.createAdditional}
+          </TextAction>
+        ))}
+        {open !== null && <AdditionalInvoiceSheet open procedureId={open} actor={actor} onClose={() => setOpen(null)} />}
+      </div>
+    </RailCard>
+  )
 }
 
 function PatientInvoiceNote({ badge, text }: { badge: string; text: string }) {

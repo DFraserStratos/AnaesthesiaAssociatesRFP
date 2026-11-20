@@ -43,6 +43,13 @@ export {
 export { formatMoney, formatMoney as formatCurrency, parseAmount, parseAmountOrNaN } from '../domain/billing/money'
 export type { MoneyFormat } from '../domain/billing/money'
 
+/** A whole count with thousands separators: 28114 → "28,114" (catch-up Phase 43's scale figures). Locale-independent. */
+export function formatCount(n: number): string {
+  const rounded = Math.round(n)
+  const sign = rounded < 0 ? '-' : ''
+  return sign + String(Math.abs(rounded)).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+}
+
 // The audit change string used to live here as `formatAuditChange`, rendering
 // `JSON.stringify(patch)` at clinicians. It is replaced by `src/shared/audit/`
 // — field labels, human values and the change ledger, with Vitest coverage.

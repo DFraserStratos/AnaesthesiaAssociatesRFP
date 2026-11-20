@@ -18,7 +18,8 @@ import { Button, DemoBadge, FormError, TextArea, TextField, useSurface } from '.
 import { Pill, SelectField } from '../../../../shared/ui'
 import { OverlayHeader, SheetActions } from '../../../../shared/surface'
 import { HistorySheet } from '../../../../shared/booking'
-import { Header, Table, TextAction } from './chrome'
+import { MasterHeader, MasterTable } from './chrome'
+import { TextAction } from '../../../../shared/ui'
 import { cellStyle } from './tableStyles'
 
 const RECIPIENTS: readonly UpdateEmailRecipient[] = ['office', 'hospital', 'both']
@@ -69,13 +70,13 @@ export function EmailTemplatesView({ actor }: { actor: Actor }) {
 
   return (
     <>
-      <Header
+      <MasterHeader
         title="Email templates"
         sub="The wording of the update email the office drafts from a Booking or a List, one template for each kind of change, and who it goes to by default. The email opens in your own mail client; nothing is sent from here."
-        action={<Button variant="secondary" onClick={() => { setError(null); setSheet({}) }}>Add template</Button>}
+        add={{ label: 'Add template', onClick: () => { setError(null); setSheet({}) } }}
       />
       <FormError message={error} />
-      <Table heads={['Name', 'Kind of change', 'Sends to', 'Active', '']} rightAlign={[4]} shot="email-templates" label="Email templates">
+      <MasterTable columns={['Name', 'Kind of change', 'Sends to', 'Active', '']} rightAlign={[4]} shot="email-templates" label="Email templates">
         {rows.map((t) => {
           const muted = t.active ? {} : { color: neutral.mist }
           return (
@@ -86,17 +87,17 @@ export function EmailTemplatesView({ actor }: { actor: Actor }) {
               <td style={cellStyle}>{t.active ? <Pill tone="success" size="sm">Active</Pill> : <Pill tone="neutral" size="sm">Retired</Pill>}</td>
               <td style={{ ...cellStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
                 <span style={{ display: 'inline-flex', gap: 12 }}>
-                  <TextAction onClick={() => setHistory(t)} label={`History of ${t.name}`}>History</TextAction>
-                  <TextAction onClick={() => { setError(null); setSheet({ template: t }) }} label={`Edit ${t.name}`}>Edit</TextAction>
+                  <TextAction size="sm" flush onClick={() => setHistory(t)} label={`History of ${t.name}`}>History</TextAction>
+                  <TextAction size="sm" flush onClick={() => { setError(null); setSheet({ template: t }) }} label={`Edit ${t.name}`}>Edit</TextAction>
                   {t.active
-                    ? <TextAction onClick={() => setActive(t, false)} label={`Retire ${t.name}`}>Retire</TextAction>
-                    : <TextAction onClick={() => setActive(t, true)} label={`Restore ${t.name}`}>Restore</TextAction>}
+                    ? <TextAction size="sm" flush onClick={() => setActive(t, false)} label={`Retire ${t.name}`}>Retire</TextAction>
+                    : <TextAction size="sm" flush onClick={() => setActive(t, true)} label={`Restore ${t.name}`}>Restore</TextAction>}
                 </span>
               </td>
             </tr>
           )
         })}
-      </Table>
+      </MasterTable>
       {sheet !== null && <EmailTemplateSheet key={sheet.template?.id ?? 'new'} template={sheet.template} actor={actor} onClose={() => setSheet(null)} />}
       <HistorySheet open={history !== null} entityIds={history !== null ? [history.id] : []} title="Email template history" onClose={() => setHistory(null)} />
     </>

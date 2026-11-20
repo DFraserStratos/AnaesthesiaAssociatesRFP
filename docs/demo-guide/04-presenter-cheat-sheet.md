@@ -117,7 +117,8 @@ Fee = (Base + Time + Modifier units) x anaesthetist's own dollar value per unit
   Spine code, so it cannot be added twice; the age modifier is pre-applied from the date of birth,
   removable. Every other modifier, ASA included, is claimed with a short reason.
 - A part interval always rounds up (confirmed with AA); the tiers are held as data (Admin → Master
-  data → RVG groups shows the RVG time rule, read only). The anaesthetist enters start and finish only.
+  data → RVG groups holds the RVG time rule; the office edits its tiers, and a part interval always
+  rounds up). The anaesthetist enters start and finish only.
 
 ### One Contract per Procedure, on the step rail
 
@@ -325,7 +326,7 @@ price list) and claims back themselves; nib is billed only through nib's own Con
   **Locked record** card), and **Demo actions → Regenerate from locked data** rebuilds it from the lock
   and says "identical". It is the recipe, not a replay of the data as at a date.
 - Which fields are frozen is Donald's proposal (AR-58 2.8), still to confirm with AA (US-15.0.3).
-- An invoiced Booking's price, split or payee changes only by a credit note and rebill (later build).
+- An invoiced Booking's price, split or payee changes only by a credit note and rebill (S4 Beat 2b).
 
 ### Contract history
 
@@ -359,6 +360,11 @@ Payer -> ACCREC -> AA account -> ACCPAY (full amount) -> Anaesthetist
 - A prepayment's ACCPAY credits the AA Holding account instead, and is never paid itself; the money is
   transferred to the anaesthetist when the List is authorised (section 8 below).
 - A partial payment releases the payable for exactly the amount received; the rest stays outstanding.
+- A correction is a trail, never an edit: the original's debit, the credit note's credit, the contra (a
+  negative invoice to the anaesthetist) and the new invoice's debit (catch-up Phase 39).
+- The negative invoice (`CN-2026-nnnn-P`) always reverses the anaesthetist's payable: offset against it
+  while unpaid, netted in her next weekly payment run once paid. The Ledger shows **Credits held for
+  payers** and **Negative invoices to net**; Xero gets an ACCRECCREDIT.
 - Both Xero records carry the InvoiceNumber (the ACCPAY's ends `-P`) and the case Reference.
 - The mobile/web app reads the Billing Engine's own ledger, AA's system of record, never Xero
   directly. Xero mirrors the ledger for receivables and banking.
@@ -481,7 +487,9 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - Draft Lists: Lists with no anaesthetist yet, soonest first; assign one from a grouped, tier-ordered picker
 - Correct billing setup
 - Review and authorise
-- Master data and audit
+- Master data (every master in one place, kept by hand after a one-off load from AA's controlled
+  spreadsheets, every change audited, go-live load) and audit
+- Master data's sub-nav is grouped: People and places, Schedule, Billing, Settings, Go-live
 - Anaesthetist profiles: rate per unit, contact details, registration number, HPI CPN, bank account
   (masked) and GST number on each record (**Edit details** on the Profile card) and in the
   Anaesthetists table; the HPI CPN and bank details are mandatory, every change audited
@@ -532,6 +540,12 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - "Bulk remittances are matched in Xero, not by the engine."
 - "Approval stays on Review, one path with all its checks; the monitor shows what is waiting and takes
   you there."
+- "Everything after setup is an event on the Procedure, reviewed once and invoiced in the next run."
+- "Extra work after a fixed price is billed by hand, by the anaesthetist or the office."
+- "We never edit an issued invoice; we credit it in full and rebill."
+- "A split must add up to what was credited."
+- "Nothing comes across because it exists in Solutions Plus."
+- "The NHI never leaves the core platform, no personal information goes to Xero, and we check it."
 - "This is a candidate design we would validate during discovery."
 
 ## Statements to avoid
@@ -548,6 +562,13 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - "The system emails the hospital (or the surgeon's office) automatically." (The office drafts it on
   demand and sends it from its own mail client, OQ-82.)
 - "The app replaces the emailed lists." (The rooms' emailed Lists stay; OQ-124 is open.)
+- "The anaesthetist raises a post-op Booking." (A post-op charge is an event on the Procedure, never a
+  new Booking.)
+- "The system invoices the balance." (Nothing is billed automatically after a prepaid or fixed price.)
+- "A BCTI credit." (The anaesthetist's payable is reversed by a negative invoice.)
+- "A credit note is a refund." (It is not; money paid on a credited invoice is held for the payer.)
+- "The system credits the difference automatically." (Nothing is credited automatically: a person
+  decides, and the invoice is credited in full, never by the difference.)
 
 ## Prototype readiness
 
@@ -565,7 +586,12 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   (catch-up Phase 22)
 - The anaesthetist's edit window to `AUTHORISED`, the main view from today, and search by patient
   name, NHI or date over months of history (catch-up Phase 38a)
-- Pre-payment from a prepaid Contract (catch-up Phase 27), held in the AA Holding account and transferred to the anaesthetist when the List is authorised (catch-up Phase 27a), post-op addendum and billing monitor with per-booking isolation and retry (Phase 09); since catch-up Phase 37 the monitor is grouped by anaesthetist, sorts and filters (one anaesthetist, hospital, dates, **Problems only**, all in the URL), and lists each anaesthetist's Lists awaiting approval with **Open in Review** (approval itself stays on Review)
+- Pre-payment from a prepaid Contract (catch-up Phase 27), held in the AA Holding account and transferred to the anaesthetist when the List is authorised (catch-up Phase 27a), events and additional invoices (office and anaesthetist, catch-up Phase 38b) and billing monitor with per-booking isolation and retry (Phase 09); since catch-up Phase 37 the monitor is grouped by anaesthetist, sorts and filters (one anaesthetist, hospital, dates, **Problems only**, all in the URL), and lists each anaesthetist's Lists awaiting approval with **Open in Review** (approval itself stays on Review)
+- Credit notes (catch-up Phase 39): the office's **Credit note**, **Credit in full and rebill** (from a
+  copy of the original's lines) and **Split into additional invoices** (Left to allocate to $0.00) on
+  the invoice's **Correct this invoice** card, and the anaesthetist's **Credit note** on her own
+  Procedure; each reviewed on Review, Events and issued in the next run, with its negative invoice,
+  the credit note document, the Credited original and the Xero credit note
 - Contract locked at authorise, the run and the invoice document reading only the lock, Regenerate
   from locked data, and each Contract's History tab (catch-up Phase 25)
 - Xero collection/payable pairs, payments, reconciliation poll, payables, live balances and GST (Phase 10)
@@ -607,6 +633,9 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   or is missed and the poll catches it); **Simulate bulk hospital remittance** (Xero Invoices and Bank
   reconciliation). The Billing monitor's **Run payables in Xero** is not a demo action but carries the
   **Simulated Xero** badge: Xero pays the bills and the Billing Engine records each payment it reports.
+- Master data's **Seed load** and **Go-live load** views are badged demo: they stand in for the
+  developer's one-off load from AA's controlled spreadsheets (every row checked by the manual add's
+  rules, rejected rows listed with reasons), not office screens. The office never loads master data.
 - **Demo actions** (the pill in the top bar, beside the app switcher) holds the simulated events for
   the screen you are on, each badged "Demo trigger". It appears only on screens that have one. The
   control panel is now the index of them, with an **Open screen** link per entry (catch-up Phase 14).
@@ -669,6 +698,20 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   (account provisioned with no admin access to credentials, Admin sign-in with MFA, a failed attempt,
   a self-service password reset, an Apple social-login sign-in on mobile). Set Entity type to
   **account** to see them together. The identity service (Auth0 or Entra External ID) is simulated.
+- **Load full-scale data** (catch-up Phase 43; **Demo actions** on Admin Day view and Invoices, with a
+  confirm): builds the whole practice in memory from the same seed (85 anaesthetists, 21,080 sessions,
+  28,268 invoices) with a banner reading "saving paused" and a **Timings** disclosure. It is a demo
+  stand-in for production volume, not a product feature: move with the side nav while it is loaded, and
+  **Reset** or a reload returns to the demo data.
+- **Scan for NHI leaks** (Data Inspector, `/demo/data`; **Scan now**, or **Scan with a planted test
+  leak (proves the scan finds one)**): checks the Xero records and their sync queue for any NHI or
+  personal detail, and the diagnostic log and failure reasons for anything that looks like an NHI. The
+  planted choice adds one test line to that scan only, to prove the scan finds one.
+- **View raw row as another role** (Admin, Intake, Matching; **As Dr Melanie Souter** or **As the
+  hospital feed**): plays someone other than the office asking for a raw hospital row, so the refusal
+  ("Refused: only office staff can view a raw hospital row") and its audit entry, **Raw row view
+  refused**, show. **View raw row** itself, with its reason and masking, is proposed product UI; the
+  masking policy is for AA to agree.
 
 ### Still upcoming
 
@@ -752,6 +795,11 @@ Say:
   screen across every date.
 - It clears when the clash goes (the closure moved or deleted, or the List's hospital changed) or when
   the office clears it, with an optional note and "Flag again".
+- Public holidays come from one master calendar (Master data → Public holidays: Labour Day Mon 26 Oct
+  and Canterbury Anniversary Day Fri 13 Nov 2026, then Christmas to Waitangi Day 2027): each closes every
+  hospital not listed open that day, shows on each hospital card and read-only on its calendar, and flags
+  a List there like any closure. AA rooms is listed open only on Labour Day and Canterbury Anniversary Day
+  (PH001, PH002); the later holidays close it too.
 - The office never assigns or moves a List onto an unavailable session: it is made available first,
   with the anaesthetist's agreement (US-01.6.3).
 - Not conflicts: a recurring booking landing on an unavailable session becomes a Draft List (Phase 31),
@@ -826,7 +874,8 @@ Say:
 - Only the age modifier and a modifier the base units include are pre-applied, and both can be
   removed; nothing else is pre-filled. The age bands are settled (OQ-95 answered, D29).
 - Modifiers stack with no limit (a policy matter for AA, not a system rule); the same modifier is
-  never added twice. AA's own modifiers (Vanessa's list) are not loaded yet; the office can add one.
+  never added twice. AA's own modifiers are master data the office adds, edits, retires and
+  reinstates.
 
 ### 11. Open versus genuinely overdue prior balances
 
@@ -964,9 +1013,23 @@ earlier one kept in History.
 
 ### "Is the demo using real patient or integration data?"
 
-No. All names and data are fictional. The hospital files and the rooms' PDF lists are sample files,
+No. Point at the **Synthetic data only** badge: it is in the top bar, the Admin side nav, the web top
+nav and the mobile More card ("All patients, NHIs, Lists and figures are synthetic."). All names and
+data are fictional. The hospital files and the rooms' PDF lists are sample files,
 their procedure wording illustrative (AI-made, not AA's); NHI, email, Xero and payment events are
 simulated in-browser. Nothing syncs with a hospital: the office imports each file.
+
+### "Can it handle 85 anaesthetists and 28,000 invoices a year?"
+
+Show it: **Admin → Day view → Demo actions → Load full-scale data → Confirm** builds the whole practice
+in the browser from the same seed in about 2 seconds: 85 anaesthetists, 21,080 sessions over the
+scheduling horizon (four months by default) and 28,268 invoices in the last 12 months. The Day view,
+Invoices, Audit, the Billing monitor and the Ledger page through it, and the banner's **Timings** shows
+each screen's render time at demo size and at full size (most about a tenth of a second or less; the
+Billing monitor, the heaviest, about a quarter of a second). The honest caveat: these are timings in
+one browser on one laptop, with no server; formal performance testing is a Testing-milestone task.
+**Reset** (or a reload) returns to the demo data. The script's "Full scale" aside after S2 is the click
+path.
 
 ## One-line close
 

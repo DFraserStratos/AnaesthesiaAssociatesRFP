@@ -1,49 +1,25 @@
 {
   "id": "US-08.6.1",
-  "status": "partial",
-  "absentReason": "The post-op charge becomes a new linked addendum booking on the anaesthetist's free session today and bills when that list is authorised, rather than raising a supplementary invoice directly against the invoiced booking. It needs a free session that day.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "post-op-event",
       "app": "web",
-      "caption": "Add post-op event on a Booking whose list is already invoiced",
-      "start": "/web/lists/L-34821-2026-07-20-AM",
-      "setup": [
-        {
-          "scenario": "S3"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
-        },
-        {
-          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
-        },
-        {
-          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
-        },
-        {
-          "wait": 800
-        }
-      ],
+      "caption": "The anaesthetist raises an additional invoice on their own invoiced Booking; the Booking stays locked",
+      "start": "/web/lists/L-HIST-03/bookings/HBK03",
       "states": [
         {
           "steps": [
             {
-              "click": "text=\"Brian Holt\" >> nth=0"
+              "wait": "[data-shot=additional-invoice-button]"
             },
             {
-              "wait": 800
-            },
-            {
-              "scroll": "text=/A post-op charge \\(an HDU review/"
+              "scroll": "[data-shot=additional-invoice-button] >> nth=0"
             }
           ],
           "highlight": [
-            "text=/A post-op charge \\(an HDU review/",
-            "role=button[name=\"Add post-op event\"]"
+            "[data-shot=additional-invoice-button]"
           ]
         }
       ]
@@ -51,48 +27,29 @@
     {
       "name": "post-op-event",
       "app": "mobile",
-      "caption": "Add post-op event on a Booking whose list is already invoiced, on the phone",
-      "start": "/mobile/lists/L-34821-2026-07-21-AM",
+      "caption": "The anaesthetist raises an additional invoice on their own invoiced Booking, on the phone; the Booking stays locked",
+      "start": "/mobile/lists/L-HIST-03/bookings/HBK03",
       "states": [
         {
           "steps": [
             {
-              "click": "role=button[name=\"Mark list completed\"]"
+              "wait": "[data-shot=additional-invoice-button]"
             },
             {
-              "wait": 600
-            },
-            {
-              "click": "role=button[name=\"Submit to office\"]"
-            },
-            {
-              "wait": 1600
-            },
-            {
-              "trigger": "office-authorises-list"
-            },
-            {
-              "goto": "/mobile/lists/L-34821-2026-07-21-AM/bookings/BK0001"
-            },
-            {
-              "wait": 800
-            },
-            {
-              "scroll": "[data-testid=slide-booking] >> text=/A post-op charge \\(an HDU review/"
+              "scroll": "[data-shot=additional-invoice-button] >> nth=0"
             }
           ],
           "highlight": [
-            "[data-testid=slide-booking] >> text=/A post-op charge \\(an HDU review/",
-            "[data-testid=slide-booking] >> role=button[name=\"Add post-op event\"]"
+            "[data-aa-mobile-product] [data-shot=additional-invoice-button]"
           ]
         }
       ]
     },
     {
-      "name": "post-op-addendum",
+      "name": "additional-invoice",
       "app": "admin",
-      "caption": "Post-op addendum raised on a locked, invoiced booking",
-      "start": "/admin/day/2026-07-14",
+      "caption": "A late charge on a locked, invoiced Booking becomes an additional invoice",
+      "start": "/admin/day/2026-07-14/bookings/BK0032",
       "setup": [
         {
           "goto": "/admin/review/L-41267-2026-07-14-AM"
@@ -106,59 +63,115 @@
       ],
       "states": [
         {
-          "state": "locked",
-          "caption": "Locked, invoiced Booking offering Add post-op event",
+          "state": "button",
+          "caption": "The Create additional invoice button on the Procedure's Contract row, beside Split",
           "steps": [
             {
-              "click": "text=\"Christchurch Public\" >> nth=0"
+              "wait": "[data-shot=additional-invoice-button]"
             },
             {
-              "wait": 600
-            },
-            {
-              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
-            },
-            {
-              "wait": 800
-            },
-            {
-              "scroll": "text=/A post-op charge \\(an HDU review/"
+              "scroll": "[data-shot=additional-invoice-button] >> nth=0"
             }
           ],
           "highlight": [
-            "text=/A post-op charge \\(an HDU review/",
-            "role=button[name=\"Add post-op event\"]"
+            "[data-shot=additional-invoice-button]"
           ]
         },
         {
-          "state": "added",
-          "caption": "Addendum created as a new linked Booking, the original stays locked",
+          "state": "sheet",
+          "caption": "Recorded as an event on the Procedure: the form filled with a post-op ward review",
           "steps": [
             {
-              "click": "text=\"Christchurch Public\" >> nth=0"
+              "click": "[data-shot=additional-invoice-button] >> nth=0"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "input[data-shot=line-description]",
+              "value": "Post-op ward review, Wed 15 Jul, 15 min"
+            },
+            {
+              "fill": "input[data-shot=line-amount]",
+              "value": "30.00"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=additional-invoice-sheet]"
+          ]
+        },
+        {
+          "state": "invoiced",
+          "caption": "Invoiced in the next run, as every event is, with its own number, linked to the original",
+          "steps": [
+            {
+              "click": "[data-shot=additional-invoice-button] >> nth=0"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "input[data-shot=line-description]",
+              "value": "Post-op ward review, Wed 15 Jul, 15 min"
+            },
+            {
+              "fill": "input[data-shot=line-amount]",
+              "value": "30.00"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=additional-invoice-save]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr[data-event-id] >> nth=-1"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            },
+            {
+              "click": "[data-shot=event-review-approve]"
             },
             {
               "wait": 600
             },
             {
-              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+              "goto": "/admin/billing"
+            },
+            {
+              "trigger": "run-next-billing-run"
             },
             {
               "wait": 800
             },
             {
-              "click": "role=button[name=\"Add post-op event\"]"
+              "goto": "/admin/day/2026-07-14/bookings/BK0032"
             },
             {
-              "wait": 800
+              "wait": "[data-shot=procedure-event-invoice]"
             },
             {
-              "scroll": "text=/A post-op charge \\(an HDU review/"
+              "click": "[data-shot=procedure-event-invoice] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-additional-links]"
             }
           ],
           "highlight": [
-            "text=/Post-op addendum created/",
-            "role=button[name=\"Add post-op event\"]"
+            "[data-shot=invoice-additional-links]"
           ]
         }
       ]

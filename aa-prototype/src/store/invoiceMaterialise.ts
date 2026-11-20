@@ -23,7 +23,8 @@
 import type { Invoice, InvoiceApproval, InvoiceId, InvoiceLine, InvoiceLineage, LedgerPair } from '../domain/types'
 import { anaesthetistPayee, HOLDING_PAYEE, newBookingPair } from '../domain/billing/ledger'
 import type { DraftInvoice, LockedPayee } from '../domain/billing/lock'
-import { AA_AGENT, deliveryStampFor, supplierFor } from '../domain/billing/invoicePresentation'
+import { deliveryStampFor, supplierFor } from '../domain/billing/invoicePresentation'
+import { invoiceLineRecord, invoiceRecordFromDraft } from '../domain/billing/invoiceRecord'
 import { invoiceDeliveryFor } from '../domain/billing/whoIsBilled'
 import { allocateId, type MutationMeta } from './mutate'
 import type { AppState } from './appStore'
@@ -38,7 +39,13 @@ export interface MaterialiseArgs {
   /** Stamp delivery now (the run, the retry, today's prepayment raise). */
   send: boolean
   /** The audit action each invoice is created under (a prepayment's: approved, or sent with approval off). */
-  createAction: 'invoice.create' | 'invoice.prePaymentApproved' | 'invoice.prePaymentAutoSent'
+  createAction: 'invoice.create' | 'invoice.prePaymentApproved' | 'invoice.prePaymentAutoSent' | 'invoice.additionalCreated'
+  /** More fields for the create entry's `after` (an additional invoice's original, Procedure, lines and raiser; catch-up Phase 38b). */
+  createAfter?: Record<string, unknown>
+  /** Links beyond a split's siblings (an additional invoice's `additionalTo`, catch-up Phase 38b). */
+  lineage?: InvoiceLineage[]
+  /** The event an additional invoice is raised from (catch-up Phase 38b). */
+  eventId?: string
   /** A prepayment invoice's approval stamp (catch-up Phase 27). */
   approval?: InvoiceApproval
   /** The locked payee (catch-up Phase 25): the supplier block and each pair's payee. Absent on a pre-payment, whose payable is to the AA Holding account. */
@@ -105,33 +112,26 @@ export function materialiseInvoices(
 
   drafts.forEach((draft, index) => {
     const { caseId, invoiceId, invoiceNumber } = allocated[index]!
-    const lineage: InvoiceLineage[] = (draft.splitSiblings ?? []).flatMap((i) => {
-      const sibling = allocated[i]
-      return sibling !== undefined ? [{ role: 'otherShareOfSplit' as const, invoiceId: sibling.invoiceId }] : []
-    })
-    const invoice: Invoice = {
-      id: invoiceId,
+    const lineage: InvoiceLineage[] = [
+      ...(draft.splitSiblings ?? []).flatMap((i) => {
+        const sibling = allocated[i]
+        return sibling !== undefined ? [{ role: 'otherShareOfSplit' as const, invoiceId: sibling.invoiceId }] : []
+      }),
+      ...(args.lineage ?? []).map((l) => ({ ...l })),
+    ]
+    // One stored shape for every path (catch-up Phase 43: `domain/billing/invoiceRecord.ts`).
+    const invoice: Invoice = invoiceRecordFromDraft(draft, {
+      invoiceId,
       invoiceNumber,
-      caseReference: caseId,
+      caseId,
       bookingId: args.bookingId,
-      counterparty: draft.counterparty,
-      ...(draft.billedTo !== undefined ? { billedTo: draft.billedTo } : {}),
-      layout: draft.layout,
       kind: args.kind,
-      subtotal: draft.subtotal,
-      gst: draft.gst,
-      total: draft.total,
-      raisedAtISO: args.atISO,
-      procedureIds: [...draft.procedureIds],
+      atISO: args.atISO,
       ...(supplier !== undefined ? { supplier } : {}),
-      agent: AA_AGENT,
-      ...(draft.split !== undefined ? { split: draft.split } : {}),
-      ...(draft.holderReference !== undefined ? { holderReference: draft.holderReference } : {}),
-      ...(draft.crossMatch !== undefined ? { crossMatch: draft.crossMatch } : {}),
-      ...(lineage.length > 0 ? { lineage } : {}),
-      ...(draft.noCharge === true ? { noCharge: true as const } : {}),
-      ...(args.approval !== undefined ? { approval: { ...args.approval } } : {}),
-    }
+      lineage,
+      ...(args.eventId !== undefined ? { eventId: args.eventId } : {}),
+      ...(args.approval !== undefined ? { approval: args.approval } : {}),
+    })
     if (args.send && draft.delivery !== undefined) {
       invoice.delivery = deliveryStampFor(draft.delivery, args.atISO, BILLING_RUN_SENDER)
     } else if (args.send && booking !== undefined) {
@@ -142,12 +142,7 @@ export function materialiseInvoices(
     for (const line of draft.lines) {
       const il = allocateId(counters, 'invoiceLine')
       counters = il.counters
-      const stored: InvoiceLine = { id: il.id, invoiceId, kind: line.kind, description: line.description, amount: line.amount }
-      if (line.procedureId !== undefined) stored.procedureId = line.procedureId
-      if (line.units !== undefined) stored.units = line.units
-      if (line.btm !== undefined) stored.btm = line.btm
-      if (line.contractId !== undefined) stored.contractId = line.contractId
-      invoiceLines[il.id] = stored
+      invoiceLines[il.id] = invoiceLineRecord(line, il.id, invoiceId)
     }
     // The ledger pair, made with the invoice (US-08.3.1): the payee stamped from the lock, or the AA Holding
     // account on a prepayment (D38); never re-derived and never changed.
@@ -186,6 +181,7 @@ export function materialiseInvoices(
         gst: draft.gst,
         total: draft.total,
         ...(draft.split !== undefined ? { split: draft.split.shareLabel } : {}),
+        ...(args.createAfter ?? {}),
       },
       stampBookingId: null,
     })

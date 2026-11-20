@@ -13,6 +13,7 @@
  * stays on Review.
  */
 
+import { pairByInvoice } from './indexes'
 import type { AppState } from './appStore'
 import type { AssignedList } from '../domain/types'
 import { billingMonitor, bookingsForList, submittedLists, type MonitorListRow } from './selectors'
@@ -23,7 +24,7 @@ import { surnameOf } from '../shared/format'
 export const MONITOR_EXPAND_ALL_UP_TO = 12
 
 /** What makes an authorised List a problem. Not yet emailed, or not yet paid, is not a problem. */
-export type MonitorProblem = 'billingException' | 'waitingForXero' | 'xeroAlert' | 'voidedInXero' | 'amendedInXero'
+export type MonitorProblem = 'billingException' | 'waitingForXero' | 'xeroAlert' | 'voidedInXero' | 'amendedInXero' | 'paidAfterCredit'
 
 export type MonitorSortKey = 'date' | 'hospital' | 'status' | 'invoices' | 'run'
 export type SortDir = 'asc' | 'desc'
@@ -110,7 +111,7 @@ function problemsByList(state: ViewState, rows: readonly MonitorListRow[]): Map<
   return out
 }
 
-const PROBLEM_ORDER: readonly MonitorProblem[] = ['billingException', 'waitingForXero', 'xeroAlert', 'voidedInXero', 'amendedInXero']
+const PROBLEM_ORDER: readonly MonitorProblem[] = ['billingException', 'waitingForXero', 'xeroAlert', 'voidedInXero', 'amendedInXero', 'paidAfterCredit']
 
 function statusOf(row: MonitorListRow, problems: readonly MonitorProblem[]): MonitorListStatus {
   if (problems.includes('voidedInXero')) return 'Voided in Xero'
@@ -122,7 +123,7 @@ function inXeroCount(state: ViewState, row: MonitorListRow): number {
   const ids = new Set(row.bookingRows.flatMap((b) => b.invoiceIds))
   let n = 0
   for (const id of ids) {
-    const pair = Object.values(state.billing.ledger).find((p) => 'invoiceId' in p && p.invoiceId === id)
+    const pair = pairByInvoice(state.billing.ledger).get(id)
     if (pair?.receivable.xeroAccRecId !== undefined) n += 1
   }
   return n

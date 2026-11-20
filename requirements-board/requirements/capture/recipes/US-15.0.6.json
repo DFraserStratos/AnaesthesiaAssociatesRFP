@@ -16,6 +16,151 @@
       "caption": "A Xero invoice pair identifies the payer by ContactNumber, with no NHI",
       "start": "/demo/xero/invoices/XRB0",
       "states": [ { "steps": [], "highlight": ["[data-testid=xero-money-flow-grid]"] } ]
+    },
+    {
+      "name": "raw-row",
+      "app": "admin",
+      "caption": "NHI stays inside the core platform and non-production holds synthetic data only",
+      "start": "/admin/intake/matching",
+      "states": [
+        {
+          "state": "restricted",
+          "caption": "A hospital row waiting for its NHI shows only the fields needed to match; the rest of what the hospital sent is held under restricted access",
+          "steps": [
+            { "click": "[data-shot^='matching-row-'][data-import-row-id=IRS001]" },
+            { "wait": "[data-shot=matching-panel]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=matching-restricted]"]
+        },
+        {
+          "state": "reason",
+          "caption": "View raw row asks why first: a quick reason or a typed one, and the view is recorded with it",
+          "steps": [
+            { "click": "[data-shot^='matching-row-'][data-import-row-id=IRS001]" },
+            { "wait": "[data-shot=matching-panel]" },
+            { "click": "[data-shot=matching-raw-row]" },
+            { "wait": "[data-shot=matching-raw-row-reason]" },
+            { "click": "[data-shot=matching-raw-row-reason] >> role=button[name=\"Find why this row did not match\"]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=matching-raw-row-sheet]"]
+        },
+        {
+          "state": "masked",
+          "caption": "The raw hospital row with every identifier masked, and the note that the masking policy is for AA to agree",
+          "steps": [
+            { "click": "[data-shot^='matching-row-'][data-import-row-id=IRS001]" },
+            { "wait": "[data-shot=matching-panel]" },
+            { "click": "[data-shot=matching-raw-row]" },
+            { "wait": "[data-shot=matching-raw-row-reason]" },
+            { "click": "[data-shot=matching-raw-row-reason] >> role=button[name=\"Find why this row did not match\"]" },
+            { "click": "[data-shot=matching-raw-row-view]" },
+            { "wait": "[data-shot=matching-raw-row-columns]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=matching-raw-row-sheet]"]
+        },
+        {
+          "state": "viewed",
+          "caption": "Back on the row, each view of the raw row is counted with who looked last and when",
+          "steps": [
+            { "click": "[data-shot^='matching-row-'][data-import-row-id=IRS001]" },
+            { "wait": "[data-shot=matching-panel]" },
+            { "click": "[data-shot=matching-raw-row]" },
+            { "wait": "[data-shot=matching-raw-row-reason]" },
+            { "click": "[data-shot=matching-raw-row-reason] >> role=button[name=\"Find why this row did not match\"]" },
+            { "click": "[data-shot=matching-raw-row-view]" },
+            { "wait": "[data-shot=matching-raw-row-columns]" },
+            { "click": "[data-shot=matching-raw-row-sheet] >> role=button[name=\"Close\"] >> nth=-1" },
+            { "wait": "[data-shot=matching-raw-row-views]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=matching-restricted]"]
+        },
+        {
+          "state": "refused",
+          "caption": "Only office staff can view a raw hospital row: an anaesthetist's attempt is refused and recorded in the audit trail",
+          "steps": [
+            { "trigger": "matching-raw-row-other-role", "choice": "souter", "open": true },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=demo-action-matching-raw-row-other-role]"]
+        },
+        {
+          "state": "pdf-row",
+          "caption": "A row from a rooms' PDF list also shows only the fields needed to match",
+          "steps": [
+            { "goto": "/admin/intake/pdfs" },
+            { "wait": "[data-shot=pdf-inbox]" },
+            { "click": "[data-shot=pdf-inbox] tr[data-pdf-list-id=PDL0001]" },
+            { "wait": "[data-shot=pdf-list-header]" },
+            { "fill": "[data-shot=pdf-row-2] input >> nth=0", "value": "ZAA0067" },
+            { "click": "[data-shot=pdf-row-2-apply]" },
+            { "wait": "[data-shot=pdf-correction]" },
+            { "click": "[data-shot=pdf-send]" },
+            { "wait": "[data-shot=pdf-open-matching]" },
+            { "click": "[data-shot=pdf-open-matching]" },
+            { "wait": "[data-shot=matching-table]" },
+            { "wait": 400 },
+            { "press": "Escape" },
+            { "wait": 400 },
+            { "click": "[data-shot^='matching-row-']:has-text('Brian Holt')" },
+            { "wait": "[data-shot=matching-panel]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=matching-restricted]"]
+        }
+      ]
+    },
+    {
+      "name": "leak-scan",
+      "app": "simulator",
+      "caption": "NHI stays inside the core platform and non-production holds synthetic data only",
+      "start": "/demo/data",
+      "states": [
+        {
+          "state": "scan-now",
+          "caption": "Privacy checks after Scan now: no NHI or personal detail in the Xero records or their sync queue, none in the logs, messages or failure reasons",
+          "steps": [
+            { "trigger": "scan-nhi-leaks", "choice": "now" },
+            { "wait": "[data-shot=nhi-scan-report][data-scanned=true]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=nhi-scan-panel]"]
+        },
+        {
+          "state": "planted",
+          "caption": "A planted test line proves the scan finds an NHI, shown masked",
+          "steps": [
+            { "trigger": "scan-nhi-leaks", "choice": "planted" },
+            { "wait": "[data-shot=nhi-scan-report][data-scanned=true]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=nhi-scan-report] tr[data-scan-area=planted]"]
+        }
+      ]
+    },
+    {
+      "name": "synthetic-badge",
+      "app": "admin",
+      "caption": "Synthetic data only: the environment marker under ADMIN in the side nav",
+      "start": "/admin/day/2026-07-21",
+      "states": [ { "steps": [], "highlight": ["[data-aa-modal-scope] [data-shot=synthetic-data-badge]"] } ]
+    },
+    {
+      "name": "synthetic-badge",
+      "app": "web",
+      "caption": "Synthetic data only: the environment marker in the anaesthetist web app's top nav",
+      "start": "/web/lists",
+      "states": [ { "steps": [], "highlight": ["[data-aa-modal-scope] [data-shot=synthetic-data-badge]"] } ]
+    },
+    {
+      "name": "synthetic-badge",
+      "app": "mobile",
+      "caption": "Synthetic data only: the environment marker on the phone's More screen",
+      "start": "/mobile/more",
+      "states": [ { "steps": [], "highlight": ["[data-shot=synthetic-data-badge]"] } ]
     }
   ]
 }

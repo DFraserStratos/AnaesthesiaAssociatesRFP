@@ -1,0 +1,97 @@
+{
+  "id": "US-15.0.7",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "office-changes-time",
+      "app": "admin",
+      "caption": "The office moves Margaret Ellison's Booking from 16:00 to 16:30 and saves it",
+      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "states": [
+        {
+          "steps": [
+            { "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]" },
+            { "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]" },
+            { "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]" },
+            { "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]" },
+            { "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]" },
+            { "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]" },
+            { "click": "[data-shot=booking-save]" },
+            { "wait": "[data-shot=booking-saved-strip]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=booking-saved-strip]", "[data-shot=booking-patient] div:has(> dt:text-is(\"Scheduled\"))"]
+        }
+      ]
+    },
+    {
+      "name": "list-shows-new-time",
+      "app": "web",
+      "caption": "Dr Souter's List shows the office's new time, 16:30, with no sign-out",
+      "start": "/web/lists/L-34821-2026-07-21-PM",
+      "setup": [
+        { "goto": "/admin/day/2026-07-21/bookings/BK0009" },
+        { "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]" },
+        { "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]" },
+        { "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]" },
+        { "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]" },
+        { "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]" },
+        { "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]" },
+        { "click": "[data-shot=booking-save]" },
+        { "wait": "[data-shot=booking-saved-strip]" },
+        { "wait": 400 }
+      ],
+      "states": [
+        {
+          "steps": [ { "wait": 400 } ],
+          "highlight": ["tbody tr:has-text(\"Margaret Ellison\")"]
+        }
+      ]
+    },
+    {
+      "name": "list-shows-new-time",
+      "app": "mobile",
+      "caption": "On the phone, the office's saved change shows without signing out",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "states": [
+        {
+          "state": "office-saved",
+          "caption": "With the Booking open, a line says the office saved a change to its time",
+          "steps": [
+            { "trigger": "office-edits-booking" },
+            { "wait": "[data-shot=booking-office-saved]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=booking-office-saved]"]
+        },
+        {
+          "state": "list",
+          "caption": "Back on the List, Margaret Ellison's Booking shows the new time, 16:30",
+          "steps": [
+            { "trigger": "office-edits-booking" },
+            { "wait": "[data-shot=booking-office-saved]" },
+            { "click": "[data-testid=mobile-booking-header] >> role=button[name=\"List\"]" },
+            { "wait": "[data-testid=mobile-list-scroll]" },
+            { "wait": 500 }
+          ],
+          "highlight": ["[data-testid=mobile-list-scroll] button:has-text(\"Margaret Ellison\")"]
+        },
+        {
+          "state": "reopened",
+          "caption": "Opening the Booking again shows the scheduled time 16:30",
+          "steps": [
+            { "trigger": "office-edits-booking" },
+            { "wait": "[data-shot=booking-office-saved]" },
+            { "click": "[data-testid=mobile-booking-header] >> role=button[name=\"List\"]" },
+            { "wait": "[data-testid=mobile-list-scroll]" },
+            { "click": "[data-testid=mobile-list-scroll] button:has-text(\"Margaret Ellison\")" },
+            { "wait": "[data-testid=mobile-booking-header]" },
+            { "wait": 500 }
+          ],
+          "highlight": ["[data-testid=slide-booking] div:has(> dt:text-is(\"Scheduled\"))"]
+        }
+      ]
+    }
+  ]
+}

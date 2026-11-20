@@ -325,3 +325,40 @@ describe('DayGrid Draft Lists band and booking counts (catch-up Phase 31; US-13.
     expect(container.querySelector('[data-list-id="counted"] [data-shot="daygrid-block-count"]')?.getAttribute('data-booking-count')).toBe('3')
   })
 })
+
+describe('DayGrid pager (catch-up Phase 43)', () => {
+  function bigGrid(count: number, page: number, onPage = vi.fn()) {
+    const masters = useAppStore.getState().masters
+    const anaesthetists = Array.from({ length: count }, (_, i) => anaesthetist(`B${i + 1}`, `Dr Row${String(i + 1).padStart(2, '0')} Test`))
+    const views: Record<string, SlotView[]> = {}
+    anaesthetists.forEach((a, i) => {
+      views[a.registrationNumber] = [i % 2 === 0 ? view(a.registrationNumber, { kind: 'private', id: `L${i}` }) : view(a.registrationNumber, { status: 'holiday' })]
+    })
+    const utils = render(<DayGrid anaesthetists={anaesthetists} viewsByAnaesthetist={views} masters={masters} warningFlags={new Map()} onSelectSlot={vi.fn()} page={page} onPage={onPage} />)
+    return { ...utils, onPage }
+  }
+
+  it('shows no pager at demo scale (14 rows)', () => {
+    const { container } = bigGrid(14, 1)
+    expect(container.querySelector('[data-shot="day-grid-pager"]')).toBeNull()
+    expect(container.querySelectorAll('[data-day-grid-row]')).toHaveLength(14)
+  })
+
+  it('pages 85 rows in three pages of 30, and counts all 85 in the footer', () => {
+    const { container } = bigGrid(85, 3)
+    expect(container.querySelector('[data-shot="day-grid-pager"]')?.getAttribute('data-pages')).toBe('3')
+    expect(container.querySelectorAll('[data-day-grid-row]')).toHaveLength(25)
+    expect(screen.getByText('Anaesthetists 61 to 85 of 85')).toBeInTheDocument()
+    expect(screen.getByText(/of 85 anaesthetists have matching blocks/)).toBeInTheDocument()
+  })
+
+  it('a filter narrows before paging and returns to page 1', () => {
+    const { container, onPage } = bigGrid(85, 1)
+    fireEvent.click(screen.getByRole('button', { name: 'Holiday status' }))
+    expect(onPage).toHaveBeenCalledWith(1)
+    // The 43 matching rows (the private Lists) lead the page, the rest follow.
+    const rows = Array.from(container.querySelectorAll('[data-day-grid-row]'))
+    expect(rows).toHaveLength(30)
+    expect(rows.every((r) => r.getAttribute('data-filter-match') === 'true')).toBe(true)
+  })
+})
