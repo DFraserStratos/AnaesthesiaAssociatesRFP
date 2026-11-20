@@ -5,6 +5,9 @@ Buildbook method (`docs/BUILD-BOOK.md`). It fixes the 164 verified findings of t
 whole-codebase review, recorded in [FINDINGS.md](FINDINGS.md), and fixes five systemic causes at
 the root rather than finding by finding.
 
+**Programme status: COMPLETE (2026-11-20, B15, board 1.26.1).** See
+[review/CLOSING-REVIEW.md](review/CLOSING-REVIEW.md).
+
 ## Purpose and outcome
 
 The board is the single place where the requirements catalogue is read, edited and arranged, by a

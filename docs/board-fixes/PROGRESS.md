@@ -142,10 +142,10 @@ Agent tools in parallel: B12 (after B02), B13 (REQ-07b after B04); both before B
 | B12 | Build-plan tools | COMPLETE | after B02; D-08 and B12-Q3, Q6 recorded (accepted decision 28); D-03 not needed | 2026-11-20, board 1.25.0; all 15 findings fixed, R-07 closed; A-4 and A-10 confirmed and fixed; lanes read on master (migration at the master merge) |
 | B13 | Consistency and linking tools | COMPLETE | REQ-07b after B04 (D-03, landed); B13-Q1 to Q5 recorded (accepted decision 27) | 2026-11-20, board 1.24.0; all 14 findings fixed; stage 1 parse error found and fixed; new agent suites for B12 to add to verify:board |
 | B14 | Scripts, kit and docs | COMPLETE | D-09 and B14-Q1 to Q5 recorded (accepted decision 29) | 2026-11-20, board 1.26.0; all 16 findings fixed; the exported kit passes its own check, typecheck, Vitest and region sweep |
-| B15 | Closing audit | IN PROGRESS | B15-Q2 to Q5, Q7 recorded (accepted decision 30) | 2026-11-20, audit commit `d5499c70` |
+| B15 | Closing audit | COMPLETE | B15-Q2 to Q5, Q7 recorded (accepted decision 30) | 2026-11-20, board 1.26.1; 164 of 164 dispositions verified, A-1 to A-10 hold, no regression found; **programme complete** (review/CLOSING-REVIEW.md) |
 
-All phases are ready for implementation planning. None is ready to build until its gate's
-decisions are recorded under "Accepted decisions".
+**Programme COMPLETE (2026-11-20, B15).** Every finding has a verified disposition; deferred follow-up and
+manual acceptance owed are listed in `review/CLOSING-REVIEW.md` section 7.
 
 ## Deferred decisions
 
@@ -688,7 +688,7 @@ decisions" section and resolved in that phase's planning.
 | `/history-blob/<sha>?src=assets/x.png` serves any blob in the repository by full sha, typed by `src`'s extension (same-origin only; needs the hash) | B01 security review | B08 | **Done in B08**: the `src` case is gated by `blobWasAt` |
 | `catalogueDiff.ts:135` compares git's real top with `REPO_ROOT` as given (the E7a mixed-path defect) | B01 completeness review | B09 | **Done in B09**: `fileInRepo` resolves `REPO_ROOT` through `realPath` (test in `tests/catalogueDiff.test.ts`) |
 | A base folder that is itself an escaping link (`assets/` linked out of the requirements folder) is not warned: `linkOut` compares against the base's real path | B01 completeness review | B14 (moved by B03) | not built in B03 (outside its 14 findings; R-47's isolation does not depend on it); a check warning would suffice |
-| A top-level visit from another site can still open Vite's `/__open-in-editor` (navigations are allowed so links to the board work); Vite still serves the board's own source, `node_modules` and any `.html` outside the catalogue as same-origin pages (SPEC residual) | B01 | B15 | Vite's dev model; consider refusing cross-site navigations to `/__open-in-editor` |
+| A top-level visit from another site can still open Vite's `/__open-in-editor` (navigations are allowed so links to the board work); Vite still serves the board's own source, `node_modules` and any `.html` outside the catalogue as same-origin pages (SPEC residual) | B01 | B15 | Vite's dev model; consider refusing cross-site navigations to `/__open-in-editor`; **B15: deferred** to the board owner (CLOSING-REVIEW section 7); CHANGELOG 1.13.0 corrected |
 | A screenshot whose file name holds a backslash cannot be served (`\` is read as `/`, as the file system on Windows would) | B01 correctness review | B14 (docs) | **Done in B14**: README, Screenshots paragraph |
 | `verify:board` saw 5 s Vitest timeouts in `gitHistory.test.ts` under full parallel load (once in four runs; passes alone) | B01 | B12 or B14 | the live origin test adds a Vite boot to the load; consider raising git-test timeouts |
 | The 5 s timeouts recurred in B02 across `gitHistory`, `catalogueDiff`, `api` and `catalogue` tests while the machine's load average was 20 to 26 (antivirus scanning); all pass alone, and the suite passed once the load fell | B02 | B12 or B14 | same item as above; B02's script tests that spawn node carry a 60 s timeout |
@@ -704,11 +704,11 @@ decisions" section and resolved in that phase's planning.
 | `lintFrontmatter` keeps a `#` warning quiet when any other frontmatter string holds the same text after the `#` | B04 review | none | contrived false negative |
 | A mermaid edge label written without spaces (`A--text-->B`) is read as a node `text`; unverified whether mermaid accepts that form | B04 review | none | |
 | A retired artifact's `page_offset` is applied to its replacement's pages (from before B04) | B04 review | B14 (docs) | **Done in B14**: SCHEMA "Which artifact" states the rule |
-| The 5 s Vitest timeouts in git and live-server tests recurred in B04 (load 20 to 34); the same files time out on the pre-B04 board too | B04 | B15 (moved by B14) | same item as B01's and B02's |
+| The 5 s Vitest timeouts in git and live-server tests recurred in B04 (load 20 to 34); the same files time out on the pre-B04 board too | B04 | B15 (moved by B14) | same item as B01's and B02's; **Done in B15**: Vitest `hookTimeout` 60 s (the hooks were what failed); final `verify:board` green at load 16 to 19; individual test limits unchanged (deferred, watch) |
 | git's own rename detection (`-M`) can pair a deleted card with a similar new card added in the same commit, so the new card inherits the old one's history with no deletion bound | B08 review | B05 | the same case as REQ-11.4 (reuse with no committed deletion); B05-REQ-20's own cut covers it |
 | An LFS version is served as its pointer (`GIT_LFS_SKIP_SMUDGE`, so a request never fetches); viewers show the pointer text | B08 review | B10 | a viewer could say "stored in LFS" instead |
-| `e2e/one-rule.spec.ts` R-101 ("a decomposed passage is boxed over exactly its words") fails 2 runs in 3 on this machine, on the pre-B05 board as well (pixel box off by more than its tolerance) | B05 | B10, then B15 | passed in B04's runs; viewer geometry, not the write model |
-| An artifact ID reissued before the old sidecar's deletion is committed shows the old sidecar's commits as its past (artifacts have no journal to mark a new life; git sees an edit) | B05 review | none (B15 to confirm) | the card case is cut by the journal; an artifact would need a marker kept outside the catalogue |
+| `e2e/one-rule.spec.ts` R-101 ("a decomposed passage is boxed over exactly its words") fails 2 runs in 3 on this machine, on the pre-B05 board as well (pixel box off by more than its tolerance) | B05 | B10, then B15 | passed in B04's runs; viewer geometry, not the write model; **B15:** not seen in two full runs (144 of 144, and the kit 137 of 137); deferred to the board owner (watch) |
+| An artifact ID reissued before the old sidecar's deletion is committed shows the old sidecar's commits as its past (artifacts have no journal to mark a new life; git sees an edit) | B05 review | none (B15 to confirm) | the card case is cut by the journal; an artifact would need a marker kept outside the catalogue; **B15: confirmed**, accepted under D-05; no owner |
 | A card deleted by hand and re-created as another card inside one watcher debounce (600 ms) reads as an edit, so no new life starts | B05 review | none | same class as B08's `-M` pairing row |
 | `writeAll` (`server/catalogueApi.ts`) reads a file's bytes for put-back a moment before the writer's own read; an agent write in that window would be put back over if a later file then failed | B05 review | none | microseconds, on a failure path only |
 | `src/components/useEditableRecord.ts` and `shared/steps.ts` keep their own JSON equality; B05's three copies became `sameValue` (`shared/patch.ts`) | B05 review | B06, B09 | adopt `sameValue` when touching those files |
@@ -720,9 +720,9 @@ decisions" section and resolved in that phase's planning.
 | A save's own delivery and its HTTP answer travel on two sockets; a delivery older than an answer the tab already applied could in principle arrive after it (deliveries are sent before the answer, so only on a severe stall) | B07 | B06 | if sheet conflict handling needs it, put `seq` on write answers |
 | `tests/resync.test.ts` and `tests/storeSync.test.ts` twins share `artifactInfo`'s process-wide cache, so artifact facts are compared partly through it | B07 review | none | facts are cached per file version, which is what a full read uses too |
 | The `logged` deliveries in `store.ts` are bounded only by how long a load takes (a load that never settles would let it grow) | B07 review | none | dev-only; `fetch` has no timeout today |
-| `e2e/board-mapped.spec.ts` "clicking a lane name renames it" failed once in a full fixture run at load 17 and passed 6 of 6 on repeat (B05's flaky row) | B07 | B15 | same item as B05's |
-| `e2e/one-rule.spec.ts` R-101 failed in every full fixture run in B06 and in 4 to 12 of 12 single runs; the pre-B06 board fails it 4 of 6 and 1 of 3, and B06's board with its artifact page changes taken out 3 of 8 against 4 of 8 with them | B06 | B10, then B15 | the viewer pixel-box flake (B05's row), not the edit sheets |
-| Settings rows are keyed by index, so focus falls to `body` after Remove or Move; every row's buttons are named just "Remove", "Move up", "Move down"; the accent and tone swatch radio groups have no arrow keys | B06 review | none (B15 to judge) | pre-existing accessibility in Settings, outside B06's findings |
+| `e2e/board-mapped.spec.ts` "clicking a lane name renames it" failed once in a full fixture run at load 17 and passed 6 of 6 on repeat (B05's flaky row) | B07 | B15 | same item as B05's; **B15:** not seen in two full runs (144 of 144, and the kit 137 of 137); deferred to the board owner (watch) |
+| `e2e/one-rule.spec.ts` R-101 failed in every full fixture run in B06 and in 4 to 12 of 12 single runs; the pre-B06 board fails it 4 of 6 and 1 of 3, and B06's board with its artifact page changes taken out 3 of 8 against 4 of 8 with them | B06 | B10, then B15 | the viewer pixel-box flake (B05's row), not the edit sheets; **B15:** not seen in two full runs (144 of 144, and the kit 137 of 137); deferred to the board owner (watch) |
+| Settings rows are keyed by index, so focus falls to `body` after Remove or Move; every row's buttons are named just "Remove", "Move up", "Move down"; the accent and tone swatch radio groups have no arrow keys | B06 review | none (B15 to judge) | pre-existing accessibility in Settings, outside B06's findings; **B15: deferred** to the board owner (pre-existing accessibility) |
 | Unsaved Settings edits are not counted by the leave prompt (`hasUnsavedWork`), and Discard changes in Settings does not ask | B06 review | none (a product choice) | pre-existing; DESIGN's "every way out asks" is about sheets |
 | The veil markup and its Escape handling exist in `Sheet.tsx` and in the artifact panel's `PanelVeil` / `usePanelKeys` (now exported from `ArtifactPanel.tsx` for the artifact page's orphan state) | B06 review | B10 | B10 owns `src/artifacts/*`; one shared veil component would do |
 | The Writing voice section hand-rolls the conflict banner and save bar the other sections now share (`ConflictBanner`, `SaveBar`) | B06 review | none | cosmetic duplication |
@@ -732,35 +732,108 @@ decisions" section and resolved in that phase's planning.
 | A card first seen outside any repository (or clean with no git history) shows no "Created" entry; a second `seen` after an offline delete and re-create is not a life start | B09 review | none | REQ-12 rule 3 covers the uncommitted case; the board's own create starts a life |
 | `shared/steps.ts` still writes `lcsPairs(...) ?? []`, now unreachable; `alike` is exported for tests only | B09 review | B14 | harmless; `steps.ts` left untouched (P-06) |
 | `shared/proseDiff.ts` keeps its own fence heuristics (B04's row) | B04 | none | not needed by any B09 finding; left |
-| `e2e/artifacts.spec.ts` "stepping back, a jump from the panel ... reduced motion fly nothing" failed once in B09's full fixture run (load about 12) and passed 3 of 3 alone | B09 | B15 | viewer animation timing, no diff code |
+| `e2e/artifacts.spec.ts` "stepping back, a jump from the panel ... reduced motion fly nothing" failed once in B09's full fixture run (load about 12) and passed 3 of 3 alone | B09 | B15 | viewer animation timing, no diff code; **B15:** not seen in two full runs (144 of 144, and the kit 137 of 137); deferred to the board owner (watch) |
 | `tests/catalogue.test.ts` "round-trips every item file" failed once in a `verify:board` run at load 22 and passed alone and in the next full run | B09 | B12 or B14 | the timeout rows above |
 | `tests/api.test.ts` "serves a version of a removed artifact ..." and once `diffUi` (R-92) and `originLive` failed in `verify:board` runs at load 18 to 24; each passes alone (`diffUi` 3 of 3) and in the next full run | B10 | B12 or B14 | the timeout rows above |
-| `e2e/board-mapped.spec.ts` "clicking a lane name renames it" failed in one of two full fixture runs and 1 of 3 alone (no B10 code on that path) | B10 | B15 | B05's and B07's row |
-| `e2e/one-rule.spec.ts` R-101 (the viewer pixel-box flake routed to B10) passed 3 of 3 alone and in both full fixture runs after B10; not traced to one cause (B10's Markdown reader now places a request once, not on every effect run) | B10 | B15 | confirm over more runs |
+| `e2e/board-mapped.spec.ts` "clicking a lane name renames it" failed in one of two full fixture runs and 1 of 3 alone (no B10 code on that path) | B10 | B15 | B05's and B07's row; **B15:** not seen in two full runs (144 of 144, and the kit 137 of 137); deferred to the board owner (watch) |
+| `e2e/one-rule.spec.ts` R-101 (the viewer pixel-box flake routed to B10) passed 3 of 3 alone and in both full fixture runs after B10; not traced to one cause (B10's Markdown reader now places a request once, not on every effect run) | B10 | B15 | confirm over more runs; **B15:** not seen in two full runs (144 of 144, and the kit 137 of 137); deferred to the board owner (watch) |
 | A PDF thumbnail opens its document through `pdfDocs.ts`, which reads every page's size first (as `loadPdf` did), so a thumbnail of a long PDF waits on all its pages | B10 review | none | the reader needs the sizes; a first-page-only open would be a second path |
 | History compare checks an old non-PDF version with a HEAD and `Image.decode()` before its `<img>` loads it (three requests, cached); an SVG with no size might fail `decode()` in a browser other than Chromium (unverified) | B10 review | none | the board is used in Chromium-based browsers |
 | An LFS version is still served as its pointer; the compare and timeline now read "Could not be drawn" for it rather than "never committed" | B10 | none | B08's row; "stored in LFS" wording not added |
 | A second lane-list write sent before the first has answered (Add lane twice quickly, or Add lane while a delete is in flight) carries the old `lanesRev` and is refused ("Lanes not saved"), nothing written | B11 review | none | safe; a queue for lane writes (as Freeform moves have) would send the second on the first's rev |
 | A renamed collapsed lane shows open for one render until the server answers (the key moves on success) | B11 review | none | cosmetic |
 | In a collapsed lane the open card is placed at the strip's top while the hidden cards of its stack keep their stacked places (one may share its spot) | B11 review | none | hidden cards are never hit-tested; a collapsed lane's drop index is the stack's foot |
-| The full fixture e2e run at load 29 lost `board-mapped` "dragging a feature to an earlier slot", `artifacts` R-104 and `diff` "uncommitted edits arrive live"; each passed 3 of 3 alone, and `board-mapped` 13 of 13 twice, `artifacts` with `diff` 59 of 59 | B11 | B15 | load timing, the same class as the rows above |
+| The full fixture e2e run at load 29 lost `board-mapped` "dragging a feature to an earlier slot", `artifacts` R-104 and `diff` "uncommitted edits arrive live"; each passed 3 of 3 alone, and `board-mapped` 13 of 13 twice, `artifacts` with `diff` 59 of 59 | B11 | B15 | load timing, the same class as the rows above; **B15:** not seen in two full runs (144 of 144, and the kit 137 of 137); deferred to the board owner (watch) |
 | `consistency-rulings.js` had not parsed since 2026-10-20 (an unescaped backtick in a template literal), so stage 1 of the consistency review could not run | B13 | B13 | **Done in B13** (the REQ-09 proof parses the workflow) |
 | `scripts/linkProposals.ts` has its own code-masking copy | B04 review | B13 | **Done in B13**: it uses `markdownCode.ts` and `LINK_SOURCE` |
 | `run-build-phase/tools/phase-context.mjs` (about line 210) matches note cites by title words, a third note rule | B13 review | B14 (left by B12: outside its findings) | could use B04's import as `consistency-review/scripts/board-kit.mjs` does |
 | The new agent suites (`consistency-review.test.mjs`, `workflows.test.mjs`) run by hand until `verify:board` runs every `*.test.mjs` under `agent/` | B13 | B12 | **Done in B12**: `verify` runs `node --test "agent/**/*.test.mjs"` (73 tests) |
 | `apply-links.ts` and `link-index.ts` take the links root from the script's folder only, so a CLI test needs a named run folder | B13 | B14 | the R-31 env-path sweep |
 | `kit:export` copies untracked, git-ignored files: the `.pdf-facts/` cache (project words) and a leftover `.origin-fixture/` (an unreadable file aborts the export); and `agent/shared-rules.test.mjs` and `tests/inPlace.test.ts` hold denied words, so a scratch export fails its leak check before B12's terms are reached | B12 | B14 (D-09) | **Done in B14**: built from HEAD (decision 29); the two test files reworded; the HEAD export passes |
-| `tests/originLive.test.ts` leaves its `.origin-fixture/<dir>` behind when its hook times out under load | B12 | B15 (moved by B14, decision 29) | no longer reaches a kit (HEAD source); cleanup in a `finally` still open |
+| `tests/originLive.test.ts` leaves its `.origin-fixture/<dir>` behind when its hook times out under load | B12 | B15 (moved by B14, decision 29) | no longer reaches a kit (HEAD source); cleanup in a `finally` still open; **Done in B15**: cleanup in a `finally`, hook 60 s |
 | `plan-state.mjs` reads each changed item's current status from the working tree even with `--to` (the R-138 class) | B12 SPEC | B14 or none | display only; regrade-ids now reads at the ref |
-| The 5 s and 10 s Vitest timeouts recurred in B12's full runs at load 20 to 46 (`originLive`, `api`, `catalogue`, `skillInstall`); each passed alone and the next full run was green | B12 | B14 | the timeout rows above; **moved to B15** (decision 29). B14's first full run lost `originLive`'s `afterAll` hook (10 s) at load 16 to 25; it passed alone (52 of 52) and the next full run was green |
-| B14's code rows not taken (decision 29): the escaping base folder warning, `resolve-source`/`new-artifact` unguarded facts, tests-only tsconfig, `steps.ts ?? []`, `phase-context.mjs`'s note rule, `plan-state --to`, the git-test timeouts, `.origin-fixture` cleanup | B01 to B13 | B15 | each row above keeps its note; B15 judges them |
+| The 5 s and 10 s Vitest timeouts recurred in B12's full runs at load 20 to 46 (`originLive`, `api`, `catalogue`, `skillInstall`); each passed alone and the next full run was green | B12 | B14 | the timeout rows above; **moved to B15** (decision 29). B14's first full run lost `originLive`'s `afterAll` hook (10 s) at load 16 to 25; it passed alone (52 of 52) and the next full run was green; **Done in B15**: Vitest `hookTimeout` 60 s (the hooks were what failed); final `verify:board` green at load 16 to 19; individual test limits unchanged (deferred, watch) |
+| B14's code rows not taken (decision 29): the escaping base folder warning, `resolve-source`/`new-artifact` unguarded facts, tests-only tsconfig, `steps.ts ?? []`, `phase-context.mjs`'s note rule, `plan-state --to`, the git-test timeouts, `.origin-fixture` cleanup | B01 to B13 | B15 | each row above keeps its note; B15 judges them; **B15: deferred** to the board owner, each listed in CLOSING-REVIEW section 7 (the `.origin-fixture` cleanup and timeouts done in B15) |
 | No upgrade mode for a board already adopted: an adopter re-exports to a fresh folder and copies over by hand (README, ADOPTING "Upgrading") | B14 (B14-Q2) | none | a `kit:export --upgrade` that keeps `requirements/` and the "This repo" blocks would be later work |
-| `e2e/board-edges.spec.ts` (real-catalogue project) fails its three tests ("edges missing on load", 322 missing) on the pre-B14 board too (a scratch copy of `0047a169`, own port) | B14 | B15 | not B14 code: `board-edges` is untouched; B11's canvas area |
+| `e2e/board-edges.spec.ts` (real-catalogue project) fails its three tests ("edges missing on load", 322 missing) on the pre-B14 board too (a scratch copy of `0047a169`, own port) | B14 | B15 | not B14 code: `board-edges` is untouched; B11's canvas area; **Done in B15**: a stale spec (Mapped is the default since 1.12); it now pins Freeform, 3 of 3 |
 | A screenshot kept because another item lists it is never revisited once that item drops it (the check does not flag an unlisted file) | B14 review | none | documented in README's capture Output; a later recipe run removes it |
-| `requirements/SCHEMA.md`'s Sources examples cite this project's RFP (`"RFP p.27 · Pricing Engine ..."`, AR-15) and ship in the kit; no deny term matches them | B14 | B15 | neutral examples would read better; not a leak of people or numbers |
+| `requirements/SCHEMA.md`'s Sources examples cite this project's RFP (`"RFP p.27 · Pricing Engine ..."`, AR-15) and ship in the kit; no deny term matches them | B14 | B15 | neutral examples would read better; not a leak of people or numbers; **B15: deferred** to the board owner (kit); UP-6 |
 | Card find has no DESIGN line (B10's suggestion) | B10 | none | left: DESIGN.md was not otherwise touched in B14 |
+| Plan tools fall back to built-in status lists on an unreadable `board.config.json`, and read an unreadable `status-recodes.json` as none (SY-1); the board does the same for the recodes file, which also lowers the high-water mark (SY-4) | B15 systemic review | board owner | pre-existing; decision 16 kept the tools' reader; outcome 2 met with deviations |
+| No page-level boundary over the masthead, problem pill and new-card button (SY-2) | B15 systemic review | board owner | D-06 named views and sheets only |
+| Mermaid fence extraction (`shared/files.ts`) and the Diff splitter keep their own fence tests (SY-3, SY-5) | B15 systemic review | board owner | the second is B04's row |
+| Two `git` spawns skip `gitEnv` (SY-6); `capture --only` recursion has no cycle guard (SY-7); `/API` spellings reach the SPA page (SY-8) | B15 systemic review | board owner | nits, no security effect |
+| Layout PUT records a path-like card ID (CO-2); item delete removes screenshots after the atomic step (CO-3); rename detection unbounded on a huge repository (CO-4, unmeasured); a 409 when the patch already equals disk (CO-1, as D-04a states); CO-5 to CO-8 nits | B15 correctness review | board owner | pre-existing or by decision; see `review/CLOSING-CORRECTNESS.md` |
 
 ## Phase entries
+
+### B15 · Closing audit · COMPLETE · 2026-11-20
+
+Board 1.26.0 to **1.26.1**, on `board-fixes` in the programme worktree (master had nothing new; no merge). Audit
+commit `d5499c70`; B15's code and doc changes in `f1f83eff` (checkpoint, the kit's source); this entry with the
+closing report in the `B15 complete` commit. Decisions: accepted decision 30 (B15-Q4, Q5, Q7 asked; Q2 from the
+kick-off prompt; Q3 settled by the session). Plan: `phases/B15-closing-audit/IMPLEMENTATION.md`. Report:
+**`review/CLOSING-REVIEW.md`** (coverage, verdicts, proof, the five lists).
+
+**Dispositions (B15 owns no finding; it verifies all 164).** Mechanical cross-check: 164 of 164 with exactly one
+final disposition, 163 Fixed and R-35 Won't fix (decision 13); no gap, duplicate, conflict or move; every split
+delivery has both halves. Fail-first re-run independently (B15-Q3 sample, 69 findings plus A-2, A-4, A-10) on the
+pre-phase code and at HEAD: every one fails for its defect and passes now (R-07's plan-tool half is B12's
+recorded guard). Four proofs the auditors could not show were re-run by B15: R-08 by hand on the old
+`links:apply` (a removed link came back), R-102, R-12 and R-98 by their phase's own e2e spec on the pre-phase
+code (ports 5791 to 5793). Evidence: `review/CLOSING-FAILFIRST-APP.md`, `review/CLOSING-FAILFIRST-TOOLS.md`.
+A-1 to A-10 all hold at the audit commit (table in CLOSING-REVIEW section 2).
+
+**What shipped (small confirmed fixes, B15-REQ-17):**
+- `e2e/board-edges.spec.ts` pins Freeform: the real-catalogue project failed 3 of 3 (322 "missing" edges, on the
+  pre-B14 board too) because Mapped became the default in 1.12 and joins only the open card's lineage; now 3 of 3.
+  Test-only; the proof is that failing run and the pass.
+- `tests/originLive.test.ts`: teardown in a `finally` with a 60 s limit (the audit-commit `verify:board` failed on
+  its 10 s `afterAll`; `.origin-fixture/` folders were left behind).
+- `vite.config.ts`: Vitest `hookTimeout` 60 s (the first final run failed `exportKit` and `skillInstall`
+  `afterAll` cleanups at load 15 with all 1,191 tests passing; the rerun was green). A recorded manual check: a
+  load-dependent timeout has no fail-first test.
+- Docs (text only): README folder map, START-HERE `.claude/skills/` line, CHANGELOG 1.13.0's
+  `/__open-in-editor` claim; CHANGELOG 1.26.1.
+
+**Touch-rights edits (convention 11):** `tests/originLive.test.ts` (B01), `vite.config.ts` (B01, B14),
+`e2e/board-edges.spec.ts` (B11's area), `README.md`, `starter/START-HERE.html`, `CHANGELOG.md` 1.13.0 line (B14's
+docs, B01's entry); `PLAN.md` and `index.html` closing status only.
+
+**Deviations:** (1) The audit commit is `board-fixes`' head, not master (convention 16). (2) Four fail-first
+proofs needed B15's own runs (above). (3) Two test-harness fixes (timeouts) are proven by recorded failing runs,
+not tests. (4) The live `plan.config.json` keys stay unwritten (decision 28: the owner applies them at the master
+merge).
+
+**Verification:** `verify:board` at the audit commit: red (`originLive` hook); final: **green** (77 files, 1,191
+Vitest tests, check OK, 73 agent tests). Playwright: fixture 5482 and real 5483, **144 of 144**. `npm run check`
+OK. Live plan tools read-only: exit 0, nothing written. Installed skills match `agent/` exactly. Kit from HEAD
+`f1f83eff` to the scratchpad (outside any repository): 347 files, leak and reference checks clean, versions agree
+(1.26.1), starter "This repo" blocks; in the kit `npm ci` (network), check, `verify` (1,142 Vitest, 72 agent) and
+fixture e2e on 5792 **137 of 137**; ADOPTING in a scratch repo through `install-skills` (7 skills, 3 workflows).
+No programme commit changed a record, `aa-prototype/`, `contract-picker-mock/` or the catch-up plan; root
+`CLAUDE.md` only B12's recorded `verify:board` line.
+
+**Review (B15-REQ-14):** three fresh Sonnet reviewers: unmet promises (with quality and conventions), systemic
+regression (with origin security), correctness (with agent-tools truth); files `review/CLOSING-*.md`. 23 findings,
+no programme regression. Fixed: UP-1 (`board-edges`), UP-2, UP-3, UP-5 (docs). Owed: UP-4/CO-9 (`lanes` key).
+Not a defect: CO-1 (decision 20). Deferred to the board owner: SY-1 to SY-8, CO-2 to CO-8, UP-6 (Discovered rows).
+
+**Outcomes:** 1 Met; 2 Met with accepted deviations (SY-1, SY-4); 3 Met; 4 Met; 5 Met; 6 Met with accepted
+deviations (decision 13; `/__open-in-editor` by top-level visit); 7 Met with accepted deviations (the owed `lanes`
+key). Systemic issues: 1, 3, 4, 5 Met; 2 Met with deviations.
+
+**Doc facts (convention 12):** `requirements-board/README.md` Layout (`shared/statuses.ts`, `shared/bom.ts`,
+`server/historyDir.ts`); `starter/START-HERE.html` "I edited a skill" answer; `CHANGELOG.md` 1.13.0 origin bullet
+and the 1.26.1 entry; headers of `e2e/board-edges.spec.ts` (comment) and `vite.config.ts` (comment). Root
+`CLAUDE.md` not edited (decision 30, Q7): its kit sentence could add that an export is built from HEAD and
+refuses a used target; proposed to the user.
+
+**Manual acceptance owed (the user):** the `plan.config.json` keys at the master merge (B12's entry); the
+`CLAUDE.md` kit wording; an optional UI walk-through (CLOSING-REVIEW section 7).
+
+**Programme status: COMPLETE** (decision 30, Q5). Next: merge `board-fixes` into master when the owner chooses
+(convention 16), applying the owed migration then.
 
 ### B14 · Scripts, kit and docs · COMPLETE · 2026-11-20
 
