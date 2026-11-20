@@ -128,7 +128,7 @@ server/
                      never pruned (an old version's entry stays): delete the folder any time, it only costs speed
 scripts/       check, export-csv, capture (+ captureFiles: generated-file naming, pruning and `--only`, testable;
                captureReport), link-index, apply-links (+ linkProposals: the applier, linkRuns: run folders, testable),
-               new-artifact, shoot-steps, resolve-source, recode-statuses, install-skills, export-kit;
+               new-artifact, shoot-steps, resolve-source, recode-statuses, install-skills;
                userPath: a typed path read from the folder the command was run from
 src/
   store.ts       catalogue mirror (deliveries in order, never under a snapshot), card-move queue, derived index, view prefs
@@ -476,7 +476,8 @@ catalogue. It is optional: a project with no `capture` section in `board.config.
 - **Output:** `requirements/assets/<ID>/<app>-<name>[-<state>].png`, linked into the item's `images`
   (hand-added images are kept). A generated file the item's recipe no longer makes is deleted, unless
   another item's `images` still lists it: then it is kept and the run names it with the items that use
-  it, so no item is left pointing at a missing image. And the report: a full run writes
+  it, so no item is left pointing at a missing image. Once no item lists it, delete it by hand (a later
+  run of that recipe also removes it). And the report: a full run writes
   it whole; a run limited with `--only` updates those IDs' rows and the totals, carrying over failures
   recorded for other IDs (`scripts/captureReport.ts`).
   A file counts as generated when its name starts with a screenshot app's key and a dash
@@ -593,10 +594,10 @@ skill's "This repo" section is swapped for `starter/this-repo/<skill>.md`, and p
   when the folder has other files and no `requirements-board/`, or when its `requirements-board/` is not
   an untouched earlier kit: each export writes `.kit-export.json` (version, commit, a hash per file), and
   a re-export replaces the folder only while every file matches it (a catalogue edit, a `.history/`
-  from opening its board, a new `package-lock.json` all refuse). Its `node_modules` is kept; nothing
+  from opening its board, a `package-lock.json` that `npm install` rewrote all refuse). Its `node_modules` is kept; nothing
   else in the target is touched. There is no override: export into an empty folder.
-- **Upgrading a board already in use:** export to a fresh folder, then copy everything in its
-  `requirements-board/` except `requirements/` over the adopting repo's board, and run `install-skills`.
+- **Upgrading a board already in use:** export to a fresh folder and follow ADOPTING's "Upgrading"
+  (replace everything but `requirements/`, then put back the skills' filled-in "This repo" blocks).
 
 `START-HERE.html` (from `starter/START-HERE.html`, the version, source commit and loop diagram filled
 in) is a static page the recipient opens before anything runs: where the folder goes, one prompt that

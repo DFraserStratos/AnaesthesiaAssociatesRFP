@@ -102,9 +102,32 @@ describe('kit:export refuses a target that holds or is a live board (R-05)', () 
   it('reads --to .. from the repo root, as npm --prefix runs it: never the board (R-31)', () => {
     const { root, board } = sourceRepo()
     const before = snapshot(root)
-    exportKit(board, root, '--to', '..')
-    // `..` from the root is the scratch folder above it: the board is untouched whatever happens there.
+    const r = exportKit(board, root, '--to', '..')
+    // `..` from the root is the scratch folder above it, which holds the repo: refused, the board untouched.
+    expect(r.status).toBe(1)
+    expect(r.stderr).toMatch(/has other files and no requirements-board/)
     expect(snapshot(root)).toEqual(before)
+  })
+
+  it('reads a relative --to from the repo root, and a second export there does not nest (R-31)', () => {
+    const { top, root, board } = sourceRepo()
+    const out = join(top, 'outer', 'kit-out')
+    expect(exportKit(board, join(top, 'outer'), '--to', 'kit-out').status).toBe(0)
+    const again = exportKit(board, join(top, 'outer'), '--to', 'kit-out')
+    expect(again.status, again.stderr).toBe(0)
+    expect(existsSync(join(out, 'requirements-board', '.kit-export.json'))).toBe(true)
+    expect(existsSync(join(out, 'requirements-board', 'kit-out'))).toBe(false)
+    expect(existsSync(join(board, 'kit-out'))).toBe(false)
+    expect(existsSync(join(root, 'kit-out'))).toBe(false)
+  })
+
+  it('--dry-run stages and checks, and writes nothing to the target', () => {
+    const { top, root, board } = sourceRepo()
+    const out = join(top, 'staging')
+    const r = exportKit(board, root, '--to', out, '--dry-run')
+    expect(r.status, r.stderr).toBe(0)
+    expect(r.stdout).toMatch(/staged in/)
+    expect(existsSync(out)).toBe(false)
   })
 
   it('refuses a folder inside the board, and a path spelled through a link to the repo root', () => {
@@ -144,6 +167,15 @@ describe('kit:export refuses a target that holds or is a live board (R-05)', () 
     expect(readFileSync(join(out, 'requirements-board', 'node_modules', 'dep', 'index.js'), 'utf8')).toBe('kept\n')
     expect(readFileSync(join(out, 'NOTES.txt'), 'utf8')).toBe('mine\n')
     expect(readdirSync(out).filter((f) => f.startsWith('.requirements-board'))).toEqual([])
+  })
+
+  it('is not blocked by a swap folder an interrupted export left behind', () => {
+    const { top, root, board } = sourceRepo()
+    const out = join(top, 'staging')
+    put(join(out, '.requirements-board.incoming-4242', 'half.txt'), 'half written\n')
+    const r = exportKit(board, root, '--to', out)
+    expect(r.status, r.stderr).toBe(0)
+    expect(existsSync(join(out, 'requirements-board', '.kit-export.json'))).toBe(true)
   })
 
   for (const [what, change] of [

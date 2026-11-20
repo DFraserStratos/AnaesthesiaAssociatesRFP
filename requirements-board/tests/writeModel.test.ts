@@ -305,7 +305,9 @@ describe('the artifact details save (R-37, REQ-10)', () => {
       cpSync(REQUIREMENTS_DIR, copy, { recursive: true, filter: (src) => !src.startsWith(join(REQUIREMENTS_DIR, 'assets')) })
       const a = createCatalogueApi(copy)
       const ids = Object.keys(a.getState().artifacts)
-      expect(ids.length).toBeGreaterThan(10)
+      // Every sidecar on disk loads and is swept (a kit's starter has one), so the loop never covers nothing.
+      expect(ids.length).toBeGreaterThan(0)
+      expect(ids.length).toBe(readdirSync(join(copy, 'artifacts')).filter((f) => /^AR-\d+\.md$/.test(f)).length)
       for (const id of ids) {
         const file = artifactSidecarPath(id, copy)
         const before = readFileSync(file, 'utf8')

@@ -18,7 +18,7 @@
  * decides who owns a folder.
  */
 import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
-import { join, relative } from 'node:path'
+import { dirname, join, relative, resolve, sep } from 'node:path'
 import { hasJunk, isJunk } from './junk.ts'
 
 export type InstallMode = 'copy' | 'link'
@@ -35,10 +35,11 @@ const MANIFEST = join('.claude', 'requirements-board.json')
 /** The mode `.claude/` is in for this board: copy (a list), link (links into the board), or null. */
 export function installMode(repo: string, board: string): InstallMode | null {
   if (readManifest(repo).length) return 'copy'
+  const agentDir = join(repo, board, 'agent')
   const skillsDir = join(repo, '.claude', 'skills')
   const workflowsDir = join(repo, '.claude', 'workflows')
   const entries = [...list(skillsDir).map((n) => join(skillsDir, n)), ...list(workflowsDir).map((n) => join(workflowsDir, n))]
-  return entries.some((abs) => linksIntoBoard(abs, board) || isBoardLinkFolder(abs, board)) ? 'link' : null
+  return entries.some((abs) => linksIntoBoard(abs, agentDir) || isBoardLinkFolder(abs, agentDir)) ? 'link' : null
 }
 
 /** `board` is the board's folder name inside `repo` (e.g. `requirements-board`). */
@@ -53,7 +54,7 @@ export function linkSkills(repo: string, board: string, mode?: InstallMode): Lin
   const installed = new Set(readManifest(repo))
   const next: string[] = []
   /** Ours to replace or remove: installed by an earlier run, or a link (or folder of links) into the board. */
-  const ours = (rel: string, abs: string) => installed.has(rel) || linksIntoBoard(abs, board) || isBoardLinkFolder(abs, board)
+  const ours = (rel: string, abs: string) => installed.has(rel) || linksIntoBoard(abs, agent) || isBoardLinkFolder(abs, agent)
   const clear = (rel: string, abs: string) => {
     if (!existsSync(abs) && !isLink(abs)) return true
     if (!ours(rel, abs)) {
@@ -138,16 +139,21 @@ function list(dir: string): string[] {
   }
 }
 
-/** A symlink whose target is in the board's `agent/` folder (whether or not the target still exists). */
-function linksIntoBoard(abs: string, board: string) {
-  return isLink(abs) && readlinkSync(abs).split('\\').join('/').includes(`${board}/agent/`)
+/**
+ * A symlink whose target, resolved from the link's own folder, lies in this board's `agent/` folder
+ * (whether or not the target still exists). A link to another copy of a board elsewhere is not ours.
+ */
+function linksIntoBoard(abs: string, agentDir: string) {
+  if (!isLink(abs)) return false
+  const target = resolve(dirname(abs), readlinkSync(abs))
+  return target.startsWith(resolve(agentDir) + sep)
 }
 
 /** A real folder whose entries, junk aside, are all links into the board (a link-mode skill). */
-function isBoardLinkFolder(abs: string, board: string) {
+function isBoardLinkFolder(abs: string, agentDir: string) {
   if (!isDir(abs)) return false
   const entries = list(abs)
-  return entries.length > 0 && entries.every((f) => linksIntoBoard(join(abs, f), board))
+  return entries.length > 0 && entries.every((f) => linksIntoBoard(join(abs, f), agentDir))
 }
 
 function isLink(p: string) {

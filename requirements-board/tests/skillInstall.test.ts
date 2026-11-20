@@ -1,4 +1,4 @@
-import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -135,6 +135,19 @@ describe('install-skills', { timeout: 60_000 }, () => {
     expect(there(join(repo, '.claude', 'requirements-board.json'))).toBe(false)
     linkSkills(repo, board, 'copy')
     expect(tree(repo).some((p) => p.endsWith(' ->'))).toBe(false)
+  })
+
+  it('never takes a link into another copy of a board as its own', () => {
+    // A second board elsewhere (vendored) whose path also contains `requirements-board/agent/`.
+    const other = join(repo, 'vendor', board, 'agent', 'skills', 'their-skill')
+    mkdirSync(other, { recursive: true })
+    writeFileSync(join(other, 'SKILL.md'), 'theirs\n')
+    symlinkSync(`../../vendor/${board}/agent/skills/their-skill`, skill(repo, 'their-skill'))
+    symlinkSync(`../../vendor/${board}/agent/skills/their-skill`, skill(repo, 'add-artifact'))
+    const report = linkSkills(repo, board, 'link') as Install.LinkReport
+    expect(report.removed ?? []).not.toContain('.claude/skills/their-skill')
+    expect(report.skipped).toContain('.claude/skills/add-artifact (already there and not the board\'s)')
+    expect(readFileSync(join(skill(repo, 'their-skill'), 'SKILL.md'), 'utf8')).toBe('theirs\n')
   })
 
   it('shares one junk rule with the kit export (R-131)', () => {

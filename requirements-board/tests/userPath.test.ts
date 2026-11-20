@@ -144,5 +144,11 @@ describe.runIf(existsSync(STARTER))('artifact:steps shoots this worktree’s boa
     loadLaneEnv(set, join(root, 'board'))
     expect(boardPort(set)).toBe(5888)
     expect(boardPort({})).toBe(5180)
+    // A quoted value reads as a shell would; a value that is not a port stops instead of falling back.
+    writeFileSync(join(root, '.lane.env'), 'BOARD_PORT="5779"\n')
+    const quoted: NodeJS.ProcessEnv = {}
+    loadLaneEnv(quoted, join(root, 'board'))
+    expect(boardPort(quoted)).toBe(5779)
+    expect(() => boardPort({ BOARD_PORT: 'abc' })).toThrow(/not a port/)
   })
 })

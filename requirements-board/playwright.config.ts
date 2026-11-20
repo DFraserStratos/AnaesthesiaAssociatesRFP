@@ -14,7 +14,8 @@ import { boardPort, loadLaneEnv } from './server/laneEnv.ts'
  *                          saves, drags or edits there), so it can run beside the board you have open.
  *                          `BOARD_E2E_REAL_PORT` moves it. `artifact-regions.spec.ts` opens every named
  *                          region of whatever catalogue that is; a project may add its own content specs.
- * Run: `npm run test:e2e` (add BOARD_E2E_REAL=1 for the live catalogue's checks).
+ * Run: `npm run test:e2e` (add BOARD_E2E_REAL=1 for the live catalogue's checks). Give worktrees board
+ * ports at least 4 apart, so one's e2e boards never land on another's board.
  */
 loadLaneEnv()
 const REAL = process.env.BOARD_E2E_REAL === '1'

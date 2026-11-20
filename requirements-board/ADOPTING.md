@@ -16,10 +16,11 @@ root and paste its prompt into Claude Code, which does step 5, adds the CLAUDE.m
 in step 4 with you. Then run the checks in step 7. The steps below are the
 whole account, for copying the board by hand.
 
-**Upgrading** a board already in use: get a fresh kit, copy everything in its `requirements-board/`
-except `requirements/` over `BOARD/` (keep your `requirements/`, and your skills' filled-in "This repo"
-blocks), run `npm --prefix BOARD install` and `install-skills`, then the checks in step 7. An export
-never writes over a board in use: it refuses any folder that holds one.
+**Upgrading** a board already in use: get a fresh kit; save a copy of each skill's filled-in "This
+repo" section; replace everything in `BOARD/` except `requirements/` (and `node_modules/`) with the
+kit's files, so files the new version dropped go too; paste the saved "This repo" sections back over
+the kit's starter ones; then run `npm --prefix BOARD install`, `install-skills` and the checks in step
+7. An export never writes over a board in use: it refuses any folder that holds one.
 
 ## 1. Copy the kit
 

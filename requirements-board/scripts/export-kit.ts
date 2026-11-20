@@ -78,7 +78,7 @@ try {
 }
 const prefix = relative(top, realpathSync(BOARD_DIR)).split(sep).join('/')
 const commit = git(['rev-parse', 'HEAD'], top).toString().trim()
-const changed = git(['status', '--porcelain', '-z', '--untracked-files=no', '--', prefix || '.'], top)
+const changed = git(['status', '--porcelain', '-z', '--no-renames', '--untracked-files=no', '--', prefix || '.'], top)
   .toString()
   .split('\0')
   .filter((l) => /^.. /.test(l))
@@ -184,13 +184,17 @@ if (again) fail(again)
 mkdirSync(target, { recursive: true })
 const incoming = join(target, `.${BOARD}.incoming-${process.pid}`)
 const old = join(target, `.${BOARD}.old-${process.pid}`)
-cpSync(stageBoard, incoming, { recursive: true, verbatimSymlinks: true })
 const hadBoard = existsSync(targetBoard)
-if (hadBoard) renameSync(targetBoard, old)
+let movedAside = false
 try {
+  cpSync(stageBoard, incoming, { recursive: true, verbatimSymlinks: true })
+  if (hadBoard) {
+    renameSync(targetBoard, old)
+    movedAside = true
+  }
   renameSync(incoming, targetBoard)
 } catch (e) {
-  if (hadBoard) renameSync(old, targetBoard)
+  if (movedAside) renameSync(old, targetBoard)
   rmSync(incoming, { recursive: true, force: true })
   fail(`Could not put the kit in place (${(e as Error).message}); ${shown(target)} is as it was.`)
 }
@@ -204,7 +208,8 @@ console.log(`Exported kit ${version} to ${shown(targetBoard)}`)
 
 /** Why the target must not be written, or null. Real paths, so no symlink or `..` spelling slips past. */
 function targetProblem(): string | null {
-  const board = realpathSync(BOARD_DIR)
+  // `.native`: the file system's own spelling, so a path typed in another case on macOS compares equal.
+  const board = realpathSync.native(BOARD_DIR)
   const where = realish(targetBoard)
   const within = (a: string, b: string) => a === b || a.startsWith(b.endsWith(sep) ? b : b + sep)
   const what = `${shown(target)} (its ${BOARD}/ is ${where})`
@@ -213,7 +218,8 @@ function targetProblem(): string | null {
   if (!existsSync(target)) return null
   if (!lstatSync(target).isDirectory()) return `Refused: ${shown(target)} is not a folder.`
   if (!existsSync(targetBoard) && !isLink(targetBoard)) {
-    const others = readdirSync(target).filter((f) => !OS_LITTER.has(f))
+    // A swap folder left by an export that was killed mid-way is not someone's work.
+    const others = readdirSync(target).filter((f) => !OS_LITTER.has(f) && !/^\.requirements-board\.(incoming|old)-\d+$/.test(f))
     return others.length ? `Refused: ${shown(target)} has other files and no ${BOARD}/. Export into an empty folder, or one that holds an earlier kit.` : null
   }
   if (isLink(targetBoard) || !lstatSync(targetBoard).isDirectory()) return `Refused: ${shown(targetBoard)} is a link or a file, not an earlier kit. Export into an empty folder.`
@@ -326,7 +332,7 @@ function realish(p: string): string {
     rest.unshift(basename(head))
     head = up
   }
-  return join(realpathSync(head), ...rest)
+  return join(realpathSync.native(head), ...rest)
 }
 
 function isLink(p: string) {
