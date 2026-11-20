@@ -44,40 +44,36 @@ and lock.
 Each lane runs its queue in order, one phase at a time. A phase is **complete on a lane** when the
 lane branch holds a commit whose subject starts `<id> complete:`.
 
-### Current wave: Wave 5
+### Current wave: Wave 6
 
 Wave 1 (Lane A 26, 27, 27a; Lane B 32d, 33) was joined on 18 November 2026, Wave 2 (Lane A 25a, 36;
 Lane B 33a, 17b) and Wave 3 (Lane A 37, 38; Lane B 34, 35) on 19 November 2026, and Wave 4 (Lane A
-38b, 39; Lane B 42, 43) on 20 November 2026; `master` holds all four (`PERSIST_VERSION` 69).
+38b, 39; Lane B 42, 43) and Wave 5 (Lane A 39a, 41; Lane B 39b, 40) on 20 November 2026; `master`
+holds all five once the Wave 5 fast-forward is done (`PERSIST_VERSION` 74).
 
 | Lane | Queue | Sessions |
 |---|---|---|
-| A | 39a, then 41 | 2 + 2 |
-| B | 39b, then 40 | 2 + 2 |
+| A | 40a | 1 |
+| B | 43a, then 43b | 2 + 1 |
 
-Why this split: after Wave 4 every remaining phase whose dependencies are all built is one of these
-four. 39a (payment runs, BCTI approval, netting, remittance) needs 37 and 39, and 41 (the prepayment
-letter, cancellation and differences by hand) needs 39: both are money, so they stay in Lane A, the
-Money lane, one after the other. 39b (pre-op, post-op and billing events) needs 38b and 25a, all
-joined; 40 (patients: mandatory NHI, the balance warning, the patient view) needs 39 and phases
-already joined. Neither depends on the other lane's queue for this wave. 40a and 43a then 43b follow
-in Wave 6 (40a needs 40; 43a needs 39b).
+Why this split: after Wave 5 the only phases whose dependencies are all built are 40a (NHI lookup and
+identity standards: needs 22a, 26, 40) and 43a (sign-in and ease of use: needs 39b and phases already
+joined); 43b (the help line and product support) needs 43a, so it follows it in the same lane. U7
+needs all three, and 44 needs U7, so each runs alone afterwards. Lane A takes 40a because nothing
+else is left for it; the lanes cannot be balanced further.
 
-**Who owns what in Wave 5.** Keep to your side and the merges stay mechanical.
+**Who owns what in Wave 6.** Keep to your side and the merges stay mechanical.
 
 | | Owns |
 |---|---|
-| Lane A | Payment runs (39a: the weekly cycle and its clock job, BCTI approval, netting a negative invoice against the next run, remittance; `payablesActions.ts`, `xeroSimActions.ts`'s payables run, `disbursementDetection.ts`, `domain/billing/ledger.ts`'s netting, `bcti.ts`). Prepayment follow-up (41: `prepaymentActions.ts`, `prepaymentCancellation.ts`, `prepayHolding.ts`, the prepayment letter, `xeroHandoff.ts`'s and `xeroPairView.ts`'s prepayment refunds, the move and reassign flows' prepayment steps) |
-| Lane B | Events (39b: the pre-op, post-op and billing event kinds in `domain/billing/procedureEvent.ts`'s `EVENT_RULES`, `procedureEventActions.ts`, `procedureEventCopy.ts`, `fee.ts` and `invoiceBuild.ts` for event pricing, the events section of `BookingDetailBody.tsx`, Admin Review's Events tab). Patients (40: `patientActions.ts`, mandatory NHI in `bookingActions.ts` and intake, the balance warning, the Admin patient view and its routes) |
+| Lane A | NHI lookup (40a: `src/domain/nhiRegister/`, `src/domain/seed/nhiRegister.ts`, `src/shared/nhiHub/`, the NHI field's lookup on the add-booking forms and the Add NHI sheet through `shared/flows/nhiCopy.ts`, refresh from the register on the patient record `/admin/patients/:nhi`) |
+| Lane B | Sign-in and ease of use (43a: `src/shared/session/`, `src/shared/help/`, `src/shared/viewer.ts`, `firstRunHints.ts`, `src/shell/framedReset.ts`, `store/authDemoActions.ts`, the mobile `SignInScreen`, the simple anaesthetist screens). Support (43b: `src/domain/support.ts`, `store/supportActions.ts`, `src/shared/support/`, the help line and its tickets) |
 
-- **Where they meet.** 39b adds event kinds to 38b's element; 39a and 41 read events and credits but
-  add no kind: if 41's cancellation needs one, note it "For the merge" and use 39's credit as built.
-  41 touches `mastersActions.ts` only for its letter's settings: add your lines, never reshape 42's
-  editors. 40's balance warning reads the ledger 39a nets: read through the selectors, never edit
-  `ledger.ts`. 43's indexes (`store/indexes.ts`) are shared: a new selector that scans a whole slice
-  per row on a list screen should use or add an index there (add your own; never change another's).
-  Each phase patches the demo guide beats its own doc names; where two touch one file, add your lines
-  by section.
+- **Where they meet.** 40a and 43a both touch the anaesthetist's add-booking form: 40a only its NHI
+  field (its captions stay in `nhiCopy.ts`); 43a only the screen's simplicity (layout, hints). 40a's
+  patient record refresh sits on 40's record: add a section, never reshape 40's cards. 43b's PWA
+  entry goes in `PwaDemoActions.tsx` beside 40's and 41's: add your lines. Each phase patches the demo
+  guide beats its own doc names; where two touch one file, add your lines by section.
 - **Files both lanes add to:** `src/domain/types.ts`, the audit label files
   (`shared/audit/actionLabels.ts`, `fieldLabels.ts`, `auditNarrative.ts`), `src/domain/seed/index.ts`
   and the seed files, `store/mutate.ts`'s `ID_FORMATS`, the store barrel, `src/store/appStore.ts`
@@ -97,7 +93,6 @@ rewrites "Current wave" above.
 
 | Wave | Lane A | Lane B |
 |---|---|---|
-| 6, likely | 40a | 43a, then 43b |
 | Later | U7 (alone), then 44 (alone) | |
 
 Rules for choosing a wave: every phase's `depends_on` is built or in an earlier wave (never in the
@@ -201,12 +196,12 @@ When your last phase in the wave is complete:
      seed, never added up. The S1 to S5 golden tests pass.
    - No hook was lost: `git diff master...wave/<n> -- aa-prototype | grep '^-.*data-'`, and account
      for every line.
-   - Where the lanes meet, check in the running app on your ports. For Wave 5: 39a's payment run nets a
+   - Where the lanes meet, check in the running app on your ports. For Wave 6: 40a's NHI lookup on the add-booking form 43a simplified, and on the Add NHI sheet; a looked-up NHI reusing the single record; sign-in and a framed Reset landing on the patient record route; 43b's help line on the PWA beside 40's and 41's stand-ins. (Wave 5's checks, done at its join: 39a's payment run nets a
      39 negative invoice beside 39b's new events (a post-op event invoiced, then credited, nets in the
      next run); 41's prepayment cancellation and refund on a Booking whose patient 40 now requires an
      NHI for; 40's patient view and balance warning after a 39a run and a 41 refund; Load full-scale
      data (43) still loads, and its Ledger and Billing monitor timings hold, with 39a's runs and 40's
-     patient view in the app. (Wave 4's checks, done at its join: 43's full-scale load with 38b's
+     patient view in the app.) (Wave 4's checks, done at its join: 43's full-scale load with 38b's
      events and 39's credits, a credit and rebill on a generated invoice; a Party edited in 42's Master
      data still bills its credit and rebill. Wave 3's: 37's monitor and Xero sim beside 34's matching screen; 38's web Accounts and dashboard after
      35's explicit save. Wave 2's: the seed's masters after 25a's and 17b's removals, 36's balance

@@ -29,6 +29,7 @@ import { markDraftStore } from './draftMode'
 import { saveBookingChanges } from './bookingSaveActions'
 import { snapshotBooking } from '../domain/changeSets'
 import { setXeroOutage } from './xeroQueue'
+import { patientBalanceRows } from './patientLedger'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const RILEY = SEED_MARKERS.prepaymentBooking!.entityId
@@ -92,6 +93,14 @@ describe('cancelling a prepaid Booking settles it (US-06.5.2)', () => {
     expect(cancelBooking(api, OFFICE, NAIR, 'again').ok).toBe(false)
     expect(refunds()).toHaveLength(1)
     expectConserved()
+  })
+
+  it("a refunded cancellation leaves the patient's record and balance warning holding no credit (Wave 5 join: 40 reads 41's refund)", () => {
+    const patientId = api.getState().schedule.bookings[NAIR]!.patientId
+    expect(cancelBooking(api, OFFICE, NAIR, 'Patient withdrew').ok).toBe(true)
+    const rows = patientBalanceRows(api.getState(), patientId).filter((r) => r.invoiceId === 'INV0001')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.creditHeld).toBe(0)
   })
 
   it("unpaid, cancelled by the anaesthetist on mobile: credited, no refund; then a payment after the credit note is refunded at once", () => {

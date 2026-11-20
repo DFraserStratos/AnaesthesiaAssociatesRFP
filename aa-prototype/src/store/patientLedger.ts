@@ -10,6 +10,7 @@
 import type { PatientBalanceRow } from '../domain/patients'
 import type { AppState } from './appStore'
 import { patientPosition } from '../domain/billing/ledger'
+import { roundToCents } from '../domain/billing/money'
 import { pairsByPatient } from './indexes'
 import { counterpartyName } from './selectors'
 
@@ -29,7 +30,9 @@ export function patientBalanceRows(state: PatientLedgerState, patientId: string)
   // 36's patient position over the patient's own pairs (43's index), the same rows `patientLedgerPosition` reads.
   return patientPosition(pairsByPatient(state.billing.ledger).get(patientId) ?? [], patientId).rows.map((row) => {
     const pair = state.billing.ledger[row.pairId]
-    const creditHeld = pair !== undefined && pair.kind !== 'aaFee' ? (pair.credit?.heldForPayer ?? 0) : 0
+    // Net of a refund (catch-up Phase 41): money paid back leaves what is held, as in ledger.ts's creditsHeld (Wave 5 join).
+    const credit = pair !== undefined && pair.kind !== 'aaFee' ? pair.credit : undefined
+    const creditHeld = credit !== undefined ? Math.max(0, roundToCents(credit.heldForPayer - (credit.refundedAmount ?? 0))) : 0
     const name = billedToName(state, row.invoiceId, row.billedTo)
     return {
       invoiceId: row.invoiceId,
