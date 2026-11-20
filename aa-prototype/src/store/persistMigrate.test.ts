@@ -1313,3 +1313,22 @@ describe('catch-up Phase 41 session 1 (v72): the prepayment letter', () => {
     expect(s.counters['letterTemplate']).toBe(4)
   })
 })
+
+describe('catch-up Phase 41 session 2 (v73): cancellation and refunds', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v72 store without the refund slices and reseeds them', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(73)
+    const fresh = freshAppState()
+    const { prepaymentRefunds: _r, ...billing } = fresh.billing
+    const { refunds: _x, ...xero } = fresh.xero
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing, xero }, version: 72 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.billing.prepaymentRefunds).toEqual({})
+    expect(s.xero.refunds).toEqual({})
+  })
+})

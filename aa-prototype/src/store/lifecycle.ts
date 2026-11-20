@@ -33,6 +33,8 @@ import {
   type Outcome,
   withChangeSet,
 } from './mutate'
+import { settlePrepaymentOnCancel, type SettledInvoice } from './prepaymentCancellation'
+import { handoffCorrection, postPrepaymentRefund } from './xeroHandoff'
 import type { AppState, AppStoreApi } from './appStore'
 import { bookingsForList, completionContextFor, heldPricesForBooking, proceduresForBooking } from './selectors'
 import { takeLockFor } from './locks'
@@ -489,34 +491,43 @@ function cancelBookingUnscoped(api: AppStoreApi, actor: Actor, bookingId: string
   const rights = editRefusal(actor, list)
   if (rights !== null) return rights
 
-  mutate(
-    api,
-    actor,
+  // Catch-up Phase 41 (US-06.5.2, D56): the prepayment is settled in the same commit, for every actor; never a refusal.
+  let settled: SettledInvoice[] = []
+  const metas: MutationMeta[] = [
     {
       entityType: 'booking',
       entityId: bookingId,
       action: 'booking.cancel',
       after: { cancelled: true, reason: reason.trim() },
     },
-    (s) => ({
-      schedule: {
-        ...s.schedule,
-        bookings: {
-          ...s.schedule.bookings,
-          [bookingId]: {
-            ...booking,
-            cancellation: {
-              reason: reason.trim(),
-              by: actor.who,
-              role: actor.role,
-              source: actor.source,
-              atISO: clockISO(s.clock),
-            },
+  ]
+  mutate(api, actor, metas, (s) => {
+    const atISO = clockISO(s.clock)
+    const schedule = {
+      ...s.schedule,
+      bookings: {
+        ...s.schedule.bookings,
+        [bookingId]: {
+          ...booking,
+          cancellation: {
+            reason: reason.trim(),
+            by: actor.who,
+            role: actor.role,
+            source: actor.source,
+            atISO,
           },
         },
       },
-    }),
-  )
+    }
+    const settlement = settlePrepaymentOnCancel({ ...s, schedule }, bookingId, atISO, metas)
+    settled = settlement.settled
+    return settlement.patch !== null ? { ...settlement.patch, schedule: settlement.patch.schedule } : { schedule }
+  })
+  // Their Xero mirror, after the commit (39's correction; the refund paid in Xero from the AA trust account, D53).
+  for (const x of settled) {
+    if (x.creditNoteId !== undefined) handoffCorrection(api, x.creditNoteId)
+    if (x.refundId !== undefined) postPrepaymentRefund(api, x.refundId)
+  }
   return ok(undefined)
 }
 

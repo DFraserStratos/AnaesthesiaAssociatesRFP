@@ -88,7 +88,12 @@ describe('Phase 36 parity: the scripted flows, step by step', () => {
     expect(captured.feeRun.preview?.find((r) => r.bctiCount === 40)?.subtotal).toBe(700)
   })
   it("27's re-check and a move change no pair, amount or payee", () => {
-    expect(captured.recheck).toEqual(BASELINE.recheck)
+    // Declared (catch-up Phase 41, D67): a Contract changed off prepaid after sending is now credited in full, so the
+    // `changed` step moves by design; prepaymentCancellation.test.ts pins it. Everything else is compared as it was.
+    const { changed: _now, ...recheck } = captured.recheck
+    const { changed: _then, ...baseline } = BASELINE.recheck
+    expect(recheck).toEqual(baseline)
+    expect(captured.recheck.changed.status.status).toBe('none')
     expect(captured.s4RunOnly).toEqual(BASELINE.s4RunOnly)
   })
 })

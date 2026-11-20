@@ -204,6 +204,32 @@ export {
   LETTER_TEMPLATE_MESSAGES,
   type LetterTemplateFields,
 } from './letterTemplateActions'
+// Catch-up Phase 41: a moved prepaid Booking and the optional patient email (US-06.5.4).
+export {
+  PATIENT_NOTICE_MESSAGES,
+  anaesthetistChangedFor,
+  changedPrepaymentInvoicesFor,
+  emailPatientAnaesthetistChanged,
+  hasSentPrepayment,
+  lastPatientNotice,
+  listHasSentPrepayment,
+  patientNoticesFor,
+} from './prepaymentNotice'
+// Catch-up Phase 41: rebook a truly cancelled Booking with another anaesthetist (US-06.5.3).
+export {
+  REBOOK_MESSAGES,
+  prepaymentHistoryFor,
+  rebookedBookingOf,
+  rebookPriceFor,
+  rebookPriceLine,
+  rebookRefusal,
+  rebookTargetsFor,
+  rebookWithAnotherAnaesthetist,
+  type PrepaymentHistoryRow,
+  type RebookPrice,
+  type RebookTarget,
+  type RebookTargetList,
+} from './rebookActions'
 export { LONGER_PREPAID_COPY, STAGE_LONGER_DURATION_MIN, longerPrepaidChoices, stageLongerPrepaidProcedure, stageLongerRefusal } from './prepaymentFollowupDemo'
 export {
   warningFactsFor,

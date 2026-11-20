@@ -255,8 +255,8 @@ function emittedActionCodes(): string[] {
     if (file.endsWith('.test.ts')) continue // fixtures may invent codes
     // `createAction:` is the invoice materialiser's argument (catch-up Phase 22), passed through to `action:`.
     for (const match of source.matchAll(/(?:\baction|createAction): '([^']+)'/g)) codes.add(match[1]!)
-    // A materialiser argument picked by a ternary (catch-up Phase 27's prepayment approval): both codes.
-    for (const match of source.matchAll(/createAction: [^,?\n]+\? '([^']+)' : '([^']+)'/g)) {
+    // A materialiser argument or an action picked by a ternary (catch-up Phase 27's prepayment approval, 41's refund cause): both codes.
+    for (const match of source.matchAll(/(?:\baction|createAction): [^,?\n]+\? '([^']+)' : '([^']+)'/g)) {
       codes.add(match[1]!)
       codes.add(match[2]!)
     }

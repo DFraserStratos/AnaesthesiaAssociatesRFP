@@ -115,6 +115,21 @@ export interface XeroCreditView {
   accPayVoided: boolean
   /** The replacements' Xero pairs, by number; `accRecId` once mirrored. */
   newPairs: { invoiceNumber: string; accRecId?: string }[]
+  /**
+   * Refunds paid in Xero against this credit note from the AA trust account
+   * (catch-up Phase 41; US-06.5.2, D53): a cancelled prepayment's, a late
+   * payment's, a Contract change's. Absent when there are none.
+   */
+  refunds?: XeroRefundView[]
+}
+
+/** One refund Xero paid against a credit note (catch-up Phase 41): no personal information, only the reference. */
+export interface XeroRefundView {
+  id: string
+  amount: number
+  bankAccount: 'AA trust account'
+  paidAtISO: string
+  reference: string
 }
 
 /**
@@ -415,10 +430,20 @@ function creditViewFor(state: XeroPairState, accRecId: string, accPayId: string 
     const xeroId = pair?.receivable.xeroAccRecId
     return [{ invoiceNumber: invoice.invoiceNumber, ...(xeroId !== undefined ? { accRecId: xeroId } : {}) }]
   })
+  const refunds = engine !== undefined ? refundViewsFor(state, engine.id) : []
   return {
     creditNoteNumber: engine?.creditNoteNumber ?? notes[0]!.creditNoteNumber,
     notes: notes.map((n) => ({ id: n.id, type: n.type, creditNoteNumber: n.creditNoteNumber, total: n.total, allocated: n.allocated, unallocated: roundToCents(n.total - n.allocated), ...(n.type === 'ACCPAYCREDIT' ? { allocations: allocationViews(state, { creditId: n.id }) } : {}) })),
     accPayVoided: accPay?.status === 'voided',
     newPairs,
+    ...(refunds.length > 0 ? { refunds } : {}),
   }
+}
+
+/** The Xero refunds against one engine credit note, oldest first (catch-up Phase 41). */
+function refundViewsFor(state: XeroPairState, creditNoteId: string): XeroRefundView[] {
+  return Object.values(state.xero.refunds ?? {})
+    .filter((r) => r.creditNoteId === creditNoteId)
+    .sort((a, b) => a.paidAtISO.localeCompare(b.paidAtISO) || a.id.localeCompare(b.id, undefined, { numeric: true }))
+    .map((r) => ({ id: r.id, amount: r.amount, bankAccount: r.bankAccount, paidAtISO: r.paidAtISO, reference: r.reference }))
 }

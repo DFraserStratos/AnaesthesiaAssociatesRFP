@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useBookingStore } from './draft'
 import { neutral, semantic } from '../../theme/tokens'
 import { procedureLabel } from '../../domain/billing/procedureStack'
@@ -12,7 +12,9 @@ import { TextAction } from '../ui/TextAction'
 import { formatMoney } from '../format'
 import { lastPrepaymentReminder } from '../../store/prepaymentLetter'
 import { PrepaymentReminderDialog } from './PrepaymentLetterDialogs'
+import { settledPrepaymentsFor, type SettledPrepayment } from './settledPrepayments'
 import {
+  CONTRACT_CHANGED_OFF_PREPAID,
   NO_PRICE_YET,
   OFFICE_SENDS_LETTER,
   SEND_REMINDER_LABEL,
@@ -23,7 +25,9 @@ import {
   prepaymentHoldingText,
   prepaymentTitle,
   prepaymentTone,
+  refundLineParts,
   reminderStampText,
+  settledTitle,
 } from './prepaymentText'
 
 /** Where the office goes from the panel (Admin passes these; the anaesthetist's apps pass none). */
@@ -59,16 +63,35 @@ interface PrepaymentPanelProps {
  * List not yet authorised offers Send prepayment reminder; everyone sees the
  * last reminder's line, and the anaesthetist reads that the office sends the
  * letter.
+ *
+ * Settled automatically (catch-up Phase 41; US-06.5.2, US-06.3.7): a prepayment
+ * invoice credited by a cancellation or by the office's Contract change off
+ * prepaid stops counting as issued, so the panel adds a read-only block naming
+ * the credit note and every refund paid against it ("Credited · CN-2026-0001",
+ * "Refunded to the payer from the AA Holding account · $1,380.00 on 21 Jul",
+ * "Late payment of $100.00 refunded on 22 Jul"). It shows on its own when
+ * nothing else is left to show, as on a cancelled Booking.
  */
 export function PrepaymentPanel({ bookingId, actor, links, onShowProcedure }: PrepaymentPanelProps) {
   const prepayment = useBookingPrepayment(bookingId)
   // After the run: what it left off the final invoice (US-08.2.2, D57). Re-read when the lock or invoices change.
   const lock = useBookingStore((s) => s.billing.locks[bookingId])
   const leftOff = useBookingStore((s) => (lock !== undefined ? leftOffLine(s, bookingId) : null))
-  if (prepayment.status === 'none') return null
+  const settled = useSettledPrepayments(bookingId)
+  if (prepayment.status === 'none' && settled.length === 0) return null
+  const office = actor.role === 'office'
+  const settledBlock = settled.length > 0 && (
+    <SettledBlock settled={settled} divided={prepayment.groups.length > 0} {...(office && links?.onOpenCreditNote !== undefined ? { onOpenCreditNote: links.onOpenCreditNote } : {})} />
+  )
+  if (prepayment.status === 'none') {
+    return (
+      <Card shot="booking-prepayment" title={<span style={{ color: neutral.ink }}>{settledTitle(settled.some((x) => x.refunds.length > 0))}</span>} data-prepayment-status="settled">
+        {settledBlock}
+      </Card>
+    )
+  }
   const least = prepayment.groups.find((g) => g.status === prepayment.status) ?? prepayment.groups[0]!
   const title = prepaymentTitle(prepayment.status, { received: least.receivedTotal, total: least.invoicedTotal })
-  const office = actor.role === 'office'
   return (
     <Card shot="booking-prepayment" title={<span style={{ color: titleColour(prepayment.status) }}>{title}</span>} data-prepayment-status={prepayment.status}>
       {prepayment.groups.map((group, i) => (
@@ -83,12 +106,74 @@ export function PrepaymentPanel({ bookingId, actor, links, onShowProcedure }: Pr
           {...(onShowProcedure !== undefined ? { onShowProcedure } : {})}
         />
       ))}
+      {settledBlock}
       {leftOff !== null && (
         <div data-shot="booking-prepaid-left-off" style={{ borderTop: `1px solid ${neutral.line}`, paddingTop: 10, fontSize: 13, color: neutral.slate }}>
           {leftOff}
         </div>
       )}
     </Card>
+  )
+}
+
+/** The Booking's settled prepayments, re-read when its invoices, credit notes or refunds change. */
+export function useSettledPrepayments(bookingId: string): SettledPrepayment[] {
+  const invoices = useBookingStore((s) => s.billing.invoices)
+  const creditNotes = useBookingStore((s) => s.billing.creditNotes)
+  const prepaymentRefunds = useBookingStore((s) => s.billing.prepaymentRefunds)
+  const bookings = useBookingStore((s) => s.schedule.bookings)
+  return useMemo(
+    () => settledPrepaymentsFor({ billing: { invoices, creditNotes, prepaymentRefunds }, schedule: { bookings } }, bookingId),
+    [invoices, creditNotes, prepaymentRefunds, bookings, bookingId],
+  )
+}
+
+/**
+ * The settled prepayments, read-only (catch-up Phase 41). The credit number
+ * opens 39's credit-note document on Admin; plain text on the anaesthetist's
+ * apps. Amounts, numbers and days in mono.
+ */
+function SettledBlock({ settled, divided, onOpenCreditNote }: { settled: SettledPrepayment[]; divided: boolean; onOpenCreditNote?: (creditNoteId: string) => void }) {
+  return (
+    <div data-shot="prepayment-settled" style={{ display: 'flex', flexDirection: 'column', gap: 12, ...(divided ? { borderTop: `1px solid ${neutral.line}`, paddingTop: 12 } : {}) }}>
+      {settled.map((x) => {
+        const refunded = x.refunds.length > 0
+        return (
+          <div key={x.creditNoteId} data-shot="prepayment-settled-invoice" data-credit-note={x.creditNoteNumber} data-cause={x.cause} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 14, color: neutral.ink }}>
+                {'Credited · '}
+                {onOpenCreditNote !== undefined ? (
+                  <TextAction size="sm" flush shot="prepayment-settled-credit-link" onClick={() => onOpenCreditNote(x.creditNoteId)}>
+                    <span className="mono">{x.creditNoteNumber}</span>
+                  </TextAction>
+                ) : (
+                  <span className="mono">{x.creditNoteNumber}</span>
+                )}
+                {x.cause === 'prepaidContractChanged' ? ` · ${CONTRACT_CHANGED_OFF_PREPAID}` : ''}
+              </span>
+              <Pill tone={refunded ? 'success' : 'neutral'}>{refunded ? 'Refunded' : 'Credited'}</Pill>
+            </div>
+            <span style={{ fontSize: 12.5, color: neutral.mist }}>
+              {'Prepayment invoice '}
+              <span className="mono">{x.invoiceNumber}</span>
+              {x.payerName !== undefined ? ` · ${x.payerName}` : ''}
+            </span>
+            {x.refunds.map((r) => {
+              const parts = refundLineParts(r)
+              return (
+                <span key={r.id} data-shot="prepayment-settled-refund" data-refund-cause={r.cause} style={{ fontSize: 13, color: neutral.slate }}>
+                  {parts.before}
+                  <span className="mono">{parts.amount}</span>
+                  {parts.between}
+                  <span className="mono">{parts.day}</span>
+                </span>
+              )
+            })}
+          </div>
+        )
+      })}
+    </div>
   )
 }
 

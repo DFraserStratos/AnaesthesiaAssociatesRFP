@@ -6,7 +6,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from '../../store/appStore'
 import { wireBillingRun } from '../../store/billingRun'
-import { authoriseList, submitList } from '../../store/lifecycle'
+import { authoriseList, cancelBooking, submitList } from '../../store/lifecycle'
 import { completeAnswered } from '../../test/completeAnswered'
 import { LONGER_PREPAID_COPY, STAGE_LONGER_DURATION_MIN } from '../../store/prepaymentFollowupDemo'
 import { approveProcedureEvent } from '../../store/procedureEventActions'
@@ -15,11 +15,15 @@ import { resetDemo } from '../../store/clockActions'
 import { bookingsForList, openAccRecs, proceduresForBooking } from '../../store/selectors'
 import { handoffQueuedFor } from '../../store/ledgerSelectors'
 import { clearWarning, warningsForBooking } from '../../store/warnings'
-import { OFFICE_ACTOR, SOUTER_ACTOR } from '../../store/demoActors'
+import { OFFICE_ACTOR, OFFICE_SIMULATION_ACTOR, SOUTER_ACTOR } from '../../store/demoActors'
+import { PREPAYMENT_SETTLEMENT_DEMO_COPY } from '../../store/prepaymentSettlementDemo'
+import { approvePrepayment } from '../../store/prepaymentActions'
+import { prepaymentStatusFor } from '../../store/prepaymentSelectors'
+import { formatCurrency } from '../format'
 import { correctPdfListRow, sendPdfListToMatching } from '../../store/pdfListActions'
 import { setAvailabilityRange } from '../../store/availabilityActions'
 import { alertOffice } from '../../store/officeAlertActions'
-import { ANAE, SEED_LIST_IDS, SEED_MARKERS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
+import { ANAE, SEED_LIST_IDS, SEED_MARKERS, SEED_PREPAID_BOOKING_ID, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
 import { deliverPaymentWebhook } from '../../store/paymentActions'
 import { stagedSouterBooking } from '../../store/eventDemo'
 import { BILLING_MONITOR_SCREEN, DEMO_TRIGGERS, POST_OP_ORIGINAL_LIST_ID } from './registry'
@@ -1332,5 +1336,138 @@ describe('Stage longer prepaid procedure (catch-up Phase 41; US-06.4.1)', () => 
     const list = api.getState().schedule.lists[other]
     if (list === undefined) return
     expect(byId('stage-longer-prepaid-procedure').disabledReason(api.getState(), ctxFor(`/admin/review/${other}`, { listId: other }))).not.toBeNull()
+  })
+})
+
+describe('Prepayment settled automatically (catch-up Phase 41 session 2; US-06.5.2, US-06.3.7, US-06.3.6)', () => {
+  const RILEY = SEED_MARKERS.prepaymentBooking!.entityId
+  const NAIR = SEED_PREPAID_BOOKING_ID
+  const adminCtx = (api: BoundAppStore, bookingId: string) => {
+    const booking = api.getState().schedule.bookings[bookingId]!
+    const dateISO = api.getState().schedule.lists[booking.listId]!.dateISO
+    return ctxFor(`/admin/day/${dateISO}/bookings/${bookingId}`, { dateISO, bookingId })
+  }
+  const mobileCtx = (api: BoundAppStore, bookingId: string) => {
+    const listId = api.getState().schedule.bookings[bookingId]!.listId
+    return ctxFor(`/mobile/lists/${listId}/bookings/${bookingId}`, { listId, bookingId })
+  }
+  function approveRiley(api: BoundAppStore) {
+    for (const g of prepaymentStatusFor(api.getState(), RILEY).groups) {
+      if (g.status !== 'awaitingApproval') continue
+      const out = approvePrepayment(api, OFFICE_ACTOR, RILEY, g.payerKey)
+      if (!out.ok) throw new Error(out.message)
+    }
+  }
+  const refunds = (api: BoundAppStore) => Object.values(api.getState().billing.prepaymentRefunds)
+
+  it('show on their routes only: the late payment and the Contract change on the Admin Booking (bar), the reminder on the PWA only', () => {
+    const api = createAppStore()
+    const admin = adminCtx(api, RILEY).pathname
+    expect(ids(api, admin)).toEqual(expect.arrayContaining(['prepayment-late-payment', 'prepayment-contract-changed']))
+    expect(ids(api, admin, 'pwa')).not.toContain('prepayment-late-payment')
+    expect(ids(api, '/admin/invoices')).not.toContain('prepayment-contract-changed')
+    const mobile = mobileCtx(api, RILEY).pathname
+    expect(byId('pwa-office-sends-prepayment-reminder').surfaces).toEqual(['pwa'])
+    expect(byId('pwa-office-sends-prepayment-reminder').badge).toBe('office-stand-in')
+    expect(ids(api, mobile, 'pwa')).toContain('pwa-office-sends-prepayment-reminder')
+    expect(ids(api, mobile, 'bar')).not.toContain('pwa-office-sends-prepayment-reminder')
+    expect(ids(api, admin)).not.toContain('pwa-office-sends-prepayment-reminder')
+  })
+
+  it('Payment arrives after the credit note: disabled until a cancelled Booking holds a credited, unpaid prepayment; then refunds exactly one payment', () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    try {
+      const t = byId('prepayment-late-payment')
+      const ctx = adminCtx(api, RILEY)
+      // Live and awaiting approval; then sent but not cancelled.
+      expect(t.disabledReason(api.getState(), ctx)).toBe(PREPAYMENT_SETTLEMENT_DEMO_COPY.lateOnlyCancelled)
+      approveRiley(api)
+      expect(t.disabledReason(api.getState(), ctx)).toBe(PREPAYMENT_SETTLEMENT_DEMO_COPY.lateOnlyCancelled)
+      // Nair was paid: cancelling refunds her, so a late payment has nothing to land on.
+      expect(cancelBooking(api, OFFICE_ACTOR, NAIR, 'Patient withdrew').ok).toBe(true)
+      expect(t.disabledReason(api.getState(), adminCtx(api, NAIR))).toBe(PREPAYMENT_SETTLEMENT_DEMO_COPY.lateOnlyCancelled)
+      expect(cancelBooking(api, OFFICE_ACTOR, RILEY, 'Surgery postponed').ok).toBe(true)
+      expect(t.disabledReason(api.getState(), ctx)).toBeNull()
+      const before = refunds(api).length
+      const invoice = Object.values(api.getState().billing.invoices).find((i) => i.bookingId === RILEY && i.kind === 'prePayment')!
+      const out = t.run(api, ctx)
+      expect(out).toEqual({ ok: true, message: `Late payment of ${formatCurrency(invoice.total)} refunded to the payer.` })
+      const late = refunds(api).slice(before)
+      expect(late).toEqual([expect.objectContaining({ cause: 'latePayment', amount: invoice.total, prepaymentInvoiceId: invoice.id })])
+      expect(t.disabledReason(api.getState(), ctx)).toBe(PREPAYMENT_SETTLEMENT_DEMO_COPY.lateOnlyCancelled)
+      expect(t.run(api, ctx).ok).toBe(false)
+      expect(refunds(api)).toHaveLength(before + 1)
+    } finally {
+      unwire()
+    }
+  })
+
+  it('Change Contract after prepayment sent: disabled with no sent prepayment; settles once as the office, then is disabled', () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    try {
+      const t = byId('prepayment-contract-changed')
+      const ctx = adminCtx(api, RILEY)
+      expect(t.disabledReason(api.getState(), ctx)).toBe(PREPAYMENT_SETTLEMENT_DEMO_COPY.noSentPrepayment)
+      approveRiley(api)
+      expect(t.disabledReason(api.getState(), ctx)).toBeNull()
+      const out = t.run(api, ctx)
+      expect(out.ok).toBe(true)
+      const invoice = Object.values(api.getState().billing.invoices).find((i) => i.bookingId === RILEY && i.kind === 'prePayment')!
+      const note = Object.values(api.getState().billing.creditNotes).find((c) => c.originalInvoiceId === invoice.id)!
+      expect(note.cause).toBe('prepaidContractChanged')
+      expect(out.message).toContain(note.creditNoteNumber)
+      // Unpaid: credited only.
+      expect(refunds(api)).toEqual([])
+      const settled = api.getState().audit.filter((a) => a.action === 'procedure.prepaymentSettled')
+      expect(settled).toHaveLength(1)
+      expect(settled[0]!.who).toBe(OFFICE_ACTOR.who)
+      expect(t.disabledReason(api.getState(), ctx)).toBe(PREPAYMENT_SETTLEMENT_DEMO_COPY.noSentPrepayment)
+      expect(t.run(api, ctx).ok).toBe(false)
+      expect(api.getState().audit.filter((a) => a.action === 'procedure.prepaymentSettled')).toHaveLength(1)
+      // Nair was paid: the change credits and refunds her in full.
+      expect(t.run(api, adminCtx(api, NAIR)).ok).toBe(true)
+      expect(refunds(api)).toEqual([expect.objectContaining({ cause: 'contractChanged', amount: 1380 })])
+    } finally {
+      unwire()
+    }
+  })
+
+  it('Change Contract after prepayment sent: disabled on an authorised List', () => {
+    const api = createAppStore()
+    const t = byId('prepayment-contract-changed')
+    const listId = api.getState().schedule.bookings[NAIR]!.listId
+    for (const b of bookingsForList(api.getState(), listId)) completeAnswered(api, SOUTER_ACTOR, b.id)
+    expect(submitList(api, SOUTER_ACTOR, listId).ok).toBe(true)
+    const unwire = wireBillingRun(api)
+    try {
+      expect(authoriseList(api, OFFICE_ACTOR, listId).ok).toBe(true)
+    } finally {
+      unwire()
+    }
+    expect(t.disabledReason(api.getState(), adminCtx(api, NAIR))).toBe(PREPAYMENT_SETTLEMENT_DEMO_COPY.listAuthorised)
+  })
+
+  it('Office sends a prepayment reminder: disabled with nothing unpaid or no invoice email; appends one reminder', () => {
+    const api = createAppStore()
+    const t = byId('pwa-office-sends-prepayment-reminder')
+    // Awaiting approval: nothing unpaid yet. Nair is paid in full.
+    expect(t.disabledReason(api.getState(), mobileCtx(api, RILEY))).toBe(PREPAYMENT_SETTLEMENT_DEMO_COPY.noUnpaidPrepayment)
+    expect(t.disabledReason(api.getState(), mobileCtx(api, NAIR))).toBe(PREPAYMENT_SETTLEMENT_DEMO_COPY.noUnpaidPrepayment)
+    approveRiley(api)
+    const invoice = Object.values(api.getState().billing.invoices).find((i) => i.bookingId === RILEY && i.kind === 'prePayment')!
+    // No invoice email for the payer: the reason; then with one, the reminder goes.
+    const { delivery: _sent, ...unsent } = invoice
+    const withoutEmail = { ...unsent, billedTo: { ...invoice.billedTo!, email: '' } }
+    api.setState((s) => ({ billing: { ...s.billing, invoices: { ...s.billing.invoices, [invoice.id]: withoutEmail } } }))
+    expect(t.disabledReason(api.getState(), mobileCtx(api, RILEY))).toBe(PREPAYMENT_SETTLEMENT_DEMO_COPY.noInvoiceEmail)
+    api.setState((s) => ({ billing: { ...s.billing, invoices: { ...s.billing.invoices, [invoice.id]: { ...withoutEmail, billedTo: { ...withoutEmail.billedTo, email: 'annette.riley@example.co.nz' } } } } }))
+    expect(t.disabledReason(api.getState(), mobileCtx(api, RILEY))).toBeNull()
+    const out = t.run(api, mobileCtx(api, RILEY))
+    expect(out).toEqual({ ok: true, message: PREPAYMENT_SETTLEMENT_DEMO_COPY.reminderSent })
+    const reminders = api.getState().billing.invoices[invoice.id]!.prepaymentReminders ?? []
+    expect(reminders).toHaveLength(1)
+    expect(reminders[0]!.by).toBe(OFFICE_SIMULATION_ACTOR.who)
   })
 })

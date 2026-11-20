@@ -120,6 +120,8 @@ describe("Contracts' specialties and tags (US-04.2.16, US-04.2.17)", () => {
       .map((c) => `${c.aaCode}:${c.specialtyIds.join('+')}`)
       .sort()
     expect(withSpecialties).toEqual([
+      // Catch-up Phase 41 (US-06.5.3): Dr Beaumont's prepaid Rhinoplasty, narrowed like Dr Souter's.
+      'BEAU-001:SPC-PLASTIC+SPC-ENT',
       ...['CES-002', 'CES-003', 'CES-004', 'CES-005', 'CES-006', 'CES-007', 'CES-008', 'CES-009'].map((c) => `${c}:SPC-OPHTH`),
       'DOYLE-001:SPC-GENSURG',
       'DOYLE-002:SPC-GENSURG',

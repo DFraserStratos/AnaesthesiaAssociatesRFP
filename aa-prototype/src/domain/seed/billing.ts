@@ -20,6 +20,7 @@ import { AA_AGENT, buyerCreatedTaxInvoiceFor, deliveryStampFor, supplierFor } fr
 import { invoiceDeliveryFor } from '../billing/whoIsBilled'
 import type {
   RenderedLetter,
+  XeroRefund,
   AaFeeInvoice,
   LedgerDisbursement,
   LedgerPair,
@@ -68,10 +69,11 @@ export interface SeedXeroSlice {
   /** Payment runs' credit allocations and batch payments (catch-up Phase 39a): the backdrop runs' batch payments. */
   creditAllocations: Record<string, XeroCreditAllocation>
   batchPayments: Record<string, XeroBatchPayment>
+  refunds: Record<string, XeroRefund>
 }
 
 export function emptySeedXeroSlice(): SeedXeroSlice {
-  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {}, creditNotes: {}, creditAllocations: {}, batchPayments: {} }
+  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {}, creditNotes: {}, creditAllocations: {}, batchPayments: {}, refunds: {} }
 }
 
 export interface SeedBillingSlice {
@@ -326,6 +328,7 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
         bankLines: {},
         creditNotes: {},
         creditAllocations: {},
+        refunds: {},
         batchPayments: backdrop.batchPayments,
       },
       payablesRuns: backdrop.runs,

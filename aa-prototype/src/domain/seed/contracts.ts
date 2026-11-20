@@ -40,7 +40,7 @@ import { FUNDING_TAGS, TAG } from './fundingTags'
 import { PARTIES, PARTY } from './parties'
 import { SPC } from './specialties'
 import { RVG_GROUP } from './rvgGroups'
-import { PRICED_ITEMS, fixed } from './pricedItems'
+import { BEAUMONT_RHINOPLASTY, PRICED_ITEMS, fixed } from './pricedItems'
 
 export const CONTRACT = {
   noContractRvg: 'CT-NO-CONTRACT',
@@ -140,6 +140,8 @@ const SEED: readonly SeedContract[] = [
   // Catch-up Phase 25a (demo values): Christchurch Eye Surgery's old rate, Disabled on Fri 10 Jul 2026 by the office
   // (`seed/disabledContractBooking.ts` writes the audit entry); one later Procedure still on it is flagged at review. Last, so no AA code moves.
   { id: CONTRACT.cesOldRate, name: 'Christchurch Eye Surgery 2025 rate', holderId: PARTY.ces, billsTo: 'holder', pricing: rate(25), status: 'disabled' },
+  // Catch-up Phase 41 (US-06.5.3; demo-plausible $1,350): Dr Beaumont's prepaid Rhinoplasty, the rebook's replacement price. Last, so no AA code moves.
+  BEAUMONT_RHINOPLASTY,
 ]
 
 function buildContracts(): Contract[] {

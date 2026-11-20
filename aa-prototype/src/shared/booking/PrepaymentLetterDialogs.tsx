@@ -30,7 +30,7 @@ import { formatMoney } from '../format'
 import { useCommandBlock } from './draft'
 
 /** The active templates of a kind, the default first (stable while the masters are). */
-function useLetterTemplates(kind: PrepaymentLetterKind): PrepaymentLetterTemplate[] {
+export function useLetterTemplates(kind: PrepaymentLetterKind): PrepaymentLetterTemplate[] {
   const masters = useAppStore((s) => s.masters)
   return useMemo(() => activeLetterTemplates({ masters }, kind), [masters, kind])
 }
@@ -39,7 +39,7 @@ function useLetterTemplates(kind: PrepaymentLetterKind): PrepaymentLetterTemplat
  * The letter row: the default named, or a select when more than one template
  * of the kind is active.
  */
-function LetterRow({ templates, value, onChange, shot }: { templates: readonly PrepaymentLetterTemplate[]; value: string; onChange: (id: string) => void; shot: string }) {
+export function LetterRow({ templates, value, onChange, shot }: { templates: readonly PrepaymentLetterTemplate[]; value: string; onChange: (id: string) => void; shot: string }) {
   if (templates.length === 0) {
     return (
       <DefRow label="Letter" tone="warning">

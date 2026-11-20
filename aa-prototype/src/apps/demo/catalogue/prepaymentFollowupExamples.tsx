@@ -8,10 +8,12 @@ import { useState } from 'react'
 import { Button } from '../../../shared'
 import { LetterPreview } from '../../../shared/booking/PrepaymentLetterDialogs'
 import { PrepaidSettlementBlock } from '../../../shared/booking/PrepaidSettlementBlock'
+import { PrepaymentHonourLine } from '../../../shared/flows/PrepaymentHonourLine'
+import { PrepaymentHistory } from '../../../shared/booking/PrepaymentHistory'
 import { LETTER_PREVIEW_SAMPLE, renderPrepaymentLetter } from '../../../domain/billing/prepaymentLetter'
 import { SEED_LETTER_TEMPLATES } from '../../../domain/seed/prepaymentLetters'
-import { SEED_LIST_IDS } from '../../../domain/seed'
-import { authoriseList, completeBooking, confirmNoModifiers, submitList, useAppStore } from '../../../store'
+import { SEED_LIST_IDS, SEED_PREPAID_BOOKING_ID } from '../../../domain/seed'
+import { authoriseList, completeBooking, confirmNoModifiers, prePaymentInvoicesForBooking, submitList, useAppStore } from '../../../store'
 import { OFFICE_ACTOR, SOUTER_ACTOR } from '../../../store/demoActors'
 
 /** The Standard prepayment letter rendered against the fictional sample. */
@@ -21,7 +23,8 @@ export function LetterPreviewExample() {
 
 /** Nair's settlement block: a button authorises her List in the demo store first. */
 export function PrepaidSettlementExample({ as = 'office' }: { as?: 'office' | 'anaesthetist' }) {
-  const procedureId = useAppStore((s) => s.billing.invoices['INV0001']?.procedureIds?.[0])
+  // The seeded prepaid Booking's prepayment invoice, and the Procedure it covers.
+  const procedureId = useAppStore((s) => prePaymentInvoicesForBooking(s, SEED_PREPAID_BOOKING_ID)[0]?.procedureIds?.[0])
   const authorised = useAppStore((s) => s.schedule.lists[SEED_LIST_IDS.prepaymentPaidList]?.state === 'AUTHORISED')
   const [error, setError] = useState<string | null>(null)
   function authorise() {
@@ -44,4 +47,19 @@ export function PrepaidSettlementExample({ as = 'office' }: { as?: 'office' | 'a
     )
   }
   return <PrepaidSettlementBlock procedureId={procedureId} actor={as === 'office' ? OFFICE_ACTOR : SOUTER_ACTOR} />
+}
+
+/** The honour line on a move of a prepaid Booking, as the office and the anaesthetist read it. */
+export function PrepaymentHonourLineExample() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 520 }}>
+      <PrepaymentHonourLine audience="office" />
+      <PrepaymentHonourLine audience="anaesthetist" receiverShort="Dr Beaumont" />
+    </div>
+  )
+}
+
+/** The prepayment history across a rebook: shown on Nair's Booking once it is cancelled and rebooked in the demo store. */
+export function PrepaymentHistoryExample() {
+  return <PrepaymentHistory bookingId={SEED_PREPAID_BOOKING_ID} />
 }

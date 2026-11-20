@@ -291,6 +291,10 @@ Hooks already added:
 | Credit note (catch-up Phase 39) | `CRN0001` / `CN-2026-0001` | None at reset. The first one issued (Approve, then `run-next-billing-run`) is record `CRN0001`, number `CN-2026-0001`, page `/admin/credit-notes/CRN0001`; its negative invoice to the anaesthetist is `CN-2026-0001-P`. The rebill and split components are ordinary runtime invoices (`AA-2026-....`). |
 | Staged combination (catch-up Phase 39) | `BK0191` / `P0198` / AA-2026-0002 | `stage-combined-procedure` right after a reset: Lorraine Petrie (`PT0173`) on Dr Delaney's Fri 10 Jul PM List `L-27731-2026-07-10-PM` at Forte, $3,700.00 plus GST = $4,255.00, billed to the patient. Another runtime Booking or invoice first shifts these numbers: pick the row by patient. |
 | Anaesthetist credit target (catch-up Phase 39) | `HBK03` on `L-HIST-03` | Dr Souter, David Chen, Mon 22 Jun 2026, invoice AA-2026-H03: web `/web/lists/L-HIST-03/bookings/HBK03`, mobile `/mobile/lists/L-HIST-03/bookings/HBK03`. |
+| Prepayment letter template (catch-up Phase 41) | `LT001` to `LT003` (a new template takes the next `LT` number) | Seeded, one default per kind: `LT001` "Standard prepayment letter" (request), `LT002` "Prepayment reminder" (reminder), `LT003` "Anaesthetist changed" (the optional patient email). Rows `tr[data-letter-template=<id>]` on `/admin/masters?view=prepaymentLetters`. `INV0001` (Nair) was sent with `LT001`. |
+| Prepayment refund (catch-up Phase 41) | `RF0001`…; Xero refund `XRF0001`… | None at reset. Raised by the system on cancelling a paid prepaid Booking, on a payment that arrives after its credit note, and on a Contract change off prepaid after sending. The cancellation's credit note is the first `CN-2026-0001` after a reset (issued at once, no review). |
+| The two prepaid Bookings (catch-up Phase 41) | Riley `BK0034`, Nair `BK0038` | No separate "refund Booking" is seeded: Nair (`INV0001`, paid $1,380.00, held) is the paid cancel and the paid Contract change; Riley, once Approve and send is done on `/admin/invoices`, is the sent-but-unpaid cancel, the reminder and the moved prepaid Booking. |
+| Rebook target (catch-up Phase 41) | Dr Sarah Beaumont `31902`, `CT-BEAUMONT-RHINO`, `L-31902-2026-08-04-PM` | Her prepaid Rhinoplasty Contract ($1,350.00 ex GST) on her ACTIVE Tue 4 Aug PM List at Forte Health with Mr V. Nand (ENT). Her Mon 27 Jul AM List `L-31902-2026-07-27-AM` (St George's, orthopaedics) offers no price of hers for it. |
 
 **Named lists** (`SEED_LIST_IDS`)
 
@@ -410,6 +414,9 @@ unsaved-changes guard can block a navigation). No URL changed; the Admin Booking
 | `/admin/billing/payment-runs/:runId/remittance/:anaesthetistId` (catch-up Phase 39a) | One anaesthetist's remittance advice for the run (Dr Sharma is `41267`): the document `remittance-advice` ("REMITTANCE ADVICE", `remittance-week` "Week 30, 2026", one row per BCTI, netted rows `remittance-netted` "Negative invoice CN-2026-0001-P · credit of AA-2026-PP20" with "-$365.70", the "Paid to you" total `remittance-net`, `remittance-still-to-net` only when a negative is left over), with the rail cards `remittance-print` and `remittance-xero` (batch payment). |
 | `/admin/invoices/:invoiceId` (catch-up Phase 39a) | The Ledger card adds `payment-week` once the invoice is paid out: "Paid out in Week 30 · $54.30 · netted $365.70" on `PPINV01` after the netting run (one span per run, `[data-run-id]`). |
 | `/admin/ledger/anaesthetists/:anaesthetistId` (catch-up Phase 39a) | Adds the "Payment runs" card `ledger-payment-runs` (the runs that paid this anaesthetist, "Not paid in a payment run yet." when none) and `ledger-still-to-net` ("Dr Sharma has negative invoices to net: ...") only while a negative is open. |
+| `/admin/masters?view=prepaymentLetters` (catch-up Phase 41) | Master data, Prepayment letters (Settings group; sub-nav `[data-masters-view=prepaymentLetters]`): the view `letter-templates` ("Prepayment letters", table rows `tr[data-letter-template=LT001..LT003]` with Name and a Default pill, Kind, Active, Updated, and Make default, Edit, Deactivate, each named "<action> <template name>"), "New template" `letter-template-new` in the header. Edit or New template opens `letter-template-editor` (see Overlays). |
+| `/admin/day/:date/bookings/:bookingId` (catch-up Phase 41) | Above the Booking body, `PrepaymentFollowupCards`: the moved card `prepayment-moved` (only when the List's anaesthetist differs from the one the prepayment invoice named), the office's `rebook-open` ("Rebook with another anaesthetist", only on a cancelled Booking that had a prepayment and was not rebooked yet) and `prepayment-history` (two or more prepayments along a rebook). In the prepayment panel `booking-prepayment`: `prepayment-reminder` (office, sent and unpaid or part paid, List not authorised), `prepayment-reminder-sent`, and once settled `prepayment-settled`. Under a prepaid Procedure once the List is AUTHORISED: `prepaid-settlement` (all three apps). |
+| `/admin/invoices/:invoiceId` (catch-up Phase 41) | A prepayment invoice sent with a letter shows it as its cover `prepayment-letter` above the masthead (`INV0001` from reset); the Delivery card adds `invoice-letter-line` ("Letter: Standard prepayment letter · sent with this invoice") and one `invoice-reminder-line` per reminder ("Reminder · 21 Jul 08:00 · $1,380.00 outstanding"). |
 
 The side nav has: Day view, Intake (amber badge `[data-shot=nav-badge-intake]`, the open Matching rows;
 catch-up Phase 34, was Matching with `nav-badge-matching`), Conflicts (amber badge `[data-shot=nav-badge-conflicts]`, catch-up
@@ -450,6 +457,7 @@ the ledger's failed checks (none at reset, so no badge; 1 after "Inject unmatche
 | `/demo/xero/invoices/:accRecId` | Pair detail: ACCREC and ACCPAY, money flow, both records' InvoiceNumber and Reference (`xero-invoice-identifiers`); the payable equals the receivable. `XRB0` exists in the seed. An AA fee pair (`XRFH01`, `XRFH02`) shows the fee ACCREC and a "No payable" note (`xero-aa-fee-pair`). |
 | `/demo/xero/invoices/:accRecId` (catch-up Phase 36) | The callout `xero-engine-link` is now titled "Ledger pair (the system of record)"; inside it `xero-ledger-pair` (the patient, then Ledger pair, Receivable and Payable numbers and the ledger's received, released and paid out) and the chip `xero-ledger-match` ("Matches the ledger" or "Differs from the ledger"). The page subtitle says Xero mirrors the Billing Engine's ledger. |
 | `/demo/xero/invoices/:accRecId` (catch-up Phase 37) | The ACCPAY card `xero-accpay-card` separates what Xero paid from what the engine knows: `xero-accpay-paid-in-xero` ("Paid in Xero": each bill payment's id, time and amount, or "No bill payment yet. Xero's payables run pays the bill once it is authorised.") and, once a bill payment exists, `xero-accpay-engine-detection` (one line per bill payment, `data-engine-state=recorded|notDetected|queued`: "Billing Engine: disbursement recorded HH:mm by webhook", "... by the poll", "Billing Engine: not yet detected; the next poll picks it up", or the queued wording). The ACCREC card shows `xero-accrec-voided` (pill "Voided in Xero") after a void and `xero-accrec-amended` ("Amended in Xero HH:mm", "Total in Xero") after an edit. The "Simulate payment and payout" button stays (payment, Xero's payables run and the bill-paid webhook in one click); the staged way is the `xero-pay-bill` trigger. |
+| `/demo/xero/invoices/:accRecId` (catch-up Phase 41) | On a credited prepayment's pair (Nair's `XRB0` after her Booking is cancelled), the credit note card `xero-credit-note` adds `xero-prepayment-refund` with one row `xero-prepayment-refund-row` (`data-refund-id`) per refund: "Refund paid from <bank account> · $1,380.00 · Paid 21 Jul" and its reference. Scroll to `xero-credit-note` first. |
 | `/demo/xero/bank` | Bank reconciliation tab (catch-up Phase 37; US-10.2.4), labelled "Bank reconciliation (N unmatched)": `xero-bank-reconciliation` holds the scope callout `xero-bank-scope` ("Matched in Xero, not by the Billing Engine": "The Billing Engine does not match bulk remittances. Xero's bank reconciliation and remittance add-on do, keyed on the unique InvoiceNumber; the engine learns each matched payment through the normal payment webhook (US-10.2.4)."), then `xero-bank-empty` at reset ("No remittance yet"). After the `xero-bulk-remittance` trigger: the remittance card `xero-remittance-rmt0001` (lower-case id; "St George's remittance 21 Jul") with lines `xero-bank-line-bkl0001`, `-bkl0002` (`data-line-status=matchedByAddOn`) and `-bkl0003` (`unmatched`, $980.00 quoting AA-2026-H40), and the section `xero-bank-unmatched` ("Unmatched items · for office staff, handled in Xero") with one row `xero-bank-unmatched-bkl0003`, its invoice select `xero-bank-pick-BKL0003` and "Match in Xero" `xero-bank-match-BKL0003` (upper-case ids on these two); the right invoice is AA-2026-H04 (Xero id `XRH04`), and the result line is `xero-bank-match-result`. |
 | `/demo/integrations` | Future scope: HL7 and FHIR (catch-up Phase 34), the integration simulator: feeds, message library, raw HL7 to FHIR, then pane 3 "Sent to matching" (a message stages a row on `/admin/intake/matching`, never applies). Header line `demo-surface-future-scope`, page strip `future-scope-pages` (Simulator, Message log, Feed mapping). App `simulator`. |
 | `/demo/integrations/log` | Future scope: the HL7 message log (catch-up Phase 34; was Admin Integrations' Messages tab): `future-scope-log` (its table is `[data-shot=future-scope-log] table`), the dead-letter callout `integrations-attention`. Empty until a message is replayed or fired. |
@@ -1089,6 +1097,8 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   opens a confirm whose primary is `[data-shot=prepayment-approval-off-confirm]` "Switch off"), and the result line
   `[data-shot=approve-and-send-result]`. Approve Riley with
   `[data-shot=awaiting-approval-row][data-booking-id=BK0034] [data-shot=approve-and-send]`.
+  Since catch-up Phase 41 that click opens the letter dialog: wait for `[data-shot=prepayment-letter-picker]`, then
+  click `[data-shot=prepayment-letter-send]` (see Overlays).
 - **Admin Day** `/admin/day/2026-07-21`: the rail card `[data-shot=rail-prepayments]` ("Pre-payments"), rows
   `[data-shot=rail-prepayment-row]` (`data-booking-id`, `data-status`). 15a's triangle and To-do card are unchanged.
 - **Billing monitor** `/admin/billing`: `[data-shot=monitor-prepaid-left-off]`. **Review:** the chip
@@ -1314,8 +1324,10 @@ were already imported. Nothing new.").
 - **Office chips**: "Wrong billable party", "Wrong amount", "Less work than expected", "Split requested", "Paid twice".
   A reason is required; pick a chip with `[data-shot=credit-reason-chip]:has-text("Wrong amount")`. There is never an
   amount field: a credit is always for the whole invoice.
-- **Prepaid Procedures** show `credit-note-unavailable` ("Crediting a prepayment invoice is not in this prototype
-  yet.") in place of the button: crediting a prepayment invoice is Phase 41's.
+- **Prepaid Procedures** (catch-up Phase 41): `credit-note-unavailable` is gone. The credit note on a prepaid
+  Procedure credits the whole prepayment invoice; once the List is authorised its button sits in the
+  `prepaid-settlement` block, and the form shows `prepayment-credit` in place of the new-invoice cards (see
+  [Prepayment letter, cancellation and differences by hand](#prepayment-letter-cancellation-and-differences-by-hand-catch-up-phase-41)).
 
 ### Pre-op, post-op and billing events (catch-up Phase 39b)
 
@@ -1459,6 +1471,67 @@ were already imported. Nothing new.").
   tagged `payment-cycle-rolled` "Rolled from Week 30".
 - **No back door.** `stage-refund-after-payout` and the PWA's `pwa-office-runs-payables` pay out through a run too
   (a one-line run tagged Staged, or the week's own run), so they appear in `payables-runs`.
+
+### Prepayment letter, cancellation and differences by hand (catch-up Phase 41)
+
+- **Seed.** Letter templates `LT001` to `LT003`, one default per kind. Riley (`BK0034`, Souter Fri 24 Jul AM) still awaits
+  approval; "Approve and send" on `/admin/invoices` now opens the letter dialog, and the invoice goes only on its own
+  send (`prepayment-letter-send`). Right after a reset Riley's invoice is the next number, AA-2026-0002 (the examples
+  below assume it). Nair (`BK0038`, `INV0001` = AA-2026-0001, $1,380.00 paid and held, Souter Fri 24 Jul
+  PM `L-34821-2026-07-24-PM`, `SEED_LIST_IDS.prepaymentPaidList`) was sent with `LT001`, so `/admin/invoices/INV0001`
+  shows the letter at reset. No separate refund Booking is seeded: Nair is the paid case, Riley (approved first) the
+  unpaid one.
+- **The letter and the reminder.** Riley approved and sent, then her Admin Booking
+  `/admin/day/2026-07-24/bookings/BK0034` offers `prepayment-reminder`; its dialog previews the reminder with the
+  amount still to pay and sends to the payer's invoice email; then `prepayment-reminder-sent` on the panel,
+  `rail-prepayment-reminded` on Admin Day's Pre-payments card, and `invoice-reminder-line` on the invoice. On the
+  phone (`/mobile/lists/L-34821-2026-07-24-AM/bookings/BK0034`) the anaesthetist reads `prepayment-letter-by-office`;
+  the PWA stand-ins `pwa-office-approves-prepayment` then `pwa-office-sends-prepayment-reminder` stage it there.
+- **Nothing automatic after the procedure.** Authorise Nair's List (complete, submit and authorise: US-06.5.1's
+  steps) and the prepaid Rhinoplasty gets `prepaid-settlement`: "Prepaid · $1,200.00 · the price", the recorded BTM
+  `prepaid-settlement-btm` "for reference", the move from the AA Holding account `prepaid-settlement-transfer` (Dr
+  Souter on Admin, "you" on web and mobile), `prepaid-settlement-nothing-automatic` "Nothing is invoiced or credited
+  automatically." and `prepaid-settlement-actions` (Create or Raise additional invoice, Credit note). Before Authorise,
+  on Review with the List SUBMITTED, `stage-longer-prepaid-procedure` lengthens it to 240 minutes; Authorise still
+  bills nothing more. Before Authorise the office's Change price on the prepaid Procedure
+  (`[data-shot=office-billing-setup-2] >> role=button[name="Change price"]`) shows the price read-only with
+  `pricing-sheet-refusal`.
+- **By hand.** The settlement block's Credit note (`[data-shot=prepaid-settlement] [data-shot=procedure-credit-note-button]`,
+  web and mobile `anaesthetist-credit-note-button`) credits the whole prepayment invoice: the form shows
+  `prepayment-credit` ("This credits the whole prepayment invoice. Raise an additional invoice for anything still
+  owed.") and no new-invoice cards. It waits in Review's Events tab like any credit (`tr[data-kind=credit]`); once
+  approved and issued by `run-next-billing-run`, the block lists `prepaid-settlement-credit` and hides its Credit
+  note. A fresh additional invoice (`[data-shot=prepaid-settlement] [data-shot=additional-invoice-button]`, reviewed
+  as `tr[data-kind=additionalInvoice]`, then the run) shows as `prepaid-settlement-additional`.
+- **Cancel.** Cancel booking on a prepaid Booking (all three apps) shows `cancel-prepayment` in the sheet, one notice
+  per live prepayment invoice (`data-received=yes|no`): paid, "Prepayment received · $1,380.00 on AA-2026-0001.
+  Cancelling refunds it in full to the payer from the AA Holding account and credits the invoice."; unpaid,
+  "Prepayment invoice AA-2026-0002 is unpaid. Cancelling credits it in full, so the patient is not chased." The sheet's
+  reason is `[role=dialog] textarea`, its primary `[role=dialog] >> role=button[name="Cancel booking"]`. After it the
+  panel reads `prepayment-settled`: "Credited · CN-2026-0001" with a Refunded or Credited pill, and per refund
+  `prepayment-settled-refund` (`data-refund-cause`) "Refunded to the payer from the AA Holding account · $1,380.00 on
+  21 Jul" or "Late payment of $1,380.00 refunded on 21 Jul". The Billing monitor's `billing-prepay-holding` gains
+  `holding-entry` rows `data-entry-kind=credited` and `refunded` (Credit note and Cause columns); Xero shows the
+  refund on `/demo/xero/invoices/XRB0` (`xero-prepayment-refund`). Riley cancelled unpaid, then
+  `prepayment-late-payment` on her Booking, adds the late payment's refund.
+- **Contract change.** `prepayment-contract-changed` on Nair's Admin Booking credits and refunds as a cancellation:
+  the panel's `prepayment-settled` reads "Credited · CN-2026-0001 · Contract changed off prepaid". Moving a sent
+  Procedure off prepaid on the Contract rail (step 2, Standard, then `[data-contract-id=CT-NO-CONTRACT]`, as US-06.3.5's
+  recheck recipe does before sending; US-06.3.7 does it after sending) shows the line `prepaid-contract-change` under the rail: "Prepayment invoice
+  AA-2026-0002 was sent. Changing the Contract credits it (and refunds what was paid), then bills this procedure after
+  it under the new Contract."
+- **Moves change nothing.** The honour line `move-booking-honour` shows on every move of a sent prepaid Booking:
+  32a's sheet on web and mobile (`data-audience=anaesthetist`), Admin Day's Move dialog (Nair's row in the Fri 24 PM
+  drawer) and the List drawer's Reassign (`reassign-list-honour`) (`data-audience=office`: "The prepayment keeps its
+  agreed amount. Whoever the office assigns claims it."). Riley approved, then moved with 32a's sheet on web (the
+  first receiver), shows `prepayment-moved` on her Admin Booking: "Prepayment kept at the agreed amount · now with Dr
+  <surname>", `prepayment-moved-invoice` "Invoice AA-2026-0002 unchanged", and the office's `patient-email-open`.
+- **Rebook.** Cancel Nair on Admin, then `rebook-open`: the dialog `rebook-dialog`, the anaesthetist select
+  `select[data-shot=rebook-anaesthetist]` (value `31902` for Dr Beaumont), her List cards
+  `[data-shot=rebook-list][data-list-id="L-31902-2026-08-04-PM"]`, and `rebook-price` (`data-kind=prepaid`) "New
+  prepayment at Dr Beaumont's own price: $1,350.00". `rebook-submit` creates the new Booking on that List and opens
+  it (`/admin/day/2026-08-04/bookings/<new id>`): awaiting approval at $1,350.00, with `prepayment-history` "Earlier
+  prepayment · Dr Souter · $1,200.00 · refunded" and "This prepayment · Dr Beaumont · $1,350.00".
 
 ## Overlays that need clicks
 
@@ -1867,6 +1940,41 @@ were already imported. Nothing new.").
   inside the History dialog ("As at ..., after Kirsty W.'s save", the Booking's fields then, no prices),
   with its own "Close". `[data-shot=booking-history] [data-shot=history-view-as-at] >> nth=1` picks the row before
   the newest.
+- **Approve and send's letter dialog** (catch-up Phase 41): the strip's `approve-and-send` no longer sends. It opens
+  `[data-shot=prepayment-letter-picker]` ("Approve and send", `data-booking-id`, `data-payer-key`): the Letter row
+  `prepayment-letter-template` (the default named, a select when several are active), the To row
+  `prepayment-letter-recipient` (the payer and its email or postal line), the text action
+  `prepayment-letter-preview-toggle` ("Preview letter" / "Hide letter") showing `prepayment-letter-preview`, the
+  refusal `prepayment-letter-refusal`, and the teal `prepayment-letter-send` ("Approve and send"). **Every recipe that
+  clicks `approve-and-send` then waits for the picker and clicks `prepayment-letter-send`**; only then does
+  `approve-and-send-result` appear.
+- **Send prepayment reminder** (Admin Booking, catch-up Phase 41): `prepayment-reminder` opens
+  `[data-shot=prepayment-reminder-dialog]` (`data-invoice-id`; "Invoice AA-2026-0002 · $1,380.00 still to pay"):
+  `prepayment-reminder-template`, `prepayment-reminder-recipient` (or `prepayment-reminder-no-address`),
+  `prepayment-reminder-preview-toggle` / `prepayment-reminder-preview`, `prepayment-reminder-refusal` and the teal
+  `prepayment-reminder-send` ("Send reminder"). It acts on the saved Booking at once.
+- **Letter template editor** (Master data, Prepayment letters, catch-up Phase 41): a row's Edit
+  (`tr[data-letter-template=LT001] >> text="Edit"`, named "Edit Standard prepayment letter") or "New template"
+  (`letter-template-new`) opens a wide dialog `[data-shot=letter-template-editor]`: Name, Kind (new only), the Letter
+  body, the merge-field buttons `letter-merge-chips` (named "Insert <field>") and the live preview
+  `letter-template-preview` ("Preview with a sample booking").
+- **Credit sheet on a prepaid Procedure** (catch-up Phase 41): the same `credit-sheet` / `credit-form`, with the
+  notice `prepayment-credit` in place of the new-invoice step (no amount, no new invoice cards). Open it from the
+  settlement block once the List is authorised (see the Phase 41 seed notes).
+- **Cancel sheet on a prepaid Booking** (catch-up Phase 41): `role=button[name="Cancel booking"] >> nth=0` opens the
+  confirm sheet (`[role=dialog]`; on the phone a bottom sheet, scope `[data-aa-mobile-product]`); above the Reason
+  box sits `cancel-prepayment`. Fill `[role=dialog] textarea` and press `[role=dialog] >> role=button[name="Cancel booking"]`.
+  A Booking with no live prepayment invoice shows no note.
+- **Email patient: anaesthetist changed** (catch-up Phase 41, office only): on a moved prepaid Booking's card,
+  `patient-email-open` opens `[data-shot=patient-email]`: `patient-email-template`, `patient-email-recipient` (or
+  `patient-email-no-address`), the always-open preview `patient-email-preview`, the caption `patient-email-provisional`
+  "Provisional (OQ-120)", `patient-email-refusal`, and the teal `patient-email-send` ("Send email"), which closes it;
+  the card then shows `patient-emailed`.
+- **Rebook with another anaesthetist** (catch-up Phase 41, office only): `rebook-open` on a cancelled prepaid Booking
+  opens `[data-shot=rebook-dialog]`: `select[data-shot=rebook-anaesthetist]` (every active colleague but the original,
+  roster order), the List cards `[data-shot=rebook-list][data-list-id=<id>]` (or `rebook-no-lists`), the inline
+  `rebook-not-preferred`, the price line `rebook-price` (`data-kind=prepaid|notPrepaid|noPrice`), `rebook-refusal` and
+  the teal `rebook-submit` ("Rebook"), which opens the new Booking.
 
 **Shell** (these controls sit in the harness bar, which is hidden in shots, so they can't be
 clicked; use the matching `/demo/control` buttons in `setup` instead. The "Demo actions" menu is
@@ -1911,8 +2019,9 @@ the exception: use the `trigger` step)
   additional invoices"; refusal `split-combined-refusal`); all three disabled while a credit waits or once credited.
   Procedure button slot (beside Create additional invoice and 22's Split): Admin `procedure-credit-note-button` and
   `split-combined-button`, web and mobile `anaesthetist-credit-note-button` (both "Credit note", `data-invoice-id`;
-  hidden on a colleague's Procedure and before the invoice; on a prepaid Procedure the caption `credit-note-unavailable`
-  instead). Sheets: Admin `credit-sheet` (`data-mode=credit|rebill|edit`) and `split-combined-sheet`, both wrapping
+  hidden on a colleague's Procedure and before the invoice; on a prepaid Procedure it credits the whole prepayment
+  invoice, from the `prepaid-settlement` block once the List is authorised: catch-up Phase 41 removed
+  `credit-note-unavailable`). Sheets: Admin `credit-sheet` (`data-mode=credit|rebill|edit`) and `split-combined-sheet`, both wrapping
   the form `credit-form` (`data-variant=office|anaesthetist`, `data-mode`), which every wrapper (web dialog, mobile
   bottom sheet) carries. Inside the form: `credit-original` (`credit-original-total`), `credit-party` (38b's
   `event-same-as-row` tick and `event-party-picker`, then `credit-invoice-email`), `credit-reason` with chips
@@ -2474,6 +2583,33 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   `web-remittances` (rows `tr[data-run-id]`, `data-testid=remittance-row-<runId>`), `web-remittance-sheet`,
   `web-remittance-advice`, `web-still-to-net`, `web-payment-week`, `web-payment-held-out`. Demo action rows
   `demo-action-stage-payment-week`, `demo-action-stage-bank-mismatch`.
+- Prepayment letter, cancellation and differences by hand (catch-up Phase 41; US-06.3.6, US-06.3.7, US-06.4.1,
+  US-06.5.2 to US-06.5.4). Master data: `letter-templates` (rows `tr[data-letter-template]`), `letter-template-new`,
+  `letter-template-editor`, `letter-merge-chips`, `letter-template-preview`. Invoices strip: `prepayment-letter-picker`
+  with `prepayment-letter-template`, `prepayment-letter-recipient`, `prepayment-letter-preview-toggle`,
+  `prepayment-letter-preview`, `prepayment-letter-refusal`, `prepayment-letter-send`. Invoice document:
+  `prepayment-letter` (the cover section), rail `invoice-letter-line`, `invoice-reminder-line`. Prepayment panel (all
+  three apps): `prepayment-reminder` (office), `prepayment-reminder-sent`, `prepayment-letter-by-office`
+  (anaesthetist), `prepayment-settled` with `prepayment-settled-invoice` (`data-credit-note`, `data-cause`),
+  `prepayment-settled-credit-link` (Admin) and `prepayment-settled-refund` (`data-refund-cause`); reminder dialog
+  `prepayment-reminder-dialog` (`prepayment-reminder-template`, `-recipient`, `-no-address`, `-preview-toggle`,
+  `-preview`, `-refusal`, `-send`). Admin Day rail: `rail-prepayment-reminded`. Settlement block under a prepaid
+  Procedure: `prepaid-settlement` (`data-prepayment-status`), `prepaid-settlement-amount`, `prepaid-settlement-invoice`,
+  `prepaid-settlement-btm`, `prepaid-settlement-transfer`, `prepaid-settlement-credit`
+  (`prepaid-settlement-credit-number`), `prepaid-settlement-additional` (`prepaid-settlement-additional-number`),
+  `prepaid-settlement-nothing-automatic`, `prepaid-settlement-actions` (`data-variant=office|anaesthetist`). Credit
+  form: `prepayment-credit`. Cancel sheet: `cancel-prepayment` (notices `data-invoice-id`, `data-received`). Contract
+  rail: `prepaid-contract-change`. Billing monitor: `holding-entry` gains `data-entry-kind=credited|refunded`. Xero
+  sim: `xero-prepayment-refund`, `xero-prepayment-refund-row`. Moves: `move-booking-honour` (`data-audience`, now
+  also in Admin Day's Move dialog), `reassign-list-honour`. Admin Booking: `prepayment-moved`,
+  `prepayment-moved-invoice`, `patient-emailed`, `patient-email-open`, the dialog `patient-email` (`-template`,
+  `-recipient`, `-no-address`, `-preview`, `-provisional`, `-refusal`, `-send`), `rebook-open-row`, `rebook-open`,
+  the dialog `rebook-dialog` (`rebook-anaesthetist`, `rebook-lists`, `rebook-list`, `rebook-no-lists`,
+  `rebook-not-preferred`, `rebook-price`, `rebook-refusal`, `rebook-submit`), `prepayment-history` (rows
+  `prepayment-history-row`, `data-booking-id`, `data-state=refunded|credited|current`). Demo action rows
+  `demo-action-stage-longer-prepaid-procedure`, `demo-action-prepayment-late-payment`,
+  `demo-action-prepayment-contract-changed`; PWA `pwa-demo-action-pwa-office-sends-prepayment-reminder`.
+  `credit-note-unavailable` is gone.
 
 **Other hooks**
 
@@ -2483,6 +2619,27 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 - `[data-validation-focus=true]`
 
 ## Demo control panel (`/demo/control`) and Demo actions
+
+- Catch-up Phase 41 (prepayment settled automatically, differences by hand). Three bar entries and one PWA entry, none
+  with a choice to pass. `stage-longer-prepaid-procedure` ("Stage longer prepaid procedure", screen "Admin · Review",
+  only on `/admin/review/:listId`, the List SUBMITTED; its choices are the List's Bookings with a sent prepayment, the
+  first by default) lengthens the prepaid Procedure to 240 minutes as the office: "Recorded BTM now N units, for
+  reference only. Authorise bills nothing more ..."; disabled "Submit this List first", "No sent prepayment on this
+  List" or "Already staged". Index path `/admin/review/L-34821-2026-07-24-PM` ("Submit Dr Souter's Fri 24 Jul PM List
+  first."). `prepayment-late-payment` ("Payment arrives after the credit note", Admin Booking detail) pays the total of
+  a prepayment invoice the cancellation credited unpaid through the simulated bank feed, and the system refunds it at
+  once: "Late payment of $1,380.00 refunded to the payer."; disabled "Only on a cancelled booking with a credited,
+  unpaid prepayment" (approve and send Riley, cancel her, then run it on `/admin/day/2026-07-24/bookings/BK0034`).
+  `prepayment-contract-changed` ("Change Contract after prepayment sent", Admin Booking detail) moves the Booking's
+  first prepaid Procedure onto the first Contract that is not prepaid (insurers' first) as the office: "The office
+  moved the procedure to <Contract>. Prepayment invoice credited as CN-2026-0001, and anything paid refunded from the
+  AA Holding account."; disabled "No sent prepayment on this booking" or "This List is authorised"; runs once per
+  Booking (Nair's `BK0038` works from reset). The PWA-only `pwa-office-sends-prepayment-reminder` ("Office sends a
+  prepayment reminder", office stand-in badge, a mobile Booking) sends the reminder as the office: "Reminder sent by
+  the AA office"; disabled "No unpaid prepayment on this booking" (so run `pwa-office-approves-prepayment` on Riley
+  first) or "No invoice email for the payer". `pwa-office-approves-prepayment` now sends the default letter. The
+  letter, the reminder, cancelling, the Contract rail, the patient email and the rebook are product controls (real
+  clicks), never triggers.
 
 - Catch-up Phase 39a (the weekly payment cycle). Two bar entries on `/admin/billing`, screen "Admin · Billing monitor":
   `stage-payment-week` ("Stage a payment week", choices `bctis` "19 BCTIs", the default, and `withCredit` "19 BCTIs

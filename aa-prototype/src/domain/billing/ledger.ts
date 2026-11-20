@@ -422,7 +422,11 @@ function checksForPair(pair: BookingLedgerPair, transfer: LedgerTransfer | undef
   const out: LedgerCheck[] = []
   const r = pair.receivable
   const who = pair.anaesthetistId !== undefined ? { anaesthetistId: pair.anaesthetistId } : {}
-  if (toCents(r.receivedAmount) > toCents(r.amount)) out.push({ code: 'receivedAboveAmount', amount: roundToCents(r.receivedAmount - r.amount), targetId: pair.id, ...who })
+  // Money that arrived after a cancelled prepayment's credit and was refunded straight back (catch-up Phase 41) is not an overpayment.
+  const refundedBack = toCents(pair.credit?.refundedAmount ?? 0)
+  if (toCents(r.receivedAmount) - refundedBack > toCents(r.amount) || (toCents(r.receivedAmount) > toCents(r.amount) && pair.credit === undefined)) {
+    out.push({ code: 'receivedAboveAmount', amount: roundToCents(r.receivedAmount - r.amount), targetId: pair.id, ...who })
+  }
   const p = pair.payable
   if (p === undefined) return out
   if (toCents(p.amount) !== toCents(r.amount)) out.push({ code: 'pairAmountMismatch', amount: roundToCents(p.amount - r.amount), targetId: pair.id, ...who })
@@ -483,6 +487,8 @@ export interface LedgerPosition {
   creditsHeldForPayers: number
   /** What was paid out on credited invoices, left to net from the anaesthetists' next payment runs (catch-up Phase 39; 39a nets it). */
   recoveryDueFromAnaesthetists: number
+  /** What the system refunded to payers out of what was held for them (catch-up Phase 41: cancelled prepayments): money out. */
+  refundedToPayers: number
 }
 
 /** What a payable still awaits from the payer: none once it is reversed (catch-up Phase 39). */
@@ -518,6 +524,7 @@ export function ledgerPosition(pairs: readonly LedgerPair[], transfers: Readonly
   const feeOutstanding = new Cents()
   const creditsHeld = new Cents()
   const recoveryDue = new Cents()
+  const refunded = new Cents()
   let notInXero = 0
   for (const pair of pairs) {
     if (!isInXero(pair)) notInXero += 1
@@ -531,7 +538,9 @@ export function ledgerPosition(pairs: readonly LedgerPair[], transfers: Readonly
     outstanding.add(Math.max(0, roundToCents(r.amount - r.receivedAmount - (r.creditedAmount ?? 0))))
     received.add(r.receivedAmount)
     if (pair.credit !== undefined) {
-      creditsHeld.add(pair.credit.heldForPayer)
+      // A refund (catch-up Phase 41) pays out of what is held for the payer: money out, so it leaves both.
+      creditsHeld.add(roundToCents(pair.credit.heldForPayer - (pair.credit.refundedAmount ?? 0)))
+      refunded.add(pair.credit.refundedAmount ?? 0)
       // Net of what payment runs have netted (catch-up Phase 39a): each netting lowers it by exactly the offset it adds to a bill.
       recoveryDue.add(recoveryOpenOn(pair.credit))
     }
@@ -553,7 +562,7 @@ export function ledgerPosition(pairs: readonly LedgerPair[], transfers: Readonly
   }
   const unmatchedHeld = new Cents()
   for (const u of unmatched) if (u.status === 'held') unmatchedHeld.add(u.amount)
-  const receiptsHeldCents = received.cents + unmatchedHeld.cents - disbursed.cents
+  const receiptsHeldCents = received.cents + unmatchedHeld.cents - disbursed.cents - refunded.cents
   const holdingCents = holdingReleased.cents - out.cents
   const imbalanceCents = receiptsHeldCents - due.cents - holdingCents - creditsHeld.cents + recoveryDue.cents
   const checks = ledgerChecks(pairs, transfers, unmatched)
@@ -573,6 +582,7 @@ export function ledgerPosition(pairs: readonly LedgerPair[], transfers: Readonly
     notInXero,
     creditsHeldForPayers: creditsHeld.value,
     recoveryDueFromAnaesthetists: recoveryDue.value,
+    refundedToPayers: refunded.value,
   }
 }
 

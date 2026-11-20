@@ -34,6 +34,7 @@ export const PARTY = {
   merivale: 'PY-MER',
   doyle: 'PY-DOYLE',
   souter: 'PY-SOUTER',
+  beaumont: 'PY-BEAUMONT',
 } as const
 
 export const PARTIES: readonly Party[] = [
@@ -68,5 +69,7 @@ export const PARTIES: readonly Party[] = [
   // A surgeon, and an anaesthetist (19a seeds her price list).
   { id: PARTY.doyle, kind: 'surgeon', name: 'Mr P. Doyle', codePrefix: 'DOYLE', billingIdentity: { kind: 'surgeon', id: SURG.doyle } },
   { id: PARTY.souter, kind: 'anaesthetist', name: 'Dr Melanie Souter', codePrefix: 'SOUTER' },
+  // Catch-up Phase 41 (US-06.5.3): Dr Beaumont's own price list, the rebook's replacement price. Last, so no id moves.
+  { id: PARTY.beaumont, kind: 'anaesthetist', name: 'Dr Sarah Beaumont', codePrefix: 'BEAU' },
 ] as const
 

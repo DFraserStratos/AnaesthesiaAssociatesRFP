@@ -67,8 +67,12 @@ export function canPayOutOfHolding(source: HoldingOutflow): boolean {
 /** One line of the account's entries table. */
 export interface HoldingEntry {
   atISO: string
-  /** `credited` (catch-up Phase 41): a credit reversing the account's payable before the transfer (by hand, a cancellation or a Contract change). */
-  kind: 'received' | 'transferred' | 'credited'
+  /**
+   * `credited` (catch-up Phase 41): a credit reversing the account's payable before the transfer (by hand, a cancellation or
+   * a Contract change). `refunded`: money the system paid back to the payer out of the account, against that credit; it is
+   * shown, never counted again in the balance (the credit already took it out).
+   */
+  kind: 'received' | 'transferred' | 'credited' | 'refunded'
   /** Received: the payment. Transferred: the amount held at that moment. Credited: what the account held when the credit reversed it. */
   amount: number
   bookingId: string
@@ -80,9 +84,12 @@ export interface HoldingEntry {
   /** Received: the receipt. Transferred: the transfer. One of the two, so every entry has its own key. */
   receiptId?: string
   transferId?: string
-  /** Credited only: the credit note and its number. */
+  /** Credited and refunded: the credit note and its number. */
   creditNoteId?: string
   creditNoteNumber?: string
+  /** Refunded only: the refund and why. */
+  refundId?: string
+  refundCause?: 'cancelled' | 'latePayment' | 'contractChanged'
 }
 
 export interface HoldingInput {
@@ -92,6 +99,8 @@ export interface HoldingInput {
   invoices: Readonly<Record<string, Pick<Invoice, 'id' | 'invoiceNumber' | 'counterparty'>>>
   /** The credit notes, to number a credited entry (catch-up Phase 41). */
   creditNotes?: Readonly<Record<string, { id: string; creditNoteNumber: string }>>
+  /** The refunds paid by the system (catch-up Phase 41). */
+  prepaymentRefunds?: Readonly<Record<string, { id: string; prepaymentInvoiceId: string; creditNoteId: string; amount: number; paidAtISO: string; cause: 'cancelled' | 'latePayment' | 'contractChanged' }>>
 }
 
 /** The `prePayment` pairs whose payable is to the account. */
@@ -161,14 +170,35 @@ export function holdingEntries(input: HoldingInput): HoldingEntry[] {
       })
     }
   }
-  const order: Record<HoldingEntry['kind'], number> = { received: 0, transferred: 1, credited: 1 }
+  for (const r of Object.values(input.prepaymentRefunds ?? {})) {
+    const invoice = input.invoices[r.prepaymentInvoiceId]
+    const pair = heldPairs(input.ledger).find((c) => c.invoiceId === r.prepaymentInvoiceId)
+    if (invoice === undefined || pair === undefined) continue
+    entries.push({
+      atISO: r.paidAtISO,
+      kind: 'refunded',
+      amount: r.amount,
+      bookingId: pair.bookingId,
+      invoiceId: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      payerKey: refKey(invoice.counterparty),
+      creditNoteId: r.creditNoteId,
+      ...(input.creditNotes?.[r.creditNoteId] !== undefined ? { creditNoteNumber: input.creditNotes[r.creditNoteId]!.creditNoteNumber } : {}),
+      refundId: r.id,
+      refundCause: r.cause,
+    })
+  }
+  const order: Record<HoldingEntry['kind'], number> = { received: 0, transferred: 1, credited: 1, refunded: 2 }
   return entries.sort((a, b) => a.atISO.localeCompare(b.atISO) || order[a.kind] - order[b.kind] || a.invoiceNumber.localeCompare(b.invoiceNumber))
 }
 
 /** The account's balance: received less transferred and credited, in cents, never negative. It is the prepayments received for procedures not yet done. */
 export function holdingBalance(entries: readonly HoldingEntry[]): number {
   let cents = 0
-  for (const e of entries) cents += e.kind === 'received' ? toCents(e.amount) : -toCents(e.amount)
+  for (const e of entries) {
+    if (e.kind === 'refunded') continue
+    cents += e.kind === 'received' ? toCents(e.amount) : -toCents(e.amount)
+  }
   return Math.max(0, cents) / 100
 }
 
@@ -176,6 +206,7 @@ export function holdingBalance(entries: readonly HoldingEntry[]): number {
 export function heldBookingIds(entries: readonly HoldingEntry[]): string[] {
   const heldByInvoice = new Map<string, { bookingId: string; cents: number }>()
   for (const e of entries) {
+    if (e.kind === 'refunded') continue
     const row = heldByInvoice.get(e.invoiceId) ?? { bookingId: e.bookingId, cents: 0 }
     row.cents += e.kind === 'received' ? toCents(e.amount) : -toCents(e.amount)
     heldByInvoice.set(e.invoiceId, row)
@@ -245,4 +276,16 @@ export function creditTargetFor(pair: Pick<BookingLedgerPair, 'kind' | 'payable'
   }
   const to = p.payee.kind === 'anaesthetist' ? p.payee.anaesthetistId : undefined
   return to !== undefined ? { leg: 'payable', anaesthetistId: to } : { leg: 'none' }
+}
+
+/**
+ * The account's identity (catch-up Phase 41): every cent received was either
+ * still held, transferred to an anaesthetist, or credited back; and what was
+ * refunded never exceeds what was credited. False is a `holdingUnbalanced`
+ * finding.
+ */
+export function holdingIdentityHolds(entries: readonly HoldingEntry[]): boolean {
+  const sum = (k: HoldingEntry['kind']) => entries.filter((e) => e.kind === k).reduce((c, e) => c + toCents(e.amount), 0)
+  const received = sum('received')
+  return received === toCents(holdingBalance(entries)) + sum('transferred') + sum('credited') && sum('refunded') <= sum('credited')
 }

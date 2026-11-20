@@ -33,6 +33,9 @@ import type { AppState, AppStoreApi } from './appStore'
 import { pairByAccRec } from './ledgerSelectors'
 import { enqueueXeroWork, XERO_OUTAGE_ERROR, xeroAvailable } from './xeroGate'
 import { CREDIT_MESSAGES } from '../shared/procedureEventCopy'
+import { refundLatePrepaymentPayment, refundsLatePayment } from './prepaymentCancellation'
+import { postPrepaymentRefund } from './xeroHandoff'
+import { settlePendingPrepayments } from './prepaymentSweep'
 
 export { gstComponentOf }
 
@@ -217,6 +220,24 @@ export function receivePayment(api: AppStoreApi, input: ReceivePaymentInput): Ou
   if (accRec.status === 'voided') return refuse('voidedInXero', 'Voided in Xero')
 
   const pair = pairByAccRec(state, input.accRecId)
+  // A payment after a cancellation's or a Contract change's credit (catch-up Phase 41; US-06.5.2): held for the payer and refunded straight back.
+  if (pair !== undefined && isBookingPair(pair) && isCreditedPair(pair) && refundsLatePayment(state, pair.invoiceId) !== undefined) {
+    let refundId: string | undefined
+    const metas: MutationMeta[] = []
+    mutate(api, PAYMENT_ACTOR[input.source], metas, (s) => {
+      const atISO = input.atISO ?? clockISO(s.clock)
+      const rct = allocateId(s.counters, 'receipt')
+      const out = refundLatePrepaymentPayment({ ...s, counters: rct.counters }, pair.invoiceId, input.amount, { id: rct.id, idempotencyKey: input.idempotencyKey, source: input.source }, atISO, metas)
+      if (out === null) {
+        metas.push({ entityType: 'ledgerPair', entityId: pair.id, action: 'ledger.receiptNoop' })
+        return {}
+      }
+      refundId = out.refundId
+      return out.patch
+    })
+    if (refundId !== undefined) postPrepaymentRefund(api, refundId)
+    return ok({ applied: refundId !== undefined })
+  }
   // A credited invoice (catch-up Phase 39): Xero refuses payment on a fully credited invoice, and the engine never applies
   // one to the ledger or holds it as an unmatched receipt. A payment Xero took before its credit landed is flagged by the poll.
   if (accRec.status === 'credited' || (pair !== undefined && isCreditedPair(pair))) return refuse('invoiceCredited', CREDIT_MESSAGES.invoiceCredited)
@@ -239,6 +260,8 @@ export function receivePayment(api: AppStoreApi, input: ReceivePaymentInput): Ou
     applied = true
     return { ...out.patch, counters: out.counters }
   })
+  // Catch-up Phase 41: money on a cancelled Booking's still-live prepayment (its settlement waited for this receipt) is settled now.
+  if (applied && isBookingPair(pair) && pair.kind === 'prePayment') settlePendingPrepayments(api)
   return ok({ applied })
 }
 

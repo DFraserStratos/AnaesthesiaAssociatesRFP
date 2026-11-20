@@ -47,6 +47,8 @@ const REAL_STORE_ALLOWED: Record<string, string> = {
   'booking/EventSheets.tsx': 'events are not part of the Booking (catch-up Phase 39b): addPrePostOpEvent, addBillingEvent and updateProcedureEvent write the real store, never a draft',
   'booking/CreditForm.tsx': 'a credit is an event, not part of the Booking (catch-up Phase 39): submitCredit and updateCredit write the real store, never a draft',
   'booking/PrepaymentLetterDialogs.tsx': 'commands approvePrepayment and sendPrepaymentReminder (catch-up Phase 41): a letter goes to the payer at once, never from a draft, and waits while the draft is unsaved',
+  'booking/RebookDialog.tsx': 'command rebookWithAnotherAnaesthetist (catch-up Phase 41): a new Booking from a cancelled one, never a draft of either, and waits while the draft is unsaved',
+  'booking/PrepaymentMovedCard.tsx': 'command emailPatientAnaesthetistChanged (catch-up Phase 41): the optional patient email goes at once, never from a draft, and waits while the draft is unsaved',
   'booking/HistorySheet.tsx': "the history shows saved changes only: the real audit, never a draft's own entries",
   'booking/BookingAsAtPanel.tsx': 'the as-at view reconstructs from the saved audit and Booking; writes nothing',
   'booking/OfficeSavedNotice.tsx': "reads the real audit for another actor's save; writes nothing",

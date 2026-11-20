@@ -28,6 +28,8 @@ export function seedText(text: string, source?: ProcedureTextSource, receivedAtI
 const SOURCE_BY_BOOKING: Record<BookingSource, ProcedureTextSource> = {
   hospitalDownload: 'hospitalDownload',
   surgeonPdf: 'surgeonPdf',
+  // Catch-up Phase 41: a rebooked replacement keeps the office's wording.
+  rebook: 'phone',
   admin: 'phone',
   anaesthetistAdHoc: 'anaesthetist',
 }

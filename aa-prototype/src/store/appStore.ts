@@ -52,6 +52,8 @@ import type {
   CreditNote,
   NegativeInvoice,
   PayablesRun,
+  PrepaymentRefund,
+  XeroRefund,
   BankLine,
   XeroCreditAllocation,
   XeroBatchPayment,
@@ -126,6 +128,8 @@ export interface BillingSlice {
   payablesRuns: Record<string, PayablesRun>
   /** The simulated bank download the week's close reconciles against (catch-up Phase 39a). */
   bankLines: Record<string, BankLine>
+  /** Prepayments refunded by the system (catch-up Phase 41; US-06.5.2). */
+  prepaymentRefunds: Record<string, PrepaymentRefund>
 }
 
 export interface XeroSlice {
@@ -145,6 +149,8 @@ export interface XeroSlice {
   creditAllocations: Record<string, XeroCreditAllocation>
   /** One payment per anaesthetist per run, for the net (catch-up Phase 39a). */
   batchPayments: Record<string, XeroBatchPayment>
+  /** Refunds paid in Xero against a credit note (catch-up Phase 41; simulated). */
+  refunds: Record<string, XeroRefund>
 }
 
 export interface IntegrationsSlice {
@@ -461,14 +467,16 @@ export const PERSIST_KEY = 'aa-demo'
  *  v71: the Wave 5 sync of Lane B's 39b into lane/a (Phase 39a and Phase 39b both took v70): one past the higher.
  *  Reseeds on load.
  *  v72: catch-up Phase 41 session 1, the prepayment letter: `masters.prepaymentLetterTemplates` (LT001 to LT003, one
- *  default per kind; counter `letterTemplate` 4) and INV0001's `letter` (LT001 rendered at its approval). Reseeds on load. */
-export const PERSIST_VERSION = 72
+ *  default per kind; counter `letterTemplate` 4) and INV0001's `letter` (LT001 rendered at its approval). Reseeds on load.
+ *  v73: catch-up Phase 41 session 2, cancellation and refunds: `billing.prepaymentRefunds` (RF) and `xero.refunds` (XRF), empty
+ *  in the seed; the credit's `refundedAmount`; Dr Beaumont's prepaid Rhinoplasty price-list Contract for the rebook. Reseeds on load. */
+export const PERSIST_VERSION = 73
 
 export function emptyBillingSlice(): BillingSlice {
-  return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {}, creditNotes: {}, negativeInvoices: {}, payablesRuns: {}, bankLines: {} }
+  return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {}, creditNotes: {}, negativeInvoices: {}, payablesRuns: {}, bankLines: {}, prepaymentRefunds: {} }
 }
 export function emptyXeroSlice(): XeroSlice {
-  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {}, creditNotes: {}, creditAllocations: {}, batchPayments: {} }
+  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {}, creditNotes: {}, creditAllocations: {}, batchPayments: {}, refunds: {} }
 }
 export function emptyIntegrationsSlice(): IntegrationsSlice {
   return { feeds: {}, messages: {} }
@@ -520,6 +528,7 @@ export function freshAppState(): AppState {
       negativeInvoices: {},
       payablesRuns: seedBilling.payablesRuns,
       bankLines: seedBilling.bankLines,
+      prepaymentRefunds: {},
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),

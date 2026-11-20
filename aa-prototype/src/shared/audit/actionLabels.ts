@@ -334,6 +334,17 @@ export const ACTION_LABELS: Record<string, string> = {
   'letterTemplate.setDefault': 'Prepayment letter template made default',
   'invoice.letterSent': 'Prepayment letter sent with the invoice',
   'invoice.prepaymentReminder': 'Prepayment reminder sent',
+  'booking.patientNotified': 'Patient emailed: anaesthetist changed',
+  'booking.rebooked': 'Booking rebooked with another anaesthetist',
+  'booking.prepaymentSettled': 'Prepayment credited or refunded on cancellation',
+  'procedure.prepaymentSettled': 'Prepayment settled on Contract change',
+  'prepaymentRefund.cancelled': 'Prepayment refunded on cancellation',
+  'prepaymentRefund.latePayment': 'Late prepayment payment refunded',
+  'prepaymentRefund.contractChanged': 'Prepayment refunded on Contract change',
+  'prepayment.settlementSkipped': 'Prepayment not settled automatically',
+  'prepayment.settlementNoop': 'Prepayment already settled',
+  'xero.refundPaid': 'Refund paid in Xero from the AA trust account',
+  'xero.refundNoop': 'Refund already in Xero',
 }
 
 /** "someWord" -> "some word" (the shared camelCase splitter). */

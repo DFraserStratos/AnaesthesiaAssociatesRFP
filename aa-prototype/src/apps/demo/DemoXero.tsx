@@ -14,7 +14,7 @@ import {
   unmatchedBankLines,
   useAppStore,
 } from '../../store'
-import { dateTimeMicroCap, dayMicroCap, formatCount, formatCurrency, hhmm } from '../../shared/format'
+import { dateTimeMicroCap, dayMicroCap, formatCount, formatCurrency, hhmm, stampText } from '../../shared/format'
 import { HELD_UNTIL_AUTHORISED, LEAVES_ONLY_BY_SYSTEM, RELEASE_TRIGGER_CAPTION } from '../../domain/billing/prepayHolding'
 import { transferOfPair } from '../../domain/billing/ledger'
 import { toCents } from '../../domain/billing/money'
@@ -1511,6 +1511,22 @@ function CreditNotesCard({ credit }: { credit: XeroCreditView }) {
           </div>
         )}
       </div>
+      {/* Refunds paid from the AA trust account against this credit note (catch-up Phase 41; US-06.5.2, D53). */}
+      {(credit.refunds ?? []).length > 0 && (
+        <div data-shot="xero-prepayment-refund" style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13 }}>
+          {credit.refunds!.map((r) => (
+            <div key={r.id} data-shot="xero-prepayment-refund-row" data-refund-id={r.id} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, padding: '10px 14px', border: `1px solid ${neutral.line}`, borderRadius: radius.ctl }}>
+              <span>
+                {`Refund paid from ${r.bankAccount} · `}
+                <span className="mono">{formatCurrency(r.amount)}</span>
+                {' · Paid '}
+                <span className="mono">{stampText(r.paidAtISO.slice(0, 10), { weekday: false })}</span>
+              </span>
+              <span className="mono" style={{ fontSize: 12.5, color: neutral.slate }}>{r.reference}</span>
+            </div>
+          ))}
+        </div>
+      )}
       {credit.newPairs.length > 0 && (
         <div data-shot="xero-credit-new-pairs" style={{ display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap', fontSize: 13 }}>
           <SectionLabel>{CREDIT_LABELS.xeroNewPairs}</SectionLabel>

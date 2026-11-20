@@ -153,7 +153,7 @@ import { CANNED_MESSAGES } from '../../domain/integrations'
 import { PDF_LIST_SAMPLES, resendSampleFor } from '../../domain/intake'
 import { contractCandidatesFor, destinationOf } from '../../domain/billing/contractRail'
 import { noContractRvg } from '../../domain/billing/contracts'
-import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, SEED_LIST_IDS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
+import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, SEED_LIST_IDS, SEED_MARKERS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
 import { MULTI_PROCEDURE_DEMO } from '../../domain/seed/multiProcedureDemo'
 import { DRAFT_LIST, DRAFT_LISTS, SOURCE_LABELS } from '../scheduleTerms'
 import { projectedListId, slotIdFor } from '../../domain/slots'
@@ -205,6 +205,15 @@ import { leakScanSummary, scanForNhiLeaks } from '../../store/privacyScan'
 import { rawRowRefusal, rawRowTarget, viewRawImportRow } from '../../store/rawRowActions'
 import { reportDiagnostic } from '../../store/diagnostics'
 import { LONGER_PREPAID_COPY, longerPrepaidChoices, stageLongerPrepaidProcedure, stageLongerRefusal } from '../../store/prepaymentFollowupDemo'
+import {
+  PREPAYMENT_SETTLEMENT_DEMO_COPY,
+  contractChangeRefusal,
+  latePaymentRefusal,
+  sendReminderAsOfficeStandIn,
+  stageLatePrepaymentPayment,
+  stagePrepaidContractChange,
+  standInReminderRefusal,
+} from '../../store/prepaymentSettlementDemo'
 
 // ---------------------------------------------------------------------------
 // Route patterns (checked against `src/router.tsx` and `pwa/main.tsx`)
@@ -288,6 +297,13 @@ function chosenSample(ctx: DemoTriggerCtx, choiceId: string | undefined): Sample
 const NO_SAMPLE_HERE = 'Open Seed load, or a Master data view loaded from a spreadsheet'
 const SAMPLE_WAITING = 'A load is already waiting for this sheet; load or discard it first'
 const GO_LIVE_WAITING = 'A go-live load is already waiting; load or discard it first'
+
+/** A Booking's Admin detail path, or null when it is not in the data (catch-up Phase 41's prepayment entries). */
+function adminBookingPath(state: AppState, bookingId: string | undefined): string | null {
+  const booking = bookingId !== undefined ? state.schedule.bookings[bookingId] : undefined
+  const dateISO = booking !== undefined ? state.schedule.lists[booking.listId]?.dateISO : undefined
+  return booking !== undefined && dateISO !== undefined ? `/admin/day/${dateISO}/bookings/${booking.id}` : null
+}
 
 /** "St George's · Mr S. Tan" from the masters. */
 function pairingOf(state: AppState, hospitalId: string, surgeonId: string): string {
@@ -1895,6 +1911,41 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     indexPath: () => `/admin/review/${SEED_LIST_IDS.prepaymentPaidList}`,
     indexHint: "Submit Dr Souter's Fri 24 Jul PM List first.",
   },
+  // ── Admin · Booking detail: a prepayment settled automatically (catch-up Phase 41; US-06.5.2, US-06.3.7) ──
+  {
+    id: 'prepayment-late-payment',
+    label: 'Payment arrives after the credit note',
+    description:
+      "On a cancelled Booking whose prepayment invoice was credited while unpaid, the payer pays the invoice total anyway (the simulated bank feed). The system refunds it to the payer at once from the AA Holding account, and the Booking's prepayment panel adds the late payment line.",
+    screen: 'Admin · Booking detail',
+    routes: [ADMIN_BOOKING],
+    surfaces: ['bar'],
+    disabledReason: (state, ctx) => latePaymentRefusal(state, ctx.params['bookingId']),
+    run: (api, ctx) => {
+      const out = stageLatePrepaymentPayment(api, ctx.params['bookingId'])
+      return out.ok ? { ok: true, message: PREPAYMENT_SETTLEMENT_DEMO_COPY.lateRefunded(out.value.amount) } : { ok: false, message: out.message }
+    },
+    indexPath: (state) => adminBookingPath(state, SEED_MARKERS.prepaymentBooking?.entityId),
+    indexHint: "Approve and send Annette Riley's prepayment invoice, then cancel her Booking.",
+  },
+  {
+    id: 'prepayment-contract-changed',
+    label: 'Change Contract after prepayment sent',
+    description:
+      "As the office, moves the Booking's prepaid procedure onto a Contract that is not prepaid after its prepayment invoice was sent: the system credits the whole prepayment invoice and refunds anything paid from the AA Holding account, and the procedure is billed after it under the new Contract. Runs once per Booking.",
+    screen: 'Admin · Booking detail',
+    routes: [ADMIN_BOOKING],
+    surfaces: ['bar'],
+    disabledReason: (state, ctx) => contractChangeRefusal(state, ctx.params['bookingId']),
+    run: (api, ctx) => {
+      const out = stagePrepaidContractChange(api, OFFICE_ACTOR, ctx.params['bookingId'])
+      if (!out.ok) return { ok: false, message: out.message }
+      const name = api.getState().masters.contracts[out.value.contractId]?.name ?? out.value.contractId
+      return { ok: true, message: PREPAYMENT_SETTLEMENT_DEMO_COPY.contractChanged(name, out.value.creditNoteNumber) }
+    },
+    indexPath: (state) => adminBookingPath(state, SEED_MARKERS.prepaymentBooking?.entityId),
+    indexHint: "Approve and send Annette Riley's prepayment invoice first.",
+  },
   // ── Admin · Day and Booking detail, Mobile · Booking: prepayment (catch-up Phase 27) ──
   {
     id: 'prepayment-two-days-before',
@@ -1960,6 +2011,26 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => null,
     indexEmptyReason: 'PWA only: the framed build approves on Admin Invoices (Approve and send).',
+  },
+  {
+    id: 'pwa-office-sends-prepayment-reminder',
+    label: 'Office sends a prepayment reminder',
+    description:
+      "Stands in for the office, which sends prepayment reminders from Admin: while this Booking's prepayment is unpaid or part paid, emails the payer a reminder with the amount still to pay. The Booking's prepayment panel shows when it went and to whom.",
+    screen: 'Mobile · Booking',
+    routes: [MOBILE_BOOKING],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    disabledReason: (state, ctx) => {
+      const bookingId = ctx.params['bookingId']
+      return bookingId === undefined ? 'Open a Booking' : standInReminderRefusal(state, bookingId)
+    },
+    run: (api, ctx) => {
+      const out = sendReminderAsOfficeStandIn(api, OFFICE_SIMULATION_ACTOR, ctx.params['bookingId'])
+      return out.ok ? { ok: true, message: PREPAYMENT_SETTLEMENT_DEMO_COPY.reminderSent } : { ok: false, message: out.message }
+    },
+    indexPath: () => null,
+    indexEmptyReason: 'PWA only: the framed build sends reminders on the Admin Booking (Send prepayment reminder).',
   },
   // ── Admin · Day, Booking detail and Mobile · Booking: sample warnings ──
   {

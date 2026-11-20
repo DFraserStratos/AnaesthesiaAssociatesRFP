@@ -121,7 +121,8 @@ export function validateLetterTemplate(
   if (t.kind !== 'anaesthetistChanged' && !namesAnaesthetist && fields.includes('anaesthetist')) {
     return { code: 'anaesthetistNotNamed', message: LETTER_MESSAGES.anaesthetistNotNamed, field: 'body' }
   }
-  if (ESTIMATE_WORDING.test(body) || ESTIMATE_WORDING.test(name)) return { code: 'estimateWording', message: LETTER_MESSAGES.estimateWording, field: 'body' }
+  if (ESTIMATE_WORDING.test(body)) return { code: 'estimateWording', message: LETTER_MESSAGES.estimateWording, field: 'body' }
+  if (ESTIMATE_WORDING.test(name)) return { code: 'estimateWording', message: LETTER_MESSAGES.estimateWording, field: 'name' }
   return null
 }
 

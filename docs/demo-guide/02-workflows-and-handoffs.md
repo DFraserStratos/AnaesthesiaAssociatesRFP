@@ -230,7 +230,11 @@ A hospital, surgeon, patient or anaesthetist reports a change.
 3. She opens the List drawer and its Bookings.
 4. For a routine patient reschedule, she moves one Booking to a different List.
 5. For an incorrect assignment, she changes hospital, surgeon or actual start/end time.
-6. For a cancellation, she records a reason and soft-cancels the Booking.
+6. For a cancellation, she records a reason and soft-cancels the Booking. A prepayment is credited or
+   refunded automatically: the cancel sheet says which before she confirms (an unpaid invoice credited
+   in full; a paid one credited and refunded in full to the payer from the AA Holding account), and an
+   anaesthetist's own cancel settles it the same way. On the cancelled Booking she can **Rebook with
+   another anaesthetist**, which starts a fresh prepayment at that anaesthetist's own price.
 7. Cancelled Bookings remain visible for history but do not block submission or enter billing.
 8. She can add an internal day note for colleagues.
 9. She plans the day from the Draft Lists rail card and band, soonest first. The assign picker is
@@ -294,7 +298,9 @@ An anaesthetist becomes unavailable or needs cover at short notice.
    may leave off. This is also the doer rule: whoever submits a List did every procedure on it, so a
    Booking a colleague does moves to a new List of theirs before the procedure, and its payable
    follows. A prepaid Booking's payable stays the AA Holding account: nothing is repointed or
-   recalculated, and the transfer when the List is authorised pays whoever did it.
+   recalculated, and the transfer when the List is authorised pays whoever did it. Her move sheet
+   carries the honour line ("This Booking is prepaid. The prepaid amount stays as agreed, and moves to
+   Dr ... once the List is authorised.").
 5. When nobody has arranged cover, Kirsty receives the phone call and records the sickness on the
    Day view (Change status). Unavailability is never a conflict: the same "Where does this List go?"
    step asks her to return the List to the office (a Draft List) or hand it to a colleague there and
@@ -302,7 +308,11 @@ An anaesthetist becomes unavailable or needs cover at short notice.
 6. She views the anaesthetists free at the required AM/PM granularity, in priority-tier order and
    preferred pairing first within a tier, with any not-preferred pairing grouped apart and warned
    (never blocked), and assigns or reassigns the List. A colleague marked unavailable shows but cannot
-   be picked: the session is made available first, with that anaesthetist's agreement.
+   be picked: the session is made available first, with that anaesthetist's agreement. On a List or
+   Booking with a sent prepayment, the office's move and reassign steps carry the honour line: "The
+   prepayment keeps its agreed amount. Whoever the office assigns claims it." Nothing changes; the
+   moved Booking reads "Prepayment kept at the agreed amount · now with Dr ...", and the office may
+   send the optional **Email patient: anaesthetist changed** (provisional, OQ-120).
 7. Whoever moves the List, the anaesthetist or the office, chooses what the vacated session becomes:
    Free or Unavailable (OQ-84, answered).
 8. Every move and reassignment is audited.
@@ -723,12 +733,16 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
   invoice per payer, each payer locked once theirs is raised.
 - The amount is the Procedure's price when the invoice is raised, read-only after; or an amount the
   office types on No contract · Fixed price.
-- The office approves and sends it from Admin Invoices (a switchable step, on by default). The invoice's
-  pair credits the AA Holding account, not the anaesthetist.
+- The office approves and sends it from Admin Invoices (a switchable step, on by default), with the
+  prepayment letter (Master data, Prepayment letters; the Standard prepayment letter by default, with
+  the automatic send when approval is off). The letter states the prepaid amount as the price and says
+  the anaesthetist may send a further invoice or a credit if the procedure turns out very different.
+  The invoice's pair credits the AA Holding account, not the anaesthetist.
+- While it is unpaid or part paid the office can **Send prepayment reminder** from the Booking: the
+  amount still to pay, stamped on the panel and the Admin Day rail ("Reminded 21 Jul").
 - The AA Holding account is a payables creditor, kept like an anaesthetist's account. It is not a bank
   account (the money itself sits in the trust bank account) and not a Xero ledger account, and it is
-  never paid itself. Money leaves it only by a transfer or a refund the system raises (the refund is
-  Phase 41).
+  never paid itself. Money leaves it only by a transfer or a refund the system raises.
 - Two steps, and the anaesthetist is paid only after the second:
   1. **Collected into the AA Holding account.** The payer's money lands; the payable to the AA Holding
      account is authorised for what was received, and nothing is paid to the anaesthetist. The Billing
@@ -746,9 +760,17 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
   account and its own transfer.
 - An unpaid prepayment never blocks (AA's decision, OQ-57): a warning that turns strong as the date
   nears, so the anaesthetist sees it before surgery starts. There is no override.
-- After the procedure it is left off the final invoice with nothing deducted. A move to a colleague
-  changes nothing in the books: nothing is repointed, the transfer pays whoever did the List, and the
-  old anaesthetist never sees it.
+- After the procedure the prepaid amount is the price: it is left off the final invoice, and nothing
+  further is invoiced or credited automatically (the **Prepaid settlement** block shows the BTM for
+  reference only). A real difference is raised by hand, by the anaesthetist or the office: a credit
+  note always for the whole prepayment invoice, and anything still owed a fresh additional invoice,
+  both through the office's review and the next run. Before authorise only the office credits it.
+- A move changes nothing in the books: the patient is not billed again, nothing is repointed, the
+  transfer pays whoever did the List, and the old anaesthetist never sees it.
+- A cancel settles it at once, whoever cancels: credited if unpaid, credited and refunded in full from
+  the AA Holding account if paid (the refund paid in Xero), and a payment arriving after the credit is
+  refunded straight back. A Contract changed off prepaid after sending is settled the same way. A true
+  rebook is a new Booking with a fresh prepayment at the new anaesthetist's own price.
 - A prepayment's payable is not counted as a BCTI for AA's monthly fee (provisional, OQ-29).
 
 #### Warnings and the to-do list
@@ -910,6 +932,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Invoice calculation and documents | Yes | Phase 08 |
 | Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), escalating warning, left off the final invoice | Yes | Catch-up Phase 27 |
 | Prepayment held in the AA Holding account, transferred to the anaesthetist when the List is authorised, then paid by the next weekly payment run | Yes | Catch-up Phase 27a |
+| Prepayment letter, cancellation and differences by hand: the letter and its templates, reminders, nothing further but by hand, credit or refund on cancel, the move rule and optional email, the rebook | Yes | Catch-up Phase 41 |
 | Prepayment warning, events and additional invoices, credit and rebill, split, the anaesthetist's credit note, billing monitor/retry | Yes | Phase 09; events and additional invoices from catch-up Phase 38b; credit notes, credit and rebill and the split from catch-up Phase 39 |
 | Pre-op and post-op events, the ACC pre-op event, Contract event fees and billing events (a free-text charge or credit), billed in the next run | Yes | Catch-up Phase 39b |
 | Contract locked at authorise, invoices from the lock, Contract history | Yes | Catch-up Phase 25 |

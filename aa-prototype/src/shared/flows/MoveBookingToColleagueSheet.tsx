@@ -21,6 +21,7 @@ import { useSurface } from '../surface'
 import { Avatar } from '../Avatar'
 import { sessionText } from '../../domain/outOfHours'
 import { procedureLabel } from '../../domain/billing/procedureStack'
+import { PrepaymentHonourLine } from './PrepaymentHonourLine'
 
 /**
  * Move to a colleague: an anaesthetist hands one Booking to a colleague free in
@@ -225,9 +226,7 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
               <span data-shot="move-booking-payable">{receiverShort} is paid for it.</span>
             </div>
             {snapshot.prepaid && (
-              <div data-shot="move-booking-honour" style={{ background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, lineHeight: '19px', color: neutral.ink }}>
-                This Booking is prepaid. The prepaid amount stays as agreed, and moves to {receiverShort} once the List is authorised.
-              </div>
+              <PrepaymentHonourLine audience="anaesthetist" receiverShort={receiverShort} />
             )}
 
             <TextArea label="Add a message" value={message} onChange={setMessage} placeholder={`Optional note for ${receiverShort}`} />

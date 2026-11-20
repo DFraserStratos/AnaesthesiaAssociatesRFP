@@ -1,6 +1,272 @@
 {
   "id": "US-06.3.6",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 41 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "letter-templates",
+      "app": "admin",
+      "caption": "The prepayment letter, from one standard template, states the prepaid amount as the price",
+      "start": "/admin/masters?view=prepaymentLetters",
+      "states": [
+        {
+          "state": "list",
+          "caption": "Master data, Prepayment letters: one default template per kind, the prepayment letter, the reminder and the anaesthetist changed email",
+          "steps": [
+            {
+              "wait": "[data-shot=letter-templates]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=letter-templates]"
+          ]
+        },
+        {
+          "state": "editor",
+          "caption": "The office edits the standard letter: merge fields fill it from the Booking, and the preview states the prepaid amount as the price",
+          "steps": [
+            {
+              "wait": "[data-shot=letter-templates]"
+            },
+            {
+              "click": "tr[data-letter-template=LT001] >> text=\"Edit\""
+            },
+            {
+              "wait": "[data-shot=letter-template-editor]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=letter-template-editor]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "letter-picker",
+      "app": "admin",
+      "caption": "The prepayment letter, from one standard template, states the prepaid amount as the price",
+      "start": "/admin/invoices",
+      "states": [
+        {
+          "state": "preview",
+          "caption": "Approve and send names the standard letter and its payer; the preview fills in Annette Riley, her procedure, the prepaid amount and Dr Souter",
+          "steps": [
+            {
+              "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
+            },
+            {
+              "click": "[data-shot=awaiting-approval-row][data-booking-id=BK0034] [data-shot=approve-and-send]"
+            },
+            {
+              "wait": "[data-shot=prepayment-letter-picker]"
+            },
+            {
+              "click": "[data-shot=prepayment-letter-preview-toggle]"
+            },
+            {
+              "wait": "[data-shot=prepayment-letter-preview]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=prepayment-letter-picker]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "letter-on-invoice",
+      "app": "admin",
+      "caption": "The letter goes out with the prepayment invoice",
+      "start": "/admin/invoices/INV0001",
+      "states": [
+        {
+          "state": "cover",
+          "caption": "Priya Nair's prepayment invoice carries the letter as sent, as its cover",
+          "steps": [
+            {
+              "wait": "[data-shot=prepayment-letter]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=prepayment-letter]"
+          ]
+        },
+        {
+          "state": "delivery",
+          "caption": "The invoice's delivery names the letter sent with it",
+          "steps": [
+            {
+              "wait": "[data-shot=invoice-letter-line]"
+            },
+            {
+              "scroll": "[data-shot=invoice-letter-line]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-letter-line]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "reminder",
+      "app": "admin",
+      "caption": "The office sends a prepayment reminder from the standard reminder template",
+      "start": "/admin/day/2026-07-24/bookings/BK0034",
+      "setup": [
+        {
+          "goto": "/admin/invoices"
+        },
+        {
+          "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
+        },
+        {
+          "click": "[data-shot=awaiting-approval-row][data-booking-id=BK0034] [data-shot=approve-and-send]"
+        },
+        {
+          "wait": "[data-shot=prepayment-letter-picker]"
+        },
+        {
+          "click": "[data-shot=prepayment-letter-send]"
+        },
+        {
+          "wait": "[data-shot=approve-and-send-result]"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "states": [
+        {
+          "state": "dialog",
+          "caption": "Send prepayment reminder: the reminder letter, the amount still to pay and the payer's invoice email",
+          "steps": [
+            {
+              "wait": "[data-shot=prepayment-reminder]"
+            },
+            {
+              "click": "[data-shot=prepayment-reminder]"
+            },
+            {
+              "wait": "[data-shot=prepayment-reminder-dialog]"
+            },
+            {
+              "click": "[data-shot=prepayment-reminder-preview-toggle]"
+            },
+            {
+              "wait": "[data-shot=prepayment-reminder-preview]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=prepayment-reminder-dialog]"
+          ]
+        },
+        {
+          "state": "sent",
+          "caption": "Reminder sent: the Booking's prepayment says when it went and to whom",
+          "steps": [
+            {
+              "wait": "[data-shot=prepayment-reminder]"
+            },
+            {
+              "click": "[data-shot=prepayment-reminder]"
+            },
+            {
+              "wait": "[data-shot=prepayment-reminder-dialog]"
+            },
+            {
+              "click": "[data-shot=prepayment-reminder-send]"
+            },
+            {
+              "wait": "[data-shot=prepayment-reminder-sent]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=prepayment-reminder-sent]"
+          ]
+        },
+        {
+          "state": "on-invoice",
+          "caption": "The prepayment invoice lists the letter it went with and each reminder, with the amount then outstanding",
+          "steps": [
+            {
+              "wait": "[data-shot=prepayment-reminder]"
+            },
+            {
+              "click": "[data-shot=prepayment-reminder]"
+            },
+            {
+              "wait": "[data-shot=prepayment-reminder-dialog]"
+            },
+            {
+              "click": "[data-shot=prepayment-reminder-send]"
+            },
+            {
+              "wait": "[data-shot=prepayment-reminder-sent]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=prepayment-invoice-link] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-reminder-line]"
+            },
+            {
+              "scroll": "[data-shot=invoice-letter-line]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-letter-line]",
+            "[data-shot=invoice-reminder-line]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "office-sends",
+      "app": "mobile",
+      "caption": "On the phone, the anaesthetist reads that the AA office sends the prepayment letter and its reminders",
+      "start": "/mobile/lists/L-34821-2026-07-24-AM/bookings/BK0034",
+      "states": [
+        {
+          "state": "reminded",
+          "caption": "Sent with the standard letter, then a reminder from the office: the phone shows when it went and to whom",
+          "steps": [
+            {
+              "trigger": "pwa-office-approves-prepayment"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "trigger": "pwa-office-sends-prepayment-reminder"
+            },
+            {
+              "wait": "[data-aa-mobile-product] [data-shot=prepayment-reminder-sent]"
+            },
+            {
+              "scroll": "[data-aa-mobile-product] [data-shot=booking-prepayment]"
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [data-shot=booking-prepayment]"
+          ]
+        }
+      ]
+    }
+  ]
 }

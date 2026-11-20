@@ -33,6 +33,11 @@ describe('validateLetterTemplate (US-06.3.6)', () => {
     }
   })
 
+  it('estimate wording in the name alone is refused on the name; in the body, on the body', () => {
+    expect(validateLetterTemplate(request('Please pay {{prepaidAmount}}.', 'Deposit letter'))).toMatchObject({ code: 'estimateWording', field: 'name' })
+    expect(validateLetterTemplate(request('An estimate of {{prepaidAmount}}.', 'Deposit letter'))).toMatchObject({ code: 'estimateWording', field: 'body' })
+  })
+
   it('while prepayment invoices do not name the anaesthetist (OQ-120), a request or reminder cannot either; the changed-anaesthetist email still does', () => {
     expect(validateLetterTemplate(request('{{prepaidAmount}} with {{anaesthetist}}'), false)?.code).toBe('anaesthetistNotNamed')
     expect(validateLetterTemplate({ kind: 'anaesthetistChanged', name: 'A', body: 'Now {{anaesthetist}}' }, false)).toBeNull()

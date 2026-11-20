@@ -49,7 +49,7 @@ import {
 import { useBookingWarnings, WarningsPanel } from '../warnings'
 import { OfficeBillingSetup } from './OfficeBillingSetup'
 import { ProcedureEventsList } from './ProcedureEventsList'
-import { PrepaymentPanel, type PrepaymentOfficeLinks } from './PrepaymentPanel'
+import { PrepaymentPanel, useSettledPrepayments, type PrepaymentOfficeLinks } from './PrepaymentPanel'
 import { PrepaidSettlementBlock } from './PrepaidSettlementBlock'
 import { FunderDetailsView } from './FunderDetailsView'
 import { startForAddedProcedure } from '../../domain/billing/contractRail'
@@ -146,6 +146,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
   const locks = useBookingStore((s) => s.billing.locks)
   const masters = useBookingStore((s) => s.masters)
   const prepaymentStatus = useBookingPrepayment(bookingId).status
+  // A prepayment settled by a cancellation or a Contract change (catch-up Phase 41) keeps the panel on screen.
+  const prepaymentSettled = useSettledPrepayments(bookingId).length > 0
+  const showPrepayment = prepaymentStatus !== 'none' || prepaymentSettled
   const warnings = useBookingWarnings(bookingId)
   // The history reads the saved audit, never a draft's own entries (catch-up Phase 35).
   const audit = useAppStore((s) => s.audit)
@@ -548,7 +551,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
     warnings.length > 0 ||
     movedToMe !== undefined ||
     cancelled ||
-    prepaymentStatus !== 'none' ||
+    showPrepayment ||
     recheck !== null ||
     error !== null ||
     (completeError !== null && showValidation)
@@ -575,7 +578,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
         </Notice>
       )}
       {/* The prepayment, per payer group (catch-up Phase 27; US-06.3.2, US-03.1.8): on screen the moment the Booking opens. */}
-      {prepaymentStatus !== 'none' && (
+      {showPrepayment && (
         <PrepaymentPanel
           bookingId={bookingId}
           actor={actor}

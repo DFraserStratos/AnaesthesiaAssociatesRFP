@@ -109,16 +109,20 @@ export function PrepaidSettlementBlock({ procedureId, actor, onOpenInvoice, onOp
           label={C.prepaid}
           labelTone="slate"
           labelWidth={labelWidth}
+          // On the phone the value takes the full width under its label (checklist design pair 1).
+          layout={phone ? 'stacked' : 'inline'}
           shot="prepaid-settlement-amount"
-          trailing={number(settlement.prepaymentInvoice.number, onOpenInvoice !== undefined ? () => onOpenInvoice(settlement.prepaymentInvoice.id) : undefined, 'prepaid-settlement-invoice')}
+          {...(phone ? {} : { trailing: number(settlement.prepaymentInvoice.number, onOpenInvoice !== undefined ? () => onOpenInvoice(settlement.prepaymentInvoice.id) : undefined, 'prepaid-settlement-invoice') })}
         >
           <span style={LINE}>
             <span className="mono" style={{ ...MONEY, fontWeight: 600 }}>{formatCurrency(settlement.prepaidAmount)}</span>
             {` · ${C.thePrice}`}
           </span>
+          {/* Stacked on the phone: the invoice number on its own line under the amount. */}
+          {phone && <div>{number(settlement.prepaymentInvoice.number, onOpenInvoice !== undefined ? () => onOpenInvoice(settlement.prepaymentInvoice.id) : undefined, 'prepaid-settlement-invoice')}</div>}
         </DefRow>
         {settlement.recordedBtmUnits !== undefined && (
-          <DefRow label={C.recordedBtm} labelTone="slate" labelWidth={labelWidth} shot="prepaid-settlement-btm">
+          <DefRow label={C.recordedBtm} labelTone="slate" labelWidth={labelWidth} layout={phone ? 'stacked' : 'inline'} shot="prepaid-settlement-btm">
             <span style={LINE}>
               <span className="mono" style={MONEY}>{C.units(settlement.recordedBtmUnits)}</span>
               <span style={{ color: neutral.slate }}>{` · ${C.forReference}`}</span>

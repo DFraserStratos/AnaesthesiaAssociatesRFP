@@ -18,14 +18,18 @@ import {
   type RailActor,
 } from '../domain/billing/contractRail'
 import { INTEGRATION_PRICE_MESSAGE, officeMayChangePrice, typedPriceProblem } from '../domain/billing/procedurePrice'
-import { mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
+import { clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import { REOPENED_FOR_RVG_DETAIL_MESSAGE, contractChangeAsksRvgDetail } from '../domain/billing/completion'
 import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal, getBooking, withRvgRowChange } from './lifecycle'
-import { prepaymentRaisedFor, railContextForList, railMastersOf } from './selectors'
+import { prepaidHeldFor, prepaymentRaisedFor, railContextForList, railMastersOf } from './selectors'
 import { claimsAuditView } from '../domain/billing/modifiers'
 import { refreshedInvoiceDescriptionFor } from '../domain/billing/procedureStack'
 import { autoSendPrepayments } from './prepaymentActions'
+import { settlePrepaidContractChange, type SettledInvoice } from './prepaymentCancellation'
+import { isDraftStore } from './draftMode'
+import { handoffCorrection, postPrepaymentRefund } from './xeroHandoff'
+import { isPrepaidContract } from '../domain/billing/prepayment'
 
 /** The rail's actor for a store actor: the anaesthetist, or the office (system and integration act as the office). */
 export function railActorOf(actor: Actor): RailActor {
@@ -172,6 +176,12 @@ export function setProcedureContract(
       after: { completed: false, reason: REOPENED_FOR_RVG_DETAIL_MESSAGE },
     })
   }
+  // A Contract changed off prepaid by the office after the prepayment invoice was sent (catch-up Phase 41; US-06.3.7,
+  // OQ-119 answered, D67): settled as a cancellation of that prepayment in this commit. Never on a new price range (D47).
+  const heldBy = prepaidHeldFor(state, booking.id)[procedureId]?.prepaymentInvoiceId
+  // Never inside a Booking draft (catch-up Phase 35): the draft raises no money; the save settles it on the real store.
+  const settleOff = !isDraftStore(api) && actor.role === 'office' && heldBy !== undefined && !isPrepaidContract(state.masters.contracts[contractId])
+  let settled: SettledInvoice | undefined
   mutate(api, actor, metas, (s) => {
     const bookings = { ...s.schedule.bookings }
     if (reopen) {
@@ -179,8 +189,15 @@ export function setProcedureContract(
       delete reopened.completedAtISO
       bookings[booking.id] = reopened
     }
-    return { schedule: { ...s.schedule, bookings, procedures: { ...s.schedule.procedures, [procedureId]: next } } }
+    const schedule = { ...s.schedule, bookings, procedures: { ...s.schedule.procedures, [procedureId]: next } }
+    if (!settleOff || heldBy === undefined) return { schedule }
+    const out = settlePrepaidContractChange({ ...s, schedule }, procedureId, heldBy, clockISO(s.clock), metas)
+    settled = out.settled
+    return out.patch ?? { schedule }
   })
+  const done = settled as SettledInvoice | undefined
+  if (done?.creditNoteId !== undefined) handoffCorrection(api, done.creditNoteId)
+  if (done?.refundId !== undefined) postPrepaymentRefund(api, done.refundId)
   // With approval off, a group this made ready is sent now (catch-up Phase 27; D6 extended).
   autoSendPrepayments(api, booking.id)
   return ok(undefined)

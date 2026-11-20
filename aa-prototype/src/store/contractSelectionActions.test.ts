@@ -245,17 +245,17 @@ describe('review-pass fixes (catch-up Phase 20)', () => {
     expect(needsInvoiceDestinationBookings(api.getState()).filter((r) => r.bookingId === booking)).toHaveLength(1)
   })
 
-  it('keeps a sent prepayment invoice, never rewritten, when the office moves the Procedure off prepaid', () => {
+  it('keeps a sent prepayment invoice, never rewritten, when the office moves the Procedure off prepaid, and credits it (catch-up Phase 41)', () => {
     const api = store()
     const riley = marker('prepaymentBooking')
     const [invoiceId] = approveAllPrepayments(api, riley)
     expect(invoiceId).toBeDefined()
     const invoiceBefore = api.getState().billing.invoices[invoiceId!]
     expect(setProcedureContract(api, OFFICE, RILEY_PROC, 'CT-NO-CONTRACT')).toMatchObject({ ok: true })
-    // Catch-up Phase 27 (D67): the sent invoice stays as it was and its group reads not needed until 41's handling.
+    // The sent invoice stays as it was; catch-up Phase 41 (D67) settles it as a cancellation: credited in full, no group left.
     expect(api.getState().billing.invoices[invoiceId!]).toEqual(invoiceBefore)
     const status = prepaymentStatusFor(api.getState(), riley)
-    expect(status.status).toBe('notNeeded')
-    expect(status.groups.map((g) => g.invoiceId)).toEqual([invoiceId])
+    expect(status.status).toBe('none')
+    expect(Object.values(api.getState().billing.creditNotes).map((c) => [c.originalInvoiceId, c.cause])).toEqual([[invoiceId, 'prepaidContractChanged']])
   })
 })

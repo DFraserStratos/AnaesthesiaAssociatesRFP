@@ -64,6 +64,7 @@ export const PRICED_ITEM = {
   souterBleph: 'CT-SOUTER-BLEPH',
   souterBreastAug: 'CT-SOUTER-BREAST',
   souterRhinoCosmetic: 'CT-SOUTER-RHINO-COS',
+  beaumontRhinoplasty: 'CT-BEAUMONT-RHINO',
 } as const
 
 /** The fields a seeded priced item carries (the rest default as `buildContracts` sets them). */
@@ -171,3 +172,25 @@ export const PRICED_ITEMS: readonly SeedPricedItem[] = [
     specialtyIds: [SPC.plasticSurgery, SPC.ent],
   }),
 ]
+
+/**
+ * Dr Sarah Beaumont's own price list (catch-up Phase 41; US-06.5.3): one
+ * prepaid Rhinoplasty at $1,350.00 ex GST from 1 Jan 2026, a DEMO-PLAUSIBLE
+ * figure (no fee file names it), so a true cancellation of Dr Souter's $1,200
+ * prepayment can be rebooked with a colleague at her own different price.
+ * Narrowed like Dr Souter's (plastic or ENT surgeons). Appended in
+ * `contracts.ts` after every other Contract, so no AA code moves; no seeded
+ * Procedure is on it.
+ */
+export const BEAUMONT_RHINOPLASTY: SeedPricedItem = {
+  id: PRICED_ITEM.beaumontRhinoplasty,
+  name: 'Rhinoplasty',
+  invoiceDescription: 'Rhinoplasty',
+  holderId: PARTY.beaumont,
+  billsTo: 'payer',
+  prepaid: true,
+  linkedAnaesthetistId: ANAE.beaumont,
+  pricing: fixed(['2026-01-01', 1350]),
+  defaultRvgGroupId: RVG_GROUP.aaRhinoplasty,
+  specialtyIds: [SPC.plasticSurgery, SPC.ent],
+}

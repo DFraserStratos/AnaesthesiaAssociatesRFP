@@ -91,7 +91,14 @@ function issuedFor(state: PrepaymentState, bookingId: string): IssuedPrepayment[
 export function prepaymentGroupsForBooking(state: PrepaymentState, bookingId: string): PrepaymentGroup[] {
   const booking = state.schedule.bookings[bookingId]
   if (booking === undefined) return []
-  const procedures = proceduresForBooking(state, bookingId)
+  // A Procedure whose prepayment invoice the office or the anaesthetist credited whole by hand (catch-up Phase 41; D31)
+  // derives no fresh prepayment: the payer's money is held for them and the Procedure is billed normally at authorise.
+  const creditedByHand = new Set(
+    Object.values(state.billing.creditNotes ?? {})
+      .filter((c) => c.cause === 'correction' && state.billing.invoices[c.originalInvoiceId]?.kind === 'prePayment' && c.bookingId === bookingId)
+      .flatMap((c) => c.procedureIds),
+  )
+  const procedures = proceduresForBooking(state, bookingId).map((p) => (creditedByHand.has(p.id) ? { ...p, governingContractId: undefined } : p))
   if (!mayHavePrepayment(state, booking, procedures)) return []
   // 24's price now, the Booking priced once under the multi-procedure rule (23).
   const ctx = billingContextForBooking(state, booking)
@@ -426,7 +433,7 @@ export function prepaidSettlementFor(state: PrepaymentState, procedureId: string
   const prepayment = invoices.filter((i) => i.kind === 'prePayment').sort((a, b) => b.invoiceNumber.localeCompare(a.invoiceNumber))[0]
   if (prepayment === undefined) return undefined
   const line = (linesByInvoice(state.billing.invoiceLines).get(prepayment.id) ?? []).find((l) => l.procedureId === procedureId)
-  const credits = Object.values(state.billing.creditNotes)
+  const credits = Object.values(state.billing.creditNotes ?? {})
     .filter((c) => c.originalInvoiceId === prepayment.id)
     .map((c) => ({ id: c.id, number: c.creditNoteNumber, total: c.total, cause: c.cause }))
   const pair = pairForInvoice(state, prepayment.id)
@@ -446,14 +453,6 @@ export function prepaidSettlementFor(state: PrepaymentState, procedureId: string
       .map((i) => ({ id: i.id, number: i.invoiceNumber, total: i.total })),
     credits,
   }
-}
-
-/** The settlement block's hook. */
-export function usePrepaidSettlement(procedureId: string): PrepaidSettlement | undefined {
-  const schedule = useAppStore((s) => s.schedule)
-  const billing = useAppStore((s) => s.billing)
-  const masters = useAppStore((s) => s.masters)
-  return useMemo(() => prepaidSettlementFor({ schedule, billing, masters }, procedureId), [schedule, billing, masters, procedureId])
 }
 
 /**

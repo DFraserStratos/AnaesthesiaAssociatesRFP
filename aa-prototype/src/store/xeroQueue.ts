@@ -27,6 +27,7 @@ import { receivePayment } from './paymentActions'
 import { recordDisbursement, recordOffset } from './disbursementDetection'
 import { runReconciliationPoll } from './reconciliationPoll'
 import { XERO_OUTAGE_ERROR, XERO_QUEUE_ACTOR, xeroAvailable } from './xeroGate'
+import { settlePendingPrepayments } from './prepaymentSweep'
 
 export { xeroAvailable } from './xeroGate'
 
@@ -186,6 +187,8 @@ export function processXeroQueue(api: AppStoreApi, opts: { force?: boolean; item
     markSent(api, item)
     result.sent += 1
   }
+  // Catch-up Phase 41: a prepayment settlement or refund that waited for Xero completes now.
+  if (xeroAvailable(api.getState())) settlePendingPrepayments(api)
   return result
 }
 

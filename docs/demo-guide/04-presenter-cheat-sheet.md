@@ -367,7 +367,10 @@ Payer -> ACCREC -> AA account -> ACCPAY (full amount) -> Anaesthetist
   Resolve moves no money, provisional). Admin Day's **Reconciliation** card reads **Books square** or
   **Out of balance**, with each item to resolve and its age (catch-up Phase 37).
 - A prepayment's ACCPAY credits the AA Holding account instead, and is never paid itself; the money is
-  transferred to the anaesthetist when the List is authorised (section 8 below).
+  transferred to the anaesthetist when the List is authorised (section 8 below). The prepaid amount is
+  the price: nothing further is invoiced or credited automatically. A cancelled prepayment is credited
+  and, if paid, refunded in full to the payer from the AA Holding account there and then; the refund
+  is paid in Xero (catch-up Phase 41).
 - A partial payment releases the payable for exactly the amount received; the rest stays outstanding.
 - A correction is a trail, never an edit: the original's debit, the credit note's credit, the contra (a
   negative invoice to the anaesthetist) and the new invoice's debit (catch-up Phase 39).
@@ -579,7 +582,8 @@ Receipts held = payables due + the AA Holding account  ->  In balance
   new Booking.)
 - "The system invoices the balance." (Nothing is billed automatically after a prepaid or fixed price.)
 - "A BCTI credit." (The anaesthetist's payable is reversed by a negative invoice.)
-- "A credit note is a refund." (It is not; money paid on a credited invoice is held for the payer.)
+- "A credit note is a refund." (It is not; money paid on a credited invoice is held for the payer. The
+  one automatic refund is a cancelled prepayment, refunded from the AA Holding account.)
 - "The system credits the difference automatically." (Nothing is credited automatically: a person
   decides, and the invoice is credited in full, never by the difference.)
 - "The accountant has signed off the weekly cycle." (It is Greg's proposal, Proposed and still with
@@ -612,6 +616,13 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   (catch-up Phase 22)
 - The anaesthetist's edit window to `AUTHORISED`, the main view from today, and search by patient
   name, NHI or date over months of history (catch-up Phase 38a)
+- Prepayment letter, cancellation and differences by hand (catch-up Phase 41): the letter with **Approve
+  and send** and its **Preview letter**, Master data · Prepayment letters, **Send prepayment
+  reminder**, the **Prepaid settlement** block (nothing further but by hand: a whole-invoice credit
+  note and an additional invoice), automatic credit or refund on cancel (the holding card's Credited
+  and Refunded rows, the Xero refund), the move rule with its honour line and the optional **Email
+  patient: anaesthetist changed**, and **Rebook with another anaesthetist** at the new anaesthetist's
+  own price
 - Pre-payment from a prepaid Contract (catch-up Phase 27), held in the AA Holding account and transferred to the anaesthetist when the List is authorised (catch-up Phase 27a), events and additional invoices (office and anaesthetist, catch-up Phase 38b) and billing monitor with per-booking isolation and retry (Phase 09); since catch-up Phase 37 the monitor is grouped by anaesthetist, sorts and filters (one anaesthetist, hospital, dates, **Problems only**, all in the URL), and lists each anaesthetist's Lists awaiting approval with **Open in Review** (approval itself stays on Review)
 - Pre-op and post-op events (catch-up Phase 39b): the anaesthetist's **Add pre-op or post-op event**
   (its own date, a time or fixed fee, the invoice tick, the "same as" party) and **Add billing event**
@@ -672,6 +683,14 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   accountant paying the schedule in Xero, and the Billing Engine records each payment it reports. The
   cycle's staging triggers, **Stage a payment week** and **Stage a bank mismatch**, are Billing monitor
   demo actions.
+- The prepayment follow-up triggers (catch-up Phase 41): **Stage longer prepaid procedure** (Admin
+  Review of a submitted List with a sent prepayment: lengthens the prepaid procedure so Authorise can
+  show it raises nothing), **Payment arrives after the credit note** (Admin Booking detail of a
+  cancelled, credited, unpaid prepayment: the late payment is refunded at once), **Change Contract after
+  prepayment sent** (Admin Booking detail: the office's Contract change, credited and refunded), and on
+  a handset Booking **Office sends a prepayment reminder** (badged "Office stand-in"). **Send
+  prepayment reminder**, **Rebook with another anaesthetist** and **Email patient: anaesthetist
+  changed** are product actions.
 - Master data's **Seed load** and **Go-live load** views are badged demo: they stand in for the
   developer's one-off load from AA's controlled spreadsheets (every row checked by the manual add's
   rules, rejected rows listed with reasons), not office screens. The office never loads master data.
@@ -865,11 +884,21 @@ Say:
 - Approve and send is a switchable step (Admin Invoices, "Prepayment approval", on by default):
   approving generates the invoice to the payer, its pair, and sends it. The payable credits the AA
   Holding account, not the anaesthetist.
+- The letter (catch-up Phase 41): Approve and send names the **Standard prepayment letter**, with
+  **Preview letter**. It states the prepaid amount as the price ("The anaesthetic fee is $1,380.00,
+  payable before your procedure.") and says the anaesthetist may send a further invoice or a credit if
+  the procedure turns out very different; the invoice document carries it as a cover section, and with
+  approval off the automatic send carries the default letter. The office keeps the templates on
+  Master data, Prepayment letters (Standard prepayment letter, Prepayment reminder, Anaesthetist
+  changed; one default per kind; estimate wording refused).
+- Reminders: **Send prepayment reminder** on the Booking's prepayment panel (office, while unpaid or
+  part paid) sends the amount still to pay; the panel reads "Reminder sent 21 Jul 10:04 to" the
+  address, and the Admin Day rail row "Reminded 21 Jul".
 - The AA Holding account is a payables creditor, kept like an anaesthetist's account: not a bank account
   (the money sits in the trust bank account), not a Xero ledger account, and never paid itself. Money
-  leaves it only by a transfer or a refund the system raises (the refund is Phase 41). Admin → Billing
-  monitor shows its card: the balance, the prepaid Bookings it holds for, and its Received and
-  Transferred entries (fresh reset: $1,380.00, Priya Nair, AA-2026-0001).
+  leaves it only by a transfer or a refund the system raises. Admin → Billing monitor shows its card:
+  the balance, the prepaid Bookings it holds for, and its Received, Transferred, Credited and Refunded
+  entries (fresh reset: $1,380.00, Priya Nair, AA-2026-0001).
 - Two steps: the payer's money is **collected into the AA Holding account** (nothing is paid to the
   anaesthetist; no payment run pays it), then **transferred** automatically when the office
   authorises the List, with no office step. The transfer is not a payment: no new invoice, no GST
@@ -883,12 +912,34 @@ Say:
 - AA decided not to block (OQ-57): an unpaid prepayment is a warning in both apps that escalates as the
   date nears (mild, then strong from two days before; D5), and completing, submitting and authorising
   all go through. There is no override.
-- After the procedure the prepaid Procedure is left off the final invoice with nothing deducted, and
-  nothing more happens automatically. A move to a colleague changes nothing in the books: nothing is
-  repointed, the transfer pays whoever did the List, and the old anaesthetist never sees it.
+- After the procedure the prepaid amount is the price: the prepaid Procedure is left off the final
+  invoice and nothing further is invoiced or credited automatically. Once the List is authorised its
+  **Prepaid settlement** block shows the prepaid price, the recorded BTM for reference only, the move
+  from the AA Holding account, and "Nothing is invoiced or credited automatically." If the work turned
+  out very different, the anaesthetist or the office raises an additional invoice or a credit note by
+  hand. A credit on a prepayment invoice is always the whole invoice ($1,380.00 against AA-2026-0001);
+  anything still owed is a fresh additional invoice, its payable to the anaesthetist (OQ-97). Before
+  authorise only the office credits it, and Authorise then bills the Procedure normally.
+- A move changes nothing: the patient is not billed again, nothing is repointed, and whoever does the
+  procedure claims the prepaid amount. Every move step carries the honour line (the office's: "The
+  prepayment keeps its agreed amount. Whoever the office assigns claims it."); the Admin Booking reads
+  "Prepayment kept at the agreed amount · now with Dr Beaumont", with an optional **Email patient:
+  anaesthetist changed** (Provisional, OQ-120).
+- A cancel settles it there and then, whoever cancels, and the cancel sheet says what will happen: an
+  unpaid invoice is credited in full (the patient is not chased); a paid one is credited and refunded
+  in full to the payer from the AA Holding account (the refund paid in Xero, "Refund paid from AA trust
+  account"; our reading of "all payments", to confirm with Greg); a payment that arrives after the
+  credit is refunded at once (a reading). A Contract changed off prepaid after sending is settled the
+  same way, then the Procedure bills under the new Contract (OQ-119).
+- A true rebook (**Rebook with another anaesthetist** on the cancelled Booking) starts a fresh
+  prepayment at the new anaesthetist's own price ($1,350.00 for Dr Beaumont), awaiting approval; both
+  Bookings show the history ("Earlier prepayment · Dr Souter · $1,200.00 ex GST · refunded"), so the patient
+  may see two amounts.
 - Demo seed: Annette Riley (awaiting approval, $1,200.00 plus GST) and Priya Nair (the mixed case, paid,
-  AA-2026-0001). Demo actions: Payment received · half / full, Move to 2 days before procedure, Add
-  prepaid Booking (One payer / Two payers).
+  AA-2026-0001); Dr Beaumont's own price list (Rhinoplasty $1,350.00). Demo actions: Payment received ·
+  half / full, Move to 2 days before procedure, Add prepaid Booking (One payer / Two payers), Stage
+  longer prepaid procedure (Admin Review), Payment arrives after the credit note and Change Contract
+  after prepayment sent (Admin Booking detail), and the PWA's Office sends a prepayment reminder.
 - Warnings: one routine; a To-do card and a Pre-payments card in Admin; a small triangle on Bookings in
   all three apps; the warning at the top of the Booking when it opens. Never a block, and no confirm
   step at submit.

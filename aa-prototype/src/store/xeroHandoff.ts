@@ -812,3 +812,41 @@ export function createTransferJournal(api: AppStoreApi, transferId: string): Out
   })
   return ok(journalId !== undefined ? { journalId } : {})
 }
+
+/**
+ * Mirror a prepayment refund to Xero (catch-up Phase 41; US-06.5.2, D53): the
+ * refund paid in Xero against its credit note from the AA trust account (the
+ * simulated `XeroRefund`), referenced by the credit note number and the refund
+ * id, never the patient. How the real system posts it is a build matter, kept
+ * in this one function. Idempotent by refund id. While Xero is unavailable it
+ * is not posted (the refund shows as waiting for Xero); `settlePendingPrepayments`
+ * posts it once the Xero sync queue drains (catch-up Phase 41 review).
+ */
+export function postPrepaymentRefund(api: AppStoreApi, refundId: string): Outcome<{ xeroRefundId?: string; waiting?: boolean }> {
+  const state = api.getState()
+  const refund = state.billing.prepaymentRefunds[refundId]
+  if (refund === undefined) return refuse('notFound', 'Refund not found.')
+  if (refund.xeroRefundId !== undefined) return ok({ xeroRefundId: refund.xeroRefundId })
+  // Honours an outage and an armed hand-off fault, as every push does; the sweep after the queue drains retries it.
+  if (!gateFor(state, { bookingId: refund.bookingId }).go) return ok({ waiting: true })
+  let xeroRefundId: string | undefined
+  const metas: MutationMeta[] = []
+  mutate(api, HANDOFF_ACTOR, metas, (s) => {
+    const now = s.billing.prepaymentRefunds[refundId]
+    if (now === undefined || now.xeroRefundId !== undefined) {
+      metas.push({ entityType: 'prepaymentRefund', entityId: refundId, action: 'xero.refundNoop', stampBookingId: null })
+      return {}
+    }
+    const id = allocateId(s.counters, 'xeroRefund')
+    xeroRefundId = id.id
+    const note = s.billing.creditNotes[now.creditNoteId]
+    const reference = `${note?.creditNoteNumber ?? now.creditNoteId} ${now.id}`
+    metas.push({ entityType: 'prepaymentRefund', entityId: refundId, action: 'xero.refundPaid', after: { xeroRefundId: id.id, amount: now.amount, bankAccount: 'AA trust account', reference }, stampBookingId: null })
+    return {
+      xero: { ...s.xero, refunds: { ...s.xero.refunds, [id.id]: { id: id.id, prepaymentRefundId: now.id, creditNoteId: now.creditNoteId, amount: now.amount, bankAccount: 'AA trust account', paidAtISO: clockISO(s.clock), reference } } },
+      billing: { ...s.billing, prepaymentRefunds: { ...s.billing.prepaymentRefunds, [refundId]: { ...now, xeroRefundId: id.id } } },
+      counters: id.counters,
+    }
+  })
+  return ok(xeroRefundId !== undefined ? { xeroRefundId } : {})
+}

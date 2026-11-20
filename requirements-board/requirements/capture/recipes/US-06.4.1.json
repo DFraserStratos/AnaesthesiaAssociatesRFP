@@ -20,6 +20,538 @@
           ]
         }
       ]
+    },
+    {
+      "name": "by-hand",
+      "app": "admin",
+      "caption": "After a prepaid procedure nothing further is invoiced or credited automatically",
+      "start": "/admin/day/2026-07-24/bookings/BK0038",
+      "states": [
+        {
+          "state": "settlement",
+          "caption": "Once the List is authorised the prepaid amount is the price, the recorded BTM is for reference only, the amount moves from the AA Holding account to Dr Souter, and nothing is invoiced or credited automatically",
+          "steps": [
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Priya Nair\" >> nth=0"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "scroll": "[data-shot=capture-modifiers]"
+            },
+            {
+              "click": "[data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+              "value": "ASA III on review"
+            },
+            {
+              "click": "role=button[name=\"Claim\"]"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Mark complete\"]"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Mark list completed\" >> nth=0"
+            },
+            {
+              "click": "text=\"Submit to office\" >> nth=0"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/admin/review/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": "[data-shot=review-authorised-banner]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/day/2026-07-24/bookings/BK0038"
+            },
+            {
+              "wait": "[data-shot=prepaid-settlement]"
+            },
+            {
+              "scroll": "[data-shot=prepaid-settlement]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=prepaid-settlement]"
+          ]
+        },
+        {
+          "state": "read-only-price",
+          "caption": "Once the prepayment invoice is raised the prepaid price is read-only for the office too: use a credit or an additional invoice",
+          "steps": [
+            {
+              "wait": "[data-shot=office-billing-setup-2]"
+            },
+            {
+              "scroll": "[data-shot=office-billing-setup-2]"
+            },
+            {
+              "click": "[data-shot=office-billing-setup-2] >> role=button[name=\"Change price\"]"
+            },
+            {
+              "wait": "[data-shot=pricing-sheet-refusal]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=pricing-sheet]"
+          ]
+        },
+        {
+          "state": "longer",
+          "caption": "The procedure took four hours: authorising bills nothing more, and the recorded BTM is shown for reference only",
+          "steps": [
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Priya Nair\" >> nth=0"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "scroll": "[data-shot=capture-modifiers]"
+            },
+            {
+              "click": "[data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+              "value": "ASA III on review"
+            },
+            {
+              "click": "role=button[name=\"Claim\"]"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Mark complete\"]"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Mark list completed\" >> nth=0"
+            },
+            {
+              "click": "text=\"Submit to office\" >> nth=0"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/admin/review/L-34821-2026-07-24-PM"
+            },
+            {
+              "wait": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "trigger": "stage-longer-prepaid-procedure"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": "[data-shot=review-authorised-banner]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/day/2026-07-24/bookings/BK0038"
+            },
+            {
+              "wait": "[data-shot=prepaid-settlement-btm]"
+            },
+            {
+              "scroll": "[data-shot=prepaid-settlement]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=prepaid-settlement-btm]",
+            "[data-shot=prepaid-settlement-nothing-automatic]"
+          ]
+        },
+        {
+          "state": "additional-invoice",
+          "caption": "Differences raised by hand: a credit for the whole prepayment invoice, then a fresh additional invoice",
+          "steps": [
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Priya Nair\" >> nth=0"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "scroll": "[data-shot=capture-modifiers]"
+            },
+            {
+              "click": "[data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+              "value": "ASA III on review"
+            },
+            {
+              "click": "role=button[name=\"Claim\"]"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Mark complete\"]"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Mark list completed\" >> nth=0"
+            },
+            {
+              "click": "text=\"Submit to office\" >> nth=0"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/admin/review/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": "[data-shot=review-authorised-banner]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/day/2026-07-24/bookings/BK0038"
+            },
+            {
+              "wait": "[data-shot=prepaid-settlement]"
+            },
+            {
+              "click": "[data-shot=prepaid-settlement] [data-shot=procedure-credit-note-button]"
+            },
+            {
+              "wait": "[data-shot=credit-sheet]"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-reason-chip]:has-text(\"Less work than expected\")"
+            },
+            {
+              "click": "[data-shot=credit-sheet] [data-shot=credit-submit]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr[data-event-id][data-kind=credit]:has-text(\"Priya Nair\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            },
+            {
+              "click": "[data-shot=event-review-approve]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "trigger": "run-next-billing-run"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/day/2026-07-24/bookings/BK0038"
+            },
+            {
+              "wait": "[data-shot=prepaid-settlement-credit]"
+            },
+            {
+              "click": "[data-shot=prepaid-settlement] [data-shot=additional-invoice-button]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "input[data-shot=line-description]",
+              "value": "Rhinoplasty, the part of the procedure done"
+            },
+            {
+              "fill": "input[data-shot=line-amount]",
+              "value": "600.00"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=additional-invoice-save]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr[data-event-id][data-kind=additionalInvoice]:has-text(\"Priya Nair\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            },
+            {
+              "click": "[data-shot=event-review-approve]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "trigger": "run-next-billing-run"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/day/2026-07-24/bookings/BK0038"
+            },
+            {
+              "wait": "[data-shot=prepaid-settlement-additional]"
+            },
+            {
+              "scroll": "[data-shot=prepaid-settlement]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=prepaid-settlement]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "whole-credit",
+      "app": "web",
+      "caption": "Differences raised by hand: a credit for the whole prepayment invoice, then a fresh additional invoice",
+      "start": "/web/lists/L-34821-2026-07-24-PM/bookings/BK0038",
+      "states": [
+        {
+          "caption": "Dr Souter credits the whole prepayment invoice by hand: there is no amount to enter, and anything still owed is raised as an additional invoice",
+          "steps": [
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Priya Nair\" >> nth=0"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "scroll": "[data-shot=capture-modifiers]"
+            },
+            {
+              "click": "[data-shot=modifier-add]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] [data-modifier-code=AS3]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "textarea[placeholder=\"A short reason, as an insurer would ask\"]",
+              "value": "ASA III on review"
+            },
+            {
+              "click": "role=button[name=\"Claim\"]"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Mark complete\"]"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "text=\"Mark list completed\" >> nth=0"
+            },
+            {
+              "click": "text=\"Submit to office\" >> nth=0"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "goto": "/admin/review/L-34821-2026-07-24-PM"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": "[data-shot=review-authorised-banner]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/web/lists/L-34821-2026-07-24-PM/bookings/BK0038"
+            },
+            {
+              "wait": "[data-shot=prepaid-settlement]"
+            },
+            {
+              "scroll": "[data-shot=prepaid-settlement]"
+            },
+            {
+              "click": "[data-shot=prepaid-settlement] [data-shot=anaesthetist-credit-note-button]"
+            },
+            {
+              "wait": "[data-shot=credit-form]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=credit-form] [data-shot=credit-reason-chip]:has-text(\"Less work than expected\")"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=credit-form]"
+          ]
+        }
+      ]
     }
   ]
 }

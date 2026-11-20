@@ -159,12 +159,13 @@ describe('The re-check line (US-06.3.5)', () => {
     expect(step(() => undefined)).toBeNull()
   })
 
-  it('after sending: a Contract changed off prepaid reads "sent before this change"', () => {
+  it('after sending: a Contract changed off prepaid is settled as a cancellation (catch-up Phase 41, D67), so no interim line is left', () => {
     const api = createAppStore()
     const nairRhino = proceduresForBooking(api.getState(), NAIR).find((p) => p.governingContractId === 'CT-SOUTER-RHINO')!
     const before = prepaymentStatusFor(api.getState(), NAIR)
     setProcedureContract(api, OFFICE, nairRhino.id, CONTRACT.noContractRvg)
-    expect(prepaymentRecheckLine(before, prepaymentStatusFor(api.getState(), NAIR))).toBe('Pre-payment invoice sent before this change')
+    expect(Object.values(api.getState().billing.creditNotes).map((c) => c.cause)).toEqual(['prepaidContractChanged'])
+    expect(prepaymentRecheckLine(before, prepaymentStatusFor(api.getState(), NAIR))).toBeNull()
   })
 })
 

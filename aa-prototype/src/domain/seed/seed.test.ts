@@ -870,6 +870,8 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
       'CT-FORTE-DISC': 'FORTE-002',
       // Catch-up Phase 25a: Christchurch Eye Surgery's old rate, the seeded Disabled Contract, appended last.
       'CT-CES-2025': 'CES-010',
+      // Catch-up Phase 41 (US-06.5.3): Dr Beaumont's prepaid Rhinoplasty, the rebook's replacement price, appended last.
+      'CT-BEAUMONT-RHINO': 'BEAU-001',
     })
     expect(Object.fromEntries(Object.values(contracts).filter((c) => c.systemRole === 'rvgFallback').map((c) => [c.id, c.aaCode]))).toEqual(RVG_BACKSTOPS)
     const codes = Object.values(contracts).map((c) => c.aaCode)
@@ -885,9 +887,9 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
     // The override is seeded on No contract · RVG (A18) and the system's RVG backstops only; every Contract is Active.
     // Catch-up Phase 24 (work item 11): one hospital RVG Contract, Forte Health RVG, allows the override too.
     expect(Object.values(contracts).filter((c) => c.anaesthetistMayOverridePrice).map((c) => c.id).sort()).toEqual(['CT-FORTE-D1', 'CT-NO-CONTRACT', ...Object.keys(RVG_BACKSTOPS)].sort())
-    // Prepaid: Dr Souter's price list (catch-up Phase 19a) and the system's Prepaid · Fixed price (Phase 18a).
+    // Prepaid: Dr Souter's price list (catch-up Phase 19a), Dr Beaumont's Rhinoplasty (catch-up Phase 41, the rebook) and the system's Prepaid · Fixed price (Phase 18a).
     expect(Object.values(contracts).filter((c) => c.prepaid).map((c) => c.id).sort()).toEqual(
-      ['CT-SOUTER-BLEPH', 'CT-SOUTER-BREAST', 'CT-SOUTER-RHINO', 'CT-SOUTER-RHINO-COS', Object.values(contracts).find((c) => c.name === 'Prepaid · Fixed price')!.id].sort(),
+      ['CT-BEAUMONT-RHINO', 'CT-SOUTER-BLEPH', 'CT-SOUTER-BREAST', 'CT-SOUTER-RHINO', 'CT-SOUTER-RHINO-COS', Object.values(contracts).find((c) => c.name === 'Prepaid · Fixed price')!.id].sort(),
     )
     // Every Contract is Active but one: catch-up Phase 25a's Christchurch Eye Surgery 2025 rate, Disabled on Fri 10 Jul.
     expect(Object.values(contracts).filter((c) => c.status !== 'active').map((c) => c.id)).toEqual(['CT-CES-2025'])

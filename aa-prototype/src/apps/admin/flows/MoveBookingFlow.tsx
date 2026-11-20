@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { List } from '../../../domain/types'
-import { reassignBooking, useAppStore, type Actor } from '../../../store'
+import { hasSentPrepayment, reassignBooking, useAppStore, type Actor } from '../../../store'
 import { LIST_STATE_LABELS, locationName } from '../../../shared/format'
 import { UNASSIGNED } from '../../../shared/scheduleTerms'
 import { Button, FormError, TextField } from '../../../shared/ui'
@@ -11,6 +11,7 @@ import { surnameOf } from '../util'
 import { CONFLICT_REASONS } from '../../../domain/conflicts'
 import { compareSessions, sessionText } from '../../../domain/outOfHours'
 import { EmptyState } from '../../../shared/ui/EmptyState'
+import { PrepaymentHonourLine } from '../../../shared/flows/PrepaymentHonourLine'
 
 interface MoveBookingFlowProps {
   open: boolean
@@ -32,6 +33,8 @@ export function MoveBookingFlow({ open, bookingId, actor, onClose, onMoved }: Mo
   const booking = useAppStore((s) => s.schedule.bookings[bookingId])
   const lists = useAppStore((s) => s.schedule.lists)
   const masters = useAppStore((s) => s.masters)
+  // A sent prepayment stays exactly as it is through the move (US-06.5.4, D38): the honour line says so before the pick.
+  const prepaid = useAppStore((s) => hasSentPrepayment(s, bookingId))
 
   const sourceList = booking !== undefined ? lists[booking.listId] : undefined
   const [targetDate, setTargetDate] = useState(sourceList?.dateISO ?? '')
@@ -74,6 +77,7 @@ export function MoveBookingFlow({ open, bookingId, actor, onClose, onMoved }: Mo
           description="The Booking moves alone. Both lists' other bookings and their status are untouched, and the move is recorded in the Booking's audit trail."
         />
         <div style={{ fontSize: 13, color: neutral.slate }}>To move into a free session, assign a List to it first.</div>
+        {prepaid && <PrepaymentHonourLine audience="office" />}
 
         <TextField label="Target day" type="date" value={targetDate} onChange={setTargetDate} />
 

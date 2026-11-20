@@ -29,12 +29,12 @@ import { diffSnapshots, sameValue, snapshotBooking, type BookingSnapshot, type F
 import type { AuditEntry, Booking, ChangeSetId, List, Procedure, ProcedurePayer } from '../domain/types'
 import { payerKey } from '../domain/billing/procedurePayer'
 import { contractChangeAsksRvgDetail } from '../domain/billing/completion'
-import { payerLockedByPrepayment } from './selectors'
+import { payerLockedByPrepayment, prepaidHeldFor } from './selectors'
 import { PAYER_LOCKED_BY_PREPAYMENT } from './payerActions'
 import { validateNhi } from '../domain/nhi'
 import { resolveSplit } from '../domain/billing/splitShare'
 import { isBlankText } from '../domain/billing/procedureStack'
-import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
+import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal, getBooking } from './lifecycle'
 import { contractPickRefusal } from './contractSelectionActions'
@@ -42,6 +42,9 @@ import { priceChangeRefusal } from './pricingActions'
 import { procedureFeeNow } from './splitActions'
 import { autoSendPrepayments } from './prepaymentActions'
 import { INVOICE_DESCRIPTION_BLANK_MESSAGE } from './procedureTextActions'
+import { settlePrepaidContractChange, type SettledInvoice } from './prepaymentCancellation'
+import { handoffCorrection, postPrepaymentRefund } from './xeroHandoff'
+import { isPrepaidContract } from '../domain/billing/prepayment'
 
 export const SAVE_OFFICE_ONLY_MESSAGE = 'Only the AA office saves Booking changes this way.'
 export const SAVE_NO_CHANGES_MESSAGE = 'There are no changes to save.'
@@ -214,13 +217,34 @@ export function saveBookingChanges(
     { entityType: 'booking', entityId: bookingId, action: 'booking.save', after: { kind: 'save', fields }, stampBookingId: bookingId },
     ...metasFor(applied, attribution, (pid) => procedures[pid]?.bookingId ?? state.schedule.procedures[pid]?.bookingId ?? bookingId, bookingId),
   ]
+  // A Procedure the office moved off prepaid while its prepayment invoice stands (catch-up Phase 41; US-06.3.7, D67):
+  // settled as a cancellation of that prepayment in this same commit, as `setProcedureContract` does outside a draft.
+  const offPrepaid = actor.role === 'office'
+    ? Object.entries(prepaidHeldFor(state, bookingId)).filter(([pid]) => {
+        const now = candidate.schedule.procedures[pid]
+        return now !== undefined && now.governingContractId !== state.schedule.procedures[pid]?.governingContractId && !isPrepaidContract(candidate.masters.contracts[now.governingContractId ?? ''])
+      })
+    : []
+  const settled: SettledInvoice[] = []
   const result = mutate(
     api,
     actor,
     metas,
-    () => ({ counters: candidate.counters, masters: candidate.masters, schedule: candidate.schedule }),
+    (s) => {
+      let next: AppState = { ...s, counters: candidate.counters, masters: candidate.masters, schedule: candidate.schedule }
+      for (const [pid, held] of offPrepaid) {
+        const out = settlePrepaidContractChange(next, pid, held.prepaymentInvoiceId, clockISO(s.clock), metas)
+        if (out.settled !== undefined) settled.push(out.settled)
+        if (out.patch !== null) next = { ...next, ...out.patch }
+      }
+      return { counters: next.counters, masters: next.masters, schedule: next.schedule, billing: next.billing }
+    },
     { changeSet: 'save' },
   )
+  for (const x of settled) {
+    if (x.creditNoteId !== undefined) handoffCorrection(api, x.creditNoteId)
+    if (x.refundId !== undefined) postPrepaymentRefund(api, x.refundId)
+  }
 
   // --- The derived follow-on, once, on the real store (27; never on a move, D20). ---
   if (applied.some((c) => c.entityType === 'procedure')) autoSendPrepayments(api, bookingId)

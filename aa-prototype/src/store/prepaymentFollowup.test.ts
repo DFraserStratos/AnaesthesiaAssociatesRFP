@@ -257,8 +257,10 @@ describe('differences by hand: the whole prepayment invoice credited, then a fre
     expectInBalance()
     // The credited invoice no longer counts as issued: the Procedure bills at authorise and nothing is transferred for it.
     const before = Object.keys(api.getState().billing.invoices).length
-    // Still on a prepaid Contract: a fresh prepayment awaits approval and is never sent once authorised.
-    expect(prepaymentStatusFor(api.getState(), NAIR).groups.some((g) => g.status === 'awaitingApproval')).toBe(true)
+    // Credited by hand: no fresh prepayment is derived for it (the payer's money is held), so approval off sends nothing.
+    expect(prepaymentStatusFor(api.getState(), NAIR).groups.some((g) => g.status === 'awaitingApproval')).toBe(false)
+    const off = setPrepaymentApprovalRequired(api, OFFICE, false)
+    expect(off.ok && off.value.sentInvoiceIds.every((id) => api.getState().billing.invoices[id]!.bookingId !== NAIR)).toBe(true)
     authorise(NAIR_LIST)
     const raised = Object.values(api.getState().billing.invoices).slice(before)
     expect(raised.some((i) => (i.procedureIds ?? []).includes(nairProcedure()) && i.kind === 'standard')).toBe(true)

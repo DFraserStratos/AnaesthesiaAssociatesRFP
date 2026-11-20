@@ -262,7 +262,8 @@ export function creditRefusalFor(state: Pick<AppState, 'schedule' | 'billing'>, 
   if (creditNoteForInvoice(state, invoiceId) !== undefined || pair.credit !== undefined) return { code: 'alreadyCredited', message: CREDIT_MESSAGES.alreadyCredited }
   if (pendingCreditEventFor(state, invoiceId, opts.editing) !== undefined) return { code: 'correctionPending', message: CREDIT_MESSAGES.correctionPending }
   // A payable Xero is paying in a payment run right now (catch-up Phase 39a): the run must finish first, or its payment strands.
-  const paying = payingRunFor(state, pair.id)
+  const transferNow = transferOfPair(state.billing.transfers, pair.id)
+  const paying = payingRunFor(state, transferNow !== undefined && pair.kind === 'prePayment' ? transferNow.id : pair.id)
   if (paying !== undefined) return { code: 'inPaymentRun', message: CREDIT_MESSAGES.inPaymentRun(paying) }
   return null
 }
@@ -761,7 +762,8 @@ export function planCreditIssue(state: CreditState, creditEventId: string): Outc
   // The reversal is read from the ledger, so it waits until Xero and the ledger agree (catch-up Phase 39 review).
   if (xeroMoneyNotInLedger(state, pair)) return refuse('waitingForXero', CREDIT_SYNC_MESSAGES.waitingForXeroSync)
   // Never while Xero is paying its payable in a payment run (catch-up Phase 39a): the run skips it and it waits.
-  const paying = payingRunFor(state, pair.id)
+  // A transferred prepayment's payable is the transfer's line in the run (catch-up Phase 41 review).
+  const paying = payingRunFor(state, target.leg === 'transfer' ? target.transferId : pair.id)
   if (paying !== undefined) return refuse('inPaymentRun', CREDIT_MESSAGES.inPaymentRun(paying))
   const planned: PlannedAdditional[] = []
   for (const r of replacements) {
@@ -1142,11 +1144,12 @@ export function splitCombinedProcedure(
 /**
  * Whether the **Credit note** entry shows on a Procedure for this actor, and
  * how: `hidden` on a colleague's Procedure (the store refuses it anyway) and
- * on one not invoiced yet; `hidden` with the caption "Crediting a prepayment
- * invoice is not in this prototype yet." when the Procedure's only invoice is
- * its prepayment invoice (Phase 41); `disabled` with its sentence while a
- * credit waits or once the invoice is credited (and for a no-charge invoice
- * or one with no ledger pair); else `enabled` on the invoice it credits (the
+ * on one not invoiced yet. On a prepaid Procedure, whose only invoice is its
+ * prepayment invoice, the option credits that prepayment invoice whole
+ * (catch-up Phase 41, D31): the office any time, the anaesthetist on their own
+ * once the List is authorised (`hidden` before then). `disabled` with its
+ * sentence while a credit waits or once the invoice is credited (and for a
+ * no-charge invoice or one with no ledger pair); else `enabled` on the invoice it credits (the
  * Procedure's live invoice, a rebill once the original is credited), with
  * `invoiceIds`: every live invoice of the Procedure this actor may credit now,
  * by number (22's fee split bills two parties, so the UI lets the user pick).
@@ -1154,7 +1157,7 @@ export function splitCombinedProcedure(
  * credited, `enabled` on that other one.
  */
 export type CreditOption =
-  | { kind: 'hidden'; caption?: string }
+  | { kind: 'hidden' }
   | { kind: 'disabled'; invoiceId: InvoiceId; reason: string }
   | { kind: 'enabled'; invoiceId: InvoiceId; invoiceIds: InvoiceId[] }
 

@@ -613,8 +613,8 @@ already seeded.
   carries one sentence: "Submitting says you did every procedure on this List. If a colleague is doing
   one, move it to them first."
 - **Presenter note:** say the prepaid line here; the AA Holding account and its transfer at
-  authorisation are shown in S4 Beat 7. A moved prepaid Booking needs no change: the transfer pays
-  whoever did the List. A prepaid Booking (Fri 24 PM, Priya Nair) shows "This Booking is prepaid. The prepaid amount stays as agreed, and moves to Dr ...
+  authorisation are shown in S4 Beat 7, and the office's move of a prepaid Booking in S4 Beat 9. A
+  moved prepaid Booking needs no change: the transfer pays whoever did the List. A prepaid Booking (Fri 24 PM, Priya Nair) shows "This Booking is prepaid. The prepaid amount stays as agreed, and moves to Dr ...
   once the List is authorised." on the confirm step; Reset after moving one.
 
 ### Beat 3e (optional): an emergency case after hours
@@ -1097,10 +1097,11 @@ invoice or one per procedure.
 ## S4 · Exceptions
 
 **Serves:** resilience, the RFP's hard cases, and the audit trail that keeps them honest.
-**Time:** 8 to 10 minutes. Use this for a technical audience; every sub-trigger is under **Demo
+**Time:** 8 to 10 minutes, about 4 more with Beats 8 and 9. Use this for a technical audience; every sub-trigger is under **Demo
 actions** on the screen named in its beat.
 
-**Stage it:** use **Reset → Confirm reset**. Work top to bottom through the beats below.
+**Stage it:** use **Reset → Confirm reset**. Work top to bottom through the beats below; Beats 8 and 9
+(the prepayment follow-up) each start from their own reset, so run them last or on their own.
 
 ### Beat 1: Pre-payment from a prepaid Contract
 
@@ -1113,8 +1114,16 @@ actions** on the screen named in its beat.
     Contract, $1,200.00 plus GST ($1,380.00), the patient as the Procedure's payer. The panel reads
     **Pre-payment awaiting approval**; there is no amount field and no raise button.
   - Go to **Admin Invoices**: the **Awaiting approval** card above the table, and its **Prepayment
-    approval** switch. Select **Approve and send**. Optionally open the **Xero sim**: the pair is a
-    receivable from the patient and a payable crediting the AA Holding account.
+    approval** switch. Select **Approve and send**, preview the letter: the dialog names the
+    **Standard prepayment letter**; **Preview letter** shows it states the prepaid amount as the price
+    ("The anaesthetic fee is $1,380.00, payable before your procedure.") and says Dr Souter may send a
+    further invoice or a credit if the procedure turns out very different. Then **Approve and send**.
+    The invoice document carries the letter as a cover section. Optionally open the **Xero sim**: the
+    pair is a receivable from the patient and a payable crediting the AA Holding account.
+  - Optional: **Admin → Master data → Prepayment letters** (`/admin/masters?view=prepaymentLetters`):
+    three templates (Standard prepayment letter, Prepayment reminder, Anaesthetist changed), one
+    default per kind. A template worded as an estimate is refused. With **Prepayment approval** off,
+    the automatic send carries the default letter.
   - Back on Riley's Booking, **Demo actions → Payment received · half → Run**: it reads "Pre-payment
     part paid · $690.00 of $1,380.00 received".
   - Go to **Admin → Billing monitor**: the **AA Holding account** card under the AA fee invoices panel.
@@ -1136,7 +1145,7 @@ actions** on the screen named in its beat.
     (invoice AA-2026-0001, $1,200.00 plus GST, approved by Kirsty W., paid, its payable to the AA
     Holding account and held there) and her septoplasty on Forte's Contract, billed as usual. On
     **Authorise** the prepaid Procedure reads "Prepaid, left off the final invoice (AA-2026-0001)",
-    with nothing deducted. Beat 7 authorises her List and follows the money.
+    and nothing more is raised for it. Beat 7 authorises her List and follows the money.
   - Optional asides: on a Booking with no prepaid Contract, **Patient › Prepaid**, the **No contract**
     heading at the top of the list, **No contract · Fixed price**, type $2,000 ("just make it two
     grand"), then **Save changes**: it awaits approval at $2,000.00 plus GST ($2,300.00). **Demo actions → Add prepaid
@@ -1149,11 +1158,13 @@ actions** on the screen named in its beat.
 - **Say:** "The office picked Dr Souter's own prepaid Contract for this procedure, so it needs
   prepayment: the price, in full, not an estimate, and fixed once the invoice is raised. Whoever pays
   for this procedure is invoiced; if two procedures have different payers, each gets their own
-  prepayment invoice. By default we approve it here, and AA can switch that step off. Approving sends
-  it and credits the AA Holding account, not Dr Souter. The money is held there: nothing is paid to
-  the anaesthetist yet, and it leaves only by a transfer or refund the system raises. Nothing blocks:
-  the warning strengthens as the day approaches. After the procedure it is left off the final invoice,
-  nothing deducted. A move to a colleague changes nothing in the books."
+  prepayment invoice. By default we approve it here, and AA can switch that step off. The letter
+  states the prepaid amount as the price, and says the anaesthetist may send a further invoice or
+  credit if the procedure turns out very different. Approving sends it and credits the AA Holding
+  account, not Dr Souter. The money is held there: nothing is paid to the anaesthetist yet, and it
+  leaves only by a transfer or refund the system raises. Nothing blocks: the warning strengthens as
+  the day approaches. After the procedure it is left off the final invoice, and nothing more is raised
+  automatically. A move to a colleague changes nothing in the books."
 - **Expected:** awaiting approval, then the sent invoice with its pair to the AA Holding account, part
   paid on all three surfaces, the AA Holding account card holding both prepayments with nothing waiting in
   the week's payment run, and a submit that goes through. The Ledger (`/admin/ledger`) shows Riley's
@@ -1530,6 +1541,11 @@ $1,380.00 held since Beat 1) to Dr Souter.
   - Go to **Admin → Review queue → Dr Melanie Souter, Fri 24 Jul PM → Review** and select **Authorise
     for billing**, then confirm. Nothing else: there is no transfer button. (On a handset, the PWA's
     **Office authorises this List** does the same.)
+  - Open Nair's Booking: under the rhinoplasty the **Prepaid settlement** block reads "Prepaid
+    $1,200.00 · the price for this procedure", "Recorded BTM n units · for reference only" (the
+    units as recorded, never a dollar figure), "Moved from the AA Holding account to Dr Souter on 24
+    Jul" and "Nothing is invoiced or credited automatically.", with **Credit note** and **Create
+    additional invoice** (Beat 8). Dr Souter sees the same block on web and mobile ("to you").
   - Go to **Admin → Billing monitor**. The **AA Holding account** card shows a **Transferred** entry
     naming Dr Melanie Souter, and the balance falls by $1,380.00 (to $0.00 from a fresh reset; Riley's
     $690.00 stays held if Beat 1 paid half of hers).
@@ -1548,16 +1564,103 @@ $1,380.00 held since Beat 1) to Dr Souter.
     prepayment read "Held until the List is authorised" before, and now reads **Paid to you**.
 - **Say:** "The patient paid before the procedure, but the money was held, not paid to Dr Souter. When the office
   authorised her List the system moved it from the AA Holding account to her, with no office step.
-  That is a transfer, not a payment: no new invoice, no GST, nothing more from the patient. The next
-  weekly payment run pays her. If the Booking had moved to a colleague, the transfer would pay whoever did
-  the List, with nothing changed in between. Whether authorisation is the right moment is still to
-  confirm with AA."
-- **Expected:** one Transferred entry naming Dr Souter, the card's balance down by $1,380.00, MJ-0001 on
+  That is a transfer, not a payment: no new invoice, no GST, nothing more from the patient. The
+  prepaid amount is the price: the BTM she recorded is there for reference only, and nothing is
+  invoiced or credited automatically. The next weekly payment run pays her. If the Booking had moved
+  to a colleague, the transfer would pay whoever did the List, with nothing changed in between.
+  Whether authorisation is the right moment is still to confirm with AA."
+- **Expected:** the settlement block on Nair's Booking with nothing raised for the prepaid
+  rhinoplasty, one Transferred entry naming Dr Souter, the card's balance down by $1,380.00, MJ-0001 on
   XRB0, and the week's run paying exactly $1,380.00 to Dr Souter. The transfer itself adds no invoice,
   ACCREC or payment, and GST does not move (her septoplasty bills on its own invoice as usual). On the
   Ledger the transfer is its own row (Kind Transfer, Receivable "None", "From AA-2026-0001", Payee Dr
   Souter); the AA Holding account tile falls and Payables due rises by the same amount until the week's
   run is paid, and the ledger stays in balance.
+
+### Beat 8: Raised by hand, if at all
+
+**Stage it:** Reset → Confirm reset, then submit Dr Souter's Fri 24 Jul PM List on mobile as in
+Beat 7, and stop before **Authorise**. (Or fold the first two clicks into Beat 7, between submit and
+authorise.)
+
+- **Click:**
+  - Go to **Admin → Review → Dr Melanie Souter, Fri 24 Jul PM** (`/admin/review/L-34821-2026-07-24-PM`,
+    submitted). **Demo actions → Stage longer prepaid procedure**, choose Priya Nair, **Run**: her
+    rhinoplasty now took four hours ("Recorded BTM now n units, for reference only. Authorise bills
+    nothing more for the prepaid procedure; raise an additional invoice by hand if one is needed.").
+  - **Authorise for billing** and confirm: nothing is raised for the rhinoplasty (her septoplasty bills
+    on Forte's Contract as usual). Nair's Booking shows the **Prepaid settlement** block with the
+    longer BTM for reference only and "Nothing is invoiced or credited automatically."
+  - In the block, **Create additional invoice**: a line for the extra time, for example $300.00, to
+    the patient; **Save for review**. **Review → Events**: **Approve for billing**. **Billing monitor →
+    Demo actions → Run the next billing run**: the additional invoice is raised with its own number,
+    and the block lists it.
+  - Optional, on another reset (submit and authorise the List as in Beat 7): on the **Anaesthetist
+    Web App** as Dr Souter, search **Nair** and open her Booking. In the settlement block, **Credit
+    note**: "This credits the whole prepayment invoice. Raise an additional invoice for anything still
+    owed." It credits AA-2026-0001 in full ($1,380.00 with GST); she cannot credit part of it. Then
+    **Raise additional invoice** for the work done, for example $600.00: a fresh invoice to the
+    patient, its payable to Dr Souter. Both wait for the office's review (on the PWA, the review
+    stand-ins approve them) and are issued in the next run.
+  - Optional, before authorise: only the office can credit a prepayment invoice while the List is not
+    yet authorised. Its **Credit note** on the prepaid Procedure lowers the AA Holding account by
+    $1,380.00, and **Authorise** then bills the Procedure normally.
+- **Say:** "After a prepaid procedure the prepaid amount is the price. The system never invoices or
+  credits the difference by itself. If the work turned out very different, the anaesthetist or the
+  office raises an additional invoice or a credit note by hand. A credit is always for the whole
+  prepayment invoice, and anything still owed is a new additional invoice."
+- **Expected:** after **Stage longer prepaid procedure**, **Authorise** raises nothing for the prepaid
+  rhinoplasty; the hand-raised additional invoice goes through review and the next billing run with
+  its own number and pair. On the credit route, the credit note is for $1,380.00 against AA-2026-0001,
+  never the difference, and the additional invoice ($600.00 here) pays Dr Souter like any other.
+
+### Beat 9: Moved, cancelled and rebooked
+
+**Stage it:** Reset → Confirm reset, then on **Admin Invoices** **Approve and send** Riley's
+prepayment (Beat 1); her half payment is optional. Nair's prepayment is seeded paid and held. Both
+Fri 24 Jul Lists must not be authorised yet, so run this beat from a reset, not after Beat 7.
+
+- **Click:**
+  - On Riley's Admin Booking, the prepayment panel: **Send prepayment reminder** (office, while unpaid
+    or part paid). The dialog shows the amount still to pay ($1,380.00, or $690.00 after Beat 1's half
+    payment), the Prepayment reminder letter and the recipient; **Send reminder**. The panel reads
+    "Reminder sent 21 Jul 10:04 to" the patient's address (the time is the demo clock's), and the
+    Admin Day **Pre-payments** rail row adds "Reminded 21 Jul". (On a handset Booking, **Demo → Office
+    sends a prepayment reminder** plays the office: "Reminder sent by the AA office".)
+  - Move Riley to Dr Beaumont's Mon 27 Jul AM List with the office's **Move booking to another list**.
+    Its confirm step carries the honour line: "The prepayment keeps its agreed amount. Whoever the
+    office assigns claims it." After the move nothing changes: the invoice, the holding card and the
+    Xero pairs stand as they were. Riley's Admin Booking reads "Prepayment kept at the agreed amount ·
+    now with Dr Beaumont", with **Email patient: anaesthetist changed** (optional, "Provisional
+    (OQ-120)"): preview and **Send email** if wanted.
+  - Open Priya Nair's Booking (paid, AA-2026-0001, held) and **Cancel booking**. The sheet says what
+    will happen: "Prepayment received · $1,380.00. Cancelling refunds it in full to the payer from the
+    AA Holding account and credits the invoice." Confirm: the invoice is credited in full and $1,380.00
+    refunded to the payer at once. The panel reads "Refunded to the payer from the AA Holding account ·
+    $1,380.00 on 21 Jul"; the **AA Holding account** card on the Billing monitor adds a **Credited** and
+    a **Refunded** row; the **Xero sim**'s credit note reads "Refund paid from AA trust account ·
+    $1,380.00 · Paid 21 Jul".
+  - On the cancelled Nair Booking, **Rebook with another anaesthetist**: Dr Beaumont, her Tue 4 Aug PM
+    List at Forte. The dialog reads "New prepayment at Dr Beaumont's own price: $1,350.00 ex GST"; **Rebook**
+    opens the new Booking, awaiting approval at $1,350.00. Both Bookings show the history: "Earlier
+    prepayment · Dr Souter · $1,200.00 ex GST · refunded" and "This prepayment · Dr Beaumont · $1,350.00 ex GST".
+  - On another reset, approve and send Riley's prepayment but record no payment, then cancel her
+    Booking (the office, or Dr Souter on mobile: the same result). The sheet reads "Prepayment invoice
+    AA-2026-0002 is unpaid. Cancelling credits it in full, so the patient is not chased."; it is
+    credited only. Then **Demo actions → Payment arrives after the credit note → Run**: the payment is
+    refunded at once, and the panel adds "Late payment of $1,380.00 refunded".
+  - Optional: on a Booking with a sent prepayment whose List is not authorised, **Demo actions → Change
+    Contract after prepayment sent → Run** (Admin Booking detail): the office's Contract change credits
+    the prepayment and refunds what was paid, then the Procedure bills after it under the new
+    Contract.
+- **Say:** "Prepayment money sits in the AA Holding account until the procedure is done. If the
+  booking moves, nothing changes: the patient is not billed again and whoever does it claims the
+  prepaid amount. If it is cancelled, the system settles it there and then: an unpaid invoice is
+  credited, a paid one refunded in full from the holding account, and a payment that turns up later
+  goes straight back. A true rebook starts a fresh prepayment at the new anaesthetist's own price, so
+  the patient may see two amounts."
+- **Expected:** the holding card unchanged by the move; credited and refunded on cancel; the late
+  payment refunded; the new Booking awaiting approval at $1,350.00.
 
 ### Optional asides: Xero resilience
 
@@ -1647,24 +1750,27 @@ payment fits still open (the 20th is not part of this run; AA's monthly fee is i
 For the stub on a List (Beat 4), our readings, to confirm with AA: the Booking takes the stub's place
 when the office adds the NHI; what a stub shows (time, name and wording as received, marked waiting at
 intake); and how a List holding one reads (counted apart, no prompt or block on submit or authorise).
-For the prepayment beats: still to confirm whether the prepayment
-invoice names the anaesthetist (OQ-120); still to confirm when the AA Holding account releases the
-money (OQ-125: the prototype transfers it when the office authorises the List; Greg said "confirmed and
-submitted"); payments, the transferred prepayment's included, are made in Xero: the weekly cycle
-approves and records them, and the badged **Run payables in Xero** stands in for the accountant paying
-the schedule in Xero (OQ-111, answered); and whether a prepayment's payable counts as a BCTI (the prototype
-leaves it out, provisional, beside the BCTI granularity point in S3, OQ-29). Stated as facts: the prepaid price is never editable by the
-anaesthetist and is kept (OQ-96, OQ-104), the prepaid Procedure is left off the final invoice (OQ-116),
-and a Contract changed after sending is handled as a cancellation, built in Phase 41 (OQ-119). One
-prepayment invoice per payer, each payer locked once theirs is raised, is built from Donald's answer and
-not yet discussed with AA (OQ-140); a prepaid Contract always billing the Procedure's payer is a working
-reading awaiting AA's confirmation (OQ-73).
+For the prepayment beats (Beats 1 and 6 to 9), still open: whether the prepayment invoice names the
+anaesthetist (OQ-120: built as yes, one constant, and the anaesthetist-changed email carries the one
+"Provisional (OQ-120)" caption); and when the AA Holding account releases the money (OQ-125: the
+prototype transfers it when the office authorises the List; Greg said "confirmed and submitted").
+Our readings, to confirm: the refund on cancellation is paid in Xero, our reading of Greg's "all
+payments", to confirm with him; and a payment that arrives after the credit note is refunded by the
+system at once. Also provisional: whether a prepayment's payable counts as a BCTI (the prototype
+leaves it out, beside the BCTI granularity point in S3, OQ-29), and a prepaid Contract always billing
+the Procedure's payer (a working reading, OQ-73). Say as built (answered): a credit on a prepayment
+invoice is always for the whole invoice, anything still owed a new additional invoice (OQ-97); a
+cancelled prepayment is credited, and refunded if paid, by the system (OQ-115); payments, the
+transferred prepayment's and the refunds included, are made in Xero, with the badged **Run payables in
+Xero** standing in for the accountant (OQ-111); a Contract changed after sending is settled like a
+cancellation (OQ-119); and one prepayment invoice per payer, each payer locked once theirs is raised
+(OQ-140).
 For the additional invoice beat (Beat 2): the name "event" is provisional (Greg was unconvinced); the
 billing rule (an event is billed in the next run after review, never held for the Procedure's invoice,
 bundled with the same party's invoice where the run has one, else its own; an additional invoice is
 always its own) is Donald's answer for the build (OQ-121, 4 November), not yet seen by AA; and the
-prototype's next billing run is a button where the real one is scheduled. Ben's answer (OQ-96): a rare
-difference on a prepaid procedure is a second invoice raised by hand, which this beat shows.
+prototype's next billing run is a button where the real one is scheduled. Say as built: a rare
+difference on a prepaid procedure is raised by hand, which this beat's aside and Beat 8 show.
 For the pre-op and post-op lead-in (Beat 2): the ACC codes CS250, CS260 and CS70 are provisional, to
 confirm with AA's accountant (OQ-12; ACC pre-op has no fixed-fee Contract, ACC being a funding tag).
 An event billed to the same party as the procedure unless the anaesthetist changes it is our reading,
