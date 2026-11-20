@@ -347,9 +347,10 @@ const PHASE_STATE = {
   B11: { status:'COMPLETE', date:'2026-11-20', note:'Board 1.23.0. All 13 findings fixed; every card and the open card always drawn, drops land where the bar shows, arrows walk as drawn at one zoom, lanes merge and Move into on the board (decision 25).' },
   B13: { status:'COMPLETE', date:'2026-11-20', note:'Board 1.24.0. All 14 findings fixed; decisions bound by fingerprint, edits only inside the catalogue and whole or not at all, every question and action shown, note cites by the board\'s rule, one link run at a time (decision 27).' },
   B12: { status:'COMPLETE', date:'2026-11-20', note:'Board 1.25.0. All 15 findings fixed, R-07 closed, A-4 and A-10 confirmed and fixed; plan updates read the build lanes (D-08, decision 28; add the lanes key at the master merge), the gate and capture report cannot be fooled, agent tests in verify:board.' },
+  B14: { status:'COMPLETE', date:'2026-11-20', note:'Board 1.26.0. All 16 findings fixed; the kit is exported from HEAD with a hash marker and never over a live board (D-09, decision 29), paths follow the folder you ran from, an exact skill install that keeps its mode, ports follow the worktree, docs truth pass; the exported kit passes its own check, typecheck, Vitest and region sweep.' },
 };
 // Programme decisions accepted so far, with their PROGRESS accepted-decision number. A phase that settles one adds it here.
-const DECISION_STATE = { 'D-01':13, 'D-02':16, 'D-06':17, 'D-03':18, 'D-05':19, 'D-07':19, 'D-04':20, 'D-10':21, 'D-08':28 };
+const DECISION_STATE = { 'D-01':13, 'D-02':16, 'D-06':17, 'D-03':18, 'D-05':19, 'D-07':19, 'D-04':20, 'D-10':21, 'D-08':28, 'D-09':29 };
 // ===== end PHASE STATUS =====
 const STATUS = Object.fromEntries(PHASES.map(p=>[p.id,(PHASE_STATE[p.id]||{}).status||'PLANNED']));
 const isDone = id => STATUS[id]==='COMPLETE';

@@ -42,11 +42,12 @@ test('an agent imports the shared rules directly, with plain node', () => {
   assert.equal(typeof loadSourceIndex, 'function')
 })
 
-test('the agent-side note-cite resolver opens the same note as the board, for every note and Notes source', async () => {
+test('the agent-side note-cite resolver opens the same note as the board, for every note and Notes source', async (t) => {
   const agent = loadSourceIndex(req)
   const boardSide = await boardResolver()
   const notes = Object.values(boardSide.recs).map((r) => r.data.file).filter((f) => f && /^notes\/\d{4}-\d{2}-\d{2}-.+\.md$/.test(f))
-  assert.ok(notes.length > 0, 'the catalogue has notes')
+  // A catalogue with no notes yet (a kit's starter) has nothing to compare; this repo's has many.
+  if (!notes.length) return t.skip('the catalogue has no notes yet')
   const nobody = /^notes\/(\d{4}-\d{2}-\d{2})-/.exec(notes[0])[1]
   const cites = new Set([
     // Every note by its own file name's words: with a point, without one (FINDINGS R-141), and with

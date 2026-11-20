@@ -141,7 +141,7 @@ Agent tools in parallel: B12 (after B02), B13 (REQ-07b after B04); both before B
 | B11 | Board canvas and views | COMPLETE | after B03, B05, B07; D-06 recorded; B11-Q1 to Q5 recorded (accepted decision 25) | 2026-11-20, board 1.23.0; all 13 findings fixed; lane merge on B05's route; D-04e's last legacy shape (base-less lane lists) retired |
 | B12 | Build-plan tools | COMPLETE | after B02; D-08 and B12-Q3, Q6 recorded (accepted decision 28); D-03 not needed | 2026-11-20, board 1.25.0; all 15 findings fixed, R-07 closed; A-4 and A-10 confirmed and fixed; lanes read on master (migration at the master merge) |
 | B13 | Consistency and linking tools | COMPLETE | REQ-07b after B04 (D-03, landed); B13-Q1 to Q5 recorded (accepted decision 27) | 2026-11-20, board 1.24.0; all 14 findings fixed; stage 1 parse error found and fixed; new agent suites for B12 to add to verify:board |
-| B14 | Scripts, kit and docs | PLANNED | after B02, B05, B11, B12, B13; D-09 before build | |
+| B14 | Scripts, kit and docs | COMPLETE | D-09 and B14-Q1 to Q5 recorded (accepted decision 29) | 2026-11-20, board 1.26.0; all 16 findings fixed; the exported kit passes its own check, typecheck, Vitest and region sweep |
 | B15 | Closing audit | PLANNED | after all | |
 
 All phases are ready for implementation planning. None is ready to build until its gate's
@@ -661,16 +661,16 @@ decisions" section and resolved in that phase's planning.
 | HistoryView's screenshot `Shot` labels every load failure "never committed" (same flaw as R-103) | B09 author | B10 | taken into B10 scope |
 | Two layout saves that both succeed can land out of order; StrictMode double start-up load | B07 author | B07 | taken into scope |
 | `artifact:new` uses `git mv`, which stages mid-phase | B05 author (B05-Q6) | B05 | **Done in B05** (decision 20): a plain, non-overwriting move, never staged |
-| Fixture e2e port 5182 is fixed, so two lanes collide | B14 author (B14-Q3) | B14 | |
+| Fixture e2e port 5182 is fixed, so two lanes collide | B14 author (B14-Q3) | B14 | **Done in B14**: `BOARD_E2E_PORT`, default `BOARD_PORT` + 2 (decision 29) |
 | `/history-blob/<sha>?src=assets/x.png` serves any blob in the repository by full sha, typed by `src`'s extension (same-origin only; needs the hash) | B01 security review | B08 | **Done in B08**: the `src` case is gated by `blobWasAt` |
 | `catalogueDiff.ts:135` compares git's real top with `REPO_ROOT` as given (the E7a mixed-path defect) | B01 completeness review | B09 | **Done in B09**: `fileInRepo` resolves `REPO_ROOT` through `realPath` (test in `tests/catalogueDiff.test.ts`) |
 | A base folder that is itself an escaping link (`assets/` linked out of the requirements folder) is not warned: `linkOut` compares against the base's real path | B01 completeness review | B14 (moved by B03) | not built in B03 (outside its 14 findings; R-47's isolation does not depend on it); a check warning would suffice |
 | A top-level visit from another site can still open Vite's `/__open-in-editor` (navigations are allowed so links to the board work); Vite still serves the board's own source, `node_modules` and any `.html` outside the catalogue as same-origin pages (SPEC residual) | B01 | B15 | Vite's dev model; consider refusing cross-site navigations to `/__open-in-editor` |
-| A screenshot whose file name holds a backslash cannot be served (`\` is read as `/`, as the file system on Windows would) | B01 correctness review | B14 (docs) | rare; document, or keep `%5C` apart |
+| A screenshot whose file name holds a backslash cannot be served (`\` is read as `/`, as the file system on Windows would) | B01 correctness review | B14 (docs) | **Done in B14**: README, Screenshots paragraph |
 | `verify:board` saw 5 s Vitest timeouts in `gitHistory.test.ts` under full parallel load (once in four runs; passes alone) | B01 | B12 or B14 | the live origin test adds a Vite boot to the load; consider raising git-test timeouts |
 | The 5 s timeouts recurred in B02 across `gitHistory`, `catalogueDiff`, `api` and `catalogue` tests while the machine's load average was 20 to 26 (antivirus scanning); all pass alone, and the suite passed once the load fell | B02 | B12 or B14 | same item as above; B02's script tests that spawn node carry a 60 s timeout |
 | The Settings Add row's use of the high-water mark has no browser test (the helper and the server refusal are unit-tested) | B02 review | B06 | B06 owns the Settings UI and can prove it with the lock-out |
-| A lock left by a crashed board whose process ID is later reused makes `statuses:recode` refuse until the file is deleted (the message names the file) | B02 review | B14 (docs) | rare; a start-time marker would settle it |
+| A lock left by a crashed board whose process ID is later reused makes `statuses:recode` refuse until the file is deleted (the message names the file) | B02 review | B14 (docs) | **Done in B14**: SCHEMA's statuses paragraph says to delete the named lock |
 | `statuses:recode` writes `board.config.json` through `formatJson`, so a hand layout it would lay out differently is reflowed (data unchanged; Settings does the same) | B02 review | none | accepted: `formatJson` is the file's house layout |
 | The write routes' `guard()` runs `checkCatalogue` unguarded, so a check that throws on unexpected data turns a save into a 500 (the load is backstopped, writes are not) | B03 | B05 | **Done in B05**: backstopped with `issuesFor`'s wording, so only a new such error refuses |
 | `scripts/resolve-source.ts` runs `pdfFacts.ts` with no timeout and no try; `scripts/new-artifact.ts` derives SVG and Markdown facts unguarded | B03 | B14 | the board's load is safe; the scripts are not |
@@ -680,8 +680,8 @@ decisions" section and resolved in that phase's planning.
 | `decodeEntities` knows six named entities, so `# &copy; 2026` reads "&copy; 2026" where the page shows "©" (slug differs); a footnote `[^1]` in a heading reads "^1" | B04 review | none | no catalogue heading uses either |
 | `lintFrontmatter` keeps a `#` warning quiet when any other frontmatter string holds the same text after the `#` | B04 review | none | contrived false negative |
 | A mermaid edge label written without spaces (`A--text-->B`) is read as a node `text`; unverified whether mermaid accepts that form | B04 review | none | |
-| A retired artifact's `page_offset` is applied to its replacement's pages (from before B04) | B04 review | B14 (docs) | replacement with a different offset cites the wrong page |
-| The 5 s Vitest timeouts in git and live-server tests recurred in B04 (load 20 to 34); the same files time out on the pre-B04 board too | B04 | B12 or B14 | same item as B01's and B02's |
+| A retired artifact's `page_offset` is applied to its replacement's pages (from before B04) | B04 review | B14 (docs) | **Done in B14**: SCHEMA "Which artifact" states the rule |
+| The 5 s Vitest timeouts in git and live-server tests recurred in B04 (load 20 to 34); the same files time out on the pre-B04 board too | B04 | B15 (moved by B14) | same item as B01's and B02's |
 | git's own rename detection (`-M`) can pair a deleted card with a similar new card added in the same commit, so the new card inherits the old one's history with no deletion bound | B08 review | B05 | the same case as REQ-11.4 (reuse with no committed deletion); B05-REQ-20's own cut covers it |
 | An LFS version is served as its pointer (`GIT_LFS_SKIP_SMUDGE`, so a request never fetches); viewers show the pointer text | B08 review | B10 | a viewer could say "stored in LFS" instead |
 | `e2e/one-rule.spec.ts` R-101 ("a decomposed passage is boxed over exactly its words") fails 2 runs in 3 on this machine, on the pre-B05 board as well (pixel box off by more than its tolerance) | B05 | B10, then B15 | passed in B04's runs; viewer geometry, not the write model |
@@ -726,12 +726,137 @@ decisions" section and resolved in that phase's planning.
 | `run-build-phase/tools/phase-context.mjs` (about line 210) matches note cites by title words, a third note rule | B13 review | B14 (left by B12: outside its findings) | could use B04's import as `consistency-review/scripts/board-kit.mjs` does |
 | The new agent suites (`consistency-review.test.mjs`, `workflows.test.mjs`) run by hand until `verify:board` runs every `*.test.mjs` under `agent/` | B13 | B12 | **Done in B12**: `verify` runs `node --test "agent/**/*.test.mjs"` (73 tests) |
 | `apply-links.ts` and `link-index.ts` take the links root from the script's folder only, so a CLI test needs a named run folder | B13 | B14 | the R-31 env-path sweep |
-| `kit:export` copies untracked, git-ignored files: the `.pdf-facts/` cache (project words) and a leftover `.origin-fixture/` (an unreadable file aborts the export); and `agent/shared-rules.test.mjs` and `tests/inPlace.test.ts` hold denied words, so a scratch export fails its leak check before B12's terms are reached | B12 | B14 (D-09) | B12's own files pass; a planted term in run-build-phase's body is flagged |
-| `tests/originLive.test.ts` leaves its `.origin-fixture/<dir>` behind when its hook times out under load | B12 | B14 | delete the folder; consider cleanup in a `finally` |
+| `kit:export` copies untracked, git-ignored files: the `.pdf-facts/` cache (project words) and a leftover `.origin-fixture/` (an unreadable file aborts the export); and `agent/shared-rules.test.mjs` and `tests/inPlace.test.ts` hold denied words, so a scratch export fails its leak check before B12's terms are reached | B12 | B14 (D-09) | **Done in B14**: built from HEAD (decision 29); the two test files reworded; the HEAD export passes |
+| `tests/originLive.test.ts` leaves its `.origin-fixture/<dir>` behind when its hook times out under load | B12 | B15 (moved by B14, decision 29) | no longer reaches a kit (HEAD source); cleanup in a `finally` still open |
 | `plan-state.mjs` reads each changed item's current status from the working tree even with `--to` (the R-138 class) | B12 SPEC | B14 or none | display only; regrade-ids now reads at the ref |
-| The 5 s and 10 s Vitest timeouts recurred in B12's full runs at load 20 to 46 (`originLive`, `api`, `catalogue`, `skillInstall`); each passed alone and the next full run was green | B12 | B14 | the timeout rows above |
+| The 5 s and 10 s Vitest timeouts recurred in B12's full runs at load 20 to 46 (`originLive`, `api`, `catalogue`, `skillInstall`); each passed alone and the next full run was green | B12 | B14 | the timeout rows above; **moved to B15** (decision 29). B14's first full run lost `originLive`'s `afterAll` hook (10 s) at load 16 to 25; it passed alone (52 of 52) and the next full run was green |
+| B14's code rows not taken (decision 29): the escaping base folder warning, `resolve-source`/`new-artifact` unguarded facts, tests-only tsconfig, `steps.ts ?? []`, `phase-context.mjs`'s note rule, `plan-state --to`, the git-test timeouts, `.origin-fixture` cleanup | B01 to B13 | B15 | each row above keeps its note; B15 judges them |
+| No upgrade mode for a board already adopted: an adopter re-exports to a fresh folder and copies over by hand (README, ADOPTING "Upgrading") | B14 (B14-Q2) | none | a `kit:export --upgrade` that keeps `requirements/` and the "This repo" blocks would be later work |
+| `e2e/board-edges.spec.ts` (real-catalogue project) fails its three tests ("edges missing on load", 322 missing) on the pre-B14 board too (a scratch copy of `0047a169`, own port) | B14 | B15 | not B14 code: `board-edges` is untouched; B11's canvas area |
+| A screenshot kept because another item lists it is never revisited once that item drops it (the check does not flag an unlisted file) | B14 review | none | documented in README's capture Output; a later recipe run removes it |
+| `requirements/SCHEMA.md`'s Sources examples cite this project's RFP (`"RFP p.27 · Pricing Engine ..."`, AR-15) and ship in the kit; no deny term matches them | B14 | B15 | neutral examples would read better; not a leak of people or numbers |
+| Card find has no DESIGN line (B10's suggestion) | B10 | none | left: DESIGN.md was not otherwise touched in B14 |
 
 ## Phase entries
+
+### B14 · Scripts, kit and docs · COMPLETE · 2026-11-20
+
+Board 1.25.0 to **1.26.0**, on `board-fixes` in the programme worktree (master had nothing new; no merge).
+Decisions: accepted decision 29 (D-09, B14-Q1 asked; B14-Q2 to Q5 settled from evidence), recorded before
+building. Plan and evidence: `phases/B14-scripts-kit-and-docs/IMPLEMENTATION.md` (written alongside the first
+bite rather than strictly before it; deviation 1). Every finding reproduced or held at `0047a169`; B05-Q6 was
+already done by B05. Fail-first proofs ran the new tests against a `git archive 0047a169` copy in the
+scratchpad through `*_UNDER_TEST` variables.
+
+**Dispositions**
+
+| Finding | Disposition | Proof (fails on `0047a169`, passes now) |
+|---|---|---|
+| R-05 | **Fixed.** Target checks before anything is read and again before the swap: the board, inside it or containing it (real paths, `realpathSync.native`), a folder with other files and no board, a link or file at `requirements-board/`, and any board without a matching `.kit-export.json` (added, removed or changed file) are refused, byte for byte unchanged; no `--force`. The swap is whole (incoming sibling, rename, restore on failure), keeping `node_modules` | `tests/exportKit.test.ts` (old: 13 of 17 fail; `--to ..` under the npm environment replaced the scratch board's catalogue with the starter and deleted `starter/` and the export script, R-05 exactly). Live: re-exporting into the scratch kit that had run its tests was refused, naming its `.history/` files |
+| R-31 | **Fixed.** `scripts/userPath.ts` (`INIT_CWD` only when npm's script line names the running script); `artifact:new` file and `--mermaid` (inside checks on the resolved path), `export:csv --out`, `artifact:steps --out`, `links:index <out>`, `links:apply <dir>`, `kit:export --to`; printed paths via `shown` (`new-artifact`, `capture`, `recode-statuses`, `link-index`, `apply-links`, `export-csv`) | `tests/userPath.test.ts` (old scripts: 6 of 10 fail), `exportKit.test.ts` relative `--to` twice, no nesting |
+| R-39 | **Fixed.** `pruneShots` keeps a generated file another item lists and the run names it with its users | `tests/captureFiles.test.ts` (new function; old prune deleted it) |
+| R-129 | **Fixed.** After installing, every owned entry with no current source (manifest copy, link or folder of links into this board's `agent/`, dangling or not) is removed and reported; foreign entries never | `tests/skillInstall.test.ts` both modes (old: fail) |
+| R-130 | **Fixed.** Junk never counts against ownership | same file, both modes (old: link mode fails) |
+| R-131 | **Fixed.** `server/junk.ts` shared by install and export (a test asserts both import it); tracked `.claude/skills/svg-diagram/__pycache__` removed with `rm`; no dangling link under `.claude` | same file (old: both modes install `__pycache__`); `find .claude -type l ! -exec test -e` empty |
+| R-132 | **Fixed** (B14-Q4): `installStatus` and its test deleted; no caller remains | grep |
+| R-134 | **Fixed.** `parseOnly`: `--only X` and `--only=X`; missing, empty, flag, comma-only or repeated values exit 1 before any work | `captureFiles.test.ts`, `tests/captureArgs.test.ts` (old capture: 5 of 5 fail, exiting 0 after a full run that wrote `REPORT.md`) |
+| R-148 | **Fixed.** `artifact:steps` defaults to `http://localhost:$BOARD_PORT` after `loadLaneEnv` (`server/laneEnv.ts`, now shared by Vite, capture, artifact:steps and Playwright); `--url` wins; skills and starter blocks updated | `userPath.test.ts` (old: always 5180); quoted and non-numeric `BOARD_PORT` cases |
+| R-149 | **Fixed.** SCHEMA names statuses by role; the live notes README's "4 here" is a role; deny term `\b\d+ here\b` | `exportKit.test.ts` planted pin fails; HEAD export passes |
+| R-152 | **Fixed** (B14-Q5): starter `notes/README.md` and `changes/README.md` ship, `SHARED_REQ` is SCHEMA only; the live notes README path is `docs/discovery-reference/Contract Files/` (exists) | `exportKit.test.ts` ships the starter guides; grep of the kit |
+| R-153 | **Fixed.** Export-time reference check (`npm run` scripts and backticked board paths in shipped `.md`, `.html`, `playwright.config.ts`); `<!-- kit:omit -->` for source-only passages; `e2e/artifact-regions.spec.ts` (generic, ships) split from `artifacts-real.spec.ts` (project); START-HERE and README list run-build-phase | `exportKit.test.ts` planted script and path fail; the first real run flagged 16 lines, all fixed; the kit's region sweep passes on the starter |
+| R-154 | **Fixed** per D-09: built from HEAD (`ls-tree` + one `cat-file --batch`), `--uncommitted` takes tracked files only and names every changed file; deny terms for the voice patterns' people (case-sensitive) | `exportKit.test.ts` (untracked and ignored files never ship; HEAD vs `--uncommitted`; planted person fails; "benefit", "michaelmas" pass). The old export died on `.origin-fixture/` (EACCES) |
+| R-155 | **Fixed.** Install keeps the mode in use (manifest copy, board links link, none copy; `--link`/`--copy`); About shows the command with that meaning, `.claude` text and the commit claim corrected | `skillInstall.test.ts` (old: fails); in this worktree `install-skills` with no flag kept links (`git status -- .claude`: only the intended `__pycache__` removal and B13's new test-file link, both committed) |
+| R-156 | **Fixed.** README skill list and Settings passage (fixed board name, `board` key and `project.locale` dropped on save), README `:48` and START-HERE `:139` | read-through below |
+| R-157 | **Fixed** (B14-Q3): fixture `BOARD_E2E_PORT` (`BOARD_PORT` + 2), real `BOARD_E2E_REAL_PORT` (+ 3): 5182 and 5183 by default, 5482 and 5483 here | real project booted on 5483, fixture on 5482 (5181 was not bound, per the phase's port rule) |
+| B05-Q6 | **Already done by B05** (decision 20): `artifact:new` moves without `git mv` | B05's `tests/newArtifact.test.ts` |
+
+**What shipped:** new `scripts/userPath.ts`, `server/boardPaths.ts`, `server/laneEnv.ts`, `server/junk.ts`,
+`e2e/artifact-regions.spec.ts`, `starter/requirements/notes/README.md`, `starter/requirements/changes/README.md`,
+tests `exportKit`, `userPath`, `captureArgs`; rewritten `scripts/export-kit.ts`, `server/skillInstall.ts`,
+`scripts/install-skills.ts`; changed `capture.ts`, `captureFiles.ts`, `shoot-steps.ts`, `export-csv.ts`,
+`new-artifact.ts`, `recode-statuses.ts`, `playwright.config.ts`, `vite.config.ts`; `starter/deny.txt` (four
+people, the "N here" pin); docs below.
+
+**Touch-rights edits (convention 11):** `server/catalogueFs.ts`, `server/artifactFiles.ts`, `server/historyDir.ts`,
+`server/pdfFactsStore.ts` (env values through `envPath`); `scripts/link-index.ts`, `scripts/apply-links.ts`
+(B13's, path lines only); `agent/skills/consistency-review/SKILL.md` (step 7 check wording),
+`agent/skills/update-build-plan/SKILL.md` (two `verify:board` mentions to the board's `verify`), the add-artifact
+and svg-diagram SKILL.md lines on ports and the region spec; `agent/shared-rules.test.mjs` (B04: a denied word in
+a comment; the note comparison skips when a catalogue has no notes, as the kit's starter has none),
+`agent/workflows/workflows.test.mjs` (B13: a denied name), `tests/inPlace.test.ts` (B05: a denied name),
+`tests/writeModel.test.ts` (B05: "more than 10 artifacts" became "every sidecar on disk"), the 17 fixture spec
+headers (their fixed port wording); `requirements/README.md` (this project's folder guide, the ID line);
+`docs/board-fixes/index.html` (PHASE STATUS, D-09).
+
+**Deviations:** (1) IMPLEMENTATION.md was written alongside the first bite, after the decisions were recorded.
+(2) The baseline `verify:board` overlapped the first edits; B12's green run at `0047a169` stands as the baseline.
+(3) The reference check found more than R-153 named (root-only `verify:board`/`dev:board` in skill bodies and
+SCHEMA), fixed. (4) Two earlier phases' tests assumed this project's catalogue (more than 10 artifacts, some
+notes) and failed in the kit; both fixed under touch rights. (5) `vite.config.ts` now loads every `.lane.env` key
+(was `BOARD_PORT` only), documented as intentional. (6) R-157's proof did not bind 5181 (the phase forbids it);
+the change itself means no e2e board takes it.
+
+**Verification:** `npm run verify:board` green after the review fixes (77 files, 1,191 Vitest tests; check OK; 73
+agent tests). The first full run lost only `originLive`'s `afterAll` hook (10 s) at load 16 to 25; it passed
+alone. Playwright here: fixture `status-picker` and `origin` 7 of 7 on 5482; real project on 5483: the two
+`artifact-regions` and two `artifacts-real` tests pass; `board-edges` fails its three tests on the pre-B14
+board as well (Discovered). **Kit:** `kit:export` from HEAD `07bf7964` to the scratchpad: 347 files, leak and
+reference checks clean; in the kit (`node_modules` linked) `check` OK, `tsc -b`, Vitest 1,142 passed (12 skipped,
+the starter-only and project-only tests), agent tests 72 passed (1 skipped) after the shared-rules fix, and
+`BOARD_E2E_REAL=1` region sweep 2 of 2 on 5492 and 5493.
+
+**Review (convention 15):** two Sonnet reviewers (diff about 1,600 added lines). Neither found a blocking issue;
+both confirmed every finding and SPEC row met. Confirmed and fixed: the incoming copy outside the swap's `try`
+(a failed copy left a folder that then blocked the target; leftovers are now ignored), link ownership by
+substring (a link to another copy of a board counted as ours; now resolved against this board's `agent/`),
+`realpathSync` without `.native` (wrong-case paths on macOS), renames in `git status` (`--no-renames`), quoted
+or non-numeric `BOARD_PORT` falling back silently, the loosened artifact-count assertion, README's script map
+naming `export-kit` in the kit, the upgrade wording (it overwrote filled-in "This repo" blocks), the
+`package-lock.json` wording, and missing tests (dry run, relative `--to` twice, `--to ..` refusal). Regression
+tests added for the ownership, swap, port and test-gap items. Not taken: Reviewer 2's claim that a nested npm
+call keeps the first `INIT_CWD` (the phase brief and SPEC record that it is the outer script's folder);
+low-`BOARD_PORT` collisions (documented: keep worktree ports 4 apart); kept shared shots never revisited
+(documented).
+
+**Doc facts (convention 12):**
+- **`requirements-board/README.md`:** the `agent/` paragraph (run-build-phase, link mode per top-level entry,
+  mode kept, stale removal, junk); the command list (`dev`, `test:e2e` ports, `artifact:steps`, `install-skills`,
+  `kit:export` in `kit:omit`); Settings sentence and the run-from-root and **Environment** paragraphs; server and
+  scripts maps; `HISTORY_DIR` relative rule; the backslash screenshot line; the fixed board name and dropped
+  `board` key after Project config; capture `--only` and Output (kept shared shots); Adding artifacts (paths,
+  `artifact:steps` port); "Sharing the board" rewritten (source, checks, target rules, upgrade) inside `kit:omit`.
+- **`requirements-board/ADOPTING.md`:** the kit paragraph and **Upgrading**; step 1 `.pdf-facts/`; step 2 folder
+  guides; Settings; add-artifact and svg-diagram URLs; `lanes` key; step 5 install (removal, junk, links per
+  top-level entry, mode kept); step 7 ports and `artifact-regions.spec.ts`, deny list wording.
+- **`requirements/SCHEMA.md`:** line 6 dev command; `id` rows for items and artifacts; the lane merge; the
+  recode lock; the handed-on `page_offset`; Conventions (retire rather than delete, IDs after a delete, retire
+  artifacts, answering a question by role, never a status by number).
+- **`requirements/notes/README.md`:** data path, the answered role. **Starter:** `START-HERE.html` (version and
+  commit, Settings line, run-build-phase row, port tip), `requirements/README.md` (config row, IDs),
+  `this-repo/add-artifact.md` and `svg-diagram.md` (dev server URL).
+- **About page** (`src/views/AboutView.tsx`): the skills lede (commits), the `dev` and `install-skills`
+  commands, the `.claude/skills/` sentence.
+- **SKILL.md:** add-artifact ("This repo" URL, the region spec and `artifact:steps`), svg-diagram ("This repo"
+  URL, step 8), consistency-review step 7, update-build-plan screenshot section.
+- **Headers:** `export-kit.ts`, `install-skills.ts`, `skillInstall.ts`, `shoot-steps.ts`, `export-csv.ts`,
+  `new-artifact.ts`, `playwright.config.ts`, `vite.config.ts`, the new modules. **`CHANGELOG.md`** 1.26.0.
+- **Whole-file pass, confirmed true:** every earlier phase's Doc facts in README (B01 serving, B03 load and crash
+  bullets, B04 one-rule section, B05 save, write, lanes and Delete bullets, B06 sheets and config paragraph,
+  B07 watcher, screenshot-version and kept-moves bullets, B08 History, B09 Diff review, B10 artifacts paragraph,
+  B11 Mapped bullet, B12 `verify` and capture Output, B13 linking and consistency); SCHEMA's statuses paragraph
+  matches B02's registry (removed statuses, no reissue, damaged lists, recode rules); the starter config and
+  `starter/this-repo/update-requirements.md` agree on codes; B12's plan keys (`lanes`, `runner.context.*`,
+  `plan-state --from`) are in the update-build-plan and run-build-phase SKILL.md files and now ADOPTING.
+  DESIGN.md: B09 to B11's lines read as their entries say; card find still has no line (Discovered).
+
+**What later phases need:**
+- **B15:** export with `npm --prefix requirements-board run kit:export -- --to <scratch>` after committing (HEAD
+  source; `--uncommitted` to try work); never into this repo; a used kit is refused by design, so export into a
+  fresh folder each time. Playwright ports: `BOARD_PORT` + 2 and + 3 (`BOARD_E2E_PORT`, `BOARD_E2E_REAL_PORT`).
+  Rerun `tests/{exportKit,userPath,skillInstall,captureFiles,captureArgs}.test.ts`. Judge the code rows moved by
+  decision 29 and the `board-edges` failure (Discovered).
+- **The owner:** nothing to migrate. Lanes get the new install and capture rules at the master merge; their
+  commands keep their meaning (`install-skills -- --link`, `capture --only ... --dry`, `artifact:new`).
 
 ### B12 · Build-plan tools · COMPLETE · 2026-11-20
 
