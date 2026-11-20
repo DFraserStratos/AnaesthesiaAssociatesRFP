@@ -257,6 +257,8 @@ export interface RailStep {
   current: boolean
   /** Jump back to change this answer; absent, the step is not clickable. */
   onJump?: () => void
+  /** What a step not done yet shows in the compact rail (default "Not answered"; the payment cycle's planned day, catch-up Phase 39a). */
+  pendingValue?: string
 }
 
 /**
@@ -264,7 +266,7 @@ export interface RailStep {
  * `aria-current="step"`: `vertical` (the desktop column, a connector line
  * between markers) or `compact` (three across, the phone's sheet).
  */
-export function StepRail({ steps, orientation, label }: { steps: readonly RailStep[]; orientation: 'vertical' | 'compact'; label: string }) {
+export function StepRail({ steps, orientation, label, shotPrefix }: { steps: readonly RailStep[]; orientation: 'vertical' | 'compact'; label: string; shotPrefix?: string }) {
   const compact = orientation === 'compact'
   return (
     <nav aria-label={label} style={compact ? undefined : { borderRight: `1px solid ${neutral.line}`, paddingRight: 12 }}>
@@ -277,7 +279,7 @@ export function StepRail({ steps, orientation, label }: { steps: readonly RailSt
       >
         {steps.map((s, i) => (
           <li key={s.n} style={{ minWidth: 0 }}>
-            <StepMarker step={s} orientation={orientation} last={i === steps.length - 1} />
+            <StepMarker step={s} orientation={orientation} last={i === steps.length - 1} {...(shotPrefix !== undefined ? { shotPrefix } : {})} />
           </li>
         ))}
       </ol>
@@ -286,8 +288,8 @@ export function StepRail({ steps, orientation, label }: { steps: readonly RailSt
 }
 
 /** One step: its marker (24px mono circle, a tick once answered), its label and its answer. */
-export function StepMarker({ step, orientation, last }: { step: RailStep; orientation: 'vertical' | 'compact'; last: boolean }) {
-  const { n, label, value, auto, done, current, onJump } = step
+export function StepMarker({ step, orientation, last, shotPrefix = 'contract-rail-step' }: { step: RailStep; orientation: 'vertical' | 'compact'; last: boolean; shotPrefix?: string }) {
+  const { n, label, value, auto, done, current, onJump, pendingValue = 'Not answered' } = step
   const circle = (size: number) => (
     <span
       className="mono"
@@ -315,7 +317,7 @@ export function StepMarker({ step, orientation, last }: { step: RailStep; orient
       <button
         type="button"
         className="aa-ctl"
-        data-shot={`contract-rail-step-${n}`}
+        data-shot={`${shotPrefix}-${n}`}
         disabled={onJump === undefined}
         onClick={onJump}
         aria-current={current ? 'step' : undefined}
@@ -323,7 +325,7 @@ export function StepMarker({ step, orientation, last }: { step: RailStep; orient
       >
         {circle(22)}
         <span style={{ fontSize: 11.5, lineHeight: '15px', fontWeight: 600, color: current ? accent.base : neutral.slate }}>{label}</span>
-        <span style={{ width: '100%', fontSize: 13, lineHeight: '17px', fontWeight: 600, color: done && value !== undefined ? neutral.ink : neutral.mist, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{done && value !== undefined ? value : 'Not answered'}</span>
+        <span style={{ width: '100%', fontSize: 13, lineHeight: '17px', fontWeight: 600, color: done && value !== undefined ? neutral.ink : neutral.mist, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{done && value !== undefined ? value : pendingValue}</span>
         {showAuto && <span data-shot="contract-rail-only-option" style={{ fontSize: 11.5, color: neutral.slate }}>Only option</span>}
       </button>
     )
@@ -332,7 +334,7 @@ export function StepMarker({ step, orientation, last }: { step: RailStep; orient
     <button
       type="button"
       className="aa-ctl"
-      data-shot={`contract-rail-step-${n}`}
+      data-shot={`${shotPrefix}-${n}`}
       disabled={onJump === undefined}
       onClick={onJump}
       title={onJump !== undefined ? 'Change this answer' : undefined}

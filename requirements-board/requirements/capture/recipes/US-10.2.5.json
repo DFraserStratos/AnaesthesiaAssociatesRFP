@@ -1,6 +1,173 @@
 {
   "id": "US-10.2.5",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 39a builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "remittance-advice",
+      "app": "admin",
+      "caption": "The remittance advice shows the negative invoice netted against the positive ones",
+      "start": "/admin/billing/payment-runs/PR0001/remittance/41267",
+      "setup": [
+        {
+          "goto": "/admin/billing"
+        },
+        {
+          "wait": "[data-shot=payment-cycle]"
+        },
+        {
+          "trigger": "stage-payment-week",
+          "choice": "withCredit"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "[data-shot=payment-cycle-close]"
+        },
+        {
+          "wait": "[data-shot=payment-cycle-approve]"
+        },
+        {
+          "click": "[data-shot=payment-cycle-approve]"
+        },
+        {
+          "wait": "[data-shot=payment-cycle-send]"
+        },
+        {
+          "click": "[data-shot=payment-cycle-send]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=billing-run-payables-in-xero]"
+        },
+        {
+          "wait": "[data-shot=billing-payables-result]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=remittance-netted]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=remittance-netted]",
+            "[data-shot=remittance-net]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "payables-run-detail",
+      "app": "admin",
+      "caption": "The payment to the anaesthetist is the net total",
+      "start": "/admin/billing/payment-runs/PR0001",
+      "setup": [
+        {
+          "goto": "/admin/billing"
+        },
+        {
+          "wait": "[data-shot=payment-cycle]"
+        },
+        {
+          "trigger": "stage-payment-week",
+          "choice": "withCredit"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "[data-shot=payment-cycle-close]"
+        },
+        {
+          "wait": "[data-shot=payment-cycle-approve]"
+        },
+        {
+          "click": "[data-shot=payment-cycle-approve]"
+        },
+        {
+          "wait": "[data-shot=payment-cycle-send]"
+        },
+        {
+          "click": "[data-shot=payment-cycle-send]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=billing-run-payables-in-xero]"
+        },
+        {
+          "wait": "[data-shot=billing-payables-result]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=payables-run-detail]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=payables-run-totals]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "web-remittances",
+      "app": "web",
+      "caption": "The anaesthetist sees each weekly payment run in a remittance advice: Dr Souter's earlier runs, newest first, nothing netted in them",
+      "start": "/web/accounts/remittances",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=web-remittances] tr[data-run-id]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=web-remittances]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "web-remittance-sheet",
+      "app": "web",
+      "caption": "Dr Souter's Week 29 remittance advice, read only: the BCTIs the run paid and what was paid to her",
+      "start": "/web/accounts/remittances",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=web-remittances] tr[data-run-id]"
+            },
+            {
+              "click": "[data-shot=web-remittances] tr[data-run-id] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=web-remittance-sheet]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=web-remittance-sheet]"
+          ]
+        }
+      ]
+    }
+  ]
 }

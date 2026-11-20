@@ -10,26 +10,42 @@
  * account only by a transfer or a refund the system raises (27a). AA's own fee
  * is never netted (16): an `aaFee` pair has no payable.
  *
- * `payablesDue` is the ONE source of what is due: the Billing monitor's
- * read-only list and Phase 39a's weekly run read it, with no second copy.
+ * `payablesDue` is the figure of what is due (the Ledger, the tiles, the
+ * positions). What a weekly run may take is `runLegsFromLedger`
+ * (`paymentCycleActions.ts`): the same legs, less anything an unsettled run
+ * already holds.
  *
  * Since catch-up Phase 37 (US-09.2.4, FT-10.2, RV-40; OQ-111 answered, D53)
- * the payment is made in Xero, never here: `runPayables` is the simulated Xero
- * payables run over the legs due (`payBillsInXero`, Xero side), and the
- * engine records each disbursement only when Xero reports the bill paid
- * (`recordDisbursement`). No code in this module writes a payable leg.
+ * the payment is made in Xero, never here, and since catch-up Phase 39a only
+ * through an approved, scheduled payment run: `runPayables` is the accountant
+ * paying the oldest scheduled run in Xero (`payRunInXero`), and the engine
+ * records each payment only when Xero reports it (`recordDisbursement`,
+ * `recordOffset`). No code in this module writes a payable leg.
  */
 
-import type { AnaesthetistId, PayableLeg } from '../domain/types'
+import type { AnaesthetistId, PayableLeg, PayablesRun } from '../domain/types'
 import { toCents } from '../domain/billing/money'
 import { dueOn, isBookingPair, isHoldingLeg, payeeAnaesthetistOf } from '../domain/billing/ledger'
 import { HOLDING_SYSTEM_ONLY } from '../domain/billing/prepayHolding'
 import { ok, refuse, type Actor, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
-import { payBillsInXero, XERO_PAYABLES_ACTOR, type XeroBill } from './xeroSimActions'
+import { payRunInXero, XERO_PAYABLES_ACTOR, type PayBillsResult } from './xeroSimActions'
+import {
+  approveWeekBctis,
+  closeWeek,
+  openCycleDraft,
+  PAYMENT_CYCLE_COPY,
+  scheduledLineFor,
+  sendPaymentSchedule,
+  stagePairRun,
+  weekRunInProgress,
+  xeroSentOn,
+} from './paymentCycleActions'
+
+type CycleReadState = Pick<AppState, 'billing' | 'xero' | 'masters' | 'schedule' | 'clock' | 'appSettings'>
 
 export interface PayablesRunResult {
-  /** The Xero payables run, when any bill was paid. */
+  /** The payment run Xero paid. */
   payablesRunId?: string
   /** Bills Xero paid. */
   billsPaid: number
@@ -41,6 +57,11 @@ export interface PayablesRunResult {
   paidIds: string[]
   /** Legs released but with no Xero bill to pay (not handed off yet, or a transfer whose journal waits); skipped and counted. */
   skippedNotInXero: number
+  /** Negatives netted against the bills (credit allocated in Xero) and how many allocations (catch-up Phase 39a). */
+  netted: number
+  nettedCount: number
+  /** Syncs waiting in the Xero sync queue (outage). */
+  queued: number
 }
 
 export interface PayablesDueRow {
@@ -60,7 +81,7 @@ export interface PayablesDue {
 export interface PayablesFilter {
   /** One anaesthetist's legs only. */
   anaesthetistId?: AnaesthetistId
-  /** Only these pairs and transfers (Phase 39a holds anomalies out of a cycle with this). */
+  /** Only these pairs and transfers. */
   only?: readonly string[]
 }
 
@@ -118,66 +139,134 @@ export function payablesDue(state: Pick<AppState, 'billing'>, filter: PayablesFi
   }
 }
 
-/** The Xero bill behind a due leg: its pair's ACCPAY, or the transfer itself; none when not in Xero yet. */
-function billFor(l: DueLeg): XeroBill | undefined {
-  if (l.kind === 'transfer') return { transferId: l.id }
-  return l.leg.xeroAccPayId !== undefined ? { accPayId: l.leg.xeroAccPayId } : undefined
-}
-
-/** Run Xero's payables run (simulated) over the given due legs, the bill-paid webhook delivered. */
-function payInXero(api: AppStoreApi, legs: readonly DueLeg[]): Outcome<PayablesRunResult> {
-  const result: PayablesRunResult = { billsPaid: 0, totalPaid: 0, disbursedCount: 0, totalDisbursed: 0, paidIds: [], skippedNotInXero: 0 }
-  const bills: XeroBill[] = []
-  const idOfBill = new Map<string, string>()
-  for (const l of legs) {
-    const bill = billFor(l)
-    if (bill === undefined) {
-      result.skippedNotInXero += 1
-      continue
-    }
-    bills.push(bill)
-    idOfBill.set('accPayId' in bill ? bill.accPayId : bill.transferId, l.id)
-  }
-  if (bills.length === 0) return ok(result)
-  const paid = payBillsInXero(api, XERO_PAYABLES_ACTOR, bills, { webhook: 'deliver' })
-  if (!paid.ok) return paid
-  const v = paid.value
-  // A transfer whose journal still waits for Xero has no bill Xero can pay yet.
-  result.skippedNotInXero += bills.length - v.paid.length
-  return ok({
-    ...result,
-    ...(v.payablesRunId !== undefined ? { payablesRunId: v.payablesRunId } : {}),
+function resultOf(runId: string, v: PayBillsResult, paidIds: string[]): PayablesRunResult {
+  return {
+    payablesRunId: runId,
     billsPaid: v.paid.length,
     totalPaid: v.totalPaid,
     disbursedCount: v.recordedCount,
     totalDisbursed: v.totalRecorded,
-    paidIds: v.paid.map((p) => idOfBill.get('accPayId' in p.bill ? p.bill.accPayId : p.bill.transferId)!),
-  })
+    paidIds,
+    skippedNotInXero: v.skipped,
+    netted: v.totalAllocated,
+    nettedCount: v.allocations.length,
+    queued: v.paid.filter((p) => p.queued).length + v.allocations.filter((a) => a.queued).length,
+  }
+}
+
+/** The oldest run with lines Xero has still to pay: scheduled, or paying with something unsent. */
+export function nextRunToPay(state: Pick<AppState, 'billing' | 'xero'>): PayablesRun | undefined {
+  return Object.values(state.billing.payablesRuns)
+    .filter((r) => r.status === 'scheduled' || (r.status === 'paying' && r.lines.some((l) => l.heldOut === undefined && toCents(l.amount) > toCents(xeroSentOn(state, r, l)))))
+    .sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }))[0]
 }
 
 /**
- * "Run payables in Xero" (the Billing monitor's badged simulated-Xero button,
- * and the PWA's office stand-in): Xero's payables run pays every bill due, or
- * one anaesthetist's, or a chosen subset, and the engine records each
- * disbursement from the bill-paid webhook. A Xero-side action audited with the
- * Xero actor, so no office-only guard; the caller's actor is not the payer.
+ * "Run payables in Xero" (the Billing monitor's badged simulated-Xero button:
+ * the accountant paying the schedule): Xero pays the oldest scheduled run,
+ * netting included, and the engine records each payment when Xero reports
+ * it. Nothing else is paid: a released payable not on an approved, scheduled
+ * run waits (the gate, US-10.2.6). A Xero-side action audited with the Xero
+ * actor; the caller's actor is not the payer.
  */
-export function runPayables(api: AppStoreApi, _actor: Actor, filter: PayablesFilter = {}): Outcome<PayablesRunResult> {
-  return payInXero(api, payableLegsDue(api.getState(), filter))
+export function runPayables(api: AppStoreApi, _actor: Actor, opts: { webhook?: 'deliver' | 'missed' } = {}): Outcome<PayablesRunResult> {
+  const run = nextRunToPay(api.getState())
+  if (run === undefined) return refuse('nothingScheduled', PAYMENT_CYCLE_COPY.nothingScheduled)
+  const paid = payRunInXero(api, XERO_PAYABLES_ACTOR, run.id, { webhook: opts.webhook ?? 'deliver' })
+  if (!paid.ok) return paid
+  return ok(resultOf(run.id, paid.value, run.lines.filter((l) => l.heldOut === undefined).map((l) => l.pairId)))
 }
 
-/**
- * Pay one pair's (or transfer's) payable in Xero: the Xero simulation's
- * in-page shortcut. A payable to the AA Holding account is refused: money
- * leaves the account only by a transfer or refund the system raises (catch-up
- * Phase 27a; US-06.5.1, D38, D53).
- */
-export function disbursePayable(api: AppStoreApi, _actor: Actor, pairId: string): Outcome<PayablesRunResult> {
-  const state = api.getState()
+/** Why one payable cannot be paid on its own now, or null (the Xero pair's single payout). */
+export function disbursePayableRefusal(state: Pick<AppState, 'billing' | 'xero'>, pairId: string): { code: string; message: string } | null {
   const pair = state.billing.ledger[pairId]
   const transfer = state.billing.transfers[pairId]
-  if (pair === undefined && transfer === undefined) return refuse('notFound', 'Payable not found.')
-  if (pair !== undefined && (!isBookingPair(pair) || pair.payable === undefined)) return refuse('noPayable', 'This invoice has no payable.')
+  if (pair === undefined && transfer === undefined) return { code: 'notFound', message: 'Payable not found.' }
+  if (pair !== undefined && (!isBookingPair(pair) || pair.payable === undefined)) return { code: 'noPayable', message: 'This invoice has no payable.' }
+  if (pair !== undefined && isBookingPair(pair) && pair.payable !== undefined && isHoldingLeg(pair.payable)) return { code: 'holdingSystemOnly', message: HOLDING_SYSTEM_ONLY }
+  const on = scheduledLineFor(state, pairId)
+  if (on === undefined) return { code: 'notApproved', message: PAYMENT_CYCLE_COPY.notApproved }
+  if (on.run.nettings.some((n) => n.allocations.some((a) => a.pairId === pairId))) return { code: 'useRun', message: PAYMENT_CYCLE_COPY.useRun }
+  return null
+}
+
+/**
+ * Pay one pair's (or transfer's) payable in Xero, only as an unheld line of a
+ * scheduled run (the gate), and refused `useRun` when a negative is netted
+ * against that bill (netting applies only in a whole run). A payable to the AA
+ * Holding account is refused: money leaves the account only by a transfer or
+ * refund the system raises (catch-up Phase 27a; US-06.5.1, D38, D53).
+ */
+export function disbursePayable(api: AppStoreApi, _actor: Actor, pairId: string, opts: { webhook?: 'deliver' | 'missed' } = {}): Outcome<PayablesRunResult> {
+  const state = api.getState()
+  const refusal = disbursePayableRefusal(state, pairId)
+  if (refusal !== null) return refuse(refusal.code, refusal.message)
+  const on = scheduledLineFor(state, pairId)!
+  const paid = payRunInXero(api, XERO_PAYABLES_ACTOR, on.run.id, { webhook: opts.webhook ?? 'deliver', onlyPairIds: [pairId] })
+  if (!paid.ok) return paid
+  return ok(resultOf(on.run.id, paid.value, [pairId]))
+}
+
+/**
+ * The one-click demo payouts (no back door; catch-up Phase 39a): the office
+ * approves a one-line staged run for this pair in the demo clock's week
+ * (closed, approved and scheduled in one mutate, as `OFFICE_SIMULATION_ACTOR`
+ * by default) and Xero pays it, webhook delivered. Refuses a pair already in
+ * an unsettled run (`useRun`), the AA Holding account, and a pair with
+ * nothing released and unpaid (`nothingToApprove`).
+ */
+export function approveAndPayPairForDemo(api: AppStoreApi, actor: Actor, pairId: string, opts: { webhook?: 'deliver' | 'missed' } = {}): Outcome<PayablesRunResult & { cycleId: string }> {
+  const pair = api.getState().billing.ledger[pairId]
   if (pair !== undefined && isBookingPair(pair) && pair.payable !== undefined && isHoldingLeg(pair.payable)) return refuse('holdingSystemOnly', HOLDING_SYSTEM_ONLY)
-  return payInXero(api, payableLegsDue(state, { only: [pairId] }))
+  const staged = stagePairRun(api, actor, pairId)
+  if (!staged.ok) return staged
+  const paid = payRunInXero(api, XERO_PAYABLES_ACTOR, staged.value.runId, { webhook: opts.webhook ?? 'deliver' })
+  if (!paid.ok) return paid
+  return ok({ ...resultOf(staged.value.runId, paid.value, [pairId]), cycleId: staged.value.cycleId })
+}
+
+export const OFFICE_CYCLE_COPY = {
+  nothingDue: 'Nothing due to pay out',
+  anomaly: 'An anomaly needs the office',
+} as const
+
+/** Why the office's whole weekly cycle cannot run now, or null (the PWA stand-in's disabled state). */
+export function officeRunsCycleRefusal(state: CycleReadState): string | null {
+  const inProgress = weekRunInProgress(state)
+  if (inProgress !== undefined) {
+    if (inProgress.status === 'closed' && inProgress.anomalies.some((a) => a.status === 'open')) return OFFICE_CYCLE_COPY.anomaly
+    return null
+  }
+  if (nextRunToPay(state) !== undefined) return null
+  return openCycleDraft(state).lines.length > 0 ? null : OFFICE_CYCLE_COPY.nothingDue
+}
+
+/**
+ * The office runs this week's payment cycle end to end (the PWA stand-in;
+ * tests): close the open week (or carry on with the one in progress),
+ * approve its BCTIs, send the schedule, then Xero pays it with the webhook
+ * delivered. It never holds or fixes an anomaly on the office's behalf.
+ */
+export function runThisWeeksCycle(api: AppStoreApi, actor: Actor, opts: { webhook?: 'deliver' | 'missed' } = {}): Outcome<PayablesRunResult & { cycleId: string }> {
+  const refusal = officeRunsCycleRefusal(api.getState())
+  if (refusal !== null) return refuse(refusal === OFFICE_CYCLE_COPY.anomaly ? 'anomaliesOpen' : 'nothingDue', refusal)
+  let run = weekRunInProgress(api.getState())
+  if (run === undefined && nextRunToPay(api.getState()) === undefined) {
+    const closed = closeWeek(api, actor)
+    if (!closed.ok) return closed
+    run = api.getState().billing.payablesRuns[closed.value.runId]!
+    if (run.anomalies.some((a) => a.status === 'open')) return refuse('anomaliesOpen', OFFICE_CYCLE_COPY.anomaly)
+  }
+  if (run !== undefined && run.status === 'closed') {
+    const approved = approveWeekBctis(api, actor, run.id)
+    if (!approved.ok) return approved
+  }
+  if (run !== undefined && api.getState().billing.payablesRuns[run.id]!.status === 'approved') {
+    const sent = sendPaymentSchedule(api, actor, run.id)
+    if (!sent.ok) return sent
+  }
+  const target = run ?? nextRunToPay(api.getState())!
+  const out = runPayables(api, actor, opts)
+  if (!out.ok) return out
+  return ok({ ...out.value, cycleId: api.getState().billing.payablesRuns[target.id]?.cycleId ?? '' })
 }

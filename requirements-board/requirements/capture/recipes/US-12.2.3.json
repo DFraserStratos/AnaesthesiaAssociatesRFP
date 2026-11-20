@@ -20,7 +20,7 @@
     {
       "name": "dashboard-paid-out",
       "app": "web",
-      "caption": "After a payment comes in and AA pays you in Xero's payables run, Collected and Paid out to you rise on the dashboard",
+      "caption": "After a payment comes in and AA pays you in the weekly payment run in Xero, Collected and Paid out to you rise on the dashboard",
       "start": "/web",
       "states": [
         {
@@ -57,6 +57,24 @@
             },
             {
               "wait": "[data-shot=billing-payables-run]"
+            },
+            {
+              "click": "[data-shot=payment-cycle-close]"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-approve]"
+            },
+            {
+              "click": "[data-shot=payment-cycle-approve]"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-send]"
+            },
+            {
+              "click": "[data-shot=payment-cycle-send]"
+            },
+            {
+              "wait": 400
             },
             {
               "click": "[data-shot=billing-run-payables-in-xero]"

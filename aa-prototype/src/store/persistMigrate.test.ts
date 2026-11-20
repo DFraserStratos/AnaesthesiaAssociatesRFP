@@ -1234,7 +1234,7 @@ describe('Phase 39b (v70: pre-op, post-op and billing events; BillingLine remove
   afterEach(() => localStorage.clear())
 
   it('discards a v69 store holding billing lines and no event fees, and reseeds', () => {
-    expect(PERSIST_VERSION).toBe(70)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(70)
     const fresh = freshAppState()
     const { contractEventFees: _f, ...masters } = fresh.masters
     const staleLine = { id: 'BL0001', procedureId: 'P0001', chargeBasis: 'fixed', amount: 50, description: 'Ancillary fixed amount' }
@@ -1250,3 +1250,47 @@ describe('Phase 39b (v70: pre-op, post-op and billing events; BillingLine remove
   })
 })
 
+
+describe('catch-up Phase 39a (v70): the weekly payment cycle', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v69 store without the payment runs and bank download, and reseeds them', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(70)
+    const fresh = freshAppState()
+    const { payablesRuns: _r, bankLines: _b, ...billing } = fresh.billing
+    const { creditAllocations: _a, batchPayments: _p, ...xero } = fresh.xero
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing, xero }, version: 69 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.keys(s.billing.payablesRuns).length).toBeGreaterThan(0)
+    expect(Object.keys(s.billing.bankLines).length).toBeGreaterThan(0)
+    expect(s.appSettings.paymentCycle).toEqual({ weekIdentity: 'isoWeek', closeWeekday: 5, checkWeekday: 1, scheduleWeekday: 2 })
+    expect(Object.values(s.billing.disbursements).every((d) => s.billing.payablesRuns[d.payablesRunId] !== undefined)).toBe(true)
+  })
+
+  it('two fresh seeds deep-equal, backdrop runs included', () => {
+    expect(freshAppState()).toEqual(freshAppState())
+  })
+})
+
+describe('Phase 40 sync (v71): Lane A 39a (v70) synced into lane/b beside 39b (v70)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v70 store from either lane and reseeds with both', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(71)
+    const fresh = freshAppState()
+    const { payablesRuns: _r, ...billing } = fresh.billing
+    const { contractEventFees: _f, ...masters } = fresh.masters
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing, masters }, version: 70 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.keys(s.billing.payablesRuns).length).toBeGreaterThan(0)
+    expect(s.masters.contractEventFees['CEF001']).toBeDefined()
+  })
+})

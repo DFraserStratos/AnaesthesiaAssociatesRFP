@@ -11,7 +11,7 @@
  * Pure (enforced by `domainPurity.test.ts`).
  */
 
-import type { AaFeeSettings, ActorRole, Booking, BookingId, Contract, IsoDate, Party, IsoDateTime, List, Patient, Procedure, ProcedureId, RvgGroup, RvgGroupId, ScheduleSettings } from '../types'
+import type { AaFeeSettings, ActorRole, Booking, BookingId, Contract, IsoDate, Party, IsoDateTime, List, Patient, PaymentCycleSettings, Procedure, ProcedureId, RvgGroup, RvgGroupId, ScheduleSettings } from '../types'
 
 export type WarningKind = 'beforeProcedure' | 'afterProcedure'
 export type WarningStrength = 'mild' | 'strong'
@@ -129,6 +129,13 @@ export interface AppSettings {
    * generated and sent as soon as its payer group is ready.
    */
   prepayment: PrepaymentSettings
+  /**
+   * The weekly payment cycle (catch-up Phase 39a; US-10.2.7, Proposed): ISO
+   * week, Friday close, Monday checks, Tuesday schedule. Greg's proposed cycle,
+   * built to; AA's accountant may change it (OQ-47): change it here, never in
+   * code. No settings screen.
+   */
+  paymentCycle: PaymentCycleSettings
 }
 
 export interface PrepaymentSettings {

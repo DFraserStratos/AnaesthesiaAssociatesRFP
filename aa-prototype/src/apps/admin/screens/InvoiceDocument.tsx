@@ -18,6 +18,7 @@ import {
   replacementsOf,
   resendInvoice,
   splitPartOf,
+  paymentWeeksForPair,
   useAppStore,
 } from '../../../store'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
@@ -25,22 +26,18 @@ import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, CREDIT_MESSAGES, EVENT_KIND_LAB
 import { AdditionalInvoiceSheet } from '../../../shared/booking/AdditionalInvoiceForm'
 import type { CreditFormMode } from '../../../shared/booking/CreditForm'
 import { CreditSheet } from '../flows/CreditSheet'
-import type { BookingLedgerPair, CreditNote, Invoice, InvoiceAgent, InvoiceDelivery, InvoiceLineBtm, InvoiceSupplier } from '../../../domain/types'
+import type { BookingLedgerPair, CreditNote, Invoice, InvoiceDelivery, InvoiceLineBtm } from '../../../domain/types'
 import {
-  GST_RATE,
   GST_TREATMENT_CAPTION,
   OQ122_PILL,
-  OQ29_CAPTION,
-  OQ29_PILL,
-  agentStatement,
   btmBreakdownText,
   formatMoney,
   invoiceDeliveryLabel,
   postalAddressLines,
   splitNoteText,
-  supplierGstText,
 } from '../../../domain/billing'
-import { Button, DemoBadge, Logo } from '../../../shared'
+import { Button, DemoBadge } from '../../../shared'
+import { AgentBlock, DocLinesTable, DocMasthead, DocMeta, DocTotals, metaLabel } from '../../../shared/billing/docParts'
 import { dateTimeMicroCap, drSurname, formatCurrency, plainDate } from '../../../shared/format'
 import { dayWithYear, hhmm } from '../../../domain/dateText'
 import { DefList, DefRow, FormError, Notice, Pill, TextAction, TextField } from '../../../shared/ui'
@@ -404,6 +401,13 @@ function InvoiceInfoRail({
     const transfer = transferOfPair(s.billing.transfers, billingCase.id)
     return transfer?.xeroJournalId !== undefined ? s.xero.journals[transfer.xeroJournalId]?.journalNumber : undefined
   })
+  // The weeks this invoice's payable was paid out in (catch-up Phase 39a): its own payable, or a transferred prepayment's.
+  const billing = useAppStore((s) => s.billing)
+  const payoutWeeks = useMemo(() => {
+    if (billingCase === undefined) return []
+    const transfer = collect ? transferOfPair(billing.transfers, billingCase.id) : undefined
+    return paymentWeeksForPair({ billing }, transfer?.id ?? billingCase.id)
+  }, [billing, billingCase, collect])
 
   return (
     <aside
@@ -486,6 +490,23 @@ function InvoiceInfoRail({
               {collect && <XeroReference label="Payee" value={HOLDING_ACCOUNT.name} testId="xero-accpay-payee" />}
               {journalNumber !== undefined && <XeroReference label="Transfer journal" value={journalNumber} testId="xero-transfer-journal-reference" />}
             </dl>
+          )}
+          {/* The week each payment went out in (catch-up Phase 39a; US-10.2.7): cash, and any negative netted against it. */}
+          {payoutWeeks.length > 0 && (
+            <div data-shot="payment-week" style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12.5, lineHeight: '18px' }}>
+              {payoutWeeks.map((w) => (
+                <span key={w.runId} data-run-id={w.runId}>
+                  {`Paid out in ${w.week ?? 'a payment run'} · `}
+                  <span className="mono">{formatMoney(w.paid)}</span>
+                  {w.netted > 0 && (
+                    <>
+                      {' · netted '}
+                      <span className="mono">{formatMoney(w.netted)}</span>
+                    </>
+                  )}
+                </span>
+              ))}
+            </div>
           )}
           {billingCase !== undefined && (
             <TextAction size="sm" flush shot="invoice-open-ledger" onClick={() => navigate(`/admin/ledger?pair=${billingCase.id}`)}>
@@ -792,8 +813,6 @@ const compactFullButtonStyle: CSSProperties = {
   width: '100%',
 }
 
-const metaLabel = { fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: neutral.mist }
-
 const railMetaLabel: CSSProperties = {
   fontSize: 10,
   lineHeight: '14px',
@@ -801,126 +820,6 @@ const railMetaLabel: CSSProperties = {
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
   color: neutral.mist,
-}
-
-const docCell = {
-  padding: '9px 8px',
-  fontSize: 13,
-  borderBottom: `1px solid ${neutral.line}`,
-  verticalAlign: 'top' as const,
-}
-
-const docHead = {
-  ...docCell,
-  fontSize: 10,
-  fontWeight: 700,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase' as const,
-  color: neutral.mist,
-  borderBottom: `1.5px solid ${neutral.lineStrong}`,
-}
-
-function TotalRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ display: 'flex', gap: 24 }}>
-      <span style={{ fontSize: 12.5, color: neutral.slate }}>{label}</span>
-      <span className="mono" style={{ fontSize: 12.5, minWidth: 110, textAlign: 'right' }}>{value}</span>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// The sheet's parts: one masthead, agent block and totals for the tax invoice
-// and the credit note (catch-up Phase 39), so the two documents never drift.
-// ---------------------------------------------------------------------------
-
-/** The supplier on the left; the heading ("TAX INVOICE", "CREDIT NOTE"), the number and its badge on the right, then the lines under it. */
-function DocMasthead({ supplier, heading, number, badge, children }: { supplier: InvoiceSupplier | undefined; heading: string; number: string; badge?: ReactNode; children?: ReactNode }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
-      <div data-shot="invoice-supplier" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <div style={{ fontFamily: fontFamily.serif, fontSize: 21, color: neutral.ink }}>{supplier?.name ?? 'The anaesthetist'}</div>
-        {supplier !== undefined && (
-          <div className={supplier.gstNumber !== undefined ? 'mono' : undefined} style={{ fontSize: 12, color: neutral.slate }}>
-            {supplierGstText(supplier)}
-          </div>
-        )}
-        <div style={{ fontSize: 11.5, color: neutral.slate }}>Christchurch · New Zealand</div>
-      </div>
-      <div style={{ textAlign: 'right' }}>
-        <div style={{ fontFamily: fontFamily.serif, fontSize: 21, letterSpacing: '0.12em', color: neutral.ink }}>{heading}</div>
-        <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-          {badge}
-          <span className="mono" style={{ fontSize: 13.5, fontWeight: 700 }}>{number}</span>
-        </div>
-        {children}
-      </div>
-    </div>
-  )
-}
-
-/**
- * AA as agent (US-08.4.5). On a tax invoice (a BCTI) the wording is
- * provisional (OQ-29) and says so; a credit note is not a BCTI, so it carries
- * the agency line without the marker (`bcti={false}`).
- */
-function AgentBlock({ supplierName, agent, bcti = true }: { supplierName: string | undefined; agent: InvoiceAgent | undefined; bcti?: boolean }) {
-  return (
-    <div
-      data-shot="invoice-agent-block"
-      style={{ display: 'flex', gap: 14, alignItems: 'flex-start', background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, padding: '12px 14px' }}
-    >
-      <Logo height={20} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
-        <div data-shot="invoice-agency-line" style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.ink }}>
-          {agentStatement(supplierName ?? 'the anaesthetist', agent)}
-        </div>
-        {bcti && (
-          <div data-shot="invoice-agent-provisional" style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-            <Pill size="sm" style={{ flex: 'none' }}>{OQ29_PILL}</Pill>
-            <span style={{ fontSize: 11, lineHeight: '16px', color: neutral.mist }}>{OQ29_CAPTION}</span>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-/** The meta strip under the masthead, one for both documents: the date (raised or issued), the Procedure date and the internal case reference. */
-function DocMeta({ dateLabel, dateISO, procedureDateISO, caseReference }: { dateLabel: string; dateISO: string | undefined; procedureDateISO: string | undefined; caseReference: string | undefined }) {
-  return (
-    <div data-shot="invoice-meta" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, borderTop: `1px solid ${neutral.line}`, borderBottom: `1px solid ${neutral.line}`, padding: '12px 0' }}>
-      <div>
-        <div style={metaLabel}>{dateLabel}</div>
-        <div className="mono" style={{ fontSize: 12.5, marginTop: 3 }}>{dateTimeMicroCap(dateISO)}</div>
-      </div>
-      <div>
-        <div style={metaLabel}>Procedure date</div>
-        <div className="mono" style={{ fontSize: 12.5, marginTop: 3 }}>{procedureDateISO !== undefined ? dayWithYear(procedureDateISO) : '·'}</div>
-      </div>
-      <div>
-        <div style={metaLabel}>Case reference</div>
-        <div className="mono" style={{ fontSize: 12.5, marginTop: 3 }}>{caseReference ?? '·'}</div>
-        <div style={{ fontSize: 10.5, color: neutral.mist }}>internal reference only</div>
-      </div>
-    </div>
-  )
-}
-
-interface DocLineRow {
-  key: string
-  description: ReactNode
-  quantity?: number
-  unitAmount?: number
-  amount: number
-  /** `data-line-kind` on the row (fee, discount, adjustment). */
-  kind?: string
-  /** `data-shot` on the row (catch-up Phase 39b: `invoice-event-lines`). */
-  shot?: string
-  /** `data-event-id` on an event's line. */
-  eventId?: string
-  /** The amount as printed, where it differs from `formatCurrency` (an event credit: "-$40.00"). */
-  amountText?: string
 }
 
 /** An event line's description with its date of service in mono (catch-up Phase 39b; work item 11). */
@@ -934,52 +833,6 @@ function EventLineText({ text, dateISO }: { text: string; dateISO: string }) {
       <span className="mono">{date}</span>
       {text.slice(at + date.length)}
     </>
-  )
-}
-
-/**
- * The lines table, one for both documents: Description, then the quantity
- * column (`quantityHead`, "Units" on a priced invoice, "Qty" on a free-form
- * one; left out when no line has a quantity, as a credit note's mirrored fee
- * lines), Unit amount on a free-form invoice, and Amount.
- */
-function DocLinesTable({ rows, quantityHead, unitAmount = false }: { rows: readonly DocLineRow[]; quantityHead: string; unitAmount?: boolean }) {
-  const showQuantity = rows.some((r) => r.quantity !== undefined)
-  return (
-    <table data-shot="invoice-lines" style={{ borderCollapse: 'collapse', width: '100%' }}>
-      <thead>
-        <tr>
-          <th style={{ ...docHead, textAlign: 'left' }}>Description</th>
-          {showQuantity && <th style={{ ...docHead, textAlign: 'right', width: 70 }}>{quantityHead}</th>}
-          {unitAmount && <th style={{ ...docHead, textAlign: 'right', width: 110 }}>Unit amount</th>}
-          <th style={{ ...docHead, textAlign: 'right', width: 110 }}>Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r) => (
-          <tr key={r.key} {...(r.kind !== undefined ? { 'data-line-kind': r.kind } : {})} {...(r.shot !== undefined ? { 'data-shot': r.shot } : {})} {...(r.eventId !== undefined ? { 'data-event-id': r.eventId } : {})}>
-            <td style={docCell}>{r.description}</td>
-            {showQuantity && <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{r.quantity ?? ''}</td>}
-            {unitAmount && <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{r.unitAmount !== undefined ? formatCurrency(r.unitAmount) : ''}</td>}
-            <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{r.amountText ?? formatCurrency(r.amount)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  )
-}
-
-/** Subtotal, GST and the total ("Total due", "Total credited"). */
-function DocTotals({ subtotal, gst, totalLabel, total }: { subtotal: number; gst: number; totalLabel: string; total: number }) {
-  return (
-    <div data-shot="invoice-totals" style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
-      <TotalRow label="Subtotal" value={formatCurrency(subtotal)} />
-      <TotalRow label={`GST (${GST_RATE * 100}%)`} value={formatCurrency(gst)} />
-      <div style={{ display: 'flex', gap: 24, borderTop: `2px solid ${neutral.ink}`, paddingTop: 6, marginTop: 2 }}>
-        <span style={{ fontSize: 13.5, fontWeight: 700 }}>{totalLabel}</span>
-        <span className="mono" style={{ fontSize: 15, fontWeight: 700, minWidth: 110, textAlign: 'right' }}>{formatCurrency(total)}</span>
-      </div>
-    </div>
   )
 }
 

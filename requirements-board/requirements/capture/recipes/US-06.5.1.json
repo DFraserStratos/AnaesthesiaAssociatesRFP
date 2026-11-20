@@ -134,7 +134,7 @@
         },
         {
           "state": "released",
-          "caption": "Transferred at authorise and paid in Xero's payables run: Paid to you",
+          "caption": "Transferred at authorise and paid in the weekly payment run in Xero: Paid to you",
           "steps": [
             {
               "goto": "/web/lists/L-34821-2026-07-24-PM"
@@ -211,6 +211,24 @@
             },
             {
               "goto": "/admin/billing"
+            },
+            {
+              "click": "[data-shot=payment-cycle-close]"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-approve]"
+            },
+            {
+              "click": "[data-shot=payment-cycle-approve]"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-send]"
+            },
+            {
+              "click": "[data-shot=payment-cycle-send]"
+            },
+            {
+              "wait": 400
             },
             {
               "click": "[data-shot=billing-run-payables-in-xero]"

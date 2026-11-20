@@ -13,7 +13,7 @@ import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList, submitList } from './lifecycle'
 import { wireBillingRun } from './billingRun'
 import { receivePayment } from './paymentActions'
-import { runPayables } from './payablesActions'
+import { approveAndPayPairForDemo } from './payablesActions'
 import { anaesthetistLedgerPosition, bctiRecords, ledgerPositionOf, pairForInvoice } from './ledgerSelectors'
 import {
   approveProcedureEvent,
@@ -229,10 +229,11 @@ describe('the reversal cases, through the real actions', () => {
     expect([pos.creditsHeldForPayers, pos.recoveryDueFromAnaesthetists]).toEqual([original.total, 0])
   })
 
-  it('fully paid and paid out by runPayables: the paid-out part is left to net', () => {
+  it('fully paid and paid out in a payment run: the paid-out part is left to net', () => {
     const { original } = stageMitchell()
     pay(original.id, original.total, 'full')
-    expect(runPayables(api, OFFICE, { anaesthetistId: ANAE.sharma }).ok).toBe(true)
+    // (catch-up Phase 39a: paid out as an approved one-line run for this pair, paid in Xero.)
+    expect(approveAndPayPairForDemo(api, OFFICE, pairForInvoice(api.getState(), original.id)!.id).ok).toBe(true)
     expect(pairForInvoice(api.getState(), original.id)!.payable!.disbursedAmount).toBe(original.total)
     const { negative, note } = issue(OFFICE, creditInput(original.id))
     expect(negative).toMatchObject({ amount: original.total, offsetAmount: 0, recoveryDue: original.total, status: 'toNet' })

@@ -5,6 +5,8 @@ import {
   anaesthetistLedgerPosition,
   gstReportFor,
   gstReportMonthsFor,
+  heldOutRunFor,
+  paymentWeeksForPair,
   OUTSTANDING_STAGE_LABEL,
   outstandingPayableRowsFor,
   outstandingTotalFor,
@@ -25,14 +27,17 @@ import { Button, Card, EmptyState, LineTabLink, LineTabs, Notice, PageHeader, Pi
 import { ClickableRow, RowOpenButton, TableShell, Td, Th } from '../../../shared/table'
 import { downloadTextFile } from '../../../shared/download'
 import { HELD_UNTIL_AUTHORISED } from '../../../domain/billing/prepayHolding'
+import { RemittancesTab } from './RemittancesTab'
 
-export type AccountsSubTab = 'outstanding' | 'payments' | 'gst' | 'fees'
+export type AccountsSubTab = 'outstanding' | 'payments' | 'remittances' | 'gst' | 'fees'
 
-export const ACCOUNTS_SUB_TABS: readonly AccountsSubTab[] = ['outstanding', 'payments', 'gst', 'fees']
+export const ACCOUNTS_SUB_TABS: readonly AccountsSubTab[] = ['outstanding', 'payments', 'remittances', 'gst', 'fees']
 
 const SUB_TAB_LABEL: Record<AccountsSubTab, string> = {
   outstanding: 'Outstanding',
   payments: 'Payments',
+  // Catch-up Phase 39a (US-10.2.5): each weekly payment run's remittance advice.
+  remittances: 'Remittances',
   gst: 'GST report',
   fees: 'AA fees',
 }
@@ -44,6 +49,8 @@ interface AccountsScreenProps {
   /** Opens a Booking from its Outstanding line (US-12.2.1). */
   onOpenBooking?: (listId: string, bookingId: string) => void
   focusInvoiceNumber?: string
+  /** `?run=PR0003` on Remittances focuses that run's row (catch-up Phase 39a). */
+  focusRunId?: string
 }
 
 /**
@@ -60,6 +67,7 @@ export function AccountsScreen({
   onSubTab,
   onOpenBooking,
   focusInvoiceNumber,
+  focusRunId,
 }: AccountsScreenProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -83,6 +91,8 @@ export function AccountsScreen({
           focusInvoiceNumber={focusInvoiceNumber}
           onOpenFees={() => onSubTab('fees')}
         />
+      ) : subTab === 'remittances' ? (
+        <RemittancesTab anaesthetistId={anaesthetistId} {...(focusRunId !== undefined ? { focusRunId } : {})} />
       ) : subTab === 'fees' ? (
         <AaFeesTable anaesthetistId={anaesthetistId} focusInvoiceNumber={focusInvoiceNumber} />
       ) : (
@@ -240,6 +250,15 @@ function PaymentsTable({
     () => paymentHistoryFor({ billing, schedule, masters }, anaesthetistId),
     [billing, schedule, masters, anaesthetistId],
   )
+  const transferOf = useMemo(() => new Map(Object.values(billing.transfers).map((t) => [t.collectPairId, t.id])), [billing.transfers])
+  const weeksOf = (pairId: string): string => {
+    return [...new Set(paymentWeeksForPair({ billing }, transferOf.get(pairId) ?? pairId).map((w) => w.week).filter((w): w is string => w !== undefined))].join(', ')
+  }
+  const heldNoteOf = (pairId: string): string | null => {
+    const held = heldOutRunFor({ billing }, pairId)
+    if (held === undefined) return null
+    return weeksOf(pairId) !== '' ? `Held out of ${held}, paid in a later run.` : `Held out of ${held}, to be paid in a later run.`
+  }
 
   return (
     <Card padding="panel" flush>
@@ -280,7 +299,12 @@ function PaymentsTable({
                   <Td>{row.payerLabel}</Td>
                   <Td mono align="right" nowrap>{formatCurrency(row.grossReceived)}</Td>
                   <Td mono align="right" bold nowrap>{formatCurrency(row.releasedAmount)}</Td>
-                  <Td mono align="right" nowrap>{formatCurrency(row.disbursedAmount)}</Td>
+                  {/* Paid to you, with the week each payment went out in (catch-up Phase 39a; US-10.2.7) and a quiet note when a line was held out. */}
+                  <Td mono align="right" nowrap>
+                    {formatCurrency(row.disbursedAmount)}
+                    {weeksOf(row.pairId) !== '' && <div data-shot="web-payment-week" style={{ fontSize: 11.5, color: neutral.slate }}>{weeksOf(row.pairId)}</div>}
+                    {heldNoteOf(row.pairId) !== null && <div data-shot="web-payment-held-out" style={{ fontFamily: 'inherit', fontSize: 11.5, color: neutral.slate, whiteSpace: 'normal' }}>{heldNoteOf(row.pairId)}</div>}
+                  </Td>
                   <Td>
                     <Pill size="lg" tone={row.status === 'paidOut' ? 'success' : 'neutral'} shot={row.status === 'held' ? 'payment-held' : undefined}>
                       {PAYMENT_STATUS_LABEL[row.status]}

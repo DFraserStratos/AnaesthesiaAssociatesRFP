@@ -22,12 +22,27 @@ function emittedActionCodes(): string[] {
 }
 
 /** What reads as money moving: a payment, a receipt, a disbursement or payout, a bill paid, a bank or remittance match, a release on receipt. */
-const MONEY = /payment|receipt|disburs|bankLine|remittance|unmatched|allocation|accpayAuthorised|transferReleased/i
+const MONEY = /payment|receipt|disburs|bankLine|remittance|unmatched|allocation|accpayAuthorised|transferReleased|creditAllocated|batchPaid|offset/i
 /**
  * Codes the pattern catches that move no money: a Procedure's payer, the prepayment approval switch, a prepaid
- * Booking left off the final invoice, and 27a's transfer of a prepayment's payable (neither money in nor money out).
+ * Booking left off the final invoice, 27a's transfer of a prepayment's payable (neither money in nor money out),
+ * and the weekly payment cycle's office decisions and staging (catch-up Phase 39a: audited, like any office step).
  */
-const NOT_MONEY = new Set(['procedure.payer', 'settings.prepaymentApprovalChanged', 'booking.prepaidSettled', 'prepayment.transfer', 'prepayment.transferNoop'])
+const NOT_MONEY = new Set([
+  'procedure.payer',
+  'settings.prepaymentApprovalChanged',
+  'booking.prepaidSettled',
+  'prepayment.transfer',
+  'prepayment.transferNoop',
+  'payments.weekClosed',
+  'payments.lineHeldOut',
+  'payments.holdReleased',
+  'payments.anomalyFixed',
+  'payments.scheduleSent',
+  'payments.runSuperseded',
+  'demo.paymentWeekStaged',
+  'demo.bankLineRemoved',
+])
 
 describe('AUDIT_VIEWER_EXCLUDED (US-13.5.2: payments are not audited, credit notes are)', () => {
   it('holds every action that records money moving, and nothing else the store does not emit', () => {

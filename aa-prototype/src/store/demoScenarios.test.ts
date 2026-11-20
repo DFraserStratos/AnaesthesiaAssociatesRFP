@@ -16,7 +16,7 @@ import { claimModifier, removeModifier } from './modifierActions'
 import { seedModifierId } from '../domain/seed/modifiers'
 import { advanceClockToDate } from './clockActions'
 import { receivePayment } from './paymentActions'
-import { payablesDue, runPayables } from './payablesActions'
+import { payablesDue, runThisWeeksCycle } from './payablesActions'
 import { auditForEntity, bookingsForList, openAccRecs, proceduresForBooking } from './selectors'
 import { regenerateInvoiceFromLock } from './locks'
 import type { Actor } from './mutate'
@@ -217,7 +217,7 @@ describe('S3 · money end-to-end', () => {
 
       // The paired payable is now authorised, so payables has an increment to disburse.
       expect(payablesDue(api.getState()).count).toBeGreaterThan(0)
-      const run = runPayables(api, OFFICE)
+      const run = runThisWeeksCycle(api, OFFICE)
       expect(run.ok && run.value.disbursedCount > 0).toBe(true)
     } finally {
       unwire()
@@ -327,7 +327,7 @@ describe('S4 · exceptions', () => {
 
     // The paid-out variant: the rebill paid in full and paid out, then credited: its negative invoice nets.
     const payout = trigger('stage-refund-after-payout').run(api, ctx('/admin/billing'))
-    expect(payout).toMatchObject({ ok: true, message: 'Paid in full and paid out to Dr Sharma in Xero. Credit it to see the negative invoice.' })
+    expect(payout).toMatchObject({ ok: true, message: "Paid in full, approved for payment and paid out to Dr Sharma in Xero. Credit it to see the negative invoice. Once credited, the negative invoice is netted in Dr Sharma's next payment run." })
     const paidOutCredit = submitCredit(api, OFFICE, { invoiceId: rebilled.id, reason: 'Paid twice', cause: 'correction', replacements: [] })
     if (!paidOutCredit.ok) throw new Error(paidOutCredit.message)
     approve(paidOutCredit.value.creditEventId)

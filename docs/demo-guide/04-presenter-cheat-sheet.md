@@ -348,10 +348,19 @@ Payer -> ACCREC -> AA account -> ACCPAY (full amount) -> Anaesthetist
 - `ACCPAY`: the full amount AA owes the anaesthetist; it equals the ACCREC. AA's own fee is never
   deducted from it (it is invoiced to the anaesthetist separately).
 - Paid into AA and disbursed to the anaesthetist are separate states.
-- The payables run happens in Xero: Xero pays the authorised bills, and the Billing Engine detects
+- Weekly run by ISO week: close, check, approve, schedule; negatives net; remittance per run. A
+  released payable waits for the week's run; the week closes on Friday and is reconciled to the bank
+  download, Monday is for the checks (an anomaly is fixed or **held out**, and rolls into next week),
+  the office approves the week's BCTIs, and on Tuesday the payment schedule goes to the accountant
+  (catch-up Phase 39a). A negative invoice (a credit after payout) nets against the anaesthetist's
+  positives in the same run, and every run leaves a remittance advice per anaesthetist; every payment
+  carries its week. The 20th-of-the-month payment is not part of it (that is AA's separate monthly fee
+  cycle), and the cycle is Greg's proposal, still with AA's accountant (OQ-47).
+- The payment itself is made in Xero: the accountant pays the schedule, and the Billing Engine detects
   each disbursement by the bill-paid webhook, or at the daily reconciliation poll if the webhook is
-  missed, and records it. On the Billing monitor the payables panel, **Authorised, awaiting Xero's
-  payables run**, is read only; its **Run payables in Xero** is badged **Simulated Xero**.
+  missed, and records it. On the Billing monitor the **Payment cycle** panel (Week 30 on a fresh
+  reset) holds the four steps; its **Run payables in Xero** is badged **Simulated Xero** and reads "Nothing scheduled to
+  pay" until the week is closed, approved and scheduled.
 - Every call to Xero goes through the **Xero sync queue** first and retries with growing gaps, so an
   outage never loses a financial event or blocks authorising; **Retry now** on a queue row retries at
   once. Voids and edits made directly in Xero are flagged at the poll (**Changed directly in Xero**,
@@ -419,7 +428,8 @@ Receipts held = payables due + the AA Holding account  ->  In balance
   ledger**) and each invoice's **Ledger** card. The anaesthetist sees her position on web **Accounts**
   (Your position), the web dashboard (Financial position) and mobile **Balances** ("Collected $X",
   "Paid out to you $Y"); on a handset the Demo sheet's
-  **Office runs payables in Xero** (office stand-in) pays what is due. The Xero sim's pair detail shows
+  **Office runs this week's payment cycle** (office stand-in) closes the week, approves it and sends
+  the schedule, and the accountant pays it in Xero. The Xero sim's pair detail shows
   **Ledger pair (the system of record)** with **Matches the ledger**.
 - Note: Dr Souter's outstanding total is $11,350.50 on a fresh seed (it was $7,785.50 before Phase 36),
   because the seeded AA-2026-S2401 ($3,565.00, Thu 16 Jul Face lift) is now counted though it is not
@@ -537,6 +547,8 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - "The Billing Engine references the Booking; it does not duplicate the scheduling record."
 - "The captured inputs remain reproducible, not just the final total."
 - "AA tracks collection and disbursement as two separate states."
+- "Nothing is paid until the week's BCTIs are approved."
+- "Every payment carries its week number."
 - "Bulk remittances are matched in Xero, not by the engine."
 - "Approval stays on Review, one path with all its checks; the monitor shows what is waiting and takes
   you there."
@@ -570,6 +582,13 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - "A credit note is a refund." (It is not; money paid on a credited invoice is held for the payer.)
 - "The system credits the difference automatically." (Nothing is credited automatically: a person
   decides, and the invoice is credited in full, never by the difference.)
+- "The accountant has signed off the weekly cycle." (It is Greg's proposal, Proposed and still with
+  AA's accountant, OQ-47.)
+- "The 20th is part of this run." (It is the separate monthly fee cycle.)
+- "The system chases a departed anaesthetist." (With no later payment to net against, AA settles a
+  negative invoice with the anaesthetist outside the system, OQ-71.)
+- "The system pays the anaesthetist." (Payments are made in Xero; the system approves, records and
+  tracks them.)
 - "Events need a separate approval." (One review step, Review → Events, for every event, D13.)
 - "These are the ACC codes." (CS250, CS260 and CS70 are provisional; OQ-12 is open.)
 - "ACC pre-op has its own fixed-fee Contract." (Answered no: it follows the generic event rules.)
@@ -607,7 +626,12 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 - Contract locked at authorise, the run and the invoice document reading only the lock, Regenerate
   from locked data, and each Contract's History tab (catch-up Phase 25)
 - Xero collection/payable pairs, payments, reconciliation poll, payables, live balances and GST (Phase 10)
-- Xero resilience (catch-up Phase 37): the payables run made in Xero with each disbursement recorded by
+- The weekly payment cycle (catch-up Phase 39a): close the week (reconciled to the bank download),
+  the Monday checks with **Hold out of this run**, **Approve week 30's BCTIs** (nothing is paid
+  without it), the payment schedule sent to the accountant, and **Run payables in Xero**; negative
+  invoices netted in the run, each run's page and remittance advice per anaesthetist, the week on
+  every payment, and the anaesthetist's **Remittances** in web Accounts
+- Xero resilience (catch-up Phase 37): the payment made in Xero with each disbursement recorded by
   webhook or poll, the Xero sync queue with backoff and **Retry now**, voids and edits made in Xero
   flagged at the poll, bulk remittances matched in Xero's Bank reconciliation, and the Reconciliation
   card on Admin Day
@@ -644,7 +668,10 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   Xero** ($20.00 lower) and **Pay anaesthetist in Xero (payables run)** (the bill-paid webhook delivers,
   or is missed and the poll catches it); **Simulate bulk hospital remittance** (Xero Invoices and Bank
   reconciliation). The Billing monitor's **Run payables in Xero** is not a demo action but carries the
-  **Simulated Xero** badge: Xero pays the bills and the Billing Engine records each payment it reports.
+  **Simulated Xero** badge: once the week is closed, approved and scheduled, it stands in for the
+  accountant paying the schedule in Xero, and the Billing Engine records each payment it reports. The
+  cycle's staging triggers, **Stage a payment week** and **Stage a bank mismatch**, are Billing monitor
+  demo actions.
 - Master data's **Seed load** and **Go-live load** views are badged demo: they stand in for the
   developer's one-off load from AA's controlled spreadsheets (every row checked by the manual add's
   rules, rejected rows listed with reasons), not office screens. The office never loads master data.
@@ -844,10 +871,10 @@ Say:
   monitor shows its card: the balance, the prepaid Bookings it holds for, and its Received and
   Transferred entries (fresh reset: $1,380.00, Priya Nair, AA-2026-0001).
 - Two steps: the payer's money is **collected into the AA Holding account** (nothing is paid to the
-  anaesthetist; the payables run pays nothing), then **transferred** automatically when the office
+  anaesthetist; no payment run pays it), then **transferred** automatically when the office
   authorises the List, with no office step. The transfer is not a payment: no new invoice, no GST
   movement; the Xero simulator shows it as a manual journal (MJ-0001 for Nair), and how it posts in
-  Xero is still to be confirmed. The next payables run pays the anaesthetist; the payment itself is made
+  Xero is still to be confirmed. The next weekly payment run pays the anaesthetist; the payment itself is made
   in Xero (OQ-111). The trigger is provisional (OQ-125: Greg said "confirmed and submitted").
 - Money paid after the transfer goes straight to the anaesthetist's payable; a part-paid prepayment
   moves in full and is released as money arrives. Two payers mean two invoices, two payables to the
@@ -990,7 +1017,7 @@ anaesthetist-facing views. Xero is the AR and banking add-on.
 
 No. A prepayment is held in the AA Holding account until the office authorises the List, then
 transferred to the anaesthetist who did it automatically, with no office step, and paid by the next
-payables run. The payment itself is made in Xero (OQ-111). Authorisation as the trigger is provisional
+weekly payment run. The payment itself is made in Xero (OQ-111). Authorisation as the trigger is provisional
 (OQ-125).
 
 ### "How do late hospital changes work?"

@@ -19,6 +19,7 @@ import { setAvailabilityRange } from '../../store/availabilityActions'
 import { alertOffice } from '../../store/officeAlertActions'
 import { ANAE, SEED_LIST_IDS, SEED_MARKERS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
 import { stagedSouterBooking } from '../../store/eventDemo'
+import { deliverPaymentWebhook } from '../../store/paymentActions'
 import { BILLING_MONITOR_SCREEN, DEMO_TRIGGERS, POST_OP_ORIGINAL_LIST_ID } from './registry'
 import { projectedListId } from '../../domain/slots'
 import { demoTriggersFor, groupTriggersByScreen, initialChoice } from './match'
@@ -63,12 +64,30 @@ describe('registry shape', () => {
     expect(DEMO_TRIGGERS.some((t) => t.surfaces.includes('bar') && /run payables/i.test(t.label))).toBe(false)
   })
 
-  it('the labels with "payables": the Xero pair\'s bill payment and the PWA-only office stand-in, renamed for Xero (catch-up Phase 37)', () => {
+  it('the only label with "payables" is the Xero pair\'s bill payment (catch-up Phase 37); the PWA stand-in runs the office\'s weekly cycle and avoids the word (catch-up Phase 39a)', () => {
     const payables = DEMO_TRIGGERS.filter((t) => /payables/i.test(t.label))
-    expect(payables.map((t) => [t.id, t.label, t.surfaces, t.badge])).toEqual([
-      ['xero-pay-bill', 'Pay anaesthetist in Xero (payables run)', ['bar'], undefined],
-      ['pwa-office-runs-payables', 'Office runs payables in Xero', ['pwa'], 'office-stand-in'],
-    ])
+    expect(payables.map((t) => [t.id, t.label, t.surfaces, t.badge])).toEqual([['xero-pay-bill', 'Pay anaesthetist in Xero (payables run)', ['bar'], undefined]])
+    const standIn = DEMO_TRIGGERS.find((t) => t.id === 'pwa-office-runs-payables')!
+    expect([standIn.label, standIn.surfaces, standIn.badge]).toEqual(["Office runs this week's payment cycle", ['pwa'], 'office-stand-in'])
+  })
+
+  it("the PWA stand-in runs this week's cycle: disabled with nothing due, then pays Dr Souter what was released through a weekly run", () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    const standIn = DEMO_TRIGGERS.find((t) => t.id === 'pwa-office-runs-payables')!
+    const ctx = ctxFor('/mobile/balances')
+    expect(standIn.disabledReason(api.getState(), ctx)).toBe('Nothing due to pay out')
+    const s = api.getState()
+    const bill = Object.values(s.xero.accPays).find((p) => p.anaesthetistId === ANAE.souter && p.payeeAccount !== 'aaHoldingAccount' && s.xero.accRecs[p.accRecId]?.status === 'awaitingPayment')!
+    const rec = s.xero.accRecs[bill.accRecId]!
+    expect(deliverPaymentWebhook(api, { accRecId: rec.id, amount: rec.amountDue - rec.amountReceived, idempotencyKey: 'PWA-CYCLE' }).ok).toBe(true)
+    expect(standIn.disabledReason(api.getState(), ctx)).toBeNull()
+    const out = standIn.run(api, ctx)
+    expect(out.ok, out.message).toBe(true)
+    expect(out.message).toMatch(/^The office ran Week 30's payment cycle and the accountant paid it in Xero: \$[\d,]+\.\d\d to Dr Souter/)
+    expect(Object.values(api.getState().billing.payablesRuns).some((r) => r.kind === 'week' && r.cycleId === '2026-W30' && r.status === 'paid')).toBe(true)
+    expect(standIn.disabledReason(api.getState(), ctx)).toBe('Nothing due to pay out')
+    unwire()
   })
 
   it('every bar entry\'s Open screen link lands where the entry is visible', () => {
@@ -121,10 +140,37 @@ const PINNED_XERO_INVOICES = ['xero-outage-start', 'xero-outage-restore', 'run-r
 const PINNED_XERO_BANK = PINNED_XERO_INVOICES
 
 describe('route scoping', () => {
-  it('the Billing monitor shows exactly its eight entries (catch-up Phase 37 adds the outage pair, 38b the next billing run, 39 the refund after payout); routes match the path, so search params never change them', () => {
+  it('the Billing monitor shows exactly its ten entries (catch-up Phase 37 adds the outage pair, 38b the next billing run, 39 the refund after payout, 39a the payment week and the bank mismatch); routes match the path, so search params never change them', () => {
     const api = createAppStore()
-    const eight = ['billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job', 'run-next-billing-run', 'stage-refund-after-payout']
-    expect([...ids(api, '/admin/billing')].sort()).toEqual([...eight].sort())
+    const ten = ['billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job', 'run-next-billing-run', 'stage-refund-after-payout', 'stage-payment-week', 'stage-bank-mismatch']
+    expect([...ids(api, '/admin/billing')].sort()).toEqual([...ten].sort())
+  })
+
+  it('"Stage a payment week" and "Stage a bank mismatch": choices, disabled states and results (catch-up Phase 39a)', () => {
+    const api = createAppStore()
+    const week = byId('stage-payment-week')
+    const mismatch = byId('stage-bank-mismatch')
+    const ctx = ctxFor('/admin/billing')
+    expect(week.choices!(api.getState(), ctx).map((c) => c.label)).toEqual(['19 BCTIs', '19 BCTIs and a credit after payout'])
+    expect(mismatch.disabledReason(api.getState(), ctx)).toBe('Nothing received this week')
+    const out = week.run(api, ctx, 'bctis')
+    expect(out).toMatchObject({ ok: true, message: '19 payables released for Dr Sharma into Week 30. Close the week to start the run.' })
+    expect(week.disabledReason(api.getState(), ctx)).toBe('Already staged for this week')
+    expect(mismatch.disabledReason(api.getState(), ctx)).toBeNull()
+    expect(mismatch.run(api, ctx).message).toMatch(/^The bank download is missing the receipt for AA-2026-PP\d\d\. Close the week to see the anomaly\.$/)
+  })
+
+  it('"Pay anaesthetist in Xero" pays a bill only as a line of a scheduled run (catch-up Phase 39a)', () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    const t = byId('xero-pay-bill')
+    const s = api.getState()
+    const bill = Object.values(s.xero.accPays).find((p) => p.anaesthetistId === ANAE.souter && p.payeeAccount !== 'aaHoldingAccount' && s.xero.accRecs[p.accRecId]?.status === 'awaitingPayment')!
+    const rec = s.xero.accRecs[bill.accRecId]!
+    expect(deliverPaymentWebhook(api, { accRecId: rec.id, amount: rec.amountDue - rec.amountReceived, idempotencyKey: 'PAY-BILL-GATE' }).ok).toBe(true)
+    const ctx = ctxFor(`/demo/xero/invoices/${rec.id}`, { accRecId: rec.id })
+    expect(t.disabledReason(api.getState(), ctx)).toBe('Not in an approved payment run yet')
+    unwire()
   })
 
   it('the Xero outage pair, and the pair-only Xero actions, are bar-only with working disabled states (catch-up Phase 37)', () => {
@@ -1195,7 +1241,9 @@ describe('credit entries (catch-up Phase 39 session 2)', () => {
     expect(t.disabledReason(api.getState(), monitor)).toBeNull()
     const out = t.run(api, monitor)
     unwire()
-    expect(out).toMatchObject({ ok: true, message: 'Paid in full and paid out to Dr Sharma in Xero. Credit it to see the negative invoice.' })
+    expect(out).toMatchObject({ ok: true, message: "Paid in full, approved for payment and paid out to Dr Sharma in Xero. Credit it to see the negative invoice. Once credited, the negative invoice is netted in Dr Sharma's next payment run." })
+    // The payout went through a one-line staged run the office approved (no back door).
+    expect(Object.values(api.getState().billing.payablesRuns).filter((r) => r.kind === 'staged')).toEqual([expect.objectContaining({ status: 'paid', cycleId: '2026-W30' })])
     const invoiceId = out.link!.to.split('/').pop()!
     expect(t.disabledReason(api.getState(), monitor)).toBe('Already paid out')
     expect(t.disabledReason(api.getState(), ctxFor(`/admin/invoices/${invoiceId}`, { invoiceId }))).toBe('Already paid out')

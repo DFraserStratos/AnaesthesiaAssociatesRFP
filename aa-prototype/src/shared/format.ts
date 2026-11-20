@@ -14,6 +14,7 @@
 
 import { ageInCompletedYears } from '../domain/billing/modifiers'
 import { validateNhi } from '../domain/nhi'
+import { formatMoney as formatMoneyOf } from '../domain/billing/money'
 import { nameWithoutTitle } from '../domain/names'
 import type { BookingSource, Hospital, InvoiceDescriptionOrigin, List, ProcedureTextSource, Surgeon } from '../domain/types'
 
@@ -41,6 +42,19 @@ export {
 
 /** NZ dollars: "$3,100.00" (`formatCurrency` is the name the screens already call). Typed money: `parseAmount`. */
 export { formatMoney, formatMoney as formatCurrency, parseAmount, parseAmountOrNaN } from '../domain/billing/money'
+
+/**
+ * A signed amount (catch-up Phase 39a): "-$120.00" with a hyphen-minus for a
+ * negative, "$120.00" otherwise, never "$-120.00", never an en dash or a
+ * U+2212 minus. Every negative in the payment cycle, the schedule and the
+ * remittance advice renders through it. A thin wrapper over `formatMoney`'s
+ * `sign`, not a second formatter.
+ */
+export function formatSignedCurrency(amount: number): string {
+  // A negative zero (-0, or a negative that rounds to zero) prints "$0.00", never "$-0.00".
+  if (Math.round(Math.abs(amount) * 100) === 0) return formatMoneyOf(0)
+  return amount < 0 ? formatMoneyOf(amount, { sign: 'always' }) : formatMoneyOf(amount)
+}
 export type { MoneyFormat } from '../domain/billing/money'
 
 /** A whole count with thousands separators: 28114 → "28,114" (catch-up Phase 43's scale figures). Locale-independent. */

@@ -12,14 +12,23 @@ import {
   payBillsInXero,
   runReconciliationPoll,
   setXeroOutage,
+  stagePairRun,
   voidAccRecInXero,
   wireBillingRun,
 } from '../../store'
-import type { Actor, AppState } from '../../store'
+import type { Actor, AppState, BoundAppStore } from '../../store'
 import { xeroInvoicePairViews } from './xeroPairView'
 import { projectedListId } from '../../domain/slots'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
+
+/** Stage a one-line approved run for the pair whose bill this is (catch-up Phase 39a: Xero pays only a run's lines). */
+function stagedRunFor(api: BoundAppStore, accPayId: string): string {
+  const pair = Object.values(api.getState().billing.ledger).find((p) => p.kind !== 'aaFee' && p.payable?.xeroAccPayId === accPayId)!
+  const staged = stagePairRun(api, OFFICE, pair.id)
+  if (!staged.ok) throw new Error(staged.message)
+  return staged.value.runId
+}
 
 function stagedS3State(): AppState {
   const api = createAppStore()
@@ -131,7 +140,7 @@ describe('Xero invoice-pair view: the Xero side and the engine side (catch-up Ph
     const api = stagedS3Api()
     const start = nibPair(api.getState())
     expect(deliverPaymentWebhook(api, { accRecId: start.accRec.id, amount: start.accRec.balance, idempotencyKey: 'TEST-PAY' }).ok).toBe(true)
-    const paid = payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId: start.accPay!.id }], { webhook: 'missed' })
+    const paid = payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId: start.accPay!.id }], { webhook: 'missed', runId: stagedRunFor(api, start.accPay!.id) })
     if (!paid.ok) throw new Error(paid.message)
 
     const missed = nibPair(api.getState()).accPay!.billPayments
@@ -153,7 +162,7 @@ describe('Xero invoice-pair view: the Xero side and the engine side (catch-up Ph
     const start = nibPair(api.getState())
     expect(deliverPaymentWebhook(api, { accRecId: start.accRec.id, amount: start.accRec.balance, idempotencyKey: 'TEST-PAY' }).ok).toBe(true)
     expect(setXeroOutage(api, DEMO_TRIGGER_ACTOR, true).ok).toBe(true)
-    expect(payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId: start.accPay!.id }], { webhook: 'deliver' }).ok).toBe(true)
+    expect(payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId: start.accPay!.id }], { webhook: 'deliver', runId: stagedRunFor(api, start.accPay!.id) }).ok).toBe(true)
     expect(nibPair(api.getState()).accPay!.billPayments[0]!.engine).toEqual({ state: 'queued' })
 
     expect(setXeroOutage(api, DEMO_TRIGGER_ACTOR, false).ok).toBe(true)

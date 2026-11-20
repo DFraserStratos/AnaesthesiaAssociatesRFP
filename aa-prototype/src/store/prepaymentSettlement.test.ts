@@ -16,7 +16,7 @@ import { addProcedure } from './bookingActions'
 import { slotIdFor } from '../domain/slots'
 import { PRICED_ITEM } from '../domain/seed/pricedItems'
 import { receivePayment } from './paymentActions'
-import { disbursePayable, payablesDue, runPayables } from './payablesActions'
+import { approveAndPayPairForDemo, disbursePayable, payablesDue, runThisWeeksCycle } from './payablesActions'
 import { armHandoffFault } from './demoSettingsActions'
 import { postTransferJournal } from './xeroHandoff'
 import { settlePrepaymentsForList } from './prepaymentSettlement'
@@ -91,7 +91,9 @@ describe('held in the AA Holding account', () => {
     const held = api.getState().billing.ledger.BC0001
     expect(held?.kind === 'prePayment' && held.payable?.xeroAccPayId).toBe('XPB0')
     expect(disbursePayable(api, OFFICE, 'BC0001')).toMatchObject({ ok: false, code: 'holdingSystemOnly', message: HOLDING_SYSTEM_ONLY })
-    expect(runPayables(api, OFFICE)).toMatchObject({ ok: true, value: { disbursedCount: 0 } })
+    expect(approveAndPayPairForDemo(api, OFFICE, 'BC0001')).toMatchObject({ ok: false, code: 'holdingSystemOnly', message: HOLDING_SYSTEM_ONLY })
+    // (catch-up Phase 39a: the held payable is never a line of the weekly cycle, so there is nothing due to run.)
+    expect(runThisWeeksCycle(api, OFFICE)).toMatchObject({ ok: false, code: 'nothingDue' })
     expect(api.getState().xero.accPays.XPB0).toMatchObject({ amountDisbursed: 0, status: 'authorised' })
   })
 
@@ -101,7 +103,8 @@ describe('held in the AA Holding account', () => {
     pay(invoiceId!, 690, 'T-RILEY-HALF')
     expect(balance()).toBe(2070)
     expect(payablesDue(api.getState()).count).toBe(0)
-    expect(runPayables(api, OFFICE)).toMatchObject({ ok: true, value: { disbursedCount: 0 } })
+    // (catch-up Phase 39a: nothing due, so the weekly cycle is refused and nothing is paid.)
+    expect(runThisWeeksCycle(api, OFFICE)).toMatchObject({ ok: false, code: 'nothingDue' })
   })
 })
 
@@ -140,7 +143,7 @@ describe('the transfer at authorisation (OQ-125 provisional)', () => {
     // The account falls; exactly the transferred payable is due.
     expect(balance()).toBe(0)
     expect(payablesDue(api.getState())).toEqual({ count: 1, total: 1380, byAnaesthetist: [{ anaesthetistId: '34821', count: 1, total: 1380 }] })
-    const run = runPayables(api, OFFICE)
+    const run = runThisWeeksCycle(api, OFFICE)
     expect(run).toMatchObject({ ok: true, value: { disbursedCount: 1, totalDisbursed: 1380, paidIds: [t.id] } })
     expect(api.getState().billing.transfers[t.id]!.in.disbursedAmount).toBe(1380)
     const dsb = Object.values(api.getState().xero.disbursements).find((d) => d.transferId === t.id)
@@ -172,7 +175,7 @@ describe('the transfer at authorisation (OQ-125 provisional)', () => {
     pay(invoiceId!, 690, 'T-RILEY-REST')
     expect(api.getState().billing.transfers[t.id]!.in.releasedAmount).toBe(1380)
     expect(balance()).toBe(1380)
-    expect(runPayables(api, OFFICE)).toMatchObject({ ok: true, value: { totalDisbursed: 1380 } })
+    expect(runThisWeeksCycle(api, OFFICE)).toMatchObject({ ok: true, value: { totalDisbursed: 1380 } })
     expect(paymentHistoryFor(api.getState(), '34821').find((r) => r.invoiceNumber === api.getState().billing.invoices[invoiceId!]!.invoiceNumber)).toMatchObject({ status: 'paidOut', releasedAmount: 1380, disbursedAmount: 1380 })
   })
 

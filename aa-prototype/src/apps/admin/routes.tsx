@@ -4,6 +4,7 @@ import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from '
 import { neutral, radius, elevation } from '../../theme/tokens'
 import { TextAction } from '../../shared/ui'
 import { RequireEntity } from '../../shell/RequireEntity'
+import { PaymentRunScreen, RemittanceAdviceScreen } from './screens/PaymentRunScreen'
 import { isISODate } from '../../shell/routeParams'
 import { listInSlot, useAppStore, useToday, type NotificationTarget } from '../../store'
 import { DayNav } from './components/DayNav'
@@ -460,6 +461,35 @@ export function AdminAnaesthetistRecordRoute() {
 
 export function AdminAuditRoute() {
   return <AuditViewer />
+}
+
+// ---------------------------------------------------------------------------
+// A payment run and its remittance advices (catch-up Phase 39a): under the
+// Billing monitor in the side nav. An unknown run, or an anaesthetist not paid
+// in it, is a 404.
+// ---------------------------------------------------------------------------
+
+export function AdminPaymentRunRoute() {
+  const { runId = '' } = useParams()
+  const exists = useAppStore((s) => s.billing.payablesRuns[runId] !== undefined)
+  return (
+    <RequireEntity exists={exists}>
+      <PaymentRunScreen key={runId} runId={runId} />
+    </RequireEntity>
+  )
+}
+
+export function AdminRemittanceRoute() {
+  const { runId = '', anaesthetistId = '' } = useParams()
+  const exists = useAppStore((s) => {
+    const run = s.billing.payablesRuns[runId]
+    return run !== undefined && run.status !== 'superseded' && run.approvedAtISO !== undefined && run.byAnaesthetist.some((t) => t.anaesthetistId === anaesthetistId)
+  })
+  return (
+    <RequireEntity exists={exists}>
+      <RemittanceAdviceScreen key={`${runId}:${anaesthetistId}`} runId={runId} anaesthetistId={anaesthetistId} />
+    </RequireEntity>
+  )
 }
 
 /** The Day view's state for a date past the schedule horizon (catch-up Phase 28; FT-01.1). */

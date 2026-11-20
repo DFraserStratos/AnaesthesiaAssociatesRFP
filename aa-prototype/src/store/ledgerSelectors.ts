@@ -178,6 +178,10 @@ function queueWhat(state: BillingState, q: XeroQueueItem): { what: string; pairI
       const note = q.target.creditNoteId !== undefined ? state.billing.creditNotes[q.target.creditNoteId] : undefined
       return { what: `Credit ${number}${note !== undefined ? ` (${note.creditNoteNumber})` : ''} and its new invoices`, ...who }
     }
+    case 'offsetSync': {
+      const payNumber = pair !== undefined && isBookingPair(pair) && pair.payable !== undefined ? pair.payable.number : number
+      return { what: `Record netting on ${payNumber}`, ...who }
+    }
   }
 }
 

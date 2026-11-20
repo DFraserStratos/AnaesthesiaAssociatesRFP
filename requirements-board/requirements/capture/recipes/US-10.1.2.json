@@ -61,8 +61,26 @@
         },
         {
           "state": "disbursed",
-          "caption": "After Xero's payables run pays the bill, the Billing Engine records the disbursement: disbursed to the anaesthetist",
+          "caption": "After the week's payment run is paid in Xero, the Billing Engine records the disbursement: disbursed to the anaesthetist",
           "steps": [
+            {
+              "click": "[data-shot=payment-cycle-close]"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-approve]"
+            },
+            {
+              "click": "[data-shot=payment-cycle-approve]"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-send]"
+            },
+            {
+              "click": "[data-shot=payment-cycle-send]"
+            },
+            {
+              "wait": 400
+            },
             {
               "click": "[data-shot=billing-run-payables-in-xero]"
             },

@@ -87,7 +87,7 @@
     {
       "name": "payables-run",
       "app": "admin",
-      "caption": "Authorised payables awaiting Xero's payables run",
+      "caption": "Released payables wait for this week's payment run",
       "start": "/admin/billing",
       "setup": [
         {
@@ -129,9 +129,13 @@
       ],
       "states": [
         {
-          "steps": [],
+          "steps": [
+            {
+              "wait": "[data-shot=payables-run-draft]"
+            }
+          ],
           "highlight": [
-            "[data-shot=billing-payables-run]"
+            "[data-shot=payables-run-draft]"
           ]
         }
       ]

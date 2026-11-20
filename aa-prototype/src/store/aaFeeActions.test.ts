@@ -13,7 +13,7 @@ import { handoffListPairs as handoffListCases } from './xeroHandoff'
 import { bctiRecords } from './ledgerSelectors'
 import { receivePayment } from './paymentActions'
 import { runReconciliationPoll } from './reconciliationPoll'
-import { payablesDue, runPayables } from './payablesActions'
+import { payablesDue, runThisWeeksCycle } from './payablesActions'
 import { resetDomainState, type Actor } from './mutate'
 import {
   AA_FEE_PAYMENT_ACTOR,
@@ -298,7 +298,7 @@ describe('guards on the procedure money paths', () => {
     expect(moneySnapshot(api)).toEqual(before)
 
     // The run then disburses exactly the payable, nothing deducted.
-    const run = runPayables(api, OFFICE)
+    const run = runThisWeeksCycle(api, OFFICE)
     expect(run.ok && run.value.totalDisbursed).toBe(before.due.total)
   })
 })

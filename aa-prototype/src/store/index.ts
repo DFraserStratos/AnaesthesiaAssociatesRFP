@@ -374,10 +374,12 @@ export { wireReconciliationPoll, runReconciliationPoll, type PollResult } from '
 export { deliverPaymentWebhook, xeroBalanceOf, XERO_SIDE_ACTOR, type PaymentWebhookInput } from './paymentActions'
 export { xeroAvailable, gateFor, XERO_OUTAGE_ERROR, XERO_FAULT_ERROR, XERO_QUEUE_ACTOR } from './xeroGate'
 export { setXeroOutage, processXeroQueue, retryXeroItemNow, wireXeroQueue, type ProcessResult } from './xeroQueue'
-export { recordDisbursement, disbursementKeySeen, DETECTION_ACTOR, type RecordDisbursementInput } from './disbursementDetection'
+export { recordDisbursement, disbursementKeySeen, recordOffset, offsetKeySeen, DETECTION_ACTOR, type RecordDisbursementInput, type RecordOffsetInput } from './disbursementDetection'
 export { flagXeroDivergences, resolveXeroDivergence, DIVERGENCE_OUTCOMES } from './xeroDivergenceActions'
 export {
   payBillsInXero,
+  payRunInXero,
+  type CreditAllocated,
   xeroBillPayable,
   voidAccRecInXero,
   voidInXeroRefusal,
@@ -413,6 +415,12 @@ export {
 export { seedMonthOfBctis, seedBctisDisabledReason, BCTI_SEED_MONTH, BCTI_SEED_TARGET } from './demoBctiSeed'
 export {
   runPayables,
+  nextRunToPay,
+  disbursePayableRefusal,
+  approveAndPayPairForDemo,
+  runThisWeeksCycle,
+  officeRunsCycleRefusal,
+  OFFICE_CYCLE_COPY,
   disbursePayable,
   payablesDue,
   payableLegsDue,
@@ -420,6 +428,10 @@ export {
   type PayablesRunResult,
   type PayablesDue,
 } from './payablesActions'
+// The weekly payment cycle (catch-up Phase 39a; US-10.2.7, US-10.2.6, US-10.2.5).
+export * from './paymentCycleActions'
+export * from './remittanceSelectors'
+export { stagePaymentWeek, stagePaymentWeekRefusal, stageBankMismatch, stageBankMismatchRefusal, PAYMENT_WEEK_CHOICES, PAYMENT_WEEK_COPY } from './paymentWeekDemo'
 export { runArchiveJob, eligibleArchiveContactIds, wireArchiveJob, ARCHIVE_SKIPPED_OUTAGE, type ArchiveJobResult } from './archiveActions'
 export {
   advanceClockMinutes,

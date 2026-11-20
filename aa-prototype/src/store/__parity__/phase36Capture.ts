@@ -32,7 +32,7 @@ import { authoriseList, reassignBooking, submitList } from '../lifecycle'
 import { completeAnswered } from '../../test/completeAnswered'
 import { approveAllPrepayments, TEST_OFFICE } from '../../test/approvePrepayments'
 import { receivePayment } from '../paymentActions'
-import { payablesDue, runPayables } from '../payablesActions'
+import { payablesDue, runThisWeeksCycle } from '../payablesActions'
 import { stageBillingFailure } from '../demoStaging'
 import { handoffPair } from '../xeroHandoff'
 import { processXeroQueue } from '../xeroQueue'
@@ -239,7 +239,9 @@ function pay(api: BoundAppStore, invoiceNumber: string, amount: number, key: str
 }
 
 function run(api: BoundAppStore) {
-  const out = runPayables(api, OFFICE)
+  // (catch-up Phase 39a: the office's weekly cycle; nothing due is a refusal now, which paid nothing before too.)
+  const out = runThisWeeksCycle(api, OFFICE)
+  if (!out.ok && out.code === 'nothingDue') return { count: 0, total: 0 }
   return out.ok ? { count: out.value.disbursedCount, total: out.value.totalDisbursed } : { count: -1, total: -1 }
 }
 

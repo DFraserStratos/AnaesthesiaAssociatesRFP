@@ -24,7 +24,7 @@
  */
 
 import { idempotencyKeysOf } from './indexes'
-import type { LedgerPair, LedgerReceipt, LedgerTransfer, PaymentIn, UnmatchedReceipt, XeroAccPay, XeroAccRec } from '../domain/types'
+import type { BankLine, LedgerPair, LedgerReceipt, LedgerTransfer, PaymentIn, UnmatchedReceipt, XeroAccPay, XeroAccRec } from '../domain/types'
 import { roundToCents, toCents } from '../domain/billing/money'
 import { payableReleasedFor } from '../domain/billing/payableRelease'
 import { applyReceipt, gstComponentOf, isBookingPair, isCreditedPair, payeeAnaesthetistOf, transferOfPair } from '../domain/billing/ledger'
@@ -35,6 +35,16 @@ import { enqueueXeroWork, XERO_OUTAGE_ERROR, xeroAvailable } from './xeroGate'
 import { CREDIT_MESSAGES } from '../shared/procedureEventCopy'
 
 export { gstComponentOf }
+
+/**
+ * One line of the simulated bank download (catch-up Phase 39a): written beside
+ * every payment Xero records, in the same mutate, standing in for AA's daily
+ * bank download. The week's close reconciles its receipts against these.
+ */
+export function bankLineFor(counters: Record<string, number>, input: { dateISO: string; amount: number; reference: string; xeroPaymentId: string }): { line: BankLine; counters: Record<string, number> } {
+  const id = allocateId(counters, 'bankDownloadLine')
+  return { line: { id: id.id, dateISO: input.dateISO.slice(0, 10), amount: input.amount, reference: input.reference, xeroPaymentId: input.xeroPaymentId }, counters: id.counters }
+}
 
 /** The system actors for the two detection paths (both audit source=system). */
 export const PAYMENT_ACTOR: Record<'webhook' | 'poll', Actor> = {
@@ -139,12 +149,16 @@ export function applyReceiptInto(
   const payments = { ...s.xero.payments }
   const accRecs = { ...s.xero.accRecs }
   const accPays = { ...s.xero.accPays }
+  const bankLines = { ...s.billing.bankLines }
   const recNow = accRecId !== undefined ? s.xero.accRecs[accRecId] : undefined
   if (accRecId !== undefined && recNow !== undefined) {
     if (!idempotencyKeysOf(s.xero.payments).has(w.idempotencyKey)) {
       const pmt = allocateId(c, 'paymentIn')
       c = pmt.counters
       payments[pmt.id] = { id: pmt.id, accRecId, amount: added, atISO: w.atISO, idempotencyKey: w.idempotencyKey, source: w.source } satisfies PaymentIn
+      const bnk = bankLineFor(c, { dateISO: w.atISO, amount: added, reference: recNow.invoiceNumber, xeroPaymentId: pmt.id })
+      c = bnk.counters
+      bankLines[bnk.line.id] = bnk.line
     }
     const newReceived = roundToCents(recNow.amountReceived + added)
     const fullyPaid = toCents(newReceived) >= toCents(recNow.amountDue)
@@ -172,7 +186,7 @@ export function applyReceiptInto(
 
   return {
     patch: {
-      billing: { ...s.billing, ledger, transfers, receipts: { ...s.billing.receipts, [rct.id]: receipt } },
+      billing: { ...s.billing, ledger, transfers, receipts: { ...s.billing.receipts, [rct.id]: receipt }, bankLines },
       xero: { ...s.xero, payments, accRecs, accPays },
     },
     counters: c,
@@ -322,7 +336,9 @@ export function deliverPaymentWebhook(api: AppStoreApi, input: PaymentWebhookInp
       paymentId = allocated.id
       const payment: PaymentIn = { id: allocated.id, accRecId: input.accRecId, amount: roundToCents(input.amount), atISO: input.atISO ?? clockISO(s.clock), idempotencyKey: input.idempotencyKey, source: 'webhook' }
       metas.push({ entityType: 'xeroAccRec', entityId: input.accRecId, action: 'xero.paymentLanded', after: { amount: payment.amount, idempotencyKey: input.idempotencyKey, engineNotified: false } })
-      return { xero: { ...s.xero, payments: { ...s.xero.payments, [allocated.id]: payment } }, counters: allocated.counters }
+      // The money is in the bank whether or not the engine has heard of it (catch-up Phase 39a's bank download).
+      const bnk = bankLineFor(allocated.counters, { dateISO: payment.atISO, amount: payment.amount, reference: accRec.invoiceNumber, xeroPaymentId: payment.id })
+      return { xero: { ...s.xero, payments: { ...s.xero.payments, [allocated.id]: payment } }, billing: { ...s.billing, bankLines: { ...s.billing.bankLines, [bnk.line.id]: bnk.line } }, counters: bnk.counters }
     })
   }
   const pair = pairByAccRec(state, input.accRecId)

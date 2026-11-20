@@ -184,7 +184,7 @@ export interface XeroCorrectionPlan {
  */
 export function xeroCorrectionPlan(
   accRec: Pick<XeroAccRec, 'amountDue' | 'amountReceived'> | undefined,
-  accPay: Pick<XeroAccPay, 'status' | 'amountPayable' | 'amountAuthorised' | 'amountDisbursed'> | undefined,
+  accPay: Pick<XeroAccPay, 'status' | 'amountPayable' | 'amountAuthorised' | 'amountDisbursed' | 'amountCreditAllocated'> | undefined,
   credit: { creditNoteNumber: string; total: number },
 ): XeroCorrectionPlan {
   const total = toCents(credit.total)
@@ -199,7 +199,8 @@ export function xeroCorrectionPlan(
     if (accPay.status === 'draft' && toCents(accPay.amountAuthorised) === 0) pay = { action: 'void' }
     else {
       const payTotal = toCents(accPay.amountPayable)
-      const unpaid = Math.max(0, payTotal - toCents(accPay.amountDisbursed))
+      // Settled already by cash or by a payment run's netting (catch-up Phase 39a): only the rest is still unpaid.
+      const unpaid = Math.max(0, payTotal - toCents(accPay.amountDisbursed) - toCents(accPay.amountCreditAllocated ?? 0))
       const allocated = Math.min(payTotal, unpaid)
       pay = { action: 'credit', creditNoteNumber: `${credit.creditNoteNumber}-P`, total: payTotal / 100, allocated: allocated / 100, unallocated: (payTotal - allocated) / 100 }
     }

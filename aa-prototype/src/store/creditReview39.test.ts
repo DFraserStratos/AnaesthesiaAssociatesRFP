@@ -33,7 +33,7 @@ import { handoffCorrection } from './xeroHandoff'
 import { processXeroQueue, setXeroOutage } from './xeroQueue'
 import { armHandoffFault } from './demoSettingsActions'
 import { runReconciliationPoll } from './reconciliationPoll'
-import { payBillsInXero, XERO_PAYABLES_ACTOR } from './xeroSimActions'
+import { approveAndPayPairForDemo } from './payablesActions'
 import { proceduresForBooking } from './selectors'
 import { clockISO, type Actor } from './mutate'
 import { ANAE, SEED_MARKERS } from '../domain/seed'
@@ -101,7 +101,8 @@ describe('a credit waits while Xero holds money the ledger has not recorded (fin
     const original = stage()
     const pair = pairForInvoice(api.getState(), original.id)!
     expect(receivePayment(api, { accRecId: pair.receivable.xeroAccRecId!, amount: original.total, idempotencyKey: 'paid', source: 'webhook' }).ok).toBe(true)
-    expect(payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId: pair.payable!.xeroAccPayId! }], { webhook: 'missed' }).ok).toBe(true)
+    // (catch-up Phase 39a: paid as an approved one-line run, in Xero, its webhook missed.)
+    expect(approveAndPayPairForDemo(api, OFFICE, pair.id, { webhook: 'missed' }).ok).toBe(true)
     const creditEventId = submitAndApprove({ invoiceId: original.id, reason: 'Wrong amount', cause: 'correction', replacements: [] })
 
     const waiting = runEventInvoicing(api, OFFICE)
@@ -144,22 +145,26 @@ describe('a credit waits while Xero holds money the ledger has not recorded (fin
     receivePayment(api, { accRecId: pair.receivable.xeroAccRecId!, amount: original.total, idempotencyKey: 'paid', source: 'webhook' })
     expect(setXeroOutage(api, OFFICE, true).ok).toBe(true)
     // Xero pays the bill during the outage: its webhook waits in the queue as a disbursementSync.
-    const paid = payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId }], { webhook: 'deliver' })
+    const paid = approveAndPayPairForDemo(api, OFFICE, pair.id, { webhook: 'deliver' })
     const amount = paid.ok ? paid.value.totalPaid : 0
     expect(amount).toBeGreaterThan(0)
     const before = api.getState()
     const sync = Object.values(before.billing.xeroQueue).find((q) => q.kind === 'disbursementSync')!
     const bill = before.xero.disbursements[sync.target.xeroDisbursementId!]!
     const accPay = before.xero.accPays[accPayId]!
-    // The state a credit issued before the wait existed would leave: hide the payout while the credit issues, then put it back.
+    // The state a credit issued before the wait existed would leave: hide the payout (and, since catch-up Phase 39a, the
+    // payment run that paid it, which did not exist then) while the credit issues, then put them back.
+    const runId = paid.ok ? paid.value.payablesRunId! : ''
+    const payingRun = before.billing.payablesRuns[runId]!
     api.setState((s) => {
       const { [sync.id]: _q, ...xeroQueue } = s.billing.xeroQueue
       const { [bill.id]: _d, ...disbursements } = s.xero.disbursements
-      return { billing: { ...s.billing, xeroQueue }, xero: { ...s.xero, disbursements, accPays: { ...s.xero.accPays, [accPayId]: { ...accPay, amountDisbursed: 0, status: 'authorised' } } } }
+      const { [runId]: _r, ...payablesRuns } = s.billing.payablesRuns
+      return { billing: { ...s.billing, xeroQueue, payablesRuns }, xero: { ...s.xero, disbursements, accPays: { ...s.xero.accPays, [accPayId]: { ...accPay, amountDisbursed: 0, status: 'authorised' } } } }
     })
     submitAndApprove({ invoiceId: original.id, reason: 'Wrong amount', cause: 'correction', replacements: [] })
     run()
-    api.setState((s) => ({ billing: { ...s.billing, xeroQueue: { ...s.billing.xeroQueue, [sync.id]: sync } }, xero: { ...s.xero, disbursements: { ...s.xero.disbursements, [bill.id]: bill }, accPays: { ...s.xero.accPays, [accPayId]: accPay } } }))
+    api.setState((s) => ({ billing: { ...s.billing, xeroQueue: { ...s.billing.xeroQueue, [sync.id]: sync }, payablesRuns: { ...s.billing.payablesRuns, [runId]: payingRun } }, xero: { ...s.xero, disbursements: { ...s.xero.disbursements, [bill.id]: bill }, accPays: { ...s.xero.accPays, [accPayId]: accPay } } }))
 
     expect(setXeroOutage(api, OFFICE, false).ok).toBe(true)
     const s = api.getState()

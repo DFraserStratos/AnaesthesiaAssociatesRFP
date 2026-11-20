@@ -131,6 +131,8 @@ export const EVENT_MESSAGES = {
 /** Store sentences for a credit (catch-up Phase 39; US-08.6.5, OQ-97). No en or em dash. */
 export const CREDIT_MESSAGES = {
   invoiceNotFound: 'Invoice not found.',
+  /** Catch-up Phase 39a: Xero is paying this invoice's payable in a payment run; the credit waits for the run. */
+  inPaymentRun: (week: string) => `Being paid in ${week}'s payment run. Credit it once the run is paid.`,
   reasonRequired: 'Give a reason for the credit.',
   notOwnProcedure: 'You can only credit invoices for your own procedures.',
   splitOfficeOnly: 'Only the office can split an invoice into additional invoices.',
@@ -419,7 +421,7 @@ export const CREDIT_DEMO_COPY = {
   alreadyPaidOut: 'Already paid out',
   kindNotHere: 'AA fee and prepayment invoices are not credited here',
   /** "Paid in full and paid out to Dr Sharma in Xero. Credit it to see the negative invoice." (Phase 37: payouts are made in Xero.) */
-  paidOut: (dr: string) => `Paid in full and paid out to ${dr} in Xero. Credit it to see the negative invoice.`,
+  paidOut: (dr: string) => `Paid in full, approved for payment and paid out to ${dr} in Xero. Credit it to see the negative invoice. Once credited, the negative invoice is netted in ${dr}'s next payment run.`,
   noCreditAwaiting: 'No credit on this Booking is awaiting review',
   /** "Approved by the office and issued in the next billing run (CN-2026-0001)." */
   creditIssued: (number: string) => `Approved by the office and issued in the next billing run (${number}).`,

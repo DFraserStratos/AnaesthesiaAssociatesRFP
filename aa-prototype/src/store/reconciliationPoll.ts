@@ -18,7 +18,7 @@
  */
 
 import { receivePayment } from './paymentActions'
-import { disbursementKeySeen, recordDisbursement } from './disbursementDetection'
+import { disbursementKeySeen, offsetKeySeen, recordDisbursement, recordOffset } from './disbursementDetection'
 import { flagXeroDivergences } from './xeroDivergenceActions'
 import { enqueueXeroWork, XERO_OUTAGE_ERROR, xeroAvailable } from './xeroGate'
 import type { AppStoreApi } from './appStore'
@@ -31,6 +31,8 @@ export interface PollResult {
   disbursements: number
   /** Voids and amendments newly flagged. */
   divergences: number
+  /** Credit allocations (payment-run netting) newly recorded (catch-up Phase 39a). */
+  offsets: number
   /** True when Xero was unavailable and the poll waits in the queue. */
   queued?: boolean
 }
@@ -39,7 +41,7 @@ export interface PollResult {
 export function runReconciliationPoll(api: AppStoreApi): PollResult {
   if (!xeroAvailable(api.getState())) {
     enqueueXeroWork(api, { kind: 'poll', idempotencyKey: `POLL-${api.getState().clock.todayISO}`, target: {}, lastError: XERO_OUTAGE_ERROR })
-    return { payments: 0, disbursements: 0, divergences: 0, queued: true }
+    return { payments: 0, disbursements: 0, divergences: 0, offsets: 0, queued: true }
   }
   const state = api.getState()
   const mirroredKeys = new Set(Object.values(state.billing.receipts).map((r) => r.idempotencyKey))
@@ -80,8 +82,16 @@ export function runReconciliationPoll(api: AppStoreApi): PollResult {
     if (outcome.ok && outcome.value.applied) disbursements += 1
   }
 
+  // Credit allocations (catch-up Phase 39a): every netting Xero made that the engine has not recorded, dated when Xero made it.
+  let offsets = 0
+  for (const a of Object.values(api.getState().xero.creditAllocations).sort((x, y) => x.id.localeCompare(y.id))) {
+    if (offsetKeySeen(api.getState(), a.idempotencyKey)) continue
+    const outcome = recordOffset(api, { accPayId: a.accPayId, accPayCreditId: a.accPayCreditId, xeroAllocationId: a.id, amount: a.amount, atISO: a.atISO, idempotencyKey: a.idempotencyKey, detectedBy: 'poll', payablesRunId: a.payablesRunId })
+    if (outcome.ok && outcome.value.applied) offsets += 1
+  }
+
   const divergences = flagXeroDivergences(api)
-  return { payments, disbursements, divergences }
+  return { payments, disbursements, divergences, offsets }
 }
 
 /**

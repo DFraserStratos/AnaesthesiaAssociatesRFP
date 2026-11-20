@@ -7,6 +7,7 @@ import { ProcedureStackExample } from './procedureStackExample'
 import { FunderDetailsExample, PayerFieldsExample } from './payerExamples'
 import { PaidByRowExample, PaidBySheetExample, PartyPickerExample } from './splitExamples'
 import { AdditionalInvoiceButtonExample, AdditionalInvoiceSheetExample, AnaesthetistCreditSheetExample, CreditNoteButtonExample, EventSheetsExample, ProcedureEventsListExample } from './eventExamples'
+import { RemittancesTabExample } from './admin/paymentRunExamples'
 
 const W = 'Web'
 const WA = 'Web · Admin'
@@ -147,6 +148,9 @@ export function WebCatalogue() {
           </CatalogueRow>
           <CatalogueRow name="Accounts tables (tfoot totals)" source="apps/web/screens/AccountsScreen.tsx" usedIn={W} what="Outstanding, Payments, the GST report and AA fees, each on the table kit (catch-up Phase 38); Outstanding, the GST report and AA fees close with totals in a tfoot. Outstanding rows open their Booking; the GST report has a month picker and Download, Print and Email to me." replaceWith="TanStack Table + shadcn Table (footer)" note="The real AccountsScreen. Its sub-tabs are the shared LineTabLink (catch-up Phase 38 migrated SubTabButton), real links to /web/accounts/*, so a tab here leaves the catalogue. Totals rows have no row headers." height={560}>
             <D.AccountsDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="RemittancesTab / StillToNetPanel" source="apps/web/screens/RemittancesTab.tsx" usedIn={W} what="Accounts · Remittances (catch-up Phase 39a; US-10.2.5): the anaesthetist's remittance advices, newest first (week, paid on, BCTIs, netted, paid to you, status), a row opening the same advice the office sees in a sheet; above it, only while a negative invoice is open, what is still to net." replaceWith="TanStack Table + shadcn Table + Sheet" note="On the shared Card (flush), TableShell (bare), ClickableRow, Pill, Notice and the surface Overlay; the advice is the shared RemittanceAdviceDocument. Reads the ledger only, never Xero (money-view purity). Dr Souter's backdrop weekly runs here." height={480}>
+            <RemittancesTabExample />
           </CatalogueRow>
           <CatalogueRow name="List detail Bookings table" source="shared/table/" usedIn={W} what="A List's Bookings with time, patient and NHI, procedure, units, fee and status, then a totals row; plus the page's actions and panels." replaceWith="TanStack Table + shadcn Table" note="The real ListDetailView in a scrolling stage, on the shared table kit (U6) inside a flush panel Card (TableShell bare). The patient's name is each row's RowOpenButton; the row click stays for the mouse. Move, alert and add a booking open real flows that change the demo data." height={700}>
             <D.ListDetailDemo f={f} />

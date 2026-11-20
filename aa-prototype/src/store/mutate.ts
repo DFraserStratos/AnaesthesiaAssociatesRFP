@@ -163,6 +163,10 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   creditNoteNumber: { prefix: 'CN-2026-', pad: 4 },
   negativeInvoice: { prefix: 'NEG', pad: 4 },
   xeroCreditNote: { prefix: 'XCN', pad: 4 },
+  // Catch-up Phase 39a: the simulated bank download (not Xero's own bank lines, `bankLine` above), credit allocations and batch payments.
+  bankDownloadLine: { prefix: 'BNK', pad: 4 },
+  creditAllocation: { prefix: 'XCA', pad: 4 },
+  batchPayment: { prefix: 'XBP', pad: 4 },
 }
 
 /** Allocate the next deterministic id of a kind from the counters record. */
@@ -501,6 +505,9 @@ function resetDomainStateOnly(api: AppStoreApi): void {
       // No credit notes or negative invoices in the seed (catch-up Phase 39).
       creditNotes: {},
       negativeInvoices: {},
+      // The backdrop weekly runs and the bank download (catch-up Phase 39a).
+      payablesRuns: seedBilling.payablesRuns,
+      bankLines: seedBilling.bankLines,
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),

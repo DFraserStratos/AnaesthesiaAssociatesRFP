@@ -41,6 +41,7 @@ import type {
   IsoDateTime,
   LedgerPair,
   LedgerTransfer,
+  PairCredit,
   PayableLeg,
   PayeeRef,
   ProcedureShare,
@@ -278,9 +279,14 @@ export function applyReceipt<P extends LedgerPair>(pair: P, amount: number, atIS
   }
 }
 
-/** What a payable leg has to pay out now: released less paid out. */
-export function dueOn(leg: Pick<PayableLeg, 'releasedAmount' | 'disbursedAmount'>): number {
-  return roundToCents(leg.releasedAmount - leg.disbursedAmount)
+/** What a payable leg has to pay out now: released less paid out less netted (catch-up Phase 39a). */
+export function dueOn(leg: Pick<PayableLeg, 'releasedAmount' | 'disbursedAmount' | 'offsetAmount'>): number {
+  return roundToCents(leg.releasedAmount - leg.disbursedAmount - (leg.offsetAmount ?? 0))
+}
+
+/** What a payable leg has settled: paid out in cash plus netted (catch-up Phase 39a). */
+export function settledOn(leg: Pick<PayableLeg, 'disbursedAmount' | 'offsetAmount'>): number {
+  return roundToCents(leg.disbursedAmount + (leg.offsetAmount ?? 0))
 }
 
 export type DisbursementRefusal = 'holdingSystemOnly' | 'aboveReleased' | 'invalidAmount' | 'pairCredited'
@@ -297,8 +303,30 @@ export function applyDisbursement(leg: PayableLeg, amount: number, atISO: IsoDat
   if (!Number.isFinite(amount) || toCents(amount) <= 0) return { ok: false, code: 'invalidAmount' }
   if (toCents(amount) > toCents(dueOn(leg))) return { ok: false, code: 'aboveReleased' }
   const disbursed = roundToCents(leg.disbursedAmount + amount)
-  const full = toCents(disbursed) >= toCents(leg.amount)
+  const full = toCents(disbursed) + toCents(leg.offsetAmount ?? 0) >= toCents(leg.amount)
   return { ok: true, leg: { ...leg, disbursedAmount: disbursed, ...(full && leg.paidOutAtISO === undefined ? { paidOutAtISO: atISO } : {}) } }
+}
+
+/**
+ * Settle part of a payable by netting a negative invoice against it in a
+ * payment run (catch-up Phase 39a; US-10.2.5): `offsetAmount` rises, never
+ * cash. Refused above what is released and not yet settled, on the AA Holding
+ * account and on a reversed payable. Stamps `paidOutAtISO` when cash plus
+ * netted reaches the amount.
+ */
+export function applyOffset(leg: PayableLeg, amount: number, atISO: IsoDateTime): { ok: true; leg: PayableLeg } | { ok: false; code: DisbursementRefusal } {
+  if (isHoldingLeg(leg)) return { ok: false, code: 'holdingSystemOnly' }
+  if (leg.reversedAmount !== undefined) return { ok: false, code: 'pairCredited' }
+  if (!Number.isFinite(amount) || toCents(amount) <= 0) return { ok: false, code: 'invalidAmount' }
+  if (toCents(amount) > toCents(dueOn(leg))) return { ok: false, code: 'aboveReleased' }
+  const offset = roundToCents((leg.offsetAmount ?? 0) + amount)
+  const full = toCents(leg.disbursedAmount) + toCents(offset) >= toCents(leg.amount)
+  return { ok: true, leg: { ...leg, offsetAmount: offset, ...(full && leg.paidOutAtISO === undefined ? { paidOutAtISO: atISO } : {}) } }
+}
+
+/** What is still open to net on a credited pair: its `recoveryDue` less what runs have netted (catch-up Phase 39a). */
+export function recoveryOpenOn(credit: Pick<PairCredit, 'recoveryDue' | 'nettedAmount'>): number {
+  return roundToCents(credit.recoveryDue - (credit.nettedAmount ?? 0))
 }
 
 // ---------------------------------------------------------------------------
@@ -328,7 +356,7 @@ export function applyCredit(
     pair: {
       ...pair,
       receivable: { ...pair.receivable, creditedAmount: plan.receivableCredited },
-      ...(payable !== undefined ? { payable: { ...payable, reversedAmount: plan.negativeInvoiceTotal, releasedAmount: payable.disbursedAmount } } : {}),
+      ...(payable !== undefined ? { payable: { ...payable, reversedAmount: plan.negativeInvoiceTotal, releasedAmount: settledOn(payable) } } : {}),
       credit: { creditNoteId: ref.creditNoteId, negativeInvoiceId: ref.negativeInvoiceId, atISO: ref.atISO, heldForPayer: plan.heldForPayer, recoveryDue: plan.recoveryDue },
     },
   }
@@ -349,7 +377,8 @@ export function pairStatusLabel(pair: LedgerPair, transfer?: LedgerTransfer, wai
   if (isCreditedPair(pair)) return 'credited'
   if (!isInXero(pair)) return waitingForXero ? 'waitingForXero' : 'invoiced'
   const out = isBookingPair(pair) ? (transfer?.in ?? pair.payable) : undefined
-  if (out !== undefined && toCents(out.disbursedAmount) > 0) return toCents(out.disbursedAmount) >= toCents(out.amount) ? 'disbursed' : 'partPaidOut'
+  // Settled by cash or netting (catch-up Phase 39a): a leg settled partly by a netted negative reads paid out.
+  if (out !== undefined && toCents(settledOn(out)) > 0) return toCents(settledOn(out)) >= toCents(out.amount) ? 'disbursed' : 'partPaidOut'
   if (toCents(pair.receivable.receivedAmount) >= toCents(pair.receivable.amount)) return 'paid'
   return toCents(pair.receivable.receivedAmount) > 0 ? 'partPaid' : 'handedOff'
 }
@@ -379,7 +408,7 @@ function checksForPair(pair: BookingLedgerPair, transfer: LedgerTransfer | undef
   if (toCents(p.amount) !== toCents(r.amount)) out.push({ code: 'pairAmountMismatch', amount: roundToCents(p.amount - r.amount), targetId: pair.id, ...who })
   if (transfer === undefined) {
     // A credited pair's release was cut to what was paid out (catch-up Phase 39).
-    const expected = pair.credit !== undefined ? p.disbursedAmount : payableReleasedFor(r.receivedAmount, p.amount)
+    const expected = pair.credit !== undefined ? settledOn(p) : payableReleasedFor(r.receivedAmount, p.amount)
     if (toCents(p.releasedAmount) !== toCents(expected)) out.push({ code: 'releasedNotReceived', amount: roundToCents(p.releasedAmount - expected), targetId: pair.id, ...who })
   } else {
     const expected = payableReleasedFor(r.receivedAmount, transfer.in.amount)
@@ -387,7 +416,7 @@ function checksForPair(pair: BookingLedgerPair, transfer: LedgerTransfer | undef
     if (toCents(transfer.in.releasedAmount) !== toCents(expected)) out.push({ code: 'releasedNotReceived', amount: roundToCents(transfer.in.releasedAmount - expected), targetId: transfer.id, ...(to !== undefined ? { anaesthetistId: to } : {}) })
     if (toCents(transfer.out.amount) !== toCents(p.releasedAmount)) out.push({ code: 'transferMismatch', amount: roundToCents(p.releasedAmount - transfer.out.amount), targetId: transfer.id, ...(to !== undefined ? { anaesthetistId: to } : {}) })
   }
-  if (toCents(p.disbursedAmount) > toCents(p.releasedAmount)) out.push({ code: 'disbursedAboveReleased', amount: roundToCents(p.disbursedAmount - p.releasedAmount), targetId: pair.id, ...who })
+  if (toCents(settledOn(p)) > toCents(p.releasedAmount)) out.push({ code: 'disbursedAboveReleased', amount: roundToCents(settledOn(p) - p.releasedAmount), targetId: pair.id, ...who })
   return out
 }
 
@@ -482,7 +511,8 @@ export function ledgerPosition(pairs: readonly LedgerPair[], transfers: Readonly
     received.add(r.receivedAmount)
     if (pair.credit !== undefined) {
       creditsHeld.add(pair.credit.heldForPayer)
-      recoveryDue.add(pair.credit.recoveryDue)
+      // Net of what payment runs have netted (catch-up Phase 39a): each netting lowers it by exactly the offset it adds to a bill.
+      recoveryDue.add(recoveryOpenOn(pair.credit))
     }
     const p = pair.payable
     if (p === undefined) continue
@@ -539,7 +569,7 @@ export interface AnaesthetistPosition {
   theyOweAa: number
   /** Held receipts attributed to them. */
   unmatchedHeld: number
-  /** Paid out to them on invoices since credited: left to net in their next payment run (catch-up Phase 39; 39a nets it). */
+  /** Paid out to them on invoices since credited, less what payment runs have netted: still to net in their next payment run (catch-up Phases 39, 39a; OQ-71: with no later payment, AA settles it outside the system). */
   recoveryDue: number
   /** Their receipts held (with `unmatchedHeld`) less their payables due, less what is held for payers on their credited invoices, plus their `recoveryDue`. */
   imbalance: number
@@ -579,7 +609,7 @@ export function anaesthetistPosition(
     awaiting.add(awaitingOn(p))
     if (pair.credit !== undefined) {
       heldForPayers.add(pair.credit.heldForPayer)
-      recovery.add(pair.credit.recoveryDue)
+      recovery.add(recoveryOpenOn(pair.credit))
     }
   }
   for (const t of Object.values(transfers)) {

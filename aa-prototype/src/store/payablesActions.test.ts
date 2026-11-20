@@ -14,7 +14,7 @@ import { authoriseList, submitList } from './lifecycle'
 import { runBillingForList, wireBillingRun } from './billingRun'
 import { handoffListPairs } from './xeroHandoff'
 import { receivePayment } from './paymentActions'
-import { disbursePayable, runPayables, payablesDue, type PayablesRunResult } from './payablesActions'
+import { approveAndPayPairForDemo, disbursePayable, runPayables, runThisWeeksCycle, payablesDue, type PayablesRunResult } from './payablesActions'
 import { openAccRecs } from './selectors'
 import { pairsForList } from './ledgerSelectors'
 import { pairStatusLabel } from '../domain/billing/ledger'
@@ -34,7 +34,8 @@ function marker(key: string): string {
   return m.entityId
 }
 function pay(api: BoundAppStore): PayablesRunResult {
-  const res = runPayables(api, OFFICE)
+  // (catch-up Phase 39a: payables are paid only as an approved, scheduled run; this is the office's whole weekly cycle.)
+  const res = runThisWeeksCycle(api, OFFICE)
   if (!res.ok) throw new Error(`payables refused: ${res.message}`)
   return res.value
 }
@@ -62,13 +63,16 @@ function pairOf(api: BoundAppStore, pairId: string) {
 describe('payables run', () => {
   it('is the simulated Xero payables run: audited as Xero whoever presses it, and nothing is paid by the engine (catch-up Phase 37)', () => {
     const api = store()
-    expect(runPayables(api, ANAE_ACTOR)).toMatchObject({ ok: true, value: { billsPaid: 0 } })
+    // (catch-up Phase 39a: with no approved, scheduled run, Xero's run pays nothing: it is refused.)
+    expect(runPayables(api, ANAE_ACTOR)).toMatchObject({ ok: false, code: 'nothingScheduled' })
   })
 
   it('a run with nothing authorised disburses nothing', () => {
     const api = store()
-    const res = runPayables(api, OFFICE)
-    expect(res).toMatchObject({ ok: true, value: { disbursedCount: 0, totalDisbursed: 0 } })
+    // (catch-up Phase 39a: nothing released, so the weekly cycle refuses and nothing is disbursed.)
+    const before = Object.keys(api.getState().xero.disbursements).length
+    expect(runThisWeeksCycle(api, OFFICE)).toMatchObject({ ok: false, code: 'nothingDue' })
+    expect(Object.keys(api.getState().xero.disbursements)).toHaveLength(before)
   })
 
   it('successive partials with a run between pay only the increment (no double-pay)', () => {
@@ -84,7 +88,7 @@ describe('payables run', () => {
     // Partial 1 → authorise exactly p1 → run disburses it.
     expect(receivePayment(api, { accRecId, amount: p1, idempotencyKey: 'A', source: 'webhook' }).ok).toBe(true)
     expect(payablesDue(api.getState()).total).toBe(authorised1)
-    const run1 = runPayables(api, OFFICE)
+    const run1 = runThisWeeksCycle(api, OFFICE)
     expect(run1).toMatchObject({ ok: true, value: { disbursedCount: 1, totalDisbursed: authorised1 } })
     let accPay = api.getState().xero.accPays[accPayId]!
     let c = pairOf(api, pairId)
@@ -96,12 +100,12 @@ describe('payables run', () => {
     expect(c.payable!.paidOutAtISO).toBeUndefined()
     // Nothing new to pay until more is authorised.
     expect(payablesDue(api.getState()).total).toBe(0)
-    expect(pay(api).disbursedCount).toBe(0)
+    expect(runThisWeeksCycle(api, OFFICE)).toMatchObject({ ok: false, code: 'nothingDue' })
 
     // Partial 2 → authorised rises → next run pays ONLY the increment.
     expect(receivePayment(api, { accRecId, amount: p2, idempotencyKey: 'B', source: 'webhook' }).ok).toBe(true)
     expect(payablesDue(api.getState()).total).toBe(authorised2)
-    const run2 = runPayables(api, OFFICE)
+    const run2 = runThisWeeksCycle(api, OFFICE)
     expect(run2).toMatchObject({ ok: true, value: { disbursedCount: 1, totalDisbursed: authorised2 } })
 
     accPay = api.getState().xero.accPays[accPayId]!
@@ -118,8 +122,9 @@ describe('payables run', () => {
     const totalDisbursed = disbursements.reduce((sum, d) => sum + d.amount, 0)
     expect(toCents(totalDisbursed)).toBe(toCents(amountPayable))
 
-    // A run after full disbursement is a no-op.
-    expect(pay(api).disbursedCount).toBe(0)
+    // A run after full disbursement pays nothing (refused: nothing due).
+    expect(runThisWeeksCycle(api, OFFICE)).toMatchObject({ ok: false, code: 'nothingDue' })
+    expect(Object.values(api.getState().xero.disbursements).filter((d) => d.accPayId === accPayId)).toHaveLength(2)
   })
 
   it('a fully-paid ACCREC disburses in full in one run', () => {
@@ -154,7 +159,9 @@ describe('payables run', () => {
     }).ok).toBe(true)
 
     // (catch-up Phase 36: a payable is chosen by its pair id, and the result names the pairs paid.)
-    const result = disbursePayable(api, OFFICE, selected.pairId)
+    // (catch-up Phase 39a: a single payout is a one-line approved run for that pair; the ungated payout is refused.)
+    expect(disbursePayable(api, OFFICE, selected.pairId)).toMatchObject({ ok: false, code: 'notApproved' })
+    const result = approveAndPayPairForDemo(api, OFFICE, selected.pairId)
     expect(result).toMatchObject({
       ok: true,
       value: {

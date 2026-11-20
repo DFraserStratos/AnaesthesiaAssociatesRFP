@@ -16,7 +16,7 @@ import { pairForInvoice } from './ledgerSelectors'
 import { warningsForBooking } from './warnings'
 import { advanceClockToDate } from './clockActions'
 import { receivePayment } from './paymentActions'
-import { payablesDue, runPayables } from './payablesActions'
+import { payablesDue, runThisWeeksCycle } from './payablesActions'
 import { setProcedureContract } from './contractSelectionActions'
 import { setProcedurePrice } from './pricingActions'
 import { setProcedurePayer } from './payerActions'
@@ -113,8 +113,10 @@ describe('Approve and send (US-06.3.1, D6, D38)', () => {
     expect(prepaymentStatusFor(api.getState(), RILEY).groups[0]).toMatchObject({ status: 'partPaid', receivedTotal: 690, invoicedTotal: 1380 })
     receivePayment(api, { accRecId, amount: 690, idempotencyKey: 'rest', source: 'webhook' })
     expect(prepaymentStatusFor(api.getState(), RILEY).status).toBe('paid')
-    const run = runPayables(api, OFFICE)
-    expect(run.ok && run.value.disbursedCount).toBe(0)
+    // (catch-up Phase 39a: the holding account's payable is never a line of the weekly cycle, so there is nothing due.)
+    const before = Object.keys(api.getState().billing.disbursements).length
+    expect(runThisWeeksCycle(api, OFFICE)).toMatchObject({ ok: false, code: 'nothingDue' })
+    expect(Object.keys(api.getState().billing.disbursements)).toHaveLength(before)
   })
 
   it('a typed 0 on Prepaid · Fixed price cannot be approved; $2,000 typed invoices $2,300.00', () => {

@@ -604,9 +604,19 @@ An invoice has been generated.
 4. A Xero webhook notifies the Billing Engine; a daily poll is the safety net.
 5. The matching payable becomes `AUTHORISED` for exactly the amount received, including a partial
    payment; the rest stays outstanding on the invoice.
-6. AA runs payables in Xero; a bill-paid webhook, or the daily poll, tells the Billing Engine, which
-   records the disbursement. The payment itself is made in Xero, never by the app; the Billing
-   monitor's payables panel (**Authorised, awaiting Xero's payables run**) only shows what is waiting.
+6. The released payable waits for the week's payment run (catch-up Phase 39a). Payments to
+   anaesthetists run weekly, each run named by its ISO week, on the Billing monitor's **Payment
+   cycle** panel: the office **closes the week** (Friday), which reconciles it to the bank download;
+   the **Monday checks** list anything odd, and a problem not fixed in time is **held out of this run**
+   and rolls into next week; the office **approves the week's BCTIs** (nothing is paid without it);
+   and on Tuesday the **payment schedule** goes to the accountant, who pays it in Xero. A bill-paid
+   webhook, or the daily poll, tells the Billing Engine, which records the disbursement. The payment
+   itself is made in Xero, never by the app. Each run is kept as a record (its page, its schedule,
+   the ledger at close), every payment shows the week it was paid in, and every run leaves a
+   remittance advice per anaesthetist, which she reads by week in web **Accounts → Remittances**. A
+   negative invoice nets against her positives in the run. The cycle is Greg's proposal, being
+   confirmed with AA's accountant (OQ-47); the 20th-of-the-month payment is not part of it (AA's
+   monthly fee is its own cycle).
    A prepayment is the exception: its payable credits the AA Holding account and is never paid itself;
    the anaesthetist is paid only after the transfer at authorisation (Workflow 8, Pre-payment).
 7. The system tracks **paid into AA** and **disbursed to anaesthetist** separately.
@@ -615,7 +625,7 @@ An invoice has been generated.
    her), the persistent payment history and the monthly GST report of the payments AA passed on to her
    (cash basis, with each payment's GST) update from the Billing Engine's own ledger, AA's system of record, not from direct Xero queries. Every invoice is a
    ledger pair (a receivable from the payer and a payable to the anaesthetist) created with the invoice;
-   payments are recorded in the ledger first, the payables run pays from the payable legs, and Xero
+   payments are recorded in the ledger first, the weekly payment run pays from the payable legs, and Xero
    mirrors both. The office checks on **Admin → Ledger** that receipts held equal payables due plus the
    AA Holding account, and follows up any anaesthetist on its out-of-balance list (catch-up Phase 36).
 9. Eligible individual Xero contacts may later be archived to manage active-contact volume. These
@@ -631,7 +641,8 @@ The financial episode closes when the receipt and disbursement states are both c
 For S3, use the selected invoice's combined **Simulate payment and payout** shortcut, then follow its
 direct link to the highlighted Web Payments row. Explain that the shortcut combines the two demo
 events while the underlying receipt and disbursement states remain separate. For a technical
-audience, use a partial payment followed by two payables runs to prove no double payment.
+audience, use a partial payment followed by two weekly payment runs (S4 Beat 5: half paid in Week 30,
+the balance in Week 31) to prove no double payment, with a remittance advice for each run.
 S3 Beat 5 closes on the Ledger: in balance, then a $120.00 receipt that matches no invoice puts it
 out of balance (and Dr Souter on the out-of-balance list) until the office allocates it. S3 then ends
 on Admin Day's **Reconciliation** card: **Books square**.
@@ -721,13 +732,13 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 - Two steps, and the anaesthetist is paid only after the second:
   1. **Collected into the AA Holding account.** The payer's money lands; the payable to the AA Holding
      account is authorised for what was received, and nothing is paid to the anaesthetist. The Billing
-     monitor's **AA Holding account** card shows the balance and a Received entry. The payables run
-     pays nothing.
+     monitor's **AA Holding account** card shows the balance and a Received entry. No payment run
+     pays it.
   2. **Transferred at authorisation.** When the office authorises the List, the system writes a
      transfer from the AA Holding account to the anaesthetist who did the List, with no office step: a
      Transferred entry on the card, the balance falls, and the Xero simulator shows a manual journal on
-     the prepayment pair. No new invoice or payment appears and GST does not move. The next payables
-     run pays the anaesthetist. The trigger is provisional (OQ-125: authorisation, or "confirmed and
+     the prepayment pair. No new invoice or payment appears and GST does not move. The next weekly
+     payment run pays the anaesthetist. The trigger is provisional (OQ-125: authorisation, or "confirmed and
      submitted"); the payment itself is made in Xero (OQ-111).
 - Money paid after the transfer goes straight to the anaesthetist's payable, released exactly as it
   arrives. A part-paid prepayment moves in full at authorisation and is released as money arrives.
@@ -837,8 +848,9 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
   issued in the next billing run with its credit note number (CN-2026-nnnn); any new invoice raised with
   it gets its own number and is linked to the original.
 - The anaesthetist's payable is always reversed, by a negative invoice: offset against the payable
-  while it is unpaid, netted in her next weekly payment run once she has been paid. Both sides move
-  together in the ledger and in Xero.
+  while it is unpaid, netted in her next weekly payment run once she has been paid; with no later
+  payment, settled with the anaesthetist outside the system (OQ-71). Both sides move together in the
+  ledger and in Xero.
 - A credit note is not a refund, and nothing is ever credited automatically: a person decides. A
   disputed invoice with no AA error stays outstanding.
 
@@ -897,11 +909,12 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Office review and authorisation | Yes | Phase 07 |
 | Invoice calculation and documents | Yes | Phase 08 |
 | Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), escalating warning, left off the final invoice | Yes | Catch-up Phase 27 |
-| Prepayment held in the AA Holding account, transferred to the anaesthetist when the List is authorised, then paid by the payables run | Yes | Catch-up Phase 27a |
+| Prepayment held in the AA Holding account, transferred to the anaesthetist when the List is authorised, then paid by the next weekly payment run | Yes | Catch-up Phase 27a |
 | Prepayment warning, events and additional invoices, credit and rebill, split, the anaesthetist's credit note, billing monitor/retry | Yes | Phase 09; events and additional invoices from catch-up Phase 38b; credit notes, credit and rebill and the split from catch-up Phase 39 |
 | Pre-op and post-op events, the ACC pre-op event, Contract event fees and billing events (a free-text charge or credit), billed in the next run | Yes | Catch-up Phase 39b |
 | Contract locked at authorise, invoices from the lock, Contract history | Yes | Catch-up Phase 25 |
 | Xero pairs, payment, balances and disbursement | Yes | Phase 10 |
+| The weekly payment cycle (close, Monday checks and holds, BCTI approval, the schedule to the accountant), netting, run records, the week on every payment and the remittance advice | Yes | Catch-up Phase 39a |
 | Xero resilience: payables run in Xero, sync queue and outage, voids and edits flagged, bulk remittance matched in Xero, Reconciliation card; Billing monitor grouped by anaesthetist with filters | Yes | Catch-up Phase 37 |
 | Internal ledger with in-balance view (whole ledger, one anaesthetist, the out-of-balance list) | Yes | Catch-up Phase 36 |
 | Anaesthetist profile, rate per unit and bank details | Yes | Catch-up Phase 26 |

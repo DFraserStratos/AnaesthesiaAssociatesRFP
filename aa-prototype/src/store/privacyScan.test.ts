@@ -15,7 +15,7 @@ import { runBillingForList } from './billingRun'
 import { handoffListPairs } from './xeroHandoff'
 import { approveAllPrepayments } from '../test/approvePrepayments'
 import { receivePayment } from './paymentActions'
-import { runPayables } from './payablesActions'
+import { runThisWeeksCycle } from './payablesActions'
 import { runMonthlyFeeInvoices } from './aaFeeActions'
 import { openAccRecs } from './selectors'
 import { approveProcedureEvent, runEventInvoicing } from './procedureEventActions'
@@ -42,7 +42,7 @@ function exercised(): BoundAppStore {
   expect(approveAllPrepayments(api, SEED_MARKERS.prepaymentBooking!.entityId, OFFICE_ACTOR)).toHaveLength(1)
   let i = 0
   for (const cand of openAccRecs(api.getState())) receivePayment(api, { accRecId: cand.accRecId, amount: cand.remaining, idempotencyKey: `P${i++}`, source: 'webhook' })
-  expect(runPayables(api, OFFICE_ACTOR).ok).toBe(true)
+  expect(runThisWeeksCycle(api, OFFICE_ACTOR).ok).toBe(true)
   // The monthly AA fee run (16).
   expect(runMonthlyFeeInvoices(api, OFFICE_ACTOR, { monthISO: '2026-07' }).ok).toBe(true)
   // An additional invoice (38b) through the next run.

@@ -250,6 +250,12 @@ Hooks already added:
   the List"), the field changes beneath it. Pick one by its title, for example
   `[data-shot=history-change-set]:has-text("Updated from the hospital")`. Open the Booking's History with
   `[data-shot=booking-history-button]` rather than `role=button[name="History"]` (a substring match).
+- **"Close the week" is in the payment cycle twice (catch-up Phase 39a).** The Billing monitor's step rail labels its
+  first step "Close the week" (`[data-shot=payment-cycle-step-1]`), and the button that closes it says the same, so
+  `role=button[name="Close the week"]` or `text="Close the week"` can hit the rail. Use the hooks:
+  `[data-shot=payment-cycle-close]`, then `[data-shot=payment-cycle-approve]` ("Approve week 30's BCTIs", its name
+  carries the week), `[data-shot=payment-cycle-send]` and `[data-shot=billing-run-payables-in-xero]`. Each button
+  appears only once the step before it is done, so `wait` for the next hook between clicks.
 
 ## Personas and IDs
 
@@ -350,6 +356,8 @@ unsaved-changes guard can block a navigation). No URL changed; the Admin Booking
 | `/web/accounts/gst` (catch-up Phase 26) | The GST tab has no period switch (the GST period is retired): a calendar month, caption `gst-month` "Month (1 Jul to 21 Jul 2026) ...", footer "Month total". Never click a Segmented here. |
 | `/web/accounts/gst` (catch-up Phase 38) | The tab is the GST report (the "GST activity" view is gone): the payments AA passed to the anaesthetist in a calendar month, dated by disbursement, never by receipt. Month picker `select[data-shot=web-gst-month-picker]` (label "Month", values `2026-07` down to `2026-01`, text "July 2026" etc., default July 2026; June 2026 has seeded payouts; pick with the `select` step); actions `web-gst-actions` (Download, Print, Email to me; Email to me shows `web-gst-email-sent` "Sent to ...: the GST report for July 2026."); caption `gst-month` ("July 2026 · GST on a cash basis: ..."); `web-gst-not-yet-paid` ("$X collected by AA is not yet paid to you ...") only while a receipt waits for the payout; table scroller `web-gst-report`, rows `tr[data-testid=gst-report-row-<invoiceNumber>]`, columns Date paid, Invoice, Billable party, Paid to you (incl GST), GST component, Paid ex GST, footer "Month total". A payment alone adds no row; the payout does. |
 | `/web/accounts/*` (catch-up Phase 36) | Every Accounts tab has the "Your position" strip `web-accounts-position` above the sub-tabs: AA owes you (with "Due now ..., which AA holds for you; awaiting collection ..."), Collected for you, Paid out to you, You owe AA (its link "Your AA fee invoices" opens the AA fees tab). Since catch-up Phase 38 the strip's labels read Owed to you, Collected, Paid out to you, You owe AA, and the Outstanding caption reads "One row per invoice not yet paid to you, oldest first. A row stays until AA pays you. For a question about a line, contact the office." Outstanding also lists the seed's AA-2026-S2401 ($3,565.00, Thu 16 Jul PM). |
+| `/web/accounts/remittances` (catch-up Phase 39a) | Accounts' Remittances tab (between Payments and GST report): Dr Souter's remittance advices, one per weekly payment run, newest first, in the card `web-remittances` (rows `tr[data-run-id]`, columns Week, Paid on, BCTIs, Netted, Paid to you, Status; on a fresh seed the first row is Week 29). Clicking a row opens the sheet `web-remittance-sheet` (title "Remittance advice · Week 29", the advice inside as `web-remittance-advice`). `?run=<runId>` marks that run's row. The panel `web-still-to-net` shows above the card only while she has a negative invoice still to net (never on a fresh seed). The anaesthetist apps are Dr Souter only, so Dr Sharma's staged advice is shot in Admin. |
+| `/web/accounts/payments` (catch-up Phase 39a) | Under "Paid to you" each paid row shows the week it went out in, `web-payment-week` (for example "Week 29"), and a line held out of a run shows `web-payment-held-out` ("Held out of Week 30, paid in a later run."). |
 | `/web/profile` | Your profile (catch-up Phase 26; `web-profile`), reached from the nav persona button `[data-shot=web-profile-link]` (aria-label "Your profile, Dr Melanie Souter"); the four nav tabs are unchanged. Panels: Billing `web-billing-panel` (field "Rate per unit ($)", "Save changes" `web-rate-save`, enabled only once the rate differs), Contact `web-contact-panel`, Identity `web-identity-panel` (Registration, HPI CPN), Bank account `web-bank-panel` (name, number masked `99-0101-•••••21-00`). Only the rate is editable; the rest carries lock glyphs. |
 
 **Admin app** (`src/apps/admin/`)
@@ -397,6 +405,11 @@ unsaved-changes guard can block a navigation). No URL changed; the Admin Booking
 | `/admin/ledger` (catch-up Phase 43) | The pager `ledger-pager` shows only when there are more rows than a page (full scale). |
 | `/admin/intake/matching` (catch-up Phase 43) | The row panel shows only the fields needed to match, with the line `matching-restricted` ("Only the fields needed to match are shown. The rest of what the hospital sent is held under restricted access."). On a row that needs resolving (open, and unmatched, waiting for its NHI or blocked by a flag; the seeded `IRS001` Mere Tipene is one) the line adds the link `matching-raw-row` ("View raw row"), which opens the raw-row sheet (see Overlays); after a view, `matching-raw-row-views` ("Raw row viewed once · last Kirsty W. 08:00"). Demo action `matching-raw-row-other-role`. |
 | `/admin/masters?view=xeroArchiving` (catch-up Phase 43) | The archive volume line `archive-scale-line`. |
+| `/admin/billing` (catch-up Phase 39a) | The payables panel is replaced by the payment cycle card `payment-cycle` ("Payment cycle · Week 30 · 20 Jul to 26 Jul 2026" at reset; its status pill `payment-cycle-status` once closed) with a compact step rail, steps `payment-cycle-step-1` to `-4` (Close the week, Monday checks, Approve BCTIs, Send payment schedule; each "Planned Friday 24 Jul" and so on until done, then its stamp). Before the close: `payables-run-draft` ("Waiting for this week's run", per-anaesthetist table, rows `tr[data-anaesthetist-id]`; "Nothing is waiting for this week's run." at reset) with the button `payment-cycle-close` "Close the week" (disabled with nothing waiting). After it: `payment-cycle-anomalies` ("Checks before payment", anomaly rows `li[data-anomaly-id][data-anomaly-kind]` with `payment-cycle-hold-anomaly` "Hold out of this run" and `payment-cycle-mark-fixed` "Mark fixed"; per line `payment-cycle-hold-open`, `payment-cycle-hold-reason`, `payment-cycle-hold-line`), the held lines `payment-cycle-held` ("Rolls into Week 31", rows `[data-held-pair-id]`, `payment-cycle-release` "Return to run"), then `payment-cycle-approve` ("Approve week 30's BCTIs", disabled while an anomaly is open). Approved: `payables-run-approved` (the frozen table) and `payment-cycle-send` "Send payment schedule". Always: `billing-payables-run` (now only the Simulated Xero badge and `billing-run-payables-in-xero` "Run payables in Xero", disabled "Nothing scheduled to pay" until a schedule is sent), the runs table `payables-runs` (rows `tr[data-run-id][data-run-status]`, Week, Run (a link to the run), Closed, Approved, Scheduled, Net, Status pill Closed, Approved, Scheduled, Paying, Paid or Superseded, plus Seeded or Staged), `billing-open-ledger`, and the result line `billing-payables-result` ("Week 30 paid in Xero: 19 BCTIs, 1 negative invoice netted, $10,472.16 paid to 1 anaesthetist."). After the run is paid the card moves on to Week 31. `billing-payables-due` and the per-payable rows are gone. `payment-cycle-stale` and `payment-cycle-reclose` show when the ledger changed after the close. |
+| `/admin/billing/payment-runs/:runId` (catch-up Phase 39a) | One payment run ("Payment run · Week 30"): the run card `payables-run-detail` (Run, Closed, Approved, Schedule sent, Sent to Xero, Paid stamps; status pill), "Ledger at close" `payables-run-snapshot`, "Totals by anaesthetist" (no hook: `role=region[name="Totals by anaesthetist"]`) with the link `payables-run-remittance-link` "Remittance advice" per row once approved, "Checks before payment" (held lines `payables-run-held`), and once approved the "Payment schedule" card `payment-schedule` ("PAYMENT SCHEDULE · Week 30", Total row, "Sent to the accountant ..." once sent; `payment-schedule-print`). The first live run after a reset is `PR0001`; the seeded runs are `PRH01` to `PRH13`. |
+| `/admin/billing/payment-runs/:runId/remittance/:anaesthetistId` (catch-up Phase 39a) | One anaesthetist's remittance advice for the run (Dr Sharma is `41267`): the document `remittance-advice` ("REMITTANCE ADVICE", `remittance-week` "Week 30, 2026", one row per BCTI, netted rows `remittance-netted` "Negative invoice CN-2026-0001-P · credit of AA-2026-PP20" with "-$365.70", the "Paid to you" total `remittance-net`, `remittance-still-to-net` only when a negative is left over), with the rail cards `remittance-print` and `remittance-xero` (batch payment). |
+| `/admin/invoices/:invoiceId` (catch-up Phase 39a) | The Ledger card adds `payment-week` once the invoice is paid out: "Paid out in Week 30 · $54.30 · netted $365.70" on `PPINV01` after the netting run (one span per run, `[data-run-id]`). |
+| `/admin/ledger/anaesthetists/:anaesthetistId` (catch-up Phase 39a) | Adds the "Payment runs" card `ledger-payment-runs` (the runs that paid this anaesthetist, "Not paid in a payment run yet." when none) and `ledger-still-to-net` ("Dr Sharma has negative invoices to net: ...") only while a negative is open. |
 
 The side nav has: Day view, Intake (amber badge `[data-shot=nav-badge-intake]`, the open Matching rows;
 catch-up Phase 34, was Matching with `nav-badge-matching`), Conflicts (amber badge `[data-shot=nav-badge-conflicts]`, catch-up
@@ -1109,6 +1122,9 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   1 payable due, $1,380.00; clicking "Run payables in Xero" (`[data-shot=billing-run-payables-in-xero]`) shows
   `[data-shot=billing-payables-result]` "Xero paid 1 bill ($1,380.00); the Billing Engine recorded 1 disbursement
   from the bill-paid webhooks." (wait for that hook; the old "Run PR0001" line is gone).
+  Since catch-up Phase 39a the transfer waits in the payment cycle's `payables-run-draft` instead, and "Run payables in
+  Xero" stays disabled until `payment-cycle-close`, `payment-cycle-approve` and `payment-cycle-send` have been clicked;
+  the result line then reads "Week 30 paid in Xero: ...". US-06.5.1 and US-09.2.4 carry the clicks.
 - **Xero sim** `/demo/xero/invoices/XRB0`: the ACCPAY card's flow text "Held until the List is authorised, then
   moved by a transfer to the anaesthetist who did the List. Leaves only by a system transfer or refund."; before
   the transfer the callout `[data-shot=xero-holding-held]` "Held in the AA Holding account"; after it
@@ -1415,6 +1431,34 @@ were already imported. Nothing new.").
   16:00; six "5 minutes later" clicks then `booking-save` make it 16:30) shows on the web List after a `setup` (same
   origin). The PWA (:5174) cannot see an Admin save, so its shot uses the `office-edits-booking` stand-in (the time 30
   minutes later, also 16:30), then the header's "List" back button.
+
+### Weekly payment runs and remittance (catch-up Phase 39a)
+
+- **Backdrop runs.** Every seeded payout belongs to a paid weekly run, one per ISO week of its payment dates: `PRH01`
+  to `PRH13`, Week 29 (13 Jul to 19 Jul) the newest, each tagged Seeded, closed, approved and scheduled by "Office
+  (seeded)", with Xero batch payments `XBPH..`. None nets a negative invoice. So at reset the Billing monitor's card
+  reads "Payment cycle · Week 30 · 20 Jul to 26 Jul 2026" with nothing waiting (`payment-cycle-close` disabled), the
+  runs table's first row is Week 29, Paid, Seeded, and Dr Souter's web Remittances list starts at Week 29.
+- **Bank lines.** `billing.bankLines` is the bank download the close reconciles against: one line per seeded payment
+  (`BNKH001`..., reference the invoice number; AA fee payments are left out, as they go to AA's own account). Every
+  live payment (the Xero simulator's payment entries, `web-payment-full`, the staging below) writes its own line, so
+  closing the week after an ordinary payment raises no anomaly.
+- **Stage a payment week** (`stage-payment-week` on `/admin/billing`): nineteen of Dr Sharma's invoices on her 29 and
+  30 Jun Lists (`PPINV01`..., numbers `AA-2026-PP01`...), each paid by the ordinary payment webhook, released into
+  Week 30. Choice `bctis`: message "19 payables released for Dr Sharma into Week 30. Close the week to start the run."
+  Choice `withCredit` also credits `AA-2026-PP20`, already paid out to her, so a negative invoice (the first credit
+  note, `CN-2026-0001-P`) waits to net: "... A negative invoice of -$365.70 is waiting to be netted." Disabled
+  "Already staged for this week" once run.
+- **The netting run.** `withCredit`, then Close, Approve, Send and Run payables in Xero: run `PR0001` (the first live
+  run), Dr Sharma 19 BCTIs, positives $10,837.86, netted -$365.70, net $10,472.16; result "Week 30 paid in Xero: 19
+  BCTIs, 1 negative invoice netted, $10,472.16 paid to 1 anaesthetist."; `/admin/invoices/PPINV01` then reads "Paid out
+  in Week 30 · $54.30 · netted $365.70", and her advice is `/admin/billing/payment-runs/PR0001/remittance/41267`.
+- **The anomaly and the hold.** `bctis`, then `stage-bank-mismatch`, then Close: one anomaly "Receipt not on the bank
+  download" and Approve disabled. "Hold out of this run" on it moves its line (`AA-2026-PP19-P`) under "Rolls into
+  Week 31"; Approve, Send and Run then pay 18 BCTIs, the card moves to Week 31 and the held line comes back there
+  tagged `payment-cycle-rolled` "Rolled from Week 30".
+- **No back door.** `stage-refund-after-payout` and the PWA's `pwa-office-runs-payables` pay out through a run too
+  (a one-line run tagged Staged, or the week's own run), so they appear in `payables-runs`.
 
 ## Overlays that need clicks
 
@@ -2414,6 +2458,22 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   & archiving: `archive-scale-line`. Every shell: `synthetic-data-badge` (harness bar, Admin side nav, web top nav,
   mobile More card). Demo action rows `demo-action-load-full-scale`, `demo-action-scan-nhi-leaks`,
   `demo-action-matching-raw-row-other-role`.
+- Weekly payment cycle and remittance (catch-up Phase 39a; US-10.2.5 to US-10.2.7). Billing monitor: `payment-cycle`
+  (the card), `payment-cycle-status`, `payment-cycle-step-1` to `-4` (the rail), `payables-run-draft`,
+  `payment-cycle-close`, `payment-cycle-anomalies` (anomaly rows `li[data-anomaly-id]`), `payment-cycle-hold-anomaly`,
+  `payment-cycle-mark-fixed`, `payment-cycle-hold-open`, `payment-cycle-hold-reason`, `payment-cycle-hold-line`,
+  `payment-cycle-held` (rows `[data-held-pair-id]`), `payment-cycle-release`, `payment-cycle-approve`,
+  `payables-run-approved`, `payment-cycle-send`, `payment-cycle-stale`, `payment-cycle-reclose`,
+  `payment-cycle-rolled`, `payment-cycle-no-bank`, `payables-runs` (rows `tr[data-run-id][data-run-status]`); kept:
+  `billing-payables-run` (the Run payables in Xero row only), `billing-run-payables-in-xero`, `billing-payables-result`,
+  `billing-open-ledger`; gone: `billing-payables-due`. Run detail: `payables-run-detail`, `payables-run-snapshot`,
+  `payables-run-remittance-link`, `payables-run-held`, `payment-schedule`, `payment-schedule-print`. Remittance advice:
+  `remittance-advice`, `remittance-week`, `remittance-netted` (`data-negative-invoice`), `remittance-net`,
+  `remittance-still-to-net`, `remittance-print`, `remittance-xero`. Admin invoice: `payment-week` (spans
+  `[data-run-id]`). Anaesthetist ledger: `ledger-payment-runs`, `ledger-still-to-net`. Web Accounts:
+  `web-remittances` (rows `tr[data-run-id]`, `data-testid=remittance-row-<runId>`), `web-remittance-sheet`,
+  `web-remittance-advice`, `web-still-to-net`, `web-payment-week`, `web-payment-held-out`. Demo action rows
+  `demo-action-stage-payment-week`, `demo-action-stage-bank-mismatch`.
 
 **Other hooks**
 
@@ -2423,6 +2483,21 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 - `[data-validation-focus=true]`
 
 ## Demo control panel (`/demo/control`) and Demo actions
+
+- Catch-up Phase 39a (the weekly payment cycle). Two bar entries on `/admin/billing`, screen "Admin · Billing monitor":
+  `stage-payment-week` ("Stage a payment week", choices `bctis` "19 BCTIs", the default, and `withCredit` "19 BCTIs
+  and a credit after payout") releases nineteen of Dr Sharma's invoices into this week's run, and with `withCredit`
+  leaves a negative invoice to net (messages and figures under
+  [Weekly payment runs](#weekly-payment-runs-and-remittance-catch-up-phase-39a)); disabled "Already staged for this
+  week" once run, or "Xero is unavailable: restore it first". `stage-bank-mismatch` ("Stage a bank mismatch", no
+  choice) removes the newest receipt of this week's draft from the bank download, so Close raises "Receipt not on the
+  bank download": message "The bank download is missing the receipt for AA-2026-.... Close the week to see the
+  anomaly."; disabled "Nothing received this week" until something is waiting, and "This week is already closed" after Close. Neither
+  closes, approves, sends or pays: the recipe clicks `payment-cycle-close`, `payment-cycle-approve`,
+  `payment-cycle-send` and `billing-run-payables-in-xero` itself, waiting for each. The PWA stand-in
+  `pwa-office-runs-payables` is relabelled "Office runs this week's payment cycle": it closes, approves, sends and pays
+  Week 30 for what was released to Dr Souter ("The office ran Week 30's payment cycle and the accountant paid it in
+  Xero: $X to Dr Souter ..."); still disabled "Nothing due to pay out" at reset.
 
 - Catch-up Phase 42 (Master data loads), both bar only on `/admin/masters`, run as the developer's seed-load actor:
   `load-sample-spreadsheet` ("Load sample spreadsheet") shows on Seed load (every sample sheet) and on a seeded view
@@ -2530,6 +2605,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 | Screen (`goto`) | ids | Notes |
 |---|---|---|
 | `/admin/billing` (search params allowed, e.g. `?list=` or `?problems=1`) | `billing-failure`, `arm-handoff-fault`, `xero-outage-start`, `xero-outage-restore`, `run-reconciliation-poll`, `run-archive-job` | "Trigger billing failure" (re-based in catch-up Phase 25, re-pointed in 37) arms a Xero hand-off fault for Losa Tuilagi's Booking (BK0039) alone and authorises Dr Ropata's Thu 16 Jul AM List (`L-39560-2026-07-16-AM`). Each Booking bills from its locked record: her row (`[data-shot=billing-pipeline-L-39560-2026-07-16-AM] tr[data-booking-id=BK0039]`) shows the "Waiting for Xero" pill and `monitor-waiting-for-xero` ("Waiting for Xero · attempt 1 · next try HH:mm. The invoice and its ledger pair stand; the Xero sync queue retries it."), and the Xero sync queue `billing-xero-queue` holds its row with "Retry now", which hands her off once; Hemi Walker's (BK0040) bills; the List is not failed (it shows under Problems only). No Contract changes. Disabled "Already triggered" once the List is AUTHORISED. A run failure (none staged by this trigger) shows "Retry" (`billing-retry-<bookingId>`) and `monitor-retry-note`. The outage pair: "Simulate Xero outage" makes every new hand-off, payment sync, disbursement sync and the poll wait in the queue (the Xero line reads "Xero unavailable since ..."); "Restore Xero" drains it in order. "Run payables in Xero" is the screen's own product button, `[data-shot=billing-run-payables-in-xero]` in `billing-payables-run`, not a demo action |
+| `/admin/billing` (catch-up Phase 39a) | `stage-payment-week` (choice `bctis` or `withCredit`), `stage-bank-mismatch` | Bar only. Stage the week, then (for the anomaly) the mismatch, then click the cycle's buttons by hook: `payment-cycle-close`, `payment-cycle-approve`, `payment-cycle-send`, `billing-run-payables-in-xero`. US-10.2.5 to US-10.2.7 show the pattern; a recipe that pays out something released another way (FT-10.2, US-09.2.4, US-10.1.2) clicks the same four |
 | `/admin/invoices/<invoiceId>` | `regenerate-invoice` | Catch-up Phase 25, "Regenerate from locked data". Rebuilds the invoice on screen from its Booking's lock and compares it with the invoice as stored, read-only: the result shows under the Locked record card as `[data-shot=invoice-regenerated]`, `data-identical="true"` with "Regenerated from locked data: identical (n lines, total $x)", or the differences. Disabled on prepayment and AA fee invoices and on an invoice with no lock. Stage an edit first (a Contract edit, a backdated range, a unit-value edit) to show it holds; US-08.4.4 shows the pattern (S3 AM authorise, a unit-value edit, open AA-2026-0002, trigger) |
 | `/demo/xero`, `/demo/xero/invoices[/<accRecId>]`, `/demo/xero/bank` | `xero-outage-start`, `xero-outage-restore`, `run-reconciliation-poll`, `run-archive-job` | Catch-up Phase 37 adds the outage pair and `/demo/xero/bank`. While the outage is on, every tab shows `xero-outage-banner`. The poll's result line reports missed payments, missed bill payments and invoices changed directly in Xero |
 | `/demo/xero/invoices/<accRecId>` (a procedure pair) | `xero-void-invoice`, `xero-amend-invoice`, `xero-pay-bill` (choice `deliver` or `missed`) | Catch-up Phase 37, bar only, acting as AA staff or Xero on the pair in the URL. Void: disabled once a payment is applied; the engine learns at the next poll, which flags it on the Billing monitor (`billing-xero-divergence`, "Voided in Xero" against "Receivable open"). Amend: the total $20.00 lower in Xero; the poll flags "Amended in Xero". Pay bill: Xero's payables run pays this pair's bill; `deliver` records the disbursement at once ("disbursement recorded HH:mm by webhook"), `missed` leaves the engine "not yet detected" until `run-reconciliation-poll` records it "by the poll", dated at the bill payment; disabled "Nothing authorised to pay yet" until the receivable is paid in (so not on the seeded history pairs `XRH..`, whose payments the demo cannot send: use AA-2026-0002 after the S3 AM authorise and `payment-full`, as US-09.2.4 does). Hidden on an AA fee pair |
@@ -2575,7 +2651,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/admin/ledger`, `/admin/ledger/anaesthetists/<id>` | `inject-unmatched-receipt` (choice `souter` or `none`), `payment-full`, `payment-half`, `payment-replay` (choice: an open receivable's ACCREC id), `arm-handoff-fault`, `run-archive-job` | Catch-up Phase 36, bar only. The $120.00 unmatched receipt puts the ledger out of balance (see "Internal ledger" under Seed data); US-13.2.1 and US-08.3.4 show the pattern (`goto` `/admin/ledger`, then the trigger in `setup`). The payment entries land the receipt in the ledger first, then Xero, and the ledger stays in balance |
 | `/admin/day/<date>` (and `/admin`, which redirects there) | `inject-unmatched-receipt` (choice `souter` or `none`) | Catch-up Phase 37, bar only: the same entry as on the Ledger; it puts the right rail's Reconciliation card (`dashboard-reconciliation`) out of balance with one unresolved item. US-13.2.4 shows the pattern (`start` `/admin`, then the trigger as a step) |
 | `/web`, `/web/accounts/<subTab>` | `web-payment-full`, `web-payment-half` | Catch-up Phase 38, bar only, "Payment received · full" or "· half": a Xero payment webhook on one of Dr Souter's open invoices, chosen in the row's select (option values are runtime ACCREC ids, so omit `choice`: it defaults to the first open invoice by number, AA-2026-0002 after the S3 AM authorise). Disabled "No open invoices yet" on a fresh seed (the history invoices take no payment): authorise a List first. Collected rises at once and the Outstanding row reads "Paid in, due to you"; the GST report gains its row only when AA pays out (`/admin/billing`, `billing-run-payables-in-xero`). US-12.2.1 and US-12.2.3 show the pattern |
-| `/mobile/balances` (PWA Demo sheet only) | `pwa-office-runs-payables` | Catch-up Phase 36, badged Office stand-in, labelled "Office runs payables in Xero" since catch-up Phase 37. Runs the payables for Dr Souter; Balances' "Paid out" rises by what was due. Disabled "Nothing due to pay out" until a payment has been received |
+| `/mobile/balances` (PWA Demo sheet only) | `pwa-office-runs-payables` | Catch-up Phase 36, badged Office stand-in, labelled "Office runs this week's payment cycle" since catch-up Phase 39a. Runs the payables for Dr Souter; Balances' "Paid out" rises by what was due. Disabled "Nothing due to pay out" until a payment has been received |
 | `/admin/day/<date>`, `/admin/invoices`, `/admin/invoices/<invoiceId>` | `load-full-scale` ("Load full-scale data") | Catch-up Phase 43, bar only, with a confirm step (the `trigger` step clicks Confirm). Message "Generating full-scale data. Timings appear in the banner."; the data is ready only when `scale-timings-toggle` shows (2 to 3 seconds). Disabled while generating or once loaded. Lost on any `goto` or reload. Index path the Day view |
 | `/demo/data` | `scan-nhi-leaks` ("Scan for NHI leaks", choice `now` or `planted`) | Catch-up Phase 43, bar only. Fills the Privacy checks report `nhi-scan-report`; the result line summarises what was found |
 | `/admin/intake/matching` | `matching-raw-row-other-role` ("View raw row as another role", choice `souter` or `feed`) | Catch-up Phase 43, bar only. Acts on the selected row or, with none selected, the oldest row needing resolving; refused, "Refused: only office staff can view a raw hospital row (Mere Tipene's row). The attempt is in the audit trail." Close the row panel first: it covers the harness bar's right side |
